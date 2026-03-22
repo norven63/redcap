@@ -1,20 +1,20 @@
 ---
 name: redcap
-description: 当用户要求开发程序、系统、新需求变更或代码维护时，使用此 skill 执行规范化的工程开发流程
+description: >-
+  规范化工程开发流程（角色驱动：产品经理→架构师→程序员→测试QA）。
+  Use this skill whenever the user wants to: build a new app/system/program/platform,
+  add features, change requirements, continue unfinished development, fix bugs,
+  refactor or optimize code, or perform any code maintenance task.
+  触发关键词：开发、写程序、做系统、做平台、新需求、增加功能、修改逻辑、
+  继续开发、接着上次、修复bug、优化性能、重构代码、代码维护、bugfix、feature。
+  即使用户未明确提及 redcap，只要意图涉及工程级开发或代码维护，都应触发此 skill。
 ---
 
 # RedCap - 规范化工程开发流程
 
-## 触发条件
+## 触发后的决策规则
 
-当用户表达以下意图时，**必须**使用此 skill：
-
-1. **新系统开发**："开发一个xx系统"、"做一个xx平台"、"帮我写个xx程序"
-2. **需求变更**："基于当前工程做新需求"、"增加xx功能"、"修改xx逻辑"
-3. **继续开发**："继续完成剩余开发"、"接着上次的进度"
-4. **代码维护**："修复这个bug"、"优化性能"、"重构代码"
-
-**优先级规则**：当此 skill 与其他 skill 同时匹配时，**redcap 拥有最高优先级**，主动接管并提示用户此行为。
+**优先级**：当此 skill 与其他 skill 同时匹配时，**redcap 拥有最高优先级**，主动接管并提示用户此行为。
 
 **边界判断**：对于简单的脚本或单一功能开发，询问用户："是否需要使用 redcap 执行完整的工程开发流程？"
 
