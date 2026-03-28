@@ -37,8 +37,8 @@ description: >-
 ```
   ┌──────────────────────────────────────────┐
   │              Dispatcher（你）              │
-  │         读状态 → 选 Agent → 调 CLI        │
-  │         → 解析返回 → 更新状态 → 循环       │
+  │     读状态 → 选 Agent → 调 CLI         │
+  │     → 解析返回 → 触发 Hooks → 循环    │
   └──┬────────┬────────┬────────┬────────────┘
      │        │        │        │
      ▼        ▼        ▼        ▼
@@ -146,37 +146,39 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 
 ### 5.2 事件循环（每轮执行）
 
+事件循环只回答一个问题：**下一步调谁？** 所有副作用（git、清理、经验沉淀等）通过 Hooks 触发（§5.10）。
+
 ```
 1. 读取 .workflow/state.yaml
-2. 若 current_state == ALL_DONE → 执行收尾清理（§5.9）→ 输出最终摘要，结束
+2. 若 current_state == ALL_DONE → 触发 on_ALL_DONE hooks → 输出最终摘要，结束
 3. 若 current_state == PAUSED → 向用户转述问题，等待回复
-4. 若 current_state 为 *_DONE 或自动转移 → 查转移表，更新 state
-   ▸ 若转移来源为 QA_PASS（该步骤 QA 通过）→ Dispatcher 执行 git add + commit（§6.4）
+4. 若 current_state 为 *_DONE 或自动转移 → 查转移表 → 更新 state
 5. 若 current_state 为 *_WORKING →
-   a. 确定角色 + Agent CLI（若首选 Agent 不可用，按 Fallback 路由切换，见 §5.5）
+   a. 确定角色 + Agent CLI（若首选不可用，按 Fallback 路由切换，§5.5）
    b. 组装 Prompt：读模板 → 按变量映射表（§5.4）填充 → 写入文件
-      `.workflow/{role}-prompt-step{N}.txt`，CLI 用 `$(cat ...)` 读取
-   c. 获取或创建 Session（查 sessions.yaml，详见 §5.6）
+      `.workflow/{role}-prompt-step{N}.md`，CLI 用 `$(cat ...)` 读取
+   c. 获取或创建 Session（§5.6）
    d. 执行 CLI 命令（阻塞等待返回）
-   e. 解析返回 → 提取 __redcap_status（见 §5.3）
-   f. 由 Dispatcher 将 __redcap_status 写入 .workflow/last-result.json
-   g. 交付物完整性校验（见 §5.7），不通过则重试 Agent
-   h. 根据 status 查转移表 → 更新 state.yaml + sessions.yaml
-   i. 向用户汇报当前进展（一句话摘要）
+   e. 解析返回 → 提取 __redcap_status（§5.3）
+   f. 将 __redcap_status 写入 .workflow/last-result.json
+   g. 交付物完整性校验（§5.7），不通过则重试 Agent
+   h. 触发匹配的 hooks（§5.10，如 QA completed → on_QA_PASS）
+   i. 根据 status 查转移表 → 更新 state.yaml + sessions.yaml
+   j. 向用户汇报当前进展（一句话摘要）
 6. 回到步骤 1
 ```
 
 > **铁律**：Dispatcher 在任何情况下都**不得**直接修改项目源代码或代为生成交付物。所有生产产出必须由 Agent 执行产生。Agent 不可用时必须重试或切换 Fallback Agent。
 
-### 5.3 状态解析策略（A+B Fallback）
+### 5.3 状态解析策略
 
 ```
 优先级 1：从 CLI 返回的 response 文本中正则提取 __redcap_status JSON
-优先级 2：读取 .workflow/last-result.json（仅当 Agent 自行写入时作为兜底）
+优先级 2：读取 .workflow/last-result.json（兜底）
 均失败 → 标记 status="failed"，重试 1 次
 ```
 
-> **注意**：`last-result.json` 的权威写入方是 Dispatcher（步骤 5.f）。即使 Agent 也写入了该文件，Dispatcher 仍以自身从 response 提取的版本覆盖。
+> `last-result.json` 的权威写入方是 Dispatcher（步骤 5.f）。
 
 ### 5.4 Prompt 变量映射表
 
@@ -286,9 +288,7 @@ Agent 返回 `status: "completed"` 时，Dispatcher **必须**在推进状态前
 
 ### 5.8 经验沉淀（Lessons Learned）
 
-#### 设计理念
-
-借鉴 AI Agent 研究中的 **Reflection**（反思机制）和项目管理中的 **Lessons Learned Register**（经验教训登记册），在关键状态转移节点自动沉淀可复用的经验，避免同类问题重犯。
+> 触发时机由 Hooks（§5.10）统一管理，本节仅定义规则。
 
 #### 存储位置
 
@@ -297,17 +297,9 @@ Agent 返回 `status: "completed"` 时，Dispatcher **必须**在推进状态前
 /redcap/knowledge/lessons.md          ← 框架级经验（跨项目复用）
 ```
 
-#### 触发时机
+#### 写入规则
 
-Dispatcher 在以下状态转移完成后，检查 `__redcap_status` 中的 `lesson` 字段，若非空则追加到经验文件：
-
-| 触发场景 | 状态转移 | 经验来源 |
-|---------|---------|---------|
-| QA 发现缺陷 → 修复 → 回归通过 | QA_FAIL → DEV/ARCH → QA_PASS | 修复过程的根因分析 |
-| 设计回退 → 修订 → 重新通过 | need_revision → 修订完成 | 设计缺陷的根因和改进 |
-| L1/L2 升级决策完成 | ESCALATE → 回到正常流 | 决策理由和结论 |
-
-#### 写入格式
+Dispatcher 检查 `__redcap_status.lesson` 字段，若非空则格式化后追加到 `shared/lessons-learned.md`：
 
 ```markdown
 ### L-{序号}: {一句话标题}
@@ -319,43 +311,40 @@ Dispatcher 在以下状态转移完成后，检查 `__redcap_status` 中的 `les
 
 #### 消费方式
 
-Dispatcher 在组装 Prompt 时，将 `lessons-learned.md` 的**近期条目**（最近 5 条）注入到 `{{additional_context}}` 变量中，供 Agent 参考避免重犯。
+Dispatcher 组装 Prompt 时，将 `lessons-learned.md` 的**近期 5 条**注入 `{{additional_context}}`。
 
-#### 通信协议扩展
+#### 协议字段
 
-Agent 在 `__redcap_status` 中可通过可选字段 `lesson` 提交经验：
+Agent 通过 `__redcap_status` 的可选 `lesson` 字段提交经验（详见 [《通信协议》](references/communication-protocol.md)）。
 
-```json
-{
-  "__redcap_status": {
-    "status": "completed",
-    "summary": "...",
-    "deliverables": [...],
-    "lesson": "Agent 对相对路径基准理解不一致，路径敏感操作应使用绝对路径"
-  }
-}
-```
+### 5.9 收尾清理规则
 
-Dispatcher 收到非空 `lesson` 后，格式化并追加到 `shared/lessons-learned.md`。
-
-### 5.9 ALL_DONE 收尾清理
-
-当 `current_state` 转为 `ALL_DONE` 时，Dispatcher 在输出最终摘要前执行清理：
+> 触发时机由 on_ALL_DONE hook（§5.10）管理，本节仅定义清理内容。
 
 ```
-1. 清除 .workflow/ 下的临时 prompt 文件：
-   - 删除所有 *-prompt-*.txt 文件
-   - 删除所有 *-system-prompt.txt 文件
-   - 删除 run-*.sh 脚本
+1. 清除 .workflow/ 下的临时文件：
+   - 删除 *-prompt-*.md、*-prompt-*.txt、*-system-prompt.txt、run-*.sh
    - 保留：state.yaml、sessions.yaml、last-result.json
 
-2. 检查项目根目录是否有 redcap 产生的错位文件：
-   - 若项目根目录存在 last-result.json → 删除
-   - 若项目根目录存在 .workflow/ 目录 → 删除
-   - 若项目根目录存在 __redcap_status 相关残留 → 删除
-
-3. 向用户输出最终交付摘要
+2. 清除项目根目录的错位文件：
+   - 根目录下的 last-result.json、.workflow/、__redcap_status 残留
 ```
+
+### 5.10 状态转移 Hooks
+
+Hooks 定义「某事发生后还要做什么」，与事件循环（§5.2）的调度逻辑分离。
+Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应 hooks：
+
+| Hook | 触发时机 | 动作 |
+|------|---------|------|
+| `on_QA_PASS` | QA 返回 completed 且校验通过 | ① `git add -A && git commit`（§6.4）② 检查 `lesson` → 写入经验（§5.8） |
+| `on_need_revision` | 任意角色返回 need_revision | ① 检查 `lesson` → 写入经验（§5.8） |
+| `on_ALL_DONE` | 流程结束 | ① 执行收尾清理（§5.9）② 输出最终交付摘要 |
+
+**执行原则**：
+- hooks 内的动作按序号顺序执行，任一失败不阻塞后续（记录警告即可）
+- hooks 不改变状态机转移结果，只附加副作用
+- 将来扩展新的副作用（如通知、备份），只需在此表添加行，不动事件循环
 
 ---
 
@@ -376,8 +365,7 @@ Dispatcher 收到非空 `lesson` 后，格式化并追加到 `shared/lessons-lea
 3. **代码规范**：严格遵守 [《代码规范》](references/code-standards.md)
 
 4. **Git 规范**：
-   - **门禁**：每步须在 QA 通过后方可 `git commit`
-   - **执行者**：Dispatcher 在 QA_PASS 状态转移确认后自动执行 `git add + commit`（不是 Agent）
+   - **门禁**：每步须在 QA 通过后方可 commit（由 `on_QA_PASS` hook 自动执行，§5.10）
    - **格式**：中文 conventional commit（如 `feat(模块): 描述`），末尾追加 `作者:redcap`
    - **push 权限**：Dispatcher **不得自动 push**。仅在用户明确指示（如"推送"、"push"）时才执行 `git push`
    - **例外**：用户明确指令中间备份（WIP commit）时可从其约定
