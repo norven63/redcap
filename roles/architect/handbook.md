@@ -187,4 +187,4 @@
 {"__redcap_status": {"status": "blocked", "summary": "需求边界不清晰", "deliverables": [], "escalation": {"level": 1, "target_role": "product-manager", "question": "具体问题描述", "recommendation": "我的建议是..."}}}
 ```
 
-同时将状态 JSON 写入 `.workflow/last-result.json` 作为备份。
+> 你不需要写 `.workflow/last-result.json`，Dispatcher 会从你的回复中自动提取并写入。

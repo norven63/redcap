@@ -153,4 +153,4 @@
 {"__redcap_status": {"status": "need_user", "summary": "需要用户澄清以下问题", "deliverables": []}}
 ```
 
-同时将状态 JSON 写入 `.workflow/last-result.json` 作为备份。
+> 你不需要写 `.workflow/last-result.json`，Dispatcher 会从你的回复中自动提取并写入。

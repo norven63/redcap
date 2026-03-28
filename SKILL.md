@@ -180,21 +180,57 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 
 Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
 
+**通用变量（所有角色共用）**：
 ```
 {{handbook_content}}       → 读取 roles/{role}/handbook.md 全文
-{{pm_requirement_summary}} → 读取 pm/outbox/需求文档.md（或 pm/需求文档.md）
-{{pm_outbox_content}}      → 同上
-{{architect_outbox_content}} → 读取 architect/outbox/步骤X-{模块名}.md
-{{architect_design_test_plan}} → 同上中的测试方案部分
-{{tech_framework_summary}} → 读取 architect/技术框架设计.md
-{{programmer_outbox_content}} → 读取 programmer/outbox/步骤X-自测报告.md
 {{project_dir}}            → 项目根目录绝对路径
 {{dev_manual_dir}}         → 开发手册/ 绝对路径
 {{current_step}}           → state.yaml.current_step
 {{total_steps}}            → state.yaml.total_steps
 {{step_name}}              → state.yaml.current_step_name
+{{additional_context}}     → Dispatcher 补充的上下文信息（可为空）
+```
+
+**产品经理专用**：
+```
 {{user_intent}}            → 用户原始需求描述
-{{additional_context}}     → Dispatcher 补充的上下文信息
+{{existing_context}}       → 已有项目上下文（如旧版迁移后的现有文档摘要，首次为空）
+{{user_answer}}            → 用户回复内容（恢复 Session 时）
+{{source_role}}            → 发起回退的角色名（需求回退时）
+{{revision_description}}   → 回退问题描述（需求回退时）
+```
+
+**架构师专用**：
+```
+{{pm_outbox_content}}      → 读取 pm/outbox/需求文档.md
+{{existing_designs}}       → 已有 architect/designs/ 下的文件列表及摘要
+{{design_doc_filename}}    → 当前步骤对应的设计文档文件名（回退时）
+{{source_role}}            → 发起回退的角色名
+{{revision_description}}   → 回退问题描述
+{{failed_items}}           → 缺陷列表（QA 回退设计时）
+{{escalation_context}}     → L1 升级的上下文信息
+{{escalation_question}}    → L1 升级的具体问题
+{{escalation_recommendation}} → 发起方的建议
+```
+
+**程序员专用**：
+```
+{{architect_outbox_content}} → 读取 architect/outbox/步骤X-{模块名}.md
+{{tech_framework_summary}} → 读取 architect/技术框架设计.md
+{{entry_type}}             → 入口类型：A=新开发步 / B=同步迭代 / C=维护轻量
+{{design_doc_filename}}    → 设计文档文件名（回退修复时）
+{{failed_items}}           → QA 发现的缺陷列表（代码回退时）
+```
+
+**测试QA 专用**：
+```
+{{pm_requirement_summary}} → 读取 pm/outbox/需求文档.md（或 pm/需求文档.md）
+{{architect_design_test_plan}} → 读取 architect/outbox/ 中的测试方案部分
+{{programmer_outbox_content}} → 读取 programmer/outbox/步骤X-自测报告.md
+{{fixed_by_role}}          → 修复缺陷的角色名（回归测试时）
+{{original_failed_items}}  → 原始缺陷列表（回归测试时）
+{{fix_description}}        → 修复说明（回归测试时）
+{{user_answer}}            → 用户人工验证结果（恢复 Session 时）
 ```
 
 ### 5.5 Agent Fallback 路由

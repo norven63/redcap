@@ -11,10 +11,10 @@
 进入此角色前必须满足：
 
 - [ ] 架构师已完成本步设计文档（`architect/outbox/步骤X-xxx.md` 已存在）
-- [ ] 已读取 `开发手册/shared/开发进度日志.md`，确认**当前开发步骤**及本步属于哪种入口：
+- [ ] 已读取 `开发手册/shared/开发进度日志.md`，确认**当前开发步骤**及本步属于哪种入口类型：
   - **A 新开发步**：架构师已产出/更新本步 `designs/` 并已完成
-  - **B 同一开发步迭代**：沿用同一已完成的 `designs/`，日志中「模块设计文档」路径未变
-  - **C 维护与轻量路径**：沿用既有「模块设计文档」或约定范围，无需本轮架构师产出
+  - **B 同步迭代**：沿用同一已完成的 `designs/`，日志中「模块设计文档」路径未变
+  - **C 维护轻量**：沿用既有「模块设计文档」或约定范围，无需本轮架构师产出
 - [ ] 已读取 `开发手册/architect/技术框架设计.md`：整体架构、**跨步技术约定**、**分步设计索引**
 - [ ] 已读取**当前步模块设计正文**（路径以《开发进度日志》当前步「模块设计文档」为权威）
 - [ ] 已读取 [《安全铁律》](../../references/security-rules.md) 与 [《代码规范》](../../references/code-standards.md)
@@ -146,4 +146,4 @@
 {"__redcap_status": {"status": "blocked", "summary": "技术方案X与框架约定Y存在冲突", "deliverables": [], "escalation": {"level": 1, "target_role": "architect", "question": "具体冲突描述", "recommendation": "我的建议是..."}}}
 ```
 
-同时将状态 JSON 写入 `.workflow/last-result.json` 作为备份。
+> 你不需要写 `.workflow/last-result.json`，Dispatcher 会从你的回复中自动提取并写入。

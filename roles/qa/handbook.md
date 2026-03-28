@@ -177,4 +177,4 @@ YYYY-MM-DD HH:mm
 {"__redcap_status": {"status": "need_user", "summary": "需要用户完成GUI界面验证", "deliverables": []}}
 ```
 
-同时将状态 JSON 写入 `.workflow/last-result.json` 作为备份。
+> 你不需要写 `.workflow/last-result.json`，Dispatcher 会从你的回复中自动提取并写入。
