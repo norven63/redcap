@@ -71,11 +71,13 @@ Agent 在回复文本的**末尾**输出 `__redcap_status` JSON 块。Dispatcher
 ```（结束标记）
 ```
 
-### 2.2 方案 B（Fallback 通道）：写入状态文件
+### 2.2 方案 B（Fallback 通道）：Dispatcher 写入状态文件
 
-Agent 在完成工作时，**同时**将 `__redcap_status` JSON 写入 `.workflow/last-result.json`。
+Dispatcher 在从 response 中成功提取 `__redcap_status` 后，**由 Dispatcher 自行**将该 JSON 写入 `.workflow/last-result.json`。Agent 不再负责写入此文件。
 
-当 Dispatcher 无法从 response 中解析出合法 JSON 时，读取此文件。
+当 Dispatcher 无法从 response 中解析出合法 JSON 时，可读取此文件获取上一次成功的状态（用于断点恢复场景）。
+
+> **所有权变更**：`last-result.json` 的唯一权威写入方是 Dispatcher。即使 Agent 仍写入该文件，Dispatcher 也会用自身提取的版本覆盖。
 
 ### 2.3 解析优先级
 

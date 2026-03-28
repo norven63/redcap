@@ -15,8 +15,9 @@
 {{handbook_content}}
 
 ## 通信协议
-你必须在回复末尾输出 __redcap_status JSON 块，同时将该 JSON 写入 .workflow/last-result.json。
+你必须在回复末尾输出 __redcap_status JSON 块。
 状态字段含义见工作手册「状态报告格式」一节。
+你不需要写 .workflow/last-result.json，Dispatcher 会从你的回复中提取并写入。
 
 ## 目录结构
 - 你的工作目录：开发手册/architect/
@@ -57,7 +58,14 @@
 3. 非首次启动仅需完成当前步分步设计（技术栈和框架已存在则更新索引即可）
 4. 所有设计写入正确路径，outbox 交付物供程序员读取
 5. 完成后在回复末尾输出 __redcap_status JSON
-6. 同时将 __redcap_status 写入 {{project_dir}}/.workflow/last-result.json
+
+## ⚠️ 必须写入的文件（缺一不可）
+- [ ] `开发手册/architect/outbox/步骤{{current_step}}-{模块名}.md`（当前步设计文档副本）
+- [ ] `开发手册/architect/designs/步骤{{current_step}}-{模块名}.md`（设计文档正本）
+- [ ] `开发手册/shared/开发进度日志.md`（更新设计完成记录）
+- [ ] `__redcap_status` JSON 中的 `deliverables` 字段必须列出所有实际写入的文件路径
+
+> 你不需要写入 `.workflow/last-result.json`，Dispatcher 会自动处理。
 ```
 
 ---

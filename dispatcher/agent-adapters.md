@@ -29,13 +29,15 @@ agent_routing:
 ### 2.2 命令模板
 
 ```bash
-claude -p "<prompt>" \
-  --system-prompt "<角色身份 + 手册核心摘要>" \
+claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
+  --system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
   --output-format json \
   --add-dir "<项目根目录>" \
   --permission-mode acceptEdits \
   --allowedTools "Read,Write,Bash(test:*)"
 ```
+
+> Dispatcher 始终先将 prompt 和 system-prompt 写入 `.workflow/` 下的文件，再用 `$(cat ...)` 读取传入 CLI，避免 Shell 中文引号截断问题。
 
 ### 2.3 参数说明
 
@@ -78,11 +80,14 @@ claude -p "<prompt>" \
 ### 3.2 命令模板
 
 ```bash
-gemini -p "<prompt>" \
+gemini -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
   --output-format json \
+  --sandbox false \
   --include-directories "<项目根目录>" \
   --approval-mode auto_edit
 ```
+
+> ⚠️ `-p` 参数必须存在，否则 Gemini 进入交互模式导致终端不可用。`--sandbox false` 避免沙盒确认弹窗。
 
 ### 3.3 参数说明
 
@@ -156,5 +161,78 @@ Gemini:
 
 统一后:
   从 response_text 中正则提取 __redcap_status JSON 块
-  若提取失败，读取 .workflow/last-result.json（Fallback）
+  由 Dispatcher 写入 .workflow/last-result.json（Agent 不再负责写入此文件）
 ```
+
+---
+
+## 6. Agent Fallback 策略
+
+### 6.1 Fallback 路由表
+
+当首选 Agent 不可用时，按备选顺序切换：
+
+```yaml
+fallback_routing:
+  product-manager: ["claude-code", "gemini"]
+  architect:       ["gemini", "claude-code"]
+  programmer:      ["gemini", "claude-code"]
+  qa:              ["claude-code", "gemini"]
+```
+
+### 6.2 触发条件
+
+- 首选 Agent 连续 **2 次**返回失败（含 HTTP 429 频控、CLI 进程非零退出码）
+- CLI 进程超时（无响应超过合理阈值）
+- CLI 进入交互模式（未正常返回 JSON）
+
+### 6.3 切换流程
+
+```
+1. 首选 Agent 第 1 次失败 → 重试同一 Agent
+2. 第 2 次仍失败 → 切换到 Fallback Agent
+3. 更新 state.yaml 的 current_role.agent 为实际使用的 Agent
+4. 组装适配 Fallback Agent 的 CLI 命令（参数映射见 §2/§3）
+5. Fallback Agent 也失败 → 向用户报告，暂停流程（PAUSED）
+```
+
+### 6.4 Dispatcher 铁律
+
+> ⚠️ **在任何情况下，Dispatcher 都不得直接修改项目源代码或代为生成任何交付物。**
+> 即使所有 Agent 均不可用，Dispatcher 也只能暂停流程（PAUSED）并向用户报告，不得"代劳"。
+
+---
+
+## 7. Prompt 传参规范
+
+### 7.1 文件传参模式（标准）
+
+Dispatcher 始终使用文件传参，避免 Shell 中文引号截断问题：
+
+```bash
+# 1. Dispatcher 将组装好的 prompt 写入文件
+#    .workflow/{role}-prompt-step{N}.txt
+
+# 2. CLI 调用时用 $(cat ...) 读取
+
+# Claude Code:
+claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
+  --system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
+  --output-format json \
+  --add-dir "<项目根目录>" \
+  --permission-mode acceptEdits \
+  --allowedTools "Read,Write,Bash(test:*)"
+
+# Gemini:
+gemini -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
+  --output-format json \
+  --sandbox false \
+  --include-directories "<项目根目录>" \
+  --approval-mode auto_edit
+```
+
+### 7.2 Gemini CLI 安全措施
+
+- **强制非交互**：命令中必须包含 `-p` 参数
+- **禁用沙盒交互**：增加 `--sandbox false` 避免 sandbox 确认弹窗
+- **超时保护**：Dispatcher 设置合理超时，CLI 超时后 kill 进程并按 Fallback 策略处理

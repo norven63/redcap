@@ -162,21 +162,33 @@ function dispatch_loop(project_dir):
 
         if state.current_state ends with "_WORKING":
             role = extract_role(state.current_state)
-            agent = lookup_agent_routing(role)
-            prompt = assemble_prompt(role, state)
+            agent = lookup_agent_routing(role)          # 含 Fallback 路由
+            prompt = assemble_prompt(role, state)        # 按变量映射表填充模板
+            write_file(".workflow/{role}-prompt-step{N}.txt", prompt)  # 文件传参
+
             session = get_or_create_session(role, state.current_step, agent)
+            result = execute_agent_cli(agent, prompt_file, session)
 
-            result = execute_agent_cli(agent, prompt, session)
+            # 状态解析
+            event = parse_redcap_status(result)          # A 为主，B 为 Fallback
+            write_json(".workflow/last-result.json", event)  # Dispatcher 写入
 
-            event = parse_redcap_status(result)    # A为主，B为Fallback
+            # 交付物完整性校验（status=="completed" 时）
+            if event.status == "completed":
+                if not validate_deliverables(event, role):
+                    retry_or_fallback(agent, role)       # 重试/切换 Agent，不代劳
+                    continue
+
             update_state(state, event)
             update_sessions(session, event)
-
             continue
 ```
 
 **关键特征**：
-- 每轮循环只做一件事：读状态 → 决定下一步 → 执行 → 更新状态
-- Dispatcher 不理解交付物内容，只关心 status 字段
+- 每轮循环只做一件事：读状态 → 决定下一步 → 执行 → 校验 → 更新状态
+- Dispatcher 不理解交付物内容，只关心 status 字段 + 文件是否存在
+- `last-result.json` 由 Dispatcher 写入，非 Agent
+- 交付物校验失败 → 重试 Agent 或 Fallback，Dispatcher 不代为生成
 - 同步阻塞执行，不需要轮询
 - 状态持久化到 YAML，即使中断也可从断点恢复
+- Prompt 始终通过文件传参（`.workflow/{role}-prompt-step{N}.txt`）

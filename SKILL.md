@@ -12,7 +12,7 @@ description: >-
 
 # RedCap - 多 Agent 协同工程开发框架
 
-> **你的身份**：Dispatcher（调度器）。你不直接执行开发工作，而是通过 CLI 调用独立的 AI Agent 完成各角色任务，读取其返回状态，驱动流程推进。
+> **你的身份**：Dispatcher（调度器）。你不直接执行开发工作，而是通过 CLI 调用独立的 AI Agent 完成各角色任务，读取其返回状态，驱动流程推进。**铁律：不得直接修改项目源代码或代为生成任何交付物。Agent 不可用时走 Fallback 路由或暂停，绝不代劳。**
 
 ---
 
@@ -114,7 +114,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 └── .workflow/                         ← 流程状态（Dispatcher 管理）
     ├── state.yaml                     ← 当前状态、步骤、角色
     ├── sessions.yaml                  ← Session ID 记录
-    └── last-result.json               ← Agent 返回的最后一个状态 JSON（Fallback）
+    └── last-result.json               ← Agent 最近返回的状态 JSON（Dispatcher 写入）
 ```
 
 ---
@@ -151,22 +151,99 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 3. 若 current_state == PAUSED → 向用户转述问题，等待回复
 4. 若 current_state 为 *_DONE 或自动转移 → 查转移表，更新 state
 5. 若 current_state 为 *_WORKING →
-   a. 确定角色 + Agent CLI
-   b. 读取 Prompt 模板，填充变量（上游 outbox 内容、项目路径、步骤信息等）
-   c. 获取或创建 Session（查 sessions.yaml）
+   a. 确定角色 + Agent CLI（若首选 Agent 不可用，按 Fallback 路由切换，见 §5.5）
+   b. 组装 Prompt：读模板 → 按变量映射表（§5.4）填充 → 写入文件
+      `.workflow/{role}-prompt-step{N}.txt`，CLI 用 `$(cat ...)` 读取
+   c. 获取或创建 Session（查 sessions.yaml，详见 §5.6）
    d. 执行 CLI 命令（阻塞等待返回）
-   e. 解析返回 → 提取 __redcap_status（A 方案：从 response 正则提取；B Fallback：读 last-result.json）
-   f. 根据 status 查转移表 → 更新 state.yaml + sessions.yaml
-   g. 向用户汇报当前进展（一句话摘要）
+   e. 解析返回 → 提取 __redcap_status（见 §5.3）
+   f. 由 Dispatcher 将 __redcap_status 写入 .workflow/last-result.json
+   g. 交付物完整性校验（见 §5.7），不通过则重试 Agent
+   h. 根据 status 查转移表 → 更新 state.yaml + sessions.yaml
+   i. 向用户汇报当前进展（一句话摘要）
 6. 回到步骤 1
 ```
+
+> **铁律**：Dispatcher 在任何情况下都**不得**直接修改项目源代码或代为生成交付物。所有生产产出必须由 Agent 执行产生。Agent 不可用时必须重试或切换 Fallback Agent。
 
 ### 5.3 状态解析策略（A+B Fallback）
 
 ```
 优先级 1：从 CLI 返回的 response 文本中正则提取 __redcap_status JSON
-优先级 2：读取 .workflow/last-result.json
+优先级 2：读取 .workflow/last-result.json（仅当 Agent 自行写入时作为兜底）
 均失败 → 标记 status="failed"，重试 1 次
+```
+
+> **注意**：`last-result.json` 的权威写入方是 Dispatcher（步骤 5.f）。即使 Agent 也写入了该文件，Dispatcher 仍以自身从 response 提取的版本覆盖。
+
+### 5.4 Prompt 变量映射表
+
+Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
+
+```
+{{handbook_content}}       → 读取 roles/{role}/handbook.md 全文
+{{pm_requirement_summary}} → 读取 pm/outbox/需求文档.md（或 pm/需求文档.md）
+{{pm_outbox_content}}      → 同上
+{{architect_outbox_content}} → 读取 architect/outbox/步骤X-{模块名}.md
+{{architect_design_test_plan}} → 同上中的测试方案部分
+{{tech_framework_summary}} → 读取 architect/技术框架设计.md
+{{programmer_outbox_content}} → 读取 programmer/outbox/步骤X-自测报告.md
+{{project_dir}}            → 项目根目录绝对路径
+{{dev_manual_dir}}         → 开发手册/ 绝对路径
+{{current_step}}           → state.yaml.current_step
+{{total_steps}}            → state.yaml.total_steps
+{{step_name}}              → state.yaml.current_step_name
+{{user_intent}}            → 用户原始需求描述
+{{additional_context}}     → Dispatcher 补充的上下文信息
+```
+
+### 5.5 Agent Fallback 路由
+
+当首选 Agent 不可用（频控、超时、连续失败）时，按备选顺序切换：
+
+```yaml
+fallback_routing:
+  product-manager: ["claude-code", "gemini"]
+  architect:       ["gemini", "claude-code"]
+  programmer:      ["gemini", "claude-code"]
+  qa:              ["claude-code", "gemini"]
+```
+
+切换条件：首选 Agent 连续 2 次返回失败（含频控 429）或 CLI 进程超时无响应。切换后在 `state.yaml` 的 `current_role.agent` 中记录实际使用的 Agent。
+
+### 5.6 Session 管理
+
+```
+获取 Session：
+  key = "{role}-step{current_step}"
+  若 sessions.yaml[key] 存在且 status != "expired" → 使用 --resume 传入 session_id
+  否则 → 新建 Session，CLI 返回后将 session_id 写入 sessions.yaml
+
+更新 Session：
+  Agent 完成后，从 CLI 返回 JSON 中提取 session_id
+  写入 sessions.yaml：{ agent, session_id, status, created_at, resume_count }
+  同一角色同步骤的重试复用同一 Session（resume_count++）
+
+Session 过期处理：
+  --resume 调用失败（Session 不存在或过期）→ fallback 到新建 Session
+  标记旧 Session status="expired"
+```
+
+### 5.7 交付物完整性校验
+
+Agent 返回 `status: "completed"` 时，Dispatcher **必须**在推进状态前执行以下校验：
+
+```
+1. __redcap_status 必填字段检查：status、summary、deliverables 均须存在
+2. deliverables 列表非空检查：至少包含 1 个交付物路径
+3. 磁盘验证：遍历 deliverables 中每个路径，确认文件实际存在于磁盘
+4. outbox 目录非空检查：对应角色的 outbox/ 目录至少有 1 个文件
+
+校验不通过处理：
+  a. 第 1 次失败 → 重试同一 Agent（注入提示："上次交付物不完整，请确保写入以下文件：{缺失列表}"）
+  b. 第 2 次仍失败 → 切换 Fallback Agent 重试
+  c. Fallback 也失败 → 向用户报告，暂停流程（PAUSED）
+  ⚠️ 任何情况下 Dispatcher 都不得代为生成交付物
 ```
 
 ---

@@ -23,9 +23,9 @@
 
 ---
 
-## P1 — 框架设计缺陷
+## P1 — 框架设计缺陷（已修复）
 
-### 🔴 #3 Agent 中断时交付物缺失无检测
+### ✅ #3 Agent 中断时交付物缺失无检测
 
 - **现象**：Gemini Programmer 因频控中断，代码已修改但 `programmer/outbox/`、`last-result.json`、`__redcap_status` 全部缺失，Dispatcher 无感知直接推进到 QA
 - **优化方案**：Dispatcher 在 `*_WORKING → *_DONE` 转移前增加**交付物完整性检查**：
@@ -35,7 +35,7 @@
   4. 任一缺失 → **必须重试该 Agent**（优先同一 Agent，频控时切 fallback Agent），不得由 Dispatcher 代为生成任何交付内容
 - **涉及文件**：SKILL.md §5.2（事件循环）、dispatcher/state-machine.md
 
-### 🔴 #4 outbox 协议未被 Agent 遵守
+### ✅ #4 outbox 协议未被 Agent 遵守
 
 - **现象**：Programmer 和 QA 均未写入各自的 `outbox/` 目录，直接写 `shared/开发进度日志.md`
 - **优化方案**：
@@ -44,7 +44,7 @@
   3. 不存在 → 要求 Agent 补写（重试）
 - **涉及文件**：dispatcher/prompt-templates/*.md、SKILL.md §5.2
 
-### 🔴 #5 last-result.json 写入路径错乱
+### ✅ #5 last-result.json 写入路径错乱
 
 - **现象**：QA Agent 在项目根目录写了 `/.workflow/last-result.json` 和 `/last-result.json` 两个残留文件，正确路径应为 `开发手册/.workflow/last-result.json`
 - **优化方案**：
@@ -52,7 +52,7 @@
   - 方案 B：Prompt 中用**绝对路径**指定写入目标，而非相对路径
 - **涉及文件**：dispatcher/prompt-templates/*.md、SKILL.md §5.3、references/communication-protocol.md
 
-### 🔴 #6 Session 管理未生效
+### ✅ #6 Session 管理未生效
 
 - **现象**：`sessions.yaml` 全程为空，未记录任何 Agent session ID，断点恢复能力 = 0
 - **优化方案**：
@@ -64,9 +64,9 @@
 
 ---
 
-## P2 — 工程体验问题
+## P2 — 工程体验问题（已修复）
 
-### 🟡 #7 Shell 中文 Prompt 传参截断/引号问题
+### ✅ #7 Shell 中文 Prompt 传参截断/引号问题
 
 - **现象**：直接用 shell 变量传递中文 Prompt 时出现截断、引号残留导致终端进入 `quote>` 模式
 - **优化方案**：
@@ -74,7 +74,7 @@
   - 适配器命令模板中明确使用此模式
 - **涉及文件**：dispatcher/agent-adapters.md §2.2、§3.2
 
-### 🟡 #8 Gemini CLI 交互模式污染终端
+### ✅ #8 Gemini CLI 交互模式污染终端
 
 - **现象**：`gemini` 命令未加 `-p` 时进入交互模式，后续所有终端命令被 Gemini 吞掉，终端不可用
 - **优化方案**：
@@ -83,7 +83,7 @@
   3. 设计超时机制：Agent CLI 执行超过阈值后 kill 进程并重试
 - **涉及文件**：dispatcher/agent-adapters.md §3.2
 
-### 🟡 #9 Dispatcher 违反"不写代码"原则做了 fallback
+### ✅ #9 Dispatcher 违反“不写代码”原则做了 fallback
 
 - **现象**：Gemini Programmer 频控失败后，Dispatcher 直接修改了 `src/main.ts`（删除 `now` 变量）
 - **优化方案**：
@@ -99,9 +99,9 @@
 
 ---
 
-## P3 — 可改进项
+## P3 — 可改进项（已修复）
 
-### 🟡 #10 Prompt 模板变量替换全靠手工
+### ✅ #10 Prompt 模板变量替换全靠手工
 
 - **现象**：Dispatcher 手动读模板、手动拼接上下文、手动创建 prompt 文件，流程繁琐且易出错
 - **优化方案**：
@@ -122,9 +122,9 @@
 
 ## 实施优先级建议
 
-| 批次 | 编号 | 理由 |
+| 批次 | 编号 | 状态 |
 |------|------|------|
-| **第一批**（必须） | #3, #4, #5, #9 | 交付物完整性 + Dispatcher 职责边界，直接影响框架正确性 |
-| **第二批**（重要） | #6, #7, #8 | Session 恢复 + CLI 调用鲁棒性，影响可靠性 |
-| **第三批**（改进） | #10 | 提效，不影响正确性 |
-| 已完成 | #1, #2 | 环境级修复，已验证 |
+| 已完成 | #1, #2 | ✅ 环境级修复 |
+| 已完成 | #3, #4, #5, #9 | ✅ 交付物完整性 + Dispatcher 职责边界 |
+| 已完成 | #6, #7, #8 | ✅ Session 恢复 + CLI 调用鲁棒性 |
+| 已完成 | #10 | ✅ Prompt 变量映射表 |
