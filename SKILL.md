@@ -151,6 +151,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 2. 若 current_state == ALL_DONE → 执行收尾清理（§5.9）→ 输出最终摘要，结束
 3. 若 current_state == PAUSED → 向用户转述问题，等待回复
 4. 若 current_state 为 *_DONE 或自动转移 → 查转移表，更新 state
+   ▸ 若转移来源为 QA_PASS（该步骤 QA 通过）→ Dispatcher 执行 git add + commit（§6.4）
 5. 若 current_state 为 *_WORKING →
    a. 确定角色 + Agent CLI（若首选 Agent 不可用，按 Fallback 路由切换，见 §5.5）
    b. 组装 Prompt：读模板 → 按变量映射表（§5.4）填充 → 写入文件
@@ -375,8 +376,10 @@ Dispatcher 收到非空 `lesson` 后，格式化并追加到 `shared/lessons-lea
 3. **代码规范**：严格遵守 [《代码规范》](references/code-standards.md)
 
 4. **Git 规范**：
-   - **门禁**：每步须在 QA 通过后方可 `git commit`（由 QA Agent 执行）
+   - **门禁**：每步须在 QA 通过后方可 `git commit`
+   - **执行者**：Dispatcher 在 QA_PASS 状态转移确认后自动执行 `git add + commit`（不是 Agent）
    - **格式**：中文 conventional commit（如 `feat(模块): 描述`），末尾追加 `作者:redcap`
+   - **push 权限**：Dispatcher **不得自动 push**。仅在用户明确指示（如"推送"、"push"）时才执行 `git push`
    - **例外**：用户明确指令中间备份（WIP commit）时可从其约定
 
 ---
