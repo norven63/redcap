@@ -169,6 +169,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 ```
 
 > **铁律**：Dispatcher 在任何情况下都**不得**直接修改项目源代码或代为生成交付物。所有生产产出必须由 Agent 执行产生。Agent 不可用时必须重试或切换 Fallback Agent。
+> ⚠ 此铁律仅约束**项目文件**（源代码、设计文档、测试报告等 Agent 产出）。`.workflow/` 下的框架状态文件（state.yaml、last-result.json 等）由 Dispatcher 自行维护，不受此限制。
 
 ### 5.3 状态解析策略
 
@@ -390,7 +391,7 @@ Dispatcher 收到 `need_revision` 事件后，按 `revision.root_cause` 查此�
 |------|--------|---------|
 | L0 | Agent 自主决策 | 默认，90% 的决策 |
 | L1 | PM Agent 决策 | Agent 返回 `blocked` + `escalation.level=1` |
-| L2 | 用户决策 | L1 PM 也无法决策，或 Agent 直接 L2 |
+| L2 | 用户人工决策 | L1 PM 也无法决策，或 Agent 直接 L2 |
 
 ---
 
