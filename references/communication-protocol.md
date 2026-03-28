@@ -28,7 +28,8 @@
       "root_cause": "design | code | requirement",
       "description": "需要修订的具体内容描述"
     },
-    "next_suggestion": "Agent 对下一步的建议（可选）"
+    "next_suggestion": "Agent 对下一步的建议（可选）",
+    "lesson": "本次工作中发现的可复用经验（可选）"
   }
 }
 ```
@@ -43,6 +44,7 @@
 | `escalation` | 仅 `blocked` 时 | 升级请求的详细信息 |
 | `revision` | 仅 `need_revision` 时 | 回退请求的详细信息 |
 | `next_suggestion` | ❌ | Agent 对下一步的建议，Dispatcher 仅参考不强制执行 |
+| `lesson` | ❌ | 本次工作中发现的可复用经验，Dispatcher 收到后写入 `shared/lessons-learned.md` |
 
 ### 1.3 状态枚举
 

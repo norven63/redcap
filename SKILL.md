@@ -98,7 +98,8 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 ├── shared/                            ← 跨角色共享文档
 │   ├── README.md
 │   ├── 开发进度日志.md
-│   └── API接口文档.md
+│   ├── API接口文档.md
+│   └── lessons-learned.md             ← 项目级经验沉淀
 ├── pm/                                ← 产品经理工作区
 │   ├── 需求文档.md
 │   └── outbox/                        ← PM 交付物（→ 架构师读取）
@@ -147,7 +148,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 
 ```
 1. 读取 .workflow/state.yaml
-2. 若 current_state == ALL_DONE → 输出最终摘要，结束
+2. 若 current_state == ALL_DONE → 执行收尾清理（§5.9）→ 输出最终摘要，结束
 3. 若 current_state == PAUSED → 向用户转述问题，等待回复
 4. 若 current_state 为 *_DONE 或自动转移 → 查转移表，更新 state
 5. 若 current_state 为 *_WORKING →
@@ -280,6 +281,79 @@ Agent 返回 `status: "completed"` 时，Dispatcher **必须**在推进状态前
   b. 第 2 次仍失败 → 切换 Fallback Agent 重试
   c. Fallback 也失败 → 向用户报告，暂停流程（PAUSED）
   ⚠️ 任何情况下 Dispatcher 都不得代为生成交付物
+```
+
+### 5.8 经验沉淀（Lessons Learned）
+
+#### 设计理念
+
+借鉴 AI Agent 研究中的 **Reflection**（反思机制）和项目管理中的 **Lessons Learned Register**（经验教训登记册），在关键状态转移节点自动沉淀可复用的经验，避免同类问题重犯。
+
+#### 存储位置
+
+```
+开发手册/shared/lessons-learned.md    ← 项目级经验（当前项目积累）
+/redcap/knowledge/lessons.md          ← 框架级经验（跨项目复用）
+```
+
+#### 触发时机
+
+Dispatcher 在以下状态转移完成后，检查 `__redcap_status` 中的 `lesson` 字段，若非空则追加到经验文件：
+
+| 触发场景 | 状态转移 | 经验来源 |
+|---------|---------|---------|
+| QA 发现缺陷 → 修复 → 回归通过 | QA_FAIL → DEV/ARCH → QA_PASS | 修复过程的根因分析 |
+| 设计回退 → 修订 → 重新通过 | need_revision → 修订完成 | 设计缺陷的根因和改进 |
+| L1/L2 升级决策完成 | ESCALATE → 回到正常流 | 决策理由和结论 |
+
+#### 写入格式
+
+```markdown
+### L-{序号}: {一句话标题}
+- **场景**：{触发场景描述}
+- **根因**：{问题的根本原因}
+- **经验规则**：{可复用的经验（什么情况下应该/不应该做什么）}
+- **来源**：步骤{N}, {角色}, {日期}
+```
+
+#### 消费方式
+
+Dispatcher 在组装 Prompt 时，将 `lessons-learned.md` 的**近期条目**（最近 5 条）注入到 `{{additional_context}}` 变量中，供 Agent 参考避免重犯。
+
+#### 通信协议扩展
+
+Agent 在 `__redcap_status` 中可通过可选字段 `lesson` 提交经验：
+
+```json
+{
+  "__redcap_status": {
+    "status": "completed",
+    "summary": "...",
+    "deliverables": [...],
+    "lesson": "Agent 对相对路径基准理解不一致，路径敏感操作应使用绝对路径"
+  }
+}
+```
+
+Dispatcher 收到非空 `lesson` 后，格式化并追加到 `shared/lessons-learned.md`。
+
+### 5.9 ALL_DONE 收尾清理
+
+当 `current_state` 转为 `ALL_DONE` 时，Dispatcher 在输出最终摘要前执行清理：
+
+```
+1. 清除 .workflow/ 下的临时 prompt 文件：
+   - 删除所有 *-prompt-*.txt 文件
+   - 删除所有 *-system-prompt.txt 文件
+   - 删除 run-*.sh 脚本
+   - 保留：state.yaml、sessions.yaml、last-result.json
+
+2. 检查项目根目录是否有 redcap 产生的错位文件：
+   - 若项目根目录存在 last-result.json → 删除
+   - 若项目根目录存在 .workflow/ 目录 → 删除
+   - 若项目根目录存在 __redcap_status 相关残留 → 删除
+
+3. 向用户输出最终交付摘要
 ```
 
 ---
