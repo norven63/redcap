@@ -63,16 +63,21 @@ docs(经验): 新增 L-9 飞书架构局限性
 2. 本轮是否验证了一个**之前文档中写错的假设**？→ 归档为 Lesson
 3. 本轮使用的**工作方法本身**是否值得复用？→ 归档为方法论 Lesson
 
-## 4. 飞书通知（可选）
+## 4. 飞书通知
 
-RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。如需通知（如长时间等待用户确认方案），可手动调用：
+RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。需手动调用：
+
+**完成通知（必须）**：每轮变更全部完成并 git commit 后，**必须**发送飞书通知告知用户：
 
 ```bash
-# 发送通知
-python3 tools/feishu-notifier.py notify "RedCap 框架变更完成，请 review"
+python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>" --project "redcap"
+```
 
+**过程中通知（按需）**：长时间等待用户确认方案等场景：
+
+```bash
 # 发送问题并等待回复（前台阻塞）
-python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap-self"
+python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap"
 ```
 
 ## 5. 文件变更影响范围提示
