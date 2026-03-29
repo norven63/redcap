@@ -198,9 +198,13 @@ class FeishuNotifier:
             table_link=self._table_link(),
         )
 
-        print(f"[feishu-notifier] 已发送通知，等待回复中... (超时: {timeout}s)", file=sys.stderr)
+        timeout_desc = "无限等待" if timeout == 0 else f"{timeout}s"
+        print(f"[feishu-notifier] 已发送通知，等待回复中... (超时: {timeout_desc})", file=sys.stderr)
         start = time.time()
-        while time.time() - start < timeout:
+        poll_count = 0
+        while True:
+            if timeout > 0 and time.time() - start >= timeout:
+                break
             try:
                 fields = self._get_record(record_id)
                 reply = fields.get("用户回复")
@@ -215,7 +219,11 @@ class FeishuNotifier:
                         return reply
             except Exception as e:
                 print(f"[feishu-notifier] 轮询异常: {e}", file=sys.stderr)
-            time.sleep(3)
+            poll_count += 1
+            if poll_count % 60 == 0:  # 每 5 分钟提示一次
+                elapsed = int(time.time() - start)
+                print(f"[feishu-notifier] 仍在等待用户回复... (已等待 {elapsed}s)", file=sys.stderr)
+            time.sleep(5)
 
         self._update_record(record_id, {"状态": "已超时"})
         print("[feishu-notifier] 等待超时", file=sys.stderr)
@@ -343,7 +351,7 @@ def main():
     parser = argparse.ArgumentParser(description="RedCap 飞书通知器")
     parser.add_argument("command", choices=["setup", "ask", "confirm", "notify"], help="命令")
     parser.add_argument("message", nargs="?", default="", help="消息内容")
-    parser.add_argument("--timeout", type=int, default=300, help="等待超时秒数 (默认 300)")
+    parser.add_argument("--timeout", type=int, default=0, help="等待超时秒数 (默认 0=无限等待，直到人工回复)")
     parser.add_argument("--project", default="", help="项目名")
     parser.add_argument("--fsm-state", default="", help="FSM 当前状态")
     parser.add_argument("--options", default="", help="可选项，逗号分隔")

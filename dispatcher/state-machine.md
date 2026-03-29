@@ -187,12 +187,16 @@ function dispatch_loop(project_dir):
 
         if state.current_state == "PAUSED":
             question = state.escalation_stack.last.question
-            # 先尝试通过飞书获取用户回复（on_PAUSED hook）
-            feishu_reply = feishu_ask(question, project, fsm_state="PAUSED")
-            if feishu_reply and feishu_reply not in ("TIMEOUT", "SKIP"):
-                user_answer = feishu_reply
+            # 双通道等待：飞书后台轮询 + 终端直接输入，先到先生效
+            feishu_proc = feishu_ask_background(question, project, fsm_state="PAUSED")  # 后台进程，无限等待
+            if feishu_proc == "SKIP":
+                # 飞书未配置，回退到终端等待
+                user_answer = ask_user(question)
             else:
-                user_answer = ask_user(question)  # 回退到终端交互
+                # 两个通道并行：飞书轮询(后台) + 终端输入(前台)
+                # 用户在任一通道回复即生效
+                user_answer = wait_any(feishu_proc, terminal_input)
+                kill(feishu_proc)  # 终止飞书轮询进程
             inject_answer_to_session(state, user_answer)
             state.current_state = state.paused_from
             continue

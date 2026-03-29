@@ -399,10 +399,13 @@ python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
 | 所有 Agent 不可用 | `on_ALL_AGENT_FAIL` | `ask` | 推送降级确认请求，阻塞等待 |
 | QA 循环失败 | `on_QA_FAIL_MAX_RETRY` | `ask` | 推送循环失败警报，阻塞等待 |
 
-**回复处理**：
-- `ask` 返回用户回复内容 → Dispatcher 将其注入 `{{user_answer}}` 变量，恢复流程
-- `ask` 返回 TIMEOUT → Dispatcher 记录警告，保持 PAUSED 状态等待下次用户交互
+**回复处理（双通道）**：
+- **飞书通道**：`ask` 以 `--timeout 0`（无限等待）运行，在后台终端轮询多维表格直到用户回复
+- **终端通道**：用户也可直接在 Dispatcher 会话中输入回复，Dispatcher 读取后终止飞书轮询进程
+- 两个通道先到先生效，Dispatcher 将回复注入 `{{user_answer}}` 变量恢复流程
 - `ask` 返回 SKIP → 飞书未配置，回退到终端等待用户输入（原有行为）
+
+**关于轮询开销**：飞书轮询为纯 HTTP GET 请求（每 5 秒 1 次），不消耗 AI token，飞书 API 在正常用量下免费。
 
 ---
 
