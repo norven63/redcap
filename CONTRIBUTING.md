@@ -65,18 +65,19 @@ docs(经验): 新增 L-9 飞书架构局限性
 
 ## 4. 飞书通知
 
-RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。需手动调用：
+RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。**编辑 RedCap 的 AI Agent 必须在流程中自动执行以下通知**：
 
-**完成通知（必须）**：每轮变更全部完成并 git commit 后，**必须**发送飞书通知告知用户：
+**完成通知（必须，自动执行）**：每轮变更全部完成并 git commit 后、结束任务前，**必须自动执行**以下命令（仅通知，不等待回复）：
 
 ```bash
 python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>" --project "redcap"
 ```
 
+> ⚠ 这是强制步骤，不可跳过。通知失败（如 feishu-config.json 不存在）时记录警告但不阻塞任务完成。
+
 **过程中通知（按需）**：长时间等待用户确认方案等场景：
 
 ```bash
-# 发送问题并等待回复（前台阻塞）
 python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap"
 ```
 
