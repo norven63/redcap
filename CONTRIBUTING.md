@@ -70,7 +70,8 @@ RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。*
 **完成通知（必须，自动执行）**：每轮变更全部完成并 git commit 后、结束任务前，**必须自动执行**以下命令（仅通知，不等待回复）：
 
 ```bash
-python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>" --project "redcap"
+# 消息中须附带本次 commit 记录
+python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>\n\nCommits:\n$(git log --oneline <初始commit>..HEAD)" --project "redcap"
 ```
 
 > ⚠ 这是强制步骤，不可跳过。通知失败（如 feishu-config.json 不存在）时记录警告但不阻塞任务完成。

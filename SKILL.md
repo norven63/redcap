@@ -358,7 +358,7 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 |------|---------|------|
 | `on_QA_PASS` | QA 返回 completed 且校验通过 | ① `git add -A && git commit`（按[《Commit 规范》](references/commit-standards.md)格式，§6.4）② 检查 `lesson` → 写入经验（§5.8） |
 | `on_need_revision` | 任意角色返回 need_revision | ① 检查 `lesson` → 写入经验（§5.8） |
-| `on_ALL_DONE` | 流程结束 | ① 执行收尾清理（§5.9）② 输出最终交付摘要 ③ 飞书通知（§5.11） |
+| `on_ALL_DONE` | 流程结束 | ① 执行收尾清理（§5.9）② 输出最终交付摘要 ③ 飞书通知（§5.11，消息须附带本次所有 commit 记录：`git log --oneline <初始HEAD>..HEAD`） |
 | `on_PAUSED` | 进入 PAUSED 状态（need_user 或 升级） | ① 飞书 ask（§5.11）：前台阻塞推送问题并等待回复；若存在 `feishu_record_id` 则改用 resume |
 | `on_ALL_AGENT_FAIL` | 所有 Agent 均不可用 | ① 飞书 ask（§5.11）：推送降级确认请求，前台阻塞等待 |
 | `on_QA_FAIL_MAX_RETRY` | 同步骤 QA 失败超过 3 次 | ① 飞书 ask（§5.11）：推送循环失败警报，前台阻塞等待 |
@@ -402,7 +402,7 @@ python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
 
 | 场景 | Hook | 命令 | 说明 |
 |------|------|------|------|
-| 流程完成 | `on_ALL_DONE` | `notify` | 推送完成摘要，非阻塞 |
+| 流程完成 | `on_ALL_DONE` | `notify` | 推送完成摘要 + commit 记录，非阻塞 |
 | 需要用户信息 | `on_PAUSED` | `ask` | 前台阻塞等待用户在多维表格回复 |
 | 中断恢复 | `on_PAUSED`（重启） | `resume` | 轮询已有记录，不新建 |
 | 所有 Agent 不可用 | `on_ALL_AGENT_FAIL` | `ask` | 推送降级确认请求，前台阻塞等待 |
