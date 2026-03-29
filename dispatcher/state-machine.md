@@ -80,8 +80,8 @@ REVIEW_FAIL       root=design          ARCH_WORKING         启动架构师 Sess
 ESCALATE_L1       pm_decided           (回到发起方状态)      将决策注入发起方 Session
 ESCALATE_L1       pm_cannot_decide     ESCALATE_L2          暂停，向用户提问
 ESCALATE_L2       (用户回复)           (回到发起方状态)      将用户决策注入流程
-PAUSED            (用户回复)           (回到暂停前状态)      将用户信息注入当前 Session
-PAUSED            (飞书回复)           (回到暂停前状态)      on_PAUSED hook 通过飞书 ask 获取用户回复，注入 Session
+PAUSED            (飞书回复)           (回到暂停前状态)      前台阻塞等待飞书 ask 返回用户回复，注入 Session
+PAUSED            (飞书未配置)         (回到暂停前状态)      ask 返回 SKIP，回退终端输入
 PAUSED            (用户授权降级)       DEGRADED             记录 degraded_mode=true
 DEGRADED          completed            (按原状态流转)        降级产出标记 dispatcher-degraded
 DEGRADED          next_step            (重置为正常模式)      新步骤自动退出降级
@@ -120,6 +120,7 @@ history:
 paused_from: null
 escalation_stack: []
 blocked_on_user: false
+feishu_record_id: null        # 飞书 ask 记录 ID，用于中断恢复（§5.11）
 
 degraded_mode: false
 degraded_approved_by: null
@@ -187,16 +188,21 @@ function dispatch_loop(project_dir):
 
         if state.current_state == "PAUSED":
             question = state.escalation_stack.last.question
-            # 双通道等待：飞书后台轮询 + 终端直接输入，先到先生效
-            feishu_proc = feishu_ask_background(question, project, fsm_state="PAUSED")  # 后台进程，无限等待
-            if feishu_proc == "SKIP":
-                # 飞书未配置，回退到终端等待
-                user_answer = ask_user(question)
+
+            # 恢复检测：是否存在上次中断遗留的 feishu_record_id？
+            if state.feishu_record_id:
+                # 中断恢复：直接轮询旧记录，不新建
+                user_answer = feishu_resume(state.feishu_record_id)  # 前台阻塞
             else:
-                # 两个通道并行：飞书轮询(后台) + 终端输入(前台)
-                # 用户在任一通道回复即生效
-                user_answer = wait_any(feishu_proc, terminal_input)
-                kill(feishu_proc)  # 终止飞书轮询进程
+                # 新请求：前台阻塞式飞书 ask（无限等待）
+                result = feishu_ask(question, project, fsm_state="PAUSED")  # 前台阻塞
+                if result.status == "SKIP":
+                    user_answer = ask_user(question)  # 飞书未配置，回退终端
+                else:
+                    # ask 返回时已拿到回复
+                    user_answer = result.reply
+
+            state.feishu_record_id = null  # 清除
             inject_answer_to_session(state, user_answer)
             state.current_state = state.paused_from
             continue

@@ -4,7 +4,8 @@ RedCap 飞书通知器 — 多维表格轮询方案
 
 功能：
   setup    自动创建独立多维表格 + 10个字段，更新配置文件
-  ask      发送问题并等待用户在多维表格中回复（阻塞）
+  ask      发送问题并等待用户在多维表格中回复（前台阻塞）
+  resume   恢复轮询已有记录（Agent 中断后重启场景）
   confirm  发送确认请求，用户回复"确认/取消"（阻塞）
   notify   发送纯通知，不等待回复（非阻塞）
 
@@ -14,7 +15,8 @@ RedCap 飞书通知器 — 多维表格轮询方案
 
 用法：
   python3 feishu-notifier.py setup              # 首次运行，自动创建表
-  python3 feishu-notifier.py ask "问题描述" [--timeout 300] [--project 项目名]
+  python3 feishu-notifier.py ask "问题描述" [--timeout 0] [--project 项目名]
+  python3 feishu-notifier.py resume <record_id> [--timeout 0]
   python3 feishu-notifier.py confirm "是否继续？" [--timeout 120]
   python3 feishu-notifier.py notify "任务完成"
 """
@@ -198,8 +200,15 @@ class FeishuNotifier:
             table_link=self._table_link(),
         )
 
+        # 输出 record_id 供 Dispatcher 持久化到 state.yaml，用于中断恢复
+        print(f"FEISHU_RECORD_ID={record_id}", file=sys.stderr)
+
+        return self._poll_record(record_id, timeout)
+
+    def _poll_record(self, record_id: str, timeout: int = 0) -> Optional[str]:
+        """轮询指定记录等待用户回复，timeout=0 为无限等待"""
         timeout_desc = "无限等待" if timeout == 0 else f"{timeout}s"
-        print(f"[feishu-notifier] 已发送通知，等待回复中... (超时: {timeout_desc})", file=sys.stderr)
+        print(f"[feishu-notifier] 等待回复中... (超时: {timeout_desc})", file=sys.stderr)
         start = time.time()
         poll_count = 0
         while True:
@@ -228,6 +237,27 @@ class FeishuNotifier:
         self._update_record(record_id, {"状态": "已超时"})
         print("[feishu-notifier] 等待超时", file=sys.stderr)
         return None
+
+    def resume(self, record_id: str, timeout: int = 0) -> Optional[str]:
+        """恢复轮询已有记录（用于 Agent 中断后重启）"""
+        print(f"[feishu-notifier] 恢复轮询记录: {record_id}", file=sys.stderr)
+        # 先检查记录是否已有回复
+        try:
+            fields = self._get_record(record_id)
+            reply = fields.get("用户回复")
+            if reply:
+                if isinstance(reply, list):
+                    reply = reply[0].get("text", str(reply[0])) if reply else ""
+                reply = str(reply).strip()
+                if reply:
+                    self._update_record(record_id, {"状态": "已回复"})
+                    print(f"[feishu-notifier] 记录已有回复: {reply}", file=sys.stderr)
+                    return reply
+        except Exception as e:
+            print(f"[feishu-notifier] 检查记录失败: {e}", file=sys.stderr)
+            return None
+        # 未回复，继续轮询
+        return self._poll_record(record_id, timeout)
 
     def confirm(self, message: str, timeout: int = 120, project: str = "") -> bool:
         """发送确认请求，返回 True/False"""
@@ -349,8 +379,8 @@ def run_setup():
 
 def main():
     parser = argparse.ArgumentParser(description="RedCap 飞书通知器")
-    parser.add_argument("command", choices=["setup", "ask", "confirm", "notify"], help="命令")
-    parser.add_argument("message", nargs="?", default="", help="消息内容")
+    parser.add_argument("command", choices=["setup", "ask", "confirm", "notify", "resume"], help="命令")
+    parser.add_argument("message", nargs="?", default="", help="消息内容（resume 时为 record_id）")
     parser.add_argument("--timeout", type=int, default=0, help="等待超时秒数 (默认 0=无限等待，直到人工回复)")
     parser.add_argument("--project", default="", help="项目名")
     parser.add_argument("--fsm-state", default="", help="FSM 当前状态")
@@ -363,7 +393,7 @@ def main():
         return
 
     if not args.message:
-        parser.error(f"命令 '{args.command}' 需要提供 message 参数")
+        parser.error(f"命令 '{args.command}' 需要提供 message 参数（resume 时为 record_id）")
 
     config = load_config()
     if config is None:
@@ -400,6 +430,15 @@ def main():
         confirmed = notifier.confirm(args.message, timeout=args.timeout, project=args.project)
         print("CONFIRMED" if confirmed else "CANCELLED")
         sys.exit(0 if confirmed else 1)
+
+    elif args.command == "resume":
+        response = notifier.resume(args.message, timeout=args.timeout)
+        if response:
+            print(response)
+            sys.exit(0)
+        else:
+            print("TIMEOUT")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

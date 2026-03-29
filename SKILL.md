@@ -145,6 +145,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
    history: []
    paused_from: null
    escalation_stack: []
+   feishu_record_id: null
    ```
 
 3. **设置 `current_state: PM_WORKING`**，启动产品经理 Agent
@@ -173,7 +174,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 6. 回到步骤 1
 ```
 
-> **PAUSED 状态的飞书协作**：步骤 3 进入 PAUSED 状态时，先触发 `on_PAUSED` hook（§5.10）。若飞书 ask 返回了用户回复，直接将回复注入 Session 并恢复流程，无需等待终端输入。若返回 TIMEOUT 或 SKIP，则回退到终端交互模式。
+> **PAUSED 状态的飞书协作**：步骤 3 进入 PAUSED 状态时，Dispatcher 执行**前台阻塞式** `feishu-notifier.py ask`（无限等待）。脚本在飞书多维表格创建记录后持续轮询，用户在飞书中回复后脚本退出、Dispatcher 自动拿到回复内容并注入 Session 恢复流程。若返回 SKIP（飞书未配置），回退到终端交互模式。中断恢复：若 `state.yaml` 中存在 `feishu_record_id`，Dispatcher 调用 `resume` 命令直接轮询该记录而非新建。
 6. 回到步骤 1
 ```
 
@@ -356,14 +357,14 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 | `on_QA_PASS` | QA 返回 completed 且校验通过 | ① `git add -A && git commit`（§6.4）② 检查 `lesson` → 写入经验（§5.8） |
 | `on_need_revision` | 任意角色返回 need_revision | ① 检查 `lesson` → 写入经验（§5.8） |
 | `on_ALL_DONE` | 流程结束 | ① 执行收尾清理（§5.9）② 输出最终交付摘要 ③ 飞书通知（§5.11） |
-| `on_PAUSED` | 进入 PAUSED 状态（need_user 或 升级） | ① 飞书 ask（§5.11）：将问题推送到飞书并轮询等待回复 |
-| `on_ALL_AGENT_FAIL` | 所有 Agent 均不可用 | ① 飞书 ask（§5.11）：推送降级确认请求并等待用户指令 |
-| `on_QA_FAIL_MAX_RETRY` | 同步骤 QA 失败超过 3 次 | ① 飞书 ask（§5.11）：推送循环失败警报并等待用户决策 |
+| `on_PAUSED` | 进入 PAUSED 状态（need_user 或 升级） | ① 飞书 ask（§5.11）：前台阻塞推送问题并等待回复；若存在 `feishu_record_id` 则改用 resume |
+| `on_ALL_AGENT_FAIL` | 所有 Agent 均不可用 | ① 飞书 ask（§5.11）：推送降级确认请求，前台阻塞等待 |
+| `on_QA_FAIL_MAX_RETRY` | 同步骤 QA 失败超过 3 次 | ① 飞书 ask（§5.11）：推送循环失败警报，前台阻塞等待 |
 
 **执行原则**：
 - hooks 内的动作按序号顺序执行，任一失败不阻塞后续（记录警告即可）
 - hooks 不改变状态机转移结果，只附加副作用
-- `on_PAUSED` 和 `on_ALL_AGENT_FAIL` 中的飞书 ask 为**阻塞式**：可将用户在飞书多维表格中的回复注入当前 Session 恢复流程
+- `on_PAUSED` 和 `on_ALL_AGENT_FAIL` 中的飞书 ask/resume 为**前台阻塞式**：Dispatcher 以 `isBackground=false, timeout=0` 执行脚本，脚本退出后 Dispatcher 自动获得回复并恢复流程
 - 飞书通知类 hook（on_PAUSED / on_ALL_AGENT_FAIL / on_QA_FAIL_MAX_RETRY）均为可选：当本地未配置 `feishu-config.json` 时自动跳过，不影响流程
 
 ### 5.11 飞书通知集成
@@ -381,9 +382,14 @@ python3 tools/feishu-notifier.py setup
 # 非阻塞通知（on_ALL_DONE 等）
 python3 tools/feishu-notifier.py notify "消息内容" --project "项目名"
 
-# 阻塞式提问（on_PAUSED / on_ALL_AGENT_FAIL，等待用户在多维表格中回复）
-python3 tools/feishu-notifier.py ask "问题内容" --timeout 300 --project "项目名" --fsm-state "PAUSED"
+# 阻塞式提问（on_PAUSED / on_ALL_AGENT_FAIL，前台阻塞等待用户在多维表格中回复）
+python3 tools/feishu-notifier.py ask "问题内容" --project "项目名" --fsm-state "PAUSED"
+# stderr 输出 FEISHU_RECORD_ID=xxx（Dispatcher 须写入 state.yaml）
 # stdout 输出用户回复内容，或 TIMEOUT/SKIP
+
+# 恢复轮询（Agent 中断后重启，继续等待已有记录的回复）
+python3 tools/feishu-notifier.py resume <record_id>
+# stdout 输出用户回复内容，或 TIMEOUT
 
 # 阻塞式确认（降级授权等场景）
 python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
@@ -395,15 +401,21 @@ python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
 | 场景 | Hook | 命令 | 说明 |
 |------|------|------|------|
 | 流程完成 | `on_ALL_DONE` | `notify` | 推送完成摘要，非阻塞 |
-| 需要用户信息 | `on_PAUSED` | `ask` | 阻塞等待用户在多维表格回复 |
-| 所有 Agent 不可用 | `on_ALL_AGENT_FAIL` | `ask` | 推送降级确认请求，阻塞等待 |
-| QA 循环失败 | `on_QA_FAIL_MAX_RETRY` | `ask` | 推送循环失败警报，阻塞等待 |
+| 需要用户信息 | `on_PAUSED` | `ask` | 前台阻塞等待用户在多维表格回复 |
+| 中断恢复 | `on_PAUSED`（重启） | `resume` | 轮询已有记录，不新建 |
+| 所有 Agent 不可用 | `on_ALL_AGENT_FAIL` | `ask` | 推送降级确认请求，前台阻塞等待 |
+| QA 循环失败 | `on_QA_FAIL_MAX_RETRY` | `ask` | 推送循环失败警报，前台阻塞等待 |
 
-**回复处理（双通道）**：
-- **飞书通道**：`ask` 以 `--timeout 0`（无限等待）运行，在后台终端轮询多维表格直到用户回复
-- **终端通道**：用户也可直接在 Dispatcher 会话中输入回复，Dispatcher 读取后终止飞书轮询进程
-- 两个通道先到先生效，Dispatcher 将回复注入 `{{user_answer}}` 变量恢复流程
+**回复处理（前台阻塞）**：
+- Dispatcher 以**前台阻塞**方式执行 `feishu-notifier.py ask`（`isBackground=false, timeout=0`）
+- 脚本创建多维表格记录后，**同时向 stderr 输出 `FEISHU_RECORD_ID=xxx`**，Dispatcher 读取后写入 `state.yaml` 的 `feishu_record_id` 字段
+- 用户在飞书多维表格回复 → 脚本检测到 → stdout 输出回复内容 → 命令结束 → Dispatcher 自动获得回复并继续流程
 - `ask` 返回 SKIP → 飞书未配置，回退到终端等待用户输入（原有行为）
+
+**中断恢复**：
+- 若 Agent 在等待期间被终止，`state.yaml` 中已持久化 `feishu_record_id`
+- 下次启动时 Dispatcher 检测到 `current_state == PAUSED` 且 `feishu_record_id` 非空 → 调用 `feishu-notifier.py resume <record_id>` 直接轮询旧记录
+- 用户无需重新回复，之前在飞书填的回复仍然有效
 
 **关于轮询开销**：飞书轮询为纯 HTTP GET 请求（每 5 秒 1 次），不消耗 AI token，飞书 API 在正常用量下免费。
 
