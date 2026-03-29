@@ -134,7 +134,9 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
    - 若 `开发手册/1.需求文档.md` 存在（旧版） → 触发向后兼容迁移（§8）
    - 均不存在 → 初始化新项目（创建 `开发手册/` 骨架 + `.workflow/`）
 
-2. **初始化 `.workflow/`**：
+2. **经验回顾**：读取 `knowledge/lessons.md`，检查本项目是否涉及已知陷阱（如 Agent 调用方式、路由策略等）。若命中，在当步驤的 Prompt 中注入相关 Lesson 作为防护提示。
+
+3. **初始化 `.workflow/`**：
    ```yaml
    # state.yaml 初始内容
    project: "项目名称"
@@ -148,7 +150,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
    feishu_record_id: null
    ```
 
-3. **设置 `current_state: PM_WORKING`**，启动产品经理 Agent
+4. **设置 `current_state: PM_WORKING`**，启动产品经理 Agent
 
 ### 5.2 事件循环（每轮执行）
 
@@ -354,7 +356,7 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 
 | Hook | 触发时机 | 动作 |
 |------|---------|------|
-| `on_QA_PASS` | QA 返回 completed 且校验通过 | ① `git add -A && git commit`（§6.4）② 检查 `lesson` → 写入经验（§5.8） |
+| `on_QA_PASS` | QA 返回 completed 且校验通过 | ① `git add -A && git commit`（按[《Commit 规范》](references/commit-standards.md)格式，§6.4）② 检查 `lesson` → 写入经验（§5.8） |
 | `on_need_revision` | 任意角色返回 need_revision | ① 检查 `lesson` → 写入经验（§5.8） |
 | `on_ALL_DONE` | 流程结束 | ① 执行收尾清理（§5.9）② 输出最终交付摘要 ③ 飞书通知（§5.11） |
 | `on_PAUSED` | 进入 PAUSED 状态（need_user 或 升级） | ① 飞书 ask（§5.11）：前台阻塞推送问题并等待回复；若存在 `feishu_record_id` 则改用 resume |
@@ -437,9 +439,9 @@ python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
 
 3. **代码规范**：严格遵守 [《代码规范》](references/code-standards.md)
 
-4. **Git 规范**：
+4. **Git 规范**：严格遵守 [《Commit 规范》](references/commit-standards.md)
    - **门禁**：每步须在 QA 通过后方可 commit（由 `on_QA_PASS` hook 自动执行，§5.10）
-   - **格式**：中文 conventional commit（如 `feat(模块): 描述`），末尾追加 `作者:redcap`
+   - **格式**：`type(scope): 描述`，末尾追加 `作者:redcap`（详见规范文件）
    - **push 权限**：Dispatcher **不得自动 push**。仅在用户明确指示（如"推送"、"push"）时才执行 `git push`
    - **例外**：用户明确指令中间备份（WIP commit）时可从其约定
 

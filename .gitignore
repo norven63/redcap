@@ -4,4 +4,4 @@ prompt.txt
 feishu-config.json
 __pycache__/
 *.pyc
-docs copy/
+docs*/

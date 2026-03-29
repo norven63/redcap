@@ -1,0 +1,86 @@
+# RedCap 自身开发规范
+
+> 本文件约束 **RedCap 框架自身** 的变更流程。项目 Agent 在开发用户项目时遵守的规范见 `references/` 目录。
+
+---
+
+## 1. 变更前：经验回顾
+
+修改框架文件前，**必须先阅读 `knowledge/lessons.md`**，检查本次变更是否涉及已知陷阱。
+
+重点关注：
+- L-4（Fallback 深度不足）：修改路由/降级逻辑时
+- L-7（gemini headless 挂起）：修改 Agent 适配器时
+- L-8（先测再改）：涉及 Agent 调用方式变更时，必须先实测再改文档
+
+## 2. Commit 规范
+
+采用中文 Conventional Commit 格式：
+
+```
+type(scope): 简要描述
+
+正文（可选，说明动机和关键变更）
+```
+
+**type 取值**：
+
+| type | 用途 |
+|------|------|
+| `feat` | 新功能、新机制 |
+| `fix` | 缺陷修复、行为修正 |
+| `refactor` | 重构（不改变外部行为） |
+| `docs` | 仅文档变更 |
+| `chore` | 构建、工具、配置等杂务 |
+
+**scope 取值**（框架自身常用）：
+
+| scope | 对应目录/文件 |
+|-------|-------------|
+| `框架` | SKILL.md 核心流程 |
+| `状态机` | dispatcher/state-machine.md |
+| `适配器` | dispatcher/agent-adapters.md |
+| `模板` | dispatcher/prompt-templates/ |
+| `角色` | roles/ 下的角色手册 |
+| `规范` | references/ 下的规范文件 |
+| `feishu` | tools/feishu-notifier.py + 相关配置 |
+| `经验` | knowledge/lessons.md |
+| `铁律` | 涉及安全铁律的变更 |
+
+**示例**：
+```
+feat(feishu): 前台阻塞模式+中断恢复
+fix(框架): 修正Git规范 — commit由Dispatcher执行
+refactor(状态机): PAUSED 伪代码更新为前台阻塞
+docs(经验): 新增 L-9 飞书架构局限性
+```
+
+## 3. 变更后：经验沉淀检查
+
+每轮变更完成后，执行以下自检（同 `knowledge/lessons.md` 中的归档触发检查点）：
+
+1. 本轮是否发现了**新的失败模式或反直觉行为**？→ 归档为 Lesson
+2. 本轮是否验证了一个**之前文档中写错的假设**？→ 归档为 Lesson
+3. 本轮使用的**工作方法本身**是否值得复用？→ 归档为方法论 Lesson
+
+## 4. 飞书通知（可选）
+
+RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。如需通知（如长时间等待用户确认方案），可手动调用：
+
+```bash
+# 发送通知
+python3 tools/feishu-notifier.py notify "RedCap 框架变更完成，请 review"
+
+# 发送问题并等待回复（前台阻塞）
+python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap-self"
+```
+
+## 5. 文件变更影响范围提示
+
+| 修改的文件 | 可能需要同步更新的文件 |
+|-----------|---------------------|
+| SKILL.md §5.2 事件循环 | dispatcher/state-machine.md 伪代码 |
+| SKILL.md §5.10 Hooks | dispatcher/state-machine.md 对应触发点 |
+| references/communication-protocol.md | roles/ 下各角色手册中的状态返回说明 |
+| dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 |
+| 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
