@@ -173,6 +173,10 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 6. 回到步骤 1
 ```
 
+> **PAUSED 状态的飞书协作**：步骤 3 进入 PAUSED 状态时，先触发 `on_PAUSED` hook（§5.10）。若飞书 ask 返回了用户回复，直接将回复注入 Session 并恢复流程，无需等待终端输入。若返回 TIMEOUT 或 SKIP，则回退到终端交互模式。
+6. 回到步骤 1
+```
+
 > **铁律**：Dispatcher 在未获得用户授权的情况下**不得**直接修改项目源代码或代为生成交付物。所有 Agent 不可用时，Dispatcher 必须暂停流程并向用户提供降级选项（详见 [《Agent适配器》§6.5](dispatcher/agent-adapters.md)）。
 > ⚠ 此铁律仅约束**项目文件**（源代码、设计文档、测试报告等 Agent 产出）。`.workflow/` 下的框架状态文件（state.yaml、last-result.json 等）由 Dispatcher 自行维护，不受此限制。
 
@@ -351,12 +355,54 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 |------|---------|------|
 | `on_QA_PASS` | QA 返回 completed 且校验通过 | ① `git add -A && git commit`（§6.4）② 检查 `lesson` → 写入经验（§5.8） |
 | `on_need_revision` | 任意角色返回 need_revision | ① 检查 `lesson` → 写入经验（§5.8） |
-| `on_ALL_DONE` | 流程结束 | ① 执行收尾清理（§5.9）② 输出最终交付摘要 |
+| `on_ALL_DONE` | 流程结束 | ① 执行收尾清理（§5.9）② 输出最终交付摘要 ③ 飞书通知（§5.11） |
+| `on_PAUSED` | 进入 PAUSED 状态（need_user 或 升级） | ① 飞书 ask（§5.11）：将问题推送到飞书并轮询等待回复 |
+| `on_ALL_AGENT_FAIL` | 所有 Agent 均不可用 | ① 飞书 ask（§5.11）：推送降级确认请求并等待用户指令 |
+| `on_QA_FAIL_MAX_RETRY` | 同步骤 QA 失败超过 3 次 | ① 飞书 ask（§5.11）：推送循环失败警报并等待用户决策 |
 
 **执行原则**：
 - hooks 内的动作按序号顺序执行，任一失败不阻塞后续（记录警告即可）
 - hooks 不改变状态机转移结果，只附加副作用
-- 将来扩展新的副作用（如通知、备份），只需在此表添加行，不动事件循环
+- `on_PAUSED` 和 `on_ALL_AGENT_FAIL` 中的飞书 ask 为**阻塞式**：可将用户在飞书多维表格中的回复注入当前 Session 恢复流程
+- 飞书通知类 hook（on_PAUSED / on_ALL_AGENT_FAIL / on_QA_FAIL_MAX_RETRY）均为可选：当本地未配置 `feishu-config.json` 时自动跳过，不影响流程
+
+### 5.11 飞书通知集成
+
+通过 `tools/feishu-notifier.py` 实现人机协作通知，让用户在飞书端即时知晓流程状态并可远程响应。
+
+**前置条件**：项目根目录存在 `feishu-config.json`（本地配置，已在 .gitignore 中排除）。若不存在或 `notify_enabled=false`，所有飞书通知自动跳过，不影响流程。
+
+**CLI 接口**：
+
+```bash
+# 首次使用 — 自动创建多维表格 + 字段，更新配置
+python3 tools/feishu-notifier.py setup
+
+# 非阻塞通知（on_ALL_DONE 等）
+python3 tools/feishu-notifier.py notify "消息内容" --project "项目名"
+
+# 阻塞式提问（on_PAUSED / on_ALL_AGENT_FAIL，等待用户在多维表格中回复）
+python3 tools/feishu-notifier.py ask "问题内容" --timeout 300 --project "项目名" --fsm-state "PAUSED"
+# stdout 输出用户回复内容，或 TIMEOUT/SKIP
+
+# 阻塞式确认（降级授权等场景）
+python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
+# stdout 输出 CONFIRMED 或 CANCELLED
+```
+
+**触发场景与命令映射**：
+
+| 场景 | Hook | 命令 | 说明 |
+|------|------|------|------|
+| 流程完成 | `on_ALL_DONE` | `notify` | 推送完成摘要，非阻塞 |
+| 需要用户信息 | `on_PAUSED` | `ask` | 阻塞等待用户在多维表格回复 |
+| 所有 Agent 不可用 | `on_ALL_AGENT_FAIL` | `ask` | 推送降级确认请求，阻塞等待 |
+| QA 循环失败 | `on_QA_FAIL_MAX_RETRY` | `ask` | 推送循环失败警报，阻塞等待 |
+
+**回复处理**：
+- `ask` 返回用户回复内容 → Dispatcher 将其注入 `{{user_answer}}` 变量，恢复流程
+- `ask` 返回 TIMEOUT → Dispatcher 记录警告，保持 PAUSED 状态等待下次用户交互
+- `ask` 返回 SKIP → 飞书未配置，回退到终端等待用户输入（原有行为）
 
 ---
 

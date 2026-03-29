@@ -1,2 +1,7 @@
 .DS_Store
 prompt.txt
+.env.local
+feishu-config.json
+__pycache__/
+*.pyc
+docs copy/

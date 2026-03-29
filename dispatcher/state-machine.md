@@ -81,6 +81,7 @@ ESCALATE_L1       pm_decided           (回到发起方状态)      将决策注
 ESCALATE_L1       pm_cannot_decide     ESCALATE_L2          暂停，向用户提问
 ESCALATE_L2       (用户回复)           (回到发起方状态)      将用户决策注入流程
 PAUSED            (用户回复)           (回到暂停前状态)      将用户信息注入当前 Session
+PAUSED            (飞书回复)           (回到暂停前状态)      on_PAUSED hook 通过飞书 ask 获取用户回复，注入 Session
 PAUSED            (用户授权降级)       DEGRADED             记录 degraded_mode=true
 DEGRADED          completed            (按原状态流转)        降级产出标记 dispatcher-degraded
 DEGRADED          next_step            (重置为正常模式)      新步骤自动退出降级
@@ -179,12 +180,19 @@ function dispatch_loop(project_dir):
         state = read_yaml(project_dir/.workflow/state.yaml)
 
         if state.current_state == "ALL_DONE":
+            cleanup_workflow_temp_files()      # §5.9
             output_final_summary()
+            feishu_notify("项目完成: " + state.project, project=state.project)  # §5.11
             break
 
         if state.current_state == "PAUSED":
             question = state.escalation_stack.last.question
-            user_answer = ask_user(question)
+            # 先尝试通过飞书获取用户回复（on_PAUSED hook）
+            feishu_reply = feishu_ask(question, project, fsm_state="PAUSED")
+            if feishu_reply and feishu_reply not in ("TIMEOUT", "SKIP"):
+                user_answer = feishu_reply
+            else:
+                user_answer = ask_user(question)  # 回退到终端交互
             inject_answer_to_session(state, user_answer)
             state.current_state = state.paused_from
             continue
@@ -225,3 +233,18 @@ function dispatch_loop(project_dir):
 - 同步阻塞执行，不需要轮询
 - 状态持久化到 YAML，即使中断也可从断点恢复
 - Prompt 始终通过文件传参（`.workflow/{role}-prompt-step{N}.txt`）
+
+**飞书通知辅助函数**（伪代码）：
+
+```
+function feishu_notify(message, project=""):
+    # 非阻塞推送，配置不存在时静默跳过
+    result = exec("python3 tools/feishu-notifier.py notify {message} --project {project}")
+    # result == "OK" | "SKIP"（无配置时）
+
+function feishu_ask(question, project="", fsm_state=""):
+    # 阻塞式：推送到飞书 + 轮询多维表格等待用户回复
+    result = exec("python3 tools/feishu-notifier.py ask {question} --project {project} --fsm-state {fsm_state}")
+    # result == 用户回复内容 | "TIMEOUT" | "SKIP"
+    return result
+```
