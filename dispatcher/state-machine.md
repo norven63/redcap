@@ -22,6 +22,10 @@
 | `ESCALATE_L1` | 升级到产品经理决策 |
 | `ESCALATE_L2` | 升级到用户决策 |
 | `PAUSED` | 等待用户响应 |
+| `DEGRADED` | 用户授权降级，Dispatcher 代为执行当前步骤 |
+| `REVIEW_WORKING` | Reviewer 正在执行项目级 Code Review |
+| `REVIEW_PASS` | Review 通过 |
+| `REVIEW_FAIL` | Review 发现需修复问题 |
 | `STEP_DONE` | 当前步骤完成 |
 | `ALL_DONE` | 所有步骤完成 |
 
@@ -66,11 +70,20 @@ QA_FAIL           root=code            DEV_WORKING          启动程序员 Sess
 QA_FAIL           root=design          ARCH_WORKING         启动架构师 Session（修订设计）
 QA_FAIL           root=requirement     PM_WORKING           启动 PM Session（澄清需求）
 QA_PASS           has_next_step        ARCH_WORKING         启动架构师 Session（下一步设计）
-QA_PASS           no_next_step         ALL_DONE             输出最终交付摘要
+QA_PASS           no_next_step         REVIEW_WORKING       启动 Reviewer Session（项目级 Review）
+QA_PASS(review_off) no_next_step       ALL_DONE             输出最终交付摘要（Review 未启用时）
+REVIEW_WORKING    completed(pass)      REVIEW_PASS          Review 通过
+REVIEW_WORKING    completed(fail)      REVIEW_FAIL          Review 发现问题
+REVIEW_PASS       (自动)               ALL_DONE             输出最终交付摘要
+REVIEW_FAIL       root=code            DEV_WORKING          启动程序员 Session 修复
+REVIEW_FAIL       root=design          ARCH_WORKING         启动架构师 Session 修复
 ESCALATE_L1       pm_decided           (回到发起方状态)      将决策注入发起方 Session
 ESCALATE_L1       pm_cannot_decide     ESCALATE_L2          暂停，向用户提问
 ESCALATE_L2       (用户回复)           (回到发起方状态)      将用户决策注入流程
 PAUSED            (用户回复)           (回到暂停前状态)      将用户信息注入当前 Session
+PAUSED            (用户授权降级)       DEGRADED             记录 degraded_mode=true
+DEGRADED          completed            (按原状态流转)        降级产出标记 dispatcher-degraded
+DEGRADED          next_step            (重置为正常模式)      新步骤自动退出降级
 ```
 
 ---
@@ -106,6 +119,26 @@ history:
 paused_from: null
 escalation_stack: []
 blocked_on_user: false
+
+degraded_mode: false
+degraded_approved_by: null
+
+agent_health:
+  gemini:
+    consecutive_failures: 0
+    last_failure_at: null
+    last_failure_reason: null
+    blacklisted: false
+  claude-code:
+    consecutive_failures: 0
+    last_failure_at: null
+    last_failure_reason: null
+    blacklisted: false
+  kimi:
+    consecutive_failures: 0
+    last_failure_at: null
+    last_failure_reason: null
+    blacklisted: false
 ```
 
 ---

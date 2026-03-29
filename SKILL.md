@@ -12,7 +12,7 @@ description: >-
 
 # RedCap - 多 Agent 协同工程开发框架
 
-> **你的身份**：Dispatcher（调度器）。你不直接执行开发工作，而是通过 CLI 调用独立的 AI Agent 完成各角色任务，读取其返回状态，驱动流程推进。**铁律：不得直接修改项目源代码或代为生成任何交付物。Agent 不可用时走 Fallback 路由或暂停，绝不代劳。**
+> **你的身份**：Dispatcher（调度器）。你不直接执行开发工作，而是通过 CLI 调用独立的 AI Agent 完成各角色任务，读取其返回状态，驱动流程推进。**铁律：未经用户授权，不得直接修改项目源代码或代为生成任何交付物。所有 Agent 不可用时必须暂停并向用户请求降级授权，绝不自行代劳。**
 
 ---
 
@@ -39,27 +39,28 @@ description: >-
   │              Dispatcher（你）              │
   │     读状态 → 选 Agent → 调 CLI         │
   │     → 解析返回 → 触发 Hooks → 循环    │
-  └──┬────────┬────────┬────────┬────────────┘
-     │        │        │        │
-     ▼        ▼        ▼        ▼
-  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
-  │  PM  │ │ ARCH │ │ DEV  │ │  QA  │
-  │Agent │ │Agent │ │Agent │ │Agent │
-  └──────┘ └──────┘ └──────┘ └──────┘
+  └──┬────────┬────────┬────────┬─────┬──────┘
+     │        │        │        │     │
+     ▼        ▼        ▼        ▼     ▼
+  ┌──────┐ ┌──────┐ ┌──────┐ ┌────┐ ┌────────┐
+  │  PM  │ │ ARCH │ │ DEV  │ │ QA │ │Reviewer│
+  │Agent │ │Agent │ │Agent │ │Agt │ │ Agent  │
+  └──────┘ └──────┘ └──────┘ └────┘ └────────┘
 ```
 
 ---
 
 ## 2. Agent 路由
 
-| 角色 | Agent CLI |
+| 角色 | 优先级列表 |
 |------|-----------|
-| 产品经理 | `claude-code` |
-| 架构师 | `gemini` |
-| 程序员 | `gemini` |
-| 测试QA | `claude-code` |
+| 产品经理 | `kimi` → `claude-code` → `gemini` |
+| 架构师 | `gemini` → `kimi` → `claude-code` |
+| 程序员 | `gemini` → `kimi` → `claude-code` |
+| 测试QA | `kimi` → `claude-code` → `gemini` |
+| Reviewer | `gemini` → `kimi` → `claude-code` |
 
-CLI 调用详见 [《Agent适配器》](dispatcher/agent-adapters.md)。
+Agent 使用 `{cli}&{model}` 标识（如 `kimi&kimi-k2`、`claude-code&kimi-2.5`），同一模型下专用 CLI 优先于通用 CLI 代理。CLI 调用详见 [《Agent适配器》](dispatcher/agent-adapters.md)。
 
 ---
 
@@ -71,8 +72,10 @@ Dispatcher 通过有限状态机驱动流转，完整定义见 [《状态机》]
 
 ```
 INIT → PM_WORKING → PM_DONE → ARCH_WORKING → ARCH_DONE → DEV_WORKING → DEV_DONE → QA_WORKING
-  → QA_PASS (has_next → ARCH_WORKING | no_next → ALL_DONE)
+  → QA_PASS (has_next → ARCH_WORKING | no_next → REVIEW_WORKING)
   → QA_FAIL (root=code → DEV_WORKING | root=design → ARCH_WORKING | root=requirement → PM_WORKING)
+REVIEW_WORKING → REVIEW_PASS → ALL_DONE
+             → REVIEW_FAIL (root=code → DEV_WORKING | root=design → ARCH_WORKING)
 ```
 
 ### 事件来源
@@ -112,6 +115,8 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 │   └── outbox/                        ← 程序员交付物（→ QA 读取）
 ├── qa/                                ← 测试QA 工作区
 │   └── outbox/                        ← QA 交付物
+├── reviewer/                          ← Reviewer 工作区
+│   └── outbox/                        ← Review 交付物
 └── .workflow/                         ← 流程状态（Dispatcher 管理）
     ├── state.yaml                     ← 当前状态、步骤、角色
     ├── sessions.yaml                  ← Session ID 记录
@@ -168,7 +173,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 6. 回到步骤 1
 ```
 
-> **铁律**：Dispatcher 在任何情况下都**不得**直接修改项目源代码或代为生成交付物。所有生产产出必须由 Agent 执行产生。Agent 不可用时必须重试或切换 Fallback Agent。
+> **铁律**：Dispatcher 在未获得用户授权的情况下**不得**直接修改项目源代码或代为生成交付物。所有 Agent 不可用时，Dispatcher 必须暂停流程并向用户提供降级选项（详见 [《Agent适配器》§6.5](dispatcher/agent-adapters.md)）。
 > ⚠ 此铁律仅约束**项目文件**（源代码、设计文档、测试报告等 Agent 产出）。`.workflow/` 下的框架状态文件（state.yaml、last-result.json 等）由 Dispatcher 自行维护，不受此限制。
 
 ### 5.3 状态解析策略
@@ -244,13 +249,18 @@ Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
 
 ```yaml
 fallback_routing:
-  product-manager: ["claude-code", "gemini"]
-  architect:       ["gemini", "claude-code"]
-  programmer:      ["gemini", "claude-code"]
-  qa:              ["claude-code", "gemini"]
+  product-manager: ["kimi", "claude-code", "gemini"]
+  architect:       ["gemini", "kimi", "claude-code"]
+  programmer:      ["gemini", "kimi", "claude-code"]
+  qa:              ["kimi", "claude-code", "gemini"]
+  reviewer:        ["gemini", "kimi", "claude-code"]
 ```
 
 切换条件：首选 Agent 连续 2 次返回失败（含频控 429）或 CLI 进程超时无响应。切换后在 `state.yaml` 的 `current_role.agent` 中记录实际使用的 Agent。
+
+**新步骤自动重置**：每个新步骤开始时，所有 Agent 的失败计数自动归零，重新从首选开始尝试。
+**用户指令重置**：用户告知某 Agent 已恢复时，立即重置该 Agent 的健康状态。
+**所有 Agent 均不可用**：暂停流程，向用户提供降级选项（详见 [《Agent适配器》§6.5](dispatcher/agent-adapters.md)）。
 
 ### 5.6 Session 管理
 
@@ -325,10 +335,11 @@ Agent 通过 `__redcap_status` 的可选 `lesson` 字段提交经验（详见 [�
 ```
 1. 清除 .workflow/ 下的临时文件：
    - 删除 *-prompt-*.md、*-prompt-*.txt、*-system-prompt.txt、run-*.sh
-   - 保留：state.yaml、sessions.yaml、last-result.json
+   - 保留：state.yaml、sessions.yaml、last-result.json、agent-registry.yaml
 
 2. 清除项目根目录的错位文件：
    - 根目录下的 last-result.json、.workflow/、__redcap_status 残留
+   - 名称为 Shell 特殊字符的异常目录/文件（如 `>`、`<`、`|` 等）
 ```
 
 ### 5.10 状态转移 Hooks

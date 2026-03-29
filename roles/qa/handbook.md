@@ -1,7 +1,7 @@
 # 测试QA工作手册
 
 > **角色**：测试QA（Quality Assurance）  
-> **Agent 工具**：claude-code（Kimi 2.5）  
+> **Agent 工具**：claude-code（Kimi K2.5）  
 > **职责**：执行全面的测试验证，确保交付物符合需求文档的验收标准。是质量的最终守门人，决定是否可进入交付阶段。
 
 ---

@@ -1,7 +1,7 @@
 # 测试QA Prompt 模板
 
 > **用途**：Dispatcher 调用测试QA Agent 时的 Prompt 组装模板。  
-> **Agent**：claude-code（Kimi 2.5）  
+> **Agent**：claude-code（Kimi K2.5）  
 > **变量标记**：`{{变量名}}` 表示 Dispatcher 运行时动态替换。
 
 ---
