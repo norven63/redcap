@@ -467,6 +467,12 @@ python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
 - 每次重读仅加载关键段落（非整个 SKILL.md），增量约 500-1000 tokens
 - 配置文件可扩展：后续发现新的退化风险点时，只需向 yaml 添加条目
 
+**子 Agent 级防退化**：
+Dispatcher 级的 reload-rules 只保护 Dispatcher 自身。子 Agent 在执行长任务时同样面临上下文压缩导致约束丢失的风险。对策：
+- 共享约束文件 `references/agent-constraints.md` 中内置了子 Agent 级检查点规则（§4 防退化检查点）
+- 通过项目级 CLAUDE.md / GEMINI.md 的 `@` 导入机制，在 Agent 启动时注入约束
+- 具体模板见 `dispatcher/agent-adapters.md` §11.2/§11.4
+
 ### 5.13 Pending Actions（双保险机制）
 
 **问题**：即使通过 §5.12 重载了规则，Dispatcher 仍需"记住"当前状态下还有哪些待办动作。若 hooks 表细节在两次重载之间被压缩，可能遗漏动作。

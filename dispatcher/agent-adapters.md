@@ -643,6 +643,10 @@ kimi:
 
 ## 11. CLI 工具级项目配置
 
+> Dispatcher 在项目初始化时为每种 Agent CLI 创建对应的指令文件。
+> 所有子 Agent 共享 `references/agent-constraints.md` 中的强制约束（通过 `@` 导入）。
+> 修改约束只需编辑该共享文件，无需逐个同步各 CLI 的配置。
+
 ### 11.1 Gemini `settings.json` 最佳实践
 
 Dispatcher 在项目初始化时检查 `~/.gemini/settings.json`，确保以下配置存在：
@@ -661,19 +665,21 @@ Dispatcher 在项目初始化时检查 `~/.gemini/settings.json`，确保以下�
 
 ### 11.2 Gemini `GEMINI.md` 项目规则
 
-Dispatcher 在项目初始化时于项目根目录创建 `GEMINI.md`（如不存在），注入 RedCap 框架约束：
+Dispatcher 在项目初始化时于项目根目录创建 `GEMINI.md`（如不存在），通过 `@` 导入共享约束：
 
 ```markdown
 # GEMINI.md — RedCap 项目规则
 
-## 强制约束
-1. 所有文件写入使用内建 Write/Edit 工具，禁止 Shell 重定向（`>`, `>>`）
-2. 回复末尾必须输出 __redcap_status JSON 块
-3. 只在指定的工作目录和交付目录下写文件
-4. 不修改 .workflow/ 下的框架状态文件
+@references/agent-constraints.md
+
+## 当前任务上下文
+- 角色：{{role}}
+- 步骤：{{step_id}}
+- 交付目录：{{deliverable_dir}}
 ```
 
-> gemini CLI 启动时会自动读取项目根目录的 `GEMINI.md` 作为底层 System Prompt，无需额外参数传递。
+> Gemini CLI 启动时自动读取项目根目录的 `GEMINI.md`，`@` 导入的文件会被原生展开注入上下文。
+> 共享约束文件 `references/agent-constraints.md` 包含安全铁律、文件操作约束、通信协议和防退化检查点。
 
 ### 11.3 Kimi 配置最佳实践
 
@@ -691,14 +697,18 @@ compaction_trigger_ratio = 0.85   # 上下文压缩触发比例
 
 ### 11.4 Claude Code 项目规则
 
-Claude Code 在项目根目录自动读取 `CLAUDE.md`。Dispatcher 在项目初始化时创建（如不存在）：
+Claude Code 在项目根目录自动读取 `CLAUDE.md`。Dispatcher 在项目初始化时创建（如不存在），通过 `@` 导入共享约束：
 
 ```markdown
 # CLAUDE.md — RedCap 项目规则
 
-## 强制约束
-1. 所有文件写入使用内建 Write/Edit 工具，禁止 Shell 重定向（`>`, `>>`）
-2. 回复末尾必须输出 __redcap_status JSON 块
-3. 只在指定的工作目录和交付目录下写文件
-4. 不修改 .workflow/ 下的框架状态文件
+@references/agent-constraints.md
+
+## 当前任务上下文
+- 角色：{{role}}
+- 步骤：{{step_id}}
+- 交付目录：{{deliverable_dir}}
 ```
+
+> Claude Code 支持 `@file` 原生导入，启动时自动展开注入上下文。
+> 共享约束文件包含安全铁律、文件操作约束、通信协议和防退化检查点（L-9 子 Agent 级对策）。

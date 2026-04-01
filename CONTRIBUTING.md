@@ -92,6 +92,7 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 |
 | SKILL.md §5.10 Hooks 表 | dispatcher/state-machine.md `populate_pending_actions` + SKILL.md §5.13 映射表 |
 | CONTRIBUTING.md 自身 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md 均为索引，通过 `@` 导入指向本文件；修改本文件即全局生效，无需手动同步 |
+| references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
 
 ### 跨工具指令文件位置参考（经官方文档验证 2026-04）
