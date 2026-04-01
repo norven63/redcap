@@ -275,6 +275,12 @@ function populate_pending_actions(state, event):
         actions.append({action: "feishu_notify", rule_file: null})
     if state.current_state == "PAUSED":
         actions.append({action: "feishu_ask", rule_file: null})
+    if event.status == "need_revision":
+        actions.append({action: "check_lesson", rule_file: "knowledge/lessons.md"})
+    if state.current_state == "ALL_AGENT_FAIL":
+        actions.append({action: "feishu_ask", rule_file: null})
+    if state.qa_fail_retry_count >= 3:
+        actions.append({action: "feishu_ask", rule_file: null})
     state.pending_actions = actions
     write_yaml(state)
 ```

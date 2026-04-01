@@ -472,11 +472,14 @@ pending_actions:
 
 **转移→Actions 映射**：
 
-| 转移目标状态 | 自动填充的 pending_actions |
-|-------------|--------------------------|
+| 转移目标状态 / 事件 | 自动填充的 pending_actions |
+|-------------------|---------------------------|
 | `QA_PASS` | `git_commit`（rule: commit-standards.md）、`check_lesson`（rule: lessons.md） |
 | `ALL_DONE` | `cleanup`（rule: §5.9）、`final_summary`、`feishu_notify`（rule: §5.11） |
 | `PAUSED` | `feishu_ask`（rule: §5.11） |
+| event=`need_revision` | `check_lesson`（rule: lessons.md） |
+| `ALL_AGENT_FAIL` | `feishu_ask`（rule: §5.11） |
+| QA 失败超过 3 次 | `feishu_ask`（rule: §5.11） |
 | 其他 `*_DONE` | 无 |
 
 **与 §5.12 的关系**：§5.12 保证规则不退化，§5.13 保证动作不遗漏。两者互补，非替代关系。

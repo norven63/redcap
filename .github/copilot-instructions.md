@@ -44,3 +44,12 @@ python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描�
 | SKILL.md §5.10 Hooks | dispatcher/state-machine.md 对应触发点 |
 | references/communication-protocol.md | roles/ 下各角色手册 |
 | dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 |
+
+### R6: 防退化 — 工作流规范重载（仅 RedCap 项目开发时）
+
+当作为 Dispatcher 执行 RedCap 工作流时，**每轮事件循环开始前**必须：
+
+1. `read_file dispatcher/reload-rules.yaml`
+2. 根据当前检查点（角色切换/即将commit/即将结束/PAUSED）重读对应规范段落
+
+> 这是防止长任务上下文压缩导致规则退化的核心机制（L-9）。
