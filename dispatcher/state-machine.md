@@ -121,6 +121,7 @@ paused_from: null
 escalation_stack: []
 blocked_on_user: false
 feishu_record_id: null        # 飞书 ask 记录 ID，用于中断恢复（§5.11）
+pending_actions: []           # §5.13 双保险待办清单
 
 degraded_mode: false
 degraded_approved_by: null
@@ -177,8 +178,34 @@ sessions:
 
 ```
 function dispatch_loop(project_dir):
+    prev_role = null
     while true:
+        # ── Step 0: 防退化 — 按检查点重载常驻规范 ──
+        reload_config = read_yaml("dispatcher/reload-rules.yaml")
         state = read_yaml(project_dir/.workflow/state.yaml)
+        cur_role = state.current_role.name if state.current_role else null
+
+        if cur_role != prev_role:  # 角色切换 → 重读核心规则
+            for rule in reload_config.on_role_switch:
+                read_file(rule.file, rule.sections)
+            prev_role = cur_role
+
+        if state.current_state == "PAUSED":
+            for rule in reload_config.on_paused:
+                read_file(rule.file, rule.sections)
+
+        if state.current_state == "ALL_DONE":
+            for rule in reload_config.before_task_complete:
+                read_file(rule.file, rule.sections)
+
+        # ── Step 0.5: 执行 pending_actions（§5.13 双保险）──
+        if state.pending_actions:
+            for action in state.pending_actions:
+                if action.rule_file:
+                    read_file(action.rule_file)
+                execute_action(action)
+            state.pending_actions = []
+            write_yaml(state)
 
         if state.current_state == "ALL_DONE":
             cleanup_workflow_temp_files()      # §5.9
@@ -231,8 +258,25 @@ function dispatch_loop(project_dir):
                     continue
 
             update_state(state, event)
+            # §5.13: 根据目标状态填充 pending_actions
+            populate_pending_actions(state, event)
             update_sessions(session, event)
             continue
+
+# §5.13 pending_actions 填充逻辑
+function populate_pending_actions(state, event):
+    actions = []
+    if state.current_state == "QA_PASS":
+        actions.append({action: "git_commit", rule_file: "references/commit-standards.md"})
+        actions.append({action: "check_lesson", rule_file: "knowledge/lessons.md"})
+    if state.current_state == "ALL_DONE":
+        actions.append({action: "cleanup", rule_file: null})
+        actions.append({action: "final_summary", rule_file: null})
+        actions.append({action: "feishu_notify", rule_file: null})
+    if state.current_state == "PAUSED":
+        actions.append({action: "feishu_ask", rule_file: null})
+    state.pending_actions = actions
+    write_yaml(state)
 ```
 
 **关键特征**：

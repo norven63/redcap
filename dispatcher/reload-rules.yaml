@@ -1,0 +1,32 @@
+# 常驻规范重载配置
+# 
+# 解决长任务中 SKILL.md 等规范被上下文压缩导致规则退化的问题。
+# Dispatcher 在指定检查点 read_file 对应文件段落，强制刷新上下文中的规则。
+#
+# 原理：read_file 调用会把文件内容注入到最新的上下文位置，不受之前压缩影响。
+
+# ── 每次角色切换时重读（最关键的检查点）──
+on_role_switch:
+  - file: "SKILL.md"
+    sections: "§5.10 Hooks表, §5.7 交付物校验"
+    reason: "防止 hooks 动作细节和校验规则在上下文压缩后丢失"
+  - file: "SKILL.md"
+    sections: "§5.5 Fallback 路由"
+    reason: "防止 Agent 路由优先级退化为随机选择"
+
+# ── 即将执行 git commit 前重读 ──
+before_commit:
+  - file: "references/commit-standards.md"
+    reason: "确保 commit 格式符合规范"
+
+# ── 即将结束整个任务（ALL_DONE）前重读 ──
+before_task_complete:
+  - file: "SKILL.md"
+    sections: "§5.9 收尾清理, §5.11 飞书通知"
+    reason: "确保清理步骤和飞书通知不被遗漏"
+
+# ── 进入 PAUSED 状态时重读 ──
+on_paused:
+  - file: "SKILL.md"
+    sections: "§5.11 飞书通知集成"
+    reason: "确保飞书 ask/resume 的前台阻塞机制正确执行"

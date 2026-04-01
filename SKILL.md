@@ -148,6 +148,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
    paused_from: null
    escalation_stack: []
    feishu_record_id: null
+   pending_actions: []       # §5.13 双保险待办清单
    ```
 
 4. **设置 `current_state: PM_WORKING`**，启动产品经理 Agent
@@ -157,7 +158,13 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 事件循环只回答一个问题：**下一步调谁？** 所有副作用（git、清理、经验沉淀等）通过 Hooks 触发（§5.10）。
 
 ```
-1. 读取 .workflow/state.yaml
+0. 【防退化】按 dispatcher/reload-rules.yaml 重载常驻规范（§5.12）
+   - 每次角色切换时：重读 §5.10 Hooks表 + §5.7 交付物校验 + §5.5 路由
+   - 即将 commit 时：重读 references/commit-standards.md
+   - 即将结束（ALL_DONE）时：重读 §5.9 收尾清理 + §5.11 飞书通知
+   - 进入 PAUSED 时：重读 §5.11 飞书通知集成
+1. 读取 .workflow/state.yaml + pending_actions（§5.13）
+   - 若存在未完成的 pending_actions → 按序执行 → 清除已完成项
 2. 若 current_state == ALL_DONE → 触发 on_ALL_DONE hooks → 输出最终摘要，结束
 3. 若 current_state == PAUSED → 向用户转述问题，等待回复
 4. 若 current_state 为 *_DONE 或自动转移 → 查转移表 → 更新 state
@@ -420,6 +427,59 @@ python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
 - 用户无需重新回复，之前在飞书填的回复仍然有效
 
 **关于轮询开销**：飞书轮询为纯 HTTP GET 请求（每 5 秒 1 次），不消耗 AI token，飞书 API 在正常用量下免费。
+
+### 5.12 常驻规范重载（防退化机制）
+
+**问题**：SKILL.md 在 skill 触发时一次性读入上下文，随着长任务推进，上下文压缩会导致 hooks 细节、校验规则、路由策略等关键规则退化。
+
+**解法**：在事件循环的关键检查点，通过 `read_file` 重新加载规范文件段落，强制刷新上下文中的规则。
+
+**配置文件**：`dispatcher/reload-rules.yaml`，定义了 4 个检查点：
+
+| 检查点 | 触发时机 | 重读内容 |
+|--------|---------|---------|
+| `on_role_switch` | 角色切换时（如 PM→ARCH、DEV→QA） | §5.10 Hooks、§5.7 交付物校验、§5.5 Fallback 路由 |
+| `before_commit` | 即将执行 git commit | references/commit-standards.md |
+| `before_task_complete` | 即将结束任务（ALL_DONE） | §5.9 收尾清理、§5.11 飞书通知 |
+| `on_paused` | 进入 PAUSED 状态 | §5.11 飞书通知集成 |
+
+**执行方式**：事件循环步骤 0（§5.2）中，Dispatcher 读取 `reload-rules.yaml`，根据当前状态判断命中哪些检查点，然后 `read_file` 对应文件段落。
+
+**设计原则**：
+- 以角色切换为主检查点（`on_role_switch`），频率适中（一个完整项目约 10-20 轮，角色切换约 5-8 次）
+- 每次重读仅加载关键段落（非整个 SKILL.md），增量约 500-1000 tokens
+- 配置文件可扩展：后续发现新的退化风险点时，只需向 yaml 添加条目
+
+### 5.13 Pending Actions（双保险机制）
+
+**问题**：即使通过 §5.12 重载了规则，Dispatcher 仍需"记住"当前状态下还有哪些待办动作。若 hooks 表细节在两次重载之间被压缩，可能遗漏动作。
+
+**解法**：在状态转移时，由转移逻辑将下一步的必做动作写入 `state.yaml` 的 `pending_actions` 字段。Dispatcher 每轮读 `state.yaml` 时自然会看到待办清单。
+
+```yaml
+# state.yaml 中追加字段
+pending_actions:
+  - action: "git_commit"
+    rule_file: "references/commit-standards.md"
+  - action: "check_lesson"
+    rule_file: "knowledge/lessons.md"
+```
+
+**生命周期**：
+1. **写入**：状态转移时（§5.2 步骤 5i），根据目标状态 + hooks 表，自动填充 `pending_actions`
+2. **执行**：下一轮事件循环步骤 1（§5.2），Dispatcher 遍历 `pending_actions`，逐项执行
+3. **清除**：执行完毕后清空 `pending_actions`
+
+**转移→Actions 映射**：
+
+| 转移目标状态 | 自动填充的 pending_actions |
+|-------------|--------------------------|
+| `QA_PASS` | `git_commit`（rule: commit-standards.md）、`check_lesson`（rule: lessons.md） |
+| `ALL_DONE` | `cleanup`（rule: §5.9）、`final_summary`、`feishu_notify`（rule: §5.11） |
+| `PAUSED` | `feishu_ask`（rule: §5.11） |
+| 其他 `*_DONE` | 无 |
+
+**与 §5.12 的关系**：§5.12 保证规则不退化，§5.13 保证动作不遗漏。两者互补，非替代关系。
 
 ---
 
