@@ -102,6 +102,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 │   ├── README.md
 │   ├── 开发进度日志.md
 │   ├── API接口文档.md
+│   ├── codebase-baseline.md           ← 代码库基线快照（迭代模式，§5.14）
 │   └── lessons-learned.md             ← 项目级经验沉淀
 ├── pm/                                ← 产品经理工作区
 │   ├── 需求文档.md
@@ -129,18 +130,26 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 
 ### 5.1 启动流程
 
-1. **检测项目状态**：
-   - 若 `.workflow/state.yaml` 存在 → 读取状态，从断点恢复
-   - 若 `开发手册/1.需求文档.md` 存在（旧版） → 触发向后兼容迁移（§8）
-   - 均不存在 → 初始化新项目（创建 `开发手册/` 骨架 + `.workflow/`）
+1. **检测项目状态**（场景路由）：
 
-2. **经验回顾**：读取 `knowledge/lessons.md`，检查本项目是否涉及已知陷阱（如 Agent 调用方式、路由策略等）。若命中，在当步驤的 Prompt 中注入相关 Lesson 作为防护提示。
+   Dispatcher 按以下优先级依次检测，命中第一个即停：
 
-3. **初始化 `.workflow/`**：
+   | 优先级 | 检测条件 | 场景 | 入口动作 |
+   |--------|---------|------|----------|
+   | 1 | `.workflow/state.yaml` 存在 且 `current_state != ALL_DONE` | **S2: 中断恢复** | 从断点恢复（原有逻辑） |
+   | 2 | `.workflow/state.yaml` 存在 且 `current_state == ALL_DONE` | **S1: 迭代开发**（当前版 RedCap 项目） | 进入迭代启动流程（§5.14） |
+   | 3 | `开发手册/1.需求文档.md` 存在（旧版扁平结构） | **S3: 旧版项目** | 触发向后兼容迁移（§8）→ 再按 S1 进入迭代流程 |
+   | 4 | 项目根目录有代码文件但无 `开发手册/` 目录 | **S4: 非 RedCap 已有项目纳管** | 代码库扫描生成基线（§5.14.2）→ 初始化 `开发手册/` → 正常流程 |
+   | 5 | 以上均不满足 | **S0: 全新项目** | 初始化新项目（创建 `开发手册/` 骨架 + `.workflow/`） |
+
+2. **经验回顾**：读取 `knowledge/lessons.md`，检查本项目是否涉及已知陷阱（如 Agent 调用方式、路由策略等）。若命中，在当步骤的 Prompt 中注入相关 Lesson 作为防护提示。
+
+3. **初始化 `.workflow/`**（S0/S4 场景）：
    ```yaml
    # state.yaml 初始内容
    project: "项目名称"
    current_state: "INIT"
+   iteration: 1              # 迭代版本号（§5.14）
    current_step: 0
    total_steps: 0
    current_role: null
@@ -152,6 +161,8 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
    ```
 
 4. **设置 `current_state: PM_WORKING`**，启动产品经理 Agent
+
+> **S4 特殊处理**：在步骤 4 之前，先执行代码库扫描（§5.14.2），产出 `codebase-baseline.md` 后再启动 PM。
 
 ### 5.2 事件循环（每轮执行）
 
@@ -218,7 +229,9 @@ Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
 **产品经理专用**：
 ```
 {{user_intent}}            → 用户原始需求描述
-{{existing_context}}       → 已有项目上下文（如旧版迁移后的现有文档摘要，首次为空）
+{{existing_context}}       → 已有项目上下文（迭代模式下包含：已有需求摘要 + codebase-baseline 摘要；首次为空）
+{{iteration_mode}}         → 迭代模式标识："new"（S0全新）/ "iterate"（S1/S3迭代）/ "onboard"（S4纳管）
+{{previous_requirements}}  → 上一版需求文档全文路径（迭代时非空，如 pm/需求文档-v1.md）
 {{user_answer}}            → 用户回复内容（恢复 Session 时）
 {{source_role}}            → 发起回退的角色名（需求回退时）
 {{revision_description}}   → 回退问题描述（需求回退时）
@@ -226,8 +239,10 @@ Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
 
 **架构师专用**：
 ```
-{{pm_outbox_content}}      → 读取 pm/outbox/需求文档.md
+{{pm_outbox_content}}      → 读取 pm/outbox/需求文档.md（迭代模式下读取最新版增量需求）
 {{existing_designs}}       → 已有 architect/designs/ 下的文件列表及摘要
+{{codebase_baseline}}      → 读取 shared/codebase-baseline.md（迭代/纳管模式非空）
+{{iteration_mode}}         → 迭代模式标识：同上
 {{design_doc_filename}}    → 当前步骤对应的设计文档文件名（回退时）
 {{source_role}}            → 发起回退的角色名
 {{revision_description}}   → 回退问题描述
@@ -251,6 +266,8 @@ Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
 {{pm_requirement_summary}} → 读取 pm/outbox/需求文档.md（或 pm/需求文档.md）
 {{architect_design_test_plan}} → 读取 architect/outbox/ 中的测试方案部分
 {{programmer_outbox_content}} → 读取 programmer/outbox/步骤X-自测报告.md
+{{codebase_baseline}}      → 读取 shared/codebase-baseline.md（迭代模式下用于回归测试范围判定）
+{{iteration_mode}}         → 迭代模式标识：同上
 {{fixed_by_role}}          → 修复缺陷的角色名（回归测试时）
 {{original_failed_items}}  → 原始缺陷列表（回归测试时）
 {{fix_description}}        → 修复说明（回归测试时）
@@ -483,6 +500,178 @@ pending_actions:
 | 其他 `*_DONE` | 无 |
 
 **与 §5.12 的关系**：§5.12 保证规则不退化，§5.13 保证动作不遗漏。两者互补，非替代关系。
+
+### 5.14 迭代开发协议（1→x）
+
+本节定义 RedCap 在已有项目上进行迭代开发的完整协议。适用于 S1（当前版迭代）、S3（旧版迁移后迭代）、S4（非 RedCap 项目纳管）三种场景。
+
+#### 5.14.1 场景分类与入口
+
+| 场景 | 检测标志 | 前置处理 | 入口流程 |
+|------|---------|---------|---------|
+| **S1: 当前版 RedCap 迭代** | `state.yaml` 存在 + `current_state == ALL_DONE` | 无 | 迭代启动（§5.14.3） |
+| **S3: 旧版 RedCap 项目** | `开发手册/1.需求文档.md` 存在 | 先执行 §8 目录迁移 | 迁移完成后 → 按 S1 迭代启动 |
+| **S4: 非 RedCap 已有项目** | 有代码但无 `开发手册/` | 代码库扫描（§5.14.2） | 扫描完成后 → 初始化 `开发手册/` → PM 启动 |
+
+#### 5.14.2 代码库扫描（Codebase Scan）
+
+**触发时机**：S1 迭代启动时（更新已有基线）或 S4 纳管时（首次生成基线）。
+
+**执行者**：架构师 Agent（技术理解能力最强）。
+
+**Dispatcher 动作**：
+1. 设置 `current_state: SCAN_WORKING`，启动架构师 Agent
+2. Prompt 中注入 `{{scan_mode}}`：`"update"`（S1）或 `"full"`（S4）
+3. Agent 返回后，校验 `codebase-baseline.md` 已写入磁盘
+
+**产出文件**：`开发手册/shared/codebase-baseline.md`
+
+```markdown
+# 代码库基线快照
+
+## 生成信息
+- 扫描时间：YYYY-MM-DD HH:mm
+- 扫描模式：full / update
+- 迭代版本：i{N}
+
+## 1. 项目结构
+- 目录树概览（深度 3 级）
+- 核心入口文件
+
+## 2. 技术栈实况
+| 技术领域 | 实际使用 | 版本 |
+|----------|---------|------|
+| 语言 | | |
+| 框架 | | |
+| 数据库 | | |
+
+## 3. 模块依赖图
+- 核心模块列表及职责
+- 模块间调用关系（文字或 Mermaid）
+
+## 4. 数据模型现状
+- 数据库表/集合清单（如涉及）
+- 核心实体关系
+
+## 5. 已有 API 清单
+| 路径 | 方法 | 用途 | 所属模块 |
+|------|------|------|---------|
+
+## 6. 已知技术债务
+- 代码异味、遗留 TODO、已知缺陷
+```
+
+> **S1 update 模式**：Agent 读取上一版 `codebase-baseline.md`，仅更新变化部分（新增模块、删除模块、API 变更），不重写未变部分。
+
+#### 5.14.3 迭代启动流程（S1 主流程）
+
+```
+1. 读取 state.yaml，确认 current_state == ALL_DONE
+2. 递增 iteration: N+1
+3. 重置迭代相关字段：
+   - current_state → SCAN_WORKING（先扫描代码库）
+   - current_step → 0
+   - total_steps → 0
+   - current_role → null
+   - 保留 history（追加，不清空）
+4. 执行代码库扫描（§5.14.2，scan_mode="update"）
+5. 扫描完成后 → current_state → PM_WORKING
+6. PM 以增量模式启动（§5.14.4）
+```
+
+**步骤编号规则**：迭代模式下步骤记为 `i{iteration}-step{N}`（如 `i2-step1`）。每次新迭代 `current_step` 从 1 重新开始，但 `history` 保留所有迭代的完整记录。
+
+#### 5.14.4 增量需求协议（PM 迭代模式）
+
+当 `{{iteration_mode}} == "iterate"` 或 `"onboard"` 时，PM 不再写覆盖式需求文档，而是写**增量需求文档**。
+
+**版本管理**：
+- 上一版需求文档重命名为 `pm/需求文档-v{N-1}.md`（归档）
+- 新版写入 `pm/需求文档.md` 和 `pm/outbox/需求文档.md`
+
+**增量需求文档结构**：
+
+```markdown
+# 需求文档（迭代 v{N}）
+
+## 0. 迭代概述
+- 迭代目标
+- 相对上一版本的核心变化
+
+## 1. 新增功能
+| 功能模块 | 功能描述 | 优先级 | 验收标准 |
+|----------|----------|--------|----------|
+
+## 2. 变更功能
+| 原功能 | 变更内容 | 变更原因 | 新验收标准 |
+|--------|---------|---------|-----------|
+
+## 3. 废弃功能
+| 功能模块 | 废弃原因 | 迁移/兼容方案 |
+|----------|---------|-------------|
+
+## 4. 不变功能（引用）
+> 以下功能延续上一版本，不做修改。详见 pm/需求文档-v{N-1}.md
+
+## 5. 非功能需求变更
+（仅列变化项）
+
+## 6. 验收标准
+- 新增功能验收 checklist
+- 变更功能回归验收 checklist
+```
+
+#### 5.14.5 架构影响分析（Architect 迭代模式）
+
+当 `{{iteration_mode}} == "iterate"` 或 `"onboard"` 时，架构师在步骤规划前**必须先做影响分析**。
+
+**在 `技术框架设计.md` 中新增「影响分析」节**：
+
+```markdown
+## 影响分析（迭代 v{N}）
+
+### 受影响的已有模块
+| 模块名 | 影响类型 | 改动范围 | 回归风险 |
+|--------|---------|---------|---------|
+| | 新增依赖/接口变更/逻辑修改/数据模型变更 | 高/中/低 | 高/中/低 |
+
+### 不受影响的模块（确认）
+- 模块A：与本次需求无交集
+- 模块B：仅读取不写入，无副作用
+
+### 步骤分类
+| 步骤 | 类型 | 说明 |
+|------|------|------|
+| i2-step1 | 改造已有模块 | 修改用户模块支持新角色 |
+| i2-step2 | 纯新增 | 新增通知模块 |
+```
+
+**步骤类型**标注为「纯新增」或「改造已有模块」，供程序员和 QA 判断回归测试范围。
+
+#### 5.14.6 回归测试协议（QA 迭代模式）
+
+当 `{{iteration_mode}} == "iterate"` 或 `"onboard"` 时，QA 除执行当前步骤测试外，**必须执行回归测试**：
+
+1. **回归范围判定**：读取 `codebase-baseline.md` 的已有 API 清单 + 架构师影响分析中标注为「改造已有模块」的步骤
+2. **核心路径回归**：从已有 API 中选取**受影响模块的核心路径**（非全量），执行冒烟级回归
+3. **回归结果记录**：在测试报告中增加「回归测试」节，与当前步骤测试分开记录
+4. **回归失败处理**：按 `root_cause=code` 回退程序员，在 `revision.description` 中注明"回归测试失败"
+
+#### 5.14.7 状态机扩展
+
+迭代模式新增一个状态：
+
+| 状态 | 说明 |
+|------|------|
+| `SCAN_WORKING` | 代码库扫描进行中（架构师 Agent） |
+| `SCAN_DONE` | 代码库扫描完成 |
+
+**转移规则**：
+```
+SCAN_WORKING    completed    SCAN_DONE       读取 codebase-baseline.md
+SCAN_DONE       (自动)       PM_WORKING      启动 PM（增量模式）
+SCAN_WORKING    failed       SCAN_WORKING    重试 1 次或 Fallback Agent
+```
 
 ---
 

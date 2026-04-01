@@ -26,6 +26,8 @@
 | `REVIEW_WORKING` | Reviewer 正在执行项目级 Code Review |
 | `REVIEW_PASS` | Review 通过 |
 | `REVIEW_FAIL` | Review 发现需修复问题 |
+| `SCAN_WORKING` | 代码库扫描进行中（架构师 Agent，迭代/纳管模式，§5.14） |
+| `SCAN_DONE` | 代码库扫描完成，codebase-baseline.md 就绪 |
 | `STEP_DONE` | 当前步骤完成 |
 | `ALL_DONE` | 所有步骤完成 |
 
@@ -51,6 +53,10 @@
 当前状态          事件                  下一状态              Dispatcher 动作
 ─────────────────────────────────────────────────────────────────────────────
 INIT              (启动)               PM_WORKING           启动产品经理 Session
+INIT              (迭代启动)           SCAN_WORKING         启动代码库扫描（§5.14）
+SCAN_WORKING      completed            SCAN_DONE            读取 codebase-baseline.md
+SCAN_WORKING      failed               SCAN_WORKING         重试 1 次或 Fallback Agent
+SCAN_DONE         (自动)               PM_WORKING           启动 PM（增量模式）
 PM_WORKING        completed            PM_DONE              读取 PM outbox，准备启动架构师
 PM_WORKING        need_user            PAUSED               向用户转述问题
 PM_DONE           (自动)               ARCH_WORKING         启动架构师 Session
@@ -94,6 +100,7 @@ DEGRADED          next_step            (重置为正常模式)      新步骤自
 ```yaml
 project: "项目名称"
 current_state: "DEV_WORKING"
+iteration: 1                  # 迭代版本号（§5.14）
 current_step: 2
 current_step_name: "支付模块"
 total_steps: 5
@@ -283,6 +290,21 @@ function populate_pending_actions(state, event):
         actions.append({action: "feishu_ask", rule_file: null})
     state.pending_actions = actions
     write_yaml(state)
+
+# §5.14 迭代启动逻辑（在 dispatch_loop 之前调用）
+function start_iteration(project_dir):
+    state = read_yaml(project_dir/.workflow/state.yaml)
+    if state.current_state != "ALL_DONE":
+        return  # 非迭代场景，不处理
+    
+    state.iteration = (state.iteration or 1) + 1
+    state.current_state = "SCAN_WORKING"
+    state.current_step = 0
+    state.total_steps = 0
+    state.current_role = null
+    # history 保留，不清空
+    write_yaml(state)
+    dispatch_loop(project_dir)  # 进入正常事件循环
 ```
 
 **关键特征**：

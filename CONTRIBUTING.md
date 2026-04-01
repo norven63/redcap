@@ -91,4 +91,5 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | references/communication-protocol.md | roles/ 下各角色手册中的状态返回说明 |
 | dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 |
 | SKILL.md §5.10 Hooks 表 | dispatcher/state-machine.md `populate_pending_actions` + SKILL.md §5.13 映射表 |
+| .github/copilot-instructions.md | CLAUDE.md + GEMINI.md（三文件规则必须同步） |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
