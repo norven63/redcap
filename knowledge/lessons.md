@@ -72,5 +72,5 @@
 ### L-10: 跨工具指令文件必须用索引模式而非内容复制
 - **场景**：为 Claude Code 和 Gemini CLI 创建系统级指令文件（CLAUDE.md / GEMINI.md），直接复制了 copilot-instructions.md 中的 R1-R6 规则全文
 - **根因**：未遵守"单一权威来源"原则。多份内容副本必然漂移——修改 CONTRIBUTING.md 后需手动同步三个文件，遗漏是必然的
-- **经验规则**：工具特定指令文件（copilot-instructions.md / CLAUDE.md / GEMINI.md）只允许写"索引 + 工具特有语法"，实际规则内容统一维护在 CONTRIBUTING.md。修改一处即全局生效
+- **经验规则**：① 工具特定指令文件只写"索引 + 工具特有语法"，规则内容统一维护在 CONTRIBUTING.md ② Claude Code 和 Gemini CLI 均支持 `@file` 原生导入语法，应优先使用（工具层面保证加载，不依赖 Agent 是否遵守 read_file 指令） ③ 文件位置必须查官方文档验证，不可凭记忆假设（违反 L-8 同理）
 - **来源**：跨 Agent 工具兼容性实现, 2026-04

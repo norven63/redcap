@@ -5,16 +5,16 @@
 
 ---
 
-## 首要动作（每次会话开始时执行）
+## 自动导入（由 Claude Code @import 原生加载）
 
-修改 RedCap 框架任何文件前，**必须先执行以下两步**：
+@CONTRIBUTING.md
+@knowledge/lessons.md
 
-1. 读取 `CONTRIBUTING.md` — 获取完整的自身开发规范（Commit 格式、经验回顾、飞书通知、影响范围等）
-2. 读取 `knowledge/lessons.md` — 检查已知陷阱
-
-> 这两步是强制前置条件，不可跳过。所有规则细节以 `CONTRIBUTING.md` 为准。
+> 以上两个文件会在会话启动时由 Claude Code 自动展开注入上下文，无需手动 read_file。
+> 所有规则细节以 `CONTRIBUTING.md` 为准。
 
 ## Claude Code 特有说明
 
 - Claude Code 的 `CLAUDE.md` 在每次会话自动加载到系统上下文
-- 本文件仅作索引，不包含具体规则，避免与 `CONTRIBUTING.md` 内容漂移
+- 本文件仅作索引，通过 `@` 导入机制引用权威文件，避免与 `CONTRIBUTING.md` 内容漂移
+- 等价索引文件：`.github/copilot-instructions.md`（Copilot）、`GEMINI.md`（Gemini CLI）
