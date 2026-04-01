@@ -68,3 +68,9 @@
 - **根因**：SKILL.md 在 skill 触发时一次性读入上下文，之后全靠上下文记忆存活。LLM 摘要压缩会保留"有 hooks 机制"的概念但丢失具体触发条件和动作细节
 - **经验规则**：① 所有关键规则必须有"检查点重读"机制（`read_file` 重新注入最新上下文位置）② 重读频率以角色切换为主检查点 ③ 待办事项持久化到 state.yaml 而非依赖上下文记忆 ④ 不可压缩的规则提升为系统级指令（copilot-instructions.md）
 - **来源**：RedCap 防退化机制设计, 2026-04
+
+### L-10: 跨工具指令文件必须用索引模式而非内容复制
+- **场景**：为 Claude Code 和 Gemini CLI 创建系统级指令文件（CLAUDE.md / GEMINI.md），直接复制了 copilot-instructions.md 中的 R1-R6 规则全文
+- **根因**：未遵守"单一权威来源"原则。多份内容副本必然漂移——修改 CONTRIBUTING.md 后需手动同步三个文件，遗漏是必然的
+- **经验规则**：工具特定指令文件（copilot-instructions.md / CLAUDE.md / GEMINI.md）只允许写"索引 + 工具特有语法"，实际规则内容统一维护在 CONTRIBUTING.md。修改一处即全局生效
+- **来源**：跨 Agent 工具兼容性实现, 2026-04
