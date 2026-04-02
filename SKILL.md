@@ -1,7 +1,7 @@
 ---
 name: redcap
 description: >-
-  规范化工程开发流程（角色驱动：产品经理→架构师→程序员→测试QA）。
+  多 Agent 协同工程开发框架（Dispatcher 驱动：产品经理→架构师→程序员→测试QA）。
   Use this skill whenever the user wants to: build a new app/system/program/platform,
   add features, change requirements, continue unfinished development, fix bugs,
   refactor or optimize code, or perform any code maintenance task.
@@ -10,7 +10,11 @@ description: >-
   即使用户未明确提及 redcap，只要意图涉及工程级开发或代码维护，都应触发此 skill。
 ---
 
-# RedCap - 规范化工程开发流程
+# RedCap - 多 Agent 协同工程开发框架
+
+> **你的身份**：Dispatcher（调度器）。你不直接执行开发工作，而是通过 CLI 调用独立的 AI Agent 完成各角色任务，读取其返回状态，驱动流程推进。**铁律：未经用户授权，不得直接修改项目源代码或代为生成任何交付物。所有 Agent 不可用时必须暂停并向用户请求降级授权，绝不自行代劳。**
+
+---
 
 ## 触发后的决策规则
 
@@ -18,134 +22,726 @@ description: >-
 
 **边界判断**：对于简单的脚本或单一功能开发，询问用户："是否需要使用 redcap 执行完整的工程开发流程？"
 
-**维护与轻量路径**（缺陷修复、小改动、性能/文案/配置调整等仍触发本 skill 时）：
+**向后兼容**：若项目根目录存在 `开发手册/1.需求文档.md`（旧版扁平结构），自动识别为旧版项目。向用户确认后执行目录迁移（见 §8）。
 
-- 若**同时满足**：不涉及产品需求范围与验收标准变更、不涉及技术栈或整体架构或跨步技术约定变更、不涉及需重新约定的对外 API/契约（或仅极小变更且已在日志中说明）→ 可走**轻量路径**：跳过产品经理/架构师的完整回合，由**程序员**在《开发进度日志》本步（或单列「维护记录」）写明变更摘要 → 自测 → **测试QA**；仍须遵守 [《安全铁律》](references/安全铁律.md)、[《代码规范》](references/代码规范.md) 与下文 **Git 规范**。
-- 若涉及**需求/架构/新分步设计**任一，则不得走轻量路径，须按角色正向流转。
+**维护与轻量路径**（缺陷修复、小改动、性能/文案/配置调整等）：
+
+- 若**同时满足**：不涉及产品需求范围与验收标准变更、不涉及技术栈或整体架构或跨步技术约定变更、不涉及需重新约定的对外 API/契约（或仅极小变更且已在日志中说明）→ 可走**轻量路径**：跳过产品经理/架构师，直接启动**程序员** Agent → **测试QA** Agent。
+- 若涉及**需求/架构/新分步设计**任一，则不得走轻量路径，须按完整流程。
 - **无法判定**时，向用户确认是否采用轻量路径。
 
 ---
 
-## 角色工作流
-
-RedCap 将开发流程划分为 4 个角色，按以下规则流转：
+## 1. 架构概览
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  产品经理    │ --> │   架构师     │ --> │   程序员     │ --> │   测试QA     │
-│    (PM)     │     │ (Architect) │     │    (Dev)    │     │    (QA)     │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-       ↑                    ↑                ↑                      │
-       │                    │                │                      │
-       └────────────────────┴────────────────┴──────────────────────┘
-                         （反馈修正：按问题类型回到对应角色）
+  ┌──────────────────────────────────────────┐
+  │              Dispatcher（你）              │
+  │     读状态 → 选 Agent → 调 CLI         │
+  │     → 解析返回 → 触发 Hooks → 循环    │
+  └──┬────────┬────────┬────────┬─────┬──────┘
+     │        │        │        │     │
+     ▼        ▼        ▼        ▼     ▼
+  ┌──────┐ ┌──────┐ ┌──────┐ ┌────┐ ┌────────┐
+  │  PM  │ │ ARCH │ │ DEV  │ │ QA │ │Reviewer│
+  │Agent │ │Agent │ │Agent │ │Agt │ │ Agent  │
+  └──────┘ └──────┘ └──────┘ └────┘ └────────┘
 ```
 
-**测试通过且仍有后续开发时（避免「先进程序员再补架构师」）**：
+---
 
-- **下一步需要新的或重大修订的分步/模块设计**（新建或实质改写 `designs/`、或改变跨步约定/整体架构意图）→ **下一角色必须是架构师**，完成设计并取得用户「通过」后，**再**进入程序员。**禁止**默认先进入程序员再补架构师。
-- **仍在同一开发步内**（继续沿用**同一**份已获用户通过的 `designs/` 文档，仅补齐实现、修缺陷、补测等）→ 下一角色可为**程序员**，**无需**本步再次经过架构师。此即「架构师非每轮必经」的含义。
+## 2. Agent 路由
 
-### 流转规则
+| 角色 | 优先级列表 |
+|------|-----------|
+| 产品经理 | `kimi` → `claude-code` → `gemini` |
+| 架构师 | `gemini` → `kimi` → `claude-code` |
+| 程序员 | `gemini` → `kimi` → `claude-code` |
+| 测试QA | `kimi` → `claude-code` → `gemini` |
+| Reviewer | `gemini` → `kimi` → `claude-code` |
 
-| 流转方向 | 说明 |
-|----------|------|
-| **正向流转** | 默认单向流动：产品经理 → 架构师 → 程序员 → 测试QA |
-| **测试通过后** | 见上文「测试通过且仍有后续开发时」的分支；细则见 [roles/测试QA.md](roles/测试QA.md)「输出至下一环节」 |
-| **反馈修正** | 见下文「回退与修订」中的根因矩阵 |
-| **用户主动回退** | 见下文「回退与修订」 |
+Agent 使用 `{cli}&{model}` 标识（如 `kimi&kimi-k2`、`claude-code&kimi-2.5`），同一模型下专用 CLI 优先于通用 CLI 代理。CLI 调用详见 [《Agent适配器》](dispatcher/agent-adapters.md)。
 
 ---
 
-## 角色定义
+## 3. 状态机（FSM）
 
-| 角色 | 核心职责 | 关键输入 | 关键输出 |
-|------|----------|----------|----------|
-| **产品经理** | 需求澄清、需求文档编写 | 用户原始意图 | 《需求文档》、确认的需求范围 |
-| **架构师** | 技术选型、框架设计 | 《需求文档》 | 《技术栈选型》、《技术框架设计》 |
-| **程序员** | 代码开发、代码审查 | 《技术框架设计》+ 当前步《模块设计文档》（`/开发手册/designs/`） | 可运行的代码、《代码审查报告》 |
-| **测试QA** | 测试验证、交付确认 | 代码、《需求文档》 | 《测试报告》、验证证据 |
+Dispatcher 通过有限状态机驱动流转，完整定义见 [《状态机》](dispatcher/state-machine.md)。
 
----
+### 核心状态流
 
-## 全局约束
+```
+INIT → PM_WORKING → PM_DONE → ARCH_WORKING → ARCH_DONE → DEV_WORKING → DEV_DONE → QA_WORKING
+  → QA_PASS (has_next → ARCH_WORKING | no_next → REVIEW_WORKING)
+  → QA_FAIL (root=code → DEV_WORKING | root=design → ARCH_WORKING | root=requirement → PM_WORKING)
+REVIEW_WORKING → REVIEW_PASS → ALL_DONE
+             → REVIEW_FAIL (root=code → DEV_WORKING | root=design → ARCH_WORKING)
+```
 
-所有角色在执行工作时必须遵守：
+### 事件来源
 
-1. **文档规范**（项目根目录 `/开发手册/`）：
-   - **固定文件**：`README.md`、`1.需求文档.md`、`2.技术栈选型.md`、`3.技术框架设计.md`、`4.API接口文档.md`、`5.开发进度日志.md`
-   - **分步/模块设计目录**：`/开发手册/designs/`。每一步（或每一可交付模块）的**详细框架设计**写入独立文件，命名建议：`步骤X-<模块或主题简述>.md`（示例：`步骤1-用户认证.md`）
-   - **主从关系**：`3.技术框架设计.md` **只保留整体框架**（架构概述、步骤规划、依赖、**跨步技术约定**、库表与安全运维等），**不得**把各步长篇设计全文堆进该文件；应在其中维护「分步设计索引」（链接到 `designs/` 下各文件）。程序员**实现当前步时**以对应的 `designs/` 文档为**本步技术方案的唯一权威正文**（整体约束仍以 `3.技术框架设计.md` 为准）
-   - **衔接**：每个 `designs/` 文件末尾须包含 **【下一步】**，指向下一份模块设计文档路径，或写明进入本步验证/测试QA、无后续设计等（见 [roles/架构师.md](roles/架构师.md)）
-   - **模板**：索引表见 [examples/分步设计索引格式.md](examples/分步设计索引格式.md)；单步正文骨架见 [examples/模块设计文档格式.md](examples/模块设计文档格式.md)；测试用例与验证记录见 [examples/测试用例与验证记录格式.md](examples/测试用例与验证记录格式.md)
-   - **单一信源（模块设计路径）**：《开发进度日志》**当前步骤**中的 **「模块设计文档」** 字段为**唯一权威路径**；更新步骤时须同步更新 `3.技术框架设计.md`「分步设计索引」对应行。**`README.md` 不重复填写该路径**（仅写当前步骤与状态，路径以日志为准），避免三处漂移
-2. **安全铁律**：严格遵守 [《安全铁律》](references/安全铁律.md)
-3. **代码规范**：严格遵守 [《代码规范》](references/代码规范.md)
-4. **Git 规范**：
-   - **提交时机（门禁）**：每个开发步骤须在 **测试QA 完成本步验证** 且 **用户回复「通过」确认本步** 之后，方可执行 `git commit`（及向远端推送）。**程序员阶段默认不执行 commit**，代码保留在工作区直至通过上述门禁。
-   - **例外**：仅当用户在本步**明确指令**需要中间备份（如临时 `WIP` 提交）时，可从其约定；默认仍以「整步验收通过后再提交」为准。
-   - **格式**：中文 conventional commit（如 `feat(模块): 描述`），末尾追加 `作者:redcap`；提交后应将 **commit 标识**（如短 SHA 或说明）记入《开发进度日志》对应步骤。
-   - **单一信源**：Git 门禁与格式的**完整定义仅在本条**；其它文件只写「遵照 SKILL Git 规范」或执行动作，**不重复**展开条文。
+Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 `status` 字段作为事件：
+
+| status | 含义 | Dispatcher 动作 |
+|--------|------|----------------|
+| `completed` | 正常完成 | 按状态机推进到下一角色 |
+| `failed` | 执行失败 | 重试 1 次或升级 |
+| `blocked` | 需要升级决策 | L1→PM Agent / L2→用户 |
+| `need_user` | 需要用户信息 | 暂停，向用户转述问题 |
+| `need_revision` | 需要上游修订 | 按 root_cause 回退到对应角色 |
+
+完整定义见 [《通信协议》](references/communication-protocol.md)。
 
 ---
 
-## 程序员自测与测试QA 的分工
+## 4. 项目目录（每个项目的 `开发手册/`）
 
-- **程序员（自测）**：按 [《测试用例与验证记录格式》](examples/测试用例与验证记录格式.md) 在《开发进度日志》维护用例表；执行**实现级自测**（与当前 `designs/` 中【测试方案】、实现一致）；填写「实际结果」「验证证据」「状态」至可移交；**不**出具对整份《需求文档》的最终验收结论。
-- **测试QA**：在同一套表格上复核、补充用例与边界/异常/回归；**独立**对照《需求文档》验证；**唯一**给出本步测试结论（通过/不通过）。汇总统计可从该表推导，**禁止**另用不同列表定义作为主数据。
-
----
-
-## 回退与修订（单一信源，各角色勿重复展开）
-
-### 根因 → 责任角色
-
-| 根因 | 下一责任角色 |
-|------|----------------|
-| 代码/实现缺陷 | 程序员 |
-| 方案/架构/跨步约定不符 | 架构师 |
-| 需求理解偏差、验收标准不清 | 产品经理 |
-
-修复后按**角色工作流**重新正向推进至当前步完成。
-
-### 文档与代码如何处理
-
-1. 回退或返工时，先**标记**受影响范围（步骤、文档、设计可标「待重新评审」「已失效」等），**不擅自删除**仓库内历史内容。  
-2. **经用户明确同意**后，可对过时内容执行**覆盖、重写或精简**（与此前讨论的「直接覆盖」一致，但以用户确认为准）。  
-3. 各 `roles/*.md` **仅保留本角色特有的触发说明**，具体操作一律以本节为准。
-
----
-
-## 执行指令
-
-**当前处于哪个角色？**
-- 读取 `/开发手册/5.开发进度日志.md` 与 `/开发手册/README.md` 确定当前进度
-- 若文件不存在或为空，从**产品经理**角色开始
-
-**当前步以哪份设计为准？**
-- **路径唯一信源**：《开发进度日志》**当前步骤**的「模块设计文档」字段
-- 再读该路径下的 `designs/*.md`；并读 `3.技术框架设计.md` 的跨步技术约定与「分步设计索引」（须与日志一致，必要时先更正索引）
-
-**如何执行角色工作？**
-- 进入角色前，先加载对应角色的子 skill：`/roles/角色名.md`
-- 严格按照子 skill 中的【Start 检查点】→【工作流程】→【End 检查点】执行
-- 完成当前角色后，根据 End 检查点的输出，引导至下一角色
-
-### 渐进式披露（技能包内，减轻无谓上下文）
-
-- **角色文件**：同一任务流中优先只打开**当前** `roles/<角色>.md`；其它角色文档在**即将切换**到该角色时再打开，避免同一轮并行通读四个角色全文。
-- **examples/**：仅在**创建或更新** `/开发手册/` 下对应文档（如索引表、模块设计、进度日志格式等）时按需打开相关示例，不必预先通读全部 `examples/`。
-- **references/**：在**进入程序员角色并开展代码编写、修改或代码审查**之前，须阅读并遵守 [《安全铁律》](references/安全铁律.md) 与 [《代码规范》](references/代码规范.md)（与上文「全局约束」第 2、3 条一致；**不**要求在产品经理等纯需求/纯设计阶段预先通读这两份引用，除非该轮已涉及写改项目代码）。
-
-**如何回退？** → 见上文 **「回退与修订」**。
+```
+开发手册/
+├── shared/                            ← 跨角色共享文档
+│   ├── README.md
+│   ├── 开发进度日志.md
+│   ├── API接口文档.md
+│   ├── codebase-baseline.md           ← 代码库基线快照（迭代模式，§5.14）
+│   └── lessons-learned.md             ← 项目级经验沉淀
+├── pm/                                ← 产品经理工作区
+│   ├── 需求文档.md
+│   └── outbox/                        ← PM 交付物（→ 架构师读取）
+├── architect/                         ← 架构师工作区
+│   ├── 技术栈选型.md
+│   ├── 技术框架设计.md
+│   ├── designs/                       ← 分步模块设计
+│   └── outbox/                        ← 架构师交付物（→ 程序员读取）
+├── programmer/                        ← 程序员工作区
+│   └── outbox/                        ← 程序员交付物（→ QA 读取）
+├── qa/                                ← 测试QA 工作区
+│   └── outbox/                        ← QA 交付物
+├── reviewer/                          ← Reviewer 工作区
+│   └── outbox/                        ← Review 交付物
+└── .workflow/                         ← 流程状态（Dispatcher 管理）
+    ├── state.yaml                     ← 当前状态、步骤、角色
+    ├── sessions.yaml                  ← Session ID 记录
+    └── last-result.json               ← Agent 最近返回的状态 JSON（Dispatcher 写入）
+```
 
 ---
 
-## 角色子 Skill 列表
+## 5. Dispatcher 执行协议
 
-| 子 Skill | 路径 | 说明 |
-|----------|------|------|
-| 产品经理 | [roles/产品经理.md](roles/产品经理.md) | 需求澄清与文档化 |
-| 架构师 | [roles/架构师.md](roles/架构师.md) | 技术选型与框架设计 |
-| 程序员 | [roles/程序员.md](roles/程序员.md) | 代码开发与审查 |
-| 测试QA | [roles/测试QA.md](roles/测试QA.md) | 测试验证与交付 |
+### 5.1 启动流程
+
+1. **检测项目状态**（场景路由）：
+
+   Dispatcher 按以下优先级依次检测，命中第一个即停：
+
+   | 优先级 | 检测条件 | 场景 | 入口动作 |
+   |--------|---------|------|----------|
+   | 1 | `.workflow/state.yaml` 存在 且 `current_state != ALL_DONE` | **S2: 中断恢复** | 从断点恢复（原有逻辑） |
+   | 2 | `.workflow/state.yaml` 存在 且 `current_state == ALL_DONE` | **S1: 迭代开发**（当前版 RedCap 项目） | 进入迭代启动流程（§5.14） |
+   | 3 | `开发手册/1.需求文档.md` 存在（旧版扁平结构） | **S3: 旧版项目** | 触发向后兼容迁移（§8）→ 再按 S1 进入迭代流程 |
+   | 4 | 项目根目录有代码文件但无 `开发手册/` 目录 | **S4: 非 RedCap 已有项目纳管** | 代码库扫描生成基线（§5.14.2）→ 初始化 `开发手册/` → 正常流程 |
+   | 5 | 以上均不满足 | **S0: 全新项目** | 初始化新项目（创建 `开发手册/` 骨架 + `.workflow/`） |
+
+2. **经验回顾**：读取 `knowledge/lessons.md`，检查本项目是否涉及已知陷阱（如 Agent 调用方式、路由策略等）。若命中，在当步骤的 Prompt 中注入相关 Lesson 作为防护提示。
+
+3. **初始化 `.workflow/`**（S0/S4 场景）：
+   ```yaml
+   # state.yaml 初始内容
+   project: "项目名称"
+   current_state: "INIT"
+   iteration: 1              # 迭代版本号（§5.14）
+   current_step: 0
+   total_steps: 0
+   current_role: null
+   history: []
+   paused_from: null
+   escalation_stack: []
+   feishu_record_id: null
+   pending_actions: []       # §5.13 双保险待办清单
+   ```
+
+4. **设置 `current_state: PM_WORKING`**，启动产品经理 Agent
+
+> **S4 特殊处理**：在步骤 4 之前，先执行代码库扫描（§5.14.2），产出 `codebase-baseline.md` 后再启动 PM。
+
+### 5.2 事件循环（每轮执行）
+
+事件循环只回答一个问题：**下一步调谁？** 所有副作用（git、清理、经验沉淀等）通过 Hooks 触发（§5.10）。
+
+```
+0. 【防退化】按 dispatcher/reload-rules.yaml 重载常驻规范（§5.12）
+   - 每次角色切换时：重读 §5.10 Hooks表 + §5.7 交付物校验 + §5.5 路由
+   - 即将 commit 时：重读 references/commit-standards.md
+   - 即将结束（ALL_DONE）时：重读 §5.9 收尾清理 + §5.11 飞书通知
+   - 进入 PAUSED 时：重读 §5.11 飞书通知集成
+1. 读取 .workflow/state.yaml + pending_actions（§5.13）
+   - 若存在未完成的 pending_actions → 按序执行 → 清除已完成项
+2. 若 current_state == ALL_DONE → 触发 on_ALL_DONE hooks → 输出最终摘要，结束
+3. 若 current_state == PAUSED → 向用户转述问题，等待回复
+4. 若 current_state 为 *_DONE 或自动转移 → 查转移表 → 更新 state
+5. 若 current_state 为 *_WORKING →
+   a. 确定角色 + Agent CLI（若首选不可用，按 Fallback 路由切换，§5.5）
+   b. 组装 Prompt：读模板 → 按变量映射表（§5.4）填充 → 写入文件
+      `.workflow/{role}-prompt-step{N}.md`，CLI 用 `$(cat ...)` 读取
+   c. 获取或创建 Session（§5.6）
+   d. 执行 CLI 命令（阻塞等待返回）
+   e. 解析返回 → 提取 __redcap_status（§5.3）
+   f. 将 __redcap_status 写入 .workflow/last-result.json
+   g. 交付物完整性校验（§5.7），不通过则重试 Agent
+   h. 触发匹配的 hooks（§5.10，如 QA completed → on_QA_PASS）
+   i. 根据 status 查转移表 → 更新 state.yaml + sessions.yaml
+   j. 向用户汇报当前进展（一句话摘要）
+6. 回到步骤 1
+```
+
+> **PAUSED 状态的飞书协作**：步骤 3 进入 PAUSED 状态时，Dispatcher 执行**前台阻塞式** `feishu-notifier.py ask`（无限等待）。脚本在飞书多维表格创建记录后持续轮询，用户在飞书中回复后脚本退出、Dispatcher 自动拿到回复内容并注入 Session 恢复流程。若返回 SKIP（飞书未配置），回退到终端交互模式。中断恢复：若 `state.yaml` 中存在 `feishu_record_id`，Dispatcher 调用 `resume` 命令直接轮询该记录而非新建。
+6. 回到步骤 1
+```
+
+> **铁律**：Dispatcher 在未获得用户授权的情况下**不得**直接修改项目源代码或代为生成交付物。所有 Agent 不可用时，Dispatcher 必须暂停流程并向用户提供降级选项（详见 [《Agent适配器》§6.5](dispatcher/agent-adapters.md)）。
+> ⚠ 此铁律仅约束**项目文件**（源代码、设计文档、测试报告等 Agent 产出）。`.workflow/` 下的框架状态文件（state.yaml、last-result.json 等）由 Dispatcher 自行维护，不受此限制。
+
+### 5.3 状态解析策略
+
+```
+优先级 1：从 CLI 返回的 response 文本中正则提取 __redcap_status JSON
+优先级 2：读取 .workflow/last-result.json（兜底）
+均失败 → 标记 status="failed"，重试 1 次
+```
+
+> `last-result.json` 的权威写入方是 Dispatcher（步骤 5.f）。
+
+### 5.4 Prompt 变量映射表
+
+Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
+
+**通用变量（所有角色共用）**：
+```
+{{handbook_content}}       → 读取 roles/{role}/handbook.md 全文
+{{project_dir}}            → 项目根目录绝对路径
+{{dev_manual_dir}}         → 开发手册/ 绝对路径
+{{current_step}}           → state.yaml.current_step
+{{total_steps}}            → state.yaml.total_steps
+{{step_name}}              → state.yaml.current_step_name
+{{additional_context}}     → Dispatcher 补充的上下文信息（可为空）
+```
+
+**产品经理专用**：
+```
+{{user_intent}}            → 用户原始需求描述
+{{existing_context}}       → 已有项目上下文（迭代模式下包含：已有需求摘要 + codebase-baseline 摘要；首次为空）
+{{iteration_mode}}         → 迭代模式标识："new"（S0全新）/ "iterate"（S1/S3迭代）/ "onboard"（S4纳管）
+{{previous_requirements}}  → 上一版需求文档全文路径（迭代时非空，如 pm/需求文档-v1.md）
+{{user_answer}}            → 用户回复内容（恢复 Session 时）
+{{source_role}}            → 发起回退的角色名（需求回退时）
+{{revision_description}}   → 回退问题描述（需求回退时）
+```
+
+**架构师专用**：
+```
+{{pm_outbox_content}}      → 读取 pm/outbox/需求文档.md（迭代模式下读取最新版增量需求）
+{{existing_designs}}       → 已有 architect/designs/ 下的文件列表及摘要
+{{codebase_baseline}}      → 读取 shared/codebase-baseline.md（迭代/纳管模式非空）
+{{iteration_mode}}         → 迭代模式标识：同上
+{{design_doc_filename}}    → 当前步骤对应的设计文档文件名（回退时）
+{{source_role}}            → 发起回退的角色名
+{{revision_description}}   → 回退问题描述
+{{failed_items}}           → 缺陷列表（QA 回退设计时）
+{{escalation_context}}     → L1 升级的上下文信息
+{{escalation_question}}    → L1 升级的具体问题
+{{escalation_recommendation}} → 发起方的建议
+```
+
+**程序员专用**：
+```
+{{architect_outbox_content}} → 读取 architect/outbox/步骤X-{模块名}.md
+{{tech_framework_summary}} → 读取 architect/技术框架设计.md
+{{entry_type}}             → 入口类型：A=新开发步 / B=同步迭代 / C=维护轻量
+{{design_doc_filename}}    → 设计文档文件名（回退修复时）
+{{failed_items}}           → QA 发现的缺陷列表（代码回退时）
+```
+
+**测试QA 专用**：
+```
+{{pm_requirement_summary}} → 读取 pm/outbox/需求文档.md（或 pm/需求文档.md）
+{{architect_design_test_plan}} → 读取 architect/outbox/ 中的测试方案部分
+{{programmer_outbox_content}} → 读取 programmer/outbox/步骤X-自测报告.md
+{{codebase_baseline}}      → 读取 shared/codebase-baseline.md（迭代模式下用于回归测试范围判定）
+{{iteration_mode}}         → 迭代模式标识：同上
+{{fixed_by_role}}          → 修复缺陷的角色名（回归测试时）
+{{original_failed_items}}  → 原始缺陷列表（回归测试时）
+{{fix_description}}        → 修复说明（回归测试时）
+{{user_answer}}            → 用户人工验证结果（恢复 Session 时）
+```
+
+### 5.5 Agent Fallback 路由
+
+当首选 Agent 不可用（频控、超时、连续失败）时，按备选顺序切换：
+
+```yaml
+fallback_routing:
+  product-manager: ["kimi", "claude-code", "gemini"]
+  architect:       ["gemini", "kimi", "claude-code"]
+  programmer:      ["gemini", "kimi", "claude-code"]
+  qa:              ["kimi", "claude-code", "gemini"]
+  reviewer:        ["gemini", "kimi", "claude-code"]
+```
+
+切换条件：首选 Agent 连续 2 次返回失败（含频控 429）或 CLI 进程超时无响应。切换后在 `state.yaml` 的 `current_role.agent` 中记录实际使用的 Agent。
+
+**新步骤自动重置**：每个新步骤开始时，所有 Agent 的失败计数自动归零，重新从首选开始尝试。
+**用户指令重置**：用户告知某 Agent 已恢复时，立即重置该 Agent 的健康状态。
+**所有 Agent 均不可用**：暂停流程，向用户提供降级选项（详见 [《Agent适配器》§6.5](dispatcher/agent-adapters.md)）。
+
+### 5.6 Session 管理
+
+```
+获取 Session：
+  key = "{role}-step{current_step}"
+  若 sessions.yaml[key] 存在且 status != "expired" → 使用 --resume 传入 session_id
+  否则 → 新建 Session，CLI 返回后将 session_id 写入 sessions.yaml
+
+更新 Session：
+  Agent 完成后，从 CLI 返回 JSON 中提取 session_id
+  写入 sessions.yaml：{ agent, session_id, status, created_at, resume_count }
+  同一角色同步骤的重试复用同一 Session（resume_count++）
+
+Session 过期处理：
+  --resume 调用失败（Session 不存在或过期）→ fallback 到新建 Session
+  标记旧 Session status="expired"
+```
+
+### 5.7 交付物完整性校验
+
+Agent 返回 `status: "completed"` 时，Dispatcher **必须**在推进状态前执行以下校验：
+
+```
+1. __redcap_status 必填字段检查：status、summary、deliverables 均须存在
+2. deliverables 列表非空检查：至少包含 1 个交付物路径
+3. 磁盘验证：遍历 deliverables 中每个路径，确认文件实际存在于磁盘
+4. outbox 目录非空检查：对应角色的 outbox/ 目录至少有 1 个文件
+
+校验不通过处理：
+  a. 第 1 次失败 → 重试同一 Agent（注入提示："上次交付物不完整，请确保写入以下文件：{缺失列表}"）
+  b. 第 2 次仍失败 → 切换 Fallback Agent 重试
+  c. Fallback 也失败 → 向用户报告，暂停流程（PAUSED）
+  ⚠️ 任何情况下 Dispatcher 都不得代为生成交付物
+```
+
+### 5.8 经验沉淀（Lessons Learned）
+
+> 触发时机由 Hooks（§5.10）统一管理，本节仅定义规则。
+
+#### 存储位置
+
+```
+开发手册/shared/lessons-learned.md    ← 项目级经验（当前项目积累）
+/redcap/knowledge/lessons.md          ← 框架级经验（跨项目复用）
+```
+
+#### 写入规则
+
+Dispatcher 检查 `__redcap_status.lesson` 字段，若非空则格式化后追加到 `shared/lessons-learned.md`：
+
+```markdown
+### L-{序号}: {一句话标题}
+- **场景**：{触发场景描述}
+- **根因**：{问题的根本原因}
+- **经验规则**：{可复用的经验（什么情况下应该/不应该做什么）}
+- **来源**：步骤{N}, {角色}, {日期}
+```
+
+#### 消费方式
+
+Dispatcher 组装 Prompt 时，将 `lessons-learned.md` 的**近期 5 条**注入 `{{additional_context}}`。
+
+#### 协议字段
+
+Agent 通过 `__redcap_status` 的可选 `lesson` 字段提交经验（详见 [《通信协议》](references/communication-protocol.md)）。
+
+### 5.9 收尾清理规则
+
+> 触发时机由 on_ALL_DONE hook（§5.10）管理，本节仅定义清理内容。
+
+```
+1. 清除 .workflow/ 下的临时文件：
+   - 删除 *-prompt-*.md、*-prompt-*.txt、*-system-prompt.txt、run-*.sh
+   - 保留：state.yaml、sessions.yaml、last-result.json、agent-registry.yaml
+
+2. 清除项目根目录的错位文件：
+   - 根目录下的 last-result.json、.workflow/、__redcap_status 残留
+   - 名称为 Shell 特殊字符的异常目录/文件（如 `>`、`<`、`|` 等）
+```
+
+### 5.10 状态转移 Hooks
+
+Hooks 定义「某事发生后还要做什么」，与事件循环（§5.2）的调度逻辑分离。
+Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应 hooks：
+
+| Hook | 触发时机 | 动作 |
+|------|---------|------|
+| `on_QA_PASS` | QA 返回 completed 且校验通过 | ① `git add -A && git commit`（按[《Commit 规范》](references/commit-standards.md)格式，§6.4）② 检查 `lesson` → 写入经验（§5.8） |
+| `on_need_revision` | 任意角色返回 need_revision | ① 检查 `lesson` → 写入经验（§5.8） |
+| `on_ALL_DONE` | 流程结束 | ① 执行收尾清理（§5.9）② 输出最终交付摘要 ③ 飞书通知（§5.11，消息须附带本次所有 commit 记录：`git log --oneline <初始HEAD>..HEAD`） |
+| `on_PAUSED` | 进入 PAUSED 状态（need_user 或 升级） | ① 飞书 ask（§5.11）：前台阻塞推送问题并等待回复；若存在 `feishu_record_id` 则改用 resume |
+| `on_ALL_AGENT_FAIL` | 所有 Agent 均不可用 | ① 飞书 ask（§5.11）：推送降级确认请求，前台阻塞等待 |
+| `on_QA_FAIL_MAX_RETRY` | 同步骤 QA 失败超过 3 次 | ① 飞书 ask（§5.11）：推送循环失败警报，前台阻塞等待 |
+
+**执行原则**：
+- hooks 内的动作按序号顺序执行，任一失败不阻塞后续（记录警告即可）
+- hooks 不改变状态机转移结果，只附加副作用
+- `on_PAUSED` 和 `on_ALL_AGENT_FAIL` 中的飞书 ask/resume 为**前台阻塞式**：Dispatcher 以 `isBackground=false, timeout=0` 执行脚本，脚本退出后 Dispatcher 自动获得回复并恢复流程
+- 飞书通知类 hook（on_PAUSED / on_ALL_AGENT_FAIL / on_QA_FAIL_MAX_RETRY）均为可选：当本地未配置 `feishu-config.json` 时自动跳过，不影响流程
+
+### 5.11 飞书通知集成
+
+通过 `tools/feishu-notifier.py` 实现人机协作通知，让用户在飞书端即时知晓流程状态并可远程响应。
+
+**前置条件**：项目根目录存在 `feishu-config.json`（本地配置，已在 .gitignore 中排除）。若不存在或 `notify_enabled=false`，所有飞书通知自动跳过，不影响流程。
+
+**CLI 接口**：
+
+```bash
+# 首次使用 — 自动创建多维表格 + 字段，更新配置
+python3 tools/feishu-notifier.py setup
+
+# 非阻塞通知（on_ALL_DONE 等）
+python3 tools/feishu-notifier.py notify "消息内容" --project "项目名"
+
+# 阻塞式提问（on_PAUSED / on_ALL_AGENT_FAIL，前台阻塞等待用户在多维表格中回复）
+python3 tools/feishu-notifier.py ask "问题内容" --project "项目名" --fsm-state "PAUSED"
+# stderr 输出 FEISHU_RECORD_ID=xxx（Dispatcher 须写入 state.yaml）
+# stdout 输出用户回复内容，或 TIMEOUT/SKIP
+
+# 恢复轮询（Agent 中断后重启，继续等待已有记录的回复）
+python3 tools/feishu-notifier.py resume <record_id>
+# stdout 输出用户回复内容，或 TIMEOUT
+
+# 阻塞式确认（降级授权等场景）
+python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
+# stdout 输出 CONFIRMED 或 CANCELLED
+```
+
+**触发场景与命令映射**：
+
+| 场景 | Hook | 命令 | 说明 |
+|------|------|------|------|
+| 流程完成 | `on_ALL_DONE` | `notify` | 推送完成摘要 + commit 记录，非阻塞 |
+| 需要用户信息 | `on_PAUSED` | `ask` | 前台阻塞等待用户在多维表格回复 |
+| 中断恢复 | `on_PAUSED`（重启） | `resume` | 轮询已有记录，不新建 |
+| 所有 Agent 不可用 | `on_ALL_AGENT_FAIL` | `ask` | 推送降级确认请求，前台阻塞等待 |
+| QA 循环失败 | `on_QA_FAIL_MAX_RETRY` | `ask` | 推送循环失败警报，前台阻塞等待 |
+
+**回复处理（前台阻塞）**：
+- Dispatcher 以**前台阻塞**方式执行 `feishu-notifier.py ask`（`isBackground=false, timeout=0`）
+- 脚本创建多维表格记录后，**同时向 stderr 输出 `FEISHU_RECORD_ID=xxx`**，Dispatcher 读取后写入 `state.yaml` 的 `feishu_record_id` 字段
+- 用户在飞书多维表格回复 → 脚本检测到 → stdout 输出回复内容 → 命令结束 → Dispatcher 自动获得回复并继续流程
+- `ask` 返回 SKIP → 飞书未配置，回退到终端等待用户输入（原有行为）
+
+**中断恢复**：
+- 若 Agent 在等待期间被终止，`state.yaml` 中已持久化 `feishu_record_id`
+- 下次启动时 Dispatcher 检测到 `current_state == PAUSED` 且 `feishu_record_id` 非空 → 调用 `feishu-notifier.py resume <record_id>` 直接轮询旧记录
+- 用户无需重新回复，之前在飞书填的回复仍然有效
+
+**关于轮询开销**：飞书轮询为纯 HTTP GET 请求（每 5 秒 1 次），不消耗 AI token，飞书 API 在正常用量下免费。
+
+### 5.12 常驻规范重载（防退化机制）
+
+**问题**：SKILL.md 在 skill 触发时一次性读入上下文，随着长任务推进，上下文压缩会导致 hooks 细节、校验规则、路由策略等关键规则退化。
+
+**解法**：在事件循环的关键检查点，通过 `read_file` 重新加载规范文件段落，强制刷新上下文中的规则。
+
+**配置文件**：`dispatcher/reload-rules.yaml`，定义了 4 个检查点：
+
+| 检查点 | 触发时机 | 重读内容 |
+|--------|---------|---------|
+| `on_role_switch` | 角色切换时（如 PM→ARCH、DEV→QA） | §5.10 Hooks、§5.7 交付物校验、§5.5 Fallback 路由 |
+| `before_commit` | 即将执行 git commit | references/commit-standards.md |
+| `before_task_complete` | 即将结束任务（ALL_DONE） | §5.9 收尾清理、§5.11 飞书通知 |
+| `on_paused` | 进入 PAUSED 状态 | §5.11 飞书通知集成 |
+
+**执行方式**：事件循环步骤 0（§5.2）中，Dispatcher 读取 `reload-rules.yaml`，根据当前状态判断命中哪些检查点，然后 `read_file` 对应文件段落。
+
+**设计原则**：
+- 以角色切换为主检查点（`on_role_switch`），频率适中（一个完整项目约 10-20 轮，角色切换约 5-8 次）
+- 每次重读仅加载关键段落（非整个 SKILL.md），增量约 500-1000 tokens
+- 配置文件可扩展：后续发现新的退化风险点时，只需向 yaml 添加条目
+
+**子 Agent 级防退化**：
+Dispatcher 级的 reload-rules 只保护 Dispatcher 自身。子 Agent 在执行长任务时同样面临上下文压缩导致约束丢失的风险。对策：
+- 共享约束文件 `references/agent-constraints.md` 中内置了子 Agent 级检查点规则（§4 防退化检查点）
+- 通过项目级 CLAUDE.md / GEMINI.md 的 `@` 导入机制，在 Agent 启动时注入约束
+- 具体模板见 `dispatcher/agent-adapters.md` §11.2/§11.4
+
+### 5.13 Pending Actions（双保险机制）
+
+**问题**：即使通过 §5.12 重载了规则，Dispatcher 仍需"记住"当前状态下还有哪些待办动作。若 hooks 表细节在两次重载之间被压缩，可能遗漏动作。
+
+**解法**：在状态转移时，由转移逻辑将下一步的必做动作写入 `state.yaml` 的 `pending_actions` 字段。Dispatcher 每轮读 `state.yaml` 时自然会看到待办清单。
+
+```yaml
+# state.yaml 中追加字段
+pending_actions:
+  - action: "git_commit"
+    rule_file: "references/commit-standards.md"
+  - action: "check_lesson"
+    rule_file: "knowledge/lessons.md"
+```
+
+**生命周期**：
+1. **写入**：状态转移时（§5.2 步骤 5i），根据目标状态 + hooks 表，自动填充 `pending_actions`
+2. **执行**：下一轮事件循环步骤 1（§5.2），Dispatcher 遍历 `pending_actions`，逐项执行
+3. **清除**：执行完毕后清空 `pending_actions`
+
+**转移→Actions 映射**：
+
+| 转移目标状态 / 事件 | 自动填充的 pending_actions |
+|-------------------|---------------------------|
+| `QA_PASS` | `git_commit`（rule: commit-standards.md）、`check_lesson`（rule: lessons.md） |
+| `ALL_DONE` | `cleanup`（rule: §5.9）、`final_summary`、`feishu_notify`（rule: §5.11） |
+| `PAUSED` | `feishu_ask`（rule: §5.11） |
+| event=`need_revision` | `check_lesson`（rule: lessons.md） |
+| `ALL_AGENT_FAIL` | `feishu_ask`（rule: §5.11） |
+| QA 失败超过 3 次 | `feishu_ask`（rule: §5.11） |
+| 其他 `*_DONE` | 无 |
+
+**与 §5.12 的关系**：§5.12 保证规则不退化，§5.13 保证动作不遗漏。两者互补，非替代关系。
+
+### 5.14 迭代开发协议（1→x）
+
+本节定义 RedCap 在已有项目上进行迭代开发的完整协议。适用于 S1（当前版迭代）、S3（旧版迁移后迭代）、S4（非 RedCap 项目纳管）三种场景。
+
+#### 5.14.1 场景分类与入口
+
+| 场景 | 检测标志 | 前置处理 | 入口流程 |
+|------|---------|---------|---------|
+| **S1: 当前版 RedCap 迭代** | `state.yaml` 存在 + `current_state == ALL_DONE` | 无 | 迭代启动（§5.14.3） |
+| **S3: 旧版 RedCap 项目** | `开发手册/1.需求文档.md` 存在 | 先执行 §8 目录迁移 | 迁移完成后 → 按 S1 迭代启动 |
+| **S4: 非 RedCap 已有项目** | 有代码但无 `开发手册/` | 代码库扫描（§5.14.2） | 扫描完成后 → 初始化 `开发手册/` → PM 启动 |
+
+#### 5.14.2 代码库扫描（Codebase Scan）
+
+**触发时机**：S1 迭代启动时（更新已有基线）或 S4 纳管时（首次生成基线）。
+
+**执行者**：架构师 Agent（技术理解能力最强）。
+
+**Dispatcher 动作**：
+1. 设置 `current_state: SCAN_WORKING`，启动架构师 Agent
+2. Prompt 中注入 `{{scan_mode}}`：`"update"`（S1）或 `"full"`（S4）
+3. Agent 返回后，校验 `codebase-baseline.md` 已写入磁盘
+
+**产出文件**：`开发手册/shared/codebase-baseline.md`
+
+```markdown
+# 代码库基线快照
+
+## 生成信息
+- 扫描时间：YYYY-MM-DD HH:mm
+- 扫描模式：full / update
+- 迭代版本：i{N}
+
+## 1. 项目结构
+- 目录树概览（深度 3 级）
+- 核心入口文件
+
+## 2. 技术栈实况
+| 技术领域 | 实际使用 | 版本 |
+|----------|---------|------|
+| 语言 | | |
+| 框架 | | |
+| 数据库 | | |
+
+## 3. 模块依赖图
+- 核心模块列表及职责
+- 模块间调用关系（文字或 Mermaid）
+
+## 4. 数据模型现状
+- 数据库表/集合清单（如涉及）
+- 核心实体关系
+
+## 5. 已有 API 清单
+| 路径 | 方法 | 用途 | 所属模块 |
+|------|------|------|---------|
+
+## 6. 已知技术债务
+- 代码异味、遗留 TODO、已知缺陷
+```
+
+> **S1 update 模式**：Agent 读取上一版 `codebase-baseline.md`，仅更新变化部分（新增模块、删除模块、API 变更），不重写未变部分。
+
+#### 5.14.3 迭代启动流程（S1 主流程）
+
+```
+1. 读取 state.yaml，确认 current_state == ALL_DONE
+2. 递增 iteration: N+1
+3. 重置迭代相关字段：
+   - current_state → SCAN_WORKING（先扫描代码库）
+   - current_step → 0
+   - total_steps → 0
+   - current_role → null
+   - 保留 history（追加，不清空）
+4. 执行代码库扫描（§5.14.2，scan_mode="update"）
+5. 扫描完成后 → current_state → PM_WORKING
+6. PM 以增量模式启动（§5.14.4）
+```
+
+**步骤编号规则**：迭代模式下步骤记为 `i{iteration}-step{N}`（如 `i2-step1`）。每次新迭代 `current_step` 从 1 重新开始，但 `history` 保留所有迭代的完整记录。
+
+#### 5.14.4 增量需求协议（PM 迭代模式）
+
+当 `{{iteration_mode}} == "iterate"` 或 `"onboard"` 时，PM 不再写覆盖式需求文档，而是写**增量需求文档**。
+
+**版本管理**：
+- 上一版需求文档重命名为 `pm/需求文档-v{N-1}.md`（归档）
+- 新版写入 `pm/需求文档.md` 和 `pm/outbox/需求文档.md`
+
+**增量需求文档结构**：
+
+```markdown
+# 需求文档（迭代 v{N}）
+
+## 0. 迭代概述
+- 迭代目标
+- 相对上一版本的核心变化
+
+## 1. 新增功能
+| 功能模块 | 功能描述 | 优先级 | 验收标准 |
+|----------|----------|--------|----------|
+
+## 2. 变更功能
+| 原功能 | 变更内容 | 变更原因 | 新验收标准 |
+|--------|---------|---------|-----------|
+
+## 3. 废弃功能
+| 功能模块 | 废弃原因 | 迁移/兼容方案 |
+|----------|---------|-------------|
+
+## 4. 不变功能（引用）
+> 以下功能延续上一版本，不做修改。详见 pm/需求文档-v{N-1}.md
+
+## 5. 非功能需求变更
+（仅列变化项）
+
+## 6. 验收标准
+- 新增功能验收 checklist
+- 变更功能回归验收 checklist
+```
+
+#### 5.14.5 架构影响分析（Architect 迭代模式）
+
+当 `{{iteration_mode}} == "iterate"` 或 `"onboard"` 时，架构师在步骤规划前**必须先做影响分析**。
+
+**在 `技术框架设计.md` 中新增「影响分析」节**：
+
+```markdown
+## 影响分析（迭代 v{N}）
+
+### 受影响的已有模块
+| 模块名 | 影响类型 | 改动范围 | 回归风险 |
+|--------|---------|---------|---------|
+| | 新增依赖/接口变更/逻辑修改/数据模型变更 | 高/中/低 | 高/中/低 |
+
+### 不受影响的模块（确认）
+- 模块A：与本次需求无交集
+- 模块B：仅读取不写入，无副作用
+
+### 步骤分类
+| 步骤 | 类型 | 说明 |
+|------|------|------|
+| i2-step1 | 改造已有模块 | 修改用户模块支持新角色 |
+| i2-step2 | 纯新增 | 新增通知模块 |
+```
+
+**步骤类型**标注为「纯新增」或「改造已有模块」，供程序员和 QA 判断回归测试范围。
+
+#### 5.14.6 回归测试协议（QA 迭代模式）
+
+当 `{{iteration_mode}} == "iterate"` 或 `"onboard"` 时，QA 除执行当前步骤测试外，**必须执行回归测试**：
+
+1. **回归范围判定**：读取 `codebase-baseline.md` 的已有 API 清单 + 架构师影响分析中标注为「改造已有模块」的步骤
+2. **核心路径回归**：从已有 API 中选取**受影响模块的核心路径**（非全量），执行冒烟级回归
+3. **回归结果记录**：在测试报告中增加「回归测试」节，与当前步骤测试分开记录
+4. **回归失败处理**：按 `root_cause=code` 回退程序员，在 `revision.description` 中注明"回归测试失败"
+
+#### 5.14.7 状态机扩展
+
+迭代模式新增一个状态：
+
+| 状态 | 说明 |
+|------|------|
+| `SCAN_WORKING` | 代码库扫描进行中（架构师 Agent） |
+| `SCAN_DONE` | 代码库扫描完成 |
+
+**转移规则**：
+```
+SCAN_WORKING    completed    SCAN_DONE       读取 codebase-baseline.md
+SCAN_DONE       (自动)       PM_WORKING      启动 PM（增量模式）
+SCAN_WORKING    failed       SCAN_WORKING    重试 1 次或 Fallback Agent
+```
+
+---
+
+## 6. 全局约束
+
+所有 Agent 在执行工作时必须遵守（通过 Prompt 注入）：
+
+1. **文档规范**：
+   - 目录结构见 §4
+   - 分步/模块设计存于 `architect/designs/`，每步独立文件
+   - `技术框架设计.md` 只保留整体框架 + 分步设计索引，不堆叠长篇正文
+   - 每个 `designs/` 文件末尾须含 **【下一步】**
+   - **模板引用**：索引表见 [《分步设计索引》](roles/architect/templates/step-design-index.md)；模块设计骨架见 [《模块设计文档》](roles/architect/templates/module-design-doc.md)；测试用例见 [《测试用例》](roles/qa/templates/test-cases.md)
+   - **单一信源**：《开发进度日志》当前步骤的「模块设计文档」字段为唯一权威路径
+
+2. **安全铁律**：严格遵守 [《安全铁律》](references/security-rules.md)
+
+3. **代码规范**：严格遵守 [《代码规范》](references/code-standards.md)
+
+4. **Git 规范**：严格遵守 [《Commit 规范》](references/commit-standards.md)
+   - **门禁**：每步须在 QA 通过后方可 commit（由 `on_QA_PASS` hook 自动执行，§5.10）
+   - **格式**：`type(scope): 描述`，末尾追加 `作者:redcap`（详见规范文件）
+   - **push 权限**：Dispatcher **不得自动 push**。仅在用户明确指示（如"推送"、"push"）时才执行 `git push`
+   - **例外**：用户明确指令中间备份（WIP commit）时可从其约定
+
+---
+
+## 7. 回退与修订
+
+### 根因 → 回流角色
+
+| root_cause | 回流角色 | 说明 |
+|-----------|---------|------|
+| `code` | programmer | 代码/实现缺陷 |
+| `design` | architect | 方案/架构/跨步约定问题 |
+| `requirement` | product-manager | 需求理解偏差、验收标准不清 |
+
+Dispatcher 收到 `need_revision` 事件后，按 `revision.root_cause` 查此表，触发对应 Agent Session（可恢复或新建），注入回退原因。修复后沿正向流程返回发起方 Agent 继续。
+
+### 三级决策升级
+
+| 级别 | 决策者 | 触发条件 |
+|------|--------|---------|
+| L0 | Agent 自主决策 | 默认，90% 的决策 |
+| L1 | PM Agent 决策 | Agent 返回 `blocked` + `escalation.level=1` |
+| L2 | 用户人工决策 | L1 PM 也无法决策，或 Agent 直接 L2 |
+
+---
+
+## 8. 向后兼容（旧版项目迁移）
+
+当检测到 `开发手册/1.需求文档.md` 存在（旧版扁平结构）时：
+
+1. **识别**：Dispatcher 自动检测旧版标志文件
+2. **确认**：向用户说明将进行目录迁移，请求确认
+3. **迁移映射**：
+   ```
+   开发手册/1.需求文档.md       → 开发手册/pm/需求文档.md
+   开发手册/2.技术栈选型.md     → 开发手册/architect/技术栈选型.md
+   开发手册/3.技术框架设计.md   → 开发手册/architect/技术框架设计.md
+   开发手册/4.API接口文档.md    → 开发手册/shared/API接口文档.md
+   开发手册/5.开发进度日志.md   → 开发手册/shared/开发进度日志.md
+   开发手册/designs/            → 开发手册/architect/designs/
+   开发手册/README.md           → 开发手册/shared/README.md
+   ```
+4. **初始化**：创建 `.workflow/state.yaml`，根据迁移后的进度日志推断 `current_state`
+5. **继续**：正常进入事件循环
