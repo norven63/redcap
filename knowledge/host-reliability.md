@@ -175,28 +175,50 @@
 1. GEMINI.md 中保持关键提醒（每次 prompt 重发）
 2. 下次启动审计
 
-### 4.3 收尾脚本封装（降低 LLM 记忆负担）
+### 4.3 收尾脚本封装（已实现）
 
-将 on_ALL_DONE 的 3 个动作封装为 1 个脚本：
+关键 hook 的多步动作已封装为确定性 shell 脚本：
 
-```bash
-# tools/redcap-on-complete.sh
-# 用途：on_ALL_DONE 收尾动作一站式执行
-# 参数：$1 = 项目名  $2 = 初始 commit hash（可选）
-```
+| 脚本 | 对应 Hook | 封装的动作 | 调用示例 |
+|------|----------|-----------|---------|
+| `tools/redcap-on-complete.sh` | `on_ALL_DONE` | ① 清除 .workflow/ 临时文件（§5.9）② 输出交付摘要 ③ 飞书通知（§5.11） | `bash tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>` |
+| `tools/redcap-on-qa-pass.sh` | `on_QA_PASS` | ① git add -A && git commit（按 commit-standards.md）② 检查 lesson 字段 | `bash tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]` |
 
-脚本内容应包含：
-1. 清除 `.workflow/` 临时文件（§5.9）
-2. 飞书通知（§5.11，附带 commit 记录）
-3. 输出最终摘要到 stdout
-
-**好处**：Dispatcher 只需记住"调一个脚本"，而不是"记住 3 个步骤每步的细节"。
+**好处**：Dispatcher 只需记住"调一个脚本"，而不是"记住 N 个步骤每步的细节"。
 
 ### 4.4 下次启动审计（Layer 3）
 
-在 §5.1 启动流程中增加检查：
-- 若 `current_state == ALL_DONE` 且 `pending_actions` 非空 → 说明上次遗漏了收尾动作 → 立即补执行
+在 §5.1 启动流程中增加检查（已实现为 §5.1 步骤 2.5）：
+- 若 `pending_actions` 非空 → 说明上次会话遗漏了收尾动作 → 立即补执行
 - 这一层在新会话第一轮执行，attention 最强，最可靠
+
+### 4.5 工作流节点→防护措施映射
+
+基于系统性梳理，将 RedCap 所有工作流节点按可靠性风险分类：
+
+#### Category 1 — 关键节点（必须 100% 执行）
+
+| 节点 | 风险 | 已有防护 | 剩余风险 |
+|------|------|---------|---------|
+| `on_ALL_DONE`（清理+摘要+飞书） | E2E 已实际遗漏（L-9） | ✅ 脚本封装 + pending_actions + 启动审计 + Claude Stop hook | 低：VS Code/Gemini 无 hook，依赖 Layer 2+3 |
+| `on_QA_PASS`（git commit） | 遗漏则代码可能丢失 | ✅ 脚本封装 + pending_actions | 低：pending_actions 原子写入保障 |
+| `§5.13 pending_actions 写入` | 递归遗忘问题 | ✅ 原子写入铁律（与 current_state 同一次写入） | 中：仍为 LLM 执行，但降为单一操作 |
+
+#### Category 2 — 可恢复节点（遗漏可补救）
+
+| 节点 | 恢复方式 |
+|------|---------|
+| §5.7 交付物校验 | 下轮 QA 会发现 |
+| §5.5 Fallback 路由 | Agent 失败自动触发 |
+| §5.8 经验沉淀 | 手动补录，不阻塞流程 |
+
+#### Category 3 — 已天然安全的节点
+
+| 节点 | 安全原因 |
+|------|---------|
+| §5.2 步骤 1 读 state.yaml | 事件循环首步，attention 最强 |
+| §5.3 状态解析 | 机械操作，不依赖记忆 |
+| §5.6 Session 管理 | 查询型操作，幂等 |
 
 ---
 

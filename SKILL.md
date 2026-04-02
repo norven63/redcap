@@ -382,9 +382,9 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 
 | Hook | 触发时机 | 动作 |
 |------|---------|------|
-| `on_QA_PASS` | QA 返回 completed 且校验通过 | ① `git add -A && git commit`（按[《Commit 规范》](references/commit-standards.md)格式，§6.4）② 检查 `lesson` → 写入经验（§5.8） |
+| `on_QA_PASS` | QA 返回 completed 且校验通过 | **执行脚本**：`bash tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]`（封装 git commit + lesson 检查，按[《Commit 规范》](references/commit-standards.md)格式） |
 | `on_need_revision` | 任意角色返回 need_revision | ① 检查 `lesson` → 写入经验（§5.8） |
-| `on_ALL_DONE` | 流程结束 | ① 执行收尾清理（§5.9）② 输出最终交付摘要 ③ 飞书通知（§5.11，消息须附带本次所有 commit 记录：`git log --oneline <初始HEAD>..HEAD`） |
+| `on_ALL_DONE` | 流程结束 | **执行脚本**：`bash tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>`（封装清理 + 摘要 + 飞书通知，详见 §5.9/§5.11） |
 | `on_PAUSED` | 进入 PAUSED 状态（need_user 或 升级） | ① 飞书 ask（§5.11）：前台阻塞推送问题并等待回复；若存在 `feishu_record_id` 则改用 resume |
 | `on_ALL_AGENT_FAIL` | 所有 Agent 均不可用 | ① 飞书 ask（§5.11）：推送降级确认请求，前台阻塞等待 |
 | `on_QA_FAIL_MAX_RETRY` | 同步骤 QA 失败超过 3 次 | ① 飞书 ask（§5.11）：推送循环失败警报，前台阻塞等待 |
@@ -392,6 +392,7 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 **执行原则**：
 - hooks 内的动作按序号顺序执行，任一失败不阻塞后续（记录警告即可）
 - hooks 不改变状态机转移结果，只附加副作用
+- **脚本封装**：`on_QA_PASS` 和 `on_ALL_DONE` 的多步动作已封装为单一 shell 脚本（`tools/redcap-on-qa-pass.sh`、`tools/redcap-on-complete.sh`），Dispatcher 只需调用一个脚本即可。这将 LLM 的记忆负担从「记住 N 个步骤的细节」降低为「调一个脚本」，显著提高长对话中的执行可靠性（详见 [《宿主可靠性报告》](knowledge/host-reliability.md) L-12）
 - `on_PAUSED` 和 `on_ALL_AGENT_FAIL` 中的飞书 ask/resume 为**前台阻塞式**：Dispatcher 以 `isBackground=false, timeout=0` 执行脚本，脚本退出后 Dispatcher 自动获得回复并恢复流程
 - 飞书通知类 hook（on_PAUSED / on_ALL_AGENT_FAIL / on_QA_FAIL_MAX_RETRY）均为可选：当本地未配置 `feishu-config.json` 时自动跳过，不影响流程
 
@@ -482,16 +483,18 @@ Dispatcher 级的 reload-rules 只保护 Dispatcher 自身。子 Agent 在执行
 **解法**：在状态转移时，由转移逻辑将下一步的必做动作写入 `state.yaml` 的 `pending_actions` 字段。Dispatcher 每轮读 `state.yaml` 时自然会看到待办清单。
 
 ```yaml
-# state.yaml 中追加字段
+# state.yaml 中追加字段 — 脚本封装版
 pending_actions:
-  - action: "git_commit"
-    rule_file: "references/commit-standards.md"
+  - action: "run_script"
+    command: "bash tools/redcap-on-qa-pass.sh {{project_dir}} feat 支付 接入微信支付回调"
   - action: "check_lesson"
     rule_file: "knowledge/lessons.md"
 ```
 
+**⚠ 原子写入铁律**：`pending_actions` 必须与 `current_state` 在**同一次 state.yaml 写入操作**中完成。禁止先写 `current_state` 再"记得"补写 `pending_actions`——这正是递归遗忘问题的根源（「防止遗忘的机制本身被遗忘」）。实现方式：Dispatcher 在步骤 5i 更新 state.yaml 时，根据下方映射表机械填充 `pending_actions`，与 `current_state` 一起写入。
+
 **生命周期**：
-1. **写入**：状态转移时（§5.2 步骤 5i），根据目标状态 + hooks 表，自动填充 `pending_actions`
+1. **写入**：状态转移时（§5.2 步骤 5i），根据目标状态 + 映射表，**与 current_state 同时写入** state.yaml
 2. **执行**：下一轮事件循环步骤 1（§5.2），Dispatcher 遍历 `pending_actions`，逐项执行
 3. **清除**：执行完毕后清空 `pending_actions`
 
@@ -499,8 +502,8 @@ pending_actions:
 
 | 转移目标状态 / 事件 | 自动填充的 pending_actions |
 |-------------------|---------------------------|
-| `QA_PASS` | `git_commit`（rule: commit-standards.md）、`check_lesson`（rule: lessons.md） |
-| `ALL_DONE` | `cleanup`（rule: §5.9）、`final_summary`、`feishu_notify`（rule: §5.11） |
+| `QA_PASS` | `run_script`（cmd: `bash tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <msg>`） |
+| `ALL_DONE` | `run_script`（cmd: `bash tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>`） |
 | `PAUSED` | `feishu_ask`（rule: §5.11） |
 | event=`need_revision` | `check_lesson`（rule: lessons.md） |
 | `ALL_AGENT_FAIL` | `feishu_ask`（rule: §5.11） |
