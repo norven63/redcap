@@ -144,7 +144,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 
 2. **经验回顾**：读取 `knowledge/lessons.md`，检查本项目是否涉及已知陷阱（如 Agent 调用方式、路由策略等）。若命中，在当步骤的 Prompt 中注入相关 Lesson 作为防护提示。
 
-2.5. **上次收尾审计**（S1/S2 场景）：若 `state.yaml` 中 `pending_actions` 非空，说明上次会话遗漏了收尾动作 → **立即补执行**所有 pending_actions → 清空。此机制利用新会话 attention 最强的时机修复遗漏（详见 [《宿主可靠性报告》§4.4](knowledge/host-reliability.md)）。
+2.5. **上次收尾审计**（S1/S2 场景）：若 `state.yaml` 中 `pending_actions` 非空，说明上次会话遗漏了收尾动作 → **立即补执行**所有 pending_actions → 清空。此机制利用新会话 attention 最强的时机修复遗漏（详见 [《宿主可靠性报告》§3.4](knowledge/host-reliability.md)）。
 
 3. **初始化 `.workflow/`**（S0/S4 场景）：
    ```yaml
