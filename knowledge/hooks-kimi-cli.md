@@ -7,16 +7,14 @@
 ## 1. Hooks 能力
 
 ```toml
-# ~/.kimi/config.toml
+# ~/.kimi/config.toml — 示例（单项目简单场景）
 [[hooks]]
 event = "Stop"
-command = "bash ./tools/redcap-on-complete.sh"
-
-[[hooks]]
-event = "SessionEnd"
-matcher = ""
-command = "bash ./tools/redcap-on-complete.sh"
+command = "bash /path/to/project/tools/on-complete.sh"
+timeout = 60
 ```
+
+> ⚠️ 多项目环境下**不要**直接注册项目级脚本，必须通过 Dispatcher 路由（§3）。
 
 - 支持 **13 种生命周期事件**（远超 Claude Code 的 4 种）：`PreToolUse`、`PostToolUse`、`PostToolUseFailure`、`UserPromptSubmit`、`Stop`、`StopFailure`、`SessionStart`、`SessionEnd`、`SubagentStart`、`SubagentStop`、`PreCompact`、`PostCompact`、`Notification`
 - `Stop` hook 在 Agent 轮次结束时执行——与 Claude Code 等价，适合 `on_ALL_DONE`
@@ -90,6 +88,18 @@ Kimi CLI
 ```toml
 # ~/.kimi/config.toml — 所有事件统一路由到 dispatcher
 [[hooks]]
+event = "PreToolUse"
+matcher = "WriteFile|StrReplaceFile"
+command = "/Users/norven/.kimi/hooks/dispatcher.sh PreToolUse"
+timeout = 5
+
+[[hooks]]
+event = "PostToolUse"
+matcher = "WriteFile|StrReplaceFile"
+command = "/Users/norven/.kimi/hooks/dispatcher.sh PostToolUse"
+timeout = 3
+
+[[hooks]]
 event = "Stop"
 command = "/Users/norven/.kimi/hooks/dispatcher.sh Stop"
 timeout = 60
@@ -103,19 +113,9 @@ timeout = 60
 event = "SessionStart"
 command = "/Users/norven/.kimi/hooks/dispatcher.sh SessionStart"
 timeout = 5
-
-[[hooks]]
-event = "PreToolUse"
-matcher = "WriteFile|StrReplaceFile"
-command = "/Users/norven/.kimi/hooks/dispatcher.sh PreToolUse"
-timeout = 5
-
-[[hooks]]
-event = "PostToolUse"
-matcher = "WriteFile|StrReplaceFile"
-command = "/Users/norven/.kimi/hooks/dispatcher.sh PostToolUse"
-timeout = 5
 ```
+
+> 以上顺序与实际 `~/.kimi/config.toml` 一致。
 
 ### 3.4 各项目的接入规则（AI Agent 操作指南）
 
@@ -176,10 +176,35 @@ exit 0
 
 ---
 
-## 4. RedCap 部署建议
+## 4. RedCap 部署现状
 
-可利用 `Stop` + `SessionEnd` 双 hook 通过 Dispatcher 实现 100% 保证。
+### 4.1 已实现
+
+| 组件 | 位置 | 功能 |
+|------|------|------|
+| Dispatcher | `~/.kimi/hooks/dispatcher.sh` | 全局路由，按 cwd 分发到项目脚本 |
+| config.toml | `~/.kimi/config.toml` | 5 个事件注册到 Dispatcher |
+| kimi-hook-handler.sh | `tools/kimi-hook-handler.sh` | RedCap 项目级处理器 |
+
+### 4.2 hook-handler 逻辑
+
+- **SessionStart**：捕获当前 `git HEAD` 到 `/tmp/redcap-kimi-initial-head`
+- **Stop**：检测新 commit → 有则飞书通知（**不清理**临时文件，留给 SessionEnd 兜底）
+- **SessionEnd**：检测新 commit → 有则飞书通知 → **清理**临时文件
+
+通过「Stop 不清理 + SessionEnd 清理」实现**去重**：
+- Stop 通知后更新了 HEAD → SessionEnd 对比发现无增量 → 不重复通知（✅ 当前未实现，见 §4.3）
+
+### 4.3 待优化：Stop/SessionEnd 双触发去重
+
+当前 `handle_session_end()` 在 Stop 和 SessionEnd 都会触发通知。正常退出时两个事件依次触发，导致**同一内容发两次飞书通知**。
+
+**解法**：Stop 通知成功后将已通知的 HEAD 写入 `/tmp/redcap-kimi-last-notified-head`，SessionEnd 先检查此文件，若 HEAD 未变则跳过。
+
+> 此优化为低优先级——重复通知不影响正确性，仅影响用户体验。
+
+### 4.4 可靠性评估
+
+Layer 0 可用（Stop + SessionEnd = 100% 确定性执行），事件覆盖面最广（13 种），需通过 Dispatcher 协议解决全局配置限制。
 
 > `SessionEnd` 作为 `Stop` 的兜底：即使 Stop 因 `stop_hook_active` 反循环被跳过，SessionEnd 仍会在会话关闭时触发。
-
-**可靠性评估**：Layer 0 可用（Stop + SessionEnd = 100% 确定性执行），事件覆盖面最广（13 种），但需通过 Dispatcher 协议解决全局配置限制。
