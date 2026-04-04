@@ -128,7 +128,31 @@ timeout = 5
 | **必须** 在脚本内部按事件名过滤 | 只处理自己关心的事件，其他事件 exit 0 |
 | **建议** 脚本内检查 cwd 做二次确认 | 防止路径匹配歧义 |
 
-### 3.5 项目 hook 脚本模板
+### 3.5 如何在 dispatcher.sh 中添加新项目路由
+
+打开 `~/.kimi/hooks/dispatcher.sh`，在 `route()` 函数的 case 语句中 `*)` 默认分支**之前**添加：
+
+```bash
+        # --- My Project ---
+        */my-project|*/my-project/*)
+            local script
+            # 从 cwd 提取项目根目录（处理可能在子目录中的情况）
+            script=$(echo "$CWD" | sed 's|\(.*my-project\).*|\1|')
+            script="$script/tools/kimi-hook-handler.sh"
+            if [[ -f "$script" ]]; then
+                echo "$JSON" | bash "$script" "$EVENT"
+                return $?
+            fi
+            ;;
+```
+
+**要点**：
+- `*/my-project|*/my-project/*)`：匹配项目根目录及其所有子目录
+- `sed 's|\(.*my-project\).*|\1|'`：从 cwd 中截取到项目根路径（即使 cwd 是子目录也能找到）
+- `if [[ -f "$script" ]]`：脚本不存在时静默跳过，不报错
+- `echo "$JSON" | bash "$script" "$EVENT"`：将完整 JSON 上下文通过 stdin 传给项目脚本，事件名作为 $1
+
+### 3.6 项目 hook 脚本模板
 
 ```bash
 #!/bin/bash
