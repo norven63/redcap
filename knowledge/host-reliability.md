@@ -163,6 +163,24 @@ command = "bash ./tools/redcap-on-complete.sh"
 - 配置位置：`~/.kimi/config.toml`（`[[hooks]]` 数组）
 - **局限**：Beta 阶段（截至 2026-04），API 可能变更
 
+#### 实测验证（v1.30.0, 2026-04-04）
+
+使用标记文件法实测 4 种事件，**全部确认可用**：
+
+| 事件 | 触发时机 | stdin JSON 关键字段 | 验证结果 |
+|------|----------|---------------------|----------|
+| `SessionStart` | 会话创建后立即触发 | `session_id`, `cwd`, `source: "startup"` | ✅ |
+| `PostToolUse` | 工具调用完成后 | `tool_name`, `tool_input`, `tool_output`, `tool_call_id` | ✅ |
+| `Stop` | Agent 轮次结束 | `session_id`, `stop_hook_active: false` | ✅ |
+| `SessionEnd` | 会话关闭时 | `session_id`, `reason: "exit"` | ✅ |
+
+**关键发现**：
+- 触发顺序严格为 `SessionStart → PostToolUse(×N) → Stop → SessionEnd`
+- `--print` 模式下 `Stop` 不触发（直接跳到 `SessionEnd`），`-p` 模式正常触发
+- stdin JSON 包含完整上下文（session_id、cwd、工具输入/输出等），可用于条件判断
+- `stop_hook_active` 字段可用于检测是否处于防循环状态
+- 环境变量：hook 脚本中无 Kimi 特有环境变量注入，事件名通过 stdin JSON 的 `hook_event_name` 传递
+
 > 官方文档：https://moonshotai.github.io/kimi-cli/zh/customization/hooks.html
 
 ---
