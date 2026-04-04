@@ -175,11 +175,17 @@ command = "bash ./tools/redcap-on-complete.sh"
 | `SessionEnd` | 会话关闭时 | `session_id`, `reason: "exit"` | ✅ |
 
 **关键发现**：
-- 触发顺序严格为 `SessionStart → PostToolUse(×N) → Stop → SessionEnd`
+- 触发顺序严格为 `SessionStart → PreToolUse → PostToolUse(×N) → Stop → SessionEnd`
 - `--print` 模式下 `Stop` 不触发（直接跳到 `SessionEnd`），`-p` 模式正常触发
+- **matcher 过滤有效**：`matcher = "WriteFile|StrReplaceFile"` 精确匹配 `tool_name` 字段，Shell 等其他工具不触发
 - stdin JSON 包含完整上下文（session_id、cwd、工具输入/输出等），可用于条件判断
 - `stop_hook_active` 字段可用于检测是否处于防循环状态
 - 环境变量：hook 脚本中无 Kimi 特有环境变量注入，事件名通过 stdin JSON 的 `hook_event_name` 传递
+
+**stdin JSON 字段名注意**（与 Claude Code 不同）：
+- 文件路径：`.tool_input.path`（非 `.tool_input.file_path`）
+- 编辑内容：`.tool_input.edit.old` / `.tool_input.edit.new`（StrReplaceFile）
+- 工具输出：`.tool_output`（字符串，含 `is_error`、`output`、`message`、`display` 等）
 
 > 官方文档：https://moonshotai.github.io/kimi-cli/zh/customization/hooks.html
 
