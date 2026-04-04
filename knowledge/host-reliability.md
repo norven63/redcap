@@ -126,8 +126,19 @@
 ### 3.3 Gemini CLI
 
 - `--system-prompt-file` 可注入 system prompt 级指令（最高优先级）
-- 无原生 hooks 机制（截至 v0.36.0）
 - JIT 加载可部分弥补（工具访问目录时自动扫描 GEMINI.md）
+
+**Hooks 状态（v0.36.0 源码深度审计）**：
+
+| 层面 | 状态 | 证据 |
+|------|------|------|
+| **Schema 定义** | ✅ 存在 | `settingsSchema.js`: `enableHooks`（默认 false）、`hooks` 配置对象 |
+| **Hooks 库** | ✅ 完整实现 | `@google/gemini-cli-core/hooks/`: `hookRunner.js`（spawn shell）、`hookRegistry.js`、`hookPlanner.js`、`hookAggregator.js`、`types.js` |
+| **事件类型** | ✅ 11 种已定义 | `BeforeTool`、`AfterTool`、`BeforeAgent`、`AfterAgent`、`SessionStart`、`SessionEnd`、`PreCompress`、`BeforeModel`、`AfterModel`、`BeforeToolSelection`、`Notification` |
+| **Agent 循环集成** | ❌ **未接入** | 整个代码库中，**没有任何非测试文件** import 或实例化 `HookRunner`/`HookRegistry`；`config.js` 标注 `// TODO: loading of hooks based on workspace trust` |
+| **MessageBus** | ⚠️ 仅用于 policy | `MessageBus` 存在但只服务于 tool confirmation（ALLOW/DENY/ASK_USER），未连接到 hooks |
+
+**结论**：Gemini CLI 的 hooks 是**已实现但未集成**的独立库——hookRunner 通过 `spawn` 执行 shell 命令、支持退出码 0/1/2、并行执行、60s 超时，架构已就绪。一旦 Google 将其接入 agent 循环，可快速适配 RedCap。当前版本（v0.36.0）**无法提供有效的 hooks 执行**。
 
 ### 3.4 Kimi CLI Hooks
 
