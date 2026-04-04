@@ -2,7 +2,7 @@
 
 > **调研日期**：2026-04  
 > **调研背景**：RedCap E2E 测试中 `on_ALL_DONE` 飞书通知被遗漏（L-9 复现），需评估宿主 Agent 的指令持久性和可靠性保障机制，为 RedCap 的关键动作防遗漏策略提供决策依据。  
-> **核心发现**：指令注入物理上每轮都在，但 LLM attention 衰减使执行率随对话长度下降。唯一 100% 保证的是 Hooks（绕过 LLM 的 shell 命令）。
+> **核心发现**：指令注入物理上每轮都在，但 LLM attention 衰减使执行率随对话长度下降。唯一 100% 保证的是 Hooks（绕过 LLM 的 shell 命令）。4 个宿主工具中 Claude Code 和 Kimi CLI 支持 Hooks。
 
 ---
 
@@ -129,6 +129,31 @@
 - 无原生 hooks 机制（截至 v0.36.0）
 - JIT 加载可部分弥补（工具访问目录时自动扫描 GEMINI.md）
 
+### 3.4 Kimi CLI Hooks
+
+```toml
+# ~/.kimi/config.toml
+[[hooks]]
+event = "Stop"
+command = "bash ./tools/redcap-on-complete.sh"
+
+[[hooks]]
+event = "SessionEnd"
+matcher = ""
+command = "bash ./tools/redcap-on-complete.sh"
+```
+
+- 支持 **13 种生命周期事件**（远超 Claude Code 的 4 种）：`PreToolUse`、`PostToolUse`、`PostToolUseFailure`、`UserPromptSubmit`、`Stop`、`StopFailure`、`SessionStart`、`SessionEnd`、`SubagentStart`、`SubagentStop`、`PreCompact`、`PostCompact`、`Notification`
+- `Stop` hook 在 Agent 轮次结束时执行——与 Claude Code 等价，适合 `on_ALL_DONE`
+- `SessionEnd` hook 在会话关闭时执行——**比 Stop 更可靠**，因为即使 Stop 被跳过，SessionEnd 仍会触发
+- 通信协议：stdin 接收 JSON 上下文，退出码 0=继续 / 2=阻止
+- **Fail-Open 策略**：hook 超时/崩溃按"允许"处理，不阻塞 Agent
+- **Stop 防循环**：Stop hook 最多重新触发一次，`stop_hook_active=true` 标志位防止无限循环
+- 配置位置：`~/.kimi/config.toml`（`[[hooks]]` 数组）
+- **局限**：Beta 阶段（截至 2026-04），API 可能变更
+
+> 官方文档：https://moonshotai.github.io/kimi-cli/zh/customization/hooks.html
+
 ---
 
 ## 4. 对 RedCap 的部署建议
@@ -175,6 +200,24 @@
 1. GEMINI.md 中保持关键提醒（每次 prompt 重发）
 2. 下次启动审计
 
+#### Kimi CLI 环境
+
+可利用 `Stop` + `SessionEnd` 双 hook 实现 100% 保证：
+```toml
+# ~/.kimi/config.toml（或项目级 .kimi/config.toml）
+[[hooks]]
+event = "Stop"
+command = "bash tools/redcap-on-complete.sh $PROJECT_DIR $INITIAL_HEAD $PROJECT_NAME"
+timeout = 60
+
+[[hooks]]
+event = "SessionEnd"
+command = "bash tools/redcap-on-complete.sh $PROJECT_DIR $INITIAL_HEAD $PROJECT_NAME"
+timeout = 60
+```
+
+> `SessionEnd` 作为 `Stop` 的兜底：即使 Stop 因 `stop_hook_active` 反循环被跳过，SessionEnd 仍会在会话关闭时触发。
+
 ### 4.3 收尾脚本封装（已实现）
 
 关键 hook 的多步动作已封装为确定性 shell 脚本：
@@ -200,7 +243,7 @@
 
 | 节点 | 风险 | 已有防护 | 剩余风险 |
 |------|------|---------|---------|
-| `on_ALL_DONE`（清理+摘要+飞书） | E2E 已实际遗漏（L-9） | ✅ 脚本封装 + pending_actions + 启动审计 + Claude Stop hook | 低：VS Code/Gemini 无 hook，依赖 Layer 2+3 |
+| `on_ALL_DONE`（清理+摘要+飞书） | E2E 已实际遗漏（L-9） | ✅ 脚本封装 + pending_actions + 启动审计 + Claude Stop hook + Kimi Stop/SessionEnd hook | 低：仅 VS Code/Gemini 无 hook，依赖 Layer 2+3 |
 | `on_QA_PASS`（git commit） | 遗漏则代码可能丢失 | ✅ 脚本封装 + pending_actions | 低：pending_actions 原子写入保障 |
 | `§5.13 pending_actions 写入` | 递归遗忘问题 | ✅ 原子写入铁律（与 current_state 同一次写入） | 中：仍为 LLM 执行，但降为单一操作 |
 
@@ -228,6 +271,6 @@
 |------|------|
 | **指令注入是可靠的** | 三个工具都做到了每轮/每次物理注入 |
 | **LLM 执行是概率性的** | 随对话长度必然衰减，无法 100% |
-| **唯一 100% 保证是 Hooks** | 绕过 LLM，宿主程序直接执行 shell |
+| **唯一 100% 保证是 Hooks** | 绕过 LLM，宿主程序直接执行 shell（Claude Code、Kimi CLI 均支持） |
 | **RedCap 最佳策略** | 用脚本封装关键动作 + 宿主 Hooks（如有）+ 下次启动审计 |
-| **不应过度依赖指令文本** | L-9 的根因不是"指令丢失"而是"指令被忽视" |
+| **Hook 覆盖率** | 4 个宿主中 2 个有 Hooks（Claude Code: Stop; Kimi CLI: Stop+SessionEnd 等 13 种），2 个无（VS Code Copilot、Gemini CLI） |
