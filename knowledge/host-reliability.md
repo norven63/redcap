@@ -237,18 +237,93 @@ command = "bash ./tools/redcap-on-complete.sh"
 
 #### Kimi CLI 环境
 
-可利用 `Stop` + `SessionEnd` 双 hook 实现 100% 保证：
+**⚠️ 重要限制**：Kimi CLI 仅支持全局配置（`~/.kimi/config.toml`），不支持工程级 hook 配置。为避免多项目 hook 相互污染，**必须使用 Dispatcher 模式**。
+
+##### Kimi CLI Hook Dispatcher 协议（所有 AI Agent 必须遵守）
+
+**问题**：全局 `[[hooks]]` 对所有项目生效。如果各项目各自注册 hook，会导致：
+- 跨项目误触发（A 项目的 hook 在 B 项目中执行）
+- 同一事件多个 hook 并行执行，结果不可预测
+
+**方案**：全局只注册一个 **dispatcher 脚本**作为所有事件的唯一入口，由 dispatcher 读取 stdin JSON 中的 `cwd` 字段，按项目路径路由到对应的处理脚本。
+
+**架构图**：
+```
+Kimi CLI
+  │
+  ├─ [PreToolUse]  ─┐
+  ├─ [PostToolUse] ─┤
+  ├─ [Stop]        ─┼──► ~/.kimi/hooks/dispatcher.sh <EVENT>
+  ├─ [SessionEnd]  ─┤        │
+  └─ [SessionStart]─┘        ├─ cwd 含 "redcap"  → redcap/tools/kimi-hook-handler.sh
+                              ├─ cwd 含 "distill" → distill/scripts/kimi-hook-handler.sh
+                              ├─ cwd 含 "xxx"     → xxx/hooks/handler.sh
+                              └─ 未匹配            → exit 0（静默跳过）
+```
+
+**Dispatcher 位置**：`~/.kimi/hooks/dispatcher.sh`
+
+**config.toml 注册方式**（全局唯一一份 hook 配置）：
 ```toml
-# ~/.kimi/config.toml（或项目级 .kimi/config.toml）
+# ~/.kimi/config.toml — 所有事件统一路由到 dispatcher
 [[hooks]]
 event = "Stop"
-command = "bash tools/redcap-on-complete.sh $PROJECT_DIR $INITIAL_HEAD $PROJECT_NAME"
+command = "/Users/norven/.kimi/hooks/dispatcher.sh Stop"
 timeout = 60
 
 [[hooks]]
 event = "SessionEnd"
-command = "bash tools/redcap-on-complete.sh $PROJECT_DIR $INITIAL_HEAD $PROJECT_NAME"
+command = "/Users/norven/.kimi/hooks/dispatcher.sh SessionEnd"
 timeout = 60
+
+[[hooks]]
+event = "SessionStart"
+command = "/Users/norven/.kimi/hooks/dispatcher.sh SessionStart"
+timeout = 5
+
+[[hooks]]
+event = "PreToolUse"
+matcher = "WriteFile|StrReplaceFile"
+command = "/Users/norven/.kimi/hooks/dispatcher.sh PreToolUse"
+timeout = 5
+
+[[hooks]]
+event = "PostToolUse"
+matcher = "WriteFile|StrReplaceFile"
+command = "/Users/norven/.kimi/hooks/dispatcher.sh PostToolUse"
+timeout = 5
+```
+
+**各项目的接入规则**（AI Agent 操作指南）：
+
+| 规则 | 说明 |
+|------|------|
+| **禁止** 直接在 config.toml 添加 `[[hooks]]` | 所有 hook 必须通过 dispatcher 路由 |
+| **必须** 在 dispatcher.sh 的 `route()` 函数中添加 case 分支 | 格式：`*/project-name\|*/project-name/*)`|
+| **必须** 将项目 hook 脚本放在项目目录内 | 如 `tools/kimi-hook-handler.sh` 或 `scripts/kimi-hook-handler.sh` |
+| **必须** 从 stdin 读取 JSON | dispatcher 会 pipe JSON 到项目脚本，第一个参数是事件名 |
+| **必须** 在脚本内部按事件名过滤 | 只处理自己关心的事件，其他事件 exit 0 |
+| **建议** 脚本内检查 cwd 做二次确认 | 防止路径匹配歧义 |
+
+**项目 hook 脚本模板**：
+```bash
+#!/bin/bash
+# tools/kimi-hook-handler.sh — 项目级 Kimi hook 处理器
+EVENT="$1"
+JSON=$(cat)
+
+case "$EVENT" in
+    Stop|SessionEnd)
+        # 在此处理收尾逻辑
+        ;;
+    PreToolUse)
+        # 在此处理工具调用前检查
+        ;;
+    *)
+        # 不关心的事件，跳过
+        ;;
+esac
+exit 0
 ```
 
 > `SessionEnd` 作为 `Stop` 的兜底：即使 Stop 因 `stop_hook_active` 反循环被跳过，SessionEnd 仍会在会话关闭时触发。
