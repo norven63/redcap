@@ -128,13 +128,13 @@ claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
   --system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
   --output-format json \
   --add-dir "<项目根目录>" \
-  --permission-mode auto \
+  --permission-mode bypassPermissions \
   --session-id "<UUID>"
 ```
 
 > Dispatcher 始终先将 prompt 和 system-prompt 写入 `.workflow/` 下的文件，再用 `$(cat ...)` 读取传入 CLI，避免 Shell 中文引号截断问题。
 > `--session-id` 首次调用时传入调用方生成的 UUID，后续通过 `--resume` 恢复。
-> `--permission-mode auto` 自动审批所有操作（程序员/QA 需要执行 Shell）；`acceptEdits` 仅审批文件编辑（PM/架构师）。
+> `--permission-mode bypassPermissions` 跳过所有权限检查（程序员/QA 需要执行 Shell），防止 `-p` 管道模式下权限弹窗导致挂起（与 L-7 Gemini `--yolo` 同理）；`acceptEdits` 仅审批文件编辑（PM/架构师）。
 
 ### 2.3 参数说明
 
@@ -144,7 +144,7 @@ claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 | `--system-prompt` | 角色身份设定 | 对应角色手册.md 的核心摘要 |
 | `--output-format json` | 返回 JSON 格式 | 固定 `json` |
 | `--add-dir` | 授权访问的项目目录 | 项目根目录路径 |
-| `--permission-mode` | 权限模式 | PM/架构师: `acceptEdits`；程序员/QA: `auto` |
+| `--permission-mode` | 权限模式 | PM/架构师: `acceptEdits`；程序员/QA: `bypassPermissions` |
 | `--session-id` | 指定 Session ID | 首次调用时传入 Dispatcher 生成的 UUID |
 | `--resume` | 恢复已有 Session | 传入 session_id 恢复上下文 |
 | `--name` | Session 命名 | `"redcap-{role}-step{N}"` 便于人工识别 |
@@ -227,8 +227,8 @@ gemini -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 |------|-----------------|------|
 | 产品经理 | `acceptEdits` | 只读写文档，不执行代码 |
 | 架构师 | `acceptEdits` | 可读写文档，不需要 Shell |
-| 程序员 | `auto` | 自动审批所有操作（含 Shell 命令） |
-| 测试QA | `auto` | 自动审批所有操作（含测试执行） |
+| 程序员 | `bypassPermissions` | 跳过所有权限检查（含 Shell 命令），防止管道模式挂起 |
+| 测试QA | `bypassPermissions` | 跳过所有权限检查（含测试执行），防止管道模式挂起 |
 | Reviewer | `acceptEdits` | 只读代码和写 Review 报告 |
 
 ### 4.2 Gemini `--yolo` 映射

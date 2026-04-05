@@ -433,7 +433,7 @@ python3 tools/feishu-notifier.py setup
 **Q: DEV/QA Agent 真的会执行测试吗？会不会"幻觉自测"？**
 
 Agent 通过宿主 Shell **真实执行**命令（curl、pytest、npm test 等），不是模拟或想象。具体机制：
-- Gemini 配置 `--sandbox false`，Claude Code 配置 `--permission-mode auto`，均直接操作宿主环境
+- Gemini 配置 `--sandbox false`，Claude Code 配置 `--permission-mode bypassPermissions`，均直接操作宿主环境
 - QA 手册要求记录**完整请求命令 + 实际返回值**作为测试证据（非自述式"测试通过"）
 - GUI 等无法自动化的场景通过 `need_user` 升级给用户人工验证
 - ⚠️ **非沙箱隔离**：Agent 在用户本地终端执行，与 AutoGPT、Claude Code 等 CLI 工具的安全模型一致

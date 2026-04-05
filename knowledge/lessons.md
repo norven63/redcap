@@ -109,12 +109,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 ### L-7: Gemini `--approval-mode auto_edit` 在 headless 模式会永久挂起
 - **场景**：gemini Agent 执行需要 Shell 命令的任务（如运行测试、安装依赖）时超时失败
 - **根因**：`--approval-mode auto_edit` 仅自动审批文件编辑操作，Shell 命令仍弹出 `[Y/n]` 交互确认。在 headless/非交互模式下，无人应答导致 Agent 永久挂起直至超时
-- **经验规则**：gemini CLI 必须使用 `--yolo` 而非 `--approval-mode auto_edit`。`--yolo` 自动审批所有工具操作（含文件编辑和 Shell 命令），是 headless 模式唯一可靠的参数
-- **来源**：CLI 实测验证, gemini 0.35.3
+- **经验规则**：gemini CLI 必须使用 `--yolo` 而非 `--approval-mode auto_edit`。`--yolo` 自动审批所有工具操作（含文件编辑和 Shell 命令），是 headless 模式唯一可靠的参数。**泛化原则**：所有 Agent CLI 在 `-p`/headless 模式下必须使用最高权限参数（Gemini: `--yolo`；Claude Code: `--permission-mode bypassPermissions`），"几乎全自动"≠"全自动"
+- **来源**：CLI 实测验证, gemini 0.35.3; 泛化至 claude-code（`auto` → `bypassPermissions`）
 - **发现日期**：2026-03
 - **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-03
+- **复现次数**：2
+- **最后命中**：2026-04
 
 ### L-8: 框架变更必须"先测再改"——实测驱动而非假设驱动
 - **场景**：第四轮优化中，通过实际运行 3 个 CLI（gemini/kimi/claude）发现模型名全错、`--approval-mode auto_edit` 导致挂起、claude `--session-id` 能力未知等关键问题——这些问题仅靠读文档无法发现
