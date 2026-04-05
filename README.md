@@ -150,6 +150,11 @@ RedCap 有两条完全不同的工作流：
 │  │ • Claude Code: InstructionsLoaded → Stop 飞书通知        │  │
 │  │ • VS Code / Gemini: 无 Hook，依赖 Agent 自觉 + 启动审计 │  │
 │  └─────────────────────────────────────────────────────────┘  │
+│                                                               │
+│  ⚠ 此处为 Layer B（开发 RedCap 自身）的 Hook。               │
+│    Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10   │
+│    定义，通过 Dispatcher 状态机触发，机制完全不同。           │
+│    两层架构详见 knowledge/host-reliability.md §0。            │
 └───────────────────────────────────────────────────────────────┘
 ```
 

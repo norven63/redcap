@@ -6,6 +6,22 @@
 
 ---
 
+## 0. Hook 两层架构
+
+RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为两层：
+
+| | Layer A — RedCap 开发用户项目 | Layer B — 开发 RedCap 自身 |
+|---|---|---|
+| **工作区** | 用户项目 repo | RedCap 自身 repo |
+| **Hook 本质** | Dispatcher 状态机内的逻辑事件（`on_QA_PASS`、`on_ALL_DONE` 等） | 宿主工具原生 shell Hook |
+| **定义位置** | SKILL.md §5.10 + `dispatcher/state-machine.md` | 工程级配置（`.claude/settings.json`、`config.toml` + dispatcher） |
+| **可移植性** | 跟随 RedCap 框架，适用于所有项目 | 仅对 RedCap 自身 repo 生效 |
+| **执行保证** | 依赖 LLM attention（Layer 2-3） | 100% 确定性（Layer 0） |
+
+> 本文件及其子文档（`hooks-*.md`）记录的**宿主 Hook 能力**同时服务于两层。§3 的四层防御策略以 Layer A 场景为主，Layer B 的具体部署见各 `hooks-*.md` 的"部署现状"章节及 `CONTRIBUTING.md` §4。
+
+---
+
 ## 1. 宿主工具总览
 
 | 宿主工具 | 指令注入频率 | 注入位置 | Hooks 状态 | 详情文档 |

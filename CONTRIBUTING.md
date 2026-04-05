@@ -65,6 +65,8 @@ docs(经验): 新增 L-9 飞书架构局限性
 
 ## 4. 飞书通知
 
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10 定义，通过 Dispatcher 状态机触发。两层架构详见 `knowledge/host-reliability.md` §0。
+
 RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。**编辑 RedCap 的 AI Agent 必须在流程中自动执行以下通知**：
 
 **完成通知（必须，自动执行）**：每轮变更全部完成并 git commit 后、结束任务前，**必须自动执行**以下命令（仅通知，不等待回复）：
