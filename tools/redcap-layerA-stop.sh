@@ -56,6 +56,10 @@ if [[ -f "$WORKFLOW_SESSION_FILE" ]]; then
     if [[ "$WORKFLOW_SESSION" != "$SESSION_ID" ]]; then
         exit 0
     fi
+else
+    # Graceful degradation：无归属记录（旧项目/resume session/24h 清理后），
+    # 降级为三重过滤继续执行，不阻塞收尾
+    echo "[redcap-layerA-stop] WARN: workflow-session file not found for project hash ${PROJECT_HASH}, skipping ownership check (graceful degradation)" >&2
 fi
 
 # ── 过滤 4: Session 去重 ─────────────────────────────────
@@ -88,7 +92,8 @@ REVIEW_FALLBACK="$REDCAP_DIR/tools/redcap-layerA-review-fallback.sh"
 if [[ -f "$REVIEW_FALLBACK" ]]; then
     # 检查 history 中是否存在 reviewer 角色的 completed 记录
     # state.yaml history 格式: - role: "reviewer" ... status: "completed"
-    HAS_REVIEW=$(grep -A3 'role:.*reviewer' "$STATE_FILE" 2>/dev/null | grep -c 'status:.*completed' || true)
+    # -A10 覆盖 history 条目最大字段数（role/agent/session_id/status/finished_at 等约 6-8 字段）
+    HAS_REVIEW=$(grep -A10 'role:.*reviewer' "$STATE_FILE" 2>/dev/null | grep -c 'status:.*completed' || true)
     if [[ "$HAS_REVIEW" -eq 0 ]]; then
         echo "[redcap-layerA-stop] Review 未执行，启动兜底 Review..." >&2
         bash "$REVIEW_FALLBACK" "$CWD" "$PROJECT_NAME" 2>&1 || echo "[redcap-layerA-stop] WARN: review-fallback exited with $?" >&2

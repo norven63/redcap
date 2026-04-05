@@ -114,6 +114,13 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | `on_QA_PASS`（git commit） | 遗漏则代码可能丢失 | ✅ 脚本封装 + pending_actions | 低：pending_actions 原子写入保障 |
 | `§5.13 pending_actions 写入` | 递归遗忘问题 | ✅ 原子写入铁律（与 current_state 同一次写入） | 中：仍为 LLM 执行，但降为单一操作 |
 
+##### Layer A Stop Hook 已知边界 Case
+
+| # | 触发条件 | 如何发生 | 后果 | 兼容方案 |
+|---|---------|---------|------|---------|
+| EC-1 | **workflow-session 归属文件不存在** | ① 旧项目：部署 Session 归属机制前已有 `state.yaml`，从未写过 workflow-session 文件 ② resume session：Claude Code 恢复历史会话时不会重新触发 SessionStart Hook ③ 24h 清理：SessionStart 的 `find -mtime +1 -delete` 清理了过期标记 | 过滤器 3（Session 归属）静默失效，退化为三重过滤（存在性→状态→去重）。非归属 session 可能误触发收尾 | **Graceful degradation**：文件不存在时记录 WARN 日志但不阻塞，降级继续执行。理由：误触发收尾是幂等的（on-complete 和 Review 兜底都可安全重复执行），而阻塞收尾会导致通知永远丢失（不可接受）。宁可偶尔多触发，不可漏触发 |
+| EC-2 | **Review 检测的 YAML grep 字段距离超出窗口** | state.yaml `history` 条目的 `role` 与 `status` 字段之间插入了超过 10 个其他字段（当前窗口 `-A10`，正常条目约 6-8 字段） | grep 匹配失败 → `HAS_REVIEW=0` → **误触发兜底 Review**（false positive），浪费一次 Agent 调用（kimi/claude）资源 | **宽窗口 + 容错**：从 `-A3` 扩大到 `-A10`，覆盖当前最大字段数的 1.5 倍。即使误触发，兜底 Review 是只读操作（不修改代码），结果写入 `/tmp` 日志，不影响项目。若未来 history 条目结构大幅变化，可升级为 `python3 -c 'import yaml; ...'` 精确解析 |
+
 #### Category 2 — 可恢复节点（遗漏可补救）
 
 | 节点 | 恢复方式 |
@@ -139,5 +146,6 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | **指令注入是可靠的** | 各工具都做到了每轮/每次物理注入 |
 | **LLM 执行是概率性的** | 随对话长度必然衰减，无法 100% |
 | **唯一 100% 保证是 Hooks** | 绕过 LLM，宿主程序直接执行 shell（Claude Code、Kimi CLI 均支持） |
+| **需认知的关键动作** | Hook 确定性触发 × 新 Agent 生命周期认知能力（L-15）：Hook 保证 100% 触发，新 Agent 消除历史上下文污染保证认知质量，两者相乘解决"纯脚本无认知 vs 纯 LLM 会遗忘"的两难。实例：Layer B `redcap-on-stop-review.sh`、Layer A `redcap-layerA-review-fallback.sh` |
 | **RedCap 最佳策略** | 用脚本封装关键动作 + 宿主 Hooks（如有）+ 下次启动审计 |
 | **Hook 覆盖率** | 4 个宿主中 2 个有 Hooks（Claude Code: Stop; Kimi CLI: Stop+SessionEnd 等 13 种），2 个无（VS Code Copilot、Gemini CLI） |
