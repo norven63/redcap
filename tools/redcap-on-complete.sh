@@ -26,7 +26,7 @@ INITIAL_HEAD="${2:-}"
 PROJECT_NAME="${3:-$(basename "$PROJECT_DIR")}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-WORKFLOW_DIR="$PROJECT_DIR/.workflow"
+WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
 
 # ── 动作 1: 清除 .workflow/ 临时文件（§5.9） ──────────────
 

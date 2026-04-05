@@ -16,9 +16,9 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | **Hook 本质** | Dispatcher 状态机内的逻辑事件（`on_QA_PASS`、`on_ALL_DONE` 等） | 宿主工具原生 shell Hook |
 | **定义位置** | SKILL.md §5.10 + `dispatcher/state-machine.md` | 工程级配置（`.claude/settings.json`、`config.toml` + dispatcher） |
 | **可移植性** | 跟随 RedCap 框架，适用于所有项目 | 仅对 RedCap 自身 repo 生效 |
-| **执行保证** | 依赖 LLM attention（Layer 2-3） | 100% 确定性（Layer 0） |
+| **执行保证** | `on_ALL_DONE`: Layer 0（用户级 Stop hook）；其他: Layer 2-3 | 100% 确定性（Layer 0） |
 
-> 本文件及其子文档（`hooks-*.md`）记录的**宿主 Hook 能力**同时服务于两层。§3 的四层防御策略以 Layer A 场景为主，Layer B 的具体部署见各 `hooks-*.md` 的"部署现状"章节及 `CONTRIBUTING.md` §4。
+> 本文件及其子文档（`hooks-*.md`）记录的**宿主 Hook 能力**同时服务于两层。§3 的四层防御策略以 Layer A 场景为主，Layer B 的具体部署见各 `hooks-*.md` 的"部署现状"章节及 `CONTRIBUTING.md` §4。Layer A 的用户级 Hook 脚本见 `tools/redcap-layerA-*.sh`。
 
 ---
 
@@ -108,7 +108,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 
 | 节点 | 风险 | 已有防护 | 剩余风险 |
 |------|------|---------|---------|
-| `on_ALL_DONE`（清理+摘要+飞书） | E2E 已实际遗漏（L-9） | ✅ 脚本封装 + pending_actions + 启动审计 + Claude Stop hook + Kimi Stop/SessionEnd hook | 低：仅 VS Code/Gemini 无 hook，依赖 Layer 2+3 |
+| `on_ALL_DONE`（清理+摘要+飞书） | E2E 已实际遗漏（L-9） | ✅ Layer B: 项目级 Stop hook + Layer A: 用户级 Stop hook（三重过滤） + 脚本封装 + pending_actions + 启动审计 | 低：Layer A/B 均有 Layer 0 保护（Claude/Kimi）。VS Code/Gemini 退守 Layer 2+3 |
 | `on_QA_PASS`（git commit） | 遗漏则代码可能丢失 | ✅ 脚本封装 + pending_actions | 低：pending_actions 原子写入保障 |
 | `§5.13 pending_actions 写入` | 递归遗忘问题 | ✅ 原子写入铁律（与 current_state 同一次写入） | 中：仍为 LLM 执行，但降为单一操作 |
 
