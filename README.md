@@ -19,6 +19,7 @@
 - [文件职责矩阵](#文件职责矩阵)
 - [快速上手](#快速上手)
 - [设计哲学](#设计哲学)
+  - [常见架构疑问](#常见架构疑问)
 - [作为 AI Agent 设计参考](#作为-ai-agent-设计参考)
   - [架构模式：Dispatcher + Worker Agents](#1-架构模式dispatcher--worker-agents)
   - [状态机驱动](#2-状态机驱动)
@@ -404,6 +405,16 @@ python3 tools/feishu-notifier.py setup
 
 配置后，流程完成自动发飞书通知，需要用户决策时飞书提问并等待回复。
 
+### 典型成本参考
+
+| 项目规模 | 轮次 | Token 消耗 | 预估成本 |
+|---------|------|-----------|----------|
+| 小型（Todo List） | ~15 轮 | ~150K tokens | ~$0.5-1.5 |
+| 中型（带认证的 REST API） | ~30 轮 | ~400K tokens | ~$2-5 |
+| 大型（多模块全栈） | ~60 轮 | ~800K tokens | ~$5-15 |
+
+> 以上为经验估算，实际成本取决于 Agent CLI 选择（Claude Code 较贵、Gemini/Kimi 较便宜）、模型版本、项目复杂度和 QA 回退次数。每次 Agent 调用的 token 消耗可通过 `cost_usd`（Claude）或 `total_tokens`（Gemini）字段追踪。
+
 ---
 
 ## 设计哲学
@@ -416,6 +427,26 @@ python3 tools/feishu-notifier.py setup
 | **确定性优于概率性** | 关键动作封装为 shell 脚本 + 宿主 Hooks，不依赖 LLM 记忆 |
 | **经验沉淀** | 每次遇到新坑自动归档到 lessons.md，防止踩同样的坑 |
 | **渐进式降级** | 3 级 Fallback 路由 + 用户授权降级，而非硬失败 |
+
+### 常见架构疑问
+
+**Q: DEV/QA Agent 真的会执行测试吗？会不会"幻觉自测"？**
+
+Agent 通过宿主 Shell **真实执行**命令（curl、pytest、npm test 等），不是模拟或想象。具体机制：
+- Gemini 配置 `--sandbox false`，Claude Code 配置 `--permission-mode auto`，均直接操作宿主环境
+- QA 手册要求记录**完整请求命令 + 实际返回值**作为测试证据（非自述式"测试通过"）
+- GUI 等无法自动化的场景通过 `need_user` 升级给用户人工验证
+- ⚠️ **非沙箱隔离**：Agent 在用户本地终端执行，与 AutoGPT、Claude Code 等 CLI 工具的安全模型一致
+
+**Q: 面对大项目，上下文不会爆吗？为什么不用 RAG？**
+
+RedCap 通过**架构层面**而非基础设施解决上下文问题，这是有意的设计选择：
+- **分步设计**：架构师将需求拆为 N 步，每步只处理一个模块，天然限制单次上下文需求
+- **按需读取**：Agent 通过 `read_file` 按需加载文件，不全量注入代码库
+- **Agent CLI 自身能力**：Claude Code 内置 codebase indexing、Gemini 有 repo map，代码检索是 Agent 层的职责
+- **检查点重载**（§3.2）：对抗规范退化，仅重读关键段落（~500 tokens/次）
+
+不在 Dispatcher 层引入 RAG/AST，是因为这与 Agent CLI 自身的代码索引能力重复，且违反"高内聚低耦合"——Dispatcher 管状态流转，Agent 管代码理解。
 
 ---
 
