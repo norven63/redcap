@@ -20,6 +20,7 @@
 - [快速上手](#快速上手)
 - [设计哲学](#设计哲学)
 - [作为 AI Agent 设计参考](#作为-ai-agent-设计参考)
+  - [Hook 机制深度解读](#31-hook-机制深度解读)
 
 ---
 
@@ -440,6 +441,84 @@ RedCap 的设计模式可以作为小型多 Agent 系统的参考蓝图。以下
 | 确定性执行 | 宿主 Hooks + shell 脚本封装 | 任何不能遗漏的关键步骤 |
 | 规则防退化 | 检查点重载（`read_file` 刷新上下文） | LLM 长对话场景 |
 | 动作防遗忘 | Pending Actions（待办写入持久化存储） | 多步骤任务的跨轮次连续性 |
+
+### 3.1 Hook 机制深度解读
+
+RedCap 的 Hook 体系是整个可靠性工程的核心。**核心洞察**：LLM 指令注入 ≠ 执行保证（详见 L-12），唯一 100% 确定性的是绕过 LLM 的宿主 Hooks。
+
+#### 问题模型
+
+```
+指令遵从率
+   ↑
+95%│████
+   │   ████
+85%│       ████          ← RedCap 完整流程通常 20-40 轮
+   │          ████         恰好在遵从率显著下降的区间
+70%│             ████
+   │                ████
+60%│                   ████
+   └─────────────────────────→
+   1   5   10   15   20   30
+       对话轮数
+```
+
+#### 四层防御架构
+
+| 层 | 机制 | 可靠性 | 实现方式 |
+|----|------|--------|---------|
+| **Layer 0** | 宿主 Hooks（OS 级 shell） | **100%** | 绕过 LLM，宿主程序直接执行 |
+| **Layer 1** | 系统级指令（每轮重注入） | ~30-50% 补救 | copilot-instructions.md / CLAUDE.md |
+| **Layer 2** | SKILL.md hooks 表 | ~60-70% | 依赖 LLM attention（会衰减） |
+| **Layer 3** | 下次启动审计 | ~95-100% | 新会话 attention 最强 |
+
+#### 两层 Hook 架构（Layer A / Layer B）
+
+RedCap 既是开发工具，也是被开发的对象，因此 Hook 分两层：
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Layer A — RedCap 开发用户项目                                     │
+│                                                                   │
+│ 部署位置: ~/.claude/settings.json（用户级，所有项目生效）          │
+│ 核心挑战: cwd 在目标项目，但脚本在 RedCap repo                    │
+│ 解决方案: 用户级全局 Hook + state.yaml 存在性检测 + 三重过滤       │
+│                                                                   │
+│ SessionStart → 捕获 HEAD + 清理僵尸标记                           │
+│ Stop         → state.yaml存在? → ALL_DONE? → 未通知? → on-complete│
+│ SessionEnd   → 清理 session 标记                                  │
+│                                                                   │
+│ 三重过滤（防误触发）:                                              │
+│  1. 开发手册/.workflow/state.yaml 存在 → 确认是 RedCap 项目       │
+│  2. current_state == ALL_DONE → 确认流程已完成                    │
+│  3. /tmp 标记文件去重 → 确认本 session 未通知过                    │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Layer B — 开发 RedCap 自身                                        │
+│                                                                   │
+│ 部署位置: .claude/settings.json（项目级，仅 RedCap repo 生效）    │
+│ InstructionsLoaded → 捕获初始 HEAD                                │
+│ Stop               → 检测新 commit → 飞书通知                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 关键设计决策：脚本封装
+
+将多步副作用封装为单一 shell 脚本（如 `redcap-on-complete.sh`），LLM 只需记住"调一个脚本"而非"记住 N 个步骤"。这降低了 LLM 记忆负担，是 Layer 0 + Layer 2 共用的提升手段。
+
+#### Hook 阅读路径（推荐顺序）
+
+| 顺序 | 文件 | 内容 | 阅读时间 |
+|------|------|------|---------|
+| 1 | `knowledge/host-reliability.md` §0-§3 | 总览：问题模型 + 四层防御 + 宿主对比 | ~5 min |
+| 2 | `knowledge/hooks-claude-code.md` §2-§3 | Hook 能力详情 + RedCap 部署现状 | ~5 min |
+| 3 | `tools/redcap-on-complete.sh` | 关键脚本封装示例（on_ALL_DONE） | ~3 min |
+| 4 | `tools/redcap-layerA-stop.sh` | Layer A 三重过滤实现 | ~3 min |
+| 5 | `knowledge/layerA-hook-deploy.md` | Layer A 部署指南 | ~3 min |
+| 6 | `knowledge/lessons.md` L-9, L-12, L-14 | 相关经验教训 | ~3 min |
+
+> 其他宿主工具的 Hook 详情：`hooks-kimi-cli.md`（Kimi CLI）、`hooks-vscode-copilot.md`、`hooks-gemini-cli.md`
 
 ### 4. 经验库模式（可复用）
 
