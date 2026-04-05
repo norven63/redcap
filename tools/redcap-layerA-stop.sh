@@ -8,10 +8,11 @@
 # 职责：
 #   检测 RedCap 工作流是否到达 ALL_DONE → 执行 on_ALL_DONE 收尾
 #
-# 检测逻辑（三重过滤，避免误触发）：
+# 检测逻辑（四重过滤，避免误触发）：
 #   1. 开发手册/.workflow/state.yaml 存在（RedCap 项目标识）
 #   2. current_state == ALL_DONE（流程完毕）
-#   3. 本 session 未通知过（session_id 去重）
+#   3. Session 归属校验（发起工作流的 session 才能触发）
+#   4. 本 session 未通知过（session_id 去重）
 #
 # 通信协议（Claude Code Hooks Reference）：
 #   stdin — JSON（含 session_id, cwd, stop_hook_active 等）
@@ -44,7 +45,20 @@ if [[ "$CURRENT_STATE" != "ALL_DONE" ]]; then
     exit 0
 fi
 
-# ── 过滤 3: Session 去重 ─────────────────────────────────
+# ── 过滤 3: Session 归属校验 ──────────────────────────────
+# 只有发起工作流的 session 才应触发收尾，防止其他 session 在同一
+# 项目目录下打开时误触发（state.yaml 仍为 ALL_DONE 但非本 session 产生）
+
+PROJECT_HASH=$(echo -n "$CWD" | md5 2>/dev/null || echo -n "$CWD" | md5sum 2>/dev/null | cut -d' ' -f1)
+WORKFLOW_SESSION_FILE="/tmp/redcap-layerA-workflow-session-${PROJECT_HASH}"
+if [[ -f "$WORKFLOW_SESSION_FILE" ]]; then
+    WORKFLOW_SESSION=$(cat "$WORKFLOW_SESSION_FILE")
+    if [[ "$WORKFLOW_SESSION" != "$SESSION_ID" ]]; then
+        exit 0
+    fi
+fi
+
+# ── 过滤 4: Session 去重 ─────────────────────────────────
 
 NOTIFIED_FILE="/tmp/redcap-layerA-notified-${SESSION_ID}"
 if [[ -f "$NOTIFIED_FILE" ]]; then
@@ -65,6 +79,21 @@ if [[ -f "$HEAD_FILE" ]]; then
 fi
 
 PROJECT_NAME=$(basename "$CWD")
+
+# ── Review 兜底检查 ──────────────────────────────────────
+# 状态机的 REVIEW_WORKING 节点受 LLM attention 衰减影响可能被跳过。
+# 如果 state.yaml history 中没有 reviewer 完成记录，拉起新 Agent 补 Review。
+
+REVIEW_FALLBACK="$REDCAP_DIR/tools/redcap-layerA-review-fallback.sh"
+if [[ -f "$REVIEW_FALLBACK" ]]; then
+    # 检查 history 中是否存在 reviewer 角色的 completed 记录
+    # state.yaml history 格式: - role: "reviewer" ... status: "completed"
+    HAS_REVIEW=$(grep -A3 'role:.*reviewer' "$STATE_FILE" 2>/dev/null | grep -c 'status:.*completed' || true)
+    if [[ "$HAS_REVIEW" -eq 0 ]]; then
+        echo "[redcap-layerA-stop] Review 未执行，启动兜底 Review..." >&2
+        bash "$REVIEW_FALLBACK" "$CWD" "$PROJECT_NAME" 2>&1 || echo "[redcap-layerA-stop] WARN: review-fallback exited with $?" >&2
+    fi
+fi
 
 # 调用 on-complete 收尾脚本
 ON_COMPLETE="$REDCAP_DIR/tools/redcap-on-complete.sh"

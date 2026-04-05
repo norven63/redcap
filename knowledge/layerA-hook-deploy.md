@@ -102,5 +102,7 @@ SessionEnd → 清理 session 标记文件
 |------|------|
 | Hook 不触发 | `claude --debug` 检查 hook 日志 |
 | 重复通知 | 检查 `/tmp/redcap-layerA-notified-*` 是否存在 |
+| 非本 Session 误触发 | 检查 `/tmp/redcap-layerA-workflow-session-*` 是否记录了正确的 session_id |
 | 僵尸标记累积 | `find /tmp -name "redcap-layerA-*" -ls`，SessionStart 会自动清理 >24h 的 |
+| Review 兜底未触发 | 确认 state.yaml history 中无 `role: reviewer` + `status: completed` 记录 |
 | on-complete.sh 失败 | 检查 `feishu-notifier.py` 和 `feishu-config.json` 配置 |

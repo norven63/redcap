@@ -276,7 +276,8 @@ redcap/
     ├── redcap-claude-hook-stop.sh ← Claude Code Stop Hook — 飞书通知（Layer B）
     ├── redcap-on-stop-review.sh   ← Claude Code Stop Hook — 独立架构评审（Layer B）
     ├── redcap-layerA-session-start.sh ← Layer A SessionStart Hook
-    ├── redcap-layerA-stop.sh      ← Layer A Stop Hook（三重过滤）
+    ├── redcap-layerA-stop.sh      ← Layer A Stop Hook（四重过滤 + Review 兜底）
+    ├── redcap-layerA-review-fallback.sh ← Layer A Review 兜底（拉起新 Agent）
     └── redcap-layerA-session-end.sh   ← Layer A SessionEnd Hook
 ```
 
@@ -704,7 +705,7 @@ RedCap 既是开发工具，也是被开发的对象，因此 Hook 分两层：
 | 2 | `knowledge/hooks-claude-code.md` §2-§3 | Hook 能力详情 + RedCap 部署现状 | ~5 min |
 | 3 | `tools/redcap-on-complete.sh` | 关键脚本封装示例（on_ALL_DONE） | ~3 min |
 | 4 | `tools/redcap-on-stop-review.sh` | 独立架构评审（Stop Hook 拉起新 Agent） | ~5 min |
-| 5 | `tools/redcap-layerA-stop.sh` | Layer A 三重过滤实现 | ~3 min |
+| 5 | `tools/redcap-layerA-stop.sh` | Layer A 四重过滤 + Review 兜底实现 | ~3 min |
 | 6 | `knowledge/layerA-hook-deploy.md` | Layer A 部署指南 | ~3 min |
 | 7 | `knowledge/lessons.md` L-9, L-12, L-14 | 相关经验教训 | ~3 min |
 

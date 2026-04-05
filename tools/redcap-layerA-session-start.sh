@@ -41,4 +41,14 @@ find /tmp -maxdepth 1 -name "redcap-layerA-*" -mtime +1 -delete 2>/dev/null || t
 HEAD=$(git -C "$CWD" rev-parse HEAD 2>/dev/null) || exit 0
 echo "$HEAD" > "/tmp/redcap-layerA-head-${SESSION_ID}"
 
+# ── 3. 记录 Session 归属（用于 Stop Hook 校验） ──────────
+
+# 如果当前 CWD 是 RedCap 工作流项目，记录本 Session 为工作流发起者
+# 使用 CWD 的 md5 哈希作为项目标识，避免路径中特殊字符
+STATE_FILE="$CWD/开发手册/.workflow/state.yaml"
+if [[ -f "$STATE_FILE" ]]; then
+    PROJECT_HASH=$(echo -n "$CWD" | md5 2>/dev/null || echo -n "$CWD" | md5sum 2>/dev/null | cut -d' ' -f1)
+    echo "$SESSION_ID" > "/tmp/redcap-layerA-workflow-session-${PROJECT_HASH}"
+fi
+
 exit 0

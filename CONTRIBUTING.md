@@ -65,7 +65,7 @@ docs(经验): 新增 L-9 飞书架构局限性
 
 ## 4. 独立架构评审（Stop Hook 自动触发）
 
-> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的评审由状态机的 `REVIEW_WORKING` 节点驱动独立 Reviewer Agent 执行（见 `roles/reviewer/handbook.md`），不存在遗漏风险。
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的评审由状态机 `REVIEW_WORKING` 节点驱动，当 LLM 跳过 Review 直接进入 ALL_DONE 时，Layer A Stop Hook 会检测缺失并拉起新 Agent 兜底执行项目级 Review（`tools/redcap-layerA-review-fallback.sh`）。两层共享同一设计模式：Hook 100% 触发 + 新 Agent 生命周期保证认知能力（详见 L-15）。
 
 **问题**：开发 Agent 在长对话末期注意力衰减，可能遗漏规范检查、文件联动、经验沉淀等收尾动作。即使 §3 写了自检清单，长任务末期的 LLM 也可能"忘记"执行。
 
@@ -124,6 +124,7 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
 | tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ knowledge/host-reliability.md（防线文档）|
+| tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
 
 ### 跨工具指令文件位置参考（经官方文档验证 2026-04）
 

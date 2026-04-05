@@ -185,3 +185,13 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：medium
 - **复现次数**：1
 - **最后命中**：2026-04
+
+### L-15: 需认知的关键动作用 Hook + 新 Agent 生命周期兜底
+- **场景**：两个独立场景暴露同一模式缺陷——① Layer B：开发 RedCap 自身时，长对话末期 Agent 忘记执行架构评审和规范检查 ② Layer A：状态机的 `REVIEW_WORKING` 节点在 20+ 轮长对话中被 LLM 跳过，直接进入 ALL_DONE
+- **根因**：需要**认知能力**的关键动作（Code Review、架构评审）无法用纯脚本实现，但又不能接受 LLM attention 衰减导致的遗漏。软约束（文档规则）失败率 20-30%，环境变量 hack 缺乏认知能力——两端都不可行
+- **经验规则**：① 核心模式：`Hook（100% 触发）→ 拉起新 Agent（100% 认知能力，无历史上下文污染）`。Hook 保证触发，新 Agent 生命周期保证认知质量 ② Layer B 实例：Stop Hook → `redcap-on-stop-review.sh` → 新 Agent 独立架构评审 ③ Layer A 实例：Stop Hook 检测 ALL_DONE 但缺少 REVIEW_PASS → `redcap-layerA-review-fallback.sh` → 新 Agent 项目级 Review ④ 附带发现：Session 归属校验是 Hook 正确触发的前提——不同 session 在同一 CWD 可导致 Hook 误触发
+- **来源**：Layer A/B Hook 可靠性工程 + Gemini 3.1 "架构遗忘"讨论
+- **发现日期**：2026-04
+- **影响度**：high
+- **复现次数**：2（Layer A + Layer B 独立发现同一模式）
+- **最后命中**：2026-04
