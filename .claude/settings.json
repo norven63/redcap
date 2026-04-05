@@ -17,6 +17,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash tools/redcap-on-stop-review.sh"
+          },
+          {
+            "type": "command",
             "command": "bash tools/redcap-claude-hook-stop.sh"
           }
         ]

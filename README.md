@@ -146,15 +146,16 @@ RedCap 有两条完全不同的工作流：
 │  1. 读 CONTRIBUTING.md — 获取完整规范                         │
 │  2. 读 knowledge/lessons.md — 检查已知陷阱                    │
 │  3. 执行变更                                                  │
-│  4. 检查影响范围 — CONTRIBUTING.md §5 联动表                  │
+│  4. 检查影响范围 — CONTRIBUTING.md §6 联动表                  │
 │  5. 经验沉淀自检 — 是否有新 Lesson？                         │
 │  6. git commit（Conventional Commit 中文格式）                │
 │  7. 飞书通知（自动/宿主 Hook）                                │
+│  8. 独立架构评审（Stop Hook 自动拉起新 Agent）                │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────────┐  │
 │  │ 宿主 Hook（Layer 0）自动保障                             │  │
 │  │ • Kimi CLI: SessionStart 捕获 HEAD → Stop 飞书通知      │  │
-│  │ • Claude Code: InstructionsLoaded → Stop 飞书通知        │  │
+│  │ • Claude Code: InstructionsLoaded → Stop 独立评审+通知   │  │
 │  │ • VS Code / Gemini: 无 Hook，依赖 Agent 自觉 + 启动审计 │  │
 │  └─────────────────────────────────────────────────────────┘  │
 │                                                               │
@@ -272,7 +273,8 @@ redcap/
     ├── redcap-on-qa-pass.sh       ← on_QA_PASS 提交脚本
     ├── kimi-hook-handler.sh       ← Kimi CLI 宿主 Hook 处理器
     ├── redcap-claude-hook-init.sh ← Claude Code InstructionsLoaded Hook
-    ├── redcap-claude-hook-stop.sh ← Claude Code Stop Hook（Layer B）
+    ├── redcap-claude-hook-stop.sh ← Claude Code Stop Hook — 飞书通知（Layer B）
+    ├── redcap-on-stop-review.sh   ← Claude Code Stop Hook — 独立架构评审（Layer B）
     ├── redcap-layerA-session-start.sh ← Layer A SessionStart Hook
     ├── redcap-layerA-stop.sh      ← Layer A Stop Hook（三重过滤）
     └── redcap-layerA-session-end.sh   ← Layer A SessionEnd Hook
@@ -685,7 +687,8 @@ RedCap 既是开发工具，也是被开发的对象，因此 Hook 分两层：
 │                                                                   │
 │ 部署位置: .claude/settings.json（项目级，仅 RedCap repo 生效）    │
 │ InstructionsLoaded → 捕获初始 HEAD                                │
-│ Stop               → 检测新 commit → 飞书通知                     │
+│ Stop → ① 独立架构评审（新 Agent，零上下文污染）                    │
+│        ② 检测新 commit → 飞书通知                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -700,9 +703,10 @@ RedCap 既是开发工具，也是被开发的对象，因此 Hook 分两层：
 | 1 | `knowledge/host-reliability.md` §0-§3 | 总览：问题模型 + 四层防御 + 宿主对比 | ~5 min |
 | 2 | `knowledge/hooks-claude-code.md` §2-§3 | Hook 能力详情 + RedCap 部署现状 | ~5 min |
 | 3 | `tools/redcap-on-complete.sh` | 关键脚本封装示例（on_ALL_DONE） | ~3 min |
-| 4 | `tools/redcap-layerA-stop.sh` | Layer A 三重过滤实现 | ~3 min |
-| 5 | `knowledge/layerA-hook-deploy.md` | Layer A 部署指南 | ~3 min |
-| 6 | `knowledge/lessons.md` L-9, L-12, L-14 | 相关经验教训 | ~3 min |
+| 4 | `tools/redcap-on-stop-review.sh` | 独立架构评审（Stop Hook 拉起新 Agent） | ~5 min |
+| 5 | `tools/redcap-layerA-stop.sh` | Layer A 三重过滤实现 | ~3 min |
+| 6 | `knowledge/layerA-hook-deploy.md` | Layer A 部署指南 | ~3 min |
+| 7 | `knowledge/lessons.md` L-9, L-12, L-14 | 相关经验教训 | ~3 min |
 
 > 其他宿主工具的 Hook 详情：`hooks-kimi-cli.md`（Kimi CLI）、`hooks-vscode-copilot.md`、`hooks-gemini-cli.md`
 #### 规则防退化（检查点重载）

@@ -18,7 +18,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | **可移植性** | 跟随 RedCap 框架，适用于所有项目 | 仅对 RedCap 自身 repo 生效 |
 | **执行保证** | `on_ALL_DONE`: Layer 0（用户级 Stop hook）；其他: Layer 2-3 | 100% 确定性（Layer 0） |
 
-> 本文件及其子文档（`hooks-*.md`）记录的**宿主 Hook 能力**同时服务于两层。§3 的四层防御策略以 Layer A 场景为主，Layer B 的具体部署见各 `hooks-*.md` 的"部署现状"章节及 `CONTRIBUTING.md` §4。Layer A 的用户级 Hook 脚本见 `tools/redcap-layerA-*.sh`。
+> 本文件及其子文档（`hooks-*.md`）记录的**宿主 Hook 能力**同时服务于两层。§3 的四层防御策略以 Layer A 场景为主，Layer B 的具体部署见各 `hooks-*.md` 的"部署现状"章节及 `CONTRIBUTING.md` §4-§5。Layer A 的用户级 Hook 脚本见 `tools/redcap-layerA-*.sh`。
 
 ---
 
@@ -91,6 +91,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 |------|----------|-----------|---------|
 | `tools/redcap-on-complete.sh` | `on_ALL_DONE` | ① 清除 .workflow/ 临时文件（§5.9）② 输出交付摘要 ③ 飞书通知（§5.11） | `bash tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>` |
 | `tools/redcap-on-qa-pass.sh` | `on_QA_PASS` | ① git add -A && git commit（按 commit-standards.md）② 检查 lesson 字段 | `bash tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]` |
+| `tools/redcap-on-stop-review.sh` | Stop Hook（Layer B） | 提取 git diff → 拉起新 Agent 独立架构评审 → PASS/FAIL + 飞书告警 | 由 `.claude/settings.json` Stop hook 自动触发 |
 
 **好处**：Dispatcher 只需记住"调一个脚本"，而不是"记住 N 个步骤每步的细节"。
 
@@ -108,7 +109,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 
 | 节点 | 风险 | 已有防护 | 剩余风险 |
 |------|------|---------|---------|
-| `on_ALL_DONE`（清理+摘要+飞书） | E2E 已实际遗漏（L-9） | ✅ Layer B: 项目级 Stop hook + Layer A: 用户级 Stop hook（三重过滤） + 脚本封装 + pending_actions + 启动审计 | 低（前提：已按 `layerA-hook-deploy.md` 部署用户级 Hook）：Layer A/B 均有 Layer 0 保护（Claude/Kimi）。VS Code/Gemini 退守 Layer 2+3 |
+| `on_ALL_DONE`（清理+摘要+飞书） | E2E 已实际遗漏（L-9） | ✅ Layer B: 项目级 Stop hook + 独立架构评审 + Layer A: 用户级 Stop hook（三重过滤）+ 脚本封装 + pending_actions + 启动审计 | 低（前提：已按 `layerA-hook-deploy.md` 部署用户级 Hook）：Layer A/B 均有 Layer 0 保护（Claude/Kimi）。VS Code/Gemini 退守 Layer 2+3 |
 | `on_QA_PASS`（git commit） | 遗漏则代码可能丢失 | ✅ 脚本封装 + pending_actions | 低：pending_actions 原子写入保障 |
 | `§5.13 pending_actions 写入` | 递归遗忘问题 | ✅ 原子写入铁律（与 current_state 同一次写入） | 中：仍为 LLM 执行，但降为单一操作 |
 

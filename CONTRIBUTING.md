@@ -63,7 +63,34 @@ docs(经验): 新增 L-9 飞书架构局限性
 2. 本轮是否验证了一个**之前文档中写错的假设**？→ 归档为 Lesson
 3. 本轮使用的**工作方法本身**是否值得复用？→ 归档为方法论 Lesson
 
-## 4. 飞书通知
+## 4. 独立架构评审（Stop Hook 自动触发）
+
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的评审由状态机的 `REVIEW_WORKING` 节点驱动独立 Reviewer Agent 执行（见 `roles/reviewer/handbook.md`），不存在遗漏风险。
+
+**问题**：开发 Agent 在长对话末期注意力衰减，可能遗漏规范检查、文件联动、经验沉淀等收尾动作。即使 §3 写了自检清单，长任务末期的 LLM 也可能"忘记"执行。
+
+**解法**：Layer 0（物理 Hook）+ 全新 Agent 生命周期。
+
+- **触发机制**：Claude Code Stop Hook → `tools/redcap-on-stop-review.sh`
+- **执行方式**：脚本提取 `git diff`，拉起一个全新的、无历史上下文污染的 Agent（`kimi -p` / `claude -p`）执行独立评审
+- **评审维度**：Commit 规范、经验回顾、文件联动（§6 影响范围表）、内容质量、经验沉淀遗漏
+- **结果处理**：
+  - `PASS` → 静默通过
+  - `FAIL`（含 P0 问题）→ 飞书告警 + 写标记文件 `/tmp/redcap-stop-review-result`
+  - 评审日志始终保存到 `/tmp/redcap-stop-review-log.md`
+
+> ⚠ Claude Code 的 Stop hook 退出码非零不会阻塞 Agent 退出。FAIL 时通过飞书告警通知用户，下次会话的 init hook 也可检查未解决的评审标记。
+
+**宿主适配**：
+
+| 宿主 | 触发方式 | 状态 |
+|------|---------|------|
+| Claude Code | `.claude/settings.json` Stop hook | ✅ 已部署 |
+| Kimi CLI | `dispatcher` Stop 事件路由 | ⏳ 待适配 |
+| VS Code Copilot | 无原生 Hook | ❌ 不支持 |
+| Gemini CLI | Hook 机制待集成 | ❌ 不支持 |
+
+## 5. 飞书通知
 
 > **本节属于 Layer B（开发 RedCap 自身）**。Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10 定义，通过 Dispatcher 状态机触发。两层架构详见 `knowledge/host-reliability.md` §0。
 
@@ -84,7 +111,7 @@ python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描�
 python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap"
 ```
 
-## 5. 文件变更影响范围提示
+## 6. 文件变更影响范围提示
 
 | 修改的文件 | 可能需要同步更新的文件 |
 |-----------|---------------------|
@@ -96,6 +123,7 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | CONTRIBUTING.md 自身 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md 均为索引，通过 `@` 导入指向本文件；修改本文件即全局生效，无需手动同步 |
 | references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
+| tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ knowledge/host-reliability.md（防线文档）|
 
 ### 跨工具指令文件位置参考（经官方文档验证 2026-04）
 
