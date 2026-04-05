@@ -125,17 +125,19 @@ Claude Code 支持 **24 种** hook 事件（截至 2026-04 官方文档）：
 {
   "hooks": {
     "SessionStart": [{
-      "hooks": [{ "type": "command", "command": "/absolute/path/to/redcap/tools/redcap-layerA-session-start.sh" }]
+      "hooks": [{ "type": "command", "command": "<REDCAP_DIR>/tools/redcap-layerA-session-start.sh" }]
     }],
     "Stop": [{
-      "hooks": [{ "type": "command", "command": "/absolute/path/to/redcap/tools/redcap-layerA-stop.sh" }]
+      "hooks": [{ "type": "command", "command": "<REDCAP_DIR>/tools/redcap-layerA-stop.sh" }]
     }],
     "SessionEnd": [{
-      "hooks": [{ "type": "command", "command": "/absolute/path/to/redcap/tools/redcap-layerA-session-end.sh" }]
+      "hooks": [{ "type": "command", "command": "<REDCAP_DIR>/tools/redcap-layerA-session-end.sh" }]
     }]
   }
 }
 ```
+
+> ⚠ 将 `<REDCAP_DIR>` 替换为实际绝对路径。部署详见 [`layerA-hook-deploy.md`](../knowledge/layerA-hook-deploy.md)。
 
 | 脚本 | 触发事件 | 功能 |
 |------|---------|------|

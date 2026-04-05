@@ -27,6 +27,7 @@ SESSION_ID=$(echo "$INPUT" | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]
 CWD=$(echo "$INPUT" | grep -o '"cwd"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 
 if [[ -z "$SESSION_ID" || -z "$CWD" ]]; then
+    echo "[redcap-layerA-session-start] WARN: failed to parse session_id or cwd from stdin" >&2
     exit 0
 fi
 

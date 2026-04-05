@@ -7,7 +7,7 @@
 ## 前置条件
 
 - Claude Code CLI 已安装
-- RedCap 框架目录：`/Users/norven/.claude/skills/redcap/`（根据实际路径调整）
+- RedCap 框架目录：`~/.claude/skills/redcap/`（根据实际路径调整）
 - `jq` 非必需（脚本用 grep/sed 解析 JSON，零外部依赖）
 
 ## 部署步骤
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/norven/.claude/skills/redcap/tools/redcap-layerA-session-start.sh"
+            "command": "<REDCAP_DIR>/tools/redcap-layerA-session-start.sh"
           }
         ]
       }
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/norven/.claude/skills/redcap/tools/redcap-layerA-stop.sh"
+            "command": "<REDCAP_DIR>/tools/redcap-layerA-stop.sh"
           }
         ]
       }
@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/norven/.claude/skills/redcap/tools/redcap-layerA-session-end.sh"
+            "command": "<REDCAP_DIR>/tools/redcap-layerA-session-end.sh"
           }
         ]
       }
@@ -55,13 +55,14 @@
 }
 ```
 
-> ⚠ 路径必须使用绝对路径。根据你的 RedCap 安装位置调整。
+> ⚠ 将 `<REDCAP_DIR>` 替换为 RedCap 实际安装的绝对路径（如 `/Users/yourname/.claude/skills/redcap`）。
 
 ### 2. 验证脚本可执行
 
 ```bash
 ls -la ~/.claude/skills/redcap/tools/redcap-layerA-*.sh
 # 确认 -rwxr-xr-x 权限
+# 若权限不足：chmod +x ~/.claude/skills/redcap/tools/redcap-layerA-*.sh
 ```
 
 ### 3. 验证部署

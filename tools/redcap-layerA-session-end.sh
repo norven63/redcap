@@ -21,6 +21,7 @@ INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 
 if [[ -z "$SESSION_ID" ]]; then
+    echo "[redcap-layerA-session-end] WARN: failed to parse session_id from stdin" >&2
     exit 0
 fi
 

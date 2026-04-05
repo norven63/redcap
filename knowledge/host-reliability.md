@@ -108,7 +108,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 
 | 节点 | 风险 | 已有防护 | 剩余风险 |
 |------|------|---------|---------|
-| `on_ALL_DONE`（清理+摘要+飞书） | E2E 已实际遗漏（L-9） | ✅ Layer B: 项目级 Stop hook + Layer A: 用户级 Stop hook（三重过滤） + 脚本封装 + pending_actions + 启动审计 | 低：Layer A/B 均有 Layer 0 保护（Claude/Kimi）。VS Code/Gemini 退守 Layer 2+3 |
+| `on_ALL_DONE`（清理+摘要+飞书） | E2E 已实际遗漏（L-9） | ✅ Layer B: 项目级 Stop hook + Layer A: 用户级 Stop hook（三重过滤） + 脚本封装 + pending_actions + 启动审计 | 低（前提：已按 `layerA-hook-deploy.md` 部署用户级 Hook）：Layer A/B 均有 Layer 0 保护（Claude/Kimi）。VS Code/Gemini 退守 Layer 2+3 |
 | `on_QA_PASS`（git commit） | 遗漏则代码可能丢失 | ✅ 脚本封装 + pending_actions | 低：pending_actions 原子写入保障 |
 | `§5.13 pending_actions 写入` | 递归遗忘问题 | ✅ 原子写入铁律（与 current_state 同一次写入） | 中：仍为 LLM 执行，但降为单一操作 |
 

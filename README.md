@@ -152,8 +152,8 @@ RedCap 有两条完全不同的工作流：
 │  └─────────────────────────────────────────────────────────┘  │
 │                                                               │
 │  ⚠ 此处为 Layer B（开发 RedCap 自身）的 Hook。               │
-│    Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10   │
-│    定义，通过 Dispatcher 状态机触发，机制完全不同。           │
+│    Layer A（RedCap 开发用户项目）已实现用户级 Stop hook  │
+│    （三重过滤防误触发），部署详见 knowledge/layerA-hook-deploy.md。│
 │    两层架构详见 knowledge/host-reliability.md §0。            │
 └───────────────────────────────────────────────────────────────┘
 ```
@@ -164,7 +164,7 @@ RedCap 有两条完全不同的工作流：
 |------|------|
 | `CONTRIBUTING.md` | 唯一权威规范（commit 格式、飞书通知、影响范围） |
 | `CLAUDE.md` / `GEMINI.md` / `.github/copilot-instructions.md` | 索引文件，`@` 导入 CONTRIBUTING.md |
-| `knowledge/lessons.md` | 12 条已知陷阱，变更前必读 |
+| `knowledge/lessons.md` | 13 条已知陷阱，变更前必读 |
 
 ---
 
@@ -327,13 +327,14 @@ redcap/
 │   └── agent-constraints.md       ← 子 Agent 共享约束（防退化等）
 │
 ├── knowledge/                     ← 经验库 + 调研报告
-│   ├── lessons.md                 ← 12 条框架级经验（L-1 ~ L-12）
+│   ├── lessons.md                 ← 13 条框架级经验（L-1 ~ L-13）
 │   ├── lessons-archive.md         ← 归档的低活跃经验
 │   ├── host-reliability.md        ← 宿主可靠性调研总览
 │   ├── hooks-vscode-copilot.md    ← VS Code Copilot hooks 详情
 │   ├── hooks-claude-code.md       ← Claude Code hooks 详情
 │   ├── hooks-gemini-cli.md        ← Gemini CLI hooks 详情
-│   └── hooks-kimi-cli.md          ← Kimi CLI hooks + Dispatcher 协议
+│   ├── hooks-kimi-cli.md          ← Kimi CLI hooks + Dispatcher 协议
+│   └── layerA-hook-deploy.md      ← Layer A 用户级 Hook 部署指南
 │
 └── tools/                         ← 可执行脚本
     ├── feishu-notifier.py         ← 飞书通知（notify/ask/resume/confirm）
@@ -341,7 +342,10 @@ redcap/
     ├── redcap-on-qa-pass.sh       ← on_QA_PASS 提交脚本
     ├── kimi-hook-handler.sh       ← Kimi CLI 宿主 Hook 处理器
     ├── redcap-claude-hook-init.sh ← Claude Code InstructionsLoaded Hook
-    └── redcap-claude-hook-stop.sh ← Claude Code Stop Hook
+    ├── redcap-claude-hook-stop.sh ← Claude Code Stop Hook（Layer B）
+    ├── redcap-layerA-session-start.sh ← Layer A SessionStart Hook
+    ├── redcap-layerA-stop.sh      ← Layer A Stop Hook（三重过滤）
+    └── redcap-layerA-session-end.sh   ← Layer A SessionEnd Hook
 ```
 
 ---

@@ -3,13 +3,23 @@
     "InstructionsLoaded": [
       {
         "matcher": "",
-        "command": "bash tools/redcap-claude-hook-init.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash tools/redcap-claude-hook-init.sh"
+          }
+        ]
       }
     ],
     "Stop": [
       {
         "matcher": "",
-        "command": "bash tools/redcap-claude-hook-stop.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash tools/redcap-claude-hook-stop.sh"
+          }
+        ]
       }
     ]
   }

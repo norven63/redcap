@@ -26,6 +26,7 @@ SESSION_ID=$(echo "$INPUT" | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]
 CWD=$(echo "$INPUT" | grep -o '"cwd"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 
 if [[ -z "$SESSION_ID" || -z "$CWD" ]]; then
+    echo "[redcap-layerA-stop] WARN: failed to parse session_id or cwd from stdin" >&2
     exit 0
 fi
 
@@ -52,7 +53,8 @@ fi
 
 # ── 执行 on_ALL_DONE 收尾 ────────────────────────────────
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# 使用 readlink 解析真实路径（兼容符号链接）
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")" )" && pwd)"
 REDCAP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # 读取初始 HEAD（SessionStart 捕获）
@@ -67,7 +69,9 @@ PROJECT_NAME=$(basename "$CWD")
 # 调用 on-complete 收尾脚本
 ON_COMPLETE="$REDCAP_DIR/tools/redcap-on-complete.sh"
 if [[ -f "$ON_COMPLETE" ]]; then
-    bash "$ON_COMPLETE" "$CWD" "$INITIAL_HEAD" "$PROJECT_NAME" 2>/dev/null || true
+    bash "$ON_COMPLETE" "$CWD" "$INITIAL_HEAD" "$PROJECT_NAME" 2>&1 || echo "[redcap-layerA-stop] WARN: on-complete.sh exited with $?" >&2
+else
+    echo "[redcap-layerA-stop] WARN: on-complete.sh not found at $ON_COMPLETE" >&2
 fi
 
 # 标记已通知
