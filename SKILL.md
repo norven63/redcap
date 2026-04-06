@@ -161,13 +161,18 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
    current_state: "INIT"
    iteration: 1              # 迭代版本号（§5.14）
    current_step: 0
+   current_step_name: null
    total_steps: 0
    current_role: null
    history: []
    paused_from: null
    escalation_stack: []
+   blocked_on_user: false
    feishu_record_id: null
    pending_actions: []       # §5.13 双保险待办清单
+   degraded_mode: false
+   degraded_approved_by: null
+   agent_health: {}          # 运行时按 agent-registry.yaml 动态填充
    ```
 
 3.5. **Agent 嗅探**（所有场景）：

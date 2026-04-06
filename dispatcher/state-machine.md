@@ -110,19 +110,19 @@ total_steps: 5
 
 current_role:
   name: "programmer"
-  agent: "gemini"
+  agent: "gemini&gemini-3-flash"  # {cli}&{model} 格式（见 agent-adapters.md §1.1）
   session_id: "abc-123-def-456"
   started_at: "2026-03-28T10:00:00Z"
   retry_count: 0
 
 history:
   - role: "product-manager"
-    agent: "claude-code"
+    agent: "claude-code&claude-sonnet-4"  # {cli}&{model} 格式
     session_id: "aaa-111"
     status: "completed"
     finished_at: "2026-03-28T09:00:00Z"
   - role: "architect"
-    agent: "gemini"
+    agent: "gemini&gemini-3-flash"  # {cli}&{model} 格式
     session_id: "bbb-222"
     status: "completed"
     finished_at: "2026-03-28T09:30:00Z"
@@ -248,27 +248,32 @@ function dispatch_loop(project_dir):
             next = lookup_transition_table(state.current_state)
             state.current_state = next.target_state
 
+        # --- §5.2 步骤 5: *_WORKING 处理 ---
         if state.current_state ends with "_WORKING":
             role = extract_role(state.current_state)
-            agent = lookup_agent_routing(role)          # 含 Fallback 路由
-            prompt = assemble_prompt(role, state)        # 按变量映射表填充模板
-            write_file(".workflow/{role}-prompt-step{N}.txt", prompt)  # 文件传参
+            agent = lookup_agent_routing(role)          # 5a: 路由算法（含 Fallback）
+            prompt = assemble_prompt(role, state)        # 5b: 组装 Prompt
+            write_file(".workflow/{role}-prompt-step{N}.txt", prompt)
 
-            session = get_or_create_session(role, state.current_step, agent)
-            result = execute_agent_cli(agent, prompt_file, session)
+            session = get_or_create_session(role, state.current_step, agent)  # 5c: Session
+            result = execute_agent_cli(agent, prompt_file, session)           # 5d: 执行 CLI
 
-            # 状态解析
-            event = parse_redcap_status(result)          # A 为主，B 为 Fallback
-            write_json(".workflow/last-result.json", event)  # Dispatcher 写入
+            event = parse_redcap_status(result)          # 5e: 解析返回
+            write_json(".workflow/last-result.json", event)  # 5f: 写入 last-result
 
-            # 交付物完整性校验（status=="completed" 时）
+            # 5g: 交付物完整性校验（status=="completed" 时）
             if event.status == "completed":
                 if not validate_deliverables(event, role):
-                    retry_or_fallback(agent, role)       # 重试/切换 Agent，不代劳
+                    retry_or_fallback(agent, role)
                     continue
 
+            # 5h: 触发匹配的 hooks
+            trigger_hooks(state, event)
+            # 5i: 状态转移
             update_state(state, event)
-            # §L-21: 目的回读 — 每个角色完成后检查方向偏移
+            # 5j: 向用户汇报
+            report_progress(state, event)
+            # 5k: §L-21 目的回读 — 每个角色完成后检查方向偏移
             if state.purpose:
                 drift = check_purpose_drift(state.purpose, state.current_state, event)
                 if drift.detected:
