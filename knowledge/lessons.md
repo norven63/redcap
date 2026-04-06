@@ -225,3 +225,23 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04
+
+### L-19: Dispatcher 代劳时 state.yaml 维护纪律会系统性下降
+- **场景**：trpg-web 步骤 1-2 由独立 Agent 执行，state.yaml 正常维护。步骤 3-5 全部由 Dispatcher（Cap）代劳后，state.yaml 停留在 `step: 3, DEV_WORKING`，实际已完成全部 5 步。history 仅记录到步骤 3 的部分角色
+- **根因**：Dispatcher 正常调度独立 Agent 时，state.yaml 更新是事件循环的固有步骤（§5.2 第 5 步）。但代劳模式下 Dispatcher 自身在"执行"和"调度"之间切换，容易在角色执行完成后忘记回到调度视角更新状态文件。认知负荷从"读状态→调Agent→写状态"变为"读状态→自己做→可能忘了写状态"
+- **经验规则**：① Dispatcher 代劳完成每个角色后，必须立即更新 state.yaml（同正常流程完全一致，不可省略）② 建议在 commit 前增加 state.yaml 一致性检查：当前实际进度与 state.yaml 记录是否吻合 ③ 代劳模式下 history 记录需添加 `note: "Dispatcher代劳"` 标记，便于回溯
+- **来源**：trpg-web E2E 测试（Phase 4 验证）
+- **发现日期**：2026-04
+- **影响度**：medium
+- **复现次数**：1
+- **最后命中**：2026-04
+
+### L-20: Agent CLI headless 模式的稳定性是多 Agent 协同的实际瓶颈
+- **场景**：trpg-web 5 步流程中，4 个 Agent CLI（copilot/claude/kimi/gemini）分别出现超时、长时间挂起零产出、权限确认阻塞、进程不退出等问题。步骤 3-5 所有角色被迫由 Dispatcher 代劳
+- **根因**：各 Agent CLI 的 headless（`-p`/非交互）模式成熟度参差不齐。共性问题：① 权限/安全确认在 headless 下无人应答导致挂起（kimi `ACTION REQUIRED`、gemini `[Y/n]`）② 长任务完成后 CLI 不干净退出（gemini JSON 序列化卡死、claude 10分钟零产出）③ 网络代理/超时配置不透明（copilot CLI 超时无明确配置项）
+- **经验规则**：① 每个 Agent CLI 必须使用该 CLI 已验证的最高权限参数（L-7 泛化版）：gemini `--yolo`、claude `--permission-mode bypassPermissions`、copilot 无此选项需依赖超时兜底 ② Fallback 路由必须包含 Dispatcher 代劳作为最终降级（需用户授权），不能假设总有独立 Agent 可用 ③ Dispatcher 超时时先检查磁盘交付物是否已落盘（L-11 模式），已落盘则视为"内容完成、通信失败" ④ 此为当前多 Agent 协同的根本制约因素，短期靠 Dispatcher 代劳兜底，中长期依赖 CLI 工具链成熟
+- **来源**：trpg-web E2E 全流程（Phase 4 验证），复现了 L-4/L-5/L-7/L-11 的综合效应
+- **发现日期**：2026-04
+- **影响度**：high
+- **复现次数**：1（但综合了 L-4/L-7/L-11 的多次独立复现）
+- **最后命中**：2026-04

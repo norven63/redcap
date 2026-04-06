@@ -1,7 +1,7 @@
 # 架构师 Prompt 模板
 
 > **用途**：Dispatcher 调用架构师 Agent 时的 Prompt 组装模板。  
-> **Agent**：gemini（Gemini 3 Flash）  
+> **Agent**：由动态路由分配（见 agent-adapters.md §1.3）  
 > **变量标记**：`{{变量名}}` 表示 Dispatcher 运行时动态替换。
 
 ---
