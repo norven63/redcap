@@ -268,6 +268,7 @@ redcap/
 │   ├── hooks-claude-code.md       ← Claude Code hooks 详情
 │   ├── hooks-gemini-cli.md        ← Gemini CLI hooks 详情
 │   ├── hooks-kimi-cli.md          ← Kimi CLI hooks + Dispatcher 协议
+│   ├── hooks-copilot-cli.md       ← Copilot CLI hooks（仓库级 .github/hooks/）
 │   └── layerA-hook-deploy.md      ← Layer A 用户级 Hook 部署指南
 │
 └── tools/                         ← 可执行脚本
@@ -720,7 +721,7 @@ RedCap 既是开发工具，也是被开发的对象，因此 Hook 分两层：
 | 6 | `knowledge/layerA-hook-deploy.md` | Layer A 部署指南 | ~3 min |
 | 7 | `knowledge/lessons.md` L-9, L-12, L-14 | 相关经验教训 | ~3 min |
 
-> 其他宿主工具的 Hook 详情：`hooks-kimi-cli.md`（Kimi CLI）、`hooks-vscode-copilot.md`、`hooks-gemini-cli.md`
+> 其他宿主工具的 Hook 详情：`hooks-kimi-cli.md`（Kimi CLI）、`hooks-copilot-cli.md`（Copilot CLI）、`hooks-vscode-copilot.md`、`hooks-gemini-cli.md`
 #### 规则防退化（检查点重载）
 
 **问题模型**

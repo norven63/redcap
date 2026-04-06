@@ -15,6 +15,8 @@ claude-code&Kimi-K2.5     — Claude Code CLI + Kimi K2.5 (SiliconFlow)
 claude-code&claude-sonnet — Claude Code CLI + Claude Sonnet 原生
 gemini&gemini-3-flash      — Gemini CLI + Gemini 3 Flash
 kimi&kimi-for-coding       — Kimi CLI + Kimi Code 原生
+copilot&claude-opus-4.6    — Copilot CLI + Claude Opus 4.6（默认）
+copilot&gpt-5.4            — Copilot CLI + GPT-5.4
 ```
 
 ### 1.2 模型检测与缓存
@@ -42,6 +44,9 @@ print(main[0] if main else 'unknown')
 
 # kimi: 从配置文件读取默认模型
 grep 'default_model' ~/.kimi/config.toml 2>/dev/null | cut -d'"' -f2 || echo "kimi-for-coding"
+
+# copilot: 从 --version 确认可用，默认模型为 claude-opus-4.6
+copilot --version 2>/dev/null && echo "claude-opus-4.6" || echo "unavailable"
 ```
 
 **缓存位置** `.workflow/agent-registry.yaml`：
@@ -62,6 +67,11 @@ agents:
     model: "kimi-code/kimi-for-coding"
     detected_at: "2026-03-29T19:25:00+08:00"
     available: true
+  copilot:
+    cli_path: "/opt/homebrew/bin/copilot"  # 或 which copilot 检测
+    model: "claude-opus-4.6"               # 默认，可通过 --model 切换
+    detected_at: "2026-03-29T19:25:00+08:00"
+    available: true
 ```
 
 ### 1.3 优先级路由表（带 Model 维度）
@@ -76,25 +86,30 @@ agent_priority:
   product-manager:
     - "kimi&kimi-for-coding"         # Kimi 原生 CLI 优先
     - "claude-code&Kimi-K2.5"        # 同模型但通用 CLI 备选
+    - "copilot&claude-opus-4.6"      # Copilot CLI + Claude 深度推理
     - "claude-code&claude-sonnet"    # 不同模型备选
     - "gemini&gemini-3-flash"        # Google 模型备选
   architect:
     - "gemini&gemini-3-flash"        # 推理能力强
+    - "copilot&claude-opus-4.6"      # Copilot + Claude 架构设计
     - "kimi&kimi-for-coding"
     - "claude-code&claude-sonnet"
     - "claude-code&Kimi-K2.5"
   programmer:
     - "gemini&gemini-3-flash"        # 编码能力强
     - "kimi&kimi-for-coding"
+    - "copilot&claude-opus-4.6"      # Copilot + Claude 编码
     - "claude-code&Kimi-K2.5"
     - "claude-code&claude-sonnet"
   qa:
     - "kimi&kimi-for-coding"         # 工具使用/指令遵从
     - "claude-code&Kimi-K2.5"
+    - "copilot&gpt-5.4"              # Copilot + GPT 测试视角
     - "claude-code&claude-sonnet"
     - "gemini&gemini-3-flash"
   reviewer:
-    - "gemini&gemini-3-flash"        # Review 需要强推理 + 独立视角
+    - "copilot&gpt-5.4"              # GPT-5.4 独立视角 Review（首选）
+    - "gemini&gemini-3-flash"        # Gemini 强推理 Review
     - "kimi&kimi-for-coding"
     - "claude-code&claude-sonnet"
     - "claude-code&Kimi-K2.5"
@@ -243,7 +258,13 @@ gemini -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 |------|------|------|
 | 所有角色 | `--yolo` | 自动审批所有操作（Kimi CLI 不区分角色级权限，通过 Prompt 约束） |
 
-### 4.4 目录访问限制
+### 4.4 Copilot `--allow-all` 映射
+
+| 角色 | 模式 | 说明 |
+|------|------|------|
+| 所有角色 | `--allow-all --autopilot` | 全授权 + 自动驾驶（Copilot CLI 不区分角色级权限，通过 Prompt 约束） |
+
+### 4.5 目录访问限制
 
 Dispatcher 通过 Prompt 中的行为约束实现目录级权限控制（CLI 参数不支持细粒度目录授权）：
 
@@ -273,6 +294,10 @@ Kimi (--print --output-format text):
   response_text = 完整文本输出（Kimi 不返回结构化 JSON wrapper）
   session_id = 从 CLI 日志或 sessions 目录提取
 
+Copilot CLI (-p 纯文本):
+  response_text = 完整文本输出（与 Kimi text 模式等价）
+  session_id = 从 .workflow/.copilot-session-id 读取（由 sessionStart Hook 写入）
+
 统一后:
   从 response_text 中正则提取 __redcap_status JSON 块
   由 Dispatcher 写入 .workflow/last-result.json（Agent 不再负责写入此文件）
@@ -288,11 +313,11 @@ Kimi (--print --output-format text):
 
 ```yaml
 fallback_routing:
-  product-manager: ["kimi", "claude-code", "gemini"]
-  architect:       ["gemini", "kimi", "claude-code"]
-  programmer:      ["gemini", "kimi", "claude-code"]
-  qa:              ["kimi", "claude-code", "gemini"]
-  reviewer:        ["gemini", "kimi", "claude-code"]
+  product-manager: ["kimi", "copilot", "claude-code", "gemini"]
+  architect:       ["gemini", "copilot", "kimi", "claude-code"]
+  programmer:      ["gemini", "kimi", "copilot", "claude-code"]
+  qa:              ["kimi", "copilot", "claude-code", "gemini"]
+  reviewer:        ["copilot", "gemini", "kimi", "claude-code"]
 ```
 
 ### 6.2 触发条件
@@ -328,6 +353,11 @@ agent_health:
     last_failure_reason: "hallucinated completion"
     blacklisted: false
   kimi:
+    consecutive_failures: 0
+    last_failure_at: null
+    last_failure_reason: null
+    blacklisted: false
+  copilot:
     consecutive_failures: 0
     last_failure_at: null
     last_failure_reason: null
@@ -410,6 +440,12 @@ kimi --print \
   --yolo \
   --session "redcap-{role}-step{N}-{uuid}" \
   --max-steps-per-turn 50
+
+# Copilot:
+copilot -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
+  --allow-all \
+  --autopilot \
+  --model "{model_id}"
 ```
 
 ### 7.2 Gemini CLI 安全措施
@@ -515,6 +551,97 @@ kimi export <session_id> -o session-backup.zip
 
 ---
 
+## 3C. Copilot CLI（GitHub Copilot）
+
+> **来源**：基于 Copilot CLI 自身实测验证的集成方案，详见 `round-table/copilot-cli_integration_proposal.md`。
+> **状态**：文档集成完成，Hook 脚本待实测后部署（遵循 L-8 先测再改 + L-16 部署链验证）。
+
+### 3C.1 基本信息
+
+- **可执行文件**：`copilot`（路径：需检测，通常 `/opt/homebrew/bin/copilot` 或 `~/.local/bin/copilot`）
+- **底层模型**：多模型可选（14 种），默认 Claude Opus 4.6
+- **版本**：1.0.18+
+- **独特优势**：唯一同时支持 Claude 系列和 GPT 系列的 CLI；仓库级 Hook 配置（`.github/hooks/`）
+
+### 3C.2 命令模板
+
+```bash
+# ── 标准调用（所有角色通用） ──
+copilot -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
+  --allow-all \
+  --autopilot \
+  --model "{model_id}"
+
+# ── 恢复调用（同角色同步骤的后续轮次） ──
+copilot -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
+  --allow-all \
+  --autopilot \
+  --resume="{session_id}" \
+  --model "{model_id}"
+```
+
+> `--allow-all` 跳过所有权限确认（等价 claude 的 `bypassPermissions`、gemini/kimi 的 `--yolo`）。
+> `--autopilot` 持续执行直至完成，不暂停询问。
+> Copilot CLI 不支持 `--system-prompt`，角色身份通过 Prompt 前缀或 `.github/copilot-instructions.md` 注入。
+> 不支持 `--output-format json`，输出为纯文本（解析逻辑与 Kimi text 模式统一）。
+
+### 3C.3 参数说明
+
+| 参数 | 用途 | 取值 |
+|------|------|------|
+| `-p` | 非交互模式，传入 prompt | Dispatcher 组装的完整任务指令 |
+| `--allow-all` | 全授权 | 固定，跳过所有权限确认 |
+| `--autopilot` | 自动驾驶 | 固定，持续执行不暂停 |
+| `--model` | 指定模型 | 按路由表选择（如 `claude-opus-4.6`、`gpt-5.4`） |
+| `--resume=<id>` | 恢复 Session | 执行后从 sessionStart Hook 获取的 session ID |
+
+### 3C.4 返回格式
+
+**纯文本输出**（无 JSON wrapper）：
+
+```
+Copilot CLI (-p 纯文本):
+  session_id = 从 .workflow/.copilot-session-id 读取（由 sessionStart Hook 写入）
+  response_text = 完整文本输出（包含 __redcap_status JSON 块）
+```
+
+与 Kimi CLI `--output-format text` 模式解析逻辑完全等价，无需新增解析器。
+
+### 3C.5 Session 管理
+
+Copilot CLI 的 Session ID 为自动生成的 UUID，不支持自定义：
+
+```bash
+# 首次调用：正常执行，session ID 由 sessionStart Hook 捕获写入
+# .workflow/.copilot-session-id
+copilot -p "..." --allow-all --autopilot
+
+# 恢复调用：从标记文件读取 session ID
+copilot -p "..." --allow-all --autopilot --resume="$(cat .workflow/.copilot-session-id)"
+```
+
+### 3C.6 Copilot CLI 安全措施
+
+- **强制非交互**：命令必须包含 `-p` 参数
+- **全授权**：`--allow-all` 避免权限确认挂起
+- **自动驾驶**：`--autopilot` 避免中途暂停
+- **超时保护**：同 §8 统一超时策略
+- **Git 仓库要求**：Hook 机制依赖 `.github/hooks/` 目录，项目必须是 git 仓库
+
+### 3C.7 可选模型（14 种）
+
+```
+claude-opus-4.6          # premium — 深度推理、架构设计（默认）
+claude-sonnet-4.6        # standard — 通用编码
+gpt-5.4                  # standard — OpenAI 阵营
+gpt-5.3-codex            # standard — 代码专精
+claude-haiku-4.5         # fast/cheap — 轻量任务
+```
+
+> 完整列表见 `round-table/copilot-cli_integration_proposal.md §1.2`。
+
+---
+
 ## 8. Agent 超时策略与排查
 
 ### 8.1 超时原因排查（优先从自身调用方式排查）
@@ -525,7 +652,7 @@ Agent 超时多数并非 Agent 工具质量问题，常见自身原因：
 |---------|---------|---------|
 | **Prompt 过长** | 将完整手册 + 上下文 + 模板全部注入，超过 Agent 高效处理阈值 | 精简 Prompt：只注入当前步骤必要的上下文，手册用摘要而非全文 |
 | **文件传参格式** | `$(cat ...)` 读取的文件含特殊字符（中文引号、Shell 元字符）导致解析异常 | 确保文件内容 UTF-8 无 BOM，无未转义的 Shell 特殊字符 |
-| **交互式阻塞** | Agent 进入确认等待（sandbox 确认、权限确认、trust 确认） | claude: `--permission-mode auto`；gemini: `--yolo --sandbox false`；kimi: `--yolo` |
+| **交互式阻塞** | Agent 进入确认等待（sandbox 确认、权限确认、trust 确认） | claude: `--permission-mode auto`；gemini: `--yolo --sandbox false`；kimi: `--yolo`；copilot: `--allow-all --autopilot` |
 | **工作目录错误** | Agent 在错误目录执行导致找不到文件，反复重试超时 | 确保 `--add-dir` / `--work-dir` / `--include-directories` 指向正确的项目根目录 |
 | **Session 恢复失败** | `--resume` 传入过期 Session ID，Agent 报错但未正常退出 | 调用前检查 Session 有效性，失败后 fallback 到新建 Session |
 | **网络代理延迟** | SiliconFlow 等中间代理增加 RTT | 优先使用原生 CLI（kimi-cli > claude-code&kimi-2.5） |
@@ -553,16 +680,16 @@ Dispatcher 在调用 CLI 时设置超时。超时后：
 
 ### 9.1 各 CLI 的 Session 能力对比
 
-| 能力 | claude-code | gemini | kimi |
-|------|------------|--------|------|
-| 自定义 Session ID | ✅ `--session-id <UUID>`（必须为合法 UUID） | ❌（自动生成） | ✅ `--session <任意字符串>` |
-| 恢复指定 Session | ✅ `--resume <UUID>` | ✅ `--resume latest/index/UUID` | ✅ `--session <同一ID>` 或 `--continue` |
-| 恢复效果（实测） | ⚠️ 部分恢复（历史消息列出但模型可能声称"新会话"） | ✅ 完整恢复（正确回忆上轮内容） | ✅ 完整恢复（最佳） |
-| 列出 Sessions | ✅ `/resume` 交互命令 | ✅ `--list-sessions` | ✅ `kimi export` |
-| Fork Session | ✅ `--fork-session` | ❌ | ❌ |
-| 禁用持久化 | ✅ `--no-session-persistence` | ❌ | ❌ |
-| Session 导出 | ❌ | ❌ | ✅ `kimi export <id>` |
-| Session 命名 | ✅ `--name "xxx"` | ❌ | ❌ |
+| 能力 | claude-code | gemini | kimi | copilot |
+|------|------------|--------|------|--------|
+| 自定义 Session ID | ✅ `--session-id <UUID>`（必须为合法 UUID） | ❌（自动生成） | ✅ `--session <任意字符串>` | ❌（自动生成 UUID） |
+| 恢复指定 Session | ✅ `--resume <UUID>` | ✅ `--resume latest/index/UUID` | ✅ `--session <同一ID>` 或 `--continue` | ✅ `--resume=<UUID>` |
+| 恢复效果（实测） | ⚠️ 部分恢复（历史消息列出但模型可能声称“新会话”） | ✅ 完整恢复（正确回忆上轮内容） | ✅ 完整恢复（最佳） | ⚠️ 待独立验证 |
+| 列出 Sessions | ✅ `/resume` 交互命令 | ✅ `--list-sessions` | ✅ `kimi export` | ❌ |
+| Fork Session | ✅ `--fork-session` | ❌ | ❌ | ❌ |
+| 禁用持久化 | ✅ `--no-session-persistence` | ❌ | ❌ | ❌ |
+| Session 导出 | ❌ | ❌ | ✅ `kimi export <id>` | ❌ |
+| Session 命名 | ✅ `--name "xxx"` | ❌ | ❌ | ❌ |
 
 ### 9.2 Session 策略
 
@@ -589,6 +716,12 @@ kimi:
   2. 恢复调用：--session "<同一 ID>" 即可恢复
   3. 导出备份：kimi export <session_id> 保存完整会话
   ✅ 实测恢复效果最佳：Session ID 可自定义，恢复完美
+
+copilot:
+  1. 首次调用：正常执行，Session ID 由 sessionStart Hook 捕获写入 .workflow/.copilot-session-id
+  2. 恢复调用：--resume="$(cat .workflow/.copilot-session-id)"
+  3. 恢复失败：新建 Session（标记旧 Session 为 expired）
+  ⚠ Session ID 自动生成（UUID），不支持自定义；需依赖 Hook 捕获
 ```
 
 ### 9.3 Prompt 精简原则（减少 Session 依赖）
@@ -712,3 +845,26 @@ Claude Code 在项目根目录自动读取 `CLAUDE.md`。Dispatcher 在项目初
 
 > Claude Code 支持 `@file` 原生导入，启动时自动展开注入上下文。
 > 共享约束文件包含安全铁律、文件操作约束、通信协议和防退化检查点（L-9 子 Agent 级对策）。
+
+### 11.5 Copilot CLI 项目规则
+
+Copilot CLI 在项目根目录自动读取 `.github/copilot-instructions.md`。Dispatcher 在项目初始化时创建（如不存在）：
+
+```markdown
+# .github/copilot-instructions.md — RedCap 项目规则
+
+<!-- Copilot CLI 不支持 @file 导入，共享约束需内联或通过 Prompt 注入 -->
+
+## 强制约束
+- 参考 references/agent-constraints.md 中的安全铁律
+- 文件写入一律使用内建工具，不使用 Shell 重定向
+
+## 当前任务上下文
+- 角色：{{role}}
+- 步骤：{{step_id}}
+- 交付目录：{{deliverable_dir}}
+```
+
+> ⚠️ Copilot CLI 不支持 `@file` 原生导入（与 Claude Code、Gemini 不同）。
+> 共享约束需通过 Prompt 前缀注入或在 `.github/copilot-instructions.md` 中内联关键规则。
+> Hook 脚本（`.github/hooks/`）提供另一层约束注入机制（见 `knowledge/hooks-copilot-cli.md`）。

@@ -54,13 +54,13 @@ description: >-
 
 | 角色 | 优先级列表 |
 |------|-----------|
-| 产品经理 | `kimi` → `claude-code` → `gemini` |
-| 架构师 | `gemini` → `kimi` → `claude-code` |
-| 程序员 | `gemini` → `kimi` → `claude-code` |
-| 测试QA | `kimi` → `claude-code` → `gemini` |
-| Reviewer | `gemini` → `kimi` → `claude-code` |
+| 产品经理 | `kimi` → `copilot` → `claude-code` → `gemini` |
+| 架构师 | `gemini` → `copilot` → `kimi` → `claude-code` |
+| 程序员 | `gemini` → `kimi` → `copilot` → `claude-code` |
+| 测试QA | `kimi` → `copilot` → `claude-code` → `gemini` |
+| Reviewer | `copilot` → `gemini` → `kimi` → `claude-code` |
 
-Agent 使用 `{cli}&{model}` 标识（如 `kimi&kimi-k2`、`claude-code&kimi-2.5`），同一模型下专用 CLI 优先于通用 CLI 代理。CLI 调用详见 [《Agent适配器》](dispatcher/agent-adapters.md)。
+Agent 使用 `{cli}&{model}` 标识（如 `kimi&kimi-k2`、`claude-code&kimi-2.5`、`copilot&claude-opus-4.6`），同一模型下专用 CLI 优先于通用 CLI 代理。CLI 调用详见 [《Agent适配器》](dispatcher/agent-adapters.md)。
 
 ---
 
