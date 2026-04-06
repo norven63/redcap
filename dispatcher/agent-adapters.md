@@ -560,7 +560,7 @@ kimi export <session_id> -o session-backup.zip
 
 ## 3C. Copilot CLI（GitHub Copilot）
 
-> **来源**：基于 Copilot CLI 自身实测验证的集成方案，详见 `round-table/copilot-cli_integration_proposal.md`。
+> **来源**：基于 Copilot CLI 自身实测验证的集成方案。
 > **状态**：文档集成完成，Hook 脚本待实测后部署（遵循 L-8 先测再改 + L-16 部署链验证）。
 
 ### 3C.1 基本信息
@@ -645,7 +645,7 @@ gpt-5.3-codex            # standard — 代码专精
 claude-haiku-4.5         # fast/cheap — 轻量任务
 ```
 
-> 完整列表见 `round-table/copilot-cli_integration_proposal.md §1.2`。
+> 完整列表可通过 `copilot --help` 查看。
 
 ---
 
