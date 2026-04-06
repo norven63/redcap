@@ -172,7 +172,8 @@ RedCap 有两条完全不同的工作流：
 |------|------|
 | `CONTRIBUTING.md` | 唯一权威规范（commit 格式、飞书通知、影响范围） |
 | `CLAUDE.md` / `GEMINI.md` / `.github/copilot-instructions.md` | 索引文件，`@` 导入 CONTRIBUTING.md |
-| `knowledge/lessons.md` | 13 条已知陷阱，变更前必读 |
+| `knowledge/design-principles.md` | 五项元原则（灵魂指引），变更前必读 |
+| `knowledge/lessons.md` | 18 条已知陷阱，变更前必读 |
 
 ---
 
@@ -258,8 +259,10 @@ redcap/
 │   └── agent-constraints.md       ← 子 Agent 共享约束（防退化等）
 │
 ├── knowledge/                     ← 经验库 + 调研报告
-│   ├── lessons.md                 ← 13 条框架级经验（L-1 ~ L-13）
+│   ├── lessons.md                 ← 18 条框架级经验（L-1 ~ L-18）
 │   ├── lessons-archive.md         ← 归档的低活跃经验
+│   ├── design-principles.md       ← 五项元原则（灵魂指引，高于 Lesson）
+│   ├── a2a-communication.md       ← Agent 间直接通信机制 + 协商协议
 │   ├── host-reliability.md        ← 宿主可靠性调研总览
 │   ├── hooks-vscode-copilot.md    ← VS Code Copilot hooks 详情
 │   ├── hooks-claude-code.md       ← Claude Code hooks 详情
@@ -506,6 +509,14 @@ Dispatcher                              Agent (CLI)
 | 1 | `references/communication-protocol.md` | 完整 JSON schema + 所有字段说明 + 交付物规范 | ~8 min |
 | 2 | `dispatcher/agent-adapters.md` §返回值 | 各 CLI 的返回值提取差异 | ~3 min |
 | 3 | `SKILL.md` §5.7 | 交付物完整性校验逻辑 | ~3 min |
+
+#### Agent-to-Agent（A2A）通信
+
+除了 Dispatcher 中转通信外，RedCap 还支持 Agent 之间的**直接对话**（A2A），用于技术方案讨论、Review 结果协商等需要多轮交互达成共识的场景。
+
+> A2A 是辅助通道，不替代 Dispatcher 中转。完整设计见 [`knowledge/a2a-communication.md`](knowledge/a2a-communication.md)。
+
+**核心原则**（L-18）：A2A 通信采用**讨论模式**——发起方提出方案，接收方独立评估并可反驳，双方以共识收敛为目标。
 
 ---
 
@@ -900,6 +911,8 @@ Dispatcher 组装 Prompt 时，将近期 5 条高相关 Lesson 注入 Agent 上�
 ---
 
 ## 设计哲学
+
+> **元原则（灵魂指引）**：RedCap 的所有设计决策都受 [`knowledge/design-principles.md`](knowledge/design-principles.md) 五项元原则约束。元原则高于下表的具体实践——当二者冲突时，以元原则为准。
 
 | 原则 | 实践 |
 |------|------|

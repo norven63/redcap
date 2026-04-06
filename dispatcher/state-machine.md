@@ -31,6 +31,8 @@
 | `STEP_DONE` | 当前步骤完成 |
 | `ALL_DONE` | 所有步骤完成 |
 
+> **前瞻**：`NEGOTIATING` 状态的设计已完成（见 [`knowledge/a2a-communication.md §5`](../knowledge/a2a-communication.md)），待首次实际项目验证后正式纳入。该状态用于 `REVIEW_FAIL` 和 `need_revision` 场景下的 Agent 间对等讨论，替代当前的单向回退。
+
 ---
 
 ## 2. 事件枚举

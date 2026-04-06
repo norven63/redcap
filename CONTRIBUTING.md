@@ -6,7 +6,10 @@
 
 ## 1. 变更前：经验回顾
 
-修改框架文件前，**必须先阅读 `knowledge/lessons.md`**，检查本次变更是否涉及已知陷阱。
+修改框架文件前，**必须先阅读以下两个文件**：
+
+1. **`knowledge/design-principles.md`**（元原则）— 确认本次变更不违背 P-1 至 P-5 五项战略层原则
+2. **`knowledge/lessons.md`**（经验库）— 检查本次变更是否涉及已知陷阱
 
 重点关注：
 - L-4（Fallback 深度不足）：修改路由/降级逻辑时
@@ -14,6 +17,7 @@
 - L-8（先测再改）：涉及 Agent 调用方式变更时，必须先实测再改文档
 - L-16（设计≠部署≠生效）：修改 Hook 配置或 Dispatcher 路由时，必须端到端验证
 - L-17（Agent 信息茧房）：编写提示词时，确保关键资产文件有显式引用路径
+- L-18（A2A 讨论优于指令）：Agent 间协作采用讨论共识模式，而非单向命令模式
 
 ## 2. Commit 规范
 
@@ -119,11 +123,14 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 |-----------|---------------------|
 | SKILL.md §5.2 事件循环 | dispatcher/state-machine.md 伪代码 |
 | SKILL.md §5.10 Hooks | dispatcher/state-machine.md 对应触发点 |
-| references/communication-protocol.md | roles/ 下各角色手册中的状态返回说明 |
-| dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 |
+| references/communication-protocol.md | roles/ 下各角色手册中的状态返回说明 + knowledge/a2a-communication.md §5.4 |
+| dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 + knowledge/a2a-communication.md §2 |
+| dispatcher/state-machine.md 状态枚举 | knowledge/a2a-communication.md §4（NEGOTIATING 状态同步） |
 | SKILL.md §5.10 Hooks 表 | dispatcher/state-machine.md `populate_pending_actions` + SKILL.md §5.13 映射表 |
 | CONTRIBUTING.md 自身 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md 均为索引，通过 `@` 导入指向本文件；修改本文件即全局生效，无需手动同步 |
 | references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
+| knowledge/design-principles.md | README.md 设计哲学章节 + CONTRIBUTING.md §1（元原则引用） |
+| knowledge/a2a-communication.md | README.md 通信协议章节 + dispatcher/state-machine.md（前瞻标注） |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
 | tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ knowledge/host-reliability.md（防线文档）|
 | tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |

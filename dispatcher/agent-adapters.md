@@ -443,7 +443,7 @@ kimi --print \
 
 - **可执行文件**：`kimi`（路径：`/Users/norven/.local/bin/kimi`）
 - **底层模型**：kimi-code/kimi-for-coding（Moonshot AI 原生）
-- **版本**：1.27.0+
+- **版本**：1.30.0+
 
 ### 3B.2 命令模板
 
