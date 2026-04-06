@@ -213,7 +213,12 @@ A2A 讨论的结果应以以下方式留痕：
 PM ──→ Dispatcher ──→ ARCH ──→ Dispatcher ──→ DEV ──→ ...
 ```
 
-所有角色之间的信息传递通过 Dispatcher 的 `outbox` + `__redcap_status` 机制完成。这是**主通道**，保证流程可审计、可恢复、可追踪。
+所有角色之间的信息传递通过 Dispatcher 中转完成。具体传递方式采用三级优先级（L-23）：
+1. **outbox 文件**（主通道）：Agent 将 `__redcap_status` 写入 `{role}/outbox/__redcap_status.json`，Dispatcher 读取后归档到 `.workflow/last-result.json` 并删除 outbox 副本
+2. **stdout 正则**（辅助通道）：Dispatcher 从 Agent 回复文本中正则提取 `__redcap_status` JSON 块
+3. **last-result.json**（兜底通道）：Agent 将状态写入 `.workflow/last-result.json`
+
+三个通道保证流程可审计、可恢复、可追踪。
 
 ### 4.2 A2A 扩展：协商通道
 
@@ -384,8 +389,8 @@ def handle_negotiation(initiator_role, receiver_role, findings):
 | **Phase 0: 经验沉淀** | L-18 记录 + A2A 文档（本文件） | ✅ 已完成 |
 | **Phase 1: 手动 A2A** | Dispatcher 外手动发起 A2A 对话（如本次 Copilot×Kimi） | ✅ 已验证 |
 | **Phase 2: 协商协议设计** | `NEGOTIATING` 状态 + `__redcap_status` 扩展 + 伪代码 | ✅ 设计完成（本文件 §5） |
-| **Phase 3: 状态机集成** | 修改 `state-machine.md` + `communication-protocol.md` | ⏳ 待首次实际验证 |
+| **Phase 3: 状态机集成** | 修改 `state-machine.md` + `communication-protocol.md` | ⏳ 待前置条件满足 |
 | **Phase 4: Prompt 模板** | 各角色添加协商模式 prompt + 变量映射 | ⏳ 待 Phase 3 |
 | **Phase 5: 全 Agent 适配** | 确保 Kimi/Claude/Gemini 三个 CLI 都能作为协商参与方 | ⏳ 待 Phase 4 |
 
-> Phase 3-5 需要在实际项目中验证 Phase 2 设计后再推进，避免过早实现未验证的设计（L-8 精神）。
+> **Phase 3 启动的前置条件**：至少 2 个不同的 Agent CLI 能在 headless 模式下稳定完成各自角色任务（当前 3/4 个 CLI 存在挂起/超时/阻塞问题，见 L-4/L-5/L-7/L-11）。在此之前，协商的双方实际是同一个 Dispatcher 模型，不存在"独立视角分歧"的协商需求。回退路径的验证可通过刻意注入缺陷来测试（见 smoke-test-backlog #11-#15），不必等待自然触发。
