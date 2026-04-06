@@ -157,6 +157,7 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
    ```yaml
    # state.yaml 初始内容
    project: "项目名称"
+   purpose: "（一句话：本轮要做什么 + 完成标准）"  # §L-21 目的锚点
    current_state: "INIT"
    iteration: 1              # 迭代版本号（§5.14）
    current_step: 0
@@ -208,6 +209,8 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
    h. 触发匹配的 hooks（§5.10，如 QA completed → on_QA_PASS）
    i. 根据 status 查转移表 → 更新 state.yaml + sessions.yaml
    j. 向用户汇报当前进展（一句话摘要）
+   k. 【目的回读】回读 state.yaml 的 `purpose` 字段，确认当前执行方向未偏离初始目标（L-21）
+      - 若发现偏移（当前动作与 purpose 无关）→ 暂停并向用户确认是否调整目标
 6. 回到步骤 1
 ```
 

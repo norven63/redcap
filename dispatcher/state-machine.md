@@ -101,6 +101,7 @@ DEGRADED          next_step            (重置为正常模式)      新步骤自
 
 ```yaml
 project: "项目名称"
+purpose: "本轮目标的一句话声明（完成标准）"  # §L-21 目的锚点，初始化时必填
 current_state: "DEV_WORKING"
 iteration: 1                  # 迭代版本号（§5.14）
 current_step: 2
@@ -267,6 +268,11 @@ function dispatch_loop(project_dir):
                     continue
 
             update_state(state, event)
+            # §L-21: 目的回读 — 每个角色完成后检查方向偏移
+            if state.purpose:
+                drift = check_purpose_drift(state.purpose, state.current_state, event)
+                if drift.detected:
+                    pause_and_confirm_with_user("当前方向可能偏离初始目的: " + state.purpose)
             # §5.13: 根据目标状态填充 pending_actions
             populate_pending_actions(state, event)
             update_sessions(session, event)
