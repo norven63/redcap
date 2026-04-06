@@ -99,12 +99,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 ### L-6: 模型检测应在项目初始化时完成并缓存
 - **场景**：Dispatcher 不知道 claude-code 背后是 Kimi 2.5（SiliconFlow 代理），导致路由决策基于 CLI 名而非模型能力
 - **根因**：路由表硬编码 CLI 名称，不感知底层模型
-- **经验规则**：项目初始化时检测所有 CLI 的底层模型，结果缓存到 agent-registry.yaml，路由决策基于 `{cli}&{model}` 标识
+- **经验规则**：项目初始化时检测所有 CLI 的底层模型，结果缓存到 agent-registry.yaml，路由决策基于 `{cli}&{model}` 标识。**已实现**：`tools/redcap-detect-agents.sh`（轻检测 + 全量检测 + mtime 缓存）+ `knowledge/model-capability-matrix.yaml`（能力矩阵）→ 动态路由算法（agent-adapters.md §1.3）
 - **来源**：TRPG-Server 实测, 全程
 - **发现日期**：2026-03
 - **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-03
+- **复现次数**：2
+- **最后命中**：2026-04
 
 ### L-7: Gemini `--approval-mode auto_edit` 在 headless 模式会永久挂起
 - **场景**：gemini Agent 执行需要 Shell 命令的任务（如运行测试、安装依赖）时超时失败

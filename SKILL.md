@@ -50,17 +50,24 @@ description: >-
 
 ---
 
-## 2. Agent 路由
+## 2. Agent 路由（动态嗅探）
 
-| 角色 | 优先级列表 |
-|------|-----------|
-| 产品经理 | `kimi` → `copilot` → `claude-code` → `gemini` |
-| 架构师 | `gemini` → `copilot` → `kimi` → `claude-code` |
-| 程序员 | `gemini` → `kimi` → `copilot` → `claude-code` |
-| 测试QA | `kimi` → `copilot` → `claude-code` → `gemini` |
-| Reviewer | `copilot` → `gemini` → `kimi` → `claude-code` |
+> 路由决策 = **动态可用性**（嗅探脚本）× **静态适配度经验**（能力矩阵）。
+> 不硬编码优先级——每次会话启动时嗅探本地实际 Agent 部署，动态计算。
 
-Agent 使用 `{cli}&{model}` 标识（如 `kimi&kimi-k2`、`claude-code&kimi-2.5`、`copilot&claude-opus-4.6`），同一模型下专用 CLI 优先于通用 CLI 代理。CLI 调用详见 [《Agent适配器》](dispatcher/agent-adapters.md)。
+**嗅探脚本**：`bash tools/redcap-detect-agents.sh` → 输出 `.workflow/agent-registry.yaml`
+**能力矩阵**：[`knowledge/model-capability-matrix.yaml`](knowledge/model-capability-matrix.yaml)
+**路由算法**：见 [《Agent适配器》§1.3](dispatcher/agent-adapters.md)
+
+**算法摘要**：
+1. 从 registry 获取可用 Agent + 实际模型（展开可切换模型的 Agent）
+2. 对每个候选，按 `角色需求权重 × 模型能力评分` 计算适配分
+3. Reviewer 加跨模型族奖励分（确保独立审视视角）
+4. 按分数降序排列为 Fallback 序列
+
+**锁定规则**：步骤内选定后不变，仅连续 2 次失败触发 Fallback。新步骤重新计算。
+
+Agent 使用 `{cli}&{model}` 标识（如 `kimi&kimi-for-coding`、`copilot&claude-opus-4.6`），同一模型下专用 CLI 优先于通用 CLI 代理。CLI 调用详见 [《Agent适配器》](dispatcher/agent-adapters.md)。
 
 ---
 
@@ -162,6 +169,13 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
    pending_actions: []       # §5.13 双保险待办清单
    ```
 
+3.5. **Agent 嗅探**（所有场景）：
+   ```bash
+   bash tools/redcap-detect-agents.sh "$dev_manual_dir/.workflow/agent-registry.yaml"
+   ```
+   脚本自动检测本地已安装的 Agent CLI 及其底层模型，结果缓存到 `agent-registry.yaml`。
+   若 registry 已存在且配置文件未变化，脚本秒级跳过（轻检测）。
+
 4. **设置 `current_state: PM_WORKING`**，启动产品经理 Agent
 
 > **S4 特殊处理**：在步骤 4 之前，先执行代码库扫描（§5.14.2），产出 `codebase-baseline.md` 后再启动 PM。
@@ -182,7 +196,8 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 3. 若 current_state == PAUSED → 向用户转述问题，等待回复
 4. 若 current_state 为 *_DONE 或自动转移 → 查转移表 → 更新 state
 5. 若 current_state 为 *_WORKING →
-   a. 确定角色 + Agent CLI（若首选不可用，按 Fallback 路由切换，§5.5）
+   a. 执行路由算法（§2）：读 registry + 能力矩阵 → 计算候选列表 → 写入 state.yaml
+      （若 current_role.locked=true 且 agent 仍可用，沿用不重算）
    b. 组装 Prompt：读模板 → 按变量映射表（§5.4）填充 → 写入文件
       `.workflow/{role}-prompt-step{N}.md`，CLI 用 `$(cat ...)` 读取
    c. 获取或创建 Session（§5.6）
@@ -278,20 +293,14 @@ Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
 
 ### 5.5 Agent Fallback 路由
 
-当首选 Agent 不可用（频控、超时、连续失败）时，按备选顺序切换：
+> Fallback 序列由**动态路由算法**（§2）在每个新步骤开始时计算，不再使用静态列表。
 
-```yaml
-fallback_routing:
-  product-manager: ["kimi", "claude-code", "gemini"]
-  architect:       ["gemini", "kimi", "claude-code"]
-  programmer:      ["gemini", "kimi", "claude-code"]
-  qa:              ["kimi", "claude-code", "gemini"]
-  reviewer:        ["gemini", "kimi", "claude-code"]
-```
+**Fallback 序列来源**：路由算法输出的有序候选列表（存于 `state.yaml` 的 `current_role.candidates`）。
 
-切换条件：首选 Agent 连续 2 次返回失败（含频控 429）或 CLI 进程超时无响应。切换后在 `state.yaml` 的 `current_role.agent` 中记录实际使用的 Agent。
+**切换条件**：首选 Agent 连续 2 次返回失败（含频控 429）或 CLI 进程超时无响应。切换后更新 `state.yaml` 的 `current_role.agent`。
 
-**新步骤自动重置**：每个新步骤开始时，所有 Agent 的失败计数自动归零，重新从首选开始尝试。
+**新步骤自动重置**：每个新步骤开始时，重新执行路由算法（重读 registry + 能力矩阵），失败计数归零。
+**Agent 失败时重检**：`bash tools/redcap-detect-agents.sh --agent <name>` 重新嗅探该 Agent 的可用性和模型。
 **用户指令重置**：用户告知某 Agent 已恢复时，立即重置该 Agent 的健康状态。
 **所有 Agent 均不可用**：暂停流程，向用户提供降级选项（详见 [《Agent适配器》§6.5](dispatcher/agent-adapters.md)）。
 

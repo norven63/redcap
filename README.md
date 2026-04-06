@@ -269,7 +269,8 @@ redcap/
 │   ├── hooks-gemini-cli.md        ← Gemini CLI hooks 详情
 │   ├── hooks-kimi-cli.md          ← Kimi CLI hooks + Dispatcher 协议
 │   ├── hooks-copilot-cli.md       ← Copilot CLI hooks（仓库级 .github/hooks/）
-│   └── layerA-hook-deploy.md      ← Layer A 用户级 Hook 部署指南
+│   ├── layerA-hook-deploy.md      ← Layer A 用户级 Hook 部署指南
+│   └── model-capability-matrix.yaml ← 模型能力参考矩阵（路由算法输入）
 │
 └── tools/                         ← 可执行脚本
     ├── feishu-notifier.py         ← 飞书通知（notify/ask/resume/confirm）
@@ -282,7 +283,8 @@ redcap/
     ├── redcap-layerA-session-start.sh ← Layer A SessionStart Hook
     ├── redcap-layerA-stop.sh      ← Layer A Stop Hook（四重过滤 + Review 兜底）
     ├── redcap-layerA-review-fallback.sh ← Layer A Review 兜底（拉起新 Agent）
-    └── redcap-layerA-session-end.sh   ← Layer A SessionEnd Hook
+    ├── redcap-layerA-session-end.sh   ← Layer A SessionEnd Hook
+    └── redcap-detect-agents.sh    ← Agent 嗅探脚本（检测本地 CLI + 模型）
 ```
 
 ---

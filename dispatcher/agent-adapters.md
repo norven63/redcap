@@ -19,103 +19,110 @@ copilot&claude-opus-4.6    — Copilot CLI + Claude Opus 4.6（默认）
 copilot&gpt-5.4            — Copilot CLI + GPT-5.4
 ```
 
-### 1.2 模型检测与缓存
+### 1.2 模型嗅探与缓存
 
-**检测时机**：
-- 项目初始化时（`INIT` 状态）一次性检测所有已安装 CLI 的底层模型
-- Agent 调用失败时，触发对该 Agent 的重新检测
-- 用户显式告知某 Agent 可用/恢复时，触发重新检测
+> 嗅探逻辑已封装为脚本，Dispatcher 只需调用一行命令（L-12: 关键动作用脚本而非纯文本指令）。
 
-**检测方法**：
-```bash
-# claude-code: 从 --print 模式返回的 JSON 中提取 modelUsage 字段
-claude -p "echo test" --output-format json 2>/dev/null | python3 -c "
-import sys,json; d=json.load(sys.stdin)
-print(list(d.get('modelUsage',{}).keys())[0] if d.get('modelUsage') else 'unknown')
-"
+**嗅探脚本**：`bash tools/redcap-detect-agents.sh [output_path] [--agent <name>] [--probe]`
 
-# gemini: 从 --output-format json 返回的 stats.models 字段提取主模型
-gemini -p "echo test" --output-format json --yolo 2>/dev/null | python3 -c "
-import sys,json; d=json.load(sys.stdin)
-models = d.get('stats',{}).get('models',{})
-main = [k for k,v in models.items() if 'main' in v.get('roles',{})]
-print(main[0] if main else 'unknown')
-"
+**两层检测机制**：
 
-# kimi: 从配置文件读取默认模型
-grep 'default_model' ~/.kimi/config.toml 2>/dev/null | cut -d'"' -f2 || echo "kimi-for-coding"
+| 层级 | 做什么 | 耗时 | 触发时机 |
+|------|--------|------|---------|
+| **轻检测** | `command -v` + 配置文件 mtime 对比 | < 1s | 每次 RedCap 会话启动 |
+| **全量检测** | 读配置文件解析模型 + 写 registry | 2-5s | 首次 / registry 不存在 / 配置 mtime 变化 / Agent 失败 |
+| **探测模式** | 实际调用 CLI 获取精确模型（`--probe`） | 10s+ | 用户手动触发 / 诊断问题时 |
 
-# copilot: 从 --version 确认可用，默认模型为 claude-opus-4.6
-copilot --version 2>/dev/null && echo "claude-opus-4.6" || echo "unavailable"
-```
+**运行逻辑**：
+1. 脚本自动比较已缓存 registry 中各 Agent 的 `config_mtime` 与当前磁盘 mtime
+2. 若全部一致 → 输出 "fresh"，跳过检测
+3. 若有变化 → 全量重检，覆盖 registry
+4. `--agent <name>` → 只重检指定 Agent（故障恢复时使用）
 
-**缓存位置** `.workflow/agent-registry.yaml`：
+**缓存位置**：`.workflow/agent-registry.yaml`（由脚本自动生成，勿手动编辑）
+
+**registry 示例**（以本设备 2026-04 实际嗅探结果为例）：
 ```yaml
+detected_at: "2026-04-06T09:41:38Z"
 agents:
   claude-code:
-    cli_path: "/opt/homebrew/bin/claude"
-    model: "Pro/moonshotai/Kimi-K2.5"
-    detected_at: "2026-03-29T19:25:00+08:00"
     available: true
+    cli_path: "/Users/norven/bin/claude"
+    version: "2.1.81"
+    model_alias: "sonnet"          # settings.json 中配置的别名
+    actual_model: "kimi-k2.5"      # 实际模型（由 base_url 推断）
+    api_provider: "kimi-siliconflow"
+    config_mtime: "2026-04-06T00:32:07"
+    supports_model_switch: true
   gemini:
-    cli_path: "/opt/homebrew/bin/gemini"
-    model: "gemini-3-flash-preview"
-    detected_at: "2026-03-29T19:25:00+08:00"
     available: true
+    actual_model: "gemini-3-flash"
+    known_issues: ["L-7", "L-11"]
   kimi:
-    cli_path: "/Users/norven/.local/bin/kimi"
-    model: "kimi-code/kimi-for-coding"
-    detected_at: "2026-03-29T19:25:00+08:00"
     available: true
+    actual_model: "kimi-code/kimi-for-coding"
   copilot:
-    cli_path: "/opt/homebrew/bin/copilot"  # 或 which copilot 检测
-    model: "claude-opus-4.6"               # 默认，可通过 --model 切换
-    detected_at: "2026-03-29T19:25:00+08:00"
     available: true
+    actual_model: "claude-opus-4.6"
+    supports_model_switch: true
+    switchable_models: ["claude-opus-4.6", "gpt-5.4", "claude-sonnet-4.6"]
 ```
 
-### 1.3 优先级路由表（带 Model 维度）
+> ⚠ **关键发现**：Claude Code CLI 的 `settings.json` 中 `"model": "sonnet"` 并不代表使用 Claude Sonnet。当 `ANTHROPIC_BASE_URL` 指向第三方代理（如 `api.kimi.com`）时，model 别名无意义，实际模型由代理方决定。嗅探脚本通过 `base_url` + `api_key` 前缀推断真实模型。
 
-**核心规则**：
-1. 同一模型下，**专用 CLI > 通用 CLI 代理**（如 `kimi&kimi-k2` > `claude-code&kimi-2.5`）
-2. 按角色需求匹配最佳模型能力
-3. 近期失败的 Agent 降权
+### 1.3 动态路由算法
 
-```yaml
-agent_priority:
-  product-manager:
-    - "kimi&kimi-for-coding"         # Kimi 原生 CLI 优先
-    - "claude-code&Kimi-K2.5"        # 同模型但通用 CLI 备选
-    - "copilot&claude-opus-4.6"      # Copilot CLI + Claude 深度推理
-    - "claude-code&claude-sonnet"    # 不同模型备选
-    - "gemini&gemini-3-flash"        # Google 模型备选
-  architect:
-    - "gemini&gemini-3-flash"        # 推理能力强
-    - "copilot&claude-opus-4.6"      # Copilot + Claude 架构设计
-    - "kimi&kimi-for-coding"
-    - "claude-code&claude-sonnet"
-    - "claude-code&Kimi-K2.5"
-  programmer:
-    - "gemini&gemini-3-flash"        # 编码能力强
-    - "kimi&kimi-for-coding"
-    - "copilot&claude-opus-4.6"      # Copilot + Claude 编码
-    - "claude-code&Kimi-K2.5"
-    - "claude-code&claude-sonnet"
-  qa:
-    - "kimi&kimi-for-coding"         # 工具使用/指令遵从
-    - "claude-code&Kimi-K2.5"
-    - "copilot&gpt-5.4"              # Copilot + GPT 测试视角
-    - "claude-code&claude-sonnet"
-    - "gemini&gemini-3-flash"
-  reviewer:
-    - "copilot&gpt-5.4"              # GPT-5.4 独立视角 Review（首选）
-    - "gemini&gemini-3-flash"        # Gemini 强推理 Review
-    - "kimi&kimi-for-coding"
-    - "claude-code&claude-sonnet"
-    - "claude-code&Kimi-K2.5"
+> **设计原则**：路由决策 = 动态可用性（嗅探脚本）× 静态适配度经验（能力矩阵）。
+> 排名是参考，落地逻辑依托本地实际部署。
+
+**能力矩阵**：[`knowledge/model-capability-matrix.yaml`](../knowledge/model-capability-matrix.yaml)
+
+**算法步骤**（Dispatcher 在每个新步骤开始时执行）：
+
+```
+输入: role, agent-registry.yaml, model-capability-matrix.yaml, dev_agent(仅 reviewer)
+输出: 有序候选列表 [{cli}&{model}, ...]
+
+1. 从 registry 筛选 available=true 的 Agent
+2. 展开可切换模型的 Agent
+   例: copilot (switchable) → copilot&claude-opus-4.6, copilot&gpt-5.4, copilot&claude-sonnet-4.6
+3. 对每个候选 {cli}&{model}:
+   a. 查矩阵获取能力评分（未收录模型按 all=3 兜底处理）
+   b. role_req = matrix.role_requirements[role]
+   c. score = model[role_req.primary] × 2 + model[role_req.secondary] × 1
+   d. Reviewer 特殊: model.family ≠ dev_agent.family → score += 2
+   e. agent.known_issues 非空 → score -= 1
+4. 按 score 降序排列
+5. 同分优先: 专用 CLI > 通用 CLI 代理（如 kimi > claude-code 代理 kimi-k2.5）
+6. 输出有序列表
 ```
 
-用户可在项目 `.workflow/state.yaml` 中通过 `agent_routing_override` 字段覆盖默认配置。
+**锁定规则**（原子性保证）：
+- 某步骤选定 Agent 后，写入 `state.yaml`：
+  ```yaml
+  current_role:
+    role: architect
+    agent: "copilot&claude-opus-4.6"
+    locked: true
+    candidates: ["copilot&claude-opus-4.6", "gemini&gemini-3-flash", ...]
+  ```
+- 该步骤内持续使用此 Agent，不因外部变化而切换
+- 仅当**连续 2 次失败**时，从 `candidates` 取下一个（Fallback），并更新 `agent` 字段
+- **新步骤开始**时：失败计数归零，重新执行路由算法（重读 registry + 矩阵）
+
+**示例**（基于本设备 2026-04 实际嗅探结果）：
+
+| 角色 | 算法计算过程 | 首选结果 |
+|------|------------|---------|
+| 产品经理 | kimi-for-coding: IF=4×2 + R=3 = 11; kimi-k2.5: 4×2+3=11; opus: 4×2+5=13 → **但 copilot 是通用 CLI，kimi 是专用 CLI** | `kimi&kimi-for-coding` |
+| 架构师 | opus: R=5×2 + C=5 = 15; flash: 4×2+4=12; k2.5: 3×2+4=10 | `copilot&claude-opus-4.6` |
+| 程序员 | opus: C=5×2 + TU=4 = 14; flash: 4×2+3=11; kimi-coding: 4×2+4=12 | `copilot&claude-opus-4.6` |
+| 测试QA | kimi-coding: TU=4×2 + IF=4 = 12; gpt-5.4: 5×2+5=15 → **但 copilot 通用 CLI vs kimi 专用** | `copilot&gpt-5.4` |
+| Reviewer | 假设 Dev 用了 copilot&opus(anthropic族): gpt-5.4(openai族): R=5×2+C=4=14 +2(跨族)=16 | `copilot&gpt-5.4` |
+
+> 注意：示例中 copilot 频繁出现是因为它可切换 Premium 模型。若 copilot 不可用，Budget/Standard 层自动接管。
+
+用户可在项目 `.workflow/state.yaml` 中通过 `agent_routing_override` 字段覆盖算法结果。
 
 ---
 

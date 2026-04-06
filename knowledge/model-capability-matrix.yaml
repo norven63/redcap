@@ -1,0 +1,142 @@
+# 模型能力参考矩阵
+# 数据来源: Gemini 报告排名 + RedCap 实测经验 (lessons.md)
+# 更新频率: 随新模型上线或新经验积累时更新
+#
+# 评分说明:
+#   1-5 整数（5=顶级）
+#   reasoning:              逻辑推理与架构设计
+#   coding:                 全栈编码能力
+#   instruction_following:  指令遵从与精准执行
+#   tool_use:               工具使用（Shell/API/文件操作）
+#   cost_efficiency:        成本效益（5=最便宜/免费）
+
+# ═══════════════════════════════════════════════════════
+# 角色能力需求（权重: primary ×2, secondary ×1）
+# ═══════════════════════════════════════════════════════
+role_requirements:
+  product-manager:
+    primary: instruction_following   # 需求采集必须忠实、结构化
+    secondary: reasoning             # 理解业务逻辑
+  architect:
+    primary: reasoning               # 架构决策 = 深度推理
+    secondary: coding                # 理解技术约束
+  programmer:
+    primary: coding                  # 编码是核心
+    secondary: tool_use              # 执行命令、操作文件
+  qa:
+    primary: tool_use                # 执行测试、断言验证
+    secondary: instruction_following # 遵循测试计划
+  reviewer:
+    primary: reasoning               # 独立判断代码质量
+    secondary: coding                # 理解实现细节
+    constraint: cross_family         # 与 Dev Agent 不同模型族优先
+
+# ═══════════════════════════════════════════════════════
+# 模型能力评分
+# ═══════════════════════════════════════════════════════
+models:
+  # ── Premium 层 ──
+  claude-opus-4.6:
+    family: anthropic
+    tier: premium
+    reasoning: 5
+    coding: 5
+    instruction_following: 4
+    tool_use: 4
+    cost_efficiency: 1
+    source: "Gemini 报告 #1 (9.8); 最强综合能力"
+
+  gpt-5.4:
+    family: openai
+    tier: premium
+    reasoning: 5
+    coding: 4
+    instruction_following: 5
+    tool_use: 5
+    cost_efficiency: 2
+    source: "Gemini 报告 #2 (9.6); 指令遵从最佳"
+
+  # ── Standard 层 ──
+  claude-sonnet-4.6:
+    family: anthropic
+    tier: standard
+    reasoning: 4
+    coding: 5
+    instruction_following: 4
+    tool_use: 4
+    cost_efficiency: 3
+    source: "Gemini 报告 #3 (9.5); 编码性价比最优"
+
+  gemini-3-flash:
+    family: google
+    tier: standard
+    reasoning: 4
+    coding: 4
+    instruction_following: 3
+    tool_use: 3
+    cost_efficiency: 4
+    source: "RedCap 经验: 推理强但 CLI 稳定性问题 (L-7/L-11)"
+
+  # ── Budget 层 ──
+  kimi-k2.5:
+    family: moonshot
+    tier: budget
+    reasoning: 3
+    coding: 4
+    instruction_following: 4
+    tool_use: 3
+    cost_efficiency: 4
+    source: "Gemini 报告 Kimi K2 #6 (8.8); SiliconFlow 代理降低成本"
+
+  kimi-for-coding:
+    family: moonshot
+    tier: budget
+    reasoning: 3
+    coding: 4
+    instruction_following: 4
+    tool_use: 4
+    cost_efficiency: 5
+    source: "RedCap 实测: PM/QA 稳定; 免费层"
+    aliases:
+      - "kimi-code/kimi-for-coding"
+
+  deepseek-v3.2:
+    family: deepseek
+    tier: budget
+    reasoning: 4
+    coding: 4
+    instruction_following: 3
+    tool_use: 3
+    cost_efficiency: 5
+    source: "Gemini 报告 #5 (9.0); 性价比极高"
+
+# ═══════════════════════════════════════════════════════
+# 路由算法（Dispatcher 执行）
+# ═══════════════════════════════════════════════════════
+#
+# 输入:
+#   role          — 当前角色 (product-manager|architect|programmer|qa|reviewer)
+#   registry      — agent-registry.yaml (嗅探脚本产出)
+#   dev_agent     — 当前步骤的程序员所用 Agent（仅 reviewer 需要）
+#
+# 算法:
+#   1. 从 registry 筛选 available=true 的 Agent
+#   2. 展开可切换模型的 Agent（如 copilot 展开为 3 个候选）
+#   3. 对每个候选 {cli}&{model}:
+#      a. 在本矩阵查 model 的能力评分（未收录的模型按 all=3 兜底）
+#      b. score = models[model][role_req.primary] × 2
+#                + models[model][role_req.secondary] × 1
+#      c. Reviewer 且 model.family != dev_agent.family → score += 2
+#      d. agent.known_issues 非空 → score -= 1
+#   4. 按 score 降序排列
+#   5. 同分时: 专用 CLI > 通用 CLI（如 kimi CLI > claude-code 代理 kimi）
+#   6. 输出有序列表，Dispatcher 取第 1 个为首选，其余为 Fallback
+#
+# 锁定规则:
+#   一旦某步骤（如 PM_WORKING step 1）选定 Agent，写入 state.yaml:
+#     current_role:
+#       agent: "copilot&claude-opus-4.6"
+#       locked: true
+#   该步骤内即使出现非致命错误也不切换。
+#   仅当连续 2 次失败时触发 Fallback，从列表中取下一个。
+#   新步骤开始时重新计算（失败计数归零，重读 registry）。
