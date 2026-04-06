@@ -273,3 +273,19 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04
+
+### L-23: Agent 通信协议必须走文件管道而非 stdout 嵌入 ⚙️ 已硬化
+- **场景**：E2E 测试（trpg-web）中，所有 Agent 在复杂任务中 100% 忘记在回复末尾输出 `__redcap_status` JSON 块，同时 100% 正确写入了 outbox 交付物文件。通信协议完全失效，而文件交付物零漏失
+- **根因**："在回复末尾输出结构化 JSON"是一个反直觉的元动作——Agent 的注意力被任务内容占据，自然倾向于结束回复而非追加元数据。文件写入则不同：它与任务内容（写设计文档、写测试报告）是同质动作，Agent 的任务执行流程天然包含文件写入
+- **已硬化到协议层**（2026-04-07）：
+  - communication-protocol.md §2 重构：outbox 文件为主通道、stdout 为兼容通道
+  - SKILL.md §5.3 解析优先级：outbox 文件 → response 正则 → last-result.json
+  - state-machine.md 伪代码步骤 5e-5f 更新为三级解析 + 清理逻辑
+  - 全部 5 个 prompt-templates 的 System Prompt 和必须写入文件清单已更新
+  - state.yaml 自动一致性校验脚本（`tools/redcap-check-state.sh`）已集成到 on_QA_PASS hook
+- **经验规则**：① Agent 通信协议应复用已验证可靠的管道（outbox 文件写入），不要发明新管道（stdout 嵌入） ② "必须写入的文件"清单是最有效的 Agent 合规手段——列在清单里的 100% 被写入 ③ 保留旧通道作为兼容降级，但不再作为主推方式 ④ 此经验泛化：任何需要 Agent 执行的元动作，都应尽量转化为与其主任务同质的动作形态
+- **来源**：trpg-web E2E Phase 4 验证报告 §8 + 通信协议复盘
+- **发现日期**：2026-04
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04

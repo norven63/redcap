@@ -60,33 +60,49 @@
 
 ## 2. 传递策略
 
-### 2.1 方案 A（主通道）：嵌入 response
+### 2.1 方案 A（主通道）：Outbox 文件写入 ← E2E 验证后升级（2026-04）
 
-Agent 在回复文本的**末尾**输出 `__redcap_status` JSON 块。Dispatcher 从 CLI 返回的 `response` 字段中用正则提取。
+Agent 将 `__redcap_status` JSON 写入**自身角色的 outbox 目录**：
 
-**Agent 输出约定**：
 ```
-（正常的工作回复文本...）
+{role}/outbox/__redcap_status.json
+```
 
+**设计依据**：E2E 测试（trpg-web）证明 outbox 文件交付方式 100% 可靠，而 stdout 嵌入方式 Agent 遵从率为 0%（L-12）。文件写入与交付物写入走同一管道，Agent 无需额外记忆"回复末尾输出 JSON"这一反直觉动作。
+
+**Agent 写入约定**：
 ```json
-{"__redcap_status": {"status": "completed", "summary": "...", ...}}
-```（结束标记）
+// 文件路径: {role}/outbox/__redcap_status.json
+// Agent 完成工作后，将此文件作为交付物之一写入
+{
+  "__redcap_status": {
+    "status": "completed",
+    "summary": "...",
+    "deliverables": ["..."],
+    ...
+  }
+}
 ```
 
-### 2.2 方案 B（Fallback 通道）：Dispatcher 写入状态文件
+> **生命周期**：Dispatcher 在读取并处理完 `__redcap_status.json` 后，将其内容写入 `.workflow/last-result.json` 作为持久化归档，然后**删除** outbox 中的 `__redcap_status.json`，避免下一轮误读旧状态。
 
-Dispatcher 在从 response 中成功提取 `__redcap_status` 后，**由 Dispatcher 自行**将该 JSON 写入 `.workflow/last-result.json`。Agent 不再负责写入此文件。
+### 2.2 方案 B（兼容通道）：嵌入 response
 
-当 Dispatcher 无法从 response 中解析出合法 JSON 时，可读取此文件获取上一次成功的状态（用于断点恢复场景）。
+若 Agent 未写入 outbox 文件但在回复文本末尾输出了 `__redcap_status` JSON 块，Dispatcher 仍可正则提取。此通道保留向后兼容性，不再作为主推方式。
 
-> **所有权变更**：`last-result.json` 的唯一权威写入方是 Dispatcher。即使 Agent 仍写入该文件，Dispatcher 也会用自身提取的版本覆盖。
+### 2.3 方案 C（断点恢复通道）：last-result.json
 
-### 2.3 解析优先级
+`.workflow/last-result.json` 由 Dispatcher 写入（取自方案 A 或 B 的解析结果）。用于断点恢复场景——新会话启动时读取此文件获取上次成功的状态。
+
+> **所有权**：`last-result.json` 的唯一权威写入方是 Dispatcher。
+
+### 2.4 解析优先级
 
 ```
-1. 尝试从 response 文本中正则提取 __redcap_status → 成功则使用
-2. 提取失败 → 读取 .workflow/last-result.json → 成功则使用
-3. 均失败 → 标记 status="failed"，保留原始 response，触发重试或升级
+1. 读取 {role}/outbox/__redcap_status.json → 存在且合法则使用（主通道）
+2. 文件不存在 → 从 response 文本正则提取 __redcap_status JSON（兼容通道）
+3. 提取失败 → 读取 .workflow/last-result.json（断点恢复/兜底）
+4. 均失败 → 标记 status="failed"，保留原始 response，触发重试或升级
 ```
 
 ---

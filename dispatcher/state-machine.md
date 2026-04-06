@@ -258,8 +258,20 @@ function dispatch_loop(project_dir):
             session = get_or_create_session(role, state.current_step, agent)  # 5c: Session
             result = execute_agent_cli(agent, prompt_file, session)           # 5d: 执行 CLI
 
-            event = parse_redcap_status(result)          # 5e: 解析返回
-            write_json(".workflow/last-result.json", event)  # 5f: 写入 last-result
+            # 5e: 解析返回（三级优先级，详见 communication-protocol.md §2.4）
+            status_file = f"{role}/outbox/__redcap_status.json"
+            if file_exists(status_file):
+                event = read_json(status_file)          # 优先级 1: outbox 文件
+            else:
+                event = regex_extract_status(result)     # 优先级 2: response 正则
+            if not event:
+                event = read_json(".workflow/last-result.json")  # 优先级 3: 兜底
+            if not event:
+                event = {"status": "failed", "summary": "无法获取 Agent 状态"}
+
+            # 5f: 归档到 last-result.json 并清理 outbox 状态文件（防下轮误读）
+            write_json(".workflow/last-result.json", event)
+            delete_if_exists(status_file)
 
             # 5g: 交付物完整性校验（status=="completed" 时）
             if event.status == "completed":

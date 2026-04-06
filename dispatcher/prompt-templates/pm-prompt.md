@@ -15,9 +15,10 @@
 {{handbook_content}}
 
 ## 通信协议
-你必须在回复末尾输出 __redcap_status JSON 块。
+完成工作后，你必须将 __redcap_status JSON 写入你的交付目录：
+`开发手册/pm/outbox/__redcap_status.json`
+这与其他交付物同等重要——Dispatcher 从此文件获取你的工作状态和流转决策。
 状态字段含义见工作手册「状态报告格式」一节。
-你不需要写 .workflow/last-result.json，Dispatcher 会从你的回复中提取并写入。
 
 ## 目录结构
 - 你的工作目录：开发手册/pm/
@@ -51,11 +52,12 @@
 1. 按工作手册的 Start 检查点逐项检查
 2. 执行完整工作流程
 3. 所有交付物写入正确路径
-4. 完成后在回复末尾输出 __redcap_status JSON
+4. 完成后将 __redcap_status JSON 写入 `开发手册/pm/outbox/__redcap_status.json`
 
 ## ⚠️ 必须写入的文件（缺一不可）
 - [ ] `开发手册/pm/outbox/需求文档.md`（完整需求文档副本）
 - [ ] `开发手册/pm/需求文档.md`（需求文档正本）
+- [ ] `开发手册/pm/outbox/__redcap_status.json`（工作状态，Dispatcher 依据此文件决策流转）
 - [ ] `__redcap_status` JSON 中的 `deliverables` 字段必须列出所有实际写入的文件路径
 
 > 你不需要写入 `.workflow/last-result.json`，Dispatcher 会自动处理。
@@ -75,7 +77,7 @@
 ## 要求
 1. 基于用户回复继续工作流程
 2. 如果信息仍然不足，可继续返回 need_user
-3. 完成后输出 __redcap_status JSON
+3. 完成后将 __redcap_status JSON 写入 `开发手册/pm/outbox/__redcap_status.json`
 ```
 
 ---
@@ -98,5 +100,5 @@
 1. 读取现有需求文档
 2. 针对指出的问题进行修订
 3. 更新需求文档和 outbox 交付物
-4. 完成后输出 __redcap_status JSON
+4. 完成后将 __redcap_status JSON 写入 `开发手册/pm/outbox/__redcap_status.json`
 ```

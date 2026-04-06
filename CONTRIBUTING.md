@@ -135,6 +135,8 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | CONTRIBUTING.md §7 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md（入口索引中的断点续传检查指令）|
 | tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ knowledge/host-reliability.md（防线文档）|
 | tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
+| references/communication-protocol.md §2 | SKILL.md §5.3 + dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + README.md 通信协议节 |
+| tools/redcap-check-state.sh | tools/redcap-on-qa-pass.sh（集成调用）|
 
 ## 7. Layer B 大型任务断点续传
 

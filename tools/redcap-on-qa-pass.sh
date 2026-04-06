@@ -125,6 +125,14 @@ except:
 
 echo "[on_qa_pass] 开始执行 on_QA_PASS 动作..."
 
+# 动作 0: state.yaml 一致性校验（L-19 防护）
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEV_MANUAL="$PROJECT_DIR/开发手册"
+if [[ -d "$DEV_MANUAL" ]]; then
+  bash "$SCRIPT_DIR/redcap-check-state.sh" "$DEV_MANUAL" || \
+    echo "[on_qa_pass] ⚠ state.yaml 存在不一致，建议在 commit 前修正"
+fi
+
 git_commit   || echo "[on_qa_pass] ⚠ git 操作出错，继续执行"
 check_lesson || echo "[on_qa_pass] ⚠ lesson 检查出错，继续执行"
 

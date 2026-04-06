@@ -87,7 +87,7 @@ REVIEW_WORKING → REVIEW_PASS → ALL_DONE
 
 ### 事件来源
 
-Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 `status` 字段作为事件：
+Agent 每次执行完毕将 `__redcap_status` JSON 写入 outbox 文件（`{role}/outbox/__redcap_status.json`），Dispatcher 读取后提取 `status` 字段作为事件：
 
 | status | 含义 | Dispatcher 动作 |
 |--------|------|----------------|
@@ -208,8 +208,8 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
       `.workflow/{role}-prompt-step{N}.md`，CLI 用 `$(cat ...)` 读取
    c. 获取或创建 Session（§5.6）
    d. 执行 CLI 命令（阻塞等待返回）
-   e. 解析返回 → 提取 __redcap_status（§5.3）
-   f. 将 __redcap_status 写入 .workflow/last-result.json
+   e. 解析返回 → 按优先级提取 __redcap_status（§5.3）：先读 {role}/outbox/__redcap_status.json → 再尝试 response 正则 → 最后读 last-result.json
+   f. 将 __redcap_status 写入 .workflow/last-result.json，然后删除 outbox 中的 __redcap_status.json（防下轮误读）
    g. 交付物完整性校验（§5.7），不通过则重试 Agent
    h. 触发匹配的 hooks（§5.10，如 QA completed → on_QA_PASS）
    i. 根据 status 查转移表 → 更新 state.yaml + sessions.yaml
@@ -229,12 +229,14 @@ Agent 每次执行完毕返回 `__redcap_status` JSON，Dispatcher 从中提取 
 ### 5.3 状态解析策略
 
 ```
-优先级 1：从 CLI 返回的 response 文本中正则提取 __redcap_status JSON
-优先级 2：读取 .workflow/last-result.json（兜底）
+优先级 1：读取 {role}/outbox/__redcap_status.json（Agent 写入的 outbox 文件）
+优先级 2：从 CLI 返回的 response 文本中正则提取 __redcap_status JSON（兼容通道）
+优先级 3：读取 .workflow/last-result.json（断点恢复/兜底）
 均失败 → 标记 status="failed"，重试 1 次
 ```
 
-> `last-result.json` 的权威写入方是 Dispatcher（步骤 5.f）。
+> **设计依据**：E2E 测试（trpg-web）证明 outbox 文件写入 100% 可靠，stdout 嵌入方式 Agent 遵从率为 0%（L-12）。详见 [《通信协议》§2](references/communication-protocol.md)。
+> `last-result.json` 的权威写入方是 Dispatcher（步骤 5.f），内容来源于优先级 1 或 2 的解析结果。
 
 ### 5.4 Prompt 变量映射表
 
@@ -389,6 +391,7 @@ Agent 通过 `__redcap_status` 的可选 `lesson` 字段提交经验（详见 [�
 
 2. 清除项目根目录的错位文件：
    - 根目录下的 last-result.json、.workflow/、__redcap_status 残留
+   - 各角色 outbox 下的 __redcap_status.json 残留（正常流程中 Dispatcher 会在步骤 5f 清理）
    - 名称为 Shell 特殊字符的异常目录/文件（如 `>`、`<`、`|` 等）
 ```
 

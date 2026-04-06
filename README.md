@@ -323,8 +323,8 @@ Dispatcher 的核心是一个**事件循环**，每轮执行以下 10 步：
 │     b. 组装 Prompt（模板 + 变量映射 → 写入文件）                  │
 │     c. 获取/创建 Session                                         │
 │     d. 执行 CLI（阻塞等待）                                      │
-│     e. 解析 __redcap_status                                      │
-│     f. 写入 last-result.json                                     │
+│     e. 读取 outbox/__redcap_status.json（主）/ response 正则（兼容）  │
+│     f. 归档到 last-result.json + 清理 outbox 状态文件          │
 │     g. 交付物完整性校验                                           │
 │     h. 触发 Hooks（on_QA_PASS / on_need_revision / ...）         │
 │     i. 更新 state.yaml（+ pending_actions 原子写入）             │
@@ -401,7 +401,7 @@ Dispatcher 的核心是一个**事件循环**，每轮执行以下 10 步：
   └──────────────────────────────────────────┘
 ```
 
-**事件来源**：Agent 返回 `__redcap_status` JSON，Dispatcher 提取 `status` 字段驱动状态转移。
+**事件来源**：Agent 将 `__redcap_status` JSON 写入 outbox 文件，Dispatcher 读取后提取 `status` 字段驱动状态转移。
 
 | status | 含义 |
 |--------|------|
@@ -448,9 +448,9 @@ Dispatcher                              Agent (CLI)
     │                                       │
     │     （Agent 执行任务、写文件...）       │
     │                                       │
-    │←── 自然语言回复 + __redcap_status ────│
+    │←── 交付物文件 + outbox/__redcap_status.json ──┤
     │                                       │
-    │  提取 JSON ──→ 写入 last-result.json  │
+    │  读取 outbox JSON ──→ 归档 last-result.json  │
     │  校验交付物 ──→ 触发 Hooks            │
     │  更新 state.yaml                      │
 ```
@@ -477,14 +477,15 @@ Dispatcher                              Agent (CLI)
 }
 ```
 
-#### 双轨传递策略
+#### 三级传递策略
 
 | 通道 | 机制 | 何时用 |
 |------|------|--------|
-| **方案 A（主通道）** | Agent 在回复末尾输出 `__redcap_status` JSON | 正常情况 |
-| **方案 B（Fallback）** | Dispatcher 正则提取失败 → 读 `last-result.json` | Agent 输出格式异常 / 断点恢复 |
+| **方案 A（主通道）** | Agent 写入 `{role}/outbox/__redcap_status.json` 文件 | 正常情况（E2E 验证 100% 可靠） |
+| **方案 B（兼容通道）** | 从 Agent 回复文本正则提取 `__redcap_status` JSON | 旧 Agent 兼容 |
+| **方案 C（兜底）** | 读取 `.workflow/last-result.json`（Dispatcher 写入） | 断点恢复 / 前两个均失败 |
 
-**为什么双轨？** 部分 Agent 难以稳定输出结构化 JSON。Fallback 通道确保即使 JSON 解析失败，Dispatcher 仍可从上次成功状态恢复。
+**为什么改为文件模式？** E2E 测试（trpg-web）证明 Agent 在复杂任务中 100% 写入 outbox 文件，但 0% 在回复末尾输出结构化 JSON（L-12）。文件写入与交付物写入走同一管道，Agent 无需额外记忆负担。
 
 #### 交付物协议
 
@@ -500,7 +501,7 @@ Dispatcher                              Agent (CLI)
 
 | 决策 | 选择 | 理由 |
 |------|------|------|
-| 协议嵌入方式 | 内嵌在自然语言回复中 | 无需修改 Agent CLI 传输层；`__redcap_status` 前缀避免与正文冲突 |
+| 协议传递方式 | Outbox 文件写入（主）+ response 正则（兼容） | outbox 文件 100% 可靠（E2E 验证），stdout 嵌入 0% 遵从率；与交付物走同一管道 |
 | last-result.json 写入方 | 仅 Dispatcher | 单一写入方防止状态错乱（Agent vs Dispatcher 概念不一致） |
 | 交付物自包含 | 强制 | 分工制下下游无法回溯上游工作区，交付物必须完全独立 |
 | 5 种 status | 最小完备集 | completed/failed 覆盖正常流；blocked/need_user 覆盖阻塞流；need_revision 覆盖回退流 |

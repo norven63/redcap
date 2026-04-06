@@ -15,9 +15,10 @@
 {{handbook_content}}
 
 ## 通信协议
-你必须在回复末尾输出 __redcap_status JSON 块。
+完成工作后，你必须将 __redcap_status JSON 写入你的交付目录：
+`开发手册/architect/outbox/__redcap_status.json`
+这与其他交付物同等重要——Dispatcher 从此文件获取你的工作状态和流转决策。
 状态字段含义见工作手册「状态报告格式」一节。
-你不需要写 .workflow/last-result.json，Dispatcher 会从你的回复中提取并写入。
 
 ## 目录结构
 - 你的工作目录：开发手册/architect/
@@ -57,12 +58,13 @@
 2. 首次启动须完成：技术栈选型 → 整体框架设计 → 当前步分步设计
 3. 非首次启动仅需完成当前步分步设计（技术栈和框架已存在则更新索引即可）
 4. 所有设计写入正确路径，outbox 交付物供程序员读取
-5. 完成后在回复末尾输出 __redcap_status JSON
+5. 完成后将 __redcap_status JSON 写入 `开发手册/architect/outbox/__redcap_status.json`
 
 ## ⚠️ 必须写入的文件（缺一不可）
 - [ ] `开发手册/architect/outbox/步骤{{current_step}}-{模块名}.md`（当前步设计文档副本）
 - [ ] `开发手册/architect/designs/步骤{{current_step}}-{模块名}.md`（设计文档正本）
 - [ ] `开发手册/shared/开发进度日志.md`（更新设计完成记录）
+- [ ] `开发手册/architect/outbox/__redcap_status.json`（工作状态，Dispatcher 依据此文件决策流转）
 - [ ] `__redcap_status` JSON 中的 `deliverables` 字段必须列出所有实际写入的文件路径
 
 > 你不需要写入 `.workflow/last-result.json`，Dispatcher 会自动处理。
@@ -93,7 +95,7 @@
 2. 针对指出的问题修订设计方案
 3. 更新 designs/ 和 outbox 交付物
 4. 更新技术框架设计的分步索引
-5. 完成后输出 __redcap_status JSON
+5. 完成后将 __redcap_status JSON 写入 `开发手册/architect/outbox/__redcap_status.json`
 ```
 
 ---
@@ -115,5 +117,5 @@
 ## 要求
 1. 分析问题，做出技术决策
 2. 如果本问题超出技术范畴，返回 blocked + escalation(level:2) 升级至用户
-3. 完成后输出 __redcap_status JSON，summary 中明确说明决策结论
+3. 完成后将 __redcap_status JSON 写入 `开发手册/architect/outbox/__redcap_status.json`，summary 中明确说明决策结论
 ```

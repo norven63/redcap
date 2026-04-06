@@ -15,9 +15,10 @@
 {{handbook_content}}
 
 ## 通信协议
-你必须在回复末尾输出 __redcap_status JSON 块。
+完成工作后，你必须将 __redcap_status JSON 写入你的交付目录：
+`开发手册/qa/outbox/__redcap_status.json`
+这与其他交付物同等重要——Dispatcher 从此文件获取你的工作状态和流转决策。
 状态字段含义见工作手册「状态报告格式」一节。
-你不需要写 .workflow/last-result.json，Dispatcher 会从你的回复中提取并写入。
 
 ## 目录结构
 - 你的工作目录：开发手册/qa/
@@ -61,11 +62,12 @@
 3. 执行完整工作流程：测试执行 → 问题反馈 → 测试报告 → 交付物输出
 4. 如需人工验证（GUI 等），返回 need_user 并说明验证步骤
 5. 测试报告写入 开发手册/shared/开发进度日志.md
-6. 完成后在回复末尾输出 __redcap_status JSON
+6. 完成后将 __redcap_status JSON 写入 `开发手册/qa/outbox/__redcap_status.json`
 
 ## ⚠️ 必须写入的文件（缺一不可）
 - [ ] `开发手册/qa/outbox/步骤{{current_step}}-测试报告.md`（测试结果+缺陷列表）
 - [ ] `开发手册/shared/开发进度日志.md`（更新测试结果记录）
+- [ ] `开发手册/qa/outbox/__redcap_status.json`（工作状态，Dispatcher 依据此文件决策流转）
 - [ ] `__redcap_status` JSON 中的 `deliverables` 字段必须列出所有实际写入的文件路径
 
 > 你不需要写入 `.workflow/last-result.json`，Dispatcher 会自动处理。
@@ -98,7 +100,7 @@
 3. 更新开发进度日志中的测试报告
 4. 全部通过 → status: completed
 5. 仍有问题 → status: need_revision + 更新 revision 字段
-6. 完成后输出 __redcap_status JSON
+6. 完成后将 __redcap_status JSON 写入 `开发手册/qa/outbox/__redcap_status.json`
 ```
 
 ---
@@ -115,5 +117,5 @@
 ## 要求
 1. 将用户验证结果纳入测试报告
 2. 综合判断整体测试结论
-3. 完成后输出 __redcap_status JSON
+3. 完成后将 __redcap_status JSON 写入 `开发手册/qa/outbox/__redcap_status.json`
 ```

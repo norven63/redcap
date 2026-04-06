@@ -15,9 +15,10 @@
 {{handbook_content}}
 
 ## 通信协议
-你必须在回复末尾输出 __redcap_status JSON 块。
+完成工作后，你必须将 __redcap_status JSON 写入你的交付目录：
+`开发手册/reviewer/outbox/__redcap_status.json`
+这与其他交付物同等重要——Dispatcher 从此文件获取你的工作状态和流转决策。
 状态字段含义见工作手册「状态报告」一节。
-你不需要写 .workflow/last-result.json，Dispatcher 会从你的回复中提取并写入。
 
 ## 目录结构
 - 你的工作目录：项目根目录（只读代码）及 开发手册/reviewer/
@@ -60,11 +61,12 @@
 2. 读取安全铁律和代码规范
 3. 按审查维度优先级执行全面 Review：安全合规 → 架构一致性 → 需求覆盖 → 代码质量 → 性能 → 可维护性
 4. Review 报告写入 开发手册/shared/开发进度日志.md
-5. 完成后在回复末尾输出 __redcap_status JSON
+5. 完成后将 __redcap_status JSON 写入 `开发手册/reviewer/outbox/__redcap_status.json`
 
 ## ⚠️ 必须写入的文件（缺一不可）
 - [ ] `开发手册/reviewer/outbox/项目级Review报告.md`（Review 结果摘要）
 - [ ] `开发手册/shared/开发进度日志.md`（追加项目级 Code Review 章节）
+- [ ] `开发手册/reviewer/outbox/__redcap_status.json`（工作状态，Dispatcher 依据此文件决策流转）
 - [ ] `__redcap_status` JSON 中的 `deliverables` 字段必须列出所有实际写入的文件路径
 
 > 你不需要写入 `.workflow/last-result.json`，Dispatcher 会自动处理。
