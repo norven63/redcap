@@ -132,8 +132,55 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | knowledge/design-principles.md | README.md 设计哲学章节 + CONTRIBUTING.md §1（元原则引用） |
 | knowledge/a2a-communication.md | README.md 通信协议章节 + dispatcher/state-machine.md（前瞻标注） |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
+| CONTRIBUTING.md §7 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md（入口索引中的断点续传检查指令）|
 | tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ knowledge/host-reliability.md（防线文档）|
 | tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
+
+## 7. Layer B 大型任务断点续传
+
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的断点续传由 `.workflow/state.yaml` 状态机自动保证。
+
+**问题**：Layer B 无状态机保护，会话中断（坏死、超时、主动关闭）后，任务进度仅存在于 LLM 上下文中，无法结构化恢复。
+
+**解法**：触发式轻状态文件 `.dev-task.md`。
+
+### 触发条件
+
+仅在以下情况创建：
+
+> **预计超过 2 个独立阶段、且单次会话大概率无法完成** → 创建 `.dev-task.md`
+
+单次 fix、docs 更新、单个 Lesson 沉淀等简单任务不需要。
+
+### 文件格式
+
+```markdown
+# 当前任务：<任务名称>
+
+## 目的（为什么做）
+<一句话描述>
+
+## 完成标准
+- [ ] Phase 1: ...
+- [ ] Phase 2: ...
+- [x] Phase N: ... ← 已完成的打勾
+
+## 断点备注
+<当前进度、下一步、已知阻塞项>
+```
+
+### 生命周期
+
+| 时机 | 动作 |
+|------|------|
+| 大型任务启动 | 在 RedCap 工作区根目录创建 `.dev-task.md` |
+| 每完成一个阶段 | 更新 checklist + 断点备注 |
+| 新会话启动 | 入口索引检查该文件是否存在 → 存在则读取并恢复 |
+| 任务全部完成 | 删除文件（或移至 `docs/` 归档） |
+
+> 该文件已加入 `.gitignore`——它是临时过程状态，不应进入版本控制。
+
+---
 
 ### 跨工具指令文件位置参考（经官方文档验证 2026-04）
 
