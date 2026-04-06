@@ -15,7 +15,7 @@
 
 ## 会话启动时“断点续传”检查
 
-进入 RedCap 工作区后，检查 `.dev-task.md` 是否存在。若存在，读取并恢复上次中断的任务进度（详见 CONTRIBUTING.md §7）。
+进入 RedCap 工作区后，检查 `.dev-task.md` 是否存在。若存在，读取并恢复上次中断的任务进度，然后 `git log --oneline -10` 交叉验证实际进度（详见 CONTRIBUTING.md §7）。
 
 ## Claude Code 特有说明
 

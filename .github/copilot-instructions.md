@@ -11,7 +11,7 @@
 
 1. `read_file` 读取 `CONTRIBUTING.md` — 获取完整的自身开发规范（Commit 格式、经验回顾、飞书通知、影响范围等）
 2. `read_file` 读取 `knowledge/lessons.md` — 检查已知陷阱
-3. 检查 `.dev-task.md` 是否存在 — 若存在，读取并恢复上次中断的任务进度（见 CONTRIBUTING.md §7）
+3. 检查 `.dev-task.md` 是否存在 — 若存在，读取并恢复上次中断的任务进度（见 CONTRIBUTING.md §7），然后 `git log --oneline -10` 交叉验证实际进度
 
 > 步骤 1、2 是强制前置条件，不可跳过。所有规则细节以 `CONTRIBUTING.md` 为准。
 
