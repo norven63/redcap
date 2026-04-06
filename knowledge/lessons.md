@@ -195,3 +195,23 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：2（Layer A + Layer B 独立发现同一模式）
 - **最后命中**：2026-04
+
+### L-16: Hook 设计≠部署≠生效——部署链每个环节必须端到端验证
+- **场景**：Distill 项目已完成 Hook 架构设计（`hooks-kimi.md` 写了 Dispatcher 注册代码块），全局 Dispatcher 也已注册 Distill 路由（`*/distill|*/distill/*`），但 Hook 从未实际触发。Agent 在复盘时误判为"没有 Stop Hook"
+- **根因**：部署链上两处断裂同时存在——① Dispatcher 路由模式 `*/distill*` 不匹配实际 CWD `*/MyObsidian*`（Distill 作为 skill 工作在 Obsidian vault 中，不在自身仓库中）② 路由目标脚本 `kimi-hook-handler.sh` 不存在（实际文件名是 `agent-hook-handler.sh`）。设计文档、Dispatcher 配置、目标脚本三者从未经过联调验证
+- **经验规则**：① Hook 部署完整性公式：`设计 × 配置 × 路由匹配 × 脚本存在 × 实际触发 = 生效`，任一环节为零则全链路失效 ② 任何 Hook 配置变更后，必须用标记文件法做端到端验证（`touch /tmp/hook-fired-$(date +%s)`），确认物理触发 ③ 特别注意 skill 类项目的 CWD ≠ skill 仓库路径——路由模式必须匹配工作目录而非代码目录 ④ 泛化原则：「配置了」≠「部署了」≠「生效了」，三者之间的断裂是静默的、不会报错的
+- **来源**：Distill V8.0 L3 机制 E2E 测试交叉评审
+- **发现日期**：2026-04
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04
+
+### L-17: Agent 无法自主发现自身未知的项目资产——排查指引必须显式写入提示词
+- **场景**：Distill Agent（kimi-for-coding）在复盘 Hook 失效问题时，不知道自己项目已有 `knowledge/hooks-kimi.md`（Dispatcher 方案）、不知道全局 `~/.kimi/hooks/dispatcher.sh` 已注册 Distill 路由，因而错误结论"当前无自动 Stop Hook"。同时对 RedCap 已有的 Kimi CLI Hook 实测调研（`hooks-kimi-cli.md`）完全不知情
+- **根因**：Agent 的推理仅基于"已加载到上下文的信息"。SKILL.md 和 CONTRIBUTING.md 均未引用 `hooks-kimi.md`，也未提供"Hook 故障排查路径"。Agent 不会自发搜索项目中所有文件来验证自己的假设——它在信息茧房内做出了逻辑自洽但事实错误的分析
+- **经验规则**：① 提示词中必须提供显式的排查指引路径（如："Hook 问题 → 先检查 `~/.kimi/hooks/dispatcher.sh` → 再检查 `knowledge/hooks-*.md`"），不能指望 Agent 自行发现 ② 跨项目知识引用必须在提示词中点名文件路径，Agent 不会主动探索其他项目的经验 ③ 所有关键资产文件必须在入口文件（SKILL.md 或等价物）中有明确引用或索引——未被引用的文件等于不存在
+- **来源**：Distill V8.0 L3 机制 E2E 测试交叉评审
+- **发现日期**：2026-04
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04
