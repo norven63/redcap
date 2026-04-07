@@ -28,7 +28,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 |----------|------------|----------|-----------|---------|
 | VS Code Copilot | 每轮对话 | Context 附件 | ⚠️ 有限（无 onTaskComplete） | [hooks-vscode-copilot.md](hooks-vscode-copilot.md) |
 | Claude Code | 会话开始 + compact 后重读 | User message | ✅ Stop hook（100%） | [hooks-claude-code.md](hooks-claude-code.md) |
-| Gemini CLI | 每次 prompt | 与 prompt 拼接 | ❌ 已实现但未集成（v0.36.0） | [hooks-gemini-cli.md](hooks-gemini-cli.md) |
+| Gemini CLI | 每次 prompt | 与 prompt 拼接 | ✅ 实测可用（v0.36.0）⏳ 待部署 | [hooks-gemini-cli.md](hooks-gemini-cli.md) |
 | Kimi CLI | N/A（无指令文件） | N/A | ✅ 13 种事件（v1.30.0 实测） | [hooks-kimi-cli.md](hooks-kimi-cli.md) |
 | Copilot CLI | N/A（仅 `.github/copilot-instructions.md`） | 自动读取 | ✅ 8 种事件（仓库级 `.github/hooks/`） | [hooks-copilot-cli.md](hooks-copilot-cli.md) |
 
@@ -83,7 +83,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | Kimi CLI | ✅ | 全局 Dispatcher 路由（**必须遵守协议**） | [hooks-kimi-cli.md §3](hooks-kimi-cli.md) |
 | Copilot CLI | ✅ | 仓库级 `.github/hooks/`（天然隔离，无需 Dispatcher） | [hooks-copilot-cli.md §3](hooks-copilot-cli.md) |
 | VS Code Copilot | ❌ | 退守 Layer 1-3 | [hooks-vscode-copilot.md §3](hooks-vscode-copilot.md) |
-| Gemini CLI | ❌ | 退守 Layer 1-3 | [hooks-gemini-cli.md §3](hooks-gemini-cli.md) |
+| Gemini CLI | ✅ ⏳待部署 | `.gemini/settings.json` SessionEnd Hook | [hooks-gemini-cli.md §3](hooks-gemini-cli.md) |
 
 ### 3.3 收尾脚本封装（已实现）
 

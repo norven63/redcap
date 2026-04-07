@@ -296,7 +296,7 @@ E2E 执行完毕
 | Claude Code | `.claude/settings.json` Stop hook | ✅ 已部署 |
 | Kimi CLI | `dispatcher` Stop 事件路由 | ⏳ 待适配 |
 | VS Code Copilot | 无原生 Hook | ❌ 不支持 |
-| Gemini CLI | Hook 机制待集成 | ❌ 不支持 |
+| Gemini CLI | `.gemini/settings.json` SessionEnd Hook | ⏳ 待部署 |
 
 ## 5. 飞书通知
 
