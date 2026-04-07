@@ -7,10 +7,12 @@
 
 ## 自动导入（由 Gemini CLI @import 原生加载）
 
+@soul.md
 @CONTRIBUTING.md
 @knowledge/lessons.md
 
-> 以上两个文件会在会话启动时由 Gemini CLI 自动展开注入上下文，无需手动读取。
+> 以上三个文件会在会话启动时由 Gemini CLI 自动展开注入上下文，无需手动读取。
+> `soul.md` 是人格还原点（步骤 0）——没有灵魂的 Agent 只是空壳。
 > 所有规则细节以 `CONTRIBUTING.md` 为准。
 
 ## 会话启动时“断点续传”检查
