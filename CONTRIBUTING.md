@@ -54,7 +54,15 @@
 - 设计涉及覆盖范围声明（如测试覆盖矩阵、功能点清单）
 - 设计方案影响 ≥3 个框架文件
 
-**执行方式**：将设计方案写入临时文件，调用独立 Agent 执行红队审查：
+**Agent 选择**：复用 `agent-adapters.md §1.3` 动态路由算法，但角色设为 `reviewer`（天然获得 cross-family +2 加分），确保选出的 Agent 与当前设计者不同模型族。降级逻辑同 §6.3（Model 降级 → CLI 降级 → 用户决策）。
+
+> 简化版选择流程（Cap 在 Layer B 无完整 Dispatcher 环境时）：
+> 1. 读 `.workflow/agent-registry.yaml` 获取可用 Agent 列表
+> 2. 排除与自身同 family 的 Agent（如当前是 claude 族，排除所有 claude 系 CLI）
+> 3. 从剩余中选 `reasoning` 评分最高者（红队审查的核心能力需求）
+> 4. 若无跨族可用 Agent → 降级为同族不同 Model；仍无 → 记录"红队审查跳过（无可用 Agent）"并继续
+
+**执行方式**：将设计方案写入临时文件，调用选定 Agent 执行红队审查：
 
 ```bash
 # 1. 将设计方案写入临时文件
@@ -66,8 +74,9 @@ cat > /tmp/redcap-design-review.md << 'EOF'
 {第一层自检结果，含"不可行"判断和尝试记录}
 EOF
 
-# 2. 调用独立 Agent 红队审查（优先用与设计者不同模型族的 Agent）
-kimi -p "你是 RedCap 框架的独立红队审查员（Red Team Reviewer）。
+# 2. 调用独立 Agent 红队审查（由上述选择流程确定具体 CLI）
+# 示例：若选中 kimi → kimi -p；若选中 gemini → gemini -p --yolo（L-7）
+{selected_cli} -p "你是 RedCap 框架的独立红队审查员（Red Team Reviewer）。
 你的唯一目标是找出设计方案中的缺陷、遗漏和错误假设。
 
 审查要求：
@@ -84,6 +93,8 @@ kimi -p "你是 RedCap 框架的独立红队审查员（Red Team Reviewer）。
 
 $(cat /tmp/redcap-design-review.md)"
 ```
+
+> 各 CLI 的 headless 调用参数参见 `agent-adapters.md §2-§5`（含 L-7 等已知陷阱）。
 
 **结果处理**：
 - 有 CHALLENGE/MISS → 评估并决定是否修改设计，记录决策理由
