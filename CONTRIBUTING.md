@@ -82,13 +82,19 @@ docs(经验): 新增 L-9 飞书架构局限性
 
 单纯的文档措辞修正、经验沉淀、注释更新等不需要 E2E。
 
+**变更登记（强制）**——commit 命中上表任一触发类型时，**必须**在 `testing/pending-validations.md` 追加一条 V-编号条目，格式见该文件头部说明。这是防止"待验证黑洞"的核心机制——不登记就会遗忘。
+
+> ⚠ Stop Hook 评审（§4）会检查：本次 commit 是否涉及触发类型但未登记 pending-validation。
+
 **最小产出物**——E2E 不要求写完整报告，但必须产出以下内容并融入框架：
 
 1. **经验条目**（L-编号）：每个新发现的失败模式/反直觉行为 → 沉淀到 `knowledge/lessons.md`
 2. **Bug 修复**：发现的问题当场修复并 commit
-3. **一句话结论**：在 commit message 正文中记录 E2E 范围和核心结论（如 "E2E(trpg-web): 5 步正向流转 100%，回退路径 0%"）
+3. **E2E 报告更新**：更新 `testing/latest-e2e-report.md`（覆盖范围、核心发现、遗留问题）
+4. **消费 pending-validations**：验证通过的条目标记 ✅ 并移入归档区
+5. **一句话结论**：在 commit message 正文中记录 E2E 范围和核心结论（如 "E2E(trpg-web): 5 步正向流转 100%，回退路径 0%"）
 
-> E2E 报告是消耗品——精华融入经验库和 commit 记录后，报告本身不需要持久保留。如需完整记录以备个人回顾，可放在 `docs/`（不受版本控制）。
+> E2E 执行使用 `testing/benchmark-scenario.md` 定义的固定场景，保证跨版本可比性。
 
 ### E2E 后置处理流程
 
@@ -214,6 +220,9 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
 | references/communication-protocol.md §2 | SKILL.md §5.3 + dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + README.md 通信协议节 |
 | tools/redcap-check-state.sh | tools/redcap-on-qa-pass.sh（集成调用）|
+| 涉及 §3.1 触发类型的任何变更 | testing/pending-validations.md（登记待验证条目）|
+| testing/benchmark-scenario.md | testing/pending-validations.md（验证矩阵变更可能影响待验证项的验证方法）|
+| testing/latest-e2e-report.md | testing/pending-validations.md（报告产出后消费待验证条目）+ knowledge/lessons.md（经验沉淀）|
 
 ## 7. Layer B 大型任务断点续传
 
