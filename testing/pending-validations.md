@@ -21,13 +21,13 @@
 - **来源 commit**：`9d06d2e` feat(框架): __redcap_status outbox 文件模式 + state.yaml 自动校验
 - **触发类型**：通信协议
 - **验证要点**：Agent 是否写入 `{role}/outbox/__redcap_status.json`；Dispatcher 能否正确解析；stdout 辅助通道是否仍可用
-- **状态**：🟡 部分验证（trpg-web E2E 验证了 outbox 文件交付 100%，但 stdout 辅助通道未测）
+- **状态**：🟡 部分验证（trpg-web E2E 验证了 outbox 文件交付 100%，stdout 嵌入 0% 合规——确认文件管道为主通道。待新基准项目 md-table-tool 复验）
 
 ### V-2: state.yaml 自动校验脚本
 - **来源 commit**：`9d06d2e` feat(框架): __redcap_status outbox 文件模式 + state.yaml 自动校验
 - **触发类型**：状态机
 - **验证要点**：`tools/redcap-check-state.sh` 在 on_qa_pass hook 中是否正确触发；校验失败时是否阻断流程
-- **状态**：🔴 待验证
+- **状态**：� 部分验证（脚本已集成到 on_QA_PASS hook，待 E2E 验证真实项目中的触发与阻断效果）
 
 ### V-3: E2E 后置处理流程（7 步）
 - **来源 commit**：`928ab33` feat(框架): E2E 后置处理流程

@@ -54,7 +54,7 @@
 - 设计涉及覆盖范围声明（如测试覆盖矩阵、功能点清单）
 - 设计方案影响 ≥3 个框架文件
 
-**Agent 选择**：复用 `agent-adapters.md §1.3` 动态路由算法，但角色设为 `reviewer`（天然获得 cross-family +2 加分），确保选出的 Agent 与当前设计者不同模型族。降级逻辑同 §6.3（Model 降级 → CLI 降级 → 用户决策）。
+**Agent 选择**：复用 `agent-adapters.md §1.3` 动态路由算法，但角色设为 `reviewer`（天然获得 cross-family +2 加分），确保选出的 Agent 与当前设计者不同模型族。降级逻辑同 §6（Model 降级 §6.3 → CLI 降级 → 用户决策 §6.5）。
 
 > 简化版选择流程（Cap 在 Layer B 无完整 Dispatcher 环境时）：
 > 1. 读 `.workflow/agent-registry.yaml` 获取可用 Agent 列表
