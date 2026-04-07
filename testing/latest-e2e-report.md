@@ -1,11 +1,11 @@
 # E2E 验证报告
 
-> 每次 E2E 执行后更新此文件。保留最近一次完整报告，历史报告归档到 `docs/`。
+> 每次 E2E 执行后更新此文件。仅保留最近一次完整报告，旧报告直接覆盖（精华已融入 lessons.md 和 pending-validations.md）。
 
 ## 最近一次 E2E
 
 **日期**：2026-04-07  
-**项目**：trpg-web（TRPG 角色卡管理器）  
+**项目**：trpg-web（TRPG 角色卡管理器）— 旧基准项目，已替换为 md-table-tool  
 **执行者**：Cap（Dispatcher）  
 **框架版本**：commit `928ab33` 之前的版本  
 
