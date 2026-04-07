@@ -307,12 +307,32 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **复现次数**：1
 - **最后命中**：2026-04
 
-### L-25: E2E 后置处理必须严格执行——§3.1 最小产出物缺一不可
+### L-25: E2E 后置处理必须严格执行——§3.1 最小产出物缺一不可 ⚙️ 已硬化
 - **场景**：md-table-tool E2E smoke 测试完成后，Dispatcher 将报告写到 `docs/` 而非 `testing/latest-e2e-report.md`，且完全跳过 pending-validations 消费、经验沉淀、一句话 commit 结论等后置处理步骤。直到用户审计三个合规性问题后才发现全部遗漏
 - **根因**：E2E 执行本身（调度 10 个 Agent、处理 QA 反馈回路）消耗了大量注意力和上下文空间，完成"核心任务"后产生"已完成"的认知错觉，忽略了后置处理属于 E2E 流程的必要组成部分。报告路径错误则是因为未在写入前回读 §3.1 确认规范路径
-- **经验规则**：① E2E 执行结束后，必须 `read_file` 重读 CONTRIBUTING.md §3.1 的最小产出物清单，逐项对照执行——不可凭记忆 ② 报告路径是 `testing/latest-e2e-report.md`（覆盖式），不是 `docs/` 下的项目特定文件 ③ pending-validations 消费是 E2E 的核心交付物之一——不消费等于 E2E 白做 ④ 与 L-9（长任务规则退化）属同一模式：关键规则在长任务末段被遗忘，必须用文件重读对冲
+- **已硬化到协议层**（2026-04-07）：
+  - `tools/redcap-e2e-postcheck.sh` — E2E 完整性审计脚本（6 项检查，任一 FAIL 阻断）
+  - CONTRIBUTING.md §3.1 新增步骤 ⑧ 完整性 Gate
+  - Stop Hook 自动检测 `testing/e2e-session.yaml` 存在时执行 postcheck
+  - `testing/e2e-session.yaml` 配置锁定机制防止目的漂移
+- **经验规则**：① E2E 后置处理不可凭记忆——必须由脚本审计 ② 报告路径是 `testing/latest-e2e-report.md`（覆盖式），错误路径由脚本自动检测 ③ pending-validations 消费是 E2E 核心交付物 ④ 与 L-9（长任务规则退化）属同一模式，但 L-25 通过脚本 Gate 实现了 100% 硬保障而非仅靠文件重读
 - **来源**：md-table-tool E2E smoke 后置处理遗漏，用户审计纠偏
 - **发现日期**：2026-04
-- **影响度**：medium
+- **影响度**：high（从 medium 升级——用户明确定义为红线问题）
+- **复现次数**：1
+- **最后命中**：2026-04
+
+### L-26: E2E 预设必须物理锁定——用户指令与实际执行之间不允许漂移
+- **场景**：用户要求"全量回归"，Dispatcher 实际只执行了 smoke 预设（3/11 开关）。长对话中"先跑 smoke 验证基础"的中间步骤被误当成最终目标，原始需求被遗忘
+- **根因**：E2E 启动时没有将用户指定的预设写入持久化文件，执行范围全靠上下文记忆。L-21（目的漂移）的 E2E 特化实例
+- **已硬化到协议层**（2026-04-07）：
+  - `testing/e2e-session.yaml` 在 E2E 启动时锁定：preset、switches_on（全部展开）、user_instruction（原话）
+  - 每执行完一个开关追加到 switches_completed
+  - `tools/redcap-e2e-postcheck.sh` 检查 switches_on 与 switches_completed 差集
+  - 不一致 = FAIL，列出未执行的开关名
+- **经验规则**：① 用户指令必须在任务启动时持久化为物理文件，不可仅存在于上下文 ② 执行进度必须实时更新到同一文件 ③ 完成判定由脚本对比"应做"与"已做"，不由 LLM 自行判断
+- **来源**：md-table-tool E2E 范围缺失，用户审计纠偏
+- **发现日期**：2026-04
+- **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04

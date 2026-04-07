@@ -39,6 +39,30 @@ fi
 
 CURRENT_HEAD=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null) || exit 0
 
+# ── E2E Session Gate 检查 ──
+# 如果 e2e-session.yaml 存在，说明有未完成的 E2E 后置处理
+# 无论是否有 git 变更，都必须执行 postcheck
+
+E2E_SESSION_FILE="$PROJECT_DIR/testing/e2e-session.yaml"
+if [[ -f "$E2E_SESSION_FILE" ]]; then
+    echo "[redcap-on-stop-review] ⚠ 检测到未完成的 E2E session，执行后置完整性审计..." >&2
+    POSTCHECK_SCRIPT="$PROJECT_DIR/tools/redcap-e2e-postcheck.sh"
+    if [[ -x "$POSTCHECK_SCRIPT" ]]; then
+        bash "$POSTCHECK_SCRIPT" >&2
+        POSTCHECK_EXIT=$?
+        if [[ $POSTCHECK_EXIT -ne 0 ]]; then
+            NOTIFIER_E2E="$PROJECT_DIR/tools/feishu-notifier.py"
+            if [[ -f "$NOTIFIER_E2E" ]]; then
+                python3 "$NOTIFIER_E2E" notify \
+                    "⚠️ RedCap E2E 后置处理未完成！\ntesting/e2e-session.yaml 仍存在，请补齐后置处理步骤。" \
+                    --project "redcap" 2>/dev/null || true
+            fi
+        fi
+    else
+        echo "[redcap-on-stop-review] WARNING: redcap-e2e-postcheck.sh 不可执行" >&2
+    fi
+fi
+
 if [[ "$BASELINE" == "$CURRENT_HEAD" ]]; then
     # 无变更，无需评审
     rm -f "$REVIEW_RESULT_FILE" "$REVIEW_LOG_FILE" 2>/dev/null
@@ -104,6 +128,7 @@ $DIFF
    - 文档变更：是否有 Markdown 格式错误（代码块未闭合、标题层级混乱、链接断裂）？
    - 代码变更：是否有安全问题、硬编码、路径错误？
 5. **经验沉淀**：本次变更是否发现了新的失败模式或验证了错误假设，但未归档为 Lesson？
+6. **E2E 完整性**：如果变更涉及 E2E 验证，检查 testing/e2e-session.yaml 是否已处理、报告是否在正确路径（testing/latest-e2e-report.md 而非 docs/）、pending-validations 是否已消费。
 
 ## 输出格式
 

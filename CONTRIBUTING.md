@@ -19,6 +19,8 @@
 - L-17（Agent 信息茧房）：编写提示词时，确保关键资产文件有显式引用路径
 - L-18（A2A 讨论优于指令）：Agent 间协作采用讨论共识模式，而非单向命令模式
 - L-24（前置对抗缺失）：设计方案中出现"不可行"判断时，必须执行 §1.1 Pre-mortem 挑战
+- L-25（E2E 后置处理不可省略）：E2E 完成后必须执行 `bash tools/redcap-e2e-postcheck.sh`，不可凭记忆
+- L-26（E2E 预设必须锁定）：E2E 启动时必须创建 `testing/e2e-session.yaml` 锁定用户指定的预设和开关
 
 ### 1.1 设计自检：前置对抗（Red Team Self-Check）
 
@@ -157,6 +159,21 @@ docs(经验): 新增 L-9 飞书架构局限性
 
 ## 3.1 E2E 验证：触发条件与最小产出物
 
+### E2E 启动配置锁定（强制）
+
+E2E 启动时，Dispatcher **必须**先创建 `testing/e2e-session.yaml` 锁定本次配置，否则不得开始执行：
+
+```yaml
+# testing/e2e-session.yaml — E2E 启动时创建，全部完成后删除
+created_at: "2026-04-07T21:00:00Z"
+preset: full                          # 用户指定的预设
+switches_on: [happy_path, multi_step, qa_fail_code, ...]  # 展开后的全部开关
+switches_completed: []                # 每验证完一个开关追加
+user_instruction: "全量回归"          # 用户原话，防止漂移
+```
+
+每个开关对应的路径执行完毕后，**立即**将该开关追加到 `switches_completed`。此文件是防止"目的漂移"（L-21）和"部分执行当全量"（L-25）的物理屏障。
+
 **触发条件**——以下任一情况满足时，必须在真实项目中做端到端验证：
 
 | 变更类型 | 示例 | 为什么需要 E2E |
@@ -234,6 +251,22 @@ E2E 执行完毕
 ⑦ 汇总 commit
     所有修复完成后，在最后一个 commit message 中附带 E2E 汇总：
     "E2E({项目名}): {覆盖范围}, {核心结论}, BUG={P0数}P0/{P1数}P1/{P2数}P2, GAP={数量}, L-{新增编号列表}"
+    │
+    ▼
+⑧ 完整性 Gate（强制 — 100% 硬保障）
+    执行 `bash tools/redcap-e2e-postcheck.sh`
+    此脚本检查：
+    · e2e-session.yaml 中 switches_on 与 switches_completed 是否一致
+    · 报告是否写入 testing/latest-e2e-report.md（而非 docs/）
+    · pending-validations 是否有消费动作
+    · lessons.md 是否有更新
+    · 最近 commit 是否包含 E2E 结论
+    · docs/ 下有无错误路径的报告文件
+    
+    全部 PASS → 删除 e2e-session.yaml，E2E 后置处理完成
+    任一 FAIL → 必须修复后重新执行，不得跳过
+    
+    双重保障：Stop Hook 检测到 e2e-session.yaml 存在时自动执行此脚本
 ```
 
 > **防止链路断裂的关键点**：步骤④要求每个修复都检查 §6 影响范围表。这是 E2E 后置流程依赖的唯一外部机制——如果 §6 的表不完整，联动更新就会遗漏。因此每次新增框架文件时，必须同步更新 §6。
@@ -248,7 +281,7 @@ E2E 执行完毕
 
 - **触发机制**：Claude Code Stop Hook → `tools/redcap-on-stop-review.sh`
 - **执行方式**：脚本提取 `git diff`，拉起一个全新的、无历史上下文污染的 Agent（`kimi -p` / `claude -p`）执行独立评审
-- **评审维度**：Commit 规范、经验回顾、文件联动（§6 影响范围表）、内容质量、经验沉淀遗漏、设计完备性（§1.1 Pre-mortem 是否执行——含"不可行"判断和覆盖范围声明）
+- **评审维度**：Commit 规范、经验回顾、文件联动（§6 影响范围表）、内容质量、经验沉淀遗漏、设计完备性（§1.1 Pre-mortem 是否执行——含"不可行"判断和覆盖范围声明）、E2E 完整性（e2e-session.yaml 是否处理、报告路径、pending-validations 消费）
 - **结果处理**：
   - `PASS` → 静默通过
   - `FAIL`（含 P0 问题）→ 飞书告警 + 写标记文件 `/tmp/redcap-stop-review-result`
@@ -286,6 +319,24 @@ python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描�
 python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap"
 ```
 
+### 5.1 docs/ 目录管理规则
+
+`docs/` 目录仅允许存放以下两类文件：
+
+| 允许类型 | 说明 | 示例 |
+|---------|------|------|
+| 架构决策记录（ADR） | 记录“为什么这样设计”的长期参考 | engine-upgrade-part1/part2 |
+| 技术选型调研 | 将来更换方案时的参考 | 飞书技术调研报告 |
+
+以下类型的文件在内容被正式目录（`knowledge/`、`testing/`、`references/`）吸收后**必须删除**：
+
+- 一次性测试报告（→ `testing/latest-e2e-report.md`）
+- 外部工具操作手册（→ `knowledge/hooks-*.md` 或 `dispatcher/agent-adapters.md`）
+- 早期讨论稿/聊天记录（结论已落地到框架文件）
+- 已完成的问题清单/backlog（全部条目已关闭）
+
+> Stop Hook 评审（§4）包含 docs/ 文件卓生检查，`redcap-e2e-postcheck.sh` 也会检测错误路径的报告文件。
+
 ## 6. 文件变更影响范围提示
 
 | 修改的文件 | 可能需要同步更新的文件 |
@@ -309,6 +360,8 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | 涉及 §3.1 触发类型的任何变更 | testing/pending-validations.md（登记待验证条目）|
 | testing/benchmark-scenario.md | testing/pending-validations.md（验证矩阵变更可能影响待验证项的验证方法）|
 | testing/latest-e2e-report.md | testing/pending-validations.md（报告产出后消费待验证条目）+ knowledge/lessons.md（经验沉淀）|
+| tools/redcap-e2e-postcheck.sh | CONTRIBUTING.md §3.1 步骤⑧ + tools/redcap-on-stop-review.sh（E2E gate 集成）|
+| testing/e2e-session.yaml（新增/删除）| testing/latest-e2e-report.md + testing/pending-validations.md + knowledge/lessons.md |
 
 ## 7. Layer B 大型任务断点续传
 
