@@ -44,6 +44,13 @@
 
 E2E 启动时，Dispatcher 读取以下配置决定要测试的路径。`mode: full` 时忽略个别开关，全部启用。
 
+### 安全隔离保障
+
+> ⚠ **开关机制不改动任何框架文件**，仅在 E2E 运行时生效：
+> - **Prompt 注入类开关**（qa_fail_code、escalate_l1 等）：仅在 E2E Prompt 组装时追加额外指令，正常工作流不存在这些追加段
+> - **state.yaml 类开关**（agent_fallback、all_agent_fail）：写入 `e2e_config.agent_overrides` 命名空间，正常工作流中 `e2e_config` 字段不存在，Dispatcher 路由逻辑完全跳过
+> - **识别标记**：E2E 启动时 state.yaml 写入 `e2e_mode: true`，正常工作流中该字段不存在。所有开关逻辑均以 `if state.e2e_mode == true` 为前提
+
 ```yaml
 # --- 测试配置（嵌入 Dispatcher 启动 prompt 或 state.yaml 的 e2e_config 字段）---
 e2e_mode: selective        # selective | full（full = 所有开关强制 ON）
@@ -65,6 +72,9 @@ switches:
 
 # ═══ 基础设施 ═══
   agent_fallback: false    # P11: 模拟首选 Agent 不可用 → Model 降级 → CLI 降级
+  all_agent_fail: false    # P12: 模拟所有 Agent 不可用 → on_ALL_AGENT_FAIL → 用户降级决策
+  qa_max_retry: false      # P14: 注入难以修复的缺陷 → QA 循环失败 ≥3 次 → on_QA_FAIL_MAX_RETRY
+  iteration_scan: false    # P16: ALL_DONE 后追加增量需求 → SCAN_WORKING → 增量开发
   deliverable_check: true  # P13: 每次状态转移后校验交付物完整性（几乎零额外成本，建议常开）
 ```
 
@@ -80,7 +90,10 @@ switches:
 | `escalate_l1` | 在需求描述中追加模糊条款：`"支持'智能表格识别'（未定义具体规则）"` → DEV 无法实现 → blocked |
 | `escalate_l2` | 依赖 `escalate_l1` 先触发，PM 收到 `"判断此问题是否超出技术范畴——如果需要产品决策请升级"` |
 | `paused_resume` | 在 QA prompt 中追加：`"对 CSV 输出格式需要人工目视确认，返回 need_user"` |
-| `agent_fallback` | 在 state.yaml 中预设首选 Agent 为一个已知不可用的 `{cli}&{model}` |
+| `agent_fallback` | 在 state.yaml `e2e_config.agent_overrides` 中预设首选 Agent 为虚构的 `{cli}&{model}`（如 `test-cli&fake-model`），触发降级到真实候选 |
+| `all_agent_fail` | 在 state.yaml `e2e_config.agent_overrides` 中将所有候选设为 blacklisted，触发 `on_ALL_AGENT_FAIL` → 飞书 ask → 用户授权降级 → DEGRADED 模式执行 |
+| `qa_max_retry` | 在 Programmer prompt 中追加：`"修复 bug 时故意引入新 bug（将 --filter 的正则匹配改为字符串包含），使 QA 持续失败"` — ⚠ 不保证稳定触发 3 次，属于尽力而为 |
+| `iteration_scan` | 正向流程 ALL_DONE 后，Dispatcher 自动追加增量需求：`"新增 YAML 输出格式（--format yaml）"` → 触发 SCAN_WORKING → 增量开发 |
 
 ### 预设组合（快捷方式）
 
@@ -89,7 +102,8 @@ switches:
 | `smoke` | happy_path + deliverable_check | 最快速度验证核心流转 | ~15 min |
 | `rollback` | happy_path + qa_fail_code + qa_fail_design + review_fail | 验证所有回退路径 | ~40 min |
 | `escalation` | happy_path + escalate_l1 + escalate_l2 + paused_resume | 验证升级和暂停 | ~30 min |
-| `full` | 全部 ON | 全量回归 | ~90 min |
+| `infra` | happy_path + agent_fallback + all_agent_fail + iteration_scan | 验证基础设施机制 | ~40 min |
+| `full` | 全部 ON | 全量回归 | ~120 min |
 
 ---
 
@@ -117,18 +131,18 @@ switches:
 | F16 | 交付物完整性校验 | P13 | deliverable_check | V-2 |
 | F17 | Session 管理（复用/过期） | P19 | happy_path | — |
 | F18 | E2E 后置处理流程 | — | （E2E 结束后自动） | V-3 |
+| F19 | 全部 Agent 失败 → 用户降级决策 | P12 | all_agent_fail | — |
+| F20 | DEGRADED 降级执行 | P15 | all_agent_fail | — |
+| F21 | QA 循环失败 ≥3 次 → 飞书 ask | P14 | qa_max_retry ⚠ | — |
+| F22 | 迭代启动 SCAN → 增量开发 | P16 | iteration_scan | — |
+
+> ⚠ F21（qa_max_retry）属于"尽力而为"——Prompt 注入的缺陷不保证 Agent 每次都修复失败。如果 Agent 在第 2 次就修好了，P14 路径不会触发。这是 LLM 不确定性导致的固有限制。
 
 ### 本场景无法覆盖的路径
 
-以下路径需要特殊环境条件，不适合在固定场景中测试：
-
 | 路径 | 原因 | 替代验证方式 |
 |------|------|------------|
-| P12: 全部 Agent 失败 | 需要所有 CLI 同时不可用 | 手动断网测试 |
-| P14: QA 循环失败 ≥3 次 | 需要 QA 连续产出不合格报告 | 极端条件，可在实际项目中观察 |
-| P15: DEGRADED 降级执行 | 依赖 P12 先触发 | 同上 |
-| P16: 迭代启动 SCAN | 需要已有项目做增量开发 | 首次 E2E 全量完成后，用同项目追加需求验证 |
-| P20: 目的偏移检测 | 需要 Agent 产出偏离目的 | 难以可靠注入，依赖实际观察 |
+| P20: 目的偏移检测 | 需要 Agent 自发偏移行为，无法通过 Prompt 可靠注入 | 依赖实际项目中观察 |
 
 ---
 
