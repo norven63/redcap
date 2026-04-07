@@ -32,6 +32,29 @@ role_requirements:
     constraint: cross_family         # 与 Dev Agent 不同模型族优先
 
 # ═══════════════════════════════════════════════════════
+# 角色最低能力门槛（Fallback 降级时的硬性底线）
+# Agent 降级时，目标 Model 必须满足对应角色的每项最低分
+# 不达标的 Model 直接跳过，宁可继续降级也不用不够格的 Model
+# 详见 agent-adapters.md §6.3.1
+# ═══════════════════════════════════════════════════════
+role_minimum_thresholds:
+  product-manager:
+    instruction_following: 3       # PM 必须能准确采集需求
+    reasoning: 2
+  architect:
+    reasoning: 4                   # 架构师必须有强推理能力
+    coding: 3
+  programmer:
+    coding: 4                      # 程序员必须能写高质量代码
+    tool_use: 3
+  qa:
+    tool_use: 3                    # QA 必须能执行测试
+    instruction_following: 3
+  reviewer:
+    reasoning: 4                   # Reviewer 必须能独立判断
+    coding: 3
+
+# ═══════════════════════════════════════════════════════
 # 模型能力评分
 # ═══════════════════════════════════════════════════════
 models:

@@ -314,17 +314,25 @@ Copilot CLI (-p 纯文本):
 
 ## 6. Agent Fallback 策略
 
-### 6.1 Fallback 路由表
+### 6.1 Fallback 候选列表
 
-按 §1.3 的优先级路由表顺序切换。同一模型下专用 CLI 始终优先于通用 CLI 代理：
+Fallback 候选列表由 §1.3 动态路由算法在每个新步骤开始时计算，输出格式为 `{cli}&{model}` 有序列表（存入 `state.yaml` 的 `current_role.candidates`）。
 
+> ⚠ 不再使用静态 CLI 级别的路由表。同一 CLI 下的不同 Model 作为独立候选参与排序。
+
+**示例**（architect 角色，基于 2026-04 实际环境）：
 ```yaml
-fallback_routing:
-  product-manager: ["kimi", "copilot", "claude-code", "gemini"]
-  architect:       ["gemini", "copilot", "kimi", "claude-code"]
-  programmer:      ["gemini", "kimi", "copilot", "claude-code"]
-  qa:              ["kimi", "copilot", "claude-code", "gemini"]
-  reviewer:        ["copilot", "gemini", "kimi", "claude-code"]
+current_role:
+  role: architect
+  agent: "copilot&claude-opus-4.6"    # 当前使用
+  locked: true
+  candidates:                          # 有序 Fallback 列表
+    - "copilot&claude-opus-4.6"       # 首选
+    - "copilot&gpt-5.4"              # 同 CLI 不同 Model
+    - "gemini&gemini-3-flash"         # 不同 CLI
+    - "copilot&claude-sonnet-4.6"     # 同 CLI 低层级 Model
+    - "kimi&kimi-for-coding"          # 不同 CLI
+    - "claude-code&kimi-k2.5"         # 不同 CLI
 ```
 
 ### 6.2 触发条件
@@ -333,38 +341,88 @@ fallback_routing:
 - CLI 进程超时（无响应超过合理阈值，见 §8）
 - CLI 进入交互模式（未正常返回 JSON）
 
-### 6.3 切换流程
+### 6.3 两层降级切换流程
+
+降级分两层：**Model 降级**（换同 CLI 下的其他 Model）和 **CLI 降级**（换不同 CLI）。优先 Model 降级，因为参数体系不变、成本最低。
 
 ```
-1. 首选 Agent 第 1 次失败 → 重试同一 Agent
-2. 第 2 次仍失败 → 切换到下一 Fallback Agent
-3. 更新 state.yaml 的 current_role.agent 为实际使用的 Agent
-4. 组装适配 Fallback Agent 的 CLI 命令（参数映射见 §2/§3/§3B）
-5. 所有 Fallback Agent 均失败 → 进入 §6.5 用户降级决策
+当前 Agent = {cli}&{model} 失败
+
+Layer 1: Model 降级（同 CLI 内）
+  1. 首选 Agent 第 1 次失败 → 重试同一 Agent
+  2. 第 2 次仍失败 → 从 candidates 中找同一 CLI 的下一个 Model
+     条件：该 Model 的角色适配分 ≥ 角色最低门槛（见 §6.3.1）
+  3. 找到 → 切换 Model，更新 state.yaml，重置失败计数
+  4. 未找到（同 CLI 无其他可用 Model）→ 进入 Layer 2
+
+Layer 2: CLI 降级（换 CLI）
+  5. 从 candidates 中找不同 CLI 的下一个候选
+     条件：该候选的角色适配分 ≥ 角色最低门槛
+  6. 找到 → 切换 CLI+Model，按目标 CLI 的参数映射（§2/§3/§3B）重新组装命令
+  7. 未找到（所有候选均已失败或不达标）→ 进入 §6.5 用户降级决策
+
+每次切换后：
+  · 更新 state.yaml 的 current_role.agent
+  · 新 Agent 享有独立的 2 次重试机会
+  · 记录切换原因到 agent_health
+```
+
+#### 6.3.1 角色最低能力门槛
+
+降级后的 Model 必须满足角色最低能力要求，否则宁可继续降级到下一个候选，也不用一个不够格的 Model 硬撑：
+
+```yaml
+# 在 model-capability-matrix.yaml 中定义
+role_minimum_thresholds:
+  product-manager:
+    instruction_following: 3    # PM 必须能准确采集需求
+    reasoning: 2
+  architect:
+    reasoning: 4                # 架构师必须有强推理能力
+    coding: 3
+  programmer:
+    coding: 4                   # 程序员必须能写高质量代码
+    tool_use: 3
+  qa:
+    tool_use: 3                 # QA 必须能执行测试
+    instruction_following: 3
+  reviewer:
+    reasoning: 4                # Reviewer 必须能独立判断
+    coding: 3
+```
+
+**门槛检查逻辑**：
+```
+对候选 {cli}&{model}:
+  model_caps = matrix.models[model]
+  role_min = matrix.role_minimum_thresholds[role]
+  对 role_min 中每个 {capability}: {min_score}:
+    若 model_caps[capability] < min_score → 不合格，跳过
+  全部通过 → 合格，可作为降级目标
 ```
 
 ### 6.4 Agent 可用性追踪
 
-Dispatcher 在 `state.yaml` 中维护 `agent_health` 字段：
+Dispatcher 在 `state.yaml` 中维护 `agent_health` 字段，粒度为 `{cli}&{model}`：
 
 ```yaml
 agent_health:
-  gemini:
+  "copilot&claude-opus-4.6":
     consecutive_failures: 2
-    last_failure_at: "2026-03-29T15:00:00+08:00"
-    last_failure_reason: "rate-limited (429)"
+    last_failure_at: "2026-04-07T15:00:00+08:00"
+    last_failure_reason: "timeout (>120s)"
     blacklisted: true
-  claude-code:
-    consecutive_failures: 1
-    last_failure_at: "2026-03-29T15:10:00+08:00"
-    last_failure_reason: "hallucinated completion"
-    blacklisted: false
-  kimi:
+  "copilot&gpt-5.4":
     consecutive_failures: 0
     last_failure_at: null
     last_failure_reason: null
     blacklisted: false
-  copilot:
+  "gemini&gemini-3-flash":
+    consecutive_failures: 2
+    last_failure_at: "2026-04-07T15:10:00+08:00"
+    last_failure_reason: "interactive mode (L-7)"
+    blacklisted: true
+  "kimi&kimi-for-coding":
     consecutive_failures: 0
     last_failure_at: null
     last_failure_reason: null
@@ -372,9 +430,10 @@ agent_health:
 ```
 
 **重置规则**：
-- **新步骤开始时**：所有 Agent 的 `consecutive_failures` 重置为 0，`blacklisted` 重置为 false（Agent 可能已恢复）
+- **新步骤开始时**：所有 Agent 的 `consecutive_failures` 重置为 0，`blacklisted` 重置为 false（Agent/Model 可能已恢复）
 - **用户显式告知**（如 "gemini 已恢复"）：立即重置指定 Agent 的健康状态
 - **失败计数仅在当前步骤内累积**
+- **同 CLI 不同 Model 独立追踪**：`copilot&claude-opus-4.6` 失败不影响 `copilot&gpt-5.4` 的健康状态
 
 ### 6.5 用户降级决策（替代原"铁律"的绝对禁令）
 

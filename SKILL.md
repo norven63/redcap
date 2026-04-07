@@ -309,6 +309,8 @@ Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
 
 **切换条件**：首选 Agent 连续 2 次返回失败（含频控 429）或 CLI 进程超时无响应。切换后更新 `state.yaml` 的 `current_role.agent`。
 
+**两层降级**：优先 **Model 降级**（同 CLI 换 Model，参数体系不变、成本最低），其次 **CLI 降级**（换不同 CLI）。降级目标 Model 必须满足角色最低能力门槛（定义在 `model-capability-matrix.yaml` 的 `role_minimum_thresholds`）。完整流程详见 [《Agent适配器》§6.3](dispatcher/agent-adapters.md)。
+
 **新步骤自动重置**：每个新步骤开始时，重新执行路由算法（重读 registry + 能力矩阵），失败计数归零。
 **Agent 失败时重检**：`bash tools/redcap-detect-agents.sh --agent <name>` 重新嗅探该 Agent 的可用性和模型。
 **用户指令重置**：用户告知某 Agent 已恢复时，立即重置该 Agent 的健康状态。
