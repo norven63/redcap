@@ -17,34 +17,22 @@
 
 ## 活跃条目
 
-### V-1: __redcap_status outbox 文件模式
-- **来源 commit**：`9d06d2e` feat(框架): __redcap_status outbox 文件模式 + state.yaml 自动校验
-- **触发类型**：通信协议
-- **验证要点**：Agent 是否写入 `{role}/outbox/__redcap_status.json`；Dispatcher 能否正确解析；stdout 辅助通道是否仍可用
-- **状态**：🟡 部分验证（trpg-web E2E 验证了 outbox 文件交付 100%，stdout 嵌入 0% 合规——确认文件管道为主通道。待新基准项目 md-table-tool 复验）
-
 ### V-2: state.yaml 自动校验脚本
 - **来源 commit**：`9d06d2e` feat(框架): __redcap_status outbox 文件模式 + state.yaml 自动校验
 - **触发类型**：状态机
 - **验证要点**：`tools/redcap-check-state.sh` 在 on_qa_pass hook 中是否正确触发；校验失败时是否阻断流程
-- **状态**：� 部分验证（脚本已集成到 on_QA_PASS hook，待 E2E 验证真实项目中的触发与阻断效果）
+- **状态**：🟡 部分验证（E2E-2026-04-07，md-table-tool smoke：hook 触发正常，但未测试校验失败时的阻断效果）
 
 ### V-3: E2E 后置处理流程（7 步）
 - **来源 commit**：`928ab33` feat(框架): E2E 后置处理流程
 - **触发类型**：Prompt模板（影响 Dispatcher 行为流程）
 - **验证要点**：Dispatcher 在 E2E 结束后是否按 7 步执行；分类定性(BUG/GAP/OBSERVATION)是否准确
-- **状态**：🔴 待验证
+- **状态**：� 部分验证（E2E-2026-04-07，md-table-tool：Dispatcher 首次执行时遗漏后置处理，经用户审计后补齐。暴露 L-25。7 步未完整——缺少独立的 BUG/GAP/OBSERVATION 分类定性步骤）
 
 ### V-4: Agent Fallback 两层降级（Model→CLI）
 - **来源 commit**：`4f51037` feat: Agent Fallback 两层降级（Model→CLI）
 - **触发类型**：路由逻辑
 - **验证要点**：① 同 CLI 内 Model 降级是否优先于 CLI 降级 ② 角色最低能力门槛是否生效（不达标 Model 被跳过） ③ agent_health 粒度是否为 `{cli}&{model}`
-- **状态**：🔴 待验证
-
-### V-5: QA_FAIL → DEV_WORKING 回退路径
-- **来源**：smoke-test-backlog #11（设计已就绪，未实测）
-- **触发类型**：状态机
-- **验证要点**：QA 发现代码缺陷后状态机回退到程序员；revision 字段传递完整
 - **状态**：🔴 待验证
 
 ### V-6: QA_FAIL → ARCH_WORKING 设计回退路径
@@ -77,4 +65,10 @@
 
 > E2E 验证通过的条目移到此区域，保留记录便于追溯。
 
-（暂无）
+### V-1: __redcap_status outbox 文件模式 ✅
+- **验证日期**：E2E-2026-04-07（md-table-tool smoke）
+- **结论**：所有角色 outbox 交付 100%，跨 trpg-web + md-table-tool 两次 E2E 一致确认
+
+### V-5: QA_FAIL → DEV_WORKING 回退路径 ✅
+- **验证日期**：E2E-2026-04-07（md-table-tool smoke，自然触发）
+- **结论**：BUG-STEP2-001 触发完整 QA→DEV→QA 回退链，revision 字段传递正常
