@@ -128,7 +128,7 @@ echo "$response" | jq -r '.response'
 ```
 
 **⚠️ 限制**：
-- Gemini CLI 的 Hooks 机制尚未集成到 agent loop（v0.36.0），无法通过 Hook 自动触发 A2A
+- Gemini CLI 的 Hooks 机制已实测可用（v0.36.0），支持 SessionEnd 等 11 种事件，但 RedCap 尚未部署（⏳）
 - `--resume latest` 恢复最近 session，但无法指定自定义 session ID（不如 Kimi/Claude 灵活）
 - 长任务可能出现进程不退出问题（L-11）
 

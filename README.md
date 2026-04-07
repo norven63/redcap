@@ -156,7 +156,8 @@ RedCap 有两条完全不同的工作流：
 │  │ 宿主 Hook（Layer 0）自动保障                             │  │
 │  │ • Kimi CLI: SessionStart 捕获 HEAD → Stop 飞书通知      │  │
 │  │ • Claude Code: InstructionsLoaded → Stop 独立评审+通知   │  │
-│  │ • VS Code / Gemini: 无 Hook，依赖 Agent 自觉 + 启动审计 │  │
+│  │ • VS Code: 无 Hook，依赖 Agent 自觉 + 启动审计        │  │
+│  │ • Gemini: hooks 可用⏳待部署，当前退守 Layer 2+3      │  │
 │  └─────────────────────────────────────────────────────────┘  │
 │                                                               │
 │  ⚠ 此处为 Layer B（开发 RedCap 自身）的 Hook。               │
