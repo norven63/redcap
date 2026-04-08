@@ -205,7 +205,7 @@ Agent 每次执行完毕将 `__redcap_status` JSON 写入 outbox 文件（`{role
    a. 执行路由算法（§2）：读 registry + 能力矩阵 → 计算候选列表 → 写入 state.yaml
       （若 current_role.locked=true 且 agent 仍可用，沿用不重算）
    b. 组装 Prompt：读模板 → 按变量映射表（§5.4）填充 → 写入文件
-      `.workflow/{role}-prompt-step{N}.md`，CLI 用 `$(cat ...)` 读取
+      `.workflow/{role}-prompt-step{N}.txt`，CLI 用 `$(cat ...)` 读取
    c. 获取或创建 Session（§5.6）
    d. 执行 CLI 命令（阻塞等待返回）
    e. 解析返回 → 按优先级提取 __redcap_status（§5.3）：先读 {role}/outbox/__redcap_status.json → 再尝试 response 正则 → 最后读 last-result.json
