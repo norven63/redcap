@@ -50,7 +50,7 @@ echo ""
 
 # ── 检查 1: e2e-session.yaml 是否存在 ──
 
-echo "[1/6] E2E Session 配置文件"
+echo "[1/5] E2E Session 配置文件"
 if [[ ! -f "$SESSION_FILE" ]]; then
     fail "testing/e2e-session.yaml 不存在 — E2E 启动时未创建配置锁定文件"
     echo "  → 无法验证开关覆盖完整性，后续检查可能不准确"
@@ -105,7 +105,7 @@ echo ""
 
 # ── 检查 2: 报告是否写到正确路径 ──
 
-echo "[2/6] E2E 报告路径"
+echo "[2/5] E2E 报告路径"
 if [[ ! -f "$REPORT_FILE" ]]; then
     fail "testing/latest-e2e-report.md 不存在"
 else
@@ -124,7 +124,7 @@ echo ""
 
 # ── 检查 3: pending-validations 是否被消费 ──
 
-echo "[3/6] pending-validations 消费"
+echo "[3/5] pending-validations 消费"
 if [[ ! -f "$PENDING_FILE" ]]; then
     fail "testing/pending-validations.md 不存在"
 else
@@ -154,7 +154,7 @@ echo ""
 
 # ── 检查 4: lessons.md 是否有本次沉淀 ──
 
-echo "[4/6] 经验沉淀"
+echo "[4/5] 经验沉淀"
 if [[ ! -f "$LESSONS_FILE" ]]; then
     fail "knowledge/lessons.md 不存在"
 else
@@ -172,7 +172,7 @@ echo ""
 
 # ── 检查 5: commit message 是否包含 E2E 结论 ──
 
-echo "[5/6] Commit E2E 结论"
+echo "[5/5] Commit E2E 结论"
 RECENT_COMMITS=$(git -C "$PROJECT_DIR" --no-pager log --oneline -10 2>/dev/null || echo "")
 E2E_COMMIT=$(echo "$RECENT_COMMITS" | grep -i 'E2E(' | head -1)
 
@@ -180,24 +180,6 @@ if [[ -n "$E2E_COMMIT" ]]; then
     pass "找到 E2E 结论 commit: $E2E_COMMIT"
 else
     fail "最近 10 个 commit 中未找到包含 'E2E(' 的结论 commit"
-fi
-echo ""
-
-# ── 检查 6: E2E 报告路径 ──
-
-echo "[6/6] E2E 报告路径"
-REPORT_FILE="$PROJECT_DIR/testing/latest-e2e-report.md"
-if [[ -f "$REPORT_FILE" ]]; then
-    REPORT_MTIME=$(get_mtime "$REPORT_FILE")
-    NOW=$(date +%s)
-    AGE=$(( (NOW - REPORT_MTIME) / 60 ))
-    if [[ $AGE -le 120 ]]; then
-        pass "testing/latest-e2e-report.md 已更新（${AGE}分钟前）"
-    else
-        warn "testing/latest-e2e-report.md 最后更新于 ${AGE} 分钟前"
-    fi
-else
-    fail "testing/latest-e2e-report.md 不存在（E2E 报告必须写入此路径）"
 fi
 echo ""
 
