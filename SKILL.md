@@ -706,6 +706,90 @@ SCAN_DONE       (自动)       PM_WORKING      启动 PM（增量模式）
 SCAN_WORKING    failed       SCAN_WORKING    重试 1 次或 Fallback Agent
 ```
 
+### 5.15 长任务并行裂变协议
+
+**触发条件**（同时满足）：
+1. 当前任务预估上下文消耗 > 单轮安全阈值（经验值：分析目标 ≥ 5 个独立模块）
+2. 子任务之间**无耦合**（每个子任务的输入不依赖其他子任务的输出）
+3. **只关注结果**，无需记录子任务执行过程到 outbox（但需要落盘任务清单，见步骤 2）
+
+**协议步骤**：
+
+```
+1. Dispatcher 将大任务分解为 N 个独立子任务
+2. 启动前先将子任务清单落盘（崩溃恢复用）：
+   写入 .workflow/subtask-manifest-{session_id}.yaml：
+     session_id: {当前会话 ID}
+     tasks:
+       - id: {subtask_id}
+         desc: {子任务描述}
+         output_file: /tmp/redcap-subtask-{session_id}-{subtask_id}.txt
+         status: pending
+3. 对每个子任务，使用当前 Agent 的适配器（见 dispatcher/agent-adapters.md）
+   以 headless 模式启动独立 Agent 进程。
+   - 每个进程的 prompt 必须包含完整上下文（L-17：Agent 不自动发现资产）
+   - 进程间无共享状态，输出写入独立临时文件（/tmp/redcap-subtask-{session_id}-{subtask_id}.txt）
+   - 子进程完成后在文件末尾写入完成标记行：##DONE##
+4. Dispatcher 以"完成标记行 ##DONE## 存在"作为单个子进程完成条件（非文件存在+非空）
+   待所有子进程写入 ##DONE## 后再合并
+5. Dispatcher 统一收集结果（去除 ##DONE## 行），合并分析，给出综合结论
+6. 综合结论按正常流程处理（写 outbox / 更新 state.yaml 等）
+7. 清理：删除各 /tmp/redcap-subtask-{session_id}-*.txt，
+   并删除 .workflow/subtask-manifest-{session_id}.yaml
+   （只清理本会话自己登记的文件，不使用通配符）
+```
+
+**注意事项**：
+- headless 参数使用 L-7/L-29 验证的最高权限版本（L-29 有完整示例）
+- **必须使用 `dispatcher/agent-adapters.md` 中对应 Agent 的适配器模板**，不要绕过适配层
+- 本协议**不适用于**有依赖顺序的任务链——那种情况仍按正常串行事件循环执行
+- 若中途崩溃恢复，读取 `.workflow/subtask-manifest-{session_id}.yaml` 确认哪些已完成
+
+---
+
+### 5.16 Red Teaming 对抗型 Review 协议
+
+**触发条件**（满足任一）：
+- 改动涉及 `dispatcher/`、`roles/`、`SKILL.md`，且改动行数 > 20 行
+- 新增角色手册或删除现有角色
+- 重大架构决策（新增 FSM 状态、改变 hook 触发逻辑、修改交付物规范）
+
+> 非强制：小修补（< 20 行）、纯文档错字修正、配置更新不需要触发本协议。
+
+**协议步骤**：
+
+```
+1. 实施变更后，Dispatcher 用当前 Agent 适配器（dispatcher/agent-adapters.md）
+   以 headless 模式启动独立 critic Agent，prompt 模板：
+   "你是一名对抗型 Reviewer。
+    以下是刚刚对 {文件列表} 做的 git diff（含完整 hunk）：
+    ---
+    {实际 diff 内容，至少包含变更 hunk}
+    ---
+    你的目标是找出这些变更引入的 bug、逻辑错误、regression、设计缺陷。
+    不评论风格和格式。只汇报真实问题。
+    输出格式（JSON）：
+    {
+      'issues': [
+        {'severity': 'blocking|non-blocking', 'file': '...', 'area': '大致范围描述', 'problem': '...', 'impact': '...'}
+      ]
+    }
+    无问题时输出 {'issues': []}"
+
+2. Critic Agent 输出写入 /tmp/redcap-redteam-{timestamp}.txt（含 ##DONE## 结尾标记）
+3. Dispatcher 解析 JSON 输出：
+   - issues 为空 → 继续正常流程
+   - 有 severity=blocking → 修复后重新触发本协议
+   - 有 severity=non-blocking → 写入 pending-validations.md（附原因），继续但标注
+4. 清理临时文件
+```
+
+**与 rubber-duck 的区别**：
+- **rubber-duck**（已有）：在实施前评审计划，防止设计缺陷
+- **Red Teaming**（本节）：在实施后对抗性地寻找变更引入的 regression
+
+两者互补，不互相替代：先 rubber-duck，再实施，再 Red Teaming。
+
 ---
 
 ## 6. 全局约束
