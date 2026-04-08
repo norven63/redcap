@@ -128,7 +128,7 @@ $DIFF
    - 文档变更：是否有 Markdown 格式错误（代码块未闭合、标题层级混乱、链接断裂）？
    - 代码变更：是否有安全问题、硬编码、路径错误？
 5. **经验沉淀**：本次变更是否发现了新的失败模式或验证了错误假设，但未归档为 Lesson？
-6. **E2E 完整性**：如果变更涉及 E2E 验证，检查 testing/e2e-session.yaml 是否已处理、报告是否在正确路径（testing/latest-e2e-report.md 而非 docs/）、pending-validations 是否已消费。
+6. **E2E 完整性**：如果变更涉及 E2E 验证，检查 testing/e2e-session.yaml 是否已处理、报告是否写入 testing/latest-e2e-report.md（而非其他路径）、pending-validations 是否已消费。
 
 ## 输出格式
 

@@ -295,6 +295,27 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **复现次数**：1
 - **最后命中**：2026-04
 
+### L-29: Hook + 子 Agent CLI 模式——同时获得 100% 触发保证 + LLM 认知质量
+- **场景**：需要在 Agent 会话结束时"100% 执行"某个认知型任务（如架构评审、Review 兜底），但纯 shell hook 没有推理能力，纯 LLM 指令又受 attention 衰减无法 100% 执行
+- **根因**：这是两个正交的能力维度——"触发可靠性"（shell 的强项）和"认知质量"（LLM 的强项）。两者不能互相替代，但可以组合
+- **解决方案**：在 hook shell 脚本中调用 Agent CLI 的 headless 模式（`agent -p -y "prompt"`），以 hook 的 100% 触发保证启动一个独立的新 Agent 进程执行认知型任务：
+  - **触发层**：shell hook（Layer 0，100% 确定）
+  - **执行层**：新 Agent 进程（全新上下文，零 attention 衰减）
+  - **组合效果**：100% 触发 × 完整认知质量 = 两难同时解决
+- **已有实例**：
+  - `tools/redcap-on-stop-review.sh`：Stop Hook → `kimi -p -y` 或 `claude -p` 执行独立架构评审
+  - `tools/redcap-layerA-review-fallback.sh`：ALL_DONE 且无 REVIEW_PASS → Agent CLI 执行补充 Review
+- **注意事项**：
+  - headless 参数必须使用 L-7 验证的最高权限版本（Gemini: `--yolo`；Claude: `--permission-mode bypassPermissions`）
+  - 新 Agent 的上下文需通过 prompt 参数显式传入（L-17：Agent 不会自动发现项目资产）
+  - 结果写入 `/tmp` 文件而非 stdout，防止输出污染 hook 的 exit code 逻辑
+- **与 L-15 的区别**：L-15 讲"为什么"要用 Hook + 新 Agent 兜底（原理层），L-29 讲"如何"通过 `agent -p -y` 在 hook 中实现（实现层）
+- **来源**：`redcap-on-stop-review.sh` 和 `redcap-layerA-review-fallback.sh` 实际设计，用户提炼为显式架构模式
+- **发现日期**：2026-04
+- **影响度**：medium
+- **复现次数**：2（L-15 发现原理，本次显式命名实现模式）
+- **最后命中**：2026-04
+
 ### L-28: 静态源码审计不等于运行时行为——"不可行"结论必须经实测验证
 - **场景**：对 Gemini CLI v0.36.0 做了源码深度审计，发现 `HookRunner/HookRegistry` 在所有非测试文件中均未被显式 import/实例化，`config.js` 标注 `// TODO: loading of hooks based on workspace trust`，据此得出"hooks 已实现但未集成"的结论，并在框架文档中标注 `❌ 不支持`。实测（同版本 v0.36.0）证实 hooks 完全可用——全局和项目级 hooks 均正确触发，数据正确透传
 - **根因**：静态源码审计只检查"可见的显式 import 链"，遗漏了延迟加载、动态 require、Plugin 系统等运行时机制。源码中的 `TODO` 注释也不等于"功能未实现"——可能是"功能已实现但部分逻辑待完善"

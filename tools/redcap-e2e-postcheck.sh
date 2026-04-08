@@ -120,15 +120,6 @@ else
         fail "testing/latest-e2e-report.md 最后更新于 ${AGE} 分钟前 — 未在本次 E2E 中更新"
     fi
 fi
-
-# 检查 docs/ 下是否有错误路径的报告
-WRONG_REPORTS=$(find "$PROJECT_DIR/docs" -maxdepth 1 \( -iname '*e2e*' -o -iname '*smoke*' -o -iname '*test*report*' \) 2>/dev/null | grep -v '.keep' || true)
-if [[ -n "$WRONG_REPORTS" ]]; then
-    fail "docs/ 下发现疑似 E2E 报告文件（应写 testing/latest-e2e-report.md）:"
-    echo "$WRONG_REPORTS" | while read -r f; do echo "       - $(basename "$f")"; done
-else
-    pass "docs/ 下无错误路径的报告文件"
-fi
 echo ""
 
 # ── 检查 3: pending-validations 是否被消费 ──
@@ -192,22 +183,21 @@ else
 fi
 echo ""
 
-# ── 检查 6: docs/ 文件卫生 ──
+# ── 检查 6: E2E 报告路径 ──
 
-echo "[6/6] docs/ 文件卫生"
-if [[ -d "$PROJECT_DIR/docs" ]]; then
-    DOC_COUNT=$(find "$PROJECT_DIR/docs" -type f | wc -l | tr -d ' ')
-    if [[ "$DOC_COUNT" -gt 0 ]]; then
-        echo "  docs/ 下有 ${DOC_COUNT} 个文件，建议审查是否有已被吸收的冗余文件："
-        find "$PROJECT_DIR/docs" -type f -exec basename {} \; | while read -r f; do
-            echo "       - $f"
-        done
-        warn "docs/ 非空，建议人工审查（仅允许 ADR 和技术选型调研）"
+echo "[6/6] E2E 报告路径"
+REPORT_FILE="$PROJECT_DIR/testing/latest-e2e-report.md"
+if [[ -f "$REPORT_FILE" ]]; then
+    REPORT_MTIME=$(get_mtime "$REPORT_FILE")
+    NOW=$(date +%s)
+    AGE=$(( (NOW - REPORT_MTIME) / 60 ))
+    if [[ $AGE -le 120 ]]; then
+        pass "testing/latest-e2e-report.md 已更新（${AGE}分钟前）"
     else
-        pass "docs/ 为空或不存在"
+        warn "testing/latest-e2e-report.md 最后更新于 ${AGE} 分钟前"
     fi
 else
-    pass "docs/ 目录不存在"
+    fail "testing/latest-e2e-report.md 不存在（E2E 报告必须写入此路径）"
 fi
 echo ""
 

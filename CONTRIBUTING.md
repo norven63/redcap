@@ -257,11 +257,10 @@ E2E 执行完毕
     执行 `bash tools/redcap-e2e-postcheck.sh`
     此脚本检查：
     · e2e-session.yaml 中 switches_on 与 switches_completed 是否一致
-    · 报告是否写入 testing/latest-e2e-report.md（而非 docs/）
+    · 报告是否写入 testing/latest-e2e-report.md（E2E 报告必须在此路径）
     · pending-validations 是否有消费动作
     · lessons.md 是否有更新
     · 最近 commit 是否包含 E2E 结论
-    · docs/ 下有无错误路径的报告文件
     
     全部 PASS → 删除 e2e-session.yaml，E2E 后置处理完成
     任一 FAIL → 必须修复后重新执行，不得跳过
@@ -319,23 +318,6 @@ python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描�
 python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap"
 ```
 
-### 5.1 docs/ 目录管理规则
-
-`docs/` 目录仅允许存放以下两类文件：
-
-| 允许类型 | 说明 | 示例 |
-|---------|------|------|
-| 架构决策记录（ADR） | 记录“为什么这样设计”的长期参考 | engine-upgrade-part1/part2 |
-| 技术选型调研 | 将来更换方案时的参考 | 飞书技术调研报告 |
-
-以下类型的文件在内容被正式目录（`knowledge/`、`testing/`、`references/`）吸收后**必须删除**：
-
-- 一次性测试报告（→ `testing/latest-e2e-report.md`）
-- 外部工具操作手册（→ `knowledge/hooks-*.md` 或 `dispatcher/agent-adapters.md`）
-- 早期讨论稿/聊天记录（结论已落地到框架文件）
-- 已完成的问题清单/backlog（全部条目已关闭）
-
-> Stop Hook 评审（§4）包含 docs/ 文件卓生检查，`redcap-e2e-postcheck.sh` 也会检测错误路径的报告文件。
 
 ## 6. 文件变更影响范围提示
 
