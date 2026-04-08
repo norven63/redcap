@@ -296,7 +296,7 @@ E2E 执行完毕
 | Claude Code | `.claude/settings.json` Stop hook | ✅ 已部署 |
 | Kimi CLI | `dispatcher` Stop 事件路由 | ⏳ 待适配 |
 | VS Code Copilot | 无原生 Hook | ❌ 不支持 |
-| Gemini CLI | `.gemini/settings.json` SessionEnd Hook | ⏳ 待部署 |
+| Gemini CLI | `.gemini/settings.json` SessionEnd Hook | ✅ 已验证 |
 
 ## 5. 飞书通知
 
@@ -353,8 +353,9 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | knowledge/a2a-communication.md | README.md 通信协议章节 + dispatcher/state-machine.md（前瞻标注） |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
 | CONTRIBUTING.md §7 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md（入口索引中的断点续传检查指令）|
-| tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ knowledge/host-reliability.md（防线文档）|
+| tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ .gemini/settings.json（Gemini 注册）+ knowledge/host-reliability.md（防线文档）+ references/hook-standards.md §1（不变量清单）|
 | tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
+| references/hook-standards.md | tools/redcap-layerA-session-end.sh（实现必须满足§1不变量）+ knowledge/host-reliability.md §3（宿主覆盖率）|
 | references/communication-protocol.md §2 | SKILL.md §5.3 + dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + README.md 通信协议节 |
 | tools/redcap-check-state.sh | tools/redcap-on-qa-pass.sh（集成调用）|
 | 涉及 §3.1 触发类型的任何变更 | testing/pending-validations.md（登记待验证条目）|

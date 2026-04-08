@@ -65,6 +65,11 @@
 
 > E2E 验证通过的条目移到此区域，保留记录便于追溯。
 
+### V-10: Gemini CLI SessionEnd Hook 验证 ✅
+- **验证日期**：E2E-2026-04-08
+- **验证方式**：物理标记文件法（touch /tmp/redcap-gemini-hook-fired-*），并确认 Layer B 分发路径触发 redcap-on-stop-review.sh
+- **结论**：.gemini/settings.json 正确加载，SessionEnd 物理触发，Layer A/B 分发逻辑均验证通过
+
 ### V-1: __redcap_status outbox 文件模式 ✅
 - **验证日期**：E2E-2026-04-07（md-table-tool smoke）
 - **结论**：所有角色 outbox 交付 100%，跨 trpg-web + md-table-tool 两次 E2E 一致确认

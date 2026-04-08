@@ -60,17 +60,32 @@
 
 ```json
 {
-  "hooks": [
-    {
-      "trigger": "BeforeTool",
-      "matcher": "run_shell_command",
-      "command": "/path/to/hook-script.sh"
-    },
-    {
-      "trigger": "SessionEnd",
-      "command": "/path/to/on-session-end.sh"
-    }
-  ]
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "run_shell_command",
+        "hooks": [
+          {
+            "name": "redcap-tool-check",
+            "type": "command",
+            "command": "/path/to/hook-script.sh"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "redcap-cleanup",
+            "type": "command",
+            "command": "/path/to/on-session-end.sh"
+          }
+        ]
+      }
+    ]
+  }
 }
 ```
 
