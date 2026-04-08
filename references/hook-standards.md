@@ -61,10 +61,9 @@
 
 ## 4. 宿主对齐矩阵
 
-| 宿主 | 配置文件 | 调用入口 | 覆盖等级 |
-|------|---------|---------|---------|
-| Claude Code | `.claude/settings.json` | `tools/redcap-layerA-session-end.sh` | ✅ 完全对齐 |
-| Gemini CLI | `.gemini/settings.json` | `tools/redcap-layerA-session-end.sh` | ✅ 完全对齐 |
-| Kimi CLI | `dispatcher.sh` | `tools/redcap-layerA-session-end.sh` | ✅ 完全对齐 |
+> **单一来源**：各宿主的 Hook 部署状态和配置文件位置，以 [`knowledge/host-reliability.md §3.2`](../knowledge/host-reliability.md) 为权威来源，本节不重复维护。
 
-> **注**：所有入口最终必须汇聚到 `tools/redcap-layerA-session-end.sh`（通用分发器）。
+本节只记录**不变的架构约束**：
+- 所有宿主的 SessionEnd/Stop Hook 入口必须最终汇聚到 `tools/redcap-layerA-session-end.sh`（通用分发器）
+- Layer A（用户项目）Hook 配置必须注册在**用户级**配置文件，使用 RedCap 安装目录的**绝对路径**，而非项目工作区
+- Layer B（RedCap 自身）Hook 配置注册在 RedCap 仓库的**项目级**配置文件
