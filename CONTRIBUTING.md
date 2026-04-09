@@ -331,14 +331,14 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | SKILL.md §5.10 Hooks 表 | dispatcher/state-machine.md `populate_pending_actions` + SKILL.md §5.13 映射表 |
 | CONTRIBUTING.md 自身 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md 均为索引，通过 `@` 导入指向本文件；修改本文件即全局生效，无需手动同步 |
 | references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
-| knowledge/design-principles.md | README.md 设计哲学章节 + CONTRIBUTING.md §1（元原则引用） |
-| knowledge/a2a-communication.md | README.md 通信协议章节 + dispatcher/state-machine.md（前瞻标注） |
+| knowledge/design-principles.md | ARCHITECTURE.md 设计哲学章节 + CONTRIBUTING.md §1（元原则引用） |
+| knowledge/a2a-communication.md | ARCHITECTURE.md 通信协议章节 + dispatcher/state-machine.md（前瞻标注） |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
 | CONTRIBUTING.md §7 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md（入口索引中的断点续传检查指令）|
 | tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ .gemini/settings.json（Gemini 注册）+ knowledge/host-reliability.md（防线文档）+ references/hook-standards.md §1（不变量清单）|
 | tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
 | references/hook-standards.md | tools/redcap-layerA-session-end.sh（实现必须满足§1不变量）+ knowledge/host-reliability.md §3（宿主覆盖率）|
-| references/communication-protocol.md §2 | SKILL.md §5.3 + dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + README.md 通信协议节 |
+| references/communication-protocol.md §2 | SKILL.md §5.3 + dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + ARCHITECTURE.md 通信协议节 |
 | tools/redcap-check-state.sh | tools/redcap-on-qa-pass.sh（集成调用）|
 | 涉及 §3.1 触发类型的任何变更 | test-reports/pending-validations.md（登记待验证条目）|
 | test-reports/benchmark-scenario.md | test-reports/pending-validations.md（验证矩阵变更可能影响待验证项的验证方法）|
