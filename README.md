@@ -143,8 +143,10 @@ RedCap 有两条完全不同的工作流：
    ▼
 ┌────────────────────── 框架自身变更流程 ──────────────────────┐
 │                                                               │
+│  0. PM Gate — 原文落盘 + 需求澄清锁定（§10）                  │
 │  1. 读 CONTRIBUTING.md — 获取完整规范                         │
 │  2. 读 knowledge/lessons.md — 检查已知陷阱                    │
+│  2a. 自身变更 Red Teaming — 影响 >20 行时，先独立评审再执行（§9）│
 │  3. 执行变更                                                  │
 │  4. 检查影响范围 — CONTRIBUTING.md §6 联动表                  │
 │  5. 经验沉淀自检 — 是否有新 Lesson？                         │
@@ -156,8 +158,9 @@ RedCap 有两条完全不同的工作流：
 │  │ 宿主 Hook（Layer 0）自动保障                             │  │
 │  │ • Kimi CLI: SessionStart 捕获 HEAD → Stop 飞书通知      │  │
 │  │ • Claude Code: InstructionsLoaded → Stop 独立评审+通知   │  │
-│  │ • VS Code: 无 Hook，依赖 Agent 自觉 + 启动审计        │  │
+│  │ • VS Code: 无 Hook，退守 Layer 2+3（启动审计兜底）      │  │
 │  │ • Gemini: hooks ✅已部署，SessionEnd Layer 0 防护已对齐   │  │
+│  │ • Copilot CLI: hooks ✅已部署，仓库级 .github/hooks/     │  │
 │  └─────────────────────────────────────────────────────────┘  │
 │                                                               │
 │  ⚠ 此处为 Layer B（开发 RedCap 自身）的 Hook。               │
@@ -174,7 +177,17 @@ RedCap 有两条完全不同的工作流：
 | `CONTRIBUTING.md` | 唯一权威规范（commit 格式、飞书通知、影响范围） |
 | `CLAUDE.md` / `GEMINI.md` / `.github/copilot-instructions.md` | 索引文件，`@` 导入 CONTRIBUTING.md |
 | `knowledge/design-principles.md` | 五项元原则（灵魂指引），变更前必读 |
-| `knowledge/lessons.md` | 18 条已知陷阱，变更前必读 |
+| `knowledge/lessons.md` | 30+ 条已知陷阱（含归档机制），变更前必读 |
+
+**Layer B 三大质量保障机制**：
+
+| 机制 | 触发条件 | 作用 |
+|------|---------|------|
+| **§8 长任务并行裂变** | 分析目标 ≥5 个独立模块 | 拆解为无耦合子任务，并行 Agent 执行，只汇收结论 |
+| **§9 自身变更 Red Teaming** | 改动 CONTRIBUTING.md / SKILL.md / roles/ 任意文件且 >20 行 | 先用独立 critic Agent 对抗审查，再 commit |
+| **§10 PM Gate（需求确认门）** | 任意需求（含单 Q） | Step 0 原文即时落盘 → PM 澄清 → 用户确认锁定 → 执行；防止需求失真和执行漂移 |
+
+> 详见 `CONTRIBUTING.md` §8/§9/§10。
 
 ---
 
@@ -260,7 +273,7 @@ redcap/
 │   └── agent-constraints.md       ← 子 Agent 共享约束（防退化等）
 │
 ├── knowledge/                     ← 经验库 + 调研报告
-│   ├── lessons.md                 ← 18 条框架级经验（L-1 ~ L-18）
+│   ├── lessons.md                 ← 30+ 条框架级经验（热活跃条目，低活跃归档）
 │   ├── lessons-archive.md         ← 归档的低活跃经验
 │   ├── design-principles.md       ← 五项元原则（灵魂指引，高于 Lesson）
 │   ├── a2a-communication.md       ← Agent 间直接通信机制 + 协商协议
@@ -271,6 +284,7 @@ redcap/
 │   ├── hooks-kimi-cli.md          ← Kimi CLI hooks + Dispatcher 协议
 │   ├── hooks-copilot-cli.md       ← Copilot CLI hooks（仓库级 .github/hooks/）
 │   ├── layerA-hook-deploy.md      ← Layer A 用户级 Hook 部署指南
+│   ├── DEPLOYMENT_STATUS.md       ← Layer A/B × 5工具 红线节点部署矩阵
 │   └── model-capability-matrix.yaml ← 模型能力参考矩阵（路由算法输入）
 │
 └── tools/                         ← 可执行脚本
@@ -286,6 +300,10 @@ redcap/
     ├── redcap-layerA-review-fallback.sh ← Layer A Review 兜底（拉起新 Agent）
     ├── redcap-layerA-session-end.sh   ← Layer A SessionEnd Hook
     └── redcap-detect-agents.sh    ← Agent 嗅探脚本（检测本地 CLI + 模型）
+├── test-reports/                  ← E2E 测试报告 + 待验证条目
+│   ├── latest-e2e-report.md
+│   ├── benchmark-scenario.md
+│   └── pending-validations.md
 ```
 
 ---
