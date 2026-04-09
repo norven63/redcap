@@ -47,6 +47,9 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 
 **工具辅助**：运行 `bash tools/lessons-score.sh` 可自动计算所有条目评分并输出归档候选清单
 
+**选型说明（为何不引入 RAG 或向量数据库）**：
+热/冷分层分文件加载是 LLM context management 的业内标准做法（活跃层直接加载，归档层按需查阅）。RAG 适合 > 500 条场景，向量检索的基础设施成本与运维复杂度远超收益；在 < 50 条规模下，关键词过滤即可满足需求。当前方案即长期设计，无需迁移到向量数据库。
+
 ---
 
 ### L-4: Agent Fallback 深度不足导致铁律系统性违反
@@ -257,14 +260,14 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **最后命中**：2026-04
 
 ### L-25: E2E 后置处理必须严格执行——§3.1 最小产出物缺一不可 ⚙️ 已硬化
-- **场景**：md-table-tool E2E smoke 测试完成后，Dispatcher 将报告写到 `docs/` 而非 `testing/latest-e2e-report.md`，且完全跳过 pending-validations 消费、经验沉淀、一句话 commit 结论等后置处理步骤。直到用户审计三个合规性问题后才发现全部遗漏
+- **场景**：md-table-tool E2E smoke 测试完成后，Dispatcher 将报告写到 `docs/` 而非 `test-reports/latest-e2e-report.md`，且完全跳过 pending-validations 消费、经验沉淀、一句话 commit 结论等后置处理步骤。直到用户审计三个合规性问题后才发现全部遗漏
 - **根因**：E2E 执行本身（调度 10 个 Agent、处理 QA 反馈回路）消耗了大量注意力和上下文空间，完成"核心任务"后产生"已完成"的认知错觉，忽略了后置处理属于 E2E 流程的必要组成部分。报告路径错误则是因为未在写入前回读 §3.1 确认规范路径
 - **已硬化到协议层**（2026-04-07）：
   - `tools/redcap-e2e-postcheck.sh` — E2E 完整性审计脚本（6 项检查，任一 FAIL 阻断）
   - CONTRIBUTING.md §3.1 新增步骤 ⑧ 完整性 Gate
-  - Stop Hook 自动检测 `testing/e2e-session.yaml` 存在时执行 postcheck
-  - `testing/e2e-session.yaml` 配置锁定机制防止目的漂移
-- **经验规则**：① E2E 后置处理不可凭记忆——必须由脚本审计 ② 报告路径是 `testing/latest-e2e-report.md`（覆盖式），错误路径由脚本自动检测 ③ pending-validations 消费是 E2E 核心交付物 ④ 与 L-9（长任务规则退化）属同一模式，但 L-25 通过脚本 Gate 实现了 100% 硬保障而非仅靠文件重读
+  - Stop Hook 自动检测 `test-reports/e2e-session.yaml` 存在时执行 postcheck
+  - `test-reports/e2e-session.yaml` 配置锁定机制防止目的漂移
+- **经验规则**：① E2E 后置处理不可凭记忆——必须由脚本审计 ② 报告路径是 `test-reports/latest-e2e-report.md`（覆盖式），错误路径由脚本自动检测 ③ pending-validations 消费是 E2E 核心交付物 ④ 与 L-9（长任务规则退化）属同一模式，但 L-25 通过脚本 Gate 实现了 100% 硬保障而非仅靠文件重读
 - **来源**：md-table-tool E2E smoke 后置处理遗漏，用户审计纠偏
 - **发现日期**：2026-04
 - **影响度**：high（从 medium 升级——用户明确定义为红线问题）
@@ -275,7 +278,7 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **场景**：用户要求"全量回归"，Dispatcher 实际只执行了 smoke 预设（3/11 开关）。长对话中"先跑 smoke 验证基础"的中间步骤被误当成最终目标，原始需求被遗忘
 - **根因**：E2E 启动时没有将用户指定的预设写入持久化文件，执行范围全靠上下文记忆。L-21（目的漂移）的 E2E 特化实例
 - **已硬化到协议层**（2026-04-07）：
-  - `testing/e2e-session.yaml` 在 E2E 启动时锁定：preset、switches_on（全部展开）、user_instruction（原话）
+  - `test-reports/e2e-session.yaml` 在 E2E 启动时锁定：preset、switches_on（全部展开）、user_instruction（原话）
   - 每执行完一个开关追加到 switches_completed
   - `tools/redcap-e2e-postcheck.sh` 检查 switches_on 与 switches_completed 差集
   - 不一致 = FAIL，列出未执行的开关名

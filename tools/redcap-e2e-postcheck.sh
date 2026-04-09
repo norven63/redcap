@@ -9,7 +9,7 @@
 #
 # 触发方式（双重保障）：
 #   1. Dispatcher 在 E2E 后置流程步骤 ⑧ 手动执行
-#   2. Stop Hook 检测到 testing/e2e-session.yaml 存在时自动执行
+#   2. Stop Hook 检测到 test-reports/e2e-session.yaml 存在时自动执行
 #
 # 退出码：
 #   0 — 全部 PASS
@@ -30,9 +30,9 @@ get_mtime() {
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-SESSION_FILE="$PROJECT_DIR/testing/e2e-session.yaml"
-REPORT_FILE="$PROJECT_DIR/testing/latest-e2e-report.md"
-PENDING_FILE="$PROJECT_DIR/testing/pending-validations.md"
+SESSION_FILE="$PROJECT_DIR/test-reports/e2e-session.yaml"
+REPORT_FILE="$PROJECT_DIR/test-reports/latest-e2e-report.md"
+PENDING_FILE="$PROJECT_DIR/test-reports/pending-validations.md"
 LESSONS_FILE="$PROJECT_DIR/knowledge/lessons.md"
 
 FAIL_COUNT=0
@@ -52,10 +52,10 @@ echo ""
 
 echo "[1/5] E2E Session 配置文件"
 if [[ ! -f "$SESSION_FILE" ]]; then
-    fail "testing/e2e-session.yaml 不存在 — E2E 启动时未创建配置锁定文件"
+    fail "test-reports/e2e-session.yaml 不存在 — E2E 启动时未创建配置锁定文件"
     echo "  → 无法验证开关覆盖完整性，后续检查可能不准确"
 else
-    pass "testing/e2e-session.yaml 存在"
+    pass "test-reports/e2e-session.yaml 存在"
 
     # 检查 switches_on vs switches_completed 是否一致
     if command -v python3 &>/dev/null; then
@@ -107,7 +107,7 @@ echo ""
 
 echo "[2/5] E2E 报告路径"
 if [[ ! -f "$REPORT_FILE" ]]; then
-    fail "testing/latest-e2e-report.md 不存在"
+    fail "test-reports/latest-e2e-report.md 不存在"
 else
     # 检查报告是否在最近 2 小时内更新
     REPORT_MTIME=$(get_mtime "$REPORT_FILE")
@@ -115,9 +115,9 @@ else
     AGE=$(( (NOW - REPORT_MTIME) / 60 ))
 
     if [[ $AGE -le 120 ]]; then
-        pass "testing/latest-e2e-report.md 已更新（${AGE}分钟前）"
+        pass "test-reports/latest-e2e-report.md 已更新（${AGE}分钟前）"
     else
-        fail "testing/latest-e2e-report.md 最后更新于 ${AGE} 分钟前 — 未在本次 E2E 中更新"
+        fail "test-reports/latest-e2e-report.md 最后更新于 ${AGE} 分钟前 — 未在本次 E2E 中更新"
     fi
 fi
 echo ""
@@ -126,7 +126,7 @@ echo ""
 
 echo "[3/5] pending-validations 消费"
 if [[ ! -f "$PENDING_FILE" ]]; then
-    fail "testing/pending-validations.md 不存在"
+    fail "test-reports/pending-validations.md 不存在"
 else
     # 检查是否有任何 ✅ 状态的条目（表示有消费动作）
     CONSUMED=$(grep -c '✅' "$PENDING_FILE" 2>/dev/null || echo "0")

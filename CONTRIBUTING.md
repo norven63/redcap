@@ -20,7 +20,7 @@
 - L-18（A2A 讨论优于指令）：Agent 间协作采用讨论共识模式，而非单向命令模式
 - L-24（前置对抗缺失）：设计方案中出现"不可行"判断时，必须执行 §1.1 Pre-mortem 挑战
 - L-25（E2E 后置处理不可省略）：E2E 完成后必须执行 `bash tools/redcap-e2e-postcheck.sh`，不可凭记忆
-- L-26（E2E 预设必须锁定）：E2E 启动时必须创建 `testing/e2e-session.yaml` 锁定用户指定的预设和开关
+- L-26（E2E 预设必须锁定）：E2E 启动时必须创建 `test-reports/e2e-session.yaml` 锁定用户指定的预设和开关
 
 ### 1.1 设计自检：前置对抗（Red Team Self-Check）
 
@@ -161,10 +161,10 @@ docs(经验): 新增 L-9 飞书架构局限性
 
 ### E2E 启动配置锁定（强制）
 
-E2E 启动时，Dispatcher **必须**先创建 `testing/e2e-session.yaml` 锁定本次配置，否则不得开始执行：
+E2E 启动时，Dispatcher **必须**先创建 `test-reports/e2e-session.yaml` 锁定本次配置，否则不得开始执行：
 
 ```yaml
-# testing/e2e-session.yaml — E2E 启动时创建，全部完成后删除
+# test-reports/e2e-session.yaml — E2E 启动时创建，全部完成后删除
 created_at: "2026-04-07T21:00:00Z"
 preset: full                          # 用户指定的预设
 switches_on: [happy_path, multi_step, qa_fail_code, ...]  # 展开后的全部开关
@@ -185,7 +185,7 @@ user_instruction: "全量回归"          # 用户原话，防止漂移
 
 单纯的文档措辞修正、经验沉淀、注释更新等不需要 E2E。
 
-**变更登记（强制）**——commit 命中上表任一触发类型时，**必须**在 `testing/pending-validations.md` 追加一条 V-编号条目，格式见该文件头部说明。这是防止"待验证黑洞"的核心机制——不登记就会遗忘。
+**变更登记（强制）**——commit 命中上表任一触发类型时，**必须**在 `test-reports/pending-validations.md` 追加一条 V-编号条目，格式见该文件头部说明。这是防止"待验证黑洞"的核心机制——不登记就会遗忘。
 
 > ⚠ Stop Hook 评审（§4）会检查：本次 commit 是否涉及触发类型但未登记 pending-validation。
 
@@ -193,11 +193,11 @@ user_instruction: "全量回归"          # 用户原话，防止漂移
 
 1. **经验条目**（L-编号）：每个新发现的失败模式/反直觉行为 → 沉淀到 `knowledge/lessons.md`
 2. **Bug 修复**：发现的问题当场修复并 commit
-3. **E2E 报告更新**：更新 `testing/latest-e2e-report.md`（覆盖范围、核心发现、遗留问题）
+3. **E2E 报告更新**：更新 `test-reports/latest-e2e-report.md`（覆盖范围、核心发现、遗留问题）
 4. **消费 pending-validations**：验证通过的条目标记 ✅ 并移入归档区
 5. **一句话结论**：在 commit message 正文中记录 E2E 范围和核心结论（如 "E2E(trpg-web): 5 步正向流转 100%，回退路径 0%"）
 
-> E2E 执行使用 `testing/benchmark-scenario.md` 定义的固定场景，保证跨版本可比性。
+> E2E 执行使用 `test-reports/benchmark-scenario.md` 定义的固定场景，保证跨版本可比性。
 
 ### E2E 后置处理流程
 
@@ -257,7 +257,7 @@ E2E 执行完毕
     执行 `bash tools/redcap-e2e-postcheck.sh`
     此脚本检查：
     · e2e-session.yaml 中 switches_on 与 switches_completed 是否一致
-    · 报告是否写入 testing/latest-e2e-report.md（E2E 报告必须在此路径）
+    · 报告是否写入 test-reports/latest-e2e-report.md（E2E 报告必须在此路径）
     · pending-validations 是否有消费动作
     · lessons.md 是否有更新
     · 最近 commit 是否包含 E2E 结论
@@ -340,11 +340,11 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | references/hook-standards.md | tools/redcap-layerA-session-end.sh（实现必须满足§1不变量）+ knowledge/host-reliability.md §3（宿主覆盖率）|
 | references/communication-protocol.md §2 | SKILL.md §5.3 + dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + README.md 通信协议节 |
 | tools/redcap-check-state.sh | tools/redcap-on-qa-pass.sh（集成调用）|
-| 涉及 §3.1 触发类型的任何变更 | testing/pending-validations.md（登记待验证条目）|
-| testing/benchmark-scenario.md | testing/pending-validations.md（验证矩阵变更可能影响待验证项的验证方法）|
-| testing/latest-e2e-report.md | testing/pending-validations.md（报告产出后消费待验证条目）+ knowledge/lessons.md（经验沉淀）|
+| 涉及 §3.1 触发类型的任何变更 | test-reports/pending-validations.md（登记待验证条目）|
+| test-reports/benchmark-scenario.md | test-reports/pending-validations.md（验证矩阵变更可能影响待验证项的验证方法）|
+| test-reports/latest-e2e-report.md | test-reports/pending-validations.md（报告产出后消费待验证条目）+ knowledge/lessons.md（经验沉淀）|
 | tools/redcap-e2e-postcheck.sh | CONTRIBUTING.md §3.1 步骤⑧ + tools/redcap-on-stop-review.sh（E2E gate 集成）|
-| testing/e2e-session.yaml（新增/删除）| testing/latest-e2e-report.md + testing/pending-validations.md + knowledge/lessons.md |
+| test-reports/e2e-session.yaml（新增/删除）| test-reports/latest-e2e-report.md + test-reports/pending-validations.md + knowledge/lessons.md |
 
 ## 7. Layer B 大型任务断点续传
 
@@ -399,3 +399,60 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 | VS Code Copilot | `.github/copilot-instructions.md` | 项目 `.github/` 下 | 无原生导入；使用 `read_file` 指令 |
 | Claude Code | `CLAUDE.md` | `./CLAUDE.md` 或 `./.claude/CLAUDE.md` | `@file` 原生自动导入 |
 | Gemini CLI | `GEMINI.md` | 项目根目录（及父目录层级） | `@file.md` 原生自动导入 |
+
+---
+
+## 8. Layer B 长任务并行裂变协议
+
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的子任务并行机制见 `SKILL.md §5.15`。
+
+**问题**：分析 RedCap 框架自身时（如 Q3/Q4 审计），单一 Agent 上下文有限，串行处理 5+ 个独立模块会导致上下文溢出或结论被压缩。
+
+**触发条件**（同时满足）：
+1. 分析/评估目标 ≥ 5 个独立模块（如 5 个角色文件、5 个 hook 脚本）
+2. 子任务之间无耦合（A 的结论不依赖 B）
+3. 只关注结论，不需要记录和存储任务过程
+
+### 执行步骤
+
+```
+1. 将分析目标拆解为 N 个互不依赖的子任务，每条描述清晰（不依赖当前上下文）
+2. 用 explore agent（Copilot task tool）或 headless CLI（claude -p / gemini -p -y）并行启动
+3. 完成标记：每个子任务结果写入 /tmp/redcap-subtask-{session_id}-{n}.txt，写完追加 ##DONE##
+4. 主 Agent 等待所有 ##DONE## 出现后再汇总（不读取半成品）
+5. 汇总完成后清理所有 /tmp/redcap-subtask-{session_id}-* 文件
+```
+
+**实例**：Q3/Q4 分析（5 个并行 explore agent，分别分析 Layer A/B 各钩点、角色定义、工具脚本、参考文档、状态机），汇总后无损益精简项，发现 hook-standards.md 与 host-reliability.md 轻微重叠但目的不同（保留）。
+
+---
+
+## 9. Layer B Red Teaming 协议
+
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的 Red Teaming 见 `SKILL.md §5.16`。Stop Hook 对 Layer B 变更的事后独立评审见 `§4`。
+
+**问题**：Cap 改动框架自身时，作者盲点（L-24）比 Layer A 更严重——改文档的 Agent 无法客观评价自己的改动。
+
+**触发条件**（满足任意一条）：
+- 改动 `SKILL.md` / `CONTRIBUTING.md` / `roles/` 下任意文件，且总变更行数 > 20
+- 新增或删除角色定义文件
+- 修改 hook 脚本逻辑（不含注释/格式）
+
+### 执行步骤
+
+```
+1. 获取 diff：git diff HEAD（或 git diff [base]..[head]）
+2. 启动独立 critic Agent（claude -p 或 gemini -p -y），传入完整 diff
+3. Critic prompt 框架：
+   "你是一个对抗审查员，不看作者解释，只看 diff。
+    请找出：① 逻辑错误或与现有规范矛盾之处 ② 遗漏的关联文件 ③ 无意引入的增熵内容。
+    以 JSON 输出：[{severity: 'blocking'|'warning', file, area, problem, impact}]"
+4. 处理结论：
+   - blocking → 必须修复后才能 commit
+   - warning → 评估是否接受，不接受的写入 knowledge/pending-validations.md
+```
+
+**与 §4（Stop Hook）的分工**：
+- §9 是**主动**、**commit 前**的对抗审查（作者发起）
+- §4 是**被动**、**会话结束时**的独立评审（Hook 兜底）
+- 两者互补，不互相替代

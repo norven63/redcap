@@ -43,7 +43,7 @@ CURRENT_HEAD=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null) || exit 0
 # 如果 e2e-session.yaml 存在，说明有未完成的 E2E 后置处理
 # 无论是否有 git 变更，都必须执行 postcheck
 
-E2E_SESSION_FILE="$PROJECT_DIR/testing/e2e-session.yaml"
+E2E_SESSION_FILE="$PROJECT_DIR/test-reports/e2e-session.yaml"
 if [[ -f "$E2E_SESSION_FILE" ]]; then
     echo "[redcap-on-stop-review] ⚠ 检测到未完成的 E2E session，执行后置完整性审计..." >&2
     POSTCHECK_SCRIPT="$PROJECT_DIR/tools/redcap-e2e-postcheck.sh"
@@ -54,7 +54,7 @@ if [[ -f "$E2E_SESSION_FILE" ]]; then
             NOTIFIER_E2E="$PROJECT_DIR/tools/feishu-notifier.py"
             if [[ -f "$NOTIFIER_E2E" ]]; then
                 python3 "$NOTIFIER_E2E" notify \
-                    "⚠️ RedCap E2E 后置处理未完成！\ntesting/e2e-session.yaml 仍存在，请补齐后置处理步骤。" \
+                    "⚠️ RedCap E2E 后置处理未完成！\ntest-reports/e2e-session.yaml 仍存在，请补齐后置处理步骤。" \
                     --project "redcap" 2>/dev/null || true
             fi
         fi
@@ -128,7 +128,7 @@ $DIFF
    - 文档变更：是否有 Markdown 格式错误（代码块未闭合、标题层级混乱、链接断裂）？
    - 代码变更：是否有安全问题、硬编码、路径错误？
 5. **经验沉淀**：本次变更是否发现了新的失败模式或验证了错误假设，但未归档为 Lesson？
-6. **E2E 完整性**：如果变更涉及 E2E 验证，检查 testing/e2e-session.yaml 是否已处理、报告是否写入 testing/latest-e2e-report.md（而非其他路径）、pending-validations 是否已消费。
+6. **E2E 完整性**：如果变更涉及 E2E 验证，检查 test-reports/e2e-session.yaml 是否已处理、报告是否写入 test-reports/latest-e2e-report.md（而非其他路径）、pending-validations 是否已消费。
 
 ## 输出格式
 
