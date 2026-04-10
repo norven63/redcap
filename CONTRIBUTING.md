@@ -548,3 +548,47 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 | §10 需求确认门 | 执行过程中如何保持**需求保真** | 任意需求（含单 Q） |
 
 > 两者互补：§10 确保需求在 Phase 1 被锁定，§7 确保锁定后的进度在会话中断时可恢复。
+
+---
+
+## §11 棱镜（Prism）— 多视角协同分析引擎
+
+> 详细协议见 `prism/` 目录。本节为快速参考。
+
+棱镜是 RedCap 的底层公共能力，将多 Agent 协同分析系统化为可复用的标准流程。当单一视角不足以得出可信结论时，召唤棱镜。
+
+### 何时用棱镜 vs §8/§9
+
+| 场景 | 路径 |
+|------|------|
+| ≥5 模块快速并行（结论不需要跨模型共识） | §8（保留，轻量） |
+| 提交前简单检查（单模型足够） | §9（保留，轻量） |
+| 核心协议改动需要跨家族模型审查 | Prism redteam |
+| soul/identity 大改后的效果验证 | Prism test |
+| 方案有分歧，连续两轮卡壳 | Prism council |
+| 架构探索，方向未定 | Prism explore |
+
+§8/§9 是轻量快速路径，Prism 是高后果决策的系统化路径，两者并存。
+
+### 触发条件（风险信号驱动）
+
+- 改动核心协议（本文 §1-§10、SKILL.md §5.x）→ **redteam**
+- 改动 soul.md / identity.md → **test**
+- 存在 ≥2 个互斥方案 → **council**
+- 已有明确不确定性或反对意见 → **explore**
+- 无法在 2 轮内自行解决的卡壳 → **council**
+
+### 与 §10 PM Gate 的顺序
+
+```
+需求不清晰 → §10 PM Gate 先行（Prism 不运行）
+需求已锁定 + 有高风险信号 → Prism 运行（验证模式，不重开需求决策）
+Prism 发现需求边界问题 → escalate → 回到 §10 PM Gate 重新锁定
+```
+
+### 索引
+
+- 协议全文：`prism/protocol.md`
+- 模式说明：`prism/modes/README.md`
+- 报告归档：`prism/reports/`（git 追踪）
+- 报告索引：`prism/reports/index.yaml`

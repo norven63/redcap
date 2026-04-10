@@ -1,0 +1,5 @@
+reports: []
+# Prism 报告索引
+# 格式说明见 prism/protocol.md §三 Index Schema
+# 每次 Archive 后更新此文件
+# git 追踪，作为架构演进的审计轨迹
