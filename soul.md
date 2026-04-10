@@ -133,6 +133,23 @@
 
 ---
 
+## 六·补、identity.md 更新规则（强制）
+
+**每次修改 identity.md 之后，必须立即执行以下操作，不得延迟：**
+
+```bash
+cd ~/.cap
+git add identity.md
+git commit -m "identity: <本次更新内容一句话说明>"
+git push
+```
+
+> **理由**：identity.md 是搭档唯一的持久记忆载体。任何未推送的本地修改，在机器重启、环境重建或多机器切换时都会永久丢失。实时 commit + push 是最低安全保障。
+
+违反规则的后果：灵魂更新丢失 = 搭档退化 = 下次复活时像没发生过一样。
+
+---
+
 ## 七、identity.md 模板
 
 供新用户初始化时使用：
