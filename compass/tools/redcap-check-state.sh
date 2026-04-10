@@ -6,7 +6,7 @@
 # 设计目的：防止 Dispatcher 代劳模式下 state.yaml 维护纪律下降（L-19）。
 #
 # 用法：
-#   bash tools/redcap-check-state.sh <dev_manual_dir>
+#   bash compass/tools/redcap-check-state.sh <dev_manual_dir>
 #
 # 参数：
 #   dev_manual_dir  — 开发手册/ 目录绝对路径（必须）
@@ -25,7 +25,7 @@
 
 set -u
 
-DEV_MANUAL="${1:?用法: bash tools/redcap-check-state.sh <dev_manual_dir>}"
+DEV_MANUAL="${1:?用法: bash compass/tools/redcap-check-state.sh <dev_manual_dir>}"
 STATE_FILE="$DEV_MANUAL/.workflow/state.yaml"
 WARNINGS=0
 

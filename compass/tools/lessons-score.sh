@@ -4,8 +4,8 @@
 # 用途：判断哪些 Lesson 可归档到 lessons-archive.md（score < 1.0 且 impact ≠ high 且 age > 3 个月）
 #
 # 用法：
-#   bash tools/lessons-score.sh                  # 默认从脚本所在目录推断 redcap 根
-#   bash tools/lessons-score.sh /path/to/redcap  # 显式指定路径
+#   bash compass/tools/lessons-score.sh                  # 默认从脚本所在目录推断 redcap 根
+#   bash compass/tools/lessons-score.sh /path/to/redcap  # 显式指定路径
 
 REDCAP_ROOT="${1:-$(cd "$(dirname "$0")/../.." && pwd)}"
 LESSONS_FILE="$REDCAP_ROOT/compass/knowledge/lessons.md"

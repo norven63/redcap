@@ -2,7 +2,7 @@
 # prism-archive-check.sh — Prism Archive 前置校验
 #
 # 用法:
-#   bash tools/prism-archive-check.sh --report prism/reports/20260410-redteam-001.md
+#   bash prism/tools/prism-archive-check.sh --report prism/reports/20260410-redteam-001.md
 #
 # 退出码:
 #   0 → 校验通过，可以 Archive + commit

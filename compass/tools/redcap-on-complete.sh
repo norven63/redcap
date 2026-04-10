@@ -6,7 +6,7 @@
 # 降低 LLM 记忆负担（记 1 个脚本调用 vs 记 3 个步骤细节）。
 #
 # 用法：
-#   bash tools/redcap-on-complete.sh <project_dir> [initial_head] [project_name]
+#   bash compass/tools/redcap-on-complete.sh <project_dir> [initial_head] [project_name]
 #
 # 参数：
 #   project_dir   — 项目根目录绝对路径（必须）
@@ -21,7 +21,7 @@
 
 set -u  # 未定义变量报错
 
-PROJECT_DIR="${1:?用法: bash tools/redcap-on-complete.sh <project_dir> [initial_head] [project_name]}"
+PROJECT_DIR="${1:?用法: bash compass/tools/redcap-on-complete.sh <project_dir> [initial_head] [project_name]}"
 INITIAL_HEAD="${2:-}"
 PROJECT_NAME="${3:-$(basename "$PROJECT_DIR")}"
 

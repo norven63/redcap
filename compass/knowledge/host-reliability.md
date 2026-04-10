@@ -91,10 +91,10 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 
 | 脚本 | 对应 Hook | 封装的动作 | 调用示例 |
 |------|----------|-----------|---------|
-| `tools/redcap-on-complete.sh` | `on_ALL_DONE` | ① 清除 .workflow/ 临时文件（§5.9）② 输出交付摘要 ③ 飞书通知（§5.11） | `bash tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>` |
-| `tools/redcap-on-qa-pass.sh` | `on_QA_PASS` | ① git add -A && git commit（按 commit-standards.md）② 检查 lesson 字段 | `bash tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]` |
-| `tools/redcap-on-stop-review.sh` | Stop Hook（Layer B） | 提取 git diff → 拉起新 Agent 独立架构评审 → PASS/FAIL + 飞书告警 | 由 `.claude/settings.json` Stop hook 自动触发 |
-| `tools/redcap-layerA-review-fallback.sh` | Stop Hook（Layer A 兜底） | 检测 REVIEW 被跳过 → 拉起新 Agent 项目级 Code Review → PASS/FAIL + 飞书告警 | 由 `redcap-layerA-stop.sh` 在 ALL_DONE 且无 REVIEW_PASS 时调用 |
+| `compass/tools/redcap-on-complete.sh` | `on_ALL_DONE` | ① 清除 .workflow/ 临时文件（§5.9）② 输出交付摘要 ③ 飞书通知（§5.11） | `bash compass/tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>` |
+| `compass/tools/redcap-on-qa-pass.sh` | `on_QA_PASS` | ① git add -A && git commit（按 commit-standards.md）② 检查 lesson 字段 | `bash compass/tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]` |
+| `compass/tools/redcap-on-stop-review.sh` | Stop Hook（Layer B） | 提取 git diff → 拉起新 Agent 独立架构评审 → PASS/FAIL + 飞书告警 | 由 `.claude/settings.json` Stop hook 自动触发 |
+| `loom/tools/redcap-layerA-review-fallback.sh` | Stop Hook（Layer A 兜底） | 检测 REVIEW 被跳过 → 拉起新 Agent 项目级 Code Review → PASS/FAIL + 飞书告警 | 由 `redcap-layerA-stop.sh` 在 ALL_DONE 且无 REVIEW_PASS 时调用 |
 
 **好处**：Dispatcher 只需记住"调一个脚本"，而不是"记住 N 个步骤每步的细节"。
 

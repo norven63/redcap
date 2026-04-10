@@ -5,7 +5,7 @@
 # E2E 验证完成后的 exit gate — 所有检查项必须 PASS 才算 E2E 后置处理完成。
 #
 # 用法：
-#   bash tools/redcap-e2e-postcheck.sh
+#   bash loom/tools/redcap-e2e-postcheck.sh
 #
 # 触发方式（双重保障）：
 #   1. Dispatcher 在 E2E 后置流程步骤 ⑧ 手动执行
@@ -193,7 +193,7 @@ if [[ $FAIL_COUNT -eq 0 ]]; then
     exit 0
 else
     echo " ❌ ${FAIL_COUNT} 项未通过（${WARN_COUNT} 个警告）"
-    echo " → 修复后重新执行: bash tools/redcap-e2e-postcheck.sh"
+    echo " → 修复后重新执行: bash loom/tools/redcap-e2e-postcheck.sh"
     echo "═══════════════════════════════════════════════════"
     exit 1
 fi

@@ -2,8 +2,8 @@
 # prism-dispatch-check.sh — Prism Dispatch 前置校验（硬门禁）
 #
 # 用法:
-#   bash tools/prism-dispatch-check.sh --mode redteam --agents "claude-opus-4.6:challenger,gpt-5.4:reviewer,gemini-3.1-pro-preview:historian"
-#   bash tools/prism-dispatch-check.sh --mode explore  --agents "claude-sonnet-4.6:explorer,gpt-5.4:explorer,gemini-3.1-pro-preview:explorer"
+#   bash prism/tools/prism-dispatch-check.sh --mode redteam --agents "claude-opus-4.6:challenger,gpt-5.4:reviewer,gemini-3.1-pro-preview:historian"
+#   bash prism/tools/prism-dispatch-check.sh --mode explore  --agents "claude-sonnet-4.6:explorer,gpt-5.4:explorer,gemini-3.1-pro-preview:explorer"
 #
 # 退出码:
 #   0 → 校验通过，可以继续 Dispatch

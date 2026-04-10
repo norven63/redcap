@@ -6,7 +6,7 @@
 # 降低 LLM 记忆负担（记 1 个脚本调用 vs 记 commit 格式细节）。
 #
 # 用法：
-#   bash tools/redcap-on-qa-pass.sh <project_dir> <commit_type> <commit_scope> <commit_message> [commit_body]
+#   bash compass/tools/redcap-on-qa-pass.sh <project_dir> <commit_type> <commit_scope> <commit_message> [commit_body]
 #
 # 参数：
 #   project_dir     — 项目根目录绝对路径（必须）
@@ -27,7 +27,7 @@
 
 set -u
 
-PROJECT_DIR="${1:?用法: bash tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]}"
+PROJECT_DIR="${1:?用法: bash compass/tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]}"
 COMMIT_TYPE="${2:?缺少 commit_type 参数（feat/fix/refactor/docs/test/chore/style）}"
 COMMIT_SCOPE="${3:?缺少 commit_scope 参数}"
 COMMIT_MESSAGE="${4:?缺少 commit_message 参数}"
