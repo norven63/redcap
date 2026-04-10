@@ -55,32 +55,32 @@
 
 分发方式：为每个 Agent 发送完全相同的问题包（Frame 内容 + 具体分析任务）。
 
-**Session 记录（强制）**：每个 Agent 以 `mode="background"` 启动后，立即记录其 `agent_id`：
+**Session 记录（强制）**：每个 Agent 以 `mode="background"` 启动后，立即写入物理文件：
 
 ```
-session_registry（运行内存，不落盘）：
-  - agent_id    ：task tool 返回的 ID
-  - role        ：挑战者 / 审查员 / 旧错者 / 探索者 / …
-  - model       ：实际使用的模型名
-  - family      ：claude / gpt / gemini / kimi
-  - status      ：dispatched | responded | absent | followed_up
-  - schema_ok   ：true | false（Collect 阶段填写）
+prism/reports/.session-registry.yaml   ← 物理文件，运行期间落盘，gitignored
+格式：
+  run_id: <YYYYMMDD-mode-NNN>
+  mode: redteam | explore | test | council
+  agents:
+    - agent_id: <task tool 返回的 ID>
+      role: challenger | reviewer | historian | explorer | …
+      model: <模型名>
+      family: claude | gpt | gemini | kimi
+      status: dispatched | responded | absent | followed_up
+      schema_ok: null | true | false
 ```
 
-session_registry 是 Council 多轮复用 session 和 Collect 追问的基础。
+session_registry 是 Council 多轮复用 session 和 Collect 追问的基础，也是 `prism-archive-check.sh` 校验 quorum 的数据源。
 
-**Dispatch 前置校验（硬门禁）**：
-```
-redteam 模式必须满足：
-  ✓ 挑战者（Challenger）角色已分配
-  ✓ 审查员（Reviewer）角色已分配
-  ✓ 旧错者（Historian）角色已分配
-  ✓ 至少 3 个不同模型家族（Claude + GPT + Gemini）
-  → 以上任一不满足：Dispatch 中止，不得继续
+**Dispatch 前置校验（必须通过才能继续）**：
 
-explore/test 模式必须满足：
-  ✓ 至少 2 个不同模型家族
-  ✓ 总 Agent 数 ≥3
+```bash
+bash tools/prism-dispatch-check.sh \
+  --mode <模式> \
+  --agents "model1:role1,model2:role2,..." \
+  [--problem <问题包文件>]
+# 退出码 1 = 校验失败，Dispatch 中止
 ```
 
 Agent 数量：
@@ -182,7 +182,11 @@ escalate      ：发现 PM Gate 已锁定需求的边界问题 → 【硬终态�
    将核心结论（1~3 条）沉淀至 knowledge/lessons.md
    （理由：复活协议必读 lessons.md，这是棱镜结论进入"长期记忆"的唯一通道）
 
-4. git add + commit（prism/reports/ 全部 git 追踪，作为架构演进的审计轨迹）
+4. Archive 校验（必须通过才能 commit）：
+   bash tools/prism-archive-check.sh --report prism/reports/<报告文件>
+   # 退出码 1 = 校验失败，禁止 commit
+
+5. git add + commit（prism/reports/ 全部 git 追踪，作为架构演进的审计轨迹）
 ```
 
 报告保留策略：
