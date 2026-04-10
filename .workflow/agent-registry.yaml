@@ -3,52 +3,20 @@
 # 重新检测: bash tools/redcap-detect-agents.sh [--probe]
 #
 # capability_matrix: /Users/norven/.claude/skills/redcap/knowledge/model-capability-matrix.yaml
-detected_at: "2026-04-07T13:18:41Z"
-probe_mode: false
+detected_at: "2026-04-10T14:58:03Z"
+probe_mode: true
 agents:
-  claude-code:
-    available: true
-    cli_path: "/Users/norven/bin/claude"
-    version: "2.1.85"
-    model_alias: "sonnet"
-    actual_model: "kimi-k2.5"
-    api_provider: "kimi-siliconflow"
-    base_url: "https://api.kimi.com/coding/"
-    config_file: "/Users/norven/.claude/settings.json"
-    config_mtime: "2026-04-06T00:32:07"
-    supports_model_switch: true
-    model_switch_flag: "--model"
   gemini:
     available: true
     cli_path: "/opt/homebrew/bin/gemini"
-    version: "0.36.0"
-    actual_model: "gemini-3-flash"
+    version: "0.37.1"
+    actual_model: "gemini-3.1-pro-preview"
+    model_note: "user-specified; probe skipped due to L-11 (headless hang). Use --model gemini-3.1-pro-preview to invoke."
     api_provider: "google"
     config_file: "/Users/norven/.gemini/settings.json"
-    config_mtime: "2026-04-07T21:13:15"
+    config_mtime: "2026-04-10T22:43:06"
     supports_model_switch: true
     model_switch_flag: "--model"
     known_issues:
       - "L-7: headless 必须 --yolo"
       - "L-11: JSON 输出长任务可能挂起"
-  kimi:
-    available: true
-    cli_path: "/Users/norven/.local/bin/kimi"
-    version: "1.30.0"
-    actual_model: "kimi-code/kimi-for-coding"
-    api_provider: "moonshot"
-    config_file: "/Users/norven/.kimi/config.toml"
-    config_mtime: "2026-04-04T22:46:56"
-    supports_model_switch: false
-  copilot:
-    available: true
-    cli_path: "/Users/norven/Library/Application Support/Code/User/globalStorage/github.copilot-chat/copilotCli/copilot"
-    version: "1.0.18"
-    actual_model: "claude-opus-4.6"
-    api_provider: "github"
-    supports_model_switch: true
-    model_switch_flag: "--model"
-    switchable_models:
-      - "claude-opus-4.6"
-      - "gpt-5.4"
-      - "claude-sonnet-4.6"

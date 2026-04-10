@@ -55,6 +55,20 @@
 
 分发方式：为每个 Agent 发送完全相同的问题包（Frame 内容 + 具体分析任务）。
 
+**Session 记录（强制）**：每个 Agent 以 `mode="background"` 启动后，立即记录其 `agent_id`：
+
+```
+session_registry（运行内存，不落盘）：
+  - agent_id    ：task tool 返回的 ID
+  - role        ：挑战者 / 审查员 / 旧错者 / 探索者 / …
+  - model       ：实际使用的模型名
+  - family      ：claude / gpt / gemini / kimi
+  - status      ：dispatched | responded | absent | followed_up
+  - schema_ok   ：true | false（Collect 阶段填写）
+```
+
+session_registry 是 Council 多轮复用 session 和 Collect 追问的基础。
+
 **Dispatch 前置校验（硬门禁）**：
 ```
 redteam 模式必须满足：
@@ -78,14 +92,31 @@ Agent 数量：
 
 可用模型阵容见 `roles/README.md`。
 
-### Step 3 · Collect（收集，含超时治理）
+### Step 3 · Collect（收集，含超时治理与追问）
 
 ```
-超时限制：单个 Agent 超过 30min 无响应 → 重试 1 次
-重试失败：标记为 ABSENT，继续流程
+超时限制：单个 Agent 超过 30min 无响应 → 进入追问流程（见下）
 法定人数（quorum）：≥60% Agent 完成（含重试），否则中止本次运行，记录原因
 收集完成：所有 Agent 均提交符合 Schema 的结果（ABSENT 视为弃权）
 ```
+
+**Schema 完整性追问（强制，优先于标记 ABSENT）**：
+
+Agent 响应后，检查输出是否符合 Frame 锁定的 Schema。若不符合或关键字段缺失：
+
+```
+追问流程：
+  1. 用 write_agent(agent_id) 发送追问：
+     "你的输出缺少以下字段：{缺失字段列表}。请按 Schema 补全后重新提交。"
+  2. 追问最多 2 次
+  3. 2 次追问后仍不合格 → 标记 status=absent，记录原因
+  4. 超时（30min 无响应）→ 先追问 1 次，再超时 → status=absent
+```
+
+**追问禁止项**：追问只能要求 Agent 补全 Schema 格式，不得：
+- 透露其他 Agent 的输出内容
+- 引导 Agent 修改已有结论
+- 给出"正确答案"暗示
 
 ### Step 4 · Synthesize（提炼）
 

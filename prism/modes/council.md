@@ -58,11 +58,21 @@ council 模式的强制对抗角色同 redteam：
 
 ```
 Round 1：各 Agent 独立提交初始观点（Dispatch Firewall 生效）
-          ↓ Cap 提炼摘要
-Round 2：各 Agent 读摘要 → 更新或维持立场（dissent 字段填异议）
+          所有 agent_id 记入 session_registry
+          ↓ Cap 提炼摘要（Synthesis Audit 规则适用）
+Round 2：用 write_agent(agent_id) 向【同一批 Agent 的原有 session】发送：
+          - 前轮摘要（主流观点 + 主要分歧 + 已排除方案）
+          - 请求：更新或维持立场，填写 dissent 字段
+          注意：必须复用 session_registry 中的 agent_id，不得重新 Dispatch 新 Agent
           ↓ 检查收敛
           if 收敛 → Adjudicate
           if 未收敛 → Round 3
-Round 3：同 Round 2
+Round 3：同 Round 2（继续 write_agent 到同一 session）
           ↓ 强制进入 Adjudicate（无论收敛与否）
 ```
+
+**Session 复用规则**：
+- Round 2 及之后，必须用 `write_agent(agent_id)` 向 Round 1 的原 session 追发摘要
+- 禁止在 Round 2+ 重新 `task(mode="background")` 创建新 Agent 实例
+- Agent session 在 council 全程保持活跃（agent 在最后一轮结束后方可视为完成）
+- 若某 Agent session 已超时不可达，标记 ABSENT 并从 quorum 分母中移除（该轮仅此 Agent）
