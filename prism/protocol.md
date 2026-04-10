@@ -28,14 +28,18 @@
 问题陈述    ：本次分析的核心问题是什么？
 禁止项      ：哪些结论/方案不在考虑范围？（对齐 PM Gate 已锁定决策）
 输出 Schema ：每个 Agent 必须按此格式输出：
+              独立取样模式（explore/redteam/test）：
               {
                 "agent": "<model>",
+                "role": "<分析视角或对抗职能>",
                 "conclusion": "<核心结论，50字内>",
                 "confidence": "high|medium|low",
-                "blockers": ["<问题1>", ...],  // 阻塞项，没有则 []
-                "actions": ["<行动1>", ...],   // 建议行动
-                "dissent": "<异议，无则 null>" // 对其他主流观点的反对意见
+                "blockers": ["[BLOCKING/CRITICAL/MAJOR] <问题>", ...],
+                "actions": ["<行动1>", ...],
+                "blind_spots": "<本视角可能遗漏的角度，无则 null>"
               }
+              council 模式第 2 轮及之后，Schema 中 blind_spots 改为：
+              "dissent": "<对前轮主流观点的异议，无则 null>"
 验收标准    ：Adjudicate 阶段，什么条件算"可继续"？
 与 PM Gate 的关系：
               - 若 PM Gate 已锁定需求 → Prism 运行"验证模式"：只验证方案可行性，不重开需求决策
@@ -51,10 +55,28 @@
 
 分发方式：为每个 Agent 发送完全相同的问题包（Frame 内容 + 具体分析任务）。
 
+**Dispatch 前置校验（硬门禁）**：
+```
+redteam 模式必须满足：
+  ✓ 挑战者（Challenger）角色已分配
+  ✓ 审查员（Reviewer）角色已分配
+  ✓ 旧错者（Historian）角色已分配
+  ✓ 至少 3 个不同模型家族（Claude + GPT + Gemini）
+  → 以上任一不满足：Dispatch 中止，不得继续
+
+explore/test 模式必须满足：
+  ✓ 至少 2 个不同模型家族
+  ✓ 总 Agent 数 ≥3
+```
+
 Agent 数量：
-- explore：3~5 个
-- redteam：≥3 个，其中 ≥1 个跨家族模型（如 Claude + GPT）
+- explore：3~5 个，≥2 家族
+- redteam：4~6 个，**≥3 家族，含挑战者/审查员/旧错者三对抗角色**
 - test：2~4 个，按评分维度分工
+
+**GPT 系模型特别处理**：发送问题包前检查长度，超过 800 行的材料必须分段发送（GPT 系模型会静默截断大文件而不报错，见 lessons.md L-11）。
+
+可用模型阵容见 `roles/README.md`。
 
 ### Step 3 · Collect（收集，含超时治理）
 
@@ -68,19 +90,49 @@ Agent 数量：
 ### Step 4 · Synthesize（提炼）
 
 从各 Agent 的 Schema 输出中提炼：
-- **共识行动**：≥75% Agent 支持的行动项
-- **弱共识**：60%~75% 支持，附少数意见
-- **开放争议**：<60% 支持，双方论点均列出
+- **共识行动**：≥N_consensus Agent 支持的行动项（见下方离散映射表）
+- **弱共识**：≥N_weak 但 <N_consensus 支持，附少数意见
+- **开放争议**：<N_weak 支持，双方论点均列出
 - **ABSENT 说明**：记录哪个模型缺席及原因
+
+**离散共识映射表**（按参与人数）：
+
+| 参与 Agent 数 | N_consensus（共识） | N_weak（弱共识） | N_quorum（法定最低） |
+|-------------|-------------------|----------------|-------------------|
+| 3 | 3/3 | 2/3 | 2 |
+| 4 | 3/4 | 3/4 | 3 |
+| 5 | 4/5 | 3/5 | 3 |
+| 6 | 5/6 | 4/6 | 4 |
+
+**Quorum 分母定义**：Frame 阶段锁定的原始 Agent 数（含 ABSENT），不是实际响应数。3人组中1人ABSENT = 2/3响应 = quorum不达标，运行无效。
+
+**Synthesis Audit（必须执行）**：
+Synthesize 完成后，启动 1 个独立 Agent（与参与 Dispatch 的 Agent 不同实例）做"摘要忠实度审计"：
+```
+审计任务：对比各 Agent 原始输出 vs Cap 的 Synthesize 摘要
+检查项：
+  ① 是否有结论被错误归类（如将 MAJOR 降级为 MEDIUM）
+  ② 共识人数是否与原始输出一致
+  ③ 是否有 BLOCKING 项被遗漏
+  ④ 少数意见是否被合理保留
+输出：AUDIT_PASS（可进入 Adjudicate）或 AUDIT_FAIL + 具体偏差列表
+```
+AUDIT_FAIL 时必须修正 Synthesize 结果再重新审计，不得跳过进入 Adjudicate。
 
 ### Step 5 · Adjudicate（裁决）
 
 ```
 consensus     ：共识行动 ≥1 条，无阻塞项 → 可继续执行
 weak-consensus：有弱共识但无严重阻塞 → 可继续，标注风险
-deadlock      ：核心议题无共识（<60%） → 生成 OPEN_QUESTION 列表，暂停执行，等待 Norven 决策
-escalate      ：发现 PM Gate 已锁定需求的边界问题 → 必须回到 §10 PM Gate 重新锁定，不得自行决定
+deadlock      ：核心议题无共识（<N_weak）→ 【硬终态】
+escalate      ：发现 PM Gate 已锁定需求的边界问题 → 【硬终态】
 ```
+
+**deadlock/escalate 硬终态规则**：
+- 进入后系统只允许：Archive（写入 OPEN_QUESTION 清单）+ 等待 Norven 确认
+- **必须收到 Norven 明确的「解锁确认」后，才能继续后续执行**
+- 禁止：继续 Dispatch 新一轮、进入实现阶段、更新 lessons.md 结论
+- 解锁方式：Norven 在对话中明确回复"确认继续"或提供决策方向
 
 **Adjudicate 权威规则**：Prism 无权推翻已 PM Gate 锁定的决策。若 Prism 结论与锁定需求冲突，结论 = escalate，不是 override。
 

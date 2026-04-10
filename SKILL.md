@@ -792,6 +792,31 @@ SCAN_WORKING    failed       SCAN_WORKING    重试 1 次或 Fallback Agent
 
 ---
 
+### 5.17 棱镜（Prism）— 多视角协同分析引擎
+
+> 完整协议见 `redcap/prism/protocol.md`。本节为触发索引。
+
+**棱镜 vs §5.15/§5.16 的选择**：
+
+| 情境 | 路径 |
+|------|------|
+| ≥5 独立模块、不需跨模型共识 | §5.15（并行裂变） |
+| 提交后、单模型对抗 review | §5.16（Red Teaming） |
+| 核心协议改动、需跨家族模型审查 | Prism redteam |
+| soul/identity 大改后验证 | Prism test |
+| 方案有分歧、连续两轮卡壳 | Prism council |
+| 架构探索、方向未定 | Prism explore |
+
+**自动触发信号**（满足任一立即启动 Prism）：
+- 改动 `CONTRIBUTING.md §1-§10`、`SKILL.md §5.x`、`soul.md` → **redteam**
+- 改动 `identity.md` → **test**
+- 存在 ≥2 个互斥方案无法独立决策 → **council**
+- 已有明确不确定性或反对意见 → **explore**
+
+**快速调用**：参数包含 `mode`（explore|redteam|test|council）+ 问题陈述，交给 Cap 主导运行。
+
+---
+
 ## 6. 全局约束
 
 所有 Agent 在执行工作时必须遵守（通过 Prompt 注入）：

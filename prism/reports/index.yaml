@@ -1,5 +1,24 @@
-reports: []
-# Prism 报告索引
-# 格式说明见 prism/protocol.md §三 Index Schema
-# 每次 Archive 后更新此文件
-# git 追踪，作为架构演进的审计轨迹
+reports:
+  - id: "20260410-redteam-001"
+    mode: redteam
+    date: "2026-04-10"
+    topic: "Prism v0.1 设计缺陷自评（Norven 5点质疑）"
+    agents: ["claude-opus-4.6", "gpt-5.4", "claude-sonnet-4.6"]
+    roles: ["challenger", "reviewer", "past-mistakes-reviewer"]
+    verdict: "weak-consensus"
+    consensus_actions:
+      - "SKILL.md 显式引用 Prism 触发条件（L-17修复）"
+      - "redteam 强制对抗角色：挑战者+审查员+旧错者必须齐备"
+      - "模型阵容升级：Gemini 2.5 Pro + GPT-5.4，≥3家族红线"
+      - "Dispatch 硬门禁：缺对抗角色拒绝Dispatch"
+    open_questions:
+      - "Dispatch Firewall 技术强制化（v0.3候选）"
+      - "Prism Orchestrator状态机（v0.3候选）"
+    lessons_updated: true
+    files_affected:
+      - "prism/protocol.md"
+      - "prism/roles/README.md"
+      - "prism/modes/council.md"
+      - "SKILL.md"
+      - "knowledge/lessons.md"
+    archived: false
