@@ -7,7 +7,7 @@
           {
             "name": "redcap-session-end",
             "type": "command",
-            "command": "tools/redcap-layerA-session-end.sh",
+            "command": "loom/tools/redcap-layerA-session-end.sh",
             "description": "RedCap 通用 Hook 分发代理：清理临时文件 + 状态审计 + 飞书通知兜底"
           }
         ]

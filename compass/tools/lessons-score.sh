@@ -7,8 +7,8 @@
 #   bash tools/lessons-score.sh                  # 默认从脚本所在目录推断 redcap 根
 #   bash tools/lessons-score.sh /path/to/redcap  # 显式指定路径
 
-REDCAP_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
-LESSONS_FILE="$REDCAP_DIR/knowledge/lessons.md"
+REDCAP_ROOT="${1:-$(cd "$(dirname "$0")/../.." && pwd)}"
+LESSONS_FILE="$REDCAP_ROOT/compass/knowledge/lessons.md"
 
 if [[ ! -f "$LESSONS_FILE" ]]; then
     echo "错误：找不到 $LESSONS_FILE" >&2

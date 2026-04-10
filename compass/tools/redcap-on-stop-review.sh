@@ -23,7 +23,7 @@ set -u
 cat > /dev/null  # 消费 stdin
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HEAD_FILE="/tmp/redcap-claude-initial-head"
 REVIEW_RESULT_FILE="/tmp/redcap-stop-review-result"
 REVIEW_LOG_FILE="/tmp/redcap-stop-review-log.md"
@@ -37,21 +37,21 @@ else
     exit 0
 fi
 
-CURRENT_HEAD=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null) || exit 0
+CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null) || exit 0
 
 # ── E2E Session Gate 检查 ──
 # 如果 e2e-session.yaml 存在，说明有未完成的 E2E 后置处理
 # 无论是否有 git 变更，都必须执行 postcheck
 
-E2E_SESSION_FILE="$PROJECT_DIR/test-reports/e2e-session.yaml"
+E2E_SESSION_FILE="$REDCAP_ROOT/loom/test-reports/e2e-session.yaml"
 if [[ -f "$E2E_SESSION_FILE" ]]; then
     echo "[redcap-on-stop-review] ⚠ 检测到未完成的 E2E session，执行后置完整性审计..." >&2
-    POSTCHECK_SCRIPT="$PROJECT_DIR/tools/redcap-e2e-postcheck.sh"
+    POSTCHECK_SCRIPT="$REDCAP_ROOT/loom/tools/redcap-e2e-postcheck.sh"
     if [[ -x "$POSTCHECK_SCRIPT" ]]; then
         bash "$POSTCHECK_SCRIPT" >&2
         POSTCHECK_EXIT=$?
         if [[ $POSTCHECK_EXIT -ne 0 ]]; then
-            NOTIFIER_E2E="$PROJECT_DIR/tools/feishu-notifier.py"
+            NOTIFIER_E2E="$SCRIPT_DIR/feishu-notifier.py"
             if [[ -f "$NOTIFIER_E2E" ]]; then
                 python3 "$NOTIFIER_E2E" notify \
                     "⚠️ RedCap E2E 后置处理未完成！\ntest-reports/e2e-session.yaml 仍存在，请补齐后置处理步骤。" \
@@ -71,9 +71,9 @@ fi
 
 # ── 提取 Diff ──
 
-DIFF=$(git -C "$PROJECT_DIR" --no-pager diff "$BASELINE..HEAD" 2>/dev/null)
-COMMIT_LOG=$(git -C "$PROJECT_DIR" --no-pager log --oneline "$BASELINE..HEAD" 2>/dev/null)
-FILE_LIST=$(git -C "$PROJECT_DIR" --no-pager diff --name-only "$BASELINE..HEAD" 2>/dev/null)
+DIFF=$(git -C "$REDCAP_ROOT" --no-pager diff "$BASELINE..HEAD" 2>/dev/null)
+COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..HEAD" 2>/dev/null)
+FILE_LIST=$(git -C "$REDCAP_ROOT" --no-pager diff --name-only "$BASELINE..HEAD" 2>/dev/null)
 
 if [[ -z "$DIFF" ]]; then
     exit 0
@@ -91,8 +91,8 @@ fi
 # ── 读取 CONTRIBUTING.md 作为评审基准 ──
 
 CONTRIBUTING=""
-if [[ -f "$PROJECT_DIR/CONTRIBUTING.md" ]]; then
-    CONTRIBUTING=$(cat "$PROJECT_DIR/CONTRIBUTING.md")
+if [[ -f "$REDCAP_ROOT/compass/CONTRIBUTING.md" ]]; then
+    CONTRIBUTING=$(cat "$REDCAP_ROOT/compass/CONTRIBUTING.md")
 fi
 
 # ── 组装评审 Prompt ──
@@ -222,7 +222,7 @@ echo "$RESULT" > "$REVIEW_RESULT_FILE"
 
 # ── 结果处理 ──
 
-NOTIFIER="$PROJECT_DIR/tools/feishu-notifier.py"
+NOTIFIER="$SCRIPT_DIR/feishu-notifier.py"
 
 if [[ "$RESULT" == "FAIL" ]]; then
     echo "[redcap-on-stop-review] ⚠ 独立评审发现 P0 问题！详情: $REVIEW_LOG_FILE" >&2

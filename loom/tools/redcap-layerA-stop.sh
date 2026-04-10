@@ -73,7 +73,7 @@ fi
 
 # 使用 readlink 解析真实路径（兼容符号链接）
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")" )" && pwd)"
-REDCAP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # 读取初始 HEAD（SessionStart 捕获）
 INITIAL_HEAD=""
@@ -88,7 +88,7 @@ PROJECT_NAME=$(basename "$CWD")
 # 状态机的 REVIEW_WORKING 节点受 LLM attention 衰减影响可能被跳过。
 # 如果 state.yaml history 中没有 reviewer 完成记录，拉起新 Agent 补 Review。
 
-REVIEW_FALLBACK="$REDCAP_DIR/tools/redcap-layerA-review-fallback.sh"
+REVIEW_FALLBACK="$REDCAP_ROOT/loom/tools/redcap-layerA-review-fallback.sh"
 if [[ -f "$REVIEW_FALLBACK" ]]; then
     # 检查 history 中是否存在 reviewer 角色的 completed 记录
     # state.yaml history 格式: - role: "reviewer" ... status: "completed"
@@ -101,7 +101,7 @@ if [[ -f "$REVIEW_FALLBACK" ]]; then
 fi
 
 # 调用 on-complete 收尾脚本
-ON_COMPLETE="$REDCAP_DIR/tools/redcap-on-complete.sh"
+ON_COMPLETE="$REDCAP_ROOT/compass/tools/redcap-on-complete.sh"
 if [[ -f "$ON_COMPLETE" ]]; then
     bash "$ON_COMPLETE" "$CWD" "$INITIAL_HEAD" "$PROJECT_NAME" 2>&1 || echo "[redcap-layerA-stop] WARN: on-complete.sh exited with $?" >&2
 else

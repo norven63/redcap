@@ -9,8 +9,8 @@
 cat > /dev/null  # 消费 stdin
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HEAD_FILE="/tmp/redcap-claude-initial-head"
 
-git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null > "$HEAD_FILE" || true
+git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null > "$HEAD_FILE" || true
 exit 0

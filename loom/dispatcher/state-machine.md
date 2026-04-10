@@ -1,7 +1,7 @@
 # Dispatcher 状态机定义
 
 > **用途**：定义 Dispatcher 的有限状态机（FSM），驱动多 Agent 协同流转。  
-> **依赖**：[通信协议](../references/communication-protocol.md)
+> **依赖**：[通信协议](../../references/communication-protocol.md)
 
 ---
 

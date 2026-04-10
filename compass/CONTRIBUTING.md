@@ -8,8 +8,8 @@
 
 修改框架文件前，**必须先阅读以下两个文件**：
 
-1. **`knowledge/design-principles.md`**（元原则）— 确认本次变更不违背 P-1 至 P-5 五项战略层原则
-2. **`knowledge/lessons.md`**（经验库）— 检查本次变更是否涉及已知陷阱
+1. **`compass/knowledge/design-principles.md`**（元原则）— 确认本次变更不违背 P-1 至 P-5 五项战略层原则
+2. **`compass/knowledge/lessons.md`**（经验库）— 检查本次变更是否涉及已知陷阱
 
 重点关注：
 - L-4（Fallback 深度不足）：修改路由/降级逻辑时
@@ -19,8 +19,8 @@
 - L-17（Agent 信息茧房）：编写提示词时，确保关键资产文件有显式引用路径
 - L-18（A2A 讨论优于指令）：Agent 间协作采用讨论共识模式，而非单向命令模式
 - L-24（前置对抗缺失）：设计方案中出现"不可行"判断时，必须执行 §1.1 Pre-mortem 挑战
-- L-25（E2E 后置处理不可省略）：E2E 完成后必须执行 `bash tools/redcap-e2e-postcheck.sh`，不可凭记忆
-- L-26（E2E 预设必须锁定）：E2E 启动时必须创建 `test-reports/e2e-session.yaml` 锁定用户指定的预设和开关
+- L-25（E2E 后置处理不可省略）：E2E 完成后必须执行 `bash loom/loom/tools/redcap-e2e-postcheck.sh`，不可凭记忆
+- L-26（E2E 预设必须锁定）：E2E 启动时必须创建 `loom/test-reports/e2e-session.yaml` 锁定用户指定的预设和开关
 
 ### 1.1 设计自检：前置对抗（Red Team Self-Check）
 
@@ -83,7 +83,7 @@ EOF
 
 审查要求：
 1. 对每条'不可行/无法做到'的判断：尝试提出至少一种实现方式来反驳
-2. 对覆盖范围声明：检查是否遗漏了功能点（参考 dispatcher/state-machine.md 的完整状态列表）
+2. 对覆盖范围声明：检查是否遗漏了功能点（参考 loom/dispatcher/state-machine.md 的完整状态列表）
 3. 对设计假设：指出哪些假设可能在实际运行中不成立
 4. 对成本评估：质疑是否低估了某些方案的可行性或高估了成本
 
@@ -132,13 +132,13 @@ type(scope): 简要描述
 | scope | 对应目录/文件 |
 |-------|-------------|
 | `框架` | SKILL.md 核心流程 |
-| `状态机` | dispatcher/state-machine.md |
-| `适配器` | dispatcher/agent-adapters.md |
+| `状态机` | loom/dispatcher/state-machine.md |
+| `适配器` | loom/dispatcher/agent-adapters.md |
 | `模板` | dispatcher/prompt-templates/ |
 | `角色` | roles/ 下的角色手册 |
 | `规范` | references/ 下的规范文件 |
-| `feishu` | tools/feishu-notifier.py + 相关配置 |
-| `经验` | knowledge/lessons.md |
+| `feishu` | compass/tools/feishu-notifier.py + 相关配置 |
+| `经验` | compass/knowledge/lessons.md |
 | `铁律` | 涉及安全铁律的变更 |
 
 **示例**：
@@ -151,7 +151,7 @@ docs(经验): 新增 L-9 飞书架构局限性
 
 ## 3. 变更后：经验沉淀检查
 
-每轮变更完成后，执行以下自检（同 `knowledge/lessons.md` 中的归档触发检查点）：
+每轮变更完成后，执行以下自检（同 `compass/knowledge/lessons.md` 中的归档触发检查点）：
 
 1. 本轮是否发现了**新的失败模式或反直觉行为**？→ 归档为 Lesson
 2. 本轮是否验证了一个**之前文档中写错的假设**？→ 归档为 Lesson
@@ -161,10 +161,10 @@ docs(经验): 新增 L-9 飞书架构局限性
 
 ### E2E 启动配置锁定（强制）
 
-E2E 启动时，Dispatcher **必须**先创建 `test-reports/e2e-session.yaml` 锁定本次配置，否则不得开始执行：
+E2E 启动时，Dispatcher **必须**先创建 `loom/test-reports/e2e-session.yaml` 锁定本次配置，否则不得开始执行：
 
 ```yaml
-# test-reports/e2e-session.yaml — E2E 启动时创建，全部完成后删除
+# loom/test-reports/e2e-session.yaml — E2E 启动时创建，全部完成后删除
 created_at: "2026-04-07T21:00:00Z"
 preset: full                          # 用户指定的预设
 switches_on: [happy_path, multi_step, qa_fail_code, ...]  # 展开后的全部开关
@@ -185,19 +185,19 @@ user_instruction: "全量回归"          # 用户原话，防止漂移
 
 单纯的文档措辞修正、经验沉淀、注释更新等不需要 E2E。
 
-**变更登记（强制）**——commit 命中上表任一触发类型时，**必须**在 `test-reports/pending-validations.md` 追加一条 V-编号条目，格式见该文件头部说明。这是防止"待验证黑洞"的核心机制——不登记就会遗忘。
+**变更登记（强制）**——commit 命中上表任一触发类型时，**必须**在 `loom/test-reports/pending-validations.md` 追加一条 V-编号条目，格式见该文件头部说明。这是防止"待验证黑洞"的核心机制——不登记就会遗忘。
 
 > ⚠ Stop Hook 评审（§4）会检查：本次 commit 是否涉及触发类型但未登记 pending-validation。
 
 **最小产出物**——E2E 不要求写完整报告，但必须产出以下内容并融入框架：
 
-1. **经验条目**（L-编号）：每个新发现的失败模式/反直觉行为 → 沉淀到 `knowledge/lessons.md`
+1. **经验条目**（L-编号）：每个新发现的失败模式/反直觉行为 → 沉淀到 `compass/knowledge/lessons.md`
 2. **Bug 修复**：发现的问题当场修复并 commit
-3. **E2E 报告更新**：更新 `test-reports/latest-e2e-report.md`（覆盖范围、核心发现、遗留问题）
+3. **E2E 报告更新**：更新 `loom/test-reports/latest-e2e-report.md`（覆盖范围、核心发现、遗留问题）
 4. **消费 pending-validations**：验证通过的条目标记 ✅ 并移入归档区
 5. **一句话结论**：在 commit message 正文中记录 E2E 范围和核心结论（如 "E2E(trpg-web): 5 步正向流转 100%，回退路径 0%"）
 
-> E2E 执行使用 `test-reports/benchmark-scenario.md` 定义的固定场景，保证跨版本可比性。
+> E2E 执行使用 `loom/test-reports/benchmark-scenario.md` 定义的固定场景，保证跨版本可比性。
 
 ### E2E 后置处理流程
 
@@ -254,10 +254,10 @@ E2E 执行完毕
     │
     ▼
 ⑧ 完整性 Gate（强制 — 100% 硬保障）
-    执行 `bash tools/redcap-e2e-postcheck.sh`
+    执行 `bash loom/loom/tools/redcap-e2e-postcheck.sh`
     此脚本检查：
     · e2e-session.yaml 中 switches_on 与 switches_completed 是否一致
-    · 报告是否写入 test-reports/latest-e2e-report.md（E2E 报告必须在此路径）
+    · 报告是否写入 loom/test-reports/latest-e2e-report.md（E2E 报告必须在此路径）
     · pending-validations 是否有消费动作
     · lessons.md 是否有更新
     · 最近 commit 是否包含 E2E 结论
@@ -272,13 +272,13 @@ E2E 执行完毕
 
 ## 4. 独立架构评审（Stop Hook 自动触发）
 
-> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的评审由状态机 `REVIEW_WORKING` 节点驱动，当 LLM 跳过 Review 直接进入 ALL_DONE 时，Layer A Stop Hook 会检测缺失并拉起新 Agent 兜底执行项目级 Review（`tools/redcap-layerA-review-fallback.sh`）。两层共享同一设计模式：Hook 100% 触发 + 新 Agent 生命周期保证认知能力（详见 L-15）。
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的评审由状态机 `REVIEW_WORKING` 节点驱动，当 LLM 跳过 Review 直接进入 ALL_DONE 时，Layer A Stop Hook 会检测缺失并拉起新 Agent 兜底执行项目级 Review（`loom/tools/redcap-layerA-review-fallback.sh`）。两层共享同一设计模式：Hook 100% 触发 + 新 Agent 生命周期保证认知能力（详见 L-15）。
 
 **问题**：开发 Agent 在长对话末期注意力衰减，可能遗漏规范检查、文件联动、经验沉淀等收尾动作。即使 §3 写了自检清单，长任务末期的 LLM 也可能"忘记"执行。
 
 **解法**：Layer 0（物理 Hook）+ 全新 Agent 生命周期。
 
-- **触发机制**：Claude Code Stop Hook → `tools/redcap-on-stop-review.sh`
+- **触发机制**：Claude Code Stop Hook → `compass/tools/redcap-on-stop-review.sh`
 - **执行方式**：脚本提取 `git diff`，拉起一个全新的、无历史上下文污染的 Agent（`kimi -p` / `claude -p`）执行独立评审
 - **评审维度**：Commit 规范、经验回顾、文件联动（§6 影响范围表）、内容质量、经验沉淀遗漏、设计完备性（§1.1 Pre-mortem 是否执行——含"不可行"判断和覆盖范围声明）、E2E 完整性（e2e-session.yaml 是否处理、报告路径、pending-validations 消费）
 - **结果处理**：
@@ -299,7 +299,7 @@ E2E 执行完毕
 
 ## 5. 飞书通知
 
-> **本节属于 Layer B（开发 RedCap 自身）**。Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10 定义，通过 Dispatcher 状态机触发。两层架构详见 `knowledge/host-reliability.md` §0。
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10 定义，通过 Dispatcher 状态机触发。两层架构详见 `compass/knowledge/host-reliability.md` §0。
 
 RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。**编辑 RedCap 的 AI Agent 必须在流程中自动执行以下通知**：
 
@@ -307,7 +307,7 @@ RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。*
 
 ```bash
 # 消息中须附带本次 commit 记录
-python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>\n\nCommits:\n$(git log --oneline <初始commit>..HEAD)" --project "redcap"
+python3 compass/tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>\n\nCommits:\n$(git log --oneline <初始commit>..HEAD)" --project "redcap"
 ```
 
 > ⚠ 这是强制步骤，不可跳过。通知失败（如 feishu-config.json 不存在）时记录警告但不阻塞任务完成。
@@ -315,7 +315,7 @@ python3 tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描�
 **过程中通知（按需）**：长时间等待用户确认方案等场景：
 
 ```bash
-python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap"
+python3 compass/tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap"
 ```
 
 
@@ -323,28 +323,28 @@ python3 tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap
 
 | 修改的文件 | 可能需要同步更新的文件 |
 |-----------|---------------------|
-| SKILL.md §5.2 事件循环 | dispatcher/state-machine.md 伪代码 |
-| SKILL.md §5.10 Hooks | dispatcher/state-machine.md 对应触发点 |
-| references/communication-protocol.md | roles/ 下各角色手册中的状态返回说明 + knowledge/a2a-communication.md §5.4 |
-| dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 + knowledge/a2a-communication.md §2 |
-| dispatcher/state-machine.md 状态枚举 | knowledge/a2a-communication.md §4（NEGOTIATING 状态同步） |
-| SKILL.md §5.10 Hooks 表 | dispatcher/state-machine.md `populate_pending_actions` + SKILL.md §5.13 映射表 |
+| SKILL.md §5.2 事件循环 | loom/dispatcher/state-machine.md 伪代码 |
+| SKILL.md §5.10 Hooks | loom/dispatcher/state-machine.md 对应触发点 |
+| references/communication-protocol.md | roles/ 下各角色手册中的状态返回说明 + compass/knowledge/a2a-communication.md §5.4 |
+| loom/dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 + compass/knowledge/a2a-communication.md §2 |
+| loom/dispatcher/state-machine.md 状态枚举 | compass/knowledge/a2a-communication.md §4（NEGOTIATING 状态同步） |
+| SKILL.md §5.10 Hooks 表 | loom/dispatcher/state-machine.md `populate_pending_actions` + SKILL.md §5.13 映射表 |
 | CONTRIBUTING.md 自身 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md 均为索引，通过 `@` 导入指向本文件；修改本文件即全局生效，无需手动同步 |
 | references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
 | knowledge/design-principles.md | ARCHITECTURE.md 设计哲学章节 + CONTRIBUTING.md §1（元原则引用） |
-| knowledge/a2a-communication.md | ARCHITECTURE.md 通信协议章节 + dispatcher/state-machine.md（前瞻标注） |
+| compass/knowledge/a2a-communication.md | ARCHITECTURE.md 通信协议章节 + loom/dispatcher/state-machine.md（前瞻标注） |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
 | CONTRIBUTING.md §7 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md（入口索引中的断点续传检查指令）|
-| tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ .gemini/settings.json（Gemini 注册）+ knowledge/host-reliability.md（防线文档）+ references/hook-standards.md §1（不变量清单）|
-| tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
-| references/hook-standards.md | tools/redcap-layerA-session-end.sh（实现必须满足§1不变量）+ knowledge/host-reliability.md §3（宿主覆盖率）|
-| references/communication-protocol.md §2 | SKILL.md §5.3 + dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + ARCHITECTURE.md 通信协议节 |
-| tools/redcap-check-state.sh | tools/redcap-on-qa-pass.sh（集成调用）|
-| 涉及 §3.1 触发类型的任何变更 | test-reports/pending-validations.md（登记待验证条目）|
-| test-reports/benchmark-scenario.md | test-reports/pending-validations.md（验证矩阵变更可能影响待验证项的验证方法）|
-| test-reports/latest-e2e-report.md | test-reports/pending-validations.md（报告产出后消费待验证条目）+ knowledge/lessons.md（经验沉淀）|
-| tools/redcap-e2e-postcheck.sh | CONTRIBUTING.md §3.1 步骤⑧ + tools/redcap-on-stop-review.sh（E2E gate 集成）|
-| test-reports/e2e-session.yaml（新增/删除）| test-reports/latest-e2e-report.md + test-reports/pending-validations.md + knowledge/lessons.md |
+| tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ .gemini/settings.json（Gemini 注册）+ compass/knowledge/host-reliability.md（防线文档）+ references/hook-standards.md §1（不变量清单）|
+| loom/tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ compass/knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
+| references/hook-standards.md | loom/tools/redcap-layerA-session-end.sh（实现必须满足§1不变量）+ compass/knowledge/host-reliability.md §3（宿主覆盖率）|
+| references/communication-protocol.md §2 | SKILL.md §5.3 + loom/dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + ARCHITECTURE.md 通信协议节 |
+| compass/tools/redcap-check-state.sh | compass/tools/redcap-on-qa-pass.sh（集成调用）|
+| 涉及 §3.1 触发类型的任何变更 | loom/test-reports/pending-validations.md（登记待验证条目）|
+| loom/test-reports/benchmark-scenario.md | loom/test-reports/pending-validations.md（验证矩阵变更可能影响待验证项的验证方法）|
+| loom/test-reports/latest-e2e-report.md | loom/test-reports/pending-validations.md（报告产出后消费待验证条目）+ compass/knowledge/lessons.md（经验沉淀）|
+| loom/tools/redcap-e2e-postcheck.sh | CONTRIBUTING.md §3.1 步骤⑧ + compass/tools/redcap-on-stop-review.sh（E2E gate 集成）|
+| loom/test-reports/e2e-session.yaml（新增/删除）| loom/test-reports/latest-e2e-report.md + loom/test-reports/pending-validations.md + compass/knowledge/lessons.md |
 
 ## 7. Layer B 大型任务断点续传
 

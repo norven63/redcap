@@ -36,17 +36,17 @@ fi
 
 # 使用 readlink 解析真实路径（兼容符号链接）
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")" )" && pwd)"
-REDCAP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # 路径归一化（移除末尾斜杠）
 CWD_NORM=$(echo "$CWD" | sed 's:/*$::')
-REDCAP_DIR_NORM=$(echo "$REDCAP_DIR" | sed 's:/*$::')
+REDCAP_DIR_NORM=$(echo "$REDCAP_ROOT" | sed 's:/*$::')
 
 # 检查是否为 RedCap 自身开发 (Layer B)
 if [[ "$CWD_NORM" == "$REDCAP_DIR_NORM" ]]; then
     echo "[redcap-hook-proxy] 检测到 Layer B (RedCap 自身) 任务，启动框架审计..." >&2
     # 调用框架评审脚本
-    B_REVIEW_SCRIPT="$REDCAP_DIR/tools/redcap-on-stop-review.sh"
+    B_REVIEW_SCRIPT="$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh"
     if [[ -x "$B_REVIEW_SCRIPT" ]]; then
         # 注意：Layer B 脚本内部也需要消费 stdin，我们已经消费过了，
         # 所以通过 echo 重新传进去（虽然目前的脚本只是 cat > /dev/null）
@@ -57,7 +57,7 @@ else
     # 依据：是否存在 开发手册/.workflow/state.yaml
     if [[ -f "$CWD/开发手册/.workflow/state.yaml" ]]; then
         echo "[redcap-hook-proxy] 检测到 Layer A (用户项目) 任务，启动项目审计..." >&2
-        A_STOP_SCRIPT="$REDCAP_DIR/tools/redcap-layerA-stop.sh"
+        A_STOP_SCRIPT="$REDCAP_ROOT/loom/tools/redcap-layerA-stop.sh"
         if [[ -x "$A_STOP_SCRIPT" ]]; then
             echo "$INPUT" | bash "$A_STOP_SCRIPT" 2>&1 || true
         fi

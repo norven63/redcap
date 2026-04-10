@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash tools/redcap-claude-hook-init.sh"
+            "command": "bash compass/tools/redcap-claude-hook-init.sh"
           }
         ]
       }
@@ -17,11 +17,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash tools/redcap-on-stop-review.sh"
+            "command": "bash compass/tools/redcap-on-stop-review.sh"
           },
           {
             "type": "command",
-            "command": "bash tools/redcap-claude-hook-stop.sh"
+            "command": "bash compass/tools/redcap-claude-hook-stop.sh"
           }
         ]
       }

@@ -22,14 +22,14 @@ EVENT="${1:-}"
 JSON=$(cat)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HEAD_FILE="/tmp/redcap-kimi-initial-head"
 
 # ── SessionStart: 捕获初始 HEAD ──────────────────────────
 
 handle_session_start() {
     local head
-    head=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null) || return 0
+    head=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null) || return 0
     echo "$head" > "$HEAD_FILE"
 }
 
@@ -45,7 +45,7 @@ handle_session_end() {
 
     # 检查是否有新 commit
     local current_head
-    current_head=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null) || return 0
+    current_head=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null) || return 0
 
     if [[ "$initial_head" == "$current_head" ]]; then
         # 无变更，无需通知
@@ -59,7 +59,7 @@ handle_session_end() {
     fi
 
     local commit_log
-    commit_log=$(git -C "$PROJECT_DIR" --no-pager log --oneline "$initial_head..HEAD" 2>/dev/null || echo "(无法获取)")
+    commit_log=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$initial_head..HEAD" 2>/dev/null || echo "(无法获取)")
 
     python3 "$notifier" notify \
         "RedCap 框架变更完成 (Kimi Hook 自动通知)\n\nCommits:\n$commit_log" \

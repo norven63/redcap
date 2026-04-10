@@ -28,7 +28,7 @@
 - [ ] 已读取 `开发手册/pm/需求文档.md`（需求全景）
 - [ ] 已读取 `开发手册/architect/技术框架设计.md`（架构决策 + 跨步约定）
 - [ ] 已读取 `开发手册/shared/开发进度日志.md`（各步骤开发/测试记录）
-- [ ] 已读取 [《安全铁律》](../../references/security-rules.md) 与 [《代码规范》](../../references/code-standards.md)
+- [ ] 已读取 [《安全铁律》](../../../references/security-rules.md) 与 [《代码规范》](../../../references/code-standards.md)
 - [ ] 已读取 `开发手册/shared/lessons-learned.md`（项目经验教训）
 
 ---

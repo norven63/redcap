@@ -76,7 +76,7 @@ session_registry 是 Council 多轮复用 session 和 Collect 追问的基础，
 **Dispatch 前置校验（必须通过才能继续）**：
 
 ```bash
-bash tools/prism-dispatch-check.sh \
+bash prism/tools/prism-dispatch-check.sh \
   --mode <模式> \
   --agents "model1:role1,model2:role2,..." \
   [--problem <问题包文件>]
@@ -183,7 +183,7 @@ escalate      ：发现 PM Gate 已锁定需求的边界问题 → 【硬终态�
    （理由：复活协议必读 lessons.md，这是棱镜结论进入"长期记忆"的唯一通道）
 
 4. Archive 校验（必须通过才能 commit）：
-   bash tools/prism-archive-check.sh --report prism/reports/<报告文件>
+   bash prism/tools/prism-archive-check.sh --report prism/reports/<报告文件>
    # 退出码 1 = 校验失败，禁止 commit
 
 5. git add + commit（prism/reports/ 全部 git 追踪，作为架构演进的审计轨迹）

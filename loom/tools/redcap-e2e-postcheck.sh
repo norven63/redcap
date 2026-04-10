@@ -28,12 +28,12 @@ get_mtime() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-SESSION_FILE="$PROJECT_DIR/test-reports/e2e-session.yaml"
-REPORT_FILE="$PROJECT_DIR/test-reports/latest-e2e-report.md"
-PENDING_FILE="$PROJECT_DIR/test-reports/pending-validations.md"
-LESSONS_FILE="$PROJECT_DIR/knowledge/lessons.md"
+SESSION_FILE="$REDCAP_ROOT/loom/test-reports/e2e-session.yaml"
+REPORT_FILE="$REDCAP_ROOT/loom/test-reports/latest-e2e-report.md"
+PENDING_FILE="$REDCAP_ROOT/loom/test-reports/pending-validations.md"
+LESSONS_FILE="$REDCAP_ROOT/compass/knowledge/lessons.md"
 
 FAIL_COUNT=0
 WARN_COUNT=0
@@ -173,7 +173,7 @@ echo ""
 # ── 检查 5: commit message 是否包含 E2E 结论 ──
 
 echo "[5/5] Commit E2E 结论"
-RECENT_COMMITS=$(git -C "$PROJECT_DIR" --no-pager log --oneline -10 2>/dev/null || echo "")
+RECENT_COMMITS=$(git -C "$REDCAP_ROOT" --no-pager log --oneline -10 2>/dev/null || echo "")
 E2E_COMMIT=$(echo "$RECENT_COMMITS" | grep -i 'E2E(' | head -1)
 
 if [[ -n "$E2E_COMMIT" ]]; then

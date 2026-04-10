@@ -1,9 +1,10 @@
 .DS_Store
 prompt.txt
 .env.local
-feishu-config.json
+compass/tools/feishu-config.json
 __pycache__/
 *.pyc
 docs*/
 round-table/
-.dev-task.mdprism/reports/.session-registry.yaml
+.dev-task.md
+prism/reports/.session-registry.yaml

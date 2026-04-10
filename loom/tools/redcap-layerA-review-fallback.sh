@@ -126,8 +126,8 @@ if echo "$REVIEW_OUTPUT" | grep -q "REVIEW_RESULT: FAIL"; then
 
     # 飞书告警（如果 feishu-notifier 可用）
     SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
-    REDCAP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-    NOTIFIER="$REDCAP_DIR/tools/feishu-notifier.py"
+    REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    NOTIFIER="$REDCAP_ROOT/compass/tools/feishu-notifier.py"
     if [[ -f "$NOTIFIER" ]]; then
         python3 "$NOTIFIER" notify "⚠️ RedCap Layer A Review 兜底 FAIL\n项目: ${PROJECT_NAME}\n\n兜底 Review 发现 P0 问题，正常 Review 步骤可能被跳过。\n详见: ${LOG_FILE}" --project "$PROJECT_NAME" 2>/dev/null || true
     fi

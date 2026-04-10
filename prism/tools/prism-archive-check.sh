@@ -11,10 +11,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$SCRIPT_DIR/.."
-LESSONS="$ROOT/knowledge/lessons.md"
-INDEX="$ROOT/prism/reports/index.yaml"
-SESSION_REGISTRY="$ROOT/prism/reports/.session-registry.yaml"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LESSONS="$REDCAP_ROOT/compass/knowledge/lessons.md"
+INDEX="$REDCAP_ROOT/prism/reports/index.yaml"
+SESSION_REGISTRY="$REDCAP_ROOT/prism/reports/.session-registry.yaml"
 
 REPORT_FILE=""
 

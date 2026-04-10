@@ -55,7 +55,7 @@ description: >-
 > 路由决策 = **动态可用性**（嗅探脚本）× **静态适配度经验**（能力矩阵）。
 > 不硬编码优先级——每次会话启动时嗅探本地实际 Agent 部署，动态计算。
 
-**嗅探脚本**：`bash tools/redcap-detect-agents.sh` → 输出 `.workflow/agent-registry.yaml`
+**嗅探脚本**：`bash compass/tools/redcap-detect-agents.sh` → 输出 `.workflow/agent-registry.yaml`
 **能力矩阵**：[`knowledge/model-capability-matrix.yaml`](knowledge/model-capability-matrix.yaml)
 **路由算法**：见 [《Agent适配器》§1.3](dispatcher/agent-adapters.md)
 
@@ -151,7 +151,7 @@ Agent 每次执行完毕将 `__redcap_status` JSON 写入 outbox 文件（`{role
 
 2. **经验回顾**：读取 `knowledge/lessons.md`，检查本项目是否涉及已知陷阱（如 Agent 调用方式、路由策略等）。若命中，在当步骤的 Prompt 中注入相关 Lesson 作为防护提示。
 
-2.5. **上次收尾审计**（S1/S2 场景）：若 `state.yaml` 中 `pending_actions` 非空，说明上次会话遗漏了收尾动作 → **立即补执行**所有 pending_actions → 清空。此机制利用新会话 attention 最强的时机修复遗漏（详见 [《宿主可靠性报告》§3.4](knowledge/host-reliability.md)）。
+2.5. **上次收尾审计**（S1/S2 场景）：若 `state.yaml` 中 `pending_actions` 非空，说明上次会话遗漏了收尾动作 → **立即补执行**所有 pending_actions → 清空。此机制利用新会话 attention 最强的时机修复遗漏（详见 [《宿主可靠性报告》§3.4](compass/knowledge/host-reliability.md)）。
 
 3. **初始化 `.workflow/`**（S0/S4 场景）：
    ```yaml
@@ -177,7 +177,7 @@ Agent 每次执行完毕将 `__redcap_status` JSON 写入 outbox 文件（`{role
 
 3.5. **Agent 嗅探**（所有场景）：
    ```bash
-   bash tools/redcap-detect-agents.sh "$dev_manual_dir/.workflow/agent-registry.yaml"
+   bash compass/tools/redcap-detect-agents.sh "$dev_manual_dir/.workflow/agent-registry.yaml"
    ```
    脚本自动检测本地已安装的 Agent CLI 及其底层模型，结果缓存到 `agent-registry.yaml`。
    若 registry 已存在且配置文件未变化，脚本秒级跳过（轻检测）。
@@ -312,7 +312,7 @@ Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
 **两层降级**：优先 **Model 降级**（同 CLI 换 Model，参数体系不变、成本最低），其次 **CLI 降级**（换不同 CLI）。降级目标 Model 必须满足角色最低能力门槛（定义在 `model-capability-matrix.yaml` 的 `role_minimum_thresholds`）。完整流程详见 [《Agent适配器》§6.3](dispatcher/agent-adapters.md)。
 
 **新步骤自动重置**：每个新步骤开始时，重新执行路由算法（重读 registry + 能力矩阵），失败计数归零。
-**Agent 失败时重检**：`bash tools/redcap-detect-agents.sh --agent <name>` 重新嗅探该 Agent 的可用性和模型。
+**Agent 失败时重检**：`bash compass/tools/redcap-detect-agents.sh --agent <name>` 重新嗅探该 Agent 的可用性和模型。
 **用户指令重置**：用户告知某 Agent 已恢复时，立即重置该 Agent 的健康状态。
 **所有 Agent 均不可用**：暂停流程，向用户提供降级选项（详见 [《Agent适配器》§6.5](dispatcher/agent-adapters.md)）。
 
@@ -404,9 +404,9 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 
 | Hook | 触发时机 | 动作 |
 |------|---------|------|
-| `on_QA_PASS` | QA 返回 completed 且校验通过 | **执行脚本**：`bash tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]`（封装 git commit + lesson 检查，按[《Commit 规范》](references/commit-standards.md)格式） |
+| `on_QA_PASS` | QA 返回 completed 且校验通过 | **执行脚本**：`bash compass/tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]`（封装 git commit + lesson 检查，按[《Commit 规范》](references/commit-standards.md)格式） |
 | `on_need_revision` | 任意角色返回 need_revision | ① 检查 `lesson` → 写入经验（§5.8） |
-| `on_ALL_DONE` | 流程结束 | **执行脚本**：`bash tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>`（封装清理 + 摘要 + 飞书通知，详见 §5.9/§5.11） |
+| `on_ALL_DONE` | 流程结束 | **执行脚本**：`bash compass/tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>`（封装清理 + 摘要 + 飞书通知，详见 §5.9/§5.11） |
 | `on_PAUSED` | 进入 PAUSED 状态（need_user 或 升级） | ① 飞书 ask（§5.11）：前台阻塞推送问题并等待回复；若存在 `feishu_record_id` 则改用 resume |
 | `on_ALL_AGENT_FAIL` | 所有 Agent 均不可用 | ① 飞书 ask（§5.11）：推送降级确认请求，前台阻塞等待 |
 | `on_QA_FAIL_MAX_RETRY` | 同步骤 QA 失败超过 3 次 | ① 飞书 ask（§5.11）：推送循环失败警报，前台阻塞等待 |
@@ -414,36 +414,36 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 **执行原则**：
 - hooks 内的动作按序号顺序执行，任一失败不阻塞后续（记录警告即可）
 - hooks 不改变状态机转移结果，只附加副作用
-- **脚本封装**：`on_QA_PASS` 和 `on_ALL_DONE` 的多步动作已封装为单一 shell 脚本（`tools/redcap-on-qa-pass.sh`、`tools/redcap-on-complete.sh`），Dispatcher 只需调用一个脚本即可。这将 LLM 的记忆负担从「记住 N 个步骤的细节」降低为「调一个脚本」，显著提高长对话中的执行可靠性（详见 [《宿主可靠性报告》](knowledge/host-reliability.md) L-12）
+- **脚本封装**：`on_QA_PASS` 和 `on_ALL_DONE` 的多步动作已封装为单一 shell 脚本（`compass/tools/redcap-on-qa-pass.sh`、`compass/tools/redcap-on-complete.sh`），Dispatcher 只需调用一个脚本即可。这将 LLM 的记忆负担从「记住 N 个步骤的细节」降低为「调一个脚本」，显著提高长对话中的执行可靠性（详见 [《宿主可靠性报告》](compass/knowledge/host-reliability.md) L-12）
 - `on_PAUSED` 和 `on_ALL_AGENT_FAIL` 中的飞书 ask/resume 为**前台阻塞式**：Dispatcher 以 `isBackground=false, timeout=0` 执行脚本，脚本退出后 Dispatcher 自动获得回复并恢复流程
-- 飞书通知类 hook（on_PAUSED / on_ALL_AGENT_FAIL / on_QA_FAIL_MAX_RETRY）均为可选：当本地未配置 `feishu-config.json` 时自动跳过，不影响流程
+- 飞书通知类 hook（on_PAUSED / on_ALL_AGENT_FAIL / on_QA_FAIL_MAX_RETRY）均为可选：当本地未配置 `compass/tools/feishu-config.json` 时自动跳过，不影响流程
 
 ### 5.11 飞书通知集成
 
-通过 `tools/feishu-notifier.py` 实现人机协作通知，让用户在飞书端即时知晓流程状态并可远程响应。
+通过 `compass/tools/feishu-notifier.py` 实现人机协作通知，让用户在飞书端即时知晓流程状态并可远程响应。
 
-**前置条件**：项目根目录存在 `feishu-config.json`（本地配置，已在 .gitignore 中排除）。若不存在或 `notify_enabled=false`，所有飞书通知自动跳过，不影响流程。
+**前置条件**：项目根目录存在 `compass/tools/feishu-config.json`（本地配置，已在 .gitignore 中排除）。若不存在或 `notify_enabled=false`，所有飞书通知自动跳过，不影响流程。
 
 **CLI 接口**：
 
 ```bash
 # 首次使用 — 自动创建多维表格 + 字段，更新配置
-python3 tools/feishu-notifier.py setup
+python3 compass/tools/feishu-notifier.py setup
 
 # 非阻塞通知（on_ALL_DONE 等）
-python3 tools/feishu-notifier.py notify "消息内容" --project "项目名"
+python3 compass/tools/feishu-notifier.py notify "消息内容" --project "项目名"
 
 # 阻塞式提问（on_PAUSED / on_ALL_AGENT_FAIL，前台阻塞等待用户在多维表格中回复）
-python3 tools/feishu-notifier.py ask "问题内容" --project "项目名" --fsm-state "PAUSED"
+python3 compass/tools/feishu-notifier.py ask "问题内容" --project "项目名" --fsm-state "PAUSED"
 # stderr 输出 FEISHU_RECORD_ID=xxx（Dispatcher 须写入 state.yaml）
 # stdout 输出用户回复内容，或 TIMEOUT/SKIP
 
 # 恢复轮询（Agent 中断后重启，继续等待已有记录的回复）
-python3 tools/feishu-notifier.py resume <record_id>
+python3 compass/tools/feishu-notifier.py resume <record_id>
 # stdout 输出用户回复内容，或 TIMEOUT
 
 # 阻塞式确认（降级授权等场景）
-python3 tools/feishu-notifier.py confirm "确认内容" --timeout 120
+python3 compass/tools/feishu-notifier.py confirm "确认内容" --timeout 120
 # stdout 输出 CONFIRMED 或 CANCELLED
 ```
 
@@ -508,7 +508,7 @@ Dispatcher 级的 reload-rules 只保护 Dispatcher 自身。子 Agent 在执行
 # state.yaml 中追加字段 — 脚本封装版
 pending_actions:
   - action: "run_script"
-    command: "bash tools/redcap-on-qa-pass.sh {{project_dir}} feat 支付 接入微信支付回调"
+    command: "bash compass/tools/redcap-on-qa-pass.sh {{project_dir}} feat 支付 接入微信支付回调"
   - action: "check_lesson"
     rule_file: "knowledge/lessons.md"
 ```
@@ -524,8 +524,8 @@ pending_actions:
 
 | 转移目标状态 / 事件 | 自动填充的 pending_actions |
 |-------------------|---------------------------|
-| `QA_PASS` | `run_script`（cmd: `bash tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <msg>`） |
-| `ALL_DONE` | `run_script`（cmd: `bash tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>`） |
+| `QA_PASS` | `run_script`（cmd: `bash compass/tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <msg>`） |
+| `ALL_DONE` | `run_script`（cmd: `bash compass/tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>`） |
 | `PAUSED` | `feishu_ask`（rule: §5.11） |
 | event=`need_revision` | `check_lesson`（rule: lessons.md） |
 | `ALL_AGENT_FAIL` | `feishu_ask`（rule: §5.11） |

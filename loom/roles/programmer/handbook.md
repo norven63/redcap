@@ -18,7 +18,7 @@
   - **C 维护轻量**：沿用既有「模块设计文档」或约定范围，无需本轮架构师产出
 - [ ] 已读取 `开发手册/architect/技术框架设计.md`：整体架构、**跨步技术约定**、**分步设计索引**
 - [ ] 已读取**当前步模块设计正文**（路径以《开发进度日志》当前步「模块设计文档」为权威）
-- [ ] 已读取 [《安全铁律》](../../references/security-rules.md) 与 [《代码规范》](../../references/code-standards.md)
+- [ ] 已读取 [《安全铁律》](../../../references/security-rules.md) 与 [《代码规范》](../../../references/code-standards.md)
 
 ---
 
@@ -39,7 +39,7 @@
 
 **开发过程中的必须动作**：
 
-- [ ] 工程安全与配置须符合 [《安全铁律》](../../references/security-rules.md)（含密钥不入库、`.gitignore`、`.env.example`、环境变量等）
+- [ ] 工程安全与配置须符合 [《安全铁律》](../../../references/security-rules.md)（含密钥不入库、`.gitignore`、`.env.example`、环境变量等）
 - [ ] 涉及 API 接口变更时，同步更新 `开发手册/shared/API接口文档.md`
 
 ---

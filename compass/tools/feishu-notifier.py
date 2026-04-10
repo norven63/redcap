@@ -42,7 +42,7 @@ warnings.filterwarnings("ignore", message=".*urllib3.*OpenSSL.*")
 
 # ── 配置加载 ──────────────────────────────────────────────
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "feishu-config.json"
+CONFIG_PATH = Path(__file__).resolve().parent / "feishu-config.json"
 
 
 def load_config() -> Optional[dict]:

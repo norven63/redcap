@@ -18,7 +18,7 @@ set -u
 cat > /dev/null  # 消费 stdin
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HEAD_FILE="/tmp/redcap-claude-initial-head"
 NOTIFIED_FILE="/tmp/redcap-claude-last-notified-head"
 
@@ -33,19 +33,19 @@ else
     exit 0
 fi
 
-CURRENT_HEAD=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null) || exit 0
+CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null) || exit 0
 
 if [[ "$BASELINE" == "$CURRENT_HEAD" ]]; then
     exit 0
 fi
 
 # 有新 commit → 飞书通知
-NOTIFIER="$PROJECT_DIR/tools/feishu-notifier.py"
+NOTIFIER="$SCRIPT_DIR/feishu-notifier.py"
 if [[ ! -f "$NOTIFIER" ]]; then
     exit 0
 fi
 
-COMMIT_LOG=$(git -C "$PROJECT_DIR" --no-pager log --oneline "$BASELINE..HEAD" 2>/dev/null || echo "(无法获取)")
+COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..HEAD" 2>/dev/null || echo "(无法获取)")
 
 python3 "$NOTIFIER" notify \
     "RedCap 框架变更完成 (Claude Hook 自动通知)\n\nCommits:\n$COMMIT_LOG" \
