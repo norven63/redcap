@@ -402,3 +402,21 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04
+
+### L-37: git mv 时目标目录已存在会导致内容嵌套而非覆盖
+- **场景**：三体重组时，先 `mkdir -p compass/knowledge`，再 `git mv knowledge compass/knowledge`。期望将 knowledge/ 重命名为 compass/knowledge/，实际上 git mv 语义是"移入目标目录"——目标目录存在时，knowledge/ 整体落入 compass/knowledge/knowledge/，造成双层嵌套
+- **根因**：git mv 与 mv 一样：当目标路径是已存在目录时，源目录会被放入该目录下，而非替换它。`mkdir -p` 预创建了目标目录，触发了此行为
+- **修复方式**：`git mv compass/knowledge/knowledge/* compass/knowledge/ && git rm -r compass/knowledge/knowledge`
+- **经验规则**：git mv src/ dest/ 前，不要预先 mkdir dest/。如果 dest/ 已存在，应先检查：① 不存在则直接 git mv；② 已存在则用 git mv src/* dest/（移动内容而非目录本身）
+- **来源**：2026-05 三体重组，compass/knowledge 嵌套 bug 复盘
+- **影响度**：medium
+- **复现次数**：1
+- **最后命中**：2026-05
+
+### L-38: 三体架构脚本路径规则——REDCAP_ROOT = SCRIPT_DIR/../..
+- **场景**：三体重组后，所有脚本从 tools/ 迁移到 loom/tools/ 或 compass/tools/，深度增加一层。原有 `REDCAP_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)` 计算出的是 loom/ 或 compass/ 的父级——即 redcap 根目录，并非预期的 loom/ 或 compass/
+- **经验规则**：迁移后统一规则：`REDCAP_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)`，变量名统一为 REDCAP_ROOT（非 SCRIPT_ROOT/PROJECT_ROOT）。跨层引用格式：`$REDCAP_ROOT/loom/test-reports/`，`$REDCAP_ROOT/compass/tools/`，不使用相对路径 ../../
+- **来源**：2026-05 三体重组，script-path-fixer agent 修复 13 个脚本后总结
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-05
