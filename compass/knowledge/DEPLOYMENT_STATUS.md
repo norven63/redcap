@@ -2,7 +2,8 @@
 
 > **单一来源**：本文件记录各宿主 Agent 工具对 RedCap 红线 hook 节点的实际部署状态。
 > **更新时机**：每次新增或变更 hook 部署后，必须同步更新本文件。
-> **数据来源**：Q3 分析结论（2026-04）+ `knowledge/host-reliability.md` + 各 `hooks-*.md` 详情文件。
+> **数据来源**：Q3 分析结论（2026-04）+ `compass/knowledge/host-reliability.md` + 各 `hooks-*.md` 详情文件。
+> **架构里程碑**：2026-05 三体重组 — 脚本迁移到 `loom/tools/`（Layer A）和 `compass/tools/`（Layer B），hook 注册路径同步更新。
 
 ---
 
@@ -45,8 +46,8 @@
 
 | 工具 | 部署文件 | 状态 | 备注 |
 |------|----------|------|------|
-| Claude Code | `.claude/settings.json`（项目级） | ✅ 已部署 | InstructionsLoaded（初始化）+ Stop（架构评审 + 飞书） |
-| Gemini CLI | `.gemini/settings.json`（项目级） | ✅ 部分部署 | SessionEnd → `redcap-layerA-session-end.sh`（通用）；独立架构评审未覆盖 |
+| Claude Code | `.claude/settings.json`（项目级） | ✅ 已部署 | InstructionsLoaded → `compass/tools/redcap-claude-hook-init.sh`；Stop → `compass/tools/redcap-claude-hook-stop.sh`（飞书）+ `compass/tools/redcap-on-stop-review.sh`（架构评审） |
+| Gemini CLI | `.gemini/settings.json`（项目级） | ✅ 部分部署 | SessionEnd → `loom/tools/redcap-layerA-session-end.sh`（通用）；独立架构评审未覆盖 |
 | 其他工具 | N/A | ➖ | Layer B 开发工具仅 Claude Code / Gemini CLI 常用 |
 
 ---
