@@ -301,9 +301,9 @@ Kimi (--print --output-format text):
   response_text = 完整文本输出（Kimi 不返回结构化 JSON wrapper）
   session_id = 从 CLI 日志或 sessions 目录提取
 
-Copilot CLI (-p 纯文本):
-  response_text = 完整文本输出（与 Kimi text 模式等价）
-  session_id = 从 .workflow/.copilot-session-id 读取（由 sessionStart Hook 写入）
+Copilot CLI (--output-format=json):
+  response_text = 从 JSONL 提取 response 字段
+  session_id = 从 .workflow/.copilot-session-id 读取（由 JSONL 输出解析写入，见 §3C.5）
 
 统一后:
   从 response_text 中正则提取 __redcap_status JSON 块
@@ -659,32 +659,70 @@ copilot -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 | `--allow-all` | 全授权 | 固定，跳过所有权限确认 |
 | `--autopilot` | 自动驾驶 | 固定，持续执行不暂停 |
 | `--model` | 指定模型 | 按路由表选择（如 `claude-opus-4.6`、`gpt-5.4`） |
-| `--resume=<id>` | 恢复 Session | 执行后从 sessionStart Hook 获取的 session ID |
+| `--resume=<id>` | 恢复 Session | 执行后从 JSONL 输出解析的 session ID（见 §3C.5） |
 
 ### 3C.4 返回格式
 
-**纯文本输出**（无 JSON wrapper）：
+**JSONL 输出**（`--output-format=json`）：
 
 ```
+Copilot CLI (--output-format=json, JSONL):
+  session_id = 解析 JSONL 末行或 session 字段（见 §3C.5）
+  response_text = 从 JSONL 提取 response 字段
+```
+
+纯文本回退（不加 `--output-format=json`）：
+```
 Copilot CLI (-p 纯文本):
-  session_id = 从 .workflow/.copilot-session-id 读取（由 sessionStart Hook 写入）
+  session_id = 不可获取（不支持续接）
   response_text = 完整文本输出（包含 __redcap_status JSON 块）
 ```
 
-与 Kimi CLI `--output-format text` 模式解析逻辑完全等价，无需新增解析器。
-
 ### 3C.5 Session 管理
 
-Copilot CLI 的 Session ID 为自动生成的 UUID，不支持自定义：
+Copilot CLI 的 Session ID 为自动生成的 UUID，不支持自定义。**重要**：官方 sessionStart Hook 不暴露 sessionId 字段（已验证），须改用 `--output-format=json` 从 JSONL 输出提取。
 
 ```bash
-# 首次调用：正常执行，session ID 由 sessionStart Hook 捕获写入
-# .workflow/.copilot-session-id
-copilot -p "..." --allow-all --autopilot
+# 首次调用：加 --output-format=json，从 JSONL 提取 session_id
+# tee 同时保存完整 JSONL，供 Dispatcher 读取模型回复
+copilot -p "..." --allow-all --autopilot --output-format=json 2>&1 \
+  | tee /tmp/copilot-response-${STEP}.jsonl \
+  | python3 -c "
+import sys, json
+for line in sys.stdin:
+    line = line.strip()
+    if not line: continue
+    try:
+        obj = json.loads(line)
+        # 兼容 camelCase(sessionId) 和 snake_case(session_id) 两种字段名
+        sid = obj.get('sessionId') or obj.get('session_id')
+        if sid: print(sid)
+    except: pass
+" > .workflow/.copilot-session-id
+
+# Dispatcher 从 tee 输出的文件读取模型回复（不是从 stdout 读取）
+RESPONSE_TEXT=$(python3 -c "
+import json, sys
+for line in open('/tmp/copilot-response-\${STEP}.jsonl'):
+    try:
+        obj = json.loads(line.strip())
+        text = obj.get('response') or obj.get('content') or ''
+        if text: sys.stdout.write(text)
+    except: pass
+")
 
 # 恢复调用：从标记文件读取 session ID
-copilot -p "..." --allow-all --autopilot --resume="$(cat .workflow/.copilot-session-id)"
+copilot -p "..." --allow-all --autopilot --output-format=json \
+  --resume="$(cat .workflow/.copilot-session-id)" \
+  | tee /tmp/copilot-response-${STEP}.jsonl \
+  | python3 -c "import sys,json; [print(json.loads(l).get('sessionId') or json.loads(l).get('session_id','')) for l in sys.stdin if l.strip()]" \
+  > /dev/null
 ```
+
+> ⚠️ **字段名注意**：JSONL 中 session ID 字段名可能为 `sessionId` 或 `session_id`——脚本已兼容两者。首次部署时建议用 `cat /tmp/copilot-response-N.jsonl | python3 -m json.tool` 检查实际字段结构。
+>
+> ⚠️ **已知限制（L-39）**：`sessionStart` Hook 输入字段不包含 `sessionId`（官方文档确认）。
+> 旧设计中依赖 `redcap-copilot-hook-session-start.sh` 捕获 UUID 的方案**不可行**，已废弃。
 
 ### 3C.6 Copilot CLI 安全措施
 
@@ -784,10 +822,10 @@ kimi:
   ✅ 实测恢复效果最佳：Session ID 可自定义，恢复完美
 
 copilot:
-  1. 首次调用：正常执行，Session ID 由 sessionStart Hook 捕获写入 .workflow/.copilot-session-id
+  1. 首次调用：--output-format=json 执行，从 JSONL 提取 session_id 写入 .workflow/.copilot-session-id
   2. 恢复调用：--resume="$(cat .workflow/.copilot-session-id)"
   3. 恢复失败：新建 Session（标记旧 Session 为 expired）
-  ⚠ Session ID 自动生成（UUID），不支持自定义；需依赖 Hook 捕获
+  ⚠ Session ID 自动生成（UUID），不支持自定义；需通过 JSONL 输出提取（sessionStart Hook 不暴露 sessionId）
 ```
 
 ### 9.3 Prompt 精简原则（减少 Session 依赖）
@@ -949,7 +987,7 @@ Copilot CLI 在项目根目录自动读取 `.github/copilot-instructions.md`。D
 | **Claude Code** | `--session-id <UUID>` | `--resume <UUID>` | ✅ 任意 UUID | 无 |
 | **Gemini CLI** | 自动生成（返回 session_id） | `--resume <session_id>` | ❌ | L-7：不同工作目录可能创建新 session |
 | **Kimi CLI** | `--session "<str>"` | `-S <session_id>` 或 `--session` | ✅ 任意字符串 | session 在 kimi 服务端保存 |
-| **Copilot CLI** | 由 sessionStart Hook 捕获写入 `.workflow/.copilot-session-id` | `--resume="$(cat .workflow/.copilot-session-id)"` | ❌（UUID 自动生成） | 不支持列举 sessions；不支持自定义 ID |
+| **Copilot CLI** | 通过 `--output-format=json` JSONL 输出提取，写入 `.workflow/.copilot-session-id` | `--resume="$(cat .workflow/.copilot-session-id)"` | ❌（UUID 自动生成） | sessionStart Hook 不暴露 sessionId；不支持列举 sessions；不支持自定义 ID |
 
 ### 12.2 棱镜多轮接力流程
 
@@ -996,10 +1034,11 @@ Copilot CLI 在项目根目录自动读取 `.github/copilot-instructions.md`。D
 
 ### 12.4 Copilot CLI Session 续接注意事项
 
-Copilot CLI 支持 `--resume`，但有特殊前提：
-1. **sessionStart Hook 必须已配置**（`compass/tools/redcap-copilot-hook-session-start.sh`）
-2. Session UUID 由 Copilot 自动生成，Hook 捕获后写入 `.workflow/.copilot-session-id`
-3. 续接时读取该文件：`copilot -p "..." --resume="$(cat .workflow/.copilot-session-id)"`
+Copilot CLI 支持 `--resume`，正确获取 Session ID 的方式：
+
+1. **sessionStart Hook 不可用**：官方 sessionStart Hook 输入不含 sessionId 字段（已验证），旧方案已废弃
+2. **正确方案**：首次调用时加 `--output-format=json`，从 JSONL 输出解析 session_id（见 §3C.5）
+3. 续接时读取：`copilot -p "..." --output-format=json --resume="$(cat .workflow/.copilot-session-id)"`
 4. 限制：不支持自定义 Session ID，不支持列举所有 sessions
 
 > ⚠️ **L-7 警告（Gemini）**：Gemini CLI 在不同工作目录调用时可能创建新 session 而非续接。

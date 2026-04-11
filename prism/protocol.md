@@ -159,6 +159,32 @@ Agent 响应后，检查输出是否符合 Frame 锁定的 Schema。若不符合
 
 **Quorum 分母定义**：Frame 阶段锁定的原始 Agent 数（含 ABSENT），不是实际响应数。3人组中1人ABSENT = 2/3响应 = quorum不达标，运行无效。
 
+**跨角色 Finding 去重规则（必须在 Synthesize 前执行）**：
+
+多个角色可能对同一问题产生语义重复的 finding。直接计票会导致"伪共识"（2票实为1个独立发现被两人转述），失去多视角的独立性价值。
+
+去重步骤：
+```
+1. 收集所有角色输出的 findings（按 finding.id 区分）
+2. 对每对 finding (A, B)，判断是否语义等价：
+   - 相同判定标准：指向同一文件/函数/协议步骤 AND 问题核心描述一致（措辞不同不影响）
+   - 不同判定标准：涉及不同文件 OR 同文件但根因不同（如 A 报 schema 缺字段，B 报 check 逻辑遗漏）
+
+3. 若语义等价：
+   a. 合并为单条 finding，保留最高 severity（取两者中更高级别）
+   b. 在 finding 的 area 字段末尾附注 [CROSS-VALIDATED by {role1}+{role2}]
+   c. 共识人数计票时该条目仍算作 1 票（不因为两个角色都报就变成 2 票）
+
+4. 若角色数 ≥3 且同一 finding 被 ≥3 角色独立报出（用不同措辞、不同角度）：
+   - 标注为 [MULTI-VALIDATED]，在 Synthesize 摘要中优先展示
+   - **仍须参与正常 Adjudicate 投票流程，不绕过共识门槛**（多角色重复观察是信号，不是共识授权）
+
+5. 去重后，在 Synthesize 摘要中注明：
+   "已去重：X 条 finding 来自跨角色交叉验证，Y 条为单一角色独立发现"
+```
+
+**反模式警告**：禁止将两个指向不同文件或不同根因的 finding"因措辞相似"而合并——这会掩盖真实覆盖面。疑似重复时宁可保留两条并标注"待人工确认是否同源"。
+
 **Synthesis Audit（必须执行）**：
 Synthesize 完成后，启动 1 个独立 Agent（与参与 Dispatch 的 Agent 不同实例）做"摘要忠实度审计"：
 ```
@@ -168,6 +194,7 @@ Synthesize 完成后，启动 1 个独立 Agent（与参与 Dispatch 的 Agent �
   ② 共识人数是否与原始输出一致
   ③ 是否有 BLOCKING 项被遗漏
   ④ 少数意见是否被合理保留
+  ⑤ 去重规则是否正确执行（[CROSS-VALIDATED] 标注是否准确，有无不同根因的 finding 被错误合并）
 输出：AUDIT_PASS（可进入 Adjudicate）或 AUDIT_FAIL + 具体偏差列表
 ```
 AUDIT_FAIL 时必须修正 Synthesize 结果再重新审计，不得跳过进入 Adjudicate。
