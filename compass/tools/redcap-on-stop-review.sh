@@ -24,7 +24,7 @@ cat > /dev/null  # 消费 stdin
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-HEAD_FILE="/tmp/redcap-claude-initial-head"
+HEAD_FILE="${REDCAP_BASELINE_HEAD_FILE:-/tmp/redcap-claude-initial-head}"
 REVIEW_RESULT_FILE="/tmp/redcap-stop-review-result"
 REVIEW_LOG_FILE="/tmp/redcap-stop-review-log.md"
 
@@ -63,10 +63,15 @@ if [[ -f "$E2E_SESSION_FILE" ]]; then
     fi
 fi
 
+EXPLORE_NOTES_CHECK="$SCRIPT_DIR/redcap-explore-notes-check.sh"
+if [[ -x "$EXPLORE_NOTES_CHECK" ]]; then
+    bash "$EXPLORE_NOTES_CHECK" 2>&1 || true
+fi
+
 if [[ "$BASELINE" == "$CURRENT_HEAD" ]]; then
     # 无变更，无需评审
     rm -f "$REVIEW_RESULT_FILE" "$REVIEW_LOG_FILE" 2>/dev/null
-    exit 0
+exit 0
 fi
 
 # ── 提取 Diff ──

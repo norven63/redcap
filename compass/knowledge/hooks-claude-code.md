@@ -102,10 +102,13 @@ Claude Code 支持 **24 种** hook 事件（截至 2026-04 官方文档）：
 {
   "hooks": {
     "InstructionsLoaded": [{
-      "hooks": [{ "type": "command", "command": "bash tools/redcap-claude-hook-init.sh" }]
+      "hooks": [{ "type": "command", "command": "bash compass/tools/redcap-claude-hook-init.sh" }]
     }],
     "Stop": [{
-      "hooks": [{ "type": "command", "command": "bash tools/redcap-claude-hook-stop.sh" }]
+      "hooks": [{ "type": "command", "command": "bash compass/tools/redcap-on-stop-review.sh" }]
+    }],
+    "SessionEnd": [{
+      "hooks": [{ "type": "command", "command": "bash loom/tools/redcap-layerA-session-end.sh claude" }]
     }]
   }
 }
@@ -113,8 +116,9 @@ Claude Code 支持 **24 种** hook 事件（截至 2026-04 官方文档）：
 
 | 脚本 | 触发事件 | 功能 |
 |------|---------|------|
-| `tools/redcap-claude-hook-init.sh` | InstructionsLoaded | 捕获初始 HEAD 到 `/tmp/redcap-claude-initial-head` |
-| `tools/redcap-claude-hook-stop.sh` | Stop | 检测新 commit → 飞书通知 |
+| `compass/tools/redcap-claude-hook-init.sh` | InstructionsLoaded | 复用统一 SessionStart 入口，捕获初始 HEAD |
+| `compass/tools/redcap-on-stop-review.sh` | Stop | 独立架构评审 + `explore-notes` 非阻塞提醒 |
+| `loom/tools/redcap-layerA-session-end.sh claude` | SessionEnd | 转入统一分发器，执行 Layer B 任务报告审计、飞书兜底与清理 |
 
 ### 3.2 Layer A（RedCap 开发用户项目）
 

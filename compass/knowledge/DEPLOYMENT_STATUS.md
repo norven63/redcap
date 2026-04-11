@@ -27,28 +27,29 @@
 | Kimi CLI | `~/.kimi/config.toml` + Dispatcher | ✅ 已部署 | Stop + SessionEnd 去重机制（⚠️ 双触发 bug 待修复，见 hooks-kimi-cli.md §4.3） |
 | Gemini CLI | `~/.gemini/settings.json` | ⏳ 未部署 | 能力已验证（v0.36.0），部署文档见 hooks-gemini-cli.md §3 |
 | VS Code Copilot | 无 | ⚠️ 不可用 | 无 onTaskComplete 等价事件，退守 Layer 1-3 |
-| Copilot CLI | `.github/hooks/`（仓库级） | ⏳ 待验证 | 能力待 L-8 独立验证，见 hooks-copilot-cli.md §2.2 |
+| Copilot CLI | `.github/hooks/*.json`（目标仓库级） | ⏳ 未部署 | Layer B 已在本仓库部署；Layer A 仍需为目标仓库生成安装模板 |
 
 ---
 
 ## Layer B — 开发 RedCap 自身
 
-> 部署位置：**项目级**配置文件（RedCap repo 内的 `.claude/settings.json`、`.gemini/settings.json`）
+> 部署位置：**项目级**配置文件（RedCap repo 内的 `.claude/settings.json`、`.gemini/settings.json`、`.github/hooks/*.json`）
 
-| 红线节点 | 保障机制 | Claude Code | Gemini CLI | 其他工具 |
-|----------|----------|------------|-----------|---------|
-| 独立架构评审（作者盲点防护） | Stop → `redcap-on-stop-review.sh` + 新 Agent | ✅ 已部署 | ⚠️ 部分（通用脚本，无架构评审） | ➖ 不适用 |
-| 飞书通知兜底（commit 后通知） | Stop → `redcap-claude-hook-stop.sh` | ✅ 已部署 | ✅ 已部署（通用脚本） | ➖ 不适用 |
-| 会话初始化（HEAD 捕获） | InstructionsLoaded → init 脚本 | ✅ 已部署 | ➖ 无等价事件 | ➖ 不适用 |
-| 临时文件清理 | SessionEnd Hook | ✅ 已部署 | ✅ 已部署 | ➖ 不适用 |
+| 红线节点 | 保障机制 | Claude Code | Gemini CLI | Copilot CLI |
+|----------|----------|------------|-----------|-------------|
+| 独立架构评审（作者盲点防护） | Claude: Stop → `redcap-on-stop-review.sh`；其他宿主: SessionEnd → 统一收尾链补跑 | ✅ 已部署 | ✅ 已部署 | ✅ 已部署 |
+| 飞书通知兜底（commit 后通知） | SessionEnd → `compass/tools/redcap-layerB-session-end.sh` | ✅ 已部署 | ✅ 已部署 | ✅ 已部署 |
+| 任务完成报告模板审计 | SessionEnd → `compass/tools/redcap-task-report-check.sh` | ✅ 已部署 | ✅ 已部署 | ✅ 已部署 |
+| 会话初始化（HEAD 捕获） | InstructionsLoaded / SessionStart → `compass/tools/redcap-layerB-session-start.sh` | ✅ 已部署 | ✅ 已部署 | ✅ 已部署 |
+| 临时文件清理 | SessionEnd Hook | ✅ 已部署 | ✅ 已部署 | ✅ 已部署 |
 
 ### Layer B 部署详情
 
 | 工具 | 部署文件 | 状态 | 备注 |
 |------|----------|------|------|
-| Claude Code | `.claude/settings.json`（项目级） | ✅ 已部署 | InstructionsLoaded → `compass/tools/redcap-claude-hook-init.sh`；Stop → `compass/tools/redcap-claude-hook-stop.sh`（飞书）+ `compass/tools/redcap-on-stop-review.sh`（架构评审） |
-| Gemini CLI | `.gemini/settings.json`（项目级） | ✅ 部分部署 | SessionEnd → `loom/tools/redcap-layerA-session-end.sh`（通用）；独立架构评审未覆盖 |
-| 其他工具 | N/A | ➖ | Layer B 开发工具仅 Claude Code / Gemini CLI 常用 |
+| Claude Code | `.claude/settings.json`（项目级） | ✅ 已部署 | InstructionsLoaded → `compass/tools/redcap-claude-hook-init.sh`；Stop → `compass/tools/redcap-on-stop-review.sh`；SessionEnd → `loom/tools/redcap-layerA-session-end.sh claude` |
+| Gemini CLI | `.gemini/settings.json`（项目级） | ✅ 已部署 | SessionStart → `compass/tools/redcap-layerB-session-start.sh gemini`；SessionEnd → `loom/tools/redcap-layerA-session-end.sh gemini` |
+| Copilot CLI | `.github/hooks/redcap-layerB.json`（项目级） | ✅ 已部署 | `sessionStart` / `sessionEnd` → `.github/hooks/scripts/*` → 通用分发器 |
 
 ---
 
@@ -56,8 +57,8 @@
 
 | 场景 | 当前覆盖 | 主要缺口 |
 |------|----------|---------|
-| Layer A 最高优先级节点（on_ALL_DONE + review） | Claude Code ✅, Kimi CLI ✅ | Gemini CLI 未部署，Copilot CLI 待验证 |
-| Layer B 架构评审 | Claude Code ✅ | Gemini CLI 通用脚本无架构评审逻辑 |
+| Layer A 最高优先级节点（on_ALL_DONE + review） | Claude Code ✅, Kimi CLI ✅ | Gemini CLI 未部署，Copilot CLI 需按仓库安装 |
+| Layer B 收尾链（评审 + 报告 + 飞书） | Claude Code ✅, Gemini CLI ✅, Copilot CLI ✅ | Kimi CLI 暂未纳入本仓库项目级部署 |
 
 ---
 
@@ -66,6 +67,5 @@
 | 优先级 | 行动 | 负责人 |
 |--------|------|--------|
 | P1 | 部署 Gemini CLI Layer A 用户级 Hook（`~/.gemini/settings.json`） | Cap + Norven |
-| P2 | 验证 Copilot CLI hook 触发（执行 hooks-copilot-cli.md §2.2 验证流程） | Cap |
-| P3 | Gemini CLI Layer B 补独立架构评审逻辑（非通用脚本） | Cap |
-| P4 | Kimi CLI Stop/SessionEnd 去重 bug 修复（hooks-kimi-cli.md §4.3） | Cap |
+| P2 | 为 Copilot CLI Layer A 生成仓库级 `.github/hooks/*.json` 安装模板 | Cap |
+| P3 | Kimi CLI Stop/SessionEnd 去重 bug 修复（hooks-kimi-cli.md §4.3） | Cap |

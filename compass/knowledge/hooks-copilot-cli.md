@@ -1,164 +1,160 @@
 # Copilot CLI — Hooks 与指令注入详情
 
-> 本文件从 [host-reliability.md](host-reliability.md) 拆分而来，记录 Copilot CLI 的 Hook 能力、技术规格及 RedCap 部署方案。
-> **状态**：技术规格基于 Copilot CLI 自身实测（v1.0.18+, 2025-07），Cap 待独立验证（遵循 L-8）。
+> 本文件从 [host-reliability.md](host-reliability.md) 拆分而来，记录 Copilot CLI 的 Hook 能力、官方约束与 RedCap 的实际部署。
+> **当前状态**：官方文档已确认 Copilot CLI 会从仓库内的 `.github/hooks/*.json` 加载 Hook 配置；本仓库 Layer B 已部署 `redcap-layerB.json`。`sessionStart` / `sessionEnd` 输入**不含 sessionId**，因此 Session 续传能力与 Hook 是两条独立机制。
 
 ---
 
 ## 1. Hooks 能力
 
-Copilot CLI 支持仓库级 Hook 配置（`.github/hooks/`），无需全局 Dispatcher 路由（与 Kimi CLI 的全局配置不同）。
+Copilot CLI 支持**仓库级** Hook，配置文件必须放在 `.github/hooks/*.json`。
+仅有 `.github/hooks/` 目录或脚本文件本身，**不等于已部署**；必须存在 JSON 配置文件把事件绑定到脚本。
 
-### 1.1 支持的事件（8 种）
+### 1.1 已确认的关键事件
 
-| 事件 | 触发时机 | 说明 |
-|------|----------|------|
-| `copilot-setup-steps` | Agent 启动时 | 环境准备（安装依赖等），支持 Dockerfile |
-| `pre-tool-consent` | 工具调用前（需授权时） | 可拦截/审批工具调用 |
-| `post-tool-call` | 工具调用后 | 可审计工具结果 |
-| `session-start` | 会话开始 | **⚠️ Session ID 不可从 Hook 捕获**（见 L-39） |
-| `session-end` | 会话结束 | 收尾/清理 |
-| `model-request` | 模型请求前 | 可修改/审计请求 |
-| `model-response` | 模型响应后 | 可审计/过滤响应 |
-| `context-assembly` | 上下文组装时 | 可注入额外上下文 |
+以下事件由 GitHub 官方 Hook 文档明确记录，足以覆盖 RedCap 目前需要的 Layer B 收尾链：
+
+| 事件 | 触发时机 | 关键字段 | 备注 |
+|------|----------|----------|------|
+| `sessionStart` | 新会话开始 / 恢复时 | `timestamp`, `cwd`, `source`, `initialPrompt` | **无 sessionId**；输出被忽略 |
+| `sessionEnd` | 会话完成 / 终止时 | `timestamp`, `cwd`, `reason` | **无 sessionId**；输出被忽略 |
+| `userPromptSubmitted` | 用户提交 prompt 后 | `timestamp`, `cwd`, `prompt` | 适合审计，不适合收尾 |
+| `preToolUse` | 工具调用前 | `toolName`, `toolArgs` | 可通过 stdout JSON 拒绝执行 |
+| `postToolUse` | 工具调用后 | `toolName`, `toolArgs`, `toolResult` | 适合日志与策略审计 |
+| `errorOccurred` | Agent 运行出错时 | `error.*` | 输出被忽略 |
 
 ### 1.2 配置位置
 
-```
-项目根目录/
-└── .github/
-    └── hooks/
-        ├── session-start.sh        # Session 开始
-        ├── session-end.sh          # Session 结束
-        ├── post-tool-call.sh       # 工具调用后
-        ├── pre-tool-consent.sh     # 工具调用前审批
-        └── context-assembly.sh     # 上下文注入
+官方教程明确：Copilot CLI 会自动发现仓库内的 `.github/hooks/*.json`。
+
+当前 RedCap Layer B 的实际结构：
+
+```text
+.github/
+└── hooks/
+    ├── redcap-layerB.json
+    └── scripts/
+        ├── redcap-layerB-session-start.sh
+        └── redcap-layerB-session-end.sh
 ```
 
-**工程级配置**：每个仓库独立管理自己的 hooks，不存在 Kimi CLI 的全局冲突问题。
-**无需 Dispatcher 路由**：天然按仓库隔离，是最干净的 Hook 架构。
+其中：
+
+1. `.github/hooks/redcap-layerB.json` 负责声明事件绑定
+2. `scripts/*.sh` 只是轻量包装层
+3. 真正的收尾逻辑仍汇聚到 RedCap 通用脚本：
+   - `compass/tools/redcap-layerB-session-start.sh`
+   - `loom/tools/redcap-layerA-session-end.sh copilot`
+   - `compass/tools/redcap-layerB-session-end.sh`
 
 ### 1.3 通信协议
 
-- **输入**：stdin 接收 JSON 上下文（包含工具名称、事件相关字段；**注意：session-start/session-end 的 stdin 不含 sessionId，见 L-39**）
-- **输出**：stdout 返回 JSON 响应
-- **拦截**：`{"permissionDecision": "deny"}` 阻止操作（与 Claude Code 的 exit code 2 不同）
-- **允许**：`{"permissionDecision": "allow"}` 或 exit 0
+| 类型 | 协议 |
+|------|------|
+| 输入 | stdin JSON |
+| 输出（`sessionStart` / `sessionEnd` / `postToolUse` 等） | 被忽略 |
+| 输出（`preToolUse`） | stdout JSON，使用 `permissionDecision` / `permissionDecisionReason` |
 
-### 1.4 与其他 CLI 的 Hook 对比
+> 关键差异：Copilot CLI 的拦截结果是**stdout JSON**，不是特殊退出码。
 
-| 维度 | Copilot CLI | Claude Code | Kimi CLI |
-|------|-------------|-------------|----------|
-| 事件数量 | 8 种 | 4 种 | 13 种 |
-| 配置范围 | 仓库级（`.github/hooks/`） | 全局（`~/.claude/hooks/`） | 全局（`~/.kimi/config.toml`） |
-| 跨项目隔离 | ✅ 天然隔离 | ❌ 需手动 cwd 判断 | ❌ 需 Dispatcher 路由 |
-| 拦截方式 | stdout JSON `deny` | exit code 2 | exit code 2 |
-| 环境准备 | ✅ `copilot-setup-steps`（Dockerfile） | ❌ | ❌ |
-| 上下文注入 | ✅ `context-assembly` | ❌ | ❌ |
+### 1.4 Session 兼容 ≠ Hook
 
----
+这是 Copilot 线最容易混淆的点：
 
-## 2. 实测验证
-
-> ⚠️ 以下数据来源于 Copilot CLI Agent 的自身实测报告（session `2a25efa6`，2025-07）。
-> Cap 尚未独立验证（L-8 原则），标记为"待验证"。部署前需执行 §2.2 验证流程。
-
-### 2.1 Copilot CLI 自报的验证结果
-
-| 事件 | 触发 | stdin JSON 关键字段 | 自报结果 |
-|------|------|---------------------|----------|
-| `session-start` | 会话创建后 | （不含 sessionId，见 L-39） | ❌ sessionId 不可用 |
-| `post-tool-call` | 工具调用后 | `tool_name`, `tool_input` | ✅ 可用 |
-| `session-end` | 会话关闭 | （不含 sessionId，见 L-39） | ❌ sessionId 不可用 |
-| `pre-tool-consent` | 工具审批前 | `tool_name` | ✅ 可用 |
-
-### 2.2 独立验证流程（部署前必做）
-
-```bash
-# 1. 创建 hook 测试脚本
-mkdir -p .github/hooks
-cat > .github/hooks/session-start.sh << 'EOF'
-#!/bin/bash
-JSON=$(cat)
-echo "$JSON" > /tmp/copilot-hook-session-start.json
-touch /tmp/hook-fired-session-start
-EOF
-chmod +x .github/hooks/session-start.sh
-
-# 2. 执行 Copilot CLI
-copilot -p "echo hello" --allow-all --autopilot
-
-# 3. 验证
-[[ -f /tmp/hook-fired-session-start ]] && echo "✅ session-start hook fired" || echo "❌ NOT fired"
-cat /tmp/copilot-hook-session-start.json | python3 -m json.tool
-
-# 4. 清理
-rm -f /tmp/hook-fired-session-start /tmp/copilot-hook-session-start.json
-rm -f .github/hooks/session-start.sh
-```
-
-对每个需要使用的事件重复以上步骤。
+| 问题 | 正确答案 |
+|------|----------|
+| Hook 能拿到 `sessionId` 吗？ | **不能**。官方 `sessionStart` / `sessionEnd` 输入都没有 `sessionId`。 |
+| `sessionStart` 因此没用吗？ | **不是**。它仍然适合做初始 HEAD 捕获、会话开始审计等无须 `sessionId` 的动作。 |
+| Copilot 的会话恢复 / 跟进能力靠什么？ | 靠 `--resume` / `--continue`，或 `--output-format=json` 结果中的 `sessionId`，**不是 Hook**。 |
 
 ---
 
-## 3. RedCap 部署方案
+## 2. RedCap 部署现状
 
-### 3.1 需要的 Hook 脚本
+### 2.1 Layer B（开发 RedCap 自身）
 
-| 脚本 | 事件 | 功能 |
-|------|------|------|
-| `session-end.sh` | session-end | 检测新 commit → 飞书通知 → 清理临时文件 |
-| `post-tool-call.sh` | post-tool-call | 可选：审计文件写入操作 |
+当前仓库已经落地以下配置：
 
-> ⚠️ **`session-start.sh` 已废弃**（L-39）：官方文档确认 `session-start` hook 的 stdin 不含 `sessionId`，无法用于捕获 session ID。正确方案：`--output-format=json` + 解析最终 result 行的 `sessionId`（详见 `agent-adapters.md §3C.5`）。
-
-### 3.3 session-end.sh 伪代码
-
-```bash
-#!/bin/bash
-# .github/hooks/session-end.sh — Copilot CLI Session 结束
-JSON=$(cat)
-
-INITIAL_HEAD=$(cat /tmp/redcap-copilot-initial-head 2>/dev/null)
-CURRENT_HEAD=$(git rev-parse HEAD 2>/dev/null)
-
-if [[ -n "$INITIAL_HEAD" && "$INITIAL_HEAD" != "$CURRENT_HEAD" ]]; then
-    # 有新 commit，触发飞书通知
-    # tools/feishu-notify.sh ...
-    echo "New commits detected, notifying..."
-fi
-
-# 清理
-rm -f /tmp/redcap-copilot-initial-head
-rm -f .workflow/.copilot-session-id
-
-exit 0
+```json
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "./scripts/redcap-layerB-session-start.sh",
+        "cwd": ".github/hooks"
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "./scripts/redcap-layerB-session-end.sh",
+        "cwd": ".github/hooks"
+      }
+    ]
+  }
+}
 ```
 
-> ⚠️ 以上均为伪代码，需通过 §2.2 验证流程确认 stdin JSON 字段名后才能实装（L-16 部署链验证）。
+### 2.2 当前链路职责
 
-### 3.4 部署步骤
+| 文件 | 职责 |
+|------|------|
+| `.github/hooks/redcap-layerB.json` | Copilot 仓库级 Hook 注册入口 |
+| `.github/hooks/scripts/redcap-layerB-session-start.sh` | 包装到统一 SessionStart 脚本 |
+| `.github/hooks/scripts/redcap-layerB-session-end.sh` | 包装到统一 SessionEnd 分发器 |
+| `compass/tools/redcap-layerB-session-start.sh` | 捕获初始 HEAD |
+| `compass/tools/redcap-task-report-check.sh` | 审计最近 commit 区间内是否存在模板完整的任务报告 |
+| `compass/tools/redcap-layerB-session-end.sh` | 飞书兜底、任务报告审计、非 Claude 宿主补跑独立评审 |
 
-```
-Phase 2 部署清单（待 E2E 验证后执行）：
-1. 执行 §2.2 独立验证 → 确认 post-tool-call/session-end 可用
-2. **不使用 session-start hook 捕获 session ID**（L-39 限制）；改用 `--output-format=json` + JSONL 提取（见 agent-adapters.md §3C.5）
-3. 将伪代码转为实装脚本
-4. 集成飞书通知（复用 tools/feishu-notify.sh）
-5. E2E 测试：copilot -p "创建测试文件并 commit" → 验证飞书收到通知
-6. 更新本文档 §2.1 标记为 ✅ 独立验证通过
-```
+### 2.3 Layer A 状态
+
+Copilot CLI 的能力已经足够覆盖 Layer A，但**当前框架尚未自动为用户项目生成 `.github/hooks/*.json`**。
+因此：
+
+- **Layer B**：已部署
+- **Layer A**：能力存在，但仍需按仓库安装
+
+### 2.4 本地独立验证（2026-04-11）
+
+已在本仓库用 `copilot -p ... --no-custom-instructions -s --model gpt-5-mini` 做两轮最小验证：
+
+1. **SessionEnd 触发证明**
+   - 预写入 `/tmp/redcap-layerB-copilot-last-notified-head = HEAD~1`
+   - 运行后 `/tmp/redcap-layerB-copilot-last-alerted-head = CURRENT_HEAD`
+   - 说明 `sessionEnd -> redcap-layerB-session-end.sh` 已真实执行
+2. **SessionStart 触发证明（间接）**
+   - 清空 `last-notified` / `initial-head` 后运行同样命令
+   - 运行结束后 `last-notified` 仍为 `(missing)`
+   - 若 `sessionStart` 未触发，`sessionEnd` 会走无基线降级分支并写入 `last-notified`
+   - 因此该结果反向证明本次运行中 `sessionStart` 已先写入初始 HEAD，再被 `sessionEnd` 的无差异分支清理
+
+结论：**本仓库 Copilot Layer B 的 `sessionStart` / `sessionEnd` 已通过本地独立验证。**
 
 ---
 
-## 4. 可靠性评估
+## 3. 可靠性评估
 
-**Layer 0** — 确定性执行（Hook 机制内建于 Copilot CLI）：
-- `session-start` + `session-end` = 会话级 100% 覆盖
-- 仓库级配置天然隔离，无需 Dispatcher 路由（优于 Kimi CLI）
-- 8 种事件覆盖面适中，`context-assembly` 提供独特的上下文注入能力
+**优势**
 
-**风险**：
-- Copilot CLI 仍在快速迭代（v1.0.x），Hook API 可能变更
-- 未经 Cap 独立验证，实际 stdin JSON 字段名可能与文档有出入
-- `--allow-all` 模式下 `pre-tool-consent` 是否仍触发待验证
+1. 仓库级配置天然隔离，不需要像 Kimi / Claude 那样靠 cwd 路由全局 Hook
+2. `sessionStart` + `sessionEnd` 足以支撑 Layer B 的确定性收尾链
+3. `preToolUse` / `postToolUse` 为未来策略审计留出了扩展面
+
+**边界**
+
+1. `sessionStart` / `sessionEnd` 不提供 `sessionId`
+2. Layer A 仍未自动部署，不能把“能力存在”误写成“默认已覆盖”
+3. Copilot CLI 仍在快速迭代，Hook API 与字段名需持续跟踪官方文档
+
+---
+
+## 4. 结论
+
+Copilot CLI 这条线当前的正确认知是：
+
+1. **Hook 能力真实存在，且官方支持仓库级 `.github/hooks/*.json`**
+2. **Session 兼容能力不靠 Hook，而靠 `--resume` / `--continue` 与 JSONL `sessionId`**
+3. **RedCap Layer B 已经实装 Copilot SessionStart / SessionEnd 收尾链**
+4. **Layer A 仍需后续补安装模板，不能再把“可做”写成“已部署”**

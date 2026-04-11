@@ -11,12 +11,15 @@
 #   4. 执行原子清理 (Cleanup)。
 #
 # 部署：
-#   - Claude Code: .claude/settings.json -> Stop hook
+#   - Claude Code: .claude/settings.json -> SessionEnd
 #   - Gemini CLI: .gemini/settings.json -> SessionEnd
-#   - Kimi CLI: dispatcher -> Stop event
+#   - Copilot CLI: .github/hooks/*.json -> sessionEnd
+#   - Kimi CLI: dispatcher -> Stop / SessionEnd event
 # ─────────────────────────────────────────────────────────
 
 set -u
+
+HOST="${1:-unknown}"
 
 # ── 1. 接收并解析上下文 ──────────────────────────────────
 
@@ -25,11 +28,13 @@ INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 CWD=$(echo "$INPUT" | grep -o '"cwd"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 
-if [[ -z "$SESSION_ID" || -z "$CWD" ]]; then
-    # Gemini CLI 的 SessionEnd 协议可能在不同版本有差异，若解析失败记录警告并继续清理
-    echo "[redcap-hook-proxy] WARN: failed to parse session_id or cwd from stdin" >&2
-    # 尝试降级获取 CWD
-    CWD=${CWD:-$(pwd)}
+if [[ -z "$CWD" ]]; then
+    echo "[redcap-hook-proxy] WARN: failed to parse cwd from stdin" >&2
+    CWD=$(pwd)
+fi
+
+if [[ -z "$SESSION_ID" ]]; then
+    echo "[redcap-hook-proxy] INFO: session_id unavailable for host=$HOST, continue with host-level cleanup only" >&2
 fi
 
 # ── 2. 识别层级并执行审计逻辑 (Audit) ─────────────────────
@@ -43,14 +48,11 @@ CWD_NORM=$(echo "$CWD" | sed 's:/*$::')
 REDCAP_DIR_NORM=$(echo "$REDCAP_ROOT" | sed 's:/*$::')
 
 # 检查是否为 RedCap 自身开发 (Layer B)
-if [[ "$CWD_NORM" == "$REDCAP_DIR_NORM" ]]; then
+if [[ "$CWD_NORM" == "$REDCAP_DIR_NORM" || "$CWD_NORM" == "$REDCAP_DIR_NORM/"* ]]; then
     echo "[redcap-hook-proxy] 检测到 Layer B (RedCap 自身) 任务，启动框架审计..." >&2
-    # 调用框架评审脚本
-    B_REVIEW_SCRIPT="$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh"
-    if [[ -x "$B_REVIEW_SCRIPT" ]]; then
-        # 注意：Layer B 脚本内部也需要消费 stdin，我们已经消费过了，
-        # 所以通过 echo 重新传进去（虽然目前的脚本只是 cat > /dev/null）
-        echo "$INPUT" | bash "$B_REVIEW_SCRIPT" 2>&1 || true
+    B_SESSION_END_SCRIPT="$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh"
+    if [[ -x "$B_SESSION_END_SCRIPT" ]]; then
+        bash "$B_SESSION_END_SCRIPT" "$HOST" 2>&1 || true
     fi
 else
     # 检查是否为 RedCap 开发的用户项目 (Layer A)
@@ -66,12 +68,14 @@ fi
 
 # ── 3. 执行原子清理 (Cleanup) ─────────────────────────────
 
-echo "[redcap-hook-proxy] 执行原子清理 (Session: $SESSION_ID)..." >&2
+echo "[redcap-hook-proxy] 执行原子清理 (Session: ${SESSION_ID:-n/a})..." >&2
 
 # 清理本 session 的标记文件
-rm -f "/tmp/redcap-layerA-head-${SESSION_ID}" 2>/dev/null || true
-rm -f "/tmp/redcap-layerA-notified-${SESSION_ID}" 2>/dev/null || true
-rm -f "/tmp/redcap-layerA-workflow-session-${SESSION_ID}" 2>/dev/null || true # 以前可能叫这名
+if [[ -n "$SESSION_ID" ]]; then
+    rm -f "/tmp/redcap-layerA-head-${SESSION_ID}" 2>/dev/null || true
+    rm -f "/tmp/redcap-layerA-notified-${SESSION_ID}" 2>/dev/null || true
+    rm -f "/tmp/redcap-layerA-workflow-session-${SESSION_ID}" 2>/dev/null || true # 以前可能叫这名
+fi
 
 # 清理历史过期的标记文件（24小时以上）
 find /tmp -name "redcap-layerA-head-*" -mtime +1 -delete 2>/dev/null || true
@@ -79,8 +83,8 @@ find /tmp -name "redcap-layerA-notified-*" -mtime +1 -delete 2>/dev/null || true
 
 # ── 4. 退出 ───────────────────────────────────────────────
 
-# Gemini CLI Hook 必须返回合法 JSON
-# 但 SessionEnd 是 "fire and forget"，输出主要用于调试，不影响决策
+# Gemini CLI 要求 Hook 返回合法 JSON；Claude / Copilot 会忽略 stdout
+# SessionEnd 是 "fire and forget"，输出主要用于兼容 Gemini 协议
 echo '{"decision": "allow"}'
 
 exit 0

@@ -156,7 +156,7 @@ Skill 自动触发，Dispatcher 接管后续全流程。框架运行中途如需
 python3 compass/tools/feishu-notifier.py setup
 ```
 
-配置后，流程完成自动发飞书通知，需要用户决策时飞书提问并等待回复。
+配置后，用户项目流程完成会自动发飞书通知；RedCap 自身开发则按 `compass/CONTRIBUTING.md` 的收尾协议执行，并由宿主 SessionEnd Hook 做兜底。
 
 ---
 

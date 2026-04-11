@@ -501,7 +501,7 @@ Layer B 专属机制（`CONTRIBUTING.md §12`），覆盖 PM Gate 触发之前�
 PM Gate 触发时必须先读 explore-notes.md 活跃条目作为底稿
 ```
 
-**Stop Hook 检查**：`compass/tools/redcap-claude-hook-stop.sh` 在每轮结束时扫描未归档条目，有未归档时飞书告警（Non-blocking）。
+**Stop / SessionEnd 检查**：`compass/tools/redcap-explore-notes-check.sh` 在 Layer B 收尾链中扫描未归档条目；`compass/tools/redcap-layerB-session-end.sh` 负责任务报告审计与飞书兜底。
 
 ---
 
@@ -561,10 +561,12 @@ RedCap 既是开发工具，也是被开发的对象。Hook 架构分两层，�
 ┌────────────────────────────────────────────────────────────────┐
 │  Layer B Hook — 为 RedCap 框架自身服务                            │
 │                                                                  │
-│  部署位置：.claude/settings.json（项目级，仅 RedCap repo 生效）   │
-│  InstructionsLoaded → 捕获初始 HEAD                              │
-│  Stop → ① 独立架构评审（新 Agent，零上下文污染）                   │
-│         ② 检测新 commit → 飞书通知                               │
+│  部署位置：.claude/settings.json / .gemini/settings.json /         │
+│           .github/hooks/*.json（项目级，仅 RedCap repo 生效）      │
+│  SessionStart / InstructionsLoaded → 捕获初始 HEAD                │
+│  Stop（Claude）→ 独立架构评审 + explore-notes 提醒                │
+│  SessionEnd → ① 任务报告模板审计 ② 飞书兜底 ③ 临时标记清理        │
+│               ④ 非 Claude 宿主补跑独立架构评审                    │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -572,9 +574,9 @@ RedCap 既是开发工具，也是被开发的对象。Hook 架构分两层，�
 
 | 宿主 | Layer A | Layer B |
 |------|---------|---------|
-| Claude Code | ✅ 用户级 Hook | ✅ 项目级 Hook |
-| Gemini CLI | ✅ 已部署 | ✅ 已部署 |
-| Copilot CLI | ✅ 仓库级 `.github/hooks/` | ✅ 已部署 |
+| Claude Code | ✅ 用户级 Hook | ✅ 项目级 Hook（Stop + SessionEnd） |
+| Gemini CLI | ⏳ Layer A 默认未部署 | ✅ 项目级 Hook（SessionStart + SessionEnd） |
+| Copilot CLI | ⏳ 需在目标仓库生成 `.github/hooks/*.json` | ✅ 项目级 Hook（`.github/hooks/redcap-layerB.json`） |
 | Kimi CLI | ✅ SessionStart/Stop | ✅ 已部署 |
 | VS Code Copilot | ❌ 无 Hook 支持 | — 退守 Layer 2+3 兜底 |
 

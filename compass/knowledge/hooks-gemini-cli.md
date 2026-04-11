@@ -115,26 +115,52 @@
 
 ---
 
-## 3. RedCap 部署建议
+## 3. RedCap 部署现状
 
-Gemini CLI hooks 已具备完整能力，可部署 Layer 0 防护，但**尚未部署**（⏳）。
+Gemini CLI hooks 已具备完整能力，**Layer B 已在本仓库项目级配置中实装**。
 
-**Layer B（开发 RedCap 自身）**：使用 `SessionEnd` 作为 Stop Hook 等价物：
+**Layer B（开发 RedCap 自身）**：当前 `.gemini/settings.json` 使用统一的 SessionStart / SessionEnd 收尾链：
 
 ```json
 // redcap/.gemini/settings.json
 {
-  "hooks": [
-    {
-      "trigger": "SessionEnd",
-      "command": "/absolute/path/to/redcap/tools/redcap-on-stop-review-gemini.sh"
-    }
-  ]
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "redcap-session-start",
+            "type": "command",
+            "command": "bash compass/tools/redcap-layerB-session-start.sh gemini"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "redcap-session-end",
+            "type": "command",
+            "command": "bash loom/tools/redcap-layerA-session-end.sh gemini"
+          }
+        ]
+      }
+    ]
+  }
 }
 ```
 
-**Layer A（RedCap 开发用户项目）**：由 RedCap 在项目初始化时创建 `.gemini/settings.json`，使用 `SessionEnd` 实现收尾审计。
+这条链最终会汇聚到：
 
-**可靠性评估**：已具备 Layer 0 能力，部署后与 Claude Code/Kimi CLI 看齐。
+1. `compass/tools/redcap-layerB-session-start.sh`：捕获初始 HEAD
+2. `loom/tools/redcap-layerA-session-end.sh gemini`：统一分发入口
+3. `compass/tools/redcap-layerB-session-end.sh`：补跑独立评审、任务报告模板审计、飞书兜底
 
-> ⚠️ 部署后必须用标记文件法做端到端验证（L-16）：确认 SessionEnd Hook 物理触发，不可假设"配置了就生效了"。
+**Layer A（RedCap 开发用户项目）**：能力已验证，但用户级 `~/.gemini/settings.json` 仍需单独部署，不会随本仓库项目级配置自动覆盖。
+
+**可靠性评估**：Gemini CLI 现已具备完整的 Layer B Layer 0 保障；Layer A 仍处于“能力具备、默认未安装”的状态。
+
+> ⚠️ 任何后续调整仍须用标记文件法做端到端验证（L-16）：确认 SessionStart / SessionEnd Hook 物理触发，不可假设“配置了就生效了”。

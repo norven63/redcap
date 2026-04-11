@@ -628,7 +628,7 @@ kimi export <session_id> -o session-backup.zip
 - **可执行文件**：`copilot`（路径：需检测，通常 `/opt/homebrew/bin/copilot` 或 `~/.local/bin/copilot`）
 - **底层模型**：多模型可选（14 种），默认 Claude Opus 4.6
 - **版本**：1.0.18+
-- **独特优势**：唯一同时支持 Claude 系列和 GPT 系列的 CLI；仓库级 Hook 配置（`.github/hooks/`）
+- **独特优势**：唯一同时支持 Claude 系列和 GPT 系列的 CLI；仓库级 Hook 配置（`.github/hooks/*.json`）
 
 ### 3C.2 命令模板
 
@@ -650,7 +650,7 @@ copilot -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 > `--allow-all` 跳过所有权限确认（等价 claude 的 `bypassPermissions`、gemini/kimi 的 `--yolo`）。
 > `--autopilot` 持续执行直至完成，不暂停询问。
 > Copilot CLI 不支持 `--system-prompt`，角色身份通过 Prompt 前缀或 `.github/copilot-instructions.md` 注入。
-> 不支持 `--output-format json`，输出为纯文本（解析逻辑与 Kimi text 模式统一）。
+> Copilot CLI **支持** `--output-format=json`，程序化场景应开启 JSONL 输出并从结果行提取 `sessionId`。
 
 ### 3C.3 参数说明
 
@@ -747,7 +747,7 @@ fi
 - **全授权**：`--allow-all` 避免权限确认挂起
 - **自动驾驶**：`--autopilot` 避免中途暂停
 - **超时保护**：同 §8 统一超时策略
-- **Git 仓库要求**：Hook 机制依赖 `.github/hooks/` 目录，项目必须是 git 仓库
+- **Git 仓库要求**：Hook 机制依赖 `.github/hooks/*.json` 配置文件，项目必须是 git 仓库
 
 ### 3C.7 可选模型（14 种）
 
@@ -988,7 +988,7 @@ Copilot CLI 在项目根目录自动读取 `.github/copilot-instructions.md`。D
 
 > ⚠️ Copilot CLI 不支持 `@file` 原生导入（与 Claude Code、Gemini 不同）。
 > 共享约束需通过 Prompt 前缀注入或在 `.github/copilot-instructions.md` 中内联关键规则。
-> Hook 脚本（`.github/hooks/`）提供另一层约束注入机制（见 `knowledge/hooks-copilot-cli.md`）。
+> Hook 脚本（由 `.github/hooks/*.json` 注册）提供另一层约束注入机制（见 `knowledge/hooks-copilot-cli.md`）。
 
 ---
 
@@ -1055,7 +1055,7 @@ Copilot CLI 在项目根目录自动读取 `.github/copilot-instructions.md`。D
 
 Copilot CLI 支持 `--resume`，正确获取 Session ID 的方式：
 
-1. **sessionStart Hook 不可用**：官方 sessionStart Hook 输入不含 sessionId 字段（已验证），旧方案已废弃
+1. **sessionStart Hook 不能用于拿 sessionId**：官方 sessionStart Hook 输入不含 sessionId 字段（已验证），但仍可用于会话级基线捕获
 2. **正确方案**：首次调用时加 `--output-format=json`，从 JSONL 输出解析 session_id（见 §3C.5）
 3. 续接时读取：`copilot -p "..." --output-format=json --resume="$(cat .workflow/.copilot-session-id)"`
 4. 限制：不支持自定义 Session ID，不支持列举所有 sessions

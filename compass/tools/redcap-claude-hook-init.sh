@@ -3,14 +3,12 @@
 # RedCap 框架 — Claude Code InstructionsLoaded Hook
 #
 # 在 CLAUDE.md 加载时触发（等价于 session start）。
-# 捕获当前 HEAD 作为基准，供 Stop hook 比较。
+# 委托到统一的 Layer B SessionStart 入口，保证 Claude/Gemini/Copilot
+# 使用同一套初始 HEAD 捕获协议。
 # ─────────────────────────────────────────────────────────
 
-cat > /dev/null  # 消费 stdin
+set -u
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-HEAD_FILE="/tmp/redcap-claude-initial-head"
 
-git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null > "$HEAD_FILE" || true
-exit 0
+exec bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" claude

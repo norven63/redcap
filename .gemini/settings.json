@@ -1,5 +1,18 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "redcap-session-start",
+            "type": "command",
+            "command": "bash compass/tools/redcap-layerB-session-start.sh gemini",
+            "description": "RedCap Layer B 会话开始：捕获初始 HEAD 作为本次会话基线"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "matcher": "*",
@@ -7,8 +20,8 @@
           {
             "name": "redcap-session-end",
             "type": "command",
-            "command": "loom/tools/redcap-layerA-session-end.sh",
-            "description": "RedCap 通用 Hook 分发代理：清理临时文件 + 状态审计 + 飞书通知兜底"
+            "command": "bash loom/tools/redcap-layerA-session-end.sh gemini",
+            "description": "RedCap 通用 SessionEnd 分发代理：Layer A 清理 / Layer B 评审、报告与飞书兜底"
           }
         ]
       }

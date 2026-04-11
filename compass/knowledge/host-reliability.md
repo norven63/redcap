@@ -2,7 +2,7 @@
 
 > **调研日期**：2026-04  
 > **调研背景**：RedCap E2E 测试中 `on_ALL_DONE` 飞书通知被遗漏（L-9 复现），需评估宿主 Agent 的指令持久性和可靠性保障机制，为 RedCap 的关键动作防遗漏策略提供决策依据。  
-> **核心发现**：指令注入物理上每轮都在，但 LLM attention 衰减使执行率随对话长度下降。唯一 100% 保证的是 Hooks（绕过 LLM 的 shell 命令）。4 个宿主工具中 Claude Code 和 Kimi CLI 支持 Hooks。
+> **核心发现**：指令注入物理上每轮都在，但 LLM attention 衰减使执行率随对话长度下降。唯一 100% 保证的是 Hooks（绕过 LLM 的 shell 命令）。当前 5 个宿主里已有 4 个具备可用 Hook 能力；是否真正可靠，取决于是否完成部署与 E2E 验证。
 
 ---
 
@@ -18,7 +18,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | **可移植性** | 跟随 RedCap 框架，适用于所有项目 | 仅对 RedCap 自身 repo 生效 |
 | **执行保证** | `on_ALL_DONE`: Layer 0（用户级 Stop hook）；其他: Layer 2-3 | 100% 确定性（Layer 0） |
 
-> 本文件及其子文档（`hooks-*.md`）记录的**宿主 Hook 能力**同时服务于两层。§3 的四层防御策略以 Layer A 场景为主，Layer B 的具体部署见各 `hooks-*.md` 的"部署现状"章节及 `CONTRIBUTING.md` §4-§5。Layer A 的用户级 Hook 脚本见 `tools/redcap-layerA-*.sh`。
+> 本文件及其子文档（`hooks-*.md`）记录的**宿主 Hook 能力**同时服务于两层。§3 的四层防御策略以 Layer A 场景为主，Layer B 的具体部署见各 `hooks-*.md` 的“部署现状”章节及 `CONTRIBUTING.md` §4-§5。Layer A 的用户级 Hook 脚本见 `loom/tools/redcap-layerA-*.sh`。
 
 ---
 
@@ -27,10 +27,10 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | 宿主工具 | 指令注入频率 | 注入位置 | Hooks 状态 | 详情文档 |
 |----------|------------|----------|-----------|---------|
 | VS Code Copilot | 每轮对话 | Context 附件 | ⚠️ 有限（无 onTaskComplete） | [hooks-vscode-copilot.md](hooks-vscode-copilot.md) |
-| Claude Code | 会话开始 + compact 后重读 | User message | ✅ Stop hook（100%） | [hooks-claude-code.md](hooks-claude-code.md) |
-| Gemini CLI | 每次 prompt | 与 prompt 拼接 | ✅ 实测可用（v0.36.0）✅ 已部署 | [hooks-gemini-cli.md](hooks-gemini-cli.md) |
+| Claude Code | 会话开始 + compact 后重读 | User message | ✅ Stop + SessionEnd（Layer B 已部署） | [hooks-claude-code.md](hooks-claude-code.md) |
+| Gemini CLI | 每次 prompt | 与 prompt 拼接 | ✅ 实测可用（v0.36.0）；Layer B 已部署 | [hooks-gemini-cli.md](hooks-gemini-cli.md) |
 | Kimi CLI | N/A（无指令文件） | N/A | ✅ 13 种事件（v1.30.0 实测） | [hooks-kimi-cli.md](hooks-kimi-cli.md) |
-| Copilot CLI | N/A（仅 `.github/copilot-instructions.md`） | 自动读取 | ✅ 8 种事件（仓库级 `.github/hooks/`） | [hooks-copilot-cli.md](hooks-copilot-cli.md) |
+| Copilot CLI | N/A（仅 `.github/copilot-instructions.md`） | 自动读取 | ✅ 仓库级 `.github/hooks/*.json`（Layer B 已部署） | [hooks-copilot-cli.md](hooks-copilot-cli.md) |
 
 ---
 
@@ -79,11 +79,11 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 
 | 环境 | Layer 0 可用？ | 部署方式 | 详见 |
 |------|--------------|---------|------|
-| Claude Code | ✅ | 工程级 `.claude/settings.json` Stop hook | [hooks-claude-code.md §3](hooks-claude-code.md) |
+| Claude Code | ✅ | 工程级 `.claude/settings.json` Stop + SessionEnd | [hooks-claude-code.md §3](hooks-claude-code.md) |
 | Kimi CLI | ✅ | 全局 Dispatcher 路由（**必须遵守协议**） | [hooks-kimi-cli.md §3](hooks-kimi-cli.md) |
-| Copilot CLI | ✅ | 仓库级 `.github/hooks/`（天然隔离，无需 Dispatcher） | [hooks-copilot-cli.md §3](hooks-copilot-cli.md) |
+| Copilot CLI | ✅ | 仓库级 `.github/hooks/*.json`（Layer B 已部署；Layer A 按仓库安装） | [hooks-copilot-cli.md §3](hooks-copilot-cli.md) |
 | VS Code Copilot | ❌ | 退守 Layer 1-3 | [hooks-vscode-copilot.md §3](hooks-vscode-copilot.md) |
-| Gemini CLI | ✅ 已验证部署 | `.gemini/settings.json` SessionEnd Hook | [hooks-gemini-cli.md §3](hooks-gemini-cli.md) |
+| Gemini CLI | ✅ | `.gemini/settings.json` SessionStart + SessionEnd（Layer B 已部署） | [hooks-gemini-cli.md §3](hooks-gemini-cli.md) |
 
 ### 3.3 收尾脚本封装（已实现）
 
@@ -94,6 +94,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | `compass/tools/redcap-on-complete.sh` | `on_ALL_DONE` | ① 清除 .workflow/ 临时文件（§5.9）② 输出交付摘要 ③ 飞书通知（§5.11） | `bash compass/tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>` |
 | `compass/tools/redcap-on-qa-pass.sh` | `on_QA_PASS` | ① git add -A && git commit（按 commit-standards.md）② 检查 lesson 字段 | `bash compass/tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]` |
 | `compass/tools/redcap-on-stop-review.sh` | Stop Hook（Layer B） | 提取 git diff → 拉起新 Agent 独立架构评审 → PASS/FAIL + 飞书告警 | 由 `.claude/settings.json` Stop hook 自动触发 |
+| `compass/tools/redcap-layerB-session-end.sh` | SessionEnd（Layer B） | ① 任务报告模板审计 ② 飞书兜底 ③ 非 Claude 宿主补跑独立评审 ④ 去重标记维护 | 由 `.claude/settings.json` / `.gemini/settings.json` / `.github/hooks/*.json` 自动触发 |
 | `loom/tools/redcap-layerA-review-fallback.sh` | Stop Hook（Layer A 兜底） | 检测 REVIEW 被跳过 → 拉起新 Agent 项目级 Code Review → PASS/FAIL + 飞书告警 | 由 `redcap-layerA-stop.sh` 在 ALL_DONE 且无 REVIEW_PASS 时调用 |
 
 **好处**：Dispatcher 只需记住"调一个脚本"，而不是"记住 N 个步骤每步的细节"。
@@ -147,7 +148,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 |------|------|
 | **指令注入是可靠的** | 各工具都做到了每轮/每次物理注入 |
 | **LLM 执行是概率性的** | 随对话长度必然衰减，无法 100% |
-| **唯一 100% 保证是 Hooks** | 绕过 LLM，宿主程序直接执行 shell（Claude Code、Kimi CLI 均支持） |
+| **唯一 100% 保证是 Hooks** | 绕过 LLM，宿主程序直接执行 shell（Claude Code / Gemini CLI / Kimi CLI / Copilot CLI 均支持） |
 | **需认知的关键动作** | Hook 确定性触发 × 新 Agent 生命周期认知能力（L-15）：Hook 保证 100% 触发，新 Agent 消除历史上下文污染保证认知质量，两者相乘解决"纯脚本无认知 vs 纯 LLM 会遗忘"的两难。实例：Layer B `redcap-on-stop-review.sh`、Layer A `redcap-layerA-review-fallback.sh` |
 | **RedCap 最佳策略** | 用脚本封装关键动作 + 宿主 Hooks（如有）+ 下次启动审计 |
-| **Hook 覆盖率** | 5 个宿主中 3 个有 Hooks（Claude Code: Stop; Kimi CLI: Stop+SessionEnd 等 13 种; Gemini CLI: SessionEnd 等 11 种），1 个无（VS Code Copilot） |
+| **Hook 覆盖率** | 5 个宿主中 4 个有 Hooks（Claude Code、Gemini CLI、Kimi CLI、Copilot CLI），1 个无（VS Code Copilot） |

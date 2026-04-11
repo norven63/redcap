@@ -1,8 +1,9 @@
 # RedCap 任务完成报告模板
 
 > **用途**：每次 RedCap 框架自身开发任务完成后的标准回报格式。
-> **归档位置**：`prism/reports/` 或 `compass/docs/`（按任务类型）
-> **触发时机**：完成 PM Gate 确认的任务后，提交给 Norven 人工审核前
+> **归档位置**：Layer B 任务统一归档到 `compass/docs/task-reports/YYYY-MM-DD-<topic>.md`；`prism/reports/` 仅存放 Prism 模式报告，**不能替代任务完成报告**
+> **触发时机**：完成任务级 Review Gate 后、结束任务前
+> **机器审计**：SessionEnd Hook 会检查物理报告文件；已提交的报告自动可见，未提交但已暂存的报告需先执行 `bash compass/tools/redcap-task-report-register.sh <claude|gemini|copilot> <report_path>` 进行显式登记。只在对话里口头汇报、或只留在工作区草稿中，仍视为未归档
 
 ---
 

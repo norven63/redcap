@@ -18,10 +18,17 @@
           {
             "type": "command",
             "command": "bash compass/tools/redcap-on-stop-review.sh"
-          },
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
           {
             "type": "command",
-            "command": "bash compass/tools/redcap-claude-hook-stop.sh"
+            "command": "bash loom/tools/redcap-layerA-session-end.sh claude"
           }
         ]
       }

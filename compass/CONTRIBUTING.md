@@ -295,13 +295,14 @@ E2E 执行完毕
 | Claude Code | `.claude/settings.json` Stop hook | ✅ 已部署 |
 | Kimi CLI | `dispatcher` Stop 事件路由 | ⏳ 待适配 |
 | VS Code Copilot | 无原生 Hook | ❌ 不支持 |
-| Gemini CLI | `.gemini/settings.json` SessionEnd Hook | ✅ 已验证 |
+| Gemini CLI | `.gemini/settings.json` SessionEnd Hook | ✅ 已部署 |
+| Copilot CLI | `.github/hooks/redcap-layerB.json` | ✅ 已部署 |
 
 ## 5. 飞书通知
 
 > **本节属于 Layer B（开发 RedCap 自身）**。Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10 定义，通过 Dispatcher 状态机触发。两层架构详见 `compass/knowledge/host-reliability.md` §0。
 
-RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。**编辑 RedCap 的 AI Agent 必须在流程中自动执行以下通知**：
+RedCap 自身变更不走 Dispatcher 主状态机，**主链通知仍需由编辑 RedCap 的 AI Agent 在流程内主动执行**；宿主 SessionEnd Hook 只负责兜底审计与补发，不可把主链通知职责推给 Hook：
 
 **完成通知（必须，自动执行）**：每轮变更全部完成并 git commit 后、结束任务前，**必须自动执行**以下命令（仅通知，不等待回复）：
 
@@ -310,7 +311,7 @@ RedCap 自身变更不走 Dispatcher 流程，飞书 hook 不会自动触发。*
 python3 compass/tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>\n\nCommits:\n$(git log --oneline <初始commit>..HEAD)" --project "redcap"
 ```
 
-> ⚠ 这是强制步骤，不可跳过。通知失败（如 feishu-config.json 不存在）时记录警告但不阻塞任务完成。
+> ⚠ 这是强制步骤，不可跳过。通知失败（如 feishu-config.json 不存在）时记录警告但不阻塞任务完成；若主链漏调，SessionEnd Hook 会尝试补发，但这只算兜底，不算合规主路径。
 
 **过程中通知（按需）**：长时间等待用户确认方案等场景：
 
@@ -587,7 +588,7 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 **执行规范**：
 - 自主执行时仍需完整走 PM Gate 流程（Step 0 固化原始输入 + Phase 1 澄清 + Phase 2 锁定）
 - 棱镜评审结论写入 `.dev-task.md` 的 `## 自主决策依据` 段，作为可追溯的授权记录
-- 任务完成后，**必须**按 `references/task-report-template.md` 整理完整报告同步给 Norven
+- 任务完成后，**必须**按 `references/task-report-template.md` 归档到 `compass/docs/task-reports/YYYY-MM-DD-<topic>.md`，再同步给 Norven
 - 若执行过程中出现超出预期的影响范围扩大，立即暂停并向 Norven 透传
 
 > **本规则不适用于**：涉及架构方向性变更（如调整 Layer A/B 边界、新增/删除核心角色）、外部依赖引入、以及 Norven 明确要求介入的决策点——这些仍须等待 Norven 显式确认。
@@ -718,7 +719,7 @@ PM Gate 触发时，**必须先读 `explore-notes.md`** 的相关活跃条目，
 
 ### Stop Hook 检查
 
-`compass/tools/redcap-claude-hook-stop.sh` 在每轮结束时检查：
+`compass/tools/redcap-explore-notes-check.sh` 在 Layer B 的 Stop / SessionEnd 链中检查：
 - 若 `explore-notes.md` 存在且有**未归档**（非 `[ARCHIVED]`）的活跃条目 → 飞书告警（Non-blocking，提醒，不阻塞 Agent）
 - 告警内容：条目数量 + 最老未归档条目的时间戳
 
@@ -759,7 +760,11 @@ Step 3: 全量 rubber-duck 对抗评审
 
 Step 4: 任务完成报告
   - 按 references/task-report-template.md 整理完整报告
-  - 同步给 Norven（直接在对话中输出）
+  - 归档到 `compass/docs/task-reports/YYYY-MM-DD-<topic>.md`
+  - 同步给 Norven（对话中引用报告内容/路径）
+  - 报告文件最迟需在 SessionEnd 前存在且已纳入 Git（已提交或已暂存均可被审计；建议随最终提交一起归档）
+  - 若报告尚未提交，先 `git add <report_path>`，再执行 `bash compass/tools/redcap-task-report-register.sh <claude|gemini|copilot> <report_path>` 显式登记本次任务的报告路径
+  - SessionEnd Hook 会审计报告文件是否存在且模板关键章节齐全
 ```
 
 ### 与现有机制的关系

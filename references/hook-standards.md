@@ -19,6 +19,7 @@
 | **飞书通知不可遗漏** | Both | 任务中断时 LLM 无法感知自己已停止 | on_ALL_DONE 脚本主动发送 | Hook → 检查本 session 是否已发送，若无则补发 |
 | **临时标记文件必须清理** | Both | LLM 不感知副作用，无法自主清理 `/tmp/redcap-*` | — | Hook → rm -f（唯一保障层） |
 | **Layer B 变更须独立评审** | Layer B | 作者盲点：改框架的 Agent 不能评价自身变更 | — | Hook → 检测 Layer B CWD → 拉起独立 Agent 架构评审 |
+| **任务完成报告必须物理归档** | Layer B | 对话输出不可被 Hook 观察，口头回报无法审计 | Agent 主动写入 `compass/docs/task-reports/` | SessionEnd Hook → 检查最近 commit 区间内是否存在模板完整的报告文件 |
 | **Pending Actions 必须落盘** | Layer A | 会话崩溃时未落盘 Action 永久丢失 | Dispatcher 主动写入 state.yaml | Hook → 检查 state.yaml 完整性（审计保障） |
 
 > **扩展规则**：新增"必须保障"的动作，先在此表登记，再在 §2 中补充实现规范。不允许直接写进脚本而不在此表体现。
@@ -48,6 +49,7 @@
 - **目标**：保证人类搭档对进度的知情权。
 - **强制动作**：
   - **飞书通知兜底**：检查本次 session 是否产生过 `on_ALL_DONE` 通知。若无，且状态已推进，则补发汇总通知。
+  - **任务报告审计**：Layer B 需检查最近 commit 区间内是否存在 `compass/docs/task-reports/*.md` 且满足模板关键章节。
   - **Pending Actions 持久化**：确认所有未完成的 Action 已落盘到 `state.yaml`。
 ---
 
@@ -65,5 +67,6 @@
 
 本节只记录**不变的架构约束**：
 - 所有宿主的 SessionEnd/Stop Hook 入口必须最终汇聚到 `loom/tools/redcap-layerA-session-end.sh`（通用分发器）
+- Layer B 的最终收尾逻辑统一由 `compass/tools/redcap-layerB-session-end.sh` 承担；宿主配置只负责把事件接到通用分发器
 - Layer A（用户项目）Hook 配置必须注册在**用户级**配置文件，使用 RedCap 安装目录的**绝对路径**，而非项目工作区
 - Layer B（RedCap 自身）Hook 配置注册在 RedCap 仓库的**项目级**配置文件
