@@ -14,7 +14,7 @@
 
 ### 1.2 触发背景
 
-Prism redteam E2E 收尾完成后，用户没有先质疑业务结果，而是直接指出“模板报告缺失 + 飞书通知缺失”。这说明真正的问题不是单次遗漏，而是 Layer B 的**完成链缺少物理保障**：文档、宿主 Hook、报告产物三者已经发生漂移。  
+Prism redteam E2E 收尾完成后，用户没有先质疑业务结果，而是直接指出“模板报告缺失 + 飞书通知缺失”。这说明真正的问题不是单次遗漏，而是 Layer B 的**完成链缺少物理保障**：文档、宿主 Hook、报告产物三者已经发生漂移。
 本次任务的目标因此从“补发一次通知”升级为“重建可审计的 Layer B SessionEnd 收尾链”，避免以后再次靠人工肉眼发现。
 
 ---
@@ -23,9 +23,9 @@ Prism redteam E2E 收尾完成后，用户没有先质疑业务结果，而是�
 
 ### 2.1 问题分析
 
-这次暴露出来的不是单点 bug，而是三类错位叠加：  
-1. **主链错位**：Layer B 飞书通知本来要求流程内主动执行，但实际执行缺少兜底。  
-2. **可观测性缺失**：任务完成报告只存在于对话规范，没有任何物理产物可被 Hook 审计。  
+这次暴露出来的不是单点 bug，而是三类错位叠加：
+1. **主链错位**：Layer B 飞书通知本来要求流程内主动执行，但实际执行缺少兜底。
+2. **可观测性缺失**：任务完成报告只存在于对话规范，没有任何物理产物可被 Hook 审计。
 3. **文档漂移**：Copilot / Gemini / Claude 的 Hook 能力、部署状态与真实配置文件不一致，导致“能力存在”被误写成“当前已覆盖”。
 
 ### 2.2 方案选项
@@ -96,8 +96,8 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 
 ### 3.3 关联变更
 
-1. 因 `task-report-template.md` 增加物理归档约定，联动更新了 `CONTRIBUTING.md`、`hook-standards.md`、`ARCHITECTURE.md`、`README.md`。  
-2. 因 Copilot Hook 真实部署方式被纠正，联动更新了 `hooks-copilot-cli.md`、`host-reliability.md`、`DEPLOYMENT_STATUS.md`、`agent-adapters.md`。  
+1. 因 `task-report-template.md` 增加物理归档约定，联动更新了 `CONTRIBUTING.md`、`hook-standards.md`、`ARCHITECTURE.md`、`README.md`。
+2. 因 Copilot Hook 真实部署方式被纠正，联动更新了 `hooks-copilot-cli.md`、`host-reliability.md`、`DEPLOYMENT_STATUS.md`、`agent-adapters.md`。
 3. 因 Layer B 收尾链职责重构，联动更新了 Claude/Gemini 的项目级配置文档与部署矩阵。
 
 ---
@@ -123,6 +123,7 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 | JSON 配置校验 | `python3 - <<'PY' ... json.load(open('.claude/settings.json')) ... json.load(open('.gemini/settings.json')) ... json.load(open('.github/hooks/redcap-layerB.json')) ... PY` | ✅ |
 | Copilot SessionEnd 物理触发 | `REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 copilot -p 'Reply with OK only.' --allow-all --no-custom-instructions -s --model gpt-5-mini`（预先写入 `last-notified=HEAD~1`） | ✅：`/tmp/redcap-layerB-copilot-last-alerted-head = CURRENT_HEAD` |
 | Copilot SessionStart 物理触发（间接） | `REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 copilot -p 'Reply with OK only.' --allow-all --no-custom-instructions -s --model gpt-5-mini`（清空 `last-notified` / `initial-head`） | ✅：结束后 `last-notified` 仍为 `(missing)`，说明先写入了初始 HEAD，再被无差异 SessionEnd 清理 |
+| Copilot 成功路径（报告已提交） | `REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 copilot -p 'Reply with OK only.' --allow-all --no-custom-instructions -s --model gpt-5-mini`（预先写入 `last-notified=HEAD~1`，当前 HEAD 已包含报告） | ✅：`last-notified = CURRENT_HEAD` 且 `last-alerted = (missing)` |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -162,8 +163,8 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 
 ### 7.2 流程改进建议
 
-1. 任何文档如果声称“已部署”，都必须能指出**真实配置文件路径**和**最近一次验证方式**。  
-2. 任务级完成报告不应再只依赖最终聊天输出；物理报告文件应作为 Task Completion Review Gate 的硬产物。  
+1. 任何文档如果声称“已部署”，都必须能指出**真实配置文件路径**和**最近一次验证方式**。
+2. 任务级完成报告不应再只依赖最终聊天输出；物理报告文件应作为 Task Completion Review Gate 的硬产物。
 3. 宿主 Hook 责任边界必须明确区分“主链主动执行”和“SessionEnd 兜底”，避免再次把兜底误当成主路径。
 
 ---
@@ -175,7 +176,8 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 ```
 6fa1591 fix(prism): harden e2e archive and dispatch gates
 6df3418 docs(spec): add hook-chain investigation design
-（本报告对应的 Hook 链修复改动将与本文件一起归档到当前后续提交）
+9bae831 fix(hooks): harden layer-b completion chain
+（本报告在后续收尾提交中补写最终验证与 commit 清单）
 ```
 
 ### 附录 B：棱镜调用记录（如有）
