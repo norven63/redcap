@@ -429,3 +429,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：medium
 - **复现次数**：1
 - **最后命中**：2026-04-11
+
+### L-40: Session 续接能力 ≠ Prism Collect 追问能力
+- **场景**：Prism redteam E2E（run `20260411-redteam-003`）中，协议把“backend 支持追问”写得过于抽象。reviewer 与 challenger 同时指出：CLI 理论支持 `--resume`，不代表本轮运行一定保留了可复用 session handle，也不代表 Dispatcher 已实现“补充 prompt 后继续同一 session”的模板
+- **根因**：把“CLI 产品级能力”（支持 resume/session）和“本轮 runtime 可执行能力”（有 handle + 有模板 + 当前调用真的保存了 session 信息）混为一谈，导致 Collect 阶段的追问/absent 判定失真
+- **经验规则**：Prism 只有在同时满足 ① `session_registry` 已落盘可复用 handle ② 适配层已实现该 backend 的 follow-up/resume 模板 ③ 本轮调用实际保留了恢复所需 session 信息 时，才可判定 `supports_follow_up=true`；否则直接记录 backend limitation 并标记 `absent`。该判定应落到 Collect 协议与适配器文档，而不是停留在 CLI 能力表的抽象描述
+- **来源**：2026-04-11，Prism run `20260411-redteam-003` / report `20260411-redteam-001`，reviewer R-003 + challenger C-005 交叉命中，并在 Collect/adapter 协议中落地
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-11

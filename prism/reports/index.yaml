@@ -1,4 +1,30 @@
 reports:
+  - id: "20260411-redteam-001"
+    mode: redteam
+    date: "2026-04-11"
+    topic: "Prism redteam E2E validation after deterministic protocol/doc fixes"
+    agents: ["claude-code-current", "claude-sonnet-4.6", "gemini-default", "gpt-5.4"]
+    roles: ["challenger", "reviewer", "historian", "explorer"]
+    verdict: "weak-consensus"
+    consensus_actions:
+      - "Archive gate reads session_registry as the quorum source and this run additionally hard-gates schema_ok/injection_mode/dispatched"
+      - "Collect follow-up support is defined as handle + template + preserved session"
+      - "Dispatch preflight accepts and validates injection_mode planning"
+      - "Dispatch Firewall is treated as a prompt-level hard limitation until physical enforcement exists"
+    open_questions:
+      - "Council multi-round session orchestration remains unspecified across CLIs"
+      - "Mandatory Synthesis Audit still lacks a machine-verifiable gate"
+      - "Explorer fourth seat stability still needs observation"
+    lessons_updated: true
+    files_affected:
+      - "prism/tools/prism-archive-check.sh"
+      - "prism/tools/prism-dispatch-check.sh"
+      - "prism/protocol.md"
+      - "prism/roles/universal-constraints.md"
+      - "prism/roles/redteam-prompts.md"
+      - "loom/dispatcher/agent-adapters.md"
+      - "compass/knowledge/lessons.md"
+    archived: false
   - id: "20260410-redteam-001"
     mode: redteam
     date: "2026-04-10"

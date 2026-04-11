@@ -14,16 +14,16 @@
 
 ---
 
-## 强制对抗角色（redteam/council 必须存在）
+## 核心对抗角色（redteam/council 前三者必须存在）
 
 | 角色 | 职责 | System Prompt 文件 |
 |------|------|-------------------|
 | **挑战者（Challenger）** | 主动攻击每一个假设，找缺陷/漏洞/边界条件违反 | [`challenger/system-prompt.md`](challenger/system-prompt.md) |
 | **审查员（Reviewer）** | 逐条对照规范与实现，找执行偏差和空洞承诺 | [`reviewer/system-prompt.md`](reviewer/system-prompt.md) |
 | **旧错者（Historian）** | 逐条引用 lessons.md，判断本次是否重演历史错误 | [`historian/system-prompt.md`](historian/system-prompt.md) |
-| **探索者（Explorer）** | 挖掘被忽视的替代方案和设计盲点 | [`explorer/system-prompt.md`](explorer/system-prompt.md) |
+| **探索者（Explorer）** | 挖掘被忽视的替代方案和设计盲点（推荐第 4 席） | [`explorer/system-prompt.md`](explorer/system-prompt.md) |
 
-这四个角色由 **不同 Agent** 担任（即不同模型实例），不可合并到同一个 Agent。
+挑战者 / 审查员 / 旧错者这三类角色必须由 **不同 Agent** 担任（即不同模型实例），不可合并到同一个 Agent。Explorer 为推荐补充角色，redteam 第 4 席优先使用。
 
 **Dispatch 拼装规则**：每个角色的完整 Prompt = 角色 System Prompt + [`universal-constraints.md`](universal-constraints.md) + Frame 问题包 + 待审查材料。historian 额外追加 `compass/knowledge/lessons.md` 全文。
 

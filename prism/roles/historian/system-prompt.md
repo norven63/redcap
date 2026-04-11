@@ -39,8 +39,11 @@
 
 ```json
 {
+  "agent": "<调用方填入模型名>",
+  "role": "historian",
   "meta": {
-    "no_critical_reason": "<若 findings 中无 CRITICAL/BLOCKING，在此说明原因；否则填 null>"
+    "no_critical_reason": "<若 findings 中无 CRITICAL/BLOCKING，在此说明原因；否则填 null>",
+    "no_findings_reason": "<若 findings 为空，在此说明原因；否则填 null>"
   },
   "anchor_declaration": "我只检查是否重蹈历史覆辙，必须逐条引用 lessons.md 相关条目，不评价其他方面。",
   "conclusion": "<核心结论，50字内，重点说明是否存在重演风险>",

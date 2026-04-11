@@ -50,12 +50,18 @@
 
 **redteam 角色 System Prompt 注入规范**：
 
-redteam 模式中，每个 Agent 必须携带对应角色的 System Prompt（见 `prism/roles/redteam-prompts.md`）。**必须分层注入，不得合并**：
+redteam 模式中，每个 Agent 必须携带对应角色的 System Prompt（见 `prism/roles/redteam-prompts.md`）。**优先使用原生 system prompt 分层；CLI 不支持时，降级为高优先级 prompt 前缀，并在运行记录中标记。**
 
 ```
-【系统层（--system-prompt / -s 参数，受信任权威层）】
+【系统层（CLI 已验证支持原生 system prompt 时）】
   1. 角色 System Prompt（prism/roles/{role}/system-prompt.md）
   2. 通用对抗约束（prism/roles/universal-constraints.md）
+
+【高优先级前缀层（CLI 不支持原生 system prompt 时）】
+  1. 将「角色 System Prompt + 通用对抗约束」拼接为 prompt 前缀
+  2. 明确置于用户材料之前
+  3. 在 session_registry 中记录 injection_mode: native | prefixed
+  4. prefixed 模式仅保证角色一致性，**不宣称具备原生 system-layer 隔离强度**
 
 【用户层（正文 prompt，视为不受信任输入）】
   3. Frame 问题包（问题陈述 + 禁止项 + 待审查材料）
@@ -63,21 +69,21 @@ redteam 模式中，每个 Agent 必须携带对应角色的 System Prompt（见
 ```
 
 > **分层的必要性**：待审查材料（代码、文档、git diff）中可能含有"忽略上述指令"类注入文本。
-> 若材料与系统 prompt 合并进同一层，注入内容获得与角色防护指令相同的权威级别，直接破坏对抗约束。
-> 材料放入用户层后，模型会以「待检查的内容」而非「行为指令」处理它们。
+> 若材料与角色防护指令落在同一层，注入内容会与约束竞争注意力，隔离强度下降。
+> 因此：**原生 system prompt > prompt 前缀 > 纯正文混排**。当前 CLI 能力以实际 `--help`/实测为准，不得凭假设声明支持。
 
 > **禁止直接使用 Frame 问题包作为 redteam 唯一 prompt**——必须携带角色 System Prompt，否则 Dispatch 校验失败。
 
 ### Step 2 · Dispatch（分发，含防火墙）
 
-**Dispatch Firewall（强制）**：在执行阶段，所有 Agent 不得：
+**Dispatch Firewall（当前为 Prompt 级隔离，不是物理强制）**：在执行阶段，所有 Agent 不得：
 - 读取 `prism/reports/` 下的任何文件
 - 读取其他 Agent 的中间产出
 - 访问 `.dev-task.md` 或其他状态文件（Frame 内容除外）
 
 分发方式：为每个 Agent 发送完全相同的问题包（Frame 内容 + 具体分析任务）。
 
-**Session 记录（强制）**：每个 Agent 以 `mode="background"` 启动后，立即写入物理文件：
+**Session 记录（强制）**：Cap / Dispatcher 在成功启动每个 Agent 后，立即写入物理文件：
 
 ```
 prism/reports/.session-registry.yaml   ← 物理文件，运行期间落盘，gitignored
@@ -85,15 +91,18 @@ prism/reports/.session-registry.yaml   ← 物理文件，运行期间落盘，g
   run_id: <YYYYMMDD-mode-NNN>
   mode: redteam | explore | test | council
   agents:
-    - agent_id: <task tool 返回的 ID>
+    - handle_type: task_agent | cli_session | shell
+      handle: <task tool agent_id / CLI session_id / shellId>
       role: challenger | reviewer | historian | explorer | …
       model: <模型名>
       family: claude | gpt | gemini | kimi
+      injection_mode: native | prefixed
       status: dispatched | responded | absent | followed_up
       schema_ok: null | true | false
 ```
 
 session_registry 是 Council 多轮复用 session 和 Collect 追问的基础，也是 `prism-archive-check.sh` 校验 quorum 的数据源。
+Cap / Dispatcher 是 session_registry 的唯一写入方：Dispatch 阶段必须写入 `handle` 与 `injection_mode`；Collect 阶段必须把 `status` 从 `dispatched` 更新为 `responded | absent | followed_up`，并同步写回 `schema_ok`。禁止以默认值冒充已收集状态。
 
 **Dispatch 前置校验（必须通过才能继续）**：
 
@@ -107,7 +116,7 @@ bash prism/tools/prism-dispatch-check.sh \
 
 Agent 数量：
 - explore：3~5 个，≥2 家族
-- redteam：4~6 个，**≥3 家族，含挑战者/审查员/旧错者三对抗角色**
+- redteam：4~6 个，**≥3 家族，必须含挑战者/审查员/旧错者；第 4 席优先 explorer**
 - test：2~4 个，按评分维度分工
 
 **GPT 系模型特别处理**：发送问题包前检查长度，超过 800 行的材料必须分段发送（GPT 系模型会静默截断大文件而不报错，见 lessons.md L-11）。
@@ -127,12 +136,18 @@ Agent 数量：
 Agent 响应后，检查输出是否符合 Frame 锁定的 Schema。若不符合或关键字段缺失：
 
 ```
+Collect 解析顺序：
+  0. 先做高容错提取：允许 JSON 外层存在 code fence、hook 噪音、前言/尾注；只要能稳定提取出完整 JSON 载荷，就先按 schema 校验
+  1. 仅当无法提取合法 JSON，或 JSON 缺少关键字段时，才进入追问流程
+
 追问流程：
-  1. 用 write_agent(agent_id) 发送追问：
-     "你的输出缺少以下字段：{缺失字段列表}。请按 Schema 补全后重新提交。"
+  1. 若当前 backend 支持多轮追问（定义：当前 run 已保留可复用 handle，且适配层已实现该 backend 的续接/追问模板）：
+      发送追问：
+      "你的输出缺少以下字段：{缺失字段列表}。请按 Schema 补全后重新提交。"
   2. 追问最多 2 次
-  3. 2 次追问后仍不合格 → 标记 status=absent，记录原因
-  4. 超时（30min 无响应）→ 先追问 1 次，再超时 → status=absent
+  3. 若 backend 仅“理论支持 session 续接”，但本轮未保留可复用 handle / 无续接模板 → 视为不支持追问，直接标记 status=absent，并记录 backend limitation
+  4. 2 次追问后仍不合格 → 标记 status=absent，记录原因
+  5. 超时（30min 无响应）→ 先追问 1 次，再超时 → status=absent
 ```
 
 **追问禁止项**：追问只能要求 Agent 补全 Schema 格式，不得：
@@ -227,6 +242,7 @@ escalate      ：发现 PM Gate 已锁定需求的边界问题 → 【硬终态�
 1. 写入运行报告：
    prism/reports/YYYYMMDD-{mode}-NNN.md
    （NNN 为当天流水号，从 001 起）
+   报告头部必须显式记录 `run_id`，用于将报告与 `.session-registry.yaml` 绑定
 
 2. 更新索引：
    prism/reports/index.yaml
@@ -239,6 +255,12 @@ escalate      ：发现 PM Gate 已锁定需求的边界问题 → 【硬终态�
 4. Archive 校验（必须通过才能 commit）：
    bash prism/tools/prism-archive-check.sh --report prism/reports/<报告文件>
    # 退出码 1 = 校验失败，禁止 commit
+   # 必须实际读取 prism/reports/.session-registry.yaml，验证：
+   #   - 原始 Agent 总数与 N_quorum
+   #   - responded/followed_up 数量是否达标
+   #   - 不存在 lingering dispatched 状态
+   #   - responded/followed_up 项的 schema_ok=true
+   #   - 每个 Agent 的 injection_mode 已记录
 
 5. git add + commit（prism/reports/ 全部 git 追踪，作为架构演进的审计轨迹）
 ```

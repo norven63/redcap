@@ -14,18 +14,20 @@ set -euo pipefail
 MODE=""
 AGENTS_RAW=""
 PROBLEM_FILE=""
+INJECTION_MODES_RAW=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode)     MODE="$2";         shift 2 ;;
     --agents)   AGENTS_RAW="$2";   shift 2 ;;
     --problem)  PROBLEM_FILE="$2"; shift 2 ;;
+    --injection-modes) INJECTION_MODES_RAW="$2"; shift 2 ;;
     *) echo "Unknown arg: $1"; exit 1 ;;
   esac
 done
 
 if [[ -z "$MODE" || -z "$AGENTS_RAW" ]]; then
-  echo "❌ 用法: $0 --mode <redteam|explore|test|council> --agents \"model:role,...\" [--problem <file>]"
+  echo "❌ 用法: $0 --mode <redteam|explore|test|council> --agents \"model:role,...\" [--problem <file>] [--injection-modes \"role:native,role:prefixed,...\"]"
   exit 1
 fi
 
@@ -37,13 +39,14 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRISM_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-python3 - "$MODE" "$AGENTS_RAW" "$LINE_COUNT" "$PRISM_DIR" << 'PYEOF'
+python3 - "$MODE" "$AGENTS_RAW" "$LINE_COUNT" "$PRISM_DIR" "$INJECTION_MODES_RAW" << 'PYEOF'
 import sys, os
 
 mode = sys.argv[1]
 agents_raw = sys.argv[2]
 line_count = int(sys.argv[3])
 prism_dir = sys.argv[4] if len(sys.argv) > 4 else ""
+injection_modes_raw = sys.argv[5] if len(sys.argv) > 5 else ""
 
 agents = []
 for spec in agents_raw.split(','):
@@ -56,8 +59,10 @@ for spec in agents_raw.split(','):
 
 def get_family(model):
     m = model.lower()
-    if m.startswith('claude') or m.startswith('kimi'):
+    if m.startswith('claude'):
         return 'claude'
+    elif m.startswith('kimi'):
+        return 'kimi'
     elif m.startswith('gpt') or m.startswith('o1') or m.startswith('o3') or m.startswith('o4'):
         return 'gpt'
     elif m.startswith('gemini'):
@@ -68,28 +73,43 @@ roles = [a['role'] for a in agents]
 families = list(set(get_family(a['model']) for a in agents))
 total = len(agents)
 unique_families = len(families)
+injection_modes = {}
+if injection_modes_raw:
+    for spec in injection_modes_raw.split(','):
+        spec = spec.strip()
+        if not spec:
+            continue
+        if ':' not in spec:
+            print(f"❌ 非法 injection mode 规格: {spec}（需为 role:native|prefixed）")
+            sys.exit(1)
+        role, injection_mode = spec.split(':', 1)
+        injection_modes[role.strip()] = injection_mode.strip()
 
 print(f"=== Prism Dispatch 前置校验 (mode: {mode}) ===")
 print(f"Agents: {agents_raw}")
+if injection_modes_raw:
+    print(f"Injection modes: {injection_modes_raw}")
 print()
 
 fail = False
 
 # 检查 1: 对抗角色（redteam/council 必须）
 if mode in ('redteam', 'council'):
-    print("[1/4] 检查强制对抗角色...")
+    print("[1/6] 检查强制对抗角色...")
     for required in ('challenger', 'reviewer', 'historian'):
         if required in roles:
             print(f"  ✅ {required} 已分配")
         else:
             print(f"  ❌ 缺少强制角色: {required}")
             fail = True
+    if mode == 'redteam' and 'explorer' not in roles:
+        print("  ⚠️  未分配 explorer（推荐第4席，用于盲点补充，但非硬门禁）")
 else:
-    print(f"[1/4] 对抗角色检查（跳过，模式 {mode} 不要求）")
+    print(f"[1/6] 对抗角色检查（跳过，模式 {mode} 不要求）")
 
 # 检查 2: 家族多样性
 print()
-print("[2/4] 检查模型家族多样性...")
+print("[2/6] 检查模型家族多样性...")
 required_families = 3 if mode == 'redteam' else 2
 if unique_families < required_families:
     print(f"  ❌ 家族数 {unique_families} < 要求 {required_families}（当前: {', '.join(families)}）")
@@ -99,7 +119,7 @@ else:
 
 # 检查 3: Agent 数量
 print()
-print("[3/4] 检查 Agent 数量...")
+print("[3/6] 检查 Agent 数量...")
 limits = {'redteam': (4,6), 'explore': (3,5), 'test': (2,4), 'council': (3,6)}
 min_n, max_n = limits.get(mode, (2,6))
 if total < min_n:
@@ -110,9 +130,31 @@ elif total > max_n:
 else:
     print(f"  ✅ Agent 数 {total} 符合 {min_n}~{max_n} 范围")
 
-# 检查 4: 问题包长度
+# 检查 4: injection_mode 计划
 print()
-print("[4/4] 检查问题包长度...")
+print("[4/6] 检查 injection_mode 计划...")
+ADVERSARIAL_MODES = {'redteam', 'council'}
+if mode in ADVERSARIAL_MODES:
+    if not injection_modes:
+        print("  ❌ redteam/council 模式必须提供 --injection-modes")
+        fail = True
+    else:
+        for role in roles:
+            planned = injection_modes.get(role)
+            if planned in ('native', 'prefixed'):
+                print(f"  ✅ {role}: {planned}")
+            elif planned is None:
+                print(f"  ❌ {role}: 缺少 injection_mode 计划")
+                fail = True
+            else:
+                print(f"  ❌ {role}: 非法 injection_mode={planned}（仅允许 native|prefixed）")
+                fail = True
+else:
+    print(f"  ℹ️  {mode} 模式无强制对抗角色注入计划，跳过校验")
+
+# 检查 5: 问题包长度
+print()
+print("[5/6] 检查问题包长度...")
 if line_count > 0:
     if line_count > 800:
         print(f"  ⚠️  问题包 {line_count} 行 > 800 行，GPT 系模型可能静默截断（见 L-11）")
@@ -122,8 +164,7 @@ else:
     print("  ℹ️  未提供 --problem 文件，跳过长度检查")
 
 print()
-print("[5/5] 检查对抗角色 System Prompt 文件...")
-ADVERSARIAL_MODES = {'redteam', 'council'}
+print("[6/6] 检查对抗角色 System Prompt 文件...")
 if mode in ADVERSARIAL_MODES and prism_dir:
     for role in roles:
         prompt_file = os.path.join(prism_dir, 'roles', role, 'system-prompt.md')

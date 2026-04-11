@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "<REDCAP_DIR>/tools/redcap-layerA-session-start.sh"
+            "command": "<REDCAP_DIR>/loom/tools/redcap-layerA-session-start.sh"
           }
         ]
       }
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "<REDCAP_DIR>/tools/redcap-layerA-stop.sh"
+            "command": "<REDCAP_DIR>/loom/tools/redcap-layerA-stop.sh"
           }
         ]
       }
@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "<REDCAP_DIR>/tools/redcap-layerA-session-end.sh"
+            "command": "<REDCAP_DIR>/loom/tools/redcap-layerA-session-end.sh"
           }
         ]
       }

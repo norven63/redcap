@@ -34,7 +34,12 @@
    - blockers 必须是 findings 中 BLOCKING/CRITICAL 条目的摘要提取，不得另行发明
    - findings 列表按 severity 降序排列（BLOCKING 在前，MINOR 在后）
 
-5. 【完整性要求】
+5. 【机制空缺专项检查】
+   - 你必须额外扫描材料中所有“文档/协议声称存在，但未描述实现方式或执行闸门”的机制
+   - 这类问题不属于一般代码找错，而是所有 redteam 角色的强制专项检查项
+   - 若发现，必须至少以 1 条 finding 报告；若未报告，须在 blind_spots 说明为何本轮材料不存在此类机制空缺
+
+6. 【完整性要求】
    - 不得以字数限制为由截断 findings 列表
    - 宁可多报 MINOR，不可遗漏 BLOCKING/CRITICAL
    - 每个 finding 的 problem 字段必须具体到可操作的定位（文件/函数/步骤），

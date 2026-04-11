@@ -34,13 +34,13 @@
 
 ```json
 {
+  "agent": "<调用方填入模型名>",
+  "role": "reviewer",
   "meta": {
-    "no_critical_reason": "<若 findings 中无 CRITICAL/BLOCKING，在此说明原因；否则填 null>"
+    "no_critical_reason": "<若 findings 中无 CRITICAL/BLOCKING，在此说明原因；否则填 null>",
+    "no_findings_reason": "<若 findings 为空，在此说明原因；否则填 null>"
   },
   "anchor_declaration": "我只寻找协议/规范写了但代码/流程未正确执行的地方，不评价其他方面。",
-  "meta": {
-    "no_critical_reason": "<若 findings 中无 CRITICAL/BLOCKING，在此说明原因；否则填 null>"
-  },
   "conclusion": "<核心结论，50字内，必须指出最严重的规范落差>",
   "confidence": "high|medium|low",
   "findings": [

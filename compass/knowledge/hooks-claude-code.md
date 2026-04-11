@@ -125,13 +125,13 @@ Claude Code 支持 **24 种** hook 事件（截至 2026-04 官方文档）：
 {
   "hooks": {
     "SessionStart": [{
-      "hooks": [{ "type": "command", "command": "<REDCAP_DIR>/tools/redcap-layerA-session-start.sh" }]
+      "hooks": [{ "type": "command", "command": "<REDCAP_DIR>/loom/tools/redcap-layerA-session-start.sh" }]
     }],
     "Stop": [{
-      "hooks": [{ "type": "command", "command": "<REDCAP_DIR>/tools/redcap-layerA-stop.sh" }]
+      "hooks": [{ "type": "command", "command": "<REDCAP_DIR>/loom/tools/redcap-layerA-stop.sh" }]
     }],
     "SessionEnd": [{
-      "hooks": [{ "type": "command", "command": "<REDCAP_DIR>/tools/redcap-layerA-session-end.sh" }]
+      "hooks": [{ "type": "command", "command": "<REDCAP_DIR>/loom/tools/redcap-layerA-session-end.sh" }]
     }]
   }
 }
@@ -141,9 +141,9 @@ Claude Code 支持 **24 种** hook 事件（截至 2026-04 官方文档）：
 
 | 脚本 | 触发事件 | 功能 |
 |------|---------|------|
-| `tools/redcap-layerA-session-start.sh` | SessionStart | 僵尸标记清理 + 捕获初始 HEAD |
-| `tools/redcap-layerA-stop.sh` | Stop | 三重过滤检测 ALL_DONE → 调用 `redcap-on-complete.sh` |
-| `tools/redcap-layerA-session-end.sh` | SessionEnd | 清理 session 标记文件 |
+| `loom/tools/redcap-layerA-session-start.sh` | SessionStart | 僵尸标记清理 + 捕获初始 HEAD |
+| `loom/tools/redcap-layerA-stop.sh` | Stop | 三重过滤检测 ALL_DONE → 调用 `redcap-on-complete.sh` |
+| `loom/tools/redcap-layerA-session-end.sh` | SessionEnd | 清理 session 标记文件 |
 
 **三重过滤机制**（防误触发）：
 

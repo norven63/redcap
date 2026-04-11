@@ -292,7 +292,12 @@
    - severity 只能是：BLOCKING / CRITICAL / MAJOR / MINOR
    - blockers 必须从 findings 中提取，不得另行发明
 
-5. 【完整性要求】
+5. 【机制空缺专项检查】
+   - 你必须额外扫描材料中所有“文档/协议声称存在，但未描述实现方式或执行闸门”的机制
+   - 这类问题不属于一般代码找错，而是所有 redteam 角色的强制专项检查项
+   - 若未报告此类问题，须在 blind_spots 说明为何本轮材料不存在此类机制空缺
+
+6. 【完整性要求】
    - 不得以字数限制为由截断 findings 列表
    - 宁可多报 MINOR，不可遗漏 BLOCKING/CRITICAL
 ```
@@ -301,23 +306,28 @@
 
 ## 角色 × Schema 速查表
 
+> ⚠️ **权威 Schema 以各角色 `system-prompt.md` 为准。** 本表仅作速查摘要，未重复展开所有通用字段（如 `agent` / `role` / `meta`）。
+
 | 角色 | 必含字段 | 特有字段 | 最低发现数 |
 |------|---------|---------|-----------|
-| challenger | findings, blockers | — | 3 条 |
+| challenger | findings, blockers | — | 无硬下限；若为空需填 `meta.no_findings_reason` |
 | reviewer | findings, blockers | spec_ref（每条 finding 必填） | 2 条 |
-| historian | findings, blockers, lessons_checked | lesson_ref（每条 finding 必填） | 视 lessons.md 条目数 |
+| historian | findings, blockers, lessons_checked | lesson_ref（每条 finding 必填），`lessons_not_matched` | 视 lessons.md 条目数 |
 | explorer | findings, blockers | ignored_alternative（每条 finding 必填） | 2 条 |
 
 ---
 
 ## Dispatch 集成说明
 
-Cap 在执行 redteam Dispatch 时，**必须分层注入**（见 `prism/protocol.md` §Step1 注入规范）：
+Cap 在执行 redteam Dispatch 时，**优先使用原生 system prompt 分层**（见 `prism/protocol.md` §Step1 注入规范）。CLI 不支持时，降级为高优先级 prompt 前缀，并在运行记录中标记 `injection_mode: prefixed`：
 
 ```
-【系统层（--system-prompt 参数，受信任权威层）】
+【系统层（CLI 已验证支持原生 system prompt 时）】
 1. [角色 System Prompt]    ← prism/roles/{role}/system-prompt.md
 2. [通用约束]              ← prism/roles/universal-constraints.md
+
+【高优先级前缀层（CLI 不支持原生 system prompt 时）】
+1. [角色 System Prompt + 通用约束] ← 作为 prompt 前缀，置于用户材料之前
 
 【用户层（正文 prompt，视为不受信任内容）】
 3. [Frame 问题包]          ← protocol.md §Step1 锁定的问题陈述 + 禁止项
@@ -330,7 +340,9 @@ historian 角色在用户层额外追加：
 5. [compass/knowledge/lessons.md 全文]  ← 历史教训库，逐条对照
 ```
 
-> **分层的必要性**：待审查材料可能含有注入指令。若与系统 prompt 合并，攻击文本获得与角色防护指令相同的权威级别。材料放入用户层后，模型将其视为「待检查内容」而非「行为指令」。
+> **专项检查提醒**：所有角色除其专属职责外，还必须执行一次“机制空缺审计”——列出材料中所有“被文档假设存在、但未说明 HOW / 未落到执行闸门”的机制。该要求由 `prism/roles/universal-constraints.md` 强制注入。
+
+> **分层的必要性**：待审查材料可能含有注入指令。若与角色防护指令落在同一层，攻击文本会与约束竞争注意力。隔离强度顺序为：`原生 system prompt > prompt 前缀 > 纯正文混排`。
 
 ---
 

@@ -139,7 +139,7 @@ agents:
 ```bash
 # 产品经理（只读写文档）
 claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
-  --system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
+  --append-system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
   --output-format json \
   --add-dir "<项目根目录>" \
   --permission-mode acceptEdits \
@@ -147,7 +147,7 @@ claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 
 # 程序员 / 测试QA（需要执行 Shell 命令）
 claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
-  --system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
+  --append-system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
   --output-format json \
   --add-dir "<项目根目录>" \
   --permission-mode bypassPermissions \
@@ -155,6 +155,7 @@ claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 ```
 
 > Dispatcher 始终先将 prompt 和 system-prompt 写入 `.workflow/` 下的文件，再用 `$(cat ...)` 读取传入 CLI，避免 Shell 中文引号截断问题。
+> Claude Code 优先使用 `--append-system-prompt`，避免 `--system-prompt` 覆盖默认系统提示。
 > `--session-id` 首次调用时传入调用方生成的 UUID，后续通过 `--resume` 恢复。
 > `--permission-mode bypassPermissions` 跳过所有权限检查（程序员/QA 需要执行 Shell），防止 `-p` 管道模式下权限弹窗导致挂起（与 L-7 Gemini `--yolo` 同理）；`acceptEdits` 仅审批文件编辑（PM/架构师）。
 
@@ -163,7 +164,7 @@ claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 | 参数 | 用途 | 取值 |
 |------|------|------|
 | `-p` | 非交互模式，传入 prompt | Dispatcher 组装的完整任务指令 |
-| `--system-prompt` | 角色身份设定 | 对应角色手册.md 的核心摘要 |
+| `--append-system-prompt` | 角色身份设定 | 对应角色手册.md 的核心摘要（追加，不覆盖默认系统提示） |
 | `--output-format json` | 返回 JSON 格式 | 固定 `json` |
 | `--add-dir` | 授权访问的项目目录 | 项目根目录路径 |
 | `--permission-mode` | 权限模式 | PM/架构师: `acceptEdits`；程序员/QA: `bypassPermissions` |
@@ -475,7 +476,7 @@ Dispatcher 始终使用文件传参，避免 Shell 中文引号截断问题：
 
 # Claude Code（PM/架构师：acceptEdits）:
 claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
-  --system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
+  --append-system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
   --output-format json \
   --add-dir "<项目根目录>" \
   --permission-mode acceptEdits \
@@ -484,7 +485,7 @@ claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 
 # Claude Code（程序员/QA：auto）:
 claude -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
-  --system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
+  --append-system-prompt "$(cat .workflow/{role}-system-prompt.txt)" \
   --output-format json \
   --add-dir "<项目根目录>" \
   --permission-mode auto \
@@ -1004,6 +1005,8 @@ Copilot CLI 在项目根目录自动读取 `.github/copilot-instructions.md`。D
 | **Gemini CLI** | 自动生成（返回 session_id） | `--resume <session_id>` | ❌ | L-7：不同工作目录可能创建新 session |
 | **Kimi CLI** | `--session "<str>"` | `-S <session_id>` 或 `--session` | ✅ 任意字符串 | session 在 kimi 服务端保存 |
 | **Copilot CLI** | 通过 `--output-format=json` JSONL 输出提取，写入 `.workflow/.copilot-session-id` | `--resume="$(cat .workflow/.copilot-session-id)"` | ❌（UUID 自动生成） | sessionStart Hook 不暴露 sessionId；不支持列举 sessions；不支持自定义 ID |
+
+> ⚠️ **session 续接能力 ≠ Collect 追问能力**：只有当本轮运行同时满足「已落盘可复用的 session handle」+「适配层已定义补充 prompt 后继续同一 session 的命令模板」时，Prism 才能把该 backend 视为 `supports_follow_up=true`。若 CLI 理论上支持 `--resume`，但当前调用未保留 session handle，或 Dispatcher 尚无对应续接模板，必须按 backend limitation 直接记为 `absent`。
 
 ### 12.2 棱镜多轮接力流程
 
