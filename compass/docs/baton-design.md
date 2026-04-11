@@ -1,7 +1,7 @@
 # 指挥棒设计（Baton Design）
 
 > **本文件属于 Layer B 设计文档**，描述 compass 指挥棒（Layer B 调度能力）与 loom/dispatcher（Layer A 调度能力）的架构关系及共享原语。
-> **状态**：设计已定案（Norven × Cap 对齐，2026-04-11），待实现。
+> **状态**：设计已定案，脚本层已实现（2026-04-11）。
 
 ---
 
@@ -67,12 +67,16 @@ launch_agent \
 ### 3.2 结果收集原语
 
 ```bash
-collect_result \
+baton-collect.sh \
   --output-file "{结果文件路径}" \
-  --poll-interval 5 \
-  --timeout {N_seconds}
-# 返回: DONE | BLOCKED:{question} | TIMEOUT
+  --role "{角色名}" \
+  --workflow-dir "{工作流目录}"
+# exit 0 = DONE, exit 2 = BLOCKED（自动写 .workflow/blocked-*.md），
+# exit 1 = 无信号/解析失败, exit 3 = 参数错误
 ```
+
+> **注**：超时机制由 `baton-launcher.sh --timeout` 或 `baton-delegate.sh` 的 `timeout` 包装负责，
+> `baton-collect.sh` 自身为单次读取，不轮询。
 
 ### 3.3 信号路由
 
@@ -119,7 +123,9 @@ bash {loom_path}/dispatcher/dispatch.sh --task "{任务描述}" --project-dir ".
 | 共享原语文档化 | `loom/dispatcher/agent-adapters.md §12`（多轮接力协议）| ✅ 已落地 |
 | compass §8/§9 协议 | `compass/CONTRIBUTING.md §8/§9` | ✅ 已存在 |
 | skill 外包协议 | `prism/protocol.md §六`（Skill-Delegation）| ✅ 已落地 |
-| 实现共享工具脚本 | `compass/tools/baton-launcher.sh` | 🔲 待实现（P3 后续） |
+| 实现共享工具脚本 | `compass/tools/baton-launcher.sh` | ✅ 已完成（2026-04-11） |
+| 实现共享工具脚本 | `compass/tools/baton-collect.sh` | ✅ 已完成（2026-04-11） |
+| 实现共享工具脚本 | `compass/tools/baton-delegate.sh` | ✅ 已完成（2026-04-11） |
 | compass 指挥棒 CLI | `compass/tools/baton.sh` | 🔲 待实现（未来规划） |
 
 ---

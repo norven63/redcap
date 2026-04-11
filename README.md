@@ -26,6 +26,17 @@ RedCap 是一个运行在 AI Agent 宿主工具（Claude Code / Gemini CLI / Cop
 
 ---
 
+## 新能力亮点
+
+| 能力 | 一句话描述 |
+|------|----------|
+| **指挥棒（Baton）** | Layer B 共享调度原语：`baton-launcher`（启动 Agent）/ `collect`（收集结果）/ `delegate`（任务委托），支持并行裂变与条件分支 |
+| **棱镜协同分析** | 多模型并行评审引擎，独立取样（explore/redteam/test）与议事（council）两族协议，高风险决策前的对抗性验证 |
+| **Skill 外包** | 棱镜或 Cap 可将子任务委托给任意 skill（`SKILL.md` 为入口），结果通过 `skill-delegation-{id}-result.md` 回收 |
+| **书记官协议** | PM Gate 触发前的方向探讨自动落盘（`explore-notes.md`），防止多轮对话因上下文压缩丢失讨论过程 |
+
+---
+
 ## 三体架构
 
 RedCap 内部由三个子系统构成，各司其职、边界清晰：

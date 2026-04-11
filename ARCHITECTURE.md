@@ -13,13 +13,21 @@
   - [状态机](#状态机)
   - [通信协议](#通信协议)
   - [角色系统 + Prompt 组装](#角色系统--prompt-组装)
+  - [模型路由](#模型路由)
   - [可靠性工程](#可靠性工程)
 - [璇玑（Compass）— Layer B](#璇玑compass--layer-b)
   - [框架自身开发流程](#框架自身开发流程)
+  - [PM Gate（需求确认门）](#pm-gate需求确认门)
+  - [书记协议（Scribe Protocol）](#书记协议scribe-protocol)
+  - [指挥棒（Baton）](#指挥棒baton)
   - [Hook 基础设施](#hook-基础设施)
   - [经验库机制](#经验库机制)
 - [棱镜（Prism）](#棱镜prism)
+  - [两族协议](#两族协议)
+  - [Skill-Delegation 模式](#skill-delegation-模式)
+  - [多轮接力协议](#多轮接力协议)
 - [References 共约层](#references-共约层)
+- [关键协议文件索引](#关键协议文件索引)
 - [设计决策速查](#设计决策速查)
 
 ---
@@ -288,6 +296,44 @@ Dispatcher                              Agent (CLI)
 
 ---
 
+### 模型路由
+
+Dispatcher 在每个新步骤开始时执行动态路由算法，选出最适合当前角色的 Agent。
+
+**两个输入文件**：
+- `.workflow/agent-registry.yaml`：由 `tools/redcap-detect-agents.sh` 嗅探生成，记录本机可用 CLI 及实际模型
+- `compass/knowledge/model-capability-matrix.yaml`：静态能力评分矩阵，记录各模型在不同角色维度的表现
+
+**三层嗅探机制**：
+
+| 层级 | 做什么 | 耗时 | 触发时机 |
+|------|--------|------|---------|
+| **轻检测** | `command -v` + 配置 mtime 对比 | < 1s | 每次 RedCap 会话启动 |
+| **全量检测** | 读配置解析模型 + 写 registry | 2-5s | 首次 / registry 过期 / 配置变化 / Agent 失败 |
+| **探测模式** | 实际调用 CLI 获取精确模型（`--probe`） | 10s+ | 用户手动触发 / 诊断时 |
+
+**路由算法**（每个新步骤执行）：
+
+```
+输入: role, agent-registry.yaml, model-capability-matrix.yaml, dev_agent(仅 reviewer)
+输出: 有序候选列表 [{cli}&{model}, ...]
+
+1. 从 registry 筛选 available=true 的 Agent
+2. 展开可切换模型的 Agent（如 copilot → copilot&claude-opus-4.6, copilot&gpt-5.4, …）
+3. 对每个候选:
+   a. 查矩阵获取能力评分（未收录模型按 all=3 兜底）
+   b. score = model[role_req.primary] × 2 + model[role_req.secondary] × 1
+   c. Reviewer 特殊: model.family ≠ dev_agent.family → score += 2（跨家族评审加分）
+   d. agent.known_issues 非空 → score -= 1
+4. 按 score 降序 → 写入 state.yaml.current_role.candidates
+5. 连续 2 次失败 → 从 candidates 取下一个（Fallback）
+6. 新步骤开始 → 失败计数归零，重新执行路由
+```
+
+Agent 以 `{cli}&{model}` 双维度标识（如 `copilot&claude-opus-4.6`），解耦 CLI 工具与底层模型。
+
+---
+
 ### 可靠性工程
 
 RedCap 面对的核心挑战：**LLM 在长对话中的 attention 衰减导致指令遵从率下降**。
@@ -396,6 +442,101 @@ compass/
 | **§长任务并行裂变** | 分析目标 ≥5 个独立模块 | 拆解无耦合子任务，并行 Agent 执行，只汇收结论 |
 | **§自身变更 Red Teaming** | 改动核心文件且 >20 行 | 独立 critic Agent 对抗审查后再 commit |
 | **§PM Gate** | 任意需求（含单 Q） | 原文即时落盘 → PM 澄清 → 用户确认锁定 → 执行 |
+
+---
+
+### PM Gate（需求确认门）
+
+Layer B 专属机制（`CONTRIBUTING.md §10`），防止长任务因上下文衰减导致需求漂移。
+
+**执行流程**：
+
+```
+Step 0 — 原文即时固化（最优先，任何讨论之前）
+  → 将用户原始输入逐字原文写入 .dev-task.md ## 原始输入 段（禁止概括）
+
+Phase 1 — 需求澄清（PM 模式）
+  → 规模评估 → 逐 Q 澄清边界 → 每次只问一个问题 → 发现问题主动指出
+  → ⚠️ 此阶段禁止开始任何实现
+
+Phase 2 — 需求锁定
+  → 用户确认后写入 .dev-task.md ## 已确认需求 段
+  → 执行每个 Q 之前必须 re-read 对应描述（不依赖记忆）
+
+Phase 3 — 执行门控
+  → 无明确确认 → 不进入执行
+  → 每完成一个 Q → 追加执行摘要用于对标检查
+```
+
+**两段分工**：原始输入（永不修改，防失真底稿）+ 已确认需求（执行依据，经 PM 细化可合理演进）。
+
+**自主执行授权**：满足「优先级高 + 必要性高 + 棱镜 ≥2 视角无 blocking 反对」时，Cap 可自主推进 PM Gate 流程（Norven 2026-04-11 明确授权）。
+
+---
+
+### 书记协议（Scribe Protocol）
+
+Layer B 专属机制（`CONTRIBUTING.md §12`），覆盖 PM Gate 触发之前的"探讨阶段"。
+
+**问题根因**：PM Gate 前的多轮方向探讨，整个演进过程没有任何沉淀，上下文压缩后无从回溯。
+
+**触发条件**（满足任意一条立即触发）：
+- 当前对话存在 ≥2 个未解决问题
+- 同一主题已连续 >3 轮对话未做任何记录
+- 用户明确提出分歧或选项
+
+**执行动作**：
+- 将讨论状态写入 `compass/knowledge/explore-notes.md`（书记模式）
+- 写入内容：原始问题（逐字）+ 演进过程 + 关键分歧/选项 + 当前共识 + 待决策
+- 每次触发增量追加，不覆盖历史；Q 决策落定后更新状态为 `[ARCHIVED]`
+
+**与 PM Gate 的衔接**：
+```
+书记协议（§12）              PM Gate（§10）
+─────────────────            ──────────────────
+• 探讨阶段（方向未定）触发    • 方向确定后触发
+• 写 explore-notes.md        • 写 .dev-task.md
+• 防止"讨论丢失"             • 防止"执行漂移"
+↓                             ↑
+PM Gate 触发时必须先读 explore-notes.md 活跃条目作为底稿
+```
+
+**Stop Hook 检查**：`compass/tools/redcap-claude-hook-stop.sh` 在每轮结束时扫描未归档条目，有未归档时飞书告警（Non-blocking）。
+
+---
+
+### 指挥棒（Baton）
+
+Layer B 调度能力（设计文档：`compass/docs/baton-design.md`），与 loom/dispatcher 共享调度原语但各自独立实现。
+
+**核心设计**：OOP 类比
+
+```
+AbstractDispatcher（共享调度原语）
+├── launch_agent(cli, prompt, session_id?) → result
+├── collect_result(path, timeout) → content | BLOCKED | TIMEOUT
+├── route_by_signal(signal) → next_action
+└── broadcast_status(event) → 飞书通知（可选）
+
+        ↙                      ↘
+loom/dispatcher              compass 指挥棒
+（Layer A 子类）              （Layer B 子类）
+├── 状态机驱动                ├── 自由编排
+├── 固定角色序列               ├── 动态任务图
+└── PM→Arch→Code→QA→Rev       └── §8并行裂变 / §11棱镜 / skill外包
+```
+
+**三大能力**（Layer B 独有）：
+
+| 能力 | 描述 |
+|------|------|
+| **并行裂变（§8）** | N 个独立子任务同时启动，等待全部完成后汇总结论 |
+| **条件分支** | 根据 Prism 结论动态决定下一步，非固定序列 |
+| **Skill 外包** | 子任务委托给专精 skill，通过 `skill-delegation-{id}-result.md` 回收结果 |
+
+**实现状态**：共享原语文档化（`agent-adapters.md §12`）✅ | 工具脚本（`baton-launcher.sh` / `baton-collect.sh` / `baton-delegate.sh`）✅ 已实现（2026-04-11）
+
+---
 
 ### Hook 基础设施
 
@@ -523,6 +664,60 @@ prism/
 - PM Gate 已锁定需求 → Prism 运行"验证模式"：只验证方案可行性，不重开需求决策
 - PM Gate 未锁定 → Prism 可探索，但不能代替 PM Gate 做决策
 
+**触发条件（风险信号驱动）**：
+
+| 信号 | 对应模式 |
+|------|---------|
+| 改动核心协议（CONTRIBUTING.md §1-§13、SKILL.md §5.x） | `redteam` |
+| 改动 soul.md / identity.md | `test` |
+| 存在 ≥2 个互斥方案 | `council` |
+| 已有不确定性或反对意见 | `explore` |
+| 2 轮内无法自行解决的卡壳 | `council` |
+
+---
+
+### Skill-Delegation 模式
+
+棱镜或 Cap 将子任务委托给专精 skill 完成，通过文件系统回收结果（协议全文：`prism/protocol.md §六`）。
+
+```
+Cap/雇佣兵
+  ├─ 1. 决定外包：子任务超出能力边界或有更专精 skill
+  ├─ 2. 写外包请求：.workflow/skill-delegation-{task_id}.md
+  │     内容：任务描述 + 输入路径 + 期望输出格式 + 超时上限
+  ├─ 3. 启动雇佣兵（headless）：
+  │     gemini -p "[读取 {skill_path}/SKILL.md 并按协议完成以下任务]..."
+  │     （传入 SKILL.md 路径即加载 skill，无需其他机制）
+  ├─ 4. 轮询结果：.workflow/skill-delegation-{task_id}-result.md
+  │     - 成功：含 "##DONE##" 标记
+  │     - 阻塞：含 "##BLOCKED: <question>##" → 走 BLOCKED 透传协议
+  │     - 超时：降级处理，记录到 lessons
+  └─ 5. 归档 delegation 文件，更新任务进度
+```
+
+**BLOCKED 透传协议**：雇佣兵将阻塞信息写入 `.workflow/blocked-{role}-{timestamp}.md`，Cap 向 Norven 透传后追加 RESOLVED 状态，通过 `--resume` 续接 session 继续。
+
+---
+
+### 多轮接力协议
+
+棱镜 Council 模式及其他多轮对话场景的 session 续接标准（协议全文：`loom/dispatcher/agent-adapters.md §12`）。
+
+| 工具 | 首次启动 | 续接方式 | 自定义 ID |
+|------|---------|---------|---------|
+| **Claude Code** | `--session-id <UUID>` | `--resume <UUID>` | ✅ |
+| **Gemini CLI** | 自动生成 | `--resume <id>` | ❌ |
+| **Kimi CLI** | `--session "<str>"` | `-S <id>` | ✅ |
+| **Copilot CLI** | sessionStart Hook 捕获写入 `.workflow/.copilot-session-id` | `--resume=$(cat ...)` | ❌ |
+
+**接力流程**：
+
+```
+第1轮：启动 Agent → 记录 session_id → 写入 .workflow/prism-sessions.yaml
+第2轮：读取 session_id → --resume 续接 → prompt 开头附加 [续接轮次 N，摘要：...]
+第N轮：持续续接 → 直到收到 __redcap_status completed/blocked
+```
+
 ---
 
 ## References 共约层
@@ -545,6 +740,32 @@ references/
 
 ---
 
+## 关键协议文件索引
+
+| 文件 | 职责 |
+|------|------|
+| `SKILL.md` | Dispatcher 完整执行协议（Copilot CLI skill 入口） |
+| `loom/dispatcher/state-machine.md` | 状态转移表、五种启动场景定义 |
+| `loom/dispatcher/agent-adapters.md` | Agent CLI 参数映射、动态路由算法（§1.3）、多轮接力协议（§12） |
+| `loom/dispatcher/reload-rules.yaml` | 检查点重载配置（哪些时机重读哪些规则段） |
+| `loom/dispatcher/prompt-templates/` | 五角色各场景 Prompt 模板（新需求/恢复/回退/迭代） |
+| `loom/roles/*/handbook.md` | 五角色行为手册（PM/Arch/Dev/QA/Reviewer） |
+| `compass/CONTRIBUTING.md` | 框架自身开发唯一权威规范（PM Gate §10 / 书记协议 §12 / 任务复盘 §13） |
+| `compass/soul.md` | Cap 人格与复活协议（跨会话人格连续性） |
+| `compass/docs/baton-design.md` | 指挥棒设计文档（Layer B 调度原语、OOP 类比、实现路线图） |
+| `compass/knowledge/lessons.md` | 活跃经验库（每次启动自动加载，< 300 行） |
+| `compass/knowledge/model-capability-matrix.yaml` | 模型能力评分矩阵（路由算法输入） |
+| `compass/knowledge/explore-notes.md` | 书记协议存档（PM Gate 前探讨记录） |
+| `compass/.workflow/agent-registry.yaml` | 嗅探脚本生成的可用 Agent 注册表（路由算法输入） |
+| `prism/protocol.md` | 棱镜协议全文（两族协议、Skill-Delegation §六、会话记录要求） |
+| `prism/modes/README.md` | 四种运行模式说明（explore/redteam/test/council） |
+| `references/communication-protocol.md` | `__redcap_status` 通信协议完整 Schema |
+| `references/security-rules.md` | 安全铁律（注入每个 Agent Prompt） |
+| `references/agent-constraints.md` | 子 Agent 共享约束（防退化、禁止操作列表） |
+| `references/task-report-template.md` | 任务完成报告模板（自主执行后必须按此汇报） |
+
+---
+
 ## 设计决策速查
 
 | 维度 | 决策 | 理由 |
@@ -553,11 +774,15 @@ references/
 | **Dispatcher 角色** | 纯调度器，不写代码 | 职责单一，防止 Dispatcher 越权干扰 Agent 工作 |
 | **状态持久化** | YAML 文件 | 零依赖、Git 可追踪、Agent 可直读写 |
 | **Agent 通信** | outbox 文件写入（主）| E2E 验证：文件写入 100% 可靠，stdout 嵌入 0% |
+| **模型路由** | 动态路由（registry × 能力矩阵）| 本机实际可用性 × 角色适配度，Reviewer 跨家族加分 |
 | **回退策略** | 按 root_cause 三分类 | 精准回退到负责人，避免盲目重启浪费 token |
 | **Hook 分层** | Layer A（用户级）+ Layer B（项目级） | 两种 Hook 目的不同，部署位置必须分离 |
 | **经验库分层** | 活跃层 + 归档层 | 防止 lessons.md 膨胀挤占上下文 |
 | **Prism 隔离** | Dispatch Firewall | 独立取样要求各 Agent 结论不相互污染 |
 | **规则防退化** | 检查点 read_file 重载 | 成本 $0.02，远低于规则退化返工成本 |
 | **Pending Actions** | 与 state 原子写入 | 防止"更新状态但忘记后续动作"的递归遗忘 |
+| **Baton 与 Dispatcher 关系** | compass 独立扩展，loom 原地不动 | 不破坏 Layer A 用户体验；两者独立演进 |
+| **书记协议触发** | 自动（≥2 未决问题 / >3 轮无记录） | PM Gate 前的探讨阶段是最易丢失的信息节点 |
+| **Skill-Delegation 通信** | 文件系统接力 | 与棱镜现有通信模型同构；无额外依赖 |
 
 ---

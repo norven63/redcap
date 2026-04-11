@@ -808,12 +808,75 @@ SCAN_WORKING    failed       SCAN_WORKING    重试 1 次或 Fallback Agent
 | 架构探索、方向未定 | Prism explore |
 
 **自动触发信号**（满足任一立即启动 Prism）：
-- 改动 `CONTRIBUTING.md §1-§12`、`SKILL.md §5.x`、`soul.md` → **redteam**
+- 改动 `CONTRIBUTING.md §1-§13`、`SKILL.md §5.x`、`soul.md` → **redteam**
 - 改动 `identity.md` → **test**
 - 存在 ≥2 个互斥方案无法独立决策 → **council**
 - 已有明确不确定性或反对意见 → **explore**
 
 **快速调用**：参数包含 `mode`（explore|redteam|test|council）+ 问题陈述，交给 Cap 主导运行。
+
+---
+
+### 5.18 指挥棒工具（Baton Tools）
+
+> 完整设计见 `compass/docs/baton-design.md`。
+
+compass 指挥棒为 Cap 提供标准化调度原语，用于并行任务裂变（§5.15）、棱镜委托（§5.17）及跨任务编排：
+
+| 工具 | 用途 |
+|------|------|
+| `compass/tools/baton-launcher.sh` | 启动独立 Agent 进程（headless 模式，输出写文件） |
+| `compass/tools/baton-collect.sh` | 收集 Agent 输出结果（单次读取，解析 `##DONE##`/`##BLOCKED##` 信号，exit code 路由） |
+| `compass/tools/baton-delegate.sh` | 委托子任务给指定 skill（Skill 外包模式） |
+
+**何时使用 Baton**：§5.15 并行裂变子任务启动、§5.17 棱镜协议 Agent 启动、需要跨 CLI 一致调度接口时。
+
+---
+
+### 5.19 PM Gate（需求确认门）
+
+> 完整协议见 `compass/CONTRIBUTING.md §10`。本节为触发索引。
+
+**核心规则：任意需求（无论大小）在执行前必须走 PM Gate**。
+
+| 阶段 | 关键动作 |
+|------|---------|
+| Step 0 | 立即将用户原始输入逐字写入 `.dev-task.md`（任何讨论前） |
+| Phase 1 | 需求澄清（逐 Q、选择题优先，禁止同步执行） |
+| Phase 2 | 用户发出确认语句后锁定需求 |
+
+⚠️ **"Norven 在场给出授权" ≠ "PM Gate 已完成"**。PM Gate 的产物是**需求文档**，不是口头确认。
+
+**自主执行授权**（三条同时满足时，Cap 可不等待 Norven 显式指令自主推进）：
+1. 优先级高（延迟有实质代价）
+2. 必要性高（不做有明确缺口/风险）
+3. 棱镜团队 ≥2 个独立视角一致通过，无 blocking 反对
+
+---
+
+### 5.20 书记协议（Scribe Protocol）
+
+> 完整协议见 `compass/CONTRIBUTING.md §12`。本节为触发索引。
+
+**触发条件**（满足任意一条立即触发）：
+- 当前对话中**存在 ≥2 个未解决问题**
+- 同一主题已**连续 >3 轮对话未做任何记录**
+- 用户提出讨论存在**分歧或选项**（即使只有 1 个 Q）
+
+触发后，立即将当前讨论状态写入 `compass/knowledge/explore-notes.md`，本轮对话结束前完成写入。Q 决策落定后标记 `[ARCHIVED]`，沉淀到 `.dev-task.md` 或 `knowledge/lessons.md`。
+
+---
+
+### 5.21 任务级完成复盘（Task Completion Review Gate）
+
+> 完整协议见 `compass/CONTRIBUTING.md §13`。本节为触发索引。
+
+**触发条件**（满足任意一条立即触发）：
+- 全部 todos 完成，且变更涉及框架级文件（CONTRIBUTING.md / SKILL.md / ARCHITECTURE.md 等）
+- 单次任务变更文件数 ≥ 10
+- 用户明确说"完成了 / 收工 / 结束"
+
+触发后，按 §13 执行：① 文档一致性扫描 → ② 关键决策归档 → ③ Prism redteam 对抗审查 → ④ 按 `references/task-report-template.md` 生成任务报告同步 Norven。
 
 ---
 
