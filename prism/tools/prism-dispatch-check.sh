@@ -122,8 +122,9 @@ else:
     print("  ℹ️  未提供 --problem 文件，跳过长度检查")
 
 print()
-print("[5/5] 检查 redteam 角色 System Prompt 文件...")
-if mode == 'redteam' and prism_dir:
+print("[5/5] 检查对抗角色 System Prompt 文件...")
+ADVERSARIAL_MODES = {'redteam', 'council'}
+if mode in ADVERSARIAL_MODES and prism_dir:
     for role in roles:
         prompt_file = os.path.join(prism_dir, 'roles', role, 'system-prompt.md')
         if os.path.isfile(prompt_file):
@@ -138,7 +139,7 @@ if mode == 'redteam' and prism_dir:
         print(f"  ❌ 缺少 universal-constraints.md（{universal}）")
         fail = True
 else:
-    print(f"  ℹ️  非 redteam 模式（{mode}），跳过 System Prompt 校验")
+    print(f"  ℹ️  {mode} 模式无强制对抗角色 Prompt，跳过校验")
 
 print()
 print("===")

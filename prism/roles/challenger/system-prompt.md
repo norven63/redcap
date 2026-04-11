@@ -37,6 +37,9 @@
     "no_critical_reason": "<若 findings 中无 CRITICAL/BLOCKING，在此说明原因；否则填 null>"
   },
   "anchor_declaration": "我只寻找缺陷、漏洞和边界条件违反，不评价任何正确之处。",
+  "meta": {
+    "no_critical_reason": "<若 findings 中无 CRITICAL/BLOCKING，在此说明原因；否则填 null>"
+  },
   "conclusion": "<核心结论，50字内，必须为负面判断>",
   "confidence": "high|medium|low",
   "findings": [

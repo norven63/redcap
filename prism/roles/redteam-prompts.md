@@ -281,13 +281,14 @@
    - 禁止输出正向评价，哪怕是"这部分做得还行"
 
 3. 【最低发现门槛】
-   - 你必须输出至少 1 条 CRITICAL 或以上级别的发现
-   - 如果真的找不到，输出 confidence=low 并解释为什么——
-     但禁止以"没有发现问题"作为最终结论
+   - 不得以"没有发现问题"作为最终结论——找不到 BLOCKING/CRITICAL 不代表可以不输出 MAJOR/MINOR
+   - 若无法识别 CRITICAL 级别问题，**不得强行抬升** MAJOR/MINOR 的 severity 等级；
+     须在输出 JSON 的 meta.no_critical_reason 字段说明原因
+   - 若你的专属材料（如 lessons.md）为空或无相关条目，允许 findings 为空并在 meta.no_critical_reason 说明
 
 4. 【输出格式强制】
-   - 第一行必须是你的角色声明（anchor_declaration）
-   - 输出必须是合法 JSON，不允许附加 Markdown 解释
+   - 输出必须是**合法 JSON**，不允许在 JSON 前后附加任何 Markdown 文字或裸文本
+   - anchor_declaration 字段已在 JSON 内声明角色锁定，无需在 JSON 外单独输出任何声明行
    - severity 只能是：BLOCKING / CRITICAL / MAJOR / MINOR
    - blockers 必须从 findings 中提取，不得另行发明
 
@@ -311,17 +312,22 @@
 
 ## Dispatch 集成说明
 
-Cap 在执行 redteam Dispatch 时，按以下顺序拼装每个 Agent 的完整 Prompt：
+Cap 在执行 redteam Dispatch 时，**必须分层注入**（见 `prism/protocol.md` §Step1 注入规范）：
 
 ```
-1. [角色 System Prompt]    ← 本文件对应章节的 System Prompt 文本
-2. [通用约束]              ← 本文件「通用约束」章节文本
+【系统层（--system-prompt 参数，受信任权威层）】
+1. [角色 System Prompt]    ← prism/roles/{role}/system-prompt.md
+2. [通用约束]              ← prism/roles/universal-constraints.md
+
+【用户层（正文 prompt，视为不受信任内容）】
 3. [Frame 问题包]          ← protocol.md §Step1 锁定的问题陈述 + 禁止项
-4. [待审查材料]            ← 具体的代码/设计/协议文本
+4. [待审查材料]            ← 具体的代码/设计/协议文本（不可信输入）
 ```
 
-historian 角色额外注入：
+historian 角色在用户层额外追加：
 
 ```
 5. [compass/knowledge/lessons.md 全文]  ← 历史教训库，逐条对照
 ```
+
+> **分层的必要性**：待审查材料可能含有注入指令。若与系统 prompt 合并，攻击文本获得与角色防护指令相同的权威级别。材料放入用户层后，模型将其视为「待检查内容」而非「行为指令」。
