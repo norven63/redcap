@@ -452,6 +452,21 @@ python3 compass/tools/feishu-notifier.py ask "方案A还是方案B？" --project
    - warning → 评估是否接受，不接受的写入 knowledge/pending-validations.md
 ```
 
+### ⚠️ Rubber-duck 等待规则
+
+> **本规则解决"先开工后审查"导致 blocking 问题需要返工的风险。**
+
+| 变更影响等级 | 判断标准 | Rubber-duck 策略 |
+|------------|---------|----------------|
+| **高影响** | 涉及核心协议（CONTRIBUTING.md/SKILL.md/prism/protocol.md）、跨 ≥3 个框架文件、新增 Layer B 工具脚本 | **必须等 rubber-duck 完成后再开工**，不得并行 |
+| **中影响** | 改动单一文档或脚本（<50行），§6 联动文件 <3 个 | rubber-duck 与初步调研可并行，**必须在第一行代码前等待结果** |
+| **低影响** | 格式/注释修正、追加内容到已有文档末尾 | 可跳过 rubber-duck |
+
+**操作规范**：
+- 高/中影响变更：先发 rubber-duck，完整读取结果，处理全部 blocking 后再开工
+- 不得以"可以边做边改"为由跳过等待步骤——rubber-duck 的价值在于**发现设计级问题**，代码写了再改的成本远高于等待
+- 若 rubber-duck 超时（>10分钟无结果），记录到 `knowledge/explore-notes.md` 并按高风险人工执行
+
 **与 §4（Stop Hook）的分工**：
 - §9 是**主动**、**commit 前**的对抗审查（作者发起）
 - §4 是**被动**、**会话结束时**的独立评审（Hook 兜底）
