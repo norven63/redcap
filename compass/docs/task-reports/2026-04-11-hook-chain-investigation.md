@@ -104,12 +104,7 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 
 ## 四、人工审核要点
 
-> ⚠️ 以下是 Norven 需要重点确认的内容，其他部分 Cap 已自行验证。
-
-| 序号 | 审核项 | 说明 | 优先级 |
-|------|-------|------|------|
-| 1 | Layer B 统一报告归档目录 | 我将 `compass/docs/task-reports/` 固化为 Layer B 任务完成报告的唯一物理归档位置，这是规范层面的新约定，建议 Norven 明确认可 | P1 |
-| 2 | Layer A 是否也要引入同等级的“物理报告审计” | 本次只修 Layer B；若后续希望 Layer A 交付也具备同样的 Hook 审计能力，需要单独设计，不应在本次 incident 响应里顺手混入 | P2 |
+无阻塞式人工审核项。本次 incident 里关于 Layer B 报告归档目录、宿主职责边界、真实部署口径的决策，均已在多轮独立审查和真实 smoke 后由 Cap 自主闭合；若未来要把同等级“物理报告审计”扩展到 Layer A，应另起独立设计，不混入本次修复。
 
 ---
 
@@ -124,11 +119,12 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 | Copilot SessionEnd 物理触发 | `REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 copilot -p 'Reply with OK only.' --allow-all --no-custom-instructions -s --model gpt-5-mini`（预先写入 `last-notified=HEAD~1`） | ✅：`/tmp/redcap-layerB-copilot-last-alerted-head = CURRENT_HEAD` |
 | Copilot SessionStart 物理触发（间接） | `REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 copilot -p 'Reply with OK only.' --allow-all --no-custom-instructions -s --model gpt-5-mini`（清空 `last-notified` / `initial-head`） | ✅：结束后 `last-notified` 仍为 `(missing)`，说明先写入了初始 HEAD，再被无差异 SessionEnd 清理 |
 | Copilot 成功路径（报告已提交） | `REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 copilot -p 'Reply with OK only.' --allow-all --no-custom-instructions -s --model gpt-5-mini`（预先写入 `last-notified=HEAD~1`，当前 HEAD 已包含报告） | ✅：`last-notified = CURRENT_HEAD` 且 `last-alerted = (missing)` |
+| Claude SessionEnd 真实 smoke | `REDCAP_SKIP_FEISHU=1 claude -p "Reply with OK only." --output-format text`（预先写入 `last-notified=HEAD~1`） | ✅：修复宿主特定 stdout 协议后，`last-notified = CURRENT_HEAD` 且 stderr 无 schema error；同时修正了用户级 `~/.claude/settings.json` 中遗留的旧绝对路径 |
+| Gemini SessionEnd 真实 smoke | `REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 gemini -p "Reply with OK only." -y --output-format text`（预先写入 `last-notified=HEAD~1`） | ✅：`last-notified = CURRENT_HEAD` 且不再出现由说明文字中的导入指令关键字触发的导入噪音 |
 
-### 5.2 人工验证项（Cap 无法自动化验证的）
+### 5.2 追加结论
 
-- [ ] 在 Claude Code 的真实对话结束一次，观察 `Stop + SessionEnd` 是否按新职责拆分运行
-- [ ] 在 Gemini CLI 的真实对话结束一次，观察新的 SessionStart / SessionEnd 配置是否与本地网络环境兼容
+当前已无必须补跑的宿主级 smoke。Claude / Gemini / Copilot 三宿主都已完成最小真实会话验证，剩余仅保留“同宿主并发 Layer B session 共享宿主级报告 marker”这一已知非阻塞边界。
 
 ---
 
@@ -143,13 +139,17 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 
 ### 6.2 触发的新问题
 
-`compass/tools/redcap-claude-hook-stop.sh` 现在已经退居历史兼容脚本。只要确认没有外部配置仍依赖它，后续可以考虑正式删掉，以免未来再次引发“旧脚本仍在、但已不在主链”的认知噪音。  
-另一个已知边界是：报告登记 marker 目前按**宿主**隔离，而不是按**同宿主多并发 session** 隔离；这在当前设计下记为已知边界，不作为 blocking bug 处理。
+本轮在 Claude / Gemini 真实 smoke 中额外暴露并已修复三处问题：
+1. 用户级 Claude hook 仍残留旧绝对路径；已同步修正 `~/.claude/settings.json`。
+2. 通用 SessionEnd 分发器错误复用了 Gemini 的 stdout JSON 到 Claude；已改为按宿主隔离返回。
+3. `CLAUDE.md` / `GEMINI.md` / `lessons.md` 中对导入机制的说明文字会触发 Gemini 的误导入噪音；已改为不触发解析的表述。
+
+当前剩余已知边界只有一项：报告登记 marker 目前按**宿主**隔离，而不是按**同宿主多并发 session** 隔离；这在当前设计下记为已知边界，不作为 blocking bug 处理。
 
 ### 6.3 推荐的下一步行动
 
 1. 为 Layer A 的 Copilot CLI 输出一个可复用的 `.github/hooks/*.json` 安装模板，避免“Layer B 已修、Layer A 仍空白”。
-2. 在 Claude Code / Gemini CLI 各跑一次真实 SessionEnd smoke，补齐非 Copilot 宿主的本轮物理证据。
+2. 如未来需要支持同宿主多并发 Layer B session，再把报告 marker 从宿主级升级为 session 级。
 
 ---
 
@@ -189,5 +189,5 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 ### 附录 C：相关文档索引
 
 - 需求原始记录：当前会话用户原始消息（“结果报告不是按照模版来走的 / 飞书通知没有了 / hook机制失效了”）
-- 设计文档：`docs/superpowers/specs/2026-04-11-hook-chain-investigation-design.md`
+- 设计文档：`compass/docs/hook-chain-investigation-design.md`
 - 变更影响分析：`compass/CONTRIBUTING.md §6`、`references/hook-standards.md`

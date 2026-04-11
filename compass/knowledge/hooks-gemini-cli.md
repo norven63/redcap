@@ -99,7 +99,7 @@
 - `tool_name`：工具名（BeforeTool/AfterTool 时存在）
 - `tool_input`：工具输入参数（BeforeTool 时存在）
 
-**stdout（Hook 脚本 → CLI）**：必须输出合法 JSON，例：
+**stdout（Hook 脚本 → CLI）**：必须输出 Gemini 协议要求的合法 JSON，例：
 - `{"decision": "allow"}`：放行，继续执行
 - `{"decision": "deny"}`：拦截，终止工具调用
 

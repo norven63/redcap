@@ -5,6 +5,8 @@
 **默认范围决策**：C（用户暂时不在线，按默认建议执行：先止血，再扩到全链路）  
 **当前阶段**：设计 / 排查方案定义（不进入实现）
 
+> ⚠️ 本文是 **设计阶段快照**。文中“当前仓库 / 当前配置 / 当前 Hook”均指 2026-04-11 实施前的观察面，不代表最终落地状态；最终结果以 `compass/docs/task-reports/2026-04-11-hook-chain-investigation.md` 和现行配置文件为准。
+
 ---
 
 ## 1. 问题陈述
@@ -26,12 +28,12 @@
 
 ## 2. 已知初始信号
 
-在正式实现前，当前代码库里已经能看到几处高风险漂移：
+在正式实现前（以下条目均为**修复前快照**），代码库里已经能看到几处高风险漂移：
 
 1. `references/task-report-template.md` 明确定义了 RedCap 自身开发任务的标准完成报告，但当前没有发现任何脚本或 Hook 对“是否按模板输出”做机器检查。
 2. `compass/CONTRIBUTING.md §5` 明确写的是：**Layer B（开发 RedCap 自身）的飞书通知不是 Dispatcher 自动 hook，而是流程内必须自动执行**。这意味着飞书缺失未必是 Hook 脚本坏了，也可能是主链根本没被调用。
-3. `.claude/settings.json` 的 Stop hook 已注册 `redcap-on-stop-review.sh` 与 `redcap-claude-hook-stop.sh`；但 `.gemini/settings.json` 当前挂的是 `loom/tools/redcap-layerA-session-end.sh`，它会分发到 Layer B 评审，却不天然等价于 Layer B 的成功通知兜底。
-4. `compass/knowledge/hooks-copilot-cli.md` 与 `host-reliability.md` 声称 Copilot CLI 可用仓库级 `.github/hooks/`，但当前仓库里并不存在 `.github/hooks/` 目录，说明“文档承诺 vs 实际注册”至少有一处明显断裂。
+3. 修复前快照中，Claude Stop 链仍同时涉及 `redcap-on-stop-review.sh` 与历史兼容脚本 `redcap-claude-hook-stop.sh`；而 `.gemini/settings.json` 挂的是 `loom/tools/redcap-layerA-session-end.sh`，它会分发到 Layer B 评审，却不天然等价于 Layer B 的成功通知兜底。
+4. 修复前文档曾声称 Copilot CLI 可用仓库级 `.github/hooks/`，但当时仓库里尚不存在 `.github/hooks/` 目录，说明“文档承诺 vs 实际注册”至少有一处明显断裂。
 
 这些信号足以说明：**本次排查必须查链路，不是查单点。**
 
@@ -143,8 +145,8 @@
 **检查面**
 - `references/task-report-template.md` 的消费链
 - `CONTRIBUTING.md §5` 的 Layer B 飞书主链
-- `.claude/settings.json` → `redcap-claude-hook-stop.sh` / `redcap-on-stop-review.sh`
-- `.gemini/settings.json` → `redcap-layerA-session-end.sh` → Layer B 分发
+- `.claude/settings.json` → 修复前 Stop 链快照（`redcap-claude-hook-stop.sh` / `redcap-on-stop-review.sh`）
+- `.gemini/settings.json` → 修复前 SessionEnd 分发链快照（`redcap-layerA-session-end.sh` → Layer B 分发）
 - 最近两次本地提交对应的真实完成路径（`aaa4882` / `6fa1591`）
 
 **预期输出**

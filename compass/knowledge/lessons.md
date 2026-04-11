@@ -325,7 +325,7 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 ### L-30: 并行分析 Agent 的结论必须经独立 Red Teaming 才能用于实施决策
 
 - **场景**：启动多个并行 explore Agent 分析框架（Q3 红线盘点 + Q4 冗余审计），汇总报告后直接进入实施规划，其中一个 Agent 建议"归档 L-2/L-10"，另一个建议"合并 5 处降级说明"，第三个建议"提取 2 行公共 preamble"
-- **问题**：这三条建议均为误判——L-2/L-10 已在上一 session 归档（Agent 没看到 lessons-archive.md）；降级说明是 handbook 自洽的必要成分，不是无意重复；2 行共同内容引入 @import 机制得不偿失
+- **问题**：这三条建议均为误判——L-2/L-10 已在上一 session 归档（Agent 没看到 lessons-archive.md）；降级说明是 handbook 自洽的必要成分，不是无意重复；2 行共同内容引入专用导入机制得不偿失
 - **根因**：并行 Agent 各自独立、视野受限（可能看不到所有相关文件），且不会互相交叉验证。聚合者（Dispatcher）如果直接信任汇总结果，会把误报纳入实施计划
 - **经验规则**：
   1. 并行分析 Agent 的输出是"假设性候选清单"，不是可信任的行动指令
@@ -444,6 +444,15 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **根因**：把产品能力、仓库配置、E2E 触发证据混为同一个概念。只要任一环节缺失——没有 `.github/hooks/*.json`、没有真实触发证据、没有可观测产物——系统就会静默退化，而文档却仍可能自我感觉“已覆盖”
 - **经验规则**：涉及 Hook / 收尾链的结论必须分三层陈述：① **能力存在**（官方文档/CLI 支持）② **已部署**（能指出真实配置文件和脚本路径）③ **已生效**（有本地独立验证或 E2E 证据）。此外，凡是需要 Hook 审计的流程产物，必须有**物理落盘载体**（如 `compass/docs/task-reports/*.md`），禁止把“仅在对话里输出”当作可审计完成态
 - **来源**：2026-04-11，Layer B hook-chain investigation；由“任务报告未按模板 + 飞书通知缺失”追查并落地到 Copilot/Gemini/Claude 三宿主收尾链
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-11
+
+### L-42: Hook stdout 契约必须按宿主隔离，不能复用 Gemini 的 allow JSON
+- **场景**：为统一 Layer B SessionEnd 分发器复用同一份脚本时，脚本一律输出 `{"decision": "allow"}`。Gemini CLI 可接受，但 Claude Code 的 SessionEnd 生命周期 Hook 会把这段 JSON 当成不合法输出并报 schema error
+- **根因**：把“Gemini 需要 stdout JSON”误推广成“所有宿主都能接受同一 JSON”。实际不同宿主对生命周期 Hook 的 stdout 协议并不一致，Claude/Copilot 的安全返回结构与 Gemini 的 decision JSON 不是同一套接口
+- **经验规则**：Hook 适配层必须按宿主分别处理 stdout：Gemini 输出其要求的合法 JSON；Claude / Copilot 生命周期 Hook 默认保持静默，只有在官方协议明确要求时才返回宿主特定结构。禁止把某一宿主的控制 JSON 直接复用到全部宿主
+- **来源**：2026-04-11，Claude / Gemini Layer B SessionEnd 真实 smoke；Claude 实测报 `Hook JSON output validation failed`，随后修复 `loom/tools/redcap-layerA-session-end.sh`
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-11

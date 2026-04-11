@@ -54,7 +54,8 @@ Claude Code 支持 **24 种** hook 事件（截至 2026-04 官方文档）：
 ### 2.2 通信协议
 
 - **输入**：所有事件通过 **stdin JSON** 传递上下文，包含 `session_id`、`cwd`、`transcript_path` 等公共字段
-- **输出**：exit 0 = 成功（可输出 JSON 控制行为），exit 2 = 阻止（stderr 反馈给 Claude）
+- **输出**：exit 0 = 成功（可输出 Claude 协议允许的 JSON 控制行为，或保持 stdout 为空），exit 2 = 阻止（stderr 反馈给 Claude）
+- **宿主特性**：不要把 Gemini 的 `{"decision": "allow"}` 直接复用到 Claude 的生命周期 Hook；`SessionEnd` 这类非阻止事件默认保持静默更安全
 - **四种 Hook 类型**：`command`（shell）、`http`（POST）、`prompt`（LLM 单轮判断）、`agent`（子Agent 验证）
 
 ### 2.3 配置层级

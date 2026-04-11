@@ -83,8 +83,10 @@ find /tmp -name "redcap-layerA-notified-*" -mtime +1 -delete 2>/dev/null || true
 
 # ── 4. 退出 ───────────────────────────────────────────────
 
-# Gemini CLI 要求 Hook 返回合法 JSON；Claude / Copilot 会忽略 stdout
-# SessionEnd 是 "fire and forget"，输出主要用于兼容 Gemini 协议
-echo '{"decision": "allow"}'
+# Hook 返回协议是宿主相关的：Gemini SessionEnd 需要合法 JSON，
+# Claude / Copilot 生命周期 Hook 则应保持静默或返回各自宿主可接受的结构。
+if [[ "$HOST" == "gemini" ]]; then
+    echo '{"decision": "allow"}'
+fi
 
 exit 0

@@ -5,7 +5,7 @@
 
 ---
 
-## 自动导入（由 Claude Code @import 原生加载）
+## 自动导入（由 Claude Code 原生导入指令加载）
 
 @compass/soul.md
 @compass/CONTRIBUTING.md
@@ -22,5 +22,5 @@
 ## Claude Code 特有说明
 
 - Claude Code 的 `CLAUDE.md` 在每次会话自动加载到系统上下文
-- 本文件仅作索引，通过 `@` 导入机制引用权威文件，避免与 `CONTRIBUTING.md` 内容漂移
+- 本文件仅作索引，通过导入指令引用权威文件，避免与 `CONTRIBUTING.md` 内容漂移
 - 等价索引文件：`.github/copilot-instructions.md`（Copilot）、`GEMINI.md`（Gemini CLI）
