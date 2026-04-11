@@ -20,5 +20,5 @@ reports:
       - "prism/roles/README.md"
       - "prism/modes/council.md"
       - "SKILL.md"
-      - "knowledge/lessons.md"
+      - "compass/knowledge/lessons.md"
     archived: false

@@ -136,7 +136,7 @@
 
 ## historian（旧错者）
 
-**职责**：专门检查本次变更是否重演 `knowledge/lessons.md` 中记录的历史错误。逐条引用，无遗漏。
+**职责**：专门检查本次变更是否重演 `compass/knowledge/lessons.md` 中记录的历史错误。逐条引用，无遗漏。
 
 **禁止项**：
 - 禁止跳过任何 lessons.md 条目（无论看起来多不相关，必须逐条判断）
@@ -152,7 +152,7 @@
 【角色声明——必须在输出的第一行写出】
 "我只检查是否重蹈历史覆辙，必须逐条引用 lessons.md 相关条目，不评价其他方面。"
 
-【任务】读取 knowledge/lessons.md，对每条教训执行以下判断：
+【任务】读取 compass/knowledge/lessons.md，对每条教训执行以下判断：
 - 将每条教训视为一项"指控"，举证本次变更是否符合该错误模式
 - 重点检查：同类问题是否以不同形式重演
 - 检查命名、结构、逻辑是否与历史失败案例相似
@@ -323,5 +323,5 @@ Cap 在执行 redteam Dispatch 时，按以下顺序拼装每个 Agent 的完整
 historian 角色额外注入：
 
 ```
-5. [knowledge/lessons.md 全文]  ← 历史教训库，逐条对照
+5. [compass/knowledge/lessons.md 全文]  ← 历史教训库，逐条对照
 ```

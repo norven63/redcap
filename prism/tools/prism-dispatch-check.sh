@@ -34,12 +34,16 @@ if [[ -n "$PROBLEM_FILE" && -f "$PROBLEM_FILE" ]]; then
   LINE_COUNT=$(wc -l < "$PROBLEM_FILE" | tr -d ' ')
 fi
 
-python3 - "$MODE" "$AGENTS_RAW" "$LINE_COUNT" << 'PYEOF'
-import sys
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PRISM_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+python3 - "$MODE" "$AGENTS_RAW" "$LINE_COUNT" "$PRISM_DIR" << 'PYEOF'
+import sys, os
 
 mode = sys.argv[1]
 agents_raw = sys.argv[2]
 line_count = int(sys.argv[3])
+prism_dir = sys.argv[4] if len(sys.argv) > 4 else ""
 
 agents = []
 for spec in agents_raw.split(','):
@@ -116,6 +120,25 @@ if line_count > 0:
         print(f"  ✅ 问题包 {line_count} 行，无截断风险")
 else:
     print("  ℹ️  未提供 --problem 文件，跳过长度检查")
+
+print()
+print("[5/5] 检查 redteam 角色 System Prompt 文件...")
+if mode == 'redteam' and prism_dir:
+    for role in roles:
+        prompt_file = os.path.join(prism_dir, 'roles', role, 'system-prompt.md')
+        if os.path.isfile(prompt_file):
+            print(f"  ✅ {role}: system-prompt.md 存在")
+        else:
+            print(f"  ❌ {role}: 缺少 {prompt_file}")
+            fail = True
+    universal = os.path.join(prism_dir, 'roles', 'universal-constraints.md')
+    if os.path.isfile(universal):
+        print(f"  ✅ universal-constraints.md 存在")
+    else:
+        print(f"  ❌ 缺少 universal-constraints.md（{universal}）")
+        fail = True
+else:
+    print(f"  ℹ️  非 redteam 模式（{mode}），跳过 System Prompt 校验")
 
 print()
 print("===")

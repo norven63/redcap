@@ -25,7 +25,7 @@
 
 这四个角色由 **不同 Agent** 担任（即不同模型实例），不可合并到同一个 Agent。
 
-**Dispatch 拼装规则**：每个角色的完整 Prompt = 角色 System Prompt + [`universal-constraints.md`](universal-constraints.md) + Frame 问题包 + 待审查材料。historian 额外追加 `knowledge/lessons.md` 全文。
+**Dispatch 拼装规则**：每个角色的完整 Prompt = 角色 System Prompt + [`universal-constraints.md`](universal-constraints.md) + Frame 问题包 + 待审查材料。historian 额外追加 `compass/knowledge/lessons.md` 全文。
 
 详见：[`redteam-prompts.md`](redteam-prompts.md)（完整设计文档含 Schema）
 

@@ -27,8 +27,10 @@
 ```
 问题陈述    ：本次分析的核心问题是什么？
 禁止项      ：哪些结论/方案不在考虑范围？（对齐 PM Gate 已锁定决策）
-输出 Schema ：每个 Agent 必须按此格式输出：
-              独立取样模式（explore/redteam/test）：
+角色分配    ：redteam 模式中，每个 Agent 分配专属对抗角色（见下方角色规范）
+输出 Schema ：每个 Agent 按其角色对应 Schema 输出（redteam 用角色专属 Schema，
+              其余模式用通用 Schema）
+              通用 Schema（explore/test/council）：
               {
                 "agent": "<model>",
                 "role": "<分析视角或对抗职能>",
@@ -45,6 +47,26 @@
               - 若 PM Gate 已锁定需求 → Prism 运行"验证模式"：只验证方案可行性，不重开需求决策
               - 若 PM Gate 未锁定 → Prism 可探索，但不能代替 PM Gate 做决策
 ```
+
+**redteam 角色 System Prompt 注入规范**：
+
+redteam 模式中，每个 Agent 必须携带对应角色的 System Prompt（见 `prism/roles/redteam-prompts.md`）。**必须分层注入，不得合并**：
+
+```
+【系统层（--system-prompt / -s 参数，受信任权威层）】
+  1. 角色 System Prompt（prism/roles/{role}/system-prompt.md）
+  2. 通用对抗约束（prism/roles/universal-constraints.md）
+
+【用户层（正文 prompt，视为不受信任输入）】
+  3. Frame 问题包（问题陈述 + 禁止项 + 待审查材料）
+     historian 额外追加：compass/knowledge/lessons.md 全文
+```
+
+> **分层的必要性**：待审查材料（代码、文档、git diff）中可能含有"忽略上述指令"类注入文本。
+> 若材料与系统 prompt 合并进同一层，注入内容获得与角色防护指令相同的权威级别，直接破坏对抗约束。
+> 材料放入用户层后，模型会以「待检查的内容」而非「行为指令」处理它们。
+
+> **禁止直接使用 Frame 问题包作为 redteam 唯一 prompt**——必须携带角色 System Prompt，否则 Dispatch 校验失败。
 
 ### Step 2 · Dispatch（分发，含防火墙）
 
@@ -179,7 +201,7 @@ escalate      ：发现 PM Gate 已锁定需求的边界问题 → 【硬终态�
    （格式见下方 Index Schema）
 
 3. 若 Adjudicate = consensus 或 weak-consensus，且产出可被后续决策引用：
-   将核心结论（1~3 条）沉淀至 knowledge/lessons.md
+   将核心结论（1~3 条）沉淀至 compass/knowledge/lessons.md
    （理由：复活协议必读 lessons.md，这是棱镜结论进入"长期记忆"的唯一通道）
 
 4. Archive 校验（必须通过才能 commit）：
