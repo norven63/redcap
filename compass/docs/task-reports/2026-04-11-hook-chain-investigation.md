@@ -112,6 +112,8 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 
 ### 5.1 自动化验证
 
+> 说明：以下命令前缀里的 `REDCAP_SKIP_FEISHU=1` 与 `REDCAP_SKIP_INDEPENDENT_REVIEW=1`，都是 **Cap 在本地做最小 smoke 时临时注入的验证变量**，用于避免测试过程产生真实飞书或重复拉起独立评审；它们不是用户预设，也不是 RedCap 的常驻部署要求。
+
 | 验证项 | 命令 | 结果 |
 |--------|------|------|
 | Shell 语法检查 | `bash -n compass/tools/redcap-claude-hook-init.sh compass/tools/redcap-layerB-session-start.sh compass/tools/redcap-task-report-check.sh compass/tools/redcap-layerB-session-end.sh compass/tools/redcap-explore-notes-check.sh compass/tools/redcap-on-stop-review.sh loom/tools/redcap-layerA-session-end.sh .github/hooks/scripts/redcap-layerB-session-start.sh .github/hooks/scripts/redcap-layerB-session-end.sh` | ✅ |
