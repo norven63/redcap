@@ -592,3 +592,73 @@ Prism 发现需求边界问题 → escalate → 回到 §10 PM Gate 重新锁定
 - 模式说明：`prism/modes/README.md`
 - 报告归档：`prism/reports/`（git 追踪）
 - 报告索引：`prism/reports/index.yaml`
+
+---
+
+## §12 书记协议（Scribe Protocol）
+
+> **本节属于 Layer B（开发 RedCap 自身）**。防止 PM Gate 前的方向探讨因上下文压缩丢失，解决"讨论阶段无记录机制"的系统性缺口。
+
+**问题根因**：多Q探讨阶段（PM Gate 触发前）可能走很多轮——用户抛方向、Cap 细化加工、反复讨论——整个演进过程没有任何沉淀。当真正需要回溯某轮细节时，已无从查找。这比需求漂移更早发生，且无法被 §10 PM Gate 覆盖（那时方向尚未确定）。
+
+### 触发条件（满足任意一条立即触发）
+
+- 当前对话中**存在 ≥2 个未解决问题**
+- 同一主题已**连续 >3 轮对话未做任何记录**
+- 用户明确提出讨论存在**分歧或选项**（即使只有 1 个 Q）
+
+### 执行动作
+
+触发后，Cap 立即将当前讨论状态写入 `compass/knowledge/explore-notes.md`（书记模式）：
+
+1. **即时性**：触发条件成立后**本轮对话结束前**完成写入，不推迟到下一轮
+2. **完整性**：用户原始问题必须逐字原文记录（与 §10 PM Gate 同等要求，禁止概括）
+3. **增量追加**：每次触发追加新条目，不覆盖已有记录
+4. **归档闭环**：Q 决策落定后，将对应条目状态更新为 `[ARCHIVED]`，并沉淀到 `.dev-task.md` 或 `knowledge/lessons.md`
+
+### 写入格式
+
+```markdown
+## [YYYY-MM-DD HH:MM] Q<N>: <问题标题>
+
+**原始问题**（用户原文，禁止改写）：
+> ...
+
+**演进过程**：
+- 轮次 1：...
+- 轮次 2：...
+
+**关键分歧 / 选项**：
+- 选项 A：...（支持理由）
+- 选项 B：...（支持理由）
+
+**当前共识**：...
+
+**待决策**：[NORVEN_DECIDE] / [CAP_DECIDE] / 已决定：...
+
+**状态**：exploring / aligned / decided / [ARCHIVED]
+```
+
+### 与 §10 PM Gate 的衔接
+
+```
+书记模式（§12）                    PM Gate（§10）
+─────────────────                  ──────────────────
+• 探讨阶段（方向未定）触发          • 方向确定后触发
+• 写入 explore-notes.md            • 写入 .dev-task.md
+• 防止"讨论丢失"                   • 防止"执行漂移"
+↓                                   ↑
+explore-notes.md 作为 PM Gate Phase 1 的原始资料直接消费
+```
+
+PM Gate 触发时，**必须先读 `explore-notes.md`** 的相关活跃条目，作为需求澄清的上下文底稿。
+
+### Stop Hook 检查
+
+`compass/tools/redcap-claude-hook-stop.sh` 在每轮结束时检查：
+- 若 `explore-notes.md` 存在且有**未归档**（非 `[ARCHIVED]`）的活跃条目 → 飞书告警（Non-blocking，提醒，不阻塞 Agent）
+- 告警内容：条目数量 + 最老未归档条目的时间戳
+
+### 文件位置
+
+`compass/knowledge/explore-notes.md`（持久化，git 追踪，与 lessons.md 同级）

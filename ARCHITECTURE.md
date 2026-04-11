@@ -367,10 +367,10 @@ compass/
 ├── CONTRIBUTING.md  ← 框架自身开发的唯一权威规范
 ├── CHANGELOG.md
 ├── knowledge/       ← lessons.md, design-principles.md, host-reliability.md,
-│                       hooks-*.md, model-capability-matrix.yaml, …
+│                       hooks-*.md, model-capability-matrix.yaml, explore-notes.md, …
 ├── tools/           ← 飞书通知、Claude/Gemini/Kimi Hook 处理器
-├── docs/            ← 设计文档和技术调研
-└── .workflow/       ← 运行时状态（agent-registry.yaml 等）
+├── docs/            ← 设计文档和技术调研（baton-design.md 等）
+└── .workflow/       ← 运行时状态（agent-registry.yaml, blocked-*.md 等）
 ```
 
 ### 框架自身开发流程
@@ -534,7 +534,8 @@ references/
 ├── commit-standards.md       ← Git commit 规范（Conventional Commit 中文格式）
 ├── communication-protocol.md ← __redcap_status 通信协议完整 Schema
 ├── hook-standards.md         ← Hook 编写规范
-└── agent-constraints.md      ← 子 Agent 共享约束（防退化、禁止操作等）
+├── agent-constraints.md      ← 子 Agent 共享约束（防退化、禁止操作等）
+└── task-report-template.md   ← 任务完成报告标准模板（每次任务交付时使用）
 ```
 
 这是 Loom 与 Compass 的**公约层**：

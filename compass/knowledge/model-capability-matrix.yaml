@@ -163,3 +163,55 @@ models:
 #   该步骤内即使出现非致命错误也不切换。
 #   仅当连续 2 次失败时触发 Fallback，从列表中取下一个。
 #   新步骤开始时重新计算（失败计数归零，重读 registry）。
+
+  gemini-2.5-pro:
+    family: google
+    tier: premium
+    reasoning: 5
+    coding: 4
+    instruction_following: 4
+    tool_use: 4
+    cost_efficiency: 3
+    source: "RedCap 实测 2026-04 + 官方发布：Gemini 2.5 Pro 正式版，推理能力显著提升"
+    known_issues:
+      - "L-7: 不同工作目录调用可能创建新 session，续接时需显式 --resume"
+
+  gemini-2.5-flash:
+    family: google
+    tier: standard
+    reasoning: 4
+    coding: 4
+    instruction_following: 4
+    tool_use: 4
+    cost_efficiency: 5
+    source: "RedCap 实测 2026-04：Gemini 2.5 Flash，速度/成本优于 2.5 Pro，适合高频调用"
+
+  gpt-5.4:
+    family: openai
+    tier: premium
+    reasoning: 5
+    coding: 5
+    instruction_following: 5
+    tool_use: 4
+    cost_efficiency: 2
+    source: "GPT-5.4 官方发布 + Copilot CLI 默认模型之一；成本高，质量顶级"
+
+# ═══════════════════════════════════════════════════════
+# 矩阵维护规范
+# ═══════════════════════════════════════════════════════
+#
+# 更新频率: 每 30 天（日历提醒）或遇以下事件时立即更新：
+#   - 主力模型（claude/gemini/gpt）发布新版本
+#   - 发现某模型评分与实测偏差 ≥1 分
+#   - RedCap 新增一个 known_issue 指向某模型
+#
+# 更新步骤:
+#   1. 更新模型条目（评分 + source 注明评估日期）
+#   2. 对比新评分与路由算法：是否影响各角色首选模型
+#   3. 若首选变更 → 更新 agent-registry.yaml 并通知 Norven
+#   4. 在 CONTRIBUTING.md §8 并行裂变实例中更新示例模型
+#
+# Frame 阶段集成:
+#   Prism Frame 阶段（拆分独立任务、选型雇佣兵）必须读取本文件，
+#   根据路由算法为每个子任务选择最合适的 {cli}&{model} 组合。
+#   禁止在 Frame 阶段凭记忆选型，必须引用矩阵评分。

@@ -5,6 +5,7 @@ compass/tools/feishu-config.json
 __pycache__/
 *.pyc
 docs*/
+!compass/docs/
 round-table/
 .dev-task.md
 prism/reports/.session-registry.yaml

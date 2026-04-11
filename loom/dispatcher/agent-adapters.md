@@ -934,3 +934,73 @@ Copilot CLI 在项目根目录自动读取 `.github/copilot-instructions.md`。D
 > ⚠️ Copilot CLI 不支持 `@file` 原生导入（与 Claude Code、Gemini 不同）。
 > 共享约束需通过 Prompt 前缀注入或在 `.github/copilot-instructions.md` 中内联关键规则。
 > Hook 脚本（`.github/hooks/`）提供另一层约束注入机制（见 `knowledge/hooks-copilot-cli.md`）。
+
+---
+
+## §12 多轮接力协议（Multi-turn Relay Protocol）
+
+> **用途**：定义棱镜（Prism）及其他需要多轮对话场景下，各 Agent CLI 工具的 session 续接标准化操作。
+> 解决"各工具 session 机制不统一"导致上下文丢失的问题。
+
+### 12.1 各工具续接能力对比
+
+| 工具 | 首次启动 session | 续接方式 | 自定义 ID | 限制 |
+|------|---------------|---------|---------|------|
+| **Claude Code** | `--session-id <UUID>` | `--resume <UUID>` | ✅ 任意 UUID | 无 |
+| **Gemini CLI** | 自动生成（返回 session_id） | `--resume <session_id>` | ❌ | L-7：不同工作目录可能创建新 session |
+| **Kimi CLI** | `--session "<str>"` | `-S <session_id>` 或 `--session` | ✅ 任意字符串 | session 在 kimi 服务端保存 |
+| **Copilot CLI** | 由 sessionStart Hook 捕获写入 `.workflow/.copilot-session-id` | `--resume="$(cat .workflow/.copilot-session-id)"` | ❌（UUID 自动生成） | 不支持列举 sessions；不支持自定义 ID |
+
+### 12.2 棱镜多轮接力流程
+
+棱镜运行中可能需要多轮对话（如 Council 模式需要多方讨论收敛）。标准接力流程：
+
+```
+第1轮：启动 Agent → 记录 session_id → 写入 .workflow/prism-sessions.yaml
+第2轮：读取 session_id → --resume/续接 → 追加 context（上一轮摘要 + 新问题）
+第N轮：持续续接 → 直到 __redcap_status completed/blocked 收到
+```
+
+**context 携带规则**：续接时必须在 prompt 开头附加：
+```
+[续接轮次 N，摘要：<上轮核心结论1-2句话>]
+<新的问题/追加内容>
+```
+
+### 12.3 BLOCKED 信号物理锚点
+
+当棱镜雇佣兵或任何子 Agent 遇到需要人工决策的阻塞点时：
+
+**写入位置**：`{任务工作目录}/.workflow/blocked-{role}-{timestamp}.md`
+
+**格式**：
+```markdown
+# BLOCKED: {问题一句话标题}
+
+**阻塞方**：{role名称}（如 prism-council, architect）
+**时间戳**：{ISO8601}
+**上下文**：{当前任务和进度，2-3句话}
+**阻塞问题**：
+> {用户必须决策的具体问题，禁止模糊描述}
+
+**选项**：
+- 选项 A：{描述} — {影响}
+- 选项 B：{描述} — {影响}
+
+**Cap 推荐**：{推荐选项及理由，1句话}
+
+**状态**：PENDING / RESOLVED
+```
+
+**Cap 读取方式**：每轮任务开始时扫描 `find .workflow -name "blocked-*.md" -newer ...`，发现 PENDING 文件则读取并向 Norven 透传，等待决策后在文件追加 `**状态**：RESOLVED\n**决策**：{Norven 的决定}` 后重启 Agent 续接。
+
+### 12.4 Copilot CLI Session 续接注意事项
+
+Copilot CLI 支持 `--resume`，但有特殊前提：
+1. **sessionStart Hook 必须已配置**（`compass/tools/redcap-copilot-hook-session-start.sh`）
+2. Session UUID 由 Copilot 自动生成，Hook 捕获后写入 `.workflow/.copilot-session-id`
+3. 续接时读取该文件：`copilot -p "..." --resume="$(cat .workflow/.copilot-session-id)"`
+4. 限制：不支持自定义 Session ID，不支持列举所有 sessions
+
+> ⚠️ **L-7 警告（Gemini）**：Gemini CLI 在不同工作目录调用时可能创建新 session 而非续接。
+> 解决方案：始终在项目根目录执行 Gemini 续接调用，或显式传入 `--resume` 参数。

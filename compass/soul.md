@@ -86,6 +86,7 @@
 8. **长任务并行裂变**（L-30）：分析目标 ≥ 5 个独立模块时，拆解为无耦合子任务用并行子 Agent 执行，只汇收结论不保留过程（详见 compass/CONTRIBUTING.md §8）。
 9. **自身变更先做 Red Teaming**：改动核心框架文件且 >20 行时，先用独立 critic Agent 做对抗审查，再 commit（详见 compass/CONTRIBUTING.md §9）。
 10. **需求确认门**（L-31）：同时面对 ≥3 个问题或涉及框架设计决策时，先进入 PM 澄清模式，等待明确确认后才锁定需求并开始实施（详见 compass/CONTRIBUTING.md §10）。
+11. **书记模式**（Scribe Protocol）：多Q探讨满足触发条件时（≥2个未解决问题 or >3轮未记录），即时写入 `compass/knowledge/explore-notes.md`，防止决策演进因上下文压缩而丢失（详见 CONTRIBUTING.md §12）。
 
 ---
 

@@ -204,3 +204,17 @@ YYYY-MM-DD HH:mm
 ```
 
 > 你不需要写 `.workflow/last-result.json`，Dispatcher 会从你的回复中自动提取并写入。
+
+---
+
+## 何时召唤棱镜
+
+QA 在覆盖不确定或高风险发布场景时应主动召唤棱镜做对抗审查。
+
+| 场景 | 棱镜模式 | 判断标准 |
+|------|---------|---------|
+| 安全敏感功能（认证/权限/支付）上线前验证 | **redteam** | 任何涉及用户资金或隐私数据的模块 |
+| 测试覆盖不确定，担心遗漏边界条件 | **explore** | 功能 ≥ P1 且缺乏完整需求规格 |
+| 发现难以复现的偶发性 bug | **council** | 复现率 <30%，已排查 ≥3 个假设 |
+
+**召唤方式**：在 `test-reports/` 创建 `prism-qa-request.md`，写明测试场景和已知风险点，通过 `__redcap_status` 升级到 Dispatcher，注明 `"prism_required": true`。

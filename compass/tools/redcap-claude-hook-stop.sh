@@ -54,4 +54,23 @@ python3 "$NOTIFIER" notify \
 # 记录已通知的 HEAD，防止下次 Stop 重复通知
 echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
 
+# ── 书记协议检查（§12）──────────────────────────────────────
+# 检测 explore-notes.md 是否有未归档条目，有则飞书告警（Non-blocking）
+EXPLORE_NOTES="$REDCAP_ROOT/compass/knowledge/explore-notes.md"
+if [[ -f "$EXPLORE_NOTES" ]]; then
+    # 统计非 [ARCHIVED] 的活跃条目（以 "## [" 开头且下方无 [ARCHIVED] 标记）
+    UNARCHIVED_COUNT=$(awk '
+        /^## \[/ { in_entry=1; entry_line=$0; archived=0 }
+        in_entry && /\[ARCHIVED\]/ { archived=1 }
+        in_entry && /^## \[/ && NR>1 && !archived { count++ }
+        END { if (in_entry && !archived) count++; print count+0 }
+    ' "$EXPLORE_NOTES")
+
+    if [[ "$UNARCHIVED_COUNT" -gt 0 ]]; then
+        python3 "$NOTIFIER" notify \
+            "⚠️ 探索笔记提醒\n\n存在 ${UNARCHIVED_COUNT} 个未归档的探讨条目，请在 PM Gate 前归档或沉淀到 .dev-task.md\n\n文件：compass/knowledge/explore-notes.md" \
+            --project "redcap" 2>/dev/null || true
+    fi
+fi
+
 exit 0

@@ -294,3 +294,66 @@ Prism 发现需求边界问题 → escalate → 回到 §10 PM Gate 重新锁定
 | 架构探索，方向未定 | Prism explore | 开放取样，提炼共识 |
 
 §8/§9 是轻量快速路径，Prism 是高后果决策的系统化路径。两者并存，不替代。
+
+---
+
+## 六、Skill-Delegation 模式（外包模式）
+
+> **用途**：Cap 或棱镜雇佣兵需要将某子任务外包给另一个专精 skill 完成，并回收其结果。
+> **前提**：外包目标 skill 有标准的 `SKILL.md` 入口文件。
+
+### 6.1 工作流
+
+```
+Cap/雇佣兵
+  │
+  ├─ 1. 决定外包：子任务超出当前 skill 能力边界，或有更专精的 skill 可完成
+  │
+  ├─ 2. 准备外包请求文件：.workflow/skill-delegation-{task_id}.md
+  │     内容：任务描述 + 输入文件路径 + 期望输出格式 + 超时上限
+  │
+  ├─ 3. 启动雇佣兵 Agent（headless）：
+  │     gemini -p "[读取 {skill_path}/SKILL.md 并按其协议完成以下任务]..." \
+  │     --tools=all --yolo
+  │     （路径传入 = 加载 skill，无需 prompt 注入或任何导入机制）
+  │
+  ├─ 4. 等待结果：轮询 .workflow/skill-delegation-{task_id}-result.md
+  │     - 成功：result 包含 "##DONE##" 标记，读取并继续
+  │     - 阻塞：result 包含 "##BLOCKED: <question>##"，走 6.2 透传流程
+  │     - 超时：降级处理（记录到 lessons，自行完成或报错升级）
+  │
+  └─ 5. 清理：归档 delegation 文件，更新任务进度
+```
+
+### 6.2 BLOCKED 透传协议
+
+当雇佣兵遇到需要人工决策的阻塞点时：
+
+1. 雇佣兵将阻塞信息写入 `.workflow/blocked-{role}-{timestamp}.md`（格式见 `loom/dispatcher/agent-adapters.md §12.3`）
+2. Cap 发现 PENDING 状态的 blocked 文件 → 读取内容 → 向 Norven 透传问题
+3. Norven 给出决策 → Cap 在文件中追加 `**状态**：RESOLVED\n**决策**：{决策内容}`
+4. Cap 重启雇佣兵 Agent，通过 `--resume` 续接 session（参照 `loom/dispatcher/agent-adapters.md §12`），并附加决策内容作为 context
+
+**多轮 BLOCKED 处理**：若单次任务触发 ≥3 次 BLOCKED，升级为 Prism council 模式重新评估该子任务的可行性。
+
+### 6.3 外包请求文件格式
+
+```markdown
+# Skill Delegation: {task_id}
+
+**发起方**：{role/Cap}
+**目标 Skill**：{skill_path}（如 /Users/norven/.claude/skills/some-skill）
+**任务描述**：
+> {具体要完成的任务，1-3句话}
+
+**输入**：
+- {文件路径或内容描述}
+
+**期望输出**：
+- 格式：{markdown / yaml / json / ...}
+- 写入路径：`.workflow/skill-delegation-{task_id}-result.md`
+- 完成信号：`##DONE##` 写在文件末尾
+
+**超时**：{N} 分钟（超时后 Cap 自行降级处理）
+**状态**：PENDING / IN_PROGRESS / DONE / BLOCKED / TIMEOUT
+```

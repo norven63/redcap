@@ -2,7 +2,7 @@
 # 由嗅探脚本自动生成，勿手动编辑
 # 重新检测: bash tools/redcap-detect-agents.sh [--probe]
 #
-# capability_matrix: /Users/norven/.claude/skills/redcap/knowledge/model-capability-matrix.yaml
+# capability_matrix: /Users/norven/.claude/skills/redcap/compass/knowledge/model-capability-matrix.yaml
 detected_at: "2026-04-10T14:58:03Z"
 probe_mode: true
 agents:

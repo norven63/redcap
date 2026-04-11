@@ -808,7 +808,7 @@ SCAN_WORKING    failed       SCAN_WORKING    重试 1 次或 Fallback Agent
 | 架构探索、方向未定 | Prism explore |
 
 **自动触发信号**（满足任一立即启动 Prism）：
-- 改动 `CONTRIBUTING.md §1-§10`、`SKILL.md §5.x`、`soul.md` → **redteam**
+- 改动 `CONTRIBUTING.md §1-§12`、`SKILL.md §5.x`、`soul.md` → **redteam**
 - 改动 `identity.md` → **test**
 - 存在 ≥2 个互斥方案无法独立决策 → **council**
 - 已有明确不确定性或反对意见 → **explore**
