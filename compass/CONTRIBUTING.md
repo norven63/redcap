@@ -718,8 +718,8 @@ PM Gate 触发时，**必须先读 `explore-notes.md`** 的相关活跃条目，
 
 | 条件 | 说明 |
 |------|------|
-| 本次任务**变更文件数 ≥ 10** | 大范围改动，单点 rubber-duck 无法覆盖全局 |
-| **全部 todos 标记为 done** 且涉及框架级文件（CONTRIBUTING.md / SKILL.md / prism/protocol.md） | 框架型迭代完成 |
+| 本次任务**变更文件数 ≥ 10** | 大范围改动，单点 rubber-duck 无法覆盖全局。计数口径：`git diff --name-only <base>..HEAD` 输出的文件数，重命名计 1 个，合并多 commit 按整体范围算 |
+| **全部 todos 标记为 done** 且涉及框架级文件（CONTRIBUTING.md / SKILL.md / prism/protocol.md） | 框架型迭代完成。触发主体：Cap 在每次将最后一个 todo 标记 done 后自检 |
 | 用户明确说"完成了"/"收工"/"结束" | 显式触发 |
 
 ### 执行步骤（必须按顺序完成，不可跳过）

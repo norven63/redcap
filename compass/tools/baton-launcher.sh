@@ -125,7 +125,7 @@ case "$CLI" in
       --add-dir "$WORK_DIR"
       --permission-mode bypassPermissions)
     if [[ -n "$SESSION_ID" ]]; then
-      CMD+=(--session-id "$SESSION_ID")
+      CMD+=(--resume "$SESSION_ID")
     fi
     if [[ -n "$MODEL" ]]; then
       CMD+=(--model "$MODEL")

@@ -688,10 +688,10 @@ Cap/雇佣兵
   ├─ 3. 启动雇佣兵（headless）：
   │     gemini -p "[读取 {skill_path}/SKILL.md 并按协议完成以下任务]..."
   │     （传入 SKILL.md 路径即加载 skill，无需其他机制）
-  ├─ 4. 轮询结果：.workflow/skill-delegation-{task_id}-result.md
-  │     - 成功：含 "##DONE##" 标记
-  │     - 阻塞：含 "##BLOCKED: <question>##" → 走 BLOCKED 透传协议
-  │     - 超时：降级处理，记录到 lessons
+  ├─ 4. 收集结果：调用方须显式传入 `baton-delegate.sh --output-file .workflow/skill-delegation-{task_id}-result.md`
+  │     - exit 0：含 "##DONE##" 信号，任务完成
+  │     - exit 2：BLOCKED，blocked 文件已写入 `.workflow/blocked-{role}-{ts}.md`
+  │     - exit 124：TIMEOUT，降级处理，记录到 lessons
   └─ 5. 归档 delegation 文件，更新任务进度
 ```
 

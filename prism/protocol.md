@@ -262,7 +262,7 @@ reports:
 
 | 风险信号 | 触发模式 |
 |---------|---------|
-| 改动核心协议/状态机（CONTRIBUTING.md §1-§10、SKILL.md §5.x） | redteam |
+| 改动核心协议/状态机（CONTRIBUTING.md §1-§13、SKILL.md §5.x） | redteam |
 | 改动身份资产（soul.md、identity.md）| test |
 | 存在 ≥2 个互斥方案，无法独立决策 | council |
 | 已有明确不确定性或反对意见 | explore |
@@ -317,10 +317,11 @@ Cap/雇佣兵
   │     --tools=all --yolo
   │     （路径传入 = 加载 skill，无需 prompt 注入或任何导入机制）
   │
-  ├─ 4. 等待结果：轮询 .workflow/skill-delegation-{task_id}-result.md
+  ├─ 4. 等待结果：雇佣兵将输出写入 `--output-file` 指定路径（建议：`.workflow/skill-delegation-{task_id}-result.md`）
+  │     调用方须在启动时显式传入 `baton-delegate.sh --output-file .workflow/skill-delegation-{task_id}-result.md`
   │     - 成功：result 包含 "##DONE##" 标记，读取并继续
-  │     - 阻塞：result 包含 "##BLOCKED: <question>##"，走 6.2 透传流程
-  │     - 超时：降级处理（记录到 lessons，自行完成或报错升级）
+  │     - 阻塞：exit 2，blocked 文件已写入 `.workflow/blocked-{role}-{ts}.md`，走 6.2 透传流程
+  │     - 超时：exit 124，降级处理（记录到 lessons，自行完成或报错升级）
   │
   └─ 5. 清理：归档 delegation 文件，更新任务进度
 ```
