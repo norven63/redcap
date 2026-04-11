@@ -7,7 +7,8 @@
 #     --prompt-file <path>       # prompt 内容文件（避免 ARG_MAX 限制）
 #     --output-file <path>       # CLI 原始输出写入此文件
 #     [--model <model_id>]       # 可选，覆盖默认模型
-#     [--session-id <id>]        # 可选，用于续接（claude/kimi）；copilot 从 .copilot-session-id 读取
+#     [--session-id <id>]        # 可选，首次调用时指定 session UUID（claude/kimi）
+#     [--resume <id>]            # 可选，续接已有 session（优先于 --session-id）
 #     [--skill-path <dir>]       # 可选，Skill 外包：在 prompt 前注入"加载此 skill"指令
 #     [--work-dir <dir>]         # Agent 工作目录，默认 $PWD
 #     [--timeout <seconds>]      # 超时秒数，默认 300
@@ -27,6 +28,7 @@ PROMPT_FILE=""
 OUTPUT_FILE=""
 MODEL=""
 SESSION_ID=""
+RESUME_ID=""
 SKILL_PATH=""
 WORK_DIR="${PWD}"
 TIMEOUT=300
@@ -38,6 +40,7 @@ while [[ $# -gt 0 ]]; do
     --output-file) OUTPUT_FILE="$2"; shift 2 ;;
     --model)       MODEL="$2";       shift 2 ;;
     --session-id)  SESSION_ID="$2";  shift 2 ;;
+    --resume)      RESUME_ID="$2";   shift 2 ;;
     --skill-path)  SKILL_PATH="$2";  shift 2 ;;
     --work-dir)    WORK_DIR="$2";    shift 2 ;;
     --timeout)     TIMEOUT="$2";     shift 2 ;;
@@ -120,12 +123,15 @@ case "$CLI" in
   claude)
     # Claude Code CLI：prompt 通过 $(cat ...) 避免 ARG_MAX
     # --permission-mode bypassPermissions：避免 headless 模式权限弹窗
+    # --resume 优先（续接）；--session-id 用于首次调用指定 UUID
     CMD=(claude -p "$(cat "$EFFECTIVE_PROMPT_FILE")"
       --output-format json
       --add-dir "$WORK_DIR"
       --permission-mode bypassPermissions)
-    if [[ -n "$SESSION_ID" ]]; then
-      CMD+=(--resume "$SESSION_ID")
+    if [[ -n "$RESUME_ID" ]]; then
+      CMD+=(--resume "$RESUME_ID")
+    elif [[ -n "$SESSION_ID" ]]; then
+      CMD+=(--session-id "$SESSION_ID")
     fi
     if [[ -n "$MODEL" ]]; then
       CMD+=(--model "$MODEL")
@@ -139,8 +145,9 @@ case "$CLI" in
       --sandbox false
       --yolo
       --include-directories "$WORK_DIR")
-    if [[ -n "$SESSION_ID" ]]; then
-      CMD+=(--resume "$SESSION_ID")
+    # Gemini：首次调用不需要 session 参数；--resume 用于续接
+    if [[ -n "$RESUME_ID" ]]; then
+      CMD+=(--resume "$RESUME_ID")
     fi
     if [[ -n "$MODEL" ]]; then
       CMD+=(--model "$MODEL")
@@ -151,13 +158,16 @@ case "$CLI" in
   kimi)
     # Kimi：使用 --output-format text（不用 stream-json，避免 JSON 流解析复杂性）
     # --print 模式隐含 --yolo；-p 传入 prompt 避免 ARG_MAX
+    # Kimi --session 对首次/续接通用，RESUME_ID 优先于 SESSION_ID
     CMD=(kimi --print
       -p "$(cat "$EFFECTIVE_PROMPT_FILE")"
       --output-format text
       --work-dir "$WORK_DIR"
       --yolo
       --max-steps-per-turn 50)
-    if [[ -n "$SESSION_ID" ]]; then
+    if [[ -n "$RESUME_ID" ]]; then
+      CMD+=(--session "$RESUME_ID")
+    elif [[ -n "$SESSION_ID" ]]; then
       CMD+=(--session "$SESSION_ID")
     fi
     if [[ -n "$MODEL" ]]; then

@@ -14,7 +14,8 @@
 #     --role <name>              # 任务角色名（用于 blocked 文件命名）
 #     [--skill-path <dir>]       # 可选，Skill 外包：加载指定 skill
 #     [--model <model_id>]       # 可选，覆盖默认模型
-#     [--session-id <id>]        # 可选，续接 session
+#     [--session-id <id>]        # 可选，首次调用指定 session UUID
+#     [--resume <id>]            # 可选，续接已有 session（优先于 --session-id）
 #     [--work-dir <dir>]         # Agent 工作目录，默认 $PWD
 #     [--output-file <path>]     # 可选，Agent 原始输出保存路径（便于调试）
 #     [--timeout <seconds>]      # 超时秒数，默认 300
@@ -37,6 +38,7 @@ ROLE="agent"
 SKILL_PATH=""
 MODEL=""
 SESSION_ID=""
+RESUME_ID=""
 WORK_DIR="${PWD}"
 OUTPUT_FILE=""
 TIMEOUT=300
@@ -50,6 +52,7 @@ while [[ $# -gt 0 ]]; do
     --skill-path)   SKILL_PATH="$2";   shift 2 ;;
     --model)        MODEL="$2";        shift 2 ;;
     --session-id)   SESSION_ID="$2";   shift 2 ;;
+    --resume)       RESUME_ID="$2";    shift 2 ;;
     --work-dir)     WORK_DIR="$2";     shift 2 ;;
     --output-file)  OUTPUT_FILE="$2";  shift 2 ;;
     --timeout)      TIMEOUT="$2";      shift 2 ;;
@@ -114,6 +117,7 @@ LAUNCHER_ARGS=(
 [[ -n "$SKILL_PATH"  ]] && LAUNCHER_ARGS+=(--skill-path  "$SKILL_PATH")
 [[ -n "$MODEL"       ]] && LAUNCHER_ARGS+=(--model       "$MODEL")
 [[ -n "$SESSION_ID"  ]] && LAUNCHER_ARGS+=(--session-id  "$SESSION_ID")
+[[ -n "$RESUME_ID"   ]] && LAUNCHER_ARGS+=(--resume      "$RESUME_ID")
 
 # ──────────────────────────────────────────────
 # 步骤 1：启动 Agent

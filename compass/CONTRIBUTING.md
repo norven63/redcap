@@ -615,11 +615,31 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 
 ### 触发条件（风险信号驱动）
 
-- 改动核心协议（本文 §1-§10、SKILL.md §5.x）→ **redteam**
+- 改动核心协议（本文 §1-§13、SKILL.md §5.x）→ **redteam**
 - 改动 soul.md / identity.md → **test**
 - 存在 ≥2 个互斥方案 → **council**
 - 已有明确不确定性或反对意见 → **explore**
 - 无法在 2 轮内自行解决的卡壳 → **council**
+- **`model-capability-matrix.yaml` 的 `next_review` 日期已到** → 触发矩阵更新流程（见下）
+
+### 模型矩阵更新流程
+
+Cap 每次任务启动时检查 `compass/knowledge/model-capability-matrix.yaml` 的 `next_review` 字段：
+
+```bash
+TODAY=$(date +%Y-%m-%d)
+NEXT_REVIEW=$(grep 'next_review:' compass/knowledge/model-capability-matrix.yaml | awk '{print $2}')
+if [[ "$TODAY" > "$NEXT_REVIEW" || "$TODAY" == "$NEXT_REVIEW" ]]; then
+  # 触发更新
+fi
+```
+
+**触发后执行**：
+1. 收集新模型信息（Gemini/Claude/GPT 发布记录、lessons.md 新增条目）
+2. 更新矩阵评分（对比旧评分，偏差 ≥1 分的模型标注 `updated: true`）
+3. 对比路由算法：是否影响各角色首选模型
+4. 若首选变更 → 更新 `agent-registry.yaml`，通知 Norven
+5. 更新 `last_updated` + `next_review`（+30 天）并 commit
 
 ### 与 §10 PM Gate 的顺序
 
