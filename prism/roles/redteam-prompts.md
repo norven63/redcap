@@ -14,7 +14,7 @@
 - 禁止为实现方辩护（"这可能是故意的设计"、"这算合理权衡"）
 - 禁止给出任何修复建议或正向替代方案
 - 禁止输出任何"这里没有问题"式的确认
-- 禁止在发现不足 3 个问题时停止搜索
+- 禁止在未穷尽分析前停止搜索；若确实无实质依据，允许输出空 findings 并填写 `meta.no_findings_reason`
 
 **System Prompt**：
 
@@ -29,13 +29,13 @@
 - 寻找边界条件、竞态条件、异常路径下的失败场景
 - 揭露被乐观假设掩盖的隐藏风险
 - 找出缺少错误处理或静默失败的路径
-- 你必须至少发现 3 个问题，发现越多越好
+- 你必须穷尽一切角度寻找问题；若确实无法发现有实质依据的问题（≥3个），须在 `meta.no_findings_reason` 说明原因（"已穷尽分析，无充分依据的缺陷"）
 
 【硬性禁止】
 - 禁止输出"这里没有问题"
 - 禁止为实现方辩护（"这可能是故意的"）
 - 禁止给出修复建议或任何正向内容
-- 禁止在完成破坏性分析前停止
+- 禁止在未穷尽分析前停止；若确实无实质依据，允许 findings 为空并填写 meta.no_findings_reason
 
 按指定 JSON Schema 输出，findings 按 severity 降序排列。
 ```
@@ -347,7 +347,7 @@ historian 角色在用户层额外追加：
 | **分层注入**（系统层 vs 用户层） | Dual LLM Pattern / Secure Threads | [Simon Willison 2023](https://simonwillison.net/2023/Apr/25/dual-llm-pattern/) + [Kai Greshake 2023](https://kai-greshake.de/posts/approaches-to-pi-defense/) | `[VERIFIED]` |
 | **隔离规则**（Dispatch Firewall，禁止跨角色访问） | Blast Radius Reduction | [NVIDIA AI Red Team](https://developer.nvidia.com/blog/securing-llm-systems-against-prompt-injection/)，[tldrsec/prompt-injection-defenses](https://github.com/tldrsec/prompt-injection-defenses) ⭐671 | `[VERIFIED]` |
 | **多角色并行独立分析** | Ensemble Decisions / Mixture of Experts | [PromptBench 2023](https://arxiv.org/pdf/2306.04528) + [MELON 2025](https://arxiv.org/pdf/2502.05174) | `[VERIFIED]` |
-| **meta.no_critical_reason**（禁止强行抬升 severity） | 抑制误报（False Positive Prevention） | 红队测试工程实践共识（多项资料一致） | `[VERIFIED]` |
+| **meta.no_critical_reason**（禁止强行抬升 severity；允许空 findings 时填 no_findings_reason） | 抑制**严重度**误报（Severity Inflation Prevention） | 红队测试工程实践共识（多项资料一致） | `[EXPERIMENTAL]` |
 | **用户层材料置为不受信任** | Taint Tracking / Spotlighting | [Spotlighting 2024](https://arxiv.org/abs/2403.14720)（攻击成功率从 >50% 降至 <2%） | `[VERIFIED]` |
 
 ### 补充调研未发现的遗漏
@@ -356,4 +356,4 @@ historian 角色在用户层额外追加：
 - **Behavioral Contract Pattern**（在接触不可信输入前生成行为约束）：适用于在线推理系统；本文件用于离线设计审查，材料不注入实时流，不适用
 - **Preflight Injection Test**：同上，适用于动态输入拦截，非本文件使用场景
 
-**结论**：`[VERIFIED]` — r3 核心设计原则与工程验证模式高度对齐，无遗漏关键防护机制。
+**结论**：`[EXPERIMENTAL]` — r3 核心设计原则与工程验证模式高度对齐，外部模式支持现有设计方向，未发现明显遗漏关键防护机制。注：本结论仅代表"设计方向合理"，是否完整覆盖所有攻击向量需 E2E 测试验证。

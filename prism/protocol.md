@@ -153,7 +153,7 @@ Agent 响应后，检查输出是否符合 Frame 锁定的 Schema。若不符合
 | 参与 Agent 数 | N_consensus（共识） | N_weak（弱共识） | N_quorum（法定最低） |
 |-------------|-------------------|----------------|-------------------|
 | 3 | 3/3 | 2/3 | 2 |
-| 4 | 3/4 | 3/4 | 3 |
+| 4 | 3/4 | 2/4 | 3 |
 | 5 | 4/5 | 3/5 | 3 |
 | 6 | 5/6 | 4/6 | 4 |
 
@@ -161,7 +161,7 @@ Agent 响应后，检查输出是否符合 Frame 锁定的 Schema。若不符合
 
 **跨角色 Finding 去重规则（必须在 Synthesize 前执行）**：
 
-多个角色可能对同一问题产生语义重复的 finding。直接计票会导致"伪共识"（2票实为1个独立发现被两人转述），失去多视角的独立性价值。
+多个角色可能对同一问题产生语义重复的 finding。**关键区分**：「去重」的目的是合并重复条目，让列表清晰；但「支持人数」必须保留——2 个角色独立报出同一问题，投票权应为 2 票，不是 1 票。
 
 去重步骤：
 ```
@@ -171,16 +171,21 @@ Agent 响应后，检查输出是否符合 Frame 锁定的 Schema。若不符合
    - 不同判定标准：涉及不同文件 OR 同文件但根因不同（如 A 报 schema 缺字段，B 报 check 逻辑遗漏）
 
 3. 若语义等价：
-   a. 合并为单条 finding，保留最高 severity（取两者中更高级别）
-   b. 在 finding 的 area 字段末尾附注 [CROSS-VALIDATED by {role1}+{role2}]
-   c. 共识人数计票时该条目仍算作 1 票（不因为两个角色都报就变成 2 票）
+   a. 合并为单条 finding，保留最高 severity
+   b. 在 finding 中记录：
+      - [CROSS-VALIDATED by {role1}+{role2}] 附注到 area 字段
+      - supporting_roles: [{role1}, {role2}]   ← 报出该 finding 的所有角色
+      - validator_count: 2                      ← 独立报出的角色数
+   c. ⚠ 共识人数计票时，票数 = validator_count（不是"1条finding=1票"）
+      示例：3人组(N_weak=2)中，角色A和B均报出 finding X → 合并后 validator_count=2 → 仍算 2 票 → 达到弱共识
 
-4. 若角色数 ≥3 且同一 finding 被 ≥3 角色独立报出（用不同措辞、不同角度）：
+4. 若同一 finding 的 validator_count ≥3：
    - 标注为 [MULTI-VALIDATED]，在 Synthesize 摘要中优先展示
-   - **仍须参与正常 Adjudicate 投票流程，不绕过共识门槛**（多角色重复观察是信号，不是共识授权）
+   - **仍须参与正常 Adjudicate 投票流程，不绕过共识门槛**
+   - 视为"强信号/优先审议"，而非"已通过授权的行动项"
 
 5. 去重后，在 Synthesize 摘要中注明：
-   "已去重：X 条 finding 来自跨角色交叉验证，Y 条为单一角色独立发现"
+   "已去重：X 条 finding（validator_count 合计 Y），其中跨角色验证 Z 条，单一角色发现 W 条"
 ```
 
 **反模式警告**：禁止将两个指向不同文件或不同根因的 finding"因措辞相似"而合并——这会掩盖真实覆盖面。疑似重复时宁可保留两条并标注"待人工确认是否同源"。

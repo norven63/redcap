@@ -302,8 +302,8 @@ Kimi (--print --output-format text):
   session_id = 从 CLI 日志或 sessions 目录提取
 
 Copilot CLI (--output-format=json):
-  response_text = 从 JSONL 提取 response 字段
-  session_id = 从 .workflow/.copilot-session-id 读取（由 JSONL 输出解析写入，见 §3C.5）
+  response_text = 从 JSONL assistant 行提取 assistant.message.data.content（见 §3C.5）
+  session_id = 从 .workflow/.copilot-session-id 读取（由 JSONL 最终 result 行的 sessionId 字段写入，见 §3C.5）
 
 统一后:
   从 response_text 中正则提取 __redcap_status JSON 块
@@ -682,47 +682,63 @@ Copilot CLI (-p 纯文本):
 
 Copilot CLI 的 Session ID 为自动生成的 UUID，不支持自定义。**重要**：官方 sessionStart Hook 不暴露 sessionId 字段（已验证），须改用 `--output-format=json` 从 JSONL 输出提取。
 
+**JSONL 实际结构**（经 rubber-duck 实测验证）：
+```
+# 每轮 assistant 回复行（可能多行）
+{"type": "assistant", "message": {"data": {"content": "...回复正文..."}}}
+
+# 最终 result 行（仅在成功完成时存在，中断/超时时无此行）
+{"type": "result", "sessionId": "uuid-xxx", ...}
+```
+
 ```bash
-# 首次调用：加 --output-format=json，从 JSONL 提取 session_id
-# tee 同时保存完整 JSONL，供 Dispatcher 读取模型回复
+# 首次调用：加 --output-format=json，tee 保存完整 JSONL
 copilot -p "..." --allow-all --autopilot --output-format=json 2>&1 \
-  | tee /tmp/copilot-response-${STEP}.jsonl \
-  | python3 -c "
-import sys, json
-for line in sys.stdin:
+  | tee /tmp/copilot-response-${STEP}.jsonl > /dev/null
+
+# 提取 session ID（仅在成功完成时可用；中断/超时时文件可能无 result 行）
+python3 -c "
+import json, sys
+for line in open('/tmp/copilot-response-\${STEP}.jsonl'):
     line = line.strip()
     if not line: continue
     try:
         obj = json.loads(line)
-        # 兼容 camelCase(sessionId) 和 snake_case(session_id) 两种字段名
-        sid = obj.get('sessionId') or obj.get('session_id')
-        if sid: print(sid)
+        # sessionId 只在最终 result 行存在
+        if obj.get('type') == 'result' and obj.get('sessionId'):
+            print(obj['sessionId'])
     except: pass
 " > .workflow/.copilot-session-id
 
-# Dispatcher 从 tee 输出的文件读取模型回复（不是从 stdout 读取）
+# 提取模型回复正文（从 assistant.message.data.content 收集）
 RESPONSE_TEXT=$(python3 -c "
 import json, sys
+parts = []
 for line in open('/tmp/copilot-response-\${STEP}.jsonl'):
     try:
         obj = json.loads(line.strip())
-        text = obj.get('response') or obj.get('content') or ''
-        if text: sys.stdout.write(text)
+        if obj.get('type') == 'assistant':
+            content = obj.get('message', {}).get('data', {}).get('content', '')
+            if content: parts.append(content)
     except: pass
+sys.stdout.write(''.join(parts))
 ")
 
-# 恢复调用：从标记文件读取 session ID
-copilot -p "..." --allow-all --autopilot --output-format=json \
-  --resume="$(cat .workflow/.copilot-session-id)" \
-  | tee /tmp/copilot-response-${STEP}.jsonl \
-  | python3 -c "import sys,json; [print(json.loads(l).get('sessionId') or json.loads(l).get('session_id','')) for l in sys.stdin if l.strip()]" \
-  > /dev/null
+# 恢复调用（仅当 .copilot-session-id 非空时使用 --resume）
+SESSION_ID=$(cat .workflow/.copilot-session-id 2>/dev/null)
+if [ -n "$SESSION_ID" ]; then
+  copilot -p "..." --allow-all --autopilot --output-format=json \
+    --resume="$SESSION_ID" | tee /tmp/copilot-response-${STEP}.jsonl > /dev/null
+else
+  # 无 session ID（上次中断/超时），新建 session
+  copilot -p "..." --allow-all --autopilot --output-format=json \
+    | tee /tmp/copilot-response-${STEP}.jsonl > /dev/null
+fi
 ```
 
-> ⚠️ **字段名注意**：JSONL 中 session ID 字段名可能为 `sessionId` 或 `session_id`——脚本已兼容两者。首次部署时建议用 `cat /tmp/copilot-response-N.jsonl | python3 -m json.tool` 检查实际字段结构。
+> ⚠️ **中断/超时时的 session 降级**：`sessionId` 只在成功完成的最终 result 行存在。若上次调用被中断，`.copilot-session-id` 为空，下次自动新建 session（与 Kimi/Gemini 超时降级行为一致）。
 >
-> ⚠️ **已知限制（L-39）**：`sessionStart` Hook 输入字段不包含 `sessionId`（官方文档确认）。
-> 旧设计中依赖 `redcap-copilot-hook-session-start.sh` 捕获 UUID 的方案**不可行**，已废弃。
+> ⚠️ **已知限制（L-39）**：`sessionStart` Hook 不暴露 `sessionId`（官方文档确认），旧方案已废弃。
 
 ### 3C.6 Copilot CLI 安全措施
 
