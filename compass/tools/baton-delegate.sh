@@ -29,6 +29,35 @@
 
 set -uo pipefail
 
+resolve_existing_path() {
+  python3 - "$1" <<'PY'
+import pathlib
+import sys
+
+try:
+    print(pathlib.Path(sys.argv[1]).resolve(strict=True))
+except Exception:
+    sys.exit(1)
+PY
+}
+
+resolve_path_allow_missing_leaf() {
+  python3 - "$1" <<'PY'
+import os
+import pathlib
+import sys
+
+p = pathlib.Path(sys.argv[1])
+try:
+    if os.path.lexists(p):
+        print(p.resolve(strict=True))
+    else:
+        print((p.parent.resolve(strict=True) / p.name))
+except Exception:
+    sys.exit(1)
+PY
+}
+
 # ──────────────────────────────────────────────
 # 参数解析
 # ──────────────────────────────────────────────
@@ -73,14 +102,80 @@ fi
 
 WORKFLOW_DIR="${WORKFLOW_DIR:-${WORK_DIR}/.workflow}"
 mkdir -p "$WORKFLOW_DIR"
+WORKFLOW_DIR_ABS=$(cd "$WORKFLOW_DIR" 2>/dev/null && pwd -P) || {
+  echo "[baton-delegate] 错误: 无法解析 workflow-dir: $WORKFLOW_DIR" >&2
+  exit 1
+}
+
+SKILL_DELEGATION_MODE=false
+if [[ -n "$SKILL_PATH" ]]; then
+  SKILL_DELEGATION_MODE=true
+  PROMPT_PATH=$(resolve_existing_path "$PROMPT_FILE") || {
+    echo "[baton-delegate] 错误: 无法解析 Skill 外包请求文件真实路径: $PROMPT_FILE" >&2
+    exit 1
+  }
+  PROMPT_BASENAME="$(basename "$PROMPT_FILE")"
+  case "$PROMPT_PATH" in
+    "$WORKFLOW_DIR_ABS"/skill-delegation-*.md) ;;
+    *)
+      echo "[baton-delegate] 错误: Skill 外包请求文件必须位于 ${WORKFLOW_DIR}/skill-delegation-*.md" >&2
+      exit 1
+      ;;
+  esac
+  case "$PROMPT_BASENAME" in
+    skill-delegation-*.md) ;;
+    *)
+      echo "[baton-delegate] 错误: Skill 外包请求文件名必须匹配 skill-delegation-{task_id}.md" >&2
+      exit 1
+      ;;
+  esac
+fi
 
 # ──────────────────────────────────────────────
 # 确定输出文件（临时 or 调用方指定）
 # ──────────────────────────────────────────────
 CLEANUP_OUTPUT=false
 if [[ -z "$OUTPUT_FILE" ]]; then
-  OUTPUT_FILE="$(mktemp /tmp/baton-output-XXXXXX.txt)"
-  CLEANUP_OUTPUT=true
+  if [[ "$SKILL_DELEGATION_MODE" == true ]]; then
+    OUTPUT_FILE="${WORKFLOW_DIR}/${PROMPT_BASENAME%.md}-result.md"
+  else
+    OUTPUT_FILE="$(mktemp /tmp/baton-output-XXXXXX.txt)"
+    CLEANUP_OUTPUT=true
+  fi
+fi
+
+if [[ "$SKILL_DELEGATION_MODE" == true ]]; then
+  OUTPUT_PATH=$(resolve_path_allow_missing_leaf "$OUTPUT_FILE") || {
+    echo "[baton-delegate] 错误: 无法解析 Skill 外包结果文件真实路径: $OUTPUT_FILE" >&2
+    exit 1
+  }
+  OUTPUT_BASENAME="$(basename "$OUTPUT_FILE")"
+  case "$OUTPUT_PATH" in
+    "$WORKFLOW_DIR_ABS"/skill-delegation-*-result.md) ;;
+    *)
+      echo "[baton-delegate] 错误: Skill 外包结果文件必须位于 ${WORKFLOW_DIR}/skill-delegation-*-result.md" >&2
+      exit 1
+      ;;
+  esac
+  case "$OUTPUT_BASENAME" in
+    skill-delegation-*-result.md) ;;
+    *)
+      echo "[baton-delegate] 错误: Skill 外包结果文件名必须匹配 skill-delegation-{task_id}-result.md" >&2
+      exit 1
+      ;;
+  esac
+
+  PROMPT_TASK_ID="${PROMPT_BASENAME#skill-delegation-}"
+  PROMPT_TASK_ID="${PROMPT_TASK_ID%.md}"
+  RESULT_TASK_ID="${OUTPUT_BASENAME#skill-delegation-}"
+  RESULT_TASK_ID="${RESULT_TASK_ID%-result.md}"
+  if [[ "$PROMPT_TASK_ID" != "$RESULT_TASK_ID" ]]; then
+    echo "[baton-delegate] 错误: Skill 外包请求/结果 task_id 必须一致（${PROMPT_TASK_ID} != ${RESULT_TASK_ID}）" >&2
+    exit 1
+  fi
+
+  PROMPT_FILE="$PROMPT_PATH"
+  OUTPUT_FILE="$OUTPUT_PATH"
 fi
 
 cleanup() {

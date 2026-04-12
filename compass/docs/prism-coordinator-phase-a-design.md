@@ -113,7 +113,7 @@ Coordinator 是唯一写者。任何角色产物不得直接修改此文件。
 建议文件：
 
 - `raw.txt`：原始输出
-- `parsed.json`：高容错提取后的 JSON 载荷
+- `parsed.json`：高容错提取后的 JSON 载荷（`responded` / `followed_up` 必填）
 - `meta.json`：收集元数据，例如：
   - `follow_up_count`
   - `backend_limitation`
@@ -167,6 +167,7 @@ Round 2+：
 
 - 不新增 registry 条目
 - 只复用既有 roster 与 handle
+- 同一 role 允许把终态从 `responded` 推进到 `followed_up`；若续接失败，可推进到 `absent`
 - 把轮次摘要和审计写进 run 目录
 
 ---
@@ -216,6 +217,7 @@ bash prism/tools/prism-coordinator.sh record-collect \
   --role <role> \
   --status <responded|followed_up|absent> \
   --schema-ok <true|false> \
+  [--round <n>] \
   [--raw-file <path>] \
   [--parsed-file <path>] \
   [--meta-file <path>]
@@ -223,7 +225,10 @@ bash prism/tools/prism-coordinator.sh record-collect \
 
 职责：
 
-- 先把证据文件复制到标准 collect 目录
+- 先把证据文件写入标准 collect 目录
+- `responded` / `followed_up` 必须留下 `parsed.json`；`raw.txt` 可选
+- `--round` 默认 `1`；只有 council Round 2+ 才允许用 `--round > 1` 推进 `responded -> followed_up|absent`
+- collect 重试必须整体替换该角色目录，不能残留旧 `raw.txt` / `parsed.json`
 - 再回写 registry
 
 ### 6.4 `resolve-handle`

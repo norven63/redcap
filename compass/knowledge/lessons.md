@@ -456,3 +456,48 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-11
+
+### L-43: 宿主 Agent 内运行 RedCap 时，必须防 authority inversion
+- **场景**：多会话隔离长任务中，状态留存（plan / todos / checkpoints / reports）仍然健康，但 `.dev-task.md` 没有接管 Layer B 主真相，宿主 `plan.md` 逐渐承担了实施策略与当前停留点；同时宿主直接 skill 调用也暴露出绕过 RedCap-native delegation 的治理缺口
+- **根因**：① 没有把 canonical truth、mirror sync、lifecycle/transaction gate 明确成可执行机制 ② 宿主 session/workboard/skill 机制天然更顺手，若 RedCap 不主动夺回控制面，它们就会反向成为事实 authority ③ 只做文档约束，不做 Hook / 脚本门禁，最终仍会退化成“靠人类纠偏”
+- **经验规则**：① `.dev-task.md` 必须是 Layer B canonical ledger，宿主 workboard 只能镜像 pointer/hash，不得承载真相 ② PM Gate / drift check 需要物理脚本门禁，不能只写在规范里 ③ RedCap 自己的 Skill-Delegation 必须经过 request/result 文件边界；宿主直接 skill 调用不算协议内 delegation ④ acceptance 只能在治理边界落地后收口，不能在错误 truth/control model 上宣称完成
+- **来源**：2026-04-12，多会话隔离主线中途 review + authority inversion 复盘（Norven 人工纠偏触发）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-12
+
+### L-44: `session_binding_key` 只负责定位，恢复写权限必须显式过 capability gate
+- **场景**：多会话隔离 acceptance 阶段，需要同时处理 resume/recovery、unmanaged Copilot degraded mode、Layer A legacy 清理与 Prism 多 run 并发。若把 `session_binding_key` 直接当作“可恢复写权限”的凭证，就会把 locate 和 authorize 混成一件事，并诱发伪 full-isolation 语义
+- **根因**：① binding key 天然更容易拿到，容易被误用成 capability 恢复通道 ② unmanaged 宿主路径若为了补功能而写 project-scoped pseudo-session marker，会绕开 safe degraded mode 的禁止项 ③ 没有物理 acceptance harness 时，这类语义错位很难在日常 smoke 中暴露
+- **经验规则**：① `session_binding_key` 只负责定位 runtime session，不等于恢复写权限 ② 从磁盘恢复 capability 必须显式开启独立 gate，禁止“只给 binding 就恢复写权限” ③ unmanaged / no-bind 宿主必须停留在 safe degraded mode，只能记审计/告警，不得写 pseudo-session marker、once-only 状态或其他伪 session 私有态
+- **来源**：2026-04-12，multi-session isolation acceptance harness（binding-recovery-gate / copilot-safe-degraded）与独立 review 收口
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-12
+
+### L-45: closure/notified 成功标记必须绑定到关键副作用真正完成，不能在“尝试过”时提前写入
+- **场景**：两条收尾链暴露同一失败模式——① Layer A：`redcap-layerA-stop.sh` 即使 `redcap-on-complete.sh` 或 review fallback 失败，也仍然写 `layerA/notified`，导致后续 Stop/SessionEnd 不再重试 ② Layer B：`redcap-task-report-register.sh` 曾在 pending closure 写入失败前先写 report marker；`redcap-layerB-session-end.sh` 也只盯显式 FAIL，而无法识别“有 diff 但 review 根本没跑”
+- **根因**：把“脚本被调用/流程被尝试”误当成“closure 已完成”。一旦去重标记、current marker、review 通过态先落盘，后续兜底 Hook 会被这些伪成功证据提前熄火，系统丧失重试与补偿式 reconcile 的机会
+- **经验规则**：① 所有 `notified` / `current-*` / success marker 只能在关键副作用真正完成后写入，失败时必须保留重试机会 ② 关键副作用失败时应返回显式失败信号，让上层 Hook 决定“不去重、记录缺口、等待下次重试” ③ review/notify 这类 closure 红线既要识别显式 FAIL，也要识别 `MISSING` / `INCONCLUSIVE` ④ 对弱 Hook / 无 Hook 宿主，必须把失败写入可延续的 pending closure，而不是只打一条 warning
+- **来源**：2026-04-12，host-agent interop governance tranche（pending closure contract / Layer A on_COMPLETE 收尾链 / Claude stop-review 缺口修复）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-12
+
+### L-46: 跨会话 owner lease 必须在 EXIT 级清理，不能只在成功路径释放
+- **场景**：`redcap-layerA-stop.sh` 在 review fallback 失败时会提前退出；如果 `layerA/workflow-owner-session` 只在 on-complete 成功后才释放，旧 session 会把 owner file 卡死，后续 session 即使接手项目也无法再完成 ALL_DONE closure
+- **根因**：把 owner claim 当成“收尾完成后顺手清理”的附属步骤，而不是跨会话事务资源。fail-closed 分支一旦提前 return，就会留下僵尸 lease，导致治理系统自己制造永久阻塞
+- **经验规则**：① `workflow-owner-session`、ownership lease、类似的跨 session 锁必须通过 EXIT trap / finally 语义清理，不能依赖单一路径 ② 释放前仍要校验当前 owner 身份，避免误删其他 session 的 lease ③ fail-closed 应阻断推进，但不能把锁资源永久遗留给失败会话
+- **来源**：2026-04-12，closure-review 独立 code-review 指出 `layerA/workflow-owner-session` 在 review fallback 失败路径未释放，随后修复为 EXIT 级释放
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-12
+
+### L-47: delegation 文件边界必须校验真实路径，不能只看字符串前缀
+- **场景**：`baton-delegate.sh` 之前只校验 request/result 文件名与字符串路径前缀；如果 `.workflow/skill-delegation-*.md` 或结果文件是 symlink，就能把 delegation 请求或结果物理落到边界外，形成“路径看起来合法、真实落点却越界”的旁路
+- **根因**：把“路径字符串位于 boundary 内”误当成“文件物理上位于 boundary 内”。symlink、broken symlink、`..` 归一化等文件系统语义不会被普通前缀比较捕获，导致 request/result file boundary 退化成表面约束
+- **经验规则**：① request/result 这类治理边界必须校验 canonical realpath，而不是只校验 basename 或字符串前缀 ② 对已存在的 symlink / broken symlink 应直接拒绝；只允许缺失叶子文件在其真实父目录已被验证为边界内时创建 ③ “文件边界”如果不能证明物理落点，就不算真正的 authority boundary
+- **来源**：2026-04-12，`baton-delegate.sh` symlink boundary probe 暴露 request/result 可越界，随后修复为真实路径校验
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-12

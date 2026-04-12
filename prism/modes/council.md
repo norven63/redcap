@@ -75,4 +75,4 @@ Round 3：同 Round 2（继续 write_agent 到同一 session）
 - Round 2 及之后，必须用 `write_agent(agent_id)` 向 Round 1 的原 session 追发摘要
 - 禁止在 Round 2+ 重新 `task(mode="background")` 创建新 Agent 实例
 - Agent session 在 council 全程保持活跃（agent 在最后一轮结束后方可视为完成）
-- 若某 Agent session 已超时不可达，标记 ABSENT 并从 quorum 分母中移除（该轮仅此 Agent）
+- 若某 Agent session 已超时不可达，标记 ABSENT，但 quorum 分母仍按该 run Frame 阶段锁定的原始 Agent 数计算（遵循 `protocol.md` 的固定分母规则）

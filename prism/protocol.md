@@ -18,7 +18,7 @@
 ## 一、独立取样协议（Independent Sampling Protocol）
 
 > 适用模式：`explore` / `redteam` / `test`  
-> 核心原则：**各 Agent 全程独立，Dispatch Firewall 强制隔离**
+> 核心原则：**各 Agent 全程独立，Dispatch Firewall 在当前实现中以 prompt 级隔离 + dispatch gate 约束执行**
 
 ### Step 1 · Frame（冻结任务）
 
@@ -83,10 +83,11 @@ redteam 模式中，每个 Agent 必须携带对应角色的 System Prompt（见
 
 分发方式：为每个 Agent 发送完全相同的问题包（Frame 内容 + 具体分析任务）。
 
-**Session 记录（强制）**：Cap / Dispatcher 在成功启动每个 Agent 后，立即写入物理文件：
+**Session 记录（强制）**：Cap / Dispatcher 在成功启动每个 Agent 后，立即写入当前 run 的物理文件：
 
 ```
-prism/reports/.session-registry.yaml   ← 物理文件，运行期间落盘，gitignored
+prism/runs/<run_id>/session-registry.yaml   ← 运行期真相文件，按 run 隔离，gitignored
+prism/runs/<run_id>/{collect,synthesize,audit,artifacts}/   ← 同 run 的中间产物目录
 格式：
   run_id: <YYYYMMDD-mode-NNN>
   mode: redteam | explore | test | council
@@ -103,6 +104,12 @@ prism/reports/.session-registry.yaml   ← 物理文件，运行期间落盘，g
 
 session_registry 是 Council 多轮复用 session 和 Collect 追问的基础，也是 `prism-archive-check.sh` 校验 quorum 的数据源。
 Cap / Dispatcher 是 session_registry 的唯一写入方：Dispatch 阶段必须写入 `handle` 与 `injection_mode`；Collect 阶段必须把 `status` 从 `dispatched` 更新为 `responded | absent | followed_up`，并同步写回 `schema_ok`。禁止以默认值冒充已收集状态。
+
+若进入 council Round 2+，同一 role 只能复用原条目继续推进：
+- 只有显式标记为后续轮次（`round > 1`）时，才允许 `responded -> followed_up`
+- 只有显式标记为后续轮次（`round > 1`）且续接失败时，才允许 `responded|followed_up -> absent`
+- 禁止为同一 role 另起新条目或偷换 handle
+run 目录与 registry path 的创建/解析统一由 `prism/tools/prism-run-state.sh` 负责；worker 只写自己的产物，由 coordinator 回填 session_registry。
 
 **Dispatch 前置校验（必须通过才能继续）**：
 
@@ -149,6 +156,10 @@ Collect 解析顺序：
   4. 2 次追问后仍不合格 → 标记 status=absent，记录原因
   5. 超时（30min 无响应）→ 先追问 1 次，再超时 → status=absent
 ```
+
+Collect 落盘约束：
+- 最终记为 `responded` / `followed_up` 时，必须保留可复核的 `parsed.json`
+- `raw.txt` 可选，但 collect 目录重试时必须整体替换，不能残留旧证据文件
 
 **追问禁止项**：追问只能要求 Agent 补全 Schema 格式，不得：
 - 透露其他 Agent 的输出内容
@@ -242,7 +253,7 @@ escalate      ：发现 PM Gate 已锁定需求的边界问题 → 【硬终态�
 1. 写入运行报告：
    prism/reports/YYYYMMDD-{mode}-NNN.md
    （NNN 为当天流水号，从 001 起）
-   报告头部必须显式记录 `run_id`，用于将报告与 `.session-registry.yaml` 绑定
+   报告头部必须显式记录 `run_id`，用于将报告与 `prism/runs/<run_id>/session-registry.yaml` 绑定
 
 2. 更新索引：
    prism/reports/index.yaml
@@ -255,12 +266,13 @@ escalate      ：发现 PM Gate 已锁定需求的边界问题 → 【硬终态�
 4. Archive 校验（必须通过才能 commit）：
    bash prism/tools/prism-archive-check.sh --report prism/reports/<报告文件>
    # 退出码 1 = 校验失败，禁止 commit
-   # 必须实际读取 prism/reports/.session-registry.yaml，验证：
+   # 必须实际读取 prism/runs/<report_run_id>/session-registry.yaml，验证：
    #   - 原始 Agent 总数与 N_quorum
    #   - responded/followed_up 数量是否达标
    #   - 不存在 lingering dispatched 状态
    #   - responded/followed_up 项的 schema_ok=true
    #   - 每个 Agent 的 injection_mode 已记录
+   # 若 run-scoped registry 尚未迁移到位，只允许在 run_id 精确匹配时走只读 legacy bridge
 
 5. git add + commit（prism/reports/ 全部 git 追踪，作为架构演进的审计轨迹）
 ```
@@ -395,6 +407,10 @@ Cap/雇佣兵
   │
   ├─ 4. 等待结果：雇佣兵将输出写入 `--output-file` 指定路径（建议：`.workflow/skill-delegation-{task_id}-result.md`）
   │     调用方须在启动时显式传入 `baton-delegate.sh --output-file .workflow/skill-delegation-{task_id}-result.md`
+  │     - `baton-delegate.sh` 在 `--skill-path` 模式下会强制：
+  │       prompt file = `.workflow/skill-delegation-{task_id}.md`
+  │       result file = `.workflow/skill-delegation-{task_id}-result.md`
+  │       不满足即直接退出，不视为协议内 delegation
   │     - 成功：result 包含 "##DONE##" 标记，读取并继续
   │     - 阻塞：exit 2，blocked 文件已写入 `.workflow/blocked-{role}-{ts}.md`，走 6.2 透传流程
   │     - 超时：exit 124，降级处理（记录到 lessons，自行完成或报错升级）
@@ -430,6 +446,8 @@ Cap/雇佣兵
 - 格式：{markdown / yaml / json / ...}
 - 写入路径：`.workflow/skill-delegation-{task_id}-result.md`
 - 完成信号：`##DONE##` 写在文件末尾
+
+> ⚠️ **治理边界**：直接调用宿主 skill 而不经过上述 request/result 文件边界，不属于 RedCap 协议内 Skill-Delegation，只能算宿主侧能力使用，不能回写成 RedCap-native authority。
 
 **超时**：{N} 分钟（超时后 Cap 自行降级处理）
 **状态**：PENDING / IN_PROGRESS / DONE / BLOCKED / TIMEOUT

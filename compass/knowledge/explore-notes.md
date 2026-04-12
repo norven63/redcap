@@ -117,6 +117,34 @@
 
 ---
 
+### [2026-04-11 16:07] Q7: Prism run-state producer 缺口
+
+**原始问题**（用户原文摘录）：
+> 我们要专注于多会话隔离的问题了，这个问题很复杂，因为不仅仅Layer A、B要进行隔离，A和B的通信、A和B调度的棱镜团队之间的通信，这些情况都要考虑和兼容。
+
+**演进过程**：
+- 轮次 1：确认 Layer A / Layer B 的 runtime session、capability、safe degraded、owner claim 已基本落地。
+- 轮次 2：重读 `prism/protocol.md`、`prism/tools/prism-archive-check.sh`、`prism/tools/prism-dispatch-check.sh`，发现 protocol 与 consumer 已明确依赖 `session_registry`，但仓库内仍未找到清晰的 scripted writer / coordinator helper。
+- 轮次 3：对照 `compass/docs/multi-session-isolation-design.md`，确认目标形态应为 `prism/runs/<prism_run_id>/session-registry.yaml`，且必须遵守 run-scoped 单主写者（Prism coordinator）原则。
+- 轮次 4：补充环境背景——此前 distill 曾并发调用 redcap，但本轮中途 review 未发现 tracked tree 中存在冲突标记、异常提交内容或被写入仓库的跨会话产物。
+- 轮次 5：已落地 `prism/tools/prism-run-state.sh`，把 run dir / registry / owner / legacy resolve 统一收口到 helper；`prism-archive-check.sh` 也已切到按报告 `run_id` 解析 run-scoped registry，并保留 deterministic read-only legacy bridge。
+- 轮次 6：同步修正 `prism/protocol.md` 与 `prism/modes/council.md` 的 run path / quorum 语义，使 archive gate 与 protocol 文档不再漂移。
+
+**关键分歧 / 选项**：
+- 选项 A：先补一个 `prism-run-state` helper，集中承载 `prism_run_id`、registry path、owner/lease、dispatch/collect 回填，再让现有 consumer 切过去。
+- 选项 B：先在现有调用点零散补写 `.session-registry.yaml`，等跑通后再回收成 helper。
+
+**当前共识**：
+- A 更符合既有多会话隔离设计：Prism 需要 **run-scoped 真相层**，不适合沿着当前全局 `prism/reports/.session-registry.yaml` 继续打补丁。
+- 当前仓库中 `prism-archive-check.sh` / `prism-dispatch-check.sh` 是 consumer / gate，不是 producer；下一步应先补 coordinator helper，再迁移 consumer。
+- 当前阶段的最小落地已完成：helper + archive consumer + deterministic legacy bridge 已到位，后续剩余的是 scripted coordinator 真正接入 dispatch / collect / council 的写回链路。
+
+**待决策**：已决定（Cap 已按批准边界完成 Phase A 接线，并将 Dispatch Firewall 的当前口径显式收口为 prompt-level hard limitation + dispatch gate）
+
+**状态**：[ARCHIVED → `prism/tools/prism-run-state.sh` / `prism/tools/prism-coordinator.sh` / `prism/protocol.md` / `compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md`]
+
+---
+
 ## 归档区
 
 > 已决策且已沉淀到正式文档的条目索引（保留追溯链路，不删除原文）
@@ -129,6 +157,7 @@
 | Q4 Session兼容 | 2026-04-11 | agent-adapters多轮接力协议 | P2 agent-adapters.md |
 | Q5 模型矩阵 | 2026-04-11 | 实测数据+Frame选型+30天更新 | P4 model-capability-matrix.yaml |
 | Q6 秘书官 | 2026-04-11 | 内置书记模式（本文件） | 本文件+soul.md+CONTRIBUTING.md §12 |
+| Q7 Prism run-state | 2026-04-12 | run-scoped truth + coordinator Phase A + Dispatch Firewall 当前口径显式收口 | prism-run-state.sh / prism-coordinator.sh / prism/protocol.md / task report |
 
 ---
 

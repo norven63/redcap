@@ -20,13 +20,91 @@
 
 set -u
 
-cat > /dev/null  # 消费 stdin
+INPUT=$(cat)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$SCRIPT_DIR/redcap-runtime-state.sh"
+source "$SCRIPT_DIR/redcap-interop-governance.sh"
+
+HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-$(redcap_runtime_json_field "$INPUT" "session_id")}"
+HOOK_CWD="${REDCAP_HOOK_CWD:-$REDCAP_ROOT}"
+BINDING_KEY=""
+if [[ -n "$HOST_SESSION_ID" ]]; then
+    BINDING_KEY=$(redcap_runtime_binding_key_from_host_session "claude" "$HOST_SESSION_ID")
+fi
+
+if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
+    redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY" || true
+fi
+
+if [[ -z "${REDCAP_RUNTIME_SESSION_DIR:-}" && -n "$BINDING_KEY" ]]; then
+    redcap_runtime_load_from_binding "claude" "$HOOK_CWD" "$BINDING_KEY" || true
+fi
+
 HEAD_FILE="${REDCAP_BASELINE_HEAD_FILE:-/tmp/redcap-claude-initial-head}"
-REVIEW_RESULT_FILE="/tmp/redcap-stop-review-result"
-REVIEW_LOG_FILE="/tmp/redcap-stop-review-log.md"
+REVIEW_RESULT_FILE="${REDCAP_REVIEW_RESULT_FILE:-/tmp/redcap-stop-review-result}"
+REVIEW_LOG_FILE="${REDCAP_REVIEW_LOG_FILE:-/tmp/redcap-stop-review-log.md}"
+NOTIFIER="$SCRIPT_DIR/feishu-notifier.py"
+SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
+
+if [[ -n "${REDCAP_RUNTIME_SESSION_DIR:-}" ]]; then
+    HEAD_FILE="${REDCAP_BASELINE_HEAD_FILE:-$(redcap_runtime_path "layerB/initial-head")}"
+    REVIEW_RESULT_FILE="${REDCAP_REVIEW_RESULT_FILE:-$(redcap_runtime_path "review/review-result")}"
+    REVIEW_LOG_FILE="${REDCAP_REVIEW_LOG_FILE:-$(redcap_runtime_path "review/review-log.md")}"
+else
+    if [[ ! -f "$HEAD_FILE" ]]; then
+        redcap_runtime_record_degraded_mode "$HOOK_CWD" "layerB-stop-review-safe-degraded" "binding_key=${BINDING_KEY:-missing}" || true
+        exit 0
+    fi
+fi
+
+mkdir -p "$(dirname "$REVIEW_RESULT_FILE")" "$(dirname "$REVIEW_LOG_FILE")" 2>/dev/null || true
+
+write_control_plane_failure() {
+    local title="$1"
+    local details="$2"
+
+    cat > "$REVIEW_LOG_FILE" <<LOGEOF
+# RedCap Stop Hook 控制面审计失败
+
+- **时间**: $(date '+%Y-%m-%d %H:%M:%S')
+- **宿主**: claude
+- **基准 commit**: ${BASELINE:-unknown}
+- **当前 HEAD**: ${CURRENT_HEAD:-unknown}
+- **失败原因**: $title
+
+## 详情
+
+$details
+LOGEOF
+
+    echo "FAIL" > "$REVIEW_RESULT_FILE"
+
+    if [[ "$SKIP_FEISHU" != "1" && -f "$NOTIFIER" ]]; then
+        python3 "$NOTIFIER" notify \
+            "⚠️ RedCap Layer B 控制面审计失败\n\n$title\n\n详情:\n$details\n\n日志: $REVIEW_LOG_FILE" \
+            --project "redcap" 2>/dev/null || true
+    fi
+}
+
+record_review_gap() {
+    local title="$1"
+    local details="${2:-}"
+
+    echo "FAIL" > "$REVIEW_RESULT_FILE"
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "claude" \
+        "stop-review-gap" \
+        "review" \
+        "$title ${details}" \
+        "" \
+        "${BASELINE:-}" \
+        "${CURRENT_HEAD:-}" \
+        >/dev/null 2>&1 || true
+}
 
 # ── 前置检查：有无新变更 ──
 
@@ -72,6 +150,28 @@ if [[ "$BASELINE" == "$CURRENT_HEAD" ]]; then
     # 无变更，无需评审
     rm -f "$REVIEW_RESULT_FILE" "$REVIEW_LOG_FILE" 2>/dev/null
 exit 0
+fi
+
+PM_GATE_CHECK="$SCRIPT_DIR/redcap-pm-gate-check.sh"
+if [[ -x "$PM_GATE_CHECK" ]]; then
+    PM_GATE_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+        REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+        REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
+        bash "$PM_GATE_CHECK" stop-review "claude" "$REDCAP_ROOT/.dev-task.md" 2>&1) || {
+        write_control_plane_failure ".dev-task / PM Gate 守门失败" "$PM_GATE_OUTPUT"
+        exit 1
+    }
+fi
+
+DRIFT_CHECK="$SCRIPT_DIR/redcap-drift-check.sh"
+if [[ -x "$DRIFT_CHECK" ]]; then
+    DRIFT_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+        REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+        REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
+        bash "$DRIFT_CHECK" stop-review "claude" "$REDCAP_ROOT/.dev-task.md" "$BASELINE" "$CURRENT_HEAD" 2>&1) || {
+        write_control_plane_failure "active_slice / scope drift 检查失败" "$DRIFT_OUTPUT"
+        exit 1
+    }
 fi
 
 # ── 提取 Diff ──
@@ -166,7 +266,8 @@ elif command -v claude &>/dev/null; then
 else
     # 无可用 Agent CLI，记录警告后退出
     echo "[redcap-on-stop-review] WARNING: 无可用 Agent CLI (kimi/claude)，跳过独立评审" >&2
-    exit 0
+    record_review_gap "无可用 Agent CLI" "kimi/claude not found"
+    exit 1
 fi
 
 # ── 执行独立评审 ──
@@ -180,7 +281,8 @@ fi
 
 if [[ -z "$REVIEW_OUTPUT" ]]; then
     echo "[redcap-on-stop-review] WARNING: Agent 评审无输出" >&2
-    exit 0
+    record_review_gap "独立评审无输出" "empty review output"
+    exit 1
 fi
 
 # ── 保存评审日志 ──
@@ -227,10 +329,9 @@ echo "$RESULT" > "$REVIEW_RESULT_FILE"
 
 # ── 结果处理 ──
 
-NOTIFIER="$SCRIPT_DIR/feishu-notifier.py"
-
 if [[ "$RESULT" == "FAIL" ]]; then
     echo "[redcap-on-stop-review] ⚠ 独立评审发现 P0 问题！详情: $REVIEW_LOG_FILE" >&2
+    record_review_gap "独立评审未通过" "$REVIEW_LOG_FILE"
 
     # 飞书告警
     if [[ -f "$NOTIFIER" ]]; then
@@ -255,10 +356,10 @@ except:
 
 elif [[ "$RESULT" == "PASS" ]]; then
     echo "[redcap-on-stop-review] ✓ 独立评审通过" >&2
-    rm -f "$REVIEW_RESULT_FILE" 2>/dev/null
     exit 0
 
 else
     echo "[redcap-on-stop-review] WARNING: 评审结果无法解析 ($RESULT)" >&2
-    exit 0
+    record_review_gap "评审结果无法解析" "$RESULT"
+    exit 1
 fi

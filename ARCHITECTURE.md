@@ -1,790 +1,518 @@
-# RedCap — 三体架构设计文档
+# RedCap — 架构总览与治理模型
 
-> **一句话定义**：RedCap 是一个由 Dispatcher 驱动、多 AI Agent 分角色协作的软件工程框架，内部由织机（Loom）、璇玑（Compass）、棱镜（Prism）三个子系统构成。
+> **一句话定义**：RedCap 是一个由 Loom 执行平面、Compass 自演化控制面、Prism 分析裁决平面与 References 共约层组成的多 Agent 软件工程框架。
+>
+> **阅读方式**：本文件负责解释“系统现在是如何设计的”；`compass/docs/architecture-capability-trace.yaml` 负责冻结旧能力锚点并承载后续 `旧架构 -> 新架构 -> runtime evidence` 的回归审查。
 
 ---
 
 ## 目录
 
-- [设计哲学](#设计哲学)
-- [三体架构总览](#三体架构总览)
-- [织机（Loom）— Layer A](#织机loom--layer-a)
-  - [Dispatcher 事件循环](#dispatcher-事件循环)
-  - [状态机](#状态机)
-  - [通信协议](#通信协议)
-  - [角色系统 + Prompt 组装](#角色系统--prompt-组装)
-  - [模型路由](#模型路由)
-  - [可靠性工程](#可靠性工程)
-- [璇玑（Compass）— Layer B](#璇玑compass--layer-b)
-  - [框架自身开发流程](#框架自身开发流程)
-  - [PM Gate（需求确认门）](#pm-gate需求确认门)
-  - [书记协议（Scribe Protocol）](#书记协议scribe-protocol)
-  - [指挥棒（Baton）](#指挥棒baton)
-  - [Hook 基础设施](#hook-基础设施)
-  - [经验库机制](#经验库机制)
-- [棱镜（Prism）](#棱镜prism)
-  - [两族协议](#两族协议)
-  - [Skill-Delegation 模式](#skill-delegation-模式)
-  - [多轮接力协议](#多轮接力协议)
-- [References 共约层](#references-共约层)
-- [关键协议文件索引](#关键协议文件索引)
-- [设计决策速查](#设计决策速查)
+- [1. 设计哲学](#1-设计哲学)
+- [2. 三体分层与 authority chain](#2-三体分层与-authority-chain)
+- [3. Loom — Layer A 执行平面](#3-loom--layer-a-执行平面)
+- [4. Compass — Layer B 自演化控制面](#4-compass--layer-b-自演化控制面)
+- [5. Runtime isolation、兼容桥与证明层](#5-runtime-isolation兼容桥与证明层)
+- [6. Prism — 分析与裁决平面](#6-prism--分析与裁决平面)
+- [7. References 共约层](#7-references-共约层)
+- [8. 能力追踪与回归审查模型](#8-能力追踪与回归审查模型)
 
 ---
 
-## 设计哲学
+## 1. 设计哲学
 
-RedCap 的架构由五项元原则驱动，完整定义见 [`compass/knowledge/design-principles.md`](compass/knowledge/design-principles.md)。以下是它们在架构层面的体现：
+RedCap 的架构不是“写一套文档给 Agent 看”，而是把关键边界变成**可重锚、可审计、可证明**的系统。五项元原则在当前架构中的落点如下：
 
-| 原则 | 架构体现 |
-|------|---------|
-| **角色分离** | PM/ARCH/DEV/QA/REVIEW 各执其职，Dispatcher 只调度、不执行 |
-| **状态外部化** | 所有流程状态写入 `state.yaml`，进程崩溃后可从断点恢复 |
-| **确定性优先** | 关键动作走宿主 Hook（OS 级 shell），不依赖 LLM 记忆 |
-| **经验积累** | 踩过的坑结构化为 Lesson 持久化，跨会话防止重踩 |
-| **层次清晰** | 用户项目开发（Layer A）与框架自身演化（Layer B）完全分离 |
+| 原则 | 当前架构体现 |
+| --- | --- |
+| **角色分离** | Loom 的 Dispatcher 只调度；角色手册、Prompt 模板、Prism 视角、Compass 控制面各司其职 |
+| **状态外部化** | `state.yaml`、`.dev-task.md`、runtime project state、Prism run state 都以外部文件持久化 |
+| **确定性优先** | 关键闭环优先走 shell 脚本、Hook、task report、acceptance，而不是依赖模型“应该会记得” |
+| **经验积累** | lessons、explore-notes、task report、trace matrix 共同承担“避免长任务漂移”的记忆层 |
+| **层次清晰** | Loom 负责用户项目交付，Compass 负责 RedCap 自身演化，Prism 负责高风险分析，References 负责跨层共约 |
 
-**核心设计决策**：
+当前版本额外强调三条架构纪律：
 
-| 决策 | 选择 | 理由 |
-|------|------|------|
-| Agent 通信方式 | CLI 调用（非 API/消息队列） | 零部署成本，与 AI CLI 工具天然对齐 |
-| Agent 状态管理 | 无状态，流程状态由 Dispatcher 持有 | 降低耦合，Agent 崩溃不影响流程恢复 |
-| 持久化格式 | YAML 文件（非数据库） | 零依赖、Git 可追踪、Agent 可直读写 |
-| 通信协议 | outbox 文件写入（主）+ response 正则（兼容） | E2E 验证：outbox 100% 可靠，stdout JSON 0% 遵从 |
+1. **authority chain 必须显式**：谁是 canonical truth、谁是 derived state、谁只是 mirror，必须可说明、可检查。
+2. **closure 必须物理可见**：review、task report、notify、cleanup 不能只存在于“应该发生”的叙述里。
+3. **证明层必须独立存在**：文档说明不是完成，runtime evidence 与 acceptance harness 才是完成的物理证据。
 
 ---
 
-## 三体架构总览
+## 2. 三体分层与 authority chain
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                            RedCap                                      │
-│                                                                        │
-│  ┌─────────────────────────┐   ┌──────────────────────────────────┐   │
-│  │  织机 Loom（Layer A）    │   │  璇玑 Compass（Layer B）          │   │
-│  │                          │   │                                  │   │
-│  │  为用户项目编织代码        │   │  Cap 的指挥所                    │   │
-│  │  Dispatcher + 五角色      │   │  框架演化 + 知识库 + Hook 基建   │   │
-│  │  状态机 + E2E 测试        │   │  soul.md（人格连续性）           │   │
-│  └─────────┬───────────────┘   └─────────────┬────────────────────┘   │
-│            │                                  │                        │
-│            │      references/（共约层）        │                        │
-│            │   security / code / commit /      │                        │
-│            │   hook / communication / constraints│                      │
-│            └────────────────┬─────────────────┘                        │
-│                             │                                           │
-│                  ┌──────────┴──────────┐                               │
-│                  │   棱镜 Prism         │                               │
-│                  │                     │                               │
-│                  │  多视角分析引擎       │                               │
-│                  │  高风险决策前评审     │                               │
-│                  └─────────────────────┘                               │
-└──────────────────────────────────────────────────────────────────────┘
+### 2.1 三体分层总览
+
+```text
+RedCap
+├── Loom        — Layer A 执行平面，负责把用户需求编织成代码与交付物
+├── Compass     — Layer B 自演化控制面，负责 RedCap 自身开发、治理与闭环
+├── Prism       — 分析与裁决平面，负责独立取样、对抗评审与多轮议事
+└── References  — 共约层，沉淀跨层共享的协议、约束、模板与安全边界
 ```
 
-**三层边界约定**：
-- Loom 不修改 Compass 的规范文件（反向也是）
-- Prism 只读取决策上下文，不直接触发 Dispatcher 流程
-- references/ 是 Loom 与 Compass 共享的公约，任何层均可引用
+四层关系不是“谁调用谁”的简单树状结构，而是：
+
+- **Loom** 管理面向用户项目的状态机、Prompt 装配、交付物与 Hook。
+- **Compass** 管理 RedCap 自身开发的 canonical ledger、PM Gate、anti-drift、hook 链与知识库。
+- **Prism** 不直接取代 Loom/Compass 的 authority，只在高风险场景提供独立验证或议事能力。
+- **References** 不拥有运行状态，但定义所有平面都必须遵守的最小共约。
+
+### 2.2 authority chain 与 truth surfaces
+
+RedCap 当前把状态面划分为三类：
+
+| 表面 | 类型 | owner | 作用 | 约束 |
+| --- | --- | --- | --- | --- |
+| `loom/**/state.yaml` | canonical truth | Loom | Layer A 流程状态与回退依据 | 只能由 Dispatcher / Layer A 工具推进 |
+| `.dev-task.md` | canonical truth | Compass | Layer B 需求、slice、边界、原始输入、已确认需求 | 宿主面板不得替代它 |
+| `prism` run state | run-scoped truth | Prism | 每次 Prism 运行的 run_id、registry、collect、resolve/archive 记录 | 以 run 为隔离边界 |
+| runtime project state | derived state | runtime tools | session/capability/binding/process claim、compat、audit、pending closure | 不能反向篡改 canonical truth |
+| 宿主 `plan.md` / workboard | mirror state | host surface | 展示当前 pointer/hash，辅助长任务导航 | **mirror-only** |
+| task report / acceptance report | closure evidence | reports | 证明“某个闭环真的发生了” | 缺失时不得伪装成完成 |
+
+### 2.3 host-agent interop governance
+
+多会话隔离之后，RedCap 显式承认宿主 Agent 与 RedCap-native 机制之间存在长期张力，因此当前采用**控制面收口型治理**：
+
+| 治理规则 | 含义 |
+| --- | --- |
+| **mirror-only** | 宿主 `plan.md` / workboard 只能镜像 canonical pointer，不得承载 Layer B 执行真相 |
+| **re-anchor first** | 新会话进入时，先恢复 soul / canonical pointer / runtime binding，再谈推进动作 |
+| **fail-closed on RedCap state** | 当 authority 不明确或 closure 未闭合时，RedCap 自有状态不得被静默推进为“已完成” |
+| **evidence-only audit** | project-shared interop audit 只记录证据，不反向长成第二个 authority |
+| **strong-hook vs weak-hook** | 强 Hook 宿主走实时 closure transaction；弱 Hook / 无 Hook 宿主通过 pending closure 做 deferred reconcile |
+
+当前 interop contract 的核心不是“阻止宿主存在”，而是**阻止宿主表面越权成为 RedCap 的真相源**。
 
 ---
 
-## 织机（Loom）— Layer A
+## 3. Loom — Layer A 执行平面
 
-织机是 RedCap 的执行引擎。用户提出需求，织机负责从需求到可运行代码的完整交付。
+Loom 负责用户项目从需求到交付的执行闭环。它不接管 Compass 的自演化控制面，但会复用 References 共约与部分可靠性原语。
 
-```
-loom/
-├── dispatcher/       ← 调度核心（状态机、适配器、Prompt 模板、防退化配置）
-├── roles/            ← 五角色手册（PM、架构师、程序员、QA、Reviewer）
-├── tools/            ← Layer A 脚本（Hook 处理器、E2E 测试、on-complete）
-└── test-reports/     ← E2E 测试报告
-```
+### 3.1 Dispatcher 事件循环
 
-### Dispatcher 事件循环
+Dispatcher 是纯调度器，不写业务代码、不替角色做设计判断。它负责：
 
-Dispatcher 是**纯调度器**，不写代码、不做设计。它只做三件事：读状态、组 Prompt + 选 Agent、解析返回 + 推进状态。
+1. 读取 `state.yaml` 与 `pending_actions`
+2. 按状态机与路由规则选择下一角色和 Agent CLI
+3. 组装 Prompt 模板并发起调用
+4. 读取 `__redcap_status` / deliverables / outbox
+5. 校验交付物完整性并触发 Hook
+6. 原子推进状态与待办
 
-完整事件循环（每轮 10 步）：
+这保证了“流程推进”与“角色产出”解耦：角色负责交付物，Dispatcher 负责状态。
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  0. 防退化重载（按 reload-rules.yaml 刷新关键规范到上下文）         │
-│  1. 读 state.yaml + 执行 pending_actions                         │
-│  2. ALL_DONE? → 触发 on_ALL_DONE → 结束                          │
-│  3. PAUSED?   → 飞书 ask / 终端等待 → 注入回复 → 恢复            │
-│  4. *_DONE?   → 查转移表 → 更新 state                            │
-│  5. *_WORKING? →                                                  │
-│     a. 选 Agent CLI（首选 → Fallback）                            │
-│     b. 组装 Prompt（模板 + 变量映射 → 写入 .workflow/）           │
-│     c. 获取/创建 Session                                          │
-│     d. 执行 CLI（阻塞等待）                                       │
-│     e. 读取 outbox/__redcap_status.json（主）/ response 正则（兼容）│
-│     f. 归档到 last-result.json + 清理 outbox 状态文件             │
-│     g. 交付物完整性校验                                            │
-│     h. 触发 Hooks（on_QA_PASS / on_need_revision / …）           │
-│     i. 更新 state.yaml（+ pending_actions 原子写入）              │
-│     j. 向用户汇报进展                                             │
-│  6. → 回到 0                                                      │
-└──────────────────────────────────────────────────────────────────┘
-```
+### 3.2 状态机
 
-Agent 路由：每个 Agent 以 `{cli}&{model}` 双维度标识（如 `claude-code&claude-opus-4`）。路由表配置首选 + Fallback 链，连续 2 次失败才切换（防偶发），新步骤自动重置失败计数。
+Layer A 主状态机以 `INIT -> PM -> ARCH -> DEV -> QA -> REVIEW -> ALL_DONE` 为主线，并显式支持：
 
-五种启动场景：
+- `PAUSED`：等待用户回复
+- `SCAN_WORKING / SCAN_DONE`：已有项目纳管与增量扫描
+- `need_revision`：按 `root_cause=code|design|requirement` 精准回退
+- 多次失败后的级联升级：先 PM/L1，再用户/L2
 
-| 场景 | 条件 | 入口 |
-|------|------|------|
-| S0: 全新项目 | 无 `开发手册/` | 初始化 → PM |
-| S1: 迭代开发 | `state.yaml` + `ALL_DONE` | 代码库扫描 → PM（增量模式） |
-| S2: 中断恢复 | `state.yaml` + 非 `ALL_DONE` | 从断点恢复 |
-| S3: 旧版项目 | 有旧版标记文件 | 目录迁移 → S1 |
-| S4: 纳管已有项目 | 有代码无 `开发手册/` | 代码库扫描 → 初始化 → PM |
+这里的关键不是状态数量，而是**回退责任明确**：问题属于谁，就退回谁。
 
----
+### 3.3 通信协议
 
-### 状态机
+Loom 与子 Agent 的主通信方式仍然是**文件系统协定**：
 
-```
-              ┌──────────────────────────── 正向流程 ──────────────────────┐
-              │                                                             │
-INIT ──→ PM_WORKING ──→ PM_DONE ──→ ARCH_WORKING ──→ ARCH_DONE           │
-                                                              │             │
-                 ┌────────────────────────────────────────────┘             │
-                 ▼                                                           │
-DEV_WORKING ──→ DEV_DONE ──→ QA_WORKING                                    │
-                                   │                                        │
-              ┌────────────────────┼──────────────────┐                    │
-              ▼                    ▼                   ▼                    │
-          QA_PASS            root=code           root=design                │
-              │              → DEV_WORKING       → ARCH_WORKING             │
-              │              root=requirement → PM_WORKING                  │
-      ┌───────┴───────┐                                                     │
-      │               │                                                     │
- has_next_step   no_next_step                                               │
-      │               │                                                     │
-      ▼               ▼                                                     │
- ARCH_WORKING   REVIEW_WORKING ──→ REVIEW_PASS ──→ ALL_DONE               │
-                      │                                                     │
-                REVIEW_FAIL                                                 │
-             root=code → DEV_WORKING                                       │
-             root=design → ARCH_WORKING                                    │
-                      │                                                     │
-                      └─────────────────────────────────────────────────────┘
+- 主通道：`{role}/outbox/__redcap_status.json`
+- 兼容通道：从回复文本中提取 JSON
+- 兜底通道：读取 `.workflow/last-result.json`
 
-特殊状态：
-┌──────────────────────────────────────────┐
-│ PAUSED           — 等待用户（飞书/终端）   │
-│ SCAN_WORKING/DONE — 迭代代码库扫描        │
-└──────────────────────────────────────────┘
-```
+`__redcap_status` 至少负责表达：
 
-**关键设计**：
-- 状态 + 转移规则存储在 YAML 文件中，不硬编码 — 流程变更只改配置
-- 所有状态写入 `state.yaml`，进程崩溃后可从断点恢复
-- Hooks 与状态转移分离：转移决定"去哪"，Hooks 决定"还要做什么"
-- QA 回退三分法：`root_cause=code` → DEV、`design` → ARCH、`requirement` → PM，精准回退
-- 级联升级：Agent blocked → L1（PM Agent 决策）→ L2（用户决策），分层减少用户打扰
+- `status`
+- `summary`
+- `deliverables`
+- `lesson`（可选）
+- `escalation` / `revision`（按状态必填）
+
+其设计目标不是“让模型输出漂亮 JSON”，而是让 Dispatcher 有一个**可以做物理校验**的协议对象。
+
+### 3.4 角色系统与 Prompt 装配
+
+Loom 保留五角色分工：
+
+| 角色 | 职责 |
+| --- | --- |
+| PM | 澄清需求、锁定范围 |
+| ARCH | 设计方案、画边界 |
+| DEV | 实现代码 |
+| QA | 验证与根因归类 |
+| REVIEW | 总体验收与审查 |
+
+Prompt 装配遵循“模板 + 场景变量 + 恢复态注入”的方式，至少覆盖：
+
+- 全新需求
+- 中断恢复
+- QA 回退
+- REVIEW 回退
+- 迭代开发
+
+这保证角色身份与场景上下文不被混写进单个巨型 Prompt。
+
+### 3.5 模型路由
+
+RedCap 的路由不是写死到单一模型，而是通过：
+
+- agent registry
+- capability matrix
+- 角色适配度
+- fallback 链
+
+动态决定实际执行者。Reviewer 还允许跨家族加权，以增加独立性。  
+这一层的目标是**把“当前机子上真正可用的工具”与“理论上最适配的模型”联合建模**。
+
+### 3.6 可靠性工程
+
+Loom 的可靠性工程面向“长任务 + 宿主差异 + LLM 遗忘”三类问题，当前主要由四类机制组成：
+
+| 机制 | 作用 |
+| --- | --- |
+| **Hook / shell 脚本** | 把关键副作用从对话记忆中拿出来 |
+| **reload rules** | 在关键检查点重读规则，抵抗上下文压缩 |
+| **pending_actions 原子写入** | 防止“状态更新了，但后续动作忘了执行” |
+| **fallback / degraded 路径** | 在宿主能力不足或会话恢复异常时，保留可恢复性而不是伪成功 |
+
+其中 `pending_actions` 的原则仍然成立：**状态推进与后续动作必须同批次固化**，否则就会产生递归遗忘。
 
 ---
 
-### 通信协议
+## 4. Compass — Layer B 自演化控制面
 
-#### 请求-响应流
+Compass 是 RedCap 的自我开发平面。这里管理的不是用户项目，而是框架本身的身份、边界、任务、治理与闭环。
 
-```
-Dispatcher                              Agent (CLI)
-    │                                       │
-    │──── CLI 调用 + Prompt 文件 ──────────→│
-    │                                       │
-    │     （Agent 执行任务、写交付物…）       │
-    │                                       │
-    │←── 交付物文件 + outbox/__redcap_status.json ──│
-    │                                       │
-    │  读取 outbox JSON ──→ 归档 last-result.json   │
-    │  校验交付物 ──→ 触发 Hooks                    │
-    │  更新 state.yaml                              │
-```
+### 4.1 框架自身开发流程
 
-#### `__redcap_status` JSON Schema
+Layer B 的核心执行序列是：
 
-```jsonc
-{
-  "status": "completed",           // 必填：completed|failed|blocked|need_user|need_revision
-  "summary": "用户管理模块完成",    // 必填：一句话摘要
-  "deliverables": [                // 必填：产出文件列表（Dispatcher 据此校验完整性）
-    "dev/outbox/用户管理模块.md"
-  ],
-  "lesson": {                      // 可选：新发现的经验
-    "title": "…", "scenario": "…", "rule": "…"
-  },
-  "escalation": {                  // 仅 blocked 时必填
-    "level": "L1", "target_role": "pm", "question": "…"
-  },
-  "revision": {                    // 仅 need_revision 时必填
-    "root_cause": "design",        // code→DEV | design→ARCH | requirement→PM
-    "description": "接口设计缺少分页字段"
-  }
-}
-```
+1. 读取 `compass/soul.md`，恢复人格与协作默契
+2. 读取 `compass/CONTRIBUTING.md` 与 `compass/knowledge/lessons.md`
+3. 恢复 `.dev-task.md`、plan mirror 与最近工作停点
+4. PM Gate 锁定需求，再进入实现
+5. 变更后执行影响范围检查、任务报告、独立审查、通知与收尾
 
-#### 三级传递策略
+Layer B 不走 Loom 的 Dispatcher 状态机，但它同样遵守“先澄清、再执行、后闭环”的工程节奏。
 
-| 通道 | 机制 | 何时用 |
-|------|------|--------|
-| **方案 A（主通道）** | Agent 写入 `{role}/outbox/__redcap_status.json` | 正常情况（E2E 验证 100% 可靠） |
-| **方案 B（兼容通道）** | 从 Agent 回复文本正则提取 JSON | 旧 Agent 兼容 |
-| **方案 C（兜底）** | 读取 `.workflow/last-result.json` | 断点恢复 / 前两者均失败 |
+### 4.2 PM Gate（需求确认门）
 
-#### 交付物协议
+PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 
-```
-命名：{角色目录}/outbox/{步骤号}-{交付物名称}.md
-规则：
-  ✅ 必须自包含（下游无需回溯源角色草稿）
-  ✅ 写入后锁定（除非被回退，源角色不应修改 outbox 文件）
-  ✅ 文件头含步骤编号 + 生成时间 + 源角色标识
-```
+- **原始输入**：逐字固化，禁止概括改写
+- **已确认需求**：经过澄清和用户确认后的执行依据
 
-> A2A 通信（Agent 间直接对话，用于多轮讨论达成共识）见 [`compass/knowledge/a2a-communication.md`](compass/knowledge/a2a-communication.md)。
+执行期要求：
 
----
+1. 没有明确确认，不进入实现
+2. 每次只追一个澄清点，避免需求同时漂移
+3. 执行前重读对应 Q，不把记忆当真相
+4. 完成后要能把结果对回已确认需求
 
-### 角色系统 + Prompt 组装
+### 4.3 Layer B canonical ledger 与 anti-drift 控制面
 
-#### 五个角色
+`.dev-task.md` 是 Layer B 的 canonical ledger。围绕它已经形成一套物理控制面：
 
-| 角色 | 核心职责 | 交付物 |
-|------|---------|--------|
-| **产品经理（PM）** | 意图澄清（苏格拉底提问法）→ 需求文档 | `pm/outbox/需求文档.md` |
-| **架构师（ARCH）** | 技术框架设计 → 分步模块设计 | `arch/outbox/分步设计索引.md` + 各步模块设计 |
-| **程序员（DEV）** | 按模块设计编码 + 自测 | 代码文件 + `dev/outbox/自测报告.md` |
-| **测试 QA** | 验证代码 vs 设计 vs 需求 | `qa/outbox/测试报告.md` |
-| **审查员（REVIEW）** | 最终交叉审查 | 审查报告 |
+| 资产 | 职责 |
+| --- | --- |
+| `redcap-dev-task.sh` | 解析 canonical metadata 与已确认需求 |
+| `redcap-pm-gate-check.sh` | 对 `.dev-task.md` 执行 session-start / stop-review / session-end 级 gate |
+| `redcap-drift-check.sh` | 检查 active_slice、允许修改范围、authority 漂移 |
+| `redcap-host-workboard-sync.sh` | 仅同步 pointer/hash 到宿主面板，不提升宿主 authority |
 
-**为什么 5 个角色而非 3 个？** PM 与 ARCH 分离确保需求分析不被技术实现干扰；DEV 与 QA 分离确保测试独立性；REVIEW 作为最终门禁交叉检查。
+当前 Layer B 的控制面不再依赖“Agent 应该记得当前在做哪一刀”，而是依赖**显式 metadata + gate 脚本 + drift 审计**。
 
-#### Prompt 组装架构
+### 4.4 宿主 workboard mirror-only 边界
 
-```
-┌──────────────────┐     ┌────────────────────────┐     ┌────────────────┐
-│  loom/roles/      │     │  loom/dispatcher/        │     │  references/    │
-│  */handbook.md    │     │  prompt-templates/       │     │  *.md           │
-│  角色行为手册      │     │  *-prompt.md             │     │  全局规范        │
-│  "Agent 读什么"   │     │  "Dispatcher 怎么组"     │     │  "所有人守什么"  │
-└────────┬─────────┘     └────────┬───────────────┘     └────────┬───────┘
-         │                        │                              │
-         └──── Prompt 组装 ───────┘──────────────────────────────┘
-                     │
-                     ▼
-         最终 Prompt = System（角色身份 + 手册 + 规范）
-                    + Task（场景模板 + 变量替换）
-```
+宿主 `plan.md` / workboard 的职责只有两个：
 
-变量映射（关键变量）：
+1. 展示当前 `task_id / active_slice / confirmed_hash`
+2. 帮助宿主界面在长任务中不丢导航
 
-| 变量 | 来源 |
-|------|------|
-| `{{handbook_content}}` | `loom/roles/{role}/handbook.md` |
-| `{{user_intent}}` | `state.yaml.user_intent` |
-| `{{project_dir}}` | 项目绝对路径 |
-| `{{iteration_mode}}` | `new / iterate / onboard` |
-| `{{revision_description}}` | 回退时的修订说明 |
+它们**不能**：
 
-每个角色 Prompt 包含多场景变种（新需求 / 恢复 Session / 回退修订 / 迭代增量）—— 通用模板导致场景边界模糊，Agent 容易混淆。
+- 代替 `.dev-task.md` 承载执行真相
+- 擅自修改 top goal 或 slice 含义
+- 让宿主自己的 todo 面板凌驾于 Layer B canonical ledger 之上
 
----
+这条边界是防 authority inversion 的第一道隔离带。
 
-### 模型路由
+### 4.5 书记协议（Scribe Protocol）
 
-Dispatcher 在每个新步骤开始时执行动态路由算法，选出最适合当前角色的 Agent。
+书记协议覆盖 PM Gate 之前的探讨阶段。它解决的不是“需求已锁定后的执行漂移”，而是“方向尚未确定时的讨论蒸发”。
 
-**两个输入文件**：
-- `.workflow/agent-registry.yaml`：由 `tools/redcap-detect-agents.sh` 嗅探生成，记录本机可用 CLI 及实际模型
-- `compass/knowledge/model-capability-matrix.yaml`：静态能力评分矩阵，记录各模型在不同角色维度的表现
+满足以下任一条件即触发：
 
-**三层嗅探机制**：
+- 同主题连续多轮讨论仍无正式记录
+- 存在多个互斥选项
+- 用户明确指出分歧或风险预警
 
-| 层级 | 做什么 | 耗时 | 触发时机 |
-|------|--------|------|---------|
-| **轻检测** | `command -v` + 配置 mtime 对比 | < 1s | 每次 RedCap 会话启动 |
-| **全量检测** | 读配置解析模型 + 写 registry | 2-5s | 首次 / registry 过期 / 配置变化 / Agent 失败 |
-| **探测模式** | 实际调用 CLI 获取精确模型（`--probe`） | 10s+ | 用户手动触发 / 诊断时 |
+记录载体是 `compass/knowledge/explore-notes.md`。  
+当 PM Gate 真正开始时，书记笔记是前情底稿，不是可忽略的“聊天记录”。
 
-**路由算法**（每个新步骤执行）：
+### 4.6 指挥棒（Baton）
 
-```
-输入: role, agent-registry.yaml, model-capability-matrix.yaml, dev_agent(仅 reviewer)
-输出: 有序候选列表 [{cli}&{model}, ...]
+Baton 是 Layer B 的调度能力。它与 Loom/Dispatcher 共享一些调度原语，但职责不同：
 
-1. 从 registry 筛选 available=true 的 Agent
-2. 展开可切换模型的 Agent（如 copilot → copilot&claude-opus-4.6, copilot&gpt-5.4, …）
-3. 对每个候选:
-   a. 查矩阵获取能力评分（未收录模型按 all=3 兜底）
-   b. score = model[role_req.primary] × 2 + model[role_req.secondary] × 1
-   c. Reviewer 特殊: model.family ≠ dev_agent.family → score += 2（跨家族评审加分）
-   d. agent.known_issues 非空 → score -= 1
-4. 按 score 降序 → 写入 state.yaml.current_role.candidates
-5. 连续 2 次失败 → 从 candidates 取下一个（Fallback）
-6. 新步骤开始 → 失败计数归零，重新执行路由
-```
+| Dispatcher | Baton |
+| --- | --- |
+| 固定角色序列 | 自由编排、动态任务图 |
+| 面向 Layer A 交付 | 面向 Layer B 治理、裂变、外包 |
+| 状态机驱动 | 条件分支与并行聚合驱动 |
 
-Agent 以 `{cli}&{model}` 双维度标识（如 `copilot&claude-opus-4.6`），解耦 CLI 工具与底层模型。
+Baton 主要承担三类能力：
+
+- **并行裂变**：将无耦合研究任务并发拆开
+- **条件分支**：根据 Prism 或运行结果决定下一步
+- **Skill 外包**：通过文件边界把子任务委托给专精能力
+
+### 4.7 Hook 基础设施
+
+RedCap 当前存在两套 Hook 层：
+
+| 层 | 面向对象 | 典型触发点 | 目标 |
+| --- | --- | --- | --- |
+| **Layer A Hook** | 用户项目 | SessionStart / Stop / SessionEnd / on_ALL_DONE | 保护用户项目交付闭环 |
+| **Layer B Hook** | RedCap 自身 | SessionStart / InstructionsLoaded / Stop / SessionEnd | 保护框架演化闭环 |
+
+不同宿主的 Hook 能力并不一致，因此架构上明确区分：
+
+- **强 Hook 宿主**：可在 Stop / SessionEnd 实时完成 closure transaction
+- **弱 Hook / 无 Hook 宿主**：必须通过补偿式 contract 把缺口延续到下一次 re-anchor
+
+### 4.8 closure transaction 与任务报告物理审计
+
+Layer B 的“完成”不是一句自然语言，而是一个 closure transaction。当前至少包括：
+
+1. PM Gate / anti-drift 审计
+2. stop-review 或独立评审兜底
+3. task report 按模板登记与校验
+4. 飞书通知 / 告警
+5. session-end cleanup
+
+本轮治理之后，这条链新增了显式的 **pending closure obligation**：
+
+- `redcap-task-report-register.sh`：报告一旦登记，即创建 pending closure
+- `redcap-task-report-check.sh`：可从 pending closure 回读 `artifact_path`，支持无新 diff 的补偿式 reconcile
+- `redcap-layerB-session-end.sh`：成功则清 obligation；失败或缺 claim 则把缺口重新写回 pending closure
+- `redcap-layerB-session-start.sh`：记录 re-anchor 时是否仍带着未闭环义务
+
+这意味着弱宿主即使没有完整 Hook，也不能再把“收尾链没发生”静默吞掉。
+
+### 4.9 经验库机制
+
+经验库仍然分两层：
+
+- `lessons.md`：活跃层，保持短小、常驻启动上下文
+- `lessons-archive.md`：归档层，按需检索
+
+高影响 lesson 不允许自动淡出。  
+它的职责不是“做知识管理”，而是**把曾经出现过的失败模式保留为下一次执行的边界条件**。
+
+### 4.10 soul / revive / re-anchor
+
+`compass/soul.md`、`CLAUDE.md`、`GEMINI.md`、`.github/copilot-instructions.md` 共同构成 RedCap 的“身份恢复层”。
+
+这里的核心不是人格化表达，而是三个工程含义：
+
+1. **revive**：新会话先恢复协作方式与原则
+2. **re-anchor**：把身份恢复与 canonical ledger / runtime binding 绑定起来
+3. **anti-drift**：避免“像 RedCap，但其实已脱离 RedCap 控制面”的伪连续性
 
 ---
 
-### 可靠性工程
+## 5. Runtime isolation、兼容桥与证明层
 
-RedCap 面对的核心挑战：**LLM 在长对话中的 attention 衰减导致指令遵从率下降**。
+### 5.1 runtime session / capability / binding / process claim
 
-#### 四层防御架构
+多会话隔离主线已经把 runtime 原语正式沉淀为系统级能力：
 
-| 层 | 机制 | 可靠性 | 实现方式 |
-|----|------|--------|---------|
-| **Layer 0** | 宿主 Hooks（OS 级 shell） | **100%** | 绕过 LLM，宿主程序直接执行 |
-| **Layer 1** | 系统级指令（每轮重注入） | ~30-50% 补救 | copilot-instructions.md / CLAUDE.md |
-| **Layer 2** | SKILL.md hooks 表 | ~60-70% | 依赖 LLM attention（会衰减） |
-| **Layer 3** | 下次启动审计 | ~95-100% | 新会话 attention 最强 |
+| 原语 | 含义 |
+| --- | --- |
+| `runtime_session_id` | 当前会话在 runtime 层的唯一标识 |
+| `capability` | 当前附着的宿主能力/上下文能力类型 |
+| `binding_key` | 宿主会话与 runtime project state 的绑定键 |
+| `process claim` | 当前进程对 runtime state 的临时占有与恢复依据 |
 
-#### 机制一：规则防退化（检查点重载）
+这四件套共同解决：
 
-**问题**：LLM 上下文压缩会保留"有 hooks 机制"的概念但丢失具体触发条件和动作细节。
+- 同仓库多会话并存
+- 同宿主 / 跨宿主恢复
+- Hook 与脚本之间的状态接力
+- 运行时“谁在写这份 derived state”的可追踪性
 
-**解决**：在关键检查点通过 `read_file` 重新加载规范段落，强制刷新被压缩的规则。
+### 5.2 safe degraded / compat bridge / legacy quarantine
 
-```yaml
-# loom/dispatcher/reload-rules.yaml
-checkpoints:
-  on_role_switch:          # 角色切换时（主检查点）
-    - SKILL.md §hooks 表
-    - SKILL.md §交付物校验
-    - SKILL.md §Fallback 路由
-  before_commit:
-    - references/commit-standards.md
-  before_task_complete:
-    - SKILL.md §收尾 hooks
-  on_paused:
-    - SKILL.md §飞书通知
-```
+当 runtime claim 缺失、宿主 Hook 不完整、旧标记文件残留或兼容链尚未迁移完时，系统允许进入**safe degraded**，但不允许伪造成功。
 
-成本分析：单次重读 ~500-1000 tokens，完整项目重载累计 ~2000-4000 tokens（≈ $0.02），远低于规则退化的返工成本。
+当前成熟策略包括：
 
-#### 机制二：Pending Actions（待办持久化）
+- 记录 degraded mode 事件
+- compat bridge 保持旧路径可恢复
+- legacy hit 被显式记录
+- 旧状态文件在安全路径中 quarantine，而不是直接静默覆盖
 
-**问题**：Dispatcher 在状态转移后可能遗忘后续动作（如：更新了 `state=QA_PASS` 但忘了执行 git commit）。
+这条线的目标是：**允许降级，但降级也必须可见、可回收、可审计**。
 
-**解决**：状态更新与 pending_actions 在**同一次 YAML 写入操作中原子提交**，下轮循环自动检查并执行。
+### 5.3 acceptance harness 作为物理证明层
 
-```
-状态转移（步骤 5i）:
+本轮多会话隔离重构之后，acceptance harness 已从“验证脚本”升级为正式架构能力：
 
-state.yaml 单次原子写入:
-  current_state: QA_PASS          ← 状态更新
-  pending_actions:                 ← 待办清单（同批次写入）
-    - type: run_script
-      command: bash loom/tools/redcap-on-qa-pass.sh …
-    - type: check_lesson
-      hint: QA 通过，检查是否有新经验
+- 它覆盖 Loom / Compass / Prism 三条主线
+- 它验证的不只是功能存在，还验证隔离、恢复、compat、degraded 与 report/register claim
+- 它是区分“文档里说有”与“系统里真的跑通”的证据层
 
-下轮循环步骤 1:
-  遍历 pending_actions → 逐项执行 → 清空
-```
-
-⚠️ **铁律**：`pending_actions` 与 `current_state` 必须同批次写入。禁止先写 state 再"记得"补写——这正是递归遗忘的根源。
-
-| 转移目标 | 自动填充的 pending_actions |
-|---------|---------------------------|
-| → `QA_PASS` | `run_script`（git commit） |
-| → `ALL_DONE` | `run_script`（清理 + 摘要 + 飞书通知） |
-| → `PAUSED` | `feishu_ask`（阻塞等待用户回复） |
-| 事件 `need_revision` | `check_lesson`（经验检查） |
-| QA 失败 > 3 次 | `feishu_ask`（循环失败警报） |
+因此，RedCap 当前把 acceptance 定义为**架构证明层**，而不是补充材料。
 
 ---
 
-## 璇玑（Compass）— Layer B
+## 6. Prism — 分析与裁决平面
 
-璇玑是 Cap 的指挥所，管理框架自身的演化。它独立于 Loom 运行，有自己的规范（CONTRIBUTING.md）、知识库（knowledge/）、工具集（tools/）和 Hook 基础设施。
+Prism 负责高风险分析，不接管 Loom 或 Compass 的 canonical truth，但必须有自己的 run-scoped truth 与隔离边界。
 
-```
-compass/
-├── soul.md          ← Cap 人格 + 复活协议（跨会话人格连续性）
-├── CONTRIBUTING.md  ← 框架自身开发的唯一权威规范
-├── CHANGELOG.md
-├── knowledge/       ← lessons.md, design-principles.md, host-reliability.md,
-│                       hooks-*.md, model-capability-matrix.yaml, explore-notes.md, …
-├── tools/           ← 飞书通知、Claude/Gemini/Kimi Hook 处理器
-├── docs/            ← 设计文档和技术调研（baton-design.md 等）
-└── .workflow/       ← 运行时状态（agent-registry.yaml, blocked-*.md 等）
-```
+### 6.1 两族协议
 
-### 框架自身开发流程
+Prism 当前保留两类协议：
 
-框架变更**不走 Dispatcher**，由 AI Agent 直接编辑框架文件，流程如下：
+| 协议族 | 场景 | 目标 |
+| --- | --- | --- |
+| **独立取样** | explore / redteam / test | 在结论互不污染的前提下收集多个独立视角 |
+| **议事协议** | council | 在多轮交互中逐步收敛复杂分歧 |
 
-```
-0. PM Gate — 原文落盘 + 需求澄清锁定（防需求失真）
-1. 读 compass/CONTRIBUTING.md — 获取完整规范
-2. 读 compass/knowledge/lessons.md — 检查已知陷阱
-3. 影响 > 20 行时 → Red Teaming（独立 critic Agent 对抗审查）
-4. 执行变更
-5. 检查影响范围（CONTRIBUTING.md §联动表）
-6. 经验沉淀自检：是否有新 Lesson？
-7. git commit（Conventional Commit 中文格式）
-8. 飞书通知 + Stop Hook 触发独立架构评审
-```
+它们的差异不是“提示词不同”，而是**信息是否允许跨轮共享**。
 
-**Layer B 三大质量保障机制**：
+### 6.2 run-scoped truth
 
-| 机制 | 触发条件 | 作用 |
-|------|---------|------|
-| **§长任务并行裂变** | 分析目标 ≥5 个独立模块 | 拆解无耦合子任务，并行 Agent 执行，只汇收结论 |
-| **§自身变更 Red Teaming** | 改动核心文件且 >20 行 | 独立 critic Agent 对抗审查后再 commit |
-| **§PM Gate** | 任意需求（含单 Q） | 原文即时落盘 → PM 澄清 → 用户确认锁定 → 执行 |
+Prism 当前已经不仅是“发几次子任务”，而是形成了 run-scoped truth：
 
----
+- run_id
+- registry
+- collect record
+- resolve handle
+- archive check
 
-### PM Gate（需求确认门）
+这让一次 Prism 运行本身成为可恢复、可审计、可归档的独立实体，而不是对话里的临时分支。
 
-Layer B 专属机制（`CONTRIBUTING.md §10`），防止长任务因上下文衰减导致需求漂移。
+### 6.3 Dispatch Firewall
 
-**执行流程**：
+独立取样协议依赖 Dispatch Firewall：
 
-```
-Step 0 — 原文即时固化（最优先，任何讨论之前）
-  → 将用户原始输入逐字原文写入 .dev-task.md ## 原始输入 段（禁止概括）
+- agent 之间不得互看中间结论
+- collect 之前不得串线
+- adjudication 必须在冻结过的 frame 上进行
 
-Phase 1 — 需求澄清（PM 模式）
-  → 规模评估 → 逐 Q 澄清边界 → 每次只问一个问题 → 发现问题主动指出
-  → ⚠️ 此阶段禁止开始任何实现
+这是一条显式的架构声明，而不是实现细节。  
+如果后续实现出现折衷，也必须在 capability trace 中显式标注，而不是在重写文档时抹掉。
 
-Phase 2 — 需求锁定
-  → 用户确认后写入 .dev-task.md ## 已确认需求 段
-  → 执行每个 Q 之前必须 re-read 对应描述（不依赖记忆）
+### 6.4 Skill-Delegation 模式
 
-Phase 3 — 执行门控
-  → 无明确确认 → 不进入执行
-  → 每完成一个 Q → 追加执行摘要用于对标检查
-```
+Prism 与 Cap 都可以通过 Skill-Delegation 协议把子任务外包给专精能力。其关键不在“谁来做”，而在**边界必须文件化**：
 
-**两段分工**：原始输入（永不修改，防失真底稿）+ 已确认需求（执行依据，经 PM 细化可合理演进）。
+- 请求文件
+- 输入路径
+- 结果文件
+- blocked / timeout 透传
+- resume/continue 协议
 
-**自主执行授权**：满足「优先级高 + 必要性高 + 棱镜 ≥2 视角无 blocking 反对」时，Cap 可自主推进 PM Gate 流程（Norven 2026-04-11 明确授权）。
+这使 skill 外包仍然处于 RedCap-native delegation boundary 内，而不是退回宿主黑箱。
+
+### 6.5 多轮接力协议
+
+Prism 的多轮接力明确区分不同宿主的 resume 能力。  
+目标不是统一所有 CLI 的参数，而是统一“**一轮运行如何在下一轮被接续**”这件事。
+
+当前要求至少做到：
+
+- 首轮启动与续接方式可区分
+- session_id / run_id 有显式登记
+- 恢复时带摘要，而不是把旧上下文当成默认存在
 
 ---
 
-### 书记协议（Scribe Protocol）
+## 7. References 共约层
 
-Layer B 专属机制（`CONTRIBUTING.md §12`），覆盖 PM Gate 触发之前的"探讨阶段"。
+### 7.1 References 共约层
 
-**问题根因**：PM Gate 前的多轮方向探讨，整个演进过程没有任何沉淀，上下文压缩后无从回溯。
+References 是三体共享的协议层，承载：
 
-**触发条件**（满足任意一条立即触发）：
-- 当前对话存在 ≥2 个未解决问题
-- 同一主题已连续 >3 轮对话未做任何记录
-- 用户明确提出分歧或选项
+- 安全规则
+- 代码规范
+- commit 规范
+- 通信协议
+- hook 规范
+- agent 约束
+- task report 模板
 
-**执行动作**：
-- 将讨论状态写入 `compass/knowledge/explore-notes.md`（书记模式）
-- 写入内容：原始问题（逐字）+ 演进过程 + 关键分歧/选项 + 当前共识 + 待决策
-- 每次触发增量追加，不覆盖历史；Q 决策落定后更新状态为 `[ARCHIVED]`
+它不拥有流程状态，但决定所有平面最低必须遵守什么。
 
-**与 PM Gate 的衔接**：
-```
-书记协议（§12）              PM Gate（§10）
-─────────────────            ──────────────────
-• 探讨阶段（方向未定）触发    • 方向确定后触发
-• 写 explore-notes.md        • 写 .dev-task.md
-• 防止"讨论丢失"             • 防止"执行漂移"
-↓                             ↑
-PM Gate 触发时必须先读 explore-notes.md 活跃条目作为底稿
-```
+### 7.2 关键协议文件索引
 
-**Stop / SessionEnd 检查**：`compass/tools/redcap-explore-notes-check.sh` 在 Layer B 收尾链中扫描未归档条目；`compass/tools/redcap-layerB-session-end.sh` 负责任务报告审计与飞书兜底。
+| 文件/目录 | 作用 |
+| --- | --- |
+| `SKILL.md` | Loom/Dispatcher 入口协议 |
+| `compass/CONTRIBUTING.md` | Layer B 唯一权威规范 |
+| `compass/soul.md` | 人格连续性与 revive 基线 |
+| `compass/docs/architecture-capability-trace.yaml` | 旧能力锚点与全量 trace matrix |
+| `loom/dispatcher/state-machine.md` | Layer A 状态转移定义 |
+| `loom/dispatcher/agent-adapters.md` | 路由、适配、会话接力 |
+| `prism/protocol.md` | Prism 协议全文 |
+| `references/communication-protocol.md` | `__redcap_status` 完整协议 |
+| `references/task-report-template.md` | 任务完成报告模板 |
+| `compass/knowledge/lessons.md` | 活跃经验库 |
 
----
+### 7.3 设计决策速查
 
-### 指挥棒（Baton）
-
-Layer B 调度能力（设计文档：`compass/docs/baton-design.md`），与 loom/dispatcher 共享调度原语但各自独立实现。
-
-**核心设计**：OOP 类比
-
-```
-AbstractDispatcher（共享调度原语）
-├── launch_agent(cli, prompt, session_id?) → result
-├── collect_result(path, timeout) → content | BLOCKED | TIMEOUT
-├── route_by_signal(signal) → next_action
-└── broadcast_status(event) → 飞书通知（可选）
-
-        ↙                      ↘
-loom/dispatcher              compass 指挥棒
-（Layer A 子类）              （Layer B 子类）
-├── 状态机驱动                ├── 自由编排
-├── 固定角色序列               ├── 动态任务图
-└── PM→Arch→Code→QA→Rev       └── §8并行裂变 / §11棱镜 / skill外包
-```
-
-**三大能力**（Layer B 独有）：
-
-| 能力 | 描述 |
-|------|------|
-| **并行裂变（§8）** | N 个独立子任务同时启动，等待全部完成后汇总结论 |
-| **条件分支** | 根据 Prism 结论动态决定下一步，非固定序列 |
-| **Skill 外包** | 子任务委托给专精 skill，通过 `skill-delegation-{id}-result.md` 回收结果 |
-
-**实现状态**：共享原语文档化（`agent-adapters.md §12`）✅ | 工具脚本（`baton-launcher.sh` / `baton-collect.sh` / `baton-delegate.sh`）✅ 已实现（2026-04-11）
+| 维度 | 当前决策 |
+| --- | --- |
+| 架构分层 | Loom / Compass / Prism / References 四层协同 |
+| Layer B 真相源 | `.dev-task.md` 是 canonical ledger |
+| 宿主面板 | mirror-only，不承载执行真相 |
+| host/native 治理 | 控制面收口型治理，fail-closed on RedCap state |
+| runtime 隔离 | session/capability/binding/process claim 四件套 |
+| closure 定义 | review + drift + task-report + notify + cleanup 的事务闭环 |
+| 弱宿主策略 | pending closure + deferred reconcile |
+| degraded 策略 | safe degraded / compat bridge / quarantine，可降级但不可伪成功 |
+| Prism 隔离 | Dispatch Firewall + run-scoped truth |
+| 证明层 | acceptance harness + task report + runtime audit |
 
 ---
 
-### Hook 基础设施
+## 8. 能力追踪与回归审查模型
 
-RedCap 既是开发工具，也是被开发的对象。Hook 架构分两层，部署位置和触发逻辑完全分离：
+本文件不再单独承担“列出所有能力然后希望读者自己脑补是否还在”的职责。  
+从本版本开始，架构审查采用**文档 + trace matrix + runtime evidence** 三件套：
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│  Layer A Hook — 为用户项目服务                                    │
-│                                                                  │
-│  部署位置：~/.claude/settings.json（用户级，所有项目生效）         │
-│  核心挑战：cwd 在目标项目，但脚本在 RedCap repo                   │
-│  解决方案：用户级全局 Hook + state.yaml 存在性检测 + 三重过滤      │
-│                                                                  │
-│  SessionStart → 捕获 HEAD + 清理僵尸标记                          │
-│  Stop         → state.yaml 存在?                                 │
-│                 → ALL_DONE?                                      │
-│                   → 本 session 未通知?                           │
-│                     → loom/tools/redcap-layerA-stop.sh           │
-│  SessionEnd   → 清理 session 标记                                 │
-└────────────────────────────────────────────────────────────────┘
+1. `ARCHITECTURE.md`：解释当前系统为什么这样设计
+2. `compass/docs/architecture-capability-trace.yaml`：冻结旧能力锚点，映射新架构锚点，记录 runtime evidence
+3. task report / acceptance / audit logs：提供物理证据
 
-┌────────────────────────────────────────────────────────────────┐
-│  Layer B Hook — 为 RedCap 框架自身服务                            │
-│                                                                  │
-│  部署位置：.claude/settings.json / .gemini/settings.json /         │
-│           .github/hooks/*.json（项目级，仅 RedCap repo 生效）      │
-│  SessionStart / InstructionsLoaded → 捕获初始 HEAD                │
-│  Stop（Claude）→ 独立架构评审 + explore-notes 提醒                │
-│  SessionEnd → ① 任务报告模板审计 ② 飞书兜底 ③ 临时标记清理        │
-│               ④ 非 Claude 宿主补跑独立架构评审                    │
-└────────────────────────────────────────────────────────────────┘
-```
+当前 trace matrix 至少覆盖以下能力簇：
 
-宿主覆盖状态：
+| 能力簇 | 代表 trace ids | 主要证据面 |
+| --- | --- | --- |
+| 架构总纲 | `design-philosophy`, `triad-overview` | 本文件、设计原则、trace matrix |
+| Loom 执行链 | `loom-dispatcher-event-loop`, `loom-state-machine`, `loom-communication-protocol`, `loom-role-prompt-assembly`, `loom-model-routing`, `loom-reliability-engineering` | Loom 文档、脚本、状态机、E2E |
+| Compass 控制面 | `compass-framework-dev-flow`, `compass-pm-gate`, `compass-scribe-protocol`, `compass-baton`, `compass-hook-infrastructure`, `compass-lessons-system` | CONTRIBUTING、knowledge、tools |
+| Layer B 新治理资产 | `control-plane-canonical-ledger`, `host-workboard-mirror-only`, `closure-transaction-and-task-report-audit`, `soul-revive-reanchor` | `.dev-task.md`、pm-gate、drift-check、interop helper、task reports |
+| 多会话隔离基础设施 | `runtime-session-isolation-model`, `safe-degraded-and-compat-bridge`, `acceptance-harness-as-proof` | runtime-state、acceptance harness、主线任务报告 |
+| Prism 能力族 | `prism-two-family-protocol`, `prism-run-scoped-truth`, `prism-dispatch-firewall`, `prism-skill-delegation`, `prism-multi-turn-relay` | Prism 协议、tools、设计文档 |
+| 共约层 | `references-layer`, `protocol-index`, `design-decisions` | references、索引、决策表 |
 
-| 宿主 | Layer A | Layer B |
-|------|---------|---------|
-| Claude Code | ✅ 用户级 Hook | ✅ 项目级 Hook（Stop + SessionEnd） |
-| Gemini CLI | ⏳ Layer A 默认未部署 | ✅ 项目级 Hook（SessionStart + SessionEnd） |
-| Copilot CLI | ⏳ 需在目标仓库生成 `.github/hooks/*.json` | ✅ 项目级 Hook（`.github/hooks/redcap-layerB.json`） |
-| Kimi CLI | ✅ SessionStart/Stop | ✅ 已部署 |
-| VS Code Copilot | ❌ 无 Hook 支持 | — 退守 Layer 2+3 兜底 |
+后续每个能力项必须至少给出以下结论之一：
 
-> Hook 详情见 `compass/knowledge/hooks-*.md`，部署指南见 `compass/knowledge/layerA-hook-deploy.md`。
+- `intact`
+- `behavior_changed_but_acceptable`
+- `critically_regressed`
+- `deferred_follow_up`
 
-**核心设计洞察**：将多步副作用封装为单一 shell 脚本（如 `redcap-on-complete.sh`），LLM 只需记住"调一个脚本"而非"记住 N 个步骤"。
+也就是说，RedCap 现在评估架构完整性时，不再只问“文档里还有没有这个标题”，而是同时问：
 
-### 经验库机制
-
-**问题**：AI Agent 在当前对话中踩坑，新会话启动时同样的坑会被再次踩中。
-
-**解决**：三层存储架构
-
-```
-compass/knowledge/lessons.md（活跃层，< 300 行）  ← 每次启动自动加载
-         │
-         │  score < 1.0 时自动归档
-         ▼
-compass/knowledge/lessons-archive.md（归档层）    ← 按需手动查阅
-         │
-         │  复现时复活
-         ▼
-lessons.md
-```
-
-归档评分公式：
-
-```
-score = impact_weight × recency_decay × frequency_boost
-
-impact_weight:   high=4, medium=2, low=1
-recency_decay:   <6mo=1.0, 6-12mo=0.6, >12mo=0.3
-frequency_boost: min(复现次数, 5) / 5 → [0.2, 1.0]
-
-score ≥ 1.0 → 保留活跃层 | score < 1.0 → 归档
-豁免：impact=high 永不自动归档（框架底线必须持续可见）
-```
-
----
-
-## 棱镜（Prism）
-
-棱镜是多视角分析引擎，用于高风险决策前的对抗性验证。
-
-```
-prism/
-├── protocol.md     ← 棱镜协议（独立取样 + 议事两族）
-├── modes/          ← 运行模式配置（explore/redteam/test/council）
-├── roles/          ← 分析角色（挑战者、审查员、旧错者、运筹者等）
-├── reports/        ← 历史运行报告
-└── tools/          ← prism-dispatch-check.sh, prism-archive-check.sh
-```
-
-### 两族协议
-
-```
-需要独立视角，结论不相互影响？
-  ├─ YES → 独立取样协议（explore / redteam / test）
-  └─ NO，需要多轮交互讨论？
-        └─ YES → 议事协议（council）
-```
-
-**独立取样协议**（explore / redteam / test）：
-- 各 Agent 全程独立，Dispatch Firewall 强制隔离
-- 流程：Frame（冻结任务）→ Dispatch（分发）→ Collect（收集）→ Adjudicate（裁决）
-- 适用：对同一问题收集多个独立观点，防止群体思维
-
-**议事协议**（council）：
-- Agent 之间多轮交互，前一轮输出对后续 Agent 可见
-- 适用：需要多轮讨论才能收敛的复杂决策
-
-每个 Agent 输出标准 Schema：
-
-```jsonc
-{
-  "agent": "<model>",
-  "role": "<分析视角或对抗职能>",
-  "conclusion": "<核心结论，50字内>",
-  "confidence": "high|medium|low",
-  "blockers": ["[BLOCKING/CRITICAL/MAJOR] <问题>", …],
-  "actions": ["<行动>", …],
-  "blind_spots": "<本视角可能遗漏的角度，无则 null>"
-}
-```
-
-**与 PM Gate 的关系**：
-- PM Gate 已锁定需求 → Prism 运行"验证模式"：只验证方案可行性，不重开需求决策
-- PM Gate 未锁定 → Prism 可探索，但不能代替 PM Gate 做决策
-
-**触发条件（风险信号驱动）**：
-
-| 信号 | 对应模式 |
-|------|---------|
-| 改动核心协议（CONTRIBUTING.md §1-§13、SKILL.md §5.x） | `redteam` |
-| 改动 soul.md / identity.md | `test` |
-| 存在 ≥2 个互斥方案 | `council` |
-| 已有不确定性或反对意见 | `explore` |
-| 2 轮内无法自行解决的卡壳 | `council` |
-
----
-
-### Skill-Delegation 模式
-
-棱镜或 Cap 将子任务委托给专精 skill 完成，通过文件系统回收结果（协议全文：`prism/protocol.md §六`）。
-
-```
-Cap/雇佣兵
-  ├─ 1. 决定外包：子任务超出能力边界或有更专精 skill
-  ├─ 2. 写外包请求：.workflow/skill-delegation-{task_id}.md
-  │     内容：任务描述 + 输入路径 + 期望输出格式 + 超时上限
-  ├─ 3. 启动雇佣兵（headless）：
-  │     gemini -p "[读取 {skill_path}/SKILL.md 并按协议完成以下任务]..."
-  │     （传入 SKILL.md 路径即加载 skill，无需其他机制）
-  ├─ 4. 收集结果：调用方须显式传入 `baton-delegate.sh --output-file .workflow/skill-delegation-{task_id}-result.md`
-  │     - exit 0：含 "##DONE##" 信号，任务完成
-  │     - exit 2：BLOCKED，blocked 文件已写入 `.workflow/blocked-{role}-{ts}.md`
-  │     - exit 124：TIMEOUT，降级处理，记录到 lessons
-  └─ 5. 归档 delegation 文件，更新任务进度
-```
-
-**BLOCKED 透传协议**：雇佣兵将阻塞信息写入 `.workflow/blocked-{role}-{timestamp}.md`，Cap 向 Norven 透传后追加 RESOLVED 状态，通过 `--resume` 续接 session 继续。
-
----
-
-### 多轮接力协议
-
-棱镜 Council 模式及其他多轮对话场景的 session 续接标准（协议全文：`loom/dispatcher/agent-adapters.md §12`）。
-
-| 工具 | 首次启动 | 续接方式 | 自定义 ID |
-|------|---------|---------|---------|
-| **Claude Code** | `--session-id <UUID>` | `--resume <UUID>` | ✅ |
-| **Gemini CLI** | 自动生成 | `--resume <id>` | ❌ |
-| **Kimi CLI** | `--session "<str>"` | `-S <id>` | ✅ |
-| **Copilot CLI** | sessionStart Hook 捕获写入 `.workflow/.copilot-session-id` | `--resume=$(cat ...)` | ❌ |
-
-**接力流程**：
-
-```
-第1轮：启动 Agent → 记录 session_id → 写入 .workflow/prism-sessions.yaml
-第2轮：读取 session_id → --resume 续接 → prompt 开头附加 [续接轮次 N，摘要：...]
-第N轮：持续续接 → 直到收到 __redcap_status completed/blocked
-```
-
----
-
-## References 共约层
-
-```
-references/
-├── security-rules.md         ← 安全铁律（注入每个 Agent Prompt）
-├── code-standards.md         ← 代码规范
-├── commit-standards.md       ← Git commit 规范（Conventional Commit 中文格式）
-├── communication-protocol.md ← __redcap_status 通信协议完整 Schema
-├── hook-standards.md         ← Hook 编写规范
-├── agent-constraints.md      ← 子 Agent 共享约束（防退化、禁止操作等）
-└── task-report-template.md   ← 任务完成报告标准模板（每次任务交付时使用）
-```
-
-这是 Loom 与 Compass 的**公约层**：
-- Loom 通过 Prompt 注入将这些规范传递给每个 Agent
-- Compass 在框架自身开发时遵守这些规范
-- Prism 在分析时可引用这些规范作为评判基准
-
----
-
-## 关键协议文件索引
-
-| 文件 | 职责 |
-|------|------|
-| `SKILL.md` | Dispatcher 完整执行协议（Copilot CLI skill 入口） |
-| `loom/dispatcher/state-machine.md` | 状态转移表、五种启动场景定义 |
-| `loom/dispatcher/agent-adapters.md` | Agent CLI 参数映射、动态路由算法（§1.3）、多轮接力协议（§12） |
-| `loom/dispatcher/reload-rules.yaml` | 检查点重载配置（哪些时机重读哪些规则段） |
-| `loom/dispatcher/prompt-templates/` | 五角色各场景 Prompt 模板（新需求/恢复/回退/迭代） |
-| `loom/roles/*/handbook.md` | 五角色行为手册（PM/Arch/Dev/QA/Reviewer） |
-| `compass/CONTRIBUTING.md` | 框架自身开发唯一权威规范（PM Gate §10 / 书记协议 §12 / 任务复盘 §13） |
-| `compass/soul.md` | Cap 人格与复活协议（跨会话人格连续性） |
-| `compass/docs/baton-design.md` | 指挥棒设计文档（Layer B 调度原语、OOP 类比、实现路线图） |
-| `compass/knowledge/lessons.md` | 活跃经验库（每次启动自动加载，< 300 行） |
-| `compass/knowledge/model-capability-matrix.yaml` | 模型能力评分矩阵（路由算法输入） |
-| `compass/knowledge/explore-notes.md` | 书记协议存档（PM Gate 前探讨记录） |
-| `compass/.workflow/agent-registry.yaml` | 嗅探脚本生成的可用 Agent 注册表（路由算法输入） |
-| `prism/protocol.md` | 棱镜协议全文（两族协议、Skill-Delegation §六、会话记录要求） |
-| `prism/modes/README.md` | 四种运行模式说明（explore/redteam/test/council） |
-| `references/communication-protocol.md` | `__redcap_status` 通信协议完整 Schema |
-| `references/security-rules.md` | 安全铁律（注入每个 Agent Prompt） |
-| `references/agent-constraints.md` | 子 Agent 共享约束（防退化、禁止操作列表） |
-| `references/task-report-template.md` | 任务完成报告模板（自主执行后必须按此汇报） |
-
----
-
-## 设计决策速查
-
-| 维度 | 决策 | 理由 |
-|------|------|------|
-| **架构分层** | Loom / Compass / Prism 三层独立 | 用户项目开发 vs 框架演化 vs 决策评审，关注点完全不同 |
-| **Dispatcher 角色** | 纯调度器，不写代码 | 职责单一，防止 Dispatcher 越权干扰 Agent 工作 |
-| **状态持久化** | YAML 文件 | 零依赖、Git 可追踪、Agent 可直读写 |
-| **Agent 通信** | outbox 文件写入（主）| E2E 验证：文件写入 100% 可靠，stdout 嵌入 0% |
-| **模型路由** | 动态路由（registry × 能力矩阵）| 本机实际可用性 × 角色适配度，Reviewer 跨家族加分 |
-| **回退策略** | 按 root_cause 三分类 | 精准回退到负责人，避免盲目重启浪费 token |
-| **Hook 分层** | Layer A（用户级）+ Layer B（项目级） | 两种 Hook 目的不同，部署位置必须分离 |
-| **经验库分层** | 活跃层 + 归档层 | 防止 lessons.md 膨胀挤占上下文 |
-| **Prism 隔离** | Dispatch Firewall | 独立取样要求各 Agent 结论不相互污染 |
-| **规则防退化** | 检查点 read_file 重载 | 成本 $0.02，远低于规则退化返工成本 |
-| **Pending Actions** | 与 state 原子写入 | 防止"更新状态但忘记后续动作"的递归遗忘 |
-| **Baton 与 Dispatcher 关系** | compass 独立扩展，loom 原地不动 | 不破坏 Layer A 用户体验；两者独立演进 |
-| **书记协议触发** | 自动（≥2 未决问题 / >3 轮无记录） | PM Gate 前的探讨阶段是最易丢失的信息节点 |
-| **Skill-Delegation 通信** | 文件系统接力 | 与棱镜现有通信模型同构；无额外依赖 |
+1. 语义是否还成立
+2. 多会话重构后是否被削弱或漂移
+3. 是否有 runtime / acceptance 级正向证据
+4. 哪些宿主受保护，哪些仍需补偿式治理
 
 ---

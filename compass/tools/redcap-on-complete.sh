@@ -23,10 +23,46 @@ set -u  # 未定义变量报错
 
 PROJECT_DIR="${1:?用法: bash compass/tools/redcap-on-complete.sh <project_dir> [initial_head] [project_name]}"
 INITIAL_HEAD="${2:-}"
-PROJECT_NAME="${3:-$(basename "$PROJECT_DIR")}"
+PROJECT_NAME_ARG="${3:-}"
+SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/redcap-runtime-state.sh"
 WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
+PROJECT_NAME=$(redcap_runtime_project_name "$PROJECT_DIR" "$PROJECT_NAME_ARG")
+
+verify_commit_closure() {
+  local current_head worktree_status=""
+
+  current_head=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || true)
+  if [[ -z "$current_head" ]]; then
+    echo "[on_complete] 无法解析当前 HEAD，拒绝标记完成" >&2
+    return 1
+  fi
+
+  if [[ -z "$INITIAL_HEAD" ]]; then
+    echo "[on_complete] 未提供初始 HEAD，无法证明本轮已有新 commit，拒绝标记完成" >&2
+    return 1
+  fi
+
+  if ! git -C "$PROJECT_DIR" rev-parse "${INITIAL_HEAD}^{commit}" >/dev/null 2>&1; then
+    echo "[on_complete] 初始 HEAD 不可解析：$INITIAL_HEAD" >&2
+    return 1
+  fi
+
+  worktree_status=$(git -C "$PROJECT_DIR" status --porcelain 2>/dev/null || true)
+  if [[ -n "$worktree_status" ]]; then
+    echo "[on_complete] worktree 仍有未提交变更，拒绝标记完成" >&2
+    return 1
+  fi
+
+  if [[ "$current_head" == "$INITIAL_HEAD" ]]; then
+    echo "[on_complete] 未检测到本轮新 commit，拒绝标记完成" >&2
+    return 1
+  fi
+
+  return 0
+}
 
 # ── 动作 1: 清除 .workflow/ 临时文件（§5.9） ──────────────
 
@@ -86,9 +122,14 @@ output_summary() {
 feishu_notify() {
   local notifier="$SCRIPT_DIR/feishu-notifier.py"
 
-  if [[ ! -f "$notifier" ]]; then
-    echo "[on_complete] feishu-notifier.py 不存在，跳过飞书通知"
+  if [[ "$SKIP_FEISHU" == "1" ]]; then
+    echo "[on_complete] REDCAP_SKIP_FEISHU=1，跳过飞书通知"
     return 0
+  fi
+
+  if [[ ! -f "$notifier" ]]; then
+    echo "[on_complete] feishu-notifier.py 不存在，无法完成飞书通知" >&2
+    return 1
   fi
 
   local commit_log=""
@@ -103,7 +144,8 @@ feishu_notify() {
 
   echo "[on_complete] 发送飞书通知..."
   python3 "$notifier" notify "$message" --project "$PROJECT_NAME" 2>/dev/null || {
-    echo "[on_complete] ⚠ 飞书通知失败（可能未配置 feishu-config.json），不阻塞流程"
+    echo "[on_complete] ⚠ 飞书通知失败（可能未配置 feishu-config.json）" >&2
+    return 1
   }
 }
 
@@ -111,8 +153,22 @@ feishu_notify() {
 
 echo "[on_complete] 开始执行 on_ALL_DONE 收尾动作..."
 
-cleanup_workflow  || echo "[on_complete] ⚠ 清理步骤出错，继续执行"
-output_summary    || echo "[on_complete] ⚠ 摘要输出出错，继续执行"
-feishu_notify     || echo "[on_complete] ⚠ 飞书通知出错，继续执行"
+if ! verify_commit_closure; then
+  echo "[on_complete] ⚠ commit proof 未满足，保留重试机会" >&2
+  exit 1
+fi
+
+ON_COMPLETE_STATUS=0
+
+cleanup_workflow  || {
+  echo "[on_complete] ⚠ 清理步骤出错，继续执行" >&2
+  ON_COMPLETE_STATUS=1
+}
+output_summary    || echo "[on_complete] ⚠ 摘要输出出错，继续执行" >&2
+feishu_notify     || {
+  echo "[on_complete] ⚠ 飞书通知未完成，保留重试机会" >&2
+  ON_COMPLETE_STATUS=1
+}
 
 echo "[on_complete] on_ALL_DONE 收尾动作全部完成"
+exit "$ON_COMPLETE_STATUS"

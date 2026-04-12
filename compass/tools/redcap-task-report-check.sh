@@ -17,6 +17,9 @@ REDCAP_ROOT="$1"
 BASELINE="$2"
 CURRENT_HEAD="${3:-}"
 HOST="${4:-}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/redcap-runtime-state.sh"
+source "$SCRIPT_DIR/redcap-interop-governance.sh"
 
 if [[ -z "$CURRENT_HEAD" ]]; then
     CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null) || exit 1
@@ -24,9 +27,24 @@ fi
 
 REPORT_GLOB='compass/docs/task-reports/*.md'
 REPORT_MARKER=""
+PENDING_CLOSURE_STATE=""
 
-if [[ -n "$HOST" ]]; then
-    REPORT_MARKER="/tmp/redcap-layerB-${HOST}-current-report-path"
+if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
+    if redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY"; then
+        REPORT_MARKER=$(redcap_runtime_path "layerB/current-report-path")
+    fi
+elif [[ -n "$HOST" ]]; then
+    if redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null; then
+        REPORT_MARKER=$(redcap_runtime_path "layerB/current-report-path")
+    else
+        redcap_runtime_record_degraded_mode "$REDCAP_ROOT" "layerB-report-check-missing-claim" "host=$HOST" || true
+    fi
+fi
+
+if PENDING_CLOSURE_STATE=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null); then
+    :
+else
+    PENDING_CLOSURE_STATE=""
 fi
 
 TMP_REPORT_LIST=$(mktemp)
@@ -37,6 +55,13 @@ if [[ -n "$REPORT_MARKER" && -f "$REPORT_MARKER" ]]; then
     MARKED_REPORT=$(cat "$REPORT_MARKER" 2>/dev/null)
     if [[ -n "$MARKED_REPORT" ]]; then
         git -C "$REDCAP_ROOT" --no-pager diff --cached --name-only -- "$MARKED_REPORT" 2>/dev/null >> "$TMP_REPORT_LIST" || true
+    fi
+fi
+
+if [[ -n "$PENDING_CLOSURE_STATE" && -f "$PENDING_CLOSURE_STATE" ]]; then
+    PENDING_ARTIFACT_PATH=$(redcap_interop_read_state_field "$PENDING_CLOSURE_STATE" "artifact_path" 2>/dev/null || true)
+    if [[ -n "$PENDING_ARTIFACT_PATH" ]]; then
+        printf '%s\n' "$PENDING_ARTIFACT_PATH" >> "$TMP_REPORT_LIST"
     fi
 fi
 

@@ -14,9 +14,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LESSONS="$REDCAP_ROOT/compass/knowledge/lessons.md"
 INDEX="$REDCAP_ROOT/prism/reports/index.yaml"
-SESSION_REGISTRY="$REDCAP_ROOT/prism/reports/.session-registry.yaml"
+source "$SCRIPT_DIR/prism-run-state.sh"
 
 REPORT_FILE=""
+SESSION_REGISTRY=""
+SESSION_REGISTRY_SOURCE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -37,6 +39,21 @@ echo ""
 FAIL=0
 VERDICT=""
 REPORT_RUN_ID=""
+REGISTRY_RUN_ID=""
+REGISTRY_MODE=""
+REGISTRY_TOTAL="0"
+REGISTRY_RESPONDED="0"
+REGISTRY_ABSENT="0"
+REGISTRY_DISPATCHED="0"
+REGISTRY_SCHEMA_BAD="0"
+REGISTRY_MISSING_INJECTION="0"
+REGISTRY_INVALID_STATUS="0"
+RESPONDED_ROLES=""
+ABSENT_ROLES=""
+DISPATCHED_ROLES=""
+SCHEMA_BAD_ROLES=""
+MISSING_INJECTION_ROLES=""
+INVALID_STATUS_ROLES=""
 
 required_quorum() {
   case "$1" in
@@ -71,22 +88,7 @@ fi
 # 检查 3: 报告 run_id
 echo ""
 echo "[3/7] 检查报告 run_id..."
-REPORT_RUN_ID="$(
-  python3 - "$REPORT_FILE" <<'PY'
-import re
-import sys
-
-path = sys.argv[1]
-pattern = re.compile(r"\*\*运行 ID\*\*：\s*([A-Za-z0-9._-]+)")
-
-with open(path, encoding="utf-8") as f:
-    for line in f:
-        match = pattern.search(line)
-        if match:
-            print(match.group(1))
-            break
-PY
-)"
+REPORT_RUN_ID="$(prism_extract_report_run_id "$REPORT_FILE" 2>/dev/null || true)"
 if [[ -z "$REPORT_RUN_ID" ]]; then
   echo "  ❌ 报告缺少 **运行 ID** 元数据，无法绑定 session_registry"
   FAIL=1
@@ -97,11 +99,36 @@ fi
 # 检查 4: session registry / quorum 物理校验
 echo ""
 echo "[4/7] 检查 session_registry 与 quorum..."
-if [[ ! -f "$SESSION_REGISTRY" ]]; then
-  echo "  ❌ 缺少 session registry: $SESSION_REGISTRY"
+if [[ -n "$REPORT_RUN_ID" ]]; then
+  if prism_resolve_registry_file_for_report "$REPORT_FILE" >/dev/null 2>&1; then
+    SESSION_REGISTRY="${PRISM_RESOLVED_REGISTRY_FILE:-}"
+    SESSION_REGISTRY_SOURCE="${PRISM_RESOLVED_REGISTRY_SOURCE:-}"
+  fi
+fi
+if [[ -z "$SESSION_REGISTRY" || ! -f "$SESSION_REGISTRY" ]]; then
+  echo "  ❌ 缺少与 run_id=${REPORT_RUN_ID:-unknown} 对应的 session registry"
   FAIL=1
 else
-  eval "$(
+  echo "  ℹ️  registry file: $SESSION_REGISTRY (${SESSION_REGISTRY_SOURCE:-unknown})"
+  while IFS=$'\t' read -r key value; do
+    case "$key" in
+      REGISTRY_RUN_ID) REGISTRY_RUN_ID="$value" ;;
+      REGISTRY_MODE) REGISTRY_MODE="$value" ;;
+      REGISTRY_TOTAL) REGISTRY_TOTAL="$value" ;;
+      REGISTRY_RESPONDED) REGISTRY_RESPONDED="$value" ;;
+      REGISTRY_ABSENT) REGISTRY_ABSENT="$value" ;;
+      REGISTRY_DISPATCHED) REGISTRY_DISPATCHED="$value" ;;
+      REGISTRY_SCHEMA_BAD) REGISTRY_SCHEMA_BAD="$value" ;;
+      REGISTRY_MISSING_INJECTION) REGISTRY_MISSING_INJECTION="$value" ;;
+      REGISTRY_INVALID_STATUS) REGISTRY_INVALID_STATUS="$value" ;;
+      RESPONDED_ROLES) RESPONDED_ROLES="$value" ;;
+      ABSENT_ROLES) ABSENT_ROLES="$value" ;;
+      DISPATCHED_ROLES) DISPATCHED_ROLES="$value" ;;
+      SCHEMA_BAD_ROLES) SCHEMA_BAD_ROLES="$value" ;;
+      MISSING_INJECTION_ROLES) MISSING_INJECTION_ROLES="$value" ;;
+      INVALID_STATUS_ROLES) INVALID_STATUS_ROLES="$value" ;;
+    esac
+  done < <(
     python3 - "$SESSION_REGISTRY" <<'PY'
 import re
 import sys
@@ -155,7 +182,8 @@ invalid_status_roles = [
 ]
 
 def emit(key, value):
-    print(f'{key}="{value}"')
+    text = str(value).replace("\t", " ").replace("\n", " ")
+    print(f"{key}\t{text}")
 
 emit("REGISTRY_RUN_ID", run_id)
 emit("REGISTRY_MODE", mode)
@@ -173,7 +201,7 @@ emit("SCHEMA_BAD_ROLES", ",".join(schema_bad_roles))
 emit("MISSING_INJECTION_ROLES", ",".join(missing_injection_roles))
 emit("INVALID_STATUS_ROLES", ",".join(invalid_status_roles))
 PY
-  )"
+  )
 
   QUORUM_REQUIRED=$(required_quorum "$REGISTRY_TOTAL")
   if [[ "$QUORUM_REQUIRED" -eq 0 ]]; then
@@ -184,7 +212,7 @@ PY
     if [[ -z "$REPORT_RUN_ID" ]]; then
       :
     elif [[ "$REPORT_RUN_ID" != "${REGISTRY_RUN_ID:-}" ]]; then
-      echo "  ❌ 报告 run_id=${REPORT_RUN_ID} 与当前 session_registry run_id=${REGISTRY_RUN_ID:-unknown} 不匹配"
+      echo "  ❌ 报告 run_id=${REPORT_RUN_ID} 与已解析 session_registry run_id=${REGISTRY_RUN_ID:-unknown} 不匹配"
       FAIL=1
     else
       echo "  ✅ 报告与 session_registry 已绑定到同一 run_id"

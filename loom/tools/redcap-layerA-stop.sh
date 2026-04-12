@@ -22,6 +22,33 @@
 set -u
 
 INPUT=$(cat)
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")" )" && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
+
+HOST="${REDCAP_HOST:-claude}"
+HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}"
+RUNTIME_ATTACHED=0
+RUNTIME_CLEANUP_REQUIRED=0
+WORKFLOW_SESSION_FILE=""
+RELEASE_WORKFLOW_OWNER_ON_EXIT=0
+
+cleanup_runtime_attachment() {
+    if [[ "$RELEASE_WORKFLOW_OWNER_ON_EXIT" == "1" && -n "$WORKFLOW_SESSION_FILE" ]]; then
+        redcap_runtime_release_text_owner "$WORKFLOW_SESSION_FILE" "${REDCAP_RUNTIME_SESSION_ID:-}" || true
+    fi
+
+    if [[ "$RUNTIME_ATTACHED" != "1" ]]; then
+        return 0
+    fi
+
+    redcap_runtime_clear_process_claim "$HOST" "$HOST_PROCESS_PID" || true
+    if [[ "$RUNTIME_CLEANUP_REQUIRED" == "1" ]]; then
+        redcap_runtime_remove_path "layerA/ownership-check" || true
+    fi
+}
+
+trap cleanup_runtime_attachment EXIT
 
 SESSION_ID=$(echo "$INPUT" | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 CWD=$(echo "$INPUT" | grep -o '"cwd"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
@@ -49,66 +76,110 @@ fi
 # 只有发起工作流的 session 才应触发收尾，防止其他 session 在同一
 # 项目目录下打开时误触发（state.yaml 仍为 ALL_DONE 但非本 session 产生）
 
-PROJECT_HASH=$(echo -n "$CWD" | md5 2>/dev/null || echo -n "$CWD" | md5sum 2>/dev/null | cut -d' ' -f1)
-WORKFLOW_SESSION_FILE="/tmp/redcap-layerA-workflow-session-${PROJECT_HASH}"
-if [[ -f "$WORKFLOW_SESSION_FILE" ]]; then
-    WORKFLOW_SESSION=$(cat "$WORKFLOW_SESSION_FILE")
-    if [[ "$WORKFLOW_SESSION" != "$SESSION_ID" ]]; then
-        exit 0
+BINDING_KEY=$(redcap_runtime_binding_key_from_host_session "$HOST" "$SESSION_ID")
+if redcap_runtime_load_from_binding "$HOST" "$CWD" "$BINDING_KEY"; then
+    RUNTIME_ATTACHED=1
+    RUNTIME_CLEANUP_REQUIRED=1
+    PROJECT_ROOT="${REDCAP_RUNTIME_PROJECT_ROOT:-$(redcap_runtime_project_root "$CWD")}"
+    WORKFLOW_SESSION_FILE=$(redcap_runtime_project_path_for_root "$PROJECT_ROOT" "layerA/workflow-owner-session")
+    OWNERSHIP_CHECK_FILE=$(redcap_runtime_path "layerA/ownership-check")
+    if [[ ! -f "$OWNERSHIP_CHECK_FILE" ]]; then
+        if [[ -f "$WORKFLOW_SESSION_FILE" ]]; then
+            WORKFLOW_SESSION=$(cat "$WORKFLOW_SESSION_FILE")
+            if [[ "$WORKFLOW_SESSION" != "${REDCAP_RUNTIME_SESSION_ID:-}" ]]; then
+                exit 0
+            fi
+            RELEASE_WORKFLOW_OWNER_ON_EXIT=1
+            redcap_runtime_write_text "layerA/ownership-check" "${REDCAP_RUNTIME_SESSION_ID:-}" || true
+        else
+            echo "[redcap-layerA-stop] WARN: workflow owner file not found for project root ${PROJECT_ROOT}, entering safe degraded mode" >&2
+            redcap_runtime_record_degraded_mode "$CWD" "layerA-stop-missing-owner-claim" "session_id=$SESSION_ID" || true
+            exit 0
+        fi
+    elif [[ -f "$WORKFLOW_SESSION_FILE" ]]; then
+        WORKFLOW_SESSION=$(cat "$WORKFLOW_SESSION_FILE")
+        if [[ -n "$WORKFLOW_SESSION" && "$WORKFLOW_SESSION" != "${REDCAP_RUNTIME_SESSION_ID:-}" ]]; then
+            exit 0
+        fi
+        RELEASE_WORKFLOW_OWNER_ON_EXIT=1
     fi
 else
-    # Graceful degradation：无归属记录（旧项目/resume session/24h 清理后），
-    # 降级为三重过滤继续执行，不阻塞收尾
-    echo "[redcap-layerA-stop] WARN: workflow-session file not found for project hash ${PROJECT_HASH}, skipping ownership check (graceful degradation)" >&2
+    redcap_runtime_record_degraded_mode "$CWD" "layerA-stop-safe-degraded" "session_id=$SESSION_ID" || true
+    exit 0
 fi
 
 # ── 过滤 4: Session 去重 ─────────────────────────────────
 
 NOTIFIED_FILE="/tmp/redcap-layerA-notified-${SESSION_ID}"
+if [[ -n "${REDCAP_RUNTIME_SESSION_DIR:-}" ]]; then
+    NOTIFIED_FILE=$(redcap_runtime_path "layerA/notified")
+fi
 if [[ -f "$NOTIFIED_FILE" ]]; then
     exit 0
 fi
 
 # ── 执行 on_ALL_DONE 收尾 ────────────────────────────────
 
-# 使用 readlink 解析真实路径（兼容符号链接）
-SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")" )" && pwd)"
-REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-
 # 读取初始 HEAD（SessionStart 捕获）
 INITIAL_HEAD=""
 HEAD_FILE="/tmp/redcap-layerA-head-${SESSION_ID}"
+if [[ -n "${REDCAP_RUNTIME_SESSION_DIR:-}" ]]; then
+    HEAD_FILE=$(redcap_runtime_path "layerA/head")
+fi
 if [[ -f "$HEAD_FILE" ]]; then
     INITIAL_HEAD=$(cat "$HEAD_FILE")
 fi
 
-PROJECT_NAME=$(basename "$CWD")
+PROJECT_NAME=$(redcap_runtime_project_name "$CWD")
 
 # ── Review 兜底检查 ──────────────────────────────────────
 # 状态机的 REVIEW_WORKING 节点受 LLM attention 衰减影响可能被跳过。
 # 如果 state.yaml history 中没有 reviewer 完成记录，拉起新 Agent 补 Review。
 
 REVIEW_FALLBACK="$REDCAP_ROOT/loom/tools/redcap-layerA-review-fallback.sh"
-if [[ -f "$REVIEW_FALLBACK" ]]; then
-    # 检查 history 中是否存在 reviewer 角色的 completed 记录
-    # state.yaml history 格式: - role: "reviewer" ... status: "completed"
-    # -A10 覆盖 history 条目最大字段数（role/agent/session_id/status/finished_at 等约 6-8 字段）
-    HAS_REVIEW=$(grep -A10 'role:.*reviewer' "$STATE_FILE" 2>/dev/null | grep -c 'status:.*completed' || true)
-    if [[ "$HAS_REVIEW" -eq 0 ]]; then
+REVIEW_FALLBACK_STATUS=0
+HAS_REVIEW=$(grep -A10 'role:.*reviewer' "$STATE_FILE" 2>/dev/null | grep -c 'status:.*completed' || true)
+if [[ "$HAS_REVIEW" -eq 0 ]]; then
+    if [[ -f "$REVIEW_FALLBACK" ]]; then
         echo "[redcap-layerA-stop] Review 未执行，启动兜底 Review..." >&2
-        bash "$REVIEW_FALLBACK" "$CWD" "$PROJECT_NAME" 2>&1 || echo "[redcap-layerA-stop] WARN: review-fallback exited with $?" >&2
+        if REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+            REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+            REDCAP_HOST_PROCESS_PID="$HOST_PROCESS_PID" \
+            bash "$REVIEW_FALLBACK" "$CWD" "$PROJECT_NAME" 2>&1; then
+            REVIEW_FALLBACK_STATUS=0
+        else
+            REVIEW_FALLBACK_STATUS=$?
+            echo "[redcap-layerA-stop] WARN: review-fallback exited with $REVIEW_FALLBACK_STATUS" >&2
+        fi
+    else
+        REVIEW_FALLBACK_STATUS=1
+        echo "[redcap-layerA-stop] WARN: review-fallback script missing: $REVIEW_FALLBACK" >&2
     fi
+fi
+
+if [[ "$REVIEW_FALLBACK_STATUS" -ne 0 ]]; then
+    redcap_runtime_record_degraded_mode "$CWD" "layerA-stop-review-fallback-incomplete" "status=$REVIEW_FALLBACK_STATUS session_id=$SESSION_ID" || true
+    exit 0
 fi
 
 # 调用 on-complete 收尾脚本
 ON_COMPLETE="$REDCAP_ROOT/compass/tools/redcap-on-complete.sh"
+ON_COMPLETE_STATUS=1
 if [[ -f "$ON_COMPLETE" ]]; then
-    bash "$ON_COMPLETE" "$CWD" "$INITIAL_HEAD" "$PROJECT_NAME" 2>&1 || echo "[redcap-layerA-stop] WARN: on-complete.sh exited with $?" >&2
+    if bash "$ON_COMPLETE" "$CWD" "$INITIAL_HEAD" "$PROJECT_NAME" 2>&1; then
+        ON_COMPLETE_STATUS=0
+    else
+        ON_COMPLETE_STATUS=$?
+        echo "[redcap-layerA-stop] WARN: on-complete.sh exited with $ON_COMPLETE_STATUS" >&2
+    fi
 else
     echo "[redcap-layerA-stop] WARN: on-complete.sh not found at $ON_COMPLETE" >&2
 fi
 
-# 标记已通知
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$NOTIFIED_FILE"
+if [[ "$ON_COMPLETE_STATUS" -eq 0 ]]; then
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$NOTIFIED_FILE"
+else
+    redcap_runtime_record_degraded_mode "$CWD" "layerA-stop-on-complete-incomplete" "status=$ON_COMPLETE_STATUS session_id=$SESSION_ID" || true
+fi
 
 exit 0

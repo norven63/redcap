@@ -357,19 +357,41 @@ python3 compass/tools/feishu-notifier.py ask "方案A还是方案B？" --project
 
 ### 触发条件
 
-仅在以下情况创建：
+默认在以下情况创建**完整版** `.dev-task.md`：
 
 > **预计超过 2 个独立阶段、且单次会话大概率无法完成** → 创建 `.dev-task.md`
 
-单次 fix、docs 更新、单个 Lesson 沉淀等简单任务不需要。
+若 §10 PM Gate 已触发但任务本身较小，也允许创建**薄版** `.dev-task.md`：
+- 至少包含：`控制面元数据`、`原始输入`、`已确认需求`、`漂移哨兵`、`允许修改范围`
+- checklist / 断点备注可以精简，但 canonical truth 不可缺席
+
+因此：**大任务 = 完整版；小任务但进入 PM Gate = 薄版。**
 
 ### 文件格式
 
 ```markdown
 # 当前任务：<任务名称>
 
-## 目的（为什么做）
-<一句话描述>
+## 控制面元数据（机器校验）
+task_id: <稳定 ID>
+source_of_truth: .dev-task.md
+top_goal: <总目标>
+active_slice: <当前子任务>
+subtask_of: <若 active_slice != top_goal，则填写>
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文）
+<逐条原文>
+
+## 已确认需求（执行依据）
+<逐条确认版 + 执行摘要>
+
+## 漂移哨兵
+- <top_goal / active_slice / subtask_of 等防偏航约束>
+
+## 允许修改范围
+- <文件 glob>
 
 ## 完成标准
 - [ ] Phase 1: ...
@@ -388,6 +410,19 @@ python3 compass/tools/feishu-notifier.py ask "方案A还是方案B？" --project
 | 每完成一个阶段 | 更新 checklist + 断点备注（通常和 commit 是同一个认知时机，顺手打勾） |
 | 新会话启动 | 入口索引检查该文件是否存在 → 存在则读取，然后 `git log --oneline -10` 交叉验证实际进度（可能最后一次更新后又做了几个 commit） |
 | 任务全部完成 | 删除文件 |
+
+### 控制面硬化（authority inversion 防护）
+
+- `.dev-task.md` 是 Layer B 的 **canonical ledger**，宿主 `plan.md` / workboard 只能做镜像，不得充当真相源
+- `compass/tools/redcap-pm-gate-check.sh`
+  - SessionStart：warning + runtime stamp
+  - Stop review / SessionEnd：blocking
+- `compass/tools/redcap-drift-check.sh`
+  - 校验 `top_goal / active_slice / subtask_of`
+  - 校验本轮改动文件不得超出 `## 允许修改范围`
+- `compass/tools/redcap-host-workboard-sync.sh`
+  - 仅向宿主 workboard 写 canonical pointer / confirmed hash
+  - 不允许反向把需求/验收真相从宿主 workboard 回灌为 RedCap authority
 
 > 该文件已加入 `.gitignore`——它是临时过程状态，不应进入版本控制。
 
@@ -556,6 +591,9 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 
 > **两段分工**：原始输入 = 防失真底稿（永不修改，随时回溯）；已确认需求 = 执行依据（经 PM 细化，可合理演进）。
 
+**执行期真相源**：`.dev-task.md` 是 Layer B 的唯一 canonical truth。  
+宿主 `plan.md` / session workboard 只允许镜像 `task_id`、`canonical_path`、`confirmed_hash`、`active_slice` 等 pointer 信息，不得承载需求正文或验收真相。
+
 ### ⚠️ 关键认知修正
 
 > **"Norven 在场给出授权" ≠ "PM Gate 已完成"**
@@ -590,6 +628,7 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 - 棱镜评审结论写入 `.dev-task.md` 的 `## 自主决策依据` 段，作为可追溯的授权记录
 - 任务完成后，**必须**按 `references/task-report-template.md` 归档到 `compass/docs/task-reports/YYYY-MM-DD-<topic>.md`，再同步给 Norven
 - 若执行过程中出现超出预期的影响范围扩大，立即暂停并向 Norven 透传
+- Stop review / SessionEnd 若 `redcap-pm-gate-check.sh` 或 `redcap-drift-check.sh` 失败，则不得宣称 Layer B 任务收尾完成
 
 > **本规则不适用于**：涉及架构方向性变更（如调整 Layer A/B 边界、新增/删除核心角色）、外部依赖引入、以及 Norven 明确要求介入的决策点——这些仍须等待 Norven 显式确认。
 

@@ -1,0 +1,1044 @@
+schema_version: 1
+frozen_at: "2026-04-12T07:14:47Z"
+baseline:
+  source_document: "ARCHITECTURE.md"
+  source_commit: "d1c8a57c430d7ba3d43a20b504f9242fecd3e462"
+  source_worktree_sha256: "cde1a98082943c14ebe5a0284b3e07a1620472e2bdfe44155d0b4cf5d0b5a1a3"
+  freeze_rule: "先冻结当前工作区中的旧 ARCHITECTURE.md 主题，再补入旧文档未充分表达但仓库中已经成熟的机制，后续审查必须基于旧基线 -> 新架构 -> runtime evidence 三向追踪。"
+default_trace_dimensions:
+  - existence
+  - semantic_integrity
+  - regression_since_multi_session_refactor
+  - positive_evidence
+  - host_coverage
+  - lifecycle_coverage
+  - enforcement_tier
+entries:
+  - id: design-philosophy
+    source_kind: old_architecture
+    title: "设计哲学"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 35
+      heading: "## 设计哲学"
+    summary: "记录五项元原则在架构层面的体现，是后续所有能力审查的战略层锚点。"
+    subcapabilities:
+      - "角色分离"
+      - "状态外部化"
+      - "确定性优先"
+      - "经验积累"
+      - "层次清晰"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "compass/knowledge/design-principles.md"
+      code: []
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["loom", "compass", "prism", "references"]
+      hosts: ["all"]
+      lifecycles: ["global"]
+    expected_enforcement_tier: ["documentation"]
+    notes: "这是旧 ARCHITECTURE 中最顶层的能力总纲，后续重写时不得弱化为纯叙述。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 22
+      heading: "## 1. 设计哲学"
+    runtime_evidence:
+      - "doc:ARCHITECTURE.md#1-设计哲学"
+      - "doc:compass/knowledge/design-principles.md"
+    audit_status: "intact"
+
+  - id: triad-overview
+    source_kind: old_architecture
+    title: "三体架构总览"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 58
+      heading: "## 三体架构总览"
+    summary: "定义 Loom / Compass / Prism / References 的分层总图与边界。"
+    subcapabilities:
+      - "Loom 执行引擎"
+      - "Compass 框架自演化控制面"
+      - "Prism 多视角分析引擎"
+      - "References 共约层"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "README.md"
+      code: []
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["loom", "compass", "prism", "references"]
+      hosts: ["all"]
+      lifecycles: ["global"]
+    expected_enforcement_tier: ["documentation"]
+    notes: "后续重写必须保留三体分层，而不是被 host/native 治理章节盖掉。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 44
+      heading: "### 2.1 三体分层总览"
+    runtime_evidence:
+      - "doc:ARCHITECTURE.md#2-三体分层与-authority-chain"
+      - "doc:README.md"
+    audit_status: "intact"
+
+  - id: loom-dispatcher-event-loop
+    source_kind: old_architecture
+    title: "Loom / Dispatcher 事件循环"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 105
+      heading: "### Dispatcher 事件循环"
+    summary: "定义 Layer A 的事件循环、状态推进、hook 触发与用户汇报链。"
+    subcapabilities:
+      - "防退化重载"
+      - "状态读取与 pending_actions"
+      - "Agent 执行与 outbox 解析"
+      - "交付物完整性校验"
+      - "hook 触发与状态推进"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "SKILL.md"
+      code:
+        - "loom/dispatcher/dispatch.sh"
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["loom"]
+      hosts: ["all"]
+      lifecycles: ["dispatch", "pause", "resume", "all_done"]
+    expected_enforcement_tier: ["documentation", "script"]
+    notes: "虽然本 tranche 聚焦 Layer B，但重写 ARCHITECTURE 时不能丢掉 Layer A 的事件循环主线。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 94
+      heading: "### 3.1 Dispatcher 事件循环"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: loom-state-machine
+    source_kind: old_architecture
+    title: "状态机"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 147
+      heading: "### 状态机"
+    summary: "定义 Layer A 各状态与回退策略，是后续回归审查的重要全集来源之一。"
+    subcapabilities:
+      - "INIT 到 ALL_DONE 正向流"
+      - "QA root_cause 三分法回退"
+      - "PAUSED / SCAN 特殊状态"
+      - "级联升级"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "loom/dispatcher/state-machine.md"
+      code: []
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["loom"]
+      hosts: ["all"]
+      lifecycles: ["dispatch", "review", "pause", "resume"]
+    expected_enforcement_tier: ["documentation", "configuration"]
+    notes: "后续审查应检查多会话改造是否反向破坏了状态机和回退链。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 107
+      heading: "### 3.2 状态机"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: loom-communication-protocol
+    source_kind: old_architecture
+    title: "通信协议"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 192
+      heading: "### 通信协议"
+    summary: "定义 `__redcap_status`、交付物、outbox 主链与兼容解析逻辑。"
+    subcapabilities:
+      - "outbox 文件写入"
+      - "__redcap_status schema"
+      - "deliverables 校验"
+      - "stdout 兼容回退"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "references/communication-protocol.md"
+      code: []
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["loom", "prism"]
+      hosts: ["all"]
+      lifecycles: ["agent-response", "collect"]
+    expected_enforcement_tier: ["documentation", "schema", "script"]
+    notes: "旧 ARCHITECTURE 中的协议能力必须继续被纳入全量能力审查，不得因本次治理线被边缘化。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 118
+      heading: "### 3.3 通信协议"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: loom-role-prompt-assembly
+    source_kind: old_architecture
+    title: "角色系统 + Prompt 组装"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 254
+      heading: "### 角色系统 + Prompt 组装"
+    summary: "定义五角色手册与 prompt 模板装配机制。"
+    subcapabilities:
+      - "五角色分工"
+      - "新需求/恢复/回退 prompt 模板"
+      - "角色行为手册"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+      code:
+        - "loom/dispatcher/prompt-templates/"
+        - "loom/roles/"
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["loom"]
+      hosts: ["all"]
+      lifecycles: ["dispatch", "resume"]
+    expected_enforcement_tier: ["documentation", "prompt"]
+    notes: "后续审查要检查多会话长任务是否伤及 prompt 装配与角色职责叙述。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 136
+      heading: "### 3.4 角色系统与 Prompt 装配"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: loom-model-routing
+    source_kind: old_architecture
+    title: "模型路由"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 299
+      heading: "### 模型路由"
+    summary: "定义 registry × 能力矩阵的动态路由模型。"
+    subcapabilities:
+      - "agent registry 嗅探"
+      - "model capability matrix"
+      - "跨家族 reviewer 加权"
+      - "fallback 路由"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "loom/dispatcher/agent-adapters.md"
+        - "compass/knowledge/model-capability-matrix.yaml"
+      code: []
+      reports: []
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["loom", "compass"]
+      hosts: ["claude", "gemini", "copilot", "kimi"]
+      lifecycles: ["dispatch", "fallback"]
+    expected_enforcement_tier: ["documentation", "configuration"]
+    notes: "路由能力不是本 tranche 的直接改动点，但必须保留在旧能力全集里。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 158
+      heading: "### 3.5 模型路由"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: loom-reliability-engineering
+    source_kind: old_architecture
+    title: "可靠性工程"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 337
+      heading: "### 可靠性工程"
+    summary: "定义 Layer A 面向宿主差异与长任务退化的可靠性策略。"
+    subcapabilities:
+      - "host reliability"
+      - "fallback 与降级"
+      - "独立 review 兜底"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "compass/knowledge/host-reliability.md"
+      code:
+        - "loom/tools/redcap-layerA-review-fallback.sh"
+      reports: []
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["loom", "compass"]
+      hosts: ["all"]
+      lifecycles: ["stop", "session-end", "timeout"]
+    expected_enforcement_tier: ["documentation", "script", "hook"]
+    notes: "后续审查要特别看它是否被多会话隔离改坏，而不只是看 Layer B 治理。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 170
+      heading: "### 3.6 可靠性工程"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: compass-framework-dev-flow
+    source_kind: old_architecture
+    title: "Compass / 框架自身开发流程"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 422
+      heading: "### 框架自身开发流程"
+    summary: "定义 Layer B 不走 Dispatcher 时的自身开发主链。"
+    subcapabilities:
+      - "读 CONTRIBUTING 与 lessons"
+      - "Red Teaming"
+      - "执行变更"
+      - "影响范围检查"
+      - "经验沉淀"
+      - "提交与通知"
+      - "Stop Hook 独立评审"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "compass/CONTRIBUTING.md"
+      code:
+        - "compass/tools/redcap-on-stop-review.sh"
+        - "compass/tools/redcap-on-complete.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-11-hook-chain-investigation.md"
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["compass"]
+      hosts: ["claude", "gemini", "copilot", "kimi", "vscode-copilot"]
+      lifecycles: ["session-start", "stop", "session-end", "complete"]
+    expected_enforcement_tier: ["documentation", "hook", "script"]
+    notes: "本 tranche 里用户明确指出整体 review / 提交 / 飞书通知结果缺失，因此该能力族必须重点审查。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 189
+      heading: "### 4.1 框架自身开发流程"
+    runtime_evidence: []
+    audit_status: "behavior_changed_but_acceptable"
+
+  - id: compass-pm-gate
+    source_kind: old_architecture
+    title: "PM Gate"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 448
+      heading: "### PM Gate（需求确认门）"
+    summary: "定义 Layer B 需求固化、确认、执行门控与 authority 链。"
+    subcapabilities:
+      - "原始输入固化"
+      - "确认需求"
+      - "执行门控"
+      - "runtime stamp"
+      - "drift 阻断"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "compass/CONTRIBUTING.md"
+      code:
+        - ".dev-task.md"
+        - "compass/tools/redcap-dev-task.sh"
+        - "compass/tools/redcap-pm-gate-check.sh"
+        - "compass/tools/redcap-drift-check.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["compass"]
+      hosts: ["all"]
+      lifecycles: ["session-start", "reread", "stop-review", "session-end"]
+    expected_enforcement_tier: ["documentation", "script", "audit"]
+    notes: "旧 ARCHITECTURE 已有 authority 链雏形，但后续重写必须把 canonical ledger / drift / mirror-only 的组合完整收束。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 201
+      heading: "### 4.2 PM Gate（需求确认门）"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: compass-scribe-protocol
+    source_kind: old_architecture
+    title: "书记协议"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 480
+      heading: "### 书记协议（Scribe Protocol）"
+    summary: "定义 PM Gate 前的探讨记录机制。"
+    subcapabilities:
+      - "explore-notes 追加记录"
+      - "未归档检查"
+      - "与 PM Gate 衔接"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "compass/CONTRIBUTING.md"
+      code:
+        - "compass/knowledge/explore-notes.md"
+        - "compass/tools/redcap-layerB-session-end.sh"
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["compass"]
+      hosts: ["all"]
+      lifecycles: ["discussion", "stop", "session-end"]
+    expected_enforcement_tier: ["documentation", "script"]
+    notes: "后续审查需要检查这条讨论沉淀线有没有被长任务与多会话治理稀释。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 243
+      heading: "### 4.5 书记协议（Scribe Protocol）"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: compass-baton
+    source_kind: old_architecture
+    title: "指挥棒（Baton）"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 511
+      heading: "### 指挥棒（Baton）"
+    summary: "定义 Layer B 的共享调度原语与动态编排能力。"
+    subcapabilities:
+      - "并行裂变"
+      - "条件分支"
+      - "skill 外包"
+      - "launcher / collect / delegate"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "compass/docs/baton-design.md"
+      code:
+        - "compass/tools/baton-launcher.sh"
+        - "compass/tools/baton-collect.sh"
+        - "compass/tools/baton-delegate.sh"
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["compass", "prism"]
+      hosts: ["all"]
+      lifecycles: ["delegation", "parallel-analysis", "skill-outsourcing"]
+    expected_enforcement_tier: ["documentation", "script"]
+    notes: "后续审查要包含 Baton 的协议边界，而不只是 host/native 治理本身。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 256
+      heading: "### 4.6 指挥棒（Baton）"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: compass-hook-infrastructure
+    source_kind: old_architecture
+    title: "Hook 基础设施"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 544
+      heading: "### Hook 基础设施"
+    summary: "定义 Layer A / Layer B hook 分层、宿主覆盖率与单脚本副作用封装。"
+    subcapabilities:
+      - "Layer A 用户级 hook"
+      - "Layer B 项目级 hook"
+      - "宿主覆盖矩阵"
+      - "单一 shell 脚本封装副作用"
+      - "Stop review / SessionEnd fallback"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "compass/knowledge/hooks-claude-code.md"
+        - "compass/docs/hook-chain-investigation-design.md"
+      code:
+        - ".claude/settings.json"
+        - "compass/tools/redcap-on-stop-review.sh"
+        - "compass/tools/redcap-layerB-session-end.sh"
+        - "loom/tools/redcap-layerA-session-end.sh"
+        - "compass/tools/redcap-on-complete.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-11-hook-chain-investigation.md"
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["loom", "compass"]
+      hosts: ["claude", "gemini", "copilot", "kimi", "vscode-copilot"]
+      lifecycles: ["session-start", "stop", "session-end", "complete"]
+    expected_enforcement_tier: ["documentation", "hook", "script", "audit"]
+    notes: "这是后续全能力审查的重点高风险族，不能只看某一个 hook 是否还在。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 272
+      heading: "### 4.7 Hook 基础设施"
+    runtime_evidence: []
+    audit_status: "behavior_changed_but_acceptable"
+
+  - id: compass-lessons-system
+    source_kind: old_architecture
+    title: "经验库机制"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 590
+      heading: "### 经验库机制"
+    summary: "定义 lessons 活跃层 / 归档层与经验复活机制。"
+    subcapabilities:
+      - "活跃层 / 归档层"
+      - "score 评分"
+      - "复活机制"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "compass/knowledge/lessons.md"
+      code:
+        - "compass/tools/lessons-score.sh"
+      reports: []
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["compass"]
+      hosts: ["all"]
+      lifecycles: ["session-start", "post-task"]
+    expected_enforcement_tier: ["documentation", "script"]
+    notes: "本 tranche 发现的问题后续也要回写 lessons，因此这条能力必须进入回归矩阵。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 305
+      heading: "### 4.9 经验库机制"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: prism-two-family-protocol
+    source_kind: old_architecture
+    title: "Prism 两族协议"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 636
+      heading: "### 两族协议"
+    summary: "定义独立取样协议与议事协议，以及 Dispatch Firewall 的主张。"
+    subcapabilities:
+      - "独立取样协议"
+      - "议事协议"
+      - "Frame / Dispatch / Collect / Adjudicate"
+      - "Dispatch Firewall"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "prism/protocol.md"
+      code:
+        - "prism/tools/prism-run-state.sh"
+        - "prism/tools/prism-coordinator.sh"
+      reports:
+        - "compass/docs/prism-coordinator-phase-a-design.md"
+      lessons: []
+    expected_surfaces:
+      layers: ["prism"]
+      hosts: ["all"]
+      lifecycles: ["frame", "dispatch", "collect", "adjudicate", "council"]
+    expected_enforcement_tier: ["documentation", "script", "audit"]
+    notes: "旧 ARCHITECTURE 明确宣称了 Dispatch Firewall；后续审查必须判断它当前是 intact、changed 还是 deferred。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 376
+      heading: "### 6.1 两族协议"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: prism-skill-delegation
+    source_kind: old_architecture
+    title: "Prism / Skill-Delegation 模式"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 684
+      heading: "### Skill-Delegation 模式"
+    summary: "定义通过文件系统做 skill 外包与结果回收的协议。"
+    subcapabilities:
+      - "delegation request/result 文件"
+      - "BLOCKED 透传"
+      - "归档 delegation 结果"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "prism/protocol.md"
+      code:
+        - "compass/tools/baton-delegate.sh"
+      reports: []
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["compass", "prism"]
+      hosts: ["all"]
+      lifecycles: ["delegation", "resume"]
+    expected_enforcement_tier: ["documentation", "script"]
+    notes: "用户已要求审查 skill 外包能力是否在本轮长任务里被打坏，因此该项必须显式保留。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 410
+      heading: "### 6.4 Skill-Delegation 模式"
+    runtime_evidence:
+      - "script:compass/tools/baton-delegate.sh"
+      - "lesson:compass/knowledge/lessons.md#L-47"
+    audit_status: "intact"
+
+  - id: prism-multi-turn-relay
+    source_kind: old_architecture
+    title: "多轮接力协议"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 707
+      heading: "### 多轮接力协议"
+    summary: "定义不同宿主 / CLI 的 session 续接标准。"
+    subcapabilities:
+      - "Claude resume"
+      - "Gemini resume"
+      - "Kimi session"
+      - "Copilot resume handle"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "loom/dispatcher/agent-adapters.md"
+      code: []
+      reports: []
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["prism", "loom", "compass"]
+      hosts: ["claude", "gemini", "copilot", "kimi"]
+      lifecycles: ["resume", "follow-up", "multi-round"]
+    expected_enforcement_tier: ["documentation", "adapter"]
+    notes: "后续审查要区分 CLI 能力、runtime 可用能力、当前实现是否真的接线。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 422
+      heading: "### 6.5 多轮接力协议"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: references-layer
+    source_kind: old_architecture
+    title: "References 共约层"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 728
+      heading: "## References 共约层"
+    summary: "定义跨 Loom / Compass / Prism 的公约层。"
+    subcapabilities:
+      - "security-rules"
+      - "code-standards"
+      - "commit-standards"
+      - "communication-protocol"
+      - "hook-standards"
+      - "agent-constraints"
+      - "task-report-template"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+      code:
+        - "references/"
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["references"]
+      hosts: ["all"]
+      lifecycles: ["global"]
+    expected_enforcement_tier: ["documentation", "prompt", "script"]
+    notes: "任务报告模板与 hook 标准是本 tranche 的关键证据来源之一。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 437
+      heading: "### 7.1 References 共约层"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: protocol-index
+    source_kind: old_architecture
+    title: "关键协议文件索引"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 748
+      heading: "## 关键协议文件索引"
+    summary: "列出各层关键资产文件，是后续 trace 审查的初始文件全集。"
+    subcapabilities:
+      - "SKILL.md"
+      - "state-machine.md"
+      - "agent-adapters.md"
+      - "CONTRIBUTING.md"
+      - "soul.md"
+      - "baton-design.md"
+      - "lessons.md"
+      - "prism/protocol.md"
+      - "task-report-template.md"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+      code: []
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["loom", "compass", "prism", "references"]
+      hosts: ["all"]
+      lifecycles: ["global"]
+    expected_enforcement_tier: ["documentation"]
+    notes: "后续重写时不能丢掉索引价值；否则 AI 容易再次进入信息茧房。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 451
+      heading: "### 7.2 关键协议文件索引"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: design-decisions
+    source_kind: old_architecture
+    title: "设计决策速查"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 774
+      heading: "## 设计决策速查"
+    summary: "以表格形式沉淀关键架构决策，是判断行为变化是否可接受的重要基线。"
+    subcapabilities:
+      - "三体分层"
+      - "Dispatcher 纯调度器"
+      - "YAML 状态持久化"
+      - "outbox 通信"
+      - "动态模型路由"
+      - "Hook 分层"
+      - "经验库分层"
+      - "Prism Dispatch Firewall"
+      - "read_file 检查点重载"
+      - "Pending Actions 原子写入"
+      - "Baton 与 Dispatcher 分离"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+      code: []
+      reports: []
+      lessons: []
+    expected_surfaces:
+      layers: ["loom", "compass", "prism"]
+      hosts: ["all"]
+      lifecycles: ["global"]
+    expected_enforcement_tier: ["documentation"]
+    notes: "后续审查中，许多项会从这里拆出为独立结论，尤其是 Dispatch Firewall、Hook 分层与 Pending Actions。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 466
+      heading: "### 7.3 设计决策速查"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: control-plane-canonical-ledger
+    source_kind: supplemental
+    title: "Layer B canonical ledger 与 anti-drift 控制面"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 448
+      heading: "### PM Gate（需求确认门）"
+    summary: "旧 ARCHITECTURE 只部分提到 authority 链，但仓库中已经成熟了 `.dev-task.md` + pm-gate + drift-check + workboard-sync 的物理控制面。"
+    seed_evidence:
+      docs:
+        - ".dev-task.md"
+        - "compass/CONTRIBUTING.md"
+      code:
+        - "compass/tools/redcap-dev-task.sh"
+        - "compass/tools/redcap-pm-gate-check.sh"
+        - "compass/tools/redcap-drift-check.sh"
+        - "compass/tools/redcap-host-workboard-sync.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["compass"]
+      hosts: ["all"]
+      lifecycles: ["session-start", "reread", "stop-review", "session-end"]
+    expected_enforcement_tier: ["documentation", "script", "audit"]
+    notes: "这是本 tranche 后续 interop contract 的直接前置资产。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 215
+      heading: "### 4.3 Layer B canonical ledger 与 anti-drift 控制面"
+    runtime_evidence:
+      - "doc:.dev-task.md"
+      - "script:compass/tools/redcap-pm-gate-check.sh"
+      - "script:compass/tools/redcap-drift-check.sh"
+      - "script:compass/tools/redcap-host-workboard-sync.sh"
+    audit_status: "intact"
+
+  - id: host-workboard-mirror-only
+    source_kind: supplemental
+    title: "宿主 workboard mirror-only 边界"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 473
+      heading: "执行期 authority 链"
+    summary: "宿主 `plan.md` / workboard 只能镜像 pointer/hash，不能承载需求与验收真相。"
+    seed_evidence:
+      docs:
+        - ".dev-task.md"
+        - "compass/CONTRIBUTING.md"
+      code:
+        - "compass/tools/redcap-host-workboard-sync.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["compass"]
+      hosts: ["all"]
+      lifecycles: ["session-start", "reread", "planning", "session-end"]
+    expected_enforcement_tier: ["documentation", "script"]
+    notes: "这是 authority inversion 的直接防线之一，旧 ARCHITECTURE 尚未把它扩成完整治理资产。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 228
+      heading: "### 4.4 宿主 workboard mirror-only 边界"
+    runtime_evidence:
+      - "doc:.dev-task.md"
+      - "mirror:/Users/norven/.copilot/session-state/c73ce3b2-e124-49d2-a1f8-770a2e08cb7a/plan.md"
+      - "script:compass/tools/redcap-host-workboard-sync.sh"
+    audit_status: "intact"
+
+  - id: runtime-session-isolation-model
+    source_kind: supplemental
+    title: "runtime session / capability / binding / process claim 模型"
+    old_anchor: null
+    summary: "旧 ARCHITECTURE 还未完整写入 runtime_session_id、capability、binding、process claim 的四件套，但它们已经成为多会话隔离基础设施。"
+    seed_evidence:
+      docs:
+        - "compass/docs/multi-session-isolation-design.md"
+      code:
+        - "compass/tools/redcap-runtime-state.sh"
+        - "compass/tools/redcap-layerB-session-start.sh"
+        - "loom/tools/redcap-layerA-session-start.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md"
+        - "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["loom", "compass", "prism"]
+      hosts: ["claude", "gemini", "copilot", "kimi"]
+      lifecycles: ["session-start", "resume", "session-end", "cleanup"]
+    expected_enforcement_tier: ["design", "script", "acceptance"]
+    notes: "后续 ARCHITECTURE 重写必须把这套隔离原语正式提升为全局能力，而不是继续留在设计文档与任务报告里。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 329
+      heading: "### 5.1 runtime session / capability / binding / process claim"
+    runtime_evidence:
+      - "script:compass/tools/redcap-runtime-state.sh"
+      - "script:compass/tools/redcap-layerB-session-start.sh"
+      - "script:loom/tools/redcap-layerA-session-start.sh"
+      - "report:compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+    audit_status: "intact"
+
+  - id: safe-degraded-and-compat-bridge
+    source_kind: supplemental
+    title: "safe degraded / compat bridge / legacy quarantine"
+    old_anchor: null
+    summary: "旧 ARCHITECTURE 没有完整承载 degraded、compat、legacy-hit、quarantine 的治理语义，但这些能力已在脚本与 acceptance 中成熟。"
+    seed_evidence:
+      docs:
+        - "compass/docs/multi-session-isolation-design.md"
+      code:
+        - "compass/tools/redcap-runtime-state.sh"
+        - "compass/tools/redcap-layerB-session-end.sh"
+        - "loom/tools/redcap-layerA-session-end.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["loom", "compass", "prism"]
+      hosts: ["claude", "gemini", "copilot", "kimi", "vscode-copilot"]
+      lifecycles: ["resume", "degraded", "session-end", "cleanup"]
+    expected_enforcement_tier: ["design", "script", "acceptance"]
+    notes: "后续全量能力审查必须验证它有没有因为治理线接入被破坏。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 347
+      heading: "### 5.2 safe degraded / compat bridge / legacy quarantine"
+    runtime_evidence:
+      - "script:compass/tools/redcap-runtime-state.sh"
+      - "script:compass/tools/redcap-layerB-session-end.sh"
+      - "script:loom/tools/redcap-layerA-session-end.sh"
+      - "report:compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+    audit_status: "intact"
+
+  - id: closure-transaction-and-task-report-audit
+    source_kind: supplemental
+    title: "closure transaction 与任务报告物理审计"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 544
+      heading: "### Hook 基础设施"
+    summary: "整体 review、提交、飞书通知、任务报告模板审计等收尾资产已成为独立能力族，但旧 ARCHITECTURE 尚未把它们整理成闭环事务模型。"
+    seed_evidence:
+      docs:
+        - "references/task-report-template.md"
+        - "compass/docs/hook-chain-investigation-design.md"
+      code:
+        - "compass/tools/redcap-task-report-register.sh"
+        - "compass/tools/redcap-task-report-check.sh"
+        - "compass/tools/redcap-layerB-session-end.sh"
+        - "compass/tools/redcap-on-stop-review.sh"
+        - "compass/tools/redcap-on-complete.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-11-hook-chain-investigation.md"
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["compass"]
+      hosts: ["claude", "gemini", "copilot", "kimi", "vscode-copilot"]
+      lifecycles: ["stop", "session-end", "complete", "next-session-audit"]
+    expected_enforcement_tier: ["documentation", "hook", "script", "audit"]
+    notes: "用户已明确指出收尾链结果缺失，因此这是后续 critical regression 修复的高优先级基线项。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 286
+      heading: "### 4.8 closure transaction 与任务报告物理审计"
+    runtime_evidence:
+      - "script:compass/tools/redcap-interop-governance.sh"
+      - "script:compass/tools/redcap-on-complete.sh"
+      - "script:compass/tools/redcap-task-report-register.sh"
+      - "script:compass/tools/redcap-task-report-check.sh"
+      - "script:compass/tools/redcap-layerB-session-end.sh"
+      - "script:loom/tools/redcap-layerA-stop.sh"
+      - "script:loom/tools/redcap-layerA-review-fallback.sh"
+      - "report:compass/docs/task-reports/2026-04-11-hook-chain-investigation.md"
+      - "lesson:compass/knowledge/lessons.md#L-45"
+      - "lesson:compass/knowledge/lessons.md#L-46"
+    audit_status: "behavior_changed_but_acceptable"
+
+  - id: soul-revive-reanchor
+    source_kind: supplemental
+    title: "soul / revive / re-anchor"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 412
+      heading: "compass/soul.md"
+    summary: "人格连续性、复活协议与 re-anchor 语义已成为 RedCap 自身开发的硬资产，但旧 ARCHITECTURE 只点名 soul.md，尚未形成完整治理叙事。"
+    seed_evidence:
+      docs:
+        - "compass/soul.md"
+        - "CLAUDE.md"
+        - "GEMINI.md"
+        - ".github/copilot-instructions.md"
+      code:
+        - "compass/tools/redcap-drift-check.sh"
+      reports: []
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["compass"]
+      hosts: ["claude", "gemini", "copilot"]
+      lifecycles: ["session-start", "resume", "re-anchor"]
+    expected_enforcement_tier: ["documentation", "instruction", "script"]
+    notes: "后续 ARCHITECTURE 应把人格连续性与 control-plane re-anchor 的关系写清，而不是仅保留灵魂文件索引。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 315
+      heading: "### 4.10 soul / revive / re-anchor"
+    runtime_evidence: []
+    audit_status: "intact"
+
+  - id: prism-run-scoped-truth
+    source_kind: supplemental
+    title: "Prism run-scoped truth"
+    old_anchor: null
+    summary: "旧 ARCHITECTURE 仍偏概念化，尚未把 Prism run_id、registry、collect、handle resolve 的 run-scoped 真相层写完整。"
+    seed_evidence:
+      docs:
+        - "compass/docs/prism-coordinator-phase-a-design.md"
+        - "prism/protocol.md"
+      code:
+        - "prism/tools/prism-run-state.sh"
+        - "prism/tools/prism-coordinator.sh"
+        - "prism/tools/prism-archive-check.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+      lessons: []
+    expected_surfaces:
+      layers: ["prism"]
+      hosts: ["all"]
+      lifecycles: ["start-run", "register-agent", "record-collect", "resolve-handle", "archive"]
+    expected_enforcement_tier: ["design", "script", "acceptance"]
+    notes: "这是 Prism 并发隔离与旧架构中概念层声明之间的重要差值。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 387
+      heading: "### 6.2 run-scoped truth"
+    runtime_evidence: []
+    audit_status: "behavior_changed_but_acceptable"
+
+  - id: acceptance-harness-as-proof
+    source_kind: supplemental
+    title: "acceptance harness 作为物理证明层"
+    old_anchor: null
+    summary: "旧 ARCHITECTURE 还没有把 acceptance harness 提升为正式能力，但多会话主线已把它做成关键证明层。"
+    seed_evidence:
+      docs:
+        - "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+      code:
+        - "compass/tools/redcap-multi-session-acceptance.sh"
+      reports:
+        - "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+      lessons:
+        - "compass/knowledge/lessons.md"
+    expected_surfaces:
+      layers: ["loom", "compass", "prism"]
+      hosts: ["claude", "gemini", "copilot"]
+      lifecycles: ["acceptance", "regression"]
+    expected_enforcement_tier: ["script", "acceptance", "task-report"]
+    notes: "后续能力审查必须区分‘文档中有’和‘acceptance 已物理证明’。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 360
+      heading: "### 5.3 acceptance harness 作为物理证明层"
+    runtime_evidence:
+      - "script:compass/tools/redcap-multi-session-acceptance.sh"
+      - "report:compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md"
+    audit_status: "intact"
+
+  - id: prism-dispatch-firewall
+    source_kind: supplemental
+    title: "Prism Dispatch Firewall 声明"
+    old_anchor:
+      file: "ARCHITECTURE.md"
+      line: 646
+      heading: "独立取样协议"
+    summary: "旧 ARCHITECTURE 与设计决策速查明确宣称了 Dispatch Firewall；后续审查必须显式判断当前实现状态，不能在重写后把这项直接抹掉。"
+    seed_evidence:
+      docs:
+        - "ARCHITECTURE.md"
+        - "prism/protocol.md"
+      code:
+        - "prism/tools/prism-coordinator.sh"
+      reports:
+        - "compass/docs/prism-coordinator-phase-a-design.md"
+      lessons: []
+    expected_surfaces:
+      layers: ["prism"]
+      hosts: ["all"]
+      lifecycles: ["dispatch", "independent-sampling"]
+    expected_enforcement_tier: ["documentation", "script", "audit"]
+    notes: "当前实现已显式收口为『prompt-level hard limitation + dispatch gate』：不再把它宣称为物理强制隔离，但也没有把它从协议/门禁/报告中抹掉。"
+    new_anchor:
+      file: "ARCHITECTURE.md"
+      line: 399
+      heading: "### 6.3 Dispatch Firewall"
+    runtime_evidence:
+      - "doc:prism/protocol.md"
+      - "script:prism/tools/prism-dispatch-check.sh"
+      - "script:prism/tools/prism-coordinator.sh"
+      - "design:compass/docs/prism-coordinator-phase-a-design.md"
+      - "report:prism/reports/20260411-redteam-001.md"
+      - "lesson:compass/knowledge/lessons.md#L-35"
+      - "lesson:compass/knowledge/lessons.md#L-36"
+    audit_status: "behavior_changed_but_acceptable"

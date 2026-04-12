@@ -15,20 +15,63 @@ if [[ -z "$HOST" ]]; then
     exit 2
 fi
 
-cat > /dev/null || true  # 消费 stdin，兼容所有宿主
+INPUT=$(cat)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-HEAD_FILE="/tmp/redcap-layerB-${HOST}-initial-head"
-REPORT_MARKER="/tmp/redcap-layerB-${HOST}-current-report-path"
+source "$SCRIPT_DIR/redcap-runtime-state.sh"
+source "$SCRIPT_DIR/redcap-dev-task.sh"
+source "$SCRIPT_DIR/redcap-interop-governance.sh"
 
-rm -f "$REPORT_MARKER" 2>/dev/null || true
-
-git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null > "$HEAD_FILE" || true
-
-# Claude 旧链路兼容：保留历史文件名，避免仍在使用旧 Stop hook 的环境失效。
-if [[ "$HOST" == "claude" ]]; then
-    cp "$HEAD_FILE" /tmp/redcap-claude-initial-head 2>/dev/null || true
+HOOK_CWD="${REDCAP_HOOK_CWD:-$(redcap_runtime_json_field "$INPUT" "cwd")}"
+if [[ -z "$HOOK_CWD" ]]; then
+    HOOK_CWD="$REDCAP_ROOT"
 fi
+
+HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-$(redcap_runtime_json_field "$INPUT" "session_id")}"
+BINDING_KEY="${REDCAP_SESSION_BINDING_KEY:-}"
+
+if [[ -z "$BINDING_KEY" && -n "$HOST_SESSION_ID" ]]; then
+    BINDING_KEY=$(redcap_runtime_binding_key_from_host_session "$HOST" "$HOST_SESSION_ID")
+fi
+
+run_control_plane_start_sync() {
+    PM_GATE_CHECK="$SCRIPT_DIR/redcap-pm-gate-check.sh"
+    if [[ -x "$PM_GATE_CHECK" ]]; then
+        REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+        REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+        REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
+        bash "$PM_GATE_CHECK" session-start "$HOST" "$REDCAP_ROOT/.dev-task.md" >/dev/null || true
+    fi
+
+    HOST_WORKBOARD_SYNC="$SCRIPT_DIR/redcap-host-workboard-sync.sh"
+    if [[ -x "$HOST_WORKBOARD_SYNC" && -n "${REDCAP_HOST_WORKBOARD_PATH:-}" ]]; then
+        bash "$HOST_WORKBOARD_SYNC" sync "$REDCAP_HOST_WORKBOARD_PATH" "$REDCAP_ROOT/.dev-task.md" 2>&1 || true
+    fi
+}
+
+if [[ -n "$BINDING_KEY" ]] && REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1 REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY=1 redcap_runtime_init_from_binding "$HOST" "$HOOK_CWD" "$BINDING_KEY"; then
+    if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        redcap_interop_record_reanchor_event \
+            "$REDCAP_ROOT" \
+            "pending-closure-detected-on-session-start" \
+            "host=$HOST binding_key=${BINDING_KEY:-missing} runtime_created=${REDCAP_RUNTIME_CREATED:-0}" \
+            >/dev/null 2>&1 || true
+    fi
+
+    redcap_runtime_remove_path "layerB/current-report-path" || true
+
+    if [[ "${REDCAP_RUNTIME_CREATED:-0}" == "1" ]]; then
+        CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null || true)
+        if [[ -n "$CURRENT_HEAD" ]]; then
+            redcap_runtime_write_text "layerB/initial-head" "$CURRENT_HEAD" || true
+        fi
+    fi
+    run_control_plane_start_sync
+    exit 0
+fi
+
+redcap_runtime_record_degraded_mode "$HOOK_CWD" "layerB-session-start-safe-degraded" "host=$HOST binding_key=${BINDING_KEY:-missing}" || true
+run_control_plane_start_sync
 
 exit 0

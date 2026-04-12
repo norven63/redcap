@@ -42,6 +42,7 @@ fi
 # 使用 readlink 解析真实路径（兼容符号链接）
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")" )" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
 
 # 路径归一化（移除末尾斜杠）
 CWD_NORM=$(echo "$CWD" | sed 's:/*$::')
@@ -52,7 +53,7 @@ if [[ "$CWD_NORM" == "$REDCAP_DIR_NORM" || "$CWD_NORM" == "$REDCAP_DIR_NORM/"* ]
     echo "[redcap-hook-proxy] 检测到 Layer B (RedCap 自身) 任务，启动框架审计..." >&2
     B_SESSION_END_SCRIPT="$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh"
     if [[ -x "$B_SESSION_END_SCRIPT" ]]; then
-        bash "$B_SESSION_END_SCRIPT" "$HOST" 2>&1 || true
+        REDCAP_HOST_SESSION_ID="$SESSION_ID" REDCAP_HOOK_CWD="$CWD" REDCAP_HOST_PROCESS_PID="$PPID" bash "$B_SESSION_END_SCRIPT" "$HOST" 2>&1 || true
     fi
 else
     # 检查是否为 RedCap 开发的用户项目 (Layer A)
@@ -61,7 +62,7 @@ else
         echo "[redcap-hook-proxy] 检测到 Layer A (用户项目) 任务，启动项目审计..." >&2
         A_STOP_SCRIPT="$REDCAP_ROOT/loom/tools/redcap-layerA-stop.sh"
         if [[ -x "$A_STOP_SCRIPT" ]]; then
-            echo "$INPUT" | bash "$A_STOP_SCRIPT" 2>&1 || true
+            echo "$INPUT" | REDCAP_HOST="$HOST" REDCAP_HOST_PROCESS_PID="$PPID" bash "$A_STOP_SCRIPT" 2>&1 || true
         fi
     fi
 fi
@@ -72,14 +73,31 @@ echo "[redcap-hook-proxy] 执行原子清理 (Session: ${SESSION_ID:-n/a})..." >
 
 # 清理本 session 的标记文件
 if [[ -n "$SESSION_ID" ]]; then
-    rm -f "/tmp/redcap-layerA-head-${SESSION_ID}" 2>/dev/null || true
-    rm -f "/tmp/redcap-layerA-notified-${SESSION_ID}" 2>/dev/null || true
-    rm -f "/tmp/redcap-layerA-workflow-session-${SESSION_ID}" 2>/dev/null || true # 以前可能叫这名
+    BINDING_KEY=$(redcap_runtime_binding_key_from_host_session "$HOST" "$SESSION_ID")
+    if REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1 REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY=1 redcap_runtime_load_from_binding "$HOST" "$CWD" "$BINDING_KEY"; then
+        redcap_runtime_remove_path "layerA/head" || true
+        redcap_runtime_remove_path "layerA/notified" || true
+        redcap_runtime_remove_path "layerA/ownership-check" || true
+    else
+        PROJECT_HASH=$(redcap_runtime_project_hash "$CWD")
+        redcap_runtime_record_legacy_hit "$CWD" "layerA-session-end-legacy-cleanup" "host=$HOST session_id=$SESSION_ID" || true
+        for LEGACY_PATH in \
+            "/tmp/redcap-layerA-head-${SESSION_ID}" \
+            "/tmp/redcap-layerA-notified-${SESSION_ID}" \
+            "/tmp/redcap-layerA-workflow-session-${SESSION_ID}" \
+            "/tmp/redcap-layerA-workflow-session-${PROJECT_HASH}"; do
+            if [[ -e "$LEGACY_PATH" ]]; then
+                if redcap_runtime_quarantine_legacy_path "$CWD" "$LEGACY_PATH" "layerA-session-end-legacy-quarantine" "host=$HOST session_id=$SESSION_ID"; then
+                    echo "[redcap-hook-proxy] quarantined legacy Layer A marker: $LEGACY_PATH" >&2
+                else
+                    rm -f "$LEGACY_PATH" 2>/dev/null || true
+                fi
+            fi
+        done
+    fi
 fi
 
-# 清理历史过期的标记文件（24小时以上）
-find /tmp -name "redcap-layerA-head-*" -mtime +1 -delete 2>/dev/null || true
-find /tmp -name "redcap-layerA-notified-*" -mtime +1 -delete 2>/dev/null || true
+redcap_runtime_clear_process_claim "$HOST" "${REDCAP_HOST_PROCESS_PID:-$PPID}" || true
 
 # ── 4. 退出 ───────────────────────────────────────────────
 

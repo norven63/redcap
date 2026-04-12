@@ -17,7 +17,8 @@ HOST="$1"
 INPUT_PATH="$2"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-MARKER_FILE="/tmp/redcap-layerB-${HOST}-current-report-path"
+source "$SCRIPT_DIR/redcap-runtime-state.sh"
+source "$SCRIPT_DIR/redcap-interop-governance.sh"
 
 if [[ "$INPUT_PATH" = /* ]]; then
     ABS_PATH="$INPUT_PATH"
@@ -39,6 +40,54 @@ if [[ ! -f "$ABS_PATH" ]]; then
 fi
 
 REL_PATH="${ABS_PATH#$REDCAP_ROOT/}"
-echo "$REL_PATH" > "$MARKER_FILE"
+if redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null; then
+    INITIAL_HEAD_FILE=$(redcap_runtime_path "layerB/initial-head")
+    REGISTER_BASELINE=""
+    REGISTER_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null || true)
+    if [[ -f "$INITIAL_HEAD_FILE" ]]; then
+        REGISTER_BASELINE=$(cat "$INITIAL_HEAD_FILE" 2>/dev/null || true)
+    fi
+
+    if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        PENDING_STATE_FILE=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+        PENDING_ARTIFACT_PATH=$(redcap_interop_read_state_field "$PENDING_STATE_FILE" "artifact_path" 2>/dev/null || true)
+        if [[ -n "$PENDING_ARTIFACT_PATH" && "$PENDING_ARTIFACT_PATH" != "$REL_PATH" ]]; then
+            redcap_interop_fail_closed \
+                "$REDCAP_ROOT" \
+                "closure" \
+                "task-report-register-blocked" \
+                "unresolved pending closure blocks new task report registration" \
+                "host=$HOST existing_artifact=$PENDING_ARTIFACT_PATH new_artifact=$REL_PATH" \
+                >/dev/null 2>&1 || true
+            echo "[redcap-task-report-register] unresolved pending closure blocks new task report registration" >&2
+            echo "  existing_artifact: $PENDING_ARTIFACT_PATH" >&2
+            exit 1
+        fi
+    fi
+
+    if ! redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$HOST" \
+        "task-report-register" \
+        "task-report,review,notify" \
+        "report-registered" \
+        "$REL_PATH" \
+        "$REGISTER_BASELINE" \
+        "$REGISTER_HEAD" \
+        >/dev/null; then
+        echo "[redcap-task-report-register] failed to persist pending closure state" >&2
+        exit 1
+    fi
+
+    if ! redcap_runtime_write_text "layerB/current-report-path" "$REL_PATH"; then
+        echo "[redcap-task-report-register] failed to persist current report marker: $REL_PATH" >&2
+        exit 1
+    fi
+else
+    redcap_runtime_record_degraded_mode "$REDCAP_ROOT" "layerB-report-register-missing-claim" "host=$HOST" || true
+    echo "[redcap-task-report-register] no runtime process claim available for host=$HOST" >&2
+    exit 1
+fi
 echo "$REL_PATH"
 exit 0

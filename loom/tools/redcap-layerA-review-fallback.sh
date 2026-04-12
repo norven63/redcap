@@ -19,6 +19,9 @@ set -u
 
 PROJECT_DIR="${1:?用法: $0 <项目目录> <项目名称>}"
 PROJECT_NAME="${2:?用法: $0 <项目目录> <项目名称>}"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
 
 # ── 收集 Review 上下文 ───────────────────────────────────
 
@@ -101,6 +104,20 @@ ${GIT_DIFF:-（无 git 变更记录）}
 RESULT_FILE="/tmp/redcap-layerA-review-fallback-result"
 LOG_FILE="/tmp/redcap-layerA-review-fallback-log.md"
 
+if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
+    if redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY"; then
+        RESULT_FILE=$(redcap_runtime_path "layerA/review-fallback-result")
+        LOG_FILE=$(redcap_runtime_path "layerA/review-fallback-log.md")
+        mkdir -p "$(dirname "$RESULT_FILE")"
+    fi
+fi
+
+if [[ "$RESULT_FILE" == "/tmp/redcap-layerA-review-fallback-result" ]]; then
+    redcap_runtime_record_degraded_mode "$PROJECT_DIR" "layerA-review-fallback-safe-degraded" "project=${PROJECT_NAME}" || true
+    echo "INCONCLUSIVE" > "$RESULT_FILE"
+    exit 1
+fi
+
 rm -f "$RESULT_FILE" "$LOG_FILE"
 
 REVIEW_OUTPUT=""
@@ -111,8 +128,9 @@ if command -v kimi &>/dev/null; then
 elif command -v claude &>/dev/null; then
     REVIEW_OUTPUT=$(echo "$REVIEW_PROMPT" | claude -p --permission-mode bypassPermissions 2>/dev/null) || true
 else
-    echo "[redcap-layerA-review-fallback] WARN: 无可用 Agent CLI (kimi/claude)，跳过兜底 Review" >&2
-    exit 0
+    echo "INCONCLUSIVE" > "$RESULT_FILE"
+    echo "[redcap-layerA-review-fallback] WARN: 无可用 Agent CLI (kimi/claude)，无法完成兜底 Review" >&2
+    exit 1
 fi
 
 # 保存 Review 日志
@@ -125,18 +143,17 @@ if echo "$REVIEW_OUTPUT" | grep -q "REVIEW_RESULT: FAIL"; then
     echo "[redcap-layerA-review-fallback] Review FAIL — 发现 P0 问题，详见 $LOG_FILE" >&2
 
     # 飞书告警（如果 feishu-notifier 可用）
-    SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
-    REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
     NOTIFIER="$REDCAP_ROOT/compass/tools/feishu-notifier.py"
     if [[ -f "$NOTIFIER" ]]; then
         python3 "$NOTIFIER" notify "⚠️ RedCap Layer A Review 兜底 FAIL\n项目: ${PROJECT_NAME}\n\n兜底 Review 发现 P0 问题，正常 Review 步骤可能被跳过。\n详见: ${LOG_FILE}" --project "$PROJECT_NAME" 2>/dev/null || true
     fi
+    exit 1
 elif echo "$REVIEW_OUTPUT" | grep -q "REVIEW_RESULT: PASS"; then
     echo "PASS" > "$RESULT_FILE"
     echo "[redcap-layerA-review-fallback] Review PASS" >&2
+    exit 0
 else
     echo "INCONCLUSIVE" > "$RESULT_FILE"
     echo "[redcap-layerA-review-fallback] WARN: 无法解析 Review 结果，详见 $LOG_FILE" >&2
+    exit 1
 fi
-
-exit 0
