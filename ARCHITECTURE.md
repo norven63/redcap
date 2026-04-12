@@ -69,6 +69,7 @@ RedCap 当前把状态面划分为三类：
 | `prism` run state | run-scoped truth | Prism | 每次 Prism 运行的 run_id、registry、collect、resolve/archive 记录 | 以 run 为隔离边界 |
 | runtime project state | derived state | runtime tools | session/capability/binding/process claim、compat、audit、pending closure | 不能反向篡改 canonical truth |
 | 宿主 `plan.md` / workboard | mirror state | host surface | 展示当前 pointer/hash，辅助长任务导航 | **mirror-only** |
+| 宿主通用 skill（brainstorming / planning / visual） | overlay protocol | host skill | 提供分解、表达、展示与设计建议 | **advisory-only**，不得覆盖 `.dev-task.md`、PM Gate、自主执行授权，也不得默认升级成人工审批门 |
 | task report / acceptance report | closure evidence | reports | 证明“某个闭环真的发生了” | 缺失时不得伪装成完成 |
 
 ### 2.3 host-agent interop governance
@@ -82,6 +83,7 @@ RedCap 当前把状态面划分为三类：
 | **fail-closed on RedCap state** | 当 authority 不明确或 closure 未闭合时，RedCap 自有状态不得被静默推进为“已完成” |
 | **evidence-only audit** | project-shared interop audit 只记录证据，不反向长成第二个 authority |
 | **strong-hook vs weak-hook** | 强 Hook 宿主走实时 closure transaction；弱 Hook / 无 Hook 宿主通过 pending closure 做 deferred reconcile |
+| **overlay-skill subordinate** | 宿主通用 skill 只能提供建议流程；若与 RedCap-native PM Gate / autonomy 冲突，必须让位给 RedCap 控制面 |
 
 当前 interop contract 的核心不是“阻止宿主存在”，而是**阻止宿主表面越权成为 RedCap 的真相源**。
 
@@ -211,6 +213,7 @@ PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 2. 每次只追一个澄清点，避免需求同时漂移
 3. 执行前重读对应 Q，不把记忆当真相
 4. 完成后要能把结果对回已确认需求
+5. 宿主通用 skill 的澄清/审批循环只能作为建议；若已满足自主执行条件，必须由 RedCap-native PM Gate 内化吸收，而不是重新 ask_user
 
 ### 4.3 Layer B canonical ledger 与 anti-drift 控制面
 
@@ -239,6 +242,8 @@ PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 - 让宿主自己的 todo 面板凌驾于 Layer B canonical ledger 之上
 
 这条边界是防 authority inversion 的第一道隔离带。
+
+同理，宿主侧的通用 brainstorming / planning / visual skill 也只能是 **advisory overlay**：它们可以帮助拆解问题、组织设计表达，但不能重开已锁定 tranche，不能把可自治决策升级为默认 ask_user / user approval，也不能替代 RedCap-native PM Gate 的最终锁定动作。
 
 ### 4.5 书记协议（Scribe Protocol）
 

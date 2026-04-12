@@ -632,6 +632,23 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 
 > **本规则不适用于**：涉及架构方向性变更（如调整 Layer A/B 边界、新增/删除核心角色）、外部依赖引入、以及 Norven 明确要求介入的决策点——这些仍须等待 Norven 显式确认。
 
+### 宿主通用 skill overlay 兼容规则
+
+宿主侧的通用 brainstorming / planning / visual 类 skill，只能视为 **overlay protocol**，不能视为 Layer B 的 authority。
+
+这意味着：
+
+1. 若 `.dev-task.md`、Norven 显式授权、或棱镜评审结论已足以锁定当前 tranche / 顺序 / 方案，Cap **不得**因为 overlay skill 的默认流程而再次 ask_user 要求 Norven 重新选择。
+2. overlay skill 可以帮助做规模评估、方案比较、设计表达，但这些产物只能作为 **输入建议**，最终锁定仍由 RedCap-native PM Gate 完成。
+3. 人工介入只允许用于以下场景：
+   - 缺少 AI 无法推断的外部事实、凭证、业务偏好或运行时信息
+   - 缺少 AI 无法直接执行/验证的人类动作（如 GUI/manual validation）
+   - Norven 已明确保留该决策（包括架构方向性变更、外部依赖引入）
+4. 若确需人工介入，必须先在 `.dev-task.md` 或 `explore-notes.md` 中记录 **为什么 AI 不能自己算出来**，再进入 ask_user / need_user / blocked_on_user。
+5. Prism 死锁或 Dispatcher 升级建议本身不构成合法人工介入理由；它们必须先定位到上述某个具体缺口，才能上抛给 Norven。
+
+> **实现口径说明**：这一条当前属于**prompt-level hard limitation + canonical-truth discipline**。由于 ask_user/tool 调用发生在宿主层，仓库内的 shell gate 无法物理拦截每一次升级动作，所以必须同时在冲突 skill 本身补兼容让位规则，并把本规则写入 RedCap-native 控制面。
+
 ---
 
 ## §11 棱镜（Prism）— 多视角协同分析引擎

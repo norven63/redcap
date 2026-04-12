@@ -27,11 +27,19 @@
 - `status` 字段只能取值：`completed`、`failed`、`blocked`、`need_user`、`need_revision`
 - `deliverables` 字段列出本次产生/修改的所有文件路径
 
-## 4. 防退化检查点（长任务必读）
+## 4. 人工介入门
+
+- 若父级控制面（如 RedCap Layer B 的 `.dev-task.md`）已声明自主推进、overlay advisory-only 或同类授权语义，子 Agent **不得**因为通用 brainstorming/澄清习惯就返回 `need_user` 或要求人工批准。
+- 只有在以下场景才允许返回 `need_user` / `blocked`：缺少 AI 无法推断的外部事实/凭证/偏好、缺少 AI 无法直接执行/验证的人类动作（如 GUI/manual verification）、或命中显式用户保留决策（包括新外部依赖与架构方向性变更）。
+- 若必须上抛，先在产出中写清楚**为什么 AI 不能自己算出来**，再返回对应状态。
+- Dispatcher 若要求上抛，也必须同时指出命中的是哪一个具体缺口；“Dispatcher 让我问用户”本身不构成合法理由。
+
+## 5. 防退化检查点（长任务必读）
 
 当任务涉及**多文件修改或超过 20 轮工具调用**时，执行以下检查：
 
 - **每完成一个逻辑子任务后**：回顾本文件第 1-3 节约束，确认未违反
+- **准备返回 `need_user` / `blocked` 前**：先回顾第 4 节，确认确实命中了人工介入门
 - **即将输出最终回复前**：确认 `__redcap_status` JSON 块格式完整、`deliverables` 无遗漏
 - **涉及敏感配置时**：重读 `references/security-rules.md` 确认合规
 
