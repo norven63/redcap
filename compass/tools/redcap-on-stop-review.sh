@@ -233,7 +233,8 @@ $DIFF
    - 文档变更：是否有 Markdown 格式错误（代码块未闭合、标题层级混乱、链接断裂）？
    - 代码变更：是否有安全问题、硬编码、路径错误？
 5. **经验沉淀**：本次变更是否发现了新的失败模式或验证了错误假设，但未归档为 Lesson？
-6. **E2E 完整性**：如果变更涉及 E2E 验证，检查 test-reports/e2e-session.yaml 是否已处理、报告是否写入 test-reports/latest-e2e-report.md（而非其他路径）、pending-validations 是否已消费。
+6. **E2E 完整性**：如果变更涉及 E2E 验证，检查 loom/test-reports/e2e-session.yaml 是否已处理、报告是否写入 loom/test-reports/latest-e2e-report.md（而非其他路径）、loom/test-reports/pending-validations.md 是否已消费。
+7. **目录与生命周期边界**：本次变更是否把 session-isolated / local-only / temporary 文件错误放进 git？docs/specs/research/traces/task-reports 的落点是否正确？是否仍残留旧路径或宿主默认输出路径耦合？
 
 ## 输出格式
 

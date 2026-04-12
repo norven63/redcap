@@ -191,5 +191,5 @@ Copilot 线按官方仓库级 Hook 机制重新落地：不是“放几个脚本
 ### 附录 C：相关文档索引
 
 - 需求原始记录：当前会话用户原始消息（“结果报告不是按照模版来走的 / 飞书通知没有了 / hook机制失效了”）
-- 设计文档：`compass/docs/hook-chain-investigation-design.md`
+- 设计文档：`compass/docs/specs/hook-chain-investigation-design.md`
 - 变更影响分析：`compass/CONTRIBUTING.md §6`、`references/hook-standards.md`

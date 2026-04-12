@@ -162,7 +162,7 @@
 **演进过程**：
 - 轮次 1：确认 Layer A / Layer B 的 runtime session、capability、safe degraded、owner claim 已基本落地。
 - 轮次 2：重读 `prism/protocol.md`、`prism/tools/prism-archive-check.sh`、`prism/tools/prism-dispatch-check.sh`，发现 protocol 与 consumer 已明确依赖 `session_registry`，但仓库内仍未找到清晰的 scripted writer / coordinator helper。
-- 轮次 3：对照 `compass/docs/multi-session-isolation-design.md`，确认目标形态应为 `prism/runs/<prism_run_id>/session-registry.yaml`，且必须遵守 run-scoped 单主写者（Prism coordinator）原则。
+- 轮次 3：对照 `compass/docs/specs/multi-session-isolation-design.md`，确认目标形态应为 `prism/runs/<prism_run_id>/session-registry.yaml`，且必须遵守 run-scoped 单主写者（Prism coordinator）原则。
 - 轮次 4：补充环境背景——此前 distill 曾并发调用 redcap，但本轮中途 review 未发现 tracked tree 中存在冲突标记、异常提交内容或被写入仓库的跨会话产物。
 - 轮次 5：已落地 `prism/tools/prism-run-state.sh`，把 run dir / registry / owner / legacy resolve 统一收口到 helper；`prism-archive-check.sh` 也已切到按报告 `run_id` 解析 run-scoped registry，并保留 deterministic read-only legacy bridge。
 - 轮次 6：同步修正 `prism/protocol.md` 与 `prism/modes/council.md` 的 run path / quorum 语义，使 archive gate 与 protocol 文档不再漂移。

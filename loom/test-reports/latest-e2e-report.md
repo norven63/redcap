@@ -67,4 +67,4 @@
 
 ---
 
-> 下次 E2E 执行时，从 `testing/pending-validations.md` 获取待验证清单，对照 `testing/benchmark-scenario.md` 的验证矩阵执行。
+> 下次 E2E 执行时，从 `loom/test-reports/pending-validations.md` 获取待验证清单，对照 `loom/test-reports/benchmark-scenario.md` 的验证矩阵执行。

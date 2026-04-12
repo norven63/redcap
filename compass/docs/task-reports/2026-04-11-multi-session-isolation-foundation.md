@@ -174,5 +174,5 @@ cd3027d docs(report): clarify smoke env flags
 ### 附录 C：相关文档索引
 
 - 需求原始记录：`compass/knowledge/explore-notes.md` §Q7
-- 设计文档：`compass/docs/multi-session-isolation-design.md`
+- 设计文档：`compass/docs/specs/multi-session-isolation-design.md`
 - 变更影响分析：`/Users/norven/.copilot/session-state/c73ce3b2-e124-49d2-a1f8-770a2e08cb7a/plan.md`

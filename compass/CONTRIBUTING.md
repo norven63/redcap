@@ -59,7 +59,7 @@
 **Agent 选择**：复用 `agent-adapters.md §1.3` 动态路由算法，但角色设为 `reviewer`（天然获得 cross-family +2 加分），确保选出的 Agent 与当前设计者不同模型族。降级逻辑同 §6（Model 降级 §6.3 → CLI 降级 → 用户决策 §6.5）。
 
 > 简化版选择流程（Cap 在 Layer B 无完整 Dispatcher 环境时）：
-> 1. 读 `.workflow/agent-registry.yaml` 获取可用 Agent 列表
+> 1. 读 `compass/.workflow/agent-registry.yaml` 获取可用 Agent 列表
 > 2. 排除与自身同 family 的 Agent（如当前是 claude 族，排除所有 claude 系 CLI）
 > 3. 从剩余中选 `reasoning` 评分最高者（红队审查的核心能力需求）
 > 4. 若无跨族可用 Agent → 降级为同族不同 Model；仍无 → 记录"红队审查跳过（无可用 Agent）"并继续
@@ -280,7 +280,7 @@ E2E 执行完毕
 
 - **触发机制**：Claude Code Stop Hook → `compass/tools/redcap-on-stop-review.sh`
 - **执行方式**：脚本提取 `git diff`，拉起一个全新的、无历史上下文污染的 Agent（`kimi -p` / `claude -p`）执行独立评审
-- **评审维度**：Commit 规范、经验回顾、文件联动（§6 影响范围表）、内容质量、经验沉淀遗漏、设计完备性（§1.1 Pre-mortem 是否执行——含"不可行"判断和覆盖范围声明）、E2E 完整性（e2e-session.yaml 是否处理、报告路径、pending-validations 消费）
+- **评审维度**：Commit 规范、经验回顾、文件联动（§6 影响范围表）、内容质量、经验沉淀遗漏、设计完备性（§1.1 Pre-mortem 是否执行——含"不可行"判断和覆盖范围声明）、E2E 完整性（e2e-session.yaml 是否处理、报告路径、pending-validations 消费）、目录与生命周期边界（docs/specs/research/traces/task-reports 落点、session/local-only 产物是否误入 git）
 - **结果处理**：
   - `PASS` → 静默通过
   - `FAIL`（含 P0 问题）→ 飞书告警 + 写标记文件 `/tmp/redcap-stop-review-result`
@@ -425,6 +425,22 @@ delegation_boundary: redcap-native-first
   - 不允许反向把需求/验收真相从宿主 workboard 回灌为 RedCap authority
 
 > 该文件已加入 `.gitignore`——它是临时过程状态，不应进入版本控制。
+
+---
+
+### Layer B 产物生命周期分类
+
+新增/移动文件前，先判断它属于哪一类：
+
+| 类别 | 判断标准 | 典型位置 | git 策略 |
+|------|---------|---------|---------|
+| **共享规范 / 历史证据** | 需要跨会话共享、可审计、后续要考古 | `compass/docs/specs/`、`compass/docs/traces/`、`compass/docs/task-reports/`、`prism/reports/`、`loom/test-reports/` | **必须进 git** |
+| **会话隔离状态** | 只服务当前会话/当前运行态，换机会重建 | `.dev-task.md`、`prism/runs/`、`compass/.workflow/`、宿主 `plan.md` | **不得进 git** |
+| **本地宿主资产** | 绑定本机路径、凭证、CLI 配置或探测结果 | `.env.local`、`compass/tools/feishu-config.json`、agent registry cache | **不得进 git** |
+| **纯临时产物** | 只在脚本执行期间存在，用完即删 | `/tmp/redcap-*`、临时 prompt/result、`__pycache__/` | **不得进 git** |
+
+判断顺序必须是：**先看 authority / 共享必要性，再看文件名像不像“报告”或“状态”**。
+例如 `loom/test-reports/latest-e2e-report.md` 虽然名叫 latest，但它是当前基线的共享验证证据，应进 git；而 `compass/.workflow/agent-registry.yaml` 虽然是 YAML，但它记录的是本机 CLI 路径和探测时间，属于本地 runtime cache，不应进 git。
 
 ---
 
@@ -809,6 +825,7 @@ PM Gate 触发时，**必须先读 `explore-notes.md`** 的相关活跃条目，
 Step 1: 文档一致性扫描
   - 检查所有变更文件的交叉引用是否对齐（文件路径、节号、版本描述）
   - 扫描 baton-design.md / 路线图类文档，确保已实现项标记更新
+  - 检查 docs/ 信息架构与产物生命周期是否一致：spec / research / trace / task-report 是否各归其位，`.workflow/` / `.dev-task.md` / 本机 cache 是否仍停留在本地态
 
 Step 2: explore-notes.md 全量归档
   - 将所有已决策条目标记 [ARCHIVED]，更新归档索引表

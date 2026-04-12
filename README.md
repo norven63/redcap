@@ -118,8 +118,12 @@ redcap/
 │   ├── knowledge/    ← lessons.md, design-principles.md, host-reliability.md,
 │   │                    hooks-*.md, model-capability-matrix.yaml, …
 │   ├── tools/        ← Layer B 脚本（飞书通知、Claude/Gemini/Kimi Hook 处理器）
-│   ├── docs/         ← 设计文档和技术调研
-│   └── .workflow/    ← 运行时状态（agent-registry.yaml 等）
+│   ├── docs/
+│   │   ├── specs/       ← 已批准的 Layer B 设计快照
+│   │   ├── research/    ← 技术调研与外部能力评估
+│   │   ├── traces/      ← trace matrix / 回归审查资产
+│   │   └── task-reports/← Layer B 任务完成报告（closure evidence）
+│   └── .workflow/    ← 本地 runtime cache（local-only，不进 git）
 │
 └── prism/            ← 棱镜
     ├── protocol.md   ← 棱镜协议（独立取样 + 议事两族）

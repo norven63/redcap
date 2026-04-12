@@ -5,7 +5,7 @@
 #   bash compass/tools/redcap-detect-agents.sh [output_path] [--agent <name>] [--probe]
 #
 # 参数:
-#   output_path   输出路径（默认: .workflow/agent-registry.yaml）
+#   output_path   输出路径（默认: compass/.workflow/agent-registry.yaml）
 #   --agent NAME  只检测指定 Agent（claude-code|gemini|kimi|copilot）
 #   --probe       对支持的 CLI 执行实际调用探测底层模型（慢，可能挂起）
 #
@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-OUTPUT_PATH="${OUTPUT_PATH:-.workflow/agent-registry.yaml}"
+OUTPUT_PATH="${OUTPUT_PATH:-compass/.workflow/agent-registry.yaml}"
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

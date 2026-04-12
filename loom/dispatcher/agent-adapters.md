@@ -23,7 +23,7 @@ copilot&gpt-5.4            — Copilot CLI + GPT-5.4
 
 > 嗅探逻辑已封装为脚本，Dispatcher 只需调用一行命令（L-12: 关键动作用脚本而非纯文本指令）。
 
-**嗅探脚本**：`bash tools/redcap-detect-agents.sh [output_path] [--agent <name>] [--probe]`
+**嗅探脚本**：`bash compass/tools/redcap-detect-agents.sh [output_path] [--agent <name>] [--probe]`
 
 **两层检测机制**：
 
@@ -39,7 +39,7 @@ copilot&gpt-5.4            — Copilot CLI + GPT-5.4
 3. 若有变化 → 全量重检，覆盖 registry
 4. `--agent <name>` → 只重检指定 Agent（故障恢复时使用）
 
-**缓存位置**：`.workflow/agent-registry.yaml`（由脚本自动生成，勿手动编辑）
+**缓存位置**：`compass/.workflow/agent-registry.yaml`（由脚本自动生成的 runtime cache，local-only，勿手动编辑，也不要提交到 git）
 
 **registry 示例**（以本设备 2026-04 实际嗅探结果为例）：
 ```yaml

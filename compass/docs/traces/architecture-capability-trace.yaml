@@ -418,7 +418,7 @@ entries:
     seed_evidence:
       docs:
         - "ARCHITECTURE.md"
-        - "compass/docs/baton-design.md"
+        - "compass/docs/specs/baton-design.md"
       code:
         - "compass/tools/baton-launcher.sh"
         - "compass/tools/baton-collect.sh"
@@ -456,7 +456,7 @@ entries:
       docs:
         - "ARCHITECTURE.md"
         - "compass/knowledge/hooks-claude-code.md"
-        - "compass/docs/hook-chain-investigation-design.md"
+        - "compass/docs/specs/hook-chain-investigation-design.md"
       code:
         - ".claude/settings.json"
         - "compass/tools/redcap-on-stop-review.sh"
@@ -535,7 +535,7 @@ entries:
         - "prism/tools/prism-run-state.sh"
         - "prism/tools/prism-coordinator.sh"
       reports:
-        - "compass/docs/prism-coordinator-phase-a-design.md"
+        - "compass/docs/specs/prism-coordinator-phase-a-design.md"
       lessons: []
     expected_surfaces:
       layers: ["prism"]
@@ -811,7 +811,7 @@ entries:
     summary: "旧 ARCHITECTURE 还未完整写入 runtime_session_id、capability、binding、process claim 的四件套，但它们已经成为多会话隔离基础设施。"
     seed_evidence:
       docs:
-        - "compass/docs/multi-session-isolation-design.md"
+        - "compass/docs/specs/multi-session-isolation-design.md"
       code:
         - "compass/tools/redcap-runtime-state.sh"
         - "compass/tools/redcap-layerB-session-start.sh"
@@ -845,7 +845,7 @@ entries:
     summary: "旧 ARCHITECTURE 没有完整承载 degraded、compat、legacy-hit、quarantine 的治理语义，但这些能力已在脚本与 acceptance 中成熟。"
     seed_evidence:
       docs:
-        - "compass/docs/multi-session-isolation-design.md"
+        - "compass/docs/specs/multi-session-isolation-design.md"
       code:
         - "compass/tools/redcap-runtime-state.sh"
         - "compass/tools/redcap-layerB-session-end.sh"
@@ -882,7 +882,7 @@ entries:
     seed_evidence:
       docs:
         - "references/task-report-template.md"
-        - "compass/docs/hook-chain-investigation-design.md"
+        - "compass/docs/specs/hook-chain-investigation-design.md"
       code:
         - "compass/tools/redcap-task-report-register.sh"
         - "compass/tools/redcap-task-report-check.sh"
@@ -955,7 +955,7 @@ entries:
     summary: "旧 ARCHITECTURE 仍偏概念化，尚未把 Prism run_id、registry、collect、handle resolve 的 run-scoped 真相层写完整。"
     seed_evidence:
       docs:
-        - "compass/docs/prism-coordinator-phase-a-design.md"
+        - "compass/docs/specs/prism-coordinator-phase-a-design.md"
         - "prism/protocol.md"
       code:
         - "prism/tools/prism-run-state.sh"
@@ -1021,7 +1021,7 @@ entries:
       code:
         - "prism/tools/prism-coordinator.sh"
       reports:
-        - "compass/docs/prism-coordinator-phase-a-design.md"
+        - "compass/docs/specs/prism-coordinator-phase-a-design.md"
       lessons: []
     expected_surfaces:
       layers: ["prism"]
@@ -1037,7 +1037,7 @@ entries:
       - "doc:prism/protocol.md"
       - "script:prism/tools/prism-dispatch-check.sh"
       - "script:prism/tools/prism-coordinator.sh"
-      - "design:compass/docs/prism-coordinator-phase-a-design.md"
+      - "design:compass/docs/specs/prism-coordinator-phase-a-design.md"
       - "report:prism/reports/20260411-redteam-001.md"
       - "lesson:compass/knowledge/lessons.md#L-35"
       - "lesson:compass/knowledge/lessons.md#L-36"

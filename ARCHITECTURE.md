@@ -2,7 +2,7 @@
 
 > **一句话定义**：RedCap 是一个由 Loom 执行平面、Compass 自演化控制面、Prism 分析裁决平面与 References 共约层组成的多 Agent 软件工程框架。
 >
-> **阅读方式**：本文件负责解释“系统现在是如何设计的”；`compass/docs/architecture-capability-trace.yaml` 负责冻结旧能力锚点并承载后续 `旧架构 -> 新架构 -> runtime evidence` 的回归审查。
+> **阅读方式**：本文件负责解释“系统现在是如何设计的”；`compass/docs/traces/architecture-capability-trace.yaml` 负责冻结旧能力锚点并承载后续 `旧架构 -> 新架构 -> runtime evidence` 的回归审查。
 
 ---
 
@@ -71,6 +71,19 @@ RedCap 当前把状态面划分为三类：
 | 宿主 `plan.md` / workboard | mirror state | host surface | 展示当前 pointer/hash，辅助长任务导航 | **mirror-only** |
 | 宿主通用 skill（brainstorming / planning / visual） | overlay protocol | host skill | 提供分解、表达、展示与设计建议 | **advisory-only**，不得覆盖 `.dev-task.md`、PM Gate、自主执行授权，也不得默认升级成人工审批门 |
 | task report / acceptance report | closure evidence | reports | 证明“某个闭环真的发生了” | 缺失时不得伪装成完成 |
+
+### 2.2.1 artifact lifecycle 分类
+
+文件不只按“内容主题”分，还必须按 **authority / 生命周期 / 共享必要性** 分层：
+
+| 类别 | 典型载体 | 是否进 git | 说明 |
+| --- | --- | --- | --- |
+| **repo-tracked canonical / evidence** | `ARCHITECTURE.md`、`references/**`、`compass/docs/specs/**`、`compass/docs/traces/**`、`compass/docs/task-reports/**`、`prism/reports/**`、`loom/test-reports/latest-e2e-report.md`、`loom/test-reports/pending-validations.md` | 是 | 这些文件要么是正式规范，要么是跨会话共享的历史证据，必须可审计、可考古 |
+| **session-isolated process state** | `.dev-task.md`、`prism/runs/**`、宿主 `plan.md` / workboard mirror | 否 | 它们服务于当前会话或当前机器的推进，不应伪装成共享真相 |
+| **local-only host assets** | `.env.local`、`compass/tools/feishu-config.json`、`compass/.workflow/agent-registry.yaml`、宿主 CLI / hook 配置、机型/路径探测缓存 | 否 | 它们绑定本地环境、凭证或宿主能力，不适合作为 repo 历史的一部分 |
+| **temporary runtime outputs** | `/tmp/redcap-*`、临时 prompt / review 输出、`__pycache__/` | 否 | 只为当前执行服务，任务结束后应清理或自动覆盖 |
+
+这也是本次 docs 重整的基本原则：**不要把 process state 塞进 history 层，也不要把历史证据误删成“临时文件”。**
 
 ### 2.3 host-agent interop governance
 
@@ -463,7 +476,7 @@ References 是三体共享的协议层，承载：
 | `SKILL.md` | Loom/Dispatcher 入口协议 |
 | `compass/CONTRIBUTING.md` | Layer B 唯一权威规范 |
 | `compass/soul.md` | 人格连续性与 revive 基线 |
-| `compass/docs/architecture-capability-trace.yaml` | 旧能力锚点与全量 trace matrix |
+| `compass/docs/traces/architecture-capability-trace.yaml` | 旧能力锚点与全量 trace matrix |
 | `loom/dispatcher/state-machine.md` | Layer A 状态转移定义 |
 | `loom/dispatcher/agent-adapters.md` | 路由、适配、会话接力 |
 | `prism/protocol.md` | Prism 协议全文 |
@@ -494,7 +507,7 @@ References 是三体共享的协议层，承载：
 从本版本开始，架构审查采用**文档 + trace matrix + runtime evidence** 三件套：
 
 1. `ARCHITECTURE.md`：解释当前系统为什么这样设计
-2. `compass/docs/architecture-capability-trace.yaml`：冻结旧能力锚点，映射新架构锚点，记录 runtime evidence
+2. `compass/docs/traces/architecture-capability-trace.yaml`：冻结旧能力锚点，映射新架构锚点，记录 runtime evidence
 3. task report / acceptance / audit logs：提供物理证据
 
 当前 trace matrix 至少覆盖以下能力簇：

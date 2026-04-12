@@ -196,6 +196,6 @@ a091730 feat(prism+loom): synthesize去重 / copilot-session修正 / r3调研验
 ### 附录 C：相关文档索引
 
 - 需求原始记录：`.dev-task.md`
-- 设计文档：`compass/docs/multi-session-isolation-design.md`
+- 设计文档：`compass/docs/specs/multi-session-isolation-design.md`
 - 主线宿主面板：`/Users/norven/.copilot/session-state/c73ce3b2-e124-49d2-a1f8-770a2e08cb7a/plan.md`
 - 既有基础报告：`compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md`

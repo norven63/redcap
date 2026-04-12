@@ -57,7 +57,7 @@ description: >-
 > 路由决策 = **动态可用性**（嗅探脚本）× **静态适配度经验**（能力矩阵）。
 > 不硬编码优先级——每次会话启动时嗅探本地实际 Agent 部署，动态计算。
 
-**嗅探脚本**：`bash compass/tools/redcap-detect-agents.sh` → 输出 `.workflow/agent-registry.yaml`
+**嗅探脚本**：`bash compass/tools/redcap-detect-agents.sh` → 输出 `compass/.workflow/agent-registry.yaml`
 **能力矩阵**：[`knowledge/model-capability-matrix.yaml`](knowledge/model-capability-matrix.yaml)
 **路由算法**：见 [《Agent适配器》§1.3](dispatcher/agent-adapters.md)
 
@@ -181,7 +181,8 @@ Agent 每次执行完毕将 `__redcap_status` JSON 写入 outbox 文件（`{role
    ```bash
    bash compass/tools/redcap-detect-agents.sh "$dev_manual_dir/.workflow/agent-registry.yaml"
    ```
-   脚本自动检测本地已安装的 Agent CLI 及其底层模型，结果缓存到 `agent-registry.yaml`。
+   脚本自动检测本地已安装的 Agent CLI 及其底层模型。
+   在 RedCap 仓库自身开发时，默认缓存到 `compass/.workflow/agent-registry.yaml`；在 Layer A 项目运行时，这里显式写入 `$dev_manual_dir/.workflow/agent-registry.yaml`。
    若 registry 已存在且配置文件未变化，脚本秒级跳过（轻检测）。
 
 4. **设置 `current_state: PM_WORKING`**，启动产品经理 Agent
@@ -821,7 +822,7 @@ SCAN_WORKING    failed       SCAN_WORKING    重试 1 次或 Fallback Agent
 
 ### 5.18 指挥棒工具（Baton Tools）
 
-> 完整设计见 `compass/docs/baton-design.md`。
+> 完整设计见 `compass/docs/specs/baton-design.md`。
 
 compass 指挥棒为 Cap 提供标准化调度原语，用于并行任务裂变（§5.15）、棱镜委托（§5.17）及跨任务编排：
 

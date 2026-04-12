@@ -64,7 +64,7 @@ Q3 的核心问题是 **必须守住 repo-owned 收口边界**：只改 RedCap �
 | `ARCHITECTURE.md` | 修改 | 将宿主通用 skill 纳入 truth surface / governance model，明确 advisory-only 边界 |
 | `references/agent-constraints.md` | 修改 | 为子 Agent 增加人工介入门，避免再次把可自治问题上抛给人类 |
 | `compass/knowledge/lessons.md` | 修改 | 更新 L-48 并新增 L-49，沉淀 overlay authority collision 与宿主资产边界经验 |
-| `docs/superpowers/specs/2026-04-12-host-skill-overlay-governance-design.md` | 新建 | 固化本次 P0 的设计边界、非目标与 repo-owned 修复口径 |
+| `compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md` | 新建 | 固化本次 P0 的设计边界、非目标与 repo-owned 修复口径 |
 | `compass/docs/task-reports/2026-04-12-autonomy-escalation-p0.md` | 新建 | 归档本次 P0 修复的完整报告 |
 | `/Users/norven/.copilot/session-state/.../plan.md` | 修改 | 宿主镜像 workboard 切到当前 P0 并冻结其他 tranche |
 
@@ -101,8 +101,8 @@ Q3 的核心问题是 **必须守住 repo-owned 收口边界**：只改 RedCap �
 
 | 验证项 | 命令 | 结果 |
 |--------|------|------|
-| 旧的独立上抛理由已移除 | `rg "Prism 真死锁|Dispatcher 明确要求上抛" SKILL.md compass/CONTRIBUTING.md references/agent-constraints.md docs/superpowers/specs/2026-04-12-host-skill-overlay-governance-design.md` | ✅（No matches found） |
-| repo 口径已声明“共享宿主 skill 不是 patch surface” | `rg "patch surface|degraded / unsupported overlay" SKILL.md compass/CONTRIBUTING.md ARCHITECTURE.md compass/knowledge/lessons.md docs/superpowers/specs/2026-04-12-host-skill-overlay-governance-design.md` | ✅ |
+| 旧的独立上抛理由已移除 | `rg "Prism 真死锁|Dispatcher 明确要求上抛" SKILL.md compass/CONTRIBUTING.md references/agent-constraints.md compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md` | ✅（No matches found） |
+| repo 口径已声明“共享宿主 skill 不是 patch surface” | `rg "patch surface|degraded / unsupported overlay" SKILL.md compass/CONTRIBUTING.md ARCHITECTURE.md compass/knowledge/lessons.md compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md` | ✅ |
 | repo 内本轮 diff rereview | `repo-quick-review` | ✅（No significant issues found in the reviewed changes） |
 | 定向 rereview 找出并修复 QA manual verification 漏口 | `autonomy-patch-review-1` | ✅（发现 1 个高优问题，已修复） |
 | 外部 shared skill 改动已回滚 | 手动回滚 `/Users/norven/.claude/skills/brainstorming/SKILL.md` 到原始宿主版本 | ✅ |
@@ -174,5 +174,5 @@ d1c8a57 docs(框架): 新增 host-agent 互操作治理设计
 ### 附录 C：相关文档索引
 
 - 需求原始记录：`.dev-task.md`
-- 设计文档：`docs/superpowers/specs/2026-04-12-host-skill-overlay-governance-design.md`
+- 设计文档：`compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md`
 - 任务报告：`compass/docs/task-reports/2026-04-12-autonomy-escalation-p0.md`

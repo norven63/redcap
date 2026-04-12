@@ -76,7 +76,7 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 ### L-6: 模型检测应在项目初始化时完成并缓存
 - **场景**：Dispatcher 不知道 claude-code 背后是 Kimi 2.5（SiliconFlow 代理），导致路由决策基于 CLI 名而非模型能力
 - **根因**：路由表硬编码 CLI 名称，不感知底层模型
-- **经验规则**：项目初始化时检测所有 CLI 的底层模型，结果缓存到 agent-registry.yaml，路由决策基于 `{cli}&{model}` 标识。**已实现**：`tools/redcap-detect-agents.sh`（轻检测 + 全量检测 + mtime 缓存）+ `knowledge/model-capability-matrix.yaml`（能力矩阵）→ 动态路由算法（agent-adapters.md §1.3）
+- **经验规则**：项目初始化时检测所有 CLI 的底层模型，结果缓存到 `compass/.workflow/agent-registry.yaml`，路由决策基于 `{cli}&{model}` 标识。**已实现**：`compass/tools/redcap-detect-agents.sh`（轻检测 + 全量检测 + mtime 缓存）+ `compass/knowledge/model-capability-matrix.yaml`（能力矩阵）→ 动态路由算法（`loom/dispatcher/agent-adapters.md` §1.3）
 - **来源**：TRPG-Server 实测, 全程
 - **发现日期**：2026-03
 - **影响度**：medium
@@ -516,6 +516,15 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **根因**：把宿主 shared skill 误当成 RedCap 可拥有的依赖，而忽略了它其实属于 carrier-owned asset，会影响其他任务、其他框架和其他会话
 - **经验规则**：① RedCap 只能修改 repo-owned 资产与明确归属自己的适配层，不能把共享宿主 skill 本体当成修复面 ② 若某能力只有在改宿主 shared skill 后才成立，应判定为 **degraded / unsupported**，而不是宣称“已经修好” ③ 若未来需要宿主 skill 兼容，应通过宿主侧独立版本化适配或上游维护者变更来实现，而不是由 RedCap 任务直接改写共享原件
 - **来源**：2026-04-12，Norven 对 autonomy-escalation P0 收尾方案复盘后指出“修改其他 skill 属于破坏原数据”
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-12
+
+### L-50: docs / artifact 审计若只看内容正确性，会漏掉目录边界与生命周期污染
+- **场景**：在多会话隔离主线完成后的整体 review 中，注意力主要集中在 authority chain、hook/commit/notify 是否恢复，结果没有继续追问 `compass/docs/` 是否已变成“大杂烩”，也没发现 `compass/.workflow/agent-registry.yaml` 这类本地 runtime cache 仍被 git 跟踪。直到用户从 docs 目录结构切入，才暴露出“历史证据、设计快照、技术调研、runtime cache”被放在错误层级的问题
+- **根因**：① review prompt 偏向功能/脚本/路径正确性，缺少“文件为什么在这里、应不应该进 git”的生命周期视角 ② 把“文档都能打开”误当成“信息架构健康”，没有区分 specs / research / traces / task-reports 这几类 authority 完全不同的资产 ③ 长任务中先前的 P0 与治理切片吸走注意力，导致 docs IA 与 artifact hygiene 没被当成独立的必审面
+- **经验规则**：① review 不能只看内容是否正确，还必须检查 **authority / lifecycle / ownership**：这个文件属于 canonical history、共享证据、会话状态还是本地 cache ② `compass/docs/` 必须按 `specs/`、`research/`、`traces/`、`task-reports/` 分层；禁止再把不同职责的文档平铺混放 ③ `.workflow/`、`.dev-task.md`、本机探测缓存、宿主配置、临时 prompt/result 一律视为 session-isolated / local-only / temporary，默认不进 git ④ stop-review 提示词必须显式加入“目录与生命周期边界”检查，否则这类问题会被功能性检查淹没
+- **来源**：2026-04-12，Norven 从 `compass/docs/` 杂糅问题切入的主线复盘；随后完成 docs 迁移、`.gitignore` 收口与 stop-review 硬化
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-12

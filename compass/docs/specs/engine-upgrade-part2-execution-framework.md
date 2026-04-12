@@ -381,7 +381,7 @@ sessions:
 
 > **已被动态路由取代**。静态绑定在 Phase 4 E2E 验证中暴露严重局限性——3/4 个 Agent CLI 在 headless 模式下出现挂起/超时/权限阻塞（详见 L-4、L-7、L-11），静态绑定无法自动降级。
 > 
-> 当前路由算法：`tools/redcap-detect-agents.sh` 嗅探 + `knowledge/model-capability-matrix.yaml` 能力矩阵 → 动态适配分计算（见 [agent-adapters.md §1.3](../dispatcher/agent-adapters.md)）。
+> 当前路由算法：`compass/tools/redcap-detect-agents.sh` 嗅探 + `compass/knowledge/model-capability-matrix.yaml` 能力矩阵 → 动态适配分计算（见 [agent-adapters.md §1.3](../../../loom/dispatcher/agent-adapters.md)）。
 
 ### 5.2 ~~远期方案：~~动态路由（已实现）
 

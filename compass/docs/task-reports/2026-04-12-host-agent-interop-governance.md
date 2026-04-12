@@ -68,7 +68,7 @@ Q4 的根问题是 **边界实现与协议表述脱节**：workboard sync、dele
 | 文件 | 变更类型 | 变更摘要 |
 |------|---------|---------|
 | `ARCHITECTURE.md` | 修改 | 重写为三体分层、authority chain、host-agent interop governance、能力矩阵与证明层 |
-| `compass/docs/architecture-capability-trace.yaml` | 新建 | 冻结旧架构能力锚点，并完成 `24 intact / 5 behavior_changed_but_acceptable / 0 deferred_follow_up` 的 trace audit |
+| `compass/docs/traces/architecture-capability-trace.yaml` | 新建 | 冻结旧架构能力锚点，并完成 `24 intact / 5 behavior_changed_but_acceptable / 0 deferred_follow_up` 的 trace audit |
 | `compass/tools/redcap-interop-governance.sh` | 新建 | 提供 evidence-only interop audit 与 pending-closure contract helper |
 | `compass/tools/redcap-dev-task.sh` | 新建 | 为 `.dev-task.md` 提供 canonical pointer / confirmed hash / active slice 解析能力 |
 | `compass/tools/redcap-pm-gate-check.sh` | 新建 | 把 Layer B PM Gate 变成可执行门禁 |
@@ -215,7 +215,7 @@ aaa4882 fix: resolve 5 blocking issues found by multi-round duck review
 ### 附录 C：相关文档索引
 
 - 需求原始记录：`.dev-task.md`
-- 设计文档：`docs/superpowers/specs/2026-04-12-host-agent-interop-governance-design.md`
-- 能力追踪矩阵：`compass/docs/architecture-capability-trace.yaml`
+- 设计文档：`compass/docs/specs/2026-04-12-host-agent-interop-governance-design.md`
+- 能力追踪矩阵：`compass/docs/traces/architecture-capability-trace.yaml`
 - 书记归档：`compass/knowledge/explore-notes.md`（Q7 已归档）
 - 主线阶段报告：`compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md`

@@ -156,16 +156,16 @@ Dispatcher 在 E2E 模式下启动时，在初始 prompt 中注入：
 本次为 E2E 基准测试。测试配置：
 - 模式：{selective|full}
 - 启用开关：{开关列表}
-- 基准项目：md-table-tool（需求见 testing/benchmark-scenario.md §1）
-- 报告产出：testing/latest-e2e-report.md
-- 待验证清单：testing/pending-validations.md
+- 基准项目：md-table-tool（需求见 loom/test-reports/benchmark-scenario.md §1）
+- 报告产出：loom/test-reports/latest-e2e-report.md
+- 待验证清单：loom/test-reports/pending-validations.md
 
 请严格按照配置执行，不要跳过任何已启用开关对应的路径。
 ```
 
 ### 执行后必做
 
-1. 更新 `testing/latest-e2e-report.md`
-2. 消费 `testing/pending-validations.md` 中对应条目
+1. 更新 `loom/test-reports/latest-e2e-report.md`
+2. 消费 `loom/test-reports/pending-validations.md` 中对应条目
 3. 按 CONTRIBUTING.md §3.1 后置流程处理发现的 BUG/GAP/OBSERVATION
 4. Commit message 附带 E2E 汇总行
