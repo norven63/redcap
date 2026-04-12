@@ -24,7 +24,7 @@
 
 1. 明确声明：宿主通用 skill 只是 **advisory overlay**，不是 Layer B authority。
 2. 明确人工介入门槛：仅限 AI 无法推断的外部事实/偏好/凭证、AI 无法直接执行/验证的人类动作、或 Norven 保留决策（包括架构方向禁区与外部依赖禁区）。
-3. 同时修改 RedCap-native 规则与触发本次问题的 brainstorming skill，形成双边兼容。
+3. 只在 RedCap-native 一侧建立可拥有的规则；共享宿主 skill 若仍冲突，只能被视为 degraded overlay，不能作为 RedCap 任务中的 patch surface。
 4. 把本次 P0 固化为 lesson 与 canonical ledger，防止后续长任务再次复现。
 
 ### 2.2 非目标
@@ -42,22 +42,22 @@
 - 优点：改动小。
 - 缺点：冲突 skill 本身仍保留默认 ask_user / approval 硬门，复发概率高。
 
-### 方案 B：只改 brainstorming skill
+### 方案 B：只改 brainstorming skill（宿主 shared asset）
 
 - 优点：直击表面触发点。
-- 缺点：RedCap-native 侧仍没有显式写出 overlay subordinate 规则，体系内仍有盲区。
+- 缺点：这属于改宿主共享资产，不是修 RedCap 自身；即使短期见效，也不能作为 RedCap 的正式支持口径。
 
-### 方案 C：双边收口（采纳）
+### 方案 C：repo-owned 收口 + degraded 判定（采纳）
 
-同时修改：
+只修改 RedCap 自身可拥有的资产，并把共享宿主 skill 明确降级为 carrier-owned overlay：
 
 1. RedCap-native 控制面（`.dev-task.md`、`CONTRIBUTING.md`、`SKILL.md`、`ARCHITECTURE.md`、`agent-constraints.md`、`lessons.md`）
-2. 冲突 overlay skill（`brainstorming/SKILL.md`）
+2. 宿主 shared skill 若仍冲突，则判定该集成为 **degraded / unsupported overlay**，而不是去修改它的原始文件
 
 理由：
 
-- 既补主系统的 authority 声明，也补冲突方的让位规则。
-- 对当前问题诚实：这是一条 **prompt-level hard limitation + canonical-truth discipline**，不是 shell hook 能单方面解决的故障。
+- 补的是 RedCap 自己的 authority 声明，而不是把宿主共享资产纳入可修改边界。
+- 对当前问题更诚实：这是一条 **prompt-level hard limitation + canonical-truth discipline**；若宿主仍冲突，正确结论是 degraded，而不是偷偷改宿主 shared skill。
 
 ---
 
@@ -79,7 +79,7 @@
 
 除此之外，tranche 分解、顺序裁剪、方案对比、设计收口都必须优先在 RedCap-native 控制面内完成。Prism 死锁或 Dispatcher 升级建议本身只算诊断信号，不算人工介入理由；它们必须先定位到具体缺口，才能上抛给 Norven。
 
-### 4.3 双边修复面
+### 4.3 repo-owned 修复面
 
 #### RedCap-native
 
@@ -90,9 +90,11 @@
 - `references/agent-constraints.md`：防止子 Agent 轻易把问题上抛给人类
 - `compass/knowledge/lessons.md`：沉淀本次失败模式
 
-#### overlay skill
+#### host-shared skill 结论
 
-- `brainstorming/SKILL.md`：新增 host-control compatibility；在 overlay mode 下不再默认重开用户批准回路，也不再强推独立 spec / commit / writing-plans 流程
+- `brainstorming` 这类共享宿主 skill 只能被视为 carrier-owned overlay
+- 若其默认协议与 RedCap 冲突，RedCap 只能在自己的控制面中拒绝承认越权结果，不能直接改写该 skill 原件
+- 若未来需要兼容，应通过宿主侧独立版本化适配或上游维护者变更来解决，而不是由 RedCap 任务直接 patch
 
 ---
 
@@ -102,7 +104,7 @@
 
 1. 当前 P0 在 `.dev-task.md` 中成为 canonical truth，其他 tranche 明确冻结。
 2. RedCap-native 文档与架构说明一致表达 overlay subordinate 规则。
-3. brainstorming skill 明确声明：遇到显式自治控制面时，不再强制 ask_user / user approval，也不再平行创建独立 spec lane。
+3. RedCap-native 文档明确声明：共享宿主 skill 不是 patch surface；若不改宿主 skill 就无法稳定工作，则该集成按 degraded / unsupported overlay 处理。
 4. 子 Agent 共享约束明确：只有 AI 真算不出来，或确实需要人类亲自执行/验证时，才返回 `need_user` / `blocked`。
 
 ---

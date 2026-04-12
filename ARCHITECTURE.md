@@ -87,6 +87,9 @@ RedCap 当前把状态面划分为三类：
 
 当前 interop contract 的核心不是“阻止宿主存在”，而是**阻止宿主表面越权成为 RedCap 的真相源**。
 
+这里还要额外加一条资产边界：**共享宿主 skill 是 carrier-owned overlay，不是 RedCap 的 patch surface**。  
+RedCap 可以消费它们的能力，但不能把“修改宿主 shared skill 原始文件”当成自身能力成立的前提；若不改宿主 skill 就无法稳定工作，该路径只能被标记为 **degraded / unsupported overlay**。
+
 ---
 
 ## 3. Loom — Layer A 执行平面

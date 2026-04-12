@@ -646,8 +646,9 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
    - Norven 已明确保留该决策（包括架构方向性变更、外部依赖引入）
 4. 若确需人工介入，必须先在 `.dev-task.md` 或 `explore-notes.md` 中记录 **为什么 AI 不能自己算出来**，再进入 ask_user / need_user / blocked_on_user。
 5. Prism 死锁或 Dispatcher 升级建议本身不构成合法人工介入理由；它们必须先定位到上述某个具体缺口，才能上抛给 Norven。
+6. 共享宿主 skill 属于宿主资产，不属于 RedCap 的 patch surface。Cap 不得通过直接修改宿主 shared skill 的原始文件来让 RedCap 能力“成立”；若不改宿主 skill 就无法稳定工作，则该能力必须在报告与架构口径中标记为 **degraded / unsupported overlay**。
 
-> **实现口径说明**：这一条当前属于**prompt-level hard limitation + canonical-truth discipline**。由于 ask_user/tool 调用发生在宿主层，仓库内的 shell gate 无法物理拦截每一次升级动作，所以必须同时在冲突 skill 本身补兼容让位规则，并把本规则写入 RedCap-native 控制面。
+> **实现口径说明**：这一条当前属于**prompt-level hard limitation + canonical-truth discipline**。由于 ask_user/tool 调用发生在宿主层，仓库内的 shell gate 无法物理拦截每一次升级动作，因此 RedCap 只能在自己的控制面里拒绝承认越权结果；若宿主 shared skill 仍与之冲突，正确结论是该集成处于 **degraded / unsupported**，而不是去改写宿主共享资产本体。
 
 ---
 

@@ -504,9 +504,18 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 
 ### L-48: 宿主通用 skill 只能是 overlay，不能把可自治决策升级成人工阻断
 - **场景**：在 RedCap 已有 `.dev-task.md` canonical truth、Norven 自主执行授权与棱镜支撑的前提下，宿主侧 brainstorming skill 仍以“必须 ask_user / 必须等用户批准”的默认流程劫持了 tranche 分解与设计收口，导致本可内部吸收的决策被错误升级成人工介入
-- **根因**：① 通用 skill 的默认协议没有声明“遇到拥有自治控制面的宿主框架时必须让位” ② RedCap 自身虽然已有 mirror-only / authority inversion / PM Gate 规则，但没有把“overlay skill subordinate”单独写成显式硬约束 ③ ask_user 属于宿主层工具调用，仓库内脚本无法物理拦截，若不在双边提示词上同时收口，就会再次出现协议碰撞
-- **经验规则**：① 宿主通用 brainstorming / planning / visual skill 只能作为 advisory overlay，不能覆盖 `.dev-task.md`、PM Gate 与自主执行授权 ② ask_user / need_user / blocked_on_user 只允许用于 AI 无法推断的外部事实、AI 无法直接执行/验证的人类动作、或用户保留决策（包括外部依赖/架构方向禁区） ③ Prism / Dispatcher 只能建议上抛，不能把“内部死锁/内部建议”本身当成人工介入理由；真正上抛前必须指出具体缺口 ④ 若必须人工介入，先记录“为什么 AI 不能自己算出来或为什么必须由人来操作”，再上抛给人类 ⑤ 这类修复必须双边收口：既改 RedCap-native 控制面，也改冲突 skill 本身
-- **来源**：2026-04-12，Norven 指出 brainstorming ask_user 导致自治升级失效；随后对 RedCap × brainstorming 协议碰撞做 P0 修复
+- **根因**：① 通用 skill 的默认协议没有声明“遇到拥有自治控制面的宿主框架时必须让位” ② RedCap 自身虽然已有 mirror-only / authority inversion / PM Gate 规则，但没有把“overlay skill subordinate”单独写成显式硬约束 ③ ask_user 属于宿主层工具调用，仓库内脚本无法物理拦截，若没有 repo-owned 的降级口径，就容易误以为“去改宿主 skill 本体”也是可接受修复
+- **经验规则**：① 宿主通用 brainstorming / planning / visual skill 只能作为 advisory overlay，不能覆盖 `.dev-task.md`、PM Gate 与自主执行授权 ② ask_user / need_user / blocked_on_user 只允许用于 AI 无法推断的外部事实、AI 无法直接执行/验证的人类动作、或用户保留决策（包括外部依赖/架构方向禁区） ③ Prism / Dispatcher 只能建议上抛，不能把“内部死锁/内部建议”本身当成人工介入理由；真正上抛前必须指出具体缺口 ④ 若必须人工介入，先记录“为什么 AI 不能自己算出来或为什么必须由人来操作”，再上抛给人类 ⑤ 共享宿主 skill 不是 RedCap 的 patch surface；若不改宿主 skill 就无法稳定工作，该能力必须按 degraded / unsupported overlay 处理
+- **来源**：2026-04-12，Norven 指出 brainstorming ask_user 导致自治升级失效；随后在 P0 复盘中进一步指出“不能通过修改其他 skill 完成目标”，据此修正最终治理口径
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-12
+
+### L-49: 共享宿主 skill 不是 RedCap 可修改资产
+- **场景**：为快速消除 overlay skill 与 RedCap-native 控制面的冲突，曾直接修改宿主共享 brainstorming skill 的原始文件来让其“兼容” RedCap；随后用户指出这等同于改写宿主共享资产，而不是修 RedCap 自身
+- **根因**：把宿主 shared skill 误当成 RedCap 可拥有的依赖，而忽略了它其实属于 carrier-owned asset，会影响其他任务、其他框架和其他会话
+- **经验规则**：① RedCap 只能修改 repo-owned 资产与明确归属自己的适配层，不能把共享宿主 skill 本体当成修复面 ② 若某能力只有在改宿主 shared skill 后才成立，应判定为 **degraded / unsupported**，而不是宣称“已经修好” ③ 若未来需要宿主 skill 兼容，应通过宿主侧独立版本化适配或上游维护者变更来实现，而不是由 RedCap 任务直接改写共享原件
+- **来源**：2026-04-12，Norven 对 autonomy-escalation P0 收尾方案复盘后指出“修改其他 skill 属于破坏原数据”
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-12

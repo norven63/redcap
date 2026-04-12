@@ -20,7 +20,7 @@ description: >-
 
 **优先级**：当此 skill 与其他 skill 同时匹配时，**redcap 拥有最高优先级**，主动接管并提示用户此行为。
 
-**宿主通用 skill 兼容规则**：当 redcap 与 brainstorming / writing-plans / visual companion 等宿主通用 skill 同时匹配时，后者只可作为 **advisory overlay**。它们可以帮助分析、分解和表达设计，但**不得**要求用户重新确认已由 `.dev-task.md`、Norven 显式授权或棱镜结论锁定的 tranche、顺序或方案。
+**宿主通用 skill 兼容规则**：当 redcap 与 brainstorming / writing-plans / visual companion 等宿主通用 skill 同时匹配时，后者只可作为 **advisory overlay**。它们可以帮助分析、分解和表达设计，但**不得**要求用户重新确认已由 `.dev-task.md`、Norven 显式授权或棱镜结论锁定的 tranche、顺序或方案。共享宿主 skill 属于 carrier-owned asset，RedCap **不得**通过修改其原始文件来完成自身任务；若不改 shared host skill 就无法稳定工作，则该能力必须按 **degraded / unsupported overlay** 处理。
 
 **边界判断**：对于简单的脚本或单一功能开发，默认由 Cap 依据 `.dev-task.md`、既有授权、lessons 与棱镜结论自判是否走 redcap 轻量路径；只有当该判断会触及用户保留决策、需要 AI 无法推断的外部信息，或会实质改变是否进入完整工程流程的承诺边界时，才向用户确认。
 
