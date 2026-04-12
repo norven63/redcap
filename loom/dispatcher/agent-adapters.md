@@ -92,9 +92,10 @@ agents:
    c. score = model[role_req.primary] × 2 + model[role_req.secondary] × 1
    d. Reviewer 特殊: model.family ≠ dev_agent.family → score += 2
    e. agent.known_issues 非空 → score -= 1
-4. 按 score 降序排列
-5. 同分优先: 专用 CLI > 通用 CLI 代理（如 kimi > claude-code 代理 kimi-k2.5）
-6. 输出有序列表
+4. 找出 top_score，并把满足“已过最低门槛且 score >= top_score - 1”的候选视为**能力相当带**
+5. 在能力相当带内，优先 cost_efficiency 更高的候选；若 Gemini CLI 位于该带内且无阻塞性 known_issues，则优先于更高成本宿主
+6. 若仍并列，再按 score 降序；同分优先: 专用 CLI > 通用 CLI 代理（如 kimi > claude-code 代理 kimi-k2.5）
+7. 输出有序候选列表
 ```
 
 **锁定规则**（原子性保证）：

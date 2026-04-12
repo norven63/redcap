@@ -19,6 +19,7 @@ cat > /dev/null  # 消费 stdin
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$SCRIPT_DIR/redcap-notify-format.sh"
 HEAD_FILE="/tmp/redcap-claude-initial-head"
 NOTIFIED_FILE="/tmp/redcap-claude-last-notified-head"
 
@@ -48,7 +49,11 @@ fi
 COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..HEAD" 2>/dev/null || echo "(无法获取)")
 
 python3 "$NOTIFIER" notify \
-    "RedCap 框架变更完成 (Claude Hook 自动通知)\n\nCommits:\n$COMMIT_LOG" \
+    "$(redcap_build_completion_message \
+        "RedCap Layer B 自动通知" \
+        "redcap" \
+        "$COMMIT_LOG" \
+        "Claude Hook 自动通知")" \
     --project "redcap" 2>/dev/null || true
 
 # 记录已通知的 HEAD，防止下次 Stop 重复通知

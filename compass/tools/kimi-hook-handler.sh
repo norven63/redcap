@@ -23,6 +23,7 @@ JSON=$(cat)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$SCRIPT_DIR/redcap-notify-format.sh"
 HEAD_FILE="/tmp/redcap-kimi-initial-head"
 
 # ── SessionStart: 捕获初始 HEAD ──────────────────────────
@@ -62,7 +63,11 @@ handle_session_end() {
     commit_log=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$initial_head..HEAD" 2>/dev/null || echo "(无法获取)")
 
     python3 "$notifier" notify \
-        "RedCap 框架变更完成 (Kimi Hook 自动通知)\n\nCommits:\n$commit_log" \
+        "$(redcap_build_completion_message \
+            "RedCap Layer B 自动通知" \
+            "redcap" \
+            "$commit_log" \
+            "Kimi Hook 自动通知")" \
         --project "redcap" 2>/dev/null || true
 
     # 清理临时文件（仅在 SessionEnd 时，Stop 不清理以便 SessionEnd 兜底）

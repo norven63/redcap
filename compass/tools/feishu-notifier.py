@@ -165,11 +165,27 @@ class FeishuNotifier:
         """当前时间的毫秒时间戳（飞书日期字段要求）"""
         return int(time.time() * 1000)
 
+    @staticmethod
+    def _split_notify_title_and_body(message: str) -> tuple[str, str]:
+        lines = [line.rstrip() for line in message.splitlines()]
+        while lines and not lines[0].strip():
+            lines.pop(0)
+
+        if not lines:
+            return "📢 RedCap 通知", ""
+
+        title = lines[0].strip()
+        body = "\n".join(lines[1:]).strip()
+        if not body:
+            body = message.strip()
+        return title[:80], body
+
     def notify(self, message: str, project: str = ""):
         """发送纯通知，不等待回复"""
-        self._send_webhook("📢 RedCap 通知", message)
+        title, body = self._split_notify_title_and_body(message)
+        self._send_webhook(title or "📢 RedCap 通知", body)
         self._create_record({
-            "标题": f"[通知] {message[:50]}",
+            "标题": f"[通知] {title[:50]}",
             "类型": "notify",
             "问题内容": message,
             "状态": "已通知",

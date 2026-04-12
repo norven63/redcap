@@ -530,6 +530,7 @@ delegation_boundary: redcap-native-first
 触发确认门后，**第一件事**：将用户原始输入逐条原文写入 `.dev-task.md` 的 `## 原始输入（用户原文）` 段。
 - 内容为用户消息的**字面原文**，禁止概括、改写或精简
 - 写完之后才开始任何澄清对话
+- 若任务执行中用户又追加了**新的需求、纠偏、约束或范围变更**，也必须在**本轮结束前**按 `U<n>` 继续追加到同一段，禁止只依赖会话记忆
 
 > 原理：PM 对话可能走很多轮，原始文本会在 attention 窗口中衰减。先落盘就不会失真——即使后续确认版与原文有出入，也随时可回溯对比。
 
@@ -555,6 +556,7 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 
 - 没有明确确认语句 → 不进入执行，继续澄清或等待
 - 每完成一个 Q → 在该 Q 描述下追加 `> 执行摘要：<一句话>` 用于对标检查
+- 若用户在执行期新增了独立要求，必须同时补：`## 原始输入` 新条目 + `## 已确认需求` 对应新 Q 或修订条目，再继续执行
 
 ### `.dev-task.md` 模板扩展
 
@@ -647,6 +649,7 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 4. 若确需人工介入，必须先在 `.dev-task.md` 或 `explore-notes.md` 中记录 **为什么 AI 不能自己算出来**，再进入 ask_user / need_user / blocked_on_user。
 5. Prism 死锁或 Dispatcher 升级建议本身不构成合法人工介入理由；它们必须先定位到上述某个具体缺口，才能上抛给 Norven。
 6. 共享宿主 skill 属于宿主资产，不属于 RedCap 的 patch surface。Cap 不得通过直接修改宿主 shared skill 的原始文件来让 RedCap 能力“成立”；若不改宿主 skill 就无法稳定工作，则该能力必须在报告与架构口径中标记为 **degraded / unsupported overlay**。
+7. `baton-delegate.sh --skill-path` 这类 skill 外包能力，只允许把 external skill 当作 **leaf worker / evidence producer / advisory helper** 使用；它不得拥有 `.dev-task`、ask_user、状态迁移、commit、通知或收尾 authority。若离开这些权力就无法工作，则仍按 **degraded / unsupported overlay** 处理。
 
 > **实现口径说明**：这一条当前属于**prompt-level hard limitation + canonical-truth discipline**。由于 ask_user/tool 调用发生在宿主层，仓库内的 shell gate 无法物理拦截每一次升级动作，因此 RedCap 只能在自己的控制面里拒绝承认越权结果；若宿主 shared skill 仍与之冲突，正确结论是该集成处于 **degraded / unsupported**，而不是去改写宿主共享资产本体。
 

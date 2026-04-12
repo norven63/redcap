@@ -65,7 +65,7 @@ RedCap 不依赖单次 AI 输出的质量，而是通过**结构性机制**兜�
 
 - **Compass 独立管理框架演化**：框架自身的开发遵守与用户项目相同的严格流程
 - **Lessons 积累防坑**：经验教训沉淀为 `lessons.md`，每次新任务自动注入防护
-- **模型矩阵**：`model-capability-matrix.yaml` 按角色能力权重路由，30天过期触发更新
+- **模型矩阵**：`model-capability-matrix.yaml` 按角色能力权重路由，并在“能力相当”时优先低成本候选（优先 Gemini，保留动态 fallback）；30天过期触发更新
 - **书记官协议**：多轮讨论自动落盘 `explore-notes.md`，防止决策上下文在压缩中丢失
 
 ---

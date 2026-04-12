@@ -22,6 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
+source "$SCRIPT_DIR/redcap-notify-format.sh"
 
 HOOK_CWD="${REDCAP_HOOK_CWD:-$REDCAP_ROOT}"
 HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-}"
@@ -274,7 +275,12 @@ if [[ "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1
         fi
 
         if [[ "$PENDING_CLEAR_STATUS" -eq 1 ]]; then
-            if send_notification "RedCap 任务完成（${HOST} SessionEnd 收尾）\n\n任务报告:\n$REPORT_OUTPUT\n\nCommits:\n$COMMIT_LOG"; then
+            if send_notification "$(redcap_build_completion_message \
+                "RedCap Layer B 收尾完成" \
+                "redcap" \
+                "$COMMIT_LOG" \
+                "${HOST} SessionEnd 兜底收尾" \
+                "$REPORT_OUTPUT")"; then
                 echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
                 rm -f "$ALERTED_FILE" 2>/dev/null || true
                 clear_review_artifacts

@@ -158,9 +158,13 @@ models:
 #                + models[model][role_req.secondary] × 1
 #      c. Reviewer 且 model.family != dev_agent.family → score += 2
 #      d. agent.known_issues 非空 → score -= 1
-#   4. 按 score 降序排列
-#   5. 同分时: 专用 CLI > 通用 CLI（如 kimi CLI > claude-code 代理 kimi）
-#   6. 输出有序列表，Dispatcher 取第 1 个为首选，其余为 Fallback
+#   4. 找出 top_score，并将满足以下条件的候选视为“能力相当带”：
+#        - 已满足 role_minimum_thresholds
+#        - score >= top_score - 1
+#   5. 在“能力相当带”内，优先选择 cost_efficiency 更高的候选；
+#      若 Gemini CLI 位于该带内且无阻塞性 known_issues，则优先于更高成本宿主
+#   6. 若仍并列，再按 score 降序；同分时: 专用 CLI > 通用 CLI（如 kimi CLI > claude-code 代理 kimi）
+#   7. 输出有序列表，Dispatcher 取第 1 个为首选，其余为 Fallback
 #
 # 锁定规则:
 #   一旦某步骤（如 PM_WORKING step 1）选定 Agent，写入 state.yaml:

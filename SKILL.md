@@ -831,6 +831,8 @@ compass 指挥棒为 Cap 提供标准化调度原语，用于并行任务裂变�
 | `compass/tools/baton-collect.sh` | 收集 Agent 输出结果（单次读取，解析 `##DONE##`/`##BLOCKED##` 信号，exit code 路由） |
 | `compass/tools/baton-delegate.sh` | 委托子任务给指定 skill（Skill 外包模式） |
 
+**Skill 外包边界**：`--skill-path` 只允许把外部 skill 当作 **leaf worker / evidence producer / advisory helper** 使用；主 Agent 必须保留 `.dev-task`、ask_user、状态迁移、commit、通知与收尾 authority。若某 skill 离开这些 authority 就无法稳定工作，则该路径只能视为 **degraded / unsupported overlay**。
+
 **何时使用 Baton**：§5.15 并行裂变子任务启动、§5.17 棱镜协议 Agent 启动、需要跨 CLI 一致调度接口时。
 
 ---
@@ -844,6 +846,7 @@ compass 指挥棒为 Cap 提供标准化调度原语，用于并行任务裂变�
 | 阶段 | 关键动作 |
 |------|---------|
 | Step 0 | 立即将用户原始输入逐字写入 `.dev-task.md`（任何讨论前） |
+| Step 0.5 | 若任务执行中出现新的用户要求/纠偏/范围变化，继续以 `U<n>` 追加原文，并同步补齐对应 Q |
 | Phase 1 | 需求澄清（逐 Q、选择题优先，禁止同步执行） |
 | Phase 2 | 用户发出确认语句后锁定需求 |
 

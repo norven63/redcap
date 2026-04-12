@@ -28,6 +28,7 @@ SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
+source "$SCRIPT_DIR/redcap-notify-format.sh"
 WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
 PROJECT_NAME=$(redcap_runtime_project_name "$PROJECT_DIR" "$PROJECT_NAME_ARG")
 
@@ -121,6 +122,7 @@ output_summary() {
 
 feishu_notify() {
   local notifier="$SCRIPT_DIR/feishu-notifier.py"
+  local message
 
   if [[ "$SKIP_FEISHU" == "1" ]]; then
     echo "[on_complete] REDCAP_SKIP_FEISHU=1，跳过飞书通知"
@@ -137,10 +139,11 @@ feishu_notify() {
     commit_log=$(git -C "$PROJECT_DIR" --no-pager log --oneline "$INITIAL_HEAD..HEAD" 2>/dev/null || echo "(无法获取)")
   fi
 
-  local message="RedCap 流程完成: $PROJECT_NAME"
-  if [[ -n "$commit_log" ]]; then
-    message="$message\n\nCommits:\n$commit_log"
-  fi
+  message="$(redcap_build_completion_message \
+    "RedCap Layer B 收尾完成" \
+    "$PROJECT_NAME" \
+    "$commit_log" \
+    "on_ALL_DONE 主路径收尾")"
 
   echo "[on_complete] 发送飞书通知..."
   python3 "$notifier" notify "$message" --project "$PROJECT_NAME" 2>/dev/null || {
