@@ -48,6 +48,11 @@ run_control_plane_start_sync() {
     if [[ -x "$HOST_WORKBOARD_SYNC" && -n "${REDCAP_HOST_WORKBOARD_PATH:-}" ]]; then
         bash "$HOST_WORKBOARD_SYNC" sync "$REDCAP_HOST_WORKBOARD_PATH" "$REDCAP_ROOT/.dev-task.md" 2>&1 || true
     fi
+
+    SESSION_CONTINUITY="$SCRIPT_DIR/redcap-session-continuity.sh"
+    if [[ -x "$SESSION_CONTINUITY" && -n "${REDCAP_HOST_WORKBOARD_PATH:-}" ]]; then
+        bash "$SESSION_CONTINUITY" sync "$REDCAP_HOST_WORKBOARD_PATH" "$REDCAP_ROOT/.dev-task.md" 2>&1 || true
+    fi
 }
 
 if [[ -n "$BINDING_KEY" ]] && REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1 REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY=1 redcap_runtime_init_from_binding "$HOST" "$HOOK_CWD" "$BINDING_KEY"; then

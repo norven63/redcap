@@ -1,0 +1,53 @@
+version: 1
+
+root_policy:
+  allowed_entries:
+    - specs
+    - research
+    - traces
+    - task-reports
+    - index.yaml
+  rule: "compass/docs/ 根目录只保留 collection 目录与索引文件，禁止重新长成未分类大杂烩。"
+
+collections:
+  specs:
+    role: "已批准或已冻结的 Layer B 设计快照"
+    authority: "repo-tracked canonical"
+    retention: "长期保留；当设计被新版明确取代时，可移入 compass/docs/archive/specs/，但新旧关系必须在任务报告或新 spec 中可追溯。"
+    collision_strategy: "优先稳定主题文件名；同主题多阶段时使用 partN 或日期前缀。"
+  research:
+    role: "技术调研、外部能力评估、可行性论证"
+    authority: "repo-tracked evidence"
+    retention: "调研结论冻结到 spec / task-report 后，可移入 compass/docs/archive/research/。"
+    collision_strategy: "按主题命名；同主题多轮调研使用日期前缀。"
+  traces:
+    role: "trace matrix、能力回归映射、审查追踪"
+    authority: "repo-tracked evidence"
+    retention: "活动 trace 保留在 traces/；历史 trace 快照可移入 compass/docs/archive/traces/，但最新入口必须稳定。"
+    collision_strategy: "入口文件名稳定，快照使用日期或版本后缀。"
+  task-reports:
+    role: "Layer B 任务完成报告与 closure evidence"
+    authority: "repo-tracked closure evidence"
+    retention: "90 天内保持热层；更早报告可移入 compass/docs/archive/task-reports/，但应保留索引与摘要引用。"
+    collision_strategy: "统一 YYYY-MM-DD-<topic>.md。"
+
+continuity_assets:
+  term: "连续性资产"
+  meaning: "帮助长任务防偏航、防上下文稀释、支持断点恢复与显式继承的 live 状态链。"
+  typical_carriers:
+    - ".dev-task.md"
+    - "compass/knowledge/explore-notes.md"
+    - "宿主 plan.md / workboard mirror"
+    - "session imported-sessions/ artifacts"
+  rules:
+    - "连续性资产不是 frozen evidence，不能替代 compass/docs/**。"
+    - "连续性资产可以索引、镜像、显式导入，但不能粗暴并表成新的 authority。"
+    - "若要合并两类连续性资产，必须证明 derivation chain 清晰且零功能折损。"
+
+explicit_import_protocol:
+  default: "disabled"
+  requirement: "仅允许显式导入，不允许默认自动继承最近会话。"
+  guarantees:
+    - "源会话保持原样保留"
+    - "导入资产带来源 session handle 与 metadata"
+    - "只复制 continuity artifacts，不接管 canonical truth"

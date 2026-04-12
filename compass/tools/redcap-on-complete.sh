@@ -31,6 +31,7 @@ source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-notify-format.sh"
 WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
 PROJECT_NAME=$(redcap_runtime_project_name "$PROJECT_DIR" "$PROJECT_NAME_ARG")
+TASK_REPORT_CHECK="$SCRIPT_DIR/redcap-task-report-check.sh"
 
 verify_commit_closure() {
   local current_head worktree_status=""
@@ -96,33 +97,53 @@ cleanup_workflow() {
 # ── 动作 2: 输出最终交付摘要 ─────────────────────────────
 
 output_summary() {
+  local report_ref message
+  report_ref=$(resolve_report_reference)
+  message="$(redcap_build_completion_message \
+    "RedCap Layer B 收尾完成" \
+    "$PROJECT_NAME" \
+    "$(current_commit_log)" \
+    "on_ALL_DONE 主路径收尾" \
+    "$report_ref" \
+    "$PROJECT_DIR")"
+
   echo ""
   echo "═══════════════════════════════════════════"
   echo "  RedCap 流程完成"
   echo "═══════════════════════════════════════════"
-
-  if [[ -n "$INITIAL_HEAD" ]]; then
-    local commit_count
-    commit_count=$(git -C "$PROJECT_DIR" rev-list --count "$INITIAL_HEAD..HEAD" 2>/dev/null || echo "0")
-    echo "  项目: $PROJECT_NAME"
-    echo "  本次 commit 数: $commit_count"
-    echo ""
-    echo "  Commits:"
-    git -C "$PROJECT_DIR" --no-pager log --oneline "$INITIAL_HEAD..HEAD" 2>/dev/null || echo "  (无法获取 commit 记录)"
-  else
-    echo "  项目: $PROJECT_NAME"
-    echo "  (未提供初始 HEAD，无法展示增量 commits)"
-  fi
-
+  printf '%s\n' "$message"
   echo "═══════════════════════════════════════════"
   echo ""
+}
+
+current_commit_log() {
+  if [[ -n "$INITIAL_HEAD" ]]; then
+    git -C "$PROJECT_DIR" --no-pager log --oneline "$INITIAL_HEAD..HEAD" 2>/dev/null || echo "(无法获取)"
+  else
+    echo "(无法获取)"
+  fi
+}
+
+resolve_report_reference() {
+  local current_head
+
+  if [[ ! -f "$TASK_REPORT_CHECK" || ! -f "$PROJECT_DIR/.dev-task.md" || -z "$INITIAL_HEAD" ]]; then
+    return 0
+  fi
+
+  current_head=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || true)
+  if [[ -z "$current_head" ]]; then
+    return 0
+  fi
+
+  "$TASK_REPORT_CHECK" "$PROJECT_DIR" "$INITIAL_HEAD" "$current_head" 2>/dev/null | awk 'NF {print; exit}'
 }
 
 # ── 动作 3: 飞书通知（§5.11） ────────────────────────────
 
 feishu_notify() {
   local notifier="$SCRIPT_DIR/feishu-notifier.py"
-  local message
+  local message report_ref
 
   if [[ "$SKIP_FEISHU" == "1" ]]; then
     echo "[on_complete] REDCAP_SKIP_FEISHU=1，跳过飞书通知"
@@ -135,15 +156,16 @@ feishu_notify() {
   fi
 
   local commit_log=""
-  if [[ -n "$INITIAL_HEAD" ]]; then
-    commit_log=$(git -C "$PROJECT_DIR" --no-pager log --oneline "$INITIAL_HEAD..HEAD" 2>/dev/null || echo "(无法获取)")
-  fi
+  commit_log=$(current_commit_log)
+  report_ref=$(resolve_report_reference)
 
   message="$(redcap_build_completion_message \
     "RedCap Layer B 收尾完成" \
     "$PROJECT_NAME" \
     "$commit_log" \
-    "on_ALL_DONE 主路径收尾")"
+    "on_ALL_DONE 主路径收尾" \
+    "$report_ref" \
+    "$PROJECT_DIR")"
 
   echo "[on_complete] 发送飞书通知..."
   python3 "$notifier" notify "$message" --project "$PROJECT_NAME" 2>/dev/null || {

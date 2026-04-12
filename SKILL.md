@@ -895,6 +895,10 @@ compass 指挥棒为 Cap 提供标准化调度原语，用于并行任务裂变�
 
 触发后，按 §13 执行：① 文档一致性扫描 → ② 关键决策归档 → ③ Prism redteam 对抗审查 → ④ 按 `references/task-report-template.md` 生成任务报告同步 Norven。
 
+补充红线：
+- 最终回复、stdout 收尾摘要与飞书通知不得只给“报告已归档”；若报告存在 `需你确认 / 人工验证 / 后续动作` 非空项，必须先显式顶出
+- 宿主 `plan.md` / workboard 允许镜像 session continuity 状态，但会话继承只能走 **explicit import**，不得默认自动接管最近会话
+
 ---
 
 ## 6. 全局约束

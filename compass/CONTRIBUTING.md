@@ -423,6 +423,9 @@ delegation_boundary: redcap-native-first
 - `compass/tools/redcap-host-workboard-sync.sh`
   - 仅向宿主 workboard 写 canonical pointer / confirmed hash
   - 不允许反向把需求/验收真相从宿主 workboard 回灌为 RedCap authority
+- `compass/tools/redcap-session-continuity.sh`
+  - 向宿主 workboard 追加 session mirror（`session_handle / binding_key / task metadata / continuity_state`）
+  - 只允许显式导入 compatible session 的 continuity artifacts，禁止默认自动继承最近会话
 
 > 该文件已加入 `.gitignore`——它是临时过程状态，不应进入版本控制。
 
@@ -441,6 +444,18 @@ delegation_boundary: redcap-native-first
 
 判断顺序必须是：**先看 authority / 共享必要性，再看文件名像不像“报告”或“状态”**。
 例如 `loom/test-reports/latest-e2e-report.md` 虽然名叫 latest，但它是当前基线的共享验证证据，应进 git；而 `compass/.workflow/agent-registry.yaml` 虽然是 YAML，但它记录的是本机 CLI 路径和探测时间，属于本地 runtime cache，不应进 git。
+
+### `docs / knowledge / continuity assets` 的硬边界
+
+- `compass/docs/`：冻结后的正式资产，只放 spec / research / trace / task-report 这类跨会话 evidence
+- `compass/knowledge/`：活的操作知识与 heuristics，只放 lessons / host behavior / routing knowledge
+- continuity assets：`.dev-task.md`、`explore-notes.md`、宿主 `plan.md` / workboard、imported session artifacts
+
+补充规则：
+
+1. `docs/` 与 `knowledge/` 是**平级不同职**，不得互相吞并。
+2. continuity assets 可以索引、镜像、显式导入，但**不能**直接伪装成 `docs/` evidence。
+3. `compass/docs/index.yaml` 是 docs collection 的 retention / archive 索引；新增 docs collection 前先改它，再改目录。
 
 ---
 
@@ -610,7 +625,7 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 > **两段分工**：原始输入 = 防失真底稿（永不修改，随时回溯）；已确认需求 = 执行依据（经 PM 细化，可合理演进）。
 
 **执行期真相源**：`.dev-task.md` 是 Layer B 的唯一 canonical truth。  
-宿主 `plan.md` / session workboard 只允许镜像 `task_id`、`canonical_path`、`confirmed_hash`、`active_slice` 等 pointer 信息，不得承载需求正文或验收真相。
+宿主 `plan.md` / session workboard 只允许镜像 `task_id`、`canonical_path`、`confirmed_hash`、`active_slice` 等 pointer 信息，以及 `session_handle / binding_key / continuity_state` 这类 continuity mirror，不得承载需求正文或验收真相。
 
 ### ⚠️ 关键认知修正
 
@@ -842,6 +857,8 @@ Step 4: 任务完成报告
   - 报告文件最迟需在 SessionEnd 前存在且已纳入 Git（已提交或已暂存均可被审计；建议随最终提交一起归档）
   - 若报告尚未提交，先 `git add <report_path>`，再执行 `bash compass/tools/redcap-task-report-register.sh <claude|gemini|copilot> <report_path>` 显式登记本次任务的报告路径
   - SessionEnd Hook 会审计报告文件是否存在且模板关键章节齐全
+  - 报告开头必须提供 `需你确认 / 人工验证 / 后续动作` 三段摘要；stdout 收尾摘要与飞书通知会直接抽取这三段
+  - 最终对话回复不得只说“报告已归档”；若这三段中存在非“无”的内容，必须先显式顶出，再给报告路径
 ```
 
 ### 与现有机制的关系

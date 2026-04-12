@@ -119,6 +119,7 @@ redcap/
 │   │                    hooks-*.md, model-capability-matrix.yaml, …
 │   ├── tools/        ← Layer B 脚本（飞书通知、Claude/Gemini/Kimi Hook 处理器）
 │   ├── docs/
+│   │   ├── index.yaml    ← docs collection/retention 索引
 │   │   ├── specs/       ← 已批准的 Layer B 设计快照
 │   │   ├── research/    ← 技术调研与外部能力评估
 │   │   ├── traces/      ← trace matrix / 回归审查资产
@@ -132,6 +133,14 @@ redcap/
     ├── reports/      ← 历史运行报告
     └── tools/        ← prism-dispatch-check.sh, prism-archive-check.sh
 ```
+
+---
+
+### Layer B 目录哲学速记
+
+- `compass/docs/`：**冻结后的正式资产**。放 spec、research、trace、task report 这类需要跨会话共享和长期考古的 evidence。
+- `compass/knowledge/`：**活的操作知识**。放 lessons、路由经验、宿主可靠性、调度 heuristics。
+- continuity assets（如 `.dev-task.md`、宿主 `plan.md`、`explore-notes.md`、导入的 session artifacts）：**连续性状态链**，用于防偏航、防上下文稀释与显式继承，不替代 `docs/` 的 frozen evidence 角色。
 
 ---
 

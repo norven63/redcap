@@ -1007,6 +1007,9 @@ Copilot CLI 在项目根目录自动读取 `.github/copilot-instructions.md`。D
 | **Kimi CLI** | `--session "<str>"` | `-S <session_id>` 或 `--session` | ✅ 任意字符串 | session 在 kimi 服务端保存 |
 | **Copilot CLI** | 通过 `--output-format=json` JSONL 输出提取，写入 `.workflow/.copilot-session-id` | `--resume="$(cat .workflow/.copilot-session-id)"` | ❌（UUID 自动生成） | sessionStart Hook 不暴露 sessionId；不支持列举 sessions；不支持自定义 ID |
 
+> `session_handle` 是宿主 workboard / continuity import 中给人类看的会话别名；它不等于 CLI 原生 sessionId。
+> RedCap 记录两者的目的不同：`session_handle` 负责定位来源会话，原生 sessionId / `runtime_session_id` 负责续接与隔离。
+
 > ⚠️ **session 续接能力 ≠ Collect 追问能力**：只有当本轮运行同时满足「已落盘可复用的 session handle」+「适配层已定义补充 prompt 后继续同一 session 的命令模板」时，Prism 才能把该 backend 视为 `supports_follow_up=true`。若 CLI 理论上支持 `--resume`，但当前调用未保留 session handle，或 Dispatcher 尚无对应续接模板，必须按 backend limitation 直接记为 `absent`。
 
 ### 12.2 棱镜多轮接力流程

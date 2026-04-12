@@ -85,6 +85,23 @@ RedCap 当前把状态面划分为三类：
 
 这也是本次 docs 重整的基本原则：**不要把 process state 塞进 history 层，也不要把历史证据误删成“临时文件”。**
 
+### 2.2.2 `docs / knowledge / continuity assets` 的职责分层
+
+文件放哪一层，不取决于“看起来像不像记录”，而取决于它承担的是哪种记忆职责：
+
+| 层 | 典型载体 | 职责 | 是否可直接当作长期 evidence |
+| --- | --- | --- | --- |
+| **frozen evidence** | `compass/docs/specs/**`、`research/**`、`traces/**`、`task-reports/**` | 冻结后的设计、审计、研究与 closure 证据 | 是 |
+| **live knowledge** | `compass/knowledge/lessons.md`、`host-reliability.md`、`hooks-*.md`、模型矩阵 | 活的经验、heuristics、宿主差异与操作知识 | 只作为规则与经验，不直接替代 closure evidence |
+| **continuity assets** | `.dev-task.md`、`compass/knowledge/explore-notes.md`、宿主 `plan.md` / workboard、导入的 session artifacts | 防偏航、防上下文稀释、断点恢复、显式继承 | 否 |
+
+因此：
+
+1. `compass/docs/` 与 `compass/knowledge/` 是**平级不同职**，不是父子关系。
+2. continuity assets 不是“第三个 docs”，而是围绕 canonical truth 运行的连续性状态链。
+3. 若某类资产要从 continuity 层升级为 evidence，必须经过**显式发布**，而不是因为“写成了 markdown”就自动变成 docs。
+4. `compass/docs/index.yaml` 负责冻结 docs collection 的 retention / archive 规则，避免 docs 根目录再次回到大杂烩状态。
+
 ### 2.3 host-agent interop governance
 
 多会话隔离之后，RedCap 显式承认宿主 Agent 与 RedCap-native 机制之间存在长期张力，因此当前采用**控制面收口型治理**：
@@ -259,6 +276,16 @@ PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 
 这条边界是防 authority inversion 的第一道隔离带。
 
+但 mirror-only 不等于“只能显示 pointer”。在当前实现里，宿主 workboard 还会追加一块 **Session Mirror**：
+
+- `session_handle`
+- `runtime_session_id`
+- `session_binding_key`
+- 当前 `task_id / confirmed_hash`
+- continuity_state（`fresh-session` / `self-recorded` / `import-suggested` / `imported`）
+
+这块信息仍然只是 mirror，不会反向成为 authority；它存在的目的，是让新会话进入时能**看见**自己是否已有连续性记录、是否存在兼容历史会话，以及显式导入命令是什么。
+
 同理，宿主侧的通用 brainstorming / planning / visual skill 也只能是 **advisory overlay**：它们可以帮助拆解问题、组织设计表达，但不能重开已锁定 tranche，不能把可自治决策升级为默认 ask_user / user approval，也不能替代 RedCap-native PM Gate 的最终锁定动作。
 
 ### 4.5 书记协议（Scribe Protocol）
@@ -321,6 +348,12 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 - `redcap-layerB-session-end.sh`：成功则清 obligation；失败或缺 claim 则把缺口重新写回 pending closure
 - `redcap-layerB-session-start.sh`：记录 re-anchor 时是否仍带着未闭环义务
 
+与此同时，task report 本身不再只是“归档路径”：
+
+- 模板必须显式提供 `需你确认 / 人工验证 / 后续动作`
+- `redcap-notify-format.sh` 会从报告中抽取这三段，直接进入 stdout 收尾摘要与飞书通知
+- 这样 Norven 在不打开完整报告时，也能先看到真正需要介入或关注的点
+
 这意味着弱宿主即使没有完整 Hook，也不能再把“收尾链没发生”静默吞掉。
 
 ### 4.9 经验库机制
@@ -353,6 +386,7 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 
 | 原语 | 含义 |
 | --- | --- |
+| `session_handle` | 宿主工作区中的可读会话别名，用于在 workboard / continuity import 中定位当前宿主会话 |
 | `runtime_session_id` | 当前会话在 runtime 层的唯一标识 |
 | `capability` | 当前附着的宿主能力/上下文能力类型 |
 | `binding_key` | 宿主会话与 runtime project state 的绑定键 |
@@ -365,6 +399,28 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 - Hook 与脚本之间的状态接力
 - 运行时“谁在写这份 derived state”的可追踪性
 
+其中：
+
+- `session_handle` 解决“人类如何在 host workboard 与导入清单里识别这是哪一个会话”
+- `binding_key` 解决“恢复后的同一逻辑会话如何重新绑回原 runtime 目录”
+- `task metadata`（`task_id / top_goal / confirmed_hash`）解决“导入时如何判断两个会话是否兼容”
+- `runtime_session_id + capability + process claim` 解决“真正读写 session 私有态时，谁被允许附着到这份 runtime state”
+
+### 5.1.1 explicit import protocol
+
+RedCap 当前把“最近会话继承”落成了**显式导入协议**，而不是默认自动恢复：
+
+1. SessionStart 先同步 canonical pointer，再把 `session_handle + binding_key + task metadata` 镜像到宿主 workboard
+2. 若当前会话没有自己的 continuity record，系统只会给出 `import-suggested` 与明确的导入命令
+3. 真正导入时，`redcap-session-continuity.sh import` 只复制 continuity artifacts：
+   - `plan.md` 快照
+   - `files/`（排除二次嵌套的 imported-sessions）
+   - `checkpoints/`
+4. 源会话目录保持原样保留；目标会话把导入内容放进 `files/imported-sessions/<source_handle>/`
+5. 导入完成后，宿主 workboard 会把 continuity_state 切到 `imported`，并记录来源 session handle / source plan / import root
+
+这条协议的重点不是“方便”，而是**在不偷换 authority 的前提下，为新会话提供可见、可审计、可保留来源的 continuity bridge**。
+
 ### 5.2 safe degraded / compat bridge / legacy quarantine
 
 当 runtime claim 缺失、宿主 Hook 不完整、旧标记文件残留或兼容链尚未迁移完时，系统允许进入**safe degraded**，但不允许伪造成功。
@@ -375,6 +431,14 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 - compat bridge 保持旧路径可恢复
 - legacy hit 被显式记录
 - 旧状态文件在安全路径中 quarantine，而不是直接静默覆盖
+
+此外，当前 closure obligation 的清理不是“谁先跑到谁算数”，而是走**task-scoped lock + compare-and-swap(CAS) 风格保护**：
+
+- session-end 先获取 pending-closure lock
+- 只在 `updated_at` 仍与自己最初读取到的一致时，才允许清 obligation
+- 若另一个更新过的新会话已经改写 obligation，旧会话的清理会被拒绝
+
+所以你此前提到的“CSA 锁”，在当前架构里更准确的说法是：**CAS 风格的状态比对 + task-scoped lock**。它的目标不是做系统级互斥玩具，而是防止旧会话把新义务误删掉。
 
 这条线的目标是：**允许降级，但降级也必须可见、可回收、可审计**。
 

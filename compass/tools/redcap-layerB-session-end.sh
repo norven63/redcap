@@ -280,7 +280,8 @@ if [[ "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1
                 "redcap" \
                 "$COMMIT_LOG" \
                 "${HOST} SessionEnd 兜底收尾" \
-                "$REPORT_OUTPUT")"; then
+                "$REPORT_OUTPUT" \
+                "$REDCAP_ROOT")"; then
                 echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
                 rm -f "$ALERTED_FILE" 2>/dev/null || true
                 clear_review_artifacts

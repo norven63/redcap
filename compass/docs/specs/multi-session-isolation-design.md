@@ -1,7 +1,7 @@
 # 多会话隔离设计（Multi-Session Isolation Design）
 
 > **定位**：本设计面向 RedCap 的跨会话并发隔离问题，覆盖 Layer A、Layer B、A↔B 通信、A2A 会话续接与 Prism 并发运行。  
-> **状态**：设计已定案，待进入实现。  
+> **状态**：runtime foundation、pending closure、host workboard mirror 与 explicit import protocol 已落地；更大范围 acceptance / archive 演进持续迭代。
 > **设计策略**：方案 C —— **有截止线的兼容迁移**，不做长期双轨共存。
 
 ---
@@ -221,6 +221,34 @@ safe degraded mode 的含义：
 - 禁止：写 session-scoped marker、写 run manifest/outbox/handoff、参与 coordinator/owner 角色、once-only 通知判定、依赖 per-session 清理的逻辑、认领已有 `runtime_session_id`
 
 > 核心原则：**宁可显式降级，也不伪装成“已经隔离”。**
+
+### 6.4 宿主 continuity mirror 与 explicit import
+
+在当前实现里，宿主 `plan.md` / workboard 不再只镜像 canonical pointer，还会追加一块 **Session Mirror**：
+
+- `session_handle`
+- `runtime_session_id`
+- `session_binding_key`
+- `task_id / confirmed_hash`
+- `continuity_state`
+
+其中 `continuity_state` 只允许取以下几类值：
+
+| 状态 | 含义 |
+|---|---|
+| `fresh-session` | 当前会话没有自身 continuity record，也没找到兼容来源 |
+| `self-recorded` | 当前会话已有自己的 continuity record |
+| `import-suggested` | 当前会话没有自身记录，但找到了 compatible source session |
+| `imported` | 已通过 explicit import 导入来源会话的 continuity artifacts |
+
+对应协议：
+
+1. **只建议，不自动继承**：系统可以给出 compatible source session 与导入命令，但不会默认自动接管最近会话。
+2. **导入只复制 continuity artifacts**：`plan.md` 快照、`files/`、`checkpoints/` 进入目标会话的 `files/imported-sessions/<source_handle>/`
+3. **源会话保持原样保留**：显式导入是 copy，不是 move，不会破坏原会话目录
+4. **导入资产带来源 metadata**：必须记录 `source_session_handle / source_plan / source_task_id / source_confirmed_hash / imported_at`
+
+> 这里的关键不是“省事续接”，而是让 continuity bridge 变成**显式、可审计、可保留来源**的协议动作。
 
 ---
 

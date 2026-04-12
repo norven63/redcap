@@ -28,6 +28,7 @@ fi
 REPORT_GLOB='compass/docs/task-reports/*.md'
 REPORT_MARKER=""
 PENDING_CLOSURE_STATE=""
+TMP_CHANGED_REPORT_LIST=$(mktemp)
 
 if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
     if redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY"; then
@@ -49,12 +50,14 @@ fi
 
 TMP_REPORT_LIST=$(mktemp)
 
-git -C "$REDCAP_ROOT" --no-pager diff --name-only "$BASELINE..$CURRENT_HEAD" -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
+git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only "$BASELINE..$CURRENT_HEAD" -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
+git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only "$BASELINE..$CURRENT_HEAD" -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
 
 if [[ -n "$REPORT_MARKER" && -f "$REPORT_MARKER" ]]; then
     MARKED_REPORT=$(cat "$REPORT_MARKER" 2>/dev/null)
     if [[ -n "$MARKED_REPORT" ]]; then
-        git -C "$REDCAP_ROOT" --no-pager diff --cached --name-only -- "$MARKED_REPORT" 2>/dev/null >> "$TMP_REPORT_LIST" || true
+        git -C "$REDCAP_ROOT" --no-pager diff --cached --diff-filter=ACMR --name-only -- "$MARKED_REPORT" 2>/dev/null >> "$TMP_REPORT_LIST" || true
+        git -C "$REDCAP_ROOT" --no-pager diff --cached --diff-filter=ACMR --name-only -- "$MARKED_REPORT" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
     fi
 fi
 
@@ -72,14 +75,21 @@ while IFS= read -r REPORT_FILE; do
     fi
 done < <(sort -u "$TMP_REPORT_LIST" | sed '/^[[:space:]]*$/d')
 
-rm -f "$TMP_REPORT_LIST"
+CHANGED_REPORTS=()
+while IFS= read -r REPORT_FILE; do
+    if [[ -n "$REPORT_FILE" ]]; then
+        CHANGED_REPORTS+=("$REPORT_FILE")
+    fi
+done < <(sort -u "$TMP_CHANGED_REPORT_LIST" | sed '/^[[:space:]]*$/d')
+
+rm -f "$TMP_REPORT_LIST" "$TMP_CHANGED_REPORT_LIST"
 
 if [[ ${#REPORT_FILES[@]} -eq 0 ]]; then
     echo "[redcap-task-report-check] missing task report under compass/docs/task-reports/" >&2
     exit 1
 fi
 
-REQUIRED_SECTIONS=(
+REQUIRED_BASE_SECTIONS=(
     "# 任务完成报告："
     "## 一、需求背景"
     "## 二、方案讨论"
@@ -91,17 +101,37 @@ REQUIRED_SECTIONS=(
     "## 八、附录"
 )
 
+REQUIRED_SUMMARY_SECTIONS=(
+    "## 零、收尾摘要"
+    "### 0.1 需你确认"
+    "### 0.2 人工验证"
+    "### 0.3 后续动作"
+)
+
 VALID_REPORTS=()
+INVALID_CHANGED_REPORTS=()
 
 for REL_PATH in "${REPORT_FILES[@]}"; do
     ABS_PATH="$REDCAP_ROOT/$REL_PATH"
+    REQUIRE_SUMMARY=0
+
+    for CHANGED in "${CHANGED_REPORTS[@]}"; do
+        if [[ "$CHANGED" == "$REL_PATH" ]]; then
+            REQUIRE_SUMMARY=1
+            break
+        fi
+    done
 
     if [[ ! -f "$ABS_PATH" ]]; then
+        if [[ "$REQUIRE_SUMMARY" -eq 1 ]]; then
+            INVALID_CHANGED_REPORTS+=("$REL_PATH")
+            echo "[redcap-task-report-check] changed report missing on disk: $REL_PATH" >&2
+        fi
         continue
     fi
 
     MISSING_SECTION=0
-    for REQUIRED in "${REQUIRED_SECTIONS[@]}"; do
+    for REQUIRED in "${REQUIRED_BASE_SECTIONS[@]}"; do
         if ! grep -Fq "$REQUIRED" "$ABS_PATH"; then
             MISSING_SECTION=1
             echo "[redcap-task-report-check] incomplete template: $REL_PATH (missing: $REQUIRED)" >&2
@@ -109,10 +139,28 @@ for REL_PATH in "${REPORT_FILES[@]}"; do
         fi
     done
 
+    if [[ "$MISSING_SECTION" -eq 0 && "$REQUIRE_SUMMARY" -eq 1 ]]; then
+        for REQUIRED in "${REQUIRED_SUMMARY_SECTIONS[@]}"; do
+            if ! grep -Fq "$REQUIRED" "$ABS_PATH"; then
+                MISSING_SECTION=1
+                echo "[redcap-task-report-check] incomplete summary template: $REL_PATH (missing: $REQUIRED)" >&2
+                break
+            fi
+        done
+    fi
+
     if [[ "$MISSING_SECTION" -eq 0 ]]; then
         VALID_REPORTS+=("$REL_PATH")
+    elif [[ "$REQUIRE_SUMMARY" -eq 1 ]]; then
+        INVALID_CHANGED_REPORTS+=("$REL_PATH")
     fi
 done
+
+if [[ ${#INVALID_CHANGED_REPORTS[@]} -gt 0 ]]; then
+    echo "[redcap-task-report-check] changed reports failed template audit:" >&2
+    printf '  - %s\n' "${INVALID_CHANGED_REPORTS[@]}" | sort -u >&2
+    exit 1
+fi
 
 if [[ ${#VALID_REPORTS[@]} -eq 0 ]]; then
     echo "[redcap-task-report-check] no template-complete task report found" >&2
