@@ -457,7 +457,7 @@ governance_debts_addressed: []
   - 基于 `references/host-session-capability-matrix.json` 统一判定 Layer B `full / degraded / unsupported` 隔离模式
   - 只有 gate 明确给出 `full` 与受允 recovery path 时，`redcap-layerB-session-start.sh` 才能 attach/create runtime session
 - `compass/tools/redcap-session-continuity.sh`
-  - 先把 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，再向宿主 workboard 追加 session mirror（`session_handle / binding_key / task metadata / isolation_mode / continuity_state`）
+  - 先把 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，再向宿主 workboard 追加 session mirror（`session_handle / binding_key / task metadata / isolation_mode / resume_gate_reason / resume_gate_profile / resume_gate_evidence / continuity_state`）
   - 只允许基于 repo-local manifest 给出 compatible source suggestion；宿主 `plan.md` 与 `files/imported-sessions/*/metadata.json` 不得反向充当 authority
   - 显式导入时必须同步写 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
   - 缺少 `runtime_session_id` 时只能输出 `continuity_authority=degraded-no-runtime-manifest` 的 no-runtime mirror；此时 `isolation_mode` 可由 resume gate 判成 `degraded` 或 `unsupported`，但仍不得伪造 `self-recorded / import-suggested / imported`

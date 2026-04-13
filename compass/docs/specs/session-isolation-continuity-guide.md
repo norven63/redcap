@@ -199,6 +199,7 @@
 - 进入 `.gitignore`
 - 是宿主 Session Mirror 的上游真相
 - `redcap-session-resume-gate.sh` 会在 SessionStart 先按 `references/host-session-capability-matrix.json` 给出 `isolation_mode`
+- Session Mirror / manifest 还会保留 `resume_gate_reason / resume_gate_profile / resume_gate_evidence`，用于解释这次宿主判定为什么是 `full / degraded / unsupported`
 
 ### 3. runtime binding / session identity
 
@@ -215,6 +216,7 @@
 
 - `continuity_state`：当前会话有没有自己的记录、有没有导入建议、是否已经 imported
 - `isolation_mode`：当前宿主这次启动到底是 `full`、`degraded` 还是 `unsupported`
+- `resume_gate_reason / profile / evidence`：当前这个 mode 是由哪条宿主能力规则、哪类证据、哪份 matrix profile 推出来的
 
 这两个字段都要出现在 Session Mirror / manifest 里，但**不能互相冒充**。
 
