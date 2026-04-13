@@ -192,6 +192,15 @@ if [[ -x "$DRIFT_CHECK" ]]; then
     fi
 fi
 
+ARTIFACT_LIFECYCLE_CHECK="$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh"
+ARTIFACT_OUTPUT=""
+ARTIFACT_STATUS=0
+if [[ -x "$ARTIFACT_LIFECYCLE_CHECK" ]]; then
+    if ARTIFACT_OUTPUT=$(bash "$ARTIFACT_LIFECYCLE_CHECK" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" redcap-self 2>&1); then
+        ARTIFACT_STATUS=1
+    fi
+fi
+
 REPORT_CHECK_SCRIPT="$SCRIPT_DIR/redcap-task-report-check.sh"
 REPORT_OUTPUT=""
 REPORT_STATUS=0
@@ -251,51 +260,124 @@ if [[ "$REVIEW_REQUIRED" -eq 0 || "$REVIEW_STATUS" == "PASS" ]]; then
     REVIEW_PASSED=1
 fi
 
-if [[ "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1 && "$REVIEW_PASSED" -eq 1 && "$PENDING_CLOSURE_HEAD_MISMATCH" -eq 0 ]]; then
+if [[ "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1 && "$ARTIFACT_STATUS" -eq 1 && "$REVIEW_PASSED" -eq 1 && "$PENDING_CLOSURE_HEAD_MISMATCH" -eq 0 ]]; then
     PENDING_CLEAR_STATUS=1
     CURRENT_PENDING_EXISTS=0
-    if ! redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
-        PENDING_CLEAR_STATUS=0
+    if [[ "$PENDING_CLOSURE_EXISTS" == "1" ]]; then
+        CURRENT_PENDING_EXISTS=1
+        if ! redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+            PENDING_CLEAR_STATUS=0
+        else
+            LOCKED_PENDING_STATE=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+            if [[ -z "$LOCKED_PENDING_STATE" || ! -f "$LOCKED_PENDING_STATE" ]]; then
+                PENDING_CLEAR_STATUS=0
+            else
+                LOCKED_PENDING_UPDATED_AT=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "updated_at" 2>/dev/null || true)
+                LOCKED_PENDING_HOST=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "host" 2>/dev/null || true)
+                LOCKED_PENDING_TRIGGER=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "trigger" 2>/dev/null || true)
+                LOCKED_PENDING_BASELINE=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "baseline_head" 2>/dev/null || true)
+                LOCKED_PENDING_AUDITED=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "audited_head" 2>/dev/null || true)
+                LOCKED_PENDING_ARTIFACT=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "artifact_path" 2>/dev/null || true)
+                LOCKED_PENDING_TASK_ID=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "task_id" 2>/dev/null || true)
+                LOCKED_PENDING_CONFIRMED_HASH=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "confirmed_hash" 2>/dev/null || true)
+                LOCKED_PENDING_ACTIVE_SLICE=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "active_slice" 2>/dev/null || true)
+                if [[ -z "$PENDING_UPDATED_AT" || "$LOCKED_PENDING_UPDATED_AT" != "$PENDING_UPDATED_AT" ]]; then
+                    PENDING_CLEAR_STATUS=0
+                elif send_notification "$(redcap_build_completion_message \
+                    "RedCap Layer B 收尾完成" \
+                    "redcap" \
+                    "$COMMIT_LOG" \
+                    "${HOST} SessionEnd 兜底收尾" \
+                    "$REPORT_OUTPUT" \
+                    "$REDCAP_ROOT")"; then
+                    if ! rm -f "$LOCKED_PENDING_STATE" 2>/dev/null; then
+                        PENDING_CLEAR_STATUS=0
+                        redcap_runtime_record_degraded_mode "$REDCAP_ROOT" "session-end-clear-after-notify-failed" "host=$HOST current_head=$CURRENT_HEAD" || true
+                    else
+                        redcap_interop_record_closure_event \
+                            "$REDCAP_ROOT" \
+                            "pending-closure-cleared" \
+                            "task=$(basename "$LOCKED_PENDING_STATE") outcome=session-end-cleared detail=host=$HOST current_head=$CURRENT_HEAD" \
+                            >/dev/null 2>&1 || true
+                        if ! redcap_interop_append_closure_ledger_identity \
+                            "$REDCAP_ROOT" \
+                            "$LOCKED_PENDING_TASK_ID" \
+                            "$LOCKED_PENDING_CONFIRMED_HASH" \
+                            "$LOCKED_PENDING_ACTIVE_SLICE" \
+                            "obligation" \
+                            "cleared" \
+                            "outcome=session-end-cleared detail=host=$HOST current_head=$CURRENT_HEAD" \
+                            "$LOCKED_PENDING_HOST" \
+                            "$LOCKED_PENDING_TRIGGER" \
+                            "$LOCKED_PENDING_BASELINE" \
+                            "$LOCKED_PENDING_AUDITED" \
+                            "$LOCKED_PENDING_ARTIFACT" \
+                            >/dev/null 2>&1; then
+                            if ! redcap_interop_append_closure_ledger \
+                                "$REDCAP_ROOT" \
+                                "$REDCAP_ROOT/.dev-task.md" \
+                                "obligation" \
+                                "cleared" \
+                                "outcome=session-end-cleared detail=host=$HOST current_head=$CURRENT_HEAD" \
+                                "$LOCKED_PENDING_HOST" \
+                                "$LOCKED_PENDING_TRIGGER" \
+                                "$LOCKED_PENDING_BASELINE" \
+                                "$LOCKED_PENDING_AUDITED" \
+                                "$LOCKED_PENDING_ARTIFACT" \
+                                >/dev/null 2>&1; then
+                                redcap_runtime_record_degraded_mode \
+                                    "$REDCAP_ROOT" \
+                                    "session-end-obligation-cleared-ledger-failed" \
+                                    "host=$HOST current_head=$CURRENT_HEAD task_id=$LOCKED_PENDING_TASK_ID" \
+                                    >/dev/null 2>&1 || true
+                            fi
+                        fi
+                        echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
+                        rm -f "$ALERTED_FILE" 2>/dev/null || true
+                        clear_review_artifacts
+                    fi
+                else
+                    NOTIFY_STATUS=0
+                    append_required_redline "notify"
+                fi
+            fi
+
+            redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1 || true
+        fi
     else
-        LOCKED_PENDING_STATE=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
-        if [[ -n "$LOCKED_PENDING_STATE" && -f "$LOCKED_PENDING_STATE" ]]; then
-            CURRENT_PENDING_EXISTS=1
-            LOCKED_PENDING_UPDATED_AT=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "updated_at" 2>/dev/null || true)
-            if [[ "$PENDING_CLOSURE_EXISTS" != "1" || -z "$PENDING_UPDATED_AT" || "$LOCKED_PENDING_UPDATED_AT" != "$PENDING_UPDATED_AT" ]]; then
-                PENDING_CLEAR_STATUS=0
-            elif ! rm -f "$LOCKED_PENDING_STATE" 2>/dev/null; then
-                PENDING_CLEAR_STATUS=0
-            else
-                redcap_interop_record_closure_event \
-                    "$REDCAP_ROOT" \
-                    "pending-closure-cleared" \
-                    "task=$(basename "$LOCKED_PENDING_STATE") outcome=session-end-cleared detail=host=$HOST current_head=$CURRENT_HEAD" \
-                    >/dev/null 2>&1 || true
-            fi
+        if send_notification "$(redcap_build_completion_message \
+            "RedCap Layer B 收尾完成" \
+            "redcap" \
+            "$COMMIT_LOG" \
+            "${HOST} SessionEnd 兜底收尾" \
+            "$REPORT_OUTPUT" \
+            "$REDCAP_ROOT")"; then
+            echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
+            rm -f "$ALERTED_FILE" 2>/dev/null || true
+            clear_review_artifacts
+        else
+            NOTIFY_STATUS=0
+            append_required_redline "notify"
         fi
-
-        if [[ "$PENDING_CLEAR_STATUS" -eq 1 ]]; then
-            if send_notification "$(redcap_build_completion_message \
-                "RedCap Layer B 收尾完成" \
-                "redcap" \
-                "$COMMIT_LOG" \
-                "${HOST} SessionEnd 兜底收尾" \
-                "$REPORT_OUTPUT" \
-                "$REDCAP_ROOT")"; then
-                echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
-                rm -f "$ALERTED_FILE" 2>/dev/null || true
-                clear_review_artifacts
-            else
-                NOTIFY_STATUS=0
-                append_required_redline "notify"
-            fi
-        fi
-
-        redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1 || true
     fi
 
-    if [[ "$PENDING_CLEAR_STATUS" -ne 1 ]]; then
+    if [[ "$CURRENT_PENDING_EXISTS" -eq 1 && "$PENDING_CLEAR_STATUS" -ne 1 ]]; then
         append_required_redline "pending-closure"
+    fi
+
+    if [[ -z "$REQUIRED_REDLINES" ]]; then
+        redcap_interop_append_closure_ledger \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "session-end" \
+            "pass" \
+            "review_status=${REVIEW_STATUS:-none} pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
+            "$HOST" \
+            "session-end" \
+            "$BASELINE" \
+            "$CURRENT_HEAD" \
+            "$REPORT_OUTPUT" \
+            >/dev/null 2>&1 || true
     fi
 else
     if [[ "$REVIEW_REQUIRED" -eq 1 && "$REVIEW_STATUS" != "PASS" ]]; then
@@ -306,6 +388,9 @@ else
     fi
     if [[ "$DRIFT_STATUS" -ne 1 ]]; then
         append_required_redline "drift"
+    fi
+    if [[ "$ARTIFACT_STATUS" -ne 1 ]]; then
+        append_required_redline "artifact-lifecycle"
     fi
     if [[ "$REPORT_STATUS" -ne 1 ]]; then
         append_required_redline "task-report"
@@ -339,6 +424,9 @@ else
         if [[ "$DRIFT_STATUS" -ne 1 ]]; then
             ALERT_BODY="${ALERT_BODY}\n\n问题：active_slice / scope drift 审计失败\n\n输出:\n$DRIFT_OUTPUT"
         fi
+        if [[ "$ARTIFACT_STATUS" -ne 1 ]]; then
+            ALERT_BODY="${ALERT_BODY}\n\n问题：artifact lifecycle 审计失败\n\n输出:\n$ARTIFACT_OUTPUT"
+        fi
         if [[ "$REPORT_STATUS" -ne 1 ]]; then
             ALERT_BODY="${ALERT_BODY}\n\n问题：缺少按模板归档的任务完成报告\n\n审计输出:\n$REPORT_OUTPUT"
         fi
@@ -359,10 +447,22 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
         "$HOST" \
         "layerB-session-end-audit-gap" \
         "$REQUIRED_REDLINES" \
-        "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
+        "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
         "" \
         "$BASELINE" \
         "$CURRENT_HEAD" \
+        >/dev/null 2>&1 || true
+    redcap_interop_append_closure_ledger \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "session-end" \
+        "blocked" \
+        "required_redlines=$REQUIRED_REDLINES review_status=${REVIEW_STATUS:-none} pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
+        "$HOST" \
+        "session-end" \
+        "$BASELINE" \
+        "$CURRENT_HEAD" \
+        "$REPORT_OUTPUT" \
         >/dev/null 2>&1 || true
 fi
 

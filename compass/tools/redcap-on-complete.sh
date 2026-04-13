@@ -29,6 +29,7 @@ SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
+source "$SCRIPT_DIR/redcap-interop-governance.sh"
 source "$SCRIPT_DIR/redcap-notify-format.sh"
 WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
 PROJECT_NAME=$(redcap_runtime_project_name "$PROJECT_DIR" "$PROJECT_NAME_ARG")
@@ -88,6 +89,128 @@ verify_artifact_lifecycle() {
 
   if ! bash "$ARTIFACT_LIFECYCLE_CHECK" "$PROJECT_DIR" "$INITIAL_HEAD" "$current_head" redcap-self; then
     echo "[on_complete] artifact lifecycle 检查失败，拒绝标记完成" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+self_dev_closure_enabled() {
+  [[ "$PROJECT_DIR" == "$REDCAP_ROOT" && -f "$PROJECT_DIR/.dev-task.md" ]]
+}
+
+current_project_head() {
+  git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || true
+}
+
+record_closure_phase() {
+  local phase="$1"
+  local status="$2"
+  local detail="${3:-}"
+  local artifact_path="${4:-}"
+  local current_head
+
+  if ! self_dev_closure_enabled; then
+    return 0
+  fi
+
+  current_head=$(current_project_head)
+  if ! redcap_interop_append_closure_ledger \
+    "$PROJECT_DIR" \
+    "$PROJECT_DIR/.dev-task.md" \
+    "$phase" \
+    "$status" \
+    "$detail" \
+    "redcap" \
+    "on-complete" \
+    "$INITIAL_HEAD" \
+    "$current_head" \
+    "$artifact_path" \
+    >/dev/null 2>&1; then
+    echo "[on_complete] failed to append closure ledger (phase=$phase status=$status)" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+write_pending_closure_redline() {
+  local redlines="$1"
+  local detail="${2:-}"
+  local artifact_path="${3:-}"
+  local current_head
+
+  if ! self_dev_closure_enabled; then
+    return 0
+  fi
+
+  current_head=$(current_project_head)
+  if ! redcap_interop_write_pending_closure \
+    "$PROJECT_DIR" \
+    "$PROJECT_DIR/.dev-task.md" \
+    "redcap" \
+    "on-complete" \
+    "$redlines" \
+    "$detail" \
+    "$artifact_path" \
+    "$INITIAL_HEAD" \
+    "$current_head" \
+    >/dev/null 2>&1; then
+    echo "[on_complete] failed to persist pending closure redline: $redlines" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+persist_failure_evidence() {
+  local phase="$1"
+  local redlines="$2"
+  local detail="${3:-}"
+  local artifact_path="${4:-}"
+  local persist_status=0
+
+  record_closure_phase "$phase" "fail" "$detail" "$artifact_path" || persist_status=1
+  if [[ -n "$redlines" ]]; then
+    write_pending_closure_redline "$redlines" "$detail" "$artifact_path" || persist_status=1
+  fi
+
+  return "$persist_status"
+}
+
+record_evidence_system_failure() {
+  local phase="$1"
+  local detail="${2:-}"
+
+  redcap_runtime_record_degraded_mode \
+    "$PROJECT_DIR" \
+    "closure-evidence-write-failure" \
+    "phase=$phase detail=$detail" \
+    >/dev/null 2>&1 || true
+  echo "[on_complete] FATAL: cannot persist closure evidence for $phase" >&2
+}
+
+verify_task_report_closure() {
+  local current_head report_output=""
+
+  if ! self_dev_closure_enabled; then
+    return 0
+  fi
+
+  current_head=$(current_project_head)
+  if [[ -z "$current_head" ]]; then
+    echo "[on_complete] 无法解析当前 HEAD，拒绝执行 task report 校验" >&2
+    return 1
+  fi
+
+  if [[ ! -x "$TASK_REPORT_CHECK" ]]; then
+    echo "[on_complete] task report 检查脚本不存在，拒绝标记完成" >&2
+    return 1
+  fi
+
+  if ! report_output=$("$TASK_REPORT_CHECK" "$PROJECT_DIR" "$INITIAL_HEAD" "$current_head" 2>&1); then
+    echo "$report_output" >&2
+    echo "[on_complete] task report 审计失败，拒绝标记完成" >&2
     return 1
   fi
 
@@ -205,16 +328,37 @@ feishu_notify() {
 # ── 执行 ─────────────────────────────────────────────────
 
 echo "[on_complete] 开始执行 on_ALL_DONE 收尾动作..."
+record_closure_phase "on-complete" "started" "project=$PROJECT_NAME" || exit 1
 
 if ! verify_commit_closure; then
+  if ! record_closure_phase "commit-proof" "fail" "commit proof unmet"; then
+    record_evidence_system_failure "commit-proof" "commit proof unmet"
+    exit 2
+  fi
   echo "[on_complete] ⚠ commit proof 未满足，保留重试机会" >&2
   exit 1
 fi
+record_closure_phase "commit-proof" "pass" "commit proof verified" || exit 1
+
+if ! verify_task_report_closure; then
+  if ! persist_failure_evidence "task-report" "task-report" "task-report-check failed during on-complete" "$(resolve_report_reference)"; then
+    record_evidence_system_failure "task-report" "task-report-check failed during on-complete"
+    exit 2
+  fi
+  echo "[on_complete] ⚠ task report proof 未满足，保留重试机会" >&2
+  exit 1
+fi
+record_closure_phase "task-report" "pass" "task report audit passed" "$(resolve_report_reference)" || exit 1
 
 if ! verify_artifact_lifecycle; then
+  if ! persist_failure_evidence "artifact-lifecycle" "artifact-lifecycle" "artifact-lifecycle-check failed during on-complete"; then
+    record_evidence_system_failure "artifact-lifecycle" "artifact-lifecycle-check failed during on-complete"
+    exit 2
+  fi
   echo "[on_complete] ⚠ artifact lifecycle proof 未满足，保留重试机会" >&2
   exit 1
 fi
+record_closure_phase "artifact-lifecycle" "pass" "artifact lifecycle audit passed" || exit 1
 
 ON_COMPLETE_STATUS=0
 
@@ -224,9 +368,30 @@ cleanup_workflow  || {
 }
 output_summary    || echo "[on_complete] ⚠ 摘要输出出错，继续执行" >&2
 feishu_notify     || {
+  if ! persist_failure_evidence "notify" "notify" "feishu notify failed during on-complete" "$(resolve_report_reference)"; then
+    record_evidence_system_failure "notify" "feishu notify failed during on-complete"
+    ON_COMPLETE_STATUS=2
+  else
+    ON_COMPLETE_STATUS=1
+  fi
   echo "[on_complete] ⚠ 飞书通知未完成，保留重试机会" >&2
-  ON_COMPLETE_STATUS=1
 }
+
+if [[ "$ON_COMPLETE_STATUS" -eq 0 ]]; then
+  record_closure_phase "notify" "pass" "on-complete notify succeeded" "$(resolve_report_reference)" || {
+    record_evidence_system_failure "notify-pass" "on-complete notify succeeded but pass evidence failed"
+    ON_COMPLETE_STATUS=2
+  }
+  record_closure_phase "on-complete" "pass" "closure main path finished" "$(resolve_report_reference)" || {
+    record_evidence_system_failure "on-complete-pass" "closure main path finished but pass evidence failed"
+    ON_COMPLETE_STATUS=2
+  }
+else
+  record_closure_phase "on-complete" "incomplete" "main path ended with retry-needed status" "$(resolve_report_reference)" || {
+    record_evidence_system_failure "on-complete-incomplete" "retry-needed status but incomplete evidence failed"
+    ON_COMPLETE_STATUS=2
+  }
+fi
 
 echo "[on_complete] on_ALL_DONE 收尾动作全部完成"
 exit "$ON_COMPLETE_STATUS"

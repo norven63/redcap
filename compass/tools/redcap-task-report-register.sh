@@ -84,6 +84,19 @@ if redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null; then
         echo "[redcap-task-report-register] failed to persist current report marker: $REL_PATH" >&2
         exit 1
     fi
+
+    redcap_interop_append_closure_ledger \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "task-report-register" \
+        "pass" \
+        "report-registered" \
+        "$HOST" \
+        "task-report-register" \
+        "$REGISTER_BASELINE" \
+        "$REGISTER_HEAD" \
+        "$REL_PATH" \
+        >/dev/null 2>&1 || true
 else
     redcap_runtime_record_degraded_mode "$REDCAP_ROOT" "layerB-report-register-missing-claim" "host=$HOST" || true
     echo "[redcap-task-report-register] no runtime process claim available for host=$HOST" >&2

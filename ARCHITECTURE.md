@@ -67,7 +67,7 @@ RedCap 当前把状态面划分为三类：
 | `loom/**/state.yaml` | canonical truth | Loom | Layer A 流程状态与回退依据 | 只能由 Dispatcher / Layer A 工具推进 |
 | `.dev-task.md` | canonical truth | Compass | Layer B 需求、slice、边界、原始输入、已确认需求 | 宿主面板不得替代它 |
 | `prism` run state | run-scoped truth | Prism | 每次 Prism 运行的 run_id、registry、collect、resolve/archive 记录 | 以 run 为隔离边界 |
-| runtime project state | derived state | runtime tools | session/capability/binding/process claim、compat、audit、pending closure | 不能反向篡改 canonical truth |
+| runtime project state | derived state | runtime tools | session/capability/binding/process claim、compat、audit、pending closure、closure-ledger | 不能反向篡改 canonical truth |
 | 宿主 `plan.md` / workboard | mirror state | host surface | 展示当前 pointer/hash，辅助长任务导航 | **mirror-only** |
 | 宿主通用 skill（brainstorming / planning / visual） | overlay protocol | host skill | 提供分解、表达、展示与设计建议 | **advisory-only**，不得覆盖 `.dev-task.md`、PM Gate、自主执行授权，也不得默认升级成人工审批门 |
 | task report / acceptance report | closure evidence | reports | 证明“某个闭环真的发生了” | 缺失时不得伪装成完成 |
@@ -343,11 +343,13 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 4. 飞书通知 / 告警
 5. session-end cleanup
 
-本轮治理之后，这条链新增了显式的 **pending closure obligation**：
+本轮治理之后，这条链新增了显式的 **pending closure obligation** 与 **closure ledger**：
 
-- `redcap-task-report-register.sh`：报告一旦登记，即创建 pending closure
+- `redcap-interop-governance.sh`：统一维护 `audit/`、`pending-closure/`、`closure-ledger/` 三类治理状态；其中 `closure-ledger/` 是 append-only 事务日志，`pending-closure/` 是当前尚未清偿的义务
+- `redcap-task-report-register.sh`：报告在 **process claim 可用且登记成功** 时创建 pending closure；若 claim 缺失则记录 degraded mode 并拒绝注册
 - `redcap-task-report-check.sh`：可从 pending closure 回读 `artifact_path`，支持无新 diff 的补偿式 reconcile
-- `redcap-layerB-session-end.sh`：成功则清 obligation；失败或缺 claim 则把缺口重新写回 pending closure
+- `redcap-on-complete.sh`：对 RedCap 自身 on-complete fail-closed 校验 commit proof / task report / artifact lifecycle，并把关键阶段追加到 closure ledger
+- `redcap-layerB-session-end.sh`：成功则清 obligation 并记账；失败或缺 claim 则把缺口重新写回 pending closure，并显式记录 blocked redlines
 - `redcap-layerB-session-start.sh`：记录 re-anchor 时是否仍带着未闭环义务
 
 与此同时，task report 本身不再只是“归档路径”：

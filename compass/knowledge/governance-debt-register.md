@@ -15,10 +15,10 @@
 
 ### GD-001：Closure authority ledger 与 obligation lifecycle
 - **design_status**: `design-complete`
-- **implementation_status**: `pending`
+- **implementation_status**: `in-progress`
 - **owner_slice**: `Authority / Closure 收口`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §三 A1
-- **gap**: closure transaction ledger、pending closure obligation lifecycle、task report mandatory audit 仍未统一到单一 authority chain
+- **gap**: `redcap-interop-governance.sh` 已新增 `closure-ledger/` 事务日志，并接入 pending closure、task report register、on-complete、session-end；但 stop-review / 其余 closure validators 仍未全部汇入同一 authority chain，且尚未经过本 tranche 的 reviewer/challenger/auditor 复审
 
 ### GD-002：Validator chain hardening
 - **design_status**: `design-complete`

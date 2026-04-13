@@ -35,6 +35,135 @@ redcap_interop_pending_closure_dir_for_root() {
     printf '%s\n' "$(redcap_interop_governance_dir_for_root "$project_root")/pending-closure"
 }
 
+redcap_interop_closure_ledger_dir_for_root() {
+    local project_root="$1"
+
+    printf '%s\n' "$(redcap_interop_governance_dir_for_root "$project_root")/closure-ledger"
+}
+
+redcap_interop_closure_ledger_file_for_identity() {
+    local project_root="$1"
+    local task_id="$2"
+    local confirmed_hash="$3"
+
+    if ! redcap_dev_task_validate_path_component "$task_id"; then
+        return 1
+    fi
+
+    if [[ -z "$confirmed_hash" ]]; then
+        return 1
+    fi
+
+    printf '%s/%s-%s.log\n' "$(redcap_interop_closure_ledger_dir_for_root "$project_root")" "$task_id" "$confirmed_hash"
+}
+
+redcap_interop_closure_ledger_file() {
+    local project_root="$1"
+    local task_file="${2:-}"
+    local task_id confirmed_hash
+
+    task_file=$(redcap_dev_task_resolve_file "$task_file")
+    task_id=$(redcap_dev_task_extract_kv "$task_file" "task_id" 2>/dev/null || true)
+    confirmed_hash=$(redcap_dev_task_confirmed_hash "$task_file" 2>/dev/null || true)
+
+    redcap_interop_closure_ledger_file_for_identity "$project_root" "$task_id" "$confirmed_hash"
+}
+
+redcap_interop_append_closure_ledger_identity() {
+    local project_root="$1"
+    local task_id="$2"
+    local confirmed_hash="$3"
+    local active_slice="$4"
+    local phase="$5"
+    local status="$6"
+    local detail="${7:-}"
+    local host="${8:-}"
+    local trigger="${9:-}"
+    local baseline_head="${10:-}"
+    local current_head="${11:-}"
+    local artifact_path="${12:-}"
+    local ledger_file ledger_dir now
+
+    if [[ -z "$project_root" || -z "$task_id" || -z "$confirmed_hash" || -z "$phase" || -z "$status" ]]; then
+        return 1
+    fi
+
+    project_root=$(redcap_runtime_project_root "$project_root")
+    ledger_file=$(redcap_interop_closure_ledger_file_for_identity "$project_root" "$task_id" "$confirmed_hash") || return 1
+    ledger_dir=$(dirname "$ledger_file")
+    now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+    mkdir -p "$ledger_dir" || return 1
+
+    detail=$(printf '%s' "$detail" | tr '\n' ' ')
+    host=$(printf '%s' "$host" | tr '\n' ' ')
+    trigger=$(printf '%s' "$trigger" | tr '\n' ' ')
+    baseline_head=$(printf '%s' "$baseline_head" | tr '\n' ' ')
+    current_head=$(printf '%s' "$current_head" | tr '\n' ' ')
+    artifact_path=$(printf '%s' "$artifact_path" | tr '\n' ' ')
+
+    if [[ ! -f "$ledger_file" ]]; then
+        cat > "$ledger_file" <<EOF
+# RedCap Closure Ledger
+task_id: $task_id
+confirmed_hash: $confirmed_hash
+EOF
+    fi
+
+    cat >> "$ledger_file" <<EOF
+---
+timestamp: $now
+phase: $phase
+status: $status
+task_id: $task_id
+confirmed_hash: $confirmed_hash
+active_slice: $active_slice
+host: $host
+trigger: $trigger
+baseline_head: $baseline_head
+current_head: $current_head
+artifact_path: $artifact_path
+detail: $detail
+EOF
+}
+
+redcap_interop_append_closure_ledger() {
+    local project_root="$1"
+    local task_file="$2"
+    local phase="$3"
+    local status="$4"
+    local detail="${5:-}"
+    local host="${6:-}"
+    local trigger="${7:-}"
+    local baseline_head="${8:-}"
+    local current_head="${9:-}"
+    local artifact_path="${10:-}"
+    local task_id confirmed_hash active_slice
+
+    if [[ -z "$project_root" || -z "$task_file" || -z "$phase" || -z "$status" ]]; then
+        return 1
+    fi
+
+    task_file=$(redcap_dev_task_resolve_file "$task_file")
+    task_id=$(redcap_dev_task_extract_kv "$task_file" "task_id" 2>/dev/null || true)
+    confirmed_hash=$(redcap_dev_task_confirmed_hash "$task_file" 2>/dev/null || true)
+    active_slice=$(redcap_dev_task_extract_kv "$task_file" "active_slice" 2>/dev/null || true)
+
+    redcap_interop_append_closure_ledger_identity \
+        "$project_root" \
+        "$task_id" \
+        "$confirmed_hash" \
+        "$active_slice" \
+        "$phase" \
+        "$status" \
+        "$detail" \
+        "$host" \
+        "$trigger" \
+        "$baseline_head" \
+        "$current_head" \
+        "$artifact_path"
+}
+
 redcap_interop_record_audit_event() {
     local project_root="$1"
     local category="$2"
@@ -257,7 +386,7 @@ redcap_interop_write_pending_closure() {
     local baseline_head="${8:-}"
     local audited_head="${9:-}"
     local task_id top_goal active_slice confirmed_hash state_file state_dir now created_at existing_artifact_path
-    local existing_required_redlines existing_baseline_head existing_audited_head item merged_required_redlines=""
+    local existing_required_redlines existing_baseline_head existing_audited_head existing_confirmed_hash existing_active_slice existing_top_goal item merged_required_redlines=""
 
     if [[ -z "$project_root" || -z "$task_file" || -z "$host" || -z "$trigger" ]]; then
         return 1
@@ -293,6 +422,9 @@ redcap_interop_write_pending_closure() {
         created_at=$(redcap_interop_read_state_field "$state_file" "created_at" 2>/dev/null || true)
         [[ -n "$created_at" ]] || created_at="$now"
         existing_required_redlines=$(redcap_interop_read_state_field "$state_file" "required_redlines" 2>/dev/null || true)
+        existing_confirmed_hash=$(redcap_interop_read_state_field "$state_file" "confirmed_hash" 2>/dev/null || true)
+        existing_active_slice=$(redcap_interop_read_state_field "$state_file" "active_slice" 2>/dev/null || true)
+        existing_top_goal=$(redcap_interop_read_state_field "$state_file" "top_goal" 2>/dev/null || true)
         for item in ${existing_required_redlines//,/ } ${required_redlines//,/ }; do
             item=$(printf '%s' "$item" | tr -d '[:space:]')
             [[ -n "$item" ]] || continue
@@ -308,6 +440,15 @@ redcap_interop_write_pending_closure() {
             esac
         done
         required_redlines="$merged_required_redlines"
+        if [[ -n "$existing_confirmed_hash" ]]; then
+            confirmed_hash="$existing_confirmed_hash"
+        fi
+        if [[ -n "$existing_active_slice" ]]; then
+            active_slice="$existing_active_slice"
+        fi
+        if [[ -n "$existing_top_goal" ]]; then
+            top_goal="$existing_top_goal"
+        fi
         if [[ -z "$artifact_path" ]]; then
             existing_artifact_path=$(redcap_interop_read_state_field "$state_file" "artifact_path" 2>/dev/null || true)
             artifact_path="$existing_artifact_path"
@@ -342,6 +483,20 @@ EOF
             "$project_root" \
             "pending-closure-created" \
             "task_id=$task_id host=$host trigger=$trigger confirmed_hash=$confirmed_hash required_redlines=$required_redlines artifact_path=$artifact_path baseline_head=$baseline_head audited_head=$audited_head detail=$detail"
+        redcap_interop_append_closure_ledger_identity \
+            "$project_root" \
+            "$task_id" \
+            "$confirmed_hash" \
+            "$active_slice" \
+            "obligation" \
+            "pending" \
+            "required_redlines=$required_redlines detail=$detail" \
+            "$host" \
+            "$trigger" \
+            "$baseline_head" \
+            "$audited_head" \
+            "$artifact_path" \
+            >/dev/null 2>&1 || true
 
         printf '%s\n' "$state_file"
     )
@@ -353,7 +508,7 @@ redcap_interop_clear_pending_closure() {
     local outcome="${3:-done}"
     local detail="${4:-}"
     local expected_updated_at="${5:-}"
-    local state_file
+    local state_file host trigger baseline_head audited_head artifact_path task_id confirmed_hash active_slice
 
     if [[ -z "$project_root" || -z "$task_file" ]]; then
         return 1
@@ -375,6 +530,14 @@ redcap_interop_clear_pending_closure() {
             exit 1
         fi
 
+        host=$(redcap_interop_read_state_field "$state_file" "host" 2>/dev/null || true)
+        trigger=$(redcap_interop_read_state_field "$state_file" "trigger" 2>/dev/null || true)
+        baseline_head=$(redcap_interop_read_state_field "$state_file" "baseline_head" 2>/dev/null || true)
+        audited_head=$(redcap_interop_read_state_field "$state_file" "audited_head" 2>/dev/null || true)
+        artifact_path=$(redcap_interop_read_state_field "$state_file" "artifact_path" 2>/dev/null || true)
+        task_id=$(redcap_interop_read_state_field "$state_file" "task_id" 2>/dev/null || true)
+        confirmed_hash=$(redcap_interop_read_state_field "$state_file" "confirmed_hash" 2>/dev/null || true)
+        active_slice=$(redcap_interop_read_state_field "$state_file" "active_slice" 2>/dev/null || true)
         detail=$(printf '%s' "$detail" | tr '\n' ' ')
         rm -f "$state_file" || exit 1
 
@@ -382,6 +545,31 @@ redcap_interop_clear_pending_closure() {
             "$project_root" \
             "pending-closure-cleared" \
             "task=$(basename "$state_file") outcome=$outcome detail=$detail"
+        redcap_interop_append_closure_ledger_identity \
+            "$project_root" \
+            "$task_id" \
+            "$confirmed_hash" \
+            "$active_slice" \
+            "obligation" \
+            "cleared" \
+            "outcome=$outcome detail=$detail" \
+            "$host" \
+            "$trigger" \
+            "$baseline_head" \
+            "$audited_head" \
+            "$artifact_path" \
+            >/dev/null 2>&1 || redcap_interop_append_closure_ledger \
+            "$project_root" \
+            "$task_file" \
+            "obligation" \
+            "cleared" \
+            "outcome=$outcome detail=$detail" \
+            "$host" \
+            "$trigger" \
+            "$baseline_head" \
+            "$audited_head" \
+            "$artifact_path" \
+            >/dev/null 2>&1 || true
     )
 }
 
@@ -391,7 +579,7 @@ redcap_interop_require_no_pending_closure() {
     local host="$3"
     local trigger="$4"
     local detail="${5:-}"
-    local state_file pending_host pending_trigger required_redlines
+    local state_file pending_host pending_trigger required_redlines pending_task_id pending_confirmed_hash pending_active_slice
 
     if [[ -z "$project_root" || -z "$task_file" || -z "$host" || -z "$trigger" ]]; then
         return 1
@@ -411,11 +599,39 @@ redcap_interop_require_no_pending_closure() {
     pending_host=$(redcap_interop_read_state_field "$state_file" "host" 2>/dev/null || true)
     pending_trigger=$(redcap_interop_read_state_field "$state_file" "trigger" 2>/dev/null || true)
     required_redlines=$(redcap_interop_read_state_field "$state_file" "required_redlines" 2>/dev/null || true)
+    pending_task_id=$(redcap_interop_read_state_field "$state_file" "task_id" 2>/dev/null || true)
+    pending_confirmed_hash=$(redcap_interop_read_state_field "$state_file" "confirmed_hash" 2>/dev/null || true)
+    pending_active_slice=$(redcap_interop_read_state_field "$state_file" "active_slice" 2>/dev/null || true)
 
     redcap_interop_record_closure_event \
         "$project_root" \
         "pending-closure-blocked" \
         "host=$host trigger=$trigger pending_host=$pending_host pending_trigger=$pending_trigger required_redlines=$required_redlines detail=$detail" \
+        >/dev/null 2>&1 || true
+    redcap_interop_append_closure_ledger_identity \
+        "$project_root" \
+        "$pending_task_id" \
+        "$pending_confirmed_hash" \
+        "$pending_active_slice" \
+        "obligation" \
+        "blocked" \
+        "pending_host=$pending_host pending_trigger=$pending_trigger required_redlines=$required_redlines detail=$detail" \
+        "$host" \
+        "$trigger" \
+        "" \
+        "" \
+        "" \
+        >/dev/null 2>&1 || redcap_interop_append_closure_ledger \
+        "$project_root" \
+        "$task_file" \
+        "obligation" \
+        "blocked" \
+        "pending_host=$pending_host pending_trigger=$pending_trigger required_redlines=$required_redlines detail=$detail" \
+        "$host" \
+        "$trigger" \
+        "" \
+        "" \
+        "" \
         >/dev/null 2>&1 || true
 
     echo "[redcap-interop-governance] unresolved pending closure blocks RedCap-owned state" >&2

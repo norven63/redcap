@@ -425,10 +425,16 @@ governance_debts_addressed: []
 - `compass/tools/redcap-validator-chain.sh`
   - 统一编排 stop-review 的 PM Gate / drift / artifact lifecycle 检查
   - 输出结构化结果，避免多条控制面检查散落在调用方
+- `compass/tools/redcap-interop-governance.sh`
+  - 统一维护 interop audit、pending closure obligation 与 `closure-ledger/` 事务日志
+  - `pending-closure/` 表示当前 outstanding obligation；`closure-ledger/` 负责保留阶段性 closure 证据，不得互相冒充
 - `compass/tools/redcap-artifact-lifecycle-check.sh`
   - 对 **RedCap 自身工作区** 检查本轮 commit 区间里所有曾进入历史的路径，而不是只看最终 net diff
   - 一旦命中违规路径，会阻断 stop-review / on-complete 收尾通过，并显式暴露这批违规产物
   - 阻断 `compass/docs/` 根目录重新长成未分类条目
+- `compass/tools/redcap-on-complete.sh`
+  - 对 RedCap 自身 on-complete fail-closed 校验 `commit proof + task report + artifact lifecycle`
+  - 若 notify / task report / artifact lifecycle 仍有缺口，必须写回 pending closure，保留下次 reconcile 机会
 - `compass/tools/redcap-host-workboard-sync.sh`
   - 仅向宿主 workboard 写 canonical pointer / confirmed hash
   - 不允许反向把需求/验收真相从宿主 workboard 回灌为 RedCap authority
