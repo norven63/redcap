@@ -31,6 +31,7 @@ REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
 source "$SCRIPT_DIR/redcap-notify-format.sh"
+source "$SCRIPT_DIR/redcap-validator-output.sh"
 WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
 PROJECT_NAME=$(redcap_runtime_project_name "$PROJECT_DIR" "$PROJECT_NAME_ARG")
 TASK_REPORT_CHECK="$SCRIPT_DIR/redcap-task-report-check.sh"
@@ -136,35 +137,15 @@ ON_COMPLETE_VALIDATOR_PRECHECK_PHASE=""
 ON_COMPLETE_VALIDATOR_PRECHECK_REDLINES=""
 ON_COMPLETE_VALIDATOR_PRECHECK_DETAIL=""
 
-validator_step_status() {
-  local output="$1"
-  local step="$2"
-
-  printf '%s\n' "$output" | awk -v step="$step" 'index($0, "] " step " :: ") {split($0, parts, " :: "); print parts[2]; exit}'
-}
-
-validator_output_has_recordable_step() {
-  local output="$1"
-  local step=""
-
-  for step in commit-proof-check pm-gate drift-check task-report-check artifact-lifecycle-check; do
-    if [[ -n "$(validator_step_status "$output" "$step")" ]]; then
-      return 0
-    fi
-  done
-
-  return 1
-}
-
 collect_on_complete_validator_redlines() {
   local output="$1"
   local items=()
 
-  [[ "$(validator_step_status "$output" "commit-proof-check")" == "fail" ]] && items+=("commit-proof")
-  [[ "$(validator_step_status "$output" "pm-gate")" == "fail" ]] && items+=("pm-gate")
-  [[ "$(validator_step_status "$output" "drift-check")" == "fail" ]] && items+=("drift")
-  [[ "$(validator_step_status "$output" "task-report-check")" == "fail" ]] && items+=("task-report")
-  [[ "$(validator_step_status "$output" "artifact-lifecycle-check")" == "fail" ]] && items+=("artifact-lifecycle")
+  [[ "$(redcap_validator_step_status "$output" "commit-proof-check")" == "fail" ]] && items+=("commit-proof")
+  [[ "$(redcap_validator_step_status "$output" "pm-gate")" == "fail" ]] && items+=("pm-gate")
+  [[ "$(redcap_validator_step_status "$output" "drift-check")" == "fail" ]] && items+=("drift")
+  [[ "$(redcap_validator_step_status "$output" "task-report-check")" == "fail" ]] && items+=("task-report")
+  [[ "$(redcap_validator_step_status "$output" "artifact-lifecycle-check")" == "fail" ]] && items+=("artifact-lifecycle")
 
   local IFS=,
   printf '%s' "${items[*]}"
@@ -176,31 +157,31 @@ record_on_complete_validator_steps() {
   local persist_status=0
   local status=""
 
-  status=$(validator_step_status "$output" "commit-proof-check")
+  status=$(redcap_validator_step_status "$output" "commit-proof-check")
   case "$status" in
     pass) record_closure_phase "commit-proof" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
     fail) record_closure_phase "commit-proof" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
   esac
 
-  status=$(validator_step_status "$output" "pm-gate")
+  status=$(redcap_validator_step_status "$output" "pm-gate")
   case "$status" in
     pass) record_closure_phase "pm-gate" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
     fail) record_closure_phase "pm-gate" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
   esac
 
-  status=$(validator_step_status "$output" "drift-check")
+  status=$(redcap_validator_step_status "$output" "drift-check")
   case "$status" in
     pass) record_closure_phase "drift" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
     fail) record_closure_phase "drift" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
   esac
 
-  status=$(validator_step_status "$output" "task-report-check")
+  status=$(redcap_validator_step_status "$output" "task-report-check")
   case "$status" in
     pass) record_closure_phase "task-report" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
     fail) record_closure_phase "task-report" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
   esac
 
-  status=$(validator_step_status "$output" "artifact-lifecycle-check")
+  status=$(redcap_validator_step_status "$output" "artifact-lifecycle-check")
   case "$status" in
     pass) record_closure_phase "artifact-lifecycle" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
     fail) record_closure_phase "artifact-lifecycle" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
@@ -370,7 +351,7 @@ if ! run_on_complete_validator_chain; then
     exit 2
   fi
 
-  if ! validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT"; then
+  if ! redcap_validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT" commit-proof-check pm-gate drift-check task-report-check artifact-lifecycle-check; then
     if ! persist_on_complete_unstructured_failure "$(resolve_report_reference)"; then
       record_evidence_system_failure "validator-chain" "failed to persist unstructured validator failure"
       exit 2
@@ -392,7 +373,7 @@ if ! run_on_complete_validator_chain; then
   exit 1
 fi
 
-if ! validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT"; then
+if ! redcap_validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT" commit-proof-check pm-gate drift-check task-report-check artifact-lifecycle-check; then
   record_evidence_system_failure "validator-chain" "validator chain succeeded without recordable step output"
   exit 2
 fi

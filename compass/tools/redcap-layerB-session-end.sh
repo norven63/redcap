@@ -23,6 +23,9 @@ REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
 source "$SCRIPT_DIR/redcap-notify-format.sh"
+source "$SCRIPT_DIR/redcap-validator-output.sh"
+
+VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
 
 HOOK_CWD="${REDCAP_HOOK_CWD:-$REDCAP_ROOT}"
 HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-}"
@@ -61,12 +64,16 @@ if [[ -x "$EXPLORE_NOTES_CHECK" ]]; then
 fi
 
 if [[ "$RUNTIME_ATTACHED" != "1" ]]; then
+    MISSING_RUNTIME_REDLINES="review,pm-gate,drift,artifact-lifecycle,task-report,notify"
+    if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        MISSING_RUNTIME_REDLINES="pending-closure,$MISSING_RUNTIME_REDLINES"
+    fi
     redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
         "$REDCAP_ROOT/.dev-task.md" \
         "$HOST" \
         "layerB-session-end-missing-runtime-claim" \
-        "review,pm-gate,drift,task-report,notify" \
+        "$MISSING_RUNTIME_REDLINES" \
         "missing-runtime-claim" \
         >/dev/null 2>&1 || true
     redcap_runtime_clear_process_claim "$HOST" "$HOST_PROCESS_PID" || true
@@ -118,6 +125,93 @@ cleanup_session_files() {
 
 clear_review_artifacts() {
     rm -f "$REVIEW_RESULT_FILE" "$REVIEW_LOG_FILE" 2>/dev/null || true
+}
+
+run_session_end_validator_chain() {
+    SESSION_END_VALIDATOR_OUTPUT=""
+
+    if [[ ! -x "$VALIDATOR_CHAIN" ]]; then
+        SESSION_END_VALIDATOR_OUTPUT="[redcap-validator-chain] mode=session-end overall=fail
+[session-end] validator chain 缺失，无法继续统一校验"
+        return 1
+    fi
+
+    SESSION_END_VALIDATOR_OUTPUT=$(REDCAP_VALIDATOR_PROJECT_DIR="$REDCAP_ROOT" \
+        REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+        REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+        REDCAP_HOST_PROCESS_PID="$HOST_PROCESS_PID" \
+        REDCAP_SESSION_END_REVIEW_REQUIRED="$REVIEW_REQUIRED" \
+        REDCAP_SESSION_END_REVIEW_STATUS="${REVIEW_STATUS:-}" \
+        REDCAP_SESSION_END_PENDING_HEAD_MISMATCH="$PENDING_CLOSURE_HEAD_MISMATCH" \
+        REDCAP_SESSION_END_PENDING_AUDITED_HEAD="${PENDING_AUDITED_HEAD:-}" \
+        bash "$VALIDATOR_CHAIN" session-end "$HOST" "$REDCAP_ROOT/.dev-task.md" "$BASELINE" "$CURRENT_HEAD" text 2>&1) || return 1
+
+    return 0
+}
+
+record_session_end_phase() {
+    local phase="$1"
+    local status="$2"
+    local detail="${3:-}"
+    local artifact_path="${4:-}"
+
+    redcap_interop_append_closure_ledger \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$phase" \
+        "$status" \
+        "$detail" \
+        "$HOST" \
+        "session-end" \
+        "$BASELINE" \
+        "$CURRENT_HEAD" \
+        "$artifact_path" \
+        >/dev/null 2>&1
+}
+
+record_session_end_validator_steps() {
+    local output="$1"
+    local artifact_path="${2:-}"
+    local persist_status=0
+    local status=""
+
+    status=$(redcap_validator_step_status "$output" "review-proof-check")
+    case "$status" in
+        pass) record_session_end_phase "review" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+        fail) record_session_end_phase "review" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+    esac
+
+    status=$(redcap_validator_step_status "$output" "reanchor-check")
+    case "$status" in
+        pass) record_session_end_phase "reanchor" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+        fail) record_session_end_phase "reanchor" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+    esac
+
+    status=$(redcap_validator_step_status "$output" "pm-gate")
+    case "$status" in
+        pass) record_session_end_phase "pm-gate" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+        fail) record_session_end_phase "pm-gate" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+    esac
+
+    status=$(redcap_validator_step_status "$output" "drift-check")
+    case "$status" in
+        pass) record_session_end_phase "drift" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+        fail) record_session_end_phase "drift" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+    esac
+
+    status=$(redcap_validator_step_status "$output" "task-report-check")
+    case "$status" in
+        pass) record_session_end_phase "task-report" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+        fail) record_session_end_phase "task-report" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+    esac
+
+    status=$(redcap_validator_step_status "$output" "artifact-lifecycle-check")
+    case "$status" in
+        pass) record_session_end_phase "artifact-lifecycle" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+        fail) record_session_end_phase "artifact-lifecycle" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+    esac
+
+    return "$persist_status"
 }
 
 if [[ -z "$BASELINE" ]]; then
@@ -174,41 +268,6 @@ if [[ "$SHOULD_RUN_REVIEW" -eq 1 ]]; then
 EOF
 fi
 
-PM_GATE_CHECK="$SCRIPT_DIR/redcap-pm-gate-check.sh"
-PM_GATE_OUTPUT=""
-PM_GATE_STATUS=0
-if [[ -x "$PM_GATE_CHECK" ]]; then
-    if PM_GATE_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" REDCAP_HOST_PROCESS_PID="$HOST_PROCESS_PID" bash "$PM_GATE_CHECK" session-end "$HOST" "$REDCAP_ROOT/.dev-task.md" 2>&1); then
-        PM_GATE_STATUS=1
-    fi
-fi
-
-DRIFT_CHECK="$SCRIPT_DIR/redcap-drift-check.sh"
-DRIFT_OUTPUT=""
-DRIFT_STATUS=0
-if [[ -x "$DRIFT_CHECK" ]]; then
-    if DRIFT_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" REDCAP_HOST_PROCESS_PID="$HOST_PROCESS_PID" bash "$DRIFT_CHECK" session-end "$HOST" "$REDCAP_ROOT/.dev-task.md" "$BASELINE" "$CURRENT_HEAD" 2>&1); then
-        DRIFT_STATUS=1
-    fi
-fi
-
-ARTIFACT_LIFECYCLE_CHECK="$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh"
-ARTIFACT_OUTPUT=""
-ARTIFACT_STATUS=0
-if [[ -x "$ARTIFACT_LIFECYCLE_CHECK" ]]; then
-    if ARTIFACT_OUTPUT=$(bash "$ARTIFACT_LIFECYCLE_CHECK" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" redcap-self 2>&1); then
-        ARTIFACT_STATUS=1
-    fi
-fi
-
-REPORT_CHECK_SCRIPT="$SCRIPT_DIR/redcap-task-report-check.sh"
-REPORT_OUTPUT=""
-REPORT_STATUS=0
-
-if REPORT_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" REDCAP_HOST_PROCESS_PID="$HOST_PROCESS_PID" "$REPORT_CHECK_SCRIPT" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" "$HOST" 2>&1); then
-    REPORT_STATUS=1
-fi
-
 COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..$CURRENT_HEAD" 2>/dev/null || echo "(无法获取)")
 NOTIFIER="$SCRIPT_DIR/feishu-notifier.py"
 SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
@@ -251,16 +310,66 @@ send_notification() {
 }
 
 REVIEW_REQUIRED=0
-REVIEW_PASSED=0
 if [[ "$SKIP_REVIEW" != "1" && ( "$BASELINE" != "$CURRENT_HEAD" || "$PENDING_REVIEW_REQUIRED" -eq 1 ) ]]; then
     REVIEW_REQUIRED=1
 fi
 
-if [[ "$REVIEW_REQUIRED" -eq 0 || "$REVIEW_STATUS" == "PASS" ]]; then
-    REVIEW_PASSED=1
+PM_GATE_OUTPUT=""
+PM_GATE_STATUS=0
+DRIFT_OUTPUT=""
+DRIFT_STATUS=0
+ARTIFACT_OUTPUT=""
+ARTIFACT_STATUS=0
+REPORT_OUTPUT=""
+REPORT_STATUS=0
+REVIEW_PASSED=0
+REVIEW_PROOF_OUTPUT=""
+REANCHOR_OUTPUT=""
+REANCHOR_STATUS=0
+VALIDATOR_INFRA_FAILURE=0
+SESSION_END_VALIDATOR_OUTPUT=""
+
+if ! run_session_end_validator_chain; then
+    if ! redcap_validator_output_has_recordable_step "$SESSION_END_VALIDATOR_OUTPUT" review-proof-check reanchor-check pm-gate drift-check task-report-check artifact-lifecycle-check; then
+        VALIDATOR_INFRA_FAILURE=1
+    fi
+elif ! redcap_validator_output_has_recordable_step "$SESSION_END_VALIDATOR_OUTPUT" review-proof-check reanchor-check pm-gate drift-check task-report-check artifact-lifecycle-check; then
+    VALIDATOR_INFRA_FAILURE=1
 fi
 
-if [[ "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1 && "$ARTIFACT_STATUS" -eq 1 && "$REVIEW_PASSED" -eq 1 && "$PENDING_CLOSURE_HEAD_MISMATCH" -eq 0 ]]; then
+if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 ]]; then
+    REVIEW_PROOF_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "review-proof-check")
+    REANCHOR_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "reanchor-check")
+    PM_GATE_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "pm-gate")
+    DRIFT_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "drift-check")
+    REPORT_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "task-report-check")
+    ARTIFACT_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "artifact-lifecycle-check")
+
+    [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "review-proof-check")" == "pass" ]] && REVIEW_PASSED=1
+    [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "reanchor-check")" == "pass" ]] && REANCHOR_STATUS=1
+    [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "pm-gate")" == "pass" ]] && PM_GATE_STATUS=1
+    [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "drift-check")" == "pass" ]] && DRIFT_STATUS=1
+    [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "task-report-check")" == "pass" ]] && REPORT_STATUS=1
+    [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "artifact-lifecycle-check")" == "pass" ]] && ARTIFACT_STATUS=1
+
+    if ! record_session_end_validator_steps "$SESSION_END_VALIDATOR_OUTPUT" "$REPORT_OUTPUT"; then
+        redcap_runtime_record_degraded_mode \
+            "$REDCAP_ROOT" \
+            "session-end-validator-ledger-write-failed" \
+            "host=$HOST current_head=$CURRENT_HEAD" \
+            >/dev/null 2>&1 || true
+    fi
+else
+    if ! record_session_end_phase "validator-chain" "fail" "validator chain failed before recordable step output: ${SESSION_END_VALIDATOR_OUTPUT:-none}" "$REPORT_OUTPUT"; then
+        redcap_runtime_record_degraded_mode \
+            "$REDCAP_ROOT" \
+            "session-end-validator-ledger-write-failed" \
+            "host=$HOST current_head=$CURRENT_HEAD phase=validator-chain" \
+            >/dev/null 2>&1 || true
+    fi
+fi
+
+if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1 && "$ARTIFACT_STATUS" -eq 1 && "$REVIEW_PASSED" -eq 1 && "$REANCHOR_STATUS" -eq 1 ]]; then
     PENDING_CLEAR_STATUS=1
     CURRENT_PENDING_EXISTS=0
     if [[ "$PENDING_CLOSURE_EXISTS" == "1" ]]; then
@@ -371,7 +480,7 @@ if [[ "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1
             "$REDCAP_ROOT/.dev-task.md" \
             "session-end" \
             "pass" \
-            "review_status=${REVIEW_STATUS:-none} pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
+            "review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
             "$HOST" \
             "session-end" \
             "$BASELINE" \
@@ -380,23 +489,27 @@ if [[ "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1
             >/dev/null 2>&1 || true
     fi
 else
-    if [[ "$REVIEW_REQUIRED" -eq 1 && "$REVIEW_STATUS" != "PASS" ]]; then
-        append_required_redline "review"
-    fi
-    if [[ "$PM_GATE_STATUS" -ne 1 ]]; then
-        append_required_redline "pm-gate"
-    fi
-    if [[ "$DRIFT_STATUS" -ne 1 ]]; then
-        append_required_redline "drift"
-    fi
-    if [[ "$ARTIFACT_STATUS" -ne 1 ]]; then
-        append_required_redline "artifact-lifecycle"
-    fi
-    if [[ "$REPORT_STATUS" -ne 1 ]]; then
-        append_required_redline "task-report"
-    fi
-    if [[ "$PENDING_CLOSURE_HEAD_MISMATCH" -eq 1 ]]; then
-        append_required_redline "pending-closure"
+    if [[ "$VALIDATOR_INFRA_FAILURE" -eq 1 ]]; then
+        append_required_redline "validator-chain"
+    else
+        if [[ "$REVIEW_REQUIRED" -eq 1 && "$REVIEW_PASSED" -ne 1 ]]; then
+            append_required_redline "review"
+        fi
+        if [[ "$REANCHOR_STATUS" -ne 1 ]]; then
+            append_required_redline "pending-closure"
+        fi
+        if [[ "$PM_GATE_STATUS" -ne 1 ]]; then
+            append_required_redline "pm-gate"
+        fi
+        if [[ "$DRIFT_STATUS" -ne 1 ]]; then
+            append_required_redline "drift"
+        fi
+        if [[ "$ARTIFACT_STATUS" -ne 1 ]]; then
+            append_required_redline "artifact-lifecycle"
+        fi
+        if [[ "$REPORT_STATUS" -ne 1 ]]; then
+            append_required_redline "task-report"
+        fi
     fi
 
     LAST_ALERTED=""
@@ -406,29 +519,41 @@ else
 
     if [[ "$LAST_ALERTED" != "$CURRENT_HEAD" ]]; then
         ALERT_BODY="⚠️ RedCap Layer B 收尾审计发现缺口（${HOST} SessionEnd）"
-        if [[ "$REVIEW_STATUS" == "FAIL" ]]; then
-            ALERT_BODY="${ALERT_BODY}\n\n问题：独立 stop-review / 控制面审计未通过"
-        elif [[ "$REVIEW_STATUS" == "MISSING" ]]; then
-            ALERT_BODY="${ALERT_BODY}\n\n问题：存在变更，但未找到 Claude stop-review 的评审证据"
-        elif [[ "$REVIEW_REQUIRED" -eq 1 && "$REVIEW_STATUS" == "INCONCLUSIVE" ]]; then
-            ALERT_BODY="${ALERT_BODY}\n\n问题：独立 stop-review 结果为 INCONCLUSIVE，不能视为评审通过"
-        elif [[ "$REVIEW_REQUIRED" -eq 1 && -z "$REVIEW_STATUS" ]]; then
-            ALERT_BODY="${ALERT_BODY}\n\n问题：存在变更，但未拿到可判定的独立评审结果"
-        fi
-        if [[ "$PENDING_CLOSURE_HEAD_MISMATCH" -eq 1 ]]; then
-            ALERT_BODY="${ALERT_BODY}\n\n问题：待清理 closure 绑定的 audited head 与当前 HEAD 不可证明衔接，不能清除历史义务"
-        fi
-        if [[ "$PM_GATE_STATUS" -ne 1 ]]; then
-            ALERT_BODY="${ALERT_BODY}\n\n问题：.dev-task / PM Gate 守门失败\n\n输出:\n$PM_GATE_OUTPUT"
-        fi
-        if [[ "$DRIFT_STATUS" -ne 1 ]]; then
-            ALERT_BODY="${ALERT_BODY}\n\n问题：active_slice / scope drift 审计失败\n\n输出:\n$DRIFT_OUTPUT"
-        fi
-        if [[ "$ARTIFACT_STATUS" -ne 1 ]]; then
-            ALERT_BODY="${ALERT_BODY}\n\n问题：artifact lifecycle 审计失败\n\n输出:\n$ARTIFACT_OUTPUT"
-        fi
-        if [[ "$REPORT_STATUS" -ne 1 ]]; then
-            ALERT_BODY="${ALERT_BODY}\n\n问题：缺少按模板归档的任务完成报告\n\n审计输出:\n$REPORT_OUTPUT"
+        if [[ "$VALIDATOR_INFRA_FAILURE" -eq 1 ]]; then
+            ALERT_BODY="${ALERT_BODY}\n\n问题：session-end validator chain 未产出可判定 step\n\n输出:\n$SESSION_END_VALIDATOR_OUTPUT"
+        else
+            if [[ "$REVIEW_REQUIRED" -eq 1 && "$REVIEW_PASSED" -ne 1 ]]; then
+                if [[ "$REVIEW_STATUS" == "FAIL" ]]; then
+                    ALERT_BODY="${ALERT_BODY}\n\n问题：独立 stop-review / 控制面审计未通过"
+                elif [[ "$REVIEW_STATUS" == "MISSING" ]]; then
+                    ALERT_BODY="${ALERT_BODY}\n\n问题：存在变更，但未找到 Claude stop-review 的评审证据"
+                elif [[ "$REVIEW_STATUS" == "INCONCLUSIVE" ]]; then
+                    ALERT_BODY="${ALERT_BODY}\n\n问题：独立 stop-review 结果为 INCONCLUSIVE，不能视为评审通过"
+                else
+                    ALERT_BODY="${ALERT_BODY}\n\n问题：存在变更，但未拿到可判定的独立评审结果"
+                fi
+                if [[ -n "$REVIEW_PROOF_OUTPUT" ]]; then
+                    ALERT_BODY="${ALERT_BODY}\n\n审计输出:\n$REVIEW_PROOF_OUTPUT"
+                fi
+            fi
+            if [[ "$REANCHOR_STATUS" -ne 1 ]]; then
+                ALERT_BODY="${ALERT_BODY}\n\n问题：待清理 closure 绑定的 audited head 与当前 HEAD 不可证明衔接，不能清除历史义务"
+                if [[ -n "$REANCHOR_OUTPUT" ]]; then
+                    ALERT_BODY="${ALERT_BODY}\n\n审计输出:\n$REANCHOR_OUTPUT"
+                fi
+            fi
+            if [[ "$PM_GATE_STATUS" -ne 1 ]]; then
+                ALERT_BODY="${ALERT_BODY}\n\n问题：.dev-task / PM Gate 守门失败\n\n输出:\n$PM_GATE_OUTPUT"
+            fi
+            if [[ "$DRIFT_STATUS" -ne 1 ]]; then
+                ALERT_BODY="${ALERT_BODY}\n\n问题：active_slice / scope drift 审计失败\n\n输出:\n$DRIFT_OUTPUT"
+            fi
+            if [[ "$ARTIFACT_STATUS" -ne 1 ]]; then
+                ALERT_BODY="${ALERT_BODY}\n\n问题：artifact lifecycle 审计失败\n\n输出:\n$ARTIFACT_OUTPUT"
+            fi
+            if [[ "$REPORT_STATUS" -ne 1 ]]; then
+                ALERT_BODY="${ALERT_BODY}\n\n问题：缺少按模板归档的任务完成报告\n\n审计输出:\n$REPORT_OUTPUT"
+            fi
         fi
         ALERT_BODY="${ALERT_BODY}\n\nCommits:\n$COMMIT_LOG"
         if send_notification "$ALERT_BODY"; then
@@ -447,7 +572,7 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
         "$HOST" \
         "layerB-session-end-audit-gap" \
         "$REQUIRED_REDLINES" \
-        "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
+        "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
         "" \
         "$BASELINE" \
         "$CURRENT_HEAD" \
@@ -457,7 +582,7 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
         "$REDCAP_ROOT/.dev-task.md" \
         "session-end" \
         "blocked" \
-        "required_redlines=$REQUIRED_REDLINES review_status=${REVIEW_STATUS:-none} pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
+        "required_redlines=$REQUIRED_REDLINES review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
         "$HOST" \
         "session-end" \
         "$BASELINE" \
