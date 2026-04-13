@@ -285,6 +285,8 @@ PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 - `session_binding_key`
 - 当前 `task_id / confirmed_hash`
 - `continuity_authority`
+- `isolation_mode`（`full` / `degraded` / `unsupported`）
+- `resume_gate_reason / resume_gate_profile / resume_gate_evidence`
 - continuity_state（`fresh-session` / `self-recorded` / `import-suggested` / `imported`）
 
 这块信息仍然只是 mirror，不会反向成为 authority；真正的 continuity authority 现在先由 `redcap-session-continuity.sh` 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，然后再把结果渲染回宿主 workboard。它存在的目的，是让新会话进入时能**看见**自己是否已有连续性记录、是否存在兼容历史会话，以及显式导入命令是什么。
@@ -415,13 +417,15 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 
 RedCap 当前把“最近会话继承”落成了**显式导入协议**，而不是默认自动恢复：
 
-1. SessionStart 先同步 canonical pointer，然后由 `redcap-session-continuity.sh` 把当前会话 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`
-2. manifest 同目录还会维护 `provenance.yaml`；跨会话导入时，再追加 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
-3. 宿主 workboard 的 `Session Mirror` 只读取这些 repo-local continuity 账本，不再以 sibling `plan.md` 或 `files/imported-sessions/*/metadata.json` 反向充当 authority
-4. 若当前会话没有自己的 continuity record，系统只会基于 repo-local manifest 扫描给出 `import-suggested` 与明确的导入命令
-5. 若当前缺少 `runtime_session_id`，Session Mirror 只能停在 `fresh-session` 并显式标记 `continuity_authority: degraded-no-runtime-manifest`，不得伪造 `self-recorded / import-suggested / imported`
-6. repo-local manifest 只能描述 continuity authority，不能反向“复活”缺失的 active runtime binding；`sync` / `import` 都必须以当前活跃 runtime binding 为前提
-7. 真正导入时，`redcap-session-continuity.sh import` 只复制 continuity artifacts：
+1. `redcap-layerB-session-start.sh` 会先调用 `redcap-session-resume-gate.sh`，按 `references/host-session-capability-matrix.json` 把当前宿主判定到 `full / degraded / unsupported`
+2. 只有 `full` 才允许 attach/create runtime session；`degraded / unsupported` 只能继续 safe advisory sync
+3. SessionStart 再同步 canonical pointer，然后由 `redcap-session-continuity.sh` 把当前会话 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`
+4. manifest 同目录还会维护 `provenance.yaml`；跨会话导入时，再追加 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
+5. 宿主 workboard 的 `Session Mirror` 只读取这些 repo-local continuity 账本，不再以 sibling `plan.md` 或 `files/imported-sessions/*/metadata.json` 反向充当 authority
+6. `continuity_state` 与 `isolation_mode` 分字段维护：前者回答“有没有连续性记录/导入建议”，后者回答“当前宿主是否具备 full isolation 能力”
+7. 若当前缺少 `runtime_session_id`，Session Mirror 只能停在 `fresh-session` 并显式标记 `continuity_authority: degraded-no-runtime-manifest`；此时 `isolation_mode` 只能来自 resume gate，不得伪造 `self-recorded / import-suggested / imported`
+8. repo-local manifest 只能描述 continuity authority，不能反向“复活”缺失的 active runtime binding；`sync` / `import` 都必须以当前活跃 runtime binding 为前提
+9. 真正导入时，`redcap-session-continuity.sh import` 只复制 continuity artifacts：
     - `plan.md` 快照
     - `files/`（排除二次嵌套的 imported-sessions）
     - `checkpoints/`

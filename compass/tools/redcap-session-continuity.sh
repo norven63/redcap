@@ -16,6 +16,7 @@ sync_session_mirror() {
     local workboard_file="$1"
     local task_file="$2"
     local task_id top_goal confirmed_hash active_slice runtime_session_id binding_key runtime_host
+    local isolation_mode resume_gate_reason resume_gate_profile resume_gate_evidence host_session_id
 
     if [[ ! -f "$workboard_file" ]]; then
         echo "[redcap-session-continuity] workboard not found: $workboard_file" >&2
@@ -29,8 +30,13 @@ sync_session_mirror() {
     runtime_session_id="${REDCAP_RUNTIME_SESSION_ID:-}"
     binding_key="${REDCAP_RUNTIME_BINDING_KEY:-${REDCAP_SESSION_BINDING_KEY:-}}"
     runtime_host="${REDCAP_RUNTIME_HOST:-}"
+    isolation_mode="${REDCAP_SESSION_ISOLATION_MODE:-}"
+    resume_gate_reason="${REDCAP_SESSION_RESUME_REASON:-}"
+    resume_gate_profile="${REDCAP_SESSION_RESUME_PROFILE:-}"
+    resume_gate_evidence="${REDCAP_SESSION_RESUME_EVIDENCE:-}"
+    host_session_id="${REDCAP_HOST_SESSION_ID:-}"
 
-    python3 - "$workboard_file" "$task_file" "$task_id" "$top_goal" "$confirmed_hash" "$active_slice" "$runtime_session_id" "$binding_key" "$runtime_host" <<'PY'
+    python3 - "$workboard_file" "$task_file" "$task_id" "$top_goal" "$confirmed_hash" "$active_slice" "$runtime_session_id" "$binding_key" "$runtime_host" "$isolation_mode" "$resume_gate_reason" "$resume_gate_profile" "$resume_gate_evidence" "$host_session_id" <<'PY'
 import json
 import os
 import re
@@ -47,6 +53,11 @@ active_slice = sys.argv[6]
 runtime_session_id = sys.argv[7].strip()
 binding_key = sys.argv[8].strip()
 runtime_host = sys.argv[9].strip()
+isolation_mode = sys.argv[10].strip()
+resume_gate_reason = sys.argv[11].strip()
+resume_gate_profile = sys.argv[12].strip()
+resume_gate_evidence = sys.argv[13].strip()
+host_session_id = sys.argv[14].strip()
 
 repo_root = Path(task_file).resolve().parent
 continuity_root = Path(
@@ -260,6 +271,25 @@ if runtime_session_id:
         binding_key = existing_manifest.get("session_binding_key", "").strip()
     if not runtime_host:
         runtime_host = existing_manifest.get("runtime_host", "").strip()
+    if not isolation_mode:
+        isolation_mode = existing_manifest.get("isolation_mode", "").strip()
+    if not resume_gate_reason:
+        resume_gate_reason = existing_manifest.get("resume_gate_reason", "").strip()
+    if not resume_gate_profile:
+        resume_gate_profile = existing_manifest.get("resume_gate_profile", "").strip()
+    if not resume_gate_evidence:
+        resume_gate_evidence = existing_manifest.get("resume_gate_evidence", "").strip()
+    if not host_session_id:
+        host_session_id = existing_manifest.get("host_session_id", "").strip()
+
+if not isolation_mode:
+    isolation_mode = "degraded"
+if not resume_gate_reason:
+    resume_gate_reason = "resume-gate-unavailable"
+if not resume_gate_profile:
+    resume_gate_profile = "legacy-unspecified"
+if not resume_gate_evidence:
+    resume_gate_evidence = "legacy-unspecified"
 
 manifest_import = manifest_import_payload(existing_manifest)
 imported = None
@@ -313,6 +343,11 @@ manifest_data = {
     "active_slice": active_slice,
     "runtime_host": runtime_host,
     "session_binding_key": binding_key,
+    "host_session_id": host_session_id,
+    "isolation_mode": isolation_mode,
+    "resume_gate_reason": resume_gate_reason,
+    "resume_gate_profile": resume_gate_profile,
+    "resume_gate_evidence": resume_gate_evidence,
     "continuity_state": state,
     "continuity_authority": continuity_authority,
     "own_record_present": "1" if own_record_present else "0",
@@ -375,6 +410,10 @@ if runtime_session_id:
     audit_keys = (
         "continuity_state",
         "continuity_authority",
+        "isolation_mode",
+        "resume_gate_reason",
+        "resume_gate_profile",
+        "resume_gate_evidence",
         "own_record_present",
         "source_session_handle",
         "source_runtime_session_id",
@@ -394,6 +433,10 @@ if runtime_session_id:
                 "workboard_path": str(workboard),
                 "task_id": task_id,
                 "confirmed_hash": confirmed_hash,
+                "isolation_mode": isolation_mode,
+                "resume_gate_reason": resume_gate_reason,
+                "resume_gate_profile": resume_gate_profile,
+                "resume_gate_evidence": resume_gate_evidence,
                 "continuity_state": state,
                 "continuity_authority": continuity_authority,
                 "source_session_handle": manifest_data.get("source_session_handle", ""),
@@ -413,6 +456,10 @@ block_lines = [
     f"- task_id: {task_id}",
     f"- confirmed_hash: {confirmed_hash}",
     f"- continuity_authority: {continuity_authority}",
+    f"- isolation_mode: {isolation_mode}",
+    f"- resume_gate_reason: {resume_gate_reason}",
+    f"- resume_gate_profile: {resume_gate_profile}",
+    f"- resume_gate_evidence: {resume_gate_evidence}",
 ]
 
 if state == "imported":
@@ -492,6 +539,7 @@ import_session_assets() {
     local target_workboard="$2"
     local task_file="$3"
     local runtime_session_id binding_key runtime_host
+    local isolation_mode resume_gate_reason resume_gate_profile resume_gate_evidence host_session_id
 
     if [[ ! -f "$source_workboard" ]]; then
         echo "[redcap-session-continuity] source workboard not found: $source_workboard" >&2
@@ -505,8 +553,13 @@ import_session_assets() {
     runtime_session_id="${REDCAP_RUNTIME_SESSION_ID:-}"
     binding_key="${REDCAP_RUNTIME_BINDING_KEY:-${REDCAP_SESSION_BINDING_KEY:-}}"
     runtime_host="${REDCAP_RUNTIME_HOST:-}"
+    isolation_mode="${REDCAP_SESSION_ISOLATION_MODE:-}"
+    resume_gate_reason="${REDCAP_SESSION_RESUME_REASON:-}"
+    resume_gate_profile="${REDCAP_SESSION_RESUME_PROFILE:-}"
+    resume_gate_evidence="${REDCAP_SESSION_RESUME_EVIDENCE:-}"
+    host_session_id="${REDCAP_HOST_SESSION_ID:-}"
 
-    python3 - "$source_workboard" "$target_workboard" "$task_file" "$runtime_session_id" "$binding_key" "$runtime_host" <<'PY'
+    python3 - "$source_workboard" "$target_workboard" "$task_file" "$runtime_session_id" "$binding_key" "$runtime_host" "$isolation_mode" "$resume_gate_reason" "$resume_gate_profile" "$resume_gate_evidence" "$host_session_id" <<'PY'
 import json
 import os
 import re
@@ -521,6 +574,11 @@ task_file = str(Path(sys.argv[3]).resolve())
 target_runtime_session_id = sys.argv[4].strip()
 target_binding_key = sys.argv[5].strip()
 runtime_host = sys.argv[6].strip()
+isolation_mode = sys.argv[7].strip()
+resume_gate_reason = sys.argv[8].strip()
+resume_gate_profile = sys.argv[9].strip()
+resume_gate_evidence = sys.argv[10].strip()
+host_session_id = sys.argv[11].strip()
 
 repo_root = Path(task_file).resolve().parent
 continuity_root = Path(
@@ -666,10 +724,29 @@ if not target_binding_key:
     target_binding_key = target_manifest.get("session_binding_key", "").strip()
 if not runtime_host:
     runtime_host = target_manifest.get("runtime_host", "").strip()
+if not isolation_mode:
+    isolation_mode = target_manifest.get("isolation_mode", "").strip()
+if not resume_gate_reason:
+    resume_gate_reason = target_manifest.get("resume_gate_reason", "").strip()
+if not resume_gate_profile:
+    resume_gate_profile = target_manifest.get("resume_gate_profile", "").strip()
+if not resume_gate_evidence:
+    resume_gate_evidence = target_manifest.get("resume_gate_evidence", "").strip()
+if not host_session_id:
+    host_session_id = target_manifest.get("host_session_id", "").strip()
 if not target_runtime_session_id:
     raise SystemExit("[redcap-session-continuity] target runtime session missing; run session-start sync before import")
 if target_manifest.get("runtime_session_id", "").strip() not in ("", target_runtime_session_id):
     raise SystemExit("[redcap-session-continuity] target runtime session mismatch; refuse import")
+
+if not isolation_mode:
+    isolation_mode = "degraded"
+if not resume_gate_reason:
+    resume_gate_reason = "resume-gate-unavailable"
+if not resume_gate_profile:
+    resume_gate_profile = "legacy-unspecified"
+if not resume_gate_evidence:
+    resume_gate_evidence = "legacy-unspecified"
 
 dest_root = target_dir / "files" / "imported-sessions" / source_handle
 created = False
@@ -706,6 +783,10 @@ metadata = {
     "target_workboard_path": str(target_workboard),
     "target_binding_key": target_binding_key,
     "runtime_host": runtime_host,
+    "target_isolation_mode": isolation_mode,
+    "target_resume_gate_reason": resume_gate_reason,
+    "target_resume_gate_profile": resume_gate_profile,
+    "target_resume_gate_evidence": resume_gate_evidence,
 }
 
 metadata_path = dest_root / "metadata.json"
@@ -733,6 +814,7 @@ if should_record_registry:
             "source_runtime_session_id": metadata["source_runtime_session_id"],
             "source_session_handle": source_handle,
             "source_workboard_path": str(source_workboard),
+            "isolation_mode": isolation_mode,
             "source_task_id": metadata["source_task_id"],
             "source_top_goal": metadata["source_top_goal"],
             "source_confirmed_hash": metadata["source_confirmed_hash"],
@@ -747,6 +829,7 @@ if should_record_registry:
             "runtime_host": runtime_host,
             "target_runtime_session_id": target_runtime_session_id,
             "target_session_handle": target_handle,
+            "isolation_mode": isolation_mode,
             "source_runtime_session_id": metadata["source_runtime_session_id"],
             "source_session_handle": source_handle,
             "import_root": metadata["import_root"],
@@ -774,6 +857,11 @@ manifest_data = {
     "active_slice": target_active_slice,
     "runtime_host": runtime_host,
     "session_binding_key": target_binding_key,
+    "host_session_id": host_session_id,
+    "isolation_mode": isolation_mode,
+    "resume_gate_reason": resume_gate_reason,
+    "resume_gate_profile": resume_gate_profile,
+    "resume_gate_evidence": resume_gate_evidence,
     "continuity_state": "imported",
     "continuity_authority": "redcap-owned-manifest",
     "own_record_present": "1" if target_own_record else "0",

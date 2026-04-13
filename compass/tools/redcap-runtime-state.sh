@@ -10,11 +10,14 @@ _REDCAP_RUNTIME_STATE_SH=1
 redcap_runtime_json_field() {
     local input="$1"
     local field="$2"
+    local value=""
 
-    printf '%s' "$input" |
+    value=$(printf '%s' "$input" |
         grep -o "\"$field\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" |
         head -1 |
-        sed "s/.*\"$field\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/"
+        sed "s/.*\"$field\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/" || true)
+
+    printf '%s\n' "$value"
 }
 
 redcap_runtime_project_hash() {
@@ -511,6 +514,19 @@ redcap_runtime_record_degraded_mode() {
 
     redcap_runtime_increment_counter_file "$compat_dir/degraded-mode.count"
     redcap_runtime_append_event_log "$compat_dir/degraded-mode.log" "$event" "$detail"
+}
+
+redcap_runtime_record_unsupported_mode() {
+    local project_root="$1"
+    local event="$2"
+    local detail="${3:-}"
+    local compat_dir
+
+    project_root=$(redcap_runtime_project_root "$project_root")
+    compat_dir=$(redcap_runtime_compat_dir_for_root "$project_root")
+
+    redcap_runtime_increment_counter_file "$compat_dir/unsupported-mode.count"
+    redcap_runtime_append_event_log "$compat_dir/unsupported-mode.log" "$event" "$detail"
 }
 
 redcap_runtime_clear_context() {

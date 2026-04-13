@@ -68,6 +68,7 @@
 
 - `continuity_authority: degraded-no-runtime-manifest`
 - `continuity_state: fresh-session`
+- `isolation_mode: degraded` 或 `unsupported`（由 `redcap-session-resume-gate.sh` 判定）
 
 而**不会**冒充：
 
@@ -197,6 +198,7 @@
 - 由 `redcap-session-continuity.sh` 单独维护
 - 进入 `.gitignore`
 - 是宿主 Session Mirror 的上游真相
+- `redcap-session-resume-gate.sh` 会在 SessionStart 先按 `references/host-session-capability-matrix.json` 给出 `isolation_mode`
 
 ### 3. runtime binding / session identity
 
@@ -208,6 +210,13 @@
 - runtime capability / owner metadata（设计口径）
 
 也就是说，**文件夹隔离负责防碰撞，binding / capability 负责防误认领。**
+
+另外要把两个问题拆开看：
+
+- `continuity_state`：当前会话有没有自己的记录、有没有导入建议、是否已经 imported
+- `isolation_mode`：当前宿主这次启动到底是 `full`、`degraded` 还是 `unsupported`
+
+这两个字段都要出现在 Session Mirror / manifest 里，但**不能互相冒充**。
 
 ---
 

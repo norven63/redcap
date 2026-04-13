@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "default": {
+    "support_status": "unsupported",
+    "profile": "unsupported-host",
+    "allow_safe_degraded": false,
+    "allow_explicit_binding_key": false,
+    "allow_host_session_id_binding": false,
+    "missing_identity_mode": "unsupported"
+  },
+  "hosts": {
+    "claude": {
+      "support_status": "supported",
+      "profile": "claude-sessionstart-host-session",
+      "allow_safe_degraded": true,
+      "allow_explicit_binding_key": true,
+      "allow_host_session_id_binding": true,
+      "missing_identity_mode": "degraded"
+    },
+    "gemini": {
+      "support_status": "supported",
+      "profile": "gemini-sessionstart-host-session",
+      "allow_safe_degraded": true,
+      "allow_explicit_binding_key": true,
+      "allow_host_session_id_binding": true,
+      "missing_identity_mode": "degraded"
+    },
+    "copilot": {
+      "support_status": "supported",
+      "profile": "copilot-sessionstart-wrapper-required",
+      "allow_safe_degraded": true,
+      "allow_explicit_binding_key": true,
+      "allow_host_session_id_binding": false,
+      "missing_identity_mode": "degraded"
+    }
+  }
+}

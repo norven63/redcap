@@ -213,7 +213,7 @@ RedCap 当前已经具备多种会话与并发形态：
 
 策略：
 
-1. **full isolation mode**：必须通过 RedCap launcher / wrapper 启动，使 RedCap 在启动前注入 `runtime_session_id`
+1. **full isolation mode**：必须通过 RedCap launcher / wrapper 启动，使 RedCap 在启动前拿到**稳定 binding 与受允 recovery path**，从而安全地创建或恢复 `runtime_session_id`
 2. **safe degraded mode**：若是手工直接启动、又拿不到稳定身份，则只允许执行**无会话副作用**的 stateless hook 行为
 
 safe degraded mode 的含义：
@@ -232,6 +232,8 @@ safe degraded mode 的含义：
 - `session_binding_key`
 - `task_id / confirmed_hash`
 - `continuity_authority`
+- `isolation_mode`
+- `resume_gate_reason / resume_gate_profile / resume_gate_evidence`
 - `continuity_state`
 
 其中 `continuity_state` 只允许取以下几类值：
@@ -251,7 +253,8 @@ safe degraded mode 的含义：
 4. **源会话保持原样保留**：显式导入是 copy，不是 move，不会破坏原会话目录
 5. **导入同时记账**：除拷贝资产外，还要追加 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
 6. **导入资产带来源 metadata**：必须记录 `source_session_handle / source_plan / source_task_id / source_confirmed_hash / imported_at`
-7. **无 runtime 不得伪造连续性**：缺少 `runtime_session_id` 时，只允许输出 `fresh-session + continuity_authority=degraded-no-runtime-manifest`，不得冒充 `self-recorded / import-suggested / imported`
+7. **无 runtime 不得伪造连续性**：缺少 `runtime_session_id` 时，只允许输出 `fresh-session + continuity_authority=degraded-no-runtime-manifest`；此时 `isolation_mode` 只能由 resume gate 判成 `degraded` 或 `unsupported`，不得冒充 `self-recorded / import-suggested / imported`
+8. **resume gate 先判模式**：`redcap-session-resume-gate.sh` 基于 `references/host-session-capability-matrix.json` 先判定 `full / degraded / unsupported`；`continuity_state` 与 `isolation_mode` 必须分字段维护，前者描述连续性，后者描述宿主隔离能力
 
 > 这里的关键不是“省事续接”，而是让 continuity bridge 变成**显式、可审计、可保留来源**的协议动作。
 

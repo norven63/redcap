@@ -63,6 +63,11 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-required
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-only-discovery
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-import
+  bash compass/tools/redcap-multi-session-acceptance.sh session-resume-gate-claude-full
+  bash compass/tools/redcap-multi-session-acceptance.sh session-resume-gate-gemini-full
+  bash compass/tools/redcap-multi-session-acceptance.sh session-resume-gate-copilot-full
+  bash compass/tools/redcap-multi-session-acceptance.sh session-resume-gate-error-safe-fail
+  bash compass/tools/redcap-multi-session-acceptance.sh session-resume-gate-unsupported-host
 EOF
 }
 
@@ -254,6 +259,197 @@ init_bound_runtime() {
     unset REDCAP_HOST_PROCESS_PID
 }
 
+run_host_session_resume_full_case() {
+    local host="$1"
+    local profile="$2"
+    local case_name="$3"
+    local case_root case_core workboard confirmed_hash
+    local session_id runtime_id manifest binding_key
+
+    log "case: $case_name"
+
+    case_root="$ACCEPT_ROOT/$case_name"
+    case_core="$CONTINUITY_CORE_DIR/$case_name"
+    workboard="$case_root/plan.md"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+
+    write_workboard_fixture \
+        "$workboard" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "framework-upgrade-backlog-review" \
+        "acceptance session resume gate" \
+        "tranche-1-session-resume-gate-capability-matrix" \
+        "$confirmed_hash"
+
+    session_id="acceptance-${host}-session-${RANDOM}-$$"
+    printf '{"session_id":"%s","cwd":"%s"}\n' "$session_id" "$REDCAP_ROOT" | \
+        REDCAP_HOOK_CWD="$REDCAP_ROOT" \
+        REDCAP_HOST_WORKBOARD_PATH="$workboard" \
+        REDCAP_CONTINUITY_ROOT_DIR="$case_core" \
+        REDCAP_HOST_PROCESS_PID="$$" \
+        bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+
+    assert_eq "$(workboard_value "$workboard" "isolation_mode")" "full"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_reason")" "host-session-id-derived-binding"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_profile")" "$profile"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_evidence")" "capability-matrix,host-session-id"
+    assert_eq "$(workboard_value "$workboard" "continuity_state")" "fresh-session"
+
+    binding_key="$(workboard_value "$workboard" "session_binding_key")"
+    assert_eq "$binding_key" "$(redcap_runtime_binding_key_from_host_session "$host" "$session_id")"
+
+    runtime_id="$(workboard_value "$workboard" "runtime_session_id")"
+    [[ -n "$runtime_id" && "$runtime_id" != "unknown" ]] || fail "expected runtime session id for $case_name"
+
+    manifest="$case_core/sessions/$runtime_id/manifest.yaml"
+    assert_exists "$manifest"
+    assert_eq "$(manifest_value "$manifest" "isolation_mode")" "full"
+    assert_eq "$(manifest_value "$manifest" "resume_gate_reason")" "host-session-id-derived-binding"
+    assert_eq "$(manifest_value "$manifest" "resume_gate_profile")" "$profile"
+    assert_eq "$(manifest_value "$manifest" "resume_gate_evidence")" "capability-matrix,host-session-id"
+}
+
+run_session_resume_gate_claude_full_case() {
+    run_host_session_resume_full_case "claude" "claude-sessionstart-host-session" "session-resume-gate-claude-full"
+}
+
+run_session_resume_gate_gemini_full_case() {
+    run_host_session_resume_full_case "gemini" "gemini-sessionstart-host-session" "session-resume-gate-gemini-full"
+}
+
+run_session_resume_gate_copilot_full_case() {
+    local host="copilot"
+    local case_name="session-resume-gate-copilot-full"
+    local case_root case_core workboard confirmed_hash
+    local binding_key runtime_id manifest
+
+    log "case: $case_name"
+
+    case_root="$ACCEPT_ROOT/$case_name"
+    case_core="$CONTINUITY_CORE_DIR/$case_name"
+    workboard="$case_root/plan.md"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+    binding_key="acceptance-copilot-full-${RANDOM}-$$"
+
+    write_workboard_fixture \
+        "$workboard" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "framework-upgrade-backlog-review" \
+        "acceptance session resume gate" \
+        "tranche-1-session-resume-gate-capability-matrix" \
+        "$confirmed_hash"
+
+    printf '{}' | \
+        REDCAP_HOOK_CWD="$REDCAP_ROOT" \
+        REDCAP_HOST_WORKBOARD_PATH="$workboard" \
+        REDCAP_CONTINUITY_ROOT_DIR="$case_core" \
+        REDCAP_HOST_PROCESS_PID="$$" \
+        REDCAP_SESSION_BINDING_KEY="$binding_key" \
+        bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+
+    assert_eq "$(workboard_value "$workboard" "isolation_mode")" "full"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_reason")" "explicit-binding-key"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_profile")" "copilot-sessionstart-wrapper-required"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_evidence")" "capability-matrix,explicit-binding-key"
+    assert_eq "$(workboard_value "$workboard" "session_binding_key")" "$binding_key"
+
+    runtime_id="$(workboard_value "$workboard" "runtime_session_id")"
+    [[ -n "$runtime_id" && "$runtime_id" != "unknown" ]] || fail "expected runtime session id for $case_name"
+
+    manifest="$case_core/sessions/$runtime_id/manifest.yaml"
+    assert_exists "$manifest"
+    assert_eq "$(manifest_value "$manifest" "isolation_mode")" "full"
+    assert_eq "$(manifest_value "$manifest" "resume_gate_reason")" "explicit-binding-key"
+    assert_eq "$(manifest_value "$manifest" "resume_gate_profile")" "copilot-sessionstart-wrapper-required"
+    assert_eq "$(manifest_value "$manifest" "resume_gate_evidence")" "capability-matrix,explicit-binding-key"
+}
+
+run_session_resume_gate_unsupported_host_case() {
+    local host="unsupported-host"
+    local case_name="session-resume-gate-unsupported-host"
+    local case_root case_core workboard confirmed_hash
+    local unsupported_file before after
+
+    log "case: $case_name"
+
+    case_root="$ACCEPT_ROOT/$case_name"
+    case_core="$CONTINUITY_CORE_DIR/$case_name"
+    workboard="$case_root/plan.md"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+    unsupported_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "unsupported-mode.count")"
+    before="$(counter_value "$unsupported_file")"
+
+    write_workboard_fixture \
+        "$workboard" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "framework-upgrade-backlog-review" \
+        "acceptance session resume gate" \
+        "tranche-1-session-resume-gate-capability-matrix" \
+        "$confirmed_hash"
+
+    printf '{}' | \
+        REDCAP_HOOK_CWD="$REDCAP_ROOT" \
+        REDCAP_HOST_WORKBOARD_PATH="$workboard" \
+        REDCAP_CONTINUITY_ROOT_DIR="$case_core" \
+        REDCAP_HOST_PROCESS_PID="$$" \
+        bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+
+    after="$(counter_value "$unsupported_file")"
+    assert_num_eq "$after" $((before + 1))
+    assert_eq "$(workboard_value "$workboard" "isolation_mode")" "unsupported"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_reason")" "unsupported-host"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_profile")" "unsupported-host"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_evidence")" "capability-matrix"
+    assert_eq "$(workboard_value "$workboard" "runtime_session_id")" "unknown"
+    assert_eq "$(workboard_value "$workboard" "continuity_state")" "fresh-session"
+    assert_eq "$(workboard_value "$workboard" "continuity_authority")" "degraded-no-runtime-manifest"
+    assert_not_exists "$case_core/sessions"
+}
+
+run_session_resume_gate_error_safe_fail_case() {
+    local host="copilot"
+    local case_name="session-resume-gate-error-safe-fail"
+    local case_root case_core workboard confirmed_hash
+    local binding_key unsupported_file before after
+
+    log "case: $case_name"
+
+    case_root="$ACCEPT_ROOT/$case_name"
+    case_core="$CONTINUITY_CORE_DIR/$case_name"
+    workboard="$case_root/plan.md"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+    binding_key="acceptance-gate-error-${RANDOM}-$$"
+    unsupported_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "unsupported-mode.count")"
+    before="$(counter_value "$unsupported_file")"
+
+    write_workboard_fixture \
+        "$workboard" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "framework-upgrade-backlog-review" \
+        "acceptance session resume gate" \
+        "tranche-1-session-resume-gate-capability-matrix" \
+        "$confirmed_hash"
+
+    printf '{}' | \
+        REDCAP_HOOK_CWD="$REDCAP_ROOT" \
+        REDCAP_HOST_WORKBOARD_PATH="$workboard" \
+        REDCAP_CONTINUITY_ROOT_DIR="$case_core" \
+        REDCAP_HOST_PROCESS_PID="$$" \
+        REDCAP_SESSION_BINDING_KEY="$binding_key" \
+        REDCAP_HOST_SESSION_CAPABILITY_MATRIX_PATH="$case_root/missing-matrix.json" \
+        bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+
+    after="$(counter_value "$unsupported_file")"
+    assert_num_eq "$after" $((before + 1))
+    assert_eq "$(workboard_value "$workboard" "isolation_mode")" "unsupported"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_reason")" "resume-gate-error"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_profile")" "resume-gate-error"
+    assert_eq "$(workboard_value "$workboard" "runtime_session_id")" "unknown"
+    assert_eq "$(workboard_value "$workboard" "session_binding_key")" "$binding_key"
+    assert_eq "$(workboard_value "$workboard" "continuity_authority")" "degraded-no-runtime-manifest"
+    assert_not_exists "$case_core/sessions"
+}
+
 run_binding_recovery_gate_case() {
     local host="claude"
     local binding_key="acceptance-binding-${RANDOM}-$$"
@@ -349,6 +545,7 @@ run_layerb_concurrency_case() {
 
 run_copilot_safe_degraded_case() {
     local compat_prefix degraded_file before after expected
+    local case_root case_core workboard confirmed_hash
     local suffix
 
     log "case: copilot-safe-degraded"
@@ -356,8 +553,26 @@ run_copilot_safe_degraded_case() {
     compat_prefix="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "legacy-fallback/layerB-copilot")"
     degraded_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "degraded-mode.count")"
     before="$(counter_value "$degraded_file")"
+    case_root="$ACCEPT_ROOT/copilot-safe-degraded"
+    case_core="$CONTINUITY_CORE_DIR/copilot-safe-degraded"
+    workboard="$case_root/plan.md"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
 
-    printf '{}' | REDCAP_HOOK_CWD="$REDCAP_ROOT" REDCAP_HOST_PROCESS_PID="$$" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" copilot >/dev/null
+    write_workboard_fixture \
+        "$workboard" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "framework-upgrade-backlog-review" \
+        "acceptance session resume gate" \
+        "tranche-1-session-resume-gate-capability-matrix" \
+        "$confirmed_hash"
+
+    printf '{}' | REDCAP_HOOK_CWD="$REDCAP_ROOT" REDCAP_HOST_WORKBOARD_PATH="$workboard" REDCAP_CONTINUITY_ROOT_DIR="$case_core" REDCAP_HOST_PROCESS_PID="$$" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" copilot >/dev/null
+    assert_eq "$(workboard_value "$workboard" "isolation_mode")" "degraded"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_reason")" "missing-host-session-id"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_profile")" "copilot-sessionstart-wrapper-required"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_evidence")" "capability-matrix"
+    assert_eq "$(workboard_value "$workboard" "runtime_session_id")" "unknown"
+    assert_eq "$(workboard_value "$workboard" "continuity_authority")" "degraded-no-runtime-manifest"
     REDCAP_HOOK_CWD="$REDCAP_ROOT" REDCAP_HOST_PROCESS_PID="$$" REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 bash "$SCRIPT_DIR/redcap-layerB-session-end.sh" copilot >/dev/null
 
     for suffix in \
@@ -922,6 +1137,11 @@ run_all_cases() {
     run_binding_recovery_gate_case
     run_layerb_concurrency_case
     run_copilot_safe_degraded_case
+    run_session_resume_gate_claude_full_case
+    run_session_resume_gate_gemini_full_case
+    run_session_resume_gate_copilot_full_case
+    run_session_resume_gate_error_safe_fail_case
+    run_session_resume_gate_unsupported_host_case
     run_cross_layer_visibility_case
     run_layera_legacy_quarantine_case
     run_prism_concurrency_case
@@ -986,6 +1206,21 @@ case "$COMMAND" in
         ;;
     continuity-manifest-import)
         run_continuity_manifest_import_case
+        ;;
+    session-resume-gate-claude-full)
+        run_session_resume_gate_claude_full_case
+        ;;
+    session-resume-gate-gemini-full)
+        run_session_resume_gate_gemini_full_case
+        ;;
+    session-resume-gate-copilot-full)
+        run_session_resume_gate_copilot_full_case
+        ;;
+    session-resume-gate-error-safe-fail)
+        run_session_resume_gate_error_safe_fail_case
+        ;;
+    session-resume-gate-unsupported-host)
+        run_session_resume_gate_unsupported_host_case
         ;;
     *)
         usage

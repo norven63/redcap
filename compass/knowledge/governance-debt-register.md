@@ -36,10 +36,10 @@
 
 ### GD-004：Session resume gate 与 capability matrix
 - **design_status**: `design-complete`
-- **implementation_status**: `pending`
+- **implementation_status**: `done`
 - **owner_slice**: `会话隔离与连续性`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §四 B2
-- **gap**: 跨宿主隔离模式、resume decision、degraded mode 还没有统一 gate
+- **gap**: `redcap-session-resume-gate.sh` 已接入 `redcap-layerB-session-start.sh`，并以 `references/host-session-capability-matrix.json` 统一发布 `full / degraded / unsupported`
 
 ### GD-005：Specs lifecycle authority
 - **design_status**: `design-complete`
