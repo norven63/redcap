@@ -380,6 +380,8 @@ active_slice: <当前子任务>
 subtask_of: <若 active_slice != top_goal，则填写>
 host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
+governance_tranche: false
+governance_debts_addressed: []
 
 ## 原始输入（用户原文）
 <逐条原文>
@@ -428,6 +430,24 @@ delegation_boundary: redcap-native-first
   - 只允许显式导入 compatible session 的 continuity artifacts，禁止默认自动继承最近会话
 
 > 该文件已加入 `.gitignore`——它是临时过程状态，不应进入版本控制。
+
+### 治理 tranche 附加要求
+
+当某个 Layer B 任务满足以下任一条件时，应将 `.dev-task.md` 中的 `governance_tranche` 标记为 `true`：
+
+1. 修改 hook / gate / validator / runtime state / closure chain 等框架保障机制
+2. 修改 docs / specs / authority / lifecycle 这类会影响全局治理口径的规则
+3. 引入或调整“业内权威规范 → RedCap 可执行约束”的映射
+
+当 `governance_tranche: true` 时，额外要求如下：
+
+1. `.dev-task.md` 中必须填写 `governance_debts_addressed`
+2. 任务执行前后都要对照 `references/governance-review-checklist.md`
+3. 若发现“设计已完成、实现未完成”的治理项，必须补录到 `compass/knowledge/governance-debt-register.md`
+4. task report 中必须显式说明：
+   - 本 tranche 触及了哪些治理边界
+   - 哪些规则已经脚本化 / gate 化
+   - 哪些仍是 debt，为什么暂不实现
 
 ---
 
