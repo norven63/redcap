@@ -85,6 +85,8 @@ RedCap 当前把状态面划分为三类：
 
 这也是本次 docs 重整的基本原则：**不要把 process state 塞进 history 层，也不要把历史证据误删成“临时文件”。**
 
+当前这条边界已由 `compass/tools/redcap-artifact-lifecycle-check.sh` 进入收尾链：`stop-review` 与 `redcap-on-complete.sh` 都会阻断 session-isolated / local-only / temporary artifact 的错误入库，以及 `compass/docs/` 根目录重新长成未分类条目。
+
 ### 2.2.2 `docs / knowledge / continuity assets` 的职责分层
 
 文件放哪一层，不取决于“看起来像不像记录”，而取决于它承担的是哪种记忆职责：

@@ -32,6 +32,7 @@ source "$SCRIPT_DIR/redcap-notify-format.sh"
 WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
 PROJECT_NAME=$(redcap_runtime_project_name "$PROJECT_DIR" "$PROJECT_NAME_ARG")
 TASK_REPORT_CHECK="$SCRIPT_DIR/redcap-task-report-check.sh"
+ARTIFACT_LIFECYCLE_CHECK="$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh"
 
 verify_commit_closure() {
   local current_head worktree_status=""
@@ -60,6 +61,28 @@ verify_commit_closure() {
 
   if [[ "$current_head" == "$INITIAL_HEAD" ]]; then
     echo "[on_complete] 未检测到本轮新 commit，拒绝标记完成" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+verify_artifact_lifecycle() {
+  local current_head
+
+  current_head=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || true)
+  if [[ -z "$current_head" ]]; then
+    echo "[on_complete] 无法解析当前 HEAD，拒绝执行 artifact lifecycle 校验" >&2
+    return 1
+  fi
+
+  if [[ ! -x "$ARTIFACT_LIFECYCLE_CHECK" ]]; then
+    echo "[on_complete] artifact lifecycle 检查脚本不存在，拒绝标记完成" >&2
+    return 1
+  fi
+
+  if ! bash "$ARTIFACT_LIFECYCLE_CHECK" "$PROJECT_DIR" "$INITIAL_HEAD" "$current_head"; then
+    echo "[on_complete] artifact lifecycle 检查失败，拒绝标记完成" >&2
     return 1
   fi
 
@@ -180,6 +203,11 @@ echo "[on_complete] 开始执行 on_ALL_DONE 收尾动作..."
 
 if ! verify_commit_closure; then
   echo "[on_complete] ⚠ commit proof 未满足，保留重试机会" >&2
+  exit 1
+fi
+
+if ! verify_artifact_lifecycle; then
+  echo "[on_complete] ⚠ artifact lifecycle proof 未满足，保留重试机会" >&2
   exit 1
 fi
 

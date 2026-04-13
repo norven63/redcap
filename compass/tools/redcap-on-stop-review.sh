@@ -174,6 +174,14 @@ if [[ -x "$DRIFT_CHECK" ]]; then
     }
 fi
 
+ARTIFACT_LIFECYCLE_CHECK="$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh"
+if [[ -x "$ARTIFACT_LIFECYCLE_CHECK" ]]; then
+    ARTIFACT_LIFECYCLE_OUTPUT=$(bash "$ARTIFACT_LIFECYCLE_CHECK" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" 2>&1) || {
+        write_control_plane_failure "artifact lifecycle 检查失败" "$ARTIFACT_LIFECYCLE_OUTPUT"
+        exit 1
+    }
+fi
+
 # ── 提取 Diff ──
 
 DIFF=$(git -C "$REDCAP_ROOT" --no-pager diff "$BASELINE..HEAD" 2>/dev/null)
