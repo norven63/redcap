@@ -61,8 +61,23 @@ run_control_plane_start_sync() {
     fi
 }
 
+run_pending_closure_reconcile() {
+    local reconcile_script="$SCRIPT_DIR/redcap-pending-closure-reconcile.sh"
+
+    if [[ ! -x "$reconcile_script" ]]; then
+        return 0
+    fi
+
+    REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+    REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+    REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
+    bash "$reconcile_script" "$HOST" >/dev/null 2>&1 || true
+}
+
 if [[ -n "$BINDING_KEY" ]] && REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1 REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY=1 redcap_runtime_init_from_binding "$HOST" "$HOOK_CWD" "$BINDING_KEY"; then
+    PENDING_CLOSURE_EXISTS=0
     if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        PENDING_CLOSURE_EXISTS=1
         redcap_interop_record_reanchor_event \
             "$REDCAP_ROOT" \
             "pending-closure-detected-on-session-start" \
@@ -77,6 +92,9 @@ if [[ -n "$BINDING_KEY" ]] && REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1 REDCAP_RUNTIM
         if [[ -n "$CURRENT_HEAD" ]]; then
             redcap_runtime_write_text "layerB/initial-head" "$CURRENT_HEAD" || true
         fi
+    fi
+    if [[ "$PENDING_CLOSURE_EXISTS" == "1" ]]; then
+        run_pending_closure_reconcile
     fi
     run_control_plane_start_sync
     exit 0

@@ -423,9 +423,10 @@ governance_debts_addressed: []
   - 校验 `top_goal / active_slice / subtask_of`
   - 校验本轮改动文件不得超出 `## 允许修改范围`
 - `compass/tools/redcap-validator-chain.sh`
-  - 统一编排 Layer B 的 session-start / stop-review / on-complete / session-end validator
+  - 统一编排 Layer B 的 session-start / obligation-reconcile / stop-review / on-complete / session-end validator
   - 当前已覆盖 commit proof、review proof、reanchor、PM Gate、drift、task report、artifact lifecycle 等检查，并输出结构化结果供下游消费
-  - `session-start` 仍是 advisory / stamp-only，不阻断进入；`stop-review`、RedCap self-dev 的 `on-complete` 与 `session-end` 才是 blocking gate
+  - `session-start` 仍是 advisory / stamp-only，不阻断进入；若发现 outstanding pending closure，只允许通过独立 auto-reconcile helper 尝试核销/收缩**当前可证明的** blocker
+  - `stop-review`、RedCap self-dev 的 `on-complete` 与 `session-end` 才是 blocking gate
   - 对非 RedCap 自身项目，`on-complete` 只保留通用的 commit proof，不启用 Layer B 专属的 PM Gate / drift / task-report / artifact lifecycle
   - 输出结构化结果，避免多条控制面检查散落在调用方
 - `compass/tools/redcap-interop-governance.sh`
@@ -442,6 +443,10 @@ governance_debts_addressed: []
   - 先消费 `validator-chain session-end` 的 `review proof + reanchor + PM Gate + drift + task report + artifact lifecycle`，再决定 notify / pending closure clear
   - 若 validator-chain 未产出可判定 step、notify 失败、pending closure 无法清除，或 closure 证据写回失败，必须保留/更新 pending closure；`session-end` 作为 authority reconcile 入口应以当前 blocker set 重写 `required_redlines`
   - 若 blocker 已判定但 `pending closure / closure-ledger` 无法持久化，必须 fail-closed，不能继续按“正常收尾”退出
+- `compass/tools/redcap-pending-closure-reconcile.sh`
+  - 由 `session-start` 在成功 re-anchor 后 advisory 触发，用于消费 pending closure 的确定性 redline（reanchor / PM Gate / drift / task report / artifact lifecycle）
+  - 只允许在 `task_id + confirmed_hash` 仍匹配当前 canonical pointer 时 auto-clear / rewrite；identity mismatch 时必须保留旧 obligation，不得静默代偿
+  - 不负责发送 notify，也不把 SessionStart 升级为 blocking gate；它的职责是“收缩 stale blocker / 自动核销可证明义务”，剩余 blocker 继续交给严格 closure 入口处理
 - `loom/tools/redcap-layerA-session-end.sh`
   - 作为宿主通用 SessionEnd 分发器，必须传播 Layer B `session-end` 的 fail-closed 结果，不能用 `|| true` 吞掉 authority 脚本的非零退出
   - Gemini 宿主若接到 Layer B fail-closed，需映射为宿主可识别的 system-block 退出码，而不是继续返回 `allow`

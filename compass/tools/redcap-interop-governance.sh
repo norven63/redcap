@@ -386,8 +386,9 @@ redcap_interop_write_pending_closure() {
     local baseline_head="${8:-}"
     local audited_head="${9:-}"
     local redline_mode="${10:-merge}"
+    local expected_updated_at="${11:-}"
     local task_id top_goal active_slice confirmed_hash state_file state_dir now created_at existing_artifact_path
-    local existing_required_redlines existing_baseline_head existing_audited_head existing_confirmed_hash existing_active_slice existing_top_goal item normalized_required_redlines=""
+    local existing_required_redlines existing_baseline_head existing_audited_head existing_confirmed_hash existing_active_slice existing_top_goal existing_updated_at item normalized_required_redlines=""
 
     if [[ -z "$project_root" || -z "$task_file" || -z "$host" || -z "$trigger" ]]; then
         return 1
@@ -425,6 +426,10 @@ redcap_interop_write_pending_closure() {
 
         created_at=$(redcap_interop_read_state_field "$state_file" "created_at" 2>/dev/null || true)
         [[ -n "$created_at" ]] || created_at="$now"
+        existing_updated_at=$(redcap_interop_read_state_field "$state_file" "updated_at" 2>/dev/null || true)
+        if [[ -n "$expected_updated_at" && "$existing_updated_at" != "$expected_updated_at" ]]; then
+            exit 1
+        fi
         existing_required_redlines=$(redcap_interop_read_state_field "$state_file" "required_redlines" 2>/dev/null || true)
         existing_confirmed_hash=$(redcap_interop_read_state_field "$state_file" "confirmed_hash" 2>/dev/null || true)
         existing_active_slice=$(redcap_interop_read_state_field "$state_file" "active_slice" 2>/dev/null || true)
@@ -449,6 +454,10 @@ redcap_interop_write_pending_closure() {
             esac
         done
         required_redlines="$normalized_required_redlines"
+        # Once an obligation exists, its identity stays anchored to the original
+        # canonical pointer. "replace" rewrites blocker state, not the
+        # obligation's historical identity, otherwise old/new confirmed hashes
+        # would split one pending closure into multiple ledger tracks.
         if [[ -n "$existing_confirmed_hash" ]]; then
             confirmed_hash="$existing_confirmed_hash"
         fi

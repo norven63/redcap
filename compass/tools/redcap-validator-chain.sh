@@ -104,6 +104,14 @@ case "$MODE" in
         run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" stop-review "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
         run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" redcap-self || overall_status="fail"
         ;;
+    obligation-reconcile)
+        run_step "review-proof-check" bash "$SCRIPT_DIR/redcap-review-proof-check.sh" "${REDCAP_SESSION_END_REVIEW_REQUIRED:-0}" "${REDCAP_SESSION_END_REVIEW_STATUS:-}" || overall_status="fail"
+        run_step "reanchor-check" bash "$SCRIPT_DIR/redcap-closure-reanchor-check.sh" "${REDCAP_SESSION_END_PENDING_HEAD_MISMATCH:-0}" "${REDCAP_SESSION_END_PENDING_AUDITED_HEAD:-}" "$CURRENT_HEAD" || overall_status="fail"
+        run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" strict "$HOST" "$TASK_FILE" || overall_status="fail"
+        run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" obligation-reconcile "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+        run_step "task-report-check" bash "$SCRIPT_DIR/redcap-task-report-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" "$HOST" || overall_status="fail"
+        run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" redcap-self || overall_status="fail"
+        ;;
     session-end)
         run_step "review-proof-check" bash "$SCRIPT_DIR/redcap-review-proof-check.sh" "${REDCAP_SESSION_END_REVIEW_REQUIRED:-0}" "${REDCAP_SESSION_END_REVIEW_STATUS:-}" || overall_status="fail"
         run_step "reanchor-check" bash "$SCRIPT_DIR/redcap-closure-reanchor-check.sh" "${REDCAP_SESSION_END_PENDING_HEAD_MISMATCH:-0}" "${REDCAP_SESSION_END_PENDING_AUDITED_HEAD:-}" "$CURRENT_HEAD" || overall_status="fail"

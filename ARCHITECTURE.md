@@ -350,7 +350,7 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 - `redcap-task-report-check.sh`：可从 pending closure 回读 `artifact_path`，支持无新 diff 的补偿式 reconcile
 - `redcap-on-complete.sh`：对 RedCap 自身 on-complete fail-closed 校验 commit proof / task report / artifact lifecycle，并把关键阶段追加到 closure ledger
 - `redcap-layerB-session-end.sh`：成功则清 obligation 并记账；失败或缺 claim 则把缺口重新写回 pending closure，并显式记录 blocked redlines
-- `redcap-layerB-session-start.sh`：记录 re-anchor 时是否仍带着未闭环义务
+- `redcap-layerB-session-start.sh`：在成功 re-anchor 后以 advisory 方式触发 pending closure auto-reconcile；它负责记录/尝试消费确定性 blocker，但不把 SessionStart 变成新的 blocking gate
 
 与此同时，task report 本身不再只是“归档路径”：
 

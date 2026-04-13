@@ -5,6 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
+source "$SCRIPT_DIR/redcap-interop-governance.sh"
 redcap_runtime_clear_context
 unset REDCAP_RUNTIME_ALLOW_DISK_RECOVERY REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY REDCAP_RUNTIME_CAPABILITY 2>/dev/null || true
 
@@ -53,6 +54,9 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh prism-concurrency
   bash compass/tools/redcap-multi-session-acceptance.sh prism-legacy-bridge
   bash compass/tools/redcap-multi-session-acceptance.sh report-register-requires-claim
+  bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-rewrite
+  bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-clear
+  bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-hash-mismatch
 EOF
 }
 
@@ -85,6 +89,12 @@ assert_num_eq() {
     [[ "$1" =~ ^[0-9]+$ ]] || fail "expected numeric value, got: $1"
     [[ "$2" =~ ^[0-9]+$ ]] || fail "expected numeric value, got: $2"
     [[ "$1" -eq "$2" ]] || fail "expected $1 -eq $2"
+}
+
+normalize_csv() {
+    local value="${1:-}"
+
+    printf '%s' "$value" | tr ',' '\n' | sed '/^[[:space:]]*$/d' | sort | paste -sd',' -
 }
 
 counter_value() {
@@ -469,6 +479,119 @@ run_report_register_requires_claim_case() {
     assert_num_eq "$after" $((before + 1))
 }
 
+run_sessionstart_auto_reconcile_rewrite_case() {
+    local host="claude"
+    local binding_a binding_b pid_a pid_b
+    local report_path pending_state required_redlines
+
+    log "case: sessionstart-auto-reconcile-rewrite"
+
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md"
+    binding_a="acceptance-reconcile-a-${RANDOM}-$$"
+    binding_b="acceptance-reconcile-b-${RANDOM}-$$"
+    pid_a="$((61000 + RANDOM))"
+    pid_b="$((62000 + RANDOM))"
+
+    printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_a" REDCAP_HOST_PROCESS_PID="$pid_a" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+    REDCAP_HOST_PROCESS_PID="$pid_a" bash "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$host" "$report_path" >/dev/null
+
+    pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
+    required_redlines=$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)
+    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "task-report,review,notify")"
+
+    printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_b" REDCAP_HOST_PROCESS_PID="$pid_b" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+
+    required_redlines=$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)
+    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "review,notify")"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "sessionstart-auto-reconcile-rewrite" >/dev/null
+    redcap_runtime_clear_process_claim "$host" "$pid_a" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid_b" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_sessionstart_auto_reconcile_clear_case() {
+    local host="claude"
+    local binding_key pid
+    local report_path pending_state current_head
+
+    log "case: sessionstart-auto-reconcile-clear"
+
+    report_path="compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report" \
+        "sessionstart-auto-reconcile-clear" \
+        "$report_path" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null
+    pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
+    assert_exists "$pending_state"
+
+    binding_key="acceptance-reconcile-clear-${RANDOM}-$$"
+    pid="$((63000 + RANDOM))"
+    printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_key" REDCAP_HOST_PROCESS_PID="$pid" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+
+    assert_not_exists "$pending_state"
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_sessionstart_auto_reconcile_hash_mismatch_case() {
+    local host="claude"
+    local binding_key pid
+    local report_path pending_state required_redlines
+    local current_hash mismatch_hash
+
+    log "case: sessionstart-auto-reconcile-hash-mismatch"
+
+    report_path="compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md"
+    current_hash=$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")
+    mismatch_hash="deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+    [[ "$current_hash" != "$mismatch_hash" ]] || fail "hash mismatch fixture collided with current confirmed hash"
+
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report" \
+        "sessionstart-auto-reconcile-hash-mismatch" \
+        "$report_path" \
+        "$current_hash" \
+        "$current_hash" \
+        >/dev/null
+    pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
+    python3 - "$pending_state" "$mismatch_hash" <<'PY'
+import pathlib
+import re
+import sys
+
+path = pathlib.Path(sys.argv[1])
+replacement = sys.argv[2]
+text = path.read_text(encoding="utf-8")
+updated = re.sub(r"^confirmed_hash:\s*.*$", f"confirmed_hash: {replacement}", text, count=1, flags=re.MULTILINE)
+path.write_text(updated, encoding="utf-8")
+PY
+
+    binding_key="acceptance-reconcile-hash-mismatch-${RANDOM}-$$"
+    pid="$((64000 + RANDOM))"
+    printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_key" REDCAP_HOST_PROCESS_PID="$pid" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+
+    assert_exists "$pending_state"
+    required_redlines=$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)
+    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "task-report")"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "sessionstart-auto-reconcile-hash-mismatch" >/dev/null
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
 run_all_cases() {
     run_binding_recovery_gate_case
     run_layerb_concurrency_case
@@ -478,6 +601,9 @@ run_all_cases() {
     run_prism_concurrency_case
     run_prism_legacy_bridge_case
     run_report_register_requires_claim_case
+    run_sessionstart_auto_reconcile_rewrite_case
+    run_sessionstart_auto_reconcile_clear_case
+    run_sessionstart_auto_reconcile_hash_mismatch_case
 }
 
 COMMAND="${1:-all}"
@@ -509,6 +635,15 @@ case "$COMMAND" in
         ;;
     report-register-requires-claim)
         run_report_register_requires_claim_case
+        ;;
+    sessionstart-auto-reconcile-rewrite)
+        run_sessionstart_auto_reconcile_rewrite_case
+        ;;
+    sessionstart-auto-reconcile-clear)
+        run_sessionstart_auto_reconcile_clear_case
+        ;;
+    sessionstart-auto-reconcile-hash-mismatch)
+        run_sessionstart_auto_reconcile_hash_mismatch_case
         ;;
     *)
         usage

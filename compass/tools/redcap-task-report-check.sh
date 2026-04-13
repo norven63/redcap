@@ -115,7 +115,7 @@ for REL_PATH in "${REPORT_FILES[@]}"; do
     ABS_PATH="$REDCAP_ROOT/$REL_PATH"
     REQUIRE_SUMMARY=0
 
-    for CHANGED in "${CHANGED_REPORTS[@]}"; do
+    for CHANGED in "${CHANGED_REPORTS[@]:-}"; do
         if [[ "$CHANGED" == "$REL_PATH" ]]; then
             REQUIRE_SUMMARY=1
             break
