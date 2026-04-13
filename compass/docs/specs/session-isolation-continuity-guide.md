@@ -45,7 +45,8 @@
 | 层 | 典型载体 | 是否按 session 隔离 | 原因 |
 |---|---|---:|---|
 | canonical truth | `.dev-task.md` | 否 | 这是当前任务的唯一真相源，不能每个 session 各写一份 |
-| 宿主 continuity 资产 | `plan.md`、`files/`、`checkpoints/` | 是 | 这是当前宿主会话的私有连续性记录 |
+| repo-local continuity authority | `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`、`provenance.yaml` | 是 | 这是 RedCap 自己维护的 continuity 真相层 |
+| 宿主 continuity 资产 | `plan.md`、`files/`、`checkpoints/` | 是 | 这是当前宿主会话的私有连续性记录与 mirror surface |
 | runtime 私有态 | runtime state / owner metadata / pending markers | 是 | 防止并发串号 |
 | frozen evidence | `compass/docs/specs/**`、`task-reports/**` | 否 | 这是跨会话共享的正式证据 |
 
@@ -55,28 +56,41 @@
 
 ## 二、当前会话如何识别“这是我自己的连续性记录”
 
-当前实现并不是去问“`.dev-task.md` 是谁创建的”，而是看三件事：
+当前实现并不是去问“`.dev-task.md` 是谁创建的”，而是先看 **repo-local continuity manifest**，再决定宿主 mirror 该显示什么：
 
-### 1. 当前 session folder 是否已有自己的 continuity assets
+### 1. 当前是否拿到了 `runtime_session_id`
+
+只有拿到 `runtime_session_id`，RedCap 才允许把 continuity authority 发布到：
+
+- `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`
+
+如果没有这个前提，`redcap-session-continuity.sh sync` 只允许输出：
+
+- `continuity_authority: degraded-no-runtime-manifest`
+- `continuity_state: fresh-session`
+
+而**不会**冒充：
+
+- `self-recorded`
+- `import-suggested`
+- `imported`
+
+### 2. 当前 session folder 是否已有自己的 continuity assets
 
 当前宿主会话目录（例如 Copilot 的 session-state 目录）下，如果已经存在：
 
 - `files/` 中的本会话记录（排除 `imported-sessions/`）
 - 或 `checkpoints/`
 
-那么 `redcap-session-continuity.sh sync` 会把当前会话标记为：
+那么 `redcap-session-continuity.sh sync` 会先更新当前 session 的 manifest，再把宿主 workboard 标记为：
 
 - `continuity_state: self-recorded`
 
 这表示：**当前会话已经有自己的连续性记录，不需要继承别人。**
 
-### 2. 当前 session folder 是否已导入过兼容来源
+### 3. 当前 session 是否已有 active import
 
-如果当前目录下存在：
-
-- `files/imported-sessions/<source_handle>/metadata.json`
-
-那么系统会继续做 **task metadata compatibility check**：
+如果当前 session 的 manifest 里已经存在 active import 信息，系统会继续做 **task metadata compatibility check**：
 
 - `task_id`
 - `confirmed_hash`
@@ -86,15 +100,19 @@
 
 - `continuity_state: imported`
 
-如果 metadata 不兼容，只会记录：
+如果 manifest 里的 import provenance 不兼容，只会记录：
 
 - `stale_import_*`
 
 而不会误判成已继承当前任务。
 
-### 3. 当前没有 own record 时，是否存在 compatible source session
+### 4. 当前没有 own record 时，是否存在 compatible source session
 
-如果当前会话自己没有记录，系统会扫描同一宿主 session 根目录下的其他 `plan.md`，从它们的 canonical pointer 中比对：
+如果当前会话自己没有记录，系统只会扫描：
+
+- `compass/.runtime/sessions/*/manifest.yaml`
+
+并从这些 repo-local manifest 中比对：
 
 - `canonical_path`
 - `task_id`
@@ -107,7 +125,8 @@
 - `suggested_source_*`
 - `next_action: bash compass/tools/redcap-session-continuity.sh import ...`
 
-注意：**这里只是建议，不会自动 takeover。**
+注意：**这里只是建议，不会自动 takeover。**  
+也就是说，sibling `plan.md` 与 `files/imported-sessions/*/metadata.json` 现在都只是宿主资产 / 导入资产，不再反向决定 continuity authority。
 
 ---
 
@@ -147,7 +166,7 @@
 你的直觉是对的：**会话隔离必须有目录边界**。  
 只是这个目录边界不应该覆盖 canonical truth，而应该覆盖 session-scoped continuity/process state。
 
-当前已经落地的目录边界有两层：
+当前已经落地的目录边界有三层：
 
 ### 1. 宿主 session folder
 
@@ -164,7 +183,22 @@
 
 这已经是一种“以 session handle 为文件夹名”的隔离。
 
-### 2. runtime binding / session identity
+### 2. repo-local continuity authority
+
+在 RedCap 自己的工作区里，还会有一层本地 continuity authority：
+
+- `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`
+- `compass/.runtime/sessions/<runtime_session_id>/provenance.yaml`
+- `compass/.runtime/continuity/import-registry.jsonl`
+- `compass/.runtime/continuity/audit-log.jsonl`
+
+这一层：
+
+- 由 `redcap-session-continuity.sh` 单独维护
+- 进入 `.gitignore`
+- 是宿主 Session Mirror 的上游真相
+
+### 3. runtime binding / session identity
 
 目录边界只解决“放哪里”，还没解决“谁有权认领这个目录”。  
 所以还需要：
@@ -214,7 +248,7 @@
 
 所以更准确的说法是：
 
-> **RedCap 应该自管协议内核，但不应把所有 continuity surface 都强行吸回自己目录。**
+> **RedCap 应该自管 continuity authority 内核，但仍保留宿主 mirror 作为可见层。**
 
 否则会牺牲宿主可见性，也会把“宿主可读句柄”和“runtime 私有主键”混为一谈。
 
@@ -222,7 +256,7 @@
 
 | 层 | 位置 | 职责 |
 |---|---|---|
-| **RedCap-owned core** | RedCap runtime / canonical / closure state | 维护协议真相、绑定、锁、兼容判定 |
+| **RedCap-owned core** | `.dev-task.md`、runtime state、`compass/.runtime/` continuity manifest | 维护协议真相、绑定、锁、兼容判定 |
 | **Host-owned mirror** | 宿主 session folder / workboard | 让当前宿主会话看见自己的 continuity 状态与导入入口 |
 
 这不是分裂实现，而是**同一协议的两层落点**。
@@ -288,7 +322,8 @@
 1. 只建议，不自动接管；  
 2. 只导入 continuity artifacts，不接管 canonical truth；  
 3. 源会话保留不动；  
-4. 导入资产必须带来源 metadata。  
+4. 导入资产必须带来源 metadata；  
+5. 导入要同步写 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`。  
 
 当前导入的典型内容：
 
@@ -305,10 +340,10 @@
 
 | 状态 | 含义 | 触发条件 |
 |---|---|---|
-| `fresh-session` | 没有 own record，也没找到兼容来源 | 当前目录没有记录，且未命中 candidate |
-| `self-recorded` | 当前会话已有自己的 continuity record | 当前 session folder 已存在本会话记录 |
-| `import-suggested` | 当前会话没有自己的记录，但找到了 compatible source | sibling session 命中 task metadata |
-| `imported` | 已显式导入兼容来源会话资产 | imported metadata 与当前 task metadata 兼容 |
+| `fresh-session` | 没有 own record，也没找到兼容来源；或当前缺少 runtime identity | 当前目录没有记录且未命中 manifest candidate，或 `runtime_session_id` 缺失 |
+| `self-recorded` | 当前会话已有自己的 continuity record | 当前 session folder 已存在本会话记录，且 manifest 已成功发布 |
+| `import-suggested` | 当前会话没有自己的记录，但找到了 compatible source | repo-local manifest 命中 task metadata |
+| `imported` | 已显式导入兼容来源会话资产 | target manifest 中的 active import 与当前 task metadata 兼容 |
 
 因此，RedCap 判断的不是“这是不是我创建的 `.dev-task.md`”，而是：
 

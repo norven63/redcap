@@ -231,6 +231,7 @@ safe degraded mode 的含义：
 - `runtime_session_id`
 - `session_binding_key`
 - `task_id / confirmed_hash`
+- `continuity_authority`
 - `continuity_state`
 
 其中 `continuity_state` 只允许取以下几类值：
@@ -244,10 +245,13 @@ safe degraded mode 的含义：
 
 对应协议：
 
-1. **只建议，不自动继承**：系统可以给出 compatible source session 与导入命令，但不会默认自动接管最近会话。
-2. **导入只复制 continuity artifacts**：`plan.md` 快照、`files/`、`checkpoints/` 进入目标会话的 `files/imported-sessions/<source_handle>/`
-3. **源会话保持原样保留**：显式导入是 copy，不是 move，不会破坏原会话目录
-4. **导入资产带来源 metadata**：必须记录 `source_session_handle / source_plan / source_task_id / source_confirmed_hash / imported_at`
+1. **先发布，再镜像**：`redcap-session-continuity.sh sync` 会先把当前 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，然后才渲染宿主 Session Mirror。
+2. **只建议，不自动继承**：系统只会基于 repo-local manifest 给出 compatible source session 与导入命令，不会默认自动接管最近会话。
+3. **导入只复制 continuity artifacts**：`plan.md` 快照、`files/`、`checkpoints/` 进入目标会话的 `files/imported-sessions/<source_handle>/`
+4. **源会话保持原样保留**：显式导入是 copy，不是 move，不会破坏原会话目录
+5. **导入同时记账**：除拷贝资产外，还要追加 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
+6. **导入资产带来源 metadata**：必须记录 `source_session_handle / source_plan / source_task_id / source_confirmed_hash / imported_at`
+7. **无 runtime 不得伪造连续性**：缺少 `runtime_session_id` 时，只允许输出 `fresh-session + continuity_authority=degraded-no-runtime-manifest`，不得冒充 `self-recorded / import-suggested / imported`
 
 > 这里的关键不是“省事续接”，而是让 continuity bridge 变成**显式、可审计、可保留来源**的协议动作。
 
@@ -316,7 +320,27 @@ prism/runs/<prism_run_id>/
   artifacts/
 ```
 
-### 7.3 Project-shared 层
+### 7.3 Repo-local continuity 层
+
+新增一层由 RedCap 自己维护、但只在本地存在的 continuity published state：
+
+```text
+compass/.runtime/
+  sessions/<runtime_session_id>/
+    manifest.yaml
+    provenance.yaml
+  continuity/
+    import-registry.jsonl
+    audit-log.jsonl
+```
+
+约束：
+
+1. 该层是 **repo-local continuity authority**，必须加入 `.gitignore`
+2. `manifest.yaml` / `provenance.yaml` 的单主写者是 `redcap-session-continuity.sh`
+3. 宿主 workboard 只允许读取这层结果，不允许反向成为 authority
+
+### 7.4 Project-shared 层
 
 保留在原位置，但职责收窄为“长期真相”：
 

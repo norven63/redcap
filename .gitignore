@@ -3,6 +3,7 @@ prompt.txt
 .env.local
 compass/tools/feishu-config.json
 compass/.workflow/
+compass/.runtime/
 __pycache__/
 *.pyc
 docs*/

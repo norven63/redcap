@@ -29,10 +29,10 @@
 
 ### GD-003：RedCap-owned continuity manifest
 - **design_status**: `design-complete`
-- **implementation_status**: `pending`
+- **implementation_status**: `done`
 - **owner_slice**: `会话隔离与连续性`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §四 B1
-- **gap**: continuity authority 仍散在宿主 session 资产与本地 runtime 辅助文件之间
+- **gap**: continuity authority 已收口到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`；宿主 Session Mirror 改为只读镜像
 
 ### GD-004：Session resume gate 与 capability matrix
 - **design_status**: `design-complete`

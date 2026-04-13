@@ -454,8 +454,10 @@ governance_debts_addressed: []
   - 仅向宿主 workboard 写 canonical pointer / confirmed hash
   - 不允许反向把需求/验收真相从宿主 workboard 回灌为 RedCap authority
 - `compass/tools/redcap-session-continuity.sh`
-  - 向宿主 workboard 追加 session mirror（`session_handle / binding_key / task metadata / continuity_state`）
-  - 只允许显式导入 compatible session 的 continuity artifacts，禁止默认自动继承最近会话
+  - 先把 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，再向宿主 workboard 追加 session mirror（`session_handle / binding_key / task metadata / continuity_state`）
+  - 只允许基于 repo-local manifest 给出 compatible source suggestion；宿主 `plan.md` 与 `files/imported-sessions/*/metadata.json` 不得反向充当 authority
+  - 显式导入时必须同步写 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
+  - 缺少 `runtime_session_id` 时只能输出 degraded mirror，不得伪造 `self-recorded / import-suggested / imported`；repo-local manifest 也不得反向“复活”缺失的 active runtime binding
 
 > 该文件已加入 `.gitignore`——它是临时过程状态，不应进入版本控制。
 
@@ -486,7 +488,7 @@ governance_debts_addressed: []
 | 类别 | 判断标准 | 典型位置 | git 策略 |
 |------|---------|---------|---------|
 | **共享规范 / 历史证据** | 需要跨会话共享、可审计、后续要考古 | `compass/docs/specs/`、`compass/docs/traces/`、`compass/docs/task-reports/`、`prism/reports/`、`loom/test-reports/` | **必须进 git** |
-| **会话隔离状态** | 只服务当前会话/当前运行态，换机会重建 | `.dev-task.md`、`prism/runs/`、`compass/.workflow/`、宿主 `plan.md` | **不得进 git** |
+| **会话隔离状态** | 只服务当前会话/当前运行态，换机会重建 | `.dev-task.md`、`prism/runs/`、`compass/.workflow/`、`compass/.runtime/`、宿主 `plan.md` | **不得进 git** |
 | **本地宿主资产** | 绑定本机路径、凭证、CLI 配置或探测结果 | `.env.local`、`compass/tools/feishu-config.json`、agent registry cache | **不得进 git** |
 | **纯临时产物** | 只在脚本执行期间存在，用完即删 | `/tmp/redcap-*`、临时 prompt/result、`__pycache__/` | **不得进 git** |
 

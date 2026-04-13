@@ -284,9 +284,10 @@ PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 - `runtime_session_id`
 - `session_binding_key`
 - 当前 `task_id / confirmed_hash`
+- `continuity_authority`
 - continuity_state（`fresh-session` / `self-recorded` / `import-suggested` / `imported`）
 
-这块信息仍然只是 mirror，不会反向成为 authority；它存在的目的，是让新会话进入时能**看见**自己是否已有连续性记录、是否存在兼容历史会话，以及显式导入命令是什么。
+这块信息仍然只是 mirror，不会反向成为 authority；真正的 continuity authority 现在先由 `redcap-session-continuity.sh` 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，然后再把结果渲染回宿主 workboard。它存在的目的，是让新会话进入时能**看见**自己是否已有连续性记录、是否存在兼容历史会话，以及显式导入命令是什么。
 
 同理，宿主侧的通用 brainstorming / planning / visual skill 也只能是 **advisory overlay**：它们可以帮助拆解问题、组织设计表达，但不能重开已锁定 tranche，不能把可自治决策升级为默认 ask_user / user approval，也不能替代 RedCap-native PM Gate 的最终锁定动作。
 
@@ -410,18 +411,22 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 - `task metadata`（`task_id / top_goal / confirmed_hash`）解决“导入时如何判断两个会话是否兼容”
 - `runtime_session_id + capability + process claim` 解决“真正读写 session 私有态时，谁被允许附着到这份 runtime state”
 
-### 5.1.1 explicit import protocol
+### 5.1.1 repo-owned continuity manifest 与 explicit import protocol
 
 RedCap 当前把“最近会话继承”落成了**显式导入协议**，而不是默认自动恢复：
 
-1. SessionStart 先同步 canonical pointer，再把 `session_handle + binding_key + task metadata` 镜像到宿主 workboard
-2. 若当前会话没有自己的 continuity record，系统只会给出 `import-suggested` 与明确的导入命令
-3. 真正导入时，`redcap-session-continuity.sh import` 只复制 continuity artifacts：
-   - `plan.md` 快照
-   - `files/`（排除二次嵌套的 imported-sessions）
-   - `checkpoints/`
-4. 源会话目录保持原样保留；目标会话把导入内容放进 `files/imported-sessions/<source_handle>/`
-5. 导入完成后，宿主 workboard 会把 continuity_state 切到 `imported`，并记录来源 session handle / source plan / import root
+1. SessionStart 先同步 canonical pointer，然后由 `redcap-session-continuity.sh` 把当前会话 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`
+2. manifest 同目录还会维护 `provenance.yaml`；跨会话导入时，再追加 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
+3. 宿主 workboard 的 `Session Mirror` 只读取这些 repo-local continuity 账本，不再以 sibling `plan.md` 或 `files/imported-sessions/*/metadata.json` 反向充当 authority
+4. 若当前会话没有自己的 continuity record，系统只会基于 repo-local manifest 扫描给出 `import-suggested` 与明确的导入命令
+5. 若当前缺少 `runtime_session_id`，Session Mirror 只能停在 `fresh-session` 并显式标记 `continuity_authority: degraded-no-runtime-manifest`，不得伪造 `self-recorded / import-suggested / imported`
+6. repo-local manifest 只能描述 continuity authority，不能反向“复活”缺失的 active runtime binding；`sync` / `import` 都必须以当前活跃 runtime binding 为前提
+7. 真正导入时，`redcap-session-continuity.sh import` 只复制 continuity artifacts：
+    - `plan.md` 快照
+    - `files/`（排除二次嵌套的 imported-sessions）
+    - `checkpoints/`
+8. 源会话目录保持原样保留；目标会话把导入内容放进 `files/imported-sessions/<source_handle>/`
+9. 导入完成后，target manifest / provenance 会先更新，再由宿主 workboard 把 continuity_state 渲染成 `imported`，并记录来源 session handle / source plan / import root
 
 这条协议的重点不是“方便”，而是**在不偷换 authority 的前提下，为新会话提供可见、可审计、可保留来源的 continuity bridge**。
 

@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
+source "$SCRIPT_DIR/redcap-dev-task.sh"
 redcap_runtime_clear_context
 unset REDCAP_RUNTIME_ALLOW_DISK_RECOVERY REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY REDCAP_RUNTIME_CAPABILITY 2>/dev/null || true
 
@@ -14,6 +15,7 @@ export REDCAP_RUNTIME_BASE_DIR="$ACCEPT_ROOT/runtime"
 export REDCAP_RUNTIME_INDEX_DIR="$ACCEPT_ROOT/runtime-index"
 export REDCAP_RUNTIME_PROJECT_BASE_DIR="$ACCEPT_ROOT/project"
 export REDCAP_RUNTIME_PROCESS_CLAIM_DIR="$ACCEPT_ROOT/process-claims"
+CONTINUITY_CORE_DIR="$ACCEPT_ROOT/continuity-core"
 
 LEGACY_REGISTRY_FILE="$REDCAP_ROOT/prism/reports/.session-registry.yaml"
 LEGACY_REGISTRY_BACKUP=""
@@ -57,6 +59,10 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-rewrite
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-clear
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-hash-mismatch
+  bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-sync
+  bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-required
+  bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-only-discovery
+  bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-import
 EOF
 }
 
@@ -79,6 +85,10 @@ assert_not_exists() {
 
 assert_eq() {
     [[ "$1" == "$2" ]] || fail "expected '$1' == '$2'"
+}
+
+assert_contains() {
+    grep -Fq -- "$2" "$1" || fail "expected '$1' to contain '$2'"
 }
 
 assert_ne() {
@@ -130,6 +140,61 @@ read_file_text() {
     cat "$path"
 }
 
+manifest_value() {
+    local path="$1"
+    local key="$2"
+
+    python3 - "$path" "$key" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+for raw in path.read_text(encoding="utf-8").splitlines():
+    line = raw.strip()
+    if not line or ":" not in line:
+        continue
+    current_key, value = line.split(":", 1)
+    if current_key.strip() != key:
+        continue
+    value = value.strip()
+    try:
+        parsed = json.loads(value)
+    except Exception:
+        parsed = value
+    print(parsed if isinstance(parsed, str) else json.dumps(parsed, ensure_ascii=False))
+    break
+PY
+}
+
+workboard_value() {
+    local path="$1"
+    local key="$2"
+
+    python3 - "$path" "$key" <<'PY'
+import pathlib
+import re
+import sys
+
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+text = path.read_text(encoding="utf-8")
+match = re.search(
+    r"<!-- redcap:session-mirror:start -->(.*?)<!-- redcap:session-mirror:end -->",
+    text,
+    re.S,
+)
+if not match:
+    raise SystemExit(0)
+for raw in match.group(1).splitlines():
+    line = raw.strip()
+    if line.startswith(f"- {key}: "):
+        print(line.split(": ", 1)[1].strip())
+        break
+PY
+}
+
 extract_output_value() {
     local output="$1"
     local key="$2"
@@ -141,11 +206,52 @@ git_previous_head() {
     git -C "$REDCAP_ROOT" rev-parse HEAD~1 2>/dev/null || git -C "$REDCAP_ROOT" rev-parse HEAD
 }
 
+repo_has_tracked_drift() {
+    [[ -n "$(git -C "$REDCAP_ROOT" status --short --untracked-files=no)" ]]
+}
+
 make_temp_project() {
     local dir
     dir="$(mktemp -d "${TMPDIR:-/tmp}/redcap-layera-project.XXXXXX")"
     TEMP_PROJECTS+=("$dir")
     printf '%s\n' "$dir"
+}
+
+write_workboard_fixture() {
+    local path="$1"
+    local task_file="$2"
+    local task_id="$3"
+    local top_goal="$4"
+    local active_slice="$5"
+    local confirmed_hash="$6"
+
+    mkdir -p "$(dirname "$path")"
+    cat >"$path" <<EOF
+# Continuity fixture
+
+<!-- redcap:canonical-pointer:start -->
+## RedCap Canonical Pointer
+- task_id: $task_id
+- canonical_path: $task_file
+- source_of_truth: .dev-task.md
+- top_goal: $top_goal
+- active_slice: $active_slice
+- subtask_of: $task_id
+- confirmed_hash: $confirmed_hash
+- host_surface_policy: mirror_only
+<!-- redcap:canonical-pointer:end -->
+EOF
+}
+
+init_bound_runtime() {
+    local host="$1"
+    local binding_key="$2"
+    local host_process_pid="$3"
+
+    REDCAP_HOST_PROCESS_PID="$host_process_pid" redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for $host"
+    export REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST
+    unset REDCAP_HOST_PROCESS_PID
 }
 
 run_binding_recovery_gate_case() {
@@ -482,7 +588,7 @@ run_report_register_requires_claim_case() {
 run_sessionstart_auto_reconcile_rewrite_case() {
     local host="claude"
     local binding_a binding_b pid_a pid_b
-    local report_path pending_state required_redlines
+    local report_path pending_state required_redlines expected_seed expected_reconciled
 
     log "case: sessionstart-auto-reconcile-rewrite"
 
@@ -497,12 +603,20 @@ run_sessionstart_auto_reconcile_rewrite_case() {
 
     pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
     required_redlines=$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)
-    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "task-report,review,notify")"
+    expected_seed="task-report,review,notify"
+    if repo_has_tracked_drift; then
+        expected_seed="${expected_seed},drift"
+    fi
+    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "$expected_seed")"
 
     printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_b" REDCAP_HOST_PROCESS_PID="$pid_b" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
 
     required_redlines=$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)
-    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "review,notify")"
+    expected_reconciled="review,notify"
+    if repo_has_tracked_drift; then
+        expected_reconciled="${expected_reconciled},drift"
+    fi
+    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "$expected_reconciled")"
 
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "sessionstart-auto-reconcile-rewrite" >/dev/null
     redcap_runtime_clear_process_claim "$host" "$pid_a" >/dev/null 2>&1 || true
@@ -513,7 +627,7 @@ run_sessionstart_auto_reconcile_rewrite_case() {
 run_sessionstart_auto_reconcile_clear_case() {
     local host="claude"
     local binding_key pid
-    local report_path pending_state current_head
+    local report_path pending_state current_head required_redlines
 
     log "case: sessionstart-auto-reconcile-clear"
 
@@ -537,7 +651,13 @@ run_sessionstart_auto_reconcile_clear_case() {
     pid="$((63000 + RANDOM))"
     printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_key" REDCAP_HOST_PROCESS_PID="$pid" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
 
-    assert_not_exists "$pending_state"
+    if [[ -f "$pending_state" ]]; then
+        required_redlines=$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)
+        assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "drift")"
+        redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "sessionstart-auto-reconcile-clear" >/dev/null
+    else
+        assert_not_exists "$pending_state"
+    fi
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
     redcap_runtime_clear_context
 }
@@ -592,6 +712,212 @@ PY
     redcap_runtime_clear_context
 }
 
+run_continuity_manifest_sync_case() {
+    local host="claude"
+    local binding_key pid runtime_id
+    local case_root case_core session_dir workboard manifest provenance
+    local task_id top_goal active_slice confirmed_hash
+
+    log "case: continuity-manifest-sync"
+
+    task_id="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "task_id")"
+    top_goal="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "top_goal")"
+    active_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+    case_root="$ACCEPT_ROOT/continuity-sync"
+    case_core="$CONTINUITY_CORE_DIR/continuity-sync"
+    session_dir="$case_root/host-a/session-sync"
+    workboard="$session_dir/plan.md"
+    write_workboard_fixture "$workboard" "$REDCAP_ROOT/.dev-task.md" "$task_id" "$top_goal" "$active_slice" "$confirmed_hash"
+    mkdir -p "$session_dir/files"
+    printf 'own record\n' >"$session_dir/files/note.txt"
+
+    binding_key="acceptance-continuity-sync-${RANDOM}-$$"
+    pid="$((65000 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    runtime_id="${REDCAP_RUNTIME_SESSION_ID:-}"
+
+    REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" sync "$workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+
+    manifest="$case_core/sessions/$runtime_id/manifest.yaml"
+    provenance="$case_core/sessions/$runtime_id/provenance.yaml"
+    assert_exists "$manifest"
+    assert_exists "$provenance"
+    assert_eq "$(manifest_value "$manifest" "runtime_session_id")" "$runtime_id"
+    assert_eq "$(manifest_value "$manifest" "continuity_state")" "self-recorded"
+    assert_eq "$(workboard_value "$workboard" "continuity_authority")" "redcap-owned-manifest"
+    assert_eq "$(workboard_value "$workboard" "continuity_state")" "self-recorded"
+
+    python3 - "$workboard" <<'PY'
+import pathlib
+import re
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = re.sub(r"^- continuity_state:\s*.*$", "- continuity_state: imported", text, count=1, flags=re.MULTILINE)
+text = re.sub(r"^- continuity_authority:\s*.*$", "- continuity_authority: tampered", text, count=1, flags=re.MULTILINE)
+path.write_text(text, encoding="utf-8")
+PY
+
+    REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" sync "$workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+    assert_eq "$(workboard_value "$workboard" "continuity_authority")" "redcap-owned-manifest"
+    assert_eq "$(workboard_value "$workboard" "continuity_state")" "self-recorded"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_continuity_runtime_required_case() {
+    local host="claude"
+    local binding_key pid runtime_id
+    local case_root case_core session_dir workboard manifest
+    local task_id top_goal active_slice confirmed_hash
+
+    log "case: continuity-runtime-required"
+
+    redcap_runtime_clear_context
+    task_id="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "task_id")"
+    top_goal="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "top_goal")"
+    active_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+    case_root="$ACCEPT_ROOT/continuity-runtime-required"
+    case_core="$CONTINUITY_CORE_DIR/continuity-runtime-required"
+    session_dir="$case_root/host-a/session-runtime-missing"
+    workboard="$session_dir/plan.md"
+    write_workboard_fixture "$workboard" "$REDCAP_ROOT/.dev-task.md" "$task_id" "$top_goal" "$active_slice" "$confirmed_hash"
+    mkdir -p "$session_dir/files"
+    printf 'own record\n' >"$session_dir/files/note.txt"
+
+    binding_key="acceptance-continuity-runtime-required-${RANDOM}-$$"
+    pid="$((69000 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    runtime_id="${REDCAP_RUNTIME_SESSION_ID:-}"
+    REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" sync "$workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+    manifest="$case_core/sessions/$runtime_id/manifest.yaml"
+    assert_exists "$manifest"
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+
+    REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" sync "$workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+
+    assert_eq "$(workboard_value "$workboard" "continuity_authority")" "degraded-no-runtime-manifest"
+    assert_eq "$(workboard_value "$workboard" "continuity_state")" "fresh-session"
+}
+
+run_continuity_manifest_only_discovery_case() {
+    local host="claude"
+    local binding_key pid
+    local case_root case_core source_dir target_dir source_workboard target_workboard
+    local task_id top_goal active_slice confirmed_hash
+
+    log "case: continuity-manifest-only-discovery"
+
+    task_id="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "task_id")"
+    top_goal="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "top_goal")"
+    active_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+    case_root="$ACCEPT_ROOT/continuity-manifest-only-discovery"
+    case_core="$CONTINUITY_CORE_DIR/continuity-manifest-only-discovery"
+    source_dir="$case_root/shared-base/source-session"
+    target_dir="$case_root/shared-base/target-session"
+    source_workboard="$source_dir/plan.md"
+    target_workboard="$target_dir/plan.md"
+
+    write_workboard_fixture "$source_workboard" "$REDCAP_ROOT/.dev-task.md" "$task_id" "$top_goal" "$active_slice" "$confirmed_hash"
+    mkdir -p "$source_dir/files"
+    printf 'source own record\n' >"$source_dir/files/note.txt"
+    write_workboard_fixture "$target_workboard" "$REDCAP_ROOT/.dev-task.md" "$task_id" "$top_goal" "$active_slice" "$confirmed_hash"
+
+    binding_key="acceptance-continuity-discovery-${RANDOM}-$$"
+    pid="$((66000 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+
+    REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" sync "$target_workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+
+    assert_eq "$(workboard_value "$target_workboard" "continuity_state")" "fresh-session"
+    assert_eq "$(workboard_value "$target_workboard" "import_protocol")" "no-compatible-source-detected"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_continuity_manifest_import_case() {
+    local host="claude"
+    local source_binding target_binding source_pid target_pid
+    local source_runtime_id target_runtime_id
+    local case_root case_core
+    local source_dir target_dir source_workboard target_workboard
+    local source_manifest target_manifest target_provenance import_registry audit_log metadata_path
+    local task_id top_goal active_slice confirmed_hash
+
+    log "case: continuity-manifest-import"
+
+    task_id="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "task_id")"
+    top_goal="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "top_goal")"
+    active_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+    case_root="$ACCEPT_ROOT/continuity-manifest-import"
+    case_core="$CONTINUITY_CORE_DIR/continuity-manifest-import"
+    source_dir="$case_root/source-host/source-session"
+    target_dir="$case_root/target-host/target-session"
+    source_workboard="$source_dir/plan.md"
+    target_workboard="$target_dir/plan.md"
+
+    write_workboard_fixture "$source_workboard" "$REDCAP_ROOT/.dev-task.md" "$task_id" "$top_goal" "$active_slice" "$confirmed_hash"
+    mkdir -p "$source_dir/files"
+    printf 'source own record\n' >"$source_dir/files/note.txt"
+
+    source_binding="acceptance-continuity-import-source-${RANDOM}-$$"
+    source_pid="$((67000 + RANDOM))"
+    init_bound_runtime "$host" "$source_binding" "$source_pid"
+    source_runtime_id="${REDCAP_RUNTIME_SESSION_ID:-}"
+    REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" sync "$source_workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+    source_manifest="$case_core/sessions/$source_runtime_id/manifest.yaml"
+    assert_exists "$source_manifest"
+    redcap_runtime_clear_process_claim "$host" "$source_pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+
+    write_workboard_fixture "$target_workboard" "$REDCAP_ROOT/.dev-task.md" "$task_id" "$top_goal" "$active_slice" "$confirmed_hash"
+    target_binding="acceptance-continuity-import-target-${RANDOM}-$$"
+    target_pid="$((68000 + RANDOM))"
+    init_bound_runtime "$host" "$target_binding" "$target_pid"
+    target_runtime_id="${REDCAP_RUNTIME_SESSION_ID:-}"
+    REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" sync "$target_workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+
+    assert_eq "$(workboard_value "$target_workboard" "continuity_state")" "import-suggested"
+    assert_eq "$(workboard_value "$target_workboard" "suggested_source_session_handle")" "source-session"
+
+    REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" import "$source_workboard" "$target_workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+
+    target_manifest="$case_core/sessions/$target_runtime_id/manifest.yaml"
+    target_provenance="$case_core/sessions/$target_runtime_id/provenance.yaml"
+    import_registry="$case_core/continuity/import-registry.jsonl"
+    audit_log="$case_core/continuity/audit-log.jsonl"
+    metadata_path="$target_dir/files/imported-sessions/source-session/metadata.json"
+    assert_exists "$target_manifest"
+    assert_exists "$target_provenance"
+    assert_exists "$import_registry"
+    assert_exists "$audit_log"
+    assert_eq "$(manifest_value "$target_manifest" "source_session_handle")" "source-session"
+    assert_eq "$(workboard_value "$target_workboard" "continuity_state")" "imported"
+    assert_eq "$(workboard_value "$target_workboard" "continuity_authority")" "redcap-owned-manifest"
+    assert_contains "$import_registry" "\"target_runtime_session_id\": \"$target_runtime_id\""
+    assert_contains "$audit_log" "\"event\": \"import\""
+
+    rm -f "$metadata_path"
+    REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" sync "$target_workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+    assert_eq "$(workboard_value "$target_workboard" "continuity_state")" "imported"
+
+    redcap_runtime_clear_process_claim "$host" "$target_pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+    if REDCAP_CONTINUITY_ROOT_DIR="$case_core" bash "$SCRIPT_DIR/redcap-session-continuity.sh" import "$source_workboard" "$target_workboard" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1; then
+        fail "import unexpectedly succeeded without active runtime binding"
+    fi
+
+    redcap_runtime_clear_context
+}
+
 run_all_cases() {
     run_binding_recovery_gate_case
     run_layerb_concurrency_case
@@ -604,6 +930,10 @@ run_all_cases() {
     run_sessionstart_auto_reconcile_rewrite_case
     run_sessionstart_auto_reconcile_clear_case
     run_sessionstart_auto_reconcile_hash_mismatch_case
+    run_continuity_manifest_sync_case
+    run_continuity_runtime_required_case
+    run_continuity_manifest_only_discovery_case
+    run_continuity_manifest_import_case
 }
 
 COMMAND="${1:-all}"
@@ -644,6 +974,18 @@ case "$COMMAND" in
         ;;
     sessionstart-auto-reconcile-hash-mismatch)
         run_sessionstart_auto_reconcile_hash_mismatch_case
+        ;;
+    continuity-manifest-sync)
+        run_continuity_manifest_sync_case
+        ;;
+    continuity-runtime-required)
+        run_continuity_runtime_required_case
+        ;;
+    continuity-manifest-only-discovery)
+        run_continuity_manifest_only_discovery_case
+        ;;
+    continuity-manifest-import)
+        run_continuity_manifest_import_case
         ;;
     *)
         usage
