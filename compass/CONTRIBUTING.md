@@ -423,7 +423,10 @@ governance_debts_addressed: []
   - 校验 `top_goal / active_slice / subtask_of`
   - 校验本轮改动文件不得超出 `## 允许修改范围`
 - `compass/tools/redcap-validator-chain.sh`
-  - 统一编排 stop-review 的 PM Gate / drift / artifact lifecycle 检查
+  - 统一编排 Layer B 的 session-start / stop-review / on-complete validator
+  - 当前已覆盖 commit proof、PM Gate、drift、task report、artifact lifecycle 等检查，并输出结构化结果供下游消费
+  - `session-start` 仍是 advisory / stamp-only，不阻断进入；`stop-review` 与 RedCap self-dev 的 `on-complete` 才是 blocking gate
+  - 对非 RedCap 自身项目，`on-complete` 只保留通用的 commit proof，不启用 Layer B 专属的 PM Gate / drift / task-report / artifact lifecycle
   - 输出结构化结果，避免多条控制面检查散落在调用方
 - `compass/tools/redcap-interop-governance.sh`
   - 统一维护 interop audit、pending closure obligation 与 `closure-ledger/` 事务日志
@@ -433,8 +436,8 @@ governance_debts_addressed: []
   - 一旦命中违规路径，会阻断 stop-review / on-complete 收尾通过，并显式暴露这批违规产物
   - 阻断 `compass/docs/` 根目录重新长成未分类条目
 - `compass/tools/redcap-on-complete.sh`
-  - 对 RedCap 自身 on-complete fail-closed 校验 `commit proof + task report + artifact lifecycle`
-  - 若 notify / task report / artifact lifecycle 仍有缺口，必须写回 pending closure，保留下次 reconcile 机会
+  - 对 RedCap 自身 on-complete fail-closed 校验 `commit proof + PM Gate + drift + task report + artifact lifecycle`
+  - 若 notify 或 validator-chain 暴露出的 `commit proof / PM Gate / drift / task report / artifact lifecycle` 仍有缺口，必须写回 pending closure，保留下次 reconcile 机会
 - `compass/tools/redcap-host-workboard-sync.sh`
   - 仅向宿主 workboard 写 canonical pointer / confirmed hash
   - 不允许反向把需求/验收真相从宿主 workboard 回灌为 RedCap authority

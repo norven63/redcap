@@ -36,8 +36,14 @@ if [[ -z "$BINDING_KEY" && -n "$HOST_SESSION_ID" ]]; then
 fi
 
 run_control_plane_start_sync() {
+    VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
     PM_GATE_CHECK="$SCRIPT_DIR/redcap-pm-gate-check.sh"
-    if [[ -x "$PM_GATE_CHECK" ]]; then
+    if [[ -x "$VALIDATOR_CHAIN" ]]; then
+        REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+        REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+        REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
+        bash "$VALIDATOR_CHAIN" session-start "$HOST" "$REDCAP_ROOT/.dev-task.md" "" "" text >/dev/null || true
+    elif [[ -x "$PM_GATE_CHECK" ]]; then
         REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
         REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
         REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \

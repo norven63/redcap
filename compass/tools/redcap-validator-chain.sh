@@ -13,6 +13,7 @@ OUTPUT_FORMAT="${6:-yaml}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_DIR="${REDCAP_VALIDATOR_PROJECT_DIR:-$REDCAP_ROOT}"
 
 STEPS=()
 STATUSES=()
@@ -95,10 +96,22 @@ emit() {
 overall_status="pass"
 
 case "$MODE" in
+    session-start)
+        run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" session-start "$HOST" "$TASK_FILE" || overall_status="fail"
+        ;;
     stop-review)
         run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" stop-review "$HOST" "$TASK_FILE" || overall_status="fail"
         run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" stop-review "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
         run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" redcap-self || overall_status="fail"
+        ;;
+    on-complete)
+        run_step "commit-proof-check" bash "$SCRIPT_DIR/redcap-commit-proof-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+        if [[ "$PROJECT_DIR" == "$REDCAP_ROOT" && -f "$TASK_FILE" ]]; then
+            run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" strict "$HOST" "$TASK_FILE" || overall_status="fail"
+            run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" on-complete "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+            run_step "task-report-check" bash "$SCRIPT_DIR/redcap-task-report-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+            run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" redcap-self || overall_status="fail"
+        fi
         ;;
     *)
         echo "[redcap-validator-chain] unsupported mode: $MODE" >&2

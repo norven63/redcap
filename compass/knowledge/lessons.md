@@ -564,3 +564,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04
+
+### L-55: 把独立 gate 收口到 validator chain 时，preflight / contract-break 失败也必须留下 closure 证据
+- **场景**：在把 `on-complete` 的 `commit proof / PM Gate / drift / task report / artifact lifecycle` 重构到统一 validator chain 后，独立审查发现两类证据黑洞：① `commit-proof-check` 失败只写 closure ledger、不写 pending closure，导致最基础 gate 与 obligation contract 不对称 ② 若 `current HEAD` 无法解析、validator chain 缺失，或返回了无可解析 step 的异常输出，`on-complete` 虽然仍 fail-closed，但 ledger 只留下 `started`，失败原因完全丢失
+- **根因**：把“结构化 step 输出已经统一”误当成“所有失败路径都会天然落到结构化输出里”，忽略了 preflight guard、脚本缺失、协议破损这类失败可能发生在 chain 产出任何 step 之前
+- **经验规则**：① 被 validator chain 编排的每个 blocking gate，都要同时保持 `closure-ledger` 与 `pending closure` 的证据对称性，不能只在一侧记账 ② 统一编排后，必须专门覆盖“无 step 输出”“输出不可解析”“脚本缺失”这类 contract-break 路径，不能默认它们会落到正常 step 解析里 ③ 若 validator chain 自身成功返回，却没有任何可记录 step，应视为 evidence-system/contract failure，而不是当作正常通过
+- **来源**：2026-04-13，GD-002 validator-chain-hardening tranche 的 reviewer / challenger / auditor 复审中发现并修复
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04

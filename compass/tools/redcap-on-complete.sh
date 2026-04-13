@@ -34,66 +34,7 @@ source "$SCRIPT_DIR/redcap-notify-format.sh"
 WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
 PROJECT_NAME=$(redcap_runtime_project_name "$PROJECT_DIR" "$PROJECT_NAME_ARG")
 TASK_REPORT_CHECK="$SCRIPT_DIR/redcap-task-report-check.sh"
-ARTIFACT_LIFECYCLE_CHECK="$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh"
-
-verify_commit_closure() {
-  local current_head worktree_status=""
-
-  current_head=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || true)
-  if [[ -z "$current_head" ]]; then
-    echo "[on_complete] 无法解析当前 HEAD，拒绝标记完成" >&2
-    return 1
-  fi
-
-  if [[ -z "$INITIAL_HEAD" ]]; then
-    echo "[on_complete] 未提供初始 HEAD，无法证明本轮已有新 commit，拒绝标记完成" >&2
-    return 1
-  fi
-
-  if ! git -C "$PROJECT_DIR" rev-parse "${INITIAL_HEAD}^{commit}" >/dev/null 2>&1; then
-    echo "[on_complete] 初始 HEAD 不可解析：$INITIAL_HEAD" >&2
-    return 1
-  fi
-
-  worktree_status=$(git -C "$PROJECT_DIR" status --porcelain 2>/dev/null || true)
-  if [[ -n "$worktree_status" ]]; then
-    echo "[on_complete] worktree 仍有未提交变更，拒绝标记完成" >&2
-    return 1
-  fi
-
-  if [[ "$current_head" == "$INITIAL_HEAD" ]]; then
-    echo "[on_complete] 未检测到本轮新 commit，拒绝标记完成" >&2
-    return 1
-  fi
-
-  return 0
-}
-
-verify_artifact_lifecycle() {
-  local current_head
-
-  if [[ "$PROJECT_DIR" != "$REDCAP_ROOT" ]]; then
-    return 0
-  fi
-
-  current_head=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || true)
-  if [[ -z "$current_head" ]]; then
-    echo "[on_complete] 无法解析当前 HEAD，拒绝执行 artifact lifecycle 校验" >&2
-    return 1
-  fi
-
-  if [[ ! -x "$ARTIFACT_LIFECYCLE_CHECK" ]]; then
-    echo "[on_complete] artifact lifecycle 检查脚本不存在，拒绝标记完成" >&2
-    return 1
-  fi
-
-  if ! bash "$ARTIFACT_LIFECYCLE_CHECK" "$PROJECT_DIR" "$INITIAL_HEAD" "$current_head" redcap-self; then
-    echo "[on_complete] artifact lifecycle 检查失败，拒绝标记完成" >&2
-    return 1
-  fi
-
-  return 0
-}
+VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
 
 self_dev_closure_enabled() {
   [[ "$PROJECT_DIR" == "$REDCAP_ROOT" && -f "$PROJECT_DIR/.dev-task.md" ]]
@@ -190,29 +131,122 @@ record_evidence_system_failure() {
   echo "[on_complete] FATAL: cannot persist closure evidence for $phase" >&2
 }
 
-verify_task_report_closure() {
-  local current_head report_output=""
+ON_COMPLETE_VALIDATOR_OUTPUT=""
+ON_COMPLETE_VALIDATOR_PRECHECK_PHASE=""
+ON_COMPLETE_VALIDATOR_PRECHECK_REDLINES=""
+ON_COMPLETE_VALIDATOR_PRECHECK_DETAIL=""
 
-  if ! self_dev_closure_enabled; then
-    return 0
-  fi
+validator_step_status() {
+  local output="$1"
+  local step="$2"
 
+  printf '%s\n' "$output" | awk -v step="$step" 'index($0, "] " step " :: ") {split($0, parts, " :: "); print parts[2]; exit}'
+}
+
+validator_output_has_recordable_step() {
+  local output="$1"
+  local step=""
+
+  for step in commit-proof-check pm-gate drift-check task-report-check artifact-lifecycle-check; do
+    if [[ -n "$(validator_step_status "$output" "$step")" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+collect_on_complete_validator_redlines() {
+  local output="$1"
+  local items=()
+
+  [[ "$(validator_step_status "$output" "commit-proof-check")" == "fail" ]] && items+=("commit-proof")
+  [[ "$(validator_step_status "$output" "pm-gate")" == "fail" ]] && items+=("pm-gate")
+  [[ "$(validator_step_status "$output" "drift-check")" == "fail" ]] && items+=("drift")
+  [[ "$(validator_step_status "$output" "task-report-check")" == "fail" ]] && items+=("task-report")
+  [[ "$(validator_step_status "$output" "artifact-lifecycle-check")" == "fail" ]] && items+=("artifact-lifecycle")
+
+  local IFS=,
+  printf '%s' "${items[*]}"
+}
+
+record_on_complete_validator_steps() {
+  local output="$1"
+  local artifact_path="${2:-}"
+  local persist_status=0
+  local status=""
+
+  status=$(validator_step_status "$output" "commit-proof-check")
+  case "$status" in
+    pass) record_closure_phase "commit-proof" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+    fail) record_closure_phase "commit-proof" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+  esac
+
+  status=$(validator_step_status "$output" "pm-gate")
+  case "$status" in
+    pass) record_closure_phase "pm-gate" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+    fail) record_closure_phase "pm-gate" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+  esac
+
+  status=$(validator_step_status "$output" "drift-check")
+  case "$status" in
+    pass) record_closure_phase "drift" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+    fail) record_closure_phase "drift" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+  esac
+
+  status=$(validator_step_status "$output" "task-report-check")
+  case "$status" in
+    pass) record_closure_phase "task-report" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+    fail) record_closure_phase "task-report" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+  esac
+
+  status=$(validator_step_status "$output" "artifact-lifecycle-check")
+  case "$status" in
+    pass) record_closure_phase "artifact-lifecycle" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+    fail) record_closure_phase "artifact-lifecycle" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+  esac
+
+  return "$persist_status"
+}
+
+persist_on_complete_unstructured_failure() {
+  local artifact_path="${1:-}"
+  local phase="${ON_COMPLETE_VALIDATOR_PRECHECK_PHASE:-validator-chain}"
+  local redlines="${ON_COMPLETE_VALIDATOR_PRECHECK_REDLINES:-validator-chain}"
+  local detail="${ON_COMPLETE_VALIDATOR_PRECHECK_DETAIL:-validator chain failed before structured output}"
+
+  persist_failure_evidence "$phase" "$redlines" "$detail" "$artifact_path"
+}
+
+run_on_complete_validator_chain() {
+  local current_head
+
+  ON_COMPLETE_VALIDATOR_OUTPUT=""
+  ON_COMPLETE_VALIDATOR_PRECHECK_PHASE=""
+  ON_COMPLETE_VALIDATOR_PRECHECK_REDLINES=""
+  ON_COMPLETE_VALIDATOR_PRECHECK_DETAIL=""
   current_head=$(current_project_head)
   if [[ -z "$current_head" ]]; then
-    echo "[on_complete] 无法解析当前 HEAD，拒绝执行 task report 校验" >&2
+    ON_COMPLETE_VALIDATOR_PRECHECK_PHASE="commit-proof"
+    ON_COMPLETE_VALIDATOR_PRECHECK_REDLINES="commit-proof"
+    ON_COMPLETE_VALIDATOR_PRECHECK_DETAIL="unable to resolve current HEAD before validator-chain"
+    echo "[on_complete] 无法解析当前 HEAD，拒绝执行 validator chain" >&2
     return 1
   fi
 
-  if [[ ! -x "$TASK_REPORT_CHECK" ]]; then
-    echo "[on_complete] task report 检查脚本不存在，拒绝标记完成" >&2
+  if [[ ! -x "$VALIDATOR_CHAIN" ]]; then
+    ON_COMPLETE_VALIDATOR_PRECHECK_PHASE="validator-chain"
+    ON_COMPLETE_VALIDATOR_PRECHECK_REDLINES="validator-chain"
+    ON_COMPLETE_VALIDATOR_PRECHECK_DETAIL="validator chain missing before on-complete"
+    echo "[on_complete] validator chain 缺失，拒绝标记完成" >&2
     return 1
   fi
 
-  if ! report_output=$("$TASK_REPORT_CHECK" "$PROJECT_DIR" "$INITIAL_HEAD" "$current_head" 2>&1); then
-    echo "$report_output" >&2
-    echo "[on_complete] task report 审计失败，拒绝标记完成" >&2
-    return 1
-  fi
+  ON_COMPLETE_VALIDATOR_OUTPUT=$(REDCAP_VALIDATOR_PROJECT_DIR="$PROJECT_DIR" \
+    REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+    REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+    REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
+    bash "$VALIDATOR_CHAIN" on-complete "redcap" "$PROJECT_DIR/.dev-task.md" "$INITIAL_HEAD" "$current_head" text 2>&1) || return 1
 
   return 0
 }
@@ -330,35 +364,43 @@ feishu_notify() {
 echo "[on_complete] 开始执行 on_ALL_DONE 收尾动作..."
 record_closure_phase "on-complete" "started" "project=$PROJECT_NAME" || exit 1
 
-if ! verify_commit_closure; then
-  if ! record_closure_phase "commit-proof" "fail" "commit proof unmet"; then
-    record_evidence_system_failure "commit-proof" "commit proof unmet"
+if ! run_on_complete_validator_chain; then
+  if ! record_on_complete_validator_steps "$ON_COMPLETE_VALIDATOR_OUTPUT" "$(resolve_report_reference)"; then
+    record_evidence_system_failure "validator-chain" "failed to persist validator failure evidence"
     exit 2
   fi
-  echo "[on_complete] ⚠ commit proof 未满足，保留重试机会" >&2
-  exit 1
-fi
-record_closure_phase "commit-proof" "pass" "commit proof verified" || exit 1
 
-if ! verify_task_report_closure; then
-  if ! persist_failure_evidence "task-report" "task-report" "task-report-check failed during on-complete" "$(resolve_report_reference)"; then
-    record_evidence_system_failure "task-report" "task-report-check failed during on-complete"
-    exit 2
+  if ! validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT"; then
+    if ! persist_on_complete_unstructured_failure "$(resolve_report_reference)"; then
+      record_evidence_system_failure "validator-chain" "failed to persist unstructured validator failure"
+      exit 2
+    fi
+  else
+    VALIDATOR_REDLINES=$(collect_on_complete_validator_redlines "$ON_COMPLETE_VALIDATOR_OUTPUT")
+    if [[ -n "$VALIDATOR_REDLINES" ]]; then
+      if ! write_pending_closure_redline "$VALIDATOR_REDLINES" "validator-chain failed during on-complete" "$(resolve_report_reference)"; then
+        record_evidence_system_failure "validator-chain" "failed to persist validator redlines"
+        exit 2
+      fi
+    fi
   fi
-  echo "[on_complete] ⚠ task report proof 未满足，保留重试机会" >&2
-  exit 1
-fi
-record_closure_phase "task-report" "pass" "task report audit passed" "$(resolve_report_reference)" || exit 1
 
-if ! verify_artifact_lifecycle; then
-  if ! persist_failure_evidence "artifact-lifecycle" "artifact-lifecycle" "artifact-lifecycle-check failed during on-complete"; then
-    record_evidence_system_failure "artifact-lifecycle" "artifact-lifecycle-check failed during on-complete"
-    exit 2
+  if [[ -n "$ON_COMPLETE_VALIDATOR_OUTPUT" ]]; then
+    printf '%s\n' "$ON_COMPLETE_VALIDATOR_OUTPUT" >&2
   fi
-  echo "[on_complete] ⚠ artifact lifecycle proof 未满足，保留重试机会" >&2
+  echo "[on_complete] ⚠ validator chain 未满足，保留重试机会" >&2
   exit 1
 fi
-record_closure_phase "artifact-lifecycle" "pass" "artifact lifecycle audit passed" || exit 1
+
+if ! validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT"; then
+  record_evidence_system_failure "validator-chain" "validator chain succeeded without recordable step output"
+  exit 2
+fi
+
+if ! record_on_complete_validator_steps "$ON_COMPLETE_VALIDATOR_OUTPUT" "$(resolve_report_reference)"; then
+  record_evidence_system_failure "validator-chain" "failed to persist validator success evidence"
+  exit 2
+fi
 
 ON_COMPLETE_STATUS=0
 

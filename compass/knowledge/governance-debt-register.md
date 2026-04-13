@@ -18,14 +18,14 @@
 - **implementation_status**: `in-progress`
 - **owner_slice**: `Authority / Closure 收口`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §三 A1
-- **gap**: `redcap-interop-governance.sh` 已新增 `closure-ledger/` 事务日志，并接入 pending closure、task report register、on-complete、session-end；但 stop-review / 其余 closure validators 仍未全部汇入同一 authority chain，且尚未经过本 tranche 的 reviewer/challenger/auditor 复审
+- **gap**: `redcap-interop-governance.sh` 已新增 `closure-ledger/` 事务日志，并接入 pending closure、task report register、on-complete、session-end，且 closure-ledger tranche 已经过 reviewer/challenger/auditor 复审并落库；但 stop-review / 其余 closure validators 仍未全部汇入同一 authority chain
 
 ### GD-002：Validator chain hardening
 - **design_status**: `design-complete`
 - **implementation_status**: `in-progress`
 - **owner_slice**: `Authority Core Hardening`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §三 A2
-- **gap**: `redcap-validator-chain.sh` 已统一 stop-review 的 PM Gate / drift / artifact lifecycle 检查并提供结构化输出，但尚未把 task-report / 其余 closure validators 全量并入同一编排链
+- **gap**: `redcap-validator-chain.sh` 已覆盖 session-start / stop-review / on-complete，并在 on-complete 接入 commit proof、PM Gate、drift、task report、artifact lifecycle；但 session-end / 其余 closure validators 仍未汇入同一编排链，strict 模式下的 re-anchor/validator authority 也还未完全统一
 
 ### GD-003：RedCap-owned continuity manifest
 - **design_status**: `design-complete`
