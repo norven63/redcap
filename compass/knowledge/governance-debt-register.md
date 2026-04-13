@@ -18,7 +18,7 @@
 - **implementation_status**: `in-progress`
 - **owner_slice**: `Authority / Closure 收口`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §三 A1
-- **gap**: `redcap-interop-governance.sh` 已新增 `closure-ledger/` 事务日志，并接入 pending closure、task report register、on-complete、session-end；session-end validator step（review / reanchor / PM Gate / drift / task report / artifact lifecycle）也已补写回 ledger，但 stale obligation management / auto-reconcile 仍未作为独立治理能力完整落地，因此 GD-001 暂维持 in-progress
+- **gap**: `redcap-interop-governance.sh` 已新增 `closure-ledger/` 事务日志，并接入 pending closure、task report register、on-complete、session-end；session-end validator step（review / reanchor / PM Gate / drift / task report / artifact lifecycle）也已补写回 ledger，且 `session-end` 现已支持按当前 blocker set 权威重写 `required_redlines`，避免 stale redline 只增不减；但独立的 stale obligation / auto-reconcile 入口仍未完整落地，因此 GD-001 暂维持 in-progress
 
 ### GD-002：Validator chain hardening
 - **design_status**: `design-complete`

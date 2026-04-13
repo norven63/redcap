@@ -440,7 +440,11 @@ governance_debts_addressed: []
   - 若 notify 或 validator-chain 暴露出的 `commit proof / PM Gate / drift / task report / artifact lifecycle` 仍有缺口，必须写回 pending closure，保留下次 reconcile 机会
 - `compass/tools/redcap-layerB-session-end.sh`
   - 先消费 `validator-chain session-end` 的 `review proof + reanchor + PM Gate + drift + task report + artifact lifecycle`，再决定 notify / pending closure clear
-  - 若 validator-chain 未产出可判定 step、notify 失败，或 pending closure 无法清除，必须保留/更新 pending closure，并把 session-end blocker 写入 closure-ledger
+  - 若 validator-chain 未产出可判定 step、notify 失败、pending closure 无法清除，或 closure 证据写回失败，必须保留/更新 pending closure；`session-end` 作为 authority reconcile 入口应以当前 blocker set 重写 `required_redlines`
+  - 若 blocker 已判定但 `pending closure / closure-ledger` 无法持久化，必须 fail-closed，不能继续按“正常收尾”退出
+- `loom/tools/redcap-layerA-session-end.sh`
+  - 作为宿主通用 SessionEnd 分发器，必须传播 Layer B `session-end` 的 fail-closed 结果，不能用 `|| true` 吞掉 authority 脚本的非零退出
+  - Gemini 宿主若接到 Layer B fail-closed，需映射为宿主可识别的 system-block 退出码，而不是继续返回 `allow`
 - `compass/tools/redcap-host-workboard-sync.sh`
   - 仅向宿主 workboard 写 canonical pointer / confirmed hash
   - 不允许反向把需求/验收真相从宿主 workboard 回灌为 RedCap authority

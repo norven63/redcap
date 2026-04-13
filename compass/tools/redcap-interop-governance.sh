@@ -360,7 +360,7 @@ if not state_file.is_file():
     sys.exit(1)
 
 text = state_file.read_text(encoding="utf-8")
-match = re.search(rf"^{re.escape(key)}:\s*(.*?)\s*$", text, re.MULTILINE)
+match = re.search(rf"^{re.escape(key)}:[ \t]*(.*?)[ \t]*$", text, re.MULTILINE)
 if match:
     print(match.group(1))
 PY
@@ -385,10 +385,14 @@ redcap_interop_write_pending_closure() {
     local artifact_path="${7:-}"
     local baseline_head="${8:-}"
     local audited_head="${9:-}"
+    local redline_mode="${10:-merge}"
     local task_id top_goal active_slice confirmed_hash state_file state_dir now created_at existing_artifact_path
-    local existing_required_redlines existing_baseline_head existing_audited_head existing_confirmed_hash existing_active_slice existing_top_goal item merged_required_redlines=""
+    local existing_required_redlines existing_baseline_head existing_audited_head existing_confirmed_hash existing_active_slice existing_top_goal item normalized_required_redlines=""
 
     if [[ -z "$project_root" || -z "$task_file" || -z "$host" || -z "$trigger" ]]; then
+        return 1
+    fi
+    if [[ "$redline_mode" != "merge" && "$redline_mode" != "replace" ]]; then
         return 1
     fi
 
@@ -425,21 +429,26 @@ redcap_interop_write_pending_closure() {
         existing_confirmed_hash=$(redcap_interop_read_state_field "$state_file" "confirmed_hash" 2>/dev/null || true)
         existing_active_slice=$(redcap_interop_read_state_field "$state_file" "active_slice" 2>/dev/null || true)
         existing_top_goal=$(redcap_interop_read_state_field "$state_file" "top_goal" 2>/dev/null || true)
-        for item in ${existing_required_redlines//,/ } ${required_redlines//,/ }; do
+
+        if [[ "$redline_mode" == "merge" ]]; then
+            required_redlines="${existing_required_redlines} ${required_redlines}"
+        fi
+
+        for item in ${required_redlines//,/ }; do
             item=$(printf '%s' "$item" | tr -d '[:space:]')
             [[ -n "$item" ]] || continue
-            case ",$merged_required_redlines," in
+            case ",$normalized_required_redlines," in
                 *,"$item",*) ;;
                 *)
-                    if [[ -z "$merged_required_redlines" ]]; then
-                        merged_required_redlines="$item"
+                    if [[ -z "$normalized_required_redlines" ]]; then
+                        normalized_required_redlines="$item"
                     else
-                        merged_required_redlines="${merged_required_redlines},$item"
+                        normalized_required_redlines="${normalized_required_redlines},$item"
                     fi
                     ;;
             esac
         done
-        required_redlines="$merged_required_redlines"
+        required_redlines="$normalized_required_redlines"
         if [[ -n "$existing_confirmed_hash" ]]; then
             confirmed_hash="$existing_confirmed_hash"
         fi
@@ -455,10 +464,14 @@ redcap_interop_write_pending_closure() {
         fi
         existing_baseline_head=$(redcap_interop_read_state_field "$state_file" "baseline_head" 2>/dev/null || true)
         existing_audited_head=$(redcap_interop_read_state_field "$state_file" "audited_head" 2>/dev/null || true)
-        if [[ -n "$existing_baseline_head" ]]; then
+        if [[ "$redline_mode" == "merge" && -n "$existing_baseline_head" ]]; then
+            baseline_head="$existing_baseline_head"
+        elif [[ -z "$baseline_head" && -n "$existing_baseline_head" ]]; then
             baseline_head="$existing_baseline_head"
         fi
-        if [[ -n "$existing_audited_head" ]]; then
+        if [[ "$redline_mode" == "merge" && -n "$existing_audited_head" ]]; then
+            audited_head="$existing_audited_head"
+        elif [[ -z "$audited_head" && -n "$existing_audited_head" ]]; then
             audited_head="$existing_audited_head"
         fi
 
@@ -482,7 +495,7 @@ EOF
         redcap_interop_record_closure_event \
             "$project_root" \
             "pending-closure-created" \
-            "task_id=$task_id host=$host trigger=$trigger confirmed_hash=$confirmed_hash required_redlines=$required_redlines artifact_path=$artifact_path baseline_head=$baseline_head audited_head=$audited_head detail=$detail"
+            "task_id=$task_id host=$host trigger=$trigger confirmed_hash=$confirmed_hash required_redlines=$required_redlines artifact_path=$artifact_path baseline_head=$baseline_head audited_head=$audited_head redline_mode=$redline_mode detail=$detail"
         redcap_interop_append_closure_ledger_identity \
             "$project_root" \
             "$task_id" \
@@ -490,7 +503,7 @@ EOF
             "$active_slice" \
             "obligation" \
             "pending" \
-            "required_redlines=$required_redlines detail=$detail" \
+            "required_redlines=$required_redlines redline_mode=$redline_mode detail=$detail" \
             "$host" \
             "$trigger" \
             "$baseline_head" \

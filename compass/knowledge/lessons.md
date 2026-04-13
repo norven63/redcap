@@ -582,3 +582,39 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04
+
+### L-57: obligation reconcile 入口必须能权威重写 blocker 集，不能让 redline 只会并集膨胀
+- **场景**：pending closure 初次写入时往往来自 stop-review、task-report-register、on-complete 等局部入口；如果后续 `session-end` 在重新审计 review / reanchor / PM Gate / drift / task report / artifact lifecycle 时，仍只把新的 blocker 与历史 `required_redlines` 做并集，那么已经修复的 `review`、`task-report` 等 redline 会永久残留，形成 stale obligation，并持续误导后续 reconcile / notify / task-report gate
+- **根因**：把“pending closure 是 outstanding obligation”误解成“它的 blocker 集也必须只增不减”。实际上，局部入口适合 additive write，但 authority reconcile 入口必须有能力根据**当前全量判定**覆盖旧 blocker 集，否则 pending closure 会从“当前缺口”退化成“历史缺口墓地”
+- **经验规则**：① additive write 与 authoritative rewrite 要分层：局部 hook 可以 merge redlines，但最终 reconcile 入口必须按当前 blocker set 重写 `required_redlines` ② 若 pending closure 还保存 `baseline_head / audited_head / artifact_path` 一类辅助字段，权威重写时也要允许用新的判定上下文刷新，避免历史元数据继续污染 reanchor 与 task-report 兼容逻辑 ③ 任何读取 `required_redlines` 决策行为（如 review requirement、pending report 兼容）都默认依赖“它代表当前 blocker”，因此要优先修 stale redline，而不是在消费方堆特判
+- **来源**：2026-04-13，Tranche 1 stale-obligation-management 第一刀中发现 `redcap_interop_write_pending_closure()` 只会并集累积 redlines；随后为 `session-end` 引入 authority rewrite 语义修复
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04
+
+### L-58: closure 证据写失败本身就是 blocker，不能“判定正确但持久化缺失”后仍按成功收尾
+- **场景**：`session-end` 已经能算出 blocker，也能决定 `pending closure` 是否可清除；但如果 `closure-ledger` 或 `pending closure` 的写入失败，只在 runtime degraded 里记一笔然后继续 `exit 0`，就会出现“内存里知道有 blocker，磁盘上却没有任何 authoritative 证据”的假闭环，甚至在 notify 已发送后留下 false-clear 轨迹
+- **根因**：把“判定逻辑正确”误当成“authority chain 完整成立”，忽略了 closure 治理真正依赖的是**判定 + 持久化**二者同时成立。对 authority 链来说，证据写失败不是普通降级，而是新的 closure blocker
+- **经验规则**：① closure 入口只要已经判定出 blocker，就必须把 `pending closure` 与 `closure-ledger` 的写入视为事务关键路径；写失败时要 fail-closed，而不是吞错后继续按成功退出 ② 即使原始业务 blocker 已全部通过，若 `session-end pass` / `obligation cleared` 等 ledger 证据写失败，也要反向生成新的 closure blocker（如 `closure-ledger`），把未完成的 authority reconcile 重新挂回 pending closure ③ 需要清理 runtime claim 时，应只释放最小必要锁，不要顺手清掉会帮助后续恢复的 report/head marker
+- **来源**：2026-04-13，closure-challenger recovery 指出 `session-end` 在 blocker persistence 失败后仍 exit 0；随后将其修复为 fail-closed，并用 ledger 不可写 smoke 覆盖
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04
+
+### L-59: authority 脚本的 fail-closed 退出码，不能在宿主分发器里被吞掉
+- **场景**：`compass/tools/redcap-layerB-session-end.sh` 已修成在 authority persistence failure 时返回非零，但宿主通用 SessionEnd 分发器 `loom/tools/redcap-layerA-session-end.sh` 仍沿用旧时代的 `|| true` 包裹调用，导致 Layer B 明明已经 fail-closed，Claude / Gemini / Copilot 侧看到的却还是“分发器正常结束”
+- **根因**：把“分发器应该尽量稳”误扩大成“下游 authority 脚本任何非零都该吞掉”，忽略了分发器本身也是 authority chain 的一环；一旦它把下游 fail-closed 信号吃掉，就会把真实 blocker重新伪装成成功收尾
+- **经验规则**：① 当下游脚本是 RedCap authority gate / closure entry 时，分发器必须传播它的 fail-closed 结果，不能一律 `|| true` ② 若宿主对退出码有特殊协议（如 Gemini 只有 `exit 2` 才是 system-block），分发器必须做**宿主语义映射**，而不是简单保留历史默认值 ③ “统一分发器”不代表“统一成功口径”；宿主适配层应负责让 authority 结果真实可见，而不是把它抹平
+- **来源**：2026-04-13，stale-obligation-management slice 中 auditor 指出 `layerA-session-end.sh` 仍吞掉 Layer B 的新 `exit 1` 路径；随后修复为传播/映射 fail-closed 退出码，并用代理 smoke 覆盖
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04
+
+### L-60: 补偿 warning 与失败 alert 必须使用独立去重 marker，不能共用 `ALERTED_FILE`
+- **场景**：为修复“成功通知已发出，但后续 persistence 失败”新增补偿 warning 后，一度直接把 warning 也写进 `ALERTED_FILE`。结果下一次同一 HEAD 下真正出现 validator / PM Gate / drift 等失败时，failure-path alert 会被误判成“已经提醒过”，从而被静默抑制
+- **根因**：把“同一 HEAD 上的所有提醒都可以共享一个 dedup 标记”当作理所当然，忽略了 warning 与 blocker alert 代表的是不同语义、不同触发面。它们一旦共享 marker，就会发生跨语义去重污染
+- **经验规则**：① 任何新的提醒类型接入 `session-end` 时，都要先判断它是不是与现有 alert 属于同一语义；不同语义必须用独立 marker（如 `warned-head` vs `alerted-head`）② dedup marker 的所有者必须单一，禁止让 warning path 与 failure path 共同写同一标记文件 ③ 若最终成功闭环，应同时清掉与该义务相关的 warning / alert marker，避免旧 dedup 残留影响新一轮判断
+- **来源**：2026-04-13，stale-challenger recovery 指出补偿 warning 复用 `ALERTED_FILE` 会压制下一次真正失败告警；随后拆分为独立 `warned-head` marker
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04

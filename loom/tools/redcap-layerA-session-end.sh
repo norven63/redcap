@@ -20,6 +20,7 @@
 set -u
 
 HOST="${1:-unknown}"
+LAYER_B_SESSION_END_STATUS=0
 
 # ── 1. 接收并解析上下文 ──────────────────────────────────
 
@@ -44,16 +45,21 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")" )" &&
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
 
-# 路径归一化（移除末尾斜杠）
-CWD_NORM=$(echo "$CWD" | sed 's:/*$::')
-REDCAP_DIR_NORM=$(echo "$REDCAP_ROOT" | sed 's:/*$::')
+# 路径归一化（统一到真实路径，兼容 macOS 的 /tmp -> /private/tmp）
+if ! CWD_NORM=$(redcap_runtime_normalize_path "$CWD" 2>/dev/null); then
+    CWD_NORM=$(echo "$CWD" | sed 's:/*$::')
+fi
+if ! REDCAP_DIR_NORM=$(redcap_runtime_normalize_path "$REDCAP_ROOT" 2>/dev/null); then
+    REDCAP_DIR_NORM=$(echo "$REDCAP_ROOT" | sed 's:/*$::')
+fi
 
 # 检查是否为 RedCap 自身开发 (Layer B)
 if [[ "$CWD_NORM" == "$REDCAP_DIR_NORM" || "$CWD_NORM" == "$REDCAP_DIR_NORM/"* ]]; then
     echo "[redcap-hook-proxy] 检测到 Layer B (RedCap 自身) 任务，启动框架审计..." >&2
     B_SESSION_END_SCRIPT="$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh"
     if [[ -x "$B_SESSION_END_SCRIPT" ]]; then
-        REDCAP_HOST_SESSION_ID="$SESSION_ID" REDCAP_HOOK_CWD="$CWD" REDCAP_HOST_PROCESS_PID="$PPID" bash "$B_SESSION_END_SCRIPT" "$HOST" 2>&1 || true
+        REDCAP_HOST_SESSION_ID="$SESSION_ID" REDCAP_HOOK_CWD="$CWD" REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" bash "$B_SESSION_END_SCRIPT" "$HOST" 2>&1
+        LAYER_B_SESSION_END_STATUS=$?
     fi
 else
     # 检查是否为 RedCap 开发的用户项目 (Layer A)
@@ -100,6 +106,14 @@ fi
 redcap_runtime_clear_process_claim "$HOST" "${REDCAP_HOST_PROCESS_PID:-$PPID}" || true
 
 # ── 4. 退出 ───────────────────────────────────────────────
+
+if [[ "$LAYER_B_SESSION_END_STATUS" -ne 0 ]]; then
+    if [[ "$HOST" == "gemini" ]]; then
+        echo '{"decision": "allow"}'
+        exit 2
+    fi
+    exit "$LAYER_B_SESSION_END_STATUS"
+fi
 
 # Hook 返回协议是宿主相关的：Gemini SessionEnd 需要合法 JSON，
 # Claude / Copilot 生命周期 Hook 则应保持静默或返回各自宿主可接受的结构。

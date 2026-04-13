@@ -39,6 +39,7 @@ fi
 HEAD_FILE=""
 NOTIFIED_FILE=""
 ALERTED_FILE=""
+WARNED_FILE=""
 REVIEW_RESULT_FILE=""
 REVIEW_LOG_FILE=""
 LEGACY_CLAUDE_HEAD_FILE="/tmp/redcap-claude-initial-head"
@@ -49,6 +50,7 @@ if [[ -n "$BINDING_KEY" ]] && redcap_runtime_load_from_binding "$HOST" "$HOOK_CW
     HEAD_FILE=$(redcap_runtime_path "layerB/initial-head")
     NOTIFIED_FILE=$(redcap_runtime_path "layerB/notified-head")
     ALERTED_FILE=$(redcap_runtime_path "layerB/alerted-head")
+    WARNED_FILE=$(redcap_runtime_path "layerB/warned-head")
     REVIEW_RESULT_FILE=$(redcap_runtime_path "review/review-result")
     REVIEW_LOG_FILE=$(redcap_runtime_path "review/review-log.md")
     RUNTIME_ATTACHED=1
@@ -125,6 +127,32 @@ cleanup_session_files() {
 
 clear_review_artifacts() {
     rm -f "$REVIEW_RESULT_FILE" "$REVIEW_LOG_FILE" 2>/dev/null || true
+}
+
+SESSION_END_PERSISTENCE_FAILURE=0
+SESSION_END_PERSISTENCE_DETAIL=""
+
+mark_session_end_persistence_failure() {
+    local reason="$1"
+    local detail="${2:-}"
+
+    SESSION_END_PERSISTENCE_FAILURE=1
+    case ",$SESSION_END_PERSISTENCE_DETAIL," in
+        *,"$reason",*) ;;
+        *)
+            if [[ -z "$SESSION_END_PERSISTENCE_DETAIL" ]]; then
+                SESSION_END_PERSISTENCE_DETAIL="$reason"
+            else
+                SESSION_END_PERSISTENCE_DETAIL="${SESSION_END_PERSISTENCE_DETAIL},$reason"
+            fi
+            ;;
+    esac
+
+    redcap_runtime_record_degraded_mode \
+        "$REDCAP_ROOT" \
+        "$reason" \
+        "host=$HOST current_head=$CURRENT_HEAD detail=$detail" \
+        >/dev/null 2>&1 || true
 }
 
 run_session_end_validator_chain() {
@@ -295,6 +323,26 @@ append_required_redline() {
     fi
 }
 
+pending_write_baseline_head() {
+    if [[ "$REANCHOR_STATUS" -ne 1 && "$PENDING_CLOSURE_EXISTS" == "1" && -n "$PENDING_BASELINE_HEAD" ]]; then
+        printf '%s\n' "$PENDING_BASELINE_HEAD"
+        return 0
+    fi
+    printf '%s\n' "$BASELINE"
+}
+
+pending_write_audited_head() {
+    if [[ "$REANCHOR_STATUS" -ne 1 && "$PENDING_CLOSURE_EXISTS" == "1" && -n "$PENDING_AUDITED_HEAD" ]]; then
+        printf '%s\n' "$PENDING_AUDITED_HEAD"
+        return 0
+    fi
+    printf '%s\n' "$CURRENT_HEAD"
+}
+
+notification_state_key() {
+    printf '%s\n' "$CURRENT_HEAD|$REQUIRED_REDLINES|${SESSION_END_PERSISTENCE_DETAIL:-none}"
+}
+
 send_notification() {
     local message="$1"
 
@@ -328,6 +376,12 @@ REANCHOR_OUTPUT=""
 REANCHOR_STATUS=0
 VALIDATOR_INFRA_FAILURE=0
 SESSION_END_VALIDATOR_OUTPUT=""
+SUCCESS_NOTIFY_SENT=0
+BLOCKER_ALERT_SENT=0
+BLOCKER_ALERT_KEY=""
+COMPENSATION_WARNING_SENT=0
+COMPENSATION_WARNING_KEY=""
+ALERT_BODY=""
 
 if ! run_session_end_validator_chain; then
     if ! redcap_validator_output_has_recordable_step "$SESSION_END_VALIDATOR_OUTPUT" review-proof-check reanchor-check pm-gate drift-check task-report-check artifact-lifecycle-check; then
@@ -353,19 +407,15 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 ]]; then
     [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "artifact-lifecycle-check")" == "pass" ]] && ARTIFACT_STATUS=1
 
     if ! record_session_end_validator_steps "$SESSION_END_VALIDATOR_OUTPUT" "$REPORT_OUTPUT"; then
-        redcap_runtime_record_degraded_mode \
-            "$REDCAP_ROOT" \
+        mark_session_end_persistence_failure \
             "session-end-validator-ledger-write-failed" \
-            "host=$HOST current_head=$CURRENT_HEAD" \
-            >/dev/null 2>&1 || true
+            "phase=validator-steps"
     fi
 else
     if ! record_session_end_phase "validator-chain" "fail" "validator chain failed before recordable step output: ${SESSION_END_VALIDATOR_OUTPUT:-none}" "$REPORT_OUTPUT"; then
-        redcap_runtime_record_degraded_mode \
-            "$REDCAP_ROOT" \
+        mark_session_end_persistence_failure \
             "session-end-validator-ledger-write-failed" \
-            "host=$HOST current_head=$CURRENT_HEAD phase=validator-chain" \
-            >/dev/null 2>&1 || true
+            "phase=validator-chain"
     fi
 fi
 
@@ -399,6 +449,7 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
                     "${HOST} SessionEnd 兜底收尾" \
                     "$REPORT_OUTPUT" \
                     "$REDCAP_ROOT")"; then
+                    SUCCESS_NOTIFY_SENT=1
                     if ! rm -f "$LOCKED_PENDING_STATE" 2>/dev/null; then
                         PENDING_CLEAR_STATUS=0
                         redcap_runtime_record_degraded_mode "$REDCAP_ROOT" "session-end-clear-after-notify-failed" "host=$HOST current_head=$CURRENT_HEAD" || true
@@ -434,16 +485,12 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
                                 "$LOCKED_PENDING_AUDITED" \
                                 "$LOCKED_PENDING_ARTIFACT" \
                                 >/dev/null 2>&1; then
-                                redcap_runtime_record_degraded_mode \
-                                    "$REDCAP_ROOT" \
+                                PENDING_CLEAR_STATUS=0
+                                mark_session_end_persistence_failure \
                                     "session-end-obligation-cleared-ledger-failed" \
-                                    "host=$HOST current_head=$CURRENT_HEAD task_id=$LOCKED_PENDING_TASK_ID" \
-                                    >/dev/null 2>&1 || true
+                                    "task_id=$LOCKED_PENDING_TASK_ID"
                             fi
                         fi
-                        echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
-                        rm -f "$ALERTED_FILE" 2>/dev/null || true
-                        clear_review_artifacts
                     fi
                 else
                     NOTIFY_STATUS=0
@@ -461,9 +508,7 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
             "${HOST} SessionEnd 兜底收尾" \
             "$REPORT_OUTPUT" \
             "$REDCAP_ROOT")"; then
-            echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
-            rm -f "$ALERTED_FILE" 2>/dev/null || true
-            clear_review_artifacts
+            SUCCESS_NOTIFY_SENT=1
         else
             NOTIFY_STATUS=0
             append_required_redline "notify"
@@ -475,7 +520,7 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
     fi
 
     if [[ -z "$REQUIRED_REDLINES" ]]; then
-        redcap_interop_append_closure_ledger \
+        if ! redcap_interop_append_closure_ledger \
             "$REDCAP_ROOT" \
             "$REDCAP_ROOT/.dev-task.md" \
             "session-end" \
@@ -486,7 +531,18 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
             "$BASELINE" \
             "$CURRENT_HEAD" \
             "$REPORT_OUTPUT" \
-            >/dev/null 2>&1 || true
+            >/dev/null 2>&1; then
+            mark_session_end_persistence_failure \
+                "session-end-pass-ledger-write-failed" \
+                "report=$REPORT_OUTPUT"
+        else
+            if [[ "$SUCCESS_NOTIFY_SENT" -eq 1 ]]; then
+                echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
+                rm -f "$ALERTED_FILE" 2>/dev/null || true
+                rm -f "$WARNED_FILE" 2>/dev/null || true
+            fi
+            clear_review_artifacts
+        fi
     fi
 else
     if [[ "$VALIDATOR_INFRA_FAILURE" -eq 1 ]]; then
@@ -517,7 +573,9 @@ else
         LAST_ALERTED=$(cat "$ALERTED_FILE")
     fi
 
-    if [[ "$LAST_ALERTED" != "$CURRENT_HEAD" ]]; then
+    PRE_ALERT_KEY=""
+    PRE_ALERT_KEY=$(notification_state_key)
+    if [[ "$LAST_ALERTED" != "$PRE_ALERT_KEY" ]]; then
         ALERT_BODY="⚠️ RedCap Layer B 收尾审计发现缺口（${HOST} SessionEnd）"
         if [[ "$VALIDATOR_INFRA_FAILURE" -eq 1 ]]; then
             ALERT_BODY="${ALERT_BODY}\n\n问题：session-end validator chain 未产出可判定 step\n\n输出:\n$SESSION_END_VALIDATOR_OUTPUT"
@@ -555,9 +613,35 @@ else
                 ALERT_BODY="${ALERT_BODY}\n\n问题：缺少按模板归档的任务完成报告\n\n审计输出:\n$REPORT_OUTPUT"
             fi
         fi
+        if [[ "$SESSION_END_PERSISTENCE_FAILURE" -eq 1 ]]; then
+            ALERT_BODY="${ALERT_BODY}\n\n问题：session-end blocker 无法完整写入 closure 证据层，不能视为闭环完成"
+            ALERT_BODY="${ALERT_BODY}\n\n持久化缺口:\n${SESSION_END_PERSISTENCE_DETAIL:-unknown}"
+        fi
         ALERT_BODY="${ALERT_BODY}\n\nCommits:\n$COMMIT_LOG"
         if send_notification "$ALERT_BODY"; then
-            echo "$CURRENT_HEAD" > "$ALERTED_FILE"
+            BLOCKER_ALERT_SENT=1
+            BLOCKER_ALERT_KEY="$PRE_ALERT_KEY"
+        else
+            NOTIFY_STATUS=0
+            append_required_redline "notify"
+        fi
+    fi
+fi
+
+if [[ "$SESSION_END_PERSISTENCE_FAILURE" -eq 1 ]]; then
+    append_required_redline "closure-ledger"
+fi
+
+if [[ "$SUCCESS_NOTIFY_SENT" -eq 1 && -n "$REQUIRED_REDLINES" ]]; then
+    PRE_WARN_KEY=$(notification_state_key)
+    LAST_WARNED=""
+    if [[ -f "$WARNED_FILE" ]]; then
+        LAST_WARNED=$(cat "$WARNED_FILE")
+    fi
+    if [[ "$LAST_WARNED" != "$PRE_WARN_KEY" ]]; then
+        if send_notification "⚠️ RedCap Layer B 收尾补偿失败（${HOST} SessionEnd）\n\n成功通知已发出，但后续 closure 持久化未完成，当前仍保留 blocker。\n\nrequired_redlines=$REQUIRED_REDLINES\npersistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}\n\nCommits:\n$COMMIT_LOG"; then
+            COMPENSATION_WARNING_SENT=1
+            COMPENSATION_WARNING_KEY="$PRE_WARN_KEY"
         else
             NOTIFY_STATUS=0
             append_required_redline "notify"
@@ -566,29 +650,95 @@ else
 fi
 
 if [[ -n "$REQUIRED_REDLINES" ]]; then
-    redcap_interop_write_pending_closure \
+    PENDING_WRITE_BASELINE=$(pending_write_baseline_head)
+    PENDING_WRITE_AUDITED=$(pending_write_audited_head)
+    if ! redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
         "$REDCAP_ROOT/.dev-task.md" \
         "$HOST" \
         "layerB-session-end-audit-gap" \
         "$REQUIRED_REDLINES" \
-        "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
+        "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
         "" \
-        "$BASELINE" \
-        "$CURRENT_HEAD" \
-        >/dev/null 2>&1 || true
-    redcap_interop_append_closure_ledger \
+        "$PENDING_WRITE_BASELINE" \
+        "$PENDING_WRITE_AUDITED" \
+        "replace" \
+        >/dev/null 2>&1; then
+        mark_session_end_persistence_failure \
+            "session-end-pending-closure-write-failed" \
+            "required_redlines=$REQUIRED_REDLINES"
+        redcap_runtime_clear_process_claim "$HOST" "$HOST_PROCESS_PID" || true
+        exit 1
+    fi
+    if ! redcap_interop_append_closure_ledger \
         "$REDCAP_ROOT" \
         "$REDCAP_ROOT/.dev-task.md" \
         "session-end" \
         "blocked" \
-        "required_redlines=$REQUIRED_REDLINES review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
+        "required_redlines=$REQUIRED_REDLINES review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
         "$HOST" \
         "session-end" \
         "$BASELINE" \
         "$CURRENT_HEAD" \
         "$REPORT_OUTPUT" \
-        >/dev/null 2>&1 || true
+        >/dev/null 2>&1; then
+        mark_session_end_persistence_failure \
+            "session-end-blocked-ledger-write-failed" \
+            "required_redlines=$REQUIRED_REDLINES"
+        append_required_redline "closure-ledger"
+        if ! redcap_interop_write_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "$HOST" \
+            "layerB-session-end-audit-gap" \
+            "$REQUIRED_REDLINES" \
+            "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
+            "" \
+            "$PENDING_WRITE_BASELINE" \
+            "$PENDING_WRITE_AUDITED" \
+            "replace" \
+            >/dev/null 2>&1; then
+            mark_session_end_persistence_failure \
+                "session-end-pending-closure-rewrite-failed" \
+                "required_redlines=$REQUIRED_REDLINES"
+        fi
+        redcap_runtime_clear_process_claim "$HOST" "$HOST_PROCESS_PID" || true
+        exit 1
+    fi
+    FINAL_NOTIFICATION_KEY=$(notification_state_key)
+    if [[ "$SUCCESS_NOTIFY_SENT" -eq 1 ]]; then
+        LAST_WARNED=""
+        if [[ -f "$WARNED_FILE" ]]; then
+            LAST_WARNED=$(cat "$WARNED_FILE")
+        fi
+        if [[ "$COMPENSATION_WARNING_SENT" -eq 1 && "$COMPENSATION_WARNING_KEY" == "$FINAL_NOTIFICATION_KEY" ]]; then
+            echo "$FINAL_NOTIFICATION_KEY" > "$WARNED_FILE"
+        elif [[ "$LAST_WARNED" != "$FINAL_NOTIFICATION_KEY" ]]; then
+            if send_notification "⚠️ RedCap Layer B 收尾补偿最终状态（${HOST} SessionEnd）\n\n最终 blocker 已确认并落盘。\n\nrequired_redlines=$REQUIRED_REDLINES\npersistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}\n\nCommits:\n$COMMIT_LOG"; then
+                echo "$FINAL_NOTIFICATION_KEY" > "$WARNED_FILE"
+            fi
+        fi
+    else
+        LAST_ALERTED=""
+        if [[ -f "$ALERTED_FILE" ]]; then
+            LAST_ALERTED=$(cat "$ALERTED_FILE")
+        fi
+        if [[ "$BLOCKER_ALERT_SENT" -eq 1 && "$BLOCKER_ALERT_KEY" == "$FINAL_NOTIFICATION_KEY" ]]; then
+            echo "$FINAL_NOTIFICATION_KEY" > "$ALERTED_FILE"
+        elif [[ "$LAST_ALERTED" != "$FINAL_NOTIFICATION_KEY" ]]; then
+            FINAL_ALERT_BODY="$ALERT_BODY"
+            if [[ "$BLOCKER_ALERT_KEY" != "$FINAL_NOTIFICATION_KEY" ]]; then
+                FINAL_ALERT_BODY="${FINAL_ALERT_BODY}\n\n最终 blocker 集已更新：required_redlines=$REQUIRED_REDLINES\npersistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}"
+            fi
+            if send_notification "$FINAL_ALERT_BODY"; then
+                echo "$FINAL_NOTIFICATION_KEY" > "$ALERTED_FILE"
+            fi
+        fi
+    fi
+    if [[ "$SESSION_END_PERSISTENCE_FAILURE" -eq 1 ]]; then
+        redcap_runtime_clear_process_claim "$HOST" "$HOST_PROCESS_PID" || true
+        exit 1
+    fi
 fi
 
 cleanup_session_files

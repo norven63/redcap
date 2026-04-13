@@ -215,12 +215,18 @@ run_layerb_concurrency_case() {
 
         attach_binding_with_capability_recovery "$host" "$REDCAP_ROOT" "$binding_a" "$pid_a" || fail "failed to reattach first $host session after session-end"
         alerted_a="$(redcap_runtime_path "layerB/alerted-head")"
-        assert_eq "$(read_file_text "$alerted_a")" "$current_head"
+        case "$(read_file_text "$alerted_a")" in
+            "$current_head|"*) ;;
+            *) fail "unexpected alerted marker for first $host session" ;;
+        esac
         redcap_runtime_clear_context
 
         attach_binding_with_capability_recovery "$host" "$REDCAP_ROOT" "$binding_b" "$pid_b" || fail "failed to reattach second $host session after session-end"
         alerted_b="$(redcap_runtime_path "layerB/alerted-head")"
-        assert_eq "$(read_file_text "$alerted_b")" "$current_head"
+        case "$(read_file_text "$alerted_b")" in
+            "$current_head|"*) ;;
+            *) fail "unexpected alerted marker for second $host session" ;;
+        esac
         redcap_runtime_clear_context
     done
 }
