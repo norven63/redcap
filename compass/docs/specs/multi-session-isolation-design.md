@@ -3,6 +3,7 @@
 > **定位**：本设计面向 RedCap 的跨会话并发隔离问题，覆盖 Layer A、Layer B、A↔B 通信、A2A 会话续接与 Prism 并发运行。  
 > **状态**：runtime foundation、pending closure、host workboard mirror 与 explicit import protocol 已落地；更大范围 acceptance / archive 演进持续迭代。
 > **设计策略**：方案 C —— **有截止线的兼容迁移**，不做长期双轨共存。
+> **阅读指引**：若你想看面向人类解释的中文版说明，而不是偏设计约束的底稿，请同时阅读 `compass/docs/specs/session-isolation-continuity-guide.md`。
 
 ---
 
