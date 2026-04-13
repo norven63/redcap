@@ -27,6 +27,7 @@ PROJECT_NAME_ARG="${3:-}"
 SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-notify-format.sh"
 WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
@@ -70,6 +71,10 @@ verify_commit_closure() {
 verify_artifact_lifecycle() {
   local current_head
 
+  if [[ "$PROJECT_DIR" != "$REDCAP_ROOT" ]]; then
+    return 0
+  fi
+
   current_head=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || true)
   if [[ -z "$current_head" ]]; then
     echo "[on_complete] 无法解析当前 HEAD，拒绝执行 artifact lifecycle 校验" >&2
@@ -81,7 +86,7 @@ verify_artifact_lifecycle() {
     return 1
   fi
 
-  if ! bash "$ARTIFACT_LIFECYCLE_CHECK" "$PROJECT_DIR" "$INITIAL_HEAD" "$current_head"; then
+  if ! bash "$ARTIFACT_LIFECYCLE_CHECK" "$PROJECT_DIR" "$INITIAL_HEAD" "$current_head" redcap-self; then
     echo "[on_complete] artifact lifecycle 检查失败，拒绝标记完成" >&2
     return 1
   fi

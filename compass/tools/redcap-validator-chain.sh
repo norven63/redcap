@@ -98,7 +98,7 @@ case "$MODE" in
     stop-review)
         run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" stop-review "$HOST" "$TASK_FILE" || overall_status="fail"
         run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" stop-review "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
-        run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+        run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" redcap-self || overall_status="fail"
         ;;
     *)
         echo "[redcap-validator-chain] unsupported mode: $MODE" >&2

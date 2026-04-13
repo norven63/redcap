@@ -426,7 +426,8 @@ governance_debts_addressed: []
   - 统一编排 stop-review 的 PM Gate / drift / artifact lifecycle 检查
   - 输出结构化结果，避免多条控制面检查散落在调用方
 - `compass/tools/redcap-artifact-lifecycle-check.sh`
-  - 阻断 session-isolated / local-only / temporary artifacts 进入 git 历史
+  - 对 **RedCap 自身工作区** 检查本轮 commit 区间里所有曾进入历史的路径，而不是只看最终 net diff
+  - 一旦命中违规路径，会阻断 stop-review / on-complete 收尾通过，并显式暴露这批违规产物
   - 阻断 `compass/docs/` 根目录重新长成未分类条目
 - `compass/tools/redcap-host-workboard-sync.sh`
   - 仅向宿主 workboard 写 canonical pointer / confirmed hash

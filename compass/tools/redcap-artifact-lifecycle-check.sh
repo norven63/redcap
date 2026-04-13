@@ -7,10 +7,24 @@ set -uo pipefail
 REPO_ROOT="${1:-}"
 BASELINE="${2:-}"
 CURRENT_HEAD="${3:-}"
+POLICY_MODE="${4:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEFAULT_REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 if [[ -z "$REPO_ROOT" ]]; then
-    REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    REPO_ROOT="$DEFAULT_REDCAP_ROOT"
+fi
+
+if [[ -z "$POLICY_MODE" ]]; then
+    if [[ "$(cd "$REPO_ROOT" 2>/dev/null && pwd)" == "$DEFAULT_REDCAP_ROOT" ]]; then
+        POLICY_MODE="redcap-self"
+    else
+        POLICY_MODE="noop"
+    fi
+fi
+
+if [[ "$POLICY_MODE" != "redcap-self" ]]; then
+    exit 0
 fi
 
 TMP_FILES=$(mktemp)
@@ -21,14 +35,13 @@ trap cleanup EXIT
 
 collect_changed_files() {
     if [[ -n "$BASELINE" && -n "$CURRENT_HEAD" ]]; then
-        git -C "$REPO_ROOT" --no-pager diff --name-only "$BASELINE..$CURRENT_HEAD" 2>/dev/null
+        git -C "$REPO_ROOT" --no-pager log --format='' --name-only "$BASELINE..$CURRENT_HEAD" 2>/dev/null
         return
     fi
 
     {
         git -C "$REPO_ROOT" --no-pager diff --name-only 2>/dev/null
         git -C "$REPO_ROOT" --no-pager diff --cached --name-only 2>/dev/null
-        git -C "$REPO_ROOT" ls-files --others --exclude-standard 2>/dev/null
     }
 }
 

@@ -52,11 +52,6 @@ if [[ -n "${REDCAP_RUNTIME_SESSION_DIR:-}" ]]; then
     HEAD_FILE="${REDCAP_BASELINE_HEAD_FILE:-$(redcap_runtime_path "layerB/initial-head")}"
     REVIEW_RESULT_FILE="${REDCAP_REVIEW_RESULT_FILE:-$(redcap_runtime_path "review/review-result")}"
     REVIEW_LOG_FILE="${REDCAP_REVIEW_LOG_FILE:-$(redcap_runtime_path "review/review-log.md")}"
-else
-    if [[ ! -f "$HEAD_FILE" ]]; then
-        redcap_runtime_record_degraded_mode "$HOOK_CWD" "layerB-stop-review-safe-degraded" "binding_key=${BINDING_KEY:-missing}" || true
-        exit 0
-    fi
 fi
 
 mkdir -p "$(dirname "$REVIEW_RESULT_FILE")" "$(dirname "$REVIEW_LOG_FILE")" 2>/dev/null || true
@@ -112,7 +107,8 @@ BASELINE=""
 if [[ -f "$HEAD_FILE" ]]; then
     BASELINE=$(cat "$HEAD_FILE")
 else
-    exit 0
+    write_control_plane_failure "missing baseline head" "$HEAD_FILE 不存在，stop-review 无法计算本轮评审范围。"
+    exit 1
 fi
 
 CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null) || exit 0
@@ -153,15 +149,18 @@ exit 0
 fi
 
 VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
-if [[ -x "$VALIDATOR_CHAIN" ]]; then
-    VALIDATOR_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
-        REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
-        REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
-        bash "$VALIDATOR_CHAIN" stop-review "claude" "$REDCAP_ROOT/.dev-task.md" "$BASELINE" "$CURRENT_HEAD" yaml 2>&1) || {
-        write_control_plane_failure "validator chain 检查失败" "$VALIDATOR_OUTPUT"
-        exit 1
-    }
+if [[ ! -x "$VALIDATOR_CHAIN" ]]; then
+    write_control_plane_failure "validator chain 缺失" "$VALIDATOR_CHAIN 不存在或不可执行，stop-review 不能静默降级。"
+    exit 1
 fi
+
+VALIDATOR_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+    REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+    REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
+    bash "$VALIDATOR_CHAIN" stop-review "claude" "$REDCAP_ROOT/.dev-task.md" "$BASELINE" "$CURRENT_HEAD" yaml 2>&1) || {
+    write_control_plane_failure "validator chain 检查失败" "$VALIDATOR_OUTPUT"
+    exit 1
+}
 
 # ── 提取 Diff ──
 

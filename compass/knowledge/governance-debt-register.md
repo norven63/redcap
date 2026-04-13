@@ -22,10 +22,10 @@
 
 ### GD-002：Validator chain hardening
 - **design_status**: `design-complete`
-- **implementation_status**: `pending`
+- **implementation_status**: `in-progress`
 - **owner_slice**: `Authority Core Hardening`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §三 A2
-- **gap**: PM Gate / drift / report 等 validator 还没有统一 orchestrator 和结构化输出
+- **gap**: `redcap-validator-chain.sh` 已统一 stop-review 的 PM Gate / drift / artifact lifecycle 检查并提供结构化输出，但尚未把 task-report / 其余 closure validators 全量并入同一编排链
 
 ### GD-003：RedCap-owned continuity manifest
 - **design_status**: `design-complete`
@@ -50,10 +50,10 @@
 
 ### GD-006：Artifact lifecycle enforcement
 - **design_status**: `design-complete`
-- **implementation_status**: `pending`
+- **implementation_status**: `in-progress`
 - **owner_slice**: `Authority Core Hardening`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §七 E1
-- **gap**: repo-tracked / session-isolated / local-only / temporary 的分类已有规则，但还没有物理门禁
+- **gap**: 已完成 stop-review / on-complete 阶段的 commit-range 检测与收尾阻断，但 source design 中的 artifact classifier、pre-commit lifecycle enforcement、mixed-lifecycle commit blocking 仍未落地，因此当前只能记为第一阶段 in-progress
 
 ### GD-007：Governance executable norms
 - **design_status**: `design-complete`
