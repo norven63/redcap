@@ -142,4 +142,9 @@ if violations:
     sys.exit(1)
 PY
 
+PYTHON_STATUS=$?
+if [[ $PYTHON_STATUS -ne 0 ]]; then
+    exit "$PYTHON_STATUS"
+fi
+
 exit 0

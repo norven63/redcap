@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# Unified validator chain for Layer B control-plane checks.
+
+set -uo pipefail
+
+MODE="${1:-stop-review}"
+HOST="${2:-}"
+TASK_FILE="${3:-}"
+BASELINE="${4:-}"
+CURRENT_HEAD="${5:-}"
+OUTPUT_FORMAT="${6:-yaml}"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+STEPS=()
+STATUSES=()
+DETAILS=()
+
+run_step() {
+    local name="$1"
+    shift
+    local output=""
+    if output=$("$@" 2>&1); then
+        STEPS+=("$name")
+        STATUSES+=("pass")
+        DETAILS+=("$output")
+        return 0
+    fi
+
+    STEPS+=("$name")
+    STATUSES+=("fail")
+    DETAILS+=("$output")
+    return 1
+}
+
+emit_yaml() {
+    local overall="$1"
+    python3 - "$overall" <<'PY'
+import os
+import sys
+
+overall = sys.argv[1]
+steps = os.environ.get("REDCAP_VALIDATOR_STEPS", "").split("\n") if os.environ.get("REDCAP_VALIDATOR_STEPS") else []
+statuses = os.environ.get("REDCAP_VALIDATOR_STATUSES", "").split("\n") if os.environ.get("REDCAP_VALIDATOR_STATUSES") else []
+details = os.environ.get("REDCAP_VALIDATOR_DETAILS", "\x1e").split("\x1e") if os.environ.get("REDCAP_VALIDATOR_DETAILS") else []
+
+print(f"mode: {os.environ.get('REDCAP_VALIDATOR_MODE', 'unknown')}")
+print(f"overall_status: {overall}")
+print("steps:")
+for name, status, detail in zip(steps, statuses, details):
+    print(f"  - name: {name}")
+    print(f"    status: {status}")
+    if detail.strip():
+        print("    detail: |-")
+        for line in detail.rstrip().splitlines():
+            print(f"      {line}")
+PY
+}
+
+emit_text() {
+    local overall="$1"
+    local i
+    echo "[redcap-validator-chain] mode=$MODE overall=$overall"
+    for ((i = 0; i < ${#STEPS[@]}; i++)); do
+        echo "[$((i + 1))] ${STEPS[$i]} :: ${STATUSES[$i]}"
+        if [[ -n "${DETAILS[$i]}" ]]; then
+            printf '%s\n' "${DETAILS[$i]}"
+        fi
+    done
+}
+
+emit() {
+    local overall="$1"
+    export REDCAP_VALIDATOR_MODE="$MODE"
+    export REDCAP_VALIDATOR_STEPS
+    export REDCAP_VALIDATOR_STATUSES
+    export REDCAP_VALIDATOR_DETAILS
+
+    REDCAP_VALIDATOR_STEPS=$(printf '%s\n' "${STEPS[@]}")
+    REDCAP_VALIDATOR_STATUSES=$(printf '%s\n' "${STATUSES[@]}")
+    REDCAP_VALIDATOR_DETAILS=$(printf '%s\x1e' "${DETAILS[@]}")
+
+    case "$OUTPUT_FORMAT" in
+        text)
+            emit_text "$overall"
+            ;;
+        yaml|*)
+            emit_yaml "$overall"
+            ;;
+    esac
+}
+
+overall_status="pass"
+
+case "$MODE" in
+    stop-review)
+        run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" stop-review "$HOST" "$TASK_FILE" || overall_status="fail"
+        run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" stop-review "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+        run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+        ;;
+    *)
+        echo "[redcap-validator-chain] unsupported mode: $MODE" >&2
+        exit 1
+        ;;
+esac
+
+emit "$overall_status"
+
+if [[ "$overall_status" != "pass" ]]; then
+    exit 1
+fi
+
+exit 0

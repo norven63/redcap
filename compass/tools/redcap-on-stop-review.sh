@@ -152,32 +152,13 @@ if [[ "$BASELINE" == "$CURRENT_HEAD" ]]; then
 exit 0
 fi
 
-PM_GATE_CHECK="$SCRIPT_DIR/redcap-pm-gate-check.sh"
-if [[ -x "$PM_GATE_CHECK" ]]; then
-    PM_GATE_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
+VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
+if [[ -x "$VALIDATOR_CHAIN" ]]; then
+    VALIDATOR_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
         REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
         REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
-        bash "$PM_GATE_CHECK" stop-review "claude" "$REDCAP_ROOT/.dev-task.md" 2>&1) || {
-        write_control_plane_failure ".dev-task / PM Gate 守门失败" "$PM_GATE_OUTPUT"
-        exit 1
-    }
-fi
-
-DRIFT_CHECK="$SCRIPT_DIR/redcap-drift-check.sh"
-if [[ -x "$DRIFT_CHECK" ]]; then
-    DRIFT_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
-        REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
-        REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
-        bash "$DRIFT_CHECK" stop-review "claude" "$REDCAP_ROOT/.dev-task.md" "$BASELINE" "$CURRENT_HEAD" 2>&1) || {
-        write_control_plane_failure "active_slice / scope drift 检查失败" "$DRIFT_OUTPUT"
-        exit 1
-    }
-fi
-
-ARTIFACT_LIFECYCLE_CHECK="$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh"
-if [[ -x "$ARTIFACT_LIFECYCLE_CHECK" ]]; then
-    ARTIFACT_LIFECYCLE_OUTPUT=$(bash "$ARTIFACT_LIFECYCLE_CHECK" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" 2>&1) || {
-        write_control_plane_failure "artifact lifecycle 检查失败" "$ARTIFACT_LIFECYCLE_OUTPUT"
+        bash "$VALIDATOR_CHAIN" stop-review "claude" "$REDCAP_ROOT/.dev-task.md" "$BASELINE" "$CURRENT_HEAD" yaml 2>&1) || {
+        write_control_plane_failure "validator chain 检查失败" "$VALIDATOR_OUTPUT"
         exit 1
     }
 fi

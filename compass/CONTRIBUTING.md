@@ -422,6 +422,9 @@ governance_debts_addressed: []
 - `compass/tools/redcap-drift-check.sh`
   - 校验 `top_goal / active_slice / subtask_of`
   - 校验本轮改动文件不得超出 `## 允许修改范围`
+- `compass/tools/redcap-validator-chain.sh`
+  - 统一编排 stop-review 的 PM Gate / drift / artifact lifecycle 检查
+  - 输出结构化结果，避免多条控制面检查散落在调用方
 - `compass/tools/redcap-artifact-lifecycle-check.sh`
   - 阻断 session-isolated / local-only / temporary artifacts 进入 git 历史
   - 阻断 `compass/docs/` 根目录重新长成未分类条目
