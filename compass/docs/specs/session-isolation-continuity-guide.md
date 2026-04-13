@@ -58,9 +58,9 @@
 
 当前实现并不是去问“`.dev-task.md` 是谁创建的”，而是先看 **repo-local continuity manifest**，再决定宿主 mirror 该显示什么：
 
-### 1. 当前是否拿到了 `runtime_session_id`
+### 1. 当前是否拿到了**经过 capability 校验**的 `runtime_session_id`
 
-只有拿到 `runtime_session_id`，RedCap 才允许把 continuity authority 发布到：
+只有拿到**经过 runtime capability / claim 校验**的 `runtime_session_id`，RedCap 才允许把 continuity authority 发布到：
 
 - `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`
 
@@ -69,6 +69,7 @@
 - `continuity_authority: degraded-no-runtime-manifest`
 - `continuity_state: fresh-session`
 - `isolation_mode: degraded` 或 `unsupported`（由 `redcap-session-resume-gate.sh` 判定）
+- `import_ready_signal: blocked-no-runtime`
 
 而**不会**冒充：
 
@@ -124,10 +125,52 @@
 
 - `continuity_state: import-suggested`
 - `suggested_source_*`
+- `import_ready_signal: ready`
+- `import_ready_summary: ...`
 - `next_action: bash compass/tools/redcap-session-continuity.sh import ...`
 
 注意：**这里只是建议，不会自动 takeover。**  
 也就是说，sibling `plan.md` 与 `files/imported-sessions/*/metadata.json` 现在都只是宿主资产 / 导入资产，不再反向决定 continuity authority。
+
+真正执行 `import` 时，还要额外满足两条 fail-closed 约束：
+
+1. target workboard 当前的 Session Mirror runtime 必须和这次命令拿到的 verified runtime binding 一致，且 target manifest 必须已经存在并声明同一个 `runtime_session_id`；这里的 verified runtime binding 指当前 live process claim 重新校验通过的 binding，而不是 shell 里残留的导出 capability。不能拿别的 full 会话 claim 去改写一个 degraded/unsupported target。
+2. source authority 必须来自 source manifest；source manifest 必须是 `continuity_state=self-recorded` 的 self-recorded source，带完整 `task_id / top_goal / confirmed_hash`，且 `own_record_present=1`，同时 source 当前 Session Mirror/runtime 也必须仍绑定到这份 manifest。若 source manifest 缺失、缺关键 metadata、`continuity_state!=self-recorded`、`own_record_present!=1`、source 当前 mirror/runtime 已退化失绑，或 source manifest 上的 task metadata 与 target 当前任务不兼容，`import` 必须直接失败，不能回退成只看 source workboard pointer。
+
+### 5. operator feedback 现在长什么样
+
+为了让显式导入不再只靠人肉拼字段，当前 Session Mirror / manifest 额外提供：
+
+- `import_protocol`
+- `import_ready_signal`
+- `import_ready_summary`
+- `import_success_summary`
+
+语义分别是：
+
+- `import_protocol`
+  - `runtime-session-unavailable`：当前没有可验证 runtime binding，导入路径被封住
+  - `no-compatible-source-detected`：当前没有找到可兼容来源
+  - `not-needed-current-session-has-own-record`：当前会话已经有自己的 continuity assets
+  - `explicit-only`：找到了 compatible source，但仍需 operator 显式执行 `next_action`
+  - `explicit-copy-preserve-source`：显式导入已经完成，且来源会话保持原样保留
+- `import_ready_signal`
+  - `blocked-no-runtime`：当前没有经过 capability 校验的 runtime binding，不能导入
+  - `not-needed-own-record`：当前会话已有自己的连续性记录
+  - `not-ready-no-compatible-source`：没有找到兼容来源
+  - `ready`：可以执行 `next_action`
+  - `completed`：显式导入已完成
+- `import_ready_summary`：给 operator 的一句话提示，说明为什么 ready / not-ready
+- `import_success_summary`：导入完成后的结果摘要
+
+同时，`redcap-session-continuity.sh import` 现在会直接在 stdout 输出一段简洁 JSON summary，至少包含：
+
+- `status`
+- `source_session_handle`
+- `target_session_handle`
+- `target_runtime_session_id`
+- `import_root`
+- `imported_match_strength`
 
 ---
 
@@ -351,7 +394,7 @@
 
 | 状态 | 含义 | 触发条件 |
 |---|---|---|
-| `fresh-session` | 没有 own record，也没找到兼容来源；或当前缺少 runtime identity | 当前目录没有记录且未命中 manifest candidate，或 `runtime_session_id` 缺失 |
+| `fresh-session` | 没有 own record，也没找到兼容来源；或当前缺少可验证 runtime identity | 当前目录没有记录且未命中 manifest candidate，或缺少经过 capability 校验的 `runtime_session_id` |
 | `self-recorded` | 当前会话已有自己的 continuity record | 当前 session folder 已存在本会话记录，且 manifest 已成功发布 |
 | `import-suggested` | 当前会话没有自己的记录，但找到了 compatible source | repo-local manifest 命中 task metadata |
 | `imported` | 已显式导入兼容来源会话资产 | target manifest 中的 active import 与当前 task metadata 兼容 |
@@ -359,6 +402,21 @@
 因此，RedCap 判断的不是“这是不是我创建的 `.dev-task.md`”，而是：
 
 > **当前 session 在 continuity 层处于什么状态，我应该继续自己、建议导入、还是保持 fresh。**
+
+### 6.1 显式导入兼容矩阵（派生规则）
+
+`explicit import` 的兼容性不再靠第二份 runtime matrix，而是由**单一宿主能力矩阵 + continuity protocol** 派生：
+
+| 来源会话 | 目标会话 | 结论 | 条件 |
+|---|---|---|---|
+| `full` 的 Claude / Gemini / Copilot(wrapper) 会话 | `full` 的 Claude / Gemini / Copilot(wrapper) 会话 | 支持 | source manifest 已发布，且是 `continuity_state=self-recorded`、具备完整 task metadata、`own_record_present=1`，并且 source 当前 Session Mirror/runtime 仍与该 manifest 绑定；target 具备经过 capability / live process claim 校验的 active runtime binding，且 target workboard runtime 与该 binding 一致 |
+| 任意来源 | `degraded` / `unsupported` 目标会话 | 不支持 | target 缺少可验证 runtime binding，或 target workboard runtime 与当前 binding 不一致；`import` 会 fail-closed |
+| source manifest 缺失 | 任意目标会话 | 不支持 | `import` 不会回退成只看 source workboard pointer |
+| task metadata mismatch 的来源 manifest | 任意目标会话 | 不建议 / 不导入 | 只会落到 `not-ready-no-compatible-source` 或 `stale_import_*`，不会冒充 `imported` |
+
+所以真正的兼容判断不是“宿主名字一样吗”，而是：
+
+> **source 是否发布了兼容且 self-recorded 的 manifest，target 是否处于 full + 经过 live process claim 校验的 verified runtime binding。**
 
 ---
 

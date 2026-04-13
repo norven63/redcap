@@ -11,6 +11,26 @@ ARG3="${4:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/redcap-dev-task.sh"
+source "$SCRIPT_DIR/redcap-runtime-state.sh"
+
+load_verified_runtime_context() {
+    local runtime_host="$1"
+    local runtime_session_id="$2"
+    local capability=""
+    local host_process_pid="${REDCAP_HOST_PROCESS_PID:-$(redcap_runtime_claim_search_pid)}"
+
+    if [[ -z "$runtime_host" || -z "$runtime_session_id" || -z "$host_process_pid" ]]; then
+        return 1
+    fi
+
+    capability=$(redcap_runtime_load_claimed_capability "$runtime_host" "$runtime_session_id" "$host_process_pid" 2>/dev/null || true)
+    if [[ -z "$capability" ]]; then
+        return 1
+    fi
+
+    REDCAP_RUNTIME_CAPABILITY="$capability"
+    redcap_runtime_attach_existing "$runtime_session_id" "$capability"
+}
 
 sync_session_mirror() {
     local workboard_file="$1"
@@ -35,6 +55,17 @@ sync_session_mirror() {
     resume_gate_profile="${REDCAP_SESSION_RESUME_PROFILE:-}"
     resume_gate_evidence="${REDCAP_SESSION_RESUME_EVIDENCE:-}"
     host_session_id="${REDCAP_HOST_SESSION_ID:-}"
+
+    if [[ -n "$runtime_session_id" ]]; then
+        if load_verified_runtime_context "$runtime_host" "$runtime_session_id" "${REDCAP_RUNTIME_CAPABILITY:-}"; then
+            runtime_session_id="${REDCAP_RUNTIME_SESSION_ID:-$runtime_session_id}"
+            binding_key="${REDCAP_RUNTIME_BINDING_KEY:-${REDCAP_SESSION_BINDING_KEY:-$binding_key}}"
+            runtime_host="${REDCAP_RUNTIME_HOST:-$runtime_host}"
+        else
+            runtime_session_id=""
+            binding_key="${REDCAP_SESSION_BINDING_KEY:-$binding_key}"
+        fi
+    fi
 
     python3 - "$workboard_file" "$task_file" "$task_id" "$top_goal" "$confirmed_hash" "$active_slice" "$runtime_session_id" "$binding_key" "$runtime_host" "$isolation_mode" "$resume_gate_reason" "$resume_gate_profile" "$resume_gate_evidence" "$host_session_id" <<'PY'
 import json
@@ -77,6 +108,25 @@ marker_end = "<!-- redcap:session-mirror:end -->"
 
 def now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def render_import_ready_summary(source_session_handle: str, match_strength: str):
+    match_label = match_strength or "candidate"
+    return f"ready to import from {source_session_handle} (match={match_label})"
+
+
+def render_import_success_summary(
+    source_session_handle: str,
+    target_session_handle: str,
+    match_strength: str,
+    import_root: str,
+    import_mode: str,
+):
+    match_label = match_strength or "unclassified"
+    return (
+        f"imported {source_session_handle} -> {target_session_handle} "
+        f"(match={match_label}, root={import_root}, mode={import_mode})"
+    )
 
 
 def decode_scalar(raw):
@@ -137,6 +187,14 @@ def parse_marker_block(plan_path: Path, start_marker: str, end_marker: str):
     return data
 
 
+def parse_session_mirror(plan_path: Path):
+    return parse_marker_block(
+        plan_path,
+        "<!-- redcap:session-mirror:start -->",
+        "<!-- redcap:session-mirror:end -->",
+    )
+
+
 def has_own_record(path: Path) -> bool:
     candidate_files = path / "files"
     candidate_checkpoints = path / "checkpoints"
@@ -188,6 +246,25 @@ def score_match(source_task_id: str, source_top_goal: str, source_confirmed_hash
     return 0, ""
 
 
+def has_complete_task_metadata(data, task_key: str, top_goal_key: str, confirmed_hash_key: str):
+    return all(str(data.get(key, "")).strip() for key in (task_key, top_goal_key, confirmed_hash_key))
+
+
+def manifest_matches_live_source(candidate):
+    workboard_path = str(candidate.get("workboard_path", "")).strip()
+    runtime_session_id = str(candidate.get("runtime_session_id", "")).strip()
+    if not workboard_path or not runtime_session_id:
+        return False
+    source_mirror = parse_session_mirror(Path(workboard_path))
+    return (
+        candidate.get("continuity_state", "").strip() == "self-recorded"
+        and source_mirror.get("continuity_state", "").strip() == "self-recorded"
+        and source_mirror.get("runtime_session_id", "").strip() == runtime_session_id
+        and source_mirror.get("continuity_authority", "").strip() == "redcap-owned-manifest"
+        and source_mirror.get("isolation_mode", "").strip() == "full"
+    )
+
+
 def best_manifest_candidate(current_runtime_id: str):
     best = None
     for candidate_path in sessions_root.glob("*/manifest.yaml"):
@@ -201,6 +278,10 @@ def best_manifest_candidate(current_runtime_id: str):
         if candidate.get("canonical_path") != task_file:
             continue
         if candidate.get("own_record_present") != "1":
+            continue
+        if not has_complete_task_metadata(candidate, "task_id", "top_goal", "confirmed_hash"):
+            continue
+        if not manifest_matches_live_source(candidate):
             continue
         score, match_strength = score_match(
             candidate.get("task_id", ""),
@@ -242,11 +323,14 @@ def manifest_import_payload(candidate):
         "source_confirmed_hash": candidate.get("source_confirmed_hash", ""),
         "imported_at": candidate.get("imported_at", ""),
         "import_root": candidate.get("import_root", ""),
+        "import_action": candidate.get("import_action", ""),
     }
 
 
 def import_match_strength(imported):
     if not imported:
+        return ""
+    if not has_complete_task_metadata(imported, "source_task_id", "source_top_goal", "source_confirmed_hash"):
         return ""
     score, match_strength = score_match(
         imported.get("source_task_id", ""),
@@ -310,16 +394,31 @@ continuity_authority = "redcap-owned-manifest"
 state = "fresh-session"
 next_action = ""
 import_protocol = "no-compatible-source-detected"
+import_ready_signal = ""
+import_ready_summary = ""
+import_success_summary = ""
 
 if not runtime_session_id:
     continuity_authority = "degraded-no-runtime-manifest"
     import_protocol = "runtime-session-unavailable"
+    import_ready_signal = "blocked-no-runtime"
+    import_ready_summary = "current session lacks a verified runtime binding"
 elif imported:
     state = "imported"
     import_protocol = "explicit-copy-preserve-source"
+    import_ready_signal = "completed"
+    import_success_summary = render_import_success_summary(
+        imported.get("source_session_handle", ""),
+        session_handle,
+        import_match_strength(imported),
+        imported.get("import_root", ""),
+        imported.get("import_action", "") or "preserved-copy",
+    )
 elif own_record_present:
     state = "self-recorded"
     import_protocol = "not-needed-current-session-has-own-record"
+    import_ready_signal = "not-needed-own-record"
+    import_ready_summary = "current session already has its own continuity assets"
 else:
     candidate = best_manifest_candidate(runtime_session_id)
     if candidate:
@@ -329,6 +428,14 @@ else:
             f"\"{candidate['source_plan']}\" \"{workboard}\" \"{task_file}\""
         )
         import_protocol = "explicit-only"
+        import_ready_signal = "ready"
+        import_ready_summary = render_import_ready_summary(
+            candidate.get("source_session_handle", ""),
+            candidate.get("suggested_match_strength", ""),
+        )
+    else:
+        import_ready_signal = "not-ready-no-compatible-source"
+        import_ready_summary = "no compatible source session detected"
 
 manifest_data = {
     "manifest_version": "1",
@@ -361,6 +468,7 @@ manifest_data = {
     "imported_match_strength": imported.get("imported_match_strength", "") if imported else "",
     "imported_at": imported.get("imported_at", "") if imported else "",
     "import_root": imported.get("import_root", "") if imported else "",
+    "import_action": imported.get("import_action", "") if imported else "",
     "suggested_source_session_handle": candidate.get("source_session_handle", "") if candidate else "",
     "suggested_source_runtime_session_id": candidate.get("source_runtime_session_id", "") if candidate else "",
     "suggested_source_workboard_path": candidate.get("source_workboard_path", "") if candidate else "",
@@ -372,6 +480,9 @@ manifest_data = {
     "stale_import_session_handle": stale_import.get("source_session_handle", "") if stale_import else "",
     "stale_import_root": stale_import.get("import_root", "") if stale_import else "",
     "stale_import_reason": stale_import.get("stale_import_reason", "") if stale_import else "",
+    "import_ready_signal": import_ready_signal,
+    "import_ready_summary": import_ready_summary,
+    "import_success_summary": import_success_summary,
     "import_protocol": import_protocol,
     "next_action": next_action,
     "last_synced_at": now_iso(),
@@ -421,6 +532,8 @@ if runtime_session_id:
         "suggested_source_runtime_session_id",
         "stale_import_session_handle",
         "import_root",
+        "import_ready_signal",
+        "import_success_summary",
     )
     if not previous_manifest or any(previous_manifest.get(key, "") != manifest_data.get(key, "") for key in audit_keys):
         append_jsonl(
@@ -516,6 +629,13 @@ if stale_import:
         ]
     )
 
+if import_ready_signal:
+    block_lines.append(f"- import_ready_signal: {import_ready_signal}")
+if import_ready_summary:
+    block_lines.append(f"- import_ready_summary: {import_ready_summary}")
+if import_success_summary:
+    block_lines.append(f"- import_success_summary: {import_success_summary}")
+
 block_lines.append(marker_end)
 block = "\n".join(block_lines)
 
@@ -558,6 +678,14 @@ import_session_assets() {
     resume_gate_profile="${REDCAP_SESSION_RESUME_PROFILE:-}"
     resume_gate_evidence="${REDCAP_SESSION_RESUME_EVIDENCE:-}"
     host_session_id="${REDCAP_HOST_SESSION_ID:-}"
+
+    if ! load_verified_runtime_context "$runtime_host" "$runtime_session_id" "${REDCAP_RUNTIME_CAPABILITY:-}"; then
+        echo "[redcap-session-continuity] target runtime claim missing or capability invalid; run import from the active claimed session" >&2
+        exit 1
+    fi
+    runtime_session_id="${REDCAP_RUNTIME_SESSION_ID:-$runtime_session_id}"
+    binding_key="${REDCAP_RUNTIME_BINDING_KEY:-${REDCAP_SESSION_BINDING_KEY:-$binding_key}}"
+    runtime_host="${REDCAP_RUNTIME_HOST:-$runtime_host}"
 
     python3 - "$source_workboard" "$target_workboard" "$task_file" "$runtime_session_id" "$binding_key" "$runtime_host" "$isolation_mode" "$resume_gate_reason" "$resume_gate_profile" "$resume_gate_evidence" "$host_session_id" <<'PY'
 import json
@@ -668,11 +796,23 @@ def parse_session_mirror(plan_path: Path):
     )
 
 
-def find_manifest_for_workboard(target: Path):
+def find_manifest_for_workboard(target: Path, runtime_session_id: str = ""):
+    latest = {}
+    latest_mtime = -1.0
     for candidate in sessions_root.glob("*/manifest.yaml"):
         data = parse_scalar_file(candidate)
-        if data.get("workboard_path") == str(target):
-            return data
+        if data.get("workboard_path") != str(target):
+            continue
+        if runtime_session_id:
+            if data.get("runtime_session_id", "").strip() == runtime_session_id:
+                return data
+            continue
+        candidate_mtime = candidate.stat().st_mtime
+        if candidate_mtime > latest_mtime:
+            latest = data
+            latest_mtime = candidate_mtime
+    if latest:
+        return latest
     return {}
 
 
@@ -693,12 +833,33 @@ def has_own_record(path: Path):
     return False
 
 
-def score_match(target_task_id: str, target_top_goal: str, target_confirmed_hash: str):
-    if metadata["source_task_id"] == target_task_id and metadata["source_confirmed_hash"] == target_confirmed_hash and target_confirmed_hash:
+def score_match(
+    source_task_id: str,
+    source_top_goal: str,
+    source_confirmed_hash: str,
+    target_task_id: str,
+    target_top_goal: str,
+    target_confirmed_hash: str,
+):
+    if source_task_id == target_task_id and source_confirmed_hash == target_confirmed_hash and target_confirmed_hash:
         return "exact"
-    if metadata["source_top_goal"] == target_top_goal and target_top_goal:
+    if source_top_goal == target_top_goal and target_top_goal:
         return "compatible"
     return ""
+
+
+def render_import_success_summary(
+    source_session_handle: str,
+    target_session_handle: str,
+    match_strength: str,
+    import_root: str,
+    import_mode: str,
+):
+    match_label = match_strength or "unclassified"
+    return (
+        f"imported {source_session_handle} -> {target_session_handle} "
+        f"(match={match_label}, root={import_root}, mode={import_mode})"
+    )
 
 
 def manifest_path_for(session_id: str):
@@ -717,9 +878,11 @@ def append_jsonl(path: Path, payload):
 
 source_pointer = parse_pointer(source_workboard)
 source_mirror = parse_session_mirror(source_workboard)
-source_manifest = find_manifest_for_workboard(source_workboard)
-target_manifest = find_manifest_for_workboard(target_workboard)
 target_pointer = parse_pointer(target_workboard)
+target_mirror = parse_session_mirror(target_workboard)
+source_runtime_session_id = source_mirror.get("runtime_session_id", "").strip()
+source_manifest = find_manifest_for_workboard(source_workboard, source_runtime_session_id)
+target_manifest = find_manifest_for_workboard(target_workboard, target_runtime_session_id)
 if not target_binding_key:
     target_binding_key = target_manifest.get("session_binding_key", "").strip()
 if not runtime_host:
@@ -736,8 +899,26 @@ if not host_session_id:
     host_session_id = target_manifest.get("host_session_id", "").strip()
 if not target_runtime_session_id:
     raise SystemExit("[redcap-session-continuity] target runtime session missing; run session-start sync before import")
-if target_manifest.get("runtime_session_id", "").strip() not in ("", target_runtime_session_id):
+if not target_mirror or target_mirror.get("runtime_session_id", "").strip() != target_runtime_session_id:
+    raise SystemExit("[redcap-session-continuity] target workboard runtime mismatch; run session-start sync before import")
+if not target_manifest:
+    raise SystemExit("[redcap-session-continuity] target manifest missing; run session-start sync before import")
+if target_manifest.get("runtime_session_id", "").strip() != target_runtime_session_id:
     raise SystemExit("[redcap-session-continuity] target runtime session mismatch; refuse import")
+if not source_manifest:
+    raise SystemExit("[redcap-session-continuity] source manifest missing; run source session sync before import")
+if not source_mirror:
+    raise SystemExit("[redcap-session-continuity] source workboard mirror missing; run source session sync before import")
+if source_manifest.get("continuity_state", "").strip() != "self-recorded":
+    raise SystemExit("[redcap-session-continuity] source manifest is not self-recorded; refuse import")
+if source_mirror.get("continuity_state", "").strip() != "self-recorded":
+    raise SystemExit("[redcap-session-continuity] source session is not self-recorded; refuse import")
+if source_mirror.get("runtime_session_id", "").strip() != source_manifest.get("runtime_session_id", "").strip():
+    raise SystemExit("[redcap-session-continuity] source runtime session mismatch; refuse import")
+if source_mirror.get("continuity_authority", "").strip() != "redcap-owned-manifest":
+    raise SystemExit("[redcap-session-continuity] source continuity authority is not self-recorded; refuse import")
+if source_mirror.get("isolation_mode", "").strip() != "full":
+    raise SystemExit("[redcap-session-continuity] source session lacks full isolation; refuse import")
 
 if not isolation_mode:
     isolation_mode = "degraded"
@@ -747,6 +928,28 @@ if not resume_gate_profile:
     resume_gate_profile = "legacy-unspecified"
 if not resume_gate_evidence:
     resume_gate_evidence = "legacy-unspecified"
+
+target_task_id = target_pointer.get("task_id", target_manifest.get("task_id", ""))
+target_top_goal = target_pointer.get("top_goal", target_manifest.get("top_goal", ""))
+target_confirmed_hash = target_pointer.get("confirmed_hash", target_manifest.get("confirmed_hash", ""))
+target_active_slice = target_pointer.get("active_slice", target_manifest.get("active_slice", ""))
+source_task_id = source_manifest.get("task_id", "")
+source_top_goal = source_manifest.get("top_goal", "")
+source_confirmed_hash = source_manifest.get("confirmed_hash", "")
+if source_manifest.get("own_record_present", "").strip() != "1":
+    raise SystemExit("[redcap-session-continuity] source manifest lacks own continuity record; refuse import")
+if not source_task_id or not source_top_goal or not source_confirmed_hash:
+    raise SystemExit("[redcap-session-continuity] source manifest missing required task metadata; refuse import")
+imported_match_strength = score_match(
+    source_task_id,
+    source_top_goal,
+    source_confirmed_hash,
+    target_task_id,
+    target_top_goal,
+    target_confirmed_hash,
+)
+if not imported_match_strength:
+    raise SystemExit("[redcap-session-continuity] source task metadata mismatch; refuse import")
 
 dest_root = target_dir / "files" / "imported-sessions" / source_handle
 created = False
@@ -773,9 +976,9 @@ metadata = {
     "source_runtime_session_id": source_manifest.get("runtime_session_id", source_mirror.get("runtime_session_id", "")),
     "source_workboard_path": str(source_workboard),
     "source_plan": str(source_workboard),
-    "source_task_id": source_pointer.get("task_id", ""),
-    "source_top_goal": source_pointer.get("top_goal", ""),
-    "source_confirmed_hash": source_pointer.get("confirmed_hash", ""),
+    "source_task_id": source_task_id,
+    "source_top_goal": source_top_goal,
+    "source_confirmed_hash": source_confirmed_hash,
     "imported_at": now_iso(),
     "import_root": str(dest_root.relative_to(target_dir)),
     "target_session_handle": target_handle,
@@ -836,13 +1039,16 @@ if should_record_registry:
         },
     )
 
-target_task_id = target_pointer.get("task_id", target_manifest.get("task_id", ""))
-target_top_goal = target_pointer.get("top_goal", target_manifest.get("top_goal", ""))
-target_confirmed_hash = target_pointer.get("confirmed_hash", target_manifest.get("confirmed_hash", ""))
-target_active_slice = target_pointer.get("active_slice", target_manifest.get("active_slice", ""))
 target_own_record = has_own_record(target_dir)
-imported_match_strength = score_match(target_task_id, target_top_goal, target_confirmed_hash)
 recorded_at = metadata["imported_at"]
+import_action = "copied" if created else "adopted-existing-root"
+import_success_summary = render_import_success_summary(
+    metadata["source_session_handle"],
+    target_handle,
+    imported_match_strength,
+    metadata["import_root"],
+    import_action,
+)
 
 manifest_data = {
     "manifest_version": "1",
@@ -875,6 +1081,7 @@ manifest_data = {
     "imported_match_strength": imported_match_strength,
     "imported_at": metadata["imported_at"],
     "import_root": metadata["import_root"],
+    "import_action": import_action,
     "suggested_source_session_handle": "",
     "suggested_source_runtime_session_id": "",
     "suggested_source_workboard_path": "",
@@ -886,6 +1093,9 @@ manifest_data = {
     "stale_import_session_handle": "",
     "stale_import_root": "",
     "stale_import_reason": "",
+    "import_ready_signal": "completed",
+    "import_ready_summary": "",
+    "import_success_summary": import_success_summary,
     "import_protocol": "explicit-copy-preserve-source",
     "next_action": "",
     "last_synced_at": recorded_at,
@@ -911,7 +1121,17 @@ provenance_data = {
 }
 write_scalar_file(provenance_path_for(target_runtime_session_id), provenance_data)
 
-print(dest_root)
+result = {
+    "import_action": import_action,
+    "import_root": metadata["import_root"],
+    "import_success_summary": import_success_summary,
+    "imported_match_strength": imported_match_strength,
+    "source_session_handle": metadata["source_session_handle"],
+    "status": "imported",
+    "target_runtime_session_id": target_runtime_session_id,
+    "target_session_handle": target_handle,
+}
+print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 PY
 
     sync_session_mirror "$target_workboard" "$task_file" >/dev/null

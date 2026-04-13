@@ -122,16 +122,28 @@ if [[ "$REDCAP_SESSION_ISOLATION_MODE" == "full" && -z "$BINDING_KEY" ]]; then
 fi
 
 run_control_plane_start_sync() {
+    local sync_runtime_session_id=""
+    local sync_runtime_capability=""
+    local sync_runtime_binding_key="${REDCAP_SESSION_BINDING_KEY:-}"
+    local sync_runtime_host="$HOST"
+
+    if [[ "${REDCAP_SESSION_ISOLATION_MODE:-}" == "full" ]] && [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" ]] && redcap_runtime_assert_capability; then
+        sync_runtime_session_id="${REDCAP_RUNTIME_SESSION_ID:-}"
+        sync_runtime_capability="${REDCAP_RUNTIME_CAPABILITY:-}"
+        sync_runtime_binding_key="${REDCAP_RUNTIME_BINDING_KEY:-${REDCAP_SESSION_BINDING_KEY:-}}"
+        sync_runtime_host="${REDCAP_RUNTIME_HOST:-$HOST}"
+    fi
+
     VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
     PM_GATE_CHECK="$SCRIPT_DIR/redcap-pm-gate-check.sh"
     if [[ -x "$VALIDATOR_CHAIN" ]]; then
-        REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
-        REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+        REDCAP_RUNTIME_SESSION_ID="$sync_runtime_session_id" \
+        REDCAP_RUNTIME_CAPABILITY="$sync_runtime_capability" \
         REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
         bash "$VALIDATOR_CHAIN" session-start "$HOST" "$REDCAP_ROOT/.dev-task.md" "" "" text >/dev/null || true
     elif [[ -x "$PM_GATE_CHECK" ]]; then
-        REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
-        REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+        REDCAP_RUNTIME_SESSION_ID="$sync_runtime_session_id" \
+        REDCAP_RUNTIME_CAPABILITY="$sync_runtime_capability" \
         REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
         bash "$PM_GATE_CHECK" session-start "$HOST" "$REDCAP_ROOT/.dev-task.md" >/dev/null || true
     fi
@@ -143,9 +155,10 @@ run_control_plane_start_sync() {
 
     SESSION_CONTINUITY="$SCRIPT_DIR/redcap-session-continuity.sh"
     if [[ -x "$SESSION_CONTINUITY" && -n "${REDCAP_HOST_WORKBOARD_PATH:-}" ]]; then
-        REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
-        REDCAP_RUNTIME_BINDING_KEY="${REDCAP_RUNTIME_BINDING_KEY:-${REDCAP_SESSION_BINDING_KEY:-}}" \
-        REDCAP_RUNTIME_HOST="${REDCAP_RUNTIME_HOST:-$HOST}" \
+        REDCAP_RUNTIME_SESSION_ID="$sync_runtime_session_id" \
+        REDCAP_RUNTIME_CAPABILITY="$sync_runtime_capability" \
+        REDCAP_RUNTIME_BINDING_KEY="$sync_runtime_binding_key" \
+        REDCAP_RUNTIME_HOST="$sync_runtime_host" \
         REDCAP_HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-}" \
         REDCAP_SESSION_ISOLATION_MODE="${REDCAP_SESSION_ISOLATION_MODE:-}" \
         REDCAP_SESSION_RESUME_REASON="${REDCAP_SESSION_RESUME_REASON:-}" \
@@ -157,16 +170,30 @@ run_control_plane_start_sync() {
 
 run_pending_closure_reconcile() {
     local reconcile_script="$SCRIPT_DIR/redcap-pending-closure-reconcile.sh"
+    local reconcile_runtime_session_id=""
+    local reconcile_runtime_capability=""
 
     if [[ ! -x "$reconcile_script" ]]; then
         return 0
     fi
 
-    REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
-    REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
+    if [[ "${REDCAP_SESSION_ISOLATION_MODE:-}" == "full" ]] && [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" ]] && redcap_runtime_assert_capability; then
+        reconcile_runtime_session_id="${REDCAP_RUNTIME_SESSION_ID:-}"
+        reconcile_runtime_capability="${REDCAP_RUNTIME_CAPABILITY:-}"
+    fi
+
+    REDCAP_RUNTIME_SESSION_ID="$reconcile_runtime_session_id" \
+    REDCAP_RUNTIME_CAPABILITY="$reconcile_runtime_capability" \
     REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
-    bash "$reconcile_script" "$HOST" >/dev/null 2>&1 || true
+        bash "$reconcile_script" "$HOST" >/dev/null 2>&1 || true
 }
+
+PRE_INIT_SESSION_ISOLATION_MODE="${REDCAP_SESSION_ISOLATION_MODE:-}"
+PRE_INIT_SESSION_RESUME_REASON="${REDCAP_SESSION_RESUME_REASON:-}"
+PRE_INIT_SESSION_RESUME_PROFILE="${REDCAP_SESSION_RESUME_PROFILE:-}"
+PRE_INIT_SESSION_RESUME_EVIDENCE="${REDCAP_SESSION_RESUME_EVIDENCE:-}"
+PRE_INIT_SESSION_RESUME_ALLOW_DISK_RECOVERY="${REDCAP_SESSION_RESUME_ALLOW_DISK_RECOVERY:-}"
+PRE_INIT_SESSION_RESUME_ALLOW_CAPABILITY_FILE_RECOVERY="${REDCAP_SESSION_RESUME_ALLOW_CAPABILITY_FILE_RECOVERY:-}"
 
 if [[ "$REDCAP_SESSION_ISOLATION_MODE" == "full" ]] && [[ -n "$BINDING_KEY" ]] && \
     REDCAP_RUNTIME_ALLOW_DISK_RECOVERY="$REDCAP_SESSION_RESUME_ALLOW_DISK_RECOVERY" \
@@ -197,7 +224,14 @@ if [[ "$REDCAP_SESSION_ISOLATION_MODE" == "full" ]] && [[ -n "$BINDING_KEY" ]] &
     exit 0
 fi
 
-if [[ "$REDCAP_SESSION_ISOLATION_MODE" == "full" ]]; then
+REDCAP_SESSION_ISOLATION_MODE="${REDCAP_SESSION_ISOLATION_MODE:-$PRE_INIT_SESSION_ISOLATION_MODE}"
+REDCAP_SESSION_RESUME_REASON="${REDCAP_SESSION_RESUME_REASON:-$PRE_INIT_SESSION_RESUME_REASON}"
+REDCAP_SESSION_RESUME_PROFILE="${REDCAP_SESSION_RESUME_PROFILE:-$PRE_INIT_SESSION_RESUME_PROFILE}"
+REDCAP_SESSION_RESUME_EVIDENCE="${REDCAP_SESSION_RESUME_EVIDENCE:-$PRE_INIT_SESSION_RESUME_EVIDENCE}"
+REDCAP_SESSION_RESUME_ALLOW_DISK_RECOVERY="${REDCAP_SESSION_RESUME_ALLOW_DISK_RECOVERY:-$PRE_INIT_SESSION_RESUME_ALLOW_DISK_RECOVERY}"
+REDCAP_SESSION_RESUME_ALLOW_CAPABILITY_FILE_RECOVERY="${REDCAP_SESSION_RESUME_ALLOW_CAPABILITY_FILE_RECOVERY:-$PRE_INIT_SESSION_RESUME_ALLOW_CAPABILITY_FILE_RECOVERY}"
+
+if [[ "${REDCAP_SESSION_ISOLATION_MODE:-}" == "full" ]]; then
     REDCAP_SESSION_ISOLATION_MODE="degraded"
     REDCAP_SESSION_RESUME_REASON="runtime-init-failed"
     REDCAP_SESSION_RESUME_RECOVERY_PATH="safe-degraded"
@@ -205,7 +239,7 @@ if [[ "$REDCAP_SESSION_ISOLATION_MODE" == "full" ]]; then
     REDCAP_SESSION_RESUME_ALLOW_CAPABILITY_FILE_RECOVERY="0"
 fi
 
-case "$REDCAP_SESSION_ISOLATION_MODE" in
+case "${REDCAP_SESSION_ISOLATION_MODE:-}" in
     degraded)
         redcap_runtime_record_degraded_mode \
             "$HOOK_CWD" \

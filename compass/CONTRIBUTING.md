@@ -457,10 +457,13 @@ governance_debts_addressed: []
   - 基于 `references/host-session-capability-matrix.json` 统一判定 Layer B `full / degraded / unsupported` 隔离模式
   - 只有 gate 明确给出 `full` 与受允 recovery path 时，`redcap-layerB-session-start.sh` 才能 attach/create runtime session
 - `compass/tools/redcap-session-continuity.sh`
-  - 先把 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，再向宿主 workboard 追加 session mirror（`session_handle / binding_key / task metadata / isolation_mode / resume_gate_reason / resume_gate_profile / resume_gate_evidence / continuity_state`）
+  - 先把 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，再向宿主 workboard 追加 session mirror（`session_handle / binding_key / task metadata / isolation_mode / resume_gate_reason / resume_gate_profile / resume_gate_evidence / continuity_state / import_protocol / next_action / import_ready_signal / import_ready_summary / import_success_summary`；其中 `import_ready_signal` 允许值为 `blocked-no-runtime / not-needed-own-record / not-ready-no-compatible-source / ready / completed`）
   - 只允许基于 repo-local manifest 给出 compatible source suggestion；宿主 `plan.md` 与 `files/imported-sessions/*/metadata.json` 不得反向充当 authority
-  - 显式导入时必须同步写 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
-  - 缺少 `runtime_session_id` 时只能输出 `continuity_authority=degraded-no-runtime-manifest` 的 no-runtime mirror；此时 `isolation_mode` 可由 resume gate 判成 `degraded` 或 `unsupported`，但仍不得伪造 `self-recorded / import-suggested / imported`
+  - 只有拿到**经过 capability / live process claim 校验**的 runtime binding，才允许发布 manifest 或执行 explicit import；不能信任 shell 里残留导出的 stale capability。显式导入时还必须满足 target workboard 的 Session Mirror runtime 与当前 verified runtime 一致，且 source manifest 已存在。显式导入成功后必须同步写 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
+  - 缺少可验证 `runtime_session_id` 时只能输出 `continuity_authority=degraded-no-runtime-manifest` 的 no-runtime mirror；此时 `isolation_mode` 可由 resume gate 判成 `degraded` 或 `unsupported`，但仍不得伪造 `self-recorded / import-suggested / imported`
+  - `import_protocol` 是 continuity engine 对当前导入姿态的权威枚举：`runtime-session-unavailable`、`no-compatible-source-detected`、`not-needed-current-session-has-own-record`、`explicit-only`、`explicit-copy-preserve-source`
+  - `import` 的 source task metadata 以 source manifest 为唯一 authority；source manifest 必须是 `continuity_state=self-recorded` 的 self-recorded source，携带完整 `task_id / top_goal / confirmed_hash`，且 `own_record_present=1`，同时 source 当前 Session Mirror/runtime 也必须仍与该 manifest 绑定。缺失 source manifest、缺关键 metadata、`continuity_state!=self-recorded`、`own_record_present!=1`、source 当前 mirror/runtime 已退化失绑，或 source/target task metadata mismatch 时必须 fail-closed，不能回退成“只看 source workboard pointer”
+  - cross-host continuity 也走这同一套协议：**唯一 host-specific 输入**只有 `references/host-session-capability-matrix.json` 对宿主 full/degraded/unsupported 的判定与恢复路径；只要 source/target 两侧都已是 verified `full` runtime，manifest / explicit import contract 在 claude、gemini、copilot 等受支持宿主之间保持 host-agnostic，不得为某个宿主另写一套“特殊导入语义”
 
 > 该文件已加入 `.gitignore`——它是临时过程状态，不应进入版本控制。
 

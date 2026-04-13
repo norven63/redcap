@@ -296,6 +296,36 @@ redcap_runtime_find_process_claim_file() {
     return 1
 }
 
+redcap_runtime_process_started_at() {
+    local host_process_pid="$1"
+
+    if [[ -z "$host_process_pid" ]]; then
+        return 1
+    fi
+
+    ps -o lstart= -p "$host_process_pid" 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | head -n 1
+}
+
+redcap_runtime_verify_process_claim_file() {
+    local claim_file="$1"
+    local host_process_pid="$2"
+    local claimed_pid claimed_probe_pid claimed_started_at live_started_at
+
+    if [[ -z "$claim_file" || -z "$host_process_pid" || ! -f "$claim_file" ]]; then
+        return 1
+    fi
+
+    claimed_pid=$(redcap_runtime_read_process_claim_field "$claim_file" "host_process_pid" 2>/dev/null || true)
+    claimed_probe_pid=$(redcap_runtime_read_process_claim_field "$claim_file" "host_process_probe_pid" 2>/dev/null || true)
+    claimed_started_at=$(redcap_runtime_read_process_claim_field "$claim_file" "host_process_started_at" 2>/dev/null || true)
+    if [[ -z "$claimed_probe_pid" ]]; then
+        claimed_probe_pid="$claimed_pid"
+    fi
+    live_started_at=$(redcap_runtime_process_started_at "$claimed_probe_pid" 2>/dev/null || true)
+
+    [[ -n "$claimed_pid" && "$claimed_pid" == "$host_process_pid" && -n "$claimed_started_at" && -n "$live_started_at" && "$claimed_started_at" == "$live_started_at" ]]
+}
+
 redcap_runtime_binding_key_from_host_session() {
     local host="$1"
     local session_id="$2"
@@ -393,6 +423,8 @@ redcap_runtime_write_process_claim() {
     local project_hash="$5"
     local host="$6"
     local host_process_pid="$7"
+    local host_process_probe_pid="$8"
+    local host_process_started_at="$9"
     local claim_dir claim_base_dir
 
     claim_dir="$(dirname "$claim_file")"
@@ -406,7 +438,9 @@ redcap_runtime_write_process_claim() {
         "$session_binding_key" \
         "$project_hash" \
         "$host" \
-        "$host_process_pid" <<'PY'
+        "$host_process_pid" \
+        "$host_process_probe_pid" \
+        "$host_process_started_at" <<'PY'
 import json
 import sys
 
@@ -418,6 +452,8 @@ data = {
     "project_hash": sys.argv[5],
     "host": sys.argv[6],
     "host_process_pid": sys.argv[7],
+    "host_process_probe_pid": sys.argv[8],
+    "host_process_started_at": sys.argv[9],
 }
 
 with open(path, "w", encoding="utf-8") as f:
@@ -530,6 +566,15 @@ redcap_runtime_record_unsupported_mode() {
 }
 
 redcap_runtime_clear_context() {
+    unset REDCAP_HOST_PROCESS_PID
+    unset REDCAP_ISOLATION_MODE
+    unset REDCAP_RESUME_GATE_REASON
+    unset REDCAP_RESUME_GATE_PROFILE
+    unset REDCAP_RESUME_GATE_EVIDENCE
+    unset REDCAP_SESSION_ISOLATION_MODE
+    unset REDCAP_SESSION_RESUME_REASON
+    unset REDCAP_SESSION_RESUME_PROFILE
+    unset REDCAP_SESSION_RESUME_EVIDENCE
     unset REDCAP_RUNTIME_HOST
     unset REDCAP_RUNTIME_CWD
     unset REDCAP_RUNTIME_PROJECT_ROOT
@@ -549,9 +594,15 @@ redcap_runtime_register_process_claim() {
     local session_binding_key="$4"
     local project_hash="$5"
     local host_process_pid="${6:-$(redcap_runtime_claim_owner_pid)}"
-    local claim_file
+    local host_process_probe_pid="${REDCAP_HOST_PROCESS_PROBE_PID:-$host_process_pid}"
+    local host_process_started_at claim_file
 
     if [[ -z "$host" || -z "$runtime_session_id" || -z "$runtime_session_capability" || -z "$host_process_pid" ]]; then
+        return 1
+    fi
+
+    host_process_started_at=$(redcap_runtime_process_started_at "$host_process_probe_pid" 2>/dev/null || true)
+    if [[ -z "$host_process_started_at" ]]; then
         return 1
     fi
 
@@ -563,7 +614,9 @@ redcap_runtime_register_process_claim() {
         "$session_binding_key" \
         "$project_hash" \
         "$host" \
-        "$host_process_pid"; then
+        "$host_process_pid" \
+        "$host_process_probe_pid" \
+        "$host_process_started_at"; then
         rm -f "$claim_file" 2>/dev/null || true
         return 1
     fi
@@ -583,6 +636,9 @@ redcap_runtime_load_claimed_capability() {
 
     claim_file=$(redcap_runtime_find_process_claim_file "$host" "$host_process_pid" 2>/dev/null || true)
     if [[ ! -f "$claim_file" ]]; then
+        return 1
+    fi
+    if ! redcap_runtime_verify_process_claim_file "$claim_file" "$host_process_pid"; then
         return 1
     fi
 
@@ -611,6 +667,9 @@ redcap_runtime_attach_from_process_claim() {
 
     claim_file=$(redcap_runtime_find_process_claim_file "$host" "$host_process_pid" 2>/dev/null || true)
     if [[ ! -f "$claim_file" ]]; then
+        return 1
+    fi
+    if ! redcap_runtime_verify_process_claim_file "$claim_file" "$host_process_pid"; then
         return 1
     fi
 

@@ -25,6 +25,8 @@ prism_coordinator_try_env_attach() {
 
 prism_coordinator_attach_from_process_claim_chain() {
     local claim_base_dir claim_dir host
+    local preserved_host_pid="${REDCAP_HOST_PROCESS_PID:-}"
+    local preserved_host_probe_pid="${REDCAP_HOST_PROCESS_PROBE_PID:-}"
 
     claim_base_dir=$(redcap_runtime_process_claim_base_dir)
     if [[ ! -d "$claim_base_dir" ]]; then
@@ -41,17 +43,32 @@ prism_coordinator_attach_from_process_claim_chain() {
             return 0
         fi
         redcap_runtime_clear_context
+        if [[ -n "$preserved_host_pid" ]]; then
+            export REDCAP_HOST_PROCESS_PID="$preserved_host_pid"
+        fi
+        if [[ -n "$preserved_host_probe_pid" ]]; then
+            export REDCAP_HOST_PROCESS_PROBE_PID="$preserved_host_probe_pid"
+        fi
     done
 
     return 1
 }
 
 prism_coordinator_attach_runtime_context() {
+    local preserved_host_pid="${REDCAP_HOST_PROCESS_PID:-}"
+    local preserved_host_probe_pid="${REDCAP_HOST_PROCESS_PROBE_PID:-}"
+
     if prism_coordinator_try_env_attach; then
         return 0
     fi
 
     redcap_runtime_clear_context
+    if [[ -n "$preserved_host_pid" ]]; then
+        export REDCAP_HOST_PROCESS_PID="$preserved_host_pid"
+    fi
+    if [[ -n "$preserved_host_probe_pid" ]]; then
+        export REDCAP_HOST_PROCESS_PROBE_PID="$preserved_host_probe_pid"
+    fi
     prism_coordinator_attach_from_process_claim_chain
 }
 

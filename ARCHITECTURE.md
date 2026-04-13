@@ -288,8 +288,10 @@ PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 - `isolation_mode`（`full` / `degraded` / `unsupported`）
 - `resume_gate_reason / resume_gate_profile / resume_gate_evidence`
 - continuity_state（`fresh-session` / `self-recorded` / `import-suggested` / `imported`）
+- `import_protocol / next_action`
+- `import_ready_signal / import_ready_summary / import_success_summary`（`blocked-no-runtime` / `not-needed-own-record` / `not-ready-no-compatible-source` / `ready` / `completed`）
 
-这块信息仍然只是 mirror，不会反向成为 authority；真正的 continuity authority 现在先由 `redcap-session-continuity.sh` 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，然后再把结果渲染回宿主 workboard。它存在的目的，是让新会话进入时能**看见**自己是否已有连续性记录、是否存在兼容历史会话，以及显式导入命令是什么。
+这块信息仍然只是 mirror，不会反向成为 authority；真正的 continuity authority 现在先由 `redcap-session-continuity.sh` 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，然后再把结果渲染回宿主 workboard。它存在的目的，是让新会话进入时能**看见**自己是否已有连续性记录、是否存在兼容历史会话、当前是否 ready to import，以及导入完成后的一句话摘要。
 
 同理，宿主侧的通用 brainstorming / planning / visual skill 也只能是 **advisory overlay**：它们可以帮助拆解问题、组织设计表达，但不能重开已锁定 tranche，不能把可自治决策升级为默认 ask_user / user approval，也不能替代 RedCap-native PM Gate 的最终锁定动作。
 
@@ -423,14 +425,17 @@ RedCap 当前把“最近会话继承”落成了**显式导入协议**，而不
 4. manifest 同目录还会维护 `provenance.yaml`；跨会话导入时，再追加 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
 5. 宿主 workboard 的 `Session Mirror` 只读取这些 repo-local continuity 账本，不再以 sibling `plan.md` 或 `files/imported-sessions/*/metadata.json` 反向充当 authority
 6. `continuity_state` 与 `isolation_mode` 分字段维护：前者回答“有没有连续性记录/导入建议”，后者回答“当前宿主是否具备 full isolation 能力”
-7. 若当前缺少 `runtime_session_id`，Session Mirror 只能停在 `fresh-session` 并显式标记 `continuity_authority: degraded-no-runtime-manifest`；此时 `isolation_mode` 只能来自 resume gate，不得伪造 `self-recorded / import-suggested / imported`
-8. repo-local manifest 只能描述 continuity authority，不能反向“复活”缺失的 active runtime binding；`sync` / `import` 都必须以当前活跃 runtime binding 为前提
-9. 真正导入时，`redcap-session-continuity.sh import` 只复制 continuity artifacts：
+7. 若当前缺少**经过 capability 校验**的 `runtime_session_id`，Session Mirror 只能停在 `fresh-session` 并显式标记 `continuity_authority: degraded-no-runtime-manifest`；此时 `isolation_mode` 只能来自 resume gate，不得伪造 `self-recorded / import-suggested / imported`
+8. repo-local manifest 只能描述 continuity authority，不能反向“复活”缺失的 active runtime binding；这里的 verified runtime binding 指当前 live process claim 重新校验通过的 binding，而不是 shell 里残留的导出环境变量。`sync` 在没有 verified runtime binding 时只能降级输出 no-runtime mirror，而 `import` 则必须同时满足：当前 verified runtime binding 存在、target workboard 的 Session Mirror runtime 与之匹配、target manifest 已存在
+9. `sync` 会把导入建议显式发布成 `import_ready_signal / import_ready_summary`；真正导入时，`redcap-session-continuity.sh import` 还会输出一段 machine-readable success summary
+10. `import` 的 source authority 优先来自 source manifest，而不是 source workboard pointer；source manifest 必须是 `continuity_state=self-recorded` 的 self-recorded source，带有完整 task metadata 且 `own_record_present=1`，同时 source 当前 Session Mirror/runtime 也必须仍绑定到这份 manifest。缺失 source manifest、缺关键 metadata、`continuity_state!=self-recorded`、`own_record_present!=1`、source 当前 mirror/runtime 已退化失绑，或 source/target task metadata mismatch 时都必须 fail-closed
+11. cross-host compatibility 没有第二套隐藏协议：**唯一 host-specific 输入**是 `host-session-capability-matrix.json` 对各宿主给出的 `full / degraded / unsupported` 判定与恢复路径；一旦 source/target 两侧都拿到 verified runtime binding 并满足上述 preconditions，后续 continuity manifest / explicit import contract 在 claude、gemini、copilot 等受支持宿主之间保持同一套 host-agnostic 语义。也就是说，cross-host import 只是“两个 full session 之间执行同一套 explicit import protocol”，而不是 per-host special case
+12. 真正导入时，`redcap-session-continuity.sh import` 只复制 continuity artifacts：
     - `plan.md` 快照
     - `files/`（排除二次嵌套的 imported-sessions）
     - `checkpoints/`
-8. 源会话目录保持原样保留；目标会话把导入内容放进 `files/imported-sessions/<source_handle>/`
-9. 导入完成后，target manifest / provenance 会先更新，再由宿主 workboard 把 continuity_state 渲染成 `imported`，并记录来源 session handle / source plan / import root
+13. 源会话目录保持原样保留；目标会话把导入内容放进 `files/imported-sessions/<source_handle>/`
+14. 导入完成后，target manifest / provenance 会先更新，再由宿主 workboard 把 continuity_state 渲染成 `imported`，并记录来源 session handle / source plan / import root
 
 这条协议的重点不是“方便”，而是**在不偷换 authority 的前提下，为新会话提供可见、可审计、可保留来源的 continuity bridge**。
 
