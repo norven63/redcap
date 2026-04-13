@@ -177,6 +177,58 @@
 
 ---
 
+## 四点五、为什么不把多会话隔离全部塞进 RedCap 自己目录
+
+这件事要分成两层回答：
+
+### 1. 协议内核，本来就应该尽量由 RedCap 自己维护
+
+真正属于 RedCap 自管理的，是这些东西：
+
+- canonical truth（`.dev-task.md`）
+- runtime identity / binding
+- pending closure / closure obligation
+- task metadata compatibility rule
+- explicit import protocol
+
+这些都不应该依赖某个宿主 UI 才成立。
+
+### 2. 但 continuity surface 故意保留一部分在宿主侧
+
+原因不是“做不到都收进 RedCap”，而是**不应该全收**：
+
+1. **宿主 workboard 要可见**
+   用户在当前宿主会话里，需要直接看到“我是不是 fresh / self-recorded / import-suggested / imported”。
+   如果所有连续性状态都藏在 RedCap 私有目录里，协议更纯，但宿主可见性更差。
+
+2. **不是所有宿主都稳定暴露原生 session id**
+   有些宿主能稳定给，有些只能在启动后给，有些只能给“宿主会话目录句柄”而不是 CLI 原生 resume id。
+   因此当前设计刻意区分：
+   - `session_handle`：宿主/人类可见定位
+   - `runtime_session_id`：RedCap runtime 私有态主键
+
+3. **宿主路径里拿到的 handle，不等于宿主原生 sessionId**
+   以 Copilot 为例，当前 session-state 目录名确实可用作 `session_handle`。
+   但它**不能自动等同于** Copilot CLI 内部用于 `/resume` 的原生 sessionId。
+   这也是为什么文档一直坚持把两者拆开，而不是偷懒混成一个字段。
+
+所以更准确的说法是：
+
+> **RedCap 应该自管协议内核，但不应把所有 continuity surface 都强行吸回自己目录。**
+
+否则会牺牲宿主可见性，也会把“宿主可读句柄”和“runtime 私有主键”混为一谈。
+
+### 3. 当前最合理的结构是“双层”
+
+| 层 | 位置 | 职责 |
+|---|---|---|
+| **RedCap-owned core** | RedCap runtime / canonical / closure state | 维护协议真相、绑定、锁、兼容判定 |
+| **Host-owned mirror** | 宿主 session folder / workboard | 让当前宿主会话看见自己的 continuity 状态与导入入口 |
+
+这不是分裂实现，而是**同一协议的两层落点**。
+
+---
+
 ## 五、五个关键原语分别干什么
 
 ### 1. `session_handle`
@@ -309,7 +361,91 @@
 
 ---
 
-## 九、当前实现的边界与诚实口径
+## 九、`git worktree` 到底解决什么，风险是什么
+
+`git worktree` 解决的不是 session-scoped continuity，而是 **task/worktree isolation**：
+
+- 不同主任务
+- 不同 branch
+- 不同未提交改动
+
+它能防止这些东西在同一个工作树里互相污染。
+
+### 1. 你担心的隐患是真实的
+
+如果用户不知道自己当前在哪个 worktree，确实可能发生：
+
+- 在 A worktree 改了代码，却以为自己还在 B
+- 切回原目录后发现“刚才改动没生效”
+- 误以为是 RedCap / session isolation 把改动吞了
+
+这个风险**真实存在，而且不能忽视**。
+
+### 2. 所以 `git worktree` 不能偷偷用
+
+正确原则应该是：
+
+1. **显式创建**
+2. **显式命名**
+3. **显式提示当前 worktree / branch**
+4. **禁止在用户无感知时静默切换主工作区**
+
+所以，`git worktree` 不是“默认后台魔法”，而应该是：
+
+> **当用户明确要并行推进不同主任务时，才启用的任务级隔离工具。**
+
+### 3. 它和会话隔离的边界
+
+| 机制 | 处理对象 |
+|---|---|
+| 会话隔离 | 同一主任务、同一 worktree 中不同 session 的私有态 |
+| `git worktree` | 不同主任务 / 不同分支 / 不同工作树 |
+
+两者互补，但不能互相替代。
+
+---
+
+## 十、为什么 `compass/docs/specs/` 会出现“多会话隔离”文档
+
+你的直觉**大体是对的**：
+**归档/说明层** 和 **运行时隔离层** 是两个独立模块，不能在实现上耦合。
+
+但这里要再补一层：
+
+### 1. `specs/` 存放的是“冻结后的设计说明”
+
+`compass/docs/specs/session-isolation-continuity-guide.md` 和 `multi-session-isolation-design.md` 的作用是：
+
+- 解释系统为什么这么设计
+- 作为后续审计/回归的参考
+- 防止设计口径在长任务或新会话中漂移
+
+它们**不是 runtime 组成部分**。
+
+### 2. “多会话隔离出现在 specs”不等于“specs 参与运行”
+
+这里的关系是：
+
+- **运行模块**：脚本、runtime state、mirror、binding、closure lock
+- **说明模块**：specs 文档，用来冻结设计口径
+
+所以准确说法不是“specs 和隔离掺合了”，而是：
+
+> **隔离系统作为一个能力，需要有对应的冻结设计文档；但 spec 文档本身不进入运行时控制链。**
+
+### 3. 为什么这仍然有必要
+
+如果没有 spec：
+
+- 后续很容易把 `session_handle` 和原生 sessionId 混掉
+- 容易把 host mirror 当 authority
+- 容易把 explicit import 又做回自动 takeover
+
+所以它不是运行依赖，而是**防设计漂移的证据层**。
+
+---
+
+## 十一、当前实现的边界与诚实口径
 
 当前已经做到：
 
@@ -332,7 +468,7 @@
 
 ---
 
-## 十、一句话总结
+## 十二、一句话总结
 
 RedCap 的会话隔离不是“给每个 session 随便造个目录”这么简单，也不是“把 `.dev-task.md` 拆成每会话一份”。  
 
