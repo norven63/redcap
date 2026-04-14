@@ -26,6 +26,10 @@
 - 回复末尾**必须**输出 `__redcap_status` JSON 块（格式见 `references/communication-protocol.md`）
 - `status` 字段只能取值：`completed`、`failed`、`blocked`、`need_user`、`need_revision`
 - `deliverables` 字段列出本次产生/修改的所有文件路径
+- 面向 Norven 或 Dispatcher 会回看的文字说明时，**默认使用中文**；能用中文说清楚的内容，不得只抛英文术语
+- 确需保留英文命令、文件名、协议 ID 或行业固定术语时，首次出现必须写成 `英文原文（中文解释）`
+- 新标题、阶段名、结论标签必须简短直观，让读者不依赖英语背景也能大致看懂设计意图
+- 用户原文、代码片段、命令、路径、字段名按原文保留，不做强行翻译
 
 ## 4. 人工介入门
 
