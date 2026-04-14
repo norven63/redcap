@@ -216,7 +216,11 @@ Agent 每次执行完毕将 `__redcap_status` JSON 写入 outbox 文件（`{role
    g. 交付物完整性校验（§5.7），不通过则重试 Agent
    h. 触发匹配的 hooks（§5.10，如 QA completed → on_QA_PASS）
    i. 根据 status 查转移表 → 更新 state.yaml + sessions.yaml
-   j. 向用户汇报当前进展（一句话摘要）
+   j. **仅在命中“用户可见输出门”时** 才向用户输出：
+      - 命中 `need_user` / `blocked` / `PAUSED`，且需要 Norven 人工介入
+      - Norven 主动追问当前状态
+      - 当前 `.dev-task.md` 对应任务的最后一个 todo 完成，进入 §5.21 终局报告
+      - 其余单路评审回执、后台 Agent 完成、`system_notification`（系统通知）、阶段性 clean 结论与小结，只写入 `.dev-task.md` / 宿主镜像 / 工作账本，不主动中断对话
    k. 【目的回读】回读 state.yaml 的 `purpose` 字段，确认当前执行方向未偏离初始目标（L-21）
       - 若发现偏移（当前动作与 purpose 无关）→ 暂停并向用户确认是否调整目标
 6. 回到步骤 1
@@ -896,6 +900,8 @@ compass 指挥棒为 Cap 提供标准化调度原语，用于并行任务裂变�
 触发后，按 §13 执行：① 文档一致性扫描 → ② 关键决策归档 → ③ Prism redteam 对抗审查 → ④ 按 `references/task-report-template.md` 生成任务报告同步 Norven。
 
 补充红线：
+- 未命中人工介入门时，不得因单路评审结果、后台 Agent 完成、`system_notification`（系统通知）、阶段性小结而主动打断 Norven；这些事件只允许更新账本或镜像
+- “任务完成”默认指当前 `.dev-task.md` 下**全部 todos 完成**；不得把 `active_slice` 完成、单路 clean、局部子任务结束冒充成任务完成
 - 最终回复、stdout 收尾摘要与飞书通知不得只给“报告已归档”；若报告存在 `需你确认 / 人工验证 / 后续动作` 非空项，必须先显式顶出
 - 宿主 `plan.md` / workboard 允许镜像 session continuity 状态，但会话继承只能走 **explicit import**，不得默认自动接管最近会话
 
