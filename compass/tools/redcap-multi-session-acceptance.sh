@@ -66,6 +66,8 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-clear
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-hash-mismatch
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-runtime-init-failed-degrades
+  bash compass/tools/redcap-multi-session-acceptance.sh runtime-clear-context-clears-probe-pid
+  bash compass/tools/redcap-multi-session-acceptance.sh runtime-claim-parent-fallback
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-sync
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-required
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-claim-requires-live-process
@@ -153,17 +155,47 @@ attach_binding_with_capability_recovery() {
     local binding_key="$3"
     local host_process_pid="$4"
     local host_process_probe_pid="${5:-}"
+    local previous_host_process_pid="${REDCAP_HOST_PROCESS_PID:-}"
+    local previous_host_process_probe_pid="${REDCAP_HOST_PROCESS_PROBE_PID:-}"
+    local previous_allow_disk_recovery="${REDCAP_RUNTIME_ALLOW_DISK_RECOVERY:-}"
+    local previous_allow_capability_recovery="${REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY:-}"
     local status=0
 
+    export REDCAP_HOST_PROCESS_PID="$host_process_pid"
+    if [[ -n "$host_process_probe_pid" ]]; then
+        export REDCAP_HOST_PROCESS_PROBE_PID="$host_process_probe_pid"
+    else
+        unset REDCAP_HOST_PROCESS_PROBE_PID
+    fi
+    export REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1
+    export REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY=1
+
     set +e
-    REDCAP_HOST_PROCESS_PID="$host_process_pid" \
-    REDCAP_HOST_PROCESS_PROBE_PID="$host_process_probe_pid" \
-    REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1 \
-    REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY=1 \
     redcap_runtime_load_from_binding "$host" "$project_root" "$binding_key"
     status=$?
     set -e
-    unset REDCAP_HOST_PROCESS_PID REDCAP_HOST_PROCESS_PROBE_PID REDCAP_RUNTIME_ALLOW_DISK_RECOVERY REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY
+
+    if [[ -n "$previous_host_process_pid" ]]; then
+        export REDCAP_HOST_PROCESS_PID="$previous_host_process_pid"
+    else
+        unset REDCAP_HOST_PROCESS_PID
+    fi
+    if [[ -n "$previous_host_process_probe_pid" ]]; then
+        export REDCAP_HOST_PROCESS_PROBE_PID="$previous_host_process_probe_pid"
+    else
+        unset REDCAP_HOST_PROCESS_PROBE_PID
+    fi
+    if [[ -n "$previous_allow_disk_recovery" ]]; then
+        export REDCAP_RUNTIME_ALLOW_DISK_RECOVERY="$previous_allow_disk_recovery"
+    else
+        unset REDCAP_RUNTIME_ALLOW_DISK_RECOVERY
+    fi
+    if [[ -n "$previous_allow_capability_recovery" ]]; then
+        export REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY="$previous_allow_capability_recovery"
+    else
+        unset REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY
+    fi
+
     return "$status"
 }
 
@@ -277,12 +309,17 @@ EOF
 }
 
 spawn_host_probe() {
-    local probe_pid
+    local outvar="${1:-}"
+    local spawned_probe_pid
 
     sleep 600 >/dev/null 2>&1 &
-    probe_pid=$!
-    HOST_PROCESS_PROBES+=("$probe_pid")
-    printf '%s\n' "$probe_pid"
+    spawned_probe_pid=$!
+    HOST_PROCESS_PROBES+=("$spawned_probe_pid")
+    if [[ -n "$outvar" ]]; then
+        printf -v "$outvar" '%s' "$spawned_probe_pid"
+    else
+        printf '%s\n' "$spawned_probe_pid"
+    fi
 }
 
 init_bound_runtime() {
@@ -291,11 +328,12 @@ init_bound_runtime() {
     local host_process_pid="$3"
     local probe_pid
 
-    probe_pid="$(spawn_host_probe)"
+    spawn_host_probe probe_pid
 
-    REDCAP_HOST_PROCESS_PID="$host_process_pid" REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+    export REDCAP_HOST_PROCESS_PID="$host_process_pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
         || fail "failed to initialize runtime binding for $host"
-    REDCAP_HOST_PROCESS_PID="$host_process_pid"
     REDCAP_SESSION_ISOLATION_MODE="full"
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
@@ -512,7 +550,9 @@ run_binding_recovery_gate_case() {
         fail "binding-only attach unexpectedly restored write capability"
     fi
 
-    if REDCAP_HOST_PROCESS_PID="$$" REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1 redcap_runtime_load_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null 2>&1; then
+    export REDCAP_HOST_PROCESS_PID="$$"
+    export REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1
+    if redcap_runtime_load_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null 2>&1; then
         fail "disk recovery without explicit capability gate unexpectedly succeeded"
     fi
     unset REDCAP_HOST_PROCESS_PID REDCAP_RUNTIME_ALLOW_DISK_RECOVERY
@@ -539,8 +579,8 @@ run_layerb_concurrency_case() {
         binding_b="acceptance-${host}-b-${RANDOM}-$$"
         pid_a="$((10000 + RANDOM))"
         pid_b="$((20000 + RANDOM))"
-        probe_a="$(spawn_host_probe)"
-        probe_b="$(spawn_host_probe)"
+        spawn_host_probe probe_a
+        spawn_host_probe probe_b
 
         printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_a" REDCAP_HOST_PROCESS_PID="$pid_a" REDCAP_HOST_PROCESS_PROBE_PID="$probe_a" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
         printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_b" REDCAP_HOST_PROCESS_PID="$pid_b" REDCAP_HOST_PROCESS_PROBE_PID="$probe_b" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
@@ -663,8 +703,8 @@ run_cross_layer_visibility_case() {
     layerb_binding="acceptance-cross-layer-b-${RANDOM}-$$"
     layera_pid="$((40000 + RANDOM))"
     layerb_pid="$((50000 + RANDOM))"
-    layera_probe="$(spawn_host_probe)"
-    layerb_probe="$(spawn_host_probe)"
+    spawn_host_probe layera_probe
+    spawn_host_probe layerb_probe
 
     printf '{"session_id":"%s","cwd":"%s"}\n' "$layera_session_id" "$project_dir" | REDCAP_HOST_PROCESS_PID="$layera_pid" REDCAP_HOST_PROCESS_PROBE_PID="$layera_probe" bash "$REDCAP_ROOT/loom/tools/redcap-layerA-session-start.sh" >/dev/null
     printf '{}' | REDCAP_SESSION_BINDING_KEY="$layerb_binding" REDCAP_HOST_PROCESS_PID="$layerb_pid" REDCAP_HOST_PROCESS_PROBE_PID="$layerb_probe" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" claude >/dev/null
@@ -790,7 +830,7 @@ run_prism_concurrency_case() {
     log "case: prism-concurrency"
 
     host_pid="$((30000 + RANDOM))"
-    host_probe="$(spawn_host_probe)"
+    spawn_host_probe host_probe
     binding_key="acceptance-prism-owner-${RANDOM}-$$"
     run_a="acceptance-prism-a-${RANDOM}-$$"
     run_b="acceptance-prism-b-${RANDOM}-$$"
@@ -862,8 +902,9 @@ run_sessionstart_auto_reconcile_rewrite_case() {
     binding_b="acceptance-reconcile-b-${RANDOM}-$$"
     pid_a="$((61000 + RANDOM))"
     pid_b="$((62000 + RANDOM))"
-    probe_a="$(spawn_host_probe)"
-    probe_b="$(spawn_host_probe)"
+    spawn_host_probe probe_a
+    spawn_host_probe probe_b
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "sessionstart-auto-reconcile-rewrite" >/dev/null 2>&1 || true
 
     printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_a" REDCAP_HOST_PROCESS_PID="$pid_a" REDCAP_HOST_PROCESS_PROBE_PID="$probe_a" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
     REDCAP_HOST_PROCESS_PID="$pid_a" bash "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$host" "$report_path" >/dev/null
@@ -883,6 +924,50 @@ run_sessionstart_auto_reconcile_rewrite_case() {
     redcap_runtime_clear_process_claim "$host" "$pid_a" >/dev/null 2>&1 || true
     redcap_runtime_clear_process_claim "$host" "$pid_b" >/dev/null 2>&1 || true
     redcap_runtime_clear_context
+}
+
+run_runtime_claim_parent_fallback_case() {
+    local host="claude"
+    local binding_key runtime_session_id capability child_capability child_runtime_id
+
+    log "case: runtime-claim-parent-fallback"
+
+    binding_key="acceptance-parent-claim-${RANDOM}-$$"
+    export REDCAP_HOST_PROCESS_PID="$$"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$$"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null || fail "failed to initialize parent claim runtime"
+    runtime_session_id="${REDCAP_RUNTIME_SESSION_ID:-}"
+    capability="${REDCAP_RUNTIME_CAPABILITY:-}"
+    [[ -n "$runtime_session_id" ]] || fail "runtime session id missing for parent fallback case"
+    [[ -n "$capability" ]] || fail "runtime capability missing for parent fallback case"
+
+    redcap_runtime_clear_context
+    unset REDCAP_HOST_PROCESS_PID REDCAP_HOST_PROCESS_PROBE_PID
+
+    child_capability="$(bash -lc 'set -euo pipefail; cd "'"$REDCAP_ROOT"'"; source compass/tools/redcap-runtime-state.sh; redcap_runtime_load_claimed_capability "'"$host"'" "'"$runtime_session_id"'"')"
+    assert_eq "$child_capability" "$capability"
+
+    child_runtime_id="$(bash -lc 'set -euo pipefail; cd "'"$REDCAP_ROOT"'"; source compass/tools/redcap-runtime-state.sh; redcap_runtime_attach_from_process_claim "'"$host"'" >/dev/null; printf "%s\n" "${REDCAP_RUNTIME_SESSION_ID:-}"')"
+    assert_eq "$child_runtime_id" "$runtime_session_id"
+
+    redcap_runtime_clear_process_claim "$host" "$$" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_runtime_clear_context_clears_probe_pid_case() {
+    log "case: runtime-clear-context-clears-probe-pid"
+
+    export REDCAP_HOST_PROCESS_PID="12345"
+    export REDCAP_HOST_PROCESS_PROBE_PID="23456"
+    export REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_SESSION_RESUME_REASON="acceptance"
+
+    redcap_runtime_clear_context
+
+    assert_eq "${REDCAP_HOST_PROCESS_PID:-}" ""
+    assert_eq "${REDCAP_HOST_PROCESS_PROBE_PID:-}" ""
+    assert_eq "${REDCAP_SESSION_ISOLATION_MODE:-}" ""
+    assert_eq "${REDCAP_SESSION_RESUME_REASON:-}" ""
 }
 
 run_sessionstart_auto_reconcile_clear_case() {
@@ -910,7 +995,7 @@ run_sessionstart_auto_reconcile_clear_case() {
 
     binding_key="acceptance-reconcile-clear-${RANDOM}-$$"
     pid="$((63000 + RANDOM))"
-    probe_pid="$(spawn_host_probe)"
+    spawn_host_probe probe_pid
     printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_key" REDCAP_HOST_PROCESS_PID="$pid" REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
 
     if [[ -f "$pending_state" ]]; then
@@ -963,7 +1048,7 @@ PY
 
     binding_key="acceptance-reconcile-hash-mismatch-${RANDOM}-$$"
     pid="$((64000 + RANDOM))"
-    probe_pid="$(spawn_host_probe)"
+    spawn_host_probe probe_pid
     printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_key" REDCAP_HOST_PROCESS_PID="$pid" REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
 
     assert_exists "$pending_state"
@@ -1376,7 +1461,7 @@ run_continuity_cross_host_import_case() {
 
     source_session_id="acceptance-cross-host-source-${RANDOM}-$$"
     source_pid="$((69000 + RANDOM))"
-    source_probe="$(spawn_host_probe)"
+    spawn_host_probe source_probe
     printf '{"session_id":"%s","cwd":"%s"}\n' "$source_session_id" "$REDCAP_ROOT" | \
         REDCAP_HOOK_CWD="$REDCAP_ROOT" \
         REDCAP_HOST_WORKBOARD_PATH="$source_workboard" \
@@ -1394,7 +1479,7 @@ run_continuity_cross_host_import_case() {
     write_workboard_fixture "$target_workboard" "$REDCAP_ROOT/.dev-task.md" "$task_id" "$top_goal" "$active_slice" "$confirmed_hash"
     target_binding="acceptance-cross-host-target-${RANDOM}-$$"
     target_pid="$((70000 + RANDOM))"
-    target_probe="$(spawn_host_probe)"
+    spawn_host_probe target_probe
     printf '{}' | \
         REDCAP_HOOK_CWD="$REDCAP_ROOT" \
         REDCAP_HOST_WORKBOARD_PATH="$target_workboard" \
@@ -1464,7 +1549,7 @@ run_continuity_manifest_mismatch_case() {
 
     source_session_id="acceptance-mismatch-source-${RANDOM}-$$"
     source_pid="$((71000 + RANDOM))"
-    source_probe="$(spawn_host_probe)"
+    spawn_host_probe source_probe
     printf '{"session_id":"%s","cwd":"%s"}\n' "$source_session_id" "$REDCAP_ROOT" | \
         REDCAP_HOOK_CWD="$REDCAP_ROOT" \
         REDCAP_HOST_WORKBOARD_PATH="$source_workboard" \
@@ -1494,7 +1579,7 @@ PY
     write_workboard_fixture "$target_workboard" "$REDCAP_ROOT/.dev-task.md" "$task_id" "$top_goal" "$active_slice" "$confirmed_hash"
     target_session_id="acceptance-mismatch-target-${RANDOM}-$$"
     target_pid="$((72000 + RANDOM))"
-    target_probe="$(spawn_host_probe)"
+    spawn_host_probe target_probe
     printf '{"session_id":"%s","cwd":"%s"}\n' "$target_session_id" "$REDCAP_ROOT" | \
         REDCAP_HOOK_CWD="$REDCAP_ROOT" \
         REDCAP_HOST_WORKBOARD_PATH="$target_workboard" \
@@ -2181,6 +2266,8 @@ run_all_cases() {
     run_sessionstart_auto_reconcile_clear_case
     run_sessionstart_auto_reconcile_hash_mismatch_case
     run_sessionstart_runtime_init_failed_degrades_case
+    run_runtime_clear_context_clears_probe_pid_case
+    run_runtime_claim_parent_fallback_case
     run_continuity_manifest_sync_case
     run_continuity_runtime_required_case
     run_continuity_runtime_claim_requires_live_process_case
@@ -2243,6 +2330,12 @@ case "$COMMAND" in
         ;;
     sessionstart-runtime-init-failed-degrades)
         run_sessionstart_runtime_init_failed_degrades_case
+        ;;
+    runtime-clear-context-clears-probe-pid)
+        run_runtime_clear_context_clears_probe_pid_case
+        ;;
+    runtime-claim-parent-fallback)
+        run_runtime_claim_parent_fallback_case
         ;;
     continuity-manifest-sync)
         run_continuity_manifest_sync_case

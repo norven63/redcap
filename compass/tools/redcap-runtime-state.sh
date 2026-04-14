@@ -306,6 +306,31 @@ redcap_runtime_process_started_at() {
     ps -o lstart= -p "$host_process_pid" 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | head -n 1
 }
 
+redcap_runtime_pid_is_same_or_descendant() {
+    local ancestor_pid="$1"
+    local candidate_pid="$2"
+    local current_pid="$candidate_pid"
+    local parent_pid
+
+    if [[ -z "$ancestor_pid" || -z "$candidate_pid" ]]; then
+        return 1
+    fi
+
+    while [[ -n "$current_pid" && "$current_pid" != "0" ]]; do
+        if [[ "$current_pid" == "$ancestor_pid" ]]; then
+            return 0
+        fi
+
+        parent_pid=$(ps -o ppid= -p "$current_pid" 2>/dev/null | tr -d '[:space:]')
+        if [[ -z "$parent_pid" || "$parent_pid" == "$current_pid" ]]; then
+            break
+        fi
+        current_pid="$parent_pid"
+    done
+
+    return 1
+}
+
 redcap_runtime_verify_process_claim_file() {
     local claim_file="$1"
     local host_process_pid="$2"
@@ -323,7 +348,8 @@ redcap_runtime_verify_process_claim_file() {
     fi
     live_started_at=$(redcap_runtime_process_started_at "$claimed_probe_pid" 2>/dev/null || true)
 
-    [[ -n "$claimed_pid" && "$claimed_pid" == "$host_process_pid" && -n "$claimed_started_at" && -n "$live_started_at" && "$claimed_started_at" == "$live_started_at" ]]
+    [[ -n "$claimed_pid" && -n "$claimed_started_at" && -n "$live_started_at" && "$claimed_started_at" == "$live_started_at" ]] || return 1
+    redcap_runtime_pid_is_same_or_descendant "$claimed_pid" "$host_process_pid"
 }
 
 redcap_runtime_binding_key_from_host_session() {
@@ -567,6 +593,7 @@ redcap_runtime_record_unsupported_mode() {
 
 redcap_runtime_clear_context() {
     unset REDCAP_HOST_PROCESS_PID
+    unset REDCAP_HOST_PROCESS_PROBE_PID
     unset REDCAP_ISOLATION_MODE
     unset REDCAP_RESUME_GATE_REASON
     unset REDCAP_RESUME_GATE_PROFILE
