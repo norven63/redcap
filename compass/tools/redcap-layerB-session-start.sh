@@ -74,6 +74,16 @@ session_resume_gate_complete() {
         [[ "${REDCAP_SESSION_RESUME_ALLOW_CAPABILITY_FILE_RECOVERY:-}" =~ ^[01]$ ]]
 }
 
+ensure_repo_git_hooks() {
+    local ensure_script="$SCRIPT_DIR/redcap-ensure-git-hooks.sh"
+
+    [[ -x "$ensure_script" ]] || return 0
+
+    if ! bash "$ensure_script" "$REDCAP_ROOT" >/dev/null 2>&1; then
+        echo "[redcap-layerB-session-start] WARNING: failed to ensure repo-owned git hooks" >&2
+    fi
+}
+
 if [[ -x "$SCRIPT_DIR/redcap-session-resume-gate.sh" ]]; then
     SESSION_RESUME_GATE_AVAILABLE=1
     if ! load_session_resume_gate || ! session_resume_gate_complete; then
@@ -264,6 +274,7 @@ case "${REDCAP_SESSION_ISOLATION_MODE:-}" in
         ;;
 esac
 
+ensure_repo_git_hooks
 run_control_plane_start_sync
 
 exit 0

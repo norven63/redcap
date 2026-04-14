@@ -85,7 +85,7 @@ RedCap 当前把状态面划分为三类：
 
 这也是本次 docs 重整的基本原则：**不要把 process state 塞进 history 层，也不要把历史证据误删成“临时文件”。**
 
-当前这条边界已由 `compass/tools/redcap-artifact-lifecycle-check.sh` 进入收尾链：对 **RedCap 自身工作区**，`stop-review` 与 `redcap-on-complete.sh` 会检查本轮 commit 区间内所有曾进入历史的路径，而不是只看最终 net diff；一旦命中 session-isolated / local-only / temporary artifact 或 `compass/docs/` 根目录未分类条目，就会阻断当前收尾通过并显式暴露该违规路径。它目前还不是 pre-commit 阶段的物理阻断器。
+当前这条边界已经形成 **分类器 + 提交前闸门 + 收尾审计** 三层链路：`compass/tools/redcap-artifact-classifier.sh` 统一按 docs 根目录索引与生命周期规则给路径分类；仓库内 `.githooks/pre-commit` 通过 `compass/tools/redcap-artifact-lifecycle-check.sh ... pre-commit` 在提交前直接拦住 staged set 里的 session-isolated / local-only / temporary artifact，并在 repo-tracked 与非 repo-tracked 产物混提时显式报出 mixed-lifecycle；`stop-review`、`redcap-on-complete.sh` 与 `session-end` 继续审计整个 commit 区间里所有曾进入历史的路径，而不是只看最终 net diff。
 
 ### 2.2.2 `docs / knowledge / continuity assets` 的职责分层
 

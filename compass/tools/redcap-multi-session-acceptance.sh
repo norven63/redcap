@@ -68,6 +68,11 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-runtime-init-failed-degrades
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-clear-context-clears-probe-pid
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-claim-parent-fallback
+  bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-classifier
+  bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-hook-install
+  bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-pre-commit-block
+  bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-pre-commit-allow
+  bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-rejects-tabbed-path
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-sync
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-required
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-claim-requires-live-process
@@ -280,6 +285,38 @@ make_temp_project() {
     dir="$(mktemp -d "${TMPDIR:-/tmp}/redcap-layera-project.XXXXXX")"
     TEMP_PROJECTS+=("$dir")
     printf '%s\n' "$dir"
+}
+
+init_temp_git_repo() {
+    local repo="$1"
+
+    git -C "$repo" init --quiet
+    git -C "$repo" config user.name "RedCap Acceptance"
+    git -C "$repo" config user.email "redcap-acceptance@example.com"
+}
+
+seed_temp_git_repo() {
+    local repo="$1"
+
+    printf '# acceptance fixture\n' >"$repo/README.md"
+    git -C "$repo" add README.md
+    git -C "$repo" commit --quiet -m "init"
+}
+
+install_artifact_hook_fixture() {
+    local repo="$1"
+
+    mkdir -p "$repo/.githooks" "$repo/compass/tools" "$repo/compass/docs"
+    cp "$REDCAP_ROOT/.githooks/pre-commit" "$repo/.githooks/pre-commit"
+    cp "$REDCAP_ROOT/compass/tools/redcap-artifact-classifier.sh" "$repo/compass/tools/redcap-artifact-classifier.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-artifact-lifecycle-check.sh" "$repo/compass/tools/redcap-artifact-lifecycle-check.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-ensure-git-hooks.sh" "$repo/compass/tools/redcap-ensure-git-hooks.sh"
+    cp "$REDCAP_ROOT/compass/docs/index.yaml" "$repo/compass/docs/index.yaml"
+    chmod +x \
+        "$repo/.githooks/pre-commit" \
+        "$repo/compass/tools/redcap-artifact-classifier.sh" \
+        "$repo/compass/tools/redcap-artifact-lifecycle-check.sh" \
+        "$repo/compass/tools/redcap-ensure-git-hooks.sh"
 }
 
 write_workboard_fixture() {
@@ -2248,6 +2285,111 @@ run_continuity_import_resolves_live_manifest_case() {
     redcap_runtime_clear_context
 }
 
+run_artifact_lifecycle_classifier_case() {
+    local repo output
+
+    log "case: artifact-lifecycle-classifier"
+
+    repo="$(make_temp_project)"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-artifact-classifier.sh" "$repo" \
+        ".dev-task.md" \
+        "compass/docs/specs/ok.md" \
+        "compass/docs/random.md" \
+        "compass/.workflow/local.txt" \
+        "docs-scratch/note.md")"
+
+    assert_string_contains "$output" $'.dev-task.md\tsession-isolated\tsession-isolated-process-state\t'
+    assert_string_contains "$output" $'compass/docs/specs/ok.md\trepo-tracked\trepo-tracked-evidence\tcompass/docs approved collection'
+    assert_string_contains "$output" $'compass/docs/random.md\tlocal-only\tdocs-root-policy-violation\tviolates compass/docs root policy'
+    assert_string_contains "$output" $'compass/.workflow/local.txt\tlocal-only\tlocal-only-host-asset\t'
+    assert_string_contains "$output" $'docs-scratch/note.md\ttemporary\ttemporary-reading-space-root\t'
+}
+
+run_artifact_lifecycle_hook_install_case() {
+    local repo
+
+    log "case: artifact-lifecycle-hook-install"
+
+    repo="$(make_temp_project)"
+    init_temp_git_repo "$repo"
+    mkdir -p "$repo/custom-hooks"
+    install_artifact_hook_fixture "$repo"
+
+    git -C "$repo" config --local core.hooksPath custom-hooks
+    bash "$repo/compass/tools/redcap-ensure-git-hooks.sh" "$repo"
+
+    assert_eq "$(git -C "$repo" config --local --get core.hooksPath)" ".githooks"
+    assert_eq "$(git -C "$repo" config --local --get redcap.previousHooksPath)" "custom-hooks"
+}
+
+run_artifact_lifecycle_pre_commit_block_case() {
+    local repo output status
+
+    log "case: artifact-lifecycle-pre-commit-block"
+
+    repo="$(make_temp_project)"
+    init_temp_git_repo "$repo"
+    seed_temp_git_repo "$repo"
+    install_artifact_hook_fixture "$repo"
+    git -C "$repo" config --local core.hooksPath .githooks
+
+    printf 'tracked update\n' >>"$repo/README.md"
+    printf 'session state\n' >"$repo/.dev-task.md"
+    git -C "$repo" add README.md .dev-task.md
+
+    set +e
+    output="$(git -C "$repo" commit -m "mixed lifecycle" 2>&1)"
+    status=$?
+    set -e
+
+    [[ "$status" -ne 0 ]] || fail "mixed lifecycle commit unexpectedly succeeded"
+    assert_string_contains "$output" "disallowed artifacts detected"
+    assert_string_contains "$output" ".dev-task.md"
+    assert_string_contains "$output" "mixed-lifecycle staged commit detected"
+}
+
+run_artifact_lifecycle_pre_commit_allow_case() {
+    local repo
+
+    log "case: artifact-lifecycle-pre-commit-allow"
+
+    repo="$(make_temp_project)"
+    init_temp_git_repo "$repo"
+    seed_temp_git_repo "$repo"
+    install_artifact_hook_fixture "$repo"
+    git -C "$repo" config --local core.hooksPath .githooks
+
+    printf 'tracked update\n' >>"$repo/README.md"
+    git -C "$repo" add README.md
+    git -C "$repo" commit --quiet -m "tracked only"
+
+    assert_eq "$(git -C "$repo" rev-list --count HEAD)" "2"
+}
+
+run_artifact_lifecycle_rejects_tabbed_path_case() {
+    local repo output status bad_name
+
+    log "case: artifact-lifecycle-rejects-tabbed-path"
+
+    repo="$(make_temp_project)"
+    init_temp_git_repo "$repo"
+    seed_temp_git_repo "$repo"
+    install_artifact_hook_fixture "$repo"
+    git -C "$repo" config --local core.hooksPath .githooks
+
+    bad_name=$'notes\twith-tab.md'
+    printf 'bad path\n' >"$repo/$bad_name"
+    git -C "$repo" add "$bad_name"
+
+    set +e
+    output="$(git -C "$repo" commit -m "tabbed path" 2>&1)"
+    status=$?
+    set -e
+
+    [[ "$status" -ne 0 ]] || fail "tabbed filename unexpectedly bypassed lifecycle gate"
+    assert_string_contains "$output" "unsupported filename contains tab/newline"
+}
+
 run_all_cases() {
     run_binding_recovery_gate_case
     run_layerb_concurrency_case
@@ -2268,6 +2410,11 @@ run_all_cases() {
     run_sessionstart_runtime_init_failed_degrades_case
     run_runtime_clear_context_clears_probe_pid_case
     run_runtime_claim_parent_fallback_case
+    run_artifact_lifecycle_classifier_case
+    run_artifact_lifecycle_hook_install_case
+    run_artifact_lifecycle_pre_commit_block_case
+    run_artifact_lifecycle_pre_commit_allow_case
+    run_artifact_lifecycle_rejects_tabbed_path_case
     run_continuity_manifest_sync_case
     run_continuity_runtime_required_case
     run_continuity_runtime_claim_requires_live_process_case
@@ -2336,6 +2483,21 @@ case "$COMMAND" in
         ;;
     runtime-claim-parent-fallback)
         run_runtime_claim_parent_fallback_case
+        ;;
+    artifact-lifecycle-classifier)
+        run_artifact_lifecycle_classifier_case
+        ;;
+    artifact-lifecycle-hook-install)
+        run_artifact_lifecycle_hook_install_case
+        ;;
+    artifact-lifecycle-pre-commit-block)
+        run_artifact_lifecycle_pre_commit_block_case
+        ;;
+    artifact-lifecycle-pre-commit-allow)
+        run_artifact_lifecycle_pre_commit_allow_case
+        ;;
+    artifact-lifecycle-rejects-tabbed-path)
+        run_artifact_lifecycle_rejects_tabbed_path_case
         ;;
     continuity-manifest-sync)
         run_continuity_manifest_sync_case

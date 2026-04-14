@@ -448,9 +448,14 @@ governance_debts_addressed: []
   - 统一维护 interop audit、pending closure obligation 与 `closure-ledger/` 事务日志
   - `pending-closure/` 表示当前 outstanding obligation；`closure-ledger/` 负责保留阶段性 closure 证据，不得互相冒充
 - `compass/tools/redcap-artifact-lifecycle-check.sh`
-  - 对 **RedCap 自身工作区** 检查本轮 commit 区间里所有曾进入历史的路径，而不是只看最终 net diff
-  - 一旦命中违规路径，会阻断 stop-review / on-complete 收尾通过，并显式暴露这批违规产物
+  - 复用 `compass/tools/redcap-artifact-classifier.sh` 统一给路径做 lifecycle 分类，并读取 `compass/docs/index.yaml` 的根目录准入规则
+  - 对 **RedCap 自身工作区**，`.githooks/pre-commit` 会用 staged set 模式在提交前拦住 session/local/temp artifact；若 repo-tracked 与非 repo-tracked 产物混提，必须显式报 mixed-lifecycle
+  - `stop-review` / `on-complete` / `session-end` 继续检查本轮 commit 区间里所有曾进入历史的路径，而不是只看最终 net diff
+  - 一旦命中违规路径，会阻断收尾通过，并显式暴露这批违规产物
   - 阻断 `compass/docs/` 根目录重新长成未分类条目
+- `compass/tools/redcap-ensure-git-hooks.sh`
+  - 由 `redcap-layerB-session-start.sh` 尝试自动设置 repo-local `core.hooksPath=.githooks`
+  - 若仓库原先已经有其他 `core.hooksPath`，必须先写入 `redcap.previousHooksPath`，再由 `.githooks/pre-commit` 在 RedCap 闸门通过后回调旧 hook，避免静默覆盖
 - `compass/tools/redcap-on-complete.sh`
   - 对 RedCap 自身 on-complete fail-closed 校验 `commit proof + PM Gate + drift + task report + artifact lifecycle`
   - 若 notify 或 validator-chain 暴露出的 `commit proof / PM Gate / drift / task report / artifact lifecycle` 仍有缺口，必须写回 pending closure，保留下次 reconcile 机会

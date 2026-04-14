@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+CURRENT_HOOK="$HOOK_DIR/pre-commit"
+LIFECYCLE_CHECK="$REPO_ROOT/compass/tools/redcap-artifact-lifecycle-check.sh"
+
+resolve_hook_file() {
+    local repo_root="$1"
+    local hook_dir="$2"
+
+    if [[ -z "$hook_dir" ]]; then
+        return 1
+    fi
+
+    if [[ "$hook_dir" != /* ]]; then
+        hook_dir="$repo_root/$hook_dir"
+    fi
+
+    printf '%s\n' "$hook_dir/pre-commit"
+}
+
+if [[ ! -x "$LIFECYCLE_CHECK" ]]; then
+    echo "[redcap-pre-commit] missing lifecycle check script: $LIFECYCLE_CHECK" >&2
+    exit 1
+fi
+
+bash "$LIFECYCLE_CHECK" "$REPO_ROOT" "" "" redcap-self pre-commit
+
+PREVIOUS_HOOKS_PATH="$(git -C "$REPO_ROOT" config --local --get redcap.previousHooksPath || true)"
+PREVIOUS_HOOK_FILE="$(resolve_hook_file "$REPO_ROOT" "$PREVIOUS_HOOKS_PATH" || true)"
+
+if [[ -n "$PREVIOUS_HOOK_FILE" && -x "$PREVIOUS_HOOK_FILE" ]]; then
+    PREVIOUS_HOOK_ABS="$(cd "$(dirname "$PREVIOUS_HOOK_FILE")" && pwd)/$(basename "$PREVIOUS_HOOK_FILE")"
+    if [[ "$PREVIOUS_HOOK_ABS" != "$CURRENT_HOOK" ]]; then
+        "$PREVIOUS_HOOK_FILE" "$@"
+    fi
+fi

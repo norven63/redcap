@@ -50,10 +50,10 @@
 
 ### GD-006：Artifact lifecycle enforcement
 - **design_status**: `design-complete`
-- **implementation_status**: `in-progress`
+- **implementation_status**: `done`
 - **owner_slice**: `Authority Core Hardening`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §七 E1
-- **gap**: 已完成 stop-review / on-complete 阶段的 commit-range 检测与收尾阻断，但 source design 中的 artifact classifier、pre-commit lifecycle enforcement、mixed-lifecycle commit blocking 仍未落地，因此当前只能记为第一阶段 in-progress
+- **gap**: 已收口：`redcap-artifact-classifier.sh` 负责统一分类，`.githooks/pre-commit` + `redcap-ensure-git-hooks.sh` 负责 repo-owned 的提交前阻断与 mixed-lifecycle 提示，`stop-review / on-complete / session-end` 继续保留 commit-range 审计作为收尾兜底
 
 ### GD-007：Governance executable norms
 - **design_status**: `design-complete`
