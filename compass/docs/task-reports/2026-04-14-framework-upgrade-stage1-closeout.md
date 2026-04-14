@@ -22,6 +22,7 @@
 
 1. 当前 `.dev-task.md` 对应 todo 已全部完成，可结束本轮任务。
 2. 如继续下一阶段，优先处理连续性权威中心化的宿主可见性与治理可执行化收口。
+3. 这里说的“下一阶段”是 backlog 的后续 tranche，不是本次任务仍有未完成遗留。
 
 ---
 
@@ -89,8 +90,8 @@
 | 需求点 | 完成状态 | 核心成果 |
 |---|---|---|
 | 会话隔离与连续性权威 | 已完成 | `.dev-task.md` 继续作为唯一账本；宿主 `plan.md / workboard` 保持 mirror-only；显式导入、runtime claim、binding key、宿主能力矩阵与跨宿主兼容口径已统一 |
-| hook / gate / runtime / closure 执行链 | 已完成 | validator chain、pending closure、closure ledger、session-end fail-closed、stale obligation auto-reconcile 已全部接入统一 authority chain |
-| 制品生命周期提交前阻断 | 已完成 | 新增 `redcap-artifact-classifier.sh`、`.githooks/pre-commit`、`redcap-ensure-git-hooks.sh`，把分类、安装、提交前拦截、混合生命周期提示和收尾审计连成闭环 |
+| hook / gate / runtime / closure 执行链 | 已完成 | 统一校验脚本、未闭环问题记录、收尾证据账本、会话结束失败即阻断、启动时自动核销旧义务，已经串成同一条权威收尾链 |
+| 制品生命周期提交前阻断 | 已完成 | 新增 `redcap-artifact-classifier.sh`、`.githooks/pre-commit`、`redcap-ensure-git-hooks.sh`，把“哪些文件能进 git、哪些不能进 git”的规则，前移到提交前直接拦截 |
 | 对外沟通可读性 | 已完成 | 中文优先、必要英文首现补中文解释、命名短直观已写入权威规范、子 Agent 约束与 soul 工作习惯 |
 | 长任务不中断与终局汇报 | 已完成 | 只在人工介入、用户追问、或全部 todo 完成时对外输出；终局报告按需求点/问题域组织，不再按流水账展开 |
 
@@ -100,7 +101,7 @@
    `session resume gate`、runtime manifest、显式导入反馈、多会话验收与跨宿主兼容性矩阵已经收口为同一协议：宿主只提供能力矩阵与会话身份线索，真正的权威仍由 RedCap 内部 manifest / canonical ledger / explicit import contract 控制。
 
 2. **收尾链与义务链收口**  
-   `validator-chain` 统一编排 review proof、reanchor、PM Gate、drift、task report、artifact lifecycle；`pending closure` 与 `closure-ledger` 则分别承担“当前未闭环义务”与“阶段性 closure 证据”的职责，避免两者互相冒充。
+   `validator-chain` 统一编排 review proof、reanchor、PM Gate、drift、task report、制品生命周期检查；`pending closure` 与 `closure-ledger` 则分别承担“当前还没修完的问题清单”和“每次收尾到底发生了什么的证据日志”，避免两者互相冒充。
 
 3. **制品生命周期从“晚发现”推进到“早阻断”**  
    `redcap-artifact-classifier.sh` 统一按四分法给路径分类，并直接读取 `compass/docs/index.yaml` 的根目录准入规则；`.githooks/pre-commit` 使用 staged set 模式在提交前拦住 session/local/temp artifact；`stop-review / on-complete / session-end` 继续对 commit 区间做历史审计，确保“提交前阻断”和“收尾兜底”同时存在。
@@ -110,6 +111,17 @@
 
 5. **沟通和执行纪律进入硬约束**  
    中文优先、非必要不中断、质量关键 review 不得降级、终局汇报按需求点组织，这些都不再只是聊天共识，而是已写进 `SKILL.md`、`CONTRIBUTING.md`、`references/agent-constraints.md`、`soul.md` 与 `.dev-task.md`。
+
+### 3.2.1 术语对照（按文件/功能解释）
+
+| 术语 | 对应文件/实现 | 人话解释 |
+|---|---|---|
+| `validator chain`（统一校验链） | `compass/tools/redcap-validator-chain.sh` | 把 PM Gate、漂移检查、任务报告检查、制品生命周期检查等多个检查项，统一串成一个总校验入口 |
+| `pending closure`（待闭环问题记录） | `compass/tools/redcap-interop-governance.sh` 中的 `pending-closure/*.state` | 如果收尾时发现还有问题没修完，就把“还差什么”写成状态文件，避免下次会话误以为已经结束 |
+| `closure ledger`（收尾证据账本） | `compass/tools/redcap-interop-governance.sh` 中的 `closure-ledger/*.log` | 记录每次收尾是通过还是被阻断，以及当时的关键信息，方便审计和考古 |
+| `session-end fail-closed`（会话结束失败即阻断） | `compass/tools/redcap-layerB-session-end.sh` | 会话结束时只要关键检查没过，就直接按失败处理，不允许伪装成“已经正常完成” |
+| `stale obligation auto-reconcile`（陈旧义务自动核销） | `compass/tools/redcap-pending-closure-reconcile.sh` + `compass/tools/redcap-layerB-session-start.sh` | 新会话开始时，自动检查上次遗留的问题是否其实已经修好；能证明已修好的就自动清掉，避免旧 blocker 永远挂着 |
+| `artifact lifecycle`（制品生命周期边界） | `compass/tools/redcap-artifact-classifier.sh` + `compass/tools/redcap-artifact-lifecycle-check.sh` | 用来区分“哪些文件属于 repo 正式资产、哪些只是会话态/本地态/临时态”，并据此决定它们能不能进 git |
 
 ### 3.3 当前完成后的现状
 
@@ -153,7 +165,7 @@
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
-- [ ] 在真实多宿主、多新 clone 的长期使用中，继续观察不同宿主进入 RedCap 自身仓库时，`session-start` 对 repo-local git hooks 的激活是否始终稳定。
+- [ ] 在真实多宿主、多新 clone 的长期使用中，继续观察不同宿主进入 RedCap 自身仓库时，`session-start` 对 repo-local git hooks 的激活是否始终稳定；这不是“只能人工做”，而是“当前还没被我自动化穷尽覆盖”的观察项。
 
 ---
 
@@ -164,6 +176,8 @@
 | 问题 | 原因 | 建议优先级 |
 |---|---|---|
 | 当前任务范围内无阻断性遗留问题 | 第一阶段尾项已补齐，耦合收口项也已完成 | P2 |
+
+说明：backlog 里当然仍有第二到第五阶段，但那是后续阶段任务，不是本次任务未完成。
 
 ### 6.2 触发的新问题
 
