@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "specs": [
+    {
+      "path": "compass/docs/specs/2026-04-12-host-agent-interop-governance-design.md",
+      "title": "宿主 Agent 互操作治理设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "说明宿主 workboard、mirror-only、re-anchor 与 Layer B 权威链的边界。",
+      "paired_control_paths": [
+        "compass/tools/redcap-host-workboard-sync.sh",
+        "compass/tools/redcap-pm-gate-check.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md",
+      "title": "宿主技能 overlay 治理设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "说明 overlay skill、shared skill 所有权与 ask_user 边界。",
+      "paired_control_paths": [
+        "references/agent-constraints.md",
+        "compass/CONTRIBUTING.md"
+      ],
+      "paired_debt_ids": [
+        "GD-007"
+      ]
+    },
+    {
+      "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
+      "title": "框架升级路线说明",
+      "role": "human-guide",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
+      "paired_control_paths": [
+        "references/backlogs/framework-upgrade.json",
+        "compass/tools/redcap-backlog-check.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/baton-design.md",
+      "title": "Baton 设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "说明跨技能委派协议、请求/结果边界与安全约束。",
+      "paired_control_paths": [
+        "compass/tools/baton-delegate.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
+      "title": "引擎升级第一部分：设计哲学",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "保存 RedCap 引擎升级的设计哲学，不直接充当运行时约束。",
+      "paired_control_paths": [
+        "ARCHITECTURE.md"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/engine-upgrade-part2-execution-framework.md",
+      "title": "引擎升级第二部分：执行框架",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "说明执行框架的目标结构，真实执行链由 Loom 状态机与协议层承接。",
+      "paired_control_paths": [
+        "loom/dispatcher/state-machine.md",
+        "references/communication-protocol.md"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/hook-chain-investigation-design.md",
+      "title": "Hook 链路调查设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "记录 hook 链路的设计与调查结论，后续硬化仍由治理债务继续承接。",
+      "paired_control_paths": [
+        "references/hook-standards.md"
+      ],
+      "paired_debt_ids": [
+        "GD-007"
+      ]
+    },
+    {
+      "path": "compass/docs/specs/multi-session-isolation-design.md",
+      "title": "多会话隔离设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "说明多会话隔离主线；真实隔离保障由 session-start/session-end/runtime/acceptance 承接。",
+      "paired_control_paths": [
+        "compass/tools/redcap-layerB-session-start.sh",
+        "compass/tools/redcap-layerB-session-end.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/prism-coordinator-phase-a-design.md",
+      "title": "Prism 协调器 Phase A 设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "说明 Prism 协调器与 run-scoped truth 的 Phase A 设计边界。",
+      "paired_control_paths": [
+        "prism/tools/prism-coordinator.sh",
+        "prism/tools/prism-run-state.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/session-isolation-continuity-guide.md",
+      "title": "会话隔离连续性指南",
+      "role": "operator-guide",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "给人说明 continuity 协议与显式导入语义；真实 authority 在 runtime manifest 与 continuity 脚本中。",
+      "paired_control_paths": [
+        "compass/tools/redcap-session-continuity.sh",
+        "compass/tools/redcap-session-resume-gate.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/2026-04-15-feishu-duplex-communication-design.md",
+      "title": "飞书双向交流与最小待处理入口设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "设计固定单聊、窗口式接收与最小待处理入口的飞书双向交流链。",
+      "paired_control_paths": [
+        "compass/tools/feishu-notifier.py",
+        "compass/tools/redcap-on-complete.sh",
+        "compass/tools/redcap-layerB-session-end.sh"
+      ],
+      "paired_debt_ids": []
+    }
+  ]
+}
