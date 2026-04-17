@@ -699,3 +699,66 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-16
+
+### L-70: 报告锚点校验不能停留在 glob / `-f` 层
+- **场景**：closeout follow-up 中，报告锚点路径一度只做了字符串与文件存在性层面的检查，`../` traversal、absolute path、symlink file、symlinked report root 等路径仍可能混进收尾主链
+- **根因**：把“路径能打开”误当成“路径属于合法报告域”，缺少统一 canonicalize 与 repo-relative 归一化，导致 closeout 对 artifact 边界的安全模型停留在脆弱的文件系统表象
+- **经验规则**：① 任何消费 task report 路径的 closeout 入口，都必须统一 canonicalize 后再判断归属 ② 必须显式拒绝 traversal、absolute path、symlink file、symlinked report root ③ pending closure / session-end / task-complete guard / reconcile 回写的都应是 canonical repo-relative artifact，而不是宿主传进来的原始字符串
+- **来源**：2026-04-17，closeout follow-up hardening（报告锚点 canonical helper 与相关 acceptance）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-17
+
+### L-71: 锁格式升级不能只做 stale prune，还要考虑 live legacy holder 与 PID reuse 的并存
+- **场景**：pending closure lock / task-complete guard lock 从 legacy 2-field 结构升级到新格式后，单靠“旧锁就删”会误杀仍然活着的升级期 legacy holder；反过来若完全不删，又会把 PID reuse 的旧锁误认成活锁
+- **根因**：把“legacy”与“stale”混为一谈，没有在兼容期同时校验 live holder 与 PID reuse，导致锁升级路径在保守和误删之间摇摆
+- **经验规则**：① 锁格式升级期必须保留 legacy 兼容分支 ② 兼容分支既要识别 live legacy holder，也要继续识别 PID reuse 的伪活锁 ③ 任何 lock prune 都必须建立在“这个 holder 不再代表当前真实活进程”的证据上，而不是仅凭格式老旧
+- **来源**：2026-04-17，closeout follow-up hardening（legacy lock 兼容与 acceptance 回归）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-17
+
+### L-72: pending anchor 的放行条件必须是“唯一最新 changed report”，不能只看它是否曾经 changed 过
+- **场景**：真实 live runtime 回放中，pending closure 指向的是当前长任务真正最新的报告，但 validator 仍把“有多份 changed report”一刀切判成冲突；反过来，如果只看 anchor 曾出现在 changed set 里，旧报告又可能被误认成当前报告
+- **根因**：把“anchor 是否出现过”误当成“anchor 是否仍代表当前最新报告”，缺少对 changed report 新旧顺序与唯一性的判定
+- **经验规则**：① pending anchor 只能在它是唯一最新 changed report 时放行 ② 只要出现更新报告，或同级并列最新报告，就必须继续按 stale fail-closed ③ 负向回归既要覆盖“anchor 不在 changed set”，也要覆盖“anchor 曾 changed 过但已不是最新”
+- **来源**：2026-04-17，live closeout 最终阻塞补丁（pending latest/stale acceptance + root 回放）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-17
+
+### L-73: task-report-register 这类 closeout 入口必须区分 live claim 与显式 runtime env 的权威级别
+- **场景**：真实 closeout 中，一旦 live process claim 已死、但 runtime session 仍可附着，旧实现就无法登记新报告；而如果直接盲信显式 runtime env，又会把 stale runtime、same-repo sibling runtime 或 foreign runtime 错当成本会话
+- **根因**：没有明确 runtime 身份权威顺序，把 live claim、显式 env、host/repo/binding identity 混成一个“能 attach 就算对”的弱模型
+- **经验规则**：① live process claim 始终是第一权威 ② 只有没有可用 live claim 时，显式 `REDCAP_RUNTIME_SESSION_ID + REDCAP_RUNTIME_CAPABILITY` 才能作为恢复入口 ③ 显式 fallback 必须同时校验 host / project_root / binding identity；缺一即 ambiguous / foreign fail-closed
+- **来源**：2026-04-17，live closeout 最终阻塞补丁（binding-aware runtime attach 与 targeted acceptance）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-17
+
+### L-74: marker anchor 与 pending anchor 不能有两套 stale 语义
+- **场景**：pending anchor 已经改成“唯一最新 changed report”后，marker anchor 仍沿用旧条件，导致旧 marker 只要曾经 changed 过，就还能从另一条入口冒充当前报告
+- **根因**：把 pending 与 marker 当成两条独立边缘路径，没有把它们视为同一“当前报告锚点”判定问题，结果 stale 防线只修了一半
+- **经验规则**：① pending / marker anchor 必须共享同一套 uniquely-latest 语义 ② acceptance 必须同时覆盖 marker allow 与 stale reject 两个方向 ③ 若一条路径已升级 stale 规则，所有能把报告送进同一 validator 的兄弟入口都必须同步升级
+- **来源**：2026-04-17，marker stale-anchor follow-up（`redcap-task-report-check.sh` + marker acceptance 补强）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-17
+
+### L-75: acceptance 要锁定目标性质，不能把 root worktree / 当前 HEAD 偶然状态写成硬编码断言
+- **场景**：`layerb-concurrency`、`sessionstart-auto-reconcile-*`、`task-report-check-prefers-anchor` 等 case 在单独跑时能通过，放进 full suite 或遇到 repo HEAD 演化后却随机变红，因为它们实际上断言的是“当前仓库历史刚好长这样”，不是想验证的隔离/锚点性质
+- **根因**：把真实目标性质与环境偶然状态耦合在一起，让 acceptance 依赖 root worktree 残留、前序 case 副作用或特定 commit 形态
+- **经验规则**：① root-sensitive case 优先迁到 fixture repo / validator stub ② 并发场景要断言真正的不变量（如每个 runtime 都写出自己的终态 marker），而不是绑死某一条 blocker/成功路径 ③ 如果一条 case 只在 `all` 模式失败，先怀疑前提污染或环境耦合，而不是先怀疑主逻辑退化
+- **来源**：2026-04-17，marker follow-up 与 acceptance 去脆弱化
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-17
+
+### L-76: acceptance cleanup 不得对真实仓库 task-report 目录做通配删除
+- **场景**：最后一轮 code review 发现，acceptance 脚本残留的 cleanup helper 会对真实仓库 `compass/docs/task-reports` 下的 `zz-acceptance-*` / `zz-review-*` 执行 glob delete；哪怕 helper 已不再是主路径，只要保留，就意味着回归脚本有能力误删开发者工作区文件
+- **根因**：为了追求“清理干净”，把测试隔离问题错误地转化成对真实工作区做模式匹配删除，忽略了 acceptance 清理本身也必须遵守 fail-safe 边界
+- **经验规则**：① acceptance cleanup 只能删除本次 case 明确创建并记录过的精确文件，或直接在 fixture repo / 临时目录里完成隔离 ② 不允许对真实仓库 task-report 目录做通配删除 ③ 对 review 指出的危险 dead helper，若已无必要，应优先直接移除而不是靠“约定不调用”维持安全
+- **来源**：2026-04-17，final code review follow-up（移除 `clear_root_acceptance_task_reports()`）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-17

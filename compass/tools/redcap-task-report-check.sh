@@ -126,7 +126,7 @@ done < <(sort -u "$TMP_CANON_CHANGED_REPORT_LIST" | sed '/^[[:space:]]*$/d')
 
 rm -f "$TMP_REPORT_LIST" "$TMP_CHANGED_REPORT_LIST" "$TMP_CANON_REPORT_LIST" "$TMP_CANON_CHANGED_REPORT_LIST"
 
-pending_anchor_is_uniquely_latest_changed_report() {
+anchored_report_is_uniquely_latest_changed_report() {
     local anchor="$1"
 
     [[ -n "$anchor" && ${#CHANGED_REPORTS[@]} -gt 0 ]] || return 1
@@ -236,7 +236,7 @@ if [[ -n "$ANCHORED_REPORT" && ${#CHANGED_REPORTS[@]} -gt 0 ]]; then
         fi
     done
     if [[ "$ANCHOR_IS_CHANGED" -eq 1 ]]; then
-        if [[ "$(pending_anchor_is_uniquely_latest_changed_report "$ANCHORED_REPORT")" == "1" ]]; then
+        if [[ "$(anchored_report_is_uniquely_latest_changed_report "$ANCHORED_REPORT")" == "1" ]]; then
             ANCHOR_IS_UNIQUE_LATEST_CHANGED=1
         fi
     fi
@@ -328,10 +328,12 @@ if [[ -n "$ANCHORED_REPORT" ]]; then
             exit 1
         fi
     fi
-    if [[ "$ANCHOR_SOURCE" == "marker" && "$ANCHOR_IS_CHANGED" -ne 1 && ${#CONFLICTING_CHANGED_REPORTS[@]} -gt 0 ]]; then
-        echo "[redcap-task-report-check] stale marker anchor conflicts with newer changed task reports:" >&2
-        printf '  - %s\n' "${CONFLICTING_CHANGED_REPORTS[@]}" | sort -u >&2
-        exit 1
+    if [[ "$ANCHOR_SOURCE" == "marker" && ${#CONFLICTING_CHANGED_REPORTS[@]} -gt 0 ]]; then
+        if [[ "$ANCHOR_IS_UNIQUE_LATEST_CHANGED" -ne 1 ]]; then
+            echo "[redcap-task-report-check] stale marker anchor conflicts with newer changed task reports:" >&2
+            printf '  - %s\n' "${CONFLICTING_CHANGED_REPORTS[@]}" | sort -u >&2
+            exit 1
+        fi
     fi
     for VALID in "${VALID_REPORTS[@]}"; do
         if [[ "$VALID" == "$ANCHORED_REPORT" ]]; then
