@@ -529,11 +529,11 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **复现次数**：1
 - **最后命中**：2026-04-12
 
-### L-51: 收尾消息必须能直接抽取“需你确认 / 人工验证 / 后续动作”，不能只给报告路径
+### L-51: 收尾消息必须能直接抽取报告开头的重点摘要，不能只给报告路径
 - **场景**：docs 治理 tranche 的正式报告已经写清了人工检查项与后续动作，但最终回复与飞书通知只说“报告已归档”，导致真正需要人类注意的信息继续被埋在长报告里。进一步修复时又暴露出一个兼容性陷阱：若新模板强制摘要段，却让旧 pending closure 的历史报告一律失效，会反过来卡死补偿式 reconcile
-- **根因**：① task report 模板缺少机器可抽取的收尾摘要段，notify/final 只能传路径 ② 把“报告已存在”误当成“人类已经看到了重点” ③ 新 schema 引入时没有区分“当前新增报告必须升级”与“历史 pending 报告需要兼容读取”的差别
-- **经验规则**：① Layer B task report 开头必须显式提供 `需你确认 / 人工验证 / 后续动作` 三段摘要 ② stdout 收尾摘要、飞书通知与最终回复都要优先顶出这三段，再给报告路径 ③ 新报告门禁升级时，对当前新增报告可以更严格，但对历史 pending closure 必须保留 backward-compatible 读取能力，避免旧义务永远无法清除
-- **来源**：2026-04-12，Norven 阅读 `2026-04-12-docs-governance-audit.md` 后指出信息被埋；随后在显式收尾与 report gate 改造中落地，并经独立 code review 反向暴露兼容性问题后修正
+- **根因**：① task report 模板缺少机器可抽取的开头摘要段，notify/final 只能传路径 ② 把“报告已存在”误当成“人类已经看到了重点” ③ 新 schema 引入时没有区分“当前新增报告必须升级”与“历史 pending closure 报告需要兼容读取”的差别
+- **经验规则**：① Layer B task report 开头必须显式提供可抽取的重点摘要；当前规范是 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置` 四段入口 ② stdout 收尾摘要、飞书通知与最终回复都要优先顶出这组摘要，再给报告路径 ③ 新报告门禁升级时，对当前新增报告可以更严格，但对历史 pending closure 必须保留 backward-compatible 读取能力，避免旧义务永远无法清除
+- **来源**：2026-04-12 初次落地；2026-04-15 升级为“四句先看懂”结构
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-12
@@ -654,3 +654,48 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04
+
+### L-66: 进度汇报若不先交代“现在、上一刀、下一刀、全局位置”，人类会很难接管评审
+- **场景**：即使技术工作已经连续推进，当汇报只给“做了什么”或只给报告路径时，Norven 仍然难以在短时间内判断当前完成度、上一步与下一步的因果关系，以及整条路线的所在位置；改成“当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置”后，状态判断与接管评审明显更顺畅
+- **根因**：状态汇报默认站在执行者视角组织，而不是站在接手评审的人类视角组织；缺少稳定入口结构时，人类必须自己重建上下文，阅读成本会陡增
+- **经验规则**：① 面向 Norven 的状态汇报、阶段汇报、终局摘要与任务报告开头，默认先给“四句先看懂”结构 ② 再长的报告也要先让人类在 15-30 秒内看懂“现在 / 上一步 / 下一步 / 全局位置” ③ 若后文还有人工审核或人工验证项，必须在四句摘要后继续显式顶出，不能埋进长文正文
+- **来源**：2026-04-15，Norven 要求把汇报模板固定为四句入口后落实
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-15
+
+### L-65: 长期路线如果只留在说明文档里，状态很快就会陈旧；必须拆成“机器权威 + 人类说明”
+- **场景**：`framework-upgrade backlog` 最初只有一份 spec 文档，虽然能保住“后面还有哪些阶段”，但随着 A1/A2/B1/B2/B3/E1/F1 等条目陆续落地，文档状态开始明显滞后；人类读不清当前已完成什么，脚本也无法拿它做执行保障
+- **根因**：把“路线说明”与“机器要验证的长期状态”混在一份文档里，既会让 spec 承担不该承担的 authority，又会让真实状态缺少可执行锚点；一旦任务跨会话拉长，状态同步完全靠自觉，迟早漂移
+- **经验规则**：① 长期路线若要进入执行保障，必须拆成机器可读权威（如 `references/backlogs/*.json`）与人类说明文档两层 ② 当前 live task 仍由 `.dev-task.md` 负责，backlog 只管长期路线与阶段状态 ③ 机器权威一旦更新，必须用脚本同步人类说明里的自动摘要区块，否则收尾门应直接报错
+- **来源**：2026-04-14，framework-upgrade backlog 机制化落地
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04
+
+### L-67: 任何断言“当前没有 runtime claim”的 acceptance，都必须在 case 内自行清上下文
+- **场景**：`report-register-requires-claim` 在单独跑时能通过，但放进 `redcap-multi-session-acceptance.sh all` 时会被前序 case 残留的 `REDCAP_HOST_PROCESS_PID` 污染，导致“本应无 claim”却意外附着到旧 claim，从而把真实的负向断言跑成假阳性
+- **根因**：把“脚本开头已经清过一次 runtime context”误当成对每个 case 都成立的前提，忽略了 acceptance 是长脚本顺序执行，前面 case 完全可能重新写入 host pid / capability / recovery 相关环境变量
+- **经验规则**：① 凡是断言“当前没有 runtime/process claim”的 case，必须在 case 内显式执行 `redcap_runtime_clear_context` 并清掉 recovery 相关环境变量 ② 负向用例不能依赖全局初始化，必须在自身内部重建前提 ③ 如果某条 acceptance 只在 `all` 模式失败，先怀疑 case 前提被前序状态污染，而不是先怀疑主逻辑退化
+- **来源**：2026-04-15，修复 `report-register-requires-claim` 在 full acceptance 中的前提污染
+- **影响度**：medium
+- **复现次数**：1
+- **最后命中**：2026-04-15
+
+### L-68: Copilot hook 没有 sessionId 时，可用 `session-state + inuse.<pid>.lock` 补出 repo-owned 身份锚点
+- **场景**：Copilot 的 `sessionStart / sessionEnd` Hook 输入始终不给 `sessionId`，导致当前会话长期停在 `degraded-no-runtime-manifest`，Session Mirror 无法判断“这是不是我自己的 continuity 记录”
+- **根因**：把“宿主没有直接给官方 sessionId”误等同于“RedCap 无法识别当前宿主会话”，忽略了 Copilot 本地 `~/.copilot/session-state/<session_handle>/inuse.<pid>.lock` 与活跃宿主进程链之间其实存在稳定、可验证的对应关系
+- **经验规则**：① 对 Copilot，优先用 repo-owned wrapper 扫描 `session-state/*/inuse.<pid>.lock`，结合当前 hook 进程可见的父进程链定位 `session_handle` ② 找到后生成显式 `session_binding_key=host/copilot/session/<session_handle>`，并把宿主 `plan.md` 路径一并注入 `sessionStart / sessionEnd` 主链 ③ 这层锚点解决的是 RedCap 的宿主兼容，不等于官方 Hook 已经提供 `sessionId`；如果锁或目录结构不可验证，必须诚实回退到 safe degraded
+- **来源**：2026-04-16，Copilot 身份锚点 follow-up（`.github/hooks/scripts/redcap-copilot-session-context.sh` + 当前会话实测）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-16
+
+### L-69: `sessionStart / sessionEnd` 已经落地，不等于 `task-complete` 自动收尾也已经落地
+- **场景**：本轮明明已经有 Copilot `sessionStart / sessionEnd` hook，也已经补好了会话身份锚点，但真实长任务里仍然出现“最终回复已经发出，飞书和其它 must-run completion 逻辑却没执行”的事故。排查后发现，问题不在飞书脚本，而在于 `.dev-task.md` 进入 `task-complete` 时没有任何 repo-owned 物理触发器会自动跑 `redcap-on-complete.sh`
+- **根因**：把“会话开始/结束都有 hook”误当成“任务完成时也一定会自动收尾”，忽略了长对话里最容易漏掉的是**中途不关会话的 task-complete 时刻**。只靠 Agent 自己记得手动执行 `redcap-on-complete.sh`，本质上仍是软约束，不是保障机制
+- **经验规则**：① 对 Copilot，`task-complete` 必须有独立的 repo-owned 物理触发器；当前实现是 `postToolUse -> redcap-layerB-post-tool.sh -> redcap-layerB-task-complete-guard.sh` ② completion guard 需要做去重，并在缺少当前报告 marker 时优先自动登记本轮最新报告，再触发 `redcap-on-complete.sh` ③ 若 pending closure 还锚在旧 confirmed hash 上，不能让它继续永久挡住新收尾；要么重锚到当前 identity，要么显式 supersede，但不能再“看到旧 state 就一律拦住”
+- **来源**：2026-04-16，completion 主链可靠性 follow-up（`postToolUse` task-complete guard + stale pending closure 修复）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-16

@@ -36,6 +36,9 @@ SUBTASK_OF=""
 SOURCE_OF_TRUTH=""
 HOST_SURFACE_POLICY=""
 DELEGATION_BOUNDARY=""
+BACKLOG_SOURCE=""
+BACKLOG_ID=""
+BACKLOG_ITEM=""
 CONFIRMED_HASH=""
 TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ERRORS=()
@@ -75,6 +78,9 @@ else
     SOURCE_OF_TRUTH=$(redcap_dev_task_extract_kv "$TASK_FILE" "source_of_truth" 2>/dev/null || true)
     HOST_SURFACE_POLICY=$(redcap_dev_task_extract_kv "$TASK_FILE" "host_surface_policy" 2>/dev/null || true)
     DELEGATION_BOUNDARY=$(redcap_dev_task_extract_kv "$TASK_FILE" "delegation_boundary" 2>/dev/null || true)
+    BACKLOG_SOURCE=$(redcap_dev_task_extract_kv "$TASK_FILE" "backlog_source" 2>/dev/null || true)
+    BACKLOG_ID=$(redcap_dev_task_extract_kv "$TASK_FILE" "backlog_id" 2>/dev/null || true)
+    BACKLOG_ITEM=$(redcap_dev_task_extract_kv "$TASK_FILE" "backlog_item" 2>/dev/null || true)
     CONFIRMED_HASH=$(redcap_dev_task_confirmed_hash "$TASK_FILE" 2>/dev/null || true)
 
     [[ -n "$TASK_ID" ]] || record_error "missing metadata key: task_id"
@@ -93,6 +99,14 @@ else
     fi
     if [[ -n "$TOP_GOAL" && -n "$ACTIVE_SLICE" && "$TOP_GOAL" != "$ACTIVE_SLICE" && -z "$SUBTASK_OF" ]]; then
         record_error "subtask_of is required when active_slice differs from top_goal"
+    fi
+    if [[ -n "$BACKLOG_SOURCE" || -n "$BACKLOG_ID" || -n "$BACKLOG_ITEM" ]]; then
+        [[ -n "$BACKLOG_SOURCE" ]] || record_error "missing metadata key: backlog_source"
+        [[ -n "$BACKLOG_ID" ]] || record_error "missing metadata key: backlog_id"
+        [[ -n "$BACKLOG_ITEM" ]] || record_error "missing metadata key: backlog_item"
+        if [[ -n "$BACKLOG_SOURCE" && -n "$BACKLOG_ID" && -n "$BACKLOG_ITEM" ]]; then
+            BACKLOG_CHECK_OUTPUT=$(bash "$SCRIPT_DIR/redcap-backlog-check.sh" anchor "$TASK_FILE" 2>&1) || record_error "$BACKLOG_CHECK_OUTPUT"
+        fi
     fi
 fi
 
@@ -119,6 +133,9 @@ if attach_runtime_if_possible; then
     redcap_runtime_write_text "layerB/control-plane/source-of-truth" "$SOURCE_OF_TRUTH" || true
     redcap_runtime_write_text "layerB/control-plane/host-surface-policy" "$HOST_SURFACE_POLICY" || true
     redcap_runtime_write_text "layerB/control-plane/delegation-boundary" "$DELEGATION_BOUNDARY" || true
+    redcap_runtime_write_text "layerB/control-plane/backlog-source" "$BACKLOG_SOURCE" || true
+    redcap_runtime_write_text "layerB/control-plane/backlog-id" "$BACKLOG_ID" || true
+    redcap_runtime_write_text "layerB/control-plane/backlog-item" "$BACKLOG_ITEM" || true
     redcap_runtime_write_text "layerB/control-plane/confirmed.hash" "$CONFIRMED_HASH" || true
     redcap_runtime_write_text "layerB/control-plane/last-reread-at" "$TIMESTAMP" || true
     redcap_runtime_write_text "layerB/control-plane/last-reread-mode" "$MODE" || true

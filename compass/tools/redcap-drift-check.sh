@@ -31,6 +31,9 @@ rm -f /tmp/redcap-pm-gate-hash.$$ /tmp/redcap-drift-check-pm.$$ 2>/dev/null || t
 
 TOP_GOAL=$(redcap_dev_task_extract_kv "$TASK_FILE" "top_goal" 2>/dev/null || true)
 ACTIVE_SLICE=$(redcap_dev_task_extract_kv "$TASK_FILE" "active_slice" 2>/dev/null || true)
+BACKLOG_SOURCE=$(redcap_dev_task_extract_kv "$TASK_FILE" "backlog_source" 2>/dev/null || true)
+BACKLOG_ID=$(redcap_dev_task_extract_kv "$TASK_FILE" "backlog_id" 2>/dev/null || true)
+BACKLOG_ITEM=$(redcap_dev_task_extract_kv "$TASK_FILE" "backlog_item" 2>/dev/null || true)
 ALLOWED_GLOBS=()
 while IFS= read -r line; do
     if [[ -n "$line" ]]; then
@@ -56,9 +59,15 @@ attach_runtime_if_possible() {
 
 STAMPED_HASH=""
 STAMPED_SLICE=""
+STAMPED_BACKLOG_SOURCE=""
+STAMPED_BACKLOG_ID=""
+STAMPED_BACKLOG_ITEM=""
 if attach_runtime_if_possible; then
     STAMPED_HASH=$(redcap_runtime_read_text "layerB/control-plane/confirmed.hash" 2>/dev/null || true)
     STAMPED_SLICE=$(redcap_runtime_read_text "layerB/control-plane/active-slice" 2>/dev/null || true)
+    STAMPED_BACKLOG_SOURCE=$(redcap_runtime_read_text "layerB/control-plane/backlog-source" 2>/dev/null || true)
+    STAMPED_BACKLOG_ID=$(redcap_runtime_read_text "layerB/control-plane/backlog-id" 2>/dev/null || true)
+    STAMPED_BACKLOG_ITEM=$(redcap_runtime_read_text "layerB/control-plane/backlog-item" 2>/dev/null || true)
 
     if [[ -n "$STAMPED_HASH" && "$STAMPED_HASH" != "$CONFIRMED_HASH" ]]; then
         echo "[redcap-drift-check] confirmed requirement hash changed without re-anchor" >&2
@@ -72,16 +81,40 @@ if attach_runtime_if_possible; then
         echo "  current: $ACTIVE_SLICE" >&2
         exit 1
     fi
+    if [[ -n "$STAMPED_BACKLOG_SOURCE" && "$STAMPED_BACKLOG_SOURCE" != "$BACKLOG_SOURCE" ]]; then
+        echo "[redcap-drift-check] backlog_source drift detected" >&2
+        echo "  stamped: $STAMPED_BACKLOG_SOURCE" >&2
+        echo "  current: $BACKLOG_SOURCE" >&2
+        exit 1
+    fi
+    if [[ -n "$STAMPED_BACKLOG_ID" && "$STAMPED_BACKLOG_ID" != "$BACKLOG_ID" ]]; then
+        echo "[redcap-drift-check] backlog_id drift detected" >&2
+        echo "  stamped: $STAMPED_BACKLOG_ID" >&2
+        echo "  current: $BACKLOG_ID" >&2
+        exit 1
+    fi
+    if [[ -n "$STAMPED_BACKLOG_ITEM" && "$STAMPED_BACKLOG_ITEM" != "$BACKLOG_ITEM" ]]; then
+        echo "[redcap-drift-check] backlog_item drift detected" >&2
+        echo "  stamped: $STAMPED_BACKLOG_ITEM" >&2
+        echo "  current: $BACKLOG_ITEM" >&2
+        exit 1
+    fi
 
     redcap_runtime_write_text "layerB/control-plane/confirmed.hash" "$CONFIRMED_HASH" || true
     redcap_runtime_write_text "layerB/control-plane/active-slice" "$ACTIVE_SLICE" || true
     redcap_runtime_write_text "layerB/control-plane/top-goal" "$TOP_GOAL" || true
+    redcap_runtime_write_text "layerB/control-plane/backlog-source" "$BACKLOG_SOURCE" || true
+    redcap_runtime_write_text "layerB/control-plane/backlog-id" "$BACKLOG_ID" || true
+    redcap_runtime_write_text "layerB/control-plane/backlog-item" "$BACKLOG_ITEM" || true
     redcap_runtime_write_text "layerB/control-plane/last-drift-check-at" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
     redcap_runtime_write_text "layerB/control-plane/last-drift-check-mode" "$MODE" || true
 elif [[ -n "$HOST" ]]; then
     COMPAT_PREFIX=$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "legacy-fallback/layerB-${HOST}")
     STAMPED_HASH=$(cat "${COMPAT_PREFIX}-confirmed.hash" 2>/dev/null || true)
     STAMPED_SLICE=$(cat "${COMPAT_PREFIX}-active-slice" 2>/dev/null || true)
+    STAMPED_BACKLOG_SOURCE=$(cat "${COMPAT_PREFIX}-backlog-source" 2>/dev/null || true)
+    STAMPED_BACKLOG_ID=$(cat "${COMPAT_PREFIX}-backlog-id" 2>/dev/null || true)
+    STAMPED_BACKLOG_ITEM=$(cat "${COMPAT_PREFIX}-backlog-item" 2>/dev/null || true)
 
     if [[ -n "$STAMPED_HASH" && "$STAMPED_HASH" != "$CONFIRMED_HASH" ]]; then
         echo "[redcap-drift-check] compat fallback confirmed hash changed without re-anchor" >&2
@@ -95,11 +128,32 @@ elif [[ -n "$HOST" ]]; then
         echo "  current: $ACTIVE_SLICE" >&2
         exit 1
     fi
+    if [[ -n "$STAMPED_BACKLOG_SOURCE" && "$STAMPED_BACKLOG_SOURCE" != "$BACKLOG_SOURCE" ]]; then
+        echo "[redcap-drift-check] compat fallback backlog_source drift detected" >&2
+        echo "  stamped: $STAMPED_BACKLOG_SOURCE" >&2
+        echo "  current: $BACKLOG_SOURCE" >&2
+        exit 1
+    fi
+    if [[ -n "$STAMPED_BACKLOG_ID" && "$STAMPED_BACKLOG_ID" != "$BACKLOG_ID" ]]; then
+        echo "[redcap-drift-check] compat fallback backlog_id drift detected" >&2
+        echo "  stamped: $STAMPED_BACKLOG_ID" >&2
+        echo "  current: $BACKLOG_ID" >&2
+        exit 1
+    fi
+    if [[ -n "$STAMPED_BACKLOG_ITEM" && "$STAMPED_BACKLOG_ITEM" != "$BACKLOG_ITEM" ]]; then
+        echo "[redcap-drift-check] compat fallback backlog_item drift detected" >&2
+        echo "  stamped: $STAMPED_BACKLOG_ITEM" >&2
+        echo "  current: $BACKLOG_ITEM" >&2
+        exit 1
+    fi
 
     mkdir -p "$(dirname "${COMPAT_PREFIX}-confirmed.hash")" 2>/dev/null || true
     printf '%s\n' "$CONFIRMED_HASH" > "${COMPAT_PREFIX}-confirmed.hash"
     printf '%s\n' "$ACTIVE_SLICE" > "${COMPAT_PREFIX}-active-slice"
     printf '%s\n' "$TOP_GOAL" > "${COMPAT_PREFIX}-top-goal"
+    printf '%s\n' "$BACKLOG_SOURCE" > "${COMPAT_PREFIX}-backlog-source"
+    printf '%s\n' "$BACKLOG_ID" > "${COMPAT_PREFIX}-backlog-id"
+    printf '%s\n' "$BACKLOG_ITEM" > "${COMPAT_PREFIX}-backlog-item"
 fi
 
 TMP_FILES=$(mktemp)

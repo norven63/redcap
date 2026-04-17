@@ -14,6 +14,7 @@
 - [ ] 明确说明了 canonical truth 是谁，mirror surface 是谁
 - [ ] 没有把宿主 workboard / session mirror / cli_console / spec 文档误当成 runtime authority
 - [ ] 如果新增了 state / manifest / ledger，说明了它与 `.dev-task.md`、runtime state、task report 的关系
+- [ ] 若当前任务绑定长期路线 backlog，已说明机器权威、`.dev-task.md` 与人类说明文档各自负责什么，且没有互相越权
 
 ## 3. Lifecycle / Artifact Boundary
 
@@ -26,11 +27,14 @@
 - [ ] 本次治理规则若可执行，已经有明确的 gate / validator / script 落点
 - [ ] 本次治理规则若暂不可执行，已被明确标注为 design/debt，而非 runtime guarantee
 - [ ] 若引用了业内标准，已说明“标准要求 → RedCap 映射”的关系
+- [ ] 面向人阅读的 repo-tracked 资产（如 backlog 说明、task report）已提供人话摘要 / 术语对照，并已接入对应检查
+- [ ] 新增或修改的 spec 已遵守 `references/spec-contribution-standard.md`，其文件名 / role / status / summary 满足生命周期准入规则
+- [ ] 若 spec 被标成 `superseded`，它已经迁入 `compass/docs/archive/specs/`，并在 registry 中声明 `replaced_by`
 
 ## 5. Review / Audit / Closure
 
 - [ ] 已说明本 tranche 需要哪些 review 轨道（architecture / governance / contracts）
-- [ ] task report 中会体现“需你确认 / 人工验证 / 后续动作”
+- [ ] task report 中会体现“当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置”
 - [ ] 如有遗留治理债务，已补录到 `compass/knowledge/governance-debt-register.md`
 
 ## 6. 最终结论

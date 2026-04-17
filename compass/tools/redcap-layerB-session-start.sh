@@ -84,6 +84,25 @@ ensure_repo_git_hooks() {
     fi
 }
 
+run_feishu_pending_reminder() {
+    local notifier="$SCRIPT_DIR/feishu-notifier.py"
+    local pending_count=""
+
+    if [[ "${REDCAP_SKIP_FEISHU:-0}" == "1" || ! -f "$notifier" ]]; then
+        return 0
+    fi
+
+    python3 "$notifier" pending-scan >/dev/null 2>&1 || true
+    pending_count=$(python3 "$notifier" pending-count 2>/dev/null || printf '0')
+
+    if [[ ! "$pending_count" =~ ^[1-9][0-9]*$ ]]; then
+        return 0
+    fi
+
+    echo "[redcap-layerB-session-start] 检测到 ${pending_count} 条飞书待处理消息，可用 python3 compass/tools/feishu-notifier.py pending-list 查看" >&2
+    python3 "$notifier" pending-list --limit 3 2>/dev/null | sed 's/^/[redcap-layerB-session-start] /' >&2 || true
+}
+
 if [[ -x "$SCRIPT_DIR/redcap-session-resume-gate.sh" ]]; then
     SESSION_RESUME_GATE_AVAILABLE=1
     if ! load_session_resume_gate || ! session_resume_gate_complete; then
@@ -97,6 +116,8 @@ if [[ -x "$SCRIPT_DIR/redcap-session-resume-gate.sh" ]]; then
         REDCAP_SESSION_RESUME_ALLOW_CAPABILITY_FILE_RECOVERY="0"
     fi
 fi
+
+run_feishu_pending_reminder
 
 HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-$HOST_SESSION_ID}"
 BINDING_KEY="${REDCAP_SESSION_BINDING_KEY:-$BINDING_KEY}"
@@ -219,7 +240,7 @@ if [[ "$REDCAP_SESSION_ISOLATION_MODE" == "full" ]] && [[ -n "$BINDING_KEY" ]] &
             >/dev/null 2>&1 || true
     fi
 
-    redcap_runtime_remove_path "layerB/current-report-path" || true
+    redcap_interop_clear_current_report_marker || true
 
     if [[ "${REDCAP_RUNTIME_CREATED:-0}" == "1" ]]; then
         CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null || true)

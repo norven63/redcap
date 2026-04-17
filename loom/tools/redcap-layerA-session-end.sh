@@ -28,6 +28,9 @@ INPUT=$(cat)
 # 简单的正则解析（不依赖 jq 以保证环境兼容性）
 SESSION_ID=$(echo "$INPUT" | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 CWD=$(echo "$INPUT" | grep -o '"cwd"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+if [[ -z "$SESSION_ID" && -n "${REDCAP_HOST_SESSION_ID:-}" ]]; then
+    SESSION_ID="${REDCAP_HOST_SESSION_ID}"
+fi
 
 if [[ -z "$CWD" ]]; then
     echo "[redcap-hook-proxy] WARN: failed to parse cwd from stdin" >&2

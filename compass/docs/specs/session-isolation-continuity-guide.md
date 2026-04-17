@@ -300,6 +300,15 @@
    但它**不能自动等同于** Copilot CLI 内部用于 `/resume` 的原生 sessionId。
    这也是为什么文档一直坚持把两者拆开，而不是偷懒混成一个字段。
 
+   进一步说，当前 Copilot 的 repo-owned wrapper 会把：
+
+   - `~/.copilot/session-state/<session_handle>/`
+   - `inuse.<pid>.lock`
+   - 当前 hook 进程可见的宿主进程链
+
+   组合起来定位当前会话，再生成 `host/copilot/session/<session_handle>` 这样的显式 `session_binding_key`。  
+   这说明：**`session_handle` 可以成为合法的宿主身份锚点，但它仍然不是在冒充官方 `sessionId`。**
+
 所以更准确的说法是：
 
 > **RedCap 应该自管 continuity authority 内核，但仍保留宿主 mirror 作为可见层。**
@@ -330,6 +339,8 @@
 - 让导入路径可读
 - 让 mirror 上的信息能对应到宿主文件夹
 
+对 Copilot 当前实现，repo-owned wrapper 还会进一步用 `session-state/<handle>/inuse.<pid>.lock` 验证“这个 handle 确实对应当前活跃宿主进程”，再把它翻译成显式 `session_binding_key` 与宿主 `plan.md` 路径，交给 `sessionStart / sessionEnd` 主链。
+
 它**不是** CLI 原生 sessionId。
 
 ### 2. `runtime_session_id`
@@ -342,7 +353,9 @@
 - 标识当前 runtime 私有态属于哪个会话
 - 支撑 helper / hook / pending closure 等运行时状态定位
 
-如果宿主不给稳定 sessionId，RedCap 不能假装自己已经拿到了它；这时只能进入 degraded / mirror-only 路径。
+如果宿主不给稳定 sessionId，RedCap 不能假装自己已经拿到了它；但这不代表一定只能永远 degraded。  
+像 Copilot 当前这条线，虽然 Hook 不直接给 `sessionId`，但 wrapper 仍可以借助本地 `session-state` + `inuse.<pid>.lock` 先拿到**稳定、可验证的宿主身份锚点**，再生成显式 `session_binding_key` 进入 full mode。  
+只有当这层本地证据也拿不到时，才应该退回 degraded / mirror-only 路径。
 
 ### 3. `session_binding_key`
 

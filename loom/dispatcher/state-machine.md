@@ -130,7 +130,7 @@ history:
 paused_from: null
 escalation_stack: []
 blocked_on_user: false
-feishu_record_id: null        # 飞书 ask 记录 ID，用于中断恢复（§5.11）
+feishu_record_id: null        # 飞书等待窗口 ID，用于中断恢复（§5.11）
 pending_actions: []           # §5.13 双保险待办清单
 
 degraded_mode: false
@@ -228,7 +228,7 @@ function dispatch_loop(project_dir):
 
             # 恢复检测：是否存在上次中断遗留的 feishu_record_id？
             if state.feishu_record_id:
-                # 中断恢复：直接轮询旧记录，不新建
+                # 中断恢复：继续等待旧窗口，不新建
                 user_answer = feishu_resume(state.feishu_record_id)  # 前台阻塞
             else:
                 # 新请求：前台阻塞式飞书 ask（无限等待）
@@ -350,7 +350,7 @@ function feishu_notify(message, project=""):
     # result == "OK" | "SKIP"（无配置时）
 
 function feishu_ask(question, project="", fsm_state=""):
-    # 阻塞式：推送到飞书 + 轮询多维表格等待用户回复
+    # 阻塞式：推送到固定单聊 + 轮询等待窗口回复
     result = exec("python3 tools/feishu-notifier.py ask {question} --project {project} --fsm-state {fsm_state}")
     # result == 用户回复内容 | "TIMEOUT" | "SKIP"
     return result

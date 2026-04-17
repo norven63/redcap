@@ -163,6 +163,8 @@ docs(经验): 新增 L-9 飞书架构局限性
 6. **不可用“便于和代码对齐”逃避可读性**：面对 Norven 的文本必须先满足可读，再谈和实现细节对齐。
 7. **优先“说人话”**：如果一句话只有在熟悉 RedCap 内部黑话、缩写或阶段命名的前提下才能读懂，就视为不合格；必须改写成普通读者也能直接理解的表达。
 8. **未约定术语先解释**：凡是此前未与 Norven 明确约定过的内部术语、链路名、缩写、阶段名、治理项名，首次出现必须补“它在仓库里对应哪个文件/功能、做了什么、为什么重要”的解释；不能把解释留到对方追问后再补。
+9. **状态汇报先给“四句先看懂”**：当 Norven 主动追问进展、要求阶段汇报、或任务最终收尾时，开头应优先给出 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置` 四段摘要，再补详细展开。
+10. **`cli_console.md` 只允许做覆盖式镜像**：它不是第二份答案，也不是历史日志；如需镜像长回复，必须保持与最终回复一致，并使用覆盖写入而不是追加堆积。当前可用 `compass/tools/redcap-cli-console-mirror.sh` 统一处理本地镜像。
 
 **执行口径**：本条先以 `compass/CONTRIBUTING.md` + `references/agent-constraints.md` + `compass/soul.md` 共同约束，并由评审 / 验收 / 收尾复盘共同检查；当前**不**新增基于正则的硬钩子，以避免误伤命令、路径、键名与代码片段。
 
@@ -321,11 +323,11 @@ E2E 执行完毕
 
 RedCap 自身变更不走 Dispatcher 主状态机，**主链通知仍需由编辑 RedCap 的 AI Agent 在流程内主动执行**；宿主 SessionEnd Hook 只负责兜底审计与补发，不可把主链通知职责推给 Hook：
 
-**完成通知（必须，自动执行）**：每轮变更全部完成并 git commit 后、结束任务前，**必须自动执行**以下命令（仅通知，不等待回复）：
+**完成通知（必须，自动执行）**：每轮变更全部完成并 git commit 后、结束任务前，**必须自动执行**以下命令（默认会给用户保留一个短时回访窗口；窗口外消息后续进入待处理入口）：
 
 ```bash
 # 消息中须附带本次 commit 记录
-python3 compass/tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>\n\nCommits:\n$(git log --oneline <初始commit>..HEAD)" --project "redcap"
+python3 compass/tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>\n\nCommits:\n$(git log --oneline <初始commit>..HEAD)" --project "redcap" --window-type followup
 ```
 
 > ⚠ 这是强制步骤，不可跳过。通知失败（如 feishu-config.json 不存在）时记录警告但不阻塞任务完成；若主链漏调，SessionEnd Hook 会尝试补发，但这只算兜底，不算合规主路径。
@@ -334,6 +336,7 @@ python3 compass/tools/feishu-notifier.py notify "RedCap 框架变更完成: <简
 
 ```bash
 python3 compass/tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap"
+python3 compass/tools/feishu-notifier.py pending-list --limit 5
 ```
 
 
@@ -441,7 +444,7 @@ governance_debts_addressed: []
   - 校验本轮改动文件不得超出 `## 允许修改范围`
 - `compass/tools/redcap-validator-chain.sh`
   - 统一编排 Layer B 的 session-start / obligation-reconcile / stop-review / on-complete / session-end validator
-  - 当前已覆盖 commit proof、review proof、reanchor、PM Gate、drift、task report、artifact lifecycle 等检查，并输出结构化结果供下游消费
+  - 当前已覆盖 commit proof、review proof、reanchor、PM Gate、drift、backlog、spec registry、task report、artifact lifecycle 等检查，并输出结构化结果供下游消费
   - `session-start` 仍是 advisory / stamp-only，不阻断进入；若发现 outstanding pending closure，只允许通过独立 auto-reconcile helper 尝试核销/收缩**当前可证明的** blocker
   - `stop-review`、RedCap self-dev 的 `on-complete` 与 `session-end` 才是 blocking gate
   - 对非 RedCap 自身项目，`on-complete` 只保留通用的 commit proof，不启用 Layer B 专属的 PM Gate / drift / task-report / artifact lifecycle
@@ -459,10 +462,10 @@ governance_debts_addressed: []
   - 由 `redcap-layerB-session-start.sh` 尝试自动设置 repo-local `core.hooksPath=.githooks`
   - 若仓库原先已经有其他 `core.hooksPath`，必须先写入 `redcap.previousHooksPath`，再由 `.githooks/pre-commit` 在 RedCap 闸门通过后回调旧 hook，避免静默覆盖
 - `compass/tools/redcap-on-complete.sh`
-  - 对 RedCap 自身 on-complete fail-closed 校验 `commit proof + PM Gate + drift + task report + artifact lifecycle`
-  - 若 notify 或 validator-chain 暴露出的 `commit proof / PM Gate / drift / task report / artifact lifecycle` 仍有缺口，必须写回 pending closure，保留下次 reconcile 机会
+  - 对 RedCap 自身 on-complete fail-closed 校验 `commit proof + PM Gate + drift + backlog + spec registry + task report + artifact lifecycle`
+  - 若 notify 或 validator-chain 暴露出的 `commit proof / PM Gate / drift / backlog / spec registry / task report / artifact lifecycle` 仍有缺口，必须写回 pending closure，保留下次 reconcile 机会
 - `compass/tools/redcap-layerB-session-end.sh`
-  - 先消费 `validator-chain session-end` 的 `review proof + reanchor + PM Gate + drift + task report + artifact lifecycle`，再决定 notify / pending closure clear
+  - 先消费 `validator-chain session-end` 的 `review proof + reanchor + PM Gate + drift + backlog + spec registry + task report + artifact lifecycle`，再决定 notify / pending closure clear
   - 若 validator-chain 未产出可判定 step、notify 失败、pending closure 无法清除，或 closure 证据写回失败，必须保留/更新 pending closure；`session-end` 作为 authority reconcile 入口应以当前 blocker set 重写 `required_redlines`
   - 若 blocker 已判定但 `pending closure / closure-ledger` 无法持久化，必须 fail-closed，不能继续按“正常收尾”退出
 - `compass/tools/redcap-pending-closure-reconcile.sh`
@@ -473,8 +476,20 @@ governance_debts_addressed: []
   - 作为宿主通用 SessionEnd 分发器，必须传播 Layer B `session-end` 的 fail-closed 结果，不能用 `|| true` 吞掉 authority 脚本的非零退出
   - Gemini 宿主若接到 Layer B fail-closed，需映射为宿主可识别的 system-block 退出码，而不是继续返回 `allow`
 - `compass/tools/redcap-host-workboard-sync.sh`
-  - 仅向宿主 workboard 写 canonical pointer / confirmed hash
+  - 仅向宿主 workboard 写 canonical pointer / confirmed hash / backlog anchor
   - 不允许反向把需求/验收真相从宿主 workboard 回灌为 RedCap authority
+- `compass/tools/redcap-backlog-check.sh`
+  - 当 `.dev-task.md` 声明 `backlog_source / backlog_id / backlog_item` 时，负责校验当前任务锚点是否存在于机器可读 backlog 权威
+  - `strict` 模式还会检查给人看的 backlog 说明文档是否包含必需的人类摘要结构，并确认自动同步区块没有过期
+  - `sync` 模式会用机器权威重写 backlog 说明里的“当前状态总览（自动同步）”区块，避免“机器状态更新了，人类说明还停在旧版本”
+- `compass/tools/redcap-cli-console-mirror.sh`
+  - 负责把 `cli_console.md` 维护成**覆盖式本地展示镜像**，避免继续追加旧回复而让人误以为这里是第二份历史日志
+  - 它只能帮助“镜像一致”，不能替代最终对话回复本身；如果镜像内容与最终回复不一致，以最终回复为准
+- `compass/tools/redcap-spec-check.sh`
+  - `references/spec-registry.json` 是 `compass/docs/specs/*.md` / `compass/docs/archive/specs/*.md` 的机器登记表；每份 spec 必须声明自己的角色、状态、是否 runtime authority、以及它对应哪条控制面或治理债务
+  - `references/spec-lifecycle-policy.json` 负责声明 spec 能放哪、什么状态必须归档、何时必须补 `replaced_by`
+  - `references/spec-contribution-standard.md` 负责给人说明新增 spec 的命名、role、状态与替代关系该怎么写
+  - 校验目标不是把 spec 变成新 authority，而是防止 `specs/` 再次退化成匿名堆放区；凡是被修改的 spec，必须先在 registry 里说清楚“它是什么、它不是什么、它和哪条执行链相关”
 - `compass/tools/redcap-session-resume-gate.sh`
   - 基于 `references/host-session-capability-matrix.json` 统一判定 Layer B `full / degraded / unsupported` 隔离模式
   - 只有 gate 明确给出 `full` 与受允 recovery path 时，`redcap-layerB-session-start.sh` 才能 attach/create runtime session
@@ -506,6 +521,9 @@ governance_debts_addressed: []
    - 本 tranche 触及了哪些治理边界
    - 哪些规则已经脚本化 / gate 化
    - 哪些仍是 debt，为什么暂不实现
+5. 若任务绑定了长期路线 backlog，`.dev-task.md` 中必须声明 `backlog_source / backlog_id / backlog_item`，并在收尾前确保人类说明文档已由 `redcap-backlog-check.sh sync` 对齐
+6. 若任务修改了 `compass/docs/specs/*.md` 或 `compass/docs/archive/specs/*.md`，必须同步更新 `references/spec-registry.json`；若这份 spec 暂无对应执行链，至少要诚实挂到治理债务，不能假装它已经是 runtime guarantee
+7. 若某份 spec 被新版替代，必须同步执行三件事：移动到 `compass/docs/archive/specs/`、在 registry 中把状态改为 `superseded`、并填写 `replaced_by`
 
 ---
 
@@ -534,6 +552,7 @@ governance_debts_addressed: []
 1. `docs/` 与 `knowledge/` 是**平级不同职**，不得互相吞并。
 2. continuity assets 可以索引、镜像、显式导入，但**不能**直接伪装成 `docs/` evidence。
 3. `compass/docs/index.yaml` 是 docs collection 的 retention / archive 索引；新增 docs collection 前先改它，再改目录。
+4. spec 生命周期的机器策略以 `references/spec-lifecycle-policy.json` 为准；对人解释以 `references/spec-contribution-standard.md` 为准。两者若不一致，先改策略与说明，再继续改 spec 文件。
 
 ---
 
@@ -780,14 +799,15 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 
 1. 若 `.dev-task.md`、Norven 显式授权、或棱镜评审结论已足以锁定当前 tranche / 顺序 / 方案，Cap **不得**因为 overlay skill 的默认流程而再次 ask_user 要求 Norven 重新选择。
 2. overlay skill 可以帮助做规模评估、方案比较、设计表达，但这些产物只能作为 **输入建议**，最终锁定仍由 RedCap-native PM Gate 完成。
-3. 人工介入只允许用于以下场景：
+3. 若 overlay skill 自带“设计完成后继续交给 writing-plans / planning 类宿主下游 skill”的默认后继链，Cap 必须在设计产出落盘后回到 RedCap-native `.dev-task.md` / `plan.md` / PM Gate 继续；缺少这类宿主下游 skill 不是合法 blocker，也不允许因此中断主流程。
+4. 人工介入只允许用于以下场景：
    - 缺少 AI 无法推断的外部事实、凭证、业务偏好或运行时信息
    - 缺少 AI 无法直接执行/验证的人类动作（如 GUI/manual validation）
    - Norven 已明确保留该决策（包括架构方向性变更、外部依赖引入）
-4. 若确需人工介入，必须先在 `.dev-task.md` 或 `explore-notes.md` 中记录 **为什么 AI 不能自己算出来**，再进入 ask_user / need_user / blocked_on_user。
-5. Prism 死锁或 Dispatcher 升级建议本身不构成合法人工介入理由；它们必须先定位到上述某个具体缺口，才能上抛给 Norven。
-6. 共享宿主 skill 属于宿主资产，不属于 RedCap 的 patch surface。Cap 不得通过直接修改宿主 shared skill 的原始文件来让 RedCap 能力“成立”；若不改宿主 skill 就无法稳定工作，则该能力必须在报告与架构口径中标记为 **degraded / unsupported overlay**。
-7. `baton-delegate.sh --skill-path` 这类 skill 外包能力，只允许把 external skill 当作 **leaf worker / evidence producer / advisory helper** 使用；它不得拥有 `.dev-task`、ask_user、状态迁移、commit、通知或收尾 authority。若离开这些权力就无法工作，则仍按 **degraded / unsupported overlay** 处理。
+5. 若确需人工介入，必须先在 `.dev-task.md` 或 `explore-notes.md` 中记录 **为什么 AI 不能自己算出来**，再进入 ask_user / need_user / blocked_on_user。
+6. Prism 死锁或 Dispatcher 升级建议本身不构成合法人工介入理由；它们必须先定位到上述某个具体缺口，才能上抛给 Norven。
+7. 共享宿主 skill 属于宿主资产，不属于 RedCap 的 patch surface。Cap 不得通过直接修改宿主 shared skill 的原始文件来让 RedCap 能力“成立”；若不改宿主 skill 就无法稳定工作，则该能力必须在报告与架构口径中标记为 **degraded / unsupported overlay**。
+8. `baton-delegate.sh --skill-path` 这类 skill 外包能力，只允许把 external skill 当作 **leaf worker / evidence producer / advisory helper** 使用；它不得拥有 `.dev-task`、ask_user、状态迁移、commit、通知或收尾 authority。若离开这些权力就无法工作，则仍按 **degraded / unsupported overlay** 处理。
 
 > **实现口径说明**：这一条当前属于**prompt-level hard limitation + canonical-truth discipline**。由于 ask_user/tool 调用发生在宿主层，仓库内的 shell gate 无法物理拦截每一次升级动作，因此 RedCap 只能在自己的控制面里拒绝承认越权结果；若宿主 shared skill 仍与之冲突，正确结论是该集成处于 **degraded / unsupported**，而不是去改写宿主共享资产本体。
 
@@ -975,9 +995,9 @@ Step 4: 任务完成报告
   - 报告文件最迟需在 SessionEnd 前存在且已纳入 Git（已提交或已暂存均可被审计；建议随最终提交一起归档）
   - 若报告尚未提交，先 `git add <report_path>`，再执行 `bash compass/tools/redcap-task-report-register.sh <claude|gemini|copilot> <report_path>` 显式登记本次任务的报告路径
   - SessionEnd Hook 会审计报告文件是否存在且模板关键章节齐全
-  - 报告开头必须提供 `需你确认 / 人工验证 / 后续动作` 三段摘要；stdout 收尾摘要与飞书通知会直接抽取这三段
-  - 终局对话回复必须先说明：本次做了什么、是否仍需你介入、是否还有遗留 todo；然后再给报告路径
-  - 最终对话回复不得只说“报告已归档”；若这三段中存在非“无”的内容，必须先显式顶出，再给报告路径
+  - 报告开头必须提供 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置` 四段摘要；stdout 收尾摘要与飞书通知会直接优先抽取这四段
+  - 终局对话回复必须先说明：本次做了什么、上一刀是什么、下一刀是什么、当前位于整条路线的哪里；然后再补是否仍需你介入、是否还有遗留 todo 与报告路径
+  - 最终对话回复不得只说“报告已归档”；若 `人工审核要点 / 人工验证项` 中存在非空内容，必须先显式顶出，再给报告路径
 ```
 
 ### 与现有机制的关系

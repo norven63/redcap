@@ -139,6 +139,9 @@ redcap/
 ### Layer B 目录哲学速记
 
 - `compass/docs/`：**冻结后的正式资产**。放 spec、research、trace、task report 这类需要跨会话共享和长期考古的 evidence。
+- `references/backlogs/*.json`：**机器可读的长期路线权威**。负责保存多阶段路线、阶段状态、当前焦点与说明文档锚点；它不替代 `.dev-task.md`。
+- `references/spec-registry.json`：**spec 登记表**。负责说明 `compass/docs/specs/*.md` 各自是什么、现在处于什么状态、以及它和哪条执行链或治理债务相关。
+- `references/spec-lifecycle-policy.json` + `references/spec-contribution-standard.md`：**spec 生命周期策略 + 人类准入规范**。前者给 `redcap-spec-check.sh` 执行，后者给人解释“什么 spec 能进、旧 spec 何时该归档、替代关系怎么写”。
 - `compass/knowledge/`：**活的操作知识**。放 lessons、路由经验、宿主可靠性、调度 heuristics。
 - continuity assets（如 `.dev-task.md`、宿主 `plan.md`、`explore-notes.md`、导入的 session artifacts）：**连续性状态链**，用于防偏航、防上下文稀释与显式继承，不替代 `docs/` 的 frozen evidence 角色。
 

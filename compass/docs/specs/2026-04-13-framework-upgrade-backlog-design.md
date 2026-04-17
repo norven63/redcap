@@ -1,436 +1,137 @@
-# RedCap 框架升级 Backlog 设计
+# RedCap 框架升级路线说明
 
-> **定位**：将 2026-04-11 至 2026-04-13 这整段长任务暴露出的优化点，整理成一份可 review、可切 tranche、可持续实施的完整升级 backlog。
-> 
-> **设计结论先行**：
-> 1. 本 backlog 采用 **5 个能力模块 + 1 个独立治理主线** 的结构。
-> 2. 优先级规则以 **authority / closure / session isolation 是否失真** 为第一判断标准。
-> 3. 真正保障 RedCap 运行的，应当是 **hook、gate、runtime state、脚本、校验器、closure chain**；`specs/docs` 只承担说明、设计冻结与证据职责，不承担 runtime authority。
-
----
-
-## 一、背景与目标
-
-本轮 backlog 不是只回顾最近几轮关于会话隔离的追问，而是把整段长任务自开始以来的演化重新拉通：
-
-1. docs 架构与 artifact lifecycle 混层  
-2. autonomy / ask_user / overlay skill 越界  
-3. Gemini-first but capability-aware 路由治理  
-4. 收尾链（task report / notify / final reply）信息吞没  
-5. continuity assets、session isolation、explicit import、host adapter 边界  
-6. specs/docs/knowledge 的定位漂移  
-7. runtime helper / 文件数量 / authority 证据散落  
-8. 工程治理与业内权威规范如何进入 RedCap 的可执行保障链
-
-本设计的目标不是“列一堆 TODO”，而是给出一份：
-
-- **能 review 的结构**
-- **能切 tranche 的顺序**
-- **能落成 hook/gate/runtime/validator 的升级路线**
+> **机器权威**：`references/backlogs/framework-upgrade.json`
+>  
+> **本文作用**：给 Norven 直接看懂“这条长期路线是什么、现在做到哪、接下来怎么走”。
+>  
+> **边界提醒**：这份文档不替代 `.dev-task.md`，也不替代脚本 / gate / validator。它只负责把路线说清楚。
 
 ---
 
-## 二、Backlog 组织方式
+## 一句话先看懂
 
-### 2.1 总结构
+这份 backlog 现在已经不是“单份设计稿”，而是一套**长期路线机制**：
 
-完整 backlog 分成 **5 个能力模块 + 1 个独立治理主线**：
+1. `references/backlogs/framework-upgrade.json` 负责给脚本读，保存阶段状态、条目状态和当前焦点。
+2. `.dev-task.md` 继续负责给执行链读，保存当前任务的原始输入、确认需求和当前切片。
+3. 本文负责给你读，把术语、人话解释、推进顺序和当前状态说明白。
 
-1. **Authority / Closure 收口**
-2. **会话隔离与连续性**
-3. **宿主适配与交互面**
-4. **文档信息架构与证据分层**
-5. **运行时资产与文件收敛**
-6. **工程治理 / 权威规范升级（独立主线）**
+简单说：**`.dev-task.md` 管“现在这刀”，backlog 管“后面几阶段”，本文管“把这条路线讲明白”。**
 
-### 2.2 每个 backlog 项的统一字段
+## 这份机制管什么 / 不管什么
 
-每个 backlog 项统一包含：
+### 管什么
 
-1. **问题**
-2. **目标状态**
-3. **现有基础**
-4. **未落地项**
-5. **风险**
-6. **验收方式**
+1. 管跨会话的长期路线：哪些阶段已经完成，哪些还没做，当前重点是什么。
+2. 管当前任务和长期路线的锚定关系：`.dev-task.md` 里会写 `backlog_source / backlog_id / backlog_item`。
+3. 管人类可读说明的同步：如果机器权威改了，但本文没同步，收尾门会直接报错。
 
-### 2.3 优先级定义
+### 不管什么
 
-| 级别 | 定义 |
+1. 不接管当前 live task 的执行真相源；那仍然是 `.dev-task.md`。
+2. 不把 spec 文档重新抬成运行时权威；运行保障仍然落在 hook、gate、runtime state、脚本和校验器。
+3. 不替你决定优先级；如果后续阶段要改顺序，仍然要由你和我明确确认。
+
+## 使用方式
+
+1. **开始做某个长期条目时**：在 `.dev-task.md` 里写明 `backlog_source / backlog_id / backlog_item`，把当前任务锚到这条长期路线。
+2. **更新路线状态时**：先改 `references/backlogs/framework-upgrade.json`，再执行  
+   `bash compass/tools/redcap-backlog-check.sh sync .dev-task.md`
+3. **准备收尾时**：现有 PM Gate / drift / validator chain 会自动检查三件事：
+   - `.dev-task.md` 里的 backlog 锚点是否真的存在
+   - 当前任务绑定的 backlog 条目是否能在机器权威里找到
+   - 本文里的自动同步区块是否和机器权威一致
+
+如果你看到“human-readable backlog guide is out of sync”，意思不是代码坏了，而是**路线状态已经改了，但给人看的说明还没同步**。
+
+<!-- redcap:backlog-generated:start -->
+## 当前状态总览（自动同步）
+
+### 这份机制对应哪里
+- 机器权威：`references/backlogs/framework-upgrade.json`
+- 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
+- 当前焦点：`F2 规范到 gate 的翻译链`
+- 当前焦点说明：D1 已完成：spec 生命周期门已补齐；当前继续推进 F2，把更广泛的治理规范继续翻译成可执行 gate。
+
+### 阶段顺序
+| 阶段 | 状态 | 主要条目 | 说明 |
+|---|---|---|---|
+| 阶段 0：长期路线机制化 | 已完成 | F4 | 长期路线已升级成机器权威 + 人类说明 + 门禁接线的正式机制。 |
+| 阶段 1：权威核心加固 | 已完成 | A1 / A2 / E1 / F1 | 权威核心、制品生命周期门与治理基建已经完成。 |
+| 阶段 2：连续性权威中心化 | 已完成 | B1 / B2 / B3 / C1 | 连续性权威、恢复门、显式导入反馈和宿主镜像边界都已落地。 |
+| 阶段 3：治理可执行化 | 进行中 | D1 / F2 / F3 / A3 | D1 已收口；当前继续推进 F2 / F3 / A3，把更多治理规范补成可执行 gate 与审计轨。 |
+| 阶段 4：宿主体验与操作反馈 | 进行中 | C2 / C3 | `cli_console.md` 已补上覆盖式镜像 helper，下一步仍要继续收口 overlay / ask_user 的诚实降级。 |
+| 阶段 5：信息架构与运行时收敛 | 待推进 | D2 / D3 / E2 / E3 | 清理知识导航、docs 保留策略、runtime helper 收敛与统一诊断。 |
+
+### 条目状态
+| 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
+|---|---|---|---|---|
+| A1 收尾账本与义务生命周期统一 | 权威与收尾收口 | 已完成 | P0 | pending closure、收尾账本、陈旧义务核销与 fail-closed 收尾已经并入同一条权威链。 |
+| A2 统一校验链与 PM Gate 加固 | 权威与收尾收口 | 已完成 | P0 | session-start、stop-review、on-complete、session-end 已统一走 validator chain，不再分散漂移。 |
+| A3 三轨评审门（架构 / 治理 / 契约） | 权威与收尾收口 | 待推进 | P1 | 目前已有统一 stop-review 入口，但还没有拆成架构、治理、契约三条专门审计轨。 |
+| B1 RedCap 自持的连续性清单 | 会话隔离与连续性 | 已完成 | P0 | 连续性权威已收口到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`，宿主只读镜像不再冒充真相源。 |
+| B2 会话恢复门与宿主能力矩阵 | 会话隔离与连续性 | 已完成 | P1 | 不同宿主已统一进入 full / degraded / unsupported 模式，恢复门与能力矩阵都已落地。 |
+| B3 显式导入反馈与端到端验收 | 会话隔离与连续性 | 已完成 | P1 | import-ready / import-success 反馈、跨宿主验收与 runtime mismatch fail-closed 都已接通。 |
+| C1 宿主面板只读镜像化 | 宿主适配与交互面 | 已完成 | P1 | 宿主 workboard 已由单一脚本生成 canonical pointer，只能镜像 RedCap 状态，不能反推真相源。 |
+| C2 `cli_console.md` 彻底降格为展示镜像 | 宿主适配与交互面 | 进行中 | P1 | 已补上覆盖式镜像 helper 与规范约束，但由于最终对话输出不归仓库脚本控制，仍未形成完全自动的宿主级强制。 |
+| C3 宿主 overlay / ask_user 诚实降级 | 宿主适配与交互面 | 待推进 | P1 | shared skill 资产边界和 ask_user 规则已写进规范，但还缺机器可审计的诚实降级标记。 |
+| D1 spec 生命周期权威收紧 | 文档与证据分层 | 已完成 | P0 | spec 生命周期策略、归档根目录、replaced_by 关系与命名/role 准入都已接入 spec-check，旧 spec 不再能留在 active specs 根目录里假装当前入口。 |
+| D2 knowledge / docs 边界导航 | 文档与证据分层 | 待推进 | P2 | knowledge 目录已有内容，但还没有统一导航入口，后续仍容易让人不清楚该去哪里找规则。 |
+| D3 docs 保留策略执行化 | 文档与证据分层 | 待推进 | P2 | 保留策略已经写在 docs 索引里，但还缺自动审计、归档日志与 check-only 门。 |
+| E1 制品生命周期提交前闸门 | 运行时资产与文件收敛 | 已完成 | P0 | 分类器、repo-owned pre-commit、mixed-lifecycle 提示与收尾历史审计都已补齐。 |
+| E2 session / runtime helper 收敛 | 运行时资产与文件收敛 | 待推进 | P2 | 运行时 helper 已很多，后续还要再收口共享 API，减少重复读写和脚本体积。 |
+| E3 统一诊断与可观测性 | 运行时资产与文件收敛 | 待推进 | P1 | 目前理解 authority / continuity / drift 状态还要手查多个脚本，缺一条统一 diagnose 入口。 |
+| F1 治理主线制度化与债务表 | 治理与规范可执行化 | 已完成 | P0 | governance_tranche 标记、治理评审清单和治理债务表都已落地，治理已成为独立主线。 |
+| F2 规范到 gate 的翻译链 | 治理与规范可执行化 | 进行中 | P1 | spec-registry + spec-lifecycle-policy + spec-check 已把 spec 维度推进到第二层翻译链，但 hook / lesson / contract 等更广泛的治理映射还没做完。 |
+| F3 hook / lesson / contract / 状态机治理硬化 | 治理与规范可执行化 | 待推进 | P1 | 这些真正保运行的机制还要继续变成脚本化、校验化、可审计化的硬约束。 |
+| F4 backlog 长期路线机制化 | 治理与规范可执行化 | 已完成 | P0 | 机器可读 backlog 权威、人类说明文档自动同步、backlog 门禁与宿主镜像锚点都已落地。 |
+
+### 术语对照
+| 术语 | 人话解释 |
 |---|---|
-| **P0** | 会破坏 authority、closure、session isolation，或导致错误完成态 / 错误升级 / 状态串扰 |
-| **P1** | 不立即破坏真相链，但会持续侵蚀可靠性、宿主一致性、可审计性 |
-| **P2** | 结构优化、文件收敛、归档/索引、长期可维护性项 |
-
----
-
-## 三、模块 A：Authority / Closure 收口
-
-### A1. Closure authority ledger 与 obligation 生命周期统一
-
-- **问题**：closure 目前由 `on-complete`、`session-end`、`pending closure`、task report gate 等多脚本协作完成，但仍缺一个单一的 closure authority ledger。
-- **目标状态**：任何“这次任务是否真的闭环”的判断，都能落回同一条 closure transaction / obligation lifecycle。
-- **现有基础**：
-  - `redcap-on-complete.sh`
-  - `redcap-layerB-session-end.sh`
-  - `redcap-task-report-check.sh`
-  - pending closure 机制已存在
-- **未落地项**：
-  - 建立 closure transaction ledger
-  - obligation 自动核销 / stale obligation 管理
-  - task report mandatory audit fail-closed
-- **优先级**：**P0**
-- **来源合并**：BL-CL-001、BL-CL-002、BL-CL-003
-
-### A2. PM Gate + confirmed hash + validator chain 的硬化
-
-- **问题**：PM Gate、drift-check、task-report-check 等 validator 已存在，但顺序、依赖和 fail-closed 语义还未统一编排。
-- **目标状态**：session-start / stop-review / on-complete 都通过统一 validator chain 驱动，confirmed hash 变化无法被静默绕过。
-- **现有基础**：
-  - `redcap-pm-gate-check.sh`
-  - `redcap-drift-check.sh`
-  - `redcap-task-report-check.sh`
-- **未落地项**：
-  - `redcap-validator-chain.sh`
-  - strict 模式下的 hash/re-anchor 硬门禁
-  - validator 输出结构化结果供下游消费
-- **优先级**：**P0**
-- **来源合并**：BL-AU-001、BL-AU-005
-
-### A3. Governance / contract / architecture 三轨 review
-
-- **问题**：当前 review 更偏 code / logic，authority、contract、lifecycle 类缺口仍可能漏过。
-- **目标状态**：stop-review 至少分成 architecture、governance、contracts 三条审计轨。
-- **现有基础**：
-  - `redcap-on-stop-review.sh`
-  - 独立评审模式
-  - 任务报告自动化验证段
-- **未落地项**：
-  - `redcap-review-governance.sh`
-  - `redcap-review-contracts.sh`
-  - 统一 review gate 汇总
-- **优先级**：**P1**
-- **来源合并**：GOV-008、BL-OBS-002
-
----
-
-## 四、模块 B：会话隔离与连续性
-
-### B1. RedCap-owned continuity manifest
-
-- **问题**：当前 continuity authority 仍散在宿主 session folder、mirror、import metadata、runtime helper 等多处。
-- **目标状态**：RedCap 自己维护唯一 continuity authority；宿主只读取 mirror。
-- **现有基础**：
-  - `redcap-session-continuity.sh`
-  - `Session Mirror`
-  - explicit import protocol
-- **未落地项**：
-  - `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`
-  - import registry / continuity audit log
-  - continuity asset provenance manifest
-- **优先级**：**P0**
-- **来源合并**：SESSION-001、SESSION-005、SESSION-008、SESSION-012
-
-### B2. Session resume gate 与跨宿主能力矩阵
-
-- **问题**：不同宿主 session id / binding 能力差异很大，resume / degraded mode 仍缺统一恢复门。
-- **目标状态**：所有宿主都通过 capability matrix + session-resume-gate 进入对应隔离模式（full / degraded / unsupported）。
-- **现有基础**：
-  - `redcap-layerB-session-start.sh`
-  - `loom/dispatcher/agent-adapters.md`
-  - 现有 session matrix 文档
-- **未落地项**：
-  - `redcap-session-resume-gate.sh`
-  - host capability check
-  - isolation mode 明确落盘与展示
-- **优先级**：**P1**
-- **来源合并**：SESSION-004、SESSION-011、BL-MS-001
-
-### B3. Explicit import 的 operator feedback 与 E2E 验收
-
-- **问题**：explicit import 目前可用，但 suggestion/acceptance 的用户反馈和端到端验收仍不完整。
-- **目标状态**：import-ready signal、import success summary、跨宿主/跨 agent 的 E2E 验证都可执行。
-- **现有基础**：
-  - `redcap-session-continuity.sh import`
-  - 当前 `import-suggested` / `imported` 状态
-- **未落地项**：
-  - import-ready signal
-  - multi-session import acceptance
-  - 跨宿主兼容性矩阵
-- **优先级**：**P1**
-- **来源合并**：SESSION-006、BL-MS-002
-
----
-
-## 五、模块 C：宿主适配与交互面
-
-### C1. Host mirror-only enforcement 与统一 mirror generator
-
-- **问题**：workboard mirror 由多个工具写入，且 mirror-only 原则目前主要靠文档约束。
-- **目标状态**：镜像块由单一生成器负责，宿主不可反向推动 canonical truth。
-- **现有基础**：
-  - `redcap-host-workboard-sync.sh`
-  - `redcap-session-continuity.sh`
-  - Session Mirror 约定
-- **未落地项**：
-  - `redcap-mirror-gen.sh`
-  - host workboard read+validate
-  - mirror drift audit
-- **优先级**：**P1**
-- **来源合并**：BL-AU-002、SESSION-003
-
-### C2. `cli_console.md` 降格为 mirror-only display
-
-- **问题**：`cli_console.md` 曾被当成第二份答案，破坏单一阅读面。
-- **目标状态**：它只镜像当前长回复，不承担 authority，不累积为历史日志。
-- **现有基础**：
-  - 用户偏好已明确
-  - 当前已手工纠偏
-- **未落地项**：
-  - mirror-only 规则写入治理
-  - 如有需要，自动生成/覆盖而非追加堆积
-- **优先级**：**P1**
-- **来源合并**：SESSION-002
-
-### C3. 宿主 overlay / shared skill / ask_user 的诚实降级
-
-- **问题**：共享宿主 skill 所有权、overlay ask_user 违规、host event orchestration 仍分散。
-- **目标状态**：shared skill ownership、unsupported overlay、host event emission 都有可执行标记与审计。
-- **现有基础**：
-  - autonomy-escalation-p0 已收口 shared skill 资产边界
-  - ask_user 规则已进入 SKILL / CONTRIBUTING
-- **未落地项**：
-  - `.skill-ownership.yaml`
-  - ask_user honest degradation 标记
-  - host event orchestrator
-- **优先级**：**P1**
-- **来源合并**：BL-AU-003、BL-AU-006、SESSION-010
-
----
-
-## 六、模块 D：文档信息架构与证据分层
-
-### D1. Specs 生命周期收紧
-
-- **问题**：`specs/` 已出现“冻结契约、调查笔记、临时设计、过程材料”混装。
-- **目标状态**：spec 只承载长期冻结设计契约；运行保障必须落在 hook/gate/runtime/validator，不得靠 spec 文案兜底。
-- **现有基础**：
-  - `compass/docs/index.yaml`
-  - docs 治理 tranche 已完成第一轮分层
-- **未落地项**：
-  - spec registry / approval status
-  - specs 准入门与迁移门
-  - specs → archive / research / task-reports 的归位规则
-- **优先级**：**P0**
-- **来源合并**：GOV-001、SESSION-007
-
-### D2. Knowledge / lessons / docs 的边界导航
-
-- **问题**：`compass/knowledge/` 中 principles、lessons、host behavior、notes 仍偏散；新贡献者不易判断该改哪里。
-- **目标状态**：knowledge 有清晰 INDEX，docs / knowledge / continuity 各归其位。
-- **现有基础**：
-  - 目录哲学已在 ARCHITECTURE 落下
-  - `lessons.md`、`design-principles.md` 已存在
-- **未落地项**：
-  - `compass/knowledge/INDEX.md`
-  - 各 knowledge 文件头信息
-  - 引用导航规则
-- **优先级**：**P2**
-- **来源合并**：GOV-009
-
-### D3. Docs retention / archive enforcement
-
-- **问题**：retention policy 已有文档化规则，但还没有自动 enforcement。
-- **目标状态**：archive 不是“将来再说”，而是有检查脚本与 archive log 的机制。
-- **现有基础**：
-  - `compass/docs/index.yaml`
-  - archive 目录约定
-- **未落地项**：
-  - `redcap-docs-retention-audit.sh`
-  - `ARCHIVE_LOG.md`
-  - CI check-only 审计
-- **优先级**：**P2**
-- **来源合并**：GOV-010
-
----
-
-## 七、模块 E：运行时资产与文件收敛
-
-### E1. Artifact lifecycle enforcement
-
-- **问题**：生命周期分类已文档化，但还缺物理门禁，仍可能把 session/cache/local-only 文件带进 git。
-- **目标状态**：pre-commit / classifier 在提交前就阻断错误 artifact。
-- **现有基础**：
-  - `.gitignore`
-  - `compass/docs/index.yaml`
-  - artifact lifecycle 口径已落入 ARCHITECTURE / CONTRIBUTING
-- **未落地项**：
-  - artifact classifier
-  - pre-commit lifecycle enforcement
-  - mixed-lifecycle commit 阻断
-- **优先级**：**P0**
-- **来源合并**：GOV-002
-
-### E2. Session/runtime helper 收敛
-
-- **问题**：session/runtime helper 脚本数量偏多，状态读写逻辑重复。
-- **目标状态**：把高频 state read/write、CAS、continuity helpers 抽到共享库，减少分散脚本体积。
-- **现有基础**：
-  - `redcap-runtime-state.sh`
-  - 已有多脚本共享模式
-- **未落地项**：
-  - `compass/lib/redcap-session.sh`
-  - runtime/continuity 统一 API
-  - duplicated logic shrink
-- **优先级**：**P2**
-- **来源合并**：SESSION-009
-
-### E3. 统一诊断与 authority/continuity 可观测性
-
-- **问题**：当前要理解 session / closure / drift / hook / debt 状态，需要手工查多个脚本与文件。
-- **目标状态**：一条 diagnose 命令能给出当前运行态和治理态。
-- **现有基础**：
-  - 现有 runtime helpers 与各类 gate
-- **未落地项**：
-  - `redcap-diagnose.sh`
-  - authority chain trace / audit visualization
-- **优先级**：**P1**
-- **来源合并**：BL-OBS-001、BL-OBS-002
-
----
-
-## 八、模块 F：工程治理 / 权威规范升级（独立主线）
-
-### F1. Governance tranche 制度化 + debt register
-
-- **问题**：治理项经常在实现后半段才被想起，缺少作为 1st-class 主线的追踪机制。
-- **目标状态**：治理 tranche、治理 review checklist、governance debt register 都成为显式机制。
-- **现有基础**：
-  - 最近多轮 tranche 已产出大量治理经验
-  - 你已明确要求把这条单列为独立主线
-- **未落地项**：
-  - governance_tranche 标记
-  - governance review checklist
-  - governance debt register
-- **优先级**：**P0**
-- **来源合并**：BL-GOV-001、BL-GOV-003
-
-### F2. Specs-to-gates translation / executable norms
-
-- **问题**：设计与规范常常停留在文档层，没有转成可执行 gate / validator / script。
-- **目标状态**：能落地的规范都必须进入 RedCap 的可执行保障链；不能落地的只能算研究/说明，不算 runtime 约束。
-- **现有基础**：
-  - 设计文档与脚本雏形很多
-  - 但映射关系还没正式化
-- **未落地项**：
-  - spec compliance audit
-  - executable tag / validator linkage
-  - 业内规范引入与映射规则
-- **优先级**：**P1**
-- **来源合并**：GOV-003、BL-GOV-002
-
-### F3. Hook / lesson / contract / FSM 的治理硬化
-
-- **问题**：hook chain completeness、lessons 作为 guard rail、outbox schema、FSM canonical source 等都已有口头或文档规则，但执行面仍不够硬。
-- **目标状态**：这些“真正保障运行的机制”全部具备脚本化、校验化、可审计化表达。
-- **现有基础**：
-  - hook-standards
-  - lessons
-  - role handbooks
-  - state machine 文档
-- **未落地项**：
-  - hook phase reporter + hook chain audit
-  - lesson injector / lesson compliance audit
-  - outbox schemas / role contract validator
-  - canonical FSM YAML
-- **优先级**：**P1**
-- **来源合并**：GOV-004、GOV-005、GOV-006、GOV-007、BL-AU-004
-
----
-
-## 九、建议的 tranche 顺序
-
-### Tranche 1 — Authority Core Hardening
-
-优先做：
-
-1. A1 Closure authority ledger
-2. A2 Validator chain + PM Gate/hash hardening
-3. E1 Artifact lifecycle enforcement
-4. F1 Governance tranche + debt register
-
-**理由**：先把 authority / closure / lifecycle 三条底座收紧，后面其它改造才不会继续建立在散落 authority 上。
-
-### Tranche 2 — Continuity Authority Centralization
-
-优先做：
-
-1. B1 RedCap-owned continuity manifest
-2. B2 Session resume gate + host capability matrix
-3. C1 Mirror generator + host mirror-only enforcement
-
-**理由**：先把 continuity authority 和 host mirror 切开，再做 import 反馈、文件收敛才不会反复返工。
-
-### Tranche 3 — Governance Executability
-
-优先做：
-
-1. F2 Specs-to-gates translation
-2. F3 Hook / lesson / contract / FSM hardening
-3. A3 三轨 review gate
-
-**理由**：把“规范不能只停在文档层”这件事真正变成 RedCap 的可执行能力。
-
-### Tranche 4 — Host UX & Operator Feedback
-
-优先做：
-
-1. B3 Explicit import feedback + E2E
-2. C2 `cli_console.md` mirror-only
-3. C3 shared skill / ask_user honest degradation
-
-**理由**：这一层主要收口宿主体验和诚实降级，不应该早于 authority core。
-
-### Tranche 5 — IA Cleanup & Tool Consolidation
-
-优先做：
-
-1. D1 Specs lifecycle收紧
-2. D2 Knowledge index
-3. D3 Docs retention enforcement
-4. E2 Runtime helper收敛
-5. E3 Diagnose / observability
-
-**理由**：这是结构优化与长期维护层，重要但不应先于 authority/closure/continuity 核心。
-
----
-
-## 十、非目标
-
-本 backlog **不**包含：
-
-1. 重新推翻 `.dev-task.md` 作为 Layer B canonical truth 的地位  
-2. 默认自动 takeover 最近会话  
-3. 通过修改共享宿主 skill 原件来让 RedCap 自身能力成立  
-4. 把 `specs` 文档重新提升为 runtime authority  
-5. 在用户无感知时静默启用 `git worktree`
-
----
-
-## 十一、评审输入来源
-
-本设计综合了 3 路独立 backlog review：
-
-1. `authority-backlog-review`：authority / closure / autonomy / runtime guarantees
-2. `continuity-backlog-review`：session isolation / host adapter / file consolidation
-3. `governance-norms-review`：governance / specs / docs / executable norms
-
-这些 review 的原始输出不会直接成为 backlog 权威；它们只是本设计的输入证据。
-
----
-
-## 十二、一句话总结
-
-这份 backlog 的核心不是“再补几篇文档”或“再多加几个脚本”，而是把 RedCap 下一阶段的升级方向明确成：
-
-> **先收 authority，再收 continuity，再把治理与规范翻译成 hook / gate / runtime state / 脚本 / 校验器 / closure chain 的可执行保障。**
+| backlog（长期路线） | 用来保存“这轮之后还要继续做什么”的跨会话路线表。它不接管当前任务执行细节，只负责长期保持。 |
+| active_slice（当前执行切片） | `.dev-task.md` 里的当前这一刀；它告诉脚本“现在正在做哪部分”，不等于整个长期路线。 |
+| validator chain（统一校验链） | 把 PM Gate、漂移检查、任务报告检查、制品生命周期检查等串成一条 fail-closed（失败即阻断）执行链。 |
+| mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
+| spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
+<!-- redcap:backlog-generated:end -->
+
+
+
+
+
+
+
+
+## 后续推进顺序
+
+1. **先做“阶段 0：长期路线机制化”**  
+   先把 backlog 本身变成正式机制，后面阶段才不会再次退回“只靠一份说明文档记忆路线”。
+
+2. **阶段 1 和阶段 2 目前都已完成**  
+   权威核心、制品生命周期门、连续性权威、恢复门、显式导入反馈和宿主只读镜像边界，都已经有脚本和验收支撑，不是停留在文档层。
+
+3. **下一批真正待做的重点，是阶段 3 与阶段 4**  
+   - 阶段 3：继续把 spec / governance / hook / lesson / contract 这些规则翻成 gate 和 validator  
+   - 阶段 4：解决 `cli_console.md`、overlay / ask_user 这类宿主体验和诚实降级问题
+
+4. **阶段 5 是长期维护层**  
+   knowledge 导航、docs 保留策略、runtime helper 收敛、统一诊断都很重要，但应晚于前面的权威与治理硬化。
+
+## 为什么现在要先补这套机制
+
+因为你已经明确指出两个真实问题：
+
+1. **旧 backlog 太像普通说明文档，缺执行保障**  
+   这会导致“路线有价值，但状态容易陈旧”，久了又回到靠人脑记忆。
+
+2. **旧 backlog 对人不够友好**  
+   就算里面有路线，如果写法还是黑话堆叠，阅读成本依旧高，人类很难持续 review。
+
+所以这次不是单纯“再写一份新文档”，而是把 backlog 分成三层：
+
+1. **机器权威**：`references/backlogs/framework-upgrade.json`
+2. **执行锚点**：`.dev-task.md`
+3. **人类说明**：本文
+
+这样才同时满足“可执行”“可追踪”“可读”三件事。

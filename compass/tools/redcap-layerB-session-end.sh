@@ -25,7 +25,7 @@ source "$SCRIPT_DIR/redcap-interop-governance.sh"
 source "$SCRIPT_DIR/redcap-notify-format.sh"
 source "$SCRIPT_DIR/redcap-validator-output.sh"
 
-VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
+VALIDATOR_CHAIN="${REDCAP_VALIDATOR_CHAIN_SCRIPT:-$SCRIPT_DIR/redcap-validator-chain.sh}"
 
 HOOK_CWD="${REDCAP_HOOK_CWD:-$REDCAP_ROOT}"
 HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-}"
@@ -96,6 +96,7 @@ fi
 PENDING_CLOSURE_STATE=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
 PENDING_CLOSURE_EXISTS=0
 PENDING_REQUIRED_REDLINES=""
+PENDING_ARTIFACT_PATH=""
 PENDING_BASELINE_HEAD=""
 PENDING_AUDITED_HEAD=""
 PENDING_UPDATED_AT=""
@@ -104,6 +105,7 @@ PENDING_CLOSURE_HEAD_MISMATCH=0
 if [[ -n "$PENDING_CLOSURE_STATE" && -f "$PENDING_CLOSURE_STATE" ]]; then
     PENDING_CLOSURE_EXISTS=1
     PENDING_REQUIRED_REDLINES=$(redcap_interop_read_state_field "$PENDING_CLOSURE_STATE" "required_redlines" 2>/dev/null || true)
+    PENDING_ARTIFACT_PATH=$(redcap_interop_read_state_field "$PENDING_CLOSURE_STATE" "artifact_path" 2>/dev/null || true)
     PENDING_BASELINE_HEAD=$(redcap_interop_read_state_field "$PENDING_CLOSURE_STATE" "baseline_head" 2>/dev/null || true)
     PENDING_AUDITED_HEAD=$(redcap_interop_read_state_field "$PENDING_CLOSURE_STATE" "audited_head" 2>/dev/null || true)
     PENDING_UPDATED_AT=$(redcap_interop_read_state_field "$PENDING_CLOSURE_STATE" "updated_at" 2>/dev/null || true)
@@ -114,7 +116,7 @@ fi
 
 cleanup_session_files() {
     rm -f "$HEAD_FILE" 2>/dev/null || true
-    redcap_runtime_remove_path "layerB/current-report-path" || true
+    redcap_interop_clear_current_report_marker || true
     if [[ "$HOST" == "claude" && "$USED_LEGACY_CLAUDE_HEAD" == "1" && -f "$LEGACY_CLAUDE_HEAD_FILE" ]]; then
         if redcap_runtime_quarantine_legacy_path "$HOOK_CWD" "$LEGACY_CLAUDE_HEAD_FILE" "layerB-session-end-legacy-quarantine" "host=$HOST"; then
             echo "[redcap-layerB-session-end] quarantined legacy Claude head marker: $LEGACY_CLAUDE_HEAD_FILE" >&2
@@ -227,6 +229,18 @@ record_session_end_validator_steps() {
         fail) record_session_end_phase "drift" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
     esac
 
+    status=$(redcap_validator_step_status "$output" "backlog-check")
+    case "$status" in
+        pass) record_session_end_phase "backlog" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+        fail) record_session_end_phase "backlog" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+    esac
+
+    status=$(redcap_validator_step_status "$output" "spec-check")
+    case "$status" in
+        pass) record_session_end_phase "spec" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+        fail) record_session_end_phase "spec" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+    esac
+
     status=$(redcap_validator_step_status "$output" "task-report-check")
     case "$status" in
         pass) record_session_end_phase "task-report" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
@@ -297,11 +311,13 @@ EOF
 fi
 
 COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..$CURRENT_HEAD" 2>/dev/null || echo "(无法获取)")
-NOTIFIER="$SCRIPT_DIR/feishu-notifier.py"
+NOTIFIER="${REDCAP_FEISHU_NOTIFIER:-$SCRIPT_DIR/feishu-notifier.py}"
 SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
+NOTIFY_TIMEOUT_SECONDS="${REDCAP_FEISHU_NOTIFY_TIMEOUT_SECONDS:-5}"
 REVIEW_STATUS=""
 REQUIRED_REDLINES=""
 NOTIFY_STATUS=1
+SUCCESS_GUARD_LOCK_HELD=0
 
 if [[ -f "$REVIEW_RESULT_FILE" ]]; then
     REVIEW_STATUS=$(cat "$REVIEW_RESULT_FILE" 2>/dev/null || true)
@@ -343,8 +359,42 @@ notification_state_key() {
     printf '%s\n' "$CURRENT_HEAD|$REQUIRED_REDLINES|${SESSION_END_PERSISTENCE_DETAIL:-none}"
 }
 
+session_end_report_rel_path() {
+    local rel_path="${1:-}"
+
+    [[ -n "$rel_path" ]] || return 1
+    redcap_interop_resolve_report_rel_path "$REDCAP_ROOT" "$rel_path" 2>/dev/null
+}
+
+session_end_report_artifact_path() {
+    local marker_rel=""
+    local resolved_rel=""
+
+    resolved_rel=$(session_end_report_rel_path "$REPORT_OUTPUT" || true)
+    if [[ -n "$resolved_rel" ]]; then
+        printf '%s\n' "$resolved_rel"
+        return 0
+    fi
+
+    marker_rel=$(redcap_interop_current_report_marker_rel "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+    resolved_rel=$(session_end_report_rel_path "$marker_rel" || true)
+    if [[ -n "$resolved_rel" ]]; then
+        printf '%s\n' "$resolved_rel"
+        return 0
+    fi
+
+    resolved_rel=$(session_end_report_rel_path "$PENDING_ARTIFACT_PATH" || true)
+    if [[ -n "$resolved_rel" ]]; then
+        printf '%s\n' "$resolved_rel"
+        return 0
+    fi
+
+    return 1
+}
+
 send_notification() {
     local message="$1"
+    local window_type="${2:-none}"
 
     if [[ "$SKIP_FEISHU" == "1" ]]; then
         return 0
@@ -354,8 +404,68 @@ send_notification() {
         return 1
     fi
 
-    python3 "$NOTIFIER" notify "$message" --project "redcap" 2>/dev/null
+    if [[ "$NOTIFY_TIMEOUT_SECONDS" =~ ^[0-9]+$ ]] && [[ "$NOTIFY_TIMEOUT_SECONDS" -gt 0 ]]; then
+        REDCAP_NOTIFY_MESSAGE="$message" \
+        REDCAP_NOTIFY_WINDOW_TYPE="$window_type" \
+        REDCAP_NOTIFY_TIMEOUT_SECONDS="$NOTIFY_TIMEOUT_SECONDS" \
+            python3 - "$NOTIFIER" <<'PY' 2>/dev/null
+import os
+import subprocess
+import sys
+
+notifier = sys.argv[1]
+message = os.environ["REDCAP_NOTIFY_MESSAGE"]
+window_type = os.environ["REDCAP_NOTIFY_WINDOW_TYPE"]
+timeout_seconds = int(os.environ["REDCAP_NOTIFY_TIMEOUT_SECONDS"])
+
+try:
+    result = subprocess.run(
+        [
+            "python3",
+            notifier,
+            "notify",
+            message,
+            "--project",
+            "redcap",
+            "--window-type",
+            window_type,
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=timeout_seconds,
+    )
+except subprocess.TimeoutExpired:
+    sys.exit(124)
+
+sys.exit(result.returncode)
+PY
+        return $?
+    fi
+
+    python3 "$NOTIFIER" notify \
+        "$message" \
+        --project "redcap" \
+        --window-type "$window_type" \
+        2>/dev/null
 }
+
+acquire_success_guard_lock() {
+    if redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        SUCCESS_GUARD_LOCK_HELD=1
+        return 0
+    fi
+    return 1
+}
+
+release_success_guard_lock() {
+    if [[ "$SUCCESS_GUARD_LOCK_HELD" -eq 1 ]]; then
+        redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1 || true
+        SUCCESS_GUARD_LOCK_HELD=0
+    fi
+}
+
+trap 'release_success_guard_lock' EXIT
 
 REVIEW_REQUIRED=0
 if [[ "$SKIP_REVIEW" != "1" && ( "$BASELINE" != "$CURRENT_HEAD" || "$PENDING_REVIEW_REQUIRED" -eq 1 ) ]]; then
@@ -368,7 +478,12 @@ DRIFT_OUTPUT=""
 DRIFT_STATUS=0
 ARTIFACT_OUTPUT=""
 ARTIFACT_STATUS=0
+BACKLOG_OUTPUT=""
+BACKLOG_STATUS=0
+SPEC_OUTPUT=""
+SPEC_STATUS=0
 REPORT_OUTPUT=""
+REPORT_ARTIFACT_PATH=""
 REPORT_STATUS=0
 REVIEW_PASSED=0
 REVIEW_PROOF_OUTPUT=""
@@ -384,10 +499,10 @@ COMPENSATION_WARNING_KEY=""
 ALERT_BODY=""
 
 if ! run_session_end_validator_chain; then
-    if ! redcap_validator_output_has_recordable_step "$SESSION_END_VALIDATOR_OUTPUT" review-proof-check reanchor-check pm-gate drift-check task-report-check artifact-lifecycle-check; then
+    if ! redcap_validator_output_has_recordable_step "$SESSION_END_VALIDATOR_OUTPUT" review-proof-check reanchor-check pm-gate drift-check backlog-check spec-check task-report-check artifact-lifecycle-check; then
         VALIDATOR_INFRA_FAILURE=1
     fi
-elif ! redcap_validator_output_has_recordable_step "$SESSION_END_VALIDATOR_OUTPUT" review-proof-check reanchor-check pm-gate drift-check task-report-check artifact-lifecycle-check; then
+elif ! redcap_validator_output_has_recordable_step "$SESSION_END_VALIDATOR_OUTPUT" review-proof-check reanchor-check pm-gate drift-check backlog-check spec-check task-report-check artifact-lifecycle-check; then
     VALIDATOR_INFRA_FAILURE=1
 fi
 
@@ -396,6 +511,8 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 ]]; then
     REANCHOR_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "reanchor-check")
     PM_GATE_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "pm-gate")
     DRIFT_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "drift-check")
+    BACKLOG_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "backlog-check")
+    SPEC_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "spec-check")
     REPORT_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "task-report-check")
     ARTIFACT_OUTPUT=$(redcap_validator_step_detail "$SESSION_END_VALIDATOR_OUTPUT" "artifact-lifecycle-check")
 
@@ -403,115 +520,44 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 ]]; then
     [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "reanchor-check")" == "pass" ]] && REANCHOR_STATUS=1
     [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "pm-gate")" == "pass" ]] && PM_GATE_STATUS=1
     [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "drift-check")" == "pass" ]] && DRIFT_STATUS=1
+    [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "backlog-check")" == "pass" ]] && BACKLOG_STATUS=1
+    [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "spec-check")" == "pass" ]] && SPEC_STATUS=1
     [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "task-report-check")" == "pass" ]] && REPORT_STATUS=1
     [[ "$(redcap_validator_step_status "$SESSION_END_VALIDATOR_OUTPUT" "artifact-lifecycle-check")" == "pass" ]] && ARTIFACT_STATUS=1
+    REPORT_ARTIFACT_PATH=$(session_end_report_artifact_path 2>/dev/null || true)
 
-    if ! record_session_end_validator_steps "$SESSION_END_VALIDATOR_OUTPUT" "$REPORT_OUTPUT"; then
+    if ! record_session_end_validator_steps "$SESSION_END_VALIDATOR_OUTPUT" "$REPORT_ARTIFACT_PATH"; then
         mark_session_end_persistence_failure \
             "session-end-validator-ledger-write-failed" \
             "phase=validator-steps"
     fi
 else
-    if ! record_session_end_phase "validator-chain" "fail" "validator chain failed before recordable step output: ${SESSION_END_VALIDATOR_OUTPUT:-none}" "$REPORT_OUTPUT"; then
+    REPORT_ARTIFACT_PATH=$(session_end_report_artifact_path 2>/dev/null || true)
+    if ! record_session_end_phase "validator-chain" "fail" "validator chain failed before recordable step output: ${SESSION_END_VALIDATOR_OUTPUT:-none}" "$REPORT_ARTIFACT_PATH"; then
         mark_session_end_persistence_failure \
             "session-end-validator-ledger-write-failed" \
             "phase=validator-chain"
     fi
 fi
 
-if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1 && "$ARTIFACT_STATUS" -eq 1 && "$REVIEW_PASSED" -eq 1 && "$REANCHOR_STATUS" -eq 1 ]]; then
+if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_STATUS" -eq 1 && "$DRIFT_STATUS" -eq 1 && "$BACKLOG_STATUS" -eq 1 && "$SPEC_STATUS" -eq 1 && "$ARTIFACT_STATUS" -eq 1 && "$REVIEW_PASSED" -eq 1 && "$REANCHOR_STATUS" -eq 1 ]]; then
     PENDING_CLEAR_STATUS=1
     CURRENT_PENDING_EXISTS=0
     if [[ "$PENDING_CLOSURE_EXISTS" == "1" ]]; then
         CURRENT_PENDING_EXISTS=1
-        if ! redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        if [[ -z "$PENDING_UPDATED_AT" ]] || ! redcap_interop_clear_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "session-end-cleared" \
+            "host=$HOST current_head=$CURRENT_HEAD" \
+            "$PENDING_UPDATED_AT" \
+            >/dev/null 2>&1; then
             PENDING_CLEAR_STATUS=0
-        else
-            LOCKED_PENDING_STATE=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
-            if [[ -z "$LOCKED_PENDING_STATE" || ! -f "$LOCKED_PENDING_STATE" ]]; then
-                PENDING_CLEAR_STATUS=0
-            else
-                LOCKED_PENDING_UPDATED_AT=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "updated_at" 2>/dev/null || true)
-                LOCKED_PENDING_HOST=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "host" 2>/dev/null || true)
-                LOCKED_PENDING_TRIGGER=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "trigger" 2>/dev/null || true)
-                LOCKED_PENDING_BASELINE=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "baseline_head" 2>/dev/null || true)
-                LOCKED_PENDING_AUDITED=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "audited_head" 2>/dev/null || true)
-                LOCKED_PENDING_ARTIFACT=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "artifact_path" 2>/dev/null || true)
-                LOCKED_PENDING_TASK_ID=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "task_id" 2>/dev/null || true)
-                LOCKED_PENDING_CONFIRMED_HASH=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "confirmed_hash" 2>/dev/null || true)
-                LOCKED_PENDING_ACTIVE_SLICE=$(redcap_interop_read_state_field "$LOCKED_PENDING_STATE" "active_slice" 2>/dev/null || true)
-                if [[ -z "$PENDING_UPDATED_AT" || "$LOCKED_PENDING_UPDATED_AT" != "$PENDING_UPDATED_AT" ]]; then
-                    PENDING_CLEAR_STATUS=0
-                elif send_notification "$(redcap_build_completion_message \
-                    "RedCap Layer B 收尾完成" \
-                    "redcap" \
-                    "$COMMIT_LOG" \
-                    "${HOST} SessionEnd 兜底收尾" \
-                    "$REPORT_OUTPUT" \
-                    "$REDCAP_ROOT")"; then
-                    SUCCESS_NOTIFY_SENT=1
-                    if ! rm -f "$LOCKED_PENDING_STATE" 2>/dev/null; then
-                        PENDING_CLEAR_STATUS=0
-                        redcap_runtime_record_degraded_mode "$REDCAP_ROOT" "session-end-clear-after-notify-failed" "host=$HOST current_head=$CURRENT_HEAD" || true
-                    else
-                        redcap_interop_record_closure_event \
-                            "$REDCAP_ROOT" \
-                            "pending-closure-cleared" \
-                            "task=$(basename "$LOCKED_PENDING_STATE") outcome=session-end-cleared detail=host=$HOST current_head=$CURRENT_HEAD" \
-                            >/dev/null 2>&1 || true
-                        if ! redcap_interop_append_closure_ledger_identity \
-                            "$REDCAP_ROOT" \
-                            "$LOCKED_PENDING_TASK_ID" \
-                            "$LOCKED_PENDING_CONFIRMED_HASH" \
-                            "$LOCKED_PENDING_ACTIVE_SLICE" \
-                            "obligation" \
-                            "cleared" \
-                            "outcome=session-end-cleared detail=host=$HOST current_head=$CURRENT_HEAD" \
-                            "$LOCKED_PENDING_HOST" \
-                            "$LOCKED_PENDING_TRIGGER" \
-                            "$LOCKED_PENDING_BASELINE" \
-                            "$LOCKED_PENDING_AUDITED" \
-                            "$LOCKED_PENDING_ARTIFACT" \
-                            >/dev/null 2>&1; then
-                            if ! redcap_interop_append_closure_ledger \
-                                "$REDCAP_ROOT" \
-                                "$REDCAP_ROOT/.dev-task.md" \
-                                "obligation" \
-                                "cleared" \
-                                "outcome=session-end-cleared detail=host=$HOST current_head=$CURRENT_HEAD" \
-                                "$LOCKED_PENDING_HOST" \
-                                "$LOCKED_PENDING_TRIGGER" \
-                                "$LOCKED_PENDING_BASELINE" \
-                                "$LOCKED_PENDING_AUDITED" \
-                                "$LOCKED_PENDING_ARTIFACT" \
-                                >/dev/null 2>&1; then
-                                PENDING_CLEAR_STATUS=0
-                                mark_session_end_persistence_failure \
-                                    "session-end-obligation-cleared-ledger-failed" \
-                                    "task_id=$LOCKED_PENDING_TASK_ID"
-                            fi
-                        fi
-                    fi
-                else
-                    NOTIFY_STATUS=0
-                    append_required_redline "notify"
-                fi
-            fi
-
-            redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1 || true
-        fi
-    else
-        if send_notification "$(redcap_build_completion_message \
-            "RedCap Layer B 收尾完成" \
-            "redcap" \
-            "$COMMIT_LOG" \
-            "${HOST} SessionEnd 兜底收尾" \
-            "$REPORT_OUTPUT" \
-            "$REDCAP_ROOT")"; then
-            SUCCESS_NOTIFY_SENT=1
-        else
-            NOTIFY_STATUS=0
-            append_required_redline "notify"
+            redcap_runtime_record_degraded_mode \
+                "$REDCAP_ROOT" \
+                "session-end-clear-before-notify-failed" \
+                "host=$HOST current_head=$CURRENT_HEAD pending_updated_at=${PENDING_UPDATED_AT:-missing}" \
+                || true
         fi
     fi
 
@@ -520,28 +566,45 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
     fi
 
     if [[ -z "$REQUIRED_REDLINES" ]]; then
-        if ! redcap_interop_append_closure_ledger \
+        if ! acquire_success_guard_lock; then
+            append_required_redline "pending-closure"
+            redcap_runtime_record_degraded_mode \
+                "$REDCAP_ROOT" \
+                "session-end-success-lock-failed" \
+                "host=$HOST current_head=$CURRENT_HEAD" \
+                >/dev/null 2>&1 || true
+        elif redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+            append_required_redline "pending-closure"
+        elif ! redcap_interop_append_closure_ledger \
             "$REDCAP_ROOT" \
             "$REDCAP_ROOT/.dev-task.md" \
-            "session-end" \
-            "pass" \
-            "review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
-            "$HOST" \
-            "session-end" \
-            "$BASELINE" \
+                "session-end" \
+                "pass" \
+                "review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS backlog_status=$BACKLOG_STATUS spec_status=$SPEC_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
+                "$HOST" \
+                "session-end" \
+                "$BASELINE" \
             "$CURRENT_HEAD" \
-            "$REPORT_OUTPUT" \
+            "$REPORT_ARTIFACT_PATH" \
             >/dev/null 2>&1; then
             mark_session_end_persistence_failure \
                 "session-end-pass-ledger-write-failed" \
-                "report=$REPORT_OUTPUT"
-        else
-            if [[ "$SUCCESS_NOTIFY_SENT" -eq 1 ]]; then
-                echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
-                rm -f "$ALERTED_FILE" 2>/dev/null || true
-                rm -f "$WARNED_FILE" 2>/dev/null || true
-            fi
+                "report=${REPORT_ARTIFACT_PATH:-none}"
+        elif send_notification "$(redcap_build_completion_message \
+            "RedCap Layer B 收尾完成" \
+            "redcap" \
+            "$COMMIT_LOG" \
+            "${HOST} SessionEnd 兜底收尾" \
+            "$REPORT_ARTIFACT_PATH" \
+            "$REDCAP_ROOT")" "followup"; then
+            SUCCESS_NOTIFY_SENT=1
+            echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
+            rm -f "$ALERTED_FILE" 2>/dev/null || true
+            rm -f "$WARNED_FILE" 2>/dev/null || true
             clear_review_artifacts
+        else
+            NOTIFY_STATUS=0
+            append_required_redline "notify"
         fi
     fi
 else
@@ -559,6 +622,12 @@ else
         fi
         if [[ "$DRIFT_STATUS" -ne 1 ]]; then
             append_required_redline "drift"
+        fi
+        if [[ "$BACKLOG_STATUS" -ne 1 ]]; then
+            append_required_redline "backlog"
+        fi
+        if [[ "$SPEC_STATUS" -ne 1 ]]; then
+            append_required_redline "spec"
         fi
         if [[ "$ARTIFACT_STATUS" -ne 1 ]]; then
             append_required_redline "artifact-lifecycle"
@@ -606,6 +675,12 @@ else
             if [[ "$DRIFT_STATUS" -ne 1 ]]; then
                 ALERT_BODY="${ALERT_BODY}\n\n问题：active_slice / scope drift 审计失败\n\n输出:\n$DRIFT_OUTPUT"
             fi
+            if [[ "$BACKLOG_STATUS" -ne 1 ]]; then
+                ALERT_BODY="${ALERT_BODY}\n\n问题：长期路线 backlog 审计失败\n\n输出:\n$BACKLOG_OUTPUT"
+            fi
+            if [[ "$SPEC_STATUS" -ne 1 ]]; then
+                ALERT_BODY="${ALERT_BODY}\n\n问题：spec 生命周期 / registry 审计失败\n\n输出:\n$SPEC_OUTPUT"
+            fi
             if [[ "$ARTIFACT_STATUS" -ne 1 ]]; then
                 ALERT_BODY="${ALERT_BODY}\n\n问题：artifact lifecycle 审计失败\n\n输出:\n$ARTIFACT_OUTPUT"
             fi
@@ -631,6 +706,8 @@ fi
 if [[ "$SESSION_END_PERSISTENCE_FAILURE" -eq 1 ]]; then
     append_required_redline "closure-ledger"
 fi
+
+release_success_guard_lock
 
 if [[ "$SUCCESS_NOTIFY_SENT" -eq 1 && -n "$REQUIRED_REDLINES" ]]; then
     PRE_WARN_KEY=$(notification_state_key)
@@ -658,8 +735,8 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
         "$HOST" \
         "layerB-session-end-audit-gap" \
         "$REQUIRED_REDLINES" \
-        "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
-        "" \
+        "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS backlog_status=$BACKLOG_STATUS spec_status=$SPEC_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
+        "$REPORT_ARTIFACT_PATH" \
         "$PENDING_WRITE_BASELINE" \
         "$PENDING_WRITE_AUDITED" \
         "replace" \
@@ -675,12 +752,12 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
         "$REDCAP_ROOT/.dev-task.md" \
         "session-end" \
         "blocked" \
-        "required_redlines=$REQUIRED_REDLINES review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
+        "required_redlines=$REQUIRED_REDLINES review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS backlog_status=$BACKLOG_STATUS spec_status=$SPEC_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
         "$HOST" \
         "session-end" \
         "$BASELINE" \
         "$CURRENT_HEAD" \
-        "$REPORT_OUTPUT" \
+        "$REPORT_ARTIFACT_PATH" \
         >/dev/null 2>&1; then
         mark_session_end_persistence_failure \
             "session-end-blocked-ledger-write-failed" \
@@ -692,8 +769,8 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
             "$HOST" \
             "layerB-session-end-audit-gap" \
             "$REQUIRED_REDLINES" \
-            "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
-            "" \
+            "baseline=$BASELINE current_head=$CURRENT_HEAD review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS backlog_status=$BACKLOG_STATUS spec_status=$SPEC_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
+            "$REPORT_ARTIFACT_PATH" \
             "$PENDING_WRITE_BASELINE" \
             "$PENDING_WRITE_AUDITED" \
             "replace" \

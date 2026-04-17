@@ -126,7 +126,21 @@ def list_items(block):
             items.append(clean(re.sub(r"^[-*]\s+", "", line)))
         elif re.match(r"^\d+\.\s+", line):
             items.append(clean(re.sub(r"^\d+\.\s+", "", line)))
-    return [item for item in items if item]
+    items = [item for item in items if item]
+    if items:
+        return items
+
+    paragraph_lines = []
+    for raw in block.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("|") or line.startswith(">"):
+            continue
+        paragraph_lines.append(clean(line))
+
+    paragraph_lines = [line for line in paragraph_lines if line]
+    if paragraph_lines:
+        return [" ".join(paragraph_lines)]
+    return []
 
 
 def table_items(block, primary_key, detail_keys):
@@ -154,15 +168,21 @@ def table_items(block, primary_key, detail_keys):
 
 
 summary_map = {
+    "done": ["0.1 当前已完成"],
+    "previous": ["0.2 上一步完成的是"],
+    "next": ["0.3 下一步计划做的是", "0.3 后续动作"],
+    "roadmap": ["0.4 整体计划脉络图与当前位置"],
     "confirm": ["0.1 需你确认"],
     "verify": ["0.2 人工验证"],
-    "followup": ["0.3 后续动作"],
 }
 
 fallback_map = {
+    "done": ([], None, None),
+    "previous": ([], None, None),
+    "roadmap": ([], None, None),
     "confirm": (["四、人工审核要点"], "审核项", ["说明", "优先级"]),
     "verify": (["5.2 人工验证项"], None, None),
-    "followup": (["6.3 推荐的下一步行动"], None, None),
+    "next": (["6.3 推荐的下一步行动"], None, None),
 }
 
 items = []
@@ -200,7 +220,7 @@ redcap_build_completion_message() {
     local project="${2:-redcap}"
     local commit_log="${3:-}"
     local source_label report_ref project_root report_path report_label
-    local commit_count latest_commit bullet_list confirm_items verify_items followup_items
+    local commit_count latest_commit bullet_list done_items previous_items next_items roadmap_items confirm_items verify_items
 
     source_label=$(redcap_notify_flatten_field "${4:-}")
     report_ref="${5:-}"
@@ -212,15 +232,19 @@ redcap_build_completion_message() {
     report_path=$(redcap_notify_resolve_report_path "$project_root" "$report_ref" 2>/dev/null || true)
     if [[ -n "$report_path" && -f "$report_path" ]]; then
         report_label=$(redcap_notify_relative_path "$project_root" "$report_path" 2>/dev/null || true)
+        done_items=$(redcap_notify_extract_report_items "$report_path" "done")
+        previous_items=$(redcap_notify_extract_report_items "$report_path" "previous")
+        next_items=$(redcap_notify_extract_report_items "$report_path" "next")
+        roadmap_items=$(redcap_notify_extract_report_items "$report_path" "roadmap")
         confirm_items=$(redcap_notify_extract_report_items "$report_path" "confirm")
         verify_items=$(redcap_notify_extract_report_items "$report_path" "verify")
-        followup_items=$(redcap_notify_extract_report_items "$report_path" "followup")
     else
         report_label=$(redcap_notify_flatten_field "$report_ref")
     fi
 
     {
         printf '%s\n\n' "$headline"
+        printf -- '- 发送人：Cap\n'
         printf -- '- 项目：%s\n' "$project"
         [[ -n "$source_label" ]] && printf -- '- 来源：%s\n' "$source_label"
         [[ -n "$report_label" ]] && printf -- '- 任务报告：%s\n' "$report_label"
@@ -230,9 +254,16 @@ redcap_build_completion_message() {
         [[ -n "$latest_commit" ]] && printf -- '- 最新提交：%s\n' "$latest_commit"
 
         if [[ -n "$report_label" ]]; then
-            printf '\n**需你确认**\n%s\n' "$(redcap_notify_markdown_list_or_none "$confirm_items")"
-            printf '\n**人工验证**\n%s\n' "$(redcap_notify_markdown_list_or_none "$verify_items")"
-            printf '\n**后续动作**\n%s\n' "$(redcap_notify_markdown_list_or_none "$followup_items")"
+            printf '\n**当前已完成**\n%s\n' "$(redcap_notify_markdown_list_or_none "$done_items")"
+            printf '\n**上一步完成的是**\n%s\n' "$(redcap_notify_markdown_list_or_none "$previous_items")"
+            printf '\n**下一步计划做的是**\n%s\n' "$(redcap_notify_markdown_list_or_none "$next_items")"
+            printf '\n**整体计划脉络图与当前位置**\n%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
+            if [[ -n "$confirm_items" ]]; then
+                printf '\n**仍需你介入**\n%s\n' "$(redcap_notify_markdown_list_or_none "$confirm_items")"
+            fi
+            if [[ -n "$verify_items" ]]; then
+                printf '\n**仍需人工验证**\n%s\n' "$(redcap_notify_markdown_list_or_none "$verify_items")"
+            fi
         fi
 
         if [[ -n "$bullet_list" ]]; then

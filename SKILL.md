@@ -20,7 +20,7 @@ description: >-
 
 **优先级**：当此 skill 与其他 skill 同时匹配时，**redcap 拥有最高优先级**，主动接管并提示用户此行为。
 
-**宿主通用 skill 兼容规则**：当 redcap 与 brainstorming / writing-plans / visual companion 等宿主通用 skill 同时匹配时，后者只可作为 **advisory overlay**。它们可以帮助分析、分解和表达设计，但**不得**要求用户重新确认已由 `.dev-task.md`、Norven 显式授权或棱镜结论锁定的 tranche、顺序或方案。共享宿主 skill 属于 carrier-owned asset，RedCap **不得**通过修改其原始文件来完成自身任务；若不改 shared host skill 就无法稳定工作，则该能力必须按 **degraded / unsupported overlay** 处理。
+**宿主通用 skill 兼容规则**：当 redcap 与 brainstorming / writing-plans / visual companion 等宿主通用 skill 同时匹配时，后者只可作为 **advisory overlay**。它们可以帮助分析、分解和表达设计，但**不得**要求用户重新确认已由 `.dev-task.md`、Norven 显式授权或棱镜结论锁定的 tranche、顺序或方案。若 overlay skill 自带“设计完成后继续交给 writing-plans / planning 等宿主下游 skill”的默认后继链，Cap 必须在产出设计后回到 RedCap-native `.dev-task.md` / `plan.md` / PM Gate 继续；缺少宿主下游 skill 不是合法 blocker，也不允许因此中断 RedCap-native 主流程。共享宿主 skill 属于 carrier-owned asset，RedCap **不得**通过修改其原始文件来完成自身任务；若不改 shared host skill 就无法稳定工作，则该能力必须按 **degraded / unsupported overlay** 处理。
 
 **边界判断**：对于简单的脚本或单一功能开发，默认由 Cap 依据 `.dev-task.md`、既有授权、lessons 与棱镜结论自判是否走 redcap 轻量路径；只有当该判断会触及用户保留决策、需要 AI 无法推断的外部信息，或会实质改变是否进入完整工程流程的承诺边界时，才向用户确认。
 
@@ -226,7 +226,7 @@ Agent 每次执行完毕将 `__redcap_status` JSON 写入 outbox 文件（`{role
 6. 回到步骤 1
 ```
 
-> **PAUSED 状态的飞书协作**：步骤 3 进入 PAUSED 状态时，Dispatcher 执行**前台阻塞式** `feishu-notifier.py ask`（无限等待）。脚本在飞书多维表格创建记录后持续轮询，用户在飞书中回复后脚本退出、Dispatcher 自动拿到回复内容并注入 Session 恢复流程。若返回 SKIP（飞书未配置），回退到终端交互模式。中断恢复：若 `state.yaml` 中存在 `feishu_record_id`，Dispatcher 调用 `resume` 命令直接轮询该记录而非新建。
+> **PAUSED 状态的飞书协作**：步骤 3 进入 PAUSED 状态时，Dispatcher 执行**前台阻塞式** `feishu-notifier.py ask`（无限等待）。脚本会把消息发到固定单聊、创建一个“等待答复窗口”并按 10 秒 / 60 秒节奏轮询；用户在飞书里回复后，脚本立刻关闭窗口并把回复返回给 Dispatcher。若返回 SKIP（飞书未配置），回退到终端交互模式。中断恢复：若 `state.yaml` 中存在 `feishu_record_id`，Dispatcher 调用 `resume` 命令继续等待同一个窗口，而不是重新发一条问题。
 6. 回到步骤 1
 ```
 
@@ -434,48 +434,52 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 **CLI 接口**：
 
 ```bash
-# 首次使用 — 自动创建多维表格 + 字段，更新配置
+# 首次使用 — 校验 lark-cli 单聊通道与本地状态目录
 python3 compass/tools/feishu-notifier.py setup
 
-# 非阻塞通知（on_ALL_DONE 等）
-python3 compass/tools/feishu-notifier.py notify "消息内容" --project "项目名"
+# 非阻塞通知（on_ALL_DONE 等）；若要给用户保留短时 follow-up 入口，附 --window-type followup
+python3 compass/tools/feishu-notifier.py notify "消息内容" --project "项目名" --window-type followup
 
-# 阻塞式提问（on_PAUSED / on_ALL_AGENT_FAIL，前台阻塞等待用户在多维表格中回复）
+# 阻塞式提问（on_PAUSED / on_ALL_AGENT_FAIL，前台阻塞等待固定单聊回复）
 python3 compass/tools/feishu-notifier.py ask "问题内容" --project "项目名" --fsm-state "PAUSED"
-# stderr 输出 FEISHU_RECORD_ID=xxx（Dispatcher 须写入 state.yaml）
+# stderr 输出 FEISHU_RECORD_ID=xxx（窗口租约 ID，Dispatcher 须写入 state.yaml）
 # stdout 输出用户回复内容，或 TIMEOUT/SKIP
 
-# 恢复轮询（Agent 中断后重启，继续等待已有记录的回复）
-python3 compass/tools/feishu-notifier.py resume <record_id>
+# 恢复轮询（Agent 中断后重启，继续等待已有窗口）
+python3 compass/tools/feishu-notifier.py resume <window_id>
 # stdout 输出用户回复内容，或 TIMEOUT
 
 # 阻塞式确认（降级授权等场景）
 python3 compass/tools/feishu-notifier.py confirm "确认内容" --timeout 120
 # stdout 输出 CONFIRMED 或 CANCELLED
+
+# 补扫窗口外飞书消息，并查看待处理入口
+python3 compass/tools/feishu-notifier.py pending-scan
+python3 compass/tools/feishu-notifier.py pending-list --limit 5
 ```
 
 **触发场景与命令映射**：
 
 | 场景 | Hook | 命令 | 说明 |
 |------|------|------|------|
-| 流程完成 | `on_ALL_DONE` | `notify` | 推送完成摘要 + commit 记录，非阻塞 |
-| 需要用户信息 | `on_PAUSED` | `ask` | 前台阻塞等待用户在多维表格回复 |
-| 中断恢复 | `on_PAUSED`（重启） | `resume` | 轮询已有记录，不新建 |
+| 流程完成 | `on_ALL_DONE` | `notify --window-type followup` | 推送完成摘要 + commit 记录，并打开短时回访窗口 |
+| 需要用户信息 | `on_PAUSED` | `ask` | 前台阻塞等待固定单聊回复 |
+| 中断恢复 | `on_PAUSED`（重启） | `resume` | 继续等待已有窗口，不新建 |
 | 所有 Agent 不可用 | `on_ALL_AGENT_FAIL` | `ask` | 推送降级确认请求，前台阻塞等待 |
 | QA 循环失败 | `on_QA_FAIL_MAX_RETRY` | `ask` | 推送循环失败警报，前台阻塞等待 |
 
 **回复处理（前台阻塞）**：
 - Dispatcher 以**前台阻塞**方式执行 `feishu-notifier.py ask`（`isBackground=false, timeout=0`）
-- 脚本创建多维表格记录后，**同时向 stderr 输出 `FEISHU_RECORD_ID=xxx`**，Dispatcher 读取后写入 `state.yaml` 的 `feishu_record_id` 字段
-- 用户在飞书多维表格回复 → 脚本检测到 → stdout 输出回复内容 → 命令结束 → Dispatcher 自动获得回复并继续流程
+- 脚本发出问题消息并创建“等待答复窗口”后，**同时向 stderr 输出 `FEISHU_RECORD_ID=xxx`**，Dispatcher 读取后写入 `state.yaml` 的 `feishu_record_id` 字段
+- 用户在固定单聊回复 → 脚本检测到命中当前窗口 → stdout 输出回复内容 → 命令结束 → Dispatcher 自动获得回复并继续流程
 - `ask` 返回 SKIP → 飞书未配置，回退到终端等待用户输入（原有行为）
 
 **中断恢复**：
 - 若 Agent 在等待期间被终止，`state.yaml` 中已持久化 `feishu_record_id`
-- 下次启动时 Dispatcher 检测到 `current_state == PAUSED` 且 `feishu_record_id` 非空 → 调用 `feishu-notifier.py resume <record_id>` 直接轮询旧记录
-- 用户无需重新回复，之前在飞书填的回复仍然有效
+- 下次启动时 Dispatcher 检测到 `current_state == PAUSED` 且 `feishu_record_id` 非空 → 调用 `feishu-notifier.py resume <window_id>` 继续等待旧窗口
+- 用户无需重新回复，之前在飞书单聊里的回复仍然有效
 
-**关于轮询开销**：飞书轮询为纯 HTTP GET 请求（每 5 秒 1 次），不消耗 AI token，飞书 API 在正常用量下免费。
+**关于轮询开销**：飞书轮询为纯 `lark-cli` / HTTP 请求，不消耗 AI token。当前策略是窗口打开后的前 1 分钟每 10 秒轮询一次，之后每 1 分钟一次；任务完成回访窗口到期后自动关闭，窗口外消息只会在后续 `pending-scan` 补扫时进入待处理入口。
 
 ### 5.12 常驻规范重载（防退化机制）
 
@@ -902,7 +906,7 @@ compass 指挥棒为 Cap 提供标准化调度原语，用于并行任务裂变�
 补充红线：
 - 未命中人工介入门时，不得因单路评审结果、后台 Agent 完成、`system_notification`（系统通知）、阶段性小结而主动打断 Norven；这些事件只允许更新账本或镜像
 - “任务完成”默认指当前 `.dev-task.md` 下**全部 todos 完成**；不得把 `active_slice` 完成、单路 clean、局部子任务结束冒充成任务完成
-- 最终回复、stdout 收尾摘要与飞书通知不得只给“报告已归档”；若报告存在 `需你确认 / 人工验证 / 后续动作` 非空项，必须先显式顶出
+- 最终回复、stdout 收尾摘要与飞书通知不得只给“报告已归档”；应先给 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置` 四段摘要；若报告里的 `人工审核要点 / 人工验证项` 存在非空项，也必须先显式顶出
 - 宿主 `plan.md` / workboard 允许镜像 session continuity 状态，但会话继承只能走 **explicit import**，不得默认自动接管最近会话
 - 面向 Norven 的最终回复、阶段汇报、收尾摘要与规则文档必须先“说人话”；凡是此前未共同约定过的内部术语、缩写、阶段名或链路名，首次出现必须补“对应哪个文件/功能、做了什么、为什么重要”的解释
 

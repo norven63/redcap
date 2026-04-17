@@ -43,10 +43,10 @@
 
 ### GD-005：Specs lifecycle authority
 - **design_status**: `design-complete`
-- **implementation_status**: `pending`
+- **implementation_status**: `done`
 - **owner_slice**: `文档信息架构与证据分层`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §六 D1
-- **gap**: specs 仍缺 registry、准入门、迁移门与 archive enforcement
+- **gap**: 已收口：`references/spec-lifecycle-policy.json` + `references/spec-contribution-standard.md` + `redcap-spec-check.sh` 已把 spec 的命名、角色、状态、归档根目录与 `replaced_by` 关系补成可执行门；`superseded` spec 不再允许留在 active specs 根目录里
 
 ### GD-006：Artifact lifecycle enforcement
 - **design_status**: `design-complete`
@@ -57,7 +57,7 @@
 
 ### GD-007：Governance executable norms
 - **design_status**: `design-complete`
-- **implementation_status**: `pending`
+- **implementation_status**: `in-progress`
 - **owner_slice**: `工程治理 / 权威规范升级`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §八 F2-F3
-- **gap**: specs-to-gates translation、hook audit、lesson injection、contract validator、FSM canonical source 尚未完整落地
+- **gap**: `spec-registry + spec-lifecycle-policy + spec-check` 已把 spec 维度的“规范到 gate”翻译链推进到第二层，但 hook audit、lesson injection、contract validator、FSM canonical source 仍未完整落地

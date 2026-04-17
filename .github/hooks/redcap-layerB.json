@@ -16,6 +16,14 @@
         "cwd": ".github/hooks",
         "timeoutSec": 300
       }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "./scripts/redcap-layerB-post-tool.sh",
+        "cwd": ".github/hooks",
+        "timeoutSec": 120
+      }
     ]
   }
 }

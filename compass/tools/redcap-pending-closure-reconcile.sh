@@ -17,7 +17,7 @@ source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
 source "$SCRIPT_DIR/redcap-validator-output.sh"
 
-VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
+VALIDATOR_CHAIN="${REDCAP_VALIDATOR_CHAIN_SCRIPT:-$SCRIPT_DIR/redcap-validator-chain.sh}"
 TASK_FILE="$REDCAP_ROOT/.dev-task.md"
 CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null || true)
 [[ -n "$CURRENT_HEAD" ]] || exit 0
@@ -53,7 +53,7 @@ append_unmanaged_redlines() {
         item=$(printf '%s' "$item" | tr -d '[:space:]')
         [[ -n "$item" ]] || continue
         case "$item" in
-            review|pending-closure|pm-gate|drift|task-report|artifact-lifecycle|validator-chain) ;;
+            review|pending-closure|pm-gate|drift|backlog|spec|task-report|artifact-lifecycle|validator-chain) ;;
             *)
                 append_required_redline "$item"
                 ;;
@@ -95,6 +95,7 @@ PENDING_BASELINE_HEAD=$(redcap_interop_read_state_field "$PENDING_STATE" "baseli
 PENDING_AUDITED_HEAD=$(redcap_interop_read_state_field "$PENDING_STATE" "audited_head" 2>/dev/null || true)
 PENDING_UPDATED_AT=$(redcap_interop_read_state_field "$PENDING_STATE" "updated_at" 2>/dev/null || true)
 PENDING_ARTIFACT_PATH=$(redcap_interop_read_state_field "$PENDING_STATE" "artifact_path" 2>/dev/null || true)
+IDENTITY_MISMATCH=0
 
 if [[ -n "$PENDING_TASK_ID" && -n "$CURRENT_TASK_ID" && "$PENDING_TASK_ID" != "$CURRENT_TASK_ID" ]]; then
     record_reconcile_event \
@@ -104,10 +105,7 @@ if [[ -n "$PENDING_TASK_ID" && -n "$CURRENT_TASK_ID" && "$PENDING_TASK_ID" != "$
 fi
 
 if [[ -n "$PENDING_CONFIRMED_HASH" && -n "$CURRENT_CONFIRMED_HASH" && "$PENDING_CONFIRMED_HASH" != "$CURRENT_CONFIRMED_HASH" ]]; then
-    record_reconcile_event \
-        "identity-mismatch" \
-        "pending_confirmed_hash=$PENDING_CONFIRMED_HASH current_confirmed_hash=$CURRENT_CONFIRMED_HASH required_redlines=$OLD_REQUIRED_REDLINES"
-    exit 0
+    IDENTITY_MISMATCH=1
 fi
 
 BASELINE="$CURRENT_HEAD"
@@ -155,6 +153,8 @@ else
         reanchor-check \
         pm-gate \
         drift-check \
+        backlog-check \
+        spec-check \
         task-report-check \
         artifact-lifecycle-check; then
         VALIDATOR_INFRA_FAILURE=1
@@ -179,6 +179,12 @@ else
     if [[ "$(redcap_validator_step_status "$VALIDATOR_OUTPUT" "drift-check")" != "pass" ]]; then
         append_required_redline "drift"
     fi
+    if [[ "$(redcap_validator_step_status "$VALIDATOR_OUTPUT" "backlog-check")" != "pass" ]]; then
+        append_required_redline "backlog"
+    fi
+    if [[ "$(redcap_validator_step_status "$VALIDATOR_OUTPUT" "spec-check")" != "pass" ]]; then
+        append_required_redline "spec"
+    fi
     if [[ "$(redcap_validator_step_status "$VALIDATOR_OUTPUT" "task-report-check")" != "pass" ]]; then
         append_required_redline "task-report"
     fi
@@ -187,7 +193,7 @@ else
     fi
 fi
 
-DETAIL="old_required_redlines=$OLD_REQUIRED_REDLINES new_required_redlines=${REQUIRED_REDLINES:-none} validator_infra_failure=$VALIDATOR_INFRA_FAILURE baseline=$BASELINE current_head=$CURRENT_HEAD"
+DETAIL="old_required_redlines=$OLD_REQUIRED_REDLINES new_required_redlines=${REQUIRED_REDLINES:-none} validator_infra_failure=$VALIDATOR_INFRA_FAILURE baseline=$BASELINE current_head=$CURRENT_HEAD identity_mismatch=$IDENTITY_MISMATCH"
 
 if [[ -z "$REQUIRED_REDLINES" ]]; then
     if redcap_interop_clear_pending_closure \
@@ -209,7 +215,7 @@ if [[ -z "$REQUIRED_REDLINES" ]]; then
     exit 0
 fi
 
-if [[ "$REQUIRED_REDLINES" != "$OLD_REQUIRED_REDLINES" ]]; then
+if [[ "$IDENTITY_MISMATCH" -eq 1 || "$REQUIRED_REDLINES" != "$OLD_REQUIRED_REDLINES" ]]; then
     if redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
         "$TASK_FILE" \
@@ -223,7 +229,11 @@ if [[ "$REQUIRED_REDLINES" != "$OLD_REQUIRED_REDLINES" ]]; then
         replace \
         "$PENDING_UPDATED_AT" \
         >/dev/null 2>&1; then
-        record_reconcile_event "rewritten" "$DETAIL"
+        if [[ "$IDENTITY_MISMATCH" -eq 1 && "$REQUIRED_REDLINES" == "$OLD_REQUIRED_REDLINES" ]]; then
+            record_reconcile_event "reanchored" "$DETAIL"
+        else
+            record_reconcile_event "rewritten" "$DETAIL"
+        fi
     else
         redcap_runtime_record_degraded_mode \
             "$REDCAP_ROOT" \

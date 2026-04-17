@@ -35,7 +35,7 @@ source "$SCRIPT_DIR/redcap-validator-output.sh"
 WORKFLOW_DIR="$PROJECT_DIR/开发手册/.workflow"
 PROJECT_NAME=$(redcap_runtime_project_name "$PROJECT_DIR" "$PROJECT_NAME_ARG")
 TASK_REPORT_CHECK="$SCRIPT_DIR/redcap-task-report-check.sh"
-VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
+VALIDATOR_CHAIN="${REDCAP_VALIDATOR_CHAIN_SCRIPT:-$SCRIPT_DIR/redcap-validator-chain.sh}"
 
 self_dev_closure_enabled() {
   [[ "$PROJECT_DIR" == "$REDCAP_ROOT" && -f "$PROJECT_DIR/.dev-task.md" ]]
@@ -144,6 +144,8 @@ collect_on_complete_validator_redlines() {
   [[ "$(redcap_validator_step_status "$output" "commit-proof-check")" == "fail" ]] && items+=("commit-proof")
   [[ "$(redcap_validator_step_status "$output" "pm-gate")" == "fail" ]] && items+=("pm-gate")
   [[ "$(redcap_validator_step_status "$output" "drift-check")" == "fail" ]] && items+=("drift")
+  [[ "$(redcap_validator_step_status "$output" "backlog-check")" == "fail" ]] && items+=("backlog")
+  [[ "$(redcap_validator_step_status "$output" "spec-check")" == "fail" ]] && items+=("spec")
   [[ "$(redcap_validator_step_status "$output" "task-report-check")" == "fail" ]] && items+=("task-report")
   [[ "$(redcap_validator_step_status "$output" "artifact-lifecycle-check")" == "fail" ]] && items+=("artifact-lifecycle")
 
@@ -173,6 +175,18 @@ record_on_complete_validator_steps() {
   case "$status" in
     pass) record_closure_phase "drift" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
     fail) record_closure_phase "drift" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+  esac
+
+  status=$(redcap_validator_step_status "$output" "backlog-check")
+  case "$status" in
+    pass) record_closure_phase "backlog" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+    fail) record_closure_phase "backlog" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
+  esac
+
+  status=$(redcap_validator_step_status "$output" "spec-check")
+  case "$status" in
+    pass) record_closure_phase "spec" "pass" "validator-chain step passed" "$artifact_path" || persist_status=1 ;;
+    fail) record_closure_phase "spec" "fail" "validator-chain step failed" "$artifact_path" || persist_status=1 ;;
   esac
 
   status=$(redcap_validator_step_status "$output" "task-report-check")
@@ -308,7 +322,7 @@ resolve_report_reference() {
 # ── 动作 3: 飞书通知（§5.11） ────────────────────────────
 
 feishu_notify() {
-  local notifier="$SCRIPT_DIR/feishu-notifier.py"
+  local notifier="${REDCAP_FEISHU_NOTIFIER:-$SCRIPT_DIR/feishu-notifier.py}"
   local message report_ref
 
   if [[ "$SKIP_FEISHU" == "1" ]]; then
@@ -334,7 +348,11 @@ feishu_notify() {
     "$PROJECT_DIR")"
 
   echo "[on_complete] 发送飞书通知..."
-  python3 "$notifier" notify "$message" --project "$PROJECT_NAME" 2>/dev/null || {
+  python3 "$notifier" notify \
+    "$message" \
+    --project "$PROJECT_NAME" \
+    --window-type followup \
+    2>/dev/null || {
     echo "[on_complete] ⚠ 飞书通知失败（可能未配置 feishu-config.json）" >&2
     return 1
   }
@@ -351,7 +369,7 @@ if ! run_on_complete_validator_chain; then
     exit 2
   fi
 
-  if ! redcap_validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT" commit-proof-check pm-gate drift-check task-report-check artifact-lifecycle-check; then
+  if ! redcap_validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT" commit-proof-check pm-gate drift-check backlog-check spec-check task-report-check artifact-lifecycle-check; then
     if ! persist_on_complete_unstructured_failure "$(resolve_report_reference)"; then
       record_evidence_system_failure "validator-chain" "failed to persist unstructured validator failure"
       exit 2
@@ -373,7 +391,7 @@ if ! run_on_complete_validator_chain; then
   exit 1
 fi
 
-if ! redcap_validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT" commit-proof-check pm-gate drift-check task-report-check artifact-lifecycle-check; then
+if ! redcap_validator_output_has_recordable_step "$ON_COMPLETE_VALIDATOR_OUTPUT" commit-proof-check pm-gate drift-check backlog-check spec-check task-report-check artifact-lifecycle-check; then
   record_evidence_system_failure "validator-chain" "validator chain succeeded without recordable step output"
   exit 2
 fi

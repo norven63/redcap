@@ -1,0 +1,257 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# Validate spec registry coverage, lifecycle policy, and changed spec entries.
+
+set -uo pipefail
+
+if [[ $# -lt 1 || $# -gt 3 ]]; then
+    echo "usage: $0 <redcap_root> [baseline_head] [current_head]" >&2
+    exit 2
+fi
+
+REDCAP_ROOT="$1"
+BASELINE="${2:-}"
+CURRENT_HEAD="${3:-}"
+REGISTRY_PATH="$REDCAP_ROOT/references/spec-registry.json"
+POLICY_PATH="$REDCAP_ROOT/references/spec-lifecycle-policy.json"
+TMP_CHANGED_SPECS=$(mktemp)
+
+cleanup() {
+    rm -f "$TMP_CHANGED_SPECS" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+if [[ -n "$BASELINE" && -n "$CURRENT_HEAD" ]]; then
+    git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only "$BASELINE..$CURRENT_HEAD" -- \
+        'compass/docs/specs/*.md' 'compass/docs/archive/specs/*.md' 2>/dev/null \
+        | sed '/^[[:space:]]*$/d' | sort -u >"$TMP_CHANGED_SPECS"
+else
+    {
+        git -C "$REDCAP_ROOT" --no-pager diff --name-only -- 'compass/docs/specs/*.md' 'compass/docs/archive/specs/*.md' 2>/dev/null
+        git -C "$REDCAP_ROOT" --no-pager diff --cached --name-only -- 'compass/docs/specs/*.md' 'compass/docs/archive/specs/*.md' 2>/dev/null
+    } | sed '/^[[:space:]]*$/d' | sort -u >"$TMP_CHANGED_SPECS"
+fi
+
+python3 - "$REDCAP_ROOT" "$REGISTRY_PATH" "$POLICY_PATH" "$TMP_CHANGED_SPECS" <<'PY'
+import json
+import pathlib
+import re
+import sys
+
+REPO_ROOT = pathlib.Path(sys.argv[1])
+REGISTRY_PATH = pathlib.Path(sys.argv[2])
+POLICY_PATH = pathlib.Path(sys.argv[3])
+CHANGED_PATH = pathlib.Path(sys.argv[4])
+
+
+def fail(message: str) -> None:
+    raise SystemExit(f"[redcap-spec-check] {message}")
+
+
+def load_json(path: pathlib.Path, label: str) -> dict:
+    if not path.is_file():
+        fail(f"{label} missing: {path}")
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        fail(f"invalid {label} json: {exc}")
+
+
+registry = load_json(REGISTRY_PATH, "spec registry")
+policy = load_json(POLICY_PATH, "spec lifecycle policy")
+
+if registry.get("version") != 1:
+    fail("spec registry version must be 1")
+if policy.get("version") != 1:
+    fail("spec lifecycle policy version must be 1")
+
+entries = registry.get("specs")
+if not isinstance(entries, list) or not entries:
+    fail("spec registry must define a non-empty specs array")
+
+roots = policy.get("roots")
+if not isinstance(roots, dict):
+    fail("spec lifecycle policy must define roots")
+active_root = roots.get("active")
+archive_root = roots.get("archive")
+if not isinstance(active_root, str) or not active_root.strip():
+    fail("spec lifecycle policy missing roots.active")
+if not isinstance(archive_root, str) or not archive_root.strip():
+    fail("spec lifecycle policy missing roots.archive")
+active_root = active_root.strip()
+archive_root = archive_root.strip()
+
+allowed_statuses = policy.get("allowed_statuses")
+if not isinstance(allowed_statuses, list) or not allowed_statuses:
+    fail("spec lifecycle policy must define allowed_statuses")
+allowed_statuses = {status for status in allowed_statuses if isinstance(status, str) and status.strip()}
+if not allowed_statuses:
+    fail("spec lifecycle policy has no valid allowed_statuses")
+
+allowed_roles = policy.get("allowed_roles")
+if not isinstance(allowed_roles, list) or not allowed_roles:
+    fail("spec lifecycle policy must define allowed_roles")
+allowed_roles = {role for role in allowed_roles if isinstance(role, str) and role.strip()}
+if not allowed_roles:
+    fail("spec lifecycle policy has no valid allowed_roles")
+
+filename_pattern = policy.get("filename_pattern")
+if not isinstance(filename_pattern, str) or not filename_pattern.strip():
+    fail("spec lifecycle policy missing filename_pattern")
+try:
+    filename_re = re.compile(filename_pattern)
+except re.error as exc:
+    fail(f"invalid spec lifecycle filename_pattern: {exc}")
+
+summary_rule = policy.get("summary", {})
+if not isinstance(summary_rule, dict):
+    fail("spec lifecycle policy summary rule must be an object")
+summary_min = int(summary_rule.get("min_length", 1))
+summary_max = int(summary_rule.get("max_length", 1000))
+if summary_min < 1 or summary_max < summary_min:
+    fail("spec lifecycle policy summary length bounds are invalid")
+
+status_rules = policy.get("status_rules")
+if not isinstance(status_rules, dict) or not status_rules:
+    fail("spec lifecycle policy must define status_rules")
+for status in allowed_statuses:
+    if status not in status_rules:
+        fail(f"spec lifecycle policy missing status rule for {status}")
+
+
+def collect_specs(rel_root: str) -> set[str]:
+    root = REPO_ROOT / rel_root
+    if not root.exists():
+        return set()
+    return {
+        path.relative_to(REPO_ROOT).as_posix()
+        for path in sorted(root.glob("*.md"))
+        if path.is_file()
+    }
+
+
+repo_specs = collect_specs(active_root) | collect_specs(archive_root)
+
+
+def classify_root(path: str) -> str:
+    if path.startswith(active_root + "/"):
+        return "active"
+    if path.startswith(archive_root + "/"):
+        return "archive"
+    fail(f"spec must live under {active_root}/ or {archive_root}/: {path}")
+
+
+registry_map: dict[str, dict] = {}
+for entry in entries:
+    if not isinstance(entry, dict):
+        fail("spec registry entries must be objects")
+    path = entry.get("path")
+    if not isinstance(path, str) or not path.strip():
+        fail("spec registry entry missing path")
+    path = path.strip()
+    if path in registry_map:
+        fail(f"duplicate spec registry path: {path}")
+    filename = pathlib.PurePosixPath(path).name
+    if not filename_re.fullmatch(filename):
+        fail(f"spec filename violates lifecycle policy: {path}")
+
+    title = entry.get("title")
+    if not isinstance(title, str) or not title.strip():
+        fail(f"spec registry entry missing title: {path}")
+
+    role = entry.get("role")
+    if role not in allowed_roles:
+        fail(f"spec registry entry uses unsupported role ({role}): {path}")
+
+    status = entry.get("status")
+    if status not in allowed_statuses:
+        fail(f"spec registry entry uses unsupported status ({status}): {path}")
+
+    root_alias = classify_root(path)
+    status_rule = status_rules.get(status)
+    if not isinstance(status_rule, dict):
+        fail(f"spec lifecycle policy status rule must be an object: {status}")
+    allowed_roots = status_rule.get("allowed_roots", [])
+    if not isinstance(allowed_roots, list) or not allowed_roots:
+        fail(f"spec lifecycle policy missing allowed_roots for status {status}")
+    if root_alias not in allowed_roots:
+        fail(f"spec status {status} cannot live under {root_alias} root: {path}")
+
+    if entry.get("runtime_authority") is not False:
+        fail(f"spec registry entry must declare runtime_authority=false: {path}")
+
+    summary = entry.get("summary")
+    if not isinstance(summary, str) or not summary.strip():
+        fail(f"spec registry entry missing summary: {path}")
+    normalized_summary = " ".join(summary.split())
+    if not (summary_min <= len(normalized_summary) <= summary_max):
+        fail(f"spec registry entry summary length violates policy: {path}")
+
+    control_paths = entry.get("paired_control_paths", [])
+    debt_ids = entry.get("paired_debt_ids", [])
+    if not isinstance(control_paths, list) or not isinstance(debt_ids, list):
+        fail(f"spec registry entry has invalid paired paths/debts: {path}")
+    if not control_paths and not debt_ids:
+        fail(f"spec registry entry must declare paired_control_paths or paired_debt_ids: {path}")
+    for control_path in control_paths:
+        if not isinstance(control_path, str) or not control_path.strip():
+            fail(f"spec registry entry has invalid paired_control_path: {path}")
+        abs_control_path = REPO_ROOT / control_path
+        if not abs_control_path.exists():
+            fail(f"spec registry entry points to missing control path: {control_path}")
+    for debt_id in debt_ids:
+        if not isinstance(debt_id, str) or not debt_id.strip():
+            fail(f"spec registry entry has invalid paired_debt_id: {path}")
+
+    replaced_by = entry.get("replaced_by")
+    requires_replacement = bool(status_rule.get("require_replaced_by"))
+    if requires_replacement:
+        if not isinstance(replaced_by, str) or not replaced_by.strip():
+            fail(f"superseded spec missing replaced_by: {path}")
+        replaced_by = replaced_by.strip()
+        entry["replaced_by"] = replaced_by
+    elif replaced_by is not None:
+        if not isinstance(replaced_by, str) or not replaced_by.strip():
+            fail(f"spec registry entry has invalid replaced_by: {path}")
+        entry["replaced_by"] = replaced_by.strip()
+
+    registry_map[path] = entry
+
+missing_from_registry = sorted(repo_specs - set(registry_map.keys()))
+if missing_from_registry:
+    fail("specs missing from registry: " + ", ".join(missing_from_registry))
+
+extra_registry_entries = sorted(set(registry_map.keys()) - repo_specs)
+if extra_registry_entries:
+    fail("spec registry references missing specs: " + ", ".join(extra_registry_entries))
+
+for path, entry in registry_map.items():
+    replaced_by = entry.get("replaced_by")
+    if replaced_by is None:
+        continue
+    if replaced_by == path:
+        fail(f"spec replaced_by cannot point to itself: {path}")
+    if replaced_by not in registry_map:
+        fail(f"spec replaced_by target missing from registry: {path} -> {replaced_by}")
+    seen = {path}
+    cursor = replaced_by
+    while cursor in registry_map:
+        if cursor in seen:
+            fail(f"spec replacement chain contains cycle: {path} -> {cursor}")
+        seen.add(cursor)
+        cursor = registry_map[cursor].get("replaced_by")
+        if cursor is None:
+            break
+
+changed_specs = [
+    line.strip()
+    for line in CHANGED_PATH.read_text(encoding="utf-8").splitlines()
+    if line.strip()
+]
+for spec_path in changed_specs:
+    if spec_path not in registry_map:
+        fail(f"changed spec missing from registry: {spec_path}")
+
+if changed_specs:
+    print("\n".join(changed_specs))
+PY

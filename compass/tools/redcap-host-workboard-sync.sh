@@ -31,6 +31,9 @@ TOP_GOAL=$(redcap_dev_task_extract_kv "$TASK_FILE" "top_goal" 2>/dev/null || tru
 ACTIVE_SLICE=$(redcap_dev_task_extract_kv "$TASK_FILE" "active_slice" 2>/dev/null || true)
 SUBTASK_OF=$(redcap_dev_task_extract_kv "$TASK_FILE" "subtask_of" 2>/dev/null || true)
 HOST_SURFACE_POLICY=$(redcap_dev_task_extract_kv "$TASK_FILE" "host_surface_policy" 2>/dev/null || true)
+BACKLOG_SOURCE=$(redcap_dev_task_extract_kv "$TASK_FILE" "backlog_source" 2>/dev/null || true)
+BACKLOG_ID=$(redcap_dev_task_extract_kv "$TASK_FILE" "backlog_id" 2>/dev/null || true)
+BACKLOG_ITEM=$(redcap_dev_task_extract_kv "$TASK_FILE" "backlog_item" 2>/dev/null || true)
 
 if [[ ! -f "$WORKBOARD_FILE" ]]; then
     echo "[redcap-host-workboard-sync] workboard not found: $WORKBOARD_FILE" >&2
@@ -50,6 +53,9 @@ $MARKER_START
 - subtask_of: $SUBTASK_OF
 - confirmed_hash: $CONFIRMED_HASH
 - host_surface_policy: $HOST_SURFACE_POLICY
+- backlog_source: $BACKLOG_SOURCE
+- backlog_id: $BACKLOG_ID
+- backlog_item: $BACKLOG_ITEM
 $MARKER_END
 EOF
 )
@@ -82,7 +88,7 @@ PY
         fi
         ;;
     check)
-        if ! python3 - "$WORKBOARD_FILE" "$MARKER_START" "$MARKER_END" "$TASK_ID" "$TASK_FILE" "$TOP_GOAL" "$ACTIVE_SLICE" "$SUBTASK_OF" "$CONFIRMED_HASH" "$HOST_SURFACE_POLICY" <<'PY'
+        if ! python3 - "$WORKBOARD_FILE" "$MARKER_START" "$MARKER_END" "$TASK_ID" "$TASK_FILE" "$TOP_GOAL" "$ACTIVE_SLICE" "$SUBTASK_OF" "$CONFIRMED_HASH" "$HOST_SURFACE_POLICY" "$BACKLOG_SOURCE" "$BACKLOG_ID" "$BACKLOG_ITEM" <<'PY'
 import pathlib
 import sys
 
@@ -96,6 +102,9 @@ active_slice = sys.argv[7]
 subtask_of = sys.argv[8]
 confirmed_hash = sys.argv[9]
 host_surface_policy = sys.argv[10]
+backlog_source = sys.argv[11]
+backlog_id = sys.argv[12]
+backlog_item = sys.argv[13]
 text = workboard.read_text(encoding="utf-8")
 start = text.find(marker_start)
 end = text.find(marker_end)
@@ -112,6 +121,9 @@ required = [
     f"- subtask_of: {subtask_of}",
     f"- confirmed_hash: {confirmed_hash}",
     f"- host_surface_policy: {host_surface_policy}",
+    f"- backlog_source: {backlog_source}",
+    f"- backlog_id: {backlog_id}",
+    f"- backlog_item: {backlog_item}",
 ]
 missing = [item for item in required if item not in block]
 if missing:

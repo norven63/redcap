@@ -102,6 +102,8 @@ case "$MODE" in
     stop-review)
         run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" stop-review "$HOST" "$TASK_FILE" || overall_status="fail"
         run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" stop-review "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+        run_step "backlog-check" bash "$SCRIPT_DIR/redcap-backlog-check.sh" strict "$TASK_FILE" || overall_status="fail"
+        run_step "spec-check" bash "$SCRIPT_DIR/redcap-spec-check.sh" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
         run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" redcap-self || overall_status="fail"
         ;;
     obligation-reconcile)
@@ -109,6 +111,8 @@ case "$MODE" in
         run_step "reanchor-check" bash "$SCRIPT_DIR/redcap-closure-reanchor-check.sh" "${REDCAP_SESSION_END_PENDING_HEAD_MISMATCH:-0}" "${REDCAP_SESSION_END_PENDING_AUDITED_HEAD:-}" "$CURRENT_HEAD" || overall_status="fail"
         run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" strict "$HOST" "$TASK_FILE" || overall_status="fail"
         run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" obligation-reconcile "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+        run_step "backlog-check" bash "$SCRIPT_DIR/redcap-backlog-check.sh" strict "$TASK_FILE" || overall_status="fail"
+        run_step "spec-check" bash "$SCRIPT_DIR/redcap-spec-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
         run_step "task-report-check" bash "$SCRIPT_DIR/redcap-task-report-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" "$HOST" || overall_status="fail"
         run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" redcap-self || overall_status="fail"
         ;;
@@ -117,6 +121,8 @@ case "$MODE" in
         run_step "reanchor-check" bash "$SCRIPT_DIR/redcap-closure-reanchor-check.sh" "${REDCAP_SESSION_END_PENDING_HEAD_MISMATCH:-0}" "${REDCAP_SESSION_END_PENDING_AUDITED_HEAD:-}" "$CURRENT_HEAD" || overall_status="fail"
         run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" session-end "$HOST" "$TASK_FILE" || overall_status="fail"
         run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" session-end "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+        run_step "backlog-check" bash "$SCRIPT_DIR/redcap-backlog-check.sh" strict "$TASK_FILE" || overall_status="fail"
+        run_step "spec-check" bash "$SCRIPT_DIR/redcap-spec-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
         run_step "task-report-check" bash "$SCRIPT_DIR/redcap-task-report-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" "$HOST" || overall_status="fail"
         run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" redcap-self || overall_status="fail"
         ;;
@@ -125,6 +131,8 @@ case "$MODE" in
         if [[ "$PROJECT_DIR" == "$REDCAP_ROOT" && -f "$TASK_FILE" ]]; then
             run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" strict "$HOST" "$TASK_FILE" || overall_status="fail"
             run_step "drift-check" bash "$SCRIPT_DIR/redcap-drift-check.sh" on-complete "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
+            run_step "backlog-check" bash "$SCRIPT_DIR/redcap-backlog-check.sh" strict "$TASK_FILE" || overall_status="fail"
+            run_step "spec-check" bash "$SCRIPT_DIR/redcap-spec-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
             run_step "task-report-check" bash "$SCRIPT_DIR/redcap-task-report-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" || overall_status="fail"
             run_step "artifact-lifecycle-check" bash "$SCRIPT_DIR/redcap-artifact-lifecycle-check.sh" "$PROJECT_DIR" "$BASELINE" "$CURRENT_HEAD" redcap-self || overall_status="fail"
         fi

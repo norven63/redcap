@@ -66,10 +66,12 @@ RedCap 当前把状态面划分为三类：
 | --- | --- | --- | --- | --- |
 | `loom/**/state.yaml` | canonical truth | Loom | Layer A 流程状态与回退依据 | 只能由 Dispatcher / Layer A 工具推进 |
 | `.dev-task.md` | canonical truth | Compass | Layer B 需求、slice、边界、原始输入、已确认需求 | 宿主面板不得替代它 |
+| `references/backlogs/*.json` | canonical long-route truth | References | 跨会话长期路线、阶段状态、当前焦点与证据锚点 | 不替代 `.dev-task.md`；当前任务必须显式锚定到具体 backlog 条目 |
+| `references/spec-registry.json` + `references/spec-lifecycle-policy.json` | canonical governance index | References | 给 `compass/docs/specs/*.md` / `compass/docs/archive/specs/*.md` 做机器登记与生命周期约束，说明每份 spec 的角色、状态、归档位置与执行链绑定 | 用于治理和校验，不把 spec 重新抬成 runtime authority |
 | `prism` run state | run-scoped truth | Prism | 每次 Prism 运行的 run_id、registry、collect、resolve/archive 记录 | 以 run 为隔离边界 |
 | runtime project state | derived state | runtime tools | session/capability/binding/process claim、compat、audit、pending closure、closure-ledger | 不能反向篡改 canonical truth |
 | 宿主 `plan.md` / workboard | mirror state | host surface | 展示当前 pointer/hash，辅助长任务导航 | **mirror-only** |
-| 宿主通用 skill（brainstorming / planning / visual） | overlay protocol | host skill | 提供分解、表达、展示与设计建议 | **advisory-only**，不得覆盖 `.dev-task.md`、PM Gate、自主执行授权，也不得默认升级成人工审批门 |
+| 宿主通用 skill（brainstorming / planning / visual） | overlay protocol | host skill | 提供分解、表达、展示与设计建议 | **advisory-only**，不得覆盖 `.dev-task.md`、PM Gate、自主执行授权，也不得默认升级成人工审批门；其自带的下游 handoff（如 writing-plans）也不能反向接管 RedCap-native 主流程 |
 | task report / acceptance report | closure evidence | reports | 证明“某个闭环真的发生了” | 缺失时不得伪装成完成 |
 
 ### 2.2.1 artifact lifecycle 分类
@@ -94,6 +96,7 @@ RedCap 当前把状态面划分为三类：
 | 层 | 典型载体 | 职责 | 是否可直接当作长期 evidence |
 | --- | --- | --- | --- |
 | **frozen evidence** | `compass/docs/specs/**`、`research/**`、`traces/**`、`task-reports/**` | 冻结后的设计、审计、研究与 closure 证据 | 是 |
+| **canonical long-route truth** | `references/backlogs/*.json` | 机器可读的长期路线、阶段状态、当前焦点与人类说明锚点 | 是，但只负责长期路线，不接管 live task |
 | **live knowledge** | `compass/knowledge/lessons.md`、`host-reliability.md`、`hooks-*.md`、模型矩阵 | 活的经验、heuristics、宿主差异与操作知识 | 只作为规则与经验，不直接替代 closure evidence |
 | **continuity assets** | `.dev-task.md`、`compass/knowledge/explore-notes.md`、宿主 `plan.md` / workboard、导入的 session artifacts | 防偏航、防上下文稀释、断点恢复、显式继承 | 否 |
 
@@ -101,8 +104,10 @@ RedCap 当前把状态面划分为三类：
 
 1. `compass/docs/` 与 `compass/knowledge/` 是**平级不同职**，不是父子关系。
 2. continuity assets 不是“第三个 docs”，而是围绕 canonical truth 运行的连续性状态链。
-3. 若某类资产要从 continuity 层升级为 evidence，必须经过**显式发布**，而不是因为“写成了 markdown”就自动变成 docs。
-4. `compass/docs/index.yaml` 负责冻结 docs collection 的 retention / archive 规则，避免 docs 根目录再次回到大杂烩状态。
+3. backlog 这类“长期路线”如果要进入执行保障，机器权威应放在 `references/backlogs/*.json`，给人看的解释继续留在 `compass/docs/specs/**`；不要反过来把 spec 文档当运行时 authority。
+4. spec 文档若想继续保留在 `compass/docs/specs/**`，必须在 `references/spec-registry.json` 里登记自己的角色、当前状态和配套控制面；否则就只是匿名材料，应迁出或补登记。
+5. 若某类资产要从 continuity 层升级为 evidence，必须经过**显式发布**，而不是因为“写成了 markdown”就自动变成 docs。
+6. `compass/docs/index.yaml` 负责冻结 docs collection 的 retention / archive 规则，避免 docs 根目录再次回到大杂烩状态。
 
 ### 2.3 host-agent interop governance
 
@@ -352,15 +357,16 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 
 - `redcap-interop-governance.sh`：统一维护 `audit/`、`pending-closure/`、`closure-ledger/` 三类治理状态；其中 `closure-ledger/` 是 append-only 事务日志，`pending-closure/` 是当前尚未清偿的义务
 - `redcap-task-report-register.sh`：报告在 **process claim 可用且登记成功** 时创建 pending closure；若 claim 缺失则记录 degraded mode 并拒绝注册
-- `redcap-task-report-check.sh`：可从 pending closure 回读 `artifact_path`，支持无新 diff 的补偿式 reconcile
+- `redcap-task-report-check.sh`：可从 pending closure 回读 `artifact_path`，支持无新 diff 的补偿式 reconcile；并强制检查报告开头摘要与术语对照节是否存在
 - `redcap-on-complete.sh`：对 RedCap 自身 on-complete fail-closed 校验 commit proof / task report / artifact lifecycle，并把关键阶段追加到 closure ledger
 - `redcap-layerB-session-end.sh`：成功则清 obligation 并记账；失败或缺 claim 则把缺口重新写回 pending closure，并显式记录 blocked redlines
 - `redcap-layerB-session-start.sh`：在成功 re-anchor 后以 advisory 方式触发 pending closure auto-reconcile；它负责记录/尝试消费确定性 blocker，但不把 SessionStart 变成新的 blocking gate
 
 与此同时，task report 本身不再只是“归档路径”：
 
-- 模板必须显式提供 `需你确认 / 人工验证 / 后续动作`
-- `redcap-notify-format.sh` 会从报告中抽取这三段，直接进入 stdout 收尾摘要与飞书通知
+- 模板必须显式提供 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置`
+- 模板必须显式提供 `术语对照（按文件/功能解释）`，避免任务报告再次退回黑话堆叠
+- `redcap-notify-format.sh` 会从报告中优先抽取这四段，直接进入 stdout 收尾摘要与飞书通知；`人工审核要点 / 人工验证项` 则作为补充提醒
 - 这样 Norven 在不打开完整报告时，也能先看到真正需要介入或关注的点
 
 这意味着弱宿主即使没有完整 Hook，也不能再把“收尾链没发生”静默吞掉。

@@ -57,14 +57,49 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh binding-recovery-gate
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-concurrency
   bash compass/tools/redcap-multi-session-acceptance.sh copilot-safe-degraded
+  bash compass/tools/redcap-multi-session-acceptance.sh copilot-wrapper-identity-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh copilot-session-context-rejects-ambiguous-locks
   bash compass/tools/redcap-multi-session-acceptance.sh cross-layer-visibility
   bash compass/tools/redcap-multi-session-acceptance.sh layera-legacy-quarantine
   bash compass/tools/redcap-multi-session-acceptance.sh prism-concurrency
   bash compass/tools/redcap-multi-session-acceptance.sh prism-legacy-bridge
   bash compass/tools/redcap-multi-session-acceptance.sh report-register-requires-claim
+  bash compass/tools/redcap-multi-session-acceptance.sh report-register-replaces-pending-artifact
+  bash compass/tools/redcap-multi-session-acceptance.sh report-register-rejects-traversal-artifact
+  bash compass/tools/redcap-multi-session-acceptance.sh report-register-rejects-symlinked-report-root
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-rewrite
+  bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-normalizes-absolute-artifact
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-clear
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-hash-mismatch
+  bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-backlog-spec
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-triggers-on-complete
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-avoids-ambiguous-reports
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-skips-stale-pending-artifact
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-normalizes-absolute-pending-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh on-complete-records-backlog-spec-redlines
+  bash compass/tools/redcap-multi-session-acceptance.sh pending-closure-clear-restores-on-ledger-failure
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-all-matching-pending-states
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-prefers-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-requires-summary-for-untracked-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-accepts-legacy-pending-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-rejects-stale-marker-conflict
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-rejects-zero-diff-stale-marker
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-ignores-invalid-pending-artifact
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-ignores-traversal-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-normalizes-absolute-pending-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-rejects-symlink-report-escape
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-replaces-stale-marker-with-unique-report
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-serializes-on-complete
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-prunes-stale-lock
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-keeps-live-legacy-lock
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-prunes-reused-pid-lock
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-retries-after-report-change
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-after-clear
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-notify-timeout-releases-lock
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-keeps-report-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-normalizes-absolute-report-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh pending-closure-lock-keeps-live-legacy-lock
+  bash compass/tools/redcap-multi-session-acceptance.sh pending-closure-lock-prunes-reused-pid
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-runtime-init-failed-degrades
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-clear-context-clears-probe-pid
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-claim-parent-fallback
@@ -73,6 +108,17 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-pre-commit-block
   bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-pre-commit-allow
   bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-rejects-tabbed-path
+  bash compass/tools/redcap-multi-session-acceptance.sh backlog-check-strict
+  bash compass/tools/redcap-multi-session-acceptance.sh spec-registry-validates-repo
+  bash compass/tools/redcap-multi-session-acceptance.sh spec-check-rejects-superseded-outside-archive
+  bash compass/tools/redcap-multi-session-acceptance.sh spec-check-requires-replaced-by
+  bash compass/tools/redcap-multi-session-acceptance.sh spec-check-rejects-invalid-role
+  bash compass/tools/redcap-multi-session-acceptance.sh spec-check-rejects-replacement-cycle
+  bash compass/tools/redcap-multi-session-acceptance.sh spec-check-accepts-archived-superseded
+  bash compass/tools/redcap-multi-session-acceptance.sh host-workboard-backlog-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh cli-console-mirror-overwrites
+  bash compass/tools/redcap-multi-session-acceptance.sh feishu-duplex-window-queue
+  bash compass/tools/redcap-multi-session-acceptance.sh overlay-skill-handoff-stays-native
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-sync
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-required
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-claim-requires-live-process
@@ -210,6 +256,38 @@ read_file_text() {
     cat "$path"
 }
 
+write_current_report_marker_fixture() {
+    local report_rel="$1"
+    local task_file="${2:-$REDCAP_ROOT/.dev-task.md}"
+
+    redcap_interop_write_current_report_marker "$report_rel" "$task_file" >/dev/null \
+        || fail "failed to write current report marker: $report_rel"
+}
+
+write_current_report_marker_with_hash_fixture() {
+    local report_rel="$1"
+    local confirmed_hash="$2"
+    local task_file="${3:-$REDCAP_ROOT/.dev-task.md}"
+    local identity_path task_id active_slice
+
+    task_file=$(redcap_dev_task_resolve_file "$task_file")
+    task_id=$(redcap_dev_task_extract_kv "$task_file" "task_id" 2>/dev/null || true)
+    active_slice=$(redcap_dev_task_extract_kv "$task_file" "active_slice" 2>/dev/null || true)
+    [[ -n "$task_id" && -n "$active_slice" ]] || fail "failed to resolve current task metadata for marker fixture"
+
+    redcap_runtime_write_text "layerB/current-report-path" "$report_rel" >/dev/null \
+        || fail "failed to write raw current report marker: $report_rel"
+    identity_path="$(redcap_runtime_path "layerB/current-report-identity")"
+    [[ -n "$identity_path" ]] || fail "failed to resolve current report identity path"
+    cat >"$identity_path" <<EOF
+report_path: $report_rel
+task_id: $task_id
+confirmed_hash: $confirmed_hash
+active_slice: $active_slice
+updated_at: 2026-04-16T00:00:00Z
+EOF
+}
+
 manifest_value() {
     local path="$1"
     local key="$2"
@@ -303,6 +381,28 @@ seed_temp_git_repo() {
     git -C "$repo" commit --quiet -m "init"
 }
 
+create_task_report_fixture_repo() {
+    local repo="$1"
+
+    mkdir -p "$repo"
+    init_temp_git_repo "$repo"
+    mkdir -p "$repo/compass/tools" "$repo/compass/docs/task-reports" "$repo/references"
+    cp "$REDCAP_ROOT/.dev-task.md" "$repo/.dev-task.md"
+    cp "$REDCAP_ROOT/compass/tools/redcap-task-report-check.sh" "$repo/compass/tools/redcap-task-report-check.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$repo/compass/tools/redcap-task-report-register.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$repo/compass/tools/redcap-layerB-task-complete-guard.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh" "$repo/compass/tools/redcap-runtime-state.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-interop-governance.sh" "$repo/compass/tools/redcap-interop-governance.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-dev-task.sh" "$repo/compass/tools/redcap-dev-task.sh"
+    cp "$REDCAP_ROOT/references/task-report-template.md" "$repo/references/task-report-template.md"
+    chmod +x \
+        "$repo/compass/tools/redcap-task-report-check.sh" \
+        "$repo/compass/tools/redcap-task-report-register.sh" \
+        "$repo/compass/tools/redcap-layerB-task-complete-guard.sh"
+    git -C "$repo" add .dev-task.md compass/tools
+    git -C "$repo" commit --quiet -m "task-report fixture"
+}
+
 install_artifact_hook_fixture() {
     local repo="$1"
 
@@ -371,6 +471,24 @@ init_bound_runtime() {
     export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
     redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
         || fail "failed to initialize runtime binding for $host"
+    REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
+    unset REDCAP_HOST_PROCESS_PROBE_PID
+}
+
+init_bound_runtime_for_repo() {
+    local host="$1"
+    local repo="$2"
+    local binding_key="$3"
+    local host_process_pid="$4"
+    local probe_pid
+
+    spawn_host_probe probe_pid
+
+    export REDCAP_HOST_PROCESS_PID="$host_process_pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$repo" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for $host fixture repo"
     REDCAP_SESSION_ISOLATION_MODE="full"
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
@@ -716,6 +834,127 @@ run_copilot_safe_degraded_case() {
     assert_num_eq "$after" "$expected"
 }
 
+run_copilot_wrapper_identity_anchor_case() {
+    local case_name="copilot-wrapper-identity-anchor"
+    local case_root case_core session_state_root session_handle session_dir workboard confirmed_hash
+    local probe_pid binding_key runtime_id manifest degraded_file before after initial_head
+
+    log "case: $case_name"
+
+    case_root="$ACCEPT_ROOT/$case_name"
+    case_core="$CONTINUITY_CORE_DIR/$case_name"
+    session_state_root="$case_root/session-state"
+    session_handle="acceptance-copilot-handle-${RANDOM}-$$"
+    session_dir="$session_state_root/$session_handle"
+    workboard="$session_dir/plan.md"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+    degraded_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "degraded-mode.count")"
+    before="$(counter_value "$degraded_file")"
+
+    spawn_host_probe probe_pid
+    mkdir -p "$session_dir"
+    printf '%s\n' "$probe_pid" >"$session_dir/inuse.$probe_pid.lock"
+
+    write_workboard_fixture \
+        "$workboard" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "framework-upgrade-backlog-review" \
+        "acceptance copilot wrapper identity anchor" \
+        "copilot-session-anchor" \
+        "$confirmed_hash"
+
+    printf '{"cwd":"%s"}\n' "$REDCAP_ROOT" | \
+        REDCAP_COPILOT_SESSION_STATE_ROOT="$session_state_root" \
+        REDCAP_CONTINUITY_ROOT_DIR="$case_core" \
+        REDCAP_HOOK_CWD="$REDCAP_ROOT" \
+        REDCAP_HOST_PROCESS_PID="$probe_pid" \
+        bash "$REDCAP_ROOT/.github/hooks/scripts/redcap-layerB-session-start.sh" >/dev/null
+
+    binding_key="$(redcap_runtime_binding_key_from_host_session copilot "$session_handle")"
+    assert_eq "$(workboard_value "$workboard" "isolation_mode")" "full"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_reason")" "explicit-binding-key"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_profile")" "copilot-sessionstart-wrapper-required"
+    assert_eq "$(workboard_value "$workboard" "resume_gate_evidence")" "capability-matrix,explicit-binding-key"
+    assert_eq "$(workboard_value "$workboard" "session_binding_key")" "$binding_key"
+    assert_eq "$(workboard_value "$workboard" "continuity_authority")" "redcap-owned-manifest"
+    assert_eq "$(workboard_value "$workboard" "continuity_state")" "fresh-session"
+
+    runtime_id="$(workboard_value "$workboard" "runtime_session_id")"
+    [[ -n "$runtime_id" && "$runtime_id" != "unknown" ]] || fail "expected runtime session id for $case_name"
+
+    manifest="$case_core/sessions/$runtime_id/manifest.yaml"
+    assert_exists "$manifest"
+    assert_eq "$(manifest_value "$manifest" "isolation_mode")" "full"
+    assert_eq "$(manifest_value "$manifest" "resume_gate_reason")" "explicit-binding-key"
+
+    printf '{"cwd":"%s"}\n' "$REDCAP_ROOT" | \
+        REDCAP_COPILOT_SESSION_STATE_ROOT="$session_state_root" \
+        REDCAP_CONTINUITY_ROOT_DIR="$case_core" \
+        REDCAP_HOOK_CWD="$REDCAP_ROOT" \
+        REDCAP_HOST_PROCESS_PID="$probe_pid" \
+        REDCAP_SKIP_FEISHU=1 \
+        REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+        bash "$REDCAP_ROOT/.github/hooks/scripts/redcap-layerB-session-end.sh" >/dev/null
+
+    after="$(counter_value "$degraded_file")"
+    assert_num_eq "$after" "$before"
+
+    attach_binding_with_capability_recovery "copilot" "$REDCAP_ROOT" "$binding_key" "$probe_pid" "$probe_pid" \
+        || fail "failed to reattach runtime for $case_name"
+    initial_head="$(redcap_runtime_path "layerB/initial-head")"
+    assert_not_exists "$initial_head"
+    redcap_runtime_clear_context
+}
+
+run_copilot_session_context_rejects_ambiguous_locks_case() {
+    local case_name="copilot-session-context-rejects-ambiguous-locks"
+    local case_root session_state_root session_dir_a session_dir_b probe_pid output session binding workboard
+
+    log "case: $case_name"
+
+    case_root="$ACCEPT_ROOT/$case_name"
+    session_state_root="$case_root/session-state"
+    session_dir_a="$session_state_root/acceptance-copilot-a-${RANDOM}-$$"
+    session_dir_b="$session_state_root/acceptance-copilot-b-${RANDOM}-$$"
+
+    spawn_host_probe probe_pid
+    mkdir -p "$session_dir_a" "$session_dir_b"
+    printf '%s\n' "$probe_pid" >"$session_dir_a/inuse.$probe_pid.lock"
+    printf '%s\n' "$probe_pid" >"$session_dir_b/inuse.$probe_pid.lock"
+    printf '# a\n' >"$session_dir_a/plan.md"
+    printf '# b\n' >"$session_dir_b/plan.md"
+
+    output="$(
+        REDCAP_ROOT_ENV="$REDCAP_ROOT" \
+        REDCAP_COPILOT_SESSION_STATE_ROOT="$session_state_root" \
+        REDCAP_HOST_PROCESS_PID="$probe_pid" \
+            bash -lc '
+set -u
+cd "$REDCAP_ROOT_ENV"
+source .github/hooks/scripts/redcap-copilot-session-context.sh
+echo "loaded=1"
+unset REDCAP_HOST_SESSION_ID REDCAP_SESSION_BINDING_KEY REDCAP_HOST_WORKBOARD_PATH REDCAP_COPILOT_SESSION_SOURCE
+if redcap_copilot_apply_session_context >/dev/null 2>&1; then
+    echo "applied=1"
+else
+    echo "applied=0"
+fi
+echo "session=${REDCAP_HOST_SESSION_ID:-}"
+echo "binding=${REDCAP_SESSION_BINDING_KEY:-}"
+echo "workboard=${REDCAP_HOST_WORKBOARD_PATH:-}"
+'
+    )"
+
+    session="$(printf '%s\n' "$output" | awk -F= '/^session=/{print $2}')"
+    binding="$(printf '%s\n' "$output" | awk -F= '/^binding=/{print $2}')"
+    workboard="$(printf '%s\n' "$output" | awk -F= '/^workboard=/{print $2}')"
+    assert_string_contains "$output" "loaded=1"
+    assert_string_contains "$output" "applied=0"
+    assert_eq "$session" ""
+    assert_eq "$binding" ""
+    assert_eq "$workboard" ""
+}
+
 run_cross_layer_visibility_case() {
     local project_dir state_dir layera_session_id layera_binding
     local layera_pid layerb_pid layerb_binding layera_probe layerb_probe
@@ -915,7 +1154,10 @@ run_report_register_requires_claim_case() {
 
     log "case: report-register-requires-claim"
 
-    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md"
+    redcap_runtime_clear_context
+    unset REDCAP_RUNTIME_ALLOW_DISK_RECOVERY REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY REDCAP_RUNTIME_CAPABILITY 2>/dev/null || true
+
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
     degraded_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "degraded-mode.count")"
     before="$(counter_value "$degraded_file")"
 
@@ -927,23 +1169,134 @@ run_report_register_requires_claim_case() {
     assert_num_eq "$after" $((before + 1))
 }
 
+run_report_register_replaces_pending_artifact_case() {
+    local host="claude"
+    local binding_key pid
+    local current_head pending_state marker_path
+    local report_a report_b rel_a rel_b
+
+    log "case: report-register-replaces-pending-artifact"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "report-register-replaces-pending-artifact" >/dev/null 2>&1 || true
+
+    report_a="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-report-a-${RANDOM}-$$.md"
+    report_b="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-report-b-${RANDOM}-$$.md"
+    rel_a="${report_a#$REDCAP_ROOT/}"
+    rel_b="${report_b#$REDCAP_ROOT/}"
+    printf '# acceptance report a\n' >"$report_a"
+    printf '# acceptance report b\n' >"$report_b"
+    LEGACY_TMP_FILES+=("$report_a" "$report_b")
+
+    binding_key="acceptance-report-register-replace-${RANDOM}-$$"
+    pid="$((65000 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to write initial head for report register replace case"
+
+    REDCAP_HOST_PROCESS_PID="$pid" bash "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$host" "$report_a" >/dev/null \
+        || fail "failed to register first report artifact"
+    pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "artifact_path")" "$rel_a"
+
+    REDCAP_HOST_PROCESS_PID="$pid" bash "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$host" "$report_b" >/dev/null \
+        || fail "failed to replace pending report artifact"
+    pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "artifact_path")" "$rel_b"
+
+    marker_path="$(redcap_runtime_path "layerB/current-report-path")"
+    assert_exists "$marker_path"
+    assert_eq "$(read_file_text "$marker_path")" "$rel_b"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "report-register-replaces-pending-artifact" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_report_register_rejects_traversal_artifact_case() {
+    local host="claude"
+    local repo binding_key pid current_head traversal_path output status pending_state
+
+    log "case: report-register-rejects-traversal-artifact"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/report-register-rejects-traversal/repo"
+    create_task_report_fixture_repo "$repo"
+    binding_key="acceptance-report-register-traversal-${RANDOM}-$$"
+    pid="$((65100 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to write initial head for traversal register case"
+    traversal_path="$repo/compass/docs/task-reports/../../../references/task-report-template.md"
+
+    set +e
+    output="$(REDCAP_HOST_PROCESS_PID="$pid" bash "$repo/compass/tools/redcap-task-report-register.sh" "$host" "$traversal_path" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task-report-register unexpectedly accepted traversal report path"
+    assert_string_contains "$output" "report must resolve under compass/docs/task-reports/"
+
+    pending_state=$(redcap_interop_pending_closure_existing_file "$repo" "$repo/.dev-task.md" 2>/dev/null || true)
+    [[ -z "$pending_state" ]] || fail "task-report-register unexpectedly created pending closure for traversal path"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_report_register_rejects_symlinked_report_root_case() {
+    local host="claude"
+    local repo case_root external_reports report_path binding_key pid current_head output status pending_state
+
+    log "case: report-register-rejects-symlinked-report-root"
+
+    redcap_runtime_clear_context
+    case_root="$ACCEPT_ROOT/report-register-symlink-root"
+    repo="$case_root/repo"
+    external_reports="$case_root/external-reports"
+    create_task_report_fixture_repo "$repo"
+    mkdir -p "$external_reports"
+    cp "$repo/references/task-report-template.md" "$external_reports/escape.md"
+    rm -rf "$repo/compass/docs/task-reports"
+    ln -s "$external_reports" "$repo/compass/docs/task-reports"
+    report_path="$repo/compass/docs/task-reports/escape.md"
+
+    binding_key="acceptance-report-register-symlink-root-${RANDOM}-$$"
+    pid="$((65110 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to write initial head for symlinked root case"
+
+    set +e
+    output="$(REDCAP_HOST_PROCESS_PID="$pid" bash "$repo/compass/tools/redcap-task-report-register.sh" "$host" "$report_path" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task-report-register unexpectedly accepted symlinked task-report root"
+    assert_string_contains "$output" "report must resolve under compass/docs/task-reports/"
+
+    pending_state=$(redcap_interop_pending_closure_existing_file "$repo" "$repo/.dev-task.md" 2>/dev/null || true)
+    [[ -z "$pending_state" ]] || fail "task-report-register unexpectedly created pending closure for symlinked task-report root"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
 run_sessionstart_auto_reconcile_rewrite_case() {
     local host="claude"
-    local binding_a binding_b pid_a pid_b probe_a probe_b
+    local binding_a binding_b pid_a pid_b
     local report_path pending_state required_redlines expected_seed expected_reconciled
+    local current_head
 
     log "case: sessionstart-auto-reconcile-rewrite"
 
-    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
     binding_a="acceptance-reconcile-a-${RANDOM}-$$"
     binding_b="acceptance-reconcile-b-${RANDOM}-$$"
     pid_a="$((61000 + RANDOM))"
     pid_b="$((62000 + RANDOM))"
-    spawn_host_probe probe_a
-    spawn_host_probe probe_b
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "sessionstart-auto-reconcile-rewrite" >/dev/null 2>&1 || true
 
-    printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_a" REDCAP_HOST_PROCESS_PID="$pid_a" REDCAP_HOST_PROCESS_PROBE_PID="$probe_a" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+    init_bound_runtime "$host" "$binding_a" "$pid_a"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for reconcile rewrite case"
     REDCAP_HOST_PROCESS_PID="$pid_a" bash "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$host" "$report_path" >/dev/null
 
     pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
@@ -951,8 +1304,12 @@ run_sessionstart_auto_reconcile_rewrite_case() {
     expected_seed="task-report,review,notify"
     assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "$expected_seed")"
 
-    printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_b" REDCAP_HOST_PROCESS_PID="$pid_b" REDCAP_HOST_PROCESS_PROBE_PID="$probe_b" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+    init_bound_runtime "$host" "$binding_b" "$pid_b"
+    write_current_report_marker_fixture "${report_path#$REDCAP_ROOT/}"
+    REDCAP_HOST_PROCESS_PID="$pid_b" bash "$REDCAP_ROOT/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null \
+        || fail "pending closure reconcile rewrite case failed"
 
+    pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
     required_redlines=$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)
     expected_reconciled="review,notify"
     assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "$expected_reconciled")"
@@ -960,6 +1317,1794 @@ run_sessionstart_auto_reconcile_rewrite_case() {
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "sessionstart-auto-reconcile-rewrite" >/dev/null
     redcap_runtime_clear_process_claim "$host" "$pid_a" >/dev/null 2>&1 || true
     redcap_runtime_clear_process_claim "$host" "$pid_b" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_sessionstart_auto_reconcile_normalizes_absolute_artifact_case() {
+    local host="claude"
+    local binding_a binding_b pid_a pid_b
+    local report_rel report_abs pending_state current_head
+
+    log "case: sessionstart-auto-reconcile-normalizes-absolute-artifact"
+
+    report_rel="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_abs="$REDCAP_ROOT/$report_rel"
+    binding_a="acceptance-reconcile-abs-a-${RANDOM}-$$"
+    binding_b="acceptance-reconcile-abs-b-${RANDOM}-$$"
+    pid_a="$((61010 + RANDOM))"
+    pid_b="$((62010 + RANDOM))"
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "sessionstart-auto-reconcile-normalizes-absolute-artifact" >/dev/null 2>&1 || true
+
+    init_bound_runtime "$host" "$binding_a" "$pid_a"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for absolute reconcile case"
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "sessionstart-auto-reconcile-normalizes-absolute-artifact" \
+        "$report_abs" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed absolute pending artifact"
+    pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
+    python3 - "$pending_state" "$report_abs" <<'PY'
+import pathlib
+import re
+import sys
+
+state_file = pathlib.Path(sys.argv[1])
+artifact_path = sys.argv[2]
+text = state_file.read_text(encoding="utf-8")
+text, count = re.subn(r"^artifact_path:.*$", f"artifact_path: {artifact_path}", text, count=1, flags=re.MULTILINE)
+if count != 1:
+    raise SystemExit(1)
+state_file.write_text(text, encoding="utf-8")
+PY
+
+    init_bound_runtime "$host" "$binding_b" "$pid_b"
+    write_current_report_marker_fixture "$report_rel"
+    REDCAP_HOST_PROCESS_PID="$pid_b" bash "$REDCAP_ROOT/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null \
+        || fail "pending closure reconcile absolute artifact case failed"
+
+    pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "artifact_path" 2>/dev/null || true)" "$report_rel"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "sessionstart-auto-reconcile-normalizes-absolute-artifact" >/dev/null
+    redcap_runtime_clear_process_claim "$host" "$pid_a" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid_b" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_complete_guard_triggers_on_complete_case() {
+    local host="copilot"
+    local binding_key pid current_head
+    local report_path report_rel marker_path
+    local case_dir register_log complete_log register_stub complete_stub
+    local complete_count register_count
+    local task_complete_slice
+
+    log "case: task-complete-guard-triggers-on-complete"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "task-complete-guard-triggers-on-complete" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-task-complete-guard-${RANDOM}-$$"
+    pid="$((66000 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for task complete guard case"
+
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-guard-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    printf '# acceptance guard report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "task-complete-guard-triggers-on-complete" \
+        "$report_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed pending closure for task complete guard case"
+    write_current_report_marker_fixture "$report_rel"
+    task_complete_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-guard.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    register_log="$case_dir/register.log"
+    complete_log="$case_dir/on-complete.log"
+    register_stub="$case_dir/register-stub.sh"
+    complete_stub="$case_dir/on-complete-stub.sh"
+
+    cat >"$register_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+HOST="\${1:?}"
+REPORT="\${2:?}"
+source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
+source "$REDCAP_ROOT/compass/tools/redcap-interop-governance.sh"
+redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNTIME_CAPABILITY:?}" >/dev/null
+printf '%s\n' "\$REPORT" >>"$register_log"
+redcap_interop_write_current_report_marker "\${REPORT#$REDCAP_ROOT/}" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+EOF
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "on-complete" >>"$complete_log"
+EOF
+    chmod +x "$register_stub" "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard first run failed"
+
+    marker_path="$(redcap_runtime_path "layerB/current-report-path")"
+    assert_exists "$marker_path"
+    assert_eq "$(read_file_text "$marker_path")" "$report_rel"
+
+    register_count="0"
+    [[ -f "$register_log" ]] && register_count="$(wc -l < "$register_log" | tr -d '[:space:]')"
+    complete_count="$(wc -l < "$complete_log" | tr -d '[:space:]')"
+    assert_num_eq "$register_count" 0
+    assert_num_eq "$complete_count" 1
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard second run failed"
+
+    register_count="0"
+    [[ -f "$register_log" ]] && register_count="$(wc -l < "$register_log" | tr -d '[:space:]')"
+    complete_count="$(wc -l < "$complete_log" | tr -d '[:space:]')"
+    assert_num_eq "$register_count" 0
+    assert_num_eq "$complete_count" 1
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "task-complete-guard-triggers-on-complete" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_complete_guard_avoids_ambiguous_reports_case() {
+    local host="copilot"
+    local binding_key pid current_head marker_path status_path
+    local report_a report_b case_dir register_log complete_log register_stub complete_stub
+    local task_complete_slice
+
+    log "case: task-complete-guard-avoids-ambiguous-reports"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "task-complete-guard-avoids-ambiguous-reports" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-task-complete-ambiguous-${RANDOM}-$$"
+    pid="$((66100 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for ambiguous report case"
+
+    report_a="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-ambiguous-a-${RANDOM}-$$.md"
+    report_b="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-ambiguous-b-${RANDOM}-$$.md"
+    printf '# acceptance ambiguous report a\n' >"$report_a"
+    printf '# acceptance ambiguous report b\n' >"$report_b"
+    LEGACY_TMP_FILES+=("$report_a" "$report_b")
+
+    task_complete_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-ambiguous.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    register_log="$case_dir/register.log"
+    complete_log="$case_dir/on-complete.log"
+    register_stub="$case_dir/register-stub.sh"
+    complete_stub="$case_dir/on-complete-stub.sh"
+
+    cat >"$register_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+HOST="\${1:?}"
+REPORT="\${2:?}"
+printf '%s\n' "\$HOST:\$REPORT" >>"$register_log"
+EOF
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
+redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNTIME_CAPABILITY:?}" >/dev/null
+marker="\$(redcap_runtime_path "layerB/current-report-path" 2>/dev/null || true)"
+[[ -n "\$marker" && -f "\$marker" ]] || exit 1
+printf '%s\n' "on-complete" >>"$complete_log"
+EOF
+    chmod +x "$register_stub" "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard ambiguous report run failed"
+
+    marker_path="$(redcap_runtime_path "layerB/current-report-path")"
+    assert_not_exists "$marker_path"
+    assert_not_exists "$register_log"
+    assert_not_exists "$complete_log"
+    status_path="$(redcap_runtime_path "layerB/task-complete-guard/last-status")"
+    assert_exists "$status_path"
+    assert_eq "$(read_file_text "$status_path")" "retry-needed"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_complete_guard_skips_stale_pending_artifact_case() {
+    local host="copilot"
+    local binding_key pid current_head marker_path status_path
+    local report_old report_new report_old_rel case_dir register_log complete_log register_stub complete_stub
+    local task_complete_slice
+
+    log "case: task-complete-guard-skips-stale-pending-artifact"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "task-complete-guard-skips-stale-pending-artifact" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-task-complete-stale-pending-${RANDOM}-$$"
+    pid="$((66150 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for stale pending case"
+
+    report_old="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-stale-old-${RANDOM}-$$.md"
+    report_new="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-stale-new-${RANDOM}-$$.md"
+    report_old_rel="${report_old#$REDCAP_ROOT/}"
+    printf '# acceptance stale old report\n' >"$report_old"
+    printf '# acceptance stale new report\n' >"$report_new"
+    LEGACY_TMP_FILES+=("$report_old" "$report_new")
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "task-complete-guard-skips-stale-pending-artifact" \
+        "$report_old_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed stale pending artifact"
+
+    task_complete_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-stale-pending.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    register_log="$case_dir/register.log"
+    complete_log="$case_dir/on-complete.log"
+    register_stub="$case_dir/register-stub.sh"
+    complete_stub="$case_dir/on-complete-stub.sh"
+
+    cat >"$register_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+HOST="\${1:?}"
+REPORT="\${2:?}"
+printf '%s\n' "\$HOST:\$REPORT" >>"$register_log"
+EOF
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
+redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNTIME_CAPABILITY:?}" >/dev/null
+marker="\$(redcap_runtime_path "layerB/current-report-path" 2>/dev/null || true)"
+[[ -n "\$marker" && -f "\$marker" ]] || exit 1
+printf '%s\n' "on-complete" >>"$complete_log"
+EOF
+    chmod +x "$register_stub" "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard stale pending run failed"
+
+    marker_path="$(redcap_runtime_path "layerB/current-report-path")"
+    assert_not_exists "$marker_path"
+    assert_not_exists "$register_log"
+    assert_not_exists "$complete_log"
+    status_path="$(redcap_runtime_path "layerB/task-complete-guard/last-status")"
+    assert_exists "$status_path"
+    assert_eq "$(read_file_text "$status_path")" "retry-needed"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "task-complete-guard-skips-stale-pending-artifact" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_complete_guard_normalizes_absolute_pending_anchor_case() {
+    local host="copilot"
+    local repo binding_key pid current_head marker_path pending_state
+    local report_path report_rel case_dir complete_log complete_stub task_complete_slice
+
+    log "case: task-complete-guard-normalizes-absolute-pending-anchor"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-complete-absolute-pending-repo/repo"
+    create_task_report_fixture_repo "$repo"
+    binding_key="acceptance-task-complete-absolute-pending-${RANDOM}-$$"
+    pid="$((66160 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for absolute pending case"
+
+    report_path="$repo/compass/docs/task-reports/zz-acceptance-task-complete-absolute-${RANDOM}-$$.md"
+    report_rel="${report_path#$repo/}"
+    cp "$repo/references/task-report-template.md" "$report_path"
+    redcap_interop_write_pending_closure \
+        "$repo" \
+        "$repo/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "task-complete-guard-normalizes-absolute-pending-anchor" \
+        "$report_path" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed absolute pending anchor"
+    pending_state="$(redcap_interop_pending_closure_file "$repo" "$repo/.dev-task.md")"
+    python3 - "$pending_state" "$report_path" <<'PY'
+import pathlib
+import re
+import sys
+
+state_file = pathlib.Path(sys.argv[1])
+artifact_path = sys.argv[2]
+text = state_file.read_text(encoding="utf-8")
+text, count = re.subn(r"^artifact_path:.*$", f"artifact_path: {artifact_path}", text, count=1, flags=re.MULTILINE)
+if count != 1:
+    raise SystemExit(1)
+state_file.write_text(text, encoding="utf-8")
+PY
+
+    task_complete_slice="$(redcap_dev_task_extract_kv "$repo/.dev-task.md" "active_slice")"
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-absolute-pending.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    complete_log="$case_dir/on-complete.log"
+    complete_stub="$case_dir/on-complete-stub.sh"
+
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+source "$repo/compass/tools/redcap-runtime-state.sh"
+redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNTIME_CAPABILITY:?}" >/dev/null
+marker="\$(redcap_runtime_path "layerB/current-report-path" 2>/dev/null || true)"
+[[ -n "\$marker" && -f "\$marker" ]] || exit 1
+printf '%s\n' "on-complete" >>"$complete_log"
+EOF
+    chmod +x "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$repo/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard absolute pending anchor case failed"
+
+    marker_path="$(redcap_runtime_path "layerB/current-report-path")"
+    pending_state="$(redcap_interop_pending_closure_existing_file "$repo" "$repo/.dev-task.md" 2>/dev/null || true)"
+    assert_exists "$marker_path"
+    assert_exists "$pending_state"
+    assert_eq "$(read_file_text "$marker_path")" "$report_rel"
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "artifact_path" 2>/dev/null || true)" "$report_rel"
+    assert_exists "$complete_log"
+
+    redcap_interop_clear_pending_closure "$repo" "$repo/.dev-task.md" "acceptance-cleanup" "task-complete-guard-normalizes-absolute-pending-anchor" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_on_complete_records_backlog_spec_redlines_case() {
+    local case_dir validator_stub current_head pending_state required_redlines
+
+    log "case: on-complete-records-backlog-spec-redlines"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "on-complete-records-backlog-spec-redlines" >/dev/null 2>&1 || true
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/on-complete-backlog-spec.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-stub.sh"
+
+    cat >"$validator_stub" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+[redcap-validator-chain] mode=on-complete overall=fail
+[1] commit-proof-check :: pass
+commit-proof ok
+[2] pm-gate :: pass
+pm-gate ok
+[3] drift-check :: pass
+drift ok
+[4] backlog-check :: fail
+backlog failed
+[5] spec-check :: fail
+spec failed
+[6] task-report-check :: pass
+task-report ok
+[7] artifact-lifecycle-check :: pass
+artifact ok
+OUT
+exit 1
+EOF
+    chmod +x "$validator_stub"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    if REDCAP_SKIP_FEISHU=1 REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-on-complete.sh" "$REDCAP_ROOT" "$current_head" redcap >/dev/null 2>&1; then
+        fail "on-complete unexpectedly succeeded with backlog/spec failures"
+    fi
+
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")"
+    assert_exists "$pending_state"
+    required_redlines="$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)"
+    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "backlog,spec")"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "on-complete-records-backlog-spec-redlines" >/dev/null 2>&1 || true
+}
+
+run_pending_closure_clear_restores_on_ledger_failure_case() {
+    local current_head report_path state_file clear_result
+
+    log "case: pending-closure-clear-restores-on-ledger-failure"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "pending-closure-clear-restores-on-ledger-failure" >/dev/null 2>&1 || true
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    state_file="$(
+        redcap_interop_write_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "copilot" \
+            "acceptance-seed" \
+            "review,notify" \
+            "pending-closure-clear-restores-on-ledger-failure" \
+            "$report_path" \
+            "$current_head" \
+            "$current_head"
+    )" || fail "failed to seed pending closure for ledger failure rollback case"
+
+    clear_result="$(
+        PROJECT_ROOT="$REDCAP_ROOT" \
+        TASK_FILE="$REDCAP_ROOT/.dev-task.md" \
+        EXPECTED_UPDATED_AT="$(redcap_interop_read_state_field "$state_file" "updated_at" 2>/dev/null || true)" \
+        bash -lc '
+            set -euo pipefail
+            source "$PROJECT_ROOT/compass/tools/redcap-runtime-state.sh"
+            source "$PROJECT_ROOT/compass/tools/redcap-dev-task.sh"
+            source "$PROJECT_ROOT/compass/tools/redcap-interop-governance.sh"
+            redcap_interop_append_closure_ledger_identity() { return 1; }
+            redcap_interop_append_closure_ledger() { return 1; }
+            if redcap_interop_clear_pending_closure "$PROJECT_ROOT" "$TASK_FILE" "acceptance-ledger-failure" "forced-ledger-failure" "$EXPECTED_UPDATED_AT"; then
+                printf "success\n"
+            else
+                printf "failed\n"
+            fi
+        '
+    )"
+    assert_eq "$clear_result" "failed"
+    assert_exists "$state_file"
+    assert_eq "$(redcap_interop_read_state_field "$state_file" "artifact_path" 2>/dev/null || true)" "$report_path"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "pending-closure-clear-restores-on-ledger-failure" >/dev/null 2>&1 || true
+}
+
+run_session_end_clears_all_matching_pending_states_case() {
+    local host="copilot"
+    local binding_key pid probe_pid current_head report_path state_file stale_state case_dir validator_stub
+
+    log "case: session-end-clears-all-matching-pending-states"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "session-end-clears-all-matching-pending-states" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-session-end-clear-${RANDOM}-$$"
+    pid="$((66250 + RANDOM))"
+    spawn_host_probe probe_pid
+    export REDCAP_HOST_PROCESS_PID="$pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for session-end clear case"
+    REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
+    unset REDCAP_HOST_PROCESS_PROBE_PID
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end clear case"
+    write_current_report_marker_fixture "$report_path"
+
+    state_file="$(
+        redcap_interop_write_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "$host" \
+            "acceptance-seed" \
+            "review,notify" \
+            "session-end-clears-all-matching-pending-states" \
+            "$report_path" \
+            "$current_head" \
+            "$current_head"
+    )" || fail "failed to seed pending closure for session-end clear case"
+    stale_state="$(dirname "$state_file")/$(basename "$state_file" .state)-stale.state"
+    cp "$state_file" "$stale_state" || fail "failed to clone stale pending state for session-end clear case"
+    LEGACY_TMP_FILES+=("$stale_state")
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-clear.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-pass.sh"
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+cat <<'OUT'
+[1] review-proof-check :: pass
+review clean
+[2] reanchor-check :: pass
+reanchor clean
+[3] pm-gate :: pass
+pm gate clean
+[4] drift-check :: pass
+drift clean
+[5] backlog-check :: pass
+backlog clean
+[6] spec-check :: pass
+spec clean
+[7] task-report-check :: pass
+$report_path
+[8] artifact-lifecycle-check :: pass
+artifact clean
+OUT
+EOF
+    chmod +x "$validator_stub"
+
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_SESSION_BINDING_KEY="$binding_key" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+    REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
+    REDCAP_SKIP_FEISHU=1 \
+    REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
+        || fail "session-end clear all matching states case failed"
+
+    assert_not_exists "$state_file"
+    assert_not_exists "$stale_state"
+    if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        fail "pending closure still exists after session-end clear all matching states case"
+    fi
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_prefers_anchor_case() {
+    local host="claude"
+    local binding_key pid current_head output
+    local report_a report_b rel_b
+
+    log "case: task-report-check-prefers-anchor"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "task-report-check-prefers-anchor" >/dev/null 2>&1 || true
+
+    report_a="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-report-anchor-a-${RANDOM}-$$.md"
+    report_b="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-report-anchor-b-${RANDOM}-$$.md"
+    rel_b="${report_b#$REDCAP_ROOT/}"
+    cat >"$report_a" <<'EOF'
+# 任务完成报告：Acceptance Anchor A
+
+**报告日期**：2026-04-16
+**执行者**：Cap（Acceptance）
+**报告版本**：v1.0
+
+---
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：fixture
+- 详情：fixture
+### 0.2 上一步完成的是
+- 上一步完成的是：fixture
+### 0.3 下一步计划做的是
+- 下一步计划做的是：fixture
+### 0.4 整体计划脉络图与当前位置
+- 整体计划脉络图是：fixture
+- 当前所在位置：fixture
+
+---
+
+## 一、需求背景
+fixture
+
+## 二、方案讨论
+fixture
+
+## 三、落地结果
+fixture
+
+### 3.2.1 术语对照（按文件/功能解释）
+| 术语 | 对应文件/功能 | 人话解释 |
+|------|--------------|---------|
+| fixture | fixture | fixture |
+
+## 四、人工审核要点
+fixture
+
+## 五、验证结果
+fixture
+
+## 六、遗留问题与下一步
+fixture
+
+## 七、经验沉淀
+fixture
+
+## 八、附录
+fixture
+EOF
+    cp "$report_a" "$report_b"
+    LEGACY_TMP_FILES+=("$report_a" "$report_b")
+
+    binding_key="acceptance-task-report-anchor-${RANDOM}-$$"
+    pid="$((66200 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    write_current_report_marker_fixture "$rel_b"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "task-report-check-prefers-anchor" \
+        "$rel_b" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed pending closure for task-report-check anchor case"
+
+    output="$(REDCAP_HOST_PROCESS_PID="$pid" bash "$REDCAP_ROOT/compass/tools/redcap-task-report-check.sh" "$REDCAP_ROOT" "$current_head" "$current_head" "$host")"
+    assert_eq "$output" "$rel_b"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "task-report-check-prefers-anchor" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_requires_summary_for_untracked_anchor_case() {
+    local host="claude"
+    local binding_key pid current_head rel_path output report_path
+
+    log "case: task-report-check-requires-summary-for-untracked-anchor"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "task-report-check-requires-summary-for-untracked-anchor" >/dev/null 2>&1 || true
+
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-report-incomplete-${RANDOM}-$$.md"
+    rel_path="${report_path#$REDCAP_ROOT/}"
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：Acceptance Incomplete Report
+
+**报告日期**：2026-04-16
+**执行者**：Cap（Acceptance）
+**报告版本**：v1.0
+
+---
+
+## 一、需求背景
+fixture
+
+## 二、方案讨论
+fixture
+
+## 三、落地结果
+fixture
+
+## 四、人工审核要点
+fixture
+
+## 五、验证结果
+fixture
+
+## 六、遗留问题与下一步
+fixture
+
+## 七、经验沉淀
+fixture
+
+## 八、附录
+fixture
+EOF
+    LEGACY_TMP_FILES+=("$report_path")
+
+    binding_key="acceptance-task-report-incomplete-${RANDOM}-$$"
+    pid="$((66300 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    write_current_report_marker_fixture "$rel_path"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "task-report-check-requires-summary-for-untracked-anchor" \
+        "$rel_path" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed pending closure for incomplete report case"
+
+    if output="$(REDCAP_HOST_PROCESS_PID="$pid" bash "$REDCAP_ROOT/compass/tools/redcap-task-report-check.sh" "$REDCAP_ROOT" "$current_head" "$current_head" "$host" 2>&1)"; then
+        fail "task-report-check unexpectedly accepted incomplete anchored report"
+    fi
+    case "$output" in
+        *"incomplete summary template"*|*"anchored task report is not template-complete"*) ;;
+        *)
+            fail "task-report-check incomplete anchor output did not mention summary/template failure"
+            ;;
+    esac
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "task-report-check-requires-summary-for-untracked-anchor" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_accepts_legacy_pending_anchor_case() {
+    local repo legacy_rel current_head output
+
+    log "case: task-report-check-accepts-legacy-pending-anchor"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-legacy-pending-anchor/repo"
+    create_task_report_fixture_repo "$repo"
+    legacy_rel="compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md"
+    mkdir -p "$(dirname "$repo/$legacy_rel")"
+    cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
+    git -C "$repo" add "$legacy_rel"
+    git -C "$repo" commit --quiet -m "add legacy report anchor"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+
+    redcap_interop_write_pending_closure \
+        "$repo" \
+        "$repo/.dev-task.md" \
+        "copilot" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "task-report-check-accepts-legacy-pending-anchor" \
+        "$legacy_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed legacy pending anchor"
+
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$current_head" "$current_head")"
+    assert_eq "$output" "$legacy_rel"
+
+    redcap_interop_clear_pending_closure "$repo" "$repo/.dev-task.md" "acceptance-cleanup" "task-report-check-accepts-legacy-pending-anchor" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_rejects_stale_marker_conflict_case() {
+    local host="copilot"
+    local repo legacy_rel current_head binding_key pid new_report output
+
+    log "case: task-report-check-rejects-stale-marker-conflict"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-stale-marker-conflict/repo"
+    create_task_report_fixture_repo "$repo"
+    legacy_rel="compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md"
+    mkdir -p "$(dirname "$repo/$legacy_rel")"
+    cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
+    git -C "$repo" add "$legacy_rel"
+    git -C "$repo" commit --quiet -m "add legacy marker report"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+
+    binding_key="acceptance-task-report-stale-marker-${RANDOM}-$$"
+    pid="$((66350 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    write_current_report_marker_fixture "$legacy_rel" "$repo/.dev-task.md"
+
+    new_report="$repo/compass/docs/task-reports/zz-acceptance-stale-marker-new-${RANDOM}-$$.md"
+    cat >"$new_report" <<'EOF'
+# 任务完成报告：Acceptance Stale Marker New
+
+**报告日期**：2026-04-16
+**执行者**：Cap（Acceptance）
+**报告版本**：v1.0
+
+---
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：fixture
+- 详情：fixture
+### 0.2 上一步完成的是
+- 上一步完成的是：fixture
+### 0.3 下一步计划做的是
+- 下一步计划做的是：fixture
+### 0.4 整体计划脉络图与当前位置
+- 整体计划脉络图是：fixture
+- 当前所在位置：fixture
+
+---
+
+## 一、需求背景
+fixture
+
+## 二、方案讨论
+fixture
+
+## 三、落地结果
+fixture
+
+### 3.2.1 术语对照（按文件/功能解释）
+| 术语 | 对应文件/功能 | 人话解释 |
+|------|--------------|---------|
+| fixture | fixture | fixture |
+
+## 四、人工审核要点
+fixture
+
+## 五、验证结果
+fixture
+
+## 六、遗留问题与下一步
+fixture
+
+## 七、经验沉淀
+fixture
+
+## 八、附录
+fixture
+EOF
+    LEGACY_TMP_FILES+=("$new_report")
+
+    set +e
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$current_head" "$current_head" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task-report-check unexpectedly accepted stale marker conflict"
+    assert_string_contains "$output" "stale marker anchor conflicts with newer changed task reports"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_complete_guard_replaces_stale_marker_with_unique_report_case() {
+    local host="copilot"
+    local repo legacy_rel current_head binding_key pid case_dir register_log complete_log register_stub complete_stub marker_path
+    local new_report new_rel register_count complete_count
+
+    log "case: task-complete-guard-replaces-stale-marker-with-unique-report"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-complete-stale-marker/repo"
+    create_task_report_fixture_repo "$repo"
+    legacy_rel="compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md"
+    mkdir -p "$(dirname "$repo/$legacy_rel")"
+    cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
+    git -C "$repo" add "$legacy_rel"
+    git -C "$repo" commit --quiet -m "add legacy stale marker report"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+
+    binding_key="acceptance-task-complete-stale-marker-${RANDOM}-$$"
+    pid="$((66400 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for stale marker guard case"
+    write_current_report_marker_fixture "$legacy_rel" "$repo/.dev-task.md"
+
+    new_report="$repo/compass/docs/task-reports/zz-acceptance-stale-marker-new-${RANDOM}-$$.md"
+    new_rel="${new_report#$repo/}"
+    cat >"$new_report" <<'EOF'
+# 任务完成报告：Acceptance Guard Stale Marker New
+
+**报告日期**：2026-04-16
+**执行者**：Cap（Acceptance）
+**报告版本**：v1.0
+
+---
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：fixture
+- 详情：fixture
+### 0.2 上一步完成的是
+- 上一步完成的是：fixture
+### 0.3 下一步计划做的是
+- 下一步计划做的是：fixture
+### 0.4 整体计划脉络图与当前位置
+- 整体计划脉络图是：fixture
+- 当前所在位置：fixture
+
+---
+
+## 一、需求背景
+fixture
+
+## 二、方案讨论
+fixture
+
+## 三、落地结果
+fixture
+
+### 3.2.1 术语对照（按文件/功能解释）
+| 术语 | 对应文件/功能 | 人话解释 |
+|------|--------------|---------|
+| fixture | fixture | fixture |
+
+## 四、人工审核要点
+fixture
+
+## 五、验证结果
+fixture
+
+## 六、遗留问题与下一步
+fixture
+
+## 七、经验沉淀
+fixture
+
+## 八、附录
+fixture
+EOF
+    LEGACY_TMP_FILES+=("$new_report")
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-stale-marker.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    register_log="$case_dir/register.log"
+    complete_log="$case_dir/on-complete.log"
+    register_stub="$case_dir/register-stub.sh"
+    complete_stub="$case_dir/on-complete-stub.sh"
+
+    cat >"$register_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+HOST="\${1:?}"
+REPORT="\${2:?}"
+REL="\$(python3 - <<'PY' "\$REPORT" "$repo"
+import os
+import sys
+print(os.path.relpath(sys.argv[1], sys.argv[2]))
+PY
+)"
+source "$repo/compass/tools/redcap-runtime-state.sh"
+source "$repo/compass/tools/redcap-interop-governance.sh"
+redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNTIME_CAPABILITY:?}" >/dev/null
+printf '%s\n' "\$REPORT" >>"$register_log"
+redcap_interop_write_current_report_marker "\$REL" "$repo/.dev-task.md" >/dev/null
+EOF
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "on-complete" >>"$complete_log"
+EOF
+    chmod +x "$register_stub" "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="task-complete" \
+    REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$repo/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard stale marker replacement case failed"
+
+    marker_path="$(redcap_runtime_path "layerB/current-report-path")"
+    assert_exists "$marker_path"
+    assert_eq "$(read_file_text "$marker_path")" "$new_rel"
+    register_count="$(wc -l < "$register_log" | tr -d '[:space:]')"
+    complete_count="$(wc -l < "$complete_log" | tr -d '[:space:]')"
+    assert_num_eq "$register_count" 1
+    assert_num_eq "$complete_count" 1
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_rejects_zero_diff_stale_marker_case() {
+    local host="copilot"
+    local repo legacy_rel current_head binding_key pid output status stale_hash
+
+    log "case: task-report-check-rejects-zero-diff-stale-marker"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-zero-diff-stale-marker/repo"
+    create_task_report_fixture_repo "$repo"
+    legacy_rel="compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md"
+    mkdir -p "$(dirname "$repo/$legacy_rel")"
+    cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
+    git -C "$repo" add "$legacy_rel"
+    git -C "$repo" commit --quiet -m "add zero diff stale marker report"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+    stale_hash="deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+
+    binding_key="acceptance-task-report-zero-diff-stale-${RANDOM}-$$"
+    pid="$((66420 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    write_current_report_marker_with_hash_fixture "$legacy_rel" "$stale_hash" "$repo/.dev-task.md"
+
+    set +e
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$current_head" "$current_head" "$host" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task-report-check unexpectedly accepted zero diff stale marker"
+    assert_string_contains "$output" "missing task report under compass/docs/task-reports/"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_ignores_invalid_pending_artifact_case() {
+    local host="copilot"
+    local repo current_head report_rel pending_state output
+
+    log "case: task-report-check-ignores-invalid-pending-artifact"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-invalid-pending-artifact/repo"
+    create_task_report_fixture_repo "$repo"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+    report_rel="compass/docs/task-reports/zz-acceptance-valid-report-${RANDOM}-$$.md"
+    printf '# 任务完成报告：acceptance\n\n## 零、先看懂当前局面\n\n### 0.1 当前已完成\n\n- 当前已完成：acceptance\n- 详情：acceptance\n\n### 0.2 上一步完成的是\n\n- 上一步完成的是：acceptance\n\n### 0.3 下一步计划做的是\n\n- 下一步计划做的是：无\n\n### 0.4 整体计划脉络图与当前位置\n\n- 整体计划脉络图是：acceptance\n- 当前所在位置：acceptance\n\n## 一、需求背景\n\n## 二、方案讨论\n\n## 三、落地结果\n\n### 3.2.1 术语对照（按文件/功能解释）\n\n## 四、人工审核要点\n\n## 五、验证结果\n\n## 六、遗留问题与下一步\n\n## 七、经验沉淀\n\n## 八、附录\n' >"$repo/$report_rel"
+    pending_state="$(
+        REDCAP_CONTINUITY_ROOT_DIR="$ACCEPT_ROOT/task-report-invalid-pending-artifact/core" \
+            bash -lc 'set -euo pipefail; cd "'"$repo"'"; source compass/tools/redcap-interop-governance.sh; redcap_interop_write_pending_closure "'"$repo"'" "'"$repo"'/.dev-task.md" "'"$host"'" acceptance-seed task-report "missing task report under compass/docs/task-reports/" "'"$current_head"'" "'"$current_head"'"'
+    )" || fail "failed to seed invalid pending artifact"
+    assert_exists "$pending_state"
+
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$current_head" "$current_head" "$host")" \
+        || fail "task-report-check should ignore invalid pending artifact"
+    assert_eq "$output" "$report_rel"
+}
+
+run_task_report_check_ignores_traversal_anchor_case() {
+    local host="copilot"
+    local repo current_head report_rel traversal_rel output
+    local binding_key pid confirmed_hash pending_state
+
+    log "case: task-report-check-ignores-traversal-anchor"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-traversal-anchor/repo"
+    create_task_report_fixture_repo "$repo"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+    report_rel="compass/docs/task-reports/zz-acceptance-valid-report-${RANDOM}-$$.md"
+    printf '# 任务完成报告：acceptance\n\n## 零、先看懂当前局面\n\n### 0.1 当前已完成\n\n- 当前已完成：acceptance\n- 详情：acceptance\n\n### 0.2 上一步完成的是\n\n- 上一步完成的是：acceptance\n\n### 0.3 下一步计划做的是\n\n- 下一步计划做的是：无\n\n### 0.4 整体计划脉络图与当前位置\n\n- 整体计划脉络图是：acceptance\n- 当前所在位置：acceptance\n\n## 一、需求背景\n\n## 二、方案讨论\n\n## 三、落地结果\n\n### 3.2.1 术语对照（按文件/功能解释）\n\n## 四、人工审核要点\n\n## 五、验证结果\n\n## 六、遗留问题与下一步\n\n## 七、经验沉淀\n\n## 八、附录\n' >"$repo/$report_rel"
+    binding_key="acceptance-task-report-traversal-${RANDOM}-$$"
+    pid="$((66600 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$repo/.dev-task.md")"
+    traversal_rel="compass/docs/task-reports/../../../references/task-report-template.md"
+    write_current_report_marker_with_hash_fixture "$traversal_rel" "$confirmed_hash" "$repo/.dev-task.md"
+    pending_state=$(redcap_interop_write_pending_closure \
+        "$repo" \
+        "$repo/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report" \
+        "traversal-anchor" \
+        "$traversal_rel" \
+        "$current_head" \
+        "$current_head") || fail "failed to seed traversal pending artifact"
+    assert_exists "$pending_state"
+
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$current_head" "$current_head" "$host")" \
+        || fail "task-report-check should ignore traversal anchor"
+    assert_eq "$output" "$report_rel"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_normalizes_absolute_pending_anchor_case() {
+    local host="copilot"
+    local repo current_head report_rel report_abs output
+    local binding_key pid pending_state
+
+    log "case: task-report-check-normalizes-absolute-pending-anchor"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-absolute-anchor/repo"
+    create_task_report_fixture_repo "$repo"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+    report_rel="compass/docs/task-reports/zz-acceptance-absolute-anchor-${RANDOM}-$$.md"
+    cp "$repo/references/task-report-template.md" "$repo/$report_rel"
+    report_abs="$repo/$report_rel"
+    binding_key="acceptance-task-report-absolute-anchor-${RANDOM}-$$"
+    pid="$((66620 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    write_current_report_marker_fixture "$report_rel" "$repo/.dev-task.md"
+    pending_state=$(redcap_interop_write_pending_closure \
+        "$repo" \
+        "$repo/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report" \
+        "absolute-anchor" \
+        "$report_abs" \
+        "$current_head" \
+        "$current_head") || fail "failed to seed absolute pending anchor"
+    assert_exists "$pending_state"
+
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$current_head" "$current_head" "$host")" \
+        || fail "task-report-check should normalize absolute pending anchor"
+    assert_eq "$output" "$report_rel"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_rejects_symlink_report_escape_case() {
+    local host="copilot"
+    local repo current_head report_rel output status
+
+    log "case: task-report-check-rejects-symlink-report-escape"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-symlink-escape/repo"
+    create_task_report_fixture_repo "$repo"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+    report_rel="compass/docs/task-reports/zz-acceptance-symlink-escape-${RANDOM}-$$.md"
+    ln -s ../../../references/task-report-template.md "$repo/$report_rel"
+    git -C "$repo" add "$report_rel"
+
+    set +e
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$current_head" "$current_head" "$host" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task-report-check unexpectedly accepted symlink report escape"
+    assert_string_contains "$output" "changed report escapes task-reports root"
+}
+
+run_task_complete_guard_serializes_on_complete_case() {
+    local host="copilot"
+    local binding_key pid current_head report_path report_rel case_dir complete_log complete_stub task_complete_slice
+
+    log "case: task-complete-guard-serializes-on-complete"
+
+    redcap_runtime_clear_context
+    binding_key="acceptance-task-complete-serialize-${RANDOM}-$$"
+    pid="$((66430 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for serialize case"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-serialize-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    printf '# acceptance serialize report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+    write_current_report_marker_fixture "$report_rel"
+    task_complete_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-serialize.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    complete_log="$case_dir/on-complete.log"
+    complete_stub="$case_dir/on-complete-stub.sh"
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "on-complete" >>"$complete_log"
+sleep 1
+EOF
+    chmod +x "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null &
+    guard_a=$!
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null &
+    guard_b=$!
+    wait "$guard_a"
+    wait "$guard_b"
+
+    assert_exists "$complete_log"
+    assert_num_eq "$(wc -l < "$complete_log" | tr -d '[:space:]')" 1
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_complete_guard_prunes_stale_lock_case() {
+    local host="copilot"
+    local binding_key pid current_head report_path report_rel case_dir complete_log complete_stub task_complete_slice lock_path
+
+    log "case: task-complete-guard-prunes-stale-lock"
+
+    redcap_runtime_clear_context
+    binding_key="acceptance-task-complete-stale-lock-${RANDOM}-$$"
+    pid="$((66435 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for stale lock case"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-stale-lock-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    printf '# acceptance stale lock report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+    write_current_report_marker_fixture "$report_rel"
+    task_complete_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    lock_path="$(redcap_runtime_path "layerB/task-complete-guard.lock")"
+    mkdir -p "$(dirname "$lock_path")"
+    printf 'dead-pid\t1970-01-01T00:00:00Z\n' >"$lock_path"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-stale-lock.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    complete_log="$case_dir/on-complete.log"
+    complete_stub="$case_dir/on-complete-stub.sh"
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "on-complete" >>"$complete_log"
+EOF
+    chmod +x "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard stale lock case failed"
+
+    assert_exists "$complete_log"
+    assert_num_eq "$(wc -l < "$complete_log" | tr -d '[:space:]')" 1
+    assert_not_exists "$lock_path"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_complete_guard_keeps_live_legacy_lock_case() {
+    local host="copilot"
+    local binding_key pid current_head report_path report_rel case_dir complete_log complete_stub task_complete_slice lock_path legacy_owner_pid legacy_created_at
+
+    log "case: task-complete-guard-keeps-live-legacy-lock"
+
+    redcap_runtime_clear_context
+    binding_key="acceptance-task-complete-live-legacy-lock-${RANDOM}-$$"
+    pid="$((66436 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for live legacy lock case"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-live-legacy-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    printf '# acceptance live legacy lock report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+    write_current_report_marker_fixture "$report_rel"
+    task_complete_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    lock_path="$(redcap_runtime_path "layerB/task-complete-guard.lock")"
+    mkdir -p "$(dirname "$lock_path")"
+    spawn_host_probe legacy_owner_pid
+    legacy_created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    printf '%s\t%s\n' "$legacy_owner_pid" "$legacy_created_at" >"$lock_path"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-live-legacy-lock.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    complete_log="$case_dir/on-complete.log"
+    complete_stub="$case_dir/on-complete-stub.sh"
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "on-complete" >>"$complete_log"
+EOF
+    chmod +x "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard live legacy lock case failed"
+
+    assert_not_exists "$complete_log"
+    assert_exists "$lock_path"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_complete_guard_retries_after_report_change_case() {
+    local host="copilot"
+    local binding_key pid current_head report_path report_rel case_dir complete_log complete_stub task_complete_slice status_path
+
+    log "case: task-complete-guard-retries-after-report-change"
+
+    redcap_runtime_clear_context
+    binding_key="acceptance-task-complete-retry-${RANDOM}-$$"
+    pid="$((66440 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for retry case"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-retry-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    printf '# acceptance retry report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+    write_current_report_marker_fixture "$report_rel"
+    task_complete_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-retry.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    complete_log="$case_dir/on-complete.log"
+    complete_stub="$case_dir/on-complete-stub.sh"
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "on-complete" >>"$complete_log"
+exit 1
+EOF
+    chmod +x "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard retry case first run failed"
+
+    assert_num_eq "$(wc -l < "$complete_log" | tr -d '[:space:]')" 1
+    status_path="$(redcap_runtime_path "layerB/task-complete-guard/last-status")"
+    assert_exists "$status_path"
+    assert_eq "$(read_file_text "$status_path")" "retry-needed"
+
+    printf '\nmore content\n' >>"$report_path"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard retry case second run failed"
+
+    assert_num_eq "$(wc -l < "$complete_log" | tr -d '[:space:]')" 2
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_session_end_success_notify_after_clear_case() {
+    local host="copilot"
+    local binding_key pid probe_pid current_head report_path case_dir validator_stub notifier_stub notify_log pending_state
+
+    log "case: session-end-success-notify-after-clear"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "session-end-success-notify-after-clear" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-session-end-notify-order-${RANDOM}-$$"
+    pid="$((66450 + RANDOM))"
+    spawn_host_probe probe_pid
+    export REDCAP_HOST_PROCESS_PID="$pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for notify order case"
+    REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
+    unset REDCAP_HOST_PROCESS_PROBE_PID
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify order case"
+    write_current_report_marker_fixture "$report_path"
+    pending_state="$(
+        redcap_interop_write_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "$host" \
+            "acceptance-seed" \
+            "review,notify" \
+            "session-end-success-notify-after-clear" \
+            "$report_path" \
+            "$current_head" \
+            "$current_head"
+    )" || fail "failed to seed pending closure for notify order case"
+    assert_exists "$pending_state"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-notify-order.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-pass.sh"
+    notifier_stub="$case_dir/notifier.py"
+    notify_log="$case_dir/notify.log"
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+cat <<'OUT'
+[1] review-proof-check :: pass
+review clean
+[2] reanchor-check :: pass
+reanchor clean
+[3] pm-gate :: pass
+pm gate clean
+[4] drift-check :: pass
+drift clean
+[5] backlog-check :: pass
+backlog clean
+[6] spec-check :: pass
+spec clean
+[7] task-report-check :: pass
+$report_path
+[8] artifact-lifecycle-check :: pass
+artifact clean
+OUT
+EOF
+    cat >"$notifier_stub" <<'PYEOF'
+#!/usr/bin/env python3
+import os
+import pathlib
+import sys
+
+log_path = pathlib.Path(os.environ["FAKE_NOTIFY_LOG"])
+pending_state = pathlib.Path(os.environ["FAKE_PENDING_STATE"])
+log_path.write_text(f"pending_exists={'1' if pending_state.exists() else '0'}\n", encoding="utf-8")
+sys.exit(0)
+PYEOF
+    chmod +x "$validator_stub" "$notifier_stub"
+
+    FAKE_NOTIFY_LOG="$notify_log" \
+    FAKE_PENDING_STATE="$pending_state" \
+    REDCAP_FEISHU_NOTIFIER="$notifier_stub" \
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_SESSION_BINDING_KEY="$binding_key" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+    REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
+    REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
+        || fail "session-end success notify after clear case failed"
+
+    assert_exists "$notify_log"
+    assert_string_contains "$(cat "$notify_log")" "pending_exists=0"
+    assert_not_exists "$pending_state"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_session_end_notify_timeout_releases_lock_case() {
+    local host="copilot"
+    local binding_key pid probe_pid current_head report_path case_dir validator_stub notifier_stub lock_probe notifier_started pending_state
+
+    log "case: session-end-notify-timeout-releases-lock"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "session-end-notify-timeout-releases-lock" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-session-end-notify-timeout-${RANDOM}-$$"
+    pid="$((66460 + RANDOM))"
+    spawn_host_probe probe_pid
+    export REDCAP_HOST_PROCESS_PID="$pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for notify timeout case"
+    REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
+    unset REDCAP_HOST_PROCESS_PROBE_PID
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify timeout case"
+    write_current_report_marker_fixture "$report_path"
+    pending_state="$(
+        redcap_interop_write_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "$host" \
+            "acceptance-seed" \
+            "review,notify" \
+            "session-end-notify-timeout-releases-lock" \
+            "$report_path" \
+            "$current_head" \
+            "$current_head"
+    )" || fail "failed to seed pending closure for notify timeout case"
+    assert_exists "$pending_state"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-notify-timeout.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-pass.sh"
+    notifier_stub="$case_dir/notifier.py"
+    lock_probe="$case_dir/lock-probe.log"
+    notifier_started="$case_dir/notifier.started"
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+cat <<'OUT'
+[1] review-proof-check :: pass
+review clean
+[2] reanchor-check :: pass
+reanchor clean
+[3] pm-gate :: pass
+pm gate clean
+[4] drift-check :: pass
+drift clean
+[5] backlog-check :: pass
+backlog clean
+[6] spec-check :: pass
+spec clean
+[7] task-report-check :: pass
+$report_path
+[8] artifact-lifecycle-check :: pass
+artifact clean
+OUT
+EOF
+    cat >"$notifier_stub" <<'PYEOF'
+#!/usr/bin/env python3
+import os
+import pathlib
+import time
+
+pathlib.Path(os.environ["FAKE_NOTIFY_STARTED"]).write_text("started\n", encoding="utf-8")
+time.sleep(3)
+PYEOF
+    chmod +x "$validator_stub" "$notifier_stub"
+
+    (
+        local attempts=0
+        while [[ ! -f "$notifier_started" ]]; do
+            attempts=$((attempts + 1))
+            if [[ "$attempts" -ge 100 ]]; then
+                echo "start-timeout" >"$lock_probe"
+                exit 1
+            fi
+            sleep 0.05
+        done
+        if redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+            echo "acquired" >"$lock_probe"
+            redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1 || true
+        else
+            echo "failed" >"$lock_probe"
+            exit 1
+        fi
+    ) &
+    lock_probe_pid=$!
+
+    FAKE_NOTIFY_STARTED="$notifier_started" \
+    REDCAP_FEISHU_NOTIFIER="$notifier_stub" \
+    REDCAP_FEISHU_NOTIFY_TIMEOUT_SECONDS=1 \
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_SESSION_BINDING_KEY="$binding_key" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+    REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
+    REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
+        || fail "session-end notify timeout case failed"
+
+    wait "$lock_probe_pid" || fail "pending closure lock probe did not complete"
+    assert_exists "$lock_probe"
+    assert_string_contains "$(cat "$lock_probe")" "acquired"
+    redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" \
+        || fail "expected pending closure to remain after notify timeout"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_session_end_blocked_rewrite_keeps_report_anchor_case() {
+    local host="copilot"
+    local binding_key pid probe_pid current_head report_path case_dir validator_stub pending_state rewritten_artifact required_redlines
+
+    log "case: session-end-blocked-rewrite-keeps-report-anchor"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "session-end-blocked-rewrite-keeps-report-anchor" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-session-end-report-anchor-${RANDOM}-$$"
+    pid="$((66470 + RANDOM))"
+    spawn_host_probe probe_pid
+    export REDCAP_HOST_PROCESS_PID="$pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for report anchor case"
+    REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
+    unset REDCAP_HOST_PROCESS_PROBE_PID
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for report anchor case"
+    write_current_report_marker_fixture "$report_path"
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,notify" \
+        "session-end-blocked-rewrite-keeps-report-anchor" \
+        "$report_path" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed pending closure for report anchor case"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-report-anchor.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-report-fail.sh"
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+cat <<'OUT'
+[1] review-proof-check :: pass
+review clean
+[2] reanchor-check :: pass
+reanchor clean
+[3] pm-gate :: pass
+pm gate clean
+[4] drift-check :: pass
+drift clean
+[5] backlog-check :: pass
+backlog clean
+[6] spec-check :: pass
+spec clean
+[7] task-report-check :: fail
+missing task report under compass/docs/task-reports/
+[8] artifact-lifecycle-check :: pass
+artifact clean
+OUT
+EOF
+    chmod +x "$validator_stub"
+
+    REDCAP_SKIP_FEISHU=1 \
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_SESSION_BINDING_KEY="$binding_key" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+    REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
+    REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
+        || fail "session-end blocked rewrite case failed"
+
+    pending_state="$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)"
+    assert_exists "$pending_state"
+    rewritten_artifact="$(redcap_interop_read_state_field "$pending_state" "artifact_path" 2>/dev/null || true)"
+    required_redlines="$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)"
+    assert_eq "$rewritten_artifact" "$report_path"
+    assert_string_contains "$required_redlines" "task-report"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_session_end_blocked_rewrite_normalizes_absolute_report_anchor_case() {
+    local host="copilot"
+    local binding_key pid probe_pid current_head report_rel report_abs case_dir validator_stub pending_state rewritten_artifact
+
+    log "case: session-end-blocked-rewrite-normalizes-absolute-report-anchor"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "session-end-blocked-rewrite-normalizes-absolute-report-anchor" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-session-end-absolute-anchor-${RANDOM}-$$"
+    pid="$((66480 + RANDOM))"
+    spawn_host_probe probe_pid
+    export REDCAP_HOST_PROCESS_PID="$pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for absolute report anchor case"
+    REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
+    unset REDCAP_HOST_PROCESS_PROBE_PID
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    report_rel="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_abs="$REDCAP_ROOT/$report_rel"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for absolute report anchor case"
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,notify" \
+        "session-end-blocked-rewrite-normalizes-absolute-report-anchor" \
+        "$report_abs" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed absolute pending closure for report anchor case"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-absolute-report-anchor.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-report-fail.sh"
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+cat <<'OUT'
+[1] review-proof-check :: pass
+review clean
+[2] reanchor-check :: pass
+reanchor clean
+[3] pm-gate :: pass
+pm gate clean
+[4] drift-check :: pass
+drift clean
+[5] backlog-check :: pass
+backlog clean
+[6] spec-check :: pass
+spec clean
+[7] task-report-check :: fail
+missing task report under compass/docs/task-reports/
+[8] artifact-lifecycle-check :: pass
+artifact clean
+OUT
+EOF
+    chmod +x "$validator_stub"
+
+    REDCAP_SKIP_FEISHU=1 \
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_SESSION_BINDING_KEY="$binding_key" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+    REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
+    REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
+        || fail "session-end absolute report anchor case failed"
+
+    pending_state="$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)"
+    assert_exists "$pending_state"
+    rewritten_artifact="$(redcap_interop_read_state_field "$pending_state" "artifact_path" 2>/dev/null || true)"
+    assert_eq "$rewritten_artifact" "$report_rel"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_pending_closure_lock_keeps_live_legacy_lock_case() {
+    local lock_path legacy_owner_pid legacy_created_at
+
+    log "case: pending-closure-lock-keeps-live-legacy-lock"
+
+    lock_path="$(redcap_interop_pending_closure_lock_path "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")"
+    mkdir -p "$(dirname "$lock_path")"
+    spawn_host_probe legacy_owner_pid
+    legacy_created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    printf '%s\t%s\n' "$legacy_owner_pid" "$legacy_created_at" >"$lock_path"
+
+    if redcap_interop_prune_stale_pending_closure_lock "$lock_path"; then
+        fail "pending closure lock unexpectedly pruned live legacy lock"
+    fi
+    assert_exists "$lock_path"
+
+    redcap_interop_release_pending_closure_lock_path "$lock_path" >/dev/null 2>&1 || true
+}
+
+run_pending_closure_lock_prunes_reused_pid_case() {
+    local lock_path owner_started_at owner_pid
+
+    log "case: pending-closure-lock-prunes-reused-pid"
+
+    lock_path="$(redcap_interop_pending_closure_lock_path "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")"
+    mkdir -p "$(dirname "$lock_path")"
+    printf '%s\t%s\t%s\n' "$$" "Mon Jan  1 00:00:00 1990" "1970-01-01T00:00:00Z" >"$lock_path"
+
+    redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" \
+        || fail "pending closure lock should prune reused pid lock"
+
+    owner_pid="$(redcap_interop_pending_closure_lock_owner_pid "$lock_path" 2>/dev/null || true)"
+    owner_started_at="$(redcap_interop_lock_owner_started_at "$lock_path" 2>/dev/null || true)"
+    assert_eq "$owner_pid" "$$"
+    assert_eq "$owner_started_at" "$(redcap_runtime_process_started_at "$$")"
+    redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1 || true
+}
+
+run_task_complete_guard_prunes_reused_pid_lock_case() {
+    local host="copilot"
+    local binding_key pid current_head report_path report_rel case_dir complete_log complete_stub task_complete_slice lock_path
+
+    log "case: task-complete-guard-prunes-reused-pid-lock"
+
+    redcap_runtime_clear_context
+    binding_key="acceptance-task-complete-reused-pid-${RANDOM}-$$"
+    pid="$((66480 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for reused pid lock case"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-reused-pid-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    printf '# acceptance reused pid report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+    write_current_report_marker_fixture "$report_rel"
+    task_complete_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    lock_path="$(redcap_runtime_path "layerB/task-complete-guard.lock")"
+    mkdir -p "$(dirname "$lock_path")"
+    printf '%s\t%s\t%s\n' "$$" "Mon Jan  1 00:00:00 1990" "1970-01-01T00:00:00Z" >"$lock_path"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-reused-pid.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    complete_log="$case_dir/on-complete.log"
+    complete_stub="$case_dir/on-complete-stub.sh"
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "on-complete" >>"$complete_log"
+EOF
+    chmod +x "$complete_stub"
+
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard should prune reused pid lock"
+
+    assert_exists "$complete_log"
+    assert_num_eq "$(wc -l < "$complete_log" | tr -d '[:space:]')" 1
+    assert_not_exists "$lock_path"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
     redcap_runtime_clear_context
 }
 
@@ -1009,12 +3154,12 @@ run_runtime_clear_context_clears_probe_pid_case() {
 
 run_sessionstart_auto_reconcile_clear_case() {
     local host="claude"
-    local binding_key pid probe_pid
+    local binding_key pid
     local report_path pending_state current_head required_redlines
 
     log "case: sessionstart-auto-reconcile-clear"
 
-    report_path="compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md"
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
@@ -1032,8 +3177,10 @@ run_sessionstart_auto_reconcile_clear_case() {
 
     binding_key="acceptance-reconcile-clear-${RANDOM}-$$"
     pid="$((63000 + RANDOM))"
-    spawn_host_probe probe_pid
-    printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_key" REDCAP_HOST_PROCESS_PID="$pid" REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    write_current_report_marker_fixture "$report_path"
+    REDCAP_HOST_PROCESS_PID="$pid" bash "$REDCAP_ROOT/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null \
+        || fail "pending closure reconcile clear case failed"
 
     if [[ -f "$pending_state" ]]; then
         required_redlines=$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)
@@ -1048,14 +3195,15 @@ run_sessionstart_auto_reconcile_clear_case() {
 
 run_sessionstart_auto_reconcile_hash_mismatch_case() {
     local host="claude"
-    local binding_key pid probe_pid
-    local report_path pending_state required_redlines
-    local current_hash mismatch_hash
+    local binding_key pid
+    local report_path pending_state mismatch_state reanchored_state required_redlines
+    local current_hash mismatch_hash current_head
 
     log "case: sessionstart-auto-reconcile-hash-mismatch"
 
-    report_path="compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md"
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
     current_hash=$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     mismatch_hash="deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
     [[ "$current_hash" != "$mismatch_hash" ]] || fail "hash mismatch fixture collided with current confirmed hash"
 
@@ -1064,7 +3212,7 @@ run_sessionstart_auto_reconcile_hash_mismatch_case() {
         "$REDCAP_ROOT/.dev-task.md" \
         "$host" \
         "acceptance-seed" \
-        "task-report" \
+        "task-report,notify" \
         "sessionstart-auto-reconcile-hash-mismatch" \
         "$report_path" \
         "$current_hash" \
@@ -1082,17 +3230,98 @@ text = path.read_text(encoding="utf-8")
 updated = re.sub(r"^confirmed_hash:\s*.*$", f"confirmed_hash: {replacement}", text, count=1, flags=re.MULTILINE)
 path.write_text(updated, encoding="utf-8")
 PY
+    mismatch_state="${pending_state/$current_hash/$mismatch_hash}"
+    mv "$pending_state" "$mismatch_state"
+    pending_state="$mismatch_state"
 
     binding_key="acceptance-reconcile-hash-mismatch-${RANDOM}-$$"
     pid="$((64000 + RANDOM))"
-    spawn_host_probe probe_pid
-    printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_key" REDCAP_HOST_PROCESS_PID="$pid" REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    write_current_report_marker_fixture "$report_path"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for hash mismatch case"
+    REDCAP_HOST_PROCESS_PID="$pid" bash "$REDCAP_ROOT/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null \
+        || fail "pending closure reconcile hash mismatch case failed"
 
-    assert_exists "$pending_state"
-    required_redlines=$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)
-    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "task-report")"
+    assert_not_exists "$pending_state"
+    reanchored_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
+    assert_exists "$reanchored_state"
+    assert_eq "$(redcap_interop_read_state_field "$reanchored_state" "confirmed_hash" 2>/dev/null || true)" "$current_hash"
+    required_redlines=$(redcap_interop_read_state_field "$reanchored_state" "required_redlines" 2>/dev/null || true)
+    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "notify")"
 
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "sessionstart-auto-reconcile-hash-mismatch" >/dev/null
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_sessionstart_auto_reconcile_backlog_spec_case() {
+    local host="claude"
+    local binding_key pid current_head
+    local report_path pending_state required_redlines
+    local case_dir validator_stub
+
+    log "case: sessionstart-auto-reconcile-backlog-spec"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "sessionstart-auto-reconcile-backlog-spec" >/dev/null 2>&1 || true
+
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "review,task-report,notify" \
+        "sessionstart-auto-reconcile-backlog-spec" \
+        "$report_path" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null
+
+    binding_key="acceptance-reconcile-backlog-spec-${RANDOM}-$$"
+    pid="$((64100 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    write_current_report_marker_fixture "$report_path"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/sessionstart-reconcile-backlog-spec.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-stub.sh"
+    cat >"$validator_stub" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+[redcap-validator-chain] mode=obligation-reconcile overall=fail
+[1] review-proof-check :: pass
+review ok
+[2] reanchor-check :: pass
+reanchor ok
+[3] pm-gate :: pass
+pm-gate ok
+[4] drift-check :: pass
+drift ok
+[5] backlog-check :: fail
+backlog failed
+[6] spec-check :: fail
+spec failed
+[7] task-report-check :: pass
+task-report ok
+[8] artifact-lifecycle-check :: pass
+artifact ok
+OUT
+exit 1
+EOF
+    chmod +x "$validator_stub"
+
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null \
+        || fail "pending closure reconcile backlog/spec case failed"
+
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")"
+    assert_exists "$pending_state"
+    required_redlines="$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)"
+    assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "notify,backlog,spec")"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "sessionstart-auto-reconcile-backlog-spec" >/dev/null 2>&1 || true
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
     redcap_runtime_clear_context
 }
@@ -2390,10 +4619,514 @@ run_artifact_lifecycle_rejects_tabbed_path_case() {
     assert_string_contains "$output" "unsupported filename contains tab/newline"
 }
 
+run_backlog_check_strict_case() {
+    log "case: backlog-check-strict"
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-backlog-check.sh" strict "$REDCAP_ROOT/.dev-task.md" >/dev/null
+}
+
+run_spec_registry_validates_repo_case() {
+    log "case: spec-registry-validates-repo"
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "$REDCAP_ROOT" >/dev/null
+}
+
+create_spec_registry_fixture() {
+    local fixture_root="$1"
+
+    python3 - "$REDCAP_ROOT" "$fixture_root" <<'PY'
+import json
+import pathlib
+import shutil
+import sys
+
+src = pathlib.Path(sys.argv[1])
+dst = pathlib.Path(sys.argv[2])
+dst.mkdir(parents=True, exist_ok=True)
+
+registry = json.loads((src / "references/spec-registry.json").read_text(encoding="utf-8"))
+files = {
+    "references/spec-registry.json",
+    "references/spec-lifecycle-policy.json",
+    "references/spec-contribution-standard.md",
+    "compass/docs/index.yaml",
+}
+
+for entry in registry["specs"]:
+    files.add(entry["path"])
+    for control_path in entry.get("paired_control_paths", []):
+        files.add(control_path)
+
+for rel in sorted(files):
+    src_path = src / rel
+    dst_path = dst / rel
+    dst_path.parent.mkdir(parents=True, exist_ok=True)
+    if src_path.is_file():
+        shutil.copy2(src_path, dst_path)
+    else:
+        dst_path.write_text("# fixture\n", encoding="utf-8")
+PY
+}
+
+run_spec_check_rejects_superseded_outside_archive_case() {
+    local repo output status
+
+    log "case: spec-check-rejects-superseded-outside-archive"
+
+    repo="$ACCEPT_ROOT/spec-check-rejects-superseded-outside-archive/repo"
+    create_spec_registry_fixture "$repo"
+
+    python3 - "$repo" <<'PY'
+import json
+import pathlib
+import sys
+
+repo = pathlib.Path(sys.argv[1])
+registry_path = repo / "references/spec-registry.json"
+registry = json.loads(registry_path.read_text(encoding="utf-8"))
+registry["specs"][0]["status"] = "superseded"
+registry["specs"][0]["replaced_by"] = registry["specs"][1]["path"]
+registry_path.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "$repo" 2>&1)"
+    status=$?
+    set -e
+
+    [[ "$status" -ne 0 ]] || fail "superseded spec unexpectedly remained valid outside archive"
+    assert_string_contains "$output" "spec status superseded cannot live under active root"
+}
+
+run_spec_check_requires_replaced_by_case() {
+    local repo output status
+
+    log "case: spec-check-requires-replaced-by"
+
+    repo="$ACCEPT_ROOT/spec-check-requires-replaced-by/repo"
+    create_spec_registry_fixture "$repo"
+
+    python3 - "$repo" <<'PY'
+import json
+import pathlib
+import shutil
+import sys
+
+repo = pathlib.Path(sys.argv[1])
+registry_path = repo / "references/spec-registry.json"
+registry = json.loads(registry_path.read_text(encoding="utf-8"))
+entry = registry["specs"][0]
+old_rel = entry["path"]
+new_rel = "compass/docs/archive/specs/" + pathlib.PurePosixPath(old_rel).name
+old_path = repo / old_rel
+new_path = repo / new_rel
+new_path.parent.mkdir(parents=True, exist_ok=True)
+shutil.move(str(old_path), str(new_path))
+entry["path"] = new_rel
+entry["status"] = "superseded"
+entry.pop("replaced_by", None)
+registry_path.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "$repo" 2>&1)"
+    status=$?
+    set -e
+
+    [[ "$status" -ne 0 ]] || fail "superseded spec unexpectedly passed without replaced_by"
+    assert_string_contains "$output" "superseded spec missing replaced_by"
+}
+
+run_spec_check_rejects_invalid_role_case() {
+    local repo output status
+
+    log "case: spec-check-rejects-invalid-role"
+
+    repo="$ACCEPT_ROOT/spec-check-rejects-invalid-role/repo"
+    create_spec_registry_fixture "$repo"
+
+    python3 - "$repo" <<'PY'
+import json
+import pathlib
+import sys
+
+repo = pathlib.Path(sys.argv[1])
+registry_path = repo / "references/spec-registry.json"
+registry = json.loads(registry_path.read_text(encoding="utf-8"))
+registry["specs"][0]["role"] = "invalid-role"
+registry_path.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "$repo" 2>&1)"
+    status=$?
+    set -e
+
+    [[ "$status" -ne 0 ]] || fail "invalid spec role unexpectedly passed"
+    assert_string_contains "$output" "spec registry entry uses unsupported role"
+}
+
+run_spec_check_rejects_replacement_cycle_case() {
+    local repo output status
+
+    log "case: spec-check-rejects-replacement-cycle"
+
+    repo="$ACCEPT_ROOT/spec-check-rejects-replacement-cycle/repo"
+    create_spec_registry_fixture "$repo"
+
+    python3 - "$repo" <<'PY'
+import json
+import pathlib
+import sys
+
+repo = pathlib.Path(sys.argv[1])
+registry_path = repo / "references/spec-registry.json"
+registry = json.loads(registry_path.read_text(encoding="utf-8"))
+registry["specs"][0]["replaced_by"] = registry["specs"][1]["path"]
+registry["specs"][1]["replaced_by"] = registry["specs"][0]["path"]
+registry_path.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "$repo" 2>&1)"
+    status=$?
+    set -e
+
+    [[ "$status" -ne 0 ]] || fail "replacement cycle unexpectedly passed"
+    assert_string_contains "$output" "spec replacement chain contains cycle"
+}
+
+run_spec_check_accepts_archived_superseded_case() {
+    local repo
+
+    log "case: spec-check-accepts-archived-superseded"
+
+    repo="$ACCEPT_ROOT/spec-check-accepts-archived-superseded/repo"
+    create_spec_registry_fixture "$repo"
+
+    python3 - "$repo" <<'PY'
+import json
+import pathlib
+import shutil
+import sys
+
+repo = pathlib.Path(sys.argv[1])
+registry_path = repo / "references/spec-registry.json"
+registry = json.loads(registry_path.read_text(encoding="utf-8"))
+entry = registry["specs"][0]
+replacement = registry["specs"][1]["path"]
+old_rel = entry["path"]
+new_rel = "compass/docs/archive/specs/" + pathlib.PurePosixPath(old_rel).name
+old_path = repo / old_rel
+new_path = repo / new_rel
+new_path.parent.mkdir(parents=True, exist_ok=True)
+shutil.move(str(old_path), str(new_path))
+entry["path"] = new_rel
+entry["status"] = "superseded"
+entry["replaced_by"] = replacement
+registry_path.write_text(json.dumps(registry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "$repo" >/dev/null
+}
+
+run_host_workboard_backlog_anchor_case() {
+    local workboard expected_backlog_item
+
+    log "case: host-workboard-backlog-anchor"
+
+    workboard="$ACCEPT_ROOT/host-workboard-backlog-anchor/plan.md"
+    mkdir -p "$(dirname "$workboard")"
+    printf '# backlog anchor fixture\n' >"$workboard"
+    expected_backlog_item=$(awk -F': ' '/^backlog_item:/ {print $2; exit}' "$REDCAP_ROOT/.dev-task.md")
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-host-workboard-sync.sh" sync "$workboard" "$REDCAP_ROOT/.dev-task.md"
+
+    assert_contains "$workboard" "- backlog_source: references/backlogs/framework-upgrade.json"
+    assert_contains "$workboard" "- backlog_id: framework-upgrade"
+    assert_contains "$workboard" "- backlog_item: $expected_backlog_item"
+}
+
+run_cli_console_mirror_overwrites_case() {
+    local temp_console temp_source
+
+    log "case: cli-console-mirror-overwrites"
+
+    temp_console="$ACCEPT_ROOT/cli-console-mirror/cli_console.md"
+    temp_source="$ACCEPT_ROOT/cli-console-mirror/source.txt"
+    mkdir -p "$(dirname "$temp_console")"
+
+    printf 'old content\n' >"$temp_console"
+    printf 'new mirrored content\nsecond line\n' >"$temp_source"
+
+    REDCAP_CLI_CONSOLE_PATH="$temp_console" bash "$REDCAP_ROOT/compass/tools/redcap-cli-console-mirror.sh" write "$temp_source"
+
+    assert_eq "$(cat "$temp_console")" "$(cat "$temp_source")"
+}
+
+run_feishu_duplex_window_queue_case() {
+    local fixture_root fake_bin fake_state config_path state_dir output window_id pending_id scan_count pending_count
+
+    log "case: feishu-duplex-window-queue"
+
+    fixture_root="$ACCEPT_ROOT/feishu-duplex-window-queue"
+    fake_bin="$fixture_root/bin/lark-cli"
+    fake_state="$fixture_root/fake-lark-state.json"
+    config_path="$fixture_root/feishu-config.json"
+    state_dir="$fixture_root/runtime-state"
+
+    mkdir -p "$(dirname "$fake_bin")" "$state_dir"
+
+    cat >"$fake_bin" <<'PYEOF'
+#!/usr/bin/env python3
+import json
+import os
+import sys
+from pathlib import Path
+
+state_path = Path(os.environ["FAKE_LARK_STATE"])
+if state_path.exists():
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+else:
+    state = {"next_id": 1, "messages": []}
+
+
+def save_state():
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def next_message_id(prefix="om_fake"):
+    value = f"{prefix}_{state['next_id']}"
+    state["next_id"] += 1
+    return value
+
+
+def arg_value(flag: str, default: str = "") -> str:
+    if flag not in args:
+        return default
+    index = args.index(flag)
+    if index + 1 >= len(args):
+        return default
+    return args[index + 1]
+
+
+args = sys.argv[1:]
+if args and args[0] == "--profile" and len(args) >= 2:
+    args = args[2:]
+
+if args[:2] == ["im", "+messages-send"]:
+    dry_run = "--dry-run" in args
+    chat_id = arg_value("--chat-id", "oc_test")
+    text = arg_value("--text")
+    message_id = next_message_id()
+    if not dry_run:
+        state["messages"].append(
+            {
+                "content": text,
+                "create_time": f"2026-04-16 00:{state['next_id']:02d}",
+                "deleted": False,
+                "message_id": message_id,
+                "msg_type": "text",
+                "sender": {
+                    "id": "cli_test",
+                    "id_type": "app_id",
+                    "sender_type": "app",
+                    "tenant_key": "tenant_test",
+                },
+                "updated": False,
+            }
+        )
+        save_state()
+    print(json.dumps({"ok": True, "identity": "bot", "data": {"chat_id": chat_id, "create_time": "2026-04-16 00:00:00", "message_id": message_id}}, ensure_ascii=False))
+    sys.exit(0)
+
+if args[:2] == ["im", "+messages-reply"]:
+    text = arg_value("--text")
+    message_id = next_message_id("om_reply")
+    state["messages"].append(
+        {
+            "content": text,
+            "create_time": f"2026-04-16 00:{state['next_id']:02d}",
+            "deleted": False,
+            "message_id": message_id,
+            "msg_type": "text",
+            "sender": {
+                "id": "cli_test",
+                "id_type": "app_id",
+                "sender_type": "app",
+                "tenant_key": "tenant_test",
+            },
+            "updated": False,
+        }
+    )
+    save_state()
+    print(json.dumps({"ok": True, "identity": "bot", "data": {"message_id": message_id}}, ensure_ascii=False))
+    sys.exit(0)
+
+if args[:2] == ["im", "+chat-messages-list"]:
+    page_size = int(arg_value("--page-size", "50"))
+    messages = list(reversed(state["messages"]))[:page_size]
+    print(json.dumps({"ok": True, "identity": "bot", "data": {"has_more": False, "messages": messages, "page_token": "", "total": len(messages)}}, ensure_ascii=False))
+    sys.exit(0)
+
+print(json.dumps({"ok": False, "error": {"message": "unsupported fake lark-cli args", "args": args}}, ensure_ascii=False))
+sys.exit(1)
+PYEOF
+    chmod +x "$fake_bin"
+
+    cat >"$config_path" <<EOF
+{
+  "notify_enabled": true,
+  "transport": "lark_cli_dm",
+  "lark_cli_bin": "$fake_bin",
+  "lark_cli_profile": "test-profile",
+  "lark_chat_id": "oc_test_chat",
+  "lark_identity": "bot",
+  "fast_poll_seconds": 1,
+  "fast_poll_window_seconds": 1,
+  "slow_poll_seconds": 1,
+  "followup_timeout_seconds": 30,
+  "history_limit": 50,
+  "known_id_limit": 50
+}
+EOF
+
+    output="$(
+        FAKE_LARK_STATE="$fake_state" \
+        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "任务完成" --project redcap --window-type followup --no-background-watch 2>&1
+    )"
+    window_id=$(printf '%s\n' "$output" | sed -n 's/^FEISHU_WINDOW_ID=//p' | tail -n 1)
+    [[ -n "$window_id" ]] || fail "notify followup did not emit window id"
+    assert_exists "$state_dir/active-window.json"
+
+    python3 - "$fake_state" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+state = json.loads(path.read_text(encoding="utf-8"))
+state["messages"].append(
+    {
+        "content": "继续下一步",
+        "create_time": "2026-04-16 00:30",
+        "deleted": False,
+        "message_id": "om_user_1",
+        "msg_type": "text",
+        "sender": {
+            "id": "user_test",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "tenant_test",
+        },
+        "updated": False,
+    }
+)
+path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+PY
+
+    output="$(
+        FAKE_LARK_STATE="$fake_state" \
+        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" watch-window "$window_id" 2>&1
+    )"
+    assert_string_contains "$output" "继续下一步"
+    assert_not_exists "$state_dir/active-window.json"
+
+    pending_count="$(
+        FAKE_LARK_STATE="$fake_state" \
+        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" pending-count
+    )"
+    assert_eq "$pending_count" "1"
+
+    pending_id="$(python3 - "$state_dir/pending-items.json" <<'PY'
+import json
+import pathlib
+import sys
+
+items = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(items[0]["id"])
+PY
+)"
+    [[ -n "$pending_id" ]] || fail "pending item id missing"
+
+    FAKE_LARK_STATE="$fake_state" \
+    REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+    REDCAP_FEISHU_STATE_DIR="$state_dir" \
+    python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" pending-promote "$pending_id" >/dev/null
+
+    pending_count="$(
+        FAKE_LARK_STATE="$fake_state" \
+        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" pending-count
+    )"
+    assert_eq "$pending_count" "0"
+
+    python3 - "$fake_state" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+state = json.loads(path.read_text(encoding="utf-8"))
+state["messages"].append(
+    {
+        "content": "窗口外消息",
+        "create_time": "2026-04-16 00:31",
+        "deleted": False,
+        "message_id": "om_user_2",
+        "msg_type": "text",
+        "sender": {
+            "id": "user_test",
+            "id_type": "open_id",
+            "sender_type": "user",
+            "tenant_key": "tenant_test",
+        },
+        "updated": False,
+    }
+)
+path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+PY
+
+    scan_count="$(
+        FAKE_LARK_STATE="$fake_state" \
+        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" pending-scan
+    )"
+    assert_eq "$scan_count" "1"
+
+    pending_count="$(
+        FAKE_LARK_STATE="$fake_state" \
+        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" pending-count
+    )"
+    assert_eq "$pending_count" "1"
+}
+
+run_overlay_skill_handoff_stays_native_case() {
+    log "case: overlay-skill-handoff-stays-native"
+
+    assert_contains "$REDCAP_ROOT/SKILL.md" "缺少宿主下游 skill 不是合法 blocker"
+    assert_contains "$REDCAP_ROOT/compass/CONTRIBUTING.md" "缺少这类宿主下游 skill 不是合法 blocker"
+    assert_contains "$REDCAP_ROOT/ARCHITECTURE.md" "其自带的下游 handoff（如 writing-plans）也不能反向接管 RedCap-native 主流程"
+    assert_contains "$REDCAP_ROOT/references/agent-constraints.md" "下游 skill 当成 blocker"
+}
+
 run_all_cases() {
     run_binding_recovery_gate_case
     run_layerb_concurrency_case
     run_copilot_safe_degraded_case
+    run_copilot_wrapper_identity_anchor_case
+    run_copilot_session_context_rejects_ambiguous_locks_case
     run_session_resume_gate_claude_full_case
     run_session_resume_gate_gemini_full_case
     run_session_resume_gate_copilot_full_case
@@ -2404,9 +5137,42 @@ run_all_cases() {
     run_prism_concurrency_case
     run_prism_legacy_bridge_case
     run_report_register_requires_claim_case
+    run_report_register_replaces_pending_artifact_case
+    run_report_register_rejects_traversal_artifact_case
+    run_report_register_rejects_symlinked_report_root_case
     run_sessionstart_auto_reconcile_rewrite_case
+    run_sessionstart_auto_reconcile_normalizes_absolute_artifact_case
     run_sessionstart_auto_reconcile_clear_case
     run_sessionstart_auto_reconcile_hash_mismatch_case
+    run_sessionstart_auto_reconcile_backlog_spec_case
+    run_task_complete_guard_triggers_on_complete_case
+    run_task_complete_guard_avoids_ambiguous_reports_case
+    run_task_complete_guard_skips_stale_pending_artifact_case
+    run_task_complete_guard_normalizes_absolute_pending_anchor_case
+    run_on_complete_records_backlog_spec_redlines_case
+    run_pending_closure_clear_restores_on_ledger_failure_case
+    run_session_end_clears_all_matching_pending_states_case
+    run_task_report_check_prefers_anchor_case
+    run_task_report_check_requires_summary_for_untracked_anchor_case
+    run_task_report_check_accepts_legacy_pending_anchor_case
+    run_task_report_check_rejects_stale_marker_conflict_case
+    run_task_report_check_rejects_zero_diff_stale_marker_case
+    run_task_report_check_ignores_invalid_pending_artifact_case
+    run_task_report_check_ignores_traversal_anchor_case
+    run_task_report_check_normalizes_absolute_pending_anchor_case
+    run_task_report_check_rejects_symlink_report_escape_case
+    run_task_complete_guard_replaces_stale_marker_with_unique_report_case
+    run_task_complete_guard_serializes_on_complete_case
+    run_task_complete_guard_prunes_stale_lock_case
+    run_task_complete_guard_keeps_live_legacy_lock_case
+    run_task_complete_guard_prunes_reused_pid_lock_case
+    run_task_complete_guard_retries_after_report_change_case
+    run_session_end_success_notify_after_clear_case
+    run_session_end_notify_timeout_releases_lock_case
+    run_session_end_blocked_rewrite_keeps_report_anchor_case
+    run_session_end_blocked_rewrite_normalizes_absolute_report_anchor_case
+    run_pending_closure_lock_keeps_live_legacy_lock_case
+    run_pending_closure_lock_prunes_reused_pid_case
     run_sessionstart_runtime_init_failed_degrades_case
     run_runtime_clear_context_clears_probe_pid_case
     run_runtime_claim_parent_fallback_case
@@ -2415,6 +5181,17 @@ run_all_cases() {
     run_artifact_lifecycle_pre_commit_block_case
     run_artifact_lifecycle_pre_commit_allow_case
     run_artifact_lifecycle_rejects_tabbed_path_case
+    run_backlog_check_strict_case
+    run_spec_registry_validates_repo_case
+    run_spec_check_rejects_superseded_outside_archive_case
+    run_spec_check_requires_replaced_by_case
+    run_spec_check_rejects_invalid_role_case
+    run_spec_check_rejects_replacement_cycle_case
+    run_spec_check_accepts_archived_superseded_case
+    run_host_workboard_backlog_anchor_case
+    run_cli_console_mirror_overwrites_case
+    run_feishu_duplex_window_queue_case
+    run_overlay_skill_handoff_stays_native_case
     run_continuity_manifest_sync_case
     run_continuity_runtime_required_case
     run_continuity_runtime_claim_requires_live_process_case
@@ -2451,6 +5228,12 @@ case "$COMMAND" in
     copilot-safe-degraded)
         run_copilot_safe_degraded_case
         ;;
+    copilot-wrapper-identity-anchor)
+        run_copilot_wrapper_identity_anchor_case
+        ;;
+    copilot-session-context-rejects-ambiguous-locks)
+        run_copilot_session_context_rejects_ambiguous_locks_case
+        ;;
     cross-layer-visibility)
         run_cross_layer_visibility_case
         ;;
@@ -2466,14 +5249,113 @@ case "$COMMAND" in
     report-register-requires-claim)
         run_report_register_requires_claim_case
         ;;
+    report-register-replaces-pending-artifact)
+        run_report_register_replaces_pending_artifact_case
+        ;;
+    report-register-rejects-traversal-artifact)
+        run_report_register_rejects_traversal_artifact_case
+        ;;
+    report-register-rejects-symlinked-report-root)
+        run_report_register_rejects_symlinked_report_root_case
+        ;;
     sessionstart-auto-reconcile-rewrite)
         run_sessionstart_auto_reconcile_rewrite_case
+        ;;
+    sessionstart-auto-reconcile-normalizes-absolute-artifact)
+        run_sessionstart_auto_reconcile_normalizes_absolute_artifact_case
         ;;
     sessionstart-auto-reconcile-clear)
         run_sessionstart_auto_reconcile_clear_case
         ;;
     sessionstart-auto-reconcile-hash-mismatch)
         run_sessionstart_auto_reconcile_hash_mismatch_case
+        ;;
+    sessionstart-auto-reconcile-backlog-spec)
+        run_sessionstart_auto_reconcile_backlog_spec_case
+        ;;
+    task-complete-guard-triggers-on-complete)
+        run_task_complete_guard_triggers_on_complete_case
+        ;;
+    task-complete-guard-avoids-ambiguous-reports)
+        run_task_complete_guard_avoids_ambiguous_reports_case
+        ;;
+    task-complete-guard-skips-stale-pending-artifact)
+        run_task_complete_guard_skips_stale_pending_artifact_case
+        ;;
+    task-complete-guard-normalizes-absolute-pending-anchor)
+        run_task_complete_guard_normalizes_absolute_pending_anchor_case
+        ;;
+    on-complete-records-backlog-spec-redlines)
+        run_on_complete_records_backlog_spec_redlines_case
+        ;;
+    pending-closure-clear-restores-on-ledger-failure)
+        run_pending_closure_clear_restores_on_ledger_failure_case
+        ;;
+    session-end-clears-all-matching-pending-states)
+        run_session_end_clears_all_matching_pending_states_case
+        ;;
+    task-report-check-prefers-anchor)
+        run_task_report_check_prefers_anchor_case
+        ;;
+    task-report-check-requires-summary-for-untracked-anchor)
+        run_task_report_check_requires_summary_for_untracked_anchor_case
+        ;;
+    task-report-check-accepts-legacy-pending-anchor)
+        run_task_report_check_accepts_legacy_pending_anchor_case
+        ;;
+    task-report-check-rejects-stale-marker-conflict)
+        run_task_report_check_rejects_stale_marker_conflict_case
+        ;;
+    task-report-check-rejects-zero-diff-stale-marker)
+        run_task_report_check_rejects_zero_diff_stale_marker_case
+        ;;
+    task-report-check-ignores-invalid-pending-artifact)
+        run_task_report_check_ignores_invalid_pending_artifact_case
+        ;;
+    task-report-check-ignores-traversal-anchor)
+        run_task_report_check_ignores_traversal_anchor_case
+        ;;
+    task-report-check-normalizes-absolute-pending-anchor)
+        run_task_report_check_normalizes_absolute_pending_anchor_case
+        ;;
+    task-report-check-rejects-symlink-report-escape)
+        run_task_report_check_rejects_symlink_report_escape_case
+        ;;
+    task-complete-guard-replaces-stale-marker-with-unique-report)
+        run_task_complete_guard_replaces_stale_marker_with_unique_report_case
+        ;;
+    task-complete-guard-serializes-on-complete)
+        run_task_complete_guard_serializes_on_complete_case
+        ;;
+    task-complete-guard-prunes-stale-lock)
+        run_task_complete_guard_prunes_stale_lock_case
+        ;;
+    task-complete-guard-keeps-live-legacy-lock)
+        run_task_complete_guard_keeps_live_legacy_lock_case
+        ;;
+    task-complete-guard-prunes-reused-pid-lock)
+        run_task_complete_guard_prunes_reused_pid_lock_case
+        ;;
+    task-complete-guard-retries-after-report-change)
+        run_task_complete_guard_retries_after_report_change_case
+        ;;
+    session-end-success-notify-after-clear)
+        run_session_end_success_notify_after_clear_case
+        ;;
+    session-end-notify-timeout-releases-lock)
+        run_session_end_notify_timeout_releases_lock_case
+        ;;
+    session-end-blocked-rewrite-keeps-report-anchor)
+        run_session_end_blocked_rewrite_keeps_report_anchor_case
+        ;;
+    session-end-blocked-rewrite-normalizes-absolute-report-anchor)
+        run_session_end_blocked_rewrite_normalizes_absolute_report_anchor_case
+        ;;
+    pending-closure-lock-keeps-live-legacy-lock)
+        run_pending_closure_lock_keeps_live_legacy_lock_case
+        ;;
+    pending-closure-lock-prunes-reused-pid)
+        run_pending_closure_lock_prunes_reused_pid_case
         ;;
     sessionstart-runtime-init-failed-degrades)
         run_sessionstart_runtime_init_failed_degrades_case
@@ -2498,6 +5380,39 @@ case "$COMMAND" in
         ;;
     artifact-lifecycle-rejects-tabbed-path)
         run_artifact_lifecycle_rejects_tabbed_path_case
+        ;;
+    backlog-check-strict)
+        run_backlog_check_strict_case
+        ;;
+    spec-registry-validates-repo)
+        run_spec_registry_validates_repo_case
+        ;;
+    spec-check-rejects-superseded-outside-archive)
+        run_spec_check_rejects_superseded_outside_archive_case
+        ;;
+    spec-check-requires-replaced-by)
+        run_spec_check_requires_replaced_by_case
+        ;;
+    spec-check-rejects-invalid-role)
+        run_spec_check_rejects_invalid_role_case
+        ;;
+    spec-check-rejects-replacement-cycle)
+        run_spec_check_rejects_replacement_cycle_case
+        ;;
+    spec-check-accepts-archived-superseded)
+        run_spec_check_accepts_archived_superseded_case
+        ;;
+    host-workboard-backlog-anchor)
+        run_host_workboard_backlog_anchor_case
+        ;;
+    cli-console-mirror-overwrites)
+        run_cli_console_mirror_overwrites_case
+        ;;
+    feishu-duplex-window-queue)
+        run_feishu_duplex_window_queue_case
+        ;;
+    overlay-skill-handoff-stays-native)
+        run_overlay_skill_handoff_stays_native_case
         ;;
     continuity-manifest-sync)
         run_continuity_manifest_sync_case

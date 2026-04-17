@@ -26,13 +26,11 @@ else
     ABS_PATH="$PWD/$INPUT_PATH"
 fi
 
-case "$ABS_PATH" in
-    "$REDCAP_ROOT"/compass/docs/task-reports/*.md) ;;
-    *)
-        echo "[redcap-task-report-register] report must live under compass/docs/task-reports/" >&2
-        exit 1
-        ;;
-esac
+ABS_PATH=$(redcap_interop_resolve_report_abs_path "$REDCAP_ROOT" "$ABS_PATH" 2>/dev/null || true)
+if [[ -z "$ABS_PATH" ]]; then
+    echo "[redcap-task-report-register] report must resolve under compass/docs/task-reports/" >&2
+    exit 1
+fi
 
 if [[ ! -f "$ABS_PATH" ]]; then
     echo "[redcap-task-report-register] report file not found: $ABS_PATH" >&2
@@ -52,16 +50,11 @@ if redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null; then
         PENDING_STATE_FILE=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
         PENDING_ARTIFACT_PATH=$(redcap_interop_read_state_field "$PENDING_STATE_FILE" "artifact_path" 2>/dev/null || true)
         if [[ -n "$PENDING_ARTIFACT_PATH" && "$PENDING_ARTIFACT_PATH" != "$REL_PATH" ]]; then
-            redcap_interop_fail_closed \
+            redcap_interop_record_closure_event \
                 "$REDCAP_ROOT" \
-                "closure" \
-                "task-report-register-blocked" \
-                "unresolved pending closure blocks new task report registration" \
+                "task-report-register-replaced-artifact" \
                 "host=$HOST existing_artifact=$PENDING_ARTIFACT_PATH new_artifact=$REL_PATH" \
                 >/dev/null 2>&1 || true
-            echo "[redcap-task-report-register] unresolved pending closure blocks new task report registration" >&2
-            echo "  existing_artifact: $PENDING_ARTIFACT_PATH" >&2
-            exit 1
         fi
     fi
 
@@ -80,7 +73,7 @@ if redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null; then
         exit 1
     fi
 
-    if ! redcap_runtime_write_text "layerB/current-report-path" "$REL_PATH"; then
+    if ! redcap_interop_write_current_report_marker "$REL_PATH" "$REDCAP_ROOT/.dev-task.md"; then
         echo "[redcap-task-report-register] failed to persist current report marker: $REL_PATH" >&2
         exit 1
     fi
