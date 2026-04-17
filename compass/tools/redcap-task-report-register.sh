@@ -17,8 +17,14 @@ HOST="$1"
 INPUT_PATH="$2"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+BINDING_KEY="${REDCAP_SESSION_BINDING_KEY:-}"
+HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-}"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
+
+if [[ -z "$BINDING_KEY" && -n "$HOST_SESSION_ID" ]]; then
+    BINDING_KEY=$(redcap_runtime_binding_key_from_host_session "$HOST" "$HOST_SESSION_ID")
+fi
 
 if [[ "$INPUT_PATH" = /* ]]; then
     ABS_PATH="$INPUT_PATH"
@@ -38,7 +44,45 @@ if [[ ! -f "$ABS_PATH" ]]; then
 fi
 
 REL_PATH="${ABS_PATH#$REDCAP_ROOT/}"
+runtime_context_matches_target() {
+    local expected_root
+
+    expected_root=$(redcap_runtime_project_root "$REDCAP_ROOT")
+    [[ -n "${REDCAP_RUNTIME_HOST:-}" && "${REDCAP_RUNTIME_HOST}" == "$HOST" ]] || return 1
+    [[ -n "${REDCAP_RUNTIME_PROJECT_ROOT:-}" ]] || return 1
+    [[ "$(redcap_runtime_project_root "${REDCAP_RUNTIME_PROJECT_ROOT}")" == "$expected_root" ]] || return 1
+    if [[ -n "$BINDING_KEY" ]]; then
+        [[ -n "${REDCAP_RUNTIME_BINDING_KEY:-}" && "${REDCAP_RUNTIME_BINDING_KEY}" == "$BINDING_KEY" ]] || return 1
+    fi
+}
+
+EXPLICIT_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}"
+EXPLICIT_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}"
+RUNTIME_ATTACHED=0
+CLAIM_RUNTIME_SESSION_ID=""
+CLAIM_RUNTIME_CAPABILITY=""
+
 if redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null; then
+    if runtime_context_matches_target; then
+        CLAIM_RUNTIME_SESSION_ID="$REDCAP_RUNTIME_SESSION_ID"
+        CLAIM_RUNTIME_CAPABILITY="$REDCAP_RUNTIME_CAPABILITY"
+        RUNTIME_ATTACHED=1
+    else
+        redcap_runtime_clear_context
+    fi
+fi
+
+if [[ "$RUNTIME_ATTACHED" != "1" && -n "$EXPLICIT_RUNTIME_SESSION_ID" && -n "$EXPLICIT_RUNTIME_CAPABILITY" ]]; then
+    if [[ -n "$BINDING_KEY" ]] && redcap_runtime_attach_existing "$EXPLICIT_RUNTIME_SESSION_ID" "$EXPLICIT_RUNTIME_CAPABILITY" 2>/dev/null; then
+        if runtime_context_matches_target; then
+            RUNTIME_ATTACHED=1
+        else
+            redcap_runtime_clear_context
+        fi
+    fi
+fi
+
+if [[ "$RUNTIME_ATTACHED" == "1" ]]; then
     INITIAL_HEAD_FILE=$(redcap_runtime_path "layerB/initial-head")
     REGISTER_BASELINE=""
     REGISTER_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null || true)
@@ -92,7 +136,7 @@ if redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null; then
         >/dev/null 2>&1 || true
 else
     redcap_runtime_record_degraded_mode "$REDCAP_ROOT" "layerB-report-register-missing-claim" "host=$HOST" || true
-    echo "[redcap-task-report-register] no runtime process claim available for host=$HOST" >&2
+    echo "[redcap-task-report-register] no matching runtime context available for host=$HOST" >&2
     exit 1
 fi
 echo "$REL_PATH"

@@ -126,6 +126,70 @@ done < <(sort -u "$TMP_CANON_CHANGED_REPORT_LIST" | sed '/^[[:space:]]*$/d')
 
 rm -f "$TMP_REPORT_LIST" "$TMP_CHANGED_REPORT_LIST" "$TMP_CANON_REPORT_LIST" "$TMP_CANON_CHANGED_REPORT_LIST"
 
+pending_anchor_is_uniquely_latest_changed_report() {
+    local anchor="$1"
+
+    [[ -n "$anchor" && ${#CHANGED_REPORTS[@]} -gt 0 ]] || return 1
+
+    python3 - "$REDCAP_ROOT" "$BASELINE" "$CURRENT_HEAD" "$anchor" "${CHANGED_REPORTS[@]}" <<'PY'
+from __future__ import annotations
+
+import subprocess
+import sys
+
+
+def git_lines(root: str, *args: str) -> list[str]:
+    completed = subprocess.run(
+        ["git", "-C", root, "--no-pager", *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        return []
+    return [line.strip() for line in completed.stdout.splitlines() if line.strip()]
+
+
+root = sys.argv[1]
+baseline = sys.argv[2]
+current = sys.argv[3]
+anchor = sys.argv[4]
+changed = sys.argv[5:]
+
+worktree_changed = set(git_lines(root, "diff", "--name-only"))
+worktree_changed.update(git_lines(root, "diff", "--cached", "--name-only"))
+worktree_changed.update(git_lines(root, "ls-files", "--others", "--exclude-standard"))
+
+commit_order = git_lines(root, "rev-list", "--reverse", f"{baseline}..{current}")
+commit_index = {commit: idx for idx, commit in enumerate(commit_order)}
+
+ranks: dict[str, tuple[int, int]] = {}
+for path in changed:
+    if path in worktree_changed:
+        ranks[path] = (2, 0)
+        continue
+
+    commits = git_lines(root, "rev-list", "--reverse", f"{baseline}..{current}", "--", path)
+    if commits:
+        ranks[path] = (1, commit_index.get(commits[-1], -1))
+    else:
+        ranks[path] = (0, -1)
+
+anchor_rank = ranks.get(anchor)
+if anchor_rank is None:
+    print("0")
+    raise SystemExit(0)
+
+best_rank = max(ranks.values())
+if anchor_rank != best_rank:
+    print("0")
+    raise SystemExit(0)
+
+is_unique = sum(1 for rank in ranks.values() if rank == best_rank) == 1
+print("1" if is_unique else "0")
+PY
+}
+
 if [[ "$ANCHOR_MISMATCH" -eq 1 ]]; then
     echo "[redcap-task-report-check] report marker and pending closure artifact disagree" >&2
     exit 1
@@ -162,6 +226,7 @@ REQUIRED_CHANGED_ONLY_SECTIONS=(
 
 VALID_REPORTS=()
 ANCHOR_IS_CHANGED=0
+ANCHOR_IS_UNIQUE_LATEST_CHANGED=0
 
 if [[ -n "$ANCHORED_REPORT" && ${#CHANGED_REPORTS[@]} -gt 0 ]]; then
     for CHANGED in "${CHANGED_REPORTS[@]}"; do
@@ -170,6 +235,11 @@ if [[ -n "$ANCHORED_REPORT" && ${#CHANGED_REPORTS[@]} -gt 0 ]]; then
             break
         fi
     done
+    if [[ "$ANCHOR_IS_CHANGED" -eq 1 ]]; then
+        if [[ "$(pending_anchor_is_uniquely_latest_changed_report "$ANCHORED_REPORT")" == "1" ]]; then
+            ANCHOR_IS_UNIQUE_LATEST_CHANGED=1
+        fi
+    fi
 fi
 
 for REL_PATH in "${REPORT_FILES[@]}"; do
@@ -252,9 +322,11 @@ if [[ -n "$ANCHORED_REPORT" ]]; then
         done
     fi
     if [[ "$ANCHOR_SOURCE" == "pending" && ${#CONFLICTING_CHANGED_REPORTS[@]} -gt 0 ]]; then
-        echo "[redcap-task-report-check] pending report anchor conflicts with other changed task reports:" >&2
-        printf '  - %s\n' "${CONFLICTING_CHANGED_REPORTS[@]}" | sort -u >&2
-        exit 1
+        if [[ "$ANCHOR_IS_UNIQUE_LATEST_CHANGED" -ne 1 ]]; then
+            echo "[redcap-task-report-check] stale pending report anchor conflicts with newer changed task reports:" >&2
+            printf '  - %s\n' "${CONFLICTING_CHANGED_REPORTS[@]}" | sort -u >&2
+            exit 1
+        fi
     fi
     if [[ "$ANCHOR_SOURCE" == "marker" && "$ANCHOR_IS_CHANGED" -ne 1 && ${#CONFLICTING_CHANGED_REPORTS[@]} -gt 0 ]]; then
         echo "[redcap-task-report-check] stale marker anchor conflicts with newer changed task reports:" >&2

@@ -64,6 +64,10 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh prism-concurrency
   bash compass/tools/redcap-multi-session-acceptance.sh prism-legacy-bridge
   bash compass/tools/redcap-multi-session-acceptance.sh report-register-requires-claim
+  bash compass/tools/redcap-multi-session-acceptance.sh report-register-accepts-explicit-runtime-env
+  bash compass/tools/redcap-multi-session-acceptance.sh report-register-rejects-ambiguous-explicit-runtime
+  bash compass/tools/redcap-multi-session-acceptance.sh report-register-prefers-live-claim-over-stale-explicit-runtime
+  bash compass/tools/redcap-multi-session-acceptance.sh report-register-rejects-foreign-explicit-runtime
   bash compass/tools/redcap-multi-session-acceptance.sh report-register-replaces-pending-artifact
   bash compass/tools/redcap-multi-session-acceptance.sh report-register-rejects-traversal-artifact
   bash compass/tools/redcap-multi-session-acceptance.sh report-register-rejects-symlinked-report-root
@@ -80,6 +84,8 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh pending-closure-clear-restores-on-ledger-failure
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-all-matching-pending-states
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-prefers-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-allows-pending-anchor-when-uniquely-latest
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-rejects-stale-pending-anchor-conflict
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-requires-summary-for-untracked-anchor
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-accepts-legacy-pending-anchor
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-rejects-stale-marker-conflict
@@ -1169,6 +1175,171 @@ run_report_register_requires_claim_case() {
     assert_num_eq "$after" $((before + 1))
 }
 
+run_report_register_accepts_explicit_runtime_env_case() {
+    local host="copilot"
+    local binding_key pid current_head pending_state marker_path
+    local report_path rel_path
+
+    log "case: report-register-accepts-explicit-runtime-env"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "report-register-accepts-explicit-runtime-env" >/dev/null 2>&1 || true
+
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-explicit-runtime-${RANDOM}-$$.md"
+    rel_path="${report_path#$REDCAP_ROOT/}"
+    printf '# acceptance explicit runtime report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+
+    binding_key="acceptance-report-register-explicit-${RANDOM}-$$"
+    pid="$((64900 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to write initial head for explicit runtime report register case"
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+
+    REDCAP_RUNTIME_SESSION_ID="$REDCAP_RUNTIME_SESSION_ID" \
+    REDCAP_RUNTIME_CAPABILITY="$REDCAP_RUNTIME_CAPABILITY" \
+    REDCAP_SESSION_BINDING_KEY="$binding_key" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$host" "$report_path" >/dev/null \
+        || fail "task report registration should accept explicit runtime env"
+
+    pending_state=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md")
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "artifact_path")" "$rel_path"
+
+    marker_path="$(redcap_runtime_path "layerB/current-report-path")"
+    assert_exists "$marker_path"
+    assert_eq "$(read_file_text "$marker_path")" "$rel_path"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "report-register-accepts-explicit-runtime-env" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_report_register_rejects_ambiguous_explicit_runtime_case() {
+    local host="copilot"
+    local binding_key pid runtime_id runtime_capability
+    local report_path output status pending_state
+
+    log "case: report-register-rejects-ambiguous-explicit-runtime"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "report-register-rejects-ambiguous-explicit-runtime" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-report-register-ambiguous-${RANDOM}-$$"
+    pid="$((64780 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    runtime_id="$REDCAP_RUNTIME_SESSION_ID"
+    runtime_capability="$REDCAP_RUNTIME_CAPABILITY"
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-ambiguous-explicit-${RANDOM}-$$.md"
+    printf '# acceptance ambiguous explicit runtime report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+
+    set +e
+    output="$(
+        REDCAP_RUNTIME_SESSION_ID="$runtime_id" \
+        REDCAP_RUNTIME_CAPABILITY="$runtime_capability" \
+            bash "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$host" "$report_path" 2>&1
+    )"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task report registration unexpectedly accepted ambiguous explicit runtime"
+    assert_string_contains "$output" "no matching runtime context available"
+
+    pending_state=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+    [[ -z "$pending_state" ]] || fail "ambiguous explicit runtime unexpectedly created pending closure"
+
+    redcap_runtime_clear_context
+}
+
+run_report_register_prefers_live_claim_over_stale_explicit_runtime_case() {
+    local host="copilot"
+    local binding_a binding_b pid_a pid_b
+    local runtime_a capability_a report_path rel_path
+    local marker_a marker_b
+
+    log "case: report-register-prefers-live-claim-over-stale-explicit-runtime"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "report-register-prefers-live-claim-over-stale-explicit-runtime" >/dev/null 2>&1 || true
+
+    binding_a="acceptance-report-register-priority-a-${RANDOM}-$$"
+    binding_b="acceptance-report-register-priority-b-${RANDOM}-$$"
+    pid_a="$((64800 + RANDOM))"
+    pid_b="$((64810 + RANDOM))"
+
+    init_bound_runtime "$host" "$binding_a" "$pid_a"
+    runtime_a="$REDCAP_RUNTIME_SESSION_ID"
+    capability_a="$REDCAP_RUNTIME_CAPABILITY"
+
+    init_bound_runtime "$host" "$binding_b" "$pid_b"
+
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-review-runtime-priority-${RANDOM}-$$.md"
+    rel_path="${report_path#$REDCAP_ROOT/}"
+    printf '# acceptance runtime priority report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+
+    REDCAP_RUNTIME_SESSION_ID="$runtime_a" \
+    REDCAP_RUNTIME_CAPABILITY="$capability_a" \
+    REDCAP_HOST_PROCESS_PID="$pid_b" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$host" "$report_path" >/dev/null \
+        || fail "task report registration should prefer live claim over stale explicit runtime"
+
+    redcap_runtime_attach_existing "$runtime_a" "$capability_a" >/dev/null || fail "failed to reattach runtime A"
+    marker_a="$(redcap_runtime_path "layerB/current-report-path")"
+    if [[ -f "$marker_a" ]]; then
+        assert_ne "$(read_file_text "$marker_a")" "$rel_path"
+    fi
+
+    REDCAP_HOST_PROCESS_PID="$pid_b" redcap_runtime_attach_from_process_claim "$host" >/dev/null || fail "failed to reattach runtime B"
+    marker_b="$(redcap_runtime_path "layerB/current-report-path")"
+    assert_exists "$marker_b"
+    assert_eq "$(read_file_text "$marker_b")" "$rel_path"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "report-register-prefers-live-claim-over-stale-explicit-runtime" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid_a" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid_b" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_report_register_rejects_foreign_explicit_runtime_case() {
+    local host="copilot"
+    local repo_a repo_b
+    local binding_key pid runtime_id runtime_capability
+    local report_path output status pending_state
+
+    log "case: report-register-rejects-foreign-explicit-runtime"
+
+    redcap_runtime_clear_context
+    repo_a="$ACCEPT_ROOT/report-register-foreign-runtime-a/repo"
+    repo_b="$ACCEPT_ROOT/report-register-foreign-runtime-b/repo"
+    create_task_report_fixture_repo "$repo_a"
+    create_task_report_fixture_repo "$repo_b"
+
+    binding_key="acceptance-report-register-foreign-${RANDOM}-$$"
+    pid="$((64850 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo_a" "$binding_key" "$pid"
+    runtime_id="$REDCAP_RUNTIME_SESSION_ID"
+    runtime_capability="$REDCAP_RUNTIME_CAPABILITY"
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+
+    report_path="$repo_b/compass/docs/task-reports/zz-acceptance-foreign-runtime-${RANDOM}-$$.md"
+    cp "$repo_b/references/task-report-template.md" "$report_path"
+
+    set +e
+    output="$(
+        REDCAP_RUNTIME_SESSION_ID="$runtime_id" \
+        REDCAP_RUNTIME_CAPABILITY="$runtime_capability" \
+        REDCAP_SESSION_BINDING_KEY="$binding_key" \
+            bash "$repo_b/compass/tools/redcap-task-report-register.sh" "$host" "$report_path" 2>&1
+    )"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task report registration unexpectedly accepted foreign explicit runtime"
+    assert_string_contains "$output" "no matching runtime context available"
+
+    pending_state=$(redcap_interop_pending_closure_existing_file "$repo_b" "$repo_b/.dev-task.md" 2>/dev/null || true)
+    [[ -z "$pending_state" ]] || fail "foreign explicit runtime unexpectedly created pending closure in target repo"
+    redcap_runtime_clear_context
+}
+
 run_report_register_replaces_pending_artifact_case() {
     local host="claude"
     local binding_key pid
@@ -1282,12 +1453,15 @@ run_report_register_rejects_symlinked_report_root_case() {
 run_sessionstart_auto_reconcile_rewrite_case() {
     local host="claude"
     local binding_a binding_b pid_a pid_b
-    local report_path pending_state required_redlines expected_seed expected_reconciled
+    local report_path report_rel pending_state required_redlines expected_seed expected_reconciled
     local current_head
 
     log "case: sessionstart-auto-reconcile-rewrite"
 
-    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-reconcile-rewrite-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    cp "$REDCAP_ROOT/references/task-report-template.md" "$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
     binding_a="acceptance-reconcile-a-${RANDOM}-$$"
     binding_b="acceptance-reconcile-b-${RANDOM}-$$"
     pid_a="$((61000 + RANDOM))"
@@ -1305,7 +1479,7 @@ run_sessionstart_auto_reconcile_rewrite_case() {
     assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "$expected_seed")"
 
     init_bound_runtime "$host" "$binding_b" "$pid_b"
-    write_current_report_marker_fixture "${report_path#$REDCAP_ROOT/}"
+    write_current_report_marker_fixture "$report_rel"
     REDCAP_HOST_PROCESS_PID="$pid_b" bash "$REDCAP_ROOT/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null \
         || fail "pending closure reconcile rewrite case failed"
 
@@ -1323,12 +1497,15 @@ run_sessionstart_auto_reconcile_rewrite_case() {
 run_sessionstart_auto_reconcile_normalizes_absolute_artifact_case() {
     local host="claude"
     local binding_a binding_b pid_a pid_b
-    local report_rel report_abs pending_state current_head
+    local report_path report_rel report_abs pending_state current_head
 
     log "case: sessionstart-auto-reconcile-normalizes-absolute-artifact"
 
-    report_rel="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
-    report_abs="$REDCAP_ROOT/$report_rel"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-reconcile-absolute-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    cp "$REDCAP_ROOT/references/task-report-template.md" "$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+    report_abs="$report_path"
     binding_a="acceptance-reconcile-abs-a-${RANDOM}-$$"
     binding_b="acceptance-reconcile-abs-b-${RANDOM}-$$"
     pid_a="$((61010 + RANDOM))"
@@ -1969,6 +2146,91 @@ EOF
 
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "task-report-check-prefers-anchor" >/dev/null 2>&1 || true
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_allows_pending_anchor_when_uniquely_latest_case() {
+    local host="copilot"
+    local repo baseline_head current_head
+    local older_rel latest_rel output
+
+    log "case: task-report-check-allows-pending-anchor-when-uniquely-latest"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-pending-anchor-latest/repo"
+    create_task_report_fixture_repo "$repo"
+    baseline_head="$(git -C "$repo" rev-parse HEAD)"
+    older_rel="compass/docs/task-reports/zz-acceptance-pending-older-${RANDOM}-$$.md"
+    latest_rel="compass/docs/task-reports/zz-acceptance-pending-latest-${RANDOM}-$$.md"
+    cp "$repo/references/task-report-template.md" "$repo/$older_rel"
+    git -C "$repo" add "$older_rel"
+    git -C "$repo" commit --quiet -m "add older report"
+    cp "$repo/references/task-report-template.md" "$repo/$latest_rel"
+    git -C "$repo" add "$latest_rel"
+    git -C "$repo" commit --quiet -m "add latest report"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+
+    redcap_interop_write_pending_closure \
+        "$repo" \
+        "$repo/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "task-report-check-allows-pending-anchor-when-uniquely-latest" \
+        "$latest_rel" \
+        "$baseline_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed pending closure for latest pending anchor case"
+
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$baseline_head" "$current_head" "$host")" \
+        || fail "task-report-check should allow uniquely latest pending anchor"
+    assert_eq "$output" "$latest_rel"
+
+    redcap_interop_clear_pending_closure "$repo" "$repo/.dev-task.md" "acceptance-cleanup" "task-report-check-allows-pending-anchor-when-uniquely-latest" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_rejects_stale_pending_anchor_conflict_case() {
+    local host="copilot"
+    local repo baseline_head current_head
+    local stale_rel newer_rel output status
+
+    log "case: task-report-check-rejects-stale-pending-anchor-conflict"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-stale-pending-anchor/repo"
+    create_task_report_fixture_repo "$repo"
+    baseline_head="$(git -C "$repo" rev-parse HEAD)"
+    stale_rel="compass/docs/task-reports/zz-acceptance-pending-stale-${RANDOM}-$$.md"
+    newer_rel="compass/docs/task-reports/zz-acceptance-pending-newer-${RANDOM}-$$.md"
+    cp "$repo/references/task-report-template.md" "$repo/$stale_rel"
+    git -C "$repo" add "$stale_rel"
+    git -C "$repo" commit --quiet -m "add stale report"
+    cp "$repo/references/task-report-template.md" "$repo/$newer_rel"
+    git -C "$repo" add "$newer_rel"
+    git -C "$repo" commit --quiet -m "add newer report"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+
+    redcap_interop_write_pending_closure \
+        "$repo" \
+        "$repo/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "task-report-check-rejects-stale-pending-anchor-conflict" \
+        "$stale_rel" \
+        "$baseline_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed pending closure for stale pending anchor case"
+
+    set +e
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$baseline_head" "$current_head" "$host" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task-report-check unexpectedly accepted stale pending anchor conflict"
+    assert_string_contains "$output" "stale pending report anchor conflicts with newer changed task reports"
+
+    redcap_interop_clear_pending_closure "$repo" "$repo/.dev-task.md" "acceptance-cleanup" "task-report-check-rejects-stale-pending-anchor-conflict" >/dev/null 2>&1 || true
     redcap_runtime_clear_context
 }
 
@@ -3155,11 +3417,14 @@ run_runtime_clear_context_clears_probe_pid_case() {
 run_sessionstart_auto_reconcile_clear_case() {
     local host="claude"
     local binding_key pid
-    local report_path pending_state current_head required_redlines
+    local report_path report_rel pending_state current_head required_redlines
 
     log "case: sessionstart-auto-reconcile-clear"
 
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-reconcile-clear-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    cp "$REDCAP_ROOT/references/task-report-template.md" "$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
@@ -3168,7 +3433,7 @@ run_sessionstart_auto_reconcile_clear_case() {
         "acceptance-seed" \
         "task-report" \
         "sessionstart-auto-reconcile-clear" \
-        "$report_path" \
+        "$report_rel" \
         "$current_head" \
         "$current_head" \
         >/dev/null
@@ -3178,7 +3443,7 @@ run_sessionstart_auto_reconcile_clear_case() {
     binding_key="acceptance-reconcile-clear-${RANDOM}-$$"
     pid="$((63000 + RANDOM))"
     init_bound_runtime "$host" "$binding_key" "$pid"
-    write_current_report_marker_fixture "$report_path"
+    write_current_report_marker_fixture "$report_rel"
     REDCAP_HOST_PROCESS_PID="$pid" bash "$REDCAP_ROOT/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null \
         || fail "pending closure reconcile clear case failed"
 
@@ -3196,12 +3461,15 @@ run_sessionstart_auto_reconcile_clear_case() {
 run_sessionstart_auto_reconcile_hash_mismatch_case() {
     local host="claude"
     local binding_key pid
-    local report_path pending_state mismatch_state reanchored_state required_redlines
+    local report_path report_rel pending_state mismatch_state reanchored_state required_redlines
     local current_hash mismatch_hash current_head
 
     log "case: sessionstart-auto-reconcile-hash-mismatch"
 
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-reconcile-hash-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    cp "$REDCAP_ROOT/references/task-report-template.md" "$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
     current_hash=$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     mismatch_hash="deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
@@ -3214,7 +3482,7 @@ run_sessionstart_auto_reconcile_hash_mismatch_case() {
         "acceptance-seed" \
         "task-report,notify" \
         "sessionstart-auto-reconcile-hash-mismatch" \
-        "$report_path" \
+        "$report_rel" \
         "$current_hash" \
         "$current_hash" \
         >/dev/null
@@ -3237,7 +3505,7 @@ PY
     binding_key="acceptance-reconcile-hash-mismatch-${RANDOM}-$$"
     pid="$((64000 + RANDOM))"
     init_bound_runtime "$host" "$binding_key" "$pid"
-    write_current_report_marker_fixture "$report_path"
+    write_current_report_marker_fixture "$report_rel"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for hash mismatch case"
     REDCAP_HOST_PROCESS_PID="$pid" bash "$REDCAP_ROOT/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null \
         || fail "pending closure reconcile hash mismatch case failed"
@@ -3257,14 +3525,17 @@ PY
 run_sessionstart_auto_reconcile_backlog_spec_case() {
     local host="claude"
     local binding_key pid current_head
-    local report_path pending_state required_redlines
+    local report_path report_rel pending_state required_redlines
     local case_dir validator_stub
 
     log "case: sessionstart-auto-reconcile-backlog-spec"
 
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "sessionstart-auto-reconcile-backlog-spec" >/dev/null 2>&1 || true
 
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-reconcile-backlog-spec-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    cp "$REDCAP_ROOT/references/task-report-template.md" "$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
@@ -3273,7 +3544,7 @@ run_sessionstart_auto_reconcile_backlog_spec_case() {
         "acceptance-seed" \
         "review,task-report,notify" \
         "sessionstart-auto-reconcile-backlog-spec" \
-        "$report_path" \
+        "$report_rel" \
         "$current_head" \
         "$current_head" \
         >/dev/null
@@ -3281,7 +3552,7 @@ run_sessionstart_auto_reconcile_backlog_spec_case() {
     binding_key="acceptance-reconcile-backlog-spec-${RANDOM}-$$"
     pid="$((64100 + RANDOM))"
     init_bound_runtime "$host" "$binding_key" "$pid"
-    write_current_report_marker_fixture "$report_path"
+    write_current_report_marker_fixture "$report_rel"
 
     case_dir="$(mktemp -d "$ACCEPT_ROOT/sessionstart-reconcile-backlog-spec.XXXXXX")"
     TEMP_PROJECTS+=("$case_dir")
@@ -5249,6 +5520,18 @@ case "$COMMAND" in
     report-register-requires-claim)
         run_report_register_requires_claim_case
         ;;
+    report-register-accepts-explicit-runtime-env)
+        run_report_register_accepts_explicit_runtime_env_case
+        ;;
+    report-register-rejects-ambiguous-explicit-runtime)
+        run_report_register_rejects_ambiguous_explicit_runtime_case
+        ;;
+    report-register-prefers-live-claim-over-stale-explicit-runtime)
+        run_report_register_prefers_live_claim_over_stale_explicit_runtime_case
+        ;;
+    report-register-rejects-foreign-explicit-runtime)
+        run_report_register_rejects_foreign_explicit_runtime_case
+        ;;
     report-register-replaces-pending-artifact)
         run_report_register_replaces_pending_artifact_case
         ;;
@@ -5296,6 +5579,12 @@ case "$COMMAND" in
         ;;
     task-report-check-prefers-anchor)
         run_task_report_check_prefers_anchor_case
+        ;;
+    task-report-check-allows-pending-anchor-when-uniquely-latest)
+        run_task_report_check_allows_pending_anchor_when_uniquely_latest_case
+        ;;
+    task-report-check-rejects-stale-pending-anchor-conflict)
+        run_task_report_check_rejects_stale_pending_anchor_conflict_case
         ;;
     task-report-check-requires-summary-for-untracked-anchor)
         run_task_report_check_requires_summary_for_untracked_anchor_case
