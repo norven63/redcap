@@ -861,3 +861,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-18
+
+### L-88: reviewer fallback 列表必须覆盖当前可用宿主族，并隔离 CLI 噪声与评审 payload
+- **场景**：`session-end` pending refresh commit 通过 spec / acceptance / commit-proof 后，真实 Copilot `session-end` 再次卡在独立评审：`gemini` / `copilot` / `claude` / `kimi` 全部不可用或超时，但本机 `codex exec` 可在 read-only headless 模式下稳定返回结构化评审结果
+- **根因**：stop-review runner 的 fallback 列表只覆盖旧四类 CLI，没有把 Codex CLI 这个当前可用的 OpenAI 族 reviewer 纳入；同时 Codex CLI 会在 stdout/stderr 打印 banner、插件预热 warning、网络重连提示等噪声，若直接消费 stdout/stderr 会污染评审 payload
+- **经验规则**：① reviewer fallback 不应固定在历史宿主集合里，发现当前环境有新的健康 reviewer CLI 时要纳入嗅探与 stop-review fallback ② Codex CLI 程序化调用必须优先读取 `--output-last-message` 结果文件，把 stdout/stderr 当 transport noise 处理 ③ acceptance 要模拟“前序 reviewer 不可用 + Codex 有 stdout/stderr 噪声但 last-message 给出合法 JSON”的路径，防止再次把健康 fallback 判成不可用
+- **来源**：2026-04-18，Copilot live `session-end` review gap follow-up（`redcap-on-stop-review.sh` / `redcap-detect-agents.sh` / `agent-adapters.md`）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18

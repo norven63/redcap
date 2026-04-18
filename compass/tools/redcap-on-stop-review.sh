@@ -15,7 +15,7 @@
 #   stdin — JSON（必须消费）
 #   退出码 — 0=通过, 非0=有问题（Claude Code 不阻塞，但会写标记文件 + 飞书告警）
 #
-# 依赖：至少一个可用的独立评审 CLI（优先 gemini，必要时 fallback 到 copilot / claude / kimi）
+# 依赖：至少一个可用的独立评审 CLI（优先 gemini，必要时 fallback 到 codex / copilot / claude / kimi）
 # ─────────────────────────────────────────────────────────
 
 set -u
@@ -30,7 +30,7 @@ source "$SCRIPT_DIR/redcap-interop-governance.sh"
 HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-$(redcap_runtime_json_field "$INPUT" "session_id")}"
 HOOK_CWD="${REDCAP_HOOK_CWD:-$REDCAP_ROOT}"
 REVIEW_HOST="${REDCAP_STOP_REVIEW_HOST:-claude}"
-REVIEW_AGENT_ORDER="${REDCAP_STOP_REVIEW_AGENT_ORDER:-gemini,copilot,claude,kimi}"
+REVIEW_AGENT_ORDER="${REDCAP_STOP_REVIEW_AGENT_ORDER:-gemini,codex,copilot,claude,kimi}"
 BINDING_KEY=""
 if [[ -n "$HOST_SESSION_ID" ]]; then
     BINDING_KEY=$(redcap_runtime_binding_key_from_host_session "$REVIEW_HOST" "$HOST_SESSION_ID")
@@ -112,6 +112,9 @@ review_agent_timeout() {
             ;;
         copilot)
             printf '%s\n' "${REDCAP_REVIEW_AGENT_TIMEOUT_COPILOT_SEC:-${REDCAP_REVIEW_AGENT_TIMEOUT_SEC:-180}}"
+            ;;
+        codex)
+            printf '%s\n' "${REDCAP_REVIEW_AGENT_TIMEOUT_CODEX_SEC:-${REDCAP_REVIEW_AGENT_TIMEOUT_SEC:-180}}"
             ;;
         claude)
             printf '%s\n' "${REDCAP_REVIEW_AGENT_TIMEOUT_CLAUDE_SEC:-${REDCAP_REVIEW_AGENT_TIMEOUT_SEC:-45}}"
@@ -361,6 +364,7 @@ run_review_with_agent() {
     local residual_failure_mode="all-lines"
     local stdout_file=""
     local stderr_file=""
+    local message_file=""
 
     timeout="$(review_agent_timeout "$agent")"
     stdout_file="$(mktemp)"
@@ -372,6 +376,10 @@ run_review_with_agent() {
             ;;
         copilot)
             run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" copilot -p "$REVIEW_PROMPT" --allow-all --autopilot || status=$?
+            ;;
+        codex)
+            message_file="$(mktemp)"
+            run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" codex exec -C "$REDCAP_ROOT" --sandbox read-only --ephemeral --output-last-message "$message_file" --color never "$REVIEW_PROMPT" || status=$?
             ;;
         claude)
             run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" claude -p "$REVIEW_PROMPT" --output-format text || status=$?
@@ -388,7 +396,10 @@ run_review_with_agent() {
     status=${status:-0}
     output="$(cat "$stdout_file")"
     stderr_output="$(cat "$stderr_file")"
-    rm -f "$stdout_file" "$stderr_file"
+    if [[ -n "$message_file" && -s "$message_file" ]]; then
+        output="$(cat "$message_file")"
+    fi
+    rm -f "$stdout_file" "$stderr_file" "$message_file"
 
     if [[ -z "${output//[[:space:]]/}" ]]; then
         output="$stderr_output"

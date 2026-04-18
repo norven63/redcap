@@ -59,6 +59,12 @@
 - **验证要点**：need_user 触发 PAUSED 后用户回复恢复执行
 - **状态**：🔴 待验证
 
+### V-11: Codex CLI reviewer fallback
+- **来源 commit**：本轮 `fix(governance): 接入 codex reviewer fallback` follow-up
+- **触发类型**：路由逻辑
+- **验证要点**：当 Gemini / Copilot / Claude / Kimi reviewer 不可用时，stop-review 能 fallback 到 Codex CLI；程序化消费应读取 `--output-last-message`，stdout/stderr banner 或 warning 不得污染评审 payload。
+- **状态**：🟡 部分验证（acceptance 覆盖；真实 E2E 待纳入下轮完整项目流转）
+
 ---
 
 ## 已验证归档

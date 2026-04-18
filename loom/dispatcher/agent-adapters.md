@@ -17,6 +17,7 @@ gemini&gemini-3-flash      — Gemini CLI + Gemini 3 Flash
 kimi&kimi-for-coding       — Kimi CLI + Kimi Code 原生
 copilot&claude-opus-4.6    — Copilot CLI + Claude Opus 4.6（默认）
 copilot&gpt-5.4            — Copilot CLI + GPT-5.4
+codex&gpt-5.4              — Codex CLI + GPT-5.4
 ```
 
 ### 1.2 模型嗅探与缓存
@@ -66,6 +67,10 @@ agents:
     actual_model: "claude-opus-4.6"
     supports_model_switch: true
     switchable_models: ["claude-opus-4.6", "gpt-5.4", "claude-sonnet-4.6"]
+  codex:
+    available: true
+    actual_model: "gpt-5.4"
+    supports_model_switch: true
 ```
 
 > ⚠ **关键发现**：Claude Code CLI 的 `settings.json` 中 `"model": "sonnet"` 并不代表使用 Claude Sonnet。当 `ANTHROPIC_BASE_URL` 指向第三方代理（如 `api.kimi.com`）时，model 别名无意义，实际模型由代理方决定。嗅探脚本通过 `base_url` + `api_key` 前缀推断真实模型。
@@ -119,7 +124,7 @@ agents:
 | 架构师 | opus: R=5×2 + C=5 = 15; flash: 4×2+4=12; k2.5: 3×2+4=10 | `copilot&claude-opus-4.6` |
 | 程序员 | opus: C=5×2 + TU=4 = 14; flash: 4×2+3=11; kimi-coding: 4×2+4=12 | `copilot&claude-opus-4.6` |
 | 测试QA | kimi-coding: TU=4×2 + IF=4 = 12; gpt-5.4: 5×2+5=15 → **但 copilot 通用 CLI vs kimi 专用** | `copilot&gpt-5.4` |
-| Reviewer | 假设 Dev 用了 copilot&opus(anthropic族): gpt-5.4(openai族): R=5×2+C=4=14 +2(跨族)=16 | `copilot&gpt-5.4` |
+| Reviewer | 假设 Dev 用了 copilot&opus(anthropic族): gpt-5.4(openai族): R=5×2+C=4=14 +2(跨族)=16；若 Copilot 限流，Codex CLI 可作为同 OpenAI 族 fallback | `copilot&gpt-5.4` / `codex&gpt-5.4` |
 
 > 注意：示例中 copilot 频繁出现是因为它可切换 Premium 模型。若 copilot 不可用，Budget/Standard 层自动接管。
 
@@ -764,6 +769,35 @@ claude-haiku-4.5         # fast/cheap — 轻量任务
 
 ---
 
+## 3D. Codex CLI（OpenAI Codex）
+
+> **来源**：2026-04-18 live closeout 中，Copilot / Claude / Kimi / Gemini reviewer 链路不可用时的本机实测。Codex CLI 可作为独立评审 fallback，但必须使用干净结果文件隔离 CLI banner / warning。
+
+### 3D.1 基本信息
+
+- **可执行文件**：`codex`（路径：需检测，通常 `/opt/homebrew/bin/codex`）
+- **底层模型**：默认 `gpt-5.4`，可通过 `--model` 切换
+- **适用角色**：Reviewer fallback 优先；常规角色可纳入动态路由，但仍按能力矩阵和健康状态排序
+
+### 3D.2 命令模板
+
+```bash
+codex exec -C "$PROJECT_ROOT" \
+  --sandbox read-only \
+  --ephemeral \
+  --output-last-message "$RESULT_FILE" \
+  --color never \
+  "$PROMPT"
+```
+
+### 3D.3 调用约束
+
+- **结果通道**：程序化消费必须优先读取 `--output-last-message` 文件；stdout/stderr 可能包含 banner、插件预热 warning、网络重连提示，不可直接当作评审 payload。
+- **权限边界**：独立评审默认用 `--sandbox read-only`，避免 reviewer 修改工作区。
+- **超时保护**：同 §8 统一超时策略；stop-review 默认可通过 `REDCAP_REVIEW_AGENT_TIMEOUT_CODEX_SEC` 单独调整。
+
+---
+
 ## 8. Agent 超时策略与排查
 
 ### 8.1 超时原因排查（优先从自身调用方式排查）
@@ -774,7 +808,7 @@ Agent 超时多数并非 Agent 工具质量问题，常见自身原因：
 |---------|---------|---------|
 | **Prompt 过长** | 将完整手册 + 上下文 + 模板全部注入，超过 Agent 高效处理阈值 | 精简 Prompt：只注入当前步骤必要的上下文，手册用摘要而非全文 |
 | **文件传参格式** | `$(cat ...)` 读取的文件含特殊字符（中文引号、Shell 元字符）导致解析异常 | 确保文件内容 UTF-8 无 BOM，无未转义的 Shell 特殊字符 |
-| **交互式阻塞** | Agent 进入确认等待（sandbox 确认、权限确认、trust 确认） | claude: `--permission-mode auto`；gemini: `--yolo --sandbox false`；kimi: `--yolo`；copilot: `--allow-all --autopilot` |
+| **交互式阻塞** | Agent 进入确认等待（sandbox 确认、权限确认、trust 确认） | claude: `--permission-mode auto`；gemini: `--yolo --sandbox false`；kimi: `--yolo`；copilot: `--allow-all --autopilot`；codex: `exec --sandbox read-only --ephemeral` |
 | **工作目录错误** | Agent 在错误目录执行导致找不到文件，反复重试超时 | 确保 `--add-dir` / `--work-dir` / `--include-directories` 指向正确的项目根目录 |
 | **Session 恢复失败** | `--resume` 传入过期 Session ID，Agent 报错但未正常退出 | 调用前检查 Session 有效性，失败后 fallback 到新建 Session |
 | **网络代理延迟** | SiliconFlow 等中间代理增加 RTT | 优先使用原生 CLI（kimi-cli > claude-code&kimi-2.5） |

@@ -6,7 +6,7 @@
 #
 # 参数:
 #   output_path   输出路径（默认: compass/.workflow/agent-registry.yaml）
-#   --agent NAME  只检测指定 Agent（claude-code|gemini|kimi|copilot）
+#   --agent NAME  只检测指定 Agent（claude-code|gemini|kimi|copilot|codex）
 #   --probe       对支持的 CLI 执行实际调用探测底层模型（慢，可能挂起）
 #
 # 调用时机:
@@ -270,6 +270,47 @@ EOF
 EOF
 }
 
+# ── 检测: Codex CLI ───────────────────────────────────
+detect_codex() {
+  local cli_path
+  cli_path=$(command -v codex 2>/dev/null || echo "")
+
+  if [[ -z "$cli_path" ]]; then
+    cat <<EOF
+  codex:
+    available: false
+    reason: "CLI not installed"
+EOF
+    return
+  fi
+
+  local version
+  version=$(codex --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+
+  local config_file="$HOME/.codex/config.toml"
+  local actual_model="gpt-5.4"
+  if [[ -f "$config_file" ]]; then
+    actual_model=$(grep -E '^[[:space:]]*model[[:space:]]*=' "$config_file" 2>/dev/null | head -1 | cut -d'"' -f2 || echo "gpt-5.4")
+    [[ -n "$actual_model" ]] || actual_model="gpt-5.4"
+  fi
+
+  local config_mtime
+  config_mtime=$(file_mtime "$config_file")
+
+  cat <<EOF
+  codex:
+    available: true
+    cli_path: "$cli_path"
+    version: "$version"
+    actual_model: "$actual_model"
+    api_provider: "openai"
+    config_file: "$config_file"
+    config_mtime: "$config_mtime"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+EOF
+}
+
 # ── 轻检测: 配置文件变化检查 ──────────────────────────
 # 用途: 对比现有 registry 中的 config_mtime 与当前磁盘 mtime
 # 若一致，说明配置未变，可跳过全量检测
@@ -296,6 +337,13 @@ check_config_staleness() {
   saved_mtime=$(grep -A 20 "gemini:" "$OUTPUT_PATH" | grep "config_mtime:" | head -1 | cut -d'"' -f2 2>/dev/null || echo "")
   current_mtime=$(file_mtime "$HOME/.gemini/settings.json")
   [[ "$saved_mtime" != "$current_mtime" ]] && stale=true
+
+  # Codex
+  saved_mtime=$(grep -A 20 "codex:" "$OUTPUT_PATH" | grep "config_mtime:" | head -1 | cut -d'"' -f2 2>/dev/null || echo "")
+  if [[ -n "$saved_mtime" ]] || command -v codex >/dev/null 2>&1; then
+    current_mtime=$(file_mtime "$HOME/.codex/config.toml")
+    [[ "$saved_mtime" != "$current_mtime" ]] && stale=true
+  fi
 
   if [[ "$stale" == true ]]; then
     echo "stale"
@@ -333,14 +381,16 @@ main() {
         detect_gemini
         detect_kimi
         detect_copilot
+        detect_codex
         ;;
       claude-code) detect_claude_code ;;
       gemini)      detect_gemini ;;
       kimi)        detect_kimi ;;
       copilot)     detect_copilot ;;
+      codex)       detect_codex ;;
       *)
         echo "❌ Unknown agent: $TARGET_AGENT" >&2
-        echo "   Supported: claude-code, gemini, kimi, copilot" >&2
+        echo "   Supported: claude-code, gemini, kimi, copilot, codex" >&2
         exit 1
         ;;
     esac

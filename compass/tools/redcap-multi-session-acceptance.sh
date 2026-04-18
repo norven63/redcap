@@ -102,6 +102,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-keeps-live-legacy-lock
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-prunes-reused-pid-lock
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-retries-after-report-change
+  bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-to-codex-after-unavailable-reviewers
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-after-clear
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-notify-timeout-releases-lock
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-keeps-report-anchor
@@ -3328,6 +3329,92 @@ run_on_stop_review_falls_back_after_unparseable_success_output_case() {
 
 run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case() {
     run_on_stop_review_copilot_fallback_case "on-stop-review-falls-back-after-structured-pass-with-auth-error-line" "structured-pass-with-auth-error-line"
+}
+
+run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case() {
+    local case_name="on-stop-review-falls-back-to-codex-after-unavailable-reviewers"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' 'Rate limit exceeded.' >&2
+exit 1
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    cat >"$fake_bin/codex" <<'EOF'
+#!/usr/bin/env bash
+message_file=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --output-last-message)
+            message_file="$2"
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+printf '%s\n' 'Codex CLI banner that must not become the review payload.'
+printf '%s\n' 'Reading additional input from stdin...' >&2
+printf '%s\n' 'WARN codex plugin prewarm failed; continuing.' >&2
+
+if [[ -n "$message_file" ]]; then
+    cat >"$message_file" <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"codex fallback ok"}
+```
+OUT
+else
+    cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"codex fallback ok"}
+```
+OUT
+fi
+EOF
+    chmod +x "$fake_bin/codex"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,codex" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "codex fallback case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: codex"
+    assert_string_contains "$(read_file_text "$review_log")" "codex fallback ok"
+    if [[ "$(read_file_text "$review_log")" == *"Codex CLI banner that must not become the review payload."* ]]; then
+        fail "codex fallback leaked stdout banner into review payload"
+    fi
 }
 
 run_on_stop_review_accepts_structured_review_with_auth_terms_case() {
@@ -6607,6 +6694,7 @@ run_all_cases() {
     run_on_stop_review_falls_back_after_auth_failure_with_result_token_case
     run_on_stop_review_falls_back_after_unparseable_success_output_case
     run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case
+    run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
     run_on_stop_review_accepts_structured_review_with_auth_terms_case
     run_on_stop_review_accepts_structured_review_with_auth_prose_outside_fence_case
     run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stdout_prose_case
@@ -6839,6 +6927,9 @@ case "$COMMAND" in
         ;;
     on-stop-review-falls-back-after-structured-pass-with-auth-error-line)
         run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case
+        ;;
+    on-stop-review-falls-back-to-codex-after-unavailable-reviewers)
+        run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
         ;;
     on-stop-review-accepts-structured-review-with-auth-terms)
         run_on_stop_review_accepts_structured_review_with_auth_terms_case
