@@ -3216,7 +3216,7 @@ EOF
 run_on_stop_review_copilot_fallback_case() {
     local case_name="$1"
     local gemini_mode="$2"
-    local case_dir fake_bin head_file review_result review_log baseline output status
+    local case_dir fake_bin head_file review_result review_log baseline output status child_pid_file child_pid attempt
 
     log "case: $case_name"
 
@@ -3227,9 +3227,12 @@ run_on_stop_review_copilot_fallback_case() {
 
     case "$gemini_mode" in
         timeout)
-            cat >"$fake_bin/gemini" <<'EOF'
+            child_pid_file="$case_dir/gemini-child.pid"
+            cat >"$fake_bin/gemini" <<EOF
 #!/usr/bin/env bash
-sleep 5
+(sleep 30) &
+printf '%s\n' "\$!" > "$child_pid_file"
+sleep 30
 EOF
             ;;
         auth-failure)
@@ -3309,6 +3312,21 @@ EOF
     assert_exists "$review_log"
     assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: copilot"
     assert_string_contains "$(read_file_text "$review_log")" "copilot fallback ok"
+
+    if [[ -n "${child_pid_file:-}" ]]; then
+        assert_exists "$child_pid_file"
+        child_pid="$(read_file_text "$child_pid_file")"
+        for attempt in {1..20}; do
+            if ! kill -0 "$child_pid" 2>/dev/null; then
+                break
+            fi
+            sleep 0.1
+        done
+        if kill -0 "$child_pid" 2>/dev/null; then
+            kill "$child_pid" 2>/dev/null || true
+            fail "timed-out reviewer descendant process still alive: $child_pid"
+        fi
+    fi
 }
 
 run_on_stop_review_falls_back_after_timeout_case() {

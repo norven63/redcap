@@ -870,3 +870,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-18
+
+### L-89: headless reviewer timeout 必须杀整个进程组，不能只等父进程返回
+- **场景**：Codex fallback 接入后首次真实 `session-end` 回放时，runner 仍先尝试 Gemini；Gemini CLI timeout 后留下了 Node 子进程，`redcap-on-stop-review.sh` 也在 Bash 字符串处理里高 CPU 自旋，导致流程没有继续进入健康的 Codex fallback
+- **根因**：timeout wrapper 只依赖 `subprocess.run(..., timeout=...)` 处理直接子进程，没有把 reviewer CLI 放进独立进程组并在 timeout 时杀掉整组；对 Node / CLI wrapper 这类会再拉子进程的工具，父进程被杀不等于执行树已清干净
+- **经验规则**：① 所有 headless reviewer CLI 都必须用独立进程组启动 ② timeout 时先 SIGTERM 整个进程组，短暂等待后再 SIGKILL 兜底 ③ acceptance 要让假 reviewer 在 timeout 前拉起长寿命子进程，并断言 fallback 后该子进程不再存活
+- **来源**：2026-04-18，Codex reviewer fallback live 回放（Gemini timeout descendant 逃逸）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18

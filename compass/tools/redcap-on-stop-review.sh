@@ -15,7 +15,7 @@
 #   stdin — JSON（必须消费）
 #   退出码 — 0=通过, 非0=有问题（Claude Code 不阻塞，但会写标记文件 + 飞书告警）
 #
-# 依赖：至少一个可用的独立评审 CLI（优先 gemini，必要时 fallback 到 codex / copilot / claude / kimi）
+# 依赖：至少一个可用的独立评审 CLI（优先 codex，必要时 fallback 到 gemini / copilot / claude / kimi）
 # ─────────────────────────────────────────────────────────
 
 set -u
@@ -30,7 +30,13 @@ source "$SCRIPT_DIR/redcap-interop-governance.sh"
 HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-$(redcap_runtime_json_field "$INPUT" "session_id")}"
 HOOK_CWD="${REDCAP_HOOK_CWD:-$REDCAP_ROOT}"
 REVIEW_HOST="${REDCAP_STOP_REVIEW_HOST:-claude}"
-REVIEW_AGENT_ORDER="${REDCAP_STOP_REVIEW_AGENT_ORDER:-gemini,codex,copilot,claude,kimi}"
+if [[ -n "${REDCAP_STOP_REVIEW_AGENT_ORDER:-}" ]]; then
+    REVIEW_AGENT_ORDER="$REDCAP_STOP_REVIEW_AGENT_ORDER"
+elif [[ "$REVIEW_HOST" == "codex" ]]; then
+    REVIEW_AGENT_ORDER="gemini,copilot,claude,kimi,codex"
+else
+    REVIEW_AGENT_ORDER="codex,gemini,copilot,claude,kimi"
+fi
 BINDING_KEY=""
 if [[ -n "$HOST_SESSION_ID" ]]; then
     BINDING_KEY=$(redcap_runtime_binding_key_from_host_session "$REVIEW_HOST" "$HOST_SESSION_ID")
@@ -321,6 +327,8 @@ run_review_command_with_timeout() {
     shift 3
 
     python3 - "$timeout" "$stdout_file" "$stderr_file" "$@" <<'PY'
+import os
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -333,20 +341,34 @@ cmd = sys.argv[4:]
 def write_text(path, text):
     path.write_text(text or "", encoding="utf-8", errors="replace")
 
+proc = subprocess.Popen(
+    cmd,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    text=True,
+    start_new_session=True,
+)
+
 try:
-    completed = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-    write_text(stdout_path, completed.stdout or "")
-    write_text(stderr_path, completed.stderr or "")
-    sys.exit(completed.returncode)
-except subprocess.TimeoutExpired as exc:
-    stdout = exc.stdout or ""
-    stderr = exc.stderr or ""
-    if isinstance(stdout, bytes):
-        stdout = stdout.decode("utf-8", "replace")
-    if isinstance(stderr, bytes):
-        stderr = stderr.decode("utf-8", "replace")
-    write_text(stdout_path, stdout)
-    write_text(stderr_path, stderr)
+    stdout, stderr = proc.communicate(timeout=timeout)
+    write_text(stdout_path, stdout or "")
+    write_text(stderr_path, stderr or "")
+    sys.exit(proc.returncode)
+except subprocess.TimeoutExpired:
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
+        stdout, stderr = proc.communicate(timeout=2)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        stdout, stderr = proc.communicate()
+    write_text(stdout_path, stdout or "")
+    write_text(stderr_path, stderr or "")
     sys.exit(124)
 PY
 }
