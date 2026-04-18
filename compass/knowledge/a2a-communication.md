@@ -44,16 +44,16 @@ Agent A ←── 响应文本 ←───────────────�
 
 ## 2. 各 CLI 的 A2A 能力矩阵
 
-| 能力维度 | Kimi CLI | Claude Code | Gemini CLI | VS Code Copilot |
-|---------|:--------:|:-----------:|:----------:|:---------------:|
-| Session 创建 | `--session "<id>"` | `--session-id "<uuid>"` | 自动生成 | ❌ |
-| Session 恢复 | `-S "<id>"` / `--continue` | `--resume <id>` | `--resume latest\|<uuid>` | ❌ |
-| 非交互多轮 | ✅ `--print -p` | ✅ `-p` | ✅ `-p --yolo` | ❌ |
-| 返回格式 | text / stream-json | JSON (`result` 字段) | JSON (`response` 字段) | N/A |
-| 只取最终回复 | `--final-message-only` | 解析 JSON `.result` | 解析 JSON `.response` | N/A |
-| 自动审批 | `--yolo` / `-y` | `--permission-mode bypassPermissions` | `--yolo` | N/A |
-| 实测验证 | ✅ 2026-04-04 | ✅ 2026-03+ | ⚠️ 部分 | ❌ |
-| A2A 可用性 | **推荐** | **可用** | **受限** | **不可用** |
+| 能力维度 | Kimi CLI | Claude Code | Gemini CLI | Codex CLI | VS Code Copilot |
+|---------|:--------:|:-----------:|:----------:|:---------:|:---------------:|
+| Session 创建 | `--session "<id>"` | `--session-id "<uuid>"` | 自动生成 | ❌（headless exec） | ❌ |
+| Session 恢复 | `-S "<id>"` / `--continue` | `--resume <id>` | `--resume latest\|<uuid>` | ❌（未纳入 A2A 会话） | ❌ |
+| 非交互多轮 | ✅ `--print -p` | ✅ `-p` | ✅ `-p --yolo` | ⚠️ 单轮 `exec` | ❌ |
+| 返回格式 | text / stream-json | JSON (`result` 字段) | JSON (`response` 字段) | text + last-message 文件 | N/A |
+| 只取最终回复 | `--final-message-only` | 解析 JSON `.result` | 解析 JSON `.response` | `--output-last-message` | N/A |
+| 自动审批 | `--yolo` / `-y` | `--permission-mode bypassPermissions` | `--yolo` | `--sandbox read-only --ephemeral` | N/A |
+| 实测验证 | ✅ 2026-04-04 | ✅ 2026-03+ | ⚠️ 部分 | ✅ reviewer fallback | ❌ |
+| A2A 可用性 | **推荐** | **可用** | **受限** | **仅单轮评审** | **不可用** |
 
 ### 2.1 Kimi CLI — A2A 通信命令
 
@@ -132,7 +132,25 @@ echo "$response" | jq -r '.response'
 - `--resume latest` 恢复最近 session，但无法指定自定义 session ID（不如 Kimi/Claude 灵活）
 - 长任务可能出现进程不退出问题（L-11）
 
-### 2.4 VS Code Copilot — 不支持 A2A
+### 2.4 Codex CLI — 单轮独立评审 / fallback
+
+Codex CLI 当前在 RedCap 中的定位是 **headless reviewer fallback**，不是多轮 A2A 协商参与方。它适合被宿主或 Hook 拉起做一次独立审查，输出结构化 `PASS/FAIL`；不应假设它能复用 A2A session 或承载多轮协商上下文。
+
+```bash
+codex exec -C "$PROJECT_ROOT" \
+  --sandbox read-only \
+  --ephemeral \
+  --output-last-message "$RESULT_FILE" \
+  --color never \
+  - < "$PROMPT_FILE"
+```
+
+**关键约束**：
+- 长 prompt 必须从构造阶段就文件化，再通过 stdin 输入，不能放进 Bash 大字符串或超长 argv。
+- 程序化消费必须优先读取 `--output-last-message`，stdout/stderr 只视为 transport noise。
+- timeout 必须按进程组清理，避免 CLI wrapper 拉起的子进程逃逸。
+
+### 2.5 VS Code Copilot — 不支持 A2A
 
 VS Code Copilot 无 CLI 调用接口，无 session resume 机制，**不可用于 A2A 通信链路中的被调用方**。
 

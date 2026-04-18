@@ -321,6 +321,8 @@ Dispatcher 组装 Prompt 时按以下映射机械替换，不得遗漏：
 **新步骤自动重置**：每个新步骤开始时，重新执行路由算法（重读 registry + 能力矩阵），失败计数归零。
 **Agent 失败时重检**：`bash compass/tools/redcap-detect-agents.sh --agent <name>` 重新嗅探该 Agent 的可用性和模型。
 **用户指令重置**：用户告知某 Agent 已恢复时，立即重置该 Agent 的健康状态。
+**Codex CLI 参与路由**：`codex&gpt-5.4` 由同一 registry / 能力矩阵纳入候选；它不是硬编码兜底，而是 OpenAI 族 headless reviewer / fallback 候选。调用细节以 [《Agent适配器》§3D](dispatcher/agent-adapters.md) 为准，尤其要使用文件化 prompt、`--output-last-message` 结果通道和进程组级 timeout。
+**健康判定边界**：命令存在不等于当前可用。对 reviewer / fallback 场景，timeout、auth failure、空输出、成功但不可解析输出都必须写入 agent health 并继续尝试下一个候选，不能把一次 CLI 不健康误写成业务 review FAIL。
 **所有 Agent 均不可用**：暂停流程，向用户提供降级选项（详见 [《Agent适配器》§6.5](dispatcher/agent-adapters.md)）。
 
 ### 5.6 Session 管理

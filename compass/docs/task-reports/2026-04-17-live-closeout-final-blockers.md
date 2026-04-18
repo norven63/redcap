@@ -203,11 +203,13 @@
 | on-complete host 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-passes-host-to-on-complete && bash compass/tools/redcap-multi-session-acceptance.sh on-complete-uses-explicit-validator-host && bash compass/tools/redcap-multi-session-acceptance.sh on-complete-prefers-binding-host-over-stale-runtime-host` | ✅ |
 | session-end pending refresh 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-compatible-pending-refresh && bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-all-matching-pending-states` | ✅ |
 | session-end 周边回归 | `bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-after-clear && bash compass/tools/redcap-multi-session-acceptance.sh session-end-notify-timeout-releases-lock && bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-keeps-report-anchor && bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-normalizes-absolute-report-anchor` | ✅ |
+| V-11 验证账本消费 | 更新 `loom/test-reports/pending-validations.md` 与 `loom/test-reports/latest-e2e-report.md`，将 Codex CLI reviewer fallback 作为 Layer B hook-level replay 验证项归档，并保留 V-4 作为完整用户项目 fallback E2E | ✅ |
+| 入口文档联动 | 同步 `SKILL.md §5.5`、`compass/knowledge/a2a-communication.md §2` 与 `README.md`，说明 Codex CLI 的 registry 候选身份、单轮评审边界、last-message 结果通道和 file-backed prompt 约束 | ✅ |
 | root drift-check 回放 | `REDCAP_RUNTIME_SESSION_ID=<real> REDCAP_RUNTIME_CAPABILITY=<real> bash compass/tools/redcap-drift-check.sh on-complete copilot .dev-task.md c58dc35755bf11a60b8f6280910b33ae9c8b2c35 612212c2db5a1da0c7ec6b212db50a987eecb62a` | ✅ |
 | root task-report-check 回放 | `REDCAP_RUNTIME_SESSION_ID=<real> REDCAP_RUNTIME_CAPABILITY=<real> bash compass/tools/redcap-task-report-check.sh "$PWD" c58dc35755bf11a60b8f6280910b33ae9c8b2c35 612212c2db5a1da0c7ec6b212db50a987eecb62a` | ✅ |
 | full suite 复跑 | `bash compass/tools/redcap-spec-check.sh "$PWD" && bash compass/tools/redcap-multi-session-acceptance.sh all` | ✅ |
 | 最新 redteam | `closeout-redteam-r15` | ✅ clean（在 supported / contract-valid 输入边界内无新的 blocking / significant hole） |
-| 最新 code review | `closeout-review-r12` | ✅ Clean verdict: No significant issues found |
+| 最新 code review | `2026-04-18 真实 session-end 独立评审` | ⚠️ 已指出 E2E/V-11 消费与入口文档联动缺口；本 follow-up 已补齐，需再次 live session-end 核销 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -221,16 +223,16 @@
 
 | 问题 | 原因 | 建议优先级 |
 |------|------|----------|
-| live runtime 最终完成通知仍需在 file-backed review prompt 补丁上再次跑通 | 上一轮真实 `session-end` 已证明除 review 外的 validator 链全部 PASS；最终仍要以本报告为锚点确认 Codex fallback 能正常进入并清掉 pending closure | P0 |
+| live runtime 最终完成通知仍需在 review-redline follow-up 补丁上再次跑通 | 上一轮真实 `session-end` 已证明除 review 外的 validator 链全部 PASS；最新 review blocker 已收缩为 V-11 消费与入口文档联动，本 follow-up 补齐后仍要重跑真实 `session-end` 清掉 pending closure | P0 |
 
 ### 6.2 触发的新问题
 
 本轮没有再发现新的架构级 blocker。  
-相反，后续新暴露的问题都已经收缩成七类：一类是 marker stale 判定漏网，一类是 acceptance 把“真实目标性质”写成了“依赖当前 repo 历史的脆弱断言”，一类是遗留 cleanup helper 仍具备误删真实工作区 task report 的危险副作用，一类是独立评审执行器把“命令存在”误当成“当前可用”，一类是 `session-end` 长耗时窗口里 pending `updated_at` 被等价改写导致旧 CAS 清理失败，一类是 reviewer fallback 列表没有覆盖当前健康的 Codex CLI，最后一类是 headless reviewer timeout 只杀父进程、不杀进程组导致子进程逃逸；七者都已经被压缩成明确补丁和 acceptance / review 收口。
+相反，后续新暴露的问题都已经收缩成八类：一类是 marker stale 判定漏网，一类是 acceptance 把“真实目标性质”写成了“依赖当前 repo 历史的脆弱断言”，一类是遗留 cleanup helper 仍具备误删真实工作区 task report 的危险副作用，一类是独立评审执行器把“命令存在”误当成“当前可用”，一类是 `session-end` 长耗时窗口里 pending `updated_at` 被等价改写导致旧 CAS 清理失败，一类是 reviewer fallback 列表没有覆盖当前健康的 Codex CLI，一类是 headless reviewer timeout 只杀父进程、不杀进程组导致子进程逃逸，最后一类是验证证据链分叉：代码路径有 acceptance，但 pending-validations、latest E2E 与入口文档没有同步消费。八者都已经被压缩成明确补丁和 acceptance / review 收口。
 
 ### 6.3 推荐的下一步行动
 
-1. 将当前 Codex reviewer fallback follow-up 补丁与本报告一起提交。
+1. 将当前 review-redline follow-up 补丁与本报告一起提交。
 2. 重新运行 `compass/tools/redcap-commit-proof-check.sh`。
 3. 对真实 Copilot runtime 再跑一次 `on-complete / session-end / 飞书通知`。
 
@@ -260,6 +262,8 @@
 | L-87 | `session-end` 清 pending 前必须刷新并证明当前 pending 仍被本次成功覆盖，不能拿旧 `updated_at` 永久阻断 | 否则长耗时 review / validator 窗口里的等价改写会让所有 step PASS 后仍留下 `pending-closure` |
 | L-88 | reviewer fallback 列表必须覆盖当前可用宿主族，并隔离 CLI 噪声与评审 payload | 否则四个旧 reviewer 都不可用时，明明本机 Codex CLI 可完成独立评审，`session-end` 仍会留下 `required_redlines=review` |
 | L-89 | headless reviewer timeout 必须杀整个进程组，不能只等父进程返回 | 否则 Gemini / Node 这类 CLI timeout 后仍可能留下子进程，并阻止 runner 继续进入健康 fallback |
+| L-90 | headless reviewer 的长 prompt 必须从构造开始文件化，不能放进 Bash 大字符串 | 否则即使 Codex 走 stdin，Bash 仍可能在 prompt 构造或大 stderr 空白判断阶段高 CPU 挂起 |
+| L-91 | 收尾评审的 P0/P1 必须能追到同一条物理证据链，不能让报告、验证账本与入口规范分叉 | 否则 acceptance 已通过，但 Stop Hook review 仍会因为 V-编号未消费、latest E2E 未刷新或入口规范未同步而留下 review redline |
 
 ### 7.2 流程改进建议
 

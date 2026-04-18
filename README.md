@@ -151,7 +151,7 @@ redcap/
 
 ### 前提
 
-- 安装至少一个 AI CLI（Codex CLI、[Claude Code](https://docs.anthropic.com/en/docs/claude-code)、[Gemini CLI](https://github.com/google-gemini/gemini-cli)、[Kimi CLI](https://github.com/MoonshotAI/kimi-cli) 之一）
+- 安装至少一个 AI CLI（[Codex CLI](https://github.com/openai/codex)、[Claude Code](https://docs.anthropic.com/en/docs/claude-code)、[Gemini CLI](https://github.com/google-gemini/gemini-cli)、[Kimi CLI](https://github.com/MoonshotAI/kimi-cli) 之一）
 - 宿主环境：Codex CLI / VS Code Copilot CLI / Claude Code / Gemini CLI / Kimi CLI
 
 ### 触发

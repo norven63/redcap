@@ -888,3 +888,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-18
+
+### L-91: 收尾评审的 P0/P1 必须能追到同一条物理证据链，不能让报告、验证账本与入口规范分叉
+- **场景**：Codex reviewer fallback、进程组 timeout、file-backed prompt 与 host passthrough 已分别有 acceptance / full suite / live runtime 证据，但最终独立评审仍打出 P0：`pending-validations.md` 还停在部分验证，`latest-e2e-report.md` 未记录本次 hook-level replay，`SKILL.md` 与 A2A 文档也没有同步 Codex CLI 的实际边界
+- **根因**：把“代码路径已经测过”误当成“治理证据已经连成一条链”。Stop Hook review 看的不是单个脚本是否通过，而是入口规范、验证账本、任务报告、经验库能否共同证明同一件事
+- **经验规则**：① 涉及 Agent 适配器 / Hook runner / Prompt 输入通道的变更，除了 acceptance 通过，还要同步入口规范、A2A/适配器文档、pending-validations 与 latest E2E 报告 ② 若某验证只覆盖 hook-level replay，不得冒领完整用户项目 E2E，必须明确与 V-4 这类全链路验证拆账 ③ review 指出“未沉淀经验”时，先交叉检索已有 L-编号；已有则在任务报告和验证报告中显式引用，缺失才新增
+- **来源**：2026-04-18，Codex 接盘继续 live closeout，独立评审指出 V-11 消费与入口文档联动缺口
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18

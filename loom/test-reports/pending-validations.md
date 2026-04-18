@@ -27,7 +27,7 @@
 - **来源 commit**：`928ab33` feat(框架): E2E 后置处理流程
 - **触发类型**：Prompt模板（影响 Dispatcher 行为流程）
 - **验证要点**：Dispatcher 在 E2E 结束后是否按 7 步执行；分类定性(BUG/GAP/OBSERVATION)是否准确
-- **状态**：� 部分验证（E2E-2026-04-07，md-table-tool：Dispatcher 首次执行时遗漏后置处理，经用户审计后补齐。暴露 L-25。7 步未完整——缺少独立的 BUG/GAP/OBSERVATION 分类定性步骤）
+- **状态**：🟡 部分验证（E2E-2026-04-07，md-table-tool：Dispatcher 首次执行时遗漏后置处理，经用户审计后补齐。暴露 L-25。7 步未完整——缺少独立的 BUG/GAP/OBSERVATION 分类定性步骤）
 
 ### V-4: Agent Fallback 两层降级（Model→CLI）
 - **来源 commit**：`4f51037` feat: Agent Fallback 两层降级（Model→CLI）
@@ -59,17 +59,18 @@
 - **验证要点**：need_user 触发 PAUSED 后用户回复恢复执行
 - **状态**：🔴 待验证
 
-### V-11: Codex CLI reviewer fallback
-- **来源 commit**：本轮 `fix(governance): 接入 codex reviewer fallback` follow-up
-- **触发类型**：路由逻辑
-- **验证要点**：当 Gemini / Copilot / Claude / Kimi reviewer 不可用时，stop-review 能 fallback 到 Codex CLI；程序化消费应读取 `--output-last-message`，stdout/stderr banner 或 warning 不得污染评审 payload；长 review prompt 必须从构造阶段就文件化，并经 stdin/file 传入，不能作为 Bash 大字符串或超长 argv；timeout 时必须杀掉 reviewer 进程组，不能遗留子进程。
-- **状态**：🟡 部分验证（acceptance 覆盖；真实 E2E 待纳入下轮完整项目流转）
-
 ---
 
 ## 已验证归档
 
 > E2E 验证通过的条目移到此区域，保留记录便于追溯。
+
+### V-11: Codex CLI reviewer fallback ✅
+- **验证日期**：E2E-2026-04-18（RedCap Layer B live closeout / hook-level replay）
+- **来源 commit**：`1d59616` fix(governance): 接入 codex reviewer fallback；后续 `fc0a820` / `d13f33e` / `b391197` / `1cb15bf` 补齐 timeout 进程组、stdin、file-backed prompt 与大文本解析边界
+- **触发类型**：路由逻辑 / Prompt 模板 / Hook reviewer runner
+- **验证方式**：targeted acceptance 覆盖 Codex fallback、`--output-last-message` 噪声隔离、stdin/file-backed prompt、timeout 子进程组清理；full suite `redcap-multi-session-acceptance.sh all` 与 `redcap-spec-check.sh` 已通过；真实 Copilot live runtime 回放验证除独立 review 内容 verdict 外的 `session-end` validator 链均能收口。
+- **结论**：V-11 作为 Layer B stop-review runner 的 hook-level 验证项已消费。完整用户项目里的 Agent Fallback 两层降级仍由 V-4 跟踪，不与本条混淆。
 
 ### V-10: Gemini CLI SessionEnd Hook 验证 ✅
 - **验证日期**：E2E-2026-04-08
