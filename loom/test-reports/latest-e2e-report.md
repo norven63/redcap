@@ -7,7 +7,7 @@
 **日期**：2026-04-18
 **项目**：RedCap Layer B live closeout（框架自身收尾链）
 **执行者**：Cap（Codex 接盘续修）
-**框架版本**：`1cb15bf` 之后的 review-redline follow-up
+**框架版本**：`7d2a3f2` 之后的 E2E subject-marker follow-up
 **E2E Preset**：hook-level replay（stop-review / on-complete / session-end）
 **说明**：本次不是用户项目完整流转 E2E，而是针对 Layer B Hook 与 reviewer runner 的物理闭环验证。完整用户项目 Agent Fallback 仍由 V-4 单独跟踪。
 
