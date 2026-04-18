@@ -320,6 +320,15 @@ review_output_result() {
     review_output_text_result "$output"
 }
 
+review_text_is_blank() {
+    local output="$1"
+
+    printf '%s' "$output" | python3 -c "
+import sys
+raise SystemExit(0 if not sys.stdin.read().strip() else 1)
+" 2>/dev/null
+}
+
 run_review_command_with_timeout() {
     local timeout="$1"
     local stdout_file="$2"
@@ -440,7 +449,7 @@ run_review_with_agent() {
     fi
     rm -f "$stdout_file" "$stderr_file" "$message_file"
 
-    if [[ -z "${output//[[:space:]]/}" ]]; then
+    if review_text_is_blank "$output"; then
         output="$stderr_output"
         stderr_output=""
     fi
@@ -450,7 +459,7 @@ run_review_with_agent() {
         return 1
     fi
 
-    if [[ -z "${output//[[:space:]]/}" ]]; then
+    if review_text_is_blank "$output"; then
         REVIEW_ATTEMPT_FAILURES+=("$agent:empty-output")
         return 1
     fi
