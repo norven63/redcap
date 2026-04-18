@@ -83,6 +83,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh on-complete-records-backlog-spec-redlines
   bash compass/tools/redcap-multi-session-acceptance.sh pending-closure-clear-restores-on-ledger-failure
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-all-matching-pending-states
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-compatible-pending-refresh
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-prefers-anchor
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-allows-marker-anchor-when-uniquely-latest
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-allows-pending-anchor-when-uniquely-latest
@@ -2305,6 +2306,103 @@ EOF
     assert_not_exists "$stale_state"
     if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
         fail "pending closure still exists after session-end clear all matching states case"
+    fi
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_session_end_clears_compatible_pending_refresh_case() {
+    local host="copilot"
+    local binding_key pid probe_pid current_head report_path state_file case_dir validator_stub
+
+    log "case: session-end-clears-compatible-pending-refresh"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "session-end-clears-compatible-pending-refresh" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-session-end-refresh-${RANDOM}-$$"
+    pid="$((66250 + RANDOM))"
+    spawn_host_probe probe_pid
+    export REDCAP_HOST_PROCESS_PID="$pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for session-end refresh case"
+    REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
+    unset REDCAP_HOST_PROCESS_PROBE_PID
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end refresh case"
+    write_current_report_marker_fixture "$report_path"
+
+    state_file="$(
+        redcap_interop_write_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "$host" \
+            "acceptance-seed" \
+            "review,notify" \
+            "session-end-clears-compatible-pending-refresh" \
+            "$report_path" \
+            "$current_head" \
+            "$current_head"
+    )" || fail "failed to seed pending closure for session-end refresh case"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-refresh.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-refresh-pass.sh"
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+sleep 1
+source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
+source "$REDCAP_ROOT/compass/tools/redcap-dev-task.sh"
+source "$REDCAP_ROOT/compass/tools/redcap-interop-governance.sh"
+redcap_interop_write_pending_closure \\
+    "$REDCAP_ROOT" \\
+    "$REDCAP_ROOT/.dev-task.md" \\
+    "$host" \\
+    "acceptance-compatible-refresh" \\
+    "pending-closure" \\
+    "compatible-refresh" \\
+    "$report_path" \\
+    "$current_head" \\
+    "$current_head" \\
+    "replace" \\
+    >/dev/null
+cat <<'OUT'
+[1] review-proof-check :: pass
+review clean
+[2] reanchor-check :: pass
+reanchor clean
+[3] pm-gate :: pass
+pm gate clean
+[4] drift-check :: pass
+drift clean
+[5] backlog-check :: pass
+backlog clean
+[6] spec-check :: pass
+spec clean
+[7] task-report-check :: pass
+$report_path
+[8] artifact-lifecycle-check :: pass
+artifact clean
+OUT
+EOF
+    chmod +x "$validator_stub"
+
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_SESSION_BINDING_KEY="$binding_key" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+    REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
+    REDCAP_SKIP_FEISHU=1 \
+    REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
+        || fail "session-end compatible pending refresh case failed"
+
+    assert_not_exists "$state_file"
+    if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        fail "pending closure still exists after compatible refresh clear case"
     fi
 
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
@@ -6487,6 +6585,7 @@ run_all_cases() {
     run_on_complete_prefers_binding_host_over_stale_runtime_host_case
     run_pending_closure_clear_restores_on_ledger_failure_case
     run_session_end_clears_all_matching_pending_states_case
+    run_session_end_clears_compatible_pending_refresh_case
     run_task_report_check_prefers_anchor_case
     run_task_report_check_allows_marker_anchor_when_uniquely_latest_case
     run_task_report_check_requires_summary_for_untracked_anchor_case
@@ -6668,6 +6767,9 @@ case "$COMMAND" in
         ;;
     session-end-clears-all-matching-pending-states)
         run_session_end_clears_all_matching_pending_states_case
+        ;;
+    session-end-clears-compatible-pending-refresh)
+        run_session_end_clears_compatible_pending_refresh_case
         ;;
     task-report-check-prefers-anchor)
         run_task_report_check_prefers_anchor_case

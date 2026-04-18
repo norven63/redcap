@@ -356,6 +356,90 @@ pending_write_audited_head() {
     printf '%s\n' "$CURRENT_HEAD"
 }
 
+session_end_redlines_clearable_after_success() {
+    local normalized item
+    local -a items=()
+
+    normalized=$(redcap_interop_normalize_redlines "${1:-}")
+    [[ -n "$normalized" ]] || return 0
+
+    IFS=',' read -r -a items <<< "$normalized"
+    for item in "${items[@]:-}"; do
+        case "$item" in
+            review|pending-closure|pm-gate|drift|backlog|spec|artifact-lifecycle|task-report|notify)
+                ;;
+            *)
+                return 1
+                ;;
+        esac
+    done
+
+    return 0
+}
+
+session_end_pending_commit_covered_by_success_window() {
+    local commit="$1"
+
+    [[ -n "$commit" ]] || return 0
+    git -C "$REDCAP_ROOT" rev-parse "${commit}^{commit}" >/dev/null 2>&1 || return 1
+    git -C "$REDCAP_ROOT" merge-base --is-ancestor "$commit" "$CURRENT_HEAD" >/dev/null 2>&1 || return 1
+
+    return 0
+}
+
+session_end_pending_baseline_covered_by_success_window() {
+    local baseline="$1"
+
+    [[ -n "$baseline" ]] || return 0
+    git -C "$REDCAP_ROOT" rev-parse "${baseline}^{commit}" >/dev/null 2>&1 || return 1
+    git -C "$REDCAP_ROOT" merge-base --is-ancestor "$BASELINE" "$baseline" >/dev/null 2>&1 || return 1
+    git -C "$REDCAP_ROOT" merge-base --is-ancestor "$baseline" "$CURRENT_HEAD" >/dev/null 2>&1 || return 1
+
+    return 0
+}
+
+session_end_pending_state_safe_to_clear_after_success() {
+    local state_file="$1"
+    local current_confirmed_hash state_confirmed_hash state_baseline state_audited state_redlines
+
+    [[ -n "$state_file" && -f "$state_file" ]] || return 1
+
+    current_confirmed_hash=$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+    state_confirmed_hash=$(redcap_interop_read_state_field "$state_file" "confirmed_hash" 2>/dev/null || true)
+    if [[ -n "$state_confirmed_hash" && -n "$current_confirmed_hash" && "$state_confirmed_hash" != "$current_confirmed_hash" ]]; then
+        return 1
+    fi
+
+    state_redlines=$(redcap_interop_read_state_field "$state_file" "required_redlines" 2>/dev/null || true)
+    session_end_redlines_clearable_after_success "$state_redlines" || return 1
+
+    state_baseline=$(redcap_interop_read_state_field "$state_file" "baseline_head" 2>/dev/null || true)
+    session_end_pending_baseline_covered_by_success_window "$state_baseline" || return 1
+
+    state_audited=$(redcap_interop_read_state_field "$state_file" "audited_head" 2>/dev/null || true)
+    session_end_pending_commit_covered_by_success_window "$state_audited" || return 1
+
+    return 0
+}
+
+session_end_pending_clear_expected_updated_at() {
+    local state_file updated_at
+
+    state_file=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+    [[ -n "$state_file" && -f "$state_file" ]] || return 1
+
+    updated_at=$(redcap_interop_read_state_field "$state_file" "updated_at" 2>/dev/null || true)
+    [[ -n "$updated_at" ]] || return 1
+
+    if [[ -n "$PENDING_UPDATED_AT" && "$updated_at" == "$PENDING_UPDATED_AT" ]]; then
+        printf '%s\n' "$updated_at"
+        return 0
+    fi
+
+    session_end_pending_state_safe_to_clear_after_success "$state_file" || return 1
+    printf '%s\n' "$updated_at"
+}
+
 notification_state_key() {
     printf '%s\n' "$CURRENT_HEAD|$REQUIRED_REDLINES|${SESSION_END_PERSISTENCE_DETAIL:-none}"
 }
@@ -545,18 +629,29 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
     PENDING_CLEAR_STATUS=1
     CURRENT_PENDING_EXISTS=0
     if [[ "$PENDING_CLOSURE_EXISTS" == "1" ]]; then
-        CURRENT_PENDING_EXISTS=1
-        if [[ -z "$PENDING_UPDATED_AT" ]] || ! redcap_interop_clear_pending_closure \
-            "$REDCAP_ROOT" \
-            "$REDCAP_ROOT/.dev-task.md" \
-            "session-end-cleared" \
-            "host=$HOST current_head=$CURRENT_HEAD" \
-            "$PENDING_UPDATED_AT" \
-            >/dev/null 2>&1; then
+        PENDING_CLEAR_EXPECTED_AT=$(session_end_pending_clear_expected_updated_at 2>/dev/null || true)
+        if [[ -n "$PENDING_CLEAR_EXPECTED_AT" ]]; then
+            CURRENT_PENDING_EXISTS=1
+            if ! redcap_interop_clear_pending_closure \
+                "$REDCAP_ROOT" \
+                "$REDCAP_ROOT/.dev-task.md" \
+                "session-end-cleared" \
+                "host=$HOST current_head=$CURRENT_HEAD" \
+                "$PENDING_CLEAR_EXPECTED_AT" \
+                >/dev/null 2>&1; then
+                PENDING_CLEAR_STATUS=0
+                redcap_runtime_record_degraded_mode \
+                    "$REDCAP_ROOT" \
+                    "session-end-clear-before-notify-failed" \
+                    "host=$HOST current_head=$CURRENT_HEAD pending_updated_at=${PENDING_CLEAR_EXPECTED_AT:-missing}" \
+                    || true
+            fi
+        elif redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+            CURRENT_PENDING_EXISTS=1
             PENDING_CLEAR_STATUS=0
             redcap_runtime_record_degraded_mode \
                 "$REDCAP_ROOT" \
-                "session-end-clear-before-notify-failed" \
+                "session-end-clear-before-notify-unsafe-refresh" \
                 "host=$HOST current_head=$CURRENT_HEAD pending_updated_at=${PENDING_UPDATED_AT:-missing}" \
                 || true
         fi
