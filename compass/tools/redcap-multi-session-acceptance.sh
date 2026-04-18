@@ -2946,6 +2946,810 @@ EOF
     redcap_runtime_clear_context
 }
 
+run_on_stop_review_copilot_fallback_case() {
+    local case_name="$1"
+    local gemini_mode="$2"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    case "$gemini_mode" in
+        timeout)
+            cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+sleep 5
+EOF
+            ;;
+        auth-failure)
+            cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+echo "Authorization failed, please check your login status"
+exit 1
+EOF
+            ;;
+        auth-failure-with-result-token)
+            cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+Authorization failed, please check your login status
+result: PASS
+OUT
+exit 1
+EOF
+            ;;
+        unparseable-success-output)
+            cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+echo "review completed without structured result"
+EOF
+            ;;
+        structured-pass-with-auth-error-line)
+            cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+Authorization failed, please check your login status
+OUT
+EOF
+            ;;
+        *)
+            fail "unsupported gemini fallback mode: $gemini_mode"
+            ;;
+    esac
+    chmod +x "$fake_bin/gemini"
+
+    cat >"$fake_bin/copilot" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"copilot fallback ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/copilot"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "on-stop-review fallback case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: copilot"
+    assert_string_contains "$(read_file_text "$review_log")" "copilot fallback ok"
+}
+
+run_on_stop_review_falls_back_after_timeout_case() {
+    run_on_stop_review_copilot_fallback_case "on-stop-review-falls-back-after-timeout" "timeout"
+}
+
+run_on_stop_review_falls_back_after_auth_failure_case() {
+    run_on_stop_review_copilot_fallback_case "on-stop-review-falls-back-after-auth-failure" "auth-failure"
+}
+
+run_on_stop_review_falls_back_after_auth_failure_with_result_token_case() {
+    run_on_stop_review_copilot_fallback_case "on-stop-review-falls-back-after-auth-failure-with-result-token" "auth-failure-with-result-token"
+}
+
+run_on_stop_review_falls_back_after_unparseable_success_output_case() {
+    run_on_stop_review_copilot_fallback_case "on-stop-review-falls-back-after-unparseable-success-output" "unparseable-success-output"
+}
+
+run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case() {
+    run_on_stop_review_copilot_fallback_case "on-stop-review-falls-back-after-structured-pass-with-auth-error-line" "structured-pass-with-auth-error-line"
+}
+
+run_on_stop_review_accepts_structured_review_with_auth_terms_case() {
+    local case_name="on-stop-review-accepts-structured-review-with-auth-terms"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"unauthorized path is covered and remains fail-closed"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "structured auth-term review case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" "unauthorized path is covered"
+}
+
+run_on_stop_review_accepts_structured_review_with_auth_prose_outside_fence_case() {
+    local case_name="on-stop-review-accepts-structured-review-with-auth-prose-outside-fence"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+The authentication failed path remains fail-closed.
+```json
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "structured auth prose outside fence case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" "The authentication failed path remains fail-closed."
+}
+
+run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stdout_prose_case() {
+    local case_name="on-stop-review-accepts-structured-review-with-quoted-cli-error-in-stdout-prose"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+Observed failing path:
+Authorization failed, please check your login status
+```json
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "quoted cli error in stdout prose case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" "{\"result\":\"PASS\""
+}
+
+run_on_stop_review_accepts_structured_review_with_quoted_cli_error_block_in_stdout_residual_case() {
+    local case_name="on-stop-review-accepts-structured-review-with-quoted-cli-error-block-in-stdout-residual"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+Authorization failed, please check your login status
+Hint: run login again
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "quoted cli error block in stdout residual case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" "{\"result\":\"PASS\""
+}
+
+run_on_stop_review_accepts_lowercase_structured_result_case() {
+    local case_name="on-stop-review-accepts-lowercase-structured-result"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"pass","issues":[],"summary":"ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "lowercase structured review case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" "\"result\":\"pass\""
+}
+
+run_on_stop_review_accepts_raw_json_with_stderr_auth_terms_case() {
+    local case_name="on-stop-review-accepts-raw-json-with-stderr-auth-terms"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' '{"result":"PASS","issues":[],"summary":"ok"}'
+printf '%s\n' 'unauthorized path remains fail-closed' >&2
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "raw json with stderr auth terms case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" "{\"result\":\"PASS\""
+}
+
+run_on_stop_review_falls_back_after_structured_pass_with_stderr_auth_error_line_case() {
+    local case_name="on-stop-review-falls-back-after-structured-pass-with-stderr-auth-error-line"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+OUT
+printf '%s\n' 'Authorization failed, please check your login status' >&2
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    cat >"$fake_bin/copilot" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"copilot fallback ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/copilot"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "structured pass with stderr auth error line case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: copilot"
+    assert_string_contains "$(read_file_text "$review_log")" "copilot fallback ok"
+}
+
+run_on_stop_review_falls_back_after_structured_pass_with_stderr_auth_error_and_hint_case() {
+    local case_name="on-stop-review-falls-back-after-structured-pass-with-stderr-auth-error-and-hint"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+OUT
+cat >&2 <<'ERR'
+Authorization failed, please check your login status
+Hint: run login again
+ERR
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    cat >"$fake_bin/copilot" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"copilot fallback ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/copilot"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "structured pass with stderr auth error and hint case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: copilot"
+    assert_string_contains "$(read_file_text "$review_log")" "copilot fallback ok"
+}
+
+run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stderr_prose_case() {
+    local case_name="on-stop-review-accepts-structured-review-with-quoted-cli-error-in-stderr-prose"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+OUT
+cat >&2 <<'ERR'
+Observed failing path:
+Authorization failed, please check your login status
+ERR
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "quoted cli error in stderr prose case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" "{\"result\":\"PASS\""
+}
+
+run_on_stop_review_accepts_plain_text_pass_with_fail_closed_case() {
+    local case_name="on-stop-review-accepts-plain-text-pass-with-fail-closed"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+PASS
+The failure path remains fail-closed.
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "plain text pass with fail-closed case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" "The failure path remains fail-closed."
+}
+
+run_on_stop_review_accepts_uppercase_fenced_json_case() {
+    local case_name="on-stop-review-accepts-uppercase-fenced-json"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```JSON
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "uppercase fenced json case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" '```JSON'
+}
+
+run_on_stop_review_accepts_bare_fenced_json_case() {
+    local case_name="on-stop-review-accepts-bare-fenced-json"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "bare fenced json case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" '```'
+}
+
+run_on_stop_review_accepts_json_fence_after_nonjson_bare_fence_case() {
+    local case_name="on-stop-review-accepts-json-fence-after-nonjson-bare-fence"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+这里先给一个示例：
+```
+Authorization failed, please check your login status
+```
+
+```json
+{"result":"PASS","issues":[],"summary":"ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "json fence after nonjson bare fence case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: gemini"
+    assert_string_contains "$(read_file_text "$review_log")" "Authorization failed, please check your login status"
+    assert_string_contains "$(read_file_text "$review_log")" '```json'
+}
+
 run_session_end_success_notify_after_clear_case() {
     local host="copilot"
     local binding_key pid probe_pid current_head report_path case_dir validator_stub notifier_stub notify_log pending_state
@@ -5528,6 +6332,24 @@ run_all_cases() {
     run_task_complete_guard_keeps_live_legacy_lock_case
     run_task_complete_guard_prunes_reused_pid_lock_case
     run_task_complete_guard_retries_after_report_change_case
+    run_on_stop_review_falls_back_after_timeout_case
+    run_on_stop_review_falls_back_after_auth_failure_case
+    run_on_stop_review_falls_back_after_auth_failure_with_result_token_case
+    run_on_stop_review_falls_back_after_unparseable_success_output_case
+    run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case
+    run_on_stop_review_accepts_structured_review_with_auth_terms_case
+    run_on_stop_review_accepts_structured_review_with_auth_prose_outside_fence_case
+    run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stdout_prose_case
+    run_on_stop_review_accepts_structured_review_with_quoted_cli_error_block_in_stdout_residual_case
+    run_on_stop_review_accepts_lowercase_structured_result_case
+    run_on_stop_review_accepts_raw_json_with_stderr_auth_terms_case
+    run_on_stop_review_falls_back_after_structured_pass_with_stderr_auth_error_line_case
+    run_on_stop_review_falls_back_after_structured_pass_with_stderr_auth_error_and_hint_case
+    run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stderr_prose_case
+    run_on_stop_review_accepts_plain_text_pass_with_fail_closed_case
+    run_on_stop_review_accepts_uppercase_fenced_json_case
+    run_on_stop_review_accepts_bare_fenced_json_case
+    run_on_stop_review_accepts_json_fence_after_nonjson_bare_fence_case
     run_session_end_success_notify_after_clear_case
     run_session_end_notify_timeout_releases_lock_case
     run_session_end_blocked_rewrite_keeps_report_anchor_case
@@ -5720,6 +6542,60 @@ case "$COMMAND" in
         ;;
     task-complete-guard-retries-after-report-change)
         run_task_complete_guard_retries_after_report_change_case
+        ;;
+    on-stop-review-falls-back-after-timeout)
+        run_on_stop_review_falls_back_after_timeout_case
+        ;;
+    on-stop-review-falls-back-after-auth-failure)
+        run_on_stop_review_falls_back_after_auth_failure_case
+        ;;
+    on-stop-review-falls-back-after-auth-failure-with-result-token)
+        run_on_stop_review_falls_back_after_auth_failure_with_result_token_case
+        ;;
+    on-stop-review-falls-back-after-unparseable-success-output)
+        run_on_stop_review_falls_back_after_unparseable_success_output_case
+        ;;
+    on-stop-review-falls-back-after-structured-pass-with-auth-error-line)
+        run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case
+        ;;
+    on-stop-review-accepts-structured-review-with-auth-terms)
+        run_on_stop_review_accepts_structured_review_with_auth_terms_case
+        ;;
+    on-stop-review-accepts-structured-review-with-auth-prose-outside-fence)
+        run_on_stop_review_accepts_structured_review_with_auth_prose_outside_fence_case
+        ;;
+    on-stop-review-accepts-structured-review-with-quoted-cli-error-in-stdout-prose)
+        run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stdout_prose_case
+        ;;
+    on-stop-review-accepts-structured-review-with-quoted-cli-error-block-in-stdout-residual)
+        run_on_stop_review_accepts_structured_review_with_quoted_cli_error_block_in_stdout_residual_case
+        ;;
+    on-stop-review-accepts-lowercase-structured-result)
+        run_on_stop_review_accepts_lowercase_structured_result_case
+        ;;
+    on-stop-review-accepts-raw-json-with-stderr-auth-terms)
+        run_on_stop_review_accepts_raw_json_with_stderr_auth_terms_case
+        ;;
+    on-stop-review-falls-back-after-structured-pass-with-stderr-auth-error-line)
+        run_on_stop_review_falls_back_after_structured_pass_with_stderr_auth_error_line_case
+        ;;
+    on-stop-review-falls-back-after-structured-pass-with-stderr-auth-error-and-hint)
+        run_on_stop_review_falls_back_after_structured_pass_with_stderr_auth_error_and_hint_case
+        ;;
+    on-stop-review-accepts-structured-review-with-quoted-cli-error-in-stderr-prose)
+        run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stderr_prose_case
+        ;;
+    on-stop-review-accepts-plain-text-pass-with-fail-closed)
+        run_on_stop_review_accepts_plain_text_pass_with_fail_closed_case
+        ;;
+    on-stop-review-accepts-uppercase-fenced-json)
+        run_on_stop_review_accepts_uppercase_fenced_json_case
+        ;;
+    on-stop-review-accepts-bare-fenced-json)
+        run_on_stop_review_accepts_bare_fenced_json_case
+        ;;
+    on-stop-review-accepts-json-fence-after-nonjson-bare-fence)
+        run_on_stop_review_accepts_json_fence_after_nonjson_bare_fence_case
         ;;
     session-end-success-notify-after-clear)
         run_session_end_success_notify_after_clear_case

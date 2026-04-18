@@ -762,3 +762,84 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-17
+
+### L-77: 独立评审执行器必须区分“命令存在”与“当前健康可用”，并透传真实宿主身份
+- **场景**：最终 live `session-end` 回放中，独立评审脚本只要检测到 `kimi` 命令存在，就会优先硬撞 `kimi`；一旦该 CLI 未登录，就把整个真实 `session-end` 误打成 review P0。与此同时，脚本还把宿主身份写死成 `claude`，导致 Copilot 场景下的 review log / review gap 记录失真
+- **根因**：把“binary exists”误当成“当前已认证且健康可用”，缺少 timeout / auth failure / 空输出 fallback；同时把最早的 Claude Stop hook 脚本直接复用到多宿主场景，却没有把宿主身份参数化
+- **经验规则**：① 独立评审 runner 必须对 timeout、auth failure、空输出做可用性判定并自动 fallback，不能命中首个 CLI 就停止 ② 对当前环境，默认顺序应先尝试低成本且健康的候选，再 fallback 到 copilot / 其他 CLI，而不是一旦发现某个命令存在就锁死 ③ stop-review 被其他宿主复用时，必须透传真实 host，不能继续把日志、binding 与 pending closure 证据写死成 `claude`
+- **来源**：2026-04-18，live closeout 最终回放（`redcap-on-stop-review.sh` / `redcap-layerB-session-end.sh` review fallback 修补）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18
+
+### L-78: review runner 的 transport error 检测必须让位于结构化评审结果解析
+- **场景**：stop-review runner 加上 auth / rate-limit failure 识别后，新的 code review 立即指出另一类误杀：如果合法评审 JSON/正文里提到 `unauthorized`、`login required`、`rate limit` 等词，旧检测会把这份**正常评审结果**错当成 CLI transport failure，继续 fallback 或直接判失败
+- **根因**：把 transport failure 识别放在了结构化结果解析之前，并且用的是过宽的裸子串匹配（如 `FAIL`、`unauthorized`），没有区分“这是评审内容”还是“这是 CLI 本身的执行错误”
+- **经验规则**：① 对有固定输出契约的 reviewer CLI，必须先解析结构化 `PASS/FAIL` 结果，再做 transport failure 兜底 ② 文本兜底也要用严格 token / 形状匹配，不能用会命中 `FAILED`、正文说明句的宽子串 ③ transport failure 检测的职责是识别“CLI 没有真正完成评审”，不是覆盖评审本身讨论到的异常词汇
+- **来源**：2026-04-18，stop-review fallback follow-up code review（structured result vs transport failure 误杀修补）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18
+
+### L-79: structured review 的接纳条件必须同时满足“结果值归一化”与“CLI 成功退出”
+- **场景**：在修完 L-78 后，red team 又继续把边界推实：如果 reviewer CLI 以非零状态退出，但 stderr/stdout 里混入了 `result: PASS/FAIL` 一类 token，旧逻辑仍会把它误当成合法评审；反过来，合法 JSON `{\"result\":\"pass\"}` 又因为大小写未归一化而被错判成“评审结果无法解析”
+- **根因**：把“文本里出现 PASS/FAIL”误当成足够强的成功信号，同时又默认 JSON `result` 必须正好等于大写 `PASS/FAIL`，没有把“进程退出状态”和“结构化字段归一化”一并纳入接纳条件
+- **经验规则**：① 结构化评审结果只有在 reviewer CLI **成功退出**时才能被直接接受，非零退出必须先按 transport/exit failure 处理 ② JSON `result` 解析后要先做 trim + upper normalization，再与 `PASS/FAIL` 契约比对 ③ 文本 token 兜底只能作为成功退出后的弱兼容层，不能反过来覆盖 CLI 失败信号
+- **来源**：2026-04-18，stop-review fallback follow-up red team（exit status vs token parsing / lowercase structured result 修补）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18
+
+### L-80: reviewer output 必须分离 payload / stderr / 残余文本，且成功但不可解析的输出必须继续 fallback
+- **场景**：在修完 L-79 后，新的 code review / red team 又继续把 stop-review runner 压实：如果 reviewer CLI `exit 0` 但没有给出可解析结果，旧逻辑会直接停在当前 agent，后续 fallback 永远不跑；同时如果把 stdout/stderr 生拼到一起，raw JSON、stderr 警告、以及 plain-text `PASS` + `fail-closed` 这类正常输出也会互相污染，制造新的假失败/假通过
+- **根因**：把“CLI 成功退出”误当成“结果已经可消费”，没有区分 review payload 与 transport noise；文本兜底仍按宽 token 匹配，导致 `FAIL` 会命中 `fail-closed` 一类正常说明句
+- **经验规则**：① reviewer runner 要显式区分 stdout review payload、stderr transport noise、以及 structured JSON 外残余文本，再分别做结构化解析与 transport failure 识别 ② `exit 0` 但结果不可解析时，必须把它视为 retryable failure，继续 fallback 到下一个 reviewer，而不是停在当前 agent ③ plain-text 兜底只能识别强形状结果行（如独立 `PASS` / `FAIL` 或 `result: PASS`），不能扫任意裸 token
+- **来源**：2026-04-18，stop-review final hardening（stdout/stderr 分离、unknown-success fallback、plain-text token 收紧）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18
+
+### L-81: fenced JSON 解析必须兼容 bare fence 与大小写变体
+- **场景**：在修完 L-80 后，最终 red team 又补出一个 parser 兼容性漏网：stop-review runner 的 fenced JSON 提取只认小写 ` ```json `，不认 bare ` ``` ` 或大写 ` ```JSON `。结果是合法 structured PASS/FAIL 会被错打成 `unparseable-output`，继续 fallback 或直接 fail-closed
+- **根因**：fenced JSON 提取正则写成了大小写敏感、且只覆盖单一 language tag 形态，没有把实际 reviewer 可能产出的 bare fence / uppercase fence 算进合法输入面
+- **经验规则**：① 对 markdown fenced JSON 的解析，必须显式兼容 bare fence、lowercase/uppercase `json` 语言标记，以及大小写变体 ② 同一类 fence 提取正则如果在多个解析点复用（结果提取、残余文本分离、summary 提取），必须一起更新，不能只修其中一处 ③ 对结构化输出 parser 的兼容性修补，必须补对应 acceptance 覆盖 bare / uppercase 两个最小复现
+- **来源**：2026-04-18，stop-review final red team（uppercase/bare fenced JSON 兼容修补）
+- **影响度**：medium
+- **复现次数**：1
+- **最后命中**：2026-04-18
+
+### L-82: transport failure detector 必须匹配“整行 CLI 错误形状”，不能扫 residual prose 的宽子串
+- **场景**：在修完 L-81 后，最后一轮 red team 继续把 residual text 边界压实：如果 JSON fence 外有正常说明句，例如 `The authentication failed path remains fail-closed.`，旧 detector 仍会因为其中包含 `authentication failed` 宽子串，而把这份合法 structured PASS 误打成 transport failure
+- **根因**：虽然已经把 structured payload / residual text 分离，但 transport detector 仍然对 residual prose 做整段 substring 命中，没有继续收紧到“这是一行 CLI 错误”而不是“这是一句解释文字”
+- **经验规则**：① transport failure detector 应按**逐行、整行形状**识别已知 CLI 错误（如 `Authorization failed, please check your login status`），而不是在 residual prose 里扫宽子串 ② residual text 的存在本身不是异常，只有当某一行符合明确 CLI error 形状时，才应触发 fallback ③ 对 detector 收紧后，必须补一条“structured review + residual prose containing auth/rate-limit words 仍应通过”的 acceptance 正例
+- **来源**：2026-04-18，stop-review final red team（residual prose false positive 修补）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18
+
+### L-83: bare fence 兼容不能退化成“第一个 bare fence 优先”，而必须选择真正可解析的 JSON 候选
+- **场景**：在修完 L-82 后，最后一轮 red team 又补出一个 parser 选择策略问题：为了兼容 bare fence，如果实现退化成“看到第一个 bare fence 就拿它当 review payload”，那么前面普通示例代码块里的 ` ``` ... ``` ` 会抢先被消费，后面真正的 ` ```json ` PASS/FAIL 反而被漏掉
+- **根因**：只放宽了 fenced JSON 的输入面，却没有同步定义“多个 fence 同时存在时，应该选哪个 candidate”；缺少“先验证能否 parse 成 JSON，再按 tag/位置择优”的选择策略
+- **经验规则**：① fenced review payload 的提取必须扫描所有候选 block，并只接受**真正能 parse 成 JSON** 的候选 ② 选择顺序应优先带 `json` tag 的合法 block，其次才是 bare fence 中合法的 JSON block，不能简单“第一个 bare fence 赢” ③ 对 parser 扩兼容后，必须补一条“non-json bare fence 在前、valid json fence 在后仍应接受 PASS/FAIL”的 acceptance 正例
+- **来源**：2026-04-18，stop-review final red team（fence candidate 选择策略修补）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18
+
+### L-84: 结构化 payload 选定后，residual transport scan 必须忽略所有 fenced blocks，只看 fence 外 prose
+- **场景**：在修完 L-83 后，最终 code review 又继续把 residual scan 的边界压实：即便已经正确选中了后面的 ` ```json ` PASS/FAIL，如果 residual 文本里还残留前面示例 bare fence 中的 `Authorization failed, please check your login status` 这类错误行，旧 detector 仍会把这份合法 structured review 误判成 transport failure
+- **根因**：虽然 fenced payload 选择策略已经正确，但 residual text 仍只剔除了“被选中的那个 block”，没有把其他 fenced example blocks 一并排除，导致示例代码里的错误行继续污染 transport detector
+- **经验规则**：① 一旦结构化 review payload 已选定，residual transport scan 必须只保留 fence 外 prose，不能再扫描任何 fenced blocks 里的内容 ② 示例代码块、历史错误摘录、quoted CLI output 即使包含真实错误文案，也只能作为说明上下文，不能继续参与 transport failure 判定 ③ 对 residual scan 的这类收紧，必须补一条“non-json bare fence 中引用真实 CLI 错误行、后面仍有合法 json fence 时应该通过”的 acceptance 正例
+- **来源**：2026-04-18，stop-review final code review（residual fenced block exclusion 修补）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18
+
+### L-85: stdout 已有 structured result 时，stderr 与 stdout residual 不能共用同一套 transport detector 语义
+- **场景**：在修完 L-84 后，最后一轮 red team 先追出“quoted error line in stderr prose 会误杀 structured PASS”，随后又追出反向漏报：stderr 里的 `Authorization failed ...` + `Hint: run login again` 必须继续按真实 transport failure fallback；但如果把 stdout residual 也放宽到同样的 `failure-block` 规则，reviewer 在正文里原样引用同一段错误块时，又会被误杀成 transport failure
+- **根因**：把 stderr 与 stdout residual 当成同一种载体来处理。实际上 stderr 更接近 transport noise，而 stdout residual 更接近 reviewer 正文 / 说明文本；两者虽然都可能包含错误文案，但误判代价与可接受启发式完全不同，不能强行统一成一条 detector 规则
+- **经验规则**：① 当 stdout 已拿到结构化 `PASS/FAIL` 时，stderr 可以用 failure-block 判定识别 `error line + hint/note` 这类真实 transport failure ② stdout residual 必须保持更严格的纯错误块语义，避免把正文里原样引用的错误块误杀 ③ 这类非对称 detector 设计至少要成组覆盖：stdout residual 的 `single error line -> fallback`、`quoted error block -> pass`、`quoted prose -> pass`，以及 stderr 的 `single error line -> fallback`、`error line + hint -> fallback`、`quoted prose -> pass`
+- **来源**：2026-04-18，stop-review final red team（structured review transport detector 非对称收口）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-18
