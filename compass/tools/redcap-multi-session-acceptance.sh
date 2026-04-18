@@ -1737,6 +1737,84 @@ EOF
     redcap_runtime_clear_context
 }
 
+run_task_complete_guard_passes_host_to_on_complete_case() {
+    local host="copilot"
+    local binding_key pid current_head report_path report_rel marker_path
+    local task_complete_slice case_dir register_log complete_log register_stub complete_stub register_count
+
+    log "case: task-complete-guard-passes-host-to-on-complete"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "task-complete-guard-passes-host-to-on-complete" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-task-complete-host-${RANDOM}-$$"
+    pid="$((68000 + RANDOM))"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for host passthrough case"
+
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-host-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    printf '# acceptance guard host report\n' >"$report_path"
+    LEGACY_TMP_FILES+=("$report_path")
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report,review,notify" \
+        "task-complete-guard-passes-host-to-on-complete" \
+        "$report_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed pending closure for host passthrough case"
+    write_current_report_marker_fixture "$report_rel"
+    task_complete_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-host.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    register_log="$case_dir/register.log"
+    complete_log="$case_dir/on-complete-host.log"
+    register_stub="$case_dir/register-stub.sh"
+    complete_stub="$case_dir/on-complete-stub.sh"
+
+    cat >"$register_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+REPORT="\${2:?}"
+source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
+source "$REDCAP_ROOT/compass/tools/redcap-interop-governance.sh"
+redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNTIME_CAPABILITY:?}" >/dev/null
+printf '%s\n' "\$REPORT" >>"$register_log"
+redcap_interop_write_current_report_marker "\${REPORT#$REDCAP_ROOT/}" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+EOF
+    cat >"$complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "\${REDCAP_ON_COMPLETE_HOST:-missing}" >>"$complete_log"
+EOF
+    chmod +x "$register_stub" "$complete_stub"
+
+    REDCAP_ON_COMPLETE_HOST="claude" \
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
+    REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
+    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
+        || fail "task complete guard host passthrough case failed"
+
+    marker_path="$(redcap_runtime_path "layerB/current-report-path")"
+    assert_exists "$marker_path"
+    assert_eq "$(read_file_text "$marker_path")" "$report_rel"
+    assert_eq "$(read_file_text "$complete_log")" "$host"
+    register_count="0"
+    [[ -f "$register_log" ]] && register_count="$(wc -l < "$register_log" | tr -d '[:space:]')"
+    assert_num_eq "$register_count" 0
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "task-complete-guard-passes-host-to-on-complete" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
 run_task_complete_guard_avoids_ambiguous_reports_case() {
     local host="copilot"
     local binding_key pid current_head marker_path status_path
@@ -2010,6 +2088,96 @@ EOF
     assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "backlog,spec")"
 
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "on-complete-records-backlog-spec-redlines" >/dev/null 2>&1 || true
+}
+
+run_on_complete_uses_explicit_validator_host_case() {
+    local case_dir validator_stub host_log current_head
+
+    log "case: on-complete-uses-explicit-validator-host"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/on-complete-host.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    host_log="$case_dir/validator-host.log"
+    validator_stub="$case_dir/validator-stub.sh"
+
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s|%s\n' "\${2:-missing}" "\${REDCAP_RUNTIME_HOST:-missing}" >"$host_log"
+cat <<'OUT'
+[redcap-validator-chain] mode=on-complete overall=pass
+[1] commit-proof-check :: pass
+commit-proof ok
+[2] pm-gate :: pass
+pm-gate ok
+[3] drift-check :: pass
+drift ok
+[4] backlog-check :: pass
+backlog ok
+[5] spec-check :: pass
+spec ok
+[6] task-report-check :: pass
+task-report ok
+[7] artifact-lifecycle-check :: pass
+artifact ok
+OUT
+EOF
+    chmod +x "$validator_stub"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    REDCAP_SKIP_FEISHU=1 \
+    REDCAP_ON_COMPLETE_HOST="copilot" \
+    REDCAP_RUNTIME_HOST="claude" \
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-on-complete.sh" "$REDCAP_ROOT" "$current_head" redcap >/dev/null 2>&1 \
+        || fail "on-complete should accept explicit validator host"
+
+    assert_eq "$(read_file_text "$host_log")" "copilot|copilot"
+}
+
+run_on_complete_prefers_binding_host_over_stale_runtime_host_case() {
+    local case_dir validator_stub host_log current_head
+
+    log "case: on-complete-prefers-binding-host-over-stale-runtime-host"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/on-complete-binding-host.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    host_log="$case_dir/validator-host.log"
+    validator_stub="$case_dir/validator-stub.sh"
+
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s|%s\n' "\${2:-missing}" "\${REDCAP_RUNTIME_HOST:-missing}" >"$host_log"
+cat <<'OUT'
+[redcap-validator-chain] mode=on-complete overall=pass
+[1] commit-proof-check :: pass
+commit-proof ok
+[2] pm-gate :: pass
+pm-gate ok
+[3] drift-check :: pass
+drift ok
+[4] backlog-check :: pass
+backlog ok
+[5] spec-check :: pass
+spec ok
+[6] task-report-check :: pass
+task-report ok
+[7] artifact-lifecycle-check :: pass
+artifact ok
+OUT
+EOF
+    chmod +x "$validator_stub"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    REDCAP_SKIP_FEISHU=1 \
+    REDCAP_SESSION_BINDING_KEY="host/copilot/session/acceptance-binding-host" \
+    REDCAP_RUNTIME_HOST="claude" \
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-on-complete.sh" "$REDCAP_ROOT" "$current_head" redcap >/dev/null 2>&1 \
+        || fail "on-complete should prefer binding host over stale runtime host"
+
+    assert_eq "$(read_file_text "$host_log")" "copilot|copilot"
 }
 
 run_pending_closure_clear_restores_on_ledger_failure_case() {
@@ -3914,7 +4082,7 @@ import pathlib
 import time
 
 pathlib.Path(os.environ["FAKE_NOTIFY_STARTED"]).write_text("started\n", encoding="utf-8")
-time.sleep(3)
+time.sleep(5)
 PYEOF
     chmod +x "$validator_stub" "$notifier_stub"
 
@@ -3940,7 +4108,7 @@ PYEOF
 
     FAKE_NOTIFY_STARTED="$notifier_started" \
     REDCAP_FEISHU_NOTIFIER="$notifier_stub" \
-    REDCAP_FEISHU_NOTIFY_TIMEOUT_SECONDS=1 \
+    REDCAP_FEISHU_NOTIFY_TIMEOUT_SECONDS=2 \
     REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
     REDCAP_SESSION_BINDING_KEY="$binding_key" \
     REDCAP_HOST_PROCESS_PID="$pid" \
@@ -6310,10 +6478,13 @@ run_all_cases() {
     run_sessionstart_auto_reconcile_hash_mismatch_case
     run_sessionstart_auto_reconcile_backlog_spec_case
     run_task_complete_guard_triggers_on_complete_case
+    run_task_complete_guard_passes_host_to_on_complete_case
     run_task_complete_guard_avoids_ambiguous_reports_case
     run_task_complete_guard_skips_stale_pending_artifact_case
     run_task_complete_guard_normalizes_absolute_pending_anchor_case
     run_on_complete_records_backlog_spec_redlines_case
+    run_on_complete_uses_explicit_validator_host_case
+    run_on_complete_prefers_binding_host_over_stale_runtime_host_case
     run_pending_closure_clear_restores_on_ledger_failure_case
     run_session_end_clears_all_matching_pending_states_case
     run_task_report_check_prefers_anchor_case
@@ -6471,6 +6642,9 @@ case "$COMMAND" in
     task-complete-guard-triggers-on-complete)
         run_task_complete_guard_triggers_on_complete_case
         ;;
+    task-complete-guard-passes-host-to-on-complete)
+        run_task_complete_guard_passes_host_to_on_complete_case
+        ;;
     task-complete-guard-avoids-ambiguous-reports)
         run_task_complete_guard_avoids_ambiguous_reports_case
         ;;
@@ -6482,6 +6656,12 @@ case "$COMMAND" in
         ;;
     on-complete-records-backlog-spec-redlines)
         run_on_complete_records_backlog_spec_redlines_case
+        ;;
+    on-complete-uses-explicit-validator-host)
+        run_on_complete_uses_explicit_validator_host_case
+        ;;
+    on-complete-prefers-binding-host-over-stale-runtime-host)
+        run_on_complete_prefers_binding_host_over_stale_runtime_host_case
         ;;
     pending-closure-clear-restores-on-ledger-failure)
         run_pending_closure_clear_restores_on_ledger_failure_case

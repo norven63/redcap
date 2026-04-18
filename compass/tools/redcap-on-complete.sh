@@ -213,8 +213,33 @@ persist_on_complete_unstructured_failure() {
   persist_failure_evidence "$phase" "$redlines" "$detail" "$artifact_path"
 }
 
+resolve_on_complete_validator_host() {
+  local host="${REDCAP_ON_COMPLETE_HOST:-}"
+  local binding_key="${REDCAP_SESSION_BINDING_KEY:-${REDCAP_RUNTIME_BINDING_KEY:-}}"
+
+  if [[ -z "$host" && -n "$binding_key" ]]; then
+    case "$binding_key" in
+      host/*/session/*)
+        host="${binding_key#host/}"
+        host="${host%%/session/*}"
+        ;;
+    esac
+  fi
+
+  if [[ -z "$host" ]]; then
+    host="${REDCAP_RUNTIME_HOST:-}"
+  fi
+
+  if [[ -z "$host" ]]; then
+    host="redcap"
+  fi
+
+  printf '%s\n' "$host"
+}
+
 run_on_complete_validator_chain() {
   local current_head
+  local validator_host
 
   ON_COMPLETE_VALIDATOR_OUTPUT=""
   ON_COMPLETE_VALIDATOR_PRECHECK_PHASE=""
@@ -237,11 +262,13 @@ run_on_complete_validator_chain() {
     return 1
   fi
 
+  validator_host=$(resolve_on_complete_validator_host)
   ON_COMPLETE_VALIDATOR_OUTPUT=$(REDCAP_VALIDATOR_PROJECT_DIR="$PROJECT_DIR" \
+    REDCAP_RUNTIME_HOST="$validator_host" \
     REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
     REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
     REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
-    bash "$VALIDATOR_CHAIN" on-complete "redcap" "$PROJECT_DIR/.dev-task.md" "$INITIAL_HEAD" "$current_head" text 2>&1) || return 1
+    bash "$VALIDATOR_CHAIN" on-complete "$validator_host" "$PROJECT_DIR/.dev-task.md" "$INITIAL_HEAD" "$current_head" text 2>&1) || return 1
 
   return 0
 }
