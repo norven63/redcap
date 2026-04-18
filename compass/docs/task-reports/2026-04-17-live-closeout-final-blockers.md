@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-17
 **执行者**：Cap（Copilot CLI / GPT-5.4；Codex 接盘续修）
-**报告版本**：v1.6
+**报告版本**：v1.7
 
 ---
 
@@ -10,21 +10,21 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：首次真实 live runtime 收尾暴露出的最终阻塞，以及其后 reviewer / redteam / final sweep 继续挖出的 marker anchor 漏网、acceptance 脆弱性、真实工作区删除风险、独立评审执行器失效、stop-review 结果判定边界问题、`on-complete` 校验宿主误传问题、`session-end` 清 pending 时的陈旧 `updated_at` 竞态问题、Codex CLI reviewer fallback 缺失问题、reviewer timeout 子进程逃逸问题、以及 reviewer 长 prompt / 大 stderr 在 Bash 变量、argv、空白判断路径中触发宽字符扫描导致挂起的问题，都已经补上。
-- 详情：当前补丁最终覆盖了 closeout 主链最后一批关键点：`.dev-task.md` 的允许修改范围补齐、`redcap-task-report-check.sh` 改成只在 pending / marker anchor 是**唯一最新 changed report** 时才放行、`redcap-task-report-register.sh` 支持“无 live claim 时显式 runtime env 接管”、同时又保证“有 live claim 时 claim 仍优先，且显式 fallback 必须同时匹配 host / project / binding identity”、`redcap-multi-session-acceptance.sh` 里一批 root-history 敏感 case 已改成 fixture repo / 稳定隔离断言、误删真实 `compass/docs/task-reports` 的危险 cleanup helper 已被移除，以及 `redcap-on-stop-review.sh` / `redcap-layerB-session-end.sh` 现在会按健康 fallback 执行独立评审、透传真实宿主身份、把 reviewer stdout/stderr 分离处理、仅在成功退出时直接接受结构化评审结果、成功但不可解析时继续 fallback、把 JSON `result` 做大小写归一化、兼容 bare / uppercase fenced JSON、优先选择**真正能 parse 成 JSON 的 fence candidate**，并把 transport failure detector 收紧到**整行 CLI 错误形状**；最后又把“stdout 已拿到结构化结果”这条路径做成非对称语义：stderr 允许用 `failure-block` 识别“错误行 + hint/note”这类真实 transport failure，而 stdout residual 继续保持更严格的纯错误块判定，从而既不漏掉 stderr 里的真实 failure block，也不把 review 正文里原样引用的错误块误杀成 transport failure。接盘补丁又把 `task-complete guard -> redcap-on-complete.sh -> validator-chain` 这段链路的宿主身份补实：guard 会用当前 `HOST` 覆盖旧环境，`on-complete` 解析校验宿主时按“显式 host → 绑定身份 → runtime host → redcap 兜底”的顺序选择，并把同一个 host 同步写入 validator chain 的位置参数和 `REDCAP_RUNTIME_HOST` 环境变量，避免 Copilot 场景被项目名 `redcap` 或陈旧 `claude` 环境污染。再次 live `session-end` 时又暴露出最后一层收口竞态：长耗时 validator / review 窗口中 pending closure 可能被兼容路径或重试路径改写，导致旧 `updated_at` 的 CAS 清理被正确拒绝；现在 `session-end` 会在全绿后重新读取当前 pending，并且只有在同一任务身份、head 区间仍被本次 validator 覆盖、redline 属于本次成功可清集合时，才用最新 `updated_at` 清理。最新 live `session-end` 又暴露出独立评审 fallback 列表仍少了当前可用的 Codex CLI：`gemini / copilot / claude / kimi` 全部不可用时，runner 现在会尝试 `codex exec`，并优先消费 `--output-last-message` 结果文件，避免 stdout/stderr 的 banner 或 warning 污染评审 payload。
+- 当前已完成：Copilot CLI 中断后留下的真实 pending closure 已接盘；此前暴露出的 marker anchor、acceptance 脆弱性、真实工作区删除风险、独立评审执行器失效、reviewer parser 边界、`on-complete` 宿主身份污染、`session-end` pending refresh 竞态、Codex reviewer fallback、timeout 子进程逃逸、以及 reviewer 大文本 Bash 扫描问题都已形成补丁。最新一轮真实独立评审指出的 V-11 验证消费与入口文档联动缺口，也已通过 `7d2a3f2` / `c8b4b2e` 两个 follow-up 收口，并由 E2E postcheck 证明账本闭合。
+- 详情：本轮接盘后的最后两步不是继续改核心脚本，而是把“已经验证过的事实”接进同一条物理证据链：`SKILL.md §5.5` 现在说明 Codex CLI 作为 registry / 能力矩阵候选参与 reviewer fallback；`compass/knowledge/a2a-communication.md §2` 明确 Codex CLI 目前只承担单轮 headless review，不冒领多轮 A2A；`loom/test-reports/pending-validations.md` 已把 V-11 移入已验证归档；`loom/test-reports/latest-e2e-report.md` 记录这次 Layer B hook-level replay，并明确 V-4 仍保留给完整用户项目 fallback E2E。`bash loom/tools/redcap-e2e-postcheck.sh` 已通过，随后真实 `on-complete` 也对当前 runtime 成功发送了飞书通知；由于本报告顶部摘要随后又被刷新，仍需在这个最终报告刷新 commit 后再跑一次 live `on-complete / session-end`。
 
 ### 0.2 上一步完成的是
 
-- 上一步完成的是：`d13f33e fix(governance): 改用 stdin 传递 codex review prompt` 已形成正式 commit，并通过 targeted / full acceptance / commit-proof；随后真实 `session-end` 又证明根因还要再往前收一层：不能先把长 review prompt 拼成 Bash 变量，再传给 Codex stdin。Bash 在变量赋值 / 宽字符处理阶段就会高 CPU 挂起，真正的安全形态必须是 prompt 从构造开始文件化。
+- 上一步完成的是：`7d2a3f2 docs(governance): 补齐 reviewer fallback 验证账本` 与 `c8b4b2e docs(governance): E2E(redcap-layerB-live) 标记验证结论` 已形成正式 commit；`redcap-spec-check.sh`、targeted reviewer fallback、full acceptance、commit-proof、以及 `redcap-e2e-postcheck.sh` 均已通过。随后真实 `on-complete` 已成功发送飞书通知，但通知正文暴露出报告顶部摘要仍是旧坐标，因此本版 `v1.7` 专门刷新最终报告入口。
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：形成 file-backed review prompt follow-up commit，再以本报告为锚点执行最后一轮 live runtime 收尾闭环，确认 `commit-proof` 与真实 `on-complete / session-end / 飞书通知` 在这版补丁上再次对齐。
+- 下一步计划做的是：提交本次报告入口刷新后，再以本报告为锚点执行最后一轮 live runtime 收尾闭环，确认 `commit-proof` 与真实 `on-complete / session-end / 飞书通知` 在最终 HEAD 上再次对齐，并清掉当前 `required_redlines=review` pending closure。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof → live runtime 最终闭环。
-- 当前所在位置：第一次真实 live runtime 收尾已经把最终剩余 blocker 暴露出来；stop-review 边界、on-complete 校验宿主、session-end pending refresh、Codex reviewer fallback、reviewer timeout 进程组清理、以及 file-backed review prompt 输入通道都已修，当前正准备形成最后一个 follow-up commit 并做正式闭环。
+- 当前所在位置：第一次真实 live runtime 收尾已经把最终剩余 blocker 暴露出来；stop-review 边界、on-complete 校验宿主、session-end pending refresh、Codex reviewer fallback、reviewer timeout 进程组清理、file-backed review prompt 输入通道、以及 V-11 / E2E / 入口文档证据链都已修。当前只剩最终 HEAD 的 live `session-end` 核销。
 
 ---
 
@@ -208,6 +208,7 @@
 | root drift-check 回放 | `REDCAP_RUNTIME_SESSION_ID=<real> REDCAP_RUNTIME_CAPABILITY=<real> bash compass/tools/redcap-drift-check.sh on-complete copilot .dev-task.md c58dc35755bf11a60b8f6280910b33ae9c8b2c35 612212c2db5a1da0c7ec6b212db50a987eecb62a` | ✅ |
 | root task-report-check 回放 | `REDCAP_RUNTIME_SESSION_ID=<real> REDCAP_RUNTIME_CAPABILITY=<real> bash compass/tools/redcap-task-report-check.sh "$PWD" c58dc35755bf11a60b8f6280910b33ae9c8b2c35 612212c2db5a1da0c7ec6b212db50a987eecb62a` | ✅ |
 | full suite 复跑 | `bash compass/tools/redcap-spec-check.sh "$PWD" && bash compass/tools/redcap-multi-session-acceptance.sh all` | ✅ |
+| E2E 后置审计 | `bash loom/tools/redcap-e2e-postcheck.sh` | ✅ |
 | 最新 redteam | `closeout-redteam-r15` | ✅ clean（在 supported / contract-valid 输入边界内无新的 blocking / significant hole） |
 | 最新 code review | `2026-04-18 真实 session-end 独立评审` | ⚠️ 已指出 E2E/V-11 消费与入口文档联动缺口；本 follow-up 已补齐，需再次 live session-end 核销 |
 
