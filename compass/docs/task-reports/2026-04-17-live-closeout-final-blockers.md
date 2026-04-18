@@ -19,7 +19,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：提交本次报告入口刷新后，再以本报告为锚点执行最后一轮 live runtime 收尾闭环，确认 `commit-proof` 与真实 `on-complete / session-end / 飞书通知` 在最终 HEAD 上再次对齐，并清掉当前 `required_redlines=review` pending closure。
+- 下一步计划做的是：以本报告为锚点执行最后一轮 live runtime `session-end` 核销，确认 `commit-proof` 与真实 `on-complete / session-end / 飞书通知` 在最终 HEAD 上再次对齐，并清掉当前 `required_redlines=review` pending closure。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -214,7 +214,7 @@
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
-- [ ] 形成 file-backed review prompt follow-up commit 后，再对真实 Copilot runtime 重跑 `on-complete / session-end / 飞书通知`，确认最终完成通知真的发出，且不再留下 `required_redlines=review`。
+- [ ] 对最终 HEAD 再跑真实 Copilot runtime `session-end`，确认最终完成通知已经在 `on-complete` 主路径发出，且不再留下 `required_redlines=review`。
 
 ---
 
@@ -224,7 +224,7 @@
 
 | 问题 | 原因 | 建议优先级 |
 |------|------|----------|
-| live runtime 最终完成通知仍需在 review-redline follow-up 补丁上再次跑通 | 上一轮真实 `session-end` 已证明除 review 外的 validator 链全部 PASS；最新 review blocker 已收缩为 V-11 消费与入口文档联动，本 follow-up 补齐后仍要重跑真实 `session-end` 清掉 pending closure | P0 |
+| live runtime 最终 `session-end` 仍需在最终 HEAD 上再次跑通 | 真实 `on-complete` 已在最终报告刷新后发送飞书通知；最新 review blocker 已收缩为 V-11 消费与入口文档联动，本 follow-up 补齐后仍要重跑真实 `session-end` 清掉 pending closure | P0 |
 
 ### 6.2 触发的新问题
 
@@ -233,9 +233,9 @@
 
 ### 6.3 推荐的下一步行动
 
-1. 将当前 review-redline follow-up 补丁与本报告一起提交。
-2. 重新运行 `compass/tools/redcap-commit-proof-check.sh`。
-3. 对真实 Copilot runtime 再跑一次 `on-complete / session-end / 飞书通知`。
+1. 本报告口径修正提交后，重新运行 `compass/tools/redcap-commit-proof-check.sh`。
+2. 对最终 HEAD 再跑一次真实 `on-complete`，刷新完成通知正文。
+3. 对真实 Copilot runtime 再跑一次 `session-end`，确认 pending closure 被清理。
 
 ---
 
