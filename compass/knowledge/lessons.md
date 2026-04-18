@@ -880,11 +880,11 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **复现次数**：1
 - **最后命中**：2026-04-18
 
-### L-90: headless reviewer 的长 prompt 必须走 stdin/file，不能作为超长 argv 传入
-- **场景**：进程组级 timeout 修补后，真实 Copilot `session-end` 再次回放仍卡在 `redcap-on-stop-review.sh`；此时没有真正拉起 `codex exec`，而是 Bash 进程在处理包含 CONTRIBUTING / diff / 中文评审说明的长 `REVIEW_PROMPT` 参数时高 CPU 自旋
-- **根因**：把完整 review prompt 作为命令行末尾参数传给 `codex exec`，等于让 shell / argv 路径承载大块多语言文本；在长任务 diff 与规范正文叠加后，执行器可能在 CLI 启动前就卡死，timeout 也无法覆盖“尚未进入被 wrapper 管理的子进程”的阶段
-- **经验规则**：① 支持 stdin 的 headless CLI（如 `codex exec -`）必须把长 prompt 写入临时文件并经 stdin 传入 ② acceptance 要让假 reviewer 同时记录 argv 与 stdin，断言 prompt 出现在 stdin、不会泄入 argv ③ `--output-last-message` 只解决结果通道干净问题，不能替代输入通道的 argv 风险治理
-- **来源**：2026-04-18，Codex reviewer fallback live 回放（Codex prompt argv 挂起）
+### L-90: headless reviewer 的长 prompt 必须从构造开始文件化，不能放进 Bash 大字符串
+- **场景**：进程组级 timeout 与 Codex stdin 修补后，真实 Copilot `session-end` 再次回放仍卡在 `redcap-on-stop-review.sh`；此时没有真正拉起 `codex exec`，Bash 进程在处理包含 CONTRIBUTING / diff / 中文评审说明的长 `REVIEW_PROMPT` 时高 CPU 自旋，`sample` 显示热点集中在 `wcslen`
+- **根因**：只把 Codex 调用末尾参数改成 stdin 还不够；如果先在 Bash 里用 `REVIEW_PROMPT="...$CONTRIBUTING...$DIFF..."` 拼出大块多语言字符串，shell 仍会在变量赋值、长度截断、命令替换或 argv 展开阶段做宽字符扫描。timeout wrapper 只能管已启动的 reviewer 子进程，管不到“还卡在父 Bash 解释器里”的阶段
+- **经验规则**：① 大块 review prompt 必须从 diff 提取、截断、模板拼装开始就走临时文件 / Python 处理，Bash 只传文件路径 ② 支持 stdin 的 headless CLI（如 `codex exec -`）必须直接从 prompt 文件输入；需要 `-p` 参数的 fallback CLI 也应由 Python wrapper 从文件替换 argv 占位符，不能用 Bash `$(cat prompt)` ③ acceptance 要让假 reviewer 同时记录 argv 与 stdin，断言 prompt 出现在 stdin、不会泄入 argv；真实 live 回放要观察不再出现 Bash 99% CPU 卡在 reviewer 启动前
+- **来源**：2026-04-18，Codex reviewer fallback live 回放（Bash prompt 构造 / argv 挂起）
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-18

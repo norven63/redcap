@@ -62,7 +62,7 @@
 ### V-11: Codex CLI reviewer fallback
 - **来源 commit**：本轮 `fix(governance): 接入 codex reviewer fallback` follow-up
 - **触发类型**：路由逻辑
-- **验证要点**：当 Gemini / Copilot / Claude / Kimi reviewer 不可用时，stop-review 能 fallback 到 Codex CLI；程序化消费应读取 `--output-last-message`，stdout/stderr banner 或 warning 不得污染评审 payload；长 review prompt 必须经 stdin/file 传入，不能作为超长 argv；timeout 时必须杀掉 reviewer 进程组，不能遗留子进程。
+- **验证要点**：当 Gemini / Copilot / Claude / Kimi reviewer 不可用时，stop-review 能 fallback 到 Codex CLI；程序化消费应读取 `--output-last-message`，stdout/stderr banner 或 warning 不得污染评审 payload；长 review prompt 必须从构造阶段就文件化，并经 stdin/file 传入，不能作为 Bash 大字符串或超长 argv；timeout 时必须杀掉 reviewer 进程组，不能遗留子进程。
 - **状态**：🟡 部分验证（acceptance 覆盖；真实 E2E 待纳入下轮完整项目流转）
 
 ---

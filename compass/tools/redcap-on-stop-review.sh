@@ -325,9 +325,10 @@ run_review_command_with_timeout() {
     local stdout_file="$2"
     local stderr_file="$3"
     local stdin_file="${REDCAP_REVIEW_COMMAND_STDIN_FILE:-}"
+    local prompt_arg_file="${REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE:-}"
     shift 3
 
-    python3 - "$timeout" "$stdout_file" "$stderr_file" "$stdin_file" "$@" <<'PY'
+    python3 - "$timeout" "$stdout_file" "$stderr_file" "$stdin_file" "$prompt_arg_file" "$@" <<'PY'
 import os
 import signal
 import subprocess
@@ -338,11 +339,15 @@ timeout = int(sys.argv[1])
 stdout_path = Path(sys.argv[2])
 stderr_path = Path(sys.argv[3])
 stdin_file = sys.argv[4]
-cmd = sys.argv[5:]
+prompt_arg_file = sys.argv[5]
+cmd = sys.argv[6:]
 stdin_text = None
 
 if stdin_file:
     stdin_text = Path(stdin_file).read_text(encoding="utf-8", errors="replace")
+if prompt_arg_file:
+    prompt_arg = Path(prompt_arg_file).read_text(encoding="utf-8", errors="replace")
+    cmd = [prompt_arg if arg == "__REDCAP_REVIEW_PROMPT__" else arg for arg in cmd]
 
 def write_text(path, text):
     path.write_text(text or "", encoding="utf-8", errors="replace")
@@ -394,7 +399,6 @@ run_review_with_agent() {
     local stdout_file=""
     local stderr_file=""
     local message_file=""
-    local prompt_file=""
 
     timeout="$(review_agent_timeout "$agent")"
     stdout_file="$(mktemp)"
@@ -402,23 +406,25 @@ run_review_with_agent() {
 
     case "$agent" in
         gemini)
-            run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" gemini -p "$REVIEW_PROMPT" --sandbox false --yolo || status=$?
+            REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE="$REVIEW_PROMPT_FILE" \
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" gemini -p "__REDCAP_REVIEW_PROMPT__" --sandbox false --yolo || status=$?
             ;;
         copilot)
-            run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" copilot -p "$REVIEW_PROMPT" --allow-all --autopilot || status=$?
+            REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE="$REVIEW_PROMPT_FILE" \
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" copilot -p "__REDCAP_REVIEW_PROMPT__" --allow-all --autopilot || status=$?
             ;;
         codex)
             message_file="$(mktemp)"
-            prompt_file="$(mktemp)"
-            printf '%s' "$REVIEW_PROMPT" >"$prompt_file"
-            REDCAP_REVIEW_COMMAND_STDIN_FILE="$prompt_file" \
+            REDCAP_REVIEW_COMMAND_STDIN_FILE="$REVIEW_PROMPT_FILE" \
                 run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" codex exec -C "$REDCAP_ROOT" --sandbox read-only --ephemeral --output-last-message "$message_file" --color never - || status=$?
             ;;
         claude)
-            run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" claude -p "$REVIEW_PROMPT" --output-format text || status=$?
+            REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE="$REVIEW_PROMPT_FILE" \
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" claude -p "__REDCAP_REVIEW_PROMPT__" --output-format text || status=$?
             ;;
         kimi)
-            run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" kimi -p "$REVIEW_PROMPT" -y || status=$?
+            REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE="$REVIEW_PROMPT_FILE" \
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" kimi -p "__REDCAP_REVIEW_PROMPT__" -y || status=$?
             ;;
         *)
             rm -f "$stdout_file" "$stderr_file"
@@ -432,7 +438,7 @@ run_review_with_agent() {
     if [[ -n "$message_file" && -s "$message_file" ]]; then
         output="$(cat "$message_file")"
     fi
-    rm -f "$stdout_file" "$stderr_file" "$message_file" "$prompt_file"
+    rm -f "$stdout_file" "$stderr_file" "$message_file"
 
     if [[ -z "${output//[[:space:]]/}" ]]; then
         output="$stderr_output"
@@ -558,53 +564,69 @@ VALIDATOR_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
     exit 1
 }
 
-# ── 提取 Diff ──
+# ── 提取 Diff 并组装评审 Prompt ──
 
-DIFF=$(git -C "$REDCAP_ROOT" --no-pager diff "$BASELINE..HEAD" 2>/dev/null)
-COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..HEAD" 2>/dev/null)
-FILE_LIST=$(git -C "$REDCAP_ROOT" --no-pager diff --name-only "$BASELINE..HEAD" 2>/dev/null)
+DIFF_FILE="$(mktemp)"
+COMMIT_LOG_FILE="$(mktemp)"
+FILE_LIST_FILE="$(mktemp)"
+REVIEW_PROMPT_FILE="$(mktemp)"
 
-if [[ -z "$DIFF" ]]; then
+git -C "$REDCAP_ROOT" --no-pager diff "$BASELINE..HEAD" >"$DIFF_FILE" 2>/dev/null
+git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..HEAD" >"$COMMIT_LOG_FILE" 2>/dev/null
+git -C "$REDCAP_ROOT" --no-pager diff --name-only "$BASELINE..HEAD" >"$FILE_LIST_FILE" 2>/dev/null
+
+if [[ ! -s "$DIFF_FILE" ]]; then
+    rm -f "$DIFF_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE" "$REVIEW_PROMPT_FILE"
     exit 0
 fi
 
-# ── 截断 Diff（防止超出 Agent 上下文）──
+if ! python3 - "$REDCAP_ROOT/compass/CONTRIBUTING.md" "$DIFF_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE" "$REVIEW_PROMPT_FILE" <<'PY'
+from pathlib import Path
+import sys
 
-MAX_DIFF_CHARS=20000
-if [[ ${#DIFF} -gt $MAX_DIFF_CHARS ]]; then
-    DIFF="${DIFF:0:$MAX_DIFF_CHARS}
+contributing_path = Path(sys.argv[1])
+diff_path = Path(sys.argv[2])
+commit_log_path = Path(sys.argv[3])
+file_list_path = Path(sys.argv[4])
+prompt_path = Path(sys.argv[5])
 
-... [Diff 截断，共 ${#DIFF} 字符，仅显示前 $MAX_DIFF_CHARS 字符]"
-fi
+def read_text(path):
+    if not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8", errors="replace")
 
-# ── 读取 CONTRIBUTING.md 作为评审基准 ──
+contributing = read_text(contributing_path)
+diff = read_text(diff_path)
+commit_log = read_text(commit_log_path)
+file_list = read_text(file_list_path)
 
-CONTRIBUTING=""
-if [[ -f "$REDCAP_ROOT/compass/CONTRIBUTING.md" ]]; then
-    CONTRIBUTING=$(cat "$REDCAP_ROOT/compass/CONTRIBUTING.md")
-fi
+max_diff_chars = 20000
+diff_len = len(diff)
+if diff_len > max_diff_chars:
+    diff = (
+        diff[:max_diff_chars]
+        + f"\n\n... [Diff 截断，共 {diff_len} 字符，仅显示前 {max_diff_chars} 字符]"
+    )
 
-# ── 组装评审 Prompt ──
-
-REVIEW_PROMPT="你是一位独立的代码架构评审员。你与开发者无关，你的唯一任务是客观审查以下变更。
+prompt = f"""你是一位独立的代码架构评审员。你与开发者无关，你的唯一任务是客观审查以下变更。
 
 ## 评审基准
 
-$CONTRIBUTING
+{contributing}
 
 ## 本次变更摘要
 
 Commits:
-$COMMIT_LOG
+{commit_log}
 
 变更文件:
-$FILE_LIST
+{file_list}
 
 ## Diff 内容
 
-\`\`\`diff
-$DIFF
-\`\`\`
+```diff
+{diff}
+```
 
 ## 评审要求
 
@@ -624,22 +646,33 @@ $DIFF
 
 严格按以下 JSON 输出，不要输出其他内容：
 
-\`\`\`json
-{
+```json
+{{
   \"result\": \"PASS\" 或 \"FAIL\",
   \"issues\": [
-    {
+    {{
       \"severity\": \"P0\" 或 \"P1\" 或 \"P2\",
       \"dimension\": \"维度名\",
       \"description\": \"问题描述\",
       \"suggestion\": \"修复建议\"
-    }
+    }}
   ],
   \"summary\": \"一句话总结\"
-}
-\`\`\`
+}}
+```
 
-规则：有任何 P0 问题 → result=FAIL；仅有 P1/P2 → result=PASS（附建议）。"
+规则：有任何 P0 问题 → result=FAIL；仅有 P1/P2 → result=PASS（附建议）。"""
+
+prompt_path.write_text(prompt, encoding="utf-8")
+PY
+then
+    rm -f "$DIFF_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE" "$REVIEW_PROMPT_FILE"
+    write_control_plane_failure "review prompt 构造失败" "无法生成 stop-review 独立评审 prompt。"
+    exit 1
+fi
+
+COMMIT_LOG="$(cat "$COMMIT_LOG_FILE")"
+rm -f "$DIFF_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE"
 
 # ── 选择并执行 Agent CLI ──
 
@@ -661,6 +694,7 @@ for candidate in "${REVIEW_AGENT_CANDIDATES[@]}"; do
 done
 
 if [[ -z "$REVIEW_OUTPUT" ]]; then
+    rm -f "$REVIEW_PROMPT_FILE"
     local_failure_summary="all-review-clis-unavailable"
     if [[ "${#REVIEW_ATTEMPT_FAILURES[@]}" -gt 0 ]]; then
         local_failure_summary="$(IFS='; '; printf '%s' "${REVIEW_ATTEMPT_FAILURES[*]}")"
@@ -669,6 +703,8 @@ if [[ -z "$REVIEW_OUTPUT" ]]; then
     record_review_gap "独立评审不可用" "$local_failure_summary"
     exit 1
 fi
+
+rm -f "$REVIEW_PROMPT_FILE"
 
 # ── 保存评审日志 ──
 

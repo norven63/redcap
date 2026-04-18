@@ -793,7 +793,7 @@ codex exec -C "$PROJECT_ROOT" \
 ### 3D.3 调用约束
 
 - **结果通道**：程序化消费必须优先读取 `--output-last-message` 文件；stdout/stderr 可能包含 banner、插件预热 warning、网络重连提示，不可直接当作评审 payload。
-- **输入通道**：长 prompt 必须先写入临时文件，再通过 `codex exec ... -` 的 stdin 输入；不得把包含规范正文 / diff / 中文说明的大 prompt 作为末尾 argv 传入。
+- **输入通道**：长 prompt 必须从生成阶段就保持文件化（diff 截断、模板拼装都不要落入 Bash 大字符串），再通过 `codex exec ... -` 的 stdin 输入；不得把包含规范正文 / diff / 中文说明的大 prompt 作为 Bash 变量或末尾 argv 传入。
 - **权限边界**：独立评审默认用 `--sandbox read-only`，避免 reviewer 修改工作区。
 - **超时保护**：同 §8 统一超时策略；stop-review 默认可通过 `REDCAP_REVIEW_AGENT_TIMEOUT_CODEX_SEC` 单独调整。runner 必须用进程组级 timeout，避免 Gemini / Node 这类 CLI 的子进程逃逸后阻塞 fallback。
 
