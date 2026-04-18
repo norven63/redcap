@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-17
 **执行者**：Cap（Copilot CLI / GPT-5.4；Codex 接盘续修）
-**报告版本**：v1.4
+**报告版本**：v1.5
 
 ---
 
@@ -10,21 +10,21 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：首次真实 live runtime 收尾暴露出的最终阻塞，以及其后 reviewer / redteam / final sweep 继续挖出的 marker anchor 漏网、acceptance 脆弱性、真实工作区删除风险、独立评审执行器失效、stop-review 结果判定边界问题、`on-complete` 校验宿主误传问题、`session-end` 清 pending 时的陈旧 `updated_at` 竞态问题、Codex CLI reviewer fallback 缺失问题、以及 reviewer timeout 子进程逃逸问题，都已经补上。
+- 当前已完成：首次真实 live runtime 收尾暴露出的最终阻塞，以及其后 reviewer / redteam / final sweep 继续挖出的 marker anchor 漏网、acceptance 脆弱性、真实工作区删除风险、独立评审执行器失效、stop-review 结果判定边界问题、`on-complete` 校验宿主误传问题、`session-end` 清 pending 时的陈旧 `updated_at` 竞态问题、Codex CLI reviewer fallback 缺失问题、reviewer timeout 子进程逃逸问题、以及 Codex reviewer 长 prompt 作为超长 argv 传入导致 Bash 挂起的问题，都已经补上。
 - 详情：当前补丁最终覆盖了 closeout 主链最后一批关键点：`.dev-task.md` 的允许修改范围补齐、`redcap-task-report-check.sh` 改成只在 pending / marker anchor 是**唯一最新 changed report** 时才放行、`redcap-task-report-register.sh` 支持“无 live claim 时显式 runtime env 接管”、同时又保证“有 live claim 时 claim 仍优先，且显式 fallback 必须同时匹配 host / project / binding identity”、`redcap-multi-session-acceptance.sh` 里一批 root-history 敏感 case 已改成 fixture repo / 稳定隔离断言、误删真实 `compass/docs/task-reports` 的危险 cleanup helper 已被移除，以及 `redcap-on-stop-review.sh` / `redcap-layerB-session-end.sh` 现在会按健康 fallback 执行独立评审、透传真实宿主身份、把 reviewer stdout/stderr 分离处理、仅在成功退出时直接接受结构化评审结果、成功但不可解析时继续 fallback、把 JSON `result` 做大小写归一化、兼容 bare / uppercase fenced JSON、优先选择**真正能 parse 成 JSON 的 fence candidate**，并把 transport failure detector 收紧到**整行 CLI 错误形状**；最后又把“stdout 已拿到结构化结果”这条路径做成非对称语义：stderr 允许用 `failure-block` 识别“错误行 + hint/note”这类真实 transport failure，而 stdout residual 继续保持更严格的纯错误块判定，从而既不漏掉 stderr 里的真实 failure block，也不把 review 正文里原样引用的错误块误杀成 transport failure。接盘补丁又把 `task-complete guard -> redcap-on-complete.sh -> validator-chain` 这段链路的宿主身份补实：guard 会用当前 `HOST` 覆盖旧环境，`on-complete` 解析校验宿主时按“显式 host → 绑定身份 → runtime host → redcap 兜底”的顺序选择，并把同一个 host 同步写入 validator chain 的位置参数和 `REDCAP_RUNTIME_HOST` 环境变量，避免 Copilot 场景被项目名 `redcap` 或陈旧 `claude` 环境污染。再次 live `session-end` 时又暴露出最后一层收口竞态：长耗时 validator / review 窗口中 pending closure 可能被兼容路径或重试路径改写，导致旧 `updated_at` 的 CAS 清理被正确拒绝；现在 `session-end` 会在全绿后重新读取当前 pending，并且只有在同一任务身份、head 区间仍被本次 validator 覆盖、redline 属于本次成功可清集合时，才用最新 `updated_at` 清理。最新 live `session-end` 又暴露出独立评审 fallback 列表仍少了当前可用的 Codex CLI：`gemini / copilot / claude / kimi` 全部不可用时，runner 现在会尝试 `codex exec`，并优先消费 `--output-last-message` 结果文件，避免 stdout/stderr 的 banner 或 warning 污染评审 payload。
 
 ### 0.2 上一步完成的是
 
-- 上一步完成的是：`ce38d7e fix(governance): 修复 session-end pending 刷新` 已形成正式 commit，spec-check、full acceptance、commit-proof 和真实 `on-complete` 都已通过；随后真实 `session-end` 又暴露出新的 `required_redlines=review`，根因是四个旧 reviewer CLI 全部不可用，而 runner 没有 Codex fallback。
+- 上一步完成的是：`1d59616 fix(governance): 接入 codex reviewer fallback` 与 `fc0a820 fix(governance): 加固 reviewer timeout 清理` 已形成正式 commit，并通过 targeted / full acceptance / commit-proof；随后真实 `session-end` 又暴露出 Codex prompt 输入通道问题，根因是长 review prompt 被作为 `codex exec` 的命令行参数传入，导致 Bash 在真正启动 Codex 前高 CPU 挂起。
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：形成 Codex reviewer fallback follow-up commit，再以本报告为锚点执行最后一轮 live runtime 收尾闭环，确认 `commit-proof` 与真实 `on-complete / session-end / 飞书通知` 在这版补丁上再次对齐。
+- 下一步计划做的是：形成 Codex stdin prompt follow-up commit，再以本报告为锚点执行最后一轮 live runtime 收尾闭环，确认 `commit-proof` 与真实 `on-complete / session-end / 飞书通知` 在这版补丁上再次对齐。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof → live runtime 最终闭环。
-- 当前所在位置：第一次真实 live runtime 收尾已经把最终剩余 blocker 暴露出来；stop-review 边界、on-complete 校验宿主、session-end pending refresh、以及 Codex reviewer fallback 都已修，当前正准备形成最后一个 follow-up commit 并做正式闭环。
+- 当前所在位置：第一次真实 live runtime 收尾已经把最终剩余 blocker 暴露出来；stop-review 边界、on-complete 校验宿主、session-end pending refresh、Codex reviewer fallback、reviewer timeout 进程组清理、以及 Codex stdin prompt 输入通道都已修，当前正准备形成最后一个 follow-up commit 并做正式闭环。
 
 ---
 
@@ -60,6 +60,7 @@
 8. stop-review 边界收口后，code review 又抓到 `on-complete` 的真实物理根因：`redcap-layerB-task-complete-guard.sh` 虽然知道当前宿主是 `copilot`，但旧链路只把项目名 `redcap` 作为 `redcap-on-complete.sh` 的第三个参数传入；而 `redcap-on-complete.sh` 又把 validator chain 的 host 固定成 `redcap`，或可能被外层残留的 `REDCAP_RUNTIME_HOST=claude` 污染。这样就会出现“当前任务实际来自 Copilot，但 validator / report register 认为它来自 redcap 或 claude”的分裂。
 9. `on-complete` host follow-up commit 形成后，真实 `session-end` 再次回放时出现“validator 全部 PASS，但 pending closure 仍被写回”的矛盾状态。排查后确认不是 review / PM Gate / drift / task report 任一校验失败，而是 `session-end` 在脚本开头读取了旧 pending 的 `updated_at`，随后长耗时 review / validator 窗口中 pending 被兼容路径或重试路径改写；最后脚本仍拿旧 `updated_at` 做 CAS 清理，被保护机制正确拒绝，于是写回 `required_redlines=pending-closure`。这类情况下不能粗暴跳过 CAS，也不能无条件清掉当前 pending；必须先重新读取当前 pending，并证明它仍是同一任务身份、同一 head 覆盖窗口内、且 redline 已被本次成功 session-end 覆盖。
 10. `session-end` pending refresh commit 形成后，真实 `session-end` 再次回放，reanchor / PM Gate / drift / backlog / spec / task-report / artifact-lifecycle / notify 全部 PASS，但最终留下 `required_redlines=review`。这次根因不在 validator，而在独立评审 fallback 列表：`gemini` exit-1、`copilot` timeout、`claude` timeout、`kimi` exit-1 后，runner 没有继续尝试本机已经可用的 `codex exec`。同时 Codex CLI 会输出 banner / warning，必须通过 `--output-last-message` 取得干净 payload。第一次把 Codex 插到 Gemini 后面再 live 回放时，又暴露出 Gemini CLI timeout 会留下 node 子进程并让 Bash runner 高 CPU 自旋；因此 timeout 必须杀整个进程组，且当前环境应优先尝试健康的 Codex，再降级到 Gemini。
+11. reviewer timeout 修补后，真实 `session-end` 再次卡在 `redcap-on-stop-review.sh`，但这次没有真正拉起 `codex exec`。排查确认：完整 review prompt 包含 CONTRIBUTING、diff 与中文评审说明，作为超长命令行参数传给 `codex exec` 时，会让 Bash 在 CLI 启动前高 CPU 挂起。`--output-last-message` 只解决“结果通道干净”，不解决“输入通道不能塞超长 argv”。因此 Codex reviewer 必须改成临时文件 + `codex exec ... -` stdin 输入，并用 acceptance 断言 prompt 只出现在 stdin，不泄入 argv。
 
 ### 2.2 方案选项
 
@@ -81,6 +82,8 @@
 | on-complete 校验宿主 | 选项 B | task-complete guard 显式传当前 `HOST`，on-complete 再按“显式 host → 绑定身份 → runtime host → redcap 兜底”解析，并同步覆盖 validator 的参数与环境 | 避免当前宿主与 validator 环境分裂，可覆盖 stale env | 需要补 host passthrough acceptance |
 | session-end pending 清理 | 选项 A | CAS 清理失败后直接忽略 pending 或无条件重试清理 | 改动小 | 可能误清并发新写入的真实 blocker，破坏 fail-closed |
 | session-end pending 清理 | 选项 B | 全绿后刷新读取当前 pending；只有同一任务身份、head 区间被本次 validator 覆盖、redline 属于本次成功可清集合时，才用最新 `updated_at` 清理 | 保留 CAS 防线，同时允许兼容/重试路径的等价改写被安全核销 | 需要补兼容刷新 acceptance |
+| Codex prompt 输入 | 选项 A | 继续把完整 review prompt 作为 `codex exec` 的末尾参数传入 | 改动小 | 长 diff / 中文规范叠加后会在 shell / argv 层挂起，甚至进不了 Codex CLI |
+| Codex prompt 输入 | 选项 B | 将 review prompt 写入临时文件，通过 `codex exec ... -` stdin 输入；保留 `--output-last-message` 作为结果通道 | 同时治理输入通道和结果通道，避免 argv 挂起与 stdout/stderr 噪声污染 | 需要补 fake Codex 断言 stdin / argv |
 
 ### 2.3 决策结果
 
@@ -94,6 +97,7 @@
 | 独立评审执行器 | 选项 B | stop-review 不能把“binary exists”误当成“runner healthy”，也不能在 Copilot session-end 中继续写死 `claude` 身份；必须做可用性 fallback、host 透传，并纳入当前可用的 Codex CLI | CAP_DECIDE |
 | on-complete 校验宿主 | 选项 B | `project_name` 是飞书/展示用项目名，不是 runtime host；validator chain 必须拿到当前真实宿主，否则 report register / runtime fallback 会继续错绑 | CAP_DECIDE |
 | session-end pending 清理 | 选项 B | 旧 `updated_at` 被拒绝是正确保护；修复点应是“刷新后证明当前 pending 仍可由本次成功覆盖”，而不是削掉 CAS | CAP_DECIDE |
+| Codex prompt 输入 | 选项 B | Codex CLI 已支持 `-` 从 stdin 读 prompt；长任务评审输入不应让 shell / argv 承载大块多语言文本，结果通道则继续由 `--output-last-message` 保证干净 | CAP_DECIDE |
 
 ---
 
@@ -106,14 +110,14 @@
 | `.dev-task.md` | 修改 | 补齐本轮真实触达的文件范围，消除 live closeout 时的 drift-check 假阻塞 |
 | `compass/tools/redcap-task-report-check.sh` | 修改 | pending / marker anchor 现在都只有在它是唯一最新 changed report 时才会被放行；stale / 并列最新 anchor 继续 fail-closed |
 | `compass/tools/redcap-task-report-register.sh` | 修改 | 无 live claim 时才允许显式 runtime env 接管；有 live claim 时仍以 claim 为准，并校验 runtime host/project/binding 归属 |
-| `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 新增 marker allow/reject 回归，把 `layerb-concurrency`、`sessionstart-auto-reconcile-*`、`task-report-check-prefers-anchor` 等 case 从 root-history 脆弱断言中解耦，移除会误删真实 root task report 的 cleanup helper，并补上 session-end pending refresh 与 Codex reviewer fallback 回归 |
-| `compass/tools/redcap-on-stop-review.sh` | 修改 | stop-review 现在按 `codex → gemini → copilot → claude → kimi` 做 timeout / auth failure fallback，不再把“命令存在”误当成“评审 CLI 可用”；Codex 路径优先读 `--output-last-message`，timeout 路径会杀整个 reviewer 进程组 |
+| `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 新增 marker allow/reject 回归，把 `layerb-concurrency`、`sessionstart-auto-reconcile-*`、`task-report-check-prefers-anchor` 等 case 从 root-history 脆弱断言中解耦，移除会误删真实 root task report 的 cleanup helper，并补上 session-end pending refresh、Codex reviewer fallback、进程组 timeout 与 Codex stdin prompt 回归 |
+| `compass/tools/redcap-on-stop-review.sh` | 修改 | stop-review 现在按 `codex → gemini → copilot → claude → kimi` 做 timeout / auth failure fallback，不再把“命令存在”误当成“评审 CLI 可用”；Codex 路径优先读 `--output-last-message`，长 prompt 通过 stdin/file 输入，timeout 路径会杀整个 reviewer 进程组 |
 | `compass/tools/redcap-detect-agents.sh` | 修改 | agent 嗅探加入 Codex CLI，记录 `~/.codex/config.toml` mtime 与默认模型 |
 | `compass/tools/redcap-layerB-session-end.sh` | 修改 | 调用独立评审时透传真实宿主身份；session-end 全绿后会安全刷新 pending closure，再按同一任务身份 / head 覆盖窗口 / 可清 redline 集合决定是否用最新 `updated_at` 清理 |
 | `compass/tools/redcap-on-complete.sh` | 修改 | validator host 不再硬编码为 `redcap`；显式 host / 绑定身份会压过陈旧 runtime host，并同步写入 validator 参数与环境 |
 | `compass/tools/redcap-layerB-task-complete-guard.sh` | 修改 | 调用 `redcap-on-complete.sh` 时用当前 `HOST` 覆盖旧 `REDCAP_ON_COMPLETE_HOST` 环境，避免 stale env 抢权 |
-| `loom/dispatcher/agent-adapters.md` | 修改 | 记录 Codex CLI 的 headless 调用模板和 stdout/stderr 噪声隔离约束 |
-| `loom/test-reports/pending-validations.md` | 修改 | 登记 Codex CLI reviewer fallback 的路由逻辑待验证项 |
+| `loom/dispatcher/agent-adapters.md` | 修改 | 记录 Codex CLI 的 headless 调用模板、stdin 输入通道和 stdout/stderr 噪声隔离约束 |
+| `loom/test-reports/pending-validations.md` | 修改 | 登记 Codex CLI reviewer fallback 的路由逻辑、stdin 输入与进程组 timeout 待验证项 |
 | `README.md` | 修改 | 快速开始中补充 Codex CLI 作为可用宿主 / AI CLI |
 | `compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md` | 修改 | 同步归档本轮最终阻塞、最新 review/redteam 结论与最后一轮 acceptance 安全修补 |
 
@@ -140,7 +144,7 @@
 此前最后一轮 review 又挖出一个遗留 helper，会对真实仓库 `compass/docs/task-reports` 直接执行 glob delete。这个 helper 已被移除，当前回归路径不再具备“为了清 acceptance 痕迹而误删真实 task report”的能力。
 
 第六，独立评审执行器现在也不再把“CLI 二进制存在”误当成“当前健康可用”。
-`redcap-on-stop-review.sh` 现在按 `codex → gemini → copilot → claude → kimi` 顺序尝试独立评审；对 timeout、auth failure、空输出会自动 fallback，而不是像旧逻辑那样一旦命中未登录的 `kimi` 就把整个真实 `session-end` 误判成 review P0。与此同时，`redcap-layerB-session-end.sh` 会透传真实宿主身份，避免 Copilot 场景下的 review log / review gap 继续写死成 `claude`。Codex 路径使用 `codex exec -C <repo> --sandbox read-only --ephemeral --output-last-message <file> --color never`，并优先读取 last-message 文件作为 review payload；stdout/stderr 里的 banner、插件预热 warning、网络重连提示只按 transport noise 处理。timeout 路径现在用独立进程组启动 reviewer CLI，并在超时时对整个进程组发送终止信号，避免 Gemini / Node 这类子进程在父进程被杀后继续逃逸。在 runner 判定顺序上，也把 structured review payload 和 transport noise 分离处理：结构化 `PASS/FAIL` 只从主 review output 中解析，stderr 与 JSON 外残余文本才参与 transport failure 识别；非零退出即使夹带 `result: PASS/FAIL` token 也不会被当成合法评审，成功退出但不可解析的输出会继续 fallback 到下一个 reviewer，而文本兜底也只认独立的 `PASS/FAIL` 结果行，避免把 `fail-closed` 之类正常说明句误打成 FAIL。对于 fenced JSON，parser 现在同时接受 bare fence、` ```json `、以及 ` ```JSON ` 这类大小写变体；更重要的是，不再“见到第一个 bare fence 就吃掉”，而是扫描所有候选 block，优先 `json` tag，其次 bare fence，并只接受**真正能 parse 成 JSON** 的候选。对于 transport failure detector，则只认**整行** CLI 错误形状，而不再对 residual prose 做宽子串命中，避免 JSON fence 外的正常说明句反过来误杀合法 structured review。最后，detector 采用了非对称语义：纯错误流仍按任意行命中；只要 stdout 已拿到 structured `PASS/FAIL`，stderr 就允许用 `failure-block` 识别 `error line + Hint:` 这类真实 transport failure，而 stdout residual 继续保持更严格的纯错误块判定，因此 `Observed failing path:` 或原样引用的错误块不会被轻易误杀。
+`redcap-on-stop-review.sh` 现在按 `codex → gemini → copilot → claude → kimi` 顺序尝试独立评审；对 timeout、auth failure、空输出会自动 fallback，而不是像旧逻辑那样一旦命中未登录的 `kimi` 就把整个真实 `session-end` 误判成 review P0。与此同时，`redcap-layerB-session-end.sh` 会透传真实宿主身份，避免 Copilot 场景下的 review log / review gap 继续写死成 `claude`。Codex 路径使用 `codex exec -C <repo> --sandbox read-only --ephemeral --output-last-message <file> --color never -`，并优先读取 last-message 文件作为 review payload；review prompt 会先写入临时文件再通过 stdin 输入，避免 shell / argv 承载长 diff 与中文规范正文；stdout/stderr 里的 banner、插件预热 warning、网络重连提示只按 transport noise 处理。timeout 路径现在用独立进程组启动 reviewer CLI，并在超时时对整个进程组发送终止信号，避免 Gemini / Node 这类子进程在父进程被杀后继续逃逸。在 runner 判定顺序上，也把 structured review payload 和 transport noise 分离处理：结构化 `PASS/FAIL` 只从主 review output 中解析，stderr 与 JSON 外残余文本才参与 transport failure 识别；非零退出即使夹带 `result: PASS/FAIL` token 也不会被当成合法评审，成功退出但不可解析的输出会继续 fallback 到下一个 reviewer，而文本兜底也只认独立的 `PASS/FAIL` 结果行，避免把 `fail-closed` 之类正常说明句误打成 FAIL。对于 fenced JSON，parser 现在同时接受 bare fence、` ```json `、以及 ` ```JSON ` 这类大小写变体；更重要的是，不再“见到第一个 bare fence 就吃掉”，而是扫描所有候选 block，优先 `json` tag，其次 bare fence，并只接受**真正能 parse 成 JSON** 的候选。对于 transport failure detector，则只认**整行** CLI 错误形状，而不再对 residual prose 做宽子串命中，避免 JSON fence 外的正常说明句反过来误杀合法 structured review。最后，detector 采用了非对称语义：纯错误流仍按任意行命中；只要 stdout 已拿到 structured `PASS/FAIL`，stderr 就允许用 `failure-block` 识别 `error line + Hint:` 这类真实 transport failure，而 stdout residual 继续保持更严格的纯错误块判定，因此 `Observed failing path:` 或原样引用的错误块不会被轻易误杀。
 
 第七，`on-complete` 的 validator host 现在不再由项目名或陈旧环境变量隐式决定。
 `redcap-layerB-task-complete-guard.sh` 调用 `redcap-on-complete.sh` 时，会把当前 guard 收到的宿主参数写成 `REDCAP_ON_COMPLETE_HOST="$HOST"`，并覆盖外层可能残留的旧值。`redcap-on-complete.sh` 自己再按“显式 host → `host/<宿主>/session/<会话>` 绑定身份 → `REDCAP_RUNTIME_HOST` → `redcap` 兜底”的顺序解析 validator host，然后同时传给 validator chain 的第二个参数和 `REDCAP_RUNTIME_HOST` 环境变量。这样即使外层残留 `REDCAP_RUNTIME_HOST=claude`，Copilot 的 `task-complete` 收尾也会继续以 `copilot` 身份进入 validator / report register 链。
@@ -194,7 +198,8 @@
 | acceptance 隔离稳态回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-concurrency && bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-rewrite && bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-prefers-anchor` | ✅ |
 | stop-review runner 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-timeout && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-auth-failure && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-auth-failure-with-result-token && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-unparseable-success-output && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-structured-pass-with-auth-error-line && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-auth-terms && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-auth-prose-outside-fence && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-quoted-cli-error-block-in-stdout-residual && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-quoted-cli-error-in-stdout-prose && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-lowercase-structured-result && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-raw-json-with-stderr-auth-terms && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-structured-pass-with-stderr-auth-error-line && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-structured-pass-with-stderr-auth-error-and-hint && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-quoted-cli-error-in-stderr-prose && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-plain-text-pass-with-fail-closed && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-uppercase-fenced-json && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-bare-fenced-json && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-json-fence-after-nonjson-bare-fence` | ✅ |
 | Codex CLI 冒烟 | `codex exec -C "$PWD" --sandbox read-only --output-last-message <tmp> '严格只输出一行：PASS'` | ✅ |
-| Codex reviewer fallback 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-to-codex-after-unavailable-reviewers` | ✅ |
+| Codex reviewer fallback / stdin prompt 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-to-codex-after-unavailable-reviewers` | ✅ |
+| reviewer timeout 进程组回归 | `bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-timeout` | ✅ |
 | on-complete host 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-passes-host-to-on-complete && bash compass/tools/redcap-multi-session-acceptance.sh on-complete-uses-explicit-validator-host && bash compass/tools/redcap-multi-session-acceptance.sh on-complete-prefers-binding-host-over-stale-runtime-host` | ✅ |
 | session-end pending refresh 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-compatible-pending-refresh && bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-all-matching-pending-states` | ✅ |
 | session-end 周边回归 | `bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-after-clear && bash compass/tools/redcap-multi-session-acceptance.sh session-end-notify-timeout-releases-lock && bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-keeps-report-anchor && bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-normalizes-absolute-report-anchor` | ✅ |
@@ -206,7 +211,7 @@
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
-- [ ] 形成 Codex reviewer fallback follow-up commit 后，再对真实 Copilot runtime 重跑 `on-complete / session-end / 飞书通知`，确认最终完成通知真的发出，且不再留下 `required_redlines=review`。
+- [ ] 形成 Codex stdin prompt follow-up commit 后，再对真实 Copilot runtime 重跑 `on-complete / session-end / 飞书通知`，确认最终完成通知真的发出，且不再留下 `required_redlines=review`。
 
 ---
 
@@ -216,7 +221,7 @@
 
 | 问题 | 原因 | 建议优先级 |
 |------|------|----------|
-| live runtime 最终完成通知仍需在 Codex reviewer fallback 补丁上再次跑通 | 上一轮真实 `session-end` 已证明除 review 外的 validator 链全部 PASS；最终仍要以本报告为锚点确认 Codex fallback 后 pending closure 被清掉 | P0 |
+| live runtime 最终完成通知仍需在 Codex stdin prompt 补丁上再次跑通 | 上一轮真实 `session-end` 已证明除 review 外的 validator 链全部 PASS；最终仍要以本报告为锚点确认 Codex fallback 能正常进入并清掉 pending closure | P0 |
 
 ### 6.2 触发的新问题
 

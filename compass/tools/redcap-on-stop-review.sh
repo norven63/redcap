@@ -324,9 +324,10 @@ run_review_command_with_timeout() {
     local timeout="$1"
     local stdout_file="$2"
     local stderr_file="$3"
+    local stdin_file="${REDCAP_REVIEW_COMMAND_STDIN_FILE:-}"
     shift 3
 
-    python3 - "$timeout" "$stdout_file" "$stderr_file" "$@" <<'PY'
+    python3 - "$timeout" "$stdout_file" "$stderr_file" "$stdin_file" "$@" <<'PY'
 import os
 import signal
 import subprocess
@@ -336,13 +337,19 @@ from pathlib import Path
 timeout = int(sys.argv[1])
 stdout_path = Path(sys.argv[2])
 stderr_path = Path(sys.argv[3])
-cmd = sys.argv[4:]
+stdin_file = sys.argv[4]
+cmd = sys.argv[5:]
+stdin_text = None
+
+if stdin_file:
+    stdin_text = Path(stdin_file).read_text(encoding="utf-8", errors="replace")
 
 def write_text(path, text):
     path.write_text(text or "", encoding="utf-8", errors="replace")
 
 proc = subprocess.Popen(
     cmd,
+    stdin=subprocess.PIPE if stdin_text is not None else None,
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
     text=True,
@@ -350,7 +357,7 @@ proc = subprocess.Popen(
 )
 
 try:
-    stdout, stderr = proc.communicate(timeout=timeout)
+    stdout, stderr = proc.communicate(input=stdin_text, timeout=timeout)
     write_text(stdout_path, stdout or "")
     write_text(stderr_path, stderr or "")
     sys.exit(proc.returncode)
@@ -387,6 +394,7 @@ run_review_with_agent() {
     local stdout_file=""
     local stderr_file=""
     local message_file=""
+    local prompt_file=""
 
     timeout="$(review_agent_timeout "$agent")"
     stdout_file="$(mktemp)"
@@ -401,7 +409,10 @@ run_review_with_agent() {
             ;;
         codex)
             message_file="$(mktemp)"
-            run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" codex exec -C "$REDCAP_ROOT" --sandbox read-only --ephemeral --output-last-message "$message_file" --color never "$REVIEW_PROMPT" || status=$?
+            prompt_file="$(mktemp)"
+            printf '%s' "$REVIEW_PROMPT" >"$prompt_file"
+            REDCAP_REVIEW_COMMAND_STDIN_FILE="$prompt_file" \
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" codex exec -C "$REDCAP_ROOT" --sandbox read-only --ephemeral --output-last-message "$message_file" --color never - || status=$?
             ;;
         claude)
             run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" claude -p "$REVIEW_PROMPT" --output-format text || status=$?
@@ -421,7 +432,7 @@ run_review_with_agent() {
     if [[ -n "$message_file" && -s "$message_file" ]]; then
         output="$(cat "$message_file")"
     fi
-    rm -f "$stdout_file" "$stderr_file" "$message_file"
+    rm -f "$stdout_file" "$stderr_file" "$message_file" "$prompt_file"
 
     if [[ -z "${output//[[:space:]]/}" ]]; then
         output="$stderr_output"

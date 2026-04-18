@@ -3351,7 +3351,7 @@ run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case() 
 
 run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case() {
     local case_name="on-stop-review-falls-back-to-codex-after-unavailable-reviewers"
-    local case_dir fake_bin head_file review_result review_log baseline output status
+    local case_dir fake_bin head_file review_result review_log baseline output status codex_argv codex_stdin
 
     log "case: $case_name"
 
@@ -3367,20 +3367,40 @@ exit 1
 EOF
     chmod +x "$fake_bin/gemini"
 
+    codex_argv="$case_dir/codex-argv.txt"
+    codex_stdin="$case_dir/codex-stdin.txt"
     cat >"$fake_bin/codex" <<'EOF'
 #!/usr/bin/env bash
+: "${REDCAP_FAKE_CODEX_ARGV:?}"
+: "${REDCAP_FAKE_CODEX_STDIN:?}"
 message_file=""
+stdin_requested=""
+printf '%s\n' "$@" >"$REDCAP_FAKE_CODEX_ARGV"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --output-last-message)
             message_file="$2"
             shift 2
             ;;
+        -)
+            stdin_requested=1
+            shift
+            ;;
         *)
             shift
             ;;
     esac
 done
+cat >"$REDCAP_FAKE_CODEX_STDIN"
+
+if [[ -z "$stdin_requested" ]]; then
+    printf '%s\n' 'codex prompt was not requested via stdin' >&2
+    exit 2
+fi
+if ! grep -q '你是一位独立的代码架构评审员' "$REDCAP_FAKE_CODEX_STDIN"; then
+    printf '%s\n' 'codex stdin did not contain the review prompt' >&2
+    exit 2
+fi
 
 printf '%s\n' 'Codex CLI banner that must not become the review payload.'
 printf '%s\n' 'Reading additional input from stdin...' >&2
@@ -3412,6 +3432,8 @@ EOF
     output="$(
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_FAKE_CODEX_ARGV="$codex_argv" \
+            REDCAP_FAKE_CODEX_STDIN="$codex_stdin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,codex" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -3427,6 +3449,13 @@ EOF
     [[ "$status" -eq 0 ]] || fail "codex fallback case failed: $output"
     assert_exists "$review_result"
     assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$codex_argv"
+    assert_exists "$codex_stdin"
+    assert_string_contains "$(read_file_text "$codex_argv")" "-"
+    assert_string_contains "$(read_file_text "$codex_stdin")" "你是一位独立的代码架构评审员"
+    if [[ "$(read_file_text "$codex_argv")" == *"你是一位独立的代码架构评审员"* ]]; then
+        fail "codex review prompt leaked into argv"
+    fi
     assert_exists "$review_log"
     assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: codex"
     assert_string_contains "$(read_file_text "$review_log")" "codex fallback ok"
