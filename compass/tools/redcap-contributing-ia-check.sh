@@ -52,7 +52,7 @@ for heading in [
     if heading not in full:
         fail(f"CONTRIBUTING missing routed heading: {heading}")
 
-for rel in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
+for rel in ("CLAUDE.md", "GEMINI.md"):
     text = read(rel)
     if len(text.splitlines()) > 80:
         fail(f"{rel} must remain a thin host shim, not a second handbook")
@@ -68,6 +68,17 @@ for rel in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
     at_lines = [line.strip() for line in text.splitlines() if line.strip().startswith("@")]
     if at_lines != ["@compass/soul.md", "@compass/CONTRIBUTING.core.md"]:
         fail(f"{rel} must only auto-import soul + CONTRIBUTING core")
+
+agents_path = root / "AGENTS.md"
+if agents_path.is_file():
+    text = read("AGENTS.md")
+    if len(text.splitlines()) > 80:
+        fail("AGENTS.md must remain a thin local Codex shim, not a second handbook")
+    if "@compass/CONTRIBUTING.core.md" not in text or "@compass/soul.md" not in text:
+        fail("AGENTS.md must keep soul + CONTRIBUTING core startup imports")
+    for forbidden in ("@compass/CONTRIBUTING.md", "@compass/knowledge/lessons.md"):
+        if any(line.strip() == forbidden for line in text.splitlines()):
+            fail(f"AGENTS.md must not auto-import large file: {forbidden}")
 
 copilot = read(".github/copilot-instructions.md")
 if len(copilot.splitlines()) > 80:

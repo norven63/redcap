@@ -157,6 +157,9 @@ run_control_plane_start_sync() {
     local sync_runtime_capability=""
     local sync_runtime_binding_key="${REDCAP_SESSION_BINDING_KEY:-}"
     local sync_runtime_host="$HOST"
+    local control_plane_output=""
+    local control_plane_status=0
+    local control_plane_label="validator-chain"
 
     if [[ "${REDCAP_SESSION_ISOLATION_MODE:-}" == "full" ]] && [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" ]] && redcap_runtime_assert_capability; then
         sync_runtime_session_id="${REDCAP_RUNTIME_SESSION_ID:-}"
@@ -168,15 +171,36 @@ run_control_plane_start_sync() {
     VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
     PM_GATE_CHECK="$SCRIPT_DIR/redcap-pm-gate-check.sh"
     if [[ -x "$VALIDATOR_CHAIN" ]]; then
-        REDCAP_RUNTIME_SESSION_ID="$sync_runtime_session_id" \
-        REDCAP_RUNTIME_CAPABILITY="$sync_runtime_capability" \
-        REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
-        bash "$VALIDATOR_CHAIN" session-start "$HOST" "$REDCAP_ROOT/.dev-task.md" "" "" text >/dev/null || true
+        set +e
+        control_plane_output="$(
+            REDCAP_RUNTIME_SESSION_ID="$sync_runtime_session_id" \
+            REDCAP_RUNTIME_CAPABILITY="$sync_runtime_capability" \
+            REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
+            bash "$VALIDATOR_CHAIN" session-start "$HOST" "$REDCAP_ROOT/.dev-task.md" "" "" text 2>&1
+        )"
+        control_plane_status=$?
+        set -e
     elif [[ -x "$PM_GATE_CHECK" ]]; then
-        REDCAP_RUNTIME_SESSION_ID="$sync_runtime_session_id" \
-        REDCAP_RUNTIME_CAPABILITY="$sync_runtime_capability" \
-        REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
-        bash "$PM_GATE_CHECK" session-start "$HOST" "$REDCAP_ROOT/.dev-task.md" >/dev/null || true
+        control_plane_label="pm-gate-fallback"
+        set +e
+        control_plane_output="$(
+            REDCAP_RUNTIME_SESSION_ID="$sync_runtime_session_id" \
+            REDCAP_RUNTIME_CAPABILITY="$sync_runtime_capability" \
+            REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
+            bash "$PM_GATE_CHECK" session-start "$HOST" "$REDCAP_ROOT/.dev-task.md" 2>&1
+        )"
+        control_plane_status=$?
+        set -e
+    fi
+
+    if [[ "$control_plane_status" -ne 0 ]]; then
+        redcap_runtime_record_degraded_mode \
+            "$HOOK_CWD" \
+            "layerB-session-start-control-gate-failed" \
+            "host=$HOST check=$control_plane_label status=$control_plane_status" || true
+        if [[ -n "$control_plane_output" ]]; then
+            printf '%s\n' "$control_plane_output" >&2
+        fi
     fi
 
     HOST_WORKBOARD_SYNC="$SCRIPT_DIR/redcap-host-workboard-sync.sh"

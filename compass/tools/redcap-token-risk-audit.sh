@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Read-only audit for repository areas that can accidentally flood agent context.
+# Audit for repository areas that can accidentally flood agent context.
 
 set -euo pipefail
 
@@ -41,10 +41,13 @@ COPILOT_FORBIDDEN_FULL_READS = [
 ]
 
 ENTRY_FILES = [
-    "AGENTS.md",
     "CLAUDE.md",
     "GEMINI.md",
     ".github/copilot-instructions.md",
+]
+
+OPTIONAL_LOCAL_ENTRY_FILES = [
+    "AGENTS.md",
 ]
 
 
@@ -140,6 +143,27 @@ for rel in ENTRY_FILES:
         for token in COPILOT_FORBIDDEN_FULL_READS:
             if token in text:
                 entry_failures.append(f"{rel} still requires full read: {token}")
+    for required in [
+        "compass/CONTRIBUTING.core.md",
+        "redcap-current-status.sh",
+        "compass/knowledge/index.md",
+        "redcap-docs-catalog.sh",
+    ]:
+        if required not in text:
+            entry_failures.append(f"{rel} missing progressive entry hint: {required}")
+
+if entry_failures:
+    fail("; ".join(entry_failures))
+
+for rel in OPTIONAL_LOCAL_ENTRY_FILES:
+    path = root / rel
+    if not path.is_file():
+        continue
+    text = path.read_text(encoding="utf-8")
+    for token in FORBIDDEN_AUTO_IMPORTS:
+        for raw in text.splitlines():
+            if raw.strip() == "@" + token:
+                entry_failures.append(f"{rel} still auto-imports large file: @{token}")
     for required in [
         "compass/CONTRIBUTING.core.md",
         "redcap-current-status.sh",

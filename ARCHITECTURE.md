@@ -136,7 +136,12 @@ RedCap 当前把状态面划分为三类：
 这里还要额外加一条资产边界：**共享宿主 skill 是 carrier-owned overlay，不是 RedCap 的 patch surface**。  
 RedCap 可以消费它们的能力，但不能把“修改宿主 shared skill 原始文件”当成自身能力成立的前提；若不改宿主 skill 就无法稳定工作，该路径只能被标记为 **degraded / unsupported overlay**。
 
-同时，宿主入口文件（`AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.github/copilot-instructions.md`）必须被看作 **carrier-required shims**：
+同时，宿主入口文件需要拆成两类看待，也就是 RedCap 的 **carrier-required shims** 与本地可选 carrier shim：
+
+- `CLAUDE.md`、`GEMINI.md`、`.github/copilot-instructions.md` 是 **repo-tracked carrier shims**；
+- `AGENTS.md` 是 **Codex 本地 carrier shim**，可以存在于工作区，但当前不再被 RedCap 当成 fresh clone 必备输入。
+
+这些 shims 的共同原则仍然是：
 
 - 它们分名存在，是因为各宿主只会自动加载自己的固定文件名；
 - 它们的职责只是把会话导向同一套 `soul + CONTRIBUTING.core + current-status + index` 首读链；

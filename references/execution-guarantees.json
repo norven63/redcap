@@ -58,7 +58,6 @@
       "rule": "New sessions must restore identity, soul, CONTRIBUTING, lessons, design principles, and the current task anchor before doing work.",
       "source_paths": [
         "compass/soul.md#6",
-        "AGENTS.md",
         "CLAUDE.md",
         "GEMINI.md",
         ".github/copilot-instructions.md"
@@ -208,7 +207,6 @@
       "automation": "revival-check verifies all host entries point at soul and the revival protocol lists identity restoration.",
       "guarantee_paths": [
         "compass/tools/redcap-revival-check.sh",
-        "AGENTS.md",
         "CLAUDE.md",
         "GEMINI.md",
         ".github/copilot-instructions.md"
@@ -525,7 +523,6 @@
       "priority": "P0",
       "rule": "New sessions and framework changes must not reintroduce large-file auto-imports, unguarded giant tracked files, or unmanaged ignored runtime directories that can flood agent context.",
       "source_paths": [
-        "AGENTS.md",
         "CLAUDE.md",
         "GEMINI.md",
         ".github/copilot-instructions.md",
@@ -554,7 +551,6 @@
       "source_paths": [
         "compass/CONTRIBUTING.md",
         "compass/CONTRIBUTING.core.md",
-        "AGENTS.md",
         ".github/copilot-instructions.md"
       ],
       "auto_enforceable": true,

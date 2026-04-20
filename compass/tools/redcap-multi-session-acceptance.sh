@@ -104,6 +104,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-retries-after-report-change
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-to-codex-after-unavailable-reviewers
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-records-unavailable-rate-limit
+  bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-rejects-invalid-track-structure
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-after-clear
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-notify-timeout-releases-lock
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-keeps-report-anchor
@@ -111,6 +112,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh pending-closure-lock-keeps-live-legacy-lock
   bash compass/tools/redcap-multi-session-acceptance.sh pending-closure-lock-prunes-reused-pid
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-runtime-init-failed-degrades
+  bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-control-gate-failure-degrades
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-clear-context-clears-probe-pid
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-claim-parent-fallback
   bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-classifier
@@ -3283,7 +3285,7 @@ EOF
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 Authorization failed, please check your login status
 OUT
@@ -3299,7 +3301,7 @@ EOF
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"copilot fallback ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"copilot fallback ok"}
 ```
 OUT
 EOF
@@ -3435,13 +3437,13 @@ printf '%s\n' 'WARN codex plugin prewarm failed; continuing.' >&2
 if [[ -n "$message_file" ]]; then
     cat >"$message_file" <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"codex fallback ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"codex fallback ok"}
 ```
 OUT
 else
     cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"codex fallback ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"codex fallback ok"}
 ```
 OUT
 fi
@@ -3543,8 +3545,8 @@ EOF
     [[ "$output" != *"command not found"* ]] || fail "unavailable rate-limit case leaked shell expansion error: $output"
 }
 
-run_on_stop_review_accepts_structured_review_with_auth_terms_case() {
-    local case_name="on-stop-review-accepts-structured-review-with-auth-terms"
+run_on_stop_review_rejects_invalid_track_structure_case() {
+    local case_name="on-stop-review-rejects-invalid-track-structure"
     local case_dir fake_bin head_file review_result review_log baseline output status
 
     log "case: $case_name"
@@ -3558,7 +3560,7 @@ run_on_stop_review_accepts_structured_review_with_auth_terms_case() {
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"unauthorized path is covered and remains fail-closed"}
+{"result":"PASS","issues":[],"summary":"legacy schema must be rejected"}
 ```
 OUT
 EOF
@@ -3575,10 +3577,63 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -ne 0 ]] || fail "invalid track structure case unexpectedly passed"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "FAIL"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "独立评审不可用"
+    assert_string_contains "$(read_file_text "$review_log")" "gemini:invalid-track-structure"
+    assert_string_contains "$output" "gemini:invalid-track-structure"
+}
+
+run_on_stop_review_accepts_structured_review_with_auth_terms_case() {
+    local case_name="on-stop-review-accepts-structured-review-with-auth-terms"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+```json
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"unauthorized path is covered and remains fail-closed"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3609,7 +3664,7 @@ run_on_stop_review_accepts_structured_review_with_auth_prose_outside_fence_case(
 cat <<'OUT'
 The authentication failed path remains fail-closed.
 ```json
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 OUT
 EOF
@@ -3626,10 +3681,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3661,7 +3717,7 @@ cat <<'OUT'
 Observed failing path:
 Authorization failed, please check your login status
 ```json
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 OUT
 EOF
@@ -3678,10 +3734,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3711,7 +3768,7 @@ run_on_stop_review_accepts_structured_review_with_quoted_cli_error_block_in_stdo
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 Authorization failed, please check your login status
 Hint: run login again
@@ -3730,10 +3787,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3763,7 +3821,7 @@ run_on_stop_review_accepts_lowercase_structured_result_case() {
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"pass","issues":[],"summary":"ok"}
+{"result":"pass","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 OUT
 EOF
@@ -3780,10 +3838,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3811,7 +3870,7 @@ run_on_stop_review_accepts_raw_json_with_stderr_auth_terms_case() {
 
     cat >"$fake_bin/gemini" <<'EOF'
 #!/usr/bin/env bash
-printf '%s\n' '{"result":"PASS","issues":[],"summary":"ok"}'
+printf '%s\n' '{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}'
 printf '%s\n' 'unauthorized path remains fail-closed' >&2
 EOF
     chmod +x "$fake_bin/gemini"
@@ -3827,10 +3886,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3860,7 +3920,7 @@ run_on_stop_review_falls_back_after_structured_pass_with_stderr_auth_error_line_
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 OUT
 printf '%s\n' 'Authorization failed, please check your login status' >&2
@@ -3871,7 +3931,7 @@ EOF
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"copilot fallback ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"copilot fallback ok"}
 ```
 OUT
 EOF
@@ -3888,10 +3948,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,copilot" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3921,7 +3982,7 @@ run_on_stop_review_falls_back_after_structured_pass_with_stderr_auth_error_and_h
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 OUT
 cat >&2 <<'ERR'
@@ -3935,7 +3996,7 @@ EOF
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"copilot fallback ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"copilot fallback ok"}
 ```
 OUT
 EOF
@@ -3952,10 +4013,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,copilot" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3985,7 +4047,7 @@ run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stderr_pro
 #!/usr/bin/env bash
 cat <<'OUT'
 ```json
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 OUT
 cat >&2 <<'ERR'
@@ -4006,10 +4068,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4055,10 +4118,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4088,7 +4152,7 @@ run_on_stop_review_accepts_uppercase_fenced_json_case() {
 #!/usr/bin/env bash
 cat <<'OUT'
 ```JSON
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 OUT
 EOF
@@ -4105,10 +4169,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4138,7 +4203,7 @@ run_on_stop_review_accepts_bare_fenced_json_case() {
 #!/usr/bin/env bash
 cat <<'OUT'
 ```
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 OUT
 EOF
@@ -4155,10 +4220,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4193,7 +4259,7 @@ Authorization failed, please check your login status
 ```
 
 ```json
-{"result":"PASS","issues":[],"summary":"ok"}
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"ok"}
 ```
 OUT
 EOF
@@ -4210,10 +4276,11 @@ EOF
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -5001,6 +5068,61 @@ run_sessionstart_runtime_init_failed_degrades_case() {
     assert_eq "$(workboard_value "$workboard" "continuity_authority")" "degraded-no-runtime-manifest"
     assert_eq "$(workboard_value "$workboard" "import_protocol")" "runtime-session-unavailable"
     assert_eq "$(workboard_value "$workboard" "import_ready_signal")" "blocked-no-runtime"
+}
+
+run_sessionstart_control_gate_failure_degrades_case() {
+    local case_root case_core fixture_root workboard compat_dir degraded_log output
+    local task_id top_goal active_slice confirmed_hash
+
+    log "case: sessionstart-control-gate-failure-degrades"
+
+    task_id="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "task_id")"
+    top_goal="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "top_goal")"
+    active_slice="$(redcap_dev_task_extract_kv "$REDCAP_ROOT/.dev-task.md" "active_slice")"
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
+    case_root="$ACCEPT_ROOT/sessionstart-control-gate-failure-degrades"
+    case_core="$CONTINUITY_CORE_DIR/sessionstart-control-gate-failure-degrades"
+    fixture_root="$case_root/repo"
+    workboard="$case_root/plan.md"
+
+    mkdir -p "$fixture_root/compass"
+    cp -R "$REDCAP_ROOT/compass/tools" "$fixture_root/compass/"
+    cp "$REDCAP_ROOT/.dev-task.md" "$fixture_root/.dev-task.md"
+    chmod +x "$fixture_root/compass/tools/"*.sh
+
+    cat >"$fixture_root/compass/tools/redcap-validator-chain.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "fixture validator failure" >&2
+exit 37
+EOF
+    chmod +x "$fixture_root/compass/tools/redcap-validator-chain.sh"
+
+    write_workboard_fixture "$workboard" "$fixture_root/.dev-task.md" "$task_id" "$top_goal" "$active_slice" "$confirmed_hash"
+
+    output="$(
+        printf '{}' | \
+            REDCAP_HOOK_CWD="$fixture_root" \
+            REDCAP_HOST_WORKBOARD_PATH="$workboard" \
+            REDCAP_CONTINUITY_ROOT_DIR="$case_core" \
+            REDCAP_SKIP_FEISHU=1 \
+            REDCAP_SESSION_ISOLATION_MODE="degraded" \
+            REDCAP_SESSION_RESUME_REASON="acceptance-control-gate" \
+            REDCAP_SESSION_RESUME_PROFILE="safe-degraded" \
+            REDCAP_SESSION_RESUME_EVIDENCE="acceptance-fixture" \
+            REDCAP_SESSION_RESUME_RECOVERY_PATH="safe-degraded" \
+            REDCAP_SESSION_RESUME_ALLOW_DISK_RECOVERY="0" \
+            REDCAP_SESSION_RESUME_ALLOW_CAPABILITY_FILE_RECOVERY="0" \
+            REDCAP_HOST_PROCESS_PID="$$" \
+            bash "$fixture_root/compass/tools/redcap-layerB-session-start.sh" "claude" 2>&1
+    )"
+
+    assert_string_contains "$output" "fixture validator failure"
+    compat_dir="$(redcap_runtime_compat_dir_for_root "$fixture_root")"
+    degraded_log="$compat_dir/degraded-mode.log"
+    assert_exists "$degraded_log"
+    assert_contains "$degraded_log" "layerB-session-start-control-gate-failed"
+    assert_contains "$degraded_log" "check=validator-chain status=37"
+    assert_eq "$(workboard_value "$workboard" "isolation_mode")" "degraded"
 }
 
 run_continuity_manifest_sync_case() {
@@ -6449,7 +6571,9 @@ run_revival_protocol_check_case() {
     mkdir -p "$fixture/compass" "$fixture/compass/docs" "$fixture/compass/knowledge" "$fixture/loom/dispatcher" "$fixture/references" "$fixture/.github"
     cp "$REDCAP_ROOT/compass/soul.md" "$fixture/compass/soul.md"
     cp "$REDCAP_ROOT/compass/knowledge/index.md" "$fixture/compass/knowledge/index.md"
-    cp "$REDCAP_ROOT/AGENTS.md" "$fixture/AGENTS.md"
+    if [[ -f "$REDCAP_ROOT/AGENTS.md" ]]; then
+        cp "$REDCAP_ROOT/AGENTS.md" "$fixture/AGENTS.md"
+    fi
     cp "$REDCAP_ROOT/CLAUDE.md" "$fixture/CLAUDE.md"
     cp "$REDCAP_ROOT/GEMINI.md" "$fixture/GEMINI.md"
     cp "$REDCAP_ROOT/.github/copilot-instructions.md" "$fixture/.github/copilot-instructions.md"
@@ -6523,7 +6647,6 @@ run_token_risk_audit_case() {
     fixture="$ACCEPT_ROOT/token-risk-fixture"
     mkdir -p "$fixture"
     init_temp_git_repo "$fixture"
-    cp -R "$REDCAP_ROOT/AGENTS.md" "$fixture/AGENTS.md"
     cp -R "$REDCAP_ROOT/CLAUDE.md" "$fixture/CLAUDE.md"
     cp -R "$REDCAP_ROOT/GEMINI.md" "$fixture/GEMINI.md"
     mkdir -p "$fixture/.github" "$fixture/compass/tools" "$fixture/compass/docs" "$fixture/compass/knowledge"
@@ -6538,7 +6661,7 @@ run_token_risk_audit_case() {
     chmod +x "$fixture/compass/tools/redcap-token-risk-audit.sh"
     git -C "$fixture" add . >/dev/null
     git -C "$fixture" commit --quiet -m "token risk fixture"
-    printf '\n@compass/CONTRIBUTING.md\n' >>"$fixture/AGENTS.md"
+    printf '\n@compass/CONTRIBUTING.md\n' >>"$fixture/CLAUDE.md"
 
     set +e
     stale_output="$(bash "$fixture/compass/tools/redcap-token-risk-audit.sh" 2>&1)"
@@ -6558,7 +6681,6 @@ run_contributing_ia_check_case() {
 
     fixture="$ACCEPT_ROOT/contributing-ia-fixture"
     mkdir -p "$fixture/.github" "$fixture/compass/tools" "$fixture/references" "$fixture/compass"
-    cp "$REDCAP_ROOT/AGENTS.md" "$fixture/AGENTS.md"
     cp "$REDCAP_ROOT/CLAUDE.md" "$fixture/CLAUDE.md"
     cp "$REDCAP_ROOT/GEMINI.md" "$fixture/GEMINI.md"
     cp "$REDCAP_ROOT/.github/copilot-instructions.md" "$fixture/.github/copilot-instructions.md"
@@ -6568,7 +6690,7 @@ run_contributing_ia_check_case() {
     cp "$REDCAP_ROOT/compass/tools/redcap-token-risk-audit.sh" "$fixture/compass/tools/redcap-token-risk-audit.sh"
     cp "$REDCAP_ROOT/compass/tools/redcap-contributing-ia-check.sh" "$fixture/compass/tools/redcap-contributing-ia-check.sh"
     cp "$REDCAP_ROOT/references/review-tracks.json" "$fixture/references/review-tracks.json"
-    printf '\n@compass/CONTRIBUTING.md\n' >>"$fixture/AGENTS.md"
+    printf '\n@compass/CONTRIBUTING.md\n' >>"$fixture/CLAUDE.md"
     set +e
     stale_output="$(bash "$fixture/compass/tools/redcap-contributing-ia-check.sh" 2>&1)"
     stale_status=$?
@@ -7412,6 +7534,7 @@ run_all_cases() {
     run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case
     run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
     run_on_stop_review_records_unavailable_rate_limit_case
+    run_on_stop_review_rejects_invalid_track_structure_case
     run_on_stop_review_accepts_structured_review_with_auth_terms_case
     run_on_stop_review_accepts_structured_review_with_auth_prose_outside_fence_case
     run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stdout_prose_case
@@ -7432,6 +7555,7 @@ run_all_cases() {
     run_pending_closure_lock_keeps_live_legacy_lock_case
     run_pending_closure_lock_prunes_reused_pid_case
     run_sessionstart_runtime_init_failed_degrades_case
+    run_sessionstart_control_gate_failure_degrades_case
     run_runtime_clear_context_clears_probe_pid_case
     run_runtime_claim_parent_fallback_case
     run_artifact_lifecycle_classifier_case
@@ -7669,6 +7793,9 @@ case "$COMMAND" in
     on-stop-review-records-unavailable-rate-limit)
         run_on_stop_review_records_unavailable_rate_limit_case
         ;;
+    on-stop-review-rejects-invalid-track-structure)
+        run_on_stop_review_rejects_invalid_track_structure_case
+        ;;
     on-stop-review-accepts-structured-review-with-auth-terms)
         run_on_stop_review_accepts_structured_review_with_auth_terms_case
         ;;
@@ -7728,6 +7855,9 @@ case "$COMMAND" in
         ;;
     sessionstart-runtime-init-failed-degrades)
         run_sessionstart_runtime_init_failed_degrades_case
+        ;;
+    sessionstart-control-gate-failure-degrades)
+        run_sessionstart_control_gate_failure_degrades_case
         ;;
     runtime-clear-context-clears-probe-pid)
         run_runtime_clear_context_clears_probe_pid_case

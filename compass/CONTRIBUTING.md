@@ -355,7 +355,7 @@ python3 compass/tools/feishu-notifier.py pending-list --limit 5
 | loom/dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 + compass/knowledge/a2a-communication.md §2 |
 | loom/dispatcher/state-machine.md 状态枚举 | compass/knowledge/a2a-communication.md §4（NEGOTIATING 状态同步） |
 | SKILL.md §5.10 Hooks 表 | loom/dispatcher/state-machine.md `populate_pending_actions` + SKILL.md §5.13 映射表 |
-| CONTRIBUTING.md 自身 | `compass/CONTRIBUTING.core.md` + .github/copilot-instructions.md + AGENTS.md + CLAUDE.md + GEMINI.md；不得通过 `@compass/CONTRIBUTING.md` 默认导入全文，修改入口规则后需运行 `redcap-contributing-ia-check.sh` 与 `redcap-token-risk-audit.sh` |
+| CONTRIBUTING.md 自身 | `compass/CONTRIBUTING.core.md` + .github/copilot-instructions.md + CLAUDE.md + GEMINI.md（`AGENTS.md` 仅作本地 Codex carrier，不再视为 fresh clone 必备输入）；不得通过 `@compass/CONTRIBUTING.md` 默认导入全文，修改入口规则后需运行 `redcap-contributing-ia-check.sh` 与 `redcap-token-risk-audit.sh` |
 | references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
 | knowledge/design-principles.md | ARCHITECTURE.md 设计哲学章节 + CONTRIBUTING.md §1（元原则引用） |
 | compass/knowledge/a2a-communication.md | ARCHITECTURE.md 通信协议章节 + loom/dispatcher/state-machine.md（前瞻标注） |

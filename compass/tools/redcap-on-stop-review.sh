@@ -307,6 +307,59 @@ else:
 " 2>/dev/null || echo "UNKNOWN"
 }
 
+review_output_tracks_valid() {
+    local output="$1"
+    local payload
+
+    payload="$(review_output_json_payload "$output")"
+    if [[ -z "$payload" ]]; then
+        return 1
+    fi
+
+    printf '%s' "$payload" | python3 -c "
+import json
+import sys
+
+required = {'architecture', 'governance', 'contracts'}
+
+try:
+    data = json.loads(sys.stdin.read().strip())
+except Exception:
+    raise SystemExit(1)
+
+track_verdicts = data.get('track_verdicts')
+if not isinstance(track_verdicts, dict):
+    raise SystemExit(1)
+if set(track_verdicts.keys()) != required:
+    raise SystemExit(1)
+for key in required:
+    value = track_verdicts.get(key)
+    if not isinstance(value, str) or value.strip().upper() not in {'PASS', 'FAIL'}:
+        raise SystemExit(1)
+
+issues = data.get('issues')
+if not isinstance(issues, list):
+    raise SystemExit(1)
+for issue in issues:
+    if not isinstance(issue, dict):
+        raise SystemExit(1)
+    track = issue.get('track')
+    if not isinstance(track, str) or track not in required:
+        raise SystemExit(1)
+    severity = issue.get('severity')
+    if severity is not None and (not isinstance(severity, str) or severity not in {'P0', 'P1', 'P2'}):
+        raise SystemExit(1)
+
+result = data.get('result', '')
+if not isinstance(result, str):
+    raise SystemExit(1)
+if result.strip().upper() == 'PASS':
+    for issue in issues:
+        if issue.get('severity') == 'P0':
+            raise SystemExit(1)
+" >/dev/null 2>&1
+}
+
 review_output_text_result() {
     local output="$1"
 
@@ -485,6 +538,10 @@ run_review_with_agent() {
     if [[ "$status" -eq 0 ]]; then
         case "$structured_result" in
             PASS|FAIL)
+                if ! review_output_tracks_valid "$output"; then
+                    REVIEW_ATTEMPT_FAILURES+=("$agent:invalid-track-structure")
+                    return 1
+                fi
                 stderr_failure_mode="failure-block"
                 ;;
         esac

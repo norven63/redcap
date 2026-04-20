@@ -32,6 +32,13 @@ def require(rel_path: str, patterns: list[str]) -> None:
             fail(f"{rel_path} missing required revival pattern: {pattern}")
 
 
+def optional_require(rel_path: str, patterns: list[str]) -> None:
+    path = root / rel_path
+    if not path.is_file():
+        return
+    require(rel_path, patterns)
+
+
 def forbid(rel_path: str, patterns: list[str]) -> None:
     text = read(rel_path)
     for pattern in patterns:
@@ -41,6 +48,13 @@ def forbid(rel_path: str, patterns: list[str]) -> None:
             found = pattern in text
         if found:
             fail(f"{rel_path} contains forbidden revival pattern: {pattern}")
+
+
+def optional_forbid(rel_path: str, patterns: list[str]) -> None:
+    path = root / rel_path
+    if not path.is_file():
+        return
+    forbid(rel_path, patterns)
 
 
 require(
@@ -76,7 +90,28 @@ require(
     ],
 )
 
-for rel_path in ("AGENTS.md", "CLAUDE.md", "GEMINI.md"):
+optional_require(
+    "AGENTS.md",
+    [
+        "@compass/soul.md",
+        "@compass/CONTRIBUTING.core.md",
+        "轻量自动导入",
+        "不再默认展开注入上下文",
+        "redcap-current-status.sh",
+        "redcap-execution-guarantee-check.sh",
+        "redcap-docs-catalog.sh budget",
+        "compass/knowledge/index.md",
+    ],
+)
+optional_forbid(
+    "AGENTS.md",
+    [
+        "@compass/CONTRIBUTING.md",
+        "@compass/knowledge/lessons.md",
+    ],
+)
+
+for rel_path in ("CLAUDE.md", "GEMINI.md"):
     require(
         rel_path,
         [
