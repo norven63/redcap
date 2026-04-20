@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 30,
-    "size_bytes": 539708,
+    "size_bytes": 539973,
     "lines": 9468,
-    "chars": 345338,
+    "chars": 345475,
     "rough_token_pressure": {
-      "low": 86334,
-      "high": 172669
+      "low": 86368,
+      "high": 172737
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 15,
-        "size_bytes": 285521,
+        "size_bytes": 285786,
         "lines": 3341,
-        "chars": 179065,
+        "chars": 179202,
         "rough_token_pressure": {
-          "low": 44766,
-          "high": 89532
+          "low": 44800,
+          "high": 89601
         }
       },
       "traces": {
@@ -83,7 +83,7 @@
     "largest_entries": [
       {
         "path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
-        "chars": 44587,
+        "chars": 44724,
         "lines": 419,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
@@ -590,9 +590,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 68253,
+      "size_bytes": 68518,
       "lines": 419,
-      "chars": 44587,
+      "chars": 44724,
       "summary": "当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验。 / 详情：需要更正的是，“历史 closeout 已清”只对应更早一次 confirmed hash（`06ceb763...`）的手工核销；当前 `.dev-task.md` 的 confirmed…",
       "status_basis": "filename_recency_only",
       "summary_points": {

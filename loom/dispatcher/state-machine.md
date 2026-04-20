@@ -195,6 +195,10 @@ function dispatch_loop(project_dir):
         state = read_yaml(project_dir/.workflow/state.yaml)
         cur_role = state.current_role.name if state.current_role else null
 
+        if session_just_revived():
+            for rule in reload_config.on_session_revival:
+                read_file(rule.file, rule.sections)
+
         if cur_role != prev_role:  # 角色切换 → 重读核心规则
             for rule in reload_config.on_role_switch:
                 read_file(rule.file, rule.sections)

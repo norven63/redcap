@@ -160,9 +160,9 @@
 | `compass/tools/redcap-knowledge-index-check.sh` | 新建 | 校验 `compass/knowledge/*.md` 顶层知识文件都被索引覆盖，防止导航陈旧 |
 | `compass/tools/redcap-overlay-governance-check.sh` | 新建 | 校验 brainstorming overlay 与 RedCap 已授权执行边界，避免 `ask_user` 硬门槛误盖过用户明确授权 |
 | `compass/tools/redcap-state-machine-check.sh` | 新建 | 校验 FSM 文档状态、通信协议状态与 `redcap-check-state.sh` 合法状态集合保持一致 |
-| `compass/tools/redcap-diagnose.sh` | 新建 | 汇总 current-status、docs retention、knowledge、overlay、state-machine、execution guarantee、revival 与 spec-check 的只读诊断入口 |
+| `compass/tools/redcap-diagnose.sh` | 新建 | 汇总 current-status、docs retention、knowledge、overlay、state-machine、execution guarantee、revival 与 spec-check 的统一诊断入口；当前实现要求可写临时目录，read-only sandbox 尚未承诺 |
 | `compass/tools/redcap-acceptance-index.sh` | 新建 | 为巨型 acceptance 脚本提供 `summary/find/check` 首读索引，避免单 case 排查时默认打开全文 |
-| `compass/tools/redcap-token-risk-audit.sh` | 新建 | 只读审计 tracked 大文件、宿主入口自动导入、ignored 运行残留与 mitigation 映射，防止 docs 之外的新 token 大户反弹 |
+| `compass/tools/redcap-token-risk-audit.sh` | 新建 | 审计 tracked 大文件、宿主入口自动导入、ignored 运行残留与 mitigation 映射，防止 docs 之外的新 token 大户反弹；当前实现要求可写临时目录 |
 | `compass/tools/redcap-artifact-classifier.sh` | 修改 | 允许 `compass/docs/catalog.json` 作为 repo-tracked docs 根索引 |
 | `references/execution-guarantees.json` | 新建 | 把复活启动、汇报、lessons、soul/identity、Prism、CLI 健康、closure、docs catalog 与宿主 hook 规则列为机器可读执行保障目录 |
 | `compass/tools/redcap-execution-guarantee-check.sh` | 新建 | 校验执行保障目录的必备类别、规则 ID、source / guarantee 路径与 manual-only 原因 |
@@ -232,7 +232,7 @@ Kimi 只读审查指出 `redcap-spec-check.sh` 没有 `set -e`，因此 `redcap-
 本轮发现 `loom/dispatcher/state-machine.md` 已记录 `DEGRADED`、扫描态与 step 态，但 `redcap-check-state.sh` 没有完全同步。当前已补齐合法状态集合，并新增 `redcap-state-machine-check.sh`，让 FSM 文档、通信协议与脚本枚举保持一致；该检查已纳入 `spec-check` 和 acceptance。
 
 第十四，统一 diagnose 入口补齐“整体状态概览”。
-`redcap-diagnose.sh` 将 current-status、docs catalog/retention、knowledge index、overlay governance、state-machine contract、execution guarantees、revival protocol 与 spec-check 串成只读诊断视图。后续接盘不再需要先翻大量报告才能知道“当前剩什么”，而是先运行 diagnose / current-status，再按 catalog plan 打开少量证据。
+`redcap-diagnose.sh` 将 current-status、docs catalog/retention、knowledge index、overlay governance、state-machine contract、execution guarantees、revival protocol 与 spec-check 串成统一诊断视图。后续接盘不再需要先翻大量报告才能知道“当前剩什么”，而是先运行 diagnose / current-status，再按 catalog plan 打开少量证据。当前实现要求宿主提供可写临时目录；在 read-only reviewer sandbox 中只能诚实视为 degraded/manual-only，而不是 100% 物理强保障。
 
 第十五，acceptance fixture 不再假设当前任务永远处于 `task-complete`。
 `task-complete-guard-replaces-stale-marker-with-unique-report` 现在读取 fixture `.dev-task.md` 的 `active_slice` 作为 `REDCAP_TASK_COMPLETE_SLICE`，避免长期 backlog 切到 F3 后，case 因入口条件不匹配而误以为 guard 行为回归。

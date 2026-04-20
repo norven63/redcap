@@ -22,6 +22,7 @@
 9. **运行残留不能擅自删除**：`prism/runs`、`compass/.runtime`、`compass/.workflow` 等 ignored 本地证据目录默认 no-bulk-read；物理清理需用户显式批准。
 10. **Codex 子 Agent 不默认开启**：本任务用户已要求不要开启 Codex 子 Agent；需要外部审查时优先使用可控的 Gemini/Kimi CLI 并限时。
 11. **飞书不是唯一收尾动作**：飞书通知只是可见信号；真正收尾还要看 review、validator、task report、lessons、backlog、catalog、diagnose 与 pending closure。
+12. **首读/诊断入口当前要求可写临时目录**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 在当前实现下不承诺 read-only sandbox 可跑；只读 reviewer 宿主必须走 wrapper、手工账本查验，或显式接受 degraded/manual-only 边界。
 
 ## 章节路由
 
@@ -37,8 +38,8 @@
 
 ## 必跑入口
 
-1. `bash compass/tools/redcap-current-status.sh .dev-task.md`
-2. `bash compass/tools/redcap-diagnose.sh .dev-task.md`
-3. `bash compass/tools/redcap-token-risk-audit.sh`
-4. 涉及 docs：`bash compass/tools/redcap-docs-catalog.sh plan "<query>"` 与 `budget <paths...>`
-5. 涉及 acceptance：`bash compass/tools/redcap-acceptance-index.sh find "<case>"`
+1. `bash compass/tools/redcap-current-status.sh .dev-task.md`（当前要求可写临时目录）
+2. `bash compass/tools/redcap-diagnose.sh .dev-task.md`（当前要求可写临时目录）
+3. `bash compass/tools/redcap-token-risk-audit.sh`（当前要求可写临时目录）
+4. 涉及 docs：`bash compass/tools/redcap-docs-catalog.sh plan "<query>"` 与 `budget <paths...>`（当前要求可写临时目录）
+5. 涉及 acceptance：`bash compass/tools/redcap-acceptance-index.sh find "<case>"`（当前要求可写临时目录）

@@ -83,11 +83,13 @@
         "compass/soul.md#6"
       ],
       "status": "scripted",
-      "automation": "redcap-current-status.sh is the first-read status surface and is referenced by the revival protocol.",
+      "automation": "redcap-current-status.sh is the first-read status surface and is referenced by the revival protocol, but the current implementation requires a writable temp directory.",
       "guarantee_paths": [
         "compass/tools/redcap-current-status.sh",
         "compass/tools/redcap-revival-check.sh"
       ],
+      "read_only_safe": false,
+      "host_requirement": "writable-temp-dir",
       "revival_required": true,
       "hook_required": true,
       "auto_enforceable": true
@@ -321,17 +323,19 @@
       "id": "diagnostic-overview",
       "category": "diagnostics",
       "priority": "P1",
-      "rule": "RedCap must provide a single read-only diagnostic entry that summarizes current status and runs the key governance checks without requiring manual script hunting.",
+      "rule": "RedCap must provide a single diagnostic entry that summarizes current status and runs the key governance checks without requiring manual script hunting; the current implementation still requires a writable temp directory.",
       "source_paths": [
         "references/backlogs/framework-upgrade.json",
         "compass/tools/redcap-current-status.sh"
       ],
       "status": "scripted",
-      "automation": "redcap-diagnose.sh runs current-status plus docs, knowledge, overlay, execution, revival, and spec checks.",
+      "automation": "redcap-diagnose.sh runs current-status plus docs, knowledge, overlay, execution, revival, and spec checks, but the chain is not yet guaranteed inside read-only sandboxes.",
       "guarantee_paths": [
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-multi-session-acceptance.sh"
       ],
+      "read_only_safe": false,
+      "host_requirement": "writable-temp-dir",
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true
@@ -395,6 +399,8 @@
         "compass/tools/redcap-spec-check.sh",
         "compass/docs/catalog.json"
       ],
+      "read_only_safe": false,
+      "host_requirement": "writable-temp-dir",
       "revival_required": true,
       "hook_required": true,
       "auto_enforceable": true
@@ -416,6 +422,8 @@
         "compass/tools/redcap-multi-session-acceptance.sh",
         "compass/tools/redcap-current-status.sh"
       ],
+      "read_only_safe": false,
+      "host_requirement": "writable-temp-dir",
       "revival_required": true,
       "hook_required": true,
       "auto_enforceable": true
@@ -505,6 +513,8 @@
         "compass/tools/redcap-token-risk-audit.sh",
         "compass/tools/redcap-spec-check.sh"
       ],
+      "read_only_safe": false,
+      "host_requirement": "writable-temp-dir",
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true
@@ -523,12 +533,14 @@
         "compass/soul.md"
       ],
       "status": "scripted",
-      "automation": "redcap-token-risk-audit.sh checks entry files, tracked large files, ignored runtime directories, and required navigation mitigations; spec-check and diagnose consume it.",
+      "automation": "redcap-token-risk-audit.sh checks entry files, tracked large files, ignored runtime directories, and required navigation mitigations; spec-check and diagnose consume it, but the current implementation requires a writable temp directory.",
       "guarantee_paths": [
         "compass/tools/redcap-token-risk-audit.sh",
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-spec-check.sh"
       ],
+      "read_only_safe": false,
+      "host_requirement": "writable-temp-dir",
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true

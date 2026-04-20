@@ -490,10 +490,12 @@ governance_debts_addressed: []
 - `compass/tools/redcap-current-status.sh`
   - 面向接盘、长任务中途汇报、飞书摘要与人工追问，统一输出 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置`
   - 同时汇总 `.dev-task.md` 当前锚点、pending closure 红线、长期 backlog 计数、CLI 工具族 registry cache 与待验证登记，避免只靠零散飞书或 closure ledger 让 Norven 反向考古
+  - 当前实现要求宿主提供可写临时目录；read-only reviewer sandbox 只能诚实视为 degraded/manual-only，不再宣称物理强保障
   - 当用户追问“现在整体到哪了 / backlog 还有什么 / 是否已完成”时，优先运行该脚本再汇报；若脚本输出与人工记忆冲突，以脚本和账本为准并说明差异
 - `compass/tools/redcap-docs-catalog.sh`
   - 维护 `compass/docs/catalog.json`，把 specs / research / traces / task-reports 的标题、摘要、读法策略、体量与粗略 token 压力压成首读索引
   - 接盘、考古或长任务恢复时，优先运行 `redcap-docs-catalog.sh summary` / `redcap-docs-catalog.sh plan "<问题>"` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；不得默认全量读取 `compass/docs/**`
+  - 当前实现要求宿主提供可写临时目录；只读 sandbox 下不再冒充强保障入口
   - `budget` 会拒绝目录、glob、未登记路径、过多文件与超预算读取；真实需要大规模考古时，必须在任务报告中写明范围、理由与折中
   - 修改、移动、新增 `compass/docs/**` 后，必须重新执行 `redcap-docs-catalog.sh generate` 并让 `redcap-docs-catalog.sh check` 通过，避免首读索引陈旧
   - catalog 中 task report 的 `hot / warm / cold-candidate` 只是文件名近因提示，不代表当前 active truth；当前任务锚点必须以 `redcap-current-status.sh`、pending closure 与 `.dev-task.md` 为准
@@ -513,8 +515,10 @@ governance_debts_addressed: []
   - 已接入 `redcap-spec-check.sh`；后续新增必须复活时执行的规则，应先补进 `soul.md §6.5` 与 `references/execution-guarantees.json`，再补本检查脚本
 - `compass/tools/redcap-acceptance-index.sh`
   - 为巨型 `redcap-multi-session-acceptance.sh` 生成 case 首读索引；需要定位 acceptance case 时先用 `summary/find`，再打开精确行段，不得默认全文读测试脚本
+  - 当前实现要求宿主提供可写临时目录；只读 sandbox 下必须退回手工 case 定位或 wrapper
 - `compass/tools/redcap-token-risk-audit.sh`
   - 审计 tracked 大文件、ignored 大目录、入口文件大文件自动导入、docs/knowledge/acceptance 首读保护与 Prism 运行残留风险
+  - 当前实现要求宿主提供可写临时目录；因此它在只读 reviewer sandbox 中属于 degraded/manual-only，而不是物理强保障
   - 已接入 `redcap-spec-check.sh` 与 `redcap-diagnose.sh`；修改入口文件、docs/knowledge/acceptance/Prism 运行态规则后必须运行
   - 若检查失败，说明复活协议与执行保障脱节；必须先修协议 / 门禁，再继续宣称当前会话已“复活完成”
 - `compass/tools/redcap-cli-console-mirror.sh`

@@ -58,5 +58,8 @@ missing_statuses = sorted(status for status in required_statuses if f"`{status}`
 if missing_statuses:
     fail("communication protocol missing status values: " + ", ".join(missing_statuses))
 
+if "reload_config.on_session_revival" not in state_text:
+    fail("state-machine event loop missing on_session_revival reload checkpoint")
+
 print("STATE_MACHINE_CONTRACT_OK")
 PY

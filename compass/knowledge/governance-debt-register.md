@@ -68,3 +68,10 @@
 - **owner_slice**: `宿主能力画像 / 行为保障诚实建模`
 - **source**: `references/execution-guarantees.json`（host-behavior 类别）+ `references/host-session-capability-matrix.json`
 - **gap**: 入口恢复、docs/knowledge 渐进披露、validator 与 diagnose 已有较强机械保障，但“主 Agent 不应无必要中断用户 / 不应把 commit 犹豫升级成人工确认”这类回复时行为，目前在 Codex.app 等宿主上仍缺少 repo-owned pre-reply veto。现阶段已把该边界登记为 host-limited / manual-only，并把 Codex 宿主正式纳入 capability matrix；同时通过 `references/execution-guarantee-tiers.md` 明确它属于“人工/宿主边界保障”而非物理强保障。真正的 100% 物理约束仍依赖未来宿主暴露更强 Hook 或 veto 接口。
+
+### GD-009：首读/诊断链尚未实现真正 read-only-safe
+- **design_status**: `identified`
+- **implementation_status**: `pending`
+- **owner_slice**: `只读宿主适配 / 首读链重构`
+- **source**: `references/execution-guarantees.json`（revival-startup / diagnostics / docs-catalog / acceptance-navigation / token-risk-control）+ `compass/CONTRIBUTING.core.md`
+- **gap**: `redcap-current-status.sh`、`redcap-diagnose.sh`、`redcap-docs-catalog.sh`、`redcap-acceptance-index.sh`、`redcap-token-risk-audit.sh` 当前仍依赖 heredoc 或临时文件，因此只能在提供可写临时目录的宿主上稳定运行。现阶段已把它们从“read-only 强保障”口径降为“需要可写临时目录 / 否则 degraded/manual-only”，并把真正的 read-only-safe 重构留作后续治理债务。

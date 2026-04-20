@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Read-only RedCap Layer B diagnostic overview.
+# RedCap Layer B diagnostic overview.
+# Note: current implementation requires a writable temp directory; read-only sandboxes are degraded/manual-only.
 
 set -u
 
