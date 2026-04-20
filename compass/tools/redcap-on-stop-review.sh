@@ -148,6 +148,19 @@ review_agent_timeout() {
     esac
 }
 
+review_agent_supports_repo_inspection() {
+    local agent="$1"
+
+    case "$agent" in
+        codex|copilot|claude)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 review_cli_failure_reason() {
     local output="$1"
     local mode="${2:-any-line}"
@@ -479,6 +492,11 @@ run_review_with_agent() {
     local stderr_file=""
     local message_file=""
 
+    if [[ "${REVIEW_REQUIRES_REPO_INSPECTION:-0}" == "1" ]] && ! review_agent_supports_repo_inspection "$agent"; then
+        REVIEW_ATTEMPT_FAILURES+=("$agent:insufficient-evidence")
+        return 1
+    fi
+
     timeout="$(review_agent_timeout "$agent")"
     stdout_file="$(mktemp)"
     stderr_file="$(mktemp)"
@@ -650,37 +668,56 @@ VALIDATOR_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
 # ── 提取 Diff 并组装评审 Prompt ──
 
 DIFF_FILE="$(mktemp)"
+DIFF_STAT_FILE="$(mktemp)"
 COMMIT_LOG_FILE="$(mktemp)"
 FILE_LIST_FILE="$(mktemp)"
 REVIEW_PROMPT_FILE="$(mktemp)"
 
 git -C "$REDCAP_ROOT" --no-pager diff "$BASELINE..HEAD" >"$DIFF_FILE" 2>/dev/null
+git -C "$REDCAP_ROOT" --no-pager diff --stat "$BASELINE..HEAD" >"$DIFF_STAT_FILE" 2>/dev/null
 git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..HEAD" >"$COMMIT_LOG_FILE" 2>/dev/null
 git -C "$REDCAP_ROOT" --no-pager diff --name-only "$BASELINE..HEAD" >"$FILE_LIST_FILE" 2>/dev/null
 
 if [[ ! -s "$DIFF_FILE" ]]; then
-    rm -f "$DIFF_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE" "$REVIEW_PROMPT_FILE"
+    rm -f "$DIFF_FILE" "$DIFF_STAT_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE" "$REVIEW_PROMPT_FILE"
     exit 0
 fi
 
+DIFF_LEN="$(wc -c <"$DIFF_FILE" | tr -d '[:space:]')"
+REVIEW_REQUIRES_REPO_INSPECTION=0
+REVIEW_REPO_INSPECTION_THRESHOLD="${REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD:-20000}"
+if [[ "${DIFF_LEN:-0}" =~ ^[0-9]+$ ]] && [[ "${REVIEW_REPO_INSPECTION_THRESHOLD:-0}" =~ ^[0-9]+$ ]] && [[ "${DIFF_LEN:-0}" -gt "${REVIEW_REPO_INSPECTION_THRESHOLD:-0}" ]]; then
+    REVIEW_REQUIRES_REPO_INSPECTION=1
+fi
+
 if ! python3 - \
+    "$REDCAP_ROOT" \
     "$REDCAP_ROOT/compass/CONTRIBUTING.core.md" \
     "$REDCAP_ROOT/compass/CONTRIBUTING.md" \
     "$REDCAP_ROOT/references/review-tracks.json" \
-    "$DIFF_FILE" \
+    "$DIFF_STAT_FILE" \
     "$COMMIT_LOG_FILE" \
     "$FILE_LIST_FILE" \
-    "$REVIEW_PROMPT_FILE" <<'PY'
+    "$REVIEW_PROMPT_FILE" \
+    "$BASELINE" \
+    "$CURRENT_HEAD" \
+    "$DIFF_LEN" \
+    "$REVIEW_REQUIRES_REPO_INSPECTION" <<'PY'
 from pathlib import Path
 import sys
 
-core_path = Path(sys.argv[1])
-contributing_path = Path(sys.argv[2])
-review_tracks_path = Path(sys.argv[3])
-diff_path = Path(sys.argv[4])
-commit_log_path = Path(sys.argv[5])
-file_list_path = Path(sys.argv[6])
-prompt_path = Path(sys.argv[7])
+repo_root = Path(sys.argv[1])
+core_path = Path(sys.argv[2])
+contributing_path = Path(sys.argv[3])
+review_tracks_path = Path(sys.argv[4])
+diff_stat_path = Path(sys.argv[5])
+commit_log_path = Path(sys.argv[6])
+file_list_path = Path(sys.argv[7])
+prompt_path = Path(sys.argv[8])
+baseline = sys.argv[9]
+current_head = sys.argv[10]
+diff_len = int(sys.argv[11])
+requires_repo_inspection = sys.argv[12] == "1"
 
 def read_text(path):
     if not path.exists():
@@ -690,7 +727,7 @@ def read_text(path):
 core_contract = read_text(core_path)
 contributing_full = read_text(contributing_path)
 review_tracks = read_text(review_tracks_path)
-diff = read_text(diff_path)
+diff_stat = read_text(diff_stat_path)
 commit_log = read_text(commit_log_path)
 file_list = read_text(file_list_path)
 
@@ -734,23 +771,21 @@ if any(path in {"SKILL.md", "compass/CONTRIBUTING.md", "compass/CONTRIBUTING.cor
         "## §11 棱镜（Prism）",
     })
 
-selected_chunks = []
+selected_titles = []
 for title, body in contributing_sections(contributing_full):
     if any(title.startswith(prefix) for prefix in wanted_prefixes):
-        selected_chunks.append(body)
+        selected_titles.append(title)
 
-selected_guidance = "\n\n---\n\n".join(selected_chunks)
-max_guidance_chars = 12000
-if len(selected_guidance) > max_guidance_chars:
-    selected_guidance = selected_guidance[:max_guidance_chars] + f"\n\n... [CONTRIBUTING 精选章节截断至 {max_guidance_chars} 字符]"
-
-max_diff_chars = 20000
-diff_len = len(diff)
-if diff_len > max_diff_chars:
-    diff = (
-        diff[:max_diff_chars]
-        + f"\n\n... [Diff 截断，共 {diff_len} 字符，仅显示前 {max_diff_chars} 字符]"
-    )
+guidance_index = "\n".join(f"- {title}" for title in selected_titles) or "- 先读 core contract，再按 changed files 回到 CONTRIBUTING.md 精读相关章节"
+selected_guidance = guidance_index
+diff_stat = diff_stat.strip() or "(git diff --stat 输出为空)"
+evidence_mode = "repo-inspection-required" if requires_repo_inspection else "repo-inspection-preferred"
+inspection_clause = f"""- 当前 reviewer 运行目录就是仓库根目录：`{repo_root}`。
+- 基准 commit: `{baseline}`
+- 当前 HEAD: `{current_head}`
+- 完整 unified diff 约 `{diff_len}` 字符，本提示不再内嵌截断 diff。
+- 你必须直接检查仓库中的完整证据：优先使用 `git --no-pager diff {baseline}..{current_head} -- <path>`、`git --no-pager show {current_head}:<path>`，并按需打开 `compass/CONTRIBUTING.core.md`、`compass/CONTRIBUTING.md`、`references/review-tracks.json`。
+- 如果你拿不到完整证据，必须返回 `FAIL`，并给出一条 `severity=P0`、`track=contracts` 的“evidence incomplete”问题；不得在证据不完整时给出 PASS。"""
 
 prompt = f"""你是一位独立的代码架构评审员。你与开发者无关，你的唯一任务是客观审查以下变更。
 
@@ -764,11 +799,20 @@ prompt = f"""你是一位独立的代码架构评审员。你与开发者无关�
 
 {review_tracks}
 
-### CONTRIBUTING 精选章节
+### CONTRIBUTING 路由提示
 
+- 必读：`compass/CONTRIBUTING.core.md`
+- 按需精读：`compass/CONTRIBUTING.md`
+- 本次优先章节：
 {selected_guidance}
 
 ## 本次变更摘要
+
+Repo root:
+{repo_root}
+
+基准 / 当前:
+{baseline} .. {current_head}
 
 Commits:
 {commit_log}
@@ -776,11 +820,13 @@ Commits:
 变更文件:
 {file_list}
 
-## Diff 内容
+Diff 统计:
+{diff_stat}
 
-```diff
-{diff}
-```
+## 证据获取要求
+
+- 证据模式：`{evidence_mode}`
+{inspection_clause}
 
 ## 评审要求
 
@@ -788,7 +834,7 @@ Commits:
 
 1. **Commit 规范**：是否符合中文 Conventional Commit 格式（type(scope): 描述）？
 2. **经验回顾**：变更是否涉及 lessons.md 中的已知陷阱（如 L-4 路由深度、L-7 headless 挂起、L-8 先测再改）？是否有遗漏的检查？
-3. **文件联动**：对照 CONTRIBUTING.md 的影响范围表与本次精选章节，本次变更涉及的文件是否有需要同步更新但遗漏的文件？
+3. **文件联动**：对照 CONTRIBUTING.md 的影响范围表与本次优先章节，本次变更涉及的文件是否有需要同步更新但遗漏的文件？
 4. **内容质量**：
    - 文档变更：是否有 Markdown 格式错误（代码块未闭合、标题层级混乱、链接断裂）？
    - 代码变更：是否有安全问题、硬编码、路径错误？
@@ -808,22 +854,22 @@ Commits:
 
 ```json
 {{
-  \"result\": \"PASS\" 或 \"FAIL\",
-  \"track_verdicts\": {{
-    \"architecture\": \"PASS\" 或 \"FAIL\",
-    \"governance\": \"PASS\" 或 \"FAIL\",
-    \"contracts\": \"PASS\" 或 \"FAIL\"
+  "result": "PASS" 或 "FAIL",
+  "track_verdicts": {{
+    "architecture": "PASS" 或 "FAIL",
+    "governance": "PASS" 或 "FAIL",
+    "contracts": "PASS" 或 "FAIL"
   }},
-  \"issues\": [
+  "issues": [
     {{
-      \"severity\": \"P0\" 或 \"P1\" 或 \"P2\",
-      \"track\": \"architecture\" 或 \"governance\" 或 \"contracts\",
-      \"dimension\": \"维度名\",
-      \"description\": \"问题描述\",
-      \"suggestion\": \"修复建议\"
+      "severity": "P0" 或 "P1" 或 "P2",
+      "track": "architecture" 或 "governance" 或 "contracts",
+      "dimension": "维度名",
+      "description": "问题描述",
+      "suggestion": "修复建议"
     }}
   ],
-  \"summary\": \"一句话总结\"
+  "summary": "一句话总结"
 }}
 ```
 
@@ -832,13 +878,13 @@ Commits:
 prompt_path.write_text(prompt, encoding="utf-8")
 PY
 then
-    rm -f "$DIFF_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE" "$REVIEW_PROMPT_FILE"
+    rm -f "$DIFF_FILE" "$DIFF_STAT_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE" "$REVIEW_PROMPT_FILE"
     write_control_plane_failure "review prompt 构造失败" "无法生成 stop-review 独立评审 prompt。"
     exit 1
 fi
 
 COMMIT_LOG="$(cat "$COMMIT_LOG_FILE")"
-rm -f "$DIFF_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE"
+rm -f "$DIFF_FILE" "$DIFF_STAT_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE"
 
 # ── 选择并执行 Agent CLI ──
 

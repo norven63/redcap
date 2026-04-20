@@ -81,17 +81,18 @@
         "compass/CONTRIBUTING.md",
         "compass/soul.md#6"
       ],
-      "status": "scripted",
-      "automation": "redcap-current-status.sh is the first-read status surface and is referenced by the revival protocol, but the current implementation requires a writable temp directory.",
+      "status": "manual-only",
+      "automation": "redcap-current-status.sh remains the required first-read status surface in the revival protocol, but the current session-start chain does not physically execute it; until that hook exists, this guarantee is manual-only and still requires a writable temp directory when run.",
       "guarantee_paths": [
         "compass/tools/redcap-current-status.sh",
         "compass/tools/redcap-revival-check.sh"
       ],
+      "non_automation_reason": "session-start validator chain does not actually invoke redcap-current-status.sh yet, so claiming automatic enforcement would be unsafe until a real hook path exists.",
       "read_only_safe": false,
       "host_requirement": "writable-temp-dir",
       "revival_required": true,
-      "hook_required": true,
-      "auto_enforceable": true
+      "hook_required": false,
+      "auto_enforceable": false
     },
     {
       "id": "revival-reload-rules",

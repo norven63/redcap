@@ -131,7 +131,7 @@ RedCap 当前把状态面划分为三类：
 2. **宿主耦合保障**：RedCap 已有接线，但是否成立取决于宿主能力矩阵。
 3. **人工/宿主边界保障**：规则已被登记、审计、诊断，但当前没有 repo-owned reply veto 一类的物理拦截点。
 
-具体解释见 [execution-guarantee-tiers.md](/Users/norven/.claude/skills/redcap/references/execution-guarantee-tiers.md)；机器权威仍以 `references/execution-guarantees.json` 为准。
+具体解释见 [execution-guarantee-tiers.md](references/execution-guarantee-tiers.md)；机器权威仍以 `references/execution-guarantees.json` 为准。
 
 这里还要额外加一条资产边界：**共享宿主 skill 是 carrier-owned overlay，不是 RedCap 的 patch surface**。  
 RedCap 可以消费它们的能力，但不能把“修改宿主 shared skill 原始文件”当成自身能力成立的前提；若不改宿主 skill 就无法稳定工作，该路径只能被标记为 **degraded / unsupported overlay**。

@@ -105,6 +105,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-to-codex-after-unavailable-reviewers
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-records-unavailable-rate-limit
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-rejects-invalid-track-structure
+  bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-skips-prompt-only-reviewer-when-repo-inspection-required
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-after-clear
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-notify-timeout-releases-lock
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-keeps-report-anchor
@@ -3326,6 +3327,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3481,6 +3483,10 @@ EOF
     assert_exists "$codex_stdin"
     assert_string_contains "$(read_file_text "$codex_argv")" "-"
     assert_string_contains "$(read_file_text "$codex_stdin")" "你是一位独立的代码架构评审员"
+    assert_string_contains "$(read_file_text "$codex_stdin")" "repo-inspection"
+    assert_string_contains "$(read_file_text "$codex_stdin")" "你必须直接检查仓库中的完整证据"
+    [[ "$(read_file_text "$codex_stdin")" != *"Diff 截断"* ]] || fail "codex prompt still contains diff truncation marker"
+    [[ "$(read_file_text "$codex_stdin")" != *"CONTRIBUTING 精选章节截断"* ]] || fail "codex prompt still contains guidance truncation marker"
     if [[ "$(read_file_text "$codex_argv")" == *"你是一位独立的代码架构评审员"* ]]; then
         fail "codex review prompt leaked into argv"
     fi
@@ -3582,6 +3588,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3595,6 +3602,55 @@ EOF
     assert_string_contains "$(read_file_text "$review_log")" "独立评审不可用"
     assert_string_contains "$(read_file_text "$review_log")" "gemini:invalid-track-structure"
     assert_string_contains "$output" "gemini:invalid-track-structure"
+}
+
+run_on_stop_review_skips_prompt_only_reviewer_when_repo_inspection_required_case() {
+    local case_name="on-stop-review-skips-prompt-only-reviewer-when-repo-inspection-required"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/gemini" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' 'gemini should not be invoked for oversized repo-inspection review' >&2
+exit 99
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="7cb8cca0d66f1ebfc95d115be5c71ec1ac9f17e3"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -ne 0 ]] || fail "prompt-only oversized review case unexpectedly passed"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "FAIL"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "gemini:insufficient-evidence"
+    assert_string_contains "$output" "gemini:insufficient-evidence"
+    [[ "$output" != *"gemini should not be invoked"* ]] || fail "prompt-only reviewer was invoked despite insufficient evidence gate"
 }
 
 run_on_stop_review_accepts_structured_review_with_auth_terms_case() {
@@ -3634,6 +3690,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3686,6 +3743,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3739,6 +3797,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3792,6 +3851,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3843,6 +3903,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3891,6 +3952,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3953,6 +4015,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4018,6 +4081,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4073,6 +4137,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4123,6 +4188,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4174,6 +4240,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4225,6 +4292,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4281,6 +4349,7 @@ EOF
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -6522,7 +6591,9 @@ path = pathlib.Path(sys.argv[1])
 data = json.loads(path.read_text(encoding="utf-8"))
 for entry in data["guarantees"]:
     if entry["id"] == "revival-current-status":
+        entry["auto_enforceable"] = True
         entry["guarantee_paths"] = []
+        entry.pop("non_automation_reason", None)
         break
 path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -7535,6 +7606,7 @@ run_all_cases() {
     run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
     run_on_stop_review_records_unavailable_rate_limit_case
     run_on_stop_review_rejects_invalid_track_structure_case
+    run_on_stop_review_skips_prompt_only_reviewer_when_repo_inspection_required_case
     run_on_stop_review_accepts_structured_review_with_auth_terms_case
     run_on_stop_review_accepts_structured_review_with_auth_prose_outside_fence_case
     run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stdout_prose_case
@@ -7795,6 +7867,9 @@ case "$COMMAND" in
         ;;
     on-stop-review-rejects-invalid-track-structure)
         run_on_stop_review_rejects_invalid_track_structure_case
+        ;;
+    on-stop-review-skips-prompt-only-reviewer-when-repo-inspection-required)
+        run_on_stop_review_skips_prompt_only_reviewer_when_repo_inspection_required_case
         ;;
     on-stop-review-accepts-structured-review-with-auth-terms)
         run_on_stop_review_accepts_structured_review_with_auth_terms_case
