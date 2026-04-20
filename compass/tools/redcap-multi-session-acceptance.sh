@@ -3538,7 +3538,9 @@ EOF
     assert_exists "$review_log"
     assert_string_contains "$(read_file_text "$review_log")" "独立评审不可用"
     assert_string_contains "$(read_file_text "$review_log")" "copilot:rate-limited"
+    assert_string_contains "$(read_file_text "$review_log")" '`review` 红线 pending'
     assert_string_contains "$output" "copilot:rate-limited"
+    [[ "$output" != *"command not found"* ]] || fail "unavailable rate-limit case leaked shell expansion error: $output"
 }
 
 run_on_stop_review_accepts_structured_review_with_auth_terms_case() {

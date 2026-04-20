@@ -68,19 +68,15 @@ write_control_plane_failure() {
     local title="$1"
     local details="$2"
 
-    cat > "$REVIEW_LOG_FILE" <<LOGEOF
-# RedCap Stop Hook 控制面审计失败
-
-- **时间**: $(date '+%Y-%m-%d %H:%M:%S')
-- **宿主**: $REVIEW_HOST
-- **基准 commit**: ${BASELINE:-unknown}
-- **当前 HEAD**: ${CURRENT_HEAD:-unknown}
-- **失败原因**: $title
-
-## 详情
-
-$details
-LOGEOF
+    {
+        printf '# RedCap Stop Hook 控制面审计失败\n\n'
+        printf -- '- **时间**: %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+        printf -- '- **宿主**: %s\n' "$REVIEW_HOST"
+        printf -- '- **基准 commit**: %s\n' "${BASELINE:-unknown}"
+        printf -- '- **当前 HEAD**: %s\n' "${CURRENT_HEAD:-unknown}"
+        printf -- '- **失败原因**: %s\n\n' "$title"
+        printf '## 详情\n\n%s\n' "$details"
+    } > "$REVIEW_LOG_FILE"
 
     echo "FAIL" > "$REVIEW_RESULT_FILE"
 
@@ -94,23 +90,17 @@ LOGEOF
 write_review_unavailable_log() {
     local details="$1"
 
-    cat > "$REVIEW_LOG_FILE" <<LOGEOF
-# RedCap Stop Hook 独立评审不可用
-
-- **时间**: $(date '+%Y-%m-%d %H:%M:%S')
-- **宿主**: $REVIEW_HOST
-- **基准 commit**: ${BASELINE:-unknown}
-- **当前 HEAD**: ${CURRENT_HEAD:-unknown}
-- **候选顺序**: ${REVIEW_AGENT_ORDER:-unknown}
-
-## 失败摘要
-
-$details
-
-## 结论
-
-本日志只说明 reviewer CLI 传输层不可用或超时；它不是对代码变更内容的独立评审 verdict。RedCap 必须保持 `review` 红线 pending，直到任一独立 reviewer 产出可解析的 PASS/FAIL。
-LOGEOF
+    {
+        printf '# RedCap Stop Hook 独立评审不可用\n\n'
+        printf -- '- **时间**: %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+        printf -- '- **宿主**: %s\n' "$REVIEW_HOST"
+        printf -- '- **基准 commit**: %s\n' "${BASELINE:-unknown}"
+        printf -- '- **当前 HEAD**: %s\n' "${CURRENT_HEAD:-unknown}"
+        printf -- '- **候选顺序**: %s\n\n' "${REVIEW_AGENT_ORDER:-unknown}"
+        printf '## 失败摘要\n\n%s\n\n' "$details"
+        printf '## 结论\n\n'
+        printf '%s\n' '本日志只说明 reviewer CLI 传输层不可用或超时；它不是对代码变更内容的独立评审 verdict。RedCap 必须保持 `review` 红线 pending，直到任一独立 reviewer 产出可解析的 PASS/FAIL。'
+    } > "$REVIEW_LOG_FILE"
 
     echo "FAIL" > "$REVIEW_RESULT_FILE"
 }
