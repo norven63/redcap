@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-21
 **执行者**：Cap（Copilot CLI / GPT-5.4；Codex 接盘续修）
-**报告版本**：v2.9
+**报告版本**：v3.0
 
 ---
 
@@ -11,20 +11,20 @@
 ### 0.1 当前已完成
 
 - 当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验。
-- 详情：需要更正的是，“历史 closeout 已清”只对应更早一次 confirmed hash（`06ceb763...`）的手工核销；当前 `.dev-task.md` 的 confirmed hash（`849cfdbc...`）后续治理 tranche 仍留有 `pending closure`，`required_redlines=review,pm-gate,drift,artifact-lifecycle,task-report,notify`。因此本报告现在明确区分“历史已清”与“当前账面仍 pending”，不再把它们混成一句“现在已 clean”。
+- 详情：最新补丁 `389a3c5 fix(治理): 修复 stop-review 证据审计缺口` 已提交；其后真实 `session-end` 再次回放已通过独立评审，当前 `.dev-task.md` 对应 confirmed hash（`849cfdbc...`）的 `pending closure` 已清，`redcap-current-status.sh` 回到 `status: clear`，工作区保持干净。
 
 ### 0.2 上一步完成的是
 
-- 上一步完成的是：已完成 4 个同批治理项（`pending-closure/current-status/task-report/closure-ledger` 一致性、`lessons / CONTRIBUTING` 去重与热点分层、`prism/runs` 证据链与清理策略分离、formal Prism 归档口径诚实化），并继续补上 backlog 人类说明的最终状态收口、执行保障强度分层说明、CLI wrapper 与桌面 App wrapper 的边界说明。外部 reviewer 健康微探测方面，Kimi 与 Copilot 已能 headless 回包，Gemini 有 `PASS` 文本但在 SessionEnd hook 噪声下超时，Claude 则在 hook 层取消；因此当前仍不够形成一个诚实的 formal Prism 新 quorum。
+- 上一步完成的是：已完成 4 个同批治理项（`pending-closure/current-status/task-report/closure-ledger` 一致性、`lessons / CONTRIBUTING` 去重与热点分层、`prism/runs` 证据链与清理策略分离、formal Prism 归档口径诚实化），随后补齐 `execution-guarantees` 对 `revival-current-status` 的诚实降级、修复 stop-review 大 diff 截断评审缺口、跑通 full suite，并在真实 runtime 上把 closeout 链完整回放到清账完成。
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：在当前治理补丁与文档口径都已对齐的前提下，完成当前 confirmed hash 的真实 closeout 链收尾，把剩余 `pending closure` 从 `review/spec/notify` 继续压缩并清掉；如果外部 reviewer 家族仍不足以支撑新的 formal Prism redteam，就把它明确保留为独立后续线，而不再冒充“本轮已归档”。
+- 下一步计划做的是：当前任务内已经没有必须继续执行的 repo-owned 收尾动作。若继续推进，应另起后续线处理新的 formal Prism quorum、`loom/test-reports/pending-validations.md` 中的历史完整用户项目 E2E 队列，以及经用户批准后的 `prism/runs` 物理清理。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof / E2E → live runtime 严格收尾。
-- 当前所在位置：RedCap 的 repo-owned backlog 仍然是 `done=19 / in_progress=0 / pending=0`，但当前 confirmed hash 的收尾账面不是 clean，而是“历史 closeout 已清、当前 follow-up tranche 仍 pending”。Prism 侧同样要拆开说：历史 formal Prism 报告已有 2 份，但当前任务新增的 formal quorum 仍是 0；`prism/runs` 里的本地运行证据也不能被误读成已归档成功。
+- 当前所在位置：RedCap 的 repo-owned backlog 已保持 `done=19 / in_progress=0 / pending=0`，当前 confirmed hash 的收尾账面也已经 clean；需要拆开保留的只剩三类独立后续线：历史 formal Prism 报告虽已有 2 份，但当前任务新增的 formal quorum 仍是 0；`prism/runs` 的本地运行证据不等于已归档成功；`loom/test-reports/pending-validations.md` 中仍有历史完整用户项目 E2E 队列待处理。
 
 ---
 
@@ -336,7 +336,8 @@ A3 由 `references/review-tracks.json`、stop-review prompt 与 review-tracks ga
 | full suite 复跑 | `bash compass/tools/redcap-spec-check.sh "$PWD" && bash compass/tools/redcap-multi-session-acceptance.sh all` | ✅ |
 | E2E 后置审计 | `bash loom/tools/redcap-e2e-postcheck.sh` | ✅ |
 | 最新 redteam | `closeout-redteam-r15` | ✅ clean（在 supported / contract-valid 输入边界内无新的 blocking / significant hole） |
-| 最新 code review | `2026-04-18 真实 session-end 独立评审` | ⚠️ 已指出 E2E/V-11 消费与入口文档联动缺口；本 follow-up 已补齐，需再次 live session-end 核销 |
+| 最新 code review | `2026-04-21 真实 session-end 独立评审（head=389a3c5）` | ✅ 已通过；stop-review 现要求 repo inspection，`revival-current-status` 也已按实际能力降级为 manual-only |
+| 最新真实 closeout 回放 | 重新绑定 runtime 后执行 `bash compass/tools/redcap-layerB-session-end.sh codex` | ✅ 独立评审通过，当前 `.dev-task.md` 对应 pending closure 已清，`redcap-current-status.sh` 返回 `status: clear` |
 
 ### 5.2 棱镜 / Agent 使用记录
 
@@ -372,7 +373,7 @@ A3 由 `references/review-tracks.json`、stop-review prompt 与 review-tracks ga
 
 ### 6.3 推荐的下一步行动
 
-1. 先把当前 confirmed hash 的 `pending closure` 走完真实 review / notify 收尾链，再宣称“当前任务已 clean”；在这之前，版本化提交与终局总结都必须继续保持 pending-aware。
+1. 当前 confirmed hash 的真实 closeout 链已经走完，后续若再开 follow-up，默认从 `status: clear` 起步，不得把旧 pending-aware 口径继续外推到当前 head。
 2. 若需要 formal Prism quorum，把未来外部审查按 `prism/runs` + `prism/reports/` 协议完整归档；当前单路 CLI 探测/审查记录不能越权升级为 quorum。
 3. 若要继续消化 `loom/test-reports/pending-validations.md` 的历史完整用户项目 E2E 队列，应单独起任务，把验证对象、环境、完成标准写清楚，再逐项消费。
 4. 后续 docs 物理归档/瘦身应在 catalog / budget / retention 已稳定的基础上另起 tranche，避免直接删除 closure evidence。
