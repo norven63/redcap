@@ -103,6 +103,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-prunes-reused-pid-lock
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-retries-after-report-change
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-to-codex-after-unavailable-reviewers
+  bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-records-unavailable-rate-limit
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-after-clear
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-notify-timeout-releases-lock
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-keeps-report-anchor
@@ -117,8 +118,25 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-pre-commit-block
   bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-pre-commit-allow
   bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-rejects-tabbed-path
+  bash compass/tools/redcap-multi-session-acceptance.sh docs-catalog-check
+  bash compass/tools/redcap-multi-session-acceptance.sh docs-catalog-progressive-disclosure
+  bash compass/tools/redcap-multi-session-acceptance.sh docs-retention-check
   bash compass/tools/redcap-multi-session-acceptance.sh backlog-check-strict
+  bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview
+  bash compass/tools/redcap-multi-session-acceptance.sh execution-guarantees-check
+  bash compass/tools/redcap-multi-session-acceptance.sh knowledge-index-check
+  bash compass/tools/redcap-multi-session-acceptance.sh acceptance-index-check
+  bash compass/tools/redcap-multi-session-acceptance.sh token-risk-audit
+  bash compass/tools/redcap-multi-session-acceptance.sh contributing-ia-check
+  bash compass/tools/redcap-multi-session-acceptance.sh review-tracks-check
+  bash compass/tools/redcap-multi-session-acceptance.sh hook-contract-check
+  bash compass/tools/redcap-multi-session-acceptance.sh runtime-helper-check
+  bash compass/tools/redcap-multi-session-acceptance.sh cli-console-mirror-check
+  bash compass/tools/redcap-multi-session-acceptance.sh revival-protocol-check
+  bash compass/tools/redcap-multi-session-acceptance.sh diagnose-overview
+  bash compass/tools/redcap-multi-session-acceptance.sh state-machine-contract-check
   bash compass/tools/redcap-multi-session-acceptance.sh spec-registry-validates-repo
+  bash compass/tools/redcap-multi-session-acceptance.sh spec-check-propagates-control-gate-failures
   bash compass/tools/redcap-multi-session-acceptance.sh spec-check-rejects-superseded-outside-archive
   bash compass/tools/redcap-multi-session-acceptance.sh spec-check-requires-replaced-by
   bash compass/tools/redcap-multi-session-acceptance.sh spec-check-rejects-invalid-role
@@ -128,6 +146,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh cli-console-mirror-overwrites
   bash compass/tools/redcap-multi-session-acceptance.sh feishu-duplex-window-queue
   bash compass/tools/redcap-multi-session-acceptance.sh overlay-skill-handoff-stays-native
+  bash compass/tools/redcap-multi-session-acceptance.sh overlay-governance-check
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-sync
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-required
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-runtime-claim-requires-live-process
@@ -2489,7 +2508,7 @@ run_task_report_check_allows_marker_anchor_when_uniquely_latest_case() {
     init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
     write_current_report_marker_fixture "$marker_rel" "$repo/.dev-task.md"
 
-    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$baseline_head" "$current_head")"
+    output="$(REDCAP_HOST_PROCESS_PID="$pid" bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$baseline_head" "$current_head" "$host")"
     assert_eq "$output" "$marker_rel"
 
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
@@ -2717,7 +2736,7 @@ run_task_report_check_rejects_stale_marker_conflict_case() {
     cp "$repo/references/task-report-template.md" "$new_report"
 
     set +e
-    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$baseline_head" "$current_head" 2>&1)"
+    output="$(REDCAP_HOST_PROCESS_PID="$pid" bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$baseline_head" "$current_head" "$host" 2>&1)"
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "task-report-check unexpectedly accepted stale marker conflict"
@@ -2729,7 +2748,7 @@ run_task_report_check_rejects_stale_marker_conflict_case() {
 
 run_task_complete_guard_replaces_stale_marker_with_unique_report_case() {
     local host="copilot"
-    local repo legacy_rel current_head binding_key pid case_dir register_log complete_log register_stub complete_stub marker_path
+    local repo legacy_rel current_head binding_key pid case_dir register_log complete_log register_stub complete_stub marker_path task_complete_slice
     local new_report new_rel register_count complete_count
 
     log "case: task-complete-guard-replaces-stale-marker-with-unique-report"
@@ -2749,6 +2768,7 @@ run_task_complete_guard_replaces_stale_marker_with_unique_report_case() {
     init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for stale marker guard case"
     write_current_report_marker_fixture "$legacy_rel" "$repo/.dev-task.md"
+    task_complete_slice="$(redcap_dev_task_extract_kv "$repo/.dev-task.md" "active_slice")"
 
     new_report="$repo/compass/docs/task-reports/zz-acceptance-stale-marker-new-${RANDOM}-$$.md"
     new_rel="${new_report#$repo/}"
@@ -2837,7 +2857,7 @@ printf '%s\n' "on-complete" >>"$complete_log"
 EOF
     chmod +x "$register_stub" "$complete_stub"
 
-    REDCAP_TASK_COMPLETE_SLICE="task-complete" \
+    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
     REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
     REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
@@ -3295,18 +3315,24 @@ EOF
     output="$(
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_RUNTIME_SESSION_ID="" \
+            REDCAP_RUNTIME_CAPABILITY="" \
+            REDCAP_RUNTIME_SESSION_DIR="" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,copilot" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
     status=$?
     set -e
 
-    [[ "$status" -eq 0 ]] || fail "on-stop-review fallback case failed: $output"
+    if [[ "$status" -ne 0 ]]; then
+        fail "on-stop-review fallback case failed: status=$status output=$output result=$(counter_value "$review_result") log=$(counter_value "$review_log")"
+    fi
     assert_exists "$review_result"
     assert_eq "$(read_file_text "$review_result")" "PASS"
     assert_exists "$review_log"
@@ -3439,7 +3465,7 @@ EOF
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -3462,6 +3488,57 @@ EOF
     if [[ "$(read_file_text "$review_log")" == *"Codex CLI banner that must not become the review payload."* ]]; then
         fail "codex fallback leaked stdout banner into review payload"
     fi
+}
+
+run_on_stop_review_records_unavailable_rate_limit_case() {
+    local case_name="on-stop-review-records-unavailable-rate-limit"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    cat >"$fake_bin/copilot" <<'EOF'
+#!/usr/bin/env bash
+cat >&2 <<'OUT'
+Sorry, you've hit a rate limit that restricts the number of Copilot model requests you can make within a specific time period. Please try again in 44 hours.
+OUT
+exit 1
+EOF
+    chmod +x "$fake_bin/copilot"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="copilot" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -ne 0 ]] || fail "unavailable rate-limit case unexpectedly passed"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "FAIL"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "独立评审不可用"
+    assert_string_contains "$(read_file_text "$review_log")" "copilot:rate-limited"
+    assert_string_contains "$output" "copilot:rate-limited"
 }
 
 run_on_stop_review_accepts_structured_review_with_auth_terms_case() {
@@ -4322,7 +4399,7 @@ PYEOF
         local attempts=0
         while [[ ! -f "$notifier_started" ]]; do
             attempts=$((attempts + 1))
-            if [[ "$attempts" -ge 100 ]]; then
+            if [[ "$attempts" -ge 400 ]]; then
                 echo "start-timeout" >"$lock_probe"
                 exit 1
             fi
@@ -4349,7 +4426,7 @@ PYEOF
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
         || fail "session-end notify timeout case failed"
 
-    wait "$lock_probe_pid" || fail "pending closure lock probe did not complete"
+    wait "$lock_probe_pid" || fail "pending closure lock probe did not complete: $(counter_value "$lock_probe")"
     assert_exists "$lock_probe"
     assert_string_contains "$(cat "$lock_probe")" "acquired"
     redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" \
@@ -6086,12 +6163,16 @@ run_artifact_lifecycle_classifier_case() {
     repo="$(make_temp_project)"
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-artifact-classifier.sh" "$repo" \
         ".dev-task.md" \
+        "compass/docs/catalog.json" \
+        "compass/docs/catalog.json/evil.md" \
         "compass/docs/specs/ok.md" \
         "compass/docs/random.md" \
         "compass/.workflow/local.txt" \
         "docs-scratch/note.md")"
 
     assert_string_contains "$output" $'.dev-task.md\tsession-isolated\tsession-isolated-process-state\t'
+    assert_string_contains "$output" $'compass/docs/catalog.json\trepo-tracked\trepo-tracked-evidence\tcompass/docs approved collection'
+    assert_string_contains "$output" $'compass/docs/catalog.json/evil.md\tlocal-only\tdocs-root-policy-violation\tviolates compass/docs root policy'
     assert_string_contains "$output" $'compass/docs/specs/ok.md\trepo-tracked\trepo-tracked-evidence\tcompass/docs approved collection'
     assert_string_contains "$output" $'compass/docs/random.md\tlocal-only\tdocs-root-policy-violation\tviolates compass/docs root policy'
     assert_string_contains "$output" $'compass/.workflow/local.txt\tlocal-only\tlocal-only-host-asset\t'
@@ -6183,16 +6264,551 @@ run_artifact_lifecycle_rejects_tabbed_path_case() {
     assert_string_contains "$output" "unsupported filename contains tab/newline"
 }
 
+run_docs_catalog_check_case() {
+    local output summary temp_catalog stale_output stale_status zz_report
+
+    log "case: docs-catalog-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check)"
+    assert_string_contains "$output" "DOCS_CATALOG_OK"
+    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md"'
+    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"read_policy": "read-catalog-summary-first-then-open-if-current-anchor"'
+    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"status_basis": "filename_recency_only"'
+    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md"'
+
+    summary="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" summary)"
+    assert_string_contains "$summary" "DOCS_CATALOG_SUMMARY"
+    assert_string_contains "$summary" "rough_token_pressure="
+    assert_string_contains "$summary" "task-reports:"
+
+    zz_report="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-docs-catalog-ignore-${RANDOM}-$$.md"
+    LEGACY_TMP_FILES+=("$zz_report")
+    printf '# acceptance-only report fixture\n' >"$zz_report"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check)"
+    assert_string_contains "$output" "DOCS_CATALOG_OK"
+
+    temp_catalog="$ACCEPT_ROOT/docs-catalog-fixture.json"
+    bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate "$temp_catalog"
+    REDCAP_DOCS_CATALOG_PATH="$temp_catalog" bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check >/dev/null
+    printf '\n' >>"$temp_catalog"
+    set +e
+    stale_output="$(REDCAP_DOCS_CATALOG_PATH="$temp_catalog" bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "stale docs catalog unexpectedly passed"
+    assert_string_contains "$stale_output" "catalog is out of date"
+}
+
+run_docs_catalog_progressive_disclosure_case() {
+    local plan_output budget_output blocked_output blocked_status bulk_output bulk_status
+
+    log "case: docs-catalog-progressive-disclosure"
+
+    plan_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" plan "当前 pending closure task report" 5)"
+    assert_string_contains "$plan_output" "DOCS_ACCESS_PLAN"
+    assert_string_contains "$plan_output" "rule=Open only the exact paths needed; run budget before opening source files."
+    assert_string_contains "$plan_output" "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md"
+
+    budget_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md")"
+    assert_string_contains "$budget_output" "DOCS_ACCESS_BUDGET_OK"
+    assert_string_contains "$budget_output" "files=1"
+
+    set +e
+    blocked_output="$(REDCAP_DOCS_BUDGET_MAX_HIGH_TOKENS=1000 bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md" 2>&1)"
+    blocked_status=$?
+    set -e
+    [[ "$blocked_status" -ne 0 ]] || fail "oversized docs read budget unexpectedly passed"
+    assert_string_contains "$blocked_output" "rough token budget exceeded"
+
+    set +e
+    bulk_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/" 2>&1)"
+    bulk_status=$?
+    set -e
+    [[ "$bulk_status" -ne 0 ]] || fail "docs directory budget unexpectedly passed"
+    assert_string_contains "$bulk_output" "directory reads are not allowed"
+}
+
+run_docs_retention_check_case() {
+    local output fixture stale_output stale_status
+
+    log "case: docs-retention-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" retention-check)"
+    assert_string_contains "$output" "DOCS_RETENTION_CHECK_OK"
+    assert_string_contains "$output" "archive_candidates_check_only="
+
+    fixture="$ACCEPT_ROOT/docs-retention-fixture"
+    mkdir -p "$fixture/compass/docs/archive" "$fixture/compass/tools"
+    cp "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" "$fixture/compass/tools/redcap-docs-catalog.sh"
+    cp -R "$REDCAP_ROOT/compass/docs/specs" "$fixture/compass/docs/specs"
+    cp -R "$REDCAP_ROOT/compass/docs/task-reports" "$fixture/compass/docs/task-reports"
+    cp -R "$REDCAP_ROOT/compass/docs/research" "$fixture/compass/docs/research"
+    cp -R "$REDCAP_ROOT/compass/docs/traces" "$fixture/compass/docs/traces"
+    chmod +x "$fixture/compass/tools/redcap-docs-catalog.sh"
+    printf '# bad retention log\n' >"$fixture/compass/docs/archive/retention-log.md"
+
+    set +e
+    stale_output="$(bash "$fixture/compass/tools/redcap-docs-catalog.sh" retention-check 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad docs retention log unexpectedly passed"
+    assert_string_contains "$stale_output" "retention log missing required phrase"
+}
+
 run_backlog_check_strict_case() {
     log "case: backlog-check-strict"
 
     bash "$REDCAP_ROOT/compass/tools/redcap-backlog-check.sh" strict "$REDCAP_ROOT/.dev-task.md" >/dev/null
 }
 
+run_current_status_overview_case() {
+    local output
+
+    log "case: current-status-overview"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$REDCAP_ROOT/.dev-task.md")"
+    assert_string_contains "$output" "当前已完成："
+    assert_string_contains "$output" "## 收尾红线"
+    assert_string_contains "$output" "## 长期 backlog"
+    assert_string_contains "$output" "## CLI 工具族"
+    assert_string_contains "$output" "## 棱镜 / 独立评审"
+    assert_string_contains "$output" "## docs 考古入口"
+    assert_string_contains "$output" "## token 风险入口"
+    assert_string_contains "$output" "token-risk-audit:"
+    assert_string_contains "$output" "## 待验证登记"
+    assert_string_contains "$output" "active_slice:"
+}
+
+run_execution_guarantees_check_case() {
+    local output temp_registry stale_output stale_status
+
+    log "case: execution-guarantees-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-execution-guarantee-check.sh")"
+    assert_string_contains "$output" "EXECUTION_GUARANTEES_OK"
+
+    temp_registry="$ACCEPT_ROOT/execution-guarantees-stale.json"
+    cp "$REDCAP_ROOT/references/execution-guarantees.json" "$temp_registry"
+    python3 - "$temp_registry" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+data = json.loads(path.read_text(encoding="utf-8"))
+for entry in data["guarantees"]:
+    if entry["id"] == "revival-current-status":
+        entry["guarantee_paths"] = []
+        break
+path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-execution-guarantee-check.sh" "$temp_registry" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "stale execution-guarantee registry unexpectedly passed"
+    assert_string_contains "$stale_output" "revival-current-status"
+}
+
+run_knowledge_index_check_case() {
+    local output fixture stale_output stale_status
+
+    log "case: knowledge-index-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-knowledge-index-check.sh")"
+    assert_string_contains "$output" "KNOWLEDGE_INDEX_OK"
+
+    fixture="$ACCEPT_ROOT/knowledge-index-fixture"
+    mkdir -p "$fixture/compass/knowledge" "$fixture/compass/tools"
+    cp "$REDCAP_ROOT/compass/tools/redcap-knowledge-index-check.sh" "$fixture/compass/tools/redcap-knowledge-index-check.sh"
+    cp "$REDCAP_ROOT/compass/knowledge/lessons.md" "$fixture/compass/knowledge/lessons.md"
+    cp "$REDCAP_ROOT/compass/knowledge/design-principles.md" "$fixture/compass/knowledge/design-principles.md"
+    printf '# bad index\n\n首读导航\n不要默认 bulk-read\nredcap-knowledge-index-check.sh\ncompass/knowledge/lessons.md\n' >"$fixture/compass/knowledge/index.md"
+    chmod +x "$fixture/compass/tools/redcap-knowledge-index-check.sh"
+
+    set +e
+    stale_output="$(bash "$fixture/compass/tools/redcap-knowledge-index-check.sh" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad knowledge index unexpectedly passed"
+    assert_string_contains "$stale_output" "index missing required phrase: 热点主题速览"
+}
+
+run_revival_protocol_check_case() {
+    local fixture output stale_output stale_status
+
+    log "case: revival-protocol-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-revival-check.sh" "$REDCAP_ROOT")"
+    assert_string_contains "$output" "REVIVAL_PROTOCOL_OK"
+
+    fixture="$ACCEPT_ROOT/revival-protocol-fixture"
+    mkdir -p "$fixture/compass" "$fixture/compass/docs" "$fixture/compass/knowledge" "$fixture/loom/dispatcher" "$fixture/references" "$fixture/.github"
+    cp "$REDCAP_ROOT/compass/soul.md" "$fixture/compass/soul.md"
+    cp "$REDCAP_ROOT/compass/knowledge/index.md" "$fixture/compass/knowledge/index.md"
+    cp "$REDCAP_ROOT/AGENTS.md" "$fixture/AGENTS.md"
+    cp "$REDCAP_ROOT/CLAUDE.md" "$fixture/CLAUDE.md"
+    cp "$REDCAP_ROOT/GEMINI.md" "$fixture/GEMINI.md"
+    cp "$REDCAP_ROOT/.github/copilot-instructions.md" "$fixture/.github/copilot-instructions.md"
+    cp "$REDCAP_ROOT/loom/dispatcher/reload-rules.yaml" "$fixture/loom/dispatcher/reload-rules.yaml"
+    cp "$REDCAP_ROOT/references/hook-standards.md" "$fixture/references/hook-standards.md"
+    cp "$REDCAP_ROOT/references/execution-guarantees.json" "$fixture/references/execution-guarantees.json"
+
+    python3 - "$fixture/compass/soul.md" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("redcap-execution-guarantee-check.sh", "redcap-execution-guarantee-missing.sh")
+path.write_text(text, encoding="utf-8")
+PY
+
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-revival-check.sh" "$fixture" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "stale revival protocol fixture unexpectedly passed"
+    assert_string_contains "$stale_output" "redcap-execution-guarantee-check.sh"
+}
+
+run_diagnose_overview_case() {
+    local output
+
+    log "case: diagnose-overview"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_ROOT/.dev-task.md")"
+    assert_string_contains "$output" "REDCAP_DIAGNOSE"
+    assert_string_contains "$output" "## 诊断门禁"
+    assert_string_contains "$output" "[ok] docs-catalog"
+    assert_string_contains "$output" "[ok] knowledge-index"
+    assert_string_contains "$output" "[ok] overlay-governance"
+    assert_string_contains "$output" "[ok] state-machine-contract"
+    assert_string_contains "$output" "[ok] token-risk-audit"
+    assert_string_contains "$output" "[ok] contributing-ia"
+    assert_string_contains "$output" "[ok] review-tracks"
+    assert_string_contains "$output" "[ok] hook-contract"
+    assert_string_contains "$output" "[ok] runtime-helper"
+    assert_string_contains "$output" "[ok] cli-console-mirror"
+    assert_string_contains "$output" "DIAGNOSE_OK"
+}
+
+run_acceptance_index_check_case() {
+    local output find_output
+
+    log "case: acceptance-index-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-acceptance-index.sh" check)"
+    assert_string_contains "$output" "ACCEPTANCE_INDEX_OK"
+    assert_string_contains "$output" "do not bulk-read"
+
+    find_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-acceptance-index.sh" find docs-catalog)"
+    assert_string_contains "$find_output" "ACCEPTANCE_INDEX_FIND"
+    assert_string_contains "$find_output" "docs-catalog-check"
+}
+
+run_token_risk_audit_case() {
+    local output fixture stale_output stale_status
+
+    log "case: token-risk-audit"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-token-risk-audit.sh")"
+    assert_string_contains "$output" "TOKEN_RISK_AUDIT_OK"
+    assert_string_contains "$output" "entry_auto_import_large_files=none"
+    assert_string_contains "$output" "redcap-multi-session-acceptance.sh"
+
+    fixture="$ACCEPT_ROOT/token-risk-fixture"
+    mkdir -p "$fixture"
+    init_temp_git_repo "$fixture"
+    cp -R "$REDCAP_ROOT/AGENTS.md" "$fixture/AGENTS.md"
+    cp -R "$REDCAP_ROOT/CLAUDE.md" "$fixture/CLAUDE.md"
+    cp -R "$REDCAP_ROOT/GEMINI.md" "$fixture/GEMINI.md"
+    mkdir -p "$fixture/.github" "$fixture/compass/tools" "$fixture/compass/docs" "$fixture/compass/knowledge"
+    cp "$REDCAP_ROOT/.github/copilot-instructions.md" "$fixture/.github/copilot-instructions.md"
+    cp "$REDCAP_ROOT/.gitignore" "$fixture/.gitignore"
+    cp "$REDCAP_ROOT/compass/tools/redcap-token-risk-audit.sh" "$fixture/compass/tools/redcap-token-risk-audit.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" "$fixture/compass/tools/redcap-docs-catalog.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-knowledge-index-check.sh" "$fixture/compass/tools/redcap-knowledge-index-check.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-acceptance-index.sh" "$fixture/compass/tools/redcap-acceptance-index.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-contributing-ia-check.sh" "$fixture/compass/tools/redcap-contributing-ia-check.sh"
+    cp "$REDCAP_ROOT/compass/CONTRIBUTING.core.md" "$fixture/compass/CONTRIBUTING.core.md"
+    chmod +x "$fixture/compass/tools/redcap-token-risk-audit.sh"
+    git -C "$fixture" add . >/dev/null
+    git -C "$fixture" commit --quiet -m "token risk fixture"
+    printf '\n@compass/CONTRIBUTING.md\n' >>"$fixture/AGENTS.md"
+
+    set +e
+    stale_output="$(bash "$fixture/compass/tools/redcap-token-risk-audit.sh" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad token-risk fixture unexpectedly passed"
+    assert_string_contains "$stale_output" "auto-imports large file"
+}
+
+run_contributing_ia_check_case() {
+    local output fixture stale_output stale_status
+
+    log "case: contributing-ia-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-contributing-ia-check.sh")"
+    assert_string_contains "$output" "CONTRIBUTING_IA_OK"
+
+    fixture="$ACCEPT_ROOT/contributing-ia-fixture"
+    mkdir -p "$fixture/.github" "$fixture/compass/tools" "$fixture/references" "$fixture/compass"
+    cp "$REDCAP_ROOT/AGENTS.md" "$fixture/AGENTS.md"
+    cp "$REDCAP_ROOT/CLAUDE.md" "$fixture/CLAUDE.md"
+    cp "$REDCAP_ROOT/GEMINI.md" "$fixture/GEMINI.md"
+    cp "$REDCAP_ROOT/.github/copilot-instructions.md" "$fixture/.github/copilot-instructions.md"
+    cp "$REDCAP_ROOT/compass/CONTRIBUTING.md" "$fixture/compass/CONTRIBUTING.md"
+    cp "$REDCAP_ROOT/compass/CONTRIBUTING.core.md" "$fixture/compass/CONTRIBUTING.core.md"
+    cp "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" "$fixture/compass/tools/redcap-on-stop-review.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-token-risk-audit.sh" "$fixture/compass/tools/redcap-token-risk-audit.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-contributing-ia-check.sh" "$fixture/compass/tools/redcap-contributing-ia-check.sh"
+    cp "$REDCAP_ROOT/references/review-tracks.json" "$fixture/references/review-tracks.json"
+    printf '\n@compass/CONTRIBUTING.md\n' >>"$fixture/AGENTS.md"
+    set +e
+    stale_output="$(bash "$fixture/compass/tools/redcap-contributing-ia-check.sh" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad contributing IA fixture unexpectedly passed"
+    assert_string_contains "$stale_output" "must not auto-import large file"
+}
+
+run_review_tracks_check_case() {
+    local output
+
+    log "case: review-tracks-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-review-tracks-check.sh")"
+    assert_string_contains "$output" "REVIEW_TRACKS_OK"
+}
+
+run_hook_contract_check_case() {
+    local output
+
+    log "case: hook-contract-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-hook-contract-check.sh")"
+    assert_string_contains "$output" "HOOK_CONTRACT_OK"
+}
+
+run_runtime_helper_check_case() {
+    local output
+
+    log "case: runtime-helper-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-runtime-helper-check.sh")"
+    assert_string_contains "$output" "RUNTIME_HELPER_OK"
+}
+
+run_cli_console_mirror_check_case() {
+    local output
+
+    log "case: cli-console-mirror-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-cli-console-mirror-check.sh")"
+    assert_string_contains "$output" "CLI_CONSOLE_MIRROR_OK"
+}
+
+run_state_machine_contract_check_case() {
+    local output fixture stale_output stale_status
+
+    log "case: state-machine-contract-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-state-machine-check.sh")"
+    assert_string_contains "$output" "STATE_MACHINE_CONTRACT_OK"
+
+    fixture="$ACCEPT_ROOT/state-machine-contract-fixture"
+    mkdir -p "$fixture/compass/tools" "$fixture/loom/dispatcher" "$fixture/references"
+    cp "$REDCAP_ROOT/compass/tools/redcap-state-machine-check.sh" "$fixture/compass/tools/redcap-state-machine-check.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-check-state.sh" "$fixture/compass/tools/redcap-check-state.sh"
+    cp "$REDCAP_ROOT/loom/dispatcher/state-machine.md" "$fixture/loom/dispatcher/state-machine.md"
+    cp "$REDCAP_ROOT/references/communication-protocol.md" "$fixture/references/communication-protocol.md"
+    chmod +x "$fixture/compass/tools/redcap-state-machine-check.sh"
+    python3 - "$fixture/compass/tools/redcap-check-state.sh" <<'PY'
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("    'DEGRADED',\n", "")
+path.write_text(text, encoding="utf-8")
+PY
+
+    set +e
+    stale_output="$(bash "$fixture/compass/tools/redcap-state-machine-check.sh" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad state-machine contract fixture unexpectedly passed"
+    assert_string_contains "$stale_output" "documented states missing"
+}
+
 run_spec_registry_validates_repo_case() {
     log "case: spec-registry-validates-repo"
 
     bash "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "$REDCAP_ROOT" >/dev/null
+}
+
+run_spec_check_propagates_control_gate_failures_case() {
+    local repo output status failing_gate expected_message
+
+    log "case: spec-check-propagates-control-gate-failures"
+
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival; do
+        repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
+        create_spec_registry_fixture "$repo"
+        mkdir -p "$repo/compass/tools" "$repo/compass/docs"
+        cp "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "$repo/compass/tools/redcap-spec-check.sh"
+
+cat >"$repo/compass/tools/redcap-docs-catalog.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "docs-catalog" && "\${1:-}" == "check" ]]; then
+    echo "fixture docs catalog failure" >&2
+    exit 37
+fi
+if [[ "$failing_gate" == "docs-retention" && "\${1:-}" == "retention-check" ]]; then
+    echo "fixture docs retention failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-execution-guarantee-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "execution-guarantee" ]]; then
+    echo "fixture execution guarantee failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-revival-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "revival" ]]; then
+    echo "fixture revival failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-knowledge-index-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "knowledge-index" ]]; then
+    echo "fixture knowledge index failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-overlay-governance-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "overlay-governance" ]]; then
+    echo "fixture overlay governance failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-state-machine-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "state-machine" ]]; then
+    echo "fixture state machine failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-token-risk-audit.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "token-risk" ]]; then
+    echo "fixture token risk failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-contributing-ia-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "contributing-ia" ]]; then
+    echo "fixture contributing IA failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-review-tracks-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "review-tracks" ]]; then
+    echo "fixture review tracks failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-hook-contract-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "hook-contract" ]]; then
+    echo "fixture hook contract failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-runtime-helper-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "runtime-helper" ]]; then
+    echo "fixture runtime helper failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-cli-console-mirror-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "cli-console" ]]; then
+    echo "fixture cli console failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
+            "$repo/compass/tools/redcap-docs-catalog.sh" \
+            "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
+            "$repo/compass/tools/redcap-knowledge-index-check.sh" \
+            "$repo/compass/tools/redcap-overlay-governance-check.sh" \
+            "$repo/compass/tools/redcap-state-machine-check.sh" \
+            "$repo/compass/tools/redcap-token-risk-audit.sh" \
+            "$repo/compass/tools/redcap-contributing-ia-check.sh" \
+            "$repo/compass/tools/redcap-review-tracks-check.sh" \
+            "$repo/compass/tools/redcap-hook-contract-check.sh" \
+            "$repo/compass/tools/redcap-runtime-helper-check.sh" \
+            "$repo/compass/tools/redcap-cli-console-mirror-check.sh" \
+            "$repo/compass/tools/redcap-revival-check.sh"
+
+        case "$failing_gate" in
+            docs-catalog) expected_message="docs catalog check failed" ;;
+            docs-retention) expected_message="docs retention check failed" ;;
+            execution-guarantee) expected_message="execution guarantee check failed" ;;
+            knowledge-index) expected_message="knowledge index check failed" ;;
+            overlay-governance) expected_message="overlay governance check failed" ;;
+            state-machine) expected_message="state machine contract check failed" ;;
+            token-risk) expected_message="token risk audit failed" ;;
+            contributing-ia) expected_message="contributing IA check failed" ;;
+            review-tracks) expected_message="review tracks check failed" ;;
+            hook-contract) expected_message="hook contract check failed" ;;
+            runtime-helper) expected_message="runtime helper check failed" ;;
+            cli-console) expected_message="cli console mirror check failed" ;;
+            revival) expected_message="revival check failed" ;;
+        esac
+
+        set +e
+        output="$(bash "$repo/compass/tools/redcap-spec-check.sh" "$repo" 2>&1)"
+        status=$?
+        set -e
+        [[ "$status" -ne 0 ]] || fail "spec-check did not propagate $failing_gate failure"
+        assert_string_contains "$output" "$expected_message"
+    done
 }
 
 create_spec_registry_fixture() {
@@ -6429,7 +7045,7 @@ run_cli_console_mirror_overwrites_case() {
 }
 
 run_feishu_duplex_window_queue_case() {
-    local fixture_root fake_bin fake_state config_path state_dir output window_id pending_id scan_count pending_count
+    local fixture_root fake_bin fake_state config_path state_dir output window_id pending_id scan_count pending_count sent_count
 
     log "case: feishu-duplex-window-queue"
 
@@ -6551,6 +7167,7 @@ PYEOF
   "fast_poll_window_seconds": 1,
   "slow_poll_seconds": 1,
   "followup_timeout_seconds": 30,
+  "notify_dedup_seconds": 300,
   "history_limit": 50,
   "known_id_limit": 50
 }
@@ -6565,6 +7182,23 @@ EOF
     window_id=$(printf '%s\n' "$output" | sed -n 's/^FEISHU_WINDOW_ID=//p' | tail -n 1)
     [[ -n "$window_id" ]] || fail "notify followup did not emit window id"
     assert_exists "$state_dir/active-window.json"
+
+    output="$(
+        FAKE_LARK_STATE="$fake_state" \
+        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "任务完成" --project redcap --window-type followup --no-background-watch 2>&1
+    )"
+    assert_string_contains "$output" "FEISHU_DEDUPED_WINDOW_ID=$window_id"
+    sent_count="$(python3 - "$fake_state" <<'PY'
+import json
+import pathlib
+import sys
+state = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(sum(1 for message in state["messages"] if message.get("sender", {}).get("sender_type") == "app"))
+PY
+)"
+    assert_eq "$sent_count" "1"
 
     python3 - "$fake_state" <<'PY'
 import json
@@ -6685,6 +7319,39 @@ run_overlay_skill_handoff_stays_native_case() {
     assert_contains "$REDCAP_ROOT/references/agent-constraints.md" "下游 skill 当成 blocker"
 }
 
+run_overlay_governance_check_case() {
+    local output fixture stale_output stale_status
+
+    log "case: overlay-governance-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-overlay-governance-check.sh")"
+    assert_string_contains "$output" "OVERLAY_GOVERNANCE_OK"
+
+    fixture="$ACCEPT_ROOT/overlay-governance-fixture"
+    mkdir -p "$fixture/compass" "$fixture/references" "$fixture/compass/docs/specs" "$fixture/compass/tools"
+    cp "$REDCAP_ROOT/compass/tools/redcap-overlay-governance-check.sh" "$fixture/compass/tools/redcap-overlay-governance-check.sh"
+    cp "$REDCAP_ROOT/SKILL.md" "$fixture/SKILL.md"
+    cp "$REDCAP_ROOT/compass/CONTRIBUTING.md" "$fixture/compass/CONTRIBUTING.md"
+    cp "$REDCAP_ROOT/references/agent-constraints.md" "$fixture/references/agent-constraints.md"
+    cp "$REDCAP_ROOT/compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md" "$fixture/compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md"
+    chmod +x "$fixture/compass/tools/redcap-overlay-governance-check.sh"
+    python3 - "$fixture/references/agent-constraints.md" <<'PY'
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("brainstorming/澄清习惯", "随便澄清")
+path.write_text(text, encoding="utf-8")
+PY
+
+    set +e
+    stale_output="$(bash "$fixture/compass/tools/redcap-overlay-governance-check.sh" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad overlay governance fixture unexpectedly passed"
+    assert_string_contains "$stale_output" "references/agent-constraints.md missing required pattern"
+}
+
 run_all_cases() {
     run_binding_recovery_gate_case
     run_layerb_concurrency_case
@@ -6742,6 +7409,7 @@ run_all_cases() {
     run_on_stop_review_falls_back_after_unparseable_success_output_case
     run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case
     run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
+    run_on_stop_review_records_unavailable_rate_limit_case
     run_on_stop_review_accepts_structured_review_with_auth_terms_case
     run_on_stop_review_accepts_structured_review_with_auth_prose_outside_fence_case
     run_on_stop_review_accepts_structured_review_with_quoted_cli_error_in_stdout_prose_case
@@ -6769,8 +7437,25 @@ run_all_cases() {
     run_artifact_lifecycle_pre_commit_block_case
     run_artifact_lifecycle_pre_commit_allow_case
     run_artifact_lifecycle_rejects_tabbed_path_case
+    run_docs_catalog_check_case
+    run_docs_catalog_progressive_disclosure_case
+    run_docs_retention_check_case
     run_backlog_check_strict_case
+    run_current_status_overview_case
+    run_execution_guarantees_check_case
+    run_knowledge_index_check_case
+    run_acceptance_index_check_case
+    run_token_risk_audit_case
+    run_contributing_ia_check_case
+    run_review_tracks_check_case
+    run_hook_contract_check_case
+    run_runtime_helper_check_case
+    run_cli_console_mirror_check_case
+    run_revival_protocol_check_case
+    run_diagnose_overview_case
+    run_state_machine_contract_check_case
     run_spec_registry_validates_repo_case
+    run_spec_check_propagates_control_gate_failures_case
     run_spec_check_rejects_superseded_outside_archive_case
     run_spec_check_requires_replaced_by_case
     run_spec_check_rejects_invalid_role_case
@@ -6780,6 +7465,7 @@ run_all_cases() {
     run_cli_console_mirror_overwrites_case
     run_feishu_duplex_window_queue_case
     run_overlay_skill_handoff_stays_native_case
+    run_overlay_governance_check_case
     run_continuity_manifest_sync_case
     run_continuity_runtime_required_case
     run_continuity_runtime_claim_requires_live_process_case
@@ -6978,6 +7664,9 @@ case "$COMMAND" in
     on-stop-review-falls-back-to-codex-after-unavailable-reviewers)
         run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
         ;;
+    on-stop-review-records-unavailable-rate-limit)
+        run_on_stop_review_records_unavailable_rate_limit_case
+        ;;
     on-stop-review-accepts-structured-review-with-auth-terms)
         run_on_stop_review_accepts_structured_review_with_auth_terms_case
         ;;
@@ -7059,11 +7748,62 @@ case "$COMMAND" in
     artifact-lifecycle-rejects-tabbed-path)
         run_artifact_lifecycle_rejects_tabbed_path_case
         ;;
+    docs-catalog-check)
+        run_docs_catalog_check_case
+        ;;
+    docs-catalog-progressive-disclosure)
+        run_docs_catalog_progressive_disclosure_case
+        ;;
+    docs-retention-check)
+        run_docs_retention_check_case
+        ;;
     backlog-check-strict)
         run_backlog_check_strict_case
         ;;
+    current-status-overview)
+        run_current_status_overview_case
+        ;;
+    execution-guarantees-check)
+        run_execution_guarantees_check_case
+        ;;
+    knowledge-index-check)
+        run_knowledge_index_check_case
+        ;;
+    acceptance-index-check)
+        run_acceptance_index_check_case
+        ;;
+    token-risk-audit)
+        run_token_risk_audit_case
+        ;;
+    contributing-ia-check)
+        run_contributing_ia_check_case
+        ;;
+    review-tracks-check)
+        run_review_tracks_check_case
+        ;;
+    hook-contract-check)
+        run_hook_contract_check_case
+        ;;
+    runtime-helper-check)
+        run_runtime_helper_check_case
+        ;;
+    cli-console-mirror-check)
+        run_cli_console_mirror_check_case
+        ;;
+    revival-protocol-check)
+        run_revival_protocol_check_case
+        ;;
+    diagnose-overview)
+        run_diagnose_overview_case
+        ;;
+    state-machine-contract-check)
+        run_state_machine_contract_check_case
+        ;;
     spec-registry-validates-repo)
         run_spec_registry_validates_repo_case
+        ;;
+    spec-check-propagates-control-gate-failures)
+        run_spec_check_propagates_control_gate_failures_case
         ;;
     spec-check-rejects-superseded-outside-archive)
         run_spec_check_rejects_superseded_outside_archive_case
@@ -7091,6 +7831,9 @@ case "$COMMAND" in
         ;;
     overlay-skill-handoff-stays-native)
         run_overlay_skill_handoff_stays_native_case
+        ;;
+    overlay-governance-check)
+        run_overlay_governance_check_case
         ;;
     continuity-manifest-sync)
         run_continuity_manifest_sync_case

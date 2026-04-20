@@ -46,23 +46,12 @@ if [[ ${#ALLOWED_GLOBS[@]} -eq 0 ]]; then
     exit 1
 fi
 
-attach_runtime_if_possible() {
-    if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
-        redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY" 2>/dev/null
-        return
-    fi
-
-    if [[ -n "$HOST" ]]; then
-        redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null
-    fi
-}
-
 STAMPED_HASH=""
 STAMPED_SLICE=""
 STAMPED_BACKLOG_SOURCE=""
 STAMPED_BACKLOG_ID=""
 STAMPED_BACKLOG_ITEM=""
-if attach_runtime_if_possible; then
+if redcap_runtime_attach_current_or_claim "$HOST"; then
     STAMPED_HASH=$(redcap_runtime_read_text "layerB/control-plane/confirmed.hash" 2>/dev/null || true)
     STAMPED_SLICE=$(redcap_runtime_read_text "layerB/control-plane/active-slice" 2>/dev/null || true)
     STAMPED_BACKLOG_SOURCE=$(redcap_runtime_read_text "layerB/control-plane/backlog-source" 2>/dev/null || true)

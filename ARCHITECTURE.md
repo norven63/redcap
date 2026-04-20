@@ -108,6 +108,7 @@ RedCap 当前把状态面划分为三类：
 4. spec 文档若想继续保留在 `compass/docs/specs/**`，必须在 `references/spec-registry.json` 里登记自己的角色、当前状态和配套控制面；否则就只是匿名材料，应迁出或补登记。
 5. 若某类资产要从 continuity 层升级为 evidence，必须经过**显式发布**，而不是因为“写成了 markdown”就自动变成 docs。
 6. `compass/docs/index.yaml` 负责冻结 docs collection 的 retention / archive 规则，避免 docs 根目录再次回到大杂烩状态。
+7. `compass/CONTRIBUTING.core.md` 是**首读压缩层**，不是第二权威；它只负责把“新会话立刻必须遵守的规则”压到小体积入口里，权威解释仍回到 `compass/CONTRIBUTING.md`。
 
 ### 2.3 host-agent interop governance
 
@@ -124,8 +125,22 @@ RedCap 当前把状态面划分为三类：
 
 当前 interop contract 的核心不是“阻止宿主存在”，而是**阻止宿主表面越权成为 RedCap 的真相源**。
 
+这也意味着，RedCap 的执行保障不能再被当成单一强度的“统一护盾”。当前正式采用三档口径：
+
+1. **物理强保障**：脚本、validator、closure chain、Hook 已直接接管触发点。
+2. **宿主耦合保障**：RedCap 已有接线，但是否成立取决于宿主能力矩阵。
+3. **人工/宿主边界保障**：规则已被登记、审计、诊断，但当前没有 repo-owned reply veto 一类的物理拦截点。
+
+具体解释见 [execution-guarantee-tiers.md](/Users/norven/.claude/skills/redcap/references/execution-guarantee-tiers.md)；机器权威仍以 `references/execution-guarantees.json` 为准。
+
 这里还要额外加一条资产边界：**共享宿主 skill 是 carrier-owned overlay，不是 RedCap 的 patch surface**。  
 RedCap 可以消费它们的能力，但不能把“修改宿主 shared skill 原始文件”当成自身能力成立的前提；若不改宿主 skill 就无法稳定工作，该路径只能被标记为 **degraded / unsupported overlay**。
+
+同时，宿主入口文件（`AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`.github/copilot-instructions.md`）必须被看作 **carrier-required shims**：
+
+- 它们分名存在，是因为各宿主只会自动加载自己的固定文件名；
+- 它们的职责只是把会话导向同一套 `soul + CONTRIBUTING.core + current-status + index` 首读链；
+- 它们不得长成第二份规范正文，也不得各自维护不同版本的规则。
 
 ---
 
@@ -219,6 +234,7 @@ Loom 的可靠性工程面向“长任务 + 宿主差异 + LLM 遗忘”三类�
 | **reload rules** | 在关键检查点重读规则，抵抗上下文压缩 |
 | **pending_actions 原子写入** | 防止“状态更新了，但后续动作忘了执行” |
 | **fallback / degraded 路径** | 在宿主能力不足或会话恢复异常时，保留可恢复性而不是伪成功 |
+| **execution guarantees** | 用 `references/execution-guarantees.json` 登记哪些规则必须有复活、Hook、validator 或 manual-only 保障，避免规则只停在自然语言文档里 |
 
 其中 `pending_actions` 的原则仍然成立：**状态推进与后续动作必须同批次固化**，否则就会产生递归遗忘。
 
@@ -569,6 +585,7 @@ References 是三体共享的协议层，承载：
 | `loom/dispatcher/agent-adapters.md` | 路由、适配、会话接力 |
 | `prism/protocol.md` | Prism 协议全文 |
 | `references/communication-protocol.md` | `__redcap_status` 完整协议 |
+| `references/execution-guarantees.json` | 执行保障目录，说明哪些规则必须被脚本、Hook、validator 或人工边界保护 |
 | `references/task-report-template.md` | 任务完成报告模板 |
 | `compass/knowledge/lessons.md` | 活跃经验库 |
 

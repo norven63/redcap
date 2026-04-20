@@ -39,12 +39,8 @@ report_anchor_rel_path() {
     redcap_interop_resolve_report_rel_path "$REDCAP_ROOT" "$rel_path" 2>/dev/null
 }
 
-if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
-    if redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY"; then
-        :
-    fi
-elif [[ -n "$HOST" ]]; then
-    if redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null; then
+if [[ -n "$HOST" ]]; then
+    if redcap_runtime_attach_current_or_claim "$HOST"; then
         :
     else
         redcap_runtime_record_degraded_mode "$REDCAP_ROOT" "layerB-report-check-missing-claim" "host=$HOST" || true

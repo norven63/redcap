@@ -255,3 +255,107 @@ for spec_path in changed_specs:
 if changed_specs:
     print("\n".join(changed_specs))
 PY
+SPEC_CHECK_STATUS=$?
+if [[ "$SPEC_CHECK_STATUS" -ne 0 ]]; then
+    exit "$SPEC_CHECK_STATUS"
+fi
+
+DOCS_CATALOG_CHECK="$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh"
+if [[ -x "$DOCS_CATALOG_CHECK" ]]; then
+    if ! REDCAP_DOCS_CATALOG_PATH="$REDCAP_ROOT/compass/docs/catalog.json" bash "$DOCS_CATALOG_CHECK" check >/dev/null; then
+        echo "[redcap-spec-check] docs catalog check failed" >&2
+        exit 1
+    fi
+    if ! REDCAP_DOCS_CATALOG_PATH="$REDCAP_ROOT/compass/docs/catalog.json" bash "$DOCS_CATALOG_CHECK" retention-check >/dev/null; then
+        echo "[redcap-spec-check] docs retention check failed" >&2
+        exit 1
+    fi
+fi
+
+EXECUTION_GUARANTEE_CHECK="$REDCAP_ROOT/compass/tools/redcap-execution-guarantee-check.sh"
+if [[ -x "$EXECUTION_GUARANTEE_CHECK" ]]; then
+    if ! bash "$EXECUTION_GUARANTEE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] execution guarantee check failed" >&2
+        exit 1
+    fi
+fi
+
+KNOWLEDGE_INDEX_CHECK="$REDCAP_ROOT/compass/tools/redcap-knowledge-index-check.sh"
+if [[ -x "$KNOWLEDGE_INDEX_CHECK" ]]; then
+    if ! bash "$KNOWLEDGE_INDEX_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] knowledge index check failed" >&2
+        exit 1
+    fi
+fi
+
+OVERLAY_GOVERNANCE_CHECK="$REDCAP_ROOT/compass/tools/redcap-overlay-governance-check.sh"
+if [[ -x "$OVERLAY_GOVERNANCE_CHECK" ]]; then
+    if ! bash "$OVERLAY_GOVERNANCE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] overlay governance check failed" >&2
+        exit 1
+    fi
+fi
+
+STATE_MACHINE_CHECK="$REDCAP_ROOT/compass/tools/redcap-state-machine-check.sh"
+if [[ -x "$STATE_MACHINE_CHECK" ]]; then
+    if ! bash "$STATE_MACHINE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] state machine contract check failed" >&2
+        exit 1
+    fi
+fi
+
+TOKEN_RISK_AUDIT="$REDCAP_ROOT/compass/tools/redcap-token-risk-audit.sh"
+if [[ -x "$TOKEN_RISK_AUDIT" ]]; then
+    if ! bash "$TOKEN_RISK_AUDIT" >/dev/null; then
+        echo "[redcap-spec-check] token risk audit failed" >&2
+        exit 1
+    fi
+fi
+
+CONTRIBUTING_IA_CHECK="$REDCAP_ROOT/compass/tools/redcap-contributing-ia-check.sh"
+if [[ -x "$CONTRIBUTING_IA_CHECK" ]]; then
+    if ! bash "$CONTRIBUTING_IA_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] contributing IA check failed" >&2
+        exit 1
+    fi
+fi
+
+REVIEW_TRACKS_CHECK="$REDCAP_ROOT/compass/tools/redcap-review-tracks-check.sh"
+if [[ -x "$REVIEW_TRACKS_CHECK" ]]; then
+    if ! bash "$REVIEW_TRACKS_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] review tracks check failed" >&2
+        exit 1
+    fi
+fi
+
+HOOK_CONTRACT_CHECK="$REDCAP_ROOT/compass/tools/redcap-hook-contract-check.sh"
+if [[ -x "$HOOK_CONTRACT_CHECK" ]]; then
+    if ! bash "$HOOK_CONTRACT_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] hook contract check failed" >&2
+        exit 1
+    fi
+fi
+
+RUNTIME_HELPER_CHECK="$REDCAP_ROOT/compass/tools/redcap-runtime-helper-check.sh"
+if [[ -x "$RUNTIME_HELPER_CHECK" ]]; then
+    if ! bash "$RUNTIME_HELPER_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] runtime helper check failed" >&2
+        exit 1
+    fi
+fi
+
+CLI_CONSOLE_CHECK="$REDCAP_ROOT/compass/tools/redcap-cli-console-mirror-check.sh"
+if [[ -x "$CLI_CONSOLE_CHECK" ]]; then
+    if ! bash "$CLI_CONSOLE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] cli console mirror check failed" >&2
+        exit 1
+    fi
+fi
+
+REVIVAL_CHECK="$REDCAP_ROOT/compass/tools/redcap-revival-check.sh"
+if [[ -x "$REVIVAL_CHECK" ]]; then
+    if ! bash "$REVIVAL_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] revival check failed" >&2
+        exit 1
+    fi
+fi

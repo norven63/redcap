@@ -32,6 +32,14 @@
       "allow_explicit_binding_key": true,
       "allow_host_session_id_binding": false,
       "missing_identity_mode": "degraded"
+    },
+    "codex": {
+      "support_status": "supported",
+      "profile": "codex-agents-md-no-reply-veto",
+      "allow_safe_degraded": true,
+      "allow_explicit_binding_key": true,
+      "allow_host_session_id_binding": false,
+      "missing_identity_mode": "degraded"
     }
   }
 }

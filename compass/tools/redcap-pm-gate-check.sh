@@ -51,17 +51,6 @@ task_exists() {
     [[ -f "$TASK_FILE" ]]
 }
 
-attach_runtime_if_possible() {
-    if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
-        redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY" 2>/dev/null
-        return
-    fi
-
-    if [[ -n "$HOST" ]]; then
-        redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null
-    fi
-}
-
 if ! task_exists; then
     record_error "missing canonical task ledger: $TASK_FILE"
 else
@@ -124,7 +113,7 @@ if [[ ${#ERRORS[@]} -gt 0 ]]; then
     exit 0
 fi
 
-if attach_runtime_if_possible; then
+if redcap_runtime_attach_current_or_claim "$HOST"; then
     redcap_runtime_write_text "layerB/control-plane/task-id" "$TASK_ID" || true
     redcap_runtime_write_text "layerB/control-plane/task-file" "$TASK_FILE" || true
     redcap_runtime_write_text "layerB/control-plane/top-goal" "$TOP_GOAL" || true

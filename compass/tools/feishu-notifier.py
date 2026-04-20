@@ -26,6 +26,7 @@ RedCap 飞书通知器 — bot 单聊 + 窗口式接收
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -45,6 +46,7 @@ WINDOWS_DIR = STATE_DIR / "windows"
 ACTIVE_WINDOW_PATH = STATE_DIR / "active-window.json"
 PENDING_ITEMS_PATH = STATE_DIR / "pending-items.json"
 CHAT_CURSOR_PATH = STATE_DIR / "chat-cursor.json"
+RECENT_NOTIFICATIONS_PATH = STATE_DIR / "recent-notifications.json"
 
 DEFAULT_HISTORY_LIMIT = 100
 DEFAULT_KNOWN_ID_LIMIT = 200
@@ -142,6 +144,7 @@ class FeishuConfig:
     fast_poll_window_seconds: int
     slow_poll_seconds: int
     followup_timeout_seconds: int
+    notify_dedup_seconds: int
     history_limit: int
     known_id_limit: int
 
@@ -229,6 +232,10 @@ def load_config() -> Optional[FeishuConfig]:
             env_or_cfg(raw, ["REDCAP_FEISHU_FOLLOWUP_TIMEOUT_SECONDS"], ["followup_timeout_seconds"], 1800),
             1800,
         ),
+        notify_dedup_seconds=as_int(
+            env_or_cfg(raw, ["REDCAP_FEISHU_NOTIFY_DEDUP_SECONDS"], ["notify_dedup_seconds"], 1800),
+            1800,
+        ),
         history_limit=as_int(env_or_cfg(raw, ["REDCAP_FEISHU_HISTORY_LIMIT"], ["history_limit"], DEFAULT_HISTORY_LIMIT), DEFAULT_HISTORY_LIMIT),
         known_id_limit=as_int(env_or_cfg(raw, ["REDCAP_FEISHU_KNOWN_ID_LIMIT"], ["known_id_limit"], DEFAULT_KNOWN_ID_LIMIT), DEFAULT_KNOWN_ID_LIMIT),
     )
@@ -312,6 +319,68 @@ class FeishuNotifier:
 
     def _save_cursor_state(self, cursor: dict[str, Any]) -> None:
         save_json_file(CHAT_CURSOR_PATH, cursor)
+
+    def _recent_notifications(self) -> list[dict[str, Any]]:
+        records = load_json_file(RECENT_NOTIFICATIONS_PATH, [])
+        if isinstance(records, list):
+            return records
+        return []
+
+    def _save_recent_notifications(self, records: list[dict[str, Any]]) -> None:
+        save_json_file(RECENT_NOTIFICATIONS_PATH, records[:100])
+
+    def _notification_key(self, project: str, window_type: str, message: str) -> str:
+        payload = json.dumps(
+            {
+                "project": project or "",
+                "window_type": window_type or "none",
+                "message": message or "",
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def _fresh_duplicate_notification(self, key: str) -> Optional[dict[str, Any]]:
+        dedup_seconds = int(self.config.notify_dedup_seconds or 0)
+        if dedup_seconds <= 0:
+            return None
+
+        now = time.time()
+        fresh_records: list[dict[str, Any]] = []
+        duplicate: Optional[dict[str, Any]] = None
+        for record in self._recent_notifications():
+            try:
+                sent_at = float(record.get("sent_at_epoch") or 0)
+            except (TypeError, ValueError):
+                continue
+            if now - sent_at > dedup_seconds:
+                continue
+            fresh_records.append(record)
+            if record.get("key") == key and duplicate is None:
+                duplicate = record
+
+        self._save_recent_notifications(fresh_records)
+        return duplicate
+
+    def _record_notification(self, key: str, project: str, window_type: str, message: str, window_id: str = "") -> None:
+        record = {
+            "key": key,
+            "project": project or "",
+            "window_type": window_type or "none",
+            "message_preview": trim_text(message, 120),
+            "window_id": window_id,
+            "sent_at": utc_now_iso(),
+            "sent_at_epoch": time.time(),
+        }
+        records = [record]
+        for existing in self._recent_notifications():
+            if existing.get("key") == key:
+                continue
+            records.append(existing)
+            if len(records) >= 100:
+                break
+        self._save_recent_notifications(records)
 
     def _recent_messages(self, limit: Optional[int] = None) -> list[dict[str, Any]]:
         remaining = limit or self.config.history_limit
@@ -594,6 +663,16 @@ class FeishuNotifier:
         window_timeout: int = 0,
         background_watch: bool = True,
     ) -> Optional[str]:
+        notification_key = self._notification_key(project, window_type, message)
+        duplicate = self._fresh_duplicate_notification(notification_key)
+        if duplicate is not None:
+            window_id = str(duplicate.get("window_id", "") or "")
+            if window_id:
+                print(f"FEISHU_DEDUPED_WINDOW_ID={window_id}", file=sys.stderr)
+                return window_id
+            print("FEISHU_DEDUPED=1", file=sys.stderr)
+            return None
+
         if window_type == "followup":
             timeout_seconds = window_timeout or self.config.followup_timeout_seconds
             outbound = (
@@ -608,10 +687,12 @@ class FeishuNotifier:
                 reply_action="queue",
                 background_watch=background_watch,
             )
+            self._record_notification(notification_key, project, window_type, message, window["window_id"])
             print(f"FEISHU_WINDOW_ID={window['window_id']}", file=sys.stderr)
             return window["window_id"]
 
         self._send_text(message)
+        self._record_notification(notification_key, project, window_type, message)
         return None
 
     def ask(

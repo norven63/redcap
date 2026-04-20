@@ -199,6 +199,7 @@ Agent 每次执行完毕将 `__redcap_status` JSON 写入 outbox 文件（`{role
    - 即将 commit 时：重读 references/commit-standards.md
    - 即将结束（ALL_DONE）时：重读 §5.9 收尾清理 + §5.11 飞书通知
    - 进入 PAUSED 时：重读 §5.11 飞书通知集成
+   - Layer B 新会话 / 复活时：按 `compass/soul.md §6.5` 运行 `compass/tools/redcap-current-status.sh`，先读 `compass/docs/catalog.json`，并让 `redcap-execution-guarantee-check.sh` / `redcap-revival-check.sh` 保障复活协议没有漏掉经验沉淀、棱镜、CLI 健康与任务完成复盘规则
 1. 读取 .workflow/state.yaml + pending_actions（§5.13）
    - 若存在未完成的 pending_actions → 按序执行 → 清除已完成项
 2. 若 current_state == ALL_DONE → 触发 on_ALL_DONE hooks → 输出最终摘要，结束

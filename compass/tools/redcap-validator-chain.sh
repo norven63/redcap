@@ -98,6 +98,8 @@ overall_status="pass"
 case "$MODE" in
     session-start)
         run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" session-start "$HOST" "$TASK_FILE" || overall_status="fail"
+        run_step "execution-guarantee-check" bash "$SCRIPT_DIR/redcap-execution-guarantee-check.sh" || overall_status="fail"
+        run_step "revival-check" bash "$SCRIPT_DIR/redcap-revival-check.sh" "$REDCAP_ROOT" || overall_status="fail"
         ;;
     stop-review)
         run_step "pm-gate" bash "$SCRIPT_DIR/redcap-pm-gate-check.sh" stop-review "$HOST" "$TASK_FILE" || overall_status="fail"

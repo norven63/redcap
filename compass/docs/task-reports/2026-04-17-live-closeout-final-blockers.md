@@ -1,8 +1,8 @@
 # 任务完成报告：live closeout 最终阻塞补丁
 
-**报告日期**：2026-04-17
+**报告日期**：2026-04-21
 **执行者**：Cap（Copilot CLI / GPT-5.4；Codex 接盘续修）
-**报告版本**：v1.7
+**报告版本**：v2.9
 
 ---
 
@@ -10,21 +10,21 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：Copilot CLI 中断后留下的真实 pending closure 已接盘；此前暴露出的 marker anchor、acceptance 脆弱性、真实工作区删除风险、独立评审执行器失效、reviewer parser 边界、`on-complete` 宿主身份污染、`session-end` pending refresh 竞态、Codex reviewer fallback、timeout 子进程逃逸、以及 reviewer 大文本 Bash 扫描问题都已形成补丁。最新一轮真实独立评审指出的 V-11 验证消费与入口文档联动缺口，也已通过 `7d2a3f2` / `c8b4b2e` 两个 follow-up 收口，并由 E2E postcheck 证明账本闭合。
-- 详情：本轮接盘后的最后两步不是继续改核心脚本，而是把“已经验证过的事实”接进同一条物理证据链：`SKILL.md §5.5` 现在说明 Codex CLI 作为 registry / 能力矩阵候选参与 reviewer fallback；`compass/knowledge/a2a-communication.md §2` 明确 Codex CLI 目前只承担单轮 headless review，不冒领多轮 A2A；`loom/test-reports/pending-validations.md` 已把 V-11 移入已验证归档；`loom/test-reports/latest-e2e-report.md` 记录这次 Layer B hook-level replay，并明确 V-4 仍保留给完整用户项目 fallback E2E。`bash loom/tools/redcap-e2e-postcheck.sh` 已通过，随后真实 `on-complete` 也对当前 runtime 成功发送了飞书通知；由于本报告顶部摘要随后又被刷新，仍需在这个最终报告刷新 commit 后再跑一次 live `on-complete / session-end`。
+- 当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验。
+- 详情：需要更正的是，“历史 closeout 已清”只对应更早一次 confirmed hash（`06ceb763...`）的手工核销；当前 `.dev-task.md` 的 confirmed hash（`849cfdbc...`）后续治理 tranche 仍留有 `pending closure`，`required_redlines=review,pm-gate,drift,artifact-lifecycle,task-report,notify`。因此本报告现在明确区分“历史已清”与“当前账面仍 pending”，不再把它们混成一句“现在已 clean”。
 
 ### 0.2 上一步完成的是
 
-- 上一步完成的是：`7d2a3f2 docs(governance): 补齐 reviewer fallback 验证账本` 与 `c8b4b2e docs(governance): E2E(redcap-layerB-live) 标记验证结论` 已形成正式 commit；`redcap-spec-check.sh`、targeted reviewer fallback、full acceptance、commit-proof、以及 `redcap-e2e-postcheck.sh` 均已通过。随后真实 `on-complete` 已成功发送飞书通知，但通知正文暴露出报告顶部摘要仍是旧坐标，因此本版 `v1.7` 专门刷新最终报告入口。
+- 上一步完成的是：已完成 4 个同批治理项（`pending-closure/current-status/task-report/closure-ledger` 一致性、`lessons / CONTRIBUTING` 去重与热点分层、`prism/runs` 证据链与清理策略分离、formal Prism 归档口径诚实化），并继续补上 backlog 人类说明的最终状态收口、执行保障强度分层说明、CLI wrapper 与桌面 App wrapper 的边界说明。外部 reviewer 健康微探测方面，Kimi 与 Copilot 已能 headless 回包，Gemini 有 `PASS` 文本但在 SessionEnd hook 噪声下超时，Claude 则在 hook 层取消；因此当前仍不够形成一个诚实的 formal Prism 新 quorum。
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：以本报告为锚点执行最后一轮 live runtime `session-end` 核销，确认 `commit-proof` 与真实 `on-complete / session-end / 飞书通知` 在最终 HEAD 上再次对齐，并清掉当前 `required_redlines=review` pending closure。
+- 下一步计划做的是：在当前治理补丁与文档口径都已对齐的前提下，完成当前 confirmed hash 的真实 closeout 链收尾，把剩余 `pending closure` 从 `review/spec/notify` 继续压缩并清掉；如果外部 reviewer 家族仍不足以支撑新的 formal Prism redteam，就把它明确保留为独立后续线，而不再冒充“本轮已归档”。
 
 ### 0.4 整体计划脉络图与当前位置
 
-- 整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof → live runtime 最终闭环。
-- 当前所在位置：第一次真实 live runtime 收尾已经把最终剩余 blocker 暴露出来；stop-review 边界、on-complete 校验宿主、session-end pending refresh、Codex reviewer fallback、reviewer timeout 进程组清理、file-backed review prompt 输入通道、以及 V-11 / E2E / 入口文档证据链都已修。当前只剩最终 HEAD 的 live `session-end` 核销。
+- 整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof / E2E → live runtime 严格收尾。
+- 当前所在位置：RedCap 的 repo-owned backlog 仍然是 `done=19 / in_progress=0 / pending=0`，但当前 confirmed hash 的收尾账面不是 clean，而是“历史 closeout 已清、当前 follow-up tranche 仍 pending”。Prism 侧同样要拆开说：历史 formal Prism 报告已有 2 份，但当前任务新增的 formal quorum 仍是 0；`prism/runs` 里的本地运行证据也不能被误读成已归档成功。
 
 ---
 
@@ -61,6 +61,15 @@
 9. `on-complete` host follow-up commit 形成后，真实 `session-end` 再次回放时出现“validator 全部 PASS，但 pending closure 仍被写回”的矛盾状态。排查后确认不是 review / PM Gate / drift / task report 任一校验失败，而是 `session-end` 在脚本开头读取了旧 pending 的 `updated_at`，随后长耗时 review / validator 窗口中 pending 被兼容路径或重试路径改写；最后脚本仍拿旧 `updated_at` 做 CAS 清理，被保护机制正确拒绝，于是写回 `required_redlines=pending-closure`。这类情况下不能粗暴跳过 CAS，也不能无条件清掉当前 pending；必须先重新读取当前 pending，并证明它仍是同一任务身份、同一 head 覆盖窗口内、且 redline 已被本次成功 session-end 覆盖。
 10. `session-end` pending refresh commit 形成后，真实 `session-end` 再次回放，reanchor / PM Gate / drift / backlog / spec / task-report / artifact-lifecycle / notify 全部 PASS，但最终留下 `required_redlines=review`。这次根因不在 validator，而在独立评审 fallback 列表：`gemini` exit-1、`copilot` timeout、`claude` timeout、`kimi` exit-1 后，runner 没有继续尝试本机已经可用的 `codex exec`。同时 Codex CLI 会输出 banner / warning，必须通过 `--output-last-message` 取得干净 payload。第一次把 Codex 插到 Gemini 后面再 live 回放时，又暴露出 Gemini CLI timeout 会留下 node 子进程并让 Bash runner 高 CPU 自旋；因此 timeout 必须杀整个进程组，且当前环境应优先尝试健康的 Codex，再降级到 Gemini。
 11. reviewer timeout 与 Codex stdin 修补后，真实 `session-end` 再次卡在 `redcap-on-stop-review.sh`。排查确认有两层 Bash 宽字符热点：完整 review prompt 只要先拼成 `REVIEW_PROMPT="..."`，就会让 Bash 在 CLI 启动前高 CPU；而 Codex 用量限制 / 连接失败时又可能把大段输入上下文混进 stderr，旧脚本再用 `${output//[[:space:]]/}` 判断“是否空白”，也会再次高 CPU。`--output-last-message` 只解决“结果通道干净”，`codex exec -` 只解决“Codex 不从 argv 读 prompt”；最终还必须让 prompt 构造与大文本解析都走 Python/stdin，Bash 只传文件路径和小字符串。
+12. 接盘过程中又暴露出一个非功能但很实在的成本问题：`compass/docs/` 已经积累到约 9k 行，粗略 token 压力达到 8w 到 16w，其中 `task-reports/` 单独就约 4w 到 8w。继续把 task report 当默认工作记忆，会让后续接盘为了找“当前到哪了”反复读取大量冻结 evidence，既慢也容易把注意力淹没。
+13. 用户补齐 `.env` 后，Gemini / Kimi headless 路径恢复，外部只读审查抓到一个真实 P0：`redcap-spec-check.sh` 接入了 docs catalog、execution guarantee、revival check，但旧脚本没有 `set -e`，且新增 gate 只是顺序调用，子命令失败不会传播到 spec-check 总结果。这意味着 catalog 或复活执行保障坏掉时，full suite 可能仍然误绿；因此必须让三类控制面 gate 显式 fail-closed，并用 acceptance 分别模拟三路失败。
+14. 用户进一步指出“docs catalog 只是止血，不等于彻底解决 token 污染”。复盘确认：只有 catalog freshness 还不够，必须把读取动作本身拆成 `summary/plan/budget`，并阻断目录、glob、未登记路径和超预算路径，才能让“按需加载、渐进披露”从建议变成可执行准入。
+15. 同一类问题也存在于 `compass/knowledge/`：lessons、人格魂点、治理债务、通信协议等都可能被后续 agent 当成“全量记忆”读取。解决方式不是删除知识库，而是建立 `compass/knowledge/index.md` 与检查脚本，让复活入口先读导航，再按任务打开精确文件。
+16. “执行保障”也不能只覆盖 hook 和 closure。用户点名的 lessons 沉淀、Cap 灵魂人格提炼、overlay ask-user 边界、Prism 进程限制、CLI 健康嗅探、汇报纪律、docs 渐进披露，都必须能被 `execution-guarantees` / `revival-check` / `spec-check` 消费，否则复活后仍会丢规则。
+17. 扫描状态机时又发现一个实质漂移：`loom/dispatcher/state-machine.md` 已记录 `DEGRADED`、扫描态与 step 态，但 `redcap-check-state.sh` 的合法状态集合没有同步。若不补 contract check，后续文档和脚本会继续各自演化。
+18. 本轮不能宣称“绝对 100% 防止任何未来 agent 读取所有 docs”。真实可保证的是：RedCap 自有入口、复活协议、catalog budget、spec-check、acceptance 和 diagnose 已把默认路径改成可审计的渐进披露；如果未来 agent 绕过这些协议硬读全量文件，那属于违反 RedCap 入口规范，而不是当前机制没有给出安全路径。
+19. full suite 复跑时又抓到一个 acceptance 自身的活跃切片假设：`task-complete-guard-replaces-stale-marker-with-unique-report` 写死 `task-complete`，但当前 `.dev-task.md` 已切到 F3 `governance-hardening`，导致 fixture guard 按设计退出。该 case 已改成和同类 case 一样读取 fixture `.dev-task.md` 的当前 active_slice。
+20. 进一步扫 token 风险时确认，docs catalog 只解决了 `compass/docs/**` 的读取路径，但还剩三类同源风险：宿主入口文件仍可能把 `compass/CONTRIBUTING.md` 与 `compass/knowledge/lessons.md` 这类大文件默认展开；`redcap-multi-session-acceptance.sh` 本身体量已经很大，后续排查单个 case 时不应默认打开全文；`prism/runs/` 是 gitignored 运行残留，不该擅自删除，但也必须被状态/审计显式标成“不要 bulk-read”的运行目录。若不把这三类纳入执行保障，docs 止血后 token 消耗仍会从别处反弹。
 
 ### 2.2 方案选项
 
@@ -84,6 +93,20 @@
 | session-end pending 清理 | 选项 B | 全绿后刷新读取当前 pending；只有同一任务身份、head 区间被本次 validator 覆盖、redline 属于本次成功可清集合时，才用最新 `updated_at` 清理 | 保留 CAS 防线，同时允许兼容/重试路径的等价改写被安全核销 | 需要补兼容刷新 acceptance |
 | review prompt 输入 | 选项 A | 继续在 Bash 中拼接完整 `REVIEW_PROMPT`，再按不同 CLI 传参 | 改动小 | 长 diff / 中文规范叠加后会在 Bash 宽字符扫描阶段挂起，甚至进不了 reviewer CLI |
 | review prompt 输入 | 选项 B | diff / commit log / 文件列表写临时文件，由 Python 完成截断与模板拼装；Codex 走 stdin，需要 `-p` 的 fallback CLI 由 Python wrapper 从文件替换 argv 占位符 | Bash 只处理文件路径与小字符串，同时治理输入通道和结果通道 | 需要补 fake Codex 断言 stdin / argv，并做真实 live 回放 |
+| docs token 淤积 | 选项 A | 立即批量移动 / 删除历史 spec 与 task report | 表面减量最快 | 风险高，容易切断 closure evidence 与考古链 |
+| docs token 淤积 | 选项 B | 先建立机器可读 catalog 与读法规则：首读索引、按需打开、禁止默认 bulk-read；后续再分 tranche 做归档迁移 | 先降低接盘 token 压力，不破坏历史证据 | 仍需后续归档 tranche 才能真正降低仓库文件数量 |
+| docs 渐进披露 | 选项 A | catalog 只做 freshness check 与摘要提示 | 改动小 | 不能阻止后续 agent 直接按目录 / glob / 大集合读取，仍会 token 爆炸 |
+| docs 渐进披露 | 选项 B | 增加 `plan` 候选定位、`budget` 路径/数量/token 准入、`retention-check` 证据保留审计，并接入 spec-check / acceptance | 把“按需加载”从建议变成可执行门禁，同时保留考古能力 | 仍不能阻止恶意/违规 agent 绕过工具硬读，但能让 RedCap 默认路径和回归 fail-closed |
+| knowledge / soul 读取 | 选项 A | 复活时继续默认导入或人工全扫 knowledge | 简单 | lessons / soul / governance debt 会再次成为上下文污染源 |
+| knowledge / soul 读取 | 选项 B | 建立 `compass/knowledge/index.md` 与 check，入口只读导航，按任务加载精确知识文件 | 减少 token，保留可发现性和人格/经验沉淀 | 需要维护索引 freshness |
+| 宿主入口自动导入 | 选项 A | 继续让 AGENTS / CLAUDE / GEMINI / Copilot 入口默认展开 CONTRIBUTING 与 lessons | 复活时看似最完整 | 大文件会在每个新会话默认进入上下文，和渐进披露目标冲突 |
+| 宿主入口自动导入 | 选项 B | 默认导入轻量 soul + `CONTRIBUTING.core.md`；CONTRIBUTING 全文、lessons 通过 current-status、knowledge index 与精确 `rg`/章节读取 | 保留人格还原点与启动核心契约，同时阻断默认大文件注入 | 需要入口检查防止旧写法回流 |
+| acceptance 巨型脚本导航 | 选项 A | 继续靠 `rg` 或直接打开完整 acceptance 文件找 case | 简单 | 单文件过大，容易在单个排查任务中吞掉大量上下文 |
+| acceptance 巨型脚本导航 | 选项 B | 新增 `redcap-acceptance-index.sh summary/find/check`，先定位 case 行号再精读局部 | 不折损回归能力，只改变读取入口 | 索引脚本需要纳入 spec-check/acceptance |
+| 运行残留目录治理 | 选项 A | 直接删除 `prism/runs/` 等 ignored 残留 | 表面最干净 | 会破坏本地运行证据，且删除 ignored 目录属于 destructive action，需要用户显式批准 |
+| 运行残留目录治理 | 选项 B | 不擅自删除；由 token-risk-audit 报告体量与策略，current-status 标明不要 bulk-read | 安全、可审计，保留证据链 | 文件数量仍存在，但不会进入默认读取路径 |
+| 状态机契约 | 选项 A | 继续靠文档和脚本各自维护状态集合 | 零改动 | 状态名漂移后，调度器文档允许但脚本拒绝，或反之 |
+| 状态机契约 | 选项 B | 新增 contract check，比对文档 FSM 与 `redcap-check-state.sh` 合法状态，并纳入 spec-check | 防止状态机治理分叉 | 需要把新状态变更纳入检查 |
 
 ### 2.3 决策结果
 
@@ -98,6 +121,17 @@
 | on-complete 校验宿主 | 选项 B | `project_name` 是飞书/展示用项目名，不是 runtime host；validator chain 必须拿到当前真实宿主，否则 report register / runtime fallback 会继续错绑 | CAP_DECIDE |
 | session-end pending 清理 | 选项 B | 旧 `updated_at` 被拒绝是正确保护；修复点应是“刷新后证明当前 pending 仍可由本次成功覆盖”，而不是削掉 CAS | CAP_DECIDE |
 | review prompt 输入 | 选项 B | 长任务评审输入不应让 Bash 承载大块多语言文本；Codex CLI 已支持 `-` 从 stdin 读 prompt，其它 fallback CLI 则由 Python wrapper 替换占位符，结果通道继续由 `--output-last-message` 保证干净 | CAP_DECIDE |
+| docs token 淤积 | 选项 B | 当前最急的是让后续接盘不要再把冻结 evidence 当默认工作记忆；先建 catalog / check / status 入口，批量归档另起 tranche 更稳 | CAP_DECIDE |
+| docs 渐进披露 | 选项 B | 用户要求的“彻底解决”不能停在 catalog freshness；必须把候选定位、读取预算和证据保留都变成可测试脚本 | CAP_DECIDE |
+| knowledge / soul 读取 | 选项 B | lessons 与人格魂点必须可发现，但不该被每次全量加载；导航索引是功能质量与 token 控制的折中 | CAP_DECIDE |
+| 宿主入口自动导入 | 选项 B | 自动导入大文件是本轮真实扫出的 token 风险；改成轻量入口不会删除原文，只改变读取路径，副作用可由 revival/token-risk audit 约束 | CAP_DECIDE |
+| acceptance 巨型脚本导航 | 选项 B | acceptance 仍然必须完整保留，但排查单 case 时应先索引定位；这是零功能折损的上下文治理 | CAP_DECIDE |
+| 运行残留目录治理 | 选项 B | `prism/runs` 属于 ignored 本地证据，未经用户明确同意不能物理清理；先纳入审计与 no-bulk-read 策略是安全闭环 | CAP_DECIDE |
+| 状态机契约 | 选项 B | 文档状态和脚本状态必须同源审计，否则执行保障会在 dispatcher / validator 边界分叉 | CAP_DECIDE |
+| CONTRIBUTING 信息架构 | 选项 B | `CONTRIBUTING.md` 是权威全文，不该因体积大被误标为垃圾；正确做法是新增小型 `CONTRIBUTING.core.md` 首读契约，并通过章节路由按需读取全文 | NORVEN_CHALLENGE + CAP_DECIDE |
+| 三轨评审门 | 选项 B | 不再只靠自然语言 checklist，而是用 `references/review-tracks.json` 作为机器 registry，并让 stop-review prompt 与 gate 消费它 | CAP_DECIDE |
+| runtime helper 收敛 | 选项 B | 重复 attach/current-or-claim 逻辑应集中到 `redcap-runtime-state.sh`，再由 helper check 防止关键脚本回退到本地复制 | CAP_DECIDE |
+| `cli_console.md` 展示镜像 | 选项 B | repo-owned 文件边界可以完全降格为 gitignored local-only 覆盖式镜像；宿主最终回复 UI 不归 repo 脚本强控，不能把这部分伪装成 RedCap backlog 残留 | CAP_DECIDE |
 
 ---
 
@@ -116,10 +150,40 @@
 | `compass/tools/redcap-layerB-session-end.sh` | 修改 | 调用独立评审时透传真实宿主身份；session-end 全绿后会安全刷新 pending closure，再按同一任务身份 / head 覆盖窗口 / 可清 redline 集合决定是否用最新 `updated_at` 清理 |
 | `compass/tools/redcap-on-complete.sh` | 修改 | validator host 不再硬编码为 `redcap`；显式 host / 绑定身份会压过陈旧 runtime host，并同步写入 validator 参数与环境 |
 | `compass/tools/redcap-layerB-task-complete-guard.sh` | 修改 | 调用 `redcap-on-complete.sh` 时用当前 `HOST` 覆盖旧 `REDCAP_ON_COMPLETE_HOST` 环境，避免 stale env 抢权 |
+| `compass/tools/feishu-notifier.py` | 修改 | 对相同 `project + window_type + message` 做短窗口去重，避免长任务重复发送同一条飞书完成/告警通知 |
+| `compass/tools/redcap-current-status.sh` | 新建/修改 | 统一输出当前任务、pending closure、backlog、CLI 工具族、待验证登记与 docs 考古入口，供接盘、飞书摘要和用户追问时快速对齐 |
+| `compass/tools/redcap-docs-catalog.sh` | 新建 | 生成 / 检查 / 摘要化 `compass/docs/catalog.json`，作为 docs 考古首读入口 |
+| `compass/docs/catalog.json` | 新建 | 记录 docs 文件清单、摘要、读法策略、体量与粗略 token 压力，避免默认全量扫 docs |
+| `compass/docs/archive/retention-log.md` | 新建 | 记录当前不删除/不迁移历史 closure evidence 的保留决策，并作为后续归档 tranche 的审计入口 |
+| `compass/docs/index.yaml` | 修改 | 把 catalog 纳入 docs 根目录准入，并把 task report retention 改成“首读 catalog、按需打开、后续分 tranche 归档” |
+| `compass/knowledge/index.md` | 新建 | 作为 knowledge 首读导航，避免 lessons / soul / governance debt 被默认全量扫入上下文 |
+| `compass/tools/redcap-knowledge-index-check.sh` | 新建 | 校验 `compass/knowledge/*.md` 顶层知识文件都被索引覆盖，防止导航陈旧 |
+| `compass/tools/redcap-overlay-governance-check.sh` | 新建 | 校验 brainstorming overlay 与 RedCap 已授权执行边界，避免 `ask_user` 硬门槛误盖过用户明确授权 |
+| `compass/tools/redcap-state-machine-check.sh` | 新建 | 校验 FSM 文档状态、通信协议状态与 `redcap-check-state.sh` 合法状态集合保持一致 |
+| `compass/tools/redcap-diagnose.sh` | 新建 | 汇总 current-status、docs retention、knowledge、overlay、state-machine、execution guarantee、revival 与 spec-check 的只读诊断入口 |
+| `compass/tools/redcap-acceptance-index.sh` | 新建 | 为巨型 acceptance 脚本提供 `summary/find/check` 首读索引，避免单 case 排查时默认打开全文 |
+| `compass/tools/redcap-token-risk-audit.sh` | 新建 | 只读审计 tracked 大文件、宿主入口自动导入、ignored 运行残留与 mitigation 映射，防止 docs 之外的新 token 大户反弹 |
+| `compass/tools/redcap-artifact-classifier.sh` | 修改 | 允许 `compass/docs/catalog.json` 作为 repo-tracked docs 根索引 |
+| `references/execution-guarantees.json` | 新建 | 把复活启动、汇报、lessons、soul/identity、Prism、CLI 健康、closure、docs catalog 与宿主 hook 规则列为机器可读执行保障目录 |
+| `compass/tools/redcap-execution-guarantee-check.sh` | 新建 | 校验执行保障目录的必备类别、规则 ID、source / guarantee 路径与 manual-only 原因 |
+| `compass/tools/redcap-revival-check.sh` | 新建 | 校验 `soul.md`、宿主入口、reload-rules、hook standards 与 execution guarantees 是否同步，防止复活协议只恢复文字不恢复执行纪律 |
+| `compass/soul.md` | 修改 | 复活协议新增 docs catalog、reload-rules、execution guarantees、acceptance index、token-risk audit 与复活后必须运行/确认的执行保障步骤 |
+| `compass/CONTRIBUTING.core.md` | 新建 | 启动必读核心契约：保留 `CONTRIBUTING.md` 全文权威，同时把新会话必须立即遵守的红线、章节路由和必跑入口压缩成小文件 |
+| `AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / `.github/copilot-instructions.md` | 修改 | 宿主入口改为 soul + `CONTRIBUTING.core.md` 轻量自动导入；CONTRIBUTING 全文、lessons 改走 current-status、knowledge index、docs catalog、acceptance index 与精确章节读取 |
+| `loom/dispatcher/reload-rules.yaml` | 修改 | 新增 `on_session_revival` 重载点，覆盖 soul、CONTRIBUTING.core、CONTRIBUTING、lessons、docs catalog、execution guarantees 与 Prism 协议 |
+| `references/hook-standards.md` | 修改 | 不变量清单新增复活与执行保障、经验沉淀、docs catalog freshness、token 风险审计四类保障项 |
+| `ARCHITECTURE.md` | 修改 | 在可靠性工程与关键协议索引中补充 execution guarantees 机制 |
+| `compass/tools/redcap-spec-check.sh` | 修改 | 将 docs catalog、execution guarantee、revival check 与 token-risk audit 接入硬门禁，并显式传播控制面失败 |
+| `compass/tools/redcap-check-state.sh` | 修改 | 补齐 `DEGRADED`、扫描态与 step 态，和 dispatcher FSM 文档重新对齐 |
 | `loom/dispatcher/agent-adapters.md` | 修改 | 记录 Codex CLI 的 headless 调用模板、stdin 输入通道和 stdout/stderr 噪声隔离约束 |
 | `loom/test-reports/pending-validations.md` | 修改 | 登记 Codex CLI reviewer fallback 的路由逻辑、stdin 输入与进程组 timeout 待验证项 |
 | `README.md` | 修改 | 快速开始中补充 Codex CLI 作为可用宿主 / AI CLI |
-| `compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md` | 修改 | 同步归档本轮最终阻塞、最新 review/redteam 结论与最后一轮 acceptance 安全修补 |
+| `prism/protocol.md` | 修改 | 增加 Codex-family 进程限定规则：RedCap/Prism 机制默认最多 2 个 Codex-family 执行进程，当前宿主计为 1 |
+| `references/review-tracks.json` | 新建 | 定义架构、治理、契约三条评审轨，作为 stop-review 与治理 checklist 的机器权威 |
+| `compass/tools/redcap-contributing-ia-check.sh` / `redcap-review-tracks-check.sh` / `redcap-hook-contract-check.sh` / `redcap-runtime-helper-check.sh` / `redcap-cli-console-mirror-check.sh` | 新建 | 将 CONTRIBUTING 信息架构、三轨评审、hook contract、runtime helper 收敛与 CLI mirror 边界变成可执行 gate |
+| `compass/CONTRIBUTING.md` | 修改 | 固化飞书重复通知治理、`redcap-current-status.sh` 状态概览入口、docs catalog 首读规则与 CONTRIBUTING core/section routing 原则 |
+| `references/backlogs/framework-upgrade.json` | 修改 | A3 / C2 / E2 / F3 全部标记完成，长期 backlog 收口为 `done=19 / in_progress=0 / pending=0`；F3 保留为最后完成的治理焦点 |
+| `compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md` | 修改 | 同步归档本轮最终阻塞、最新 review/redteam 结论、最后一轮 acceptance 安全修补与 docs token 淤积治理 |
 
 ### 3.2 技术实现要点
 
@@ -144,13 +208,43 @@
 此前最后一轮 review 又挖出一个遗留 helper，会对真实仓库 `compass/docs/task-reports` 直接执行 glob delete。这个 helper 已被移除，当前回归路径不再具备“为了清 acceptance 痕迹而误删真实 task report”的能力。
 
 第六，独立评审执行器现在也不再把“CLI 二进制存在”误当成“当前健康可用”。
-`redcap-on-stop-review.sh` 现在按 `codex → gemini → copilot → claude → kimi` 顺序尝试独立评审；对 timeout、auth failure、空输出会自动 fallback，而不是像旧逻辑那样一旦命中未登录的 `kimi` 就把整个真实 `session-end` 误判成 review P0。与此同时，`redcap-layerB-session-end.sh` 会透传真实宿主身份，避免 Copilot 场景下的 review log / review gap 继续写死成 `claude`。review prompt 现在从生成开始保持 file-backed：diff、commit log、文件列表先写入临时文件，Python 完成 diff 截断与模板拼装；Codex 路径使用 `codex exec -C <repo> --sandbox read-only --ephemeral --output-last-message <file> --color never -`，并通过 stdin 读取 prompt，同时优先读取 last-message 文件作为 review payload；需要 `-p` 参数的 fallback CLI 也由 Python wrapper 从 prompt 文件替换 argv 占位符，避免 Bash 承载大块中文规范正文与长 diff。stdout/stderr 里的 banner、插件预热 warning、网络重连提示只按 transport noise 处理；对可能很大的 stdout/stderr，空白判断也改为 Python stdin，不再用 Bash `${var//[[:space:]]/}` 做宽字符替换。timeout 路径现在用独立进程组启动 reviewer CLI，并在超时时对整个进程组发送终止信号，避免 Gemini / Node 这类子进程在父进程被杀后继续逃逸。在 runner 判定顺序上，也把 structured review payload 和 transport noise 分离处理：结构化 `PASS/FAIL` 只从主 review output 中解析，stderr 与 JSON 外残余文本才参与 transport failure 识别；非零退出即使夹带 `result: PASS/FAIL` token 也不会被当成合法评审，成功退出但不可解析的输出会继续 fallback 到下一个 reviewer，而文本兜底也只认独立的 `PASS/FAIL` 结果行，避免把 `fail-closed` 之类正常说明句误打成 FAIL。对于 fenced JSON，parser 现在同时接受 bare fence、` ```json `、以及 ` ```JSON ` 这类大小写变体；更重要的是，不再“见到第一个 bare fence 就吃掉”，而是扫描所有候选 block，优先 `json` tag，其次 bare fence，并只接受**真正能 parse 成 JSON** 的候选。对于 transport failure detector，则只认**整行** CLI 错误形状，而不再对 residual prose 做宽子串命中，避免 JSON fence 外的正常说明句反过来误杀合法 structured review。最后，detector 采用了非对称语义：纯错误流仍按任意行命中；只要 stdout 已拿到 structured `PASS/FAIL`，stderr 就允许用 `failure-block` 识别 `error line + Hint:` 这类真实 transport failure，而 stdout residual 继续保持更严格的纯错误块判定，因此 `Observed failing path:` 或原样引用的错误块不会被轻易误杀。
+`redcap-on-stop-review.sh` 现在按可用 reviewer fallback，并透传真实宿主身份；timeout、auth failure、空输出、非零退出、成功但不可解析都会继续尝试下一路。review prompt 从生成开始 file-backed，Codex 走 stdin + `--output-last-message`，timeout 会杀整个进程组。parser 同时治理 structured JSON、大小写 fence、bare fence、stdout/stderr 噪声、transport error 整行匹配和 `fail-closed` 这类正常说明句，避免把合法评审误杀，也避免 transport failure 被 stray `PASS/FAIL` 掩盖。完整边界由 `on-stop-review-*` acceptance 覆盖，细节以脚本和 lessons 为准。
 
 第七，`on-complete` 的 validator host 现在不再由项目名或陈旧环境变量隐式决定。
 `redcap-layerB-task-complete-guard.sh` 调用 `redcap-on-complete.sh` 时，会把当前 guard 收到的宿主参数写成 `REDCAP_ON_COMPLETE_HOST="$HOST"`，并覆盖外层可能残留的旧值。`redcap-on-complete.sh` 自己再按“显式 host → `host/<宿主>/session/<会话>` 绑定身份 → `REDCAP_RUNTIME_HOST` → `redcap` 兜底”的顺序解析 validator host，然后同时传给 validator chain 的第二个参数和 `REDCAP_RUNTIME_HOST` 环境变量。这样即使外层残留 `REDCAP_RUNTIME_HOST=claude`，Copilot 的 `task-complete` 收尾也会继续以 `copilot` 身份进入 validator / report register 链。
 
 第八，`session-end` 现在不会再把“旧 `updated_at` 清理失败”直接等价成新的业务 blocker。
 全绿路径里，`redcap-layerB-session-end.sh` 会先重新读取当前 pending closure。若当前 pending 已被长耗时窗口中的兼容路径或重试路径改写，它不会绕过 CAS，而是先证明三件事：任务身份仍是当前 `.dev-task.md` 的 confirmed hash；pending 的 baseline/audited head 仍落在本次 session-end validator 已覆盖的区间；当前 redline 只包含本次成功路径能够核销的 `review / pending-closure / pm-gate / drift / backlog / spec / artifact-lifecycle / task-report / notify`。三者都成立时，脚本才用最新 `updated_at` 调 `redcap_interop_clear_pending_closure()`；否则继续 fail-closed 并写回 pending。
+
+第九，docs 淤积现在不再只是“首读索引”止血，而是形成了可执行的渐进披露链路。
+`redcap-docs-catalog.sh` 会生成确定性的 `compass/docs/catalog.json`，记录每份 docs evidence 的标题、摘要、读法策略、行数、字符数与粗略 token 压力；`summary` 只展示索引，`plan <query>` 只用 catalog 摘要和当前 `.dev-task.md` 锚点推荐少量候选，`budget <path...>` 则在真正打开文件前阻断目录、glob、未登记路径、过多文件和超 token 预算读取。`retention-check` 明确当前不删除、不迁移 closure evidence，而是用 retention log 证明“减 token”没有牺牲考古证据链。`docs-catalog-progressive-disclosure` / `docs-retention-check` acceptance 与 `redcap-spec-check.sh` 已消费这些门禁。这里的保证边界也被写清：RedCap 默认入口和回归会强制走渐进披露；若未来 agent 绕过协议硬读全量 docs，那属于违反 RedCap 入口规范，而不是当前机制缺少安全路径。
+
+第十，控制面 gate 进入 spec-check 后必须显式传播失败，不能依赖 Bash 默认行为。
+Kimi 只读审查指出 `redcap-spec-check.sh` 没有 `set -e`，因此 `redcap-docs-catalog.sh check`、`redcap-execution-guarantee-check.sh`、`redcap-revival-check.sh` 即便返回非零，也可能被后续命令覆盖成总体验收通过。当前实现已为三类 gate 分别加上 `if ! ...; then exit 1` 的 fail-closed 包装，并新增 `spec-check-propagates-control-gate-failures` acceptance，逐一模拟 docs catalog / execution guarantee / revival 三路失败，防止“保障系统坏了但总门禁误绿”。
+
+第十一，knowledge / lessons / soul 现在有了轻量导航，不再要求每次复活都扫全库。
+`compass/knowledge/index.md` 作为首读入口，说明 lessons、governance debt、Cap identity、通信协议等知识文件的打开条件；`redcap-knowledge-index-check.sh` 会校验顶层 knowledge 文件都被索引覆盖。这样保留了经验沉淀和人格还原能力，但默认只读导航，不把知识库本身变成新的 token 污染源。
+
+第十二，overlay / ask-user 边界进入执行保障。
+`redcap-overlay-governance-check.sh` 校验 `SKILL.md`、`compass/CONTRIBUTING.md`、`references/agent-constraints.md` 与 overlay 规范，确保 brainstorming 这类上层技能只作为需求澄清 overlay；当用户已明确授权执行时，RedCap 继续按“少问、先做、风险点再升级”的工程规则推进。这防止了“复活后每个动作都反复问用户”的质量折损。
+
+第十三，dispatcher 状态机现在有 contract check。
+本轮发现 `loom/dispatcher/state-machine.md` 已记录 `DEGRADED`、扫描态与 step 态，但 `redcap-check-state.sh` 没有完全同步。当前已补齐合法状态集合，并新增 `redcap-state-machine-check.sh`，让 FSM 文档、通信协议与脚本枚举保持一致；该检查已纳入 `spec-check` 和 acceptance。
+
+第十四，统一 diagnose 入口补齐“整体状态概览”。
+`redcap-diagnose.sh` 将 current-status、docs catalog/retention、knowledge index、overlay governance、state-machine contract、execution guarantees、revival protocol 与 spec-check 串成只读诊断视图。后续接盘不再需要先翻大量报告才能知道“当前剩什么”，而是先运行 diagnose / current-status，再按 catalog plan 打开少量证据。
+
+第十五，acceptance fixture 不再假设当前任务永远处于 `task-complete`。
+`task-complete-guard-replaces-stale-marker-with-unique-report` 现在读取 fixture `.dev-task.md` 的 `active_slice` 作为 `REDCAP_TASK_COMPLETE_SLICE`，避免长期 backlog 切到 F3 后，case 因入口条件不匹配而误以为 guard 行为回归。
+
+第十六，token 风险治理已经从 docs 扩展到“入口、巨型脚本、运行残留”三类高风险面。
+`AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / Copilot 入口不再默认展开 `CONTRIBUTING.md` 与 `lessons.md`，而是要求先走 current-status、knowledge index、docs catalog 与精确章节读取；`redcap-acceptance-index.sh` 为巨型 acceptance 脚本提供 case 索引，避免单 case 排查时打开全文；`redcap-token-risk-audit.sh` 会检查 tracked 大文件是否有 mitigation、入口文件是否重新引入大文件自动导入、`prism/runs` 等 ignored 运行残留是否被标为 no-bulk-read。这个治理不删除证据、不折损回归能力，只把默认读取路径变成可审计、可回归、可 fail-closed。
+
+第十七，`CONTRIBUTING.md` 的治理结论已经从“避免读大文件”修正为“权威全文 + 小型核心 + 章节路由”。
+`compass/CONTRIBUTING.md` 仍是唯一权威规范全文；新增的 `compass/CONTRIBUTING.core.md` 只负责首读红线、章节路由和必跑入口，防止新会话启动时被全文规范和 lessons 打爆上下文。stop-review prompt 现在读取 core、全文路径与 review-tracks registry，但只抽取与 changed files 相关的精选章节；`redcap-contributing-ia-check.sh`、token-risk audit、revival check 与 spec-check 会共同防止入口文件重新恢复全文自动注入。
+
+第十八，长期 backlog 的 A3 / C2 / E2 / F3 已从“长期后续 tranche”推进为本轮完成项。
+A3 由 `references/review-tracks.json`、stop-review prompt 与 review-tracks gate 承接；C2 由 gitignore、artifact classifier、overwrite mirror helper 与 mirror check 承接；E2 由 `redcap_runtime_attach_current_or_claim` 共享 helper 与 runtime-helper check 承接；F3 则由 execution guarantees、hook-contract、state-machine、token-risk、CONTRIBUTING IA 与 diagnose/acceptance 串联承接。这里没有宣称宿主 UI 可被 repo 脚本完全控制，也没有宣称 formal Prism quorum 已归档，只宣称 RedCap repo-owned backlog 已全量清空。
 
 ### 3.2.1 术语对照（按文件/功能解释）
 
@@ -165,6 +259,8 @@
 | validator host | `redcap-on-complete.sh` 传给 `redcap-validator-chain.sh` 的宿主参数 | 指当前收尾动作到底来自哪个宿主，例如 `copilot`；它不能和飞书展示用项目名 `redcap` 混用 |
 | CAS / updated_at | `pending-closure/*.state` 的 `updated_at` 字段 | 清 pending 时用来证明“我清的是刚才看过的那一版状态”，避免误清并发新 blocker |
 | last-message | Codex CLI 的 `--output-last-message` 文件 | 指 Codex CLI 写出的最终回复文件；程序化评审应读它，而不是直接相信 stdout/stderr |
+| docs catalog | `compass/docs/catalog.json` / `redcap-docs-catalog.sh` | 指 docs 首读索引；它帮助定位该读哪份 evidence，但不替代原始 spec / report / trace |
+| execution guarantees | `references/execution-guarantees.json` / `redcap-execution-guarantee-check.sh` | 指“执行保障目录”：哪些规则必须被复活协议、Hook、validator 或明确 manual-only 边界保护，不能只写在自然语言文档里 |
 
 ### 3.3 关联变更
 
@@ -179,7 +275,7 @@
 
 | 序号 | 审核项 | 说明 | 优先级 |
 |------|-------|------|------|
-| 1 | 最终 live runtime 的 `on-complete / session-end / 飞书通知` 是否真实闭环 | 这是本报告之后的最后一步，需要在 follow-up commit 后重新执行并确认不是口头完成 | P0 |
+| 1 | 无当前任务级 P0 必须人工 gate | 本轮 repo-owned closeout 已通过 full suite、pending closure 清账、current-status/diagnose 复核与飞书终局通知；若要继续推进 formal Prism quorum 或历史完整用户项目 E2E，应另起任务 | P2 |
 
 ---
 
@@ -196,7 +292,7 @@
 | live claim 优先级回归 | `bash compass/tools/redcap-multi-session-acceptance.sh report-register-prefers-live-claim-over-stale-explicit-runtime` | ✅ |
 | foreign runtime 拒绝回归 | `bash compass/tools/redcap-multi-session-acceptance.sh report-register-rejects-foreign-explicit-runtime` | ✅ |
 | acceptance 隔离稳态回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-concurrency && bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-rewrite && bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-prefers-anchor` | ✅ |
-| stop-review runner 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-timeout && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-auth-failure && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-auth-failure-with-result-token && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-unparseable-success-output && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-structured-pass-with-auth-error-line && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-auth-terms && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-auth-prose-outside-fence && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-quoted-cli-error-block-in-stdout-residual && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-quoted-cli-error-in-stdout-prose && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-lowercase-structured-result && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-raw-json-with-stderr-auth-terms && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-structured-pass-with-stderr-auth-error-line && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-structured-pass-with-stderr-auth-error-and-hint && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-structured-review-with-quoted-cli-error-in-stderr-prose && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-plain-text-pass-with-fail-closed && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-uppercase-fenced-json && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-bare-fenced-json && bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-accepts-json-fence-after-nonjson-bare-fence` | ✅ |
+| stop-review runner 回归 | `on-stop-review-*` acceptance 覆盖 timeout/auth fallback、非零退出、不可解析输出、structured PASS/FAIL、stderr/stdout transport 噪声、大小写 fence、bare fence、quoted error block、`fail-closed` 文本等边界 | ✅ |
 | Codex CLI 冒烟 | `codex exec -C "$PWD" --sandbox read-only --output-last-message <tmp> '严格只输出一行：PASS'` | ✅ |
 | Codex reviewer fallback / file-backed prompt 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-to-codex-after-unavailable-reviewers` | ✅ |
 | reviewer timeout 进程组回归 | `bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-after-timeout` | ✅ |
@@ -204,6 +300,36 @@
 | session-end pending refresh 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-compatible-pending-refresh && bash compass/tools/redcap-multi-session-acceptance.sh session-end-clears-all-matching-pending-states` | ✅ |
 | session-end 周边回归 | `bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-after-clear && bash compass/tools/redcap-multi-session-acceptance.sh session-end-notify-timeout-releases-lock && bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-keeps-report-anchor && bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-normalizes-absolute-report-anchor` | ✅ |
 | V-11 验证账本消费 | 更新 `loom/test-reports/pending-validations.md` 与 `loom/test-reports/latest-e2e-report.md`，将 Codex CLI reviewer fallback 作为 Layer B hook-level replay 验证项归档，并保留 V-4 作为完整用户项目 fallback E2E | ✅ |
+| docs catalog targeted 回归 | `bash compass/tools/redcap-docs-catalog.sh check && bash compass/tools/redcap-multi-session-acceptance.sh docs-catalog-check && bash compass/tools/redcap-multi-session-acceptance.sh artifact-lifecycle-classifier && bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview` | ✅ |
+| docs 渐进披露回归 | `plan` 能把当前报告排第一；`budget` 放行精确路径、拒绝超预算/目录/glob；`docs-catalog-progressive-disclosure` acceptance 覆盖该边界 | ✅ |
+| docs retention 回归 | `bash compass/tools/redcap-docs-catalog.sh retention-check && bash compass/tools/redcap-multi-session-acceptance.sh docs-retention-check` | ✅ |
+| docs catalog 独立评审 | Prism/Boole 只读评审返回 `CONCERNS`；已补 exact root file 保护、stale catalog fail-closed、spec-check 硬门禁、`status_basis=filename_recency_only`、line count 与 drift scope | ✅ |
+| execution guarantees targeted 回归 | `bash compass/tools/redcap-execution-guarantee-check.sh && bash compass/tools/redcap-revival-check.sh "$PWD" && bash compass/tools/redcap-multi-session-acceptance.sh execution-guarantees-check && bash compass/tools/redcap-multi-session-acceptance.sh revival-protocol-check` | ✅ |
+| execution guarantees 硬门禁 | `bash compass/tools/redcap-spec-check.sh "$PWD"` 已消费 docs catalog、execution guarantee 与 revival protocol 三类检查 | ✅ |
+| knowledge / overlay / state-machine / diagnose 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh knowledge-index-check && bash compass/tools/redcap-multi-session-acceptance.sh overlay-governance-check && bash compass/tools/redcap-multi-session-acceptance.sh state-machine-contract-check && bash compass/tools/redcap-multi-session-acceptance.sh diagnose-overview` | ✅ |
+| 控制面 gate 失败传播回归 | `bash compass/tools/redcap-multi-session-acceptance.sh spec-check-propagates-control-gate-failures` 覆盖 docs catalog、execution guarantee、revival、knowledge index、overlay governance、state-machine contract 等控制面失败 | ✅ |
+| acceptance index / token risk targeted 回归 | `bash compass/tools/redcap-acceptance-index.sh check && bash compass/tools/redcap-token-risk-audit.sh && bash compass/tools/redcap-multi-session-acceptance.sh acceptance-index-check && bash compass/tools/redcap-multi-session-acceptance.sh token-risk-audit && bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview` | ✅ |
+| token risk spec-check 接线 | `bash compass/tools/redcap-spec-check.sh "$PWD"` 已消费 token-risk audit；fixture 会证明入口大文件自动导入回流时 audit fail-closed | ✅ |
+| CONTRIBUTING 信息架构回归 | `bash compass/tools/redcap-contributing-ia-check.sh`，并通过 acceptance fixture 证明入口重新 `@compass/CONTRIBUTING.md` 全文注入会 fail-closed | ✅ |
+| 三轨评审回归 | `bash compass/tools/redcap-review-tracks-check.sh` 验证 `references/review-tracks.json`、stop-review prompt 与治理 checklist 的接线 | ✅ |
+| hook contract 回归 | `bash compass/tools/redcap-hook-contract-check.sh` 验证 hook standards、validator modes、stop-review、session-end、task-complete 与 runtime helper 链接 | ✅ |
+| runtime helper 收敛回归 | `bash compass/tools/redcap-runtime-helper-check.sh` 验证关键脚本都使用 `redcap_runtime_attach_current_or_claim`，不再保留本地 `attach_runtime_if_possible` 复制实现 | ✅ |
+| `cli_console.md` 镜像回归 | `bash compass/tools/redcap-cli-console-mirror-check.sh` 验证 `cli_console.md` 仍是 gitignored local-only 覆盖式展示镜像 | ✅ |
+| backlog 全量收口 | `bash compass/tools/redcap-backlog-check.sh sync .dev-task.md` 已同步机器权威与人类说明；`references/backlogs/framework-upgrade.json` 当前统计为 `done=19 / in_progress=0 / pending=0` | ✅ |
+| Gemini headless 可用性复核 | `timeout 30 gemini -p '严格只输出一行：PASS' --output-format json --yolo --sandbox false --include-directories "$PWD"` 仍会弹浏览器认证页，未形成无头 PASS | ⚠️ |
+| backlog 人类说明终态收口 | 更新 `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`，明确 framework-upgrade 长期路线已完成，后续工作转入 closeout / formal Prism / 历史完整用户项目 E2E / 宿主硬边界四条独立后续线 | ✅ |
+| 执行保障强度分层 | 新增 `references/execution-guarantee-tiers.md`，并把 G1/G2/G3 三档解释接回 `execution-guarantees.json`、`ARCHITECTURE.md`、governance checklist 与 debt register | ✅ |
+| wrapper 边界沉淀 | 在 `compass/knowledge/host-reliability.md` 记录 CLI wrapper 与桌面 App 启动包装的差异，避免再把“启动包装”误说成 reply-time veto | ✅ |
+| 历史 E2E 队列边界说明 | 在 `loom/test-reports/pending-validations.md` 增补“当前队列边界”，明确 7 项活跃条目属于完整用户项目 E2E，不能在 self repo 内被伪消费 | ✅ |
+| Kimi headless 健康微探测 | `timeout 45 kimi -p "Reply exactly PASS" -y` 返回有效 `PASS` | ✅ |
+| Copilot headless 健康微探测 | `timeout 45 copilot -p "Reply exactly PASS" --allow-all --autopilot` 返回有效 `PASS` | ✅ |
+| Gemini headless 健康微探测 | `timeout 45 gemini -p "Reply exactly PASS" --sandbox false --yolo --output-format text` 返回 `PASS`，但伴随 SessionEnd hook 噪声并最终 timeout；可见响应但不适合当“健康稳定” reviewer | ⚠️ |
+| Claude headless 健康微探测 | `timeout 45 claude -p "Reply exactly PASS" --output-format text` 退出时被 SessionEnd hook 取消，未形成稳定 reviewer 结果 | ⚠️ |
+| Kimi 窄范围外部只读审查 | `timeout 60 kimi --quiet ...` 在限定关键文件集合下仍超时，未形成新 verdict；因此本轮不把它冒充 formal Prism/quorum | ⚠️ |
+| 本轮 final full suite | `bash compass/tools/redcap-spec-check.sh "$PWD" && bash compass/tools/redcap-multi-session-acceptance.sh all && git diff --check` | ✅ |
+| 旧 confirmed hash 的 pending closure 终局核销 | `source compass/tools/redcap-interop-governance.sh && redcap_interop_clear_pending_closure "$PWD" .dev-task.md manual-closeout-after-spec-acceptance-diagnose ... 2026-04-19T14:26:47Z`，对应旧 confirmed hash `06ceb763...` 的 closeout 已清 | ✅ |
+| 终局状态复核 | `bash compass/tools/redcap-current-status.sh .dev-task.md && bash compass/tools/redcap-diagnose.sh .dev-task.md`；随后识别出当前 confirmed hash `849cfdbc...` 仍有 pending closure，因此“当前账面 clean”口径被回滚为更诚实的 pending-aware 表述 | ✅ |
+| 飞书终局通知 | `python3 compass/tools/feishu-notifier.py notify ... --project redcap --window-type none` | ✅ |
 | 入口文档联动 | 同步 `SKILL.md §5.5`、`compass/knowledge/a2a-communication.md §2` 与 `README.md`，说明 Codex CLI 的 registry 候选身份、单轮评审边界、last-message 结果通道和 file-backed prompt 约束 | ✅ |
 | root drift-check 回放 | `REDCAP_RUNTIME_SESSION_ID=<real> REDCAP_RUNTIME_CAPABILITY=<real> bash compass/tools/redcap-drift-check.sh on-complete copilot .dev-task.md c58dc35755bf11a60b8f6280910b33ae9c8b2c35 612212c2db5a1da0c7ec6b212db50a987eecb62a` | ✅ |
 | root task-report-check 回放 | `REDCAP_RUNTIME_SESSION_ID=<real> REDCAP_RUNTIME_CAPABILITY=<real> bash compass/tools/redcap-task-report-check.sh "$PWD" c58dc35755bf11a60b8f6280910b33ae9c8b2c35 612212c2db5a1da0c7ec6b212db50a987eecb62a` | ✅ |
@@ -212,9 +338,20 @@
 | 最新 redteam | `closeout-redteam-r15` | ✅ clean（在 supported / contract-valid 输入边界内无新的 blocking / significant hole） |
 | 最新 code review | `2026-04-18 真实 session-end 独立评审` | ⚠️ 已指出 E2E/V-11 消费与入口文档联动缺口；本 follow-up 已补齐，需再次 live session-end 核销 |
 
-### 5.2 人工验证项（Cap 无法自动化验证的）
+### 5.2 棱镜 / Agent 使用记录
 
-- [ ] 对最终 HEAD 再跑真实 Copilot runtime `session-end`，确认最终完成通知已经在 `on-complete` 主路径发出，且不再留下 `required_redlines=review`。
+- historical formal Prism 报告：2 份（均已登记到 `prism/reports/index.yaml`，但 `archived=false`，属于历史 formal 记录，不代表当前任务已形成新 quorum）。
+- 当前任务新增的 formal Prism quorum：0（本轮外部 CLI 探测 / 只读审查没有按 `prism/runs` + `prism/reports/` 协议完整归档，不能冒充 formal Prism）。
+- Gemini CLI：本次累计至少 3 次调用；旧一次终局收口阶段在 headless 路径上弹浏览器认证页，新一次健康微探测虽返回 `PASS` 文本，但伴随 hook 噪声并 timeout，因此当前只能算“看到可用迹象”，不能算稳定 reviewer，更不能算 formal Prism 成员。
+- Kimi CLI：本次累计至少 4 次调用，其中健康微探测可稳定返回 `PASS`，但窄范围 quiet 只读 review 仍超时；因此当前只能算“headless 可用”，不能算新的 formal Prism verdict。
+- Copilot CLI：新增一次健康微探测返回有效 `PASS`；但目前只验证了最小 headless 路径，不足以单凭这次微探测就把它升级为本轮 formal Prism 新席位。
+- Claude CLI：新增一次健康微探测在 hook 层取消，没有形成稳定 reviewer verdict。
+- Codex 子 Agent：0 次。用户本轮明确要求不要再开启，Cap 全程遵守。
+
+### 5.3 人工验证项（Cap 无法自动化验证的）
+
+- [ ] 若后续要做当前任务的新 formal Prism quorum，需要把 Gemini/Kimi 这类外部审查按 prism run / report 协议归档，而不是只记录为本轮只读审查结论。
+- [ ] 若后续要物理清理 `prism/runs` 或其它 ignored runtime 残留，需要用户显式批准，并先确定哪些运行证据必须保留；本轮只做“证据链与清理策略分离”，不做 destructive cleanup。
 
 ---
 
@@ -224,47 +361,39 @@
 
 | 问题 | 原因 | 建议优先级 |
 |------|------|----------|
-| live runtime 最终 `session-end` 仍需在最终 HEAD 上再次跑通 | 真实 `on-complete` 已在最终报告刷新后发送飞书通知；最新 review blocker 已收缩为 V-11 消费与入口文档联动，本 follow-up 补齐后仍要重跑真实 `session-end` 清掉 pending closure | P0 |
+| 当前任务的新 formal Prism quorum 尚未归档 | 历史 formal 报告已有 2 份，但本轮新增外部审查未按 `prism/runs` + `prism/reports/` 完整归档；同时当前健康微探测还不足以证明存在 4 席、3 家族、可稳定收敛的诚实 roster，因此当前任务的新 quorum 仍是 0 | P1 |
+| `prism/runs` 仍有本地运行残留 | 这是 gitignored 运行证据目录，当前已与 formal 报告归档口径拆开；未经用户明确批准仍不做物理删除 | P2 |
+| 历史完整用户项目 E2E 队列仍有 7 项待验证/部分验证 | 这些条目位于 `loom/test-reports/pending-validations.md`，属于历史 full user-project E2E 队列，不计入当前 framework-upgrade backlog 完成度，也不应在本轮被伪装成已完成 | P1 |
 
 ### 6.2 触发的新问题
 
 本轮没有再发现新的架构级 blocker。  
-相反，后续新暴露的问题都已经收缩成八类：一类是 marker stale 判定漏网，一类是 acceptance 把“真实目标性质”写成了“依赖当前 repo 历史的脆弱断言”，一类是遗留 cleanup helper 仍具备误删真实工作区 task report 的危险副作用，一类是独立评审执行器把“命令存在”误当成“当前可用”，一类是 `session-end` 长耗时窗口里 pending `updated_at` 被等价改写导致旧 CAS 清理失败，一类是 reviewer fallback 列表没有覆盖当前健康的 Codex CLI，一类是 headless reviewer timeout 只杀父进程、不杀进程组导致子进程逃逸，最后一类是验证证据链分叉：代码路径有 acceptance，但 pending-validations、latest E2E 与入口文档没有同步消费。八者都已经被压缩成明确补丁和 acceptance / review 收口。
+相反，后续新暴露的问题都已经收缩成明确补丁：marker stale 判定漏网、acceptance 脆弱断言、危险 cleanup helper、独立评审执行器健康误判、`session-end` pending CAS 竞态、Codex reviewer fallback 缺口、timeout 子进程逃逸、验证证据链分叉、执行保障目录缺失、控制面 gate 失败未传播、docs catalog 缺少读取预算、knowledge / lessons / soul 缺少轻量导航、overlay ask-user 边界缺少保障、状态机文档与脚本枚举漂移、docs 之外的入口自动导入/巨型 acceptance/运行残留 token 风险、CONTRIBUTING 全文权威与首读预算混淆、三轨评审缺少机器 registry、runtime helper 重复实现、`cli_console.md` 镜像边界缺少机器检查。这些问题都已经被压缩成代码、gate、acceptance 或明确 manual-only 边界。
 
 ### 6.3 推荐的下一步行动
 
-1. 本报告口径修正提交后，重新运行 `compass/tools/redcap-commit-proof-check.sh`。
-2. 对最终 HEAD 再跑一次真实 `on-complete`，刷新完成通知正文。
-3. 对真实 Copilot runtime 再跑一次 `session-end`，确认 pending closure 被清理。
+1. 先把当前 confirmed hash 的 `pending closure` 走完真实 review / notify 收尾链，再宣称“当前任务已 clean”；在这之前，版本化提交与终局总结都必须继续保持 pending-aware。
+2. 若需要 formal Prism quorum，把未来外部审查按 `prism/runs` + `prism/reports/` 协议完整归档；当前单路 CLI 探测/审查记录不能越权升级为 quorum。
+3. 若要继续消化 `loom/test-reports/pending-validations.md` 的历史完整用户项目 E2E 队列，应单独起任务，把验证对象、环境、完成标准写清楚，再逐项消费。
+4. 后续 docs 物理归档/瘦身应在 catalog / budget / retention 已稳定的基础上另起 tranche，避免直接删除 closure evidence。
+5. 若后续要物理清理 `prism/runs` 或其它 ignored runtime 残留，必须先得到用户显式批准，并保留必要运行证据索引；当前默认只做 no-bulk-read 审计。
 
 ---
 
 ## 七、经验沉淀
 
-### 7.1 新增 Lesson（建议写入 knowledge/lessons.md）
+### 7.1 新增 Lesson（已写入 knowledge/lessons.md）
+
+完整 lessons 以 `compass/knowledge/lessons.md` 为准；本报告只保留本轮执行保障相关的新增重点，避免 task report 自身继续膨胀成 token 污染源。
 
 | 编号 | 标题 | 核心内容 |
 |------|------|---------|
-| L-72 | pending anchor 的放行条件必须是“唯一最新 changed report”，不能只看它是否曾经 changed 过 | 否则旧报告也可能因为仍在 commit 区间里而被误认成当前报告 |
-| L-73 | task-report-register 这类 closeout 入口必须区分 live claim 与显式 runtime env 的权威级别 | live claim 代表当前宿主进程，显式 env 只能作为无 claim 时的恢复入口，且必须校验 host/project/binding 归属 |
-| L-74 | marker anchor 与 pending anchor 不能有两套 stale 语义 | 只修 pending、不修 marker，会让旧报告从另一条入口继续漏进来 |
-| L-75 | acceptance 要锁定目标性质，不能把 root worktree / 当前 HEAD 偶然状态写成硬编码断言 | 否则长任务越接近收尾，suite 越容易被前序 case 残留和仓库演化污染成假红 |
-| L-76 | acceptance cleanup 不得对真实仓库 task-report 目录做通配删除 | root-sensitive case 应使用 fixture repo、显式 stub 或仅清理本次测试创建的精确文件，不能靠 glob delete 真实工作区 |
-| L-77 | 独立评审执行器必须区分“命令存在”与“当前健康可用”，并透传真实宿主身份 | 否则 live `session-end` 会因为未登录 / 超时的首选 CLI 假失败，甚至把 Copilot 场景的 review 证据误记成 `claude` |
-| L-78 | review runner 的 transport error 检测必须让位于结构化评审结果解析 | 否则正常评审正文里只要提到 `unauthorized`、`rate limit`、`login required` 等词，也会被误判成执行器失败 |
-| L-79 | structured review 的接纳条件必须同时满足“结果值归一化”与“CLI 成功退出” | 否则非零退出里的 stray `PASS/FAIL` token 会掩盖 transport failure，而合法的 `pass` / `fail` JSON 又会被错杀 |
-| L-80 | reviewer output 必须分离 payload / stderr / 残余文本，且成功但不可解析的输出必须继续 fallback | 否则 stdout/stderr 会互相污染，`fail-closed` 说明句会误打成 FAIL，而 unknown-success 还会提前截断后续 reviewer |
-| L-81 | fenced JSON 解析必须兼容 bare fence 与大小写变体 | 否则 ` ```JSON ` 或 bare ` ``` ` 这类合法 structured review 会被误判成 unknown，继续触发假 fallback / fail-closed |
-| L-82 | transport failure detector 必须匹配“整行 CLI 错误形状”，不能扫 residual prose 的宽子串 | 否则 `authentication failed`、`rate limit exceeded` 之类说明句只要出现在 JSON fence 外，也会把合法 structured review 重新误杀 |
-| L-83 | bare fence 兼容不能退化成“第一个 bare fence 优先”，而必须选择**真正可解析的 JSON 候选** | 否则前面普通示例 code block 里的 bare fence 会抢走 parser，后面的合法 json fence 反而被漏掉 |
-| L-84 | 结构化 payload 选定后，residual transport scan 必须忽略所有 fenced blocks，只看 fence 外 prose | 否则前面示例 code block 里引用的真实 CLI 错误行，仍会被误当成 transport failure，再次误杀合法 structured review |
-| L-85 | stdout 已有 structured result 时，stderr 与 stdout residual 不能共用同一套 transport detector 语义 | stderr 需要识别 `error line + hint` 这类真实 failure block，但 stdout residual 若也放宽到同样规则，就会把 reviewer 原样引用的错误块误杀成 transport failure |
-| L-86 | `on-complete` 的 validator host 必须显式来自当前宿主或绑定身份，不能被 project_name 或陈旧 runtime env 污染 | 否则 Copilot 的 task-complete 收尾可能被记成 `redcap` 或 `claude`，导致 validator / report register 继续错绑 |
-| L-87 | `session-end` 清 pending 前必须刷新并证明当前 pending 仍被本次成功覆盖，不能拿旧 `updated_at` 永久阻断 | 否则长耗时 review / validator 窗口里的等价改写会让所有 step PASS 后仍留下 `pending-closure` |
-| L-88 | reviewer fallback 列表必须覆盖当前可用宿主族，并隔离 CLI 噪声与评审 payload | 否则四个旧 reviewer 都不可用时，明明本机 Codex CLI 可完成独立评审，`session-end` 仍会留下 `required_redlines=review` |
-| L-89 | headless reviewer timeout 必须杀整个进程组，不能只等父进程返回 | 否则 Gemini / Node 这类 CLI timeout 后仍可能留下子进程，并阻止 runner 继续进入健康 fallback |
-| L-90 | headless reviewer 的长 prompt 必须从构造开始文件化，不能放进 Bash 大字符串 | 否则即使 Codex 走 stdin，Bash 仍可能在 prompt 构造或大 stderr 空白判断阶段高 CPU 挂起 |
-| L-91 | 收尾评审的 P0/P1 必须能追到同一条物理证据链，不能让报告、验证账本与入口规范分叉 | 否则 acceptance 已通过，但 Stop Hook review 仍会因为 V-编号未消费、latest E2E 未刷新或入口规范未同步而留下 review redline |
+| L-92 | 强制规则必须进入执行保障目录，不能只散落在复活协议或报告里 | 否则“应该做”的规则会在上下文压缩、复活或多宿主接盘时丢失，不会被 hook / validator / manual-only 边界消费 |
+| L-93 | 上层 validator 消费下层控制面检查时必须显式传播失败 | 否则 docs catalog、execution guarantee、revival 这类保障脚本失败时，父级 spec-check 仍可能误绿 |
+| L-94 | docs catalog 只是止血，真正的上下文治理必须有 plan / budget / retention 三段式 | 否则索引虽然新鲜，后续 agent 仍可能目录级或 glob 级打开历史报告，把冻结 evidence 重新变成 token 污染 |
+| L-95 | 状态机文档和脚本合法状态必须有 contract check | 否则 dispatcher 文档允许的状态可能被 validator 拒绝，或者脚本新增状态后文档不知情，治理层继续分叉 |
+| L-96 | token 风险不能只治理 docs，还要覆盖入口自动导入、巨型脚本与 ignored 运行残留 | 否则 docs catalog 止血后，上下文爆炸会从宿主入口、acceptance 全文或 `prism/runs` 这类运行目录反弹 |
+| L-97 | 权威规范变大时不能简单贴“token 陷阱”标签，必须拆成核心契约与章节路由 | `CONTRIBUTING.md` 继续保留全文权威，启动路径只读 core，并通过章节路由和 gate 防止全文默认注入回流 |
 
 ### 7.2 流程改进建议
 

@@ -6,10 +6,11 @@
 
 ## 1. 变更前：经验回顾
 
-修改框架文件前，**必须先阅读以下两个文件**：
+修改框架文件前，**必须先按需检查以下入口**，不得为了“完整复活”默认全文读取大文件：
 
 1. **`compass/knowledge/design-principles.md`**（元原则）— 确认本次变更不违背 P-1 至 P-5 五项战略层原则
-2. **`compass/knowledge/lessons.md`**（经验库）— 检查本次变更是否涉及已知陷阱
+2. **`compass/knowledge/index.md` → `compass/knowledge/lessons.md` 热点主题速览 → 精确 L-编号**（经验库）— 先用 knowledge index 与热点簇定位，再打开相关 lessons；不要默认全文读 lessons
+3. **`rg -n "^## |^### " compass/CONTRIBUTING.md`** — 先定位本次变更涉及的规范章节，再按精确行段读取
 
 重点关注：
 - L-4（Fallback 深度不足）：修改路由/降级逻辑时
@@ -21,6 +22,8 @@
 - L-24（前置对抗缺失）：设计方案中出现"不可行"判断时，必须执行 §1.1 Pre-mortem 挑战
 - L-25（E2E 后置处理不可省略）：E2E 完成后必须执行 `bash loom/loom/tools/redcap-e2e-postcheck.sh`，不可凭记忆
 - L-26（E2E 预设必须锁定）：E2E 启动时必须创建 `loom/test-reports/e2e-session.yaml` 锁定用户指定的预设和开关
+
+若一次变更同时命中多类经验，不要从上到下扫完整个 `lessons.md`；先按“收尾 / 账面一致性”“宿主 / Hook / runtime 边界”“docs / knowledge / token 风险”“评审 / 执行保障”这四个热点主题缩到正确簇，再精读对应 L-编号。
 
 ### 1.1 设计自检：前置对抗（Red Team Self-Check）
 
@@ -339,6 +342,8 @@ python3 compass/tools/feishu-notifier.py ask "方案A还是方案B？" --project
 python3 compass/tools/feishu-notifier.py pending-list --limit 5
 ```
 
+**重复通知治理**：`feishu-notifier.py notify` 对同一 `project + window_type + message` 默认做短窗口去重，避免长任务里 `on-complete / session-end / 补偿入口` 反复发送同一条完成或告警消息。不同内容的真实告警不能被合并；相同内容在去重窗口内只保留第一条，并复用原 followup window。
+
 
 ## 6. 文件变更影响范围提示
 
@@ -350,7 +355,7 @@ python3 compass/tools/feishu-notifier.py pending-list --limit 5
 | loom/dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 + compass/knowledge/a2a-communication.md §2 |
 | loom/dispatcher/state-machine.md 状态枚举 | compass/knowledge/a2a-communication.md §4（NEGOTIATING 状态同步） |
 | SKILL.md §5.10 Hooks 表 | loom/dispatcher/state-machine.md `populate_pending_actions` + SKILL.md §5.13 映射表 |
-| CONTRIBUTING.md 自身 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md 均为索引，通过 `@` 导入指向本文件；修改本文件即全局生效，无需手动同步 |
+| CONTRIBUTING.md 自身 | `compass/CONTRIBUTING.core.md` + .github/copilot-instructions.md + AGENTS.md + CLAUDE.md + GEMINI.md；不得通过 `@compass/CONTRIBUTING.md` 默认导入全文，修改入口规则后需运行 `redcap-contributing-ia-check.sh` 与 `redcap-token-risk-audit.sh` |
 | references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
 | knowledge/design-principles.md | ARCHITECTURE.md 设计哲学章节 + CONTRIBUTING.md §1（元原则引用） |
 | compass/knowledge/a2a-communication.md | ARCHITECTURE.md 通信协议章节 + loom/dispatcher/state-machine.md（前瞻标注） |
@@ -482,6 +487,36 @@ governance_debts_addressed: []
   - 当 `.dev-task.md` 声明 `backlog_source / backlog_id / backlog_item` 时，负责校验当前任务锚点是否存在于机器可读 backlog 权威
   - `strict` 模式还会检查给人看的 backlog 说明文档是否包含必需的人类摘要结构，并确认自动同步区块没有过期
   - `sync` 模式会用机器权威重写 backlog 说明里的“当前状态总览（自动同步）”区块，避免“机器状态更新了，人类说明还停在旧版本”
+- `compass/tools/redcap-current-status.sh`
+  - 面向接盘、长任务中途汇报、飞书摘要与人工追问，统一输出 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置`
+  - 同时汇总 `.dev-task.md` 当前锚点、pending closure 红线、长期 backlog 计数、CLI 工具族 registry cache 与待验证登记，避免只靠零散飞书或 closure ledger 让 Norven 反向考古
+  - 当用户追问“现在整体到哪了 / backlog 还有什么 / 是否已完成”时，优先运行该脚本再汇报；若脚本输出与人工记忆冲突，以脚本和账本为准并说明差异
+- `compass/tools/redcap-docs-catalog.sh`
+  - 维护 `compass/docs/catalog.json`，把 specs / research / traces / task-reports 的标题、摘要、读法策略、体量与粗略 token 压力压成首读索引
+  - 接盘、考古或长任务恢复时，优先运行 `redcap-docs-catalog.sh summary` / `redcap-docs-catalog.sh plan "<问题>"` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；不得默认全量读取 `compass/docs/**`
+  - `budget` 会拒绝目录、glob、未登记路径、过多文件与超预算读取；真实需要大规模考古时，必须在任务报告中写明范围、理由与折中
+  - 修改、移动、新增 `compass/docs/**` 后，必须重新执行 `redcap-docs-catalog.sh generate` 并让 `redcap-docs-catalog.sh check` 通过，避免首读索引陈旧
+  - catalog 中 task report 的 `hot / warm / cold-candidate` 只是文件名近因提示，不代表当前 active truth；当前任务锚点必须以 `redcap-current-status.sh`、pending closure 与 `.dev-task.md` 为准
+- `references/execution-guarantees.json`
+  - 作为“执行保障目录”，把已经形成规则、但必须进入复活协议 / Hook / validator / manual-only 边界的事项列成机器可读清单
+  - 后续新增强制规则时，必须先登记 `id / category / priority / source_paths / guarantee_paths / auto_enforceable`；不能只把规则写进自然语言文档
+  - 对不能或不宜自动化的规则，必须写 `non_automation_reason`，例如 identity 内容判断、lessons 内容质量、外部 CLI 登录态修复与自然语言风格细节
+- `compass/knowledge/index.md`
+  - 作为 knowledge 首读导航，说明 lessons、design principles、host hooks、A2A、部署状态、治理债务分别去哪查
+  - 需要读取 `compass/knowledge/**` 时，先读 index，再打开 1-3 个精确文件；不得默认 bulk-read 整个 knowledge 目录
+  - 新增、移动或删除 `compass/knowledge/*.md` 后，必须同步更新 index，并让 `redcap-knowledge-index-check.sh` 通过
+- `compass/tools/redcap-execution-guarantee-check.sh`
+  - 校验 `references/execution-guarantees.json` 的必备类别、必备规则 ID、来源文件、保障文件与 manual-only 原因
+  - 已接入 `redcap-spec-check.sh`；若检查失败，说明某条规则只停在文档里，没有进入执行保障体系
+- `compass/tools/redcap-revival-check.sh`
+  - 维护“复活协议是否真正重载执行纪律”的静态门禁，检查 `compass/soul.md`、宿主入口文件、reload-rules、hook standards 与执行保障目录是否对齐
+  - 已接入 `redcap-spec-check.sh`；后续新增必须复活时执行的规则，应先补进 `soul.md §6.5` 与 `references/execution-guarantees.json`，再补本检查脚本
+- `compass/tools/redcap-acceptance-index.sh`
+  - 为巨型 `redcap-multi-session-acceptance.sh` 生成 case 首读索引；需要定位 acceptance case 时先用 `summary/find`，再打开精确行段，不得默认全文读测试脚本
+- `compass/tools/redcap-token-risk-audit.sh`
+  - 审计 tracked 大文件、ignored 大目录、入口文件大文件自动导入、docs/knowledge/acceptance 首读保护与 Prism 运行残留风险
+  - 已接入 `redcap-spec-check.sh` 与 `redcap-diagnose.sh`；修改入口文件、docs/knowledge/acceptance/Prism 运行态规则后必须运行
+  - 若检查失败，说明复活协议与执行保障脱节；必须先修协议 / 门禁，再继续宣称当前会话已“复活完成”
 - `compass/tools/redcap-cli-console-mirror.sh`
   - 负责把 `cli_console.md` 维护成**覆盖式本地展示镜像**，避免继续追加旧回复而让人误以为这里是第二份历史日志
   - 它只能帮助“镜像一致”，不能替代最终对话回复本身；如果镜像内容与最终回复不一致，以最终回复为准
@@ -546,6 +581,8 @@ governance_debts_addressed: []
 - `compass/docs/`：冻结后的正式资产，只放 spec / research / trace / task-report 这类跨会话 evidence
 - `compass/knowledge/`：活的操作知识与 heuristics，只放 lessons / host behavior / routing knowledge
 - continuity assets：`.dev-task.md`、`explore-notes.md`、宿主 `plan.md` / workboard、imported session artifacts
+- `compass/docs/catalog.json`：docs 首读索引，只承载摘要、读法策略与体量信息，不替代任何原始 evidence
+- `compass/knowledge/index.md`：knowledge 首读导航，只帮助定位经验/宿主/治理知识，不替代 lessons 或具体 host 记录
 
 补充规则：
 
@@ -553,6 +590,13 @@ governance_debts_addressed: []
 2. continuity assets 可以索引、镜像、显式导入，但**不能**直接伪装成 `docs/` evidence。
 3. `compass/docs/index.yaml` 是 docs collection 的 retention / archive 索引；新增 docs collection 前先改它，再改目录。
 4. spec 生命周期的机器策略以 `references/spec-lifecycle-policy.json` 为准；对人解释以 `references/spec-contribution-standard.md` 为准。两者若不一致，先改策略与说明，再继续改 spec 文件。
+5. `compass/docs/**` 不再作为默认工作记忆批量导入；需要考古时，先用 `redcap-docs-catalog.sh summary/plan` 定位，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合，只打开 budget 通过的必要源文档。
+6. `compass/docs/catalog.json` 只能作为导航索引；涉及 closure verdict、历史根因、runtime authority 或当前 pending 时，必须打开对应原文核对。
+7. `compass/knowledge/**` 不再作为默认工作记忆批量导入；需要查经验、宿主行为或治理债务时，先看 `compass/knowledge/index.md`，只打开必要原文。
+8. `redcap-multi-session-acceptance.sh` 不再作为默认工作记忆批量读取；需要查 case 时先运行 `redcap-acceptance-index.sh find <关键词>`。
+9. 入口文件（AGENTS/CLAUDE/GEMINI/Copilot）必须自动导入小型 `compass/CONTRIBUTING.core.md`，但不得自动导入 `CONTRIBUTING.md` 全文或 `lessons.md` 这类大文件；新会话必须先走 core / current-status / index / rg / budget。
+10. `CONTRIBUTING.md` 不是 token 陷阱本身，它仍是权威规范全文；风险点是无差别全文注入。若全文继续膨胀，应优先做 core/section 信息架构、合并重复、迁移历史事故到 lessons/task report，而不是简单削弱规范权威。
+11. 宿主入口文件分名存在是 carrier 约束，不是多权威设计。它们必须保持“薄 shim”形态，只负责指向同一套首读链；若入口文件开始各自长出不同规则、不同默认流程或大量独有正文，视为信息架构退化。
 
 ---
 

@@ -1,0 +1,667 @@
+{
+  "version": 1,
+  "description": "Machine-readable index of rules that must be backed by RedCap revival, hook, validator, or explicit manual-review safeguards.",
+  "strength_tiers": [
+    {
+      "id": "G1",
+      "label": "物理强保障",
+      "meaning": "规则已经绑到 repo-owned script、validator、hook、CI 或 fail-closed runtime chain，命中时可被确定性执行或阻断。"
+    },
+    {
+      "id": "G2",
+      "label": "宿主耦合保障",
+      "meaning": "规则是否成立取决于当前宿主是否暴露 session、hook、binding 或其它控制点；需要结合 host capability matrix 判断。"
+    },
+    {
+      "id": "G3",
+      "label": "人工/宿主边界保障",
+      "meaning": "规则已被登记、审计和诊断，但当前没有 repo-owned veto 点；只能诚实标注为 host-limited 或 manual-only。"
+    }
+  ],
+  "tier_interpretation": {
+    "scripted": "通常落在 G1；若依赖宿主接线，则需结合 host capability matrix 判断是否退到 G2。",
+    "hooked": "通常落在 G1 或 G2，取决于宿主是否真正提供并验证了对应 Hook。",
+    "validator": "通常落在 G1，因为规则已进入 fail-closed 校验链。",
+    "manual-only": "落在 G3，必须说明为什么当前不能安全自动化。",
+    "documented": "仅文档声明不足以宣称强保障，至少属于待补强边界。",
+    "not-automatable": "落在 G3，且必须写清不自动化的原因。"
+  },
+  "required_categories": [
+    "revival-startup",
+    "external-reporting",
+    "lessons-knowledge",
+    "knowledge-navigation",
+    "soul-identity",
+    "prism-multi-agent",
+    "cli-health",
+    "overlay-governance",
+    "diagnostics",
+    "state-machine-contract",
+    "task-report-closure",
+    "docs-catalog",
+    "control-gates",
+    "host-adapter-hooks",
+    "acceptance-navigation",
+    "token-risk-control",
+    "contributing-ia",
+    "review-tracks",
+    "hook-contracts",
+    "runtime-helper",
+    "host-mirror",
+    "host-behavior"
+  ],
+  "guarantees": [
+    {
+      "id": "revival-core-files",
+      "category": "revival-startup",
+      "priority": "P0",
+      "rule": "New sessions must restore identity, soul, CONTRIBUTING, lessons, design principles, and the current task anchor before doing work.",
+      "source_paths": [
+        "compass/soul.md#6",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md"
+      ],
+      "status": "scripted",
+      "automation": "redcap-revival-check validates the revival protocol and host entry files.",
+      "guarantee_paths": [
+        "compass/tools/redcap-revival-check.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "revival-current-status",
+      "category": "revival-startup",
+      "priority": "P0",
+      "rule": "After re-anchor, the host must obtain a compact current-state view before explaining status or continuing work.",
+      "source_paths": [
+        "compass/CONTRIBUTING.md",
+        "compass/soul.md#6"
+      ],
+      "status": "scripted",
+      "automation": "redcap-current-status.sh is the first-read status surface and is referenced by the revival protocol.",
+      "guarantee_paths": [
+        "compass/tools/redcap-current-status.sh",
+        "compass/tools/redcap-revival-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "revival-reload-rules",
+      "category": "revival-startup",
+      "priority": "P1",
+      "rule": "Revival must reload the anti-degradation rule map so long tasks do not lose hook, reporting, Prism, or closure constraints.",
+      "source_paths": [
+        "SKILL.md#5.12",
+        "loom/dispatcher/reload-rules.yaml"
+      ],
+      "status": "scripted",
+      "automation": "revival-check requires an on_session_revival reload checkpoint.",
+      "guarantee_paths": [
+        "loom/dispatcher/reload-rules.yaml",
+        "compass/tools/redcap-revival-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "external-four-line-status",
+      "category": "external-reporting",
+      "priority": "P1",
+      "rule": "Status replies, final summaries, task reports, and notifications must start from the four human-readable status lines.",
+      "source_paths": [
+        "compass/CONTRIBUTING.md#2.1",
+        "references/task-report-template.md",
+        "references/agent-constraints.md"
+      ],
+      "status": "scripted",
+      "automation": "redcap-current-status.sh emits the four-line shape; task-report-check validates task-report summaries.",
+      "guarantee_paths": [
+        "compass/tools/redcap-current-status.sh",
+        "compass/tools/redcap-task-report-check.sh",
+        "compass/tools/redcap-notify-format.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "lessons-preflight",
+      "category": "lessons-knowledge",
+      "priority": "P1",
+      "rule": "Framework changes must review lessons and design principles before implementation.",
+      "source_paths": [
+        "compass/CONTRIBUTING.md#1",
+        "compass/knowledge/lessons.md",
+        "compass/knowledge/design-principles.md"
+      ],
+      "status": "scripted",
+      "automation": "revival protocol requires lessons; execution-guarantees check keeps the rule in the protected map.",
+      "guarantee_paths": [
+        "compass/tools/redcap-revival-check.sh",
+        "references/execution-guarantees.json"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "lessons-closeout",
+      "category": "lessons-knowledge",
+      "priority": "P1",
+      "rule": "After each meaningful change, new failure modes, corrected assumptions, and reusable methods must be considered for lessons.",
+      "source_paths": [
+        "compass/CONTRIBUTING.md#3",
+        "SKILL.md#5.8",
+        "references/task-report-template.md"
+      ],
+      "status": "validator",
+      "automation": "task report template and stop-review require explicit lesson consideration; quality of the lesson remains human-reviewable.",
+      "guarantee_paths": [
+        "compass/tools/redcap-task-report-check.sh",
+        "compass/tools/redcap-on-stop-review.sh",
+        "references/task-report-template.md"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "knowledge-index-navigation",
+      "category": "knowledge-navigation",
+      "priority": "P1",
+      "rule": "Knowledge archaeology must start from compass/knowledge/index.md and open only the specific knowledge files needed for the task.",
+      "source_paths": [
+        "compass/knowledge/index.md",
+        "compass/CONTRIBUTING.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-knowledge-index-check.sh ensures every top-level knowledge markdown file is represented in the first-read index; spec-check consumes it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-knowledge-index-check.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/knowledge/index.md"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "soul-identity-read",
+      "category": "soul-identity",
+      "priority": "P0",
+      "rule": "Cap identity and collaboration posture must be restored at session start when the identity file exists.",
+      "source_paths": [
+        "compass/soul.md#6",
+        "ARCHITECTURE.md#4.10"
+      ],
+      "status": "scripted",
+      "automation": "revival-check verifies all host entries point at soul and the revival protocol lists identity restoration.",
+      "guarantee_paths": [
+        "compass/tools/redcap-revival-check.sh",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "soul-identity-update",
+      "category": "soul-identity",
+      "priority": "P1",
+      "rule": "Identity updates must be committed and pushed immediately, but the content decision should remain intentional and human-visible.",
+      "source_paths": [
+        "compass/soul.md#identity-update"
+      ],
+      "status": "manual-only",
+      "automation": "Repository gates can check that the rule is documented, but should not auto-edit or auto-push a personal identity file.",
+      "guarantee_paths": [
+        "compass/tools/redcap-revival-check.sh",
+        "references/execution-guarantees.json"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": false,
+      "non_automation_reason": "Identity content is personal memory; automatic mutation or push would risk corrupting the user's chosen identity record."
+    },
+    {
+      "id": "prism-formal-run",
+      "category": "prism-multi-agent",
+      "priority": "P0",
+      "rule": "Formal Prism work must use dispatch-check, run-scoped session registry, schema collection, synthesis audit, adjudication, and archive checks.",
+      "source_paths": [
+        "prism/protocol.md",
+        "SKILL.md#5.17",
+        "compass/CONTRIBUTING.md#11"
+      ],
+      "status": "scripted",
+      "automation": "Prism tools validate dispatch and archive; execution guarantees keep these requirements in the protected map.",
+      "guarantee_paths": [
+        "prism/tools/prism-dispatch-check.sh",
+        "prism/tools/prism-run-state.sh",
+        "prism/tools/prism-archive-check.sh",
+        "prism/tools/prism-evidence-check.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "prism-cli-health",
+      "category": "prism-multi-agent",
+      "priority": "P1",
+      "rule": "Before delegating to Prism workers, the coordinator must distinguish install/config cache from real headless health and record degradations honestly.",
+      "source_paths": [
+        "loom/dispatcher/agent-adapters.md#1.2",
+        "prism/protocol.md#dispatch"
+      ],
+      "status": "scripted",
+      "automation": "redcap-detect-agents refreshes registry; real headless probes remain on-demand because they may consume quotas or require credentials.",
+      "guarantee_paths": [
+        "compass/tools/redcap-detect-agents.sh",
+        "references/execution-guarantees.json"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": false,
+      "non_automation_reason": "Real headless probes can spend quota, hit login prompts, or require user credentials; they should be explicit diagnostics, not unconditional hooks."
+    },
+    {
+      "id": "cli-registry-refresh",
+      "category": "cli-health",
+      "priority": "P1",
+      "rule": "Session start and fallback paths must refresh the local agent registry without treating it as proof of auth or rate-limit health.",
+      "source_paths": [
+        "SKILL.md#2",
+        "loom/dispatcher/agent-adapters.md#1.2"
+      ],
+      "status": "scripted",
+      "automation": "redcap-detect-agents is the canonical registry refresh script.",
+      "guarantee_paths": [
+        "compass/tools/redcap-detect-agents.sh",
+        "compass/tools/redcap-current-status.sh"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "overlay-ask-user-boundary",
+      "category": "overlay-governance",
+      "priority": "P1",
+      "rule": "Host overlay skills must remain advisory and must not turn already-authorized RedCap work into ask_user, need_user, blocked, or downstream-skill handoff blockers.",
+      "source_paths": [
+        "SKILL.md",
+        "compass/CONTRIBUTING.md",
+        "references/agent-constraints.md",
+        "compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-overlay-governance-check.sh verifies RedCap-owned overlay/ask_user boundaries and spec-check consumes it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-overlay-governance-check.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "diagnostic-overview",
+      "category": "diagnostics",
+      "priority": "P1",
+      "rule": "RedCap must provide a single read-only diagnostic entry that summarizes current status and runs the key governance checks without requiring manual script hunting.",
+      "source_paths": [
+        "references/backlogs/framework-upgrade.json",
+        "compass/tools/redcap-current-status.sh"
+      ],
+      "status": "scripted",
+      "automation": "redcap-diagnose.sh runs current-status plus docs, knowledge, overlay, execution, revival, and spec checks.",
+      "guarantee_paths": [
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "state-machine-contract",
+      "category": "state-machine-contract",
+      "priority": "P1",
+      "rule": "Documented FSM states and communication status values must stay aligned with the scripts that validate state.yaml.",
+      "source_paths": [
+        "loom/dispatcher/state-machine.md",
+        "references/communication-protocol.md",
+        "compass/tools/redcap-check-state.sh"
+      ],
+      "status": "validator",
+      "automation": "redcap-state-machine-check.sh compares documented FSM states with redcap-check-state.sh and is consumed by spec-check.",
+      "guarantee_paths": [
+        "compass/tools/redcap-state-machine-check.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "task-report-closure",
+      "category": "task-report-closure",
+      "priority": "P0",
+      "rule": "Layer B completion requires physical task report evidence, closure validator consumption, and pending-closure honesty.",
+      "source_paths": [
+        "references/task-report-template.md",
+        "references/hook-standards.md",
+        "compass/CONTRIBUTING.md#13"
+      ],
+      "status": "validator",
+      "automation": "validator-chain consumes review, PM Gate, drift, backlog, spec, task-report, and artifact lifecycle checks.",
+      "guarantee_paths": [
+        "compass/tools/redcap-validator-chain.sh",
+        "compass/tools/redcap-task-report-check.sh",
+        "compass/tools/redcap-layerB-session-end.sh",
+        "compass/tools/redcap-on-complete.sh"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "docs-catalog-freshness",
+      "category": "docs-catalog",
+      "priority": "P1",
+      "rule": "Docs archaeology must start from catalog, and docs changes must regenerate and check the catalog.",
+      "source_paths": [
+        "compass/CONTRIBUTING.md",
+        "compass/docs/index.yaml"
+      ],
+      "status": "validator",
+      "automation": "redcap-docs-catalog.sh check is consumed by spec-check.",
+      "guarantee_paths": [
+        "compass/tools/redcap-docs-catalog.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/docs/catalog.json"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "docs-progressive-disclosure",
+      "category": "docs-catalog",
+      "priority": "P0",
+      "rule": "Docs archaeology must use summary/plan/budget progressive disclosure before opening source documents, and bulk directory reads must fail closed by default.",
+      "source_paths": [
+        "compass/docs/index.yaml",
+        "compass/CONTRIBUTING.md",
+        "references/hook-standards.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-docs-catalog.sh plan selects candidates from summaries, budget rejects directories, glob-like paths, uncataloged paths, too many files, and oversized read sets; acceptance covers the behavior.",
+      "guarantee_paths": [
+        "compass/tools/redcap-docs-catalog.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "compass/tools/redcap-current-status.sh"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "control-gate-failure-propagation",
+      "category": "control-gates",
+      "priority": "P0",
+      "rule": "Any control-plane check consumed by a higher-level validator must propagate failures to the parent validator result.",
+      "source_paths": [
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "compass/knowledge/lessons.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-spec-check wraps docs catalog, execution guarantee, and revival checks with explicit fail-closed handling; acceptance simulates all three failing routes.",
+      "guarantee_paths": [
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "host-hook-convergence",
+      "category": "host-adapter-hooks",
+      "priority": "P0",
+      "rule": "Host-specific hooks must converge into Layer A/Layer B shared session-start, stop-review, on-complete, and session-end control scripts.",
+      "source_paths": [
+        "references/hook-standards.md",
+        "ARCHITECTURE.md#4.7",
+        "compass/knowledge/host-reliability.md"
+      ],
+      "status": "hooked",
+      "automation": "session-start/session-end scripts and validator-chain provide the shared control path; hook standards define host alignment.",
+      "guarantee_paths": [
+        "compass/tools/redcap-layerB-session-start.sh",
+        "compass/tools/redcap-layerB-session-end.sh",
+        "compass/tools/redcap-on-stop-review.sh",
+        "compass/tools/redcap-on-complete.sh",
+        "references/hook-standards.md"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "main-agent-interruption-boundary",
+      "category": "host-behavior",
+      "priority": "P0",
+      "rule": "When a task is already authorized and no real human gate is hit, the main agent must not interrupt merely out of caution; if the host cannot offer reply-time veto, RedCap must mark this boundary as host-limited instead of pretending it is physically enforced.",
+      "source_paths": [
+        "compass/soul.md#5",
+        "compass/CONTRIBUTING.md#10",
+        "references/agent-constraints.md",
+        "compass/knowledge/host-reliability.md",
+        "references/host-session-capability-matrix.json"
+      ],
+      "status": "manual-only",
+      "automation": "Current Codex.app and similar hosts expose startup import but not repo-owned reply veto; execution guarantees and host capability docs must therefore describe this as host-limited rather than auto-enforced.",
+      "guarantee_paths": [
+        "references/execution-guarantees.json",
+        "references/host-session-capability-matrix.json",
+        "compass/knowledge/host-reliability.md",
+        "compass/tools/redcap-contributing-ia-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": false,
+      "non_automation_reason": "The decision to pause, ask the user, or hesitate before commit happens inside the host agent's live reply path. Without a repo-owned pre-reply veto API, RedCap can document, audit, and diagnose this boundary but cannot physically intercept every violation."
+    },
+    {
+      "id": "acceptance-index-navigation",
+      "category": "acceptance-navigation",
+      "priority": "P1",
+      "rule": "Agents must use the acceptance case index before opening the giant multi-session acceptance script, so case lookup stays targeted and does not flood context.",
+      "source_paths": [
+        "compass/CONTRIBUTING.md",
+        "compass/soul.md",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "status": "scripted",
+      "automation": "redcap-acceptance-index.sh provides summary/find/check and token-risk audit requires it as the mitigation for the large acceptance suite.",
+      "guarantee_paths": [
+        "compass/tools/redcap-acceptance-index.sh",
+        "compass/tools/redcap-token-risk-audit.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "token-risk-audit",
+      "category": "token-risk-control",
+      "priority": "P0",
+      "rule": "New sessions and framework changes must not reintroduce large-file auto-imports, unguarded giant tracked files, or unmanaged ignored runtime directories that can flood agent context.",
+      "source_paths": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md",
+        "compass/CONTRIBUTING.md",
+        "compass/soul.md"
+      ],
+      "status": "scripted",
+      "automation": "redcap-token-risk-audit.sh checks entry files, tracked large files, ignored runtime directories, and required navigation mitigations; spec-check and diagnose consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-token-risk-audit.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "contributing-core-routing",
+      "category": "contributing-ia",
+      "priority": "P1",
+      "status": "validator",
+      "rule": "CONTRIBUTING remains the authoritative full specification, but new sessions and reviewers must first consume the compact core contract and route to exact sections instead of default full-context injection.",
+      "source_paths": [
+        "compass/CONTRIBUTING.md",
+        "compass/CONTRIBUTING.core.md",
+        "AGENTS.md",
+        ".github/copilot-instructions.md"
+      ],
+      "auto_enforceable": true,
+      "guarantee_paths": [
+        "compass/tools/redcap-contributing-ia-check.sh",
+        "compass/tools/redcap-token-risk-audit.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "automation": "redcap-contributing-ia-check.sh validates core size, entry imports, Copilot startup rules, and stop-review selected-section prompts; token-risk audit prevents full auto-import regression."
+    },
+    {
+      "id": "review-tracks-gate",
+      "category": "review-tracks",
+      "priority": "P1",
+      "status": "validator",
+      "rule": "Layer B governance changes must be reviewable through explicit architecture, governance, and contracts tracks, with the track registry consumed by stop-review and governance checklists.",
+      "source_paths": [
+        "references/review-tracks.json",
+        "references/governance-review-checklist.md",
+        "compass/tools/redcap-on-stop-review.sh"
+      ],
+      "auto_enforceable": true,
+      "guarantee_paths": [
+        "compass/tools/redcap-review-tracks-check.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "automation": "redcap-review-tracks-check.sh validates the three-track registry and confirms stop-review consumes it."
+    },
+    {
+      "id": "hook-contract-audit",
+      "category": "hook-contracts",
+      "priority": "P1",
+      "status": "validator",
+      "rule": "Hook, validator, and runtime contract hardening must be checked as executable contracts, not only as natural-language hook standards.",
+      "source_paths": [
+        "references/hook-standards.md",
+        "compass/tools/redcap-validator-chain.sh",
+        "compass/tools/redcap-on-stop-review.sh",
+        "compass/tools/redcap-layerB-session-end.sh"
+      ],
+      "auto_enforceable": true,
+      "guarantee_paths": [
+        "compass/tools/redcap-hook-contract-check.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "automation": "redcap-hook-contract-check.sh verifies hook standards, validator modes, stop-review, session-end, task-complete, and runtime helper linkage."
+    },
+    {
+      "id": "runtime-helper-convergence",
+      "category": "runtime-helper",
+      "priority": "P2",
+      "status": "validator",
+      "rule": "Common runtime attach/load patterns must converge on shared helpers in redcap-runtime-state.sh instead of being reimplemented across hook and validator scripts.",
+      "source_paths": [
+        "compass/tools/redcap-runtime-state.sh",
+        "compass/tools/redcap-drift-check.sh",
+        "compass/tools/redcap-pm-gate-check.sh",
+        "compass/tools/redcap-layerB-task-complete-guard.sh"
+      ],
+      "auto_enforceable": true,
+      "guarantee_paths": [
+        "compass/tools/redcap-runtime-helper-check.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "automation": "redcap-runtime-helper-check.sh ensures managed scripts use redcap_runtime_attach_current_or_claim and no longer define local attach helpers."
+    },
+    {
+      "id": "cli-console-mirror-contract",
+      "category": "host-mirror",
+      "priority": "P2",
+      "status": "validator",
+      "rule": "cli_console.md must remain a local-only overwrite display mirror and must not become a second answer log or repo-tracked truth surface.",
+      "source_paths": [
+        "compass/tools/redcap-cli-console-mirror.sh",
+        "compass/tools/redcap-artifact-classifier.sh",
+        ".gitignore",
+        "compass/CONTRIBUTING.md"
+      ],
+      "auto_enforceable": true,
+      "guarantee_paths": [
+        "compass/tools/redcap-cli-console-mirror-check.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "automation": "redcap-cli-console-mirror-check.sh validates ignore status, artifact classification, and overwrite-only helper behavior."
+    }
+  ],
+  "manual_review_boundaries": [
+    {
+      "id": "lesson-content-quality",
+      "reason": "A hook can require a lesson check section, but it cannot safely decide whether a nuanced event deserves a permanent lesson without creating noisy memory."
+    },
+    {
+      "id": "identity-content-quality",
+      "reason": "Identity is a personal continuity asset; scripts may protect the workflow but must not auto-write personality conclusions."
+    },
+    {
+      "id": "external-cli-auth",
+      "reason": "Login state, rate limits, and API keys are local credentials; RedCap can sniff and report but should not silently repair or spend them."
+    },
+    {
+      "id": "natural-language-style",
+      "reason": "Four-line status and terminology rules can be scaffolded and reviewed, but strict regex gates would misfire on commands, paths, field names, and quoted user text."
+    },
+    {
+      "id": "main-agent-live-reply-control",
+      "reason": "Whether the active host agent pauses, asks the user, or stops before commit is decided inside the host reply path. RedCap can constrain and audit this behavior, but without host-level reply veto or pre-send hooks it cannot honestly promise 100% physical enforcement."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 .DS_Store
 prompt.txt
-.env.local
+.env*
 compass/tools/feishu-config.json
 compass/.workflow/
 compass/.runtime/

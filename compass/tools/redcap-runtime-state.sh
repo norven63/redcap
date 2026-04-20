@@ -709,6 +709,22 @@ redcap_runtime_attach_from_process_claim() {
     redcap_runtime_attach_existing "$runtime_session_id" "$capability"
 }
 
+redcap_runtime_attach_current_or_claim() {
+    local host="${1:-}"
+    local host_process_pid="${2:-$(redcap_runtime_claim_search_pid)}"
+
+    if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
+        redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY" 2>/dev/null && return 0
+    fi
+
+    [[ -n "$host" ]] || return 1
+    redcap_runtime_attach_from_process_claim "$host" "$host_process_pid" 2>/dev/null
+}
+
+redcap_runtime_attach_current_or_claim_for_host() {
+    redcap_runtime_attach_current_or_claim "$@"
+}
+
 redcap_runtime_clear_process_claim() {
     local host="$1"
     local host_process_pid="${2:-$(redcap_runtime_claim_owner_pid)}"

@@ -22,14 +22,6 @@ TASK_FILE="$REDCAP_ROOT/.dev-task.md"
 CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null || true)
 [[ -n "$CURRENT_HEAD" ]] || exit 0
 
-attach_runtime_if_possible() {
-    if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
-        redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY" 2>/dev/null && return 0
-    fi
-
-    redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null
-}
-
 append_required_redline() {
     local item="$1"
     local normalized=""
@@ -72,7 +64,7 @@ record_reconcile_event() {
         >/dev/null 2>&1 || true
 }
 
-if ! attach_runtime_if_possible; then
+if ! redcap_runtime_attach_current_or_claim "$HOST"; then
     redcap_runtime_record_degraded_mode \
         "$REDCAP_ROOT" \
         "pending-closure-reconcile-missing-claim" \

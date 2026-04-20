@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`F2 规范到 gate 的翻译链`
-- 当前焦点说明：D1 已完成：spec 生命周期门已补齐；当前继续推进 F2，把更广泛的治理规范继续翻译成可执行 gate。
+- 当前焦点：`F3 hook / lesson / contract / 状态机治理硬化`
+- 当前焦点说明：framework-upgrade 长期路线当前已全量收口：三轨评审、CONTRIBUTING core 路由、hook contract、runtime helper、CLI mirror、docs/knowledge/token 风险与复活执行保障均已接入可执行 gate；F3 保留为最后完成的治理硬化焦点。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -59,31 +59,31 @@
 | 阶段 0：长期路线机制化 | 已完成 | F4 | 长期路线已升级成机器权威 + 人类说明 + 门禁接线的正式机制。 |
 | 阶段 1：权威核心加固 | 已完成 | A1 / A2 / E1 / F1 | 权威核心、制品生命周期门与治理基建已经完成。 |
 | 阶段 2：连续性权威中心化 | 已完成 | B1 / B2 / B3 / C1 | 连续性权威、恢复门、显式导入反馈和宿主镜像边界都已落地。 |
-| 阶段 3：治理可执行化 | 进行中 | D1 / F2 / F3 / A3 | D1 已收口；当前继续推进 F2 / F3 / A3，把更多治理规范补成可执行 gate 与审计轨。 |
-| 阶段 4：宿主体验与操作反馈 | 进行中 | C2 / C3 | `cli_console.md` 已补上覆盖式镜像 helper，下一步仍要继续收口 overlay / ask_user 的诚实降级。 |
-| 阶段 5：信息架构与运行时收敛 | 待推进 | D2 / D3 / E2 / E3 | 清理知识导航、docs 保留策略、runtime helper 收敛与统一诊断。 |
+| 阶段 3：治理可执行化 | 已完成 | D1 / F2 / F3 / A3 | D1 / F2 / F3 / A3 均已收口：spec、docs、knowledge、hook、contract、FSM、三轨评审与 token 风险均已进入可执行 gate。 |
+| 阶段 4：宿主体验与操作反馈 | 已完成 | C2 / C3 | C2 / C3 均已收口：`cli_console.md` 降格为 local-only 覆盖式展示镜像，overlay / ask_user 诚实降级也已接入审计。 |
+| 阶段 5：信息架构与运行时收敛 | 已完成 | D2 / D3 / E2 / E3 | D2 / D3 / E2 / E3 均已收口：docs/knowledge 渐进披露、docs 保留策略、runtime helper 收敛与统一诊断均已接入检查。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
 |---|---|---|---|---|
 | A1 收尾账本与义务生命周期统一 | 权威与收尾收口 | 已完成 | P0 | pending closure、收尾账本、陈旧义务核销与 fail-closed 收尾已经并入同一条权威链。 |
 | A2 统一校验链与 PM Gate 加固 | 权威与收尾收口 | 已完成 | P0 | session-start、stop-review、on-complete、session-end 已统一走 validator chain，不再分散漂移。 |
-| A3 三轨评审门（架构 / 治理 / 契约） | 权威与收尾收口 | 待推进 | P1 | 目前已有统一 stop-review 入口，但还没有拆成架构、治理、契约三条专门审计轨。 |
+| A3 三轨评审门（架构 / 治理 / 契约） | 权威与收尾收口 | 已完成 | P1 | 三轨评审已收口为 `references/review-tracks.json` 机器 registry，并由 stop-review prompt、治理 checklist 与 review-tracks gate 消费。 |
 | B1 RedCap 自持的连续性清单 | 会话隔离与连续性 | 已完成 | P0 | 连续性权威已收口到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`，宿主只读镜像不再冒充真相源。 |
 | B2 会话恢复门与宿主能力矩阵 | 会话隔离与连续性 | 已完成 | P1 | 不同宿主已统一进入 full / degraded / unsupported 模式，恢复门与能力矩阵都已落地。 |
 | B3 显式导入反馈与端到端验收 | 会话隔离与连续性 | 已完成 | P1 | import-ready / import-success 反馈、跨宿主验收与 runtime mismatch fail-closed 都已接通。 |
 | C1 宿主面板只读镜像化 | 宿主适配与交互面 | 已完成 | P1 | 宿主 workboard 已由单一脚本生成 canonical pointer，只能镜像 RedCap 状态，不能反推真相源。 |
-| C2 `cli_console.md` 彻底降格为展示镜像 | 宿主适配与交互面 | 进行中 | P1 | 已补上覆盖式镜像 helper 与规范约束，但由于最终对话输出不归仓库脚本控制，仍未形成完全自动的宿主级强制。 |
-| C3 宿主 overlay / ask_user 诚实降级 | 宿主适配与交互面 | 待推进 | P1 | shared skill 资产边界和 ask_user 规则已写进规范，但还缺机器可审计的诚实降级标记。 |
+| C2 `cli_console.md` 彻底降格为展示镜像 | 宿主适配与交互面 | 已完成 | P1 | `cli_console.md` 已被固定为 gitignored local-only 覆盖式展示镜像，并由 artifact classifier 与 mirror check 审计；宿主最终回复 UI 不归 repo 脚本强控，不再冒充 RedCap backlog 残留。 |
+| C3 宿主 overlay / ask_user 诚实降级 | 宿主适配与交互面 | 已完成 | P1 | shared skill 资产边界、ask_user 人工介入门与下游 skill 不可阻断规则已由 overlay governance check 审计。 |
 | D1 spec 生命周期权威收紧 | 文档与证据分层 | 已完成 | P0 | spec 生命周期策略、归档根目录、replaced_by 关系与命名/role 准入都已接入 spec-check，旧 spec 不再能留在 active specs 根目录里假装当前入口。 |
-| D2 knowledge / docs 边界导航 | 文档与证据分层 | 待推进 | P2 | knowledge 目录已有内容，但还没有统一导航入口，后续仍容易让人不清楚该去哪里找规则。 |
-| D3 docs 保留策略执行化 | 文档与证据分层 | 待推进 | P2 | 保留策略已经写在 docs 索引里，但还缺自动审计、归档日志与 check-only 门。 |
+| D2 knowledge / docs 边界导航 | 文档与证据分层 | 已完成 | P2 | docs 侧通过 catalog / plan / budget 首读，knowledge 侧通过 index.md 首读导航，二者都已接入检查。 |
+| D3 docs 保留策略执行化 | 文档与证据分层 | 已完成 | P2 | docs 保留策略已补 check-only retention 审计、归档日志、progressive disclosure 预算门与 spec-check 接线。 |
 | E1 制品生命周期提交前闸门 | 运行时资产与文件收敛 | 已完成 | P0 | 分类器、repo-owned pre-commit、mixed-lifecycle 提示与收尾历史审计都已补齐。 |
-| E2 session / runtime helper 收敛 | 运行时资产与文件收敛 | 待推进 | P2 | 运行时 helper 已很多，后续还要再收口共享 API，减少重复读写和脚本体积。 |
-| E3 统一诊断与可观测性 | 运行时资产与文件收敛 | 待推进 | P1 | 目前理解 authority / continuity / drift 状态还要手查多个脚本，缺一条统一 diagnose 入口。 |
+| E2 session / runtime helper 收敛 | 运行时资产与文件收敛 | 已完成 | P2 | runtime attach/load 重复逻辑已收敛到 `redcap_runtime_attach_current_or_claim` 共享 helper，并由 runtime-helper check 防止关键脚本重新复制本地 attach helper。 |
+| E3 统一诊断与可观测性 | 运行时资产与文件收敛 | 已完成 | P1 | 已新增 redcap-diagnose.sh，统一汇总 current-status、docs、knowledge、overlay、execution、revival 与 spec-check。 |
 | F1 治理主线制度化与债务表 | 治理与规范可执行化 | 已完成 | P0 | governance_tranche 标记、治理评审清单和治理债务表都已落地，治理已成为独立主线。 |
-| F2 规范到 gate 的翻译链 | 治理与规范可执行化 | 进行中 | P1 | spec-registry + spec-lifecycle-policy + spec-check 已把 spec 维度推进到第二层翻译链，但 hook / lesson / contract 等更广泛的治理映射还没做完。 |
-| F3 hook / lesson / contract / 状态机治理硬化 | 治理与规范可执行化 | 待推进 | P1 | 这些真正保运行的机制还要继续变成脚本化、校验化、可审计化的硬约束。 |
+| F2 规范到 gate 的翻译链 | 治理与规范可执行化 | 已完成 | P1 | spec、docs、knowledge、overlay、execution guarantees、revival 与 diagnostics 均已从自然语言规则接入脚本 / gate / acceptance；更专门的 hook / contract / FSM 深水区交给 F3。 |
+| F3 hook / lesson / contract / 状态机治理硬化 | 治理与规范可执行化 | 已完成 | P1 | hook、lesson、contract、状态机、CONTRIBUTING 信息架构、token-risk、runtime helper 与 CLI mirror 均已登记到执行保障并接入 spec-check / diagnose / acceptance。 |
 | F4 backlog 长期路线机制化 | 治理与规范可执行化 | 已完成 | P0 | 机器可读 backlog 权威、人类说明文档自动同步、backlog 门禁与宿主镜像锚点都已落地。 |
 
 ### 术语对照
@@ -103,20 +103,32 @@
 
 
 
+
+
+
+
+
+
 ## 后续推进顺序
 
-1. **先做“阶段 0：长期路线机制化”**  
-   先把 backlog 本身变成正式机制，后面阶段才不会再次退回“只靠一份说明文档记忆路线”。
+这条 **framework-upgrade 长期路线本身已经完成**。
+也就是说，阶段 0 到阶段 5 的 backlog 条目都已经收口到脚本、gate、validator、docs 导航或诊断链里，不再存在“下一批继续做阶段 3 / 4”这种说法。
 
-2. **阶段 1 和阶段 2 目前都已完成**  
-   权威核心、制品生命周期门、连续性权威、恢复门、显式导入反馈和宿主只读镜像边界，都已经有脚本和验收支撑，不是停留在文档层。
+现在真正剩下的，已经不是 backlog 本体，而是 backlog 之外的四类后续动作：
 
-3. **下一批真正待做的重点，是阶段 3 与阶段 4**  
-   - 阶段 3：继续把 spec / governance / hook / lesson / contract 这些规则翻成 gate 和 validator  
-   - 阶段 4：解决 `cli_console.md`、overlay / ask_user 这类宿主体验和诚实降级问题
+1. **当前 live task 的收尾账面**
+   当前 `.dev-task.md` 对应的 confirmed hash 若仍有 `pending closure`，要继续走 review / validator / notify 链，把“当前任务已 clean”这句话真正做实。
 
-4. **阶段 5 是长期维护层**  
-   knowledge 导航、docs 保留策略、runtime helper 收敛、统一诊断都很重要，但应晚于前面的权威与治理硬化。
+2. **formal Prism 新运行是否真的归档**
+   历史 formal Prism 报告存在，不等于当前任务已经形成新的 quorum。后续若要补 formal Prism，必须按 `prism/runs` + `prism/reports` 协议真实归档。
+
+3. **历史完整用户项目 E2E 队列**
+   `loom/test-reports/pending-validations.md` 里的条目属于另一条长期验证线，它们不再算 framework-upgrade backlog 未完成项，但仍是独立 backlog。
+
+4. **宿主硬边界债务**
+   像“主 Agent 回复前 reply-veto”这类能力，不是再做一轮 repo 内治理就能补齐，而要等宿主暴露更强控制点，或另起 wrapper / host 适配 tranche。
+
+简单说：**framework-upgrade 已完成；后续工作转入 closeout、Prism、历史 E2E 和宿主边界治理四条独立后续线。**
 
 ## 为什么现在要先补这套机制
 

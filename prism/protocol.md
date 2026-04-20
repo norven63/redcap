@@ -105,6 +105,14 @@ prism/runs/<run_id>/{collect,synthesize,audit,artifacts}/   ← 同 run 的中�
 session_registry 是 Council 多轮复用 session 和 Collect 追问的基础，也是 `prism-archive-check.sh` 校验 quorum 的数据源。
 Cap / Dispatcher 是 session_registry 的唯一写入方：Dispatch 阶段必须写入 `handle` 与 `injection_mode`；Collect 阶段必须把 `status` 从 `dispatched` 更新为 `responded | absent | followed_up`，并同步写回 `schema_ok`。禁止以默认值冒充已收集状态。
 
+### `prism/runs`、报告归档与物理清理的边界
+
+- `prism/runs/<run_id>/...` 是 **run-scoped 本地运行证据**：它服务于当前 run 的 collect / synthesize / audit 过程，默认 gitignored。
+- `prism/reports/*.md` 与 `prism/reports/index.yaml` 是 **repo-tracked 归档证据**：只有报告写成、索引登记、archive-check 通过后，才算 formal Prism 被正式归档。
+- `prism/runs` 的目录数量、残留数量，**不等于** formal Prism 成功次数，也不等于当前任务已经用过 formal quorum。
+- 物理清理 `prism/runs` 是独立动作，不等于“报告已归档”；清理前必须先明确哪些运行证据仍需保留，并获得用户显式批准。
+- 默认治理目标是：**禁止 bulk-read `prism/runs`，优先保持 run registry / report archive 口径诚实**；不是为了表面干净去删除本地证据。
+
 若进入 council Round 2+，同一 role 只能复用原条目继续推进：
 - 只有显式标记为后续轮次（`round > 1`）时，才允许 `responded -> followed_up`
 - 只有显式标记为后续轮次（`round > 1`）且续接失败时，才允许 `responded|followed_up -> absent`
@@ -125,6 +133,12 @@ Agent 数量：
 - explore：3~5 个，≥2 家族
 - redteam：4~6 个，**≥3 家族，必须含挑战者/审查员/旧错者；第 4 席优先 explorer**
 - test：2~4 个，按评分维度分工
+
+**Codex 进程限定规则**：
+- 当当前宿主是 Codex，或 Prism/RedCap 准备调起 `codex` CLI 作为棱镜参与者、reviewer、synthesis audit 时，RedCap 控制面默认最多允许 **2 个 Codex-family 执行进程**同时存在；当前宿主 Agent 计为 1，因此默认只剩 1 个额外 Codex 子进程名额。
+- 该限制只约束 RedCap / Prism 机制主动启动的 `codex` CLI 或 Codex-family 子 Agent，不限制当前宿主 Agent 自身在“不降低任务质量”的前提下做必要上下文管理。
+- 若任务质量确实需要超过该限制，必须先向 Norven 明确说明原因、预计收益、token / 限流风险，并获得显式授权后再放宽。
+- Prism 分发前若候选 roster 会超过该限制，优先选择非 Codex 家族的健康 CLI 补足多样性；若无法补足 quorum，应中止本次 Prism 运行并记录为资源不足，而不是偷偷并发更多 Codex 进程。
 
 **GPT 系模型特别处理**：发送问题包前检查长度，超过 800 行的材料必须分段发送（GPT 系模型会静默截断大文件而不报错，见 lessons.md L-11）。
 
@@ -281,6 +295,7 @@ escalate      ：发现 PM Gate 已锁定需求的边界问题 → 【硬终态�
 - 活跃期（90天内）：直接存放于 `reports/`
 - 90天后：移至 `reports/archive/`，index.yaml 保留摘要
 - 永不 gitignore：所有报告均 git 追踪
+- `prism/runs/` 不在此归档策略里；它是否物理清理，由单独的本地证据保留决策决定。
 
 ---
 

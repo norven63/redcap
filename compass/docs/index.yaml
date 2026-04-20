@@ -2,6 +2,7 @@ version: 1
 
 root_policy:
   allowed_entries:
+    - catalog.json
     - specs
     - archive
     - research
@@ -11,6 +12,14 @@ root_policy:
   rule: "compass/docs/ 根目录只保留 collection 目录与索引文件，禁止重新长成未分类大杂烩。"
 
 collections:
+  catalog:
+    role: "docs 首读索引与 token 压力摘要"
+    authority: "repo-tracked navigation index"
+    retention: "长期保留；每次新增、移动或显著修改 compass/docs/** 后，用 redcap-docs-catalog.sh generate 重建。"
+    collision_strategy: "固定文件 compass/docs/catalog.json。"
+    rules:
+      - "接盘、考古、长任务恢复时，先读 compass/docs/catalog.json 或运行 redcap-docs-catalog.sh summary，再按需打开具体文档。"
+      - "不得默认 bulk-read compass/docs/** 来恢复上下文。"
   specs:
     role: "已批准或已冻结的 Layer B 设计快照"
     authority: "repo-tracked canonical"
@@ -34,8 +43,13 @@ collections:
   task-reports:
     role: "Layer B 任务完成报告与 closure evidence"
     authority: "repo-tracked closure evidence"
-    retention: "90 天内保持热层；更早报告可移入 compass/docs/archive/task-reports/，但应保留索引与摘要引用。"
+    retention: "当前活跃报告与最近少量报告保持热层；更早报告应优先通过 compass/docs/catalog.json 摘要读取，后续可分 tranche 移入 compass/docs/archive/task-reports/，但应保留索引与摘要引用。"
     collision_strategy: "统一 YYYY-MM-DD-<topic>.md。"
+    rules:
+      - "task report 是 closure evidence，不是默认工作记忆；后续会话不得为了找状态而全量读取所有历史报告。"
+      - "若只需要判断当前进度，优先运行 redcap-current-status.sh；若需要考古，先运行 redcap-docs-catalog.sh summary/plan 定位候选，再用 redcap-docs-catalog.sh budget <精确路径...> 审计读取集合。"
+      - "catalog 里的 hot/warm/cold 仅表示文件名近因分层，不表示 active truth；当前任务锚点仍以 pending closure 与 redcap-current-status.sh 为准。"
+      - "禁止默认读取 compass/docs 目录、通配读取 task-reports/specs，或在没有 budget 审计的情况下打开多份大文档；真实需要大规模考古时必须在任务报告中写明范围与理由。"
 
 archive:
   specs:

@@ -32,7 +32,7 @@ def normalize(path: str) -> str:
 
 
 def read_allowed_docs_root(index_path: pathlib.Path) -> set[str]:
-    default = {"index.yaml", "specs", "research", "traces", "task-reports"}
+    default = {"catalog.json", "index.yaml", "specs", "research", "traces", "task-reports"}
     if not index_path.exists():
         return default
 
@@ -102,7 +102,8 @@ def classify(path: str) -> tuple[str, str, str]:
     if path.startswith("compass/docs/"):
         rel = path[len("compass/docs/") :]
         root = rel.split("/", 1)[0]
-        if root not in allowed_docs_root or (root == "index.yaml" and rel != "index.yaml"):
+        exact_root_files = {"catalog.json", "index.yaml"}
+        if root not in allowed_docs_root or (root in exact_root_files and rel != root):
             return "local-only", "docs-root-policy-violation", "violates compass/docs root policy"
         return "repo-tracked", "repo-tracked-evidence", "compass/docs approved collection"
 

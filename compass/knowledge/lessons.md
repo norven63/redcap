@@ -3,6 +3,15 @@
 > 本文件记录跨项目可复用的经验教训。由 Dispatcher 在识别到高价值经验时手动归档。
 > 项目级经验存放在各项目的 `开发手册/shared/lessons-learned.md`。
 
+## 热点主题速览
+
+- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93。适用于 pending closure、task report、validator chain、closure ledger、current-status 打架时。
+- **宿主 / Hook / runtime 边界**：先看 L-15、L-16、L-39、L-41~L-49、L-62~L-69、L-77~L-90。适用于宿主适配、review runner、session-start/session-end、host-limited 行为边界。
+- **docs / knowledge / token 风险**：先看 L-50~L-52、L-64~L-66、L-91~L-97。适用于首读入口、说人话、渐进披露、`CONTRIBUTING` / docs / acceptance / `prism/runs` 的上下文压力治理。
+- **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模。
+
+> 使用方式：先按主题命中热点簇，再精读对应 L-编号；不要为了找一条相关经验默认全量扫完整个 lessons 文件。
+
 ### 归档触发检查点
 
 每轮框架变更完成后，Dispatcher 必须执行以下自检：
@@ -897,3 +906,57 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-18
+
+### L-92: 强制规则必须进入执行保障目录，不能只散落在复活协议或报告里
+- **场景**：docs catalog 补丁后，用户继续指出 lessons 沉淀、Cap 灵魂人格、复活协议、多 Agent 宿主适配 hook 等规则虽然已经形成，但并没有统一进入“复活协议 + 多宿主 hook + validator”的执行保障链；如果只靠 Agent 读到某段文档，下一次上下文压缩或中途接盘仍会遗漏
+- **根因**：自然语言规范、宿主入口文件、hook standards、task report 模板与实际 validator 之间缺少一张机器可读的“规则 -> 保障机制”目录，导致新增规则很容易停留在“应该做”，没有被 hard gate、revival check、manual-only 边界或 acceptance 消费
+- **经验规则**：① 新增 P0/P1 强制规则时，必须同步登记到 `references/execution-guarantees.json`，说明 source_paths、guarantee_paths、priority、category 与 auto_enforceable ② 能自动化的规则要接入脚本 / Hook / validator / acceptance，不能只写进 `soul.md` 或任务报告 ③ 不宜自动化的规则必须写清 manual-only 原因，避免为了“全自动”误伤 identity 内容、lessons 内容质量、外部 CLI 凭证或自然语言表达 ④ `redcap-spec-check.sh` 应消费执行保障检查，让“规则没进保障体系”在收尾前可见
+- **来源**：2026-04-19，Codex 接盘后对复活协议与执行保障遗漏的治理补丁
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-19
+
+### L-93: 上层 validator 消费下层控制面检查时必须显式传播失败
+- **场景**：Gemini/Kimi headless 路径恢复后，Kimi 对 docs catalog / execution guarantees / revival check 补丁做只读审查，指出 `redcap-spec-check.sh` 虽然顺序调用了三类控制面检查，但脚本没有 `set -e`，也没有对这些子检查的非零退出做显式处理；因此某个保障检查失败时，spec-check 总结果仍可能被后续命令覆盖成通过
+- **根因**：把“接入检查脚本”误当成“检查结果已进入 hard gate”。在 Bash 中，只要没有 `set -e` 或 `if ! cmd; then exit` 包装，子命令失败并不会自动成为父 validator 失败；越是控制面保障脚本，越不能依赖隐式 shell 行为
+- **经验规则**：① 高层 validator 消费任何下层控制面检查时，必须显式捕获非零退出并 fail-closed ② acceptance 不能只测 happy path，必须为每个被消费的控制面 gate 建一个失败 fixture，证明失败会传播到父 validator ③ 这类“保障系统自身的保障”必须登记到 `references/execution-guarantees.json`，否则后续新增 gate 仍可能只接线、不传播
+- **来源**：2026-04-19，Kimi 外部只读审查发现 `redcap-spec-check.sh` 控制面 gate failure propagation 缺口
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-19
+
+### L-94: docs catalog 只能止血，彻底防上下文爆炸还需要 plan/budget 渐进披露门
+- **场景**：docs catalog 补齐后，用户追问“是否已经彻底解决 docs 淤积污染”，并明确要求新会话不能被 `compass/docs/**` 擅自打爆上下文、后续迭代也必须遵守按需加载、且真实考古能力不能折损
+- **根因**：catalog freshness 只能保证“索引不陈旧”，不能单独阻止 Agent 直接 bulk-read 目录，也不能证明“要打开的源文档集合”是精确、低预算、可解释的。若只写“先看 catalog”，仍可能在紧张接盘时把索引当跳板继续全量打开历史证据
+- **经验规则**：① docs 首读必须分三步：summary 看体量，plan 按问题选候选，budget 审计精确路径集合 ② directory / glob / uncataloged / too-many-files / over-budget 读取应默认 fail-closed ③ 不应为省 token 删除 closure evidence；真实归档必须有 retention log、迁移记录和替代入口
+- **来源**：2026-04-19，docs 淤积二次收口（progressive disclosure + retention check）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-19
+
+### L-95: FSM 文档新增状态后，state.yaml 校验器必须同步合法状态集
+- **场景**：F3 治理硬化扫描时发现 `loom/dispatcher/state-machine.md` 已记录 `DEGRADED / SCAN_WORKING / SCAN_DONE / STEP_DONE`，但 `redcap-check-state.sh` 的 `VALID_STATES` 没有全部同步，可能把合法运行状态误报为不合法
+- **根因**：状态机文档、通信协议与 state 校验器缺少一条 contract check；新增状态时只改了文档，没有让脚本自动证明文档枚举和校验器枚举一致
+- **经验规则**：① 修改 FSM、通信协议或 state 校验器时，必须运行 `redcap-state-machine-check.sh` ② 检查应至少证明文档状态枚举被脚本接受，通信协议 status 值仍完整 ③ 这类文档/脚本契约漂移必须接入 `redcap-spec-check.sh`，不能只靠人工 review
+- **来源**：2026-04-19，F3 hook / contract / FSM 治理硬化扫描
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-19
+
+### L-96: token 风险不能只治理 docs，还要覆盖入口自动导入、巨型脚本与 ignored 运行残留
+- **场景**：docs catalog / plan / budget 落地后，继续扫 token 大户发现 `AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / Copilot 入口仍可能默认展开 `CONTRIBUTING.md` 与 `lessons.md`，`redcap-multi-session-acceptance.sh` 单文件已经很大，`prism/runs/` 又存在大量 gitignored 运行夹具。即使 docs 不再 bulk-read，这些入口仍可能在新会话或排查单 case 时吞掉大量上下文
+- **根因**：把“docs 目录治理”误当成“上下文治理全部完成”。真实 token 风险来自所有默认首读路径、巨型单文件和运行残留目录；只要其中任一项没有索引/预算/审计，后续接盘就可能从新入口重新爆炸
+- **经验规则**：① 宿主入口只应默认导入轻量人格还原点，大文件规范与 lessons 必须通过 current-status、knowledge index 与精确章节读取 ② 巨型 acceptance 脚本必须先用 `redcap-acceptance-index.sh summary/find/check` 定位 case，再按行号精读局部 ③ `prism/runs`、`compass/.runtime`、`compass/.workflow` 等 ignored 运行目录不能默认读取，也不能未经用户批准删除；应由 `redcap-token-risk-audit.sh` 报告体量、mitigation 与 no-bulk-read 策略 ④ token 风险审计必须接入 spec-check / diagnose / acceptance，防止旧入口写法回流
+- **来源**：2026-04-19，docs token 淤积后续扫面与 token-risk audit 补丁
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-19
+
+### L-97: 权威规范变大时不能简单贴“token 陷阱”标签，必须拆成核心契约与章节路由
+- **场景**：在入口自动导入治理后，用户指出 `compass/CONTRIBUTING.md` 不能因为体积大就被粗暴降级为“不应读取”的文件；它本来就是 RedCap 权威规范，问题不是权威规范存在，而是把全文无差别注入每个新会话
+- **根因**：把“上下文预算风险”和“规范权威性”混为一谈。大文件可能同时是必要规范与 token 风险源；如果只做禁止读取，会折损执行质量，如果继续默认全文注入，又会吞噬新会话上下文
+- **经验规则**：① 权威规范全文必须保留权威地位，不得因体积大被误标为垃圾或陷阱 ② 启动路径应抽出轻量 `CONTRIBUTING.core.md` 承接必须立即遵守的红线，再通过章节路由按需读取全文细则 ③ stop-review / revival / token-risk audit 要消费 core + selected guidance，而不是重新把全文塞回 prompt ④ 这类信息架构调整必须有机器 gate，防止后续入口文件又恢复 `@CONTRIBUTING.md` 全文注入
+- **来源**：2026-04-20，用户质询 CONTRIBUTING 是否被误判为 token trap 后的 core + section routing 补丁
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-20

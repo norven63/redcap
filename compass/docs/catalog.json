@@ -1,0 +1,628 @@
+{
+  "version": 1,
+  "generated_by": "compass/tools/redcap-docs-catalog.sh",
+  "purpose": "First-read index for compass/docs. Read this catalog before opening historical specs, traces, research, or task reports.",
+  "rules": [
+    "Do not bulk-read compass/docs/** by default.",
+    "Use summary/read_policy first, then open only the specific source document needed for the current question.",
+    "Use plan <query> to select candidate evidence without opening source documents.",
+    "Use budget <paths...> before opening source documents; directories, uncataloged paths, too many files, or oversized read sets fail closed.",
+    "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
+  ],
+  "summary": {
+    "file_count": 30,
+    "size_bytes": 539708,
+    "lines": 9468,
+    "chars": 345338,
+    "rough_token_pressure": {
+      "low": 86334,
+      "high": 172669
+    },
+    "collections": {
+      "archive": {
+        "file_count": 1,
+        "size_bytes": 957,
+        "lines": 10,
+        "chars": 633,
+        "rough_token_pressure": {
+          "low": 158,
+          "high": 316
+        }
+      },
+      "research": {
+        "file_count": 1,
+        "size_bytes": 34752,
+        "lines": 852,
+        "chars": 24181,
+        "rough_token_pressure": {
+          "low": 6045,
+          "high": 12090
+        }
+      },
+      "root": {
+        "file_count": 1,
+        "size_bytes": 4573,
+        "lines": 79,
+        "chars": 3141,
+        "rough_token_pressure": {
+          "low": 785,
+          "high": 1570
+        }
+      },
+      "specs": {
+        "file_count": 11,
+        "size_bytes": 176246,
+        "lines": 4142,
+        "chars": 105034,
+        "rough_token_pressure": {
+          "low": 26258,
+          "high": 52517
+        }
+      },
+      "task-reports": {
+        "file_count": 15,
+        "size_bytes": 285521,
+        "lines": 3341,
+        "chars": 179065,
+        "rough_token_pressure": {
+          "low": 44766,
+          "high": 89532
+        }
+      },
+      "traces": {
+        "file_count": 1,
+        "size_bytes": 37659,
+        "lines": 1044,
+        "chars": 33284,
+        "rough_token_pressure": {
+          "low": 8321,
+          "high": 16642
+        }
+      }
+    },
+    "largest_entries": [
+      {
+        "path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
+        "chars": 44587,
+        "lines": 419,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+      },
+      {
+        "path": "compass/docs/traces/architecture-capability-trace.yaml",
+        "chars": 33284,
+        "lines": 1044,
+        "read_policy": "read-on-demand-after-catalog"
+      },
+      {
+        "path": "compass/docs/research/feishu-ai-agent-collaboration-report.md",
+        "chars": 24181,
+        "lines": 852,
+        "read_policy": "read-on-demand-after-catalog"
+      },
+      {
+        "path": "compass/docs/specs/engine-upgrade-part2-execution-framework.md",
+        "chars": 19377,
+        "lines": 624,
+        "read_policy": "read-registry-summary-first"
+      },
+      {
+        "path": "compass/docs/specs/session-isolation-continuity-guide.md",
+        "chars": 16126,
+        "lines": 594,
+        "read_policy": "read-registry-summary-first"
+      },
+      {
+        "path": "compass/docs/specs/multi-session-isolation-design.md",
+        "chars": 15361,
+        "lines": 620,
+        "read_policy": "read-registry-summary-first"
+      },
+      {
+        "path": "compass/docs/specs/2026-04-12-host-agent-interop-governance-design.md",
+        "chars": 13482,
+        "lines": 555,
+        "read_policy": "read-registry-summary-first"
+      },
+      {
+        "path": "compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md",
+        "chars": 12549,
+        "lines": 221,
+        "read_policy": "read-catalog-summary-by-default"
+      }
+    ]
+  },
+  "entries": [
+    {
+      "path": "compass/docs/archive/retention-log.md",
+      "collection": "archive",
+      "title": "RedCap docs retention log",
+      "role": "archived-evidence",
+      "status": "archived",
+      "read_policy": "read-on-demand",
+      "size_bytes": 957,
+      "lines": 10,
+      "chars": 633,
+      "summary": "<!-- redcap:docs-retention-log -->"
+    },
+    {
+      "path": "compass/docs/index.yaml",
+      "collection": "root",
+      "title": "index",
+      "role": "docs-evidence",
+      "status": "reference",
+      "read_policy": "read-on-demand",
+      "size_bytes": 4573,
+      "lines": 79,
+      "chars": 3141,
+      "summary": "version: 1"
+    },
+    {
+      "path": "compass/docs/research/feishu-ai-agent-collaboration-report.md",
+      "collection": "research",
+      "title": "飞书 AI Agent 人机协作通知方案技术调研报告",
+      "role": "research-evidence",
+      "status": "reference",
+      "read_policy": "read-on-demand-after-catalog",
+      "size_bytes": 34752,
+      "lines": 852,
+      "chars": 24181,
+      "summary": "**调研日期**: 2026-03-29 **调研目标**: 为 AI Agent CLI 工具（Claude Code、kimi cli、gemini cli 等）寻找飞书平台的双向通信通知方案 **核心需求**: 当 Agent 执行遇到阻塞问题时，能够通知用户并接收用户回复，实现人机协作闭环"
+    },
+    {
+      "path": "compass/docs/specs/2026-04-12-host-agent-interop-governance-design.md",
+      "collection": "specs",
+      "title": "宿主 Agent 互操作治理设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 23285,
+      "lines": 555,
+      "chars": 13482,
+      "summary": "说明宿主 workboard、mirror-only、re-anchor 与 Layer B 权威链的边界。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "compass/tools/redcap-host-workboard-sync.sh",
+        "compass/tools/redcap-pm-gate-check.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md",
+      "collection": "specs",
+      "title": "宿主技能 overlay 治理设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 5986,
+      "lines": 129,
+      "chars": 3532,
+      "summary": "说明 overlay skill、shared skill 所有权与 ask_user 边界。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "references/agent-constraints.md",
+        "compass/CONTRIBUTING.md"
+      ],
+      "paired_debt_ids": [
+        "GD-007"
+      ]
+    },
+    {
+      "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
+      "collection": "specs",
+      "title": "框架升级路线说明",
+      "role": "human-guide",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 11670,
+      "lines": 149,
+      "chars": 6634,
+      "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "references/backlogs/framework-upgrade.json",
+        "compass/tools/redcap-backlog-check.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/2026-04-15-feishu-duplex-communication-design.md",
+      "collection": "specs",
+      "title": "飞书双向交流与最小待处理入口设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 12736,
+      "lines": 398,
+      "chars": 6016,
+      "summary": "设计固定单聊、窗口式接收与最小待处理入口的飞书双向交流链。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "compass/tools/feishu-notifier.py",
+        "compass/tools/redcap-on-complete.sh",
+        "compass/tools/redcap-layerB-session-end.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/baton-design.md",
+      "collection": "specs",
+      "title": "Baton 设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 5728,
+      "lines": 139,
+      "chars": 3549,
+      "summary": "说明跨技能委派协议、请求/结果边界与安全约束。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "compass/tools/baton-delegate.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
+      "collection": "specs",
+      "title": "引擎升级第一部分：设计哲学",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 18097,
+      "lines": 348,
+      "chars": 9116,
+      "summary": "保存 RedCap 引擎升级的设计哲学，不直接充当运行时约束。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "ARCHITECTURE.md"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/engine-upgrade-part2-execution-framework.md",
+      "collection": "specs",
+      "title": "引擎升级第二部分：执行框架",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 28557,
+      "lines": 624,
+      "chars": 19377,
+      "summary": "说明执行框架的目标结构，真实执行链由 Loom 状态机与协议层承接。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "loom/dispatcher/state-machine.md",
+        "references/communication-protocol.md"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/hook-chain-investigation-design.md",
+      "collection": "specs",
+      "title": "Hook 链路调查设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 11031,
+      "lines": 233,
+      "chars": 5637,
+      "summary": "记录 hook 链路的设计与调查结论，后续硬化仍由治理债务继续承接。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "references/hook-standards.md"
+      ],
+      "paired_debt_ids": [
+        "GD-007"
+      ]
+    },
+    {
+      "path": "compass/docs/specs/multi-session-isolation-design.md",
+      "collection": "specs",
+      "title": "多会话隔离设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 24675,
+      "lines": 620,
+      "chars": 15361,
+      "summary": "说明多会话隔离主线；真实隔离保障由 session-start/session-end/runtime/acceptance 承接。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "compass/tools/redcap-layerB-session-start.sh",
+        "compass/tools/redcap-layerB-session-end.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/prism-coordinator-phase-a-design.md",
+      "collection": "specs",
+      "title": "Prism 协调器 Phase A 设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 8822,
+      "lines": 353,
+      "chars": 6204,
+      "summary": "说明 Prism 协调器与 run-scoped truth 的 Phase A 设计边界。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "prism/tools/prism-coordinator.sh",
+        "prism/tools/prism-run-state.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/session-isolation-continuity-guide.md",
+      "collection": "specs",
+      "title": "会话隔离连续性指南",
+      "role": "operator-guide",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 25659,
+      "lines": 594,
+      "chars": 16126,
+      "summary": "给人说明 continuity 协议与显式导入语义；真实 authority 在 runtime manifest 与 continuity 脚本中。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "compass/tools/redcap-session-continuity.sh",
+        "compass/tools/redcap-session-resume-gate.sh"
+      ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-11-hook-chain-investigation.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Hook 链排查与 Layer B 收尾加固",
+      "role": "closure-evidence",
+      "status": "cold-candidate",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 14963,
+      "lines": 195,
+      "chars": 9414,
+      "summary": "**报告日期**：2026-04-11 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：multi-session isolation foundation",
+      "role": "closure-evidence",
+      "status": "cold-candidate",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 11796,
+      "lines": 178,
+      "chars": 8057,
+      "summary": "**报告日期**：2026-04-11 **执行者**：Cap（Copilot CLI + GPT-5.4） **报告版本**：v1.0",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-12-autonomy-escalation-p0.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：autonomy escalation P0",
+      "role": "closure-evidence",
+      "status": "cold-candidate",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 13083,
+      "lines": 178,
+      "chars": 7773,
+      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：连续性治理与显式会话导入收口",
+      "role": "closure-evidence",
+      "status": "cold-candidate",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 18602,
+      "lines": 215,
+      "chars": 10634,
+      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-12-docs-governance-audit.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：docs 治理与产物生命周期审计",
+      "role": "closure-evidence",
+      "status": "cold-candidate",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 12701,
+      "lines": 182,
+      "chars": 7867,
+      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：host-agent interop governance",
+      "role": "closure-evidence",
+      "status": "cold-candidate",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 19261,
+      "lines": 221,
+      "chars": 12549,
+      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：multi-session isolation mainline",
+      "role": "closure-evidence",
+      "status": "cold-candidate",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 15943,
+      "lines": 201,
+      "chars": 10929,
+      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-14-backlog-mechanism-and-spec-governance.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：backlog 机制化与 spec 生命周期治理首刀",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 16295,
+      "lines": 226,
+      "chars": 9675,
+      "summary": "当前已完成：backlog 机制已经升级成正式机制，spec 生命周期治理也补上了第一刀。 / 详情：机器可读长期路线、人类说明文档、backlog 门禁、spec registry、spec-check 与 `cli_console.md` 覆盖式镜像 helper 都已经落地，并接入现有控制面。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-14-framework-upgrade-stage1-closeout.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：框架升级第一阶段收口",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 18126,
+      "lines": 251,
+      "chars": 9926,
+      "summary": "**报告日期**：2026-04-14 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-15-report-template-and-d1-f2-followup.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：汇报模板升级与 D1/F2 后续收口",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 17116,
+      "lines": 225,
+      "chars": 10216,
+      "summary": "当前已完成：对外汇报入口已经统一成“四句先看懂”，并把 spec 生命周期治理从“有登记”推进到了“有 policy、有 gate、有 acceptance”。 / 详情：`references/task-report-template.md`、`compass/tools/redcap-task-report-check.sh`、`compass/tools/redcap-notify-format.sh` 与相关规范文档现在统一使用“当前已完成 / 上一步 / 下一步 / 整体脉络与当前位置”作为固定入口；`references/spec-lifecycle-policy.json`、`references/spec-cont…",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-16-completion-hook-hardening.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Copilot completion 主链硬化",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 13758,
+      "lines": 205,
+      "chars": 8954,
+      "summary": "当前已完成：Copilot 这条线已经补上 `task-complete -> on-complete` 的 repo-owned 物理触发器，并修掉了旧 pending closure 会跨 confirmed hash 卡死新收尾的问题。 / 详情：`.github/hooks/redcap-layerB.json` 现已注册 `postToolUse`，它会通过 `.github/hooks/scripts/redcap-layerB-post-tool.sh` 进入 `compass/tools/redcap-layerB-task-complete-guard.sh`。当 `.dev-task.md` 进入 `task-…",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-16-copilot-session-anchor.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Copilot 会话身份锚点收口",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 13579,
+      "lines": 207,
+      "chars": 8597,
+      "summary": "当前已完成：Copilot 这条线已经补上 repo-owned 的会话身份锚点，`sessionStart / sessionEnd` 不再只能停在 `degraded-no-runtime-manifest`。 / 详情：新增的 `.github/hooks/scripts/redcap-copilot-session-context.sh` 会从 `~/.copilot/session-state/<handle>/inuse.<pid>.lock` 和当前宿主进程链反推出 `session_handle`，再注入显式 `session_binding_key` 与宿主 `plan.md` 路径。当前这次 Copilot 会…",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-16-feishu-duplex-and-overlay-p0.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：飞书双向链路与 overlay handoff P0 收口",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 15273,
+      "lines": 219,
+      "chars": 8747,
+      "summary": "当前已完成：RedCap 的飞书主链已经从“webhook + 多维表格”切到“`lark-cli + bot + 固定单聊 + 窗口式接收 + 最小待处理入口`”，并把本次 `brainstorming → writing-plans` 混入主流程的问题按 P0 红线收口。 / 详情：`compass/tools/feishu-notifier.py` 现在负责 bot 单聊发送、等待答复窗口、任务完成回访窗口、待处理入口与补扫历史；`redcap-on-complete.sh`、`redcap-layerB-session-end.sh`、`redcap-layerB-session-start.sh` 已接入这条新链。与此同…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 的飞书主链已经从“webhook + 多维表格”切到“`lark-cli + bot + 固定单聊 + 窗口式接收 + 最小待处理入口`”，并把本次 `brainstorming → writing-plans` 混入主流程的问题按 P0 红线收口。",
+          "详情：`compass/tools/feishu-notifier.py` 现在负责 bot 单聊发送、等待答复窗口、任务完成回访窗口、待处理入口与补扫历史；`redcap-on-complete.sh`、`redcap-layerB-session-end.sh`、`redcap-layerB-session-start.sh` 已接入这条新链。与此同时，`SKILL.md`、`compass/CONTRIBUTING.md`、`ARCHITECTURE.md`、`references/agent-constr…"
+        ],
+        "previous_step": [
+          "上一步完成的是：飞书双向交流方案的 design / spec 已经完成并过审，问题边界、窗口模型、待处理入口、CLI 主控制面原则都已经锁定；本轮是在这个设计基础上把代码、规范、回归与本机配置全部接起来。"
+        ],
+        "next_step": [
+          "下一步计划做的是：无必须收尾项；如果回到长期路线主线，优先继续 `F2 规范到 gate 的翻译链`，然后推进 `A3 + F3`。"
+        ],
+        "position": [
+          "整体计划脉络图是：backlog / D1 / 模板链收口 → 飞书双向链路落地 → overlay downstream handoff P0 收口 → 回到 F2 / A3 / F3 主线。",
+          "当前所在位置：飞书链路与 overlay handoff P0 已收口，`.dev-task.md` 已回到 `task-complete`；长期路线的下一焦点重新回到 `F2`。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-17-closeout-followup-hardening.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：closeout follow-up 硬化收口",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 16772,
+      "lines": 219,
+      "chars": 11140,
+      "summary": "当前已完成：closeout 尾链的高风险边界已经补成 repo-owned 硬约束，最后一轮独立 code review、redteam 和 ultimate full suite 都已收口。 / 详情：`compass/tools/redcap-interop-governance.sh`、`redcap-task-report-check.sh`、`redcap-task-report-register.sh`、`redcap-layerB-task-complete-guard.sh`、`redcap-layerB-session-end.sh`、`redcap-pending-closure-reconcile.sh`…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：closeout 尾链的高风险边界已经补成 repo-owned 硬约束，最后一轮独立 code review、redteam 和 ultimate full suite 都已收口。",
+          "详情：`compass/tools/redcap-interop-governance.sh`、`redcap-task-report-check.sh`、`redcap-task-report-register.sh`、`redcap-layerB-task-complete-guard.sh`、`redcap-layerB-session-end.sh`、`redcap-pending-closure-reconcile.sh` 与 Copilot session-context helper 现在都统一走…"
+        ],
+        "previous_step": [
+          "上一步完成的是：飞书双向链路与 overlay P0、Copilot 会话身份锚点、Copilot completion 主链硬化已经分别收口；本轮是在这些成果之上，把最后一批 closeout follow-up 风险逐个打穿。"
+        ],
+        "next_step": [
+          "下一步计划做的是：完成 commit-proof，并在 clean worktree 上触发 live runtime 的最终 `on-complete / session-end / 飞书通知` 收尾。"
+        ],
+        "position": [
+          "整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点收口 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof / live runtime 最终收尾。",
+          "当前所在位置：closeout follow-up 硬化已完成，仍待执行的是 `commit-proof` 与 live runtime 最终闭环。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：live closeout 最终阻塞补丁",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 68253,
+      "lines": 419,
+      "chars": 44587,
+      "summary": "当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验。 / 详情：需要更正的是，“历史 closeout 已清”只对应更早一次 confirmed hash（`06ceb763...`）的手工核销；当前 `.dev-task.md` 的 confirmed…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验。",
+          "详情：需要更正的是，“历史 closeout 已清”只对应更早一次 confirmed hash（`06ceb763...`）的手工核销；当前 `.dev-task.md` 的 confirmed hash（`849cfdbc...`）后续治理 tranche 仍留有 `pending closure`，`required_redlines=review,pm-gate,drift,artifact-lifecycle,task-report,notify`。因此本报告现在明确区分“历史已清”与“当前账面仍 pe…"
+        ],
+        "previous_step": [
+          "上一步完成的是：已完成 4 个同批治理项（`pending-closure/current-status/task-report/closure-ledger` 一致性、`lessons / CONTRIBUTING` 去重与热点分层、`prism/runs` 证据链与清理策略分离、formal Prism 归档口径诚实化），并继续补上 backlog 人类说明的最终状态收口、执行保障强度分层说明、CLI wrapper 与桌面 App wrapper 的边界说明。外部 reviewer 健康微探测方面，Kimi…"
+        ],
+        "next_step": [
+          "下一步计划做的是：在当前治理补丁与文档口径都已对齐的前提下，完成当前 confirmed hash 的真实 closeout 链收尾，把剩余 `pending closure` 从 `review/spec/notify` 继续压缩并清掉；如果外部 reviewer 家族仍不足以支撑新的 formal Prism redteam，就把它明确保留为独立后续线，而不再冒充“本轮已归档”。"
+        ],
+        "position": [
+          "整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof / E2E → live runtime 严格收尾。",
+          "当前所在位置：RedCap 的 repo-owned backlog 仍然是 `done=19 / in_progress=0 / pending=0`，但当前 confirmed hash 的收尾账面不是 clean，而是“历史 closeout 已清、当前 follow-up tranche 仍 pending”。Prism 侧同样要拆开说：历史 formal Prism 报告已有 2 份，但当前任务新增的 formal quorum 仍是 0；`prism/runs` 里的本地运行证据也不能被误读成已归档成…"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/traces/architecture-capability-trace.yaml",
+      "collection": "traces",
+      "title": "architecture-capability-trace",
+      "role": "trace-evidence",
+      "status": "reference",
+      "read_policy": "read-on-demand-after-catalog",
+      "size_bytes": 37659,
+      "lines": 1044,
+      "chars": 33284,
+      "summary": "schema_version: 1 frozen_at: \"2026-04-12T07:14:47Z\" baseline: source_document: \"ARCHITECTURE.md\" source_commit: \"d1c8a57c430d7ba3d43a20b504f9242fecd3e462\" source_worktree_sha256: \"cde1a98082943c14ebe5a0284b3e07a1620472e2bdfe44155d0b4cf5d0b…"
+    }
+  ]
+}

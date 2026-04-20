@@ -91,6 +91,30 @@ LOGEOF
     fi
 }
 
+write_review_unavailable_log() {
+    local details="$1"
+
+    cat > "$REVIEW_LOG_FILE" <<LOGEOF
+# RedCap Stop Hook 独立评审不可用
+
+- **时间**: $(date '+%Y-%m-%d %H:%M:%S')
+- **宿主**: $REVIEW_HOST
+- **基准 commit**: ${BASELINE:-unknown}
+- **当前 HEAD**: ${CURRENT_HEAD:-unknown}
+- **候选顺序**: ${REVIEW_AGENT_ORDER:-unknown}
+
+## 失败摘要
+
+$details
+
+## 结论
+
+本日志只说明 reviewer CLI 传输层不可用或超时；它不是对代码变更内容的独立评审 verdict。RedCap 必须保持 `review` 红线 pending，直到任一独立 reviewer 产出可解析的 PASS/FAIL。
+LOGEOF
+
+    echo "FAIL" > "$REVIEW_RESULT_FILE"
+}
+
 record_review_gap() {
     local title="$1"
     local details="${2:-}"
@@ -159,6 +183,9 @@ patterns = (
         r'^(?:error:\s*)?rate limit exceeded[.!]?$',
         r'^(?:error:\s*)?too many requests[.!]?$',
         r'^(?:error:\s*)?quota exceeded[.!]?$',
+        r'^sorry,\s*you.?ve hit a rate limit that restricts .+$',
+        r'^please try again in \d+\s+(?:second|seconds|minute|minutes|hour|hours|day|days)[.!]?$',
+        r'^.*please try again in \d+\s+(?:second|seconds|minute|minutes|hour|hours|day|days).*$',
     )),
 )
 hint_patterns = (
@@ -589,25 +616,86 @@ if [[ ! -s "$DIFF_FILE" ]]; then
     exit 0
 fi
 
-if ! python3 - "$REDCAP_ROOT/compass/CONTRIBUTING.md" "$DIFF_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE" "$REVIEW_PROMPT_FILE" <<'PY'
+if ! python3 - \
+    "$REDCAP_ROOT/compass/CONTRIBUTING.core.md" \
+    "$REDCAP_ROOT/compass/CONTRIBUTING.md" \
+    "$REDCAP_ROOT/references/review-tracks.json" \
+    "$DIFF_FILE" \
+    "$COMMIT_LOG_FILE" \
+    "$FILE_LIST_FILE" \
+    "$REVIEW_PROMPT_FILE" <<'PY'
 from pathlib import Path
 import sys
 
-contributing_path = Path(sys.argv[1])
-diff_path = Path(sys.argv[2])
-commit_log_path = Path(sys.argv[3])
-file_list_path = Path(sys.argv[4])
-prompt_path = Path(sys.argv[5])
+core_path = Path(sys.argv[1])
+contributing_path = Path(sys.argv[2])
+review_tracks_path = Path(sys.argv[3])
+diff_path = Path(sys.argv[4])
+commit_log_path = Path(sys.argv[5])
+file_list_path = Path(sys.argv[6])
+prompt_path = Path(sys.argv[7])
 
 def read_text(path):
     if not path.exists():
         return ""
     return path.read_text(encoding="utf-8", errors="replace")
 
-contributing = read_text(contributing_path)
+core_contract = read_text(core_path)
+contributing_full = read_text(contributing_path)
+review_tracks = read_text(review_tracks_path)
 diff = read_text(diff_path)
 commit_log = read_text(commit_log_path)
 file_list = read_text(file_list_path)
+
+
+def contributing_sections(text):
+    sections = []
+    current = []
+    current_title = "preamble"
+    for line in text.splitlines():
+        if line.startswith("## "):
+            if current:
+                sections.append((current_title, "\n".join(current).strip()))
+            current_title = line.strip()
+            current = [line]
+        else:
+            current.append(line)
+    if current:
+        sections.append((current_title, "\n".join(current).strip()))
+    return sections
+
+
+changed_files = [line.strip() for line in file_list.splitlines() if line.strip()]
+wanted_prefixes = {
+    "## 2. Commit 规范",
+    "## 3. 变更后：经验沉淀检查",
+    "## 4. 独立架构评审",
+    "## 6. 文件变更影响范围提示",
+    "## 7. Layer B 大型任务断点续传",
+    "## 10. Layer B 需求确认门",
+    "## §13 任务级完成强制复盘协议",
+}
+if any(path.startswith("compass/docs/") or path.startswith("compass/knowledge/") for path in changed_files):
+    wanted_prefixes.add("## 7. Layer B 大型任务断点续传")
+if any(path.startswith("compass/tools/") or path.startswith("loom/tools/") for path in changed_files):
+    wanted_prefixes.update({"## 4. 独立架构评审", "## 7. Layer B 大型任务断点续传"})
+if any(path in {"SKILL.md", "compass/CONTRIBUTING.md", "compass/CONTRIBUTING.core.md", "prism/protocol.md"} for path in changed_files):
+    wanted_prefixes.update({
+        "## 1. 变更前：经验回顾",
+        "## 8. Layer B 长任务并行裂变协议",
+        "## 9. Layer B Red Teaming 协议",
+        "## §11 棱镜（Prism）",
+    })
+
+selected_chunks = []
+for title, body in contributing_sections(contributing_full):
+    if any(title.startswith(prefix) for prefix in wanted_prefixes):
+        selected_chunks.append(body)
+
+selected_guidance = "\n\n---\n\n".join(selected_chunks)
+max_guidance_chars = 12000
+if len(selected_guidance) > max_guidance_chars:
+    selected_guidance = selected_guidance[:max_guidance_chars] + f"\n\n... [CONTRIBUTING 精选章节截断至 {max_guidance_chars} 字符]"
 
 max_diff_chars = 20000
 diff_len = len(diff)
@@ -621,7 +709,17 @@ prompt = f"""你是一位独立的代码架构评审员。你与开发者无关�
 
 ## 评审基准
 
-{contributing}
+### 启动核心契约
+
+{core_contract}
+
+### 三轨评审定义
+
+{review_tracks}
+
+### CONTRIBUTING 精选章节
+
+{selected_guidance}
 
 ## 本次变更摘要
 
@@ -639,17 +737,23 @@ Commits:
 
 ## 评审要求
 
-请严格对照以下维度逐一检查：
+请严格对照以下维度逐一检查，并且把发现按三轨归类：
 
 1. **Commit 规范**：是否符合中文 Conventional Commit 格式（type(scope): 描述）？
 2. **经验回顾**：变更是否涉及 lessons.md 中的已知陷阱（如 L-4 路由深度、L-7 headless 挂起、L-8 先测再改）？是否有遗漏的检查？
-3. **文件联动**：对照 CONTRIBUTING.md §5 影响范围表，本次变更涉及的文件是否有需要同步更新但遗漏的文件？
+3. **文件联动**：对照 CONTRIBUTING.md 的影响范围表与本次精选章节，本次变更涉及的文件是否有需要同步更新但遗漏的文件？
 4. **内容质量**：
    - 文档变更：是否有 Markdown 格式错误（代码块未闭合、标题层级混乱、链接断裂）？
    - 代码变更：是否有安全问题、硬编码、路径错误？
 5. **经验沉淀**：本次变更是否发现了新的失败模式或验证了错误假设，但未归档为 Lesson？
 6. **E2E 完整性**：如果变更涉及 E2E 验证，检查 loom/test-reports/e2e-session.yaml 是否已处理、报告是否写入 loom/test-reports/latest-e2e-report.md（而非其他路径）、loom/test-reports/pending-validations.md 是否已消费。
 7. **目录与生命周期边界**：本次变更是否把 session-isolated / local-only / temporary 文件错误放进 git？docs/specs/research/traces/task-reports 的落点是否正确？是否仍残留旧路径或宿主默认输出路径耦合？
+
+三轨归类要求：
+- `architecture`：架构边界、状态机、角色职责、宿主/运行时真相源边界。
+- `governance`：规范是否进入执行保障、backlog/debt/lessons/task report 是否同步、是否存在伪完成。
+- `contracts`：hook、validator、runtime helper、artifact lifecycle、输入输出契约、fail-closed 边界。
+- 每条 issue 必须落到其中一轨；若某轨没有问题，也必须给出明确 verdict。
 
 ## 输出格式
 
@@ -658,9 +762,15 @@ Commits:
 ```json
 {{
   \"result\": \"PASS\" 或 \"FAIL\",
+  \"track_verdicts\": {{
+    \"architecture\": \"PASS\" 或 \"FAIL\",
+    \"governance\": \"PASS\" 或 \"FAIL\",
+    \"contracts\": \"PASS\" 或 \"FAIL\"
+  }},
   \"issues\": [
     {{
       \"severity\": \"P0\" 或 \"P1\" 或 \"P2\",
+      \"track\": \"architecture\" 或 \"governance\" 或 \"contracts\",
       \"dimension\": \"维度名\",
       \"description\": \"问题描述\",
       \"suggestion\": \"修复建议\"
@@ -709,6 +819,7 @@ if [[ -z "$REVIEW_OUTPUT" ]]; then
         local_failure_summary="$(IFS='; '; printf '%s' "${REVIEW_ATTEMPT_FAILURES[*]}")"
     fi
     echo "[redcap-on-stop-review] WARNING: 所有 Agent 评审都不可用: $local_failure_summary" >&2
+    write_review_unavailable_log "$local_failure_summary"
     record_review_gap "独立评审不可用" "$local_failure_summary"
     exit 1
 fi

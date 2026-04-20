@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "F2",
-    "summary": "D1 已完成：spec 生命周期门已补齐；当前继续推进 F2，把更广泛的治理规范继续翻译成可执行 gate。"
+    "item_id": "F3",
+    "summary": "framework-upgrade 长期路线当前已全量收口：三轨评审、CONTRIBUTING core 路由、hook contract、runtime helper、CLI mirror、docs/knowledge/token 风险与复活执行保障均已接入可执行 gate；F3 保留为最后完成的治理硬化焦点。"
   },
   "glossary": [
     {
@@ -85,13 +85,15 @@
         {
           "id": "A3",
           "title": "三轨评审门（架构 / 治理 / 契约）",
-          "status": "pending",
+          "status": "done",
           "priority": "P1",
           "phase_id": "phase-3-governance-executability",
-          "summary": "目前已有统一 stop-review 入口，但还没有拆成架构、治理、契约三条专门审计轨。",
+          "summary": "三轨评审已收口为 `references/review-tracks.json` 机器 registry，并由 stop-review prompt、治理 checklist 与 review-tracks gate 消费。",
           "evidence_paths": [
             "compass/tools/redcap-on-stop-review.sh",
-            "references/governance-review-checklist.md"
+            "references/governance-review-checklist.md",
+            "references/review-tracks.json",
+            "compass/tools/redcap-review-tracks-check.sh"
           ]
         }
       ]
@@ -157,26 +159,29 @@
         {
           "id": "C2",
           "title": "`cli_console.md` 彻底降格为展示镜像",
-          "status": "in_progress",
+          "status": "done",
           "priority": "P1",
           "phase_id": "phase-4-host-ux",
-          "summary": "已补上覆盖式镜像 helper 与规范约束，但由于最终对话输出不归仓库脚本控制，仍未形成完全自动的宿主级强制。",
+          "summary": "`cli_console.md` 已被固定为 gitignored local-only 覆盖式展示镜像，并由 artifact classifier 与 mirror check 审计；宿主最终回复 UI 不归 repo 脚本强控，不再冒充 RedCap backlog 残留。",
           "evidence_paths": [
             "cli_console.md",
             "compass/tools/redcap-cli-console-mirror.sh",
+            "compass/tools/redcap-cli-console-mirror-check.sh",
+            "compass/tools/redcap-artifact-classifier.sh",
             "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md"
           ]
         },
         {
           "id": "C3",
           "title": "宿主 overlay / ask_user 诚实降级",
-          "status": "pending",
+          "status": "done",
           "priority": "P1",
           "phase_id": "phase-4-host-ux",
-          "summary": "shared skill 资产边界和 ask_user 规则已写进规范，但还缺机器可审计的诚实降级标记。",
+          "summary": "shared skill 资产边界、ask_user 人工介入门与下游 skill 不可阻断规则已由 overlay governance check 审计。",
           "evidence_paths": [
             "references/agent-constraints.md",
-            "compass/CONTRIBUTING.md"
+            "compass/CONTRIBUTING.md",
+            "compass/tools/redcap-overlay-governance-check.sh"
           ]
         }
       ]
@@ -205,24 +210,28 @@
         {
           "id": "D2",
           "title": "knowledge / docs 边界导航",
-          "status": "pending",
+          "status": "done",
           "priority": "P2",
           "phase_id": "phase-5-ia-and-runtime",
-          "summary": "knowledge 目录已有内容，但还没有统一导航入口，后续仍容易让人不清楚该去哪里找规则。",
+          "summary": "docs 侧通过 catalog / plan / budget 首读，knowledge 侧通过 index.md 首读导航，二者都已接入检查。",
           "evidence_paths": [
+            "compass/docs/catalog.json",
             "compass/knowledge/lessons.md",
-            "ARCHITECTURE.md"
+            "compass/knowledge/index.md",
+            "compass/tools/redcap-knowledge-index-check.sh"
           ]
         },
         {
           "id": "D3",
           "title": "docs 保留策略执行化",
-          "status": "pending",
+          "status": "done",
           "priority": "P2",
           "phase_id": "phase-5-ia-and-runtime",
-          "summary": "保留策略已经写在 docs 索引里，但还缺自动审计、归档日志与 check-only 门。",
+          "summary": "docs 保留策略已补 check-only retention 审计、归档日志、progressive disclosure 预算门与 spec-check 接线。",
           "evidence_paths": [
-            "compass/docs/index.yaml"
+            "compass/docs/index.yaml",
+            "compass/docs/archive/retention-log.md",
+            "compass/tools/redcap-docs-catalog.sh"
           ]
         }
       ]
@@ -247,22 +256,30 @@
         {
           "id": "E2",
           "title": "session / runtime helper 收敛",
-          "status": "pending",
+          "status": "done",
           "priority": "P2",
           "phase_id": "phase-5-ia-and-runtime",
-          "summary": "运行时 helper 已很多，后续还要再收口共享 API，减少重复读写和脚本体积。",
+          "summary": "runtime attach/load 重复逻辑已收敛到 `redcap_runtime_attach_current_or_claim` 共享 helper，并由 runtime-helper check 防止关键脚本重新复制本地 attach helper。",
           "evidence_paths": [
-            "compass/tools/redcap-runtime-state.sh"
+            "compass/tools/redcap-runtime-state.sh",
+            "compass/tools/redcap-runtime-helper-check.sh",
+            "compass/tools/redcap-layerB-task-complete-guard.sh",
+            "compass/tools/redcap-pending-closure-reconcile.sh",
+            "compass/tools/redcap-drift-check.sh",
+            "compass/tools/redcap-pm-gate-check.sh",
+            "compass/tools/redcap-task-report-check.sh"
           ]
         },
         {
           "id": "E3",
           "title": "统一诊断与可观测性",
-          "status": "pending",
+          "status": "done",
           "priority": "P1",
           "phase_id": "phase-5-ia-and-runtime",
-          "summary": "目前理解 authority / continuity / drift 状态还要手查多个脚本，缺一条统一 diagnose 入口。",
+          "summary": "已新增 redcap-diagnose.sh，统一汇总 current-status、docs、knowledge、overlay、execution、revival 与 spec-check。",
           "evidence_paths": [
+            "compass/tools/redcap-diagnose.sh",
+            "compass/tools/redcap-current-status.sh",
             "compass/tools/redcap-validator-chain.sh"
           ]
         }
@@ -288,33 +305,48 @@
         {
           "id": "F2",
           "title": "规范到 gate 的翻译链",
-          "status": "in_progress",
+          "status": "done",
           "priority": "P1",
           "phase_id": "phase-3-governance-executability",
-          "summary": "spec-registry + spec-lifecycle-policy + spec-check 已把 spec 维度推进到第二层翻译链，但 hook / lesson / contract 等更广泛的治理映射还没做完。",
+          "summary": "spec、docs、knowledge、overlay、execution guarantees、revival 与 diagnostics 均已从自然语言规则接入脚本 / gate / acceptance；更专门的 hook / contract / FSM 深水区交给 F3。",
           "linked_debts": [
             "GD-007"
           ],
           "evidence_paths": [
             "references/spec-registry.json",
             "compass/tools/redcap-spec-check.sh",
+            "compass/tools/redcap-execution-guarantee-check.sh",
+            "compass/tools/redcap-revival-check.sh",
+            "compass/tools/redcap-knowledge-index-check.sh",
+            "compass/tools/redcap-overlay-governance-check.sh",
+            "compass/tools/redcap-diagnose.sh",
+            "compass/docs/catalog.json",
             "compass/knowledge/governance-debt-register.md"
           ]
         },
         {
           "id": "F3",
           "title": "hook / lesson / contract / 状态机治理硬化",
-          "status": "pending",
+          "status": "done",
           "priority": "P1",
           "phase_id": "phase-3-governance-executability",
-          "summary": "这些真正保运行的机制还要继续变成脚本化、校验化、可审计化的硬约束。",
+          "summary": "hook、lesson、contract、状态机、CONTRIBUTING 信息架构、token-risk、runtime helper 与 CLI mirror 均已登记到执行保障并接入 spec-check / diagnose / acceptance。",
           "linked_debts": [
             "GD-007"
           ],
           "evidence_paths": [
             "references/hook-standards.md",
             "compass/knowledge/lessons.md",
-            "loom/dispatcher/state-machine.md"
+            "compass/tools/redcap-token-risk-audit.sh",
+            "compass/tools/redcap-acceptance-index.sh",
+            "loom/dispatcher/state-machine.md",
+            "references/execution-guarantees.json",
+            "references/review-tracks.json",
+            "compass/tools/redcap-contributing-ia-check.sh",
+            "compass/tools/redcap-review-tracks-check.sh",
+            "compass/tools/redcap-hook-contract-check.sh",
+            "compass/tools/redcap-runtime-helper-check.sh",
+            "compass/tools/redcap-cli-console-mirror-check.sh"
           ]
         },
         {
@@ -370,36 +402,36 @@
     {
       "id": "phase-3-governance-executability",
       "title": "阶段 3：治理可执行化",
-      "status": "in_progress",
+      "status": "done",
       "item_ids": [
         "D1",
         "F2",
         "F3",
         "A3"
       ],
-      "summary": "D1 已收口；当前继续推进 F2 / F3 / A3，把更多治理规范补成可执行 gate 与审计轨。"
+      "summary": "D1 / F2 / F3 / A3 均已收口：spec、docs、knowledge、hook、contract、FSM、三轨评审与 token 风险均已进入可执行 gate。"
     },
     {
       "id": "phase-4-host-ux",
       "title": "阶段 4：宿主体验与操作反馈",
-      "status": "in_progress",
+      "status": "done",
       "item_ids": [
         "C2",
         "C3"
       ],
-      "summary": "`cli_console.md` 已补上覆盖式镜像 helper，下一步仍要继续收口 overlay / ask_user 的诚实降级。"
+      "summary": "C2 / C3 均已收口：`cli_console.md` 降格为 local-only 覆盖式展示镜像，overlay / ask_user 诚实降级也已接入审计。"
     },
     {
       "id": "phase-5-ia-and-runtime",
       "title": "阶段 5：信息架构与运行时收敛",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "D2",
         "D3",
         "E2",
         "E3"
       ],
-      "summary": "清理知识导航、docs 保留策略、runtime helper 收敛与统一诊断。"
+      "summary": "D2 / D3 / E2 / E3 均已收口：docs/knowledge 渐进披露、docs 保留策略、runtime helper 收敛与统一诊断均已接入检查。"
     }
   ]
 }

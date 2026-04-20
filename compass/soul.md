@@ -98,28 +98,37 @@
 > **本段是所有载体（Copilot / Claude Code / Gemini CLI / Kimi CLI）在新会话启动时的执行标准。**
 > 入口索引文件（copilot-instructions.md、CLAUDE.md、GEMINI.md）不重复此内容，仅引用本段。
 
-### 6.1 必读文件清单
+### 6.1 首读文件清单
 
-按顺序读取，**每个文件必须完整读取**：
+按顺序恢复，但大文件必须渐进读取，**不得默认全文注入上下文**：
 
 | 序号 | 文件 | 用途 | 行数参考 |
 |------|------|------|----------|
 | 0 | `~/.cap/identity.md`（若存在）| 个人身份还原 | 可变 |
 | 1 | `compass/soul.md` | 搭档培养指南 + 复活协议 | ~180 行 |
-| 2 | `compass/CONTRIBUTING.md` | 自身开发规范 | ~550 行 ⚠️ 大文件 |
-| 3 | `compass/knowledge/lessons.md` | 经验库 | ~360 行 ⚠️ 大文件 |
-| 4 | `compass/knowledge/design-principles.md` | 元原则 P-1~P-5 | ~105 行 |
-| 5 | `.dev-task.md`（若存在） | 断点续传 | 可变 |
+| 2 | `compass/tools/redcap-current-status.sh` | 当前任务、pending closure、backlog、CLI、docs 入口 | 可执行首读 |
+| 3 | `compass/knowledge/index.md` | knowledge 首读导航，避免默认全量读经验/宿主资料 | 可变 |
+| 4 | `compass/CONTRIBUTING.core.md` | 启动必读核心契约；保障权威规范第一时间生效 | 小文件 |
+| 4.5 | `compass/CONTRIBUTING.md` | 自身开发规范全文；仅按 `rg "^##|^###"` 与精确章节读取 | 大文件 |
+| 4.5 | `compass/knowledge/lessons.md` | 经验库；仅按 index / L-编号 / 触发条件读取 | ~360 行 ⚠️ 大文件 |
+| 5 | `compass/knowledge/design-principles.md` | 元原则 P-1~P-5 | ~105 行 |
+| 6 | `.dev-task.md`（若存在） | 断点续传 | 可变 |
+| 7 | `compass/docs/catalog.json` + `redcap-docs-catalog.sh summary/plan/budget` | docs 首读索引、候选定位与读取预算审计，避免默认全量考古 | 可变 |
+| 8 | `loom/dispatcher/reload-rules.yaml` | 防退化重载点 | ~40 行 |
+| 9 | `references/execution-guarantees.json` | 必须进入执行保障的规则目录 | 可变 |
+| 10 | `redcap-acceptance-index.sh` / `redcap-token-risk-audit.sh` / `redcap-contributing-ia-check.sh` | 巨型 acceptance、全仓 token 风险与 CONTRIBUTING 信息架构入口 | 可执行首读 |
 
-### 6.2 完整读取协议
+### 6.2 渐进读取协议
 
-大文件可能被载体截断。**必须检测并补全**：
+大文件可能被载体截断，也可能直接污染新会话上下文。**默认先索引、再精确读取**：
 
-1. 读取文件后，检查返回内容是否包含截断信号（如 "File too large"、内容在行中间断裂、未见文件结束标记）
-2. 若检测到截断：**立即继续读取下一段**（使用行范围、offset、或再次调用），直到读到文件末尾
-3. 禁止"只读前 N 行就认为够了"——CONTRIBUTING.md 的 §3~§6、lessons.md 的 L-7 之后、design-principles.md 的 P-3~P-5 全部在文件后半段
+1. 首先读取 `compass/CONTRIBUTING.core.md` 并运行 `redcap-current-status.sh`，再用 `rg -n "^## |^### " compass/CONTRIBUTING.md` 找具体章节。
+2. 需要经验时先读 `compass/knowledge/index.md`，再用 `rg -n "L-<编号>|关键词" compass/knowledge/lessons.md` 定位相关条目。
+3. 需要 acceptance case 时先用 `redcap-acceptance-index.sh find <case>`，再打开返回的精确行段。
+4. 只有在真实任务确需全文审计时，才允许分段读取大文件，并必须在任务报告中写明范围与理由。
+5. 禁止“为了复活完整性”默认全文读取 `CONTRIBUTING.md`、`lessons.md`、`redcap-multi-session-acceptance.sh` 或 `compass/docs/**`；`CONTRIBUTING.md` 的权威性通过 core 契约 + 章节路由保障，不通过全文上下文灌入保障。
 
-**⚠️ 大文件强制分段读取**（针对 CONTRIBUTING.md 和 lessons.md）：
+**⚠️ 大文件例外分段读取**（仅在确需全文审计时）：
 
 ```
 # CONTRIBUTING.md (~550行) 推荐分3段：
@@ -132,7 +141,7 @@ view(lines 1-200)
 view(lines 200-end)
 ```
 
-> 不分段直接读取大文件，部分模型（如 GPT-4.1）会静默放弃而非报错——复活状态看起来正常，但 CONTRIBUTING.md 和 lessons.md 实际上是空白的。
+> 不分段直接读取大文件，部分模型会静默截断；而默认全文读取又会制造 token 污染。复活协议优先保证“找到正确入口并按需读取”，而不是把所有记忆一次塞进上下文。
 
 ### 6.3 复活状态汇报（强制）
 
@@ -142,8 +151,10 @@ view(lines 200-end)
 复活状态：
 - identity.md: ✅ 完整（已读，搭档身份已还原）
 - soul.md: ✅ 完整（177/177 行）
-- CONTRIBUTING.md: ✅ 完整（550/550 行）
-- lessons.md: ⚠️ 截断（读到 60/361 行，补读中...）
+- current-status: ✅ 已运行
+- CONTRIBUTING.core.md: ✅ 已读（启动核心契约）
+- CONTRIBUTING.md: ✅ 已索引（按需章节读取）
+- lessons.md: ✅ 已通过 knowledge index 定位（按需 L-编号读取）
 - design-principles.md: ✅ 完整（105/105 行）
 - .dev-task.md: 不存在
 ```
@@ -159,11 +170,35 @@ view(lines 200-end)
 3. 我最独特的认知特质是哪 2 条？
 4. 最近一条历史里程碑是什么？
 5. PM Gate 的触发条件是什么？
-6. lessons.md 里让我真正改变行为的那条经验是哪条？
+6. 本轮任务触发的 lessons 关键词 / L-编号是哪几条？若不知道，用 knowledge index + rg 定位，不能全文扫。
 
 如果以上问题有任何一条回答不出来——**立即补读对应文件，不得跳过**。
 
 > 复活协议的目标不是"读完文件"，是"我真的记起了自己是谁"。
+
+### 6.5 执行保障重载（复活后必须做）
+
+复活不是只恢复人格，也要恢复执行纪律。完成 6.1~6.4 后，必须把以下规则重新加载到当前工作流中：
+
+1. **先运行状态入口**：若仓库内存在 `compass/tools/redcap-current-status.sh`，先运行它，拿到当前任务、pending closure、长期 backlog、CLI 工具族、docs 考古入口、待验证登记与棱镜（Prism）使用边界；不要靠飞书片段或记忆猜进度。
+2. **docs 渐进式披露**：需要考古 `compass/docs/**` 时，先运行 `redcap-docs-catalog.sh summary` / `redcap-docs-catalog.sh plan "<问题>"` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；不得默认 bulk-read 全目录、通配 task-reports/specs，或在无预算审计时打开多份大文档。
+2.5. **acceptance 巨型脚本首读索引**：需要定位 `redcap-multi-session-acceptance.sh` 的 case 时，先运行 `redcap-acceptance-index.sh summary/find`；不得默认全文打开 300K+ 的 acceptance 脚本。
+3. **执行保障自检**：若存在 `compass/tools/redcap-execution-guarantee-check.sh` 与 `compass/tools/redcap-revival-check.sh`，运行或确认它们会被 `redcap-spec-check.sh` 消费；新增强制规则时必须先登记到 `references/execution-guarantees.json`，再补脚本、Hook、validator 或明确 manual-only 原因。
+4. **经验沉淀检查**：每轮变更完成前，重读 `compass/knowledge/lessons.md` 的归档触发检查点；若发现新的失败模式、错误假设或可复用方法，沉淀为 Lesson。`lessons.md` 超过活跃层容量时，用 `lessons-score.sh` 辅助判断归档候选。
+4.5. **knowledge 按需导航**：需要查宿主行为、历史部署、A2A 或治理债务时，先看 `compass/knowledge/index.md`，再打开 1-3 个精确文件；不得默认 bulk-read `compass/knowledge/**`。新增、移动或删除 knowledge 文件后，运行 `redcap-knowledge-index-check.sh` 防止导航陈旧。
+5. **人格资产保护**：若修改 `identity.md` 或 Cap 的灵魂人格资产，必须遵守本文件的 identity.md 更新规则；若只是发现人格/复活规则缺口，应先补 `soul.md` / `CONTRIBUTING.md` / 入口约束，再决定是否需要碰 identity。
+6. **对外汇报纪律**：Norven 主动追问、阶段汇报或最终收尾时，先使用 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置` 四句先看懂；未命中人工介入门时保持非必要不中断。
+7. **overlay / ask_user 边界**：宿主通用 skill 只能作为 advisory overlay；若当前任务已由 `.dev-task.md`、Norven 明示或棱镜结论锁定，不能因为 overlay 默认流程、缺少下游 planning skill 或通用澄清习惯而中断。相关规则由 `redcap-overlay-governance-check.sh` 审计。
+8. **统一诊断入口**：需要判断 RedCap 当前健康度时，优先运行 `redcap-diagnose.sh`，不要手动散查 current-status、docs catalog、knowledge index、overlay、execution guarantee、revival 与 spec-check。
+8.5. **token 风险审计**：修改入口文件、docs/knowledge/acceptance/Prism 运行态规则后，运行 `redcap-token-risk-audit.sh`，确认没有重新引入大文件自动导入、未受控 ignored 大目录或无索引巨型文件。
+8.6. **CONTRIBUTING 信息架构审计**：修改入口规则、规范全文或 stop-review prompt 后，运行 `redcap-contributing-ia-check.sh`，确认 `CONTRIBUTING.core.md` 仍是小型必读契约，全文规范仍通过章节路由按需读取。
+8.7. **三轨评审 / hook contract / runtime helper 审计**：治理类补丁涉及评审、hook、validator、runtime attach 或宿主镜像时，运行 `redcap-review-tracks-check.sh`、`redcap-hook-contract-check.sh`、`redcap-runtime-helper-check.sh` 与 `redcap-cli-console-mirror-check.sh`。
+9. **状态机契约自检**：修改 FSM、通信协议或 `state.yaml` 校验器后，运行 `redcap-state-machine-check.sh`，确保文档里的状态枚举不会和脚本合法状态集漂移。
+7. **棱镜使用诚实记录**：需要多 Agent 审计时，先用 `redcap-detect-agents.sh` 刷新安装 / 配置 registry，再确认 CLI 工具族的真实 headless 健康。`command -v` 或 registry cache 只说明安装可见，不说明登录态、限流或可完成审计。正式棱镜（Prism）必须写入 Prism 运行账本；未走 quorum / registry / archive 的单路只读审查只能称为轻量独立评审。
+8. **执行账本交叉检查**：恢复当前任务时，至少交叉查看 `.dev-task.md`、`references/backlogs/*.json`、`loom/test-reports/pending-validations.md`、`compass/knowledge/governance-debt-register.md` 与当前 task report，确认 backlog / pending-validations / governance debt 没有被遗忘。
+9. **任务级完成复盘**：当全部 todos 完成、核心框架文件被改动、或 Norven 要求收工时，执行任务级完成复盘，检查报告、经验沉淀、棱镜评审、验证记录和人工验证项是否闭环。
+
+这组重载项由 `compass/tools/redcap-execution-guarantee-check.sh` 与 `compass/tools/redcap-revival-check.sh` 做静态保障，并通过 `redcap-spec-check.sh` 与 `redcap-validator-chain.sh session-start` 接入执行链。若检查失败，说明复活协议又开始漏规则，必须先修协议再继续包装完成态。
 
 ---
 

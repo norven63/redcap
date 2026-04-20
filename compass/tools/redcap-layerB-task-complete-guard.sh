@@ -27,14 +27,6 @@ source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-dev-task.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
 
-attach_runtime_if_possible() {
-    if [[ -n "${REDCAP_RUNTIME_SESSION_ID:-}" && -n "${REDCAP_RUNTIME_CAPABILITY:-}" ]]; then
-        redcap_runtime_attach_existing "$REDCAP_RUNTIME_SESSION_ID" "$REDCAP_RUNTIME_CAPABILITY" 2>/dev/null && return 0
-    fi
-
-    redcap_runtime_attach_from_process_claim "$HOST" 2>/dev/null
-}
-
 guard_lock_owner_pid() {
     local lock_path="$1"
 
@@ -283,7 +275,7 @@ if [[ "$ACTIVE_SLICE" != "$TASK_COMPLETE_SLICE" ]]; then
     exit 0
 fi
 
-if ! attach_runtime_if_possible; then
+if ! redcap_runtime_attach_current_or_claim "$HOST"; then
     redcap_runtime_record_degraded_mode \
         "$REDCAP_ROOT" \
         "task-complete-guard-missing-runtime-claim" \

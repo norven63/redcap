@@ -21,6 +21,12 @@
 | **Layer B 变更须独立评审** | Layer B | 作者盲点：改框架的 Agent 不能评价自身变更 | — | Hook → 检测 Layer B CWD → 拉起独立 Agent 架构评审 |
 | **任务完成报告必须物理归档** | Layer B | 对话输出不可被 Hook 观察，口头回报无法审计 | Agent 主动写入 `compass/docs/task-reports/` | SessionEnd Hook → 检查最近 commit 区间内是否存在模板完整的报告文件 |
 | **Pending Actions 必须落盘** | Layer A | 会话崩溃时未落盘 Action 永久丢失 | Dispatcher 主动写入 state.yaml | Hook → 检查 state.yaml 完整性（审计保障） |
+| **复活与执行保障不可遗漏** | Layer B | 新会话只读入口文档容易恢复文字规则，却漏掉 current-status、catalog、Prism、lessons 等执行入口 | 复活协议 + `redcap-current-status.sh` + `references/execution-guarantees.json` | `redcap-revival-check.sh` / `redcap-execution-guarantee-check.sh` → `redcap-spec-check.sh` |
+| **经验沉淀不可遗漏** | Both | LLM 很容易修完问题后忘记把失败模式写入长期记忆 | task report 的经验沉淀章节 + `__redcap_status.lesson` | Stop review / SessionEnd 检查经验沉淀是否被显式考虑；内容质量保留人工 review |
+| **docs catalog 不可陈旧** | Layer B | 首读索引过期会诱导后续 Agent 读错摘要或漏读证据 | 修改 docs 后执行 `redcap-docs-catalog.sh generate` | `redcap-docs-catalog.sh check` 已接入 `redcap-spec-check.sh` |
+| **docs 读取必须渐进披露** | Layer B | 历史 evidence 体量过大，默认 bulk-read 会打爆新会话上下文 | `redcap-docs-catalog.sh summary/plan/budget` | acceptance 覆盖 plan 候选、budget 单文件通过、目录/超预算读取 fail-closed |
+| **knowledge 读取必须先走导航** | Layer B | 经验、宿主行为、探索记录分散在多文件，默认 bulk-read 会放大上下文污染 | `compass/knowledge/index.md` | `redcap-knowledge-index-check.sh` 已接入 `redcap-spec-check.sh` |
+| **token 风险审计不可遗漏** | Layer B | 入口文件、巨型 acceptance、ignored runtime 残留和历史证据都可能绕开 docs catalog 重新污染上下文 | `redcap-token-risk-audit.sh` + `redcap-acceptance-index.sh` | `redcap-diagnose.sh` / `redcap-spec-check.sh` / acceptance 回归 |
 
 > **扩展规则**：新增"必须保障"的动作，先在此表登记，再在 §2 中补充实现规范。不允许直接写进脚本而不在此表体现。
 

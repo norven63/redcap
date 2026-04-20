@@ -57,7 +57,14 @@
 
 ### GD-007：Governance executable norms
 - **design_status**: `design-complete`
-- **implementation_status**: `in-progress`
+- **implementation_status**: `done`
 - **owner_slice**: `工程治理 / 权威规范升级`
 - **source**: `compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md` §八 F2-F3
-- **gap**: `spec-registry + spec-lifecycle-policy + spec-check` 已把 spec 维度的“规范到 gate”翻译链推进到第二层，但 hook audit、lesson injection、contract validator、FSM canonical source 仍未完整落地
+- **gap**: 已收口：`spec-registry + spec-lifecycle-policy + spec-check` 承接 spec 维度；`docs catalog + knowledge index + execution guarantees + revival check` 承接 docs/knowledge/复活执行纪律；`acceptance index + token-risk audit` 承接巨型脚本、入口自动导入与 ignored 运行残留；`review-tracks + hook-contract + runtime-helper + cli-console-mirror` checks 承接三轨评审、hook 契约、runtime helper 收敛与宿主展示镜像边界。`cli_console.md` 的 repo-owned 边界已完成；宿主最终回复 UI 不由仓库脚本强控，不再作为本债务残留。
+
+### GD-008：主 Agent 实时行为约束仍属 host-limited
+- **design_status**: `identified`
+- **implementation_status**: `in-progress`
+- **owner_slice**: `宿主能力画像 / 行为保障诚实建模`
+- **source**: `references/execution-guarantees.json`（host-behavior 类别）+ `references/host-session-capability-matrix.json`
+- **gap**: 入口恢复、docs/knowledge 渐进披露、validator 与 diagnose 已有较强机械保障，但“主 Agent 不应无必要中断用户 / 不应把 commit 犹豫升级成人工确认”这类回复时行为，目前在 Codex.app 等宿主上仍缺少 repo-owned pre-reply veto。现阶段已把该边界登记为 host-limited / manual-only，并把 Codex 宿主正式纳入 capability matrix；同时通过 `references/execution-guarantee-tiers.md` 明确它属于“人工/宿主边界保障”而非物理强保障。真正的 100% 物理约束仍依赖未来宿主暴露更强 Hook 或 veto 接口。

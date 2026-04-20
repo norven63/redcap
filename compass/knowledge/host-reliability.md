@@ -2,7 +2,7 @@
 
 > **调研日期**：2026-04  
 > **调研背景**：RedCap E2E 测试中 `on_ALL_DONE` 飞书通知被遗漏（L-9 复现），需评估宿主 Agent 的指令持久性和可靠性保障机制，为 RedCap 的关键动作防遗漏策略提供决策依据。  
-> **核心发现**：指令注入物理上每轮都在，但 LLM attention 衰减使执行率随对话长度下降。唯一 100% 保证的是 Hooks（绕过 LLM 的 shell 命令）。当前 5 个宿主里已有 4 个具备可用 Hook 能力；是否真正可靠，取决于是否完成部署与 E2E 验证。
+> **核心发现**：指令注入物理上每轮都在，但 LLM attention 衰减使执行率随对话长度下降。唯一 100% 保证的是 Hooks（绕过 LLM 的 shell 命令）。当前 6 个宿主里已有 4 个具备可用 Hook 能力；另有 2 个只能提供较弱的入口注入或上下文约束，不能把“主 Agent 回复前拦截”误说成已支持。
 
 ---
 
@@ -31,6 +31,39 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | Gemini CLI | 每次 prompt | 与 prompt 拼接 | ✅ 实测可用（v0.36.0）；Layer B 已部署 | [hooks-gemini-cli.md](hooks-gemini-cli.md) |
 | Kimi CLI | N/A（无指令文件） | N/A | ✅ 13 种事件（v1.30.0 实测） | [hooks-kimi-cli.md](hooks-kimi-cli.md) |
 | Copilot CLI | N/A（仅 `.github/copilot-instructions.md`） | 自动读取 | ✅ 仓库级 `.github/hooks/*.json`（Layer B 已部署） | [hooks-copilot-cli.md](hooks-copilot-cli.md) |
+| Codex.app / Codex CLI | 会话开始自动读 `AGENTS.md` | 宿主系统上下文 | ⚠️ 入口导入可用，但未见 repo-owned reply veto / SessionEnd Hook | 本文件 §1.1 |
+
+### 1.1 Codex.app 当前画像
+
+Codex.app 当前对 RedCap 有两类能力：
+
+1. **已确认可用**
+   - `AGENTS.md` 入口自动导入
+   - shell / 文件 / git / 本地工具调用
+   - 基于仓库文件的规则提示、状态索引与诊断脚本
+2. **当前未见公开支持面**
+   - 回复发送前的 repo-owned veto
+   - 对 `ask_user` / 中断 / commit 犹豫这类主 Agent 行为的物理拦截
+   - 可由仓库脚本稳定接管的 SessionEnd / Stop-review 原生 Hook
+
+因此 Codex.app 在 RedCap 里应被视为：
+
+- **入口恢复能力存在**
+- **主 Agent 实时行为约束仍属 host-limited**
+- **不能把 prompt-level 纪律误标成 100% 宿主硬保障**
+
+### 1.2 wrapper / proxy 的真实边界
+
+围绕“能不能靠 wrapper 补强宿主控制”这一点，当前 RedCap 采用以下诚实口径：
+
+1. **CLI Agent 的 wrapper 是正经工程手段**
+   对 `gemini`、`kimi`、`copilot` 这类 CLI，wrapper 可以站在命令入口上，补 preflight、统一注入上下文、记录审计、拒绝不满足条件的执行，甚至在一定程度上做输出后置检查。
+
+2. **桌面 App 的 wrapper 不等于 reply-time veto**
+   对 Codex.app 这类独立宿主，如果 wrapper 只能“负责启动 App、注入环境变量、切工作目录”，那它只是启动包装，不是实时拦截。只有当宿主公开提供 pre-send / pre-reply / veto / extension API，或者 wrapper 真正站到消息收发主链路上，才有机会把这类规则补成物理门禁。
+
+3. **所以 wrapper 不是魔法补丁**
+   repo 内脚本做不到的事，不会因为外面多包了一层启动壳就自动变成 100% 物理保障。正确判断标准不是“有没有 wrapper”，而是“wrapper 是否真的拿到了那个控制点”。
 
 ---
 
@@ -84,6 +117,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | Copilot CLI | ✅ | 仓库级 `.github/hooks/*.json`（Layer B 已部署；Layer A 按仓库安装） | [hooks-copilot-cli.md §3](hooks-copilot-cli.md) |
 | VS Code Copilot | ❌ | 退守 Layer 1-3 | [hooks-vscode-copilot.md §3](hooks-vscode-copilot.md) |
 | Gemini CLI | ✅ | `.gemini/settings.json` SessionStart + SessionEnd（Layer B 已部署） | [hooks-gemini-cli.md §3](hooks-gemini-cli.md) |
+| Codex.app / Codex CLI | ❌ | 退守 Layer 1-3 + `AGENTS.md` 入口恢复 + repo-owned 诊断/审计 | 本文件 §1.1 |
 
 ### 3.3 收尾脚本封装（已实现）
 
@@ -150,5 +184,5 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | **LLM 执行是概率性的** | 随对话长度必然衰减，无法 100% |
 | **唯一 100% 保证是 Hooks** | 绕过 LLM，宿主程序直接执行 shell（Claude Code / Gemini CLI / Kimi CLI / Copilot CLI 均支持） |
 | **需认知的关键动作** | Hook 确定性触发 × 新 Agent 生命周期认知能力（L-15）：Hook 保证 100% 触发，新 Agent 消除历史上下文污染保证认知质量，两者相乘解决"纯脚本无认知 vs 纯 LLM 会遗忘"的两难。实例：Layer B `redcap-on-stop-review.sh`、Layer A `redcap-layerA-review-fallback.sh` |
-| **RedCap 最佳策略** | 用脚本封装关键动作 + 宿主 Hooks（如有）+ 下次启动审计 |
-| **Hook 覆盖率** | 5 个宿主中 4 个有 Hooks（Claude Code、Gemini CLI、Kimi CLI、Copilot CLI），1 个无（VS Code Copilot） |
+| **RedCap 最佳策略** | 用脚本封装关键动作 + 宿主 Hooks（如有）+ 下次启动审计；对 Codex.app 这类无 reply-veto 宿主，要诚实标注 host-limited 行为保障；对 CLI 家族可优先考虑 wrapper / proxy 做入口控制，但不得把“启动包装”冒充成“实时拦截” |
+| **Hook 覆盖率** | 6 个宿主中 4 个有 Hooks（Claude Code、Gemini CLI、Kimi CLI、Copilot CLI），2 个无/弱（VS Code Copilot、Codex.app） |
