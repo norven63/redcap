@@ -2,8 +2,9 @@
 
 > 一个把单体 AI Agent 升级成工程化 AI Team 的协同开发框架。
 
-RedCap 不是“再包一层 prompt”。
-它把复杂任务拆成**明确角色、状态机交棒、文件协议、独立评审、Prism 多 Agent Team 验证**几条硬结构，让 AI 开发从“单点发挥”变成“可恢复、可审计、可收尾”的工程流程。
+RedCap 不是“再包一层提示词”。
+它真正做的事，是把复杂开发任务拆成**分工明确、状态可追踪、过程可复盘、关键结论可独立验证**的一套工程协作流程。
+目标不是让一个 Agent 更拼，而是让一组 Agent 更可靠。
 
 ## 一眼看懂
 
@@ -23,27 +24,25 @@ Compass 负责规范、经验、Hook、收尾与复活
 可运行代码 + 可考古证据 + 可恢复连续性
 ```
 
-## RedCap 的核心范式
+## RedCap 最核心的 5 个能力
 
-| 范式 | 它解决什么 |
+| 能力 | 解决的问题 |
 |---|---|
-| **状态机驱动交棒** | 不再靠一个 Agent 从头扛到尾，复杂任务被拆成有责任边界的接力流程 |
-| **文件系统即协议** | 交付物、状态、报告、运行证据都落盘，不把关键真相藏在瞬时上下文里 |
-| **Prism 多 Agent Team** | 高风险决策不是“再问一次同一个模型”，而是多视角独立取样、聚合、裁决 |
-| **独立 Reviewer 门禁** | `QA PASS ≠ 自动通过`，提交前仍有独立审查层 |
-| **run-scoped truth** | 会话、Prism run、task report、pending closure 各自有权威边界，避免串线 |
-| **渐进披露上下文** | docs / knowledge / acceptance / runtime 入口都强调按需加载，避免 token 污染 |
-| **宿主边界诚实化** | 能脚本硬保障的就进 gate；做不到 100% 的明确标注 `host-limited` |
+| **任务不会只活在对话里** | 当前任务、阶段结果、结案报告都会落盘，不靠聊天记忆硬扛 |
+| **复杂任务不是一个 Agent 从头扛到尾** | 任务会按角色分工、按阶段交棒，减少单点失误 |
+| **高风险结论不是自说自话** | 关键判断会进入 Prism，多视角独立验证，不让同一路脑回路自证正确 |
+| **文档不会默认灌满上下文** | 文档、知识库、测试集合都先看索引，再按需读取，避免 token 污染 |
+| **做不到硬保障的地方会诚实承认** | 不会把“只能靠纪律遵守”的规则伪装成 100% 自动执行 |
 
 ## 为什么 Prism 是主角之一
 
-很多框架有“多角色”，但没有真正的**多 Agent Team 验证层**。
-Prism 的作用不是“让更多模型来凑热闹”，而是把高后果问题交给一个独立的团队协议处理：
+很多框架有“多角色”，但没有真正的**多 Agent 团队验证层**。
+Prism 的作用不是“多叫几个模型来热闹一下”，而是把高后果问题交给一个独立团队去复核：
 
-- **独立取样**：不同 Agent 不能互抄中间结论
-- **多模型族**：不是单家模型自证正确
-- **结构化 Collect / Synthesize / Adjudicate**：不是聊天式“大家都说两句”
-- **run-scoped 证据链**：`session-registry.yaml`、`raw.txt`、`parsed.json`、report archive 可回放、可审计
+- **彼此独立看问题**：不同 Agent 不能互抄中间答案
+- **不是同一家模型自己给自己背书**
+- **不是随便聊几句，而是结构化收集、汇总、裁决**
+- **全过程留证据，之后能回放、能审计**
 
 一句话说，**Loom 负责把任务做出来，Prism 负责在高风险处把结论打磨得更可信。**
 
@@ -71,18 +70,16 @@ Prism 的作用不是“让更多模型来凑热闹”，而是把高后果问�
 - **长任务拆解**：优先走 Loom / Layer B 的并行裂变协议
 - **高后果验证**：再交给 Prism
 
-## 当前设计风格
+## 你可以把 RedCap 理解成什么
 
-RedCap 更接近业内这几类 AI Agent 设计思想的组合体：
+如果用人话来讲，RedCap 更像下面这几样东西拼在一起：
 
-- workflow engine / state machine
-- multi-agent team orchestration
-- file-backed protocol and evidence
-- independent reviewer gates
-- progressive disclosure for context hygiene
-- host-capability honesty
+- 一个会把任务拆开、分阶段推进的开发小组
+- 一个把过程和结论都记账的工程账本
+- 一个在高风险处会主动再找独立视角复核的审查机制
+- 一个尽量不让上下文被历史垃圾打爆的阅读和检索系统
 
-它追求的不是“最像人类助理”，而是**最像一个可靠的工程团队**。
+所以它追求的不是“像一个能聊天的助手”，而是**像一个靠谱、有记性、有复核能力的工程团队**。
 
 ## 一键安装 / 复活
 
@@ -92,7 +89,15 @@ Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养�
 - 新环境初始化：`bash compass/tools/redcap-install.sh --host codex --task-file .dev-task.md --init-identity`
 - 已有 identity 的复活：`bash compass/tools/redcap-install.sh --host codex --task-file .dev-task.md`
 
-这条入口会串起 identity 检查/初始化、workflow import、`current-status`、`tracking-health`、`execution-guarantee-check` 与 `revival-check`，避免把复活拆成口头步骤再靠记忆补齐。
+这条入口会串起 5 件事：
+
+- 检查或初始化 Cap 的身份卡
+- 把当前工作流重新接回正确入口
+- 给出当前状态总览
+- 检查追踪链是否还健康
+- 检查复活和执行保障有没有掉链子
+
+它的意义很简单：**以后尽量不再靠“记得先跑这个、再看那个”来复活。**
 
 ## 入口文档
 
