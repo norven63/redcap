@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 31,
-    "size_bytes": 543334,
+    "size_bytes": 543380,
     "lines": 9532,
-    "chars": 348554,
+    "chars": 348578,
     "rough_token_pressure": {
-      "low": 87138,
-      "high": 174277
+      "low": 87144,
+      "high": 174289
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 16,
-        "size_bytes": 289147,
+        "size_bytes": 289193,
         "lines": 3405,
-        "chars": 182281,
+        "chars": 182305,
         "rough_token_pressure": {
-          "low": 45570,
-          "high": 91140
+          "low": 45576,
+          "high": 91152
         }
       },
       "traces": {
@@ -603,9 +603,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 3141,
+      "size_bytes": 3187,
       "lines": 66,
-      "chars": 2325,
+      "chars": 2349,
       "summary": "- 当前已完成：Codex 宿主差异点已写回 repo 权威面，完整用户项目 E2E tranche 已消费 V-2 / V-3 / V-4 / V-6 / V-7 / V-8 / V-9。",
       "status_basis": "filename_recency_only",
       "summary_points": {
