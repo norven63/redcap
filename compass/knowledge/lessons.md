@@ -996,3 +996,33 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-21
+
+### L-102: shell heredoc 调 Python 时，参数位置写反会把数据文件当脚本执行
+- **场景**：完整用户项目 E2E tranche 中实际调用 `compass/tools/redcap-check-state.sh` 时，脚本没有读取 `state.yaml`，而是把 `state.yaml` 本身当成 Python 脚本执行，直接抛出 `SyntaxError`
+- **根因**：`python3 <<'PYEOF' "$STATE_FILE" "$DEV_MANUAL"` 把位置参数写在 heredoc 重定向之后，等价于执行 `python3 "$STATE_FILE" "$DEV_MANUAL"`。这里 `state.yaml` 被 Python 当成脚本文件，不再从标准输入读取内联程序
+- **经验规则**：① 通过 heredoc 调 Python 时，若要同时传位置参数，必须写成 `python3 - "$arg1" "$arg2" <<'PY'` ② 任何“脚本校验器”第一次用于真实 E2E 前都要先跑一遍物理 smoke，不能只靠静态阅读脚本自信 ③ 这类调用错误应优先补 targeted acceptance，避免再次静默回归
+- **来源**：md-table-tool benchmark E2E tranche / V-2 收口
+- **发现日期**：2026-04
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04
+
+### L-103: `on_QA_PASS` 的 state guard 必须 fail-closed，不能把不一致 state 只当警告
+- **场景**：同一轮 E2E 中，`redcap-on-qa-pass.sh` 即使拿到 `redcap-check-state.sh` 的非零退出码，也只是打印一条警告然后继续执行后续动作
+- **根因**：`on_QA_PASS` 把 state guard 当成 advisory check，而不是 gate。这样一来，state.yaml 不一致时，后续 git/lesson 流程仍会继续推进，违背了 V-2 对“校验失败时阻断流程”的预期
+- **经验规则**：① 任何用于守住账本一致性的 guard，只要其职责是“阻止错误状态继续传播”，就必须 fail-closed ② hook/validator 的调用方必须显式传播 guard 的失败，不允许把状态不一致退化成日志提示 ③ 验证这类 gate 时必须同时覆盖“正常通过”和“失败阻断”两条物理路径
+- **来源**：md-table-tool benchmark E2E tranche / V-2 收口
+- **发现日期**：2026-04
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04
+
+### L-104: 完整用户项目 E2E 可用“固定 benchmark carrier + focused replay 副本”高密度消费历史验证队列
+- **场景**：`pending-validations.md` 中剩余 7 项条目并不适合都在一条从零开始的项目链里硬塞；若每项都重跑一次绿地项目，token 和时间成本都会显著膨胀
+- **根因**：完整用户项目 E2E 同时承担“真实项目主链验证”和“特定状态路径回放”两类目标。把两者绑成同一条超长 run，会让无关步骤反复重演，效率极低
+- **经验规则**：① 先用固定 benchmark carrier 跑一条 smoke/multi-step 主链，确认项目可交付 ② 再从该完成版派生 focused replay 副本，分别验证 rollback / escalation / infra 等特定路径 ③ focused 副本仍需维护独立 `开发手册/.workflow` 与最终回归，不能只写空报告 ④ 这种模式适合清历史验证队列，但必须在最终 E2E 报告里诚实注明“副本回放”而非伪装成多次绿地项目
+- **来源**：md-table-tool benchmark E2E tranche / V-4,V-6,V-7,V-8,V-9 收口
+- **发现日期**：2026-04
+- **影响度**：medium
+- **复现次数**：1
+- **最后命中**：2026-04

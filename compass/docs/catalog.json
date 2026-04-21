@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 30,
-    "size_bytes": 540193,
-    "lines": 9466,
-    "chars": 346229,
+    "file_count": 31,
+    "size_bytes": 543334,
+    "lines": 9532,
+    "chars": 348554,
     "rough_token_pressure": {
-      "low": 86557,
-      "high": 173114
+      "low": 87138,
+      "high": 174277
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 15,
-        "size_bytes": 286006,
-        "lines": 3339,
-        "chars": 179956,
+        "file_count": 16,
+        "size_bytes": 289147,
+        "lines": 3405,
+        "chars": 182281,
         "rough_token_pressure": {
-          "low": 44989,
-          "high": 89978
+          "low": 45570,
+          "high": 91140
         }
       },
       "traces": {
@@ -465,7 +465,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：backlog 机制化与 spec 生命周期治理首刀",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16295,
       "lines": 226,
@@ -530,29 +530,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：飞书双向链路与 overlay handoff P0 收口",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15273,
       "lines": 219,
       "chars": 8747,
       "summary": "当前已完成：RedCap 的飞书主链已经从“webhook + 多维表格”切到“`lark-cli + bot + 固定单聊 + 窗口式接收 + 最小待处理入口`”，并把本次 `brainstorming → writing-plans` 混入主流程的问题按 P0 红线收口。 / 详情：`compass/tools/feishu-notifier.py` 现在负责 bot 单聊发送、等待答复窗口、任务完成回访窗口、待处理入口与补扫历史；`redcap-on-complete.sh`、`redcap-layerB-session-end.sh`、`redcap-layerB-session-start.sh` 已接入这条新链。与此同…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 的飞书主链已经从“webhook + 多维表格”切到“`lark-cli + bot + 固定单聊 + 窗口式接收 + 最小待处理入口`”，并把本次 `brainstorming → writing-plans` 混入主流程的问题按 P0 红线收口。",
-          "详情：`compass/tools/feishu-notifier.py` 现在负责 bot 单聊发送、等待答复窗口、任务完成回访窗口、待处理入口与补扫历史；`redcap-on-complete.sh`、`redcap-layerB-session-end.sh`、`redcap-layerB-session-start.sh` 已接入这条新链。与此同时，`SKILL.md`、`compass/CONTRIBUTING.md`、`ARCHITECTURE.md`、`references/agent-constr…"
-        ],
-        "previous_step": [
-          "上一步完成的是：飞书双向交流方案的 design / spec 已经完成并过审，问题边界、窗口模型、待处理入口、CLI 主控制面原则都已经锁定；本轮是在这个设计基础上把代码、规范、回归与本机配置全部接起来。"
-        ],
-        "next_step": [
-          "下一步计划做的是：无必须收尾项；如果回到长期路线主线，优先继续 `F2 规范到 gate 的翻译链`，然后推进 `A3 + F3`。"
-        ],
-        "position": [
-          "整体计划脉络图是：backlog / D1 / 模板链收口 → 飞书双向链路落地 → overlay downstream handoff P0 收口 → 回到 F2 / A3 / F3 主线。",
-          "当前所在位置：飞书链路与 overlay handoff P0 已收口，`.dev-task.md` 已回到 `task-complete`；长期路线的下一焦点重新回到 `F2`。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-17-closeout-followup-hardening.md",
@@ -610,6 +594,25 @@
           "整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof / E2E → live runtime 严格收尾。",
           "当前所在位置：RedCap 的 repo-owned backlog 已保持 `done=19 / in_progress=0 / pending=0`；formal Prism follow-up 已归档，`prism/runs` 已从 437 个目录收敛到 19 个 preserve-by-default 目录，`pending-validations` 也已经不再缺 carrier，当前 `.dev-task.md` 对应 pending closure 也已清。现在唯一仍待真正清零的，是这批历史完整用户项…"
         ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-21-pending-validations-e2e-tranche.md",
+      "collection": "task-reports",
+      "title": "2026-04-21 Pending Validations E2E Tranche",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 3141,
+      "lines": 66,
+      "chars": 2325,
+      "summary": "- 当前已完成：Codex 宿主差异点已写回 repo 权威面，完整用户项目 E2E tranche 已消费 V-2 / V-3 / V-4 / V-6 / V-7 / V-8 / V-9。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [],
+        "previous_step": [],
+        "next_step": [],
+        "position": []
       }
     },
     {

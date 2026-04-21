@@ -5,9 +5,9 @@
 
 ## 当前队列边界
 
-- 这 7 项活跃条目都属于**完整用户项目 E2E 队列**，不是 RedCap self repo 内部治理脚本的 hook-level replay。
-- 当前工作区已经补齐 repo-owned benchmark carrier：`loom/tools/redcap-e2e-benchmark-carrier.sh` + `loom/fixtures/md-table-tool-benchmark/`。后续执行完整用户项目 E2E 时，应优先用它创建固定载体，而不是临时寻找外部用户项目。
-- 这不等于这些条目已经被消费。换句话说：它们仍是明确 backlog，不是遗忘；只是“没有可执行载体”的 blocker 已解除，接下来需要单独起完整用户项目 E2E tranche。
+- 当前无活跃完整用户项目 E2E 条目。
+- 2026-04-21 的 `md-table-tool` benchmark tranche 已消费完此前遗留的 V-2 / V-3 / V-4 / V-6 / V-7 / V-8 / V-9。
+- 后续若新增完整用户项目验证项，仍应优先使用 repo-owned benchmark carrier，而不是临时寻找外部用户项目。
 
 ## 登记格式
 
@@ -23,47 +23,7 @@
 
 ## 活跃条目
 
-### V-2: state.yaml 自动校验脚本
-- **来源 commit**：`9d06d2e` feat(框架): __redcap_status outbox 文件模式 + state.yaml 自动校验
-- **触发类型**：状态机
-- **验证要点**：`tools/redcap-check-state.sh` 在 on_qa_pass hook 中是否正确触发；校验失败时是否阻断流程
-- **状态**：🟡 部分验证（E2E-2026-04-07，md-table-tool smoke：hook 触发正常，但未测试校验失败时的阻断效果）
-
-### V-3: E2E 后置处理流程（7 步）
-- **来源 commit**：`928ab33` feat(框架): E2E 后置处理流程
-- **触发类型**：Prompt模板（影响 Dispatcher 行为流程）
-- **验证要点**：Dispatcher 在 E2E 结束后是否按 7 步执行；分类定性(BUG/GAP/OBSERVATION)是否准确
-- **状态**：🟡 部分验证（E2E-2026-04-07，md-table-tool：Dispatcher 首次执行时遗漏后置处理，经用户审计后补齐。暴露 L-25。7 步未完整——缺少独立的 BUG/GAP/OBSERVATION 分类定性步骤）
-
-### V-4: Agent Fallback 两层降级（Model→CLI）
-- **来源 commit**：`4f51037` feat: Agent Fallback 两层降级（Model→CLI）
-- **触发类型**：路由逻辑
-- **验证要点**：① 同 CLI 内 Model 降级是否优先于 CLI 降级 ② 角色最低能力门槛是否生效（不达标 Model 被跳过） ③ agent_health 粒度是否为 `{cli}&{model}`
-- **状态**：🔴 待验证
-
-### V-6: QA_FAIL → ARCH_WORKING 设计回退路径
-- **来源**：smoke-test-backlog #12
-- **触发类型**：状态机
-- **验证要点**：QA → ARCH → DEV → QA 长链路完整走通
-- **状态**：🔴 待验证
-
-### V-7: ESCALATE_L1 → PM 决策升级路径
-- **来源**：smoke-test-backlog #13
-- **触发类型**：状态机
-- **验证要点**：Agent 遇无法自主决策问题时升级到 PM
-- **状态**：🔴 待验证
-
-### V-8: ESCALATE_L2 → 用户决策升级路径
-- **来源**：smoke-test-backlog #14
-- **触发类型**：状态机
-- **验证要点**：二级升级链 Agent → PM → 用户完整走通
-- **状态**：🔴 待验证
-
-### V-9: PAUSED → Resume 暂停恢复路径
-- **来源**：smoke-test-backlog #15
-- **触发类型**：状态机
-- **验证要点**：need_user 触发 PAUSED 后用户回复恢复执行
-- **状态**：🔴 待验证
+> 当前无活跃条目。
 
 ---
 
@@ -83,10 +43,59 @@
 - **验证方式**：物理标记文件法（touch /tmp/redcap-gemini-hook-fired-*），并确认 Layer B 分发路径触发 redcap-on-stop-review.sh
 - **结论**：.gemini/settings.json 正确加载，SessionEnd 物理触发，Layer A/B 分发逻辑均验证通过
 
-### V-1: __redcap_status outbox 文件模式 ✅
-- **验证日期**：E2E-2026-04-07（md-table-tool smoke）
-- **结论**：所有角色 outbox 交付 100%，跨 trpg-web + md-table-tool 两次 E2E 一致确认
+### V-9: PAUSED → Resume 暂停恢复路径 ✅
+- **验证日期**：E2E-2026-04-21
+- **来源**：smoke-test-backlog #15
+- **触发类型**：状态机
+- **验证方式**：`/tmp/redcap-md-table-tool-e2e-20260421-escalation` focused replay；QA 在 Step 2 对 CSV 可读性发起 `PAUSED`，随后由 benchmark harness 注入用户确认并恢复执行。
+- **结论**：need_user → Resume 链已覆盖，最终重新回到 `ALL_DONE`。
+
+### V-8: ESCALATE_L2 → 用户决策升级路径 ✅
+- **验证日期**：E2E-2026-04-21
+- **来源**：smoke-test-backlog #14
+- **触发类型**：状态机
+- **验证方式**：`/tmp/redcap-md-table-tool-e2e-20260421-escalation` focused replay；PM 对“多表 CSV 是否插入标题注释行”无法裁决，升级到 benchmark harness 注入的用户决策，再回注流程。
+- **结论**：Agent → PM → 用户的二级升级链已覆盖。
+
+### V-7: ESCALATE_L1 → PM 决策升级路径 ✅
+- **验证日期**：E2E-2026-04-21
+- **来源**：smoke-test-backlog #13
+- **触发类型**：状态机
+- **验证方式**：`/tmp/redcap-md-table-tool-e2e-20260421-escalation` focused replay；程序员对“智能表格识别”模糊需求发起升级，PM 明确冻结为标准 GFM 范围。
+- **结论**：L1 决策升级链已覆盖。
+
+### V-6: QA_FAIL → ARCH_WORKING 设计回退路径 ✅
+- **验证日期**：E2E-2026-04-21
+- **来源**：smoke-test-backlog #12
+- **触发类型**：状态机
+- **验证方式**：`/tmp/redcap-md-table-tool-e2e-20260421-rollback` focused replay；QA 将 Step 2 的过滤语义缺口归类为 `design`，随后走 ARCH 修订 → DEV 对齐 → QA 回归。
+- **结论**：QA → ARCH → DEV → QA 长链路已完整走通。
 
 ### V-5: QA_FAIL → DEV_WORKING 回退路径 ✅
 - **验证日期**：E2E-2026-04-07（md-table-tool smoke，自然触发）
 - **结论**：BUG-STEP2-001 触发完整 QA→DEV→QA 回退链，revision 字段传递正常
+
+### V-4: Agent Fallback 两层降级（Model→CLI）✅
+- **验证日期**：E2E-2026-04-21
+- **来源 commit**：`4f51037` feat: Agent Fallback 两层降级（Model→CLI）
+- **触发类型**：路由逻辑
+- **验证方式**：`/tmp/redcap-md-table-tool-e2e-20260421-infra` focused replay；先执行真实 `agent-registry.yaml` 嗅探，再通过 `e2e_config.agent_overrides` 注入受控候选链，验证同 CLI fallback、最低能力门槛跳过与 `{cli}&{model}` 粒度 `agent_health`。
+- **结论**：三项验证要点均已覆盖，不再保留为活跃 backlog。
+
+### V-3: E2E 后置处理流程（7 步）✅
+- **验证日期**：E2E-2026-04-21
+- **来源 commit**：`928ab33` feat(框架): E2E 后置处理流程
+- **触发类型**：Prompt模板（影响 Dispatcher 行为流程）
+- **验证方式**：本轮完整用户项目 tranche 按 §3.1 完成问题提取、BUG/GAP/OBSERVATION 分类、P1 修复、lessons 沉淀、focused 回归、E2E 汇总与 postcheck 收口。
+- **结论**：此前缺失的“独立分类定性步骤”已补上，V-3 现已消费。
+
+### V-2: state.yaml 自动校验脚本 ✅
+- **验证日期**：E2E-2026-04-21
+- **来源 commit**：`9d06d2e` feat(框架): __redcap_status outbox 文件模式 + state.yaml 自动校验
+- **触发类型**：状态机
+- **验证方式**：smoke/rollback/escalation/infra 四个 benchmark 副本均通过 `redcap-check-state.sh`；新增 acceptance `on-qa-pass-blocks-inconsistent-state` 覆盖“校验失败时阻断流程”。
+- **结论**：正常路径与失败阻断路径均已覆盖；过程中还发现并修复 `redcap-check-state.sh` heredoc 调用缺陷。
+
+### V-1: __redcap_status outbox 文件模式 ✅
+- **验证日期**：E2E-2026-04-07（md-table-tool smoke）
+- **结论**：所有角色 outbox 交付 100%，跨 trpg-web + md-table-tool 两次 E2E 一致确认
