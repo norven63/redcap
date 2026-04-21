@@ -127,6 +127,8 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh docs-retention-check
   bash compass/tools/redcap-multi-session-acceptance.sh backlog-check-strict
   bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview
+  bash compass/tools/redcap-multi-session-acceptance.sh tracking-health-overview
+  bash compass/tools/redcap-multi-session-acceptance.sh install-overview
   bash compass/tools/redcap-multi-session-acceptance.sh execution-guarantees-check
   bash compass/tools/redcap-multi-session-acceptance.sh knowledge-index-check
   bash compass/tools/redcap-multi-session-acceptance.sh acceptance-index-check
@@ -6920,9 +6922,49 @@ run_current_status_overview_case() {
     assert_string_contains "$output" "## 棱镜 / 独立评审"
     assert_string_contains "$output" "## docs 考古入口"
     assert_string_contains "$output" "## token 风险入口"
+    assert_string_contains "$output" "## 追踪连续性"
     assert_string_contains "$output" "token-risk-audit:"
+    assert_string_contains "$output" "tracking-health:"
     assert_string_contains "$output" "## 待验证登记"
     assert_string_contains "$output" "active_slice:"
+}
+
+run_tracking_health_overview_case() {
+    local output
+
+    log "case: tracking-health-overview"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-tracking-health.sh" "$REDCAP_ROOT/.dev-task.md")"
+    assert_string_contains "$output" "REDCAP_TRACKING_HEALTH"
+    assert_string_contains "$output" "task_anchor=present"
+    assert_string_contains "$output" "task_report=present"
+    assert_string_contains "$output" "explore_notes=active:"
+    assert_string_contains "$output" "TRACKING_OK"
+}
+
+run_install_overview_case() {
+    local output home_root
+
+    log "case: install-overview"
+
+    home_root="$ACCEPT_ROOT/install-home"
+    rm -rf "$home_root"
+    mkdir -p "$home_root"
+
+    output="$(
+        HOME="$home_root" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-install.sh" \
+            --host acceptance \
+            --task-file "$REDCAP_ROOT/.dev-task.md" \
+            --init-identity
+    )"
+    assert_string_contains "$output" "REDCAP_INSTALL"
+    assert_string_contains "$output" "identity=initialized:"
+    assert_string_contains "$output" "[ok] current-status"
+    assert_string_contains "$output" "[ok] tracking-health"
+    assert_string_contains "$output" "[ok] execution-guarantees"
+    assert_string_contains "$output" "[ok] revival-protocol"
+    assert_string_contains "$output" "REDCAP_INSTALL_OK"
 }
 
 run_execution_guarantees_check_case() {
@@ -7036,6 +7078,7 @@ run_diagnose_overview_case() {
     assert_string_contains "$output" "[ok] overlay-governance"
     assert_string_contains "$output" "[ok] state-machine-contract"
     assert_string_contains "$output" "[ok] token-risk-audit"
+    assert_string_contains "$output" "[ok] tracking-health"
     assert_string_contains "$output" "[ok] contributing-ia"
     assert_string_contains "$output" "[ok] review-tracks"
     assert_string_contains "$output" "[ok] hook-contract"
@@ -8044,6 +8087,8 @@ run_all_cases() {
     run_docs_retention_check_case
     run_backlog_check_strict_case
     run_current_status_overview_case
+    run_tracking_health_overview_case
+    run_install_overview_case
     run_execution_guarantees_check_case
     run_knowledge_index_check_case
     run_acceptance_index_check_case
@@ -8380,6 +8425,12 @@ case "$COMMAND" in
         ;;
     current-status-overview)
         run_current_status_overview_case
+        ;;
+    tracking-health-overview)
+        run_tracking_health_overview_case
+        ;;
+    install-overview)
+        run_install_overview_case
         ;;
     execution-guarantees-check)
         run_execution_guarantees_check_case

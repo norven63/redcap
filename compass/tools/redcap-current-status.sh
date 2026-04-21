@@ -381,6 +381,35 @@ def token_risk_summary() -> list[str]:
     return lines
 
 
+def tracking_summary() -> list[str]:
+    script = repo / "compass/tools/redcap-tracking-health.sh"
+    if not script.is_file():
+        return ["tracking-health missing: compass/tools/redcap-tracking-health.sh"]
+
+    try:
+        proc = subprocess.run(
+            ["bash", str(script), str(task_file)],
+            cwd=repo,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=20,
+            check=False,
+        )
+    except Exception as exc:
+        return [f"tracking-health 无法运行：{exc}"]
+
+    lines = [f"tracking-health: {'pass' if proc.returncode == 0 else 'fail'}"]
+    for raw in proc.stdout.splitlines():
+        line = raw.strip()
+        if not line or line in {"REDCAP_TRACKING_HEALTH", "TRACKING_OK"}:
+            continue
+        if line.startswith("[redcap-tracking-health] "):
+            line = line.replace("[redcap-tracking-health] ", "", 1)
+        lines.append(line)
+    return lines
+
+
 task_text = read(task_file)
 meta = metadata(task_text)
 pending = state_fields(pending_state)
@@ -474,6 +503,11 @@ print()
 
 print("## token 风险入口")
 for line in token_risk_summary():
+    print(f"- {line}")
+print()
+
+print("## 追踪连续性")
+for line in tracking_summary():
     print(f"- {line}")
 print()
 

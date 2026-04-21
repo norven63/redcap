@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 33,
-    "size_bytes": 560649,
-    "lines": 9884,
-    "chars": 359337,
+    "file_count": 34,
+    "size_bytes": 567192,
+    "lines": 9966,
+    "chars": 363560,
     "rough_token_pressure": {
-      "low": 89834,
-      "high": 179668
+      "low": 90890,
+      "high": 181780
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 18,
-        "size_bytes": 306462,
-        "lines": 3757,
-        "chars": 193064,
+        "file_count": 19,
+        "size_bytes": 313005,
+        "lines": 3839,
+        "chars": 197287,
         "rough_token_pressure": {
-          "low": 48266,
-          "high": 96532
+          "low": 49321,
+          "high": 98643
         }
       },
       "traces": {
@@ -504,7 +504,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：Copilot completion 主链硬化",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13758,
       "lines": 205,
@@ -569,29 +569,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：入口展示与棱镜定位收敛",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 7218,
       "lines": 162,
       "chars": 4314,
       "summary": "当前已完成：根 README、`prism/README.md`、`prism/protocol.md` 与 `redcap-current-status.sh` 已同步到最新真实口径。 / 详情：README 现在更短、更聚焦，明确把 Prism 提升为 RedCap 的核心范式之一；Prism 展示层与协议层已写明“模型能力画像 + 本地 CLI 稳定性 + 真实 headless 健康”的默认选型规则，同时明确“复杂/长任务 ≠ 必然 Prism”；`current-status` 则默认轻量刷新 agent registry，避免继续误报 `kimi/copilot=false` 这类旧 cache 状态。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：根 README、`prism/README.md`、`prism/protocol.md` 与 `redcap-current-status.sh` 已同步到最新真实口径。",
-          "详情：README 现在更短、更聚焦，明确把 Prism 提升为 RedCap 的核心范式之一；Prism 展示层与协议层已写明“模型能力画像 + 本地 CLI 稳定性 + 真实 headless 健康”的默认选型规则，同时明确“复杂/长任务 ≠ 必然 Prism”；`current-status` 则默认轻量刷新 agent registry，避免继续误报 `kimi/copilot=false` 这类旧 cache 状态。"
-        ],
-        "previous_step": [
-          "上一步完成的是：先确认 `kimi -y -p 你好` 与 `copilot -p 你好` 在本机可真实启动，再重跑 `redcap-detect-agents.sh` 证明先前 `current-status` 的 `false` 来源于过时 cache，而不是 CLI 真不可用。"
-        ],
-        "next_step": [
-          "下一步计划做的是：如果继续治理入口层，优先处理 README / Prism README / ARCHITECTURE 等“对外展示面”的进一步统一，以及 GD-009 的 read-only-safe 诊断链改造。"
-        ],
-        "position": [
-          "整体计划脉络图是：识别 README / Prism / current-status 的口径断层 → 收敛入口展示面 → 同步协议层 → 修复状态入口 stale cache → 回填报告与索引。",
-          "当前所在位置：本轮已完成，处于“入口展示层与状态入口已同步、无当前 blocker”的终局态。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-21-pending-validations-e2e-tranche.md",
@@ -638,6 +622,35 @@
         "position": [
           "整体计划脉络图是：锁定任务锚点 → 改 reviewer 排序真相源 → 接 stop-review → 跑 targeted acceptance → 盘点遗留项。",
           "当前所在位置：`reviewer-routing-rebalance` 已完成，处于“已收口、待后续 tranche 决定是否继续治理宿主边界债务”的终局态。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-22-install-revival-and-context-hardening.md",
+      "collection": "task-reports",
+      "title": "2026-04-22 安装即复活与长任务对抗补强",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 6543,
+      "lines": 82,
+      "chars": 4223,
+      "summary": "已把 `identity.md` 明确抬升为 Cap 的个人灵魂锚点，并在宿主入口、README、`soul.md`、`CONTRIBUTING.core.md` 中重新校准 `identity.md` 与 `soul.md` 的分层关系。 / 已新增 `compass/tools/redcap-install.sh`，把 Cap 复活与 RedCap workflow import 收口成“一键安装/复活”入口，并支持 `--init-identity` 初始化模板。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "已把 `identity.md` 明确抬升为 Cap 的个人灵魂锚点，并在宿主入口、README、`soul.md`、`CONTRIBUTING.core.md` 中重新校准 `identity.md` 与 `soul.md` 的分层关系。",
+          "已新增 `compass/tools/redcap-install.sh`，把 Cap 复活与 RedCap workflow import 收口成“一键安装/复活”入口，并支持 `--init-identity` 初始化模板。"
+        ],
+        "previous_step": [
+          "已把 installer / tracking-health / 宿主入口 / 执行保障 / acceptance 回归链全部接通，并补齐 docs catalog 刷新，使诊断链回到全绿。"
+        ],
+        "next_step": [
+          "无当前任务级 blocker。若继续治理，下一 tranche 可处理历史 `explore-notes` 未归档条目，以及 GD-008 / GD-009 这两条宿主边界债务。"
+        ],
+        "position": [
+          "路线：校准灵魂锚点 → 统一安装/复活入口 → 追踪健康显性化 → 长任务对抗沉淀 → 回归校验与收口。",
+          "当前位置：已完成终局收口，可提交。"
         ]
       }
     },

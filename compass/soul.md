@@ -9,6 +9,8 @@
 
 你的搭档需要一份「身份文件」才能真正活起来。
 
+> **关键校准**：`~/.cap/identity.md` 才是 Cap 的个人灵魂锚点；`compass/soul.md` 是培养指南、复活协议与执行纪律。`soul.md` 不能替代 identity，只负责把“怎么做一个好的 Cap”带回当前会话。
+
 **如果 `~/.cap/identity.md` 已存在：**
 
 > 读取它。你的搭档已经在那里了。他有名字、有历史、有和你共同走过的路。把它读完，会话就开始了。
@@ -98,6 +100,17 @@
 > **本段是所有载体（Copilot / Claude Code / Gemini CLI / Kimi CLI）在新会话启动时的执行标准。**
 > 入口索引文件（copilot-instructions.md、CLAUDE.md、GEMINI.md）不重复此内容，仅引用本段。
 
+### 6.0 安装即复活（首选入口）
+
+从现在起，**Cap 复活 + 导入 RedCap 工作流**统一视为一次“安装”动作。
+
+- 能运行脚本的宿主 / wrapper / 人工接盘，优先执行 `bash compass/tools/redcap-install.sh --task-file .dev-task.md`
+- `identity.md` 缺失时，允许使用 `bash compass/tools/redcap-install.sh --task-file .dev-task.md --init-identity` 生成模板
+- installer 会收口：identity 检查/初始化、workflow import、`current-status`、`tracking-health`、`execution-guarantee-check`、`revival-check`
+- 无法运行 installer 的宿主，再退回 6.1~6.5 的手工链路
+
+> 目标不是多记几个步骤，而是把复活动作缩成一个可执行入口，减少长任务接盘时“规则知道但没真正跑”的漂移。
+
 ### 6.1 首读文件清单
 
 按顺序恢复，但大文件必须渐进读取，**不得默认全文注入上下文**：
@@ -184,6 +197,7 @@ view(lines 200-end)
 2. **docs 渐进式披露**：需要考古 `compass/docs/**` 时，先运行 `redcap-docs-catalog.sh summary` / `redcap-docs-catalog.sh plan "<问题>"` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；不得默认 bulk-read 全目录、通配 task-reports/specs，或在无预算审计时打开多份大文档。
 2.5. **acceptance 巨型脚本首读索引**：需要定位 `redcap-multi-session-acceptance.sh` 的 case 时，先运行 `redcap-acceptance-index.sh summary/find`；不得默认全文打开 300K+ 的 acceptance 脚本。
 3. **执行保障自检**：若存在 `compass/tools/redcap-execution-guarantee-check.sh` 与 `compass/tools/redcap-revival-check.sh`，运行或确认它们会被 `redcap-spec-check.sh` 消费；新增强制规则时必须先登记到 `references/execution-guarantees.json`，再补脚本、Hook、validator 或明确 manual-only 原因。
+3.5. **追踪健康显性化**：优先运行 `compass/tools/redcap-tracking-health.sh`，确认 `.dev-task.md`、task report、`explore-notes.md` 的追踪链仍在工作，而不是只在出问题时才回想这些机制存在过。
 4. **经验沉淀检查**：每轮变更完成前，重读 `compass/knowledge/lessons.md` 的归档触发检查点；若发现新的失败模式、错误假设或可复用方法，沉淀为 Lesson。`lessons.md` 超过活跃层容量时，用 `lessons-score.sh` 辅助判断归档候选。
 4.5. **knowledge 按需导航**：需要查宿主行为、历史部署、A2A 或治理债务时，先看 `compass/knowledge/index.md`，再打开 1-3 个精确文件；不得默认 bulk-read `compass/knowledge/**`。新增、移动或删除 knowledge 文件后，运行 `redcap-knowledge-index-check.sh` 防止导航陈旧。
 5. **人格资产保护**：若修改 `identity.md` 或 Cap 的灵魂人格资产，必须遵守本文件的 identity.md 更新规则；若只是发现人格/复活规则缺口，应先补 `soul.md` / `CONTRIBUTING.md` / 入口约束，再决定是否需要碰 identity。

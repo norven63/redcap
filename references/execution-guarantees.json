@@ -205,12 +205,14 @@
         "ARCHITECTURE.md#4.10"
       ],
       "status": "scripted",
-      "automation": "revival-check verifies all host entries point at soul and the revival protocol lists identity restoration.",
+      "automation": "revival-check verifies host entries explicitly point at ~/.cap/identity.md as the personal soul anchor, while soul.md and the installer remain the shared revival contract.",
       "guarantee_paths": [
         "compass/tools/redcap-revival-check.sh",
+        "AGENTS.md",
         "CLAUDE.md",
         "GEMINI.md",
-        ".github/copilot-instructions.md"
+        ".github/copilot-instructions.md",
+        "compass/tools/redcap-install.sh"
       ],
       "revival_required": true,
       "hook_required": true,
@@ -234,6 +236,29 @@
       "hook_required": false,
       "auto_enforceable": false,
       "non_automation_reason": "Identity content is personal memory; automatic mutation or push would risk corrupting the user's chosen identity record."
+    },
+    {
+      "id": "install-revival-entry",
+      "category": "revival-startup",
+      "priority": "P1",
+      "rule": "Cap revival and RedCap workflow import must have a single installer entry so hosts and humans can re-anchor with one command instead of reassembling the workflow from memory.",
+      "source_paths": [
+        "compass/soul.md#6",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md",
+        "compass/CONTRIBUTING.core.md"
+      ],
+      "status": "scripted",
+      "automation": "redcap-install.sh performs identity bootstrap, current-status, tracking-health, execution-guarantee, and revival checks; revival-check ensures the installer is referenced by host entry surfaces.",
+      "guarantee_paths": [
+        "compass/tools/redcap-install.sh",
+        "compass/tools/redcap-revival-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
     },
     {
       "id": "prism-formal-run",
@@ -335,6 +360,28 @@
       ],
       "read_only_safe": false,
       "host_requirement": "writable-temp-dir",
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "tracking-health-overview",
+      "category": "diagnostics",
+      "priority": "P1",
+      "rule": "RedCap must surface whether .dev-task, task report, and explore-notes tracking assets are still present and aligned, instead of waiting for tracking drift to be discovered by accident.",
+      "source_paths": [
+        "compass/CONTRIBUTING.core.md",
+        "compass/CONTRIBUTING.md#12",
+        "compass/knowledge/explore-notes.md",
+        ".dev-task.md"
+      ],
+      "status": "scripted",
+      "automation": "redcap-tracking-health.sh audits the current task anchor, task report binding, and explore-notes inventory; current-status and diagnose surface it directly.",
+      "guarantee_paths": [
+        "compass/tools/redcap-tracking-health.sh",
+        "compass/tools/redcap-current-status.sh",
+        "compass/tools/redcap-diagnose.sh"
+      ],
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true

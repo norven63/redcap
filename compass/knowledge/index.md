@@ -6,8 +6,9 @@
 
 1. `compass/knowledge/lessons.md`：活跃经验库；先看开头的“热点主题速览”，再按命中的 L-编号精读具体经验。
 2. `compass/knowledge/design-principles.md`：RedCap 设计元原则，适合做架构/治理取舍前置检查。
-3. `compass/knowledge/governance-debt-register.md`：治理债务登记，说明哪些规则还没有完全变成可执行保障。
-4. `compass/knowledge/host-reliability.md`：宿主可靠性与 Hook 分层策略。
+3. `compass/knowledge/long-task-context-defense.md`：长任务 / 长对话上下文对抗策略，说明当前防线、行业常见方案与未完成边界。
+4. `compass/knowledge/governance-debt-register.md`：治理债务登记，说明哪些规则还没有完全变成可执行保障。
+5. `compass/knowledge/host-reliability.md`：宿主可靠性与 Hook 分层策略。
 
 ## 宿主与 Hook
 

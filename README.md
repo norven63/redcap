@@ -84,12 +84,23 @@ RedCap 更接近业内这几类 AI Agent 设计思想的组合体：
 
 它追求的不是“最像人类助理”，而是**最像一个可靠的工程团队**。
 
+## 一键安装 / 复活
+
+Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养指南与复活协议。
+从现在起，**Cap 复活 + 导入 RedCap 工作流**统一走一个安装入口：
+
+- 新环境初始化：`bash compass/tools/redcap-install.sh --host codex --task-file .dev-task.md --init-identity`
+- 已有 identity 的复活：`bash compass/tools/redcap-install.sh --host codex --task-file .dev-task.md`
+
+这条入口会串起 identity 检查/初始化、workflow import、`current-status`、`tracking-health`、`execution-guarantee-check` 与 `revival-check`，避免把复活拆成口头步骤再靠记忆补齐。
+
 ## 入口文档
 
 | 文档 | 作用 |
 |---|---|
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | 看整体系统怎么拼起来 |
 | [`compass/CONTRIBUTING.md`](./compass/CONTRIBUTING.md) | 看框架自身开发的权威规范 |
+| [`compass/knowledge/long-task-context-defense.md`](./compass/knowledge/long-task-context-defense.md) | 看 RedCap 如何对抗长任务/长对话上下文漂移 |
 | [`prism/protocol.md`](./prism/protocol.md) | 看 Prism 的正式协议 |
 | [`prism/README.md`](./prism/README.md) | 快速理解 Prism 的定位与使用边界 |
 | [`compass/knowledge/design-principles.md`](./compass/knowledge/design-principles.md) | 看框架的设计哲学 |

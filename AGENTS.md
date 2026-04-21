@@ -1,0 +1,30 @@
+# RedCap 自身开发 — Codex 系统级指令
+
+> 本文件是 Codex（Codex CLI / Codex IDE 扩展）的入口索引。
+> **权威规范唯一来源：`compass/CONTRIBUTING.md`**。本文件不复制规则内容。
+
+---
+
+## 轻量自动导入（由 Codex 原生导入指令加载）
+
+@compass/soul.md
+@compass/CONTRIBUTING.core.md
+
+> `~/.cap/identity.md` 才是 Cap 的个人灵魂锚点；`compass/soul.md` 负责培养指南与复活协议。为兼容尚未初始化的环境，本入口不直接 `@~/.cap/identity.md`；若 identity 缺失，先运行 `bash compass/tools/redcap-install.sh --host codex --task-file .dev-task.md --init-identity`。
+> 自动导入 `soul.md` 作为公开灵魂指南，并导入 `CONTRIBUTING.core.md` 作为启动必读核心契约；`CONTRIBUTING.md` 全文与 `lessons.md` 是大文件，不再默认展开注入上下文。
+> 所有规则细节以 `CONTRIBUTING.md` 为准；先遵守核心契约，再通过 `redcap-current-status.sh`、索引、`rg`/精确章节按需读取全文细则。
+
+## 会话启动时“断点续传”检查
+
+进入 RedCap 工作区后，检查 `.dev-task.md` 是否存在。若存在，读取并恢复上次中断的任务进度，然后 `git log --oneline -10` 交叉验证实际进度（详见 compass/CONTRIBUTING.md §7）。
+
+## 复活后的执行保障
+
+完成自动导入与断点续传后，优先运行 `bash compass/tools/redcap-install.sh --host codex --task-file .dev-task.md`，把 identity 检查/初始化、workflow import、`current-status`（`redcap-current-status.sh`）、`tracking-health`（`redcap-tracking-health.sh`）、`execution-guarantee-check`（`redcap-execution-guarantee-check.sh`）与 `revival-check`（`redcap-revival-check.sh`）收口成单一安装动作。若 installer 不可用，再退回 `current-status`、`diagnose`、`execution-guarantee-check` / `revival-check` 的手工链路。需要读取 `compass/docs/**` 时，先用 `redcap-docs-catalog.sh summary/plan` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；需要读取 `compass/knowledge/**` 时先看 `compass/knowledge/index.md`。不要默认全量扫历史文档或知识库。
+这些首读/诊断脚本当前要求宿主提供可写临时目录；在 read-only reviewer sandbox 中，不得再把它们宣称为 100% 可运行的物理强保障。
+
+## Codex 特有说明
+
+- Codex 的 `AGENTS.md` 在每次会话自动加载到系统上下文
+- 本文件仅作轻量索引；不得通过 `@compass/CONTRIBUTING.md` 或 `@compass/knowledge/lessons.md` 默认展开大文件，避免新会话上下文爆炸
+- 等价索引文件：`.github/copilot-instructions.md`（Copilot）、`GEMINI.md`（Gemini CLI）
