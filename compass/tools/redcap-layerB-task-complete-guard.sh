@@ -23,6 +23,11 @@ TASK_COMPLETE_SLICE="${REDCAP_TASK_COMPLETE_SLICE:-task-complete}"
 SKIP_AUTOREGISTER="${REDCAP_TASK_COMPLETE_GUARD_SKIP_AUTOREGISTER:-0}"
 FORCE_RUN="${REDCAP_TASK_COMPLETE_GUARD_FORCE:-0}"
 
+if [[ "${REDCAP_SUPPRESS_TASK_COMPLETE_GUARD:-0}" == "1" ]]; then
+    echo "[redcap-layerB-task-complete-guard] suppressed by REDCAP_SUPPRESS_TASK_COMPLETE_GUARD=1" >&2
+    exit 0
+fi
+
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-dev-task.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"

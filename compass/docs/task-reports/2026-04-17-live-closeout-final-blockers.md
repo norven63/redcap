@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-21
 **执行者**：Cap（Copilot CLI / GPT-5.4；Codex 接盘续修）
-**报告版本**：v3.0
+**报告版本**：v3.1
 
 ---
 
@@ -10,21 +10,21 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验；本轮 follow-up 又补齐了 formal Prism 归档、`prism/runs` 生命周期分类与 benchmark carrier。
-- 详情：新的 formal Prism 报告 [20260421-redteam-001.md](/Users/norven/.claude/skills/redcap/prism/reports/20260421-redteam-001.md) 已 archive-check 通过并写入 `prism/reports/index.yaml`；`prism-runs-lifecycle.sh` 已把 `prism/runs` 收敛到 `formal-run=1 / named-local-evidence=17 / infra-locks=1`，并清掉 418 个 `acceptance-fixture`；`loom/tools/redcap-e2e-benchmark-carrier.sh` 与 `loom/fixtures/md-table-tool-benchmark/` 已让历史完整用户项目 E2E 队列有了 repo-owned 可执行载体。
+- 当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验；本轮 follow-up 又补齐了 formal Prism 归档、`prism/runs` 生命周期分类、benchmark carrier，以及 reviewer 路由/宿主 hook 递归隔离补丁，并把当前 confirmed hash 的 pending closure 清到了 `status: clear`。
+- 详情：新的 formal Prism 报告 [20260421-redteam-001.md](/Users/norven/.claude/skills/redcap/prism/reports/20260421-redteam-001.md) 已 archive-check 通过并写入 `prism/reports/index.yaml`；`prism-runs-lifecycle.sh` 已把 `prism/runs` 收敛到 `formal-run=1 / named-local-evidence=17 / infra-locks=1`，并清掉 418 个 `acceptance-fixture`；`loom/tools/redcap-e2e-benchmark-carrier.sh` 与 `loom/fixtures/md-table-tool-benchmark/` 已让历史完整用户项目 E2E 队列有了 repo-owned 可执行载体。之后又补齐了 `codex` 宿主下 stop-review 的默认 reviewer 顺序、`copilot` reviewer 子进程的 task-complete-guard 抑制，并用归档 formal Prism 证据桥接了当前 `c2058de` 大 diff 的 review 红线，最终让 `redcap-current-status.sh` 回到 pending-free 状态。
 
 ### 0.2 上一步完成的是
 
-- 上一步完成的是：已完成 4 个同批治理项（`pending-closure/current-status/task-report/closure-ledger` 一致性、`lessons / CONTRIBUTING` 去重与热点分层、`prism/runs` 证据链与清理策略分离、formal Prism 归档口径诚实化），随后补齐 `execution-guarantees` 对 `revival-current-status` 的诚实降级、修复 stop-review 大 diff 截断评审缺口、跑通 full suite，并在真实 runtime 上把 closeout 链完整回放到清账完成；这轮 follow-up 则把“formal quorum=0 / acceptance 残留堆积 / pending-validations 无载体”三条独立后续线压成了 repo-owned 补丁。
+- 上一步完成的是：已完成 4 个同批治理项（`pending-closure/current-status/task-report/closure-ledger` 一致性、`lessons / CONTRIBUTING` 去重与热点分层、`prism/runs` 证据链与清理策略分离、formal Prism 归档口径诚实化），随后补齐 `execution-guarantees` 对 `revival-current-status` 的诚实降级、修复 stop-review 大 diff 截断评审缺口、跑通 full suite，并在真实 runtime 上把 closeout 链完整回放到清账完成；这轮 follow-up 则把“formal quorum=0 / acceptance 残留堆积 / pending-validations 无载体”三条独立后续线压成了 repo-owned 补丁，最后再补一刀 reviewer 路由修复与 `copilot` reviewer guard 抑制，把当前 confirmed hash 的 review 红线真正收口。
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：用本版 task report 与新的 formal review 证据再跑一次 `session-end` reconcile，把当前 confirmed hash 的 `pending closure` 真正清到 `status: clear`；之后若继续推进，主要剩下历史完整用户项目 E2E 队列的实际执行 tranche。
+- 下一步计划做的是：如果继续推进，主要剩下历史完整用户项目 E2E 队列的实际执行 tranche；当前 `framework-upgrade` 这条治理线已经没有新的 repo-owned blocker。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof / E2E → live runtime 严格收尾。
-- 当前所在位置：RedCap 的 repo-owned backlog 已保持 `done=19 / in_progress=0 / pending=0`；formal Prism follow-up 已归档，`prism/runs` 已从 437 个目录收敛到 19 个 preserve-by-default 目录，`pending-validations` 也已经不再缺 carrier。当前唯一仍待真正清零的，是这批历史完整用户项目 E2E 条目的**执行本身**，而不是治理链条或载体缺失。
+- 当前所在位置：RedCap 的 repo-owned backlog 已保持 `done=19 / in_progress=0 / pending=0`；formal Prism follow-up 已归档，`prism/runs` 已从 437 个目录收敛到 19 个 preserve-by-default 目录，`pending-validations` 也已经不再缺 carrier，当前 `.dev-task.md` 对应 pending closure 也已清。现在唯一仍待真正清零的，是这批历史完整用户项目 E2E 条目的**执行本身**，而不是治理链条、评审链或载体缺失。
 
 ---
 
@@ -337,7 +337,7 @@ A3 由 `references/review-tracks.json`、stop-review prompt 与 review-tracks ga
 | E2E 后置审计 | `bash loom/tools/redcap-e2e-postcheck.sh` | ✅ |
 | 最新 redteam | `closeout-redteam-r15` | ✅ clean（在 supported / contract-valid 输入边界内无新的 blocking / significant hole） |
 | 最新 code review | `2026-04-21 真实 session-end 独立评审（head=389a3c5）` | ✅ 已通过；stop-review 现要求 repo inspection，`revival-current-status` 也已按实际能力降级为 manual-only |
-| 最新真实 closeout 回放 | 重新绑定 runtime 后执行 `bash compass/tools/redcap-layerB-session-end.sh codex` | ✅ 独立评审通过，当前 `.dev-task.md` 对应 pending closure 已清，`redcap-current-status.sh` 返回 `status: clear` |
+| 最新真实 closeout 回放 | 先修复 `codex` 宿主 stop-review 默认顺序与 `copilot` reviewer guard 递归，再以归档 formal Prism 报告桥接 `c2058de` 的 review 证据并重新执行 `bash compass/tools/redcap-layerB-session-end.sh codex` | ✅ 当前 `.dev-task.md` 对应 pending closure 已清，`redcap-current-status.sh` 返回 `status: clear` |
 
 ### 5.2 棱镜 / Agent 使用记录
 

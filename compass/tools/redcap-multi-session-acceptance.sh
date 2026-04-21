@@ -103,6 +103,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-prunes-reused-pid-lock
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-retries-after-report-change
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-falls-back-to-codex-after-unavailable-reviewers
+  bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-prefers-codex-for-codex-host
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-records-unavailable-rate-limit
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-rejects-invalid-track-structure
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-skips-prompt-only-reviewer-when-repo-inspection-required
@@ -3239,7 +3240,7 @@ EOF
 run_on_stop_review_copilot_fallback_case() {
     local case_name="$1"
     local gemini_mode="$2"
-    local case_dir fake_bin head_file review_result review_log baseline output status child_pid_file child_pid attempt
+    local case_dir fake_bin head_file review_result review_log baseline output status child_pid_file child_pid attempt copilot_guard_flag
 
     log "case: $case_name"
 
@@ -3298,8 +3299,11 @@ EOF
     esac
     chmod +x "$fake_bin/gemini"
 
+    copilot_guard_flag="$case_dir/copilot-guard-flag.txt"
     cat >"$fake_bin/copilot" <<'EOF'
 #!/usr/bin/env bash
+: "${REDCAP_FAKE_COPILOT_GUARD_FLAG:?}"
+printf '%s\n' "${REDCAP_SUPPRESS_TASK_COMPLETE_GUARD:-}" >"$REDCAP_FAKE_COPILOT_GUARD_FLAG"
 cat <<'OUT'
 ```json
 {"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"copilot fallback ok"}
@@ -3318,6 +3322,7 @@ EOF
     output="$(
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_FAKE_COPILOT_GUARD_FLAG="$copilot_guard_flag" \
             REDCAP_RUNTIME_SESSION_ID="" \
             REDCAP_RUNTIME_CAPABILITY="" \
             REDCAP_RUNTIME_SESSION_DIR="" \
@@ -3342,6 +3347,8 @@ EOF
     assert_exists "$review_log"
     assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: copilot"
     assert_string_contains "$(read_file_text "$review_log")" "copilot fallback ok"
+    assert_exists "$copilot_guard_flag"
+    assert_eq "$(read_file_text "$copilot_guard_flag")" "1"
 
     if [[ -n "${child_pid_file:-}" ]]; then
         assert_exists "$child_pid_file"
@@ -3496,6 +3503,109 @@ EOF
     if [[ "$(read_file_text "$review_log")" == *"Codex CLI banner that must not become the review payload."* ]]; then
         fail "codex fallback leaked stdout banner into review payload"
     fi
+}
+
+run_on_stop_review_prefers_codex_for_codex_host_case() {
+    local case_name="on-stop-review-prefers-codex-for-codex-host"
+    local case_dir fake_bin head_file review_result review_log baseline output status
+    local gemini_marker copilot_marker codex_argv codex_stdin
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    gemini_marker="$case_dir/gemini-called.txt"
+    cat >"$fake_bin/gemini" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called > "$gemini_marker"
+exit 97
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    copilot_marker="$case_dir/copilot-called.txt"
+    cat >"$fake_bin/copilot" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called > "$copilot_marker"
+exit 98
+EOF
+    chmod +x "$fake_bin/copilot"
+
+    codex_argv="$case_dir/codex-argv.txt"
+    codex_stdin="$case_dir/codex-stdin.txt"
+    cat >"$fake_bin/codex" <<'EOF'
+#!/usr/bin/env bash
+: "${REDCAP_FAKE_CODEX_ARGV:?}"
+: "${REDCAP_FAKE_CODEX_STDIN:?}"
+message_file=""
+stdin_requested=""
+printf '%s\n' "$@" >"$REDCAP_FAKE_CODEX_ARGV"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --output-last-message)
+            message_file="$2"
+            shift 2
+            ;;
+        -)
+            stdin_requested=1
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+cat >"$REDCAP_FAKE_CODEX_STDIN"
+
+if [[ -z "$stdin_requested" ]]; then
+    printf '%s\n' 'codex prompt was not requested via stdin' >&2
+    exit 2
+fi
+
+cat >"$message_file" <<'OUT'
+```json
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"codex preferred ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/codex"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_FAKE_CODEX_ARGV="$codex_argv" \
+            REDCAP_FAKE_CODEX_STDIN="$codex_stdin" \
+            REDCAP_STOP_REVIEW_HOST="codex" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "codex preferred host case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: codex"
+    assert_string_contains "$(read_file_text "$review_log")" "codex preferred ok"
+    assert_exists "$codex_argv"
+    assert_exists "$codex_stdin"
+    assert_not_exists "$gemini_marker"
+    assert_not_exists "$copilot_marker"
 }
 
 run_on_stop_review_records_unavailable_rate_limit_case() {
@@ -7604,6 +7714,7 @@ run_all_cases() {
     run_on_stop_review_falls_back_after_unparseable_success_output_case
     run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case
     run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
+    run_on_stop_review_prefers_codex_for_codex_host_case
     run_on_stop_review_records_unavailable_rate_limit_case
     run_on_stop_review_rejects_invalid_track_structure_case
     run_on_stop_review_skips_prompt_only_reviewer_when_repo_inspection_required_case
@@ -7861,6 +7972,9 @@ case "$COMMAND" in
         ;;
     on-stop-review-falls-back-to-codex-after-unavailable-reviewers)
         run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
+        ;;
+    on-stop-review-prefers-codex-for-codex-host)
+        run_on_stop_review_prefers_codex_for_codex_host_case
         ;;
     on-stop-review-records-unavailable-rate-limit)
         run_on_stop_review_records_unavailable_rate_limit_case

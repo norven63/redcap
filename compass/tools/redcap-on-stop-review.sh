@@ -33,7 +33,7 @@ REVIEW_HOST="${REDCAP_STOP_REVIEW_HOST:-claude}"
 if [[ -n "${REDCAP_STOP_REVIEW_AGENT_ORDER:-}" ]]; then
     REVIEW_AGENT_ORDER="$REDCAP_STOP_REVIEW_AGENT_ORDER"
 elif [[ "$REVIEW_HOST" == "codex" ]]; then
-    REVIEW_AGENT_ORDER="gemini,copilot,claude,kimi,codex"
+    REVIEW_AGENT_ORDER="codex,gemini,claude,kimi,copilot"
 else
     REVIEW_AGENT_ORDER="codex,gemini,copilot,claude,kimi"
 fi
@@ -507,6 +507,7 @@ run_review_with_agent() {
                 run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" gemini -p "__REDCAP_REVIEW_PROMPT__" --sandbox false --yolo || status=$?
             ;;
         copilot)
+            REDCAP_SUPPRESS_TASK_COMPLETE_GUARD=1 \
             REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE="$REVIEW_PROMPT_FILE" \
                 run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" copilot -p "__REDCAP_REVIEW_PROMPT__" --allow-all --autopilot || status=$?
             ;;
