@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 30,
-    "size_bytes": 539880,
-    "lines": 9469,
-    "chars": 345524,
+    "size_bytes": 539540,
+    "lines": 9466,
+    "chars": 345798,
     "rough_token_pressure": {
-      "low": 86381,
-      "high": 172762
+      "low": 86449,
+      "high": 172899
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 15,
-        "size_bytes": 285693,
-        "lines": 3342,
-        "chars": 179251,
+        "size_bytes": 285353,
+        "lines": 3339,
+        "chars": 179525,
         "rough_token_pressure": {
-          "low": 44812,
-          "high": 89625
+          "low": 44881,
+          "high": 89762
         }
       },
       "traces": {
@@ -83,8 +83,8 @@
     "largest_entries": [
       {
         "path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
-        "chars": 44773,
-        "lines": 420,
+        "chars": 45047,
+        "lines": 417,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
@@ -590,25 +590,25 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 68425,
-      "lines": 420,
-      "chars": 44773,
-      "summary": "当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验。 / 详情：最新补丁 `389a3c5 fix(治理): 修复 stop-review 证据审计缺口` 已提交；其后真实 `session-end` 再次回放已通过独立评审，当前 `.dev-task.…",
+      "size_bytes": 68085,
+      "lines": 417,
+      "chars": 45047,
+      "summary": "当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验；本轮 follow-up 又补齐了 formal Prism 归档、`prism/… / 详情：新的 formal Prism 报告 [20260421-redteam-001.md](/Users/n…",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验。",
-          "详情：最新补丁 `389a3c5 fix(治理): 修复 stop-review 证据审计缺口` 已提交；其后真实 `session-end` 再次回放已通过独立评审，当前 `.dev-task.md` 对应 confirmed hash（`849cfdbc...`）的 `pending closure` 已清，`redcap-current-status.sh` 回到 `status: clear`，工作区保持干净。"
+          "当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验；本轮 follow-up 又补齐了 formal Prism 归档、`prism/…",
+          "详情：新的 formal Prism 报告 [20260421-redteam-001.md](/Users/norven/.claude/skills/redcap/prism/reports/20260421-redteam-001.md) 已 archive-check 通过并写入 `prism/reports/index.yaml`；`prism-runs-lifecycle.sh` 已把 `prism/runs` 收敛到 `formal-run=1 / named-local-evidence=17 /…"
         ],
         "previous_step": [
           "上一步完成的是：已完成 4 个同批治理项（`pending-closure/current-status/task-report/closure-ledger` 一致性、`lessons / CONTRIBUTING` 去重与热点分层、`prism/runs` 证据链与清理策略分离、formal Prism 归档口径诚实化），随后补齐 `execution-guarantees` 对 `revival-current-status` 的诚实降级、修复 stop-review 大 diff 截断评审缺口、跑通 fu…"
         ],
         "next_step": [
-          "下一步计划做的是：当前任务内已经没有必须继续执行的 repo-owned 收尾动作。若继续推进，应另起后续线处理新的 formal Prism quorum、`loom/test-reports/pending-validations.md` 中的历史完整用户项目 E2E 队列，以及经用户批准后的 `prism/runs` 物理清理。"
+          "下一步计划做的是：用本版 task report 与新的 formal review 证据再跑一次 `session-end` reconcile，把当前 confirmed hash 的 `pending closure` 真正清到 `status: clear`；之后若继续推进，主要剩下历史完整用户项目 E2E 队列的实际执行 tranche。"
         ],
         "position": [
           "整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof / E2E → live runtime 严格收尾。",
-          "当前所在位置：RedCap 的 repo-owned backlog 已保持 `done=19 / in_progress=0 / pending=0`，当前 confirmed hash 的收尾账面也已经 clean；需要拆开保留的只剩三类独立后续线：历史 formal Prism 报告虽已有 2 份，但当前任务新增的 formal quorum 仍是 0；`prism/runs` 的本地运行证据不等于已归档成功；`loom/test-reports/pending-validations.md` 中仍有历史完…"
+          "当前所在位置：RedCap 的 repo-owned backlog 已保持 `done=19 / in_progress=0 / pending=0`；formal Prism follow-up 已归档，`prism/runs` 已从 437 个目录收敛到 19 个 preserve-by-default 目录，`pending-validations` 也已经不再缺 carrier。当前唯一仍待真正清零的，是这批历史完整用户项目 E2E 条目的**执行本身**，而不是治理链条或载体缺失。"
         ]
       }
     },

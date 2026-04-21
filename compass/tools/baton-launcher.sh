@@ -3,9 +3,9 @@
 #
 # 用法:
 #   baton-launcher.sh \
-#     --cli <claude|gemini|kimi|copilot> \
+#     --cli <claude|gemini|kimi|copilot|codex> \
 #     --prompt-file <path>       # prompt 内容文件（避免 ARG_MAX 限制）
-#     --output-file <path>       # CLI 原始输出写入此文件
+#     --output-file <path>       # 供 baton-collect 消费的最终消息写入此文件
 #     [--model <model_id>]       # 可选，覆盖默认模型
 #     [--session-id <id>]        # 可选，首次调用时指定 session UUID（claude/kimi）
 #     [--resume <id>]            # 可选，续接已有 session（优先于 --session-id）
@@ -52,7 +52,7 @@ done
 # 参数校验
 # ──────────────────────────────────────────────
 if [[ -z "$CLI" ]]; then
-  echo "[baton-launcher] 错误: --cli 必须指定（claude|gemini|kimi|copilot）" >&2
+  echo "[baton-launcher] 错误: --cli 必须指定（claude|gemini|kimi|copilot|codex）" >&2
   exit 1
 fi
 if [[ -z "$PROMPT_FILE" ]]; then
@@ -192,8 +192,38 @@ case "$CLI" in
     run_with_timeout "${CMD[@]}"
     ;;
 
+  codex)
+    # Codex CLI：程序化消费必须优先读取 --output-last-message，stdout/stderr 只作 transport noise
+    RAW_OUTPUT_FILE="$(mktemp /tmp/baton-codex-raw-XXXXXX.txt)"
+    MESSAGE_FILE="$(mktemp /tmp/baton-codex-message-XXXXXX.txt)"
+    trap 'rm -f "${RAW_OUTPUT_FILE:-}" "${MESSAGE_FILE:-}" "${INJECTED_PROMPT_FILE:-}"' EXIT
+
+    CMD=(codex exec
+      -C "$WORK_DIR"
+      --sandbox read-only
+      --ephemeral
+      --output-last-message "$MESSAGE_FILE"
+      --color never
+      -)
+    if [[ -n "$MODEL" ]]; then
+      CMD+=(--model "$MODEL")
+    fi
+
+    if timeout "$TIMEOUT" "${CMD[@]}" < "$EFFECTIVE_PROMPT_FILE" > "$RAW_OUTPUT_FILE" 2>&1; then
+      EXIT_CODE=0
+    else
+      EXIT_CODE=$?
+    fi
+
+    if [[ -s "$MESSAGE_FILE" ]]; then
+      cp "$MESSAGE_FILE" "$OUTPUT_FILE"
+    else
+      cp "$RAW_OUTPUT_FILE" "$OUTPUT_FILE"
+    fi
+    ;;
+
   *)
-    echo "[baton-launcher] 错误: 不支持的 CLI: $CLI（支持: claude|gemini|kimi|copilot）" >&2
+    echo "[baton-launcher] 错误: 不支持的 CLI: $CLI（支持: claude|gemini|kimi|copilot|codex）" >&2
     exit 1
     ;;
 esac

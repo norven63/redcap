@@ -10,21 +10,21 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验。
-- 详情：最新补丁 `389a3c5 fix(治理): 修复 stop-review 证据审计缺口` 已提交；其后真实 `session-end` 再次回放已通过独立评审，当前 `.dev-task.md` 对应 confirmed hash（`849cfdbc...`）的 `pending closure` 已清，`redcap-current-status.sh` 回到 `status: clear`，工作区保持干净。
+- 当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验；本轮 follow-up 又补齐了 formal Prism 归档、`prism/runs` 生命周期分类与 benchmark carrier。
+- 详情：新的 formal Prism 报告 [20260421-redteam-001.md](/Users/norven/.claude/skills/redcap/prism/reports/20260421-redteam-001.md) 已 archive-check 通过并写入 `prism/reports/index.yaml`；`prism-runs-lifecycle.sh` 已把 `prism/runs` 收敛到 `formal-run=1 / named-local-evidence=17 / infra-locks=1`，并清掉 418 个 `acceptance-fixture`；`loom/tools/redcap-e2e-benchmark-carrier.sh` 与 `loom/fixtures/md-table-tool-benchmark/` 已让历史完整用户项目 E2E 队列有了 repo-owned 可执行载体。
 
 ### 0.2 上一步完成的是
 
-- 上一步完成的是：已完成 4 个同批治理项（`pending-closure/current-status/task-report/closure-ledger` 一致性、`lessons / CONTRIBUTING` 去重与热点分层、`prism/runs` 证据链与清理策略分离、formal Prism 归档口径诚实化），随后补齐 `execution-guarantees` 对 `revival-current-status` 的诚实降级、修复 stop-review 大 diff 截断评审缺口、跑通 full suite，并在真实 runtime 上把 closeout 链完整回放到清账完成。
+- 上一步完成的是：已完成 4 个同批治理项（`pending-closure/current-status/task-report/closure-ledger` 一致性、`lessons / CONTRIBUTING` 去重与热点分层、`prism/runs` 证据链与清理策略分离、formal Prism 归档口径诚实化），随后补齐 `execution-guarantees` 对 `revival-current-status` 的诚实降级、修复 stop-review 大 diff 截断评审缺口、跑通 full suite，并在真实 runtime 上把 closeout 链完整回放到清账完成；这轮 follow-up 则把“formal quorum=0 / acceptance 残留堆积 / pending-validations 无载体”三条独立后续线压成了 repo-owned 补丁。
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：当前任务内已经没有必须继续执行的 repo-owned 收尾动作。若继续推进，应另起后续线处理新的 formal Prism quorum、`loom/test-reports/pending-validations.md` 中的历史完整用户项目 E2E 队列，以及经用户批准后的 `prism/runs` 物理清理。
+- 下一步计划做的是：用本版 task report 与新的 formal review 证据再跑一次 `session-end` reconcile，把当前 confirmed hash 的 `pending closure` 真正清到 `status: clear`；之后若继续推进，主要剩下历史完整用户项目 E2E 队列的实际执行 tranche。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof / E2E → live runtime 严格收尾。
-- 当前所在位置：RedCap 的 repo-owned backlog 已保持 `done=19 / in_progress=0 / pending=0`，当前 confirmed hash 的收尾账面也已经 clean；需要拆开保留的只剩三类独立后续线：历史 formal Prism 报告虽已有 2 份，但当前任务新增的 formal quorum 仍是 0；`prism/runs` 的本地运行证据不等于已归档成功；`loom/test-reports/pending-validations.md` 中仍有历史完整用户项目 E2E 队列待处理。
+- 当前所在位置：RedCap 的 repo-owned backlog 已保持 `done=19 / in_progress=0 / pending=0`；formal Prism follow-up 已归档，`prism/runs` 已从 437 个目录收敛到 19 个 preserve-by-default 目录，`pending-validations` 也已经不再缺 carrier。当前唯一仍待真正清零的，是这批历史完整用户项目 E2E 条目的**执行本身**，而不是治理链条或载体缺失。
 
 ---
 
@@ -341,18 +341,17 @@ A3 由 `references/review-tracks.json`、stop-review prompt 与 review-tracks ga
 
 ### 5.2 棱镜 / Agent 使用记录
 
-- historical formal Prism 报告：2 份（均已登记到 `prism/reports/index.yaml`，但 `archived=false`，属于历史 formal 记录，不代表当前任务已形成新 quorum）。
-- 当前任务新增的 formal Prism quorum：0（本轮外部 CLI 探测 / 只读审查没有按 `prism/runs` + `prism/reports/` 协议完整归档，不能冒充 formal Prism）。
-- Gemini CLI：本次累计至少 3 次调用；旧一次终局收口阶段在 headless 路径上弹浏览器认证页，新一次健康微探测虽返回 `PASS` 文本，但伴随 hook 噪声并 timeout，因此当前只能算“看到可用迹象”，不能算稳定 reviewer，更不能算 formal Prism 成员。
-- Kimi CLI：本次累计至少 4 次调用，其中健康微探测可稳定返回 `PASS`，但窄范围 quiet 只读 review 仍超时；因此当前只能算“headless 可用”，不能算新的 formal Prism verdict。
-- Copilot CLI：新增一次健康微探测返回有效 `PASS`；但目前只验证了最小 headless 路径，不足以单凭这次微探测就把它升级为本轮 formal Prism 新席位。
-- Claude CLI：新增一次健康微探测在 hook 层取消，没有形成稳定 reviewer verdict。
-- Codex 子 Agent：0 次。用户本轮明确要求不要再开启，Cap 全程遵守。
+- historical formal Prism 报告索引：3 份，其中 `archived=true` / replay-auditable baseline 为 1 份（本轮新增），legacy / non-auditable 历史索引为 2 份。
+- 当前任务新增的 formal Prism quorum：1（运行 ID `20260421-redteam-001`，4 席 / 4 家族，`3 responded/followed_up + 1 absent`，verdict=`weak-consensus`，已通过 archive-check）。
+- Gemini CLI：本轮 formal Prism 作为 historian 形成有效 verdict，原始输出伴随 SessionEnd hook 噪声，但高容错提取后 schema 有效。
+- Kimi CLI：本轮 formal Prism 作为 challenger 返回 verdict；Collect 阶段通过一次 resume 格式追问拿到合法 JSON，并以 `followed_up` 记账。
+- Copilot CLI：本轮作为 reviewer 发起 shell run，但 raw 里只有阅读轨迹和 stats，没有 schema verdict；由于本轮没有保留下可复用的 Copilot session handle，最终按 backend limitation 记为 ABSENT。
+- Codex CLI：本轮 formal Prism 作为 explorer 返回有效 verdict，同时 `baton-launcher.sh` 已补齐 Codex headless 接入。
+- Codex 子 Agent：0 次。Cap 本轮没有开启任何 Codex `spawn_agent` 子进程。
 
 ### 5.3 人工验证项（Cap 无法自动化验证的）
 
-- [ ] 若后续要做当前任务的新 formal Prism quorum，需要把 Gemini/Kimi 这类外部审查按 prism run / report 协议归档，而不是只记录为本轮只读审查结论。
-- [ ] 若后续要物理清理 `prism/runs` 或其它 ignored runtime 残留，需要用户显式批准，并先确定哪些运行证据必须保留；本轮只做“证据链与清理策略分离”，不做 destructive cleanup。
+- [ ] 历史完整用户项目 E2E 队列（V-2 / V-3 / V-4 / V-6 / V-7 / V-8 / V-9）虽然已经有 repo-owned benchmark carrier，但仍需要单独起完整执行 tranche 去真正消费。
 
 ---
 
@@ -362,9 +361,8 @@ A3 由 `references/review-tracks.json`、stop-review prompt 与 review-tracks ga
 
 | 问题 | 原因 | 建议优先级 |
 |------|------|----------|
-| 当前任务的新 formal Prism quorum 尚未归档 | 历史 formal 报告已有 2 份，但本轮新增外部审查未按 `prism/runs` + `prism/reports/` 完整归档；同时当前健康微探测还不足以证明存在 4 席、3 家族、可稳定收敛的诚实 roster，因此当前任务的新 quorum 仍是 0 | P1 |
-| `prism/runs` 仍有本地运行残留 | 这是 gitignored 运行证据目录，当前已与 formal 报告归档口径拆开；未经用户明确批准仍不做物理删除 | P2 |
-| 历史完整用户项目 E2E 队列仍有 7 项待验证/部分验证 | 这些条目位于 `loom/test-reports/pending-validations.md`，属于历史 full user-project E2E 队列，不计入当前 framework-upgrade backlog 完成度，也不应在本轮被伪装成已完成 | P1 |
+| 历史完整用户项目 E2E 队列仍有 7 项待验证/部分验证 | 这些条目位于 `loom/test-reports/pending-validations.md`，现在已经有 repo-owned benchmark carrier，可执行 blocker 已解除；但条目本身仍需要单独的完整用户项目 E2E tranche 去真实消费 | P1 |
+| 历史 formal Prism 报告仍有 2 份是 legacy / non-auditable | 旧报告仍保留在索引里供考古，但它们没有 replay-auditable 的 run-scoped 证据链；当前已通过 `archived=true` 口径诚实化，而不是回填伪证据 | P2 |
 
 ### 6.2 触发的新问题
 
@@ -373,11 +371,10 @@ A3 由 `references/review-tracks.json`、stop-review prompt 与 review-tracks ga
 
 ### 6.3 推荐的下一步行动
 
-1. 当前 confirmed hash 的真实 closeout 链已经走完，后续若再开 follow-up，默认从 `status: clear` 起步，不得把旧 pending-aware 口径继续外推到当前 head。
-2. 若需要 formal Prism quorum，把未来外部审查按 `prism/runs` + `prism/reports/` 协议完整归档；当前单路 CLI 探测/审查记录不能越权升级为 quorum。
-3. 若要继续消化 `loom/test-reports/pending-validations.md` 的历史完整用户项目 E2E 队列，应单独起任务，把验证对象、环境、完成标准写清楚，再逐项消费。
-4. 后续 docs 物理归档/瘦身应在 catalog / budget / retention 已稳定的基础上另起 tranche，避免直接删除 closure evidence。
-5. 若后续要物理清理 `prism/runs` 或其它 ignored runtime 残留，必须先得到用户显式批准，并保留必要运行证据索引；当前默认只做 no-bulk-read 审计。
+1. 先用本版 task report 与 formal Prism 归档结果跑完当前 confirmed hash 的 `session-end` reconcile，再把 closeout 口径收回 `status: clear`。
+2. 若要继续消化 `loom/test-reports/pending-validations.md` 的 7 项历史完整用户项目 E2E 队列，优先使用 `bash loom/tools/redcap-e2e-benchmark-carrier.sh init <dest-dir>` 创建固定载体，再逐项消费。
+3. 后续若新增 formal Prism 运行，继续按 `run_id + session_registry + archive-check` 这条真相链归档，不再把单路健康探测或只读审查口头升级成 quorum。
+4. 后续若要进一步瘦身 `prism/runs`，只能在 `prism-runs-lifecycle.sh` 的分类基础上做新的 retention 决策，不得把 named/manual 或 formal run 与 acceptance 夹具混删。
 
 ---
 

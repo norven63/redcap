@@ -109,9 +109,35 @@ Cap / Dispatcher 是 session_registry 的唯一写入方：Dispatch 阶段必须
 
 - `prism/runs/<run_id>/...` 是 **run-scoped 本地运行证据**：它服务于当前 run 的 collect / synthesize / audit 过程，默认 gitignored。
 - `prism/reports/*.md` 与 `prism/reports/index.yaml` 是 **repo-tracked 归档证据**：只有报告写成、索引登记、archive-check 通过后，才算 formal Prism 被正式归档。
+- `prism/reports/index.yaml` 中 `archived: true` 的条目才可当作 **replay-auditable formal baseline**；`archived: false` 只代表索引里存在历史记录，不能拿来冒充可重放的 formal 基线。
 - `prism/runs` 的目录数量、残留数量，**不等于** formal Prism 成功次数，也不等于当前任务已经用过 formal quorum。
 - 物理清理 `prism/runs` 是独立动作，不等于“报告已归档”；清理前必须先明确哪些运行证据仍需保留，并获得用户显式批准。
 - 默认治理目标是：**禁止 bulk-read `prism/runs`，优先保持 run registry / report archive 口径诚实**；不是为了表面干净去删除本地证据。
+
+### `prism/runs` 生命周期分类（机器可判定）
+
+`prism/runs` 的物理清理不能靠目录名猜测，必须先通过 `prism/tools/prism-runs-lifecycle.sh` 做分类：
+
+| lifecycle class | 含义 | 默认保留策略 | 是否允许纳入自动清理安全集 |
+|---|---|---|---|
+| `acceptance-fixture` | acceptance / regression 过程中生成的本地夹具运行证据（如 `acceptance-prism-*`） | `ephemeral-local` | ✅ 允许；但仅限非 active、未被报告绑定的 acceptance 目录 |
+| `formal-run` | 以 `YYYYMMDD-*` 命名、用于 formal Prism 的 run-scoped 证据 | `preserve` | ❌ 默认不自动删 |
+| `named-local-evidence` | `debug-run` / `council-*` / `review-*` / `safe-default` 这类命名运行证据 | `preserve` | ❌ 默认不自动删 |
+| `infra-locks` | `.locks` 等内部锁目录 | `preserve` | ❌ 默认不自动删 |
+
+执行入口：
+
+```bash
+bash prism/tools/prism-runs-lifecycle.sh summary
+bash prism/tools/prism-runs-lifecycle.sh check
+bash prism/tools/prism-runs-lifecycle.sh prune-acceptance        # dry-run
+bash prism/tools/prism-runs-lifecycle.sh prune-acceptance --apply
+```
+
+规则：
+- `prune-acceptance --apply` 只允许删除 `cleanup_eligible=true` 的 `acceptance-fixture`
+- 命名运行、formal run、本轮 active run 与 `.locks` 必须 preserve-by-default
+- 若当前任务只批准“降 token / 清 acceptance 残留”，不得顺手扩展到命名 run 或 formal run
 
 若进入 council Round 2+，同一 role 只能复用原条目继续推进：
 - 只有显式标记为后续轮次（`round > 1`）时，才允许 `responded -> followed_up`

@@ -48,6 +48,7 @@ run_check "token-risk-audit" bash "$SCRIPT_DIR/redcap-token-risk-audit.sh" || ov
 run_check "contributing-ia" bash "$SCRIPT_DIR/redcap-contributing-ia-check.sh" || overall=1
 run_check "review-tracks" bash "$SCRIPT_DIR/redcap-review-tracks-check.sh" || overall=1
 run_check "prism-evidence" bash "$REDCAP_ROOT/prism/tools/prism-evidence-check.sh" || overall=1
+run_check "prism-runs-lifecycle" bash "$REDCAP_ROOT/prism/tools/prism-runs-lifecycle.sh" check || overall=1
 run_check "hook-contract" bash "$SCRIPT_DIR/redcap-hook-contract-check.sh" || overall=1
 run_check "runtime-helper" bash "$SCRIPT_DIR/redcap-runtime-helper-check.sh" || overall=1
 run_check "cli-console-mirror" bash "$SCRIPT_DIR/redcap-cli-console-mirror-check.sh" || overall=1

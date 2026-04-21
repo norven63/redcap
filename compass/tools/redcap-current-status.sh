@@ -231,14 +231,32 @@ def prism_summary() -> list[str]:
     consensus_reports = len(re.findall(r'^\s+verdict:\s*"?consensus"?\s*$', text, flags=re.MULTILINE))
     weak_reports = len(re.findall(r'^\s+verdict:\s*"?weak-consensus"?\s*$', text, flags=re.MULTILINE))
     blocked_reports = len(re.findall(r'^\s+verdict:\s*"?(deadlock|escalate)"?\s*$', text, flags=re.MULTILINE))
-    active_runs = len([path for path in (repo / "prism/runs").glob("*") if path.is_dir()]) if (repo / "prism/runs").exists() else 0
+    runs_root = repo / "prism/runs"
+    active_runs = len([path for path in runs_root.glob("*") if path.is_dir()]) if runs_root.exists() else 0
+    acceptance_runs = 0
+    formal_runs = 0
+    named_runs = 0
+    if runs_root.exists():
+        for path in runs_root.iterdir():
+            if not path.is_dir():
+                continue
+            name = path.name
+            if name == ".locks":
+                continue
+            if name.startswith("acceptance-prism-"):
+                acceptance_runs += 1
+            elif re.match(r"^20\d{6}-", name):
+                formal_runs += 1
+            else:
+                named_runs += 1
     lines = [
-        f"formal Prism 历史报告：{formal_reports} 份（live-index={formal_reports - archived_reports}，archived={archived_reports}）",
+        f"formal Prism 报告索引：{formal_reports} 份（replay-auditable/archived={archived_reports}，legacy/non-auditable={formal_reports - archived_reports}）",
         f"历史 verdict：consensus={consensus_reports}，weak-consensus={weak_reports}，deadlock/escalate={blocked_reports}",
         "未写入 Prism run registry / reports 的单路审查只能算轻量独立评审，不能冒充 formal Prism quorum",
         "当前任务新增的 formal quorum 不能从报告总数或 prism/runs 目录数量反推，必须看本次 run/report 是否真实归档",
     ]
     if active_runs:
+        lines.append(f"prism/runs 分类：acceptance-fixture={acceptance_runs}，formal-run={formal_runs}，named-local-evidence={named_runs}")
         lines.append(f"本地 prism/runs 目录含 {active_runs} 个运行夹具/残留；这是运行证据，不等于当前任务已成功使用 Prism")
     return lines
 

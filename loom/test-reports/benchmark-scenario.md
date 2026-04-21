@@ -148,6 +148,22 @@ switches:
 
 ## 4. 执行指引
 
+### 基准载体初始化
+
+在执行完整用户项目 E2E 前，先准备 repo-owned benchmark carrier：
+
+```bash
+bash loom/tools/redcap-e2e-benchmark-carrier.sh init /tmp/md-table-tool-benchmark
+```
+
+生成目录中会包含：
+
+- `REQUEST.md`：用于启动 E2E 的固定请求
+- `samples/input.md`：固定样例输入
+- `.redcap-e2e-benchmark-carrier.json`：benchmark carrier 元数据
+
+这一步的作用是提供**真实可执行的用户项目上下文载体**；它不等于“pending-validations 已消费”，真正消费仍要完成完整 E2E 与 postcheck。
+
 ### 启动命令
 
 Dispatcher 在 E2E 模式下启动时，在初始 prompt 中注入：

@@ -6,8 +6,8 @@
 ## 当前队列边界
 
 - 这 7 项活跃条目都属于**完整用户项目 E2E 队列**，不是 RedCap self repo 内部治理脚本的 hook-level replay。
-- 当前工作区里只有基准场景说明（`benchmark-scenario.md`），没有现成的长期保活用户项目 fixture，因此这些条目**不能在没有真实用户项目上下文的情况下被伪装成“已消费”**。
-- 换句话说：它们是明确 backlog，不是遗忘；但要真正清掉，仍需要单独起完整用户项目 E2E tranche。
+- 当前工作区已经补齐 repo-owned benchmark carrier：`loom/tools/redcap-e2e-benchmark-carrier.sh` + `loom/fixtures/md-table-tool-benchmark/`。后续执行完整用户项目 E2E 时，应优先用它创建固定载体，而不是临时寻找外部用户项目。
+- 这不等于这些条目已经被消费。换句话说：它们仍是明确 backlog，不是遗忘；只是“没有可执行载体”的 blocker 已解除，接下来需要单独起完整用户项目 E2E tranche。
 
 ## 登记格式
 

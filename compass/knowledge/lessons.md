@@ -960,3 +960,30 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-20
+
+### L-98: 历史 formal Prism 报告的“索引存在”不等于“可重放审计”
+- **场景**：formal Prism follow-up redteam 中，Explorer 指出 `prism/reports/index.yaml` 已登记两份历史报告，但它们既没有可重放的 `run_id + session_registry + archive-check` 证据链，也都处于 `archived=false`。如果继续把“index 里有两份报告”说成“已有 formal baseline”，就会误导后续 quorum 判断和运行残留清理决策
+- **根因**：把“历史留档”与“可重放审计”混成一个概念。对于 formal Prism，真正可复核的权威并不是报告文件本身，而是报告与 run-scoped registry 的绑定关系是否仍能被脚本验证
+- **经验规则**：① `prism/reports/index.yaml` 中只有 `archived=true` 的条目才能对外称为 replay-auditable formal baseline ② `archived=false` 的历史记录只能算 legacy / non-auditable reference，不能拿来冒充当前 formal 成熟度 ③ `redcap-current-status.sh`、task report 和汇报口径必须显式区分这两类数量
+- **来源**：2026-04-21，formal Prism follow-up（run `20260421-redteam-001`）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-21
+
+### L-99: `prism/runs` 物理清理前必须先做 machine-readable 生命周期分类
+- **场景**：formal Prism follow-up redteam 中，Historian / Challenger / Explorer 都指出 `prism/runs/` 下同时混有 418 个 acceptance 夹具、当前 formal run、以及 `debug-run` / `council-*` / `review-*` 这类命名本地证据。如果没有 machine-readable lifecycle，哪怕拿到“可以清理”的授权，也无法安全判断哪些能删、哪些必须保留
+- **根因**：此前只有“未经批准不要删”的负面约束，没有“批准后按什么规则删”的正面判定面。结果就是既不能安全清理，也不能诚实说出 token 风险到底来自哪一类残留
+- **经验规则**：① `prism/runs` 必须先按 `acceptance-fixture / formal-run / named-local-evidence / infra-locks` 分类 ② 自动清理安全集只能包含非 active、未被报告绑定的 `acceptance-fixture` ③ formal run、named/manual run 与 `.locks` 默认 preserve，不得被“顺手清理”波及
+- **来源**：2026-04-21，formal Prism follow-up（run `20260421-redteam-001`）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-21
+
+### L-100: 完整用户项目 E2E 队列不能只有 benchmark 说明，必须有 repo-owned benchmark carrier
+- **场景**：`pending-validations.md` 里 7 项完整用户项目 E2E 队列长期挂起，根因不是验证点没有定义，而是仓库里只有 `benchmark-scenario.md` 这份纸面说明，没有一个可以真正初始化出来的 benchmark carrier。结果每次想清这些项，都还要先临时寻找“真实用户项目上下文”
+- **根因**：把“测试场景定义”误当成“测试载体已经存在”。前者只告诉你测什么，后者才解决“在哪个可重放的项目上下文里执行”
+- **经验规则**：① benchmark-scenario 一旦成为长期待验证队列的唯一执行依据，就必须同步提供 repo-owned benchmark carrier 生成器 ② carrier 解决的是“可执行载体缺失”，不等于验证项已消费；真正消费仍要走 `e2e-session.yaml`、`latest-e2e-report.md`、`pending-validations.md` 与 postcheck ③ 后续完整用户项目 E2E 应优先使用固定 carrier，而不是临时抓一个外部项目来碰运气
+- **来源**：2026-04-21，formal Prism follow-up（run `20260421-redteam-001`）
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-21

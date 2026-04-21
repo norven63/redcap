@@ -219,7 +219,7 @@ user_instruction: "全量回归"          # 用户原话，防止漂移
 4. **消费 pending-validations**：验证通过的条目标记 ✅ 并移入归档区
 5. **一句话结论**：在 commit message 正文中记录 E2E 范围和核心结论（如 "E2E(trpg-web): 5 步正向流转 100%，回退路径 0%"）
 
-> E2E 执行使用 `loom/test-reports/benchmark-scenario.md` 定义的固定场景，保证跨版本可比性。
+> E2E 执行使用 `loom/test-reports/benchmark-scenario.md` 定义的固定场景，保证跨版本可比性；若需要 repo-owned 基准用户项目载体，先运行 `bash loom/tools/redcap-e2e-benchmark-carrier.sh init <dest-dir>`，不得再把“没有真实用户项目”当作长期挂起 V-2 / V-3 / V-4 / V-6 / V-7 / V-8 / V-9 的默认借口。
 
 ### E2E 后置处理流程
 

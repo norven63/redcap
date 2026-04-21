@@ -1,4 +1,33 @@
 reports:
+  - id: "20260421-redteam-001"
+    mode: redteam
+    date: "2026-04-21"
+    topic: "formal Prism follow-up for runs lifecycle, benchmark carrier, and closeout honesty"
+    agents: ["kimi-for-coding", "gpt-5.4", "claude-opus-4.6", "gemini-3-flash"]
+    roles: ["challenger", "explorer", "reviewer", "historian"]
+    verdict: "weak-consensus"
+    consensus_actions:
+      - "Add machine-readable lifecycle classification for prism/runs and limit auto-prune to acceptance fixtures"
+      - "Promote the md-table-tool benchmark carrier from paper spec to a repo-owned executable scaffold"
+      - "Treat archived=true as the only replay-auditable formal Prism baseline; legacy indexed reports stay non-auditable"
+    open_questions:
+      - "Formal runs and named/manual local runs still default to preserve and need separate retention decisions"
+      - "The 7 pending-validations items still need a dedicated full user-project E2E tranche to be consumed"
+      - "Synthesis Audit still lacks a machine-verifiable gate comparable to quorum"
+    lessons_updated: true
+    files_affected:
+      - "prism/tools/prism-runs-lifecycle.sh"
+      - "prism/tools/prism-evidence-check.sh"
+      - "prism/protocol.md"
+      - "compass/tools/redcap-current-status.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/baton-launcher.sh"
+      - "loom/tools/redcap-e2e-benchmark-carrier.sh"
+      - "loom/fixtures/md-table-tool-benchmark/"
+      - "loom/test-reports/benchmark-scenario.md"
+      - "loom/test-reports/pending-validations.md"
+      - "compass/knowledge/lessons.md"
+    archived: true
   - id: "20260411-redteam-001"
     mode: redteam
     date: "2026-04-11"
