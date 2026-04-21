@@ -10,7 +10,7 @@
 
 ## 0.3 下一步计划做的是
 
-- 下一步计划做的是：运行 postcheck / spec-check / diagnose 最终收口并提交版本。
+- 下一步计划做的是：无当前任务级剩余 repo-owned blocker；完成 `e2e-session.yaml` 清理后即可视为本轮 tranche 收口。
 
 ## 0.4 整体计划脉络图是
 
