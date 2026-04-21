@@ -12,6 +12,7 @@
 ## 宿主与 Hook
 
 - `compass/knowledge/hooks-claude-code.md`：Claude Code Hook 行为与部署记录。
+- `compass/knowledge/hooks-codex-cli.md`：Codex CLI / Codex.app 的入口导入、非交互 runner 与 host-limited 边界。
 - `compass/knowledge/hooks-copilot-cli.md`：Copilot CLI Hook 行为与限制。
 - `compass/knowledge/hooks-gemini-cli.md`：Gemini CLI Hook 行为与验证记录。
 - `compass/knowledge/hooks-kimi-cli.md`：Kimi CLI Hook 行为与验证记录。

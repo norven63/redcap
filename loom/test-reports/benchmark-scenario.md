@@ -42,7 +42,7 @@
 
 ## 2. 测试开关配置
 
-E2E 启动时，Dispatcher 读取以下配置决定要测试的路径。`mode: full` 时忽略个别开关，全部启用。
+E2E 启动时，Dispatcher 读取以下配置决定要测试的路径。`mode: full` 时忽略个别开关，全部启用。推荐先用 `bash loom/tools/redcap-e2e-session.sh start ...` 写入本次 `e2e-session.yaml`，不要再手工拼写开关列表。
 
 ### 安全隔离保障
 
@@ -163,6 +163,20 @@ bash loom/tools/redcap-e2e-benchmark-carrier.sh init /tmp/md-table-tool-benchmar
 - `.redcap-e2e-benchmark-carrier.json`：benchmark carrier 元数据
 
 这一步的作用是提供**真实可执行的用户项目上下文载体**；它不等于“pending-validations 已消费”，真正消费仍要完成完整 E2E 与 postcheck。
+
+随后立即锁定本次 E2E session，例如：
+
+```bash
+bash loom/tools/redcap-e2e-session.sh start \
+  --preset full \
+  --instruction "执行 md-table-tool benchmark 的完整用户项目 E2E"
+```
+
+执行过程中每完成一个开关，立刻追加：
+
+```bash
+bash loom/tools/redcap-e2e-session.sh mark happy_path
+```
 
 ### 启动命令
 

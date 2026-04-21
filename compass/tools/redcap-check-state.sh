@@ -54,7 +54,7 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 # 用 Python 执行完整校验
-python3 << 'PYEOF' "$STATE_FILE" "$DEV_MANUAL"
+python3 - "$STATE_FILE" "$DEV_MANUAL" << 'PYEOF'
 import sys, os, re
 from pathlib import Path
 

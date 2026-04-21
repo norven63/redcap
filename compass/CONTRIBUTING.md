@@ -196,6 +196,14 @@ user_instruction: "全量回归"          # 用户原话，防止漂移
 
 每个开关对应的路径执行完毕后，**立即**将该开关追加到 `switches_completed`。此文件是防止"目的漂移"（L-21）和"部分执行当全量"（L-25）的物理屏障。
 
+推荐直接使用 repo-owned helper 维护它，而不是手工改 YAML：
+
+```bash
+bash loom/tools/redcap-e2e-session.sh start --preset full --instruction "执行完整用户项目 E2E"
+bash loom/tools/redcap-e2e-session.sh mark happy_path
+bash loom/tools/redcap-e2e-session.sh status
+```
+
 **触发条件**——以下任一情况满足时，必须在真实项目中做端到端验证：
 
 | 变更类型 | 示例 | 为什么需要 E2E |

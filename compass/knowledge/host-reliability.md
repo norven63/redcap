@@ -31,7 +31,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | Gemini CLI | 每次 prompt | 与 prompt 拼接 | ✅ 实测可用（v0.36.0）；Layer B 已部署 | [hooks-gemini-cli.md](hooks-gemini-cli.md) |
 | Kimi CLI | N/A（无指令文件） | N/A | ✅ 13 种事件（v1.30.0 实测） | [hooks-kimi-cli.md](hooks-kimi-cli.md) |
 | Copilot CLI | N/A（仅 `.github/copilot-instructions.md`） | 自动读取 | ✅ 仓库级 `.github/hooks/*.json`（Layer B 已部署） | [hooks-copilot-cli.md](hooks-copilot-cli.md) |
-| Codex.app / Codex CLI | 会话开始自动读 `AGENTS.md` | 宿主系统上下文 | ⚠️ 入口导入可用，但未见 repo-owned reply veto / SessionEnd Hook | 本文件 §1.1 |
+| Codex.app / Codex CLI | 会话开始自动读 `AGENTS.md` | 宿主系统上下文 | ⚠️ 入口导入可用，但未见 repo-owned reply veto / SessionEnd Hook | [hooks-codex-cli.md](hooks-codex-cli.md) |
 
 ### 1.1 Codex.app 当前画像
 

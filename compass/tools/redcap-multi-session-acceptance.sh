@@ -139,6 +139,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh revival-protocol-check
   bash compass/tools/redcap-multi-session-acceptance.sh diagnose-overview
   bash compass/tools/redcap-multi-session-acceptance.sh state-machine-contract-check
+  bash compass/tools/redcap-multi-session-acceptance.sh on-qa-pass-blocks-inconsistent-state
   bash compass/tools/redcap-multi-session-acceptance.sh spec-registry-validates-repo
   bash compass/tools/redcap-multi-session-acceptance.sh spec-check-propagates-control-gate-failures
   bash compass/tools/redcap-multi-session-acceptance.sh spec-check-rejects-superseded-outside-archive
@@ -6948,6 +6949,55 @@ PY
     assert_string_contains "$stale_output" "documented states missing"
 }
 
+run_on_qa_pass_blocks_inconsistent_state_case() {
+    local fixture output status
+
+    log "case: on-qa-pass-blocks-inconsistent-state"
+
+    fixture="$ACCEPT_ROOT/on-qa-pass-state-fixture"
+    mkdir -p "$fixture/compass/tools" "$fixture/开发手册/.workflow"
+    cp "$REDCAP_ROOT/compass/tools/redcap-check-state.sh" "$fixture/compass/tools/redcap-check-state.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-on-qa-pass.sh" "$fixture/compass/tools/redcap-on-qa-pass.sh"
+    chmod +x "$fixture/compass/tools/redcap-check-state.sh" "$fixture/compass/tools/redcap-on-qa-pass.sh"
+
+    cat >"$fixture/开发手册/.workflow/state.yaml" <<'EOF'
+project: "fixture-project"
+current_state: "QA_PASS"
+iteration: 1
+current_step: 2
+current_step_name: "功能完整"
+total_steps: 2
+current_role:
+  name: "qa"
+  agent: "dispatcher-degraded"
+  session_id: null
+  started_at: "2026-04-21T00:00:00Z"
+  retry_count: 0
+history:
+  - role: "product-manager"
+    agent: "dispatcher-degraded"
+    session_id: null
+    status: "completed"
+    step: 1
+    finished_at: "2026-04-21T00:00:00Z"
+degraded_mode: false
+EOF
+
+    set +e
+    output="$(bash "$fixture/compass/tools/redcap-check-state.sh" "$fixture/开发手册" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -eq 2 ]] || fail "invalid state fixture should return 2 from redcap-check-state.sh"
+    assert_string_contains "$output" "缺少 purpose 字段"
+
+    set +e
+    output="$(bash "$fixture/compass/tools/redcap-on-qa-pass.sh" "$fixture" test fixture "blocked by invalid state" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -eq 3 ]] || fail "on-qa-pass should block on invalid state fixture"
+    assert_string_contains "$output" "state.yaml 一致性校验未通过"
+}
+
 run_spec_registry_validates_repo_case() {
     log "case: spec-registry-validates-repo"
 
@@ -7763,6 +7813,7 @@ run_all_cases() {
     run_revival_protocol_check_case
     run_diagnose_overview_case
     run_state_machine_contract_check_case
+    run_on_qa_pass_blocks_inconsistent_state_case
     run_spec_registry_validates_repo_case
     run_spec_check_propagates_control_gate_failures_case
     run_spec_check_rejects_superseded_outside_archive_case
@@ -8119,6 +8170,9 @@ case "$COMMAND" in
         ;;
     state-machine-contract-check)
         run_state_machine_contract_check_case
+        ;;
+    on-qa-pass-blocks-inconsistent-state)
+        run_on_qa_pass_blocks_inconsistent_state_case
         ;;
     spec-registry-validates-repo)
         run_spec_registry_validates_repo_case

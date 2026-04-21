@@ -15,7 +15,8 @@
 #   commit_message  — Commit 简要描述，≤72 字符（必须）
 #   commit_body     — Commit 正文，说明动机（可选）
 #
-# 动作（按序执行，任一失败不阻塞后续）：
+# 动作（按序执行）：
+#   0. state.yaml 一致性校验；若发现不一致则阻断 on_QA_PASS
 #   1. git add -A && git commit（按 references/commit-standards.md 格式）
 #   2. 检查 lesson 字段 → 提示 Dispatcher 写入经验（§5.8）
 #
@@ -23,6 +24,7 @@
 #   0 — 成功
 #   1 — 参数错误
 #   2 — git 操作失败（已输出警告，不阻塞）
+#   3 — state.yaml 一致性校验未通过，阻断 on_QA_PASS
 # ─────────────────────────────────────────────────────────
 
 set -u
@@ -129,8 +131,19 @@ echo "[on_qa_pass] 开始执行 on_QA_PASS 动作..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DEV_MANUAL="$PROJECT_DIR/开发手册"
 if [[ -d "$DEV_MANUAL" ]]; then
-  bash "$SCRIPT_DIR/redcap-check-state.sh" "$DEV_MANUAL" || \
-    echo "[on_qa_pass] ⚠ state.yaml 存在不一致，建议在 commit 前修正"
+  state_check_output="$(bash "$SCRIPT_DIR/redcap-check-state.sh" "$DEV_MANUAL" 2>&1)"
+  state_check_status=$?
+  if [[ -n "$state_check_output" ]]; then
+    printf '%s\n' "$state_check_output"
+  fi
+  if [[ "$state_check_status" -eq 2 ]]; then
+    echo "[on_qa_pass] ❌ state.yaml 一致性校验未通过，阻断 on_QA_PASS"
+    exit 3
+  fi
+  if [[ "$state_check_status" -ne 0 ]]; then
+    echo "[on_qa_pass] ❌ state.yaml 一致性校验脚本执行失败（exit=$state_check_status），阻断 on_QA_PASS"
+    exit "$state_check_status"
+  fi
 fi
 
 git_commit   || echo "[on_qa_pass] ⚠ git 操作出错，继续执行"
