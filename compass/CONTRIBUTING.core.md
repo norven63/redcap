@@ -20,7 +20,7 @@
 7. **人类可读输出必须说人话**：首次出现内部术语、缩写、阶段名时，要解释对应文件/功能、做了什么、为什么重要。
 8. **宿主面只能镜像 RedCap 真相**：`cli_console.md`、宿主 workboard、plan mirror 不能反向改写 `.dev-task.md`、runtime state 或 task report。
 9. **运行残留不能擅自删除**：`prism/runs`、`compass/.runtime`、`compass/.workflow` 等 ignored 本地证据目录默认 no-bulk-read；物理清理需用户显式批准。
-10. **Codex 子 Agent 不默认开启**：本任务用户已要求不要开启 Codex 子 Agent；需要外部审查时优先使用可控的 Gemini/Kimi CLI 并限时。
+10. **Codex 子 Agent 默认克制但不是禁用**：仅在确实能提效提质时开启，且 RedCap / Prism 主动拉起的 Codex-family 执行进程总数默认不超过 2（当前宿主也计入）；外部审查 / reviewer 选择统一按“模型能力画像 + 本地 CLI 稳定性”排序，不得静态压低 Copilot / Codex。
 11. **飞书不是唯一收尾动作**：飞书通知只是可见信号；真正收尾还要看 review、validator、task report、lessons、backlog、catalog、diagnose 与 pending closure。
 12. **首读/诊断入口当前要求可写临时目录**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 在当前实现下不承诺 read-only sandbox 可跑；只读 reviewer 宿主必须走 wrapper、手工账本查验，或显式接受 degraded/manual-only 边界。
 

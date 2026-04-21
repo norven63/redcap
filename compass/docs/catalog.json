@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 31,
-    "size_bytes": 543380,
-    "lines": 9532,
-    "chars": 348578,
+    "file_count": 32,
+    "size_bytes": 553461,
+    "lines": 9722,
+    "chars": 354999,
     "rough_token_pressure": {
-      "low": 87144,
-      "high": 174289
+      "low": 88749,
+      "high": 177499
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 16,
-        "size_bytes": 289193,
-        "lines": 3405,
-        "chars": 182305,
+        "file_count": 17,
+        "size_bytes": 299274,
+        "lines": 3595,
+        "chars": 188726,
         "rough_token_pressure": {
-          "low": 45576,
-          "high": 91152
+          "low": 47181,
+          "high": 94363
         }
       },
       "traces": {
@@ -478,7 +478,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：框架升级第一阶段收口",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 18126,
       "lines": 251,
@@ -543,29 +543,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：closeout follow-up 硬化收口",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16772,
       "lines": 219,
       "chars": 11140,
       "summary": "当前已完成：closeout 尾链的高风险边界已经补成 repo-owned 硬约束，最后一轮独立 code review、redteam 和 ultimate full suite 都已收口。 / 详情：`compass/tools/redcap-interop-governance.sh`、`redcap-task-report-check.sh`、`redcap-task-report-register.sh`、`redcap-layerB-task-complete-guard.sh`、`redcap-layerB-session-end.sh`、`redcap-pending-closure-reconcile.sh`…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：closeout 尾链的高风险边界已经补成 repo-owned 硬约束，最后一轮独立 code review、redteam 和 ultimate full suite 都已收口。",
-          "详情：`compass/tools/redcap-interop-governance.sh`、`redcap-task-report-check.sh`、`redcap-task-report-register.sh`、`redcap-layerB-task-complete-guard.sh`、`redcap-layerB-session-end.sh`、`redcap-pending-closure-reconcile.sh` 与 Copilot session-context helper 现在都统一走…"
-        ],
-        "previous_step": [
-          "上一步完成的是：飞书双向链路与 overlay P0、Copilot 会话身份锚点、Copilot completion 主链硬化已经分别收口；本轮是在这些成果之上，把最后一批 closeout follow-up 风险逐个打穿。"
-        ],
-        "next_step": [
-          "下一步计划做的是：完成 commit-proof，并在 clean worktree 上触发 live runtime 的最终 `on-complete / session-end / 飞书通知` 收尾。"
-        ],
-        "position": [
-          "整体计划脉络图是：飞书双向链路与 overlay P0 收口 → Copilot 会话身份锚点收口 → completion 主链硬化 → closeout follow-up 硬化 → commit-proof / live runtime 最终收尾。",
-          "当前所在位置：closeout follow-up 硬化已完成，仍待执行的是 `commit-proof` 与 live runtime 最终闭环。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
@@ -613,6 +597,35 @@
         "previous_step": [],
         "next_step": [],
         "position": []
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：reviewer 选型重排与账面补锚",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 10081,
+      "lines": 190,
+      "chars": 6421,
+      "summary": "当前已完成：Copilot / Codex 的静态优先级限制已经去除，reviewer / stop-review 默认排序已统一收敛到“模型能力画像 + 本地 CLI 稳定性”这套机器真相源。 / 详情：新增了 `compass/tools/redcap-reviewer-order.py`，修正并扩充了 `compass/knowledge/model-capability-matrix.yaml`，同步更新了 `compass/CONTRIBUTING.core.md`、`loom/dispatcher/agent-adapters.md` 与 `compass/knowledge/lessons.md`。`.dev-tas…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：Copilot / Codex 的静态优先级限制已经去除，reviewer / stop-review 默认排序已统一收敛到“模型能力画像 + 本地 CLI 稳定性”这套机器真相源。",
+          "详情：新增了 `compass/tools/redcap-reviewer-order.py`，修正并扩充了 `compass/knowledge/model-capability-matrix.yaml`，同步更新了 `compass/CONTRIBUTING.core.md`、`loom/dispatcher/agent-adapters.md` 与 `compass/knowledge/lessons.md`。`.dev-task.md` 也已补成合法 canonical task ledger，三条 st…"
+        ],
+        "previous_step": [
+          "上一步完成的是：先补齐 `.dev-task.md` 的 canonical task ledger，再把 stop-review acceptance 夹具从真实宿主 compat fallback 印章中隔离出来，最终拿到三条 targeted acceptance 绿灯。"
+        ],
+        "next_step": [
+          "下一步计划做的是：若继续治理，则转去处理非本轮 blocker 的长期债务，例如 GD-008（主 Agent 实时行为约束仍属 host-limited）与 GD-009（首读/诊断链尚未 read-only-safe）。"
+        ],
+        "position": [
+          "整体计划脉络图是：锁定任务锚点 → 改 reviewer 排序真相源 → 接 stop-review → 跑 targeted acceptance → 盘点遗留项。",
+          "当前所在位置：`reviewer-routing-rebalance` 已完成，处于“已收口、待后续 tranche 决定是否继续治理宿主边界债务”的终局态。"
+        ]
       }
     },
     {

@@ -15,7 +15,7 @@
 #   stdin — JSON（必须消费）
 #   退出码 — 0=通过, 非0=有问题（Claude Code 不阻塞，但会写标记文件 + 飞书告警）
 #
-# 依赖：至少一个可用的独立评审 CLI（优先 codex，必要时 fallback 到 gemini / copilot / claude / kimi）
+# 依赖：至少一个可用的独立评审 CLI（按“模型能力画像 + 本地 CLI 稳定性”动态排序）
 # ─────────────────────────────────────────────────────────
 
 set -u
@@ -24,19 +24,18 @@ INPUT=$(cat)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+TASK_FILE="${REDCAP_TASK_FILE:-$REDCAP_ROOT/.dev-task.md}"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
 
 HOST_SESSION_ID="${REDCAP_HOST_SESSION_ID:-$(redcap_runtime_json_field "$INPUT" "session_id")}"
 HOOK_CWD="${REDCAP_HOOK_CWD:-$REDCAP_ROOT}"
 REVIEW_HOST="${REDCAP_STOP_REVIEW_HOST:-claude}"
-if [[ -n "${REDCAP_STOP_REVIEW_AGENT_ORDER:-}" ]]; then
-    REVIEW_AGENT_ORDER="$REDCAP_STOP_REVIEW_AGENT_ORDER"
-elif [[ "$REVIEW_HOST" == "codex" ]]; then
-    REVIEW_AGENT_ORDER="codex,gemini,claude,kimi,copilot"
-else
-    REVIEW_AGENT_ORDER="codex,gemini,copilot,claude,kimi"
-fi
+VALIDATOR_HOST="${REDCAP_STOP_REVIEW_VALIDATOR_HOST:-$REVIEW_HOST}"
+REVIEW_AGENT_ORDER="${REDCAP_STOP_REVIEW_AGENT_ORDER:-}"
+DEFAULT_REVIEW_AGENT_REGISTRY_FILE="$REDCAP_ROOT/compass/.workflow/agent-registry.yaml"
+REVIEW_AGENT_REGISTRY_FILE="${REDCAP_REVIEW_AGENT_REGISTRY_FILE:-$DEFAULT_REVIEW_AGENT_REGISTRY_FILE}"
+REVIEW_CAPABILITY_MATRIX_FILE="${REDCAP_REVIEW_CAPABILITY_MATRIX_FILE:-$REDCAP_ROOT/compass/knowledge/model-capability-matrix.yaml}"
 BINDING_KEY=""
 if [[ -n "$HOST_SESSION_ID" ]]; then
     BINDING_KEY=$(redcap_runtime_binding_key_from_host_session "$REVIEW_HOST" "$HOST_SESSION_ID")
@@ -112,7 +111,7 @@ record_review_gap() {
     echo "FAIL" > "$REVIEW_RESULT_FILE"
     redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
-        "$REDCAP_ROOT/.dev-task.md" \
+        "$TASK_FILE" \
         "$REVIEW_HOST" \
         "stop-review-gap" \
         "review" \
@@ -159,6 +158,61 @@ review_agent_supports_repo_inspection() {
             return 1
             ;;
     esac
+}
+
+build_review_targets() {
+    local manual_order="${1:-}"
+    local requires_repo_inspection="${2:-0}"
+    local detect_agents_script="$SCRIPT_DIR/redcap-detect-agents.sh"
+    local reviewer_order_tool="$SCRIPT_DIR/redcap-reviewer-order.py"
+    local order_output=""
+    local -a reviewer_order_args=()
+
+    if [[ -x "$detect_agents_script" && ( "$REVIEW_AGENT_REGISTRY_FILE" == "$DEFAULT_REVIEW_AGENT_REGISTRY_FILE" || ! -f "$REVIEW_AGENT_REGISTRY_FILE" ) ]]; then
+        bash "$detect_agents_script" "$REVIEW_AGENT_REGISTRY_FILE" >/dev/null 2>&1 || true
+    fi
+
+    if [[ -f "$REVIEW_AGENT_REGISTRY_FILE" && -f "$REVIEW_CAPABILITY_MATRIX_FILE" && -f "$reviewer_order_tool" ]]; then
+        reviewer_order_args=(
+            --matrix "$REVIEW_CAPABILITY_MATRIX_FILE"
+            --registry "$REVIEW_AGENT_REGISTRY_FILE"
+        )
+        if [[ -n "$manual_order" ]]; then
+            reviewer_order_args+=(--manual-order "$manual_order")
+        fi
+        if [[ "$requires_repo_inspection" == "1" ]]; then
+            reviewer_order_args+=(--requires-repo-inspection)
+        fi
+        order_output="$(
+            python3 "$reviewer_order_tool" "${reviewer_order_args[@]}" 2>/dev/null || true
+        )"
+    fi
+
+    if [[ -z "$order_output" ]]; then
+        local fallback_order="${manual_order:-codex,copilot,claude,kimi,gemini}"
+        local target
+        REVIEW_TARGET_CANDIDATES=()
+        IFS=',' read -r -a REVIEW_AGENT_CANDIDATES <<< "$fallback_order"
+        for target in "${REVIEW_AGENT_CANDIDATES[@]}"; do
+            target="${target//[[:space:]]/}"
+            [[ -n "$target" ]] || continue
+            REVIEW_TARGET_CANDIDATES+=("$target")
+        done
+        REVIEW_AGENT_ORDER="$(IFS=','; printf '%s' "${REVIEW_TARGET_CANDIDATES[*]}")"
+        return 0
+    fi
+
+    REVIEW_TARGET_CANDIDATES=()
+    while IFS=$'\t' read -r agent model _score _capability _stability; do
+        [[ -n "$agent" ]] || continue
+        if [[ -n "$model" ]]; then
+            REVIEW_TARGET_CANDIDATES+=("$agent@$model")
+        else
+            REVIEW_TARGET_CANDIDATES+=("$agent")
+        fi
+    done <<< "$order_output"
+
+    REVIEW_AGENT_ORDER="$(IFS=','; printf '%s' "${REVIEW_TARGET_CANDIDATES[*]}")"
 }
 
 review_cli_failure_reason() {
@@ -477,9 +531,12 @@ except subprocess.TimeoutExpired:
 PY
 }
 
-run_review_with_agent() {
-    local agent="$1"
+run_review_with_target() {
+    local target="$1"
+    local agent="${target%%@*}"
+    local model=""
     local timeout status
+    local -a review_cmd=()
     local output=""
     local stderr_output=""
     local residual_output=""
@@ -492,6 +549,10 @@ run_review_with_agent() {
     local stderr_file=""
     local message_file=""
 
+    if [[ "$target" == *"@"* ]]; then
+        model="${target#*@}"
+    fi
+
     if [[ "${REVIEW_REQUIRES_REPO_INSPECTION:-0}" == "1" ]] && ! review_agent_supports_repo_inspection "$agent"; then
         REVIEW_ATTEMPT_FAILURES+=("$agent:insufficient-evidence")
         return 1
@@ -503,26 +564,46 @@ run_review_with_agent() {
 
     case "$agent" in
         gemini)
+            review_cmd=(gemini)
+            [[ -n "$model" ]] && review_cmd+=(--model "$model")
+            review_cmd+=(-p "__REDCAP_REVIEW_PROMPT__" --sandbox false --yolo)
             REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE="$REVIEW_PROMPT_FILE" \
-                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" gemini -p "__REDCAP_REVIEW_PROMPT__" --sandbox false --yolo || status=$?
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" \
+                "${review_cmd[@]}" || status=$?
             ;;
         copilot)
+            review_cmd=(copilot)
+            [[ -n "$model" ]] && review_cmd+=(--model "$model")
+            review_cmd+=(-p "__REDCAP_REVIEW_PROMPT__" --allow-all --autopilot)
             REDCAP_SUPPRESS_TASK_COMPLETE_GUARD=1 \
             REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE="$REVIEW_PROMPT_FILE" \
-                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" copilot -p "__REDCAP_REVIEW_PROMPT__" --allow-all --autopilot || status=$?
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" \
+                "${review_cmd[@]}" || status=$?
             ;;
         codex)
             message_file="$(mktemp)"
+            review_cmd=(codex exec -C "$REDCAP_ROOT" --sandbox read-only --ephemeral --output-last-message "$message_file" --color never)
+            [[ -n "$model" ]] && review_cmd+=(--model "$model")
+            review_cmd+=(-)
             REDCAP_REVIEW_COMMAND_STDIN_FILE="$REVIEW_PROMPT_FILE" \
-                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" codex exec -C "$REDCAP_ROOT" --sandbox read-only --ephemeral --output-last-message "$message_file" --color never - || status=$?
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" \
+                "${review_cmd[@]}" || status=$?
             ;;
         claude)
+            review_cmd=(claude)
+            [[ -n "$model" ]] && review_cmd+=(--model "$model")
+            review_cmd+=(-p "__REDCAP_REVIEW_PROMPT__" --output-format text)
             REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE="$REVIEW_PROMPT_FILE" \
-                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" claude -p "__REDCAP_REVIEW_PROMPT__" --output-format text || status=$?
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" \
+                "${review_cmd[@]}" || status=$?
             ;;
         kimi)
+            review_cmd=(kimi)
+            [[ -n "$model" ]] && review_cmd+=(--model "$model")
+            review_cmd+=(-p "__REDCAP_REVIEW_PROMPT__" -y)
             REDCAP_REVIEW_COMMAND_PROMPT_ARG_FILE="$REVIEW_PROMPT_FILE" \
-                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" kimi -p "__REDCAP_REVIEW_PROMPT__" -y || status=$?
+                run_review_command_with_timeout "$timeout" "$stdout_file" "$stderr_file" \
+                "${review_cmd[@]}" || status=$?
             ;;
         *)
             rm -f "$stdout_file" "$stderr_file"
@@ -578,12 +659,12 @@ run_review_with_agent() {
     fi
 
     if [[ "$status" -eq 0 ]]; then
-        case "$structured_result" in
-            PASS|FAIL)
-                AGENT_CMD="$agent"
-                REVIEW_OUTPUT="$output"
-                return 0
-                ;;
+            case "$structured_result" in
+                PASS|FAIL)
+                    AGENT_CMD="$agent${model:+@$model}"
+                    REVIEW_OUTPUT="$output"
+                    return 0
+                    ;;
         esac
     fi
 
@@ -595,7 +676,7 @@ run_review_with_agent() {
     parsed_result="$(review_output_result "$output")"
     case "$parsed_result" in
         PASS|FAIL)
-            AGENT_CMD="$agent"
+            AGENT_CMD="$agent${model:+@$model}"
             REVIEW_OUTPUT="$output"
             return 0
             ;;
@@ -661,7 +742,7 @@ fi
 VALIDATOR_OUTPUT=$(REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
     REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
     REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
-    bash "$VALIDATOR_CHAIN" stop-review "$REVIEW_HOST" "$REDCAP_ROOT/.dev-task.md" "$BASELINE" "$CURRENT_HEAD" yaml 2>&1) || {
+    bash "$VALIDATOR_CHAIN" stop-review "$VALIDATOR_HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" yaml 2>&1) || {
     write_control_plane_failure "validator chain 检查失败" "$VALIDATOR_OUTPUT"
     exit 1
 }
@@ -892,16 +973,18 @@ rm -f "$DIFF_FILE" "$DIFF_STAT_FILE" "$COMMIT_LOG_FILE" "$FILE_LIST_FILE"
 AGENT_CMD=""
 REVIEW_OUTPUT=""
 REVIEW_ATTEMPT_FAILURES=()
-IFS=',' read -r -a REVIEW_AGENT_CANDIDATES <<< "$REVIEW_AGENT_ORDER"
+REVIEW_TARGET_CANDIDATES=()
+build_review_targets "$REVIEW_AGENT_ORDER" "$REVIEW_REQUIRES_REPO_INSPECTION"
 
-for candidate in "${REVIEW_AGENT_CANDIDATES[@]}"; do
+for candidate in "${REVIEW_TARGET_CANDIDATES[@]}"; do
+    local_agent="${candidate%%@*}"
     [[ -n "$candidate" ]] || continue
-    if ! command -v "$candidate" >/dev/null 2>&1; then
+    if ! command -v "$local_agent" >/dev/null 2>&1; then
         REVIEW_ATTEMPT_FAILURES+=("$candidate:missing")
         continue
     fi
 
-    if run_review_with_agent "$candidate"; then
+    if run_review_with_target "$candidate"; then
         break
     fi
 done

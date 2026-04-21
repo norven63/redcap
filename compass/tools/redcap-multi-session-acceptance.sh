@@ -3389,7 +3389,7 @@ run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case() 
 
 run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case() {
     local case_name="on-stop-review-falls-back-to-codex-after-unavailable-reviewers"
-    local case_dir fake_bin head_file review_result review_log baseline output status codex_argv codex_stdin
+    local case_dir fake_bin head_file review_result review_log baseline output status codex_argv codex_stdin fake_task
 
     log "case: $case_name"
 
@@ -3463,16 +3463,55 @@ EOF
     head_file="$case_dir/baseline.head"
     review_result="$case_dir/review-result"
     review_log="$case_dir/review-log.md"
+    fake_task="$case_dir/.dev-task.md"
     baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
     printf '%s\n' "$baseline" >"$head_file"
+    cat >"$fake_task" <<'EOF'
+# 当前任务：stop-review acceptance fixture
+
+## 控制面元数据（机器校验）
+task_id: stop-review-acceptance
+source_of_truth: .dev-task.md
+top_goal: 隔离验证 stop-review 行为，不让真实仓库当前任务账面干扰 acceptance。
+active_slice: stop-review-acceptance-fixture
+subtask_of: stop-review-acceptance
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+human_escalation_policy: ai-uncomputable-only
+overlay_skill_policy: advisory_only
+task_report: compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md
+
+## 原始输入（用户原文，禁止改写）
+### Q1
+验证 stop-review fallback。
+
+## 已确认需求（执行依据）
+### Q1: stop-review acceptance fixture
+验证 stop-review 在受控 fake CLI 环境下的行为。
+> 执行摘要：仅用于 acceptance。
+
+## 漂移哨兵
+- 本文件只用于 acceptance。
+
+## 允许修改范围
+- *
+
+## 完成标准
+- [ ] acceptance fixture
+
+## 断点备注
+- none
+EOF
 
     set +e
     output="$(
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_TASK_FILE="$fake_task" \
             REDCAP_FAKE_CODEX_ARGV="$codex_argv" \
             REDCAP_FAKE_CODEX_STDIN="$codex_stdin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,codex" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
@@ -3506,10 +3545,10 @@ EOF
     fi
 }
 
-run_on_stop_review_prefers_codex_for_codex_host_case() {
-    local case_name="on-stop-review-prefers-codex-for-codex-host"
-    local case_dir fake_bin head_file review_result review_log baseline output status
-    local gemini_marker copilot_marker codex_argv codex_stdin
+run_on_stop_review_prefers_codex_when_best_ranked_case() {
+    local case_name="on-stop-review-prefers-codex-when-best-ranked"
+    local case_dir fake_bin head_file review_result review_log baseline output status fake_registry fake_task
+    local gemini_marker kimi_marker codex_argv codex_stdin
 
     log "case: $case_name"
 
@@ -3526,13 +3565,13 @@ exit 97
 EOF
     chmod +x "$fake_bin/gemini"
 
-    copilot_marker="$case_dir/copilot-called.txt"
-    cat >"$fake_bin/copilot" <<EOF
+    kimi_marker="$case_dir/kimi-called.txt"
+    cat >"$fake_bin/kimi" <<EOF
 #!/usr/bin/env bash
-printf '%s\n' called > "$copilot_marker"
+printf '%s\n' called > "$kimi_marker"
 exit 98
 EOF
-    chmod +x "$fake_bin/copilot"
+    chmod +x "$fake_bin/kimi"
 
     codex_argv="$case_dir/codex-argv.txt"
     codex_stdin="$case_dir/codex-stdin.txt"
@@ -3576,16 +3615,78 @@ EOF
     head_file="$case_dir/baseline.head"
     review_result="$case_dir/review-result"
     review_log="$case_dir/review-log.md"
+    fake_registry="$case_dir/agent-registry.yaml"
+    fake_task="$case_dir/.dev-task.md"
     baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
     printf '%s\n' "$baseline" >"$head_file"
+    cat >"$fake_task" <<'EOF'
+# 当前任务：stop-review acceptance fixture
+
+## 控制面元数据（机器校验）
+task_id: stop-review-acceptance
+source_of_truth: .dev-task.md
+top_goal: 隔离验证 stop-review 动态 reviewer 排序。
+active_slice: stop-review-acceptance-fixture
+subtask_of: stop-review-acceptance
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+human_escalation_policy: ai-uncomputable-only
+overlay_skill_policy: advisory_only
+task_report: compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md
+
+## 原始输入（用户原文，禁止改写）
+### Q1
+验证 stop-review 动态排序。
+
+## 已确认需求（执行依据）
+### Q1: stop-review acceptance fixture
+验证 stop-review 在受控 fake CLI 环境下的 reviewer 排序。
+> 执行摘要：仅用于 acceptance。
+
+## 漂移哨兵
+- 本文件只用于 acceptance。
+
+## 允许修改范围
+- *
+
+## 完成标准
+- [ ] acceptance fixture
+
+## 断点备注
+- none
+EOF
+    cat >"$fake_registry" <<'EOF'
+detected_at: "2026-04-21T02:00:00Z"
+probe_mode: false
+agents:
+  gemini:
+    available: true
+    actual_model: "gemini-3-flash"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+    known_issues:
+      - "L-7: headless 必须 --yolo"
+  kimi:
+    available: true
+    actual_model: "kimi-for-coding"
+    supports_model_switch: false
+  codex:
+    available: true
+    actual_model: "gpt-5.4"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+EOF
 
     set +e
     output="$(
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_TASK_FILE="$fake_task" \
             REDCAP_FAKE_CODEX_ARGV="$codex_argv" \
             REDCAP_FAKE_CODEX_STDIN="$codex_stdin" \
-            REDCAP_STOP_REVIEW_HOST="codex" \
+            REDCAP_REVIEW_AGENT_REGISTRY_FILE="$fake_registry" \
+            REDCAP_STOP_REVIEW_HOST="claude" \
+            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
@@ -3597,16 +3698,157 @@ EOF
     status=$?
     set -e
 
-    [[ "$status" -eq 0 ]] || fail "codex preferred host case failed: $output"
+    [[ "$status" -eq 0 ]] || fail "codex best-ranked case failed: $output"
     assert_exists "$review_result"
     assert_eq "$(read_file_text "$review_result")" "PASS"
     assert_exists "$review_log"
-    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: codex"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: codex@gpt-5.4"
     assert_string_contains "$(read_file_text "$review_log")" "codex preferred ok"
     assert_exists "$codex_argv"
     assert_exists "$codex_stdin"
     assert_not_exists "$gemini_marker"
-    assert_not_exists "$copilot_marker"
+    assert_not_exists "$kimi_marker"
+}
+
+run_on_stop_review_prefers_copilot_premium_model_over_lighter_clis_case() {
+    local case_name="on-stop-review-prefers-copilot-premium-model-over-lighter-clis"
+    local case_dir fake_bin head_file review_result review_log baseline output status fake_registry fake_task
+    local gemini_marker kimi_marker copilot_argv
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    gemini_marker="$case_dir/gemini-called.txt"
+    cat >"$fake_bin/gemini" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called > "$gemini_marker"
+exit 97
+EOF
+    chmod +x "$fake_bin/gemini"
+
+    kimi_marker="$case_dir/kimi-called.txt"
+    cat >"$fake_bin/kimi" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called > "$kimi_marker"
+exit 98
+EOF
+    chmod +x "$fake_bin/kimi"
+
+    copilot_argv="$case_dir/copilot-argv.txt"
+    cat >"$fake_bin/copilot" <<'EOF'
+#!/usr/bin/env bash
+: "${REDCAP_FAKE_COPILOT_ARGV:?}"
+printf '%s\n' "$@" >"$REDCAP_FAKE_COPILOT_ARGV"
+cat <<'OUT'
+```json
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"copilot preferred ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/copilot"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    fake_registry="$case_dir/agent-registry.yaml"
+    fake_task="$case_dir/.dev-task.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+    cat >"$fake_task" <<'EOF'
+# 当前任务：stop-review acceptance fixture
+
+## 控制面元数据（机器校验）
+task_id: stop-review-acceptance
+source_of_truth: .dev-task.md
+top_goal: 隔离验证 stop-review 动态 reviewer 排序。
+active_slice: stop-review-acceptance-fixture
+subtask_of: stop-review-acceptance
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+human_escalation_policy: ai-uncomputable-only
+overlay_skill_policy: advisory_only
+task_report: compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md
+
+## 原始输入（用户原文，禁止改写）
+### Q1
+验证 stop-review 动态排序。
+
+## 已确认需求（执行依据）
+### Q1: stop-review acceptance fixture
+验证 stop-review 在受控 fake CLI 环境下的 reviewer 排序。
+> 执行摘要：仅用于 acceptance。
+
+## 漂移哨兵
+- 本文件只用于 acceptance。
+
+## 允许修改范围
+- *
+
+## 完成标准
+- [ ] acceptance fixture
+
+## 断点备注
+- none
+EOF
+    cat >"$fake_registry" <<'EOF'
+detected_at: "2026-04-21T02:00:00Z"
+probe_mode: false
+agents:
+  gemini:
+    available: true
+    actual_model: "gemini-3-flash"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+    known_issues:
+      - "L-7: headless 必须 --yolo"
+  kimi:
+    available: true
+    actual_model: "kimi-for-coding"
+    supports_model_switch: false
+  copilot:
+    available: true
+    actual_model: "claude-opus-4.6"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+    switchable_models:
+      - "claude-opus-4.6"
+EOF
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_FAKE_COPILOT_ARGV="$copilot_argv" \
+            REDCAP_TASK_FILE="$fake_task" \
+            REDCAP_REVIEW_AGENT_REGISTRY_FILE="$fake_registry" \
+            REDCAP_STOP_REVIEW_HOST="claude" \
+            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
+            REDCAP_SKIP_FEISHU=1 \
+            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "copilot premium ranking case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: copilot@claude-opus-4.6"
+    assert_string_contains "$(read_file_text "$review_log")" "copilot preferred ok"
+    assert_exists "$copilot_argv"
+    assert_string_contains "$(read_file_text "$copilot_argv")" "--model"
+    assert_string_contains "$(read_file_text "$copilot_argv")" "claude-opus-4.6"
+    assert_not_exists "$gemini_marker"
+    assert_not_exists "$kimi_marker"
 }
 
 run_on_stop_review_records_unavailable_rate_limit_case() {
@@ -7764,7 +8006,8 @@ run_all_cases() {
     run_on_stop_review_falls_back_after_unparseable_success_output_case
     run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case
     run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
-    run_on_stop_review_prefers_codex_for_codex_host_case
+    run_on_stop_review_prefers_codex_when_best_ranked_case
+    run_on_stop_review_prefers_copilot_premium_model_over_lighter_clis_case
     run_on_stop_review_records_unavailable_rate_limit_case
     run_on_stop_review_rejects_invalid_track_structure_case
     run_on_stop_review_skips_prompt_only_reviewer_when_repo_inspection_required_case
@@ -8024,8 +8267,11 @@ case "$COMMAND" in
     on-stop-review-falls-back-to-codex-after-unavailable-reviewers)
         run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
         ;;
-    on-stop-review-prefers-codex-for-codex-host)
-        run_on_stop_review_prefers_codex_for_codex_host_case
+    on-stop-review-prefers-codex-when-best-ranked)
+        run_on_stop_review_prefers_codex_when_best_ranked_case
+        ;;
+    on-stop-review-prefers-copilot-premium-model-over-lighter-clis)
+        run_on_stop_review_prefers_copilot_premium_model_over_lighter_clis_case
         ;;
     on-stop-review-records-unavailable-rate-limit)
         run_on_stop_review_records_unavailable_rate_limit_case

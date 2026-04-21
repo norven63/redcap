@@ -1,10 +1,10 @@
 # 模型能力参考矩阵
-# 数据来源: Gemini 报告排名 + RedCap 实测经验 (lessons.md)
+# 数据来源: 业内公开评价 + RedCap 本地实测经验 (lessons.md / host reliability)
 # 更新频率: 随新模型上线或新经验积累时更新
 #
 # ── 更新周期追踪 ──────────────────────────────────────────
-# last_updated:  2026-04-11
-# next_review:   2026-05-11
+# last_updated:  2026-04-21
+# next_review:   2026-05-21
 # ─────────────────────────────────────────────────────────
 # Cap 每次任务启动时检查：若 today >= next_review，触发矩阵更新流程
 # （见 CONTRIBUTING.md §11）
@@ -22,50 +22,46 @@
 # ═══════════════════════════════════════════════════════
 role_requirements:
   product-manager:
-    primary: instruction_following   # 需求采集必须忠实、结构化
-    secondary: reasoning             # 理解业务逻辑
+    primary: instruction_following
+    secondary: reasoning
   architect:
-    primary: reasoning               # 架构决策 = 深度推理
-    secondary: coding                # 理解技术约束
+    primary: reasoning
+    secondary: coding
   programmer:
-    primary: coding                  # 编码是核心
-    secondary: tool_use              # 执行命令、操作文件
+    primary: coding
+    secondary: tool_use
   qa:
-    primary: tool_use                # 执行测试、断言验证
-    secondary: instruction_following # 遵循测试计划
+    primary: tool_use
+    secondary: instruction_following
   reviewer:
-    primary: reasoning               # 独立判断代码质量
-    secondary: coding                # 理解实现细节
-    constraint: cross_family         # 与 Dev Agent 不同模型族优先
+    primary: reasoning
+    secondary: coding
+    constraint: cross_family
 
 # ═══════════════════════════════════════════════════════
 # 角色最低能力门槛（Fallback 降级时的硬性底线）
-# Agent 降级时，目标 Model 必须满足对应角色的每项最低分
-# 不达标的 Model 直接跳过，宁可继续降级也不用不够格的 Model
-# 详见 agent-adapters.md §6.3.1
 # ═══════════════════════════════════════════════════════
 role_minimum_thresholds:
   product-manager:
-    instruction_following: 3       # PM 必须能准确采集需求
+    instruction_following: 3
     reasoning: 2
   architect:
-    reasoning: 4                   # 架构师必须有强推理能力
+    reasoning: 4
     coding: 3
   programmer:
-    coding: 4                      # 程序员必须能写高质量代码
+    coding: 4
     tool_use: 3
   qa:
-    tool_use: 3                    # QA 必须能执行测试
+    tool_use: 3
     instruction_following: 3
   reviewer:
-    reasoning: 4                   # Reviewer 必须能独立判断
+    reasoning: 4
     coding: 3
 
 # ═══════════════════════════════════════════════════════
 # 模型能力评分
 # ═══════════════════════════════════════════════════════
 models:
-  # ── Premium 层 ──
   claude-opus-4.6:
     family: anthropic
     tier: premium
@@ -74,19 +70,8 @@ models:
     instruction_following: 4
     tool_use: 4
     cost_efficiency: 1
-    source: "Gemini 报告 #1 (9.8); 最强综合能力"
+    source: "业内公开评价 + RedCap 实测：综合能力顶级，适合高风险审查与复杂实现。"
 
-  gpt-5.4:
-    family: openai
-    tier: premium
-    reasoning: 5
-    coding: 4
-    instruction_following: 5
-    tool_use: 5
-    cost_efficiency: 2
-    source: "Gemini 报告 #2 (9.6); 指令遵从最佳"
-
-  # ── Standard 层 ──
   claude-sonnet-4.6:
     family: anthropic
     tier: standard
@@ -95,7 +80,17 @@ models:
     instruction_following: 4
     tool_use: 4
     cost_efficiency: 3
-    source: "Gemini 报告 #3 (9.5); 编码性价比最优"
+    source: "业内公开评价：编码性价比高，适合常规开发与中高强度 review。"
+
+  gpt-5.4:
+    family: openai
+    tier: premium
+    reasoning: 5
+    coding: 5
+    instruction_following: 5
+    tool_use: 5
+    cost_efficiency: 2
+    source: "业内公开评价 + 本地实测：指令遵从、工具调用与结构化输出都很强。"
 
   gemini-3-flash:
     family: google
@@ -105,9 +100,30 @@ models:
     instruction_following: 3
     tool_use: 3
     cost_efficiency: 4
-    source: "RedCap 经验: 推理强但 CLI 稳定性问题 (L-7/L-11)"
+    source: "业内公开评价：推理/速度平衡较好；本地 CLI headless 稳定性弱于能力面。"
 
-  # ── Budget 层 ──
+  gemini-2.5-pro:
+    family: google
+    tier: premium
+    reasoning: 5
+    coding: 4
+    instruction_following: 4
+    tool_use: 4
+    cost_efficiency: 3
+    source: "业内公开评价 + RedCap 实测：推理能力强，适合方案审查与对抗评估。"
+    known_issues:
+      - "L-7: headless 模式必须 --yolo，且部分路径仍可能超时/挂起。"
+
+  gemini-2.5-flash:
+    family: google
+    tier: standard
+    reasoning: 4
+    coding: 4
+    instruction_following: 4
+    tool_use: 4
+    cost_efficiency: 5
+    source: "业内公开评价：高频调用成本低，适合轻量探索和快反馈。"
+
   kimi-k2.5:
     family: moonshot
     tier: budget
@@ -116,7 +132,7 @@ models:
     instruction_following: 4
     tool_use: 3
     cost_efficiency: 4
-    source: "Gemini 报告 Kimi K2 #6 (8.8); SiliconFlow 代理降低成本"
+    source: "业内公开评价：性价比较高，适合成本敏感的日常工程场景。"
 
   kimi-for-coding:
     family: moonshot
@@ -126,7 +142,7 @@ models:
     instruction_following: 4
     tool_use: 4
     cost_efficiency: 5
-    source: "RedCap 实测: PM/QA 稳定; 免费层"
+    source: "RedCap 本地实测：轻量编码 / QA / review 稳定，交互成本低。"
     aliases:
       - "kimi-code/kimi-for-coding"
 
@@ -138,10 +154,37 @@ models:
     instruction_following: 3
     tool_use: 3
     cost_efficiency: 5
-    source: "Gemini 报告 #5 (9.0); 性价比极高"
+    source: "业内公开评价：成本低、综合能力均衡，适合预算型补位。"
 
 # ═══════════════════════════════════════════════════════
-# 路由算法（Dispatcher 执行）
+# Reviewer CLI 本地稳定性 / 场景画像
+# 这是“本机此 Agent 工具在 headless/review 场景下的可靠度”维度，
+# 与上面的模型能力分开记录。
+# ═══════════════════════════════════════════════════════
+reviewer_cli_profiles:
+  codex:
+    reviewer_local_stability: 5
+    repo_inspection: true
+    reviewer_notes: "本地 codex exec + --output-last-message 的只读 review 路径最稳定，适合结构化 stop-review。"
+  copilot:
+    reviewer_local_stability: 3
+    repo_inspection: true
+    reviewer_notes: "模型面强，但本地历史上出现过 timeout 与 completion-hook 干扰；适合 premium review，需保留超时与 guard 隔离。"
+  claude:
+    reviewer_local_stability: 3
+    repo_inspection: true
+    reviewer_notes: "能力强，但当前本地配置常经代理/别名复用，适合补位，不应盲目假设始终最稳。"
+  gemini:
+    reviewer_local_stability: 2
+    repo_inspection: false
+    reviewer_notes: "推理面不错，但本地 headless 登录态 / MCP / 超时噪声较多，更适合轻量探测或非 repo-inspection review。"
+  kimi:
+    reviewer_local_stability: 4
+    repo_inspection: false
+    reviewer_notes: "本地轻量 review / health probe 较稳，适合快速补位；复杂 repo-inspection 场景仍不如 codex/copilot/claude。"
+
+# ═══════════════════════════════════════════════════════
+# 路由算法（Dispatcher / stop-review 共同消费）
 # ═══════════════════════════════════════════════════════
 #
 # 输入:
@@ -151,20 +194,24 @@ models:
 #
 # 算法:
 #   1. 从 registry 筛选 available=true 的 Agent
-#   2. 展开可切换模型的 Agent（如 copilot 展开为 3 个候选）
+#   2. 展开可切换模型的 Agent（如 copilot 展开为多个 {cli}&{model} 候选）
 #   3. 对每个候选 {cli}&{model}:
-#      a. 在本矩阵查 model 的能力评分（未收录的模型按 all=3 兜底）
-#      b. score = models[model][role_req.primary] × 2
-#                + models[model][role_req.secondary] × 1
-#      c. Reviewer 且 model.family != dev_agent.family → score += 2
-#      d. agent.known_issues 非空 → score -= 1
-#   4. 找出 top_score，并将满足以下条件的候选视为“能力相当带”：
-#        - 已满足 role_minimum_thresholds
-#        - score >= top_score - 1
-#   5. 在“能力相当带”内，优先选择 cost_efficiency 更高的候选；
-#      若 Gemini CLI 位于该带内且无阻塞性 known_issues，则优先于更高成本宿主
-#   6. 若仍并列，再按 score 降序；同分时: 专用 CLI > 通用 CLI（如 kimi CLI > claude-code 代理 kimi）
-#   7. 输出有序列表，Dispatcher 取第 1 个为首选，其余为 Fallback
+#      a. 在本矩阵查 model 的能力评分（未收录模型按 reasoning/coding/tool_use/instruction_following=3 兜底）
+#      b. capability_score = models[model][role_req.primary] × 2
+#                            + models[model][role_req.secondary] × 1
+#      c. local_stability = reviewer_cli_profiles[cli].reviewer_local_stability
+#      d. issue_penalty = agent.known_issues + model.known_issues（上限 3）
+#      e. final_score = capability_score × 10 + local_stability × 3 - issue_penalty × 4
+#      f. reviewer 如要求 repo-inspection，则不支持 repo_inspection 的 CLI 直接跳过
+#   4. 过滤未满足 role_minimum_thresholds 的候选
+#   5. 按 final_score 降序；若并列，再按 capability_score、local_stability、cost_efficiency 降序；
+#      再并列时，专用 CLI > 通用 CLI 代理
+#   6. 输出有序列表，Dispatcher/stop-review 取第 1 个为首选，其余为 Fallback
+#
+# 设计口径:
+#   - 不再对 Gemini/Kimi 或 Copilot/Codex 施加静态家族偏置。
+#   - 选择逻辑的第一层是“业内模型能力评价”，第二层是“本机此 CLI 的实际稳定性画像”。
+#   - Codex-family ≤2 只是一条并发控制红线，不是排序加分或减分项。
 #
 # 锁定规则:
 #   一旦某步骤（如 PM_WORKING step 1）选定 Agent，写入 state.yaml:
@@ -175,38 +222,6 @@ models:
 #   仅当连续 2 次失败时触发 Fallback，从列表中取下一个。
 #   新步骤开始时重新计算（失败计数归零，重读 registry）。
 
-  gemini-2.5-pro:
-    family: google
-    tier: premium
-    reasoning: 5
-    coding: 4
-    instruction_following: 4
-    tool_use: 4
-    cost_efficiency: 3
-    source: "RedCap 实测 2026-04 + 官方发布：Gemini 2.5 Pro 正式版，推理能力显著提升"
-    known_issues:
-      - "L-7: 不同工作目录调用可能创建新 session，续接时需显式 --resume"
-
-  gemini-2.5-flash:
-    family: google
-    tier: standard
-    reasoning: 4
-    coding: 4
-    instruction_following: 4
-    tool_use: 4
-    cost_efficiency: 5
-    source: "RedCap 实测 2026-04：Gemini 2.5 Flash，速度/成本优于 2.5 Pro，适合高频调用"
-
-  gpt-5.4:
-    family: openai
-    tier: premium
-    reasoning: 5
-    coding: 5
-    instruction_following: 5
-    tool_use: 4
-    cost_efficiency: 2
-    source: "GPT-5.4 官方发布 + Copilot CLI 默认模型之一；成本高，质量顶级"
-
 # ═══════════════════════════════════════════════════════
 # 矩阵维护规范
 # ═══════════════════════════════════════════════════════
@@ -215,12 +230,14 @@ models:
 #   - 主力模型（claude/gemini/gpt）发布新版本
 #   - 发现某模型评分与实测偏差 ≥1 分
 #   - RedCap 新增一个 known_issue 指向某模型
+#   - 本地 CLI 稳定性画像显著变化（例如登录态恢复、timeout 修补、生效路径改变）
 #
 # 更新步骤:
 #   1. 更新模型条目（评分 + source 注明评估日期）
-#   2. 对比新评分与路由算法：是否影响各角色首选模型
-#   3. 若首选变更 → 更新 agent-registry.yaml 并通知 Norven
-#   4. 在 CONTRIBUTING.md §8 并行裂变实例中更新示例模型
+#   2. 更新 reviewer_cli_profiles（stability / repo_inspection / notes）
+#   3. 对比新评分与路由算法：是否影响各角色首选模型
+#   4. 若首选变更 → 更新 agent-registry.yaml / stop-review / task report 口径
+#   5. 在 CONTRIBUTING.md、agent-adapters.md 中同步算法摘要
 #
 # Frame 阶段集成:
 #   Prism Frame 阶段（拆分独立任务、选型雇佣兵）必须读取本文件，

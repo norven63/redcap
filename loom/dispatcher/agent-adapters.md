@@ -94,12 +94,14 @@ agents:
 3. 对每个候选 {cli}&{model}:
    a. 查矩阵获取能力评分（未收录模型按 all=3 兜底处理）
    b. role_req = matrix.role_requirements[role]
-   c. score = model[role_req.primary] × 2 + model[role_req.secondary] × 1
-   d. Reviewer 特殊: model.family ≠ dev_agent.family → score += 2
-   e. agent.known_issues 非空 → score -= 1
-4. 找出 top_score，并把满足“已过最低门槛且 score >= top_score - 1”的候选视为**能力相当带**
-5. 在能力相当带内，优先 cost_efficiency 更高的候选；若 Gemini CLI 位于该带内且无阻塞性 known_issues，则优先于更高成本宿主
-6. 若仍并列，再按 score 降序；同分优先: 专用 CLI > 通用 CLI 代理（如 kimi > claude-code 代理 kimi-k2.5）
+   c. capability_score = model[role_req.primary] × 2 + model[role_req.secondary] × 1
+   d. reviewer 特殊: 再读取 reviewer_cli_profiles[cli].reviewer_local_stability，作为“本机此 CLI 的 headless / review 稳定性”维度
+   e. issue_penalty = agent.known_issues + model.known_issues（上限 3）
+   f. final_score = capability_score × 10 + local_stability × 3 - issue_penalty × 4
+   g. 若 reviewer 要求 repo-inspection，则 repo_inspection=false 的 CLI 直接跳过
+4. 过滤未满足 role_minimum_thresholds 的候选
+5. 按 final_score 降序；若并列，再按 capability_score、local_stability、cost_efficiency 降序
+6. 若仍并列，再按“专用 CLI > 通用 CLI 代理”打破平局（如 kimi > claude-code 代理 kimi-k2.5）
 7. 输出有序候选列表
 ```
 
@@ -124,7 +126,7 @@ agents:
 | 架构师 | opus: R=5×2 + C=5 = 15; flash: 4×2+4=12; k2.5: 3×2+4=10 | `copilot&claude-opus-4.6` |
 | 程序员 | opus: C=5×2 + TU=4 = 14; flash: 4×2+3=11; kimi-coding: 4×2+4=12 | `copilot&claude-opus-4.6` |
 | 测试QA | kimi-coding: TU=4×2 + IF=4 = 12; gpt-5.4: 5×2+5=15 → **但 copilot 通用 CLI vs kimi 专用** | `copilot&gpt-5.4` |
-| Reviewer | 假设 Dev 用了 copilot&opus(anthropic族): gpt-5.4(openai族): R=5×2+C=4=14 +2(跨族)=16；若 Copilot 限流，Codex CLI 可作为同 OpenAI 族 fallback | `copilot&gpt-5.4` / `codex&gpt-5.4` |
+| Reviewer | stop-review / Prism reviewer 不再对某个 CLI 家族做静态偏置，而是统一按“模型能力 + 本地稳定性”排序；例如 premium model 在 copilot 上更稳时可优先 copilot，codex 的 gpt-5.4 只要综合分更高也可直接排第一 | `copilot&claude-opus-4.6` / `codex&gpt-5.4` |
 
 > 注意：示例中 copilot 频繁出现是因为它可切换 Premium 模型。若 copilot 不可用，Budget/Standard 层自动接管。
 
