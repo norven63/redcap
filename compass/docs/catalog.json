@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 33,
-    "size_bytes": 560621,
+    "size_bytes": 560649,
     "lines": 9884,
-    "chars": 359283,
+    "chars": 359337,
     "rough_token_pressure": {
-      "low": 89820,
-      "high": 179641
+      "low": 89834,
+      "high": 179668
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 18,
-        "size_bytes": 306434,
+        "size_bytes": 306462,
         "lines": 3757,
-        "chars": 193010,
+        "chars": 193064,
         "rough_token_pressure": {
-          "low": 48252,
-          "high": 96505
+          "low": 48266,
+          "high": 96532
         }
       },
       "traces": {
@@ -571,9 +571,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 7190,
+      "size_bytes": 7218,
       "lines": 162,
-      "chars": 4260,
+      "chars": 4314,
       "summary": "当前已完成：根 README、`prism/README.md`、`prism/protocol.md` 与 `redcap-current-status.sh` 已同步到最新真实口径。 / 详情：README 现在更短、更聚焦，明确把 Prism 提升为 RedCap 的核心范式之一；Prism 展示层与协议层已写明“模型能力画像 + 本地 CLI 稳定性 + 真实 headless 健康”的默认选型规则，同时明确“复杂/长任务 ≠ 必然 Prism”；`current-status` 则默认轻量刷新 agent registry，避免继续误报 `kimi/copilot=false` 这类旧 cache 状态。",
       "status_basis": "filename_recency_only",
       "summary_points": {

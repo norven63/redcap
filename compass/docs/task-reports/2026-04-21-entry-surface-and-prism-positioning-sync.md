@@ -151,7 +151,7 @@
 ### 附录 A：Commits
 
 ```text
-尚未提交；当前为工作区内治理补丁。
+已提交：7ac5585 docs(governance): sync entry surfaces and prism positioning
 ```
 
 ### 附录 B：相关文档索引
