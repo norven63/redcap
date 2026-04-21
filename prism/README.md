@@ -1,58 +1,87 @@
-# 棱镜（Prism）
+# Prism
 
-> 多视角协同分析引擎 — RedCap 底层公共能力
+> RedCap 的多 Agent Team 验证层。
 
----
+Prism 不是普通“多问几个模型”。
+它是一套把**独立取样、结构化收集、聚合裁决、run-scoped 证据**组合起来的团队协议，用来处理高后果问题。
 
-## 是什么
+## 它负责什么
 
-棱镜是 RedCap 的多 Agent 协同分析子系统。当一个视角不足以得出可信结论时，棱镜将问题"折射"成多束光，让不同模型/视角独立分析，再将结论汇聚成行动指南。
+- 架构方案需要多视角验证
+- 核心治理补丁需要跨模型族审查
+- 重要争议需要独立视角而不是单 Agent 自证
+- 高风险结论需要 formal quorum，而不是单路 reviewer 口头背书
 
-就像棱镜对白光的作用：单色看起来清晰，但经过棱镜才能看见全光谱。
+## 它不负责什么
 
----
+- 任何长任务的默认拆解
+- 一切复杂任务的默认并行器
+- 取代 Loom 状态机去做日常开发编排
 
-## 何时使用
+原则很简单：
+- **复杂/长任务先拆解**
+- **高风险/高后果问题再进 Prism**
 
-| 情境 | 推荐模式 |
-|------|---------|
-| 架构决策需要多角度验证 | `explore`（探索） |
-| 提交前发现潜在风险 | `redteam`（红队） |
-| Agent 连续两轮卡壳，观点分歧 | `council`（议事） |
-| soul.md / CONTRIBUTING.md 大改后验证 | `test`（测试） |
+## Prism 的 4 种模式
 
-**不需要用棱镜的情况**：单一明确任务、改动 <3 个文件且 <20 行、已有 §8/§9 足够的场合。
+| 模式 | 用途 |
+|---|---|
+| `explore` | 架构探索、方向未定，但还没到强对抗阶段 |
+| `redteam` | 高风险方案、关键治理改动、需要挑战者视角 |
+| `council` | 连续分歧、需要多轮议事收敛 |
+| `test` | 对框架关键能力做结构化验证 |
 
----
+## 它为什么像一个 Team
 
-## 快速调用
+Prism 的关键不是“数量多”，而是**协议硬**：
 
-```
-触发：在任务描述中说明需要棱镜，或 Cap 自主判断
-模式：explore | redteam | council | test
-产出：prism/reports/YYYYMMDD-{mode}-NNN.md + index.yaml 更新
-```
+- **独立取样**：不同 Agent 不共享中间答案
+- **多模型族**：避免单家模型闭环自证
+- **角色分工**：挑战者、审查员、旧错者、探索者等各自承担不同视角
+- **结构化 Collect / Synthesize / Adjudicate**：不是聊天记录堆积
+- **run-scoped truth**：每次运行有自己的 `session-registry.yaml`、`raw.txt`、`parsed.json`
 
-详细协议见 → `protocol.md`  
-模式说明见 → `modes/README.md`
+## 默认选型口径
 
----
+Prism 候选 roster 的默认排序，现在和 stop-review 保持一致：
 
-## 设计原则
+1. **先看模型能力画像与适用场景**
+2. **再看本机该 CLI 的本地稳定性**
+3. **最后再看真实 headless 健康**
 
-1. **独立性优先**：各 Agent 在执行阶段不能读取彼此的中间产出（Dispatch Firewall）
-2. **落盘保鲜**：所有产出持久化至 `reports/`，git 追踪，跨会话可读
-3. **可移植**：不绑定 RedCap 特定逻辑，可迁移至其他框架
-4. **有终点**：每种模式都有明确的完成条件，防止无限循环
+需要特别注意：
 
----
+- `registry cache` 只说明安装/配置可见
+- 不代表登录态、限流、MCP/Hook 噪声或真实可完成审计
+- 所以正式 Prism 前，必须把“可见”与“可健康运行”分开记录
 
-## 与现有机制关系
+## 运行证据长什么样
 
-```
-CONTRIBUTING.md §8  →  Prism explore 模式（≥5模块并行分析时优先用此）
-CONTRIBUTING.md §9  →  Prism redteam 模式（跨家族模型审查时优先用此）
-新增 CONTRIBUTING.md §11  →  棱镜集成指南（见 §11 引用）
-```
+Prism 不是只留一份报告。
+formal 运行至少有两层证据：
 
-§8/§9 原有文本保持不变，作为速查版本；棱镜是系统化版本，适用于高后果决策。
+- `prism/runs/<run_id>/...`
+  - `session-registry.yaml`
+  - `collect/*/raw.txt`
+  - `collect/*/parsed.json`
+- `prism/reports/*.md` + `prism/reports/index.yaml`
+
+只有**报告归档 + index 登记 + archive-check 通过**，才算 formal Prism 完成。
+
+## 什么时候不要滥用它
+
+- 小改动、低风险、边界清晰的问题
+- 已有 Loom / Reviewer 就足够闭环的场景
+- 只是想“多叫几个模型来看看”但没有清晰的验证目标
+
+Prism 是**验证系统**，不是“豪华群聊”。
+
+## 先读哪里
+
+- 正式协议：[`protocol.md`](./protocol.md)
+- 模式说明：[`modes/README.md`](./modes/README.md)
+- 角色目录：[`roles/README.md`](./roles/README.md)
+
+## 一句收束
+
+**Prism 的价值，不在于多模型本身，而在于把多模型协作升级成可审计的团队协议。**

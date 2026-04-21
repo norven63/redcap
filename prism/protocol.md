@@ -160,11 +160,26 @@ Agent 数量：
 - redteam：4~6 个，**≥3 家族，必须含挑战者/审查员/旧错者；第 4 席优先 explorer**
 - test：2~4 个，按评分维度分工
 
+**候选 roster 默认排序规则**：
+- Prism 的默认候选选择，不再靠历史事故留下的静态家族偏置。
+- 默认顺序应统一回到与 stop-review 一致的机器真相源：
+  1. 先看 `compass/knowledge/model-capability-matrix.yaml` 中的**模型能力画像 / 适用场景**
+  2. 再看 reviewer / Prism 场景下该 CLI 的**本地稳定性画像**
+  3. 最后结合**真实 headless 健康**决定是否纳入本轮 roster
+- `command -v`、registry cache、配置文件存在，只能证明“安装 / 配置可见”，不能证明“当前已登录、未限流、可稳定完成审计”。
+- 因此 Prism coordinator 在 Dispatch 前，必须把“可见性”与“真实健康”分开记录；必要时通过显式轻探测或降级说明诚实记账。
+- `Copilot` / `Codex` 不能被静态压低；`Gemini` / `Kimi` 也不能因历史习惯被静态抬高。
+
 **Codex 进程限定规则**：
 - 当当前宿主是 Codex，或 Prism/RedCap 准备调起 `codex` CLI 作为棱镜参与者、reviewer、synthesis audit 时，RedCap 控制面默认最多允许 **2 个 Codex-family 执行进程**同时存在；当前宿主 Agent 计为 1，因此默认只剩 1 个额外 Codex 子进程名额。
 - 该限制只约束 RedCap / Prism 机制主动启动的 `codex` CLI 或 Codex-family 子 Agent，不限制当前宿主 Agent 自身在“不降低任务质量”的前提下做必要上下文管理。
 - 若任务质量确实需要超过该限制，必须先向 Norven 明确说明原因、预计收益、token / 限流风险，并获得显式授权后再放宽。
 - Prism 分发前若候选 roster 会超过该限制，优先选择非 Codex 家族的健康 CLI 补足多样性；若无法补足 quorum，应中止本次 Prism 运行并记录为资源不足，而不是偷偷并发更多 Codex 进程。
+
+**与长任务拆解的边界**：
+- “任务很长 / 文件很多 / 步骤很多”本身，不自动等于“必须运行 Prism”。
+- 长任务默认先走 Loom / Layer B 的拆解、裂变、并行执行协议；Prism 只在**高后果、需独立多视角验证**时启用。
+- 若只是并行提效，而不是独立验证，应优先使用普通裂变协议，而不是把 Prism 当成通用并行器。
 
 **GPT 系模型特别处理**：发送问题包前检查长度，超过 800 行的材料必须分段发送（GPT 系模型会静默截断大文件而不报错，见 lessons.md L-11）。
 

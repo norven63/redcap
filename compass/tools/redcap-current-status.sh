@@ -12,9 +12,23 @@ source "$SCRIPT_DIR/redcap-interop-governance.sh"
 TASK_FILE=$(redcap_dev_task_resolve_file "${1:-}")
 PENDING_STATE=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$TASK_FILE" 2>/dev/null || true)
 CURRENT_CONFIRMED_HASH=$(redcap_dev_task_confirmed_hash "$TASK_FILE" 2>/dev/null || true)
+AGENT_REGISTRY_REFRESH_STATUS="cached"
+DETECT_AGENTS_SCRIPT="$SCRIPT_DIR/redcap-detect-agents.sh"
+AGENT_REGISTRY_FILE="$REDCAP_ROOT/compass/.workflow/agent-registry.yaml"
+
+if [[ "${REDCAP_CURRENT_STATUS_REFRESH_AGENT_REGISTRY:-1}" == "1" && -x "$DETECT_AGENTS_SCRIPT" ]]; then
+    if bash "$DETECT_AGENTS_SCRIPT" "$AGENT_REGISTRY_FILE" >/dev/null 2>&1; then
+        AGENT_REGISTRY_REFRESH_STATUS="light-refreshed"
+    else
+        AGENT_REGISTRY_REFRESH_STATUS="refresh-failed"
+    fi
+fi
+
+export REDCAP_CURRENT_STATUS_AGENT_REGISTRY_REFRESH_STATUS="$AGENT_REGISTRY_REFRESH_STATUS"
 
 python3 - "$REDCAP_ROOT" "$TASK_FILE" "$PENDING_STATE" "$CURRENT_CONFIRMED_HASH" <<'PY'
 import json
+import os
 import re
 import subprocess
 import sys
@@ -211,8 +225,16 @@ def agent_registry_summary() -> list[str]:
     if current:
         agents.append(f"{current}={available or 'unknown'}")
 
+    refresh_state = os.environ.get("REDCAP_CURRENT_STATUS_AGENT_REGISTRY_REFRESH_STATUS", "cached")
+    refresh_labels = {
+        "light-refreshed": "registry 已在本次 current-status 前做轻量刷新",
+        "cached": "registry 使用现有 cache（未强制刷新）",
+        "refresh-failed": "registry 轻量刷新失败，以下结果回退到已有 cache",
+    }
+
     lines = [
         f"registry cache: detected_at={detected}",
+        refresh_labels.get(refresh_state, f"registry 刷新状态：{refresh_state}"),
         "registry 只代表安装/配置嗅探，不等于登录态、限流或 headless 调用健康",
     ]
     if agents:

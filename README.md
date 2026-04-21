@@ -1,200 +1,99 @@
-# RedCap — 多 Agent 协同工程开发框架
+# RedCap
 
-> 你说需求，AI 团队完成交付。
+> 一个把单体 AI Agent 升级成工程化 AI Team 的协同开发框架。
 
----
+RedCap 不是“再包一层 prompt”。
+它把复杂任务拆成**明确角色、状态机交棒、文件协议、独立评审、Prism 多 Agent Team 验证**几条硬结构，让 AI 开发从“单点发挥”变成“可恢复、可审计、可收尾”的工程流程。
 
-## 它是什么
+## 一眼看懂
 
-RedCap 是运行在 AI 宿主工具（Claude Code / Gemini CLI / Copilot CLI 等）之上的**多角色协同工程框架**。你描述需求，RedCap 自动编排五个专职 AI 角色完成从需求到代码的全流程——每个角色只负责自己的职责，完成后自动交棒。
-
-```
-你的一句需求
-      │
-      ▼
-┌────────────────────────────────────────────────────────┐
-│                   RedCap Dispatcher                     │
-│                                                        │
-│  ① PM Gate ──需求锁定──▶ ② 产品经理                    │
-│                              │ 需求文档                 │
-│                              ▼                          │
-│                         ③ 架构师 ──▶ 高风险? ──▶ 棱镜   │
-│                              │ 分步设计                 │
-│                              ▼                          │
-│                         ④ 程序员                        │
-│                              │ 代码 + 自测报告           │
-│                              ▼                          │
-│                         ⑤ QA ──FAIL──▶ 回退对应角色     │
-│                              │ PASS                     │
-│                              ▼                          │
-│                         ⑥ 独立 Reviewer ──▶ git commit  │
-│                                                        │
-│  全程：Session 续接 · Fallback 路由 · 多层质量门禁       │
-└────────────────────────────────────────────────────────┘
-      │
-      ▼
-可运行的代码 + 完整文档
+```text
+用户目标
+  ↓
+PM Gate 锁定边界
+  ↓
+Loom 状态机驱动角色接力
+  PM → Architect → Programmer → QA → Reviewer
+  ↓
+高风险决策进入 Prism
+  多 Agent / 多模型族 / 多视角独立验证
+  ↓
+Compass 负责规范、经验、Hook、收尾与复活
+  ↓
+可运行代码 + 可考古证据 + 可恢复连续性
 ```
 
-**RedCap 的设计哲学**：单个 Agent 独自完成复杂任务容易跑偏、遗漏、无法自我验证。RedCap 让每个 AI 角色职责单一，通过**状态机驱动交棒、独立角色互相审查、多层防护门禁**，把不可靠的单点放大成可靠的流水线。
+## RedCap 的核心范式
 
----
+| 范式 | 它解决什么 |
+|---|---|
+| **状态机驱动交棒** | 不再靠一个 Agent 从头扛到尾，复杂任务被拆成有责任边界的接力流程 |
+| **文件系统即协议** | 交付物、状态、报告、运行证据都落盘，不把关键真相藏在瞬时上下文里 |
+| **Prism 多 Agent Team** | 高风险决策不是“再问一次同一个模型”，而是多视角独立取样、聚合、裁决 |
+| **独立 Reviewer 门禁** | `QA PASS ≠ 自动通过`，提交前仍有独立审查层 |
+| **run-scoped truth** | 会话、Prism run、task report、pending closure 各自有权威边界，避免串线 |
+| **渐进披露上下文** | docs / knowledge / acceptance / runtime 入口都强调按需加载，避免 token 污染 |
+| **宿主边界诚实化** | 能脚本硬保障的就进 gate；做不到 100% 的明确标注 `host-limited` |
 
-## 核心设计亮点
+## 为什么 Prism 是主角之一
 
-### 可靠性：多层质量防护
+很多框架有“多角色”，但没有真正的**多 Agent Team 验证层**。
+Prism 的作用不是“让更多模型来凑热闹”，而是把高后果问题交给一个独立的团队协议处理：
 
-RedCap 不依赖单次 AI 输出的质量，而是通过**结构性机制**兜底：
+- **独立取样**：不同 Agent 不能互抄中间结论
+- **多模型族**：不是单家模型自证正确
+- **结构化 Collect / Synthesize / Adjudicate**：不是聊天式“大家都说两句”
+- **run-scoped 证据链**：`session-registry.yaml`、`raw.txt`、`parsed.json`、report archive 可回放、可审计
 
-- **角色隔离**：每个角色只读取上游 outbox，不跨层访问，防止信息污染
-- **交付物校验**：Dispatcher 在每步 Agent 完成后验证文件实际写入磁盘，校验不通过不推进
-- **独立 Reviewer**：QA 通过后，由独立评审角色再次 Review，commit 是门禁而非默认动作
-- **防退化机制**：长任务中 reload-rules 在关键节点重载规范，`pending_actions` 双保险防遗漏
-
-### 鲁棒性：自愈与恢复
-
-- **Session 续接**：每个 Agent 运行记录 session ID，中断后可从断点恢复，不丢失上下文
-- **Fallback 路由**：Agent 失败自动切换候选，路由算法动态计算适配分，不硬编码优先级
-- **三级决策升级**：Agent 自主 → PM Agent → 用户，大多数阻塞在 L0/L1 自动消化
-
-### 高风险决策：棱镜多模型验证
-
-重要变更触发**棱镜（Prism）**：跨模型家族（Claude/GPT/Gemini）多 Agent 并行分析，结果经 Synthesize 聚合、Adjudicate 裁决。对抗角色（挑战者/审查员/旧错者/探索者）各持独立视角，在注入分层隔离下防止 prompt injection 污染评审结论。
-
-### 自演化：框架自身持续进化
-
-- **Compass 独立管理框架演化**：框架自身的开发遵守与用户项目相同的严格流程
-- **Lessons 积累防坑**：经验教训沉淀为 `lessons.md`，每次新任务自动注入防护
-- **模型矩阵**：`model-capability-matrix.yaml` 按角色能力权重路由，并在“能力相当”时优先低成本候选（优先 Gemini，保留动态 fallback）；30天过期触发更新
-- **书记官协议**：多轮讨论自动落盘 `explore-notes.md`，防止决策上下文在压缩中丢失
-
----
+一句话说，**Loom 负责把任务做出来，Prism 负责在高风险处把结论打磨得更可信。**
 
 ## 三体架构
 
-RedCap 内部由三个子系统构成，各司其职、边界清晰：
+| 子系统 | 角色 |
+|---|---|
+| **Loom** | 执行引擎。负责状态机、角色流水线、回退、Fallback、E2E |
+| **Compass** | 治理与连续性中枢。负责规范、lessons、Hook、收尾、复活、入口控制 |
+| **Prism** | 多 Agent Team 验证层。负责高风险决策、多视角分析与 formal quorum |
 
-```
-redcap/
-├── loom/      ← 织机（Layer A）  为用户项目编织代码的执行引擎
-├── compass/   ← 璇玑（Layer B）  Cap 的指挥所，管理框架自身的演化
-└── prism/     ← 棱镜            多视角分析引擎，高风险决策前的并行评审
-```
+## 什么时候用
 
-### 织机（Loom）— Layer A
+- 需求会跨多步、多文件、多角色协作
+- 需要可恢复、可审计、可收尾的 AI 开发流程
+- 架构方案、治理补丁、宿主边界、高风险改动需要独立多视角验证
 
-执行引擎。Dispatcher 状态机驱动五角色流水线（PM → 架构师 → 程序员 → QA → Reviewer），处理回退、Session 恢复、Hook 触发、Fallback 路由等所有工程流程。支持迭代开发、旧项目纳管、多步并行裂变。
+## 什么时候不必上 Prism
 
-### 璇玑（Compass）— Layer B
+- 任务简单、边界清晰、局部改动很小
+- 只是长任务，不代表天然要进 Prism
+- “复杂”先拆解，**是否进 Prism 看风险和验证需求，不看字面长度**
 
-Cap 的指挥所。管理框架自身的知识（lessons.md）、开发规范（CONTRIBUTING.md）、Hook 基础设施（飞书通知、会话级自动 Review）以及 Cap 的人格（soul.md）。提供指挥棒工具（baton-launcher / baton-collect / baton-delegate）作为跨层调度原语。
+也就是说：
+- **长任务拆解**：优先走 Loom / Layer B 的并行裂变协议
+- **高后果验证**：再交给 Prism
 
-### 棱镜（Prism）
+## 当前设计风格
 
-多模型并行评审引擎。支持两种协议族：**独立取样**（多模型各自分析后汇聚）和**议事**（多模型多轮讨论）。棱镜内置对抗角色（挑战者、审查员、旧错者、探索者），在架构决策和高风险变更前提供跨家族模型的对抗性验证。
+RedCap 更接近业内这几类 AI Agent 设计思想的组合体：
 
----
+- workflow engine / state machine
+- multi-agent team orchestration
+- file-backed protocol and evidence
+- independent reviewer gates
+- progressive disclosure for context hygiene
+- host-capability honesty
 
-## 目录结构
+它追求的不是“最像人类助理”，而是**最像一个可靠的工程团队**。
 
-```
-redcap/
-├── SKILL.md          ← Copilot CLI skill 入口（Dispatcher 完整执行协议）
-├── CLAUDE.md / GEMINI.md / .github/copilot-instructions.md  ← 各宿主配置索引
-├── README.md / ARCHITECTURE.md
-├── references/       ← 跨层公约（security-rules, code-standards, commit-standards,
-│                        hook-standards, communication-protocol, agent-constraints）
-│
-├── loom/             ← 织机（Layer A）
-│   ├── dispatcher/   ← state-machine.md, agent-adapters.md, prompt-templates/, reload-rules.yaml
-│   ├── roles/        ← 五角色手册（architect, programmer, qa, reviewer, product-manager）
-│   ├── tools/        ← Layer A 脚本（redcap-layerA-*.sh, redcap-e2e-postcheck.sh）
-│   └── test-reports/ ← E2E 测试报告
-│
-├── compass/          ← 璇玑（Layer B）
-│   ├── soul.md       ← Cap 人格与复活协议
-│   ├── CONTRIBUTING.md ← 框架自身开发的唯一权威规范
-│   ├── CHANGELOG.md
-│   ├── knowledge/    ← lessons.md, design-principles.md, host-reliability.md,
-│   │                    hooks-*.md, model-capability-matrix.yaml, …
-│   ├── tools/        ← Layer B 脚本（飞书通知、Claude/Gemini/Kimi Hook 处理器）
-│   ├── docs/
-│   │   ├── index.yaml    ← docs collection/retention 索引
-│   │   ├── specs/       ← 已批准的 Layer B 设计快照
-│   │   ├── research/    ← 技术调研与外部能力评估
-│   │   ├── traces/      ← trace matrix / 回归审查资产
-│   │   └── task-reports/← Layer B 任务完成报告（closure evidence）
-│   └── .workflow/    ← 本地 runtime cache（local-only，不进 git）
-│
-└── prism/            ← 棱镜
-    ├── protocol.md   ← 棱镜协议（独立取样 + 议事两族）
-    ├── modes/        ← 运行模式配置
-    ├── roles/        ← 分析角色（挑战者、审查员、旧错者、运筹者等）
-    ├── reports/      ← 历史运行报告
-    └── tools/        ← prism-dispatch-check.sh, prism-archive-check.sh
-```
+## 入口文档
 
----
+| 文档 | 作用 |
+|---|---|
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | 看整体系统怎么拼起来 |
+| [`compass/CONTRIBUTING.md`](./compass/CONTRIBUTING.md) | 看框架自身开发的权威规范 |
+| [`prism/protocol.md`](./prism/protocol.md) | 看 Prism 的正式协议 |
+| [`prism/README.md`](./prism/README.md) | 快速理解 Prism 的定位与使用边界 |
+| [`compass/knowledge/design-principles.md`](./compass/knowledge/design-principles.md) | 看框架的设计哲学 |
 
-### Layer B 目录哲学速记
+## 一句收束
 
-- `compass/docs/`：**冻结后的正式资产**。放 spec、research、trace、task report 这类需要跨会话共享和长期考古的 evidence。
-- `references/backlogs/*.json`：**机器可读的长期路线权威**。负责保存多阶段路线、阶段状态、当前焦点与说明文档锚点；它不替代 `.dev-task.md`。
-- `references/spec-registry.json`：**spec 登记表**。负责说明 `compass/docs/specs/*.md` 各自是什么、现在处于什么状态、以及它和哪条执行链或治理债务相关。
-- `references/spec-lifecycle-policy.json` + `references/spec-contribution-standard.md`：**spec 生命周期策略 + 人类准入规范**。前者给 `redcap-spec-check.sh` 执行，后者给人解释“什么 spec 能进、旧 spec 何时该归档、替代关系怎么写”。
-- `compass/knowledge/`：**活的操作知识**。放 lessons、路由经验、宿主可靠性、调度 heuristics。
-- continuity assets（如 `.dev-task.md`、宿主 `plan.md`、`explore-notes.md`、导入的 session artifacts）：**连续性状态链**，用于防偏航、防上下文稀释与显式继承，不替代 `docs/` 的 frozen evidence 角色。
-
----
-
-## 快速开始
-
-### 前提
-
-- 安装至少一个 AI CLI（[Codex CLI](https://github.com/openai/codex)、[Claude Code](https://docs.anthropic.com/en/docs/claude-code)、[Gemini CLI](https://github.com/google-gemini/gemini-cli)、[Kimi CLI](https://github.com/MoonshotAI/kimi-cli) 之一）
-- 宿主环境：Codex CLI / VS Code Copilot CLI / Claude Code / Gemini CLI / Kimi CLI
-
-### 触发
-
-在宿主 AI Agent 中直接描述需求即可：
-
-```
-@redcap 帮我开发一个任务管理系统
-@redcap 给现有项目增加支付功能
-@redcap 修复用户登录超时的 bug
-```
-
-Skill 自动触发，Dispatcher 接管后续全流程。框架运行中途如需介入，直接在对话中说即可。
-
-### 飞书集成（可选）
-
-```bash
-python3 compass/tools/feishu-notifier.py setup
-```
-
-配置后，用户项目流程完成会自动发飞书通知；RedCap 自身开发则按 `compass/CONTRIBUTING.md` 的收尾协议执行，并由宿主 SessionEnd Hook 做兜底。
-
----
-
-## 为什么用它
-
-| 痛点 | RedCap 的解法 |
-|------|-------------|
-| 单个 Agent 上下文有限，复杂任务容易跑偏 | 多 Agent 接力，每个角色只关注自己的职责 |
-| 每次都要重复描述规范、格式、约束 | 角色手册 + 元原则一次写入，自动注入每个 Agent |
-| AI 给了结果但没有 Review | 独立评审角色兜底，可靠性机制多层防护 |
-| 换了工具就要重新适配 | 适配器层屏蔽差异，多宿主工具开箱即用 |
-| 框架自身越改越乱 | 璇玑（Compass）独立管理框架演化，lessons 积累防坑 |
-
----
-
-## 深入了解
-
-| 文档 | 内容 |
-|------|------|
-| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | 三体架构详解、Dispatcher 状态机、Hook 基础设施、棱镜机制 |
-| [`compass/CONTRIBUTING.md`](./compass/CONTRIBUTING.md) | 框架自身开发的唯一权威规范（Commit 格式、PM Gate、Red Teaming） |
-| [`SKILL.md`](./SKILL.md) | Dispatcher 完整执行协议（面向 AI Agent） |
-| [`compass/knowledge/design-principles.md`](./compass/knowledge/design-principles.md) | 五项元原则（框架灵魂） |
-| [`compass/soul.md`](./compass/soul.md) | Cap 的人格与复活协议 |
-| [`prism/protocol.md`](./prism/protocol.md) | 棱镜协议（多视角并行评审） |
+**RedCap 的目标，不是让一个 Agent 更努力；而是让一组 Agent 按工程规则协作。**
