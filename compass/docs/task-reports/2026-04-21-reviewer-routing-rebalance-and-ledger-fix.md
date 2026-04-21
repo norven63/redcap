@@ -174,7 +174,7 @@
 ### 附录 A：Commits
 
 ```text
-尚未提交；当前为工作区内治理补丁，已完成验证并处于可提交状态。
+已提交：dd93181 fix(governance): rebalance reviewer routing
 ```
 
 ### 附录 B：棱镜调用记录（如有）

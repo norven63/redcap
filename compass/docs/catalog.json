@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 32,
-    "size_bytes": 553461,
+    "size_bytes": 553431,
     "lines": 9722,
-    "chars": 354999,
+    "chars": 355023,
     "rough_token_pressure": {
-      "low": 88749,
-      "high": 177499
+      "low": 88755,
+      "high": 177511
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 17,
-        "size_bytes": 299274,
+        "size_bytes": 299244,
         "lines": 3595,
-        "chars": 188726,
+        "chars": 188750,
         "rough_token_pressure": {
-          "low": 47181,
-          "high": 94363
+          "low": 47187,
+          "high": 94375
         }
       },
       "traces": {
@@ -606,9 +606,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 10081,
+      "size_bytes": 10051,
       "lines": 190,
-      "chars": 6421,
+      "chars": 6445,
       "summary": "当前已完成：Copilot / Codex 的静态优先级限制已经去除，reviewer / stop-review 默认排序已统一收敛到“模型能力画像 + 本地 CLI 稳定性”这套机器真相源。 / 详情：新增了 `compass/tools/redcap-reviewer-order.py`，修正并扩充了 `compass/knowledge/model-capability-matrix.yaml`，同步更新了 `compass/CONTRIBUTING.core.md`、`loom/dispatcher/agent-adapters.md` 与 `compass/knowledge/lessons.md`。`.dev-tas…",
       "status_basis": "filename_recency_only",
       "summary_points": {
