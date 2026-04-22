@@ -91,6 +91,11 @@ RedCap 当前把状态面划分为三类：
 
 ### 2.2.2 `docs / knowledge / continuity assets` 的职责分层
 
+更完整的运行时记忆分层与 Layer B 生命周期定义，见：
+
+- [references/runtime-memory-architecture.md](references/runtime-memory-architecture.md)
+- [compass/knowledge/runtime-memory-architecture.md](compass/knowledge/runtime-memory-architecture.md)
+
 文件放哪一层，不取决于“看起来像不像记录”，而取决于它承担的是哪种记忆职责：
 
 | 层 | 典型载体 | 职责 | 是否可直接当作长期 evidence |
@@ -259,7 +264,10 @@ Layer B 的核心执行序列是：
 4. PM Gate 锁定需求，再进入实现
 5. 变更后执行影响范围检查、任务报告、独立审查、通知与收尾
 
-Layer B 不走 Loom 的 Dispatcher 状态机，但它同样遵守“先澄清、再执行、后闭环”的工程节奏。
+Layer B **不走 Layer A 那种单一 `state.yaml` FSM**，但它并不是“无状态控制面”。
+当前 Layer B 采用的是**分布式控制面生命周期**：由 `.dev-task.md`、PM Gate、
+anti-drift、stop-review、pending closure、closure-ledger 与 session-end 共同表达
+状态与转移。正式定义见 [references/runtime-memory-architecture.md](references/runtime-memory-architecture.md)。
 
 ### 4.2 PM Gate（需求确认门）
 
@@ -287,7 +295,9 @@ PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 | `redcap-drift-check.sh` | 检查 active_slice、允许修改范围、authority 漂移 |
 | `redcap-host-workboard-sync.sh` | 仅同步 pointer/hash 到宿主面板，不提升宿主 authority |
 
-当前 Layer B 的控制面不再依赖“Agent 应该记得当前在做哪一刀”，而是依赖**显式 metadata + gate 脚本 + drift 审计**。
+当前 Layer B 的控制面不再依赖“Agent 应该记得当前在做哪一刀”，而是依赖
+**显式 metadata + gate 脚本 + drift 审计**。`.dev-task.md` 只是其中一个真相源，
+不是全部生命周期本身；完整状态链见 [references/runtime-memory-architecture.md](references/runtime-memory-architecture.md)。
 
 ### 4.4 宿主 workboard mirror-only 边界
 

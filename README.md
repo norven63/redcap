@@ -132,6 +132,8 @@ Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养�
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | 看整体系统怎么拼起来 |
 | [`compass/CONTRIBUTING.md`](./compass/CONTRIBUTING.md) | 看框架自身开发的权威规范 |
 | [`compass/knowledge/long-task-context-defense.md`](./compass/knowledge/long-task-context-defense.md) | 看 RedCap 如何对抗长任务/长对话上下文漂移 |
+| [`compass/knowledge/runtime-memory-architecture.md`](./compass/knowledge/runtime-memory-architecture.md) | 看“真相源 / 镜像 / 考古追踪 / 长期沉淀”等术语到底是什么意思 |
+| [`references/runtime-memory-architecture.md`](./references/runtime-memory-architecture.md) | 看 Layer B 生命周期如何与 `.dev-task.md`、validator、pending closure、session hooks 绑在一起 |
 | [`prism/protocol.md`](./prism/protocol.md) | 看 Prism 的正式协议 |
 | [`prism/README.md`](./prism/README.md) | 快速理解 Prism 的定位与使用边界 |
 | [`compass/knowledge/design-principles.md`](./compass/knowledge/design-principles.md) | 看框架的设计哲学 |

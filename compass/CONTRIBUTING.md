@@ -382,11 +382,11 @@ python3 compass/tools/feishu-notifier.py pending-list --limit 5
 
 ## 7. Layer B 大型任务断点续传
 
-> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的断点续传由 `.workflow/state.yaml` 状态机自动保证。
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的断点续传由 `.workflow/state.yaml` 这类单一显式 FSM 自动保证；Layer B 不采用同一种单中心状态文件，而是使用 `.dev-task.md + pending closure + closure-ledger + validator-chain + session-start/stop-review/on-complete/session-end` 组成的分布式控制面生命周期。详见 `references/runtime-memory-architecture.md`。
 
-**问题**：Layer B 无状态机保护，会话中断（坏死、超时、主动关闭）后，任务进度仅存在于 LLM 上下文中，无法结构化恢复。
+**问题**：Layer B 曾经缺少像 Layer A 那样显眼的单一 FSM 表达，导致会话中断后容易被误判成“只能靠上下文记忆恢复”，也让入口文档和实际控制面之间出现口径漂移。
 
-**解法**：触发式轻状态文件 `.dev-task.md`。
+**解法**：以 `.dev-task.md` 作为当前任务真相源，再由 pending closure、closure-ledger 与 session hooks 补齐闭环事务与恢复链。
 
 ### 触发条件
 

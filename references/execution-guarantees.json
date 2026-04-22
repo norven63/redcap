@@ -407,6 +407,29 @@
       "auto_enforceable": true
     },
     {
+      "id": "layerb-lifecycle-contract",
+      "category": "control-gates",
+      "priority": "P1",
+      "rule": "Layer B distributed control-plane lifecycle and runtime-memory terminology must stay aligned with the scripts, ledgers, and entry documents that actually implement them.",
+      "source_paths": [
+        "references/runtime-memory-architecture.md",
+        "compass/knowledge/runtime-memory-architecture.md",
+        "ARCHITECTURE.md",
+        "compass/CONTRIBUTING.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-layerb-lifecycle-check.sh verifies the lifecycle contract, glossary surface, referenced script files, guarantee registration, and key entry wording; diagnose consumes it directly.",
+      "guarantee_paths": [
+        "compass/tools/redcap-layerb-lifecycle-check.sh",
+        "references/runtime-memory-architecture.md",
+        "compass/knowledge/runtime-memory-architecture.md",
+        "compass/tools/redcap-diagnose.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "task-report-closure",
       "category": "task-report-closure",
       "priority": "P0",
