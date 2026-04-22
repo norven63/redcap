@@ -5,7 +5,7 @@
 
 ## 读取边界
 
-1. **必须先遵守核心契约**：新会话、复活、接盘、长任务继续时，先读本文件，再优先运行 `./revive-cap.sh`（它会转调 `compass/tools/redcap-install.sh`）；installer 不可用时，再退回 `current-status + diagnose + guarantee checks`。
+1. **必须先遵守核心契约**：新会话、复活、接盘、长任务继续时，先读本文件，再优先运行 `./revive-cap.sh`（它会转调 `compass/tools/redcap-install.sh`，并显式检查宿主 Hook 就绪状态）；installer 不可用时，再退回 `current-status + diagnose + guarantee checks`。
 2. **不得把全文规范当默认上下文**：`compass/CONTRIBUTING.md` 不应被宿主入口无差别全文注入；需要细则时，先按章节路由精确读取。
 3. **全文仍是权威**：当本文件和 `compass/CONTRIBUTING.md` 冲突时，以全文规范为准，并修正本文件，不能让核心契约漂移。
 

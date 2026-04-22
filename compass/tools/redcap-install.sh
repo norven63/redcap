@@ -89,6 +89,8 @@ run_check() {
             printf '%s\n' "$output" | sed -n '1,4p' | sed 's/^/  /'
         elif [[ "$label" == "tracking-health" ]]; then
             printf '%s\n' "$output" | sed '/^REDCAP_TRACKING_HEALTH$/d;/^TRACKING_OK$/d' | sed 's/^/  /'
+        elif [[ "$label" == "host-hook-readiness" ]]; then
+            printf '%s\n' "$output" | sed 's/^/  /'
         fi
     else
         printf '[fail] %s status=%s\n' "$label" "$status"
@@ -115,6 +117,7 @@ fi
 
 run_check "current-status" bash "$SCRIPT_DIR/redcap-current-status.sh" "$TASK_FILE"
 run_check "tracking-health" bash "$SCRIPT_DIR/redcap-tracking-health.sh" "$TASK_FILE"
+run_check "host-hook-readiness" bash "$SCRIPT_DIR/redcap-host-hook-readiness.sh" "$HOST" "$REDCAP_ROOT"
 run_check "execution-guarantees" bash "$SCRIPT_DIR/redcap-execution-guarantee-check.sh"
 run_check "revival-protocol" bash "$SCRIPT_DIR/redcap-revival-check.sh" "$REDCAP_ROOT"
 

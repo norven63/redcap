@@ -250,9 +250,10 @@
         "compass/CONTRIBUTING.core.md"
       ],
       "status": "scripted",
-      "automation": "redcap-install.sh performs identity bootstrap, current-status, tracking-health, execution-guarantee, and revival checks; revival-check ensures the installer is referenced by host entry surfaces, and Layer B SessionStart now invokes the installer on hosts that expose that hook.",
+      "automation": "redcap-install.sh performs identity bootstrap, current-status, tracking-health, host-hook-readiness, execution-guarantee, and revival checks; revival-check ensures the installer is referenced by host entry surfaces, and Layer B SessionStart now invokes the installer on hosts that expose that hook.",
       "guarantee_paths": [
         "compass/tools/redcap-install.sh",
+        "compass/tools/redcap-host-hook-readiness.sh",
         "compass/tools/redcap-revival-check.sh"
       ],
       "revival_required": true,
