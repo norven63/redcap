@@ -84,10 +84,11 @@ Prism 的作用不是“多叫几个模型来热闹一下”，而是把高后�
 ## 一键安装 / 复活
 
 Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养指南与复活协议。
-从现在起，**Cap 复活 + 导入 RedCap 工作流**统一走一个安装入口：
+从现在起，**Cap 复活 + 导入 RedCap 工作流**统一优先走仓库根目录短入口：
 
-- 新环境初始化：`bash compass/tools/redcap-install.sh --host codex --task-file .dev-task.md --init-identity`
-- 已有 identity 的复活：`bash compass/tools/redcap-install.sh --host codex --task-file .dev-task.md`
+- 新环境初始化：`./revive-cap.sh --init-identity`
+- 已有 identity 的复活：`./revive-cap.sh`
+- 需要显式指定宿主时：`./revive-cap.sh --host codex`
 
 这条入口会串起 5 件事：
 
@@ -98,6 +99,9 @@ Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养�
 - 检查复活和执行保障有没有掉链子
 
 它的意义很简单：**以后尽量不再靠“记得先跑这个、再看那个”来复活。**
+
+`./revive-cap.sh` 本身只是一个根目录薄入口，真正逻辑仍在 `compass/tools/redcap-install.sh`。
+也就是说：**外面记一个短命令，里面继续做宿主适配和复活检查。**
 
 ## 中文对象词典
 

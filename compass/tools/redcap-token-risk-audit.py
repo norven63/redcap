@@ -18,7 +18,7 @@ REQUIRED_IGNORED_PATHS = [
     "compass/.workflow",
     ".env",
     "prompt.txt",
-    "cli_console.md",
+    "cli_" "console.md",
 ]
 
 FORBIDDEN_AUTO_IMPORTS = [

@@ -5,7 +5,7 @@
 
 ## 读取边界
 
-1. **必须先遵守核心契约**：新会话、复活、接盘、长任务继续时，先读本文件，再优先运行 `compass/tools/redcap-install.sh --task-file .dev-task.md`；installer 不可用时，再退回 `current-status + diagnose + guarantee checks`。
+1. **必须先遵守核心契约**：新会话、复活、接盘、长任务继续时，先读本文件，再优先运行 `./revive-cap.sh`（它会转调 `compass/tools/redcap-install.sh`）；installer 不可用时，再退回 `current-status + diagnose + guarantee checks`。
 2. **不得把全文规范当默认上下文**：`compass/CONTRIBUTING.md` 不应被宿主入口无差别全文注入；需要细则时，先按章节路由精确读取。
 3. **全文仍是权威**：当本文件和 `compass/CONTRIBUTING.md` 冲突时，以全文规范为准，并修正本文件，不能让核心契约漂移。
 
@@ -40,10 +40,11 @@
 
 ## 必跑入口
 
-1. `bash compass/tools/redcap-install.sh --task-file .dev-task.md`（installer；有 SessionStart Hook 的宿主会实际调用）
-2. `bash compass/tools/redcap-current-status.sh .dev-task.md`（fallback）
-3. `bash compass/tools/redcap-tracking-health.sh .dev-task.md`
-4. `bash compass/tools/redcap-diagnose.sh .dev-task.md`
-5. `bash compass/tools/redcap-token-risk-audit.sh`
-6. 涉及 docs：`bash compass/tools/redcap-docs-catalog.sh plan "<query>"` 与 `budget <paths...>`
-7. 涉及 acceptance：`bash compass/tools/redcap-acceptance-index.sh find "<case>"`
+1. `./revive-cap.sh`（推荐短入口；内部转调 installer）
+2. `bash compass/tools/redcap-install.sh --task-file .dev-task.md`（installer 真正实现；有 SessionStart Hook 的宿主会实际调用）
+3. `bash compass/tools/redcap-current-status.sh .dev-task.md`（fallback）
+4. `bash compass/tools/redcap-tracking-health.sh .dev-task.md`
+5. `bash compass/tools/redcap-diagnose.sh .dev-task.md`
+6. `bash compass/tools/redcap-token-risk-audit.sh`
+7. 涉及 docs：`bash compass/tools/redcap-docs-catalog.sh plan "<query>"` 与 `budget <paths...>`
+8. 涉及 acceptance：`bash compass/tools/redcap-acceptance-index.sh find "<case>"`
