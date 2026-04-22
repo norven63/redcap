@@ -1035,3 +1035,21 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-21
+
+### L-106: Prism 真实 E2E 必须把“Agent 席位故障”和“repo-owned 脚本故障”分开记账
+- **场景**：对 `./revive-cap.sh` 做一组真实 Prism test 时，`copilot` 因模型不可用直接失败、`gemini` 停在浏览器认证提示、`kimi` 回显 prompt 且报告 `LLM not set`，只有 `codex` 这席真正跑到了脚本执行层。若不拆分两类故障，很容易把“席位环境坏了”误判成“脚本本身坏了”
+- **根因**：外部 reviewer / Prism 席位是“两层系统”叠加：上层是 CLI/登录态/模型路由/headless 交互，下层才是 repo-owned 脚本。只看最终红绿，不记录原始 raw/耗时/阻塞点，就会丢失故障归属
+- **经验规则**：① Prism 真实 E2E 必须至少同时保存 raw、meta、席位耗时与失败原因 ② 汇总结论时先判断“席位有没有真的跑到脚本层”，再判断脚本是否成功 ③ prompt echo、登录页、模型不可用、超时重连都属于席位故障，不得直接记成脚本回归失败 ④ 若一轮编队中只有部分席位真正命中脚本层，必须再补一个最相关席位的 post-fix 复测，避免结论悬空
+- **来源**：2026-04-22 `20260422-test-001` / `20260422-test-002`，对 `./revive-cap.sh` 的真实 Prism E2E 回归
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-22
+
+### L-107: 需要在只读 reviewer sandbox 里执行的校验器，不能再用 shell heredoc 承载 Python
+- **场景**：`./revive-cap.sh` 在本地可写环境里返回 `REDCAP_INSTALL_OK`，但在 `codex` 只读席位下会卡在 `execution-guarantees` / `revival-protocol`，错误是 “cannot create temp file for here document: Operation not permitted”
+- **根因**：虽然检查逻辑本身是只读的，但 `bash <<'PY'` 这类 heredoc 仍要在临时目录落一个中间载体；只读 sandbox 会把这一步直接拦住，导致“逻辑只读、实现不只读”的假绿错觉
+- **经验规则**：① 面向 reviewer sandbox / revive / diagnose / validator chain 的检查器，一律优先采用“shell 薄入口 + 独立 Python 载体”模式 ② 不要把“脚本逻辑不写 repo”误当成“执行时不需要临时写入” ③ 外部席位回归暴露出 heredoc 依赖后，应优先把载体迁移成真实文件，而不是在报告里继续口头声明 read-only-safe
+- **来源**：2026-04-22 `./revive-cap.sh` Prism E2E 复盘，随后将 `redcap-execution-guarantee-check` / `redcap-revival-check` 迁移到独立 Python 载体
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-22

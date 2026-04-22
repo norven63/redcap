@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 35,
-    "size_bytes": 573480,
-    "lines": 10081,
-    "chars": 367604,
+    "file_count": 36,
+    "size_bytes": 578775,
+    "lines": 10207,
+    "chars": 371385,
     "rough_token_pressure": {
-      "low": 91901,
-      "high": 183802
+      "low": 92846,
+      "high": 185692
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 20,
-        "size_bytes": 319293,
-        "lines": 3954,
-        "chars": 201331,
+        "file_count": 21,
+        "size_bytes": 324588,
+        "lines": 4080,
+        "chars": 205112,
         "rough_token_pressure": {
-          "low": 50332,
-          "high": 100665
+          "low": 51278,
+          "high": 102556
         }
       },
       "traces": {
@@ -530,7 +530,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：飞书双向链路与 overlay handoff P0 收口",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15273,
       "lines": 219,
@@ -595,29 +595,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：reviewer 选型重排与账面补锚",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10051,
       "lines": 190,
       "chars": 6445,
       "summary": "当前已完成：Copilot / Codex 的静态优先级限制已经去除，reviewer / stop-review 默认排序已统一收敛到“模型能力画像 + 本地 CLI 稳定性”这套机器真相源。 / 详情：新增了 `compass/tools/redcap-reviewer-order.py`，修正并扩充了 `compass/knowledge/model-capability-matrix.yaml`，同步更新了 `compass/CONTRIBUTING.core.md`、`loom/dispatcher/agent-adapters.md` 与 `compass/knowledge/lessons.md`。`.dev-tas…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：Copilot / Codex 的静态优先级限制已经去除，reviewer / stop-review 默认排序已统一收敛到“模型能力画像 + 本地 CLI 稳定性”这套机器真相源。",
-          "详情：新增了 `compass/tools/redcap-reviewer-order.py`，修正并扩充了 `compass/knowledge/model-capability-matrix.yaml`，同步更新了 `compass/CONTRIBUTING.core.md`、`loom/dispatcher/agent-adapters.md` 与 `compass/knowledge/lessons.md`。`.dev-task.md` 也已补成合法 canonical task ledger，三条 st…"
-        ],
-        "previous_step": [
-          "上一步完成的是：先补齐 `.dev-task.md` 的 canonical task ledger，再把 stop-review acceptance 夹具从真实宿主 compat fallback 印章中隔离出来，最终拿到三条 targeted acceptance 绿灯。"
-        ],
-        "next_step": [
-          "下一步计划做的是：若继续治理，则转去处理非本轮 blocker 的长期债务，例如 GD-008（主 Agent 实时行为约束仍属 host-limited）与 GD-009（首读/诊断链尚未 read-only-safe）。"
-        ],
-        "position": [
-          "整体计划脉络图是：锁定任务锚点 → 改 reviewer 排序真相源 → 接 stop-review → 跑 targeted acceptance → 盘点遗留项。",
-          "当前所在位置：`reviewer-routing-rebalance` 已完成，处于“已收口、待后续 tranche 决定是否继续治理宿主边界债务”的终局态。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-22-install-revival-and-context-hardening.md",
@@ -646,6 +630,25 @@
           "路线：校准灵魂锚点 → 统一安装/复活入口 → 追踪健康显性化 → 长任务对抗沉淀 → 回归校验与收口。",
           "当前位置：已完成终局收口，可提交。"
         ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-22-prism-revive-cap-e2e-and-readonly-fix.md",
+      "collection": "task-reports",
+      "title": "2026-04-22 `revive-cap` Prism E2E 与 read-only 修补",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 5295,
+      "lines": 126,
+      "chars": 3781,
+      "summary": "- 已完成一组真实 Prism test 回归来验证 `./revive-cap.sh`。 - 首轮编队 run `20260422-test-001` 证明：`copilot/gemini/kimi` 主要卡在各自 CLI/登录态/模型路由层；`codex` 席位真正跑到了脚本层，并抓出了 `execution-guarantees` / `revival-protocol` 仍依赖 shell heredoc 的 read-only 缺口。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [],
+        "previous_step": [],
+        "next_step": [],
+        "position": []
       }
     },
     {
