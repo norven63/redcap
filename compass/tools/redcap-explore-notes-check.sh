@@ -25,7 +25,7 @@ UNARCHIVED_COUNT=$(awk '
         in_entry=1
         archived=0
     }
-    in_entry && /\[ARCHIVED\]/ { archived=1 }
+    in_entry && /\[ARCHIVED/ { archived=1 }
     END {
         if (in_entry && !archived) {
             count++

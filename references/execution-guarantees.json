@@ -82,14 +82,13 @@
         "compass/soul.md#6"
       ],
       "status": "manual-only",
-      "automation": "redcap-current-status.sh remains the required first-read status surface in the revival protocol, but the current session-start chain does not physically execute it; until that hook exists, this guarantee is manual-only and still requires a writable temp directory when run.",
+      "automation": "redcap-current-status.sh remains the required first-read status surface. SessionStart-capable hosts now invoke the installer, which runs current-status physically during startup; Codex.app and other startup-import-only hosts still rely on explicit installer/current-status execution.",
       "guarantee_paths": [
         "compass/tools/redcap-current-status.sh",
         "compass/tools/redcap-revival-check.sh"
       ],
-      "non_automation_reason": "session-start validator chain does not actually invoke redcap-current-status.sh yet, so claiming automatic enforcement would be unsafe until a real hook path exists.",
-      "read_only_safe": false,
-      "host_requirement": "writable-temp-dir",
+      "non_automation_reason": "Not every host exposes SessionStart hooks. Codex.app still provides startup import without repo-owned hook execution, so RedCap cannot claim this rule is automatic everywhere.",
+      "read_only_safe": true,
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": false
@@ -251,7 +250,7 @@
         "compass/CONTRIBUTING.core.md"
       ],
       "status": "scripted",
-      "automation": "redcap-install.sh performs identity bootstrap, current-status, tracking-health, execution-guarantee, and revival checks; revival-check ensures the installer is referenced by host entry surfaces.",
+      "automation": "redcap-install.sh performs identity bootstrap, current-status, tracking-health, execution-guarantee, and revival checks; revival-check ensures the installer is referenced by host entry surfaces, and Layer B SessionStart now invokes the installer on hosts that expose that hook.",
       "guarantee_paths": [
         "compass/tools/redcap-install.sh",
         "compass/tools/redcap-revival-check.sh"
@@ -347,19 +346,18 @@
       "id": "diagnostic-overview",
       "category": "diagnostics",
       "priority": "P1",
-      "rule": "RedCap must provide a single diagnostic entry that summarizes current status and runs the key governance checks without requiring manual script hunting; the current implementation still requires a writable temp directory.",
+      "rule": "RedCap must provide a single diagnostic entry that summarizes current status and runs the key governance checks without requiring manual script hunting.",
       "source_paths": [
         "references/backlogs/framework-upgrade.json",
         "compass/tools/redcap-current-status.sh"
       ],
       "status": "scripted",
-      "automation": "redcap-diagnose.sh runs current-status plus docs, knowledge, overlay, execution, revival, and spec checks, but the chain is not yet guaranteed inside read-only sandboxes.",
+      "automation": "redcap-diagnose.sh runs current-status plus docs, knowledge, overlay, execution, revival, and spec checks through the read-only-safe first-read chain; host startup automation still depends on the current host's hook surface.",
       "guarantee_paths": [
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-multi-session-acceptance.sh"
       ],
-      "read_only_safe": false,
-      "host_requirement": "writable-temp-dir",
+      "read_only_safe": true,
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true
@@ -439,14 +437,13 @@
         "compass/docs/index.yaml"
       ],
       "status": "validator",
-      "automation": "redcap-docs-catalog.sh check is consumed by spec-check.",
+      "automation": "redcap-docs-catalog.sh check is consumed by spec-check, and the summary/plan/check/retention commands no longer depend on temporary writable files.",
       "guarantee_paths": [
         "compass/tools/redcap-docs-catalog.sh",
         "compass/tools/redcap-spec-check.sh",
         "compass/docs/catalog.json"
       ],
-      "read_only_safe": false,
-      "host_requirement": "writable-temp-dir",
+      "read_only_safe": true,
       "revival_required": true,
       "hook_required": true,
       "auto_enforceable": true
@@ -468,8 +465,7 @@
         "compass/tools/redcap-multi-session-acceptance.sh",
         "compass/tools/redcap-current-status.sh"
       ],
-      "read_only_safe": false,
-      "host_requirement": "writable-temp-dir",
+      "read_only_safe": true,
       "revival_required": true,
       "hook_required": true,
       "auto_enforceable": true
@@ -505,7 +501,7 @@
         "compass/knowledge/host-reliability.md"
       ],
       "status": "hooked",
-      "automation": "session-start/session-end scripts and validator-chain provide the shared control path; hook standards define host alignment.",
+      "automation": "session-start/session-end scripts and validator-chain provide the shared control path; SessionStart-capable hosts now also run the installer through redcap-layerB-session-start.sh, while hook standards define host alignment.",
       "guarantee_paths": [
         "compass/tools/redcap-layerB-session-start.sh",
         "compass/tools/redcap-layerB-session-end.sh",
@@ -553,14 +549,13 @@
         "compass/tools/redcap-multi-session-acceptance.sh"
       ],
       "status": "scripted",
-      "automation": "redcap-acceptance-index.sh provides summary/find/check and token-risk audit requires it as the mitigation for the large acceptance suite.",
+      "automation": "redcap-acceptance-index.sh provides summary/find/check without temporary writable files, and token-risk audit requires it as the mitigation for the large acceptance suite.",
       "guarantee_paths": [
         "compass/tools/redcap-acceptance-index.sh",
         "compass/tools/redcap-token-risk-audit.sh",
         "compass/tools/redcap-spec-check.sh"
       ],
-      "read_only_safe": false,
-      "host_requirement": "writable-temp-dir",
+      "read_only_safe": true,
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true
@@ -578,14 +573,13 @@
         "compass/soul.md"
       ],
       "status": "scripted",
-      "automation": "redcap-token-risk-audit.sh checks entry files, tracked large files, ignored runtime directories, and required navigation mitigations; spec-check and diagnose consume it, but the current implementation requires a writable temp directory.",
+      "automation": "redcap-token-risk-audit.sh checks entry files, tracked large files, ignored runtime directories, and required navigation mitigations; spec-check and diagnose consume it through the read-only-safe first-read chain.",
       "guarantee_paths": [
         "compass/tools/redcap-token-risk-audit.sh",
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-spec-check.sh"
       ],
-      "read_only_safe": false,
-      "host_requirement": "writable-temp-dir",
+      "read_only_safe": true,
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true

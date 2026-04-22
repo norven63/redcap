@@ -13,7 +13,10 @@ if [[ -z "$REPO_ROOT" ]]; then
 fi
 
 HOOKS_PATH=".githooks"
-HOOK_FILE="$REPO_ROOT/$HOOKS_PATH/pre-commit"
+HOOK_FILES=(
+    "$REPO_ROOT/$HOOKS_PATH/pre-commit"
+    "$REPO_ROOT/$HOOKS_PATH/commit-msg"
+)
 
 resolve_hook_dir() {
     local repo_root="$1"
@@ -40,10 +43,12 @@ git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1 || {
     exit 1
 }
 
-if [[ ! -x "$HOOK_FILE" ]]; then
-    echo "[redcap-ensure-git-hooks] missing repo-owned pre-commit hook: $HOOK_FILE" >&2
-    exit 1
-fi
+for hook_file in "${HOOK_FILES[@]}"; do
+    if [[ ! -x "$hook_file" ]]; then
+        echo "[redcap-ensure-git-hooks] missing repo-owned hook: $hook_file" >&2
+        exit 1
+    fi
+done
 
 CURRENT_HOOKS_PATH="$(git -C "$REPO_ROOT" config --local --get core.hooksPath || true)"
 DESIRED_ABS="$(resolve_hook_dir "$REPO_ROOT" "$HOOKS_PATH")"

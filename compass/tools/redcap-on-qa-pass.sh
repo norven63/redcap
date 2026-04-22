@@ -34,6 +34,7 @@ COMMIT_TYPE="${2:?缺少 commit_type 参数（feat/fix/refactor/docs/test/chore/
 COMMIT_SCOPE="${3:?缺少 commit_scope 参数}"
 COMMIT_MESSAGE="${4:?缺少 commit_message 参数}"
 COMMIT_BODY="${5:-}"
+AUTHOR_MARKER="作者:redcap"
 
 # ── 校验 commit_type ─────────────────────────────────────
 
@@ -50,6 +51,20 @@ if [[ ${#SUBJECT_LINE} -gt 72 ]]; then
   echo "[on_qa_pass] ⚠ subject line 超过 72 字符（${#SUBJECT_LINE} 字符）: $SUBJECT_LINE"
   echo "[on_qa_pass] 继续执行，但建议缩短描述"
 fi
+
+compose_commit_body() {
+  local body="$COMMIT_BODY"
+
+  if [[ -z "$body" ]]; then
+    body="原因：沉淀当前步骤已通过 QA 的结果，保持代码、状态机与交付节奏一致。"
+  fi
+
+  if [[ "$body" != *"$AUTHOR_MARKER"* ]]; then
+    body="${body}"$'\n\n'"$AUTHOR_MARKER"
+  fi
+
+  printf '%s' "$body"
+}
 
 # ── 动作 1: git add -A && git commit ─────────────────────
 
@@ -75,17 +90,12 @@ git_commit() {
     return 2
   }
 
-  if [[ -n "$COMMIT_BODY" ]]; then
-    git commit -m "$SUBJECT_LINE" -m "$COMMIT_BODY" || {
-      echo "[on_qa_pass] ⚠ git commit 失败"
-      return 2
-    }
-  else
-    git commit -m "$SUBJECT_LINE" || {
-      echo "[on_qa_pass] ⚠ git commit 失败"
-      return 2
-    }
-  fi
+  local full_body
+  full_body="$(compose_commit_body)"
+  git commit -m "$SUBJECT_LINE" -m "$full_body" || {
+    echo "[on_qa_pass] ⚠ git commit 失败"
+    return 2
+  }
 
   echo "[on_qa_pass] ✓ 已提交: $SUBJECT_LINE"
 }

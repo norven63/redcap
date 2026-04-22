@@ -22,8 +22,9 @@
 9. **运行残留不能擅自删除**：`prism/runs`、`compass/.runtime`、`compass/.workflow` 等 ignored 本地证据目录默认 no-bulk-read；物理清理需用户显式批准。
 10. **Codex 子 Agent 默认克制但不是禁用**：仅在确实能提效提质时开启，且 RedCap / Prism 主动拉起的 Codex-family 执行进程总数默认不超过 2（当前宿主也计入）；外部审查 / reviewer 选择统一按“模型能力画像 + 本地 CLI 稳定性”排序，不得静态压低 Copilot / Codex。
 11. **飞书不是唯一收尾动作**：飞书通知只是可见信号；真正收尾还要看 review、validator、task report、lessons、backlog、catalog、diagnose 与 pending closure。
-12. **首读/诊断入口当前要求可写临时目录**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 在当前实现下不承诺 read-only sandbox 可跑；只读 reviewer 宿主必须走 wrapper、手工账本查验，或显式接受 degraded/manual-only 边界。
+12. **首读/诊断入口已优先做成只读安全**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 的 repo-owned 首读链不再依赖临时可写目录；真正仍受宿主限制的是 reply-time veto、SessionEnd 等宿主控制点，而不是这些首读入口本身。
 13. **identity 先于 soul**：`~/.cap/identity.md` 是 Cap 的个人灵魂锚点；`compass/soul.md` 负责培养指南、复活协议与执行纪律。缺失 identity 时，优先用 `redcap-install.sh --init-identity` 初始化，不要把 `soul.md` 误当成个人记忆本体。
+14. **有 SessionStart Hook 的宿主必须跑 installer**：Claude / Gemini / Copilot 这类已接入 Layer B SessionStart 的宿主，会在启动链里实际调用 `redcap-install.sh`；Codex.app 这类只有入口导入的宿主，仍需显式运行 installer 或 current-status。
 
 ## 章节路由
 
@@ -39,10 +40,10 @@
 
 ## 必跑入口
 
-1. `bash compass/tools/redcap-install.sh --task-file .dev-task.md`（installer；当前要求可写临时目录）
-2. `bash compass/tools/redcap-current-status.sh .dev-task.md`（fallback；当前要求可写临时目录）
+1. `bash compass/tools/redcap-install.sh --task-file .dev-task.md`（installer；有 SessionStart Hook 的宿主会实际调用）
+2. `bash compass/tools/redcap-current-status.sh .dev-task.md`（fallback）
 3. `bash compass/tools/redcap-tracking-health.sh .dev-task.md`
-4. `bash compass/tools/redcap-diagnose.sh .dev-task.md`（当前要求可写临时目录）
-5. `bash compass/tools/redcap-token-risk-audit.sh`（当前要求可写临时目录）
-6. 涉及 docs：`bash compass/tools/redcap-docs-catalog.sh plan "<query>"` 与 `budget <paths...>`（当前要求可写临时目录）
-7. 涉及 acceptance：`bash compass/tools/redcap-acceptance-index.sh find "<case>"`（当前要求可写临时目录）
+4. `bash compass/tools/redcap-diagnose.sh .dev-task.md`
+5. `bash compass/tools/redcap-token-risk-audit.sh`
+6. 涉及 docs：`bash compass/tools/redcap-docs-catalog.sh plan "<query>"` 与 `budget <paths...>`
+7. 涉及 acceptance：`bash compass/tools/redcap-acceptance-index.sh find "<case>"`

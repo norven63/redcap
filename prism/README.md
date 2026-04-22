@@ -68,6 +68,17 @@ formal 运行至少有两层证据：
 
 只有**报告归档 + index 登记 + archive-check 通过**，才算 formal Prism 完成。
 
+本地 `prism/runs` 目录里的运行夹具，不再默认一律永久保留：
+
+- `formal-run` 默认保留
+- `acceptance-fixture` 可进入安全清理集
+- `named-local-evidence` 会进入“保留期 + 审查后清理”的生命周期，而不是无限堆积
+
+入口在：
+- `bash prism/tools/prism-runs-lifecycle.sh summary`
+- `bash prism/tools/prism-runs-lifecycle.sh inventory`
+- `bash prism/tools/prism-runs-lifecycle.sh prune-local`（dry-run）
+
 ## 什么时候不要滥用它
 
 - 小改动、低风险、边界清晰的问题

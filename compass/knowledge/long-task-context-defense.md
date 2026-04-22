@@ -41,12 +41,12 @@ RedCap 目前不是靠“上下文越长越稳”，而是靠**把关键真相�
 |---|---|---|
 | 文件化状态外置 | 用 worklog、state file、checkpoint 代替纯聊天记忆 | **已落地**：`.dev-task.md`、task report、pending closure、runtime manifest |
 | 渐进式上下文加载 | 先索引，再按需读取正文 | **已落地**：docs catalog、knowledge index、acceptance index |
-| 会话重启 / 一键复活 | 新会话统一跑 bootstrap / installer / preflight | **本轮补强**：`redcap-install.sh` 把复活与 workflow import 收口成单一入口 |
+| 会话重启 / 一键复活 | 新会话统一跑 bootstrap / installer / preflight | **本轮补强**：`redcap-install.sh` 把复活与 workflow import 收口成单一入口；有 SessionStart Hook 的宿主会实际调用它 |
 | 独立审查对冲上下文漂移 | 让新 Agent / 新模型族做独立 review | **已落地**：Reviewer、Prism、stop-review |
 | 任务切片 / 子任务并行 | 把独立问题拆成小上下文工作单元 | **已落地但依赖纪律**：Loom / Layer B 并行裂变协议 |
 | 外部记忆检索（RAG / vector DB） | 用向量检索从大规模历史中召回相关记忆 | **暂不需要**：当前规模仍适合文件索引 + 关键词定位 |
 | reply-time veto / pre-send guard | 在模型回复前做硬拦截 | **未落地，宿主限制**：这是 GD-008 的核心边界 |
-| read-only-safe bootstrap | 只读宿主也能稳定跑首读与诊断 | **未落地，治理债务**：这是 GD-009 的核心边界 |
+| read-only-safe bootstrap | 只读宿主也能稳定跑首读与诊断 | **已补强**：`current-status` / `diagnose` / `docs-catalog` / `acceptance-index` / `token-risk-audit` 的 repo-owned 首读链已去掉临时目录依赖；reply-time veto 仍不属于这条能力 |
 
 ## 为什么当前不引入 RAG
 
@@ -83,10 +83,10 @@ RedCap 目前不是靠“上下文越长越稳”，而是靠**把关键真相�
   没有 repo-owned pre-reply veto，就不能 100% 拦住“无必要 ask_user / 无必要中断”。
 
 - **只读宿主仍不是 full support**
-  首读、diagnose、catalog、token-risk 这套脚本目前仍依赖可写临时目录。
+  首读、diagnose、catalog、token-risk 这条 repo-owned 首读链已经基本 read-only-safe；真正还做不到 full support 的，是 reply-time veto、SessionEnd 与宿主私有控制点。
 
-- **书记官触发仍主要靠执行纪律**
-  现在有提醒与状态面，但还没有“只要满足条件就 100% 自动落盘”的宿主级强控制。
+- **书记官触发仍没有宿主级 100% 自动落盘**
+  现在已经有 stale fail-loud 与状态面显性化，但“满足条件立即写回 explore-notes / .dev-task.md”仍缺宿主级实时拦截点。
 
 ## 对 Norven 的最短回答
 

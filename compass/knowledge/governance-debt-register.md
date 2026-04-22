@@ -71,7 +71,7 @@
 
 ### GD-009：首读/诊断链尚未实现真正 read-only-safe
 - **design_status**: `identified`
-- **implementation_status**: `pending`
+- **implementation_status**: `done`
 - **owner_slice**: `只读宿主适配 / 首读链重构`
 - **source**: `references/execution-guarantees.json`（revival-startup / diagnostics / docs-catalog / acceptance-navigation / token-risk-control）+ `compass/CONTRIBUTING.core.md`
-- **gap**: `redcap-current-status.sh`、`redcap-diagnose.sh`、`redcap-docs-catalog.sh`、`redcap-acceptance-index.sh`、`redcap-token-risk-audit.sh` 当前仍依赖 heredoc 或临时文件，因此只能在提供可写临时目录的宿主上稳定运行。现阶段已把它们从“read-only 强保障”口径降为“需要可写临时目录 / 否则 degraded/manual-only”，并把真正的 read-only-safe 重构留作后续治理债务。
+- **gap**: 已收口：`redcap-current-status.sh`、`redcap-diagnose.sh`、`redcap-docs-catalog.sh`、`redcap-acceptance-index.sh`、`redcap-token-risk-audit.sh` 的 repo-owned 首读链已抽离 heredoc / 临时文件依赖，优先支持 read-only-safe 首读与诊断。仍需诚实保留的边界是宿主 reply-time veto、SessionEnd 和其它宿主私有控制点，它们属于 GD-008，而不再属于这条债务。

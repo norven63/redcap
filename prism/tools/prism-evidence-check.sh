@@ -41,7 +41,7 @@ for phrase in [
     if phrase not in protocol:
         fail(f"prism/protocol.md missing evidence boundary: {phrase}")
 
-status_script = read("compass/tools/redcap-current-status.sh")
+status_script = read("compass/tools/redcap-current-status.sh") + "\n" + read("compass/tools/redcap-current-status.py")
 for phrase in [
     "formal Prism 报告索引",
     "legacy/non-auditable",

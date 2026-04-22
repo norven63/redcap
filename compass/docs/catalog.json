@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 34,
-    "size_bytes": 567192,
-    "lines": 9966,
-    "chars": 363560,
+    "file_count": 35,
+    "size_bytes": 573480,
+    "lines": 10081,
+    "chars": 367604,
     "rough_token_pressure": {
-      "low": 90890,
-      "high": 181780
+      "low": 91901,
+      "high": 183802
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 19,
-        "size_bytes": 313005,
-        "lines": 3839,
-        "chars": 197287,
+        "file_count": 20,
+        "size_bytes": 319293,
+        "lines": 3954,
+        "chars": 201331,
         "rough_token_pressure": {
-          "low": 49321,
-          "high": 98643
+          "low": 50332,
+          "high": 100665
         }
       },
       "traces": {
@@ -517,7 +517,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：Copilot 会话身份锚点收口",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13579,
       "lines": 207,
@@ -582,19 +582,13 @@
       "collection": "task-reports",
       "title": "2026-04-21 Pending Validations E2E Tranche",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 3187,
       "lines": 66,
       "chars": 2349,
       "summary": "- 当前已完成：Codex 宿主差异点已写回 repo 权威面，完整用户项目 E2E tranche 已消费 V-2 / V-3 / V-4 / V-6 / V-7 / V-8 / V-9。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [],
-        "previous_step": [],
-        "next_step": [],
-        "position": []
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md",
@@ -652,6 +646,25 @@
           "路线：校准灵魂锚点 → 统一安装/复活入口 → 追踪健康显性化 → 长任务对抗沉淀 → 回归校验与收口。",
           "当前位置：已完成终局收口，可提交。"
         ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-22-readonly-scribe-lifecycle-and-hook-hardening.md",
+      "collection": "task-reports",
+      "title": "2026-04-22 首读链 / 书记官 / 生命周期 / Hook 硬化",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 6288,
+      "lines": 115,
+      "chars": 4044,
+      "summary": "- 已把 `current-status`、`tracking-health`、`docs-catalog`、`acceptance-index`、`token-risk-audit`、`prism-runs-lifecycle` 的关键控制面从 shell heredoc/临时文件迁移到独立 Python 载体，收口到更稳定的只读首读链。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [],
+        "previous_step": [],
+        "next_step": [],
+        "position": []
       }
     },
     {

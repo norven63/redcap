@@ -99,7 +99,8 @@ if "{contributing}" in stop_review:
     fail("stop-review prompt still embeds full CONTRIBUTING text")
 
 token_audit = read("compass/tools/redcap-token-risk-audit.sh")
-if "compass/CONTRIBUTING.core.md" not in token_audit:
+token_audit_impl = read("compass/tools/redcap-token-risk-audit.py")
+if "compass/CONTRIBUTING.core.md" not in token_audit and "compass/CONTRIBUTING.core.md" not in token_audit_impl:
     fail("token-risk audit must know the CONTRIBUTING core mitigation")
 
 architecture = read("ARCHITECTURE.md")

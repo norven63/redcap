@@ -84,6 +84,36 @@ ensure_repo_git_hooks() {
     fi
 }
 
+run_install_revival_entry() {
+    local install_script="$SCRIPT_DIR/redcap-install.sh"
+    local install_output=""
+    local install_status=0
+
+    [[ -x "$install_script" ]] || return 0
+
+    set +e
+    install_output="$(
+        REDCAP_CURRENT_STATUS_REFRESH_AGENT_REGISTRY=0 \
+        bash "$install_script" --host "$HOST" --task-file "$REDCAP_ROOT/.dev-task.md" 2>&1
+    )"
+    install_status=$?
+    set -e
+
+    if redcap_runtime_assert_capability >/dev/null 2>&1; then
+        redcap_runtime_write_text "layerB/install-overview" "$install_output" || true
+    fi
+
+    if [[ "$install_status" -ne 0 ]]; then
+        redcap_runtime_record_degraded_mode \
+            "$HOOK_CWD" \
+            "layerB-session-start-install-failed" \
+            "host=$HOST install_status=$install_status" || true
+        if [[ -n "$install_output" ]]; then
+            printf '%s\n' "$install_output" | sed -n '1,20p' >&2
+        fi
+    fi
+}
+
 run_feishu_pending_reminder() {
     local notifier="$SCRIPT_DIR/feishu-notifier.py"
     local pending_count=""
@@ -275,6 +305,7 @@ if [[ "$REDCAP_SESSION_ISOLATION_MODE" == "full" ]] && [[ -n "$BINDING_KEY" ]] &
     if [[ "$PENDING_CLOSURE_EXISTS" == "1" ]]; then
         run_pending_closure_reconcile
     fi
+    run_install_revival_entry
     run_control_plane_start_sync
     exit 0
 fi
@@ -320,6 +351,7 @@ case "${REDCAP_SESSION_ISOLATION_MODE:-}" in
 esac
 
 ensure_repo_git_hooks
+run_install_revival_entry
 run_control_plane_start_sync
 
 exit 0

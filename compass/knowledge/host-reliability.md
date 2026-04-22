@@ -128,6 +128,7 @@ Codex.app 当前对 RedCap 有两类能力：
 | `compass/tools/redcap-on-complete.sh` | `on_ALL_DONE` | ① 清除 .workflow/ 临时文件（§5.9）② 输出交付摘要 ③ 飞书通知（§5.11） | `bash compass/tools/redcap-on-complete.sh <project_dir> <initial_head> <project_name>` |
 | `compass/tools/redcap-on-qa-pass.sh` | `on_QA_PASS` | ① git add -A && git commit（按 commit-standards.md）② 检查 lesson 字段 | `bash compass/tools/redcap-on-qa-pass.sh <project_dir> <type> <scope> <message> [body]` |
 | `compass/tools/redcap-on-stop-review.sh` | Stop Hook（Layer B） | 提取 git diff → 拉起新 Agent 独立架构评审 → PASS/FAIL + 飞书告警 | 由 `.claude/settings.json` Stop hook 自动触发 |
+| `compass/tools/redcap-install.sh` | SessionStart（Layer B） | 统一执行 identity 检查、current-status、tracking-health、execution-guarantee、revival-check | 由 `redcap-layerB-session-start.sh` 在支持 SessionStart 的宿主中实际调用 |
 | `compass/tools/redcap-layerB-session-end.sh` | SessionEnd（Layer B） | ① 任务报告模板审计 ② 飞书兜底 ③ 非 Claude 宿主补跑独立评审 ④ 去重标记维护 | 由 `.claude/settings.json` / `.gemini/settings.json` / `.github/hooks/*.json` 自动触发 |
 | `loom/tools/redcap-layerA-review-fallback.sh` | Stop Hook（Layer A 兜底） | 检测 REVIEW 被跳过 → 拉起新 Agent 项目级 Code Review → PASS/FAIL + 飞书告警 | 由 `redcap-layerA-stop.sh` 在 ALL_DONE 且无 REVIEW_PASS 时调用 |
 

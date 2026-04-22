@@ -68,9 +68,9 @@
 - `.dev-task.md` 与书记链需要立即补写当前两轮原话，避免再出现“机制存在但执行漏记”。
 - 文件生命周期分类应纳入当前主线，不宜盲目执行“一刀切不进 git”，而要做公正分层判断。
 
-**待决策**：已部分决定（Cap 可自主推进，无需额外人工介入；后续在主线中继续完成路由、通知、生命周期与 docs 审计收口）
+**待决策**：已决定（相关路由、通知、生命周期与 docs 审计收口已在后续治理 tranche 中实际落地）
 
-**状态**：exploring
+**状态**：[ARCHIVED] → `compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md` / `compass/docs/task-reports/2026-04-22-install-revival-and-context-hardening.md`
 
 ---
 
@@ -87,7 +87,7 @@
 
 **待决策**：已决定（Norven 确认）
 
-**状态**：[ARCHIVED → 见 .dev-task.md / discussion_log]
+**状态**：[ARCHIVED] → 见 `.dev-task.md` / `discussion_log`
 
 ---
 
@@ -98,7 +98,7 @@
 
 **当前共识**：四个 handbook 确认无棱镜调用指令（真实缺口），补"何时召唤棱镜"节，纯 CAP_DECIDE
 
-**状态**：[ARCHIVED → P1 落地中]
+**状态**：[ARCHIVED] → P1 落地中
 
 ---
 
@@ -113,7 +113,7 @@
 
 **当前共识**：告知路径 → Agent 读 SKILL.md；BLOCKED 信号 → 文件接力 → Norven 透传
 
-**状态**：[ARCHIVED → P3 落地中]
+**状态**：[ARCHIVED] → P3 落地中
 
 ---
 
@@ -124,7 +124,7 @@
 
 **当前共识**：在 agent-adapters.md 补"多轮接力协议"：各工具续接参数标准化 + BLOCKED 接力 context 携带方式
 
-**状态**：[ARCHIVED → P2 落地中]
+**状态**：[ARCHIVED] → P2 落地中
 
 ---
 
@@ -135,7 +135,7 @@
 
 **当前共识**：矩阵已存在（model-capability-matrix.yaml），补 Gemini/GPT 实测数据；prism Frame 阶段加读矩阵选型步骤；30天更新频率
 
-**状态**：[ARCHIVED → P4 落地中]
+**状态**：[ARCHIVED] → P4 落地中
 
 ---
 
@@ -150,7 +150,7 @@
 
 **当前共识**：内置书记模式。触发条件：≥2个未解决问题 or >3轮未记录。写入本文件。PM Gate 时直接消费。Stop Hook 检查未归档。
 
-**状态**：[ARCHIVED → P0 正在落地，即本文件]
+**状态**：[ARCHIVED] → P0 已落地（本文件 + `soul.md` + `CONTRIBUTING.md §12`）
 
 ---
 
@@ -178,7 +178,7 @@
 
 **待决策**：已决定（Cap 已按批准边界完成 Phase A 接线，并将 Dispatch Firewall 的当前口径显式收口为 prompt-level hard limitation + dispatch gate）
 
-**状态**：[ARCHIVED → `prism/tools/prism-run-state.sh` / `prism/tools/prism-coordinator.sh` / `prism/protocol.md` / `compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md`]
+**状态**：[ARCHIVED] → `prism/tools/prism-run-state.sh` / `prism/tools/prism-coordinator.sh` / `prism/protocol.md` / `compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md`
 
 ---
 
@@ -212,4 +212,4 @@
 
 **沉淀位置**：CONTRIBUTING.md §10 自主执行授权段
 
-**状态**：[ARCHIVED → CONTRIBUTING.md §10]
+**状态**：[ARCHIVED] → `CONTRIBUTING.md §10`

@@ -122,21 +122,25 @@ Cap / Dispatcher 是 session_registry 的唯一写入方：Dispatch 阶段必须
 |---|---|---|---|
 | `acceptance-fixture` | acceptance / regression 过程中生成的本地夹具运行证据（如 `acceptance-prism-*`） | `ephemeral-local` | ✅ 允许；但仅限非 active、未被报告绑定的 acceptance 目录 |
 | `formal-run` | 以 `YYYYMMDD-*` 命名、用于 formal Prism 的 run-scoped 证据 | `preserve` | ❌ 默认不自动删 |
-| `named-local-evidence` | `debug-run` / `council-*` / `review-*` / `safe-default` 这类命名运行证据 | `preserve` | ❌ 默认不自动删 |
+| `named-local-evidence` | `debug-run` / `council-*` / `review-*` / `safe-default` 这类命名运行证据 | `review-and-prune`（超过保留期后进入审查清理候选） | ✅ 可在显式 dry-run / apply 下清理，但必须满足非 active、未被报告绑定、超过保留阈值 |
 | `infra-locks` | `.locks` 等内部锁目录 | `preserve` | ❌ 默认不自动删 |
 
 执行入口：
 
 ```bash
 bash prism/tools/prism-runs-lifecycle.sh summary
+bash prism/tools/prism-runs-lifecycle.sh inventory
 bash prism/tools/prism-runs-lifecycle.sh check
 bash prism/tools/prism-runs-lifecycle.sh prune-acceptance        # dry-run
 bash prism/tools/prism-runs-lifecycle.sh prune-acceptance --apply
+bash prism/tools/prism-runs-lifecycle.sh prune-local             # dry-run
+bash prism/tools/prism-runs-lifecycle.sh prune-local --apply
 ```
 
 规则：
 - `prune-acceptance --apply` 只允许删除 `cleanup_eligible=true` 的 `acceptance-fixture`
-- 命名运行、formal run、本轮 active run 与 `.locks` 必须 preserve-by-default
+- `prune-local --apply` 只允许删除 `local_prune_candidate=true` 的 `named-local-evidence`
+- formal run、本轮 active run 与 `.locks` 必须 preserve-by-default
 - 若当前任务只批准“降 token / 清 acceptance 残留”，不得顺手扩展到命名 run 或 formal run
 
 若进入 council Round 2+，同一 role 只能复用原条目继续推进：
