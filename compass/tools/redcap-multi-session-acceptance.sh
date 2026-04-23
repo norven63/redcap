@@ -1997,6 +1997,66 @@ EOF
     assert_string_contains "$output" "\"status\": \"pass\""
 }
 
+run_review_proof_check_accepts_prism_acceptance_case() {
+    local case_dir task_file report_path report_rel run_id output
+    local parsed_a parsed_b registry
+
+    log "case: review-proof-check-accepts-prism-acceptance"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/review-proof-prism.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    task_file="$case_dir/.dev-task.md"
+    report_path="$case_dir/report.md"
+    report_rel="$report_path"
+    printf '# report\n' >"$report_path"
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 棱镜验收可替代 stop-review 证明"
+    python3 - "$task_file" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("acceptance_policy: not-required", "acceptance_policy: prism-required")
+text = text.replace("prism_acceptance_run: none", "prism_acceptance_run: review-proof-prism-run")
+path.write_text(text, encoding="utf-8")
+PY
+
+    run_id="review-proof-prism-run"
+    registry="$case_dir/prism/runs/$run_id/session-registry.yaml"
+    parsed_a="$case_dir/prism/runs/$run_id/collect/a_review/parsed.json"
+    parsed_b="$case_dir/prism/runs/$run_id/collect/b_review/parsed.json"
+    mkdir -p "$(dirname "$registry")" "$(dirname "$parsed_a")" "$(dirname "$parsed_b")"
+    cat >"$registry" <<'EOF'
+run_id: "review-proof-prism-run"
+mode: "test"
+agents:
+  - handle_type: "shell"
+    handle: "a"
+    role: "a_review"
+    model: "kimi-for-coding"
+    family: "kimi"
+    injection_mode: "native"
+    status: "responded"
+    schema_ok: true
+  - handle_type: "task_agent"
+    handle: "b"
+    role: "b_review"
+    model: "gpt-5.4"
+    family: "gpt"
+    injection_mode: "native"
+    status: "responded"
+    schema_ok: true
+EOF
+    printf '{"agent":"a","role":"independent-reviewer","conclusion":"ok","confidence":"high","blockers":[],"actions":[],"blind_spots":null}\n' >"$parsed_a"
+    printf '{"agent":"b","role":"independent-reviewer","conclusion":"ok","confidence":"high","blockers":[],"actions":[],"blind_spots":null}\n' >"$parsed_b"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-prism-acceptance-bind.sh" --run-id "$run_id" --task-file "$task_file")"
+    assert_string_contains "$output" "\"status\": \"ok\""
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-review-proof-check.sh" 1 "" "$task_file")"
+    assert_string_contains "$output" "bound Prism acceptance"
+}
+
 run_layerb_closeout_runtime_complete_writes_receipt_case() {
     local host="copilot"
     local current_head task_file report_path report_rel case_dir
@@ -8899,6 +8959,9 @@ case "$COMMAND" in
         ;;
     prism-acceptance-binding-required)
         run_prism_acceptance_binding_required_case
+        ;;
+    review-proof-check-accepts-prism-acceptance)
+        run_review_proof_check_accepts_prism_acceptance_case
         ;;
     layerb-closeout-runtime-complete-writes-receipt)
         run_layerb_closeout_runtime_complete_writes_receipt_case

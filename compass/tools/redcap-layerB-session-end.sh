@@ -287,10 +287,19 @@ INITIAL_REVIEW_STATUS=""
 if [[ -f "$REVIEW_RESULT_FILE" ]]; then
     INITIAL_REVIEW_STATUS=$(cat "$REVIEW_RESULT_FILE" 2>/dev/null || true)
 fi
+PRISM_ACCEPTANCE_PASSED=0
+if bash "$SCRIPT_DIR/redcap-prism-acceptance-check.sh" --task-file "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1; then
+    PRISM_ACCEPTANCE_PASSED=1
+    if [[ -z "$INITIAL_REVIEW_STATUS" ]]; then
+        INITIAL_REVIEW_STATUS="PRISM_PASS"
+    fi
+fi
 
 SHOULD_RUN_REVIEW=0
 if [[ "$SKIP_REVIEW" != "1" ]]; then
-    if [[ "$HOST" != "claude" && "$BASELINE" != "$CURRENT_HEAD" ]]; then
+    if [[ "$PRISM_ACCEPTANCE_PASSED" -eq 1 ]]; then
+        SHOULD_RUN_REVIEW=0
+    elif [[ "$HOST" != "claude" && "$BASELINE" != "$CURRENT_HEAD" ]]; then
         SHOULD_RUN_REVIEW=1
     elif [[ "$HOST" == "claude" && "$PENDING_REVIEW_REQUIRED" -eq 1 && "$INITIAL_REVIEW_STATUS" != "PASS" ]]; then
         SHOULD_RUN_REVIEW=1
@@ -322,6 +331,9 @@ SUCCESS_GUARD_LOCK_HELD=0
 
 if [[ -f "$REVIEW_RESULT_FILE" ]]; then
     REVIEW_STATUS=$(cat "$REVIEW_RESULT_FILE" 2>/dev/null || true)
+fi
+if [[ -z "$REVIEW_STATUS" && "$PRISM_ACCEPTANCE_PASSED" -eq 1 ]]; then
+    REVIEW_STATUS="PRISM_PASS"
 fi
 
 if [[ "$HOST" == "claude" && "$BASELINE" != "$CURRENT_HEAD" && -n "$REVIEW_LOG_FILE" && ! -f "$REVIEW_LOG_FILE" && -z "$REVIEW_STATUS" ]]; then
