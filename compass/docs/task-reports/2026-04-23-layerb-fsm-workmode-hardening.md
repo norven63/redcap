@@ -2,14 +2,14 @@
 
 **报告日期**：2026-04-23
 **执行者**：Cap（Codex 宿主）
-**报告版本**：v0.3
+**报告版本**：v0.4
 
 ## 零、先看懂当前局面
 
 ### 0.1 当前已完成
 
 - 当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。
-- 详情：当前任务的 follow-up Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；`current-status` 已能诚实区分 lifecycle / independent acceptance / formal completion；剩余唯一未闭环项是这条 live 任务还未执行最终 `complete` 并写出 receipt。
+- 详情：当前任务的 closeout retry Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；当前 live 任务已经真实执行 `complete`，`pending closure` 已清，且已写出 closeout receipt。
 
 ### 0.2 上一步完成的是
 
@@ -17,12 +17,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：对当前 live 任务执行真实 complete 收尾并生成 receipt；若成功，则无当前 tranche 级下一步。
+- 下一步计划做的是：无当前 tranche 级下一步；后续仅保留长期治理项的独立演进，不再属于本任务的未完成项。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：重新锚定任务 → 落 FSM 状态面 → 落 Prism acceptance gate → 收紧 closeout runtime → 同步入口与模板 → acceptance / 棱镜验收 → 真实 complete 收尾。
-- 当前所在位置：FSM 工作模式、默认独立验收门和终态事务都已落地并完成棱镜 follow-up；当前卡在 live closeout 的最后一步。
+- 当前所在位置：FSM 工作模式、默认独立验收门、closeout runtime 终态事务与真实 live closeout 都已闭环完成，当前 confirmed_hash 已进入正式完成态。
 
 ## 一、需求背景
 
@@ -93,7 +93,7 @@
 - `references/spec-registry.json` / `references/execution-guarantees.json` 现已把 acceptance binding 纳入 paired/guarantee paths，避免“代码有新 gate，registry 仍按旧 gate 记账”的 authority 漂移。
 - `references/runtime-memory-architecture.md` 与 `compass/knowledge/runtime-memory-architecture.md` 补进了 acceptance binding 与 preserve-blockers 语义，避免再把“run 有结果”误说成“当前任务验收已通过”。
 - 当前 tranche 的任务报告模板、anchor 与 docs catalog 已对齐到同一版，避免 formal closeout 继续被“多份有效报告并列”或 catalog 漂移卡住。
-- 当前 tranche 仍在推进中的唯一项是：当前 live 任务真实 complete 收尾。
+- 当前 tranche 已完成真实 live closeout，报告、receipt、summary、current-status 与 diagnose 已开始按 completed 态对齐。
 
 ## 四、人工审核要点
 
@@ -102,7 +102,7 @@
 | 1 | 棱镜默认独立验收是否仍被维持为 completed 前置门 | 这是本 tranche 的主目标，不允许后续再退回作者自证完成 | P0 |
 | 2 | acceptance binding 是否持续要求 `task_id + confirmed_hash + run_id` 三重绑定 | 这是防止旧 run 复用的关键物理门 | P0 |
 | 3 | audit-open/pending closure 是否继续保留旧 blocker 集合 | 若回退成覆盖式写回，会再次破坏 closeout 真相源 | P0 |
-| 4 | live closeout 完成后，report / receipt / current-status 是否保持一致 | 这是本 tranche 最后一刀，需要人工抽查一致性而不是重新做人肉法医 | P1 |
+| 4 | live closeout 完成后，report / receipt / current-status 是否保持一致 | 本 tranche 已完成这条一致性收口；后续若再变更报告，需要同步重刷 receipt/summary | P1 |
 
 ## 五、验证结果
 
@@ -113,19 +113,22 @@
 | `redcap-layerb-lifecycle-check.sh` | ✅ |
 | `redcap-layerb-fsm-check.sh` | ✅ |
 | `redcap-layerb-closeout-runtime-check.sh .dev-task.md` | ✅ |
-| `redcap-prism-acceptance-check.sh --task-file .dev-task.md` | ✅（`review-layerb-fsm-workmode-followup-20260423`，2 席 responded，2 家族，无 blocker） |
+| `redcap-prism-acceptance-check.sh --task-file .dev-task.md` | ✅（`review-layerb-fsm-workmode-closeout-retry-20260423`，2 席 responded，2 家族，无 blocker） |
 | `prism-acceptance-binding-required` acceptance | ✅ |
+| `review-proof-check-accepts-prism-acceptance` acceptance | ✅ |
+| `pending-closure-clear-locked-mode` acceptance | ✅ |
+| `session-end-clears-closeout-runtime-pending` acceptance | ✅ |
 | `layerb-closeout-runtime-audit-open-preserves-existing-blockers` acceptance | ✅ |
 | `redcap-spec-check.sh "$PWD"` | ✅ |
-| `redcap-current-status.sh .dev-task.md` | ✅ 已诚实显示 independent-acceptance=pass / receipt=missing |
+| `redcap-current-status.sh .dev-task.md` | ✅ 已诚实显示 independent-acceptance=pass / receipt=present |
 
 ### 5.2 当前 closeout runtime / receipt
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 已同步，但仍未全部勾到完成态 |
-| 棱镜验收 | 已通过（`review-layerb-fsm-workmode-followup-20260423`） |
-| closeout receipt | 无 |
+| 执行承诺账本 | 已完成（6/6） |
+| 棱镜验收 | 已通过（`review-layerb-fsm-workmode-closeout-retry-20260423`） |
+| closeout receipt | 已生成（`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/layerb-fsm-workmode-hardening-73fc9acfaeb64441f5e48277fe536c985424f4f56109de2538b26190f42a0657.json`） |
 
 ### 5.3 完成等级（禁止混报）
 
@@ -134,7 +137,7 @@
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是（以棱镜 follow-up 为准） |
-| 已正式完成 | 否（receipt 仍缺失，live closeout 未执行） |
+| 已正式完成 | 是（receipt 已生成，live closeout 已执行） |
 
 ## 六、遗留问题与下一步
 
@@ -142,17 +145,16 @@
 
 | 问题 | 原因 | 建议优先级 |
 |------|------|----------|
-| live task 尚未 complete | formal closeout 还没执行，receipt 尚未生成 | P0 |
+| 无当前 tranche 级遗留问题 | 当前 confirmed_hash 已正式完成；剩余仅是独立长期治理项，不属于本任务未完成项 | P2 |
 
 ### 6.2 触发的新问题
 
-- 原始承诺账本里把“执行真实 complete 收尾”写进了 pre-closeout promise，形成自指死锁；本轮已把它修正为“推进到可执行真实 complete 的状态”，避免 promise-ledger 永远无法在 complete 前清零。
+- 本轮额外修掉了两条真实 runtime 断路：一是 `session-end` 在持有 pending-closure 锁时再次调用 clear 导致自锁；二是 live closeout 未导出 `REDCAP_SESSION_BINDING_KEY`，让 `session-end` 误入 `missing-runtime-claim` 降级分支。
 
 ### 6.3 推荐的下一步行动
 
-1. 勾清当前 `.dev-task.md` 的承诺账本
-2. 提交本 tranche 代码与文档
-3. 对当前 live 任务执行真实 complete，并以 receipt 作为唯一正式完成凭证
+1. 无当前 tranche 级下一步
+2. 后续若继续治理长期项，需新开独立 tranche，并保持“先独立验收、再 receipt 完成”的同一 FSM 口径
 
 ## 七、经验沉淀
 
@@ -162,6 +164,8 @@
 |------|------|---------|
 | L-111 | Layer B FSM 的 completed 必须晚于 receipt | 工作模式重构、检查链和独立验收都落地后，仍只有 receipt 能把“已实现/已验收”与“已正式完成”真正分开 |
 | L-112 | Prism acceptance 必须绑定当前 task 与 hash | 默认独立验收如果不绑定 `task_id + confirmed_hash + run_id`，旧 run 就可能被误复用，completed gate 会失真 |
+| L-113 | live closeout 必须显式携带 runtime binding key | 只传 runtime session/capability 不够，`session-end` 仍会因拿不到 binding key 而误降级成 missing-runtime-claim |
+| L-114 | session-end 成功路径不能在持锁状态下调用会再次拿锁的 clear 函数 | 否则 validator 全绿也会因为运行时自锁而卡成 unresolved |
 
 ### 7.2 流程改进建议
 
@@ -179,5 +183,6 @@
 
 ### 8.2 棱镜记录
 
-- follow-up run：[review-layerb-fsm-workmode-followup-20260423/session-registry.yaml](/Users/norven/.claude/skills/redcap/prism/runs/review-layerb-fsm-workmode-followup-20260423/session-registry.yaml)
-- acceptance binding：[acceptance-binding.json](/Users/norven/.claude/skills/redcap/prism/runs/review-layerb-fsm-workmode-followup-20260423/artifacts/acceptance-binding.json)
+- closeout retry run：[review-layerb-fsm-workmode-closeout-retry-20260423/session-registry.yaml](/Users/norven/.claude/skills/redcap/prism/runs/review-layerb-fsm-workmode-closeout-retry-20260423/session-registry.yaml)
+- acceptance binding：[acceptance-binding.json](/Users/norven/.claude/skills/redcap/prism/runs/review-layerb-fsm-workmode-closeout-retry-20260423/artifacts/acceptance-binding.json)
+- closeout receipt：[/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/layerb-fsm-workmode-hardening-73fc9acfaeb64441f5e48277fe536c985424f4f56109de2538b26190f42a0657.json](/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/layerb-fsm-workmode-hardening-73fc9acfaeb64441f5e48277fe536c985424f4f56109de2538b26190f42a0657.json)
