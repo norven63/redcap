@@ -3028,6 +3028,86 @@ EOF
     redcap_runtime_clear_context
 }
 
+run_session_end_clears_closeout_runtime_pending_case() {
+    local host="copilot"
+    local binding_key pid probe_pid current_head report_path state_file case_dir validator_stub
+
+    log "case: session-end-clears-closeout-runtime-pending"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "session-end-clears-closeout-runtime-pending" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-session-end-closeout-${RANDOM}-$$"
+    pid="$((66250 + RANDOM))"
+    spawn_host_probe probe_pid
+    export REDCAP_HOST_PROCESS_PID="$pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for session-end closeout clear case"
+    REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
+    unset REDCAP_HOST_PROCESS_PROBE_PID
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    report_path="compass/docs/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end closeout clear case"
+    write_current_report_marker_fixture "$report_path"
+
+    state_file="$(
+        redcap_interop_write_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "$host" \
+            "acceptance-seed" \
+            "review,task-report,pending-closure,pm-gate,drift,artifact-lifecycle,notify,closeout-runtime" \
+            "session-end-clears-closeout-runtime-pending" \
+            "$report_path" \
+            "1d6b320909c53d479ec1f29e4430a1113ea49134" \
+            "1d6b320909c53d479ec1f29e4430a1113ea49134"
+    )" || fail "failed to seed closeout-runtime pending closure"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-closeout-clear.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-pass.sh"
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+cat <<'OUT'
+[1] review-proof-check :: pass
+review clean
+[2] reanchor-check :: pass
+reanchor clean
+[3] pm-gate :: pass
+pm gate clean
+[4] drift-check :: pass
+drift clean
+[5] backlog-check :: pass
+backlog clean
+[6] spec-check :: pass
+spec clean
+[7] task-report-check :: pass
+$report_path
+[8] artifact-lifecycle-check :: pass
+artifact clean
+OUT
+EOF
+    chmod +x "$validator_stub"
+
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_SESSION_BINDING_KEY="$binding_key" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+    REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
+    REDCAP_SKIP_FEISHU=1 \
+    REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
+        || fail "session-end closeout-runtime clear case failed"
+
+    assert_not_exists "$state_file"
+    if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        fail "pending closure still exists after clearing closeout-runtime-compatible blocker set"
+    fi
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
 run_task_report_check_prefers_anchor_case() {
     local host="claude"
     local repo baseline_head current_head binding_key pid output
@@ -8870,6 +8950,9 @@ case "$COMMAND" in
         ;;
     session-end-clears-compatible-pending-refresh)
         run_session_end_clears_compatible_pending_refresh_case
+        ;;
+    session-end-clears-closeout-runtime-pending)
+        run_session_end_clears_closeout_runtime_pending_case
         ;;
     task-report-check-prefers-anchor)
         run_task_report_check_prefers_anchor_case

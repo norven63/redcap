@@ -366,7 +366,7 @@ session_end_redlines_clearable_after_success() {
     IFS=',' read -r -a items <<< "$normalized"
     for item in "${items[@]:-}"; do
         case "$item" in
-            review|pending-closure|pm-gate|drift|backlog|spec|artifact-lifecycle|task-report|notify)
+            review|pending-closure|pm-gate|drift|backlog|spec|artifact-lifecycle|task-report|notify|closeout-runtime|promise-ledger|prism-acceptance|validator-chain|closure-ledger)
                 ;;
             *)
                 return 1
