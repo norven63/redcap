@@ -3,7 +3,7 @@
 # Repo-owned task-complete guard for Copilot postToolUse.
 # When .dev-task.md enters task-complete, this guard auto-attempts:
 # 1. task report registration (best effort, prefer existing pending artifact; otherwise only a unique git-visible candidate)
-# 2. redcap-on-complete.sh
+# 2. unified Layer B closeout runtime
 
 set -u
 
@@ -17,7 +17,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TASK_FILE="$REDCAP_ROOT/.dev-task.md"
-ON_COMPLETE_SCRIPT="${REDCAP_ON_COMPLETE_SCRIPT:-$SCRIPT_DIR/redcap-on-complete.sh}"
+CLOSEOUT_RUNTIME_SCRIPT="${REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT:-$SCRIPT_DIR/redcap-layerb-closeout-runtime.sh}"
 REPORT_REGISTER_SCRIPT="${REDCAP_TASK_REPORT_REGISTER_SCRIPT:-$SCRIPT_DIR/redcap-task-report-register.sh}"
 TASK_COMPLETE_SLICE="${REDCAP_TASK_COMPLETE_SLICE:-task-complete}"
 SKIP_AUTOREGISTER="${REDCAP_TASK_COMPLETE_GUARD_SKIP_AUTOREGISTER:-0}"
@@ -336,8 +336,8 @@ fi
 INITIAL_HEAD=$(cat "$INITIAL_HEAD_FILE" 2>/dev/null || true)
 [[ -n "$INITIAL_HEAD" ]] || exit 0
 
-if [[ ! -x "$ON_COMPLETE_SCRIPT" ]]; then
-    record_guard_state "$FINGERPRINT" "missing-on-complete" "script=$ON_COMPLETE_SCRIPT"
+if [[ ! -x "$CLOSEOUT_RUNTIME_SCRIPT" ]]; then
+    record_guard_state "$FINGERPRINT" "missing-closeout-runtime" "script=$CLOSEOUT_RUNTIME_SCRIPT"
     exit 0
 fi
 
@@ -346,25 +346,28 @@ REDCAP_HOST_PROCESS_PID="${REDCAP_HOST_PROCESS_PID:-$PPID}" \
 REDCAP_ON_COMPLETE_HOST="$HOST" \
 REDCAP_RUNTIME_SESSION_ID="${REDCAP_RUNTIME_SESSION_ID:-}" \
 REDCAP_RUNTIME_CAPABILITY="${REDCAP_RUNTIME_CAPABILITY:-}" \
-bash "$ON_COMPLETE_SCRIPT" "$REDCAP_ROOT" "$INITIAL_HEAD" "redcap" >/dev/null 2>&1
+bash "$CLOSEOUT_RUNTIME_SCRIPT" complete \
+    --host "$HOST" \
+    --task-file "$TASK_FILE" \
+    --baseline-head "$INITIAL_HEAD" >/dev/null 2>&1
 STATUS=$?
 set -e
 
 case "$STATUS" in
     0)
-        record_guard_state "$FINGERPRINT" "success" "on-complete-finished"
+        record_guard_state "$FINGERPRINT" "success" "closeout-runtime-finished"
         write_guard_marker "success-fingerprint" "$FINGERPRINT" || true
         ;;
     1)
-        record_guard_state "$FINGERPRINT" "retry-needed" "on-complete-retry-needed"
+        record_guard_state "$FINGERPRINT" "retry-needed" "closeout-runtime-retry-needed"
         redcap_runtime_remove_path "layerB/task-complete-guard/success-fingerprint" >/dev/null 2>&1 || true
         ;;
     *)
-        record_guard_state "$FINGERPRINT" "error" "on-complete-exit=$STATUS"
+        record_guard_state "$FINGERPRINT" "error" "closeout-runtime-exit=$STATUS"
         redcap_runtime_remove_path "layerB/task-complete-guard/success-fingerprint" >/dev/null 2>&1 || true
         redcap_runtime_record_degraded_mode \
             "$REDCAP_ROOT" \
-            "task-complete-guard-on-complete-error" \
+            "task-complete-guard-closeout-runtime-error" \
             "host=$HOST current_head=$CURRENT_HEAD status=$STATUS" \
             >/dev/null 2>&1 || true
         ;;

@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import sys
+import hashlib
 from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
@@ -277,6 +278,84 @@ def prism_summary(repo: Path) -> list[str]:
     return lines
 
 
+def layerb_fsm_summary(repo: Path, task_file: Path) -> list[str]:
+    script = repo / "compass/tools/redcap-layerb-fsm.sh"
+    if not script.is_file():
+        return ["layerb-fsm: missing redcap-layerb-fsm.sh"]
+    try:
+        proc = subprocess.run(
+            ["bash", str(script), "--task-file", str(task_file)],
+            cwd=repo,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=20,
+            check=False,
+        )
+    except Exception as exc:
+        return [f"layerb-fsm 无法运行：{exc}"]
+    if proc.returncode != 0:
+        detail = proc.stdout.strip() or "unknown error"
+        return [f"layerb-fsm 失败：{detail}"]
+    try:
+        payload = json.loads(proc.stdout)
+    except Exception:
+        return ["layerb-fsm 输出不可解析"]
+
+    acceptance = payload.get("acceptance") or {}
+    closeout = payload.get("closeout") or {}
+    lines = [
+        f"lifecycle-state: {payload.get('lifecycle_state', 'unknown')}（{payload.get('reason', 'no reason')}）",
+        f"independent-acceptance: {acceptance.get('status', 'unknown')}（{acceptance.get('detail', 'no detail')}）",
+        f"formal-completion: receipt={'present' if closeout.get('receipt_exists') else 'missing'} pending_closure={'yes' if closeout.get('pending_closure_exists') else 'no'} promise={closeout.get('promise_completed', 0)}/{closeout.get('promise_total', 0)}",
+    ]
+    run_id = str(acceptance.get("run_id", "")).strip()
+    if run_id:
+        lines.append(f"prism-acceptance-run: {run_id}")
+    return lines
+
+
+def closeout_runtime_summary(repo: Path, meta: dict[str, str], task_text: str) -> list[str]:
+    task_id = meta.get("task_id", "").strip()
+    confirmed_section = section(task_text, "已确认需求")
+    confirmed = hashlib.sha256(confirmed_section.encode("utf-8")).hexdigest() if confirmed_section else ""
+    if not task_id or not confirmed:
+        return ["closeout-runtime: task identity incomplete; unable to inspect receipt/promise state"]
+
+    identity = f"{task_id}-{confirmed}"
+    project_hash = hashlib.md5(str(repo.resolve()).encode("utf-8")).hexdigest()
+    runtime_root = Path(os.environ.get("REDCAP_RUNTIME_PROJECT_BASE_DIR", "/tmp/redcap/project")) / project_hash / "governance" / "closeout-runtime"
+    state_path = runtime_root / "state" / f"{identity}.json"
+    receipt_path = runtime_root / "receipts" / f"{identity}.json"
+    promise_path = runtime_root / "promise-ledger" / f"{identity}.json"
+
+    lines: list[str] = []
+    try:
+        promise_payload = json.loads(promise_path.read_text(encoding="utf-8")) if promise_path.is_file() else {}
+    except Exception:
+        promise_payload = {}
+    if promise_payload:
+        lines.append(
+            f"promise-ledger: completed={promise_payload.get('completed', 0)} pending={promise_payload.get('pending', 0)} total={promise_payload.get('total', 0)}"
+        )
+    else:
+        lines.append("promise-ledger: missing or not yet synced")
+
+    try:
+        state_payload = json.loads(state_path.read_text(encoding="utf-8")) if state_path.is_file() else {}
+    except Exception:
+        state_payload = {}
+    if state_payload:
+        lines.append(
+            f"closeout-runtime-state: status={state_payload.get('status', 'unknown')} last_command={state_payload.get('last_command', 'none')} last_result={state_payload.get('last_result', 'none')}"
+        )
+    else:
+        lines.append("closeout-runtime-state: not initialized")
+
+    lines.append(f"closeout-receipt: {'present' if receipt_path.is_file() else 'missing'}")
+    return lines
+
+
 def host_hook_summary(repo: Path) -> list[str]:
     matrix_path = repo / "references/host-session-capability-matrix.json"
     try:
@@ -505,8 +584,18 @@ def main() -> int:
         print(f"- {line}")
     print()
 
+    print("## Layer B FSM")
+    for line in layerb_fsm_summary(repo, task_file):
+        print(f"- {line}")
+    print()
+
     print("## 待验证登记")
     print(f"- {pending_validation_summary(repo)}")
+    print()
+
+    print("## closeout runtime")
+    for line in closeout_runtime_summary(repo, meta, task_text):
+        print(f"- {line}")
     return 0
 
 

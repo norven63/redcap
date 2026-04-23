@@ -304,6 +304,14 @@ if [[ -x "$STATE_MACHINE_CHECK" ]]; then
     fi
 fi
 
+LAYERB_LIFECYCLE_CHECK="$REDCAP_ROOT/compass/tools/redcap-layerb-lifecycle-check.sh"
+if [[ -x "$LAYERB_LIFECYCLE_CHECK" ]]; then
+    if ! bash "$LAYERB_LIFECYCLE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] layerb lifecycle contract check failed" >&2
+        exit 1
+    fi
+fi
+
 TOKEN_RISK_AUDIT="$REDCAP_ROOT/compass/tools/redcap-token-risk-audit.sh"
 if [[ -x "$TOKEN_RISK_AUDIT" ]]; then
     if ! bash "$TOKEN_RISK_AUDIT" >/dev/null; then
@@ -332,6 +340,14 @@ HOOK_CONTRACT_CHECK="$REDCAP_ROOT/compass/tools/redcap-hook-contract-check.sh"
 if [[ -x "$HOOK_CONTRACT_CHECK" ]]; then
     if ! bash "$HOOK_CONTRACT_CHECK" >/dev/null; then
         echo "[redcap-spec-check] hook contract check failed" >&2
+        exit 1
+    fi
+fi
+
+LAYERB_FSM_CHECK="$REDCAP_ROOT/compass/tools/redcap-layerb-fsm-check.sh"
+if [[ -x "$LAYERB_FSM_CHECK" ]]; then
+    if ! bash "$LAYERB_FSM_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] layerb fsm check failed" >&2
         exit 1
     fi
 fi

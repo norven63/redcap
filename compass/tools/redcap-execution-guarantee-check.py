@@ -24,6 +24,7 @@ REQUIRED_IDS = {
     "diagnostic-overview",
     "tracking-health-overview",
     "state-machine-contract",
+    "layerb-closeout-runtime",
     "acceptance-index-navigation",
     "task-report-closure",
     "docs-catalog-freshness",

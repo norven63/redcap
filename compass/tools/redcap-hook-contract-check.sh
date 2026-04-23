@@ -63,8 +63,10 @@ if "redcap_interop_write_pending_closure" not in session_end:
 task_complete = read("compass/tools/redcap-layerB-task-complete-guard.sh")
 if "redcap_runtime_attach_current_or_claim" not in task_complete:
     fail("task-complete guard must use shared runtime attach helper")
-if "redcap-on-complete.sh" not in task_complete:
-    fail("task-complete guard must call on-complete")
+if "redcap-layerb-closeout-runtime.sh" not in task_complete:
+    fail("task-complete guard must call unified closeout runtime")
+if "redcap-task-report-register.sh" not in task_complete:
+    fail("task-complete guard must still register task reports before closeout")
 
 runtime_state = read("compass/tools/redcap-runtime-state.sh")
 for helper in [
@@ -73,6 +75,26 @@ for helper in [
 ]:
     if helper not in runtime_state:
         fail(f"runtime state missing convergence helper: {helper}")
+
+closeout_runtime = read("compass/tools/redcap-layerb-closeout-runtime.py")
+for phrase in [
+    "promise-ledger",
+    "redcap-prism-acceptance-check.sh",
+    "audit-open",
+    "redcap-on-complete.sh",
+    "redcap-layerB-session-end.sh",
+]:
+    if phrase not in closeout_runtime:
+        fail(f"closeout runtime missing required binding: {phrase}")
+
+current_status = read("compass/tools/redcap-current-status.py")
+for phrase in [
+    "layerb_fsm_summary",
+    "independent-acceptance:",
+    "lifecycle-state:",
+]:
+    if phrase not in current_status:
+        fail(f"current-status missing FSM honesty phrase: {phrase}")
 
 print("HOOK_CONTRACT_OK")
 PY

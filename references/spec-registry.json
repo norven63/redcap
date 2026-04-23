@@ -146,6 +146,47 @@
         "compass/tools/redcap-layerB-session-end.sh"
       ],
       "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md",
+      "title": "Layer B 统一 closeout runtime 与承诺账本设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "说明统一 closeout runtime、承诺账本、receipt 与 rescue audit 如何接管 Layer B 终态收口。",
+      "paired_control_paths": [
+        "compass/tools/redcap-layerb-closeout-runtime.py",
+        "compass/tools/redcap-layerb-closeout-runtime.sh",
+        "compass/tools/redcap-layerB-task-complete-guard.sh",
+        "closeout-cap.sh"
+      ],
+      "paired_debt_ids": [
+        "GD-008"
+      ]
+    },
+    {
+      "path": "compass/docs/specs/2026-04-23-layerb-fsm-workmode-rebuild.md",
+      "title": "Layer B 状态机工作模式重构",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "把 Layer B 的工作模式重新收口到状态、转移、gate 与证据四层表达，并把 Prism 默认独立验收与 receipt 正式挂回 FSM 骨架。",
+      "paired_control_paths": [
+        "compass/tools/redcap-layerb-fsm.py",
+        "compass/tools/redcap-layerb-fsm.sh",
+        "compass/tools/redcap-prism-acceptance-bind.py",
+        "compass/tools/redcap-prism-acceptance-bind.sh",
+        "compass/tools/redcap-prism-acceptance-check.py",
+        "compass/tools/redcap-prism-acceptance-check.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.py",
+        "compass/tools/redcap-layerb-closeout-runtime.sh",
+        "compass/tools/redcap-current-status.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "paired_debt_ids": [
+        "GD-008"
+      ]
     }
   ]
 }

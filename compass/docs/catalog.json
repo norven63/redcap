@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 37,
-    "size_bytes": 587717,
-    "lines": 10342,
-    "chars": 376907,
+    "file_count": 41,
+    "size_bytes": 627008,
+    "lines": 11210,
+    "chars": 403794,
     "rough_token_pressure": {
-      "low": 94226,
-      "high": 188453
+      "low": 100948,
+      "high": 201897
     },
     "collections": {
       "archive": {
@@ -50,23 +50,23 @@
         }
       },
       "specs": {
-        "file_count": 11,
-        "size_bytes": 176246,
-        "lines": 4142,
-        "chars": 105034,
+        "file_count": 13,
+        "size_bytes": 187987,
+        "lines": 4493,
+        "chars": 112589,
         "rough_token_pressure": {
-          "low": 26258,
-          "high": 52517
+          "low": 28147,
+          "high": 56294
         }
       },
       "task-reports": {
-        "file_count": 22,
-        "size_bytes": 333530,
-        "lines": 4215,
-        "chars": 210634,
+        "file_count": 24,
+        "size_bytes": 361080,
+        "lines": 4732,
+        "chars": 229966,
         "rough_token_pressure": {
-          "low": 52658,
-          "high": 105317
+          "low": 57491,
+          "high": 114983
         }
       },
       "traces": {
@@ -242,6 +242,57 @@
         "compass/tools/redcap-layerB-session-end.sh"
       ],
       "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md",
+      "collection": "specs",
+      "title": "Layer B 统一 closeout runtime 与承诺账本设计",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 8035,
+      "lines": 229,
+      "chars": 5029,
+      "summary": "说明统一 closeout runtime、承诺账本、receipt 与 rescue audit 如何接管 Layer B 终态收口。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "compass/tools/redcap-layerb-closeout-runtime.py",
+        "compass/tools/redcap-layerb-closeout-runtime.sh",
+        "compass/tools/redcap-layerB-task-complete-guard.sh",
+        "closeout-cap.sh"
+      ],
+      "paired_debt_ids": [
+        "GD-008"
+      ]
+    },
+    {
+      "path": "compass/docs/specs/2026-04-23-layerb-fsm-workmode-rebuild.md",
+      "collection": "specs",
+      "title": "Layer B 状态机工作模式重构",
+      "role": "design-snapshot",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
+      "size_bytes": 3706,
+      "lines": 122,
+      "chars": 2526,
+      "summary": "把 Layer B 的工作模式重新收口到状态、转移、gate 与证据四层表达，并把 Prism 默认独立验收与 receipt 正式挂回 FSM 骨架。",
+      "runtime_authority": false,
+      "paired_control_paths": [
+        "compass/tools/redcap-layerb-fsm.py",
+        "compass/tools/redcap-layerb-fsm.sh",
+        "compass/tools/redcap-prism-acceptance-bind.py",
+        "compass/tools/redcap-prism-acceptance-bind.sh",
+        "compass/tools/redcap-prism-acceptance-check.py",
+        "compass/tools/redcap-prism-acceptance-check.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.py",
+        "compass/tools/redcap-layerb-closeout-runtime.sh",
+        "compass/tools/redcap-current-status.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "paired_debt_ids": [
+        "GD-008"
+      ]
     },
     {
       "path": "compass/docs/specs/baton-design.md",
@@ -556,7 +607,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：live closeout 最终阻塞补丁",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 68738,
       "lines": 417,
@@ -569,7 +620,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：入口展示与棱镜定位收敛",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 7218,
       "lines": 162,
@@ -621,29 +672,26 @@
       "collection": "task-reports",
       "title": "2026-04-22 Layer B 生命周期与运行时记忆架构收口",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8942,
       "lines": 135,
       "chars": 5522,
       "summary": "已把 Layer B 从“散落在各处的状态逻辑”正式收口成一份单一协议面：[runtime-memory-architecture.md](/Users/norven/.claude/skills/redcap/references/runtime-memory-architecture.md)。 / 已新增一份给人直接复用的术语词典：[runtime-memory-architecture.md](/Users/norven/.claude/skills/redcap/compass/knowledge/runtime-memory-architecture.md)，把“真相源”“跨会话考古 / 追踪层”“长期知识和项目资产的持…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "已把 Layer B 从“散落在各处的状态逻辑”正式收口成一份单一协议面：[runtime-memory-architecture.md](/Users/norven/.claude/skills/redcap/references/runtime-memory-architecture.md)。",
-          "已新增一份给人直接复用的术语词典：[runtime-memory-architecture.md](/Users/norven/.claude/skills/redcap/compass/knowledge/runtime-memory-architecture.md)，把“真相源”“跨会话考古 / 追踪层”“长期知识和项目资产的持续沉淀”等概念固定下来。"
-        ],
-        "previous_step": [
-          "上一步已经把 Layer A / Layer B 的事实考古清楚：Layer A 的显式状态机一直都在，Layer B 则在多轮迭代里逐渐长出了 `.dev-task.md + pending closure + closure-ledger + validator-chain + session-*` 这套控制面，只是文档还停留在旧表述。"
-        ],
-        "next_step": [
-          "无当前任务级 blocker；本轮协议、词典、机器检查与独立审视均已收口完成。"
-        ],
-        "position": [
-          "路线：考古 Layer A / Layer B 真相 → 抽象运行时记忆三层 → 显性化 Layer B 生命周期 → 用机器检查绑定协议、入口口径与基础脚本 → 外部独立审视。",
-          "当前位置：协议、词典、机器检查、入口口径与独立审视 follow-up 已全部落盘；当前处于已完成 closeout 状态。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-22-layerb-runtime-closeout-hardening.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Layer B 统一 runtime / 承诺账本 / receipt 收口 / rescue 审计",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 16169,
+      "lines": 336,
+      "chars": 11699,
+      "summary": "当前已完成：Layer B 已从“协议写清楚但终态收口仍靠多脚本分散执行”，升级到“统一 closeout runtime + 承诺账本 + receipt + rescue audit”的可检查闭环。 / 上一步完成的是：上一刀已把 Layer B 生命周期和运行时记忆架构显性化；本轮是在此基础上把终态收口真正接进 runtime，而不再只停留在文档口径。",
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-22-prism-revive-cap-e2e-and-readonly-fix.md",
@@ -681,6 +729,35 @@
         "previous_step": [],
         "next_step": [],
         "position": []
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Layer B 状态机工作模式重构",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 11381,
+      "lines": 181,
+      "chars": 7633,
+      "summary": "当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。 / 详情：当前任务的 follow-up Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；`current-status` 已能诚实区分 lifecycle / independent acceptance / formal completion；剩余唯一未闭环项是这条 live 任务还未执行最终 `complete`…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。",
+          "详情：当前任务的 follow-up Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；`current-status` 已能诚实区分 lifecycle / independent acceptance / formal completion；剩余唯一未闭环项是这条 live 任务还未执行最终 `complete` 并写出 receipt。"
+        ],
+        "previous_step": [
+          "上一步完成的是：上一 tranche 已把 Layer B 生命周期协议、closeout runtime、承诺账本、receipt 和 rescue audit 初步接到位，但仍未把“工作模式本体”和“默认独立验收门”真正做成硬门。"
+        ],
+        "next_step": [
+          "下一步计划做的是：对当前 live 任务执行真实 complete 收尾并生成 receipt；若成功，则无当前 tranche 级下一步。"
+        ],
+        "position": [
+          "整体计划脉络图是：重新锚定任务 → 落 FSM 状态面 → 落 Prism acceptance gate → 收紧 closeout runtime → 同步入口与模板 → acceptance / 棱镜验收 → 真实 complete 收尾。",
+          "当前所在位置：FSM 工作模式、默认独立验收门和终态事务都已落地并完成棱镜 follow-up；当前卡在 live closeout 的最后一步。"
+        ]
       }
     },
     {

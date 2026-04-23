@@ -5,10 +5,10 @@
 
 ## 热点主题速览
 
-- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93。适用于 pending closure、task report、validator chain、closure ledger、current-status 打架时。
+- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109。适用于 pending closure、task report、validator chain、closure ledger、current-status 打架时。
 - **宿主 / Hook / runtime 边界**：先看 L-15、L-16、L-39、L-41~L-49、L-62~L-69、L-77~L-90。适用于宿主适配、review runner、session-start/session-end、host-limited 行为边界。
 - **docs / knowledge / token 风险**：先看 L-50~L-52、L-64~L-66、L-91~L-97。适用于首读入口、说人话、渐进披露、`CONTRIBUTING` / docs / acceptance / `prism/runs` 的上下文压力治理。
-- **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模。
+- **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模。
 
 > 使用方式：先按主题命中热点簇，再精读对应 L-编号；不要为了找一条相关经验默认全量扫完整个 lessons 文件。
 
@@ -1060,5 +1060,23 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **经验规则**：① 当一组散落脚本和账本已经共同表达阶段、转移和失败落点时，就要把它升格成单一协议文档，并绑定机器检查 ② “没有单一 FSM 文件”不等于“没有状态控制面”，文档必须精确描述这类差别 ③ 人话词典要和协议面分开：前者服务沟通，后者服务约束，避免以后再次把概念和权威面混在一起
 - **来源**：2026-04-22 Layer B 生命周期 / 运行时记忆架构收口
 - **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-22
+
+### L-109: 终态收口一旦涉及“Agent 自追加承诺”，就必须升级成 receipt-driven runtime，不能继续靠分散脚本和口头完成
+- **场景**：Layer B 已经有 `on-complete`、`session-end`、pending closure、closure-ledger、飞书通知等收尾零件，但仍发生了“部分兑现 + 过早收口”：用户需求没丢，真正丢的是 Agent 在执行中自己追加的承诺，以及终态没有被统一收成一个可核对物理事件
+- **根因**：旧机制对“用户原始需求”约束很强，却没有同等强度约束“Agent 后来答应还要做什么”；同时 `notify / task report / ledger / receipt` 被分散在多脚本里，只要宿主没有强 SessionEnd/final-reply hook，就可能出现“看起来都绿了，但真正 closeout 没闭环”的假完成
+- **经验规则**：① 终态收口必须提供统一 runtime，把 promise ledger、on-complete、session-end、receipt、rescue audit 串成同一事务 ② Agent 自追加承诺必须从对话升级为 `.dev-task.md` 的固定账本段，再派生为可核对的 promise-ledger ③ “完成”不能只靠最终回复或 task report，要以 receipt 是否写成、pending closure 是否已清作为物理判据 ④ rescue audit 不是锦上添花，而是对抗“这轮忘了就永远漏掉”的必备兜底
+- **来源**：2026-04-22 Layer B closeout runtime / promise-ledger / receipt / rescue 审计治理 tranche
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-22
+
+### L-110: 运行时重构的独立评审，必须提供“完整可审”的材料包；截断 diff 会制造假 blocker 和盲区
+- **场景**：首轮轻量独立审视虽然抓到了真问题“rescue audit 还没接入强入口”，但同时也因为 reviewer 看到的 `redcap-layerb-closeout-runtime.py` diff 被上下文截断，额外报出了“核心实现不可审”的 blocker
+- **根因**：对运行时/控制面类重构，reviewer 真正需要的是“完整、聚焦、可独立判断”的材料包；如果只给巨大 diff 或被截断的片段，reviewer 无法区分“代码真的缺失”与“材料给得不完整”，最终会把审查盲区本身当成 blocker
+- **经验规则**：① 运行时重构的独立评审材料应优先提供完整核心文件、最相关的调用点、以及已通过的 targeted acceptance 列表，而不是把 reviewer 扔进一个容易截断的大 diff ② 审查包若来自 prompt 注入，必须先检查长度和关键文件完整性 ③ reviewer 报“源码不可审”时，要先区分是实现真缺失还是材料包缺失，再决定补代码还是补 review pack
+- **来源**：2026-04-22 Layer B closeout runtime follow-up review 复盘
+- **影响度**：medium
 - **复现次数**：1
 - **最后命中**：2026-04-22

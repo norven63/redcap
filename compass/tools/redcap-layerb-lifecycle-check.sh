@@ -59,8 +59,13 @@ required_bindings = [
     "compass/tools/redcap-pm-gate-check.sh",
     "compass/tools/redcap-drift-check.sh",
     "compass/tools/redcap-on-stop-review.sh",
+    "compass/tools/redcap-prism-acceptance-bind.sh",
+    "compass/tools/redcap-prism-acceptance-check.sh",
     "compass/tools/redcap-validator-chain.sh",
     "compass/tools/redcap-task-report-check.sh",
+    "compass/tools/redcap-layerb-closeout-runtime.sh",
+    "compass/tools/redcap-layerb-closeout-runtime.py",
+    "closeout-cap.sh",
     "compass/tools/redcap-on-complete.sh",
     "compass/tools/redcap-layerB-session-end.sh",
     "compass/tools/redcap-interop-governance.sh",
@@ -77,6 +82,10 @@ required_terms = [
     "真相源",
     "镜像",
     "闭环证据",
+    "承诺账本",
+    "棱镜验收",
+    "终态收据",
+    "rescue 审计",
     "跨会话考古 / 追踪层",
     "长期知识和项目资产的持续沉淀",
     "分布式控制面状态机",
@@ -84,6 +93,13 @@ required_terms = [
 missing_terms = [term for term in required_terms if term not in terms_text]
 if missing_terms:
     fail("runtime memory glossary missing terms: " + ", ".join(missing_terms))
+
+for required_phrase in (
+    "验收绑定",
+    "覆盖掉",
+):
+    if required_phrase not in terms_text and required_phrase not in lifecycle_text:
+        fail(f"runtime memory contract missing phrase: {required_phrase}")
 
 if "Layer B 无状态机保护" in contributing_text:
     fail("CONTRIBUTING.md still contains the outdated 'Layer B 无状态机保护' wording")
@@ -94,6 +110,8 @@ if "compass/knowledge/runtime-memory-architecture.md" not in architecture_text:
     fail("ARCHITECTURE.md must reference compass/knowledge/runtime-memory-architecture.md")
 if "compass/knowledge/runtime-memory-architecture.md" not in readme_text:
     fail("README.md must surface the runtime memory glossary")
+if "./closeout-cap.sh" not in readme_text and "closeout-cap.sh" not in readme_text:
+    fail("README.md must surface the unified closeout runtime entry")
 if "compass/knowledge/runtime-memory-architecture.md" not in index_text:
     fail("knowledge index must include the runtime memory glossary")
 if "redcap-layerb-lifecycle-check.sh" not in diagnose_text:

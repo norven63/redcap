@@ -262,7 +262,7 @@ Layer B 的核心执行序列是：
 2. 读取 `compass/CONTRIBUTING.md` 与 `compass/knowledge/lessons.md`
 3. 恢复 `.dev-task.md`、plan mirror 与最近工作停点
 4. PM Gate 锁定需求，再进入实现
-5. 变更后执行影响范围检查、任务报告、独立审查、通知与收尾
+5. 变更后执行影响范围检查、任务报告、棱镜独立验收，再交给统一 closeout runtime 完成通知与收尾
 
 Layer B **不走 Layer A 那种单一 `state.yaml` FSM**，但它并不是“无状态控制面”。
 当前 Layer B 采用的是**分布式控制面生命周期**：由 `.dev-task.md`、PM Gate、
@@ -381,8 +381,9 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 1. PM Gate / anti-drift 审计
 2. stop-review 或独立评审兜底
 3. task report 按模板登记与校验
-4. 飞书通知 / 告警
-5. session-end cleanup
+4. `closeout runtime` 核对承诺账本、棱镜验收、生成 summary / receipt、必要时执行 rescue audit
+5. 飞书通知 / 告警
+6. session-end cleanup
 
 本轮治理之后，这条链新增了显式的 **pending closure obligation** 与 **closure ledger**：
 
@@ -392,6 +393,18 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 - `redcap-on-complete.sh`：对 RedCap 自身 on-complete fail-closed 校验 commit proof / task report / artifact lifecycle，并把关键阶段追加到 closure ledger
 - `redcap-layerB-session-end.sh`：成功则清 obligation 并记账；失败或缺 claim 则把缺口重新写回 pending closure，并显式记录 blocked redlines
 - `redcap-layerB-session-start.sh`：在成功 re-anchor 后以 advisory 方式触发 pending closure auto-reconcile；它负责记录/尝试消费确定性 blocker，但不把 SessionStart 变成新的 blocking gate
+
+在此基础上，Layer B 终态现在新增了一个**统一 closeout runtime**：
+
+- `redcap-layerb-closeout-runtime.py/.sh`：把 Agent 自追加承诺、`redcap-on-complete.sh`、`redcap-layerB-session-end.sh`、summary、receipt 与 rescue audit 收到同一条 runtime 里
+- `redcap-prism-acceptance-check.sh/.py`：把棱镜验收变成 Layer B completed 的默认前置门，没有有效验收就不能正式完成
+- `closeout-cap.sh`：仓库根目录短入口。以后 Layer B 的人类/Agent 收尾优先走这里，而不是自己拼接 on-complete / session-end
+- `promise-ledger`：从 `.dev-task.md` 的 `## 执行承诺账本` 派生，专门锁住“用户原始需求之外，Agent 自己后来承诺还要做的事”
+- `redcap-diagnose.sh`：当前已接上一条 diagnose-rescue 强入口；一旦检测到 terminal closeout 已开始但 receipt 缺失，就会优先尝试 `audit-open`
+- `closeout-receipt`：machine-readable 终态收据，证明 closeout 不是口头完成
+- `closeout-audit`：receipt 丢失或终态半闭环时，负责补写 receipt 或补写 blocker 的 rescue 证据
+
+这条 runtime 的含义不是“又多了一套状态机”，而是：**把 Layer B 终态收口从多脚本分散执行，升级成由棱镜验收 + receipt 共同约束的统一闭环。**
 
 与此同时，task report 本身不再只是“归档路径”：
 

@@ -430,20 +430,83 @@
       "auto_enforceable": true
     },
     {
+      "id": "layerb-closeout-runtime",
+      "category": "control-gates",
+      "priority": "P0",
+      "rule": "Layer B terminal closeout must run through the unified closeout runtime so agent promises, Prism acceptance, receipt, summary, blocker carry-forward, and rescue audit are checked as one transaction.",
+      "source_paths": [
+        "compass/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md",
+        "references/runtime-memory-architecture.md",
+        "compass/CONTRIBUTING.md#7",
+        "compass/CONTRIBUTING.core.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-layerb-closeout-runtime-check.sh validates the runtime entry, promise-ledger section, Prism acceptance gate, and audit-open path; redcap-diagnose.sh now provides the diagnose-rescue strong entry, and task-complete guard calls the runtime instead of invoking ad-hoc closeout steps.",
+      "guarantee_paths": [
+        "compass/tools/redcap-layerb-closeout-runtime-check.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.py",
+        "compass/tools/redcap-prism-acceptance-bind.sh",
+        "compass/tools/redcap-prism-acceptance-bind.py",
+        "compass/tools/redcap-prism-acceptance-check.sh",
+        "compass/tools/redcap-layerB-task-complete-guard.sh",
+        "closeout-cap.sh",
+        "compass/tools/redcap-diagnose.sh"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "layerb-completion-truth",
+      "category": "task-report-closure",
+      "priority": "P0",
+      "rule": "Layer B completed truth must be fail-closed: authors may not declare completed unless Prism acceptance is valid, receipt exists, and pending closure is clear.",
+      "source_paths": [
+        "references/runtime-memory-architecture.md",
+        "references/task-report-template.md",
+        "compass/CONTRIBUTING.md#13",
+        "compass/CONTRIBUTING.core.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-prism-acceptance-bind/check enforce that independent acceptance is bound to the current task_id + confirmed_hash, redcap-layerb-fsm/current-status surface lifecycle state honestly, and closeout runtime refuses completed when acceptance or receipt conditions are missing.",
+      "guarantee_paths": [
+        "compass/tools/redcap-prism-acceptance-bind.sh",
+        "compass/tools/redcap-prism-acceptance-bind.py",
+        "compass/tools/redcap-prism-acceptance-check.sh",
+        "compass/tools/redcap-prism-acceptance-check.py",
+        "compass/tools/redcap-layerb-fsm.sh",
+        "compass/tools/redcap-layerb-fsm.py",
+        "compass/tools/redcap-layerb-fsm-check.sh",
+        "compass/tools/redcap-current-status.py",
+        "compass/tools/redcap-layerb-closeout-runtime.py"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
       "id": "task-report-closure",
       "category": "task-report-closure",
       "priority": "P0",
-      "rule": "Layer B completion requires physical task report evidence, closure validator consumption, and pending-closure honesty.",
+      "rule": "Layer B completion requires physical task report evidence, unified closeout runtime consumption, Prism acceptance, receipt generation, and pending-closure honesty.",
       "source_paths": [
         "references/task-report-template.md",
         "references/hook-standards.md",
+        "references/runtime-memory-architecture.md",
         "compass/CONTRIBUTING.md#13"
       ],
       "status": "validator",
-      "automation": "validator-chain consumes review, PM Gate, drift, backlog, spec, task-report, and artifact lifecycle checks.",
+      "automation": "task-report-check, Prism acceptance binding/check, unified closeout runtime, and session-end jointly require task report evidence, promise-ledger reconciliation, receipt generation, and honest blocker carry-forward without clobbering pre-existing blockers.",
       "guarantee_paths": [
         "compass/tools/redcap-validator-chain.sh",
         "compass/tools/redcap-task-report-check.sh",
+        "compass/tools/redcap-prism-acceptance-bind.sh",
+        "compass/tools/redcap-prism-acceptance-bind.py",
+        "compass/tools/redcap-prism-acceptance-check.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.py",
+        "closeout-cap.sh",
         "compass/tools/redcap-layerB-session-end.sh",
         "compass/tools/redcap-on-complete.sh"
       ],

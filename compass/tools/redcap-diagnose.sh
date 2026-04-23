@@ -26,6 +26,57 @@ run_check() {
     return "$status"
 }
 
+run_closeout_rescue_audit() {
+    local runtime_script="$SCRIPT_DIR/redcap-layerb-closeout-runtime.sh"
+    local status_output status rescue_candidate
+
+    if [[ ! -x "$runtime_script" ]]; then
+        echo "[warn] closeout-rescue-audit skipped (runtime missing)"
+        return 0
+    fi
+
+    set +e
+    status_output="$(bash "$runtime_script" status --task-file "$TASK_FILE" 2>/dev/null)"
+    status=$?
+    set -e
+
+    if [[ "$status" -ne 0 || -z "$status_output" ]]; then
+        echo "[warn] closeout-rescue-audit skipped (runtime status unavailable)"
+        return 0
+    fi
+
+    rescue_candidate="$(python3 - "$status_output" <<'PY'
+import json
+import sys
+
+payload = json.loads(sys.argv[1])
+receipt_exists = bool(payload.get("receipt_exists"))
+active_slice = payload.get("active_slice", "")
+state = payload.get("state") or {}
+runtime_status = state.get("status", "")
+
+terminal_slices = {"task-complete", "closeout-complete"}
+terminal_states = {"closeout-pending", "completed", "blocked"}
+
+if receipt_exists:
+    print("skip:receipt-present")
+elif runtime_status in terminal_states or active_slice in terminal_slices:
+    print("run")
+else:
+    print(f"skip:status={runtime_status or 'none'} active_slice={active_slice or 'none'}")
+PY
+)"
+
+    if [[ "$rescue_candidate" != "run" ]]; then
+        echo "[ok] closeout-rescue-audit ${rescue_candidate}"
+        return 0
+    fi
+
+    run_check \
+        "closeout-rescue-audit" \
+        bash "$runtime_script" audit-open --task-file "$TASK_FILE" --host "${REDCAP_DIAGNOSE_RESCUE_HOST:-diagnose}" --mode diagnose
+}
+
 echo "REDCAP_DIAGNOSE"
 echo "cwd=$REDCAP_ROOT"
 echo
@@ -39,12 +90,15 @@ fi
 echo
 echo "## 诊断门禁"
 overall=0
+run_closeout_rescue_audit || overall=1
 run_check "docs-catalog" bash "$SCRIPT_DIR/redcap-docs-catalog.sh" check || overall=1
 run_check "docs-retention" bash "$SCRIPT_DIR/redcap-docs-catalog.sh" retention-check || overall=1
 run_check "knowledge-index" bash "$SCRIPT_DIR/redcap-knowledge-index-check.sh" || overall=1
 run_check "overlay-governance" bash "$SCRIPT_DIR/redcap-overlay-governance-check.sh" || overall=1
 run_check "state-machine-contract" bash "$SCRIPT_DIR/redcap-state-machine-check.sh" || overall=1
 run_check "layerb-lifecycle-contract" bash "$SCRIPT_DIR/redcap-layerb-lifecycle-check.sh" || overall=1
+run_check "layerb-fsm" bash "$SCRIPT_DIR/redcap-layerb-fsm-check.sh" || overall=1
+run_check "layerb-closeout-runtime" bash "$SCRIPT_DIR/redcap-layerb-closeout-runtime-check.sh" "$TASK_FILE" || overall=1
 run_check "token-risk-audit" bash "$SCRIPT_DIR/redcap-token-risk-audit.sh" || overall=1
 run_check "tracking-health" bash "$SCRIPT_DIR/redcap-tracking-health.sh" "$TASK_FILE" || overall=1
 run_check "contributing-ia" bash "$SCRIPT_DIR/redcap-contributing-ia-check.sh" || overall=1

@@ -16,15 +16,19 @@
 3. **变更前必须做经验回顾**：框架/治理/控制面变更前，先通过 `compass/knowledge/index.md` 与 `lessons.md` 的热点主题速览定位相关经验，不能因为 lessons 大就跳过已知失败模式。
 4. **强制规则必须进执行保障**：P0/P1 规则不能只写在报告或自然语言里；能自动化的接入脚本、validator、hook、acceptance，不能自动化的写清 manual-only 原因。
 5. **收尾必须 fail-closed**：stop-review、on-complete、session-end、spec-check、diagnose 等控制面失败时，不能用后续成功覆盖失败。
-6. **上下文必须渐进披露**：docs 先 catalog summary/plan/budget，knowledge 先 index，acceptance 先 acceptance-index；大文件不默认 bulk-read。
-7. **人类可读输出必须说人话**：首次出现内部术语、缩写、阶段名时，要解释对应文件/功能、做了什么、为什么重要。
-8. **宿主面只能镜像 RedCap 真相**：`cli_console.md`、宿主 workboard、plan mirror 不能反向改写 `.dev-task.md`、runtime state 或 task report。
-9. **运行残留不能擅自删除**：`prism/runs`、`compass/.runtime`、`compass/.workflow` 等 ignored 本地证据目录默认 no-bulk-read；物理清理需用户显式批准。
-10. **Codex 子 Agent 默认克制但不是禁用**：仅在确实能提效提质时开启，且 RedCap / Prism 主动拉起的 Codex-family 执行进程总数默认不超过 2（当前宿主也计入）；外部审查 / reviewer 选择统一按“模型能力画像 + 本地 CLI 稳定性”排序，不得静态压低 Copilot / Codex。
-11. **飞书不是唯一收尾动作**：飞书通知只是可见信号；真正收尾还要看 review、validator、task report、lessons、backlog、catalog、diagnose 与 pending closure。
-12. **首读/诊断入口已优先做成只读安全**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 的 repo-owned 首读链不再依赖临时可写目录；真正仍受宿主限制的是 reply-time veto、SessionEnd 等宿主控制点，而不是这些首读入口本身。
-13. **identity 先于 soul**：`~/.cap/identity.md` 是 Cap 的个人灵魂锚点；`compass/soul.md` 负责培养指南、复活协议与执行纪律。缺失 identity 时，优先用 `redcap-install.sh --init-identity` 初始化，不要把 `soul.md` 误当成个人记忆本体。
-14. **有 SessionStart Hook 的宿主必须跑 installer**：Claude / Gemini / Copilot 这类已接入 Layer B SessionStart 的宿主，会在启动链里实际调用 `redcap-install.sh`；Codex.app 这类只有入口导入的宿主，仍需显式运行 installer 或 current-status。
+6. **Agent 自追加承诺必须落账**：只要你在执行中明确承诺“下一步会做 A/B/C”，就要写入 `.dev-task.md` 的 `## 执行承诺账本`；不能只留在对话里。
+7. **上下文必须渐进披露**：docs 先 catalog summary/plan/budget，knowledge 先 index，acceptance 先 acceptance-index；大文件不默认 bulk-read。
+8. **人类可读输出必须说人话**：首次出现内部术语、缩写、阶段名时，要解释对应文件/功能、做了什么、为什么重要。
+9. **宿主面只能镜像 RedCap 真相**：`cli_console.md`、宿主 workboard、plan mirror 不能反向改写 `.dev-task.md`、runtime state 或 task report。
+10. **运行残留不能擅自删除**：`prism/runs`、`compass/.runtime`、`compass/.workflow` 等 ignored 本地证据目录默认 no-bulk-read；物理清理需用户显式批准。
+11. **Codex 子 Agent 默认克制但不是禁用**：仅在确实能提效提质时开启，且 RedCap / Prism 主动拉起的 Codex-family 执行进程总数默认不超过 2（当前宿主也计入）；外部审查 / reviewer 选择统一按“模型能力画像 + 本地 CLI 稳定性”排序，不得静态压低 Copilot / Codex。
+12. **统一 closeout runtime 优先**：Layer B 终态优先走 `./closeout-cap.sh` / `redcap-layerb-closeout-runtime.sh`，由它统一串起 promise ledger、Prism acceptance、on-complete、session-end、receipt 与 rescue audit。
+13. **diagnose 是当前 rescue 强入口**：若 terminal closeout 已开始但 receipt 缺失，`redcap-diagnose.sh` 必须优先尝试 `audit-open --mode diagnose`；能补收据就补收据，不能补就显性保留 blocker。
+14. **飞书不是唯一收尾动作**：飞书通知只是可见信号；真正收尾还要看承诺账本、Prism 验收、receipt、review、validator、task report、lessons、backlog、catalog、diagnose 与 pending closure。
+15. **作者不得单独宣称 completed**：没有有效 Prism 验收、没有 receipt，或 pending closure 未清时，作者只能汇报“已实现/已自检”，不得宣称 completed，也不得汇报 completed。
+16. **首读/诊断入口已优先做成只读安全**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 的 repo-owned 首读链不再依赖临时可写目录；真正仍受宿主限制的是 reply-time veto、SessionEnd 等宿主控制点，而不是这些首读入口本身。
+17. **identity 先于 soul**：`~/.cap/identity.md` 是 Cap 的个人灵魂锚点；`compass/soul.md` 负责培养指南、复活协议与执行纪律。缺失 identity 时，优先用 `redcap-install.sh --init-identity` 初始化，不要把 `soul.md` 误当成个人记忆本体。
+18. **有 SessionStart Hook 的宿主必须跑 installer**：Claude / Gemini / Copilot 这类已接入 Layer B SessionStart 的宿主，会在启动链里实际调用 `redcap-install.sh`；Codex.app 这类只有入口导入的宿主，仍需显式运行 installer 或 current-status。
 
 ## 章节路由
 
@@ -46,5 +50,6 @@
 4. `bash compass/tools/redcap-tracking-health.sh .dev-task.md`
 5. `bash compass/tools/redcap-diagnose.sh .dev-task.md`
 6. `bash compass/tools/redcap-token-risk-audit.sh`
-7. 涉及 docs：`bash compass/tools/redcap-docs-catalog.sh plan "<query>"` 与 `budget <paths...>`
-8. 涉及 acceptance：`bash compass/tools/redcap-acceptance-index.sh find "<case>"`
+7. `./closeout-cap.sh status`（做收尾前先看 closeout runtime / promise ledger / receipt 状态）
+8. 涉及 docs：`bash compass/tools/redcap-docs-catalog.sh plan "<query>"` 与 `budget <paths...>`
+9. 涉及 acceptance：`bash compass/tools/redcap-acceptance-index.sh find "<case>"`

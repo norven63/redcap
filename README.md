@@ -32,6 +32,7 @@ Compass 负责规范、经验、Hook、收尾与复活
 | **复杂任务不是一个 Agent 从头扛到尾** | 任务会按角色分工、按阶段交棒，减少单点失误 |
 | **高风险结论不是自说自话** | 关键判断会进入 Prism，多视角独立验证，不让同一路脑回路自证正确 |
 | **文档不会默认灌满上下文** | 文档、知识库、测试集合都先看索引，再按需读取，避免 token 污染 |
+| **收尾不是口头说完成** | Layer B 终态要走统一 closeout runtime，棱镜验收、承诺账本、receipt、rescue audit 都要留下物理证据 |
 | **做不到硬保障的地方会诚实承认** | 不会把“只能靠纪律遵守”的规则伪装成 100% 自动执行 |
 
 ## 为什么 Prism 是主角之一
@@ -108,6 +109,31 @@ Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养�
 - **repo 内可幂等确保的**，由 installer 自动检查并补到位
 - **用户家目录级、跨工作区生效的**，只显式提示，不静默改全局
 
+## 一键收尾 / closeout
+
+Layer B 现在不再把“完成”理解成一句自然语言。
+统一收尾入口是：
+
+- 默认收尾：`./closeout-cap.sh`
+- 显式补齐承诺账本：`./closeout-cap.sh sync-promises`
+- 只看当前收尾状态：`./closeout-cap.sh status`
+- 漏写 receipt 时做 rescue 审计：`./closeout-cap.sh audit-open`
+- 日常体检会自动尝试 diagnose-rescue：`bash compass/tools/redcap-diagnose.sh`
+
+这条入口内部会串起：
+
+- Prism 默认独立验收 gate
+- `.dev-task.md` 里的**执行承诺账本**
+- 既有 `on-complete` / `session-end` 收尾链
+- `pending closure / closure-ledger`
+- closeout summary / receipt
+- rescue audit
+
+这意味着：
+- **飞书只是收尾链里的可见信号之一**
+- **真正完成要看承诺是否兑现、棱镜验收是否通过、receipt 是否生成、blocker 是否清账**
+- **作者不能单独宣布 completed**
+
 ## 中文对象词典
 
 如果你不想先记一堆英文脚本名，可以先把 RedCap 理解成这 7 个中文对象：
@@ -117,10 +143,12 @@ Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养�
 | **身份卡** | `~/.cap/identity.md` | 解决“Cap 到底是谁”，不让人格锚点和工作手册混层 |
 | **复活手册** | `compass/soul.md` | 解决“Cap 应该怎样恢复自己并开始工作” |
 | **当前任务卡** | `.dev-task.md` | 解决“当前这轮到底在做什么、做到哪了” |
+| **承诺账本** | `.dev-task.md` 的 `## 执行承诺账本` + closeout runtime 派生账本 | 解决“Agent 自己承诺过要做的事不能只活在对话里” |
 | **讨论草稿本** | `compass/knowledge/explore-notes.md` | 解决“多轮讨论的原始演进不要在长对话里蒸发” |
 | **当前状态板** | `redcap-current-status.sh` | 解决“接盘时先看全局状态，而不是先翻一堆旧文档” |
 | **追踪体检表** | `redcap-tracking-health.sh` | 解决“书记官、任务卡、结案报告到底有没有真的在工作” |
 | **结案报告** | `compass/docs/task-reports/*.md` | 解决“这轮到底改了什么、验证了什么、还剩什么” |
+| **收尾收据** | `closeout-receipts/*.json` | 解决“不能只靠一句‘完成了’，而要有物理 receipt 证明终态真的闭环” |
 
 这套词典的目的很简单：
 **先让人理解 RedCap 的对象分工，再决定要不要深入到具体脚本名。**
@@ -133,7 +161,7 @@ Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养�
 | [`compass/CONTRIBUTING.md`](./compass/CONTRIBUTING.md) | 看框架自身开发的权威规范 |
 | [`compass/knowledge/long-task-context-defense.md`](./compass/knowledge/long-task-context-defense.md) | 看 RedCap 如何对抗长任务/长对话上下文漂移 |
 | [`compass/knowledge/runtime-memory-architecture.md`](./compass/knowledge/runtime-memory-architecture.md) | 看“真相源 / 镜像 / 考古追踪 / 长期沉淀”等术语到底是什么意思 |
-| [`references/runtime-memory-architecture.md`](./references/runtime-memory-architecture.md) | 看 Layer B 生命周期如何与 `.dev-task.md`、validator、pending closure、session hooks 绑在一起 |
+| [`references/runtime-memory-architecture.md`](./references/runtime-memory-architecture.md) | 看 Layer B 生命周期如何与 `.dev-task.md`、承诺账本、closeout runtime、pending closure、session hooks 绑在一起 |
 | [`prism/protocol.md`](./prism/protocol.md) | 看 Prism 的正式协议 |
 | [`prism/README.md`](./prism/README.md) | 快速理解 Prism 的定位与使用边界 |
 | [`compass/knowledge/design-principles.md`](./compass/knowledge/design-principles.md) | 看框架的设计哲学 |

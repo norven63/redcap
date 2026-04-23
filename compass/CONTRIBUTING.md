@@ -382,7 +382,7 @@ python3 compass/tools/feishu-notifier.py pending-list --limit 5
 
 ## 7. Layer B 大型任务断点续传
 
-> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的断点续传由 `.workflow/state.yaml` 这类单一显式 FSM 自动保证；Layer B 不采用同一种单中心状态文件，而是使用 `.dev-task.md + pending closure + closure-ledger + validator-chain + session-start/stop-review/on-complete/session-end` 组成的分布式控制面生命周期。详见 `references/runtime-memory-architecture.md`。
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的断点续传由 `.workflow/state.yaml` 这类单一显式 FSM 自动保证；Layer B 不采用同一种单中心状态文件，而是使用 `.dev-task.md + 承诺账本 + closeout runtime + pending closure + closure-ledger + validator-chain + session-start/stop-review/on-complete/session-end` 组成的分布式控制面生命周期。详见 `references/runtime-memory-architecture.md`。
 
 **问题**：Layer B 曾经缺少像 Layer A 那样显眼的单一 FSM 表达，导致会话中断后容易被误判成“只能靠上下文记忆恢复”，也让入口文档和实际控制面之间出现口径漂移。
 
@@ -433,6 +433,9 @@ governance_debts_addressed: []
 - [ ] Phase 2: ...
 - [x] Phase N: ... ← 已完成的打勾
 
+## 执行承诺账本（Agent 自追加承诺，closeout 必核对）
+- [ ] <若你在执行中明确承诺“下一步会做 A/B/C”，写在这里>
+
 ## 断点备注
 <当前进度、下一步、已知阻塞项>
 ```
@@ -477,6 +480,11 @@ governance_debts_addressed: []
 - `compass/tools/redcap-on-complete.sh`
   - 对 RedCap 自身 on-complete fail-closed 校验 `commit proof + PM Gate + drift + backlog + spec registry + task report + artifact lifecycle`
   - 若 notify 或 validator-chain 暴露出的 `commit proof / PM Gate / drift / backlog / spec registry / task report / artifact lifecycle` 仍有缺口，必须写回 pending closure，保留下次 reconcile 机会
+- `compass/tools/redcap-layerb-closeout-runtime.sh` / `closeout-cap.sh`
+  - 作为 Layer B 终态统一入口，先同步 `.dev-task.md` 中的 `## 执行承诺账本`，再串起 `redcap-prism-acceptance-check.sh + redcap-on-complete.sh + redcap-layerB-session-end.sh`
+  - closeout 只有在**承诺已兑现 + Prism 验收通过 + pending closure 已清 + receipt 已生成**时才算完成；否则必须写回 blocker / audit，不能只靠“session-end 绿了”口头宣布完成
+  - `audit-open` 只做两件事：能补 receipt 时补 receipt；不能补 receipt 时补 blocker / audit。禁止偷偷把未闭环任务改写成 completed
+  - 当前至少要有一条强入口消费 `audit-open`；本仓库现行实现选择 `redcap-diagnose.sh` 的 diagnose-rescue 路径
 - `compass/tools/redcap-layerB-session-end.sh`
   - 先消费 `validator-chain session-end` 的 `review proof + reanchor + PM Gate + drift + backlog + spec registry + task report + artifact lifecycle`，再决定 notify / pending closure clear
   - 若 validator-chain 未产出可判定 step、notify 失败、pending closure 无法清除，或 closure 证据写回失败，必须保留/更新 pending closure；`session-end` 作为 authority reconcile 入口应以当前 blocker set 重写 `required_redlines`
@@ -1048,6 +1056,9 @@ Step 4: 任务完成报告
   - 按 references/task-report-template.md 整理完整报告
   - 归档到 `compass/docs/task-reports/YYYY-MM-DD-<topic>.md`
   - 同步给 Norven（对话中引用报告内容/路径）
+  - 完成所有 todo 后，优先通过 `./closeout-cap.sh` 或 `bash compass/tools/redcap-layerb-closeout-runtime.sh complete ...` 执行统一 closeout runtime，而不是手工拼接棱镜验收 / on-complete / session-end
+  - closeout runtime 会核对 `## 执行承诺账本`、Prism 独立验收、summary / receipt / rescue audit；承诺未清、验收缺失、receipt 缺失或 blocker 未清时，不得伪装成收口完成
+  - 作者只能汇报“已实现 / 已自检”；只有 Prism 验收通过且 receipt 已生成后，才允许汇报 completed
   - 报告文件最迟需在 SessionEnd 前存在且已纳入 Git（已提交或已暂存均可被审计；建议随最终提交一起归档）
   - 若报告尚未提交，先 `git add <report_path>`，再执行 `bash compass/tools/redcap-task-report-register.sh <claude|gemini|copilot> <report_path>` 显式登记本次任务的报告路径
   - SessionEnd Hook 会审计报告文件是否存在且模板关键章节齐全

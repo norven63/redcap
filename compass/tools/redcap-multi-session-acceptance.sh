@@ -76,7 +76,16 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-clear
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-hash-mismatch
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-backlog-spec
-  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-triggers-on-complete
+  bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-triggers-closeout-runtime
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-promise-ledger-blocks
+  bash compass/tools/redcap-multi-session-acceptance.sh prism-acceptance-binding-required
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-complete-writes-receipt
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-session-end-failure-writes-pending
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-audit-open-repairs-receipt
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-audit-open-blocks-unresolved
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-audit-open-preserves-existing-blockers
+  bash compass/tools/redcap-multi-session-acceptance.sh diagnose-auto-repairs-closeout-receipt
+  bash compass/tools/redcap-multi-session-acceptance.sh closeout-cap-root-entry-basic-commands
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-avoids-ambiguous-reports
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-skips-stale-pending-artifact
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-normalizes-absolute-pending-anchor
@@ -1669,17 +1678,17 @@ EOF
     redcap_runtime_clear_context
 }
 
-run_task_complete_guard_triggers_on_complete_case() {
+run_task_complete_guard_triggers_closeout_runtime_case() {
     local host="copilot"
     local binding_key pid current_head
     local report_path report_rel marker_path
-    local case_dir register_log complete_log register_stub complete_stub
-    local complete_count register_count
+    local case_dir register_log runtime_log register_stub runtime_stub
+    local runtime_count register_count
     local task_complete_slice
 
-    log "case: task-complete-guard-triggers-on-complete"
+    log "case: task-complete-guard-triggers-closeout-runtime"
 
-    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "task-complete-guard-triggers-on-complete" >/dev/null 2>&1 || true
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "task-complete-guard-triggers-closeout-runtime" >/dev/null 2>&1 || true
 
     binding_key="acceptance-task-complete-guard-${RANDOM}-$$"
     pid="$((66000 + RANDOM))"
@@ -1697,7 +1706,7 @@ run_task_complete_guard_triggers_on_complete_case() {
         "$host" \
         "acceptance-seed" \
         "task-report,review,notify" \
-        "task-complete-guard-triggers-on-complete" \
+        "task-complete-guard-triggers-closeout-runtime" \
         "$report_rel" \
         "$current_head" \
         "$current_head" \
@@ -1708,9 +1717,9 @@ run_task_complete_guard_triggers_on_complete_case() {
     case_dir="$(mktemp -d "$ACCEPT_ROOT/task-complete-guard.XXXXXX")"
     TEMP_PROJECTS+=("$case_dir")
     register_log="$case_dir/register.log"
-    complete_log="$case_dir/on-complete.log"
+    runtime_log="$case_dir/closeout-runtime.log"
     register_stub="$case_dir/register-stub.sh"
-    complete_stub="$case_dir/on-complete-stub.sh"
+    runtime_stub="$case_dir/closeout-runtime-stub.sh"
 
     cat >"$register_stub" <<EOF
 #!/usr/bin/env bash
@@ -1723,16 +1732,16 @@ redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNT
 printf '%s\n' "\$REPORT" >>"$register_log"
 redcap_interop_write_current_report_marker "\${REPORT#$REDCAP_ROOT/}" "$REDCAP_ROOT/.dev-task.md" >/dev/null
 EOF
-    cat >"$complete_stub" <<EOF
+    cat >"$runtime_stub" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-printf '%s\n' "on-complete" >>"$complete_log"
+printf '%s\t%s\n' "\${1:-complete}" "\${REDCAP_HOST_PROCESS_PID:-missing}" >>"$runtime_log"
 EOF
-    chmod +x "$register_stub" "$complete_stub"
+    chmod +x "$register_stub" "$runtime_stub"
 
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
     REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$runtime_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
         || fail "task complete guard first run failed"
@@ -1743,26 +1752,609 @@ EOF
 
     register_count="0"
     [[ -f "$register_log" ]] && register_count="$(wc -l < "$register_log" | tr -d '[:space:]')"
-    complete_count="$(wc -l < "$complete_log" | tr -d '[:space:]')"
+    runtime_count="$(wc -l < "$runtime_log" | tr -d '[:space:]')"
     assert_num_eq "$register_count" 0
-    assert_num_eq "$complete_count" 1
+    assert_num_eq "$runtime_count" 1
+    assert_string_contains "$(cat "$runtime_log")" $'complete\t'
 
-    REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
-    REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
-    REDCAP_HOST_PROCESS_PID="$pid" \
-        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
-        || fail "task complete guard second run failed"
-
-    register_count="0"
-    [[ -f "$register_log" ]] && register_count="$(wc -l < "$register_log" | tr -d '[:space:]')"
-    complete_count="$(wc -l < "$complete_log" | tr -d '[:space:]')"
-    assert_num_eq "$register_count" 0
-    assert_num_eq "$complete_count" 1
-
-    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "task-complete-guard-triggers-on-complete" >/dev/null 2>&1 || true
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "task-complete-guard-triggers-closeout-runtime" >/dev/null 2>&1 || true
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
     redcap_runtime_clear_context
+}
+
+write_layerb_closeout_task_fixture() {
+    local task_file="$1"
+    local report_rel="$2"
+    local promise_block="$3"
+    local task_id
+
+    task_id="$(basename "$task_file")"
+    task_id="${task_id%.md}"
+    task_id="${task_id#.}"
+    task_id="${task_id//[^A-Za-z0-9._-]/-}"
+    case "$task_id" in
+        acceptance-*) ;;
+        *) task_id="acceptance-${task_id}" ;;
+    esac
+
+    cat >"$task_file" <<EOF
+# 当前任务：Layer B closeout runtime acceptance
+
+## 控制面元数据（机器校验）
+task_id: $task_id
+source_of_truth: .dev-task.md
+top_goal: 验证 Layer B closeout runtime
+active_slice: closeout-runtime-acceptance
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+task_report: $report_rel
+acceptance_policy: not-required
+prism_acceptance_run: none
+
+## 原始输入（用户原文）
+验证统一 closeout runtime
+
+## 已确认需求（执行依据）
+统一 closeout runtime 必须核对 promise ledger、receipt 与 rescue audit。
+
+## 漂移哨兵
+- 只验证 closeout runtime acceptance
+
+## 允许修改范围
+- compass/tools/**
+- compass/docs/task-reports/**
+
+## 完成标准
+- [ ] closeout runtime acceptance
+
+## 执行承诺账本（Agent 自追加承诺，closeout 必核对）
+$promise_block
+
+## 断点备注
+acceptance fixture
+EOF
+}
+
+run_layerb_closeout_runtime_promise_ledger_blocks_case() {
+    local host="copilot"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub output status pending_state audit_path
+
+    log "case: layerb-closeout-runtime-promise-ledger-blocks"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-pending-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-pending-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance closeout runtime
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：closeout runtime acceptance fixture
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [ ] 统一 runtime 还未真正收尾"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/closeout-runtime-blocked.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    printf '#!/usr/bin/env bash\nexit 99\n' >"$on_complete_stub"
+    printf '#!/usr/bin/env bash\nexit 99\n' >"$session_end_stub"
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    set +e
+    output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "promise-ledger blocked case unexpectedly succeeded"
+    assert_string_contains "$output" "promise ledger contains unresolved commitments"
+
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$task_file")"
+    assert_exists "$pending_state"
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)" "promise-ledger,closeout-runtime"
+
+    audit_path="$(python3 - <<'PY' "$output"
+import json, sys
+text = sys.argv[1]
+start = text.find('{')
+payload = json.loads(text[start:])
+print(payload["audit_path"])
+PY
+)"
+    assert_exists "$audit_path"
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$task_file" "acceptance-cleanup" "layerb-closeout-runtime-promise-ledger-blocks" >/dev/null 2>&1 || true
+}
+
+run_layerb_closeout_runtime_prism_acceptance_blocks_case() {
+    local host="copilot"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub output status pending_state audit_path
+
+    log "case: layerb-closeout-runtime-prism-acceptance-blocks"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/layerb-prism-acceptance.XXXXXX")"
+    task_file="$case_dir/.dev-task.md"
+    report_path="$case_dir/report.md"
+    report_rel="$report_path"
+    cat >"$report_path" <<EOF
+# report
+
+### 0.1 当前已完成
+- 当前已完成：FSM 验收门已接线
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 统一 runtime 已真正收尾"
+    python3 - "$task_file" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("acceptance_policy: not-required", "acceptance_policy: prism-required")
+text = text.replace("prism_acceptance_run: none", "prism_acceptance_run: pending")
+path.write_text(text, encoding="utf-8")
+PY
+
+    on_complete_stub="$case_dir/on-complete.sh"
+    session_end_stub="$case_dir/session-end.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    set +e
+    output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "prism-acceptance blocked case unexpectedly succeeded"
+    assert_string_contains "$output" "independent acceptance missing or failed"
+    pending_state="$(redcap_interop_pending_closure_file "$case_dir" "$task_file")"
+    assert_exists "$pending_state"
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)" "prism-acceptance,closeout-runtime"
+    audit_path="$(python3 - <<'PY' "$output"
+import json
+import sys
+payload = json.loads(sys.argv[1])
+print(payload["audit_path"])
+PY
+)"
+    assert_exists "$audit_path"
+}
+
+run_prism_acceptance_binding_required_case() {
+    local case_dir task_file report_path report_rel run_id output status
+    local parsed_a parsed_b registry
+
+    log "case: prism-acceptance-binding-required"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/prism-acceptance-binding.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    task_file="$case_dir/.dev-task.md"
+    report_path="$case_dir/report.md"
+    report_rel="$report_path"
+    printf '# report\n' >"$report_path"
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 棱镜验收证据已准备"
+    python3 - "$task_file" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("acceptance_policy: not-required", "acceptance_policy: prism-required")
+text = text.replace("prism_acceptance_run: none", "prism_acceptance_run: acceptance-binding-run")
+path.write_text(text, encoding="utf-8")
+PY
+
+    run_id="acceptance-binding-run"
+    registry="$case_dir/prism/runs/$run_id/session-registry.yaml"
+    parsed_a="$case_dir/prism/runs/$run_id/collect/a_review/parsed.json"
+    parsed_b="$case_dir/prism/runs/$run_id/collect/b_review/parsed.json"
+    mkdir -p "$(dirname "$registry")" "$(dirname "$parsed_a")" "$(dirname "$parsed_b")"
+    cat >"$registry" <<'EOF'
+run_id: "acceptance-binding-run"
+mode: "test"
+agents:
+  - handle_type: "shell"
+    handle: "a"
+    role: "a_review"
+    model: "kimi-for-coding"
+    family: "kimi"
+    injection_mode: "native"
+    status: "responded"
+    schema_ok: true
+  - handle_type: "task_agent"
+    handle: "b"
+    role: "b_review"
+    model: "gpt-5.4"
+    family: "gpt"
+    injection_mode: "native"
+    status: "responded"
+    schema_ok: true
+EOF
+    printf '{"agent":"a","role":"independent-reviewer","conclusion":"ok","confidence":"high","blockers":[],"actions":[],"blind_spots":null}\n' >"$parsed_a"
+    printf '{"agent":"b","role":"independent-reviewer","conclusion":"ok","confidence":"high","blockers":[],"actions":[],"blind_spots":null}\n' >"$parsed_b"
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-prism-acceptance-check.sh" --task-file "$task_file" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "prism acceptance unexpectedly passed without binding"
+    assert_string_contains "$output" "binding missing"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-prism-acceptance-bind.sh" --run-id "$run_id" --task-file "$task_file")"
+    assert_string_contains "$output" "\"status\": \"ok\""
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-prism-acceptance-check.sh" --task-file "$task_file")"
+    assert_string_contains "$output" "\"status\": \"pass\""
+}
+
+run_layerb_closeout_runtime_complete_writes_receipt_case() {
+    local host="copilot"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub on_complete_log session_end_log output receipt_path summary_path state_path
+
+    log "case: layerb-closeout-runtime-complete-writes-receipt"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-complete-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-complete-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance closeout runtime
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：统一 closeout runtime 已完成收尾
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 统一 runtime 已真正收尾"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/closeout-runtime-complete.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    on_complete_log="$case_dir/on-complete.log"
+    session_end_log="$case_dir/session-end.log"
+    cat >"$on_complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "on-complete" >>"$on_complete_log"
+EOF
+    cat >"$session_end_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "session-end" >>"$session_end_log"
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    receipt_path="$(python3 - <<'PY' "$output"
+import json, sys
+payload = json.loads(sys.argv[1])
+print(payload["receipt_path"])
+PY
+)"
+    summary_path="$(python3 - <<'PY' "$output"
+import json, sys
+payload = json.loads(sys.argv[1])
+print(payload["summary_path"])
+PY
+)"
+    state_path="$(python3 - <<'PY' "$output"
+import json, sys
+payload = json.loads(sys.argv[1])
+print(payload["state"]["receipt_path"])
+PY
+)"
+    assert_exists "$receipt_path"
+    assert_exists "$summary_path"
+    assert_eq "$receipt_path" "$state_path"
+    assert_string_contains "$(cat "$summary_path")" "统一 closeout runtime 已完成收尾"
+    assert_num_eq "$(wc -l < "$on_complete_log" | tr -d '[:space:]')" 1
+    assert_num_eq "$(wc -l < "$session_end_log" | tr -d '[:space:]')" 1
+}
+
+run_layerb_closeout_runtime_session_end_failure_writes_pending_case() {
+    local host="copilot"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub output status pending_state audit_path
+
+    log "case: layerb-closeout-runtime-session-end-failure-writes-pending"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-session-end-fail-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-session-end-fail-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance closeout runtime session-end failure
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：session-end 失败时必须写回 pending closure
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 统一 runtime 已走到 session-end"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/closeout-runtime-session-end-fail.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 1
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    set +e
+    output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "session-end failure case unexpectedly succeeded"
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$task_file")"
+    assert_exists "$pending_state"
+    assert_string_contains "$(cat "$pending_state")" "closeout-runtime"
+    audit_path="$(python3 - <<'PY' "$output"
+import json, sys
+text = sys.argv[1]
+start = text.find('{')
+payload = json.loads(text[start:])
+print(payload["audit_path"])
+PY
+)"
+    assert_exists "$audit_path"
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$task_file" "acceptance-cleanup" "layerb-closeout-runtime-session-end-failure-writes-pending" >/dev/null 2>&1 || true
+}
+
+run_layerb_closeout_runtime_audit_open_repairs_receipt_case() {
+    local host="copilot"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub output receipt_path audit_path
+
+    log "case: layerb-closeout-runtime-audit-open-repairs-receipt"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-repair-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-repair-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance closeout runtime
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：receipt 可由 rescue audit 补写
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 收尾已完成，仅缺 receipt"
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/closeout-runtime-audit-repair.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    receipt_path="$(python3 - <<'PY' "$output"
+import json, sys
+payload = json.loads(sys.argv[1])
+print(payload["receipt_path"])
+PY
+)"
+    assert_exists "$receipt_path"
+    rm -f "$receipt_path"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" audit-open --task-file "$task_file" --host "$host" --baseline-head "$current_head" --mode diagnose)"
+    receipt_path="$(python3 - <<'PY' "$output"
+import json, sys
+payload = json.loads(sys.argv[1])
+print(payload["receipt_path"])
+PY
+)"
+    audit_path="$(python3 - <<'PY' "$output"
+import json, sys
+payload = json.loads(sys.argv[1])
+print(payload["audit_path"])
+PY
+)"
+    assert_exists "$receipt_path"
+    assert_exists "$audit_path"
+    assert_string_contains "$(cat "$audit_path")" "repair-receipt"
+}
+
+run_layerb_closeout_runtime_audit_open_blocks_unresolved_case() {
+    local host="copilot"
+    local current_head task_file report_path report_rel output status audit_path pending_state
+
+    log "case: layerb-closeout-runtime-audit-open-blocks-unresolved"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-audit-block-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-audit-block-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    printf '# acceptance report\n' >"$report_path"
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 代码已改完，但 blocker 还没清"
+
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$task_file" \
+        "$host" \
+        "acceptance-seed" \
+        "closeout-runtime" \
+        "audit-open unresolved fixture" \
+        "$report_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed pending closure for audit-open blocked case"
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" audit-open --task-file "$task_file" --host "$host" --baseline-head "$current_head" --mode diagnose 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "audit-open unresolved case unexpectedly succeeded"
+    assert_string_contains "$output" "could not repair receipt"
+    audit_path="$(python3 - <<'PY' "$output"
+import json, sys
+text = sys.argv[1]
+start = text.find('{')
+payload = json.loads(text[start:])
+print(payload["audit_path"])
+PY
+)"
+    assert_exists "$audit_path"
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$task_file")"
+    assert_exists "$pending_state"
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$task_file" "acceptance-cleanup" "layerb-closeout-runtime-audit-open-blocks-unresolved" >/dev/null 2>&1 || true
+}
+
+run_layerb_closeout_runtime_audit_open_preserves_existing_blockers_case() {
+    local host="copilot"
+    local current_head task_file report_path report_rel output status pending_state
+
+    log "case: layerb-closeout-runtime-audit-open-preserves-existing-blockers"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-audit-merge-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-audit-merge-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    printf '# acceptance report\n' >"$report_path"
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] closeout 之外的 blocker 仍存在"
+
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$task_file" \
+        "$host" \
+        "acceptance-seed" \
+        "review,task-report" \
+        "pre-existing blockers" \
+        "$report_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed pending closure for merge-preserve case"
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" audit-open --task-file "$task_file" --host "$host" --baseline-head "$current_head" --mode diagnose 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "audit-open preserve-blockers case unexpectedly succeeded"
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$task_file")"
+    assert_exists "$pending_state"
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)" "review,task-report,closeout-runtime"
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$task_file" "acceptance-cleanup" "layerb-closeout-runtime-audit-open-preserves-existing-blockers" >/dev/null 2>&1 || true
+}
+
+run_diagnose_auto_repairs_closeout_receipt_case() {
+    local host="copilot"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub receipt_path output complete_output
+
+    log "case: diagnose-auto-repairs-closeout-receipt"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-diagnose-closeout-repair-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-diagnose-closeout-repair-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance diagnose rescue audit
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：session-end 已闭环，但 receipt 丢失
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] receipt 之外的收尾都已完成"
+    bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate >/dev/null
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/diagnose-closeout-repair.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    complete_output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    receipt_path="$(python3 - <<'PY' "$complete_output"
+import json, sys
+payload = json.loads(sys.argv[1])
+print(payload["receipt_path"])
+PY
+)"
+    assert_exists "$receipt_path"
+    rm -f "$receipt_path"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$task_file")"
+    assert_string_contains "$output" "[ok] closeout-rescue-audit"
+    assert_exists "$receipt_path"
+}
+
+run_closeout_cap_root_entry_basic_commands_case() {
+    local task_file report_path report_rel output
+
+    log "case: closeout-cap-root-entry-basic-commands"
+
+    task_file="$REDCAP_ROOT/.acceptance-closeout-cap-root-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-cap-root-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance closeout cap root entry
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：根入口基础命令可用
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] closeout cap 根入口可用"
+    bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate >/dev/null
+
+    output="$(bash "$REDCAP_ROOT/closeout-cap.sh" sync-promises --task-file "$task_file")"
+    assert_string_contains "$output" "\"status\": \"ok\""
+
+    output="$(bash "$REDCAP_ROOT/closeout-cap.sh" status --task-file "$task_file")"
+    assert_string_contains "$output" "\"promise_total\": 1"
+    assert_string_contains "$output" "\"receipt_exists\": false"
 }
 
 run_task_complete_guard_passes_host_to_on_complete_case() {
@@ -6923,9 +7515,15 @@ run_current_status_overview_case() {
     assert_string_contains "$output" "## docs 考古入口"
     assert_string_contains "$output" "## token 风险入口"
     assert_string_contains "$output" "## 追踪连续性"
+    assert_string_contains "$output" "## Layer B FSM"
+    assert_string_contains "$output" "lifecycle-state:"
+    assert_string_contains "$output" "independent-acceptance:"
     assert_string_contains "$output" "token-risk-audit:"
     assert_string_contains "$output" "tracking-health:"
     assert_string_contains "$output" "## 待验证登记"
+    assert_string_contains "$output" "## closeout runtime"
+    assert_string_contains "$output" "promise-ledger:"
+    assert_string_contains "$output" "closeout-receipt:"
     assert_string_contains "$output" "active_slice:"
 }
 
@@ -7073,12 +7671,15 @@ run_diagnose_overview_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_ROOT/.dev-task.md")"
     assert_string_contains "$output" "REDCAP_DIAGNOSE"
     assert_string_contains "$output" "## 诊断门禁"
+    assert_string_contains "$output" "[ok] closeout-rescue-audit"
     assert_string_contains "$output" "[ok] docs-catalog"
     assert_string_contains "$output" "[ok] knowledge-index"
     assert_string_contains "$output" "[ok] overlay-governance"
     assert_string_contains "$output" "[ok] state-machine-contract"
     assert_string_contains "$output" "[ok] token-risk-audit"
     assert_string_contains "$output" "[ok] tracking-health"
+    assert_string_contains "$output" "[ok] layerb-lifecycle-contract"
+    assert_string_contains "$output" "[ok] layerb-closeout-runtime"
     assert_string_contains "$output" "[ok] contributing-ia"
     assert_string_contains "$output" "[ok] review-tracks"
     assert_string_contains "$output" "[ok] hook-contract"
@@ -8207,8 +8808,38 @@ case "$COMMAND" in
     sessionstart-auto-reconcile-backlog-spec)
         run_sessionstart_auto_reconcile_backlog_spec_case
         ;;
-    task-complete-guard-triggers-on-complete)
-        run_task_complete_guard_triggers_on_complete_case
+    task-complete-guard-triggers-on-complete|task-complete-guard-triggers-closeout-runtime)
+        run_task_complete_guard_triggers_closeout_runtime_case
+        ;;
+    layerb-closeout-runtime-promise-ledger-blocks)
+        run_layerb_closeout_runtime_promise_ledger_blocks_case
+        ;;
+    layerb-closeout-runtime-prism-acceptance-blocks)
+        run_layerb_closeout_runtime_prism_acceptance_blocks_case
+        ;;
+    prism-acceptance-binding-required)
+        run_prism_acceptance_binding_required_case
+        ;;
+    layerb-closeout-runtime-complete-writes-receipt)
+        run_layerb_closeout_runtime_complete_writes_receipt_case
+        ;;
+    layerb-closeout-runtime-session-end-failure-writes-pending)
+        run_layerb_closeout_runtime_session_end_failure_writes_pending_case
+        ;;
+    layerb-closeout-runtime-audit-open-repairs-receipt)
+        run_layerb_closeout_runtime_audit_open_repairs_receipt_case
+        ;;
+    layerb-closeout-runtime-audit-open-blocks-unresolved)
+        run_layerb_closeout_runtime_audit_open_blocks_unresolved_case
+        ;;
+    layerb-closeout-runtime-audit-open-preserves-existing-blockers)
+        run_layerb_closeout_runtime_audit_open_preserves_existing_blockers_case
+        ;;
+    diagnose-auto-repairs-closeout-receipt)
+        run_diagnose_auto_repairs_closeout_receipt_case
+        ;;
+    closeout-cap-root-entry-basic-commands)
+        run_closeout_cap_root_entry_basic_commands_case
         ;;
     task-complete-guard-passes-host-to-on-complete)
         run_task_complete_guard_passes_host_to_on_complete_case

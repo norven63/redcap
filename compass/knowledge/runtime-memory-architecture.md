@@ -18,12 +18,18 @@ RedCap 的“记性”不是一个大脑，而是三层东西一起工作：
 | --- | --- | --- |
 | **真相源** | 当前最有权威、能拍板“事实是什么”的地方 | `.dev-task.md`、`pending-closure/*.state`、`references/backlogs/*.json` |
 | **镜像** | 只是把真相源显示出来，方便看，但自己不能改口径 | 宿主 `plan.md` / workboard |
-| **闭环证据** | 证明“这轮真的做完了 / 审过了 / 记账了”的物理证据 | task report、closure-ledger、Prism report |
+| **闭环证据** | 证明“这轮真的做完了 / 审过了 / 记账了”的物理证据 | task report、closeout receipt、closure-ledger、Prism report |
+| **承诺账本** | 把 Agent 在执行中自己追加的承诺变成可核对的清单 | `.dev-task.md` 的 `## 执行承诺账本` + closeout runtime 派生账本 |
+| **终态收据** | 证明“这次 closeout 真的闭环了”的 receipt | `closeout-receipts/*.json` |
+| **rescue 审计** | 在漏写 receipt 或终态半闭环时，补写收据或补写 blocker 的审计动作 | `closeout-audits/*.json`、`audit-open` |
 | **当前任务流状态** | 当前这一刀在做什么、做到哪、下一步去哪 | `.dev-task.md`、Layer A `state.yaml` |
 | **跨会话考古 / 追踪层** | 回头追“为什么会走到这、上次卡在哪、证据在哪” | `current-status`、`diagnose`、task report、pending closure |
 | **长期知识和项目资产的持续沉淀** | 跨任务、跨会话长期要保留的经验、路线、设计、研究 | `lessons.md`、`references/backlogs/*.json`、specs、research |
 | **连续性资产** | 为了接盘和防上下文蒸发而存在的辅助记忆层 | `.dev-task.md`、`explore-notes.md`、runtime session manifest |
-| **闭环事务** | 一次任务从“开始做”到“审完、记账、清账”的完整收尾过程 | stop-review → task report → on-complete → session-end |
+| **闭环事务** | 一次任务从“开始做”到“审完、记账、清账”的完整收尾过程 | stop-review → task report → closeout runtime → receipt / rescue audit |
+| **棱镜验收** | 默认的独立验收层，用来判断任务是否有资格进入正式完成态 | `prism/runs/*`、`parsed.json`、`redcap-prism-acceptance-check.sh` |
+| **验收绑定** | 把某个 Prism run 明确声明成“就是当前任务这一刀的验收 run” | `acceptance-binding.json`、`redcap-prism-acceptance-bind.sh` |
+| **diagnose-rescue** | 在日常体检时自动尝试补 receipt 或重写 blocker 的强入口 | `redcap-diagnose.sh` → `audit-open --mode diagnose` |
 | **分布式控制面状态机** | 没有单一 `state.yaml`，但由多份账本和 gate 共同表达状态与转移 | Layer B 生命周期 |
 | **长期路线真相源** | 不管当前会话怎么变，长期 tranche/backlog 还是以它为准 | `references/backlogs/*.json` |
 
@@ -43,14 +49,43 @@ RedCap 的“记性”不是一个大脑，而是三层东西一起工作：
 
 一个是现在的债，一个是过去的账。
 
-### 3. explore-notes vs lessons
+### 3. 承诺账本 vs 已确认需求
+
+- `已确认需求`：回答“用户到底要什么”
+- `执行承诺账本`：回答“Agent 后来自己承诺还要做什么”
+
+一个锁用户边界，一个锁 Agent 自己追加的执行责任。
+
+### 4. closeout receipt vs task report
+
+- `closeout receipt`：回答“这次收尾在机器层是否真的闭环”
+- `task report`：回答“这轮从人类视角到底做成了什么”
+
+一个偏 machine-readable 终态收据，一个偏 human-readable 结案说明。
+
+### 4.5 棱镜验收 vs 作者自检
+
+- `作者自检`：回答“作者自己认为改动是否通过了测试和回归”
+- `棱镜验收`：回答“独立验收者是否同意它可以进入正式完成态”
+- `验收绑定`：回答“这轮棱镜 run 到底是不是当前 task_id / confirmed_hash 的那一刀”
+
+作者可以自检，但不能拿自检替代棱镜验收。
+
+### 4.6 新 blocker vs 旧 blocker
+
+- 新 blocker：这次 closeout / rescue 新发现的缺口
+- 旧 blocker：任务在此之前就已经挂着的 review、task-report、pm-gate 等 redline
+
+正确做法是：**新 blocker 追加到旧 blocker 后面**，而不是为了“看起来统一”把旧 blocker 覆盖掉。
+
+### 5. explore-notes vs lessons
 
 - `explore-notes`：某次讨论还没锁定前的草稿本
 - `lessons`：未来类似任务都要复用的经验
 
 一个偏“当时怎么讨论”，一个偏“以后别再踩坑”。
 
-### 4. backlog vs 当前任务卡
+### 6. backlog vs 当前任务卡
 
 - backlog：长期路线，回答“整体大图走到哪”
 - 当前任务卡：当前 tranche / active slice，回答“这一刀正在砍哪”
