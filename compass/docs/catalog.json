@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 41,
-    "size_bytes": 627227,
-    "lines": 11212,
-    "chars": 403931,
+    "size_bytes": 628489,
+    "lines": 11217,
+    "chars": 405047,
     "rough_token_pressure": {
-      "low": 100982,
-      "high": 201965
+      "low": 101261,
+      "high": 202523
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 24,
-        "size_bytes": 361299,
-        "lines": 4734,
-        "chars": 230103,
+        "size_bytes": 362561,
+        "lines": 4739,
+        "chars": 231219,
         "rough_token_pressure": {
-          "low": 57525,
-          "high": 115051
+          "low": 57804,
+          "high": 115609
         }
       },
       "traces": {
@@ -738,25 +738,25 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11600,
-      "lines": 183,
-      "chars": 7770,
-      "summary": "当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。 / 详情：当前任务的 follow-up Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；`current-status` 已能诚实区分 lifecycle / independent acceptance / formal completion；剩余唯一未闭环项是这条 live 任务还未执行最终 `complete`…",
+      "size_bytes": 12862,
+      "lines": 188,
+      "chars": 8886,
+      "summary": "当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。 / 详情：当前任务的 closeout retry Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；当前 live 任务已经真实执行 `complete`，`pending closure` 已清，且已写出 closeout receipt。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
           "当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。",
-          "详情：当前任务的 follow-up Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；`current-status` 已能诚实区分 lifecycle / independent acceptance / formal completion；剩余唯一未闭环项是这条 live 任务还未执行最终 `complete` 并写出 receipt。"
+          "详情：当前任务的 closeout retry Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；当前 live 任务已经真实执行 `complete`，`pending closure` 已清，且已写出 closeout receipt。"
         ],
         "previous_step": [
           "上一步完成的是：上一 tranche 已把 Layer B 生命周期协议、closeout runtime、承诺账本、receipt 和 rescue audit 初步接到位，但仍未把“工作模式本体”和“默认独立验收门”真正做成硬门。"
         ],
         "next_step": [
-          "下一步计划做的是：对当前 live 任务执行真实 complete 收尾并生成 receipt；若成功，则无当前 tranche 级下一步。"
+          "下一步计划做的是：无当前 tranche 级下一步；后续仅保留长期治理项的独立演进，不再属于本任务的未完成项。"
         ],
         "position": [
           "整体计划脉络图是：重新锚定任务 → 落 FSM 状态面 → 落 Prism acceptance gate → 收紧 closeout runtime → 同步入口与模板 → acceptance / 棱镜验收 → 真实 complete 收尾。",
-          "当前所在位置：FSM 工作模式、默认独立验收门和终态事务都已落地并完成棱镜 follow-up；当前卡在 live closeout 的最后一步。"
+          "当前所在位置：FSM 工作模式、默认独立验收门、closeout runtime 终态事务与真实 live closeout 都已闭环完成，当前 confirmed_hash 已进入正式完成态。"
         ]
       }
     },
