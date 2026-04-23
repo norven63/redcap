@@ -2907,6 +2907,48 @@ run_pending_closure_clear_restores_on_ledger_failure_case() {
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-cleanup" "pending-closure-clear-restores-on-ledger-failure" >/dev/null 2>&1 || true
 }
 
+run_pending_closure_clear_locked_mode_case() {
+    local current_head state_file expected_updated_at
+
+    log "case: pending-closure-clear-locked-mode"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "pending-closure-clear-locked-mode" >/dev/null 2>&1 || true
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    state_file="$(
+        redcap_interop_write_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "copilot" \
+            "acceptance-seed" \
+            "pending-closure" \
+            "pending-closure-clear-locked-mode" \
+            "compass/docs/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md" \
+            "$current_head" \
+            "$current_head"
+    )" || fail "failed to seed pending closure for locked clear case"
+    expected_updated_at="$(redcap_interop_read_state_field "$state_file" "updated_at" 2>/dev/null || true)"
+    [[ -n "$expected_updated_at" ]] || fail "missing updated_at for locked clear case"
+
+    redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" \
+        || fail "failed to acquire pending closure lock for locked clear case"
+    if ! redcap_interop_clear_pending_closure \
+        "$REDCAP_ROOT" \
+        "$REDCAP_ROOT/.dev-task.md" \
+        "acceptance-clear" \
+        "pending-closure-clear-locked-mode" \
+        "$expected_updated_at" \
+        "locked" \
+        >/dev/null 2>&1; then
+        redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1 || true
+        fail "locked-mode pending closure clear unexpectedly failed"
+    fi
+    redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1 || true
+
+    if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        fail "pending closure still exists after locked-mode clear"
+    fi
+}
+
 run_session_end_clears_all_matching_pending_states_case() {
     local host="copilot"
     local binding_key pid probe_pid current_head report_path state_file stale_state case_dir validator_stub
@@ -9007,6 +9049,9 @@ case "$COMMAND" in
         ;;
     pending-closure-clear-restores-on-ledger-failure)
         run_pending_closure_clear_restores_on_ledger_failure_case
+        ;;
+    pending-closure-clear-locked-mode)
+        run_pending_closure_clear_locked_mode_case
         ;;
     session-end-clears-all-matching-pending-states)
         run_session_end_clears_all_matching_pending_states_case

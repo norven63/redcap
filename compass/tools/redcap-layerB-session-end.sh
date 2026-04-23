@@ -650,6 +650,7 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
                 "session-end-cleared" \
                 "host=$HOST current_head=$CURRENT_HEAD" \
                 "$PENDING_CLEAR_EXPECTED_AT" \
+                "locked" \
                 >/dev/null 2>&1; then
                 PENDING_CLEAR_STATUS=0
                 redcap_runtime_record_degraded_mode \

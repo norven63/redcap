@@ -857,7 +857,7 @@ EOF
     )
 }
 
-redcap_interop_clear_pending_closure() {
+redcap_interop_clear_pending_closure_locked() {
     local project_root="$1"
     local task_file="$2"
     local outcome="${3:-done}"
@@ -874,11 +874,9 @@ redcap_interop_clear_pending_closure() {
 
     project_root=$(redcap_runtime_project_root "$project_root")
     task_file=$(redcap_dev_task_resolve_file "$task_file")
-    redcap_interop_acquire_pending_closure_lock "$project_root" "$task_file" || return 1
     (
         local current_updated_at="" state_dir="" backup_dir="" moved_file="" ledger_written=0
         local moved_files=()
-        trap 'redcap_interop_release_pending_closure_lock "'"$project_root"'" "'"$task_file"'" >/dev/null 2>&1 || true' EXIT
         state_file=$(redcap_interop_pending_closure_existing_file "$project_root" "$task_file" 2>/dev/null || true)
         if [[ -z "$state_file" || ! -f "$state_file" ]]; then
             exit 1
@@ -965,6 +963,33 @@ redcap_interop_clear_pending_closure() {
         fi
 
         rm -rf "$backup_dir" 2>/dev/null || true
+    )
+}
+
+redcap_interop_clear_pending_closure() {
+    local project_root="$1"
+    local task_file="$2"
+    local outcome="${3:-done}"
+    local detail="${4:-}"
+    local expected_updated_at="${5:-}"
+    local lock_mode="${6:-acquire}"
+
+    if [[ -z "$project_root" || -z "$task_file" ]]; then
+        return 1
+    fi
+
+    project_root=$(redcap_runtime_project_root "$project_root")
+    task_file=$(redcap_dev_task_resolve_file "$task_file")
+
+    if [[ "$lock_mode" == "locked" ]]; then
+        redcap_interop_clear_pending_closure_locked "$project_root" "$task_file" "$outcome" "$detail" "$expected_updated_at"
+        return $?
+    fi
+
+    redcap_interop_acquire_pending_closure_lock "$project_root" "$task_file" || return 1
+    (
+        trap 'redcap_interop_release_pending_closure_lock "'"$project_root"'" "'"$task_file"'" >/dev/null 2>&1 || true' EXIT
+        redcap_interop_clear_pending_closure_locked "$project_root" "$task_file" "$outcome" "$detail" "$expected_updated_at"
     )
 }
 
