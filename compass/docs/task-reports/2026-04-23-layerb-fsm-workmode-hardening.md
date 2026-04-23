@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-23
 **执行者**：Cap（Codex 宿主）
-**报告版本**：v0.2
+**报告版本**：v0.3
 
 ## 零、先看懂当前局面
 
@@ -92,6 +92,7 @@
 
 - `references/spec-registry.json` / `references/execution-guarantees.json` 现已把 acceptance binding 纳入 paired/guarantee paths，避免“代码有新 gate，registry 仍按旧 gate 记账”的 authority 漂移。
 - `references/runtime-memory-architecture.md` 与 `compass/knowledge/runtime-memory-architecture.md` 补进了 acceptance binding 与 preserve-blockers 语义，避免再把“run 有结果”误说成“当前任务验收已通过”。
+- 当前 tranche 的任务报告模板、anchor 与 docs catalog 已对齐到同一版，避免 formal closeout 继续被“多份有效报告并列”或 catalog 漂移卡住。
 - 当前 tranche 仍在推进中的唯一项是：当前 live 任务真实 complete 收尾。
 
 ## 四、人工审核要点
@@ -115,6 +116,7 @@
 | `redcap-prism-acceptance-check.sh --task-file .dev-task.md` | ✅（`review-layerb-fsm-workmode-followup-20260423`，2 席 responded，2 家族，无 blocker） |
 | `prism-acceptance-binding-required` acceptance | ✅ |
 | `layerb-closeout-runtime-audit-open-preserves-existing-blockers` acceptance | ✅ |
+| `redcap-spec-check.sh "$PWD"` | ✅ |
 | `redcap-current-status.sh .dev-task.md` | ✅ 已诚实显示 independent-acceptance=pass / receipt=missing |
 
 ### 5.2 当前 closeout runtime / receipt
