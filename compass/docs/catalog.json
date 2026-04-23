@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 41,
-    "size_bytes": 627008,
-    "lines": 11210,
-    "chars": 403794,
+    "size_bytes": 627227,
+    "lines": 11212,
+    "chars": 403931,
     "rough_token_pressure": {
-      "low": 100948,
-      "high": 201897
+      "low": 100982,
+      "high": 201965
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 24,
-        "size_bytes": 361080,
-        "lines": 4732,
-        "chars": 229966,
+        "size_bytes": 361299,
+        "lines": 4734,
+        "chars": 230103,
         "rough_token_pressure": {
-          "low": 57491,
-          "high": 114983
+          "low": 57525,
+          "high": 115051
         }
       },
       "traces": {
@@ -738,9 +738,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11381,
-      "lines": 181,
-      "chars": 7633,
+      "size_bytes": 11600,
+      "lines": 183,
+      "chars": 7770,
       "summary": "当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。 / 详情：当前任务的 follow-up Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；`current-status` 已能诚实区分 lifecycle / independent acceptance / formal completion；剩余唯一未闭环项是这条 live 任务还未执行最终 `complete`…",
       "status_basis": "filename_recency_only",
       "summary_points": {
