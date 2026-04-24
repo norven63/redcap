@@ -89,8 +89,10 @@
 | `compass/docs/catalog.json` | 修改 | 将全景图纳入按需披露索引 |
 | `compass/knowledge/lessons.md` | 修改 | 沉淀当前任务卡重锚定与机制活性经验 |
 | `compass/tools/redcap-layerb-closeout-runtime.py` | 修改 | 修复 `sync-promises` 降级 completed 的状态漂移 |
+| `compass/tools/redcap-layerb-closeout-runtime.py` | 修改 | 让 `complete` 在调用 `on-complete` / `session-end` 前确保 runtime binding，并把 binding/env 传入子流程 |
+| `compass/tools/redcap-layerb-closeout-runtime-bridge.sh` | 修改 | 新增 `ensure-runtime-binding`，供 Python runtime 复用 shell runtime claim 能力 |
 | `compass/tools/redcap-layerB-session-end.sh` | 修改 | 允许后续成功的 commit-proof gate 清掉旧 pending closure 中的 `commit-proof` 红线 |
-| `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 新增状态保持 acceptance 用例 |
+| `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 新增状态保持与 session-end binding acceptance 用例 |
 
 ### 3.2 技术实现要点
 
@@ -111,7 +113,7 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 
 ### 3.3 关联变更
 
-本轮触发了 docs catalog 重新生成；同时发现上一轮 `sync-promises` 会把已完成 runtime state 回退到 prepared，因此补入状态保持修复和 acceptance 回归。
+本轮触发了 docs catalog 重新生成；同时发现上一轮 `sync-promises` 会把已完成 runtime state 回退到 prepared，因此补入状态保持修复和 acceptance 回归。正式 closeout 复验时又抓到 `complete -> session-end` 没有继承 runtime binding，会把真实 session-end 打进 `missing-runtime-claim` 降级分支；已把 binding 初始化收进 closeout runtime，并新增回归防复发。
 
 ## 四、人工审核要点
 
@@ -129,8 +131,9 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 | Layer B FSM | `bash compass/tools/redcap-layerb-fsm-check.sh` | 通过 |
 | 执行保障 | `bash compass/tools/redcap-execution-guarantee-check.sh` | 通过 |
 | 总规范检查 | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
-| 总诊断 | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 在任务卡更新前通过；任务卡更新后需等待当前 acceptance 绑定再复跑 |
+| 总诊断 | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 待最终 closeout 前复跑 |
 | acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-sync-preserves-completed-state` | 通过 |
+| acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-attaches-session-end-binding` | 通过 |
 | FSM 状态派生 | Python 直接调用 `derive_state()` 检查 planning / plan-review | 通过 |
 | diff 空白检查 | `git diff --check` | 通过 |
 | 任务卡重锚定 | `bash compass/tools/redcap-drift-check.sh reanchor codex .dev-task.md` | 通过 |
@@ -195,15 +198,17 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 ### 附录 A：Commits
 
 ```text
-未提交；当前为工作区变更。
+f8aefb4 feat: 强化 RedCap 全景图与机制活性门禁
+9312462 fix: 允许 session-end 清理 commit-proof 红线
 ```
 
 ### 附录 B：棱镜调用记录（如有）
 
 | 模式 | 问题 | 结论 | 报告路径 |
 |------|------|------|---------|
-| Kimi CLI 只读审查 | 四项目标是否有阻塞 | 未发现阻塞 | `prism/runs/review-workflow-panorama-mechanism-vitality-20260424/collect/kimi_review/parsed.json` |
-| Copilot CLI 只读审查 | task-card reanchor blocker 与复审 | 初审抓到 blocker，补丁后复审通过 | `prism/runs/review-workflow-panorama-mechanism-vitality-20260424/collect/copilot_review/parsed.json` |
+| Kimi CLI 只读审查 | closeout runtime binding 修复是否有阻塞 | 未发现阻塞；提示 PID fallback 为低风险 | `prism/runs/review-closeout-runtime-binding-20260424/collect/kimi_review/parsed.json` |
+| Copilot CLI 只读审查 | closeout runtime binding 修复是否有阻塞 | 未发现阻塞 | `prism/runs/review-closeout-runtime-binding-20260424/collect/copilot_review/parsed.json` |
+| Kimi / Copilot 历史审查 | 全景图、机制活性、task-card reanchor | 前序 run 已通过，后续 binding 修复另开 run 复审 | `prism/runs/review-workflow-panorama-mechanism-vitality-20260424/collect/*_review/parsed.json` |
 | Gemini / Claude | 同上 | 超时/无输出，已记录降级 | `prism/runs/review-workflow-panorama-mechanism-vitality-20260424/collect/*_review/meta.json` |
 
 ### 附录 C：相关文档索引

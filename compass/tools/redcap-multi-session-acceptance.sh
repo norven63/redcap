@@ -80,6 +80,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-promise-ledger-blocks
   bash compass/tools/redcap-multi-session-acceptance.sh prism-acceptance-binding-required
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-complete-writes-receipt
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-attaches-session-end-binding
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-sync-preserves-completed-state
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-session-end-failure-writes-pending
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-audit-open-repairs-receipt
@@ -2467,6 +2468,61 @@ EOF
     status_output="$(bash "$REDCAP_ROOT/closeout-cap.sh" status --task-file "$task_file")"
     assert_string_contains "$status_output" "\"receipt_exists\": true"
     assert_string_contains "$status_output" "\"status\": \"completed\""
+}
+
+run_layerb_closeout_runtime_attaches_session_end_binding_case() {
+    local host="codex"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub complete_output
+
+    log "case: layerb-closeout-runtime-attaches-session-end-binding"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-binding-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-binding-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance closeout runtime binding
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：closeout runtime 会把 runtime binding 传给 session-end
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] closeout runtime session-end binding 已接线"
+    bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate >/dev/null
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/closeout-runtime-binding.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ -n "${REDCAP_SESSION_BINDING_KEY:-}" ]]
+[[ -n "${REDCAP_ON_COMPLETE_HOST:-}" ]]
+exit 0
+EOF
+    cat >"$session_end_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
+[[ -n "\${REDCAP_SESSION_BINDING_KEY:-}" ]]
+[[ -n "\${REDCAP_HOST_PROCESS_PID:-}" ]]
+redcap_runtime_load_from_binding "\$1" "$REDCAP_ROOT" "\$REDCAP_SESSION_BINDING_KEY" >/dev/null
+[[ -n "\${REDCAP_RUNTIME_SESSION_ID:-}" ]]
+exit 0
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    complete_output="$(
+        REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" \
+        REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" \
+            bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head"
+    )"
+    assert_string_contains "$complete_output" "\"status\": \"completed\""
 }
 
 run_task_complete_guard_passes_host_to_on_complete_case() {
@@ -9059,6 +9115,9 @@ case "$COMMAND" in
         ;;
     layerb-closeout-runtime-complete-writes-receipt)
         run_layerb_closeout_runtime_complete_writes_receipt_case
+        ;;
+    layerb-closeout-runtime-attaches-session-end-binding)
+        run_layerb_closeout_runtime_attaches_session_end_binding_case
         ;;
     layerb-closeout-runtime-sync-preserves-completed-state)
         run_layerb_closeout_runtime_sync_preserves_completed_state_case

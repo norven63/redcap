@@ -402,6 +402,51 @@ def run_shell(command: list[str], *, env: dict[str, str] | None = None) -> subpr
     return subprocess.run(command, cwd=str(REDCAP_ROOT), capture_output=True, text=True, env=merged_env, check=False)
 
 
+def closeout_binding_key(identity: TaskIdentity, host: str) -> str:
+    explicit = os.environ.get("REDCAP_SESSION_BINDING_KEY", "").strip()
+    if explicit:
+        return explicit
+    runtime_binding = os.environ.get("REDCAP_RUNTIME_BINDING_KEY", "").strip()
+    if runtime_binding:
+        return runtime_binding
+    host_session = os.environ.get("REDCAP_HOST_SESSION_ID", "").strip()
+    if host_session:
+        return f"host/{host}/session/{host_session}"
+    return f"host/{host}/session/closeout/{identity.identity_key}"
+
+
+def closeout_runtime_env(identity: TaskIdentity, host: str, baseline_head: str) -> tuple[dict[str, str], dict[str, Any]]:
+    binding_key = closeout_binding_key(identity, host)
+    host_pid = os.environ.get("REDCAP_HOST_PROCESS_PID", "").strip() or str(os.getpid())
+    probe_pid = os.environ.get("REDCAP_HOST_PROCESS_PROBE_PID", "").strip() or host_pid
+    env = {
+        "REDCAP_SESSION_BINDING_KEY": binding_key,
+        "REDCAP_HOST_PROCESS_PID": host_pid,
+        "REDCAP_HOST_PROCESS_PROBE_PID": probe_pid,
+        "REDCAP_ON_COMPLETE_HOST": host,
+    }
+    init = run_shell(
+        [
+            "bash",
+            str(BRIDGE_SCRIPT),
+            "ensure-runtime-binding",
+            str(identity.repo_root),
+            host,
+            binding_key,
+            baseline_head,
+        ],
+        env=env,
+    )
+    return env, {
+        "binding_key": binding_key,
+        "host_process_pid": host_pid,
+        "host_process_probe_pid": probe_pid,
+        "returncode": init.returncode,
+        "stdout": init.stdout,
+        "stderr": init.stderr,
+    }
+
+
 def prism_acceptance(identity: TaskIdentity) -> dict[str, Any]:
     if not PRISM_ACCEPTANCE_SCRIPT.is_file():
         return {"status": "fail", "detail": f"missing script: {PRISM_ACCEPTANCE_SCRIPT}"}
@@ -713,7 +758,43 @@ def command_complete(args: argparse.Namespace) -> int:
         emit({"status": "blocked", "reason": detail, "audit_path": str(audit_path), "state": state, "acceptance": acceptance})
         return 1
 
-    on_complete = run_shell(["bash", str(ON_COMPLETE_SCRIPT), str(identity.repo_root), baseline_head, identity.repo_root.name])
+    runtime_env, runtime_binding = closeout_runtime_env(identity, host, baseline_head)
+    if runtime_binding["returncode"] != 0:
+        detail = f"closeout runtime binding init failed with status={runtime_binding['returncode']}"
+        bridge_write_pending(
+            identity,
+            host=host,
+            trigger="layerb-closeout-runtime-binding",
+            required_redlines="closeout-runtime",
+            detail=detail,
+            artifact_path=report_rel,
+            baseline_head=baseline_head,
+            audited_head=current,
+        )
+        bridge_append_ledger(
+            identity,
+            phase="closeout-runtime",
+            status="blocked",
+            detail=detail,
+            host=host,
+            trigger="complete",
+            baseline_head=baseline_head,
+            current_head=current,
+            artifact_path=report_rel,
+        )
+        audit_path = append_audit(
+            identity,
+            "runtime-binding-failed",
+            {
+                "detail": detail,
+                "runtime_binding": runtime_binding,
+            },
+        )
+        state = update_state(identity, status="blocked", last_result="runtime-binding-failed", audit_path=str(audit_path))
+        emit({"status": "blocked", "reason": detail, "audit_path": str(audit_path), "state": state})
+        return 1
+
+    on_complete = run_shell(["bash", str(ON_COMPLETE_SCRIPT), str(identity.repo_root), baseline_head, identity.repo_root.name], env=runtime_env)
     current = current_head(identity)
     if on_complete.returncode != 0:
         detail = f"redcap-on-complete failed with status={on_complete.returncode}"
@@ -751,7 +832,7 @@ def command_complete(args: argparse.Namespace) -> int:
         emit({"status": "blocked", "reason": detail, "audit_path": str(audit_path), "state": state})
         return 1
 
-    session_end = run_shell(["bash", str(SESSION_END_SCRIPT), host])
+    session_end = run_shell(["bash", str(SESSION_END_SCRIPT), host], env=runtime_env)
     current = current_head(identity)
     if session_end.returncode != 0 or pending_state_path(identity).is_file():
         detail = (

@@ -6,7 +6,7 @@ set -euo pipefail
 
 SUBCOMMAND="${1:-}"
 if [[ -z "$SUBCOMMAND" ]]; then
-    echo "usage: $0 <write-pending|append-ledger>" >&2
+    echo "usage: $0 <write-pending|append-ledger|ensure-runtime-binding>" >&2
     exit 2
 fi
 shift || true
@@ -70,6 +70,22 @@ case "$SUBCOMMAND" in
             "$BASELINE_HEAD" \
             "$CURRENT_HEAD" \
             "$ARTIFACT_PATH"
+        ;;
+    ensure-runtime-binding)
+        if [[ $# -lt 3 || $# -gt 4 ]]; then
+            echo "usage: $0 ensure-runtime-binding <project_root> <host> <binding_key> [initial_head]" >&2
+            exit 2
+        fi
+        PROJECT_ROOT="$1"
+        HOST="$2"
+        BINDING_KEY="$3"
+        INITIAL_HEAD="${4:-}"
+        REDCAP_RUNTIME_ALLOW_DISK_RECOVERY=1 \
+        REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY=1 \
+            redcap_runtime_init_from_binding "$HOST" "$PROJECT_ROOT" "$BINDING_KEY"
+        if [[ -n "$INITIAL_HEAD" ]]; then
+            redcap_runtime_write_text "layerB/initial-head" "$INITIAL_HEAD"
+        fi
         ;;
     *)
         echo "unsupported subcommand: $SUBCOMMAND" >&2
