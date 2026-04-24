@@ -131,9 +131,10 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 | Layer B FSM | `bash compass/tools/redcap-layerb-fsm-check.sh` | 通过 |
 | 执行保障 | `bash compass/tools/redcap-execution-guarantee-check.sh` | 通过 |
 | 总规范检查 | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
-| 总诊断 | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 待最终 closeout 前复跑 |
+| 总诊断 | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过；显示 lifecycle-state=CLOSED、receipt=present、promise=12/12 |
 | acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-sync-preserves-completed-state` | 通过 |
 | acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-attaches-session-end-binding` | 通过 |
+| acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-session-end-failure-writes-pending` | 通过 |
 | FSM 状态派生 | Python 直接调用 `derive_state()` 检查 planning / plan-review | 通过 |
 | diff 空白检查 | `git diff --check` | 通过 |
 | 任务卡重锚定 | `bash compass/tools/redcap-drift-check.sh reanchor codex .dev-task.md` | 通过 |
@@ -147,11 +148,11 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 11/11 已清 |
-| 棱镜验收 | 通过；Kimi 首轮无阻塞，Copilot 抓到 task card 重锚定约束缺口后复审通过，当前 run 已绑定任务并通过 acceptance check |
-| closeout summary | 无 |
-| closeout receipt | 无 |
-| rescue audit（如有） | 无 |
+| 执行承诺账本 | 12/12 已清 |
+| 棱镜验收 | 通过；`review-closeout-runtime-binding-20260424` 已绑定当前任务，Kimi + Copilot 两家族均无 blocker |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-workflow-panorama-mechanism-vitality-cc725ca8e175f72f9dfff94639e844e130283cb0ea8826fdf82a3e2b98defaad.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-workflow-panorama-mechanism-vitality-cc725ca8e175f72f9dfff94639e844e130283cb0ea8826fdf82a3e2b98defaad.json` |
+| pending closure | 无 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -160,7 +161,7 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是；Kimi + Copilot 两家族通过 |
-| 已正式完成 | 否；当前任务 receipt 尚未生成，下一步执行 closeout |
+| 已正式完成 | 是；closeout runtime 返回 `status=completed`，`diagnose` 显示 `CLOSED` |
 
 ## 六、遗留问题与下一步
 
@@ -168,17 +169,16 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 
 | 问题 | 原因 | 建议优先级 |
 |------|------|----------|
-| Prism provider 稳定性 | Gemini/Claude 长时间无输出，Codex CLI 全局二进制缺平台依赖；Copilot 在证据包模式下可用并已通过复审 | P0 |
-| 老旧资产全量迁移 | 本轮只把治理规则和全景说明纳入工作流，未执行全仓迁移 | P1 |
+| 无当前 tranche 级 blocker | 当前任务的实现、自检、Prism acceptance、commit、receipt 均已完成 | - |
 
 ### 6.2 触发的新问题
 
-当前 Prism provider 池仍不稳定，说明“棱镜验收作为默认验收人”的理念已经清楚，但 provider 运行层还需要单独硬化；本轮已用 Kimi + Copilot 形成可接受 quorum。
+当前 Prism provider 池仍不稳定，说明“棱镜验收作为默认验收人”的理念已经清楚，但 provider 运行层还需要单独硬化；本轮最终使用 Kimi + Copilot 形成可接受 quorum，Gemini/Claude 超时只记录为 provider 稳定性治理项，不阻塞当前任务。
 
 ### 6.3 推荐的下一步行动
 
-1. 单独修复 Prism provider health / timeout / fallback 运行层，让 Gemini、Kimi、Copilot、Codex CLI 的可用性被统一探活、重试和降级记录。
-2. 以本轮全景图和机制活性检查为入口，继续推进老旧资产 authority / archive / translate 治理。
+1. Prism provider health / timeout / fallback 运行层可作为后续独立治理任务处理。
+2. 老旧资产 authority / archive / translate 治理可作为后续独立治理任务处理。
 
 ## 七、经验沉淀
 
@@ -200,6 +200,8 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 ```text
 f8aefb4 feat: 强化 RedCap 全景图与机制活性门禁
 9312462 fix: 允许 session-end 清理 commit-proof 红线
+2f9a8c9 fix: 修复 closeout runtime 的 session-end 绑定
+本报告最终状态同步提交见当前 git HEAD
 ```
 
 ### 附录 B：棱镜调用记录（如有）

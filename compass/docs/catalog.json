@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 44,
-    "size_bytes": 655219,
-    "lines": 11747,
-    "chars": 423085,
+    "size_bytes": 655734,
+    "lines": 11749,
+    "chars": 423712,
     "rough_token_pressure": {
-      "low": 105771,
-      "high": 211542
+      "low": 105928,
+      "high": 211856
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 25,
-        "size_bytes": 377869,
-        "lines": 4958,
-        "chars": 240939,
+        "size_bytes": 378384,
+        "lines": 4960,
+        "chars": 241566,
         "rough_token_pressure": {
-          "low": 60234,
-          "high": 120469
+          "low": 60391,
+          "high": 120783
         }
       },
       "traces": {
@@ -785,9 +785,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 15308,
-      "lines": 219,
-      "chars": 9720,
+      "size_bytes": 15823,
+      "lines": 221,
+      "chars": 10347,
       "summary": "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared。 / 详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态漂移要回归覆盖”四条主线落成了脚本、文档、索引和验收用例。",
       "status_basis": "filename_recency_only",
       "summary_points": {
