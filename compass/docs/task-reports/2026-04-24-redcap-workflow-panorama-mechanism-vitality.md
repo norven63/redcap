@@ -89,6 +89,7 @@
 | `compass/docs/catalog.json` | 修改 | 将全景图纳入按需披露索引 |
 | `compass/knowledge/lessons.md` | 修改 | 沉淀当前任务卡重锚定与机制活性经验 |
 | `compass/tools/redcap-layerb-closeout-runtime.py` | 修改 | 修复 `sync-promises` 降级 completed 的状态漂移 |
+| `compass/tools/redcap-layerB-session-end.sh` | 修改 | 允许后续成功的 commit-proof gate 清掉旧 pending closure 中的 `commit-proof` 红线 |
 | `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 新增状态保持 acceptance 用例 |
 
 ### 3.2 技术实现要点
