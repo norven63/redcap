@@ -458,6 +458,12 @@ governance_debts_addressed: []
 - `compass/tools/redcap-drift-check.sh`
   - 校验 `top_goal / active_slice / subtask_of`
   - 校验本轮改动文件不得超出 `## 允许修改范围`
+  - 范围审计必须同时覆盖 tracked、staged 与 untracked 文件；否则新增报告、全景图或研究材料会绕过任务卡，形成“旧 receipt 冒充新任务完成态”的复发路径
+  - 当新需求被正式立项并更新 `.dev-task.md` 后，必须显式跑 `redcap-drift-check.sh reanchor <host> .dev-task.md` 刷新宿主控制面指纹；普通 `workspace/strict` 模式发现 hash 漂移仍必须 fail-closed
+- Layer B FSM 中的 `PLANNING / PLANNING_REVIEW`
+  - `PLANNING` 用于承接方案、切片、执行承诺账本与验证路径；复杂任务不得把计划质量完全交给作者自检
+  - `PLANNING_REVIEW` 用于让棱镜审核计划本身；Norven 只负责战略方向与 AI 不可计算事项，不再默认承担细节 plan 审稿
+  - 轻量任务可从 `TASK_LOCKED` 直接进入 `EXECUTING`，但高风险、跨机制或治理重构任务必须保留计划审核证据
 - `compass/tools/redcap-validator-chain.sh`
   - 统一编排 Layer B 的 session-start / obligation-reconcile / stop-review / on-complete / session-end validator
   - 当前已覆盖 commit proof、review proof、reanchor、PM Gate、drift、backlog、spec registry、task report、artifact lifecycle 等检查，并输出结构化结果供下游消费
@@ -508,6 +514,9 @@ governance_debts_addressed: []
   - 同时汇总 `.dev-task.md` 当前锚点、pending closure 红线、长期 backlog 计数、CLI 工具族 registry cache 与待验证登记，避免只靠零散飞书或 closure ledger 让 Norven 反向考古
   - 当前实现要求宿主提供可写临时目录；read-only reviewer sandbox 只能诚实视为 degraded/manual-only，不再宣称物理强保障
   - 当用户追问“现在整体到哪了 / backlog 还有什么 / 是否已完成”时，优先运行该脚本再汇报；若脚本输出与人工记忆冲突，以脚本和账本为准并说明差异
+- `compass/tools/redcap-mechanism-vitality-check.sh`
+  - 审计书记官、经验沉淀、灵魂锚点、计划审核与人话全景图是否仍有 runtime 可见面，防止优秀机制只剩自然语言规则
+  - 它不能替代宿主级 pre-reply veto，但会被 `diagnose / spec-check` 消费，至少让“zero work”机制在状态面里暴露出来
 - `compass/tools/redcap-docs-catalog.sh`
   - 维护 `compass/docs/catalog.json`，把 specs / research / traces / task-reports 的标题、摘要、读法策略、体量与粗略 token 压力压成首读索引
   - 接盘、考古或长任务恢复时，优先运行 `redcap-docs-catalog.sh summary` / `redcap-docs-catalog.sh plan "<问题>"` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；不得默认全量读取 `compass/docs/**`

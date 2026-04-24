@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 41,
-    "size_bytes": 628489,
-    "lines": 11217,
-    "chars": 405047,
+    "file_count": 44,
+    "size_bytes": 654049,
+    "lines": 11741,
+    "chars": 422121,
     "rough_token_pressure": {
-      "low": 101261,
-      "high": 202523
+      "low": 105530,
+      "high": 211060
     },
     "collections": {
       "archive": {
@@ -30,13 +30,13 @@
         }
       },
       "research": {
-        "file_count": 1,
-        "size_bytes": 34752,
-        "lines": 852,
-        "chars": 24181,
+        "file_count": 3,
+        "size_bytes": 46174,
+        "lines": 1163,
+        "chars": 32499,
         "rough_token_pressure": {
-          "low": 6045,
-          "high": 12090
+          "low": 8124,
+          "high": 16249
         }
       },
       "root": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 24,
-        "size_bytes": 362561,
-        "lines": 4739,
-        "chars": 231219,
+        "file_count": 25,
+        "size_bytes": 376699,
+        "lines": 4952,
+        "chars": 239975,
         "rough_token_pressure": {
-          "low": 57804,
-          "high": 115609
+          "low": 59993,
+          "high": 119987
         }
       },
       "traces": {
@@ -155,6 +155,30 @@
       "lines": 79,
       "chars": 3141,
       "summary": "version: 1"
+    },
+    {
+      "path": "compass/docs/research/2026-04-24-redcap-workflow-panorama.html",
+      "collection": "research",
+      "title": "2026-04-24-redcap-workflow-panorama",
+      "role": "research-evidence",
+      "status": "reference",
+      "read_policy": "read-on-demand-after-catalog",
+      "size_bytes": 6422,
+      "lines": 214,
+      "chars": 5628,
+      "summary": "<!doctype html> <html lang=\"zh-CN\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <title>RedCap 工作流全景图</title>"
+    },
+    {
+      "path": "compass/docs/research/2026-04-24-redcap-workflow-panorama.md",
+      "collection": "research",
+      "title": "RedCap 工作流全景图",
+      "role": "research-evidence",
+      "status": "reference",
+      "read_policy": "read-on-demand-after-catalog",
+      "size_bytes": 5000,
+      "lines": 97,
+      "chars": 2690,
+      "summary": "> 面向 Norven 的人话版。它解释 RedCap 现在如何把“讨论、立项、计划、执行、评审、收尾、考古”串成一个 Agent 工程框架。"
     },
     {
       "path": "compass/docs/research/feishu-ai-agent-collaboration-report.md",
@@ -633,7 +657,7 @@
       "collection": "task-reports",
       "title": "2026-04-21 Pending Validations E2E Tranche",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 3187,
       "lines": 66,
@@ -698,19 +722,13 @@
       "collection": "task-reports",
       "title": "2026-04-22 `revive-cap` Prism E2E 与 read-only 修补",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 5295,
       "lines": 126,
       "chars": 3781,
       "summary": "- 已完成一组真实 Prism test 回归来验证 `./revive-cap.sh`。 - 首轮编队 run `20260422-test-001` 证明：`copilot/gemini/kimi` 主要卡在各自 CLI/登录态/模型路由层；`codex` 席位真正跑到了脚本层，并抓出了 `execution-guarantees` / `revival-protocol` 仍依赖 shell heredoc 的 read-only 缺口。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [],
-        "previous_step": [],
-        "next_step": [],
-        "position": []
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-22-readonly-scribe-lifecycle-and-hook-hardening.md",
@@ -757,6 +775,35 @@
         "position": [
           "整体计划脉络图是：重新锚定任务 → 落 FSM 状态面 → 落 Prism acceptance gate → 收紧 closeout runtime → 同步入口与模板 → acceptance / 棱镜验收 → 真实 complete 收尾。",
           "当前所在位置：FSM 工作模式、默认独立验收门、closeout runtime 终态事务与真实 live closeout 都已闭环完成，当前 confirmed_hash 已进入正式完成态。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RedCap 全景图与机制活性硬化",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 14138,
+      "lines": 213,
+      "chars": 8756,
+      "summary": "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared。 / 详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态漂移要回归覆盖”四条主线落成了脚本、文档、索引和验收用例。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared。",
+          "详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态漂移要回归覆盖”四条主线落成了脚本、文档、索引和验收用例。"
+        ],
+        "previous_step": [
+          "上一步完成的是：前一轮 Layer B FSM 重构已建立 closeout runtime、Prism acceptance、receipt 与 pending closure 的终态控制面。本轮是在那条主线之上，把计划审核、机制活性和全景学习面补回到工作流前中段。"
+        ],
+        "next_step": [
+          "下一步计划做的是：执行正式 closeout，生成 receipt；Gemini/Claude provider 稳定性问题另列后续治理，不能阻塞本轮已由 Kimi + Copilot 形成的 Prism acceptance。"
+        ],
+        "position": [
+          "整体计划脉络图是：PM Gate 可见化 → `PLANNING` → `PLANNING_REVIEW` → 机制活性门 → 全景图按需披露 → 状态漂移回归 → 外部审查与 closeout。",
+          "当前所在位置：`planning-review-and-mechanism-vitality-hardening` 已实现、自检和 Prism acceptance 完成，正在执行 closeout 收口。"
         ]
       }
     },

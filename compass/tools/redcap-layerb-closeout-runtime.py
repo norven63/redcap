@@ -578,10 +578,24 @@ def write_receipt(identity: TaskIdentity, promise_info: dict[str, Any], *, statu
 def command_sync_promises(args: argparse.Namespace) -> int:
     identity = load_identity(resolve_task_file(args.task_file))
     promise_info = sync_promises(identity)
+    existing_state = load_state(identity)
+    receipt_exists = closeout_receipt_path(identity).is_file()
+    current_status = str(existing_state.get("status", "")).strip()
+    next_status = current_status or "prepared"
+    next_result = str(existing_state.get("last_result", "")).strip()
+
+    # sync-promises only refreshes the derived ledger; it must not silently
+    # downgrade a terminal/blocked lifecycle back to "prepared".
+    if receipt_exists:
+        next_status = "completed"
+        if not next_result:
+            next_result = "receipt-present"
+
     state = update_state(
         identity,
-        status="prepared",
+        status=next_status,
         last_command="sync-promises",
+        last_result=next_result,
         promises_total=promise_info["total"],
         promises_pending=promise_info["pending"],
     )

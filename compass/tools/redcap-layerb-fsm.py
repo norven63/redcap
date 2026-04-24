@@ -83,6 +83,8 @@ def acceptance_result(task_file: Path) -> dict[str, Any]:
 
 
 def derive_state(active_slice: str, pending_exists: bool, receipt_exists: bool, closeout_status: str, acceptance_status: str) -> tuple[str, str]:
+    planning_slices = {"planning", "plan", "work-plan", "design-plan", "proposal"}
+    planning_review_slices = {"planning-review", "plan-review", "prism-planning-review", "plan-audit"}
     if pending_exists:
         return "BLOCKED", "pending closure exists"
     if receipt_exists:
@@ -95,6 +97,10 @@ def derive_state(active_slice: str, pending_exists: bool, receipt_exists: bool, 
         return "CLOSEOUT_PENDING", "closeout runtime started but receipt missing"
     if active_slice in {"task-complete", "report-and-closeout", "closeout-complete"}:
         return "CLOSEOUT_PENDING", "active slice indicates terminal closeout stage"
+    if active_slice in planning_review_slices:
+        return "PLANNING_REVIEW", "active slice indicates planning review gate"
+    if active_slice in planning_slices:
+        return "PLANNING", "active slice indicates planning stage"
     if active_slice in {"review", "review-pending", "stop-review"}:
         return "REVIEW_PENDING", "active slice indicates review gate"
     if active_slice:

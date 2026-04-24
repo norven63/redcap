@@ -34,7 +34,7 @@ core = read("compass/CONTRIBUTING.core.md")
 task_report_template = read("references/task-report-template.md")
 guarantees = read("references/execution-guarantees.json")
 
-for required_state in ["REANCHORED", "TASK_LOCKED", "EXECUTING", "REVIEW_PENDING", "CLOSEOUT_PENDING", "CLOSED", "BLOCKED"]:
+for required_state in ["REANCHORED", "TASK_LOCKED", "PLANNING", "PLANNING_REVIEW", "EXECUTING", "REVIEW_PENDING", "CLOSEOUT_PENDING", "CLOSED", "BLOCKED"]:
     if required_state not in runtime_arch:
         fail(f"runtime-memory-architecture missing state: {required_state}")
 
@@ -98,6 +98,16 @@ for required_id in [
 ]:
     if required_id not in guarantees:
         fail(f"execution-guarantees missing entry: {required_id}")
+
+layerb_fsm = read("compass/tools/redcap-layerb-fsm.py")
+for required_phrase in [
+    "PLANNING",
+    "PLANNING_REVIEW",
+    "planning_slices",
+    "planning_review_slices",
+]:
+    if required_phrase not in layerb_fsm:
+        fail(f"layerb fsm state surface missing planning phrase: {required_phrase}")
 
 print("LAYERB_FSM_OK")
 PY

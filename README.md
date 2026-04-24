@@ -157,6 +157,8 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 
 | 文档 | 作用 |
 |---|---|
+| [`compass/docs/research/2026-04-24-redcap-workflow-panorama.md`](./compass/docs/research/2026-04-24-redcap-workflow-panorama.md) | 用一张全景图理解 RedCap 的 Layer A、Layer B、Prism、书记官、计划审核、收尾与老旧资产治理 |
+| [`compass/docs/research/2026-04-24-redcap-workflow-panorama.html`](./compass/docs/research/2026-04-24-redcap-workflow-panorama.html) | 面向人类阅读的网页版全景材料 |
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | 看整体系统怎么拼起来 |
 | [`compass/CONTRIBUTING.md`](./compass/CONTRIBUTING.md) | 看框架自身开发的权威规范 |
 | [`compass/knowledge/long-task-context-defense.md`](./compass/knowledge/long-task-context-defense.md) | 看 RedCap 如何对抗长任务/长对话上下文漂移 |

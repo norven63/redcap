@@ -101,6 +101,7 @@ run_check "layerb-fsm" bash "$SCRIPT_DIR/redcap-layerb-fsm-check.sh" || overall=
 run_check "layerb-closeout-runtime" bash "$SCRIPT_DIR/redcap-layerb-closeout-runtime-check.sh" "$TASK_FILE" || overall=1
 run_check "token-risk-audit" bash "$SCRIPT_DIR/redcap-token-risk-audit.sh" || overall=1
 run_check "tracking-health" bash "$SCRIPT_DIR/redcap-tracking-health.sh" "$TASK_FILE" || overall=1
+run_check "mechanism-vitality" bash "$SCRIPT_DIR/redcap-mechanism-vitality-check.sh" || overall=1
 run_check "contributing-ia" bash "$SCRIPT_DIR/redcap-contributing-ia-check.sh" || overall=1
 run_check "review-tracks" bash "$SCRIPT_DIR/redcap-review-tracks-check.sh" || overall=1
 run_check "prism-evidence" bash "$REDCAP_ROOT/prism/tools/prism-evidence-check.sh" || overall=1

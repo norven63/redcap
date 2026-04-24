@@ -195,6 +195,27 @@
       "auto_enforceable": true
     },
     {
+      "id": "workflow-panorama-surface",
+      "category": "knowledge-navigation",
+      "priority": "P1",
+      "rule": "RedCap must keep a human-readable workflow panorama so users and future agents can understand the whole framework before diving into script names.",
+      "source_paths": [
+        "README.md",
+        "compass/docs/research/2026-04-24-redcap-workflow-panorama.md",
+        "compass/docs/research/2026-04-24-redcap-workflow-panorama.html"
+      ],
+      "status": "validator",
+      "automation": "redcap-mechanism-vitality-check.sh verifies the panorama surfaces exist and contain the core Layer A, Layer B, Prism, planning-review, closeout, and legacy-governance concepts.",
+      "guarantee_paths": [
+        "compass/tools/redcap-mechanism-vitality-check.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "soul-identity-read",
       "category": "soul-identity",
       "priority": "P0",
@@ -386,6 +407,50 @@
       "auto_enforceable": true
     },
     {
+      "id": "scribe-runtime-vitality",
+      "category": "diagnostics",
+      "priority": "P1",
+      "rule": "The scribe and scratchpad layer must be visible to runtime diagnostics so explore-notes, PM Gate input, and tracking drift do not silently become zero-work mechanisms.",
+      "source_paths": [
+        "compass/CONTRIBUTING.md#12",
+        "compass/knowledge/explore-notes.md",
+        "compass/tools/redcap-tracking-health.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-mechanism-vitality-check.sh and redcap-tracking-health.sh jointly verify that explore-notes stays tied to PM Gate input and that stale scratchpad entries are surfaced by diagnose/spec-check.",
+      "guarantee_paths": [
+        "compass/tools/redcap-mechanism-vitality-check.sh",
+        "compass/tools/redcap-tracking-health.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "task-card-reanchor-scope",
+      "category": "control-gates",
+      "priority": "P0",
+      "rule": "When new work enters the Layer B execution flow, the current task card must be re-anchored and all tracked, staged, and untracked workspace changes must stay inside the task card's allowed modification scope.",
+      "source_paths": [
+        ".dev-task.md",
+        "compass/CONTRIBUTING.md#7",
+        "compass/tools/redcap-drift-check.sh"
+      ],
+      "status": "validator",
+      "automation": "redcap-drift-check.sh validates the current task metadata and allowed modification scope, including untracked files, so new reports or docs cannot escape the active task card while an old receipt remains misleadingly green.",
+      "guarantee_paths": [
+        "compass/tools/redcap-drift-check.sh",
+        "compass/tools/redcap-validator-chain.sh",
+        "compass/tools/redcap-mechanism-vitality-check.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
       "id": "state-machine-contract",
       "category": "state-machine-contract",
       "priority": "P1",
@@ -480,6 +545,28 @@
         "compass/tools/redcap-layerb-fsm-check.sh",
         "compass/tools/redcap-current-status.py",
         "compass/tools/redcap-layerb-closeout-runtime.py"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "planning-review-gate",
+      "category": "state-machine-contract",
+      "priority": "P0",
+      "rule": "Layer B plans that shape multi-step implementation must pass through an explicit PLANNING and PLANNING_REVIEW control state before execution unless the task is intentionally classified as light work.",
+      "source_paths": [
+        "references/runtime-memory-architecture.md",
+        "compass/tools/redcap-layerb-fsm.py",
+        "compass/CONTRIBUTING.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-layerb-fsm-check.sh keeps the PLANNING and PLANNING_REVIEW states aligned with the lifecycle docs; redcap-mechanism-vitality-check.sh keeps the planning-review gate visible in diagnose/spec-check.",
+      "guarantee_paths": [
+        "compass/tools/redcap-layerb-fsm.py",
+        "compass/tools/redcap-layerb-fsm-check.sh",
+        "compass/tools/redcap-mechanism-vitality-check.sh",
+        "compass/tools/redcap-spec-check.sh"
       ],
       "revival_required": false,
       "hook_required": true,

@@ -375,3 +375,11 @@ if [[ -x "$REVIVAL_CHECK" ]]; then
         exit 1
     fi
 fi
+
+MECHANISM_VITALITY_CHECK="$REDCAP_ROOT/compass/tools/redcap-mechanism-vitality-check.sh"
+if [[ -x "$MECHANISM_VITALITY_CHECK" ]]; then
+    if ! bash "$MECHANISM_VITALITY_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] mechanism vitality check failed" >&2
+        exit 1
+    fi
+fi

@@ -9,6 +9,10 @@ HOST="${2:-}"
 TASK_FILE="${3:-}"
 BASELINE="${4:-}"
 CURRENT_HEAD="${5:-}"
+ALLOW_REANCHOR=0
+if [[ "$MODE" == "reanchor" ]]; then
+    ALLOW_REANCHOR=1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -59,16 +63,24 @@ if redcap_runtime_attach_current_or_claim "$HOST"; then
     STAMPED_BACKLOG_ITEM=$(redcap_runtime_read_text "layerB/control-plane/backlog-item" 2>/dev/null || true)
 
     if [[ -n "$STAMPED_HASH" && "$STAMPED_HASH" != "$CONFIRMED_HASH" ]]; then
-        echo "[redcap-drift-check] confirmed requirement hash changed without re-anchor" >&2
-        echo "  stamped: $STAMPED_HASH" >&2
-        echo "  current: $CONFIRMED_HASH" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" == "1" ]]; then
+            redcap_runtime_write_text "layerB/control-plane/reanchor-from-confirmed.hash" "$STAMPED_HASH" || true
+            redcap_runtime_write_text "layerB/control-plane/reanchor-to-confirmed.hash" "$CONFIRMED_HASH" || true
+            redcap_runtime_write_text "layerB/control-plane/reanchor-at" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
+        else
+            echo "[redcap-drift-check] confirmed requirement hash changed without re-anchor" >&2
+            echo "  stamped: $STAMPED_HASH" >&2
+            echo "  current: $CONFIRMED_HASH" >&2
+            exit 1
+        fi
     fi
     if [[ -n "$STAMPED_SLICE" && "$STAMPED_SLICE" != "$ACTIVE_SLICE" ]]; then
-        echo "[redcap-drift-check] active_slice drift detected" >&2
-        echo "  stamped: $STAMPED_SLICE" >&2
-        echo "  current: $ACTIVE_SLICE" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" != "1" ]]; then
+            echo "[redcap-drift-check] active_slice drift detected" >&2
+            echo "  stamped: $STAMPED_SLICE" >&2
+            echo "  current: $ACTIVE_SLICE" >&2
+            exit 1
+        fi
     fi
     if [[ -n "$STAMPED_BACKLOG_SOURCE" && "$STAMPED_BACKLOG_SOURCE" != "$BACKLOG_SOURCE" ]]; then
         echo "[redcap-drift-check] backlog_source drift detected" >&2
@@ -106,16 +118,25 @@ elif [[ -n "$HOST" ]]; then
     STAMPED_BACKLOG_ITEM=$(cat "${COMPAT_PREFIX}-backlog-item" 2>/dev/null || true)
 
     if [[ -n "$STAMPED_HASH" && "$STAMPED_HASH" != "$CONFIRMED_HASH" ]]; then
-        echo "[redcap-drift-check] compat fallback confirmed hash changed without re-anchor" >&2
-        echo "  stamped: $STAMPED_HASH" >&2
-        echo "  current: $CONFIRMED_HASH" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" == "1" ]]; then
+            mkdir -p "$(dirname "${COMPAT_PREFIX}-confirmed.hash")" 2>/dev/null || true
+            printf '%s\n' "$STAMPED_HASH" > "${COMPAT_PREFIX}-reanchor-from-confirmed.hash"
+            printf '%s\n' "$CONFIRMED_HASH" > "${COMPAT_PREFIX}-reanchor-to-confirmed.hash"
+            printf '%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "${COMPAT_PREFIX}-reanchor-at"
+        else
+            echo "[redcap-drift-check] compat fallback confirmed hash changed without re-anchor" >&2
+            echo "  stamped: $STAMPED_HASH" >&2
+            echo "  current: $CONFIRMED_HASH" >&2
+            exit 1
+        fi
     fi
     if [[ -n "$STAMPED_SLICE" && "$STAMPED_SLICE" != "$ACTIVE_SLICE" ]]; then
-        echo "[redcap-drift-check] compat fallback active_slice drift detected" >&2
-        echo "  stamped: $STAMPED_SLICE" >&2
-        echo "  current: $ACTIVE_SLICE" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" != "1" ]]; then
+            echo "[redcap-drift-check] compat fallback active_slice drift detected" >&2
+            echo "  stamped: $STAMPED_SLICE" >&2
+            echo "  current: $ACTIVE_SLICE" >&2
+            exit 1
+        fi
     fi
     if [[ -n "$STAMPED_BACKLOG_SOURCE" && "$STAMPED_BACKLOG_SOURCE" != "$BACKLOG_SOURCE" ]]; then
         echo "[redcap-drift-check] compat fallback backlog_source drift detected" >&2
@@ -153,11 +174,17 @@ cleanup() {
 trap cleanup EXIT
 
 if [[ -n "$BASELINE" && -n "$CURRENT_HEAD" ]]; then
-    git -C "$REDCAP_ROOT" --no-pager diff --name-only "$BASELINE..$CURRENT_HEAD" 2>/dev/null | sed '/^[[:space:]]*$/d' | sort -u > "$TMP_FILES"
+    {
+        git -C "$REDCAP_ROOT" --no-pager diff --name-only "$BASELINE..$CURRENT_HEAD" 2>/dev/null
+        git -C "$REDCAP_ROOT" --no-pager diff --name-only 2>/dev/null
+        git -C "$REDCAP_ROOT" --no-pager diff --cached --name-only 2>/dev/null
+        git -C "$REDCAP_ROOT" --no-pager ls-files --others --exclude-standard 2>/dev/null
+    } | sed '/^[[:space:]]*$/d' | sort -u > "$TMP_FILES"
 else
     {
         git -C "$REDCAP_ROOT" --no-pager diff --name-only 2>/dev/null
         git -C "$REDCAP_ROOT" --no-pager diff --cached --name-only 2>/dev/null
+        git -C "$REDCAP_ROOT" --no-pager ls-files --others --exclude-standard 2>/dev/null
     } | sed '/^[[:space:]]*$/d' | sort -u > "$TMP_FILES"
 fi
 

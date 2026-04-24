@@ -63,6 +63,8 @@ Layer B 没有 Layer A 那种单一 `state.yaml` FSM，但已经形成了一个�
 | --- | --- | --- |
 | `REANCHORED` | 新会话已完成复活、身份恢复和当前任务锚点恢复 | `redcap-install.sh`、`redcap-layerB-session-start.sh`、会话绑定/runtime stamp |
 | `TASK_LOCKED` | 当前任务边界、需求、slice 和允许修改范围已锁定 | `.dev-task.md`、`redcap-pm-gate-check.sh` |
+| `PLANNING` | 任务已经锁定，正在制定执行方案、切片、承诺账本与验证路径 | `.dev-task.md`、`redcap-drift-check.sh`、任务报告方案段 |
+| `PLANNING_REVIEW` | 计划本身进入独立审核；复杂任务不得只靠作者或 Norven 做细节 plan 审稿 | Prism planning review、`redcap-prism-acceptance-bind.sh`、`redcap-prism-acceptance-check.sh` |
 | `EXECUTING` | 正在实现、修改、验证；所有改动必须受 drift / scope 审计约束 | `.dev-task.md`、`redcap-drift-check.sh` |
 | `REVIEW_PENDING` | 已进入独立评审 / 棱镜验收闸门，作者自检已不足以继续推进；验收 run 必须绑定到当前 `task_id + confirmed_hash` | `redcap-on-stop-review.sh`、`redcap-review-proof-check.sh`、`redcap-prism-acceptance-bind.sh`、`redcap-prism-acceptance-check.sh` |
 | `CLOSEOUT_PENDING` | 代码可能已改完，但承诺账本、绑定后的棱镜验收、task report、notify、receipt、ledger、pending closure 还没完成闭环 | `redcap-layerb-closeout-runtime.sh`、`redcap-prism-acceptance-bind.sh`、`redcap-prism-acceptance-check.sh`、`redcap-task-report-check.sh`、`pending-closure` |
@@ -74,7 +76,10 @@ Layer B 没有 Layer A 那种单一 `state.yaml` FSM，但已经形成了一个�
 | 当前状态 | 触发事件 | 下一状态 | 绑定脚本 / 账本 |
 | --- | --- | --- | --- |
 | `REANCHORED` | PM Gate 通过、`.dev-task.md` 边界完整 | `TASK_LOCKED` | `redcap-pm-gate-check.sh` |
-| `TASK_LOCKED` | 开始实现、允许修改范围内出现实际变更 | `EXECUTING` | `.dev-task.md` + `redcap-drift-check.sh` |
+| `TASK_LOCKED` | 进入执行方案制定，形成切片、承诺账本和验证路径 | `PLANNING` | `.dev-task.md` + task report / plan section |
+| `PLANNING` | 计划需要独立审核，或任务风险达到棱镜验收门槛 | `PLANNING_REVIEW` | Prism planning review |
+| `PLANNING_REVIEW` | 计划审核通过，且计划产物已回写任务账本 | `EXECUTING` | Prism verdict + `.dev-task.md` |
+| `TASK_LOCKED` | 小型轻量任务不需要独立计划审核，并已具备明确执行路径 | `EXECUTING` | `.dev-task.md` + `redcap-drift-check.sh` |
 | `EXECUTING` | stop-review / 独立评审被触发 | `REVIEW_PENDING` | `redcap-on-stop-review.sh` |
 | `REVIEW_PENDING` | 评审 / 棱镜验收通过，且 acceptance run 已绑定到当前 `task_id + confirmed_hash` | `CLOSEOUT_PENDING` | `redcap-review-proof-check.sh` + `redcap-prism-acceptance-bind.sh` + `redcap-prism-acceptance-check.sh` + `redcap-task-report-check.sh` |
 | `TASK_LOCKED` | PM Gate 失败、任务边界不完整或 authority 不一致 | `BLOCKED` | `redcap-pm-gate-check.sh` + `pending-closure` |

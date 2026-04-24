@@ -80,6 +80,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-promise-ledger-blocks
   bash compass/tools/redcap-multi-session-acceptance.sh prism-acceptance-binding-required
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-complete-writes-receipt
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-sync-preserves-completed-state
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-session-end-failure-writes-pending
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-audit-open-repairs-receipt
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-audit-open-blocks-unresolved
@@ -2415,6 +2416,57 @@ EOF
     output="$(bash "$REDCAP_ROOT/closeout-cap.sh" status --task-file "$task_file")"
     assert_string_contains "$output" "\"promise_total\": 1"
     assert_string_contains "$output" "\"receipt_exists\": false"
+}
+
+run_layerb_closeout_runtime_sync_preserves_completed_state_case() {
+    local host="copilot"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub complete_output sync_output status_output
+
+    log "case: layerb-closeout-runtime-sync-preserves-completed-state"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-sync-preserves-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-sync-preserves-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance closeout runtime sync preserves completed state
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：sync-promises 不会把已完成 runtime state 打回 prepared
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] sync-promises 保持 completed"
+    bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate >/dev/null
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/closeout-runtime-sync-preserves.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    complete_output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    assert_string_contains "$complete_output" "\"status\": \"completed\""
+
+    sync_output="$(bash "$REDCAP_ROOT/closeout-cap.sh" sync-promises --task-file "$task_file")"
+    assert_string_contains "$sync_output" "\"status\": \"ok\""
+
+    status_output="$(bash "$REDCAP_ROOT/closeout-cap.sh" status --task-file "$task_file")"
+    assert_string_contains "$status_output" "\"receipt_exists\": true"
+    assert_string_contains "$status_output" "\"status\": \"completed\""
 }
 
 run_task_complete_guard_passes_host_to_on_complete_case() {
@@ -9007,6 +9059,9 @@ case "$COMMAND" in
         ;;
     layerb-closeout-runtime-complete-writes-receipt)
         run_layerb_closeout_runtime_complete_writes_receipt_case
+        ;;
+    layerb-closeout-runtime-sync-preserves-completed-state)
+        run_layerb_closeout_runtime_sync_preserves_completed_state_case
         ;;
     layerb-closeout-runtime-session-end-failure-writes-pending)
         run_layerb_closeout_runtime_session_end_failure_writes_pending_case
