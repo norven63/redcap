@@ -217,6 +217,10 @@ assert_contains() {
     grep -Fq -- "$2" "$1" || fail "expected '$1' to contain '$2'"
 }
 
+assert_not_contains() {
+    ! grep -Fq -- "$2" "$1" || fail "expected '$1' not to contain '$2'"
+}
+
 assert_string_contains() {
     [[ "$1" == *"$2"* ]] || fail "expected '$1' to contain '$2'"
 }
@@ -483,14 +487,18 @@ install_artifact_hook_fixture() {
 
     mkdir -p "$repo/.githooks" "$repo/compass/tools" "$repo/compass/docs"
     cp "$REDCAP_ROOT/.githooks/pre-commit" "$repo/.githooks/pre-commit"
+    cp "$REDCAP_ROOT/.githooks/commit-msg" "$repo/.githooks/commit-msg"
     cp "$REDCAP_ROOT/compass/tools/redcap-artifact-classifier.sh" "$repo/compass/tools/redcap-artifact-classifier.sh"
     cp "$REDCAP_ROOT/compass/tools/redcap-artifact-lifecycle-check.sh" "$repo/compass/tools/redcap-artifact-lifecycle-check.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-commit-message-check.py" "$repo/compass/tools/redcap-commit-message-check.py"
     cp "$REDCAP_ROOT/compass/tools/redcap-ensure-git-hooks.sh" "$repo/compass/tools/redcap-ensure-git-hooks.sh"
     cp "$REDCAP_ROOT/compass/docs/index.yaml" "$repo/compass/docs/index.yaml"
     chmod +x \
         "$repo/.githooks/pre-commit" \
+        "$repo/.githooks/commit-msg" \
         "$repo/compass/tools/redcap-artifact-classifier.sh" \
         "$repo/compass/tools/redcap-artifact-lifecycle-check.sh" \
+        "$repo/compass/tools/redcap-commit-message-check.py" \
         "$repo/compass/tools/redcap-ensure-git-hooks.sh"
 }
 
@@ -2813,7 +2821,7 @@ EOF
     chmod +x "$complete_stub"
 
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$complete_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$repo/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
         || fail "task complete guard absolute pending anchor case failed"
@@ -3748,7 +3756,7 @@ EOF
 
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
     REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$complete_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$repo/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
         || fail "task complete guard stale marker replacement case failed"
@@ -3952,12 +3960,12 @@ EOF
     chmod +x "$complete_stub"
 
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$complete_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null &
     guard_a=$!
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$complete_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null &
     guard_b=$!
@@ -4005,7 +4013,7 @@ EOF
     chmod +x "$complete_stub"
 
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$complete_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
         || fail "task complete guard stale lock case failed"
@@ -4098,7 +4106,7 @@ EOF
     chmod +x "$complete_stub"
 
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$complete_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
         || fail "task complete guard retry case first run failed"
@@ -4111,7 +4119,7 @@ EOF
     printf '\nmore content\n' >>"$report_path"
 
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$complete_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
         || fail "task complete guard retry case second run failed"
@@ -4273,7 +4281,7 @@ run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case() 
 
 run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case() {
     local case_name="on-stop-review-falls-back-to-codex-after-unavailable-reviewers"
-    local case_dir fake_bin head_file review_result review_log baseline output status codex_argv codex_stdin fake_task
+    local case_dir fake_bin head_file review_result review_log baseline output status codex_argv codex_stdin fake_task fake_registry
 
     log "case: $case_name"
 
@@ -4348,6 +4356,7 @@ EOF
     review_result="$case_dir/review-result"
     review_log="$case_dir/review-log.md"
     fake_task="$case_dir/.dev-task.md"
+    fake_registry="$case_dir/agent-registry.yaml"
     baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
     printf '%s\n' "$baseline" >"$head_file"
     cat >"$fake_task" <<'EOF'
@@ -4386,6 +4395,21 @@ task_report: compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and
 ## 断点备注
 - none
 EOF
+    cat >"$fake_registry" <<'EOF'
+detected_at: "2026-04-21T02:00:00Z"
+probe_mode: false
+agents:
+  gemini:
+    available: true
+    actual_model: "gemini-3-flash"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+  codex:
+    available: true
+    actual_model: "gpt-5.4"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+EOF
 
     set +e
     output="$(
@@ -4395,12 +4419,14 @@ EOF
             REDCAP_FAKE_CODEX_ARGV="$codex_argv" \
             REDCAP_FAKE_CODEX_STDIN="$codex_stdin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
-            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture" \
+            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture-codex-fallback" \
+            REDCAP_REVIEW_AGENT_REGISTRY_FILE="$fake_registry" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,codex" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4569,8 +4595,8 @@ EOF
             REDCAP_FAKE_CODEX_ARGV="$codex_argv" \
             REDCAP_FAKE_CODEX_STDIN="$codex_stdin" \
             REDCAP_REVIEW_AGENT_REGISTRY_FILE="$fake_registry" \
-            REDCAP_STOP_REVIEW_HOST="claude" \
-            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture" \
+            REDCAP_STOP_REVIEW_HOST="acceptance-review-codex" \
+            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture-codex-rank" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
@@ -4582,7 +4608,7 @@ EOF
     status=$?
     set -e
 
-    [[ "$status" -eq 0 ]] || fail "codex best-ranked case failed: $output"
+    [[ "$status" -eq 0 ]] || fail "codex best-ranked case failed: status=$status output=$output result=$(counter_value "$review_result") log=$(counter_value "$review_log")"
     assert_exists "$review_result"
     assert_eq "$(read_file_text "$review_result")" "PASS"
     assert_exists "$review_log"
@@ -4709,8 +4735,8 @@ EOF
             REDCAP_FAKE_COPILOT_ARGV="$copilot_argv" \
             REDCAP_TASK_FILE="$fake_task" \
             REDCAP_REVIEW_AGENT_REGISTRY_FILE="$fake_registry" \
-            REDCAP_STOP_REVIEW_HOST="claude" \
-            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture" \
+            REDCAP_STOP_REVIEW_HOST="acceptance-review-copilot" \
+            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture-copilot-rank" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
@@ -4843,7 +4869,7 @@ EOF
 
 run_on_stop_review_skips_prompt_only_reviewer_when_repo_inspection_required_case() {
     local case_name="on-stop-review-skips-prompt-only-reviewer-when-repo-inspection-required"
-    local case_dir fake_bin head_file review_result review_log baseline output status
+    local case_dir fake_bin head_file review_result review_log baseline output status fake_task
 
     log "case: $case_name"
 
@@ -4862,14 +4888,53 @@ EOF
     head_file="$case_dir/baseline.head"
     review_result="$case_dir/review-result"
     review_log="$case_dir/review-log.md"
+    fake_task="$case_dir/.dev-task.md"
     baseline="7cb8cca0d66f1ebfc95d115be5c71ec1ac9f17e3"
     printf '%s\n' "$baseline" >"$head_file"
+    cat >"$fake_task" <<'EOF'
+# 当前任务：stop-review repo-inspection acceptance fixture
+
+## 控制面元数据（机器校验）
+task_id: stop-review-repo-inspection-acceptance
+source_of_truth: .dev-task.md
+top_goal: 隔离验证大 diff 场景下 prompt-only reviewer 会被跳过。
+active_slice: stop-review-repo-inspection-acceptance-fixture
+subtask_of: stop-review-acceptance
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+human_escalation_policy: ai-uncomputable-only
+overlay_skill_policy: advisory_only
+task_report: compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md
+
+## 原始输入（用户原文，禁止改写）
+### Q1
+验证大 diff 下 prompt-only reviewer 不可冒充 repo inspection。
+
+## 已确认需求（执行依据）
+### Q1: stop-review repo-inspection acceptance fixture
+验证 stop-review 在需要完整仓库检查时跳过只适合 prompt-only 的 reviewer。
+> 执行摘要：仅用于 acceptance。
+
+## 漂移哨兵
+- 本文件只用于 acceptance。
+
+## 允许修改范围
+- *
+
+## 完成标准
+- [ ] acceptance fixture
+
+## 断点备注
+- none
+EOF
 
     set +e
     output="$(
         printf '{}' | \
             PATH="$fake_bin:/usr/bin:/bin" \
+            REDCAP_TASK_FILE="$fake_task" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
+            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture-repo-inspection" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
@@ -6041,7 +6106,7 @@ EOF
     chmod +x "$complete_stub"
 
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$complete_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
         || fail "task complete guard should prune reused pid lock"
@@ -7665,7 +7730,10 @@ run_artifact_lifecycle_pre_commit_allow_case() {
 
     printf 'tracked update\n' >>"$repo/README.md"
     git -C "$repo" add README.md
-    git -C "$repo" commit --quiet -m "tracked only"
+    git -C "$repo" commit --quiet \
+        -m "test: 验证生命周期允许普通提交" \
+        -m "仅修改 repo-tracked 文件，验证 artifact lifecycle hook 不误拦截。" \
+        -m "作者:redcap"
 
     assert_eq "$(git -C "$repo" rev-list --count HEAD)" "2"
 }
@@ -7695,7 +7763,7 @@ run_artifact_lifecycle_rejects_tabbed_path_case() {
 }
 
 run_docs_catalog_check_case() {
-    local output summary temp_catalog stale_output stale_status zz_report
+    local output summary temp_catalog stale_output stale_status zz_report fixture fixture_catalog
 
     log "case: docs-catalog-check"
 
@@ -7717,6 +7785,15 @@ run_docs_catalog_check_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check)"
     assert_string_contains "$output" "DOCS_CATALOG_OK"
 
+    fixture="$ACCEPT_ROOT/docs-catalog-hidden-fixture"
+    fixture_catalog="$ACCEPT_ROOT/docs-catalog-hidden-fixture.json"
+    mkdir -p "$fixture/compass/docs"
+    printf '# visible fixture\n' >"$fixture/compass/docs/visible.md"
+    printf 'hidden fixture\n' >"$fixture/compass/docs/.DS_Store"
+    python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture" "$fixture_catalog"
+    assert_contains "$fixture_catalog" '"path": "compass/docs/visible.md"'
+    assert_not_contains "$fixture_catalog" ".DS_Store"
+
     temp_catalog="$ACCEPT_ROOT/docs-catalog-fixture.json"
     bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate "$temp_catalog"
     REDCAP_DOCS_CATALOG_PATH="$temp_catalog" bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check >/dev/null
@@ -7737,7 +7814,7 @@ run_docs_catalog_progressive_disclosure_case() {
     plan_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" plan "当前 pending closure task report" 5)"
     assert_string_contains "$plan_output" "DOCS_ACCESS_PLAN"
     assert_string_contains "$plan_output" "rule=Open only the exact paths needed; run budget before opening source files."
-    assert_string_contains "$plan_output" "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md"
+    assert_string_contains "$plan_output" "compass/docs/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md"
 
     budget_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md")"
     assert_string_contains "$budget_output" "DOCS_ACCESS_BUDGET_OK"
@@ -7770,11 +7847,12 @@ run_docs_retention_check_case() {
     fixture="$ACCEPT_ROOT/docs-retention-fixture"
     mkdir -p "$fixture/compass/docs/archive" "$fixture/compass/tools"
     cp "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" "$fixture/compass/tools/redcap-docs-catalog.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" "$fixture/compass/tools/redcap-docs-catalog.py"
     cp -R "$REDCAP_ROOT/compass/docs/specs" "$fixture/compass/docs/specs"
     cp -R "$REDCAP_ROOT/compass/docs/task-reports" "$fixture/compass/docs/task-reports"
     cp -R "$REDCAP_ROOT/compass/docs/research" "$fixture/compass/docs/research"
     cp -R "$REDCAP_ROOT/compass/docs/traces" "$fixture/compass/docs/traces"
-    chmod +x "$fixture/compass/tools/redcap-docs-catalog.sh"
+    chmod +x "$fixture/compass/tools/redcap-docs-catalog.sh" "$fixture/compass/tools/redcap-docs-catalog.py"
     printf '# bad retention log\n' >"$fixture/compass/docs/archive/retention-log.md"
 
     set +e
@@ -7954,11 +8032,24 @@ PY
 }
 
 run_diagnose_overview_case() {
-    local output
+    local output status case_dir
 
     log "case: diagnose-overview"
 
-    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_ROOT/.dev-task.md")"
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/diagnose-overview.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+
+    set +e
+    output="$(
+        REDCAP_RUNTIME_BASE_DIR="$case_dir/runtime" \
+        REDCAP_RUNTIME_INDEX_DIR="$case_dir/runtime-index" \
+        REDCAP_RUNTIME_PROJECT_BASE_DIR="$case_dir/project" \
+        REDCAP_RUNTIME_PROCESS_CLAIM_DIR="$case_dir/process-claims" \
+            bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_ROOT/.dev-task.md" 2>&1
+    )"
+    status=$?
+    set -e
+    [[ "$status" -eq 0 ]] || fail "diagnose overview failed: $output"
     assert_string_contains "$output" "REDCAP_DIAGNOSE"
     assert_string_contains "$output" "## 诊断门禁"
     assert_string_contains "$output" "[ok] closeout-rescue-audit"
@@ -8011,12 +8102,13 @@ run_token_risk_audit_case() {
     cp "$REDCAP_ROOT/.github/copilot-instructions.md" "$fixture/.github/copilot-instructions.md"
     cp "$REDCAP_ROOT/.gitignore" "$fixture/.gitignore"
     cp "$REDCAP_ROOT/compass/tools/redcap-token-risk-audit.sh" "$fixture/compass/tools/redcap-token-risk-audit.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-token-risk-audit.py" "$fixture/compass/tools/redcap-token-risk-audit.py"
     cp "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" "$fixture/compass/tools/redcap-docs-catalog.sh"
     cp "$REDCAP_ROOT/compass/tools/redcap-knowledge-index-check.sh" "$fixture/compass/tools/redcap-knowledge-index-check.sh"
     cp "$REDCAP_ROOT/compass/tools/redcap-acceptance-index.sh" "$fixture/compass/tools/redcap-acceptance-index.sh"
     cp "$REDCAP_ROOT/compass/tools/redcap-contributing-ia-check.sh" "$fixture/compass/tools/redcap-contributing-ia-check.sh"
     cp "$REDCAP_ROOT/compass/CONTRIBUTING.core.md" "$fixture/compass/CONTRIBUTING.core.md"
-    chmod +x "$fixture/compass/tools/redcap-token-risk-audit.sh"
+    chmod +x "$fixture/compass/tools/redcap-token-risk-audit.sh" "$fixture/compass/tools/redcap-token-risk-audit.py"
     git -C "$fixture" add . >/dev/null
     git -C "$fixture" commit --quiet -m "token risk fixture"
     printf '\n@compass/CONTRIBUTING.md\n' >>"$fixture/CLAUDE.md"
@@ -8542,20 +8634,58 @@ PY
 }
 
 run_host_workboard_backlog_anchor_case() {
-    local workboard expected_backlog_item
+    local workboard task_file
 
     log "case: host-workboard-backlog-anchor"
 
     workboard="$ACCEPT_ROOT/host-workboard-backlog-anchor/plan.md"
     mkdir -p "$(dirname "$workboard")"
     printf '# backlog anchor fixture\n' >"$workboard"
-    expected_backlog_item=$(awk -F': ' '/^backlog_item:/ {print $2; exit}' "$REDCAP_ROOT/.dev-task.md")
+    task_file="$ACCEPT_ROOT/host-workboard-backlog-anchor/.dev-task.md"
+    cat >"$task_file" <<'EOF'
+# 当前任务：host workboard backlog anchor fixture
 
-    bash "$REDCAP_ROOT/compass/tools/redcap-host-workboard-sync.sh" sync "$workboard" "$REDCAP_ROOT/.dev-task.md"
+## 控制面元数据（机器校验）
+task_id: host-workboard-backlog-anchor-fixture
+source_of_truth: .dev-task.md
+top_goal: 验证 host workboard 会镜像 canonical backlog anchor。
+active_slice: host-workboard-backlog-anchor-fixture
+subtask_of: acceptance
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+human_escalation_policy: ai-uncomputable-only
+overlay_skill_policy: advisory_only
+backlog_source: references/backlogs/framework-upgrade.json
+backlog_id: framework-upgrade
+backlog_item: A1
+
+## 原始输入（用户原文，禁止改写）
+### Q1
+验证 backlog anchor 镜像。
+
+## 已确认需求（执行依据）
+### Q1: host workboard backlog anchor fixture
+验证 host workboard sync 会把 backlog_source / backlog_id / backlog_item 从 canonical task ledger 镜像到工作板。
+> 执行摘要：仅用于 acceptance。
+
+## 漂移哨兵
+- 本文件只用于 acceptance。
+
+## 允许修改范围
+- *
+
+## 完成标准
+- [ ] acceptance fixture
+
+## 断点备注
+- none
+EOF
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-host-workboard-sync.sh" sync "$workboard" "$task_file"
 
     assert_contains "$workboard" "- backlog_source: references/backlogs/framework-upgrade.json"
     assert_contains "$workboard" "- backlog_id: framework-upgrade"
-    assert_contains "$workboard" "- backlog_item: $expected_backlog_item"
+    assert_contains "$workboard" "- backlog_item: A1"
 }
 
 run_cli_console_mirror_overwrites_case() {
@@ -8907,7 +9037,7 @@ run_all_cases() {
     run_sessionstart_auto_reconcile_clear_case
     run_sessionstart_auto_reconcile_hash_mismatch_case
     run_sessionstart_auto_reconcile_backlog_spec_case
-    run_task_complete_guard_triggers_on_complete_case
+    run_task_complete_guard_triggers_closeout_runtime_case
     run_task_complete_guard_passes_host_to_on_complete_case
     run_task_complete_guard_avoids_ambiguous_reports_case
     run_task_complete_guard_skips_stale_pending_artifact_case

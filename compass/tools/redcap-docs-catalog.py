@@ -9,6 +9,9 @@ import sys
 from collections import Counter
 
 
+CATALOGED_DOC_SUFFIXES = {".html", ".htm", ".json", ".md", ".markdown", ".yaml", ".yml"}
+
+
 def normalize_text(value: str, max_len: int = 240) -> str:
     value = " ".join(value.split())
     if len(value) <= max_len:
@@ -84,6 +87,12 @@ def collection_for(docs_root: pathlib.Path, path: pathlib.Path) -> str:
 
 def is_cataloged_doc(root: pathlib.Path, output_path: pathlib.Path, path: pathlib.Path) -> bool:
     if not path.is_file() or path.name == ".gitkeep" or path == output_path or path.name == "catalog.json":
+        return False
+    docs_root = root / "compass/docs"
+    rel_to_docs = path.relative_to(docs_root)
+    if any(part.startswith(".") for part in rel_to_docs.parts):
+        return False
+    if path.suffix.lower() not in CATALOGED_DOC_SUFFIXES:
         return False
     rel = repo_path(root, path)
     if rel.startswith("compass/docs/task-reports/"):
