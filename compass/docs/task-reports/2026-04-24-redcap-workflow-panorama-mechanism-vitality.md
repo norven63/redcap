@@ -2,14 +2,14 @@
 
 **报告日期**：2026-04-24
 **执行者**：Cap（Codex.app 主 Agent；Kimi CLI 参与只读独立审查）
-**报告版本**：v1.0
+**报告版本**：v1.1
 
 ## 零、先看懂当前局面
 
 ### 0.1 当前已完成
 
-- 当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared。
-- 详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态漂移要回归覆盖”四条主线落成了脚本、文档、索引和验收用例。
+- 当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染和 full acceptance 夹具老化问题。
+- 详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态漂移要回归覆盖”四条主线落成了脚本、文档、索引和验收用例；追加修复确保 `.DS_Store` 等隐藏杂物不会进入渐进披露索引，且 `redcap-multi-session-acceptance.sh all` 可完整跑通。
 
 ### 0.2 上一步完成的是
 
@@ -93,6 +93,8 @@
 | `compass/tools/redcap-layerb-closeout-runtime-bridge.sh` | 修改 | 新增 `ensure-runtime-binding`，供 Python runtime 复用 shell runtime claim 能力 |
 | `compass/tools/redcap-layerB-session-end.sh` | 修改 | 允许后续成功的 commit-proof gate 清掉旧 pending closure 中的 `commit-proof` 红线 |
 | `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 新增状态保持与 session-end binding acceptance 用例 |
+| `compass/tools/redcap-docs-catalog.py` | 修改 | docs catalog 排除隐藏路径和非文档后缀，防止 `.DS_Store` 等杂物进入索引 |
+| `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 修复 full acceptance 暴露的旧入口、旧断言、fixture 漏依赖和 runtime 污染问题 |
 
 ### 3.2 技术实现要点
 
@@ -115,6 +117,8 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 
 本轮触发了 docs catalog 重新生成；同时发现上一轮 `sync-promises` 会把已完成 runtime state 回退到 prepared，因此补入状态保持修复和 acceptance 回归。正式 closeout 复验时又抓到 `complete -> session-end` 没有继承 runtime binding，会把真实 session-end 打进 `missing-runtime-claim` 降级分支；已把 binding 初始化收进 closeout runtime，并新增回归防复发。
 
+追加复验时发现 `compass/docs/.DS_Store` 会被 docs catalog 当作普通文档索引，形成新的 token 污染入口；同时 full acceptance 因多处历史夹具老化无法跑到底。已将 catalog 生成器改为只索引明确文档后缀并排除隐藏路径，并把 acceptance 中仍指向旧 `on-complete` 入口、旧 task report 断言、缺失脚本依赖、共享 runtime 污染和真实任务账本耦合的 case 改为自包含 fixture。
+
 ## 四、人工审核要点
 
 | 序号 | 审核项 | 说明 | 优先级 |
@@ -132,6 +136,8 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 | 执行保障 | `bash compass/tools/redcap-execution-guarantee-check.sh` | 通过 |
 | 总规范检查 | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | 总诊断 | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过；显示 lifecycle-state=CLOSED、receipt=present、promise=12/12 |
+| full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过；完整套件最终返回 `ACCEPTANCE_OK` |
+| docs catalog | `bash compass/tools/redcap-docs-catalog.sh check` | 通过；`.DS_Store` 不再进入 catalog |
 | acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-sync-preserves-completed-state` | 通过 |
 | acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-attaches-session-end-binding` | 通过 |
 | acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-session-end-failure-writes-pending` | 通过 |
@@ -201,6 +207,7 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 f8aefb4 feat: 强化 RedCap 全景图与机制活性门禁
 9312462 fix: 允许 session-end 清理 commit-proof 红线
 2f9a8c9 fix: 修复 closeout runtime 的 session-end 绑定
+9e5b487 fix: 修复文档索引与验收夹具老化
 本报告最终状态同步提交见当前 git HEAD
 ```
 
