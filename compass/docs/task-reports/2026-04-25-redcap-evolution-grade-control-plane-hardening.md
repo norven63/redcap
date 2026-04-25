@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-25
 **执行者**：Cap（Codex.app 主 Agent）
-**报告版本**：v0.9-closeout-ready
+**报告版本**：v1.0-final
 
 ## 零、先看懂当前局面
 
@@ -17,12 +17,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：执行 `closeout-cap.sh complete` 生成 receipt；本轮主要实现变更已提交，receipt 将绑定最终提交状态。
+- 下一步计划做的是：无。本轮 R0-R8 已正式 closeout，后续如有新治理想法应另起任务锚点。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：R0 基线审计 → R1 控制面统一 → R2 Prism 稳定性 → R3 旧资产治理 → R4 即时回复质量 → R5 token 结构治理 → R6 Evolution Factory → R7 skill 生命周期 → R8 独立验收与 closeout。
-- 当前所在位置：R8 的机器回归与 Prism 独立验收已通过，正在进入 receipt / commit 的最后收口阶段。
+- 当前所在位置：CLOSED。机器回归、Prism 独立验收、承诺账本、pending closure 和 closeout receipt 均已收口。
 
 ## 一、需求背景
 
@@ -102,7 +102,7 @@ skill 生命周期和旧资产生命周期各自有单一信源策略：前者�
 
 ### 3.3 关联变更
 
-本报告当前是 closeout-ready 报告：实现、回归和独立审查已经完成；正式完成仍以 closeout runtime 生成 receipt 为准，避免把“已验收”混报成“已 receipt 收口”。
+本报告是最终完成报告：实现、回归、独立审查与 closeout runtime receipt 均已完成。若未来产生新治理点，应新建任务锚点，不再继续污染本任务账本。
 
 ## 四、人工审核要点
 
@@ -139,11 +139,11 @@ skill 生命周期和旧资产生命周期各自有单一信源策略：前者�
 
 | 项目 | 结果 |
 |---|---|
-| 执行承诺账本 | 进行中，待最终勾选清账 |
+| 执行承诺账本 | 16/16 已完成，pending=0 |
 | 棱镜验收 | 已通过，run=`review-redcap-evolution-control-plane-20260425-r8`，responded=2，family_count=2，blocker=0 |
-| closeout summary | 尚未生成 |
-| closeout receipt | 尚未生成 |
-| pending closure | 当前未发现 pending closure；任务仍需最后一次 closeout runtime 生成 receipt |
+| closeout summary | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-evolution-grade-control-plane-hardening-a1e2c1fecd7a93da8c331f658e6b419bf99674fb8a8e1941bd4f62733f981da1.md` |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-evolution-grade-control-plane-hardening-a1e2c1fecd7a93da8c331f658e6b419bf99674fb8a8e1941bd4f62733f981da1.json` |
+| pending closure | 已清空 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -152,7 +152,7 @@ skill 生命周期和旧资产生命周期各自有单一信源策略：前者�
 | 已实现 | 是：R0-R8 的 repo-owned 第一轮机制已落地 |
 | 已自检 | 是：targeted checks、最终 full acceptance、diagnose/spec-check 均通过 |
 | 已独立验收 | 是：Kimi + Copilot Prism acceptance 已绑定当前任务 confirmed hash |
-| 已正式完成 | 否：只差 closeout runtime 生成 receipt |
+| 已正式完成 | 是：closeout runtime completed with on-complete + session-end |
 
 ## 六、遗留问题与下一步
 
@@ -160,7 +160,7 @@ skill 生命周期和旧资产生命周期各自有单一信源策略：前者�
 
 | 问题 | 原因 | 建议优先级 |
 |---|---|---|
-| closeout receipt 尚未生成 | 这是最后 runtime 收口动作，不是产品决策项；主要实现提交已完成 | P0 |
+| 本轮无遗留 P0/P1 | R0-R8 已完成并 receipt 收口；后续想法应另起任务 | - |
 
 ### 6.2 触发的新问题
 
@@ -168,9 +168,7 @@ skill 生命周期和旧资产生命周期各自有单一信源策略：前者�
 
 ### 6.3 推荐的下一步行动
 
-1. 执行 `closeout-cap.sh complete` 生成 receipt。
-2. 运行 `closeout-cap.sh status` 确认 pending=0、pending closure 清空、receipt 存在。
-3. 在最终汇报中给出提交与 receipt 证据。
+无本轮必要下一步。建议下一次新需求从 `.dev-task.md` 新锚点开始，不再复用本任务状态。
 
 ## 七、经验沉淀
 

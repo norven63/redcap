@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 45,
-    "size_bytes": 677426,
-    "lines": 12035,
-    "chars": 437778,
+    "size_bytes": 677604,
+    "lines": 12033,
+    "chars": 438016,
     "rough_token_pressure": {
-      "low": 109444,
-      "high": 218889
+      "low": 109504,
+      "high": 219008
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 26,
-        "size_bytes": 396678,
-        "lines": 5188,
-        "chars": 253308,
+        "size_bytes": 396856,
+        "lines": 5186,
+        "chars": 253546,
         "rough_token_pressure": {
-          "low": 63327,
-          "high": 126654
+          "low": 63386,
+          "high": 126773
         }
       },
       "traces": {
@@ -808,9 +808,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 15230,
-      "lines": 211,
-      "chars": 9890,
+      "size_bytes": 15408,
+      "lines": 209,
+      "chars": 10128,
       "summary": "当前已完成：R0-R8 的 repo-owned 改造、外部 Prism 审查、最终 patchset 完整 acceptance 回归均已完成；审查发现的 harvest blocker 覆盖缺口、`~/` 证据路径宽松校验、未知 EVO ID 可被报告引用三个问题也已修复并回归。 / 详情：这一步解决的是“机制只在自然语言里存在”的根问题。现在经验/人格/skill/治理候选如果未处理，会在 closeout 前阻断 receipt；旧资产与 `prism/runs` 不再只靠口头清理；多宿主 skill 分发也有单一信源校验；治理类任务报告引用的候选 ID 必须真实存在。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -822,11 +822,11 @@
           "上一步完成的是：先建立 R0 baseline，再按弱点补齐候选池、closeout gate、provider health、旧资产、skill lifecycle 和文档入口；随后用 Kimi / Copilot 做独立审查，并按审查发现补齐 harvest blocker 验收。"
         ],
         "next_step": [
-          "下一步计划做的是：执行 `closeout-cap.sh complete` 生成 receipt；本轮主要实现变更已提交，receipt 将绑定最终提交状态。"
+          "下一步计划做的是：无。本轮 R0-R8 已正式 closeout，后续如有新治理想法应另起任务锚点。"
         ],
         "position": [
           "整体计划脉络图是：R0 基线审计 → R1 控制面统一 → R2 Prism 稳定性 → R3 旧资产治理 → R4 即时回复质量 → R5 token 结构治理 → R6 Evolution Factory → R7 skill 生命周期 → R8 独立验收与 closeout。",
-          "当前所在位置：R8 的机器回归与 Prism 独立验收已通过，正在进入 receipt / commit 的最后收口阶段。"
+          "当前所在位置：CLOSED。机器回归、Prism 独立验收、承诺账本、pending closure 和 closeout receipt 均已收口。"
         ]
       }
     },
