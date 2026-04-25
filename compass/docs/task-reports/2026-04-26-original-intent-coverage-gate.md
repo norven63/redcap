@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-26  
 **执行者**：Cap（Codex.app 宿主）  
-**报告版本**：v0.2
+**报告版本**：v0.3
 
 ---
 
@@ -27,7 +27,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：失败复盘 → 重锚新任务 → 新增原始意图覆盖硬门 → 接入 PM Gate / diagnose / guarantees → 补模板和 acceptance → 沉淀 lessons → 回归与提交。
-- 当前所在位置：实现、targeted 回归、full acceptance、spec-check 与 diagnose 已完成，等待提交后收口。
+- 当前所在位置：实现、targeted 回归、full acceptance、spec-check、diagnose 与 closeout receipt 均已完成；pending closure 已清。
 
 ---
 
@@ -124,6 +124,14 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 - `bash compass/tools/redcap-spec-check.sh "$PWD"`
 - `bash compass/tools/redcap-multi-session-acceptance.sh all`
 
+### 5.3 closeout runtime / receipt
+
+| 项 | 值 |
+|---|---|
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-original-intent-coverage-gate-651aa35ed9e834246b453e6d2d9e884ac53e735eae943d33e0ac1e001d6e4751.json` |
+| pending closure | clear |
+| promise ledger | 9/9 completed |
+
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 状态 | 说明 |
@@ -131,7 +139,7 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 | 已实现 | 是 | 硬门、文档、模板、诊断、回归入口已落地 |
 | 已自检 | 是 | targeted acceptance 与 spec/diagnose 已跑 |
 | 已独立验收 | 否 | 本轮是小范围控制面补丁，未单独启动 Prism quorum |
-| 已正式完成 | 否 | full acceptance、spec-check 已通过；仍待 webhook 通知补丁提交后生成 closeout receipt |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt，pending closure 已清；本 v0.3 仅同步 repo-visible 报告口径 |
 
 ## 六、遗留问题与下一步
 
@@ -159,3 +167,4 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 | PM Gate 接入 | `compass/tools/redcap-pm-gate-check.sh` |
 | 飞书通知兜底 | `compass/tools/feishu-notifier.py` |
 | 经验沉淀 | `compass/knowledge/lessons.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-original-intent-coverage-gate-651aa35ed9e834246b453e6d2d9e884ac53e735eae943d33e0ac1e001d6e4751.json` |

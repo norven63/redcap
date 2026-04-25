@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 47,
-    "size_bytes": 701489,
-    "lines": 12390,
-    "chars": 453295,
+    "size_bytes": 702086,
+    "lines": 12399,
+    "chars": 453896,
     "rough_token_pressure": {
-      "low": 113323,
-      "high": 226647
+      "low": 113474,
+      "high": 226948
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 28,
-        "size_bytes": 420741,
-        "lines": 5543,
-        "chars": 268825,
+        "size_bytes": 421338,
+        "lines": 5552,
+        "chars": 269426,
         "rough_token_pressure": {
-          "low": 67206,
-          "high": 134412
+          "low": 67356,
+          "high": 134713
         }
       },
       "traces": {
@@ -834,9 +834,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9619,
-      "lines": 161,
-      "chars": 5567,
+      "size_bytes": 10216,
+      "lines": 170,
+      "chars": 6168,
       "summary": "当前已完成：已把本轮故障修复单独重锚成新任务，避免继续用上一轮 receipt 证明新需求。 / 已新增 `redcap-intent-coverage-check.sh`，要求真实 Layer B 任务写明 `scope_status`、原始意图、已覆盖、未覆盖/延期、用户可见边界和后续路径。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -852,7 +852,7 @@
         ],
         "position": [
           "整体计划脉络图是：失败复盘 → 重锚新任务 → 新增原始意图覆盖硬门 → 接入 PM Gate / diagnose / guarantees → 补模板和 acceptance → 沉淀 lessons → 回归与提交。",
-          "当前所在位置：实现、targeted 回归、full acceptance、spec-check 与 diagnose 已完成，等待提交后收口。"
+          "当前所在位置：实现、targeted 回归、full acceptance、spec-check、diagnose 与 closeout receipt 均已完成；pending closure 已清。"
         ]
       }
     },
