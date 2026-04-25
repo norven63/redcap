@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 46,
-    "size_bytes": 690125,
-    "lines": 12210,
-    "chars": 446595,
+    "size_bytes": 690630,
+    "lines": 12223,
+    "chars": 447036,
     "rough_token_pressure": {
-      "low": 111648,
-      "high": 223297
+      "low": 111759,
+      "high": 223518
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 27,
-        "size_bytes": 409377,
-        "lines": 5363,
-        "chars": 262125,
+        "size_bytes": 409882,
+        "lines": 5376,
+        "chars": 262566,
         "rough_token_pressure": {
-          "low": 65531,
-          "high": 131062
+          "low": 65641,
+          "high": 131283
         }
       },
       "traces": {
@@ -821,9 +821,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12521,
-      "lines": 177,
-      "chars": 8579,
+      "size_bytes": 13026,
+      "lines": 190,
+      "chars": 9020,
       "summary": "当前已完成：已把本轮任务重锚定到 `.dev-task.md`，确认北极星是：RedCap 不再只叙述为某个宿主 skill，而是向独立 Agent Runtime / CLI / 多层协作系统演进。 / 已新增 `references/redcap-system-layers.md`，把执行层、Prism 层、知识层、Evolution 层、证据层、人类阅读层、人格层、宿主适配层与检索层拆开，形成后续迁移路线。",
       "status_basis": "filename_recency_only",
       "summary_points": {

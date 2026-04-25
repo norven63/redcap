@@ -40,7 +40,7 @@
 - 架构层：把 RedCap 从“宿主 skill 仓库”重新定位为更独立的 Agent Runtime / CLI / 多层系统，并围绕目录边界、知识/经验/报告分层、skill 生命周期、检索路线和自我进化能力形成可持续升级计划。
 - 执行层：从 2026-04-25 到 2026-05-01 00:00 +08:00 不再调用 Copilot CLI；同时为关键控制面文件提供人类可读解释入口，但不能重新制造上下文膨胀。
 
-## 二、关键设计决策
+## 二、方案讨论
 
 ### 2.1 文件解释采用字典优先
 
@@ -97,7 +97,7 @@
 | success notification owner | 最终成功飞书通知的唯一负责人；本轮收敛为 closeout runtime 调用的 on-complete | `compass/tools/redcap-layerb-closeout-runtime.py`、`compass/tools/redcap-layerB-session-end.sh` |
 | resource-limited Prism | 外部 reviewer 不足时的诚实状态：可以记录资源受限和已跑证据，但不能冒充 formal quorum | `prism/runs/**`、本报告“四、棱镜与外部 reviewer” |
 
-## 四、棱镜与外部 reviewer
+## 四、人工审核要点
 
 ### 4.1 已执行
 
@@ -123,7 +123,7 @@
 - 含义：这不是 formal quorum；它只证明当前可用外部 reviewer Kimi 未发现 blocker，并且 Gemini / Claude / Codex / Copilot 的不可用或冻结证据已落盘。
 - 后续：至少一个非 Copilot 的第二 provider 恢复后，应重跑正式双家族 Prism quorum。
 
-## 五、验证记录
+## 五、验证结果
 
 ### 5.1 已通过
 
@@ -170,7 +170,20 @@
 
 本轮没有留下 `candidate` / `reviewing` 状态的 Evolution 候选；后续如果 formal Prism quorum 恢复并发现新风险，应另立候选而不是塞回本报告。
 
-## 六、风险与边界
+## 八、附录
+
+### 8.1 关键证据路径
+
+| 证据 | 路径 |
+|---|---|
+| 任务卡 | `.dev-task.md` |
+| 本报告 | `compass/docs/task-reports/2026-04-25-redcap-runtime-productization-and-architecture-decoupling.md` |
+| provider policy | `references/prism-provider-policy.json` |
+| resource-limited Prism run | `prism/runs/review-redcap-runtime-productization-20260425-r1/` |
+| 文件查阅字典 | `references/file-lookup-dictionary.md` |
+| RedCap 多层路线 | `references/redcap-system-layers.md` |
+
+## 六、遗留问题与下一步
 
 - 当前只治理 RedCap-owned 启动口；用户手动在 shell 里直接执行 `copilot ...` 不属于仓库可物理拦截范围。
 - RedCap 仍处于 skill-root 承载形态；独立 runtime / CLI 是迁移路线，不是本轮已经完成的物理产品化。
