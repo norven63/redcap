@@ -3,7 +3,7 @@
 > **用途**：每次 RedCap 框架自身开发任务完成后的标准回报格式。
 > **归档位置**：Layer B 任务统一归档到 `compass/docs/task-reports/YYYY-MM-DD-<topic>.md`；`prism/reports/` 仅存放 Prism 模式报告，**不能替代任务完成报告**
 > **触发时机**：完成任务级 Review Gate 后、结束任务前
-> **机器审计**：SessionEnd Hook 会检查物理报告文件；已提交的报告自动可见，未提交但已暂存的报告需先执行 `bash compass/tools/redcap-task-report-register.sh <claude|gemini|copilot> <report_path>` 进行显式登记。Layer B 终态统一收口优先走 `./closeout-cap.sh` / `redcap-layerb-closeout-runtime.sh`，由 closeout runtime 核对承诺账本、Prism 独立验收并生成 receipt / summary。只在对话里口头汇报、或只留在工作区草稿中，仍视为未归档
+> **机器审计**：SessionEnd Hook 会检查物理报告文件；已提交的报告自动可见，未提交但已暂存的报告需先执行 `bash compass/tools/redcap-task-report-register.sh <claude|gemini|copilot> <report_path>` 进行显式登记。`redcap-task-report-check.sh` 会继续调用 `redcap-human-output-quality-check.sh` 审计“四句先看懂”、术语对照、完成等级与 receipt 证据是否自洽。Layer B 终态统一收口优先走 `./closeout-cap.sh` / `redcap-layerb-closeout-runtime.sh`，由 closeout runtime 核对承诺账本、Prism 独立验收并生成 receipt / summary。只在对话里口头汇报、或只留在工作区草稿中，仍视为未归档
 >
 > **完成态红线**：棱镜已成为 completed 的默认独立验收前置门；receipt 是唯一正式完工凭证；作者不能单独完成 closeout，也不得单独宣称 completed。
 

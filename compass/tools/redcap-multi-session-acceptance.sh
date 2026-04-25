@@ -139,6 +139,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh backlog-check-strict
   bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview
   bash compass/tools/redcap-multi-session-acceptance.sh tracking-health-overview
+  bash compass/tools/redcap-multi-session-acceptance.sh human-output-quality-check
   bash compass/tools/redcap-multi-session-acceptance.sh install-overview
   bash compass/tools/redcap-multi-session-acceptance.sh execution-guarantees-check
   bash compass/tools/redcap-multi-session-acceptance.sh knowledge-index-check
@@ -465,6 +466,8 @@ create_task_report_fixture_repo() {
     mkdir -p "$repo/compass/tools" "$repo/compass/docs/task-reports" "$repo/references"
     cp "$REDCAP_ROOT/.dev-task.md" "$repo/.dev-task.md"
     cp "$REDCAP_ROOT/compass/tools/redcap-task-report-check.sh" "$repo/compass/tools/redcap-task-report-check.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-human-output-quality-check.sh" "$repo/compass/tools/redcap-human-output-quality-check.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-human-output-quality-check.py" "$repo/compass/tools/redcap-human-output-quality-check.py"
     cp "$REDCAP_ROOT/compass/tools/redcap-task-report-register.sh" "$repo/compass/tools/redcap-task-report-register.sh"
     cp "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$repo/compass/tools/redcap-layerB-task-complete-guard.sh"
     cp "$REDCAP_ROOT/compass/tools/redcap-pending-closure-reconcile.sh" "$repo/compass/tools/redcap-pending-closure-reconcile.sh"
@@ -475,11 +478,160 @@ create_task_report_fixture_repo() {
     cp "$REDCAP_ROOT/references/task-report-template.md" "$repo/references/task-report-template.md"
     chmod +x \
         "$repo/compass/tools/redcap-task-report-check.sh" \
+        "$repo/compass/tools/redcap-human-output-quality-check.sh" \
+        "$repo/compass/tools/redcap-human-output-quality-check.py" \
         "$repo/compass/tools/redcap-task-report-register.sh" \
         "$repo/compass/tools/redcap-layerB-task-complete-guard.sh" \
         "$repo/compass/tools/redcap-pending-closure-reconcile.sh"
     git -C "$repo" add .dev-task.md compass/tools
     git -C "$repo" commit --quiet -m "task-report fixture"
+}
+
+write_valid_task_report_fixture() {
+    local path="$1"
+    local title="${2:-Acceptance Valid Report}"
+
+    mkdir -p "$(dirname "$path")"
+    cat >"$path" <<EOF
+# 任务完成报告：$title
+
+**报告日期**：2026-04-24
+**执行者**：Cap（Acceptance Fixture）
+**报告版本**：v1.0
+
+## 零、先看懂当前局面
+
+### 0.1 当前已完成
+
+- 当前已完成：acceptance fixture 已生成有效任务报告，用于验证报告审计链可以识别真实结构。
+- 详情：这份报告不是模板占位符；它包含人话摘要、术语对照、验证结果和完成等级，并允许合法链接 <https://example.com/redcap>、HTML 标签 <span>ok</span>、JSON 字符串 {"status":"TODO"} 与行内代码 \`{"status":"ok"}\` 出现在说明里。
+
+### 0.2 上一步完成的是
+
+- 上一步完成的是：fixture repo 已初始化，并写入当前任务报告路径。
+
+### 0.3 下一步计划做的是
+
+- 下一步计划做的是：无当前收尾动作；该 fixture 只服务 acceptance 回归。
+
+### 0.4 整体计划脉络图与当前位置
+
+- 整体计划脉络图是：fixture 初始化 → 报告生成 → task-report-check 审计。
+- 当前所在位置：task-report-check acceptance fixture。
+
+## 一、需求背景
+
+fixture background
+
+## 二、方案讨论
+
+fixture discussion
+
+## 三、落地结果
+
+### 3.1 变更文件清单
+
+| 文件 | 变更类型 | 变更摘要 |
+|------|---------|---------|
+| \`$path\` | 新建 | 写入有效任务报告 fixture |
+
+### 3.2 技术实现要点
+
+fixture 通过固定结构模拟真实任务报告，避免 acceptance 用模板占位符冒充高质量汇报。
+
+### 3.2.1 术语对照（按文件/功能解释）
+
+| 术语 | 对应文件/功能 | 人话解释 |
+|------|--------------|---------|
+| acceptance fixture | \`redcap-multi-session-acceptance.sh\` | 验收脚本里用于模拟真实报告的临时文件 |
+
+### 3.3 关联变更
+
+无。
+
+## 四、人工审核要点
+
+| 序号 | 审核项 | 说明 | 优先级 |
+|------|-------|------|------|
+| 1 | 无 | 该报告仅用于自动化验收 | P2 |
+
+## 五、验证结果
+
+### 5.1 自动化验证
+
+| 验证项 | 命令 | 结果 |
+|--------|------|------|
+| fixture check | \`redcap-task-report-check.sh\` | 通过 |
+
+### 5.2 人工验证项（Cap 无法自动化验证的）
+
+- [ ] 无。
+
+### 5.3 closeout runtime / receipt
+
+| 项目 | 结果 |
+|------|------|
+| 执行承诺账本 | 已清 |
+| 棱镜验收 | acceptance fixture |
+| closeout summary | \`fixture-summary.md\` |
+| closeout receipt | \`fixture-receipt.json\` |
+| rescue audit（如有） | 无 |
+
+### 5.4 完成等级（禁止混报）
+
+| 等级 | 结果 |
+|------|------|
+| 已实现 | 是 |
+| 已自检 | 是 |
+| 已独立验收 | 是；acceptance fixture |
+| 已正式完成 | 是；closeout receipt 已存在 |
+
+## 六、遗留问题与下一步
+
+### 6.1 本次未处理的问题
+
+| 问题 | 原因 | 建议优先级 |
+|------|------|----------|
+| 无 | fixture 覆盖范围明确 | - |
+
+### 6.2 触发的新问题
+
+无。
+
+### 6.3 推荐的下一步行动
+
+1. 无。
+
+## 七、经验沉淀
+
+### 7.1 新增 Lesson（建议写入 knowledge/lessons.md）
+
+| 编号 | 标题 | 核心内容 |
+|------|------|---------|
+| L-fixture | acceptance 报告不能用占位符 | 验收夹具也必须模拟真实有效报告 |
+
+### 7.2 流程改进建议
+
+无。
+
+## 八、附录
+
+### 附录 A：Commits
+
+\`\`\`text
+fixture
+\`\`\`
+
+### 附录 B：棱镜调用记录（如有）
+
+| 模式 | 问题 | 结论 | 报告路径 |
+|------|------|------|---------|
+| acceptance | fixture | 通过 | \`fixture\` |
+
+### 附录 C：相关文档索引
+
+- 需求原始记录：\`.dev-task.md\`
+EOF
 }
 
 install_artifact_hook_fixture() {
@@ -1394,7 +1546,7 @@ run_report_register_rejects_foreign_explicit_runtime_case() {
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
 
     report_path="$repo_b/compass/docs/task-reports/zz-acceptance-foreign-runtime-${RANDOM}-$$.md"
-    cp "$repo_b/references/task-report-template.md" "$report_path"
+    write_valid_task_report_fixture "$report_path" "Acceptance Foreign Runtime"
 
     set +e
     output="$(
@@ -1498,7 +1650,7 @@ run_report_register_rejects_symlinked_report_root_case() {
     external_reports="$case_root/external-reports"
     create_task_report_fixture_repo "$repo"
     mkdir -p "$external_reports"
-    cp "$repo/references/task-report-template.md" "$external_reports/escape.md"
+    write_valid_task_report_fixture "$external_reports/escape.md" "Acceptance Symlink Escape"
     rm -rf "$repo/compass/docs/task-reports"
     ln -s "$external_reports" "$repo/compass/docs/task-reports"
     report_path="$repo/compass/docs/task-reports/escape.md"
@@ -1535,7 +1687,7 @@ run_sessionstart_auto_reconcile_rewrite_case() {
     create_task_report_fixture_repo "$repo"
     report_rel="compass/docs/task-reports/zz-acceptance-reconcile-rewrite-${RANDOM}-$$.md"
     report_path="$repo/$report_rel"
-    cp "$repo/references/task-report-template.md" "$report_path"
+    write_valid_task_report_fixture "$report_path" "Acceptance Reconcile Rewrite"
     binding_a="acceptance-reconcile-a-${RANDOM}-$$"
     binding_b="acceptance-reconcile-b-${RANDOM}-$$"
     pid_a="$((61000 + RANDOM))"
@@ -1608,7 +1760,7 @@ run_sessionstart_auto_reconcile_normalizes_absolute_artifact_case() {
     create_task_report_fixture_repo "$repo"
     report_rel="compass/docs/task-reports/zz-acceptance-reconcile-absolute-${RANDOM}-$$.md"
     report_path="$repo/$report_rel"
-    cp "$repo/references/task-report-template.md" "$report_path"
+    write_valid_task_report_fixture "$report_path" "Acceptance Reconcile Absolute"
     report_abs="$report_path"
     binding_a="acceptance-reconcile-abs-a-${RANDOM}-$$"
     binding_b="acceptance-reconcile-abs-b-${RANDOM}-$$"
@@ -2776,7 +2928,7 @@ run_task_complete_guard_normalizes_absolute_pending_anchor_case() {
 
     report_path="$repo/compass/docs/task-reports/zz-acceptance-task-complete-absolute-${RANDOM}-$$.md"
     report_rel="${report_path#$repo/}"
-    cp "$repo/references/task-report-template.md" "$report_path"
+    write_valid_task_report_fixture "$report_path" "Acceptance Task Complete Absolute"
     redcap_interop_write_pending_closure \
         "$repo" \
         "$repo/.dev-task.md" \
@@ -3342,11 +3494,11 @@ run_task_report_check_prefers_anchor_case() {
     rel_b="compass/docs/task-reports/zz-acceptance-task-report-anchor-b-${RANDOM}-$$.md"
     report_a="$repo/$rel_a"
     report_b="$repo/$rel_b"
-    cp "$repo/references/task-report-template.md" "$report_a"
+    write_valid_task_report_fixture "$report_a" "Acceptance Older Anchor Report"
     git -C "$repo" add "$rel_a"
     git -C "$repo" commit --quiet -m "add older anchor report"
 
-    cp "$repo/references/task-report-template.md" "$report_b"
+    write_valid_task_report_fixture "$report_b" "Acceptance Latest Anchor Report"
     git -C "$repo" add "$rel_b"
     git -C "$repo" commit --quiet -m "add latest anchor report"
 
@@ -3389,13 +3541,13 @@ run_task_report_check_allows_marker_anchor_when_uniquely_latest_case() {
 
     older_rel="compass/docs/task-reports/zz-acceptance-marker-older-${RANDOM}-$$.md"
     older_report="$repo/$older_rel"
-    cp "$repo/references/task-report-template.md" "$older_report"
+    write_valid_task_report_fixture "$older_report" "Acceptance Marker Older"
     git -C "$repo" add "$older_rel"
     git -C "$repo" commit --quiet -m "add older marker report"
 
     marker_rel="compass/docs/task-reports/zz-acceptance-marker-latest-${RANDOM}-$$.md"
     marker_report="$repo/$marker_rel"
-    cp "$repo/references/task-report-template.md" "$marker_report"
+    write_valid_task_report_fixture "$marker_report" "Acceptance Marker Latest"
     git -C "$repo" add "$marker_rel"
     git -C "$repo" commit --quiet -m "add latest marker report"
     current_head="$(git -C "$repo" rev-parse HEAD)"
@@ -3425,10 +3577,10 @@ run_task_report_check_allows_pending_anchor_when_uniquely_latest_case() {
     baseline_head="$(git -C "$repo" rev-parse HEAD)"
     older_rel="compass/docs/task-reports/zz-acceptance-pending-older-${RANDOM}-$$.md"
     latest_rel="compass/docs/task-reports/zz-acceptance-pending-latest-${RANDOM}-$$.md"
-    cp "$repo/references/task-report-template.md" "$repo/$older_rel"
+    write_valid_task_report_fixture "$repo/$older_rel" "Acceptance Pending Older"
     git -C "$repo" add "$older_rel"
     git -C "$repo" commit --quiet -m "add older report"
-    cp "$repo/references/task-report-template.md" "$repo/$latest_rel"
+    write_valid_task_report_fixture "$repo/$latest_rel" "Acceptance Pending Latest"
     git -C "$repo" add "$latest_rel"
     git -C "$repo" commit --quiet -m "add latest report"
     current_head="$(git -C "$repo" rev-parse HEAD)"
@@ -3466,10 +3618,10 @@ run_task_report_check_rejects_stale_pending_anchor_conflict_case() {
     baseline_head="$(git -C "$repo" rev-parse HEAD)"
     stale_rel="compass/docs/task-reports/zz-acceptance-pending-stale-${RANDOM}-$$.md"
     newer_rel="compass/docs/task-reports/zz-acceptance-pending-newer-${RANDOM}-$$.md"
-    cp "$repo/references/task-report-template.md" "$repo/$stale_rel"
+    write_valid_task_report_fixture "$repo/$stale_rel" "Acceptance Pending Stale"
     git -C "$repo" add "$stale_rel"
     git -C "$repo" commit --quiet -m "add stale report"
-    cp "$repo/references/task-report-template.md" "$repo/$newer_rel"
+    write_valid_task_report_fixture "$repo/$newer_rel" "Acceptance Pending Newer"
     git -C "$repo" add "$newer_rel"
     git -C "$repo" commit --quiet -m "add newer report"
     current_head="$(git -C "$repo" rev-parse HEAD)"
@@ -3619,7 +3771,7 @@ run_task_report_check_rejects_stale_marker_conflict_case() {
     create_task_report_fixture_repo "$repo"
     baseline_head="$(git -C "$repo" rev-parse HEAD)"
     legacy_rel="compass/docs/task-reports/zz-acceptance-stale-marker-old-${RANDOM}-$$.md"
-    cp "$repo/references/task-report-template.md" "$repo/$legacy_rel"
+    write_valid_task_report_fixture "$repo/$legacy_rel" "Acceptance Stale Marker Old"
     git -C "$repo" add "$legacy_rel"
     git -C "$repo" commit --quiet -m "add legacy marker report"
     current_head="$(git -C "$repo" rev-parse HEAD)"
@@ -3630,7 +3782,7 @@ run_task_report_check_rejects_stale_marker_conflict_case() {
     write_current_report_marker_fixture "$legacy_rel" "$repo/.dev-task.md"
 
     new_report="$repo/compass/docs/task-reports/zz-acceptance-stale-marker-new-${RANDOM}-$$.md"
-    cp "$repo/references/task-report-template.md" "$new_report"
+    write_valid_task_report_fixture "$new_report" "Acceptance Stale Marker New"
 
     set +e
     output="$(REDCAP_HOST_PROCESS_PID="$pid" bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$baseline_head" "$current_head" "$host" 2>&1)"
@@ -3817,7 +3969,7 @@ run_task_report_check_ignores_invalid_pending_artifact_case() {
     create_task_report_fixture_repo "$repo"
     current_head="$(git -C "$repo" rev-parse HEAD)"
     report_rel="compass/docs/task-reports/zz-acceptance-valid-report-${RANDOM}-$$.md"
-    printf '# 任务完成报告：acceptance\n\n## 零、先看懂当前局面\n\n### 0.1 当前已完成\n\n- 当前已完成：acceptance\n- 详情：acceptance\n\n### 0.2 上一步完成的是\n\n- 上一步完成的是：acceptance\n\n### 0.3 下一步计划做的是\n\n- 下一步计划做的是：无\n\n### 0.4 整体计划脉络图与当前位置\n\n- 整体计划脉络图是：acceptance\n- 当前所在位置：acceptance\n\n## 一、需求背景\n\n## 二、方案讨论\n\n## 三、落地结果\n\n### 3.2.1 术语对照（按文件/功能解释）\n\n## 四、人工审核要点\n\n## 五、验证结果\n\n## 六、遗留问题与下一步\n\n## 七、经验沉淀\n\n## 八、附录\n' >"$repo/$report_rel"
+    write_valid_task_report_fixture "$repo/$report_rel" "Acceptance Valid Report"
     pending_state="$(
         REDCAP_CONTINUITY_ROOT_DIR="$ACCEPT_ROOT/task-report-invalid-pending-artifact/core" \
             bash -lc 'set -euo pipefail; cd "'"$repo"'"; source compass/tools/redcap-interop-governance.sh; redcap_interop_write_pending_closure "'"$repo"'" "'"$repo"'/.dev-task.md" "'"$host"'" acceptance-seed task-report "missing task report under compass/docs/task-reports/" "'"$current_head"'" "'"$current_head"'"'
@@ -3841,7 +3993,7 @@ run_task_report_check_ignores_traversal_anchor_case() {
     create_task_report_fixture_repo "$repo"
     current_head="$(git -C "$repo" rev-parse HEAD)"
     report_rel="compass/docs/task-reports/zz-acceptance-valid-report-${RANDOM}-$$.md"
-    printf '# 任务完成报告：acceptance\n\n## 零、先看懂当前局面\n\n### 0.1 当前已完成\n\n- 当前已完成：acceptance\n- 详情：acceptance\n\n### 0.2 上一步完成的是\n\n- 上一步完成的是：acceptance\n\n### 0.3 下一步计划做的是\n\n- 下一步计划做的是：无\n\n### 0.4 整体计划脉络图与当前位置\n\n- 整体计划脉络图是：acceptance\n- 当前所在位置：acceptance\n\n## 一、需求背景\n\n## 二、方案讨论\n\n## 三、落地结果\n\n### 3.2.1 术语对照（按文件/功能解释）\n\n## 四、人工审核要点\n\n## 五、验证结果\n\n## 六、遗留问题与下一步\n\n## 七、经验沉淀\n\n## 八、附录\n' >"$repo/$report_rel"
+    write_valid_task_report_fixture "$repo/$report_rel" "Acceptance Valid Report"
     binding_key="acceptance-task-report-traversal-${RANDOM}-$$"
     pid="$((66600 + RANDOM))"
     init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
@@ -3880,7 +4032,7 @@ run_task_report_check_normalizes_absolute_pending_anchor_case() {
     create_task_report_fixture_repo "$repo"
     current_head="$(git -C "$repo" rev-parse HEAD)"
     report_rel="compass/docs/task-reports/zz-acceptance-absolute-anchor-${RANDOM}-$$.md"
-    cp "$repo/references/task-report-template.md" "$repo/$report_rel"
+    write_valid_task_report_fixture "$repo/$report_rel" "Acceptance Absolute Anchor"
     report_abs="$repo/$report_rel"
     binding_key="acceptance-task-report-absolute-anchor-${RANDOM}-$$"
     pid="$((66620 + RANDOM))"
@@ -6174,7 +6326,7 @@ run_sessionstart_auto_reconcile_clear_case() {
     create_task_report_fixture_repo "$repo"
     report_rel="compass/docs/task-reports/zz-acceptance-reconcile-clear-${RANDOM}-$$.md"
     report_path="$repo/$report_rel"
-    cp "$repo/references/task-report-template.md" "$report_path"
+    write_valid_task_report_fixture "$report_path" "Acceptance Reconcile Clear"
     current_head="$(git -C "$repo" rev-parse HEAD)"
     redcap_interop_write_pending_closure \
         "$repo" \
@@ -6249,7 +6401,7 @@ run_sessionstart_auto_reconcile_hash_mismatch_case() {
     create_task_report_fixture_repo "$repo"
     report_rel="compass/docs/task-reports/zz-acceptance-reconcile-hash-${RANDOM}-$$.md"
     report_path="$repo/$report_rel"
-    cp "$repo/references/task-report-template.md" "$report_path"
+    write_valid_task_report_fixture "$report_path" "Acceptance Reconcile Hash Mismatch"
     current_hash=$(redcap_dev_task_confirmed_hash "$repo/.dev-task.md")
     current_head="$(git -C "$repo" rev-parse HEAD)"
     mismatch_hash="deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
@@ -6345,7 +6497,7 @@ run_sessionstart_auto_reconcile_backlog_spec_case() {
 
     report_rel="compass/docs/task-reports/zz-acceptance-reconcile-backlog-spec-${RANDOM}-$$.md"
     report_path="$repo/$report_rel"
-    cp "$repo/references/task-report-template.md" "$report_path"
+    write_valid_task_report_fixture "$report_path" "Acceptance Reconcile Backlog Spec"
     current_head="$(git -C "$repo" rev-parse HEAD)"
     redcap_interop_write_pending_closure \
         "$repo" \
@@ -7908,6 +8060,40 @@ run_tracking_health_overview_case() {
     assert_string_contains "$output" "TRACKING_OK"
 }
 
+run_human_output_quality_check_case() {
+    local output fixture_report stale_output stale_status
+
+    log "case: human-output-quality-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-human-output-quality-check.sh" --task-file "$REDCAP_ROOT/.dev-task.md")"
+    assert_string_contains "$output" "HUMAN_OUTPUT_QUALITY_OK"
+
+    fixture_report="$ACCEPT_ROOT/human-output-quality-stale-next-step.md"
+    write_valid_task_report_fixture "$fixture_report" "Acceptance Human Output Quality"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-human-output-quality-check.sh" --report "$fixture_report")"
+    assert_string_contains "$output" "HUMAN_OUTPUT_QUALITY_OK"
+
+    python3 - "$fixture_report" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace(
+    "下一步计划做的是：无当前收尾动作；该 fixture 只服务 acceptance 回归。",
+    "下一步计划做的是：执行正式 closeout，生成 receipt。",
+)
+path.write_text(text, encoding="utf-8")
+PY
+
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-human-output-quality-check.sh" --report "$fixture_report" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "human output quality check unexpectedly accepted stale next-step report"
+    assert_string_contains "$stale_output" "formal completion is yes but next-step summary still says closeout/receipt remains to be done"
+}
+
 run_install_overview_case() {
     local output home_root
 
@@ -8059,6 +8245,7 @@ run_diagnose_overview_case() {
     assert_string_contains "$output" "[ok] state-machine-contract"
     assert_string_contains "$output" "[ok] token-risk-audit"
     assert_string_contains "$output" "[ok] tracking-health"
+    assert_string_contains "$output" "[ok] human-output-quality"
     assert_string_contains "$output" "[ok] layerb-lifecycle-contract"
     assert_string_contains "$output" "[ok] layerb-closeout-runtime"
     assert_string_contains "$output" "[ok] contributing-ia"
@@ -9109,6 +9296,7 @@ run_all_cases() {
     run_backlog_check_strict_case
     run_current_status_overview_case
     run_tracking_health_overview_case
+    run_human_output_quality_check_case
     run_install_overview_case
     run_execution_guarantees_check_case
     run_knowledge_index_check_case
@@ -9494,6 +9682,9 @@ case "$COMMAND" in
         ;;
     tracking-health-overview)
         run_tracking_health_overview_case
+        ;;
+    human-output-quality-check)
+        run_human_output_quality_check_case
         ;;
     install-overview)
         run_install_overview_case

@@ -169,7 +169,7 @@ docs(经验): 新增 L-9 飞书架构局限性
 9. **状态汇报先给“四句先看懂”**：当 Norven 主动追问进展、要求阶段汇报、或任务最终收尾时，开头应优先给出 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置` 四段摘要，再补详细展开。
 10. **`cli_console.md` 只允许做覆盖式镜像**：它不是第二份答案，也不是历史日志；如需镜像长回复，必须保持与最终回复一致，并使用覆盖写入而不是追加堆积。当前可用 `compass/tools/redcap-cli-console-mirror.sh` 统一处理本地镜像。
 
-**执行口径**：本条先以 `compass/CONTRIBUTING.md` + `references/agent-constraints.md` + `compass/soul.md` 共同约束，并由评审 / 验收 / 收尾复盘共同检查；当前**不**新增基于正则的硬钩子，以避免误伤命令、路径、键名与代码片段。
+**执行口径**：本条分两层执行。第一层是正式落盘产物：`compass/docs/task-reports/*.md` 已由 `redcap-task-report-check.sh` 调用 `redcap-human-output-quality-check.sh` 做结构化质量审计，检查“四句先看懂”、术语对照、完成等级与 receipt 证据是否自洽。第二层是即时对话、命令输出、代码片段等宿主实时回复：当前仍不新增全局正则拦截，避免误伤路径、键名与代码；这部分必须在最终 review / 棱镜验收 / 任务复盘中审查，并诚实标为 host-limited。
 
 ## 3. 变更后：经验沉淀检查
 

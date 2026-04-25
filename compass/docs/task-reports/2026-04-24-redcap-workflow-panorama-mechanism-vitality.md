@@ -8,7 +8,7 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染和 full acceptance 夹具老化问题。
+- 当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染、full acceptance 夹具老化，以及正式任务报告“只有模板、没有人话质量强门”的问题。
 - 详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态漂移要回归覆盖”四条主线落成了脚本、文档、索引和验收用例；追加修复确保 `.DS_Store` 等隐藏杂物不会进入渐进披露索引，且 `redcap-multi-session-acceptance.sh all` 可完整跑通。
 
 ### 0.2 上一步完成的是
@@ -17,12 +17,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：执行正式 closeout，生成 receipt；Gemini/Claude provider 稳定性问题另列后续治理，不能阻塞本轮已由 Kimi + Copilot 形成的 Prism acceptance。
+- 下一步计划做的是：无当前收尾动作；本轮 closeout receipt 已生成，后续只剩 Prism provider 稳定性等独立治理项，不能倒灌为本轮未完成。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：PM Gate 可见化 → `PLANNING` → `PLANNING_REVIEW` → 机制活性门 → 全景图按需披露 → 状态漂移回归 → 外部审查与 closeout。
-- 当前所在位置：`planning-review-and-mechanism-vitality-hardening` 已实现、自检和 Prism acceptance 完成，正在执行 closeout 收口。
+- 当前所在位置：`planning-review-and-mechanism-vitality-hardening` 已实现、自检、Prism acceptance 与 closeout receipt 全部完成。
 
 ## 一、需求背景
 
@@ -95,6 +95,10 @@
 | `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 新增状态保持与 session-end binding acceptance 用例 |
 | `compass/tools/redcap-docs-catalog.py` | 修改 | docs catalog 排除隐藏路径和非文档后缀，防止 `.DS_Store` 等杂物进入索引 |
 | `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 修复 full acceptance 暴露的旧入口、旧断言、fixture 漏依赖和 runtime 污染问题 |
+| `compass/tools/redcap-human-output-quality-check.py` | 新建 | 对正式任务报告执行人话质量审计，检查四句摘要、术语对照、完成等级和 receipt 证据是否自洽 |
+| `compass/tools/redcap-human-output-quality-check.sh` | 新建 | 人话质量审计 shell 入口，供 task report、diagnose 与 acceptance 复用 |
+| `compass/tools/redcap-task-report-check.sh` | 修改 | 在已有报告模板审计后调用人话质量强门，避免只靠章节标题通过 |
+| `references/task-report-template.md` | 修改 | 明确任务报告会被人话质量检查器审计 |
 
 ### 3.2 技术实现要点
 
@@ -112,12 +116,15 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 | 三表对账 | `closeout-cap.sh status` + `redcap-current-status.sh` + `redcap-diagnose.sh` | 用三个状态视角互相校验，抓内部状态漂移 |
 | receipt | closeout runtime receipts | 完工收据，证明任务不是口头完成 |
 | pending closure | pending-closure state | 尚未清掉的收尾红线或 blocker |
+| human output quality | `redcap-human-output-quality-check.sh` | 正式任务报告的人话质量强门，防止章节齐全但摘要、术语、完成等级和 receipt 证据互相打架 |
 
 ### 3.3 关联变更
 
 本轮触发了 docs catalog 重新生成；同时发现上一轮 `sync-promises` 会把已完成 runtime state 回退到 prepared，因此补入状态保持修复和 acceptance 回归。正式 closeout 复验时又抓到 `complete -> session-end` 没有继承 runtime binding，会把真实 session-end 打进 `missing-runtime-claim` 降级分支；已把 binding 初始化收进 closeout runtime，并新增回归防复发。
 
 追加复验时发现 `compass/docs/.DS_Store` 会被 docs catalog 当作普通文档索引，形成新的 token 污染入口；同时 full acceptance 因多处历史夹具老化无法跑到底。已将 catalog 生成器改为只索引明确文档后缀并排除隐藏路径，并把 acceptance 中仍指向旧 `on-complete` 入口、旧 task report 断言、缺失脚本依赖、共享 runtime 污染和真实任务账本耦合的 case 改为自包含 fixture。
+
+再追加的人话质量加固把“汇报质量”从纯自然语言要求推进到正式任务报告强门：`redcap-human-output-quality-check.sh` 会拒绝占位符摘要、空术语对照、缺少 completion 等级、以及“已经正式完成却还说下一步生成 receipt”的陈旧报告。即时对话仍受宿主实时拦截能力限制，因此只诚实声明为 host-limited，不冒充 100% 物理强保障。
 
 ## 四、人工审核要点
 
@@ -137,6 +144,8 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 | 总规范检查 | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | 总诊断 | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过；显示 lifecycle-state=CLOSED、receipt=present、promise=12/12 |
 | full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过；完整套件最终返回 `ACCEPTANCE_OK` |
+| 人话质量强门 | `bash compass/tools/redcap-human-output-quality-check.sh --task-file .dev-task.md` | 通过 |
+| acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh human-output-quality-check` | 通过；会拒绝“已正式完成但下一步仍写生成 receipt”的陈旧报告 |
 | docs catalog | `bash compass/tools/redcap-docs-catalog.sh check` | 通过；`.DS_Store` 不再进入 catalog |
 | acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-sync-preserves-completed-state` | 通过 |
 | acceptance 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-attaches-session-end-binding` | 通过 |
@@ -194,6 +203,7 @@ Layer B FSM 现在把计划阶段拆成两个状态：`PLANNING` 负责方案、
 |------|------|---------|
 | L-111 | 旧 receipt 不能覆盖新任务 | `.dev-task.md` 必须随当前真实任务重新锚定，否则状态面会把上一轮完成态误当成本轮完成态 |
 | L-112 | 机制活性要有诊断面 | 自然语言协议不足以防止 zero-work；至少要让机制进入 `diagnose / spec-check` |
+| L-113 | 人话质量强门要防误伤 | 把软规范变成机器强门时，必须先剥离代码/Markdown/JSON 等合法结构，避免粗暴正则制造新 blocker |
 
 ### 7.2 流程改进建议
 

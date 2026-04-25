@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 44,
-    "size_bytes": 657046,
-    "lines": 11756,
-    "chars": 424550,
+    "size_bytes": 658798,
+    "lines": 11766,
+    "chars": 425564,
     "rough_token_pressure": {
-      "low": 106137,
-      "high": 212275
+      "low": 106391,
+      "high": 212782
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 25,
-        "size_bytes": 379696,
-        "lines": 4967,
-        "chars": 242404,
+        "size_bytes": 381448,
+        "lines": 4977,
+        "chars": 243418,
         "rough_token_pressure": {
-          "low": 60601,
-          "high": 121202
+          "low": 60854,
+          "high": 121709
         }
       },
       "traces": {
@@ -785,25 +785,25 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 17135,
-      "lines": 228,
-      "chars": 11185,
-      "summary": "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染和 full accepta… / 详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态…",
+      "size_bytes": 18887,
+      "lines": 238,
+      "chars": 12199,
+      "summary": "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染、full acceptan… / 详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态…",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染和 full accepta…",
+          "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染、full acceptan…",
           "详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态漂移要回归覆盖”四条主线落成了脚本、文档、索引和验收用例；追加修复确保 `.DS_Store` 等隐藏杂物不会进入渐进披露索引，且 `redcap-multi-session-acceptance.sh all` 可完整跑通。"
         ],
         "previous_step": [
           "上一步完成的是：前一轮 Layer B FSM 重构已建立 closeout runtime、Prism acceptance、receipt 与 pending closure 的终态控制面。本轮是在那条主线之上，把计划审核、机制活性和全景学习面补回到工作流前中段。"
         ],
         "next_step": [
-          "下一步计划做的是：执行正式 closeout，生成 receipt；Gemini/Claude provider 稳定性问题另列后续治理，不能阻塞本轮已由 Kimi + Copilot 形成的 Prism acceptance。"
+          "下一步计划做的是：无当前收尾动作；本轮 closeout receipt 已生成，后续只剩 Prism provider 稳定性等独立治理项，不能倒灌为本轮未完成。"
         ],
         "position": [
           "整体计划脉络图是：PM Gate 可见化 → `PLANNING` → `PLANNING_REVIEW` → 机制活性门 → 全景图按需披露 → 状态漂移回归 → 外部审查与 closeout。",
-          "当前所在位置：`planning-review-and-mechanism-vitality-hardening` 已实现、自检和 Prism acceptance 完成，正在执行 closeout 收口。"
+          "当前所在位置：`planning-review-and-mechanism-vitality-hardening` 已实现、自检、Prism acceptance 与 closeout receipt 全部完成。"
         ]
       }
     },

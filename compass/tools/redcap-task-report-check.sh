@@ -18,6 +18,7 @@ BASELINE="$2"
 CURRENT_HEAD="${3:-}"
 HOST="${4:-}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+HUMAN_OUTPUT_QUALITY_SCRIPT="${REDCAP_HUMAN_OUTPUT_QUALITY_SCRIPT:-$SCRIPT_DIR/redcap-human-output-quality-check.sh}"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
 
@@ -289,6 +290,16 @@ for REL_PATH in "${REPORT_FILES[@]}"; do
                 break
             fi
         done
+    fi
+
+    if [[ "$MISSING_SECTION" -eq 0 && "$REQUIRE_SUMMARY" -eq 1 ]]; then
+        if [[ ! -x "$HUMAN_OUTPUT_QUALITY_SCRIPT" ]]; then
+            MISSING_SECTION=1
+            echo "[redcap-task-report-check] human output quality checker missing or not executable: $HUMAN_OUTPUT_QUALITY_SCRIPT" >&2
+        elif ! "$HUMAN_OUTPUT_QUALITY_SCRIPT" --report "$ABS_PATH" >/dev/null; then
+            MISSING_SECTION=1
+            echo "[redcap-task-report-check] human output quality audit failed: $REL_PATH" >&2
+        fi
     fi
 
     if [[ "$MISSING_SECTION" -eq 0 ]]; then

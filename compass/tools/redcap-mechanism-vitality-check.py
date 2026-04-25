@@ -88,6 +88,22 @@ def main() -> int:
     )
     require_text(
         root,
+        "compass/tools/redcap-task-report-check.sh",
+        [
+            "redcap-human-output-quality-check.sh",
+            "human output quality audit failed",
+        ],
+    )
+    require_text(
+        root,
+        "compass/tools/redcap-human-output-quality-check.py",
+        [
+            "HUMAN_OUTPUT_QUALITY_OK",
+            "formal completion is yes but next-step summary still says closeout/receipt remains to be done",
+        ],
+    )
+    require_text(
+        root,
         "compass/docs/research/2026-04-24-redcap-workflow-panorama.md",
         [
             "RedCap 工作流全景图",

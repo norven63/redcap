@@ -116,17 +116,19 @@
       "id": "external-four-line-status",
       "category": "external-reporting",
       "priority": "P1",
-      "rule": "Status replies, final summaries, task reports, and notifications must start from the four human-readable status lines.",
+      "rule": "Status replies, final summaries, task reports, and notifications must start from the four human-readable status lines; repo-tracked task reports must also explain terms, completion level, and receipt evidence without stale next-step claims.",
       "source_paths": [
         "compass/CONTRIBUTING.md#2.1",
         "references/task-report-template.md",
         "references/agent-constraints.md"
       ],
       "status": "scripted",
-      "automation": "redcap-current-status.sh emits the four-line shape; task-report-check validates task-report summaries.",
+      "automation": "redcap-current-status.sh emits the four-line shape; task-report-check validates task-report summaries and delegates formal task-report wording quality to redcap-human-output-quality-check.sh. Live chat replies remain host-limited and must be reviewed rather than claimed as fully machine-enforced.",
       "guarantee_paths": [
         "compass/tools/redcap-current-status.sh",
         "compass/tools/redcap-task-report-check.sh",
+        "compass/tools/redcap-human-output-quality-check.sh",
+        "compass/tools/redcap-human-output-quality-check.py",
         "compass/tools/redcap-notify-format.sh"
       ],
       "revival_required": true,
@@ -588,6 +590,8 @@
       "guarantee_paths": [
         "compass/tools/redcap-validator-chain.sh",
         "compass/tools/redcap-task-report-check.sh",
+        "compass/tools/redcap-human-output-quality-check.sh",
+        "compass/tools/redcap-human-output-quality-check.py",
         "compass/tools/redcap-prism-acceptance-bind.sh",
         "compass/tools/redcap-prism-acceptance-bind.py",
         "compass/tools/redcap-prism-acceptance-check.sh",
