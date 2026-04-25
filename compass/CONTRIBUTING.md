@@ -782,6 +782,15 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 2. 内容为 PM 对话结束后的**最终确认版**（可能与原始输入有合理出入，但必须有据可查）
 3. 执行每个 Q 之前，**必须 re-read 该段对应 Q 的描述**，而不是依赖记忆
 
+**Phase 2.5：原始意图覆盖审计（scope coverage）**
+
+在进入执行前，必须写入 `.dev-task.md` 的 `## 原始意图覆盖审计` 段，并通过 `redcap-intent-coverage-check.sh`：
+
+1. 明确 `scope_status`：`full-implementation`、`route-only`、`partial-with-explicit-defer` 或 `not-applicable`
+2. 对比 `## 原始输入`、`## 已确认需求` 和 `## 完成标准`，说明哪些原始意图已经覆盖
+3. 若只是路线图、方案、部分实现或显式延期，必须写清未覆盖/降级项、用户可见边界和后续任务
+4. 复杂任务的 Planning Review 也必须审这个覆盖段，防止 Agent 把战略目标降级成容易完成的小账本
+
 **Phase 3：执行门控**
 
 - 没有明确确认语句 → 不进入执行，继续澄清或等待
@@ -816,6 +825,15 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 ## 完成标准
 - [ ] Q1: ...
 - [ ] Q2: ...
+
+## 原始意图覆盖审计
+scope_status: <full-implementation|route-only|partial-with-explicit-defer|not-applicable>
+
+- 原始意图：...
+- 已覆盖：...
+- 未覆盖/延期：...
+- 用户可见边界：...
+- 后续路径：...
 
 ## 断点备注
 <当前进度、下一步、已知阻塞项>

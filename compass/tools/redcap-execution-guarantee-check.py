@@ -25,6 +25,7 @@ REQUIRED_IDS = {
     "diagnostic-overview",
     "tracking-health-overview",
     "scribe-runtime-vitality",
+    "original-intent-coverage-gate",
     "task-card-reanchor-scope",
     "state-machine-contract",
     "layerb-closeout-runtime",

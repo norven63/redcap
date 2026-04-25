@@ -572,6 +572,29 @@
       "auto_enforceable": true
     },
     {
+      "id": "original-intent-coverage-gate",
+      "category": "control-gates",
+      "priority": "P0",
+      "rule": "Layer B PM Gate must explicitly compare the user's original intent against confirmed requirements and completion standards so strategic goals cannot be silently narrowed into a route-only or partial task without a visible boundary.",
+      "source_paths": [
+        ".dev-task.md",
+        "compass/CONTRIBUTING.md#10",
+        "references/task-report-template.md",
+        "compass/tools/redcap-intent-coverage-check.sh"
+      ],
+      "status": "validator",
+      "automation": "redcap-intent-coverage-check.sh validates the task-card coverage section; redcap-pm-gate-check.sh consumes it as part of PM Gate, and diagnose surfaces it as a visible control gate.",
+      "guarantee_paths": [
+        "compass/tools/redcap-intent-coverage-check.sh",
+        "compass/tools/redcap-pm-gate-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-execution-guarantee-check.sh"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
       "id": "state-machine-contract",
       "category": "state-machine-contract",
       "priority": "P1",

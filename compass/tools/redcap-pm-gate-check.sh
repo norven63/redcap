@@ -97,6 +97,12 @@ else
             BACKLOG_CHECK_OUTPUT=$(bash "$SCRIPT_DIR/redcap-backlog-check.sh" anchor "$TASK_FILE" 2>&1) || record_error "$BACKLOG_CHECK_OUTPUT"
         fi
     fi
+
+    if [[ -x "$SCRIPT_DIR/redcap-intent-coverage-check.sh" ]]; then
+        INTENT_COVERAGE_OUTPUT=$(bash "$SCRIPT_DIR/redcap-intent-coverage-check.sh" "$TASK_FILE" 2>&1) || record_error "$INTENT_COVERAGE_OUTPUT"
+    else
+        record_error "missing intent coverage gate: compass/tools/redcap-intent-coverage-check.sh"
+    fi
 fi
 
 if [[ ${#ERRORS[@]} -gt 0 ]]; then

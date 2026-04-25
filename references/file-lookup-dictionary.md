@@ -22,6 +22,7 @@
 |---|---|---|---|---|
 | [`closeout-cap.sh`](../closeout-cap.sh) | root closeout facade | 人类/Agent 记一个短入口；内部转调 Layer B closeout runtime | Layer B runtime | `./closeout-cap.sh status` |
 | [`compass/tools/redcap-layerb-closeout-runtime.py`](../compass/tools/redcap-layerb-closeout-runtime.py) | unified closeout runtime | 串起承诺账本、Prism acceptance、on-complete、session-end、receipt 和 rescue audit | Layer B runtime | `bash compass/tools/redcap-layerb-closeout-runtime-check.sh` |
+| [`compass/tools/redcap-intent-coverage-check.sh`](../compass/tools/redcap-intent-coverage-check.sh) | original intent coverage gate | PM Gate 的原始意图覆盖审计，防止把用户战略目标降级成只完成路线图的小账本 | Layer B PM Gate | `bash compass/tools/redcap-intent-coverage-check.sh .dev-task.md` |
 | [`compass/tools/redcap-on-complete.sh`](../compass/tools/redcap-on-complete.sh) | on-complete gate | closeout 前置校验、摘要和主成功通知 owner；被 closeout runtime 编排 | Layer B runtime | acceptance cases with `on-complete-*` |
 | [`compass/tools/redcap-layerB-session-end.sh`](../compass/tools/redcap-layerB-session-end.sh) | session-end reconcile gate | 会话结束兜底审计、pending closure 清账、blocker 告警；在 closeout runtime 中不再重复发送成功通知 | Layer B runtime | acceptance cases with `session-end-*` |
 

@@ -47,6 +47,7 @@ def main() -> int:
             "PM Gate",
             "PLANNING",
             "PLANNING_REVIEW",
+            "原始意图覆盖审计",
             "explore-notes.md 作为 PM Gate Phase 1 的原始资料直接消费",
         ],
     )
@@ -83,6 +84,7 @@ def main() -> int:
         [
             "新增 Lesson",
             "完成等级",
+            "原始意图覆盖审计",
             "closeout receipt",
         ],
     )
@@ -126,6 +128,7 @@ def main() -> int:
         "references/execution-guarantees.json",
         [
             "scribe-runtime-vitality",
+            "original-intent-coverage-gate",
             "planning-review-gate",
             "workflow-panorama-surface",
             "task-card-reanchor-scope",

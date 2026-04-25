@@ -97,6 +97,30 @@
       "review_paths": [
         "references/file-lookup-dictionary.md"
       ]
+    },
+    {
+      "id": "EVO-2026-04-26-001",
+      "source_kind": "user-correction",
+      "problem_source": "The user observed that a six-hour RedCap task produced only a route-level outcome while the intended system-level restructuring was broader.",
+      "solution": "Add an original-intent coverage gate to PM Gate so task cards must declare scope_status, covered intent, uncovered/deferred scope, human-visible boundaries, and follow-up paths before execution and closeout.",
+      "final_effect": "Future receipts and promise ledgers can no longer prove only a silently narrowed task without also surfacing whether the user's original strategic intent was fully implemented, route-only, or partially deferred.",
+      "recurrence_guard": "redcap-intent-coverage-check.sh is consumed by PM Gate and diagnose, with acceptance fixtures covering both a valid partial-defer case and a missing coverage section.",
+      "applicability_boundary": "The gate makes scope narrowing visible and machine-blocked when omitted; it does not make natural-language semantic coverage perfect without Prism planning review or human strategic input.",
+      "evidence_paths": [
+        ".dev-task.md",
+        "compass/tools/redcap-intent-coverage-check.sh",
+        "compass/tools/redcap-pm-gate-check.sh",
+        "compass/CONTRIBUTING.md",
+        "references/task-report-template.md"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons.md"
+      ],
+      "review_paths": [
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ]
     }
   ]
 }

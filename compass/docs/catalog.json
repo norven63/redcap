@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 46,
-    "size_bytes": 691870,
-    "lines": 12229,
-    "chars": 447728,
+    "file_count": 47,
+    "size_bytes": 699965,
+    "lines": 12376,
+    "chars": 452425,
     "rough_token_pressure": {
-      "low": 111932,
-      "high": 223864
+      "low": 113106,
+      "high": 226212
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 27,
-        "size_bytes": 411122,
-        "lines": 5382,
-        "chars": 263258,
+        "file_count": 28,
+        "size_bytes": 419217,
+        "lines": 5529,
+        "chars": 267955,
         "rough_token_pressure": {
-          "low": 65814,
-          "high": 131629
+          "low": 66988,
+          "high": 133977
         }
       },
       "traces": {
@@ -696,7 +696,7 @@
       "collection": "task-reports",
       "title": "2026-04-22 Layer B 生命周期与运行时记忆架构收口",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8942,
       "lines": 135,
@@ -761,29 +761,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 全景图与机制活性硬化",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 18887,
       "lines": 238,
       "chars": 12199,
       "summary": "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染、full acceptan… / 详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染、full acceptan…",
-          "详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态漂移要回归覆盖”四条主线落成了脚本、文档、索引和验收用例；追加修复确保 `.DS_Store` 等隐藏杂物不会进入渐进披露索引，且 `redcap-multi-session-acceptance.sh all` 可完整跑通。"
-        ],
-        "previous_step": [
-          "上一步完成的是：前一轮 Layer B FSM 重构已建立 closeout runtime、Prism acceptance、receipt 与 pending closure 的终态控制面。本轮是在那条主线之上，把计划审核、机制活性和全景学习面补回到工作流前中段。"
-        ],
-        "next_step": [
-          "下一步计划做的是：无当前收尾动作；本轮 closeout receipt 已生成，后续只剩 Prism provider 稳定性等独立治理项，不能倒灌为本轮未完成。"
-        ],
-        "position": [
-          "整体计划脉络图是：PM Gate 可见化 → `PLANNING` → `PLANNING_REVIEW` → 机制活性门 → 全景图按需披露 → 状态漂移回归 → 外部审查与 closeout。",
-          "当前所在位置：`planning-review-and-mechanism-vitality-hardening` 已实现、自检、Prism acceptance 与 closeout receipt 全部完成。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-25-redcap-evolution-grade-control-plane-hardening.md",
@@ -840,6 +824,35 @@
         "position": [
           "整体计划脉络图是：任务重锚定 → 产品形态/目录边界总纲 → 文件查阅字典 → provider freeze 强门 → skill lifecycle 补全 → Feishu 通知 owner 收敛 → Prism 调度/通信协议升级 → 知识检索路线 → lessons/Evolution 沉淀 → Prism + 回归 + closeout。",
           "当前所在位置：本轮治理任务已正式收口；Prism 已绑定为 resource-limited-pass（Kimi 有效，其它非 Copilot provider 不可用，Copilot frozen），closeout receipt 已存在，因此本轮承诺账本完成。但 RedCap 仍处于 skill-root 承载形态，独立 runtime / CLI 化只是已形成路线图，并未完成物理迁移。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-26-original-intent-coverage-gate.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：原始意图覆盖审计硬门",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 8095,
+      "lines": 147,
+      "chars": 4697,
+      "summary": "当前已完成：已把本轮故障修复单独重锚成新任务，避免继续用上一轮 receipt 证明新需求。 / 已新增 `redcap-intent-coverage-check.sh`，要求真实 Layer B 任务写明 `scope_status`、原始意图、已覆盖、未覆盖/延期、用户可见边界和后续路径。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：已把本轮故障修复单独重锚成新任务，避免继续用上一轮 receipt 证明新需求。",
+          "已新增 `redcap-intent-coverage-check.sh`，要求真实 Layer B 任务写明 `scope_status`、原始意图、已覆盖、未覆盖/延期、用户可见边界和后续路径。"
+        ],
+        "previous_step": [
+          "上一步完成的是：上一轮任务报告已经修正为 receipt 后状态，但这只能证明“产品形态路线图 + 控制面加固”完成，不能证明 RedCap 物理目录迁移或独立 CLI 化完成。"
+        ],
+        "next_step": [
+          "下一步计划做的是：无当前任务内必需动作；后续若推进物理目录迁移或独立 CLI 化，应另立迁移任务并先通过本硬门。"
+        ],
+        "position": [
+          "整体计划脉络图是：失败复盘 → 重锚新任务 → 新增原始意图覆盖硬门 → 接入 PM Gate / diagnose / guarantees → 补模板和 acceptance → 沉淀 lessons → 回归与提交。",
+          "当前所在位置：实现、targeted 回归、full acceptance、spec-check 与 diagnose 已完成，等待提交后收口。"
         ]
       }
     },

@@ -143,6 +143,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh backlog-check-strict
   bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview
   bash compass/tools/redcap-multi-session-acceptance.sh tracking-health-overview
+  bash compass/tools/redcap-multi-session-acceptance.sh intent-coverage-check
   bash compass/tools/redcap-multi-session-acceptance.sh human-output-quality-check
   bash compass/tools/redcap-multi-session-acceptance.sh install-overview
   bash compass/tools/redcap-multi-session-acceptance.sh execution-guarantees-check
@@ -8251,7 +8252,8 @@ run_docs_catalog_progressive_disclosure_case() {
     plan_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" plan "当前 pending closure task report" 5)"
     assert_string_contains "$plan_output" "DOCS_ACCESS_PLAN"
     assert_string_contains "$plan_output" "rule=Open only the exact paths needed; run budget before opening source files."
-    assert_string_contains "$plan_output" "compass/docs/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md"
+    assert_string_contains "$plan_output" "compass/docs/task-reports/"
+    assert_string_contains "$plan_output" "policy=read-catalog-summary-first-then-open-if-current-anchor"
 
     budget_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md")"
     assert_string_contains "$budget_output" "DOCS_ACCESS_BUDGET_OK"
@@ -8405,6 +8407,90 @@ PY
 
     output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-tracking-health.py" "$fixture" "$fixture/.dev-task.md")"
     assert_string_contains "$output" "TRACKING_OK"
+}
+
+run_intent_coverage_check_case() {
+    local fixture good bad output status
+
+    log "case: intent-coverage-check"
+
+    fixture="$ACCEPT_ROOT/intent-coverage"
+    mkdir -p "$fixture"
+    good="$fixture/good-task.md"
+    bad="$fixture/bad-task.md"
+
+    cat >"$good" <<'EOF'
+# 当前任务：intent coverage good
+
+## 控制面元数据（机器校验）
+task_id: intent-coverage-good
+source_of_truth: .dev-task.md
+top_goal: 验证原始意图覆盖审计
+active_slice: planning-review
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+请完成所有目录结构重构，让 RedCap 从 skill 走向独立 CLI runtime。
+
+## 已确认需求（执行依据）
+本轮先完成架构路线图和控制面硬门，不执行物理迁移。
+
+## 原始意图覆盖审计
+scope_status: partial-with-explicit-defer
+
+- 原始意图：完成所有目录结构重构，让 RedCap 走向独立 CLI runtime。
+- 已覆盖：本轮覆盖路线图、控制面硬门和用户可见边界。
+- 未覆盖/延期：物理目录结构迁移与独立 CLI runtime 实现不在本轮。
+- 用户可见边界：不能冒充目录结构已真实重构，也不宣称 CLI runtime 已完成。
+- 后续路径：另立 T1/T3/T5 迁移任务。
+
+## 漂移哨兵
+- 不把路线图冒充实现完成
+
+## 允许修改范围
+- compass/tools/**
+
+## 完成标准
+- [ ] 原始意图覆盖审计通过
+EOF
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-intent-coverage-check.sh" "$good" >/dev/null \
+        || fail "expected good intent coverage fixture to pass"
+
+    cat >"$bad" <<'EOF'
+# 当前任务：intent coverage bad
+
+## 控制面元数据（机器校验）
+task_id: intent-coverage-bad
+source_of_truth: .dev-task.md
+top_goal: 验证原始意图覆盖审计
+active_slice: planning-review
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+请完成所有目录结构重构，让 RedCap 从 skill 走向独立 CLI runtime。
+
+## 已确认需求（执行依据）
+本轮先完成架构路线图。
+
+## 漂移哨兵
+- 不把路线图冒充实现完成
+
+## 允许修改范围
+- compass/tools/**
+
+## 完成标准
+- [ ] 路线图完成
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-intent-coverage-check.sh" "$bad" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "expected bad intent coverage fixture to fail"
+    assert_string_contains "$output" "missing section: ## 原始意图覆盖审计"
 }
 
 run_human_output_quality_check_case() {
@@ -9921,6 +10007,7 @@ run_all_cases() {
     run_backlog_check_strict_case
     run_current_status_overview_case
     run_tracking_health_overview_case
+    run_intent_coverage_check_case
     run_tracking_health_rejects_stale_completed_breakpoint_case
     run_human_output_quality_check_case
     run_install_overview_case
@@ -10322,6 +10409,9 @@ case "$COMMAND" in
         ;;
     tracking-health-overview)
         run_tracking_health_overview_case
+        ;;
+    intent-coverage-check)
+        run_intent_coverage_check_case
         ;;
     tracking-health-rejects-stale-completed-breakpoint)
         run_tracking_health_rejects_stale_completed_breakpoint_case
