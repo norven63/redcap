@@ -122,6 +122,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-rejects-invalid-track-structure
   bash compass/tools/redcap-multi-session-acceptance.sh on-stop-review-skips-prompt-only-reviewer-when-repo-inspection-required
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-after-clear
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-success-notify-skip-for-closeout-runtime
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-notify-timeout-releases-lock
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-keeps-report-anchor
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-blocked-rewrite-normalizes-absolute-report-anchor
@@ -2287,6 +2288,54 @@ EOF
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-prism-acceptance-check.sh" --task-file "$task_file")"
     assert_string_contains "$output" "\"status\": \"pass\""
+
+    run_id="acceptance-resource-limited-run"
+    registry="$case_dir/prism/runs/$run_id/session-registry.yaml"
+    parsed_a="$case_dir/prism/runs/$run_id/collect/a_review/parsed.json"
+    mkdir -p "$(dirname "$registry")" "$(dirname "$parsed_a")"
+    cat >"$registry" <<'EOF'
+run_id: "acceptance-resource-limited-run"
+mode: "test"
+agents:
+  - handle_type: "shell"
+    handle: "a"
+    role: "a_review"
+    model: "kimi-for-coding"
+    family: "kimi"
+    injection_mode: "native"
+    status: "responded"
+    schema_ok: true
+  - handle_type: "shell"
+    handle: "gemini-timeout"
+    role: "gemini_review"
+    model: "gemini-2.5-flash"
+    family: "gemini"
+    injection_mode: "native"
+    status: "absent"
+    schema_ok: false
+EOF
+    printf '{"agent":"a","role":"independent-reviewer","conclusion":"ok","confidence":"high","blockers":[],"actions":[],"blind_spots":null}\n' >"$parsed_a"
+    cat >"$case_dir/resource-limited.json" <<'EOF'
+{
+  "status": "resource-limited",
+  "provider_attempts": [
+    {"provider": "gemini", "family": "gemini", "status": "cli-timeout", "reason": "acceptance fixture"}
+  ]
+}
+EOF
+    python3 - "$task_file" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("prism_acceptance_run: acceptance-binding-run", "prism_acceptance_run: acceptance-resource-limited-run")
+path.write_text(text, encoding="utf-8")
+PY
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-prism-acceptance-bind.sh" --run-id "$run_id" --task-file "$task_file" --resource-limited --resource-limited-evidence "$case_dir/resource-limited.json")"
+    assert_string_contains "$output" "\"status\": \"ok\""
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-prism-acceptance-check.sh" --task-file "$task_file")"
+    assert_string_contains "$output" "\"status\": \"resource-limited-pass\""
 }
 
 run_review_proof_check_accepts_prism_acceptance_case() {
@@ -4510,6 +4559,7 @@ EOF
             REDCAP_RUNTIME_SESSION_DIR="" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,copilot" \
+            REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
@@ -4716,6 +4766,7 @@ EOF
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
+            REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -4891,6 +4942,7 @@ EOF
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
+            REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -5031,6 +5083,7 @@ EOF
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
+            REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
     )"
@@ -5082,6 +5135,7 @@ EOF
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="copilot" \
+            REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
@@ -5602,6 +5656,7 @@ EOF
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,copilot" \
+            REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
@@ -5668,6 +5723,7 @@ EOF
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,copilot" \
+            REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
@@ -6044,6 +6100,98 @@ PYEOF
 
     assert_exists "$notify_log"
     assert_string_contains "$(cat "$notify_log")" "pending_exists=0"
+    assert_not_exists "$pending_state"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_session_end_success_notify_skip_for_closeout_runtime_case() {
+    local host="copilot"
+    local binding_key pid probe_pid current_head report_path case_dir validator_stub notifier_stub notify_log pending_state
+
+    log "case: session-end-success-notify-skip-for-closeout-runtime"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "session-end-success-notify-skip-for-closeout-runtime" >/dev/null 2>&1 || true
+
+    binding_key="acceptance-session-end-notify-skip-${RANDOM}-$$"
+    pid="$((66455 + RANDOM))"
+    spawn_host_probe probe_pid
+    export REDCAP_HOST_PROCESS_PID="$pid"
+    export REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid"
+    redcap_runtime_init_from_binding "$host" "$REDCAP_ROOT" "$binding_key" >/dev/null \
+        || fail "failed to initialize runtime binding for notify skip case"
+    REDCAP_SESSION_ISOLATION_MODE="full"
+    export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
+    unset REDCAP_HOST_PROCESS_PROBE_PID
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify skip case"
+    write_current_report_marker_fixture "$report_path"
+    pending_state="$(
+        redcap_interop_write_pending_closure \
+            "$REDCAP_ROOT" \
+            "$REDCAP_ROOT/.dev-task.md" \
+            "$host" \
+            "acceptance-seed" \
+            "review,notify" \
+            "session-end-success-notify-skip-for-closeout-runtime" \
+            "$report_path" \
+            "$current_head" \
+            "$current_head"
+    )" || fail "failed to seed pending closure for notify skip case"
+    assert_exists "$pending_state"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-notify-skip.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_stub="$case_dir/validator-pass.sh"
+    notifier_stub="$case_dir/notifier.py"
+    notify_log="$case_dir/notify.log"
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+cat <<'OUT'
+[1] review-proof-check :: pass
+review clean
+[2] reanchor-check :: pass
+reanchor clean
+[3] pm-gate :: pass
+pm gate clean
+[4] drift-check :: pass
+drift clean
+[5] backlog-check :: pass
+backlog clean
+[6] spec-check :: pass
+spec clean
+[7] task-report-check :: pass
+$report_path
+[8] artifact-lifecycle-check :: pass
+artifact clean
+OUT
+EOF
+    cat >"$notifier_stub" <<'PYEOF'
+#!/usr/bin/env python3
+import os
+import pathlib
+import sys
+
+log_path = pathlib.Path(os.environ["FAKE_NOTIFY_LOG"])
+log_path.write_text("called\n", encoding="utf-8")
+sys.exit(0)
+PYEOF
+    chmod +x "$validator_stub" "$notifier_stub"
+
+    FAKE_NOTIFY_LOG="$notify_log" \
+    REDCAP_FEISHU_NOTIFIER="$notifier_stub" \
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_SESSION_BINDING_KEY="$binding_key" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+    REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
+    REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+    REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY=1 \
+        bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
+        || fail "session-end success notify skip case failed"
+
+    assert_not_exists "$notify_log"
     assert_not_exists "$pending_state"
 
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
@@ -8614,7 +8762,7 @@ EOF
 }
 
 run_agent_health_probe_case() {
-    local output fixture_bin
+    local output fixture_bin policy_file copilot_marker prompt_file output_file frozen_status
 
     log "case: agent-health-probe"
 
@@ -8633,6 +8781,59 @@ EOF
     output="$(PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --agent kimi --timeout 5)"
     assert_string_contains "$output" '"agent": "kimi"'
     assert_string_contains "$output" '"live_status": "pass"'
+
+    copilot_marker="$ACCEPT_ROOT/agent-health-copilot-called"
+    cat >"$fixture_bin/copilot" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called > "$copilot_marker"
+echo ok
+EOF
+    chmod +x "$fixture_bin/copilot"
+    policy_file="$ACCEPT_ROOT/provider-policy-freeze.json"
+    cat >"$policy_file" <<'EOF'
+{
+  "version": 1,
+  "freeze_windows": [
+    {
+      "agent": "copilot",
+      "scope": ["all"],
+      "starts_at": "2026-01-01T00:00:00+00:00",
+      "until": "2099-01-01T00:00:00+00:00",
+      "reason": "acceptance freeze"
+    }
+  ]
+}
+EOF
+    output="$(PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --agent copilot --provider-policy "$policy_file" --timeout 5)"
+    assert_string_contains "$output" '"agent": "copilot"'
+    assert_string_contains "$output" '"live_status": "frozen"'
+    assert_not_exists "$copilot_marker"
+
+    rm -f "$copilot_marker"
+    output="$(PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --agent copilot --provider-policy "$ACCEPT_ROOT/missing-provider-policy.json" --timeout 5)"
+    assert_string_contains "$output" '"agent": "copilot"'
+    assert_string_contains "$output" '"live_status": "policy-unavailable"'
+    assert_not_exists "$copilot_marker"
+
+    prompt_file="$ACCEPT_ROOT/provider-policy-prompt.txt"
+    output_file="$ACCEPT_ROOT/provider-policy-output.txt"
+    printf '%s\n' "respond ok" >"$prompt_file"
+    set +e
+    REDCAP_PROVIDER_POLICY_FILE="$policy_file" PATH="$fixture_bin:$PATH" \
+        bash "$REDCAP_ROOT/compass/tools/baton-launcher.sh" \
+        --cli copilot \
+        --prompt-file "$prompt_file" \
+        --output-file "$output_file" \
+        --timeout 5 >/dev/null 2>&1
+    frozen_status=$?
+    set -e
+    [[ "$frozen_status" -ne 0 ]] || fail "baton launcher should reject frozen copilot"
+    assert_not_exists "$copilot_marker"
+
+    rm -f "$copilot_marker"
+    output="$(REDCAP_PROVIDER_POLICY_FILE="$policy_file" PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-detect-agents.sh" "$ACCEPT_ROOT/agent-registry-freeze.yaml" --agent copilot)"
+    assert_not_exists "$copilot_marker"
+    assert_contains "$ACCEPT_ROOT/agent-registry-freeze.yaml" 'version: "frozen"'
 }
 
 run_skill_lifecycle_check_case() {
@@ -9699,6 +9900,7 @@ run_all_cases() {
     run_on_stop_review_accepts_bare_fenced_json_case
     run_on_stop_review_accepts_json_fence_after_nonjson_bare_fence_case
     run_session_end_success_notify_after_clear_case
+    run_session_end_success_notify_skip_for_closeout_runtime_case
     run_session_end_notify_timeout_releases_lock_case
     run_session_end_blocked_rewrite_keeps_report_anchor_case
     run_session_end_blocked_rewrite_normalizes_absolute_report_anchor_case
@@ -10057,6 +10259,9 @@ case "$COMMAND" in
         ;;
     session-end-success-notify-after-clear)
         run_session_end_success_notify_after_clear_case
+        ;;
+    session-end-success-notify-skip-for-closeout-runtime)
+        run_session_end_success_notify_skip_for_closeout_runtime_case
         ;;
     session-end-notify-timeout-releases-lock)
         run_session_end_notify_timeout_releases_lock_case

@@ -659,6 +659,7 @@ copilot -p "$(cat .workflow/{role}-prompt-step{N}.txt)" \
 > `--autopilot` 持续执行直至完成，不暂停询问。
 > Copilot CLI 不支持 `--system-prompt`，角色身份通过 Prompt 前缀或 `.github/copilot-instructions.md` 注入。
 > Copilot CLI **支持** `--output-format=json`，程序化场景应开启 JSONL 输出并从结果行提取 `sessionId`。
+> 临时冻结窗口以 `references/prism-provider-policy.json` 为准；冻结期内 Dispatcher / baton / Prism 不得启动真实 `copilot` CLI。
 
 ### 3C.3 参数说明
 

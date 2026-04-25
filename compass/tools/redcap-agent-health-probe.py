@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""Probe local Agent CLI health without violating provider freeze windows.
+
+Dictionary: references/file-lookup-dictionary.md#prism-and-providers
+"""
 from __future__ import annotations
 
 import argparse
@@ -40,6 +44,8 @@ AGENTS: dict[str, dict[str, object]] = {
     },
 }
 
+DEFAULT_PROVIDER_POLICY = "references/prism-provider-policy.json"
+
 
 def load_dotenv(root: Path, env: dict[str, str]) -> None:
     path = root / ".env"
@@ -56,7 +62,55 @@ def load_dotenv(root: Path, env: dict[str, str]) -> None:
             env[key] = value
 
 
-def probe_agent(root: Path, name: str, live: bool, timeout_s: int) -> dict[str, object]:
+def parse_policy_time(raw: object) -> datetime | None:
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    text = raw.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def load_provider_policy(root: Path, policy_arg: str) -> dict[str, object]:
+    policy_path = Path(policy_arg)
+    if not policy_path.is_absolute():
+        policy_path = root / policy_path
+    if not policy_path.is_file():
+        return {"_policy_unavailable": True, "_policy_unavailable_reason": f"provider policy file missing: {policy_path}"}
+    try:
+        payload = json.loads(policy_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"_policy_unavailable": True, "_policy_unavailable_reason": f"provider policy unavailable or invalid: {policy_path}"}
+    return payload if isinstance(payload, dict) else {}
+
+
+def active_freeze(policy: dict[str, object], agent: str, scope: str) -> dict[str, object] | None:
+    now = datetime.now(timezone.utc)
+    for item in policy.get("freeze_windows", []) or []:
+        if not isinstance(item, dict):
+            continue
+        if item.get("agent") != agent:
+            continue
+        scopes = item.get("scope", [])
+        if isinstance(scopes, list) and scope not in scopes and "all" not in scopes:
+            continue
+        starts_at = parse_policy_time(item.get("starts_at"))
+        until = parse_policy_time(item.get("until"))
+        if starts_at is not None and now < starts_at.astimezone(timezone.utc):
+            continue
+        if until is not None and now >= until.astimezone(timezone.utc):
+            continue
+        return item
+    return None
+
+
+def probe_agent(root: Path, name: str, live: bool, timeout_s: int, provider_policy: dict[str, object]) -> dict[str, object]:
     spec = AGENTS[name]
     binary = str(spec["binary"])
     path = shutil.which(binary)
@@ -72,6 +126,24 @@ def probe_agent(root: Path, name: str, live: bool, timeout_s: int) -> dict[str, 
         return row
     if not live:
         row.update({"live_status": "skipped", "reason": "live probe not requested"})
+        return row
+    if name == "copilot" and provider_policy.get("_policy_unavailable"):
+        row.update(
+            {
+                "live_status": "policy-unavailable",
+                "reason": provider_policy.get("_policy_unavailable_reason", "provider policy unavailable"),
+            }
+        )
+        return row
+    freeze = active_freeze(provider_policy, name, "live-health")
+    if freeze is not None:
+        row.update(
+            {
+                "live_status": "frozen",
+                "reason": freeze.get("reason", "provider frozen by policy"),
+                "frozen_until": freeze.get("until", ""),
+            }
+        )
         return row
     if not bool(spec.get("live_supported", False)):
         row.update({"live_status": "unsupported", "reason": spec.get("reason", "live probe unsupported")})
@@ -117,16 +189,19 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=15)
     parser.add_argument("--stdout", action="store_true", help="Print JSON to stdout instead of writing the cache file.")
     parser.add_argument("--output", default="compass/.workflow/agent-health.json")
+    parser.add_argument("--provider-policy", default=DEFAULT_PROVIDER_POLICY)
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
     names = args.agent or sorted(AGENTS)
+    provider_policy = load_provider_policy(root, args.provider_policy)
     payload = {
         "version": 1,
         "detected_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "live": bool(args.live),
         "timeout_s": args.timeout,
-        "agents": [probe_agent(root, name, bool(args.live), int(args.timeout)) for name in names],
+        "provider_policy": args.provider_policy,
+        "agents": [probe_agent(root, name, bool(args.live), int(args.timeout), provider_policy) for name in names],
     }
 
     text = json.dumps(payload, ensure_ascii=False, indent=2)

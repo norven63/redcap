@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Validate RedCap's control-plane assurance registry.
+
+Dictionary: references/file-lookup-dictionary.md#control-plane-assurance
+The default registry path keeps the historical evolution-grade-baseline name for
+compatibility, but the checked content is the broader assurance registry.
+"""
 from __future__ import annotations
 
 import json

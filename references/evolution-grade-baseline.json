@@ -1,6 +1,8 @@
 {
   "version": 1,
-  "description": "R0 registry: each RedCap guarantee surface must declare whether it reaches Evolution-grade handling or is honestly degraded, host-limited, or manual-only.",
+  "canonical_name": "control-plane-assurance-registry",
+  "dictionary_ref": "references/file-lookup-dictionary.md#control-plane-assurance",
+  "description": "Control-plane assurance registry. This compatibility file keeps the historical evolution-grade-baseline path, but its scope is all RedCap guarantee surfaces, not only self-evolution.",
   "required_dimensions": [
     "trigger",
     "evidence",

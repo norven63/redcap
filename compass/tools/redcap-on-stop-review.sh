@@ -36,6 +36,7 @@ REVIEW_AGENT_ORDER="${REDCAP_STOP_REVIEW_AGENT_ORDER:-}"
 DEFAULT_REVIEW_AGENT_REGISTRY_FILE="$REDCAP_ROOT/compass/.workflow/agent-registry.yaml"
 REVIEW_AGENT_REGISTRY_FILE="${REDCAP_REVIEW_AGENT_REGISTRY_FILE:-$DEFAULT_REVIEW_AGENT_REGISTRY_FILE}"
 REVIEW_CAPABILITY_MATRIX_FILE="${REDCAP_REVIEW_CAPABILITY_MATRIX_FILE:-$REDCAP_ROOT/compass/knowledge/model-capability-matrix.yaml}"
+PROVIDER_POLICY_FILE="${REDCAP_PROVIDER_POLICY_FILE:-$REDCAP_ROOT/references/prism-provider-policy.json}"
 BINDING_KEY=""
 if [[ -n "$HOST_SESSION_ID" ]]; then
     BINDING_KEY=$(redcap_runtime_binding_key_from_host_session "$REVIEW_HOST" "$HOST_SESSION_ID")
@@ -160,6 +161,62 @@ review_agent_supports_repo_inspection() {
     esac
 }
 
+provider_policy_applies() {
+    [[ "${REDCAP_DISABLE_PROVIDER_POLICY:-0}" != "1" ]] || return 1
+    return 0
+}
+
+provider_frozen_by_policy() {
+    local agent="$1"
+
+    provider_policy_applies || return 1
+    python3 - "$PROVIDER_POLICY_FILE" "$agent" <<'PY'
+import json
+import sys
+from datetime import datetime, timezone
+
+policy_path, agent = sys.argv[1:3]
+try:
+    payload = json.load(open(policy_path, encoding="utf-8"))
+except Exception:
+    if agent == "copilot":
+        print("provider policy unavailable; refusing frozen-sensitive provider")
+        raise SystemExit(0)
+    raise SystemExit(1)
+
+def parse(raw):
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    text = raw.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        value = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+now = datetime.now(timezone.utc)
+for item in payload.get("freeze_windows", []) or []:
+    if item.get("agent") != agent:
+        continue
+    scopes = item.get("scope", [])
+    if isinstance(scopes, list) and "stop-review" not in scopes and "all" not in scopes:
+        continue
+    starts_at = parse(item.get("starts_at"))
+    until = parse(item.get("until"))
+    if starts_at is not None and now < starts_at:
+        continue
+    if until is not None and now >= until:
+        continue
+    print(item.get("reason") or "provider frozen by policy")
+    raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
 build_review_targets() {
     local manual_order="${1:-}"
     local requires_repo_inspection="${2:-0}"
@@ -182,6 +239,9 @@ build_review_targets() {
         fi
         if [[ "$requires_repo_inspection" == "1" ]]; then
             reviewer_order_args+=(--requires-repo-inspection)
+        fi
+        if provider_policy_applies; then
+            reviewer_order_args+=(--provider-policy "$PROVIDER_POLICY_FILE")
         fi
         order_output="$(
             python3 "$reviewer_order_tool" "${reviewer_order_args[@]}" 2>/dev/null || true
@@ -555,6 +615,10 @@ run_review_with_target() {
 
     if [[ "${REVIEW_REQUIRES_REPO_INSPECTION:-0}" == "1" ]] && ! review_agent_supports_repo_inspection "$agent"; then
         REVIEW_ATTEMPT_FAILURES+=("$agent:insufficient-evidence")
+        return 1
+    fi
+    if provider_frozen_by_policy "$agent" >/dev/null 2>&1; then
+        REVIEW_ATTEMPT_FAILURES+=("$agent:frozen")
         return 1
     fi
 

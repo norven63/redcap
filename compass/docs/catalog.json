@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 45,
-    "size_bytes": 677604,
-    "lines": 12033,
-    "chars": 438016,
+    "file_count": 46,
+    "size_bytes": 690125,
+    "lines": 12210,
+    "chars": 446595,
     "rough_token_pressure": {
-      "low": 109504,
-      "high": 219008
+      "low": 111648,
+      "high": 223297
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 26,
-        "size_bytes": 396856,
-        "lines": 5186,
-        "chars": 253546,
+        "file_count": 27,
+        "size_bytes": 409377,
+        "lines": 5363,
+        "chars": 262125,
         "rough_token_pressure": {
-          "low": 63386,
-          "high": 126773
+          "low": 65531,
+          "high": 131062
         }
       },
       "traces": {
@@ -683,7 +683,7 @@
       "collection": "task-reports",
       "title": "2026-04-22 安装即复活与长任务对抗补强",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 6543,
       "lines": 82,
@@ -748,29 +748,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：Layer B 状态机工作模式重构",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12862,
       "lines": 188,
       "chars": 8886,
       "summary": "当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。 / 详情：当前任务的 closeout retry Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；当前 live 任务已经真实执行 `complete`，`pending closure` 已清，且已写出 closeout receipt。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。",
-          "详情：当前任务的 closeout retry Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；当前 live 任务已经真实执行 `complete`，`pending closure` 已清，且已写出 closeout receipt。"
-        ],
-        "previous_step": [
-          "上一步完成的是：上一 tranche 已把 Layer B 生命周期协议、closeout runtime、承诺账本、receipt 和 rescue audit 初步接到位，但仍未把“工作模式本体”和“默认独立验收门”真正做成硬门。"
-        ],
-        "next_step": [
-          "下一步计划做的是：无当前 tranche 级下一步；后续仅保留长期治理项的独立演进，不再属于本任务的未完成项。"
-        ],
-        "position": [
-          "整体计划脉络图是：重新锚定任务 → 落 FSM 状态面 → 落 Prism acceptance gate → 收紧 closeout runtime → 同步入口与模板 → acceptance / 棱镜验收 → 真实 complete 收尾。",
-          "当前所在位置：FSM 工作模式、默认独立验收门、closeout runtime 终态事务与真实 live closeout 都已闭环完成，当前 confirmed_hash 已进入正式完成态。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md",
@@ -827,6 +811,35 @@
         "position": [
           "整体计划脉络图是：R0 基线审计 → R1 控制面统一 → R2 Prism 稳定性 → R3 旧资产治理 → R4 即时回复质量 → R5 token 结构治理 → R6 Evolution Factory → R7 skill 生命周期 → R8 独立验收与 closeout。",
           "当前所在位置：CLOSED。机器回归、Prism 独立验收、承诺账本、pending closure 和 closeout receipt 均已收口。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-25-redcap-runtime-productization-and-architecture-decoupling.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RedCap 产品形态重定位与系统架构解耦",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12521,
+      "lines": 177,
+      "chars": 8579,
+      "summary": "当前已完成：已把本轮任务重锚定到 `.dev-task.md`，确认北极星是：RedCap 不再只叙述为某个宿主 skill，而是向独立 Agent Runtime / CLI / 多层协作系统演进。 / 已新增 `references/redcap-system-layers.md`，把执行层、Prism 层、知识层、Evolution 层、证据层、人类阅读层、人格层、宿主适配层与检索层拆开，形成后续迁移路线。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：已把本轮任务重锚定到 `.dev-task.md`，确认北极星是：RedCap 不再只叙述为某个宿主 skill，而是向独立 Agent Runtime / CLI / 多层协作系统演进。",
+          "已新增 `references/redcap-system-layers.md`，把执行层、Prism 层、知识层、Evolution 层、证据层、人类阅读层、人格层、宿主适配层与检索层拆开，形成后续迁移路线。"
+        ],
+        "previous_step": [
+          "上一步完成的是：Kimi 棱镜评审指出 provider policy fail-open 与自定义 registry 耦合风险；随后已补齐 `redcap-provider-policy.sh` 的 Copilot 缺失策略 fail-closed、`redcap-agent-health-probe.py` 的 missing-policy 跳过真实 Copilot、`redcap-detect-agents.sh` 的 policy-unavailable 保护、`redcap-on-stop-review…"
+        ],
+        "next_step": [
+          "下一步计划做的是：执行 closeout runtime 生成 receipt，并确认 Feishu 只发一条最终收口通知。"
+        ],
+        "position": [
+          "整体计划脉络图是：任务重锚定 → 产品形态/目录边界总纲 → 文件查阅字典 → provider freeze 强门 → skill lifecycle 补全 → Feishu 通知 owner 收敛 → Prism 调度/通信协议升级 → 知识检索路线 → lessons/Evolution 沉淀 → Prism + 回归 + closeout。",
+          "当前所在位置：实现补丁已落地并通过多组 targeted acceptance；Prism 已绑定为 resource-limited-pass（Kimi 有效，其它非 Copilot provider 不可用，Copilot frozen），仍处于 closeout receipt 生成前，不能宣称已正式完成。"
         ]
       }
     },

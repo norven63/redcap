@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "description": "Prism and reviewer provider policy. It records temporary freezes, routing principles, and evidence requirements without encoding static model-family bias.",
+  "dictionary_ref": "references/file-lookup-dictionary.md#prism-and-providers",
+  "routing_principles": [
+    "Rank providers by model capability profile plus local CLI stability evidence.",
+    "Separate installed/configured visibility from bounded live headless health.",
+    "Temporary freezes override ranking because they represent explicit resource or quota constraints.",
+    "When a provider is frozen, health probes must report frozen without executing the CLI command."
+  ],
+  "freeze_windows": [
+    {
+      "agent": "copilot",
+      "scope": ["prism", "stop-review", "live-health", "baton-delegate", "agent-detect", "direct-cli"],
+      "starts_at": "2026-04-25T00:00:00+08:00",
+      "until": "2026-05-01T00:00:00+08:00",
+      "reason": "User explicitly reserved Copilot CLI quota until the monthly freeze window ends.",
+      "authority": "user-explicit"
+    }
+  ],
+  "communication_packet": {
+    "required_fields": [
+      "task_frame",
+      "allowed_read_scope",
+      "forbidden_read_scope",
+      "context_budget",
+      "output_schema",
+      "timeout_seconds",
+      "evidence_paths",
+      "raw_output_policy",
+      "fallback_policy"
+    ],
+    "raw_output_policy": "Keep raw evidence in run-scoped ignored storage when needed; promote only parsed verdict and report summary into tracked evidence.",
+    "fallback_policy": "If provider quorum cannot be reached without frozen or unhealthy providers, record resource-limited Prism instead of silently weakening the claim."
+  }
+}

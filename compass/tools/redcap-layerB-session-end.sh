@@ -323,6 +323,7 @@ fi
 COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..$CURRENT_HEAD" 2>/dev/null || echo "(无法获取)")
 NOTIFIER="${REDCAP_FEISHU_NOTIFIER:-$SCRIPT_DIR/feishu-notifier.py}"
 SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
+SKIP_SUCCESS_NOTIFY="${REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY:-0}"
 NOTIFY_TIMEOUT_SECONDS="${REDCAP_FEISHU_NOTIFY_TIMEOUT_SECONDS:-5}"
 REVIEW_STATUS=""
 REQUIRED_REDLINES=""
@@ -547,6 +548,10 @@ PY
         2>/dev/null
 }
 
+session_end_success_notify_enabled() {
+    [[ "$SKIP_SUCCESS_NOTIFY" != "1" ]]
+}
+
 acquire_success_guard_lock() {
     if redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
         SUCCESS_GUARD_LOCK_HELD=1
@@ -699,6 +704,13 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
             mark_session_end_persistence_failure \
                 "session-end-pass-ledger-write-failed" \
                 "report=${REPORT_ARTIFACT_PATH:-none}"
+        elif ! session_end_success_notify_enabled; then
+            # In unified closeout runtime, on-complete owns the human-visible success notification.
+            # SessionEnd still reconciles evidence and may send blocker alerts, but does not duplicate success followups.
+            echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
+            rm -f "$ALERTED_FILE" 2>/dev/null || true
+            rm -f "$WARNED_FILE" 2>/dev/null || true
+            clear_review_artifacts
         elif send_notification "$(redcap_build_completion_message \
             "RedCap Layer B 收尾完成" \
             "redcap" \

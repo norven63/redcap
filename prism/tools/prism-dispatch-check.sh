@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # prism-dispatch-check.sh — Prism Dispatch 前置校验（硬门禁）
+# Dictionary: references/file-lookup-dictionary.md#prism-and-providers
 #
 # 用法:
 #   bash prism/tools/prism-dispatch-check.sh --mode redteam --agents "claude-opus-4.6:challenger,gpt-5.4:reviewer,gemini-3.1-pro-preview:historian"
@@ -40,7 +41,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRISM_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 python3 - "$MODE" "$AGENTS_RAW" "$LINE_COUNT" "$PRISM_DIR" "$INJECTION_MODES_RAW" << 'PYEOF'
-import sys, os
+import sys, os, json
+from datetime import datetime, timezone
 
 mode = sys.argv[1]
 agents_raw = sys.argv[2]
@@ -59,6 +61,12 @@ for spec in agents_raw.split(','):
 
 def get_family(model):
     m = model.lower()
+    if '&' in m:
+        provider, _, rest = m.partition('&')
+        m = rest or provider
+    if '@' in m:
+        provider, _, rest = m.partition('@')
+        m = rest or provider
     if m.startswith('claude'):
         return 'claude'
     elif m.startswith('kimi'):
@@ -68,6 +76,58 @@ def get_family(model):
     elif m.startswith('gemini'):
         return 'gemini'
     return 'unknown'
+
+def get_provider(model):
+    m = model.lower().strip()
+    for separator in ('&', '@'):
+        if separator in m:
+            provider, _, _ = m.partition(separator)
+            return provider
+    for provider in ('copilot', 'codex', 'gemini', 'kimi', 'claude'):
+        if m.startswith(provider):
+            return provider
+    return ''
+
+def parse_time(raw):
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    text = raw.strip()
+    if text.endswith('Z'):
+        text = text[:-1] + '+00:00'
+    try:
+        value = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+def provider_frozen(provider, scope='prism'):
+    if not provider or not prism_dir:
+        return None
+    policy_path = os.path.join(os.path.dirname(prism_dir), 'references', 'prism-provider-policy.json')
+    try:
+        with open(policy_path, encoding='utf-8') as handle:
+            payload = json.load(handle)
+    except Exception:
+        if provider == 'copilot':
+            return {'agent': provider, 'scope': scope, 'until': '', 'reason': 'provider policy unavailable'}
+        return None
+    now = datetime.now(timezone.utc)
+    for item in payload.get('freeze_windows', []) or []:
+        if item.get('agent') != provider:
+            continue
+        scopes = item.get('scope', [])
+        if isinstance(scopes, list) and scope not in scopes and 'all' not in scopes:
+            continue
+        starts_at = parse_time(item.get('starts_at'))
+        until = parse_time(item.get('until'))
+        if starts_at is not None and now < starts_at:
+            continue
+        if until is not None and now >= until:
+            continue
+        return item
+    return None
 
 roles = [a['role'] for a in agents]
 families = list(set(get_family(a['model']) for a in agents))
@@ -93,9 +153,19 @@ print()
 
 fail = False
 
+print("[0/7] 检查 provider 冻结窗口...")
+for agent in agents:
+    provider = get_provider(agent['model'])
+    freeze = provider_frozen(provider, 'prism')
+    if freeze:
+        print(f"  ❌ provider 已冻结: {provider} until={freeze.get('until', '')}")
+        fail = True
+if not any(provider_frozen(get_provider(agent['model']), 'prism') for agent in agents):
+    print("  ✅ 本轮 roster 未命中冻结 provider")
+
 # 检查 1: 对抗角色（redteam/council 必须）
 if mode in ('redteam', 'council'):
-    print("[1/6] 检查强制对抗角色...")
+    print("[1/7] 检查强制对抗角色...")
     for required in ('challenger', 'reviewer', 'historian'):
         if required in roles:
             print(f"  ✅ {required} 已分配")
@@ -105,11 +175,11 @@ if mode in ('redteam', 'council'):
     if mode == 'redteam' and 'explorer' not in roles:
         print("  ⚠️  未分配 explorer（推荐第4席，用于盲点补充，但非硬门禁）")
 else:
-    print(f"[1/6] 对抗角色检查（跳过，模式 {mode} 不要求）")
+    print(f"[1/7] 对抗角色检查（跳过，模式 {mode} 不要求）")
 
 # 检查 2: 家族多样性
 print()
-print("[2/6] 检查模型家族多样性...")
+print("[2/7] 检查模型家族多样性...")
 required_families = 3 if mode == 'redteam' else 2
 if unique_families < required_families:
     print(f"  ❌ 家族数 {unique_families} < 要求 {required_families}（当前: {', '.join(families)}）")
@@ -119,7 +189,7 @@ else:
 
 # 检查 3: Agent 数量
 print()
-print("[3/6] 检查 Agent 数量...")
+print("[3/7] 检查 Agent 数量...")
 limits = {'redteam': (4,6), 'explore': (3,5), 'test': (2,4), 'council': (3,6)}
 min_n, max_n = limits.get(mode, (2,6))
 if total < min_n:
@@ -132,7 +202,7 @@ else:
 
 # 检查 4: injection_mode 计划
 print()
-print("[4/6] 检查 injection_mode 计划...")
+print("[4/7] 检查 injection_mode 计划...")
 ADVERSARIAL_MODES = {'redteam', 'council'}
 if mode in ADVERSARIAL_MODES:
     if not injection_modes:
@@ -154,7 +224,7 @@ else:
 
 # 检查 5: 问题包长度
 print()
-print("[5/6] 检查问题包长度...")
+print("[5/7] 检查问题包长度...")
 if line_count > 0:
     if line_count > 800:
         print(f"  ⚠️  问题包 {line_count} 行 > 800 行，GPT 系模型可能静默截断（见 L-11）")
@@ -164,7 +234,7 @@ else:
     print("  ℹ️  未提供 --problem 文件，跳过长度检查")
 
 print()
-print("[6/6] 检查对抗角色 System Prompt 文件...")
+print("[6/7] 检查对抗角色 System Prompt 文件...")
 if mode in ADVERSARIAL_MODES and prism_dir:
     for role in roles:
         prompt_file = os.path.join(prism_dir, 'roles', role, 'system-prompt.md')

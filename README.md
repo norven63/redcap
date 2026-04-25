@@ -1,10 +1,12 @@
 # RedCap
 
-> 一个把单体 AI Agent 升级成工程化 AI Team 的协同开发框架。
+> 一个把单体 AI Agent 升级成工程化 AI Team 的 Agent Runtime / CLI / 多层协作系统。
 
 RedCap 不是“再包一层提示词”。
 它真正做的事，是把复杂开发任务拆成**分工明确、状态可追踪、过程可复盘、关键结论可独立验证**的一套工程协作流程。
 目标不是让一个 Agent 更拼，而是让一组 Agent 更可靠。
+
+当前仓库仍以 skill-root 方式承载 RedCap，但长期形态不是“某个宿主的 skill 文件夹”，而是可安装、可复活、可调度、可审计的独立 runtime。产品化分层与迁移路线见 [`references/redcap-system-layers.md`](./references/redcap-system-layers.md)。
 
 ## 一眼看懂
 
@@ -24,7 +26,7 @@ Compass 负责规范、经验、Hook、收尾与复活
 可运行代码 + 可考古证据 + 可恢复连续性
 ```
 
-## RedCap 最核心的 7 个能力
+## RedCap 最核心的 8 个能力
 
 | 能力 | 解决的问题 |
 |---|---|
@@ -171,6 +173,8 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 | [`compass/knowledge/long-task-context-defense.md`](./compass/knowledge/long-task-context-defense.md) | 看 RedCap 如何对抗长任务/长对话上下文漂移 |
 | [`compass/knowledge/runtime-memory-architecture.md`](./compass/knowledge/runtime-memory-architecture.md) | 看“真相源 / 镜像 / 考古追踪 / 长期沉淀”等术语到底是什么意思 |
 | [`compass/evolution/README.md`](./compass/evolution/README.md) | 看 RedCap Evolution Factory 如何把候选经验、人格、skill 与治理项收口 |
+| [`references/file-lookup-dictionary.md`](./references/file-lookup-dictionary.md) | 看关键 JSON、脚本和 registry 的定位、人话解释与检查入口 |
+| [`references/redcap-system-layers.md`](./references/redcap-system-layers.md) | 看 RedCap 从 skill-root 演进为 Agent Runtime / CLI / 多层系统的架构路线 |
 | [`references/skill-lifecycle-policy.json`](./references/skill-lifecycle-policy.json) | 看 RedCap-native capability、host-exported skill、portable skill package 的单一信源策略 |
 | [`references/legacy-asset-lifecycle.json`](./references/legacy-asset-lifecycle.json) | 看旧资产、运行残留与考古证据的生命周期策略 |
 | [`references/runtime-memory-architecture.md`](./references/runtime-memory-architecture.md) | 看 Layer B 生命周期如何与 `.dev-task.md`、承诺账本、closeout runtime、pending closure、session hooks 绑在一起 |

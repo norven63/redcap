@@ -1,19 +1,21 @@
-# RedCap Evolution Factory
+# RedCap Evolution Factory / RedCap 进化工厂
 
-RedCap Evolution Factory is the sidecar governance layer that turns runtime traces into reusable assets without letting self-modification become another source of drift.
+RedCap Evolution Factory 是 RedCap 的“进化工厂层”：它把运行痕迹、用户纠偏、失败链路和审查结论加工成可复用资产，同时防止自我修改本身变成新的漂移源。
 
-## Purpose
+它不是 RedCap 的全部，也不是本轮所有控制面重构的唯一主语。RedCap 的长期产品形态见 `references/redcap-system-layers.md`；Evolution Factory 只负责其中的经验、人格、skill、规则和 validator 候选沉淀。
+
+## Purpose / 作用
 
 - Collect evolution candidates from task cards, task reports, Prism verdicts, receipts, tests, user corrections, and closeout failures.
 - Require every candidate to explain at least: problem source, solution, and final effect.
 - Promote reviewed candidates into lessons, identity proposals, skills, rules, validators, backlog items, or explicit no-promote decisions.
 - Keep active rules and identity files protected: discovery can be automatic, but promotion must be reviewed and evidence-backed.
 
-## First-Read Rule
+## First-Read Rule / 首读规则
 
 Do not bulk-read future candidate pools. Start from:
 
-1. `references/evolution-grade-baseline.json`
+1. `references/evolution-grade-baseline.json`（历史兼容路径；语义上是 control-plane assurance registry）
 2. `references/evolution-candidate-schema.json`
 3. `compass/evolution/candidates.json`
 4. `compass/tools/redcap-evolution-grade-check.sh`

@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-"""Compute stop-review reviewer targets from the capability matrix and local registry.
+"""Compute stop-review reviewer targets from the capability matrix, local registry, and provider policy.
 
 This parser intentionally supports only the small YAML subset used by
 `compass/knowledge/model-capability-matrix.yaml` and
 `compass/.workflow/agent-registry.yaml` so it can run without PyYAML.
+
+Dictionary: references/file-lookup-dictionary.md#prism-and-providers
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -218,6 +222,52 @@ def parse_manual_order(order: str) -> list[tuple[str, str | None]]:
     return items
 
 
+def parse_policy_time(raw: object) -> datetime | None:
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    text = raw.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def load_provider_policy(path: str | None) -> dict:
+    if not path:
+        return {}
+    policy_path = Path(path)
+    if not policy_path.is_file():
+        return {}
+    try:
+        payload = json.loads(policy_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def provider_frozen(policy: dict, agent: str, scope: str) -> bool:
+    now = datetime.now(timezone.utc)
+    for item in policy.get("freeze_windows", []) or []:
+        if not isinstance(item, dict) or item.get("agent") != agent:
+            continue
+        scopes = item.get("scope", [])
+        if isinstance(scopes, list) and scope not in scopes and "all" not in scopes:
+            continue
+        starts_at = parse_policy_time(item.get("starts_at"))
+        until = parse_policy_time(item.get("until"))
+        if starts_at is not None and now < starts_at.astimezone(timezone.utc):
+            continue
+        if until is not None and now >= until.astimezone(timezone.utc):
+            continue
+        return True
+    return False
+
+
 def model_profile_for(model_name: str, models: dict) -> dict:
     default = {
         "family": "unknown",
@@ -238,6 +288,7 @@ def candidate_rows(
     registry: dict,
     manual_order: str | None,
     requires_repo_inspection: bool,
+    provider_policy: dict | None = None,
 ) -> list[dict]:
     models = matrix["models"]
     alias_map = build_model_alias_map(models)
@@ -269,7 +320,10 @@ def candidate_rows(
 
     seen = set()
     rows = []
+    provider_policy = provider_policy or {}
     for position, (agent, raw_model) in enumerate(seeds):
+        if provider_frozen(provider_policy, agent, "stop-review"):
+            continue
         registry_meta = registry.get("agents", {}).get(agent) or registry.get("agents", {}).get(
             next((name for name, mapped in AGENT_NAME_MAP.items() if mapped == agent and name in registry.get("agents", {})), ""),
             {},
@@ -335,15 +389,18 @@ def main() -> int:
     parser.add_argument("--registry", required=True)
     parser.add_argument("--manual-order")
     parser.add_argument("--requires-repo-inspection", action="store_true")
+    parser.add_argument("--provider-policy")
     args = parser.parse_args()
 
     matrix = parse_matrix(Path(args.matrix))
     registry = parse_registry(Path(args.registry))
+    provider_policy = load_provider_policy(args.provider_policy)
     rows = candidate_rows(
         matrix=matrix,
         registry=registry,
         manual_order=args.manual_order,
         requires_repo_inspection=args.requires_repo_inspection,
+        provider_policy=provider_policy,
     )
     for row in rows:
         print(

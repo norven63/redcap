@@ -173,6 +173,8 @@ Agent 数量：
 - `command -v`、registry cache、配置文件存在，只能证明“安装 / 配置可见”，不能证明“当前已登录、未限流、可稳定完成审计”。
 - 因此 Prism coordinator 在 Dispatch 前，必须把“可见性”与“真实健康”分开记录；必要时通过显式轻探测或降级说明诚实记账。
 - `Copilot` / `Codex` 不能被静态压低；`Gemini` / `Kimi` 也不能因历史习惯被静态抬高。
+- 显式资源冻结例外：若 `references/prism-provider-policy.json` 记录了临时冻结窗口，冻结 provider 在窗口内不得被调度；这不是能力降级，而是用户授权 / 配额边界优先于默认排序。
+- Provider 冻结必须由 health probe / reviewer ordering 记录为 `frozen` 或跳过，不能偷偷执行真实 CLI 后再在报告里解释。
 
 **Codex 进程限定规则**：
 - 当当前宿主是 Codex，或 Prism/RedCap 准备调起 `codex` CLI 作为棱镜参与者、reviewer、synthesis audit 时，RedCap 控制面默认最多允许 **2 个 Codex-family 执行进程**同时存在；当前宿主 Agent 计为 1，因此默认只剩 1 个额外 Codex 子进程名额。

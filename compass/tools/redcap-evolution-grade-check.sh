@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Validate the R0 Evolution-grade baseline registry.
+# Dictionary: references/file-lookup-dictionary.md#control-plane-assurance
+# Validate the control-plane assurance registry.
+# Compatibility: the default file is still references/evolution-grade-baseline.json,
+# but the registry now covers all RedCap guarantee surfaces, not only self-evolution.
 
 set -euo pipefail
 

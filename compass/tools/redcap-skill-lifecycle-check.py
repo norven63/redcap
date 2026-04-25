@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""Validate RedCap skill lifecycle and host thin-entry policy.
+
+Dictionary: references/file-lookup-dictionary.md#skill-and-host-distribution
+"""
 from __future__ import annotations
 
 import json
@@ -72,6 +76,39 @@ def main() -> None:
     missing_layers = sorted(required_layers - seen_layers)
     if missing_layers:
         fail("missing required capability layers: " + ", ".join(missing_layers))
+
+    lifecycle_states = policy.get("lifecycle_states")
+    required_states = {
+        "proposed",
+        "designed",
+        "implemented",
+        "installed",
+        "verified",
+        "published",
+        "deprecated",
+        "rolled-back",
+        "retired",
+    }
+    if not isinstance(lifecycle_states, list):
+        fail("lifecycle_states must be a list")
+    missing_states = sorted(required_states - {state for state in lifecycle_states if isinstance(state, str)})
+    if missing_states:
+        fail("missing lifecycle states: " + ", ".join(missing_states))
+
+    required_controls = policy.get("required_controls")
+    required_control_keys = {"create", "version", "install", "invoke", "test", "rollback", "deprecate", "repair"}
+    if not isinstance(required_controls, dict):
+        fail("required_controls must be an object")
+    missing_controls = sorted(required_control_keys - set(required_controls.keys()))
+    if missing_controls:
+        fail("missing required controls: " + ", ".join(missing_controls))
+    for key in required_control_keys:
+        values = required_controls.get(key)
+        if not isinstance(values, list) or not values:
+            fail(f"required_controls.{key} must be a non-empty list")
+        for value in values:
+            if not isinstance(value, str) or len(value.strip()) < 20:
+                fail(f"required_controls.{key} items must be meaningful")
 
     entries = policy.get("host_entries")
     if not isinstance(entries, list) or not entries:

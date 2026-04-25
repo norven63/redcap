@@ -424,15 +424,19 @@
       "id": "prism-cli-health",
       "category": "prism-multi-agent",
       "priority": "P1",
-      "rule": "Before delegating to Prism workers, the coordinator must distinguish install/config cache from real headless health and record degradations honestly.",
+      "rule": "Before delegating to Prism workers, the coordinator must distinguish install/config cache from real headless health, honor provider freeze windows, and record degradations honestly.",
       "source_paths": [
         "loom/dispatcher/agent-adapters.md#1.2",
-        "prism/protocol.md#dispatch"
+        "prism/protocol.md#dispatch",
+        "references/prism-provider-policy.json"
       ],
       "status": "scripted",
-      "automation": "redcap-detect-agents refreshes registry; real headless probes remain on-demand because they may consume quotas or require credentials.",
+      "automation": "redcap-detect-agents refreshes registry without calling frozen providers; redcap-agent-health-probe reports frozen without executing live commands; prism-dispatch-check and redcap-provider-policy block frozen providers in RedCap-owned launch paths.",
       "guarantee_paths": [
         "compass/tools/redcap-detect-agents.sh",
+        "compass/tools/redcap-provider-policy.sh",
+        "compass/tools/redcap-agent-health-probe.sh",
+        "prism/tools/prism-dispatch-check.sh",
         "references/execution-guarantees.json"
       ],
       "revival_required": true,

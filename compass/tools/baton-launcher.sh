@@ -68,6 +68,20 @@ if [[ -z "$OUTPUT_FILE" ]]; then
   exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROVIDER_POLICY="$SCRIPT_DIR/redcap-provider-policy.sh"
+if [[ ! -x "$PROVIDER_POLICY" && "$CLI" == "copilot" ]]; then
+  echo "[baton-launcher] 错误: provider policy gate missing; refusing frozen-sensitive CLI: $CLI" >&2
+  exit 1
+fi
+if [[ -x "$PROVIDER_POLICY" ]]; then
+  PROVIDER_POLICY_OUTPUT=""
+  if ! PROVIDER_POLICY_OUTPUT="$("$PROVIDER_POLICY" assert-not-frozen "$CLI" baton-delegate 2>&1)"; then
+    printf '%s\n' "$PROVIDER_POLICY_OUTPUT" >&2
+    exit 1
+  fi
+fi
+
 # ──────────────────────────────────────────────
 # Prompt 大小检查（ARG_MAX 防护）
 # 超过 200KB 的 prompt 有触发 OS ARG_MAX 的风险

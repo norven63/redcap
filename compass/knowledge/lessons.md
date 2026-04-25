@@ -1125,3 +1125,21 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-25
+
+### L-116: 临时 provider 冻结必须进入所有启动口，不能只写在健康面或排序面
+- **场景**：用户明确要求 2026-05-01 前不要调用 Copilot CLI；若只在 health probe 或 reviewer 排序里记录冻结，`baton-launcher`、agent detect、fallback review 等启动口仍可能误触发真实 CLI
+- **根因**：把“状态展示”和“执行阻断”混为一谈。冻结窗口本质是资源/配额保护策略，必须在所有 RedCap-owned launch path 上 fail-closed，而不是只影响可见状态或推荐排序
+- **经验规则**：① provider freeze 要有机器可读 policy，并被 health、dispatch check、review order、baton launcher、detect-agents 等启动口共同消费 ② 对冻结敏感 provider，policy 缺失或损坏也应 fail-closed，避免把“没读到策略”误判为“允许调用” ③ 测试 fixture 若需要 fake frozen provider，必须显式声明测试豁免，不能污染生产默认路径 ④ 独立 review 抓到 fail-open 边界后，要把风险转成 acceptance，而不是只写报告
+- **来源**：2026-04-25 RedCap 产品形态重定位与 provider policy hardening，EVO-2026-04-25-003 晋升
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-25
+
+### L-117: 关键文件解释应采用“查阅字典 + 文件短反链”，避免把可读性变成新的上下文污染
+- **场景**：用户希望 `control-plane-assurance-registry.json`、`redcap-control-plane-assurance-check.sh` 这类文件有定位解释；如果把长说明塞进每个 JSON/脚本头部，会让新会话导入和按需检索重新膨胀
+- **根因**：可读性治理和 token 治理目标不同但会互相牵制。文件需要有入口抓手，但解释权威面不应分散在大量头注释里，否则会形成新的多源分叉和文档淤积
+- **经验规则**：① 关键文件的人话解释优先集中到 `references/file-lookup-dictionary.md` ② 文件头部只保留一句定位和字典反链，避免复制长说明 ③ README / core contributing 只链接字典，不默认展开大文件 ④ 当字典变长时，应按主题分段和索引化，而不是继续在启动入口注入全文
+- **来源**：2026-04-25 RedCap 产品形态重定位与文件查阅字典治理，EVO-2026-04-25-004 晋升
+- **影响度**：medium
+- **复现次数**：1
+- **最后命中**：2026-04-25

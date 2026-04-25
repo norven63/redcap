@@ -1,6 +1,7 @@
 {
   "version": 1,
   "description": "Single-source lifecycle policy for RedCap-native capabilities, host-exported skills, and portable skill packages.",
+  "dictionary_ref": "references/file-lookup-dictionary.md#skill-and-host-distribution",
   "source_of_truth": {
     "redcap_native_skill": "SKILL.md",
     "core_contract": "compass/CONTRIBUTING.core.md",
@@ -37,6 +38,43 @@
       ]
     }
   ],
+  "lifecycle_states": [
+    "proposed",
+    "designed",
+    "implemented",
+    "installed",
+    "verified",
+    "published",
+    "deprecated",
+    "rolled-back",
+    "retired"
+  ],
+  "required_controls": {
+    "create": [
+      "Declare owner, source paths, host exposure, and expected invocation contract before adding a new skill/capability."
+    ],
+    "version": [
+      "Record compatibility expectations for RedCap-native source and each host-exported entry before claiming distribution readiness."
+    ],
+    "install": [
+      "Prefer symlink or generated host package from this repository; never hand-maintain divergent host copies."
+    ],
+    "invoke": [
+      "Document the host-facing trigger, required environment, allowed read/write scope, and fallback behavior."
+    ],
+    "test": [
+      "Add a deterministic check or acceptance case for every lifecycle rule that can be machine-enforced."
+    ],
+    "rollback": [
+      "Keep a reversible path for generated host entries and portable packages."
+    ],
+    "deprecate": [
+      "Mark replacement, sunset reason, and safe migration route before removing active host-facing surfaces."
+    ],
+    "repair": [
+      "If a skill is stale, broken, or unsafe, route the finding into Evolution candidates and fix the source-of-truth before updating host mirrors."
+    ]
+  },
   "host_entries": [
     {
       "host": "codex",
@@ -99,6 +137,7 @@
     "Host entries are mirrors and startup anchors, not independent copies of the RedCap rule body.",
     "Active identity anchors must not be exported or mutated by generated host packages.",
     "If a host requires a physical skill directory, prefer symlink or generated copy from this repository and record the adapter boundary.",
-    "If a host cannot honor a hook or import instruction, mark that host path degraded rather than duplicating divergent rules."
+    "If a host cannot honor a hook or import instruction, mark that host path degraded rather than duplicating divergent rules.",
+    "A skill lifecycle claim is incomplete unless creation, versioning, installation, invocation, testing, rollback, deprecation, and repair have an owner or an explicit degraded boundary."
   ]
 }

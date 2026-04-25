@@ -21,7 +21,7 @@
 8. **人类可读输出必须说人话**：首次出现内部术语、缩写、阶段名时，要解释对应文件/功能、做了什么、为什么重要；正式任务报告还必须通过 `redcap-human-output-quality-check.sh`，不能只靠章节标题冒充高质量汇报。
 9. **宿主面只能镜像 RedCap 真相**：`cli_console.md`、宿主 workboard、plan mirror 不能反向改写 `.dev-task.md`、runtime state 或 task report。
 10. **运行残留不能擅自删除**：`prism/runs`、`compass/.runtime`、`compass/.workflow` 等 ignored 本地证据目录默认 no-bulk-read；物理清理需用户显式批准。
-11. **Codex 子 Agent 默认克制但不是禁用**：仅在确实能提效提质时开启，且 RedCap / Prism 主动拉起的 Codex-family 执行进程总数默认不超过 2（当前宿主也计入）；外部审查 / reviewer 选择统一按“模型能力画像 + 本地 CLI 稳定性”排序，不得静态压低 Copilot / Codex。
+11. **Codex 子 Agent 默认克制但不是禁用**：仅在确实能提效提质时开启，且 RedCap / Prism 主动拉起的 Codex-family 执行进程总数默认不超过 2（当前宿主也计入）；外部审查 / reviewer 选择统一按“模型能力画像 + 本地 CLI 稳定性”排序，不得静态压低 Copilot / Codex；显式 provider 冻结窗口以 `references/prism-provider-policy.json` 为准，冻结期间不得调用对应 CLI。
 12. **统一 closeout runtime 优先**：Layer B 终态优先走 `./closeout-cap.sh` / `redcap-layerb-closeout-runtime.sh`，由它统一串起 promise ledger、Prism acceptance、on-complete、session-end、receipt 与 rescue audit。
 13. **diagnose 是当前 rescue 强入口**：若 terminal closeout 已开始但 receipt 缺失，`redcap-diagnose.sh` 必须优先尝试 `audit-open --mode diagnose`；能补收据就补收据，不能补就显性保留 blocker。
 14. **飞书不是唯一收尾动作**：飞书通知只是可见信号；真正收尾还要看承诺账本、Prism 验收、receipt、review、validator、task report、lessons、backlog、catalog、diagnose 与 pending closure。
@@ -32,6 +32,7 @@
 19. **Evolution 候选必须收口**：重要经验、用户纠偏、测试失败、人格成长、skill 候选和治理改良必须进入 `compass/evolution/candidates.json`，并在 closeout 前晋升、no-promote 或归档；未处理候选不得生成 receipt。
 20. **skill 生命周期保持单一信源**：RedCap-native capability、host-exported skill、portable skill package 由 `references/skill-lifecycle-policy.json` 约束；宿主入口只做轻量索引，不得复制并分叉权威规则。
 21. **旧资产按生命周期处理**：历史报告、spec、运行残留、知识库和本地 runtime 证据由 `references/legacy-asset-lifecycle.json` 分类；先审计保留/归档/翻译/安全清理策略，再做物理动作。
+22. **文件解释走字典优先**：关键 JSON、registry、script 的人类解释优先进入 `references/file-lookup-dictionary.md`，文件头只放短注解和反链，避免为了可读性重新制造上下文污染。
 
 ## 章节路由
 
@@ -42,9 +43,11 @@
 | docs / knowledge / token 风险 | `CONTRIBUTING.md` §6、§7 的 docs/knowledge 边界、`compass/docs/index.yaml`、`compass/knowledge/index.md` |
 | hook / validator / runtime state | `CONTRIBUTING.md` §4、§7 控制面硬化、`references/hook-standards.md` |
 | Prism / 多 Agent 审查 | `CONTRIBUTING.md` §8、§9、§11、`prism/protocol.md` |
+| provider 调度 / 冻结 | `references/prism-provider-policy.json`、`compass/knowledge/model-capability-matrix.yaml` |
 | 需求确认 / 人工介入边界 | `CONTRIBUTING.md` §10、`references/agent-constraints.md` |
 | 调研结论 | `CONTRIBUTING.md` §14 |
 | 自我进化 / 经验人格沉淀 | `compass/evolution/README.md`、`references/evolution-candidate-schema.json`、`references/evolution-grade-baseline.json` |
+| 文件查阅 / 名词定位 | `references/file-lookup-dictionary.md` |
 | skill 分发 / 多宿主入口 | `references/skill-lifecycle-policy.json` |
 | 旧资产 / 运行残留治理 | `references/legacy-asset-lifecycle.json`、`prism/protocol.md` |
 

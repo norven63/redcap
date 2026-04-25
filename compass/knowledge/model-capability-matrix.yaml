@@ -211,6 +211,7 @@ reviewer_cli_profiles:
 # 设计口径:
 #   - 不再对 Gemini/Kimi 或 Copilot/Codex 施加静态家族偏置。
 #   - 选择逻辑的第一层是“业内模型能力评价”，第二层是“本机此 CLI 的实际稳定性画像”。
+#   - 临时冻结窗口由 references/prism-provider-policy.json 管理；冻结不是能力评价，而是显式资源/配额约束。
 #   - Codex-family ≤2 只是一条并发控制红线，不是排序加分或减分项。
 #
 # 锁定规则:

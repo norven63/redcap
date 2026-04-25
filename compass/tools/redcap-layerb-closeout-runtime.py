@@ -967,7 +967,9 @@ def command_complete(args: argparse.Namespace) -> int:
         emit({"status": "blocked", "reason": detail, "audit_path": str(audit_path), "state": state})
         return 1
 
-    session_end = run_shell(["bash", str(SESSION_END_SCRIPT), host], env=runtime_env)
+    session_end_env = dict(runtime_env)
+    session_end_env["REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY"] = "1"
+    session_end = run_shell(["bash", str(SESSION_END_SCRIPT), host], env=session_end_env)
     current = current_head(identity)
     if session_end.returncode != 0 or pending_state_path(identity).is_file():
         detail = (

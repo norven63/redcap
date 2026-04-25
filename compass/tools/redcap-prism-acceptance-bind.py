@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import re
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,6 +55,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Bind a Prism acceptance run to the current Layer B task.")
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--task-file", default=str(REDCAP_ROOT / ".dev-task.md"))
+    parser.add_argument("--resource-limited", action="store_true", help="Bind an explicit resource-limited Prism result without pretending it is formal quorum.")
+    parser.add_argument("--resource-limited-evidence", help="JSON evidence file copied to artifacts/resource-limited.json when --resource-limited is used.")
     args = parser.parse_args()
 
     task_file = Path(args.task_file).resolve()
@@ -87,6 +90,16 @@ def main() -> int:
         "source_of_truth": ".dev-task.md",
         "created_at": now_iso(),
     }
+    if args.resource_limited:
+        payload["resource_limited"] = True
+        if not args.resource_limited_evidence:
+            raise SystemExit("--resource-limited requires --resource-limited-evidence")
+        evidence_source = Path(args.resource_limited_evidence).resolve()
+        if not evidence_source.is_file():
+            raise SystemExit(f"resource-limited evidence missing: {evidence_source}")
+        evidence_target = binding_path.parent / "resource-limited.json"
+        shutil.copyfile(evidence_source, evidence_target)
+        payload["resource_limited_evidence"] = str(evidence_target)
     binding_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": "ok", "binding_path": str(binding_path), "run_id": args.run_id, "task_id": task_id, "confirmed_hash": confirmed}, ensure_ascii=False, indent=2))
     return 0

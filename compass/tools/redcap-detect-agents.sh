@@ -19,6 +19,7 @@
 # 设计原则:
 #   默认模式（无 --probe）仅读配置文件 + command -v，秒级完成。
 #   --probe 模式会实际调用 CLI（注意 L-11: gemini 可能挂起）。
+#   provider 冻结期内不得调用对应 CLI；冻结 agent 只记录 binary 可见和 frozen 状态。
 
 set -euo pipefail
 
@@ -46,6 +47,8 @@ mkdir -p "$(dirname "$OUTPUT_PATH")"
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 MATRIX_PATH="$(cd "$(dirname "$0")/.." && pwd)/knowledge/model-capability-matrix.yaml"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROVIDER_POLICY="$SCRIPT_DIR/redcap-provider-policy.sh"
 
 # ── 工具函数 ──────────────────────────────────────────
 file_mtime() {
@@ -245,6 +248,46 @@ detect_copilot() {
   copilot:
     available: false
     reason: "CLI not installed"
+EOF
+    return
+  fi
+
+  if [[ ! -x "$PROVIDER_POLICY" ]]; then
+  cat <<EOF
+  copilot:
+    available: true
+    cli_path: "$cli_path"
+    version: "policy-unavailable"
+    actual_model: "claude-opus-4.6"
+    api_provider: "github"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+    switchable_models:
+      - "claude-opus-4.6"
+      - "gpt-5.4"
+      - "claude-sonnet-4.6"
+    known_issues:
+      - "provider policy gate unavailable; skipped copilot version/probe to avoid accidental CLI use"
+EOF
+    return
+  fi
+
+  if "$PROVIDER_POLICY" is-frozen copilot agent-detect >/dev/null 2>&1; then
+  cat <<EOF
+  copilot:
+    available: true
+    cli_path: "$cli_path"
+    version: "frozen"
+    actual_model: "claude-opus-4.6"
+    api_provider: "github"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+    switchable_models:
+      - "claude-opus-4.6"
+      - "gpt-5.4"
+      - "claude-sonnet-4.6"
+    known_issues:
+      - "provider frozen by references/prism-provider-policy.json"
 EOF
     return
   fi

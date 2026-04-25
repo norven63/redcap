@@ -48,6 +48,55 @@
         "prism/protocol.md",
         "references/review-tracks.json"
       ]
+    },
+    {
+      "id": "EVO-2026-04-25-003",
+      "source_kind": "prism-verdict",
+      "problem_source": "A temporary Copilot CLI freeze could be written into routing or health surfaces while launchers still retained direct execution paths.",
+      "solution": "Promote provider freeze to a machine-readable provider policy consumed by health probes, reviewer ordering, stop-review execution, baton launching, agent detection, and Prism dispatch checks.",
+      "final_effect": "Frozen providers are blocked at RedCap-owned launch points, and missing policy data fails closed for Copilot-sensitive paths.",
+      "recurrence_guard": "Acceptance now covers live-health freeze, missing-policy health probing, baton rejection, detect-agents freeze reporting, and Prism roster rejection.",
+      "applicability_boundary": "This governs RedCap-owned launch paths; historical report text and user-run manual shell commands remain outside repository enforcement.",
+      "evidence_paths": [
+        "references/prism-provider-policy.json",
+        "compass/tools/redcap-provider-policy.sh",
+        "compass/tools/redcap-agent-health-probe.py",
+        "compass/tools/redcap-detect-agents.sh",
+        "compass/tools/baton-launcher.sh",
+        "compass/tools/redcap-on-stop-review.sh",
+        "prism/tools/prism-dispatch-check.sh"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons.md"
+      ],
+      "review_paths": [
+        "prism/protocol.md",
+        "references/prism-provider-policy.json"
+      ]
+    },
+    {
+      "id": "EVO-2026-04-25-004",
+      "source_kind": "user-correction",
+      "problem_source": "The user needed a human-readable grasp of key machine files, but adding long explanations to every file would risk recreating context bloat.",
+      "solution": "Create a concise lookup dictionary as the primary explanation surface, then add short dictionary backlinks only where useful.",
+      "final_effect": "Humans and Agents can locate file intent without loading large docs or duplicating long comments across JSON and scripts.",
+      "recurrence_guard": "CONTRIBUTING.core and README now route file-meaning questions to the dictionary instead of expanding large rule files by default.",
+      "applicability_boundary": "The dictionary explains stable control files; volatile run evidence should remain in ignored run-scoped storage and be summarized only when promoted.",
+      "evidence_paths": [
+        "references/file-lookup-dictionary.md",
+        "README.md",
+        "compass/CONTRIBUTING.core.md"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons.md"
+      ],
+      "review_paths": [
+        "references/file-lookup-dictionary.md"
+      ]
     }
   ]
 }
