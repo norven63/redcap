@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 47,
-    "size_bytes": 699965,
-    "lines": 12376,
-    "chars": 452425,
+    "size_bytes": 700407,
+    "lines": 12382,
+    "chars": 452619,
     "rough_token_pressure": {
-      "low": 113106,
-      "high": 226212
+      "low": 113154,
+      "high": 226309
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 28,
-        "size_bytes": 419217,
-        "lines": 5529,
-        "chars": 267955,
+        "size_bytes": 419659,
+        "lines": 5535,
+        "chars": 268149,
         "rough_token_pressure": {
-          "low": 66988,
-          "high": 133977
+          "low": 67037,
+          "high": 134074
         }
       },
       "traces": {
@@ -834,9 +834,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 8095,
-      "lines": 147,
-      "chars": 4697,
+      "size_bytes": 8537,
+      "lines": 153,
+      "chars": 4891,
       "summary": "当前已完成：已把本轮故障修复单独重锚成新任务，避免继续用上一轮 receipt 证明新需求。 / 已新增 `redcap-intent-coverage-check.sh`，要求真实 Layer B 任务写明 `scope_status`、原始意图、已覆盖、未覆盖/延期、用户可见边界和后续路径。",
       "status_basis": "filename_recency_only",
       "summary_points": {

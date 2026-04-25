@@ -99,6 +99,12 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 | scope_status | `.dev-task.md` 覆盖审计段 | 明确本轮是完整实现、只做路线图、部分实现延期，还是不适用 |
 | PM Gate Phase 2.5 | `compass/CONTRIBUTING.md` | 需求锁定后、执行前的范围覆盖检查 |
 
+## 四、人工审核要点
+
+- 本轮修的是“任务范围降级防线”，不是 RedCap 独立 runtime / CLI / 多 repo 物理迁移本身。
+- 人工审核时应重点确认：任务卡是否保留了用户原始意图、`scope_status` 是否诚实、未覆盖边界是否明确写出。
+- 如果后续任务只做路线图或控制面补丁，报告必须显性写出“不能冒充完整实现”，否则 PM Gate 应直接拦截。
+
 ## 五、验证结果
 
 ### 5.1 已通过
@@ -121,6 +127,11 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 | 已独立验收 | 否 | 本轮是小范围控制面补丁，未单独启动 Prism quorum |
 | 已正式完成 | 否 | full acceptance、spec-check 已通过；仍待提交后生成 closeout receipt |
 
+## 六、遗留问题与下一步
+
+- 该硬门能阻断“没有声明覆盖关系”的任务卡，但不能单独替代 Prism Planning Review 对复杂计划做语义审查。
+- RedCap 物理目录迁移、独立 runtime / CLI 化仍未执行；后续要另立迁移任务。
+
 ## 七、经验沉淀
 
 ### 7.3 Evolution Factory 候选处理
@@ -140,8 +151,3 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 | 硬门脚本 | `compass/tools/redcap-intent-coverage-check.sh` |
 | PM Gate 接入 | `compass/tools/redcap-pm-gate-check.sh` |
 | 经验沉淀 | `compass/knowledge/lessons.md` |
-
-## 六、遗留问题与下一步
-
-- 该硬门能阻断“没有声明覆盖关系”的任务卡，但不能单独替代 Prism Planning Review 对复杂计划做语义审查。
-- RedCap 物理目录迁移、独立 runtime / CLI 化仍未执行；后续要另立迁移任务。
