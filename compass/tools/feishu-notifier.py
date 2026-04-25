@@ -33,6 +33,8 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -136,6 +138,7 @@ def normalized_message_text(message: dict[str, Any]) -> str:
 class FeishuConfig:
     notify_enabled: bool
     transport: str
+    webhook: str
     cli_bin: str
     profile: str
     chat_id: str
@@ -169,9 +172,11 @@ def load_config() -> Optional[FeishuConfig]:
         ["transport"],
         "lark_cli_dm",
     )
-    if transport != "lark_cli_dm":
-        eprint(f"[feishu-notifier] 暂不支持 transport={transport}，当前只支持 lark_cli_dm")
+    if transport not in {"lark_cli_dm", "webhook"}:
+        eprint(f"[feishu-notifier] 暂不支持 transport={transport}，当前只支持 lark_cli_dm / webhook")
         return None
+
+    webhook = str(env_or_cfg(raw, ["REDCAP_FEISHU_WEBHOOK", "FEISHU_WEBHOOK"], ["webhook"], ""))
 
     cli_bin = str(
         env_or_cfg(
@@ -204,8 +209,11 @@ def load_config() -> Optional[FeishuConfig]:
         )
     )
 
-    if not profile or not chat_id:
+    if transport == "lark_cli_dm" and (not profile or not chat_id):
         eprint("[feishu-notifier] 缺少 lark_cli_profile / lark_chat_id，跳过飞书链路")
+        return None
+    if transport == "webhook" and not webhook:
+        eprint("[feishu-notifier] 缺少 webhook，跳过飞书链路")
         return None
 
     def as_int(value: Any, default: int) -> int:
@@ -218,6 +226,7 @@ def load_config() -> Optional[FeishuConfig]:
     return FeishuConfig(
         notify_enabled=True,
         transport=transport,
+        webhook=webhook,
         cli_bin=cli_bin,
         profile=profile,
         chat_id=chat_id,
@@ -446,6 +455,9 @@ class FeishuNotifier:
         return None
 
     def _send_text(self, text: str) -> dict[str, Any]:
+        if self.config.transport == "webhook":
+            return self._send_webhook_text(text)
+
         payload = self._run_cli_json(
             "im",
             "+messages-send",
@@ -457,6 +469,33 @@ class FeishuNotifier:
             text,
         )
         return payload.get("data") or {}
+
+    def _send_webhook_text(self, text: str) -> dict[str, Any]:
+        payload = json.dumps(
+            {
+                "msg_type": "text",
+                "content": {"text": text},
+            },
+            ensure_ascii=False,
+        ).encode("utf-8")
+        request = urllib.request.Request(
+            self.config.webhook,
+            data=payload,
+            headers={"Content-Type": "application/json; charset=utf-8"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=10) as response:
+                body = response.read().decode("utf-8", errors="replace")
+        except urllib.error.URLError as exc:
+            raise RuntimeError(f"飞书 webhook 发送失败: {exc}") from exc
+        try:
+            parsed = json.loads(body or "{}")
+        except json.JSONDecodeError:
+            parsed = {"raw": body}
+        if parsed.get("StatusCode", parsed.get("code", 0)) not in (0, "0"):
+            raise RuntimeError(f"飞书 webhook 返回失败: {parsed}")
+        return parsed
 
     def _reply_text(self, message_id: str, text: str) -> None:
         self._run_cli_json(
@@ -673,6 +712,16 @@ class FeishuNotifier:
             print("FEISHU_DEDUPED=1", file=sys.stderr)
             return None
 
+        if window_type == "followup" and self.config.transport == "webhook":
+            outbound = (
+                f"{message}\n\n——\n"
+                "当前使用 webhook 单向通知通道，无法打开飞书回访窗口；如需回复，请回到当前会话继续。"
+            )
+            self._send_text(outbound)
+            self._record_notification(notification_key, project, window_type, message)
+            print("FEISHU_WEBHOOK_FOLLOWUP_DEGRADED=1", file=sys.stderr)
+            return None
+
         if window_type == "followup":
             timeout_seconds = window_timeout or self.config.followup_timeout_seconds
             outbound = (
@@ -818,6 +867,12 @@ class FeishuNotifier:
         return self._mark_pending(item_id, "promoted")
 
     def setup(self) -> None:
+        if self.config.transport == "webhook":
+            print("TRANSPORT=webhook")
+            print("WEBHOOK_CONFIGURED=1")
+            print(f"STATE_DIR={STATE_DIR}")
+            return
+
         self._ensure_cli_available()
         payload = self._run_cli_json(
             "im",
@@ -912,6 +967,20 @@ def main() -> None:
         return
 
     notifier = FeishuNotifier(config)
+
+    if config.transport == "webhook" and args.command not in {"setup", "notify"}:
+        if args.command == "pending-count":
+            print("0")
+        elif args.command == "pending-list":
+            print("")
+        elif args.command in {"pending-dismiss", "pending-promote"}:
+            print("MISSING")
+            sys.exit(1)
+        elif args.command == "close-window":
+            print("OK")
+        else:
+            print("SKIP")
+        return
 
     if args.command == "notify":
         if not args.message:

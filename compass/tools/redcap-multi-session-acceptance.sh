@@ -174,6 +174,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh host-workboard-backlog-anchor
   bash compass/tools/redcap-multi-session-acceptance.sh cli-console-mirror-overwrites
   bash compass/tools/redcap-multi-session-acceptance.sh feishu-duplex-window-queue
+  bash compass/tools/redcap-multi-session-acceptance.sh feishu-webhook-notify
   bash compass/tools/redcap-multi-session-acceptance.sh overlay-skill-handoff-stays-native
   bash compass/tools/redcap-multi-session-acceptance.sh overlay-governance-check
   bash compass/tools/redcap-multi-session-acceptance.sh continuity-manifest-sync
@@ -9866,6 +9867,81 @@ PY
     assert_eq "$pending_count" "1"
 }
 
+run_feishu_webhook_notify_case() {
+    local fixture_root config_path state_dir request_log port_file server_pid port output
+
+    log "case: feishu-webhook-notify"
+
+    fixture_root="$ACCEPT_ROOT/feishu-webhook-notify"
+    config_path="$fixture_root/feishu-config.json"
+    state_dir="$fixture_root/runtime-state"
+    request_log="$fixture_root/request.json"
+    port_file="$fixture_root/port"
+    mkdir -p "$fixture_root" "$state_dir"
+
+    python3 - "$request_log" "$port_file" <<'PYEOF' &
+import json
+import sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+
+request_log = Path(sys.argv[1])
+port_file = Path(sys.argv[2])
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        body = self.rfile.read(length).decode("utf-8")
+        request_log.write_text(body, encoding="utf-8")
+        payload = json.dumps({"StatusCode": 0, "StatusMessage": "success"}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def log_message(self, *_args):
+        return
+
+
+server = HTTPServer(("127.0.0.1", 0), Handler)
+port_file.write_text(str(server.server_port), encoding="utf-8")
+server.handle_request()
+PYEOF
+    server_pid=$!
+    HOST_PROCESS_PROBES+=("$server_pid")
+
+    for _ in {1..50}; do
+        [[ -f "$port_file" ]] && break
+        sleep 0.1
+    done
+    [[ -f "$port_file" ]] || fail "webhook test server did not start"
+    port="$(cat "$port_file")"
+
+    cat >"$config_path" <<EOF
+{
+  "notify_enabled": true,
+  "transport": "webhook",
+  "webhook": "http://127.0.0.1:$port/",
+  "followup_timeout_seconds": 30,
+  "notify_dedup_seconds": 300
+}
+EOF
+
+    output="$(
+        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "任务完成" --project redcap --window-type followup 2>&1
+    )"
+    assert_string_contains "$output" "FEISHU_WEBHOOK_FOLLOWUP_DEGRADED=1"
+    assert_string_contains "$output" "OK"
+    wait "$server_pid" || fail "webhook test server failed"
+    assert_exists "$request_log"
+    assert_string_contains "$(cat "$request_log")" "任务完成"
+    assert_not_exists "$state_dir/active-window.json"
+}
+
 run_overlay_skill_handoff_stays_native_case() {
     log "case: overlay-skill-handoff-stays-native"
 
@@ -10039,6 +10115,7 @@ run_all_cases() {
     run_host_workboard_backlog_anchor_case
     run_cli_console_mirror_overwrites_case
     run_feishu_duplex_window_queue_case
+    run_feishu_webhook_notify_case
     run_overlay_skill_handoff_stays_native_case
     run_overlay_governance_check_case
     run_continuity_manifest_sync_case
@@ -10505,6 +10582,9 @@ case "$COMMAND" in
         ;;
     feishu-duplex-window-queue)
         run_feishu_duplex_window_queue_case
+        ;;
+    feishu-webhook-notify)
+        run_feishu_webhook_notify_case
         ;;
     overlay-skill-handoff-stays-native)
         run_overlay_skill_handoff_stays_native_case

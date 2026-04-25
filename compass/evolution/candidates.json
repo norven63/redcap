@@ -121,6 +121,28 @@
       "review_paths": [
         "compass/tools/redcap-multi-session-acceptance.sh"
       ]
+    },
+    {
+      "id": "EVO-2026-04-26-002",
+      "source_kind": "closeout-failure",
+      "problem_source": "Layer B closeout reached the notification gate, but the configured lark-cli direct-message transport was blocked by a local profile/scope mismatch, so receipt generation could not complete even though validator-chain had passed.",
+      "solution": "Add a webhook notify-only transport to feishu-notifier.py so completion notifications can still be sent when bidirectional lark-cli windows are unavailable.",
+      "final_effect": "RedCap can keep completion notification visible while honestly marking webhook followup as one-way and not pretending ask/resume is available.",
+      "recurrence_guard": "Acceptance now covers webhook followup degradation and verifies that the notification payload is sent without creating a reply window.",
+      "applicability_boundary": "Webhook transport is single-direction only; interactive ask/resume/confirm still require lark_cli_dm with valid scopes.",
+      "evidence_paths": [
+        "compass/tools/feishu-notifier.py",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "compass/docs/task-reports/2026-04-26-original-intent-coverage-gate.md"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons.md"
+      ],
+      "review_paths": [
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ]
     }
   ]
 }

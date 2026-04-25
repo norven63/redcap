@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-26  
 **执行者**：Cap（Codex.app 宿主）  
-**报告版本**：v0.1
+**报告版本**：v0.2
 
 ---
 
@@ -14,6 +14,7 @@
 - 已新增 `redcap-intent-coverage-check.sh`，要求真实 Layer B 任务写明 `scope_status`、原始意图、已覆盖、未覆盖/延期、用户可见边界和后续路径。
 - 已把该检查接入 PM Gate 和 diagnose，并登记到 execution guarantees，避免它只停留在自然语言规则。
 - 已补任务报告模板、文件查阅字典、acceptance fixture、Evolution candidate 和 lessons。
+- 收口时发现飞书 CLI scope 会阻塞通知强门，已补 `webhook` 单向通知通道作为完成通知兜底。
 
 ### 0.2 上一步完成的是
 
@@ -78,7 +79,8 @@
 | `compass/tools/redcap-intent-coverage-check.sh` | 新建 | 校验 scope_status、覆盖/延期/边界/后续路径 |
 | `compass/tools/redcap-pm-gate-check.sh` | 修改 | strict PM Gate 消费原始意图覆盖审计 |
 | `compass/tools/redcap-diagnose.sh` | 修改 | 诊断面新增 intent-coverage 门 |
-| `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 增加覆盖审计正反例 |
+| `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 增加覆盖审计正反例与 webhook 通知回归 |
+| `compass/tools/feishu-notifier.py` | 修改 | 支持 `webhook` notify-only transport；`followup` 在 webhook 下显式降级为单向通知 |
 | `compass/CONTRIBUTING.md` | 修改 | PM Gate 新增 Phase 2.5 |
 | `references/task-report-template.md` | 修改 | 报告必须披露原始意图覆盖审计 |
 | `references/execution-guarantees.json` | 修改 | 登记 P0 control gate |
@@ -91,6 +93,8 @@
 
 PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这意味着后续如果任务卡缺少覆盖审计，不能只靠承诺账本和 receipt 自证完成。
 
+飞书通知链路补了一个本地可用性兜底：`lark_cli_dm` 仍负责双向窗口，但如果本机 CLI 缺 scope，可以把本地配置切到 `webhook`，让完成通知继续发送。该通道不能接收回复，所以会输出 `FEISHU_WEBHOOK_FOLLOWUP_DEGRADED=1`，避免把单向通知冒充成双向回访窗口。
+
 ### 3.2.1 术语对照（按文件/功能解释）
 
 | 术语 | 对应文件/功能 | 人话解释 |
@@ -98,6 +102,7 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 | 原始意图覆盖审计 | `redcap-intent-coverage-check.sh` | 检查任务卡有没有说明“用户原本想要什么”和“本轮到底覆盖到什么程度” |
 | scope_status | `.dev-task.md` 覆盖审计段 | 明确本轮是完整实现、只做路线图、部分实现延期，还是不适用 |
 | PM Gate Phase 2.5 | `compass/CONTRIBUTING.md` | 需求锁定后、执行前的范围覆盖检查 |
+| webhook notify-only transport | `feishu-notifier.py` | 飞书 CLI scope 不可用时的单向完成通知兜底，不能替代 ask/resume 双向窗口 |
 
 ## 四、人工审核要点
 
@@ -112,6 +117,7 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 - `bash compass/tools/redcap-intent-coverage-check.sh .dev-task.md`
 - `bash compass/tools/redcap-pm-gate-check.sh strict codex .dev-task.md`
 - `bash compass/tools/redcap-multi-session-acceptance.sh intent-coverage-check`
+- `bash compass/tools/redcap-multi-session-acceptance.sh feishu-webhook-notify`
 - `bash compass/tools/redcap-execution-guarantee-check.sh`
 - `bash compass/tools/redcap-mechanism-vitality-check.sh`
 - `bash compass/tools/redcap-diagnose.sh .dev-task.md`
@@ -125,12 +131,13 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 | 已实现 | 是 | 硬门、文档、模板、诊断、回归入口已落地 |
 | 已自检 | 是 | targeted acceptance 与 spec/diagnose 已跑 |
 | 已独立验收 | 否 | 本轮是小范围控制面补丁，未单独启动 Prism quorum |
-| 已正式完成 | 否 | full acceptance、spec-check 已通过；仍待提交后生成 closeout receipt |
+| 已正式完成 | 否 | full acceptance、spec-check 已通过；仍待 webhook 通知补丁提交后生成 closeout receipt |
 
 ## 六、遗留问题与下一步
 
 - 该硬门能阻断“没有声明覆盖关系”的任务卡，但不能单独替代 Prism Planning Review 对复杂计划做语义审查。
 - RedCap 物理目录迁移、独立 runtime / CLI 化仍未执行；后续要另立迁移任务。
+- webhook 通知只保证单向可见信号；需要用户在飞书里回复的 `ask/resume/confirm` 仍依赖 `lark_cli_dm` 和对应 scope。
 
 ## 七、经验沉淀
 
@@ -150,4 +157,5 @@ PM Gate strict 模式现在会调用该检查；diagnose 也会显示它。这�
 | 本报告 | `compass/docs/task-reports/2026-04-26-original-intent-coverage-gate.md` |
 | 硬门脚本 | `compass/tools/redcap-intent-coverage-check.sh` |
 | PM Gate 接入 | `compass/tools/redcap-pm-gate-check.sh` |
+| 飞书通知兜底 | `compass/tools/feishu-notifier.py` |
 | 经验沉淀 | `compass/knowledge/lessons.md` |
