@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-25  
 **执行者**：Cap（Codex.app 宿主；Prism 外部 reviewer 不使用 Copilot CLI）  
-**报告版本**：v0.1
+**报告版本**：v0.2
 
 ---
 
@@ -17,6 +17,7 @@
 - 已把 Feishu 完成通知收敛为 closeout runtime 的 `on-complete` 单一人类可见 owner；`session-end` 在 runtime complete 路径下仍做证据核对，但跳过重复成功通知。
 - 已补全 skill lifecycle policy 的生命周期状态与必备控制面，澄清上一轮只完成“唯一信源 / 多宿主 link”底座，不等于完整生命周期。
 - 已把本轮两条高价值经验沉淀为 `EVO-2026-04-25-003/004` 并晋升到 lessons：provider freeze 必须守启动口；文件解释应走字典优先。
+- 已完成 closeout runtime 收口：承诺账本 `12/12`、pending closure 为空、closeout receipt 已生成，Layer B FSM 当前为 `CLOSED`。
 
 ### 0.2 上一步完成的是
 
@@ -24,12 +25,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：执行 closeout runtime 生成 receipt，并确认 Feishu 只发一条最终收口通知。
+- 下一步计划做的是：无当前任务内必需动作。若继续推进“物理目录拆分 / 独立 CLI 化 / 多层系统迁移”，必须另立迁移任务，不能把本轮路线图冒充已完成迁移。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：任务重锚定 → 产品形态/目录边界总纲 → 文件查阅字典 → provider freeze 强门 → skill lifecycle 补全 → Feishu 通知 owner 收敛 → Prism 调度/通信协议升级 → 知识检索路线 → lessons/Evolution 沉淀 → Prism + 回归 + closeout。
-- 当前所在位置：实现补丁已落地并通过多组 targeted acceptance；Prism 已绑定为 resource-limited-pass（Kimi 有效，其它非 Copilot provider 不可用，Copilot frozen），仍处于 closeout receipt 生成前，不能宣称已正式完成。
+- 当前所在位置：本轮治理任务已正式收口；Prism 已绑定为 resource-limited-pass（Kimi 有效，其它非 Copilot provider 不可用，Copilot frozen），closeout receipt 已存在，因此本轮承诺账本完成。但 RedCap 仍处于 skill-root 承载形态，独立 runtime / CLI 化只是已形成路线图，并未完成物理迁移。
 
 ---
 
@@ -67,6 +68,8 @@
 ### 2.4 RedCap 产品形态是迁移路线，不是假装已完成
 
 `references/redcap-system-layers.md` 只宣告目标形态和迁移 tranche，不宣称当前仓库已经完成从 skill-root 到独立 runtime / CLI 的物理迁移。
+
+这也是用户看到“工程区没有明显目录结构重构痕迹”的原因：本轮 R5 的验收口径是“产出可执行的分层边界与迁移路线”，不是立即把仓库物理拆成多 package / 多 repo。若要发生明显目录重构，下一轮应以 `T1 Runtime facade` 或 `T3 Evidence boundary` 作为独立迁移任务推进。
 
 ## 三、落地结果
 
@@ -140,15 +143,17 @@
 
 ### 5.2 待通过
 
-- closeout runtime receipt
+- 无当前任务内待通过项。
 
 ### 5.3 closeout runtime / receipt
 
 | 项 | 当前证据 |
 |---|---|
-| closeout receipt | 无；当前仍处于 closeout 前，不能宣称已正式完成 |
-| pending closure | 待最终 closeout runtime 复核 |
-| Feishu 最终通知 | 待最终 closeout 成功后由 on-complete 发送 |
+| closeout receipt | 已存在；`./closeout-cap.sh status` 显示 `receipt_exists=true` |
+| pending closure | 已清空；`pending_closure_exists=false` |
+| 承诺账本 | 已兑现；`promise_pending=0`、`promise_total=12` |
+| Layer B FSM | `CLOSED`；原因是当前 confirmed hash 已有 closeout receipt |
+| Feishu 最终通知 | 收敛为 closeout runtime / on-complete owner；是否实际送达以外部飞书通道为准 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -157,7 +162,7 @@
 | 已实现 | 是 | 产品形态路线、文件字典、provider freeze、skill lifecycle、Feishu owner、经验沉淀补丁已落地 |
 | 已自检 | 是 | targeted acceptance、full regression、spec-check、diagnose、语法检查均已通过 |
 | 已独立验收 | 部分 | 已绑定 resource-limited Prism；Kimi reviewer PASS，其它非 Copilot provider 不可用，未形成 formal quorum |
-| 已正式完成 | 否 | 已有 resource-limited Prism binding，但还没有 closeout receipt，不能把当前状态混报为完成 |
+| 已正式完成 | 是 | closeout receipt 已生成，承诺账本 pending=0，pending closure 为空；但 formal Prism quorum 仍受 provider 资源限制 |
 
 ## 七、经验沉淀
 
@@ -187,4 +192,5 @@
 
 - 当前只治理 RedCap-owned 启动口；用户手动在 shell 里直接执行 `copilot ...` 不属于仓库可物理拦截范围。
 - RedCap 仍处于 skill-root 承载形态；独立 runtime / CLI 是迁移路线，不是本轮已经完成的物理产品化。
-- Gemini CLI / Claude CLI / Codex CLI 当前本机 headless 不稳定；本轮会使用 Gemini API 补足第二模型族 review，但会如实记录 CLI 不可用事实。
+- Gemini CLI / Claude CLI / Codex CLI 在本轮验收窗口内 headless 不稳定；因此本轮只按 resource-limited Prism 收口。后续若第二个非 Copilot provider 恢复稳定，应另跑 formal quorum 复验，而不是改写本轮证据。
+- 本报告 v0.1 曾经在 closeout 前停留，导致 `.dev-task.md`、current-status 摘要与 receipt 真相不一致；v0.2 已修正为 receipt 后状态，避免人类状态面继续显示“像做了一半”。

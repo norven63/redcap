@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 46,
-    "size_bytes": 690630,
-    "lines": 12223,
-    "chars": 447036,
+    "size_bytes": 691870,
+    "lines": 12229,
+    "chars": 447728,
     "rough_token_pressure": {
-      "low": 111759,
-      "high": 223518
+      "low": 111932,
+      "high": 223864
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 27,
-        "size_bytes": 409882,
-        "lines": 5376,
-        "chars": 262566,
+        "size_bytes": 411122,
+        "lines": 5382,
+        "chars": 263258,
         "rough_token_pressure": {
-          "low": 65641,
-          "high": 131283
+          "low": 65814,
+          "high": 131629
         }
       },
       "traces": {
@@ -821,9 +821,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13026,
-      "lines": 190,
-      "chars": 9020,
+      "size_bytes": 14266,
+      "lines": 196,
+      "chars": 9712,
       "summary": "当前已完成：已把本轮任务重锚定到 `.dev-task.md`，确认北极星是：RedCap 不再只叙述为某个宿主 skill，而是向独立 Agent Runtime / CLI / 多层协作系统演进。 / 已新增 `references/redcap-system-layers.md`，把执行层、Prism 层、知识层、Evolution 层、证据层、人类阅读层、人格层、宿主适配层与检索层拆开，形成后续迁移路线。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -835,11 +835,11 @@
           "上一步完成的是：Kimi 棱镜评审指出 provider policy fail-open 与自定义 registry 耦合风险；随后已补齐 `redcap-provider-policy.sh` 的 Copilot 缺失策略 fail-closed、`redcap-agent-health-probe.py` 的 missing-policy 跳过真实 Copilot、`redcap-detect-agents.sh` 的 policy-unavailable 保护、`redcap-on-stop-review…"
         ],
         "next_step": [
-          "下一步计划做的是：执行 closeout runtime 生成 receipt，并确认 Feishu 只发一条最终收口通知。"
+          "下一步计划做的是：无当前任务内必需动作。若继续推进“物理目录拆分 / 独立 CLI 化 / 多层系统迁移”，必须另立迁移任务，不能把本轮路线图冒充已完成迁移。"
         ],
         "position": [
           "整体计划脉络图是：任务重锚定 → 产品形态/目录边界总纲 → 文件查阅字典 → provider freeze 强门 → skill lifecycle 补全 → Feishu 通知 owner 收敛 → Prism 调度/通信协议升级 → 知识检索路线 → lessons/Evolution 沉淀 → Prism + 回归 + closeout。",
-          "当前所在位置：实现补丁已落地并通过多组 targeted acceptance；Prism 已绑定为 resource-limited-pass（Kimi 有效，其它非 Copilot provider 不可用，Copilot frozen），仍处于 closeout receipt 生成前，不能宣称已正式完成。"
+          "当前所在位置：本轮治理任务已正式收口；Prism 已绑定为 resource-limited-pass（Kimi 有效，其它非 Copilot provider 不可用，Copilot frozen），closeout receipt 已存在，因此本轮承诺账本完成。但 RedCap 仍处于 skill-root 承载形态，独立 runtime / CLI 化只是已形成路线图，并未完成物理迁移。"
         ]
       }
     },
