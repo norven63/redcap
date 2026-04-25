@@ -215,6 +215,27 @@ def agent_registry_summary(repo: Path) -> list[str]:
     ]
     if agents:
         lines.append("agents: " + ", ".join(agents))
+    health_path = repo / "compass/.workflow/agent-health.json"
+    if health_path.is_file():
+        try:
+            health = json.loads(health_path.read_text(encoding="utf-8"))
+        except Exception:
+            health = {}
+        health_agents = []
+        for row in health.get("agents") or []:
+            if not isinstance(row, dict):
+                continue
+            health_agents.append(
+                f"{row.get('agent', 'unknown')}={row.get('live_status', 'unknown')}"
+            )
+        if health_agents:
+            mode = "live" if health.get("live") else "install-only"
+            lines.append(
+                f"agent health cache: detected_at={health.get('detected_at', 'unknown')} mode={mode}"
+            )
+            lines.append("agent health: " + ", ".join(health_agents))
+    else:
+        lines.append("agent health cache: missing；需要区分登录态/限流/headless 健康时运行 redcap-agent-health-probe.sh --live")
     return lines
 
 

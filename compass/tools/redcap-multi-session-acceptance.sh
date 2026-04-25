@@ -11,6 +11,7 @@ redcap_runtime_clear_context
 unset REDCAP_RUNTIME_ALLOW_DISK_RECOVERY REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY REDCAP_RUNTIME_CAPABILITY 2>/dev/null || true
 
 ACCEPT_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/redcap-acceptance.XXXXXX")"
+export REDCAP_ACCEPTANCE_RUNNING=1
 export REDCAP_RUNTIME_BASE_DIR="$ACCEPT_ROOT/runtime"
 export REDCAP_RUNTIME_INDEX_DIR="$ACCEPT_ROOT/runtime-index"
 export REDCAP_RUNTIME_PROJECT_BASE_DIR="$ACCEPT_ROOT/project"
@@ -78,6 +79,8 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-backlog-spec
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-triggers-closeout-runtime
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-promise-ledger-blocks
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-evolution-harvest-blocks
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-evolution-candidates-blocks
   bash compass/tools/redcap-multi-session-acceptance.sh prism-acceptance-binding-required
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-complete-writes-receipt
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-attaches-session-end-binding
@@ -144,6 +147,11 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh execution-guarantees-check
   bash compass/tools/redcap-multi-session-acceptance.sh knowledge-index-check
   bash compass/tools/redcap-multi-session-acceptance.sh acceptance-index-check
+  bash compass/tools/redcap-multi-session-acceptance.sh evolution-candidate-check
+  bash compass/tools/redcap-multi-session-acceptance.sh evolution-harvest-check
+  bash compass/tools/redcap-multi-session-acceptance.sh agent-health-probe
+  bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
+  bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh token-risk-audit
   bash compass/tools/redcap-multi-session-acceptance.sh contributing-ia-check
   bash compass/tools/redcap-multi-session-acceptance.sh review-tracks-check
@@ -2092,6 +2100,128 @@ PY
     assert_exists "$audit_path"
 }
 
+run_layerb_closeout_runtime_evolution_candidates_blocks_case() {
+    local host="codex"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub candidate_stub output status pending_state audit_path
+
+    log "case: layerb-closeout-runtime-evolution-candidates-blocks"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/layerb-evolution-candidates.XXXXXX")"
+    task_file="$case_dir/.dev-task.md"
+    report_path="$case_dir/report.md"
+    report_rel="$report_path"
+    cat >"$report_path" <<EOF
+# report
+
+### 0.1 当前已完成
+- 当前已完成：Evolution candidate gate fixture
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 统一 runtime 已真正收尾"
+
+    on_complete_stub="$case_dir/on-complete.sh"
+    session_end_stub="$case_dir/session-end.sh"
+    candidate_stub="$case_dir/evolution-candidate-check.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat >"$candidate_stub" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' '[redcap-evolution-candidate-check] unresolved evolution candidates: EVO-FIXTURE'
+exit 1
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub" "$candidate_stub"
+
+    set +e
+    output="$(REDCAP_EVOLUTION_CANDIDATE_SCRIPT="$candidate_stub" REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "evolution candidate blocked case unexpectedly succeeded"
+    assert_string_contains "$output" "evolution candidates unresolved"
+
+    pending_state="$(redcap_interop_pending_closure_file "$case_dir" "$task_file")"
+    assert_exists "$pending_state"
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)" "evolution-candidates,closeout-runtime"
+    audit_path="$(python3 - <<'PY' "$output"
+import json
+import sys
+payload = json.loads(sys.argv[1])
+print(payload["audit_path"])
+PY
+)"
+    assert_exists "$audit_path"
+    if [[ -e "$case_dir/on-complete.log" || -e "$case_dir/session-end.log" ]]; then
+        fail "evolution candidate gate should block before on-complete/session-end"
+    fi
+}
+
+run_layerb_closeout_runtime_evolution_harvest_blocks_case() {
+    local host="codex"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub harvest_stub output status pending_state audit_path
+
+    log "case: layerb-closeout-runtime-evolution-harvest-blocks"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/layerb-evolution-harvest.XXXXXX")"
+    task_file="$case_dir/.dev-task.md"
+    report_path="$case_dir/report.md"
+    report_rel="$report_path"
+    cat >"$report_path" <<EOF
+# report
+
+### 0.1 当前已完成
+- 当前已完成：Evolution harvest gate fixture
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 统一 runtime 已真正收尾"
+
+    on_complete_stub="$case_dir/on-complete.sh"
+    session_end_stub="$case_dir/session-end.sh"
+    harvest_stub="$case_dir/evolution-harvest-check.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat >"$harvest_stub" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' '[redcap-evolution-harvest-check] missing section: 7.3 Evolution Factory 候选处理'
+exit 1
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub" "$harvest_stub"
+
+    set +e
+    output="$(REDCAP_EVOLUTION_HARVEST_SCRIPT="$harvest_stub" REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "evolution harvest blocked case unexpectedly succeeded"
+    assert_string_contains "$output" "evolution harvest unresolved"
+
+    pending_state="$(redcap_interop_pending_closure_file "$case_dir" "$task_file")"
+    assert_exists "$pending_state"
+    assert_eq "$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)" "evolution-harvest,closeout-runtime"
+    audit_path="$(python3 - <<'PY' "$output"
+import json
+import sys
+payload = json.loads(sys.argv[1])
+print(payload["audit_path"])
+PY
+)"
+    assert_exists "$audit_path"
+    if [[ -e "$case_dir/on-complete.log" || -e "$case_dir/session-end.log" ]]; then
+        fail "evolution harvest gate should block before on-complete/session-end"
+    fi
+}
+
 run_prism_acceptance_binding_required_case() {
     local case_dir task_file report_path report_rel run_id output status
     local parsed_a parsed_b registry
@@ -2688,7 +2818,7 @@ EOF
 run_task_complete_guard_passes_host_to_on_complete_case() {
     local host="copilot"
     local binding_key pid current_head report_path report_rel marker_path
-    local task_complete_slice case_dir register_log complete_log register_stub complete_stub register_count
+    local task_complete_slice case_dir register_log complete_log register_stub closeout_stub register_count
 
     log "case: task-complete-guard-passes-host-to-on-complete"
 
@@ -2723,7 +2853,7 @@ run_task_complete_guard_passes_host_to_on_complete_case() {
     register_log="$case_dir/register.log"
     complete_log="$case_dir/on-complete-host.log"
     register_stub="$case_dir/register-stub.sh"
-    complete_stub="$case_dir/on-complete-stub.sh"
+    closeout_stub="$case_dir/closeout-runtime-stub.sh"
 
     cat >"$register_stub" <<EOF
 #!/usr/bin/env bash
@@ -2735,17 +2865,24 @@ redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNT
 printf '%s\n' "\$REPORT" >>"$register_log"
 redcap_interop_write_current_report_marker "\${REPORT#$REDCAP_ROOT/}" "$REDCAP_ROOT/.dev-task.md" >/dev/null
 EOF
-    cat >"$complete_stub" <<EOF
+    cat >"$closeout_stub" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-printf '%s\n' "\${REDCAP_ON_COMPLETE_HOST:-missing}" >>"$complete_log"
+host_arg=""
+while [[ \$# -gt 0 ]]; do
+    case "\$1" in
+        --host) host_arg="\${2:-}"; shift 2 ;;
+        *) shift ;;
+    esac
+done
+printf 'env=%s arg=%s\n' "\${REDCAP_ON_COMPLETE_HOST:-missing}" "\$host_arg" >>"$complete_log"
 EOF
-    chmod +x "$register_stub" "$complete_stub"
+    chmod +x "$register_stub" "$closeout_stub"
 
     REDCAP_ON_COMPLETE_HOST="claude" \
     REDCAP_TASK_COMPLETE_SLICE="$task_complete_slice" \
     REDCAP_TASK_REPORT_REGISTER_SCRIPT="$register_stub" \
-    REDCAP_ON_COMPLETE_SCRIPT="$complete_stub" \
+    REDCAP_LAYERB_CLOSEOUT_RUNTIME_SCRIPT="$closeout_stub" \
     REDCAP_HOST_PROCESS_PID="$pid" \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-task-complete-guard.sh" "$host" >/dev/null \
         || fail "task complete guard host passthrough case failed"
@@ -2753,7 +2890,7 @@ EOF
     marker_path="$(redcap_runtime_path "layerB/current-report-path")"
     assert_exists "$marker_path"
     assert_eq "$(read_file_text "$marker_path")" "$report_rel"
-    assert_eq "$(read_file_text "$complete_log")" "$host"
+    assert_eq "$(read_file_text "$complete_log")" "env=$host arg=$host"
     register_count="0"
     [[ -f "$register_log" ]] && register_count="$(wc -l < "$register_log" | tr -d '[:space:]')"
     assert_num_eq "$register_count" 0
@@ -8060,6 +8197,68 @@ run_tracking_health_overview_case() {
     assert_string_contains "$output" "TRACKING_OK"
 }
 
+run_tracking_health_rejects_stale_completed_breakpoint_case() {
+    local fixture output status
+
+    log "case: tracking-health-rejects-stale-completed-breakpoint"
+
+    fixture="$ACCEPT_ROOT/tracking-health-stale-breakpoint"
+    mkdir -p "$fixture/compass/knowledge" "$fixture/compass/docs/task-reports"
+    cat >"$fixture/compass/knowledge/explore-notes.md" <<'EOF'
+# Explore Notes
+
+### [2026-04-25] archived note
+[ARCHIVED]
+EOF
+    cat >"$fixture/.dev-task.md" <<'EOF'
+# 当前任务：completed with stale breakpoint
+
+## 控制面元数据（机器校验）
+task_id: stale-breakpoint
+active_slice: completed
+task_report: compass/docs/task-reports/stale-breakpoint.md
+
+## 原始输入（用户原文，禁止改写）
+完成测试任务。
+
+## 断点备注
+- 当前阻塞：正在复验 closeout。
+- 下一步：跑 binding 回归、spec/diagnose，再执行正式 closeout，生成 receipt。
+EOF
+    cat >"$fixture/compass/docs/task-reports/stale-breakpoint.md" <<'EOF'
+# 任务完成报告：stale breakpoint
+
+## 五、验证结果
+
+### 5.4 完成等级（禁止混报）
+
+| 等级 | 结果 |
+|---|---|
+| 已正式完成 | 是；closeout runtime 返回 completed |
+EOF
+
+    set +e
+    output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-tracking-health.py" "$fixture" "$fixture/.dev-task.md" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "stale completed breakpoint fixture unexpectedly passed"
+    assert_string_contains "$output" "completed task has stale breakpoint"
+
+    python3 - "$fixture/.dev-task.md" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+text = text.replace("当前阻塞：正在复验 closeout。", "当前阻塞：无，任务已完成。")
+text = text.replace("下一步：跑 binding 回归、spec/diagnose，再执行正式 closeout，生成 receipt。", "下一步：无当前收尾动作。")
+path.write_text(text, encoding="utf-8")
+PY
+
+    output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-tracking-health.py" "$fixture" "$fixture/.dev-task.md")"
+    assert_string_contains "$output" "TRACKING_OK"
+}
+
 run_human_output_quality_check_case() {
     local output fixture_report stale_output stale_status
 
@@ -8246,6 +8445,11 @@ run_diagnose_overview_case() {
     assert_string_contains "$output" "[ok] token-risk-audit"
     assert_string_contains "$output" "[ok] tracking-health"
     assert_string_contains "$output" "[ok] human-output-quality"
+    assert_string_contains "$output" "[ok] evolution-grade-baseline"
+    assert_string_contains "$output" "[ok] evolution-candidates"
+    assert_string_contains "$output" "[ok] evolution-harvest"
+    assert_string_contains "$output" "[ok] skill-lifecycle"
+    assert_string_contains "$output" "[ok] legacy-asset-lifecycle"
     assert_string_contains "$output" "[ok] layerb-lifecycle-contract"
     assert_string_contains "$output" "[ok] layerb-closeout-runtime"
     assert_string_contains "$output" "[ok] contributing-ia"
@@ -8268,6 +8472,223 @@ run_acceptance_index_check_case() {
     find_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-acceptance-index.sh" find docs-catalog)"
     assert_string_contains "$find_output" "ACCEPTANCE_INDEX_FIND"
     assert_string_contains "$find_output" "docs-catalog-check"
+}
+
+run_evolution_candidate_check_case() {
+    local output fixture stale_output stale_status
+
+    log "case: evolution-candidate-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-candidate-check.sh")"
+    assert_string_contains "$output" "EVOLUTION_CANDIDATES_OK"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-candidate-check.sh" --strict)"
+    assert_string_contains "$output" "EVOLUTION_CANDIDATES_OK"
+
+    fixture="$ACCEPT_ROOT/evolution-candidate-bad.json"
+    cp "$REDCAP_ROOT/compass/evolution/candidates.json" "$fixture"
+    python3 - "$fixture" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["candidates"][0].pop("final_effect", None)
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-candidate-check.sh" "$fixture" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad evolution candidate fixture unexpectedly passed"
+    assert_string_contains "$stale_output" "missing required field: final_effect"
+
+    fixture="$ACCEPT_ROOT/evolution-candidate-unresolved.json"
+    cp "$REDCAP_ROOT/compass/evolution/candidates.json" "$fixture"
+    python3 - "$fixture" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["candidates"][0]["status"] = "candidate"
+payload["candidates"][0].pop("promotion_paths", None)
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-candidate-check.sh" --strict "$fixture" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "strict evolution candidate check unexpectedly passed with unresolved candidates"
+    assert_string_contains "$stale_output" "unresolved evolution candidates"
+
+    fixture="$ACCEPT_ROOT/evolution-candidate-home-path.json"
+    cp "$REDCAP_ROOT/compass/evolution/candidates.json" "$fixture"
+    python3 - "$fixture" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["candidates"][0]["evidence_paths"] = ["~/redcap-evolution-candidate-missing-evidence-acceptance"]
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-candidate-check.sh" "$fixture" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "evolution candidate check unexpectedly accepted missing ~/ evidence path"
+    assert_string_contains "$stale_output" "evidence path does not exist"
+}
+
+run_evolution_harvest_check_case() {
+    local fixture report task_file output stale_output stale_status
+
+    log "case: evolution-harvest-check"
+
+    fixture="$ACCEPT_ROOT/evolution-harvest"
+    mkdir -p "$fixture/compass/docs/task-reports"
+    report="$fixture/compass/docs/task-reports/report.md"
+    task_file="$fixture/.dev-task.md"
+    cat >"$report" <<'EOF'
+# report
+
+## 七、经验沉淀
+
+### 7.3 Evolution Factory 候选处理
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|------|------|----------|------|
+| 无新增候选 | acceptance fixture | 无新增候选 | `.dev-task.md` |
+EOF
+    cat >"$task_file" <<EOF
+# 当前任务：evolution harvest fixture
+
+## 控制面元数据（机器校验）
+task_id: evolution-harvest-fixture
+source_of_truth: .dev-task.md
+top_goal: verify evolution harvest
+active_slice: acceptance
+governance_tranche: true
+task_report: ${report#$fixture/}
+
+## 已确认需求（执行依据）
+验证 Evolution harvest gate。
+EOF
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file")"
+    assert_string_contains "$output" "EVOLUTION_HARVEST_OK"
+
+    python3 - "$report" <<'PY'
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text(encoding="utf-8").replace("### 7.3 Evolution Factory 候选处理", "### 7.3 Missing")
+path.write_text(text, encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad evolution harvest fixture unexpectedly passed"
+    assert_string_contains "$stale_output" "missing section: 7.3 Evolution Factory 候选处理"
+
+    cat >"$report" <<'EOF'
+# report
+
+## 七、经验沉淀
+
+### 7.3 Evolution Factory 候选处理
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|------|------|----------|------|
+| EVO-2099-01-01-001 | acceptance fixture | promoted | `.dev-task.md` |
+EOF
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "evolution harvest check unexpectedly accepted unknown candidate id"
+    assert_string_contains "$stale_output" "unknown candidate ids"
+}
+
+run_agent_health_probe_case() {
+    local output fixture_bin
+
+    log "case: agent-health-probe"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout)"
+    assert_string_contains "$output" '"version": 1'
+    assert_string_contains "$output" '"live": false'
+    assert_string_contains "$output" '"live_status": "skipped"'
+
+    fixture_bin="$ACCEPT_ROOT/agent-health-bin"
+    mkdir -p "$fixture_bin"
+    cat >"$fixture_bin/kimi" <<'EOF'
+#!/usr/bin/env bash
+echo ok
+EOF
+    chmod +x "$fixture_bin/kimi"
+    output="$(PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --agent kimi --timeout 5)"
+    assert_string_contains "$output" '"agent": "kimi"'
+    assert_string_contains "$output" '"live_status": "pass"'
+}
+
+run_skill_lifecycle_check_case() {
+    local output fixture stale_output stale_status
+
+    log "case: skill-lifecycle-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-skill-lifecycle-check.sh")"
+    assert_string_contains "$output" "SKILL_LIFECYCLE_OK"
+
+    fixture="$ACCEPT_ROOT/skill-lifecycle-bad.json"
+    cp "$REDCAP_ROOT/references/skill-lifecycle-policy.json" "$fixture"
+    python3 - "$fixture" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["host_entries"][0]["mode"] = "forked-copy"
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-skill-lifecycle-check.sh" "$fixture" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad skill lifecycle fixture unexpectedly passed"
+    assert_string_contains "$stale_output" "mode must remain thin-index"
+}
+
+run_legacy_asset_lifecycle_check_case() {
+    local output fixture stale_output stale_status
+
+    log "case: legacy-asset-lifecycle-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-lifecycle-check.sh")"
+    assert_string_contains "$output" "LEGACY_ASSET_LIFECYCLE_OK"
+
+    fixture="$ACCEPT_ROOT/legacy-asset-lifecycle-bad.json"
+    cp "$REDCAP_ROOT/references/legacy-asset-lifecycle.json" "$fixture"
+    python3 - "$fixture" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["assets"] = [asset for asset in payload["assets"] if asset["id"] != "prism-runs"]
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-lifecycle-check.sh" "$fixture" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "bad legacy asset lifecycle fixture unexpectedly passed"
+    assert_string_contains "$stale_output" "missing required asset policies: prism-runs"
 }
 
 run_token_risk_audit_case() {
@@ -9225,6 +9646,8 @@ run_all_cases() {
     run_sessionstart_auto_reconcile_hash_mismatch_case
     run_sessionstart_auto_reconcile_backlog_spec_case
     run_task_complete_guard_triggers_closeout_runtime_case
+    run_layerb_closeout_runtime_evolution_harvest_blocks_case
+    run_layerb_closeout_runtime_evolution_candidates_blocks_case
     run_task_complete_guard_passes_host_to_on_complete_case
     run_task_complete_guard_avoids_ambiguous_reports_case
     run_task_complete_guard_skips_stale_pending_artifact_case
@@ -9296,11 +9719,17 @@ run_all_cases() {
     run_backlog_check_strict_case
     run_current_status_overview_case
     run_tracking_health_overview_case
+    run_tracking_health_rejects_stale_completed_breakpoint_case
     run_human_output_quality_check_case
     run_install_overview_case
     run_execution_guarantees_check_case
     run_knowledge_index_check_case
     run_acceptance_index_check_case
+    run_evolution_candidate_check_case
+    run_evolution_harvest_check_case
+    run_agent_health_probe_case
+    run_skill_lifecycle_check_case
+    run_legacy_asset_lifecycle_check_case
     run_token_risk_audit_case
     run_contributing_ia_check_case
     run_review_tracks_check_case
@@ -9421,6 +9850,12 @@ case "$COMMAND" in
         ;;
     layerb-closeout-runtime-promise-ledger-blocks)
         run_layerb_closeout_runtime_promise_ledger_blocks_case
+        ;;
+    layerb-closeout-runtime-evolution-harvest-blocks)
+        run_layerb_closeout_runtime_evolution_harvest_blocks_case
+        ;;
+    layerb-closeout-runtime-evolution-candidates-blocks)
+        run_layerb_closeout_runtime_evolution_candidates_blocks_case
         ;;
     layerb-closeout-runtime-prism-acceptance-blocks)
         run_layerb_closeout_runtime_prism_acceptance_blocks_case
@@ -9683,6 +10118,9 @@ case "$COMMAND" in
     tracking-health-overview)
         run_tracking_health_overview_case
         ;;
+    tracking-health-rejects-stale-completed-breakpoint)
+        run_tracking_health_rejects_stale_completed_breakpoint_case
+        ;;
     human-output-quality-check)
         run_human_output_quality_check_case
         ;;
@@ -9697,6 +10135,21 @@ case "$COMMAND" in
         ;;
     acceptance-index-check)
         run_acceptance_index_check_case
+        ;;
+    evolution-candidate-check)
+        run_evolution_candidate_check_case
+        ;;
+    evolution-harvest-check)
+        run_evolution_harvest_check_case
+        ;;
+    agent-health-probe)
+        run_agent_health_probe_case
+        ;;
+    skill-lifecycle-check)
+        run_skill_lifecycle_check_case
+        ;;
+    legacy-asset-lifecycle-check)
+        run_legacy_asset_lifecycle_check_case
         ;;
     token-risk-audit)
         run_token_risk_audit_case

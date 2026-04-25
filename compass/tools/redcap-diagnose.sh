@@ -102,6 +102,11 @@ run_check "layerb-closeout-runtime" bash "$SCRIPT_DIR/redcap-layerb-closeout-run
 run_check "token-risk-audit" bash "$SCRIPT_DIR/redcap-token-risk-audit.sh" || overall=1
 run_check "tracking-health" bash "$SCRIPT_DIR/redcap-tracking-health.sh" "$TASK_FILE" || overall=1
 run_check "mechanism-vitality" bash "$SCRIPT_DIR/redcap-mechanism-vitality-check.sh" || overall=1
+run_check "evolution-grade-baseline" bash "$SCRIPT_DIR/redcap-evolution-grade-check.sh" || overall=1
+run_check "evolution-candidates" bash "$SCRIPT_DIR/redcap-evolution-candidate-check.sh" || overall=1
+run_check "evolution-harvest" bash "$SCRIPT_DIR/redcap-evolution-harvest-check.sh" "$TASK_FILE" || overall=1
+run_check "skill-lifecycle" bash "$SCRIPT_DIR/redcap-skill-lifecycle-check.sh" || overall=1
+run_check "legacy-asset-lifecycle" bash "$SCRIPT_DIR/redcap-legacy-asset-lifecycle-check.sh" || overall=1
 run_check "human-output-quality" bash "$SCRIPT_DIR/redcap-human-output-quality-check.sh" --task-file "$TASK_FILE" || overall=1
 run_check "contributing-ia" bash "$SCRIPT_DIR/redcap-contributing-ia-check.sh" || overall=1
 run_check "review-tracks" bash "$SCRIPT_DIR/redcap-review-tracks-check.sh" || overall=1

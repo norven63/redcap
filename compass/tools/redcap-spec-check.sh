@@ -383,3 +383,35 @@ if [[ -x "$MECHANISM_VITALITY_CHECK" ]]; then
         exit 1
     fi
 fi
+
+EVOLUTION_GRADE_CHECK="$REDCAP_ROOT/compass/tools/redcap-evolution-grade-check.sh"
+if [[ -x "$EVOLUTION_GRADE_CHECK" ]]; then
+    if ! bash "$EVOLUTION_GRADE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] evolution grade baseline check failed" >&2
+        exit 1
+    fi
+fi
+
+EVOLUTION_CANDIDATE_CHECK="$REDCAP_ROOT/compass/tools/redcap-evolution-candidate-check.sh"
+if [[ -x "$EVOLUTION_CANDIDATE_CHECK" ]]; then
+    if ! bash "$EVOLUTION_CANDIDATE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] evolution candidate check failed" >&2
+        exit 1
+    fi
+fi
+
+SKILL_LIFECYCLE_CHECK="$REDCAP_ROOT/compass/tools/redcap-skill-lifecycle-check.sh"
+if [[ -x "$SKILL_LIFECYCLE_CHECK" ]]; then
+    if ! bash "$SKILL_LIFECYCLE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] skill lifecycle check failed" >&2
+        exit 1
+    fi
+fi
+
+LEGACY_ASSET_LIFECYCLE_CHECK="$REDCAP_ROOT/compass/tools/redcap-legacy-asset-lifecycle-check.sh"
+if [[ -x "$LEGACY_ASSET_LIFECYCLE_CHECK" ]]; then
+    if ! bash "$LEGACY_ASSET_LIFECYCLE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] legacy asset lifecycle check failed" >&2
+        exit 1
+    fi
+fi

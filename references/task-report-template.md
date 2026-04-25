@@ -179,6 +179,12 @@
 
 {本次执行中发现的流程改进点，可提议修改 CONTRIBUTING.md 或 SKILL.md}
 
+### 7.3 Evolution Factory 候选处理
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|------|------|----------|------|
+| EVO-{YYYY-MM-DD-NNN} / 无新增候选 | {用户纠偏 / 测试失败 / Prism verdict / receipt blocker / skill 候选 / 人格成长} | {promoted / no-promote / archived / 无新增候选} | `{path}` |
+
 ---
 
 ## 八、附录

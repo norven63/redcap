@@ -20,6 +20,12 @@ BRIDGE_SCRIPT = Path(os.environ.get("REDCAP_LAYERB_CLOSEOUT_RUNTIME_BRIDGE", str
 ON_COMPLETE_SCRIPT = Path(os.environ.get("REDCAP_ON_COMPLETE_SCRIPT", str(SCRIPT_DIR / "redcap-on-complete.sh")))
 SESSION_END_SCRIPT = Path(os.environ.get("REDCAP_LAYERB_SESSION_END_SCRIPT", str(SCRIPT_DIR / "redcap-layerB-session-end.sh")))
 PRISM_ACCEPTANCE_SCRIPT = Path(os.environ.get("REDCAP_PRISM_ACCEPTANCE_SCRIPT", str(SCRIPT_DIR / "redcap-prism-acceptance-check.sh")))
+EVOLUTION_CANDIDATE_SCRIPT = Path(
+    os.environ.get("REDCAP_EVOLUTION_CANDIDATE_SCRIPT", str(SCRIPT_DIR / "redcap-evolution-candidate-check.sh"))
+)
+EVOLUTION_HARVEST_SCRIPT = Path(
+    os.environ.get("REDCAP_EVOLUTION_HARVEST_SCRIPT", str(SCRIPT_DIR / "redcap-evolution-harvest-check.sh"))
+)
 
 RUNTIME_PROJECT_BASE = Path(os.environ.get("REDCAP_RUNTIME_PROJECT_BASE_DIR", "/tmp/redcap/project"))
 
@@ -460,6 +466,34 @@ def prism_acceptance(identity: TaskIdentity) -> dict[str, Any]:
     return payload
 
 
+def evolution_candidates_strict(identity: TaskIdentity) -> dict[str, Any]:
+    if not EVOLUTION_CANDIDATE_SCRIPT.is_file():
+        return {"status": "fail", "detail": f"missing script: {EVOLUTION_CANDIDATE_SCRIPT}", "exit_code": 127}
+    completed = run_shell(["bash", str(EVOLUTION_CANDIDATE_SCRIPT), "--strict"])
+    detail = completed.stdout.strip() or completed.stderr.strip()
+    return {
+        "status": "pass" if completed.returncode == 0 else "fail",
+        "detail": detail or ("strict evolution candidates passed" if completed.returncode == 0 else "strict evolution candidates failed"),
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "exit_code": completed.returncode,
+    }
+
+
+def evolution_harvest(identity: TaskIdentity) -> dict[str, Any]:
+    if not EVOLUTION_HARVEST_SCRIPT.is_file():
+        return {"status": "fail", "detail": f"missing script: {EVOLUTION_HARVEST_SCRIPT}", "exit_code": 127}
+    completed = run_shell(["bash", str(EVOLUTION_HARVEST_SCRIPT), str(identity.task_file)])
+    detail = completed.stdout.strip() or completed.stderr.strip()
+    return {
+        "status": "pass" if completed.returncode == 0 else "fail",
+        "detail": detail or ("evolution harvest passed" if completed.returncode == 0 else "evolution harvest failed"),
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "exit_code": completed.returncode,
+    }
+
+
 def bridge_write_pending(
     identity: TaskIdentity,
     *,
@@ -522,9 +556,18 @@ def bridge_append_ledger(
     )
 
 
-def can_repair_receipt(identity: TaskIdentity, promise_info: dict[str, Any]) -> tuple[bool, str]:
+def can_repair_receipt(
+    identity: TaskIdentity,
+    promise_info: dict[str, Any],
+    harvest: dict[str, Any],
+    evolution_candidates: dict[str, Any],
+) -> tuple[bool, str]:
     if promise_info.get("pending", 0) > 0:
         return False, "promise-ledger pending"
+    if harvest.get("status") == "fail":
+        return False, f"evolution harvest unresolved: {harvest.get('detail', 'unknown reason')}"
+    if evolution_candidates.get("status") == "fail":
+        return False, f"evolution candidates unresolved: {evolution_candidates.get('detail', 'unknown reason')}"
     pending_state = pending_state_path(identity)
     if pending_state.is_file():
         return False, "pending-closure still exists"
@@ -652,6 +695,8 @@ def command_status(args: argparse.Namespace) -> int:
     identity = load_identity(resolve_task_file(args.task_file))
     promise_info = sync_promises(identity)
     acceptance = prism_acceptance(identity)
+    harvest = evolution_harvest(identity)
+    evolution_candidates = evolution_candidates_strict(identity)
     receipt_path = closeout_receipt_path(identity)
     state = load_state(identity)
     payload = {
@@ -664,6 +709,8 @@ def command_status(args: argparse.Namespace) -> int:
         "receipt_exists": receipt_path.is_file(),
         "state": state,
         "acceptance": acceptance,
+        "evolution_harvest": harvest,
+        "evolution_candidates": evolution_candidates,
     }
     emit(payload)
     return 0
@@ -672,6 +719,8 @@ def command_status(args: argparse.Namespace) -> int:
 def command_complete(args: argparse.Namespace) -> int:
     identity = load_identity(resolve_task_file(args.task_file))
     promise_info = sync_promises(identity)
+    harvest = evolution_harvest(identity)
+    evolution_candidates = evolution_candidates_strict(identity)
     acceptance = prism_acceptance(identity)
     host = args.host
     baseline_head = args.baseline_head or initial_head(identity) or current_head(identity)
@@ -721,6 +770,92 @@ def command_complete(args: argparse.Namespace) -> int:
         )
         state = update_state(identity, status="blocked", last_result="promise-ledger-pending", audit_path=str(audit_path))
         emit({"status": "blocked", "reason": detail, "audit_path": str(audit_path), "state": state})
+        return 1
+
+    if harvest.get("status") == "fail":
+        detail = f"evolution harvest unresolved: {harvest.get('detail', 'unknown reason')}"
+        bridge_write_pending(
+            identity,
+            host=host,
+            trigger="layerb-closeout-runtime-evolution-harvest",
+            required_redlines="evolution-harvest,closeout-runtime",
+            detail=detail,
+            artifact_path=report_rel,
+            baseline_head=baseline_head,
+            audited_head=current,
+        )
+        bridge_append_ledger(
+            identity,
+            phase="closeout-runtime",
+            status="blocked",
+            detail=detail,
+            host=host,
+            trigger="complete",
+            baseline_head=baseline_head,
+            current_head=current,
+            artifact_path=report_rel,
+        )
+        audit_path = append_audit(
+            identity,
+            "evolution-harvest-blocked",
+            {
+                "detail": detail,
+                "evolution_harvest": harvest,
+            },
+        )
+        state = update_state(identity, status="blocked", last_result="evolution-harvest-unresolved", audit_path=str(audit_path))
+        emit(
+            {
+                "status": "blocked",
+                "reason": detail,
+                "audit_path": str(audit_path),
+                "state": state,
+                "evolution_harvest": harvest,
+            }
+        )
+        return 1
+
+    if evolution_candidates.get("status") == "fail":
+        detail = f"evolution candidates unresolved: {evolution_candidates.get('detail', 'unknown reason')}"
+        bridge_write_pending(
+            identity,
+            host=host,
+            trigger="layerb-closeout-runtime-evolution-candidates",
+            required_redlines="evolution-candidates,closeout-runtime",
+            detail=detail,
+            artifact_path=report_rel,
+            baseline_head=baseline_head,
+            audited_head=current,
+        )
+        bridge_append_ledger(
+            identity,
+            phase="closeout-runtime",
+            status="blocked",
+            detail=detail,
+            host=host,
+            trigger="complete",
+            baseline_head=baseline_head,
+            current_head=current,
+            artifact_path=report_rel,
+        )
+        audit_path = append_audit(
+            identity,
+            "evolution-candidates-blocked",
+            {
+                "detail": detail,
+                "evolution_candidates": evolution_candidates,
+            },
+        )
+        state = update_state(identity, status="blocked", last_result="evolution-candidates-unresolved", audit_path=str(audit_path))
+        emit(
+            {
+                "status": "blocked",
+                "reason": detail,
+                "audit_path": str(audit_path),
+                "state": state,
+                "evolution_candidates": evolution_candidates,
+            }
+        )
         return 1
 
     if acceptance.get("status") == "fail":
@@ -910,6 +1045,8 @@ def command_complete(args: argparse.Namespace) -> int:
 def command_audit_open(args: argparse.Namespace) -> int:
     identity = load_identity(resolve_task_file(args.task_file))
     promise_info = sync_promises(identity)
+    harvest = evolution_harvest(identity)
+    evolution_candidates = evolution_candidates_strict(identity)
     acceptance = prism_acceptance(identity)
     host = args.host
     baseline_head = args.baseline_head or initial_head(identity) or current_head(identity)
@@ -925,7 +1062,7 @@ def command_audit_open(args: argparse.Namespace) -> int:
     if acceptance.get("status") == "fail":
         repairable, reason = (False, f"independent acceptance missing or failed: {acceptance.get('detail', 'unknown reason')}")
     else:
-        repairable, reason = can_repair_receipt(identity, promise_info)
+        repairable, reason = can_repair_receipt(identity, promise_info, harvest, evolution_candidates)
     if repairable:
         summary_path, new_receipt = write_receipt(
             identity,
@@ -969,6 +1106,10 @@ def command_audit_open(args: argparse.Namespace) -> int:
     detail = f"audit-open could not repair receipt: {reason}"
     if promise_info["pending"] > 0:
         required_redlines = "promise-ledger,closeout-runtime"
+    elif harvest.get("status") == "fail":
+        required_redlines = "evolution-harvest,closeout-runtime"
+    elif evolution_candidates.get("status") == "fail":
+        required_redlines = "evolution-candidates,closeout-runtime"
     else:
         required_redlines = "closeout-runtime"
     bridge_write_pending(

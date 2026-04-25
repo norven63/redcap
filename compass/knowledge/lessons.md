@@ -1107,3 +1107,21 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-25
+
+### L-114: 经验沉淀不能只靠作者想起来，必须进入候选池并由 closeout 强制处理
+- **场景**：用户多次指出 lessons / Cap 人格沉淀虽然在规则里存在，但长任务中经常 zero-work；只靠 CONTRIBUTING 或最终汇报提醒，无法保证高价值经验会被沉淀、关闭或解释为什么不沉淀
+- **根因**：旧机制把“是否值得沉淀”留给当前 Agent 的上下文记忆，没有形成候选池、schema、状态、promotion/no-promote 与 receipt 前强门。于是上下文越长，越容易出现“知道有这个机制，但没有执行”的假保障
+- **经验规则**：① 高价值经验、用户纠偏、测试失败、Prism verdict、receipt blocker 都应先进入 Evolution candidate，而不是直接散落在对话里 ② 每个候选至少写清问题源、解决方案、最后效果，并补证据路径与适用边界 ③ closeout 前必须跑 strict candidate gate；未 promotion 或 no-promote-with-reason 的候选不得生成 receipt ④ 候选池不能膨胀成第二个 lessons，处理完要晋升、关闭或归档
+- **来源**：2026-04-25 RedCap Evolution-grade 控制面可靠性与自我进化治理，EVO-2026-04-25-001 晋升
+- **影响度**：high
+- **复现次数**：多次
+- **最后命中**：2026-04-25
+
+### L-115: Cap identity 成长信号要保护性沉淀，不能由后台机制直接改 active identity
+- **场景**：用户提醒 `identity.md` 才是 Cap 真正的个人灵魂锚点，同时希望人格成长能被自动捕获。若把 identity 当普通 lessons 自动改写，会把“保留人格成长”变成“后台篡改人格锚点”的新风险
+- **根因**：人格沉淀同时有两种相反约束：一方面不能丢失用户确认过的偏好、称呼和关系语境；另一方面 active identity 属于高敏感个人记忆，不能由长任务中的作者进程无审查直接变更
+- **经验规则**：① identity 相关发现可以自动进入 candidate，但默认 promotion target 应是 identity proposal ② active `~/.cap/identity.md` 不应被后台任务直接修改，除非用户明确授权并有独立审查证据 ③ identity proposal 要写明候选内容、证据、风险、建议落点和不直接生效的理由 ④ 复活协议应读取 identity，但人格演化应走 proposal / review / adoption 三段式
+- **来源**：2026-04-25 RedCap Evolution-grade 控制面可靠性与自我进化治理，EVO-2026-04-25-002 晋升
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-25

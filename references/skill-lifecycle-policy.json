@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "description": "Single-source lifecycle policy for RedCap-native capabilities, host-exported skills, and portable skill packages.",
+  "source_of_truth": {
+    "redcap_native_skill": "SKILL.md",
+    "core_contract": "compass/CONTRIBUTING.core.md",
+    "full_contract": "compass/CONTRIBUTING.md",
+    "public_soul": "compass/soul.md"
+  },
+  "capability_layers": [
+    {
+      "id": "redcap-native-capability",
+      "authority": "owns workflow, task ledger, runtime state, validation, closeout, and repo-owned artifacts",
+      "source_paths": [
+        "SKILL.md",
+        "compass/CONTRIBUTING.core.md",
+        "compass/CONTRIBUTING.md",
+        "compass/tools"
+      ]
+    },
+    {
+      "id": "host-exported-skill",
+      "authority": "thin host entry that imports RedCap core anchors and runs revive/install; it must not fork the rule body",
+      "source_paths": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md"
+      ]
+    },
+    {
+      "id": "portable-skill-package",
+      "authority": "future distribution package generated from the RedCap-native source; host-side copies must remain generated or linked",
+      "source_paths": [
+        "compass/evolution/README.md",
+        "references/skill-lifecycle-policy.json"
+      ]
+    }
+  ],
+  "host_entries": [
+    {
+      "host": "codex",
+      "entry_path": "AGENTS.md",
+      "mode": "thin-index",
+      "must_include": [
+        "compass/soul.md",
+        "compass/CONTRIBUTING.core.md",
+        "./revive-cap.sh"
+      ],
+      "must_not_include": [
+        "@compass/CONTRIBUTING.md",
+        "@compass/knowledge/lessons.md"
+      ]
+    },
+    {
+      "host": "claude-code",
+      "entry_path": "CLAUDE.md",
+      "mode": "thin-index",
+      "must_include": [
+        "compass/soul.md",
+        "compass/CONTRIBUTING.core.md",
+        "./revive-cap.sh"
+      ],
+      "must_not_include": [
+        "@compass/CONTRIBUTING.md",
+        "@compass/knowledge/lessons.md"
+      ]
+    },
+    {
+      "host": "gemini-cli",
+      "entry_path": "GEMINI.md",
+      "mode": "thin-index",
+      "must_include": [
+        "compass/soul.md",
+        "compass/CONTRIBUTING.core.md",
+        "./revive-cap.sh"
+      ],
+      "must_not_include": [
+        "@compass/CONTRIBUTING.md",
+        "@compass/knowledge/lessons.md"
+      ]
+    },
+    {
+      "host": "copilot-cli",
+      "entry_path": ".github/copilot-instructions.md",
+      "mode": "thin-index",
+      "must_include": [
+        "compass/soul.md",
+        "compass/CONTRIBUTING.core.md",
+        "./revive-cap.sh"
+      ],
+      "must_not_include": [
+        "@compass/CONTRIBUTING.md",
+        "@compass/knowledge/lessons.md"
+      ]
+    }
+  ],
+  "rules": [
+    "Host entries are mirrors and startup anchors, not independent copies of the RedCap rule body.",
+    "Active identity anchors must not be exported or mutated by generated host packages.",
+    "If a host requires a physical skill directory, prefer symlink or generated copy from this repository and record the adapter boundary.",
+    "If a host cannot honor a hook or import instruction, mark that host path degraded rather than duplicating divergent rules."
+  ]
+}

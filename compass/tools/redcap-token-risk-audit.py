@@ -21,6 +21,8 @@ REQUIRED_IGNORED_PATHS = [
     "cli_" "console.md",
 ]
 
+STRUCTURAL_GOVERNANCE_PATH = "references/token-structural-governance.json"
+
 FORBIDDEN_AUTO_IMPORTS = [
     "compass/CONTRIBUTING.md",
     "compass/knowledge/lessons.md",
@@ -93,6 +95,24 @@ def mitigation_for(rel_path: str, size: int) -> str | None:
     return None
 
 
+def load_structural_plan(root: pathlib.Path) -> dict[str, dict]:
+    path = root / STRUCTURAL_GOVERNANCE_PATH
+    try:
+        payload = __import__("json").loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if payload.get("version") != 1:
+        return {}
+    result: dict[str, dict] = {}
+    for entry in payload.get("assets") or []:
+        if not isinstance(entry, dict):
+            continue
+        rel = entry.get("path")
+        if isinstance(rel, str) and rel.strip():
+            result[rel.strip()] = entry
+    return result
+
+
 def main() -> int:
     root = pathlib.Path(sys.argv[1]).resolve()
     tracked_proc = run_git(root, "ls-files", "-z")
@@ -100,6 +120,7 @@ def main() -> int:
         return fail("git ls-files failed")
 
     tracked_paths = [p for p in tracked_proc.stdout.split("\0") if p]
+    structural_plan = load_structural_plan(root)
     large_tracked: list[tuple[int, str, str | None]] = []
     for rel in tracked_paths:
         path = root / rel
@@ -115,6 +136,15 @@ def main() -> int:
     if missing_mitigation:
         rels = ", ".join(f"{rel}({size})" for size, rel in missing_mitigation[:8])
         return fail("large tracked files missing mitigation: " + rels)
+
+    missing_structural_plan = [
+        (size, rel)
+        for size, rel, _mitigation in large_tracked
+        if rel not in structural_plan
+    ]
+    if missing_structural_plan:
+        rels = ", ".join(f"{rel}({size})" for size, rel in missing_structural_plan[:8])
+        return fail("large tracked files missing structural governance plan: " + rels)
 
     entry_failures: list[str] = []
     for rel in ENTRY_FILES:
@@ -177,6 +207,8 @@ def main() -> int:
                         f"{rel} ignored but too large for unattended context safety: {size}"
                     )
                 ignored_large.append((size, files, rel, level))
+                if rel not in structural_plan:
+                    ignored_issues.append(f"{rel} ignored but missing structural governance plan")
 
     required_scripts = [
         "compass/tools/redcap-docs-catalog.sh",
@@ -205,6 +237,7 @@ def main() -> int:
             f"ignored\tlevel={level}\tbytes={size}\tfiles={files}\tpath={rel}\tpolicy=gitignored-do-not-bulk-read"
         )
     print("entry_auto_import_large_files=none")
+    print(f"structural_governance_plan={STRUCTURAL_GOVERNANCE_PATH}")
     print(
         "rule=Use current-status, docs catalog plan/budget, knowledge index, and acceptance index before opening large files."
     )

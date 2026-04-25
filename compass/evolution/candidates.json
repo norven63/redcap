@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "description": "Active RedCap Evolution Factory candidates. Keep this file concise; archive or promote handled candidates instead of letting it become a second lessons.md.",
+  "candidates": [
+    {
+      "id": "EVO-2026-04-25-001",
+      "source_kind": "user-correction",
+      "problem_source": "The user repeatedly asked for lessons and identity sedimentation to be automatic, but RedCap previously implemented only local visibility checks and author-reminder gates.",
+      "solution": "Introduce an Evolution Factory candidate flow so high-value experience, identity, skill, rule, and governance findings must be captured as candidates before promotion or explicit no-promote closure.",
+      "final_effect": "Future closeout can reason about concrete candidates instead of relying on the author to remember whether something should be sedimented.",
+      "recurrence_guard": "Connect candidate checks to diagnose/spec-check now, then connect strict unresolved-candidate blocking to closeout before declaring R6 complete.",
+      "applicability_boundary": "This candidate flow handles RedCap-owned closeout and diagnostic surfaces; live per-message capture remains host-limited without a host pre-reply hook.",
+      "evidence_paths": [
+        ".dev-task.md",
+        "references/evolution-grade-baseline.json",
+        "references/evolution-candidate-schema.json",
+        "compass/evolution/README.md"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons.md"
+      ],
+      "review_paths": [
+        "prism/protocol.md",
+        "references/review-tracks.json"
+      ]
+    },
+    {
+      "id": "EVO-2026-04-25-002",
+      "source_kind": "user-correction",
+      "problem_source": "Cap identity growth was treated like a normal lesson update in earlier discussions, but active identity content is personal memory and should not be mutated by a background agent.",
+      "solution": "Route personality-growth signals into identity candidates first; promotion may produce an identity proposal, but active identity.md must not be auto-edited without explicit review.",
+      "final_effect": "RedCap can avoid losing personality-growth signals while still protecting the identity anchor from automatic corruption.",
+      "recurrence_guard": "The candidate schema declares identity candidates as proposal-only by default, and the Evolution-grade baseline keeps identity sedimentation manual-only until reviewed promotion exists.",
+      "applicability_boundary": "Automatic discovery is allowed; automatic active identity mutation is not allowed.",
+      "evidence_paths": [
+        "compass/soul.md",
+        "references/evolution-candidate-schema.json",
+        "references/evolution-grade-baseline.json"
+      ],
+      "promotion_target": "identity-proposal",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/evolution/identity-proposals/2026-04-25-identity-candidate-proposal-boundary.md"
+      ],
+      "review_paths": [
+        "prism/protocol.md",
+        "references/review-tracks.json"
+      ]
+    }
+  ]
+}

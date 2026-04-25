@@ -48,9 +48,124 @@
     "hook-contracts",
     "runtime-helper",
     "host-mirror",
-    "host-behavior"
+    "host-behavior",
+    "evolution-factory"
   ],
   "guarantees": [
+    {
+      "id": "evolution-grade-baseline",
+      "category": "evolution-factory",
+      "priority": "P0",
+      "rule": "Every RedCap guarantee surface must be audited against the Evolution-grade baseline: automatic trigger, evidence ledger, candidate handling, independent review, promotion or close decision, and visible failure state.",
+      "source_paths": [
+        "references/evolution-grade-baseline.json",
+        "references/evolution-candidate-schema.json",
+        "compass/evolution/README.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-evolution-grade-check validates the R0 registry and redcap-diagnose/spec-check consume it so degraded or host-limited guarantees stay visible instead of becoming invisible local patches.",
+      "guarantee_paths": [
+        "compass/tools/redcap-evolution-grade-check.sh",
+        "compass/tools/redcap-evolution-grade-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "evolution-candidate-pool",
+      "category": "evolution-factory",
+      "priority": "P0",
+      "rule": "High-value user corrections, repeated failure modes, identity-growth signals, skill candidates, and governance-rule changes must be captured as Evolution candidates before they are promoted or explicitly closed.",
+      "source_paths": [
+        "compass/evolution/README.md",
+        "compass/evolution/candidates.json",
+        "references/evolution-candidate-schema.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-evolution-candidate-check validates candidate shape and can run in strict mode before final closeout to reject unresolved candidates.",
+      "guarantee_paths": [
+        "compass/tools/redcap-evolution-candidate-check.sh",
+        "compass/tools/redcap-evolution-candidate-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "evolution-harvest-gate",
+      "category": "evolution-factory",
+      "priority": "P0",
+      "rule": "Governance tranches must explicitly report how Evolution candidates were handled; closeout must block when the task report omits candidate handling or strict candidates fail.",
+      "source_paths": [
+        "compass/evolution/README.md",
+        "references/task-report-template.md",
+        "compass/tools/redcap-layerb-closeout-runtime.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-evolution-harvest-check validates governance task reports and closeout runtime runs it before receipt generation.",
+      "guarantee_paths": [
+        "compass/tools/redcap-evolution-harvest-check.sh",
+        "compass/tools/redcap-evolution-harvest-check.py",
+        "compass/tools/redcap-layerb-closeout-runtime.py",
+        "compass/tools/redcap-diagnose.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "skill-lifecycle-single-source",
+      "category": "host-adapter-hooks",
+      "priority": "P1",
+      "rule": "RedCap-native capabilities, host-exported skills, and portable skill packages must share a single source of truth; host entries may be thin startup indexes but must not fork the rule body.",
+      "source_paths": [
+        "references/skill-lifecycle-policy.json",
+        "SKILL.md",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-skill-lifecycle-check validates the single-source skill lifecycle policy and rejects host entries that directly import large rule bodies or omit revive/core anchors.",
+      "guarantee_paths": [
+        "compass/tools/redcap-skill-lifecycle-check.sh",
+        "compass/tools/redcap-skill-lifecycle-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "legacy-asset-lifecycle",
+      "category": "token-risk-control",
+      "priority": "P1",
+      "rule": "Old task reports, specs, task cards, knowledge records, and ignored runtime evidence must declare preserve, archive, translate, prune-when-safe, or ignore-runtime lifecycle behavior before they are cleaned or reused.",
+      "source_paths": [
+        "references/legacy-asset-lifecycle.json",
+        "references/token-structural-governance.json",
+        "compass/docs/catalog.json",
+        "prism/tools/prism-runs-lifecycle.sh"
+      ],
+      "status": "validator",
+      "automation": "redcap-legacy-asset-lifecycle-check validates the lifecycle policy and ensures prism/runs has no safe-to-prune acceptance fixture residue before closeout claims the residue is under control.",
+      "guarantee_paths": [
+        "compass/tools/redcap-legacy-asset-lifecycle-check.sh",
+        "compass/tools/redcap-legacy-asset-lifecycle-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
     {
       "id": "revival-core-files",
       "category": "revival-startup",

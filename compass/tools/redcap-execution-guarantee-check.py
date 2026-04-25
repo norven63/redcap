@@ -42,6 +42,11 @@ REQUIRED_IDS = {
     "control-gate-failure-propagation",
     "host-hook-convergence",
     "main-agent-interruption-boundary",
+    "evolution-grade-baseline",
+    "evolution-candidate-pool",
+    "evolution-harvest-gate",
+    "skill-lifecycle-single-source",
+    "legacy-asset-lifecycle",
 }
 
 ALLOWED_PRIORITIES = {"P0", "P1", "P2", "P3"}

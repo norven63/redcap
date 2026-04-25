@@ -103,6 +103,16 @@ token_audit_impl = read("compass/tools/redcap-token-risk-audit.py")
 if "compass/CONTRIBUTING.core.md" not in token_audit and "compass/CONTRIBUTING.core.md" not in token_audit_impl:
     fail("token-risk audit must know the CONTRIBUTING core mitigation")
 
+skill = read("SKILL.md")
+for required in [
+    "范围校准：Layer A 与 Layer B 不走同一入口",
+    "Layer B / RedCap 自身开发",
+    ".dev-task.md + 承诺账本 + closeout runtime + Prism acceptance + receipt",
+    "不得把旧 Dispatcher 缺席当成 RedCap 自身开发的 blocker",
+]:
+    if required not in skill:
+        fail(f"SKILL.md missing Layer A/B scope boundary: {required}")
+
 architecture = read("ARCHITECTURE.md")
 for required in [
     "carrier-required shims",

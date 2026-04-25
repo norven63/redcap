@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "description": "Structural governance plan for active large assets. Indexing is a mitigation, not a complete lifecycle decision.",
+  "assets": [
+    {
+      "path": "compass/tools/redcap-multi-session-acceptance.sh",
+      "kind": "tracked-large-script",
+      "current_mitigation": "acceptance-index",
+      "structural_strategy": "Keep index-first access now; when editing an area, prefer extracting cohesive helper/check modules instead of adding more unrelated cases to the monolith.",
+      "trigger_for_revisit": "Any single new tranche adding more than 300 lines or 5 cases to the monolith must consider a domain shard."
+    },
+    {
+      "path": "compass/knowledge/lessons.md",
+      "kind": "tracked-large-knowledge",
+      "current_mitigation": "knowledge-index",
+      "structural_strategy": "Keep active hot lessons in lessons.md; archive cold or superseded lessons into lessons-archive.md only when the knowledge index still preserves archaeology.",
+      "trigger_for_revisit": "When active lessons exceed 130 entries or hotspot lookup becomes ambiguous, run a lessons archive/split tranche."
+    },
+    {
+      "path": "compass/CONTRIBUTING.md",
+      "kind": "tracked-large-norm",
+      "current_mitigation": "contributing-core-and-section-routing",
+      "structural_strategy": "Keep CONTRIBUTING.md as the authority source, but move startup-critical rules into CONTRIBUTING.core.md and route all other reads by section.",
+      "trigger_for_revisit": "When a new section duplicates an existing gate or first-read rule, merge or route instead of expanding the startup surface."
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
+      "kind": "tracked-large-task-report",
+      "current_mitigation": "docs-catalog-plan-budget",
+      "structural_strategy": "Keep as historical evidence; future reads must start from docs catalog summary and open exact sections only when auditing that closeout lineage.",
+      "trigger_for_revisit": "If this report becomes a frequent active dependency again, translate the needed facts into a smaller current authority note."
+    },
+    {
+      "path": "SKILL.md",
+      "kind": "tracked-large-skill",
+      "current_mitigation": "entry-no-large-auto-import-and-targeted-rg",
+      "structural_strategy": "Keep Layer A dispatcher details scoped and prevent RedCap self-development from relying on full-file startup import.",
+      "trigger_for_revisit": "When RedCap self-development rules are added, prefer CONTRIBUTING.core.md or a targeted reference over expanding top-level SKILL.md."
+    },
+    {
+      "path": "prism/runs",
+      "kind": "ignored-runtime-evidence",
+      "current_mitigation": "gitignored-do-not-bulk-read",
+      "structural_strategy": "Preserve formal and named evidence by default; prune acceptance fixtures with prism-runs-lifecycle.sh prune-acceptance after tests; review local named evidence after retention threshold.",
+      "trigger_for_revisit": "When ignored prism/runs exceeds warn thresholds, run lifecycle summary and prune only tool-classified safe targets."
+    }
+  ]
+}

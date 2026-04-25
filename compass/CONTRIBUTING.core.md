@@ -29,6 +29,9 @@
 16. **首读/诊断入口已优先做成只读安全**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 的 repo-owned 首读链不再依赖临时可写目录；真正仍受宿主限制的是 reply-time veto、SessionEnd 等宿主控制点，而不是这些首读入口本身。
 17. **identity 先于 soul**：`~/.cap/identity.md` 是 Cap 的个人灵魂锚点；`compass/soul.md` 负责培养指南、复活协议与执行纪律。缺失 identity 时，优先用 `redcap-install.sh --init-identity` 初始化，不要把 `soul.md` 误当成个人记忆本体。
 18. **有 SessionStart Hook 的宿主必须跑 installer**：Claude / Gemini / Copilot 这类已接入 Layer B SessionStart 的宿主，会在启动链里实际调用 `redcap-install.sh`；Codex.app 这类只有入口导入的宿主，仍需显式运行 installer 或 current-status。
+19. **Evolution 候选必须收口**：重要经验、用户纠偏、测试失败、人格成长、skill 候选和治理改良必须进入 `compass/evolution/candidates.json`，并在 closeout 前晋升、no-promote 或归档；未处理候选不得生成 receipt。
+20. **skill 生命周期保持单一信源**：RedCap-native capability、host-exported skill、portable skill package 由 `references/skill-lifecycle-policy.json` 约束；宿主入口只做轻量索引，不得复制并分叉权威规则。
+21. **旧资产按生命周期处理**：历史报告、spec、运行残留、知识库和本地 runtime 证据由 `references/legacy-asset-lifecycle.json` 分类；先审计保留/归档/翻译/安全清理策略，再做物理动作。
 
 ## 章节路由
 
@@ -41,6 +44,9 @@
 | Prism / 多 Agent 审查 | `CONTRIBUTING.md` §8、§9、§11、`prism/protocol.md` |
 | 需求确认 / 人工介入边界 | `CONTRIBUTING.md` §10、`references/agent-constraints.md` |
 | 调研结论 | `CONTRIBUTING.md` §14 |
+| 自我进化 / 经验人格沉淀 | `compass/evolution/README.md`、`references/evolution-candidate-schema.json`、`references/evolution-grade-baseline.json` |
+| skill 分发 / 多宿主入口 | `references/skill-lifecycle-policy.json` |
+| 旧资产 / 运行残留治理 | `references/legacy-asset-lifecycle.json`、`prism/protocol.md` |
 
 ## 必跑入口
 
@@ -53,3 +59,6 @@
 7. `./closeout-cap.sh status`（做收尾前先看 closeout runtime / promise ledger / receipt 状态）
 8. 涉及 docs：`bash compass/tools/redcap-docs-catalog.sh plan "<query>"` 与 `budget <paths...>`
 9. 涉及 acceptance：`bash compass/tools/redcap-acceptance-index.sh find "<case>"`
+10. 涉及经验、人格、skill 或治理沉淀：`bash compass/tools/redcap-evolution-candidate-check.sh --strict`
+11. 涉及多宿主 skill 分发：`bash compass/tools/redcap-skill-lifecycle-check.sh`
+12. 涉及旧资产或运行残留：`bash compass/tools/redcap-legacy-asset-lifecycle-check.sh`

@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 44,
-    "size_bytes": 658798,
-    "lines": 11766,
-    "chars": 425564,
+    "file_count": 45,
+    "size_bytes": 677238,
+    "lines": 12033,
+    "chars": 437666,
     "rough_token_pressure": {
-      "low": 106391,
-      "high": 212782
+      "low": 109416,
+      "high": 218833
     },
     "collections": {
       "archive": {
@@ -31,12 +31,12 @@
       },
       "research": {
         "file_count": 3,
-        "size_bytes": 46174,
-        "lines": 1163,
-        "chars": 32499,
+        "size_bytes": 49572,
+        "lines": 1221,
+        "chars": 34823,
         "rough_token_pressure": {
-          "low": 8124,
-          "high": 16249
+          "low": 8705,
+          "high": 17411
         }
       },
       "root": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 25,
-        "size_bytes": 381448,
-        "lines": 4977,
-        "chars": 243418,
+        "file_count": 26,
+        "size_bytes": 396490,
+        "lines": 5186,
+        "chars": 253196,
         "rough_token_pressure": {
-          "low": 60854,
-          "high": 121709
+          "low": 63299,
+          "high": 126598
         }
       },
       "traces": {
@@ -163,9 +163,9 @@
       "role": "research-evidence",
       "status": "reference",
       "read_policy": "read-on-demand-after-catalog",
-      "size_bytes": 6422,
-      "lines": 214,
-      "chars": 5628,
+      "size_bytes": 7936,
+      "lines": 236,
+      "chars": 6826,
       "summary": "<!doctype html> <html lang=\"zh-CN\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <title>RedCap 工作流全景图</title>"
     },
     {
@@ -175,9 +175,9 @@
       "role": "research-evidence",
       "status": "reference",
       "read_policy": "read-on-demand-after-catalog",
-      "size_bytes": 5000,
-      "lines": 97,
-      "chars": 2690,
+      "size_bytes": 6884,
+      "lines": 133,
+      "chars": 3816,
       "summary": "> 面向 Norven 的人话版。它解释 RedCap 现在如何把“讨论、立项、计划、执行、评审、收尾、考古”串成一个 Agent 工程框架。"
     },
     {
@@ -670,7 +670,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：reviewer 选型重排与账面补锚",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10051,
       "lines": 190,
@@ -735,19 +735,13 @@
       "collection": "task-reports",
       "title": "2026-04-22 首读链 / 书记官 / 生命周期 / Hook 硬化",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 6288,
       "lines": 115,
       "chars": 4044,
       "summary": "- 已把 `current-status`、`tracking-health`、`docs-catalog`、`acceptance-index`、`token-risk-audit`、`prism-runs-lifecycle` 的关键控制面从 shell heredoc/临时文件迁移到独立 Python 载体，收口到更稳定的只读首读链。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [],
-        "previous_step": [],
-        "next_step": [],
-        "position": []
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md",
@@ -804,6 +798,35 @@
         "position": [
           "整体计划脉络图是：PM Gate 可见化 → `PLANNING` → `PLANNING_REVIEW` → 机制活性门 → 全景图按需披露 → 状态漂移回归 → 外部审查与 closeout。",
           "当前所在位置：`planning-review-and-mechanism-vitality-hardening` 已实现、自检、Prism acceptance 与 closeout receipt 全部完成。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-25-redcap-evolution-grade-control-plane-hardening.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RedCap Evolution-grade 控制面可靠性与自我进化治理",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 15042,
+      "lines": 209,
+      "chars": 9778,
+      "summary": "当前已完成：R0-R8 的 repo-owned 改造、外部 Prism 审查、最终 patchset 完整 acceptance 回归均已完成；审查发现的 harvest blocker 覆盖缺口、`~/` 证据路径宽松校验、未知 EVO ID 可被报告引用三个问题也已修复并回归。 / 详情：这一步解决的是“机制只在自然语言里存在”的根问题。现在经验/人格/skill/治理候选如果未处理，会在 closeout 前阻断 receipt；旧资产与 `prism/runs` 不再只靠口头清理；多宿主 skill 分发也有单一信源校验；治理类任务报告引用的候选 ID 必须真实存在。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：R0-R8 的 repo-owned 改造、外部 Prism 审查、最终 patchset 完整 acceptance 回归均已完成；审查发现的 harvest blocker 覆盖缺口、`~/` 证据路径宽松校验、未知 EVO ID 可被报告引用三个问题也已修复并回归。",
+          "详情：这一步解决的是“机制只在自然语言里存在”的根问题。现在经验/人格/skill/治理候选如果未处理，会在 closeout 前阻断 receipt；旧资产与 `prism/runs` 不再只靠口头清理；多宿主 skill 分发也有单一信源校验；治理类任务报告引用的候选 ID 必须真实存在。"
+        ],
+        "previous_step": [
+          "上一步完成的是：先建立 R0 baseline，再按弱点补齐候选池、closeout gate、provider health、旧资产、skill lifecycle 和文档入口；随后用 Kimi / Copilot 做独立审查，并按审查发现补齐 harvest blocker 验收。"
+        ],
+        "next_step": [
+          "下一步计划做的是：将最终承诺账本清零，执行 `closeout-cap.sh complete` 生成 receipt，并在成功后提交本轮已验证变更。"
+        ],
+        "position": [
+          "整体计划脉络图是：R0 基线审计 → R1 控制面统一 → R2 Prism 稳定性 → R3 旧资产治理 → R4 即时回复质量 → R5 token 结构治理 → R6 Evolution Factory → R7 skill 生命周期 → R8 独立验收与 closeout。",
+          "当前所在位置：R8 的机器回归与 Prism 独立验收已通过，正在进入 receipt / commit 的最后收口阶段。"
         ]
       }
     },

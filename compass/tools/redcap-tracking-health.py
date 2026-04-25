@@ -38,6 +38,63 @@ def metadata(text: str) -> dict[str, str]:
     return result
 
 
+def section(text: str, heading_prefix: str) -> str:
+    capture = False
+    out: list[str] = []
+    for line in text.splitlines():
+        if line.startswith("## "):
+            heading = line[3:].strip()
+            if capture:
+                break
+            if heading.startswith(heading_prefix):
+                capture = True
+                continue
+        if capture:
+            out.append(line)
+    return "\n".join(out).strip()
+
+
+def report_formally_completed(report_path: pathlib.Path) -> bool:
+    if not report_path.is_file():
+        return False
+    completion = section(read(report_path), "五、验证结果")
+    if not completion:
+        completion = read(report_path)
+    for raw in completion.splitlines():
+        line = raw.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if len(cells) >= 2 and cells[0] == "已正式完成":
+            return cells[1].startswith("是")
+    return False
+
+
+def stale_completed_breakpoint_reason(task_text: str) -> str:
+    body = section(task_text, "断点备注")
+    if not body:
+        return ""
+    suspicious_phrases = [
+        "当前阻塞：正在",
+        "当前阻塞: 正在",
+        "下一步：跑",
+        "下一步: 跑",
+        "执行正式 closeout",
+        "生成 receipt",
+        "生成收据",
+        "重跑",
+        "复验",
+    ]
+    for phrase in suspicious_phrases:
+        if phrase in body:
+            return f"completed task has stale breakpoint note phrase: {phrase}"
+    for raw in body.splitlines():
+        line = raw.strip()
+        if line.startswith("- 当前阻塞") and "无" not in line and "已完成" not in line:
+            return "completed task has non-empty 当前阻塞 breakpoint note"
+    return ""
+
+
 def parse_entry_date(title: str) -> date | None:
     match = re.match(r"^\[(\d{4}-\d{2}-\d{2})(?:\s+\d{2}:\d{2})?\]", title)
     if not match:
@@ -127,6 +184,10 @@ def run(repo: pathlib.Path, task_file: pathlib.Path, stale_days: int) -> int:
                 errors.append(f"task report missing: {report_path}")
             else:
                 lines.append(f"task_report=present path={report_path.relative_to(repo).as_posix()}")
+                if report_formally_completed(report_path):
+                    stale_reason = stale_completed_breakpoint_reason(text)
+                    if stale_reason:
+                        errors.append(stale_reason)
 
         if "## 原始输入" not in text:
             errors.append(f"{task_file} missing 原始输入 section")

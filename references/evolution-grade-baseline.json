@@ -1,0 +1,255 @@
+{
+  "version": 1,
+  "description": "R0 registry: each RedCap guarantee surface must declare whether it reaches Evolution-grade handling or is honestly degraded, host-limited, or manual-only.",
+  "required_dimensions": [
+    "trigger",
+    "evidence",
+    "candidate_handling",
+    "independent_review",
+    "promotion_or_close",
+    "failure_visibility"
+  ],
+  "dimension_levels": [
+    "strong",
+    "compensated",
+    "weak",
+    "not-applicable"
+  ],
+  "baseline_statuses": [
+    "meets",
+    "degraded",
+    "host-limited",
+    "manual-only"
+  ],
+  "required_nodes": [
+    "current-task-ledger",
+    "lessons-sedimentation",
+    "identity-sedimentation",
+    "prism-provider-evidence",
+    "legacy-asset-lifecycle",
+    "live-response-quality",
+    "token-structural-governance",
+    "skill-lifecycle-distribution",
+    "closeout-self-proof"
+  ],
+  "nodes": [
+    {
+      "id": "current-task-ledger",
+      "title": "Current task ledger and closeout truth",
+      "requirement_ids": ["R0", "R1", "R8"],
+      "baseline_status": "meets",
+      "dimensions": {
+        "trigger": "strong",
+        "evidence": "strong",
+        "candidate_handling": "compensated",
+        "independent_review": "strong",
+        "promotion_or_close": "compensated",
+        "failure_visibility": "strong"
+      },
+      "trigger_paths": [".dev-task.md", "compass/tools/redcap-current-status.sh", "compass/tools/redcap-layerb-closeout-runtime.sh"],
+      "evidence_paths": [".dev-task.md", "compass/tools/redcap-layerb-closeout-runtime.sh", "compass/tools/redcap-task-report-check.sh"],
+      "check_paths": ["compass/tools/redcap-diagnose.sh", "compass/tools/redcap-layerb-fsm-check.sh", "compass/tools/redcap-evolution-grade-check.sh"],
+      "candidate_sink_paths": ["compass/evolution/README.md", "references/evolution-candidate-schema.json"],
+      "independent_review_paths": ["prism/protocol.md", "references/review-tracks.json"],
+      "failure_visibility_paths": ["compass/tools/redcap-diagnose.sh", "compass/tools/redcap-current-status.sh"],
+      "gap": "",
+      "remediation": []
+    },
+    {
+      "id": "lessons-sedimentation",
+      "title": "Experience sedimentation",
+      "requirement_ids": ["R0", "R6", "R8"],
+      "baseline_status": "degraded",
+      "dimensions": {
+        "trigger": "compensated",
+        "evidence": "compensated",
+        "candidate_handling": "strong",
+        "independent_review": "compensated",
+        "promotion_or_close": "strong",
+        "failure_visibility": "compensated"
+      },
+      "trigger_paths": ["compass/CONTRIBUTING.md", "compass/tools/redcap-on-stop-review.sh", "references/task-report-template.md"],
+      "evidence_paths": ["compass/knowledge/lessons.md", "compass/docs/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md"],
+      "check_paths": ["compass/tools/redcap-task-report-check.sh", "compass/tools/redcap-evolution-grade-check.sh", "compass/tools/redcap-evolution-candidate-check.sh", "compass/tools/redcap-evolution-harvest-check.sh", "compass/tools/redcap-layerb-closeout-runtime.sh"],
+      "candidate_sink_paths": ["compass/evolution/README.md", "compass/evolution/candidates.json", "references/evolution-candidate-schema.json"],
+      "independent_review_paths": ["prism/protocol.md", "references/review-tracks.json"],
+      "failure_visibility_paths": ["compass/tools/redcap-diagnose.sh", "references/execution-guarantees.json", "compass/tools/redcap-evolution-harvest-check.sh"],
+      "gap": "Lessons are now candidate-gated before closeout, but live per-message discovery still depends on host surfaces and runtime traces rather than a universal host pre-reply hook.",
+      "remediation": [
+        "Continue feeding user corrections, Prism verdicts, failures, and receipts into Evolution candidates.",
+        "Keep strict candidate handling in closeout so discovered candidates cannot remain unresolved."
+      ]
+    },
+    {
+      "id": "identity-sedimentation",
+      "title": "Cap identity and personality sedimentation",
+      "requirement_ids": ["R0", "R6", "R8"],
+      "baseline_status": "manual-only",
+      "dimensions": {
+        "trigger": "compensated",
+        "evidence": "compensated",
+        "candidate_handling": "strong",
+        "independent_review": "compensated",
+        "promotion_or_close": "compensated",
+        "failure_visibility": "compensated"
+      },
+      "trigger_paths": ["compass/soul.md", "compass/tools/redcap-revival-check.sh", "compass/tools/redcap-install.sh"],
+      "evidence_paths": ["compass/soul.md", "references/evolution-candidate-schema.json", "compass/evolution/identity-proposals/2026-04-25-identity-candidate-proposal-boundary.md"],
+      "check_paths": ["compass/tools/redcap-revival-check.sh", "compass/tools/redcap-evolution-grade-check.sh", "compass/tools/redcap-evolution-candidate-check.sh", "compass/tools/redcap-evolution-harvest-check.sh"],
+      "candidate_sink_paths": ["compass/evolution/README.md", "compass/evolution/candidates.json", "references/evolution-candidate-schema.json"],
+      "independent_review_paths": ["prism/protocol.md", "references/review-tracks.json"],
+      "failure_visibility_paths": ["references/execution-guarantees.json", "compass/tools/redcap-diagnose.sh"],
+      "gap": "Identity growth is captured through candidates and proposals, but active identity mutation remains manual-only by design.",
+      "boundary_reason": "Active identity content is personal memory; automatic mutation would risk corrupting the user's chosen identity record.",
+      "remediation": [
+        "Route identity growth signals into identity-candidate records.",
+        "Only promote identity changes through proposal and explicit review, never direct background mutation."
+      ]
+    },
+    {
+      "id": "prism-provider-evidence",
+      "title": "Prism provider health and evidence authority",
+      "requirement_ids": ["R0", "R2", "R8"],
+      "baseline_status": "degraded",
+      "dimensions": {
+        "trigger": "compensated",
+        "evidence": "compensated",
+        "candidate_handling": "weak",
+        "independent_review": "strong",
+        "promotion_or_close": "compensated",
+        "failure_visibility": "strong"
+      },
+      "trigger_paths": ["prism/protocol.md", "compass/tools/redcap-detect-agents.sh", "compass/tools/redcap-agent-health-probe.sh"],
+      "evidence_paths": ["prism/reports/index.yaml", "prism/tools/prism-evidence-check.sh", "prism/tools/prism-runs-lifecycle.sh", "compass/tools/redcap-agent-health-probe.py"],
+      "check_paths": ["prism/tools/prism-evidence-check.sh", "prism/tools/prism-runs-lifecycle.sh", "compass/tools/redcap-agent-health-probe.sh", "compass/tools/redcap-evolution-grade-check.sh"],
+      "candidate_sink_paths": ["compass/evolution/README.md", "references/evolution-candidate-schema.json"],
+      "independent_review_paths": ["prism/protocol.md", "references/review-tracks.json"],
+      "failure_visibility_paths": ["compass/tools/redcap-current-status.py", "compass/tools/redcap-diagnose.sh"],
+      "gap": "Agent registry now has a separate health probe, but provider fallback and formal/local evidence promotion still need stronger closeout integration.",
+      "remediation": [
+        "Use redcap-agent-health-probe.sh --live before high-risk Prism dispatch when provider freshness matters.",
+        "Keep formal quorum, local evidence, and acceptance binding as separate evidence classes."
+      ]
+    },
+    {
+      "id": "legacy-asset-lifecycle",
+      "title": "Legacy asset lifecycle",
+      "requirement_ids": ["R0", "R3", "R5"],
+      "baseline_status": "degraded",
+      "dimensions": {
+        "trigger": "compensated",
+        "evidence": "strong",
+        "candidate_handling": "compensated",
+        "independent_review": "compensated",
+        "promotion_or_close": "compensated",
+        "failure_visibility": "strong"
+      },
+      "trigger_paths": ["compass/tools/redcap-docs-catalog.sh", "prism/tools/prism-runs-lifecycle.sh", "compass/tools/redcap-legacy-asset-lifecycle-check.sh"],
+      "evidence_paths": ["compass/docs/catalog.json", "prism/tools/prism-runs-lifecycle.py", "references/legacy-asset-lifecycle.json"],
+      "check_paths": ["compass/tools/redcap-docs-catalog.sh", "prism/tools/prism-runs-lifecycle.sh", "compass/tools/redcap-legacy-asset-lifecycle-check.sh", "compass/tools/redcap-evolution-grade-check.sh"],
+      "candidate_sink_paths": ["compass/evolution/README.md", "references/evolution-candidate-schema.json"],
+      "independent_review_paths": ["references/governance-review-checklist.md", "prism/protocol.md"],
+      "failure_visibility_paths": ["compass/tools/redcap-token-risk-audit.sh", "compass/tools/redcap-current-status.py"],
+      "gap": "Legacy assets now have a lifecycle policy and prism/runs residue gate, but historical tracked assets are preserved until a separate archive/translate/delete tranche proves archaeology is not lost.",
+      "remediation": [
+        "Convert legacy-asset findings into evolution candidates.",
+        "Add safe cleanup plans for acceptance fixtures and archive/translate/delete decisions for tracked assets."
+      ]
+    },
+    {
+      "id": "live-response-quality",
+      "title": "Live response quality and human-readable reporting",
+      "requirement_ids": ["R0", "R4", "R8"],
+      "baseline_status": "host-limited",
+      "dimensions": {
+        "trigger": "compensated",
+        "evidence": "compensated",
+        "candidate_handling": "compensated",
+        "independent_review": "compensated",
+        "promotion_or_close": "compensated",
+        "failure_visibility": "compensated"
+      },
+      "trigger_paths": ["compass/CONTRIBUTING.md", "references/agent-constraints.md"],
+      "evidence_paths": ["compass/tools/redcap-human-output-quality-check.py", "references/task-report-template.md"],
+      "check_paths": ["compass/tools/redcap-human-output-quality-check.sh", "compass/tools/redcap-evolution-grade-check.sh"],
+      "candidate_sink_paths": ["compass/evolution/README.md", "references/evolution-candidate-schema.json"],
+      "independent_review_paths": ["references/review-tracks.json", "prism/protocol.md"],
+      "failure_visibility_paths": ["compass/knowledge/governance-debt-register.md", "references/execution-guarantees.json"],
+      "gap": "Repo-owned checks cover task reports, but cannot veto every Codex.app live reply before it is sent.",
+      "boundary_reason": "Codex.app currently exposes startup import but no repo-owned pre-reply veto hook.",
+      "remediation": [
+        "Keep live reply quality host-limited.",
+        "Use task report gates, Prism review, closeout review, and future evolution candidates as compensation."
+      ]
+    },
+    {
+      "id": "token-structural-governance",
+      "title": "Token risk structural governance",
+      "requirement_ids": ["R0", "R5"],
+      "baseline_status": "degraded",
+      "dimensions": {
+        "trigger": "strong",
+        "evidence": "strong",
+        "candidate_handling": "compensated",
+        "independent_review": "compensated",
+        "promotion_or_close": "compensated",
+        "failure_visibility": "strong"
+      },
+      "trigger_paths": ["compass/tools/redcap-token-risk-audit.sh", "compass/tools/redcap-docs-catalog.sh", "compass/tools/redcap-acceptance-index.sh", "compass/tools/redcap-legacy-asset-lifecycle-check.sh"],
+      "evidence_paths": ["compass/docs/catalog.json", "compass/knowledge/index.md", "compass/tools/redcap-multi-session-acceptance.sh", "references/token-structural-governance.json"],
+      "check_paths": ["compass/tools/redcap-token-risk-audit.sh", "compass/tools/redcap-evolution-grade-check.sh"],
+      "candidate_sink_paths": ["compass/evolution/README.md", "references/evolution-candidate-schema.json"],
+      "independent_review_paths": ["references/governance-review-checklist.md", "prism/protocol.md"],
+      "failure_visibility_paths": ["compass/tools/redcap-current-status.py", "compass/tools/redcap-token-risk-audit.py"],
+      "gap": "Index-first mitigations prevent bulk-read explosions, but large active assets still need structural lifecycle plans.",
+      "remediation": [
+        "Track giant active assets as evolution candidates when they cross structural thresholds.",
+        "Split, archive, or shard assets only when doing so preserves archaeology."
+      ]
+    },
+    {
+      "id": "skill-lifecycle-distribution",
+      "title": "Skill lifecycle and multi-host distribution",
+      "requirement_ids": ["R0", "R7"],
+      "baseline_status": "meets",
+      "dimensions": {
+        "trigger": "strong",
+        "evidence": "strong",
+        "candidate_handling": "compensated",
+        "independent_review": "compensated",
+        "promotion_or_close": "strong",
+        "failure_visibility": "strong"
+      },
+      "trigger_paths": ["SKILL.md", "compass/CONTRIBUTING.core.md", "references/skill-lifecycle-policy.json"],
+      "evidence_paths": ["SKILL.md", "compass/evolution/README.md", "references/skill-lifecycle-policy.json"],
+      "check_paths": ["compass/tools/redcap-evolution-grade-check.sh", "compass/tools/redcap-revival-check.sh", "compass/tools/redcap-skill-lifecycle-check.sh"],
+      "candidate_sink_paths": ["compass/evolution/README.md", "references/evolution-candidate-schema.json"],
+      "independent_review_paths": ["prism/protocol.md", "references/review-tracks.json"],
+      "failure_visibility_paths": ["references/execution-guarantees.json", "compass/tools/redcap-diagnose.sh"],
+      "gap": "",
+      "remediation": []
+    },
+    {
+      "id": "closeout-self-proof",
+      "title": "Closeout self-proof and independent acceptance",
+      "requirement_ids": ["R0", "R8"],
+      "baseline_status": "meets",
+      "dimensions": {
+        "trigger": "strong",
+        "evidence": "strong",
+        "candidate_handling": "compensated",
+        "independent_review": "strong",
+        "promotion_or_close": "strong",
+        "failure_visibility": "strong"
+      },
+      "trigger_paths": ["closeout-cap.sh", "compass/tools/redcap-layerb-closeout-runtime.sh"],
+      "evidence_paths": ["compass/tools/redcap-layerb-closeout-runtime.py", "compass/tools/redcap-prism-acceptance-check.py", "compass/tools/redcap-task-report-check.sh", "compass/tools/redcap-evolution-candidate-check.sh", "compass/tools/redcap-evolution-harvest-check.sh"],
+      "check_paths": ["compass/tools/redcap-layerb-closeout-runtime-check.sh", "compass/tools/redcap-prism-acceptance-check.sh", "compass/tools/redcap-diagnose.sh", "compass/tools/redcap-evolution-candidate-check.sh", "compass/tools/redcap-evolution-harvest-check.sh"],
+      "candidate_sink_paths": ["compass/evolution/README.md", "references/evolution-candidate-schema.json"],
+      "independent_review_paths": ["prism/protocol.md", "references/review-tracks.json"],
+      "failure_visibility_paths": ["compass/tools/redcap-diagnose.sh", "compass/tools/redcap-layerb-closeout-runtime.sh"],
+      "gap": "",
+      "remediation": []
+    }
+  ]
+}

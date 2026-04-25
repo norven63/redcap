@@ -11,6 +11,8 @@ RUNTIME_SCRIPT="$SCRIPT_DIR/redcap-layerb-closeout-runtime.sh"
 ROOT_ENTRY="$REDCAP_ROOT/closeout-cap.sh"
 PRISM_ACCEPTANCE_SCRIPT="$SCRIPT_DIR/redcap-prism-acceptance-check.sh"
 PRISM_ACCEPTANCE_BIND_SCRIPT="$SCRIPT_DIR/redcap-prism-acceptance-bind.sh"
+EVOLUTION_CANDIDATE_SCRIPT="$SCRIPT_DIR/redcap-evolution-candidate-check.sh"
+EVOLUTION_HARVEST_SCRIPT="$SCRIPT_DIR/redcap-evolution-harvest-check.sh"
 
 [[ -x "$RUNTIME_SCRIPT" ]] || {
     echo "[redcap-layerb-closeout-runtime-check] missing runtime script: $RUNTIME_SCRIPT" >&2
@@ -32,6 +34,16 @@ PRISM_ACCEPTANCE_BIND_SCRIPT="$SCRIPT_DIR/redcap-prism-acceptance-bind.sh"
     exit 1
 }
 
+[[ -x "$EVOLUTION_CANDIDATE_SCRIPT" ]] || {
+    echo "[redcap-layerb-closeout-runtime-check] missing evolution candidate script: $EVOLUTION_CANDIDATE_SCRIPT" >&2
+    exit 1
+}
+
+[[ -x "$EVOLUTION_HARVEST_SCRIPT" ]] || {
+    echo "[redcap-layerb-closeout-runtime-check] missing evolution harvest script: $EVOLUTION_HARVEST_SCRIPT" >&2
+    exit 1
+}
+
 python3 - "$TASK_FILE" <<'PY'
 import pathlib
 import sys
@@ -44,6 +56,8 @@ PY
 bash "$RUNTIME_SCRIPT" sync-promises --task-file "$TASK_FILE" >/dev/null
 bash "$RUNTIME_SCRIPT" status --task-file "$TASK_FILE" >/dev/null
 bash "$PRISM_ACCEPTANCE_SCRIPT" --task-file "$TASK_FILE" >/dev/null || true
+bash "$EVOLUTION_CANDIDATE_SCRIPT" >/dev/null
+bash "$EVOLUTION_HARVEST_SCRIPT" "$TASK_FILE" >/dev/null
 
 ACTIVE_SLICE="$(python3 - "$TASK_FILE" <<'PY'
 import pathlib
