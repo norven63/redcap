@@ -17,7 +17,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：将最终承诺账本清零，执行 `closeout-cap.sh complete` 生成 receipt，并在成功后提交本轮已验证变更。
+- 下一步计划做的是：执行 `closeout-cap.sh complete` 生成 receipt；本轮主要实现变更已提交，receipt 将绑定最终提交状态。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -160,7 +160,7 @@ skill 生命周期和旧资产生命周期各自有单一信源策略：前者�
 
 | 问题 | 原因 | 建议优先级 |
 |---|---|---|
-| closeout receipt 尚未生成 | 这是最后 runtime 收口动作，不是产品决策项 | P0 |
+| closeout receipt 尚未生成 | 这是最后 runtime 收口动作，不是产品决策项；主要实现提交已完成 | P0 |
 
 ### 6.2 触发的新问题
 
@@ -168,9 +168,9 @@ skill 生命周期和旧资产生命周期各自有单一信源策略：前者�
 
 ### 6.3 推荐的下一步行动
 
-1. 勾选最后 closeout 承诺。
-2. 执行 `closeout-cap.sh complete` 生成 receipt。
-3. 提交本轮已验证变更。
+1. 执行 `closeout-cap.sh complete` 生成 receipt。
+2. 运行 `closeout-cap.sh status` 确认 pending=0、pending closure 清空、receipt 存在。
+3. 在最终汇报中给出提交与 receipt 证据。
 
 ## 七、经验沉淀
 
@@ -198,7 +198,9 @@ skill 生命周期和旧资产生命周期各自有单一信源策略：前者�
 ### 附录 A：Commits
 
 ```text
-待最终 closeout / commit 后，以 git log 与 closeout receipt 为准。
+6abd7ac feat: 加固 RedCap 自进化治理门禁
+
+注：如报告收口同步产生附加小提交，以最终 `git log` 和 closeout receipt 为准。
 ```
 
 ### 附录 B：棱镜调用记录（如有）
