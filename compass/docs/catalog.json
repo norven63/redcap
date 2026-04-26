@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 57,
-    "size_bytes": 819312,
-    "lines": 14460,
-    "chars": 531852,
+    "file_count": 58,
+    "size_bytes": 829814,
+    "lines": 14642,
+    "chars": 539126,
     "rough_token_pressure": {
-      "low": 132963,
-      "high": 265926
+      "low": 134781,
+      "high": 269563
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 38,
-        "size_bytes": 538564,
-        "lines": 7613,
-        "chars": 347382,
+        "file_count": 39,
+        "size_bytes": 549066,
+        "lines": 7795,
+        "chars": 354656,
         "rough_token_pressure": {
-          "low": 86845,
-          "high": 173691
+          "low": 88664,
+          "high": 177328
         }
       },
       "traces": {
@@ -839,7 +839,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：历史资产迁移 dry-run",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12079,
       "lines": 226,
@@ -897,6 +897,19 @@
       "lines": 177,
       "chars": 6214,
       "summary": "当前已完成：`prism-availability` 的 cache 可信条件从“只看 TTL / timeout”升级为“TTL + timeout + provenance 一致性”。 / provenance 覆盖：repo root、cache path、health probe 路径与内容摘要、provider policy 路径与内容摘要、PATH 指纹。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-26-prism-formal-quorum-provider-revalidation.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Formal Prism quorum 恢复复验",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 10502,
+      "lines": 182,
+      "chars": 7274,
+      "summary": "当前已完成：P2-3 已实现并通过 Kimi + Claude Code Prism acceptance；Kimi 与 Claude Code 已被真实 live probe 证明可用，Codex CLI 已被策略降为 last-resort 兜底。 / 详情：`prism-availability` 现在会读取 provider policy，把 Codex 标记为 `last-resort`，并在任一非 Codex provider 可用时拒绝 Codex 进入普通 roster。",
       "status_basis": "filename_recency_only"
     },
     {

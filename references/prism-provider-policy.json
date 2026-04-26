@@ -6,7 +6,18 @@
     "Rank providers by model capability profile plus local CLI stability evidence.",
     "Separate installed/configured visibility from bounded live headless health.",
     "Temporary freezes override ranking because they represent explicit resource or quota constraints.",
-    "When a provider is frozen, health probes must report frozen without executing the CLI command."
+    "When a provider is frozen, health probes must report frozen without executing the CLI command.",
+    "Codex CLI is a last-resort fallback only: if any non-Codex provider is live-available, normal Prism rosters must suppress Codex."
+  ],
+  "routing_overrides": [
+    {
+      "agent": "codex",
+      "scope": ["prism", "stop-review", "baton-delegate"],
+      "priority_tier": "last-resort",
+      "reason": "User explicitly asked to lower Codex CLI priority and use it only when all other CLI providers are unavailable.",
+      "live_probe_opt_in_env": "REDCAP_ALLOW_CODEX_LIVE_PROBE",
+      "authority": "user-explicit"
+    }
   ],
   "freeze_windows": [
     {

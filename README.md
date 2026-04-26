@@ -48,7 +48,7 @@ Compass 负责规范、经验、Hook、收尾与复活
 很多框架有“多角色”，但没有真正的**多 Agent 团队验证层**。
 Prism 的作用不是“多叫几个模型来热闹一下”，而是把高后果问题交给一个独立团队去复核：
 
-- **先看可用性清单**：`prism-availability` 维护 1 小时 TTL 清单，过期先嗅探，只挑当前可用的 Agent
+- **先看可用性清单**：`prism-availability` 维护 1 小时 TTL 清单，过期先嗅探，只挑当前可用的 Agent；Codex CLI 是 last-resort 兜底，Kimi / Claude Code 等非 Codex provider 可用时不进普通 roster
 - **彼此独立看问题**：不同 Agent 不能互抄中间答案
 - **不是同一家模型自己给自己背书**
 - **不是随便聊几句，而是结构化收集、汇总、裁决**

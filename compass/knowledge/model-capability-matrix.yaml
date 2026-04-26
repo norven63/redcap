@@ -3,8 +3,8 @@
 # 更新频率: 随新模型上线或新经验积累时更新
 #
 # ── 更新周期追踪 ──────────────────────────────────────────
-# last_updated:  2026-04-21
-# next_review:   2026-05-21
+# last_updated:  2026-04-26
+# next_review:   2026-05-26
 # ─────────────────────────────────────────────────────────
 # Cap 每次任务启动时检查：若 today >= next_review，触发矩阵更新流程
 # （见 CONTRIBUTING.md §11）
@@ -163,17 +163,17 @@ models:
 # ═══════════════════════════════════════════════════════
 reviewer_cli_profiles:
   codex:
-    reviewer_local_stability: 5
+    reviewer_local_stability: 3
     repo_inspection: true
-    reviewer_notes: "本地 codex exec + --output-last-message 的只读 review 路径最稳定，适合结构化 stop-review。"
+    reviewer_notes: "本地 codex exec 能做结构化 review，但为保护当前宿主 token/进程资源，已由 references/prism-provider-policy.json 降为 last-resort fallback；非 Codex provider 可用时不进入普通 roster。"
   copilot:
     reviewer_local_stability: 3
     repo_inspection: true
     reviewer_notes: "模型面强，但本地历史上出现过 timeout 与 completion-hook 干扰；适合 premium review，需保留超时与 guard 隔离。"
   claude:
-    reviewer_local_stability: 3
+    reviewer_local_stability: 4
     repo_inspection: true
-    reviewer_notes: "能力强，但当前本地配置常经代理/别名复用，适合补位，不应盲目假设始终最稳。"
+    reviewer_notes: "能力强；2026-04-26 live probe 已恢复可用，适合与 Kimi 组成当前非 Codex 双路 Prism review quorum。"
   gemini:
     reviewer_local_stability: 2
     repo_inspection: false

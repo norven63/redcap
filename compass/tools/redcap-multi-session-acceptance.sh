@@ -9044,7 +9044,7 @@ EOF
 }
 
 run_agent_health_probe_case() {
-    local output fixture_bin policy_file copilot_marker prompt_file output_file frozen_status
+    local output fixture_bin policy_file copilot_marker codex_marker prompt_file output_file frozen_status
 
     log "case: agent-health-probe"
 
@@ -9063,6 +9063,23 @@ EOF
     output="$(PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --agent kimi --timeout 5)"
     assert_string_contains "$output" '"agent": "kimi"'
     assert_string_contains "$output" '"live_status": "pass"'
+
+    codex_marker="$ACCEPT_ROOT/agent-health-codex-called"
+    cat >"$fixture_bin/codex" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called > "$codex_marker"
+echo ok
+EOF
+    chmod +x "$fixture_bin/codex"
+    output="$(REDCAP_ALLOW_CODEX_LIVE_PROBE= PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --agent codex --timeout 5)"
+    assert_string_contains "$output" '"agent": "codex"'
+    assert_string_contains "$output" '"live_status": "unsupported"'
+    assert_not_exists "$codex_marker"
+
+    output="$(REDCAP_ALLOW_CODEX_LIVE_PROBE=1 PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --agent codex --timeout 5)"
+    assert_string_contains "$output" '"agent": "codex"'
+    assert_string_contains "$output" '"live_status": "pass"'
+    assert_exists "$codex_marker"
 
     copilot_marker="$ACCEPT_ROOT/agent-health-copilot-called"
     cat >"$fixture_bin/copilot" <<EOF
@@ -9119,7 +9136,7 @@ EOF
 }
 
 run_prism_availability_case() {
-    local fake_probe cache counter output status stale_output dispatch_output
+    local fake_probe cache fallback_cache counter output status stale_output dispatch_output
 
     log "case: prism-availability"
 
@@ -9143,7 +9160,9 @@ cat <<'JSON'
   "timeout_s": 20,
   "agents": [
     {"agent": "kimi", "binary": "kimi", "installed": true, "path": "/tmp/kimi", "live_probe_requested": true, "live_status": "pass"},
+    {"agent": "claude-code", "binary": "claude", "installed": true, "path": "/tmp/claude", "live_probe_requested": true, "live_status": "pass"},
     {"agent": "gemini", "binary": "gemini", "installed": true, "path": "/tmp/gemini", "live_probe_requested": true, "live_status": "pass"},
+    {"agent": "codex", "binary": "codex", "installed": true, "path": "/tmp/codex", "live_probe_requested": true, "live_status": "pass"},
     {"agent": "copilot", "binary": "copilot", "installed": true, "path": "/tmp/copilot", "live_probe_requested": true, "live_status": "frozen", "reason": "acceptance freeze", "frozen_until": "2099-01-01T00:00:00Z"}
   ]
 }
@@ -9175,12 +9194,49 @@ JSON
     assert_string_contains "$output" '"expires_at"'
     assert_string_contains "$output" '"provenance"'
     assert_contains "$cache" '"kimi"'
+    assert_contains "$cache" '"claude-code"'
+    assert_contains "$cache" '"claude"'
     assert_contains "$cache" '"available": true'
     [[ "$(cat "$counter")" == "1" ]] || fail "availability probe should refresh cache that lacks provenance"
 
     output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "kimi&kimi-k2:reviewer")"
     assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
     [[ "$(cat "$counter")" == "1" ]] || fail "fresh availability cache should not refresh"
+
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "claude&claude-sonnet-4.6:reviewer")"
+    assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
+
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "claude-code&claude-sonnet-4.6:reviewer")"
+    assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
+
+    set +e
+    stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "codex&gpt-5.4:reviewer" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "codex last-resort provider should be suppressed while non-codex providers are available"
+    assert_string_contains "$stale_output" "last-resort-suppressed"
+
+    fallback_cache="$ACCEPT_ROOT/prism-availability-codex-fallback-cache.json"
+    cp "$cache" "$fallback_cache"
+    python3 - "$fallback_cache" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+for key in ("kimi", "gemini", "claude", "claude-code", "copilot"):
+    if key in payload["agents"]:
+        payload["agents"][key]["available"] = False
+        payload["agents"][key]["status"] = "timeout"
+        payload["agents"][key]["reason"] = "acceptance fallback fixture"
+payload["agents"]["codex"]["available"] = True
+payload["agents"]["codex"]["status"] = "pass"
+payload["agents"]["codex"]["routing_tier"] = "last-resort"
+payload.setdefault("provenance", {})["cache_path"] = str(path.resolve())
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$fallback_cache" --ttl-seconds 3600 --timeout 20 --agents "codex&gpt-5.4:reviewer")"
+    assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
 
     output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" status --cache "$cache" --ttl-seconds 3600 --timeout 20 --refresh)"
     assert_string_contains "$output" '"provenance"'
@@ -9253,6 +9309,13 @@ PY
 
     dispatch_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" PRISM_AVAILABILITY_CACHE="$cache" bash "$REDCAP_ROOT/prism/tools/prism-dispatch-check.sh" --mode test --agents "kimi&kimi-k2:reviewer,gemini&gemini-pro:challenger")"
     assert_string_contains "$dispatch_output" "Dispatch 校验通过"
+
+    set +e
+    stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" PRISM_AVAILABILITY_CACHE="$cache" bash "$REDCAP_ROOT/prism/tools/prism-dispatch-check.sh" --mode test --agents "kimi&kimi-k2:reviewer,codex&gpt-5.4:challenger" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "dispatch-check should reject codex last-resort provider while kimi is available"
+    assert_string_contains "$stale_output" "last-resort-suppressed"
 
     set +e
     stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" PRISM_AVAILABILITY_CACHE="$cache" bash "$REDCAP_ROOT/prism/tools/prism-dispatch-check.sh" --mode test --agents "kimi&kimi-k2:reviewer,copilot&gpt-5:challenger" 2>&1)"
@@ -9513,7 +9576,7 @@ target = pathlib.Path(sys.argv[2])
 payload = json.loads(source.read_text(encoding="utf-8"))
 payload["not_complete_children"] = [
     child for child in payload["not_complete_children"]
-    if child.get("id") != "P2-3"
+    if child.get("id") != "P1-3"
 ]
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -9522,7 +9585,7 @@ PY
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing required not-complete child"
-    assert_string_contains "$stale_output" "missing not-complete child entries: P2-3"
+    assert_string_contains "$stale_output" "not_complete_children must be non-empty"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-eligible-output.json"
     python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'

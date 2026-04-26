@@ -188,6 +188,7 @@ Agent 数量：
 - 因此 Prism coordinator 在 Dispatch 前，必须把“可见性”与“真实健康”分开记录；必要时通过显式轻探测或降级说明诚实记账。cache 缺少 provenance，或 root / probe / provider policy / PATH 指纹、probe 内容摘要、policy 内容摘要不匹配时，不得继续复用。
 - `Copilot` / `Codex` 不能被静态压低；`Gemini` / `Kimi` 也不能因历史习惯被静态抬高。
 - 显式资源冻结例外：若 `references/prism-provider-policy.json` 记录了临时冻结窗口，冻结 provider 在窗口内不得被调度；这不是能力降级，而是用户授权 / 配额边界优先于默认排序。
+- 显式兜底例外：若 `references/prism-provider-policy.json` 把某 provider 标记为 `last-resort`，则只要任一非 last-resort provider 在 1 小时可用性清单中为 live-available，`prism-availability` 就必须拒绝该 provider 进入普通 roster。当前 Codex CLI 属于此类兜底：它不是禁用，而是保护当前宿主资源，只有其他 CLI 都不可用时才可显式启用。Codex live probe 也必须显式设置 `REDCAP_ALLOW_CODEX_LIVE_PROBE=1`，否则健康嗅探只记录 `unsupported`，避免探测动作本身制造嵌套 Agent 消耗。
 - Provider 冻结必须由 health probe / reviewer ordering 记录为 `frozen` 或跳过，不能偷偷执行真实 CLI 后再在报告里解释。
 
 **Codex 进程限定规则**：

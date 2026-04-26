@@ -19,6 +19,10 @@ from pathlib import Path
 
 
 AGENT_NAME_MAP = {
+    # reviewer-order outputs executable CLI names. The registry provider is
+    # `claude-code`, but baton/on-stop-review invoke the local CLI as `claude`.
+    # prism-availability keeps `claude-code` canonical and adds `claude` alias;
+    # this asymmetry is intentional and covered by availability acceptance.
     "claude-code": "claude",
     "claude": "claude",
     "gemini": "gemini",
@@ -28,6 +32,7 @@ AGENT_NAME_MAP = {
 }
 
 SPECIALIZED_CLI = {"claude", "gemini", "kimi", "codex"}
+LAST_RESORT_TIERS = {"last-resort", "last_resort", "fallback-only", "fallback_only"}
 
 
 def strip_inline_comment(text: str) -> str:
@@ -268,6 +273,29 @@ def provider_frozen(policy: dict, agent: str, scope: str) -> bool:
     return False
 
 
+def scopes_include(raw: object, scope: str) -> bool:
+    if raw is None:
+        return True
+    if isinstance(raw, str):
+        return raw in {scope, "all"}
+    if isinstance(raw, list):
+        return scope in raw or "all" in raw
+    return False
+
+
+def provider_routing_tier(policy: dict, agent: str, scope: str) -> str:
+    for item in policy.get("routing_overrides", []) or []:
+        if not isinstance(item, dict) or item.get("agent") != agent:
+            continue
+        if not scopes_include(item.get("scope"), scope):
+            continue
+        raw = str(item.get("priority_tier") or item.get("mode") or "normal").strip().lower()
+        if raw in LAST_RESORT_TIERS:
+            return "last-resort"
+        return raw or "normal"
+    return "normal"
+
+
 def model_profile_for(model_name: str, models: dict) -> dict:
     default = {
         "family": "unknown",
@@ -324,6 +352,7 @@ def candidate_rows(
     for position, (agent, raw_model) in enumerate(seeds):
         if provider_frozen(provider_policy, agent, "stop-review"):
             continue
+        routing_tier = provider_routing_tier(provider_policy, agent, "stop-review")
         registry_meta = registry.get("agents", {}).get(agent) or registry.get("agents", {}).get(
             next((name for name, mapped in AGENT_NAME_MAP.items() if mapped == agent and name in registry.get("agents", {})), ""),
             {},
@@ -363,8 +392,12 @@ def candidate_rows(
                 "final_score": final_score,
                 "specialized_rank": specialized_rank,
                 "position": position,
+                "routing_tier": routing_tier,
             }
         )
+
+    if any(row.get("routing_tier") != "last-resort" for row in rows):
+        rows = [row for row in rows if row.get("routing_tier") != "last-resort"]
 
     if manual_order:
         rows.sort(key=lambda row: row["position"])

@@ -35,12 +35,14 @@ AGENTS: dict[str, dict[str, object]] = {
         "binary": "claude",
         "command": ["claude", "-p", "respond only: ok"],
         "live_supported": True,
+        "min_timeout_s": 60,
     },
     "codex": {
         "binary": "codex",
         "command": ["codex", "exec", "respond only: ok"],
-        "live_supported": False,
-        "reason": "Codex CLI live probe can create nested agent sessions; keep it opt-in until a stable non-interactive health contract is defined.",
+        "live_supported": True,
+        "requires_env": "REDCAP_ALLOW_CODEX_LIVE_PROBE",
+        "reason": "Codex CLI live probe can create nested agent sessions; it is allowed only as explicit last-resort fallback.",
     },
 }
 
@@ -145,12 +147,17 @@ def probe_agent(root: Path, name: str, live: bool, timeout_s: int, provider_poli
             }
         )
         return row
+    env = os.environ.copy()
+    load_dotenv(root, env)
+    required_env = str(spec.get("requires_env") or "")
+    if required_env and env.get(required_env, "").strip().lower() not in {"1", "true", "yes"}:
+        row.update({"live_status": "unsupported", "reason": spec.get("reason", f"live probe requires {required_env}")})
+        return row
     if not bool(spec.get("live_supported", False)):
         row.update({"live_status": "unsupported", "reason": spec.get("reason", "live probe unsupported")})
         return row
 
-    env = os.environ.copy()
-    load_dotenv(root, env)
+    effective_timeout_s = max(timeout_s, int(spec.get("min_timeout_s", timeout_s)))
     command = [str(part) for part in spec["command"]]
     try:
         completed = subprocess.run(
@@ -160,11 +167,11 @@ def probe_agent(root: Path, name: str, live: bool, timeout_s: int, provider_poli
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=timeout_s,
+            timeout=effective_timeout_s,
             check=False,
         )
     except subprocess.TimeoutExpired:
-        row.update({"live_status": "timeout", "timeout_s": timeout_s})
+        row.update({"live_status": "timeout", "timeout_s": effective_timeout_s})
         return row
     except Exception as exc:
         row.update({"live_status": "error", "reason": str(exc)})

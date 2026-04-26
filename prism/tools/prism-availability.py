@@ -22,7 +22,11 @@ DEFAULT_TTL_SECONDS = 3600
 DEFAULT_TIMEOUT_SECONDS = 15
 AVAILABLE_STATUS = "pass"
 PROVENANCE_CONTRACT = "prism-availability-provenance-v1"
+ROUTING_SCOPE = "prism"
+LAST_RESORT_TIERS = {"last-resort", "last_resort", "fallback-only", "fallback_only"}
 PROVIDER_ALIASES = {
+    # Claude Code is the provider identity; `claude` is the local CLI command
+    # and roster shorthand. Keep both so Prism users can write either form.
     "claude": "claude-code",
     "claude-code": "claude-code",
     "copilot": "copilot",
@@ -108,6 +112,63 @@ def load_json(path: Path) -> dict[str, Any] | None:
     except (OSError, json.JSONDecodeError):
         return None
     return payload if isinstance(payload, dict) else None
+
+
+def load_provider_policy(path: Path) -> dict[str, Any]:
+    payload = load_json(path)
+    return payload if isinstance(payload, dict) else {}
+
+
+def scopes_include(raw: object, scope: str) -> bool:
+    if raw is None:
+        return True
+    if isinstance(raw, str):
+        return raw in {scope, "all"}
+    if isinstance(raw, list):
+        return scope in raw or "all" in raw
+    return False
+
+
+def routing_override_for(policy: dict[str, Any], provider: str, scope: str) -> dict[str, Any] | None:
+    canonical = normalize_agent_name(provider)
+    for item in policy.get("routing_overrides", []) or []:
+        if not isinstance(item, dict):
+            continue
+        if normalize_agent_name(str(item.get("agent", ""))) != canonical:
+            continue
+        if not scopes_include(item.get("scope"), scope):
+            continue
+        return item
+    return None
+
+
+def normalize_routing_tier(raw: object) -> str:
+    tier = str(raw or "normal").strip().lower().replace("_", "-")
+    if tier in LAST_RESORT_TIERS:
+        return "last-resort"
+    return tier or "normal"
+
+
+def apply_provider_routing_policy(cache: dict[str, Any], policy: dict[str, Any], scope: str = ROUTING_SCOPE) -> dict[str, Any]:
+    agents = cache.get("agents")
+    if not isinstance(agents, dict):
+        return cache
+    for key, raw_row in list(agents.items()):
+        if not isinstance(raw_row, dict):
+            continue
+        provider = normalize_agent_name(str(raw_row.get("canonical_agent") or raw_row.get("agent") or key))
+        override = routing_override_for(policy, provider, scope)
+        if override is None:
+            raw_row.setdefault("routing_tier", "normal")
+            continue
+        tier = normalize_routing_tier(override.get("priority_tier") or override.get("mode"))
+        raw_row["routing_tier"] = tier
+        raw_row["routing_scope"] = scope
+        if override.get("reason"):
+            raw_row["routing_reason"] = str(override.get("reason"))
+        if tier == "last-resort":
+            raw_row["normal_roster_policy"] = "suppress-when-any-non-last-resort-provider-is-available"
+    return cache
 
 
 def provenance_matches(cache: dict[str, Any], expected: dict[str, str]) -> bool:
@@ -228,15 +289,18 @@ def ensure_cache(args: argparse.Namespace) -> dict[str, Any]:
     cache_path = resolve_path(root, args.cache)
     health_probe = resolve_path(root, args.health_probe)
     provider_policy_path = resolve_path(root, args.provider_policy)
+    provider_policy = load_provider_policy(provider_policy_path)
     expected_provenance = build_cache_provenance(root, cache_path, health_probe, provider_policy_path)
     now = utc_now()
     existing = load_json(cache_path)
     if not args.refresh and existing is not None and cache_is_fresh(existing, now, args.timeout, expected_provenance):
+        existing = apply_provider_routing_policy(existing, provider_policy)
         if args.verbose:
             print(f"PRISM_AVAILABILITY_CACHE_OK {cache_path}")
         return existing
 
     payload = run_health_probe(root, health_probe, args.timeout, args.provider_policy, expected_provenance)
+    payload = apply_provider_routing_policy(payload, provider_policy)
     payload["ttl_seconds"] = args.ttl_seconds
     generated = parse_time(payload.get("generated_at")) or now
     payload["expires_at"] = iso(generated + timedelta(seconds=args.ttl_seconds))
@@ -273,10 +337,32 @@ def parse_roster(raw: str) -> list[dict[str, str]]:
     return roster
 
 
+def canonical_provider(row: dict[str, Any], fallback: str = "") -> str:
+    return normalize_agent_name(str(row.get("canonical_agent") or row.get("agent") or fallback))
+
+
+def is_last_resort(row: dict[str, Any]) -> bool:
+    return normalize_routing_tier(row.get("routing_tier")) == "last-resort"
+
+
+def non_last_resort_available_providers(agents: dict[str, Any]) -> set[str]:
+    providers: set[str] = set()
+    for key, row in agents.items():
+        if not isinstance(row, dict):
+            continue
+        if row.get("available") is not True:
+            continue
+        if is_last_resort(row):
+            continue
+        providers.add(canonical_provider(row, key))
+    return providers
+
+
 def roster_status(cache: dict[str, Any], roster_raw: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     agents = cache.get("agents")
     if not isinstance(agents, dict):
         fail("availability cache has no agents map")
+    normal_available = non_last_resort_available_providers(agents)
     available: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     for item in parse_roster(roster_raw):
@@ -289,7 +375,21 @@ def roster_status(cache: dict[str, Any], roster_raw: str) -> tuple[list[dict[str
             rejected.append({**item, "status": "missing-from-cache", "reason": "provider absent from availability cache"})
             continue
         merged = {**item, **row}
-        if row.get("available") is True:
+        canonical = canonical_provider(row, provider)
+        if row.get("available") is True and is_last_resort(row) and normal_available:
+            rejected.append(
+                {
+                    **merged,
+                    "provider": provider,
+                    "canonical_provider": canonical,
+                    "status": "last-resort-suppressed",
+                    "reason": (
+                        "provider is configured as last-resort only and non-last-resort providers are available: "
+                        + ",".join(sorted(normal_available))
+                    ),
+                }
+            )
+        elif row.get("available") is True:
             available.append(merged)
         else:
             rejected.append(merged)

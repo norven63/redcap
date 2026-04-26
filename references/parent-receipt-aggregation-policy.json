@@ -35,6 +35,12 @@
       "title": "Runtime / CLI / Package Readiness",
       "report_path": "compass/docs/task-reports/2026-04-26-runtime-cli-package-readiness.md",
       "receipt_glob": "redcap-runtime-cli-package-readiness-*.json"
+    },
+    {
+      "id": "P2-3",
+      "title": "Formal Prism quorum 恢复复验",
+      "report_path": "compass/docs/task-reports/2026-04-26-prism-formal-quorum-provider-revalidation.md",
+      "receipt_glob": "redcap-prism-formal-quorum-provider-revalidation-*.json"
     }
   ],
   "not_complete_children": [
@@ -43,17 +49,11 @@
       "status": "blocked-external",
       "reason": "shared-knowledge remote Gitee binding requires a real remote repository and permission from the user.",
       "next_step": "Bind remote after the user provides repository URL and credentials."
-    },
-    {
-      "id": "P2-3",
-      "status": "resource-limited",
-      "reason": "formal Prism quorum cannot be restored while multiple providers time out or are frozen.",
-      "next_step": "Re-run quorum validation when at least two non-frozen providers are stable."
     }
   ],
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
-    "reason": "Blocked-external and resource-limited child items remain.",
-    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P2-1 have receipts; parent task is still incomplete."
+    "reason": "Blocked-external child items remain.",
+    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P2-1/P2-3 have receipts; parent task is still incomplete."
   }
 }
