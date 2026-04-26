@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "manifest_id": "redcap-execution-layer-split-dry-run",
+  "status": "dry-run-only",
+  "created_for_task": "redcap-execution-layer-split-dry-run",
+  "apply_allowed": false,
+  "apply_policy": {
+    "rule": "This manifest is advisory. No file may be moved until a later apply task validates wrappers, hook adapters, import paths, docs catalog links, and rollback.",
+    "requires_before_apply": [
+      "Generate exact file move/copy/link manifest from this dry-run plan.",
+      "Run import/link impact check against every moved path.",
+      "Install compatibility wrappers for host-facing root entries.",
+      "Run full acceptance and closeout on a throwaway branch or worktree.",
+      "Keep rollback commands generated and reviewed before apply."
+    ]
+  },
+  "target_layers": [
+    {
+      "id": "runtime-core",
+      "proposed_root": "runtime/redcap-core",
+      "purpose": "Repo-owned scripts, validators, closeout runtime, Prism runtime tooling and shared policy files."
+    },
+    {
+      "id": "host-adapters",
+      "proposed_root": "runtime/host-adapters",
+      "purpose": "Thin host-specific entry files and hook adapters that must remain compatible with AGENTS/CLAUDE/GEMINI/Copilot imports."
+    },
+    {
+      "id": "knowledge-assets",
+      "proposed_root": "redcap-knowledge",
+      "purpose": "Long-lived lessons, reports, research, and shared-knowledge assets. Physical migration belongs to P1-2, not this dry-run."
+    }
+  ],
+  "plans": [
+    {
+      "id": "SPLIT-001",
+      "source": "bin/redcap",
+      "target": "runtime/redcap-core/bin/redcap",
+      "operation": "copy-then-link",
+      "target_layer": "runtime-core",
+      "risk": "medium",
+      "apply_status": "blocked_for_apply_until_adapter_exists",
+      "reason": "The thin CLI facade can move only after root-level bin/redcap remains as a compatibility shim.",
+      "import_impact": ["root-relative command examples", "README navigation", "internal calls to compass/tools and prism/tools"],
+      "hook_impact": ["none direct"],
+      "rollback_plan": ["Remove runtime/redcap-core/bin/redcap copy", "Keep original bin/redcap unchanged"]
+    },
+    {
+      "id": "SPLIT-002",
+      "source": "revive-cap.sh",
+      "target": "runtime/redcap-core/revive-cap.sh",
+      "operation": "copy-with-root-shim",
+      "target_layer": "runtime-core",
+      "risk": "high",
+      "apply_status": "blocked_for_apply_until_adapter_exists",
+      "reason": "revive-cap.sh is the one-shot revival entry users may run from the current root.",
+      "import_impact": ["AGENTS.md startup instructions", "README quick start", "internal call to compass/tools/redcap-install.sh"],
+      "hook_impact": ["host revival/install chain"],
+      "rollback_plan": ["Keep root revive-cap.sh authoritative until shim acceptance passes"]
+    },
+    {
+      "id": "SPLIT-003",
+      "source": "closeout-cap.sh",
+      "target": "runtime/redcap-core/closeout-cap.sh",
+      "operation": "copy-with-root-shim",
+      "target_layer": "runtime-core",
+      "risk": "high",
+      "apply_status": "blocked_for_apply_until_adapter_exists",
+      "reason": "closeout-cap.sh is the repo-owned closeout facade used by Layer B receipt generation.",
+      "import_impact": [".dev-task.md closeout workflow", "task reports", "internal call to compass/tools/redcap-layerb-closeout-runtime.sh"],
+      "hook_impact": ["on-complete", "session-end", "receipt runtime"],
+      "rollback_plan": ["Keep root closeout-cap.sh unchanged", "Delete copied runtime version if shim validation fails"]
+    },
+    {
+      "id": "SPLIT-004",
+      "source": "compass/tools",
+      "target": "runtime/redcap-core/compass/tools",
+      "operation": "copy-tree-then-rewire",
+      "target_layer": "runtime-core",
+      "risk": "high",
+      "apply_status": "blocked_for_apply_until_import_map_exists",
+      "reason": "Most validators assume current repo-relative compass/tools paths.",
+      "import_impact": ["all validator-chain scripts", "diagnose", "spec-check", "acceptance"],
+      "hook_impact": ["SessionStart", "Stop", "SessionEnd", "on-complete", ".githooks/pre-commit", ".githooks/commit-msg"],
+      "rollback_plan": ["Do not remove original compass/tools until every caller uses a generated path map"]
+    },
+    {
+      "id": "SPLIT-005",
+      "source": "prism/tools",
+      "target": "runtime/redcap-core/prism/tools",
+      "operation": "copy-tree-then-rewire",
+      "target_layer": "runtime-core",
+      "risk": "high",
+      "apply_status": "blocked_for_apply_until_prism_paths_are_abstracted",
+      "reason": "Prism evidence and dispatch checks currently use repo-relative prism/tools paths.",
+      "import_impact": ["Prism protocol examples", "dispatch-check", "availability cache"],
+      "hook_impact": ["Prism acceptance before closeout"],
+      "rollback_plan": ["Keep original prism/tools until Prism run-state and report checks accept runtime path"]
+    },
+    {
+      "id": "SPLIT-006",
+      "source": "references",
+      "target": "runtime/redcap-core/references",
+      "operation": "copy-selected-policies",
+      "target_layer": "runtime-core",
+      "risk": "medium",
+      "apply_status": "blocked_for_apply_until_policy_ownership_split",
+      "reason": "Some references are runtime policy, others are human architecture docs; ownership must split before move.",
+      "import_impact": ["file lookup dictionary", "execution guarantee checks", "policy validators"],
+      "hook_impact": ["validator-chain policy loading"],
+      "rollback_plan": ["Copy selected policy files first; keep original references as source until dictionary and validators agree"]
+    },
+    {
+      "id": "SPLIT-007",
+      "source": "AGENTS.md",
+      "target": "runtime/host-adapters/codex/AGENTS.md",
+      "operation": "copy-with-root-import-pointer",
+      "target_layer": "host-adapters",
+      "risk": "high",
+      "apply_status": "blocked_for_apply_until_host_import_contract_review",
+      "reason": "Codex automatically imports AGENTS.md from the current workspace root.",
+      "import_impact": ["Codex startup import", "revival protocol"],
+      "hook_impact": ["Codex has no repo-owned reply-veto hook; startup import is the key adapter"],
+      "rollback_plan": ["Root AGENTS.md remains a thin import pointer until host import behavior is revalidated"]
+    },
+    {
+      "id": "SPLIT-008",
+      "source": "compass/docs/task-reports",
+      "target": "redcap-knowledge/task-reports",
+      "operation": "defer-to-p1-2",
+      "target_layer": "knowledge-assets",
+      "risk": "high",
+      "apply_status": "deferred_to_legacy_asset_migration",
+      "reason": "Task reports are evidence assets; moving them belongs to P1-2 historical asset migration with catalog and link checks.",
+      "import_impact": ["docs catalog", "task-report-check", "historical references"],
+      "hook_impact": ["closeout report anchors"],
+      "rollback_plan": ["No move in P1-1; P1-2 must generate retain/archive/move/prune manifest first"]
+    }
+  ],
+  "global_impact": {
+    "import_paths": "High. Most scripts assume repo-relative paths; apply requires a generated path map or compatibility shims.",
+    "host_hooks": "High. Root AGENTS/CLAUDE/GEMINI/Copilot entries and closeout hooks must remain stable.",
+    "docs_catalog": "Medium. Catalog can track moved docs, but task-report anchors and historical links require migration tooling.",
+    "rollback": "Apply task must be copy-first, link-second, delete-last. No destructive move is allowed in the first apply pass.",
+    "cross_plan_dependencies": "SPLIT-004 cannot apply before SPLIT-001/002/003 shims are rewired, and git hooks must be retargeted before compass/tools moves."
+  }
+}

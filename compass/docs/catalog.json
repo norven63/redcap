@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 53,
-    "size_bytes": 772673,
-    "lines": 13590,
-    "chars": 500009,
+    "file_count": 54,
+    "size_bytes": 785148,
+    "lines": 13816,
+    "chars": 508328,
     "rough_token_pressure": {
-      "low": 125002,
-      "high": 250004
+      "low": 127082,
+      "high": 254164
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 34,
-        "size_bytes": 491925,
-        "lines": 6743,
-        "chars": 315539,
+        "file_count": 35,
+        "size_bytes": 504400,
+        "lines": 6969,
+        "chars": 323858,
         "rough_token_pressure": {
-          "low": 78884,
-          "high": 157769
+          "low": 80964,
+          "high": 161929
         }
       },
       "traces": {
@@ -787,7 +787,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 产品形态重定位与系统架构解耦",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14266,
       "lines": 196,
@@ -806,6 +806,19 @@
       "lines": 254,
       "chars": 10669,
       "summary": "当前已完成：R0-R22 已完成本地控制面落地：Prism 可用性 TTL 清单、File Lookup Dictionary coverage gate、shared-knowledge append-only 模板、`bin/redcap` 薄 CLI facade、文档表达、targeted/full acceptance 与整体控制面回归。 / 详情：Prism 调度前现在会先检查 1 小时 TTL 可用性清单；字典不再靠人工记忆维护，而是有 policy/check 接入 diagnose/spec-check；公共沉淀库先以本地模板和写入工具落地，远端 Gitee 绑定明确延期。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-26-execution-layer-split-dry-run.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：执行层物理拆分 dry-run",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 12475,
+      "lines": 226,
+      "chars": 8319,
+      "summary": "当前已完成：P1-1 已完成执行层物理拆分 dry-run，不执行真实搬迁。 / 详情：新增 `references/execution-layer-split-dry-run.json`，把 `bin/redcap`、`revive-cap.sh`、`closeout-cap.sh`、`compass/tools`、`prism/tools`、`references`、`AGENTS.md` 和历史 task reports 的迁移边界写成机器可读计划。新增 checker 并接入 spec-check、diagnose、acceptance，能拒绝危险 dry-run 计划。",
       "status_basis": "filename_recency_only"
     },
     {

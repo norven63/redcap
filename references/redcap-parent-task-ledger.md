@@ -31,7 +31,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 |---|---|---|---|---|---|---|
 | P0-1 | U2 | Prism availability cache provenance/path 污染修复 | completed | P0 | 已增加 cache provenance、probe/policy 内容摘要和污染回归 | receipt: `prism-availability-cache-provenance-guard-*`；报告 `2026-04-26-prism-availability-cache-provenance-guard.md` |
 | P0-2 | R0-R22 audit | R0-R22 原始编号可追溯化 | completed | P0 | 已新增机器可读 registry 和 checker，登记编号来源、状态、证据、置信度与延期边界 | receipt: `redcap-r0-r22-registry-*`；产物：`references/redcap-r0-r22-registry.json` |
-| P1-1 | R0-R22 deferred | 执行层物理拆分 dry-run | open | P1 | 先生成 JSON manifest，至少包含 move/copy/link plan、import impact、hook impact、rollback plan，再决定 apply | 必须保护现有 hook、revive、closeout、docs catalog 引用 |
+| P1-1 | R0-R22 deferred | 执行层物理拆分 dry-run | completed | P1 | 已生成 dry-run manifest、checker、spec/diagnose/acceptance 接线和 Kimi Prism review；下一步进入 P1-2 历史资产迁移 dry-run | receipt: `redcap-execution-layer-split-dry-run-*`；产物：`references/execution-layer-split-dry-run.json` |
 | P1-2 | R0-R22 deferred | 历史资产迁移 dry-run/apply | open | P1 | 先生成 JSON manifest，至少包含 retain/archive/move/prune 分类、断链检查、catalog 更新计划，再决定 apply | 不能破坏 task report、receipt、docs catalog 考古能力 |
 | P1-3 | R0-R22 deferred | shared-knowledge 远端 Gitee 绑定 | blocked-external | P1 | 用户提供 remote / 权限后绑定；绑定前本地模板继续工作 | 需要外部仓库和权限，Cap 不能凭空创建最终远端 |
 | P2-1 | R0-R22 deferred | 正式 runtime / CLI / package 发布设计与实现 | open | P2 | 先确定 package 形态，再跑 package safety gate；发布前阻断 `.env`、runtime evidence、私密入口 | 依赖 P1-1 的边界清晰化 |
@@ -43,7 +43,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 
 1. `P0-1`：先修 Prism availability cache 污染，因为它会影响后续所有 Prism 审查质量。
 2. `P0-2`：建立父任务 registry，把 R0-R22 编号变成可机器检查的持续真相源。
-3. `P1-1`：执行层物理拆分 dry-run，确认 RedCap 如何从 skill-root 迁出。
+3. `P1-1`：执行层物理拆分 dry-run，确认 RedCap 如何从 skill-root 迁出。（已完成）
 4. `P1-2`：历史资产迁移 dry-run/apply，解决 docs / reports 长期淤积。
 5. `P1-3`：绑定 shared-knowledge 远端仓库。
 6. `P2-1`：正式 runtime / CLI / package 发布。
@@ -55,4 +55,4 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 - 不可声明 RedCap 已经完成独立 runtime / CLI / package 化。
 - 不可声明历史报告和研究材料已经物理迁出执行层。
 - 不可声明 shared-knowledge 已经绑定远端团队仓库。
-- 不可声明 R0-R22 的每个原始编号都已有机器可读权威表；这是本文件识别出的 P0-2。
+- 不可声明 P1-1 dry-run 已经执行真实 move/copy/link；它只证明迁移边界和风险已可审计。

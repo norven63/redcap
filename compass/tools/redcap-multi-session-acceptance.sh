@@ -156,6 +156,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh prism-availability
   bash compass/tools/redcap-multi-session-acceptance.sh file-lookup-dictionary-check
   bash compass/tools/redcap-multi-session-acceptance.sh r0-r22-registry-check
+  bash compass/tools/redcap-multi-session-acceptance.sh execution-layer-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
@@ -9311,6 +9312,69 @@ PY
     assert_string_contains "$stale_output" "items must be exactly"
 }
 
+run_execution_layer_split_check_case() {
+    local output bad_manifest stale_output status
+
+    log "case: execution-layer-split-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-execution-layer-split-check.sh")"
+    assert_string_contains "$output" "EXECUTION_LAYER_SPLIT_DRY_RUN_OK"
+
+    bad_manifest="$ACCEPT_ROOT/execution-layer-split-apply-allowed.json"
+    python3 - "$REDCAP_ROOT/references/execution-layer-split-dry-run.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["apply_allowed"] = True
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-execution-layer-split-check.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "execution-layer split checker should reject apply_allowed=true"
+    assert_string_contains "$stale_output" "apply_allowed must be false"
+
+    bad_manifest="$ACCEPT_ROOT/execution-layer-split-missing-rollback.json"
+    python3 - "$REDCAP_ROOT/references/execution-layer-split-dry-run.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["plans"][0]["rollback_plan"] = []
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-execution-layer-split-check.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "execution-layer split checker should reject empty rollback_plan"
+    assert_string_contains "$stale_output" "rollback_plan must be a non-empty list"
+
+    bad_manifest="$ACCEPT_ROOT/execution-layer-split-existing-target.json"
+    python3 - "$REDCAP_ROOT/references/execution-layer-split-dry-run.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["plans"][0]["target"] = "bin/redcap"
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-execution-layer-split-check.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "execution-layer split checker should reject targets that already exist"
+    assert_string_contains "$stale_output" "target path must not already exist"
+}
+
 run_shared_knowledge_check_case() {
     local fixture body output stale_output status
 
@@ -11013,6 +11077,9 @@ case "$COMMAND" in
         ;;
     r0-r22-registry-check)
         run_r0_r22_registry_check_case
+        ;;
+    execution-layer-split-check)
+        run_execution_layer_split_check_case
         ;;
     shared-knowledge-check)
         run_shared_knowledge_check_case

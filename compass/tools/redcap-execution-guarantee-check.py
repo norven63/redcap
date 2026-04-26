@@ -42,6 +42,7 @@ REQUIRED_IDS = {
     "shared-knowledge-append-only",
     "package-publish-safety-gate",
     "review-tracks-gate",
+    "execution-layer-split-dry-run",
     "hook-contract-audit",
     "runtime-helper-convergence",
     "cli-console-mirror-contract",

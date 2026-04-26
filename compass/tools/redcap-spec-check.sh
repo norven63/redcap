@@ -432,6 +432,14 @@ if [[ -x "$R0_R22_REGISTRY_CHECK" ]]; then
     fi
 fi
 
+EXECUTION_LAYER_SPLIT_CHECK="$REDCAP_ROOT/compass/tools/redcap-execution-layer-split-check.sh"
+if [[ -x "$EXECUTION_LAYER_SPLIT_CHECK" ]]; then
+    if ! bash "$EXECUTION_LAYER_SPLIT_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] execution layer split dry-run check failed" >&2
+        exit 1
+    fi
+fi
+
 SHARED_KNOWLEDGE_CHECK="$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-check.sh"
 if [[ -x "$SHARED_KNOWLEDGE_CHECK" ]]; then
     if ! bash "$SHARED_KNOWLEDGE_CHECK" >/dev/null; then

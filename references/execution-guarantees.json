@@ -1099,6 +1099,29 @@
       "auto_enforceable": true
     },
     {
+      "id": "execution-layer-split-dry-run",
+      "category": "parent-task-governance",
+      "priority": "P1",
+      "rule": "RedCap execution-layer physical migration must begin with a dry-run manifest that blocks direct apply, exposes path/hook/catalog impact, and requires rollback plans before any real move.",
+      "source_paths": [
+        "references/execution-layer-split-dry-run.json",
+        "references/redcap-parent-task-ledger.md",
+        "compass/docs/task-reports/2026-04-26-execution-layer-split-dry-run.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-execution-layer-split-check.sh validates the dry-run manifest, rejects apply_allowed=true, requires safe targets, existing sources, non-empty rollback plans, high-risk blockers, and explicit P1-2 deferral; spec-check, diagnose, and acceptance consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-execution-layer-split-check.sh",
+        "compass/tools/redcap-execution-layer-split-check.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "hook-contract-audit",
       "category": "hook-contracts",
       "priority": "P1",
