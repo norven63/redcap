@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 58,
-    "size_bytes": 829814,
+    "size_bytes": 830225,
     "lines": 14642,
-    "chars": 539126,
+    "chars": 539585,
     "rough_token_pressure": {
-      "low": 134781,
-      "high": 269563
+      "low": 134896,
+      "high": 269792
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 39,
-        "size_bytes": 549066,
+        "size_bytes": 549477,
         "lines": 7795,
-        "chars": 354656,
+        "chars": 355115,
         "rough_token_pressure": {
-          "low": 88664,
-          "high": 177328
+          "low": 88778,
+          "high": 177557
         }
       },
       "traces": {
@@ -906,9 +906,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10502,
+      "size_bytes": 10913,
       "lines": 182,
-      "chars": 7274,
+      "chars": 7733,
       "summary": "当前已完成：P2-3 已实现并通过 Kimi + Claude Code Prism acceptance；Kimi 与 Claude Code 已被真实 live probe 证明可用，Codex CLI 已被策略降为 last-resort 兜底。 / 详情：`prism-availability` 现在会读取 provider policy，把 Codex 标记为 `last-resort`，并在任一非 Codex provider 可用时拒绝 Codex 进入普通 roster。",
       "status_basis": "filename_recency_only"
     },

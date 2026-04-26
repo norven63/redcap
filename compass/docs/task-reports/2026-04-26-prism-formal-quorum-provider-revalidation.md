@@ -19,7 +19,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：提交后运行 closeout runtime，生成本轮 receipt；父任务后续只剩 P1-3 shared-knowledge 外部远端绑定等非本轮项。
+- 下一步计划做的是：父任务后续只剩 P1-3 shared-knowledge 外部远端绑定等非本轮项；本轮 P2-3 已生成 closeout receipt。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -120,7 +120,7 @@
 | Prism acceptance | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过，Kimi + Claude Code，2 families，0 blocker。 |
 | Claude reviewer | `baton-launcher --cli claude` | pass；提出 alias / opt-in env / 命名差异说明建议，已补。 |
 | Kimi reviewer | `baton-launcher --cli kimi` | 长 prompt 超时；短 prompt pass，0 blocker。 |
-| spec-check / diagnose | 待最终回归 | 待提交和 closeout 前后执行。 |
+| spec-check / diagnose | `redcap-spec-check.sh "$PWD"`；`redcap-diagnose.sh .dev-task.md` | 通过，最终诊断输出 `DIAGNOSE_OK`。 |
 
 ### 5.3 closeout runtime / receipt
 
@@ -128,8 +128,8 @@
 |------|------|
 | 执行承诺账本 | 待 closeout runtime 同步 |
 | 棱镜验收 | `20260426-prism-formal-quorum-provider-revalidation` pass（Kimi + Claude Code，2 families） |
-| closeout summary | 待提交后生成 |
-| closeout receipt | 待提交后生成 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-prism-formal-quorum-provider-revalidation-f6c78e041558e3a09897fa26c47d8c6759902b7b296b071ec29dd9f7dfd5f24e.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-prism-formal-quorum-provider-revalidation-f6c78e041558e3a09897fa26c47d8c6759902b7b296b071ec29dd9f7dfd5f24e.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -138,7 +138,7 @@
 | 已实现 | 是 |
 | 已自检 | 是，targeted acceptance 已通过 |
 | 已独立验收 | 是，Kimi + Claude Code 双 reviewer 通过 |
-| 已正式完成 | 否，待提交后 closeout runtime receipt |
+| 已正式完成 | 是，closeout runtime receipt 已生成 |
 
 ---
 
@@ -171,7 +171,7 @@
 ### 附录 A：Commits
 
 ```text
-本报告随 P2-3 实现提交一起进入 git；closeout receipt 将记录最终 HEAD。
+本报告随 P2-3 实现提交进入 git；closeout receipt 记录最终 HEAD。
 ```
 
 ### 附录 B：棱镜调用记录
