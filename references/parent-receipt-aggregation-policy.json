@@ -37,23 +37,41 @@
       "receipt_glob": "redcap-runtime-cli-package-readiness-*.json"
     },
     {
+      "id": "P2-2",
+      "title": "父任务 receipt 聚合 gate",
+      "report_path": "compass/docs/task-reports/2026-04-26-parent-receipt-aggregation-gate.md",
+      "receipt_glob": "redcap-parent-receipt-aggregation-gate-*.json"
+    },
+    {
       "id": "P2-3",
       "title": "Formal Prism quorum 恢复复验",
       "report_path": "compass/docs/task-reports/2026-04-26-prism-formal-quorum-provider-revalidation.md",
       "receipt_glob": "redcap-prism-formal-quorum-provider-revalidation-*.json"
+    },
+    {
+      "id": "P1-3",
+      "title": "Shared Knowledge Gitee 远端绑定",
+      "report_path": "compass/docs/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
+      "receipt_glob": "redcap-shared-knowledge-gitee-remote-binding-*.json"
     }
   ],
   "not_complete_children": [
     {
-      "id": "P1-3",
-      "status": "blocked-external",
-      "reason": "shared-knowledge remote Gitee binding requires a real remote repository and permission from the user.",
-      "next_step": "Bind remote after the user provides repository URL and credentials."
+      "id": "P3-1",
+      "status": "deferred",
+      "reason": "GraphRAG / vector retrieval threshold research should wait until the shared knowledge library grows beyond catalog + rg + metadata sufficiency.",
+      "next_step": "Re-evaluate retrieval scale after real shared-knowledge entries accumulate."
+    },
+    {
+      "id": "P3-2",
+      "status": "deferred",
+      "reason": "Runtime receipt evidence correspondence hardening is a deeper evidence-quality improvement, not required for P1-3 remote binding.",
+      "next_step": "Implement receipt/content correspondence checks after receipt roots and report links are stable."
     }
   ],
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
-    "reason": "Blocked-external child items remain.",
-    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P2-1/P2-3 have receipts; parent task is still incomplete."
+    "reason": "Deferred child items remain.",
+    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P2-1/P2-2/P2-3 have receipts or active completion reports; parent task is still incomplete."
   }
 }

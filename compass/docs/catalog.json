@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 58,
-    "size_bytes": 830225,
-    "lines": 14642,
-    "chars": 539585,
+    "file_count": 59,
+    "size_bytes": 839888,
+    "lines": 14827,
+    "chars": 546052,
     "rough_token_pressure": {
-      "low": 134896,
-      "high": 269792
+      "low": 136513,
+      "high": 273026
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 39,
-        "size_bytes": 549477,
-        "lines": 7795,
-        "chars": 355115,
+        "file_count": 40,
+        "size_bytes": 559140,
+        "lines": 7980,
+        "chars": 361582,
         "rough_token_pressure": {
-          "low": 88778,
-          "high": 177557
+          "low": 90395,
+          "high": 180791
         }
       },
       "traces": {
@@ -852,7 +852,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：原始意图覆盖审计硬门",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10216,
       "lines": 170,
@@ -917,29 +917,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：R0-R22 父任务重锚定与计划完整性审计",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13744,
       "lines": 216,
       "chars": 9244,
       "summary": "当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口，并完成 closeout receipt。 / 详情：本轮不继续散点开发，也不把 `layerb-change-intake-replan-gate` 的 receipt 冒充 R0-R22 父任务完成；本轮只做全景恢复、计划审计、边界澄清和下一批执行排序。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口，并完成 closeout receipt。",
-          "详情：本轮不继续散点开发，也不把 `layerb-change-intake-replan-gate` 的 receipt 冒充 R0-R22 父任务完成；本轮只做全景恢复、计划审计、边界澄清和下一批执行排序。"
-        ],
-        "previous_step": [
-          "上一步完成的是：Layer B 中插需求重计划强门已 closeout，receipt 覆盖提交 `5eb5081`，承诺账本 10/10，pending closure 为空。"
-        ],
-        "next_step": [
-          "下一步计划做的是：后续真正执行应先从 `P0-1 Prism availability cache provenance/path 污染修复` 和 `P0-2 R0-R22 原始编号可追溯化` 开始；本轮重锚定/计划审计已收口。"
-        ],
-        "position": [
-          "整体计划脉络图是：状态导入 → 报告/receipt 考古 → 父子任务关系恢复 → 待执行项排序 → Prism plan review → 诊断/收口。",
-          "当前所在位置：状态导入、考古、父任务账本、Kimi resource-limited Prism plan review、审查反馈修正、spec-check、diagnose、提交与 closeout receipt 已完成；本轮任务流处于 CLOSED。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-26-r0-r22-registry.md",
@@ -996,6 +980,35 @@
         "position": [
           "整体计划脉络图是：P1 dry-run 边界 → P2-1 package readiness → P2-2 父任务聚合 gate → 外部绑定/发布/Prism quorum 后续收口。",
           "当前所在位置：RedCap 有可审计 package readiness，但仍不是已公开发布的 npm package。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Shared Knowledge Gitee 远端绑定",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9663,
+      "lines": 185,
+      "chars": 6467,
+      "summary": "当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance 和 targeted 回归。 / 详情：`https://gitee.com/norven63/redcap-arsenal.git` 已创建 `main` 分支；远端只包含 shared-knowledge 最小公共模板候选，且 `--live` 会对远端文件名与内容做白名单对账。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance 和 targeted 回归。",
+          "详情：`https://gitee.com/norven63/redcap-arsenal.git` 已创建 `main` 分支；远端只包含 shared-knowledge 最小公共模板候选，且 `--live` 会对远端文件名与内容做白名单对账。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P2-3 Formal Prism quorum 恢复复验，确认 Kimi + Claude Code 可形成当前独立验收 quorum。"
+        ],
+        "next_step": [
+          "下一步计划做的是：运行最终 spec/diagnose/closeout receipt，并提交本轮变更。"
+        ],
+        "position": [
+          "整体计划脉络图是：P1-3 remote fact → safety candidate policy → Gitee push → live head proof → parent ledger update → Prism acceptance → closeout receipt。",
+          "当前所在位置：P1-3 子任务已完成并进入最终 closeout。父任务仍不能声明全部完成。"
         ]
       }
     },

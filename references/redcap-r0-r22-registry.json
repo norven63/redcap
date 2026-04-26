@@ -247,38 +247,37 @@
     {
       "id": "R20",
       "title": "Execution-layer physical split dry-run",
-      "status": "deferred",
+      "status": "completed-with-defer",
       "source_type": "reconstructed",
       "confidence": "low",
-      "source_report": "references/redcap-parent-task-ledger.md",
-      "source_commit": "0ff4a37",
-      "evidence_paths": ["references/redcap-parent-task-ledger.md"],
-      "completion_boundary": "Not completed; only identified as P1-1.",
-      "deferred_boundary": "Requires JSON move/copy/link manifest, import impact, hook impact and rollback plan."
+      "source_report": "compass/docs/task-reports/2026-04-26-execution-layer-split-dry-run.md",
+      "source_commit": "5f48de0",
+      "evidence_paths": ["references/execution-layer-split-dry-run.json", "compass/tools/redcap-execution-layer-split-check.sh", "references/redcap-parent-task-ledger.md"],
+      "completion_boundary": "P1-1 dry-run manifest, checker and report are complete.",
+      "deferred_boundary": "Does not execute physical move/copy/link migration; real apply remains a separate task."
     },
     {
       "id": "R21",
       "title": "Historical asset migration dry-run/apply",
-      "status": "deferred",
+      "status": "completed-with-defer",
       "source_type": "reconstructed",
       "confidence": "low",
-      "source_report": "references/redcap-parent-task-ledger.md",
-      "source_commit": "0ff4a37",
-      "evidence_paths": ["references/redcap-parent-task-ledger.md"],
-      "completion_boundary": "Not completed; only identified as P1-2.",
-      "deferred_boundary": "Requires retain/archive/move/prune manifest and catalog/link checks before apply."
+      "source_report": "compass/docs/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
+      "source_commit": "ea84821",
+      "evidence_paths": ["references/legacy-asset-migration-dry-run.json", "compass/tools/redcap-legacy-asset-migration-check.sh", "references/redcap-parent-task-ledger.md"],
+      "completion_boundary": "P1-2 collection-level migration dry-run, checker and report are complete.",
+      "deferred_boundary": "Does not execute real historical asset move/delete; apply remains a separate task with rollback."
     },
     {
       "id": "R22",
       "title": "Remote shared-knowledge binding and formal runtime/package distribution",
-      "status": "blocked-or-deferred",
+      "status": "completed-with-defer",
       "source_type": "reconstructed",
       "confidence": "low",
-      "source_report": "references/redcap-parent-task-ledger.md",
-      "source_commit": "0ff4a37",
-      "evidence_paths": ["references/redcap-parent-task-ledger.md", "references/package-publish-safety-policy.json"],
-      "completion_boundary": "Not completed; split across P1-3 and P2-1 in the parent ledger.",
-      "deferred_boundary": "Remote binding needs external repository/permission; package distribution depends on execution-layer boundary."
+      "source_report": "compass/docs/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
+      "evidence_paths": ["references/shared-knowledge-remote-binding.json", "references/runtime-package-readiness-policy.json", "references/package-publish-safety-policy.json", "references/redcap-parent-task-ledger.md"],
+      "completion_boundary": "P1-3 Gitee remote template binding and P2-1 package readiness are complete.",
+      "deferred_boundary": "Does not migrate historical knowledge assets or perform a real public npm/runtime release."
     }
   ]
 }

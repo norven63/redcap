@@ -54,6 +54,7 @@
     "parent-task-governance",
     "evolution-factory",
     "shared-knowledge",
+    "shared-knowledge-remote",
     "package-publish-safety",
     "runtime-package"
   ],
@@ -888,6 +889,31 @@
         "compass/tools/redcap-shared-knowledge.sh",
         "compass/tools/redcap-shared-knowledge.py",
         "compass/tools/redcap-shared-knowledge-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "shared-knowledge-remote-binding",
+      "category": "shared-knowledge-remote",
+      "priority": "P1",
+      "rule": "The public shared-knowledge repository may be considered bound only when a machine-readable remote binding policy lists the exact safe template candidates, rejects credentials and private RedCap surfaces, and can verify the remote branch head in explicit live mode.",
+      "source_paths": [
+        "references/shared-knowledge-remote-binding.json",
+        "references/shared-knowledge-policy.json",
+        "shared-knowledge/README.md",
+        "shared-knowledge/.gitignore",
+        "shared-knowledge/schemas/entry.schema.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-shared-knowledge-remote-check validates the local policy and candidate safety by default; explicit --live verifies the Gitee branch head, remote tree, and candidate file content without making every spec-check depend on network availability.",
+      "guarantee_paths": [
+        "compass/tools/redcap-shared-knowledge-remote-check.sh",
+        "compass/tools/redcap-shared-knowledge-remote-check.py",
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-spec-check.sh",
         "compass/tools/redcap-multi-session-acceptance.sh"

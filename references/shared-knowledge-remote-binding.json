@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "binding_id": "redcap-shared-knowledge-gitee-remote-binding",
+  "status": "bound",
+  "remote_url": "https://gitee.com/norven63/redcap-arsenal.git",
+  "remote_host": "gitee.com",
+  "remote_owner": "norven63",
+  "remote_repo": "redcap-arsenal",
+  "default_branch": "main",
+  "local_root": "shared-knowledge",
+  "remote_root": ".",
+  "publish_mode": "template-only",
+  "fixture_mode": false,
+  "allowed_candidates": [
+    {
+      "path": ".gitignore",
+      "remote_path": ".gitignore",
+      "purpose": "Keep local secrets and transient files out of the public shared-knowledge repository."
+    },
+    {
+      "path": "README.md",
+      "remote_path": "README.md",
+      "purpose": "Human-readable public shared-knowledge contract."
+    },
+    {
+      "path": "schemas/entry.schema.json",
+      "remote_path": "schemas/entry.schema.json",
+      "purpose": "Machine-readable append-only entry contract."
+    },
+    {
+      "path": "indexes/.gitkeep",
+      "remote_path": "indexes/.gitkeep",
+      "purpose": "Keep the index namespace visible before generated indexes exist."
+    },
+    {
+      "path": "users/.gitkeep",
+      "remote_path": "users/.gitkeep",
+      "purpose": "Keep the per-user namespace visible before team entries exist."
+    }
+  ],
+  "forbidden_path_globs": [
+    ".env",
+    ".env.*",
+    "**/.env",
+    "**/.env.*",
+    "AGENTS.md",
+    "**/AGENTS.md",
+    "CLAUDE.md",
+    "**/CLAUDE.md",
+    "GEMINI.md",
+    "**/GEMINI.md",
+    "SKILL.md",
+    "**/SKILL.md",
+    ".github/copilot-instructions.md",
+    "**/.github/copilot-instructions.md",
+    "cli_console.md",
+    "**/cli_console.md",
+    "prompt.txt",
+    "**/prompt.txt",
+    "compass/**",
+    "prism/runs/**",
+    "compass/docs/task-reports/**",
+    "compass/knowledge/**",
+    ".git/**",
+    "**/__pycache__/**",
+    "**/*.pyc",
+    "**/.DS_Store"
+  ],
+  "safety_policy_path": "references/package-publish-safety-policy.json",
+  "last_verified": {
+    "checked_at_utc": "2026-04-26T13:47:54Z",
+    "method": "git ls-remote --heads",
+    "remote_ref": "refs/heads/main",
+    "remote_head": "a43c8ab543eff42a288e23ecc4eeb5bc6e954b78"
+  },
+  "notes": [
+    "This binding only covers the minimal public template surface.",
+    "Historical reports, lessons, identity files, runtime evidence, and host entry files are intentionally out of scope.",
+    "After any legitimate template push, update last_verified.remote_head and checked_at_utc by rerunning the live check; head drift is intentional fail-closed behavior."
+  ]
+}

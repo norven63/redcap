@@ -160,6 +160,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-check
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
+  bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
@@ -9576,7 +9577,7 @@ target = pathlib.Path(sys.argv[2])
 payload = json.loads(source.read_text(encoding="utf-8"))
 payload["not_complete_children"] = [
     child for child in payload["not_complete_children"]
-    if child.get("id") != "P1-3"
+    if child.get("id") != "P3-1"
 ]
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -9585,7 +9586,7 @@ PY
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing required not-complete child"
-    assert_string_contains "$stale_output" "not_complete_children must be non-empty"
+    assert_string_contains "$stale_output" "missing not-complete child entries: P3-1"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-eligible-output.json"
     python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
@@ -9654,6 +9655,184 @@ run_shared_knowledge_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-check.sh")"
     assert_string_contains "$output" "SHARED_KNOWLEDGE_OK"
+}
+
+run_shared_knowledge_remote_binding_check_case() {
+    local fixture bare work policy bad_policy empty_bare output stale_output status head new_head
+
+    log "case: shared-knowledge-remote-binding-check"
+
+    fixture="$ACCEPT_ROOT/shared-knowledge-remote-fixture"
+    bare="$ACCEPT_ROOT/shared-knowledge-remote.git"
+    work="$ACCEPT_ROOT/shared-knowledge-remote-work"
+    policy="$ACCEPT_ROOT/shared-knowledge-remote-binding.json"
+    bad_policy="$ACCEPT_ROOT/shared-knowledge-remote-binding-bad.json"
+    empty_bare="$ACCEPT_ROOT/shared-knowledge-empty.git"
+    TEMP_PROJECTS+=("$fixture" "$bare" "$work" "$empty_bare")
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" init --root "$fixture")"
+    assert_string_contains "$output" "SHARED_KNOWLEDGE_INIT_OK"
+    assert_exists "$fixture/.gitignore"
+    assert_exists "$fixture/users/.gitkeep"
+    assert_exists "$fixture/indexes/.gitkeep"
+
+    git init --bare "$bare" >/dev/null
+    git init "$work" >/dev/null
+    git -C "$work" checkout -b main >/dev/null
+    cp -R "$REDCAP_ROOT/shared-knowledge"/. "$work"/
+    git -C "$work" add .
+    git -C "$work" -c user.name="RedCap Acceptance" -c user.email="redcap@example.invalid" commit -m "chore: init shared knowledge fixture" >/dev/null
+    git -C "$work" remote add origin "file://$bare"
+    git -C "$work" push -u origin main >/dev/null
+    head="$(git --git-dir="$bare" rev-parse refs/heads/main)"
+
+    python3 - "$policy" "$bare" "$head" <<'PY'
+import json, sys
+policy, bare, head = sys.argv[1:4]
+payload = {
+    "version": 1,
+    "binding_id": "redcap-shared-knowledge-gitee-remote-binding",
+    "status": "bound",
+    "remote_url": f"file://{bare}",
+    "remote_host": "fixture.local",
+    "remote_owner": "fixture",
+    "remote_repo": "redcap-arsenal",
+    "default_branch": "main",
+    "local_root": "shared-knowledge",
+    "remote_root": ".",
+    "publish_mode": "template-only",
+    "fixture_mode": True,
+    "allowed_candidates": [
+        {"path": ".gitignore", "remote_path": ".gitignore", "purpose": "fixture gitignore"},
+        {"path": "README.md", "remote_path": "README.md", "purpose": "fixture readme"},
+        {"path": "schemas/entry.schema.json", "remote_path": "schemas/entry.schema.json", "purpose": "fixture schema"},
+        {"path": "indexes/.gitkeep", "remote_path": "indexes/.gitkeep", "purpose": "fixture indexes"},
+        {"path": "users/.gitkeep", "remote_path": "users/.gitkeep", "purpose": "fixture users"},
+    ],
+    "forbidden_path_globs": [
+        ".env", ".env.*", "**/.env", "**/.env.*",
+        "AGENTS.md", "**/AGENTS.md", "CLAUDE.md", "**/CLAUDE.md",
+        "GEMINI.md", "**/GEMINI.md", "SKILL.md", "**/SKILL.md",
+        ".github/copilot-instructions.md", "**/.github/copilot-instructions.md",
+        "cli_console.md", "**/cli_console.md", "prompt.txt", "**/prompt.txt",
+        "compass/**", "prism/runs/**"
+    ],
+    "safety_policy_path": "references/package-publish-safety-policy.json",
+    "last_verified": {
+        "checked_at_utc": "2026-04-26T00:00:00Z",
+        "method": "git ls-remote --heads",
+        "remote_ref": "refs/heads/main",
+        "remote_head": head,
+    },
+}
+open(policy, "w", encoding="utf-8").write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+PY
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$policy")"
+    assert_string_contains "$output" "SHARED_KNOWLEDGE_REMOTE_BINDING_OK"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$policy" --live)"
+    assert_string_contains "$output" "live_head=$head"
+    assert_string_contains "$output" "remote_tree_files=5"
+
+    printf '%s\n' "# Tampered public README" >"$work/README.md"
+    git -C "$work" add README.md
+    git -C "$work" -c user.name="RedCap Acceptance" -c user.email="redcap@example.invalid" commit -m "test: tamper remote template content" >/dev/null
+    git -C "$work" push origin main >/dev/null
+    new_head="$(git --git-dir="$bare" rev-parse refs/heads/main)"
+    python3 - "$policy" "$bad_policy" "$new_head" <<'PY'
+import json, sys
+src, dst, new_head = sys.argv[1:4]
+payload = json.load(open(src, encoding="utf-8"))
+payload["last_verified"]["remote_head"] = new_head
+open(dst, "w", encoding="utf-8").write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$bad_policy" --live 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "remote checker should reject remote candidate content drift"
+    assert_string_contains "$stale_output" "remote file content mismatch"
+
+    printf '%s\n' "unexpected public file" >"$work/extra.md"
+    git -C "$work" add extra.md
+    git -C "$work" -c user.name="RedCap Acceptance" -c user.email="redcap@example.invalid" commit -m "test: add forbidden extra remote file" >/dev/null
+    git -C "$work" push origin main >/dev/null
+    new_head="$(git --git-dir="$bare" rev-parse refs/heads/main)"
+    python3 - "$policy" "$bad_policy" "$new_head" <<'PY'
+import json, sys
+src, dst, new_head = sys.argv[1:4]
+payload = json.load(open(src, encoding="utf-8"))
+payload["last_verified"]["remote_head"] = new_head
+open(dst, "w", encoding="utf-8").write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$bad_policy" --live 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "remote checker should reject remote tree files outside the whitelist"
+    assert_string_contains "$stale_output" "remote tree mismatch"
+
+    python3 - "$policy" "$bad_policy" <<'PY'
+import json, sys
+src, dst = sys.argv[1:3]
+payload = json.load(open(src, encoding="utf-8"))
+payload["remote_url"] = "https://token@example@gitee.com/norven63/redcap-arsenal.git"
+open(dst, "w", encoding="utf-8").write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "remote checker should reject embedded credentials"
+    assert_string_contains "$stale_output" "embedded credentials"
+
+    python3 - "$policy" "$bad_policy" <<'PY'
+import json, sys
+src, dst = sys.argv[1:3]
+payload = json.load(open(src, encoding="utf-8"))
+payload["allowed_candidates"][0]["path"] = "../.env"
+open(dst, "w", encoding="utf-8").write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "remote checker should reject candidates outside local_root"
+    assert_string_contains "$stale_output" "unsafe path"
+
+    python3 - "$policy" "$bad_policy" <<'PY'
+import json, sys
+src, dst = sys.argv[1:3]
+payload = json.load(open(src, encoding="utf-8"))
+payload["allowed_candidates"][1]["remote_path"] = "CLAUDE.md"
+open(dst, "w", encoding="utf-8").write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "remote checker should reject forbidden remote host-entry path"
+    assert_string_contains "$stale_output" "candidate matches forbidden path glob"
+
+    git init --bare "$empty_bare" >/dev/null
+    python3 - "$policy" "$bad_policy" "$empty_bare" <<'PY'
+import json, sys
+src, dst, empty_bare = sys.argv[1:4]
+payload = json.load(open(src, encoding="utf-8"))
+payload["status"] = "prepared"
+payload["remote_url"] = f"file://{empty_bare}"
+payload["last_verified"] = None
+open(dst, "w", encoding="utf-8").write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$bad_policy" --live 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "remote checker should reject missing live branch head"
+    assert_string_contains "$stale_output" "remote head missing"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh")"
+    assert_string_contains "$output" "SHARED_KNOWLEDGE_REMOTE_BINDING_OK"
 }
 
 run_package_publish_safety_check_case() {
@@ -10957,7 +11136,11 @@ run_all_cases() {
     run_prism_availability_case
     run_file_lookup_dictionary_check_case
     run_r0_r22_registry_check_case
+    run_execution_layer_split_check_case
+    run_legacy_asset_migration_check_case
+    run_parent_receipt_aggregation_check_case
     run_shared_knowledge_check_case
+    run_shared_knowledge_remote_binding_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
     run_skill_lifecycle_check_case
@@ -11407,6 +11590,9 @@ case "$COMMAND" in
         ;;
     shared-knowledge-check)
         run_shared_knowledge_check_case
+        ;;
+    shared-knowledge-remote-binding-check)
+        run_shared_knowledge_remote_binding_check_case
         ;;
     package-publish-safety-check)
         run_package_publish_safety_check_case

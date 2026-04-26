@@ -182,6 +182,25 @@
 
 ---
 
+### [2026-04-26] Q8: Shared Knowledge 远端绑定与公开仓库安全边界
+
+**原始问题**：
+> 继续，另外，公共库的git仓库是：https://gitee.com/norven63/redcap-arsenal.git
+
+**演进过程**：
+- 轮次 1：确认 `redcap-arsenal` 远端可访问但初始无 head，任务边界限定为 P1-3 子任务，不能冒充父任务完成。
+- 轮次 2：建立 `shared-knowledge-remote-binding.json`，把 remote URL、默认分支、最小候选清单、禁止路径与 last_verified 变成机器可读事实。
+- 轮次 3：只把 `.gitignore`、`README.md`、schema、`indexes/.gitkeep`、`users/.gitkeep` 推送到 Gitee `main`，并记录 head `a43c8ab543eff42a288e23ecc4eeb5bc6e954b78`。
+- 轮次 4：Prism review 提醒 `--live` 不应只验 head；已升级为 head + tree + 文件内容对账，并补 acceptance 覆盖额外文件与内容漂移。
+
+**当前共识**：
+- 公共库绑定必须先用最小白名单保护“能推什么”，再用 `--live` 证明“远端实际是什么”。
+- P1-3 完成不等于历史 reports/lessons/identity 已迁移，也不等于父任务全部完成。
+
+**状态**：[ACTIVE] → P1-3 closeout 中；正式证据见 `2026-04-26-shared-knowledge-gitee-remote-binding.md`
+
+---
+
 ## 归档区
 
 > 已决策且已沉淀到正式文档的条目索引（保留追溯链路，不删除原文）

@@ -11,8 +11,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_POLICY = ROOT / "references/parent-receipt-aggregation-policy.json"
 ALLOWED_OPEN_STATUSES = {"open", "blocked-external", "resource-limited", "deferred"}
-REQUIRED_COMPLETED = {"P0-1", "P0-2", "P1-1", "P1-2", "P2-1", "P2-3"}
-REQUIRED_NOT_COMPLETE = {"P1-3"}
+REQUIRED_COMPLETED = {"P0-1", "P0-2", "P1-1", "P1-2", "P1-3", "P2-1", "P2-2", "P2-3"}
+REQUIRED_NOT_COMPLETE = {"P3-1", "P3-2"}
 
 
 def fail(message: str) -> None:

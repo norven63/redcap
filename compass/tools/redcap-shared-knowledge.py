@@ -86,11 +86,17 @@ def ensure_structure(root: Path) -> None:
 
 def copy_template(repo_root: Path, root: Path) -> None:
     template_readme = repo_root / "shared-knowledge" / "README.md"
+    template_gitignore = repo_root / "shared-knowledge" / ".gitignore"
     template_schema = repo_root / "shared-knowledge" / "schemas" / "entry.schema.json"
     if template_readme.is_file() and not (root / "README.md").exists():
         shutil.copyfile(template_readme, root / "README.md")
+    if template_gitignore.is_file() and not (root / ".gitignore").exists():
+        shutil.copyfile(template_gitignore, root / ".gitignore")
     if template_schema.is_file() and not (root / "schemas" / "entry.schema.json").exists():
         shutil.copyfile(template_schema, root / "schemas" / "entry.schema.json")
+    for placeholder in (root / "users" / ".gitkeep", root / "indexes" / ".gitkeep"):
+        if not placeholder.exists():
+            placeholder.write_text("", encoding="utf-8")
 
 
 def iter_entries(root: Path) -> list[dict[str, Any]]:

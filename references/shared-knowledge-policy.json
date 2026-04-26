@@ -12,5 +12,5 @@
   "user_namespace_rule": "entries live under users/<user_slug>/ so team members can contribute to the same repository without mixing authorship",
   "retrieval_rule": "read catalog and metadata first; use rg/FTS for exact recall; only load entry bodies after the caller has a precise evidence need",
   "dedupe_rule": "before append, compute a normalized fingerprint and reject exact duplicates; near-duplicate review remains a Prism or human-review concern until semantic retrieval exists",
-  "remote_boundary": "Gitee remote creation and binding are intentionally deferred until the user provides the remote repository."
+  "remote_boundary": "The public template remote is bound in references/shared-knowledge-remote-binding.json. Only the minimal template surface may be pushed; historical reports, lessons, identity, runtime evidence, host entry files, and private configuration remain out of scope."
 }

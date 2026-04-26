@@ -40,6 +40,7 @@ REQUIRED_IDS = {
     "contributing-core-routing",
     "file-lookup-dictionary-coverage",
     "shared-knowledge-append-only",
+    "shared-knowledge-remote-binding",
     "package-publish-safety-gate",
     "runtime-package-readiness-gate",
     "review-tracks-gate",

@@ -7,7 +7,7 @@
 
 - **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124。适用于 pending closure、task report、validator chain、closure ledger、current-status、父子任务完成态打架时。
 - **宿主 / Hook / runtime 边界**：先看 L-15、L-16、L-39、L-41~L-49、L-62~L-69、L-77~L-90。适用于宿主适配、review runner、session-start/session-end、host-limited 行为边界。
-- **docs / knowledge / token 风险**：先看 L-50~L-52、L-64~L-66、L-91~L-97。适用于首读入口、说人话、渐进披露、`CONTRIBUTING` / docs / acceptance / `prism/runs` 的上下文压力治理。
+- **docs / knowledge / token 风险**：先看 L-50~L-52、L-64~L-66、L-91~L-97、L-122、L-132。适用于首读入口、说人话、渐进披露、shared-knowledge、`CONTRIBUTING` / docs / acceptance / `prism/runs` 的上下文压力治理。
 - **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110、L-124。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模、中插需求重计划。
 
 > 使用方式：先按主题命中热点簇，再精读对应 L-编号；不要为了找一条相关经验默认全量扫完整个 lessons 文件。
@@ -1203,6 +1203,15 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **解决方案**：Layer B 必须把执行期变化写入 `## 原始输入` 的 `U<n>` 与 `## 中插需求账本`，再进入 `CHANGE_INTAKE / REPLAN_REVIEW`；每条 U 项要记录类型、阻塞性、优先级、处理方式、确认需求更新、计划更新、验收更新、状态和证据。拆成子任务时只能声明 `parent_completion_claim: child-only`，并由 `redcap-change-intake-check.sh`、PM Gate、diagnose、spec-check 和 FSM 自检共同阻断“子任务冒充父任务完成”。
 - **最后效果**：缺少中插账本、terminal 阶段仍有未收口 U 项、阻塞 U 项被延期、或子任务宣称父任务完成都会 fail-closed；阶段性汇报只能作为状态同步，不能替代父任务 closeout receipt。
 - **来源**：2026-04-26 Layer B 中插需求重计划强门
+
+### L-132: 公共库远端绑定必须用最小白名单加 live 对账证明
+- **问题源**：用户提供 `https://gitee.com/norven63/redcap-arsenal.git` 后，RedCap 需要把 shared-knowledge 从“本地模板”推进到“真实公共远端”，但公共远端一旦推错文件，就可能泄露 `.env`、宿主入口、runtime evidence、Prism runs 或历史报告全文。
+- **解决方案**：远端绑定必须拆成两层证明：① 本地 `references/shared-knowledge-remote-binding.json` 白名单列出唯一允许推送的模板候选，并由 checker 扫 URL 凭证、禁止路径和 secret pattern；② 显式 `--live` 用 `git ls-remote --heads` 验证远端分支 head，并克隆远端比对 tree 与文件内容，避免把“写了 remote URL”幻觉成“远端已绑定”。
+- **最后效果**：本轮只把 `.gitignore`、`README.md`、schema 和目录占位推到 Gitee `main`，记录 head `a43c8ab543eff42a288e23ecc4eeb5bc6e954b78`；历史 reports、lessons、identity 和运行证据仍保持不迁移。
+- **来源**：2026-04-26 Shared Knowledge Gitee 远端绑定
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-26
 - **影响度**：high
 - **复现次数**：多次
 - **最后命中**：2026-04-26

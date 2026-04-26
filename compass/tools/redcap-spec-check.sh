@@ -464,6 +464,14 @@ if [[ -x "$SHARED_KNOWLEDGE_CHECK" ]]; then
     fi
 fi
 
+SHARED_KNOWLEDGE_REMOTE_CHECK="$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh"
+if [[ -x "$SHARED_KNOWLEDGE_REMOTE_CHECK" ]]; then
+    if ! bash "$SHARED_KNOWLEDGE_REMOTE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] shared knowledge remote binding check failed" >&2
+        exit 1
+    fi
+fi
+
 PACKAGE_PUBLISH_SAFETY_CHECK="$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh"
 if [[ ! -f "$PACKAGE_PUBLISH_SAFETY_CHECK" ]]; then
     echo "[redcap-spec-check] package publish safety check missing" >&2
