@@ -39,6 +39,7 @@ REQUIRED_IDS = {
     "contributing-core-routing",
     "file-lookup-dictionary-coverage",
     "shared-knowledge-append-only",
+    "package-publish-safety-gate",
     "review-tracks-gate",
     "hook-contract-audit",
     "runtime-helper-convergence",

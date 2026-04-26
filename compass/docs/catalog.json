@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 48,
-    "size_bytes": 718269,
-    "lines": 12653,
-    "chars": 464565,
+    "file_count": 49,
+    "size_bytes": 725758,
+    "lines": 12795,
+    "chars": 469346,
     "rough_token_pressure": {
-      "low": 116141,
-      "high": 232282
+      "low": 117336,
+      "high": 234673
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 29,
-        "size_bytes": 437521,
-        "lines": 5806,
-        "chars": 280095,
+        "file_count": 30,
+        "size_bytes": 445010,
+        "lines": 5948,
+        "chars": 284876,
         "rough_token_pressure": {
-          "low": 70023,
-          "high": 140047
+          "low": 71219,
+          "high": 142438
         }
       },
       "traces": {
@@ -722,7 +722,7 @@
       "collection": "task-reports",
       "title": "2026-04-22 `revive-cap` Prism E2E 与 read-only 修补",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 5295,
       "lines": 126,
@@ -787,29 +787,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 产品形态重定位与系统架构解耦",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14266,
       "lines": 196,
       "chars": 9712,
       "summary": "当前已完成：已把本轮任务重锚定到 `.dev-task.md`，确认北极星是：RedCap 不再只叙述为某个宿主 skill，而是向独立 Agent Runtime / CLI / 多层协作系统演进。 / 已新增 `references/redcap-system-layers.md`，把执行层、Prism 层、知识层、Evolution 层、证据层、人类阅读层、人格层、宿主适配层与检索层拆开，形成后续迁移路线。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：已把本轮任务重锚定到 `.dev-task.md`，确认北极星是：RedCap 不再只叙述为某个宿主 skill，而是向独立 Agent Runtime / CLI / 多层协作系统演进。",
-          "已新增 `references/redcap-system-layers.md`，把执行层、Prism 层、知识层、Evolution 层、证据层、人类阅读层、人格层、宿主适配层与检索层拆开，形成后续迁移路线。"
-        ],
-        "previous_step": [
-          "上一步完成的是：Kimi 棱镜评审指出 provider policy fail-open 与自定义 registry 耦合风险；随后已补齐 `redcap-provider-policy.sh` 的 Copilot 缺失策略 fail-closed、`redcap-agent-health-probe.py` 的 missing-policy 跳过真实 Copilot、`redcap-detect-agents.sh` 的 policy-unavailable 保护、`redcap-on-stop-review…"
-        ],
-        "next_step": [
-          "下一步计划做的是：无当前任务内必需动作。若继续推进“物理目录拆分 / 独立 CLI 化 / 多层系统迁移”，必须另立迁移任务，不能把本轮路线图冒充已完成迁移。"
-        ],
-        "position": [
-          "整体计划脉络图是：任务重锚定 → 产品形态/目录边界总纲 → 文件查阅字典 → provider freeze 强门 → skill lifecycle 补全 → Feishu 通知 owner 收敛 → Prism 调度/通信协议升级 → 知识检索路线 → lessons/Evolution 沉淀 → Prism + 回归 + closeout。",
-          "当前所在位置：本轮治理任务已正式收口；Prism 已绑定为 resource-limited-pass（Kimi 有效，其它非 Copilot provider 不可用，Copilot frozen），closeout receipt 已存在，因此本轮承诺账本完成。但 RedCap 仍处于 skill-root 承载形态，独立 runtime / CLI 化只是已形成路线图，并未完成物理迁移。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md",
@@ -866,6 +850,35 @@
         "position": [
           "整体计划脉络图是：失败复盘 → 重锚新任务 → 新增原始意图覆盖硬门 → 接入 PM Gate / diagnose / guarantees → 补模板和 acceptance → 沉淀 lessons → 回归与提交。",
           "当前所在位置：实现、targeted 回归、full acceptance、spec-check、diagnose 与 closeout receipt 均已完成；pending closure 已清。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-26-package-publish-safety-gate.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RedCap 发布/打包前安全拦截保障",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 7489,
+      "lines": 142,
+      "chars": 4781,
+      "summary": "当前已完成：RedCap 已新增发布/打包前安全 gate，并接入 execution guarantees、spec-check、diagnose、acceptance、CLI facade 和 File Lookup Dictionary。 / 详情：未来 npm / 独立 runtime / portable package 发布前，应把实际打包文件清单交给 `redcap-package-publish-safety-check.sh`；它会阻断 `.env`、宿主私密入口、本地 runtime evidence、Prism run 残留和 credential-like 内容。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已新增发布/打包前安全 gate，并接入 execution guarantees、spec-check、diagnose、acceptance、CLI facade 和 File Lookup Dictionary。",
+          "详情：未来 npm / 独立 runtime / portable package 发布前，应把实际打包文件清单交给 `redcap-package-publish-safety-check.sh`；它会阻断 `.env`、宿主私密入口、本地 runtime evidence、Prism run 残留和 credential-like 内容。"
+        ],
+        "previous_step": [
+          "上一步完成的是：上一轮 R0-R22 任务已经 closeout，receipt 覆盖提交 `7c57451`；本轮是其后的新增安全需求，不应复用上一轮 receipt 冒充完成。"
+        ],
+        "next_step": [
+          "下一步计划做的是：提交本轮安全 gate，并由 closeout runtime 生成新的 receipt。"
+        ],
+        "position": [
+          "整体计划脉络图是：新增需求进入 `.dev-task.md` → policy/checker → spec/diagnose/guarantee/acceptance 接线 → 文档与 lesson → 回归 → closeout receipt。",
+          "当前所在位置：实现与 targeted 回归已完成，处于提交和 closeout 前。"
         ]
       }
     },

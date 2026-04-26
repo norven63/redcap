@@ -27,7 +27,7 @@ Compass 负责规范、经验、Hook、收尾与复活
 可运行代码 + 可考古证据 + 可恢复连续性
 ```
 
-## RedCap 最核心的 9 个能力
+## RedCap 最核心的 10 个能力
 
 | 能力 | 解决的问题 |
 |---|---|
@@ -39,6 +39,7 @@ Compass 负责规范、经验、Hook、收尾与复活
 | **经验会进入自我进化工厂** | 重要纠偏、失败链路、人格成长和 skill 候选先进入 Evolution candidate，再晋升或说明不晋升 |
 | **共享知识不会变成新垃圾山** | 公共沉淀走独立 shared-knowledge 形态：按用户隔离、append-only、先索引、先去重 |
 | **多宿主 skill 不再各自分叉** | RedCap 原生能力是单一信源；宿主入口只做轻量索引、复活和适配 |
+| **发布前先拦安全泄漏** | npm / 独立 runtime / portable package 发布前先跑 package safety gate，阻断 `.env`、私密入口、runtime evidence 和疑似密钥 |
 | **做不到硬保障的地方会诚实承认** | 不会把“只能靠纪律遵守”的规则伪装成 100% 自动执行 |
 
 ## 为什么 Prism 是主角之一

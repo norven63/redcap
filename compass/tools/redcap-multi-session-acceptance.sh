@@ -152,6 +152,10 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh evolution-candidate-check
   bash compass/tools/redcap-multi-session-acceptance.sh evolution-harvest-check
   bash compass/tools/redcap-multi-session-acceptance.sh agent-health-probe
+  bash compass/tools/redcap-multi-session-acceptance.sh prism-availability
+  bash compass/tools/redcap-multi-session-acceptance.sh file-lookup-dictionary-check
+  bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
+  bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh token-risk-audit
@@ -9062,6 +9066,46 @@ run_shared_knowledge_check_case() {
     assert_string_contains "$output" "SHARED_KNOWLEDGE_OK"
 }
 
+run_package_publish_safety_check_case() {
+    local fixture safe_file env_file key_file list_file output stale_output status
+
+    log "case: package-publish-safety-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh")"
+    assert_string_contains "$output" "PACKAGE_PUBLISH_SAFETY_OK"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'package publish safety check missing'
+
+    fixture="$(mktemp -d "$REDCAP_ROOT/.tmp-package-publish-safety.XXXXXX")"
+    TEMP_PROJECTS+=("$fixture")
+    safe_file="$fixture/safe.md"
+    env_file="$fixture/.env"
+    key_file="$fixture/key.md"
+    list_file="$fixture/candidates.txt"
+
+    printf '%s\n' "safe package content" >"$safe_file"
+    printf '%s\n' "$safe_file" >"$list_file"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh" --candidate-list "$list_file")"
+    assert_string_contains "$output" "PACKAGE_PUBLISH_SAFETY_OK"
+
+    printf '%s\n' "$env_file" >"$list_file"
+    printf '%s\n' "KIMI_API_KEY=acceptance-fixture-secret-value" >"$env_file"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh" --candidate-list "$list_file" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "package safety should reject denied .env path"
+    assert_string_contains "$stale_output" "denied-path"
+
+    printf '%s\n' "$key_file" >"$list_file"
+    printf '%s\n' "example GEMINI_API_KEY=AIzaSyAcceptanceFixtureSecretValue000" >"$key_file"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh" --candidate-list "$list_file" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "package safety should reject credential-like content"
+    assert_string_contains "$stale_output" "secret-pattern"
+}
+
 run_skill_lifecycle_check_case() {
     local output fixture stale_output stale_status
 
@@ -10235,6 +10279,7 @@ run_all_cases() {
     run_prism_availability_case
     run_file_lookup_dictionary_check_case
     run_shared_knowledge_check_case
+    run_package_publish_safety_check_case
     run_skill_lifecycle_check_case
     run_legacy_asset_lifecycle_check_case
     run_token_risk_audit_case
@@ -10667,6 +10712,9 @@ case "$COMMAND" in
         ;;
     shared-knowledge-check)
         run_shared_knowledge_check_case
+        ;;
+    package-publish-safety-check)
+        run_package_publish_safety_check_case
         ;;
     skill-lifecycle-check)
         run_skill_lifecycle_check_case

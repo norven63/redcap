@@ -35,6 +35,7 @@
 22. **文件解释走字典优先**：关键 JSON、registry、script 的人类解释优先进入 `references/file-lookup-dictionary.md`，文件头只放短注解和反链；新增关键文件要同步补 `references/file-lookup-dictionary-policy.json`，让 `redcap-file-lookup-dictionary-check.sh` 兜住遗漏。
 23. **Prism 先看可用性清单**：Prism roster 必须写成 `provider&model:role`；dispatch 前先过 `prism-availability` 1 小时 TTL 清单，过期先嗅探，`frozen/timeout/fail/unsupported` 不得进入本轮调用。
 24. **共享沉淀库 append-only**：公共经验/方法论/skill 候选要走 `shared-knowledge` 独立仓库形态：按用户隔离、先查重复、只新增不改旧条目、先索引再读取；远端 Gitee 未绑定前不得冒充团队共享已完成。
+25. **发布/打包前必须安全审计**：正式 npm、独立 runtime 或 portable package 发布前，必须先跑 `redcap-package-publish-safety-check.sh` 检查实际候选文件集合；`.env`、宿主私密入口、runtime evidence、Prism run 残留和 credential-like 内容一律 fail-closed。
 
 ## 章节路由
 
@@ -52,6 +53,7 @@
 | 文件查阅 / 名词定位 | `references/file-lookup-dictionary.md` |
 | 共享知识 / 团队沉淀 | `references/shared-knowledge-policy.json`、`shared-knowledge/README.md` |
 | skill 分发 / 多宿主入口 | `references/skill-lifecycle-policy.json` |
+| npm / runtime 打包发布 | `references/package-publish-safety-policy.json`、`compass/tools/redcap-package-publish-safety-check.sh` |
 | 旧资产 / 运行残留治理 | `references/legacy-asset-lifecycle.json`、`prism/protocol.md` |
 
 ## 必跑入口
@@ -71,3 +73,4 @@
 13. 涉及 Prism 调用：`bash prism/tools/prism-availability.sh status`，随后只调度可用 provider
 14. 涉及关键文件新增或解释：`bash compass/tools/redcap-file-lookup-dictionary-check.sh`
 15. 涉及公共沉淀库：`bash compass/tools/redcap-shared-knowledge-check.sh`
+16. 涉及 npm / runtime / portable package 发布：`bash compass/tools/redcap-package-publish-safety-check.sh --candidate-list <实际打包文件清单>`

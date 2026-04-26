@@ -55,6 +55,14 @@
 | [`compass/docs/catalog.json`](../compass/docs/catalog.json) | docs catalog | docs 首读索引，防止任务一开始 bulk-read 历史报告 | Docs governance | `bash compass/tools/redcap-docs-catalog.sh summary` |
 | [`compass/knowledge/index.md`](../compass/knowledge/index.md) | knowledge index | lessons/knowledge 首读索引，防止默认打开知识库全文 | Knowledge governance | `bash compass/tools/redcap-knowledge-index-check.sh` |
 
+## Package Publish Safety
+
+| 文件 | 定位 | 含义 | owner | check |
+|---|---|---|---|---|
+| [`references/package-publish-safety-policy.json`](../references/package-publish-safety-policy.json) | package safety policy | 未来 npm / 独立 runtime 发布前的包面安全策略：默认候选、禁止路径、密钥模式和人工边界 | Release safety | `bash compass/tools/redcap-package-publish-safety-check.sh` |
+| [`compass/tools/redcap-package-publish-safety-check.sh`](../compass/tools/redcap-package-publish-safety-check.sh) | package safety shell entry | 发布/打包前安全审计入口，可检查默认候选包或显式候选文件清单 | Release safety | `bash compass/tools/redcap-package-publish-safety-check.sh` |
+| [`compass/tools/redcap-package-publish-safety-check.py`](../compass/tools/redcap-package-publish-safety-check.py) | package safety validator | fail-closed 检查候选文件是否包含 `.env`、宿主私密入口、runtime evidence 或 credential-like 内容 | Release safety | `bash compass/tools/redcap-package-publish-safety-check.sh --candidate-list <files>` |
+
 ## Machine-Covered Critical Paths
 
 > 这不是鼓励默认全读的清单，而是 `references/file-lookup-dictionary-policy.json` 的人类可读镜像：凡是这里登记的关键文件，都必须能通过 `bash compass/tools/redcap-file-lookup-dictionary-check.sh` 被机器检查到。新增关键 runtime / Prism / knowledge / host-adapter 文件时，要同步补 policy 与本字典。
@@ -69,6 +77,9 @@
 | [`compass/tools/redcap-file-lookup-dictionary-check.sh`](../compass/tools/redcap-file-lookup-dictionary-check.sh) | Product Shape And Retrieval | shell entry for dictionary coverage validation | Compass validator | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` |
 | [`compass/tools/redcap-file-lookup-dictionary-check.py`](../compass/tools/redcap-file-lookup-dictionary-check.py) | Product Shape And Retrieval | dictionary coverage validator and missing-entry planner | Compass validator | `bash compass/tools/redcap-file-lookup-dictionary-check.sh --plan` |
 | [`bin/redcap`](../bin/redcap) | Product Shape And Retrieval | thin CLI facade for revive, status, diagnose, closeout, Prism availability, dictionary and shared knowledge commands | Runtime facade | `bin/redcap help` |
+| [`references/package-publish-safety-policy.json`](../references/package-publish-safety-policy.json) | Package Publish Safety | fail-closed policy for future npm/runtime package candidate audits | Release safety | `bash compass/tools/redcap-package-publish-safety-check.sh` |
+| [`compass/tools/redcap-package-publish-safety-check.sh`](../compass/tools/redcap-package-publish-safety-check.sh) | Package Publish Safety | shell entry for package publish safety audit | Release safety | `bash compass/tools/redcap-package-publish-safety-check.sh` |
+| [`compass/tools/redcap-package-publish-safety-check.py`](../compass/tools/redcap-package-publish-safety-check.py) | Package Publish Safety | package candidate path and secret-pattern validator | Release safety | `bash compass/tools/redcap-package-publish-safety-check.sh` |
 | [`revive-cap.sh`](../revive-cap.sh) | Runtime And Closeout | root one-shot revival/install facade | Runtime facade | `./revive-cap.sh` |
 | [`compass/tools/redcap-install.sh`](../compass/tools/redcap-install.sh) | Runtime And Closeout | revival/install chain for identity, workflow import and readiness checks | Runtime facade | `bash compass/tools/redcap-install.sh --check-only` |
 | [`compass/tools/redcap-current-status.sh`](../compass/tools/redcap-current-status.sh) | Runtime And Closeout | human-readable current task/status surface | Layer B status | `bash compass/tools/redcap-current-status.sh` |

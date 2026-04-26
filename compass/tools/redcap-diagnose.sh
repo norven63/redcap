@@ -116,6 +116,7 @@ run_check "prism-runs-lifecycle" bash "$REDCAP_ROOT/prism/tools/prism-runs-lifec
 run_check "prism-availability" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" status || overall=1
 run_check "file-lookup-dictionary" bash "$SCRIPT_DIR/redcap-file-lookup-dictionary-check.sh" || overall=1
 run_check "shared-knowledge" bash "$SCRIPT_DIR/redcap-shared-knowledge-check.sh" || overall=1
+run_check "package-publish-safety" bash "$SCRIPT_DIR/redcap-package-publish-safety-check.sh" || overall=1
 run_check "hook-contract" bash "$SCRIPT_DIR/redcap-hook-contract-check.sh" || overall=1
 run_check "runtime-helper" bash "$SCRIPT_DIR/redcap-runtime-helper-check.sh" || overall=1
 run_check "cli-console-mirror" bash "$SCRIPT_DIR/redcap-cli-console-mirror-check.sh" || overall=1

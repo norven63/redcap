@@ -51,7 +51,8 @@
     "host-mirror",
     "host-behavior",
     "evolution-factory",
-    "shared-knowledge"
+    "shared-knowledge",
+    "package-publish-safety"
   ],
   "guarantees": [
     {
@@ -859,6 +860,30 @@
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-spec-check.sh",
         "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "package-publish-safety-gate",
+      "category": "package-publish-safety",
+      "priority": "P0",
+      "rule": "Before RedCap is packaged as npm, portable runtime, or any public distribution, the exact package candidate file set must pass a fail-closed safety audit that rejects local secrets, host-private entry files, runtime evidence, and credential-like content.",
+      "source_paths": [
+        "references/package-publish-safety-policy.json",
+        "compass/tools/redcap-package-publish-safety-check.sh",
+        "compass/tools/redcap-package-publish-safety-check.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-package-publish-safety-check validates the default future package surface and can audit explicit package file lists; spec-check, diagnose, CLI facade, and acceptance consume it before RedCap may claim package readiness.",
+      "guarantee_paths": [
+        "compass/tools/redcap-package-publish-safety-check.sh",
+        "compass/tools/redcap-package-publish-safety-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "bin/redcap"
       ],
       "revival_required": true,
       "hook_required": false,
