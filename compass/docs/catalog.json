@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 50,
-    "size_bytes": 742114,
+    "size_bytes": 742295,
     "lines": 13036,
-    "chars": 478942,
+    "chars": 478993,
     "rough_token_pressure": {
-      "low": 119735,
-      "high": 239471
+      "low": 119748,
+      "high": 239496
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 31,
-        "size_bytes": 461366,
+        "size_bytes": 461547,
         "lines": 6189,
-        "chars": 294472,
+        "chars": 294523,
         "rough_token_pressure": {
-          "low": 73618,
-          "high": 147236
+          "low": 73630,
+          "high": 147261
         }
       },
       "traces": {
@@ -815,9 +815,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 15329,
+      "size_bytes": 15510,
       "lines": 228,
-      "chars": 9027,
+      "chars": 9078,
       "summary": "当前已完成：Layer B 已新增中插需求账本、重计划状态、父子任务完成边界和机器检查器，并接入 PM Gate、diagnose、spec-check、execution guarantees、FSM、自检、current-status 与 acceptance。 / 详情：长任务执行期如果用户新增需求、纠偏、约束或优先级变化，必须先写入 `U<n>` 与 `## 中插需求账本`，再重排确认需求、计划和验收；子任务只能声明自己完成，不能冒充父任务完成。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -829,11 +829,11 @@
           "上一步完成的是：发布/打包前安全 gate 已 closeout 并提交到 `cc9b484`；本轮是用户针对“中插需求打乱长任务流程”的更高层治理任务，不能复用发布安全 gate 的完成态。"
         ],
         "next_step": [
-          "下一步计划做的是：提交本轮变更，并由 closeout runtime 生成正式 receipt。"
+          "下一步计划做的是：本轮机制已完成收口；后续如果继续推进 R0-R22 或其他父任务，必须先通过中插需求账本把新增要求并入对应父任务或明确拆为子任务，不能再用子任务完成态冒充父任务完成态。"
         ],
         "position": [
           "整体计划脉络图是：重新立项 → 设计 `CHANGE_INTAKE / REPLAN_REVIEW` → 新增 policy/checker → 接入 PM Gate / diagnose / spec / FSM / status / guarantees → acceptance → 报告与 lesson → Prism → closeout receipt。",
-          "当前所在位置：实现、targeted acceptance、full acceptance、spec-check、diagnose 与 Kimi resource-limited Prism review 均已完成，处于提交和 closeout receipt 收口点。"
+          "当前所在位置：实现、targeted acceptance、full acceptance、spec-check、diagnose、Kimi resource-limited Prism review、提交与 closeout receipt 均已完成；当前任务流处于 CLOSED。"
         ]
       }
     },

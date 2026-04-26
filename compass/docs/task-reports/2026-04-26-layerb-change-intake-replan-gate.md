@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-26
 **执行者**：Cap（Codex.app 主 Agent）
-**报告版本**：v1.0
+**报告版本**：v1.1
 
 ---
 
@@ -19,12 +19,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：提交本轮变更，并由 closeout runtime 生成正式 receipt。
+- 下一步计划做的是：本轮机制已完成收口；后续如果继续推进 R0-R22 或其他父任务，必须先通过中插需求账本把新增要求并入对应父任务或明确拆为子任务，不能再用子任务完成态冒充父任务完成态。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：重新立项 → 设计 `CHANGE_INTAKE / REPLAN_REVIEW` → 新增 policy/checker → 接入 PM Gate / diagnose / spec / FSM / status / guarantees → acceptance → 报告与 lesson → Prism → closeout receipt。
-- 当前所在位置：实现、targeted acceptance、full acceptance、spec-check、diagnose 与 Kimi resource-limited Prism review 均已完成，处于提交和 closeout receipt 收口点。
+- 当前所在位置：实现、targeted acceptance、full acceptance、spec-check、diagnose、Kimi resource-limited Prism review、提交与 closeout receipt 均已完成；当前任务流处于 CLOSED。
 
 ---
 
