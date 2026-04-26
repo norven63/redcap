@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 50,
-    "size_bytes": 742124,
+    "size_bytes": 742114,
     "lines": 13036,
-    "chars": 478952,
+    "chars": 478942,
     "rough_token_pressure": {
-      "low": 119738,
-      "high": 239476
+      "low": 119735,
+      "high": 239471
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 31,
-        "size_bytes": 461376,
+        "size_bytes": 461366,
         "lines": 6189,
-        "chars": 294482,
+        "chars": 294472,
         "rough_token_pressure": {
-          "low": 73620,
-          "high": 147241
+          "low": 73618,
+          "high": 147236
         }
       },
       "traces": {
@@ -815,9 +815,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 15339,
+      "size_bytes": 15329,
       "lines": 228,
-      "chars": 9037,
+      "chars": 9027,
       "summary": "当前已完成：Layer B 已新增中插需求账本、重计划状态、父子任务完成边界和机器检查器，并接入 PM Gate、diagnose、spec-check、execution guarantees、FSM、自检、current-status 与 acceptance。 / 详情：长任务执行期如果用户新增需求、纠偏、约束或优先级变化，必须先写入 `U<n>` 与 `## 中插需求账本`，再重排确认需求、计划和验收；子任务只能声明自己完成，不能冒充父任务完成。",
       "status_basis": "filename_recency_only",
       "summary_points": {
