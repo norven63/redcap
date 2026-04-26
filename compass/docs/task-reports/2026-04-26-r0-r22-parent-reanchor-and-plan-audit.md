@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-26
 **执行者**：Cap（Codex.app 主 Agent）
-**报告版本**：v0.3
+**报告版本**：v1.0
 
 ---
 
@@ -10,7 +10,7 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，并建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口。
+- 当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口，并完成 closeout receipt。
 - 详情：本轮不继续散点开发，也不把 `layerb-change-intake-replan-gate` 的 receipt 冒充 R0-R22 父任务完成；本轮只做全景恢复、计划审计、边界澄清和下一批执行排序。
 
 ### 0.2 上一步完成的是
@@ -19,12 +19,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：提交本轮重锚定变更并执行 closeout；后续真正执行应先从 `P0-1 Prism availability cache provenance/path 污染修复` 和 `P0-2 R0-R22 原始编号可追溯化` 开始。
+- 下一步计划做的是：后续真正执行应先从 `P0-1 Prism availability cache provenance/path 污染修复` 和 `P0-2 R0-R22 原始编号可追溯化` 开始；本轮重锚定/计划审计已收口。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：状态导入 → 报告/receipt 考古 → 父子任务关系恢复 → 待执行项排序 → Prism plan review → 诊断/收口。
-- 当前所在位置：状态导入、考古、父任务账本、Kimi resource-limited Prism plan review、审查反馈修正、spec-check 与 diagnose 已完成；正在提交并进入 closeout。
+- 当前所在位置：状态导入、考古、父任务账本、Kimi resource-limited Prism plan review、审查反馈修正、spec-check、diagnose、提交与 closeout receipt 已完成；本轮任务流处于 CLOSED。
 
 ---
 
@@ -143,11 +143,7 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过，`DIAGNOSE_OK` |
 
-### 5.2 待完成
-
-- closeout receipt。
-
-### 5.3 Prism reviewer 结论
+### 5.2 Prism reviewer 结论
 
 | 项 | 结论 |
 |---|---|
@@ -158,6 +154,17 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 | 关键建议 | closeout 前补 spec/diagnose；P0-1 补 explicit refresh 证据；P0-2 必须做到 R0-R22 编号级 registry；P1-1/P1-2 dry-run 要有 JSON manifest 与验收标准；父任务账本增加来源列 |
 | 本轮处理 | 已补 explicit refresh 证据、来源列、dry-run 输出要求；spec/diagnose 将在 closeout 前执行 |
 
+### 5.3 closeout runtime / receipt
+
+| 项 | 值 |
+|---|---|
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r0-r22-parent-reanchor-and-plan-audit-5b4110258a5450fdd577a04629d62b90b8aba5bc5369d05eebd71860a976cbdf.json` |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r0-r22-parent-reanchor-and-plan-audit-5b4110258a5450fdd577a04629d62b90b8aba5bc5369d05eebd71860a976cbdf.md` |
+| promise ledger | 8/8 completed |
+| pending closure | clear |
+| baseline_head | `2d5e9800a99f508baeee7b422323e1fc4d83f405` |
+| current_head | `7d380db52cd0a67c9f932686f1504702c9b9b4a8` |
+
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 状态 | 说明 |
@@ -165,7 +172,7 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 | 已实现 | 是 | 父任务账本、报告、文件字典入口和 Prism resource-limited plan review 已落地 |
 | 已自检 | 是 | PM Gate、intent coverage、change-intake、file dictionary、spec-check 和 diagnose 已通过 |
 | 已独立验收 | 是，resource-limited | Kimi reviewer pass，无 blocker；Gemini/Claude 超时，Codex unsupported，Copilot frozen |
-| 已正式完成 | 否 | closeout receipt 尚未生成；本报告 v0.2 仍是 closeout 前状态 |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt，promise ledger 8/8，pending closure 已清 |
 
 ---
 

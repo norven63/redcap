@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 51,
-    "size_bytes": 755322,
-    "lines": 13245,
-    "chars": 487518,
+    "size_bytes": 756039,
+    "lines": 13252,
+    "chars": 488237,
     "rough_token_pressure": {
-      "low": 121879,
-      "high": 243759
+      "low": 122059,
+      "high": 244118
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 32,
-        "size_bytes": 474574,
-        "lines": 6398,
-        "chars": 303048,
+        "size_bytes": 475291,
+        "lines": 6405,
+        "chars": 303767,
         "rough_token_pressure": {
-          "low": 75762,
-          "high": 151524
+          "low": 75941,
+          "high": 151883
         }
       },
       "traces": {
@@ -886,25 +886,25 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13027,
-      "lines": 209,
-      "chars": 8525,
-      "summary": "当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，并建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口。 / 详情：本轮不继续散点开发，也不把 `layerb-change-intake-replan-gate` 的 receipt 冒充 R0-R22 父任务完成；本轮只做全景恢复、计划审计、边界澄清和下一批执行排序。",
+      "size_bytes": 13744,
+      "lines": 216,
+      "chars": 9244,
+      "summary": "当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口，并完成 closeout receipt。 / 详情：本轮不继续散点开发，也不把 `layerb-change-intake-replan-gate` 的 receipt 冒充 R0-R22 父任务完成；本轮只做全景恢复、计划审计、边界澄清和下一批执行排序。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，并建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口。",
+          "当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口，并完成 closeout receipt。",
           "详情：本轮不继续散点开发，也不把 `layerb-change-intake-replan-gate` 的 receipt 冒充 R0-R22 父任务完成；本轮只做全景恢复、计划审计、边界澄清和下一批执行排序。"
         ],
         "previous_step": [
           "上一步完成的是：Layer B 中插需求重计划强门已 closeout，receipt 覆盖提交 `5eb5081`，承诺账本 10/10，pending closure 为空。"
         ],
         "next_step": [
-          "下一步计划做的是：提交本轮重锚定变更并执行 closeout；后续真正执行应先从 `P0-1 Prism availability cache provenance/path 污染修复` 和 `P0-2 R0-R22 原始编号可追溯化` 开始。"
+          "下一步计划做的是：后续真正执行应先从 `P0-1 Prism availability cache provenance/path 污染修复` 和 `P0-2 R0-R22 原始编号可追溯化` 开始；本轮重锚定/计划审计已收口。"
         ],
         "position": [
           "整体计划脉络图是：状态导入 → 报告/receipt 考古 → 父子任务关系恢复 → 待执行项排序 → Prism plan review → 诊断/收口。",
-          "当前所在位置：状态导入、考古、父任务账本、Kimi resource-limited Prism plan review、审查反馈修正、spec-check 与 diagnose 已完成；正在提交并进入 closeout。"
+          "当前所在位置：状态导入、考古、父任务账本、Kimi resource-limited Prism plan review、审查反馈修正、spec-check、diagnose、提交与 closeout receipt 已完成；本轮任务流处于 CLOSED。"
         ]
       }
     },
