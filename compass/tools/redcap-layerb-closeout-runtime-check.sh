@@ -13,6 +13,7 @@ PRISM_ACCEPTANCE_SCRIPT="$SCRIPT_DIR/redcap-prism-acceptance-check.sh"
 PRISM_ACCEPTANCE_BIND_SCRIPT="$SCRIPT_DIR/redcap-prism-acceptance-bind.sh"
 EVOLUTION_CANDIDATE_SCRIPT="$SCRIPT_DIR/redcap-evolution-candidate-check.sh"
 EVOLUTION_HARVEST_SCRIPT="$SCRIPT_DIR/redcap-evolution-harvest-check.sh"
+CHANGE_INTAKE_SCRIPT="$SCRIPT_DIR/redcap-change-intake-check.sh"
 
 [[ -x "$RUNTIME_SCRIPT" ]] || {
     echo "[redcap-layerb-closeout-runtime-check] missing runtime script: $RUNTIME_SCRIPT" >&2
@@ -44,6 +45,11 @@ EVOLUTION_HARVEST_SCRIPT="$SCRIPT_DIR/redcap-evolution-harvest-check.sh"
     exit 1
 }
 
+[[ -x "$CHANGE_INTAKE_SCRIPT" ]] || {
+    echo "[redcap-layerb-closeout-runtime-check] missing change intake script: $CHANGE_INTAKE_SCRIPT" >&2
+    exit 1
+}
+
 python3 - "$TASK_FILE" <<'PY'
 import pathlib
 import sys
@@ -58,6 +64,7 @@ bash "$RUNTIME_SCRIPT" status --task-file "$TASK_FILE" >/dev/null
 bash "$PRISM_ACCEPTANCE_SCRIPT" --task-file "$TASK_FILE" >/dev/null || true
 bash "$EVOLUTION_CANDIDATE_SCRIPT" >/dev/null
 bash "$EVOLUTION_HARVEST_SCRIPT" "$TASK_FILE" >/dev/null
+bash "$CHANGE_INTAKE_SCRIPT" "$TASK_FILE" --mode closeout >/dev/null
 
 ACTIVE_SLICE="$(python3 - "$TASK_FILE" <<'PY'
 import pathlib

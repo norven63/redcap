@@ -442,6 +442,18 @@ if ! bash "$PACKAGE_PUBLISH_SAFETY_CHECK" >/dev/null; then
     exit 1
 fi
 
+CHANGE_INTAKE_CHECK="$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh"
+if [[ ! -f "$CHANGE_INTAKE_CHECK" ]]; then
+    echo "[redcap-spec-check] change intake check missing" >&2
+    exit 1
+fi
+if [[ -f "$REDCAP_ROOT/.dev-task.md" ]]; then
+    if ! bash "$CHANGE_INTAKE_CHECK" "$REDCAP_ROOT/.dev-task.md" >/dev/null; then
+        echo "[redcap-spec-check] change intake check failed" >&2
+        exit 1
+    fi
+fi
+
 PRISM_AVAILABILITY_CHECK="$REDCAP_ROOT/prism/tools/prism-availability.sh"
 if [[ -x "$PRISM_AVAILABILITY_CHECK" ]]; then
     if ! bash "$PRISM_AVAILABILITY_CHECK" status >/dev/null; then

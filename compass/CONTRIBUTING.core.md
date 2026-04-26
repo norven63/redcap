@@ -17,6 +17,7 @@
 4. **强制规则必须进执行保障**：P0/P1 规则不能只写在报告或自然语言里；能自动化的接入脚本、validator、hook、acceptance，不能自动化的写清 manual-only 原因。
 5. **收尾必须 fail-closed**：stop-review、on-complete、session-end、spec-check、diagnose 等控制面失败时，不能用后续成功覆盖失败。
 6. **Agent 自追加承诺必须落账**：只要你在执行中明确承诺“下一步会做 A/B/C”，就要写入 `.dev-task.md` 的 `## 执行承诺账本`；不能只留在对话里。
+6.5. **中插需求必须先重计划**：长任务执行期用户新增需求、纠偏、约束或优先级变化时，先补 `## 原始输入` 的 `U<n>` 与 `## 中插需求账本`，重排确认需求/计划/验收；子任务只能声明 `parent_completion_claim: child-only`，不得冒充父任务完成。
 7. **上下文必须渐进披露**：docs 先 catalog summary/plan/budget，knowledge 先 index，acceptance 先 acceptance-index；大文件不默认 bulk-read。
 8. **人类可读输出必须说人话**：首次出现内部术语、缩写、阶段名时，要解释对应文件/功能、做了什么、为什么重要；正式任务报告还必须通过 `redcap-human-output-quality-check.sh`，不能只靠章节标题冒充高质量汇报。
 9. **宿主面只能镜像 RedCap 真相**：`cli_console.md`、宿主 workboard、plan mirror 不能反向改写 `.dev-task.md`、runtime state 或 task report。
@@ -48,6 +49,7 @@
 | Prism / 多 Agent 审查 | `CONTRIBUTING.md` §8、§9、§11、`prism/protocol.md` |
 | provider 调度 / 冻结 | `prism/tools/prism-availability.sh status`、`references/prism-provider-policy.json`、`compass/knowledge/model-capability-matrix.yaml` |
 | 需求确认 / 人工介入边界 | `CONTRIBUTING.md` §10、`references/agent-constraints.md` |
+| 中插需求 / 重计划 | `references/layerb-change-intake-policy.json`、`compass/tools/redcap-change-intake-check.sh`、`CONTRIBUTING.md` §10、§13 |
 | 调研结论 | `CONTRIBUTING.md` §14 |
 | 自我进化 / 经验人格沉淀 | `compass/evolution/README.md`、`references/evolution-candidate-schema.json`、`references/evolution-grade-baseline.json` |
 | 文件查阅 / 名词定位 | `references/file-lookup-dictionary.md` |
@@ -74,3 +76,4 @@
 14. 涉及关键文件新增或解释：`bash compass/tools/redcap-file-lookup-dictionary-check.sh`
 15. 涉及公共沉淀库：`bash compass/tools/redcap-shared-knowledge-check.sh`
 16. 涉及 npm / runtime / portable package 发布：`bash compass/tools/redcap-package-publish-safety-check.sh --candidate-list <实际打包文件清单>`
+17. 涉及执行期中插需求或子任务完成边界：`bash compass/tools/redcap-change-intake-check.sh .dev-task.md --mode closeout`

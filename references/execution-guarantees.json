@@ -37,6 +37,7 @@
     "overlay-governance",
     "diagnostics",
     "state-machine-contract",
+    "change-intake",
     "task-report-closure",
     "docs-catalog",
     "file-lookup-navigation",
@@ -739,6 +740,34 @@
         "compass/tools/redcap-layerb-fsm-check.sh",
         "compass/tools/redcap-mechanism-vitality-check.sh",
         "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": false,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "layerb-change-intake-replan-gate",
+      "category": "change-intake",
+      "priority": "P0",
+      "rule": "Layer B mid-task user changes must be captured as U<n> ledger rows, replanned before execution resumes, and prevented from closing a child task as if the parent task were complete.",
+      "source_paths": [
+        "references/layerb-change-intake-policy.json",
+        "references/runtime-memory-architecture.md",
+        "compass/CONTRIBUTING.md#10",
+        "compass/CONTRIBUTING.core.md",
+        "references/agent-constraints.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-change-intake-check validates the inserted-requirement ledger, unresolved U items, replan updates, and parent_completion_claim; PM Gate, diagnose, spec-check, current-status, and Layer B FSM checks consume the gate.",
+      "guarantee_paths": [
+        "compass/tools/redcap-change-intake-check.sh",
+        "compass/tools/redcap-change-intake-check.py",
+        "compass/tools/redcap-pm-gate-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-layerb-fsm.py",
+        "compass/tools/redcap-layerb-fsm-check.sh",
+        "compass/tools/redcap-current-status.py"
       ],
       "revival_required": false,
       "hook_required": true,

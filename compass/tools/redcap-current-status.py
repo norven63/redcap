@@ -336,6 +336,68 @@ def layerb_fsm_summary(repo: Path, task_file: Path) -> list[str]:
     return lines
 
 
+def change_intake_summary(repo: Path, task_file: Path) -> list[str]:
+    script = repo / "compass/tools/redcap-change-intake-check.sh"
+    if not script.is_file():
+        return ["change-intake gate: missing"]
+
+    task_text = read(task_file)
+    ledger = section(task_text, "中插需求账本")
+    try:
+        proc = subprocess.run(
+            ["bash", str(script), str(task_file)],
+            cwd=repo,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=20,
+            check=False,
+        )
+    except Exception as exc:
+        return [f"change-intake gate 无法运行：{exc}"]
+
+    lines = [f"change-intake gate: {'pass' if proc.returncode == 0 else 'fail'}"]
+    if proc.returncode != 0:
+        lines.append(proc.stdout.strip().splitlines()[0] if proc.stdout.strip() else "unknown error")
+        return lines
+    if not ledger:
+        lines.append("ledger: none required for current task")
+        return lines
+
+    rows = []
+    for raw in ledger.splitlines():
+        stripped = raw.strip()
+        if not stripped.startswith("|") or not stripped.endswith("|"):
+            continue
+        cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+        if not cells or all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells):
+            continue
+        rows.append(cells)
+    if len(rows) <= 1:
+        lines.append("ledger: present but no rows")
+        return lines
+    headers, data_rows = rows[0], rows[1:]
+    try:
+        status_index = headers.index("状态")
+        disposition_index = headers.index("处理方式")
+    except ValueError:
+        lines.append(f"ledger rows={len(data_rows)}")
+        return lines
+    statuses = Counter(row[status_index] for row in data_rows if len(row) > status_index)
+    dispositions = Counter(row[disposition_index] for row in data_rows if len(row) > disposition_index)
+    lines.append(
+        "ledger: rows="
+        + str(len(data_rows))
+        + " status="
+        + ",".join(f"{key}:{value}" for key, value in sorted(statuses.items()))
+    )
+    lines.append(
+        "handling: "
+        + ",".join(f"{key}:{value}" for key, value in sorted(dispositions.items()))
+    )
+    return lines
+
+
 def closeout_runtime_summary(repo: Path, meta: dict[str, str], task_text: str) -> list[str]:
     task_id = meta.get("task_id", "").strip()
     confirmed_section = section(task_text, "已确认需求")
@@ -607,6 +669,11 @@ def main() -> int:
 
     print("## Layer B FSM")
     for line in layerb_fsm_summary(repo, task_file):
+        print(f"- {line}")
+    print()
+
+    print("## 中插需求 / 重计划")
+    for line in change_intake_summary(repo, task_file):
         print(f"- {line}")
     print()
 

@@ -102,6 +102,7 @@ run_check "layerb-closeout-runtime" bash "$SCRIPT_DIR/redcap-layerb-closeout-run
 run_check "token-risk-audit" bash "$SCRIPT_DIR/redcap-token-risk-audit.sh" || overall=1
 run_check "tracking-health" bash "$SCRIPT_DIR/redcap-tracking-health.sh" "$TASK_FILE" || overall=1
 run_check "intent-coverage" bash "$SCRIPT_DIR/redcap-intent-coverage-check.sh" "$TASK_FILE" || overall=1
+run_check "change-intake" bash "$SCRIPT_DIR/redcap-change-intake-check.sh" "$TASK_FILE" --mode closeout || overall=1
 run_check "mechanism-vitality" bash "$SCRIPT_DIR/redcap-mechanism-vitality-check.sh" || overall=1
 run_check "evolution-grade-baseline" bash "$SCRIPT_DIR/redcap-evolution-grade-check.sh" || overall=1
 run_check "evolution-candidates" bash "$SCRIPT_DIR/redcap-evolution-candidate-check.sh" || overall=1

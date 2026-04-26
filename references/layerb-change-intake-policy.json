@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "description": "Layer B policy for handling user requirements inserted during an already-running task. The policy turns mid-task changes into a ledger, a replan gate, and a parent/child completion guard. Inserted user changes are referenced as Markdown headings like '### U1', '### U2', etc.",
+  "ledger_section": "中插需求账本",
+  "required_columns": [
+    "id",
+    "触发",
+    "类型",
+    "阻塞当前任务",
+    "优先级",
+    "处理方式",
+    "确认需求更新",
+    "计划更新",
+    "验收更新",
+    "状态",
+    "证据"
+  ],
+  "allowed_types": [
+    "authorization",
+    "new-requirement",
+    "correction",
+    "constraint-change",
+    "priority-change",
+    "scope-change",
+    "status-question",
+    "bug-report"
+  ],
+  "allowed_priorities": ["P0", "P1", "P2", "P3"],
+  "allowed_blocking_values": ["yes", "no"],
+  "allowed_update_values": ["yes", "no", "n/a"],
+  "allowed_dispositions": [
+    "merge-current",
+    "split-child",
+    "replace-scope",
+    "defer-followup",
+    "reject-out-of-scope"
+  ],
+  "allowed_statuses": [
+    "captured",
+    "replanning",
+    "integrated",
+    "split",
+    "deferred",
+    "rejected",
+    "superseded",
+    "blocked"
+  ],
+  "resolved_statuses": ["integrated", "split", "deferred", "rejected", "superseded"],
+  "open_statuses": ["captured", "replanning", "blocked"],
+  "terminal_active_slices": ["task-complete", "closeout-complete", "completed"],
+  "change_states": ["CHANGE_INTAKE", "REPLAN_REVIEW", "RESUME_EXECUTING"],
+  "disposition_rules": {
+    "merge-current": {
+      "requires_confirmed_update": true,
+      "requires_plan_update": true,
+      "requires_acceptance_update": true,
+      "terminal_status": "integrated"
+    },
+    "replace-scope": {
+      "requires_confirmed_update": true,
+      "requires_plan_update": true,
+      "requires_acceptance_update": true,
+      "terminal_status": "integrated"
+    },
+    "split-child": {
+      "requires_confirmed_update": true,
+      "requires_plan_update": true,
+      "requires_acceptance_update": false,
+      "terminal_status": "split",
+      "requires_child_evidence": true
+    },
+    "defer-followup": {
+      "requires_confirmed_update": false,
+      "requires_plan_update": true,
+      "requires_acceptance_update": false,
+      "terminal_status": "deferred"
+    },
+    "reject-out-of-scope": {
+      "requires_confirmed_update": false,
+      "requires_plan_update": true,
+      "requires_acceptance_update": false,
+      "terminal_status": "rejected"
+    }
+  },
+  "parent_completion_claim_values": ["none", "child-only", "parent-complete"]
+}

@@ -144,6 +144,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview
   bash compass/tools/redcap-multi-session-acceptance.sh tracking-health-overview
   bash compass/tools/redcap-multi-session-acceptance.sh intent-coverage-check
+  bash compass/tools/redcap-multi-session-acceptance.sh change-intake-check
   bash compass/tools/redcap-multi-session-acceptance.sh human-output-quality-check
   bash compass/tools/redcap-multi-session-acceptance.sh install-overview
   bash compass/tools/redcap-multi-session-acceptance.sh execution-guarantees-check
@@ -8328,8 +8329,10 @@ run_current_status_overview_case() {
     assert_string_contains "$output" "## token 风险入口"
     assert_string_contains "$output" "## 追踪连续性"
     assert_string_contains "$output" "## Layer B FSM"
+    assert_string_contains "$output" "## 中插需求 / 重计划"
     assert_string_contains "$output" "lifecycle-state:"
     assert_string_contains "$output" "independent-acceptance:"
+    assert_string_contains "$output" "change-intake gate:"
     assert_string_contains "$output" "token-risk-audit:"
     assert_string_contains "$output" "tracking-health:"
     assert_string_contains "$output" "## 待验证登记"
@@ -8496,6 +8499,189 @@ EOF
     set -e
     [[ "$status" -ne 0 ]] || fail "expected bad intent coverage fixture to fail"
     assert_string_contains "$output" "missing section: ## 原始意图覆盖审计"
+}
+
+run_change_intake_check_case() {
+    local fixture good missing unresolved child_bad pm_output status output
+
+    log "case: change-intake-check"
+
+    fixture="$ACCEPT_ROOT/change-intake"
+    mkdir -p "$fixture"
+    good="$fixture/good-task.md"
+    missing="$fixture/missing-ledger-task.md"
+    unresolved="$fixture/unresolved-task.md"
+    child_bad="$fixture/child-bad-task.md"
+
+    cat >"$good" <<'EOF'
+# 当前任务：change intake good
+
+## 控制面元数据（机器校验）
+task_id: change-intake-good
+source_of_truth: .dev-task.md
+top_goal: change-intake-good
+active_slice: change-intake-good
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+### Q1
+请完成父任务。
+
+### U1
+请追加一个执行期需求。
+
+## 已确认需求（执行依据）
+### R1
+完成父任务，并合并 U1。
+
+## 原始意图覆盖审计
+scope_status: full-implementation
+
+- 原始意图：完成父任务并处理 U1。
+- 已覆盖：U1 已合并到 R1、计划和验收。
+
+## 中插需求账本
+
+| id | 触发 | 类型 | 阻塞当前任务 | 优先级 | 处理方式 | 确认需求更新 | 计划更新 | 验收更新 | 状态 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| U1 | U1: 用户追加需求 | new-requirement | yes | P0 | merge-current | yes | yes | yes | integrated | R1/完成标准已同步 |
+
+## 漂移哨兵
+- 不把 U1 漏掉
+
+## 允许修改范围
+- compass/tools/**
+
+## 完成标准
+- [x] U1 已合并
+EOF
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$good" --mode closeout >/dev/null \
+        || fail "expected good change-intake fixture to pass"
+
+    cat >"$missing" <<'EOF'
+# 当前任务：change intake missing ledger
+
+## 控制面元数据（机器校验）
+task_id: change-intake-missing
+source_of_truth: .dev-task.md
+top_goal: change-intake-missing
+active_slice: change-intake-missing
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+### Q1
+请完成父任务。
+
+### U1
+执行中新增需求。
+
+## 已确认需求（执行依据）
+### R1
+完成父任务。
+
+## 原始意图覆盖审计
+scope_status: partial-with-explicit-defer
+
+- 原始意图：完成父任务并处理 U1。
+- 已覆盖：父任务。
+- 未覆盖/延期：U1 尚未进入账本，本 fixture 应失败。
+- 用户可见边界：不得宣称完整完成。
+- 后续路径：补中插需求账本。
+
+## 漂移哨兵
+- 不把 U1 漏掉
+
+## 允许修改范围
+- compass/tools/**
+
+## 完成标准
+- [ ] U1 已处理
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$missing" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "missing change-intake ledger unexpectedly passed"
+    assert_string_contains "$output" "missing section: ## 中插需求账本"
+
+    set +e
+    pm_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-pm-gate-check.sh" strict codex "$missing" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "PM Gate unexpectedly passed missing change-intake ledger"
+    assert_string_contains "$pm_output" "missing section: ## 中插需求账本"
+
+    cat >"$unresolved" <<'EOF'
+# 当前任务：change intake unresolved
+
+## 控制面元数据（机器校验）
+task_id: change-intake-unresolved
+source_of_truth: .dev-task.md
+top_goal: change-intake-unresolved
+active_slice: task-complete
+subtask_of: parent-task
+parent_completion_claim: child-only
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+### U1
+执行中新增阻塞需求。
+
+## 已确认需求（执行依据）
+### R1
+处理 U1。
+
+## 中插需求账本
+
+| id | 触发 | 类型 | 阻塞当前任务 | 优先级 | 处理方式 | 确认需求更新 | 计划更新 | 验收更新 | 状态 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| U1 | U1: 用户新增 | new-requirement | yes | P0 | merge-current | yes | yes | yes | captured | 尚未处理 |
+
+## 漂移哨兵
+- 不把未处理 U1 说成完成
+
+## 允许修改范围
+- compass/tools/**
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$unresolved" --mode closeout 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "unresolved terminal change-intake ledger unexpectedly passed"
+    assert_string_contains "$output" "terminal task cannot have unresolved change-intake status"
+
+    cat >"$child_bad" <<'EOF'
+# 当前任务：child bad
+
+## 控制面元数据（机器校验）
+task_id: child-bad
+source_of_truth: .dev-task.md
+top_goal: child-bad
+active_slice: task-complete
+subtask_of: parent-task
+parent_completion_claim: parent-complete
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+完成子任务。
+
+## 已确认需求（执行依据）
+完成子任务。
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$child_bad" --mode closeout 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent completion masquerade unexpectedly passed"
+    assert_string_contains "$output" "parent_completion_claim=parent-complete"
 }
 
 run_human_output_quality_check_case() {
@@ -9532,6 +9718,11 @@ files = {
     "references/spec-lifecycle-policy.json",
     "references/spec-contribution-standard.md",
     "compass/docs/index.yaml",
+    "compass/tools/redcap-package-publish-safety-check.sh",
+    "compass/tools/redcap-package-publish-safety-check.py",
+    "compass/tools/redcap-change-intake-check.sh",
+    "compass/tools/redcap-change-intake-check.py",
+    "references/layerb-change-intake-policy.json",
 }
 
 for entry in registry["specs"]:
@@ -9547,6 +9738,20 @@ for rel in sorted(files):
         shutil.copy2(src_path, dst_path)
     else:
         dst_path.write_text("# fixture\n", encoding="utf-8")
+
+package_policy = {
+    "version": 1,
+    "default_package_globs": ["README.md"],
+    "default_exclude_globs": [],
+    "deny_path_globs": [],
+    "secret_patterns": [],
+}
+(dst / "references/package-publish-safety-policy.json").write_text(
+    json.dumps(package_policy, ensure_ascii=False, indent=2) + "\n",
+    encoding="utf-8",
+)
+(dst / "README.md").write_text("# fixture\n", encoding="utf-8")
+(dst / "ARCHITECTURE.md").write_text("# fixture\n", encoding="utf-8")
 PY
 }
 
@@ -10267,6 +10472,7 @@ run_all_cases() {
     run_current_status_overview_case
     run_tracking_health_overview_case
     run_intent_coverage_check_case
+    run_change_intake_check_case
     run_tracking_health_rejects_stale_completed_breakpoint_case
     run_human_output_quality_check_case
     run_install_overview_case
@@ -10676,6 +10882,9 @@ case "$COMMAND" in
         ;;
     intent-coverage-check)
         run_intent_coverage_check_case
+        ;;
+    change-intake-check)
+        run_change_intake_check_case
         ;;
     tracking-health-rejects-stale-completed-breakpoint)
         run_tracking_health_rejects_stale_completed_breakpoint_case

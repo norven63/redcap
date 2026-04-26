@@ -19,6 +19,7 @@ commands:
   file-dictionary        validate the File Lookup Dictionary
   shared-knowledge       manage the shared knowledge repository template
   publish-safety         audit package candidate files before public release
+  change-intake          validate mid-task inserted requirement handling
 EOF
 }
 
@@ -53,6 +54,9 @@ case "$COMMAND" in
     ;;
   publish-safety)
     exec bash "$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh" "$@"
+    ;;
+  change-intake)
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "${1:-$REDCAP_ROOT/.dev-task.md}" "${@:2}"
     ;;
   help|-h|--help)
     usage

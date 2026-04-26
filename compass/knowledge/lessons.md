@@ -5,10 +5,10 @@
 
 ## 热点主题速览
 
-- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109。适用于 pending closure、task report、validator chain、closure ledger、current-status 打架时。
+- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124。适用于 pending closure、task report、validator chain、closure ledger、current-status、父子任务完成态打架时。
 - **宿主 / Hook / runtime 边界**：先看 L-15、L-16、L-39、L-41~L-49、L-62~L-69、L-77~L-90。适用于宿主适配、review runner、session-start/session-end、host-limited 行为边界。
 - **docs / knowledge / token 风险**：先看 L-50~L-52、L-64~L-66、L-91~L-97。适用于首读入口、说人话、渐进披露、`CONTRIBUTING` / docs / acceptance / `prism/runs` 的上下文压力治理。
-- **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模。
+- **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110、L-124。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模、中插需求重计划。
 
 > 使用方式：先按主题命中热点簇，再精读对应 L-编号；不要为了找一条相关经验默认全量扫完整个 lessons 文件。
 
@@ -1196,4 +1196,13 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **来源**：2026-04-26 RedCap 发布/打包前安全拦截保障
 - **影响度**：high
 - **复现次数**：1
+- **最后命中**：2026-04-26
+
+### L-124: 执行期中插需求必须先重计划，不能让最新子任务覆盖父任务
+- **问题源**：长任务执行中，用户多次追加纠偏或新需求后，Agent 容易把最新插入项当成独立小任务先完成，再用局部完成态写成整体收口汇报；父任务剩余范围、原始意图覆盖和未清承诺因此被污染。
+- **解决方案**：Layer B 必须把执行期变化写入 `## 原始输入` 的 `U<n>` 与 `## 中插需求账本`，再进入 `CHANGE_INTAKE / REPLAN_REVIEW`；每条 U 项要记录类型、阻塞性、优先级、处理方式、确认需求更新、计划更新、验收更新、状态和证据。拆成子任务时只能声明 `parent_completion_claim: child-only`，并由 `redcap-change-intake-check.sh`、PM Gate、diagnose、spec-check 和 FSM 自检共同阻断“子任务冒充父任务完成”。
+- **最后效果**：缺少中插账本、terminal 阶段仍有未收口 U 项、阻塞 U 项被延期、或子任务宣称父任务完成都会 fail-closed；阶段性汇报只能作为状态同步，不能替代父任务 closeout receipt。
+- **来源**：2026-04-26 Layer B 中插需求重计划强门
+- **影响度**：high
+- **复现次数**：多次
 - **最后命中**：2026-04-26

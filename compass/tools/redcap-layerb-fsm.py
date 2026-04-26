@@ -85,12 +85,18 @@ def acceptance_result(task_file: Path) -> dict[str, Any]:
 def derive_state(active_slice: str, pending_exists: bool, receipt_exists: bool, closeout_status: str, acceptance_status: str) -> tuple[str, str]:
     planning_slices = {"planning", "plan", "work-plan", "design-plan", "proposal"}
     planning_review_slices = {"planning-review", "plan-review", "prism-planning-review", "plan-audit"}
+    change_intake_slices = {"change-intake", "user-change-intake", "mid-task-change"}
+    replan_review_slices = {"replan-review", "change-replan-review"}
     if pending_exists:
         return "BLOCKED", "pending closure exists"
     if receipt_exists:
         return "CLOSED", "closeout receipt present"
     if closeout_status == "blocked":
         return "BLOCKED", "closeout runtime blocked"
+    if active_slice in change_intake_slices:
+        return "CHANGE_INTAKE", "active slice indicates mid-task inserted requirement intake"
+    if active_slice in replan_review_slices:
+        return "REPLAN_REVIEW", "active slice indicates inserted requirement replan review"
     if acceptance_status == "fail":
         return "REVIEW_PENDING", "Prism acceptance missing or failed"
     if closeout_status in {"closeout-pending", "prepared"}:

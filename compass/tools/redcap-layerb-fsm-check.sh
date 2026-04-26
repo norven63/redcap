@@ -34,7 +34,7 @@ core = read("compass/CONTRIBUTING.core.md")
 task_report_template = read("references/task-report-template.md")
 guarantees = read("references/execution-guarantees.json")
 
-for required_state in ["REANCHORED", "TASK_LOCKED", "PLANNING", "PLANNING_REVIEW", "EXECUTING", "REVIEW_PENDING", "CLOSEOUT_PENDING", "CLOSED", "BLOCKED"]:
+for required_state in ["REANCHORED", "TASK_LOCKED", "PLANNING", "PLANNING_REVIEW", "EXECUTING", "CHANGE_INTAKE", "REPLAN_REVIEW", "REVIEW_PENDING", "CLOSEOUT_PENDING", "CLOSED", "BLOCKED"]:
     if required_state not in runtime_arch:
         fail(f"runtime-memory-architecture missing state: {required_state}")
 
@@ -49,6 +49,7 @@ for phrase in [
 
 for required_file in [
     "compass/tools/redcap-layerb-fsm.sh",
+    "compass/tools/redcap-change-intake-check.sh",
     "compass/tools/redcap-prism-acceptance-check.sh",
     "compass/tools/redcap-prism-acceptance-bind.sh",
     "compass/tools/redcap-layerb-closeout-runtime.sh",
@@ -75,6 +76,8 @@ if 'redline_mode: str = "merge"' not in closeout_runtime:
 
 if "redcap-layerb-fsm-check.sh" not in diagnose:
     fail("diagnose must execute redcap-layerb-fsm-check.sh")
+if "redcap-change-intake-check.sh" not in diagnose:
+    fail("diagnose must execute redcap-change-intake-check.sh")
 
 for phrase in [
     "棱镜已成为 completed 的默认独立验收前置门",
@@ -103,8 +106,12 @@ layerb_fsm = read("compass/tools/redcap-layerb-fsm.py")
 for required_phrase in [
     "PLANNING",
     "PLANNING_REVIEW",
+    "CHANGE_INTAKE",
+    "REPLAN_REVIEW",
     "planning_slices",
     "planning_review_slices",
+    "change_intake_slices",
+    "replan_review_slices",
 ]:
     if required_phrase not in layerb_fsm:
         fail(f"layerb fsm state surface missing planning phrase: {required_phrase}")

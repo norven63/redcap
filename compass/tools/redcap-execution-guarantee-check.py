@@ -31,6 +31,7 @@ REQUIRED_IDS = {
     "state-machine-contract",
     "layerb-closeout-runtime",
     "planning-review-gate",
+    "layerb-change-intake-replan-gate",
     "acceptance-index-navigation",
     "task-report-closure",
     "docs-catalog-freshness",

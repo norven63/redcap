@@ -411,6 +411,7 @@ source_of_truth: .dev-task.md
 top_goal: <总目标>
 active_slice: <当前子任务>
 subtask_of: <若 active_slice != top_goal，则填写>
+parent_completion_claim: <若是子任务，填写 child-only；不得用子任务 receipt 冒充父任务完成>
 host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 governance_tranche: false
@@ -435,6 +436,12 @@ governance_debts_addressed: []
 
 ## 执行承诺账本（Agent 自追加承诺，closeout 必核对）
 - [ ] <若你在执行中明确承诺“下一步会做 A/B/C”，写在这里>
+
+## 中插需求账本（执行期新增需求 / 纠偏 / 约束变更时必填）
+
+| id | 触发 | 类型 | 阻塞当前任务 | 优先级 | 处理方式 | 确认需求更新 | 计划更新 | 验收更新 | 状态 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| U1 | <用户原文位置> | new-requirement | yes/no | P0-P3 | merge-current / split-child / replace-scope / defer-followup / reject-out-of-scope | yes/no/n/a | yes/no/n/a | yes/no/n/a | captured/replanning/integrated/split/deferred/rejected/superseded/blocked | <证据> |
 
 ## 断点备注
 <当前进度、下一步、已知阻塞项>
@@ -464,6 +471,10 @@ governance_debts_addressed: []
   - `PLANNING` 用于承接方案、切片、执行承诺账本与验证路径；复杂任务不得把计划质量完全交给作者自检
   - `PLANNING_REVIEW` 用于让棱镜审核计划本身；Norven 只负责战略方向与 AI 不可计算事项，不再默认承担细节 plan 审稿
   - 轻量任务可从 `TASK_LOCKED` 直接进入 `EXECUTING`，但高风险、跨机制或治理重构任务必须保留计划审核证据
+- Layer B FSM 中的 `CHANGE_INTAKE / REPLAN_REVIEW`
+  - `CHANGE_INTAKE` 是执行期中插需求的暂停点：新增需求、纠偏、约束变更、优先级调整先写入 `## 原始输入` 的 `U<n>` 与 `## 中插需求账本`
+  - `REPLAN_REVIEW` 是重计划审核点：必须把 U 项归类为合并当前任务、拆子任务、替换范围、延期跟进或拒绝出界，并同步确认需求、计划和验收
+  - 子任务 closeout 只能证明子任务完成；若 `.dev-task.md` 存在 `subtask_of`，必须声明 `parent_completion_claim: child-only|none`，不得用子任务 receipt 冒充父任务完成
 - `compass/tools/redcap-validator-chain.sh`
   - 统一编排 Layer B 的 session-start / obligation-reconcile / stop-review / on-complete / session-end validator
   - 当前已覆盖 commit proof、review proof、reanchor、PM Gate、drift、backlog、spec registry、task report、artifact lifecycle 等检查，并输出结构化结果供下游消费
@@ -764,7 +775,7 @@ governance_debts_addressed: []
 触发确认门后，**第一件事**：将用户原始输入逐条原文写入 `.dev-task.md` 的 `## 原始输入（用户原文）` 段。
 - 内容为用户消息的**字面原文**，禁止概括、改写或精简
 - 写完之后才开始任何澄清对话
-- 若任务执行中用户又追加了**新的需求、纠偏、约束或范围变更**，也必须在**本轮结束前**按 `U<n>` 继续追加到同一段，禁止只依赖会话记忆
+- 若任务执行中用户又追加了**新的需求、纠偏、约束、优先级或范围变更**，也必须在**本轮结束前**按 `U<n>` 继续追加到同一段，并同步 `## 中插需求账本`；禁止只依赖会话记忆
 
 > 原理：PM 对话可能走很多轮，原始文本会在 attention 窗口中衰减。先落盘就不会失真——即使后续确认版与原文有出入，也随时可回溯对比。
 
@@ -800,6 +811,8 @@ Cap 引用 `roles/product-manager/handbook.md §一` 的策略执行：
 - 没有明确确认语句 → 不进入执行，继续澄清或等待
 - 每完成一个 Q → 在该 Q 描述下追加 `> 执行摘要：<一句话>` 用于对标检查
 - 若用户在执行期新增了独立要求，必须同时补：`## 原始输入` 新条目 + `## 已确认需求` 对应新 Q 或修订条目，再继续执行
+- 若用户在执行期新增需求、纠偏、约束或优先级变化，必须先进入 `CHANGE_INTAKE`：补 `## 原始输入` 的 `U<n>`、补 `## 中插需求账本`、重新评估优先级和验收，再决定继续当前任务、拆子任务、替换范围、延期或拒绝出界；禁止直接把最新插入项做完后宣称全部完成
+- 若拆出子任务，必须在子任务 `.dev-task.md` 声明 `subtask_of` 与 `parent_completion_claim: child-only`，并在父任务账本保留未完成范围；子任务 receipt 不得自动关闭父任务
 
 ### `.dev-task.md` 模板扩展
 
@@ -1073,6 +1086,7 @@ PM Gate 触发时，**必须先读 `explore-notes.md`** 的相关活跃条目，
 3. **中间进展只写账本**：未命中上面三条时，中间过程只允许写入 `.dev-task.md`、`plan.md`、宿主镜像、closure 账本等连续性资产，不主动占用对话通道。
 4. **人工介入必须先亮明原因**：一旦需要打断 Norven，第一句先明确“是否需要你介入”，并说明缺的究竟是外部事实、人工动作还是保留决策。
 5. **切片完成不等于任务完成**：`active_slice` 或局部子任务完成后，若 `.dev-task.md` 仍有未完成 todo，Cap 必须继续执行，不得把该切片包装成“终局汇报”。
+6. **中插完成不等于整体完成**：执行期用户新增的 U 项若被拆成子任务或局部完成，输出只能称为“U 项已处理 / 子任务已完成”；只有父任务承诺账本、完成标准、Prism 验收与 receipt 全部闭环，才允许终局汇报。
 
 ### 执行步骤（必须按顺序完成，不可跳过）
 

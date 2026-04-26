@@ -103,6 +103,12 @@ else
     else
         record_error "missing intent coverage gate: compass/tools/redcap-intent-coverage-check.sh"
     fi
+
+    if [[ -f "$SCRIPT_DIR/redcap-change-intake-check.sh" ]]; then
+        CHANGE_INTAKE_OUTPUT=$(bash "$SCRIPT_DIR/redcap-change-intake-check.sh" "$TASK_FILE" 2>&1) || record_error "$CHANGE_INTAKE_OUTPUT"
+    else
+        record_error "missing change-intake gate: compass/tools/redcap-change-intake-check.sh"
+    fi
 fi
 
 if [[ ${#ERRORS[@]} -gt 0 ]]; then
