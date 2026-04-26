@@ -158,6 +158,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh r0-r22-registry-check
   bash compass/tools/redcap-multi-session-acceptance.sh execution-layer-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-check
+  bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
@@ -9439,6 +9440,126 @@ PY
     assert_string_contains "$stale_output" "current_count must be a non-negative integer"
 }
 
+run_parent_receipt_aggregation_check_case() {
+    local output bad_policy stale_output status
+
+    log "case: parent-receipt-aggregation-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh")"
+    assert_string_contains "$output" "PARENT_RECEIPT_AGGREGATION_OK"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-allows-complete.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["parent_completion_allowed"] = True
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject parent_completion_allowed=true"
+    assert_string_contains "$stale_output" "parent_completion_allowed must be false"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-missing-open-reason.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["not_complete_children"][0]["reason"] = ""
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing not-complete reason"
+    assert_string_contains "$stale_output" "missing non-empty reason"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-missing-next-step.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["not_complete_children"][0]["next_step"] = ""
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing not-complete next_step"
+    assert_string_contains "$stale_output" "missing non-empty next_step"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-missing-required-open-child.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["not_complete_children"] = [
+    child for child in payload["not_complete_children"]
+    if child.get("id") != "P2-3"
+]
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing required not-complete child"
+    assert_string_contains "$stale_output" "missing not-complete child entries: P2-3"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-eligible-output.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["gate_outputs"]["parent_receipt_status"] = "eligible"
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject eligible parent_receipt_status"
+    assert_string_contains "$stale_output" "gate_outputs.parent_receipt_status must be not-eligible"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-missing-incomplete-claim.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["gate_outputs"]["allowed_claim"] = "Child tasks have receipts."
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject allowed_claim without incomplete boundary"
+    assert_string_contains "$stale_output" "allowed_claim must explicitly say the parent task is still incomplete"
+}
+
 run_shared_knowledge_check_case() {
     local fixture body output stale_output status
 
@@ -11147,6 +11268,9 @@ case "$COMMAND" in
         ;;
     legacy-asset-migration-check)
         run_legacy_asset_migration_check_case
+        ;;
+    parent-receipt-aggregation-check)
+        run_parent_receipt_aggregation_check_case
         ;;
     shared-knowledge-check)
         run_shared_knowledge_check_case

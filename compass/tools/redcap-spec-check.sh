@@ -448,6 +448,14 @@ if [[ -x "$LEGACY_ASSET_MIGRATION_CHECK" ]]; then
     fi
 fi
 
+PARENT_RECEIPT_AGGREGATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh"
+if [[ -x "$PARENT_RECEIPT_AGGREGATION_CHECK" ]]; then
+    if ! bash "$PARENT_RECEIPT_AGGREGATION_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] parent receipt aggregation check failed" >&2
+        exit 1
+    fi
+fi
+
 SHARED_KNOWLEDGE_CHECK="$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-check.sh"
 if [[ -x "$SHARED_KNOWLEDGE_CHECK" ]]; then
     if ! bash "$SHARED_KNOWLEDGE_CHECK" >/dev/null; then

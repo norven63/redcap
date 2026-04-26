@@ -1242,3 +1242,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-26
+
+### L-129: 父任务完成必须由聚合 gate 判断，不能由子任务 receipt 推断
+- **问题源**：长父任务被拆成多个子任务后，每个子任务都有自己的 report 和 receipt；如果没有父任务聚合规则，Agent 很容易把最近一个子任务 receipt 当成“整体任务完成”。
+- **解决方案**：建立 parent receipt aggregation policy，把 completed children、not-complete children、blocked-external、resource-limited、open 项和 allowed claim 写成机器可读表。checker 必须在 not-complete 项存在时强制 `parent_completion_allowed=false`，并要求每个未完成项都有原因和下一步。
+- **最后效果**：RedCap 可以诚实地说“P0/P1 若干子任务已完成”，但父任务仍会被 gate 标记为 not-eligible，直到所有子任务完成或显式关闭。
+- **来源**：2026-04-26 父任务 receipt 聚合 gate
+- **影响度**：high
+- **复现次数**：多次
+- **最后命中**：2026-04-26

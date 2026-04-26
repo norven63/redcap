@@ -44,6 +44,7 @@ REQUIRED_IDS = {
     "review-tracks-gate",
     "execution-layer-split-dry-run",
     "legacy-asset-migration-dry-run",
+    "parent-receipt-aggregation-gate",
     "hook-contract-audit",
     "runtime-helper-convergence",
     "cli-console-mirror-contract",

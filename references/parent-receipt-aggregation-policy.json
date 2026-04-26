@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "policy_id": "redcap-parent-receipt-aggregation",
+  "parent_task_id": "redcap-system-migration-parent",
+  "parent_status": "incomplete",
+  "parent_completion_allowed": false,
+  "completion_rule": "The parent task may be declared complete only when every child item is completed with a report and receipt, or explicitly closed as blocked-external / resource-limited / deferred with a next action. A child receipt never proves parent completion by itself.",
+  "completed_children": [
+    {
+      "id": "P0-1",
+      "title": "Prism availability cache provenance/path 污染修复",
+      "report_path": "compass/docs/task-reports/2026-04-26-prism-availability-cache-provenance-guard.md",
+      "receipt_glob": "prism-availability-cache-provenance-guard-*.json"
+    },
+    {
+      "id": "P0-2",
+      "title": "R0-R22 原始编号可追溯化",
+      "report_path": "compass/docs/task-reports/2026-04-26-r0-r22-registry.md",
+      "receipt_glob": "redcap-r0-r22-registry-*.json"
+    },
+    {
+      "id": "P1-1",
+      "title": "执行层物理拆分 dry-run",
+      "report_path": "compass/docs/task-reports/2026-04-26-execution-layer-split-dry-run.md",
+      "receipt_glob": "redcap-execution-layer-split-dry-run-*.json"
+    },
+    {
+      "id": "P1-2",
+      "title": "历史资产迁移 dry-run",
+      "report_path": "compass/docs/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
+      "receipt_glob": "redcap-legacy-asset-migration-dry-run-*.json"
+    }
+  ],
+  "not_complete_children": [
+    {
+      "id": "P1-3",
+      "status": "blocked-external",
+      "reason": "shared-knowledge remote Gitee binding requires a real remote repository and permission from the user.",
+      "next_step": "Bind remote after the user provides repository URL and credentials."
+    },
+    {
+      "id": "P2-1",
+      "status": "open",
+      "reason": "formal runtime / CLI / package implementation still needs package shape, adapter boundary, and release workflow decisions.",
+      "next_step": "Design and implement runtime/package apply after P1 dry-runs are stable."
+    },
+    {
+      "id": "P2-3",
+      "status": "resource-limited",
+      "reason": "formal Prism quorum cannot be restored while multiple providers time out or are frozen.",
+      "next_step": "Re-run quorum validation when at least two non-frozen providers are stable."
+    }
+  ],
+  "gate_outputs": {
+    "parent_receipt_status": "not-eligible",
+    "reason": "Open, blocked-external, and resource-limited child items remain.",
+    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2 have receipts; parent task is still incomplete."
+  }
+}

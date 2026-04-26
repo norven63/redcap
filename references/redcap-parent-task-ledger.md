@@ -35,9 +35,10 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | P1-2 | R0-R22 deferred | 历史资产迁移 dry-run/apply | completed | P1 | 已生成 collection-level dry-run manifest、checker、spec/diagnose/acceptance 接线；真实 move/delete 另开 apply 任务 | receipt: `redcap-legacy-asset-migration-dry-run-*`；产物：`references/legacy-asset-migration-dry-run.json` |
 | P1-3 | R0-R22 deferred | shared-knowledge 远端 Gitee 绑定 | blocked-external | P1 | 用户提供 remote / 权限后绑定；绑定前本地模板继续工作 | 需要外部仓库和权限，Cap 不能凭空创建最终远端 |
 | P2-1 | R0-R22 deferred | 正式 runtime / CLI / package 发布设计与实现 | open | P2 | 先确定 package 形态，再跑 package safety gate；发布前阻断 `.env`、runtime evidence、私密入口 | 依赖 P1-1 的边界清晰化 |
-| P2-2 | change-intake report | 父任务 receipt 聚合 gate | open | P2 | 设计 parent receipt aggregator，允许多个子任务 receipt 聚合成父任务完成证明 | 当前只能 fail-closed，不能自动宣称父任务完成 |
+| P2-2 | change-intake report | 父任务 receipt 聚合 gate | completed | P2 | 已新增 parent receipt aggregation policy 与 checker，父任务仍因 P1-3/P2-1/P2-3 不满足而不可 complete | receipt: `redcap-parent-receipt-aggregation-gate-*`；产物：`references/parent-receipt-aggregation-policy.json` |
 | P2-3 | Prism review limits | Formal Prism quorum 恢复复验 | resource-limited | P2 | 当第二个非 Copilot provider headless 稳定后，重跑 formal quorum | 当前 Kimi 可用；Gemini/Claude 超时，Codex unsupported，Copilot frozen |
 | P3-1 | retrieval roadmap | GraphRAG / 向量检索阈值研究 | deferred | P3 | 先继续 catalog + rg + metadata；当共享库规模越过阈值再引入 RAG/GraphRAG | 不能过早引入重型系统复杂度 |
+| P3-2 | P2-2 reviewer risk | runtime receipt evidence correspondence hardening | deferred | P3 | 后续在 receipt root 可稳定定位时，校验 completed child 的 receipt_glob 至少匹配真实 receipt，并探索报告/receipt 对应关系检查 | 不影响 P2-2 防止父任务完成混报；属于证据深度增强 |
 
 ## 推荐执行顺序
 
@@ -47,8 +48,9 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 4. `P1-2`：历史资产迁移 dry-run/apply，解决 docs / reports 长期淤积。（已完成 dry-run；真实 apply 另开任务）
 5. `P1-3`：绑定 shared-knowledge 远端仓库。
 6. `P2-1`：正式 runtime / CLI / package 发布。
-7. `P2-2`：父任务 receipt 聚合 gate。
+7. `P2-2`：父任务 receipt 聚合 gate。（已完成 gate；父任务仍 incomplete）
 8. `P2-3`：formal Prism quorum 恢复复验。
+9. `P3-2`：runtime receipt evidence correspondence hardening。
 
 ## 当前不可声明
 
@@ -57,3 +59,5 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 - 不可声明 shared-knowledge 已经绑定远端团队仓库。
 - 不可声明 P1-1 dry-run 已经执行真实 move/copy/link；它只证明迁移边界和风险已可审计。
 - 不可声明 P1-2 dry-run 已经执行真实历史资产搬迁或删除；它只证明分类、断链计划、catalog 计划和回滚边界已可审计。
+- 不可声明父任务已经 complete；aggregation gate 当前输出为 not-eligible，因为 P1-3/P2-1/P2-3 仍未完成或受限。
+- 不可声明 P2-2 已经证明每个 completed child receipt 的运行时内容对应关系；当前只校验父任务 fail-closed 语义和 receipt_glob 元数据形态。

@@ -31,6 +31,13 @@
       "trigger_for_revisit": "If this report becomes a frequent active dependency again, translate the needed facts into a smaller current authority note."
     },
     {
+      "path": "compass/docs/catalog.json",
+      "kind": "tracked-large-docs-index",
+      "current_mitigation": "docs-catalog-plan-budget",
+      "structural_strategy": "Keep as the generated first-read index for docs archaeology; agents must consume summary/plan/budget commands instead of pasting or bulk-loading the full JSON into context.",
+      "trigger_for_revisit": "When catalog.json exceeds 100KB, evaluate compact index shards or a generated SQLite/FTS sidecar while preserving the same summary/plan/budget interface."
+    },
+    {
       "path": "SKILL.md",
       "kind": "tracked-large-skill",
       "current_mitigation": "entry-no-large-auto-import-and-targeted-rg",
