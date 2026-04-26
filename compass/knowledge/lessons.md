@@ -1233,3 +1233,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-26
+
+### L-128: 历史资产迁移要先按集合分类，再生成文件级 apply 清单
+- **问题源**：`compass/docs/task-reports`、research、specs、traces、knowledge 与 `prism/runs` 的性质不同：有的是 closeout 证据，有的是 active spec authority，有的是低频人类研究材料，有的是 ignored runtime evidence。如果只按目录大小决定搬迁，会破坏考古和追踪能力。
+- **解决方案**：先做 collection-level dry-run manifest，逐类记录 source、target、count、lines、default_action、risk、apply_status、catalog_update_plan、link_check_plan 和 rollback_plan；checker 必须校验计数和 Prism retention summary，防止 manifest 与物理现实分叉。真实迁移前再生成 file-level manifest 和 broken-link 检查。
+- **最后效果**：P1-2 可以安全声明“历史资产迁移计划可审计”，但不会冒充 docs/knowledge 已经迁出；后续 apply 有清晰输入，且 closeout receipt、task-report-check、docs catalog 和 knowledge index 不会被静默破坏。
+- **来源**：2026-04-26 历史资产迁移 dry-run
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-26

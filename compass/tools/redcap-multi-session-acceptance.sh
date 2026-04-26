@@ -157,6 +157,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh file-lookup-dictionary-check
   bash compass/tools/redcap-multi-session-acceptance.sh r0-r22-registry-check
   bash compass/tools/redcap-multi-session-acceptance.sh execution-layer-split-check
+  bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
@@ -9375,6 +9376,69 @@ PY
     assert_string_contains "$stale_output" "target path must not already exist"
 }
 
+run_legacy_asset_migration_check_case() {
+    local output bad_manifest stale_output status
+
+    log "case: legacy-asset-migration-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-check.sh")"
+    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_DRY_RUN_OK"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-allowed.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-dry-run.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["apply_allowed"] = True
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-check.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset checker should reject apply_allowed=true"
+    assert_string_contains "$stale_output" "apply_allowed must be false"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-missing-link-check.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-dry-run.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["collections"][0]["link_check_plan"] = []
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-check.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset checker should reject empty link_check_plan"
+    assert_string_contains "$stale_output" "link_check_plan must be a non-empty list"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-count-mismatch.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-dry-run.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["collections"][0]["current_count"] = -1
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-check.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset checker should reject invalid current_count"
+    assert_string_contains "$stale_output" "current_count must be a non-negative integer"
+}
+
 run_shared_knowledge_check_case() {
     local fixture body output stale_output status
 
@@ -11080,6 +11144,9 @@ case "$COMMAND" in
         ;;
     execution-layer-split-check)
         run_execution_layer_split_check_case
+        ;;
+    legacy-asset-migration-check)
+        run_legacy_asset_migration_check_case
         ;;
     shared-knowledge-check)
         run_shared_knowledge_check_case

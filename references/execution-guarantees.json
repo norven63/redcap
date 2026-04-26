@@ -1122,6 +1122,29 @@
       "auto_enforceable": true
     },
     {
+      "id": "legacy-asset-migration-dry-run",
+      "category": "parent-task-governance",
+      "priority": "P1",
+      "rule": "Historical docs, reports, knowledge, and runtime evidence migration must begin with a dry-run manifest that preserves archaeology, catalog links, receipt anchors, and rollback before any real move or delete.",
+      "source_paths": [
+        "references/legacy-asset-migration-dry-run.json",
+        "references/redcap-parent-task-ledger.md",
+        "compass/docs/task-reports/2026-04-26-legacy-asset-migration-dry-run.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-legacy-asset-migration-check.sh validates asset collections, counts, actions, risks, apply status, catalog/link/rollback plans, and prism/runs retention summary; spec-check, diagnose, and acceptance consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-legacy-asset-migration-check.sh",
+        "compass/tools/redcap-legacy-asset-migration-check.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "hook-contract-audit",
       "category": "hook-contracts",
       "priority": "P1",

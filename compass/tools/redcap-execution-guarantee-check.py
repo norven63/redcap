@@ -43,6 +43,7 @@ REQUIRED_IDS = {
     "package-publish-safety-gate",
     "review-tracks-gate",
     "execution-layer-split-dry-run",
+    "legacy-asset-migration-dry-run",
     "hook-contract-audit",
     "runtime-helper-convergence",
     "cli-console-mirror-contract",

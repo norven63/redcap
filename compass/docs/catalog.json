@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 54,
-    "size_bytes": 785148,
-    "lines": 13816,
-    "chars": 508328,
+    "file_count": 55,
+    "size_bytes": 797227,
+    "lines": 14042,
+    "chars": 516383,
     "rough_token_pressure": {
-      "low": 127082,
-      "high": 254164
+      "low": 129095,
+      "high": 258191
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 35,
-        "size_bytes": 504400,
-        "lines": 6969,
-        "chars": 323858,
+        "file_count": 36,
+        "size_bytes": 516479,
+        "lines": 7195,
+        "chars": 331913,
         "rough_token_pressure": {
-          "low": 80964,
-          "high": 161929
+          "low": 82978,
+          "high": 165956
         }
       },
       "traces": {
@@ -800,7 +800,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 执行层重构与公共知识库治理落地",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16183,
       "lines": 254,
@@ -832,6 +832,19 @@
       "lines": 228,
       "chars": 9078,
       "summary": "当前已完成：Layer B 已新增中插需求账本、重计划状态、父子任务完成边界和机器检查器，并接入 PM Gate、diagnose、spec-check、execution guarantees、FSM、自检、current-status 与 acceptance。 / 详情：长任务执行期如果用户新增需求、纠偏、约束或优先级变化，必须先写入 `U<n>` 与 `## 中插需求账本`，再重排确认需求、计划和验收；子任务只能声明自己完成，不能冒充父任务完成。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：历史资产迁移 dry-run",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 12079,
+      "lines": 226,
+      "chars": 8055,
+      "summary": "当前已完成：P1-2 已完成历史资产迁移 dry-run，不执行真实搬迁或删除。 / 详情：新增 `references/legacy-asset-migration-dry-run.json`，把 task reports、docs catalog、runtime working dirs、research、specs、traces、docs archive、knowledge、prism/runs 分成可审计集合。新增 checker 并接入 spec-check、diagnose、acceptance，能拒绝危险迁移计划。",
       "status_basis": "filename_recency_only"
     },
     {

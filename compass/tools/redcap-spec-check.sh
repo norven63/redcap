@@ -440,6 +440,14 @@ if [[ -x "$EXECUTION_LAYER_SPLIT_CHECK" ]]; then
     fi
 fi
 
+LEGACY_ASSET_MIGRATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-check.sh"
+if [[ -x "$LEGACY_ASSET_MIGRATION_CHECK" ]]; then
+    if ! bash "$LEGACY_ASSET_MIGRATION_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] legacy asset migration dry-run check failed" >&2
+        exit 1
+    fi
+fi
+
 SHARED_KNOWLEDGE_CHECK="$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-check.sh"
 if [[ -x "$SHARED_KNOWLEDGE_CHECK" ]]; then
     if ! bash "$SHARED_KNOWLEDGE_CHECK" >/dev/null; then
