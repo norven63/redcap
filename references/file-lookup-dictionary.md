@@ -51,6 +51,7 @@
 | 文件 | 定位 | 含义 | owner | check |
 |---|---|---|---|---|
 | [`references/redcap-system-layers.md`](../references/redcap-system-layers.md) | productization roadmap | 把 RedCap 从 skill repo 演进为 Agent Runtime / CLI / 多层系统的边界和迁移路线讲清楚；不是已完成迁移声明 | Architecture | task report + Prism review |
+| [`references/redcap-parent-task-ledger.md`](../references/redcap-parent-task-ledger.md) | parent task ledger | R0-R22 与后续中插任务的父任务视图，区分已完成子任务、延期项、待执行迁移和阻塞项 | PM Gate + Architecture | task report + PM Gate |
 | [`README.md`](../README.md) | public landing page | 面向人类的一眼看懂入口，只讲核心优势和导航，不承载细则 | Product narrative | human-output review |
 | [`compass/docs/catalog.json`](../compass/docs/catalog.json) | docs catalog | docs 首读索引，防止任务一开始 bulk-read 历史报告 | Docs governance | `bash compass/tools/redcap-docs-catalog.sh summary` |
 | [`compass/knowledge/index.md`](../compass/knowledge/index.md) | knowledge index | lessons/knowledge 首读索引，防止默认打开知识库全文 | Knowledge governance | `bash compass/tools/redcap-knowledge-index-check.sh` |
@@ -72,6 +73,7 @@
 | [`ARCHITECTURE.md`](../ARCHITECTURE.md) | Product Shape And Retrieval | deep architecture map for RedCap layers and truth surfaces | Architecture | `bash compass/tools/redcap-mechanism-vitality-check.sh` |
 | [`references/runtime-memory-architecture.md`](../references/runtime-memory-architecture.md) | Runtime And Closeout | Layer B memory, FSM, ledger, closeout and tracking architecture | Layer B runtime | `bash compass/tools/redcap-layerb-fsm-check.sh` |
 | [`references/layerb-change-intake-policy.json`](../references/layerb-change-intake-policy.json) | Runtime And Closeout | policy for mid-task inserted requirements, replan review, and parent/child completion boundaries | Layer B FSM | `bash compass/tools/redcap-change-intake-check.sh .dev-task.md` |
+| [`references/redcap-parent-task-ledger.md`](../references/redcap-parent-task-ledger.md) | Product Shape And Retrieval | parent task ledger for R0-R22 and follow-up migration batches | PM Gate + Architecture | `task report + PM Gate` |
 | [`references/task-report-template.md`](../references/task-report-template.md) | Runtime And Closeout | task report completion and evidence template | Layer B closure | `bash compass/tools/redcap-task-report-check.sh` |
 | [`references/file-lookup-dictionary.md`](../references/file-lookup-dictionary.md) | Product Shape And Retrieval | human-readable file map and term locator | Compass governance | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` |
 | [`references/file-lookup-dictionary-policy.json`](../references/file-lookup-dictionary-policy.json) | Product Shape And Retrieval | machine-readable coverage list for the lookup dictionary | Compass governance | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` |
