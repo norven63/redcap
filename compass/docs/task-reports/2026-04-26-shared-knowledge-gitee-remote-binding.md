@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-26
 **执行者**：Cap（Codex.app 主执行，Kimi + Claude Code Prism reviewers）
-**报告版本**：v1.0
+**报告版本**：v1.1
 
 ---
 
@@ -10,7 +10,7 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance 和 targeted 回归。
+- 当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance、targeted 回归，并补上 session-end 旧控制面 FAIL 污染当前收口的机制回归。
 - 详情：`https://gitee.com/norven63/redcap-arsenal.git` 已创建 `main` 分支；远端只包含 shared-knowledge 最小公共模板候选，且 `--live` 会对远端文件名与内容做白名单对账。
 
 ### 0.2 上一步完成的是
@@ -19,7 +19,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：运行最终 spec/diagnose/closeout receipt，并提交本轮变更。
+- 下一步计划做的是：提交 session-end 机制补丁后运行最终 spec/diagnose/closeout receipt；receipt 属于提交后的运行时证据，以 closeout runtime 输出为准。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -78,6 +78,7 @@
 | `shared-knowledge/README.md` / `.gitignore` / `.gitkeep` | 修改/新增 | 形成可推送到公共库的最小安全模板。 |
 | `compass/tools/redcap-shared-knowledge.py` | 修改 | `init` 也生成 `.gitignore` 与目录占位。 |
 | `compass/tools/redcap-spec-check.sh` / `redcap-diagnose.sh` / acceptance | 修改 | 把 remote binding checker 接入默认治理回归和专项验收；acceptance 覆盖 URL 凭证、路径逃逸、禁止路径、缺失 head、远端额外文件与内容漂移。 |
+| `compass/tools/redcap-layerB-session-end.sh` / acceptance | 修改 | 修复旧 stop-review 控制面 validator FAIL 污染当前 Prism pass 收口的问题；新增回归覆盖“旧 FAIL + 新 Prism pass”场景。 |
 | `references/execution-guarantees.json` | 修改 | 新增 `shared-knowledge-remote-binding` 执行保障项。 |
 | `references/redcap-parent-task-ledger.md` / parent aggregation policy | 修改 | 把 P1-3 从 blocked-external 更新为 completed；父任务仍因 P3-1/P3-2 deferred 而 incomplete。 |
 
@@ -121,6 +122,7 @@
 | live binding check | `bash compass/tools/redcap-shared-knowledge-remote-check.sh --live` | 通过，head=`a43c8ab543eff42a288e23ecc4eeb5bc6e954b78`，`remote_tree_files=5`。 |
 | 静态语法 | `py_compile` / `bash -n` / `json.tool` | 通过。 |
 | targeted acceptance | `shared-knowledge-remote-binding-check`、`shared-knowledge-check`、`parent-receipt-aggregation-check` | 通过。 |
+| stale review regression | `session-end-prism-pass-supersedes-stale-control-plane-fail` | 通过；旧控制面 FAIL 被当前 Prism pass 覆盖后不再留下 pending closure，同时真实内容 review FAIL 仍会保留 review blocker。 |
 | governance checks | execution guarantees、file lookup dictionary、R0-R22 registry、parent aggregation、package safety | 通过。 |
 | Prism acceptance | Kimi + Claude Code | 通过，2 families，0 blocker。 |
 | spec-check / diagnose | `redcap-spec-check.sh "$PWD"`；`redcap-diagnose.sh .dev-task.md` | 待最终报告/catalog/count 同步后执行。 |
@@ -131,7 +133,7 @@
 |------|------|
 | 执行承诺账本 | 待 closeout runtime 最终同步 |
 | 棱镜验收 | `20260426-shared-knowledge-gitee-remote-binding` pass（Kimi + Claude Code，2 families） |
-| closeout receipt | 待生成 |
+| closeout receipt | 提交后由 closeout runtime 生成；不得在 commit 前预写“已完成”。 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -140,7 +142,7 @@
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Kimi + Claude Code 双 reviewer 通过 |
-| 已正式完成 | 待 closeout receipt |
+| 已正式完成 | 以 closeout receipt 为准；本报告不提前冒充 receipt。 |
 
 ---
 
@@ -160,6 +162,7 @@
 | 编号 | 标题 | 核心内容 |
 |------|------|---------|
 | L-132 | 公共库远端绑定必须用最小白名单加 live head 双证明 | 先限制可公开文件，再用 git 实测远端 head；不要把“有 remote URL”当成已绑定。 |
+| L-133 | 旧控制面 FAIL 不能污染当前 Prism pass 收口 | stop-review 的 validator 失败若已被当前 Prism acceptance 覆盖，应清理旧 review artifact，避免 session-end 拒发 receipt。 |
 
 ### 7.3 Evolution Factory 候选处理
 

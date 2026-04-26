@@ -333,8 +333,25 @@ SUCCESS_GUARD_LOCK_HELD=0
 if [[ -f "$REVIEW_RESULT_FILE" ]]; then
     REVIEW_STATUS=$(cat "$REVIEW_RESULT_FILE" 2>/dev/null || true)
 fi
-if [[ -z "$REVIEW_STATUS" && "$PRISM_ACCEPTANCE_PASSED" -eq 1 ]]; then
-    REVIEW_STATUS="PRISM_PASS"
+
+review_result_is_superseded_control_plane_failure() {
+    [[ "$REVIEW_STATUS" == "FAIL" && "$PRISM_ACCEPTANCE_PASSED" -eq 1 ]] || return 1
+    [[ -n "$REVIEW_LOG_FILE" && -f "$REVIEW_LOG_FILE" ]] || return 1
+    grep -q "validator chain 检查失败" "$REVIEW_LOG_FILE" || return 1
+    grep -q "mode: stop-review" "$REVIEW_LOG_FILE" || return 1
+    return 0
+}
+
+if [[ "$PRISM_ACCEPTANCE_PASSED" -eq 1 ]]; then
+    if [[ -z "$REVIEW_STATUS" ]]; then
+        REVIEW_STATUS="PRISM_PASS"
+    elif review_result_is_superseded_control_plane_failure; then
+        # A previous stop-review may have failed only because the control-plane
+        # gates were stale. Once current Prism acceptance is bound and passes,
+        # that stale control-plane FAIL must not poison the final SessionEnd.
+        REVIEW_STATUS="PRISM_PASS"
+        clear_review_artifacts
+    fi
 fi
 
 if [[ "$HOST" == "claude" && "$BASELINE" != "$CURRENT_HEAD" && -n "$REVIEW_LOG_FILE" && ! -f "$REVIEW_LOG_FILE" && -z "$REVIEW_STATUS" ]]; then

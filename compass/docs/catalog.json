@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 59,
-    "size_bytes": 839888,
-    "lines": 14827,
-    "chars": 546052,
+    "size_bytes": 840846,
+    "lines": 14830,
+    "chars": 546696,
     "rough_token_pressure": {
-      "low": 136513,
-      "high": 273026
+      "low": 136674,
+      "high": 273348
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 40,
-        "size_bytes": 559140,
-        "lines": 7980,
-        "chars": 361582,
+        "size_bytes": 560098,
+        "lines": 7983,
+        "chars": 362226,
         "rough_token_pressure": {
-          "low": 90395,
-          "high": 180791
+          "low": 90556,
+          "high": 181113
         }
       },
       "traces": {
@@ -990,21 +990,21 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9663,
-      "lines": 185,
-      "chars": 6467,
-      "summary": "当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance 和 targeted 回归。 / 详情：`https://gitee.com/norven63/redcap-arsenal.git` 已创建 `main` 分支；远端只包含 shared-knowledge 最小公共模板候选，且 `--live` 会对远端文件名与内容做白名单对账。",
+      "size_bytes": 10621,
+      "lines": 188,
+      "chars": 7111,
+      "summary": "当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance、targeted 回归，并补上 session-end 旧控制面 FAIL 污染当前收口的机制回归。 / 详情：`https://gitee.com/norven63/redcap-arsenal.git` 已创建 `main` 分支；远端只包含 shared-knowledge 最小公共模板候选，且 `--live` 会对远端文件名与内容做白名单对账。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance 和 targeted 回归。",
+          "当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance、targeted 回归，并补上 session-end 旧控制面 FAIL 污染当前收口的机制回归。",
           "详情：`https://gitee.com/norven63/redcap-arsenal.git` 已创建 `main` 分支；远端只包含 shared-knowledge 最小公共模板候选，且 `--live` 会对远端文件名与内容做白名单对账。"
         ],
         "previous_step": [
           "上一步完成的是：P2-3 Formal Prism quorum 恢复复验，确认 Kimi + Claude Code 可形成当前独立验收 quorum。"
         ],
         "next_step": [
-          "下一步计划做的是：运行最终 spec/diagnose/closeout receipt，并提交本轮变更。"
+          "下一步计划做的是：提交 session-end 机制补丁后运行最终 spec/diagnose/closeout receipt；receipt 属于提交后的运行时证据，以 closeout runtime 输出为准。"
         ],
         "position": [
           "整体计划脉络图是：P1-3 remote fact → safety candidate policy → Gitee push → live head proof → parent ledger update → Prism acceptance → closeout receipt。",

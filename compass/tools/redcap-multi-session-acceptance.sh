@@ -82,6 +82,8 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-evolution-harvest-blocks
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-evolution-candidates-blocks
   bash compass/tools/redcap-multi-session-acceptance.sh prism-acceptance-binding-required
+  bash compass/tools/redcap-multi-session-acceptance.sh review-proof-check-accepts-prism-acceptance
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-prism-pass-supersedes-stale-control-plane-fail
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-complete-writes-receipt
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-attaches-session-end-binding
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-sync-preserves-completed-state
@@ -2409,6 +2411,144 @@ EOF
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-review-proof-check.sh" 1 "" "$task_file")"
     assert_string_contains "$output" "bound Prism acceptance"
+}
+
+run_session_end_prism_pass_supersedes_stale_control_plane_fail_case() {
+    local host="codex"
+    local repo case_dir baseline_head current_head binding_key pid review_result review_log
+    local validator_stub pending_state ledger output required_redlines
+
+    log "case: session-end-prism-pass-supersedes-stale-control-plane-fail"
+
+    repo="$ACCEPT_ROOT/session-end-stale-review/repo"
+    case_dir="$ACCEPT_ROOT/session-end-stale-review"
+    mkdir -p "$repo/compass/tools" "$repo/compass/docs/task-reports" "$repo/references"
+    init_temp_git_repo "$repo"
+    cp "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$repo/compass/tools/redcap-layerB-session-end.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh" "$repo/compass/tools/redcap-runtime-state.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-interop-governance.sh" "$repo/compass/tools/redcap-interop-governance.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-dev-task.sh" "$repo/compass/tools/redcap-dev-task.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-notify-format.sh" "$repo/compass/tools/redcap-notify-format.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-validator-output.sh" "$repo/compass/tools/redcap-validator-output.sh"
+    cp "$REDCAP_ROOT/references/task-report-template.md" "$repo/references/task-report-template.md"
+    chmod +x "$repo/compass/tools/redcap-layerB-session-end.sh"
+
+    cat >"$repo/compass/tools/redcap-prism-acceptance-check.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' '{"status":"pass","detail":"acceptance fixture"}'
+EOF
+    chmod +x "$repo/compass/tools/redcap-prism-acceptance-check.sh"
+
+    validator_stub="$case_dir/validator-chain-stub.sh"
+    cat >"$validator_stub" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${REDCAP_SESSION_END_REVIEW_STATUS:-}" == "PRISM_PASS" ]]; then
+    review_status="pass"
+else
+    review_status="fail"
+fi
+cat <<OUT
+[redcap-validator-chain] mode=session-end overall=$([[ "$review_status" == "pass" ]] && printf pass || printf fail)
+[1] review-proof-check :: $review_status
+review_status=${REDCAP_SESSION_END_REVIEW_STATUS:-missing}
+[2] reanchor-check :: pass
+reanchor ok
+[3] pm-gate :: pass
+pm gate ok
+[4] drift-check :: pass
+drift ok
+[5] backlog-check :: pass
+backlog ok
+[6] spec-check :: pass
+spec ok
+[7] task-report-check :: pass
+task report ok
+[8] artifact-lifecycle-check :: pass
+artifact ok
+OUT
+[[ "$review_status" == "pass" ]]
+EOF
+    chmod +x "$validator_stub"
+
+    printf '# acceptance fixture\n' >"$repo/README.md"
+    write_layerb_closeout_task_fixture "$repo/.dev-task.md" "compass/docs/task-reports/session-end-stale-review.md" "- [x] 旧控制面 FAIL 已由当前 Prism pass 覆盖"
+    write_valid_task_report_fixture "$repo/compass/docs/task-reports/session-end-stale-review.md" "SessionEnd Stale Review"
+    git -C "$repo" add .
+    git -C "$repo" commit --quiet -m "fixture baseline"
+    baseline_head="$(git -C "$repo" rev-parse HEAD)"
+    printf '\nfixture change\n' >>"$repo/README.md"
+    git -C "$repo" add README.md
+    git -C "$repo" commit --quiet -m "fixture change"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+
+    binding_key="acceptance-session-end-stale-review-${RANDOM}-$$"
+    pid="$$"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    redcap_runtime_write_text "layerB/initial-head" "$baseline_head" || fail "failed to seed initial head for stale review case"
+    review_result="$(redcap_runtime_path "review/review-result")"
+    review_log="$(redcap_runtime_path "review/review-log.md")"
+    mkdir -p "$(dirname "$review_result")"
+    printf '%s\n' "FAIL" >"$review_result"
+    cat >"$review_log" <<'EOF'
+# RedCap Stop Hook 控制面审计失败
+
+- **失败原因**: validator chain 检查失败
+
+## 详情
+
+mode: stop-review
+overall_status: fail
+steps:
+  - name: drift-check
+    status: fail
+EOF
+
+    output="$(REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY=1 REDCAP_SESSION_BINDING_KEY="$binding_key" REDCAP_HOST_PROCESS_PID="$pid" bash "$repo/compass/tools/redcap-layerB-session-end.sh" "$host" 2>&1)"
+    [[ -z "$output" || "$output" == *"review_status=PRISM_PASS"* ]] || fail "unexpected session-end output: $output"
+
+    pending_state="$(redcap_interop_pending_closure_existing_file "$repo" "$repo/.dev-task.md" 2>/dev/null || true)"
+    if [[ -n "$pending_state" ]]; then
+        cat "$pending_state" >&2 || true
+        fail "stale control-plane FAIL should not leave pending closure"
+    fi
+    assert_not_exists "$review_result"
+    assert_not_exists "$review_log"
+    ledger="$(redcap_interop_closure_ledger_file "$repo" "$repo/.dev-task.md")"
+    assert_exists "$ledger"
+    assert_contains "$ledger" "phase: session-end"
+    assert_contains "$ledger" "status: pass"
+    assert_eq "$current_head" "$(git -C "$repo" rev-parse HEAD)"
+
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+
+    binding_key="acceptance-session-end-content-review-fail-${RANDOM}-$$"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    redcap_runtime_write_text "layerB/initial-head" "$baseline_head" || fail "failed to seed initial head for content review fail case"
+    review_result="$(redcap_runtime_path "review/review-result")"
+    review_log="$(redcap_runtime_path "review/review-log.md")"
+    mkdir -p "$(dirname "$review_result")"
+    printf '%s\n' "FAIL" >"$review_result"
+    cat >"$review_log" <<'EOF'
+# RedCap Stop Review 内容审计失败
+
+## 详情
+
+result: FAIL
+reason: independent reviewer found a real contract blocker
+EOF
+
+    output="$(REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY=1 REDCAP_SESSION_BINDING_KEY="$binding_key" REDCAP_HOST_PROCESS_PID="$pid" bash "$repo/compass/tools/redcap-layerB-session-end.sh" "$host" 2>&1 || true)"
+    pending_state="$(redcap_interop_pending_closure_existing_file "$repo" "$repo/.dev-task.md" 2>/dev/null || true)"
+    [[ -n "$pending_state" ]] || fail "content review FAIL must leave pending closure"
+    required_redlines="$(redcap_interop_read_state_field "$pending_state" "required_redlines" 2>/dev/null || true)"
+    assert_string_contains "$required_redlines" "review"
+    assert_exists "$review_result"
+    assert_exists "$review_log"
+
+    redcap_interop_clear_pending_closure "$repo" "$repo/.dev-task.md" "acceptance-cleanup" "session-end-content-review-fail-negative" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
 }
 
 run_layerb_closeout_runtime_complete_writes_receipt_case() {
@@ -11060,6 +11200,7 @@ run_all_cases() {
     run_pending_closure_clear_restores_on_ledger_failure_case
     run_session_end_clears_all_matching_pending_states_case
     run_session_end_clears_compatible_pending_refresh_case
+    run_session_end_prism_pass_supersedes_stale_control_plane_fail_case
     run_task_report_check_prefers_anchor_case
     run_task_report_check_allows_marker_anchor_when_uniquely_latest_case
     run_task_report_check_requires_summary_for_untracked_anchor_case
@@ -11281,6 +11422,9 @@ case "$COMMAND" in
         ;;
     review-proof-check-accepts-prism-acceptance)
         run_review_proof_check_accepts_prism_acceptance_case
+        ;;
+    session-end-prism-pass-supersedes-stale-control-plane-fail)
+        run_session_end_prism_pass_supersedes_stale_control_plane_fail_case
         ;;
     layerb-closeout-runtime-complete-writes-receipt)
         run_layerb_closeout_runtime_complete_writes_receipt_case

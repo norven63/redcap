@@ -192,10 +192,12 @@
 - 轮次 2：建立 `shared-knowledge-remote-binding.json`，把 remote URL、默认分支、最小候选清单、禁止路径与 last_verified 变成机器可读事实。
 - 轮次 3：只把 `.gitignore`、`README.md`、schema、`indexes/.gitkeep`、`users/.gitkeep` 推送到 Gitee `main`，并记录 head `a43c8ab543eff42a288e23ecc4eeb5bc6e954b78`。
 - 轮次 4：Prism review 提醒 `--live` 不应只验 head；已升级为 head + tree + 文件内容对账，并补 acceptance 覆盖额外文件与内容漂移。
+- 轮次 5：closeout 暴露旧 stop-review 控制面 `FAIL` 会污染当前 Prism pass；已补 session-end 旧证据覆盖规则与回归，要求清理过期 review artifact 后再给 receipt。
 
 **当前共识**：
 - 公共库绑定必须先用最小白名单保护“能推什么”，再用 `--live` 证明“远端实际是什么”。
 - P1-3 完成不等于历史 reports/lessons/identity 已迁移，也不等于父任务全部完成。
+- closeout 证据必须按当前任务状态重算；旧 validator FAIL 只能作为历史证据，不能在当前 Prism pass 后继续阻塞 session-end。
 
 **状态**：[ACTIVE] → P1-3 closeout 中；正式证据见 `2026-04-26-shared-knowledge-gitee-remote-binding.md`
 
