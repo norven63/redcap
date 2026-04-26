@@ -29,8 +29,8 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 
 | id | 来源 | 任务 | 状态 | 优先级 | 推荐下一步 | 依赖 / 边界 |
 |---|---|---|---|---|---|---|
-| P0-1 | U2 | Prism availability cache provenance/path 污染修复 | open | P0 | 增加 cache provenance 校验或 explicit refresh，使 acceptance fake PATH 不能污染真实可用性清单 | 本轮 explicit refresh 证据显示 Kimi 真实可用；旧 cache 曾显示不可用 |
-| P0-2 | R0-R22 audit | R0-R22 原始编号可追溯化 | open | P0 | 把 R0-R22 从“口头编号”升级为机器可读父任务 registry，登记每个编号的来源、状态、receipt、延期边界 | 当前报告能恢复 promise 组，但仓库里缺少逐项 R0..R22 权威表 |
+| P0-1 | U2 | Prism availability cache provenance/path 污染修复 | completed | P0 | 已增加 cache provenance、probe/policy 内容摘要和污染回归 | receipt: `prism-availability-cache-provenance-guard-*`；报告 `2026-04-26-prism-availability-cache-provenance-guard.md` |
+| P0-2 | R0-R22 audit | R0-R22 原始编号可追溯化 | completed | P0 | 已新增机器可读 registry 和 checker，登记编号来源、状态、证据、置信度与延期边界 | receipt: `redcap-r0-r22-registry-*`；产物：`references/redcap-r0-r22-registry.json` |
 | P1-1 | R0-R22 deferred | 执行层物理拆分 dry-run | open | P1 | 先生成 JSON manifest，至少包含 move/copy/link plan、import impact、hook impact、rollback plan，再决定 apply | 必须保护现有 hook、revive、closeout、docs catalog 引用 |
 | P1-2 | R0-R22 deferred | 历史资产迁移 dry-run/apply | open | P1 | 先生成 JSON manifest，至少包含 retain/archive/move/prune 分类、断链检查、catalog 更新计划，再决定 apply | 不能破坏 task report、receipt、docs catalog 考古能力 |
 | P1-3 | R0-R22 deferred | shared-knowledge 远端 Gitee 绑定 | blocked-external | P1 | 用户提供 remote / 权限后绑定；绑定前本地模板继续工作 | 需要外部仓库和权限，Cap 不能凭空创建最终远端 |

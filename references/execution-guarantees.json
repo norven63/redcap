@@ -51,6 +51,7 @@
     "runtime-helper",
     "host-mirror",
     "host-behavior",
+    "parent-task-governance",
     "evolution-factory",
     "shared-knowledge",
     "package-publish-safety"
@@ -1073,6 +1074,29 @@
       "revival_required": false,
       "hook_required": true,
       "automation": "redcap-review-tracks-check.sh validates the three-track registry and confirms stop-review consumes it."
+    },
+    {
+      "id": "r0-r22-parent-registry",
+      "category": "parent-task-governance",
+      "priority": "P0",
+      "rule": "R0-R22 parent-task numbering must be machine-readable and must distinguish recovered evidence from reconstructed continuation items.",
+      "source_paths": [
+        "references/redcap-r0-r22-registry.json",
+        "references/redcap-parent-task-ledger.md",
+        "compass/docs/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-r0-r22-registry-check.sh validates contiguous R0-R22 coverage, required evidence paths, source type, confidence, status, and explicit boundaries; spec-check and diagnose consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-r0-r22-registry-check.sh",
+        "compass/tools/redcap-r0-r22-registry-check.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
     },
     {
       "id": "hook-contract-audit",

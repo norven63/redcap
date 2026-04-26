@@ -155,6 +155,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh agent-health-probe
   bash compass/tools/redcap-multi-session-acceptance.sh prism-availability
   bash compass/tools/redcap-multi-session-acceptance.sh file-lookup-dictionary-check
+  bash compass/tools/redcap-multi-session-acceptance.sh r0-r22-registry-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
@@ -9283,6 +9284,33 @@ EOF
     assert_string_contains "$stale_output" "required files missing from dictionary"
 }
 
+run_r0_r22_registry_check_case() {
+    local output bad_registry stale_output status
+
+    log "case: r0-r22-registry-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r0-r22-registry-check.sh")"
+    assert_string_contains "$output" "R0_R22_REGISTRY_OK"
+
+    bad_registry="$ACCEPT_ROOT/r0-r22-registry-missing.json"
+    python3 - "$REDCAP_ROOT/references/redcap-r0-r22-registry.json" "$bad_registry" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["items"] = [item for item in payload["items"] if item.get("id") != "R22"]
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r0-r22-registry-check.sh" --registry "$bad_registry" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R0-R22 registry checker should reject missing R22"
+    assert_string_contains "$stale_output" "items must be exactly"
+}
+
 run_shared_knowledge_check_case() {
     local fixture body output stale_output status
 
@@ -10547,6 +10575,7 @@ run_all_cases() {
     run_agent_health_probe_case
     run_prism_availability_case
     run_file_lookup_dictionary_check_case
+    run_r0_r22_registry_check_case
     run_shared_knowledge_check_case
     run_package_publish_safety_check_case
     run_skill_lifecycle_check_case
@@ -10981,6 +11010,9 @@ case "$COMMAND" in
         ;;
     file-lookup-dictionary-check)
         run_file_lookup_dictionary_check_case
+        ;;
+    r0-r22-registry-check)
+        run_r0_r22_registry_check_case
         ;;
     shared-knowledge-check)
         run_shared_knowledge_check_case

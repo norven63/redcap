@@ -424,6 +424,14 @@ if [[ -x "$FILE_LOOKUP_DICTIONARY_CHECK" ]]; then
     fi
 fi
 
+R0_R22_REGISTRY_CHECK="$REDCAP_ROOT/compass/tools/redcap-r0-r22-registry-check.sh"
+if [[ -x "$R0_R22_REGISTRY_CHECK" ]]; then
+    if ! bash "$R0_R22_REGISTRY_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] R0-R22 registry check failed" >&2
+        exit 1
+    fi
+fi
+
 SHARED_KNOWLEDGE_CHECK="$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-check.sh"
 if [[ -x "$SHARED_KNOWLEDGE_CHECK" ]]; then
     if ! bash "$SHARED_KNOWLEDGE_CHECK" >/dev/null; then

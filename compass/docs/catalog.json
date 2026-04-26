@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 52,
-    "size_bytes": 764765,
-    "lines": 13429,
-    "chars": 494451,
+    "file_count": 53,
+    "size_bytes": 772673,
+    "lines": 13590,
+    "chars": 500009,
     "rough_token_pressure": {
-      "low": 123612,
-      "high": 247225
+      "low": 125002,
+      "high": 250004
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 33,
-        "size_bytes": 484017,
-        "lines": 6582,
-        "chars": 309981,
+        "file_count": 34,
+        "size_bytes": 491925,
+        "lines": 6743,
+        "chars": 315539,
         "rough_token_pressure": {
-          "low": 77495,
-          "high": 154990
+          "low": 78884,
+          "high": 157769
         }
       },
       "traces": {
@@ -774,7 +774,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap Evolution-grade 控制面可靠性与自我进化治理",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15408,
       "lines": 209,
@@ -839,29 +839,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 发布/打包前安全拦截保障",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8516,
       "lines": 155,
       "chars": 5350,
       "summary": "当前已完成：RedCap 已新增发布/打包前安全 gate，并接入 execution guarantees、spec-check、diagnose、acceptance、CLI facade 和 File Lookup Dictionary。 / 详情：未来 npm / 独立 runtime / portable package 发布前，应把实际打包文件清单交给 `redcap-package-publish-safety-check.sh`；它会阻断 `.env`、宿主私密入口、本地 runtime evidence、Prism run 残留和 credential-like 内容。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已新增发布/打包前安全 gate，并接入 execution guarantees、spec-check、diagnose、acceptance、CLI facade 和 File Lookup Dictionary。",
-          "详情：未来 npm / 独立 runtime / portable package 发布前，应把实际打包文件清单交给 `redcap-package-publish-safety-check.sh`；它会阻断 `.env`、宿主私密入口、本地 runtime evidence、Prism run 残留和 credential-like 内容。"
-        ],
-        "previous_step": [
-          "上一步完成的是：上一轮 R0-R22 任务已经 closeout，receipt 覆盖提交 `7c57451`；本轮是其后的新增安全需求，不应复用上一轮 receipt 冒充完成。"
-        ],
-        "next_step": [
-          "下一步计划做的是：提交本轮安全 gate，并由 closeout runtime 生成新的 receipt。"
-        ],
-        "position": [
-          "整体计划脉络图是：新增需求进入 `.dev-task.md` → policy/checker → spec/diagnose/guarantee/acceptance 接线 → 文档与 lesson → 回归 → closeout receipt。",
-          "当前所在位置：实现与 targeted 回归已完成，处于提交和 closeout 前。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-26-prism-availability-cache-provenance-guard.md",
@@ -918,6 +902,35 @@
         "position": [
           "整体计划脉络图是：状态导入 → 报告/receipt 考古 → 父子任务关系恢复 → 待执行项排序 → Prism plan review → 诊断/收口。",
           "当前所在位置：状态导入、考古、父任务账本、Kimi resource-limited Prism plan review、审查反馈修正、spec-check、diagnose、提交与 closeout receipt 已完成；本轮任务流处于 CLOSED。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-26-r0-r22-registry.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P0-2 R0-R22 原始编号可追溯化",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 7908,
+      "lines": 161,
+      "chars": 5558,
+      "summary": "当前已完成：已新增 R0-R22 机器可读 registry，把 23 个编号的来源、状态、置信度、证据路径、完成边界和延期边界写入 `references/redcap-r0-r22-registry.json`。 / 关键边界：R0-R8 标记为 recovered/high；R9-R22 标记为 reconstructed/medium 或 low，避免把后续重构映射伪装成历史原始标题。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：已新增 R0-R22 机器可读 registry，把 23 个编号的来源、状态、置信度、证据路径、完成边界和延期边界写入 `references/redcap-r0-r22-registry.json`。",
+          "关键边界：R0-R8 标记为 recovered/high；R9-R22 标记为 reconstructed/medium 或 low，避免把后续重构映射伪装成历史原始标题。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P0-1 Prism availability cache provenance/path 污染修复已 closeout，最终 `DIAGNOSE_OK`。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续父任务账本 P1-1，执行层物理拆分 dry-run；P1-2 历史资产迁移 dry-run/apply 也仍在后续队列。"
+        ],
+        "position": [
+          "整体计划脉络图是：父任务重锚定 → P0-1 Prism cache 污染修复 → P0-2 R0-R22 registry → P1-1 执行层物理拆分 dry-run → P1-2 历史资产迁移。",
+          "当前所在位置：P0-2 registry、checker、spec/diagnose 接线、Prism resource-limited review 与 targeted acceptance 已完成，正在 closeout。"
         ]
       }
     },
