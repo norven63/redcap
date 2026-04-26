@@ -9146,15 +9146,61 @@ JSON
 EOF
     chmod +x "$fake_probe"
 
+    cat >"$cache" <<'JSON'
+{
+  "version": 1,
+  "generated_at": "2026-04-26T00:00:00Z",
+  "expires_at": "2099-01-01T00:00:00Z",
+  "ttl_seconds": 3600,
+  "timeout_s": 20,
+  "source": "acceptance polluted cache without provenance",
+  "agents": {
+    "kimi": {
+      "agent": "kimi",
+      "available": false,
+      "status": "timeout",
+      "installed": true,
+      "path": "/tmp/redcap-acceptance-polluted/bin/kimi",
+      "reason": "polluted stale cache"
+    }
+  }
+}
+JSON
     output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" status --cache "$cache" --ttl-seconds 3600 --timeout 20)"
     assert_string_contains "$output" '"expires_at"'
+    assert_string_contains "$output" '"provenance"'
     assert_contains "$cache" '"kimi"'
     assert_contains "$cache" '"available": true'
-    [[ "$(cat "$counter")" == "1" ]] || fail "availability probe should run once on first status"
+    [[ "$(cat "$counter")" == "1" ]] || fail "availability probe should refresh cache that lacks provenance"
 
     output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "kimi&kimi-k2:reviewer")"
     assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
     [[ "$(cat "$counter")" == "1" ]] || fail "fresh availability cache should not refresh"
+
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" status --cache "$cache" --ttl-seconds 3600 --timeout 20 --refresh)"
+    assert_string_contains "$output" '"provenance"'
+    [[ "$(cat "$counter")" == "2" ]] || fail "--refresh should force availability refresh"
+
+    output="$(PRISM_AVAILABILITY_REFRESH=1 PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "kimi&kimi-k2:reviewer")"
+    assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
+    [[ "$(cat "$counter")" == "3" ]] || fail "PRISM_AVAILABILITY_REFRESH should force availability refresh"
+
+    python3 - "$cache" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["expires_at"] = "2099-01-01T00:00:00Z"
+payload["provenance"]["provider_policy_sha256"] = "polluted-policy-fingerprint"
+payload["agents"]["kimi"]["available"] = False
+payload["agents"]["kimi"]["status"] = "timeout"
+payload["agents"]["kimi"]["reason"] = "polluted stale cache with mismatched provider policy hash"
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "kimi&kimi-k2:reviewer")"
+    assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
+    [[ "$(cat "$counter")" == "4" ]] || fail "availability probe should refresh cache with mismatched provider policy hash"
 
     set +e
     stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "copilot&gpt-5:reviewer" 2>&1)"
@@ -9176,12 +9222,29 @@ import pathlib
 import sys
 path = pathlib.Path(sys.argv[1])
 payload = json.loads(path.read_text(encoding="utf-8"))
+payload["expires_at"] = "2099-01-01T00:00:00Z"
+payload.setdefault("provenance", {})["path_sha256"] = "polluted-path-fingerprint"
+payload["agents"]["kimi"]["available"] = False
+payload["agents"]["kimi"]["status"] = "timeout"
+payload["agents"]["kimi"]["reason"] = "polluted stale cache with mismatched provenance"
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "kimi&kimi-k2:reviewer")"
+    assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
+    [[ "$(cat "$counter")" == "5" ]] || fail "availability probe should refresh cache with mismatched provenance"
+
+    python3 - "$cache" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
 payload["expires_at"] = "2000-01-01T00:00:00Z"
 path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
     output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" filter-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "kimi&kimi-k2:reviewer,copilot&gpt-5:reviewer")"
     [[ "$output" == "kimi&kimi-k2:reviewer" ]] || fail "filter-roster should keep only available providers"
-    [[ "$(cat "$counter")" == "2" ]] || fail "stale availability cache should refresh"
+    [[ "$(cat "$counter")" == "6" ]] || fail "stale availability cache should refresh"
 
     dispatch_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" PRISM_AVAILABILITY_CACHE="$cache" bash "$REDCAP_ROOT/prism/tools/prism-dispatch-check.sh" --mode test --agents "kimi&kimi-k2:reviewer,gemini&gemini-pro:challenger")"
     assert_string_contains "$dispatch_output" "Dispatch 校验通过"

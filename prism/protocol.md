@@ -183,9 +183,9 @@ Agent 数量：
 - 默认顺序应统一回到与 stop-review 一致的机器真相源：
   1. 先看 `compass/knowledge/model-capability-matrix.yaml` 中的**模型能力画像 / 适用场景**
   2. 再看 reviewer / Prism 场景下该 CLI 的**本地稳定性画像**
-  3. 最后结合 `prism-availability` 的**1 小时 TTL 可用性清单**决定是否纳入本轮 roster
+  3. 最后结合 `prism-availability` 的**1 小时 TTL + provenance-aware 可用性清单**决定是否纳入本轮 roster
 - `command -v`、registry cache、配置文件存在，只能证明“安装 / 配置可见”，不能证明“当前已登录、未限流、可稳定完成审计”。
-- 因此 Prism coordinator 在 Dispatch 前，必须把“可见性”与“真实健康”分开记录；必要时通过显式轻探测或降级说明诚实记账。
+- 因此 Prism coordinator 在 Dispatch 前，必须把“可见性”与“真实健康”分开记录；必要时通过显式轻探测或降级说明诚实记账。cache 缺少 provenance，或 root / probe / provider policy / PATH 指纹、probe 内容摘要、policy 内容摘要不匹配时，不得继续复用。
 - `Copilot` / `Codex` 不能被静态压低；`Gemini` / `Kimi` 也不能因历史习惯被静态抬高。
 - 显式资源冻结例外：若 `references/prism-provider-policy.json` 记录了临时冻结窗口，冻结 provider 在窗口内不得被调度；这不是能力降级，而是用户授权 / 配额边界优先于默认排序。
 - Provider 冻结必须由 health probe / reviewer ordering 记录为 `frozen` 或跳过，不能偷偷执行真实 CLI 后再在报告里解释。

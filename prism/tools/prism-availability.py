@@ -7,6 +7,7 @@ know whether a CLI is truly usable in headless mode before a roster is launched.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -20,6 +21,7 @@ DEFAULT_CACHE = "compass/.workflow/prism-agent-availability.json"
 DEFAULT_TTL_SECONDS = 3600
 DEFAULT_TIMEOUT_SECONDS = 15
 AVAILABLE_STATUS = "pass"
+PROVENANCE_CONTRACT = "prism-availability-provenance-v1"
 PROVIDER_ALIASES = {
     "claude": "claude-code",
     "claude-code": "claude-code",
@@ -64,6 +66,40 @@ def resolve_path(root: Path, raw: str) -> Path:
     return root / path
 
 
+def stable_path(path: Path) -> str:
+    try:
+        return str(path.expanduser().resolve(strict=False))
+    except OSError:
+        return str(path.expanduser().absolute())
+
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    try:
+        if not path.is_file():
+            return ""
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return ""
+
+
+def build_cache_provenance(root: Path, cache_path: Path, health_probe: Path, provider_policy_path: Path) -> dict[str, str]:
+    """Capture the runtime facts that make an availability cache trustworthy."""
+    return {
+        "contract": PROVENANCE_CONTRACT,
+        "root": stable_path(root),
+        "cache_path": stable_path(cache_path),
+        "health_probe": stable_path(health_probe),
+        "health_probe_sha256": sha256_file(health_probe),
+        "provider_policy": stable_path(provider_policy_path),
+        "provider_policy_sha256": sha256_file(provider_policy_path),
+        "path_sha256": sha256_text(os.environ.get("PATH", "")),
+    }
+
+
 def load_json(path: Path) -> dict[str, Any] | None:
     if not path.is_file():
         return None
@@ -74,8 +110,20 @@ def load_json(path: Path) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
-def cache_is_fresh(cache: dict[str, Any], now: datetime, min_timeout_s: int) -> bool:
+def provenance_matches(cache: dict[str, Any], expected: dict[str, str]) -> bool:
+    provenance = cache.get("provenance")
+    if not isinstance(provenance, dict):
+        return False
+    for key, expected_value in expected.items():
+        if provenance.get(key) != expected_value:
+            return False
+    return True
+
+
+def cache_is_fresh(cache: dict[str, Any], now: datetime, min_timeout_s: int, expected_provenance: dict[str, str]) -> bool:
     if cache.get("version") != 1:
+        return False
+    if not provenance_matches(cache, expected_provenance):
         return False
     expires_at = parse_time(cache.get("expires_at"))
     if expires_at is None or now >= expires_at:
@@ -94,7 +142,7 @@ def normalize_agent_name(name: str) -> str:
     return PROVIDER_ALIASES.get(name.strip().lower(), name.strip().lower())
 
 
-def normalize_health_payload(payload: dict[str, Any], ttl_seconds: int, source: str) -> dict[str, Any]:
+def normalize_health_payload(payload: dict[str, Any], ttl_seconds: int, source: str, provenance: dict[str, str]) -> dict[str, Any]:
     now = utc_now()
     expires = now + timedelta(seconds=ttl_seconds)
     agents: dict[str, dict[str, Any]] = {}
@@ -132,12 +180,13 @@ def normalize_health_payload(payload: dict[str, Any], ttl_seconds: int, source: 
         "ttl_seconds": ttl_seconds,
         "timeout_s": payload.get("timeout_s", ""),
         "source": source,
+        "provenance": provenance,
         "source_health_detected_at": payload.get("detected_at", ""),
         "agents": agents,
     }
 
 
-def run_health_probe(root: Path, health_probe: Path, timeout_s: int, provider_policy: str) -> dict[str, Any]:
+def run_health_probe(root: Path, health_probe: Path, timeout_s: int, provider_policy: str, provenance: dict[str, str]) -> dict[str, Any]:
     if not health_probe.is_file():
         fail(f"missing health probe script: {health_probe}")
     command = [
@@ -166,21 +215,28 @@ def run_health_probe(root: Path, health_probe: Path, timeout_s: int, provider_po
         fail(f"health probe returned invalid json: {exc}")
     if not isinstance(payload, dict):
         fail("health probe returned non-object json")
-    return normalize_health_payload(payload, ttl_seconds=int(os.environ.get("PRISM_AVAILABILITY_TTL_SECONDS", DEFAULT_TTL_SECONDS)), source=" ".join(command))
+    return normalize_health_payload(
+        payload,
+        ttl_seconds=int(os.environ.get("PRISM_AVAILABILITY_TTL_SECONDS", DEFAULT_TTL_SECONDS)),
+        source=" ".join(command),
+        provenance=provenance,
+    )
 
 
 def ensure_cache(args: argparse.Namespace) -> dict[str, Any]:
     root = args.root.resolve()
     cache_path = resolve_path(root, args.cache)
+    health_probe = resolve_path(root, args.health_probe)
+    provider_policy_path = resolve_path(root, args.provider_policy)
+    expected_provenance = build_cache_provenance(root, cache_path, health_probe, provider_policy_path)
     now = utc_now()
     existing = load_json(cache_path)
-    if existing is not None and cache_is_fresh(existing, now, args.timeout):
+    if not args.refresh and existing is not None and cache_is_fresh(existing, now, args.timeout, expected_provenance):
         if args.verbose:
             print(f"PRISM_AVAILABILITY_CACHE_OK {cache_path}")
         return existing
 
-    health_probe = resolve_path(root, args.health_probe)
-    payload = run_health_probe(root, health_probe, args.timeout, args.provider_policy)
+    payload = run_health_probe(root, health_probe, args.timeout, args.provider_policy, expected_provenance)
     payload["ttl_seconds"] = args.ttl_seconds
     generated = parse_time(payload.get("generated_at")) or now
     payload["expires_at"] = iso(generated + timedelta(seconds=args.ttl_seconds))
@@ -286,6 +342,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--provider-policy", default=os.environ.get("REDCAP_PROVIDER_POLICY_FILE", "references/prism-provider-policy.json"))
     parser.add_argument("--agents", default="")
     parser.add_argument("--report-rejected", action="store_true")
+    parser.add_argument("--refresh", action="store_true", default=os.environ.get("PRISM_AVAILABILITY_REFRESH", "").lower() in {"1", "true", "yes"})
     parser.add_argument("--verbose", action="store_true")
     return parser
 
