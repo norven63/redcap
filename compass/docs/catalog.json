@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 51,
-    "size_bytes": 753837,
-    "lines": 13211,
-    "chars": 486467,
+    "size_bytes": 755322,
+    "lines": 13245,
+    "chars": 487518,
     "rough_token_pressure": {
-      "low": 121616,
-      "high": 243233
+      "low": 121879,
+      "high": 243759
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 32,
-        "size_bytes": 473089,
-        "lines": 6364,
-        "chars": 301997,
+        "size_bytes": 474574,
+        "lines": 6398,
+        "chars": 303048,
         "rough_token_pressure": {
-          "low": 75499,
-          "high": 150998
+          "low": 75762,
+          "high": 151524
         }
       },
       "traces": {
@@ -886,9 +886,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11542,
-      "lines": 175,
-      "chars": 7474,
+      "size_bytes": 13027,
+      "lines": 209,
+      "chars": 8525,
       "summary": "当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，并建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口。 / 详情：本轮不继续散点开发，也不把 `layerb-change-intake-replan-gate` 的 receipt 冒充 R0-R22 父任务完成；本轮只做全景恢复、计划审计、边界澄清和下一批执行排序。",
       "status_basis": "filename_recency_only",
       "summary_points": {

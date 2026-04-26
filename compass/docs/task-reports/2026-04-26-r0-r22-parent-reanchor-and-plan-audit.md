@@ -55,9 +55,13 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 
 ---
 
-## 二、考古结论
+## 二、方案讨论
 
-### 2.1 已完成子任务
+### 2.1 考古策略
+
+本轮采用 evidence-first：先看 receipt、任务报告、promise ledger 与 current-status，再恢复父子任务关系；对没有机器可读逐项编号的 `R0-R22`，不凭记忆补造编号，而是显式列为 P0-2。
+
+### 2.2 已完成子任务
 
 | 子任务 | 证据 | 结论 |
 |---|---|---|
@@ -68,7 +72,7 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 | 发布/打包前安全 gate | `redcap-package-publish-safety-gate-*` receipt；报告 `2026-04-26-package-publish-safety-gate.md` | 发布前安全审计入口已完成，不等于已经发布 |
 | Layer B 中插需求重计划强门 | `layerb-change-intake-replan-gate-*` receipt；提交 `5eb5081`；报告 `2026-04-26-layerb-change-intake-replan-gate.md` | 中插账本和父子完成边界已完成，不等于 R0-R22 父任务全部完成 |
 
-### 2.2 当前最重要发现
+### 2.3 当前最重要发现
 
 | 发现 | 影响 | 处理 |
 |---|---|---|
@@ -78,7 +82,9 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 
 ---
 
-## 三、父任务待执行清单
+## 三、落地结果
+
+### 3.1 父任务待执行清单
 
 | id | 来源 | 任务 | 状态 | 优先级 | 推荐动作 |
 |---|---|---|---|---|---|
@@ -104,7 +110,9 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 
 ---
 
-## 四、建议执行顺序
+## 四、人工审核要点
+
+### 4.1 建议执行顺序
 
 1. 先做 `P0-1`，否则后续 Prism review 仍可能被错误 cache 污染。
 2. 再做 `P0-2`，把 R0-R22 从口头编号升级为机器可读父任务 registry。
@@ -114,9 +122,14 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 6. `P2-1` 在 P1-1 边界清晰后推进。
 7. `P2-2` 与 `P2-3` 作为后续控制面增强。
 
+### 4.2 人工边界
+
+- `P1-3 shared-knowledge 远端 Gitee 绑定` 需要外部 remote / 权限；没有这个事实输入时只能保留 blocked-external。
+- 其余 P0/P1/P2 技术治理项均可由 Cap 后续按任务卡继续推进，不需要用户审细节计划。
+
 ---
 
-## 五、验证与审查计划
+## 五、验证结果
 
 ### 5.1 已完成自检
 
@@ -156,12 +169,20 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 
 ---
 
-## 六、不可声明事项
+## 六、遗留问题与下一步
+
+### 6.1 不可声明事项
 
 - 不可声明 RedCap 已完成独立 runtime / CLI / package 化。
 - 不可声明历史报告和研究材料已经物理迁出执行层。
 - 不可声明 shared-knowledge 已绑定远端团队仓库。
 - 不可声明 R0-R22 原始编号已有机器可读权威表；这是本轮发现并列为 P0-2 的问题。
+
+### 6.2 下一步
+
+- 第一批实现建议：`P0-1 Prism availability cache provenance/path 污染修复`。
+- 第二批实现建议：`P0-2 R0-R22 原始编号可追溯化`。
+- 第三批实现建议：`P1-1 执行层物理拆分 dry-run` 与 `P1-2 历史资产迁移 dry-run/apply`。
 
 ---
 
@@ -173,3 +194,16 @@ Cap 在上一轮结束后建议：下一步应做“父任务重锚定 + R0-R22 
 |---|---|---|
 | 父任务编号必须机器可追溯 | no-promote | 本轮先进入父任务待执行清单 P0-2；等实现机器 registry 时再沉淀为正式 Evolution candidate，避免用纯计划污染候选池 |
 | Prism availability cache 需要 provenance 防污染 | no-promote | 本轮先进入父任务待执行清单 P0-1；等实现修复和回归后再沉淀为正式 Evolution candidate |
+
+## 八、附录
+
+### 8.1 关键证据路径
+
+| 证据 | 路径 |
+|---|---|
+| 当前任务卡 | `.dev-task.md` |
+| 父任务账本 | `references/redcap-parent-task-ledger.md` |
+| 本报告 | `compass/docs/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md` |
+| Prism run | `prism/runs/20260426-r0-r22-parent-reanchor-plan-review/` |
+| Prism parsed verdict | `prism/runs/20260426-r0-r22-parent-reanchor-plan-review/collect/reviewer/parsed.json` |
+| Availability refresh evidence | `prism/runs/20260426-r0-r22-parent-reanchor-plan-review/artifacts/availability-after-refresh.json` |
