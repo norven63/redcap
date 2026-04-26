@@ -32,7 +32,9 @@
 19. **Evolution 候选必须收口**：重要经验、用户纠偏、测试失败、人格成长、skill 候选和治理改良必须进入 `compass/evolution/candidates.json`，并在 closeout 前晋升、no-promote 或归档；未处理候选不得生成 receipt。
 20. **skill 生命周期保持单一信源**：RedCap-native capability、host-exported skill、portable skill package 由 `references/skill-lifecycle-policy.json` 约束；宿主入口只做轻量索引，不得复制并分叉权威规则。
 21. **旧资产按生命周期处理**：历史报告、spec、运行残留、知识库和本地 runtime 证据由 `references/legacy-asset-lifecycle.json` 分类；先审计保留/归档/翻译/安全清理策略，再做物理动作。
-22. **文件解释走字典优先**：关键 JSON、registry、script 的人类解释优先进入 `references/file-lookup-dictionary.md`，文件头只放短注解和反链，避免为了可读性重新制造上下文污染。
+22. **文件解释走字典优先**：关键 JSON、registry、script 的人类解释优先进入 `references/file-lookup-dictionary.md`，文件头只放短注解和反链；新增关键文件要同步补 `references/file-lookup-dictionary-policy.json`，让 `redcap-file-lookup-dictionary-check.sh` 兜住遗漏。
+23. **Prism 先看可用性清单**：Prism roster 必须写成 `provider&model:role`；dispatch 前先过 `prism-availability` 1 小时 TTL 清单，过期先嗅探，`frozen/timeout/fail/unsupported` 不得进入本轮调用。
+24. **共享沉淀库 append-only**：公共经验/方法论/skill 候选要走 `shared-knowledge` 独立仓库形态：按用户隔离、先查重复、只新增不改旧条目、先索引再读取；远端 Gitee 未绑定前不得冒充团队共享已完成。
 
 ## 章节路由
 
@@ -43,11 +45,12 @@
 | docs / knowledge / token 风险 | `CONTRIBUTING.md` §6、§7 的 docs/knowledge 边界、`compass/docs/index.yaml`、`compass/knowledge/index.md` |
 | hook / validator / runtime state | `CONTRIBUTING.md` §4、§7 控制面硬化、`references/hook-standards.md` |
 | Prism / 多 Agent 审查 | `CONTRIBUTING.md` §8、§9、§11、`prism/protocol.md` |
-| provider 调度 / 冻结 | `references/prism-provider-policy.json`、`compass/knowledge/model-capability-matrix.yaml` |
+| provider 调度 / 冻结 | `prism/tools/prism-availability.sh status`、`references/prism-provider-policy.json`、`compass/knowledge/model-capability-matrix.yaml` |
 | 需求确认 / 人工介入边界 | `CONTRIBUTING.md` §10、`references/agent-constraints.md` |
 | 调研结论 | `CONTRIBUTING.md` §14 |
 | 自我进化 / 经验人格沉淀 | `compass/evolution/README.md`、`references/evolution-candidate-schema.json`、`references/evolution-grade-baseline.json` |
 | 文件查阅 / 名词定位 | `references/file-lookup-dictionary.md` |
+| 共享知识 / 团队沉淀 | `references/shared-knowledge-policy.json`、`shared-knowledge/README.md` |
 | skill 分发 / 多宿主入口 | `references/skill-lifecycle-policy.json` |
 | 旧资产 / 运行残留治理 | `references/legacy-asset-lifecycle.json`、`prism/protocol.md` |
 
@@ -65,3 +68,6 @@
 10. 涉及经验、人格、skill 或治理沉淀：`bash compass/tools/redcap-evolution-candidate-check.sh --strict`
 11. 涉及多宿主 skill 分发：`bash compass/tools/redcap-skill-lifecycle-check.sh`
 12. 涉及旧资产或运行残留：`bash compass/tools/redcap-legacy-asset-lifecycle-check.sh`
+13. 涉及 Prism 调用：`bash prism/tools/prism-availability.sh status`，随后只调度可用 provider
+14. 涉及关键文件新增或解释：`bash compass/tools/redcap-file-lookup-dictionary-check.sh`
+15. 涉及公共沉淀库：`bash compass/tools/redcap-shared-knowledge-check.sh`

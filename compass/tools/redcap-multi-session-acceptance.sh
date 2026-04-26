@@ -8923,6 +8923,145 @@ EOF
     assert_contains "$ACCEPT_ROOT/agent-registry-freeze.yaml" 'version: "frozen"'
 }
 
+run_prism_availability_case() {
+    local fake_probe cache counter output status stale_output dispatch_output
+
+    log "case: prism-availability"
+
+    fake_probe="$ACCEPT_ROOT/prism-health-probe.sh"
+    cache="$ACCEPT_ROOT/prism-availability-cache.json"
+    counter="$ACCEPT_ROOT/prism-health-probe-count"
+    cat >"$fake_probe" <<EOF
+#!/usr/bin/env bash
+counter_file="$counter"
+count=0
+if [[ -f "\$counter_file" ]]; then
+  count="\$(cat "\$counter_file")"
+fi
+count="\$((count + 1))"
+printf '%s\n' "\$count" >"\$counter_file"
+cat <<'JSON'
+{
+  "version": 1,
+  "detected_at": "2026-04-26T00:00:00Z",
+  "live": true,
+  "timeout_s": 20,
+  "agents": [
+    {"agent": "kimi", "binary": "kimi", "installed": true, "path": "/tmp/kimi", "live_probe_requested": true, "live_status": "pass"},
+    {"agent": "gemini", "binary": "gemini", "installed": true, "path": "/tmp/gemini", "live_probe_requested": true, "live_status": "pass"},
+    {"agent": "copilot", "binary": "copilot", "installed": true, "path": "/tmp/copilot", "live_probe_requested": true, "live_status": "frozen", "reason": "acceptance freeze", "frozen_until": "2099-01-01T00:00:00Z"}
+  ]
+}
+JSON
+EOF
+    chmod +x "$fake_probe"
+
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" status --cache "$cache" --ttl-seconds 3600 --timeout 20)"
+    assert_string_contains "$output" '"expires_at"'
+    assert_contains "$cache" '"kimi"'
+    assert_contains "$cache" '"available": true'
+    [[ "$(cat "$counter")" == "1" ]] || fail "availability probe should run once on first status"
+
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "kimi&kimi-k2:reviewer")"
+    assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
+    [[ "$(cat "$counter")" == "1" ]] || fail "fresh availability cache should not refresh"
+
+    set +e
+    stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "copilot&gpt-5:reviewer" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "frozen provider should be rejected by availability roster check"
+    assert_string_contains "$stale_output" "PRISM_AGENT_UNAVAILABLE"
+
+    set +e
+    stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "gpt-5:reviewer" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "provider-unqualified Prism roster should be rejected"
+    assert_string_contains "$stale_output" "provider-unqualified"
+
+    python3 - "$cache" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["expires_at"] = "2000-01-01T00:00:00Z"
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" filter-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "kimi&kimi-k2:reviewer,copilot&gpt-5:reviewer")"
+    [[ "$output" == "kimi&kimi-k2:reviewer" ]] || fail "filter-roster should keep only available providers"
+    [[ "$(cat "$counter")" == "2" ]] || fail "stale availability cache should refresh"
+
+    dispatch_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" PRISM_AVAILABILITY_CACHE="$cache" bash "$REDCAP_ROOT/prism/tools/prism-dispatch-check.sh" --mode test --agents "kimi&kimi-k2:reviewer,gemini&gemini-pro:challenger")"
+    assert_string_contains "$dispatch_output" "Dispatch 校验通过"
+
+    set +e
+    stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" PRISM_AVAILABILITY_CACHE="$cache" bash "$REDCAP_ROOT/prism/tools/prism-dispatch-check.sh" --mode test --agents "kimi&kimi-k2:reviewer,copilot&gpt-5:challenger" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "dispatch-check should reject unavailable providers"
+    assert_string_contains "$stale_output" "PRISM_AGENT_UNAVAILABLE"
+}
+
+run_file_lookup_dictionary_check_case() {
+    local output policy stale_output status
+
+    log "case: file-lookup-dictionary-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-file-lookup-dictionary-check.sh")"
+    assert_string_contains "$output" "FILE_LOOKUP_DICTIONARY_OK"
+
+    policy="$ACCEPT_ROOT/file-lookup-dictionary-policy-missing.json"
+    cat >"$policy" <<'EOF'
+{
+  "version": 1,
+  "dictionary_path": "references/file-lookup-dictionary.md",
+  "required_paths": [
+    {"path": "references/security-rules.md", "meaning": "acceptance fixture"}
+  ]
+}
+EOF
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-file-lookup-dictionary-check.sh" --policy "$policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "dictionary checker should reject missing required entries"
+    assert_string_contains "$stale_output" "required files missing from dictionary"
+}
+
+run_shared_knowledge_check_case() {
+    local fixture body output stale_output status
+
+    log "case: shared-knowledge-check"
+
+    fixture="$ACCEPT_ROOT/shared-knowledge-fixture"
+    body="$ACCEPT_ROOT/shared-knowledge-body.md"
+    printf '%s\n' "问题源：acceptance fixture" "解决方案：append-only write path" "最后效果：dedupe blocks repeated entries" >"$body"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" init --root "$fixture")"
+    assert_string_contains "$output" "SHARED_KNOWLEDGE_INIT_OK"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" append --root "$fixture" --user norven --kind lesson --title "Acceptance Shared Knowledge" --body-file "$body" --source ".dev-task.md")"
+    assert_string_contains "$output" "SHARED_KNOWLEDGE_APPEND_OK"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" index --root "$fixture")"
+    assert_string_contains "$output" '"entry_count": 1'
+
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" append --root "$fixture" --user norven --kind lesson --title "Acceptance Shared Knowledge" --body-file "$body" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "shared knowledge append should reject duplicate fingerprints"
+    assert_string_contains "$stale_output" "SHARED_KNOWLEDGE_DUPLICATE"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" check --root "$fixture")"
+    assert_string_contains "$output" "SHARED_KNOWLEDGE_OK"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-check.sh")"
+    assert_string_contains "$output" "SHARED_KNOWLEDGE_OK"
+}
+
 run_skill_lifecycle_check_case() {
     local output fixture stale_output stale_status
 
@@ -10093,6 +10232,9 @@ run_all_cases() {
     run_evolution_candidate_check_case
     run_evolution_harvest_check_case
     run_agent_health_probe_case
+    run_prism_availability_case
+    run_file_lookup_dictionary_check_case
+    run_shared_knowledge_check_case
     run_skill_lifecycle_check_case
     run_legacy_asset_lifecycle_check_case
     run_token_risk_audit_case
@@ -10516,6 +10658,15 @@ case "$COMMAND" in
         ;;
     agent-health-probe)
         run_agent_health_probe_case
+        ;;
+    prism-availability)
+        run_prism_availability_case
+        ;;
+    file-lookup-dictionary-check)
+        run_file_lookup_dictionary_check_case
+        ;;
+    shared-knowledge-check)
+        run_shared_knowledge_check_case
         ;;
     skill-lifecycle-check)
         run_skill_lifecycle_check_case

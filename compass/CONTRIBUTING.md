@@ -612,6 +612,8 @@ governance_debts_addressed: []
 - continuity assets：`.dev-task.md`、`explore-notes.md`、宿主 `plan.md` / workboard、imported session artifacts
 - `compass/docs/catalog.json`：docs 首读索引，只承载摘要、读法策略与体量信息，不替代任何原始 evidence
 - `compass/knowledge/index.md`：knowledge 首读导航，只帮助定位经验/宿主/治理知识，不替代 lessons 或具体 host 记录
+- `shared-knowledge/`：未来独立公共知识库的本地模板，负责 append-only 团队沉淀、按用户隔离、索引优先读取；远端仓库未绑定前不得冒充已完成团队共享部署
+- `references/file-lookup-dictionary.md`：关键文件定位和人话解释入口；coverage 以 `references/file-lookup-dictionary-policy.json` + checker 为准
 
 补充规则：
 
@@ -626,6 +628,8 @@ governance_debts_addressed: []
 9. 入口文件（AGENTS/CLAUDE/GEMINI/Copilot）必须自动导入小型 `compass/CONTRIBUTING.core.md`，但不得自动导入 `CONTRIBUTING.md` 全文或 `lessons.md` 这类大文件；新会话必须先走 core / current-status / index / rg / budget。
 10. `CONTRIBUTING.md` 不是 token 陷阱本身，它仍是权威规范全文；风险点是无差别全文注入。若全文继续膨胀，应优先做 core/section 信息架构、合并重复、迁移历史事故到 lessons/task report，而不是简单削弱规范权威。
 11. 宿主入口文件分名存在是 carrier 约束，不是多权威设计。它们必须保持“薄 shim”形态，只负责指向同一套首读链；若入口文件开始各自长出不同规则、不同默认流程或大量独有正文，视为信息架构退化。
+12. 新增关键 runtime / Prism / knowledge / host-adapter / product-shape 文件时，必须同步补 File Lookup Dictionary policy 和字典条目，并运行 `redcap-file-lookup-dictionary-check.sh`。
+13. 公共沉淀写入 `shared-knowledge` 前必须先查重复；条目文件只新增不改旧文件，索引是派生物，真实任务需要正文时再按路径读取。
 
 ---
 
@@ -922,6 +926,13 @@ scope_status: <full-implementation|route-only|partial-with-explicit-defer|not-ap
 | 架构探索，方向未定 | Prism explore |
 
 §8/§9 是轻量快速路径，Prism 是高后果决策的系统化路径，两者并存。
+
+### Dispatch 前可用性硬门
+
+- Prism roster 必须写成 `provider&model:role`，例如 `kimi&kimi-k2:reviewer`；未写 provider 时，RedCap 无法判断要调用哪个本地 CLI，必须拒绝。
+- Dispatch 前必须先通过 `bash prism/tools/prism-availability.sh check-roster --agents "<roster>"`；该脚本维护 `compass/.workflow/prism-agent-availability.json`，TTL 为 1 小时。
+- 清单过期时自动调用 `redcap-agent-health-probe` 做真实 headless 嗅探；只有 `pass` 可进入本轮 roster，`frozen`、`timeout`、`fail`、`unsupported` 都不得调用。
+- `filter-roster` 只能帮忙筛出当前可用候选；筛完以后仍要重新检查角色、模型家族和 quorum 是否满足 Prism 模式要求，不能静默降配。
 
 ### 触发条件（风险信号驱动）
 

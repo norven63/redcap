@@ -421,9 +421,12 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 
 - `lessons.md`：活跃层，保持短小、常驻启动上下文
 - `lessons-archive.md`：归档层，按需检索
+- `shared-knowledge/`：未来独立团队共享库的本地模板，负责按用户隔离、append-only 沉淀、索引优先读取和 exact duplicate 拒绝
 
 高影响 lesson 不允许自动淡出。  
 它的职责不是“做知识管理”，而是**把曾经出现过的失败模式保留为下一次执行的边界条件**。
+
+shared knowledge 的职责不同：它不是当前任务真相源，也不默认进入启动上下文；它是团队长期沉淀的候选外部库，只有索引命中且任务确实需要证据时才读取正文。
 
 ### 4.10 soul / revive / re-anchor
 
@@ -556,9 +559,13 @@ Prism 当前已经不仅是“发几次子任务”，而是形成了 run-scoped
 - agent 之间不得互看中间结论
 - collect 之前不得串线
 - adjudication 必须在冻结过的 frame 上进行
+- dispatch 之前必须通过 `prism-availability` 可用性清单；清单 1 小时内有效，过期先真实嗅探
+- roster 必须写明 `provider&model:role`，让本地 CLI 可用性和模型能力画像不再混成一团
 
 这是一条显式的架构声明，而不是实现细节。  
 如果后续实现出现折衷，也必须在 capability trace 中显式标注，而不是在重写文档时抹掉。
+
+`prism-availability` 只证明“这个 provider 当前可被 RedCap-owned headless 调度使用”，不证明“这个模型一定适合当前问题”。模型适配仍由能力画像、任务风险和 Prism 角色设计决定。
 
 ### 6.4 Skill-Delegation 模式
 

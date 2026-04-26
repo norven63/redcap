@@ -32,18 +32,28 @@ redcap-runtime / redcap CLI
   └─ human docs            README / panorama / file dictionary
 ```
 
-当前仓库仍是 skill-root 形态，因此本轮只能先做“边界明确 + 低风险治理 + 迁移路线”。真正拆成独立 CLI/package，需要后续专门迁移任务。
+当前仓库仍是 skill-root 形态，因此本轮采取“边界明确 + 低风险治理 + 可逆迁移支撑”的路线。已经落地的本地控制面包括：`bin/redcap` 薄 CLI facade、Prism 可用性 TTL 清单、File Lookup Dictionary coverage gate、shared-knowledge 本地模板与 append-only 工具。真正拆成独立 CLI/package，以及绑定远端 Gitee 共享库，需要后续专门迁移任务。
 
 ## Migration Tranches
 
 | tranche | 目标 | 可验收结果 |
 |---|---|---|
 | T0: Narrative and dictionary | 把 RedCap 的产品定位、文件地图、命名误导先校准 | README、file dictionary、system layers 文档存在且不增加启动上下文 |
-| T1: Runtime facade | 把 `revive-cap.sh` / `closeout-cap.sh` / current-status 收敛成 CLI 形态的 facade | `redcap revive/status/closeout` 可等价调用现有脚本 |
+| T1: Runtime facade | 把 `revive-cap.sh` / `closeout-cap.sh` / current-status 收敛成 CLI 形态的 facade | `bin/redcap revive/status/diagnose/closeout` 已等价调用现有入口 |
 | T2: Host adapter package | 宿主入口从手写镜像变为生成或 symlink 管理 | host entries 不再手工分叉，adapter check 可阻断漂移 |
-| T3: Evidence boundary | task reports、Prism runs、human reports 与 runtime receipts 分层存放 | 新会话只读索引，历史证据按需读取 |
-| T4: Knowledge gateway | lessons / docs / reports 从文件索引升级到 metadata/FTS；必要时接入 RAG | 查询可以返回候选集合和读取预算 |
+| T3: Evidence boundary | task reports、Prism runs、human reports 与 runtime receipts 分层存放 | 新会话只读索引，历史证据按需读取；大规模物理迁移必须另走 dry-run/apply |
+| T4: Knowledge gateway | lessons / docs / reports 从文件索引升级到 metadata/FTS；必要时接入 RAG | `shared-knowledge` 模板、append-only 写入、索引和 exact dedupe 已可运行 |
 | T5: Distribution | 从 skill 仓库演进为 npm/pip/brew 或独立 CLI 包 | 新工作区可安装 runtime，而不是复制整个 skill 仓库 |
+
+## Shared Knowledge Boundary
+
+`shared-knowledge/` 是未来独立仓库的本地模板，不是新的上下文大包。它的规则是：
+
+- `users/<user>/` 按用户隔离沉淀内容
+- 条目文件以 UTC 时间戳开头，只新增不改旧文件
+- `redcap-shared-knowledge.sh append` 写入前先计算 fingerprint，发现 exact duplicate 就拒绝
+- `redcap-shared-knowledge.sh index` 先生成 metadata/catalog，真实任务需要时再读条目正文
+- 远端 Gitee remote、团队权限和跨机器同步由用户提供 remote 后再绑定，不在本地任务中伪装完成
 
 ## Retrieval Route
 
@@ -63,4 +73,3 @@ GraphRAG 的触发阈值应该是“关系型问题频繁出现且文件检索�
 - 不把人类阅读层塞进启动上下文；人类材料也要走索引和按需读取。
 - 不让宿主入口复制 RedCap 规则正文；它们只做 thin entry。
 - 不因清理证据层而损坏考古能力；清理必须先分类、再 dry-run、再显式 apply。
-

@@ -7,6 +7,7 @@ RedCap 不是“再包一层提示词”。
 目标不是让一个 Agent 更拼，而是让一组 Agent 更可靠。
 
 当前仓库仍以 skill-root 方式承载 RedCap，但长期形态不是“某个宿主的 skill 文件夹”，而是可安装、可复活、可调度、可审计的独立 runtime。产品化分层与迁移路线见 [`references/redcap-system-layers.md`](./references/redcap-system-layers.md)。
+本轮已经补了一个低风险薄 CLI facade：`bin/redcap`，先把现有 root/tool 入口统一成 CLI 形态，底层逻辑仍保持原位，避免破坏宿主适配。
 
 ## 一眼看懂
 
@@ -26,7 +27,7 @@ Compass 负责规范、经验、Hook、收尾与复活
 可运行代码 + 可考古证据 + 可恢复连续性
 ```
 
-## RedCap 最核心的 8 个能力
+## RedCap 最核心的 9 个能力
 
 | 能力 | 解决的问题 |
 |---|---|
@@ -36,6 +37,7 @@ Compass 负责规范、经验、Hook、收尾与复活
 | **文档不会默认灌满上下文** | 文档、知识库、测试集合都先看索引，再按需读取，避免 token 污染 |
 | **收尾不是口头说完成** | Layer B 终态要走统一 closeout runtime，棱镜验收、承诺账本、receipt、rescue audit 都要留下物理证据 |
 | **经验会进入自我进化工厂** | 重要纠偏、失败链路、人格成长和 skill 候选先进入 Evolution candidate，再晋升或说明不晋升 |
+| **共享知识不会变成新垃圾山** | 公共沉淀走独立 shared-knowledge 形态：按用户隔离、append-only、先索引、先去重 |
 | **多宿主 skill 不再各自分叉** | RedCap 原生能力是单一信源；宿主入口只做轻量索引、复活和适配 |
 | **做不到硬保障的地方会诚实承认** | 不会把“只能靠纪律遵守”的规则伪装成 100% 自动执行 |
 
@@ -44,6 +46,7 @@ Compass 负责规范、经验、Hook、收尾与复活
 很多框架有“多角色”，但没有真正的**多 Agent 团队验证层**。
 Prism 的作用不是“多叫几个模型来热闹一下”，而是把高后果问题交给一个独立团队去复核：
 
+- **先看可用性清单**：`prism-availability` 维护 1 小时 TTL 清单，过期先嗅探，只挑当前可用的 Agent
 - **彼此独立看问题**：不同 Agent 不能互抄中间答案
 - **不是同一家模型自己给自己背书**
 - **不是随便聊几句，而是结构化收集、汇总、裁决**
@@ -94,6 +97,7 @@ Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养�
 - 新环境初始化：`./revive-cap.sh --init-identity`
 - 已有 identity 的复活：`./revive-cap.sh`
 - 需要显式指定宿主时：`./revive-cap.sh --host codex`
+- CLI facade：`bin/redcap revive`
 
 这条入口会串起 6 件事：
 
@@ -123,6 +127,7 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 - 只看当前收尾状态：`./closeout-cap.sh status`
 - 漏写 receipt 时做 rescue 审计：`./closeout-cap.sh audit-open`
 - 日常体检会自动尝试 diagnose-rescue：`bash compass/tools/redcap-diagnose.sh`
+- CLI facade：`bin/redcap closeout` / `bin/redcap status` / `bin/redcap diagnose`
 
 这条入口内部会串起：
 
@@ -156,6 +161,8 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 | **结案报告** | `compass/docs/task-reports/*.md` | 解决“这轮到底改了什么、验证了什么、还剩什么” |
 | **收尾收据** | `closeout-receipts/*.json` | 解决“不能只靠一句‘完成了’，而要有物理 receipt 证明终态真的闭环” |
 | **进化候选池** | `compass/evolution/candidates.json` | 解决“重要经验、人格成长和治理改良不能靠作者记忆临时想起” |
+| **共享沉淀库** | `shared-knowledge/` 模板 + `redcap-shared-knowledge.sh` | 解决“团队经验要可共享、按用户隔离、只新增不改旧条目、先索引再读取” |
+| **文件定位字典** | `references/file-lookup-dictionary.md` + policy/check | 解决“人和 Agent 不知道该看哪个文件，只能全文乱翻”的问题 |
 | **skill 单一信源** | `references/skill-lifecycle-policy.json` | 解决“多个宿主各写一份规则，最后互相漂移”的问题 |
 | **旧资产生命周期** | `references/legacy-asset-lifecycle.json` | 解决“历史报告、运行残留、旧规范到底保留、翻译、归档还是清理” |
 
@@ -174,7 +181,10 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 | [`compass/knowledge/runtime-memory-architecture.md`](./compass/knowledge/runtime-memory-architecture.md) | 看“真相源 / 镜像 / 考古追踪 / 长期沉淀”等术语到底是什么意思 |
 | [`compass/evolution/README.md`](./compass/evolution/README.md) | 看 RedCap Evolution Factory 如何把候选经验、人格、skill 与治理项收口 |
 | [`references/file-lookup-dictionary.md`](./references/file-lookup-dictionary.md) | 看关键 JSON、脚本和 registry 的定位、人话解释与检查入口 |
+| [`references/file-lookup-dictionary-policy.json`](./references/file-lookup-dictionary-policy.json) | 看哪些关键文件必须被 File Lookup Dictionary 覆盖 |
 | [`references/redcap-system-layers.md`](./references/redcap-system-layers.md) | 看 RedCap 从 skill-root 演进为 Agent Runtime / CLI / 多层系统的架构路线 |
+| [`references/shared-knowledge-policy.json`](./references/shared-knowledge-policy.json) | 看公共知识库的按用户隔离、append-only、索引优先和远端边界策略 |
+| [`shared-knowledge/README.md`](./shared-knowledge/README.md) | 看未来独立共享知识仓库的本地模板 |
 | [`references/skill-lifecycle-policy.json`](./references/skill-lifecycle-policy.json) | 看 RedCap-native capability、host-exported skill、portable skill package 的单一信源策略 |
 | [`references/legacy-asset-lifecycle.json`](./references/legacy-asset-lifecycle.json) | 看旧资产、运行残留与考古证据的生命周期策略 |
 | [`references/runtime-memory-architecture.md`](./references/runtime-memory-architecture.md) | 看 Layer B 生命周期如何与 `.dev-task.md`、承诺账本、closeout runtime、pending closure、session hooks 绑在一起 |

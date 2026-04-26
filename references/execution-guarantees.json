@@ -39,6 +39,7 @@
     "state-machine-contract",
     "task-report-closure",
     "docs-catalog",
+    "file-lookup-navigation",
     "control-gates",
     "host-adapter-hooks",
     "acceptance-navigation",
@@ -49,7 +50,8 @@
     "runtime-helper",
     "host-mirror",
     "host-behavior",
-    "evolution-factory"
+    "evolution-factory",
+    "shared-knowledge"
   ],
   "guarantees": [
     {
@@ -415,6 +417,31 @@
         "prism/tools/prism-run-state.sh",
         "prism/tools/prism-archive-check.sh",
         "prism/tools/prism-evidence-check.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "prism-availability-cache",
+      "category": "prism-multi-agent",
+      "priority": "P0",
+      "rule": "Every RedCap-owned Prism dispatch must consume a fresh agent availability cache with a one-hour TTL and reject provider-unqualified or currently unavailable Agent rosters before launch.",
+      "source_paths": [
+        "prism/protocol.md",
+        "prism/tools/prism-availability.sh",
+        "prism/tools/prism-dispatch-check.sh",
+        "references/prism-provider-policy.json"
+      ],
+      "status": "scripted",
+      "automation": "prism-availability refreshes compass/.workflow/prism-agent-availability.json when stale, dispatch-check calls check-roster before role/diversity checks, and diagnose/spec-check surface cache health.",
+      "guarantee_paths": [
+        "prism/tools/prism-availability.sh",
+        "prism/tools/prism-availability.py",
+        "prism/tools/prism-dispatch-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
       ],
       "revival_required": false,
       "hook_required": false,
@@ -788,6 +815,53 @@
       "read_only_safe": true,
       "revival_required": true,
       "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "file-lookup-dictionary-coverage",
+      "category": "file-lookup-navigation",
+      "priority": "P0",
+      "rule": "Critical RedCap runtime, Prism, knowledge, host-adapter, and product-shape files must be discoverable through the File Lookup Dictionary without requiring a bulk repository read.",
+      "source_paths": [
+        "references/file-lookup-dictionary.md",
+        "references/file-lookup-dictionary-policy.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-file-lookup-dictionary-check validates required path coverage and broken dictionary links; spec-check and diagnose consume it as a fail-closed control-plane gate.",
+      "guarantee_paths": [
+        "compass/tools/redcap-file-lookup-dictionary-check.sh",
+        "compass/tools/redcap-file-lookup-dictionary-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "read_only_safe": true,
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "shared-knowledge-append-only",
+      "category": "shared-knowledge",
+      "priority": "P0",
+      "rule": "Shared knowledge and sedimentation output must have an independent repository shape, per-user namespace, append-only entries, index-first retrieval, and exact duplicate rejection before RedCap treats it as a scalable team memory layer.",
+      "source_paths": [
+        "references/shared-knowledge-policy.json",
+        "shared-knowledge/README.md",
+        "shared-knowledge/schemas/entry.schema.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-shared-knowledge provides init, append, index, dedupe, and check commands; shared-knowledge-check, spec-check, and diagnose keep the local template and append-only contract visible.",
+      "guarantee_paths": [
+        "compass/tools/redcap-shared-knowledge.sh",
+        "compass/tools/redcap-shared-knowledge.py",
+        "compass/tools/redcap-shared-knowledge-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
       "auto_enforceable": true
     },
     {

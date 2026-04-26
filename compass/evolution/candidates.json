@@ -143,6 +143,58 @@
       "review_paths": [
         "compass/tools/redcap-multi-session-acceptance.sh"
       ]
+    },
+    {
+      "id": "EVO-2026-04-26-003",
+      "source_kind": "user-correction",
+      "problem_source": "The user explicitly required Prism to stop wasting long-task time on unavailable Agent CLIs and to maintain a one-hour availability list before each Prism use.",
+      "solution": "Introduce prism-availability as a TTL cache and roster gate, require provider-qualified roster specs, wire the gate into prism-dispatch-check, and cover it with acceptance plus execution guarantees.",
+      "final_effect": "RedCap-owned Prism dispatch now rejects unavailable, frozen, timed-out, unsupported, or provider-unqualified rosters before launch instead of discovering the failure after delegation stalls.",
+      "recurrence_guard": "redcap-spec-check, redcap-diagnose, prism-dispatch-check, and the prism-availability acceptance case keep the TTL cache path visible and tested.",
+      "applicability_boundary": "The cache proves current local provider availability, not model suitability; model selection still depends on capability matrix, task risk, and Prism role design.",
+      "evidence_paths": [
+        "prism/tools/prism-availability.sh",
+        "prism/tools/prism-availability.py",
+        "prism/tools/prism-dispatch-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "references/execution-guarantees.json"
+      ],
+      "promotion_target": "execution-guarantee",
+      "status": "promoted",
+      "promotion_paths": [
+        "references/execution-guarantees.json"
+      ],
+      "review_paths": [
+        "prism/protocol.md",
+        "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
+      ]
+    },
+    {
+      "id": "EVO-2026-04-26-004",
+      "source_kind": "user-correction",
+      "problem_source": "The user challenged whether RedCap's reports, lessons, identity growth, and shared methods should continue living inside the skill-root execution layer and risk recreating a token sink.",
+      "solution": "Add a shared-knowledge repository template with per-user namespaces, append-only timestamped entries, index-first retrieval, exact duplicate rejection, and an explicit remote-binding boundary.",
+      "final_effect": "RedCap can start treating team memory as an external shared layer while keeping the current execution layer lean and preserving a safe migration path for future Gitee binding.",
+      "recurrence_guard": "shared-knowledge policy, check script, file dictionary coverage, spec-check, diagnose, and acceptance now protect the local template and append-only behavior.",
+      "applicability_boundary": "This is the local repository shape and tooling; remote Gitee creation, permissions, and historical asset physical migration remain explicit follow-up work.",
+      "evidence_paths": [
+        "shared-knowledge/README.md",
+        "shared-knowledge/schemas/entry.schema.json",
+        "references/shared-knowledge-policy.json",
+        "compass/tools/redcap-shared-knowledge.sh",
+        "compass/tools/redcap-shared-knowledge.py",
+        "references/file-lookup-dictionary.md"
+      ],
+      "promotion_target": "redcap-native-capability",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/tools/redcap-shared-knowledge.sh",
+        "shared-knowledge/README.md"
+      ],
+      "review_paths": [
+        "references/redcap-system-layers.md",
+        "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
+      ]
     }
   ]
 }

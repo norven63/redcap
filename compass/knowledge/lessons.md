@@ -1161,3 +1161,30 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-26
+
+### L-120: Prism 可用性 cache 要同时记录时间新鲜度和探测强度
+- **场景**：本轮实现 1 小时 TTL 可用性清单后，快速用 5 秒 timeout 嗅探时把 Kimi 误记为 timeout；如果只看 TTL，后续 20 秒正式嗅探会继续复用错误 cache。
+- **根因**：TTL 只能证明“什么时候探过”，不能证明“用多强的探测条件探过”。短 timeout、低权限、冻结策略、provider policy 都会影响 cache 的可信度。
+- **经验规则**：① availability cache 的 freshness 至少要比较 `expires_at` 与 `timeout_s` ② 调高 probe timeout 时应强制刷新，而不是复用更弱探测结果 ③ Prism 调度前的可用性只证明 provider 当前可用，不证明模型适合当前任务。
+- **来源**：2026-04-26 RedCap 执行层重构与公共知识库治理
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-26
+
+### L-121: File Lookup Dictionary 必须有 coverage policy，否则会退回一次性人肉索引
+- **场景**：用户质疑 `file-lookup-dictionary.md` 是否已经“最全”，而实际文件只覆盖了部分核心面，新增脚本和 registry 没有机器保障会继续漏。
+- **根因**：人类可读字典如果没有机器可读的 required path policy，就无法在新增关键文件时 fail-closed；它会和旧报告一样变成“当时写得很好、后来没人维护”的淤积物。
+- **经验规则**：① 人类解释写在 dictionary，coverage 写在 policy ② 新增关键 runtime / Prism / knowledge / host adapter / product-shape 文件时，同步补 policy 和字典 ③ policy/check 必须接入 diagnose/spec-check，不能只靠最终报告提醒。
+- **来源**：2026-04-26 RedCap 执行层重构与公共知识库治理
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-26
+
+### L-122: 公共知识库要先建立写入边界，再谈历史资产搬迁
+- **场景**：用户希望 RedCap 将知识库、经验沉淀、供人类阅读材料与执行层分离，甚至未来由团队共享；如果本轮直接搬历史资产，容易破坏现有考古引用和 closeout/report 证据链。
+- **根因**：目录瘦身和知识沉淀是两种不同风险：前者会影响已有路径引用，后者需要长期共享、去重、检索和权限边界。没有 append-only / per-user namespace / index-first / dedupe 之前，搬迁只会制造新的垃圾山。
+- **经验规则**：① 先落 shared-knowledge 模板、schema、append/index/dedupe/check ② 条目只新增不改旧文件，索引可再生成 ③ 远端仓库和历史资产物理迁移必须分开做，先 dry-run 再 apply。
+- **来源**：2026-04-26 RedCap 执行层重构与公共知识库治理
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-26

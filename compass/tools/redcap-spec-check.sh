@@ -415,3 +415,27 @@ if [[ -x "$LEGACY_ASSET_LIFECYCLE_CHECK" ]]; then
         exit 1
     fi
 fi
+
+FILE_LOOKUP_DICTIONARY_CHECK="$REDCAP_ROOT/compass/tools/redcap-file-lookup-dictionary-check.sh"
+if [[ -x "$FILE_LOOKUP_DICTIONARY_CHECK" ]]; then
+    if ! bash "$FILE_LOOKUP_DICTIONARY_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] file lookup dictionary check failed" >&2
+        exit 1
+    fi
+fi
+
+SHARED_KNOWLEDGE_CHECK="$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-check.sh"
+if [[ -x "$SHARED_KNOWLEDGE_CHECK" ]]; then
+    if ! bash "$SHARED_KNOWLEDGE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] shared knowledge check failed" >&2
+        exit 1
+    fi
+fi
+
+PRISM_AVAILABILITY_CHECK="$REDCAP_ROOT/prism/tools/prism-availability.sh"
+if [[ -x "$PRISM_AVAILABILITY_CHECK" ]]; then
+    if ! bash "$PRISM_AVAILABILITY_CHECK" status >/dev/null; then
+        echo "[redcap-spec-check] prism availability check failed" >&2
+        exit 1
+    fi
+fi

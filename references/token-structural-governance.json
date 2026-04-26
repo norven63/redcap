@@ -38,6 +38,13 @@
       "trigger_for_revisit": "When RedCap self-development rules are added, prefer CONTRIBUTING.core.md or a targeted reference over expanding top-level SKILL.md."
     },
     {
+      "path": "references/execution-guarantees.json",
+      "kind": "tracked-large-registry",
+      "current_mitigation": "file-lookup-dictionary-and-targeted-validator",
+      "structural_strategy": "Keep as the machine-readable guarantee registry while routing human explanation through File Lookup Dictionary; if the registry keeps growing, split inactive/deprecated guarantees into an archive registry consumed by the same validator.",
+      "trigger_for_revisit": "When the registry exceeds 75KB or when more than 5 new guarantees are added in one tranche, evaluate category sharding with a generated combined view."
+    },
+    {
       "path": "prism/runs",
       "kind": "ignored-runtime-evidence",
       "current_mitigation": "gitignored-do-not-bulk-read",

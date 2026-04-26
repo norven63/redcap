@@ -154,10 +154,24 @@ run 目录与 registry path 的创建/解析统一由 `prism/tools/prism-run-sta
 ```bash
 bash prism/tools/prism-dispatch-check.sh \
   --mode <模式> \
-  --agents "model1:role1,model2:role2,..." \
+  --agents "provider&model1:role1,provider&model2:role2,..." \
   [--problem <问题包文件>]
 # 退出码 1 = 校验失败，Dispatch 中止
 ```
+
+`--agents` 必须显式写 provider，例如 `kimi&kimi-k2:reviewer`、`gemini&gemini-pro:challenger`、`codex&gpt-5.4:historian`。未写 provider 的 roster 会被拒绝，因为 RedCap 无法确认应该调用哪个本地 CLI。
+
+Dispatch check 会先调用：
+
+```bash
+bash prism/tools/prism-availability.sh check-roster --agents "provider&model:role,..."
+```
+
+这一步维护 `compass/.workflow/prism-agent-availability.json`：
+- TTL 为 1 小时
+- 过期自动用 `redcap-agent-health-probe` 重新嗅探
+- `pass` 才算可用；`frozen`、`timeout`、`fail`、`unsupported` 都不能进入本轮 roster
+- 如果只是想看当前可用候选，可用 `filter-roster` 先过滤，再重新评估角色/家族是否还满足 quorum
 
 Agent 数量：
 - explore：3~5 个，≥2 家族
@@ -169,7 +183,7 @@ Agent 数量：
 - 默认顺序应统一回到与 stop-review 一致的机器真相源：
   1. 先看 `compass/knowledge/model-capability-matrix.yaml` 中的**模型能力画像 / 适用场景**
   2. 再看 reviewer / Prism 场景下该 CLI 的**本地稳定性画像**
-  3. 最后结合**真实 headless 健康**决定是否纳入本轮 roster
+  3. 最后结合 `prism-availability` 的**1 小时 TTL 可用性清单**决定是否纳入本轮 roster
 - `command -v`、registry cache、配置文件存在，只能证明“安装 / 配置可见”，不能证明“当前已登录、未限流、可稳定完成审计”。
 - 因此 Prism coordinator 在 Dispatch 前，必须把“可见性”与“真实健康”分开记录；必要时通过显式轻探测或降级说明诚实记账。
 - `Copilot` / `Codex` 不能被静态压低；`Gemini` / `Kimi` 也不能因历史习惯被静态抬高。

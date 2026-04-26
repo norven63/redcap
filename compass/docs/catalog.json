@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 47,
-    "size_bytes": 702086,
-    "lines": 12399,
-    "chars": 453896,
+    "file_count": 48,
+    "size_bytes": 718269,
+    "lines": 12653,
+    "chars": 464565,
     "rough_token_pressure": {
-      "low": 113474,
-      "high": 226948
+      "low": 116141,
+      "high": 232282
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 28,
-        "size_bytes": 421338,
-        "lines": 5552,
-        "chars": 269426,
+        "file_count": 29,
+        "size_bytes": 437521,
+        "lines": 5806,
+        "chars": 280095,
         "rough_token_pressure": {
-          "low": 67356,
-          "high": 134713
+          "low": 70023,
+          "high": 140047
         }
       },
       "traces": {
@@ -709,7 +709,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：Layer B 统一 runtime / 承诺账本 / receipt 收口 / rescue 审计",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16169,
       "lines": 336,
@@ -774,29 +774,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap Evolution-grade 控制面可靠性与自我进化治理",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15408,
       "lines": 209,
       "chars": 10128,
       "summary": "当前已完成：R0-R8 的 repo-owned 改造、外部 Prism 审查、最终 patchset 完整 acceptance 回归均已完成；审查发现的 harvest blocker 覆盖缺口、`~/` 证据路径宽松校验、未知 EVO ID 可被报告引用三个问题也已修复并回归。 / 详情：这一步解决的是“机制只在自然语言里存在”的根问题。现在经验/人格/skill/治理候选如果未处理，会在 closeout 前阻断 receipt；旧资产与 `prism/runs` 不再只靠口头清理；多宿主 skill 分发也有单一信源校验；治理类任务报告引用的候选 ID 必须真实存在。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：R0-R8 的 repo-owned 改造、外部 Prism 审查、最终 patchset 完整 acceptance 回归均已完成；审查发现的 harvest blocker 覆盖缺口、`~/` 证据路径宽松校验、未知 EVO ID 可被报告引用三个问题也已修复并回归。",
-          "详情：这一步解决的是“机制只在自然语言里存在”的根问题。现在经验/人格/skill/治理候选如果未处理，会在 closeout 前阻断 receipt；旧资产与 `prism/runs` 不再只靠口头清理；多宿主 skill 分发也有单一信源校验；治理类任务报告引用的候选 ID 必须真实存在。"
-        ],
-        "previous_step": [
-          "上一步完成的是：先建立 R0 baseline，再按弱点补齐候选池、closeout gate、provider health、旧资产、skill lifecycle 和文档入口；随后用 Kimi / Copilot 做独立审查，并按审查发现补齐 harvest blocker 验收。"
-        ],
-        "next_step": [
-          "下一步计划做的是：无。本轮 R0-R8 已正式 closeout，后续如有新治理想法应另起任务锚点。"
-        ],
-        "position": [
-          "整体计划脉络图是：R0 基线审计 → R1 控制面统一 → R2 Prism 稳定性 → R3 旧资产治理 → R4 即时回复质量 → R5 token 结构治理 → R6 Evolution Factory → R7 skill 生命周期 → R8 独立验收与 closeout。",
-          "当前所在位置：CLOSED。机器回归、Prism 独立验收、承诺账本、pending closure 和 closeout receipt 均已收口。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-25-redcap-runtime-productization-and-architecture-decoupling.md",
@@ -824,6 +808,35 @@
         "position": [
           "整体计划脉络图是：任务重锚定 → 产品形态/目录边界总纲 → 文件查阅字典 → provider freeze 强门 → skill lifecycle 补全 → Feishu 通知 owner 收敛 → Prism 调度/通信协议升级 → 知识检索路线 → lessons/Evolution 沉淀 → Prism + 回归 + closeout。",
           "当前所在位置：本轮治理任务已正式收口；Prism 已绑定为 resource-limited-pass（Kimi 有效，其它非 Copilot provider 不可用，Copilot frozen），closeout receipt 已存在，因此本轮承诺账本完成。但 RedCap 仍处于 skill-root 承载形态，独立 runtime / CLI 化只是已形成路线图，并未完成物理迁移。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RedCap 执行层重构与公共知识库治理落地",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 16183,
+      "lines": 254,
+      "chars": 10669,
+      "summary": "当前已完成：R0-R22 已完成本地控制面落地：Prism 可用性 TTL 清单、File Lookup Dictionary coverage gate、shared-knowledge append-only 模板、`bin/redcap` 薄 CLI facade、文档表达、targeted/full acceptance 与整体控制面回归。 / 详情：Prism 调度前现在会先检查 1 小时 TTL 可用性清单；字典不再靠人工记忆维护，而是有 policy/check 接入 diagnose/spec-check；公共沉淀库先以本地模板和写入工具落地，远端 Gitee 绑定明确延期。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：R0-R22 已完成本地控制面落地：Prism 可用性 TTL 清单、File Lookup Dictionary coverage gate、shared-knowledge append-only 模板、`bin/redcap` 薄 CLI facade、文档表达、targeted/full acceptance 与整体控制面回归。",
+          "详情：Prism 调度前现在会先检查 1 小时 TTL 可用性清单；字典不再靠人工记忆维护，而是有 policy/check 接入 diagnose/spec-check；公共沉淀库先以本地模板和写入工具落地，远端 Gitee 绑定明确延期。"
+        ],
+        "previous_step": [
+          "上一步完成的是：跑完 full acceptance、`spec-check`、`diagnose`，并修复回归中暴露的 `execution-guarantees.json` 大文件结构治理缺口。"
+        ],
+        "next_step": [
+          "下一步计划做的是：无本轮剩余实现任务；提交后由 `./closeout-cap.sh` 生成同一任务 hash 的正式 receipt。"
+        ],
+        "position": [
+          "整体计划脉络图是：需求重锚 → Planning/coverage 设计 → Prism/Dictionaries/Shared Knowledge/CLI 实现 → targeted acceptance → 独立审查 → 全量回归 → closeout receipt。",
+          "当前所在位置：实现、独立审查与回归均已完成，处于 closeout receipt 收口点。"
         ]
       }
     },

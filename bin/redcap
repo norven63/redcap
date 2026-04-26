@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Thin RedCap CLI facade. Keep logic in repo-owned tools; this file only routes.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REDCAP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+usage() {
+  cat <<'EOF'
+usage: redcap <command> [args...]
+
+commands:
+  revive                 run ./revive-cap.sh
+  status                 show current RedCap status
+  diagnose               run the diagnostic overview
+  closeout               route to ./closeout-cap.sh
+  prism-availability     inspect or refresh Prism agent availability
+  file-dictionary        validate the File Lookup Dictionary
+  shared-knowledge       manage the shared knowledge repository template
+EOF
+}
+
+COMMAND="${1:-}"
+if [[ -z "$COMMAND" ]]; then
+  usage
+  exit 2
+fi
+shift || true
+
+case "$COMMAND" in
+  revive)
+    exec "$REDCAP_ROOT/revive-cap.sh" "$@"
+    ;;
+  status)
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "${1:-$REDCAP_ROOT/.dev-task.md}"
+    ;;
+  diagnose)
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "${1:-$REDCAP_ROOT/.dev-task.md}"
+    ;;
+  closeout)
+    exec "$REDCAP_ROOT/closeout-cap.sh" "$@"
+    ;;
+  prism-availability)
+    exec bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" "${1:-status}" "${@:2}"
+    ;;
+  file-dictionary)
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-file-lookup-dictionary-check.sh" "$@"
+    ;;
+  shared-knowledge)
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" "$@"
+    ;;
+  help|-h|--help)
+    usage
+    ;;
+  *)
+    echo "unknown redcap command: $COMMAND" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

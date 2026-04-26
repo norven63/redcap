@@ -3,8 +3,8 @@
 # Dictionary: references/file-lookup-dictionary.md#prism-and-providers
 #
 # 用法:
-#   bash prism/tools/prism-dispatch-check.sh --mode redteam --agents "claude-opus-4.6:challenger,gpt-5.4:reviewer,gemini-3.1-pro-preview:historian"
-#   bash prism/tools/prism-dispatch-check.sh --mode explore  --agents "claude-sonnet-4.6:explorer,gpt-5.4:explorer,gemini-3.1-pro-preview:explorer"
+#   bash prism/tools/prism-dispatch-check.sh --mode redteam --agents "claude&claude-opus-4.6:challenger,codex&gpt-5.4:reviewer,gemini&gemini-3.1-pro-preview:historian"
+#   bash prism/tools/prism-dispatch-check.sh --mode explore  --agents "claude&claude-sonnet-4.6:explorer,codex&gpt-5.4:explorer,gemini&gemini-3.1-pro-preview:explorer"
 #
 # 退出码:
 #   0 → 校验通过，可以继续 Dispatch
@@ -39,6 +39,19 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRISM_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+AVAILABILITY_SCRIPT="$SCRIPT_DIR/prism-availability.sh"
+
+if [[ "${PRISM_AVAILABILITY_SKIP:-0}" != "1" ]]; then
+  if [[ ! -x "$AVAILABILITY_SCRIPT" ]]; then
+    echo "❌ Prism availability gate missing: $AVAILABILITY_SCRIPT"
+    exit 1
+  fi
+  bash "$AVAILABILITY_SCRIPT" check-roster \
+    --agents "$AGENTS_RAW" \
+    --ttl-seconds "${PRISM_AVAILABILITY_TTL_SECONDS:-3600}" \
+    --timeout "${PRISM_AVAILABILITY_PROBE_TIMEOUT:-15}" \
+    --cache "${PRISM_AVAILABILITY_CACHE:-compass/.workflow/prism-agent-availability.json}"
+fi
 
 python3 - "$MODE" "$AGENTS_RAW" "$LINE_COUNT" "$PRISM_DIR" "$INJECTION_MODES_RAW" << 'PYEOF'
 import sys, os, json

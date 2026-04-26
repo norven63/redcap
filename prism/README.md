@@ -53,7 +53,8 @@ Prism 候选 roster 的默认排序，现在和 stop-review 保持一致：
 
 - `registry cache` 只说明安装/配置可见
 - 不代表登录态、限流、MCP/Hook 噪声或真实可完成审计
-- 所以正式 Prism 前，必须把“可见”与“可健康运行”分开记录
+- 所以正式 Prism 前，必须先看 `prism-availability` 的 1 小时 TTL 可用性清单；过期就重新嗅探，只让 `pass` 的 provider 进入 roster
+- Prism roster 必须写成 `provider&model:role`，例如 `kimi&kimi-k2:reviewer`，否则 dispatch gate 会拒绝
 
 ## 运行证据长什么样
 
