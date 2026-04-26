@@ -9780,15 +9780,19 @@ run_shared_knowledge_check_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" append --root "$fixture" --user norven --kind lesson --title "Acceptance Shared Knowledge" --body-file "$body" --source ".dev-task.md")"
     assert_string_contains "$output" "SHARED_KNOWLEDGE_APPEND_OK"
 
-    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" index --root "$fixture")"
-    assert_string_contains "$output" '"entry_count": 1'
-
     set +e
     stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" append --root "$fixture" --user norven --kind lesson --title "Acceptance Shared Knowledge" --body-file "$body" 2>&1)"
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "shared knowledge append should reject duplicate fingerprints"
     assert_string_contains "$stale_output" "SHARED_KNOWLEDGE_DUPLICATE"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" append --root "$fixture" --user Norven --kind lesson --title "Acceptance User Namespace" --body "问题源：user namespace lost display case"$'\n'"解决方案：preserve safe display case"$'\n'"最后效果：users/Norven is created")"
+    assert_string_contains "$output" "SHARED_KNOWLEDGE_APPEND_OK"
+    assert_string_contains "$output" "users/Norven/"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" index --root "$fixture")"
+    assert_string_contains "$output" '"entry_count": 2'
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge.sh" check --root "$fixture")"
     assert_string_contains "$output" "SHARED_KNOWLEDGE_OK"
@@ -9826,9 +9830,9 @@ run_shared_knowledge_remote_binding_check_case() {
     git -C "$work" push -u origin main >/dev/null
     head="$(git --git-dir="$bare" rev-parse refs/heads/main)"
 
-    python3 - "$policy" "$bare" "$head" <<'PY'
+    python3 - "$policy" "$bare" "$head" "$work" <<'PY'
 import json, sys
-policy, bare, head = sys.argv[1:4]
+policy, bare, head, work = sys.argv[1:5]
 payload = {
     "version": 1,
     "binding_id": "redcap-shared-knowledge-gitee-remote-binding",
@@ -9839,6 +9843,10 @@ payload = {
     "remote_repo": "redcap-arsenal",
     "default_branch": "main",
     "local_root": "shared-knowledge",
+    "template_root": "shared-knowledge",
+    "preferred_local_worktree": work,
+    "preferred_worktree_must_be_external": False,
+    "initial_user_namespace": "Norven",
     "remote_root": ".",
     "publish_mode": "template-only",
     "fixture_mode": True,
@@ -9848,6 +9856,7 @@ payload = {
         {"path": "schemas/entry.schema.json", "remote_path": "schemas/entry.schema.json", "purpose": "fixture schema"},
         {"path": "indexes/.gitkeep", "remote_path": "indexes/.gitkeep", "purpose": "fixture indexes"},
         {"path": "users/.gitkeep", "remote_path": "users/.gitkeep", "purpose": "fixture users"},
+        {"path": "users/Norven/.gitkeep", "remote_path": "users/Norven/.gitkeep", "purpose": "fixture Norven user namespace"},
     ],
     "forbidden_path_globs": [
         ".env", ".env.*", "**/.env", "**/.env.*",
@@ -9870,9 +9879,10 @@ PY
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$policy")"
     assert_string_contains "$output" "SHARED_KNOWLEDGE_REMOTE_BINDING_OK"
-    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$policy" --live)"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-remote-check.sh" --policy "$policy" --live --require-worktree)"
     assert_string_contains "$output" "live_head=$head"
-    assert_string_contains "$output" "remote_tree_files=5"
+    assert_string_contains "$output" "preferred_local_worktree=/"
+    assert_string_contains "$output" "remote_tree_files=6"
 
     printf '%s\n' "# Tampered public README" >"$work/README.md"
     git -C "$work" add README.md

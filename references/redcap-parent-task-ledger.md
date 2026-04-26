@@ -25,6 +25,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | 发布/打包前安全 gate | 未来 package / runtime 发布前的候选文件安全审计已接入 spec/diagnose/acceptance | `redcap-package-publish-safety-gate-*` receipt；报告 `2026-04-26-package-publish-safety-gate.md` | 不等于已经发布 package |
 | Layer B 中插需求重计划强门 | 新增 U<n> 中插账本、CHANGE_INTAKE / REPLAN_REVIEW、父子完成边界和机器检查 | `layerb-change-intake-replan-gate-*` receipt；报告 `2026-04-26-layerb-change-intake-replan-gate.md` | 不等于 R0-R22 父任务全部完成 |
 | shared-knowledge Gitee 远端绑定 | 公共知识库最小模板已安全推送到 `https://gitee.com/norven63/redcap-arsenal.git`，并有 remote binding policy + live head proof | `redcap-shared-knowledge-gitee-remote-binding-*` receipt；报告 `2026-04-26-shared-knowledge-gitee-remote-binding.md` | 不等于历史 reports/lessons/identity 已迁移到公共库 |
+| redcap-arsenal 本地实体仓库与 Norven 命名空间 | 已建立 `/Users/norven/.claude/skills/redcap-arsenal` 耐久本地 Git 工作区，Gitee 远端 head 为 `2e3b954338a4c397d299da88f460c6edf5a312d6`，模板/实体/远端均含 `users/Norven/.gitkeep` | 报告 `2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md`；外部公共库 commit `2e3b954` | 不等于历史知识内容已迁移或公共库已有实质条目 |
 
 ## 父任务待执行清单
 
@@ -35,11 +36,13 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | P1-1 | R0-R22 deferred | 执行层物理拆分 dry-run | completed | P1 | 已生成 dry-run manifest、checker、spec/diagnose/acceptance 接线和 Kimi Prism review；下一步进入 P1-2 历史资产迁移 dry-run | receipt: `redcap-execution-layer-split-dry-run-*`；产物：`references/execution-layer-split-dry-run.json` |
 | P1-2 | R0-R22 deferred | 历史资产迁移 dry-run/apply | completed | P1 | 已生成 collection-level dry-run manifest、checker、spec/diagnose/acceptance 接线；真实 move/delete 另开 apply 任务 | receipt: `redcap-legacy-asset-migration-dry-run-*`；产物：`references/legacy-asset-migration-dry-run.json` |
 | P1-3 | R0-R22 deferred | shared-knowledge 远端 Gitee 绑定 | completed | P1 | 已绑定 Gitee remote 并推送最小安全模板；后续真实知识条目写入另走 append-only 流程 | receipt: `redcap-shared-knowledge-gitee-remote-binding-*`；remote head: `a43c8ab543eff42a288e23ecc4eeb5bc6e954b78` |
+| P1-4 | user inserted follow-up | redcap-arsenal 本地实体仓库与 Norven 命名空间 | completed | P1 | 已建立外部本地 worktree、推送 `users/Norven/.gitkeep`，并补模板/实体/远端三层口径和验收 | report: `2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md`；remote head: `2e3b954338a4c397d299da88f460c6edf5a312d6` |
 | P2-1 | R0-R22 deferred | 正式 runtime / CLI / package 发布设计与实现 | completed | P2 | 已建立 npm/package-style readiness：`package.json private=true`、runtime package policy、candidate list generator、package safety gate、npm pack dry-run 对账和 CLI facade；真实公网发布仍另开 release 任务 | receipt: `redcap-runtime-cli-package-readiness-*`；产物：`references/runtime-package-readiness-policy.json` |
 | P2-2 | change-intake report | 父任务 receipt 聚合 gate | completed | P2 | 已新增 parent receipt aggregation policy 与 checker，父任务仍因 P1-3 外部绑定不满足而不可 complete | receipt: `redcap-parent-receipt-aggregation-gate-*`；产物：`references/parent-receipt-aggregation-policy.json` |
 | P2-3 | Prism review limits | Formal Prism quorum 恢复复验 | completed | P2 | 已复验 Kimi + Claude Code 可形成当前非 Codex 双路 Prism quorum；Codex CLI 被策略降为 last-resort fallback；Gemini timeout、Copilot frozen 继续诚实记录 | receipt: `redcap-prism-formal-quorum-provider-revalidation-*`；产物：`references/prism-provider-policy.json`、`compass/.workflow/prism-agent-availability.json` |
 | P3-1 | retrieval roadmap | GraphRAG / 向量检索阈值研究 | deferred | P3 | 先继续 catalog + rg + metadata；当共享库规模越过阈值再引入 RAG/GraphRAG | 不能过早引入重型系统复杂度 |
 | P3-2 | P2-2 reviewer risk | runtime receipt evidence correspondence hardening | deferred | P3 | 后续在 receipt root 可稳定定位时，校验 completed child 的 receipt_glob 至少匹配真实 receipt，并探索报告/receipt 对应关系检查 | 不影响 P2-2 防止父任务完成混报；属于证据深度增强 |
+| P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | deferred | P2 | 设计 identity/schema/installer 链路，让新安装 RedCap 时自动初始化当前用户命名空间和 AI Agent 信息 | 本轮只登记需求，不冒充完成；需单独任务设计 |
 
 ## 推荐执行顺序
 
@@ -48,10 +51,12 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 3. `P1-1`：执行层物理拆分 dry-run，确认 RedCap 如何从 skill-root 迁出。（已完成）
 4. `P1-2`：历史资产迁移 dry-run/apply，解决 docs / reports 长期淤积。（已完成 dry-run；真实 apply 另开任务）
 5. `P1-3`：绑定 shared-knowledge 远端仓库。（已完成）
-6. `P2-1`：正式 runtime / CLI / package readiness。（已完成 readiness；真实 public release 另开任务）
-7. `P2-2`：父任务 receipt 聚合 gate。（已完成 gate；父任务仍 incomplete）
-8. `P2-3`：formal Prism quorum 恢复复验。（已完成）
-9. `P3-2`：runtime receipt evidence correspondence hardening。
+6. `P1-4`：实体化 redcap-arsenal 本地仓库与 Norven 命名空间。（已完成）
+7. `P2-1`：正式 runtime / CLI / package readiness。（已完成 readiness；真实 public release 另开任务）
+8. `P2-2`：父任务 receipt 聚合 gate。（已完成 gate；父任务仍 incomplete）
+9. `P2-3`：formal Prism quorum 恢复复验。（已完成）
+10. `P2-4`：首次启动初始化用户与 AI Agent 信息。
+11. `P3-2`：runtime receipt evidence correspondence hardening。
 
 ## 当前不可声明
 
@@ -59,6 +64,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 - 不可声明 RedCap 已经 npm publish 或完成跨机器公开分发；P2-1 只完成 package readiness 和候选包安全审计链。
 - 不可声明历史报告和研究材料已经物理迁出执行层。
 - 不可声明 shared-knowledge 历史 reports/lessons/identity 已经迁移到远端公共库；本轮只绑定并初始化公共库模板。
+- 不可声明 `redcap-arsenal` 已有实质历史知识内容；当前只有安全模板、索引占位和 `users/Norven/` 命名空间占位。
 - 不可声明 P1-1 dry-run 已经执行真实 move/copy/link；它只证明迁移边界和风险已可审计。
 - 不可声明 P1-2 dry-run 已经执行真实历史资产搬迁或删除；它只证明分类、断链计划、catalog 计划和回滚边界已可审计。
 - 不可声明父任务已经 complete；aggregation gate 当前输出为 not-eligible，因为 P3-1/P3-2 等后续治理项仍 deferred。

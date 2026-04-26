@@ -49,6 +49,13 @@ def slugify(value: str) -> str:
     return lowered[:64] or "entry"
 
 
+def user_namespace(value: str) -> str:
+    """Preserve human-facing user names while keeping path segments safe."""
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", value.strip())
+    cleaned = cleaned.strip(".-_")
+    return cleaned[:64] or "user"
+
+
 def normalize_text(value: str) -> str:
     return " ".join(value.strip().lower().split())
 
@@ -177,7 +184,7 @@ def command_append(args: argparse.Namespace, repo_root: Path) -> int:
     copy_template(repo_root, root)
     if args.kind not in ALLOWED_KINDS:
         fail(f"invalid kind: {args.kind}")
-    user = slugify(args.user)
+    user = user_namespace(args.user)
     body = read_body(args)
     fp = fingerprint(args.kind, args.title, body)
     duplicate = find_duplicate(root, fp)

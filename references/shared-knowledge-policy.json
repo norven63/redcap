@@ -1,7 +1,12 @@
 {
   "version": 1,
-  "description": "Policy for the future independent RedCap shared knowledge repository. The repository is append-only for authored entries and index-first for retrieval.",
-  "default_root": "shared-knowledge",
+  "description": "Policy for the independent RedCap Arsenal public knowledge repository. RedCap keeps shared-knowledge/ as a safe template source; the durable local public-library worktree should live outside the RedCap repo.",
+  "public_repository_name": "redcap-arsenal",
+  "template_root": "shared-knowledge",
+  "default_root": "../redcap-arsenal",
+  "preferred_local_worktree": "../redcap-arsenal",
+  "preferred_worktree_must_be_external": true,
+  "initial_user_namespace": "Norven",
   "entry_filename_rule": "YYYYMMDDTHHMMSSZ-<kind>-<slug>.md",
   "append_only": {
     "authored_entries": true,
@@ -9,8 +14,8 @@
     "derived_indexes_may_be_regenerated": true,
     "audit_snapshots_should_be_timestamped": true
   },
-  "user_namespace_rule": "entries live under users/<user_slug>/ so team members can contribute to the same repository without mixing authorship",
+  "user_namespace_rule": "entries live under users/<safe_user_name>/ so team members can contribute to the same repository without mixing authorship; safe display case such as Norven is preserved",
   "retrieval_rule": "read catalog and metadata first; use rg/FTS for exact recall; only load entry bodies after the caller has a precise evidence need",
   "dedupe_rule": "before append, compute a normalized fingerprint and reject exact duplicates; near-duplicate review remains a Prism or human-review concern until semantic retrieval exists",
-  "remote_boundary": "The public template remote is bound in references/shared-knowledge-remote-binding.json. Only the minimal template surface may be pushed; historical reports, lessons, identity, runtime evidence, host entry files, and private configuration remain out of scope."
+  "remote_boundary": "The public RedCap Arsenal remote is bound in references/shared-knowledge-remote-binding.json. Only the minimal template surface and explicit per-user namespace placeholders may be pushed; historical reports, lessons, identity, runtime evidence, host entry files, and private configuration remain out of scope."
 }

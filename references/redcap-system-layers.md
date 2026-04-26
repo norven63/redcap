@@ -42,18 +42,18 @@ redcap-runtime / redcap CLI
 | T1: Runtime facade | 把 `revive-cap.sh` / `closeout-cap.sh` / current-status 收敛成 CLI 形态的 facade | `bin/redcap revive/status/diagnose/closeout` 已等价调用现有入口 |
 | T2: Host adapter package | 宿主入口从手写镜像变为生成或 symlink 管理 | host entries 不再手工分叉，adapter check 可阻断漂移 |
 | T3: Evidence boundary | task reports、Prism runs、human reports 与 runtime receipts 分层存放 | 新会话只读索引，历史证据按需读取；大规模物理迁移必须另走 dry-run/apply |
-| T4: Knowledge gateway | lessons / docs / reports 从文件索引升级到 metadata/FTS；必要时接入 RAG | `shared-knowledge` 模板、append-only 写入、索引和 exact dedupe 已可运行 |
+| T4: Knowledge gateway | lessons / docs / reports 从文件索引升级到 metadata/FTS；必要时接入 RAG | `shared-knowledge` 模板、外部 `redcap-arsenal` 本地工作区、append-only 写入、索引和 exact dedupe 已可运行 |
 | T5: Distribution | 从 skill 仓库演进为 npm/pip/brew 或独立 CLI 包 | 新工作区可安装 runtime，而不是复制整个 skill 仓库 |
 
 ## Shared Knowledge Boundary
 
-`shared-knowledge/` 是未来独立仓库的本地模板，不是新的上下文大包。它的规则是：
+`shared-knowledge/` 是 RedCap 仓库内模板源，不是新的上下文大包，也不是公共库本体。本机实体公共库工作区是 `/Users/norven/.claude/skills/redcap-arsenal`，远端是 `https://gitee.com/norven63/redcap-arsenal.git`。它的规则是：
 
-- `users/<user>/` 按用户隔离沉淀内容
+- `users/<user>/` 按用户隔离沉淀内容；本安装已初始化 `users/Norven/`
 - 条目文件以 UTC 时间戳开头，只新增不改旧文件
 - `redcap-shared-knowledge.sh append` 写入前先计算 fingerprint，发现 exact duplicate 就拒绝
 - `redcap-shared-knowledge.sh index` 先生成 metadata/catalog，真实任务需要时再读条目正文
-- 远端 Gitee remote、团队权限和跨机器同步由用户提供 remote 后再绑定，不在本地任务中伪装完成
+- 远端 Gitee remote 已绑定并可 live 对账；历史资产迁移、团队权限和跨机器同步仍必须另开任务，不在模板绑定中伪装完成
 
 ## Retrieval Route
 

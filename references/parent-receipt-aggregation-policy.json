@@ -53,6 +53,12 @@
       "title": "Shared Knowledge Gitee 远端绑定",
       "report_path": "compass/docs/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
       "receipt_glob": "redcap-shared-knowledge-gitee-remote-binding-*.json"
+    },
+    {
+      "id": "P1-4",
+      "title": "redcap-arsenal 本地实体仓库与 Norven 命名空间",
+      "report_path": "compass/docs/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
+      "receipt_glob": "redcap-arsenal-local-worktree-and-user-namespace-*.json"
     }
   ],
   "not_complete_children": [
@@ -67,11 +73,17 @@
       "status": "deferred",
       "reason": "Runtime receipt evidence correspondence hardening is a deeper evidence-quality improvement, not required for P1-3 remote binding.",
       "next_step": "Implement receipt/content correspondence checks after receipt roots and report links are stable."
+    },
+    {
+      "id": "P2-4",
+      "status": "deferred",
+      "reason": "First-start user and AI Agent identity initialization requires a dedicated schema/installer design and should not be hidden inside the public-library worktree task.",
+      "next_step": "Create a separate task to initialize current user namespace and Agent identity during revive/install."
     }
   ],
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
     "reason": "Deferred child items remain.",
-    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P2-1/P2-2/P2-3 have receipts or active completion reports; parent task is still incomplete."
+    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3 have receipts or active completion reports; parent task is still incomplete."
   }
 }

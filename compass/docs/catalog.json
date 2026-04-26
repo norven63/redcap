@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 59,
-    "size_bytes": 840846,
-    "lines": 14830,
-    "chars": 546696,
+    "file_count": 60,
+    "size_bytes": 853395,
+    "lines": 15055,
+    "chars": 554409,
     "rough_token_pressure": {
-      "low": 136674,
-      "high": 273348
+      "low": 138602,
+      "high": 277204
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 40,
-        "size_bytes": 560098,
-        "lines": 7983,
-        "chars": 362226,
+        "file_count": 41,
+        "size_bytes": 572647,
+        "lines": 8208,
+        "chars": 369939,
         "rough_token_pressure": {
-          "low": 90556,
-          "high": 181113
+          "low": 92484,
+          "high": 184969
         }
       },
       "traces": {
@@ -865,7 +865,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 发布/打包前安全拦截保障",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8516,
       "lines": 155,
@@ -930,29 +930,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P0-2 R0-R22 原始编号可追溯化",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 7908,
       "lines": 161,
       "chars": 5558,
       "summary": "当前已完成：已新增 R0-R22 机器可读 registry，把 23 个编号的来源、状态、置信度、证据路径、完成边界和延期边界写入 `references/redcap-r0-r22-registry.json`。 / 关键边界：R0-R8 标记为 recovered/high；R9-R22 标记为 reconstructed/medium 或 low，避免把后续重构映射伪装成历史原始标题。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：已新增 R0-R22 机器可读 registry，把 23 个编号的来源、状态、置信度、证据路径、完成边界和延期边界写入 `references/redcap-r0-r22-registry.json`。",
-          "关键边界：R0-R8 标记为 recovered/high；R9-R22 标记为 reconstructed/medium 或 low，避免把后续重构映射伪装成历史原始标题。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P0-1 Prism availability cache provenance/path 污染修复已 closeout，最终 `DIAGNOSE_OK`。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续父任务账本 P1-1，执行层物理拆分 dry-run；P1-2 历史资产迁移 dry-run/apply 也仍在后续队列。"
-        ],
-        "position": [
-          "整体计划脉络图是：父任务重锚定 → P0-1 Prism cache 污染修复 → P0-2 R0-R22 registry → P1-1 执行层物理拆分 dry-run → P1-2 历史资产迁移。",
-          "当前所在位置：P0-2 registry、checker、spec/diagnose 接线、Prism resource-limited review 与 targeted acceptance 已完成，正在 closeout。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-26-runtime-cli-package-readiness.md",
@@ -1009,6 +993,35 @@
         "position": [
           "整体计划脉络图是：P1-3 remote fact → safety candidate policy → Gitee push → live head proof → parent ledger update → Prism acceptance → closeout receipt。",
           "当前所在位置：P1-3 子任务已完成并进入最终 closeout。父任务仍不能声明全部完成。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：redcap-arsenal 本地实体仓库与 Norven 命名空间",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12549,
+      "lines": 225,
+      "chars": 7713,
+      "summary": "当前已完成：公共库已从“临时推送工作区 + RedCap 内模板目录”补强为一个耐久本地 Git 工作区。 / 详情：本机公共库实体仓库位于 `/Users/norven/.claude/skills/redcap-arsenal`，remote 为 `https://gitee.com/norven63/redcap-arsenal.git`。RedCap 内 `shared-knowledge/` 继续作为模板源和验收 fixture，刻意不带 `.git`。Gitee 远端已包含 `users/Norven/.gitkeep`。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：公共库已从“临时推送工作区 + RedCap 内模板目录”补强为一个耐久本地 Git 工作区。",
+          "详情：本机公共库实体仓库位于 `/Users/norven/.claude/skills/redcap-arsenal`，remote 为 `https://gitee.com/norven63/redcap-arsenal.git`。RedCap 内 `shared-knowledge/` 继续作为模板源和验收 fixture，刻意不带 `.git`。Gitee 远端已包含 `users/Norven/.gitkeep`。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P1-3 将最小 shared-knowledge 模板安全推送到 Gitee，并建立 remote binding policy、live head/tree/content 对账。"
+        ],
+        "next_step": [
+          "下一步计划做的是：不迁移历史资产；后续优先进入“首次启动初始化用户与 AI Agent 信息”独立任务，或继续父任务中 P3-1/P3-2 的延期治理。"
+        ],
+        "position": [
+          "整体计划脉络图是：远端模板绑定 → 本地实体工作区 → append-only 真实沉淀 → 历史资产 apply / 检索增强。",
+          "当前所在位置：`redcap-system-migration-parent / P1-4 / shared-knowledge-local-worktree`。"
         ]
       }
     },

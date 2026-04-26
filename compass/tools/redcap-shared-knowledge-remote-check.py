@@ -57,6 +57,58 @@ def is_under(child: Path, parent: Path) -> bool:
         return False
 
 
+def git_output(cwd: Path, args: list[str]) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(cwd), *args],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if completed.returncode != 0:
+        fail(f"git {' '.join(args)} failed in {cwd}: {completed.stderr.strip() or completed.stdout.strip()}")
+    return completed.stdout.strip()
+
+
+def validate_preferred_worktree(
+    payload: dict[str, Any],
+    root: Path,
+    expected_files: list[tuple[str, str, Path]],
+) -> str | None:
+    raw = payload.get("preferred_local_worktree")
+    if raw is None:
+        fail("preferred_local_worktree is required when --require-worktree is used")
+    if not isinstance(raw, str) or not raw.strip():
+        fail("preferred_local_worktree must be a non-empty string")
+    path = Path(raw.strip()).expanduser()
+    if not path.is_absolute():
+        path = root / path
+    path = path.resolve()
+    if payload.get("preferred_worktree_must_be_external") is True and is_under(path, root):
+        fail(f"preferred_local_worktree must live outside the RedCap repo: {path}")
+    if not path.exists():
+        fail(f"preferred_local_worktree missing: {path}")
+    if not path.is_dir():
+        fail(f"preferred_local_worktree is not a directory: {path}")
+    if not (path / ".git").exists():
+        fail(f"preferred_local_worktree is not a git worktree: {path}")
+    if git_output(path, ["rev-parse", "--is-inside-work-tree"]) != "true":
+        fail(f"preferred_local_worktree is not inside a git worktree: {path}")
+    origin = git_output(path, ["remote", "get-url", "origin"])
+    if origin != require_text(payload, "remote_url", "policy"):
+        fail(f"preferred_local_worktree origin mismatch: {origin}")
+    status = git_output(path, ["status", "--short"])
+    if status:
+        fail(f"preferred_local_worktree has uncommitted changes: {status}")
+    expected = sorted(remote_rel for _repo_rel, remote_rel, _path in expected_files)
+    actual = sorted(line for line in git_output(path, ["ls-files"]).splitlines() if line)
+    missing = sorted(set(expected) - set(actual))
+    extra = sorted(set(actual) - set(expected))
+    if missing or extra:
+        fail(f"preferred_local_worktree tree mismatch missing={missing} extra={extra}")
+    return str(path)
+
+
 def check_url(payload: dict[str, Any]) -> None:
     remote_url = require_text(payload, "remote_url", "policy")
     parsed = urlparse(remote_url)
@@ -257,7 +309,7 @@ def verify_remote_tree(payload: dict[str, Any], expected_files: list[tuple[str, 
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
-def check_policy(policy_path: Path, root: Path, live: bool) -> None:
+def check_policy(policy_path: Path, root: Path, live: bool, require_worktree: bool) -> None:
     payload = load_json(policy_path)
     if payload.get("version") != 1:
         fail("version must be 1")
@@ -271,6 +323,7 @@ def check_policy(policy_path: Path, root: Path, live: bool) -> None:
     safety_policy = load_safety_policy(root, require_text(payload, "safety_policy_path", "policy"))
     files = candidate_files(payload, root)
     scan_candidate_content(files, safety_policy)
+    preferred_worktree = validate_preferred_worktree(payload, root, files) if require_worktree else None
     expected_head = check_last_verified(payload)
 
     live_value = None
@@ -287,6 +340,8 @@ def check_policy(policy_path: Path, root: Path, live: bool) -> None:
     print(f"remote_url={payload.get('remote_url')}")
     print(f"default_branch={payload.get('default_branch')}")
     print(f"candidates={len(files)}")
+    if preferred_worktree:
+        print(f"preferred_local_worktree={preferred_worktree}")
     if live_value:
         print(f"live_head={live_value}")
         print(f"remote_tree_files={len(remote_tree)}")
@@ -297,6 +352,7 @@ def main() -> int:
     parser.add_argument("--root", default=str(ROOT), help="RedCap repository root")
     parser.add_argument("--policy", default=str(DEFAULT_POLICY), help="remote binding policy JSON")
     parser.add_argument("--live", action="store_true", help="also verify the remote branch head with git ls-remote")
+    parser.add_argument("--require-worktree", action="store_true", help="require the preferred local public-library worktree to exist and be clean")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -305,7 +361,7 @@ def main() -> int:
         policy = (Path.cwd() / policy).resolve()
     if not policy.is_file():
         fail(f"missing policy: {policy}")
-    check_policy(policy, root, args.live)
+    check_policy(policy, root, args.live, args.require_worktree)
     return 0
 
 
