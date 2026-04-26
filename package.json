@@ -1,0 +1,32 @@
+{
+  "name": "@redcap-ai/runtime",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "description": "RedCap Agent runtime and CLI readiness package surface.",
+  "license": "UNLICENSED",
+  "bin": {
+    "redcap": "bin/redcap"
+  },
+  "files": [
+    "bin/redcap",
+    "README.md",
+    "ARCHITECTURE.md",
+    "revive-cap.sh",
+    "closeout-cap.sh",
+    "compass/tools/redcap-*.sh",
+    "compass/tools/redcap-*.py",
+    "!compass/tools/redcap-multi-session-acceptance.sh",
+    "prism/tools/*.sh",
+    "prism/tools/*.py",
+    "!prism/README.md",
+    "references/*.json",
+    "references/file-lookup-dictionary.md",
+    "references/redcap-system-layers.md",
+    "shared-knowledge/README.md",
+    "shared-knowledge/schemas/*.json"
+  ],
+  "scripts": {
+    "redcap:package-manifest": "bash compass/tools/redcap-runtime-package-manifest.sh --check",
+    "redcap:publish-safety": "bash compass/tools/redcap-package-publish-safety-check.sh"
+  }
+}

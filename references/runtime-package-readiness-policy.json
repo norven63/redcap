@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "policy_id": "redcap-runtime-package-readiness",
+  "status": "readiness-only",
+  "publish_allowed": false,
+  "package_manager": "npm",
+  "package_name": "@redcap-ai/runtime",
+  "package_version": "0.1.0-alpha.0",
+  "bin": {
+    "redcap": "bin/redcap"
+  },
+  "candidate_globs": [
+    "package.json",
+    "bin/redcap",
+    "README.md",
+    "ARCHITECTURE.md",
+    "revive-cap.sh",
+    "closeout-cap.sh",
+    "compass/tools/redcap-*.sh",
+    "compass/tools/redcap-*.py",
+    "prism/tools/*.sh",
+    "prism/tools/*.py",
+    "prism/README.md",
+    "references/*.json",
+    "references/file-lookup-dictionary.md",
+    "references/redcap-system-layers.md",
+    "shared-knowledge/README.md",
+    "shared-knowledge/schemas/*.json"
+  ],
+  "exclude_globs": [
+    "compass/tools/redcap-multi-session-acceptance.sh"
+  ],
+  "required_files": [
+    "package.json",
+    "bin/redcap",
+    "README.md",
+    "revive-cap.sh",
+    "closeout-cap.sh",
+    "references/package-publish-safety-policy.json",
+    "references/runtime-package-readiness-policy.json"
+  ],
+  "safety_gate": "bash compass/tools/redcap-package-publish-safety-check.sh --candidate-list <generated-candidate-list>",
+  "manual_release_boundaries": [
+    "Public package name ownership and registry selection require a human release decision.",
+    "Registry tokens, signing credentials, and remote repository permissions must never be embedded in this repository.",
+    "Changing publish_allowed to true requires a separate release task, package safety pass, and Prism review."
+  ]
+}

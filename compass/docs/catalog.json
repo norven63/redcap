@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 56,
-    "size_bytes": 809415,
-    "lines": 14275,
-    "chars": 524741,
+    "file_count": 57,
+    "size_bytes": 819312,
+    "lines": 14460,
+    "chars": 531852,
     "rough_token_pressure": {
-      "low": 131185,
-      "high": 262370
+      "low": 132963,
+      "high": 265926
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 37,
-        "size_bytes": 528667,
-        "lines": 7428,
-        "chars": 340271,
+        "file_count": 38,
+        "size_bytes": 538564,
+        "lines": 7613,
+        "chars": 347382,
         "rough_token_pressure": {
-          "low": 85067,
-          "high": 170135
+          "low": 86845,
+          "high": 173691
         }
       },
       "traces": {
@@ -826,7 +826,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：Layer B 中插需求重计划强门",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15510,
       "lines": 228,
@@ -891,29 +891,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P0-1 Prism availability cache provenance/path 污染修复",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8726,
       "lines": 177,
       "chars": 6214,
       "summary": "当前已完成：`prism-availability` 的 cache 可信条件从“只看 TTL / timeout”升级为“TTL + timeout + provenance 一致性”。 / provenance 覆盖：repo root、cache path、health probe 路径与内容摘要、provider policy 路径与内容摘要、PATH 指纹。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：`prism-availability` 的 cache 可信条件从“只看 TTL / timeout”升级为“TTL + timeout + provenance 一致性”。",
-          "provenance 覆盖：repo root、cache path、health probe 路径与内容摘要、provider policy 路径与内容摘要、PATH 指纹。"
-        ],
-        "previous_step": [
-          "上一步完成的是：`redcap-r0-r22-parent-reanchor-and-plan-audit` 已 closeout，并把本项列为父任务账本 P0-1。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续父任务账本 P0-2，将 R0-R22 原始编号恢复为机器可读 registry，避免后续再靠报告段落考古编号状态。"
-        ],
-        "position": [
-          "整体计划脉络图是：父任务重锚定 → P0-1 Prism cache 污染修复 → P0-2 R0-R22 编号 registry → P1 执行层/旧资产 dry-run → 后续 runtime / CLI / shared-knowledge 迁移。",
-          "当前所在位置：P0-1 已实现、review、targeted acceptance、spec-check、diagnose，并准备 closeout receipt。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md",
@@ -970,6 +954,35 @@
         "position": [
           "整体计划脉络图是：父任务重锚定 → P0-1 Prism cache 污染修复 → P0-2 R0-R22 registry → P1-1 执行层物理拆分 dry-run → P1-2 历史资产迁移。",
           "当前所在位置：P0-2 registry、checker、spec/diagnose 接线、Prism resource-limited review 与 targeted acceptance 已完成，正在 closeout。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-26-runtime-cli-package-readiness.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Runtime / CLI / Package Readiness",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9897,
+      "lines": 185,
+      "chars": 7111,
+      "summary": "当前已完成：P2-1 已建立 RedCap runtime / CLI / package readiness 层，但没有执行真实公网发布。 / 详情：新增 `package.json`、`.npmignore`、`references/runtime-package-readiness-policy.json` 和 `redcap-runtime-package-manifest`，由机器策略生成精确候选清单，再把候选清单交给 package safety gate 检查。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P2-1 已建立 RedCap runtime / CLI / package readiness 层，但没有执行真实公网发布。",
+          "详情：新增 `package.json`、`.npmignore`、`references/runtime-package-readiness-policy.json` 和 `redcap-runtime-package-manifest`，由机器策略生成精确候选清单，再把候选清单交给 package safety gate 检查。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P2-2 父任务 receipt 聚合 gate 已 closeout，明确父任务不能由子任务 receipt 冒充完成。"
+        ],
+        "next_step": [
+          "下一步计划做的是：P1-3 shared-knowledge 远端绑定仍需外部仓库与权限；P2-3 formal Prism quorum 仍需单独复验 provider 健康；真实 npm/Gitee/GitHub 发布仍需独立 release 任务。"
+        ],
+        "position": [
+          "整体计划脉络图是：P1 dry-run 边界 → P2-1 package readiness → P2-2 父任务聚合 gate → 外部绑定/发布/Prism quorum 后续收口。",
+          "当前所在位置：RedCap 有可审计 package readiness，但仍不是已公开发布的 npm package。"
         ]
       }
     },

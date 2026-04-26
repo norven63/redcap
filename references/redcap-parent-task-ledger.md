@@ -34,7 +34,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | P1-1 | R0-R22 deferred | 执行层物理拆分 dry-run | completed | P1 | 已生成 dry-run manifest、checker、spec/diagnose/acceptance 接线和 Kimi Prism review；下一步进入 P1-2 历史资产迁移 dry-run | receipt: `redcap-execution-layer-split-dry-run-*`；产物：`references/execution-layer-split-dry-run.json` |
 | P1-2 | R0-R22 deferred | 历史资产迁移 dry-run/apply | completed | P1 | 已生成 collection-level dry-run manifest、checker、spec/diagnose/acceptance 接线；真实 move/delete 另开 apply 任务 | receipt: `redcap-legacy-asset-migration-dry-run-*`；产物：`references/legacy-asset-migration-dry-run.json` |
 | P1-3 | R0-R22 deferred | shared-knowledge 远端 Gitee 绑定 | blocked-external | P1 | 用户提供 remote / 权限后绑定；绑定前本地模板继续工作 | 需要外部仓库和权限，Cap 不能凭空创建最终远端 |
-| P2-1 | R0-R22 deferred | 正式 runtime / CLI / package 发布设计与实现 | open | P2 | 先确定 package 形态，再跑 package safety gate；发布前阻断 `.env`、runtime evidence、私密入口 | 依赖 P1-1 的边界清晰化 |
+| P2-1 | R0-R22 deferred | 正式 runtime / CLI / package 发布设计与实现 | completed | P2 | 已建立 npm/package-style readiness：`package.json private=true`、runtime package policy、candidate list generator、package safety gate、npm pack dry-run 对账和 CLI facade；真实公网发布仍另开 release 任务 | receipt: `redcap-runtime-cli-package-readiness-*`；产物：`references/runtime-package-readiness-policy.json` |
 | P2-2 | change-intake report | 父任务 receipt 聚合 gate | completed | P2 | 已新增 parent receipt aggregation policy 与 checker，父任务仍因 P1-3/P2-1/P2-3 不满足而不可 complete | receipt: `redcap-parent-receipt-aggregation-gate-*`；产物：`references/parent-receipt-aggregation-policy.json` |
 | P2-3 | Prism review limits | Formal Prism quorum 恢复复验 | resource-limited | P2 | 当第二个非 Copilot provider headless 稳定后，重跑 formal quorum | 当前 Kimi 可用；Gemini/Claude 超时，Codex unsupported，Copilot frozen |
 | P3-1 | retrieval roadmap | GraphRAG / 向量检索阈值研究 | deferred | P3 | 先继续 catalog + rg + metadata；当共享库规模越过阈值再引入 RAG/GraphRAG | 不能过早引入重型系统复杂度 |
@@ -47,14 +47,15 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 3. `P1-1`：执行层物理拆分 dry-run，确认 RedCap 如何从 skill-root 迁出。（已完成）
 4. `P1-2`：历史资产迁移 dry-run/apply，解决 docs / reports 长期淤积。（已完成 dry-run；真实 apply 另开任务）
 5. `P1-3`：绑定 shared-knowledge 远端仓库。
-6. `P2-1`：正式 runtime / CLI / package 发布。
+6. `P2-1`：正式 runtime / CLI / package readiness。（已完成 readiness；真实 public release 另开任务）
 7. `P2-2`：父任务 receipt 聚合 gate。（已完成 gate；父任务仍 incomplete）
 8. `P2-3`：formal Prism quorum 恢复复验。
 9. `P3-2`：runtime receipt evidence correspondence hardening。
 
 ## 当前不可声明
 
-- 不可声明 RedCap 已经完成独立 runtime / CLI / package 化。
+- 不可声明 RedCap 已经完成真实公网发布、跨机器安装 E2E 或全部目录物理迁移。
+- 不可声明 RedCap 已经 npm publish 或完成跨机器公开分发；P2-1 只完成 package readiness 和候选包安全审计链。
 - 不可声明历史报告和研究材料已经物理迁出执行层。
 - 不可声明 shared-knowledge 已经绑定远端团队仓库。
 - 不可声明 P1-1 dry-run 已经执行真实 move/copy/link；它只证明迁移边界和风险已可审计。

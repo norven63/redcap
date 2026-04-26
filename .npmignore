@@ -1,0 +1,17 @@
+.env
+.env.*
+.git/
+.github/
+.cap/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+cli_console.md
+prompt.txt
+compass/.runtime/
+compass/.workflow/
+compass/tools/redcap-multi-session-acceptance.sh
+prism/runs/
+__pycache__/
+*.pyc
+.DS_Store

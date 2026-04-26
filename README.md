@@ -8,6 +8,7 @@ RedCap 不是“再包一层提示词”。
 
 当前仓库仍以 skill-root 方式承载 RedCap，但长期形态不是“某个宿主的 skill 文件夹”，而是可安装、可复活、可调度、可审计的独立 runtime。产品化分层与迁移路线见 [`references/redcap-system-layers.md`](./references/redcap-system-layers.md)。
 本轮已经补了一个低风险薄 CLI facade：`bin/redcap`，先把现有 root/tool 入口统一成 CLI 形态，底层逻辑仍保持原位，避免破坏宿主适配。
+当前 package 化进入 readiness 阶段：`package.json` 保持 `private: true` 防误发，`bin/redcap package-manifest --check` 会生成候选清单并跑发布安全 gate；真实 npm/Gitee/GitHub 发布仍需要单独 release 决策。
 
 ## 一眼看懂
 
@@ -99,6 +100,7 @@ Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养�
 - 已有 identity 的复活：`./revive-cap.sh`
 - 需要显式指定宿主时：`./revive-cap.sh --host codex`
 - CLI facade：`bin/redcap revive`
+- Package readiness：`bin/redcap package-manifest --check`
 
 这条入口会串起 6 件事：
 

@@ -54,7 +54,8 @@
     "parent-task-governance",
     "evolution-factory",
     "shared-knowledge",
-    "package-publish-safety"
+    "package-publish-safety",
+    "runtime-package"
   ],
   "guarantees": [
     {
@@ -910,6 +911,33 @@
       "guarantee_paths": [
         "compass/tools/redcap-package-publish-safety-check.sh",
         "compass/tools/redcap-package-publish-safety-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "bin/redcap"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "runtime-package-readiness-gate",
+      "category": "runtime-package",
+      "priority": "P1",
+      "rule": "RedCap may claim runtime / CLI / package readiness only when a machine-readable package policy generates an exact candidate file list and that list passes the package safety gate.",
+      "source_paths": [
+        "package.json",
+        ".npmignore",
+        "references/runtime-package-readiness-policy.json",
+        "compass/tools/redcap-runtime-package-manifest.sh",
+        "compass/tools/redcap-runtime-package-manifest.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-runtime-package-manifest.sh validates package.json, publish_allowed=false, required files, candidate glob expansion, and package safety against the generated candidate list; spec-check, diagnose, CLI facade, and acceptance consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-runtime-package-manifest.sh",
+        "compass/tools/redcap-runtime-package-manifest.py",
+        "compass/tools/redcap-package-publish-safety-check.sh",
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-spec-check.sh",
         "compass/tools/redcap-multi-session-acceptance.sh",

@@ -161,6 +161,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
+  bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh token-risk-audit
@@ -9632,6 +9633,74 @@ run_package_publish_safety_check_case() {
     assert_string_contains "$stale_output" "secret-pattern"
 }
 
+run_runtime_package_manifest_check_case() {
+    local output list_file list_file_real stale_output status fixture bad_policy symlink_dir
+
+    log "case: runtime-package-manifest-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-runtime-package-manifest.sh" --check)"
+    assert_string_contains "$output" "RUNTIME_PACKAGE_MANIFEST_OK"
+    assert_string_contains "$output" "publish_allowed=False"
+
+    list_file="$ACCEPT_ROOT/runtime-package-candidates.txt"
+    list_file_real="$(cd "$(dirname "$list_file")" && pwd -P)/$(basename "$list_file")"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-runtime-package-manifest.sh" --output "$list_file" --check)"
+    assert_exists "$list_file"
+    assert_string_contains "$output" "candidate_list=$list_file_real"
+    assert_contains "$list_file" "bin/redcap"
+    assert_contains "$list_file" "package.json"
+    assert_not_contains "$list_file" ".env"
+    assert_not_contains "$list_file" ".cap/"
+    assert_not_contains "$list_file" "AGENTS.md"
+    assert_not_contains "$list_file" "CLAUDE.md"
+    assert_not_contains "$list_file" "GEMINI.md"
+    assert_not_contains "$list_file" "compass/.runtime"
+    assert_not_contains "$list_file" "compass/.workflow"
+    assert_not_contains "$list_file" "compass/tools/redcap-multi-session-acceptance.sh"
+    assert_not_contains "$list_file" "prism/runs"
+
+    output="$(bash "$REDCAP_ROOT/bin/redcap" package-manifest --check)"
+    assert_string_contains "$output" "RUNTIME_PACKAGE_MANIFEST_OK"
+
+    symlink_dir="$(mktemp -d "$ACCEPT_ROOT/runtime-package-bin-symlink.XXXXXX")"
+    ln -s "$REDCAP_ROOT/bin/redcap" "$symlink_dir/redcap"
+    output="$("$symlink_dir/redcap" package-manifest --check)"
+    assert_string_contains "$output" "RUNTIME_PACKAGE_MANIFEST_OK"
+
+    if command -v npm >/dev/null 2>&1; then
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-runtime-package-manifest.sh" --check --npm-pack-dry-run)"
+        assert_string_contains "$output" "npm_pack_dry_run_checked=True"
+    fi
+
+    fixture="$ACCEPT_ROOT/runtime-package-bad-policy"
+    mkdir -p "$fixture/references" "$fixture/compass/tools" "$fixture/bin"
+    cp "$REDCAP_ROOT/references/runtime-package-readiness-policy.json" "$fixture/references/runtime-package-readiness-policy.json"
+    cp "$REDCAP_ROOT/package.json" "$fixture/package.json"
+    cp "$REDCAP_ROOT/.npmignore" "$fixture/.npmignore"
+    cp "$REDCAP_ROOT/bin/redcap" "$fixture/bin/redcap"
+    cp "$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh" "$fixture/compass/tools/redcap-package-publish-safety-check.sh"
+    cp "$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.py" "$fixture/compass/tools/redcap-package-publish-safety-check.py"
+    cp "$REDCAP_ROOT/references/package-publish-safety-policy.json" "$fixture/references/package-publish-safety-policy.json"
+    bad_policy="$fixture/references/runtime-package-readiness-policy.json"
+    python3 - "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["publish_allowed"] = True
+payload["candidate_globs"] = ["package.json", ".npmignore", "bin/redcap", "references/*.json", "compass/tools/redcap-package-publish-safety-check.*"]
+payload["required_files"] = ["package.json", ".npmignore", "bin/redcap", "references/package-publish-safety-policy.json", "references/runtime-package-readiness-policy.json"]
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-runtime-package-manifest.sh" --root "$fixture" --policy "$bad_policy" --check 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "runtime package manifest should reject publish_allowed=true"
+    assert_string_contains "$stale_output" "publish_allowed must be false"
+}
+
 run_skill_lifecycle_check_case() {
     local output fixture stale_output stale_status
 
@@ -10827,6 +10896,7 @@ run_all_cases() {
     run_r0_r22_registry_check_case
     run_shared_knowledge_check_case
     run_package_publish_safety_check_case
+    run_runtime_package_manifest_check_case
     run_skill_lifecycle_check_case
     run_legacy_asset_lifecycle_check_case
     run_token_risk_audit_case
@@ -11277,6 +11347,9 @@ case "$COMMAND" in
         ;;
     package-publish-safety-check)
         run_package_publish_safety_check_case
+        ;;
+    runtime-package-manifest-check)
+        run_runtime_package_manifest_check_case
         ;;
     skill-lifecycle-check)
         run_skill_lifecycle_check_case

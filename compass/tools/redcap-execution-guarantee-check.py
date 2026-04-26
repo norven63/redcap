@@ -41,6 +41,7 @@ REQUIRED_IDS = {
     "file-lookup-dictionary-coverage",
     "shared-knowledge-append-only",
     "package-publish-safety-gate",
+    "runtime-package-readiness-gate",
     "review-tracks-gate",
     "execution-layer-split-dry-run",
     "legacy-asset-migration-dry-run",

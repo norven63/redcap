@@ -1251,3 +1251,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：多次
 - **最后命中**：2026-04-26
+
+### L-130: package readiness 要核对“声明的候选清单”和“真实打包面”
+- **问题源**：P2-1 开始建立 npm/package-style readiness 时，默认安全 gate 可以检查候选清单，但 `package.json.files` 的宽泛 glob 仍可能让真实 `npm pack` 包进未纳入候选清单的大文件或测试资产。
+- **解决方案**：package readiness 必须有机器可读 policy 生成精确 candidate list，并用 package safety gate 检查该清单；同时 `package.json` 必须保持 `private=true`，宽泛 tools glob 必须显式排除 `redcap-multi-session-acceptance.sh`，防止候选清单和真实包面分叉。
+- **最后效果**：RedCap 可以声明“package readiness 已可审计”，但不会冒充真实 publish；发布前仍需人工确认 registry / token / 包名，同时 package manifest 与 safety gate 会阻断本地私密信息和运行证据进入候选包。
+- **来源**：2026-04-26 Runtime / CLI / Package Readiness
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-26

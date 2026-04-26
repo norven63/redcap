@@ -474,6 +474,16 @@ if ! bash "$PACKAGE_PUBLISH_SAFETY_CHECK" >/dev/null; then
     exit 1
 fi
 
+RUNTIME_PACKAGE_MANIFEST_CHECK="$REDCAP_ROOT/compass/tools/redcap-runtime-package-manifest.sh"
+if [[ ! -f "$RUNTIME_PACKAGE_MANIFEST_CHECK" ]]; then
+    echo "[redcap-spec-check] runtime package manifest check missing" >&2
+    exit 1
+fi
+if ! bash "$RUNTIME_PACKAGE_MANIFEST_CHECK" --check >/dev/null; then
+    echo "[redcap-spec-check] runtime package manifest check failed" >&2
+    exit 1
+fi
+
 CHANGE_INTAKE_CHECK="$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh"
 if [[ ! -f "$CHANGE_INTAKE_CHECK" ]]; then
     echo "[redcap-spec-check] change intake check missing" >&2

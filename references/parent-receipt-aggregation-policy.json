@@ -29,6 +29,12 @@
       "title": "历史资产迁移 dry-run",
       "report_path": "compass/docs/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
       "receipt_glob": "redcap-legacy-asset-migration-dry-run-*.json"
+    },
+    {
+      "id": "P2-1",
+      "title": "Runtime / CLI / Package Readiness",
+      "report_path": "compass/docs/task-reports/2026-04-26-runtime-cli-package-readiness.md",
+      "receipt_glob": "redcap-runtime-cli-package-readiness-*.json"
     }
   ],
   "not_complete_children": [
@@ -39,12 +45,6 @@
       "next_step": "Bind remote after the user provides repository URL and credentials."
     },
     {
-      "id": "P2-1",
-      "status": "open",
-      "reason": "formal runtime / CLI / package implementation still needs package shape, adapter boundary, and release workflow decisions.",
-      "next_step": "Design and implement runtime/package apply after P1 dry-runs are stable."
-    },
-    {
       "id": "P2-3",
       "status": "resource-limited",
       "reason": "formal Prism quorum cannot be restored while multiple providers time out or are frozen.",
@@ -53,7 +53,7 @@
   ],
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
-    "reason": "Open, blocked-external, and resource-limited child items remain.",
-    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2 have receipts; parent task is still incomplete."
+    "reason": "Blocked-external and resource-limited child items remain.",
+    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P2-1 have receipts; parent task is still incomplete."
   }
 }
