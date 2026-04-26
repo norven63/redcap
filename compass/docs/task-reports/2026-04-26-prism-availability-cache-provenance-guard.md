@@ -6,7 +6,7 @@
 
 ---
 
-## 零、当前局面
+## 零、先看懂当前局面
 
 ### 0.1 当前已完成
 
@@ -29,7 +29,13 @@
 
 ---
 
-## 一、问题根因
+## 一、需求背景
+
+### 1.1 原始问题
+
+本轮来自父任务账本 P0-1：`Prism availability cache provenance/path 污染修复`。
+
+### 1.2 问题根因
 
 旧版 `prism-availability` 判断 cache 是否 fresh 时只检查：
 
@@ -44,7 +50,7 @@
 
 ---
 
-## 二、落地方案
+## 二、方案讨论
 
 ### 2.1 代码修复
 
@@ -65,7 +71,13 @@
 
 ---
 
-## 三、Prism Review
+## 三、落地结果
+
+### 3.1 核心结果
+
+Prism availability cache 已经从“时间新鲜”升级为“运行面可信”。同一运行面下仍复用 fresh cache；运行面变化、策略变化、探活脚本变化、PATH 变化或强制刷新时，会重新探活。
+
+### 3.2 Prism Review
 
 | 项 | 结论 |
 |---|---|
@@ -91,7 +103,15 @@ Prism quorum 状态是 resource-limited：本轮只有 Kimi 可用，因此没�
 
 ---
 
-## 四、验证结果
+## 四、人工审核要点
+
+- 本轮修复不禁用 cache，而是补齐 cache 可信条件。
+- 本轮 Prism review 是 resource-limited，不冒充多家族 formal quorum。
+- 下一步仍应继续执行父任务账本 P0-2，不能把 P0-1 完成误认为 R0-R22 全部完成。
+
+---
+
+## 五、验证结果
 
 | 验证项 | 命令 | 结果 |
 |---|---|---|
@@ -123,7 +143,7 @@ Prism quorum 状态是 resource-limited：本轮只有 Kimi 可用，因此没�
 
 ---
 
-## 五、完成边界
+## 六、遗留问题与下一步
 
 本轮只完成 P0-1：Prism availability cache provenance/path 污染修复。
 
@@ -135,9 +155,11 @@ Prism quorum 状态是 resource-limited：本轮只有 Kimi 可用，因此没�
 - npm / CLI / runtime 正式发布完成
 - 全部旧资产迁移完成
 
+下一步：继续父任务账本 P0-2，建立 R0-R22 原始编号机器可读 registry。
+
 ---
 
-## 七、Evolution Factory
+## 七、经验沉淀
 
 ### 7.3 Evolution Factory 候选处理
 
@@ -145,3 +167,11 @@ Prism quorum 状态是 resource-limited：本轮只有 Kimi 可用，因此没�
 |---|---|---|
 | EVO-2026-04-26-P0-1-001 Prism availability cache provenance/path 污染经验 | promoted-to-lessons | 已沉淀为 `compass/knowledge/lessons.md` 的 L-125，包含问题源、解决方案、最后效果 |
 | EVO-2026-04-26-P0-1-002 Kimi reviewer 对 `--refresh` 与 policy hash 的建议 | no-promote-integrated | 已转为 acceptance 回归与 provenance 内容摘要实现，不再单独保留候选 |
+
+---
+
+## 八、附录
+
+- 任务锚点：`.dev-task.md`
+- 任务报告：`compass/docs/task-reports/2026-04-26-prism-availability-cache-provenance-guard.md`
+- Prism 本地证据：`prism/runs/20260426-prism-availability-cache-provenance-guard/`

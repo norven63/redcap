@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 52,
-    "size_bytes": 763707,
-    "lines": 13399,
-    "chars": 493815,
+    "size_bytes": 764765,
+    "lines": 13429,
+    "chars": 494451,
     "rough_token_pressure": {
-      "low": 123453,
-      "high": 246907
+      "low": 123612,
+      "high": 247225
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 33,
-        "size_bytes": 482959,
-        "lines": 6552,
-        "chars": 309345,
+        "size_bytes": 484017,
+        "lines": 6582,
+        "chars": 309981,
         "rough_token_pressure": {
-          "low": 77336,
-          "high": 154672
+          "low": 77495,
+          "high": 154990
         }
       },
       "traces": {
@@ -870,9 +870,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 7668,
-      "lines": 147,
-      "chars": 5578,
+      "size_bytes": 8726,
+      "lines": 177,
+      "chars": 6214,
       "summary": "当前已完成：`prism-availability` 的 cache 可信条件从“只看 TTL / timeout”升级为“TTL + timeout + provenance 一致性”。 / provenance 覆盖：repo root、cache path、health probe 路径与内容摘要、provider policy 路径与内容摘要、PATH 指纹。",
       "status_basis": "filename_recency_only",
       "summary_points": {
