@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 49,
-    "size_bytes": 725758,
-    "lines": 12795,
-    "chars": 469346,
+    "size_bytes": 726785,
+    "lines": 12808,
+    "chars": 469915,
     "rough_token_pressure": {
-      "low": 117336,
-      "high": 234673
+      "low": 117478,
+      "high": 234957
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 30,
-        "size_bytes": 445010,
-        "lines": 5948,
-        "chars": 284876,
+        "size_bytes": 446037,
+        "lines": 5961,
+        "chars": 285445,
         "rough_token_pressure": {
-          "low": 71219,
-          "high": 142438
+          "low": 71361,
+          "high": 142722
         }
       },
       "traces": {
@@ -860,9 +860,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 7489,
-      "lines": 142,
-      "chars": 4781,
+      "size_bytes": 8516,
+      "lines": 155,
+      "chars": 5350,
       "summary": "当前已完成：RedCap 已新增发布/打包前安全 gate，并接入 execution guarantees、spec-check、diagnose、acceptance、CLI facade 和 File Lookup Dictionary。 / 详情：未来 npm / 独立 runtime / portable package 发布前，应把实际打包文件清单交给 `redcap-package-publish-safety-check.sh`；它会阻断 `.env`、宿主私密入口、本地 runtime evidence、Prism run 残留和 credential-like 内容。",
       "status_basis": "filename_recency_only",
       "summary_points": {
