@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "policy_id": "redcap-feishu-notification-policy",
+  "description": "RedCap-owned Feishu notification policy. Only the single reachable lark-cli profile is allowed, and notifications are limited to node reports or human-intervention interrupts.",
+  "required_lark_cli_profile": "cli_a9579f5b12219bb5",
+  "allowed_transport": "lark_cli_dm",
+  "disallowed_transports": ["webhook"],
+  "allowed_notify_window_types": ["node-report", "manual-intervention"],
+  "node_report_rule": "Use exactly one node-report notification for a human-visible closeout/status node; do not open a background followup watcher.",
+  "manual_intervention_rule": "Use manual-intervention only when RedCap must interrupt because the user needs to make a decision or unblock the task.",
+  "routine_success_rule": "SessionEnd success notifications are disabled by default; on-complete owns the final node-report notification.",
+  "forbidden_patterns": [
+    "--window-type followup",
+    "transport=webhook",
+    "FEISHU_WEBHOOK",
+    "REDCAP_FEISHU_WEBHOOK"
+  ]
+}

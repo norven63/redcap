@@ -55,6 +55,8 @@
     "evolution-factory",
     "shared-knowledge",
     "shared-knowledge-remote",
+    "user-agent-identity",
+    "feishu-notification-policy",
     "package-publish-safety",
     "runtime-package"
   ],
@@ -921,6 +923,56 @@
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true
+    },
+    {
+      "id": "user-agent-identity-first-start",
+      "category": "user-agent-identity",
+      "priority": "P0",
+      "rule": "First-start revival must initialize or verify the local user namespace, Cap agent identity summary, and shared-knowledge user directory without committing private identity text into the RedCap repository.",
+      "source_paths": [
+        "references/user-agent-identity-policy.json",
+        "compass/soul.md",
+        "shared-knowledge/users/Norven/.gitkeep"
+      ],
+      "status": "validator",
+      "automation": "redcap-install runs redcap-user-agent-identity init during revive; redcap-user-agent-identity check is consumed by spec-check, diagnose, and acceptance.",
+      "guarantee_paths": [
+        "compass/tools/redcap-user-agent-identity.sh",
+        "compass/tools/redcap-user-agent-identity.py",
+        "compass/tools/redcap-install.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "feishu-notification-single-profile-policy",
+      "category": "feishu-notification-policy",
+      "priority": "P0",
+      "rule": "RedCap-owned Feishu notifications must use the single reachable lark-cli profile cli_a9579f5b12219bb5 and may only fire for node reports or human-intervention interrupts; webhook, old profiles, followup watchers, and duplicate success notifications are forbidden production paths.",
+      "source_paths": [
+        "references/feishu-notification-policy.json",
+        "compass/tools/feishu-notifier.py",
+        "compass/tools/redcap-on-complete.sh",
+        "compass/tools/redcap-layerB-session-end.sh"
+      ],
+      "status": "validator",
+      "automation": "redcap-feishu-notification-policy-check validates the policy, source call sites, and ignored local config; spec-check, diagnose, and acceptance consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-feishu-notification-policy-check.sh",
+        "compass/tools/redcap-feishu-notification-policy-check.py",
+        "compass/tools/feishu-notifier.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true,
+      "runtime_limitation": "The checker can prove RedCap will not use another profile, but a real send still requires the user to register profile cli_a9579f5b12219bb5 in the local lark-cli configuration."
     },
     {
       "id": "package-publish-safety-gate",

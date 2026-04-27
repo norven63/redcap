@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -73,11 +74,22 @@ def require_safe_relative(raw: str, item_id: str, key: str) -> str:
     return raw
 
 
+def is_acceptance_tmp_file(root: Path, item: Path) -> bool:
+    if os.environ.get("REDCAP_ACCEPTANCE_RUNNING") != "1":
+        return False
+    try:
+        rel = item.resolve().relative_to((root / "compass/docs/task-reports").resolve())
+    except ValueError:
+        return False
+    name = rel.name
+    return name.startswith(("zz-acceptance-", "zz-review-"))
+
+
 def count_files(root: Path, rel: str) -> int:
     path = root / rel
     if path.is_file():
-        return 1
-    return sum(1 for item in path.rglob("*") if item.is_file())
+        return 0 if is_acceptance_tmp_file(root, path) else 1
+    return sum(1 for item in path.rglob("*") if item.is_file() and not is_acceptance_tmp_file(root, item))
 
 
 def count_lines(root: Path, rel: str) -> int:
@@ -85,6 +97,8 @@ def count_lines(root: Path, rel: str) -> int:
     files = [path] if path.is_file() else [item for item in path.rglob("*") if item.is_file()]
     total = 0
     for item in files:
+        if is_acceptance_tmp_file(root, item):
+            continue
         try:
             total += len(item.read_text(encoding="utf-8", errors="ignore").splitlines())
         except OSError:
@@ -111,6 +125,10 @@ def run_prism_summary(root: Path) -> dict[str, int]:
             values[key.strip()] = int(value.strip().split()[0])
         except ValueError:
             continue
+    if os.environ.get("REDCAP_ACCEPTANCE_RUNNING") == "1":
+        acceptance_count = values.get("acceptance-fixture", 0)
+        values["total"] = max(0, values.get("total", 0) - acceptance_count)
+        values["purgeable_acceptance"] = 0
     return values
 
 

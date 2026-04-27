@@ -20,15 +20,24 @@
       "source": "compass/docs/task-reports",
       "target": "redcap-knowledge/task-reports",
       "kind": "tracked-archaeology",
-      "current_count": 42,
-      "current_lines": 8389,
+      "current_count": 43,
+      "current_lines": 8611,
       "default_action": "copy-to-knowledge-then-index",
       "risk": "high",
       "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
       "reason": "Task reports are closeout evidence and historical archaeology; moving them without link maps can break receipt/report anchors.",
-      "catalog_update_plan": ["Regenerate compass/docs/catalog.json with old and new paths during transition", "Keep compact summaries as first-read entries"],
-      "link_check_plan": ["Check markdown links inside task reports", "Check receipt/report anchors from closeout runtime summaries"],
-      "rollback_plan": ["Keep original compass/docs/task-reports unchanged until every report anchor resolves", "Delete redcap-knowledge/task-reports copy if link checks fail"]
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
     },
     {
       "id": "docs-catalog",
@@ -41,39 +50,58 @@
       "risk": "medium",
       "apply_status": "preserve_active_index",
       "reason": "Docs catalog is the progressive-disclosure index that keeps historical docs from being bulk-read; it must remain available while any docs paths move.",
-      "catalog_update_plan": ["Regenerate catalog after any file-level apply", "Keep moved-path redirects or aliases until old anchors age out"],
-      "link_check_plan": ["Run docs catalog check and budget check after any path changes"],
-      "rollback_plan": ["Keep current catalog path authoritative until the moved asset index passes"]
+      "catalog_update_plan": [
+        "Regenerate catalog after any file-level apply",
+        "Keep moved-path redirects or aliases until old anchors age out"
+      ],
+      "link_check_plan": [
+        "Run docs catalog check and budget check after any path changes"
+      ],
+      "rollback_plan": [
+        "Keep current catalog path authoritative until the moved asset index passes"
+      ]
     },
     {
       "id": "runtime-working-dirs",
       "source": "compass/.workflow",
       "target": "compass/.workflow",
       "kind": "ignored-local-runtime",
-      "current_count": 47,
+      "current_count": 48,
       "current_lines": 0,
       "default_action": "ignore-runtime",
       "risk": "medium",
       "apply_status": "ignore_runtime_state",
       "reason": "Local workflow state is ignored runtime data, not a historical asset to migrate into docs or knowledge.",
-      "catalog_update_plan": ["Do not add local runtime state to docs catalog"],
-      "link_check_plan": ["Use current-status and runtime checks instead of reading local runtime files as archaeology"],
-      "rollback_plan": ["No physical move or delete in P1-2 dry-run"]
+      "catalog_update_plan": [
+        "Do not add local runtime state to docs catalog"
+      ],
+      "link_check_plan": [
+        "Use current-status and runtime checks instead of reading local runtime files as archaeology"
+      ],
+      "rollback_plan": [
+        "No physical move or delete in P1-2 dry-run"
+      ]
     },
     {
       "id": "prism-runs",
       "source": "prism/runs",
       "target": "prism/runs",
       "kind": "ignored-runtime-evidence",
-      "current_count": 31,
+      "current_count": 32,
       "current_lines": 0,
       "default_action": "prune-when-safe",
       "risk": "medium",
       "apply_status": "retention_check_only",
       "reason": "prism/runs is ignored runtime evidence; current lifecycle summary has no purgeable acceptance residue, so physical cleanup is not required now but future prune candidates must pass retention.",
-      "catalog_update_plan": ["Do not add prism/runs contents to docs catalog"],
-      "link_check_plan": ["Use prism-runs-lifecycle summary/check instead of bulk-reading run directories"],
-      "rollback_plan": ["No physical move or delete in P1-2 dry-run"]
+      "catalog_update_plan": [
+        "Do not add prism/runs contents to docs catalog"
+      ],
+      "link_check_plan": [
+        "Use prism-runs-lifecycle summary/check instead of bulk-reading run directories"
+      ],
+      "rollback_plan": [
+        "No physical move or delete in P1-2 dry-run"
+      ]
     },
     {
       "id": "research",
@@ -86,9 +114,17 @@
       "risk": "medium",
       "apply_status": "blocked_until_catalog_linkmap_exists",
       "reason": "Research docs are low-frequency human reading material, but current workflow panorama is still linked from status and docs catalog.",
-      "catalog_update_plan": ["Preserve current catalog entries until new knowledge index exists", "Add redirect entries before removing old paths"],
-      "link_check_plan": ["Check file:// HTML references", "Check docs catalog entries and README links"],
-      "rollback_plan": ["Keep original compass/docs/research unchanged until redirects and catalog entries pass"]
+      "catalog_update_plan": [
+        "Preserve current catalog entries until new knowledge index exists",
+        "Add redirect entries before removing old paths"
+      ],
+      "link_check_plan": [
+        "Check file:// HTML references",
+        "Check docs catalog entries and README links"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/research unchanged until redirects and catalog entries pass"
+      ]
     },
     {
       "id": "specs",
@@ -101,9 +137,15 @@
       "risk": "high",
       "apply_status": "preserve_until_spec_registry_migration_exists",
       "reason": "Specs are already governed by spec-registry and lifecycle policy; moving them belongs to a dedicated spec authority migration.",
-      "catalog_update_plan": ["Keep existing spec registry and docs catalog authoritative"],
-      "link_check_plan": ["Use redcap-spec-check for registry and replacement-chain validation"],
-      "rollback_plan": ["No physical move in P1-2 dry-run"]
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
     },
     {
       "id": "traces",
@@ -116,9 +158,15 @@
       "risk": "medium",
       "apply_status": "blocked_until_trace_consumers_are_checked",
       "reason": "Trace files are compact but may be referenced by architecture docs and review gates.",
-      "catalog_update_plan": ["Add trace entries to knowledge index before removal from docs"],
-      "link_check_plan": ["Check architecture docs for trace references"],
-      "rollback_plan": ["Keep original trace file until architecture checks pass"]
+      "catalog_update_plan": [
+        "Add trace entries to knowledge index before removal from docs"
+      ],
+      "link_check_plan": [
+        "Check architecture docs for trace references"
+      ],
+      "rollback_plan": [
+        "Keep original trace file until architecture checks pass"
+      ]
     },
     {
       "id": "docs-archive",
@@ -131,9 +179,15 @@
       "risk": "low",
       "apply_status": "no_move_required",
       "reason": "Archive already carries historical material; current action is retention validation, not physical migration.",
-      "catalog_update_plan": ["Keep archive entries discoverable through docs catalog"],
-      "link_check_plan": ["Use docs retention check for archive policy"],
-      "rollback_plan": ["No physical move in P1-2 dry-run"]
+      "catalog_update_plan": [
+        "Keep archive entries discoverable through docs catalog"
+      ],
+      "link_check_plan": [
+        "Use docs retention check for archive policy"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
     },
     {
       "id": "knowledge-lessons",
@@ -141,14 +195,20 @@
       "target": "redcap-knowledge/knowledge",
       "kind": "active-knowledge",
       "current_count": 19,
-      "current_lines": 3914,
+      "current_lines": 3932,
       "default_action": "translate-after-index-split",
       "risk": "high",
       "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
       "reason": "Knowledge files are active runtime guidance; cold material can move only after index preserves progressive disclosure and hot lessons remain available.",
-      "catalog_update_plan": ["Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"],
-      "link_check_plan": ["Check lessons index and revival references before moving cold knowledge"],
-      "rollback_plan": ["Keep compass/knowledge authoritative until external knowledge checks pass"]
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
     }
   ],
   "global_controls": {

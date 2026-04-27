@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 61,
-    "size_bytes": 862989,
-    "lines": 15236,
-    "chars": 560311,
+    "file_count": 62,
+    "size_bytes": 879179,
+    "lines": 15458,
+    "chars": 571233,
     "rough_token_pressure": {
-      "low": 140077,
-      "high": 280155
+      "low": 142808,
+      "high": 285616
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 42,
-        "size_bytes": 582241,
-        "lines": 8389,
-        "chars": 375841,
+        "file_count": 43,
+        "size_bytes": 598431,
+        "lines": 8611,
+        "chars": 386763,
         "rough_token_pressure": {
-          "low": 93960,
-          "high": 187920
+          "low": 96690,
+          "high": 193381
         }
       },
       "traces": {
@@ -891,7 +891,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P0-1 Prism availability cache provenance/path 污染修复",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8726,
       "lines": 177,
@@ -956,27 +956,40 @@
       "collection": "task-reports",
       "title": "任务完成报告：Shared Knowledge Gitee 远端绑定",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10621,
       "lines": 188,
       "chars": 7111,
       "summary": "当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance、targeted 回归，并补上 session-end 旧控制面 FAIL 污染当前收口的机制回归。 / 详情：`https://gitee.com/norven63/redcap-arsenal.git` 已创建 `main` 分支；远端只包含 shared-knowledge 最小公共模板候选，且 `--live` 会对远端文件名与内容做白名单对账。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-27-first-start-identity-and-feishu-policy.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：首次启动身份初始化与飞书通知策略收敛",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 16190,
+      "lines": 222,
+      "chars": 10922,
+      "summary": "当前已完成：P2-4 的 repo-owned 链路已经落地：`revive/install` 会初始化本地用户/Agent 状态面，并且 RedCap 官方飞书通知路径被收敛到单一账号策略。 / 详情：新增 `references/user-agent-identity-policy.json` 与 `redcap-user-agent-identity.sh`，把 Norven 用户命名空间、Cap agent 摘要、ignored 本地状态和 `shared-knowledge/users/Norven` 串进 installer。新增 `references/feishu-notification-policy.json`…",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance、targeted 回归，并补上 session-end 旧控制面 FAIL 污染当前收口的机制回归。",
-          "详情：`https://gitee.com/norven63/redcap-arsenal.git` 已创建 `main` 分支；远端只包含 shared-knowledge 最小公共模板候选，且 `--live` 会对远端文件名与内容做白名单对账。"
+          "当前已完成：P2-4 的 repo-owned 链路已经落地：`revive/install` 会初始化本地用户/Agent 状态面，并且 RedCap 官方飞书通知路径被收敛到单一账号策略。",
+          "详情：新增 `references/user-agent-identity-policy.json` 与 `redcap-user-agent-identity.sh`，把 Norven 用户命名空间、Cap agent 摘要、ignored 本地状态和 `shared-knowledge/users/Norven` 串进 installer。新增 `references/feishu-notification-policy.json` 与检查器，阻止 webhook、旧 profile、followup wat…"
         ],
         "previous_step": [
-          "上一步完成的是：P2-3 Formal Prism quorum 恢复复验，确认 Kimi + Claude Code 可形成当前独立验收 quorum。"
+          "上一步完成的是：P2-5 把“中插需求重排决策可见化”做成强门，要求当前这类中插约束先入账、再重排、再执行。"
         ],
         "next_step": [
-          "下一步计划做的是：提交 session-end 机制补丁后运行最终 spec/diagnose/closeout receipt；receipt 属于提交后的运行时证据，以 closeout runtime 输出为准。"
+          "下一步计划做的是：继续父任务中未完成的 P3-1 / P3-2 等后续治理；如需让飞书真实发送，还需要在本机 `lark-cli` 注册 `cli_a9579f5b12219bb5` profile。"
         ],
         "position": [
-          "整体计划脉络图是：P1-3 remote fact → safety candidate policy → Gitee push → live head proof → parent ledger update → Prism acceptance → closeout receipt。",
-          "当前所在位置：P1-3 子任务已完成并进入最终 closeout。父任务仍不能声明全部完成。"
+          "整体计划脉络图是：任务卡重锚定 → 身份初始化 policy/script → 飞书单通道 policy/checker → install/spec/diagnose/acceptance 接线 → Prism review → targeted/full acceptance 复验 → closeout receipt。",
+          "当前所在位置：`redcap-system-migration-parent / P2-4 / first-start-identity-feishu-policy`，repo-owned 实现与回归已完成，等待最终 receipt/提交收口。"
         ]
       }
     },

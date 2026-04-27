@@ -12,7 +12,7 @@
 0. 若 `~/.cap/identity.md` 存在，优先 `read_file` 读取它 — **还原 Cap 的个人灵魂锚点**；若不存在，先运行 `./revive-cap.sh --init-identity`
 1. `read_file` 读取 `compass/soul.md` — 载入培养指南与复活协议；它不能替代 identity，但负责把执行纪律拉回当前会话
 2. `read_file` 读取 `compass/CONTRIBUTING.core.md` — 获取启动必读核心契约；`CONTRIBUTING.md` 全文仍是权威，但不默认全文读取
-3. 优先运行或消费 `./revive-cap.sh` — 它会转调 `compass/tools/redcap-install.sh`，并将 workflow import、`current-status`（`redcap-current-status.sh`）、`tracking-health`（`redcap-tracking-health.sh`）、宿主 Hook 就绪检查（`redcap-host-hook-readiness.sh`）、`execution-guarantee-check`（`redcap-execution-guarantee-check.sh`）、`revival-check`（`redcap-revival-check.sh`）收口为单一安装/复活动作；需要显式指定宿主时再加 `--host <name>`
+3. 优先运行或消费 `./revive-cap.sh` — 它会转调 `compass/tools/redcap-install.sh`，并将用户/Agent 本地状态初始化、workflow import、`current-status`（`redcap-current-status.sh`）、`tracking-health`（`redcap-tracking-health.sh`）、宿主 Hook 就绪检查（`redcap-host-hook-readiness.sh`）、飞书单通道策略检查（`redcap-feishu-notification-policy-check.sh`）、`execution-guarantee-check`（`redcap-execution-guarantee-check.sh`）、`revival-check`（`redcap-revival-check.sh`）收口为单一安装/复活动作；需要显式指定宿主时再加 `--host <name>`
 4. 若 installer 不可用，再退回：运行或消费 `bash compass/tools/redcap-current-status.sh`，检查 `.dev-task.md` 是否存在，必要时 `git log --oneline -10` 交叉验证实际进度（详见 `compass/CONTRIBUTING.md §7`）
 5. 使用 `rg -n "^## |^### " compass/CONTRIBUTING.md` 定位所需章节，再按精确行段读取；不要默认全文读取 `CONTRIBUTING.md`
 6. 需要查经验时先读 `compass/knowledge/index.md`，再用 `rg` 定位相关 L-编号；不要默认全文读取 `compass/knowledge/lessons.md`

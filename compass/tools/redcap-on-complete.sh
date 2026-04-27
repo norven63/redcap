@@ -378,7 +378,8 @@ feishu_notify() {
   python3 "$notifier" notify \
     "$message" \
     --project "$PROJECT_NAME" \
-    --window-type followup \
+    --window-type node-report \
+    --no-background-watch \
     2>/dev/null || {
     echo "[on_complete] ⚠ 飞书通知失败（可能未配置 feishu-config.json）" >&2
     return 1

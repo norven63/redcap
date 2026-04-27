@@ -429,13 +429,13 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 - hooks 不改变状态机转移结果，只附加副作用
 - **脚本封装**：`on_QA_PASS` 和 `on_ALL_DONE` 的多步动作已封装为单一 shell 脚本（`compass/tools/redcap-on-qa-pass.sh`、`compass/tools/redcap-on-complete.sh`），Dispatcher 只需调用一个脚本即可。这将 LLM 的记忆负担从「记住 N 个步骤的细节」降低为「调一个脚本」，显著提高长对话中的执行可靠性（详见 [《宿主可靠性报告》](compass/knowledge/host-reliability.md) L-12）
 - `on_PAUSED` 和 `on_ALL_AGENT_FAIL` 中的飞书 ask/resume 为**前台阻塞式**：Dispatcher 以 `isBackground=false, timeout=0` 执行脚本，脚本退出后 Dispatcher 自动获得回复并恢复流程
-- 飞书通知类 hook（on_PAUSED / on_ALL_AGENT_FAIL / on_QA_FAIL_MAX_RETRY）均为可选：当本地未配置 `compass/tools/feishu-config.json` 时自动跳过，不影响流程
+- 飞书通知类 hook（on_PAUSED / on_ALL_AGENT_FAIL / on_QA_FAIL_MAX_RETRY）均为可选：当本地未配置 `compass/tools/feishu-config.json` 时自动跳过，不影响流程；RedCap 官方通知只允许 `references/feishu-notification-policy.json` 指定的 `cli_a9579f5b12219bb5` lark-cli DM 通道
 
 ### 5.11 飞书通知集成
 
-通过 `compass/tools/feishu-notifier.py` 实现人机协作通知，让用户在飞书端即时知晓流程状态并可远程响应。
+通过 `compass/tools/feishu-notifier.py` 实现人机协作通知，让用户在飞书端看到关键节点汇报，并在需要人工介入时远程响应。当前生产策略是低频、单通道：只允许 `node-report` 与 `manual-intervention` 两类通知，不再保留 webhook / followup watcher / 重复 success 刷屏路径。
 
-**前置条件**：项目根目录存在 `compass/tools/feishu-config.json`（本地配置，已在 .gitignore 中排除）。若不存在或 `notify_enabled=false`，所有飞书通知自动跳过，不影响流程。
+**前置条件**：项目根目录存在 `compass/tools/feishu-config.json`（本地配置，已在 .gitignore 中排除），且本地 lark-cli 已注册 `cli_a9579f5b12219bb5` profile。若不存在或 `notify_enabled=false`，所有飞书通知自动跳过；若配置了旧 profile / webhook，则策略检查失败。
 
 **CLI 接口**：
 
@@ -443,8 +443,11 @@ Dispatcher 在状态转移或特定事件发生后，按下表顺序执行对应
 # 首次使用 — 校验 lark-cli 单聊通道与本地状态目录
 python3 compass/tools/feishu-notifier.py setup
 
-# 非阻塞通知（on_ALL_DONE 等）；若要给用户保留短时 follow-up 入口，附 --window-type followup
-python3 compass/tools/feishu-notifier.py notify "消息内容" --project "项目名" --window-type followup
+# 节点汇报通知（on_ALL_DONE / closeout 节点）；不打开后台回访窗口
+python3 compass/tools/feishu-notifier.py notify "消息内容" --project "项目名" --window-type node-report
+
+# 人工介入中断通知（只有需要 Norven 决策/授权/解除 blocker 时使用）
+python3 compass/tools/feishu-notifier.py notify "需要人工介入：<原因>" --project "项目名" --window-type manual-intervention
 
 # 阻塞式提问（on_PAUSED / on_ALL_AGENT_FAIL，前台阻塞等待固定单聊回复）
 python3 compass/tools/feishu-notifier.py ask "问题内容" --project "项目名" --fsm-state "PAUSED"
@@ -468,7 +471,7 @@ python3 compass/tools/feishu-notifier.py pending-list --limit 5
 
 | 场景 | Hook | 命令 | 说明 |
 |------|------|------|------|
-| 流程完成 | `on_ALL_DONE` | `notify --window-type followup` | 推送完成摘要 + commit 记录，并打开短时回访窗口 |
+| 流程完成 | `on_ALL_DONE` | `notify --window-type node-report` | 推送完成摘要 + commit 记录；不打开回访 watcher |
 | 需要用户信息 | `on_PAUSED` | `ask` | 前台阻塞等待固定单聊回复 |
 | 中断恢复 | `on_PAUSED`（重启） | `resume` | 继续等待已有窗口，不新建 |
 | 所有 Agent 不可用 | `on_ALL_AGENT_FAIL` | `ask` | 推送降级确认请求，前台阻塞等待 |
@@ -485,7 +488,7 @@ python3 compass/tools/feishu-notifier.py pending-list --limit 5
 - 下次启动时 Dispatcher 检测到 `current_state == PAUSED` 且 `feishu_record_id` 非空 → 调用 `feishu-notifier.py resume <window_id>` 继续等待旧窗口
 - 用户无需重新回复，之前在飞书单聊里的回复仍然有效
 
-**关于轮询开销**：飞书轮询为纯 `lark-cli` / HTTP 请求，不消耗 AI token。当前策略是窗口打开后的前 1 分钟每 10 秒轮询一次，之后每 1 分钟一次；任务完成回访窗口到期后自动关闭，窗口外消息只会在后续 `pending-scan` 补扫时进入待处理入口。
+**关于轮询开销**：飞书轮询为纯 `lark-cli` 请求，不消耗 AI token。当前策略是只有 `ask` / `confirm` 这类人工介入窗口轮询；普通节点汇报不创建回访 watcher，窗口外消息只会在后续 `pending-scan` 补扫时进入待处理入口。
 
 ### 5.12 常驻规范重载（防退化机制）
 

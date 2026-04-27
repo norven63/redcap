@@ -115,6 +115,8 @@ else
     INSTALL_OK=0
 fi
 
+run_check "user-agent-identity" bash "$SCRIPT_DIR/redcap-user-agent-identity.sh" init --host "$HOST"
+run_check "feishu-notification-policy" bash "$SCRIPT_DIR/redcap-feishu-notification-policy-check.sh"
 run_check "current-status" bash "$SCRIPT_DIR/redcap-current-status.sh" "$TASK_FILE"
 run_check "tracking-health" bash "$SCRIPT_DIR/redcap-tracking-health.sh" "$TASK_FILE"
 run_check "host-hook-readiness" bash "$SCRIPT_DIR/redcap-host-hook-readiness.sh" "$HOST" "$REDCAP_ROOT"

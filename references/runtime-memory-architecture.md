@@ -99,7 +99,8 @@ Layer B 没有 Layer A 那种单一 `state.yaml` FSM，但已经形成了一个�
 
 | 脚本 | 它在生命周期里的职责 |
 | --- | --- |
-| `compass/tools/redcap-install.sh` | 统一完成 Cap 复活、入口导入、current-status、tracking-health 和执行保障检查 |
+| `compass/tools/redcap-install.sh` | 统一完成 Cap 复活、用户/Agent 本地状态初始化、入口导入、current-status、tracking-health、飞书策略和执行保障检查 |
+| `compass/tools/redcap-user-agent-identity.sh` | 首次启动时初始化/校验当前用户命名空间、Cap agent 摘要和 ignored 本地身份状态 |
 | `compass/tools/redcap-layerB-session-start.sh` | 物理进入 `REANCHORED`，补跑 installer、会话绑定、pending closure advisory reconcile |
 | `compass/tools/redcap-pm-gate-check.sh` | 把任务从“只是会话理解”提升成 `TASK_LOCKED` |
 | `compass/tools/redcap-drift-check.sh` | 在 `EXECUTING` 期间持续检查 active slice / scope / authority 漂移 |
@@ -114,7 +115,8 @@ Layer B 没有 Layer A 那种单一 `state.yaml` FSM，但已经形成了一个�
 | `closeout-cap.sh` | 人类 / Agent 的根目录短收尾入口；不再要求调用方自己拼接棱镜验收 + on-complete + session-end |
 | `compass/tools/redcap-diagnose.sh` | 当前 diagnose-rescue 强入口；terminal closeout 已开始但 receipt 缺失时，优先尝试 `audit-open --mode diagnose` |
 | `compass/tools/redcap-on-complete.sh` | 执行 closeout 前置 gate，并在必要时写回 blocker |
-| `compass/tools/redcap-layerB-session-end.sh` | 最终 authority reconcile；负责清账或保留 blocker |
+| `compass/tools/redcap-layerB-session-end.sh` | 最终 authority reconcile；负责清账或保留 blocker；默认不重复发送成功通知，只保留人工介入类 blocker 告警 |
+| `compass/tools/redcap-feishu-notification-policy-check.sh` | 校验飞书通知只走 `cli_a9579f5b12219bb5` 且只在节点汇报/人工介入中断时发送 |
 | `compass/tools/redcap-interop-governance.sh` | 维护 pending closure / closure-ledger / current-report identity 等治理账本 |
 | `compass/tools/redcap-current-status.sh` | 汇总当前状态观测面，但不取代任何 canonical truth，也不是生命周期 authority 载体 |
 | `compass/tools/redcap-tracking-health.sh` | 汇总任务卡、报告、explore-notes 等 tracking 健康面 |

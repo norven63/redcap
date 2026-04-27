@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-RedCap 飞书通知器 — bot 单聊 + 窗口式接收
+RedCap 飞书通知器 — 单一 lark-cli 单聊通道 + 窗口式接收
 
 功能：
   setup          校验 lark-cli 通道与本地配置
-  notify         发送通知；可选打开“任务完成回访窗口”
+  notify         发送节点汇报或人工介入通知；不打开后台回访窗口
   ask            发送问题并在前台阻塞等待飞书回复
   resume         恢复等待已有窗口
   confirm        发送确认请求并解析结果
@@ -33,8 +33,6 @@ import shutil
 import subprocess
 import sys
 import time
-import urllib.error
-import urllib.request
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -42,6 +40,8 @@ from typing import Any, Optional
 
 
 COMPASS_ROOT = Path(__file__).resolve().parents[1]
+REDCAP_ROOT = COMPASS_ROOT.parent
+POLICY_PATH = REDCAP_ROOT / "references" / "feishu-notification-policy.json"
 CONFIG_PATH = Path(os.environ.get("REDCAP_FEISHU_CONFIG_PATH", COMPASS_ROOT / "tools" / "feishu-config.json"))
 STATE_DIR = Path(os.environ.get("REDCAP_FEISHU_STATE_DIR", COMPASS_ROOT / ".workflow" / "feishu"))
 WINDOWS_DIR = STATE_DIR / "windows"
@@ -68,6 +68,18 @@ def load_json_file(path: Path, default: Any) -> Any:
             return json.load(handle)
     except (OSError, json.JSONDecodeError):
         return default
+
+
+def load_policy() -> dict[str, Any]:
+    try:
+        payload = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        eprint(f"[feishu-notifier] 飞书策略读取失败: {exc}")
+        raise SystemExit(1) from exc
+    if payload.get("version") != 1:
+        eprint("[feishu-notifier] 飞书策略版本必须为 1")
+        raise SystemExit(1)
+    return payload
 
 
 def save_json_file(path: Path, data: Any) -> None:
@@ -138,21 +150,32 @@ def normalized_message_text(message: dict[str, Any]) -> str:
 class FeishuConfig:
     notify_enabled: bool
     transport: str
-    webhook: str
     cli_bin: str
     profile: str
     chat_id: str
     identity: str
+    allowed_notify_window_types: set[str]
     fast_poll_seconds: int
     fast_poll_window_seconds: int
     slow_poll_seconds: int
-    followup_timeout_seconds: int
     notify_dedup_seconds: int
     history_limit: int
     known_id_limit: int
 
 
 def load_config() -> Optional[FeishuConfig]:
+    policy = load_policy()
+    allowed_transport = str(policy.get("allowed_transport") or "lark_cli_dm")
+    required_profile = str(policy.get("required_lark_cli_profile") or "cli_a9579f5b12219bb5")
+    allowed_notify_window_types = {
+        str(item)
+        for item in (policy.get("allowed_notify_window_types") or [])
+        if str(item).strip()
+    }
+    if allowed_transport != "lark_cli_dm" or allowed_notify_window_types != {"node-report", "manual-intervention"}:
+        eprint("[feishu-notifier] 飞书策略不合法：仅允许 lark_cli_dm + node-report/manual-intervention")
+        raise SystemExit(1)
+
     if not CONFIG_PATH.exists():
         return None
 
@@ -170,13 +193,16 @@ def load_config() -> Optional[FeishuConfig]:
         raw,
         ["REDCAP_FEISHU_TRANSPORT", "FEISHU_NOTIFY_TRANSPORT"],
         ["transport"],
-        "lark_cli_dm",
+        allowed_transport,
     )
-    if transport not in {"lark_cli_dm", "webhook"}:
-        eprint(f"[feishu-notifier] 暂不支持 transport={transport}，当前只支持 lark_cli_dm / webhook")
-        return None
+    if transport != allowed_transport:
+        eprint(f"[feishu-notifier] 禁止的飞书 transport={transport}；RedCap 只允许 {allowed_transport}")
+        raise SystemExit(1)
 
-    webhook = str(env_or_cfg(raw, ["REDCAP_FEISHU_WEBHOOK", "FEISHU_WEBHOOK"], ["webhook"], ""))
+    raw_app_id = str(env_or_cfg(raw, ["REDCAP_FEISHU_APP_ID"], ["app_id"], ""))
+    if raw_app_id and raw_app_id != required_profile:
+        eprint(f"[feishu-notifier] 禁止的飞书 app_id={raw_app_id}；必须使用 {required_profile}")
+        raise SystemExit(1)
 
     cli_bin = str(
         env_or_cfg(
@@ -191,8 +217,12 @@ def load_config() -> Optional[FeishuConfig]:
             raw,
             ["REDCAP_FEISHU_PROFILE", "FEISHU_NOTIFY_PROFILE"],
             ["lark_cli_profile", "profile"],
+            required_profile,
         )
     )
+    if profile != required_profile:
+        eprint(f"[feishu-notifier] 禁止的飞书 profile={profile}；必须使用 {required_profile}")
+        raise SystemExit(1)
     chat_id = str(
         env_or_cfg(
             raw,
@@ -209,11 +239,8 @@ def load_config() -> Optional[FeishuConfig]:
         )
     )
 
-    if transport == "lark_cli_dm" and (not profile or not chat_id):
+    if not profile or not chat_id:
         eprint("[feishu-notifier] 缺少 lark_cli_profile / lark_chat_id，跳过飞书链路")
-        return None
-    if transport == "webhook" and not webhook:
-        eprint("[feishu-notifier] 缺少 webhook，跳过飞书链路")
         return None
 
     def as_int(value: Any, default: int) -> int:
@@ -226,21 +253,17 @@ def load_config() -> Optional[FeishuConfig]:
     return FeishuConfig(
         notify_enabled=True,
         transport=transport,
-        webhook=webhook,
         cli_bin=cli_bin,
         profile=profile,
         chat_id=chat_id,
         identity=identity,
+        allowed_notify_window_types=allowed_notify_window_types,
         fast_poll_seconds=as_int(env_or_cfg(raw, ["REDCAP_FEISHU_FAST_POLL_SECONDS"], ["fast_poll_seconds"], 10), 10),
         fast_poll_window_seconds=as_int(
             env_or_cfg(raw, ["REDCAP_FEISHU_FAST_POLL_WINDOW_SECONDS"], ["fast_poll_window_seconds"], 60),
             60,
         ),
         slow_poll_seconds=as_int(env_or_cfg(raw, ["REDCAP_FEISHU_SLOW_POLL_SECONDS"], ["slow_poll_seconds"], 60), 60),
-        followup_timeout_seconds=as_int(
-            env_or_cfg(raw, ["REDCAP_FEISHU_FOLLOWUP_TIMEOUT_SECONDS"], ["followup_timeout_seconds"], 1800),
-            1800,
-        ),
         notify_dedup_seconds=as_int(
             env_or_cfg(raw, ["REDCAP_FEISHU_NOTIFY_DEDUP_SECONDS"], ["notify_dedup_seconds"], 1800),
             1800,
@@ -455,9 +478,6 @@ class FeishuNotifier:
         return None
 
     def _send_text(self, text: str) -> dict[str, Any]:
-        if self.config.transport == "webhook":
-            return self._send_webhook_text(text)
-
         payload = self._run_cli_json(
             "im",
             "+messages-send",
@@ -469,33 +489,6 @@ class FeishuNotifier:
             text,
         )
         return payload.get("data") or {}
-
-    def _send_webhook_text(self, text: str) -> dict[str, Any]:
-        payload = json.dumps(
-            {
-                "msg_type": "text",
-                "content": {"text": text},
-            },
-            ensure_ascii=False,
-        ).encode("utf-8")
-        request = urllib.request.Request(
-            self.config.webhook,
-            data=payload,
-            headers={"Content-Type": "application/json; charset=utf-8"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(request, timeout=10) as response:
-                body = response.read().decode("utf-8", errors="replace")
-        except urllib.error.URLError as exc:
-            raise RuntimeError(f"飞书 webhook 发送失败: {exc}") from exc
-        try:
-            parsed = json.loads(body or "{}")
-        except json.JSONDecodeError:
-            parsed = {"raw": body}
-        if parsed.get("StatusCode", parsed.get("code", 0)) not in (0, "0"):
-            raise RuntimeError(f"飞书 webhook 返回失败: {parsed}")
-        return parsed
 
     def _reply_text(self, message_id: str, text: str) -> None:
         self._run_cli_json(
@@ -657,7 +650,7 @@ class FeishuNotifier:
         message_id = str(message.get("message_id", "") or "")
         reply_text = normalized_message_text(message)
         if window.get("reply_action") == "queue":
-            item = self._enqueue_pending(message, "followup-window", window)
+            item = self._enqueue_pending(message, "queued-window", window)
             if message_id:
                 self._ack_reply(
                     message_id,
@@ -698,10 +691,14 @@ class FeishuNotifier:
         self,
         message: str,
         project: str = "",
-        window_type: str = "none",
+        window_type: str = "node-report",
         window_timeout: int = 0,
         background_watch: bool = True,
     ) -> Optional[str]:
+        if window_type not in self.config.allowed_notify_window_types:
+            raise RuntimeError(
+                f"禁止的飞书通知事件类型: {window_type}；只允许 node-report / manual-intervention"
+            )
         notification_key = self._notification_key(project, window_type, message)
         duplicate = self._fresh_duplicate_notification(notification_key)
         if duplicate is not None:
@@ -711,34 +708,6 @@ class FeishuNotifier:
                 return window_id
             print("FEISHU_DEDUPED=1", file=sys.stderr)
             return None
-
-        if window_type == "followup" and self.config.transport == "webhook":
-            outbound = (
-                f"{message}\n\n——\n"
-                "当前使用 webhook 单向通知通道，无法打开飞书回访窗口；如需回复，请回到当前会话继续。"
-            )
-            self._send_text(outbound)
-            self._record_notification(notification_key, project, window_type, message)
-            print("FEISHU_WEBHOOK_FOLLOWUP_DEGRADED=1", file=sys.stderr)
-            return None
-
-        if window_type == "followup":
-            timeout_seconds = window_timeout or self.config.followup_timeout_seconds
-            outbound = (
-                f"{message}\n\n——\n可直接回复这条单聊。"
-                "如果回访窗口仍有效，我会收下这条回复；如果此时任务已经结束，我会把它记入待处理入口，并在你下次回到 CLI 时提醒。"
-            )
-            window = self.create_window(
-                window_type="followup",
-                outbound_message=outbound,
-                project=project,
-                timeout_seconds=timeout_seconds,
-                reply_action="queue",
-                background_watch=background_watch,
-            )
-            self._record_notification(notification_key, project, window_type, message, window["window_id"])
-            print(f"FEISHU_WINDOW_ID={window['window_id']}", file=sys.stderr)
-            return window["window_id"]
 
         self._send_text(message)
         self._record_notification(notification_key, project, window_type, message)
@@ -867,12 +836,6 @@ class FeishuNotifier:
         return self._mark_pending(item_id, "promoted")
 
     def setup(self) -> None:
-        if self.config.transport == "webhook":
-            print("TRANSPORT=webhook")
-            print("WEBHOOK_CONFIGURED=1")
-            print(f"STATE_DIR={STATE_DIR}")
-            return
-
         self._ensure_cli_available()
         payload = self._run_cli_json(
             "im",
@@ -928,10 +891,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--project", default="", help="项目名")
     parser.add_argument("--fsm-state", default="", help="FSM 当前状态")
     parser.add_argument("--options", default="", help="可选项，逗号分隔")
-    parser.add_argument("--window-type", choices=["none", "followup"], default="none", help="notify 是否打开回访窗口")
-    parser.add_argument("--window-timeout", type=int, default=0, help="回访窗口超时秒数")
+    parser.add_argument(
+        "--window-type",
+        choices=["node-report", "manual-intervention"],
+        default="node-report",
+        help="notify 事件类型：节点汇报或人工介入中断",
+    )
+    parser.add_argument("--window-timeout", type=int, default=0, help="兼容旧参数；notify 不再打开回访窗口")
     parser.add_argument("--limit", type=int, default=20, help="pending-list 的输出上限")
-    parser.add_argument("--no-background-watch", action="store_true", help="notify followup 时不拉起后台 watch")
+    parser.add_argument("--no-background-watch", action="store_true", help="兼容旧参数；notify 不再拉起后台 watch")
     return parser
 
 
@@ -967,20 +935,6 @@ def main() -> None:
         return
 
     notifier = FeishuNotifier(config)
-
-    if config.transport == "webhook" and args.command not in {"setup", "notify"}:
-        if args.command == "pending-count":
-            print("0")
-        elif args.command == "pending-list":
-            print("")
-        elif args.command in {"pending-dismiss", "pending-promote"}:
-            print("MISSING")
-            sys.exit(1)
-        elif args.command == "close-window":
-            print("OK")
-        else:
-            print("SKIP")
-        return
 
     if args.command == "notify":
         if not args.message:

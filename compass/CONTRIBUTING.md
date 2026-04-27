@@ -332,25 +332,29 @@ E2E 执行完毕
 
 > **本节属于 Layer B（开发 RedCap 自身）**。Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10 定义，通过 Dispatcher 状态机触发。两层架构详见 `compass/knowledge/host-reliability.md` §0。
 
-RedCap 自身变更不走 Dispatcher 主状态机，**主链通知仍需由编辑 RedCap 的 AI Agent 在流程内主动执行**；宿主 SessionEnd Hook 只负责兜底审计与补发，不可把主链通知职责推给 Hook：
+RedCap 自身变更不走 Dispatcher 主状态机。飞书只做“节点汇报”和“需要 Norven 人工介入的中断”两类用户可见信号；宿主 SessionEnd Hook 只负责兜底审计与 blocker 告警，不应重复发送成功刷屏。
 
-**完成通知（必须，自动执行）**：每轮变更全部完成并 git commit 后、结束任务前，**必须自动执行**以下命令（默认会给用户保留一个短时回访窗口；窗口外消息后续进入待处理入口）：
+**账号与通道（强约束）**：RedCap 官方通知路径只允许 `references/feishu-notification-policy.json` 指定的 `cli_a9579f5b12219bb5` lark-cli DM profile。`webhook`、旧 profile、followup watcher、SessionEnd 默认成功通知都不是合法生产路径。策略与本地 ignored 配置由以下检查兜底：
 
 ```bash
-# 消息中须附带本次 commit 记录
-python3 compass/tools/feishu-notifier.py notify "RedCap 框架变更完成: <简要描述>\n\nCommits:\n$(git log --oneline <初始commit>..HEAD)" --project "redcap" --window-type followup
+bash compass/tools/redcap-feishu-notification-policy-check.sh
 ```
 
-> ⚠ 这是强制步骤，不可跳过。通知失败（如 feishu-config.json 不存在）时记录警告但不阻塞任务完成；若主链漏调，SessionEnd Hook 会尝试补发，但这只算兜底，不算合规主路径。
+**节点汇报（允许，低频）**：每轮真正完成 closeout 节点时，统一通过 on-complete 发送一次 `node-report`；不要在每个内部小状态都发飞书。
 
-**过程中通知（按需）**：长时间等待用户确认方案等场景：
+```bash
+python3 compass/tools/feishu-notifier.py notify "RedCap 节点汇报: <简要描述>" --project "redcap" --window-type node-report
+```
+
+**人工介入中断（允许，阻塞式）**：只有需要用户做决策、授权或解除 blocker 时，才允许发人工介入类通知：
 
 ```bash
 python3 compass/tools/feishu-notifier.py ask "方案A还是方案B？" --project "redcap"
+python3 compass/tools/feishu-notifier.py notify "RedCap 需要人工介入: <原因>" --project "redcap" --window-type manual-intervention
 python3 compass/tools/feishu-notifier.py pending-list --limit 5
 ```
 
-**重复通知治理**：`feishu-notifier.py notify` 对同一 `project + window_type + message` 默认做短窗口去重，避免长任务里 `on-complete / session-end / 补偿入口` 反复发送同一条完成或告警消息。不同内容的真实告警不能被合并；相同内容在去重窗口内只保留第一条，并复用原 followup window。
+**重复通知治理**：`feishu-notifier.py notify` 对同一 `project + window_type + message` 默认做短窗口去重。不同内容的真实 blocker 告警不能被合并；相同内容在去重窗口内只保留第一条。
 
 
 ## 6. 文件变更影响范围提示
@@ -1053,8 +1057,8 @@ PM Gate 触发时，**必须先读 `explore-notes.md`** 的相关活跃条目，
 ### Stop Hook 检查
 
 `compass/tools/redcap-explore-notes-check.sh` 在 Layer B 的 Stop / SessionEnd 链中检查：
-- 若 `explore-notes.md` 存在且有**未归档**（非 `[ARCHIVED]`）的活跃条目 → 飞书告警（Non-blocking，提醒，不阻塞 Agent）
-- 告警内容：条目数量 + 最老未归档条目的时间戳
+- 若 `explore-notes.md` 存在且有**未归档**（非 `[ARCHIVED]`）的活跃条目 → 只输出本地 stderr 提醒并写去重标记，不再发送飞书；该提醒不属于“节点汇报/人工介入中断”
+- 提醒内容：条目数量 + 归档指引
 
 ### 文件位置
 

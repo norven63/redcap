@@ -472,6 +472,26 @@ if [[ -x "$SHARED_KNOWLEDGE_REMOTE_CHECK" ]]; then
     fi
 fi
 
+USER_AGENT_IDENTITY_CHECK="$REDCAP_ROOT/compass/tools/redcap-user-agent-identity.sh"
+if [[ ! -f "$USER_AGENT_IDENTITY_CHECK" ]]; then
+    echo "[redcap-spec-check] user/agent identity check missing" >&2
+    exit 1
+fi
+if ! bash "$USER_AGENT_IDENTITY_CHECK" check >/dev/null; then
+    echo "[redcap-spec-check] user/agent identity policy check failed" >&2
+    exit 1
+fi
+
+FEISHU_NOTIFICATION_POLICY_CHECK="$REDCAP_ROOT/compass/tools/redcap-feishu-notification-policy-check.sh"
+if [[ ! -f "$FEISHU_NOTIFICATION_POLICY_CHECK" ]]; then
+    echo "[redcap-spec-check] Feishu notification policy check missing" >&2
+    exit 1
+fi
+if ! bash "$FEISHU_NOTIFICATION_POLICY_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] Feishu notification policy check failed" >&2
+    exit 1
+fi
+
 PACKAGE_PUBLISH_SAFETY_CHECK="$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh"
 if [[ ! -f "$PACKAGE_PUBLISH_SAFETY_CHECK" ]]; then
     echo "[redcap-spec-check] package publish safety check missing" >&2

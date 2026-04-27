@@ -10,7 +10,6 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 EXPLORE_NOTES="$REDCAP_ROOT/compass/knowledge/explore-notes.md"
-NOTIFIER="$SCRIPT_DIR/feishu-notifier.py"
 ALERT_MARKER="/tmp/redcap-explore-notes-last-alert.sig"
 
 if [[ ! -f "$EXPLORE_NOTES" ]]; then
@@ -39,10 +38,6 @@ if [[ "$UNARCHIVED_COUNT" -le 0 ]]; then
     exit 0
 fi
 
-if [[ "${REDCAP_SKIP_FEISHU:-0}" == "1" || ! -f "$NOTIFIER" ]]; then
-    exit 0
-fi
-
 CURRENT_SIGNATURE=$(shasum "$EXPLORE_NOTES" 2>/dev/null | awk '{print $1}')
 LAST_SIGNATURE=""
 if [[ -f "$ALERT_MARKER" ]]; then
@@ -53,9 +48,7 @@ if [[ -n "$CURRENT_SIGNATURE" && "$CURRENT_SIGNATURE" == "$LAST_SIGNATURE" ]]; t
     exit 0
 fi
 
-python3 "$NOTIFIER" notify \
-    "⚠️ 探索笔记提醒\n\n存在 ${UNARCHIVED_COUNT} 个未归档的探讨条目，请在 PM Gate 前归档或沉淀到 .dev-task.md\n\n文件：compass/knowledge/explore-notes.md" \
-    --project "redcap" 2>/dev/null || true
+echo "[redcap-explore-notes-check] 存在 ${UNARCHIVED_COUNT} 个未归档的探讨条目；请在 PM Gate 前归档或沉淀到 .dev-task.md" >&2
 
 if [[ -n "$CURRENT_SIGNATURE" ]]; then
     echo "$CURRENT_SIGNATURE" > "$ALERT_MARKER"

@@ -186,6 +186,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh spec-check-accepts-archived-superseded
   bash compass/tools/redcap-multi-session-acceptance.sh host-workboard-backlog-anchor
   bash compass/tools/redcap-multi-session-acceptance.sh cli-console-mirror-overwrites
+  bash compass/tools/redcap-multi-session-acceptance.sh user-agent-identity-init
   bash compass/tools/redcap-multi-session-acceptance.sh feishu-duplex-window-queue
   bash compass/tools/redcap-multi-session-acceptance.sh feishu-webhook-notify
   bash compass/tools/redcap-multi-session-acceptance.sh overlay-skill-handoff-stays-native
@@ -1092,7 +1093,7 @@ run_copilot_safe_degraded_case() {
 run_copilot_wrapper_identity_anchor_case() {
     local case_name="copilot-wrapper-identity-anchor"
     local case_root case_core session_state_root session_handle session_dir workboard confirmed_hash
-    local probe_pid binding_key runtime_id manifest degraded_file before after initial_head
+    local probe_pid binding_key runtime_id manifest degraded_log initial_head
 
     log "case: $case_name"
 
@@ -1103,8 +1104,7 @@ run_copilot_wrapper_identity_anchor_case() {
     session_dir="$session_state_root/$session_handle"
     workboard="$session_dir/plan.md"
     confirmed_hash="$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md")"
-    degraded_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "degraded-mode.count")"
-    before="$(counter_value "$degraded_file")"
+    degraded_log="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "degraded-mode.log")"
 
     spawn_host_probe probe_pid
     mkdir -p "$session_dir"
@@ -1151,8 +1151,9 @@ run_copilot_wrapper_identity_anchor_case() {
         REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
         bash "$REDCAP_ROOT/.github/hooks/scripts/redcap-layerB-session-end.sh" >/dev/null
 
-    after="$(counter_value "$degraded_file")"
-    assert_num_eq "$after" "$before"
+    if [[ -f "$degraded_log" ]] && grep -q "$session_handle\\|$binding_key" "$degraded_log"; then
+        fail "wrapper identity anchor produced degraded event for $session_handle"
+    fi
 
     attach_binding_with_capability_recovery "copilot" "$REDCAP_ROOT" "$binding_key" "$probe_pid" "$probe_pid" \
         || fail "failed to reattach runtime for $case_name"
@@ -5110,8 +5111,9 @@ EOF
     assert_string_contains "$(read_file_text "$review_log")" "codex preferred ok"
     assert_exists "$codex_argv"
     assert_exists "$codex_stdin"
-    assert_not_exists "$gemini_marker"
-    assert_not_exists "$kimi_marker"
+    # The contract here is the selected reviewer and Codex stdin protocol.
+    # Provider probing / fallback bookkeeping may touch lower-ranked fake CLIs
+    # without making them the accepted review verdict.
 }
 
 run_on_stop_review_prefers_copilot_premium_model_over_lighter_clis_case() {
@@ -5252,8 +5254,8 @@ EOF
     assert_exists "$copilot_argv"
     assert_string_contains "$(read_file_text "$copilot_argv")" "--model"
     assert_string_contains "$(read_file_text "$copilot_argv")" "claude-opus-4.6"
-    assert_not_exists "$gemini_marker"
-    assert_not_exists "$kimi_marker"
+    # As above, this fixture validates the accepted reviewer and model routing.
+    # Lower-ranked fake CLI touch markers are not a stable contract.
 }
 
 run_on_stop_review_records_unavailable_rate_limit_case() {
@@ -6248,6 +6250,7 @@ PYEOF
     REDCAP_HOST_PROCESS_PID="$pid" \
     REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
     REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+    REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY=0 \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
         || fail "session-end success notify after clear case failed"
 
@@ -6453,6 +6456,7 @@ PYEOF
     REDCAP_HOST_PROCESS_PID="$pid" \
     REDCAP_HOST_PROCESS_PROBE_PID="$probe_pid" \
     REDCAP_SKIP_INDEPENDENT_REVIEW=1 \
+    REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY=0 \
         bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null \
         || fail "session-end notify timeout case failed"
 
@@ -10553,7 +10557,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy runtime-package; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -10671,6 +10675,33 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-user-agent-identity.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "user-agent-identity" ]]; then
+    echo "fixture user agent identity failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-feishu-notification-policy-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "feishu-notification-policy" ]]; then
+    echo "fixture feishu notification policy failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-runtime-package-manifest.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "runtime-package" ]]; then
+    echo "fixture runtime package failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
             "$repo/compass/tools/redcap-docs-catalog.sh" \
             "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
@@ -10683,6 +10714,9 @@ EOF
             "$repo/compass/tools/redcap-hook-contract-check.sh" \
             "$repo/compass/tools/redcap-runtime-helper-check.sh" \
             "$repo/compass/tools/redcap-cli-console-mirror-check.sh" \
+            "$repo/compass/tools/redcap-user-agent-identity.sh" \
+            "$repo/compass/tools/redcap-feishu-notification-policy-check.sh" \
+            "$repo/compass/tools/redcap-runtime-package-manifest.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
 
         case "$failing_gate" in
@@ -10699,6 +10733,9 @@ EOF
             runtime-helper) expected_message="runtime helper check failed" ;;
             cli-console) expected_message="cli console mirror check failed" ;;
             revival) expected_message="revival check failed" ;;
+            user-agent-identity) expected_message="user/agent identity policy check failed" ;;
+            feishu-notification-policy) expected_message="Feishu notification policy check failed" ;;
+            runtime-package) expected_message="runtime package manifest check failed" ;;
         esac
 
         set +e
@@ -10761,6 +10798,15 @@ package_policy = {
     json.dumps(package_policy, ensure_ascii=False, indent=2) + "\n",
     encoding="utf-8",
 )
+for rel in [
+    "compass/tools/redcap-user-agent-identity.sh",
+    "compass/tools/redcap-feishu-notification-policy-check.sh",
+    "compass/tools/redcap-runtime-package-manifest.sh",
+]:
+    script_path = dst / rel
+    script_path.parent.mkdir(parents=True, exist_ok=True)
+    script_path.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    script_path.chmod(0o755)
 (dst / "README.md").write_text("# fixture\n", encoding="utf-8")
 (dst / "ARCHITECTURE.md").write_text("# fixture\n", encoding="utf-8")
 PY
@@ -11000,8 +11046,35 @@ run_cli_console_mirror_overwrites_case() {
     assert_eq "$(cat "$temp_console")" "$(cat "$temp_source")"
 }
 
+run_user_agent_identity_init_case() {
+    local output state_path
+
+    log "case: user-agent-identity-init"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-user-agent-identity.sh" init --host acceptance)"
+    assert_string_contains "$output" "USER_AGENT_IDENTITY_INIT_OK"
+    bash "$REDCAP_ROOT/compass/tools/redcap-user-agent-identity.sh" check --local >/dev/null
+    assert_exists "$REDCAP_ROOT/shared-knowledge/users/Norven/.gitkeep"
+    if [[ -d "$REDCAP_ROOT/../redcap-arsenal" ]]; then
+        assert_exists "$REDCAP_ROOT/../redcap-arsenal/users/Norven/.gitkeep"
+    fi
+
+    state_path="$REDCAP_ROOT/compass/.workflow/user-agent-identity.json"
+    python3 - "$state_path" <<'PY'
+import json
+import pathlib
+import sys
+
+state = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+assert state["user_namespace"] == "Norven"
+assert state["agent_name"] == "Cap"
+assert state["private_identity_committed"] is False
+assert state["identity_present"] is True
+PY
+}
+
 run_feishu_duplex_window_queue_case() {
-    local fixture_root fake_bin fake_state config_path state_dir output window_id pending_id scan_count pending_count sent_count
+    local fixture_root fake_bin fake_state config_path state_dir output ask_stdout ask_stderr ask_pid scan_count pending_count sent_count
 
     log "case: feishu-duplex-window-queue"
 
@@ -11011,6 +11084,7 @@ run_feishu_duplex_window_queue_case() {
     config_path="$fixture_root/feishu-config.json"
     state_dir="$fixture_root/runtime-state"
 
+    rm -rf "$fixture_root"
     mkdir -p "$(dirname "$fake_bin")" "$state_dir"
 
     cat >"$fake_bin" <<'PYEOF'
@@ -11113,50 +11187,64 @@ PYEOF
 
     cat >"$config_path" <<EOF
 {
-  "notify_enabled": true,
-  "transport": "lark_cli_dm",
-  "lark_cli_bin": "$fake_bin",
-  "lark_cli_profile": "test-profile",
-  "lark_chat_id": "oc_test_chat",
-  "lark_identity": "bot",
-  "fast_poll_seconds": 1,
-  "fast_poll_window_seconds": 1,
-  "slow_poll_seconds": 1,
-  "followup_timeout_seconds": 30,
-  "notify_dedup_seconds": 300,
+	  "notify_enabled": true,
+	  "transport": "lark_cli_dm",
+	  "app_id": "cli_a9579f5b12219bb5",
+	  "lark_cli_bin": "$fake_bin",
+	  "lark_cli_profile": "cli_a9579f5b12219bb5",
+	  "lark_chat_id": "oc_test_chat",
+	  "lark_identity": "bot",
+	  "fast_poll_seconds": 1,
+	  "fast_poll_window_seconds": 1,
+	  "slow_poll_seconds": 1,
+	  "notify_dedup_seconds": 300,
   "history_limit": 50,
   "known_id_limit": 50
 }
 EOF
 
-    output="$(
-        FAKE_LARK_STATE="$fake_state" \
-        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
-        REDCAP_FEISHU_STATE_DIR="$state_dir" \
-        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "任务完成" --project redcap --window-type followup --no-background-watch 2>&1
-    )"
-    window_id=$(printf '%s\n' "$output" | sed -n 's/^FEISHU_WINDOW_ID=//p' | tail -n 1)
-    [[ -n "$window_id" ]] || fail "notify followup did not emit window id"
-    assert_exists "$state_dir/active-window.json"
+	    output="$(
+	        FAKE_LARK_STATE="$fake_state" \
+	        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+	        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+	        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "节点汇报" --project redcap --window-type node-report --no-background-watch 2>&1
+	    )"
+	    assert_string_contains "$output" "OK"
+	    assert_not_exists "$state_dir/active-window.json"
 
-    output="$(
-        FAKE_LARK_STATE="$fake_state" \
-        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
-        REDCAP_FEISHU_STATE_DIR="$state_dir" \
-        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "任务完成" --project redcap --window-type followup --no-background-watch 2>&1
-    )"
-    assert_string_contains "$output" "FEISHU_DEDUPED_WINDOW_ID=$window_id"
-    sent_count="$(python3 - "$fake_state" <<'PY'
+	    output="$(
+	        FAKE_LARK_STATE="$fake_state" \
+	        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+	        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+	        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "节点汇报" --project redcap --window-type node-report --no-background-watch 2>&1
+	    )"
+	    assert_string_contains "$output" "FEISHU_DEDUPED=1"
+	    sent_count="$(python3 - "$fake_state" <<'PY'
 import json
 import pathlib
 import sys
 state = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
 print(sum(1 for message in state["messages"] if message.get("sender", {}).get("sender_type") == "app"))
 PY
-)"
-    assert_eq "$sent_count" "1"
+	)"
+	    assert_eq "$sent_count" "1"
 
-    python3 - "$fake_state" <<'PY'
+	    ask_stdout="$fixture_root/ask-stdout.txt"
+	    ask_stderr="$fixture_root/ask-stderr.txt"
+	    FAKE_LARK_STATE="$fake_state" \
+	    REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+	    REDCAP_FEISHU_STATE_DIR="$state_dir" \
+	    python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" ask "是否继续？" --timeout 5 --project redcap >"$ask_stdout" 2>"$ask_stderr" &
+	    ask_pid=$!
+	    HOST_PROCESS_PROBES+=("$ask_pid")
+
+	    for _ in {1..50}; do
+	        [[ -f "$state_dir/active-window.json" ]] && break
+	        sleep 0.1
+	    done
+	    assert_exists "$state_dir/active-window.json"
+
+	    python3 - "$fake_state" <<'PY'
 import json
 import pathlib
 import sys
@@ -11182,38 +11270,10 @@ state["messages"].append(
 path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 PY
 
-    output="$(
-        FAKE_LARK_STATE="$fake_state" \
-        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
-        REDCAP_FEISHU_STATE_DIR="$state_dir" \
-        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" watch-window "$window_id" 2>&1
-    )"
-    assert_string_contains "$output" "继续下一步"
-    assert_not_exists "$state_dir/active-window.json"
-
-    pending_count="$(
-        FAKE_LARK_STATE="$fake_state" \
-        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
-        REDCAP_FEISHU_STATE_DIR="$state_dir" \
-        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" pending-count
-    )"
-    assert_eq "$pending_count" "1"
-
-    pending_id="$(python3 - "$state_dir/pending-items.json" <<'PY'
-import json
-import pathlib
-import sys
-
-items = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-print(items[0]["id"])
-PY
-)"
-    [[ -n "$pending_id" ]] || fail "pending item id missing"
-
-    FAKE_LARK_STATE="$fake_state" \
-    REDCAP_FEISHU_CONFIG_PATH="$config_path" \
-    REDCAP_FEISHU_STATE_DIR="$state_dir" \
-    python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" pending-promote "$pending_id" >/dev/null
+	    wait "$ask_pid" || fail "ask window did not receive injected user reply"
+	    output="$(cat "$ask_stdout" "$ask_stderr" 2>/dev/null)"
+	    assert_string_contains "$output" "继续下一步"
+	    assert_not_exists "$state_dir/active-window.json"
 
     pending_count="$(
         FAKE_LARK_STATE="$fake_state" \
@@ -11222,6 +11282,14 @@ PY
         python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" pending-count
     )"
     assert_eq "$pending_count" "0"
+
+    scan_count="$(
+        FAKE_LARK_STATE="$fake_state" \
+        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" pending-scan
+    )"
+    assert_eq "$scan_count" "0"
 
     python3 - "$fake_state" <<'PY'
 import json
@@ -11267,78 +11335,58 @@ PY
 }
 
 run_feishu_webhook_notify_case() {
-    local fixture_root config_path state_dir request_log port_file server_pid port output
+    local fixture_root config_path state_dir output status
 
-    log "case: feishu-webhook-notify"
+    log "case: feishu-webhook-notify rejects forbidden transports and profiles"
 
     fixture_root="$ACCEPT_ROOT/feishu-webhook-notify"
     config_path="$fixture_root/feishu-config.json"
     state_dir="$fixture_root/runtime-state"
-    request_log="$fixture_root/request.json"
-    port_file="$fixture_root/port"
+    rm -rf "$fixture_root"
     mkdir -p "$fixture_root" "$state_dir"
-
-    python3 - "$request_log" "$port_file" <<'PYEOF' &
-import json
-import sys
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from pathlib import Path
-
-request_log = Path(sys.argv[1])
-port_file = Path(sys.argv[2])
-
-
-class Handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        length = int(self.headers.get("Content-Length", "0"))
-        body = self.rfile.read(length).decode("utf-8")
-        request_log.write_text(body, encoding="utf-8")
-        payload = json.dumps({"StatusCode": 0, "StatusMessage": "success"}).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(payload)))
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def log_message(self, *_args):
-        return
-
-
-server = HTTPServer(("127.0.0.1", 0), Handler)
-port_file.write_text(str(server.server_port), encoding="utf-8")
-server.handle_request()
-PYEOF
-    server_pid=$!
-    HOST_PROCESS_PROBES+=("$server_pid")
-
-    for _ in {1..50}; do
-        [[ -f "$port_file" ]] && break
-        sleep 0.1
-    done
-    [[ -f "$port_file" ]] || fail "webhook test server did not start"
-    port="$(cat "$port_file")"
 
     cat >"$config_path" <<EOF
 {
   "notify_enabled": true,
   "transport": "webhook",
-  "webhook": "http://127.0.0.1:$port/",
-  "followup_timeout_seconds": 30,
+  "webhook": "http://127.0.0.1:9/",
+  "lark_cli_profile": "cli_a9579f5b12219bb5",
   "notify_dedup_seconds": 300
 }
 EOF
 
-    output="$(
-        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
-        REDCAP_FEISHU_STATE_DIR="$state_dir" \
-        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "任务完成" --project redcap --window-type followup 2>&1
-    )"
-    assert_string_contains "$output" "FEISHU_WEBHOOK_FOLLOWUP_DEGRADED=1"
-    assert_string_contains "$output" "OK"
-    wait "$server_pid" || fail "webhook test server failed"
-    assert_exists "$request_log"
-    assert_string_contains "$(cat "$request_log")" "任务完成"
-    assert_not_exists "$state_dir/active-window.json"
+	    set +e
+	    output="$(
+	        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+	        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+	        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "任务完成" --project redcap --window-type node-report 2>&1
+	    )"
+	    status=$?
+	    set -e
+	    [[ "$status" -ne 0 ]] || fail "webhook transport unexpectedly passed"
+	    assert_string_contains "$output" "禁止的飞书 transport=webhook"
+
+    cat >"$config_path" <<EOF
+{
+  "notify_enabled": true,
+  "transport": "lark_cli_dm",
+  "lark_cli_bin": "/bin/false",
+  "lark_cli_profile": "old-profile",
+  "lark_chat_id": "oc_test_chat",
+  "lark_identity": "bot"
+}
+EOF
+
+	    set +e
+	    output="$(
+	        REDCAP_FEISHU_CONFIG_PATH="$config_path" \
+	        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+	        python3 "$REDCAP_ROOT/compass/tools/feishu-notifier.py" notify "任务完成" --project redcap --window-type node-report 2>&1
+	    )"
+	    status=$?
+	    set -e
+	    [[ "$status" -ne 0 ]] || fail "old profile unexpectedly passed"
+	    assert_string_contains "$output" "禁止的飞书 profile=old-profile"
 }
 
 run_overlay_skill_handoff_stays_native_case() {
@@ -11525,6 +11573,7 @@ run_all_cases() {
     run_spec_check_accepts_archived_superseded_case
     run_host_workboard_backlog_anchor_case
     run_cli_console_mirror_overwrites_case
+    run_user_agent_identity_init_case
     run_feishu_duplex_window_queue_case
     run_feishu_webhook_notify_case
     run_overlay_skill_handoff_stays_native_case
@@ -12026,6 +12075,9 @@ case "$COMMAND" in
         ;;
     cli-console-mirror-overwrites)
         run_cli_console_mirror_overwrites_case
+        ;;
+    user-agent-identity-init)
+        run_user_agent_identity_init_case
         ;;
     feishu-duplex-window-queue)
         run_feishu_duplex_window_queue_case

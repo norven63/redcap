@@ -323,7 +323,7 @@ fi
 COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..$CURRENT_HEAD" 2>/dev/null || echo "(无法获取)")
 NOTIFIER="${REDCAP_FEISHU_NOTIFIER:-$SCRIPT_DIR/feishu-notifier.py}"
 SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
-SKIP_SUCCESS_NOTIFY="${REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY:-0}"
+SKIP_SUCCESS_NOTIFY="${REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY:-1}"
 NOTIFY_TIMEOUT_SECONDS="${REDCAP_FEISHU_NOTIFY_TIMEOUT_SECONDS:-5}"
 REVIEW_STATUS=""
 REQUIRED_REDLINES=""
@@ -509,7 +509,7 @@ session_end_report_artifact_path() {
 
 send_notification() {
     local message="$1"
-    local window_type="${2:-none}"
+    local window_type="${2:-manual-intervention}"
 
     if [[ "$SKIP_FEISHU" == "1" ]]; then
         return 0
@@ -544,6 +544,7 @@ try:
             "redcap",
             "--window-type",
             window_type,
+            "--no-background-watch",
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -562,6 +563,7 @@ PY
         "$message" \
         --project "redcap" \
         --window-type "$window_type" \
+        --no-background-watch \
         2>/dev/null
 }
 
@@ -723,7 +725,7 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
                 "report=${REPORT_ARTIFACT_PATH:-none}"
         elif ! session_end_success_notify_enabled; then
             # In unified closeout runtime, on-complete owns the human-visible success notification.
-            # SessionEnd still reconciles evidence and may send blocker alerts, but does not duplicate success followups.
+            # SessionEnd still reconciles evidence and may send blocker alerts, but does not duplicate success notifications.
             echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
             rm -f "$ALERTED_FILE" 2>/dev/null || true
             rm -f "$WARNED_FILE" 2>/dev/null || true
@@ -734,7 +736,7 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
             "$COMMIT_LOG" \
             "${HOST} SessionEnd 兜底收尾" \
             "$REPORT_ARTIFACT_PATH" \
-            "$REDCAP_ROOT")" "followup"; then
+            "$REDCAP_ROOT")" "node-report"; then
             SUCCESS_NOTIFY_SENT=1
             echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
             rm -f "$ALERTED_FILE" 2>/dev/null || true

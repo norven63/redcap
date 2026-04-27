@@ -1302,3 +1302,21 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-27
+
+### L-136: 通知通道要区分“机制收敛”和“外部 profile 可用”
+- **问题源**：RedCap 飞书通知曾同时保留 webhook、旧 profile、followup watcher 和 SessionEnd success 补发路径；用户明确只有 `cli_a9579f5b12219bb5` 能收到通知。排查时又发现本机 `lark-cli profile list` 里目标 profile 尚未注册，说明“代码想用哪个账号”和“本机真实可发”是两层不同问题。
+- **解决方案**：把 RedCap 官方通知收敛为 `references/feishu-notification-policy.json`：只允许 `lark_cli_dm`、`cli_a9579f5b12219bb5`、`node-report` / `manual-intervention`。`redcap-feishu-notification-policy-check.sh` 同时检查源码调用点和 ignored 本地配置；真实 profile 缺失时 fail-closed，不允许悄悄回退旧账号或 webhook。
+- **最后效果**：RedCap 不再因为旧配置漂移而发到 Norven 收不到的账号；但报告会诚实标注外部 `lark-cli` profile 仍需注册，避免把外部配置缺失冒充为已完成真实发送闭环。
+- **来源**：2026-04-27 首次启动身份初始化与飞书通知策略收敛
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-27
+
+### L-137: 首次启动身份不能只停留在“读 identity”，还要写可复验本地状态面
+- **问题源**：复活协议已经知道 `~/.cap/identity.md` 是 Cap 的个人灵魂锚点，但 installer 只检查 identity 是否存在，没有把当前用户命名空间、Agent 摘要、公共沉淀库用户目录写成机器可读状态。新会话接盘时仍可能靠上下文记忆猜测 Norven/Cap 的关系。
+- **解决方案**：新增 `references/user-agent-identity-policy.json` 与 `redcap-user-agent-identity.sh`。installer 每次 revive 时写 ignored 的 `compass/.workflow/user-agent-identity.json`，并确保 `shared-knowledge/users/Norven` 与外部 `redcap-arsenal/users/Norven` 命名空间存在；私人 identity 全文仍不进入仓库。
+- **最后效果**：首次启动/复活可以通过脚本复验“当前用户是谁、当前 Agent 是谁、沉淀库该写到哪个用户目录”，而不需要默认全文导入私人 identity 或依赖长上下文记忆。
+- **来源**：2026-04-27 首次启动身份初始化与飞书通知策略收敛
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-27
