@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 61,
-    "size_bytes": 861304,
-    "lines": 15203,
-    "chars": 559334,
+    "size_bytes": 862989,
+    "lines": 15236,
+    "chars": 560311,
     "rough_token_pressure": {
-      "low": 139833,
-      "high": 279667
+      "low": 140077,
+      "high": 280155
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 42,
-        "size_bytes": 580556,
-        "lines": 8356,
-        "chars": 374864,
+        "size_bytes": 582241,
+        "lines": 8389,
+        "chars": 375841,
         "rough_token_pressure": {
-          "low": 93716,
-          "high": 187432
+          "low": 93960,
+          "high": 187920
         }
       },
       "traces": {
@@ -987,9 +987,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 7909,
-      "lines": 148,
-      "chars": 4925,
+      "size_bytes": 9594,
+      "lines": 181,
+      "chars": 5902,
       "summary": "当前已完成：Layer B 的中插需求账本新增“重排决策摘要”强门。 / 详情：只要 `.dev-task.md` 中存在 `## 中插需求账本`，就必须同时存在 `## 中插需求重排决策摘要`，并为每个 `U<n>` 写明处置、决策理由、全景影响和用户可见表达。",
       "status_basis": "filename_recency_only",
       "summary_points": {
