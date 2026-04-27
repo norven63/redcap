@@ -8648,14 +8648,19 @@ EOF
 }
 
 run_change_intake_check_case() {
-    local fixture good missing unresolved child_bad pm_output status output
+    local fixture good no_ledger missing missing_decision missing_subsection missing_field mismatch_decision unresolved child_bad pm_output status output
 
     log "case: change-intake-check"
 
     fixture="$ACCEPT_ROOT/change-intake"
     mkdir -p "$fixture"
     good="$fixture/good-task.md"
+    no_ledger="$fixture/no-ledger-task.md"
     missing="$fixture/missing-ledger-task.md"
+    missing_decision="$fixture/missing-decision-task.md"
+    missing_subsection="$fixture/missing-subsection-task.md"
+    missing_field="$fixture/missing-field-task.md"
+    mismatch_decision="$fixture/mismatch-decision-task.md"
     unresolved="$fixture/unresolved-task.md"
     child_bad="$fixture/child-bad-task.md"
 
@@ -8693,6 +8698,14 @@ scope_status: full-implementation
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | U1 | U1: 用户追加需求 | new-requirement | yes | P0 | merge-current | yes | yes | yes | integrated | R1/完成标准已同步 |
 
+## 中插需求重排决策摘要
+
+### U1
+- 处置：merge-current
+- 决策理由：U1 是当前父任务完成前必须补入的阻塞需求。
+- 全景影响：当前任务继续执行，优先级高于后续 deferred 治理项，不改变父任务完成边界。
+- 用户可见表达：应明确告知 U1 已并入当前任务，而不是无脑插队。
+
 ## 漂移哨兵
 - 不把 U1 漏掉
 
@@ -8705,6 +8718,44 @@ EOF
 
     bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$good" --mode closeout >/dev/null \
         || fail "expected good change-intake fixture to pass"
+
+    cat >"$no_ledger" <<'EOF'
+# 当前任务：change intake no ledger
+
+## 控制面元数据（机器校验）
+task_id: change-intake-no-ledger
+source_of_truth: .dev-task.md
+top_goal: change-intake-no-ledger
+active_slice: normal-dev
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+### Q1
+请完成一个没有执行期中插需求的任务。
+
+## 已确认需求（执行依据）
+### R1
+完成普通任务。
+
+## 原始意图覆盖审计
+scope_status: full-implementation
+
+- 原始意图：完成普通任务。
+- 已覆盖：普通任务已覆盖。
+
+## 漂移哨兵
+- 不伪造中插需求。
+
+## 允许修改范围
+- compass/tools/**
+
+## 完成标准
+- [x] 普通任务已完成
+EOF
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$no_ledger" >/dev/null \
+        || fail "expected no-ledger fixture to pass"
 
     cat >"$missing" <<'EOF'
 # 当前任务：change intake missing ledger
@@ -8760,6 +8811,165 @@ EOF
     set -e
     [[ "$status" -ne 0 ]] || fail "PM Gate unexpectedly passed missing change-intake ledger"
     assert_string_contains "$pm_output" "missing section: ## 中插需求账本"
+
+    cat >"$missing_decision" <<'EOF'
+# 当前任务：change intake missing decision
+
+## 控制面元数据（机器校验）
+task_id: change-intake-missing-decision
+source_of_truth: .dev-task.md
+top_goal: change-intake-missing-decision
+active_slice: change-intake-missing-decision
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+### U1
+执行中新增需求。
+
+## 已确认需求（执行依据）
+### R1
+完成父任务并合并 U1。
+
+## 中插需求账本
+
+| id | 触发 | 类型 | 阻塞当前任务 | 优先级 | 处理方式 | 确认需求更新 | 计划更新 | 验收更新 | 状态 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| U1 | U1: 用户新增 | new-requirement | yes | P1 | merge-current | yes | yes | yes | integrated | R1/完成标准已同步 |
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$missing_decision" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "missing replan decision summary unexpectedly passed"
+    assert_string_contains "$output" "missing section: ## 中插需求重排决策摘要"
+
+    cat >"$missing_subsection" <<'EOF'
+# 当前任务：change intake missing subsection
+
+## 控制面元数据（机器校验）
+task_id: change-intake-missing-subsection
+source_of_truth: .dev-task.md
+top_goal: change-intake-missing-subsection
+active_slice: change-intake-missing-subsection
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+### U1
+第一个执行期新增需求。
+
+### U2
+第二个执行期新增需求。
+
+## 已确认需求（执行依据）
+### R1
+完成父任务并合并 U1/U2。
+
+## 中插需求账本
+
+| id | 触发 | 类型 | 阻塞当前任务 | 优先级 | 处理方式 | 确认需求更新 | 计划更新 | 验收更新 | 状态 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| U1 | U1: 用户新增 | new-requirement | yes | P1 | merge-current | yes | yes | yes | integrated | R1/完成标准已同步 |
+| U2 | U2: 用户新增 | new-requirement | yes | P1 | merge-current | yes | yes | yes | integrated | R1/完成标准已同步 |
+
+## 中插需求重排决策摘要
+
+### U1
+- 处置：merge-current
+- 决策理由：U1 是当前任务内阻塞需求。
+- 全景影响：当前任务继续执行，不改变父任务完成边界。
+- 用户可见表达：应告知 U1 已并入当前任务。
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$missing_subsection" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "missing replan decision subsection unexpectedly passed"
+    assert_string_contains "$output" "U2: missing replan decision subsection"
+
+    cat >"$missing_field" <<'EOF'
+# 当前任务：change intake missing decision field
+
+## 控制面元数据（机器校验）
+task_id: change-intake-missing-field
+source_of_truth: .dev-task.md
+top_goal: change-intake-missing-field
+active_slice: change-intake-missing-field
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+### U1
+执行中新增需求。
+
+## 已确认需求（执行依据）
+### R1
+完成父任务并合并 U1。
+
+## 中插需求账本
+
+| id | 触发 | 类型 | 阻塞当前任务 | 优先级 | 处理方式 | 确认需求更新 | 计划更新 | 验收更新 | 状态 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| U1 | U1: 用户新增 | new-requirement | yes | P1 | merge-current | yes | yes | yes | integrated | R1/完成标准已同步 |
+
+## 中插需求重排决策摘要
+
+### U1
+- 处置：merge-current
+- 决策理由：这里故意缺少全景影响字段用于回归。
+- 用户可见表达：这里应被 checker 拒绝。
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$missing_field" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "missing replan decision field unexpectedly passed"
+    assert_string_contains "$output" "missing replan decision field: 全景影响"
+
+    cat >"$mismatch_decision" <<'EOF'
+# 当前任务：change intake mismatch decision
+
+## 控制面元数据（机器校验）
+task_id: change-intake-mismatch-decision
+source_of_truth: .dev-task.md
+top_goal: change-intake-mismatch-decision
+active_slice: change-intake-mismatch-decision
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+### U1
+执行中新增需求。
+
+## 已确认需求（执行依据）
+### R1
+完成父任务并合并 U1。
+
+## 中插需求账本
+
+| id | 触发 | 类型 | 阻塞当前任务 | 优先级 | 处理方式 | 确认需求更新 | 计划更新 | 验收更新 | 状态 | 证据 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| U1 | U1: 用户新增 | new-requirement | yes | P1 | merge-current | yes | yes | yes | integrated | R1/完成标准已同步 |
+
+## 中插需求重排决策摘要
+
+### U1
+- 处置：defer-followup
+- 决策理由：这里故意写错处置用于回归。
+- 全景影响：这里故意与账本不一致。
+- 用户可见表达：这里应被 checker 拒绝。
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$mismatch_decision" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "mismatched replan decision unexpectedly passed"
+    assert_string_contains "$output" "replan decision 处置 must match ledger disposition"
 
     cat >"$unresolved" <<'EOF'
 # 当前任务：change intake unresolved

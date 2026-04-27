@@ -2,6 +2,7 @@
   "version": 1,
   "description": "Layer B policy for handling user requirements inserted during an already-running task. The policy turns mid-task changes into a ledger, a replan gate, and a parent/child completion guard. Inserted user changes are referenced as Markdown headings like '### U1', '### U2', etc.",
   "ledger_section": "中插需求账本",
+  "replan_decision_section": "中插需求重排决策摘要",
   "required_columns": [
     "id",
     "触发",
@@ -82,5 +83,12 @@
       "terminal_status": "rejected"
     }
   },
-  "parent_completion_claim_values": ["none", "child-only", "parent-complete"]
+  "parent_completion_claim_values": ["none", "child-only", "parent-complete"],
+  "required_replan_decision_fields": [
+    "处置",
+    "决策理由",
+    "全景影响",
+    "用户可见表达"
+  ],
+  "replan_decision_rule": "Every U<n> row in the inserted-requirement ledger must have a matching subsection under ## 中插需求重排决策摘要. The subsection must state the disposition, why that disposition is justified, how it affects the parent/task panorama, and what should be visible to the user."
 }

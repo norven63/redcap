@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 60,
-    "size_bytes": 853395,
-    "lines": 15055,
-    "chars": 554409,
+    "file_count": 61,
+    "size_bytes": 861304,
+    "lines": 15203,
+    "chars": 559334,
     "rough_token_pressure": {
-      "low": 138602,
-      "high": 277204
+      "low": 139833,
+      "high": 279667
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 41,
-        "size_bytes": 572647,
-        "lines": 8208,
-        "chars": 369939,
+        "file_count": 42,
+        "size_bytes": 580556,
+        "lines": 8356,
+        "chars": 374864,
         "rough_token_pressure": {
-          "low": 92484,
-          "high": 184969
+          "low": 93716,
+          "high": 187432
         }
       },
       "traces": {
@@ -878,7 +878,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：父任务 receipt 聚合 gate",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12188,
       "lines": 233,
@@ -943,29 +943,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：Runtime / CLI / Package Readiness",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9897,
       "lines": 185,
       "chars": 7111,
       "summary": "当前已完成：P2-1 已建立 RedCap runtime / CLI / package readiness 层，但没有执行真实公网发布。 / 详情：新增 `package.json`、`.npmignore`、`references/runtime-package-readiness-policy.json` 和 `redcap-runtime-package-manifest`，由机器策略生成精确候选清单，再把候选清单交给 package safety gate 检查。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P2-1 已建立 RedCap runtime / CLI / package readiness 层，但没有执行真实公网发布。",
-          "详情：新增 `package.json`、`.npmignore`、`references/runtime-package-readiness-policy.json` 和 `redcap-runtime-package-manifest`，由机器策略生成精确候选清单，再把候选清单交给 package safety gate 检查。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P2-2 父任务 receipt 聚合 gate 已 closeout，明确父任务不能由子任务 receipt 冒充完成。"
-        ],
-        "next_step": [
-          "下一步计划做的是：P1-3 shared-knowledge 远端绑定仍需外部仓库与权限；P2-3 formal Prism quorum 仍需单独复验 provider 健康；真实 npm/Gitee/GitHub 发布仍需独立 release 任务。"
-        ],
-        "position": [
-          "整体计划脉络图是：P1 dry-run 边界 → P2-1 package readiness → P2-2 父任务聚合 gate → 外部绑定/发布/Prism quorum 后续收口。",
-          "当前所在位置：RedCap 有可审计 package readiness，但仍不是已公开发布的 npm package。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
@@ -993,6 +977,35 @@
         "position": [
           "整体计划脉络图是：P1-3 remote fact → safety candidate policy → Gitee push → live head proof → parent ledger update → Prism acceptance → closeout receipt。",
           "当前所在位置：P1-3 子任务已完成并进入最终 closeout。父任务仍不能声明全部完成。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Layer B 中插需求重排决策可见化",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 7909,
+      "lines": 148,
+      "chars": 4925,
+      "summary": "当前已完成：Layer B 的中插需求账本新增“重排决策摘要”强门。 / 详情：只要 `.dev-task.md` 中存在 `## 中插需求账本`，就必须同时存在 `## 中插需求重排决策摘要`，并为每个 `U<n>` 写明处置、决策理由、全景影响和用户可见表达。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：Layer B 的中插需求账本新增“重排决策摘要”强门。",
+          "详情：只要 `.dev-task.md` 中存在 `## 中插需求账本`，就必须同时存在 `## 中插需求重排决策摘要`，并为每个 `U<n>` 写明处置、决策理由、全景影响和用户可见表达。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P1-4 将公共库从临时推送工作区补成 `/Users/norven/.claude/skills/redcap-arsenal` 耐久本地仓库，并初始化 `users/Norven/`。"
+        ],
+        "next_step": [
+          "下一步计划做的是：本轮只完成 P2-5，不推进 P2-4 首启用户/Agent 初始化，也不推进 P3-1/P3-2 长期治理项。"
+        ],
+        "position": [
+          "整体计划脉络图是：中插需求入账 → 重排决策摘要 → checker fail-closed → acceptance → Prism review → closeout receipt。",
+          "当前所在位置：`redcap-system-migration-parent / P2-5 / change-intake-replan-visibility`。"
         ]
       }
     },

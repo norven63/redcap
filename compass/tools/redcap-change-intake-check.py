@@ -91,6 +91,8 @@ def validate_policy(policy: dict[str, Any]) -> None:
         fail("policy version must be 1")
     for key in [
         "required_columns",
+        "replan_decision_section",
+        "required_replan_decision_fields",
         "allowed_types",
         "allowed_priorities",
         "allowed_blocking_values",
@@ -105,6 +107,27 @@ def validate_policy(policy: dict[str, Any]) -> None:
     ]:
         if key not in policy:
             fail(f"policy missing key: {key}")
+
+
+def subsection(text: str, heading: str) -> str:
+    pattern = re.compile(rf"^###\s+{re.escape(heading)}\b.*$", flags=re.MULTILINE)
+    match = pattern.search(text)
+    if not match:
+        return ""
+    start = match.end()
+    next_match = re.search(r"^(##|###)\s+", text[start:], flags=re.MULTILINE)
+    end = start + next_match.start() if next_match else len(text)
+    return text[start:end].strip()
+
+
+def decision_fields(body: str) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for raw in body.splitlines():
+        match = re.match(r"^\s*[-*]\s*([^:：]+)\s*[:：]\s*(.*?)\s*$", raw)
+        if not match:
+            continue
+        result[match.group(1).strip()] = match.group(2).strip()
+    return result
 
 
 def ledger_required(text: str, meta: dict[str, str], ledger: str, policy: dict[str, Any]) -> bool:
@@ -200,6 +223,35 @@ def validate_rows(rows: list[dict[str, str]], meta: dict[str, str], policy: dict
             fail(f"{row_id}: blocking inserted requirement cannot be deferred at terminal closeout")
 
 
+def validate_replan_decisions(rows: list[dict[str, str]], text: str, policy: dict[str, Any]) -> None:
+    if not rows:
+        return
+    section_name = str(policy.get("replan_decision_section", "中插需求重排决策摘要"))
+    decisions = section(text, section_name)
+    if not decisions:
+        fail(f"missing section: ## {section_name}")
+    required_fields = policy.get("required_replan_decision_fields", [])
+    if not isinstance(required_fields, list) or not all(isinstance(item, str) and item.strip() for item in required_fields):
+        fail("policy required_replan_decision_fields must be a non-empty string list")
+
+    for row in rows:
+        row_id = row["id"].strip()
+        body = subsection(decisions, row_id)
+        if not body:
+            fail(f"{row_id}: missing replan decision subsection under ## {section_name}")
+        fields = decision_fields(body)
+        for field in required_fields:
+            value = fields.get(field, "").strip()
+            if not value:
+                fail(f"{row_id}: missing replan decision field: {field}")
+            if len(value) < 4:
+                fail(f"{row_id}: replan decision field too short: {field}")
+        expected_disposition = row["处理方式"].strip()
+        actual_disposition = fields.get("处置", "").strip()
+        if actual_disposition != expected_disposition:
+            fail(f"{row_id}: replan decision 处置 must match ledger disposition {expected_disposition}, got {actual_disposition or 'missing'}")
+
+
 def validate_parent_completion(meta: dict[str, str], policy: dict[str, Any], mode: str) -> None:
     subtask_of = meta.get("subtask_of", "").strip()
     active_slice = meta.get("active_slice", "").strip()
@@ -242,6 +294,7 @@ def main() -> int:
     if ledger:
         rows = parse_ledger_table(ledger)
         validate_rows(rows, meta, policy, args.mode)
+        validate_replan_decisions(rows, text, policy)
 
     validate_parent_completion(meta, policy, args.mode)
     print("CHANGE_INTAKE_OK")

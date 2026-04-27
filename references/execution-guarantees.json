@@ -752,7 +752,7 @@
       "id": "layerb-change-intake-replan-gate",
       "category": "change-intake",
       "priority": "P0",
-      "rule": "Layer B mid-task user changes must be captured as U<n> ledger rows, replanned before execution resumes, and prevented from closing a child task as if the parent task were complete.",
+      "rule": "Layer B mid-task user changes must be captured as U<n> ledger rows, replanned before execution resumes, explained in a user-visible replan decision summary, and prevented from closing a child task as if the parent task were complete.",
       "source_paths": [
         "references/layerb-change-intake-policy.json",
         "references/runtime-memory-architecture.md",
@@ -761,7 +761,7 @@
         "references/agent-constraints.md"
       ],
       "status": "validator",
-      "automation": "redcap-change-intake-check validates the inserted-requirement ledger, unresolved U items, replan updates, and parent_completion_claim; PM Gate, diagnose, spec-check, current-status, and Layer B FSM checks consume the gate.",
+      "automation": "redcap-change-intake-check validates the inserted-requirement ledger, unresolved U items, replan updates, required replan decision summaries, and parent_completion_claim; PM Gate, diagnose, spec-check, current-status, and Layer B FSM checks consume the gate.",
       "guarantee_paths": [
         "compass/tools/redcap-change-intake-check.sh",
         "compass/tools/redcap-change-intake-check.py",

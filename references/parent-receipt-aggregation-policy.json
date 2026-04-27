@@ -59,6 +59,12 @@
       "title": "redcap-arsenal 本地实体仓库与 Norven 命名空间",
       "report_path": "compass/docs/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
       "receipt_glob": "redcap-arsenal-local-worktree-and-user-namespace-*.json"
+    },
+    {
+      "id": "P2-5",
+      "title": "Layer B 中插需求重排决策可见化",
+      "report_path": "compass/docs/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md",
+      "receipt_glob": "layerb-change-intake-replan-visibility-gate-*.json"
     }
   ],
   "not_complete_children": [
@@ -84,6 +90,6 @@
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
     "reason": "Deferred child items remain.",
-    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3 have receipts or active completion reports; parent task is still incomplete."
+    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3/P2-5 have receipts or active completion reports; parent task is still incomplete."
   }
 }

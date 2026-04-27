@@ -24,6 +24,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | 执行层重构与公共知识库治理 | R0-R22 本地控制面落地：Prism availability、File Lookup Dictionary coverage、shared-knowledge 模板、`bin/redcap` 薄 facade | `redcap-execution-layer-and-shared-knowledge-governance-*` receipt；报告 `2026-04-26-execution-layer-and-shared-knowledge-governance.md` | 不等于远端 Gitee 绑定、历史资产物理迁移、正式 npm/pip/brew 分发完成 |
 | 发布/打包前安全 gate | 未来 package / runtime 发布前的候选文件安全审计已接入 spec/diagnose/acceptance | `redcap-package-publish-safety-gate-*` receipt；报告 `2026-04-26-package-publish-safety-gate.md` | 不等于已经发布 package |
 | Layer B 中插需求重计划强门 | 新增 U<n> 中插账本、CHANGE_INTAKE / REPLAN_REVIEW、父子完成边界和机器检查 | `layerb-change-intake-replan-gate-*` receipt；报告 `2026-04-26-layerb-change-intake-replan-gate.md` | 不等于 R0-R22 父任务全部完成 |
+| Layer B 中插需求重排决策可见化 | 中插需求账本新增 `## 中插需求重排决策摘要` 强门，要求每个 U<n> 都写出处置、决策理由、全景影响和用户可见表达 | 报告 `2026-04-27-layerb-change-intake-replan-visibility-gate.md` | 不等于宿主层能 100% 物理拦截主 Agent 所有实时行为 |
 | shared-knowledge Gitee 远端绑定 | 公共知识库最小模板已安全推送到 `https://gitee.com/norven63/redcap-arsenal.git`，并有 remote binding policy + live head proof | `redcap-shared-knowledge-gitee-remote-binding-*` receipt；报告 `2026-04-26-shared-knowledge-gitee-remote-binding.md` | 不等于历史 reports/lessons/identity 已迁移到公共库 |
 | redcap-arsenal 本地实体仓库与 Norven 命名空间 | 已建立 `/Users/norven/.claude/skills/redcap-arsenal` 耐久本地 Git 工作区，Gitee 远端 head 为 `2e3b954338a4c397d299da88f460c6edf5a312d6`，模板/实体/远端均含 `users/Norven/.gitkeep` | 报告 `2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md`；外部公共库 commit `2e3b954` | 不等于历史知识内容已迁移或公共库已有实质条目 |
 
@@ -43,6 +44,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | P3-1 | retrieval roadmap | GraphRAG / 向量检索阈值研究 | deferred | P3 | 先继续 catalog + rg + metadata；当共享库规模越过阈值再引入 RAG/GraphRAG | 不能过早引入重型系统复杂度 |
 | P3-2 | P2-2 reviewer risk | runtime receipt evidence correspondence hardening | deferred | P3 | 后续在 receipt root 可稳定定位时，校验 completed child 的 receipt_glob 至少匹配真实 receipt，并探索报告/receipt 对应关系检查 | 不影响 P2-2 防止父任务完成混报；属于证据深度增强 |
 | P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | deferred | P2 | 设计 identity/schema/installer 链路，让新安装 RedCap 时自动初始化当前用户命名空间和 AI Agent 信息 | 本轮只登记需求，不冒充完成；需单独任务设计 |
+| P2-5 | user trust gap | Layer B 中插需求重排决策可见化 | completed | P2 | 已将“为什么中插需求这样排”升级为 `.dev-task.md` 必填摘要和 change-intake checker 强门 | report: `2026-04-27-layerb-change-intake-replan-visibility-gate.md` |
 
 ## 推荐执行顺序
 
@@ -56,7 +58,8 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 8. `P2-2`：父任务 receipt 聚合 gate。（已完成 gate；父任务仍 incomplete）
 9. `P2-3`：formal Prism quorum 恢复复验。（已完成）
 10. `P2-4`：首次启动初始化用户与 AI Agent 信息。
-11. `P3-2`：runtime receipt evidence correspondence hardening。
+11. `P2-5`：中插需求重排决策可见化。（已完成）
+12. `P3-2`：runtime receipt evidence correspondence hardening。
 
 ## 当前不可声明
 

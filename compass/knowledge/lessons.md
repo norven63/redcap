@@ -5,10 +5,10 @@
 
 ## 热点主题速览
 
-- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124。适用于 pending closure、task report、validator chain、closure ledger、current-status、父子任务完成态打架时。
+- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124、L-135。适用于 pending closure、task report、validator chain、closure ledger、current-status、父子任务完成态打架时。
 - **宿主 / Hook / runtime 边界**：先看 L-15、L-16、L-39、L-41~L-49、L-62~L-69、L-77~L-90。适用于宿主适配、review runner、session-start/session-end、host-limited 行为边界。
 - **docs / knowledge / token 风险**：先看 L-50~L-52、L-64~L-66、L-91~L-97、L-122、L-132、L-134。适用于首读入口、说人话、渐进披露、shared-knowledge、`CONTRIBUTING` / docs / acceptance / `prism/runs` 的上下文压力治理。
-- **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110、L-124。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模、中插需求重计划。
+- **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110、L-124、L-135。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模、中插需求重计划。
 
 > 使用方式：先按主题命中热点簇，再精读对应 L-编号；不要为了找一条相关经验默认全量扫完整个 lessons 文件。
 
@@ -1290,6 +1290,15 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **解决方案**：公共知识库必须显式分三层：① `shared-knowledge/` 是 RedCap 内模板和验收 fixture；② `/Users/norven/.claude/skills/redcap-arsenal` 是本机耐久 Git 工作区；③ `https://gitee.com/norven63/redcap-arsenal.git` 是远端共享仓库。remote checker 增加 `--require-worktree`，收口时强制验证本地实体仓库 `.git`、origin、clean status、候选树和 Gitee live tree/content 一致。
 - **最后效果**：公共库不再只靠临时 push 工作区存在；`users/Norven/` 命名空间被模板、本地实体仓库和远端同时登记，后续真实沉淀可走 append-only、dedupe、index-first 流程，而不会把 RedCap 工作区私密内容误推到公共库。
 - **来源**：2026-04-27 redcap-arsenal 本地实体仓库与 Norven 命名空间
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-27
+
+### L-135: 中插需求不能只入账，还要显性说明重排理由
+- **问题源**：P1-4 公共库中插需求处理后，技术结果和父任务边界基本正确，但用户仍合理追问“这是经过全景重排后立即执行，还是因为中插了就无脑高优执行”。这说明只有 `## 中插需求账本` 的处置字段还不够，缺少用户可见、后续可审计的决策依据。
+- **解决方案**：当 `.dev-task.md` 存在 `## 中插需求账本` 时，必须同时存在 `## 中插需求重排决策摘要`；每个 `U<n>` 都要写清 `处置`、`决策理由`、`全景影响`、`用户可见表达`，并由 `redcap-change-intake-check.sh` 校验处置与账本一致。重排解释必须接入 acceptance、PM Gate、diagnose、spec-check 和父任务聚合视图。
+- **最后效果**：后续中插需求不再只留下“做了什么”的表格，还必须留下“为什么这样排、影响了什么、应该如何向用户说明”的证据；这能降低用户靠反复盘问才能确认 Layer B 是否真的在工作流内运行的风险。
+- **来源**：2026-04-27 Layer B 中插需求重排决策可见化
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-27

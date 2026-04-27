@@ -67,7 +67,7 @@ Layer B 没有 Layer A 那种单一 `state.yaml` FSM，但已经形成了一个�
 | `PLANNING_REVIEW` | 计划本身进入独立审核；复杂任务不得只靠作者或 Norven 做细节 plan 审稿 | Prism planning review、`redcap-prism-acceptance-bind.sh`、`redcap-prism-acceptance-check.sh` |
 | `EXECUTING` | 正在实现、修改、验证；所有改动必须受 drift / scope 审计约束 | `.dev-task.md`、`redcap-drift-check.sh` |
 | `CHANGE_INTAKE` | 执行中收到用户新增需求、纠偏、约束或优先级变化，先暂停“直接实现”，把变化写成 `U<n>` 账本项 | `.dev-task.md` 的 `## 中插需求账本`、`redcap-change-intake-check.sh` |
-| `REPLAN_REVIEW` | 中插需求已归类并重排计划；必须确认是否合并当前任务、拆子任务、替换范围、延期或拒绝出界，再恢复执行 | `references/layerb-change-intake-policy.json`、Planning Review、Prism review |
+| `REPLAN_REVIEW` | 中插需求已归类并重排计划；必须确认是否合并当前任务、拆子任务、替换范围、延期或拒绝出界，并写出“为什么这样排”的用户可见摘要，再恢复执行 | `.dev-task.md` 的 `## 中插需求重排决策摘要`、`references/layerb-change-intake-policy.json`、Planning Review、Prism review |
 | `REVIEW_PENDING` | 已进入独立评审 / 棱镜验收闸门，作者自检已不足以继续推进；验收 run 必须绑定到当前 `task_id + confirmed_hash` | `redcap-on-stop-review.sh`、`redcap-review-proof-check.sh`、`redcap-prism-acceptance-bind.sh`、`redcap-prism-acceptance-check.sh` |
 | `CLOSEOUT_PENDING` | 代码可能已改完，但承诺账本、绑定后的棱镜验收、task report、notify、receipt、ledger、pending closure 还没完成闭环 | `redcap-layerb-closeout-runtime.sh`、`redcap-prism-acceptance-bind.sh`、`redcap-prism-acceptance-check.sh`、`redcap-task-report-check.sh`、`pending-closure` |
 | `CLOSED` | 当前 confirmed hash 的收尾红线已清，绑定后的棱镜验收通过，闭环事务完整落盘，且已有 receipt | `redcap-layerb-closeout-runtime.sh`、`redcap-prism-acceptance-bind.sh`、`redcap-prism-acceptance-check.sh`、`closeout-receipts`、`closure-ledger` |
@@ -84,7 +84,7 @@ Layer B 没有 Layer A 那种单一 `state.yaml` FSM，但已经形成了一个�
 | `TASK_LOCKED` | 小型轻量任务不需要独立计划审核，并已具备明确执行路径 | `EXECUTING` | `.dev-task.md` + `redcap-drift-check.sh` |
 | `EXECUTING` | 用户在执行期新增需求、纠偏、约束或优先级变化 | `CHANGE_INTAKE` | `.dev-task.md` 原始输入 `U<n>` + `## 中插需求账本` |
 | `CHANGE_INTAKE` | U 项已记录类型、阻塞性、优先级和处理方式 | `REPLAN_REVIEW` | `redcap-change-intake-check.sh` + Planning Review |
-| `REPLAN_REVIEW` | 确认需求、计划、验收和父子任务边界已同步 | `EXECUTING` | `redcap-change-intake-check.sh` + PM Gate |
+| `REPLAN_REVIEW` | 确认需求、计划、验收、父子任务边界和重排决策摘要已同步 | `EXECUTING` | `redcap-change-intake-check.sh` + PM Gate |
 | `CHANGE_INTAKE` 或 `REPLAN_REVIEW` | U 项仍未收口、阻塞项被延期、或子任务试图冒充父任务完成 | `BLOCKED` | `redcap-change-intake-check.sh` + pending closure |
 | `EXECUTING` | stop-review / 独立评审被触发 | `REVIEW_PENDING` | `redcap-on-stop-review.sh` |
 | `REVIEW_PENDING` | 评审 / 棱镜验收通过，且 acceptance run 已绑定到当前 `task_id + confirmed_hash` | `CLOSEOUT_PENDING` | `redcap-review-proof-check.sh` + `redcap-prism-acceptance-bind.sh` + `redcap-prism-acceptance-check.sh` + `redcap-task-report-check.sh` |
@@ -103,7 +103,7 @@ Layer B 没有 Layer A 那种单一 `state.yaml` FSM，但已经形成了一个�
 | `compass/tools/redcap-layerB-session-start.sh` | 物理进入 `REANCHORED`，补跑 installer、会话绑定、pending closure advisory reconcile |
 | `compass/tools/redcap-pm-gate-check.sh` | 把任务从“只是会话理解”提升成 `TASK_LOCKED` |
 | `compass/tools/redcap-drift-check.sh` | 在 `EXECUTING` 期间持续检查 active slice / scope / authority 漂移 |
-| `compass/tools/redcap-change-intake-check.sh` | 审计执行期插入的用户需求是否已入账、重计划、更新验收，并阻止子任务冒充父任务完成 |
+| `compass/tools/redcap-change-intake-check.sh` | 审计执行期插入的用户需求是否已入账、重计划、更新验收、写清重排决策摘要，并阻止子任务冒充父任务完成 |
 | `compass/tools/redcap-on-stop-review.sh` | 把 `EXECUTING` 推进到 `REVIEW_PENDING`，并要求独立评审有物理证据 |
 | `compass/tools/redcap-prism-acceptance-bind.sh` | 把当前 Prism run 绑定到 `task_id + confirmed_hash`，防止旧 run 被复用成当前任务的独立验收 |
 | `compass/tools/redcap-prism-acceptance-check.sh` | Layer B completed 的默认独立验收 gate；没有有效且已绑定的棱镜验收，不得进入正式完成态 |
