@@ -27,7 +27,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | Layer B 中插需求重排决策可见化 | 中插需求账本新增 `## 中插需求重排决策摘要` 强门，要求每个 U<n> 都写出处置、决策理由、全景影响和用户可见表达 | 报告 `2026-04-27-layerb-change-intake-replan-visibility-gate.md` | 不等于宿主层能 100% 物理拦截主 Agent 所有实时行为 |
 | shared-knowledge Gitee 远端绑定 | 公共知识库最小模板已安全推送到 `https://gitee.com/norven63/redcap-arsenal.git`，并有 remote binding policy + live head proof | `redcap-shared-knowledge-gitee-remote-binding-*` receipt；报告 `2026-04-26-shared-knowledge-gitee-remote-binding.md` | 不等于历史 reports/lessons/identity 已迁移到公共库 |
 | redcap-arsenal 本地实体仓库与 Norven 命名空间 | 已建立 `/Users/norven/.claude/skills/redcap-arsenal` 耐久本地 Git 工作区，Gitee 远端 head 为 `2e3b954338a4c397d299da88f460c6edf5a312d6`，模板/实体/远端均含 `users/Norven/.gitkeep` | 报告 `2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md`；外部公共库 commit `2e3b954` | 不等于历史知识内容已迁移或公共库已有实质条目 |
-| 首次启动身份初始化与飞书策略收敛 | installer/revive 已初始化本地用户/Agent 状态面，确保 Norven 命名空间存在，并把 RedCap 官方飞书通知收敛到 `cli_a9579f5b12219bb5` + 节点汇报/人工介入两类触发 | 报告 `2026-04-27-first-start-identity-and-feishu-policy.md`；产物：`references/user-agent-identity-policy.json`、`references/feishu-notification-policy.json` | 不等于当前机器已完成 `lark-cli` 目标 profile 注册；真实发送仍需本地 profile 存在 |
+| 首次启动身份初始化与飞书策略收敛 | installer/revive 已初始化本地用户/Agent 状态面，确保 Norven 命名空间存在，并把 RedCap 官方飞书通知收敛到 `cli_a9579f5b12219bb5` + 节点汇报/人工介入两类触发 | 报告 `2026-04-27-first-start-identity-and-feishu-policy.md`；产物：`references/user-agent-identity-policy.json`、`references/feishu-notification-policy.json` | 本机目标 profile 已在 2026-04-28 用用户补充的正确 secret 重新注册，并通过 setup / node-report 真实发送验证 |
 
 ## 父任务待执行清单
 
@@ -44,7 +44,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | P2-3 | Prism review limits | Formal Prism quorum 恢复复验 | completed | P2 | 已复验 Kimi + Claude Code 可形成当前非 Codex 双路 Prism quorum；Codex CLI 被策略降为 last-resort fallback；Gemini timeout、Copilot frozen 继续诚实记录 | receipt: `redcap-prism-formal-quorum-provider-revalidation-*`；产物：`references/prism-provider-policy.json`、`compass/.workflow/prism-agent-availability.json` |
 | P3-1 | retrieval roadmap | GraphRAG / 向量检索阈值研究 | deferred | P3 | 先继续 catalog + rg + metadata；当共享库规模越过阈值再引入 RAG/GraphRAG | 不能过早引入重型系统复杂度 |
 | P3-2 | P2-2 reviewer risk | runtime receipt evidence correspondence hardening | deferred | P3 | 后续在 receipt root 可稳定定位时，校验 completed child 的 receipt_glob 至少匹配真实 receipt，并探索报告/receipt 对应关系检查 | 不影响 P2-2 防止父任务完成混报；属于证据深度增强 |
-| P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime limitation: 本机 `lark-cli` 仍需注册 `cli_a9579f5b12219bb5` profile |
+| P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime: 本机 `cli_a9579f5b12219bb5` profile 已验证可发 |
 | P2-5 | user trust gap | Layer B 中插需求重排决策可见化 | completed | P2 | 已将“为什么中插需求这样排”升级为 `.dev-task.md` 必填摘要和 change-intake checker 强门 | report: `2026-04-27-layerb-change-intake-replan-visibility-gate.md` |
 
 ## 推荐执行顺序
@@ -58,7 +58,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 7. `P2-1`：正式 runtime / CLI / package readiness。（已完成 readiness；真实 public release 另开任务）
 8. `P2-2`：父任务 receipt 聚合 gate。（已完成 gate；父任务仍 incomplete）
 9. `P2-3`：formal Prism quorum 恢复复验。（已完成）
-10. `P2-4`：首次启动初始化用户与 AI Agent 信息。（已完成 repo-owned 链路；本机目标 Feishu profile 注册仍是外部配置项）
+10. `P2-4`：首次启动初始化用户与 AI Agent 信息。（已完成 repo-owned 链路；本机目标 Feishu profile 已在 2026-04-28 验证可发）
 11. `P2-5`：中插需求重排决策可见化。（已完成）
 12. `P3-2`：runtime receipt evidence correspondence hardening。
 
@@ -69,7 +69,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 - 不可声明历史报告和研究材料已经物理迁出执行层。
 - 不可声明 shared-knowledge 历史 reports/lessons/identity 已经迁移到远端公共库；本轮只绑定并初始化公共库模板。
 - 不可声明 `redcap-arsenal` 已有实质历史知识内容；当前只有安全模板、索引占位和 `users/Norven/` 命名空间占位。
-- 不可声明当前机器已能通过 `cli_a9579f5b12219bb5` 真实发送飞书；本轮已经阻止 RedCap 走其他账号或 webhook，但 `lark-cli profile list` 显示目标 profile 尚未注册。
+- 当前机器已能通过 `cli_a9579f5b12219bb5` 真实发送飞书；后续若 profile/token 再次失效，RedCap 仍必须 fail-closed，不得回退旧账号或 webhook。
 - 不可声明 P1-1 dry-run 已经执行真实 move/copy/link；它只证明迁移边界和风险已可审计。
 - 不可声明 P1-2 dry-run 已经执行真实历史资产搬迁或删除；它只证明分类、断链计划、catalog 计划和回滚边界已可审计。
 - 不可声明父任务已经 complete；aggregation gate 当前输出为 not-eligible，因为 P3-1/P3-2 等后续治理项仍 deferred。

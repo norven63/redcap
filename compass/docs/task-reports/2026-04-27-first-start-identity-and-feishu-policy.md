@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-27
 **执行者**：Cap（Codex.app）
-**报告版本**：v1.1（2026-04-28 收口复验）
+**报告版本**：v1.2（2026-04-28 飞书 profile 修复后收口复验）
 
 ---
 
@@ -20,7 +20,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：继续父任务中未完成的 P3-1 / P3-2 等后续治理；如需让飞书真实发送，还需要在本机 `lark-cli` 注册 `cli_a9579f5b12219bb5` profile。
+- 下一步计划做的是：继续父任务中未完成的 P3-1 / P3-2 等后续治理；飞书真实发送在用户补充正确 secret 后已恢复。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -49,7 +49,7 @@ P2-4 原本是“首次启动初始化用户与 AI Agent 信息”。用户中�
 | 原始意图 | 继续主线 P2-4，并吸收飞书唯一账号与低频触发约束 |
 | 已覆盖 | 用户/Agent 本地状态初始化、Norven 命名空间、飞书单通道策略、低频触发策略、spec/diagnose/acceptance 接线 |
 | 未覆盖/延期 | 不做目录物理大迁移、公共库历史内容迁移、GraphRAG/RAG 研究、正式 npm/CLI 发布 |
-| 用户可见边界 | RedCap 已禁止走旧账号或 webhook；但当前本机 `lark-cli profile list` 未注册 `cli_a9579f5b12219bb5`，真实发送仍需外部 profile 配置 |
+| 用户可见边界 | RedCap 已禁止走旧账号或 webhook；2026-04-28 用户补充正确 secret 后，本机 `cli_a9579f5b12219bb5` profile 已注册并通过 node-report 真实发送验证 |
 
 ---
 
@@ -114,7 +114,7 @@ P2-4 原本是“首次启动初始化用户与 AI Agent 信息”。用户中�
 
 | 序号 | 审核项 | 说明 | 优先级 |
 |---|---|---|---|
-| 1 | 飞书真实发送 profile | 当前 `lark-cli profile list` 只显示 `cli_a966...`，目标 `cli_a9579f5b12219bb5` 未注册；这需要外部 app secret/profile 初始化 | P0 |
+| 1 | 飞书真实发送 profile | 已在 2026-04-28 用用户补充的正确 secret 重新注册目标 profile，并通过 `feishu-notifier.py setup` 与 node-report notify 验证 | closed |
 | 2 | 通知频率口径 | 本轮定义节点汇报 + 人工介入两类事件；若 Norven 认为某些事件也应通知，需要新增到 policy，而不是另写发送路径 | P1 |
 
 ---
@@ -139,6 +139,8 @@ P2-4 原本是“首次启动初始化用户与 AI Agent 信息”。用户中�
 | 全量 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过（最终第三轮全绿） |
 | docs catalog | `bash compass/tools/redcap-docs-catalog.sh generate compass/docs/catalog.json && bash compass/tools/redcap-docs-catalog.sh check` | 通过 |
 | legacy migration dry-run | `bash compass/tools/redcap-legacy-asset-migration-check.sh` | 通过 |
+| 飞书 profile setup | `python3 compass/tools/feishu-notifier.py setup` | 通过 |
+| 飞书真实 node-report | `python3 compass/tools/feishu-notifier.py notify ... --window-type node-report --no-background-watch` | 通过 |
 
 ### 5.1.1 全量 acceptance 期间发现并修复的问题
 
@@ -152,18 +154,18 @@ P2-4 原本是“首次启动初始化用户与 AI Agent 信息”。用户中�
 
 ### 5.2 人工验证项（Cap 无法自动化完成的）
 
-- [ ] 在本机 `lark-cli` 中注册 `cli_a9579f5b12219bb5` profile 后，再运行 `python3 compass/tools/feishu-notifier.py setup` 做真实发送 dry-run。
+- [x] 用户补充正确 secret 后，Cap 已重新注册本机 `cli_a9579f5b12219bb5` profile，并完成 setup 与真实 node-report 验证。
 
-### 5.3 已发现但不能冒充解决的运行态边界
+### 5.3 已发现并已解除的运行态边界
 
-`python3 compass/tools/feishu-notifier.py setup` 当前失败，原因是本机 lark-cli 缺少目标 profile：
+初始收口时，`python3 compass/tools/feishu-notifier.py setup` 曾失败，原因是本机 lark-cli 缺少目标 profile：
 
 ```text
 profile "cli_a9579f5b12219bb5" not found
 available profiles: cli_a96647831a78dbd3
 ```
 
-这不是 RedCap 策略实现失败，而是本机外部 CLI 配置缺失。本轮已经把 RedCap 生产路径锁死到目标 profile；因此在 profile 未注册前，RedCap 会 fail-closed，而不是悄悄用旧账号发。
+随后用户在 2026-04-28 补充正确 secret。Cap 重新注册目标 profile 后，`setup` 输出 `DRY_RUN_OK=ok`，真实 `node-report` 发送返回 `OK`。本轮仍保留 fail-closed 策略：未来如果该 profile 再次失效，RedCap 仍不得悄悄回退旧账号或 webhook。
 
 ### 5.4 完成等级（禁止混报）
 
@@ -173,7 +175,7 @@ available profiles: cli_a96647831a78dbd3
 | 已自检 | 是：已完成 targeted acceptance、Python 编译、spec-check 与 diagnose；最终结果以本报告更新时的验证表为准 |
 | 已独立验收 | 是：Kimi + Claude Code 双路 Prism test-mode 复验通过，blockers=0 |
 | 已正式完成 | repo-owned 实现与回归完成；待提交与 closeout receipt 盖章后完成本 child 任务 |
-| 外部运行边界 | 本机尚未注册 `cli_a9579f5b12219bb5` lark-cli profile；因此不能宣称真实飞书发送已经恢复 |
+| 外部运行边界 | 初始缺失已解除；当前机器已通过 `cli_a9579f5b12219bb5` 完成 setup 与真实 node-report 验证 |
 
 ---
 
@@ -181,7 +183,7 @@ available profiles: cli_a96647831a78dbd3
 
 | 问题 | 状态 |
 |---|---|
-| `cli_a9579f5b12219bb5` lark-cli profile 注册 | 外部配置待补；需要 app secret 或重新初始化该 profile |
+| `cli_a9579f5b12219bb5` lark-cli profile 注册 | 已完成；用户补充正确 secret 后 setup 与真实发送均通过 |
 | P3-1 GraphRAG / 向量检索阈值研究 | deferred |
 | P3-2 runtime receipt evidence correspondence hardening | deferred |
 | 父任务整体完成 | 仍 incomplete，不能因 P2-4 完成而冒充全部完成 |
@@ -192,7 +194,7 @@ available profiles: cli_a96647831a78dbd3
 
 | 经验 | 问题源 | 解决方案 | 最后效果 |
 |---|---|---|---|
-| 通知通道要区分“实现收敛”和“外部 profile 可用” | 旧实现同时保留 webhook、旧 profile、followup，且真实 lark-cli profile 状态可能漂移 | 建单一策略 + checker + acceptance；真实 profile 缺失时 fail-closed | RedCap 不再悄悄走旧账号，但会诚实暴露 profile 缺失 |
+| 通知通道要区分“实现收敛”和“外部 profile 可用” | 旧实现同时保留 webhook、旧 profile、followup，且真实 lark-cli profile 状态可能漂移 | 建单一策略 + checker + acceptance；真实 profile 缺失时 fail-closed；用户补 secret 后重新注册并验证真实发送 | RedCap 不再悄悄走旧账号；外部 profile 失效会被暴露，恢复后可立即收口 |
 | 首启身份不能只靠读 identity | 复活协议知道 `~/.cap/identity.md`，但没有机器可读的用户/Agent 本地状态面 | installer 写 ignored state，并初始化 `users/Norven` 命名空间 | 新会话/新安装可通过脚本复验身份状态，而不用全文导入私人 identity |
 
 ### 7.3 Evolution Factory 候选处理
@@ -211,7 +213,7 @@ available profiles: cli_a96647831a78dbd3
 | 模式 | Agent | 结论 | blockers |
 |---|---|---|
 | test | Kimi CLI | 修复已落地，repo-owned 实现与文档无阻塞项，仅待 closeout receipt | 0 |
-| test | Claude Code | 仓库代码与文档已就绪可合入/收口；唯一未完成项是 closeout receipt 与本地 lark-cli profile 注册，不阻塞合并 | 0 |
+| test | Claude Code | 仓库代码与文档已就绪可合入/收口；当时唯一未完成项是 closeout receipt 与本地 lark-cli profile 注册，后者已在 2026-04-28 解除 | 0 |
 | final follow-up | Kimi CLI | 复查 install 飞书策略接线与 spec-check propagation 覆盖，blockers 已解除 | 0 |
 | final review | Claude Code | 最终差异复评通过；仅提示兼容占位与外部 profile 边界 | 0 |
 

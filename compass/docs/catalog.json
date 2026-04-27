@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 62,
-    "size_bytes": 879179,
-    "lines": 15458,
-    "chars": 571233,
+    "size_bytes": 879573,
+    "lines": 15460,
+    "chars": 571505,
     "rough_token_pressure": {
-      "low": 142808,
-      "high": 285616
+      "low": 142876,
+      "high": 285752
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 43,
-        "size_bytes": 598431,
-        "lines": 8611,
-        "chars": 386763,
+        "size_bytes": 598825,
+        "lines": 8613,
+        "chars": 387035,
         "rough_token_pressure": {
-          "low": 96690,
-          "high": 193381
+          "low": 96758,
+          "high": 193517
         }
       },
       "traces": {
@@ -971,9 +971,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 16190,
-      "lines": 222,
-      "chars": 10922,
+      "size_bytes": 16584,
+      "lines": 224,
+      "chars": 11194,
       "summary": "当前已完成：P2-4 的 repo-owned 链路已经落地：`revive/install` 会初始化本地用户/Agent 状态面，并且 RedCap 官方飞书通知路径被收敛到单一账号策略。 / 详情：新增 `references/user-agent-identity-policy.json` 与 `redcap-user-agent-identity.sh`，把 Norven 用户命名空间、Cap agent 摘要、ignored 本地状态和 `shared-knowledge/users/Norven` 串进 installer。新增 `references/feishu-notification-policy.json`…",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -985,7 +985,7 @@
           "上一步完成的是：P2-5 把“中插需求重排决策可见化”做成强门，要求当前这类中插约束先入账、再重排、再执行。"
         ],
         "next_step": [
-          "下一步计划做的是：继续父任务中未完成的 P3-1 / P3-2 等后续治理；如需让飞书真实发送，还需要在本机 `lark-cli` 注册 `cli_a9579f5b12219bb5` profile。"
+          "下一步计划做的是：继续父任务中未完成的 P3-1 / P3-2 等后续治理；飞书真实发送在用户补充正确 secret 后已恢复。"
         ],
         "position": [
           "整体计划脉络图是：任务卡重锚定 → 身份初始化 policy/script → 飞书单通道 policy/checker → install/spec/diagnose/acceptance 接线 → Prism review → targeted/full acceptance 复验 → closeout receipt。",
