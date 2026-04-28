@@ -3,7 +3,8 @@
 # RedCap 框架 — Claude Code Stop Hook
 #
 # 由 .claude/settings.json 的 Stop hook 触发（每次 Agent turn 结束）。
-# 检测自上次通知/会话开始以来是否有新 commit → 有则发飞书通知。
+# Legacy compatibility hook. Official notifications are owned by on-complete /
+# closeout runtime; this hook is notification-muted legacy hook state hygiene.
 #
 # 配合 redcap-claude-hook-init.sh（InstructionsLoaded）使用：
 #   init 捕获初始 HEAD → Stop 比较并通知 → 更新已通知 HEAD
@@ -40,27 +41,11 @@ if [[ "$BASELINE" == "$CURRENT_HEAD" ]]; then
     exit 0
 fi
 
-# 有新 commit → 飞书通知
-NOTIFIER="$SCRIPT_DIR/feishu-notifier.py"
-if [[ ! -f "$NOTIFIER" ]]; then
-    exit 0
-fi
-
-COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..HEAD" 2>/dev/null || echo "(无法获取)")
-
-python3 "$NOTIFIER" notify \
-    "$(redcap_build_completion_message \
-        "RedCap Layer B 自动通知" \
-        "redcap" \
-        "$COMMIT_LOG" \
-        "Claude Hook 自动通知")" \
-    --project "redcap" 2>/dev/null || true
-
-# 记录已通知的 HEAD，防止下次 Stop 重复通知
+# 记录已处理 HEAD，防止旧 hook 反复扫描同一段提交；不发送飞书。
 echo "$CURRENT_HEAD" > "$NOTIFIED_FILE"
 
 # ── 书记协议检查（§12）──────────────────────────────────────
-# 检测 explore-notes.md 是否有未归档条目，有则飞书告警（Non-blocking）
+# 只做本地 stderr 提醒；未归档 explore-notes 不是节点汇报，也不是人工介入。
 EXPLORE_NOTES="$REDCAP_ROOT/compass/knowledge/explore-notes.md"
 if [[ -f "$EXPLORE_NOTES" ]]; then
     # 统计非 [ARCHIVED] 的活跃条目（以 "## [" 开头且下方无 [ARCHIVED] 标记）
@@ -72,9 +57,7 @@ if [[ -f "$EXPLORE_NOTES" ]]; then
     ' "$EXPLORE_NOTES")
 
     if [[ "$UNARCHIVED_COUNT" -gt 0 ]]; then
-        python3 "$NOTIFIER" notify \
-            "⚠️ 探索笔记提醒\n\n存在 ${UNARCHIVED_COUNT} 个未归档的探讨条目，请在 PM Gate 前归档或沉淀到 .dev-task.md\n\n文件：compass/knowledge/explore-notes.md" \
-            --project "redcap" 2>/dev/null || true
+        echo "[redcap-claude-hook-stop] 存在 ${UNARCHIVED_COUNT} 个未归档的探讨条目；请在 PM Gate 前归档或沉淀到 .dev-task.md" >&2
     fi
 fi
 

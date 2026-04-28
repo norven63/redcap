@@ -5,7 +5,7 @@
 # 负责：
 #   1. 非 Claude 宿主补跑独立架构评审
 #   2. 检查本次 commit 区间是否产出模板化任务报告
-#   3. 发送 Layer B 飞书完成/告警通知
+#   3. 只在节点汇报或真实人工介入时发送飞书；内部 audit gap 默认落账不通知
 #   4. 维护去重标记，避免重复提醒
 # ─────────────────────────────────────────────────────────
 
@@ -324,6 +324,7 @@ COMMIT_LOG=$(git -C "$REDCAP_ROOT" --no-pager log --oneline "$BASELINE..$CURRENT
 NOTIFIER="${REDCAP_FEISHU_NOTIFIER:-$SCRIPT_DIR/feishu-notifier.py}"
 SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
 SKIP_SUCCESS_NOTIFY="${REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY:-1}"
+AUDIT_GAP_NOTIFY="${REDCAP_SESSION_END_NOTIFY_AUDIT_GAP:-0}"
 NOTIFY_TIMEOUT_SECONDS="${REDCAP_FEISHU_NOTIFY_TIMEOUT_SECONDS:-5}"
 REVIEW_STATUS=""
 REQUIRED_REDLINES=""
@@ -569,6 +570,12 @@ PY
 
 session_end_success_notify_enabled() {
     [[ "$SKIP_SUCCESS_NOTIFY" != "1" ]]
+}
+
+session_end_audit_gap_notify_enabled() {
+    # internal audit gap is ledger-only by default; Feishu is reserved for
+    # node-report or true manual-intervention interrupts.
+    [[ "$AUDIT_GAP_NOTIFY" == "1" ]]
 }
 
 acquire_success_guard_lock() {
@@ -833,12 +840,14 @@ else
             ALERT_BODY="${ALERT_BODY}\n\n持久化缺口:\n${SESSION_END_PERSISTENCE_DETAIL:-unknown}"
         fi
         ALERT_BODY="${ALERT_BODY}\n\nCommits:\n$COMMIT_LOG"
-        if send_notification "$ALERT_BODY"; then
-            BLOCKER_ALERT_SENT=1
-            BLOCKER_ALERT_KEY="$PRE_ALERT_KEY"
-        else
-            NOTIFY_STATUS=0
-            append_required_redline "notify"
+        if session_end_audit_gap_notify_enabled; then
+            if send_notification "$ALERT_BODY" "manual-intervention"; then
+                BLOCKER_ALERT_SENT=1
+                BLOCKER_ALERT_KEY="$PRE_ALERT_KEY"
+            else
+                NOTIFY_STATUS=0
+                append_required_redline "notify"
+            fi
         fi
     fi
 fi
@@ -849,14 +858,14 @@ fi
 
 release_success_guard_lock
 
-if [[ "$SUCCESS_NOTIFY_SENT" -eq 1 && -n "$REQUIRED_REDLINES" ]]; then
+if [[ "$SUCCESS_NOTIFY_SENT" -eq 1 && -n "$REQUIRED_REDLINES" ]] && session_end_audit_gap_notify_enabled; then
     PRE_WARN_KEY=$(notification_state_key)
     LAST_WARNED=""
     if [[ -f "$WARNED_FILE" ]]; then
         LAST_WARNED=$(cat "$WARNED_FILE")
     fi
     if [[ "$LAST_WARNED" != "$PRE_WARN_KEY" ]]; then
-        if send_notification "⚠️ RedCap Layer B 收尾补偿失败（${HOST} SessionEnd）\n\n成功通知已发出，但后续 closure 持久化未完成，当前仍保留 blocker。\n\nrequired_redlines=$REQUIRED_REDLINES\npersistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}\n\nCommits:\n$COMMIT_LOG"; then
+            if send_notification "⚠️ RedCap Layer B 收尾补偿失败（${HOST} SessionEnd）\n\n成功通知已发出，但后续 closure 持久化未完成，当前仍保留 blocker。\n\nrequired_redlines=$REQUIRED_REDLINES\npersistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}\n\nCommits:\n$COMMIT_LOG" "manual-intervention"; then
             COMPENSATION_WARNING_SENT=1
             COMPENSATION_WARNING_KEY="$PRE_WARN_KEY"
         else
@@ -930,8 +939,8 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
         fi
         if [[ "$COMPENSATION_WARNING_SENT" -eq 1 && "$COMPENSATION_WARNING_KEY" == "$FINAL_NOTIFICATION_KEY" ]]; then
             echo "$FINAL_NOTIFICATION_KEY" > "$WARNED_FILE"
-        elif [[ "$LAST_WARNED" != "$FINAL_NOTIFICATION_KEY" ]]; then
-            if send_notification "⚠️ RedCap Layer B 收尾补偿最终状态（${HOST} SessionEnd）\n\n最终 blocker 已确认并落盘。\n\nrequired_redlines=$REQUIRED_REDLINES\npersistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}\n\nCommits:\n$COMMIT_LOG"; then
+        elif session_end_audit_gap_notify_enabled && [[ "$LAST_WARNED" != "$FINAL_NOTIFICATION_KEY" ]]; then
+            if send_notification "⚠️ RedCap Layer B 收尾补偿最终状态（${HOST} SessionEnd）\n\n最终 blocker 已确认并落盘。\n\nrequired_redlines=$REQUIRED_REDLINES\npersistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}\n\nCommits:\n$COMMIT_LOG" "manual-intervention"; then
                 echo "$FINAL_NOTIFICATION_KEY" > "$WARNED_FILE"
             fi
         fi
@@ -942,12 +951,12 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
         fi
         if [[ "$BLOCKER_ALERT_SENT" -eq 1 && "$BLOCKER_ALERT_KEY" == "$FINAL_NOTIFICATION_KEY" ]]; then
             echo "$FINAL_NOTIFICATION_KEY" > "$ALERTED_FILE"
-        elif [[ "$LAST_ALERTED" != "$FINAL_NOTIFICATION_KEY" ]]; then
+        elif session_end_audit_gap_notify_enabled && [[ "$LAST_ALERTED" != "$FINAL_NOTIFICATION_KEY" ]]; then
             FINAL_ALERT_BODY="$ALERT_BODY"
             if [[ "$BLOCKER_ALERT_KEY" != "$FINAL_NOTIFICATION_KEY" ]]; then
                 FINAL_ALERT_BODY="${FINAL_ALERT_BODY}\n\n最终 blocker 集已更新：required_redlines=$REQUIRED_REDLINES\npersistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}"
             fi
-            if send_notification "$FINAL_ALERT_BODY"; then
+            if send_notification "$FINAL_ALERT_BODY" "manual-intervention"; then
                 echo "$FINAL_NOTIFICATION_KEY" > "$ALERTED_FILE"
             fi
         fi

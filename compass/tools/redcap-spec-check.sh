@@ -500,6 +500,16 @@ if ! bash "$FEISHU_NOTIFICATION_POLICY_CHECK" >/dev/null; then
     exit 1
 fi
 
+HUMAN_COMMUNICATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-human-communication-check.sh"
+if [[ ! -f "$HUMAN_COMMUNICATION_CHECK" ]]; then
+    echo "[redcap-spec-check] human communication check missing" >&2
+    exit 1
+fi
+if ! bash "$HUMAN_COMMUNICATION_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] human communication check failed" >&2
+    exit 1
+fi
+
 PACKAGE_PUBLISH_SAFETY_CHECK="$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh"
 if [[ ! -f "$PACKAGE_PUBLISH_SAFETY_CHECK" ]]; then
     echo "[redcap-spec-check] package publish safety check missing" >&2

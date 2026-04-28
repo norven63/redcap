@@ -195,6 +195,32 @@
         "references/redcap-system-layers.md",
         "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
       ]
+    },
+    {
+      "id": "EVO-2026-04-29-001",
+      "source_kind": "user-correction",
+      "problem_source": "The user observed that interim terminal reports lacked a stable status surface and Feishu repeatedly sent Layer B audit-failure notifications, making it hard to distinguish node reports from internal control-plane noise.",
+      "solution": "Promote human-facing status updates to a policy-backed surface, add a formatter and validator, align Feishu report formatting to the same fields, and mute SessionEnd / Stop internal audit-gap Feishu sends by default while preserving pending closure and diagnostics.",
+      "final_effect": "Future checkpoints and Feishu node reports expose whether Norven must act, whether the task is blocked, whether the next step can start, the task panorama, and the current node; internal audit gaps stay in ledger/diagnostics unless explicitly escalated as true manual intervention.",
+      "recurrence_guard": "redcap-human-communication-check.sh, redcap-feishu-notification-policy-check.sh, spec-check, diagnose, and acceptance case human-communication-check validate the surface and notification-noise boundary.",
+      "applicability_boundary": "This governs RedCap-owned terminal formatter, Feishu formatter, SessionEnd, and legacy Stop hook paths; it cannot rewrite historical Feishu messages already sent.",
+      "evidence_paths": [
+        "references/human-communication-policy.json",
+        "compass/tools/redcap-human-communication-check.py",
+        "compass/tools/redcap-status-report-format.py",
+        "compass/tools/redcap-notify-format.sh",
+        "compass/tools/redcap-layerB-session-end.sh",
+        "compass/docs/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons.md"
+      ],
+      "review_paths": [
+        "references/human-communication-policy.json",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ]
     }
   ]
 }

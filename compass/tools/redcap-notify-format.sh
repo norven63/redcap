@@ -253,10 +253,16 @@ redcap_build_completion_message() {
         fi
         [[ -n "$latest_commit" ]] && printf -- '- 最新提交：%s\n' "$latest_commit"
 
+        printf '\n**人工协助**\n- 不需要；若需要 Norven 决策，RedCap 会改用 manual-intervention 通知。\n'
+        printf '\n**阻塞状态**\n- 无；此消息是节点汇报，不是内部审核失败告警。\n'
+        printf '\n**下一步可直接开始**\n- 是；按“下一步计划做的是”继续，若已 closeout 则等待下一任务。\n'
+
         if [[ -n "$report_label" ]]; then
             printf '\n**当前已完成**\n%s\n' "$(redcap_notify_markdown_list_or_none "$done_items")"
             printf '\n**上一步完成的是**\n%s\n' "$(redcap_notify_markdown_list_or_none "$previous_items")"
             printf '\n**下一步计划做的是**\n%s\n' "$(redcap_notify_markdown_list_or_none "$next_items")"
+            printf '\n**任务全景图**\n%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
+            printf '\n**当前位置**\n%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
             printf '\n**整体计划脉络图与当前位置**\n%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
             if [[ -n "$confirm_items" ]]; then
                 printf '\n**仍需你介入**\n%s\n' "$(redcap_notify_markdown_list_or_none "$confirm_items")"
@@ -264,6 +270,12 @@ redcap_build_completion_message() {
             if [[ -n "$verify_items" ]]; then
                 printf '\n**仍需人工验证**\n%s\n' "$(redcap_notify_markdown_list_or_none "$verify_items")"
             fi
+        else
+            printf '\n**当前已完成**\n- 详见本次节点提交或终端汇报\n'
+            printf '\n**上一步完成的是**\n- 详见本次节点提交或终端汇报\n'
+            printf '\n**下一步计划做的是**\n- 详见本次节点提交或终端汇报\n'
+            printf '\n**任务全景图**\n- 未绑定任务报告；请以终端汇报或 closeout receipt 为准\n'
+            printf '\n**当前位置**\n- 未绑定任务报告；请以终端汇报或 closeout receipt 为准\n'
         fi
 
         if [[ -n "$bullet_list" ]]; then

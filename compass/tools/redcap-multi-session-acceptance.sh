@@ -148,6 +148,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh intent-coverage-check
   bash compass/tools/redcap-multi-session-acceptance.sh change-intake-check
   bash compass/tools/redcap-multi-session-acceptance.sh human-output-quality-check
+  bash compass/tools/redcap-multi-session-acceptance.sh human-communication-check
   bash compass/tools/redcap-multi-session-acceptance.sh install-overview
   bash compass/tools/redcap-multi-session-acceptance.sh execution-guarantees-check
   bash compass/tools/redcap-multi-session-acceptance.sh knowledge-index-check
@@ -11697,6 +11698,54 @@ EOF
 	    assert_string_contains "$output" "禁止的飞书 profile=old-profile"
 }
 
+run_human_communication_check_case() {
+    local output status_output notify_output session_end legacy_hook
+
+    log "case: human-communication-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-human-communication-check.sh")"
+    assert_string_contains "$output" "HUMAN_COMMUNICATION_OK"
+
+    status_output="$(
+        bash "$REDCAP_ROOT/compass/tools/redcap-status-report-format.sh" \
+            --manual "不需要" \
+            --blocked "无" \
+            --next-start "是" \
+            --panorama "立项 -> 实现 -> 验收 -> closeout" \
+            --position "验收中" \
+            --done "已实现沟通状态面" \
+            --previous "已完成 PM Gate" \
+            --next "继续回归" \
+            --validation "待 Prism"
+    )"
+    for field in "人工协助" "阻塞状态" "下一步可直接开始" "任务全景图" "当前位置" "当前已完成" "上一步完成的是" "下一步计划做的是"; do
+        assert_string_contains "$status_output" "$field"
+    done
+
+    notify_output="$(
+        cd "$REDCAP_ROOT"
+        source compass/tools/redcap-notify-format.sh
+        redcap_build_completion_message \
+            "RedCap 节点汇报" \
+            "redcap" \
+            "abc1234 feat(example): sample" \
+            "acceptance" \
+            "" \
+            "$REDCAP_ROOT"
+    )"
+    for field in "人工协助" "阻塞状态" "下一步可直接开始" "任务全景图" "当前位置" "当前已完成" "上一步完成的是" "下一步计划做的是"; do
+        assert_string_contains "$notify_output" "$field"
+    done
+    assert_not_contains "$REDCAP_ROOT/compass/tools/redcap-claude-hook-stop.sh" 'python3 "$NOTIFIER" notify'
+    assert_not_contains "$REDCAP_ROOT/compass/tools/redcap-claude-hook-stop.sh" "探索笔记提醒"
+
+    session_end="$(cat "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh")"
+    assert_string_contains "$session_end" 'AUDIT_GAP_NOTIFY="${REDCAP_SESSION_END_NOTIFY_AUDIT_GAP:-0}"'
+    assert_string_contains "$session_end" "internal audit gap is ledger-only by default"
+    legacy_hook="$(cat "$REDCAP_ROOT/compass/tools/redcap-claude-hook-stop.sh")"
+    assert_string_contains "$legacy_hook" "notification-muted legacy hook"
+}
+
 run_overlay_skill_handoff_stays_native_case() {
     log "case: overlay-skill-handoff-stays-native"
 
@@ -11886,6 +11935,7 @@ run_all_cases() {
     run_user_agent_identity_init_case
     run_feishu_duplex_window_queue_case
     run_feishu_webhook_notify_case
+    run_human_communication_check_case
     run_overlay_skill_handoff_stays_native_case
     run_overlay_governance_check_case
     run_continuity_manifest_sync_case
@@ -12397,6 +12447,9 @@ case "$COMMAND" in
         ;;
     feishu-webhook-notify)
         run_feishu_webhook_notify_case
+        ;;
+    human-communication-check)
+        run_human_communication_check_case
         ;;
     overlay-skill-handoff-stays-native)
         run_overlay_skill_handoff_stays_native_case

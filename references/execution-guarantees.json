@@ -57,6 +57,7 @@
     "shared-knowledge-remote",
     "user-agent-identity",
     "feishu-notification-policy",
+    "human-status",
     "package-publish-safety",
     "runtime-package"
   ],
@@ -1361,6 +1362,31 @@
       "revival_required": false,
       "hook_required": false,
       "automation": "redcap-cli-console-mirror-check.sh validates ignore status, artifact classification, and overwrite-only helper behavior."
+    },
+    {
+      "id": "human-communication-surface",
+      "category": "human-status",
+      "priority": "P1",
+      "status": "validator",
+      "rule": "Human-facing checkpoints and Feishu notifications must expose whether Norven needs to act, whether the task is blocked, whether the next step can start, the task panorama, and the current node. Internal audit gaps must be ledger-only by default, not Feishu noise.",
+      "source_paths": [
+        "references/human-communication-policy.json",
+        "references/feishu-notification-policy.json",
+        "compass/tools/redcap-status-report-format.sh",
+        "compass/tools/redcap-notify-format.sh",
+        "compass/tools/redcap-layerB-session-end.sh",
+        "compass/tools/redcap-claude-hook-stop.sh"
+      ],
+      "auto_enforceable": true,
+      "guarantee_paths": [
+        "compass/tools/redcap-human-communication-check.sh",
+        "compass/tools/redcap-feishu-notification-policy-check.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "automation": "redcap-human-communication-check.sh validates the shared status surface, Feishu formatter fields, SessionEnd audit-gap notification mute, and legacy hook notification mute."
     }
   ],
   "manual_review_boundaries": [

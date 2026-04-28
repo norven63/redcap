@@ -6,13 +6,16 @@
   "allowed_transport": "lark_cli_dm",
   "disallowed_transports": ["webhook"],
   "allowed_notify_window_types": ["node-report", "manual-intervention"],
-  "node_report_rule": "Use exactly one node-report notification for a human-visible closeout/status node; do not open a background followup watcher.",
-  "manual_intervention_rule": "Use manual-intervention only when RedCap must interrupt because the user needs to make a decision or unblock the task.",
+  "node_report_rule": "Use exactly one node-report notification for a human-visible closeout/status node; do not open a background followup watcher. The message must expose the same status surface as terminal checkpoints: human assistance, blocker status, next-start readiness, panorama, current node, done, previous, and next.",
+  "manual_intervention_rule": "Use manual-intervention only when RedCap must interrupt because the user needs to make a decision or unblock the task. Internal audit gaps that Cap can continue fixing are not manual intervention.",
+  "internal_audit_gap_rule": "SessionEnd / Stop audit gaps are ledger-only by default. They may create pending closure and diagnostics, but must not send Feishu unless REDCAP_SESSION_END_NOTIFY_AUDIT_GAP=1 is explicitly used for a true manual-intervention blocker.",
   "routine_success_rule": "SessionEnd success notifications are disabled by default; on-complete owns the final node-report notification.",
   "forbidden_patterns": [
     "--window-type followup",
     "transport=webhook",
     "FEISHU_WEBHOOK",
-    "REDCAP_FEISHU_WEBHOOK"
+    "REDCAP_FEISHU_WEBHOOK",
+    "legacy-stop-hook-auto-notification",
+    "explore-notes-reminder-notification"
   ]
 }

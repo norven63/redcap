@@ -47,6 +47,8 @@ def validate_policy(policy: dict[str, Any]) -> None:
         fail("webhook must be listed as disallowed")
     if set(policy.get("allowed_notify_window_types") or []) != {"node-report", "manual-intervention"}:
         fail("allowed notify window types must be node-report/manual-intervention")
+    if "ledger-only by default" not in str(policy.get("internal_audit_gap_rule", "")):
+        fail("policy must declare SessionEnd / Stop audit gaps ledger-only by default")
 
 
 def validate_source(policy: dict[str, Any]) -> None:
@@ -54,6 +56,8 @@ def validate_source(policy: dict[str, Any]) -> None:
     on_complete = text("compass/tools/redcap-on-complete.sh")
     session_end = text("compass/tools/redcap-layerB-session-end.sh")
     explore_notes = text("compass/tools/redcap-explore-notes-check.sh")
+    legacy_claude_stop = text("compass/tools/redcap-claude-hook-stop.sh")
+    notify_format = text("compass/tools/redcap-notify-format.sh")
 
     for forbidden in ["urllib.request", "urlopen", "_send_webhook_text", "transport == \"webhook\"", "transport=webhook"]:
         if forbidden in notifier:
@@ -65,10 +69,23 @@ def validate_source(policy: dict[str, Any]) -> None:
         fail("on-complete must send exactly a node-report notification")
     if re.search(r'SKIP_SUCCESS_NOTIFY="\$\{REDCAP_SKIP_SESSION_END_SUCCESS_NOTIFY:-0\}"', session_end):
         fail("session-end success notification must be disabled by default")
+    if 'AUDIT_GAP_NOTIFY="${REDCAP_SESSION_END_NOTIFY_AUDIT_GAP:-0}"' not in session_end:
+        fail("session-end audit-gap notification must be disabled by default")
+    if "session_end_audit_gap_notify_enabled" not in session_end:
+        fail("session-end audit-gap notification must be explicitly guarded")
+    if 'send_notification "$ALERT_BODY";' in session_end or 'send_notification "$FINAL_ALERT_BODY";' in session_end:
+        fail("session-end audit-gap notifications must not be sent without a manual-intervention guard")
     if 'local window_type="${2:-manual-intervention}"' not in session_end:
         fail("session-end blocker alerts must default to manual-intervention")
     if "python3 \"$NOTIFIER\" notify" in explore_notes:
         fail("explore-notes reminder must not send Feishu; it is not a node-report or manual intervention interrupt")
+    if "python3 \"$NOTIFIER\" notify" in legacy_claude_stop or "探索笔记提醒" in legacy_claude_stop:
+        fail("legacy Claude Stop hook must not send Feishu notifications")
+    if "notification-muted legacy hook" not in legacy_claude_stop:
+        fail("legacy Claude Stop hook must declare notification-muted behavior")
+    for field in ["人工协助", "阻塞状态", "下一步可直接开始", "任务全景图", "当前位置"]:
+        if field not in notify_format:
+            fail(f"notify formatter missing human status field: {field}")
 
     parser_line = re.search(r"--window-type\".*?choices=\[(.*?)\]", notifier, flags=re.S)
     if parser_line:

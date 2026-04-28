@@ -199,7 +199,7 @@
 - P1-3 完成不等于历史 reports/lessons/identity 已迁移，也不等于父任务全部完成。
 - closeout 证据必须按当前任务状态重算；旧 validator FAIL 只能作为历史证据，不能在当前 Prism pass 后继续阻塞 session-end。
 
-**状态**：[ACTIVE] → P1-3 closeout 中；正式证据见 `2026-04-26-shared-knowledge-gitee-remote-binding.md`
+**状态**：[ARCHIVED] → P1-3 已完成 closeout；正式证据见 `2026-04-26-shared-knowledge-gitee-remote-binding.md`、`2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md` 与父任务账本。
 
 ---
 
@@ -216,6 +216,7 @@
 | Q5 模型矩阵 | 2026-04-11 | 实测数据+Frame选型+30天更新 | P4 model-capability-matrix.yaml |
 | Q6 秘书官 | 2026-04-11 | 内置书记模式（本文件） | 本文件+soul.md+CONTRIBUTING.md §12 |
 | Q7 Prism run-state | 2026-04-12 | run-scoped truth + coordinator Phase A + Dispatch Firewall 当前口径显式收口 | prism-run-state.sh / prism-coordinator.sh / prism/protocol.md / task report |
+| Q8 Shared Knowledge 远端绑定 | 2026-04-27 | Gitee 远端绑定、redcap-arsenal 本地实体库与 Norven 命名空间已完成；历史知识迁移仍归后续 P4 | `2026-04-26-shared-knowledge-gitee-remote-binding.md` / `2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md` / `references/redcap-parent-task-ledger.md` |
 
 ---
 

@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 64,
-    "size_bytes": 905418,
-    "lines": 15927,
-    "chars": 588356,
+    "file_count": 65,
+    "size_bytes": 920466,
+    "lines": 16162,
+    "chars": 597876,
     "rough_token_pressure": {
-      "low": 147089,
-      "high": 294178
+      "low": 149469,
+      "high": 298938
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 45,
-        "size_bytes": 624670,
-        "lines": 9080,
-        "chars": 403886,
+        "file_count": 46,
+        "size_bytes": 639718,
+        "lines": 9315,
+        "chars": 413406,
         "rough_token_pressure": {
-          "low": 100971,
-          "high": 201943
+          "low": 103351,
+          "high": 206703
         }
       },
       "traces": {
@@ -930,7 +930,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P0-2 R0-R22 原始编号可追溯化",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 7908,
       "lines": 161,
@@ -995,29 +995,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：redcap-arsenal 本地实体仓库与 Norven 命名空间",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12549,
       "lines": 225,
       "chars": 7713,
       "summary": "当前已完成：公共库已从“临时推送工作区 + RedCap 内模板目录”补强为一个耐久本地 Git 工作区。 / 详情：本机公共库实体仓库位于 `/Users/norven/.claude/skills/redcap-arsenal`，remote 为 `https://gitee.com/norven63/redcap-arsenal.git`。RedCap 内 `shared-knowledge/` 继续作为模板源和验收 fixture，刻意不带 `.git`。Gitee 远端已包含 `users/Norven/.gitkeep`。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：公共库已从“临时推送工作区 + RedCap 内模板目录”补强为一个耐久本地 Git 工作区。",
-          "详情：本机公共库实体仓库位于 `/Users/norven/.claude/skills/redcap-arsenal`，remote 为 `https://gitee.com/norven63/redcap-arsenal.git`。RedCap 内 `shared-knowledge/` 继续作为模板源和验收 fixture，刻意不带 `.git`。Gitee 远端已包含 `users/Norven/.gitkeep`。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P1-3 将最小 shared-knowledge 模板安全推送到 Gitee，并建立 remote binding policy、live head/tree/content 对账。"
-        ],
-        "next_step": [
-          "下一步计划做的是：不迁移历史资产；后续优先进入“首次启动初始化用户与 AI Agent 信息”独立任务，或继续父任务中 P3-1/P3-2 的延期治理。"
-        ],
-        "position": [
-          "整体计划脉络图是：远端模板绑定 → 本地实体工作区 → append-only 真实沉淀 → 历史资产 apply / 检索增强。",
-          "当前所在位置：`redcap-system-migration-parent / P1-4 / shared-knowledge-local-worktree`。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
@@ -1074,6 +1058,35 @@
         "position": [
           "整体计划脉络图是：父任务聚合 gate → receipt 内容对应强门 → targeted acceptance → Prism review → closeout receipt。",
           "当前所在位置：`redcap-system-migration-parent / P3-2 / receipt-correspondence-hardening`。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Human Communication And Feishu Noise Hardening",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 15048,
+      "lines": 235,
+      "chars": 9520,
+      "summary": "当前已完成：RedCap 已把终端中途汇报与飞书节点通知统一成同一套人类可读状态面，并把 SessionEnd 内部审核缺口改为默认只落账、不刷飞书。 / 详情：新增了 human communication policy、状态面 formatter、机器检查器和 acceptance 用例；飞书 formatter 现在会输出“人工协助、阻塞状态、下一步可直接开始、任务全景图、当前位置”等字段。旧 Claude Stop hook 的自动通知路径被降为本地状态卫生提醒，不再绕过正式通知策略。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把终端中途汇报与飞书节点通知统一成同一套人类可读状态面，并把 SessionEnd 内部审核缺口改为默认只落账、不刷飞书。",
+          "详情：新增了 human communication policy、状态面 formatter、机器检查器和 acceptance 用例；飞书 formatter 现在会输出“人工协助、阻塞状态、下一步可直接开始、任务全景图、当前位置”等字段。旧 Claude Stop hook 的自动通知路径被降为本地状态卫生提醒，不再绕过正式通知策略。"
+        ],
+        "previous_step": [
+          "上一步完成的是：完成 P3-1 检索阈值门禁后，用户指出中途汇报缺少固定状态面，且飞书在 SessionEnd 内部审核失败时多次发送干扰性通知。"
+        ],
+        "next_step": [
+          "下一步计划做的是：提交本轮变更并执行 repo-owned closeout receipt；在 receipt 生成前，本报告不声明正式完成。"
+        ],
+        "position": [
+          "整体计划脉络图是：立项与追踪恢复 -> 状态面与飞书降噪实现 -> 目标回归 -> Prism 独立验收 -> closeout receipt。",
+          "当前所在位置：Prism 独立验收与全局回归已通过；正在进入提交和 closeout receipt 节点。"
         ]
       }
     },

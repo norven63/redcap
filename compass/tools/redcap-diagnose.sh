@@ -125,6 +125,7 @@ run_check "shared-knowledge-remote-binding" bash "$SCRIPT_DIR/redcap-shared-know
 run_check "retrieval-escalation" bash "$SCRIPT_DIR/redcap-retrieval-escalation-check.sh" || overall=1
 run_check "user-agent-identity" bash "$SCRIPT_DIR/redcap-user-agent-identity.sh" check --local || overall=1
 run_check "feishu-notification-policy" bash "$SCRIPT_DIR/redcap-feishu-notification-policy-check.sh" || overall=1
+run_check "human-communication" bash "$SCRIPT_DIR/redcap-human-communication-check.sh" || overall=1
 run_check "package-publish-safety" bash "$SCRIPT_DIR/redcap-package-publish-safety-check.sh" || overall=1
 run_check "runtime-package-manifest" bash "$SCRIPT_DIR/redcap-runtime-package-manifest.sh" --check || overall=1
 run_check "hook-contract" bash "$SCRIPT_DIR/redcap-hook-contract-check.sh" || overall=1

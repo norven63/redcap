@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "policy_id": "redcap-human-communication-surface",
+  "description": "Human-visible RedCap status updates and Feishu notifications must expose the same compact state surface instead of leaking noisy internal audit logs.",
+  "required_status_fields": [
+    "人工协助",
+    "阻塞状态",
+    "下一步可直接开始",
+    "任务全景图",
+    "当前位置",
+    "当前已完成",
+    "上一步完成的是",
+    "下一步计划做的是"
+  ],
+  "status_update_rule": "Every interruption, checkpoint, and final node report must say whether Norven needs to act, whether the task is blocked, what the next step is, the task panorama, and the current node.",
+  "feishu_alignment_rule": "Feishu node-report and manual-intervention messages must reuse the same required status fields where a task report or status context is available.",
+  "internal_audit_gap_rule": "SessionEnd / Stop audit gaps are internal control-plane signals by default. They must be recorded to pending closure / ledger / diagnostics, but must not send Feishu unless the gap is a true manual-intervention blocker.",
+  "allowed_feishu_events": [
+    "node-report",
+    "manual-intervention"
+  ],
+  "forbidden_feishu_noise": [
+    "internal-audit-gap-default-notification",
+    "explore-notes-reminder-notification",
+    "legacy-stop-hook-auto-notification",
+    "background-followup-watch"
+  ]
+}
