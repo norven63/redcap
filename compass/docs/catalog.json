@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 63,
-    "size_bytes": 892915,
-    "lines": 15692,
-    "chars": 580577,
+    "file_count": 64,
+    "size_bytes": 905418,
+    "lines": 15927,
+    "chars": 588356,
     "rough_token_pressure": {
-      "low": 145144,
-      "high": 290288
+      "low": 147089,
+      "high": 294178
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 44,
-        "size_bytes": 612167,
-        "lines": 8845,
-        "chars": 396107,
+        "file_count": 45,
+        "size_bytes": 624670,
+        "lines": 9080,
+        "chars": 403886,
         "rough_token_pressure": {
-          "low": 99026,
-          "high": 198053
+          "low": 100971,
+          "high": 201943
         }
       },
       "traces": {
@@ -917,7 +917,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：R0-R22 父任务重锚定与计划完整性审计",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13744,
       "lines": 216,
@@ -982,29 +982,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：Layer B 中插需求重排决策可见化",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9594,
       "lines": 181,
       "chars": 5902,
       "summary": "当前已完成：Layer B 的中插需求账本新增“重排决策摘要”强门。 / 详情：只要 `.dev-task.md` 中存在 `## 中插需求账本`，就必须同时存在 `## 中插需求重排决策摘要`，并为每个 `U<n>` 写明处置、决策理由、全景影响和用户可见表达。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：Layer B 的中插需求账本新增“重排决策摘要”强门。",
-          "详情：只要 `.dev-task.md` 中存在 `## 中插需求账本`，就必须同时存在 `## 中插需求重排决策摘要`，并为每个 `U<n>` 写明处置、决策理由、全景影响和用户可见表达。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P1-4 将公共库从临时推送工作区补成 `/Users/norven/.claude/skills/redcap-arsenal` 耐久本地仓库，并初始化 `users/Norven/`。"
-        ],
-        "next_step": [
-          "下一步计划做的是：本轮只完成 P2-5，不推进 P2-4 首启用户/Agent 初始化，也不推进 P3-1/P3-2 长期治理项。"
-        ],
-        "position": [
-          "整体计划脉络图是：中插需求入账 → 重排决策摘要 → checker fail-closed → acceptance → Prism review → closeout receipt。",
-          "当前所在位置：`redcap-system-migration-parent / P2-5 / change-intake-replan-visibility`。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
@@ -1032,6 +1016,35 @@
         "position": [
           "整体计划脉络图是：远端模板绑定 → 本地实体工作区 → append-only 真实沉淀 → 历史资产 apply / 检索增强。",
           "当前所在位置：`redcap-system-migration-parent / P1-4 / shared-knowledge-local-worktree`。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Retrieval escalation threshold policy",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12503,
+      "lines": 235,
+      "chars": 7779,
+      "summary": "当前已完成：P3-1 已把“GraphRAG / 向量检索阈值研究”从口头 deferred 升级为机器可审计的检索升级策略。 / 详情：当前 RedCap 仍保持 `catalog + rg + metadata` 路线；只有 `shared-knowledge` / `redcap-arsenal` 规模、语义召回失败观测或关系型问题观测跨过策略阈值后，才允许另开任务评估 FTS/RAG/GraphRAG。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P3-1 已把“GraphRAG / 向量检索阈值研究”从口头 deferred 升级为机器可审计的检索升级策略。",
+          "详情：当前 RedCap 仍保持 `catalog + rg + metadata` 路线；只有 `shared-knowledge` / `redcap-arsenal` 规模、语义召回失败观测或关系型问题观测跨过策略阈值后，才允许另开任务评估 FTS/RAG/GraphRAG。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P3-2 已把父任务 completed child 从 `receipt_glob` 字符串升级为真实 runtime receipt 内容对应强门，并完成 closeout receipt 收口。"
+        ],
+        "next_step": [
+          "下一步计划做的是：提交本轮实现并运行 closeout runtime 生成 receipt；若后续 `redcap-arsenal` 真正积累大量条目，再按本策略触发新的检索升级任务。"
+        ],
+        "position": [
+          "整体计划脉络图是：父任务聚合 gate → receipt 内容对应强门 → 检索升级阈值策略 → Prism review → closeout receipt。",
+          "当前所在位置：`redcap-system-migration-parent / P3-1 / retrieval-escalation-threshold-policy`。"
         ]
       }
     },

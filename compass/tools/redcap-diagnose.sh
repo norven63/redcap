@@ -122,6 +122,7 @@ run_check "legacy-asset-migration-dry-run" bash "$SCRIPT_DIR/redcap-legacy-asset
 run_check "parent-receipt-aggregation" bash "$SCRIPT_DIR/redcap-parent-receipt-aggregation-check.sh" || overall=1
 run_check "shared-knowledge" bash "$SCRIPT_DIR/redcap-shared-knowledge-check.sh" || overall=1
 run_check "shared-knowledge-remote-binding" bash "$SCRIPT_DIR/redcap-shared-knowledge-remote-check.sh" || overall=1
+run_check "retrieval-escalation" bash "$SCRIPT_DIR/redcap-retrieval-escalation-check.sh" || overall=1
 run_check "user-agent-identity" bash "$SCRIPT_DIR/redcap-user-agent-identity.sh" check --local || overall=1
 run_check "feishu-notification-policy" bash "$SCRIPT_DIR/redcap-feishu-notification-policy-check.sh" || overall=1
 run_check "package-publish-safety" bash "$SCRIPT_DIR/redcap-package-publish-safety-check.sh" || overall=1

@@ -925,6 +925,29 @@
       "auto_enforceable": true
     },
     {
+      "id": "retrieval-escalation-threshold-policy",
+      "category": "knowledge-navigation",
+      "priority": "P1",
+      "rule": "RedCap must keep catalog + rg + metadata as the default retrieval route until shared-knowledge scale or measured retrieval failures cross explicit thresholds; RAG or GraphRAG must never be enabled because it is fashionable or by default corpus loading.",
+      "source_paths": [
+        "references/retrieval-escalation-policy.json",
+        "references/redcap-system-layers.md",
+        "references/shared-knowledge-policy.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-retrieval-escalation-check validates current route, thresholds, forbidden full-corpus defaults, docs catalog scale, and shared-knowledge / redcap-arsenal entry counts; spec-check, diagnose, and acceptance consume it as a fail-closed gate.",
+      "guarantee_paths": [
+        "compass/tools/redcap-retrieval-escalation-check.sh",
+        "compass/tools/redcap-retrieval-escalation-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "user-agent-identity-first-start",
       "category": "user-agent-identity",
       "priority": "P0",

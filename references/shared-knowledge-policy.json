@@ -16,6 +16,7 @@
   },
   "user_namespace_rule": "entries live under users/<safe_user_name>/ so team members can contribute to the same repository without mixing authorship; safe display case such as Norven is preserved",
   "retrieval_rule": "read catalog and metadata first; use rg/FTS for exact recall; only load entry bodies after the caller has a precise evidence need",
+  "retrieval_escalation_policy": "references/retrieval-escalation-policy.json",
   "dedupe_rule": "before append, compute a normalized fingerprint and reject exact duplicates; near-duplicate review remains a Prism or human-review concern until semantic retrieval exists",
   "remote_boundary": "The public RedCap Arsenal remote is bound in references/shared-knowledge-remote-binding.json. Only the minimal template surface and explicit per-user namespace placeholders may be pushed; historical reports, lessons, identity, runtime evidence, host entry files, and private configuration remain out of scope."
 }

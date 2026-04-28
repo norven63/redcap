@@ -161,6 +161,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh execution-layer-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-check
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
+  bash compass/tools/redcap-multi-session-acceptance.sh retrieval-escalation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
@@ -4656,7 +4657,16 @@ PY
 }
 
 redcap_acceptance_on_stop_review() {
+    local fallback_task_file=""
+
     seed_parent_receipt_aggregation_fixtures
+    if [[ -z "${REDCAP_TASK_FILE:-}" ]]; then
+        fallback_task_file="$(mktemp "$ACCEPT_ROOT/on-stop-review-task.XXXXXX")"
+        TEMP_PROJECTS+=("$fallback_task_file")
+        write_permissive_acceptance_task_file "$fallback_task_file"
+        REDCAP_TASK_FILE="$fallback_task_file" bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh"
+        return $?
+    fi
     bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh"
 }
 
@@ -5362,7 +5372,7 @@ EOF
 
 run_on_stop_review_rejects_invalid_track_structure_case() {
     local case_name="on-stop-review-rejects-invalid-track-structure"
-    local case_dir fake_bin head_file review_result review_log baseline output status
+    local case_dir fake_bin head_file review_result review_log baseline output status task_file
 
     log "case: $case_name"
 
@@ -5384,6 +5394,8 @@ EOF
     head_file="$case_dir/baseline.head"
     review_result="$case_dir/review-result"
     review_log="$case_dir/review-log.md"
+    task_file="$case_dir/dev-task.md"
+    write_permissive_acceptance_task_file "$task_file"
     baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
     printf '%s\n' "$baseline" >"$head_file"
 
@@ -5393,6 +5405,7 @@ EOF
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
+            REDCAP_TASK_FILE="$task_file" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
@@ -9921,13 +9934,20 @@ root = pathlib.Path(sys.argv[1]).resolve()
 runtime_base = pathlib.Path(sys.argv[2]).resolve()
 policy_path = pathlib.Path(sys.argv[3])
 payload = json.loads(policy_path.read_text(encoding="utf-8"))
+task_file = root / ".dev-task.md"
+current_child = ""
+if task_file.is_file():
+    for line in task_file.read_text(encoding="utf-8").splitlines():
+        if line.startswith("parent_child_id:"):
+            current_child = line.split(":", 1)[1].strip()
+            break
 project_hash = hashlib.md5(str(root).encode("utf-8")).hexdigest()
 receipt_dir = runtime_base / project_hash / "governance/closeout-runtime/receipts"
 receipt_dir.mkdir(parents=True, exist_ok=True)
 head = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
 
 for child in payload["completed_children"]:
-    if child.get("id") == "P3-2":
+    if child.get("id") == current_child:
         continue
     receipt_glob = child["receipt_glob"]
     task_id = child.get("task_id") or receipt_glob.removesuffix("-*.json")
@@ -10078,8 +10098,8 @@ source = pathlib.Path(sys.argv[1])
 target = pathlib.Path(sys.argv[2])
 payload = json.loads(source.read_text(encoding="utf-8"))
 for child in payload["completed_children"]:
-    if child.get("id") == "P3-2":
-        child["receipt_glob"] = "runtime-receipt-evidence-correspondence-hardening-acceptance-missing-*.json"
+    if child.get("id") == "P3-1":
+        child["receipt_glob"] = "retrieval-escalation-threshold-policy-acceptance-missing-*.json"
         break
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -10163,7 +10183,7 @@ PY
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing required not-complete child"
-    assert_string_contains "$stale_output" "missing not-complete child entries: P3-1"
+    assert_string_contains "$stale_output" "missing not-complete child entries: P4-1, P4-2, P4-3"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-eligible-output.json"
     python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
@@ -10236,6 +10256,71 @@ run_shared_knowledge_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-shared-knowledge-check.sh")"
     assert_string_contains "$output" "SHARED_KNOWLEDGE_OK"
+}
+
+run_retrieval_escalation_check_case() {
+    local output bad_policy stale_output status
+
+    log "case: retrieval-escalation-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh")"
+    assert_string_contains "$output" "RETRIEVAL_ESCALATION_OK"
+    assert_string_contains "$output" "active_route=index-rg-metadata"
+    assert_string_contains "$output" "shared_entries=0"
+
+    bad_policy="$ACCEPT_ROOT/retrieval-escalation-full-corpus.json"
+    python3 - "$REDCAP_ROOT/references/retrieval-escalation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["forbidden_defaults"]["load_full_corpus_by_default"] = True
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "retrieval escalation should reject default full-corpus loading"
+    assert_string_contains "$stale_output" "forbidden_defaults.load_full_corpus_by_default must be false"
+
+    bad_policy="$ACCEPT_ROOT/retrieval-escalation-premature-rag.json"
+    python3 - "$REDCAP_ROOT/references/retrieval-escalation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["active_route"] = "rag"
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "retrieval escalation should reject premature RAG route"
+    assert_string_contains "$stale_output" "rag route enabled before RAG review threshold crossed"
+
+    bad_policy="$ACCEPT_ROOT/retrieval-escalation-threshold-crossed.json"
+    python3 - "$REDCAP_ROOT/references/retrieval-escalation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["escalation_thresholds"]["rag_review_required_when_any"]["shared_knowledge_entry_count_gte"] = 0
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "retrieval escalation should reject stale index route after threshold crossing"
+    assert_string_contains "$stale_output" "escalation review threshold crossed"
 }
 
 run_shared_knowledge_remote_binding_check_case() {
@@ -11772,6 +11857,7 @@ run_all_cases() {
     run_execution_layer_split_check_case
     run_legacy_asset_migration_check_case
     run_parent_receipt_aggregation_check_case
+    run_retrieval_escalation_check_case
     run_shared_knowledge_check_case
     run_shared_knowledge_remote_binding_check_case
     run_package_publish_safety_check_case
@@ -12224,6 +12310,9 @@ case "$COMMAND" in
         ;;
     parent-receipt-aggregation-check)
         run_parent_receipt_aggregation_check_case
+        ;;
+    retrieval-escalation-check)
+        run_retrieval_escalation_check_case
         ;;
     shared-knowledge-check)
         run_shared_knowledge_check_case

@@ -472,6 +472,14 @@ if [[ -x "$SHARED_KNOWLEDGE_REMOTE_CHECK" ]]; then
     fi
 fi
 
+RETRIEVAL_ESCALATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh"
+if [[ -x "$RETRIEVAL_ESCALATION_CHECK" ]]; then
+    if ! bash "$RETRIEVAL_ESCALATION_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] retrieval escalation check failed" >&2
+        exit 1
+    fi
+fi
+
 USER_AGENT_IDENTITY_CHECK="$REDCAP_ROOT/compass/tools/redcap-user-agent-identity.sh"
 if [[ ! -f "$USER_AGENT_IDENTITY_CHECK" ]]; then
     echo "[redcap-spec-check] user/agent identity check missing" >&2

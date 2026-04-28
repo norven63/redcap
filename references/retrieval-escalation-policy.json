@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "policy_id": "redcap-retrieval-escalation",
+  "description": "Controls when RedCap may move from catalog + rg + metadata to FTS, RAG, or GraphRAG. This policy prevents early heavy retrieval adoption while keeping a machine-visible trigger for future scale.",
+  "active_route": "index-rg-metadata",
+  "route_status": "approved_until_threshold_crossed",
+  "default_read_rule": {
+    "catalog_first": true,
+    "metadata_first": true,
+    "body_read_requires_precise_path": true,
+    "forbid_default_full_corpus_load": true
+  },
+  "roots": {
+    "docs_catalog": "compass/docs/catalog.json",
+    "shared_knowledge_template": "shared-knowledge",
+    "shared_knowledge_worktree": "../redcap-arsenal"
+  },
+  "shared_knowledge_entry_glob": "users/*/*.md",
+  "routes": [
+    {
+      "id": "index-rg-metadata",
+      "meaning": "Use docs catalog, knowledge index, shared-knowledge metadata, file lookup dictionary, and rg before reading exact evidence bodies.",
+      "allowed_now": true
+    },
+    {
+      "id": "fts",
+      "meaning": "Add a local full-text index when metadata and rg remain useful but document count makes repeated exact scans noisy.",
+      "allowed_now": false,
+      "requires_review": true
+    },
+    {
+      "id": "rag",
+      "meaning": "Add chunking, embeddings, reranking, and evidence-path citation only after semantic retrieval misses become a measured bottleneck.",
+      "allowed_now": false,
+      "requires_review": true
+    },
+    {
+      "id": "graphrag",
+      "meaning": "Add entity extraction, relationship graph, and community summaries only after relationship-heavy questions repeatedly fail file and metadata retrieval.",
+      "allowed_now": false,
+      "requires_review": true
+    }
+  ],
+  "escalation_thresholds": {
+    "fts_review_required_when_any": {
+      "docs_catalog_file_count_gte": 500,
+      "docs_catalog_lines_gte": 100000,
+      "shared_knowledge_entry_count_gte": 200
+    },
+    "rag_review_required_when_any": {
+      "shared_knowledge_entry_count_gte": 500,
+      "shared_knowledge_size_bytes_gte": 5000000,
+      "semantic_retrieval_miss_observations_30d_gte": 10
+    },
+    "graphrag_review_required_when_any": {
+      "shared_knowledge_entry_count_gte": 1000,
+      "relationship_query_observations_30d_gte": 20,
+      "cross_entity_trace_failures_30d_gte": 10
+    }
+  },
+  "current_observations": {
+    "semantic_retrieval_miss_observations_30d": 0,
+    "relationship_query_observations_30d": 0,
+    "cross_entity_trace_failures_30d": 0,
+    "last_reviewed": "2026-04-28",
+    "review_basis": "The external redcap-arsenal worktree contains only template files and namespace placeholders; RedCap docs are already protected by catalog, file lookup dictionary, token-risk audit, and budgeted reads."
+  },
+  "observation_update_rule": {
+    "write_target": "current_observations",
+    "evidence_sources": [
+      "task reports that record failed or noisy retrieval during real work",
+      "Prism reviews that identify semantic lookup or relationship tracing misses",
+      "shared-knowledge import batches that materially increase user-authored entries"
+    ],
+    "required_update_points": [
+      "before closing a task that observed retrieval misses",
+      "before closing a shared-knowledge import or migration task",
+      "before opening any FTS/RAG/GraphRAG escalation task"
+    ],
+    "note": "Automatic scale metrics are computed by the checker; observation metrics are deliberately evidence-based and must be updated only from recorded misses, not guesses."
+  },
+  "forbidden_defaults": {
+    "load_full_corpus_by_default": false,
+    "enable_vector_store_without_threshold": false,
+    "enable_graphrag_without_threshold": false,
+    "treat_rag_as_source_of_truth": false
+  },
+  "next_action_when_threshold_crossed": "Open a new RedCap task to evaluate FTS/RAG/GraphRAG with Prism review, source-path-preserving evidence, privacy review, and an explicit rollback plan before enabling any heavy retrieval runtime."
+}

@@ -64,7 +64,7 @@ redcap-runtime / redcap CLI
 | RAG | 需要语义召回、跨项目经验复用、关键词不稳定 | chunk + embedding + rerank + evidence path | 不替代 source-of-truth 文件 |
 | GraphRAG | 需要跨实体关系、因果链、团队共享知识图谱 | entity extraction + graph communities + source links | 不在小规模知识库中过早上马 |
 
-GraphRAG 的触发阈值应该是“关系型问题频繁出现且文件检索召回明显不足”，不是因为它流行就引入。
+GraphRAG 的触发阈值应该是“关系型问题频繁出现且文件检索召回明显不足”，不是因为它流行就引入。当前权威阈值策略见 `references/retrieval-escalation-policy.json`，并由 `redcap-retrieval-escalation-check.sh` 进入 spec/diagnose/acceptance。只要 shared-knowledge / redcap-arsenal 仍处在模板与少量条目阶段，默认路线就必须保持 `index-rg-metadata`；一旦条目数、体量或失败观测跨过策略阈值，checker 会要求开启新的检索升级任务，而不是静默启用 RAG/GraphRAG。
 
 ## Guardrails
 

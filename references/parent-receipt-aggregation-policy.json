@@ -89,6 +89,12 @@
       "receipt_glob": "first-start-identity-and-feishu-policy-*.json"
     },
     {
+      "id": "P3-1",
+      "title": "GraphRAG / 向量检索阈值研究",
+      "report_path": "compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
+      "receipt_glob": "retrieval-escalation-threshold-policy-*.json"
+    },
+    {
       "id": "P3-2",
       "title": "runtime receipt evidence correspondence hardening",
       "report_path": "compass/docs/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
@@ -97,15 +103,27 @@
   ],
   "not_complete_children": [
     {
-      "id": "P3-1",
+      "id": "P4-1",
       "status": "deferred",
-      "reason": "GraphRAG / vector retrieval threshold research should wait until the shared knowledge library grows beyond catalog + rg + metadata sufficiency.",
-      "next_step": "Re-evaluate retrieval scale after real shared-knowledge entries accumulate."
+      "reason": "Historical asset migration has only completed dry-run classification; real apply/move/delete remains a separate risk-window task.",
+      "next_step": "Open a dedicated legacy asset migration apply task after link-map, rollback, and archive policy are revalidated."
+    },
+    {
+      "id": "P4-2",
+      "status": "blocked-external",
+      "reason": "Runtime / CLI package readiness is complete, but public release requires explicit registry, package name, credential, and distribution decisions outside this child task.",
+      "next_step": "Open a release task with package registry target, secret handling, dry-run artifact review, and user-approved publish boundary."
+    },
+    {
+      "id": "P4-3",
+      "status": "deferred",
+      "reason": "Cross-machine installation E2E requires a clean target environment and should not be simulated inside the current already-initialized workspace.",
+      "next_step": "Open a cross-machine or clean-sandbox install E2E task when a target environment is available."
     }
   ],
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
-    "reason": "Deferred child items remain.",
-    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3/P2-4/P2-5/P3-2 have receipts or a current-task pre-receipt exception; parent task is still incomplete."
+    "reason": "Post-P3 release, migration apply, and cross-machine E2E child items remain.",
+    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3/P2-4/P2-5/P3-1/P3-2 have receipts or a current-task pre-receipt exception; parent task is still incomplete."
   }
 }
