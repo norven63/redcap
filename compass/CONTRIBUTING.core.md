@@ -19,7 +19,7 @@
 6. **Agent 自追加承诺必须落账**：只要你在执行中明确承诺“下一步会做 A/B/C”，就要写入 `.dev-task.md` 的 `## 执行承诺账本`；不能只留在对话里。
 6.5. **中插需求必须先重计划**：长任务执行期用户新增需求、纠偏、约束或优先级变化时，先补 `## 原始输入` 的 `U<n>` 与 `## 中插需求账本`，重排确认需求/计划/验收；子任务只能声明 `parent_completion_claim: child-only`，不得冒充父任务完成。
 7. **上下文必须渐进披露**：docs 先 catalog summary/plan/budget，knowledge 先 index，acceptance 先 acceptance-index；大文件不默认 bulk-read。
-8. **人类可读输出必须说人话**：首次出现内部术语、缩写、阶段名时，要解释对应文件/功能、做了什么、为什么重要；正式任务报告还必须通过 `redcap-human-output-quality-check.sh`，不能只靠章节标题冒充高质量汇报。
+8. **人类可读输出必须说人话**：首次出现内部术语、缩写、阶段名时，要解释对应文件/功能、做了什么、为什么重要；阶段汇报和最终汇报要有段落感与结论，优先讲“要解决什么问题、如何解决、效果如何、下一步/需要什么”，不得把文件清单、脚本名和工程节点堆成流水账；正式任务报告还必须通过 `redcap-human-output-quality-check.sh`，不能只靠章节标题冒充高质量汇报。
 9. **宿主面只能镜像 RedCap 真相**：`cli_console.md`、宿主 workboard、plan mirror 不能反向改写 `.dev-task.md`、runtime state 或 task report。
 10. **运行残留不能擅自删除**：`prism/runs`、`compass/.runtime`、`compass/.workflow` 等 ignored 本地证据目录默认 no-bulk-read；物理清理需用户显式批准。
 11. **Codex 子 Agent 默认克制但不是禁用**：仅在确实能提效提质时开启，且 RedCap / Prism 主动拉起的 Codex-family 执行进程总数默认不超过 2（当前宿主也计入）；外部审查 / reviewer 选择统一按“模型能力画像 + 本地 CLI 稳定性”排序，不得静态压低 Copilot / Codex；显式 provider 冻结窗口以 `references/prism-provider-policy.json` 为准，冻结期间不得调用对应 CLI。

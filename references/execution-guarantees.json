@@ -1368,7 +1368,7 @@
       "category": "human-status",
       "priority": "P1",
       "status": "validator",
-      "rule": "Human-facing checkpoints and Feishu notifications must expose whether Norven needs to act, whether the task is blocked, whether the next step can start, the task panorama, and the current node. Internal audit gaps must be ledger-only by default, not Feishu noise.",
+      "rule": "Human-facing checkpoints and Feishu notifications must expose whether Norven needs to act, whether the task is blocked, whether the next step can start, the task panorama, and the current node. Reports must be conclusion-first and paragraph-readable, not a changelog of files/scripts. Internal audit gaps must be ledger-only by default, not Feishu noise.",
       "source_paths": [
         "references/human-communication-policy.json",
         "references/feishu-notification-policy.json",

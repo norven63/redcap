@@ -117,6 +117,10 @@ def main() -> int:
         fail("unexpected policy_id")
     if policy.get("required_status_fields") != REQUIRED_FIELDS:
         fail("required_status_fields drifted from the canonical status surface")
+    narrative_rule = str(policy.get("narrative_quality_rule", ""))
+    for phrase in ["problem being solved", "chosen solution", "resulting effect", "not make the primary explanation a changelog"]:
+        if phrase not in narrative_rule:
+            fail(f"narrative_quality_rule missing phrase: {phrase}")
     if set(policy.get("allowed_feishu_events") or []) != {"node-report", "manual-intervention"}:
         fail("allowed_feishu_events must be node-report/manual-intervention")
 
