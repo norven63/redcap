@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 62,
-    "size_bytes": 879573,
-    "lines": 15460,
-    "chars": 571505,
+    "file_count": 63,
+    "size_bytes": 892333,
+    "lines": 15690,
+    "chars": 580127,
     "rough_token_pressure": {
-      "low": 142876,
-      "high": 285752
+      "low": 145031,
+      "high": 290063
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 43,
-        "size_bytes": 598825,
-        "lines": 8613,
-        "chars": 387035,
+        "file_count": 44,
+        "size_bytes": 611585,
+        "lines": 8843,
+        "chars": 395657,
         "rough_token_pressure": {
-          "low": 96758,
-          "high": 193517
+          "low": 98914,
+          "high": 197828
         }
       },
       "traces": {
@@ -904,7 +904,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：Formal Prism quorum 恢复复验",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10913,
       "lines": 182,
@@ -969,29 +969,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：首次启动身份初始化与飞书通知策略收敛",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16584,
       "lines": 224,
       "chars": 11194,
       "summary": "当前已完成：P2-4 的 repo-owned 链路已经落地：`revive/install` 会初始化本地用户/Agent 状态面，并且 RedCap 官方飞书通知路径被收敛到单一账号策略。 / 详情：新增 `references/user-agent-identity-policy.json` 与 `redcap-user-agent-identity.sh`，把 Norven 用户命名空间、Cap agent 摘要、ignored 本地状态和 `shared-knowledge/users/Norven` 串进 installer。新增 `references/feishu-notification-policy.json`…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P2-4 的 repo-owned 链路已经落地：`revive/install` 会初始化本地用户/Agent 状态面，并且 RedCap 官方飞书通知路径被收敛到单一账号策略。",
-          "详情：新增 `references/user-agent-identity-policy.json` 与 `redcap-user-agent-identity.sh`，把 Norven 用户命名空间、Cap agent 摘要、ignored 本地状态和 `shared-knowledge/users/Norven` 串进 installer。新增 `references/feishu-notification-policy.json` 与检查器，阻止 webhook、旧 profile、followup wat…"
-        ],
-        "previous_step": [
-          "上一步完成的是：P2-5 把“中插需求重排决策可见化”做成强门，要求当前这类中插约束先入账、再重排、再执行。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续父任务中未完成的 P3-1 / P3-2 等后续治理；飞书真实发送在用户补充正确 secret 后已恢复。"
-        ],
-        "position": [
-          "整体计划脉络图是：任务卡重锚定 → 身份初始化 policy/script → 飞书单通道 policy/checker → install/spec/diagnose/acceptance 接线 → Prism review → targeted/full acceptance 复验 → closeout receipt。",
-          "当前所在位置：`redcap-system-migration-parent / P2-4 / first-start-identity-feishu-policy`，repo-owned 实现与回归已完成，等待最终 receipt/提交收口。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md",
@@ -1048,6 +1032,35 @@
         "position": [
           "整体计划脉络图是：远端模板绑定 → 本地实体工作区 → append-only 真实沉淀 → 历史资产 apply / 检索增强。",
           "当前所在位置：`redcap-system-migration-parent / P1-4 / shared-knowledge-local-worktree`。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Runtime receipt evidence correspondence hardening",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12760,
+      "lines": 230,
+      "chars": 8622,
+      "summary": "当前已完成：P3-2 已把父任务聚合从“有报告 + receipt_glob 字符串”升级为“必须找到真实 runtime receipt，并核对 receipt 内容与 child 身份、报告、完成态、承诺账本、验收态、repo_path、confirmed_hash 和 git head 对应”。 / 详情：本轮修改 `references/parent-receipt-aggregation-policy.json` 与 `redcap-parent-receipt-aggregation-check.py`，让父任务 completed child 不再只靠元数据形态自证。当前 child 在 closeout 前允许被…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P3-2 已把父任务聚合从“有报告 + receipt_glob 字符串”升级为“必须找到真实 runtime receipt，并核对 receipt 内容与 child 身份、报告、完成态、承诺账本、验收态、repo_path、confirmed_hash 和 git head 对应”。",
+          "详情：本轮修改 `references/parent-receipt-aggregation-policy.json` 与 `redcap-parent-receipt-aggregation-check.py`，让父任务 completed child 不再只靠元数据形态自证。当前 child 在 closeout 前允许被 `.dev-task.md` 明确锚定为 pre-receipt 例外，历史 child 缺 receipt 或 receipt 内容错配会 fail-closed。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P2-4 已完成首次启动身份初始化与飞书通知策略收敛，并用真实飞书 profile 完成 setup / node-report 验证。"
+        ],
+        "next_step": [
+          "下一步计划做的是：提交、在提交后重跑 full acceptance（避免 stop-review fixture 被 dirty working tree 误伤），然后 closeout receipt 收口；随后父任务只剩 P3-1 GraphRAG / 向量检索阈值研究继续 deferred。"
+        ],
+        "position": [
+          "整体计划脉络图是：父任务聚合 gate → receipt 内容对应强门 → targeted acceptance → Prism review → closeout receipt。",
+          "当前所在位置：`redcap-system-migration-parent / P3-2 / receipt-correspondence-hardening`。"
         ]
       }
     },

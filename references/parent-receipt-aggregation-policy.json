@@ -5,6 +5,22 @@
   "parent_status": "incomplete",
   "parent_completion_allowed": false,
   "completion_rule": "The parent task may be declared complete only when every child item is completed with a report and receipt, or explicitly closed as blocked-external / resource-limited / deferred with a next action. A child receipt never proves parent completion by itself.",
+  "receipt_correspondence": {
+    "enabled": true,
+    "runtime_project_base": "/tmp/redcap/project",
+    "allow_current_child_pre_receipt": true,
+    "allowed_acceptance_statuses": ["pass", "resource-limited-pass", "not-required"],
+    "required_content": [
+      "task_id",
+      "confirmed_hash",
+      "repo_path",
+      "status=completed",
+      "promise_pending=0",
+      "acceptance_status",
+      "report_path",
+      "current_head"
+    ]
+  },
   "completed_children": [
     {
       "id": "P0-1",
@@ -71,6 +87,12 @@
       "title": "首次启动身份初始化与飞书通知策略收敛",
       "report_path": "compass/docs/task-reports/2026-04-27-first-start-identity-and-feishu-policy.md",
       "receipt_glob": "first-start-identity-and-feishu-policy-*.json"
+    },
+    {
+      "id": "P3-2",
+      "title": "runtime receipt evidence correspondence hardening",
+      "report_path": "compass/docs/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
+      "receipt_glob": "runtime-receipt-evidence-correspondence-hardening-*.json"
     }
   ],
   "not_complete_children": [
@@ -79,17 +101,11 @@
       "status": "deferred",
       "reason": "GraphRAG / vector retrieval threshold research should wait until the shared knowledge library grows beyond catalog + rg + metadata sufficiency.",
       "next_step": "Re-evaluate retrieval scale after real shared-knowledge entries accumulate."
-    },
-    {
-      "id": "P3-2",
-      "status": "deferred",
-      "reason": "Runtime receipt evidence correspondence hardening is a deeper evidence-quality improvement, not required for P1-3 remote binding.",
-      "next_step": "Implement receipt/content correspondence checks after receipt roots and report links are stable."
     }
   ],
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
     "reason": "Deferred child items remain.",
-    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3/P2-4/P2-5 have receipts or active completion reports; parent task is still incomplete."
+    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3/P2-4/P2-5/P3-2 have receipts or a current-task pre-receipt exception; parent task is still incomplete."
   }
 }

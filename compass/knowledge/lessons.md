@@ -1267,6 +1267,15 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **复现次数**：多次
 - **最后命中**：2026-04-26
 
+### L-129A: receipt_glob 只是索引，不是完成证据
+- **问题源**：父任务聚合曾经只校验 completed child 的 report 是否存在、`receipt_glob` 形态是否合理；这能防止父任务误报 complete，却不能证明 glob 真实匹配了 runtime receipt，也不能证明 receipt 内容对应正确 child 和报告。
+- **解决方案**：把 parent receipt aggregation checker 升级为内容对应强门：根据 repo root 定位 runtime receipt 目录，至少找到一个匹配 receipt，并核对 `task_id`、`confirmed_hash`、`repo_path`、`status=completed`、`promise_pending=0`、`acceptance_status`、`report_path` 与 git head。当前 child closeout 前只允许由 `.dev-task.md` 明确锚定的 pre-receipt 例外，历史 child 不豁免。
+- **最后效果**：父任务账本不再把文件名模式当成证据；缺 receipt、错 receipt、过时 report 会在 spec/diagnose/acceptance 中 fail-closed。
+- **来源**：2026-04-28 Runtime receipt evidence correspondence hardening
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-28
+
 ### L-130: package readiness 要核对“声明的候选清单”和“真实打包面”
 - **问题源**：P2-1 开始建立 npm/package-style readiness 时，默认安全 gate 可以检查候选清单，但 `package.json.files` 的宽泛 glob 仍可能让真实 `npm pack` 包进未纳入候选清单的大文件或测试资产。
 - **解决方案**：package readiness 必须有机器可读 policy 生成精确 candidate list，并用 package safety gate 检查该清单；同时 `package.json` 必须保持 `private=true`，宽泛 tools glob 必须显式排除 `redcap-multi-session-acceptance.sh`，防止候选清单和真实包面分叉。

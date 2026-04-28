@@ -9864,8 +9864,173 @@ run_parent_receipt_aggregation_check_case() {
 
     log "case: parent-receipt-aggregation-check"
 
+    python3 - "$REDCAP_ROOT" "$REDCAP_RUNTIME_PROJECT_BASE_DIR" "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" <<'PY'
+import hashlib
+import json
+import pathlib
+import subprocess
+import sys
+
+root = pathlib.Path(sys.argv[1]).resolve()
+runtime_base = pathlib.Path(sys.argv[2]).resolve()
+policy_path = pathlib.Path(sys.argv[3])
+payload = json.loads(policy_path.read_text(encoding="utf-8"))
+project_hash = hashlib.md5(str(root).encode("utf-8")).hexdigest()
+receipt_dir = runtime_base / project_hash / "governance/closeout-runtime/receipts"
+receipt_dir.mkdir(parents=True, exist_ok=True)
+head = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+
+for child in payload["completed_children"]:
+    if child.get("id") == "P3-2":
+        continue
+    receipt_glob = child["receipt_glob"]
+    task_id = child.get("task_id") or receipt_glob.removesuffix("-*.json")
+    filename = receipt_glob.replace("*", "acceptance")
+    receipt = {
+        "task_id": task_id,
+        "confirmed_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "active_slice": "acceptance-fixture",
+        "repo_path": str(root),
+        "task_file": str(root / ".dev-task.md"),
+        "report_path": str(root / child["report_path"]),
+        "status": "completed",
+        "detail": "acceptance fixture receipt",
+        "host": "acceptance",
+        "baseline_head": head,
+        "current_head": head,
+        "promise_completed": 1,
+        "promise_total": 1,
+        "promise_pending": 0,
+        "acceptance_status": "pass",
+        "acceptance_detail": "acceptance fixture",
+        "acceptance_run": "acceptance-fixture",
+        "summary_path": "",
+        "repaired": False,
+        "created_at": "2026-04-28T00:00:00Z",
+    }
+    (receipt_dir / filename).write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh")"
     assert_string_contains "$output" "PARENT_RECEIPT_AGGREGATION_OK"
+    assert_string_contains "$output" "receipt_correspondence=verified"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-missing-runtime-receipt.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+for child in payload["completed_children"]:
+    if child.get("id") == "P2-4":
+        child["receipt_glob"] = "missing-first-start-identity-and-feishu-policy-*.json"
+        break
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing runtime receipt for historical child"
+    assert_string_contains "$stale_output" "P2-4: receipt_glob matched no runtime receipts"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-wrong-report-path.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+for child in payload["completed_children"]:
+    if child.get("id") == "P2-4":
+        child["report_path"] = "compass/docs/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md"
+        break
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject receipt/report path mismatch"
+    assert_string_contains "$stale_output" "P2-4: no matching runtime receipt has corresponding content"
+    assert_string_contains "$stale_output" "report_path mismatch"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-task-id-mismatch.json"
+    python3 - "$REDCAP_ROOT" "$REDCAP_RUNTIME_PROJECT_BASE_DIR" "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import hashlib
+import json
+import pathlib
+import subprocess
+import sys
+
+root = pathlib.Path(sys.argv[1]).resolve()
+runtime_base = pathlib.Path(sys.argv[2]).resolve()
+source = pathlib.Path(sys.argv[3])
+target = pathlib.Path(sys.argv[4])
+payload = json.loads(source.read_text(encoding="utf-8"))
+head = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+project_hash = hashlib.md5(str(root).encode("utf-8")).hexdigest()
+receipt_dir = runtime_base / project_hash / "governance/closeout-runtime/receipts"
+receipt_dir.mkdir(parents=True, exist_ok=True)
+for child in payload["completed_children"]:
+    if child.get("id") == "P2-4":
+        child["task_id"] = "first-start-identity-and-feishu-policy"
+        child["receipt_glob"] = "first-start-identity-and-feishu-policy-badtask.json"
+        report_path = child["report_path"]
+        break
+else:
+    raise SystemExit("P2-4 fixture missing")
+receipt = {
+    "task_id": "wrong-task-id",
+    "confirmed_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "active_slice": "acceptance-fixture",
+    "repo_path": str(root),
+    "task_file": str(root / ".dev-task.md"),
+    "report_path": str(root / report_path),
+    "status": "completed",
+    "detail": "acceptance fixture receipt",
+    "host": "acceptance",
+    "baseline_head": head,
+    "current_head": head,
+    "promise_completed": 1,
+    "promise_total": 1,
+    "promise_pending": 0,
+    "acceptance_status": "pass",
+    "acceptance_detail": "acceptance fixture",
+    "acceptance_run": "acceptance-fixture",
+    "summary_path": "",
+    "repaired": False,
+    "created_at": "2026-04-28T00:00:00Z",
+}
+(receipt_dir / "first-start-identity-and-feishu-policy-badtask.json").write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject task_id mismatch"
+    assert_string_contains "$stale_output" "task_id mismatch"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-current-child-pre-receipt.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+for child in payload["completed_children"]:
+    if child.get("id") == "P3-2":
+        child["receipt_glob"] = "runtime-receipt-evidence-correspondence-hardening-acceptance-missing-*.json"
+        break
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy")"
+    assert_string_contains "$output" "current_pre_receipt=1"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-allows-complete.json"
     python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
@@ -9930,8 +10095,12 @@ source = pathlib.Path(sys.argv[1])
 target = pathlib.Path(sys.argv[2])
 payload = json.loads(source.read_text(encoding="utf-8"))
 payload["not_complete_children"] = [
-    child for child in payload["not_complete_children"]
-    if child.get("id") != "P3-1"
+    {
+        "id": "P9-9",
+        "status": "deferred",
+        "reason": "acceptance fixture",
+        "next_step": "acceptance fixture"
+    }
 ]
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
