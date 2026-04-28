@@ -105,8 +105,8 @@
     {
       "id": "P4-1",
       "status": "deferred",
-      "reason": "Historical asset migration has only completed dry-run classification; real apply/move/delete remains a separate risk-window task.",
-      "next_step": "Open a dedicated legacy asset migration apply task after link-map, rollback, and archive policy are revalidated."
+      "reason": "Historical asset migration now has collection dry-run plus file-level apply preflight, but real apply/move/delete remains a separate risk-window task.",
+      "next_step": "Run a throwaway-worktree apply rehearsal with old-path alias/link map, receipt-anchor verification, docs catalog regeneration, and rollback review before any main-tree migration."
     },
     {
       "id": "P4-2",

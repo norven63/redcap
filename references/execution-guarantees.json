@@ -1275,6 +1275,30 @@
       "auto_enforceable": true
     },
     {
+      "id": "legacy-asset-migration-apply-preflight",
+      "category": "parent-task-governance",
+      "priority": "P1",
+      "rule": "Historical asset migration real apply must not begin until a file-level preflight manifest proves no delete/move/public-export, preserves old anchors, and names catalog/link/receipt/rollback gates.",
+      "source_paths": [
+        "references/legacy-asset-migration-apply-plan.json",
+        "references/legacy-asset-migration-dry-run.json",
+        "references/redcap-parent-task-ledger.md",
+        "compass/docs/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-legacy-asset-migration-apply-plan.sh validates the file-level preflight manifest, blocks delete/move/public targets, rejects path traversal and duplicate targets, requires receipt-anchor guards, and is consumed by spec-check, diagnose, and acceptance.",
+      "guarantee_paths": [
+        "compass/tools/redcap-legacy-asset-migration-apply-plan.sh",
+        "compass/tools/redcap-legacy-asset-migration-apply-plan.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "parent-receipt-aggregation-gate",
       "category": "parent-task-governance",
       "priority": "P2",

@@ -1347,3 +1347,30 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：多次
 - **最后命中**：2026-04-29
+
+### L-140: 运行时证据目录不能用静态 exact count 当迁移门
+- **问题源**：P4-1 apply preflight 接入后，`prism/runs` 会因为 Prism 评审本身新增运行证据；如果 dry-run / preflight manifest 对这类运行时目录做静态精确计数，门禁会被自己的评审动作污染，出现“实现本身安全，但回归因动态证据增长失败”的假阴性。
+- **解决方案**：把 runtime evidence 与历史资产分开：`task-reports`、research、traces、knowledge、specs 等 file-level 历史资产继续 exact count；`prism-runs`、`runtime-working-dirs` 这类 collection-summary-only 目录只校验 snapshot integer、保留策略和清理/retention gate，不把动态数量当迁移安全证明。
+- **最后效果**：历史资产迁移安全门仍能阻断 delete/move/public export/路径逃逸/receipt anchor 破坏，同时不会因为棱镜评审、revive 或运行时状态写入导致自我污染式误报。
+- **来源**：2026-04-29 Historical asset migration apply preflight
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-29
+
+### L-141: 通知降噪不能删除本地终态证据
+- **问题源**：飞书 audit-gap 通知默认降噪后，SessionEnd blocked/audit-gap 分支只写 pending closure，没有写本地 terminal marker；全量 acceptance 的 Layer B 并发用例因此无法证明每条会话已经到达稳定终态。
+- **解决方案**：人类通知和机器终态要分层处理：飞书降噪只影响外部消息，不得影响 runtime 本地 marker、pending closure、ledger 或 receipt 证据。SessionEnd 在通知被静默时也必须写 `layerB/alerted-head` 这类本地终止标记。
+- **最后效果**：用户不会再收到内部 audit-gap 飞书刷屏，但并发会话、SessionEnd 和 closeout 仍能用本地证据判断“已触达终态”，避免把降噪做成控制面失明。
+- **来源**：2026-04-29 Historical asset migration apply preflight 全量回归
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-29
+
+### L-142: acceptance fixture 不能依赖真实当前任务卡
+- **问题源**：parent receipt 聚合和 spec lifecycle 的部分 acceptance fixture 依赖真实 `.dev-task.md` 或漏掉新增强门 stub；当当前任务从 P3-1 切到 P4-1，或 spec-check 新增 human communication 强门后，用例失败原因就从“被测机制”漂移成“夹具环境不完整”。
+- **解决方案**：验收夹具必须自带最小任务卡和完整依赖 stub，只把当前用例要验证的变量设为失败点。新增 spec-check 强门时，必须同步更新失败传播用例和所有会调用 spec-check 的夹具构造器。
+- **最后效果**：回归失败会更接近真实产品缺陷，而不是被当前会话状态、缺脚本或旧 fixture 偷换失败原因；长任务中插和任务切换也不会污染历史机制验收。
+- **来源**：2026-04-29 Historical asset migration apply preflight 全量回归
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-29

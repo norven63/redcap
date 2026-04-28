@@ -1,0 +1,2977 @@
+{
+  "version": 1,
+  "manifest_id": "redcap-legacy-asset-migration-apply-preflight",
+  "status": "apply-preflight-only",
+  "created_for_task": "historical-asset-migration-apply-preflight",
+  "source_dry_run": "references/legacy-asset-migration-dry-run.json",
+  "apply_allowed": false,
+  "public_export_allowed": false,
+  "target_authority": {
+    "proposed_private_root": "redcap-knowledge",
+    "public_repository_root": "redcap-arsenal",
+    "public_repository_status": "blocked-for-raw-history",
+    "reason": "Historical reports, local traces, and runtime evidence may contain private operational context. The public redcap-arsenal repository can receive curated, append-only knowledge entries only after separate redaction and dedupe review."
+  },
+  "apply_policy": {
+    "rule": "This preflight creates an exact file-level plan only. It is not a migration apply and must not delete, move, or public-export historical assets.",
+    "requires_before_apply": [
+      "Review this manifest with Prism before any physical migration.",
+      "Apply first in a throwaway branch or worktree.",
+      "Regenerate docs catalog and link map with old-path aliases before removing any old path.",
+      "Verify closeout receipts, task-report anchors, and report checks still resolve after the throwaway apply.",
+      "Keep rollback copy-delete commands reviewed before the real apply window."
+    ]
+  },
+  "risk_controls": {
+    "no_delete_or_move": true,
+    "old_paths_remain_authoritative": true,
+    "public_export_blocked": true,
+    "copy_first_delete_last": true,
+    "actual_apply_requires_throwaway_worktree": true
+  },
+  "collections": [
+    {
+      "id": "task-reports",
+      "source": "compass/docs/task-reports",
+      "target": "redcap-knowledge/task-reports",
+      "kind": "tracked-archaeology",
+      "risk": "high",
+      "dry_run_action": "copy-to-knowledge-then-index",
+      "operation": "copy-first",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "item_scope": "file-level",
+      "actual_file_count": 47,
+      "manifest_item_count": 47,
+      "reason": "Task reports are closeout evidence and historical archaeology; moving them without link maps can break receipt/report anchors.",
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "docs-catalog",
+      "source": "compass/docs/catalog.json",
+      "target": "compass/docs/catalog.json",
+      "kind": "progressive-disclosure-index",
+      "risk": "medium",
+      "dry_run_action": "preserve",
+      "operation": "preserve",
+      "apply_status": "preserve_active_index",
+      "item_scope": "file-level",
+      "actual_file_count": 1,
+      "manifest_item_count": 1,
+      "reason": "Docs catalog is the progressive-disclosure index that keeps historical docs from being bulk-read; it must remain available while any docs paths move.",
+      "catalog_update_plan": [
+        "Regenerate catalog after any file-level apply",
+        "Keep moved-path redirects or aliases until old anchors age out"
+      ],
+      "link_check_plan": [
+        "Run docs catalog check and budget check after any path changes"
+      ],
+      "rollback_plan": [
+        "Keep current catalog path authoritative until the moved asset index passes"
+      ]
+    },
+    {
+      "id": "runtime-working-dirs",
+      "source": "compass/.workflow",
+      "target": "compass/.workflow",
+      "kind": "ignored-local-runtime",
+      "risk": "medium",
+      "dry_run_action": "ignore-runtime",
+      "operation": "ignore-runtime",
+      "apply_status": "ignore_runtime_state",
+      "item_scope": "collection-summary-only",
+      "actual_file_count": 48,
+      "manifest_item_count": 0,
+      "reason": "Local workflow state is ignored runtime data, not a historical asset to migrate into docs or knowledge.",
+      "catalog_update_plan": [
+        "Do not add local runtime state to docs catalog"
+      ],
+      "link_check_plan": [
+        "Use current-status and runtime checks instead of reading local runtime files as archaeology"
+      ],
+      "rollback_plan": [
+        "No physical move or delete in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "prism-runs",
+      "source": "prism/runs",
+      "target": "prism/runs",
+      "kind": "ignored-runtime-evidence",
+      "risk": "medium",
+      "dry_run_action": "prune-when-safe",
+      "operation": "retention-check-only",
+      "apply_status": "retention_check_only",
+      "item_scope": "collection-summary-only",
+      "actual_file_count": 331,
+      "manifest_item_count": 0,
+      "reason": "prism/runs is ignored runtime evidence; current lifecycle summary has no purgeable acceptance residue, so physical cleanup is not required now but future prune candidates must pass retention.",
+      "catalog_update_plan": [
+        "Do not add prism/runs contents to docs catalog"
+      ],
+      "link_check_plan": [
+        "Use prism-runs-lifecycle summary/check instead of bulk-reading run directories"
+      ],
+      "rollback_plan": [
+        "No physical move or delete in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "research",
+      "source": "compass/docs/research",
+      "target": "redcap-knowledge/research",
+      "kind": "human-facing-research",
+      "risk": "medium",
+      "dry_run_action": "copy-to-knowledge-then-index",
+      "operation": "copy-first",
+      "apply_status": "blocked_until_catalog_linkmap_exists",
+      "item_scope": "file-level",
+      "actual_file_count": 3,
+      "manifest_item_count": 3,
+      "reason": "Research docs are low-frequency human reading material, but current workflow panorama is still linked from status and docs catalog.",
+      "catalog_update_plan": [
+        "Preserve current catalog entries until new knowledge index exists",
+        "Add redirect entries before removing old paths"
+      ],
+      "link_check_plan": [
+        "Check file:// HTML references",
+        "Check docs catalog entries and README links"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/research unchanged until redirects and catalog entries pass"
+      ]
+    },
+    {
+      "id": "specs",
+      "source": "compass/docs/specs",
+      "target": "compass/docs/specs",
+      "kind": "active-spec-authority",
+      "risk": "high",
+      "dry_run_action": "preserve",
+      "operation": "preserve",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "item_scope": "file-level",
+      "actual_file_count": 13,
+      "manifest_item_count": 13,
+      "reason": "Specs are already governed by spec-registry and lifecycle policy; moving them belongs to a dedicated spec authority migration.",
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "traces",
+      "source": "compass/docs/traces",
+      "target": "redcap-knowledge/traces",
+      "kind": "architecture-trace",
+      "risk": "medium",
+      "dry_run_action": "copy-to-knowledge-then-index",
+      "operation": "copy-first",
+      "apply_status": "blocked_until_trace_consumers_are_checked",
+      "item_scope": "file-level",
+      "actual_file_count": 1,
+      "manifest_item_count": 1,
+      "reason": "Trace files are compact but may be referenced by architecture docs and review gates.",
+      "catalog_update_plan": [
+        "Add trace entries to knowledge index before removal from docs"
+      ],
+      "link_check_plan": [
+        "Check architecture docs for trace references"
+      ],
+      "rollback_plan": [
+        "Keep original trace file until architecture checks pass"
+      ]
+    },
+    {
+      "id": "docs-archive",
+      "source": "compass/docs/archive",
+      "target": "compass/docs/archive",
+      "kind": "existing-archive",
+      "risk": "low",
+      "dry_run_action": "archive-in-place",
+      "operation": "archive-in-place",
+      "apply_status": "no_move_required",
+      "item_scope": "file-level",
+      "actual_file_count": 2,
+      "manifest_item_count": 2,
+      "reason": "Archive already carries historical material; current action is retention validation, not physical migration.",
+      "catalog_update_plan": [
+        "Keep archive entries discoverable through docs catalog"
+      ],
+      "link_check_plan": [
+        "Use docs retention check for archive policy"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "knowledge-lessons",
+      "source": "compass/knowledge",
+      "target": "redcap-knowledge/knowledge",
+      "kind": "active-knowledge",
+      "risk": "high",
+      "dry_run_action": "translate-after-index-split",
+      "operation": "blocked-translate",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "item_scope": "file-level",
+      "actual_file_count": 19,
+      "manifest_item_count": 19,
+      "reason": "Knowledge files are active runtime guidance; cold material can move only after index preserves progressive disclosure and hot lessons remain available.",
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "LAM-0001",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-11-hook-chain-investigation.md",
+      "target": "redcap-knowledge/task-reports/2026-04-11-hook-chain-investigation.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0002",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md",
+      "target": "redcap-knowledge/task-reports/2026-04-11-multi-session-isolation-foundation.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0003",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-12-autonomy-escalation-p0.md",
+      "target": "redcap-knowledge/task-reports/2026-04-12-autonomy-escalation-p0.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0004",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md",
+      "target": "redcap-knowledge/task-reports/2026-04-12-continuity-governance-session-adoption.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0005",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-12-docs-governance-audit.md",
+      "target": "redcap-knowledge/task-reports/2026-04-12-docs-governance-audit.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0006",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md",
+      "target": "redcap-knowledge/task-reports/2026-04-12-host-agent-interop-governance.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0007",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md",
+      "target": "redcap-knowledge/task-reports/2026-04-12-multi-session-isolation-mainline.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0008",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-14-backlog-mechanism-and-spec-governance.md",
+      "target": "redcap-knowledge/task-reports/2026-04-14-backlog-mechanism-and-spec-governance.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0009",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-14-framework-upgrade-stage1-closeout.md",
+      "target": "redcap-knowledge/task-reports/2026-04-14-framework-upgrade-stage1-closeout.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0010",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-15-report-template-and-d1-f2-followup.md",
+      "target": "redcap-knowledge/task-reports/2026-04-15-report-template-and-d1-f2-followup.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0011",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-16-completion-hook-hardening.md",
+      "target": "redcap-knowledge/task-reports/2026-04-16-completion-hook-hardening.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0012",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-16-copilot-session-anchor.md",
+      "target": "redcap-knowledge/task-reports/2026-04-16-copilot-session-anchor.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0013",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-16-feishu-duplex-and-overlay-p0.md",
+      "target": "redcap-knowledge/task-reports/2026-04-16-feishu-duplex-and-overlay-p0.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0014",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-17-closeout-followup-hardening.md",
+      "target": "redcap-knowledge/task-reports/2026-04-17-closeout-followup-hardening.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0015",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
+      "target": "redcap-knowledge/task-reports/2026-04-17-live-closeout-final-blockers.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0016",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-21-entry-surface-and-prism-positioning-sync.md",
+      "target": "redcap-knowledge/task-reports/2026-04-21-entry-surface-and-prism-positioning-sync.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0017",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-21-pending-validations-e2e-tranche.md",
+      "target": "redcap-knowledge/task-reports/2026-04-21-pending-validations-e2e-tranche.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0018",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md",
+      "target": "redcap-knowledge/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0019",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-22-install-revival-and-context-hardening.md",
+      "target": "redcap-knowledge/task-reports/2026-04-22-install-revival-and-context-hardening.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0020",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-22-layerb-lifecycle-and-memory-architecture.md",
+      "target": "redcap-knowledge/task-reports/2026-04-22-layerb-lifecycle-and-memory-architecture.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0021",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-22-layerb-runtime-closeout-hardening.md",
+      "target": "redcap-knowledge/task-reports/2026-04-22-layerb-runtime-closeout-hardening.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0022",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-22-prism-revive-cap-e2e-and-readonly-fix.md",
+      "target": "redcap-knowledge/task-reports/2026-04-22-prism-revive-cap-e2e-and-readonly-fix.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0023",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-22-readonly-scribe-lifecycle-and-hook-hardening.md",
+      "target": "redcap-knowledge/task-reports/2026-04-22-readonly-scribe-lifecycle-and-hook-hardening.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0024",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md",
+      "target": "redcap-knowledge/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0025",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md",
+      "target": "redcap-knowledge/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0026",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-25-redcap-evolution-grade-control-plane-hardening.md",
+      "target": "redcap-knowledge/task-reports/2026-04-25-redcap-evolution-grade-control-plane-hardening.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0027",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-25-redcap-runtime-productization-and-architecture-decoupling.md",
+      "target": "redcap-knowledge/task-reports/2026-04-25-redcap-runtime-productization-and-architecture-decoupling.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0028",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0029",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-execution-layer-split-dry-run.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-execution-layer-split-dry-run.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0030",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-layerb-change-intake-replan-gate.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-layerb-change-intake-replan-gate.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0031",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0032",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-original-intent-coverage-gate.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-original-intent-coverage-gate.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0033",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-package-publish-safety-gate.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-package-publish-safety-gate.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0034",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-parent-receipt-aggregation-gate.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-parent-receipt-aggregation-gate.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0035",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-prism-availability-cache-provenance-guard.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-prism-availability-cache-provenance-guard.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0036",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-prism-formal-quorum-provider-revalidation.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-prism-formal-quorum-provider-revalidation.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0037",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0038",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-r0-r22-registry.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-r0-r22-registry.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0039",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-runtime-cli-package-readiness.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-runtime-cli-package-readiness.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0040",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
+      "target": "redcap-knowledge/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0041",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-27-first-start-identity-and-feishu-policy.md",
+      "target": "redcap-knowledge/task-reports/2026-04-27-first-start-identity-and-feishu-policy.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0042",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md",
+      "target": "redcap-knowledge/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0043",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
+      "target": "redcap-knowledge/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0044",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
+      "target": "redcap-knowledge/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0045",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
+      "target": "redcap-knowledge/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0046",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md",
+      "target": "redcap-knowledge/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0047",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md",
+      "target": "redcap-knowledge/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0048",
+      "collection_id": "docs-catalog",
+      "source": "compass/docs/catalog.json",
+      "target": "compass/docs/catalog.json",
+      "operation": "preserve",
+      "risk": "medium",
+      "apply_status": "preserve_active_index",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Regenerate catalog after any file-level apply",
+        "Keep moved-path redirects or aliases until old anchors age out"
+      ],
+      "link_check_plan": [
+        "Run docs catalog check and budget check after any path changes"
+      ],
+      "rollback_plan": [
+        "Keep current catalog path authoritative until the moved asset index passes"
+      ]
+    },
+    {
+      "id": "LAM-0049",
+      "collection_id": "research",
+      "source": "compass/docs/research/2026-04-24-redcap-workflow-panorama.html",
+      "target": "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html",
+      "operation": "copy-first",
+      "risk": "medium",
+      "apply_status": "blocked_until_catalog_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Preserve current catalog entries until new knowledge index exists",
+        "Add redirect entries before removing old paths"
+      ],
+      "link_check_plan": [
+        "Check file:// HTML references",
+        "Check docs catalog entries and README links"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/research unchanged until redirects and catalog entries pass"
+      ]
+    },
+    {
+      "id": "LAM-0050",
+      "collection_id": "research",
+      "source": "compass/docs/research/2026-04-24-redcap-workflow-panorama.md",
+      "target": "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md",
+      "operation": "copy-first",
+      "risk": "medium",
+      "apply_status": "blocked_until_catalog_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Preserve current catalog entries until new knowledge index exists",
+        "Add redirect entries before removing old paths"
+      ],
+      "link_check_plan": [
+        "Check file:// HTML references",
+        "Check docs catalog entries and README links"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/research unchanged until redirects and catalog entries pass"
+      ]
+    },
+    {
+      "id": "LAM-0051",
+      "collection_id": "research",
+      "source": "compass/docs/research/feishu-ai-agent-collaboration-report.md",
+      "target": "redcap-knowledge/research/feishu-ai-agent-collaboration-report.md",
+      "operation": "copy-first",
+      "risk": "medium",
+      "apply_status": "blocked_until_catalog_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Preserve current catalog entries until new knowledge index exists",
+        "Add redirect entries before removing old paths"
+      ],
+      "link_check_plan": [
+        "Check file:// HTML references",
+        "Check docs catalog entries and README links"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/research unchanged until redirects and catalog entries pass"
+      ]
+    },
+    {
+      "id": "LAM-0052",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/2026-04-12-host-agent-interop-governance-design.md",
+      "target": "compass/docs/specs/2026-04-12-host-agent-interop-governance-design.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0053",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md",
+      "target": "compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0054",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
+      "target": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0055",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/2026-04-15-feishu-duplex-communication-design.md",
+      "target": "compass/docs/specs/2026-04-15-feishu-duplex-communication-design.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0056",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md",
+      "target": "compass/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0057",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/2026-04-23-layerb-fsm-workmode-rebuild.md",
+      "target": "compass/docs/specs/2026-04-23-layerb-fsm-workmode-rebuild.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0058",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/baton-design.md",
+      "target": "compass/docs/specs/baton-design.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0059",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
+      "target": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0060",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/engine-upgrade-part2-execution-framework.md",
+      "target": "compass/docs/specs/engine-upgrade-part2-execution-framework.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0061",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/hook-chain-investigation-design.md",
+      "target": "compass/docs/specs/hook-chain-investigation-design.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0062",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/multi-session-isolation-design.md",
+      "target": "compass/docs/specs/multi-session-isolation-design.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0063",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/prism-coordinator-phase-a-design.md",
+      "target": "compass/docs/specs/prism-coordinator-phase-a-design.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0064",
+      "collection_id": "specs",
+      "source": "compass/docs/specs/session-isolation-continuity-guide.md",
+      "target": "compass/docs/specs/session-isolation-continuity-guide.md",
+      "operation": "preserve",
+      "risk": "high",
+      "apply_status": "preserve_until_spec_registry_migration_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "no-op-preserve"
+      ],
+      "catalog_update_plan": [
+        "Keep existing spec registry and docs catalog authoritative"
+      ],
+      "link_check_plan": [
+        "Use redcap-spec-check for registry and replacement-chain validation"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0065",
+      "collection_id": "traces",
+      "source": "compass/docs/traces/architecture-capability-trace.yaml",
+      "target": "redcap-knowledge/traces/architecture-capability-trace.yaml",
+      "operation": "copy-first",
+      "risk": "medium",
+      "apply_status": "blocked_until_trace_consumers_are_checked",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Add trace entries to knowledge index before removal from docs"
+      ],
+      "link_check_plan": [
+        "Check architecture docs for trace references"
+      ],
+      "rollback_plan": [
+        "Keep original trace file until architecture checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0066",
+      "collection_id": "docs-archive",
+      "source": "compass/docs/archive/retention-log.md",
+      "target": "compass/docs/archive/retention-log.md",
+      "operation": "archive-in-place",
+      "risk": "low",
+      "apply_status": "no_move_required",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "archive-in-place-no-path-change"
+      ],
+      "catalog_update_plan": [
+        "Keep archive entries discoverable through docs catalog"
+      ],
+      "link_check_plan": [
+        "Use docs retention check for archive policy"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0067",
+      "collection_id": "docs-archive",
+      "source": "compass/docs/archive/specs/.gitkeep",
+      "target": "compass/docs/archive/specs/.gitkeep",
+      "operation": "archive-in-place",
+      "risk": "low",
+      "apply_status": "no_move_required",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "archive-in-place-no-path-change"
+      ],
+      "catalog_update_plan": [
+        "Keep archive entries discoverable through docs catalog"
+      ],
+      "link_check_plan": [
+        "Use docs retention check for archive policy"
+      ],
+      "rollback_plan": [
+        "No physical move in P1-2 dry-run"
+      ]
+    },
+    {
+      "id": "LAM-0068",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/DEPLOYMENT_STATUS.md",
+      "target": "redcap-knowledge/knowledge/DEPLOYMENT_STATUS.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0069",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/a2a-communication.md",
+      "target": "redcap-knowledge/knowledge/a2a-communication.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0070",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/design-principles.md",
+      "target": "redcap-knowledge/knowledge/design-principles.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0071",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/explore-notes.md",
+      "target": "redcap-knowledge/knowledge/explore-notes.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0072",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/governance-debt-register.md",
+      "target": "redcap-knowledge/knowledge/governance-debt-register.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0073",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/hooks-claude-code.md",
+      "target": "redcap-knowledge/knowledge/hooks-claude-code.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0074",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/hooks-codex-cli.md",
+      "target": "redcap-knowledge/knowledge/hooks-codex-cli.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0075",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/hooks-copilot-cli.md",
+      "target": "redcap-knowledge/knowledge/hooks-copilot-cli.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0076",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/hooks-gemini-cli.md",
+      "target": "redcap-knowledge/knowledge/hooks-gemini-cli.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0077",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/hooks-kimi-cli.md",
+      "target": "redcap-knowledge/knowledge/hooks-kimi-cli.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0078",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/hooks-vscode-copilot.md",
+      "target": "redcap-knowledge/knowledge/hooks-vscode-copilot.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0079",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/host-reliability.md",
+      "target": "redcap-knowledge/knowledge/host-reliability.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0080",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/index.md",
+      "target": "redcap-knowledge/knowledge/index.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0081",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/layerA-hook-deploy.md",
+      "target": "redcap-knowledge/knowledge/layerA-hook-deploy.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0082",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/lessons-archive.md",
+      "target": "redcap-knowledge/knowledge/lessons-archive.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0083",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/lessons.md",
+      "target": "redcap-knowledge/knowledge/lessons.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0084",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/long-task-context-defense.md",
+      "target": "redcap-knowledge/knowledge/long-task-context-defense.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0085",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/model-capability-matrix.yaml",
+      "target": "redcap-knowledge/knowledge/model-capability-matrix.yaml",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0086",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/runtime-memory-architecture.md",
+      "target": "redcap-knowledge/knowledge/runtime-memory-architecture.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    }
+  ],
+  "summary": {
+    "total_items": 86,
+    "copy_first_items": 51,
+    "blocked_translate_items": 19,
+    "preserve_items": 14,
+    "archive_in_place_items": 2,
+    "retention_check_only_items": 0,
+    "ignore_runtime_items": 0,
+    "runtime_summary_only_collections": 2
+  },
+  "follow_up_required": [
+    "Decide whether the private knowledge root remains redcap-knowledge or becomes a separate non-public worktree.",
+    "Build old-path alias/link map before any delete-last phase.",
+    "Run a throwaway-worktree apply rehearsal before touching the main working tree.",
+    "Create curated public entries for redcap-arsenal separately; do not bulk-copy raw history."
+  ]
+}

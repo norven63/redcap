@@ -161,6 +161,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh r0-r22-registry-check
   bash compass/tools/redcap-multi-session-acceptance.sh execution-layer-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-check
+  bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-apply-preflight
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
   bash compass/tools/redcap-multi-session-acceptance.sh retrieval-escalation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
@@ -9921,6 +9922,199 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "legacy asset checker should reject invalid current_count"
     assert_string_contains "$stale_output" "current_count must be a non-negative integer"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-prism-runs-count-snapshot.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-dry-run.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+for collection in payload["collections"]:
+    if collection["id"] in {"prism-runs", "runtime-working-dirs"}:
+        collection["current_count"] += 999
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-check.sh" --manifest "$bad_manifest")"
+    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_DRY_RUN_OK"
+}
+
+run_legacy_asset_migration_apply_preflight_case() {
+    local output bad_manifest stale_output status
+
+    log "case: legacy-asset-migration-apply-preflight"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh")"
+    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_APPLY_PREFLIGHT_OK"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-preflight-delete.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-apply-plan.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["items"][0]["operation"] = "delete"
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset apply preflight should reject delete operation"
+    assert_string_contains "$stale_output" "forbidden operation"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-preflight-move.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-apply-plan.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["items"][0]["operation"] = "move"
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset apply preflight should reject move operation"
+    assert_string_contains "$stale_output" "forbidden operation"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-preflight-collection-move.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-apply-plan.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["collections"][0]["operation"] = "move"
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset apply preflight should reject collection-level move operation"
+    assert_string_contains "$stale_output" "forbidden operation"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-preflight-traversal.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-apply-plan.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["items"][0]["target"] = "../redcap-knowledge/task-reports/escape.md"
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset apply preflight should reject target traversal"
+    assert_string_contains "$stale_output" "safe repo-relative path"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-preflight-public.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-apply-plan.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["items"][0]["target"] = "redcap-arsenal/task-reports/raw-history.md"
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset apply preflight should reject public repository target"
+    assert_string_contains "$stale_output" "public/shared repository"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-preflight-duplicate-target.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-apply-plan.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+copy_indexes = [i for i, item in enumerate(payload["items"]) if item["operation"] == "copy-first"]
+payload["items"][copy_indexes[1]]["target"] = payload["items"][copy_indexes[0]]["target"]
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset apply preflight should reject duplicate copy target"
+    assert_string_contains "$stale_output" "duplicate copy target"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-preflight-missing-receipt-guard.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-apply-plan.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["items"][0]["guards"] = [
+    guard for guard in payload["items"][0]["guards"]
+    if guard != "receipt-anchor-preserve-old-path"
+]
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset apply preflight should reject missing receipt anchor guard"
+    assert_string_contains "$stale_output" "missing guard receipt-anchor-preserve-old-path"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-preflight-missing-knowledge-guard.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-apply-plan.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+blocked_indexes = [i for i, item in enumerate(payload["items"]) if item["operation"] == "blocked-translate"]
+payload["items"][blocked_indexes[0]]["guards"] = [
+    guard for guard in payload["items"][blocked_indexes[0]]["guards"]
+    if guard != "knowledge-index-preserve-first-read"
+]
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset apply preflight should reject missing knowledge index guard"
+    assert_string_contains "$stale_output" "blocked-translate must preserve knowledge index first-read"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-apply-preflight-runtime-count-snapshot.json"
+    python3 - "$REDCAP_ROOT/references/legacy-asset-migration-apply-plan.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+for collection in payload["collections"]:
+    if collection["item_scope"] == "collection-summary-only":
+        collection["actual_file_count"] += 999
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-apply-plan.sh" --manifest "$bad_manifest")"
+    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_APPLY_PREFLIGHT_OK"
 }
 
 seed_parent_receipt_aggregation_fixtures() {
@@ -9980,7 +10174,7 @@ PY
 }
 
 run_parent_receipt_aggregation_check_case() {
-    local output bad_policy stale_output status
+    local output bad_policy stale_output status temp_task_file
 
     log "case: parent-receipt-aggregation-check"
 
@@ -10091,6 +10285,7 @@ PY
     assert_string_contains "$stale_output" "task_id mismatch"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-current-child-pre-receipt.json"
+    temp_task_file="$ACCEPT_ROOT/parent-receipt-current-child-pre-receipt-task.md"
     python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
 import json
 import pathlib
@@ -10104,7 +10299,12 @@ for child in payload["completed_children"]:
         break
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
-    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy")"
+    cat >"$temp_task_file" <<'EOF'
+task_id: retrieval-escalation-threshold-policy
+parent_child_id: P3-1
+task_report: compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md
+EOF
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" --task-file "$temp_task_file")"
     assert_string_contains "$output" "current_pre_receipt=1"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-allows-complete.json"
@@ -10866,7 +11066,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy runtime-package; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -11002,6 +11202,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-human-communication-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "human-communication" ]]; then
+    echo "fixture human communication failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         cat >"$repo/compass/tools/redcap-runtime-package-manifest.sh" <<EOF
 #!/usr/bin/env bash
 if [[ "$failing_gate" == "runtime-package" ]]; then
@@ -11025,6 +11234,7 @@ EOF
             "$repo/compass/tools/redcap-cli-console-mirror-check.sh" \
             "$repo/compass/tools/redcap-user-agent-identity.sh" \
             "$repo/compass/tools/redcap-feishu-notification-policy-check.sh" \
+            "$repo/compass/tools/redcap-human-communication-check.sh" \
             "$repo/compass/tools/redcap-runtime-package-manifest.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
 
@@ -11044,6 +11254,7 @@ EOF
             revival) expected_message="revival check failed" ;;
             user-agent-identity) expected_message="user/agent identity policy check failed" ;;
             feishu-notification-policy) expected_message="Feishu notification policy check failed" ;;
+            human-communication) expected_message="human communication check failed" ;;
             runtime-package) expected_message="runtime package manifest check failed" ;;
         esac
 
@@ -11110,6 +11321,7 @@ package_policy = {
 for rel in [
     "compass/tools/redcap-user-agent-identity.sh",
     "compass/tools/redcap-feishu-notification-policy-check.sh",
+    "compass/tools/redcap-human-communication-check.sh",
     "compass/tools/redcap-runtime-package-manifest.sh",
 ]:
     script_path = dst / rel
@@ -11905,6 +12117,7 @@ run_all_cases() {
     run_r0_r22_registry_check_case
     run_execution_layer_split_check_case
     run_legacy_asset_migration_check_case
+    run_legacy_asset_migration_apply_preflight_case
     run_parent_receipt_aggregation_check_case
     run_retrieval_escalation_check_case
     run_shared_knowledge_check_case
@@ -12357,6 +12570,9 @@ case "$COMMAND" in
         ;;
     legacy-asset-migration-check)
         run_legacy_asset_migration_check_case
+        ;;
+    legacy-asset-migration-apply-preflight)
+        run_legacy_asset_migration_apply_preflight_case
         ;;
     parent-receipt-aggregation-check)
         run_parent_receipt_aggregation_check_case

@@ -959,6 +959,11 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
             if send_notification "$FINAL_ALERT_BODY" "manual-intervention"; then
                 echo "$FINAL_NOTIFICATION_KEY" > "$ALERTED_FILE"
             fi
+        elif ! session_end_audit_gap_notify_enabled; then
+            # Audit-gap Feishu noise is muted by default, but the local runtime
+            # still needs a terminal marker so concurrent sessions can prove the
+            # SessionEnd path reached a stable blocked state.
+            echo "$FINAL_NOTIFICATION_KEY" > "$ALERTED_FILE"
         fi
     fi
     if [[ "$SESSION_END_PERSISTENCE_FAILURE" -eq 1 ]]; then

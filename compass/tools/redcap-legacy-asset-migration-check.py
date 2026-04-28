@@ -33,6 +33,7 @@ ALLOWED_APPLY_STATUS = {
     "retention_check_only",
     "ignore_runtime_state",
 }
+RUNTIME_SNAPSHOT_COLLECTIONS = {"prism-runs", "runtime-working-dirs"}
 
 
 def fail(message: str) -> None:
@@ -217,9 +218,20 @@ def check_manifest(path: Path, root: Path) -> None:
         expected_count = collection.get("current_count")
         if not isinstance(expected_count, int) or expected_count < 0:
             fail(f"{cid}: current_count must be a non-negative integer")
-        actual_count = run_prism_summary(root).get("total", -1) if cid == "prism-runs" else count_files(root, source)
-        if actual_count != expected_count:
-            fail(f"{cid}: current_count mismatch expected={expected_count} actual={actual_count}")
+        if cid in RUNTIME_SNAPSHOT_COLLECTIONS:
+            # prism/runs is live runtime evidence: formal review runs can be
+            # created while this checker is running; compass/.workflow can also
+            # be updated by revival/runtime checks. Treat current_count as a
+            # snapshot, while retention/runtime ownership checks remain the
+            # enforceable safety gate.
+            if cid == "prism-runs":
+                actual_count = run_prism_summary(root).get("total", -1)
+                if actual_count < 0:
+                    fail(f"{cid}: unable to read current prism run count")
+        else:
+            actual_count = count_files(root, source)
+            if actual_count != expected_count:
+                fail(f"{cid}: current_count mismatch expected={expected_count} actual={actual_count}")
 
         expected_lines = collection.get("current_lines")
         if not isinstance(expected_lines, int) or expected_lines < 0:
@@ -247,8 +259,8 @@ def check_manifest(path: Path, root: Path) -> None:
 
     prism = run_prism_summary(root)
     prism_item = next((item for item in collections if item.get("id") == "prism-runs"), None)
-    if prism_item and prism.get("total") != prism_item.get("current_count"):
-        fail(f"prism-runs: current_count mismatch expected={prism_item.get('current_count')} actual={prism.get('total')}")
+    if prism_item and not isinstance(prism_item.get("current_count"), int):
+        fail("prism-runs: current_count must remain a snapshot integer")
     if prism.get("purgeable_acceptance", 0) != 0:
         fail("prism-runs has purgeable acceptance residue; cleanup must be separate from docs migration")
 

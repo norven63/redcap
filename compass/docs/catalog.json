@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 65,
-    "size_bytes": 920466,
-    "lines": 16162,
-    "chars": 597876,
+    "file_count": 66,
+    "size_bytes": 937071,
+    "lines": 16406,
+    "chars": 608707,
     "rough_token_pressure": {
-      "low": 149469,
-      "high": 298938
+      "low": 152176,
+      "high": 304353
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 46,
-        "size_bytes": 639718,
-        "lines": 9315,
-        "chars": 413406,
+        "file_count": 47,
+        "size_bytes": 656323,
+        "lines": 9559,
+        "chars": 424237,
         "rough_token_pressure": {
-          "low": 103351,
-          "high": 206703
+          "low": 106059,
+          "high": 212118
         }
       },
       "traces": {
@@ -943,7 +943,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：Runtime / CLI / Package Readiness",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9897,
       "lines": 185,
@@ -1008,29 +1008,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：Retrieval escalation threshold policy",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12503,
       "lines": 235,
       "chars": 7779,
       "summary": "当前已完成：P3-1 已把“GraphRAG / 向量检索阈值研究”从口头 deferred 升级为机器可审计的检索升级策略。 / 详情：当前 RedCap 仍保持 `catalog + rg + metadata` 路线；只有 `shared-knowledge` / `redcap-arsenal` 规模、语义召回失败观测或关系型问题观测跨过策略阈值后，才允许另开任务评估 FTS/RAG/GraphRAG。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P3-1 已把“GraphRAG / 向量检索阈值研究”从口头 deferred 升级为机器可审计的检索升级策略。",
-          "详情：当前 RedCap 仍保持 `catalog + rg + metadata` 路线；只有 `shared-knowledge` / `redcap-arsenal` 规模、语义召回失败观测或关系型问题观测跨过策略阈值后，才允许另开任务评估 FTS/RAG/GraphRAG。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P3-2 已把父任务 completed child 从 `receipt_glob` 字符串升级为真实 runtime receipt 内容对应强门，并完成 closeout receipt 收口。"
-        ],
-        "next_step": [
-          "下一步计划做的是：提交本轮实现并运行 closeout runtime 生成 receipt；若后续 `redcap-arsenal` 真正积累大量条目，再按本策略触发新的检索升级任务。"
-        ],
-        "position": [
-          "整体计划脉络图是：父任务聚合 gate → receipt 内容对应强门 → 检索升级阈值策略 → Prism review → closeout receipt。",
-          "当前所在位置：`redcap-system-migration-parent / P3-1 / retrieval-escalation-threshold-policy`。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
@@ -1058,6 +1042,35 @@
         "position": [
           "整体计划脉络图是：父任务聚合 gate → receipt 内容对应强门 → targeted acceptance → Prism review → closeout receipt。",
           "当前所在位置：`redcap-system-migration-parent / P3-2 / receipt-correspondence-hardening`。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Historical asset migration apply preflight",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 16605,
+      "lines": 244,
+      "chars": 10831,
+      "summary": "当前已完成：P4-1 已从“只有 collection-level dry-run”推进到“文件级 apply preflight 已具备”，但真实历史资产仍未移动、未删除、未写入公共库。 / 详情：本轮解决的是历史资产迁移前缺少精确施工清单的问题。现在每个候选文件都有来源、目标、动作、风险和守卫条件；校验器会拒绝删除、移动、路径逃逸、重复目标、公共库直写、缺 receipt anchor、缺知识索引守卫等危险计划。棱镜评审和全量回归还抓出了两个旁路缺口：运行证据目录不能用静态 exact count 管理；飞书降噪时 SessionEnd 仍必须写本地终止标记。两者都已转成补丁与回归。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P4-1 已从“只有 collection-level dry-run”推进到“文件级 apply preflight 已具备”，但真实历史资产仍未移动、未删除、未写入公共库。",
+          "详情：本轮解决的是历史资产迁移前缺少精确施工清单的问题。现在每个候选文件都有来源、目标、动作、风险和守卫条件；校验器会拒绝删除、移动、路径逃逸、重复目标、公共库直写、缺 receipt anchor、缺知识索引守卫等危险计划。棱镜评审和全量回归还抓出了两个旁路缺口：运行证据目录不能用静态 exact count 管理；飞书降噪时 SessionEnd 仍必须写本地终止标记。两者都已转成补丁与回归。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P1-2 只完成了历史资产 collection-level dry-run，能看出哪些集合可复制、哪些应保留、哪些必须阻塞，但没有到每个文件级别。"
+        ],
+        "next_step": [
+          "下一步计划做的是：真实迁移仍需另开风险窗口，在 throwaway worktree 中先做 apply rehearsal，再验证旧路径 alias/link map、docs catalog、receipt anchor 和回滚命令；本轮不直接执行物理迁移。"
+        ],
+        "position": [
+          "整体计划脉络图是：collection dry-run → file-level preflight → throwaway apply rehearsal → catalog/link/receipt/rollback 复验 → main-tree apply。",
+          "当前所在位置：P4-1 `historical-asset-migration-apply-preflight` 已完成 preflight 切片，父任务仍因真实 apply、public release、clean workspace E2E 保持 incomplete。"
         ]
       }
     },
