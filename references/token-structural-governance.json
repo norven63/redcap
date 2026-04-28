@@ -52,6 +52,13 @@
       "trigger_for_revisit": "When the registry exceeds 75KB or when more than 5 new guarantees are added in one tranche, evaluate category sharding with a generated combined view."
     },
     {
+      "path": "references/legacy-asset-migration-apply-plan.json",
+      "kind": "tracked-large-generated-manifest",
+      "current_mitigation": "file-lookup-dictionary-and-apply-preflight-check",
+      "structural_strategy": "Keep as a generated file-level preflight ledger, not a startup document. Agents must discover it through File Lookup Dictionary or run redcap-legacy-asset-migration-apply-plan.sh; do not bulk-read it unless auditing a specific migration item.",
+      "trigger_for_revisit": "When the manifest exceeds 150KB or the item count exceeds 150, split it into generated shards with a compact summary index while preserving the same checker interface."
+    },
+    {
       "path": "prism/runs",
       "kind": "ignored-runtime-evidence",
       "current_mitigation": "gitignored-do-not-bulk-read",

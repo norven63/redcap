@@ -89,6 +89,7 @@
 | `compass/tools/redcap-spec-check.sh` / `compass/tools/redcap-diagnose.sh` | 修改 | 将 apply preflight checker 纳入总回归和诊断。 |
 | `references/file-lookup-dictionary.md` / `references/file-lookup-dictionary-policy.json` | 修改 | 登记新 manifest 和 checker，保证后续能按需发现而不是全文考古。 |
 | `references/execution-guarantees.json` | 修改 | 新增 apply-preflight 执行保障项。 |
+| `references/token-structural-governance.json` | 修改 | 将大型生成 manifest 登记为“索引发现 + checker 审计”的治理资产，避免它变成新的 token 热点。 |
 | `references/redcap-parent-task-ledger.md` / `references/parent-receipt-aggregation-policy.json` | 修改 | 父任务视图更新为“preflight 已具备，但真实迁移仍 deferred”。 |
 | `compass/knowledge/lessons.md` | 修改 | 沉淀运行时证据目录不能用静态 exact count 当迁移门的经验。 |
 | `prism/runs/20260429-historical-asset-migration-apply-preflight/**` | 新建 | Kimi 与 Claude Code 的评审、复验、binding 和风险修复证据。 |
@@ -144,6 +145,7 @@
 | spec-check 强门传播回归 | `bash compass/tools/redcap-multi-session-acceptance.sh spec-check-propagates-control-gate-failures` | 通过 |
 | spec lifecycle 夹具回归 | `bash compass/tools/redcap-multi-session-acceptance.sh spec-check-accepts-archived-superseded && bash compass/tools/redcap-multi-session-acceptance.sh spec-check-rejects-superseded-outside-archive && bash compass/tools/redcap-multi-session-acceptance.sh spec-check-requires-replaced-by && bash compass/tools/redcap-multi-session-acceptance.sh spec-check-rejects-invalid-role && bash compass/tools/redcap-multi-session-acceptance.sh spec-check-rejects-replacement-cycle` | 通过 |
 | full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过 |
+| token 风险审计 | `bash compass/tools/redcap-token-risk-audit.sh "$PWD"` | 通过，大型 apply preflight manifest 已登记结构治理计划 |
 | 文件字典 | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` | 通过 |
 | Prism acceptance binding | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过，6 reviewers，2 families，无 blocker |
 | 总规范检查 | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |

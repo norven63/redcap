@@ -21,7 +21,7 @@
       "target": "redcap-knowledge/task-reports",
       "kind": "tracked-archaeology",
       "current_count": 47,
-      "current_lines": 9559,
+      "current_lines": 9561,
       "default_action": "copy-to-knowledge-then-index",
       "risk": "high",
       "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",

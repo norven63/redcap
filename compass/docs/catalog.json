@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 66,
-    "size_bytes": 937071,
-    "lines": 16406,
-    "chars": 608707,
+    "size_bytes": 937408,
+    "lines": 16408,
+    "chars": 608940,
     "rough_token_pressure": {
-      "low": 152176,
-      "high": 304353
+      "low": 152235,
+      "high": 304470
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 47,
-        "size_bytes": 656323,
-        "lines": 9559,
-        "chars": 424237,
+        "size_bytes": 656660,
+        "lines": 9561,
+        "chars": 424470,
         "rough_token_pressure": {
-          "low": 106059,
-          "high": 212118
+          "low": 106117,
+          "high": 212235
         }
       },
       "traces": {
@@ -1052,9 +1052,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 16605,
-      "lines": 244,
-      "chars": 10831,
+      "size_bytes": 16942,
+      "lines": 246,
+      "chars": 11064,
       "summary": "当前已完成：P4-1 已从“只有 collection-level dry-run”推进到“文件级 apply preflight 已具备”，但真实历史资产仍未移动、未删除、未写入公共库。 / 详情：本轮解决的是历史资产迁移前缺少精确施工清单的问题。现在每个候选文件都有来源、目标、动作、风险和守卫条件；校验器会拒绝删除、移动、路径逃逸、重复目标、公共库直写、缺 receipt anchor、缺知识索引守卫等危险计划。棱镜评审和全量回归还抓出了两个旁路缺口：运行证据目录不能用静态 exact count 管理；飞书降噪时 SessionEnd 仍必须写本地终止标记。两者都已转成补丁与回归。",
       "status_basis": "filename_recency_only",
       "summary_points": {
