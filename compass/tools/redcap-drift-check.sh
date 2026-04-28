@@ -188,6 +188,12 @@ else
     } | sed '/^[[:space:]]*$/d' | sort -u > "$TMP_FILES"
 fi
 
+if [[ "${REDCAP_ACCEPTANCE_RUNNING:-0}" == "1" ]]; then
+    TMP_ACCEPTANCE_FILTERED="${TMP_FILES}.acceptance-filtered"
+    grep -vE '^compass/docs/task-reports/zz-acceptance-' "$TMP_FILES" > "$TMP_ACCEPTANCE_FILTERED" 2>/dev/null || true
+    mv -f "$TMP_ACCEPTANCE_FILTERED" "$TMP_FILES" 2>/dev/null || true
+fi
+
 printf '%s\n' "${ALLOWED_GLOBS[@]}" > "$TMP_GLOBS"
 
 python3 - "$TMP_FILES" "$TMP_GLOBS" <<'PY'

@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-28
 **执行者**：Cap（Codex.app）
-**报告版本**：v0.2
+**报告版本**：v0.3
 
 ---
 
@@ -20,7 +20,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：提交、在提交后重跑 full acceptance（避免 stop-review fixture 被 dirty working tree 误伤），然后 closeout receipt 收口；随后父任务只剩 P3-1 GraphRAG / 向量检索阈值研究继续 deferred。
+- 下一步计划做的是：提交本轮 acceptance fixture 隔离补丁，然后执行 closeout receipt 收口；随后父任务只剩 P3-1 GraphRAG / 向量检索阈值研究继续 deferred。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -132,7 +132,7 @@ P2-2 已经建立父任务 receipt 聚合 gate，但它主要验证父任务仍�
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
 | Prism review | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过，Kimi + Claude Code 双路 responded，blockers=0 |
-| full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 提交后重跑；提交前尝试命中 dirty working tree 下 stop-review fixture 的已知误伤，不作为功能失败结论 |
+| full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过，输出 `ACCEPTANCE_OK` |
 
 ### 5.1.1 执行中发现并修复的问题
 
@@ -141,6 +141,8 @@ P2-2 已经建立父任务 receipt 聚合 gate，但它主要验证父任务仍�
 | 新增 task report / lesson 后 `legacy-asset-migration-dry-run` 计数失真 | 历史资产 dry-run manifest 会核对 `task-reports` 和 `knowledge` 当前物理计数 | 同步更新 `references/legacy-asset-migration-dry-run.json` 的 task-reports 与 knowledge-lessons 计数 |
 | 新增 Prism run 后 `prism-runs` 计数与 acceptance residue 失真 | 本轮真实 Prism run 让 formal-run +1；一次提交前 full acceptance 尝试留下 2 个 purgeable acceptance fixture | 执行 `prism-runs-lifecycle.sh prune-acceptance --apply` 清理 fixture，并把 `prism-runs.current_count` 更新为 33 |
 | Prism 复评建议继续核对 repo_path / confirmed_hash | 第一版已核对 task_id/report/status/promise/acceptance/head，但 repo 绑定还可加强 | checker 新增 `confirmed_hash` 64 位 hex 与 `repo_path` 当前 repo 校验，acceptance 新增 task_id mismatch 失败用例 |
+| stop-review acceptance 被真实任务卡 drift 范围误伤 | stop-review fixture 复用当前 `.dev-task.md`，但本轮新增触碰 `redcap-drift-check.sh`，导致 validator-chain 在独立评审前先被 drift gate 拦截 | `.dev-task.md` 补入真实允许修改范围；acceptance 增加 permissive task-file fixture，隔离测试环境与生产任务卡 |
+| stop-review / diagnose acceptance 缺 parent receipt runtime fixture | P3-2 强门要求真实 runtime receipt；部分 acceptance 用例直接调用 validator-chain / diagnose，却没有准备父任务 receipt fixture | 新增 `redcap_acceptance_on_stop_review` wrapper，并让 `diagnose-overview` 在自己的 runtime project 下 seed parent receipt fixtures |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 

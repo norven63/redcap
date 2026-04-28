@@ -4622,10 +4622,48 @@ EOF
     redcap_runtime_clear_context
 }
 
+write_permissive_acceptance_task_file() {
+    local target="$1"
+
+    python3 - "$REDCAP_ROOT/.dev-task.md" "$target" <<'PY'
+import pathlib
+import sys
+
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+text = source.read_text(encoding="utf-8")
+lines = text.splitlines()
+out = []
+in_allowed = False
+inserted = False
+for line in lines:
+    if line == "## 允许修改范围":
+        out.append(line)
+        out.append("- *")
+        in_allowed = True
+        inserted = True
+        continue
+    if in_allowed:
+        if line.startswith("## "):
+            in_allowed = False
+            out.append(line)
+        continue
+    out.append(line)
+if not inserted:
+    out.extend(["", "## 允许修改范围", "- *"])
+target.write_text("\n".join(out).rstrip() + "\n", encoding="utf-8")
+PY
+}
+
+redcap_acceptance_on_stop_review() {
+    seed_parent_receipt_aggregation_fixtures
+    bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh"
+}
+
 run_on_stop_review_copilot_fallback_case() {
     local case_name="$1"
     local gemini_mode="$2"
-    local case_dir fake_bin head_file review_result review_log baseline output status child_pid_file child_pid attempt copilot_guard_flag
+    local case_dir fake_bin head_file review_result review_log baseline output status child_pid_file child_pid attempt copilot_guard_flag task_file
 
     log "case: $case_name"
 
@@ -4700,8 +4738,12 @@ EOF
     head_file="$case_dir/baseline.head"
     review_result="$case_dir/review-result"
     review_log="$case_dir/review-log.md"
+    task_file="$case_dir/dev-task.md"
+    write_permissive_acceptance_task_file "$task_file"
     baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
     printf '%s\n' "$baseline" >"$head_file"
+
+    seed_parent_receipt_aggregation_fixtures
 
     set +e
     output="$(
@@ -4713,6 +4755,7 @@ EOF
             REDCAP_RUNTIME_SESSION_DIR="" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,copilot" \
+            REDCAP_TASK_FILE="$task_file" \
             REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
@@ -4720,7 +4763,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -4922,7 +4965,7 @@ EOF
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5098,7 +5141,7 @@ EOF
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5240,7 +5283,7 @@ EOF
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5260,7 +5303,7 @@ EOF
 
 run_on_stop_review_records_unavailable_rate_limit_case() {
     local case_name="on-stop-review-records-unavailable-rate-limit"
-    local case_dir fake_bin head_file review_result review_log baseline output status
+    local case_dir fake_bin head_file review_result review_log baseline output status task_file
 
     log "case: $case_name"
 
@@ -5281,8 +5324,12 @@ EOF
     head_file="$case_dir/baseline.head"
     review_result="$case_dir/review-result"
     review_log="$case_dir/review-log.md"
+    task_file="$case_dir/dev-task.md"
+    write_permissive_acceptance_task_file "$task_file"
     baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
     printf '%s\n' "$baseline" >"$head_file"
+
+    seed_parent_receipt_aggregation_fixtures
 
     set +e
     output="$(
@@ -5290,13 +5337,14 @@ EOF
             PATH="$fake_bin:/usr/bin:/bin" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="copilot" \
+            REDCAP_TASK_FILE="$task_file" \
             REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5351,7 +5399,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5439,7 +5487,7 @@ EOF
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5492,7 +5540,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5545,7 +5593,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5599,7 +5647,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5653,7 +5701,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5705,7 +5753,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5754,7 +5802,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5818,7 +5866,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5885,7 +5933,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5941,7 +5989,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -5992,7 +6040,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -6044,7 +6092,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -6096,7 +6144,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -6153,7 +6201,7 @@ EOF
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
-            bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh" 2>&1
+            redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
@@ -9209,6 +9257,8 @@ run_diagnose_overview_case() {
     case_dir="$(mktemp -d "$ACCEPT_ROOT/diagnose-overview.XXXXXX")"
     TEMP_PROJECTS+=("$case_dir")
 
+    REDCAP_RUNTIME_PROJECT_BASE_DIR="$case_dir/project" seed_parent_receipt_aggregation_fixtures
+
     set +e
     output="$(
         REDCAP_RUNTIME_BASE_DIR="$case_dir/runtime" \
@@ -9859,11 +9909,7 @@ PY
     assert_string_contains "$stale_output" "current_count must be a non-negative integer"
 }
 
-run_parent_receipt_aggregation_check_case() {
-    local output bad_policy stale_output status
-
-    log "case: parent-receipt-aggregation-check"
-
+seed_parent_receipt_aggregation_fixtures() {
     python3 - "$REDCAP_ROOT" "$REDCAP_RUNTIME_PROJECT_BASE_DIR" "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" <<'PY'
 import hashlib
 import json
@@ -9910,6 +9956,14 @@ for child in payload["completed_children"]:
     }
     (receipt_dir / filename).write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
+}
+
+run_parent_receipt_aggregation_check_case() {
+    local output bad_policy stale_output status
+
+    log "case: parent-receipt-aggregation-check"
+
+    seed_parent_receipt_aggregation_fixtures
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh")"
     assert_string_contains "$output" "PARENT_RECEIPT_AGGREGATION_OK"
@@ -11601,6 +11655,7 @@ PY
 }
 
 run_all_cases() {
+    seed_parent_receipt_aggregation_fixtures
     run_binding_recovery_gate_case
     run_layerb_concurrency_case
     run_copilot_safe_degraded_case
