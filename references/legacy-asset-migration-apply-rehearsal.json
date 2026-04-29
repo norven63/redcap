@@ -4,7 +4,7 @@
   "created_for_task": "historical-asset-migration-apply-rehearsal",
   "source_manifest": "references/legacy-asset-migration-apply-plan.json",
   "source_manifest_sha256": "758248cd4afff0d067235494f9bd205b8802e0b58c16022bf004969eec297b24",
-  "source_git_head": "b4a635f",
+  "source_git_head": "e034e1e",
   "apply_allowed": false,
   "main_tree_mutated": false,
   "public_export_allowed": false,
