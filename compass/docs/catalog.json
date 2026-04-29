@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 67,
-    "size_bytes": 950489,
+    "size_bytes": 950485,
     "lines": 16631,
-    "chars": 617277,
+    "chars": 617273,
     "rough_token_pressure": {
-      "low": 154319,
-      "high": 308638
+      "low": 154318,
+      "high": 308636
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 48,
-        "size_bytes": 669741,
+        "size_bytes": 669737,
         "lines": 9784,
-        "chars": 432807,
+        "chars": 432803,
         "rough_token_pressure": {
-          "low": 108201,
-          "high": 216403
+          "low": 108200,
+          "high": 216401
         }
       },
       "traces": {
@@ -1094,9 +1094,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13081,
+      "size_bytes": 13077,
       "lines": 223,
-      "chars": 8337,
+      "chars": 8333,
       "summary": "当前已完成：P4-1 已从“文件级 preflight”推进到“临时 copy-first 演练可机器验证”，但 main tree 历史资产仍未真实迁移、删除或导出到公共库。 / 详情：本轮解决的是“真实迁移前仍缺一次可回滚演练”的问题。演练器读取现有文件级施工清单，只在临时沙箱中复制 `copy-first` 项，验证 source/target hash 一致、旧路径保留、alias map 与 rollback plan 一一对应，并确认 main tree 没有出现目标文件。它还会先扫描全量 manifest，因此即使危险项不属于 copy-first 执行集合，也会被 fail-closed 拦截。",
       "status_basis": "filename_recency_only",
       "summary_points": {
