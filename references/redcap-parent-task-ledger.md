@@ -12,7 +12,7 @@
 
 RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 skill-root 承载形态逐步演进为可安装、可复活、可调度、可审计的 Agent runtime / CLI / 多层系统。
 
-当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略，以及 P4-1 的文件级 apply preflight；尚未完成的是历史资产真实物理迁移、正式公开发布与跨机器安装 E2E。
+当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略，以及 P4-1 的文件级 apply preflight、temp-copy rehearsal、true worktree rehearsal 与 durable alias resolver；尚未完成的是历史资产真实物理迁移、正式公开发布与跨机器安装 E2E。
 
 ## 已完成子任务
 
@@ -46,7 +46,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | P2-3 | Prism review limits | Formal Prism quorum 恢复复验 | completed | P2 | 已复验 Kimi + Claude Code 可形成当前非 Codex 双路 Prism quorum；Codex CLI 被策略降为 last-resort fallback；Gemini timeout、Copilot frozen 继续诚实记录 | receipt: `redcap-prism-formal-quorum-provider-revalidation-*`；产物：`references/prism-provider-policy.json`、`compass/.workflow/prism-agent-availability.json` |
 | P3-1 | retrieval roadmap | GraphRAG / 向量检索阈值研究 | completed | P3 | 已新增 retrieval escalation policy/checker；当前继续 catalog + rg + metadata，跨阈值后另开升级任务 | 不能把阈值策略完成冒充为 GraphRAG 已启用 |
 | P3-2 | P2-2 reviewer risk | runtime receipt evidence correspondence hardening | completed | P3 | 已在 parent receipt aggregation checker 中校验真实 runtime receipt 内容对应关系，并补 acceptance 覆盖缺 receipt、错 report、当前 child pre-receipt 例外 | 父任务仍因 P4-1/P4-2/P4-3 保持 incomplete |
-| P4-1 | parent boundary | 历史资产迁移真实 apply | deferred | P1 | file-level apply preflight、temp-copy rehearsal 与 true git-worktree rehearsal 已落地；下一步需把 alias overlay 接入持久 docs/catalog resolver，并在独立 main-tree apply 风险窗口前复审 rollback | 本轮 worktree rehearsal 不移动/删除 main-tree 资产，不可冒充真实迁移 |
+| P4-1 | parent boundary | 历史资产迁移真实 apply | deferred | P1 | file-level apply preflight、temp-copy rehearsal、true git-worktree rehearsal 与 durable alias resolver 已落地；下一步是单独开启 main-tree apply 风险窗口，并复审 rollback、receipt anchor、docs catalog 与 Prism verdict | 本轮 resolver 不移动/删除 main-tree 资产，不可冒充真实迁移 |
 | P4-2 | parent boundary | 正式 runtime / CLI package public release | blocked-external | P2 | 另开 release 任务，先确认 registry、包名、凭证和发布边界 | P2-1 只完成 readiness，不可冒充 public publish |
 | P4-3 | parent boundary | 跨机器 / clean workspace 安装 E2E | deferred | P2 | 等可用干净目标环境后另开 E2E 任务 | 当前工作区已经初始化，不能冒充跨机器验证 |
 | P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime: 本机 `cli_a9579f5b12219bb5` profile 已验证可发 |
@@ -67,7 +67,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 11. `P2-5`：中插需求重排决策可见化。（已完成）
 12. `P3-2`：runtime receipt evidence correspondence hardening。（已完成）
 13. `P3-1`：GraphRAG / 向量检索阈值研究。（已完成阈值策略；当前不启用 GraphRAG）
-14. `P4-1`：历史资产迁移真实 apply。（已推进到 file-level apply preflight；真实物理迁移继续 deferred，需单独风险窗口）
+14. `P4-1`：历史资产迁移真实 apply。（已推进到 durable alias resolver；真实物理迁移继续 deferred，需单独风险窗口）
 15. `P4-2`：正式 runtime / CLI package public release。（blocked-external，需发布目标与凭证决策）
 16. `P4-3`：跨机器 / clean workspace 安装 E2E。（继续 deferred，需干净目标环境）
 
@@ -75,7 +75,7 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 
 - 不可声明 RedCap 已经完成真实公网发布、跨机器安装 E2E 或全部目录物理迁移。
 - 不可声明 RedCap 已经 npm publish 或完成跨机器公开分发；P2-1 只完成 package readiness 和候选包安全审计链。
-- 不可声明历史报告和研究材料已经物理迁出执行层；当前只具备 file-level apply preflight 与安全门禁。
+- 不可声明历史报告和研究材料已经物理迁出执行层；当前只具备 file-level apply preflight、演练证据与 durable alias resolver 安全门禁。
 - 不可声明 shared-knowledge 历史 reports/lessons/identity 已经迁移到远端公共库；本轮只绑定并初始化公共库模板。
 - 不可声明 `redcap-arsenal` 已有实质历史知识内容；当前只有安全模板、索引占位和 `users/Norven/` 命名空间占位。
 - 当前机器已能通过 `cli_a9579f5b12219bb5` 真实发送飞书；后续若 profile/token 再次失效，RedCap 仍必须 fail-closed，不得回退旧账号或 webhook。

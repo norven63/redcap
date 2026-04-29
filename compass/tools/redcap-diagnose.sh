@@ -122,6 +122,7 @@ run_check "legacy-asset-migration-dry-run" bash "$SCRIPT_DIR/redcap-legacy-asset
 run_check "legacy-asset-migration-apply-preflight" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-apply-plan.sh" || overall=1
 run_check "legacy-asset-migration-rehearsal" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-rehearsal.sh" --check-result || overall=1
 run_check "legacy-asset-migration-worktree-rehearsal" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-worktree-rehearsal.sh" --check-result || overall=1
+run_check "legacy-asset-alias-resolver" bash "$SCRIPT_DIR/redcap-legacy-asset-alias-resolver.sh" --check-result || overall=1
 run_check "parent-receipt-aggregation" bash "$SCRIPT_DIR/redcap-parent-receipt-aggregation-check.sh" || overall=1
 run_check "shared-knowledge" bash "$SCRIPT_DIR/redcap-shared-knowledge-check.sh" || overall=1
 run_check "shared-knowledge-remote-binding" bash "$SCRIPT_DIR/redcap-shared-knowledge-remote-check.sh" || overall=1

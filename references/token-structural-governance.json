@@ -73,6 +73,13 @@
       "trigger_for_revisit": "When the alias_map exceeds 150 entries or the file exceeds 150KB, shard alias rows into generated detail files with a compact summary index and preserve the same worktree rehearsal checker interface."
     },
     {
+      "path": "references/legacy-asset-migration-alias-resolver.json",
+      "kind": "tracked-generated-resolver",
+      "current_mitigation": "docs-catalog-pointer-and-alias-resolver-query",
+      "structural_strategy": "Keep as a generated resolver manifest, not a startup document. Agents should read the docs catalog legacy_alias_resolver summary first, then use redcap-legacy-asset-alias-resolver.sh --resolve for specific old/new paths.",
+      "trigger_for_revisit": "When alias entries exceed 150 or the file exceeds 150KB, shard entry details behind the same resolver command while preserving a compact manifest summary."
+    },
+    {
       "path": "prism/runs",
       "kind": "ignored-runtime-evidence",
       "current_mitigation": "gitignored-do-not-bulk-read",

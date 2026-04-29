@@ -3,23 +3,25 @@
   "manifest_id": "redcap-legacy-asset-migration-worktree-rehearsal",
   "created_for_task": "historical-asset-migration-worktree-rehearsal",
   "source_manifest": "references/legacy-asset-migration-apply-plan.json",
-  "source_manifest_sha256": "35f75c2febba26075b49e2050f6964b33a48e94b6ef160e179c356bfb0d31c28",
-  "source_git_head": "71ba69a",
-  "source_git_head_full": "71ba69ae5a1537a6413b10f5a8c8190e1fec0622",
-  "main_tree_status_before_sha256": "88de8610c18bd6c9a29bb6c999067b725fa95112776a2b40557c72801548f946",
-  "main_tree_status_after_sha256": "88de8610c18bd6c9a29bb6c999067b725fa95112776a2b40557c72801548f946",
-  "worktree_source_overlay_count": 0,
-  "worktree_source_overlays": [],
+  "source_manifest_sha256": "758248cd4afff0d067235494f9bd205b8802e0b58c16022bf004969eec297b24",
+  "source_git_head": "b4a635f",
+  "source_git_head_full": "b4a635f8ba817c8ef0d4f51426c4c640d9249849",
+  "main_tree_status_before_sha256": "613e569fa26500c7096d1ef042851639d203b78c858e131060d1c46c7e399b18",
+  "main_tree_status_after_sha256": "613e569fa26500c7096d1ef042851639d203b78c858e131060d1c46c7e399b18",
+  "worktree_source_overlay_count": 1,
+  "worktree_source_overlays": [
+    "compass/docs/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md"
+  ],
   "apply_allowed": false,
   "main_tree_mutated": false,
   "public_export_allowed": false,
   "rehearsal_mode": "git-worktree",
   "summary": {
-    "total_manifest_items": 88,
-    "copy_first_items": 53,
-    "alias_map_entries": 53,
-    "rollback_entries": 53,
-    "task_report_anchor_entries": 49,
+    "total_manifest_items": 89,
+    "copy_first_items": 54,
+    "alias_map_entries": 54,
+    "rollback_entries": 54,
+    "task_report_anchor_entries": 50,
     "non_copy_items_skipped": 35
   },
   "safety_checks": {
@@ -38,10 +40,10 @@
     "alias_overlay_resolves_new_targets": true
   },
   "catalog_anchor_validation": {
-    "docs_catalog_entries": 68,
-    "task_report_alias_entries": 49,
-    "old_task_report_anchors_present": 49,
-    "new_targets_resolved_by_alias_overlay": 53
+    "docs_catalog_entries": 69,
+    "task_report_alias_entries": 50,
+    "old_task_report_anchors_present": 50,
+    "new_targets_resolved_by_alias_overlay": 54
   },
   "alias_map": [
     {
@@ -563,6 +565,17 @@
     },
     {
       "item_id": "LAM-0048",
+      "old_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md",
+      "new_path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md",
+      "source_sha256": "2a0a15a424acf61dfad8ee9afb75aca67c1695167bf1dd27e650350c062681b7",
+      "target_sha256": "2a0a15a424acf61dfad8ee9afb75aca67c1695167bf1dd27e650350c062681b7",
+      "old_path_retained": true,
+      "catalog_alias_required": true,
+      "receipt_anchor_preserved": true,
+      "resolver_overlay": "old-path-to-copy-first-target"
+    },
+    {
+      "item_id": "LAM-0049",
       "old_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-apply-rehearsal.md",
       "new_path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-apply-rehearsal.md",
       "source_sha256": "5dd0a72bf5cdf5aa0413ebb7cf99f7b161441a8460b12031301e5e55f577b720",
@@ -573,7 +586,7 @@
       "resolver_overlay": "old-path-to-copy-first-target"
     },
     {
-      "item_id": "LAM-0049",
+      "item_id": "LAM-0050",
       "old_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md",
       "new_path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md",
       "source_sha256": "a009a8876ac53b941cfa29ea6cfd380c1ab4cb9034ff14c1fc7fa4bfcf421aa5",
@@ -584,7 +597,7 @@
       "resolver_overlay": "old-path-to-copy-first-target"
     },
     {
-      "item_id": "LAM-0051",
+      "item_id": "LAM-0052",
       "old_path": "compass/docs/research/2026-04-24-redcap-workflow-panorama.html",
       "new_path": "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html",
       "source_sha256": "7f12f965073c75118bc7a87b7e7758c4591af2756d1a968d607cef04a412081e",
@@ -595,7 +608,7 @@
       "resolver_overlay": "old-path-to-copy-first-target"
     },
     {
-      "item_id": "LAM-0052",
+      "item_id": "LAM-0053",
       "old_path": "compass/docs/research/2026-04-24-redcap-workflow-panorama.md",
       "new_path": "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md",
       "source_sha256": "b23ccb1dd1d9f2fcdf4e52065e7995b925d25e712f1b8a025f9880ccd691880a",
@@ -606,7 +619,7 @@
       "resolver_overlay": "old-path-to-copy-first-target"
     },
     {
-      "item_id": "LAM-0053",
+      "item_id": "LAM-0054",
       "old_path": "compass/docs/research/feishu-ai-agent-collaboration-report.md",
       "new_path": "redcap-knowledge/research/feishu-ai-agent-collaboration-report.md",
       "source_sha256": "25fd1395760ec378bfaf510716614f57033862b2b471a1fd81d26421acd31254",
@@ -617,7 +630,7 @@
       "resolver_overlay": "old-path-to-copy-first-target"
     },
     {
-      "item_id": "LAM-0067",
+      "item_id": "LAM-0068",
       "old_path": "compass/docs/traces/architecture-capability-trace.yaml",
       "new_path": "redcap-knowledge/traces/architecture-capability-trace.yaml",
       "source_sha256": "3b64b48843ae5e7ba196c0026093e94151a8bece02de15b68ba62c7ff8b00885",
@@ -816,6 +829,10 @@
     {
       "action": "delete-copy-target",
       "path": "redcap-knowledge/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md"
+    },
+    {
+      "action": "delete-copy-target",
+      "path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md"
     },
     {
       "action": "delete-copy-target",

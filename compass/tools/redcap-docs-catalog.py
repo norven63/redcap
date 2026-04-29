@@ -117,6 +117,46 @@ def load_spec_registry(root: pathlib.Path) -> dict[str, dict]:
     return result
 
 
+def load_alias_resolver_summary(root: pathlib.Path) -> dict:
+    resolver_path = root / "references/legacy-asset-migration-alias-resolver.json"
+    pointer = resolver_path.relative_to(root).as_posix()
+    base = {
+        "path": pointer,
+        "read_policy": "read-summary-first-then-use-redcap-legacy-asset-alias-resolver",
+        "resolver_command": "bash compass/tools/redcap-legacy-asset-alias-resolver.sh --resolve <path>",
+    }
+    if not resolver_path.is_file():
+        return {
+            **base,
+            "status": "missing",
+            "meaning": "No durable legacy alias resolver is present yet.",
+        }
+    try:
+        payload = json.loads(read_text(resolver_path))
+    except json.JSONDecodeError:
+        return {
+            **base,
+            "status": "invalid-json",
+            "meaning": "Alias resolver exists but cannot be parsed; run its checker.",
+        }
+    summary_block = payload.get("summary") if isinstance(payload, dict) else {}
+    if not isinstance(summary_block, dict):
+        summary_block = {}
+    return {
+        **base,
+        "status": "present",
+        "manifest_id": payload.get("manifest_id") if isinstance(payload, dict) else None,
+        "task_id": payload.get("task_id") if isinstance(payload, dict) else None,
+        "source_result": payload.get("source_result") if isinstance(payload, dict) else None,
+        "source_result_sha256": payload.get("source_result_sha256") if isinstance(payload, dict) else None,
+        "alias_entries": summary_block.get("alias_entries", 0),
+        "old_catalog_anchors_present": summary_block.get("old_catalog_anchors_present", 0),
+        "planned_targets": summary_block.get("planned_targets", 0),
+        "applied_targets": summary_block.get("applied_targets", 0),
+        "meaning": "Old compass/docs paths remain authoritative; new redcap-knowledge paths are resolver candidates until a separate apply window.",
+    }
+
+
 def task_report_status(index: int, total: int) -> str:
     if index >= max(total - 3, 0):
         return "hot"
@@ -274,6 +314,7 @@ def build_catalog(root: pathlib.Path, output_path: pathlib.Path) -> dict:
                 for item in largest
             ],
         },
+        "legacy_alias_resolver": load_alias_resolver_summary(root),
         "entries": sorted(entries, key=lambda item: item["path"]),
     }
 

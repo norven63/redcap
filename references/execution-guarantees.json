@@ -1349,6 +1349,32 @@
       "auto_enforceable": true
     },
     {
+      "id": "legacy-asset-alias-resolver",
+      "category": "parent-task-governance",
+      "priority": "P1",
+      "rule": "Historical asset migration must expose a durable old-path-authoritative alias resolver before any main-tree apply, so receipt anchors and docs catalog old paths remain resolvable while candidate redcap-knowledge targets are still planned.",
+      "source_paths": [
+        "references/legacy-asset-migration-alias-resolver.json",
+        "references/legacy-asset-migration-worktree-rehearsal.json",
+        "compass/docs/catalog.json",
+        "references/redcap-parent-task-ledger.md",
+        "compass/docs/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-legacy-asset-alias-resolver.sh validates the resolver against worktree rehearsal output and docs catalog, rejects stale results, duplicate paths, missing old anchors, path traversal, public targets and target hash mismatch, and is consumed by spec-check, diagnose and acceptance.",
+      "guarantee_paths": [
+        "compass/tools/redcap-legacy-asset-alias-resolver.sh",
+        "compass/tools/redcap-legacy-asset-alias-resolver.py",
+        "references/legacy-asset-migration-alias-resolver.json",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "parent-receipt-aggregation-gate",
       "category": "parent-task-governance",
       "priority": "P2",

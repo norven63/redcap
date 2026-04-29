@@ -1392,3 +1392,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-30
+
+### L-145: 迁移 resolver 必须把“候选新路径”和“权威旧锚点”分开
+- **问题源**：历史资产迁移演练能产出 alias overlay，但如果没有持久 resolver，后续 Agent 很容易把 `redcap-knowledge/**` 候选路径误读为已经完成迁移，或在旧 `compass/docs/**` receipt/catalog anchor 仍是权威时提前删除、改写、全文搜索新路径。
+- **解决方案**：在真实 main-tree apply 前建立 durable alias resolver：旧路径保持 canonical/authoritative，新路径只作为 candidate target；resolver 生成结果必须绑定 worktree rehearsal hash 和 docs catalog，并在查询、spec、diagnose、acceptance 中拒绝 stale result、重复路径、缺失旧 catalog anchor、路径逃逸、公共库 target 和 target hash mismatch。
+- **最后效果**：RedCap 可以先获得可机器查询的路径解析层，又不会把“解析层可工作”冒充成“历史资产已经迁移”；后续 main-tree apply 风险窗口能基于同一 resolver 复审 receipt anchor、catalog 和 rollback。
+- **来源**：2026-04-30 Historical asset migration durable alias resolver
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-30

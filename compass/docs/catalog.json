@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 68,
-    "size_bytes": 963722,
-    "lines": 16849,
-    "chars": 626050,
+    "file_count": 69,
+    "size_bytes": 978507,
+    "lines": 17077,
+    "chars": 635807,
     "rough_token_pressure": {
-      "low": 156512,
-      "high": 313025
+      "low": 158951,
+      "high": 317903
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 49,
-        "size_bytes": 682974,
-        "lines": 10002,
-        "chars": 441580,
+        "file_count": 50,
+        "size_bytes": 697759,
+        "lines": 10230,
+        "chars": 451337,
         "rough_token_pressure": {
-          "low": 110395,
-          "high": 220790
+          "low": 112834,
+          "high": 225668
         }
       },
       "traces": {
@@ -130,6 +130,21 @@
         "read_policy": "read-catalog-summary-by-default"
       }
     ]
+  },
+  "legacy_alias_resolver": {
+    "path": "references/legacy-asset-migration-alias-resolver.json",
+    "read_policy": "read-summary-first-then-use-redcap-legacy-asset-alias-resolver",
+    "resolver_command": "bash compass/tools/redcap-legacy-asset-alias-resolver.sh --resolve <path>",
+    "status": "present",
+    "manifest_id": "redcap-legacy-asset-migration-alias-resolver",
+    "task_id": "historical-asset-migration-alias-resolver",
+    "source_result": "references/legacy-asset-migration-worktree-rehearsal.json",
+    "source_result_sha256": "b8efa87eb16338d8f03d81c615cde04aebb94205774d121db1b0a2cf2fa52a67",
+    "alias_entries": 54,
+    "old_catalog_anchors_present": 54,
+    "planned_targets": 54,
+    "applied_targets": 0,
+    "meaning": "Old compass/docs paths remain authoritative; new redcap-knowledge paths are resolver candidates until a separate apply window."
   },
   "entries": [
     {
@@ -982,7 +997,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：Layer B 中插需求重排决策可见化",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9594,
       "lines": 181,
@@ -1047,27 +1062,40 @@
       "collection": "task-reports",
       "title": "任务完成报告：Human Communication And Feishu Noise Hardening",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15048,
       "lines": 235,
       "chars": 9520,
       "summary": "当前已完成：RedCap 已把终端中途汇报与飞书节点通知统一成同一套人类可读状态面，并把 SessionEnd 内部审核缺口改为默认只落账、不刷飞书。 / 详情：新增了 human communication policy、状态面 formatter、机器检查器和 acceptance 用例；飞书 formatter 现在会输出“人工协助、阻塞状态、下一步可直接开始、任务全景图、当前位置”等字段。旧 Claude Stop hook 的自动通知路径被降为本地状态卫生提醒，不再绕过正式通知策略。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Historical asset migration durable alias resolver",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 14785,
+      "lines": 228,
+      "chars": 9757,
+      "summary": "当前已完成：P4-1 已从“真实 worktree 演练”推进到“持久 alias resolver 可机器验证”，但历史资产仍没有真实搬迁、删除或导出。 / 详情：本轮解决的是“演练里的 alias overlay 还不能长期被后来者安全查询”的问题。现在旧 `compass/docs/**` 路径继续作为权威锚点，新 `redcap-knowledge/**` 路径只作为候选目标；查询、诊断、总回归和 acceptance 都会阻止陈旧结果、断锚、路径逃逸、公共库误写和 hash 不一致。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：RedCap 已把终端中途汇报与飞书节点通知统一成同一套人类可读状态面，并把 SessionEnd 内部审核缺口改为默认只落账、不刷飞书。",
-          "详情：新增了 human communication policy、状态面 formatter、机器检查器和 acceptance 用例；飞书 formatter 现在会输出“人工协助、阻塞状态、下一步可直接开始、任务全景图、当前位置”等字段。旧 Claude Stop hook 的自动通知路径被降为本地状态卫生提醒，不再绕过正式通知策略。"
+          "当前已完成：P4-1 已从“真实 worktree 演练”推进到“持久 alias resolver 可机器验证”，但历史资产仍没有真实搬迁、删除或导出。",
+          "详情：本轮解决的是“演练里的 alias overlay 还不能长期被后来者安全查询”的问题。现在旧 `compass/docs/**` 路径继续作为权威锚点，新 `redcap-knowledge/**` 路径只作为候选目标；查询、诊断、总回归和 acceptance 都会阻止陈旧结果、断锚、路径逃逸、公共库误写和 hash 不一致。"
         ],
         "previous_step": [
-          "上一步完成的是：完成 P3-1 检索阈值门禁后，用户指出中途汇报缺少固定状态面，且飞书在 SessionEnd 内部审核失败时多次发送干扰性通知。"
+          "上一步完成的是：P4-1 true git-worktree rehearsal 已证明 copy-first 可以在隔离 worktree 中执行、回滚，并保持主工作树和旧 docs catalog 锚点安全。"
         ],
         "next_step": [
-          "下一步计划做的是：提交本轮变更并执行 repo-owned closeout receipt；在 receipt 生成前，本报告不声明正式完成。"
+          "下一步计划做的是：另开 main-tree apply 风险窗口，在物理创建 copy target 前重新复审 rollback、receipt anchor、docs catalog、resolver target state 和 Prism verdict。"
         ],
         "position": [
-          "整体计划脉络图是：立项与追踪恢复 -> 状态面与飞书降噪实现 -> 目标回归 -> Prism 独立验收 -> closeout receipt。",
-          "当前所在位置：Prism 独立验收与全局回归已通过；正在进入提交和 closeout receipt 节点。"
+          "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy rehearsal → true worktree rehearsal → durable alias resolver → main-tree apply risk window。",
+          "当前所在位置：P4-1 `historical-asset-migration-alias-resolver` 已完成实现、本地专项验证、棱镜 resource-limited 评审、spec/diagnose 和 full acceptance，正在进行提交与 closeout receipt 收口；父任务仍因真实 apply、public release、clean workspace E2E 保持 incomplete。"
         ]
       }
     },

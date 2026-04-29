@@ -164,6 +164,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-apply-preflight
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-rehearsal
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-worktree-rehearsal
+  bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-alias-resolver
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
   bash compass/tools/redcap-multi-session-acceptance.sh retrieval-escalation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
@@ -10575,6 +10576,153 @@ PY
     assert_string_contains "$stale_output" "root is not a git worktree"
 }
 
+run_legacy_asset_alias_resolver_case() {
+    local fixture_root manifest worktree_result catalog resolver_result output old_path new_path bad_source stale_output status
+
+    log "case: legacy-asset-alias-resolver"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_ALIAS_RESOLVER_OK"
+
+    old_path="compass/docs/task-reports/2026-04-11-hook-chain-investigation.md"
+    new_path="redcap-knowledge/task-reports/2026-04-11-hook-chain-investigation.md"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "$old_path")"
+    assert_string_contains "$output" '"status": "old-anchor"'
+    assert_string_contains "$output" "\"canonical_path\": \"$old_path\""
+    assert_string_contains "$output" '"target_state": "planned-not-applied"'
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "$new_path")"
+    assert_string_contains "$output" '"status": "candidate-target"'
+    assert_string_contains "$output" "\"canonical_path\": \"$old_path\""
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "compass/docs/no-such.md")"
+    assert_string_contains "$output" '"status": "unresolved"'
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "compass/docs/archive/retention-log.md")"
+    assert_string_contains "$output" '"status": "catalog-exact"'
+    assert_string_contains "$output" '"migration_scope": "outside-alias-map"'
+    assert_string_contains "$output" '"authority_note": "not-applicable; this catalog path is outside the copy-first alias resolver"'
+
+    output="$(python3 - "$REDCAP_ROOT/compass/docs/catalog.json" "$REDCAP_ROOT/references/legacy-asset-migration-alias-resolver.json" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+result = json.loads(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"))
+resolver = payload.get("legacy_alias_resolver") or {}
+print(resolver.get("status", ""))
+catalog_count = resolver.get("alias_entries", "")
+result_count = (result.get("summary") or {}).get("alias_entries", "")
+print(catalog_count)
+print(result_count)
+print("MATCH" if catalog_count == result_count and isinstance(catalog_count, int) and catalog_count > 0 else "MISMATCH")
+PY
+)"
+    assert_string_contains "$output" "present"
+    assert_string_contains "$output" "MATCH"
+
+    fixture_root="$ACCEPT_ROOT/legacy-asset-alias-root"
+    manifest="$ACCEPT_ROOT/legacy-asset-alias-fixture.json"
+    worktree_result="$ACCEPT_ROOT/legacy-asset-alias-worktree-result.json"
+    catalog="$ACCEPT_ROOT/legacy-asset-alias-catalog.json"
+    resolver_result="$ACCEPT_ROOT/legacy-asset-alias-result.json"
+    mkdir -p "$fixture_root"
+    write_legacy_asset_rehearsal_fixture "$fixture_root" "$manifest"
+    git -C "$fixture_root" init -q
+    git -C "$fixture_root" config user.email "redcap-acceptance@example.invalid"
+    git -C "$fixture_root" config user.name "RedCap Acceptance"
+    git -C "$fixture_root" add .
+    git -C "$fixture_root" commit -qm "fixture"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$manifest" --result "$worktree_result" --write-result --check-result >/dev/null
+    python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture_root" "$catalog"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --write-result --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_ALIAS_RESOLVER_OK"
+    [[ -f "$resolver_result" ]] || fail "legacy asset alias resolver should write result"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --resolve "redcap-knowledge/task-reports/a.md")"
+    assert_string_contains "$output" '"status": "candidate-target"'
+    assert_string_contains "$output" '"canonical_path": "compass/docs/task-reports/a.md"'
+
+    bad_source="$ACCEPT_ROOT/legacy-asset-alias-stale-source.json"
+    python3 - "$worktree_result" "$bad_source" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["alias_map"][0]["new_path"] = "redcap-knowledge/task-reports/a-renamed.md"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$bad_source" --catalog "$catalog" --result "$resolver_result" --check-result 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset alias resolver should reject stale result"
+    assert_string_contains "$stale_output" "result file stale or inconsistent"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$bad_source" --catalog "$catalog" --result "$resolver_result" --resolve "redcap-knowledge/task-reports/a-renamed.md" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset alias resolver resolve should reject stale result"
+    assert_string_contains "$stale_output" "result file stale or inconsistent"
+
+    bad_source="$ACCEPT_ROOT/legacy-asset-alias-duplicate-old.json"
+    python3 - "$worktree_result" "$bad_source" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["alias_map"][1]["old_path"] = payload["alias_map"][0]["old_path"]
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$bad_source" --catalog "$catalog" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset alias resolver should reject duplicate old paths"
+    assert_string_contains "$stale_output" "duplicate old path"
+
+    bad_source="$ACCEPT_ROOT/legacy-asset-alias-public-target.json"
+    python3 - "$worktree_result" "$bad_source" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["alias_map"][0]["new_path"] = "redcap-arsenal/raw/a.md"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$bad_source" --catalog "$catalog" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset alias resolver should reject public targets"
+    assert_string_contains "$stale_output" "new path must remain under redcap-knowledge"
+
+    bad_source="$ACCEPT_ROOT/legacy-asset-alias-missing-catalog-anchor.json"
+    python3 - "$worktree_result" "$bad_source" "$fixture_root" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["alias_map"][0]["old_path"] = "compass/docs/task-reports/not-in-catalog.md"
+root = pathlib.Path(sys.argv[3])
+(root / "compass/docs/task-reports/not-in-catalog.md").write_text("# Missing catalog\n", encoding="utf-8")
+payload["alias_map"][0]["source_sha256"] = "44c43c76500c25ff95facf234b0894eaeca41b587b8ef9498a1c3eb400c43fb0"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$bad_source" --catalog "$catalog" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset alias resolver should reject missing old catalog anchor"
+    assert_string_contains "$stale_output" "old path missing from docs catalog"
+
+    mkdir -p "$fixture_root/redcap-knowledge/task-reports"
+    printf 'wrong\n' > "$fixture_root/redcap-knowledge/task-reports/a.md"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset alias resolver should reject target hash mismatch"
+    assert_string_contains "$stale_output" "target hash mismatch"
+}
+
 seed_parent_receipt_aggregation_fixtures() {
     python3 - "$REDCAP_ROOT" "$REDCAP_RUNTIME_PROJECT_BASE_DIR" "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" <<'PY'
 import hashlib
@@ -12578,6 +12726,7 @@ run_all_cases() {
     run_legacy_asset_migration_apply_preflight_case
     run_legacy_asset_migration_rehearsal_case
     run_legacy_asset_migration_worktree_rehearsal_case
+    run_legacy_asset_alias_resolver_case
     run_parent_receipt_aggregation_check_case
     run_retrieval_escalation_check_case
     run_shared_knowledge_check_case
@@ -13039,6 +13188,9 @@ case "$COMMAND" in
         ;;
     legacy-asset-migration-worktree-rehearsal)
         run_legacy_asset_migration_worktree_rehearsal_case
+        ;;
+    legacy-asset-alias-resolver)
+        run_legacy_asset_alias_resolver_case
         ;;
     parent-receipt-aggregation-check)
         run_parent_receipt_aggregation_check_case
