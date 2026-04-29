@@ -464,6 +464,14 @@ if [[ -x "$LEGACY_ASSET_REHEARSAL_CHECK" ]]; then
     fi
 fi
 
+LEGACY_ASSET_WORKTREE_REHEARSAL_CHECK="$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh"
+if [[ -x "$LEGACY_ASSET_WORKTREE_REHEARSAL_CHECK" ]]; then
+    if ! bash "$LEGACY_ASSET_WORKTREE_REHEARSAL_CHECK" --check-result >/dev/null; then
+        echo "[redcap-spec-check] legacy asset migration worktree rehearsal check failed" >&2
+        exit 1
+    fi
+fi
+
 PARENT_RECEIPT_AGGREGATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh"
 if [[ -x "$PARENT_RECEIPT_AGGREGATION_CHECK" ]]; then
     if ! bash "$PARENT_RECEIPT_AGGREGATION_CHECK" >/dev/null; then

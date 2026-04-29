@@ -40,8 +40,8 @@
       "operation": "copy-first",
       "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
       "item_scope": "file-level",
-      "actual_file_count": 48,
-      "manifest_item_count": 48,
+      "actual_file_count": 49,
+      "manifest_item_count": 49,
       "reason": "Task reports are closeout evidence and historical archaeology; moving them without link maps can break receipt/report anchors.",
       "catalog_update_plan": [
         "Regenerate compass/docs/catalog.json with old and new paths during transition",
@@ -113,7 +113,7 @@
       "operation": "retention-check-only",
       "apply_status": "retention_check_only",
       "item_scope": "collection-summary-only",
-      "actual_file_count": 341,
+      "actual_file_count": 352,
       "manifest_item_count": 0,
       "reason": "prism/runs is ignored runtime evidence; current lifecycle summary has no purgeable acceptance residue, so physical cleanup is not required now but future prune candidates must pass retention.",
       "catalog_update_plan": [
@@ -1879,6 +1879,40 @@
     },
     {
       "id": "LAM-0049",
+      "collection_id": "task-reports",
+      "source": "compass/docs/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md",
+      "target": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md",
+      "operation": "copy-first",
+      "risk": "high",
+      "apply_status": "blocked_until_catalog_and_receipt_linkmap_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "catalog-alias-required-before-apply",
+        "local-link-check-required-before-apply",
+        "receipt-anchor-preserve-old-path",
+        "copy-first-delete-last",
+        "rollback-delete-copy-only"
+      ],
+      "catalog_update_plan": [
+        "Regenerate compass/docs/catalog.json with old and new paths during transition",
+        "Keep compact summaries as first-read entries"
+      ],
+      "link_check_plan": [
+        "Check markdown links inside task reports",
+        "Check receipt/report anchors from closeout runtime summaries"
+      ],
+      "rollback_plan": [
+        "Keep original compass/docs/task-reports unchanged until every report anchor resolves",
+        "Delete redcap-knowledge/task-reports copy if link checks fail"
+      ]
+    },
+    {
+      "id": "LAM-0050",
       "collection_id": "docs-catalog",
       "source": "compass/docs/catalog.json",
       "target": "compass/docs/catalog.json",
@@ -1906,7 +1940,7 @@
       ]
     },
     {
-      "id": "LAM-0050",
+      "id": "LAM-0051",
       "collection_id": "research",
       "source": "compass/docs/research/2026-04-24-redcap-workflow-panorama.html",
       "target": "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html",
@@ -1939,7 +1973,7 @@
       ]
     },
     {
-      "id": "LAM-0051",
+      "id": "LAM-0052",
       "collection_id": "research",
       "source": "compass/docs/research/2026-04-24-redcap-workflow-panorama.md",
       "target": "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md",
@@ -1972,7 +2006,7 @@
       ]
     },
     {
-      "id": "LAM-0052",
+      "id": "LAM-0053",
       "collection_id": "research",
       "source": "compass/docs/research/feishu-ai-agent-collaboration-report.md",
       "target": "redcap-knowledge/research/feishu-ai-agent-collaboration-report.md",
@@ -2005,7 +2039,7 @@
       ]
     },
     {
-      "id": "LAM-0053",
+      "id": "LAM-0054",
       "collection_id": "specs",
       "source": "compass/docs/specs/2026-04-12-host-agent-interop-governance-design.md",
       "target": "compass/docs/specs/2026-04-12-host-agent-interop-governance-design.md",
@@ -2032,7 +2066,7 @@
       ]
     },
     {
-      "id": "LAM-0054",
+      "id": "LAM-0055",
       "collection_id": "specs",
       "source": "compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md",
       "target": "compass/docs/specs/2026-04-12-host-skill-overlay-governance-design.md",
@@ -2059,7 +2093,7 @@
       ]
     },
     {
-      "id": "LAM-0055",
+      "id": "LAM-0056",
       "collection_id": "specs",
       "source": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
       "target": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
@@ -2086,7 +2120,7 @@
       ]
     },
     {
-      "id": "LAM-0056",
+      "id": "LAM-0057",
       "collection_id": "specs",
       "source": "compass/docs/specs/2026-04-15-feishu-duplex-communication-design.md",
       "target": "compass/docs/specs/2026-04-15-feishu-duplex-communication-design.md",
@@ -2113,7 +2147,7 @@
       ]
     },
     {
-      "id": "LAM-0057",
+      "id": "LAM-0058",
       "collection_id": "specs",
       "source": "compass/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md",
       "target": "compass/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md",
@@ -2140,7 +2174,7 @@
       ]
     },
     {
-      "id": "LAM-0058",
+      "id": "LAM-0059",
       "collection_id": "specs",
       "source": "compass/docs/specs/2026-04-23-layerb-fsm-workmode-rebuild.md",
       "target": "compass/docs/specs/2026-04-23-layerb-fsm-workmode-rebuild.md",
@@ -2167,7 +2201,7 @@
       ]
     },
     {
-      "id": "LAM-0059",
+      "id": "LAM-0060",
       "collection_id": "specs",
       "source": "compass/docs/specs/baton-design.md",
       "target": "compass/docs/specs/baton-design.md",
@@ -2194,7 +2228,7 @@
       ]
     },
     {
-      "id": "LAM-0060",
+      "id": "LAM-0061",
       "collection_id": "specs",
       "source": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
       "target": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
@@ -2221,7 +2255,7 @@
       ]
     },
     {
-      "id": "LAM-0061",
+      "id": "LAM-0062",
       "collection_id": "specs",
       "source": "compass/docs/specs/engine-upgrade-part2-execution-framework.md",
       "target": "compass/docs/specs/engine-upgrade-part2-execution-framework.md",
@@ -2248,7 +2282,7 @@
       ]
     },
     {
-      "id": "LAM-0062",
+      "id": "LAM-0063",
       "collection_id": "specs",
       "source": "compass/docs/specs/hook-chain-investigation-design.md",
       "target": "compass/docs/specs/hook-chain-investigation-design.md",
@@ -2275,7 +2309,7 @@
       ]
     },
     {
-      "id": "LAM-0063",
+      "id": "LAM-0064",
       "collection_id": "specs",
       "source": "compass/docs/specs/multi-session-isolation-design.md",
       "target": "compass/docs/specs/multi-session-isolation-design.md",
@@ -2302,7 +2336,7 @@
       ]
     },
     {
-      "id": "LAM-0064",
+      "id": "LAM-0065",
       "collection_id": "specs",
       "source": "compass/docs/specs/prism-coordinator-phase-a-design.md",
       "target": "compass/docs/specs/prism-coordinator-phase-a-design.md",
@@ -2329,7 +2363,7 @@
       ]
     },
     {
-      "id": "LAM-0065",
+      "id": "LAM-0066",
       "collection_id": "specs",
       "source": "compass/docs/specs/session-isolation-continuity-guide.md",
       "target": "compass/docs/specs/session-isolation-continuity-guide.md",
@@ -2356,7 +2390,7 @@
       ]
     },
     {
-      "id": "LAM-0066",
+      "id": "LAM-0067",
       "collection_id": "traces",
       "source": "compass/docs/traces/architecture-capability-trace.yaml",
       "target": "redcap-knowledge/traces/architecture-capability-trace.yaml",
@@ -2387,7 +2421,7 @@
       ]
     },
     {
-      "id": "LAM-0067",
+      "id": "LAM-0068",
       "collection_id": "docs-archive",
       "source": "compass/docs/archive/retention-log.md",
       "target": "compass/docs/archive/retention-log.md",
@@ -2414,7 +2448,7 @@
       ]
     },
     {
-      "id": "LAM-0068",
+      "id": "LAM-0069",
       "collection_id": "docs-archive",
       "source": "compass/docs/archive/specs/.gitkeep",
       "target": "compass/docs/archive/specs/.gitkeep",
@@ -2441,7 +2475,7 @@
       ]
     },
     {
-      "id": "LAM-0069",
+      "id": "LAM-0070",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/DEPLOYMENT_STATUS.md",
       "target": "redcap-knowledge/knowledge/DEPLOYMENT_STATUS.md",
@@ -2470,7 +2504,7 @@
       ]
     },
     {
-      "id": "LAM-0070",
+      "id": "LAM-0071",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/a2a-communication.md",
       "target": "redcap-knowledge/knowledge/a2a-communication.md",
@@ -2499,7 +2533,7 @@
       ]
     },
     {
-      "id": "LAM-0071",
+      "id": "LAM-0072",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/design-principles.md",
       "target": "redcap-knowledge/knowledge/design-principles.md",
@@ -2528,7 +2562,7 @@
       ]
     },
     {
-      "id": "LAM-0072",
+      "id": "LAM-0073",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/explore-notes.md",
       "target": "redcap-knowledge/knowledge/explore-notes.md",
@@ -2557,7 +2591,7 @@
       ]
     },
     {
-      "id": "LAM-0073",
+      "id": "LAM-0074",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/governance-debt-register.md",
       "target": "redcap-knowledge/knowledge/governance-debt-register.md",
@@ -2586,7 +2620,7 @@
       ]
     },
     {
-      "id": "LAM-0074",
+      "id": "LAM-0075",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/hooks-claude-code.md",
       "target": "redcap-knowledge/knowledge/hooks-claude-code.md",
@@ -2615,7 +2649,7 @@
       ]
     },
     {
-      "id": "LAM-0075",
+      "id": "LAM-0076",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/hooks-codex-cli.md",
       "target": "redcap-knowledge/knowledge/hooks-codex-cli.md",
@@ -2644,7 +2678,7 @@
       ]
     },
     {
-      "id": "LAM-0076",
+      "id": "LAM-0077",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/hooks-copilot-cli.md",
       "target": "redcap-knowledge/knowledge/hooks-copilot-cli.md",
@@ -2673,7 +2707,7 @@
       ]
     },
     {
-      "id": "LAM-0077",
+      "id": "LAM-0078",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/hooks-gemini-cli.md",
       "target": "redcap-knowledge/knowledge/hooks-gemini-cli.md",
@@ -2702,7 +2736,7 @@
       ]
     },
     {
-      "id": "LAM-0078",
+      "id": "LAM-0079",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/hooks-kimi-cli.md",
       "target": "redcap-knowledge/knowledge/hooks-kimi-cli.md",
@@ -2731,7 +2765,7 @@
       ]
     },
     {
-      "id": "LAM-0079",
+      "id": "LAM-0080",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/hooks-vscode-copilot.md",
       "target": "redcap-knowledge/knowledge/hooks-vscode-copilot.md",
@@ -2760,7 +2794,7 @@
       ]
     },
     {
-      "id": "LAM-0080",
+      "id": "LAM-0081",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/host-reliability.md",
       "target": "redcap-knowledge/knowledge/host-reliability.md",
@@ -2789,7 +2823,7 @@
       ]
     },
     {
-      "id": "LAM-0081",
+      "id": "LAM-0082",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/index.md",
       "target": "redcap-knowledge/knowledge/index.md",
@@ -2818,7 +2852,7 @@
       ]
     },
     {
-      "id": "LAM-0082",
+      "id": "LAM-0083",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/layerA-hook-deploy.md",
       "target": "redcap-knowledge/knowledge/layerA-hook-deploy.md",
@@ -2847,7 +2881,7 @@
       ]
     },
     {
-      "id": "LAM-0083",
+      "id": "LAM-0084",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons-archive.md",
       "target": "redcap-knowledge/knowledge/lessons-archive.md",
@@ -2876,7 +2910,7 @@
       ]
     },
     {
-      "id": "LAM-0084",
+      "id": "LAM-0085",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons.md",
       "target": "redcap-knowledge/knowledge/lessons.md",
@@ -2905,7 +2939,7 @@
       ]
     },
     {
-      "id": "LAM-0085",
+      "id": "LAM-0086",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/long-task-context-defense.md",
       "target": "redcap-knowledge/knowledge/long-task-context-defense.md",
@@ -2934,7 +2968,7 @@
       ]
     },
     {
-      "id": "LAM-0086",
+      "id": "LAM-0087",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/model-capability-matrix.yaml",
       "target": "redcap-knowledge/knowledge/model-capability-matrix.yaml",
@@ -2963,7 +2997,7 @@
       ]
     },
     {
-      "id": "LAM-0087",
+      "id": "LAM-0088",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/runtime-memory-architecture.md",
       "target": "redcap-knowledge/knowledge/runtime-memory-architecture.md",
@@ -2993,8 +3027,8 @@
     }
   ],
   "summary": {
-    "total_items": 87,
-    "copy_first_items": 52,
+    "total_items": 88,
+    "copy_first_items": 53,
     "blocked_translate_items": 19,
     "preserve_items": 14,
     "archive_in_place_items": 2,

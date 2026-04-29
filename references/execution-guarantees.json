@@ -1324,6 +1324,31 @@
       "auto_enforceable": true
     },
     {
+      "id": "legacy-asset-migration-worktree-rehearsal",
+      "category": "parent-task-governance",
+      "priority": "P1",
+      "rule": "Historical asset migration real apply must pass a true git-worktree rehearsal before any main-tree apply, proving copy-first can run in isolation while old docs catalog anchors, alias overlay, rollback and main-tree status remain safe.",
+      "source_paths": [
+        "references/legacy-asset-migration-worktree-rehearsal.json",
+        "references/legacy-asset-migration-apply-plan.json",
+        "references/redcap-parent-task-ledger.md",
+        "compass/docs/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-legacy-asset-migration-worktree-rehearsal.sh creates a detached temporary git worktree, performs copy-first rehearsal there, validates old docs catalog anchors, alias overlay, rollback, stale-result detection and main-tree no-mutation, and is consumed by spec-check, diagnose and acceptance.",
+      "guarantee_paths": [
+        "compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh",
+        "compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.py",
+        "references/legacy-asset-migration-worktree-rehearsal.json",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "parent-receipt-aggregation-gate",
       "category": "parent-task-governance",
       "priority": "P2",

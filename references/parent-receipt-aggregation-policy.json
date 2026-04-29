@@ -105,8 +105,8 @@
     {
       "id": "P4-1",
       "status": "deferred",
-      "reason": "Historical asset migration now has collection dry-run, file-level apply preflight, and temp-copy apply rehearsal proof, but real main-tree apply/move/delete remains a separate risk-window task.",
-      "next_step": "Run a true throwaway-worktree rehearsal immediately before main-tree apply, wire old-path alias/link map into catalog/link resolvers, verify receipt anchors, and review rollback before any main-tree migration."
+      "reason": "Historical asset migration now has collection dry-run, file-level apply preflight, temp-copy rehearsal, and true git-worktree rehearsal proof, but real main-tree apply/move/delete remains a separate risk-window task.",
+      "next_step": "Wire old-path alias overlay into durable catalog/link resolver behavior, verify receipt anchors against that resolver, and review rollback immediately before any main-tree migration."
     },
     {
       "id": "P4-2",

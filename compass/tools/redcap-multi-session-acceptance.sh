@@ -163,6 +163,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-apply-preflight
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-rehearsal
+  bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-worktree-rehearsal
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
   bash compass/tools/redcap-multi-session-acceptance.sh retrieval-escalation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
@@ -10412,6 +10413,168 @@ PY
     assert_string_contains "$stale_output" "main-tree target already exists"
 }
 
+run_legacy_asset_migration_worktree_rehearsal_case() {
+    local fixture_root manifest result output bad_manifest stale_output status nogit_root nogit_manifest
+
+    log "case: legacy-asset-migration-worktree-rehearsal"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_WORKTREE_REHEARSAL_OK"
+
+    fixture_root="$ACCEPT_ROOT/legacy-asset-worktree-root"
+    manifest="$ACCEPT_ROOT/legacy-asset-worktree-fixture.json"
+    result="$ACCEPT_ROOT/legacy-asset-worktree-result.json"
+    mkdir -p "$fixture_root"
+    write_legacy_asset_rehearsal_fixture "$fixture_root" "$manifest"
+    git -C "$fixture_root" init -q
+    git -C "$fixture_root" config user.email "redcap-acceptance@example.invalid"
+    git -C "$fixture_root" config user.name "RedCap Acceptance"
+    git -C "$fixture_root" add .
+    git -C "$fixture_root" commit -qm "fixture"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$manifest" --result "$result" --write-result --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_WORKTREE_REHEARSAL_OK"
+    [[ -f "$result" ]] || fail "legacy asset worktree rehearsal should write result"
+    [[ ! -e "$fixture_root/redcap-knowledge" ]] || fail "legacy asset worktree rehearsal must not create targets in fixture root"
+    [[ -z "$(git -C "$fixture_root" status --porcelain=v1 --untracked-files=all)" ]] || fail "legacy asset worktree rehearsal must leave fixture git status clean"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-worktree-stale-result.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["target"] = "redcap-knowledge/task-reports/a-renamed.md"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" --result "$result" --check-result 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset worktree rehearsal should reject stale result"
+    assert_string_contains "$stale_output" "result file stale or inconsistent"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-worktree-move.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["operation"] = "move"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset worktree rehearsal should reject move"
+    assert_string_contains "$stale_output" "forbidden operation"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-worktree-public-export.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["operation"] = "public-export"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset worktree rehearsal should reject public-export"
+    assert_string_contains "$stale_output" "forbidden operation"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-worktree-traversal.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["target"] = "../redcap-knowledge/escape.md"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset worktree rehearsal should reject target traversal"
+    assert_string_contains "$stale_output" "safe repo-relative path"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-worktree-public-target.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["target"] = "redcap-arsenal/raw/a.md"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset worktree rehearsal should reject public target"
+    assert_string_contains "$stale_output" "public/shared repository"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-worktree-duplicate-target.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][1]["target"] = payload["items"][0]["target"]
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset worktree rehearsal should reject duplicate target"
+    assert_string_contains "$stale_output" "duplicate copy target"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-worktree-missing-guard.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["guards"] = [
+    guard for guard in payload["items"][0]["guards"]
+    if guard != "rollback-delete-copy-only"
+]
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset worktree rehearsal should reject missing copy-first guard"
+    assert_string_contains "$stale_output" "missing copy-first guard"
+
+    mkdir -p "$fixture_root/redcap-knowledge/task-reports"
+    printf 'existing\n' > "$fixture_root/redcap-knowledge/task-reports/a.md"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset worktree rehearsal should reject existing main-tree target"
+    assert_string_contains "$stale_output" "main-tree target already exists"
+    rm -rf "$fixture_root/redcap-knowledge"
+
+    nogit_root="$ACCEPT_ROOT/legacy-asset-worktree-nogit"
+    nogit_manifest="$ACCEPT_ROOT/legacy-asset-worktree-nogit.json"
+    mkdir -p "$nogit_root"
+    write_legacy_asset_rehearsal_fixture "$nogit_root" "$nogit_manifest"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$nogit_root" --manifest "$nogit_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset worktree rehearsal should reject non-git roots"
+    assert_string_contains "$stale_output" "root is not a git worktree"
+}
+
 seed_parent_receipt_aggregation_fixtures() {
     python3 - "$REDCAP_ROOT" "$REDCAP_RUNTIME_PROJECT_BASE_DIR" "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" <<'PY'
 import hashlib
@@ -12414,6 +12577,7 @@ run_all_cases() {
     run_legacy_asset_migration_check_case
     run_legacy_asset_migration_apply_preflight_case
     run_legacy_asset_migration_rehearsal_case
+    run_legacy_asset_migration_worktree_rehearsal_case
     run_parent_receipt_aggregation_check_case
     run_retrieval_escalation_check_case
     run_shared_knowledge_check_case
@@ -12872,6 +13036,9 @@ case "$COMMAND" in
         ;;
     legacy-asset-migration-rehearsal)
         run_legacy_asset_migration_rehearsal_case
+        ;;
+    legacy-asset-migration-worktree-rehearsal)
+        run_legacy_asset_migration_worktree_rehearsal_case
         ;;
     parent-receipt-aggregation-check)
         run_parent_receipt_aggregation_check_case
