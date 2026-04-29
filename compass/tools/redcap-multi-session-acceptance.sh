@@ -162,6 +162,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh execution-layer-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-apply-preflight
+  bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-rehearsal
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
   bash compass/tools/redcap-multi-session-acceptance.sh retrieval-escalation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
@@ -10117,6 +10118,300 @@ PY
     assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_APPLY_PREFLIGHT_OK"
 }
 
+write_legacy_asset_rehearsal_fixture() {
+    local fixture_root="$1"
+    local manifest_path="$2"
+
+    python3 - "$fixture_root" "$manifest_path" <<'PY'
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+manifest_path = pathlib.Path(sys.argv[2])
+(root / "references").mkdir(parents=True, exist_ok=True)
+(root / "compass/docs/task-reports").mkdir(parents=True, exist_ok=True)
+(root / "compass/docs/research").mkdir(parents=True, exist_ok=True)
+(root / "references/dummy-dry-run.json").write_text('{"manifest_id":"fixture"}\n', encoding="utf-8")
+(root / "compass/docs/task-reports/a.md").write_text("# A\n\nfixture task report\n", encoding="utf-8")
+(root / "compass/docs/research/b.md").write_text("# B\n\nfixture research\n", encoding="utf-8")
+guards = [
+    "apply-allowed-false",
+    "source-path-remains-authoritative",
+    "no-delete-or-move",
+    "catalog-alias-required-before-apply",
+    "local-link-check-required-before-apply",
+    "receipt-anchor-preserve-old-path",
+    "copy-first-delete-last",
+    "rollback-delete-copy-only",
+]
+payload = {
+    "version": 1,
+    "manifest_id": "redcap-legacy-asset-migration-apply-preflight",
+    "status": "apply-preflight-only",
+    "created_for_task": "historical-asset-migration-apply-preflight",
+    "source_dry_run": "references/dummy-dry-run.json",
+    "apply_allowed": False,
+    "public_export_allowed": False,
+    "items": [
+        {
+            "id": "LAM-FIX-001",
+            "collection_id": "task-reports",
+            "source": "compass/docs/task-reports/a.md",
+            "target": "redcap-knowledge/task-reports/a.md",
+            "operation": "copy-first",
+            "apply_allowed": False,
+            "old_path_retained": True,
+            "public_export_allowed": False,
+            "guards": guards,
+            "catalog_update_plan": ["add old-path alias before any delete-last phase"],
+            "link_check_plan": ["verify old path and proposed new path resolve"],
+            "rollback_plan": ["delete copy target only"],
+        },
+        {
+            "id": "LAM-FIX-002",
+            "collection_id": "research",
+            "source": "compass/docs/research/b.md",
+            "target": "redcap-knowledge/research/b.md",
+            "operation": "copy-first",
+            "apply_allowed": False,
+            "old_path_retained": True,
+            "public_export_allowed": False,
+            "guards": guards,
+            "catalog_update_plan": ["add old-path alias before any delete-last phase"],
+            "link_check_plan": ["verify old path and proposed new path resolve"],
+            "rollback_plan": ["delete copy target only"],
+        },
+    ],
+}
+manifest_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+run_legacy_asset_migration_rehearsal_case() {
+    local fixture_root manifest result output bad_manifest stale_output status
+
+    log "case: legacy-asset-migration-rehearsal"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_REHEARSAL_OK"
+
+    fixture_root="$ACCEPT_ROOT/legacy-asset-rehearsal-root"
+    manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-fixture.json"
+    result="$ACCEPT_ROOT/legacy-asset-rehearsal-result.json"
+    mkdir -p "$fixture_root"
+    write_legacy_asset_rehearsal_fixture "$fixture_root" "$manifest"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$manifest" --result "$result" --write-result --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_REHEARSAL_OK"
+    [[ -f "$result" ]] || fail "legacy asset rehearsal should write result"
+    [[ ! -e "$fixture_root/redcap-knowledge" ]] || fail "legacy asset rehearsal must not create targets in fixture root"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-stale-result.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["target"] = "redcap-knowledge/task-reports/a-renamed.md"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" --result "$result" --check-result 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject stale result"
+    assert_string_contains "$stale_output" "result file stale or inconsistent"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-apply-allowed.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["apply_allowed"] = True
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject apply_allowed=true"
+    assert_string_contains "$stale_output" "apply_allowed must be false"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-item-apply-allowed.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["apply_allowed"] = True
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject item apply_allowed=true"
+    assert_string_contains "$stale_output" "apply_allowed must be false"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-item-public-export-allowed.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["public_export_allowed"] = True
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject item public_export_allowed=true"
+    assert_string_contains "$stale_output" "public_export_allowed must be false"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-old-path-not-retained.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["old_path_retained"] = False
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject old_path_retained=false"
+    assert_string_contains "$stale_output" "old_path_retained must be true"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-move.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["operation"] = "move"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject move"
+    assert_string_contains "$stale_output" "forbidden operation"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-delete.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["operation"] = "delete"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject delete"
+    assert_string_contains "$stale_output" "forbidden operation"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-public-export.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["operation"] = "public-export"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject public-export"
+    assert_string_contains "$stale_output" "forbidden operation"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-missing-guard.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["guards"] = [
+    guard for guard in payload["items"][0]["guards"]
+    if guard != "rollback-delete-copy-only"
+]
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject missing copy-first guard"
+    assert_string_contains "$stale_output" "missing copy-first guard"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-traversal.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["target"] = "../redcap-knowledge/escape.md"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject target traversal"
+    assert_string_contains "$stale_output" "safe repo-relative path"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-public.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][0]["target"] = "redcap-arsenal/raw/a.md"
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject public target"
+    assert_string_contains "$stale_output" "public/shared repository"
+
+    bad_manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-duplicate-target.json"
+    python3 - "$manifest" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+payload["items"][1]["target"] = payload["items"][0]["target"]
+pathlib.Path(sys.argv[2]).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject duplicate target"
+    assert_string_contains "$stale_output" "duplicate copy target"
+
+    mkdir -p "$fixture_root/redcap-knowledge/task-reports"
+    printf 'existing\n' > "$fixture_root/redcap-knowledge/task-reports/a.md"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --root "$fixture_root" --manifest "$manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "legacy asset rehearsal should reject existing main-tree target"
+    assert_string_contains "$stale_output" "main-tree target already exists"
+}
+
 seed_parent_receipt_aggregation_fixtures() {
     python3 - "$REDCAP_ROOT" "$REDCAP_RUNTIME_PROJECT_BASE_DIR" "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" <<'PY'
 import hashlib
@@ -12118,6 +12413,7 @@ run_all_cases() {
     run_execution_layer_split_check_case
     run_legacy_asset_migration_check_case
     run_legacy_asset_migration_apply_preflight_case
+    run_legacy_asset_migration_rehearsal_case
     run_parent_receipt_aggregation_check_case
     run_retrieval_escalation_check_case
     run_shared_knowledge_check_case
@@ -12573,6 +12869,9 @@ case "$COMMAND" in
         ;;
     legacy-asset-migration-apply-preflight)
         run_legacy_asset_migration_apply_preflight_case
+        ;;
+    legacy-asset-migration-rehearsal)
+        run_legacy_asset_migration_rehearsal_case
         ;;
     parent-receipt-aggregation-check)
         run_parent_receipt_aggregation_check_case

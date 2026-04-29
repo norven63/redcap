@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 66,
-    "size_bytes": 937408,
-    "lines": 16408,
-    "chars": 608940,
+    "file_count": 67,
+    "size_bytes": 950489,
+    "lines": 16631,
+    "chars": 617277,
     "rough_token_pressure": {
-      "low": 152235,
-      "high": 304470
+      "low": 154319,
+      "high": 308638
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 47,
-        "size_bytes": 656660,
-        "lines": 9561,
-        "chars": 424470,
+        "file_count": 48,
+        "size_bytes": 669741,
+        "lines": 9784,
+        "chars": 432807,
         "rough_token_pressure": {
-          "low": 106117,
-          "high": 212235
+          "low": 108201,
+          "high": 216403
         }
       },
       "traces": {
@@ -956,7 +956,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：Shared Knowledge Gitee 远端绑定",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10621,
       "lines": 188,
@@ -1021,29 +1021,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：Runtime receipt evidence correspondence hardening",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13342,
       "lines": 232,
       "chars": 9072,
       "summary": "当前已完成：P3-2 已把父任务聚合从“有报告 + receipt_glob 字符串”升级为“必须找到真实 runtime receipt，并核对 receipt 内容与 child 身份、报告、完成态、承诺账本、验收态、repo_path、confirmed_hash 和 git head 对应”。 / 详情：本轮修改 `references/parent-receipt-aggregation-policy.json` 与 `redcap-parent-receipt-aggregation-check.py`，让父任务 completed child 不再只靠元数据形态自证。当前 child 在 closeout 前允许被…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P3-2 已把父任务聚合从“有报告 + receipt_glob 字符串”升级为“必须找到真实 runtime receipt，并核对 receipt 内容与 child 身份、报告、完成态、承诺账本、验收态、repo_path、confirmed_hash 和 git head 对应”。",
-          "详情：本轮修改 `references/parent-receipt-aggregation-policy.json` 与 `redcap-parent-receipt-aggregation-check.py`，让父任务 completed child 不再只靠元数据形态自证。当前 child 在 closeout 前允许被 `.dev-task.md` 明确锚定为 pre-receipt 例外，历史 child 缺 receipt 或 receipt 内容错配会 fail-closed。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P2-4 已完成首次启动身份初始化与飞书通知策略收敛，并用真实飞书 profile 完成 setup / node-report 验证。"
-        ],
-        "next_step": [
-          "下一步计划做的是：提交本轮 acceptance fixture 隔离补丁，然后执行 closeout receipt 收口；随后父任务只剩 P3-1 GraphRAG / 向量检索阈值研究继续 deferred。"
-        ],
-        "position": [
-          "整体计划脉络图是：父任务聚合 gate → receipt 内容对应强门 → targeted acceptance → Prism review → closeout receipt。",
-          "当前所在位置：`redcap-system-migration-parent / P3-2 / receipt-correspondence-hardening`。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md",
@@ -1100,6 +1084,35 @@
         "position": [
           "整体计划脉络图是：立项与追踪恢复 -> 状态面与飞书降噪实现 -> 目标回归 -> Prism 独立验收 -> closeout receipt。",
           "当前所在位置：Prism 独立验收与全局回归已通过；正在进入提交和 closeout receipt 节点。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-apply-rehearsal.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Historical asset migration apply rehearsal",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 13081,
+      "lines": 223,
+      "chars": 8337,
+      "summary": "当前已完成：P4-1 已从“文件级 preflight”推进到“临时 copy-first 演练可机器验证”，但 main tree 历史资产仍未真实迁移、删除或导出到公共库。 / 详情：本轮解决的是“真实迁移前仍缺一次可回滚演练”的问题。演练器读取现有文件级施工清单，只在临时沙箱中复制 `copy-first` 项，验证 source/target hash 一致、旧路径保留、alias map 与 rollback plan 一一对应，并确认 main tree 没有出现目标文件。它还会先扫描全量 manifest，因此即使危险项不属于 copy-first 执行集合，也会被 fail-closed 拦截。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P4-1 已从“文件级 preflight”推进到“临时 copy-first 演练可机器验证”，但 main tree 历史资产仍未真实迁移、删除或导出到公共库。",
+          "详情：本轮解决的是“真实迁移前仍缺一次可回滚演练”的问题。演练器读取现有文件级施工清单，只在临时沙箱中复制 `copy-first` 项，验证 source/target hash 一致、旧路径保留、alias map 与 rollback plan 一一对应，并确认 main tree 没有出现目标文件。它还会先扫描全量 manifest，因此即使危险项不属于 copy-first 执行集合，也会被 fail-closed 拦截。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-1 file-level apply preflight 已随本轮报告同步刷新为 87 个文件级条目，明确哪些文件可 copy-first、哪些只能 preserve / blocked-translate / retention-check-only，并阻断 delete/move/public export 等危险计划。"
+        ],
+        "next_step": [
+          "下一步计划做的是：真实迁移仍需另开风险窗口，在真实 throwaway worktree 中复验 alias/link map、docs catalog、receipt anchor 和 rollback，再决定是否进入 main-tree apply。"
+        ],
+        "position": [
+          "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy apply rehearsal → true throwaway-worktree rehearsal → catalog/link/receipt/rollback 复验 → main-tree apply。",
+          "当前所在位置：P4-1 `historical-asset-migration-apply-rehearsal` 正在收口；父任务仍因真实 apply、public release、clean workspace E2E 保持 incomplete。"
         ]
       }
     },

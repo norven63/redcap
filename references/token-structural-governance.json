@@ -59,6 +59,13 @@
       "trigger_for_revisit": "When the manifest exceeds 150KB or the item count exceeds 150, split it into generated shards with a compact summary index while preserving the same checker interface."
     },
     {
+      "path": "references/legacy-asset-migration-apply-rehearsal.json",
+      "kind": "tracked-large-generated-manifest",
+      "current_mitigation": "file-lookup-dictionary-and-apply-rehearsal-check",
+      "structural_strategy": "Keep as a compact rehearsal receipt for alias-map and rollback proof, not a startup document. Agents should read the summary first and only inspect specific alias rows when auditing a migration item.",
+      "trigger_for_revisit": "When the alias_map exceeds 150 entries or the file exceeds 150KB, shard alias rows into generated detail files with a compact summary index and preserve the same rehearsal checker interface."
+    },
+    {
       "path": "prism/runs",
       "kind": "ignored-runtime-evidence",
       "current_mitigation": "gitignored-do-not-bulk-read",

@@ -1374,3 +1374,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-29
+
+### L-143: “只处理安全项”的工具也必须先扫描危险项
+- **问题源**：历史资产迁移演练器第一版只筛出 `copy-first` 项执行沙箱复制；targeted acceptance 立即发现，如果同一个 manifest 混入 `move`，危险项可能因为“不在执行集合里”而没有被拒绝。
+- **解决方案**：任何 apply/rehearsal 工具都要分两层：第一层先扫描全量 manifest，拒绝 delete/move/public target/path traversal/unsafe flags；第二层才对允许集合执行实际动作。不能把“我不会执行它”当成“它可以留在计划里”。
+- **最后效果**：演练器现在会先全量审计，再执行 copy-first 沙箱演练；危险计划即使不属于本次执行集合，也会被 fail-closed 拦截。
+- **来源**：2026-04-30 Historical asset migration apply rehearsal
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-30
