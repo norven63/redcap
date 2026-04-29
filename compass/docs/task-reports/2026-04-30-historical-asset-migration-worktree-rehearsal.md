@@ -87,6 +87,7 @@
 | `compass/tools/redcap-spec-check.sh` / `compass/tools/redcap-diagnose.sh` | 修改 | 将 worktree rehearsal 纳入总回归和诊断。 |
 | `references/file-lookup-dictionary.md` / `references/file-lookup-dictionary-policy.json` | 修改 | 登记 worktree rehearsal 结果和工具，维持按需定位。 |
 | `references/execution-guarantees.json` | 修改 | 新增 worktree rehearsal 执行保障规则。 |
+| `references/legacy-asset-migration-dry-run.json` | 修改 | 同步新增 task report 与 lesson 后的历史资产 dry-run 统计，保持迁移清单自洽。 |
 | `references/redcap-parent-task-ledger.md` / `references/parent-receipt-aggregation-policy.json` | 修改 | 父任务状态更新为“true git-worktree rehearsal 已落地，真实 main-tree apply 仍 deferred”。 |
 | `references/token-structural-governance.json` | 修改 | 登记 worktree result 为生成型证据，要求通过字典和 checker 渐进式读取。 |
 
@@ -166,6 +167,8 @@ docs catalog 校验目前采取保守策略：旧 `compass/docs/task-reports/**`
 ### 6.2 触发的新问题
 
 Kimi 初审抓到一个真实 blocker：`git worktree remove --force` 失败会被静默吞掉，可能让文件系统目录被清理但 git worktree registry 留下脏引用。该问题已修复为 fail-closed：只有 git remove 成功才清理父目录，并额外检查 `git worktree list --porcelain` 不再包含临时路径。Claude final review 复核认为原 blocker 已解除，无新增 blocker。
+
+首次 closeout 时，drift gate 又抓到任务卡允许范围漏列 `references/legacy-asset-migration-dry-run.json`。这不是 gate 误报，而是 dry-run 统计确实随新增报告/lesson 同步更新；已把它补回任务卡与本报告的变更说明，避免用不完整账本收口。
 
 ### 6.3 推荐的下一步行动
 
