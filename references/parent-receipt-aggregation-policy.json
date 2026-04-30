@@ -128,6 +128,20 @@
         "prism/runs/20260430-historical-asset-migration-delete-last-canonical-switch/artifacts/acceptance-binding.json"
       ],
       "completion_boundary": "Completes private historical asset delete-last/canonical switch. Public export remains outside P4-1 and is covered by release/publication boundaries."
+    },
+    {
+      "id": "P4-3",
+      "title": "跨机器 / clean workspace 安装 E2E",
+      "status": "completed",
+      "task_id": "redcap-clean-workspace-install-e2e",
+      "report_path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
+      "receipt_glob": "redcap-clean-workspace-install-e2e-*.json",
+      "acceptance_status": "resource-limited-pass",
+      "evidence_paths": [
+        "references/clean-workspace-install-e2e.json",
+        "prism/runs/20260501-redcap-clean-workspace-install-e2e/artifacts/acceptance-binding.json"
+      ],
+      "completion_boundary": "Completes a local clean HEAD clone / isolated HOME-runtime-identity installation E2E for P4-3. It does not prove public package release, package registry publication, multi-OS compatibility, or external-machine distribution."
     }
   ],
   "not_complete_children": [
@@ -136,17 +150,11 @@
       "status": "blocked-external",
       "reason": "Runtime / CLI package readiness is complete, but public release requires explicit registry, package name, credential, and distribution decisions outside this child task.",
       "next_step": "Open a release task with package registry target, secret handling, dry-run artifact review, and user-approved publish boundary."
-    },
-    {
-      "id": "P4-3",
-      "status": "deferred",
-      "reason": "Cross-machine installation E2E requires a clean target environment and should not be simulated inside the current already-initialized workspace.",
-      "next_step": "Open a cross-machine or clean-sandbox install E2E task when a target environment is available."
     }
   ],
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
-    "reason": "P4-2 public release and P4-3 clean workspace E2E remain open; parent cannot complete yet.",
-    "allowed_claim": "P4-1 is completed for private delete-last/canonical switch, but the parent task is still incomplete until P4-2 and P4-3 close."
+    "reason": "P4-2 public release remains blocked-external; parent cannot complete until registry, package name, credential, and distribution boundaries are user-approved and executed.",
+    "allowed_claim": "P4-1 and P4-3 are completed for private historical asset canonical switch and local clean workspace install E2E respectively, but the parent task is still incomplete until P4-2 public release closes."
   }
 }

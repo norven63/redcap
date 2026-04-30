@@ -11279,7 +11279,7 @@ PY
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing required not-complete child"
-    assert_string_contains "$stale_output" "missing not-complete child entries: P4-2, P4-3"
+    assert_string_contains "$stale_output" "missing not-complete child entries: P4-2"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-eligible-output.json"
     python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'

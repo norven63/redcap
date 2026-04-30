@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-01  
 **执行者**：Cap（Codex.app 主 Agent）  
-**报告版本**：v0.1
+**报告版本**：v0.2
 
 ---
 
@@ -10,8 +10,8 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：P4-3 已进入 Layer B 任务卡，clean workspace E2E 工具已建立，并在本地 dirty snapshot 调试模式中证明隔离 clean clone 可以完成 revive、CLI status、publish safety 与 package manifest。
-- 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；否则首次安装环境会因缺少本地任务卡而失败。
+- 当前已完成：P4-3 clean workspace E2E 已生成正式 machine-readable receipt；该 receipt 来自干净 HEAD clone，覆盖隔离 HOME/runtime/identity、revive、CLI status、publish safety、package manifest 与 npm pack dry-run。
+- 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；receipt 也已做本机路径脱敏，避免把 `/Users/**` 或 macOS 临时目录泄漏成可提交证据。
 
 ### 0.2 上一步完成的是
 
@@ -19,12 +19,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：把 E2E receipt、Prism 独立评审、parent aggregation、文件字典和执行保障补齐后提交，并由 closeout runtime 生成正式 receipt。
+- 下一步计划做的是：完成 Prism 修复后复审、绑定 Prism acceptance，再由 closeout runtime 生成 P4-3 正式 closeout receipt。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：PM Gate 重锚 P4-3 → clean clone E2E 工具 → spec/diagnose/acceptance 接线 → machine-readable E2E receipt → Prism review → parent aggregation 更新 → full regression → closeout receipt。
-- 当前所在位置：实现与 targeted 回归正在推进，尚未进入最终 closeout。
+- 当前所在位置：E2E receipt、执行保障、文件字典与 parent aggregation 已完成实现接线；处于 Prism 复审与最终 closeout 前。
 
 ---
 
@@ -59,6 +59,8 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 |------|------|----------|
 | clean clone 中 revive 失败 | execution guarantees 把本地 `.dev-task.md` 作为仓库必备 `source_paths` | 新增 `runtime_source_paths`，把本地任务卡定义为运行时输入，只校验路径安全，不要求 clean clone 内存在 |
 | `--allow-dirty` 调试模式测不到未提交补丁 | 原实现允许源工作区脏，但 clean clone 仍 checkout 已提交 HEAD | 调试模式改为把当前工作树应用成临时 clean snapshot commit；正式模式仍只接受真实已提交 HEAD |
+| Prism 初审发现 receipt 路径泄漏 | `stdout_excerpt`、`commands[].cwd`、`source_repo_path` 曾包含本机/临时绝对路径 | 新增 receipt redaction 与 committed-result 私密路径拒绝校验，并重新生成正式 receipt |
+| Prism 初审发现 E2E 未独立登记进 execution guarantees | E2E 只通过 spec/diagnose/acceptance 间接存在 | 新增 `clean-workspace-install-e2e` execution guarantee，并同步 REQUIRED_IDS |
 
 ---
 
@@ -67,11 +69,13 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | 项目 | 结果 |
 |------|------|
 | clean workspace E2E 工具 | 已新增，支持正式 clean HEAD 验收与本地 dirty snapshot 调试 |
-| revive/install 验证 | 已在隔离 HOME/runtime 下通过调试模式；正式 receipt 待提交后生成 |
+| revive/install 验证 | 正式 receipt 已证明隔离 HOME/runtime/identity 下可通过 |
 | CLI facade 验证 | `status`、`publish-safety`、`package-manifest` 已纳入 E2E |
 | package 安全边界 | 候选包清单不包含 `.env`、宿主私密入口、runtime evidence、Prism runs、redcap-knowledge |
 | 执行保障修正 | `.dev-task.md` 从仓库资产改为运行时输入，防止 clean clone 首启失败 |
-| 回归接线 | 已接入 `spec-check`、`diagnose` 与 acceptance targeted case |
+| receipt 安全边界 | 本机仓库路径、临时 clone、临时 HOME/runtime/identity、candidate list 与命令输出已脱敏 |
+| 回归接线 | 已接入 `spec-check`、`diagnose`、execution guarantees、File Lookup Dictionary 与 acceptance targeted case |
+| parent aggregation | P4-3 已移入 completed child；P4-2 继续 blocked-external，因此父任务整体仍 incomplete |
 
 ---
 
@@ -83,8 +87,12 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | execution guarantees targeted | `bash compass/tools/redcap-multi-session-acceptance.sh execution-guarantees-check` | 通过 |
 | clean workspace E2E targeted | `bash compass/tools/redcap-multi-session-acceptance.sh clean-workspace-e2e-check` | 通过 |
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
-| 正式 clean HEAD E2E receipt | 待提交后运行 `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --check-result` | 待生成 |
-| Prism 独立评审 | 待调用可用 provider | 待完成 |
+| 正式 clean HEAD E2E receipt | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --check-result --timeout 180` | 通过，npm_pack_dry_run=true |
+| receipt 复验 | `bash compass/tools/redcap-clean-workspace-e2e.sh --check-result` | 通过 |
+| path leak scan | `rg -o '/Users/|/private/var/folders|/var/folders|norven|KIMI_API_KEY|GEMINI_API_KEY|AIza|cli_a957|Uer56' references/clean-workspace-install-e2e.json` | 无命中 |
+| Execution guarantees | `bash compass/tools/redcap-execution-guarantee-check.sh` | 通过 |
+| File Lookup Dictionary | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` | 通过，required_paths=165 |
+| Prism 独立评审 | Claude 初审 + Kimi 初审/复审 | 初审发现 2 个 blocker，已修复；最终 acceptance 待绑定 |
 | diagnose / full acceptance | 待正式 receipt 和 parent aggregation 更新后执行 | 待完成 |
 
 ### 4.1 closeout runtime / receipt
@@ -101,9 +109,9 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 
 | 等级 | 结果 |
 |------|------|
-| 已实现 | 进行中 |
+| 已实现 | 是 |
 | 已自检 | targeted 自检已过 |
-| 已独立验收 | 待 Prism |
+| 已独立验收 | Prism 初审已抓到并推动修复 blocker；最终复审待绑定 |
 | 已正式完成 | 否，待正式 clean HEAD receipt 与 closeout runtime |
 
 ---
@@ -113,7 +121,7 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | 边界 | 说明 |
 |------|------|
 | P4-2 public release | 仍需用户决策 registry、包名、凭据和发布边界；本轮不越权执行 |
-| P4-3 正式 receipt | 必须在实现提交后用 clean HEAD 运行，避免脏工作树结果冒充正式跨环境验证 |
+| P4-3 正式 receipt | 已生成；仍需提交并由 closeout runtime 产生任务完成 receipt |
 | 父任务整体完成 | P4-3 完成后仍不可声明父任务 complete，除非 P4-2 也完成或用户改变发布边界 |
 
 ---
@@ -124,6 +132,7 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 |------|------|----------|
 | 本地任务卡不是仓库资产 | clean clone revive 失败暴露 | 已转为 `runtime_source_paths` 机制，后续可沉淀为 lesson |
 | dirty debugging 不等于正式 E2E | `--allow-dirty` 原设计测不到未提交补丁 | 已改为 dirty snapshot，仅作调试；正式 result 必须来自 clean source |
+| 机器 receipt 也要脱敏 | Prism 初审发现本机路径出现在 receipt 摘要里 | 已把路径脱敏和泄漏拒绝写进 checker，适合沉淀为 lesson |
 
 ---
 
@@ -139,4 +148,5 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 
 | 模式 | 问题 | 结论 | 报告路径 |
 |------|------|------|---------|
-| 待执行 | clean workspace E2E 是否存在 false positive、泄密、父任务混报风险 | 待评审 | `prism/runs/20260501-redcap-clean-workspace-install-e2e/` |
+| Claude + Kimi 初审 | clean workspace E2E 是否存在 false positive、泄密、父任务混报风险 | 发现 execution guarantee 未独立登记与 receipt 路径泄漏；均已修复 | `prism/runs/20260501-redcap-clean-workspace-install-e2e/collect/*/raw-initial.txt` |
+| Kimi 修复后复审 | 两个 blocker 是否修复、是否仍混报父任务 | 确认初审 blocker 已修复，同时要求 E2E receipt 入库、P4-3 parent aggregation 切 completed；本报告已纳入收口 | `prism/runs/20260501-redcap-clean-workspace-install-e2e/collect/kimi-reviewer/raw.txt` |

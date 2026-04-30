@@ -1056,6 +1056,30 @@
       "auto_enforceable": true
     },
     {
+      "id": "clean-workspace-install-e2e",
+      "category": "runtime-package",
+      "priority": "P1",
+      "rule": "RedCap may close the P4-3 clean workspace / cross-machine install boundary only when a clean HEAD clone, isolated HOME, isolated runtime base, isolated identity file, CLI facade checks, package safety, and npm pack dry-run are recorded in a redacted machine-readable receipt.",
+      "source_paths": [
+        "references/clean-workspace-install-e2e.json",
+        "compass/tools/redcap-clean-workspace-e2e.sh",
+        "compass/tools/redcap-clean-workspace-e2e.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-clean-workspace-e2e.sh validates the committed clean workspace receipt; spec-check, diagnose, acceptance, parent aggregation, and Prism review consume the result before P4-3 may be marked completed.",
+      "guarantee_paths": [
+        "compass/tools/redcap-clean-workspace-e2e.sh",
+        "compass/tools/redcap-clean-workspace-e2e.py",
+        "references/clean-workspace-install-e2e.json",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "control-gate-failure-propagation",
       "category": "control-gates",
       "priority": "P0",

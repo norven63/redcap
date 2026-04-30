@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 18,
-    "size_bytes": 222156,
-    "lines": 5052,
-    "chars": 135288,
+    "size_bytes": 224161,
+    "lines": 5062,
+    "chars": 136879,
     "rough_token_pressure": {
-      "low": 33822,
-      "high": 67644
+      "low": 34219,
+      "high": 68439
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 3,
-        "size_bytes": 28635,
-        "lines": 470,
-        "chars": 18921,
+        "size_bytes": 30640,
+        "lines": 480,
+        "chars": 20512,
         "rough_token_pressure": {
-          "low": 4730,
-          "high": 9460
+          "low": 5128,
+          "high": 10256
         }
       }
     },
@@ -104,10 +104,10 @@
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/specs/prism-coordinator-phase-a-design.md",
-        "chars": 6204,
-        "lines": 353,
-        "read_policy": "read-registry-summary-first"
+        "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
+        "chars": 6382,
+        "lines": 152,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
   },
@@ -469,25 +469,25 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 7331,
-      "lines": 142,
-      "chars": 4791,
-      "summary": "当前已完成：P4-3 已进入 Layer B 任务卡，clean workspace E2E 工具已建立，并在本地 dirty snapshot 调试模式中证明隔离 clean clone 可以完成 revive、CLI status、publish safety 与 package manifest。 / 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；否则首次安装环境会因缺少本地任务卡而失败。",
+      "size_bytes": 9336,
+      "lines": 152,
+      "chars": 6382,
+      "summary": "当前已完成：P4-3 clean workspace E2E 已生成正式 machine-readable receipt；该 receipt 来自干净 HEAD clone，覆盖隔离 HOME/runtime/identity、revive、CLI status、publish safety、package manifest 与 npm pack dry-run。 / 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；receipt 也已做本机路径脱敏，避免把 `/Users/**` 或 macOS 临时目录泄漏成可提交证…",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：P4-3 已进入 Layer B 任务卡，clean workspace E2E 工具已建立，并在本地 dirty snapshot 调试模式中证明隔离 clean clone 可以完成 revive、CLI status、publish safety 与 package manifest。",
-          "重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；否则首次安装环境会因缺少本地任务卡而失败。"
+          "当前已完成：P4-3 clean workspace E2E 已生成正式 machine-readable receipt；该 receipt 来自干净 HEAD clone，覆盖隔离 HOME/runtime/identity、revive、CLI status、publish safety、package manifest 与 npm pack dry-run。",
+          "重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；receipt 也已做本机路径脱敏，避免把 `/Users/**` 或 macOS 临时目录泄漏成可提交证据。"
         ],
         "previous_step": [
           "上一步完成的是：P4-1 delete-last / canonical switch 已 closeout；父任务仍因 P4-2 public release 与 P4-3 clean workspace E2E 未完成而保持 incomplete。"
         ],
         "next_step": [
-          "下一步计划做的是：把 E2E receipt、Prism 独立评审、parent aggregation、文件字典和执行保障补齐后提交，并由 closeout runtime 生成正式 receipt。"
+          "下一步计划做的是：完成 Prism 修复后复审、绑定 Prism acceptance，再由 closeout runtime 生成 P4-3 正式 closeout receipt。"
         ],
         "position": [
           "整体计划脉络图是：PM Gate 重锚 P4-3 → clean clone E2E 工具 → spec/diagnose/acceptance 接线 → machine-readable E2E receipt → Prism review → parent aggregation 更新 → full regression → closeout receipt。",
-          "当前所在位置：实现与 targeted 回归正在推进，尚未进入最终 closeout。"
+          "当前所在位置：E2E receipt、执行保障、文件字典与 parent aggregation 已完成实现接线；处于 Prism 复审与最终 closeout 前。"
         ]
       }
     }

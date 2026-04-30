@@ -34,8 +34,9 @@ REQUIRED_COMPLETED = {
     "P3-1",
     "P3-2",
     "P4-1",
+    "P4-3",
 }
-REQUIRED_NOT_COMPLETE = {"P4-2", "P4-3"}
+REQUIRED_NOT_COMPLETE = {"P4-2"}
 
 
 def fail(message: str) -> None:

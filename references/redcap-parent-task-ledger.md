@@ -45,11 +45,11 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | P2-2 | change-intake report | 父任务 receipt 聚合 gate | completed | P2 | 已新增 parent receipt aggregation policy 与 checker，父任务仍因 release/apply/E2E 边界而不可 complete | receipt: `redcap-parent-receipt-aggregation-gate-*`；产物：`references/parent-receipt-aggregation-policy.json` |
 | P2-3 | Prism review limits | Formal Prism quorum 恢复复验 | completed | P2 | 已复验 Kimi + Claude Code 可形成当前非 Codex 双路 Prism quorum；Codex CLI 被策略降为 last-resort fallback；Gemini timeout、Copilot frozen 继续诚实记录 | receipt: `redcap-prism-formal-quorum-provider-revalidation-*`；产物：`references/prism-provider-policy.json`、`compass/.workflow/prism-agent-availability.json` |
 | P3-1 | retrieval roadmap | GraphRAG / 向量检索阈值研究 | completed | P3 | 已新增 retrieval escalation policy/checker；当前继续 catalog + rg + metadata，跨阈值后另开升级任务 | 不能把阈值策略完成冒充为 GraphRAG 已启用 |
-| P3-2 | P2-2 reviewer risk | runtime receipt evidence correspondence hardening | completed | P3 | 已在 parent receipt aggregation checker 中校验真实 runtime receipt 内容对应关系，并补 acceptance 覆盖缺 receipt、错 report、当前 child pre-receipt 例外 | 父任务仍因 P4-1/P4-2/P4-3 保持 incomplete |
+| P3-2 | P2-2 reviewer risk | runtime receipt evidence correspondence hardening | completed | P3 | 已在 parent receipt aggregation checker 中校验真实 runtime receipt 内容对应关系，并补 acceptance 覆盖缺 receipt、错 report、当前 child pre-receipt 例外 | 父任务仍因 P4-2 public release 保持 incomplete |
 | P4-1a | parent boundary | 历史资产 main-tree copy-first apply | completed | P1 | 54 个 copy-first target 已创建到私有 `redcap-knowledge/**`，resolver 显示 `applied-copy-present`，旧 `compass/docs/**` 仍是 canonical anchor | 不等于 delete-last / canonical switch / public export |
 | P4-1 | parent boundary | 历史资产迁移 delete-last / canonical switch | completed | P1 | 54 个旧 `compass/docs/**` 历史锚点已按 preflight + Prism review + apply receipt 退休，catalog 已刷新，resolver 已切到 `redcap-knowledge/**` canonical | 不等于 public export；私有知识库仍不得直接发布 |
 | P4-2 | parent boundary | 正式 runtime / CLI package public release | blocked-external | P2 | 另开 release 任务，先确认 registry、包名、凭证和发布边界 | P2-1 只完成 readiness，不可冒充 public publish |
-| P4-3 | parent boundary | 跨机器 / clean workspace 安装 E2E | deferred | P2 | 等可用干净目标环境后另开 E2E 任务 | 当前工作区已经初始化，不能冒充跨机器验证 |
+| P4-3 | parent boundary | 跨机器 / clean workspace 安装 E2E | completed | P2 | 已用 clean HEAD clone、隔离 HOME/runtime/identity、revive、CLI facade、publish safety、package manifest 与 npm pack dry-run 生成机器收据 | 完成的是本机 clean workspace / cross-machine-style E2E；不等于真实 public release、多 OS 兼容或外部机器分发 |
 | P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime: 本机 `cli_a9579f5b12219bb5` profile 已验证可发 |
 | P2-5 | user trust gap | Layer B 中插需求重排决策可见化 | completed | P2 | 已将“为什么中插需求这样排”升级为 `.dev-task.md` 必填摘要和 change-intake checker 强门 | report: `2026-04-27-layerb-change-intake-replan-visibility-gate.md` |
 
@@ -71,11 +71,11 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 14. `P4-1a`：历史资产 main-tree copy-first apply。（已完成）
 15. `P4-1`：历史资产 delete-last / canonical switch。（已完成 private canonical switch；public export 不在本项范围）
 16. `P4-2`：正式 runtime / CLI package public release。（blocked-external，需发布目标与凭证决策）
-17. `P4-3`：跨机器 / clean workspace 安装 E2E。（继续 deferred，需干净目标环境）
+17. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
 
 ## 当前不可声明
 
-- 不可声明 RedCap 已经完成真实公网发布、跨机器安装 E2E 或全部目录物理迁移。
+- 不可声明 RedCap 已经完成真实公网发布、外部机器/多 OS 安装矩阵或全部目录物理迁移；P4-3 只证明本机 clean workspace / cross-machine-style E2E。
 - 不可声明 RedCap 已经 npm publish 或完成跨机器公开分发；P2-1 只完成 package readiness 和候选包安全审计链。
 - 不可声明历史报告和研究材料已经进入公共库或可公开发布；当前只完成私有 `redcap-knowledge/**` canonical switch，公共导出仍需单独安全审查。
 - 不可声明 shared-knowledge 历史 reports/lessons/identity 已经迁移到远端公共库；本轮只绑定并初始化公共库模板。
@@ -83,5 +83,5 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 - 当前机器已能通过 `cli_a9579f5b12219bb5` 真实发送飞书；后续若 profile/token 再次失效，RedCap 仍必须 fail-closed，不得回退旧账号或 webhook。
 - 不可声明 P1-1 dry-run 已经执行真实 move/copy/link；它只证明迁移边界和风险已可审计。
 - 不可声明 P1-2 dry-run 已经执行真实历史资产搬迁或删除；它只证明分类、断链计划、catalog 计划和回滚边界已可审计。
-- 不可声明父任务已经 complete；aggregation gate 当前输出为 not-eligible，因为 P4-2/P4-3 仍未完成或需外部条件。
+- 不可声明父任务已经 complete；aggregation gate 当前输出为 not-eligible，因为 P4-2 public release 仍需外部决策与凭证边界。
 - 不可声明 P3-1 已经启用 RAG/GraphRAG；P3-1 只完成检索升级阈值策略和机器强门。
