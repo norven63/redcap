@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-01  
 **执行者**：Cap（Codex.app 主 Agent）  
-**报告版本**：v0.3
+**报告版本**：v1.0
 
 ---
 
@@ -10,8 +10,9 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：P4-3 clean workspace E2E 已生成正式 machine-readable receipt；该 receipt 来自干净 HEAD clone，覆盖隔离 HOME/runtime/identity、revive、CLI status、publish safety、package manifest 与 npm pack dry-run。
-- 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；receipt 也已做本机路径脱敏，避免把 `/Users/**` 或 macOS 临时目录泄漏成可提交证据。
+- 当前已完成：P4-3 clean workspace / cross-machine install E2E 已正式 closeout，clean clone 证据和 closeout runtime receipt 都已经生成。
+- 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；E2E receipt 已做本机路径脱敏，避免把 `/Users/**`、macOS 临时目录或密钥片段泄漏成可提交证据。
+- 当前边界：P4-3 可以声明完成；父任务仍因 P4-2 public release / package publish 保持 incomplete。
 
 ### 0.2 上一步完成的是
 
@@ -19,12 +20,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：完成 Prism 修复后复审、绑定 Prism acceptance，再由 closeout runtime 生成 P4-3 正式 closeout receipt。
+- 下一步计划做的是：不再继续扩张本轮 P4-3；父任务剩余唯一边界是 P4-2 public release / package publish，需要 Norven 对 registry、包名、凭据与发布边界做保留决策后才能推进。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：PM Gate 重锚 P4-3 → clean clone E2E 工具 → spec/diagnose/acceptance 接线 → machine-readable E2E receipt → Prism review → parent aggregation 更新 → full regression → closeout receipt。
-- 当前所在位置：E2E receipt、执行保障、文件字典与 parent aggregation 已完成实现接线；处于 Prism 复审与最终 closeout 前。
+- 当前所在位置：P4-3 已完成 closeout；父任务线仍停在 P4-2 blocked-external，因此不能声明父任务整体完成。
 
 ---
 
@@ -109,26 +110,26 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | Execution guarantees | `bash compass/tools/redcap-execution-guarantee-check.sh` | 通过 |
 | File Lookup Dictionary | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` | 通过，required_paths=165 |
 | Prism 独立评审 | Claude 初审 + Kimi 初审/复审 + acceptance binding | 初审发现 2 个 blocker，已修复；最终为 resource-limited-pass，不冒充 formal quorum |
-| diagnose / full acceptance | `bash compass/tools/redcap-diagnose.sh .dev-task.md`、`bash compass/tools/redcap-multi-session-acceptance.sh all` | full acceptance 已通过；diagnose 在 closeout 前会因 receipt 尚未生成而保持 pending，待 closeout 后复验 |
+| diagnose / full acceptance | `bash compass/tools/redcap-diagnose.sh .dev-task.md`、`bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过 |
 
 ### 5.3 closeout runtime / receipt
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 待 closeout runtime 同步 |
+| 执行承诺账本 | 已清：promises_total=6，promises_pending=0 |
 | 棱镜验收 | 已绑定为 resource-limited-pass |
-| closeout summary | 待提交后生成 |
-| closeout receipt | 待提交后生成 |
-| rescue audit（如有） | 暂无 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-clean-workspace-install-e2e-ff345b2c03b485832c942a8583638295027c38569db3a899ef12b47a3c765efd.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-clean-workspace-install-e2e-ff345b2c03b485832c942a8583638295027c38569db3a899ef12b47a3c765efd.json` |
+| rescue audit（如有） | 发生过一次 closeout 前阻塞审计，已由后续 closeout complete 解除；最终状态 completed |
 
 ### 5.4 完成等级（禁止混报）
 
 | 等级 | 结果 |
 |------|------|
 | 已实现 | 是 |
-| 已自检 | targeted、spec 与 full acceptance 已过；diagnose 的 pending closure 红灯等待 closeout runtime 解除 |
+| 已自检 | targeted、spec、diagnose 与 full acceptance 已过 |
 | 已独立验收 | 是，Prism 初审抓到并推动修复 blocker；Kimi 复审通过，Claude 最终复审超时按 resource-limited 记录 |
-| 已正式完成 | 否，待正式 clean HEAD receipt 与 closeout runtime |
+| 已正式完成 | 是，closeout runtime receipt 已生成；父任务仍因 P4-2 保持 incomplete |
 
 ---
 
@@ -137,7 +138,7 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | 边界 | 说明 |
 |------|------|
 | P4-2 public release | 仍需用户决策 registry、包名、凭据和发布边界；本轮不越权执行 |
-| P4-3 正式 receipt | 已生成；仍需提交并由 closeout runtime 产生任务完成 receipt |
+| P4-3 正式 receipt | 已生成 E2E receipt 与 closeout runtime receipt，本轮 child 任务可声明完成 |
 | 父任务整体完成 | P4-3 完成后仍不可声明父任务 complete，除非 P4-2 也完成或用户改变发布边界 |
 
 ---
@@ -167,7 +168,14 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 ### 附录 A：Commits
 
 ```text
-待提交本轮最终变更
+aaea015 feat(clean-workspace): 建立P4-3安装E2E
+d7af7e0 fix(clean-workspace): 脱敏P4-3安装E2E收据
+ca5776f fix(clean-workspace): 允许治理证据后置对账
+9b38f19 feat(parent): 完成P4-3干净工作区E2E
+8d607a7 fix(clean-workspace): 复用发布安全禁止清单
+786895a test(clean-workspace): 刷新P4-3正式E2E收据
+18e061d docs(clean-workspace): 补齐P4-3收口报告门禁
+0972ec3 docs(clean-workspace): 补齐P4-3人工审核要点
 ```
 
 ### 附录 B：棱镜调用记录
