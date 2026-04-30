@@ -22,7 +22,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：collection dry-run → file-level preflight → temp-copy rehearsal → true worktree rehearsal → durable alias resolver → main-tree copy-first apply → delete-last/canonical switch。
-- 当前所在位置：`historical-asset-migration-main-tree-copy-apply` 已完成本地实现与 copy-first 物理落地，正在进行 Prism review、全量回归、提交和 closeout receipt 收口；父任务仍保持 incomplete。
+- 当前所在位置：`historical-asset-migration-main-tree-copy-apply` 已正式收口：Prism resource-limited review、全量回归、提交与 closeout receipt 均已完成；父任务仍保持 incomplete。
 
 ## 一、需求背景
 
@@ -133,11 +133,11 @@ pre-apply rehearsal 在副本创建后不能再 live 要求 target 不存在，�
 
 | 项目 | 结果 |
 |---|---|
-| 执行承诺账本 | 待 closeout runtime 核对 |
+| 执行承诺账本 | 已核对：6/6 完成，pending=0 |
 | 棱镜验收 | 已绑定：`resource-limited-pass`，1 个 Claude reviewer responded，额外 provider 不可用证据齐全 |
-| closeout summary | 无 |
-| closeout receipt | 无 |
-| rescue audit（如有） | 无 |
+| closeout summary | 已生成：runtime summary 存于本地 `/tmp/redcap/project/.../closeout-runtime/summaries/` |
+| closeout receipt | 已生成：`historical-asset-migration-main-tree-copy-apply-1cf7042428ed6f77d4baf58a4491155a08c6fcdb781ac0b0ef883d6d5fbf2103.json` |
+| rescue audit（如有） | 首次 closeout 因 token-risk 治理缺口被拦截；已补治理并重新 closeout 成功 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -146,7 +146,7 @@ pre-apply rehearsal 在副本创建后不能再 live 要求 target 不存在，�
 | 已实现 | 是：copy-first apply 已落地 |
 | 已自检 | 是：targeted 与控制面专项已通过 |
 | 已独立验收 | 是：Prism resource-limited 验收通过，无 blocker |
-| 已正式完成 | 否：closeout receipt 尚未生成 |
+| 已正式完成 | 是：closeout receipt 已生成，pending closure 已清 |
 
 ## 六、遗留问题与下一步
 
@@ -164,8 +164,8 @@ pre-apply rehearsal 在副本创建后不能再 live 要求 target 不存在，�
 
 ### 6.3 推荐的下一步行动
 
-1. 完成本轮 full regression、commit 与 closeout receipt。
-2. 后续如继续历史资产治理，应单独立项 delete-last / canonical switch。
+1. 后续如继续历史资产治理，应单独立项 delete-last / canonical switch。
+2. public release 与 clean workspace E2E 仍保持父任务后续风险窗口，不在本轮冒充完成。
 
 ## 七、经验沉淀
 
@@ -191,7 +191,8 @@ pre-apply rehearsal 在副本创建后不能再 live 要求 target 不存在，�
 ### 附录 A：Commits
 
 ```
-提交后补充。
+ad116bb feat(legacy-assets): 执行 main-tree copy-first apply
+8f36e38 fix(token-risk): 补齐 redcap-knowledge 大文件治理
 ```
 
 ### 附录 B：棱镜调用记录（如有）
