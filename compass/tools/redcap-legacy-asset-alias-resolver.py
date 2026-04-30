@@ -203,7 +203,7 @@ def build_resolver(root: Path, source_path: Path, catalog_path: Path) -> dict[st
         },
         "entries": entries,
         "follow_up_required": [
-            "Open a separate main-tree apply risk window before creating copy targets in the main tree.",
+            "After copy-first targets are applied, keep old compass/docs anchors authoritative until a separate delete-last risk window.",
             "Re-run this resolver after any real apply so target_state can move from planned-not-applied to applied-copy-present.",
             "Do not delete old compass/docs anchors until receipt, catalog and local-link checks are revalidated after apply.",
             "Before main-tree apply, confirm non-copy-first plan items that are absent from alias entries are intentionally preserve/blocked items.",

@@ -134,10 +134,13 @@ def check_manifest(path: Path, root: Path) -> None:
         plan_ids.add(plan_id)
 
         require_existing_source(root, require_text(plan, "source", plan_id), plan_id)
-        require_target_absent(root, require_text(plan, "target", plan_id), plan_id)
         operation = require_text(plan, "operation", plan_id)
         if operation not in ALLOWED_OPERATIONS:
             fail(f"{plan_id}: unsupported operation: {operation}")
+        if operation != "defer-to-p1-2":
+            require_target_absent(root, require_text(plan, "target", plan_id), plan_id)
+        else:
+            require_safe_relative(require_text(plan, "target", plan_id), plan_id, "target")
         target_layer = require_text(plan, "target_layer", plan_id)
         if target_layer not in layer_ids:
             fail(f"{plan_id}: target_layer not declared: {target_layer}")

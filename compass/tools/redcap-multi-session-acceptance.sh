@@ -165,6 +165,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-rehearsal
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-worktree-rehearsal
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-alias-resolver
+  bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-main-tree-apply
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
   bash compass/tools/redcap-multi-session-acceptance.sh retrieval-escalation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
@@ -10195,8 +10196,13 @@ run_legacy_asset_migration_rehearsal_case() {
 
     log "case: legacy-asset-migration-rehearsal"
 
-    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --check-result)"
-    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_REHEARSAL_OK"
+    if [[ -f "$REDCAP_ROOT/references/legacy-asset-migration-main-tree-apply.json" ]]; then
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --check-stored-result-only)"
+        assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_REHEARSAL_STORED_OK"
+    else
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh" --check-result)"
+        assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_REHEARSAL_OK"
+    fi
 
     fixture_root="$ACCEPT_ROOT/legacy-asset-rehearsal-root"
     manifest="$ACCEPT_ROOT/legacy-asset-rehearsal-fixture.json"
@@ -10419,8 +10425,13 @@ run_legacy_asset_migration_worktree_rehearsal_case() {
 
     log "case: legacy-asset-migration-worktree-rehearsal"
 
-    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --check-result)"
-    assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_WORKTREE_REHEARSAL_OK"
+    if [[ -f "$REDCAP_ROOT/references/legacy-asset-migration-main-tree-apply.json" ]]; then
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --check-stored-result-only)"
+        assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_WORKTREE_REHEARSAL_STORED_OK"
+    else
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --check-result)"
+        assert_string_contains "$output" "LEGACY_ASSET_MIGRATION_WORKTREE_REHEARSAL_OK"
+    fi
 
     fixture_root="$ACCEPT_ROOT/legacy-asset-worktree-root"
     manifest="$ACCEPT_ROOT/legacy-asset-worktree-fixture.json"
@@ -10589,7 +10600,7 @@ run_legacy_asset_alias_resolver_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "$old_path")"
     assert_string_contains "$output" '"status": "old-anchor"'
     assert_string_contains "$output" "\"canonical_path\": \"$old_path\""
-    assert_string_contains "$output" '"target_state": "planned-not-applied"'
+    assert_string_contains "$output" '"target_state":'
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "$new_path")"
     assert_string_contains "$output" '"status": "candidate-target"'
     assert_string_contains "$output" "\"canonical_path\": \"$old_path\""
@@ -10721,6 +10732,91 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "legacy asset alias resolver should reject target hash mismatch"
     assert_string_contains "$stale_output" "target hash mismatch"
+}
+
+run_legacy_asset_main_tree_apply_case() {
+    local fixture_root manifest worktree_result catalog resolver_result apply_result output stale_output status
+    local fixture_root_drift manifest_drift worktree_result_drift catalog_drift resolver_result_drift apply_result_drift
+
+    log "case: legacy-asset-main-tree-apply"
+
+    if [[ -f "$REDCAP_ROOT/references/legacy-asset-migration-main-tree-apply.json" ]]; then
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --check-result)"
+        assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_OK"
+    else
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh")"
+        assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_READY"
+    fi
+
+    fixture_root="$ACCEPT_ROOT/legacy-asset-main-apply-root"
+    manifest="$ACCEPT_ROOT/legacy-asset-main-apply-fixture.json"
+    worktree_result="$ACCEPT_ROOT/legacy-asset-main-apply-worktree-result.json"
+    catalog="$ACCEPT_ROOT/legacy-asset-main-apply-catalog.json"
+    resolver_result="$ACCEPT_ROOT/legacy-asset-main-apply-resolver.json"
+    apply_result="$ACCEPT_ROOT/legacy-asset-main-apply-result.json"
+    mkdir -p "$fixture_root"
+    write_legacy_asset_rehearsal_fixture "$fixture_root" "$manifest"
+    git -C "$fixture_root" init -q
+    git -C "$fixture_root" config user.email "redcap-acceptance@example.invalid"
+    git -C "$fixture_root" config user.name "RedCap Acceptance"
+    git -C "$fixture_root" add .
+    git -C "$fixture_root" commit -qm "fixture"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$manifest" --result "$worktree_result" --write-result --check-result >/dev/null
+    python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture_root" "$catalog"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --write-result --check-result >/dev/null
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --plan "$manifest" --worktree-result "$worktree_result" --resolver "$resolver_result" --catalog "$catalog" --result "$apply_result")"
+    assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_READY"
+    [[ ! -e "$fixture_root/redcap-knowledge/task-reports/a.md" ]] || fail "main-tree apply dry-run must not create task-report target"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --plan "$manifest" --worktree-result "$worktree_result" --resolver "$resolver_result" --catalog "$catalog" --result "$apply_result" --apply --refresh-resolver --write-result --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_OK"
+    [[ -f "$apply_result" ]] || fail "main-tree apply should write result"
+    [[ -f "$fixture_root/compass/docs/task-reports/a.md" ]] || fail "main-tree apply must keep old task-report source"
+    [[ -f "$fixture_root/redcap-knowledge/task-reports/a.md" ]] || fail "main-tree apply must create task-report copy target"
+    cmp "$fixture_root/compass/docs/task-reports/a.md" "$fixture_root/redcap-knowledge/task-reports/a.md" >/dev/null
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --resolve "redcap-knowledge/task-reports/a.md")"
+    assert_string_contains "$output" '"target_state": "applied-copy-present"'
+    assert_string_contains "$output" '"canonical_path": "compass/docs/task-reports/a.md"'
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --plan "$manifest" --worktree-result "$worktree_result" --resolver "$resolver_result" --catalog "$catalog" --result "$apply_result" --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_OK"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --result "$apply_result" --rollback)"
+    assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_ROLLBACK_OK"
+    [[ -f "$fixture_root/compass/docs/task-reports/a.md" ]] || fail "main-tree apply rollback must keep old task-report source"
+    [[ ! -e "$fixture_root/redcap-knowledge/task-reports/a.md" ]] || fail "main-tree apply rollback should remove copy target"
+
+    fixture_root_drift="$ACCEPT_ROOT/legacy-asset-main-apply-drift-root"
+    manifest_drift="$ACCEPT_ROOT/legacy-asset-main-apply-drift-fixture.json"
+    worktree_result_drift="$ACCEPT_ROOT/legacy-asset-main-apply-drift-worktree-result.json"
+    catalog_drift="$ACCEPT_ROOT/legacy-asset-main-apply-drift-catalog.json"
+    resolver_result_drift="$ACCEPT_ROOT/legacy-asset-main-apply-drift-resolver.json"
+    apply_result_drift="$ACCEPT_ROOT/legacy-asset-main-apply-drift-result.json"
+    mkdir -p "$fixture_root_drift"
+    write_legacy_asset_rehearsal_fixture "$fixture_root_drift" "$manifest_drift"
+    git -C "$fixture_root_drift" init -q
+    git -C "$fixture_root_drift" config user.email "redcap-acceptance@example.invalid"
+    git -C "$fixture_root_drift" config user.name "RedCap Acceptance"
+    git -C "$fixture_root_drift" add .
+    git -C "$fixture_root_drift" commit -qm "fixture"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root_drift" --manifest "$manifest_drift" --result "$worktree_result_drift" --write-result --check-result >/dev/null
+    python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture_root_drift" "$catalog_drift"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root_drift" --source "$worktree_result_drift" --catalog "$catalog_drift" --result "$resolver_result_drift" --write-result --check-result >/dev/null
+    printf '\nsource drift\n' >> "$fixture_root_drift/compass/docs/task-reports/a.md"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root_drift" --plan "$manifest_drift" --worktree-result "$worktree_result_drift" --resolver "$resolver_result_drift" --catalog "$catalog_drift" --result "$apply_result_drift" --apply 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "main-tree apply should reject source hash drift"
+    assert_string_contains "$stale_output" "source hash drifted"
+
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --result "$apply_result" --rollback 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -eq 0 ]] || fail "main-tree apply rollback should be idempotent when targets are already absent"
 }
 
 seed_parent_receipt_aggregation_fixtures() {
@@ -10910,6 +11006,53 @@ task_id: retrieval-escalation-threshold-policy
 parent_child_id: P3-1
 task_report: compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md
 EOF
+    python3 - "$REDCAP_ROOT" "$REDCAP_RUNTIME_PROJECT_BASE_DIR" "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" <<'PY'
+import hashlib
+import json
+import pathlib
+import subprocess
+import sys
+
+root = pathlib.Path(sys.argv[1]).resolve()
+runtime_base = pathlib.Path(sys.argv[2]).resolve()
+policy_path = pathlib.Path(sys.argv[3])
+payload = json.loads(policy_path.read_text(encoding="utf-8"))
+project_hash = hashlib.md5(str(root).encode("utf-8")).hexdigest()
+receipt_dir = runtime_base / project_hash / "governance/closeout-runtime/receipts"
+receipt_dir.mkdir(parents=True, exist_ok=True)
+head = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+
+for child in payload["completed_children"]:
+    if child.get("id") != "P4-1a":
+        continue
+    receipt_glob = child["receipt_glob"]
+    task_id = child.get("task_id") or receipt_glob.removesuffix("-*.json")
+    filename = receipt_glob.replace("*", "acceptance")
+    receipt = {
+        "task_id": task_id,
+        "confirmed_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "active_slice": "acceptance-fixture",
+        "repo_path": str(root),
+        "task_file": str(root / ".dev-task.md"),
+        "report_path": str(root / child["report_path"]),
+        "status": "completed",
+        "detail": "acceptance fixture receipt for alternate-current-child pre-receipt test",
+        "host": "acceptance",
+        "baseline_head": head,
+        "current_head": head,
+        "promise_completed": 1,
+        "promise_total": 1,
+        "promise_pending": 0,
+        "acceptance_status": "resource-limited-pass",
+        "acceptance_detail": "acceptance fixture",
+        "acceptance_run": "acceptance-fixture",
+        "summary_path": "",
+        "repaired": False,
+        "created_at": "2026-04-28T00:00:00Z",
+    }
+    (receipt_dir / filename).write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    break
+PY
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" --task-file "$temp_task_file")"
     assert_string_contains "$output" "current_pre_receipt=1"
 
@@ -12727,6 +12870,7 @@ run_all_cases() {
     run_legacy_asset_migration_rehearsal_case
     run_legacy_asset_migration_worktree_rehearsal_case
     run_legacy_asset_alias_resolver_case
+    run_legacy_asset_main_tree_apply_case
     run_parent_receipt_aggregation_check_case
     run_retrieval_escalation_check_case
     run_shared_knowledge_check_case
@@ -13191,6 +13335,9 @@ case "$COMMAND" in
         ;;
     legacy-asset-alias-resolver)
         run_legacy_asset_alias_resolver_case
+        ;;
+    legacy-asset-main-tree-apply)
+        run_legacy_asset_main_tree_apply_case
         ;;
     parent-receipt-aggregation-check)
         run_parent_receipt_aggregation_check_case

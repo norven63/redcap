@@ -86,11 +86,37 @@ def is_acceptance_tmp_file(root: Path, item: Path) -> bool:
     return name.startswith(("zz-acceptance-", "zz-review-"))
 
 
+def active_task_report_path(root: Path) -> Path | None:
+    task_file = root / ".dev-task.md"
+    if not task_file.is_file():
+        return None
+    for line in task_file.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line.startswith("task_report:"):
+            continue
+        raw = line.split(":", 1)[1].strip()
+        if not raw or raw.startswith("/") or ".." in Path(raw).parts:
+            return None
+        if raw.startswith("compass/docs/task-reports/"):
+            return (root / raw).resolve(strict=False)
+    return None
+
+
+def is_active_task_report_file(root: Path, item: Path) -> bool:
+    active = active_task_report_path(root)
+    if active is None:
+        return False
+    return item.resolve(strict=False) == active
+
+
 def count_files(root: Path, rel: str) -> int:
     path = root / rel
     if path.is_file():
-        return 0 if is_acceptance_tmp_file(root, path) else 1
-    return sum(1 for item in path.rglob("*") if item.is_file() and not is_acceptance_tmp_file(root, item))
+        return 0 if is_acceptance_tmp_file(root, path) or is_active_task_report_file(root, path) else 1
+    return sum(
+        1
+        for item in path.rglob("*")
+        if item.is_file() and not is_acceptance_tmp_file(root, item) and not is_active_task_report_file(root, item)
+    )
 
 
 def count_lines(root: Path, rel: str) -> int:
@@ -98,7 +124,7 @@ def count_lines(root: Path, rel: str) -> int:
     files = [path] if path.is_file() else [item for item in path.rglob("*") if item.is_file()]
     total = 0
     for item in files:
-        if is_acceptance_tmp_file(root, item):
+        if is_acceptance_tmp_file(root, item) or is_active_task_report_file(root, item):
             continue
         try:
             total += len(item.read_text(encoding="utf-8", errors="ignore").splitlines())

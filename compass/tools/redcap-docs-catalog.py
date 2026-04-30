@@ -153,7 +153,7 @@ def load_alias_resolver_summary(root: pathlib.Path) -> dict:
         "old_catalog_anchors_present": summary_block.get("old_catalog_anchors_present", 0),
         "planned_targets": summary_block.get("planned_targets", 0),
         "applied_targets": summary_block.get("applied_targets", 0),
-        "meaning": "Old compass/docs paths remain authoritative; new redcap-knowledge paths are resolver candidates until a separate apply window.",
+        "meaning": "Old compass/docs paths remain authoritative; redcap-knowledge paths are private copy targets that may be planned or applied, but they are not canonical anchors.",
     }
 
 

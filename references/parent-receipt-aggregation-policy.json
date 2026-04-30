@@ -99,14 +99,21 @@
       "title": "runtime receipt evidence correspondence hardening",
       "report_path": "compass/docs/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
       "receipt_glob": "runtime-receipt-evidence-correspondence-hardening-*.json"
+    },
+    {
+      "id": "P4-1a",
+      "title": "历史资产 main-tree copy-first apply",
+      "task_id": "historical-asset-migration-main-tree-copy-apply",
+      "report_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
+      "receipt_glob": "historical-asset-migration-main-tree-copy-apply-*.json"
     }
   ],
   "not_complete_children": [
     {
       "id": "P4-1",
       "status": "deferred",
-      "reason": "Historical asset migration now has collection dry-run, file-level apply preflight, temp-copy rehearsal, true git-worktree rehearsal proof, and durable old-path-authoritative alias resolver proof, but real main-tree apply/move/delete remains a separate risk-window task.",
-      "next_step": "Open a separate main-tree apply risk window and re-review rollback, receipt anchors, docs catalog, resolver target states and Prism verdict immediately before any physical migration."
+      "reason": "Historical asset migration now has collection dry-run, file-level apply preflight, temp-copy rehearsal, true git-worktree rehearsal proof, durable old-path-authoritative alias resolver proof, and main-tree copy-first private targets. Delete-last, canonical path switch, and public export remain separate risk windows.",
+      "next_step": "Open a separate delete-last / canonical-switch risk window only after re-reviewing rollback, receipt anchors, docs catalog, local links, resolver target states and Prism verdict."
     },
     {
       "id": "P4-2",
@@ -123,7 +130,7 @@
   ],
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
-    "reason": "Post-P3 release, migration apply, and cross-machine E2E child items remain.",
-    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3/P2-4/P2-5/P3-1/P3-2 have receipts or a current-task pre-receipt exception; parent task is still incomplete."
+    "reason": "Delete-last/canonical switch, public release, and cross-machine E2E child items remain.",
+    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3/P2-4/P2-5/P3-1/P3-2/P4-1a have receipts or a current-task pre-receipt exception; parent task is still incomplete."
   }
 }

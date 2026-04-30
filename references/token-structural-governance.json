@@ -80,6 +80,13 @@
       "trigger_for_revisit": "When alias entries exceed 150 or the file exceeds 150KB, shard entry details behind the same resolver command while preserving a compact manifest summary."
     },
     {
+      "path": "references/legacy-asset-migration-main-tree-apply.json",
+      "kind": "tracked-generated-receipt",
+      "current_mitigation": "file-lookup-dictionary-and-main-tree-apply-check",
+      "structural_strategy": "Keep as a compact copy-first apply receipt, not a startup document. Agents should inspect summary first and use redcap-legacy-asset-main-tree-apply.sh --check-result for full verification.",
+      "trigger_for_revisit": "When copy entries exceed 150 or the file exceeds 150KB, shard entry details behind the same apply checker while preserving a compact receipt summary."
+    },
+    {
       "path": "prism/runs",
       "kind": "ignored-runtime-evidence",
       "current_mitigation": "gitignored-do-not-bulk-read",

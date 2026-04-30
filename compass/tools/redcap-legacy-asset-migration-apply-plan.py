@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -103,14 +104,43 @@ def is_acceptance_tmp_file(root: Path, item: Path) -> bool:
     return rel.name.startswith(("zz-acceptance-", "zz-review-"))
 
 
+def active_task_report_path(root: Path) -> Path | None:
+    task_file = root / ".dev-task.md"
+    if not task_file.is_file():
+        return None
+    for line in task_file.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line.startswith("task_report:"):
+            continue
+        raw = line.split(":", 1)[1].strip()
+        if not raw or raw.startswith("/") or ".." in Path(raw).parts:
+            return None
+        path = root / raw
+        if raw.startswith("compass/docs/task-reports/"):
+            return path.resolve(strict=False)
+    return None
+
+
+def is_active_task_report_file(root: Path, item: Path) -> bool:
+    active = active_task_report_path(root)
+    if active is None:
+        return False
+    return item.resolve(strict=False) == active
+
+
 def iter_files(root: Path, source: str) -> list[Path]:
     path = root / source
     if path.is_file():
-        return [] if is_acceptance_tmp_file(root, path) else [path]
+        return [] if is_acceptance_tmp_file(root, path) or is_active_task_report_file(root, path) else [path]
     if not path.exists():
         fail(f"source path missing: {source}")
     return sorted(
-        (item for item in path.rglob("*") if item.is_file() and not is_acceptance_tmp_file(root, item)),
+        (
+            item
+            for item in path.rglob("*")
+            if item.is_file()
+            and not is_acceptance_tmp_file(root, item)
+            and not is_active_task_report_file(root, item)
+        ),
         key=lambda item: item.relative_to(root).as_posix(),
     )
 
@@ -183,6 +213,14 @@ def guard_set(collection_id: str, operation: str) -> list[str]:
     if collection_id == "task-reports" and "receipt-anchor-preserve-old-path" not in guards:
         guards.append("receipt-anchor-preserve-old-path")
     return guards
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def item_scope(collection_id: str) -> str:
@@ -431,8 +469,14 @@ def validate_manifest(path: Path, root: Path) -> dict[str, Any]:
             copy_targets.add(target)
             if not target.startswith("redcap-knowledge/"):
                 fail(f"{item_id}: copy-first target must stay under redcap-knowledge: {target}")
-            if (root / target).exists():
-                fail(f"{item_id}: copy-first target already exists; preflight must not overwrite: {target}")
+            target_path = root / target
+            if target_path.exists():
+                if not target_path.is_file():
+                    fail(f"{item_id}: copy-first target exists but is not a file: {target}")
+                source_hash = sha256_file(root / source)
+                target_hash = sha256_file(target_path)
+                if source_hash != target_hash:
+                    fail(f"{item_id}: copy-first target exists with mismatched hash: {target}")
             for guard in ("catalog-alias-required-before-apply", "local-link-check-required-before-apply", "receipt-anchor-preserve-old-path", "copy-first-delete-last"):
                 if guard not in guards:
                     fail(f"{item_id}: missing guard {guard}")

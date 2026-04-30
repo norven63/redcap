@@ -1352,7 +1352,7 @@
       "id": "legacy-asset-alias-resolver",
       "category": "parent-task-governance",
       "priority": "P1",
-      "rule": "Historical asset migration must expose a durable old-path-authoritative alias resolver before any main-tree apply, so receipt anchors and docs catalog old paths remain resolvable while candidate redcap-knowledge targets are still planned.",
+      "rule": "Historical asset migration must expose a durable old-path-authoritative alias resolver before and after any main-tree apply, so receipt anchors and docs catalog old paths remain canonical while redcap-knowledge targets move from planned to applied copy targets.",
       "source_paths": [
         "references/legacy-asset-migration-alias-resolver.json",
         "references/legacy-asset-migration-worktree-rehearsal.json",
@@ -1366,6 +1366,32 @@
         "compass/tools/redcap-legacy-asset-alias-resolver.sh",
         "compass/tools/redcap-legacy-asset-alias-resolver.py",
         "references/legacy-asset-migration-alias-resolver.json",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "legacy-asset-main-tree-copy-apply",
+      "category": "parent-task-governance",
+      "priority": "P1",
+      "rule": "Historical asset migration main-tree apply may only create private redcap-knowledge copy-first targets, must keep old compass/docs anchors authoritative, and must produce a rollback-safe receipt before any delete-last phase.",
+      "source_paths": [
+        "references/legacy-asset-migration-main-tree-apply.json",
+        "references/legacy-asset-migration-alias-resolver.json",
+        "references/legacy-asset-migration-worktree-rehearsal.json",
+        "references/redcap-parent-task-ledger.md",
+        "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-legacy-asset-main-tree-apply.sh validates the main-tree copy-first receipt, rejects source drift, path traversal, public targets and mismatched applied targets, refreshes the alias resolver after apply, and is consumed by spec-check, diagnose and acceptance.",
+      "guarantee_paths": [
+        "compass/tools/redcap-legacy-asset-main-tree-apply.sh",
+        "compass/tools/redcap-legacy-asset-main-tree-apply.py",
+        "references/legacy-asset-migration-main-tree-apply.json",
         "compass/tools/redcap-spec-check.sh",
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-multi-session-acceptance.sh"

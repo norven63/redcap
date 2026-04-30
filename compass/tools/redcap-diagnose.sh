@@ -120,9 +120,16 @@ run_check "r0-r22-registry" bash "$SCRIPT_DIR/redcap-r0-r22-registry-check.sh" |
 run_check "execution-layer-split-dry-run" bash "$SCRIPT_DIR/redcap-execution-layer-split-check.sh" || overall=1
 run_check "legacy-asset-migration-dry-run" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-check.sh" || overall=1
 run_check "legacy-asset-migration-apply-preflight" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-apply-plan.sh" || overall=1
-run_check "legacy-asset-migration-rehearsal" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-rehearsal.sh" --check-result || overall=1
-run_check "legacy-asset-migration-worktree-rehearsal" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-worktree-rehearsal.sh" --check-result || overall=1
+legacy_rehearsal_mode="--check-result"
+legacy_worktree_rehearsal_mode="--check-result"
+if [[ -f "$REDCAP_ROOT/references/legacy-asset-migration-main-tree-apply.json" ]]; then
+    legacy_rehearsal_mode="--check-stored-result-only"
+    legacy_worktree_rehearsal_mode="--check-stored-result-only"
+fi
+run_check "legacy-asset-migration-rehearsal" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-rehearsal.sh" "$legacy_rehearsal_mode" || overall=1
+run_check "legacy-asset-migration-worktree-rehearsal" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-worktree-rehearsal.sh" "$legacy_worktree_rehearsal_mode" || overall=1
 run_check "legacy-asset-alias-resolver" bash "$SCRIPT_DIR/redcap-legacy-asset-alias-resolver.sh" --check-result || overall=1
+run_check "legacy-asset-main-tree-apply" bash "$SCRIPT_DIR/redcap-legacy-asset-main-tree-apply.sh" --check-result || overall=1
 run_check "parent-receipt-aggregation" bash "$SCRIPT_DIR/redcap-parent-receipt-aggregation-check.sh" || overall=1
 run_check "shared-knowledge" bash "$SCRIPT_DIR/redcap-shared-knowledge-check.sh" || overall=1
 run_check "shared-knowledge-remote-binding" bash "$SCRIPT_DIR/redcap-shared-knowledge-remote-check.sh" || overall=1

@@ -458,7 +458,11 @@ fi
 
 LEGACY_ASSET_REHEARSAL_CHECK="$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-rehearsal.sh"
 if [[ -x "$LEGACY_ASSET_REHEARSAL_CHECK" ]]; then
-    if ! bash "$LEGACY_ASSET_REHEARSAL_CHECK" --check-result >/dev/null; then
+    LEGACY_ASSET_REHEARSAL_MODE="--check-result"
+    if [[ -f "$REDCAP_ROOT/references/legacy-asset-migration-main-tree-apply.json" ]]; then
+        LEGACY_ASSET_REHEARSAL_MODE="--check-stored-result-only"
+    fi
+    if ! bash "$LEGACY_ASSET_REHEARSAL_CHECK" "$LEGACY_ASSET_REHEARSAL_MODE" >/dev/null; then
         echo "[redcap-spec-check] legacy asset migration rehearsal check failed" >&2
         exit 1
     fi
@@ -466,7 +470,11 @@ fi
 
 LEGACY_ASSET_WORKTREE_REHEARSAL_CHECK="$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh"
 if [[ -x "$LEGACY_ASSET_WORKTREE_REHEARSAL_CHECK" ]]; then
-    if ! bash "$LEGACY_ASSET_WORKTREE_REHEARSAL_CHECK" --check-result >/dev/null; then
+    LEGACY_ASSET_WORKTREE_REHEARSAL_MODE="--check-result"
+    if [[ -f "$REDCAP_ROOT/references/legacy-asset-migration-main-tree-apply.json" ]]; then
+        LEGACY_ASSET_WORKTREE_REHEARSAL_MODE="--check-stored-result-only"
+    fi
+    if ! bash "$LEGACY_ASSET_WORKTREE_REHEARSAL_CHECK" "$LEGACY_ASSET_WORKTREE_REHEARSAL_MODE" >/dev/null; then
         echo "[redcap-spec-check] legacy asset migration worktree rehearsal check failed" >&2
         exit 1
     fi
@@ -476,6 +484,14 @@ LEGACY_ASSET_ALIAS_RESOLVER_CHECK="$REDCAP_ROOT/compass/tools/redcap-legacy-asse
 if [[ -x "$LEGACY_ASSET_ALIAS_RESOLVER_CHECK" ]]; then
     if ! bash "$LEGACY_ASSET_ALIAS_RESOLVER_CHECK" --check-result >/dev/null; then
         echo "[redcap-spec-check] legacy asset alias resolver check failed" >&2
+        exit 1
+    fi
+fi
+
+LEGACY_ASSET_MAIN_TREE_APPLY_CHECK="$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh"
+if [[ -x "$LEGACY_ASSET_MAIN_TREE_APPLY_CHECK" ]]; then
+    if ! bash "$LEGACY_ASSET_MAIN_TREE_APPLY_CHECK" --check-result >/dev/null; then
+        echo "[redcap-spec-check] legacy asset main-tree apply check failed" >&2
         exit 1
     fi
 fi

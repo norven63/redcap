@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 69,
-    "size_bytes": 978507,
-    "lines": 17077,
-    "chars": 635807,
+    "file_count": 70,
+    "size_bytes": 990712,
+    "lines": 17283,
+    "chars": 643770,
     "rough_token_pressure": {
-      "low": 158951,
-      "high": 317903
+      "low": 160942,
+      "high": 321885
     },
     "collections": {
       "archive": {
@@ -60,13 +60,13 @@
         }
       },
       "task-reports": {
-        "file_count": 50,
-        "size_bytes": 697759,
-        "lines": 10230,
-        "chars": 451337,
+        "file_count": 51,
+        "size_bytes": 709964,
+        "lines": 10436,
+        "chars": 459300,
         "rough_token_pressure": {
-          "low": 112834,
-          "high": 225668
+          "low": 114825,
+          "high": 229650
         }
       },
       "traces": {
@@ -142,9 +142,9 @@
     "source_result_sha256": "6027657d135b4ae7b9dcef4dca79fe147ac507e3853834c0974e93ce310ea4be",
     "alias_entries": 54,
     "old_catalog_anchors_present": 54,
-    "planned_targets": 54,
-    "applied_targets": 0,
-    "meaning": "Old compass/docs paths remain authoritative; new redcap-knowledge paths are resolver candidates until a separate apply window."
+    "planned_targets": 0,
+    "applied_targets": 54,
+    "meaning": "Old compass/docs paths remain authoritative; redcap-knowledge paths are private copy targets that may be planned or applied, but they are not canonical anchors."
   },
   "entries": [
     {
@@ -1010,7 +1010,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：redcap-arsenal 本地实体仓库与 Norven 命名空间",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12549,
       "lines": 225,
@@ -1075,29 +1075,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：Historical asset migration durable alias resolver",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14785,
       "lines": 228,
       "chars": 9757,
       "summary": "当前已完成：P4-1 已从“真实 worktree 演练”推进到“持久 alias resolver 可机器验证”，但历史资产仍没有真实搬迁、删除或导出。 / 详情：本轮解决的是“演练里的 alias overlay 还不能长期被后来者安全查询”的问题。现在旧 `compass/docs/**` 路径继续作为权威锚点，新 `redcap-knowledge/**` 路径只作为候选目标；查询、诊断、总回归和 acceptance 都会阻止陈旧结果、断锚、路径逃逸、公共库误写和 hash 不一致。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P4-1 已从“真实 worktree 演练”推进到“持久 alias resolver 可机器验证”，但历史资产仍没有真实搬迁、删除或导出。",
-          "详情：本轮解决的是“演练里的 alias overlay 还不能长期被后来者安全查询”的问题。现在旧 `compass/docs/**` 路径继续作为权威锚点，新 `redcap-knowledge/**` 路径只作为候选目标；查询、诊断、总回归和 acceptance 都会阻止陈旧结果、断锚、路径逃逸、公共库误写和 hash 不一致。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-1 true git-worktree rehearsal 已证明 copy-first 可以在隔离 worktree 中执行、回滚，并保持主工作树和旧 docs catalog 锚点安全。"
-        ],
-        "next_step": [
-          "下一步计划做的是：另开 main-tree apply 风险窗口，在物理创建 copy target 前重新复审 rollback、receipt anchor、docs catalog、resolver target state 和 Prism verdict。"
-        ],
-        "position": [
-          "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy rehearsal → true worktree rehearsal → durable alias resolver → main-tree apply risk window。",
-          "当前所在位置：P4-1 `historical-asset-migration-alias-resolver` 已完成实现、本地专项验证、棱镜 resource-limited 评审、spec/diagnose 和 full acceptance，正在进行提交与 closeout receipt 收口；父任务仍因真实 apply、public release、clean workspace E2E 保持 incomplete。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-apply-rehearsal.md",
@@ -1125,6 +1109,35 @@
         "position": [
           "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy apply rehearsal → true throwaway-worktree rehearsal → catalog/link/receipt/rollback 复验 → main-tree apply。",
           "当前所在位置：P4-1 `historical-asset-migration-apply-rehearsal` 正在收口；父任务仍因真实 apply、public release、clean workspace E2E 保持 incomplete。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：历史资产 main-tree copy-first apply",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12205,
+      "lines": 206,
+      "chars": 7963,
+      "summary": "当前已完成：P4-1 已从 durable alias resolver 推进到 main-tree copy-first 私有副本创建，54 个旧 `compass/docs/**` 历史资产已复制到 `redcap-knowledge/**`。 / 详情：本轮解决的是“resolver 证明未来可复制，但真实 main tree 还没有副本”的缺口。现在 copy target 已真实存在、hash 与旧源一致，旧 `compass/docs/**` 仍全部保留并继续作为权威锚点。此次没有执行删除、移动、公开导出、canonical path 切换或 package release。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P4-1 已从 durable alias resolver 推进到 main-tree copy-first 私有副本创建，54 个旧 `compass/docs/**` 历史资产已复制到 `redcap-knowledge/**`。",
+          "详情：本轮解决的是“resolver 证明未来可复制，但真实 main tree 还没有副本”的缺口。现在 copy target 已真实存在、hash 与旧源一致，旧 `compass/docs/**` 仍全部保留并继续作为权威锚点。此次没有执行删除、移动、公开导出、canonical path 切换或 package release。"
+        ],
+        "previous_step": [
+          "上一步完成的是：durable alias resolver 已落地；旧路径可解析为 canonical anchor，新路径可作为候选 target 查询，但当时所有 target 仍是 `planned-not-applied`。"
+        ],
+        "next_step": [
+          "下一步计划做的是：另开 delete-last / canonical-switch 风险窗口前，复审 receipt anchor、docs catalog、local links、resolver、rollback 和 Prism verdict；父任务还剩正式公开发布与跨机器 clean workspace E2E。"
+        ],
+        "position": [
+          "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy rehearsal → true worktree rehearsal → durable alias resolver → main-tree copy-first apply → delete-last/canonical switch。",
+          "当前所在位置：`historical-asset-migration-main-tree-copy-apply` 已完成本地实现与 copy-first 物理落地，正在进行 Prism review、全量回归、提交和 closeout receipt 收口；父任务仍保持 incomplete。"
         ]
       }
     },

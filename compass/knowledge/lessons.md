@@ -1401,3 +1401,21 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-30
+
+### L-146: copy-first apply 的 receipt 只能记录稳定事实，不能记录幂等命令过程数
+- **问题源**：main-tree copy-first apply 第一版把“本次命令刚复制了几个 target”写进 receipt summary；但同一个 receipt 做幂等复验时，target 已经存在，命令过程数天然从 54 变成 0，导致机器结果不稳定。
+- **解决方案**：把 receipt 改为只记录稳定事实：copy entries、applied/planned target 数、target hash、旧路径权威、rollback plan。一次性命令过程数只允许出现在 stdout，不进入需要长期 `--check-result` 对账的 receipt。
+- **最后效果**：main-tree apply receipt 可以反复验证而不因为“第一次执行”和“后续复验”的过程差异漂移；closeout、diagnose 和父任务聚合拿到的是稳定状态，而不是临时执行日志。
+- **来源**：2026-04-30 Historical asset migration main-tree copy-first apply
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-30
+
+### L-147: 活跃任务报告不要参加同一轮历史资产迁移
+- **问题源**：历史资产迁移会复制 task report；但当前任务报告在执行、评审、回归、closeout 过程中会持续更新。如果它也被同一轮 copy-first 复制，source hash 会在复制后继续变化，制造自引用式 stale result。
+- **解决方案**：apply-plan 生成阶段跳过 `.dev-task.md` 当前 `task_report`，让活跃报告留在下一轮历史迁移处理；本轮只迁移已经稳定的历史报告和研究材料。
+- **最后效果**：当前任务可以继续更新报告和 closeout 证据，而不会污染本轮 copy-first target；历史资产迁移仍保持渐进式、安全可回滚。
+- **来源**：2026-04-30 Historical asset migration main-tree copy-first apply
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-04-30

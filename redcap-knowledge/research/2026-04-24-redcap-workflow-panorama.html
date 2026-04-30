@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RedCap 工作流全景图</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #5b6573;
+      --line: #cfd6df;
+      --paper: #f7f9fb;
+      --panel: #ffffff;
+      --accent: #1b6f68;
+      --warn: #9a5b14;
+      --bad: #9b2d30;
+      --good: #236b3a;
+    }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 15px/1.65 -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    }
+    header {
+      padding: 36px 24px 20px;
+      max-width: 1160px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 48px);
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+    .lead {
+      max-width: 820px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+    main {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 24px 48px;
+    }
+    section {
+      margin: 26px 0;
+      padding: 24px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+    }
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .node {
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--accent);
+      border-radius: 6px;
+      padding: 14px;
+      background: #fbfdff;
+      min-height: 110px;
+    }
+    .node strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+    .node small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(120px, 1fr));
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+    .step {
+      min-width: 120px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: #fff;
+      position: relative;
+    }
+    .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -15px;
+      top: 38%;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #eef3f7;
+    }
+    .tag {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      background: #e6f2f0;
+      color: var(--accent);
+      border: 1px solid #b6d9d5;
+      margin-right: 6px;
+    }
+    .warn {
+      border-left-color: var(--warn);
+    }
+    .bad {
+      border-left-color: var(--bad);
+    }
+    .good {
+      border-left-color: var(--good);
+    }
+    @media (max-width: 760px) {
+      header, main {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      section {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>RedCap 工作流全景图</h1>
+    <p class="lead">一张给人看的地图：RedCap 如何把讨论、立项、计划、执行、评审、收尾和考古串成 Agent 工程系统。</p>
+  </header>
+  <main>
+    <section>
+      <h2>Layer A / Layer B</h2>
+      <div class="grid">
+        <div class="node good">
+          <strong>Layer A：项目流水线</strong>
+          <small>一次性作战</small>
+          面向用户项目交付，状态更线性，主要由单一工作流状态文件推进。
+        </div>
+        <div class="node">
+          <strong>Layer B：框架指挥室</strong>
+          <small>持续作战</small>
+          面向 RedCap 自身治理，任务会来回切换、拆分、复盘和持续演化。
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Layer B 主链</h2>
+      <div class="flow" aria-label="Layer B workflow">
+        <div class="step"><span class="tag">上游</span><strong>书记官</strong><br>记录未锁定讨论</div>
+        <div class="step"><strong>PM Gate</strong><br>锁定正式任务</div>
+        <div class="step"><strong>REANCHORED</strong><br>复活并认回任务</div>
+        <div class="step"><strong>TASK_LOCKED</strong><br>边界与范围锁定</div>
+        <div class="step"><strong>PLANNING</strong><br>制定方案和验证路径</div>
+        <div class="step"><strong>PLANNING_REVIEW</strong><br>棱镜审核计划</div>
+        <div class="step"><strong>EXECUTING</strong><br>实现与自检</div>
+        <div class="step"><strong>REVIEW_PENDING</strong><br>独立验收</div>
+        <div class="step"><strong>CLOSEOUT</strong><br>候选、承诺与 receipt 收尾</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>关键对象</h2>
+      <table>
+        <tr><th>对象</th><th>人话解释</th><th>作用</th></tr>
+        <tr><td>当前任务卡</td><td>当前任务的法定账本</td><td>决定这轮到底在做什么</td></tr>
+        <tr><td>讨论草稿本</td><td>PM Gate 前的讨论底稿</td><td>防止多轮讨论蒸发</td></tr>
+        <tr><td>棱镜</td><td>独立验收层</td><td>防止作者自证完成</td></tr>
+        <tr><td>进化候选池</td><td>经验、人格、skill、治理改良的待处理池</td><td>防止重要信号只留在对话里</td></tr>
+        <tr><td>候选处理报告</td><td>治理类任务必须交代候选如何处理</td><td>防止候选根本没被写进池</td></tr>
+        <tr><td>receipt</td><td>正式完工收据</td><td>没有它就不能算 completed</td></tr>
+        <tr><td>pending closure</td><td>未清红线</td><td>有它就必须停在 blocked</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>三表对账</h2>
+      <div class="grid">
+        <div class="node"><strong>closeout status</strong><small>收尾总控</small>看 receipt、承诺账本、runtime state。</div>
+        <div class="node"><strong>current-status</strong><small>当前状态板</small>给接盘者一个压缩全景。</div>
+        <div class="node"><strong>diagnose</strong><small>总体验血单</small>检查多个机制有没有互相打架。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Evolution Factory</h2>
+      <div class="flow" aria-label="Evolution Factory workflow">
+        <div class="step"><span class="tag">输入</span><strong>纠偏 / 失败 / verdict</strong><br>高价值运行痕迹</div>
+        <div class="step"><strong>Candidate</strong><br>进入候选池</div>
+        <div class="step"><strong>Harvest</strong><br>报告交代候选处理</div>
+        <div class="step"><strong>Strict Gate</strong><br>未处理不出 receipt</div>
+        <div class="step"><strong>Promote / Close</strong><br>lessons、identity proposal、skill 或 no-promote</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Skill 单一信源</h2>
+      <div class="grid">
+        <div class="node"><strong>RedCap-native capability</strong><small>真实权威</small>任务卡、runtime、检查器和 closeout 都在这里。</div>
+        <div class="node"><strong>Host-exported skill</strong><small>轻量入口</small>AGENTS / CLAUDE / GEMINI / Copilot 只做索引和复活。</div>
+        <div class="node"><strong>Portable package</strong><small>未来分发</small>必须从 RedCap 源生成或链接，不能分叉手写。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>仍然诚实保留的边界</h2>
+      <div class="node bad">
+        <strong>GD-008：宿主回复前强拦截</strong>
+        Codex.app 目前还没有公开可依赖的 repo-owned pre-reply / final-reply veto。RedCap 可以收紧完成判定，但不能在所有宿主里 100% 物理拦截最终自然语言回复。
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -387,6 +387,7 @@ def main() -> int:
     parser.add_argument("--result", default=str(DEFAULT_RESULT))
     parser.add_argument("--write-result", action="store_true", help="Write the worktree rehearsal receipt to --result.")
     parser.add_argument("--check-result", action="store_true", help="Validate --result after running the live worktree rehearsal.")
+    parser.add_argument("--check-stored-result-only", action="store_true", help="Validate the stored worktree rehearsal receipt without re-running live rehearsal.")
     args = parser.parse_args()
 
     root = Path(args.root).resolve()
@@ -398,6 +399,19 @@ def main() -> int:
         result_path = (Path.cwd() / result_path).resolve()
     if not manifest.is_file():
         fail(f"missing manifest: {manifest}")
+    if args.check_stored_result_only:
+        if not result_path.is_file():
+            fail(f"missing result file: {result_path}")
+        result = load_json(result_path)
+        validate_result(result)
+        print(
+            "LEGACY_ASSET_MIGRATION_WORKTREE_REHEARSAL_STORED_OK "
+            f"{result_path} copy_first={result['summary']['copy_first_items']} "
+            f"alias_map={result['summary']['alias_map_entries']} "
+            f"rollback={result['summary']['rollback_entries']} "
+            f"catalog_old_anchors={result['catalog_anchor_validation']['old_task_report_anchors_present']}"
+        )
+        return 0
 
     result = run_worktree_rehearsal(root, manifest)
     validate_result(result)
