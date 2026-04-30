@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 18,
-    "size_bytes": 226568,
-    "lines": 5084,
-    "chars": 138514,
+    "size_bytes": 227241,
+    "lines": 5088,
+    "chars": 139007,
     "rough_token_pressure": {
-      "low": 34628,
-      "high": 69257
+      "low": 34751,
+      "high": 69503
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 3,
-        "size_bytes": 33047,
-        "lines": 502,
-        "chars": 22147,
+        "size_bytes": 33720,
+        "lines": 506,
+        "chars": 22640,
         "rough_token_pressure": {
-          "low": 5536,
-          "high": 11073
+          "low": 5660,
+          "high": 11320
         }
       }
     },
@@ -92,15 +92,15 @@
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
-        "chars": 8476,
-        "lines": 208,
+        "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
+        "chars": 8510,
+        "lines": 178,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
-        "chars": 8017,
-        "lines": 174,
+        "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
+        "chars": 8476,
+        "lines": 208,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
@@ -469,9 +469,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11743,
-      "lines": 174,
-      "chars": 8017,
+      "size_bytes": 12416,
+      "lines": 178,
+      "chars": 8510,
       "summary": "当前已完成：P4-3 clean workspace E2E 已生成正式 machine-readable receipt；该 receipt 来自干净 HEAD clone，覆盖隔离 HOME/runtime/identity、revive、CLI status、publish safety、package manifest 与 npm pack dry-run。 / 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；receipt 也已做本机路径脱敏，避免把 `/Users/**` 或 macOS 临时目录泄漏成可提交证…",
       "status_basis": "filename_recency_only",
       "summary_points": {

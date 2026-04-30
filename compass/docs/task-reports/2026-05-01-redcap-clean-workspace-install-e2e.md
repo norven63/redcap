@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-01  
 **执行者**：Cap（Codex.app 主 Agent）  
-**报告版本**：v0.2
+**报告版本**：v0.3
 
 ---
 
@@ -91,7 +91,11 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 
 ---
 
-## 四、验证结果
+## 四、人工审核要点
+
+本轮没有需要 Norven 立即决策的 blocker。需要注意的是：P4-3 只关闭 clean workspace / cross-machine install E2E；P4-2 的真实 public release / package publish 仍涉及 registry、包名、凭据与发布边界，所以父任务整体仍不能声明完成。
+
+## 五、验证结果
 
 | 验证项 | 命令 | 结果 |
 |--------|------|------|
@@ -104,15 +108,15 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | path leak scan | `rg -o '/Users/|/private/var/folders|/var/folders|norven|KIMI_API_KEY|GEMINI_API_KEY|AIza|cli_a957|Uer56' references/clean-workspace-install-e2e.json` | 无命中 |
 | Execution guarantees | `bash compass/tools/redcap-execution-guarantee-check.sh` | 通过 |
 | File Lookup Dictionary | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` | 通过，required_paths=165 |
-| Prism 独立评审 | Claude 初审 + Kimi 初审/复审 | 初审发现 2 个 blocker，已修复；最终 acceptance 待绑定 |
-| diagnose / full acceptance | 待正式 receipt 和 parent aggregation 更新后执行 | 待完成 |
+| Prism 独立评审 | Claude 初审 + Kimi 初审/复审 + acceptance binding | 初审发现 2 个 blocker，已修复；最终为 resource-limited-pass，不冒充 formal quorum |
+| diagnose / full acceptance | `bash compass/tools/redcap-diagnose.sh .dev-task.md`、`bash compass/tools/redcap-multi-session-acceptance.sh all` | full acceptance 已通过；diagnose 在 closeout 前会因 receipt 尚未生成而保持 pending，待 closeout 后复验 |
 
-### 4.1 closeout runtime / receipt
+### 5.3 closeout runtime / receipt
 
 | 项目 | 结果 |
 |------|------|
 | 执行承诺账本 | 待 closeout runtime 同步 |
-| 棱镜验收 | 待 Prism review artifact 生成 |
+| 棱镜验收 | 已绑定为 resource-limited-pass |
 | closeout summary | 待提交后生成 |
 | closeout receipt | 待提交后生成 |
 | rescue audit（如有） | 暂无 |
@@ -122,13 +126,13 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | 等级 | 结果 |
 |------|------|
 | 已实现 | 是 |
-| 已自检 | targeted 自检已过 |
-| 已独立验收 | Prism 初审已抓到并推动修复 blocker；最终复审待绑定 |
+| 已自检 | targeted、spec 与 full acceptance 已过；diagnose 的 pending closure 红灯等待 closeout runtime 解除 |
+| 已独立验收 | 是，Prism 初审抓到并推动修复 blocker；Kimi 复审通过，Claude 最终复审超时按 resource-limited 记录 |
 | 已正式完成 | 否，待正式 clean HEAD receipt 与 closeout runtime |
 
 ---
 
-## 五、遗留边界与下一步
+## 六、遗留问题与下一步
 
 | 边界 | 说明 |
 |------|------|
@@ -138,7 +142,7 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 
 ---
 
-## 六、经验沉淀候选
+## 七、经验沉淀
 
 | 候选 | 来源 | 当前处理 |
 |------|------|----------|
@@ -158,7 +162,7 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 
 ---
 
-## 七、附录
+## 八、附录
 
 ### 附录 A：Commits
 
