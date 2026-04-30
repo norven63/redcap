@@ -33,7 +33,11 @@ FORBIDDEN_CANDIDATE_PREFIXES = (
 )
 
 ALLOWED_POST_RESULT_DRIFT_PATHS = {
+    "compass/tools/redcap-execution-guarantee-check.py",
+    "compass/tools/redcap-multi-session-acceptance.sh",
+    "compass/tools/redcap-parent-receipt-aggregation-check.py",
     "references/clean-workspace-install-e2e.json",
+    "references/execution-guarantees.json",
     "references/file-lookup-dictionary.md",
     "references/file-lookup-dictionary-policy.json",
     "references/parent-receipt-aggregation-policy.json",
