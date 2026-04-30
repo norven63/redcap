@@ -2,7 +2,7 @@
 
 **报告日期**：2026-04-30
 **执行者**：Cap（Codex）
-**报告版本**：v1.0
+**报告版本**：v1.1
 
 ---
 
@@ -13,6 +13,7 @@
 - 当前已完成：P4-1 的 private delete-last / canonical switch 已完成。54 个旧 `compass/docs/**` 历史锚点已通过 preflight、Prism review、guarded apply、catalog 刷新和 resolver 复验后退休。
 - 详情：旧历史文件不再作为 docs catalog 的普通入口；`redcap-knowledge/**` 中的私有副本成为迁移资产的 canonical path，旧路径只通过 alias resolver 和 receipt correspondence 承担历史对账角色。
 - 详情：`references/legacy-asset-delete-last-apply.json` 是本轮物理收据，证明旧锚点已删除、新副本 hash 一致且可从私有副本回滚；`references/legacy-asset-delete-last-preflight.json` 当前状态为 `APPLIED`，而不是删除前 `READY`。
+- 详情：closeout runtime 已生成正式 receipt；P4-1 可以声明完成，但父任务仍不能声明完成。
 
 ### 0.2 上一步完成的是
 
@@ -77,13 +78,13 @@ P4-1 的核心风险不是“文件能不能移动”，而是“旧路径是不
 - 当前输出：`LEGACY_ASSET_DELETE_LAST_APPLY_OK entries=54 deleted=54 retired=54`
 - 已运行：`bash compass/tools/redcap-legacy-asset-delete-last-preflight.sh --write-result --check-result`
 - 当前输出：`LEGACY_ASSET_DELETE_LAST_PREFLIGHT_APPLIED entries=54 hard_reference_file_count=0 blockers=0`
-- 已运行：`bash compass/tools/redcap-spec-check.sh "$PWD"` 与 `bash compass/tools/redcap-diagnose.sh .dev-task.md`，均通过。
+- 已运行：`bash compass/tools/redcap-spec-check.sh "$PWD"`、`bash compass/tools/redcap-diagnose.sh` 与 `bash compass/tools/redcap-multi-session-acceptance.sh all`，均通过。
 
 ### 5.3 closeout runtime / receipt
 
 | 项目 | 状态 |
 |------|------|
-| closeout receipt | 待 closeout runtime 生成；本报告已进入提交前最终回归阶段 |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/historical-asset-migration-delete-last-canonical-switch-623093a995c6439cd38b81fc8ccd1f3bf46c3484e26526abbaf619efd1c80010.json` |
 | closeout 边界 | 本轮可声明 P4-1 private delete-last/canonical switch 完成；不得声明 P4-2/P4-3 或父任务整体完成 |
 
 ### 5.4 完成等级（禁止混报）
@@ -93,7 +94,7 @@ P4-1 的核心风险不是“文件能不能移动”，而是“旧路径是不
 | 已实现 | 是，preflight、guarded apply、post-delete resolver/catalog、parent receipt correspondence 与控制面接线已完成 |
 | 已自检 | 是，已运行 targeted acceptance、spec-check、diagnose、文件字典、执行保障、registry、token risk 与 parent aggregation |
 | 已独立验收 | 是，`20260430-historical-asset-migration-delete-last-canonical-switch` 为 resource-limited Prism pass，Claude Code reviewer 无 blocker |
-| 已正式完成 | 待 closeout runtime receipt；代码与物理状态已完成，最终完成声明以 receipt 为准 |
+| 已正式完成 | 是，closeout runtime receipt 已生成；父任务仍因 P4-2/P4-3 保持 incomplete |
 
 ## 六、遗留问题与下一步
 

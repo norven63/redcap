@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 17,
-    "size_bytes": 214519,
-    "lines": 4909,
-    "chars": 130201,
+    "size_bytes": 214825,
+    "lines": 4910,
+    "chars": 130497,
     "rough_token_pressure": {
-      "low": 32550,
-      "high": 65100
+      "low": 32624,
+      "high": 65248
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 2,
-        "size_bytes": 20998,
-        "lines": 327,
-        "chars": 13834,
+        "size_bytes": 21304,
+        "lines": 328,
+        "chars": 14130,
         "rough_token_pressure": {
-          "low": 3458,
-          "high": 6917
+          "low": 3532,
+          "high": 7065
         }
       }
     },
@@ -411,9 +411,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 8134,
-      "lines": 119,
-      "chars": 5358,
+      "size_bytes": 8440,
+      "lines": 120,
+      "chars": 5654,
       "summary": "当前已完成：P4-1 的 private delete-last / canonical switch 已完成。54 个旧 `compass/docs/**` 历史锚点已通过 preflight、Prism review、guarded apply、catalog 刷新和 resolver 复验后退休。 / 详情：旧历史文件不再作为 docs catalog 的普通入口；`redcap-knowledge/**` 中的私有副本成为迁移资产的 canonical path，旧路径只通过 alias resolver 和 receipt correspondence 承担历史对账角色。",
       "status_basis": "filename_recency_only",
       "summary_points": {
