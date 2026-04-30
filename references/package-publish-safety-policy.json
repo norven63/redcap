@@ -39,6 +39,7 @@
     "compass/.runtime/**",
     "prism/runs/**",
     "prism/reports/.session-registry.yaml",
+    "redcap-knowledge/**",
     "**/__pycache__/**",
     "**/*.pyc",
     "**/.DS_Store"

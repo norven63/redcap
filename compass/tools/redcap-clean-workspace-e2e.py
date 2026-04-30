@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import os
 import shutil
@@ -15,22 +16,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RESULT = ROOT / "references/clean-workspace-install-e2e.json"
+PACKAGE_SAFETY_POLICY = ROOT / "references/package-publish-safety-policy.json"
 MANIFEST_ID = "redcap-clean-workspace-install-e2e"
 TASK_ID = "redcap-clean-workspace-install-e2e"
-
-FORBIDDEN_CANDIDATE_PREFIXES = (
-    ".env",
-    ".git/",
-    "AGENTS.md",
-    "CLAUDE.md",
-    "GEMINI.md",
-    "cli_console.md",
-    "prompt.txt",
-    "compass/.runtime/",
-    "compass/.workflow/",
-    "prism/runs/",
-    "redcap-knowledge/",
-)
 
 ALLOWED_POST_RESULT_DRIFT_PATHS = {
     "compass/tools/redcap-execution-guarantee-check.py",
@@ -160,10 +148,25 @@ def minimal_env(temp_home: Path, runtime_base: Path, identity_file: Path) -> dic
     return env
 
 
-def forbidden_candidate_matches(candidates: list[str]) -> list[str]:
+def load_forbidden_candidate_globs(root: Path) -> list[str]:
+    policy_path = root / PACKAGE_SAFETY_POLICY.relative_to(ROOT)
+    try:
+        payload = json.loads(policy_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        fail(f"unable to load package safety policy: {exc}")
+    globs = payload.get("deny_path_globs")
+    if not isinstance(globs, list) or not globs:
+        fail("package safety policy deny_path_globs must be a non-empty list")
+    result = [item for item in globs if isinstance(item, str) and item.strip()]
+    if len(result) != len(globs):
+        fail("package safety policy deny_path_globs contains invalid entries")
+    return result
+
+
+def forbidden_candidate_matches(candidates: list[str], patterns: list[str]) -> list[str]:
     matches: list[str] = []
     for candidate in candidates:
-        if any(candidate == prefix.rstrip("/") or candidate.startswith(prefix) for prefix in FORBIDDEN_CANDIDATE_PREFIXES):
+        if any(fnmatch.fnmatch(candidate, pattern) for pattern in patterns):
             matches.append(candidate)
     return matches
 
@@ -313,7 +316,7 @@ def run_e2e(root: Path, *, timeout: int, allow_dirty: bool, keep_temp: bool, npm
         commands.append(run_command("package-manifest", package_command, cwd=clone_root, env=env, timeout=timeout))
 
         candidates = read_candidates(candidate_list)
-        forbidden = forbidden_candidate_matches(candidates)
+        forbidden = forbidden_candidate_matches(candidates, load_forbidden_candidate_globs(root))
         clone_status = git_status(clone_root)
         replacements = {
             str(identity_file): "<temporary-identity-file>",
