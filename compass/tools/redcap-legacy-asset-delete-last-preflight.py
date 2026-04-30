@@ -26,6 +26,10 @@ EVIDENCE_REFERENCE_PATHS = {
     "references/legacy-asset-migration-worktree-rehearsal.json",
     "references/legacy-asset-migration-main-tree-apply.json",
     "references/legacy-asset-migration-alias-resolver.json",
+    "references/legacy-asset-delete-last-apply.json",
+}
+
+SELF_GENERATED_REFERENCE_PATHS = {
     "references/legacy-asset-delete-last-preflight.json",
 }
 
@@ -212,7 +216,7 @@ def scan_references(root: Path, entries: list[dict[str, Any]]) -> list[dict[str,
     old_set = set(old_paths)
     references: list[dict[str, Any]] = []
     for rel in tracked_files(root):
-        if rel in old_set or rel.startswith("redcap-knowledge/"):
+        if rel in old_set or rel.startswith("redcap-knowledge/") or rel in SELF_GENERATED_REFERENCE_PATHS:
             continue
         path = root / rel
         try:

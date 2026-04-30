@@ -20,13 +20,13 @@
     "old_sources_retired": 54,
     "copy_targets_present": 54,
     "hash_match_entries": 54,
-    "reference_mentions": 393,
+    "reference_mentions": 501,
     "hard_reference_files": [],
     "blocker_count": 0,
     "reference_classes": {
       "acceptance-alias-compat-reference": 2,
       "historical-receipt-correspondence-reference": 13,
-      "migration-evidence": 378
+      "migration-evidence": 486
     },
     "hard_reference_file_count": 0,
     "catalog_old_anchor_mentions": 0
@@ -44,6 +44,330 @@
       "old_path": "compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
       "count": 1,
       "classification": "acceptance-alias-compat-reference"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-11-hook-chain-investigation.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-12-autonomy-escalation-p0.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-12-docs-governance-audit.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-14-backlog-mechanism-and-spec-governance.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-14-framework-upgrade-stage1-closeout.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-15-report-template-and-d1-f2-followup.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-16-completion-hook-hardening.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-16-copilot-session-anchor.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-16-feishu-duplex-and-overlay-p0.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-17-closeout-followup-hardening.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-21-entry-surface-and-prism-positioning-sync.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-21-pending-validations-e2e-tranche.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-22-install-revival-and-context-hardening.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-22-layerb-lifecycle-and-memory-architecture.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-22-layerb-runtime-closeout-hardening.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-22-prism-revive-cap-e2e-and-readonly-fix.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-22-readonly-scribe-lifecycle-and-hook-hardening.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-25-redcap-evolution-grade-control-plane-hardening.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-25-redcap-runtime-productization-and-architecture-decoupling.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-execution-layer-split-dry-run.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-layerb-change-intake-replan-gate.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-original-intent-coverage-gate.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-package-publish-safety-gate.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-parent-receipt-aggregation-gate.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-prism-availability-cache-provenance-guard.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-prism-formal-quorum-provider-revalidation.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-r0-r22-registry.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-runtime-cli-package-readiness.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-27-first-start-identity-and-feishu-policy.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-apply-rehearsal.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/research/2026-04-24-redcap-workflow-panorama.html",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/research/2026-04-24-redcap-workflow-panorama.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/research/feishu-ai-agent-collaboration-report.md",
+      "count": 2,
+      "classification": "migration-evidence"
+    },
+    {
+      "file": "references/legacy-asset-delete-last-apply.json",
+      "old_path": "compass/docs/traces/architecture-capability-trace.yaml",
+      "count": 2,
+      "classification": "migration-evidence"
     },
     {
       "file": "references/legacy-asset-migration-alias-resolver.json",

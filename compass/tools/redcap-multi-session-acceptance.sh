@@ -10862,9 +10862,15 @@ run_legacy_asset_delete_last_preflight_case() {
     assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_APPLY_OK"
     assert_contains "$delete_result" '"delete_last_applied": true'
     python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture_root" "$catalog"
-    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --delete-last-result "$delete_result" --write-result --check-result >/dev/null
-    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh" --root "$fixture_root" --apply-result "$apply_result" --delete-last-result "$delete_result" --result "$preflight_result" --write-result --check-result)"
+    mkdir -p "$fixture_root/references"
+    cp "$delete_result" "$fixture_root/references/legacy-asset-delete-last-apply.json"
+    git -C "$fixture_root" add references/legacy-asset-delete-last-apply.json
+    git -C "$fixture_root" commit -qm "track delete-last receipt"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --delete-last-result "$fixture_root/references/legacy-asset-delete-last-apply.json" --write-result --check-result >/dev/null
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh" --root "$fixture_root" --apply-result "$apply_result" --delete-last-result "$fixture_root/references/legacy-asset-delete-last-apply.json" --result "$preflight_result" --write-result --check-result)"
     assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_PREFLIGHT_APPLIED"
+    assert_contains "$preflight_result" '"references/legacy-asset-delete-last-apply.json"'
+    assert_contains "$preflight_result" '"classification": "migration-evidence"'
 
     printf 'see compass/docs/task-reports/a.md\n' >"$fixture_root/README.md"
     git -C "$fixture_root" add README.md
