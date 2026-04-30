@@ -77,6 +77,18 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | 回归接线 | 已接入 `spec-check`、`diagnose`、execution guarantees、File Lookup Dictionary 与 acceptance targeted case |
 | parent aggregation | P4-3 已移入 completed child；P4-2 继续 blocked-external，因此父任务整体仍 incomplete |
 
+### 3.2.1 术语对照（按文件/功能解释）
+
+| 术语 | 对应文件/功能 | 人话解释 |
+|------|--------------|---------|
+| clean workspace E2E | `redcap-clean-workspace-e2e.sh` | 在临时干净克隆里模拟“新工作区第一次打开 RedCap”，避免拿当前已初始化工作区冒充跨环境验证 |
+| isolated HOME/runtime/identity | E2E 临时目录与环境变量 | E2E 不读取真实家目录、真实 Cap identity、真实 runtime evidence 或真实飞书配置 |
+| dirty snapshot | `--allow-dirty` 调试模式 | 只给开发中自测使用；会把未提交修改做成临时快照提交，但不能写成正式 receipt |
+| formal E2E receipt | `references/clean-workspace-install-e2e.json` | 可机器复验的 P4-3 证据，记录 clean HEAD、命令结果、包候选和安全边界 |
+| runtime_source_paths | `references/execution-guarantees.json` | 表示 `.dev-task.md` 这类本地任务卡是运行时输入，不是 clean clone 必须带走的仓库文件 |
+| parent aggregation | `references/parent-receipt-aggregation-policy.json` | 父任务视图：P4-3 可完成，但 P4-2 public release 未完成时父任务整体仍不能完成 |
+| resource-limited Prism | Prism acceptance binding | 至少一个 reviewer 真实通过，另一个 provider 超时/不可用被诚实记录；不冒充 formal multi-family quorum |
+
 ---
 
 ## 四、验证结果
@@ -105,7 +117,7 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | closeout receipt | 待提交后生成 |
 | rescue audit（如有） | 暂无 |
 
-### 4.2 完成等级（禁止混报）
+### 5.4 完成等级（禁止混报）
 
 | 等级 | 结果 |
 |------|------|
@@ -133,6 +145,16 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | 本地任务卡不是仓库资产 | clean clone revive 失败暴露 | 已转为 `runtime_source_paths` 机制，后续可沉淀为 lesson |
 | dirty debugging 不等于正式 E2E | `--allow-dirty` 原设计测不到未提交补丁 | 已改为 dirty snapshot，仅作调试；正式 result 必须来自 clean source |
 | 机器 receipt 也要脱敏 | Prism 初审发现本机路径出现在 receipt 摘要里 | 已把路径脱敏和泄漏拒绝写进 checker，适合沉淀为 lesson |
+
+### 7.3 Evolution Factory 候选处理
+
+结论：无新增候选留待人工评审；本轮暴露出的三个经验候选都已经直接晋升为机器约束、checker 或 execution guarantee。
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|------|------|----------|------|
+| 本地任务卡不是仓库资产 | clean clone revive 失败 | 已直接晋升为 execution guarantee 机制：`source_paths` 与 `runtime_source_paths` 分离 | `references/execution-guarantees.json`、`redcap-execution-guarantee-check.py` |
+| dirty snapshot 不能冒充正式 E2E | `--allow-dirty` 调试模式设计缺陷 | 已直接落成 checker 规则：committed result 必须来自 clean source，dirty snapshot result 不可通过 `--check-result` | `redcap-clean-workspace-e2e.py` |
+| machine receipt 必须脱敏 | Prism 初审发现本机路径泄漏 | 已直接落成 receipt redaction 与 private-path leak validator；无需进入候选池等待后续人工筛选 | `references/clean-workspace-install-e2e.json`、`redcap-clean-workspace-e2e.py` |
 
 ---
 
