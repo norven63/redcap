@@ -84,6 +84,19 @@ def exists(root: pathlib.Path, rel_path: str) -> bool:
     return (root / candidate).exists()
 
 
+def validate_runtime_source_path(gid: str, source: object) -> None:
+    if not isinstance(source, str) or not source.strip():
+        fail(f"{gid}: invalid runtime source path")
+    value = strip_anchor(source).strip()
+    if not value:
+        fail(f"{gid}: invalid runtime source path")
+    candidate = pathlib.Path(value)
+    if candidate.is_absolute() or value.startswith("~/"):
+        fail(f"{gid}: runtime source path must be repository-relative: {source}")
+    if ".." in candidate.parts:
+        fail(f"{gid}: runtime source path must not escape the repository: {source}")
+
+
 def main() -> None:
     root = pathlib.Path(sys.argv[1])
     registry_path = pathlib.Path(sys.argv[2])
@@ -148,6 +161,14 @@ def main() -> None:
                 fail(f"{gid}: invalid source path")
             if not exists(root, source):
                 fail(f"{gid}: source path does not exist: {source}")
+
+        runtime_sources = entry.get("runtime_source_paths", [])
+        if runtime_sources is None:
+            runtime_sources = []
+        if not isinstance(runtime_sources, list):
+            fail(f"{gid}: runtime_source_paths must be a list")
+        for source in runtime_sources:
+            validate_runtime_source_path(gid, source)
 
         auto_enforceable = entry.get("auto_enforceable")
         if not isinstance(auto_enforceable, bool):

@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 17,
-    "size_bytes": 214825,
-    "lines": 4910,
-    "chars": 130497,
+    "file_count": 18,
+    "size_bytes": 222156,
+    "lines": 5052,
+    "chars": 135288,
     "rough_token_pressure": {
-      "low": 32624,
-      "high": 65248
+      "low": 33822,
+      "high": 67644
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 2,
-        "size_bytes": 21304,
-        "lines": 328,
-        "chars": 14130,
+        "file_count": 3,
+        "size_bytes": 28635,
+        "lines": 470,
+        "chars": 18921,
         "rough_token_pressure": {
-          "low": 3532,
-          "high": 7065
+          "low": 4730,
+          "high": 9460
         }
       }
     },
@@ -459,6 +459,35 @@
         "position": [
           "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy rehearsal → true worktree rehearsal → durable alias resolver → main-tree copy-first apply → delete-last/canonical switch。",
           "当前所在位置：`historical-asset-migration-main-tree-copy-apply` 已正式收口：Prism resource-limited review、全量回归、提交与 closeout receipt 均已完成；父任务仍保持 incomplete。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-3 clean workspace / cross-machine install E2E",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 7331,
+      "lines": 142,
+      "chars": 4791,
+      "summary": "当前已完成：P4-3 已进入 Layer B 任务卡，clean workspace E2E 工具已建立，并在本地 dirty snapshot 调试模式中证明隔离 clean clone 可以完成 revive、CLI status、publish safety 与 package manifest。 / 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；否则首次安装环境会因缺少本地任务卡而失败。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P4-3 已进入 Layer B 任务卡，clean workspace E2E 工具已建立，并在本地 dirty snapshot 调试模式中证明隔离 clean clone 可以完成 revive、CLI status、publish safety 与 package manifest。",
+          "重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；否则首次安装环境会因缺少本地任务卡而失败。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-1 delete-last / canonical switch 已 closeout；父任务仍因 P4-2 public release 与 P4-3 clean workspace E2E 未完成而保持 incomplete。"
+        ],
+        "next_step": [
+          "下一步计划做的是：把 E2E receipt、Prism 独立评审、parent aggregation、文件字典和执行保障补齐后提交，并由 closeout runtime 生成正式 receipt。"
+        ],
+        "position": [
+          "整体计划脉络图是：PM Gate 重锚 P4-3 → clean clone E2E 工具 → spec/diagnose/acceptance 接线 → machine-readable E2E receipt → Prism review → parent aggregation 更新 → full regression → closeout receipt。",
+          "当前所在位置：实现与 targeted 回归正在推进，尚未进入最终 closeout。"
         ]
       }
     }

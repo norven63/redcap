@@ -174,6 +174,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
+  bash compass/tools/redcap-multi-session-acceptance.sh clean-workspace-e2e-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh token-risk-audit
@@ -9173,12 +9174,51 @@ run_install_overview_case() {
 }
 
 run_execution_guarantees_check_case() {
-    local output temp_registry stale_output stale_status
+    local output temp_registry runtime_registry stale_output stale_status
 
     log "case: execution-guarantees-check"
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-execution-guarantee-check.sh")"
     assert_string_contains "$output" "EXECUTION_GUARANTEES_OK"
+
+    runtime_registry="$ACCEPT_ROOT/execution-guarantees-runtime-source.json"
+    cp "$REDCAP_ROOT/references/execution-guarantees.json" "$runtime_registry"
+    python3 - "$runtime_registry" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+data = json.loads(path.read_text(encoding="utf-8"))
+for entry in data["guarantees"]:
+    if entry["id"] == "tracking-health-overview":
+        entry["runtime_source_paths"] = ["zz-missing-runtime-task-card.md"]
+        break
+path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-execution-guarantee-check.sh" "$runtime_registry")"
+    assert_string_contains "$output" "EXECUTION_GUARANTEES_OK"
+
+    python3 - "$runtime_registry" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+data = json.loads(path.read_text(encoding="utf-8"))
+for entry in data["guarantees"]:
+    if entry["id"] == "tracking-health-overview":
+        entry.setdefault("source_paths", []).append("zz-missing-runtime-task-card.md")
+        entry["runtime_source_paths"] = []
+        break
+path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-execution-guarantee-check.sh" "$runtime_registry" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "execution-guarantee registry should reject runtime-only files listed as source_paths"
+    assert_string_contains "$stale_output" "source path does not exist: zz-missing-runtime-task-card.md"
 
     temp_registry="$ACCEPT_ROOT/execution-guarantees-stale.json"
     cp "$REDCAP_ROOT/references/execution-guarantees.json" "$temp_registry"
@@ -11671,6 +11711,77 @@ PY
     assert_string_contains "$stale_output" "publish_allowed must be false"
 }
 
+run_clean_workspace_e2e_check_case() {
+    local output result_file stale_result stale_output status dirty_status
+
+    log "case: clean-workspace-e2e-check"
+
+    dirty_status="$(git -C "$REDCAP_ROOT" status --porcelain=v1 --untracked-files=all)"
+    if [[ -z "$dirty_status" && -f "$REDCAP_ROOT/references/clean-workspace-install-e2e.json" ]]; then
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-clean-workspace-e2e.sh" --check-result)"
+        assert_string_contains "$output" "CLEAN_WORKSPACE_E2E_OK"
+    else
+        result_file="$ACCEPT_ROOT/clean-workspace-e2e.json"
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-clean-workspace-e2e.sh" --allow-dirty --skip-npm-pack-dry-run --write-result --result "$result_file" --timeout 120)"
+        assert_string_contains "$output" "CLEAN_WORKSPACE_E2E_OK"
+        assert_exists "$result_file"
+    fi
+
+    stale_result="$ACCEPT_ROOT/clean-workspace-e2e-failed.json"
+    python3 - "$REDCAP_ROOT" "$stale_result" <<'PY'
+import json
+import pathlib
+import subprocess
+import sys
+
+root = pathlib.Path(sys.argv[1])
+dst = pathlib.Path(sys.argv[2])
+head = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+payload = {
+    "version": 1,
+    "manifest_id": "redcap-clean-workspace-install-e2e",
+    "task_id": "redcap-clean-workspace-install-e2e",
+    "created_at": "2026-05-01T00:00:00Z",
+    "source_repo_path": str(root),
+    "source_head": head,
+    "tested_head": head,
+    "source_worktree_dirty_allowed": False,
+    "source_worktree_dirty": False,
+    "source_worktree_snapshot_applied": False,
+    "clean_workspace_e2e_passed": False,
+    "temporary_workspace_removed": True,
+    "temporary_root": "",
+    "clean_clone_path": "",
+    "isolation": {
+        "home_path": "<temporary>",
+        "runtime_project_base": "<temporary>",
+        "identity_file": "<temporary>",
+        "identity_initialized": True,
+        "runtime_base_exists": True,
+    },
+    "package_candidates": {
+        "count": 1,
+        "forbidden_matches": [],
+        "npm_pack_dry_run_checked": False,
+    },
+    "clean_clone_git_status_clean": True,
+    "commands": [
+        {"label": "revive-cap", "exit_code": 0},
+        {"label": "redcap-status", "exit_code": 0},
+        {"label": "publish-safety", "exit_code": 0},
+        {"label": "package-manifest", "exit_code": 0},
+    ],
+}
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-clean-workspace-e2e.sh" --result "$stale_result" --check-result 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "clean workspace E2E checker should reject failed result"
+    assert_string_contains "$stale_output" "clean_workspace_e2e_passed must be true"
+}
+
 run_skill_lifecycle_check_case() {
     local output fixture stale_output stale_status
 
@@ -12985,6 +13096,7 @@ run_all_cases() {
     run_shared_knowledge_remote_binding_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
+    run_clean_workspace_e2e_check_case
     run_skill_lifecycle_check_case
     run_legacy_asset_lifecycle_check_case
     run_token_risk_audit_case
@@ -13470,6 +13582,9 @@ case "$COMMAND" in
         ;;
     runtime-package-manifest-check)
         run_runtime_package_manifest_check_case
+        ;;
+    clean-workspace-e2e-check)
+        run_clean_workspace_e2e_check_case
         ;;
     skill-lifecycle-check)
         run_skill_lifecycle_check_case

@@ -548,7 +548,9 @@
       "source_paths": [
         "compass/CONTRIBUTING.core.md",
         "compass/CONTRIBUTING.md#12",
-        "compass/knowledge/explore-notes.md",
+        "compass/knowledge/explore-notes.md"
+      ],
+      "runtime_source_paths": [
         ".dev-task.md"
       ],
       "status": "scripted",
@@ -590,9 +592,11 @@
       "priority": "P0",
       "rule": "When new work enters the Layer B execution flow, the current task card must be re-anchored and all tracked, staged, and untracked workspace changes must stay inside the task card's allowed modification scope.",
       "source_paths": [
-        ".dev-task.md",
         "compass/CONTRIBUTING.md#7",
         "compass/tools/redcap-drift-check.sh"
+      ],
+      "runtime_source_paths": [
+        ".dev-task.md"
       ],
       "status": "validator",
       "automation": "redcap-drift-check.sh validates the current task metadata and allowed modification scope, including untracked files, so new reports or docs cannot escape the active task card while an old receipt remains misleadingly green.",
@@ -612,10 +616,12 @@
       "priority": "P0",
       "rule": "Layer B PM Gate must explicitly compare the user's original intent against confirmed requirements and completion standards so strategic goals cannot be silently narrowed into a route-only or partial task without a visible boundary.",
       "source_paths": [
-        ".dev-task.md",
         "compass/CONTRIBUTING.md#10",
         "references/task-report-template.md",
         "compass/tools/redcap-intent-coverage-check.sh"
+      ],
+      "runtime_source_paths": [
+        ".dev-task.md"
       ],
       "status": "validator",
       "automation": "redcap-intent-coverage-check.sh validates the task-card coverage section; redcap-pm-gate-check.sh consumes it as part of PM Gate, and diagnose surfaces it as a visible control gate.",

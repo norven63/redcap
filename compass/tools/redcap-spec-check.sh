@@ -594,6 +594,18 @@ if ! bash "$RUNTIME_PACKAGE_MANIFEST_CHECK" --check >/dev/null; then
     exit 1
 fi
 
+CLEAN_WORKSPACE_E2E_CHECK="$REDCAP_ROOT/compass/tools/redcap-clean-workspace-e2e.sh"
+if [[ -f "$REDCAP_ROOT/references/clean-workspace-install-e2e.json" ]]; then
+    if [[ ! -f "$CLEAN_WORKSPACE_E2E_CHECK" ]]; then
+        echo "[redcap-spec-check] clean workspace E2E check missing" >&2
+        exit 1
+    fi
+    if ! bash "$CLEAN_WORKSPACE_E2E_CHECK" --check-result >/dev/null; then
+        echo "[redcap-spec-check] clean workspace E2E result check failed" >&2
+        exit 1
+    fi
+fi
+
 CHANGE_INTAKE_CHECK="$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh"
 if [[ ! -f "$CHANGE_INTAKE_CHECK" ]]; then
     echo "[redcap-spec-check] change intake check missing" >&2
