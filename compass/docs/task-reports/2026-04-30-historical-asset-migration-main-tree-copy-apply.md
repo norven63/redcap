@@ -123,6 +123,7 @@ pre-apply rehearsal 在副本创建后不能再 live 要求 target 不存在，�
 | 控制面专项 | file lookup / execution guarantees / token risk / parent aggregation | 通过 |
 | Prism review | `prism/runs/20260430-historical-asset-migration-main-tree-copy-apply` | resource-limited 通过：Claude Code 高置信、无 blocker；Gemini/Kimi/Copilot/Codex 不可用或冻结证据已绑定 |
 | full regression | `redcap-spec-check` / `redcap-diagnose` / `acceptance all` | 通过；第一次 full acceptance 暴露父任务聚合 fixture 未覆盖新增 P4-1a 的问题，修复后第二轮完整通过；acceptance residue 已用 lifecycle 工具清理并复验 |
+| closeout preflight | `./closeout-cap.sh complete ...` | 首次 closeout 被 token-risk gate 拦截：新增 `redcap-knowledge` 大文件缺少结构化治理；已补治理策略并复验 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 

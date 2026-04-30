@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 70,
-    "size_bytes": 990712,
-    "lines": 17283,
-    "chars": 643770,
+    "size_bytes": 990904,
+    "lines": 17284,
+    "chars": 643906,
     "rough_token_pressure": {
-      "low": 160942,
-      "high": 321885
+      "low": 160976,
+      "high": 321953
     },
     "collections": {
       "archive": {
@@ -61,12 +61,12 @@
       },
       "task-reports": {
         "file_count": 51,
-        "size_bytes": 709964,
-        "lines": 10436,
-        "chars": 459300,
+        "size_bytes": 710156,
+        "lines": 10437,
+        "chars": 459436,
         "rough_token_pressure": {
-          "low": 114825,
-          "high": 229650
+          "low": 114859,
+          "high": 229718
         }
       },
       "traces": {
@@ -1119,9 +1119,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12205,
-      "lines": 206,
-      "chars": 7963,
+      "size_bytes": 12397,
+      "lines": 207,
+      "chars": 8099,
       "summary": "当前已完成：P4-1 已从 durable alias resolver 推进到 main-tree copy-first 私有副本创建，54 个旧 `compass/docs/**` 历史资产已复制到 `redcap-knowledge/**`。 / 详情：本轮解决的是“resolver 证明未来可复制，但真实 main tree 还没有副本”的缺口。现在 copy target 已真实存在、hash 与旧源一致，旧 `compass/docs/**` 仍全部保留并继续作为权威锚点。此次没有执行删除、移动、公开导出、canonical path 切换或 package release。",
       "status_basis": "filename_recency_only",
       "summary_points": {
