@@ -88,6 +88,24 @@ def output_excerpt(value: str, limit: int = 1600) -> str:
     return text[:limit] + "\n...<truncated>"
 
 
+def redact_text(value: str, replacements: dict[str, str]) -> str:
+    text = value
+    for raw, replacement in sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True):
+        if raw:
+            text = text.replace(raw, replacement)
+    return text
+
+
+def redact_payload(value: Any, replacements: dict[str, str]) -> Any:
+    if isinstance(value, str):
+        return redact_text(value, replacements)
+    if isinstance(value, list):
+        return [redact_payload(item, replacements) for item in value]
+    if isinstance(value, dict):
+        return {key: redact_payload(item, replacements) for key, item in value.items()}
+    return value
+
+
 def safe_command(command: list[str]) -> list[str]:
     return [str(item) for item in command]
 
@@ -148,6 +166,23 @@ def forbidden_candidate_matches(candidates: list[str]) -> list[str]:
 
 def allowed_post_result_drift(path: str) -> bool:
     return path in ALLOWED_POST_RESULT_DRIFT_PATHS or any(path.startswith(prefix) for prefix in ALLOWED_POST_RESULT_DRIFT_PREFIXES)
+
+
+def assert_no_private_path_leak(result: dict[str, Any], *, root: Path) -> None:
+    encoded = json.dumps(result, ensure_ascii=False)
+    source_repo = result.get("source_repo_path")
+    if isinstance(source_repo, str) and source_repo.startswith("/"):
+        fail("source_repo_path must be redacted, not an absolute path")
+    private_patterns = [
+        str(root.resolve()),
+        str(Path.home()),
+        "/Users/",
+        "/private/var/folders/",
+        "/var/folders/",
+    ]
+    leaked = [pattern for pattern in private_patterns if pattern and pattern in encoded]
+    if leaked:
+        fail("result contains private absolute path evidence")
 
 
 def read_candidates(path: Path) -> list[str]:
@@ -276,6 +311,15 @@ def run_e2e(root: Path, *, timeout: int, allow_dirty: bool, keep_temp: bool, npm
         candidates = read_candidates(candidate_list)
         forbidden = forbidden_candidate_matches(candidates)
         clone_status = git_status(clone_root)
+        replacements = {
+            str(identity_file): "<temporary-identity-file>",
+            str(candidate_list): "<temporary-candidate-list>",
+            str(runtime_base): "<temporary-runtime-base>",
+            str(temp_home): "<temporary-home>",
+            str(clone_root): "<clean-clone>",
+            str(temp_root): "<temporary-root>",
+            str(root.resolve()): "<source-repo>",
+        }
         passed = (
             all(item["exit_code"] == 0 for item in commands)
             and identity_file.is_file()
@@ -285,12 +329,12 @@ def run_e2e(root: Path, *, timeout: int, allow_dirty: bool, keep_temp: bool, npm
             and not forbidden
         )
 
-        return {
+        payload = {
             "version": 1,
             "manifest_id": MANIFEST_ID,
             "task_id": TASK_ID,
             "created_at": now_iso(),
-            "source_repo_path": str(root),
+            "source_repo_path": "<source-repo>",
             "source_head": source_head,
             "tested_head": tested_head,
             "source_worktree_dirty_allowed": allow_dirty,
@@ -315,6 +359,7 @@ def run_e2e(root: Path, *, timeout: int, allow_dirty: bool, keep_temp: bool, npm
             "clean_clone_git_status_clean": clone_status == "",
             "commands": commands,
         }
+        return redact_payload(payload, replacements)
     finally:
         if not keep_temp:
             try:
@@ -348,6 +393,7 @@ def validate_result(result: dict[str, Any], *, root: Path, require_current_head:
         fail("clean_workspace_e2e_passed must be true")
     if result.get("clean_clone_git_status_clean") is not True:
         fail("clean clone git status must be clean")
+    assert_no_private_path_leak(result, root=root)
     isolation = result.get("isolation")
     if not isinstance(isolation, dict) or isolation.get("identity_initialized") is not True or isolation.get("runtime_base_exists") is not True:
         fail("isolation evidence must show identity and runtime base were created")
