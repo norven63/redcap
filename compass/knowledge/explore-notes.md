@@ -70,7 +70,7 @@
 
 **待决策**：已决定（相关路由、通知、生命周期与 docs 审计收口已在后续治理 tranche 中实际落地）
 
-**状态**：[ARCHIVED] → `compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md` / `compass/docs/task-reports/2026-04-22-install-revival-and-context-hardening.md`
+**状态**：[ARCHIVED] → `redcap-knowledge/task-reports/2026-04-17-live-closeout-final-blockers.md` / `redcap-knowledge/task-reports/2026-04-22-install-revival-and-context-hardening.md`
 
 ---
 
@@ -178,7 +178,7 @@
 
 **待决策**：已决定（Cap 已按批准边界完成 Phase A 接线，并将 Dispatch Firewall 的当前口径显式收口为 prompt-level hard limitation + dispatch gate）
 
-**状态**：[ARCHIVED] → `prism/tools/prism-run-state.sh` / `prism/tools/prism-coordinator.sh` / `prism/protocol.md` / `compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md`
+**状态**：[ARCHIVED] → `prism/tools/prism-run-state.sh` / `prism/tools/prism-coordinator.sh` / `prism/protocol.md` / `redcap-knowledge/task-reports/2026-04-12-host-agent-interop-governance.md`
 
 ---
 

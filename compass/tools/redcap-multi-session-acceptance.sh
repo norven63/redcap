@@ -166,6 +166,8 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-migration-worktree-rehearsal
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-alias-resolver
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-main-tree-apply
+  bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-delete-last-preflight
+  bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-delete-last-apply
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
   bash compass/tools/redcap-multi-session-acceptance.sh retrieval-escalation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
@@ -1420,7 +1422,7 @@ run_report_register_requires_claim_case() {
     redcap_runtime_clear_context
     unset REDCAP_RUNTIME_ALLOW_DISK_RECOVERY REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY REDCAP_RUNTIME_CAPABILITY 2>/dev/null || true
 
-    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     degraded_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "degraded-mode.count")"
     before="$(counter_value "$degraded_file")"
 
@@ -3483,7 +3485,7 @@ run_pending_closure_clear_restores_on_ledger_failure_case() {
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "pending-closure-clear-restores-on-ledger-failure" >/dev/null 2>&1 || true
 
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     state_file="$(
         redcap_interop_write_pending_closure \
             "$REDCAP_ROOT" \
@@ -3537,7 +3539,7 @@ run_pending_closure_clear_locked_mode_case() {
             "acceptance-seed" \
             "pending-closure" \
             "pending-closure-clear-locked-mode" \
-            "compass/docs/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md" \
+            "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md" \
             "$current_head" \
             "$current_head"
     )" || fail "failed to seed pending closure for locked clear case"
@@ -3583,7 +3585,7 @@ run_session_end_clears_all_matching_pending_states_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end clear case"
     write_current_report_marker_fixture "$report_path"
 
@@ -3667,7 +3669,7 @@ run_session_end_clears_compatible_pending_refresh_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end refresh case"
     write_current_report_marker_fixture "$report_path"
 
@@ -3764,7 +3766,7 @@ run_session_end_clears_closeout_runtime_pending_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md"
+    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end closeout clear case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4081,7 +4083,7 @@ run_task_report_check_accepts_legacy_pending_anchor_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-report-legacy-pending-anchor/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md"
+    legacy_rel="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -4152,7 +4154,7 @@ run_task_complete_guard_replaces_stale_marker_with_unique_report_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-complete-stale-marker/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md"
+    legacy_rel="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -4281,7 +4283,7 @@ run_task_report_check_rejects_zero_diff_stale_marker_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-report-zero-diff-stale-marker/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md"
+    legacy_rel="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -4924,7 +4926,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md
+task_report: compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -5095,7 +5097,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md
+task_report: compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -5236,7 +5238,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md
+task_report: compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -5469,7 +5471,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md
+task_report: compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -6253,7 +6255,7 @@ run_session_end_success_notify_after_clear_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify order case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -6348,7 +6350,7 @@ run_session_end_success_notify_skip_for_closeout_runtime_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify skip case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -6440,7 +6442,7 @@ run_session_end_notify_timeout_releases_lock_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify timeout case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -6556,7 +6558,7 @@ run_session_end_blocked_rewrite_keeps_report_anchor_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for report anchor case"
     write_current_report_marker_fixture "$report_path"
     redcap_interop_write_pending_closure \
@@ -6636,7 +6638,7 @@ run_session_end_blocked_rewrite_normalizes_absolute_report_anchor_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_rel="compass/docs/task-reports/2026-04-16-completion-hook-hardening.md"
+    report_rel="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
     report_abs="$REDCAP_ROOT/$report_rel"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for absolute report anchor case"
     redcap_interop_write_pending_closure \
@@ -8430,7 +8432,7 @@ run_docs_catalog_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check)"
     assert_string_contains "$output" "DOCS_CATALOG_OK"
-    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md"'
+    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"read_policy": "read-catalog-summary-first-then-open-if-current-anchor"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"status_basis": "filename_recency_only"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md"'
@@ -8483,7 +8485,7 @@ run_docs_catalog_progressive_disclosure_case() {
     assert_string_contains "$budget_output" "files=1"
 
     set +e
-    blocked_output="$(REDCAP_DOCS_BUDGET_MAX_HIGH_TOKENS=1000 bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md" 2>&1)"
+    blocked_output="$(REDCAP_DOCS_BUDGET_MAX_HIGH_TOKENS=1000 bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md" 2>&1)"
     blocked_status=$?
     set -e
     [[ "$blocked_status" -ne 0 ]] || fail "oversized docs read budget unexpectedly passed"
@@ -8504,7 +8506,7 @@ run_docs_retention_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" retention-check)"
     assert_string_contains "$output" "DOCS_RETENTION_CHECK_OK"
-    assert_string_contains "$output" "archive_candidates_check_only="
+    assert_string_contains "$output" "task_reports="
 
     fixture="$ACCEPT_ROOT/docs-retention-fixture"
     mkdir -p "$fixture/compass/docs/archive" "$fixture/compass/tools"
@@ -10598,12 +10600,12 @@ run_legacy_asset_alias_resolver_case() {
     old_path="compass/docs/task-reports/2026-04-11-hook-chain-investigation.md"
     new_path="redcap-knowledge/task-reports/2026-04-11-hook-chain-investigation.md"
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "$old_path")"
-    assert_string_contains "$output" '"status": "old-anchor"'
-    assert_string_contains "$output" "\"canonical_path\": \"$old_path\""
+    assert_string_contains "$output" '"status": "retired-old-anchor"'
+    assert_string_contains "$output" "\"canonical_path\": \"$new_path\""
     assert_string_contains "$output" '"target_state":'
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "$new_path")"
-    assert_string_contains "$output" '"status": "candidate-target"'
-    assert_string_contains "$output" "\"canonical_path\": \"$old_path\""
+    assert_string_contains "$output" '"status": "canonical-target"'
+    assert_string_contains "$output" "\"canonical_path\": \"$new_path\""
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "compass/docs/no-such.md")"
     assert_string_contains "$output" '"status": "unresolved"'
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "compass/docs/archive/retention-log.md")"
@@ -10819,6 +10821,113 @@ run_legacy_asset_main_tree_apply_case() {
     [[ "$status" -eq 0 ]] || fail "main-tree apply rollback should be idempotent when targets are already absent"
 }
 
+run_legacy_asset_delete_last_preflight_case() {
+    local fixture_root manifest worktree_result catalog resolver_result apply_result preflight_result delete_result output stale_output status
+
+    log "case: legacy-asset-delete-last-preflight"
+
+    if [[ -f "$REDCAP_ROOT/references/legacy-asset-delete-last-preflight.json" ]]; then
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh" --check-result)"
+        assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_PREFLIGHT_"
+    else
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh")"
+        assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_PREFLIGHT_"
+    fi
+
+    fixture_root="$ACCEPT_ROOT/legacy-asset-delete-last-preflight-root"
+    manifest="$ACCEPT_ROOT/legacy-asset-delete-last-preflight-fixture.json"
+    worktree_result="$ACCEPT_ROOT/legacy-asset-delete-last-preflight-worktree-result.json"
+    catalog="$ACCEPT_ROOT/legacy-asset-delete-last-preflight-catalog.json"
+    resolver_result="$ACCEPT_ROOT/legacy-asset-delete-last-preflight-resolver.json"
+    apply_result="$ACCEPT_ROOT/legacy-asset-delete-last-preflight-apply-result.json"
+    preflight_result="$ACCEPT_ROOT/legacy-asset-delete-last-preflight-result.json"
+    delete_result="$ACCEPT_ROOT/legacy-asset-delete-last-apply-result.json"
+    mkdir -p "$fixture_root"
+    write_legacy_asset_rehearsal_fixture "$fixture_root" "$manifest"
+    git -C "$fixture_root" init -q
+    git -C "$fixture_root" config user.email "redcap-acceptance@example.invalid"
+    git -C "$fixture_root" config user.name "RedCap Acceptance"
+    git -C "$fixture_root" add .
+    git -C "$fixture_root" commit -qm "fixture"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$manifest" --result "$worktree_result" --write-result --check-result >/dev/null
+    python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture_root" "$catalog"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --write-result --check-result >/dev/null
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --plan "$manifest" --worktree-result "$worktree_result" --resolver "$resolver_result" --catalog "$catalog" --result "$apply_result" --apply --refresh-resolver --write-result --check-result >/dev/null
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh" --root "$fixture_root" --apply-result "$apply_result" --result "$preflight_result" --write-result --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_PREFLIGHT_READY"
+    assert_contains "$preflight_result" '"delete_allowed": true'
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-apply.sh" --root "$fixture_root" --preflight "$preflight_result" --result "$delete_result" --apply --write-result --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_APPLY_OK"
+    assert_contains "$delete_result" '"delete_last_applied": true'
+    python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture_root" "$catalog"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --delete-last-result "$delete_result" --write-result --check-result >/dev/null
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh" --root "$fixture_root" --apply-result "$apply_result" --delete-last-result "$delete_result" --result "$preflight_result" --write-result --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_PREFLIGHT_APPLIED"
+
+    printf 'see compass/docs/task-reports/a.md\n' >"$fixture_root/README.md"
+    git -C "$fixture_root" add README.md
+    git -C "$fixture_root" commit -qm "add hard reference"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh" --root "$fixture_root" --apply-result "$apply_result" --result "$preflight_result" --require-ready 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "delete-last preflight should reject active hard references"
+    assert_string_contains "$stale_output" "delete-last preflight blocked"
+    assert_string_contains "$stale_output" "blocker groups"
+
+    printf '\ntarget drift\n' >>"$fixture_root/redcap-knowledge/task-reports/a.md"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh" --root "$fixture_root" --apply-result "$apply_result" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -eq 0 ]] || fail "blocked preflight should report drift without failing when --require-ready is absent"
+    assert_string_contains "$stale_output" "LEGACY_ASSET_DELETE_LAST_PREFLIGHT_BLOCKED"
+}
+
+run_legacy_asset_delete_last_apply_case() {
+    local fixture_root manifest worktree_result catalog resolver_result apply_result preflight_result delete_result output rollback_output
+
+    log "case: legacy-asset-delete-last-apply"
+
+    if [[ -f "$REDCAP_ROOT/references/legacy-asset-delete-last-apply.json" ]]; then
+        output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-apply.sh" --check-result)"
+        assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_APPLY_OK"
+    fi
+
+    fixture_root="$ACCEPT_ROOT/legacy-asset-delete-last-apply-root"
+    manifest="$ACCEPT_ROOT/legacy-asset-delete-last-apply-fixture.json"
+    worktree_result="$ACCEPT_ROOT/legacy-asset-delete-last-apply-worktree-result.json"
+    catalog="$ACCEPT_ROOT/legacy-asset-delete-last-apply-catalog.json"
+    resolver_result="$ACCEPT_ROOT/legacy-asset-delete-last-apply-resolver.json"
+    apply_result="$ACCEPT_ROOT/legacy-asset-delete-last-apply-copy-result.json"
+    preflight_result="$ACCEPT_ROOT/legacy-asset-delete-last-apply-preflight-result.json"
+    delete_result="$ACCEPT_ROOT/legacy-asset-delete-last-apply-result.json"
+    mkdir -p "$fixture_root"
+    write_legacy_asset_rehearsal_fixture "$fixture_root" "$manifest"
+    git -C "$fixture_root" init -q
+    git -C "$fixture_root" config user.email "redcap-acceptance@example.invalid"
+    git -C "$fixture_root" config user.name "RedCap Acceptance"
+    git -C "$fixture_root" add .
+    git -C "$fixture_root" commit -qm "fixture"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-migration-worktree-rehearsal.sh" --root "$fixture_root" --manifest "$manifest" --result "$worktree_result" --write-result --check-result >/dev/null
+    python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture_root" "$catalog"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --write-result --check-result >/dev/null
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --plan "$manifest" --worktree-result "$worktree_result" --resolver "$resolver_result" --catalog "$catalog" --result "$apply_result" --apply --refresh-resolver --write-result --check-result >/dev/null
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh" --root "$fixture_root" --apply-result "$apply_result" --result "$preflight_result" --write-result --check-result --require-ready >/dev/null
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-apply.sh" --root "$fixture_root" --preflight "$preflight_result" --result "$delete_result" --apply --write-result --check-result)"
+    assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_APPLY_OK"
+    [[ ! -e "$fixture_root/compass/docs/task-reports/a.md" ]] || fail "delete-last apply should retire old source"
+    [[ -f "$fixture_root/redcap-knowledge/task-reports/a.md" ]] || fail "delete-last apply must keep private copy target"
+    python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture_root" "$catalog"
+    bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --delete-last-result "$delete_result" --write-result --check-result >/dev/null
+    assert_contains "$resolver_result" '"canonical_path": "redcap-knowledge/task-reports/a.md"'
+    rollback_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-apply.sh" --root "$fixture_root" --result "$delete_result" --rollback)"
+    assert_string_contains "$rollback_output" "LEGACY_ASSET_DELETE_LAST_APPLY_ROLLBACK_OK"
+    [[ -f "$fixture_root/compass/docs/task-reports/a.md" ]] || fail "delete-last rollback should restore old source"
+}
+
 seed_parent_receipt_aggregation_fixtures() {
     python3 - "$REDCAP_ROOT" "$REDCAP_RUNTIME_PROJECT_BASE_DIR" "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" <<'PY'
 import hashlib
@@ -10831,21 +10940,12 @@ root = pathlib.Path(sys.argv[1]).resolve()
 runtime_base = pathlib.Path(sys.argv[2]).resolve()
 policy_path = pathlib.Path(sys.argv[3])
 payload = json.loads(policy_path.read_text(encoding="utf-8"))
-task_file = root / ".dev-task.md"
-current_child = ""
-if task_file.is_file():
-    for line in task_file.read_text(encoding="utf-8").splitlines():
-        if line.startswith("parent_child_id:"):
-            current_child = line.split(":", 1)[1].strip()
-            break
 project_hash = hashlib.md5(str(root).encode("utf-8")).hexdigest()
 receipt_dir = runtime_base / project_hash / "governance/closeout-runtime/receipts"
 receipt_dir.mkdir(parents=True, exist_ok=True)
 head = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
 
 for child in payload["completed_children"]:
-    if child.get("id") == current_child:
-        continue
     receipt_glob = child["receipt_glob"]
     task_id = child.get("task_id") or receipt_glob.removesuffix("-*.json")
     filename = receipt_glob.replace("*", "acceptance")
@@ -10917,7 +11017,7 @@ target = pathlib.Path(sys.argv[2])
 payload = json.loads(source.read_text(encoding="utf-8"))
 for child in payload["completed_children"]:
     if child.get("id") == "P2-4":
-        child["report_path"] = "compass/docs/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md"
+        child["report_path"] = "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
         break
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -11133,7 +11233,7 @@ PY
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing required not-complete child"
-    assert_string_contains "$stale_output" "missing not-complete child entries: P4-1, P4-2, P4-3"
+    assert_string_contains "$stale_output" "missing not-complete child entries: P4-2, P4-3"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-eligible-output.json"
     python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
@@ -12871,6 +12971,8 @@ run_all_cases() {
     run_legacy_asset_migration_worktree_rehearsal_case
     run_legacy_asset_alias_resolver_case
     run_legacy_asset_main_tree_apply_case
+    run_legacy_asset_delete_last_preflight_case
+    run_legacy_asset_delete_last_apply_case
     run_parent_receipt_aggregation_check_case
     run_retrieval_escalation_check_case
     run_shared_knowledge_check_case
@@ -13338,6 +13440,12 @@ case "$COMMAND" in
         ;;
     legacy-asset-main-tree-apply)
         run_legacy_asset_main_tree_apply_case
+        ;;
+    legacy-asset-delete-last-preflight)
+        run_legacy_asset_delete_last_preflight_case
+        ;;
+    legacy-asset-delete-last-apply)
+        run_legacy_asset_delete_last_apply_case
         ;;
     parent-receipt-aggregation-check)
         run_parent_receipt_aggregation_check_case

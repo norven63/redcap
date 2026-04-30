@@ -9,7 +9,11 @@
     "enabled": true,
     "runtime_project_base": "/tmp/redcap/project",
     "allow_current_child_pre_receipt": true,
-    "allowed_acceptance_statuses": ["pass", "resource-limited-pass", "not-required"],
+    "allowed_acceptance_statuses": [
+      "pass",
+      "resource-limited-pass",
+      "not-required"
+    ],
     "required_content": [
       "task_id",
       "confirmed_hash",
@@ -38,7 +42,9 @@
       "id": "P1-1",
       "title": "执行层物理拆分 dry-run",
       "report_path": "compass/docs/task-reports/2026-04-26-execution-layer-split-dry-run.md",
-      "receipt_glob": "redcap-execution-layer-split-dry-run-*.json"
+      "receipt_glob": "redcap-execution-layer-split-dry-run-*.json",
+      "legacy_evidence_status": "report-only-pre-receipt-era",
+      "legacy_evidence_reason": "P1-1 was completed before runtime receipt correspondence became a hard parent aggregation gate. Its report is retained as canonical legacy evidence, but no runtime receipt is fabricated retroactively."
     },
     {
       "id": "P1-2",
@@ -106,15 +112,25 @@
       "task_id": "historical-asset-migration-main-tree-copy-apply",
       "report_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
       "receipt_glob": "historical-asset-migration-main-tree-copy-apply-*.json"
+    },
+    {
+      "id": "P4-1",
+      "title": "历史资产 delete-last / canonical switch",
+      "status": "completed",
+      "task_id": "historical-asset-migration-delete-last-canonical-switch",
+      "report_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md",
+      "receipt_glob": "historical-asset-migration-delete-last-canonical-switch-*.json",
+      "acceptance_status": "resource-limited-pass",
+      "evidence_paths": [
+        "references/legacy-asset-delete-last-apply.json",
+        "references/legacy-asset-delete-last-preflight.json",
+        "references/legacy-asset-migration-alias-resolver.json",
+        "prism/runs/20260430-historical-asset-migration-delete-last-canonical-switch/artifacts/acceptance-binding.json"
+      ],
+      "completion_boundary": "Completes private historical asset delete-last/canonical switch. Public export remains outside P4-1 and is covered by release/publication boundaries."
     }
   ],
   "not_complete_children": [
-    {
-      "id": "P4-1",
-      "status": "deferred",
-      "reason": "Historical asset migration now has collection dry-run, file-level apply preflight, temp-copy rehearsal, true git-worktree rehearsal proof, durable old-path-authoritative alias resolver proof, and main-tree copy-first private targets. Delete-last, canonical path switch, and public export remain separate risk windows.",
-      "next_step": "Open a separate delete-last / canonical-switch risk window only after re-reviewing rollback, receipt anchors, docs catalog, local links, resolver target states and Prism verdict."
-    },
     {
       "id": "P4-2",
       "status": "blocked-external",
@@ -130,7 +146,7 @@
   ],
   "gate_outputs": {
     "parent_receipt_status": "not-eligible",
-    "reason": "Delete-last/canonical switch, public release, and cross-machine E2E child items remain.",
-    "allowed_claim": "Child tasks P0-1/P0-2/P1-1/P1-2/P1-3/P1-4/P2-1/P2-2/P2-3/P2-4/P2-5/P3-1/P3-2/P4-1a have receipts or a current-task pre-receipt exception; parent task is still incomplete."
+    "reason": "P4-2 public release and P4-3 clean workspace E2E remain open; parent cannot complete yet.",
+    "allowed_claim": "P4-1 is completed for private delete-last/canonical switch, but the parent task is still incomplete until P4-2 and P4-3 close."
   }
 }

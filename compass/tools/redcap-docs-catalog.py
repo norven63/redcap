@@ -151,9 +151,15 @@ def load_alias_resolver_summary(root: pathlib.Path) -> dict:
         "source_result_sha256": payload.get("source_result_sha256") if isinstance(payload, dict) else None,
         "alias_entries": summary_block.get("alias_entries", 0),
         "old_catalog_anchors_present": summary_block.get("old_catalog_anchors_present", 0),
+        "retired_old_anchors": summary_block.get("retired_old_anchors", 0),
         "planned_targets": summary_block.get("planned_targets", 0),
         "applied_targets": summary_block.get("applied_targets", 0),
-        "meaning": "Old compass/docs paths remain authoritative; redcap-knowledge paths are private copy targets that may be planned or applied, but they are not canonical anchors.",
+        "meaning": (
+            "Old compass/docs paths are retired for migrated assets; use the resolver to map them to redcap-knowledge canonical paths."
+            if isinstance(payload.get("resolution_policy"), dict)
+            and payload.get("resolution_policy", {}).get("delete_last_applied") is True
+            else "Old compass/docs paths remain authoritative; redcap-knowledge paths are private copy targets that may be planned or applied, but they are not canonical anchors."
+        ),
     }
 
 

@@ -130,6 +130,10 @@ run_check "legacy-asset-migration-rehearsal" bash "$SCRIPT_DIR/redcap-legacy-ass
 run_check "legacy-asset-migration-worktree-rehearsal" bash "$SCRIPT_DIR/redcap-legacy-asset-migration-worktree-rehearsal.sh" "$legacy_worktree_rehearsal_mode" || overall=1
 run_check "legacy-asset-alias-resolver" bash "$SCRIPT_DIR/redcap-legacy-asset-alias-resolver.sh" --check-result || overall=1
 run_check "legacy-asset-main-tree-apply" bash "$SCRIPT_DIR/redcap-legacy-asset-main-tree-apply.sh" --check-result || overall=1
+run_check "legacy-asset-delete-last-preflight" bash "$SCRIPT_DIR/redcap-legacy-asset-delete-last-preflight.sh" --check-result || overall=1
+if [[ -f "$REDCAP_ROOT/references/legacy-asset-delete-last-apply.json" ]]; then
+    run_check "legacy-asset-delete-last-apply" bash "$SCRIPT_DIR/redcap-legacy-asset-delete-last-apply.sh" --check-result || overall=1
+fi
 run_check "parent-receipt-aggregation" bash "$SCRIPT_DIR/redcap-parent-receipt-aggregation-check.sh" || overall=1
 run_check "shared-knowledge" bash "$SCRIPT_DIR/redcap-shared-knowledge-check.sh" || overall=1
 run_check "shared-knowledge-remote-binding" bash "$SCRIPT_DIR/redcap-shared-knowledge-remote-check.sh" || overall=1

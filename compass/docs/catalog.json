@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 70,
-    "size_bytes": 991371,
-    "lines": 17285,
-    "chars": 644283,
+    "file_count": 17,
+    "size_bytes": 214519,
+    "lines": 4909,
+    "chars": 130201,
     "rough_token_pressure": {
-      "low": 161070,
-      "high": 322141
+      "low": 32550,
+      "high": 65100
     },
     "collections": {
       "archive": {
@@ -27,16 +27,6 @@
         "rough_token_pressure": {
           "low": 158,
           "high": 316
-        }
-      },
-      "research": {
-        "file_count": 3,
-        "size_bytes": 49572,
-        "lines": 1221,
-        "chars": 34823,
-        "rough_token_pressure": {
-          "low": 8705,
-          "high": 17411
         }
       },
       "root": {
@@ -51,54 +41,26 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 187987,
+        "size_bytes": 187991,
         "lines": 4493,
-        "chars": 112589,
+        "chars": 112593,
         "rough_token_pressure": {
-          "low": 28147,
-          "high": 56294
+          "low": 28148,
+          "high": 56296
         }
       },
       "task-reports": {
-        "file_count": 51,
-        "size_bytes": 710623,
-        "lines": 10438,
-        "chars": 459813,
+        "file_count": 2,
+        "size_bytes": 20998,
+        "lines": 327,
+        "chars": 13834,
         "rough_token_pressure": {
-          "low": 114953,
-          "high": 229906
-        }
-      },
-      "traces": {
-        "file_count": 1,
-        "size_bytes": 37659,
-        "lines": 1044,
-        "chars": 33284,
-        "rough_token_pressure": {
-          "low": 8321,
-          "high": 16642
+          "low": 3458,
+          "high": 6917
         }
       }
     },
     "largest_entries": [
-      {
-        "path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
-        "chars": 45478,
-        "lines": 417,
-        "read_policy": "read-catalog-summary-by-default"
-      },
-      {
-        "path": "compass/docs/traces/architecture-capability-trace.yaml",
-        "chars": 33284,
-        "lines": 1044,
-        "read_policy": "read-on-demand-after-catalog"
-      },
-      {
-        "path": "compass/docs/research/feishu-ai-agent-collaboration-report.md",
-        "chars": 24181,
-        "lines": 852,
-        "read_policy": "read-on-demand-after-catalog"
-      },
       {
         "path": "compass/docs/specs/engine-upgrade-part2-execution-framework.md",
         "chars": 19377,
@@ -124,10 +86,28 @@
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md",
-        "chars": 12549,
-        "lines": 221,
-        "read_policy": "read-catalog-summary-by-default"
+        "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
+        "chars": 9116,
+        "lines": 348,
+        "read_policy": "read-registry-summary-first"
+      },
+      {
+        "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
+        "chars": 8476,
+        "lines": 208,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+      },
+      {
+        "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
+        "chars": 6634,
+        "lines": 149,
+        "read_policy": "read-registry-summary-first"
+      },
+      {
+        "path": "compass/docs/specs/prism-coordinator-phase-a-design.md",
+        "chars": 6204,
+        "lines": 353,
+        "read_policy": "read-registry-summary-first"
       }
     ]
   },
@@ -138,13 +118,14 @@
     "status": "present",
     "manifest_id": "redcap-legacy-asset-migration-alias-resolver",
     "task_id": "historical-asset-migration-alias-resolver",
-    "source_result": "references/legacy-asset-migration-worktree-rehearsal.json",
-    "source_result_sha256": "6027657d135b4ae7b9dcef4dca79fe147ac507e3853834c0974e93ce310ea4be",
+    "source_result": "references/legacy-asset-delete-last-apply.json",
+    "source_result_sha256": "a2f8404443d0e755ce1671364838bc00ee7fec493d3764927aab081e7286c704",
     "alias_entries": 54,
-    "old_catalog_anchors_present": 54,
+    "old_catalog_anchors_present": 0,
+    "retired_old_anchors": 54,
     "planned_targets": 0,
     "applied_targets": 54,
-    "meaning": "Old compass/docs paths remain authoritative; redcap-knowledge paths are private copy targets that may be planned or applied, but they are not canonical anchors."
+    "meaning": "Old compass/docs paths are retired for migrated assets; use the resolver to map them to redcap-knowledge canonical paths."
   },
   "entries": [
     {
@@ -170,42 +151,6 @@
       "lines": 79,
       "chars": 3141,
       "summary": "version: 1"
-    },
-    {
-      "path": "compass/docs/research/2026-04-24-redcap-workflow-panorama.html",
-      "collection": "research",
-      "title": "2026-04-24-redcap-workflow-panorama",
-      "role": "research-evidence",
-      "status": "reference",
-      "read_policy": "read-on-demand-after-catalog",
-      "size_bytes": 7936,
-      "lines": 236,
-      "chars": 6826,
-      "summary": "<!doctype html> <html lang=\"zh-CN\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <title>RedCap 工作流全景图</title>"
-    },
-    {
-      "path": "compass/docs/research/2026-04-24-redcap-workflow-panorama.md",
-      "collection": "research",
-      "title": "RedCap 工作流全景图",
-      "role": "research-evidence",
-      "status": "reference",
-      "read_policy": "read-on-demand-after-catalog",
-      "size_bytes": 6884,
-      "lines": 133,
-      "chars": 3816,
-      "summary": "> 面向 Norven 的人话版。它解释 RedCap 现在如何把“讨论、立项、计划、执行、评审、收尾、考古”串成一个 Agent 工程框架。"
-    },
-    {
-      "path": "compass/docs/research/feishu-ai-agent-collaboration-report.md",
-      "collection": "research",
-      "title": "飞书 AI Agent 人机协作通知方案技术调研报告",
-      "role": "research-evidence",
-      "status": "reference",
-      "read_policy": "read-on-demand-after-catalog",
-      "size_bytes": 34752,
-      "lines": 852,
-      "chars": 24181,
-      "summary": "**调研日期**: 2026-03-29 **调研目标**: 为 AI Agent CLI 工具（Claude Code、kimi cli、gemini cli 等）寻找飞书平台的双向通信通知方案 **核心需求**: 当 Agent 执行遇到阻塞问题时，能够通知用户并接收用户回复，实现人机协作闭环"
     },
     {
       "path": "compass/docs/specs/2026-04-12-host-agent-interop-governance-design.md",
@@ -392,9 +337,9 @@
       "role": "design-snapshot",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 11031,
+      "size_bytes": 11035,
       "lines": 233,
-      "chars": 5637,
+      "chars": 5641,
       "summary": "记录 hook 链路的设计与调查结论，后续硬化仍由治理债务继续承接。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -460,655 +405,31 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-04-11-hook-chain-investigation.md",
+      "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md",
       "collection": "task-reports",
-      "title": "任务完成报告：Hook 链排查与 Layer B 收尾加固",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 14963,
-      "lines": 195,
-      "chars": 9414,
-      "summary": "**报告日期**：2026-04-11 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-11-multi-session-isolation-foundation.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：multi-session isolation foundation",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 11796,
-      "lines": 178,
-      "chars": 8057,
-      "summary": "**报告日期**：2026-04-11 **执行者**：Cap（Copilot CLI + GPT-5.4） **报告版本**：v1.0",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-12-autonomy-escalation-p0.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：autonomy escalation P0",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13083,
-      "lines": 178,
-      "chars": 7773,
-      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-12-continuity-governance-session-adoption.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：连续性治理与显式会话导入收口",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 18602,
-      "lines": 215,
-      "chars": 10634,
-      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-12-docs-governance-audit.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：docs 治理与产物生命周期审计",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12701,
-      "lines": 182,
-      "chars": 7867,
-      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-12-host-agent-interop-governance.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：host-agent interop governance",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 19261,
-      "lines": 221,
-      "chars": 12549,
-      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-12-multi-session-isolation-mainline.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：multi-session isolation mainline",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 15943,
-      "lines": 201,
-      "chars": 10929,
-      "summary": "**报告日期**：2026-04-12 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-14-backlog-mechanism-and-spec-governance.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：backlog 机制化与 spec 生命周期治理首刀",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 16295,
-      "lines": 226,
-      "chars": 9675,
-      "summary": "当前已完成：backlog 机制已经升级成正式机制，spec 生命周期治理也补上了第一刀。 / 详情：机器可读长期路线、人类说明文档、backlog 门禁、spec registry、spec-check 与 `cli_console.md` 覆盖式镜像 helper 都已经落地，并接入现有控制面。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-14-framework-upgrade-stage1-closeout.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：框架升级第一阶段收口",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 18126,
-      "lines": 251,
-      "chars": 9926,
-      "summary": "**报告日期**：2026-04-14 **执行者**：Cap（Copilot CLI / GPT-5.4） **报告版本**：v1.0",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-15-report-template-and-d1-f2-followup.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：汇报模板升级与 D1/F2 后续收口",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 17116,
-      "lines": 225,
-      "chars": 10216,
-      "summary": "当前已完成：对外汇报入口已经统一成“四句先看懂”，并把 spec 生命周期治理从“有登记”推进到了“有 policy、有 gate、有 acceptance”。 / 详情：`references/task-report-template.md`、`compass/tools/redcap-task-report-check.sh`、`compass/tools/redcap-notify-format.sh` 与相关规范文档现在统一使用“当前已完成 / 上一步 / 下一步 / 整体脉络与当前位置”作为固定入口；`references/spec-lifecycle-policy.json`、`references/spec-cont…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-16-completion-hook-hardening.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Copilot completion 主链硬化",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13758,
-      "lines": 205,
-      "chars": 8954,
-      "summary": "当前已完成：Copilot 这条线已经补上 `task-complete -> on-complete` 的 repo-owned 物理触发器，并修掉了旧 pending closure 会跨 confirmed hash 卡死新收尾的问题。 / 详情：`.github/hooks/redcap-layerB.json` 现已注册 `postToolUse`，它会通过 `.github/hooks/scripts/redcap-layerB-post-tool.sh` 进入 `compass/tools/redcap-layerB-task-complete-guard.sh`。当 `.dev-task.md` 进入 `task-…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-16-copilot-session-anchor.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Copilot 会话身份锚点收口",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13579,
-      "lines": 207,
-      "chars": 8597,
-      "summary": "当前已完成：Copilot 这条线已经补上 repo-owned 的会话身份锚点，`sessionStart / sessionEnd` 不再只能停在 `degraded-no-runtime-manifest`。 / 详情：新增的 `.github/hooks/scripts/redcap-copilot-session-context.sh` 会从 `~/.copilot/session-state/<handle>/inuse.<pid>.lock` 和当前宿主进程链反推出 `session_handle`，再注入显式 `session_binding_key` 与宿主 `plan.md` 路径。当前这次 Copilot 会…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-16-feishu-duplex-and-overlay-p0.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：飞书双向链路与 overlay handoff P0 收口",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 15273,
-      "lines": 219,
-      "chars": 8747,
-      "summary": "当前已完成：RedCap 的飞书主链已经从“webhook + 多维表格”切到“`lark-cli + bot + 固定单聊 + 窗口式接收 + 最小待处理入口`”，并把本次 `brainstorming → writing-plans` 混入主流程的问题按 P0 红线收口。 / 详情：`compass/tools/feishu-notifier.py` 现在负责 bot 单聊发送、等待答复窗口、任务完成回访窗口、待处理入口与补扫历史；`redcap-on-complete.sh`、`redcap-layerB-session-end.sh`、`redcap-layerB-session-start.sh` 已接入这条新链。与此同…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-17-closeout-followup-hardening.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：closeout follow-up 硬化收口",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 16772,
-      "lines": 219,
-      "chars": 11140,
-      "summary": "当前已完成：closeout 尾链的高风险边界已经补成 repo-owned 硬约束，最后一轮独立 code review、redteam 和 ultimate full suite 都已收口。 / 详情：`compass/tools/redcap-interop-governance.sh`、`redcap-task-report-check.sh`、`redcap-task-report-register.sh`、`redcap-layerB-task-complete-guard.sh`、`redcap-layerB-session-end.sh`、`redcap-pending-closure-reconcile.sh`…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：live closeout 最终阻塞补丁",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 68738,
-      "lines": 417,
-      "chars": 45478,
-      "summary": "当前已完成：Copilot CLI 中断后留下的真实 closeout 链、docs token 止血链、复活执行保障链、review runner fallback、runtime helper 收敛、三轨评审 registry、`CONTRIBUTING.core.md` 首读路由，以及 docs / knowledge / acceptance / Prism 的渐进披露治理，都已经形成补丁并通过 repo-owned 校验；本轮 follow-up 又补齐了 formal Prism 归档、`prism/… / 详情：新的 formal Prism 报告 [20260421-redteam-001.md](/Users/n…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-21-entry-surface-and-prism-positioning-sync.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：入口展示与棱镜定位收敛",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 7218,
-      "lines": 162,
-      "chars": 4314,
-      "summary": "当前已完成：根 README、`prism/README.md`、`prism/protocol.md` 与 `redcap-current-status.sh` 已同步到最新真实口径。 / 详情：README 现在更短、更聚焦，明确把 Prism 提升为 RedCap 的核心范式之一；Prism 展示层与协议层已写明“模型能力画像 + 本地 CLI 稳定性 + 真实 headless 健康”的默认选型规则，同时明确“复杂/长任务 ≠ 必然 Prism”；`current-status` 则默认轻量刷新 agent registry，避免继续误报 `kimi/copilot=false` 这类旧 cache 状态。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-21-pending-validations-e2e-tranche.md",
-      "collection": "task-reports",
-      "title": "2026-04-21 Pending Validations E2E Tranche",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 3187,
-      "lines": 66,
-      "chars": 2349,
-      "summary": "- 当前已完成：Codex 宿主差异点已写回 repo 权威面，完整用户项目 E2E tranche 已消费 V-2 / V-3 / V-4 / V-6 / V-7 / V-8 / V-9。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：reviewer 选型重排与账面补锚",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10051,
-      "lines": 190,
-      "chars": 6445,
-      "summary": "当前已完成：Copilot / Codex 的静态优先级限制已经去除，reviewer / stop-review 默认排序已统一收敛到“模型能力画像 + 本地 CLI 稳定性”这套机器真相源。 / 详情：新增了 `compass/tools/redcap-reviewer-order.py`，修正并扩充了 `compass/knowledge/model-capability-matrix.yaml`，同步更新了 `compass/CONTRIBUTING.core.md`、`loom/dispatcher/agent-adapters.md` 与 `compass/knowledge/lessons.md`。`.dev-tas…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-22-install-revival-and-context-hardening.md",
-      "collection": "task-reports",
-      "title": "2026-04-22 安装即复活与长任务对抗补强",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 6543,
-      "lines": 82,
-      "chars": 4223,
-      "summary": "已把 `identity.md` 明确抬升为 Cap 的个人灵魂锚点，并在宿主入口、README、`soul.md`、`CONTRIBUTING.core.md` 中重新校准 `identity.md` 与 `soul.md` 的分层关系。 / 已新增 `compass/tools/redcap-install.sh`，把 Cap 复活与 RedCap workflow import 收口成“一键安装/复活”入口，并支持 `--init-identity` 初始化模板。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-22-layerb-lifecycle-and-memory-architecture.md",
-      "collection": "task-reports",
-      "title": "2026-04-22 Layer B 生命周期与运行时记忆架构收口",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 8942,
-      "lines": 135,
-      "chars": 5522,
-      "summary": "已把 Layer B 从“散落在各处的状态逻辑”正式收口成一份单一协议面：[runtime-memory-architecture.md](/Users/norven/.claude/skills/redcap/references/runtime-memory-architecture.md)。 / 已新增一份给人直接复用的术语词典：[runtime-memory-architecture.md](/Users/norven/.claude/skills/redcap/compass/knowledge/runtime-memory-architecture.md)，把“真相源”“跨会话考古 / 追踪层”“长期知识和项目资产的持…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-22-layerb-runtime-closeout-hardening.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Layer B 统一 runtime / 承诺账本 / receipt 收口 / rescue 审计",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 16169,
-      "lines": 336,
-      "chars": 11699,
-      "summary": "当前已完成：Layer B 已从“协议写清楚但终态收口仍靠多脚本分散执行”，升级到“统一 closeout runtime + 承诺账本 + receipt + rescue audit”的可检查闭环。 / 上一步完成的是：上一刀已把 Layer B 生命周期和运行时记忆架构显性化；本轮是在此基础上把终态收口真正接进 runtime，而不再只停留在文档口径。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-22-prism-revive-cap-e2e-and-readonly-fix.md",
-      "collection": "task-reports",
-      "title": "2026-04-22 `revive-cap` Prism E2E 与 read-only 修补",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 5295,
-      "lines": 126,
-      "chars": 3781,
-      "summary": "- 已完成一组真实 Prism test 回归来验证 `./revive-cap.sh`。 - 首轮编队 run `20260422-test-001` 证明：`copilot/gemini/kimi` 主要卡在各自 CLI/登录态/模型路由层；`codex` 席位真正跑到了脚本层，并抓出了 `execution-guarantees` / `revival-protocol` 仍依赖 shell heredoc 的 read-only 缺口。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-22-readonly-scribe-lifecycle-and-hook-hardening.md",
-      "collection": "task-reports",
-      "title": "2026-04-22 首读链 / 书记官 / 生命周期 / Hook 硬化",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 6288,
-      "lines": 115,
-      "chars": 4044,
-      "summary": "- 已把 `current-status`、`tracking-health`、`docs-catalog`、`acceptance-index`、`token-risk-audit`、`prism-runs-lifecycle` 的关键控制面从 shell heredoc/临时文件迁移到独立 Python 载体，收口到更稳定的只读首读链。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Layer B 状态机工作模式重构",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12862,
-      "lines": 188,
-      "chars": 8886,
-      "summary": "当前已完成：Layer B FSM 的状态面、Prism acceptance gate、acceptance binding、closeout runtime 终态事务与相关 checks/acceptance 已经接到同一条工作模式主线上。 / 详情：当前任务的 closeout retry Prism run 已达到 2 席 responded/schema_ok、2 个模型家族且 blocker-free；当前 live 任务已经真实执行 `complete`，`pending closure` 已清，且已写出 closeout receipt。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap 全景图与机制活性硬化",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 18887,
-      "lines": 238,
-      "chars": 12199,
-      "summary": "当前已完成：Layer B 已补入 `PLANNING / PLANNING_REVIEW` 状态，书记官/机制活性检查已进入 `diagnose / spec-check / execution-guarantees`，RedCap 全景图 Markdown/HTML 已纳入 README 与 docs catalog，`sync-promises` 不再把已有 receipt 的 completed 状态打回 prepared；追加复验又修掉 docs catalog 隐藏文件污染、full acceptan… / 详情：本轮把“计划也要被审核”“优秀机制不能 zero-work”“全景学习材料要人话可读”“三表对账发现的状态…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-25-redcap-evolution-grade-control-plane-hardening.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap Evolution-grade 控制面可靠性与自我进化治理",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 15408,
-      "lines": 209,
-      "chars": 10128,
-      "summary": "当前已完成：R0-R8 的 repo-owned 改造、外部 Prism 审查、最终 patchset 完整 acceptance 回归均已完成；审查发现的 harvest blocker 覆盖缺口、`~/` 证据路径宽松校验、未知 EVO ID 可被报告引用三个问题也已修复并回归。 / 详情：这一步解决的是“机制只在自然语言里存在”的根问题。现在经验/人格/skill/治理候选如果未处理，会在 closeout 前阻断 receipt；旧资产与 `prism/runs` 不再只靠口头清理；多宿主 skill 分发也有单一信源校验；治理类任务报告引用的候选 ID 必须真实存在。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-25-redcap-runtime-productization-and-architecture-decoupling.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap 产品形态重定位与系统架构解耦",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 14266,
-      "lines": 196,
-      "chars": 9712,
-      "summary": "当前已完成：已把本轮任务重锚定到 `.dev-task.md`，确认北极星是：RedCap 不再只叙述为某个宿主 skill，而是向独立 Agent Runtime / CLI / 多层协作系统演进。 / 已新增 `references/redcap-system-layers.md`，把执行层、Prism 层、知识层、Evolution 层、证据层、人类阅读层、人格层、宿主适配层与检索层拆开，形成后续迁移路线。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap 执行层重构与公共知识库治理落地",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 16183,
-      "lines": 254,
-      "chars": 10669,
-      "summary": "当前已完成：R0-R22 已完成本地控制面落地：Prism 可用性 TTL 清单、File Lookup Dictionary coverage gate、shared-knowledge append-only 模板、`bin/redcap` 薄 CLI facade、文档表达、targeted/full acceptance 与整体控制面回归。 / 详情：Prism 调度前现在会先检查 1 小时 TTL 可用性清单；字典不再靠人工记忆维护，而是有 policy/check 接入 diagnose/spec-check；公共沉淀库先以本地模板和写入工具落地，远端 Gitee 绑定明确延期。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-execution-layer-split-dry-run.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：执行层物理拆分 dry-run",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12475,
-      "lines": 226,
-      "chars": 8319,
-      "summary": "当前已完成：P1-1 已完成执行层物理拆分 dry-run，不执行真实搬迁。 / 详情：新增 `references/execution-layer-split-dry-run.json`，把 `bin/redcap`、`revive-cap.sh`、`closeout-cap.sh`、`compass/tools`、`prism/tools`、`references`、`AGENTS.md` 和历史 task reports 的迁移边界写成机器可读计划。新增 checker 并接入 spec-check、diagnose、acceptance，能拒绝危险 dry-run 计划。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-layerb-change-intake-replan-gate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Layer B 中插需求重计划强门",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 15510,
-      "lines": 228,
-      "chars": 9078,
-      "summary": "当前已完成：Layer B 已新增中插需求账本、重计划状态、父子任务完成边界和机器检查器，并接入 PM Gate、diagnose、spec-check、execution guarantees、FSM、自检、current-status 与 acceptance。 / 详情：长任务执行期如果用户新增需求、纠偏、约束或优先级变化，必须先写入 `U<n>` 与 `## 中插需求账本`，再重排确认需求、计划和验收；子任务只能声明自己完成，不能冒充父任务完成。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：历史资产迁移 dry-run",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12079,
-      "lines": 226,
-      "chars": 8055,
-      "summary": "当前已完成：P1-2 已完成历史资产迁移 dry-run，不执行真实搬迁或删除。 / 详情：新增 `references/legacy-asset-migration-dry-run.json`，把 task reports、docs catalog、runtime working dirs、research、specs、traces、docs archive、knowledge、prism/runs 分成可审计集合。新增 checker 并接入 spec-check、diagnose、acceptance，能拒绝危险迁移计划。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-original-intent-coverage-gate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：原始意图覆盖审计硬门",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10216,
-      "lines": 170,
-      "chars": 6168,
-      "summary": "当前已完成：已把本轮故障修复单独重锚成新任务，避免继续用上一轮 receipt 证明新需求。 / 已新增 `redcap-intent-coverage-check.sh`，要求真实 Layer B 任务写明 `scope_status`、原始意图、已覆盖、未覆盖/延期、用户可见边界和后续路径。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-package-publish-safety-gate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap 发布/打包前安全拦截保障",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 8516,
-      "lines": 155,
-      "chars": 5350,
-      "summary": "当前已完成：RedCap 已新增发布/打包前安全 gate，并接入 execution guarantees、spec-check、diagnose、acceptance、CLI facade 和 File Lookup Dictionary。 / 详情：未来 npm / 独立 runtime / portable package 发布前，应把实际打包文件清单交给 `redcap-package-publish-safety-check.sh`；它会阻断 `.env`、宿主私密入口、本地 runtime evidence、Prism run 残留和 credential-like 内容。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-parent-receipt-aggregation-gate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：父任务 receipt 聚合 gate",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12188,
-      "lines": 233,
-      "chars": 8358,
-      "summary": "当前已完成：P2-2 已完成父任务 receipt 聚合 gate，但父任务仍不可声明 complete。 / 详情：新增 `references/parent-receipt-aggregation-policy.json`，把 P0-1/P0-2/P1-1/P1-2 作为已完成子任务，把 P1-3/P2-1/P2-3 作为 not-complete 边界。新增 checker 并接入 spec-check、diagnose、acceptance，阻止“子任务 receipt 冒充父任务完成”。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-prism-availability-cache-provenance-guard.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P0-1 Prism availability cache provenance/path 污染修复",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 8726,
-      "lines": 177,
-      "chars": 6214,
-      "summary": "当前已完成：`prism-availability` 的 cache 可信条件从“只看 TTL / timeout”升级为“TTL + timeout + provenance 一致性”。 / provenance 覆盖：repo root、cache path、health probe 路径与内容摘要、provider policy 路径与内容摘要、PATH 指纹。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-prism-formal-quorum-provider-revalidation.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Formal Prism quorum 恢复复验",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10913,
-      "lines": 182,
-      "chars": 7733,
-      "summary": "当前已完成：P2-3 已实现并通过 Kimi + Claude Code Prism acceptance；Kimi 与 Claude Code 已被真实 live probe 证明可用，Codex CLI 已被策略降为 last-resort 兜底。 / 详情：`prism-availability` 现在会读取 provider policy，把 Codex 标记为 `last-resort`，并在任一非 Codex provider 可用时拒绝 Codex 进入普通 roster。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：R0-R22 父任务重锚定与计划完整性审计",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13744,
-      "lines": 216,
-      "chars": 9244,
-      "summary": "当前已完成：已把上一轮 CLOSED 子任务切换为新的父任务重锚定任务卡，建立 `references/redcap-parent-task-ledger.md` 作为后续继续执行的父任务入口，并完成 closeout receipt。 / 详情：本轮不继续散点开发，也不把 `layerb-change-intake-replan-gate` 的 receipt 冒充 R0-R22 父任务完成；本轮只做全景恢复、计划审计、边界澄清和下一批执行排序。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-r0-r22-registry.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P0-2 R0-R22 原始编号可追溯化",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 7908,
-      "lines": 161,
-      "chars": 5558,
-      "summary": "当前已完成：已新增 R0-R22 机器可读 registry，把 23 个编号的来源、状态、置信度、证据路径、完成边界和延期边界写入 `references/redcap-r0-r22-registry.json`。 / 关键边界：R0-R8 标记为 recovered/high；R9-R22 标记为 reconstructed/medium 或 low，避免把后续重构映射伪装成历史原始标题。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-runtime-cli-package-readiness.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Runtime / CLI / Package Readiness",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 9897,
-      "lines": 185,
-      "chars": 7111,
-      "summary": "当前已完成：P2-1 已建立 RedCap runtime / CLI / package readiness 层，但没有执行真实公网发布。 / 详情：新增 `package.json`、`.npmignore`、`references/runtime-package-readiness-policy.json` 和 `redcap-runtime-package-manifest`，由机器策略生成精确候选清单，再把候选清单交给 package safety gate 检查。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Shared Knowledge Gitee 远端绑定",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10621,
-      "lines": 188,
-      "chars": 7111,
-      "summary": "当前已完成：P1-3 已完成本地实现、Gitee 远端初始化、remote binding policy、`--live` head/tree/content 对账、Prism acceptance、targeted 回归，并补上 session-end 旧控制面 FAIL 污染当前收口的机制回归。 / 详情：`https://gitee.com/norven63/redcap-arsenal.git` 已创建 `main` 分支；远端只包含 shared-knowledge 最小公共模板候选，且 `--live` 会对远端文件名与内容做白名单对账。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-27-first-start-identity-and-feishu-policy.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：首次启动身份初始化与飞书通知策略收敛",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 16584,
-      "lines": 224,
-      "chars": 11194,
-      "summary": "当前已完成：P2-4 的 repo-owned 链路已经落地：`revive/install` 会初始化本地用户/Agent 状态面，并且 RedCap 官方飞书通知路径被收敛到单一账号策略。 / 详情：新增 `references/user-agent-identity-policy.json` 与 `redcap-user-agent-identity.sh`，把 Norven 用户命名空间、Cap agent 摘要、ignored 本地状态和 `shared-knowledge/users/Norven` 串进 installer。新增 `references/feishu-notification-policy.json`…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Layer B 中插需求重排决策可见化",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 9594,
-      "lines": 181,
-      "chars": 5902,
-      "summary": "当前已完成：Layer B 的中插需求账本新增“重排决策摘要”强门。 / 详情：只要 `.dev-task.md` 中存在 `## 中插需求账本`，就必须同时存在 `## 中插需求重排决策摘要`，并为每个 `U<n>` 写明处置、决策理由、全景影响和用户可见表达。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：redcap-arsenal 本地实体仓库与 Norven 命名空间",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12549,
-      "lines": 225,
-      "chars": 7713,
-      "summary": "当前已完成：公共库已从“临时推送工作区 + RedCap 内模板目录”补强为一个耐久本地 Git 工作区。 / 详情：本机公共库实体仓库位于 `/Users/norven/.claude/skills/redcap-arsenal`，remote 为 `https://gitee.com/norven63/redcap-arsenal.git`。RedCap 内 `shared-knowledge/` 继续作为模板源和验收 fixture，刻意不带 `.git`。Gitee 远端已包含 `users/Norven/.gitkeep`。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Retrieval escalation threshold policy",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12503,
-      "lines": 235,
-      "chars": 7779,
-      "summary": "当前已完成：P3-1 已把“GraphRAG / 向量检索阈值研究”从口头 deferred 升级为机器可审计的检索升级策略。 / 详情：当前 RedCap 仍保持 `catalog + rg + metadata` 路线；只有 `shared-knowledge` / `redcap-arsenal` 规模、语义召回失败观测或关系型问题观测跨过策略阈值后，才允许另开任务评估 FTS/RAG/GraphRAG。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Runtime receipt evidence correspondence hardening",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13342,
-      "lines": 232,
-      "chars": 9072,
-      "summary": "当前已完成：P3-2 已把父任务聚合从“有报告 + receipt_glob 字符串”升级为“必须找到真实 runtime receipt，并核对 receipt 内容与 child 身份、报告、完成态、承诺账本、验收态、repo_path、confirmed_hash 和 git head 对应”。 / 详情：本轮修改 `references/parent-receipt-aggregation-policy.json` 与 `redcap-parent-receipt-aggregation-check.py`，让父任务 completed child 不再只靠元数据形态自证。当前 child 在 closeout 前允许被…",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Historical asset migration apply preflight",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 16942,
-      "lines": 246,
-      "chars": 11064,
-      "summary": "当前已完成：P4-1 已从“只有 collection-level dry-run”推进到“文件级 apply preflight 已具备”，但真实历史资产仍未移动、未删除、未写入公共库。 / 详情：本轮解决的是历史资产迁移前缺少精确施工清单的问题。现在每个候选文件都有来源、目标、动作、风险和守卫条件；校验器会拒绝删除、移动、路径逃逸、重复目标、公共库直写、缺 receipt anchor、缺知识索引守卫等危险计划。棱镜评审和全量回归还抓出了两个旁路缺口：运行证据目录不能用静态 exact count 管理；飞书降噪时 SessionEnd 仍必须写本地终止标记。两者都已转成补丁与回归。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Human Communication And Feishu Noise Hardening",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 15048,
-      "lines": 235,
-      "chars": 9520,
-      "summary": "当前已完成：RedCap 已把终端中途汇报与飞书节点通知统一成同一套人类可读状态面，并把 SessionEnd 内部审核缺口改为默认只落账、不刷飞书。 / 详情：新增了 human communication policy、状态面 formatter、机器检查器和 acceptance 用例；飞书 formatter 现在会输出“人工协助、阻塞状态、下一步可直接开始、任务全景图、当前位置”等字段。旧 Claude Stop hook 的自动通知路径被降为本地状态卫生提醒，不再绕过正式通知策略。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Historical asset migration durable alias resolver",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 14785,
-      "lines": 228,
-      "chars": 9757,
-      "summary": "当前已完成：P4-1 已从“真实 worktree 演练”推进到“持久 alias resolver 可机器验证”，但历史资产仍没有真实搬迁、删除或导出。 / 详情：本轮解决的是“演练里的 alias overlay 还不能长期被后来者安全查询”的问题。现在旧 `compass/docs/**` 路径继续作为权威锚点，新 `redcap-knowledge/**` 路径只作为候选目标；查询、诊断、总回归和 acceptance 都会阻止陈旧结果、断锚、路径逃逸、公共库误写和 hash 不一致。",
-      "status_basis": "filename_recency_only"
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-apply-rehearsal.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Historical asset migration apply rehearsal",
+      "title": "任务完成报告：历史资产 delete-last / canonical-switch 风险窗口",
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13077,
-      "lines": 223,
-      "chars": 8333,
-      "summary": "当前已完成：P4-1 已从“文件级 preflight”推进到“临时 copy-first 演练可机器验证”，但 main tree 历史资产仍未真实迁移、删除或导出到公共库。 / 详情：本轮解决的是“真实迁移前仍缺一次可回滚演练”的问题。演练器读取现有文件级施工清单，只在临时沙箱中复制 `copy-first` 项，验证 source/target hash 一致、旧路径保留、alias map 与 rollback plan 一一对应，并确认 main tree 没有出现目标文件。它还会先扫描全量 manifest，因此即使危险项不属于 copy-first 执行集合，也会被 fail-closed 拦截。",
+      "size_bytes": 8134,
+      "lines": 119,
+      "chars": 5358,
+      "summary": "当前已完成：P4-1 的 private delete-last / canonical switch 已完成。54 个旧 `compass/docs/**` 历史锚点已通过 preflight、Prism review、guarded apply、catalog 刷新和 resolver 复验后退休。 / 详情：旧历史文件不再作为 docs catalog 的普通入口；`redcap-knowledge/**` 中的私有副本成为迁移资产的 canonical path，旧路径只通过 alias resolver 和 receipt correspondence 承担历史对账角色。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：P4-1 已从“文件级 preflight”推进到“临时 copy-first 演练可机器验证”，但 main tree 历史资产仍未真实迁移、删除或导出到公共库。",
-          "详情：本轮解决的是“真实迁移前仍缺一次可回滚演练”的问题。演练器读取现有文件级施工清单，只在临时沙箱中复制 `copy-first` 项，验证 source/target hash 一致、旧路径保留、alias map 与 rollback plan 一一对应，并确认 main tree 没有出现目标文件。它还会先扫描全量 manifest，因此即使危险项不属于 copy-first 执行集合，也会被 fail-closed 拦截。"
+          "当前已完成：P4-1 的 private delete-last / canonical switch 已完成。54 个旧 `compass/docs/**` 历史锚点已通过 preflight、Prism review、guarded apply、catalog 刷新和 resolver 复验后退休。",
+          "详情：旧历史文件不再作为 docs catalog 的普通入口；`redcap-knowledge/**` 中的私有副本成为迁移资产的 canonical path，旧路径只通过 alias resolver 和 receipt correspondence 承担历史对账角色。"
         ],
         "previous_step": [
-          "上一步完成的是：P4-1 file-level apply preflight 已随本轮报告同步刷新为 87 个文件级条目，明确哪些文件可 copy-first、哪些只能 preserve / blocked-translate / retention-check-only，并阻断 delete/move/public export 等危险计划。"
+          "上一步完成的是：`historical-asset-migration-main-tree-copy-apply` 已创建 54 个私有副本，并保持旧 `compass/docs/**` 作为权威锚点。"
         ],
         "next_step": [
-          "下一步计划做的是：真实迁移仍需另开风险窗口，在真实 throwaway worktree 中复验 alias/link map、docs catalog、receipt anchor 和 rollback，再决定是否进入 main-tree apply。"
+          "下一步计划做的是：继续父任务线的剩余边界，即 P4-2 正式 public release / package publish 和 P4-3 clean workspace / cross-machine E2E；这两项不属于本轮 P4-1 完成声明。"
         ],
         "position": [
-          "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy apply rehearsal → true throwaway-worktree rehearsal → catalog/link/receipt/rollback 复验 → main-tree apply。",
-          "当前所在位置：P4-1 `historical-asset-migration-apply-rehearsal` 正在收口；父任务仍因真实 apply、public release、clean workspace E2E 保持 incomplete。"
+          "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy rehearsal → true worktree rehearsal → durable alias resolver → main-tree copy-first apply → delete-last/canonical-switch preflight → guarded delete-last apply。",
+          "当前所在位置：guarded delete-last apply 已执行并通过 post-delete resolver/catalog/checker 对账；父任务仍因 P4-2/P4-3 保持 incomplete。"
         ]
       }
     },
@@ -1140,47 +461,6 @@
           "当前所在位置：`historical-asset-migration-main-tree-copy-apply` 已正式收口：Prism resource-limited review、全量回归、提交与 closeout receipt 均已完成；父任务仍保持 incomplete。"
         ]
       }
-    },
-    {
-      "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Historical asset migration true worktree rehearsal",
-      "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13237,
-      "lines": 218,
-      "chars": 8777,
-      "summary": "当前已完成：P4-1 已从“临时 copy-first 演练”推进到“真实 git worktree 演练可机器验证”，但 main tree 历史资产仍未真实迁移、删除或导出到公共库。 / 详情：本轮解决的是“临时目录演练还不等于真实 git worktree 隔离演练”的问题。新 gate 会创建 detached throwaway worktree，在里面复制 copy-first target、验证 hash、旧路径、alias overlay、docs catalog 旧锚点和 rollback，再清理 worktree，并证明 main tree 状态没有被演练改变。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P4-1 已从“临时 copy-first 演练”推进到“真实 git worktree 演练可机器验证”，但 main tree 历史资产仍未真实迁移、删除或导出到公共库。",
-          "详情：本轮解决的是“临时目录演练还不等于真实 git worktree 隔离演练”的问题。新 gate 会创建 detached throwaway worktree，在里面复制 copy-first target、验证 hash、旧路径、alias overlay、docs catalog 旧锚点和 rollback，再清理 worktree，并证明 main tree 状态没有被演练改变。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-1 temp-copy rehearsal 已证明 copy-first 可以在临时沙箱中复制、回滚，并阻断危险 manifest。"
-        ],
-        "next_step": [
-          "下一步计划做的是：把 alias overlay 接入持久 docs/catalog resolver，再为 main-tree apply 另开风险窗口；真实 move/delete/public export 仍不在本轮执行。"
-        ],
-        "position": [
-          "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy apply rehearsal → true throwaway-worktree rehearsal → durable catalog/link resolver alias → main-tree apply risk window。",
-          "当前所在位置：P4-1 `historical-asset-migration-worktree-rehearsal` 已通过实现、棱镜审查和回归验收，正在执行提交与 closeout receipt 收口；父任务仍因真实 apply、public release、clean workspace E2E 保持 incomplete。"
-        ]
-      }
-    },
-    {
-      "path": "compass/docs/traces/architecture-capability-trace.yaml",
-      "collection": "traces",
-      "title": "architecture-capability-trace",
-      "role": "trace-evidence",
-      "status": "reference",
-      "read_policy": "read-on-demand-after-catalog",
-      "size_bytes": 37659,
-      "lines": 1044,
-      "chars": 33284,
-      "summary": "schema_version: 1 frozen_at: \"2026-04-12T07:14:47Z\" baseline: source_document: \"ARCHITECTURE.md\" source_commit: \"d1c8a57c430d7ba3d43a20b504f9242fecd3e462\" source_worktree_sha256: \"cde1a98082943c14ebe5a0284b3e07a1620472e2bdfe44155d0b4cf5d0b…"
     }
   ]
 }

@@ -18,9 +18,11 @@ DEFAULT_WORKTREE_RESULT = ROOT / "references/legacy-asset-migration-worktree-reh
 DEFAULT_RESOLVER = ROOT / "references/legacy-asset-migration-alias-resolver.json"
 DEFAULT_RESULT = ROOT / "references/legacy-asset-migration-main-tree-apply.json"
 DEFAULT_CATALOG = ROOT / "compass/docs/catalog.json"
+DEFAULT_DELETE_LAST_RESULT = ROOT / "references/legacy-asset-delete-last-apply.json"
 ALIAS_RESOLVER_SCRIPT = SCRIPT_DIR / "redcap-legacy-asset-alias-resolver.py"
 
 APPLY_ID = "redcap-legacy-asset-main-tree-copy-apply"
+DELETE_LAST_ID = "redcap-legacy-asset-delete-last-apply"
 TASK_ID = "historical-asset-migration-main-tree-copy-apply"
 PLAN_ID = "redcap-legacy-asset-migration-apply-preflight"
 WORKTREE_ID = "redcap-legacy-asset-migration-worktree-rehearsal"
@@ -420,6 +422,34 @@ def validate_receipt(result: dict[str, Any], expected: dict[str, Any] | None = N
         fail("result file stale or inconsistent with live main-tree apply receipt")
 
 
+def delete_last_applied(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    return payload.get("manifest_id") == DELETE_LAST_ID and payload.get("delete_last_applied") is True
+
+
+def validate_historical_receipt_after_delete_last(root: Path, result_path: Path) -> dict[str, Any]:
+    result = load_json(result_path, "main-tree apply receipt")
+    validate_receipt(result)
+    for index, entry in enumerate(result.get("entries", [])):
+        if not isinstance(entry, dict):
+            fail(f"entries[{index}] must be an object")
+        new_path = safe_relative(str(entry.get("new_path") or ""), f"entries[{index}].new_path")
+        expected_sha = str(entry.get("source_sha256") or "").strip()
+        if len(expected_sha) != 64:
+            fail(f"{new_path}: source_sha256 must be a sha256 hex string")
+        target = root / new_path
+        if not target.is_file():
+            fail(f"historical copy target missing after delete-last: {new_path}")
+        if sha256_file(target) != expected_sha:
+            fail(f"historical copy target drifted after delete-last: {new_path}")
+    return result
+
+
 def rollback_from_receipt(root: Path, result_path: Path) -> int:
     result = load_json(result_path, "main-tree apply receipt")
     validate_receipt(result)
@@ -458,6 +488,7 @@ def main() -> int:
     parser.add_argument("--resolver", default=str(DEFAULT_RESOLVER))
     parser.add_argument("--catalog", default=str(DEFAULT_CATALOG))
     parser.add_argument("--result", default=str(DEFAULT_RESULT))
+    parser.add_argument("--delete-last-result", default=str(DEFAULT_DELETE_LAST_RESULT))
     parser.add_argument("--apply", action="store_true", help="Create missing redcap-knowledge copy targets.")
     parser.add_argument("--refresh-resolver", action="store_true", help="Regenerate alias resolver after applying copies.")
     parser.add_argument("--write-result", action="store_true", help="Write the main-tree apply receipt.")
@@ -471,6 +502,7 @@ def main() -> int:
     resolver = Path(args.resolver)
     catalog = Path(args.catalog)
     result_path = Path(args.result)
+    delete_last_result = Path(args.delete_last_result)
     for name, value in {
         "plan": plan,
         "worktree_result": worktree_result,
@@ -490,10 +522,25 @@ def main() -> int:
             catalog = value
         elif name == "result":
             result_path = value
+    if args.delete_last_result == str(DEFAULT_DELETE_LAST_RESULT):
+        delete_last_result = root / "references/legacy-asset-delete-last-apply.json"
+    elif not delete_last_result.is_absolute():
+        delete_last_result = (Path.cwd() / delete_last_result).resolve()
 
     if args.rollback:
         removed = rollback_from_receipt(root, result_path)
         print(f"LEGACY_ASSET_MAIN_TREE_APPLY_ROLLBACK_OK removed={removed}")
+        return 0
+
+    if args.check_result and delete_last_applied(delete_last_result):
+        receipt = validate_historical_receipt_after_delete_last(root, result_path)
+        summary = receipt["summary"]
+        print(
+            "LEGACY_ASSET_MAIN_TREE_APPLY_OK "
+            f"entries={summary['copy_entries']} applied={summary['applied_targets']} "
+            f"planned={summary['planned_targets']} copied=0 already_present={summary['applied_targets']} "
+            "delete_last_applied=true"
+        )
         return 0
 
     for path, label in ((plan, "plan"), (worktree_result, "worktree result"), (resolver, "resolver"), (catalog, "catalog")):

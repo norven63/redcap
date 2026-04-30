@@ -133,7 +133,7 @@
       "evidence_paths": [
         "compass/tools/feishu-notifier.py",
         "compass/tools/redcap-multi-session-acceptance.sh",
-        "compass/docs/task-reports/2026-04-26-original-intent-coverage-gate.md"
+        "redcap-knowledge/task-reports/2026-04-26-original-intent-coverage-gate.md"
       ],
       "promotion_target": "lessons",
       "status": "promoted",
@@ -166,7 +166,7 @@
       ],
       "review_paths": [
         "prism/protocol.md",
-        "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
+        "redcap-knowledge/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
       ]
     },
     {
@@ -193,7 +193,7 @@
       ],
       "review_paths": [
         "references/redcap-system-layers.md",
-        "compass/docs/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
+        "redcap-knowledge/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
       ]
     },
     {
@@ -210,7 +210,7 @@
         "compass/tools/redcap-status-report-format.py",
         "compass/tools/redcap-notify-format.sh",
         "compass/tools/redcap-layerB-session-end.sh",
-        "compass/docs/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md"
+        "redcap-knowledge/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md"
       ],
       "promotion_target": "lessons",
       "status": "promoted",

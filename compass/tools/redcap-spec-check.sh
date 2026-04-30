@@ -496,6 +496,22 @@ if [[ -x "$LEGACY_ASSET_MAIN_TREE_APPLY_CHECK" ]]; then
     fi
 fi
 
+LEGACY_ASSET_DELETE_LAST_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh"
+if [[ -x "$LEGACY_ASSET_DELETE_LAST_PREFLIGHT_CHECK" ]]; then
+    if ! bash "$LEGACY_ASSET_DELETE_LAST_PREFLIGHT_CHECK" --check-result >/dev/null; then
+        echo "[redcap-spec-check] legacy asset delete-last preflight check failed" >&2
+        exit 1
+    fi
+fi
+
+LEGACY_ASSET_DELETE_LAST_APPLY_CHECK="$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-apply.sh"
+if [[ -x "$LEGACY_ASSET_DELETE_LAST_APPLY_CHECK" && -f "$REDCAP_ROOT/references/legacy-asset-delete-last-apply.json" ]]; then
+    if ! bash "$LEGACY_ASSET_DELETE_LAST_APPLY_CHECK" --check-result >/dev/null; then
+        echo "[redcap-spec-check] legacy asset delete-last apply check failed" >&2
+        exit 1
+    fi
+fi
+
 PARENT_RECEIPT_AGGREGATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh"
 if [[ -x "$PARENT_RECEIPT_AGGREGATION_CHECK" ]]; then
     if ! bash "$PARENT_RECEIPT_AGGREGATION_CHECK" >/dev/null; then

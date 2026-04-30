@@ -106,7 +106,7 @@ def main() -> int:
     )
     require_text(
         root,
-        "compass/docs/research/2026-04-24-redcap-workflow-panorama.md",
+        "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md",
         [
             "RedCap 工作流全景图",
             "PLANNING_REVIEW",
@@ -116,7 +116,7 @@ def main() -> int:
     )
     require_text(
         root,
-        "compass/docs/research/2026-04-24-redcap-workflow-panorama.html",
+        "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html",
         [
             "RedCap 工作流全景图",
             "PLANNING_REVIEW",

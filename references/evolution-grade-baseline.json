@@ -71,7 +71,7 @@
         "failure_visibility": "compensated"
       },
       "trigger_paths": ["compass/CONTRIBUTING.md", "compass/tools/redcap-on-stop-review.sh", "references/task-report-template.md"],
-      "evidence_paths": ["compass/knowledge/lessons.md", "compass/docs/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md"],
+      "evidence_paths": ["compass/knowledge/lessons.md", "redcap-knowledge/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md"],
       "check_paths": ["compass/tools/redcap-task-report-check.sh", "compass/tools/redcap-evolution-grade-check.sh", "compass/tools/redcap-evolution-candidate-check.sh", "compass/tools/redcap-evolution-harvest-check.sh", "compass/tools/redcap-layerb-closeout-runtime.sh"],
       "candidate_sink_paths": ["compass/evolution/README.md", "compass/evolution/candidates.json", "references/evolution-candidate-schema.json"],
       "independent_review_paths": ["prism/protocol.md", "references/review-tracks.json"],

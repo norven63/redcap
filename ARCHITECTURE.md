@@ -2,7 +2,7 @@
 
 > **一句话定义**：RedCap 是一个由 Loom 执行平面、Compass 自演化控制面、Prism 分析裁决平面与 References 共约层组成的多 Agent 软件工程框架。
 >
-> **阅读方式**：本文件负责解释“系统现在是如何设计的”；`compass/docs/traces/architecture-capability-trace.yaml` 负责冻结旧能力锚点并承载后续 `旧架构 -> 新架构 -> runtime evidence` 的回归审查。
+> **阅读方式**：本文件负责解释“系统现在是如何设计的”；`redcap-knowledge/traces/architecture-capability-trace.yaml` 负责冻结旧能力锚点并承载后续 `旧架构 -> 新架构 -> runtime evidence` 的回归审查。
 
 ---
 
@@ -615,7 +615,7 @@ References 是三体共享的协议层，承载：
 | `SKILL.md` | Loom/Dispatcher 入口协议 |
 | `compass/CONTRIBUTING.md` | Layer B 唯一权威规范 |
 | `compass/soul.md` | 人格连续性与 revive 基线 |
-| `compass/docs/traces/architecture-capability-trace.yaml` | 旧能力锚点与全量 trace matrix |
+| `redcap-knowledge/traces/architecture-capability-trace.yaml` | 旧能力锚点与全量 trace matrix |
 | `loom/dispatcher/state-machine.md` | Layer A 状态转移定义 |
 | `loom/dispatcher/agent-adapters.md` | 路由、适配、会话接力 |
 | `prism/protocol.md` | Prism 协议全文 |
@@ -647,7 +647,7 @@ References 是三体共享的协议层，承载：
 从本版本开始，架构审查采用**文档 + trace matrix + runtime evidence** 三件套：
 
 1. `ARCHITECTURE.md`：解释当前系统为什么这样设计
-2. `compass/docs/traces/architecture-capability-trace.yaml`：冻结旧能力锚点，映射新架构锚点，记录 runtime evidence
+2. `redcap-knowledge/traces/architecture-capability-trace.yaml`：冻结旧能力锚点，映射新架构锚点，记录 runtime evidence
 3. task report / acceptance / audit logs：提供物理证据
 
 当前 trace matrix 至少覆盖以下能力簇：

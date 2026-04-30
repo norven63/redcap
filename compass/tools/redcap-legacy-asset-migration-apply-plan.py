@@ -149,6 +149,82 @@ def count_files(root: Path, source: str) -> int:
     return len(iter_files(root, source))
 
 
+def migrated_collection_paths(root: Path, source: str) -> list[str]:
+    result_path = root / "references/legacy-asset-migration-main-tree-apply.json"
+    if not result_path.is_file():
+        return []
+    try:
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    if payload.get("manifest_id") != "redcap-legacy-asset-main-tree-copy-apply":
+        return []
+    entries = payload.get("entries")
+    if not isinstance(entries, list):
+        return []
+    prefix = source.rstrip("/") + "/"
+    paths: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        old_path = entry.get("old_path")
+        if isinstance(old_path, str) and (old_path == source or old_path.startswith(prefix)):
+            paths.append(old_path)
+    return sorted(paths)
+
+
+def delete_last_path_map(root: Path) -> dict[str, str]:
+    result_path = root / "references/legacy-asset-delete-last-apply.json"
+    if not result_path.is_file():
+        return {}
+    try:
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if payload.get("manifest_id") != "redcap-legacy-asset-delete-last-apply" or payload.get("delete_last_applied") is not True:
+        return {}
+    mapping: dict[str, str] = {}
+    for entry in payload.get("entries", []):
+        if not isinstance(entry, dict):
+            continue
+        old_path = entry.get("old_path")
+        new_path = entry.get("new_path")
+        if isinstance(old_path, str) and isinstance(new_path, str):
+            mapping[old_path] = new_path
+    return mapping
+
+
+def snapshot_file_exists(root: Path, rel: str, delete_map: dict[str, str]) -> bool:
+    if (root / rel).is_file():
+        return True
+    new_rel = delete_map.get(rel)
+    return bool(new_rel and (root / new_rel).is_file())
+
+
+def snapshot_source_path(root: Path, rel: str, delete_map: dict[str, str]) -> Path | None:
+    source = root / rel
+    if source.is_file():
+        return source
+    new_rel = delete_map.get(rel)
+    if new_rel:
+        target = root / new_rel
+        if target.is_file():
+            return target
+    return None
+
+
+def migrated_collection_count(root: Path, source: str) -> int | None:
+    paths = migrated_collection_paths(root, source)
+    if not paths:
+        return None
+    delete_map = delete_last_path_map(root)
+    return sum(1 for rel in paths if snapshot_file_exists(root, rel, delete_map))
+
+
+def migrated_collection_known(root: Path, source: str) -> bool:
+    return bool(migrated_collection_paths(root, source))
+
+
 def map_operation(default_action: str) -> str:
     if default_action == "copy-to-knowledge-then-index":
         return "copy-first"
@@ -401,7 +477,7 @@ def validate_manifest(path: Path, root: Path) -> dict[str, Any]:
         if cid in collection_by_id:
             fail(f"duplicate collection id: {cid}")
         source = safe_relative(require_text(collection, "source", cid), cid, "source")
-        if not (root / source).exists():
+        if not (root / source).exists() and not migrated_collection_known(root, source):
             fail(f"{cid}: source path missing: {source}")
         target = safe_relative(require_text(collection, "target", cid), cid, "target")
         if is_public_target(target):
@@ -413,7 +489,9 @@ def validate_manifest(path: Path, root: Path) -> dict[str, Any]:
             fail(f"{cid}: unsupported operation: {operation}")
         if collection.get("item_scope") not in {"file-level", "collection-summary-only"}:
             fail(f"{cid}: item_scope must be file-level or collection-summary-only")
-        expected = count_files(root, source)
+        expected = migrated_collection_count(root, source)
+        if expected is None:
+            expected = count_files(root, source)
         if collection.get("item_scope") == "collection-summary-only":
             if not isinstance(collection.get("actual_file_count"), int) or collection.get("actual_file_count") < 0:
                 fail(f"{cid}: actual_file_count must be a non-negative snapshot integer")
@@ -444,7 +522,9 @@ def validate_manifest(path: Path, root: Path) -> dict[str, Any]:
         item_counts[cid] += 1
         source = safe_relative(require_text(item, "source", item_id), item_id, "source")
         target = safe_relative(require_text(item, "target", item_id), item_id, "target")
-        if not (root / source).is_file():
+        delete_map = delete_last_path_map(root)
+        source_snapshot = snapshot_source_path(root, source, delete_map)
+        if source_snapshot is None:
             fail(f"{item_id}: source file missing: {source}")
         if is_public_target(target):
             fail(f"{item_id}: target must not point to public/shared repository: {target}")
@@ -473,7 +553,7 @@ def validate_manifest(path: Path, root: Path) -> dict[str, Any]:
             if target_path.exists():
                 if not target_path.is_file():
                     fail(f"{item_id}: copy-first target exists but is not a file: {target}")
-                source_hash = sha256_file(root / source)
+                source_hash = sha256_file(source_snapshot)
                 target_hash = sha256_file(target_path)
                 if source_hash != target_hash:
                     fail(f"{item_id}: copy-first target exists with mismatched hash: {target}")

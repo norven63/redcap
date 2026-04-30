@@ -24,11 +24,11 @@
       "trigger_for_revisit": "When a new section duplicates an existing gate or first-read rule, merge or route instead of expanding the startup surface."
     },
     {
-      "path": "compass/docs/task-reports/2026-04-17-live-closeout-final-blockers.md",
-      "kind": "tracked-large-task-report",
-      "current_mitigation": "docs-catalog-plan-budget",
-      "structural_strategy": "Keep as historical evidence; future reads must start from docs catalog summary and open exact sections only when auditing that closeout lineage.",
-      "trigger_for_revisit": "If this report becomes a frequent active dependency again, translate the needed facts into a smaller current authority note."
+      "path": "references/file-lookup-dictionary.md",
+      "kind": "tracked-large-human-index",
+      "current_mitigation": "file-lookup-dictionary-check-and-targeted-search",
+      "structural_strategy": "Keep as the human-readable locator for critical RedCap files. Agents should search exact terms or use the machine policy/checker instead of reading the whole dictionary during startup.",
+      "trigger_for_revisit": "When the dictionary exceeds 75KB, split the human view by section while preserving references/file-lookup-dictionary-policy.json as the machine source."
     },
     {
       "path": "compass/docs/catalog.json",
@@ -85,6 +85,20 @@
       "current_mitigation": "file-lookup-dictionary-and-main-tree-apply-check",
       "structural_strategy": "Keep as a compact copy-first apply receipt, not a startup document. Agents should inspect summary first and use redcap-legacy-asset-main-tree-apply.sh --check-result for full verification.",
       "trigger_for_revisit": "When copy entries exceed 150 or the file exceeds 150KB, shard entry details behind the same apply checker while preserving a compact receipt summary."
+    },
+    {
+      "path": "references/legacy-asset-delete-last-preflight.json",
+      "kind": "tracked-generated-receipt",
+      "current_mitigation": "file-lookup-dictionary-and-delete-last-preflight-check",
+      "structural_strategy": "Keep as the generated delete-last safety receipt, not a startup document. Agents should inspect summary first and use redcap-legacy-asset-delete-last-preflight.sh --check-result for full verification.",
+      "trigger_for_revisit": "When reference_scan exceeds 150 rows or the file exceeds 150KB, shard scan details behind the same preflight checker while preserving a compact summary receipt."
+    },
+    {
+      "path": "references/legacy-asset-delete-last-apply.json",
+      "kind": "tracked-generated-receipt",
+      "current_mitigation": "file-lookup-dictionary-and-delete-last-apply-check",
+      "structural_strategy": "Keep as the generated delete-last apply receipt, not a startup document. Agents should inspect summary first and use redcap-legacy-asset-delete-last-apply.sh --check-result for full verification.",
+      "trigger_for_revisit": "When delete entries exceed 150 or the file exceeds 150KB, shard entry details behind the same apply checker while preserving a compact receipt summary."
     },
     {
       "path": "redcap-knowledge/task-reports/2026-04-17-live-closeout-final-blockers.md",

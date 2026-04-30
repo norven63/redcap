@@ -12,6 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST = ROOT / "references/legacy-asset-migration-dry-run.json"
+DEFAULT_MAIN_TREE_APPLY = ROOT / "references/legacy-asset-migration-main-tree-apply.json"
 
 ALLOWED_ACTIONS = {
     "preserve",
@@ -133,6 +134,83 @@ def count_lines(root: Path, rel: str) -> int:
     return total
 
 
+def migrated_collection_paths(root: Path, source: str) -> list[str]:
+    """After copy-first apply, count the migrated snapshot, not new live reports."""
+    result_path = root / "references/legacy-asset-migration-main-tree-apply.json"
+    if not result_path.is_file():
+        return []
+    try:
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    if payload.get("manifest_id") != "redcap-legacy-asset-main-tree-copy-apply":
+        return []
+    entries = payload.get("entries")
+    if not isinstance(entries, list):
+        return []
+    prefix = source.rstrip("/") + "/"
+    paths: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        old_path = entry.get("old_path")
+        if isinstance(old_path, str) and (old_path == source or old_path.startswith(prefix)):
+            paths.append(old_path)
+    return sorted(paths)
+
+
+def delete_last_path_map(root: Path) -> dict[str, str]:
+    result_path = root / "references/legacy-asset-delete-last-apply.json"
+    if not result_path.is_file():
+        return {}
+    try:
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if payload.get("manifest_id") != "redcap-legacy-asset-delete-last-apply" or payload.get("delete_last_applied") is not True:
+        return {}
+    mapping: dict[str, str] = {}
+    for entry in payload.get("entries", []):
+        if not isinstance(entry, dict):
+            continue
+        old_path = entry.get("old_path")
+        new_path = entry.get("new_path")
+        if isinstance(old_path, str) and isinstance(new_path, str):
+            mapping[old_path] = new_path
+    return mapping
+
+
+def snapshot_file_path(root: Path, rel: str, delete_map: dict[str, str]) -> Path | None:
+    old_path = root / rel
+    if old_path.is_file():
+        return old_path
+    new_rel = delete_map.get(rel)
+    if new_rel:
+        new_path = root / new_rel
+        if new_path.is_file():
+            return new_path
+    return None
+
+
+def count_snapshot_files(root: Path, paths: list[str]) -> int:
+    delete_map = delete_last_path_map(root)
+    return sum(1 for rel in paths if snapshot_file_path(root, rel, delete_map) is not None)
+
+
+def count_snapshot_lines(root: Path, paths: list[str]) -> int:
+    delete_map = delete_last_path_map(root)
+    total = 0
+    for rel in paths:
+        path = snapshot_file_path(root, rel, delete_map)
+        if path is None:
+            continue
+        try:
+            total += len(path.read_text(encoding="utf-8", errors="ignore").splitlines())
+        except OSError:
+            continue
+    return total
+
+
 def run_prism_summary(root: Path) -> dict[str, int]:
     completed = subprocess.run(
         ["bash", "prism/tools/prism-runs-lifecycle.sh", "summary"],
@@ -244,7 +322,12 @@ def check_manifest(path: Path, root: Path) -> None:
         expected_count = collection.get("current_count")
         if not isinstance(expected_count, int) or expected_count < 0:
             fail(f"{cid}: current_count must be a non-negative integer")
-        if cid in RUNTIME_SNAPSHOT_COLLECTIONS:
+        migrated_paths = migrated_collection_paths(root, source)
+        if migrated_paths:
+            actual_count = count_snapshot_files(root, migrated_paths)
+            if actual_count != expected_count:
+                fail(f"{cid}: migrated snapshot count mismatch expected={expected_count} actual={actual_count}")
+        elif cid in RUNTIME_SNAPSHOT_COLLECTIONS:
             # prism/runs is live runtime evidence: formal review runs can be
             # created while this checker is running; compass/.workflow can also
             # be updated by revival/runtime checks. Treat current_count as a
@@ -263,7 +346,7 @@ def check_manifest(path: Path, root: Path) -> None:
         if not isinstance(expected_lines, int) or expected_lines < 0:
             fail(f"{cid}: current_lines must be a non-negative integer")
         if expected_lines > 0:
-            actual_lines = count_lines(root, source)
+            actual_lines = count_snapshot_lines(root, migrated_paths) if migrated_paths else count_lines(root, source)
             if actual_lines != expected_lines:
                 fail(f"{cid}: current_lines mismatch expected={expected_lines} actual={actual_lines}")
 

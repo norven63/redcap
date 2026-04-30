@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_POLICY = ROOT / "references/parent-receipt-aggregation-policy.json"
 DEFAULT_TASK_FILE = ROOT / ".dev-task.md"
 DEFAULT_RUNTIME_PROJECT_BASE = Path("/tmp/redcap/project")
+DEFAULT_ALIAS_RESOLVER = ROOT / "references/legacy-asset-migration-alias-resolver.json"
 ALLOWED_OPEN_STATUSES = {"open", "blocked-external", "resource-limited", "deferred"}
 ALLOWED_ACCEPTANCE_STATUSES = {"pass", "resource-limited-pass", "not-required"}
 REQUIRED_COMPLETED = {
@@ -32,8 +33,9 @@ REQUIRED_COMPLETED = {
     "P2-5",
     "P3-1",
     "P3-2",
+    "P4-1",
 }
-REQUIRED_NOT_COMPLETE = {"P4-1", "P4-2", "P4-3"}
+REQUIRED_NOT_COMPLETE = {"P4-2", "P4-3"}
 
 
 def fail(message: str) -> None:
@@ -73,6 +75,32 @@ def normalize_repo_path(root: Path, raw: str) -> Path:
     if not path.is_absolute():
         path = root / path
     return path.resolve()
+
+
+def load_retired_report_map(root: Path) -> dict[str, str]:
+    resolver_path = root / "references/legacy-asset-migration-alias-resolver.json"
+    if not resolver_path.is_file():
+        return {}
+    try:
+        payload = json.loads(resolver_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    policy = payload.get("resolution_policy")
+    if not isinstance(policy, dict) or policy.get("delete_last_applied") is not True:
+        return {}
+    mapping: dict[str, str] = {}
+    for entry in payload.get("entries", []):
+        if not isinstance(entry, dict):
+            continue
+        old_path = entry.get("old_path")
+        new_path = entry.get("new_path")
+        if (
+            isinstance(old_path, str)
+            and isinstance(new_path, str)
+            and old_path.startswith("compass/docs/task-reports/")
+        ):
+            mapping[old_path] = new_path
+    return mapping
 
 
 def parse_task_metadata(task_file: Path) -> dict[str, str]:
@@ -205,6 +233,11 @@ def check_completed_child_receipt(
     if not matches:
         if allow_current_pre_receipt and is_current_child_pre_receipt(child_id, report_path, task_metadata):
             return True
+        if child.get("legacy_evidence_status") == "report-only-pre-receipt-era":
+            reason = child.get("legacy_evidence_reason")
+            if not isinstance(reason, str) or not reason.strip():
+                fail(f"{child_id}: legacy evidence child must explain legacy_evidence_reason")
+            return False
         fail(f"{child_id}: receipt_glob matched no runtime receipts: {receipt_glob}")
 
     reasons: list[str] = []
@@ -244,12 +277,14 @@ def check_policy(path: Path, root: Path, task_file: Path) -> None:
     allow_current_pre_receipt = correspondence.get("allow_current_child_pre_receipt") is True
     allowed_acceptance = set(correspondence.get("allowed_acceptance_statuses", []))
     task_metadata = parse_task_metadata(task_file)
+    retired_report_map = load_retired_report_map(root)
 
     completed = payload.get("completed_children")
     if not isinstance(completed, list) or not completed:
         fail("completed_children must be a non-empty list")
     completed_ids: set[str] = set()
     pre_receipt_count = 0
+    legacy_evidence_count = 0
     for child in completed:
         if not isinstance(child, dict):
             fail("completed_children entries must be objects")
@@ -260,7 +295,9 @@ def check_policy(path: Path, root: Path, task_file: Path) -> None:
         require_text(child, "title", child_id)
         report = require_safe_relative(require_text(child, "report_path", child_id), child_id, "report_path")
         if not (root / report).is_file():
-            fail(f"{child_id}: report_path missing: {report}")
+            canonical_report = retired_report_map.get(report)
+            if not canonical_report or not (root / canonical_report).is_file():
+                fail(f"{child_id}: report_path missing: {report}")
         if check_completed_child_receipt(
             child,
             root=root,
@@ -270,6 +307,8 @@ def check_policy(path: Path, root: Path, task_file: Path) -> None:
             allowed_acceptance=allowed_acceptance,
         ):
             pre_receipt_count += 1
+        elif child.get("legacy_evidence_status") == "report-only-pre-receipt-era":
+            legacy_evidence_count += 1
     missing_completed = sorted(REQUIRED_COMPLETED - completed_ids)
     if missing_completed:
         fail("missing completed child entries: " + ", ".join(missing_completed))
@@ -309,7 +348,8 @@ def check_policy(path: Path, root: Path, task_file: Path) -> None:
     print(
         "PARENT_RECEIPT_AGGREGATION_OK "
         f"{path} completed_children={len(completed_ids)} "
-        f"receipt_correspondence=verified current_pre_receipt={pre_receipt_count}"
+        f"receipt_correspondence=verified current_pre_receipt={pre_receipt_count} "
+        f"legacy_evidence={legacy_evidence_count}"
     )
 
 
