@@ -2,10 +2,10 @@
   "version": 1,
   "manifest_id": "redcap-clean-workspace-install-e2e",
   "task_id": "redcap-clean-workspace-install-e2e",
-  "created_at": "2026-05-03T19:47:36Z",
+  "created_at": "2026-05-03T19:52:08Z",
   "source_repo_path": "<source-repo>",
-  "source_head": "b2380ada5fa0ee8f871f8838e7d197541fe6c298",
-  "tested_head": "b2380ada5fa0ee8f871f8838e7d197541fe6c298",
+  "source_head": "f0c7095e53affab6f103817f7f5a99e41dd94cf1",
+  "tested_head": "f0c7095e53affab6f103817f7f5a99e41dd94cf1",
   "source_worktree_dirty_allowed": false,
   "source_worktree_dirty": false,
   "source_worktree_snapshot_applied": false,
@@ -36,8 +36,8 @@
         "--init-identity"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-03T19:47:33Z",
-      "finished_at": "2026-05-03T19:47:35Z",
+      "started_at": "2026-05-03T19:52:04Z",
+      "finished_at": "2026-05-03T19:52:07Z",
       "exit_code": 0,
       "stdout_excerpt": "REDCAP_INSTALL\nhost=codex\nrepo=/private<clean-clone>\nidentity=initialized:<temporary-identity-file>\n[ok] user-agent-identity\n[ok] feishu-notification-policy\n[ok] current-status\n  当前已完成：未从任务报告抽取到摘要；请查看任务报告或 .dev-task.md\n  上一步完成的是：未从任务报告抽取到上一步摘要\n  下一步计划做的是：未从任务报告抽取到下一步摘要\n  整体计划脉络图与当前位置：未从任务报告抽取到路线摘要\n[ok] tracking-health\n  explore_notes=active:0 archived:10\n  note=书记官账面已归档或当前无活跃探讨条目\n  task_anchor=absent\n  task_report=unbound\n  original_input=absent\n[ok] host-hook-readiness\n  host=codex\n  hook_scope=host-limited\n  hook_status=degraded\n  note=Codex.app/Codex CLI currently has AGENTS startup import but no repo-owned SessionEnd/reply-veto hook surface\n[ok] execution-guarantees\n[ok] revival-protocol\nREDCAP_INSTALL_OK",
       "stderr_excerpt": ""
@@ -49,10 +49,10 @@
         "status"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-03T19:47:35Z",
-      "finished_at": "2026-05-03T19:47:36Z",
+      "started_at": "2026-05-03T19:52:07Z",
+      "finished_at": "2026-05-03T19:52:07Z",
       "exit_code": 0,
-      "stdout_excerpt": "当前已完成：未从任务报告抽取到摘要；请查看任务报告或 .dev-task.md\n上一步完成的是：未从任务报告抽取到上一步摘要\n下一步计划做的是：未从任务报告抽取到下一步摘要\n整体计划脉络图与当前位置：未从任务报告抽取到路线摘要\n\n## 当前任务锚点\n- task_id: unknown\n- active_slice: unknown\n- backlog: none / none\n- git: b2380ad（干净）\n\n## 收尾红线\n- status: clear（未找到当前 .dev-task 对应的 pending closure）\n\n## 长期 backlog\n- 未绑定长期 backlog\n\n## CLI 工具族\n- registry cache: detected_at=2026-05-03T19:47:33Z\n- registry 已在本次 current-status 前做轻量刷新\n- registry 只代表安装/配置嗅探，不等于登录态、限流或 headless 调用健康\n- agents: claude-code=true, gemini=true, kimi=true, copilot=true, codex=true\n- agent health cache: missing；需要区分登录态/限流/headless 健康时运行 redcap-agent-health-probe.sh --live\n\n## 宿主 Hook / 适配部署\n- capability matrix: claude=supported/degraded, codex=supported/degraded, copilot=supported/degraded, gemini=supported/degraded\n- hook configs: claude=SessionStart/Stop/SessionEnd configured, gemini=SessionStart/SessionEnd configured, codex=AGENTS startup import only; no repo-owned reply-veto hook\n- 配置存在不等于登录态、限流或真实触发已验证；弱 Hook / 无 Hook 宿主仍必须走 pending closure、wrapper 或 degraded/unsupported 标记\n\n## 棱镜 / 独立评审\n- formal Prism 报告索引：3 份（replay-auditable/archived=1，legacy/non-auditable=2）\n- 历史 verdict：consensus=0，weak-consensus=3，deadlock/escalate=0\n- 未写入 Prism run registry / reports 的单路审查只能算轻量独立评审，不能冒充 formal Prism quorum\n- 当前任务新增的 formal quorum 不能从报告总数或 prism/runs 目录数量反推，必须看本次 run/report 是否真实归档\n\n## docs 考古入口\n- docs 首读索引：files=20 lines=5569 rough_tokens=39775..79551\n- 考古规则：先用 redcap-docs-catalog.sh summary/plan 定位候选，再用 budget 审计精确路径；不得默认 bulk-read compass/docs/**\n- task-reports 压力：files=5 lines=987 rough_tokens=10684..21368\n\n## token 风险入口\n- 首读规则：current-\n...<truncated>",
+      "stdout_excerpt": "当前已完成：未从任务报告抽取到摘要；请查看任务报告或 .dev-task.md\n上一步完成的是：未从任务报告抽取到上一步摘要\n下一步计划做的是：未从任务报告抽取到下一步摘要\n整体计划脉络图与当前位置：未从任务报告抽取到路线摘要\n\n## 当前任务锚点\n- task_id: unknown\n- active_slice: unknown\n- backlog: none / none\n- git: f0c7095（干净）\n\n## 收尾红线\n- status: clear（未找到当前 .dev-task 对应的 pending closure）\n\n## 长期 backlog\n- 未绑定长期 backlog\n\n## CLI 工具族\n- registry cache: detected_at=2026-05-03T19:52:04Z\n- registry 已在本次 current-status 前做轻量刷新\n- registry 只代表安装/配置嗅探，不等于登录态、限流或 headless 调用健康\n- agents: claude-code=true, gemini=true, kimi=true, copilot=true, codex=true\n- agent health cache: missing；需要区分登录态/限流/headless 健康时运行 redcap-agent-health-probe.sh --live\n\n## 宿主 Hook / 适配部署\n- capability matrix: claude=supported/degraded, codex=supported/degraded, copilot=supported/degraded, gemini=supported/degraded\n- hook configs: claude=SessionStart/Stop/SessionEnd configured, gemini=SessionStart/SessionEnd configured, codex=AGENTS startup import only; no repo-owned reply-veto hook\n- 配置存在不等于登录态、限流或真实触发已验证；弱 Hook / 无 Hook 宿主仍必须走 pending closure、wrapper 或 degraded/unsupported 标记\n\n## 棱镜 / 独立评审\n- formal Prism 报告索引：3 份（replay-auditable/archived=1，legacy/non-auditable=2）\n- 历史 verdict：consensus=0，weak-consensus=3，deadlock/escalate=0\n- 未写入 Prism run registry / reports 的单路审查只能算轻量独立评审，不能冒充 formal Prism quorum\n- 当前任务新增的 formal quorum 不能从报告总数或 prism/runs 目录数量反推，必须看本次 run/report 是否真实归档\n\n## docs 考古入口\n- docs 首读索引：files=20 lines=5570 rough_tokens=39837..79675\n- 考古规则：先用 redcap-docs-catalog.sh summary/plan 定位候选，再用 budget 审计精确路径；不得默认 bulk-read compass/docs/**\n- task-reports 压力：files=5 lines=988 rough_tokens=10745..21491\n\n## token 风险入口\n- 首读规则：current-\n...<truncated>",
       "stderr_excerpt": ""
     },
     {
@@ -62,8 +62,8 @@
         "publish-safety"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-03T19:47:36Z",
-      "finished_at": "2026-05-03T19:47:36Z",
+      "started_at": "2026-05-03T19:52:07Z",
+      "finished_at": "2026-05-03T19:52:08Z",
       "exit_code": 0,
       "stdout_excerpt": "PACKAGE_PUBLISH_SAFETY_OK\nsource=default-package-globs\nfiles_scanned=195",
       "stderr_excerpt": ""
@@ -79,8 +79,8 @@
         "--npm-pack-dry-run"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-03T19:47:36Z",
-      "finished_at": "2026-05-03T19:47:36Z",
+      "started_at": "2026-05-03T19:52:08Z",
+      "finished_at": "2026-05-03T19:52:08Z",
       "exit_code": 0,
       "stdout_excerpt": "RUNTIME_PACKAGE_MANIFEST_OK\nstatus=ok\npolicy=references/runtime-package-readiness-policy.json\npackage_name=@redcap-ai/runtime\npackage_version=0.1.0-alpha.0\npublish_allowed=False\ncandidate_count=195\ncandidate_list=/private<temporary-candidate-list>\nsafety_checked=True\nnpm_pack_dry_run_checked=True",
       "stderr_excerpt": ""
