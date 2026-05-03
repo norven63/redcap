@@ -10,8 +10,8 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 继续强制真实 receipt，已知历史 child 必须显式说明 legacy 证据原因”。
-- 详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的历史 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务仍然必须匹配真实 runtime receipt，缺失时会失败。
+- 当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 必须有真实 runtime receipt 或 repo-owned durable machine evidence，已知历史 child 必须显式说明 legacy 证据原因”。
+- 详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务必须匹配真实 runtime receipt，或匹配显式登记的 repo-owned machine evidence。
 - 收口补丁：closeout 过程中又发现 P4-3 clean workspace E2E 的已提交收据会因为本轮治理报告/lesson 后置更新而被误判 stale；已把这些非安装、非发布、非运行时安全代码的治理证据漂移列入安全允许范围，并重新生成 clean workspace E2E receipt。
 
 ### 0.2 上一步完成的是
@@ -60,7 +60,7 @@
 
 `parent-receipt-aggregation` 的初衷是防止某个子任务 receipt 冒充父任务完成，这个方向是正确的。问题在于它把所有 completed child 一刀切为“必须匹配当前 runtime receipt”，而 RedCap 早期 closeout receipt 写在 `/tmp/redcap/project/**`，并没有 durable mirror；一旦 `/tmp` 被清理，历史任务就会变成无法复验。
 
-如果直接补造 JSON receipt，会制造假证据；如果直接放宽全部 child，又会把新机制强门打穿。因此本轮采用双轨模型：历史 child 必须显式 legacy reason，现代 child 必须继续 runtime receipt correspondence。
+如果直接补造 JSON receipt，会制造假证据；如果直接放宽全部 child，又会把新机制强门打穿。因此本轮采用三轨模型：历史 child 必须显式 legacy reason；现代 child 优先使用 runtime receipt；若 runtime receipt 被 `/tmp` 清理，只能使用显式登记的 repo-owned durable machine evidence。
 
 ### 2.2 方案选项
 
@@ -85,7 +85,7 @@
 | 文件 | 变更类型 | 变更摘要 |
 |---|---|---|
 | `.dev-task.md` | 修改 | 把当前任务重锚为 parent receipt durability reconciliation，防止继续沿用 P4-3 旧任务卡。 |
-| `compass/tools/redcap-parent-receipt-aggregation-check.py` | 修改 | 新增 legacy evidence 白名单和原因校验；现代 child 不允许使用 legacy 绕过 receipt。 |
+| `compass/tools/redcap-parent-receipt-aggregation-check.py` | 修改 | 新增 legacy evidence 白名单和原因校验；现代 child 不允许使用 legacy 绕过 receipt，同时支持 repo-owned durable machine evidence 对抗 `/tmp` 清理。 |
 | `references/parent-receipt-aggregation-policy.json` | 修改 | 为 P0-P3 的历史非持久 receipt 任务补 explicit legacy reason；P4-1/P4-3 保持强 receipt。 |
 | `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 增加“现代 child 缺 receipt 必失败”“现代 child 不可声明 legacy”“legacy 缺 reason 必失败”的回归。 |
 | `compass/tools/redcap-clean-workspace-e2e.py` | 修改 | 允许 clean workspace E2E 已提交结果在后续治理报告、lessons、legacy dry-run 与本任务报告更新后保持有效；不放宽安装/发布/运行时安全代码漂移。 |
@@ -106,7 +106,7 @@
 | parent receipt aggregation | `references/parent-receipt-aggregation-policy.json` + checker | 父任务不能只靠一个子任务说完成，必须看所有 child 的完成证据和未完成边界。 |
 | runtime receipt | `/tmp/redcap/project/**/receipts/*.json` | closeout runtime 生成的机器收据，证明当时承诺、验收和 git head 已收口。 |
 | legacy evidence | parent policy 中的 `legacy_evidence_status` | 对早期非持久 receipt 的诚实标注：旧收据不存在了，但不能补造，只能保留报告和 repo-owned 证据。 |
-| strict modern child | P4-1 / P4-3 这类新机制任务 | 必须继续有真实 runtime receipt，不能用 legacy 规则绕过去。 |
+| strict modern child | P4-1 / P4-3 这类新机制任务 | 必须继续有真实 runtime receipt 或显式登记的 repo-owned durable machine evidence，不能用 legacy 规则绕过去。 |
 
 ---
 
@@ -125,7 +125,7 @@
 | 验证项 | 命令 | 结果 |
 |---|---|---|
 | JSON / Python 语法 | `python3 -m json.tool references/parent-receipt-aggregation-policy.json`；`python3 -m py_compile compass/tools/redcap-parent-receipt-aggregation-check.py` | 通过 |
-| parent aggregation | `bash compass/tools/redcap-parent-receipt-aggregation-check.sh` | 通过，legacy_evidence=13 |
+| parent aggregation | `bash compass/tools/redcap-parent-receipt-aggregation-check.sh` | 通过，legacy_evidence=13，durable_evidence=3 |
 | targeted acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check` | 通过 |
 | clean workspace E2E receipt | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --check-result --timeout 180`；`bash compass/tools/redcap-clean-workspace-e2e.sh --check-result` | 通过 |
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |

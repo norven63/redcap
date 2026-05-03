@@ -11043,6 +11043,9 @@ payload = json.loads(source.read_text(encoding="utf-8"))
 for child in payload["completed_children"]:
     if child.get("id") == "P4-3":
         child["receipt_glob"] = "missing-redcap-clean-workspace-install-e2e-*.json"
+        child.pop("durable_evidence_status", None)
+        child.pop("durable_evidence_reason", None)
+        child.pop("durable_evidence_paths", None)
         break
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -11074,6 +11077,28 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject legacy status on strict modern child"
     assert_string_contains "$stale_output" "P4-3: legacy_evidence_status is only allowed for known historical child ids"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-durable-evidence-missing-path.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+for child in payload["completed_children"]:
+    if child.get("id") == "P4-3":
+        child["receipt_glob"] = "missing-redcap-clean-workspace-install-e2e-*.json"
+        child["durable_evidence_paths"] = ["references/missing-clean-workspace-install-e2e.json"]
+        break
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing durable evidence path"
+    assert_string_contains "$stale_output" "P4-3: durable evidence path missing"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-legacy-status-missing-reason.json"
     python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'

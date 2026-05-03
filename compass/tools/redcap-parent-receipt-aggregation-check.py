@@ -23,6 +23,9 @@ ALLOWED_LEGACY_EVIDENCE_STATUSES = {
     "report-only-pre-receipt-era",
     "runtime-receipt-not-durable",
 }
+ALLOWED_DURABLE_EVIDENCE_STATUSES = {
+    "repo-owned-machine-evidence",
+}
 ALLOWED_LEGACY_CHILD_IDS = {
     "P0-1",
     "P0-2",
@@ -164,6 +167,69 @@ def legacy_evidence_status(child: dict[str, Any], child_id: str) -> str:
     return raw
 
 
+def durable_evidence_status(child: dict[str, Any], child_id: str) -> str:
+    raw = child.get("durable_evidence_status")
+    if raw is None:
+        return ""
+    if not isinstance(raw, str) or raw not in ALLOWED_DURABLE_EVIDENCE_STATUSES:
+        fail(f"{child_id}: unsupported durable_evidence_status: {raw!r}")
+    reason = child.get("durable_evidence_reason")
+    if not isinstance(reason, str) or not reason.strip():
+        fail(f"{child_id}: durable evidence child must explain durable_evidence_reason")
+    return raw
+
+
+def safe_evidence_paths(child: dict[str, Any], child_id: str) -> list[str]:
+    raw = child.get("durable_evidence_paths")
+    if raw is None:
+        return []
+    if not isinstance(raw, list) or not raw:
+        fail(f"{child_id}: durable_evidence_paths must be a non-empty list when provided")
+    paths: list[str] = []
+    for idx, item in enumerate(raw):
+        if not isinstance(item, str) or not item.strip():
+            fail(f"{child_id}: durable_evidence_paths[{idx}] must be a non-empty string")
+        path = require_safe_relative(item.strip(), child_id, f"durable_evidence_paths[{idx}]")
+        if not path.startswith("references/"):
+            fail(f"{child_id}: durable evidence must be a repo-owned references/** path: {path}")
+        paths.append(path)
+    return paths
+
+
+def durable_evidence_is_valid(
+    child: dict[str, Any],
+    *,
+    root: Path,
+    child_id: str,
+    task_id: str,
+) -> bool:
+    if not durable_evidence_status(child, child_id):
+        return False
+    paths = safe_evidence_paths(child, child_id)
+    if not paths:
+        fail(f"{child_id}: durable evidence status requires durable_evidence_paths")
+
+    task_id_matched = False
+    for rel_path in paths:
+        path = root / rel_path
+        if not path.is_file():
+            fail(f"{child_id}: durable evidence path missing: {rel_path}")
+        if path.suffix != ".json":
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            fail(f"{child_id}: durable evidence json is invalid: {rel_path}: {exc}")
+        if not isinstance(payload, dict):
+            fail(f"{child_id}: durable evidence json must be an object: {rel_path}")
+        if payload.get("task_id") == task_id or payload.get("created_for_task") == task_id:
+            task_id_matched = True
+
+    if not task_id_matched:
+        fail(f"{child_id}: durable evidence must include a JSON object matching task_id={task_id}")
+    return True
+
+
 def ensure_git_commit(root: Path, sha: Any, item_id: str, field: str, required: bool = True) -> None:
     if not isinstance(sha, str) or not sha.strip():
         if required:
@@ -255,7 +321,7 @@ def check_completed_child_receipt(
     task_metadata: dict[str, str],
     allow_current_pre_receipt: bool,
     allowed_acceptance: set[str],
-) -> bool:
+) -> str:
     child_id = require_text(child, "id", "completed_child")
     report_path = require_safe_relative(require_text(child, "report_path", child_id), child_id, "report_path")
     receipt_glob = require_text(child, "receipt_glob", child_id)
@@ -263,13 +329,16 @@ def check_completed_child_receipt(
         fail(f"{child_id}: receipt_glob must be a safe receipt filename glob ending in .json")
     task_id = derive_task_id(child, child_id)
     legacy_status = legacy_evidence_status(child, child_id)
+    durable_status = durable_evidence_status(child, child_id)
 
     matches = sorted(receipt_dir.glob(receipt_glob)) if receipt_dir.is_dir() else []
     if not matches:
         if allow_current_pre_receipt and is_current_child_pre_receipt(child_id, report_path, task_metadata):
-            return True
+            return "current-pre-receipt"
         if legacy_status:
-            return False
+            return "legacy"
+        if durable_status and durable_evidence_is_valid(child, root=root, child_id=child_id, task_id=task_id):
+            return "durable"
         fail(f"{child_id}: receipt_glob matched no runtime receipts: {receipt_glob}")
 
     reasons: list[str] = []
@@ -283,8 +352,10 @@ def check_completed_child_receipt(
             allowed_acceptance=allowed_acceptance,
         )
         if valid:
-            return False
+            return "runtime"
         reasons.append(reason)
+    if durable_status and durable_evidence_is_valid(child, root=root, child_id=child_id, task_id=task_id):
+        return "durable"
     fail(f"{child_id}: no matching runtime receipt has corresponding content: " + "; ".join(reasons[:3]))
 
 
@@ -317,6 +388,7 @@ def check_policy(path: Path, root: Path, task_file: Path) -> None:
     completed_ids: set[str] = set()
     pre_receipt_count = 0
     legacy_evidence_count = 0
+    durable_evidence_count = 0
     for child in completed:
         if not isinstance(child, dict):
             fail("completed_children entries must be objects")
@@ -326,22 +398,26 @@ def check_policy(path: Path, root: Path, task_file: Path) -> None:
         completed_ids.add(child_id)
         require_text(child, "title", child_id)
         legacy_status = legacy_evidence_status(child, child_id)
+        durable_evidence_status(child, child_id)
         report = require_safe_relative(require_text(child, "report_path", child_id), child_id, "report_path")
         if not (root / report).is_file():
             canonical_report = retired_report_map.get(report)
             if not canonical_report or not (root / canonical_report).is_file():
                 fail(f"{child_id}: report_path missing: {report}")
-        if check_completed_child_receipt(
+        proof_kind = check_completed_child_receipt(
             child,
             root=root,
             receipt_dir=receipt_dir,
             task_metadata=task_metadata,
             allow_current_pre_receipt=allow_current_pre_receipt,
             allowed_acceptance=allowed_acceptance,
-        ):
+        )
+        if proof_kind == "current-pre-receipt":
             pre_receipt_count += 1
-        elif legacy_status:
+        elif proof_kind == "legacy" or legacy_status:
             legacy_evidence_count += 1
+        elif proof_kind == "durable":
+            durable_evidence_count += 1
     missing_completed = sorted(REQUIRED_COMPLETED - completed_ids)
     if missing_completed:
         fail("missing completed child entries: " + ", ".join(missing_completed))
@@ -382,7 +458,7 @@ def check_policy(path: Path, root: Path, task_file: Path) -> None:
         "PARENT_RECEIPT_AGGREGATION_OK "
         f"{path} completed_children={len(completed_ids)} "
         f"receipt_correspondence=verified current_pre_receipt={pre_receipt_count} "
-        f"legacy_evidence={legacy_evidence_count}"
+        f"legacy_evidence={legacy_evidence_count} durable_evidence={durable_evidence_count}"
     )
 
 

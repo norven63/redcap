@@ -135,7 +135,12 @@
       "title": "历史资产 main-tree copy-first apply",
       "task_id": "historical-asset-migration-main-tree-copy-apply",
       "report_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
-      "receipt_glob": "historical-asset-migration-main-tree-copy-apply-*.json"
+      "receipt_glob": "historical-asset-migration-main-tree-copy-apply-*.json",
+      "durable_evidence_status": "repo-owned-machine-evidence",
+      "durable_evidence_reason": "P4-1a is a completed modern child, but its closeout runtime receipt lived under /tmp and is not durable across host cleanup. The repo-owned apply manifest is machine-readable evidence for the exact task_id and must be retained instead of fabricating a historical runtime receipt.",
+      "durable_evidence_paths": [
+        "references/legacy-asset-migration-main-tree-apply.json"
+      ]
     },
     {
       "id": "P4-1",
@@ -144,6 +149,11 @@
       "task_id": "historical-asset-migration-delete-last-canonical-switch",
       "report_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md",
       "receipt_glob": "historical-asset-migration-delete-last-canonical-switch-*.json",
+      "durable_evidence_status": "repo-owned-machine-evidence",
+      "durable_evidence_reason": "P4-1 remains a completed modern child. Its repo-owned delete-last apply manifest records the exact task_id and canonical switch result, so parent aggregation can survive /tmp closeout receipt cleanup without downgrading this child to legacy evidence.",
+      "durable_evidence_paths": [
+        "references/legacy-asset-delete-last-apply.json"
+      ],
       "acceptance_status": "resource-limited-pass",
       "evidence_paths": [
         "references/legacy-asset-delete-last-apply.json",
@@ -160,6 +170,11 @@
       "task_id": "redcap-clean-workspace-install-e2e",
       "report_path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
       "receipt_glob": "redcap-clean-workspace-install-e2e-*.json",
+      "durable_evidence_status": "repo-owned-machine-evidence",
+      "durable_evidence_reason": "P4-3 remains a completed modern child. Its repo-owned clean workspace E2E receipt records task_id, clean clone result, isolation, package safety and npm pack dry-run facts; parent aggregation may use it when volatile /tmp closeout receipts are unavailable.",
+      "durable_evidence_paths": [
+        "references/clean-workspace-install-e2e.json"
+      ],
       "acceptance_status": "resource-limited-pass",
       "evidence_paths": [
         "references/clean-workspace-install-e2e.json",

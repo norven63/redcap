@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 19,
-    "size_bytes": 241522,
+    "size_bytes": 241828,
     "lines": 5317,
-    "chars": 148047,
+    "chars": 148295,
     "rough_token_pressure": {
-      "low": 37011,
-      "high": 74023
+      "low": 37073,
+      "high": 74147
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 4,
-        "size_bytes": 48001,
+        "size_bytes": 48307,
         "lines": 735,
-        "chars": 31680,
+        "chars": 31928,
         "rough_token_pressure": {
-          "low": 7920,
-          "high": 15840
+          "low": 7982,
+          "high": 15964
         }
       }
     },
@@ -98,15 +98,15 @@
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
-        "chars": 8472,
-        "lines": 208,
+        "path": "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
+        "chars": 8516,
+        "lines": 221,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
-        "chars": 8268,
-        "lines": 221,
+        "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
+        "chars": 8472,
+        "lines": 208,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
@@ -482,15 +482,15 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13335,
+      "size_bytes": 13641,
       "lines": 221,
-      "chars": 8268,
-      "summary": "当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 继续强制真实 receipt，已知历史 child 必须显式说明 legacy 证据原因”。 / 详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的历史 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务仍然必须匹配真实 runtime receipt，缺失时会失败。",
+      "chars": 8516,
+      "summary": "当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 必须有真实 runtime receipt 或 repo-owned durable machine evidence，已知历史 child 必须显式说明 legacy 证据原因”。 / 详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务必须匹配真实 runtime receipt，或匹配显式登记…",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 继续强制真实 receipt，已知历史 child 必须显式说明 legacy 证据原因”。",
-          "详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的历史 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务仍然必须匹配真实 runtime receipt，缺失时会失败。"
+          "当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 必须有真实 runtime receipt 或 repo-owned durable machine evidence，已知历史 child 必须显式说明 legacy 证据原因”。",
+          "详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务必须匹配真实 runtime receipt，或匹配显式登记的 repo-owned machine evidence。"
         ],
         "previous_step": [
           "上一步完成的是：P4-3 clean workspace / cross-machine-style install E2E 已完成 closeout；父任务账本应同步为“仅剩 P4-2 public release / package publish”。"
