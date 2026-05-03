@@ -1,7 +1,7 @@
 # 任务完成报告：历史资产 main-tree copy-first apply
 
-**报告日期**：2026-04-30  
-**执行者**：Cap（Codex.app + Prism/Claude Code resource-limited review）  
+**报告日期**：2026-04-30
+**执行者**：Cap（Codex.app + Prism/Claude Code resource-limited review）
 **报告版本**：v1.0
 
 ## 零、先看懂当前局面

@@ -19,6 +19,25 @@ DEFAULT_RUNTIME_PROJECT_BASE = Path("/tmp/redcap/project")
 DEFAULT_ALIAS_RESOLVER = ROOT / "references/legacy-asset-migration-alias-resolver.json"
 ALLOWED_OPEN_STATUSES = {"open", "blocked-external", "resource-limited", "deferred"}
 ALLOWED_ACCEPTANCE_STATUSES = {"pass", "resource-limited-pass", "not-required"}
+ALLOWED_LEGACY_EVIDENCE_STATUSES = {
+    "report-only-pre-receipt-era",
+    "runtime-receipt-not-durable",
+}
+ALLOWED_LEGACY_CHILD_IDS = {
+    "P0-1",
+    "P0-2",
+    "P1-1",
+    "P1-2",
+    "P1-3",
+    "P1-4",
+    "P2-1",
+    "P2-2",
+    "P2-3",
+    "P2-4",
+    "P2-5",
+    "P3-1",
+    "P3-2",
+}
 REQUIRED_COMPLETED = {
     "P0-1",
     "P0-2",
@@ -131,6 +150,20 @@ def derive_task_id(child: dict[str, Any], child_id: str) -> str:
     fail(f"{child_id}: receipt_glob must end with '-*.json' unless task_id is explicit")
 
 
+def legacy_evidence_status(child: dict[str, Any], child_id: str) -> str:
+    raw = child.get("legacy_evidence_status")
+    if raw is None:
+        return ""
+    if not isinstance(raw, str) or raw not in ALLOWED_LEGACY_EVIDENCE_STATUSES:
+        fail(f"{child_id}: unsupported legacy_evidence_status: {raw!r}")
+    if child_id not in ALLOWED_LEGACY_CHILD_IDS:
+        fail(f"{child_id}: legacy_evidence_status is only allowed for known historical child ids")
+    reason = child.get("legacy_evidence_reason")
+    if not isinstance(reason, str) or not reason.strip():
+        fail(f"{child_id}: legacy evidence child must explain legacy_evidence_reason")
+    return raw
+
+
 def ensure_git_commit(root: Path, sha: Any, item_id: str, field: str, required: bool = True) -> None:
     if not isinstance(sha, str) or not sha.strip():
         if required:
@@ -229,15 +262,13 @@ def check_completed_child_receipt(
     if "/" in receipt_glob or ".." in receipt_glob or not receipt_glob.endswith(".json"):
         fail(f"{child_id}: receipt_glob must be a safe receipt filename glob ending in .json")
     task_id = derive_task_id(child, child_id)
+    legacy_status = legacy_evidence_status(child, child_id)
 
     matches = sorted(receipt_dir.glob(receipt_glob)) if receipt_dir.is_dir() else []
     if not matches:
         if allow_current_pre_receipt and is_current_child_pre_receipt(child_id, report_path, task_metadata):
             return True
-        if child.get("legacy_evidence_status") == "report-only-pre-receipt-era":
-            reason = child.get("legacy_evidence_reason")
-            if not isinstance(reason, str) or not reason.strip():
-                fail(f"{child_id}: legacy evidence child must explain legacy_evidence_reason")
+        if legacy_status:
             return False
         fail(f"{child_id}: receipt_glob matched no runtime receipts: {receipt_glob}")
 
@@ -294,6 +325,7 @@ def check_policy(path: Path, root: Path, task_file: Path) -> None:
             fail(f"duplicate completed child id: {child_id}")
         completed_ids.add(child_id)
         require_text(child, "title", child_id)
+        legacy_status = legacy_evidence_status(child, child_id)
         report = require_safe_relative(require_text(child, "report_path", child_id), child_id, "report_path")
         if not (root / report).is_file():
             canonical_report = retired_report_map.get(report)
@@ -308,7 +340,7 @@ def check_policy(path: Path, root: Path, task_file: Path) -> None:
             allowed_acceptance=allowed_acceptance,
         ):
             pre_receipt_count += 1
-        elif child.get("legacy_evidence_status") == "report-only-pre-receipt-era":
+        elif legacy_status:
             legacy_evidence_count += 1
     missing_completed = sorted(REQUIRED_COMPLETED - completed_ids)
     if missing_completed:

@@ -1,7 +1,7 @@
 # 任务完成报告：P4-3 clean workspace / cross-machine install E2E
 
-**报告日期**：2026-05-01  
-**执行者**：Cap（Codex.app 主 Agent）  
+**报告日期**：2026-05-01
+**执行者**：Cap（Codex.app 主 Agent）
 **报告版本**：v1.0
 
 ---
@@ -16,7 +16,7 @@
 
 ### 0.2 上一步完成的是
 
-- 上一步完成的是：P4-1 delete-last / canonical switch 已 closeout；父任务仍因 P4-2 public release 与 P4-3 clean workspace E2E 未完成而保持 incomplete。
+- 上一步完成的是：P4-3 clean workspace / cross-machine install E2E 已完成正式收口，clean HEAD receipt、parent aggregation 与 closeout runtime receipt 均已落证；父任务仍因 P4-2 public release / package publish 保持 incomplete。
 
 ### 0.3 下一步计划做的是
 

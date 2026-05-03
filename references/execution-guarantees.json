@@ -1484,7 +1484,7 @@
       "id": "parent-receipt-aggregation-gate",
       "category": "parent-task-governance",
       "priority": "P2",
-      "rule": "Parent task completion must be derived from an aggregation policy over completed child receipts and explicit not-complete boundaries, never from a single child receipt.",
+      "rule": "Parent task completion must be derived from an aggregation policy over completed child evidence and explicit not-complete boundaries, never from a single child receipt.",
       "source_paths": [
         "references/parent-receipt-aggregation-policy.json",
         "references/redcap-parent-task-ledger.md",
@@ -1492,7 +1492,7 @@
         "redcap-knowledge/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md"
       ],
       "status": "validator",
-      "automation": "redcap-parent-receipt-aggregation-check.sh validates completed child evidence entries, locates matching runtime receipts, checks task_id/confirmed_hash/repo_path/report_path/status/promise_pending/acceptance_status/git head correspondence, validates not-complete reasons and next steps, and keeps parent_completion_allowed=false while open/blocked/resource-limited/deferred child items remain.",
+      "automation": "redcap-parent-receipt-aggregation-check.sh validates completed child evidence entries, requires modern child items to match runtime receipts with task_id/confirmed_hash/repo_path/report_path/status/promise_pending/acceptance_status/git head correspondence, allows only explicitly listed historical child ids to use non-durable legacy evidence with a reason, validates not-complete reasons and next steps, and keeps parent_completion_allowed=false while open/blocked/resource-limited/deferred child items remain.",
       "guarantee_paths": [
         "compass/tools/redcap-parent-receipt-aggregation-check.sh",
         "compass/tools/redcap-parent-receipt-aggregation-check.py",

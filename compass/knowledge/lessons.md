@@ -5,7 +5,7 @@
 
 ## 热点主题速览
 
-- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124、L-135。适用于 pending closure、task report、validator chain、closure ledger、current-status、父子任务完成态打架时。
+- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124、L-135、L-148。适用于 pending closure、task report、validator chain、closure ledger、current-status、父子任务完成态打架、长期聚合证据耐久性时。
 - **宿主 / Hook / runtime 边界**：先看 L-15、L-16、L-39、L-41~L-49、L-62~L-69、L-77~L-90。适用于宿主适配、review runner、session-start/session-end、host-limited 行为边界。
 - **docs / knowledge / token 风险**：先看 L-50~L-52、L-64~L-66、L-91~L-97、L-122、L-132、L-134。适用于首读入口、说人话、渐进披露、shared-knowledge、`CONTRIBUTING` / docs / acceptance / `prism/runs` 的上下文压力治理。
 - **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110、L-124、L-135。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模、中插需求重计划。
@@ -1419,3 +1419,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-04-30
+
+### L-148: 长期聚合证据不能只放 `/tmp`
+- **问题源**：父任务 receipt aggregation 需要长期复验 completed child，但一批早期 closeout receipt 只写在 `/tmp/redcap/project/**`；当临时目录被清理后，父级聚合器会因为找不到历史 runtime receipt 而误失败。
+- **解决方案**：不要补造旧 receipt。对已知历史 child 使用显式 `legacy_evidence_status` 和 `legacy_evidence_reason` 说明非持久证据边界；对 P4-1/P4-3 等现代 child 继续强制真实 runtime receipt correspondence，并用 acceptance 防止它们借 legacy 绕过强门。
+- **最后效果**：父任务聚合恢复可复验，同时保留证据诚实性：旧证据不会被伪造，新任务缺 receipt 仍会 fail-closed。
+- **来源**：2026-05-03 Parent receipt durability reconciliation
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-05-03

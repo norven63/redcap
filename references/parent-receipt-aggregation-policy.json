@@ -30,13 +30,17 @@
       "id": "P0-1",
       "title": "Prism availability cache provenance/path 污染修复",
       "report_path": "compass/docs/task-reports/2026-04-26-prism-availability-cache-provenance-guard.md",
-      "receipt_glob": "prism-availability-cache-provenance-guard-*.json"
+      "receipt_glob": "prism-availability-cache-provenance-guard-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P0-1 was completed before durable closeout receipt mirroring existed. Its report records the original /tmp runtime receipt path and closeout facts, but the volatile receipt is no longer present in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P0-2",
       "title": "R0-R22 原始编号可追溯化",
       "report_path": "compass/docs/task-reports/2026-04-26-r0-r22-registry.md",
-      "receipt_glob": "redcap-r0-r22-registry-*.json"
+      "receipt_glob": "redcap-r0-r22-registry-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P0-2 was completed before durable closeout receipt mirroring existed. Its canonical report and registry remain repo-owned evidence, but the historical /tmp runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P1-1",
@@ -50,61 +54,81 @@
       "id": "P1-2",
       "title": "历史资产迁移 dry-run",
       "report_path": "compass/docs/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
-      "receipt_glob": "redcap-legacy-asset-migration-dry-run-*.json"
+      "receipt_glob": "redcap-legacy-asset-migration-dry-run-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P1-2 predates durable closeout receipt mirroring. Its dry-run manifest, canonical report and later migration evidence are retained, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P2-1",
       "title": "Runtime / CLI / Package Readiness",
       "report_path": "compass/docs/task-reports/2026-04-26-runtime-cli-package-readiness.md",
-      "receipt_glob": "redcap-runtime-cli-package-readiness-*.json"
+      "receipt_glob": "redcap-runtime-cli-package-readiness-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P2-1 predates durable closeout receipt mirroring. The package readiness policy, candidate manifest and report remain repo-owned evidence, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P2-2",
       "title": "父任务 receipt 聚合 gate",
       "report_path": "compass/docs/task-reports/2026-04-26-parent-receipt-aggregation-gate.md",
-      "receipt_glob": "redcap-parent-receipt-aggregation-gate-*.json"
+      "receipt_glob": "redcap-parent-receipt-aggregation-gate-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P2-2 introduced parent aggregation before durable closeout receipt mirroring existed. Its checker, policy and canonical report remain repo-owned evidence, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P2-3",
       "title": "Formal Prism quorum 恢复复验",
       "report_path": "compass/docs/task-reports/2026-04-26-prism-formal-quorum-provider-revalidation.md",
-      "receipt_glob": "redcap-prism-formal-quorum-provider-revalidation-*.json"
+      "receipt_glob": "redcap-prism-formal-quorum-provider-revalidation-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P2-3 predates durable closeout receipt mirroring. Its Prism provider policy, availability evidence and canonical report remain repo-owned evidence, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P1-3",
       "title": "Shared Knowledge Gitee 远端绑定",
       "report_path": "compass/docs/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
-      "receipt_glob": "redcap-shared-knowledge-gitee-remote-binding-*.json"
+      "receipt_glob": "redcap-shared-knowledge-gitee-remote-binding-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P1-3 predates durable closeout receipt mirroring. The shared-knowledge remote binding policy, external worktree evidence and canonical report remain available, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P1-4",
       "title": "redcap-arsenal 本地实体仓库与 Norven 命名空间",
       "report_path": "compass/docs/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
-      "receipt_glob": "redcap-arsenal-local-worktree-and-user-namespace-*.json"
+      "receipt_glob": "redcap-arsenal-local-worktree-and-user-namespace-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P1-4 predates durable closeout receipt mirroring. The local redcap-arsenal worktree evidence, remote head evidence and canonical report remain available, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P2-5",
       "title": "Layer B 中插需求重排决策可见化",
       "report_path": "compass/docs/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md",
-      "receipt_glob": "layerb-change-intake-replan-visibility-gate-*.json"
+      "receipt_glob": "layerb-change-intake-replan-visibility-gate-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P2-5 predates durable closeout receipt mirroring. The change-intake checker, task-card contract and canonical report remain repo-owned evidence, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P2-4",
       "title": "首次启动身份初始化与飞书通知策略收敛",
       "report_path": "compass/docs/task-reports/2026-04-27-first-start-identity-and-feishu-policy.md",
-      "receipt_glob": "first-start-identity-and-feishu-policy-*.json"
+      "receipt_glob": "first-start-identity-and-feishu-policy-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P2-4 predates durable closeout receipt mirroring. The identity/Feishu policies, setup verification and canonical report remain repo-owned evidence, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P3-1",
       "title": "GraphRAG / 向量检索阈值研究",
       "report_path": "compass/docs/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
-      "receipt_glob": "retrieval-escalation-threshold-policy-*.json"
+      "receipt_glob": "retrieval-escalation-threshold-policy-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P3-1 predates durable closeout receipt mirroring. The retrieval escalation policy, checker and canonical report remain repo-owned evidence, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P3-2",
       "title": "runtime receipt evidence correspondence hardening",
       "report_path": "compass/docs/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
-      "receipt_glob": "runtime-receipt-evidence-correspondence-hardening-*.json"
+      "receipt_glob": "runtime-receipt-evidence-correspondence-hardening-*.json",
+      "legacy_evidence_status": "runtime-receipt-not-durable",
+      "legacy_evidence_reason": "P3-2 created the correspondence hardening before durable receipt mirroring existed. Its policy/checker changes and canonical report remain repo-owned evidence, but the original volatile runtime receipt is not available in the current host; no receipt is fabricated retroactively."
     },
     {
       "id": "P4-1a",

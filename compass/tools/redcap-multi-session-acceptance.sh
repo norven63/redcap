@@ -11041,8 +11041,8 @@ source = pathlib.Path(sys.argv[1])
 target = pathlib.Path(sys.argv[2])
 payload = json.loads(source.read_text(encoding="utf-8"))
 for child in payload["completed_children"]:
-    if child.get("id") == "P2-4":
-        child["receipt_glob"] = "missing-first-start-identity-and-feishu-policy-*.json"
+    if child.get("id") == "P4-3":
+        child["receipt_glob"] = "missing-redcap-clean-workspace-install-e2e-*.json"
         break
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -11050,8 +11050,52 @@ PY
     stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
     status=$?
     set -e
-    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing runtime receipt for historical child"
-    assert_string_contains "$stale_output" "P2-4: receipt_glob matched no runtime receipts"
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject missing runtime receipt for strict child"
+    assert_string_contains "$stale_output" "P4-3: receipt_glob matched no runtime receipts"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-legacy-status-on-strict-child.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+for child in payload["completed_children"]:
+    if child.get("id") == "P4-3":
+        child["legacy_evidence_status"] = "runtime-receipt-not-durable"
+        child["legacy_evidence_reason"] = "acceptance should reject legacy status on strict modern child"
+        break
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject legacy status on strict modern child"
+    assert_string_contains "$stale_output" "P4-3: legacy_evidence_status is only allowed for known historical child ids"
+
+    bad_policy="$ACCEPT_ROOT/parent-receipt-legacy-status-missing-reason.json"
+    python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+for child in payload["completed_children"]:
+    if child.get("id") == "P0-1":
+        child["receipt_glob"] = "missing-prism-availability-cache-provenance-guard-*.json"
+        child["legacy_evidence_reason"] = ""
+        break
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-receipt-aggregation-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "parent receipt checker should reject legacy evidence without reason"
+    assert_string_contains "$stale_output" "P0-1: legacy evidence child must explain legacy_evidence_reason"
 
     bad_policy="$ACCEPT_ROOT/parent-receipt-wrong-report-path.json"
     python3 - "$REDCAP_ROOT/references/parent-receipt-aggregation-policy.json" "$bad_policy" <<'PY'

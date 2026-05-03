@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 18,
-    "size_bytes": 228112,
-    "lines": 5096,
-    "chars": 139720,
+    "file_count": 19,
+    "size_bytes": 240566,
+    "lines": 5313,
+    "chars": 147409,
     "rough_token_pressure": {
-      "low": 34930,
-      "high": 69860
+      "low": 36852,
+      "high": 73704
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 3,
-        "size_bytes": 34591,
-        "lines": 514,
-        "chars": 23353,
+        "file_count": 4,
+        "size_bytes": 47045,
+        "lines": 731,
+        "chars": 31042,
         "rough_token_pressure": {
-          "low": 5838,
-          "high": 11676
+          "low": 7760,
+          "high": 15521
         }
       }
     },
@@ -87,7 +87,7 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
-        "chars": 9223,
+        "chars": 9286,
         "lines": 186,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
@@ -99,15 +99,15 @@
       },
       {
         "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
-        "chars": 8476,
+        "chars": 8472,
         "lines": 208,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
-        "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 6634,
-        "lines": 149,
-        "read_policy": "read-registry-summary-first"
+        "path": "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
+        "chars": 7630,
+        "lines": 217,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
   },
@@ -409,29 +409,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：历史资产 delete-last / canonical-switch 风险窗口",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8440,
       "lines": 120,
       "chars": 5654,
       "summary": "当前已完成：P4-1 的 private delete-last / canonical switch 已完成。54 个旧 `compass/docs/**` 历史锚点已通过 preflight、Prism review、guarded apply、catalog 刷新和 resolver 复验后退休。 / 详情：旧历史文件不再作为 docs catalog 的普通入口；`redcap-knowledge/**` 中的私有副本成为迁移资产的 canonical path，旧路径只通过 alias resolver 和 receipt correspondence 承担历史对账角色。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P4-1 的 private delete-last / canonical switch 已完成。54 个旧 `compass/docs/**` 历史锚点已通过 preflight、Prism review、guarded apply、catalog 刷新和 resolver 复验后退休。",
-          "详情：旧历史文件不再作为 docs catalog 的普通入口；`redcap-knowledge/**` 中的私有副本成为迁移资产的 canonical path，旧路径只通过 alias resolver 和 receipt correspondence 承担历史对账角色。"
-        ],
-        "previous_step": [
-          "上一步完成的是：`historical-asset-migration-main-tree-copy-apply` 已创建 54 个私有副本，并保持旧 `compass/docs/**` 作为权威锚点。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续父任务线的剩余边界，即 P4-2 正式 public release / package publish 和 P4-3 clean workspace / cross-machine E2E；这两项不属于本轮 P4-1 完成声明。"
-        ],
-        "position": [
-          "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy rehearsal → true worktree rehearsal → durable alias resolver → main-tree copy-first apply → delete-last/canonical-switch preflight → guarded delete-last apply。",
-          "当前所在位置：guarded delete-last apply 已执行并通过 post-delete resolver/catalog/checker 对账；父任务仍因 P4-2/P4-3 保持 incomplete。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
@@ -440,9 +424,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12864,
+      "size_bytes": 12860,
       "lines": 208,
-      "chars": 8476,
+      "chars": 8472,
       "summary": "当前已完成：P4-1 已从 durable alias resolver 推进到 main-tree copy-first 私有副本创建，54 个旧 `compass/docs/**` 历史资产已复制到 `redcap-knowledge/**`。 / 详情：本轮解决的是“resolver 证明未来可复制，但真实 main tree 还没有副本”的缺口。现在 copy target 已真实存在、hash 与旧源一致，旧 `compass/docs/**` 仍全部保留并继续作为权威锚点。此次没有执行删除、移动、公开导出、canonical path 切换或 package release。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -469,9 +453,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13287,
+      "size_bytes": 13366,
       "lines": 186,
-      "chars": 9223,
+      "chars": 9286,
       "summary": "当前已完成：P4-3 clean workspace / cross-machine install E2E 已正式 closeout，clean clone 证据和 closeout runtime receipt 都已经生成。 / 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；E2E receipt 已做本机路径脱敏，避免把 `/Users/**`、macOS 临时目录或密钥片段泄漏成可提交证据。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -480,7 +464,7 @@
           "重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；E2E receipt 已做本机路径脱敏，避免把 `/Users/**`、macOS 临时目录或密钥片段泄漏成可提交证据。"
         ],
         "previous_step": [
-          "上一步完成的是：P4-1 delete-last / canonical switch 已 closeout；父任务仍因 P4-2 public release 与 P4-3 clean workspace E2E 未完成而保持 incomplete。"
+          "上一步完成的是：P4-3 clean workspace / cross-machine install E2E 已完成正式收口，clean HEAD receipt、parent aggregation 与 closeout runtime receipt 均已落证；父任务仍因 P4-2 public release / package publish 保持 incomplete。"
         ],
         "next_step": [
           "下一步计划做的是：不再继续扩张本轮 P4-3；父任务剩余唯一边界是 P4-2 public release / package publish，需要 Norven 对 registry、包名、凭据与发布边界做保留决策后才能推进。"
@@ -488,6 +472,35 @@
         "position": [
           "整体计划脉络图是：PM Gate 重锚 P4-3 → clean clone E2E 工具 → spec/diagnose/acceptance 接线 → machine-readable E2E receipt → Prism review → parent aggregation 更新 → full regression → closeout receipt。",
           "当前所在位置：P4-3 已完成 closeout；父任务线仍停在 P4-2 blocked-external，因此不能声明父任务整体完成。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：父任务 receipt 聚合耐久性缺陷修复",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12379,
+      "lines": 217,
+      "chars": 7630,
+      "summary": "当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 继续强制真实 receipt，已知历史 child 必须显式说明 legacy 证据原因”。 / 详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的历史 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务仍然必须匹配真实 runtime receipt，缺失时会失败。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 继续强制真实 receipt，已知历史 child 必须显式说明 legacy 证据原因”。",
+          "详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的历史 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务仍然必须匹配真实 runtime receipt，缺失时会失败。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-3 clean workspace / cross-machine-style install E2E 已完成 closeout；父任务账本应同步为“仅剩 P4-2 public release / package publish”。"
+        ],
+        "next_step": [
+          "下一步计划做的是：如果 Norven 未来决定进入真实发布阶段，再另开 P4-2 release 任务；当前不启动 npm 发布或发布准备。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-3 收口 → 父任务状态面对账 → parent aggregation 回归失败 → 历史证据耐久性修复 → 棱镜复审 → 回归收口 → P4-2 外部阻塞。",
+          "当前所在位置：父任务状态面对账和 receipt 聚合耐久性修复已完成；父任务仍因 P4-2 保持 incomplete。"
         ]
       }
     }
