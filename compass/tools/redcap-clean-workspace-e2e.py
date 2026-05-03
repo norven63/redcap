@@ -31,8 +31,12 @@ ALLOWED_POST_RESULT_DRIFT_PATHS = {
     "references/parent-receipt-aggregation-policy.json",
     "references/redcap-parent-task-ledger.md",
     "references/redcap-r0-r22-registry.json",
+    "references/legacy-asset-migration-dry-run.json",
     "compass/docs/catalog.json",
+    "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
     "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
+    "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
+    "compass/knowledge/lessons.md",
 }
 
 ALLOWED_POST_RESULT_DRIFT_PREFIXES = (
