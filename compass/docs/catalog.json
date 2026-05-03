@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 19,
-    "size_bytes": 240566,
-    "lines": 5313,
-    "chars": 147409,
+    "size_bytes": 241522,
+    "lines": 5317,
+    "chars": 148047,
     "rough_token_pressure": {
-      "low": 36852,
-      "high": 73704
+      "low": 37011,
+      "high": 74023
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 4,
-        "size_bytes": 47045,
-        "lines": 731,
-        "chars": 31042,
+        "size_bytes": 48001,
+        "lines": 735,
+        "chars": 31680,
         "rough_token_pressure": {
-          "low": 7760,
-          "high": 15521
+          "low": 7920,
+          "high": 15840
         }
       }
     },
@@ -105,8 +105,8 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
-        "chars": 7630,
-        "lines": 217,
+        "chars": 8268,
+        "lines": 221,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
@@ -482,9 +482,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12379,
-      "lines": 217,
-      "chars": 7630,
+      "size_bytes": 13335,
+      "lines": 221,
+      "chars": 8268,
       "summary": "当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 继续强制真实 receipt，已知历史 child 必须显式说明 legacy 证据原因”。 / 详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的历史 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务仍然必须匹配真实 runtime receipt，缺失时会失败。",
       "status_basis": "filename_recency_only",
       "summary_points": {

@@ -12,6 +12,7 @@
 
 - 当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 继续强制真实 receipt，已知历史 child 必须显式说明 legacy 证据原因”。
 - 详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的历史 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务仍然必须匹配真实 runtime receipt，缺失时会失败。
+- 收口补丁：closeout 过程中又发现 P4-3 clean workspace E2E 的已提交收据会因为本轮治理报告/lesson 后置更新而被误判 stale；已把这些非安装、非发布、非运行时安全代码的治理证据漂移列入安全允许范围，并重新生成 clean workspace E2E receipt。
 
 ### 0.2 上一步完成的是
 
@@ -87,6 +88,8 @@
 | `compass/tools/redcap-parent-receipt-aggregation-check.py` | 修改 | 新增 legacy evidence 白名单和原因校验；现代 child 不允许使用 legacy 绕过 receipt。 |
 | `references/parent-receipt-aggregation-policy.json` | 修改 | 为 P0-P3 的历史非持久 receipt 任务补 explicit legacy reason；P4-1/P4-3 保持强 receipt。 |
 | `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 增加“现代 child 缺 receipt 必失败”“现代 child 不可声明 legacy”“legacy 缺 reason 必失败”的回归。 |
+| `compass/tools/redcap-clean-workspace-e2e.py` | 修改 | 允许 clean workspace E2E 已提交结果在后续治理报告、lessons、legacy dry-run 与本任务报告更新后保持有效；不放宽安装/发布/运行时安全代码漂移。 |
+| `references/clean-workspace-install-e2e.json` | 修改 | 在治理漂移允许规则更新后，重新生成 P4-3 clean workspace E2E receipt，使 spec-check 可以复验最新规则。 |
 | `references/execution-guarantees.json` / `references/file-lookup-dictionary*` | 修改 | 同步 parent aggregation 的真实语义，避免文档仍说成全部 child 都必须当前 runtime receipt。 |
 | `references/redcap-parent-task-ledger.md` / P4-3 报告 / docs catalog | 修改 | 同步 P4-3 后父任务状态面：除 P4-2 外无非发布类剩余项。 |
 
@@ -124,6 +127,7 @@
 | JSON / Python 语法 | `python3 -m json.tool references/parent-receipt-aggregation-policy.json`；`python3 -m py_compile compass/tools/redcap-parent-receipt-aggregation-check.py` | 通过 |
 | parent aggregation | `bash compass/tools/redcap-parent-receipt-aggregation-check.sh` | 通过，legacy_evidence=13 |
 | targeted acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check` | 通过 |
+| clean workspace E2E receipt | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --check-result --timeout 180`；`bash compass/tools/redcap-clean-workspace-e2e.sh --check-result` | 通过 |
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
 | human output quality | `bash compass/tools/redcap-human-output-quality-check.sh --task-file .dev-task.md` | 通过 |
