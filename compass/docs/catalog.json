@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 20,
-    "size_bytes": 258364,
-    "lines": 5569,
-    "chars": 159103,
+    "size_bytes": 258781,
+    "lines": 5570,
+    "chars": 159350,
     "rough_token_pressure": {
-      "low": 39775,
-      "high": 79551
+      "low": 39837,
+      "high": 79675
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 5,
-        "size_bytes": 64843,
-        "lines": 987,
-        "chars": 42736,
+        "size_bytes": 65260,
+        "lines": 988,
+        "chars": 42983,
         "rough_token_pressure": {
-          "low": 10684,
-          "high": 21368
+          "low": 10745,
+          "high": 21491
         }
       }
     },
@@ -87,8 +87,8 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
-        "chars": 10808,
-        "lines": 252,
+        "chars": 11055,
+        "lines": 253,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
@@ -495,9 +495,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 16536,
-      "lines": 252,
-      "chars": 10808,
+      "size_bytes": 16953,
+      "lines": 253,
+      "chars": 11055,
       "summary": "当前已完成：RedCap 现在有了一个发布前产品架构审判 gate，用来阻止“能打包”被冒充成“值得作为优秀 CLI/runtime 产品发布”。 / 详情：本轮把发布前评估拆成安全性、机器独立性、CLI 产品性、源码可见模型、公共知识边界、Agent 容器契约和分发合规几个维度，并用机器检查器对当前真实仓库状态做复验。结论不是“RedCap 可以发布”，而是“P4-2a 审判完成，当前 public release 仍有 5 个必须先处理的 release blocker”。第一轮 Prism 抓到的本机路径泄漏、checker 自证循环、本机路径硬依赖已经修复；第二轮 Prism 复审通过；完整 multi-session a…",
       "status_basis": "filename_recency_only",
       "summary_points": {

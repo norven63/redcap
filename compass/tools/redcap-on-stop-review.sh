@@ -55,6 +55,7 @@ REVIEW_RESULT_FILE="${REDCAP_REVIEW_RESULT_FILE:-/tmp/redcap-stop-review-result}
 REVIEW_LOG_FILE="${REDCAP_REVIEW_LOG_FILE:-/tmp/redcap-stop-review-log.md}"
 NOTIFIER="$SCRIPT_DIR/feishu-notifier.py"
 SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-0}"
+NOTIFY_CONTROL_PLANE_FAILURE="${REDCAP_STOP_REVIEW_NOTIFY_CONTROL_PLANE_FAILURE:-0}"
 
 if [[ -n "${REDCAP_RUNTIME_SESSION_DIR:-}" ]]; then
     HEAD_FILE="${REDCAP_BASELINE_HEAD_FILE:-$(redcap_runtime_path "layerB/initial-head")}"
@@ -80,10 +81,13 @@ write_control_plane_failure() {
 
     echo "FAIL" > "$REVIEW_RESULT_FILE"
 
-    if [[ "$SKIP_FEISHU" != "1" && -f "$NOTIFIER" ]]; then
+    if [[ "$SKIP_FEISHU" != "1" && "$NOTIFY_CONTROL_PLANE_FAILURE" == "1" && -f "$NOTIFIER" ]]; then
         python3 "$NOTIFIER" notify \
             "⚠️ RedCap Layer B 控制面审计失败\n\n$title\n\n详情:\n$details\n\n日志: $REVIEW_LOG_FILE" \
-            --project "redcap" 2>/dev/null || true
+            --project "redcap" \
+            --window-type "manual-intervention" \
+            --no-background-watch \
+            2>/dev/null || true
     fi
 }
 

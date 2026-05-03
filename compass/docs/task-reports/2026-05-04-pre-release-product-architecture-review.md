@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-04
 **执行者**：Cap（Codex + Prism: Kimi, Claude Code）
-**报告版本**：v1.2
+**报告版本**：v1.3
 
 ---
 
@@ -11,7 +11,7 @@
 ### 0.1 当前已完成
 
 - 当前已完成：RedCap 现在有了一个发布前产品架构审判 gate，用来阻止“能打包”被冒充成“值得作为优秀 CLI/runtime 产品发布”。
-- 详情：本轮把发布前评估拆成安全性、机器独立性、CLI 产品性、源码可见模型、公共知识边界、Agent 容器契约和分发合规几个维度，并用机器检查器对当前真实仓库状态做复验。结论不是“RedCap 可以发布”，而是“P4-2a 审判完成，当前 public release 仍有 5 个必须先处理的 release blocker”。第一轮 Prism 抓到的本机路径泄漏、checker 自证循环、本机路径硬依赖已经修复；第二轮 Prism 复审通过；完整 multi-session acceptance 又抓到缺 npm PATH 和 spec-check fixture 漏接新门的问题，也已修复并全量回归通过；closeout runtime 已生成 receipt。
+- 详情：本轮把发布前评估拆成安全性、机器独立性、CLI 产品性、源码可见模型、公共知识边界、Agent 容器契约和分发合规几个维度，并用机器检查器对当前真实仓库状态做复验。结论不是“RedCap 可以发布”，而是“P4-2a 审判完成，当前 public release 仍有 5 个必须先处理的 release blocker”。第一轮 Prism 抓到的本机路径泄漏、checker 自证循环、本机路径硬依赖已经修复；第二轮 Prism 复审通过；完整 multi-session acceptance 又抓到缺 npm PATH、spec-check fixture 漏接新门和 stop-review 控制面失败默认飞书通知的问题，也已修复并全量回归通过；closeout runtime 已生成 receipt。
 
 ### 0.2 上一步完成的是
 
@@ -155,6 +155,7 @@
 | 总体验证 | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | 诊断总览 | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过，closeout receipt 仍待生成 |
 | 完整 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过 |
+| 飞书策略 | `bash compass/tools/redcap-feishu-notification-policy-check.sh` | 通过，stop-review 控制面失败默认不发飞书 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -197,7 +198,7 @@
 
 本轮确认：RedCap 不能再被描述为“除 npm 发布外都好了”。更准确的父任务状态是：本地 runtime 主线已收口，但 public release 前还有产品架构整改 tranche。
 
-完整 acceptance 还额外暴露两个工程问题：P4-2a checker 第一版在受限 hook PATH 缺少 npm 时会误炸；spec-check 的最小仓库 fixture 没同步新增的 pre-release gate。两项都已修复：checker 在缺 npm 时只接受已登记且此前验证过的 `npm_pack_dry_run_checked=true` 与候选数事实，fixture 也新增 pre-release gate stub 和失败传播用例。
+完整 acceptance 还额外暴露三个工程问题：P4-2a checker 第一版在受限 hook PATH 缺少 npm 时会误炸；spec-check 的最小仓库 fixture 没同步新增的 pre-release gate；stop-review 控制面失败路径默认发送飞书通知，违背“内部 audit gap 默认只落账、不飞书”的通知降噪原则。三项都已修复：checker 在缺 npm 时只接受已登记且此前验证过的 `npm_pack_dry_run_checked=true` 与候选数事实，fixture 也新增 pre-release gate stub 和失败传播用例，stop-review 控制面失败通知改为显式 opt-in 且只允许 `manual-intervention`。
 
 ### 6.3 推荐的下一步行动
 
