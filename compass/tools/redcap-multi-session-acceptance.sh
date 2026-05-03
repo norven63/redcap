@@ -174,6 +174,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
+  bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh clean-workspace-e2e-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-lifecycle-check
@@ -11780,6 +11781,57 @@ PY
     assert_string_contains "$stale_output" "publish_allowed must be false"
 }
 
+run_pre_release_product_architecture_check_case() {
+    local output bad_review stale_output status
+
+    log "case: pre-release-product-architecture-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh")"
+    assert_string_contains "$output" "PRE_RELEASE_PRODUCT_ARCHITECTURE_OK"
+    assert_string_contains "$output" "release_blockers=5"
+
+    output="$(bash "$REDCAP_ROOT/bin/redcap" pre-release-review)"
+    assert_string_contains "$output" "PRE_RELEASE_PRODUCT_ARCHITECTURE_OK"
+
+    bad_review="$ACCEPT_ROOT/pre-release-product-architecture-bad-count.json"
+    python3 - "$REDCAP_ROOT/references/pre-release-product-architecture-review.json" "$bad_review" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["observed_facts"]["package_candidate_count"] = 1
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh" --review "$bad_review" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "pre-release product architecture check should reject stale package count"
+    assert_string_contains "$stale_output" "does not match npm pack count"
+
+    bad_review="$ACCEPT_ROOT/pre-release-product-architecture-missing-blocker.json"
+    python3 - "$REDCAP_ROOT/references/pre-release-product-architecture-review.json" "$bad_review" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["findings"] = [
+    item
+    for item in payload["findings"]
+    if item.get("id") != "runtime-project-user-boundaries-not-physically-split"
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh" --review "$bad_review" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "pre-release product architecture check should reject missing required blocker"
+    assert_string_contains "$stale_output" "missing required observed release blocker finding"
+}
+
 run_clean_workspace_e2e_check_case() {
     local output result_file stale_result stale_output status dirty_status
 
@@ -12101,7 +12153,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package pre-release-product-architecture; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12255,6 +12307,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-pre-release-product-architecture-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "pre-release-product-architecture" ]]; then
+    echo "fixture pre-release product architecture failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
             "$repo/compass/tools/redcap-docs-catalog.sh" \
             "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
@@ -12271,6 +12332,7 @@ EOF
             "$repo/compass/tools/redcap-feishu-notification-policy-check.sh" \
             "$repo/compass/tools/redcap-human-communication-check.sh" \
             "$repo/compass/tools/redcap-runtime-package-manifest.sh" \
+            "$repo/compass/tools/redcap-pre-release-product-architecture-check.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
 
         case "$failing_gate" in
@@ -12291,6 +12353,7 @@ EOF
             feishu-notification-policy) expected_message="Feishu notification policy check failed" ;;
             human-communication) expected_message="human communication check failed" ;;
             runtime-package) expected_message="runtime package manifest check failed" ;;
+            pre-release-product-architecture) expected_message="pre-release product architecture check failed" ;;
         esac
 
         set +e
@@ -12358,6 +12421,7 @@ for rel in [
     "compass/tools/redcap-feishu-notification-policy-check.sh",
     "compass/tools/redcap-human-communication-check.sh",
     "compass/tools/redcap-runtime-package-manifest.sh",
+    "compass/tools/redcap-pre-release-product-architecture-check.sh",
 ]:
     script_path = dst / rel
     script_path.parent.mkdir(parents=True, exist_ok=True)
@@ -13165,6 +13229,7 @@ run_all_cases() {
     run_shared_knowledge_remote_binding_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
+    run_pre_release_product_architecture_check_case
     run_clean_workspace_e2e_check_case
     run_skill_lifecycle_check_case
     run_legacy_asset_lifecycle_check_case
@@ -13651,6 +13716,9 @@ case "$COMMAND" in
         ;;
     runtime-package-manifest-check)
         run_runtime_package_manifest_check_case
+        ;;
+    pre-release-product-architecture-check)
+        run_pre_release_product_architecture_check_case
         ;;
     clean-workspace-e2e-check)
         run_clean_workspace_e2e_check_case

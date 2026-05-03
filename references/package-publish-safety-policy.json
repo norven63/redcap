@@ -68,6 +68,10 @@
     {
       "id": "feishu-bot-webhook",
       "pattern": "open\\.feishu\\.cn/open-apis/bot/v2/hook/[0-9A-Za-z_-]{20,}"
+    },
+    {
+      "id": "local-user-home-path",
+      "pattern": "(?:/Users/[A-Za-z0-9._-]+(?:/|$)|/home/[A-Za-z0-9._-]+(?:/|$))"
     }
   ],
   "max_text_scan_bytes": 2097152,

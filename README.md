@@ -9,6 +9,7 @@ RedCap 不是“再包一层提示词”。
 当前仓库仍以 skill-root 方式承载 RedCap，但长期形态不是“某个宿主的 skill 文件夹”，而是可安装、可复活、可调度、可审计的独立 runtime。产品化分层与迁移路线见 [`references/redcap-system-layers.md`](./references/redcap-system-layers.md)。
 本轮已经补了一个低风险薄 CLI facade：`bin/redcap`，先把现有 root/tool 入口统一成 CLI 形态，底层逻辑仍保持原位，避免破坏宿主适配。
 当前 package 化进入 readiness 阶段：`package.json` 保持 `private: true` 防误发，`bin/redcap package-manifest --check` 会生成候选清单并跑发布安全 gate；真实 npm/Gitee/GitHub 发布仍需要单独 release 决策。
+正式 public release 之前还必须先过产品架构审判：`bin/redcap pre-release-review` 会检查 RedCap 是否已经足够安全、独立、可调试、可被新用户理解；它和 `npm pack` 不同，后者只回答“能不能打包”，前者回答“值不值得作为优秀 CLI/runtime 产品发布”。
 
 ## 一眼看懂
 
@@ -101,6 +102,7 @@ Cap 的个人灵魂锚点是 `~/.cap/identity.md`；`compass/soul.md` 是培养�
 - 需要显式指定宿主时：`./revive-cap.sh --host codex`
 - CLI facade：`bin/redcap revive`
 - Package readiness：`bin/redcap package-manifest --check`
+- 发布前产品架构审判：`bin/redcap pre-release-review`
 
 这条入口会串起 8 件事：
 
@@ -167,7 +169,7 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 | **结案报告** | `compass/docs/task-reports/*.md` | 解决“这轮到底改了什么、验证了什么、还剩什么” |
 | **收尾收据** | `closeout-receipts/*.json` | 解决“不能只靠一句‘完成了’，而要有物理 receipt 证明终态真的闭环” |
 | **进化候选池** | `compass/evolution/candidates.json` | 解决“重要经验、人格成长和治理改良不能靠作者记忆临时想起” |
-| **共享沉淀库** | `shared-knowledge/` 模板 + `/Users/norven/.claude/skills/redcap-arsenal` 本地实体仓库 + remote binding policy | 解决“团队经验要可共享、按用户隔离、只新增不改旧条目、先索引再读取，并且远端同步前可审计” |
+| **共享沉淀库** | `shared-knowledge/` 模板 + 外部 `redcap-arsenal` 本地实体仓库 + remote binding policy | 解决“团队经验要可共享、按用户隔离、只新增不改旧条目、先索引再读取，并且远端同步前可审计” |
 | **文件定位字典** | `references/file-lookup-dictionary.md` + policy/check | 解决“人和 Agent 不知道该看哪个文件，只能全文乱翻”的问题 |
 | **skill 单一信源** | `references/skill-lifecycle-policy.json` | 解决“多个宿主各写一份规则，最后互相漂移”的问题 |
 | **旧资产生命周期** | `references/legacy-asset-lifecycle.json` | 解决“历史报告、运行残留、旧规范到底保留、翻译、归档还是清理” |
@@ -191,7 +193,7 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 | [`references/redcap-system-layers.md`](./references/redcap-system-layers.md) | 看 RedCap 从 skill-root 演进为 Agent Runtime / CLI / 多层系统的架构路线 |
 | [`references/shared-knowledge-policy.json`](./references/shared-knowledge-policy.json) | 看公共知识库的按用户隔离、append-only、索引优先和远端边界策略 |
 | [`references/shared-knowledge-remote-binding.json`](./references/shared-knowledge-remote-binding.json) | 看公共知识库 Gitee 远端、候选白名单和 live head 验证证据 |
-| [`shared-knowledge/README.md`](./shared-knowledge/README.md) | 看 `redcap-arsenal` 公共库的 RedCap 内模板，以及它和本地实体仓库 `/Users/norven/.claude/skills/redcap-arsenal` 的关系 |
+| [`shared-knowledge/README.md`](./shared-knowledge/README.md) | 看 `redcap-arsenal` 公共库的 RedCap 内模板，以及它和外部本地实体仓库的关系 |
 | [`references/skill-lifecycle-policy.json`](./references/skill-lifecycle-policy.json) | 看 RedCap-native capability、host-exported skill、portable skill package 的单一信源策略 |
 | [`references/legacy-asset-lifecycle.json`](./references/legacy-asset-lifecycle.json) | 看旧资产、运行残留与考古证据的生命周期策略 |
 | [`references/runtime-memory-architecture.md`](./references/runtime-memory-architecture.md) | 看 Layer B 生命周期如何与 `.dev-task.md`、承诺账本、closeout runtime、pending closure、session hooks 绑在一起 |

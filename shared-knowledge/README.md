@@ -1,6 +1,6 @@
 # RedCap Arsenal Template
 
-> 这是 RedCap 公共知识库/沉淀库 `redcap-arsenal` 的最小安全模板。当前绑定远端为 `https://gitee.com/norven63/redcap-arsenal.git`；在 RedCap 仓库中，`shared-knowledge/` 只是模板源，所以刻意没有 `.git`。本机耐久公共库工作区在 `/Users/norven/.claude/skills/redcap-arsenal`，它才是带 `.git` 的真实本地仓库。
+> 这是 RedCap 公共知识库/沉淀库 `redcap-arsenal` 的最小安全模板。当前绑定远端为 `https://gitee.com/norven63/redcap-arsenal.git`；在 RedCap 仓库中，`shared-knowledge/` 只是模板源，所以刻意没有 `.git`。实体公共库工作区由 `references/shared-knowledge-remote-binding.json` 的 `preferred_local_worktree` 配置，默认应位于 RedCap 仓库外。
 
 ## 目录约定
 

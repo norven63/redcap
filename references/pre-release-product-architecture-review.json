@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "review_id": "pre-release-product-architecture-review",
+  "task_id": "pre-release-product-architecture-review",
+  "status": "blocked-pending-remediation",
+  "release_recommendation": "not-ready-before-product-architecture-remediation",
+  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, but it is not yet an excellent public npm CLI/runtime product. Before public release, the runtime/project/user boundaries, workspace context contract, public package identity, license posture, CLI debug contract and public knowledge claims need remediation or explicit scope reduction.",
+  "observed_facts": {
+    "current_package_name": "@redcap-ai/runtime",
+    "user_approved_public_package_name": "@norven63/redcap",
+    "package_private": true,
+    "package_license": "UNLICENSED",
+    "package_bin": "bin/redcap",
+    "package_candidate_count": 195,
+    "npm_pack_dry_run_checked": true,
+    "package_publish_safety_status": "pass",
+    "runtime_package_manifest_status": "pass",
+    "execution_layer_split_status": "dry-run-only",
+    "runtime_root_exists": false,
+    "current_runtime_shape": "skill-root-runtime-plus-thin-cli-facade",
+    "cli_has_doctor_command": false,
+    "cli_has_debug_command": false,
+    "cli_has_trace_option": false,
+    "cli_has_version_command": true,
+    "cli_defaults_to_package_task_file": true,
+    "redcap_arsenal_local_worktree_ref": "shared-knowledge-remote-binding.preferred_local_worktree",
+    "redcap_arsenal_content_state": "template-only",
+    "redcap_arsenal_substantive_entries": 0,
+    "source_visibility_model": "npm package source must be treated as visible to users"
+  },
+  "findings": [
+    {
+      "id": "privacy-safety-baseline-pass",
+      "dimension": "privacy-safety",
+      "severity": "pass",
+      "claim": "The current package surface passes the publish safety gate, including content scanning for local user home paths, and excludes known local secrets, runtime residue and private knowledge paths.",
+      "evidence": [
+        "references/package-publish-safety-policy.json",
+        "compass/tools/redcap-package-publish-safety-check.sh",
+        ".npmignore"
+      ],
+      "required_before_public_release": false
+    },
+    {
+      "id": "public-package-identity-not-finalized",
+      "dimension": "cli-product-quality",
+      "severity": "release-blocker",
+      "claim": "The current package metadata remains private and uses @redcap-ai/runtime, while the user-approved public package name is @norven63/redcap. This is correct for readiness-only mode but blocks public publish.",
+      "evidence": [
+        "package.json",
+        "references/runtime-package-readiness-policy.json"
+      ],
+      "required_before_public_release": true
+    },
+    {
+      "id": "runtime-project-user-boundaries-not-physically-split",
+      "dimension": "machine-independence",
+      "severity": "release-blocker",
+      "claim": "The execution-layer split remains dry-run-only. Current runtime implementation still lives in the RedCap skill-root shape, so public CLI release would ship an internal bundle rather than a clean independent runtime layout.",
+      "evidence": [
+        "references/execution-layer-split-dry-run.json",
+        "bin/redcap",
+        "compass/tools/"
+      ],
+      "required_before_public_release": true
+    },
+    {
+      "id": "cli-debug-contract-incomplete",
+      "dimension": "cli-product-quality",
+      "severity": "release-blocker",
+      "claim": "The current CLI facade exposes core commands but does not yet expose publish-grade doctor/debug/trace surfaces. This makes external-user support and Agent-container diagnosis too opaque.",
+      "evidence": [
+        "bin/redcap"
+      ],
+      "required_before_public_release": true
+    },
+    {
+      "id": "cli-workspace-context-not-separated",
+      "dimension": "machine-independence",
+      "severity": "release-blocker",
+      "claim": "The current CLI defaults status, diagnose and closeout-style task operations to package-root state such as $REDCAP_ROOT/.dev-task.md. A public CLI must operate on the managed project workspace by default, with the npm package acting as runtime implementation rather than the project state directory.",
+      "evidence": [
+        "bin/redcap"
+      ],
+      "required_before_public_release": true
+    },
+    {
+      "id": "distribution-license-not-finalized",
+      "dimension": "distribution-compliance",
+      "severity": "release-blocker",
+      "claim": "package.json currently declares UNLICENSED. That is acceptable while private=true, but a public npm release needs an explicit distribution/license decision before publish.",
+      "evidence": [
+        "package.json"
+      ],
+      "required_before_public_release": true
+    },
+    {
+      "id": "package-surface-too-broad-for-public-cli",
+      "dimension": "cli-product-quality",
+      "severity": "should-fix",
+      "claim": "The npm package candidate surface currently contains 195 files and many internal governance artifacts. This is acceptable for internal runtime readiness, but should be curated before public product release.",
+      "evidence": [
+        "references/runtime-package-readiness-policy.json",
+        "npm pack --dry-run --json"
+      ],
+      "required_before_public_release": false
+    },
+    {
+      "id": "public-arsenal-template-only",
+      "dimension": "knowledge-boundary",
+      "severity": "should-fix",
+      "claim": "redcap-arsenal currently contains only templates, schema and Norven namespace placeholders. It must not be marketed as a populated shared knowledge/skill arsenal until append-only entries exist.",
+      "evidence": [
+        "references/shared-knowledge-remote-binding.json"
+      ],
+      "required_before_public_release": false
+    },
+    {
+      "id": "source-visibility-model-pass",
+      "dimension": "source-visibility-model",
+      "severity": "pass",
+      "claim": "The release posture now treats npm package contents as visible source and relies on exclusion of secrets rather than obfuscation.",
+      "evidence": [
+        "references/package-publish-safety-policy.json",
+        ".dev-task.md"
+      ],
+      "required_before_public_release": false
+    },
+    {
+      "id": "agent-container-contract-needs-product-doc",
+      "dimension": "agent-container-contract",
+      "severity": "deferred",
+      "claim": "The intended Agent container contract is conceptually clear: invoke CLI at revive/task/check/closeout nodes. A public user guide should still make this concrete before broad release.",
+      "evidence": [
+        "README.md",
+        "ARCHITECTURE.md"
+      ],
+      "required_before_public_release": false
+    }
+  ],
+  "must_not_claim": [
+    "Do not claim RedCap is public-release-ready.",
+    "Do not claim P4-2 public release is complete.",
+    "Do not claim redcap-arsenal contains substantive migrated knowledge.",
+    "Do not claim npm source is hidden from users.",
+    "Do not claim clean workspace E2E equals a multi-OS external release matrix."
+  ],
+  "recommended_next_tranches": [
+    {
+      "id": "P4-2b",
+      "title": "Runtime/project/user boundary physical split and compatibility shim apply",
+      "priority": "P0-before-public-release"
+    },
+    {
+      "id": "P4-2c",
+      "title": "CLI product command surface hardening: doctor/debug/trace/errors/help",
+      "priority": "P0-before-public-release"
+    },
+    {
+      "id": "P4-2d",
+      "title": "Public package identity and curated package surface preparation",
+      "priority": "P0-before-public-release"
+    },
+    {
+      "id": "P4-2e",
+      "title": "Public arsenal content strategy and claim boundary",
+      "priority": "P1-before-broad-marketing"
+    }
+  ]
+}

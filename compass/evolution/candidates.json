@@ -221,6 +221,30 @@
         "references/human-communication-policy.json",
         "compass/tools/redcap-multi-session-acceptance.sh"
       ]
+    },
+    {
+      "id": "EVO-2026-05-04-001",
+      "source_kind": "prism-verdict",
+      "problem_source": "P4-2a pre-release review showed that npm pack, package safety and clean-workspace E2E can pass while RedCap is still not a public-release-ready CLI/runtime product. Prism also found path-leak and checker self-cycle risks in the first implementation.",
+      "solution": "Promote a separate pre-release product architecture gate that judges privacy, machine independence, CLI product quality, source visibility, public knowledge claims and distribution compliance before public release readiness or npm publish.",
+      "final_effect": "RedCap can now truthfully say P4-2a judgment is complete while blocking public release behind explicit product architecture blockers, instead of confusing package generation with product readiness.",
+      "recurrence_guard": "redcap-pre-release-product-architecture-check.sh, spec-check, diagnose and targeted acceptance require the blocker ledger to match actual package, CLI, split and redcap-arsenal facts.",
+      "applicability_boundary": "This gate judges and blocks release readiness; it does not by itself remediate the identified runtime split, CLI doctor/debug/trace, package identity/license or public-arsenal content gaps.",
+      "evidence_paths": [
+        "references/pre-release-product-architecture-policy.json",
+        "references/pre-release-product-architecture-review.json",
+        "compass/tools/redcap-pre-release-product-architecture-check.py",
+        "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons.md"
+      ],
+      "review_paths": [
+        "prism/runs/20260504-pre-release-product-architecture-review/collect/kimi-final/parsed.json",
+        "prism/runs/20260504-pre-release-product-architecture-review/collect/claude-final/parsed.json"
+      ]
     }
   ]
 }

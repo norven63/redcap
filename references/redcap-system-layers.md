@@ -34,6 +34,12 @@ redcap-runtime / redcap CLI
 
 当前仓库仍是 skill-root 形态，因此本轮采取“边界明确 + 低风险治理 + 可逆迁移支撑”的路线。已经落地的本地控制面包括：`bin/redcap` 薄 CLI facade、Prism 可用性 TTL 清单、File Lookup Dictionary coverage gate、shared-knowledge 本地模板与 append-only 工具。真正拆成独立 CLI/package，以及绑定远端 Gitee 共享库，需要后续专门迁移任务。
 
+## Pre-release Product Architecture Gate
+
+RedCap 进入正式 public release 之前，不只要回答“能不能打包”，还要回答“好不好、优不优、能不能离开 Norven 本机独立工作”。这一步由 `references/pre-release-product-architecture-policy.json` 定义标准，由 `references/pre-release-product-architecture-review.json` 记录当前结论，并由 `redcap-pre-release-product-architecture-check.sh` 复验真实 package / CLI / execution split / redcap-arsenal 状态。
+
+当前 P4-2a 结论是：RedCap 已经是成熟的本地 skill-root runtime + CLI facade，但还不是优秀 public CLI/runtime 产品。发布前 blocker 包括 public package identity 未切换到用户确认包名、执行层仍停在 dry-run-only 物理拆分前状态、CLI 还缺少 doctor/debug/trace 这类外部用户支持面。`redcap-arsenal` 当前只有模板与命名空间占位，必须诚实标注为 template-only，不能冒充公共知识库已经有实质迁移内容。
+
 ## Migration Tranches
 
 | tranche | 目标 | 可验收结果 |
@@ -47,7 +53,7 @@ redcap-runtime / redcap CLI
 
 ## Shared Knowledge Boundary
 
-`shared-knowledge/` 是 RedCap 仓库内模板源，不是新的上下文大包，也不是公共库本体。本机实体公共库工作区是 `/Users/norven/.claude/skills/redcap-arsenal`，远端是 `https://gitee.com/norven63/redcap-arsenal.git`。它的规则是：
+`shared-knowledge/` 是 RedCap 仓库内模板源，不是新的上下文大包，也不是公共库本体。实体公共库工作区由 `references/shared-knowledge-remote-binding.json` 的 `preferred_local_worktree` 指向，默认应在 RedCap 仓库外；远端是 `https://gitee.com/norven63/redcap-arsenal.git`。它的规则是：
 
 - `users/<user>/` 按用户隔离沉淀内容；本安装已初始化 `users/Norven/`
 - 条目文件以 UTC 时间戳开头，只新增不改旧文件

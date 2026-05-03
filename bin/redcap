@@ -30,7 +30,9 @@ commands:
   shared-knowledge       manage the shared knowledge repository template
   publish-safety         audit package candidate files before public release
   package-manifest       generate/check runtime package candidate files
+  pre-release-review     validate product-architecture blockers before release readiness
   change-intake          validate mid-task inserted requirement handling
+  version                print RedCap package version
 EOF
 }
 
@@ -69,11 +71,25 @@ case "$COMMAND" in
   package-manifest)
     exec bash "$REDCAP_ROOT/compass/tools/redcap-runtime-package-manifest.sh" "$@"
     ;;
+  pre-release-review)
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh" "$@"
+    ;;
   change-intake)
     exec bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "${1:-$REDCAP_ROOT/.dev-task.md}" "${@:2}"
     ;;
   help|-h|--help)
     usage
+    ;;
+  version|-v|--version)
+    python3 - "$REDCAP_ROOT/package.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+package_json = Path(sys.argv[1])
+payload = json.loads(package_json.read_text(encoding="utf-8"))
+print(payload.get("version", "unknown"))
+PY
     ;;
   *)
     echo "unknown redcap command: $COMMAND" >&2

@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 19,
-    "size_bytes": 241828,
-    "lines": 5317,
-    "chars": 148295,
+    "file_count": 20,
+    "size_bytes": 257895,
+    "lines": 5569,
+    "chars": 158658,
     "rough_token_pressure": {
-      "low": 37073,
-      "high": 74147
+      "low": 39664,
+      "high": 79329
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 4,
-        "size_bytes": 48307,
-        "lines": 735,
-        "chars": 31928,
+        "file_count": 5,
+        "size_bytes": 64374,
+        "lines": 987,
+        "chars": 42291,
         "rough_token_pressure": {
-          "low": 7982,
-          "high": 15964
+          "low": 10572,
+          "high": 21145
         }
       }
     },
@@ -86,6 +86,12 @@
         "read_policy": "read-registry-summary-first"
       },
       {
+        "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
+        "chars": 10363,
+        "lines": 252,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+      },
+      {
         "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
         "chars": 9286,
         "lines": 186,
@@ -101,12 +107,6 @@
         "path": "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
         "chars": 8516,
         "lines": 221,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
-      },
-      {
-        "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
-        "chars": 8472,
-        "lines": 208,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
@@ -422,29 +422,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：历史资产 main-tree copy-first apply",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12860,
       "lines": 208,
       "chars": 8472,
       "summary": "当前已完成：P4-1 已从 durable alias resolver 推进到 main-tree copy-first 私有副本创建，54 个旧 `compass/docs/**` 历史资产已复制到 `redcap-knowledge/**`。 / 详情：本轮解决的是“resolver 证明未来可复制，但真实 main tree 还没有副本”的缺口。现在 copy target 已真实存在、hash 与旧源一致，旧 `compass/docs/**` 仍全部保留并继续作为权威锚点。此次没有执行删除、移动、公开导出、canonical path 切换或 package release。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P4-1 已从 durable alias resolver 推进到 main-tree copy-first 私有副本创建，54 个旧 `compass/docs/**` 历史资产已复制到 `redcap-knowledge/**`。",
-          "详情：本轮解决的是“resolver 证明未来可复制，但真实 main tree 还没有副本”的缺口。现在 copy target 已真实存在、hash 与旧源一致，旧 `compass/docs/**` 仍全部保留并继续作为权威锚点。此次没有执行删除、移动、公开导出、canonical path 切换或 package release。"
-        ],
-        "previous_step": [
-          "上一步完成的是：durable alias resolver 已落地；旧路径可解析为 canonical anchor，新路径可作为候选 target 查询，但当时所有 target 仍是 `planned-not-applied`。"
-        ],
-        "next_step": [
-          "下一步计划做的是：另开 delete-last / canonical-switch 风险窗口前，复审 receipt anchor、docs catalog、local links、resolver、rollback 和 Prism verdict；父任务还剩正式公开发布与跨机器 clean workspace E2E。"
-        ],
-        "position": [
-          "整体计划脉络图是：collection dry-run → file-level preflight → temp-copy rehearsal → true worktree rehearsal → durable alias resolver → main-tree copy-first apply → delete-last/canonical switch。",
-          "当前所在位置：`historical-asset-migration-main-tree-copy-apply` 已正式收口：Prism resource-limited review、全量回归、提交与 closeout receipt 均已完成；父任务仍保持 incomplete。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
@@ -501,6 +485,35 @@
         "position": [
           "整体计划脉络图是：P4-3 收口 → 父任务状态面对账 → parent aggregation 回归失败 → 历史证据耐久性修复 → 棱镜复审 → 回归收口 → P4-2 外部阻塞。",
           "当前所在位置：父任务状态面对账和 receipt 聚合耐久性修复已完成；父任务仍因 P4-2 保持 incomplete。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-2a 发布前产品架构审判",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 16067,
+      "lines": 252,
+      "chars": 10363,
+      "summary": "当前已完成：RedCap 现在有了一个发布前产品架构审判 gate，用来阻止“能打包”被冒充成“值得作为优秀 CLI/runtime 产品发布”。 / 详情：本轮把发布前评估拆成安全性、机器独立性、CLI 产品性、源码可见模型、公共知识边界、Agent 容器契约和分发合规几个维度，并用机器检查器对当前真实仓库状态做复验。结论不是“RedCap 可以发布”，而是“P4-2a 审判完成，当前 public release 仍有 5 个必须先处理的 release blocker”。第一轮 Prism 抓到的本机路径泄漏、checker 自证循环、本机路径硬依赖已经修复；第二轮 Prism 复审通过；完整 multi-session a…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 现在有了一个发布前产品架构审判 gate，用来阻止“能打包”被冒充成“值得作为优秀 CLI/runtime 产品发布”。",
+          "详情：本轮把发布前评估拆成安全性、机器独立性、CLI 产品性、源码可见模型、公共知识边界、Agent 容器契约和分发合规几个维度，并用机器检查器对当前真实仓库状态做复验。结论不是“RedCap 可以发布”，而是“P4-2a 审判完成，当前 public release 仍有 5 个必须先处理的 release blocker”。第一轮 Prism 抓到的本机路径泄漏、checker 自证循环、本机路径硬依赖已经修复；第二轮 Prism 复审通过；完整 multi-session acceptance 又抓到缺 n…"
+        ],
+        "previous_step": [
+          "上一步完成的是：父任务线已经收口到 P4-2 正式 public release 之前，但用户指出发布前更重要的是判断 RedCap 是否已经足够优秀、独立和安全，而不是只问能不能 npm pack。"
+        ],
+        "next_step": [
+          "下一步计划做的是：若继续推进 public release，应先做 P4-2b/P4-2c/P4-2d 这类发布前整改，而不是直接 npm publish。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-3 clean workspace E2E → parent 状态面对账 → P4-2a 产品架构审判 → P4-2b/c/d 发布前整改 → P4-2 release readiness → npm publish。",
+          "当前所在位置：P4-2a 已完成审判；父任务仍未 complete，P4-2 public release 仍未启动。"
         ]
       }
     }

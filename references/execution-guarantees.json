@@ -59,6 +59,7 @@
     "feishu-notification-policy",
     "human-status",
     "package-publish-safety",
+    "pre-release-product-architecture",
     "runtime-package"
   ],
   "guarantees": [
@@ -1054,6 +1055,32 @@
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true
+    },
+    {
+      "id": "pre-release-product-architecture-gate",
+      "category": "pre-release-product-architecture",
+      "priority": "P0",
+      "rule": "Before RedCap enters formal public npm/CLI release readiness, product architecture must be audited against privacy safety, machine independence, CLI product quality, source visibility, knowledge boundaries, and Agent-container contract. Passing npm pack is not enough to claim product-quality readiness.",
+      "source_paths": [
+        "references/pre-release-product-architecture-policy.json",
+        "references/pre-release-product-architecture-review.json",
+        "compass/tools/redcap-pre-release-product-architecture-check.sh",
+        "compass/tools/redcap-pre-release-product-architecture-check.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-pre-release-product-architecture-check validates the current package, CLI, execution split and redcap-arsenal facts against the P4-2a review; spec-check, diagnose, acceptance and CLI facade consume it before RedCap may enter public release readiness.",
+      "guarantee_paths": [
+        "compass/tools/redcap-pre-release-product-architecture-check.sh",
+        "compass/tools/redcap-pre-release-product-architecture-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "bin/redcap"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true,
+      "runtime_limitation": "The checker can identify architecture blockers and prevent overclaiming release readiness, but it does not itself perform the later physical runtime split, CLI hardening, registry decision, or npm publish."
     },
     {
       "id": "clean-workspace-install-e2e",

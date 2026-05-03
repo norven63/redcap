@@ -12,7 +12,7 @@
 
 RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 skill-root 承载形态逐步演进为可安装、可复活、可调度、可审计的 Agent runtime / CLI / 多层系统。
 
-当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略、P4-1 的历史资产 copy-first、delete-last 与 private canonical switch，以及 P4-3 的 clean workspace / cross-machine-style 安装 E2E；尚未完成的是 P4-2 正式公开发布。
+当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略、P4-1 的历史资产 copy-first、delete-last 与 private canonical switch、P4-3 的 clean workspace / cross-machine-style 安装 E2E，以及 P4-2a 发布前产品架构审判；尚未完成的是 P4-2 正式公开发布。P4-2 现在不能再被简化为“只差 npm publish”，它先被 P4-2a 识别出的发布前产品架构 blocker 阻塞。
 
 ## 已完成子任务
 
@@ -50,6 +50,11 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 | P4-1 | parent boundary | 历史资产迁移 delete-last / canonical switch | completed | P1 | 54 个旧 `compass/docs/**` 历史锚点已按 preflight + Prism review + apply receipt 退休，catalog 已刷新，resolver 已切到 `redcap-knowledge/**` canonical | 不等于 public export；私有知识库仍不得直接发布 |
 | P4-2 | parent boundary | 正式 runtime / CLI package public release | blocked-external | P2 | 另开 release 任务，先确认 registry、包名、凭证和发布边界 | P2-1 只完成 readiness，不可冒充 public publish |
 | P4-3 | parent boundary | 跨机器 / clean workspace 安装 E2E | completed | P2 | 已用 clean HEAD clone、隔离 HOME/runtime/identity、revive、CLI facade、publish safety、package manifest 与 npm pack dry-run 生成机器收据 | 完成的是本机 clean workspace / cross-machine-style E2E；不等于真实 public release、多 OS 兼容或外部机器分发 |
+| P4-2a | parent boundary | 发布前产品架构审判 | completed | P0-before-public-release | 已建立 pre-release product architecture gate，明确当前 public release 仍有 5 个 release blocker、2 个 should-fix、1 个 deferred；Kimi + Claude Code 复审通过 | 完成的是“审判和拦截机制”，不等于 release blocker 已修完，也不等于 public release ready |
+| P4-2b | P4-2a finding | runtime/project/user boundary 物理拆分与 CLI workspace context | open | P0-before-public-release | 让 CLI 默认操作被管理项目工作区，npm 包只作为 runtime 实现；完成 runtime/project/user 三层物理边界 | 依赖 P4-2a finding；不得把 dry-run-only split 冒充为已应用 |
+| P4-2c | P4-2a finding | CLI doctor/debug/trace/error/help 产品面加固 | open | P0-before-public-release | 补齐外部用户可理解的诊断、调试、路径可见性、错误解释和 Agent 容器调用说明 | 不等于内部脚本调试入口；面向 public CLI 用户 |
+| P4-2d | P4-2a finding | public package identity/license/surface 准备 | open | P0-before-public-release | 从 private readiness 口径进入 public package 口径：包名、license、package surface、source visibility 和 release readiness | 需要发布策略与 package/license 决策；仍不自动 npm publish |
+| P4-2e | P4-2a finding | public redcap-arsenal 内容策略与 claim 边界 | open | P1-before-broad-marketing | 决定公共库 template-only 时的产品口径，或先补 append-only 实质条目再宣传 shared arsenal 能力 | 不得把空壳模板说成已经迁移真实知识库 |
 | P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime: 本机 `cli_a9579f5b12219bb5` profile 已验证可发 |
 | P2-5 | user trust gap | Layer B 中插需求重排决策可见化 | completed | P2 | 已将“为什么中插需求这样排”升级为 `.dev-task.md` 必填摘要和 change-intake checker 强门 | report: `2026-04-27-layerb-change-intake-replan-visibility-gate.md` |
 
@@ -70,13 +75,19 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 13. `P3-1`：GraphRAG / 向量检索阈值研究。（已完成阈值策略；当前不启用 GraphRAG）
 14. `P4-1a`：历史资产 main-tree copy-first apply。（已完成）
 15. `P4-1`：历史资产 delete-last / canonical switch。（已完成 private canonical switch；public export 不在本项范围）
-16. `P4-2`：正式 runtime / CLI package public release。（blocked-external，需发布目标与凭证决策）
-17. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
+16. `P4-2a`：发布前产品架构审判。（已完成；结论是 public release 仍不 ready）
+17. `P4-2b`：runtime/project/user boundary 物理拆分与 CLI workspace context。
+18. `P4-2c`：CLI doctor/debug/trace/error/help 产品面加固。
+19. `P4-2d`：public package identity/license/surface 准备。
+20. `P4-2e`：public redcap-arsenal 内容策略与 claim 边界。
+21. `P4-2`：正式 runtime / CLI package public release。（blocked，需先完成 P4-2b/c/d，并确认发布目标与凭证决策）
+22. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
 
 ## 当前不可声明
 
 - 不可声明 RedCap 已经完成真实公网发布、外部机器/多 OS 安装矩阵或全部目录物理迁移；P4-3 只证明本机 clean workspace / cross-machine-style E2E。
 - 不可声明 RedCap 已经 npm publish 或完成跨机器公开分发；P2-1 只完成 package readiness 和候选包安全审计链。
+- 不可声明 RedCap 已经 public-release-ready；P4-2a 只完成发布前产品架构审判，并明确输出 5 个 release blocker。
 - 不可声明历史报告和研究材料已经进入公共库或可公开发布；当前只完成私有 `redcap-knowledge/**` canonical switch，公共导出仍需单独安全审查。
 - 不可声明 shared-knowledge 历史 reports/lessons/identity 已经迁移到远端公共库；本轮只绑定并初始化公共库模板。
 - 不可声明 `redcap-arsenal` 已有实质历史知识内容；当前只有安全模板、索引占位和 `users/Norven/` 命名空间占位。

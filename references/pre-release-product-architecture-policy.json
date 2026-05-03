@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "policy_id": "pre-release-product-architecture",
+  "purpose": "Judge whether RedCap is product-architecturally ready to enter formal public npm/CLI release readiness. This is stricter than npm pack safety: it asks whether RedCap is a safe, independent, debuggable, user-understandable CLI/runtime product outside Norven's machine.",
+  "scope": "pre-release architecture review only; no npm publish, registry mutation, token operation, or public package visibility change is allowed by this policy",
+  "required_dimensions": [
+    {
+      "id": "privacy-safety",
+      "question": "Will the package avoid leaking local secrets, host-private entries, identity, runtime evidence, local paths and private knowledge?",
+      "release_blocker_if_failed": true
+    },
+    {
+      "id": "machine-independence",
+      "question": "Can RedCap run as npm package runtime + managed project workspace + user home config, instead of depending on Norven's skill-root working directory?",
+      "release_blocker_if_failed": true
+    },
+    {
+      "id": "cli-product-quality",
+      "question": "Does the CLI provide stable commands, useful help, debug/doctor/trace surfaces and human-readable failure guidance?",
+      "release_blocker_if_failed": true
+    },
+    {
+      "id": "source-visibility-model",
+      "question": "Does RedCap assume npm package source is visible, and avoid treating obfuscation as a security boundary?",
+      "release_blocker_if_failed": true
+    },
+    {
+      "id": "knowledge-boundary",
+      "question": "Are public shared knowledge, private RedCap knowledge, identity and local runtime state separated so redcap-arsenal placeholders are not misrepresented as real migrated knowledge?",
+      "release_blocker_if_failed": true
+    },
+    {
+      "id": "agent-container-contract",
+      "question": "Is the contract clear for Agent hosts/containers: invoke CLI at revival/task/check/closeout nodes while regular development remains natural-language and tool driven?",
+      "release_blocker_if_failed": true
+    },
+    {
+      "id": "distribution-compliance",
+      "question": "Is the package license, package identity, registry boundary and distribution posture explicit enough for public npm release?",
+      "release_blocker_if_failed": true
+    }
+  ],
+  "allowed_review_statuses": [
+    "review-complete",
+    "blocked-pending-remediation"
+  ],
+  "allowed_finding_severities": [
+    "release-blocker",
+    "should-fix",
+    "deferred",
+    "pass"
+  ],
+  "minimum_required_checks": [
+    "package-json-private",
+    "runtime-package-manifest",
+    "package-publish-safety",
+    "npm-pack-dry-run",
+    "execution-layer-split-status",
+    "cli-command-surface",
+    "shared-knowledge-remote-binding",
+    "redcap-arsenal-content-state"
+  ],
+  "required_release_blockers_when_observed": [
+    {
+      "id": "public-package-identity-not-finalized",
+      "condition": "package.json remains private or does not use the user-approved public package name before publish"
+    },
+    {
+      "id": "runtime-project-user-boundaries-not-physically-split",
+      "condition": "execution layer split is still dry-run-only and no runtime root exists"
+    },
+    {
+      "id": "cli-debug-contract-incomplete",
+      "condition": "CLI lacks doctor/debug/trace surfaces for publish-grade supportability"
+    },
+    {
+      "id": "cli-workspace-context-not-separated",
+      "condition": "CLI defaults task/status/diagnose operations to package-root state instead of the managed project workspace"
+    },
+    {
+      "id": "distribution-license-not-finalized",
+      "condition": "package.json license remains UNLICENSED or otherwise unsuitable for the intended public package distribution"
+    }
+  ],
+  "required_should_fix_when_observed": [
+    {
+      "id": "package-surface-too-broad-for-public-cli",
+      "condition": "npm pack candidate surface is broad internal-runtime bundle rather than curated public CLI surface"
+    },
+    {
+      "id": "public-arsenal-template-only",
+      "condition": "redcap-arsenal contains only templates/placeholders and no substantive append-only knowledge entries"
+    }
+  ],
+  "manual_release_boundary": [
+    "This policy may declare product architecture blockers, but it must not execute public release.",
+    "A later P4-2 release task must still confirm registry, package name, credentials, versioning, changelog and rollback/deprecate plan.",
+    "Any claim that RedCap is public-release-ready must cite both this review and release readiness evidence."
+  ]
+}
