@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-04
 **执行者**：Cap（Codex + Prism: Kimi, Claude Code）
-**报告版本**：v1.1
+**报告版本**：v1.2
 
 ---
 
@@ -11,7 +11,7 @@
 ### 0.1 当前已完成
 
 - 当前已完成：RedCap 现在有了一个发布前产品架构审判 gate，用来阻止“能打包”被冒充成“值得作为优秀 CLI/runtime 产品发布”。
-- 详情：本轮把发布前评估拆成安全性、机器独立性、CLI 产品性、源码可见模型、公共知识边界、Agent 容器契约和分发合规几个维度，并用机器检查器对当前真实仓库状态做复验。结论不是“RedCap 可以发布”，而是“P4-2a 审判完成，当前 public release 仍有 5 个必须先处理的 release blocker”。第一轮 Prism 抓到的本机路径泄漏、checker 自证循环、本机路径硬依赖已经修复；第二轮 Prism 复审通过；完整 multi-session acceptance 又抓到缺 npm PATH 和 spec-check fixture 漏接新门的问题，也已修复并全量回归通过。
+- 详情：本轮把发布前评估拆成安全性、机器独立性、CLI 产品性、源码可见模型、公共知识边界、Agent 容器契约和分发合规几个维度，并用机器检查器对当前真实仓库状态做复验。结论不是“RedCap 可以发布”，而是“P4-2a 审判完成，当前 public release 仍有 5 个必须先处理的 release blocker”。第一轮 Prism 抓到的本机路径泄漏、checker 自证循环、本机路径硬依赖已经修复；第二轮 Prism 复审通过；完整 multi-session acceptance 又抓到缺 npm PATH 和 spec-check fixture 漏接新门的问题，也已修复并全量回归通过；closeout runtime 已生成 receipt。
 
 ### 0.2 上一步完成的是
 
@@ -165,10 +165,10 @@
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 待 closeout runtime 最终核对 |
+| 执行承诺账本 | 已清，7/7 完成 |
 | 棱镜验收 | Kimi + Claude Code 两轮复审；最终 acceptance binding 已通过 |
-| closeout summary | 待 closeout 后生成 |
-| closeout receipt | 待 closeout 后生成 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/pre-release-product-architecture-review-a6f45bc977dbf60dedda31a9bacd401887fb71267e5dc16695d0e47f60a31483.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/pre-release-product-architecture-review-a6f45bc977dbf60dedda31a9bacd401887fb71267e5dc16695d0e47f60a31483.json` |
 | rescue audit（如有） | 无 |
 
 ### 5.4 完成等级（禁止混报）
@@ -178,7 +178,7 @@
 | 已实现 | 是，P4-2a gate 已实现 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Prism acceptance pass |
-| 已正式完成 | 待 closeout receipt |
+| 已正式完成 | 是，closeout receipt 已生成；P4-2 public release 仍未完成 |
 
 ---
 
@@ -232,7 +232,7 @@ P4-2 正式发布前必须固定先经过 P4-2a gate；如果 gate 输出 releas
 ### 附录 A：Commits
 
 ```
-待提交
+见 `git log --oneline` 中本任务相关提交。
 ```
 
 ### 附录 B：棱镜调用记录
