@@ -146,10 +146,10 @@
 
 | 项目 | 结果 |
 |---|---|
-| 执行承诺账本 | 待 closeout runtime 同步 |
+| 执行承诺账本 | 6/6 已完成 |
 | 棱镜验收 | `20260504-redcap-structure-reorg-planning` pass，Kimi + Claude Code，2 个模型家族，无 blocker |
-| closeout summary | 待 closeout runtime 生成 |
-| closeout receipt | 待 closeout runtime 生成 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-pre-release-structure-refactor-task-tree-reanchor-51070a76cb490f57b35878d9b6f3be4a8bc5525cb3c7c8cc17493e4ed8ce94bc.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-pre-release-structure-refactor-task-tree-reanchor-51070a76cb490f57b35878d9b6f3be4a8bc5525cb3c7c8cc17493e4ed8ce94bc.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -158,7 +158,7 @@
 | 已实现 | 是，任务树重锚定、父账本修正、机器检查器和 Prism 证据已实现。 |
 | 已自检 | 是，新增门禁、文件字典、执行保障、package/pre-release 相关检查、全量 acceptance、diagnose/spec-check 已通过。 |
 | 已独立验收 | 是，Kimi + Claude Code 双路 Prism acceptance 已通过。 |
-| 已正式完成 | 否，待 closeout runtime 生成 receipt 后才可改为“是”。 |
+| 已正式完成 | 是，closeout runtime 已生成 receipt，pending closure 已清空。 |
 
 ---
 

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 22,
-    "size_bytes": 293890,
+    "size_bytes": 294259,
     "lines": 6041,
-    "chars": 179707,
+    "chars": 180096,
     "rough_token_pressure": {
-      "low": 44926,
-      "high": 89853
+      "low": 45024,
+      "high": 90048
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 7,
-        "size_bytes": 100369,
+        "size_bytes": 100738,
         "lines": 1459,
-        "chars": 63340,
+        "chars": 63729,
         "rough_token_pressure": {
-          "low": 15835,
-          "high": 31670
+          "low": 15932,
+          "high": 31864
         }
       }
     },
@@ -521,9 +521,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12760,
+      "size_bytes": 13129,
       "lines": 209,
-      "chars": 7554,
+      "chars": 7943,
       "summary": "当前已完成：RedCap 已把 public CLI/npm 发布前的结构重构任务树重新锚定。新的顺序是：先做 npm 白名单预检，确认哪些东西会进入包面；再做 runtime/project/user 物理边界拆分；再补 CLI 的 doctor/debug/trace/help 等公共产品面；最后处理 package 身份、license 和 release readiness。 / 详情：本轮没有做真实 npm 发布，也没有大规模移动历史资产。它解决的是“深水区任务树别再漂移”的问题：P4-2f 已从旧的 in-progress 纠正为 completed；P4-2g 成为当前任务树重锚点；历史资产默认保留为私有考古证据，只…",
       "status_basis": "filename_recency_only",
       "summary_points": {
