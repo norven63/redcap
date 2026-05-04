@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "policy_id": "pre-release-structure-refactor-task-tree",
+  "status": "active-before-public-release",
+  "parent_task": "P4-2",
+  "purpose": "Keep RedCap's project-structure refactor and public CLI release remediation ordered, evidence-driven, and honest about what is still blocked.",
+  "truth_corrections": [
+    {
+      "id": "P4-2f-status",
+      "claim": "P4-2f information architecture and runtime artifact governance is completed, not in-progress.",
+      "evidence": [
+        "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md",
+        "references/information-architecture-artifact-governance-policy.json",
+        "references/redcap-forge-policy.json"
+      ]
+    }
+  ],
+  "ordering_rules": {
+    "npm_preflight_before_history_surgery": true,
+    "whitelist_before_delete_or_move": true,
+    "history_assets_preserve_by_default": true,
+    "release_ready_requires_all_p0_blockers_closed": true,
+    "redcap_arsenal_content_is_not_release_blocker_by_default": true
+  },
+  "nodes": [
+    {
+      "id": "P4-2g",
+      "title": "npm package whitelist preflight and structure refactor task-tree reanchor",
+      "status": "current",
+      "priority": "P0",
+      "depends_on": ["P4-2f"],
+      "release_blocker": true,
+      "reason": "Map the package surface before moving, deleting, or promoting historical assets; fix stale parent-ledger truth first."
+    },
+    {
+      "id": "P4-2b",
+      "title": "Runtime/project/user boundary physical split and CLI workspace context separation",
+      "status": "open",
+      "priority": "P0",
+      "depends_on": ["P4-2g"],
+      "release_blocker": true,
+      "reason": "A public CLI must operate on a managed project workspace while the npm package remains runtime implementation."
+    },
+    {
+      "id": "P4-2c",
+      "title": "CLI doctor/debug/trace/error/help product-surface hardening",
+      "status": "open",
+      "priority": "P0",
+      "depends_on": ["P4-2b"],
+      "release_blocker": true,
+      "reason": "External users need understandable diagnostics and support surfaces after the runtime/workspace boundary is clear."
+    },
+    {
+      "id": "P4-2d",
+      "title": "Public package identity, license, and curated package surface preparation",
+      "status": "open",
+      "priority": "P0",
+      "depends_on": ["P4-2g", "P4-2b"],
+      "release_blocker": true,
+      "reason": "Public package metadata, license posture, source visibility, and pack surface must be finalized before release readiness."
+    },
+    {
+      "id": "P4-2e",
+      "title": "Public redcap-arsenal content strategy and claim boundary",
+      "status": "open",
+      "priority": "P1",
+      "depends_on": ["P4-2g"],
+      "release_blocker": false,
+      "reason": "The public arsenal is currently template-only; claim wording and future content strategy must be honest but need not block CLI release engineering."
+    },
+    {
+      "id": "P4-2h",
+      "title": "Historical asset public distillation and RedCap Forge export triage",
+      "status": "deferred",
+      "priority": "P1",
+      "depends_on": ["P4-2e"],
+      "release_blocker": false,
+      "reason": "Private historical assets may later be distilled into append-only public arsenal entries, but only through RedCap Forge review and safety checks."
+    },
+    {
+      "id": "P4-2",
+      "title": "Formal runtime / CLI package public release",
+      "status": "blocked",
+      "priority": "P2",
+      "depends_on": ["P4-2b", "P4-2c", "P4-2d"],
+      "release_blocker": false,
+      "reason": "The actual npm/public release task remains blocked until all P0 release blockers are closed and the human release boundary is explicitly satisfied."
+    }
+  ],
+  "must_not_claim": [
+    "Do not claim RedCap is public-release-ready before P4-2b, P4-2c, and P4-2d are completed and validated.",
+    "Do not claim historical assets have been publicly migrated into redcap-arsenal.",
+    "Do not claim npm pack dry-run success equals a safe or excellent public CLI product.",
+    "Do not bulk-delete or bulk-move historical evidence just to make package checks pass.",
+    "Do not claim redcap-arsenal contains substantive public knowledge while it remains template-only."
+  ],
+  "acceptance_gates": [
+    "Parent ledger must mark P4-2f completed and P4-2g current/open before the next release remediation task starts.",
+    "Package surface preflight must be whitelist-driven and must explain historical assets as excluded evidence, not as deleted residue.",
+    "Release readiness must continue to fail closed while P4-2a release blockers remain open.",
+    "Prism review must be bound before this task-tree reanchor can be closed."
+  ],
+  "prism_run": "20260504-redcap-structure-reorg-planning"
+}

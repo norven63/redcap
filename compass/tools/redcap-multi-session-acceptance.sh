@@ -177,6 +177,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
+  bash compass/tools/redcap-multi-session-acceptance.sh pre-release-structure-task-tree-check
   bash compass/tools/redcap-multi-session-acceptance.sh clean-workspace-e2e-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-lifecycle-check
@@ -993,11 +994,35 @@ run_binding_recovery_gate_case() {
 run_layerb_concurrency_case() {
     local host baseline current_head
     local binding_a binding_b pid_a pid_b probe_a probe_b
-    local session_a session_b report_marker_a report_marker_b
+    local session_a session_b report_marker_a report_marker_b validator_fixture
 
     log "case: layerb-concurrency"
 
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "layerb-concurrency" >/dev/null 2>&1 || true
+    validator_fixture="$ACCEPT_ROOT/layerb-concurrency-validator-chain.sh"
+    cat >"$validator_fixture" <<'EOF'
+#!/usr/bin/env bash
+cat <<'OUT'
+[redcap-validator-chain] mode=session-end overall=pass
+[1] review-proof-check :: pass
+fixture review proof pass
+[2] reanchor-check :: pass
+fixture reanchor pass
+[3] pm-gate :: pass
+fixture pm gate pass
+[4] drift-check :: pass
+fixture drift pass
+[5] backlog-check :: pass
+fixture backlog pass
+[6] spec-check :: pass
+fixture spec pass
+[7] task-report-check :: pass
+fixture task report pass
+[8] artifact-lifecycle-check :: pass
+fixture artifact lifecycle pass
+OUT
+EOF
+    chmod +x "$validator_fixture"
 
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     baseline="$(git_previous_head)"
@@ -1012,8 +1037,8 @@ run_layerb_concurrency_case() {
         spawn_host_probe probe_a
         spawn_host_probe probe_b
 
-        printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_a" REDCAP_HOST_PROCESS_PID="$pid_a" REDCAP_HOST_PROCESS_PROBE_PID="$probe_a" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
-        printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_b" REDCAP_HOST_PROCESS_PID="$pid_b" REDCAP_HOST_PROCESS_PROBE_PID="$probe_b" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+        printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_a" REDCAP_HOST_PROCESS_PID="$pid_a" REDCAP_HOST_PROCESS_PROBE_PID="$probe_a" REDCAP_SKIP_INSTALL_REVIVAL_ENTRY=1 REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_fixture" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
+        printf '{}' | REDCAP_SESSION_BINDING_KEY="$binding_b" REDCAP_HOST_PROCESS_PID="$pid_b" REDCAP_HOST_PROCESS_PROBE_PID="$probe_b" REDCAP_SKIP_INSTALL_REVIVAL_ENTRY=1 REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_fixture" bash "$SCRIPT_DIR/redcap-layerB-session-start.sh" "$host" >/dev/null
 
         attach_binding_with_capability_recovery "$host" "$REDCAP_ROOT" "$binding_a" "$pid_a" "$probe_a" || fail "failed to attach first $host session"
         session_a="${REDCAP_RUNTIME_SESSION_ID:-}"
@@ -1036,8 +1061,8 @@ run_layerb_concurrency_case() {
         assert_eq "$(read_file_text "$report_marker_a")" "acceptance/${host}/a.md"
         redcap_runtime_clear_context
 
-        REDCAP_SESSION_BINDING_KEY="$binding_a" REDCAP_HOST_PROCESS_PID="$pid_a" REDCAP_HOST_PROCESS_PROBE_PID="$probe_a" REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 bash "$SCRIPT_DIR/redcap-layerB-session-end.sh" "$host" >/dev/null
-        REDCAP_SESSION_BINDING_KEY="$binding_b" REDCAP_HOST_PROCESS_PID="$pid_b" REDCAP_HOST_PROCESS_PROBE_PID="$probe_b" REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 bash "$SCRIPT_DIR/redcap-layerB-session-end.sh" "$host" >/dev/null
+        REDCAP_SESSION_BINDING_KEY="$binding_a" REDCAP_HOST_PROCESS_PID="$pid_a" REDCAP_HOST_PROCESS_PROBE_PID="$probe_a" REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_fixture" bash "$SCRIPT_DIR/redcap-layerB-session-end.sh" "$host" >/dev/null
+        REDCAP_SESSION_BINDING_KEY="$binding_b" REDCAP_HOST_PROCESS_PID="$pid_b" REDCAP_HOST_PROCESS_PROBE_PID="$probe_b" REDCAP_SKIP_FEISHU=1 REDCAP_SKIP_INDEPENDENT_REVIEW=1 REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_fixture" bash "$SCRIPT_DIR/redcap-layerB-session-end.sh" "$host" >/dev/null
 
         attach_binding_with_capability_recovery "$host" "$REDCAP_ROOT" "$binding_a" "$pid_a" "$probe_a" || fail "failed to reattach first $host session after session-end"
         assert_session_end_terminal_marker "$current_head" "first $host session"
@@ -11948,6 +11973,15 @@ PY
     assert_string_contains "$stale_output" "missing required observed release blocker finding"
 }
 
+run_pre_release_structure_task_tree_check_case() {
+    local output
+
+    log "case: pre-release-structure-task-tree-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-structure-task-tree-check.sh")"
+    assert_string_contains "$output" "PRE_RELEASE_STRUCTURE_TASK_TREE_OK"
+}
+
 run_clean_workspace_e2e_check_case() {
     local output result_file stale_result stale_output status dirty_status
 
@@ -12269,7 +12303,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package pre-release-product-architecture information-architecture redcap-forge; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package pre-release-product-architecture pre-release-structure-task-tree information-architecture redcap-forge; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12432,6 +12466,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-pre-release-structure-task-tree-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "pre-release-structure-task-tree" ]]; then
+    echo "fixture pre-release structure task tree failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         cat >"$repo/compass/tools/redcap-information-architecture-check.sh" <<EOF
 #!/usr/bin/env bash
 if [[ "$failing_gate" == "information-architecture" ]]; then
@@ -12467,6 +12510,7 @@ EOF
             "$repo/compass/tools/redcap-human-communication-check.sh" \
             "$repo/compass/tools/redcap-runtime-package-manifest.sh" \
             "$repo/compass/tools/redcap-pre-release-product-architecture-check.sh" \
+            "$repo/compass/tools/redcap-pre-release-structure-task-tree-check.sh" \
             "$repo/compass/tools/redcap-information-architecture-check.sh" \
             "$repo/compass/tools/redcap-forge-check.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
@@ -12490,6 +12534,7 @@ EOF
             human-communication) expected_message="human communication check failed" ;;
             runtime-package) expected_message="runtime package manifest check failed" ;;
             pre-release-product-architecture) expected_message="pre-release product architecture check failed" ;;
+            pre-release-structure-task-tree) expected_message="pre-release structure task tree check failed" ;;
             information-architecture) expected_message="information architecture check failed" ;;
             redcap-forge) expected_message="RedCap Forge check failed" ;;
         esac
@@ -12560,6 +12605,7 @@ for rel in [
     "compass/tools/redcap-human-communication-check.sh",
     "compass/tools/redcap-runtime-package-manifest.sh",
     "compass/tools/redcap-pre-release-product-architecture-check.sh",
+    "compass/tools/redcap-pre-release-structure-task-tree-check.sh",
 ]:
     script_path = dst / rel
     script_path.parent.mkdir(parents=True, exist_ok=True)
@@ -13370,6 +13416,7 @@ run_all_cases() {
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
     run_pre_release_product_architecture_check_case
+    run_pre_release_structure_task_tree_check_case
     run_clean_workspace_e2e_check_case
     run_skill_lifecycle_check_case
     run_legacy_asset_lifecycle_check_case
@@ -13865,6 +13912,9 @@ case "$COMMAND" in
         ;;
     pre-release-product-architecture-check)
         run_pre_release_product_architecture_check_case
+        ;;
+    pre-release-structure-task-tree-check)
+        run_pre_release_structure_task_tree_check_case
         ;;
     clean-workspace-e2e-check)
         run_clean_workspace_e2e_check_case

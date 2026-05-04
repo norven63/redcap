@@ -89,6 +89,10 @@ run_install_revival_entry() {
     local install_output=""
     local install_status=0
 
+    if [[ "${REDCAP_SKIP_INSTALL_REVIVAL_ENTRY:-0}" == "1" ]]; then
+        return 0
+    fi
+
     [[ -x "$install_script" ]] || return 0
 
     set +e
@@ -198,7 +202,7 @@ run_control_plane_start_sync() {
         sync_runtime_host="${REDCAP_RUNTIME_HOST:-$HOST}"
     fi
 
-    VALIDATOR_CHAIN="$SCRIPT_DIR/redcap-validator-chain.sh"
+    VALIDATOR_CHAIN="${REDCAP_VALIDATOR_CHAIN_SCRIPT:-$SCRIPT_DIR/redcap-validator-chain.sh}"
     PM_GATE_CHECK="$SCRIPT_DIR/redcap-pm-gate-check.sh"
     if [[ -x "$VALIDATOR_CHAIN" ]]; then
         set +e

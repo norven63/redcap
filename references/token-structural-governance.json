@@ -31,6 +31,13 @@
       "trigger_for_revisit": "When the dictionary exceeds 75KB, split the human view by section while preserving references/file-lookup-dictionary-policy.json as the machine source."
     },
     {
+      "path": "references/file-lookup-dictionary-policy.json",
+      "kind": "tracked-large-machine-index",
+      "current_mitigation": "file-lookup-dictionary-check-and-targeted-search",
+      "structural_strategy": "Keep as the machine-readable coverage source for File Lookup Dictionary. Agents should query it through redcap-file-lookup-dictionary-check or targeted path search, not read the whole policy during startup.",
+      "trigger_for_revisit": "When the policy exceeds 75KB or required_paths exceeds 220 entries, split required path rows by section behind the same checker interface."
+    },
+    {
       "path": "compass/docs/catalog.json",
       "kind": "tracked-large-docs-index",
       "current_mitigation": "docs-catalog-plan-budget",

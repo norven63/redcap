@@ -984,6 +984,29 @@
       "auto_enforceable": true
     },
     {
+      "id": "pre-release-structure-task-tree",
+      "category": "pre-release-product-architecture",
+      "priority": "P0",
+      "rule": "Before RedCap can continue toward public npm/CLI release, the project-structure refactor task tree must keep P4-2f completed, run npm/package whitelist preflight before historical asset surgery, preserve historical evidence by default, and keep P4-2 release blocked until P4-2b/c/d release blockers are closed.",
+      "source_paths": [
+        "references/pre-release-structure-refactor-task-tree.json",
+        "references/pre-release-product-architecture-review.json",
+        "references/redcap-parent-task-ledger.md",
+        "package.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-pre-release-structure-task-tree-check validates the release-remediation task tree, stale-ledger correction, whitelist-before-surgery ordering, release blocker dependencies, and publish-disabled posture; diagnose and spec-check consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-pre-release-structure-task-tree-check.sh",
+        "compass/tools/redcap-pre-release-structure-task-tree-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "report-led-human-summary-boundary",
       "category": "human-status",
       "priority": "P1",

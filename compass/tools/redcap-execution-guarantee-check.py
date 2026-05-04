@@ -62,6 +62,7 @@ REQUIRED_IDS = {
     "information-architecture-artifact-governance",
     "redcap-forge-promotion-boundary",
     "report-led-human-summary-boundary",
+    "pre-release-structure-task-tree",
 }
 
 ALLOWED_PRIORITIES = {"P0", "P1", "P2", "P3"}

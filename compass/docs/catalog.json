@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 21,
-    "size_bytes": 281130,
-    "lines": 5832,
-    "chars": 172153,
+    "file_count": 22,
+    "size_bytes": 293890,
+    "lines": 6041,
+    "chars": 179707,
     "rough_token_pressure": {
-      "low": 43038,
-      "high": 86076
+      "low": 44926,
+      "high": 89853
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 6,
-        "size_bytes": 87609,
-        "lines": 1250,
-        "chars": 55786,
+        "file_count": 7,
+        "size_bytes": 100369,
+        "lines": 1459,
+        "chars": 63340,
         "rough_token_pressure": {
-          "low": 13946,
-          "high": 27893
+          "low": 15835,
+          "high": 31670
         }
       }
     },
@@ -448,29 +448,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：父任务 receipt 聚合耐久性缺陷修复",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13641,
       "lines": 221,
       "chars": 8516,
       "summary": "当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 必须有真实 runtime receipt 或 repo-owned durable machine evidence，已知历史 child 必须显式说明 legacy 证据原因”。 / 详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务必须匹配真实 runtime receipt，或匹配显式登记…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：父任务聚合检查已经从“所有 completed child 都必须还能找到 `/tmp` runtime receipt”修正为“现代 child 必须有真实 runtime receipt 或 repo-owned durable machine evidence，已知历史 child 必须显式说明 legacy 证据原因”。",
-          "详情：本轮回归发现父任务状态面不是单纯的文档同步问题，而是父级聚合器依赖一批已经被 `/tmp` 清理的 runtime receipt。修复后，旧任务不会被要求凭空恢复临时收据，也不会伪造收据；P4-1/P4-3 这类新机制任务必须匹配真实 runtime receipt，或匹配显式登记的 repo-owned machine evidence。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-3 clean workspace / cross-machine-style install E2E 已完成 closeout；父任务账本应同步为“仅剩 P4-2 public release / package publish”。"
-        ],
-        "next_step": [
-          "下一步计划做的是：如果 Norven 未来决定进入真实发布阶段，再另开 P4-2 release 任务；当前不启动 npm 发布或发布准备。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-3 收口 → 父任务状态面对账 → parent aggregation 回归失败 → 历史证据耐久性修复 → 棱镜复审 → 回归收口 → P4-2 外部阻塞。",
-          "当前所在位置：父任务状态面对账和 receipt 聚合耐久性修复已完成；父任务仍因 P4-2 保持 incomplete。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
@@ -527,6 +511,35 @@
         "position": [
           "整体计划脉络图是：P4-2a 产品架构审判 → P4-2f 信息架构与运行时产物治理 → P4-2b/c/d 发布前整改 → release readiness → npm publish。",
           "当前所在位置：P4-2f 已完成实现与棱镜验收，父任务仍处在 public release 之前的整改阶段。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-04-redcap-pre-release-structure-refactor-task-tree-reanchor.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RedCap 发布前结构重构任务树重锚定",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12760,
+      "lines": 209,
+      "chars": 7554,
+      "summary": "当前已完成：RedCap 已把 public CLI/npm 发布前的结构重构任务树重新锚定。新的顺序是：先做 npm 白名单预检，确认哪些东西会进入包面；再做 runtime/project/user 物理边界拆分；再补 CLI 的 doctor/debug/trace/help 等公共产品面；最后处理 package 身份、license 和 release readiness。 / 详情：本轮没有做真实 npm 发布，也没有大规模移动历史资产。它解决的是“深水区任务树别再漂移”的问题：P4-2f 已从旧的 in-progress 纠正为 completed；P4-2g 成为当前任务树重锚点；历史资产默认保留为私有考古证据，只…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把 public CLI/npm 发布前的结构重构任务树重新锚定。新的顺序是：先做 npm 白名单预检，确认哪些东西会进入包面；再做 runtime/project/user 物理边界拆分；再补 CLI 的 doctor/debug/trace/help 等公共产品面；最后处理 package 身份、license 和 release readiness。",
+          "详情：本轮没有做真实 npm 发布，也没有大规模移动历史资产。它解决的是“深水区任务树别再漂移”的问题：P4-2f 已从旧的 in-progress 纠正为 completed；P4-2g 成为当前任务树重锚点；历史资产默认保留为私有考古证据，只有被 npm 包面或公共导出链路命中时才进入手术范围。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2f 信息架构与运行时产物治理，已经把任务报告、私有知识、运行时证据、RedCap Forge 和 redcap-arsenal 的边界分清并接入机器门禁。"
+        ],
+        "next_step": [
+          "下一步计划做的是：进入 P4-2b，真正处理 runtime/project/user 物理边界与 CLI workspace context。换成人话：RedCap 要从“在 Norven 这台机器的 skill 目录里工作”，继续走向“作为可安装 runtime/CLI，在任意被管理项目里工作”。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-2a 发布前审判 → P4-2f 信息架构治理 → P4-2g 任务树重锚定与 npm 白名单预检原则 → P4-2b/c/d 发布前 P0 整改 → release readiness → npm publish。",
+          "当前所在位置：P4-2g 已完成实现与棱镜验收；父任务 P4-2 仍处于 public release 之前的整改阶段。"
         ]
       }
     }
