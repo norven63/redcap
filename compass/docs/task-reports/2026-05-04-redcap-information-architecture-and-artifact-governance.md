@@ -164,6 +164,8 @@ RedCap Forge 被设计为 Evolution Factory 内部的锻造流水线：它把私
 | targeted acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh redcap-forge-check` | 通过 |
 | targeted acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh spec-check-propagates-control-gate-failures` | 通过 |
 | targeted acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check` | 通过 |
+| 完整 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 240` | 通过，head=59cf303，package candidates=201 |
 | Prism acceptance | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过，Kimi + Claude Code |
 | 总体验证 | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 

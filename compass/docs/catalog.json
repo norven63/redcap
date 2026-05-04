@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 21,
-    "size_bytes": 280882,
-    "lines": 5830,
-    "chars": 171921,
+    "size_bytes": 281130,
+    "lines": 5832,
+    "chars": 172153,
     "rough_token_pressure": {
-      "low": 42980,
-      "high": 85960
+      "low": 43038,
+      "high": 86076
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 6,
-        "size_bytes": 87361,
-        "lines": 1248,
-        "chars": 55554,
+        "size_bytes": 87609,
+        "lines": 1250,
+        "chars": 55786,
         "rough_token_pressure": {
-          "low": 13888,
-          "high": 27777
+          "low": 13946,
+          "high": 27893
         }
       }
     },
@@ -87,8 +87,8 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md",
-        "chars": 12571,
-        "lines": 260,
+        "chars": 12803,
+        "lines": 262,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
@@ -508,9 +508,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 22101,
-      "lines": 260,
-      "chars": 12571,
+      "size_bytes": 22349,
+      "lines": 262,
+      "chars": 12803,
       "summary": "当前已完成：RedCap 现在把任务报告、私有知识、运行时证据、公共模板、外部 arsenal 和 RedCap Forge 的职责边界正式分清，并接入了机器门禁与棱镜复审。 / 详情：本轮解决的是“报告和知识文档越积越散、用户很难判断哪些该读、哪些可公开、哪些只是运行痕迹”的信息架构问题。新的治理规则先定义每类资产的生命周期和出口边界，再让检查器阻断报告 inbox 膨胀、私有材料误进公共库、Forge/Arsenal 命名混淆和 P4 顺序误读。最终效果是：RedCap 可以继续保留考古与追踪能力，但默认不会把旧报告、身份信息、运行证据或私有知识直接推向公共沉淀库。",
       "status_basis": "filename_recency_only",
       "summary_points": {
