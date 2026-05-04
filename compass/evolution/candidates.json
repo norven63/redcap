@@ -245,6 +245,30 @@
         "prism/runs/20260504-pre-release-product-architecture-review/collect/kimi-final/parsed.json",
         "prism/runs/20260504-pre-release-product-architecture-review/collect/claude-final/parsed.json"
       ]
+    },
+    {
+      "id": "EVO-2026-05-04-002",
+      "source_kind": "prism-verdict",
+      "problem_source": "The information architecture task showed that RedCap reports, private knowledge, runtime evidence, shared templates and public arsenal candidates could be confused under broad docs/knowledge wording. Prism also identified that report-led live summaries are a host-limited natural-language surface and should not be claimed as fully deterministic without explicit boundary registration.",
+      "solution": "Promote an information architecture governance policy plus RedCap Forge policy: classify assets by lifecycle and export boundary, forbid raw private sources from public arsenal, require report-led human summaries, and register the new boundaries in execution guarantees with honest manual-only wording where live reply control is host-limited.",
+      "final_effect": "RedCap can preserve archaeology and task tracking while reducing token-sprawl, private-content leakage risk, and report/arsenal confusion. Future public knowledge entries must pass through RedCap Forge instead of directly copying raw reports or runtime traces.",
+      "recurrence_guard": "redcap-information-architecture-check.sh, redcap-forge-check.sh, redcap-human-communication-check.sh, execution-guarantees check, spec-check, diagnose and targeted acceptance validate the boundaries.",
+      "applicability_boundary": "This lesson governs information architecture and public-promotion boundaries. It does not migrate historical private content into redcap-arsenal or make every host live reply physically vetoable.",
+      "evidence_paths": [
+        "references/information-architecture-artifact-governance-policy.json",
+        "references/redcap-forge-policy.json",
+        "references/execution-guarantees.json",
+        "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons.md"
+      ],
+      "review_paths": [
+        "prism/runs/20260504-redcap-information-architecture-governance/collect/kimi-review/parsed.json",
+        "prism/runs/20260504-redcap-information-architecture-governance/collect/claude-challenge/parsed.json"
+      ]
     }
   ]
 }

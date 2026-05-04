@@ -60,7 +60,9 @@
     "human-status",
     "package-publish-safety",
     "pre-release-product-architecture",
-    "runtime-package"
+    "runtime-package",
+    "information-architecture",
+    "redcap-forge"
   ],
   "guarantees": [
     {
@@ -931,6 +933,78 @@
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true
+    },
+    {
+      "id": "information-architecture-artifact-governance",
+      "category": "information-architecture",
+      "priority": "P1",
+      "rule": "RedCap reports, private archives, runtime evidence, shared template surfaces, and external public arsenal worktrees must have explicit lifecycle, visibility, and export boundaries before public CLI/runtime release claims.",
+      "source_paths": [
+        "references/information-architecture-artifact-governance-policy.json",
+        "references/legacy-asset-lifecycle.json",
+        "references/redcap-parent-task-ledger.md",
+        "references/human-communication-policy.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-information-architecture-check validates root classes, active report inbox limits, report/archive split, public-export forbidden sources, P4 numbering semantics, task-report inbox binding, and cross-policy links; diagnose, spec-check, and acceptance consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-information-architecture-check.sh",
+        "compass/tools/redcap-information-architecture-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "redcap-forge-promotion-boundary",
+      "category": "redcap-forge",
+      "priority": "P1",
+      "rule": "RedCap Forge is the execution pipeline that may distill, dedupe, safety-scan, index, and promote reviewed public candidates into redcap-arsenal; raw private reports, identity, secrets, and runtime traces must never be copied directly into the public arsenal.",
+      "source_paths": [
+        "references/redcap-forge-policy.json",
+        "references/shared-knowledge-policy.json",
+        "references/shared-knowledge-remote-binding.json",
+        "compass/evolution/README.md",
+        "shared-knowledge/README.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-forge-check validates the canonical naming split between RedCap Evolution Factory, RedCap Forge, and redcap-arsenal; it also checks promotion gates, forbidden raw private sources, public target boundaries, and documentation links.",
+      "guarantee_paths": [
+        "compass/tools/redcap-forge-check.sh",
+        "compass/tools/redcap-forge-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "report-led-human-summary-boundary",
+      "category": "human-status",
+      "priority": "P1",
+      "rule": "When final or interruption replies summarize a governance task, the reply must be led by the task report's human-readable current situation, completed work, next step, and manual-review/manual-validation sections before internal script or file names.",
+      "source_paths": [
+        "references/human-communication-policy.json",
+        "references/task-report-template.md",
+        "references/information-architecture-artifact-governance-policy.json"
+      ],
+      "status": "manual-only",
+      "automation": "redcap-human-communication-check validates the policy shape and report-led summary rule, while task reports provide the source sections. The active host's live reply text remains a host-limited natural-language surface and must be audited honestly instead of claimed as a deterministic repo-owned veto.",
+      "guarantee_paths": [
+        "compass/tools/redcap-human-communication-check.sh",
+        "compass/tools/redcap-human-communication-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "non_automation_reason": "RedCap can validate the policy and report sections, but cannot deterministically pre-send veto every host's natural-language final reply without a host-level reply hook; strict regex gates would also create false positives for legitimate paths, commands, and quoted terms.",
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": false
     },
     {
       "id": "retrieval-escalation-threshold-policy",

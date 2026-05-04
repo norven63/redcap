@@ -172,6 +172,8 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh retrieval-escalation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check
+  bash compass/tools/redcap-multi-session-acceptance.sh information-architecture-check
+  bash compass/tools/redcap-multi-session-acceptance.sh redcap-forge-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
@@ -11673,6 +11675,120 @@ PY
     assert_string_contains "$output" "SHARED_KNOWLEDGE_REMOTE_BINDING_OK"
 }
 
+run_information_architecture_check_case() {
+    local output bad_policy stale_output status noise_policy
+
+    log "case: information-architecture-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-information-architecture-check.sh")"
+    assert_string_contains "$output" "INFORMATION_ARCHITECTURE_GOVERNANCE_OK"
+    assert_string_contains "$output" "root_classes=8"
+
+    bad_policy="$ACCEPT_ROOT/information-architecture-bad.json"
+    python3 - "$REDCAP_ROOT/references/information-architecture-artifact-governance-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["artifact_boundaries"]["raw_private_sources_forbidden_in_public"].remove("redcap-knowledge/**")
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-information-architecture-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "information architecture checker should reject missing private archive forbidden source"
+    assert_string_contains "$stale_output" "artifact boundary missing forbidden raw source: redcap-knowledge/**"
+
+    bad_policy="$ACCEPT_ROOT/information-architecture-overflow.json"
+    python3 - "$REDCAP_ROOT/references/information-architecture-artifact-governance-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+for item in payload["root_classes"]:
+    if item["id"] == "current-task-reports":
+        item["max_files"] = 1
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-information-architecture-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "information architecture checker should reject active report inbox overflow"
+    assert_string_contains "$stale_output" "current task report inbox too large"
+
+    noise_policy="$ACCEPT_ROOT/information-architecture-acceptance-noise.json"
+    python3 - "$REDCAP_ROOT/references/information-architecture-artifact-governance-policy.json" "$noise_policy" "$REDCAP_ROOT" <<'PY'
+import json
+import pathlib
+import sys
+src, dst, root = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+report_root = root / "compass/docs/task-reports"
+real_count = sum(1 for item in report_root.iterdir() if item.is_file() and not item.name.startswith(("zz-acceptance-", "zz-review-")))
+for item in payload["root_classes"]:
+    if item["id"] == "current-task-reports":
+        item["max_files"] = real_count
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    (
+        tmp_a="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-information-architecture-noise-a-$$.md"
+        tmp_b="$REDCAP_ROOT/compass/docs/task-reports/zz-review-information-architecture-noise-b-$$.md"
+        trap 'rm -f "$tmp_a" "$tmp_b"' EXIT
+        printf '# acceptance noise\n' >"$tmp_a"
+        printf '# review noise\n' >"$tmp_b"
+        output="$(REDCAP_ACCEPTANCE_RUNNING=1 bash "$REDCAP_ROOT/compass/tools/redcap-information-architecture-check.sh" --policy "$noise_policy")"
+        assert_string_contains "$output" "INFORMATION_ARCHITECTURE_GOVERNANCE_OK"
+    )
+}
+
+run_redcap_forge_check_case() {
+    local output bad_policy stale_output status
+
+    log "case: redcap-forge-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-forge-check.sh")"
+    assert_string_contains "$output" "REDCAP_FORGE_OK"
+    assert_string_contains "$output" "pipeline=RedCap Forge"
+
+    bad_policy="$ACCEPT_ROOT/redcap-forge-bad.json"
+    python3 - "$REDCAP_ROOT/references/redcap-forge-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["canonical_names"]["execution_pipeline"] = "Arsenal Creator"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-forge-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "RedCap Forge checker should reject canonical name drift"
+    assert_string_contains "$stale_output" "execution_pipeline must be RedCap Forge"
+
+    bad_policy="$ACCEPT_ROOT/redcap-forge-raw-report.json"
+    python3 - "$REDCAP_ROOT/references/redcap-forge-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["forbidden_public_raw_sources"].remove("compass/docs/task-reports/**")
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-forge-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "RedCap Forge checker should reject raw report public-export gap"
+    assert_string_contains "$stale_output" "missing forbidden public raw source: compass/docs/task-reports/**"
+}
+
 run_package_publish_safety_check_case() {
     local fixture safe_file env_file key_file list_file output stale_output status
 
@@ -12153,7 +12269,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package pre-release-product-architecture; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package pre-release-product-architecture information-architecture redcap-forge; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12316,6 +12432,24 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-information-architecture-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "information-architecture" ]]; then
+    echo "fixture information architecture failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-forge-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "redcap-forge" ]]; then
+    echo "fixture RedCap Forge failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
             "$repo/compass/tools/redcap-docs-catalog.sh" \
             "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
@@ -12333,6 +12467,8 @@ EOF
             "$repo/compass/tools/redcap-human-communication-check.sh" \
             "$repo/compass/tools/redcap-runtime-package-manifest.sh" \
             "$repo/compass/tools/redcap-pre-release-product-architecture-check.sh" \
+            "$repo/compass/tools/redcap-information-architecture-check.sh" \
+            "$repo/compass/tools/redcap-forge-check.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
 
         case "$failing_gate" in
@@ -12354,6 +12490,8 @@ EOF
             human-communication) expected_message="human communication check failed" ;;
             runtime-package) expected_message="runtime package manifest check failed" ;;
             pre-release-product-architecture) expected_message="pre-release product architecture check failed" ;;
+            information-architecture) expected_message="information architecture check failed" ;;
+            redcap-forge) expected_message="RedCap Forge check failed" ;;
         esac
 
         set +e
@@ -13227,6 +13365,8 @@ run_all_cases() {
     run_retrieval_escalation_check_case
     run_shared_knowledge_check_case
     run_shared_knowledge_remote_binding_check_case
+    run_information_architecture_check_case
+    run_redcap_forge_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
     run_pre_release_product_architecture_check_case
@@ -13710,6 +13850,12 @@ case "$COMMAND" in
         ;;
     shared-knowledge-remote-binding-check)
         run_shared_knowledge_remote_binding_check_case
+        ;;
+    information-architecture-check)
+        run_information_architecture_check_case
+        ;;
+    redcap-forge-check)
+        run_redcap_forge_check_case
         ;;
     package-publish-safety-check)
         run_package_publish_safety_check_case

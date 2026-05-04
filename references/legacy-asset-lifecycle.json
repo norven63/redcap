@@ -73,6 +73,49 @@
       ]
     },
     {
+      "id": "private-knowledge-archive",
+      "path": "redcap-knowledge",
+      "kind": "private-cold-archive",
+      "default_action": "archive",
+      "authority": "redcap-knowledge is the private cold archive for reports and research; it must be exact-read and index-routed, not default-loaded or exported raw.",
+      "check_paths": [
+        "references/information-architecture-artifact-governance-policy.json",
+        "compass/tools/redcap-information-architecture-check.sh"
+      ]
+    },
+    {
+      "id": "shared-knowledge-template",
+      "path": "shared-knowledge",
+      "kind": "public-arsenal-template-source",
+      "default_action": "preserve",
+      "authority": "shared-knowledge is only the safe template source for redcap-arsenal; public entries require RedCap Forge processing before append.",
+      "check_paths": [
+        "references/shared-knowledge-policy.json",
+        "references/redcap-forge-policy.json",
+        "compass/tools/redcap-forge-check.sh"
+      ]
+    },
+    {
+      "id": "redcap-forge-policy",
+      "path": "references/redcap-forge-policy.json",
+      "kind": "distillation-governance",
+      "default_action": "preserve",
+      "authority": "RedCap Forge is the concrete distillation pipeline between private artifacts and public arsenal entries; it prevents raw report or identity leakage.",
+      "check_paths": [
+        "compass/tools/redcap-forge-check.sh"
+      ]
+    },
+    {
+      "id": "information-architecture-policy",
+      "path": "references/information-architecture-artifact-governance-policy.json",
+      "kind": "artifact-boundary-governance",
+      "default_action": "preserve",
+      "authority": "This policy is the product-level map for report, knowledge, runtime evidence, Forge and arsenal boundaries before CLI release.",
+      "check_paths": [
+        "compass/tools/redcap-information-architecture-check.sh"
+      ]
+    },
+    {
       "id": "runtime-working-dirs",
       "path": "compass/.workflow",
       "kind": "ignored-local-runtime",

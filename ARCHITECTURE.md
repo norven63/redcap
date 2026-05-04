@@ -80,7 +80,7 @@ RedCap 当前把状态面划分为三类：
 
 | 类别 | 典型载体 | 是否进 git | 说明 |
 | --- | --- | --- | --- |
-| **repo-tracked canonical / evidence** | `ARCHITECTURE.md`、`references/**`、`compass/docs/specs/**`、`compass/docs/traces/**`、`compass/docs/task-reports/**`、`prism/reports/**`、`loom/test-reports/latest-e2e-report.md`、`loom/test-reports/pending-validations.md` | 是 | 这些文件要么是正式规范，要么是跨会话共享的历史证据，必须可审计、可考古 |
+| **repo-tracked canonical / evidence** | `ARCHITECTURE.md`、`references/**`、`compass/docs/specs/**`、近期 `compass/docs/task-reports/**`、私有归档 `redcap-knowledge/**`、`prism/reports/**`、`loom/test-reports/latest-e2e-report.md`、`loom/test-reports/pending-validations.md` | 是 | 这些文件要么是正式规范，要么是跨会话共享的历史证据，必须可审计、可考古；历史报告不再默认长期堆在 docs 当前入口 |
 | **session-isolated process state** | `.dev-task.md`、`prism/runs/**`、宿主 `plan.md` / workboard mirror | 否 | 它们服务于当前会话或当前机器的推进，不应伪装成共享真相 |
 | **local-only host assets** | `.env.local`、`compass/tools/feishu-config.json`、`compass/.workflow/agent-registry.yaml`、宿主 CLI / hook 配置、机型/路径探测缓存 | 否 | 它们绑定本地环境、凭证或宿主能力，不适合作为 repo 历史的一部分 |
 | **temporary runtime outputs** | `/tmp/redcap-*`、临时 prompt / review 输出、`__pycache__/` | 否 | 只为当前执行服务，任务结束后应清理或自动覆盖 |
@@ -103,17 +103,20 @@ RedCap 当前把状态面划分为三类：
 | **frozen evidence** | `compass/docs/specs/**`、`research/**`、`traces/**`、`task-reports/**` | 冻结后的设计、审计、研究与 closure 证据 | 是 |
 | **canonical long-route truth** | `references/backlogs/*.json` | 机器可读的长期路线、阶段状态、当前焦点与人类说明锚点 | 是，但只负责长期路线，不接管 live task |
 | **live knowledge** | `compass/knowledge/lessons.md`、`host-reliability.md`、`hooks-*.md`、模型矩阵 | 活的经验、heuristics、宿主差异与操作知识 | 只作为规则与经验，不直接替代 closure evidence |
+| **private archive** | `redcap-knowledge/task-reports/**`、`redcap-knowledge/research/**` | 旧报告和研究材料的私有冷归档 | 是，但必须索引/精确读取，不默认加载 |
 | **continuity assets** | `.dev-task.md`、`compass/knowledge/explore-notes.md`、宿主 `plan.md` / workboard、导入的 session artifacts | 防偏航、防上下文稀释、断点恢复、显式继承 | 否 |
 
 因此：
 
 1. `compass/docs/` 与 `compass/knowledge/` 是**平级不同职**，不是父子关系。
-2. continuity assets 不是“第三个 docs”，而是围绕 canonical truth 运行的连续性状态链。
-3. backlog 这类“长期路线”如果要进入执行保障，机器权威应放在 `references/backlogs/*.json`，给人看的解释继续留在 `compass/docs/specs/**`；不要反过来把 spec 文档当运行时 authority。
-4. spec 文档若想继续保留在 `compass/docs/specs/**`，必须在 `references/spec-registry.json` 里登记自己的角色、当前状态和配套控制面；否则就只是匿名材料，应迁出或补登记。
-5. 若某类资产要从 continuity 层升级为 evidence，必须经过**显式发布**，而不是因为“写成了 markdown”就自动变成 docs。
-6. `compass/docs/index.yaml` 负责冻结 docs collection 的 retention / archive 规则，避免 docs 根目录再次回到大杂烩状态。
-7. `compass/CONTRIBUTING.core.md` 是**首读压缩层**，不是第二权威；它只负责把“新会话立刻必须遵守的规则”压到小体积入口里，权威解释仍回到 `compass/CONTRIBUTING.md`。
+2. `compass/docs/task-reports/` 是近期结案报告入口，不是历史报告仓库；旧报告的 canonical 冷归档在 `redcap-knowledge/task-reports/`。
+3. continuity assets 不是“第三个 docs”，而是围绕 canonical truth 运行的连续性状态链。
+4. backlog 这类“长期路线”如果要进入执行保障，机器权威应放在 `references/backlogs/*.json`，给人看的解释继续留在 `compass/docs/specs/**`；不要反过来把 spec 文档当运行时 authority。
+5. spec 文档若想继续保留在 `compass/docs/specs/**`，必须在 `references/spec-registry.json` 里登记自己的角色、当前状态和配套控制面；否则就只是匿名材料，应迁出或补登记。
+6. 若某类资产要从 continuity 层升级为 evidence，必须经过**显式发布**，而不是因为“写成了 markdown”就自动变成 docs。
+7. 公共沉淀必须先过 `RedCap Forge`，不能把私有报告、identity、runtime evidence 或 lessons 原文直接推入 `redcap-arsenal`。
+8. `compass/docs/index.yaml` 负责冻结 docs collection 的 retention / archive 规则，避免 docs 根目录再次回到大杂烩状态。
+9. `compass/CONTRIBUTING.core.md` 是**首读压缩层**，不是第二权威；它只负责把“新会话立刻必须遵守的规则”压到小体积入口里，权威解释仍回到 `compass/CONTRIBUTING.md`。
 
 ### 2.3 host-agent interop governance
 
@@ -422,11 +425,12 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 - `lessons.md`：活跃层，保持短小、常驻启动上下文
 - `lessons-archive.md`：归档层，按需检索
 - `shared-knowledge/`：未来独立团队共享库的本地模板，负责按用户隔离、append-only 沉淀、索引优先读取和 exact duplicate 拒绝
+- `RedCap Forge`：公共沉淀前的锻造流水线，负责蒸馏、脱敏、去重、结构化、索引化和 promotion/no-promote
 
 高影响 lesson 不允许自动淡出。  
 它的职责不是“做知识管理”，而是**把曾经出现过的失败模式保留为下一次执行的边界条件**。
 
-shared knowledge 的职责不同：它不是当前任务真相源，也不默认进入启动上下文；它是团队长期沉淀的候选外部库，只有索引命中且任务确实需要证据时才读取正文。
+shared knowledge 的职责不同：它不是当前任务真相源，也不默认进入启动上下文；它是团队长期沉淀的候选外部库，只有索引命中且任务确实需要证据时才读取正文。原始报告、identity、runtime evidence 和私有 knowledge 不能直接进入公共库，必须先被 RedCap Forge 加工成安全条目。
 
 ### 4.10 soul / revive / re-anchor
 

@@ -536,6 +536,22 @@ if [[ -x "$SHARED_KNOWLEDGE_REMOTE_CHECK" ]]; then
     fi
 fi
 
+INFORMATION_ARCHITECTURE_CHECK="$REDCAP_ROOT/compass/tools/redcap-information-architecture-check.sh"
+if [[ -x "$INFORMATION_ARCHITECTURE_CHECK" ]]; then
+    if ! bash "$INFORMATION_ARCHITECTURE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] information architecture check failed" >&2
+        exit 1
+    fi
+fi
+
+REDCAP_FORGE_CHECK="$REDCAP_ROOT/compass/tools/redcap-forge-check.sh"
+if [[ -x "$REDCAP_FORGE_CHECK" ]]; then
+    if ! bash "$REDCAP_FORGE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] RedCap Forge check failed" >&2
+        exit 1
+    fi
+fi
+
 RETRIEVAL_ESCALATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh"
 if [[ -x "$RETRIEVAL_ESCALATION_CHECK" ]]; then
     if ! bash "$RETRIEVAL_ESCALATION_CHECK" >/dev/null; then

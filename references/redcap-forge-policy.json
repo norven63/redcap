@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "policy_id": "redcap-forge",
+  "canonical_names": {
+    "umbrella_system": "RedCap Evolution Factory",
+    "execution_pipeline": "RedCap Forge",
+    "public_repository": "redcap-arsenal"
+  },
+  "description": "RedCap Forge is the concrete pipeline that turns private runtime experience into reviewed, deduplicated, safe, indexable public knowledge candidates. Evolution Factory remains the broader self-evolution system name.",
+  "responsibilities": [
+    {
+      "id": "capture",
+      "meaning": "Identify high-value signals from reports, lessons, Prism verdicts, failures, user corrections, and closeout blockers."
+    },
+    {
+      "id": "distill",
+      "meaning": "Rewrite raw traces into problem-source, solution, final-effect, applicability boundary, and evidence-backed entries."
+    },
+    {
+      "id": "privacy-safety",
+      "meaning": "Remove secrets, local private paths, identity text, raw runtime evidence, and user-private material before public consideration."
+    },
+    {
+      "id": "dedupe",
+      "meaning": "Reject exact duplicates through normalized fingerprints and send near-duplicates to Prism or human review when needed."
+    },
+    {
+      "id": "structure",
+      "meaning": "Map distilled material to shared-knowledge entry kinds, skill candidates, lessons, governance rules, or explicit no-promote decisions."
+    },
+    {
+      "id": "index",
+      "meaning": "Create or refresh metadata-first indexes so arsenal can be searched without bulk-loading entry bodies."
+    },
+    {
+      "id": "promote",
+      "meaning": "Append reviewed public entries to redcap-arsenal or keep private/no-promote with an evidence-backed reason."
+    }
+  ],
+  "allowed_sources": [
+    "compass/docs/task-reports/*.md",
+    "redcap-knowledge/task-reports/*.md",
+    "compass/knowledge/lessons.md",
+    "compass/evolution/candidates.json",
+    "prism/runs/*/collect/*",
+    "closeout runtime receipts and summaries"
+  ],
+  "forbidden_public_raw_sources": [
+    ".dev-task.md",
+    ".env",
+    ".env.*",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    ".github/copilot-instructions.md",
+    "compass/docs/task-reports/**",
+    "redcap-knowledge/**",
+    "compass/knowledge/**",
+    "prism/runs/**",
+    "compass/evolution/identity-proposals/**",
+    "~/.cap/identity.md"
+  ],
+  "promotion_targets": [
+    {
+      "id": "private-lesson",
+      "path": "compass/knowledge/lessons.md",
+      "public": false
+    },
+    {
+      "id": "identity-proposal",
+      "path": "compass/evolution/identity-proposals/",
+      "public": false
+    },
+    {
+      "id": "public-arsenal-entry",
+      "path": "../redcap-arsenal/users/<user>/YYYYMMDDTHHMMSSZ-<kind>-<slug>.md",
+      "public": true
+    },
+    {
+      "id": "skill-candidate",
+      "path": "../redcap-arsenal/users/<user>/",
+      "public": true
+    },
+    {
+      "id": "no-promote",
+      "path": "compass/evolution/candidates.json",
+      "public": false
+    }
+  ],
+  "public_promotion_gates": [
+    "redcap-evolution-candidate-check --strict",
+    "redcap-shared-knowledge dedupe",
+    "redcap-shared-knowledge check",
+    "redcap-shared-knowledge-remote-check",
+    "package publish safety secret-pattern scan or equivalent candidate-content scan",
+    "Prism review when the candidate changes behavior, public claims, or user-visible doctrine"
+  ],
+  "must_not_claim": [
+    "Do not claim Evolution Factory means every candidate is public.",
+    "Do not claim RedCap Forge can publish raw reports.",
+    "Do not claim redcap-arsenal is populated when it only contains templates and placeholders.",
+    "Do not auto-edit active identity anchors from Forge output."
+  ]
+}

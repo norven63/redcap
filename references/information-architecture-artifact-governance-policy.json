@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "policy_id": "redcap-information-architecture-artifact-governance",
+  "description": "Product-level information architecture policy for RedCap reports, private knowledge, runtime evidence, public arsenal templates, and CLI-release-facing artifact boundaries.",
+  "release_boundary": "This policy is a prerequisite for public CLI/runtime release readiness. It does not publish RedCap, migrate private archives into public repositories, or claim redcap-arsenal contains substantive entries.",
+  "root_classes": [
+    {
+      "id": "current-task-truth",
+      "path": ".dev-task.md",
+      "class": "active-control-plane",
+      "visibility": "private-repo",
+      "lifecycle": "preserve-current",
+      "human_meaning": "当前任务卡：说明这一轮到底在做什么、做到哪里、还有哪些承诺未兑现。",
+      "public_export": "forbidden"
+    },
+    {
+      "id": "current-task-reports",
+      "path": "compass/docs/task-reports",
+      "class": "current-human-report-inbox",
+      "visibility": "private-repo",
+      "lifecycle": "current-window-only-then-private-archive",
+      "human_meaning": "近期结案报告入口：给人快速看懂最近任务结果，不承担长期冷知识库职责。",
+      "public_export": "forbidden-raw",
+      "max_files": 12
+    },
+    {
+      "id": "private-task-report-archive",
+      "path": "redcap-knowledge/task-reports",
+      "class": "private-cold-archive",
+      "visibility": "private-repo",
+      "lifecycle": "private-archive-with-alias-resolution",
+      "human_meaning": "旧任务报告私有归档：用于考古，不默认注入新会话上下文。",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "id": "active-knowledge",
+      "path": "compass/knowledge",
+      "class": "active-private-knowledge",
+      "visibility": "private-repo",
+      "lifecycle": "index-first-active-knowledge",
+      "human_meaning": "RedCap 私有活知识区：保存仍会影响当前行为的 lessons、宿主可靠性和设计原则。",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "id": "private-research-archive",
+      "path": "redcap-knowledge/research",
+      "class": "private-cold-archive",
+      "visibility": "private-repo",
+      "lifecycle": "private-archive-with-exact-read",
+      "human_meaning": "私有研究与全景材料：供考古和学习，不是运行时默认上下文。",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "id": "prism-runs",
+      "path": "prism/runs",
+      "class": "runtime-evidence",
+      "visibility": "local-runtime",
+      "lifecycle": "retain-formal-prune-fixtures",
+      "human_meaning": "棱镜运行证据：只保留正式验收和命名证据，临时 fixture 可安全清理。",
+      "public_export": "forbidden"
+    },
+    {
+      "id": "shared-knowledge-template",
+      "path": "shared-knowledge",
+      "class": "public-arsenal-template-source",
+      "visibility": "public-template",
+      "lifecycle": "template-only-until-forge-promotion",
+      "human_meaning": "公共 arsenal 的模板源：只放安全模板、schema、索引占位和用户命名空间占位。",
+      "public_export": "template-allowlist-only"
+    },
+    {
+      "id": "external-redcap-arsenal",
+      "path": "../redcap-arsenal",
+      "class": "external-public-knowledge-worktree",
+      "visibility": "public-worktree",
+      "lifecycle": "append-only-after-forge",
+      "human_meaning": "外部公共武器库实体仓库：只接收 RedCap Forge 处理后的安全沉淀条目。",
+      "public_export": "append-only-reviewed"
+    }
+  ],
+  "report_lifecycle": {
+    "active_root": "compass/docs/task-reports",
+    "private_archive_root": "redcap-knowledge/task-reports",
+    "active_root_role": "current-window report inbox, not the long-term report warehouse",
+    "private_archive_role": "cold archaeology archive resolved through catalog/alias/exact reads",
+    "new_report_rule": "Layer B task reports are still written to the active root during closeout, then older reports may be migrated to private archive by explicit lifecycle tasks.",
+    "summary_rule": "Human-facing interruption/final updates must summarize report sections 0.1-0.4 and explicitly surface manual review or manual validation sections when non-empty.",
+    "must_not_claim": [
+      "Do not claim a task report is a public knowledge asset.",
+      "Do not claim private archived reports are safe for redcap-arsenal.",
+      "Do not claim a receipt exists only because a human-readable report exists."
+    ]
+  },
+  "artifact_boundaries": {
+    "raw_private_sources_forbidden_in_public": [
+      ".dev-task.md",
+      "compass/docs/task-reports/**",
+      "redcap-knowledge/**",
+      "compass/knowledge/**",
+      "prism/runs/**",
+      "compass/evolution/identity-proposals/**",
+      "~/.cap/identity.md",
+      ".env",
+      ".env.*"
+    ],
+    "public_outputs_require": [
+      "RedCap Forge candidate or explicit no-promote decision",
+      "privacy and secret scan",
+      "normalized duplicate check",
+      "append-only timestamped entry",
+      "index-first retrieval metadata",
+      "shared-knowledge remote binding safety check"
+    ]
+  },
+  "required_policy_links": [
+    "references/redcap-forge-policy.json",
+    "references/legacy-asset-lifecycle.json",
+    "references/shared-knowledge-policy.json",
+    "references/shared-knowledge-remote-binding.json",
+    "references/human-communication-policy.json",
+    "references/task-report-template.md"
+  ],
+  "p4_status_semantics": {
+    "rule": "P4 child IDs are decomposition identifiers, not strict chronological ordering.",
+    "p4_3_boundary": "P4-3 clean workspace E2E is completed as a clean-HEAD, isolated-home, cross-machine-style local validation; it does not prove public release, external machine distribution, or multi-OS support.",
+    "required_ledger_phrase": "P4 numbering is a dependency/status map, not a promise of numeric execution order."
+  }
+}

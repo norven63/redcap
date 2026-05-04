@@ -68,6 +68,7 @@
     "**/prompt.txt",
     "compass/**",
     "prism/runs/**",
+    "redcap-knowledge/**",
     "compass/docs/task-reports/**",
     "compass/knowledge/**",
     ".git/**",
@@ -86,7 +87,7 @@
     "This binding only covers the minimal public template surface plus explicit per-user namespace placeholders.",
     "shared-knowledge/ is the RedCap-internal template source and intentionally has no .git directory.",
     "../redcap-arsenal is the preferred durable local public-library worktree for this installation.",
-    "Historical reports, lessons, identity files, runtime evidence, and host entry files are intentionally out of scope.",
+    "Historical reports, lessons, identity files, runtime evidence, and host entry files are intentionally out of scope unless RedCap Forge produces a reviewed, deduplicated, safe public entry candidate.",
     "After any legitimate template push, update last_verified.remote_head and checked_at_utc by rerunning the live check; head drift is intentional fail-closed behavior."
   ]
 }

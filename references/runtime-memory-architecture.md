@@ -20,8 +20,8 @@ RedCap 过去容易在两个表述之间打架：
 | 层 | 它回答的问题 | 典型载体 | 是否是当前任务真相源 |
 | --- | --- | --- | --- |
 | **当前任务流状态** | 我现在在做什么、做到哪、下一步去哪 | Layer A: `loom/**/.workflow/state.yaml`；Layer B: `.dev-task.md`、runtime stamp、validator result | 是 |
-| **跨会话考古 / 追踪层** | 上次发生了什么、为什么会卡在这里、证据在哪里 | task report、pending closure、closure-ledger、`current-status`、`diagnose`、Prism run/report | 部分是证据真相，部分只是视图 |
-| **长期知识和项目资产的持续沉淀** | 哪些经验、路线、设计与研究要持续复用 | `compass/knowledge/**`、`references/backlogs/*.json`、`compass/docs/specs/**`、`research/**` | 否；它服务长期，不替代当前任务流 |
+| **跨会话考古 / 追踪层** | 上次发生了什么、为什么会卡在这里、证据在哪里 | task report、private archive、pending closure、closure-ledger、`current-status`、`diagnose`、Prism run/report | 部分是证据真相，部分只是视图 |
+| **长期知识和项目资产的持续沉淀** | 哪些经验、路线、设计与研究要持续复用 | `compass/knowledge/**`、`redcap-knowledge/**`、`references/backlogs/*.json`、`compass/docs/specs/**`、RedCap Forge、`redcap-arsenal` | 否；它服务长期，不替代当前任务流 |
 
 这三层的边界不能混：
 
@@ -40,8 +40,11 @@ RedCap 过去容易在两个表述之间打架：
 | `closeout-runtime/receipts/*.json` | **终态收据** | 证明这次 closeout 真的闭环并留下 summary / promise / hash 证据 | 不能被“session-end 绿了”口头替代 |
 | `closeout-runtime/audits/*.json` | **rescue 审计证据** | 记录 receipt 修补或 blocker 重写是否发生 | 不能被 diagnose 摘要替代 |
 | `compass/docs/task-reports/*.md` | **闭环证据** | 说明“这轮到底改了什么、验证了什么、还剩什么” | 不能回头承载当前 live task state |
+| `redcap-knowledge/task-reports/*.md` | **私有冷归档证据** | 承载旧报告的长期考古副本 | 不能默认 bulk-read，也不能原文进入公共 arsenal |
 | `compass/knowledge/explore-notes.md` | **PM Gate 前的讨论底稿** | 保留未锁定阶段的探讨和分歧 | 不能升级成 canonical task ledger |
 | `compass/knowledge/lessons.md` | **长期可复用经验** | 沉淀失败模式和工作方法 | 不能承载单轮任务状态 |
+| `RedCap Forge` | **公共沉淀加工层** | 把私有经验蒸馏、脱敏、去重、结构化和索引化 | 不能跳过安全审查直接发布原始资料 |
+| `redcap-arsenal` | **公共能力库** | 保存 Forge 通过审查后的 append-only 公共条目 | 不能承载当前任务状态，也不能存放私有原始运行证据 |
 | `references/backlogs/*.json` | **长期路线真相源** | 承载跨会话 backlog / tranche / focus | 不能替代 `.dev-task.md` 的当前任务锚点 |
 | `redcap-current-status.sh` / `redcap-diagnose.sh` | **状态面 / 体检面** | 把分散真相源汇总成可读视图 | 只是视图，不能自封 authority |
 
@@ -139,6 +142,7 @@ Layer B 没有 Layer A 那种单一 `state.yaml` FSM，但已经形成了一个�
 - `closeout-receipt` 与 task report：一个是终态收据，一个是人类可读闭环报告。
 - `棱镜验收` 与 `stop-review`：前者是 Layer B completed 的默认独立验收 gate，后者是 review / reviewer 证据入口；两者不能互相口头替代。
 - `explore-notes` 与 `lessons`：一个记录某次探讨底稿，一个沉淀跨任务经验。
+- `RedCap Forge` 与 `redcap-arsenal`：一个是加工/审查流水线，一个是公共成品库。
 - `references/backlogs/*.json` 与 `.dev-task.md`：一个服务长期路线，一个服务当前这一刀。
 
 ## 7. 这份文档与其它文件的关系

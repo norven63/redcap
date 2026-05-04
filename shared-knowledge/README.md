@@ -1,6 +1,8 @@
 # RedCap Arsenal Template
 
 > 这是 RedCap 公共知识库/沉淀库 `redcap-arsenal` 的最小安全模板。当前绑定远端为 `https://gitee.com/norven63/redcap-arsenal.git`；在 RedCap 仓库中，`shared-knowledge/` 只是模板源，所以刻意没有 `.git`。实体公共库工作区由 `references/shared-knowledge-remote-binding.json` 的 `preferred_local_worktree` 配置，默认应位于 RedCap 仓库外。
+>
+> 公共条目必须先经过 `RedCap Forge`：把私有报告、lessons、失败链路或 Prism verdict 蒸馏、脱敏、去重、结构化和索引化之后，才允许 append 到 `redcap-arsenal`。原始报告、identity、runtime evidence 和私有 knowledge 不得直接进入公共库。
 
 ## 目录约定
 
@@ -25,5 +27,6 @@ bash compass/tools/redcap-shared-knowledge.sh check --root ../redcap-arsenal
 
 - 先读索引，不默认打开 `users/**` 全文。
 - 先查重复，再新增沉淀。
+- 先过 RedCap Forge，不直接搬运私有原文。
 - 条目是证据和方法论沉淀，不承担当前任务真相源；当前任务真相源仍是 `.dev-task.md`、报告、receipt 和 validator 证据。
 - 远端同步前先跑 `bash compass/tools/redcap-shared-knowledge-remote-check.sh`；需要验证 Gitee 当前 head 和本机实体工作区时再加 `--live --require-worktree`。

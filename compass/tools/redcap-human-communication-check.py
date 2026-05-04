@@ -121,6 +121,10 @@ def main() -> int:
     for phrase in ["problem being solved", "chosen solution", "resulting effect", "not make the primary explanation a changelog"]:
         if phrase not in narrative_rule:
             fail(f"narrative_quality_rule missing phrase: {phrase}")
+    report_rule = str(policy.get("report_led_summary_rule", ""))
+    for phrase in ["0.1-0.4", "人工审核", "人工验证", "technical file/script details"]:
+        if phrase not in report_rule:
+            fail(f"report_led_summary_rule missing phrase: {phrase}")
     if set(policy.get("allowed_feishu_events") or []) != {"node-report", "manual-intervention"}:
         fail("allowed_feishu_events must be node-report/manual-intervention")
 

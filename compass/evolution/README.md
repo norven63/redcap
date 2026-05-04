@@ -4,6 +4,12 @@ RedCap Evolution Factory 是 RedCap 的“进化工厂层”：它把运行痕�
 
 它不是 RedCap 的全部，也不是本轮所有控制面重构的唯一主语。RedCap 的长期产品形态见 `references/redcap-system-layers.md`；Evolution Factory 只负责其中的经验、人格、skill、规则和 validator 候选沉淀。
 
+## RedCap Forge / 锻造流水线
+
+`RedCap Forge` 是 Evolution Factory 里的具体执行流水线。它负责把原始任务报告、失败案例、Prism verdict、用户纠偏和 closeout blocker 先蒸馏成结构化候选，再完成脱敏、去重、安全审查、索引生成和 promotion/no-promote 决策。
+
+`redcap-arsenal` 是 Forge 通过审查后的公共武器库，不直接接收原始报告、identity、runtime evidence 或私有 knowledge。换句话说：Evolution Factory 是自进化体系，RedCap Forge 是加工厂，redcap-arsenal 是成品库。
+
 ## Purpose / 作用
 
 - Collect evolution candidates from task cards, task reports, Prism verdicts, receipts, tests, user corrections, and closeout failures.
@@ -25,10 +31,12 @@ Do not bulk-read future candidate pools. Start from:
 
 ```text
 runtime trace
+→ RedCap Forge distillation
 → evolution candidate
 → schema check
-→ Prism / independent review
-→ promotion or no-promote-with-reason
+→ privacy / dedupe / structure / index gate
+→ Prism / independent review when risk requires it
+→ private promotion, public arsenal entry, or no-promote-with-reason
 → closeout receipt may proceed only when candidates are handled
 ```
 

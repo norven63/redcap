@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Policy for the independent RedCap Arsenal public knowledge repository. RedCap keeps shared-knowledge/ as a safe template source; the durable local public-library worktree should live outside the RedCap repo.",
+  "description": "Policy for the independent RedCap Arsenal public knowledge repository. RedCap keeps shared-knowledge/ as a safe template source; the durable local public-library worktree should live outside the RedCap repo. Public entries must come through RedCap Forge rather than raw reports or private archives.",
   "public_repository_name": "redcap-arsenal",
   "template_root": "shared-knowledge",
   "default_root": "../redcap-arsenal",
@@ -17,6 +17,7 @@
   "user_namespace_rule": "entries live under users/<safe_user_name>/ so team members can contribute to the same repository without mixing authorship; safe display case such as Norven is preserved",
   "retrieval_rule": "read catalog and metadata first; use rg/FTS for exact recall; only load entry bodies after the caller has a precise evidence need",
   "retrieval_escalation_policy": "references/retrieval-escalation-policy.json",
+  "forge_pipeline": "RedCap Forge is the concrete distillation pipeline between private RedCap runtime artifacts and public redcap-arsenal entries: distill, privacy-scan, dedupe, structure, index, then append-only public entry creation or no-promote.",
   "dedupe_rule": "before append, compute a normalized fingerprint and reject exact duplicates; near-duplicate review remains a Prism or human-review concern until semantic retrieval exists",
   "remote_boundary": "The public RedCap Arsenal remote is bound in references/shared-knowledge-remote-binding.json. Only the minimal template surface and explicit per-user namespace placeholders may be pushed; historical reports, lessons, identity, runtime evidence, host entry files, and private configuration remain out of scope."
 }

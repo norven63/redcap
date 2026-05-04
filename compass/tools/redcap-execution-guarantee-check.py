@@ -59,6 +59,9 @@ REQUIRED_IDS = {
     "evolution-harvest-gate",
     "skill-lifecycle-single-source",
     "legacy-asset-lifecycle",
+    "information-architecture-artifact-governance",
+    "redcap-forge-promotion-boundary",
+    "report-led-human-summary-boundary",
 }
 
 ALLOWED_PRIORITIES = {"P0", "P1", "P2", "P3"}
