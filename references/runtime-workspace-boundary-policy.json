@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "policy_id": "redcap-runtime-workspace-boundary",
+  "status": "active-before-public-release",
+  "purpose": "Ensure the installed RedCap CLI treats the package root as runtime implementation and the caller workspace as the managed project state by default.",
+  "runtime_layer": {
+    "meaning": "RedCap's shipped tools, scripts, policies, package metadata, and runtime implementation.",
+    "root_source": "directory containing bin/redcap's package root",
+    "env": "REDCAP_RUNTIME_ROOT"
+  },
+  "project_layer": {
+    "meaning": "The project being managed by RedCap, including its task file and project-local workflow state.",
+    "workspace_default": "$PWD",
+    "workspace_option": "--workspace",
+    "workspace_env": "REDCAP_WORKSPACE",
+    "workspace_discovery": "If cwd is inside the RedCap runtime root, default to the runtime root for self-development; otherwise walk upward from cwd for .dev-task.md, falling back to cwd when no task file is found.",
+    "task_file_default": "<workspace>/.dev-task.md",
+    "task_file_option": "--task-file",
+    "task_file_env": "REDCAP_TASK_FILE",
+    "env": "REDCAP_WORKSPACE_ROOT"
+  },
+  "user_layer": {
+    "meaning": "Local user and Agent identity, notification profile, and host-specific state that must not be packed as project state.",
+    "identity_anchor": "~/.cap/identity.md",
+    "local_state_policy": "references/user-agent-identity-policy.json",
+    "local_state_path": "compass/.workflow/user-agent-identity.json"
+  },
+  "workspace_oriented_commands": [
+    "status",
+    "diagnose",
+    "change-intake",
+    "closeout"
+  ],
+  "required_guarantees": [
+    "Workspace-oriented CLI commands must not default to $REDCAP_ROOT/.dev-task.md.",
+    "The default workspace must be the caller's discovered project workspace unless --workspace or REDCAP_WORKSPACE is provided.",
+    "The default task file must be <workspace>/.dev-task.md unless --task-file or a backward-compatible positional task file is provided.",
+    "When the caller is inside the RedCap runtime repository, the default workspace may equal the runtime root to preserve self-development.",
+    "Status and diagnose output must expose runtime root, workspace root, task file, and user-state policy.",
+    "RedCap self-development remains supported because running the CLI from the RedCap repository makes workspace root equal runtime root."
+  ],
+  "checker": "compass/tools/redcap-runtime-workspace-boundary-check.sh"
+}

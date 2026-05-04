@@ -60,6 +60,7 @@
     "human-status",
     "package-publish-safety",
     "pre-release-product-architecture",
+    "runtime-workspace-boundary",
     "runtime-package",
     "information-architecture",
     "redcap-forge"
@@ -1178,6 +1179,38 @@
       "hook_required": false,
       "auto_enforceable": true,
       "runtime_limitation": "The checker can identify architecture blockers and prevent overclaiming release readiness, but it does not itself perform the later physical runtime split, CLI hardening, registry decision, or npm publish."
+    },
+    {
+      "id": "runtime-workspace-boundary-gate",
+      "category": "runtime-workspace-boundary",
+      "priority": "P0",
+      "rule": "Workspace-oriented RedCap CLI commands must treat the package root as runtime implementation and the caller workspace as project state by default, while preserving RedCap self-development when the workspace is the runtime repository.",
+      "source_paths": [
+        "references/runtime-workspace-boundary-policy.json",
+        "bin/redcap",
+        "compass/tools/redcap-current-status.sh",
+        "compass/tools/redcap-current-status.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.py"
+      ],
+      "runtime_source_paths": [
+        "bin/redcap",
+        "compass/tools/redcap-runtime-workspace-boundary-check.sh",
+        "compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-runtime-workspace-boundary-check runs static CLI contract checks and external-workspace smoke tests; diagnose, spec-check, execution guarantees, and acceptance consume it before RedCap may close P4-2b.",
+      "guarantee_paths": [
+        "compass/tools/redcap-runtime-workspace-boundary-check.sh",
+        "compass/tools/redcap-runtime-workspace-boundary-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "bin/redcap"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
     },
     {
       "id": "clean-workspace-install-e2e",

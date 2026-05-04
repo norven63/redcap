@@ -26,7 +26,7 @@
     {
       "id": "P4-2g",
       "title": "npm package whitelist preflight and structure refactor task-tree reanchor",
-      "status": "current",
+      "status": "completed",
       "priority": "P0",
       "depends_on": ["P4-2f"],
       "release_blocker": true,
@@ -35,7 +35,7 @@
     {
       "id": "P4-2b",
       "title": "Runtime/project/user boundary physical split and CLI workspace context separation",
-      "status": "open",
+      "status": "current",
       "priority": "P0",
       "depends_on": ["P4-2g"],
       "release_blocker": true,
@@ -95,10 +95,10 @@
     "Do not claim redcap-arsenal contains substantive public knowledge while it remains template-only."
   ],
   "acceptance_gates": [
-    "Parent ledger must mark P4-2f completed and P4-2g current/open before the next release remediation task starts.",
+    "Parent ledger must mark P4-2g completed and P4-2b current/in-progress before CLI workspace remediation starts.",
     "Package surface preflight must be whitelist-driven and must explain historical assets as excluded evidence, not as deleted residue.",
     "Release readiness must continue to fail closed while P4-2a release blockers remain open.",
     "Prism review must be bound before this task-tree reanchor can be closed."
   ],
-  "prism_run": "20260504-redcap-structure-reorg-planning"
+  "prism_run": "20260505-runtime-project-user-boundary-review"
 }

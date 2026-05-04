@@ -630,6 +630,16 @@ if ! bash "$PRE_RELEASE_STRUCTURE_TASK_TREE_CHECK" >/dev/null; then
     exit 1
 fi
 
+RUNTIME_WORKSPACE_BOUNDARY_CHECK="$REDCAP_ROOT/compass/tools/redcap-runtime-workspace-boundary-check.sh"
+if [[ ! -f "$RUNTIME_WORKSPACE_BOUNDARY_CHECK" ]]; then
+    echo "[redcap-spec-check] runtime workspace boundary check missing" >&2
+    exit 1
+fi
+if ! bash "$RUNTIME_WORKSPACE_BOUNDARY_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] runtime workspace boundary check failed" >&2
+    exit 1
+fi
+
 CLEAN_WORKSPACE_E2E_CHECK="$REDCAP_ROOT/compass/tools/redcap-clean-workspace-e2e.sh"
 if [[ -f "$REDCAP_ROOT/references/clean-workspace-install-e2e.json" ]]; then
     if [[ ! -f "$CLEAN_WORKSPACE_E2E_CHECK" ]]; then

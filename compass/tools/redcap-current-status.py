@@ -173,6 +173,33 @@ def pending_validation_summary(repo: Path) -> str:
     )
 
 
+def runtime_workspace_summary(repo: Path, task_file: Path) -> list[str]:
+    runtime_root = os.environ.get("REDCAP_RUNTIME_ROOT") or str(repo)
+    workspace_root = os.environ.get("REDCAP_WORKSPACE_ROOT") or str(task_file.parent)
+    resolved_task_file = os.environ.get("REDCAP_TASK_FILE") or str(task_file)
+
+    policy_path = repo / "references/user-agent-identity-policy.json"
+    local_state = "compass/.workflow/user-agent-identity.json"
+    identity_anchor = "~/.cap/identity.md"
+    if policy_path.is_file():
+        try:
+            policy = json.loads(policy_path.read_text(encoding="utf-8"))
+            local_state = str(policy.get("local_state_path") or local_state)
+            identity_anchor = str(policy.get("identity_file") or identity_anchor)
+        except Exception:
+            pass
+
+    task_exists = Path(resolved_task_file).is_file()
+    relation = "same-root" if Path(runtime_root) == Path(workspace_root) else "external-workspace"
+    return [
+        f"runtime root: {runtime_root}",
+        f"workspace root: {workspace_root}",
+        f"task file: {resolved_task_file} ({'exists' if task_exists else 'missing'})",
+        f"user state: {local_state}; private identity anchor: {identity_anchor}",
+        f"boundary mode: {relation}；CLI 默认应以 workspace 为项目状态目录，runtime root 只提供工具实现",
+    ]
+
+
 def agent_registry_summary(repo: Path) -> list[str]:
     path = repo / "compass/.workflow/agent-registry.yaml"
     text = read(path)
@@ -614,6 +641,11 @@ def main() -> int:
     print(f"- git: {head}（{dirty_label}）")
     if report_rel:
         print(f"- task_report: {report_rel}")
+    print()
+
+    print("## runtime / workspace / user 边界")
+    for line in runtime_workspace_summary(repo, task_file):
+        print(f"- {line}")
     print()
 
     print("## 收尾红线")

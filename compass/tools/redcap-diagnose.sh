@@ -6,7 +6,10 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-TASK_FILE="${1:-$REDCAP_ROOT/.dev-task.md}"
+TASK_FILE="${1:-${REDCAP_TASK_FILE:-$REDCAP_ROOT/.dev-task.md}}"
+REDCAP_RUNTIME_ROOT="${REDCAP_RUNTIME_ROOT:-$REDCAP_ROOT}"
+REDCAP_WORKSPACE_ROOT="${REDCAP_WORKSPACE_ROOT:-$(cd "$(dirname "$TASK_FILE")" 2>/dev/null && pwd || dirname "$TASK_FILE")}"
+export REDCAP_RUNTIME_ROOT REDCAP_WORKSPACE_ROOT REDCAP_TASK_FILE="$TASK_FILE"
 
 run_check() {
     local name="$1"
@@ -78,7 +81,9 @@ PY
 }
 
 echo "REDCAP_DIAGNOSE"
-echo "cwd=$REDCAP_ROOT"
+echo "runtime_root=$REDCAP_RUNTIME_ROOT"
+echo "workspace_root=$REDCAP_WORKSPACE_ROOT"
+echo "task_file=$TASK_FILE"
 echo
 
 if [[ -x "$SCRIPT_DIR/redcap-current-status.sh" ]]; then
@@ -147,6 +152,7 @@ run_check "package-publish-safety" bash "$SCRIPT_DIR/redcap-package-publish-safe
 run_check "runtime-package-manifest" bash "$SCRIPT_DIR/redcap-runtime-package-manifest.sh" --check || overall=1
 run_check "pre-release-product-architecture" bash "$SCRIPT_DIR/redcap-pre-release-product-architecture-check.sh" || overall=1
 run_check "pre-release-structure-task-tree" bash "$SCRIPT_DIR/redcap-pre-release-structure-task-tree-check.sh" || overall=1
+run_check "runtime-workspace-boundary" bash "$SCRIPT_DIR/redcap-runtime-workspace-boundary-check.sh" || overall=1
 if [[ -f "$REDCAP_ROOT/references/clean-workspace-install-e2e.json" ]]; then
     run_check "clean-workspace-e2e" bash "$SCRIPT_DIR/redcap-clean-workspace-e2e.sh" --check-result || overall=1
 fi

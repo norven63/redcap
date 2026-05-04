@@ -4,14 +4,14 @@
   "task_id": "pre-release-product-architecture-review",
   "status": "blocked-pending-remediation",
   "release_recommendation": "not-ready-before-product-architecture-remediation",
-  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, but it is not yet an excellent public npm CLI/runtime product. Before public release, the runtime/project/user boundaries, workspace context contract, public package identity, license posture, CLI debug contract and public knowledge claims need remediation or explicit scope reduction.",
+  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, but it is not yet an excellent public npm CLI/runtime product. P4-2b has fixed the CLI workspace-context blocker by making workspace-oriented commands project-oriented by default. Before public release, the remaining runtime layout, public package identity, license posture, CLI debug contract and public knowledge claims still need remediation or explicit scope reduction.",
   "observed_facts": {
     "current_package_name": "@redcap-ai/runtime",
     "user_approved_public_package_name": "@norven63/redcap",
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 204,
+    "package_candidate_count": 207,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
@@ -22,7 +22,7 @@
     "cli_has_debug_command": false,
     "cli_has_trace_option": false,
     "cli_has_version_command": true,
-    "cli_defaults_to_package_task_file": true,
+    "cli_defaults_to_package_task_file": false,
     "redcap_arsenal_local_worktree_ref": "shared-knowledge-remote-binding.preferred_local_worktree",
     "redcap_arsenal_content_state": "template-only",
     "redcap_arsenal_substantive_entries": 0,
@@ -77,12 +77,14 @@
     {
       "id": "cli-workspace-context-not-separated",
       "dimension": "machine-independence",
-      "severity": "release-blocker",
-      "claim": "The current CLI defaults status, diagnose and closeout-style task operations to package-root state such as $REDCAP_ROOT/.dev-task.md. A public CLI must operate on the managed project workspace by default, with the npm package acting as runtime implementation rather than the project state directory.",
+      "severity": "pass",
+      "claim": "P4-2b makes workspace-oriented CLI commands resolve a managed project workspace by default. status, diagnose and change-intake now support --workspace/--task-file, default task state to <workspace>/.dev-task.md, and expose runtime root, workspace root, task file and user-state policy in status/diagnose output.",
       "evidence": [
-        "bin/redcap"
+        "bin/redcap",
+        "references/runtime-workspace-boundary-policy.json",
+        "compass/tools/redcap-runtime-workspace-boundary-check.py"
       ],
-      "required_before_public_release": true
+      "required_before_public_release": false
     },
     {
       "id": "distribution-license-not-finalized",
@@ -98,7 +100,7 @@
       "id": "package-surface-too-broad-for-public-cli",
       "dimension": "cli-product-quality",
       "severity": "should-fix",
-      "claim": "The npm package candidate surface currently contains 204 files and many internal governance artifacts. This is acceptable for internal runtime readiness, but should be curated before public product release.",
+      "claim": "The npm package candidate surface currently contains 207 files and many internal governance artifacts. This is acceptable for internal runtime readiness, but should be curated before public product release.",
       "evidence": [
         "references/runtime-package-readiness-policy.json",
         "npm pack --dry-run --json"
@@ -149,7 +151,7 @@
     {
       "id": "P4-2b",
       "title": "Runtime/project/user boundary physical split and compatibility shim apply",
-      "priority": "P0-before-public-release"
+      "priority": "completed-minimum-workspace-context"
     },
     {
       "id": "P4-2c",

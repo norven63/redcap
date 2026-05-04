@@ -15,6 +15,197 @@ while [[ -h "$SOURCE" ]]; do
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REDCAP_RUNTIME_ROOT="$REDCAP_ROOT"
+REDCAP_CMD_REMAINING_ARGS=()
+
+path_inside() {
+  local child="$1"
+  local parent="$2"
+  [[ "$child/" == "$parent/"* ]]
+}
+
+default_workspace_root() {
+  local cursor
+
+  cursor="$(pwd -P)"
+  if path_inside "$cursor" "$REDCAP_ROOT"; then
+    printf '%s\n' "$REDCAP_ROOT"
+    return
+  fi
+
+  while [[ "$cursor" != "/" ]]; do
+    if [[ -f "$cursor/.dev-task.md" ]]; then
+      printf '%s\n' "$cursor"
+      return
+    fi
+    cursor="$(dirname "$cursor")"
+  done
+
+  printf '%s\n' "$(pwd -P)"
+}
+
+abs_dir() {
+  local dir="$1"
+  if ! cd -P "$dir" >/dev/null 2>&1; then
+    echo "redcap: workspace directory not found: $dir" >&2
+    exit 2
+  fi
+  pwd
+}
+
+abs_file_from_workspace() {
+  local file="$1"
+  local workspace="$2"
+  local candidate dir base
+
+  if [[ "$file" == /* ]]; then
+    candidate="$file"
+  else
+    candidate="$workspace/$file"
+  fi
+
+  dir="$(dirname "$candidate")"
+  base="$(basename "$candidate")"
+  if ! cd -P "$dir" >/dev/null 2>&1; then
+    echo "redcap: task-file directory not found: $dir" >&2
+    exit 2
+  fi
+  printf '%s/%s\n' "$(pwd)" "$base"
+}
+
+resolve_workspace_task_args() {
+  local workspace="${REDCAP_WORKSPACE:-}"
+  local task_file=""
+  REDCAP_CMD_REMAINING_ARGS=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --workspace)
+        if [[ $# -lt 2 ]]; then
+          echo "redcap: --workspace requires a value" >&2
+          exit 2
+        fi
+        workspace="$2"
+        shift 2
+        ;;
+      --workspace=*)
+        workspace="${1#--workspace=}"
+        shift
+        ;;
+      --task-file)
+        if [[ $# -lt 2 ]]; then
+          echo "redcap: --task-file requires a value" >&2
+          exit 2
+        fi
+        task_file="$2"
+        shift 2
+        ;;
+      --task-file=*)
+        task_file="${1#--task-file=}"
+        shift
+        ;;
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          if [[ -z "$task_file" ]]; then
+            task_file="$1"
+          else
+            REDCAP_CMD_REMAINING_ARGS+=("$1")
+          fi
+          shift
+        done
+        ;;
+      -*)
+        REDCAP_CMD_REMAINING_ARGS+=("$1")
+        shift
+        ;;
+      *)
+        if [[ -z "$task_file" ]]; then
+          task_file="$1"
+        else
+          REDCAP_CMD_REMAINING_ARGS+=("$1")
+        fi
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -z "$workspace" ]]; then
+    workspace="$(default_workspace_root)"
+  fi
+  if [[ -z "$task_file" && -n "${REDCAP_TASK_FILE:-}" ]]; then
+    task_file="$REDCAP_TASK_FILE"
+  fi
+
+  REDCAP_CMD_WORKSPACE_ROOT="$(abs_dir "$workspace")"
+  if [[ -z "$task_file" ]]; then
+    REDCAP_CMD_TASK_FILE="$REDCAP_CMD_WORKSPACE_ROOT/.dev-task.md"
+  else
+    REDCAP_CMD_TASK_FILE="$(abs_file_from_workspace "$task_file" "$REDCAP_CMD_WORKSPACE_ROOT")"
+  fi
+
+  export REDCAP_RUNTIME_ROOT
+  export REDCAP_WORKSPACE_ROOT="$REDCAP_CMD_WORKSPACE_ROOT"
+  export REDCAP_TASK_FILE="$REDCAP_CMD_TASK_FILE"
+}
+
+resolve_workspace_options_only() {
+  local workspace="${REDCAP_WORKSPACE:-}"
+  local task_file=""
+  REDCAP_CMD_REMAINING_ARGS=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --workspace)
+        if [[ $# -lt 2 ]]; then
+          echo "redcap: --workspace requires a value" >&2
+          exit 2
+        fi
+        workspace="$2"
+        shift 2
+        ;;
+      --workspace=*)
+        workspace="${1#--workspace=}"
+        shift
+        ;;
+      --task-file)
+        if [[ $# -lt 2 ]]; then
+          echo "redcap: --task-file requires a value" >&2
+          exit 2
+        fi
+        task_file="$2"
+        shift 2
+        ;;
+      --task-file=*)
+        task_file="${1#--task-file=}"
+        shift
+        ;;
+      *)
+        REDCAP_CMD_REMAINING_ARGS+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if [[ -z "$workspace" ]]; then
+    workspace="$(default_workspace_root)"
+  fi
+  if [[ -z "$task_file" && -n "${REDCAP_TASK_FILE:-}" ]]; then
+    task_file="$REDCAP_TASK_FILE"
+  fi
+
+  REDCAP_CMD_WORKSPACE_ROOT="$(abs_dir "$workspace")"
+  if [[ -z "$task_file" ]]; then
+    REDCAP_CMD_TASK_FILE="$REDCAP_CMD_WORKSPACE_ROOT/.dev-task.md"
+  else
+    REDCAP_CMD_TASK_FILE="$(abs_file_from_workspace "$task_file" "$REDCAP_CMD_WORKSPACE_ROOT")"
+  fi
+  REDCAP_CMD_REMAINING_ARGS+=(--task-file "$REDCAP_CMD_TASK_FILE")
+
+  export REDCAP_RUNTIME_ROOT
+  export REDCAP_WORKSPACE_ROOT="$REDCAP_CMD_WORKSPACE_ROOT"
+  export REDCAP_TASK_FILE="$REDCAP_CMD_TASK_FILE"
+}
 
 usage() {
   cat <<'EOF'
@@ -22,9 +213,9 @@ usage: redcap <command> [args...]
 
 commands:
   revive                 run ./revive-cap.sh
-  status                 show current RedCap status
-  diagnose               run the diagnostic overview
-  closeout               route to ./closeout-cap.sh
+  status                 show current RedCap status for the workspace
+  diagnose               run the diagnostic overview for the workspace
+  closeout               route to ./closeout-cap.sh for the workspace task file
   prism-availability     inspect or refresh Prism agent availability
   file-dictionary        validate the File Lookup Dictionary
   shared-knowledge       manage the shared knowledge repository template
@@ -33,6 +224,12 @@ commands:
   pre-release-review     validate product-architecture blockers before release readiness
   change-intake          validate mid-task inserted requirement handling
   version                print RedCap package version
+
+workspace options for status/diagnose/change-intake/closeout:
+  --workspace <dir>      managed project workspace (default: current directory)
+  --task-file <file>     task file path (default: <workspace>/.dev-task.md)
+  REDCAP_WORKSPACE       optional workspace env fallback when no flag is given
+  REDCAP_TASK_FILE       optional task-file env fallback when no flag is given
 EOF
 }
 
@@ -48,13 +245,22 @@ case "$COMMAND" in
     exec "$REDCAP_ROOT/revive-cap.sh" "$@"
     ;;
   status)
-    exec bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "${1:-$REDCAP_ROOT/.dev-task.md}"
+    resolve_workspace_task_args "$@"
+    if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
+      exec bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
+    fi
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$REDCAP_CMD_TASK_FILE"
     ;;
   diagnose)
-    exec bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "${1:-$REDCAP_ROOT/.dev-task.md}"
+    resolve_workspace_task_args "$@"
+    if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
+      exec bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
+    fi
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_CMD_TASK_FILE"
     ;;
   closeout)
-    exec "$REDCAP_ROOT/closeout-cap.sh" "$@"
+    resolve_workspace_options_only "$@"
+    exec "$REDCAP_ROOT/closeout-cap.sh" "${REDCAP_CMD_REMAINING_ARGS[@]}"
     ;;
   prism-availability)
     exec bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" "${1:-status}" "${@:2}"
@@ -75,7 +281,11 @@ case "$COMMAND" in
     exec bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh" "$@"
     ;;
   change-intake)
-    exec bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "${1:-$REDCAP_ROOT/.dev-task.md}" "${@:2}"
+    resolve_workspace_task_args "$@"
+    if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
+      exec bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
+    fi
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$REDCAP_CMD_TASK_FILE"
     ;;
   help|-h|--help)
     usage

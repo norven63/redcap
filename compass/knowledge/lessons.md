@@ -1455,3 +1455,12 @@ frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
 - **影响度**：high
 - **复现次数**：1
 - **最后命中**：2026-05-04
+
+### L-152: CLI 化时必须先拆“工具位置”和“项目位置”
+- **问题源**：P4-2b 前，`bin/redcap status/diagnose/change-intake` 默认读取 RedCap package root 的 `.dev-task.md`。这在 RedCap 自开发时看似正常，但一旦作为 public CLI 安装到外部项目，就会把工具本体的开发现场误当成用户项目状态。
+- **解决方案**：CLI facade 必须先解析 runtime root、workspace root、task file 和 user state：外部项目默认使用调用者 workspace，RedCap 自开发模式允许 workspace 等于 runtime root；`closeout` 这类收尾命令也必须进入同一解析链。专项 checker 要用临时外部 workspace 和 RedCap 自开发场景同时回归，不能只做字符串检查。
+- **最后效果**：RedCap CLI 的任务类命令现在不会静默回退到 package-root 任务卡；status/diagnose 会展示三层边界，pre-release product architecture 的 workspace blocker 从 release-blocker 变为 pass，但 public release 仍被剩余 blocker 拦住。
+- **来源**：2026-05-05 P4-2b runtime/project/user 边界与 CLI workspace context
+- **影响度**：high
+- **复现次数**：1
+- **最后命中**：2026-05-05

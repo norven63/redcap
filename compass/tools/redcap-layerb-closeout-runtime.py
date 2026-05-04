@@ -345,6 +345,8 @@ def sync_promises(identity: TaskIdentity) -> dict[str, Any]:
     promises = parse_checkbox_items(identity.task_text, "执行承诺账本")
     payload = {
         "task_id": identity.task_id,
+        "task_file": str(identity.task_file),
+        "repo_root": str(identity.repo_root),
         "confirmed_hash": identity.confirmed_hash,
         "active_slice": identity.active_slice,
         "top_goal": identity.top_goal,
@@ -701,6 +703,8 @@ def command_status(args: argparse.Namespace) -> int:
     state = load_state(identity)
     payload = {
         "task_id": identity.task_id,
+        "task_file": str(identity.task_file),
+        "repo_root": str(identity.repo_root),
         "confirmed_hash": identity.confirmed_hash,
         "active_slice": identity.active_slice,
         "promise_total": promise_info["total"],

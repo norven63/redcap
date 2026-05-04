@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 22,
-    "size_bytes": 294259,
-    "lines": 6041,
-    "chars": 180096,
+    "file_count": 23,
+    "size_bytes": 309613,
+    "lines": 6272,
+    "chars": 190108,
     "rough_token_pressure": {
-      "low": 45024,
-      "high": 90048
+      "low": 47527,
+      "high": 95054
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 7,
-        "size_bytes": 100738,
-        "lines": 1459,
-        "chars": 63729,
+        "file_count": 8,
+        "size_bytes": 116092,
+        "lines": 1690,
+        "chars": 73741,
         "rough_token_pressure": {
-          "low": 15932,
-          "high": 31864
+          "low": 18435,
+          "high": 36870
         }
       }
     },
@@ -95,6 +95,12 @@
         "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
         "chars": 11055,
         "lines": 253,
+        "read_policy": "read-catalog-summary-by-default"
+      },
+      {
+        "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
+        "chars": 10012,
+        "lines": 231,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
@@ -102,12 +108,6 @@
         "chars": 9286,
         "lines": 186,
         "read_policy": "read-catalog-summary-by-default"
-      },
-      {
-        "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
-        "chars": 9116,
-        "lines": 348,
-        "read_policy": "read-registry-summary-first"
       }
     ]
   },
@@ -461,29 +461,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-2a 发布前产品架构审判",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16953,
       "lines": 253,
       "chars": 11055,
       "summary": "当前已完成：RedCap 现在有了一个发布前产品架构审判 gate，用来阻止“能打包”被冒充成“值得作为优秀 CLI/runtime 产品发布”。 / 详情：本轮把发布前评估拆成安全性、机器独立性、CLI 产品性、源码可见模型、公共知识边界、Agent 容器契约和分发合规几个维度，并用机器检查器对当前真实仓库状态做复验。结论不是“RedCap 可以发布”，而是“P4-2a 审判完成，当前 public release 仍有 5 个必须先处理的 release blocker”。第一轮 Prism 抓到的本机路径泄漏、checker 自证循环、本机路径硬依赖已经修复；第二轮 Prism 复审通过；完整 multi-session a…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 现在有了一个发布前产品架构审判 gate，用来阻止“能打包”被冒充成“值得作为优秀 CLI/runtime 产品发布”。",
-          "详情：本轮把发布前评估拆成安全性、机器独立性、CLI 产品性、源码可见模型、公共知识边界、Agent 容器契约和分发合规几个维度，并用机器检查器对当前真实仓库状态做复验。结论不是“RedCap 可以发布”，而是“P4-2a 审判完成，当前 public release 仍有 5 个必须先处理的 release blocker”。第一轮 Prism 抓到的本机路径泄漏、checker 自证循环、本机路径硬依赖已经修复；第二轮 Prism 复审通过；完整 multi-session acceptance 又抓到缺 n…"
-        ],
-        "previous_step": [
-          "上一步完成的是：父任务线已经收口到 P4-2 正式 public release 之前，但用户指出发布前更重要的是判断 RedCap 是否已经足够优秀、独立和安全，而不是只问能不能 npm pack。"
-        ],
-        "next_step": [
-          "下一步计划做的是：若继续推进 public release，应先做 P4-2b/P4-2c/P4-2d 这类发布前整改，而不是直接 npm publish。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-3 clean workspace E2E → parent 状态面对账 → P4-2a 产品架构审判 → P4-2b/c/d 发布前整改 → P4-2 release readiness → npm publish。",
-          "当前所在位置：P4-2a 已完成审判；父任务仍未 complete，P4-2 public release 仍未启动。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md",
@@ -540,6 +524,35 @@
         "position": [
           "整体计划脉络图是：P4-2a 发布前审判 → P4-2f 信息架构治理 → P4-2g 任务树重锚定与 npm 白名单预检原则 → P4-2b/c/d 发布前 P0 整改 → release readiness → npm publish。",
           "当前所在位置：P4-2g 已完成实现与棱镜验收；父任务 P4-2 仍处于 public release 之前的整改阶段。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-2b runtime/project/user 边界与 CLI workspace context",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 15354,
+      "lines": 231,
+      "chars": 10012,
+      "summary": "当前已完成：RedCap CLI 的任务类命令已经从“默认读 RedCap 包根目录任务卡”改为“默认读调用者所在项目 workspace 的任务卡”，并有机器门禁证明不会再静默回退到 package-root。 / 详情：这次解决的是 public CLI 发布前最危险的一类错位：工具本体、用户项目、用户身份状态三层混在一起。现在 `status`、`diagnose`、`change-intake`、`closeout status` 都会先解析 workspace 和 task file；外部项目默认读外部项目的 `.dev-task.md`，RedCap 自身开发仍能在仓库根目录或子目录正常读自己的任务卡。诊断输出也会直接…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap CLI 的任务类命令已经从“默认读 RedCap 包根目录任务卡”改为“默认读调用者所在项目 workspace 的任务卡”，并有机器门禁证明不会再静默回退到 package-root。",
+          "详情：这次解决的是 public CLI 发布前最危险的一类错位：工具本体、用户项目、用户身份状态三层混在一起。现在 `status`、`diagnose`、`change-intake`、`closeout status` 都会先解析 workspace 和 task file；外部项目默认读外部项目的 `.dev-task.md`，RedCap 自身开发仍能在仓库根目录或子目录正常读自己的任务卡。诊断输出也会直接展示 runtime root、workspace root、task file 和 user s…"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2g 已完成 npm 白名单预检与结构重构任务树重锚定，把“先拍片再手术”的顺序固定下来，并确认 P4-2b 是当前最优先的发布前 P0 blocker。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续推进 P4-2c，补齐面向外部用户的 CLI doctor / debug / trace / error / help 产品面；本轮不继续扩张到 npm 发布或 license/package identity 定稿。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-2g 白名单预检与任务树重锚定 → P4-2b runtime/workspace 边界 → P4-2c CLI 诊断产品面 → P4-2d public package identity/license/surface → P4-2 正式 release readiness。",
+          "当前所在位置：P4-2b 已进入实现收口；public release 仍保持 blocked，剩余 release blockers 还有 runtime layout、CLI debug surface、package identity/license。"
         ]
       }
     }
