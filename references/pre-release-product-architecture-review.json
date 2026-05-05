@@ -4,17 +4,18 @@
   "task_id": "pre-release-product-architecture-review",
   "status": "blocked-pending-remediation",
   "release_recommendation": "not-ready-before-product-architecture-remediation",
-  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, but it is not yet an excellent public npm CLI/runtime product. P4-2b fixed the CLI workspace-context blocker, and P4-2c added publish-grade doctor/debug/trace/help/error surfaces with redacted diagnostics. Before public release, the remaining runtime layout, public package identity, license posture and public knowledge claims still need remediation or explicit scope reduction.",
+  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, but it is not yet an excellent public npm CLI/runtime product. P4-2b fixed the CLI workspace-context blocker, P4-2c added publish-grade doctor/debug/trace/help/error surfaces, and P4-2d prepared the user-approved package identity @norven63/redcap while keeping private/readiness-only release boundaries. Before public release, runtime layout, license choice, publication enablement and public knowledge claims still need remediation or explicit scope reduction.",
   "observed_facts": {
-    "current_package_name": "@redcap-ai/runtime",
+    "current_package_name": "@norven63/redcap",
     "user_approved_public_package_name": "@norven63/redcap",
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 212,
+    "package_candidate_count": 215,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
+    "public_package_surface_status": "pass",
     "execution_layer_split_status": "dry-run-only",
     "runtime_root_exists": false,
     "current_runtime_shape": "skill-root-runtime-plus-thin-cli-facade",
@@ -44,11 +45,25 @@
     {
       "id": "public-package-identity-not-finalized",
       "dimension": "cli-product-quality",
-      "severity": "release-blocker",
-      "claim": "The current package metadata remains private and uses @redcap-ai/runtime, while the user-approved public package name is @norven63/redcap. This is correct for readiness-only mode but blocks public publish.",
+      "severity": "pass",
+      "claim": "The package identity is now prepared as the user-approved @norven63/redcap across package.json and runtime package readiness policy while keeping private=true and publish_allowed=false.",
       "evidence": [
         "package.json",
-        "references/runtime-package-readiness-policy.json"
+        "references/runtime-package-readiness-policy.json",
+        "references/public-package-surface-policy.json",
+        "compass/tools/redcap-public-package-surface.py"
+      ],
+      "required_before_public_release": false
+    },
+    {
+      "id": "public-package-publish-disabled",
+      "dimension": "distribution-compliance",
+      "severity": "release-blocker",
+      "claim": "The package is deliberately still private and publish_allowed=false. That is correct for P4-2d readiness work, but a separate release task must explicitly enable publication before npm publish.",
+      "evidence": [
+        "package.json",
+        "references/runtime-package-readiness-policy.json",
+        "references/public-package-surface-policy.json"
       ],
       "required_before_public_release": true
     },
@@ -103,9 +118,10 @@
       "id": "package-surface-too-broad-for-public-cli",
       "dimension": "cli-product-quality",
       "severity": "should-fix",
-      "claim": "The npm package candidate surface currently contains 212 files and many internal governance artifacts. This is acceptable for internal runtime readiness, but should be curated before public product release.",
+      "claim": "The npm package candidate surface currently contains 215 files. P4-2d makes this an explicit full-runtime-readiness surface with safety gates, but a thinner public product package may still be desirable before broad marketing.",
       "evidence": [
         "references/runtime-package-readiness-policy.json",
+        "references/public-package-surface-policy.json",
         "npm pack --dry-run --json"
       ],
       "required_before_public_release": false

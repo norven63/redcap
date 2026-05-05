@@ -610,6 +610,16 @@ if ! bash "$RUNTIME_PACKAGE_MANIFEST_CHECK" --check >/dev/null; then
     exit 1
 fi
 
+PUBLIC_PACKAGE_SURFACE_CHECK="$REDCAP_ROOT/compass/tools/redcap-public-package-surface.sh"
+if [[ ! -f "$PUBLIC_PACKAGE_SURFACE_CHECK" ]]; then
+    echo "[redcap-spec-check] public package surface check missing" >&2
+    exit 1
+fi
+if ! bash "$PUBLIC_PACKAGE_SURFACE_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] public package surface check failed" >&2
+    exit 1
+fi
+
 PRE_RELEASE_PRODUCT_ARCHITECTURE_CHECK="$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh"
 if [[ ! -f "$PRE_RELEASE_PRODUCT_ARCHITECTURE_CHECK" ]]; then
     echo "[redcap-spec-check] pre-release product architecture check missing" >&2

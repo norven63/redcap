@@ -275,6 +275,7 @@ commands:
   shared-knowledge       manage the shared knowledge repository template
   publish-safety         audit package candidate files before public release
   package-manifest       generate/check runtime package candidate files
+  package-surface        validate public package identity and surface readiness
   pre-release-review     validate product-architecture blockers before release readiness
   change-intake          validate mid-task inserted requirement handling
   version                print RedCap package version
@@ -387,6 +388,9 @@ case "$COMMAND" in
     ;;
   package-manifest)
     exec bash "$REDCAP_ROOT/compass/tools/redcap-runtime-package-manifest.sh" "$@"
+    ;;
+  package-surface)
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-public-package-surface.sh" "$@"
     ;;
   pre-release-review)
     exec bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh" "$@"

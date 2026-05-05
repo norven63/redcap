@@ -180,6 +180,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh redcap-forge-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
+  bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-structure-task-tree-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-workspace-boundary-check
@@ -567,6 +568,11 @@ write_valid_task_report_fixture() {
 
 - 整体计划脉络图是：fixture 初始化 → 报告生成 → task-report-check 审计。
 - 当前所在位置：task-report-check acceptance fixture。
+
+### 0.5 是否需要 Norven 人工介入
+
+- 人工介入：不需要。
+- 说明：该报告仅用于自动化验收，不需要 Norven 提供外部决策。
 
 ## 一、需求背景
 
@@ -4805,7 +4811,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_FAKE_COPILOT_GUARD_FLAG="$copilot_guard_flag" \
             REDCAP_RUNTIME_SESSION_ID="" \
             REDCAP_RUNTIME_CAPABILITY="" \
@@ -11462,7 +11468,7 @@ run_shared_knowledge_check_case() {
 }
 
 run_retrieval_escalation_check_case() {
-    local output bad_policy stale_output status
+    local output bad_policy bad_check_policy stale_output status
 
     log "case: retrieval-escalation-check"
 
@@ -11932,6 +11938,57 @@ PY
     assert_string_contains "$stale_output" "publish_allowed must be false"
 }
 
+run_public_package_surface_check_case() {
+    local output bad_policy stale_output status
+
+    log "case: public-package-surface-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-package-surface.sh")"
+    assert_string_contains "$output" "PUBLIC_PACKAGE_SURFACE_OK"
+    assert_string_contains "$output" "package_name=@norven63/redcap"
+    assert_string_contains "$output" "publish_allowed=False"
+    output="$(bash "$REDCAP_ROOT/bin/redcap" package-surface)"
+    assert_string_contains "$output" "PUBLIC_PACKAGE_SURFACE_OK"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'public package surface check missing'
+
+    bad_policy="$ACCEPT_ROOT/public-package-surface-bad-policy.json"
+    python3 - "$REDCAP_ROOT/references/public-package-surface-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["publish_allowed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-package-surface.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "public package surface should reject publish_allowed=true"
+    assert_string_contains "$stale_output" "publish_allowed=false"
+
+    bad_check_policy="$ACCEPT_ROOT/public-package-surface-bad-check-policy.json"
+    python3 - "$REDCAP_ROOT/references/public-package-surface-policy.json" "$bad_check_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["required_runtime_checks"] = [
+    item.replace("redcap-public-package-surface.sh", "redcap-public-package-surface-check.sh")
+    for item in payload["required_runtime_checks"]
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-package-surface.sh" --policy "$bad_check_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "public package surface should reject stale required_runtime_checks"
+    assert_string_contains "$stale_output" "required_runtime_checks must match"
+}
+
 run_pre_release_product_architecture_check_case() {
     local output bad_review stale_output status
 
@@ -12372,7 +12429,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12535,6 +12592,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-public-package-surface.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "public-package-surface" ]]; then
+    echo "fixture public package surface failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         cat >"$repo/compass/tools/redcap-pre-release-structure-task-tree-check.sh" <<EOF
 #!/usr/bin/env bash
 if [[ "$failing_gate" == "pre-release-structure-task-tree" ]]; then
@@ -12596,6 +12662,7 @@ EOF
             "$repo/compass/tools/redcap-feishu-notification-policy-check.sh" \
             "$repo/compass/tools/redcap-human-communication-check.sh" \
             "$repo/compass/tools/redcap-runtime-package-manifest.sh" \
+            "$repo/compass/tools/redcap-public-package-surface.sh" \
             "$repo/compass/tools/redcap-pre-release-product-architecture-check.sh" \
             "$repo/compass/tools/redcap-pre-release-structure-task-tree-check.sh" \
             "$repo/compass/tools/redcap-runtime-workspace-boundary-check.sh" \
@@ -12622,6 +12689,7 @@ EOF
             feishu-notification-policy) expected_message="Feishu notification policy check failed" ;;
             human-communication) expected_message="human communication check failed" ;;
             runtime-package) expected_message="runtime package manifest check failed" ;;
+            public-package-surface) expected_message="public package surface check failed" ;;
             pre-release-product-architecture) expected_message="pre-release product architecture check failed" ;;
             pre-release-structure-task-tree) expected_message="pre-release structure task tree check failed" ;;
             runtime-workspace-boundary) expected_message="runtime workspace boundary check failed" ;;
@@ -12695,6 +12763,7 @@ for rel in [
     "compass/tools/redcap-feishu-notification-policy-check.sh",
     "compass/tools/redcap-human-communication-check.sh",
     "compass/tools/redcap-runtime-package-manifest.sh",
+    "compass/tools/redcap-public-package-surface.sh",
     "compass/tools/redcap-pre-release-product-architecture-check.sh",
     "compass/tools/redcap-pre-release-structure-task-tree-check.sh",
     "compass/tools/redcap-runtime-workspace-boundary-check.sh",
@@ -13508,6 +13577,7 @@ run_all_cases() {
     run_redcap_forge_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
+    run_public_package_surface_check_case
     run_pre_release_product_architecture_check_case
     run_pre_release_structure_task_tree_check_case
     run_runtime_workspace_boundary_check_case
@@ -14004,6 +14074,9 @@ case "$COMMAND" in
         ;;
     runtime-package-manifest-check)
         run_runtime_package_manifest_check_case
+        ;;
+    public-package-surface-check)
+        run_public_package_surface_check_case
         ;;
     pre-release-product-architecture-check)
         run_pre_release_product_architecture_check_case

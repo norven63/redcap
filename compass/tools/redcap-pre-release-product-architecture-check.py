@@ -211,6 +211,9 @@ def validate_review(policy: dict[str, Any], review: dict[str, Any], root: Path) 
     runtime_manifest = run_output(["bash", str(root / "compass/tools/redcap-runtime-package-manifest.sh"), "--check"], cwd=root)
     if "RUNTIME_PACKAGE_MANIFEST_OK" not in runtime_manifest:
         fail("runtime package manifest did not pass")
+    public_surface = run_output(["bash", str(root / "compass/tools/redcap-public-package-surface.sh")], cwd=root)
+    if "PUBLIC_PACKAGE_SURFACE_OK" not in public_surface:
+        fail("public package surface check did not pass")
     package_safety = run_output(["bash", str(root / "compass/tools/redcap-package-publish-safety-check.sh")], cwd=root)
     if "PACKAGE_PUBLISH_SAFETY_OK" not in package_safety:
         fail("package safety did not pass")
@@ -277,8 +280,10 @@ def validate_review(policy: dict[str, Any], review: dict[str, Any], root: Path) 
 
     expected_blockers: set[str] = set()
     approved_name = facts.get("user_approved_public_package_name")
-    if package_json.get("private") is True or package_json.get("name") != approved_name:
+    if package_json.get("name") != approved_name:
         expected_blockers.add("public-package-identity-not-finalized")
+    if package_json.get("private") is True:
+        expected_blockers.add("public-package-publish-disabled")
     if split.get("status") == "dry-run-only" or not (root / "runtime").exists():
         expected_blockers.add("runtime-project-user-boundaries-not-physically-split")
     if not (commands["doctor"] and commands["debug"] and commands["trace"]):

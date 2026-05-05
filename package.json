@@ -1,5 +1,5 @@
 {
-  "name": "@redcap-ai/runtime",
+  "name": "@norven63/redcap",
   "version": "0.1.0-alpha.0",
   "private": true,
   "description": "RedCap Agent runtime and CLI readiness package surface.",

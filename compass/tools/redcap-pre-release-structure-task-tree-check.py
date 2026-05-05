@@ -11,6 +11,7 @@ POLICY = ROOT / "references/pre-release-structure-refactor-task-tree.json"
 PARENT_LEDGER = ROOT / "references/redcap-parent-task-ledger.md"
 PACKAGE_POLICY = ROOT / "references/runtime-package-readiness-policy.json"
 PRE_RELEASE_REVIEW = ROOT / "references/pre-release-product-architecture-review.json"
+TASK_FILE = ROOT / ".dev-task.md"
 
 
 def fail(message: str) -> None:
@@ -41,6 +42,15 @@ def require_bool(payload: dict[str, Any], key: str, label: str) -> bool:
     if not isinstance(value, bool):
         fail(f"{label} missing boolean {key}")
     return value
+
+
+def current_parent_child_id() -> str:
+    if not TASK_FILE.is_file():
+        return ""
+    for line in TASK_FILE.read_text(encoding="utf-8").splitlines():
+        if line.startswith("parent_child_id:"):
+            return line.split(":", 1)[1].strip()
+    return ""
 
 
 def main() -> None:
@@ -125,8 +135,9 @@ def main() -> None:
             if node_map[node_id]["status"] == "current"
         ]
         if node_map["P4-2b"]["status"] == "completed" and node_map["P4-2c"]["status"] == "completed":
-            if current_release_nodes:
-                fail("after P4-2c completes, no later P0 remediation node may be current until a new task card starts it")
+            active_child = current_parent_child_id()
+            if current_release_nodes and current_release_nodes != [active_child]:
+                fail("after P4-2c completes, a later P0 remediation node may be current only when .dev-task.md starts that child")
         elif node_map["P4-2b"]["status"] == "completed":
             if current_release_nodes != ["P4-2c"]:
                 fail("after P4-2b completes, exactly P4-2c must be the current P0 remediation node")

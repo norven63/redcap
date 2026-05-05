@@ -65,6 +65,7 @@ REQUIRED_IDS = {
     "pre-release-structure-task-tree",
     "runtime-workspace-boundary-gate",
     "cli-product-surface-gate",
+    "public-package-surface-gate",
 }
 
 ALLOWED_PRIORITIES = {"P0", "P1", "P2", "P3"}

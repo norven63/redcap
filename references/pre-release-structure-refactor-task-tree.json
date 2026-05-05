@@ -59,7 +59,7 @@
     {
       "id": "P4-2d",
       "title": "Public package identity, license, and curated package surface preparation",
-      "status": "open",
+      "status": "completed",
       "priority": "P0",
       "depends_on": [
         "P4-2g",
@@ -117,5 +117,5 @@
     "Release readiness must continue to fail closed while P4-2a release blockers remain open.",
     "Prism review must be bound before this task-tree reanchor can be closed."
   ],
-  "prism_run": "20260505-cli-diagnostic-product-surface-review"
+  "prism_run": "20260505-public-package-identity-surface-review"
 }

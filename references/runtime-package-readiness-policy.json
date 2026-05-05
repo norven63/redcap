@@ -4,8 +4,10 @@
   "status": "readiness-only",
   "publish_allowed": false,
   "package_manager": "npm",
-  "package_name": "@redcap-ai/runtime",
+  "package_name": "@norven63/redcap",
   "package_version": "0.1.0-alpha.0",
+  "public_identity_status": "prepared-private-readiness",
+  "license_status": "manual-before-public-publish",
   "bin": {
     "redcap": "bin/redcap"
   },
@@ -37,11 +39,13 @@
     "revive-cap.sh",
     "closeout-cap.sh",
     "references/package-publish-safety-policy.json",
-    "references/runtime-package-readiness-policy.json"
+    "references/runtime-package-readiness-policy.json",
+    "references/public-package-surface-policy.json"
   ],
   "safety_gate": "bash compass/tools/redcap-package-publish-safety-check.sh --candidate-list <generated-candidate-list>",
   "manual_release_boundaries": [
-    "Public package name ownership and registry selection require a human release decision.",
+    "Public package name is prepared as @norven63/redcap, but registry ownership must still be verified during the separate release task.",
+    "Distribution license selection remains a human legal/product decision before public publish.",
     "Registry tokens, signing credentials, and remote repository permissions must never be embedded in this repository.",
     "Changing publish_allowed to true requires a separate release task, package safety pass, and Prism review."
   ]

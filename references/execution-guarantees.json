@@ -63,6 +63,7 @@
     "runtime-workspace-boundary",
     "cli-product-surface",
     "runtime-package",
+    "public-package-surface",
     "information-architecture",
     "redcap-forge"
   ],
@@ -1154,6 +1155,33 @@
       "revival_required": true,
       "hook_required": false,
       "auto_enforceable": true
+    },
+    {
+      "id": "public-package-surface-gate",
+      "category": "public-package-surface",
+      "priority": "P0",
+      "rule": "P4-2d may prepare the user-approved public package identity and package surface only while keeping private=true, publish_allowed=false, license selection manual, and npm publish forbidden.",
+      "source_paths": [
+        "package.json",
+        "references/public-package-surface-policy.json",
+        "references/runtime-package-readiness-policy.json",
+        "compass/tools/redcap-public-package-surface.sh",
+        "compass/tools/redcap-public-package-surface.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-public-package-surface.sh validates the prepared package name, private/readiness-only posture, manual license boundary, npm pack surface, and package safety gate; diagnose, spec-check, acceptance and pre-release review consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-public-package-surface.sh",
+        "compass/tools/redcap-public-package-surface.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "compass/tools/redcap-pre-release-product-architecture-check.py"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true,
+      "runtime_limitation": "This gate does not choose a distribution license, does not make the package public, and does not publish to npm; those remain explicit release-task decisions."
     },
     {
       "id": "pre-release-product-architecture-gate",

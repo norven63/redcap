@@ -207,6 +207,7 @@ Core commands:
   doctor                 Explain CLI health in human-readable product language.
   debug [--json]         Emit a safe diagnostic packet for support or Agent containers.
   closeout               Run the task closeout controller for the workspace task file.
+  package-surface        Validate public package identity and surface readiness.
 
 Workspace options:
   --workspace <dir>      Managed project workspace. Defaults to discovered caller workspace.
@@ -231,6 +232,11 @@ best first read after revive, before deciding the next workflow step.""",
 
 Runs RedCap's internal control-plane checks. This is deeper and noisier than
 doctor, so prefer doctor for humans and diagnose for release/control gates.""",
+    "package-surface": """redcap package-surface
+
+Validates the prepared public package identity and package surface. This command
+must keep private=true, publish_allowed=false, and license selection manual until
+a separate release task explicitly authorizes publication.""",
     "closeout": """redcap closeout <subcommand> [--workspace <dir>] [--task-file <file>]
 
 Delegates to the closeout controller after resolving the managed workspace task

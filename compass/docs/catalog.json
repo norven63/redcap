@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 24,
-    "size_bytes": 324546,
-    "lines": 6513,
-    "chars": 200085,
+    "file_count": 25,
+    "size_bytes": 341289,
+    "lines": 6761,
+    "chars": 210910,
     "rough_token_pressure": {
-      "low": 50021,
-      "high": 100042
+      "low": 52727,
+      "high": 105455
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 9,
-        "size_bytes": 131025,
-        "lines": 1931,
-        "chars": 83718,
+        "file_count": 10,
+        "size_bytes": 147768,
+        "lines": 2179,
+        "chars": 94543,
         "rough_token_pressure": {
-          "low": 20929,
-          "high": 41859
+          "low": 23635,
+          "high": 47271
         }
       }
     },
@@ -98,15 +98,15 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
-        "chars": 10012,
-        "lines": 231,
+        "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
+        "chars": 10825,
+        "lines": 248,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-05-redcap-cli-diagnostic-product-surface.md",
-        "chars": 9977,
-        "lines": 241,
+        "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
+        "chars": 10012,
+        "lines": 231,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
@@ -422,7 +422,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：历史资产 main-tree copy-first apply",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12860,
       "lines": 208,
@@ -487,29 +487,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 发布前结构重构任务树重锚定",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13129,
       "lines": 209,
       "chars": 7943,
       "summary": "当前已完成：RedCap 已把 public CLI/npm 发布前的结构重构任务树重新锚定。新的顺序是：先做 npm 白名单预检，确认哪些东西会进入包面；再做 runtime/project/user 物理边界拆分；再补 CLI 的 doctor/debug/trace/help 等公共产品面；最后处理 package 身份、license 和 release readiness。 / 详情：本轮没有做真实 npm 发布，也没有大规模移动历史资产。它解决的是“深水区任务树别再漂移”的问题：P4-2f 已从旧的 in-progress 纠正为 completed；P4-2g 成为当前任务树重锚点；历史资产默认保留为私有考古证据，只…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把 public CLI/npm 发布前的结构重构任务树重新锚定。新的顺序是：先做 npm 白名单预检，确认哪些东西会进入包面；再做 runtime/project/user 物理边界拆分；再补 CLI 的 doctor/debug/trace/help 等公共产品面；最后处理 package 身份、license 和 release readiness。",
-          "详情：本轮没有做真实 npm 发布，也没有大规模移动历史资产。它解决的是“深水区任务树别再漂移”的问题：P4-2f 已从旧的 in-progress 纠正为 completed；P4-2g 成为当前任务树重锚点；历史资产默认保留为私有考古证据，只有被 npm 包面或公共导出链路命中时才进入手术范围。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2f 信息架构与运行时产物治理，已经把任务报告、私有知识、运行时证据、RedCap Forge 和 redcap-arsenal 的边界分清并接入机器门禁。"
-        ],
-        "next_step": [
-          "下一步计划做的是：进入 P4-2b，真正处理 runtime/project/user 物理边界与 CLI workspace context。换成人话：RedCap 要从“在 Norven 这台机器的 skill 目录里工作”，继续走向“作为可安装 runtime/CLI，在任意被管理项目里工作”。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-2a 发布前审判 → P4-2f 信息架构治理 → P4-2g 任务树重锚定与 npm 白名单预检原则 → P4-2b/c/d 发布前 P0 整改 → release readiness → npm publish。",
-          "当前所在位置：P4-2g 已完成实现与棱镜验收；父任务 P4-2 仍处于 public release 之前的整改阶段。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-05-redcap-cli-diagnostic-product-surface.md",
@@ -537,6 +521,35 @@
         "position": [
           "整体计划脉络图是：P4-2a 产品架构审判 → P4-2b 边界拆分 → P4-2c CLI 诊断产品面 → P4-2d 包身份/许可证/包面 → P4-2e 公共 arsenal 口径。",
           "当前所在位置：P4-2c 已完成并 CLOSED；closeout receipt 已存在，P4-2d 是下一主线。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-2d public package identity/license/surface 准备",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 16743,
+      "lines": 248,
+      "chars": 10825,
+      "summary": "当前已完成：RedCap 的未来公共 npm 包身份已准备为 `@norven63/redcap`，但仍保持私有、不可发布、许可证待人工决策的安全姿态。 / 详情：本轮解决的是“包名和包面已经开始公共化，但不能把准备态冒充成发布态”的问题。现在 package metadata、runtime readiness policy、发布前产品审判和机器检查都统一到 `@norven63/redcap`；同时 `private=true`、`publish_allowed=false`、`license=UNLICENSED` 继续锁住真实发布边界。新增的 package surface gate 会检查候选包面、禁入路径和人工 rel…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 的未来公共 npm 包身份已准备为 `@norven63/redcap`，但仍保持私有、不可发布、许可证待人工决策的安全姿态。",
+          "详情：本轮解决的是“包名和包面已经开始公共化，但不能把准备态冒充成发布态”的问题。现在 package metadata、runtime readiness policy、发布前产品审判和机器检查都统一到 `@norven63/redcap`；同时 `private=true`、`publish_allowed=false`、`license=UNLICENSED` 继续锁住真实发布边界。新增的 package surface gate 会检查候选包面、禁入路径和人工 release 边界，防止把私有证据、运行时…"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2c 已补齐 public CLI 的 `doctor`、`debug --json`、`--trace`、help 和结构化错误产品面。"
+        ],
+        "next_step": [
+          "下一步计划做的是：推进 P4-2e public redcap-arsenal 内容策略与 claim 边界，决定公共 arsenal 仍是 template-only 时如何诚实描述，或是否补充实质内容后再宣传。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-2a 产品架构审判 -> P4-2b 边界拆分 -> P4-2c CLI 诊断产品面 -> P4-2d 包身份/许可证/包面准备 -> P4-2e 公共 arsenal 口径 -> P4-2 正式发布任务。",
+          "当前所在位置：P4-2d 已完成 readiness 准备；P4-2 正式发布仍未完成，也不能声明 public-release-ready。"
         ]
       }
     },
