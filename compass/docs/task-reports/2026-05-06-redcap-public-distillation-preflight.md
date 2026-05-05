@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-06
 **执行者**：Cap（Codex.app 主执行，Claude Code + Copilot 轻量棱镜评审）
-**报告版本**：v0.1
+**报告版本**：v0.2
 
 ---
 
@@ -24,7 +24,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：P4-2a 产品架构审判 -> P4-2b workspace 边界 -> P4-2c CLI 产品面 -> P4-2d 包身份/包面 -> P4-2e 公共 arsenal claim 边界 -> P4-2h-0 公共蒸馏预检 -> P4-2h 真实公共蒸馏 -> P4-2 正式发布。
-- 当前所在位置：P4-2h-0 已实现并通过 targeted 回归，正在 closeout 前完成报告、全量验收和 receipt。
+- 当前所在位置：P4-2h-0 已完成实现、回归、棱镜验收与 closeout receipt；真实 P4-2h 公共蒸馏仍保持 deferred。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -94,6 +94,7 @@ P4-2e 完成后，父任务线出现三个可能方向：正式发布、历史�
 | `compass/tools/redcap-diagnose.sh` / `compass/tools/redcap-spec-check.sh` | 修改 | 接入新检查器，确保诊断和总回归会 fail-closed。 |
 | `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 增加 targeted acceptance，并让 spec-check 传播新门禁失败。 |
 | `references/pre-release-product-architecture-review.json` | 修改 | 同步新增 3 个包面文件后的 package candidate count。 |
+| `compass/tools/redcap-clean-workspace-e2e.py` / `references/clean-workspace-install-e2e.json` | 修改 | closeout 发现新增包面文件让跨环境安装证据变旧后，补上报告类后续漂移白名单，并用干净 HEAD 重新生成 clean workspace install E2E 证据。 |
 | `prism/reports/2026-05-06-public-distillation-preflight-route-review.md` / `prism/reports/index.yaml` | 新建 / 修改 | 记录 Claude Code + Copilot 的路线评审结论。 |
 
 ### 3.2 技术实现要点
@@ -102,7 +103,7 @@ P4-2e 完成后，父任务线出现三个可能方向：正式发布、历史�
 
 检查器同时读取 RedCap Forge、信息架构、公共 arsenal claim 边界和 P4 任务树，防止某个文件单独改口。只要有人把 dry-run 改成 public write、去掉 secret scan、让公共库有实质条目，或删掉 P4-2h-0 任务锚点，回归就会失败。
 
-本轮还同步修正了发布前产品架构审查的包面计数。新增策略、检查器和 Prism 报告后，npm pack 候选文件从 218 变为 221；如果不更新，spec-check 会继续 fail-close。
+本轮还同步修正了发布前产品架构审查和 clean workspace E2E 的包面证据。新增策略、检查器和 Prism 报告后，npm pack 候选文件从 218 变为 221；如果不更新，spec-check 会继续 fail-close。
 
 ### 3.2.1 术语对照（按文件/功能解释）
 
@@ -139,6 +140,7 @@ P4-2h-0 新增了 3 个可打包文件，所以发布前产品架构审查的 pa
 | targeted acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh public-distillation-preflight-check` | ✅ |
 | spec-check propagation | `bash compass/tools/redcap-multi-session-acceptance.sh spec-check-propagates-control-gate-failures` | ✅ |
 | pre-release architecture | `bash compass/tools/redcap-pre-release-product-architecture-check.sh` | ✅ |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | ✅ |
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | ✅ |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
@@ -149,10 +151,10 @@ P4-2h-0 新增了 3 个可打包文件，所以发布前产品架构审查的 pa
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 尚未进入最终 closeout |
+| 执行承诺账本 | 7/7 已完成 |
 | 棱镜验收 | 通过，run `20260506-next-route-decision` |
-| closeout summary | 无 |
-| closeout receipt | 无 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-public-distillation-preflight-d81aa55d85f490ea3044b563f85bfe60adc8cbb38e7c59018ddf98fb2900c7ce.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-public-distillation-preflight-d81aa55d85f490ea3044b563f85bfe60adc8cbb38e7c59018ddf98fb2900c7ce.json` |
 | rescue audit（如有） | 无 |
 
 ### 5.4 完成等级（禁止混报）
@@ -162,7 +164,7 @@ P4-2h-0 新增了 3 个可打包文件，所以发布前产品架构审查的 pa
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code + Copilot 路线评审和 Prism acceptance binding 已通过 |
-| 已正式完成 | 否，receipt 尚未生成 |
+| 已正式完成 | 是，receipt 已生成 |
 
 ---
 
@@ -182,8 +184,8 @@ P4-2h-0 新增了 3 个可打包文件，所以发布前产品架构审查的 pa
 
 ### 6.3 推荐的下一步行动
 
-1. 完成本轮 closeout receipt。
-2. 后续若要继续公共知识库内容建设，另开 RedCap Forge promotion 任务。
+1. 后续若要继续公共知识库内容建设，另开 RedCap Forge promotion 任务。
+2. 真实 npm 发布仍保持 deferred，需要独立 release readiness 任务判断。
 
 ---
 
@@ -212,7 +214,9 @@ P4-2h-0 新增了 3 个可打包文件，所以发布前产品架构审查的 pa
 ### 附录 A：Commits
 
 ```text
-本报告生成时尚未提交；最终提交信息以 closeout 后 git log 为准。
+d986e4e feat(forge): 增加公共蒸馏预检强门
+352a97d test(e2e): 接纳公共蒸馏报告后续漂移
+c376e67 test(e2e): 刷新公共蒸馏安装验收
 ```
 
 ### 附录 B：棱镜调用记录（如有）

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 369960,
-    "lines": 7242,
-    "chars": 228561,
+    "size_bytes": 370889,
+    "lines": 7246,
+    "chars": 229358,
     "rough_token_pressure": {
-      "low": 57140,
-      "high": 114280
+      "low": 57339,
+      "high": 114679
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 176285,
-        "lines": 2659,
-        "chars": 112088,
+        "size_bytes": 177214,
+        "lines": 2663,
+        "chars": 112885,
         "rough_token_pressure": {
-          "low": 28022,
-          "high": 56044
+          "low": 28221,
+          "high": 56442
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12376,
-      "lines": 229,
-      "chars": 7470,
+      "size_bytes": 13305,
+      "lines": 233,
+      "chars": 8267,
       "summary": "当前已完成：RedCap 已把“历史资产未来是否能进入公共 redcap-arsenal”先收束成 dry-run 预检强门。 / 详情：本轮解决的是“不能因为公共库还空，就把私有历史报告、经验库或运行证据直接搬出去填充内容”的风险。现在 RedCap Forge 只能先做候选分类和边界检查，公共写入、raw 私有资料导出、历史资产删除/移动、npm 发布都被明确禁止。这样后续如果真的要公开沉淀知识，必须先经过脱敏、去重、安全审查、append-only 条目和索引刷新。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -604,7 +604,7 @@
         ],
         "position": [
           "整体计划脉络图是：P4-2a 产品架构审判 -> P4-2b workspace 边界 -> P4-2c CLI 产品面 -> P4-2d 包身份/包面 -> P4-2e 公共 arsenal claim 边界 -> P4-2h-0 公共蒸馏预检 -> P4-2h 真实公共蒸馏 -> P4-2 正式发布。",
-          "当前所在位置：P4-2h-0 已实现并通过 targeted 回归，正在 closeout 前完成报告、全量验收和 receipt。"
+          "当前所在位置：P4-2h-0 已完成实现、回归、棱镜验收与 closeout receipt；真实 P4-2h 公共蒸馏仍保持 deferred。"
         ]
       }
     }
