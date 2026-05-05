@@ -161,8 +161,9 @@ pre-release product architecture review 现在区分三个事实：包名已经�
 | 结构任务树 | `bash compass/tools/redcap-pre-release-structure-task-tree-check.sh` | ✅ |
 | 执行保障 / 文件字典 | `bash compass/tools/redcap-execution-guarantee-check.sh && bash compass/tools/redcap-file-lookup-dictionary-check.sh` | ✅ |
 | Prism 证据 | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | ✅ |
-| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result && --check-result` | 待实现提交后刷新 |
-| full acceptance / umbrella spec | `bash compass/tools/redcap-multi-session-acceptance.sh all` / `bash compass/tools/redcap-spec-check.sh "$PWD"` | 待 clean E2E 刷新后执行 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` / `bash compass/tools/redcap-clean-workspace-e2e.sh --check-result` | ✅ |
+| umbrella spec | `bash compass/tools/redcap-spec-check.sh "$PWD"` | ✅ |
+| full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | ✅ |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -172,11 +173,11 @@ pre-release product architecture review 现在区分三个事实：包名已经�
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 待 closeout runtime 核对 |
+| 执行承诺账本 | 已清：completed=6 pending=0 total=6 |
 | 棱镜验收 | Kimi + Claude Code 双路通过，binding 已生成 |
-| closeout summary | 待 closeout runtime 生成 |
-| closeout receipt | 待 closeout runtime 生成 |
-| rescue audit（如有） | 当前无 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-public-package-identity-surface-readiness-8e9aa70458f7f4c5f76bce2caf5d6c44277d5c375f99cbbee22678b6e5a489a7.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-public-package-identity-surface-readiness-8e9aa70458f7f4c5f76bce2caf5d6c44277d5c375f99cbbee22678b6e5a489a7.json` |
+| rescue audit（如有） | 曾出现两次 closeout 调用口径问题：先缺 baseline，再缺 allowed-scope；均已修正后成功生成 receipt |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -185,7 +186,7 @@ pre-release product architecture review 现在区分三个事实：包名已经�
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是；Prism acceptance 已通过 |
-| 已正式完成 | 否；仍待 clean E2E 刷新、full gate 和 closeout receipt |
+| 已正式完成 | 是；closeout receipt 已生成，且未声明 release-ready 或 npm publish 完成 |
 
 ---
 
@@ -206,9 +207,8 @@ pre-release product architecture review 现在区分三个事实：包名已经�
 
 ### 6.3 推荐的下一步行动
 
-1. 刷新 clean workspace E2E durable result，并跑 full acceptance / umbrella spec。
-2. 进入 P4-2e：公共 arsenal 内容策略与 claim 边界。
-3. 在正式发布任务前，再由 Norven 决定许可证、npm registry 凭据和是否允许真实 publish。
+1. 进入 P4-2e：公共 arsenal 内容策略与 claim 边界。
+2. 在正式发布任务前，再由 Norven 决定许可证、npm registry 凭据和是否允许真实 publish。
 
 ---
 
@@ -237,7 +237,10 @@ pre-release product architecture review 现在区分三个事实：包名已经�
 ### 附录 A：Commits
 
 ```
-待提交
+70f4cf0 feat(release): 准备公共包身份与包面
+3723512 test(release): 刷新公共包安装验收
+a30db49 test(review): 保留评审夹具运行环境路径
+a246f5a test(release): 刷新评审夹具后安装验收
 ```
 
 ### 附录 B：棱镜调用记录

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 25,
-    "size_bytes": 341289,
-    "lines": 6761,
-    "chars": 210910,
+    "size_bytes": 341947,
+    "lines": 6764,
+    "chars": 211478,
     "rough_token_pressure": {
-      "low": 52727,
-      "high": 105455
+      "low": 52869,
+      "high": 105739
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 10,
-        "size_bytes": 147768,
-        "lines": 2179,
-        "chars": 94543,
+        "size_bytes": 148426,
+        "lines": 2182,
+        "chars": 95111,
         "rough_token_pressure": {
-          "low": 23635,
-          "high": 47271
+          "low": 23777,
+          "high": 47555
         }
       }
     },
@@ -92,16 +92,16 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
+        "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
+        "chars": 11393,
+        "lines": 251,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+      },
+      {
         "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
         "chars": 11055,
         "lines": 253,
         "read_policy": "read-catalog-summary-by-default"
-      },
-      {
-        "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
-        "chars": 10825,
-        "lines": 248,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
         "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
@@ -531,9 +531,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 16743,
-      "lines": 248,
-      "chars": 10825,
+      "size_bytes": 17401,
+      "lines": 251,
+      "chars": 11393,
       "summary": "当前已完成：RedCap 的未来公共 npm 包身份已准备为 `@norven63/redcap`，但仍保持私有、不可发布、许可证待人工决策的安全姿态。 / 详情：本轮解决的是“包名和包面已经开始公共化，但不能把准备态冒充成发布态”的问题。现在 package metadata、runtime readiness policy、发布前产品审判和机器检查都统一到 `@norven63/redcap`；同时 `private=true`、`publish_allowed=false`、`license=UNLICENSED` 继续锁住真实发布边界。新增的 package surface gate 会检查候选包面、禁入路径和人工 rel…",
       "status_basis": "filename_recency_only",
       "summary_points": {
