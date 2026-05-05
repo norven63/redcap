@@ -27,6 +27,11 @@
 - 整体计划脉络图是：PM Gate 重锚 P4-3 → clean clone E2E 工具 → spec/diagnose/acceptance 接线 → machine-readable E2E receipt → Prism review → parent aggregation 更新 → full regression → closeout receipt。
 - 当前所在位置：P4-3 已完成 closeout；父任务线仍停在 P4-2 blocked-external，因此不能声明父任务整体完成。
 
+### 0.5 是否需要 Norven 人工介入
+
+- 人工介入：当前不需要。
+- 说明：P4-3 已完成，后续只有进入真实 public release / package publish 时才需要 Norven 对 registry、包名、凭据与发布边界做保留决策。
+
 ---
 
 ## 一、需求背景
