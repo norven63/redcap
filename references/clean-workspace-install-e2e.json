@@ -2,13 +2,13 @@
   "version": 1,
   "manifest_id": "redcap-clean-workspace-install-e2e",
   "task_id": "redcap-clean-workspace-install-e2e",
-  "created_at": "2026-05-05T06:27:18Z",
+  "created_at": "2026-05-05T06:28:56Z",
   "source_repo_path": "<source-repo>",
-  "source_head": "d011eb80d1cc47fe5ceb48bb7df919ba0ebf8790",
-  "tested_head": "dedf175d75883db6a173e947a033abedd7d15156",
-  "source_worktree_dirty_allowed": true,
-  "source_worktree_dirty": true,
-  "source_worktree_snapshot_applied": true,
+  "source_head": "dd151058624fe1be90b301c4fd960d988e2202bf",
+  "tested_head": "dd151058624fe1be90b301c4fd960d988e2202bf",
+  "source_worktree_dirty_allowed": false,
+  "source_worktree_dirty": false,
+  "source_worktree_snapshot_applied": false,
   "clean_workspace_e2e_passed": true,
   "temporary_workspace_removed": true,
   "temporary_root": "",
@@ -36,8 +36,8 @@
         "--init-identity"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-05T06:27:07Z",
-      "finished_at": "2026-05-05T06:27:14Z",
+      "started_at": "2026-05-05T06:28:45Z",
+      "finished_at": "2026-05-05T06:28:52Z",
       "exit_code": 0,
       "stdout_excerpt": "REDCAP_INSTALL\nhost=codex\nrepo=/private<clean-clone>\nidentity=initialized:<temporary-identity-file>\n[ok] user-agent-identity\n[ok] feishu-notification-policy\n[ok] current-status\n  当前已完成：未从任务报告抽取到摘要；请查看任务报告或 .dev-task.md\n  上一步完成的是：未从任务报告抽取到上一步摘要\n  下一步计划做的是：未从任务报告抽取到下一步摘要\n  整体计划脉络图与当前位置：未从任务报告抽取到路线摘要\n[ok] tracking-health\n  explore_notes=active:0 archived:10\n  note=书记官账面已归档或当前无活跃探讨条目\n  task_anchor=absent\n  task_report=unbound\n  original_input=absent\n[ok] host-hook-readiness\n  host=codex\n  hook_scope=host-limited\n  hook_status=degraded\n  note=Codex.app/Codex CLI currently has AGENTS startup import but no repo-owned SessionEnd/reply-veto hook surface\n[ok] execution-guarantees\n[ok] revival-protocol\nREDCAP_INSTALL_OK",
       "stderr_excerpt": ""
@@ -49,10 +49,10 @@
         "status"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-05T06:27:14Z",
-      "finished_at": "2026-05-05T06:27:16Z",
+      "started_at": "2026-05-05T06:28:52Z",
+      "finished_at": "2026-05-05T06:28:54Z",
       "exit_code": 0,
-      "stdout_excerpt": "当前已完成：未从任务报告抽取到摘要；请查看任务报告或 .dev-task.md\n上一步完成的是：未从任务报告抽取到上一步摘要\n下一步计划做的是：未从任务报告抽取到下一步摘要\n整体计划脉络图与当前位置：未从任务报告抽取到路线摘要\n\n## 当前任务锚点\n- task_id: unknown\n- active_slice: unknown\n- backlog: none / none\n- git: dedf175（干净）\n\n## runtime / workspace / user 边界\n- runtime root: /private<clean-clone>\n- workspace root: /private<clean-clone>\n- task file: /private<clean-clone>/.dev-task.md (missing)\n- user state: compass/.workflow/user-agent-identity.json; private identity anchor: ~/.cap/identity.md\n- boundary mode: same-root；CLI 默认应以 workspace 为项目状态目录，runtime root 只提供工具实现\n\n## 收尾红线\n- status: clear（未找到当前 .dev-task 对应的 pending closure）\n\n## 长期 backlog\n- 未绑定长期 backlog\n\n## CLI 工具族\n- registry cache: detected_at=2026-05-05T06:27:08Z\n- registry 已在本次 current-status 前做轻量刷新\n- registry 只代表安装/配置嗅探，不等于登录态、限流或 headless 调用健康\n- agents: claude-code=true, gemini=true, kimi=true, copilot=true, codex=true\n- agent health cache: missing；需要区分登录态/限流/headless 健康时运行 redcap-agent-health-probe.sh --live\n\n## 宿主 Hook / 适配部署\n- capability matrix: claude=supported/degraded, codex=supported/degraded, copilot=supported/degraded, gemini=supported/degraded\n- hook configs: claude=SessionStart/Stop/SessionEnd configured, gemini=SessionStart/SessionEnd configured, codex=AGENTS startup import only; no repo-owned reply-veto hook\n- 配置存在不等于登录态、限流或真实触发已验证；弱 Hook / 无 Hook 宿主仍必须走 pending closure、wra\n...<truncated>",
+      "stdout_excerpt": "当前已完成：未从任务报告抽取到摘要；请查看任务报告或 .dev-task.md\n上一步完成的是：未从任务报告抽取到上一步摘要\n下一步计划做的是：未从任务报告抽取到下一步摘要\n整体计划脉络图与当前位置：未从任务报告抽取到路线摘要\n\n## 当前任务锚点\n- task_id: unknown\n- active_slice: unknown\n- backlog: none / none\n- git: dd15105（干净）\n\n## runtime / workspace / user 边界\n- runtime root: /private<clean-clone>\n- workspace root: /private<clean-clone>\n- task file: /private<clean-clone>/.dev-task.md (missing)\n- user state: compass/.workflow/user-agent-identity.json; private identity anchor: ~/.cap/identity.md\n- boundary mode: same-root；CLI 默认应以 workspace 为项目状态目录，runtime root 只提供工具实现\n\n## 收尾红线\n- status: clear（未找到当前 .dev-task 对应的 pending closure）\n\n## 长期 backlog\n- 未绑定长期 backlog\n\n## CLI 工具族\n- registry cache: detected_at=2026-05-05T06:28:47Z\n- registry 已在本次 current-status 前做轻量刷新\n- registry 只代表安装/配置嗅探，不等于登录态、限流或 headless 调用健康\n- agents: claude-code=true, gemini=true, kimi=true, copilot=true, codex=true\n- agent health cache: missing；需要区分登录态/限流/headless 健康时运行 redcap-agent-health-probe.sh --live\n\n## 宿主 Hook / 适配部署\n- capability matrix: claude=supported/degraded, codex=supported/degraded, copilot=supported/degraded, gemini=supported/degraded\n- hook configs: claude=SessionStart/Stop/SessionEnd configured, gemini=SessionStart/SessionEnd configured, codex=AGENTS startup import only; no repo-owned reply-veto hook\n- 配置存在不等于登录态、限流或真实触发已验证；弱 Hook / 无 Hook 宿主仍必须走 pending closure、wra\n...<truncated>",
       "stderr_excerpt": ""
     },
     {
@@ -62,8 +62,8 @@
         "publish-safety"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-05T06:27:16Z",
-      "finished_at": "2026-05-05T06:27:17Z",
+      "started_at": "2026-05-05T06:28:54Z",
+      "finished_at": "2026-05-05T06:28:54Z",
       "exit_code": 0,
       "stdout_excerpt": "PACKAGE_PUBLISH_SAFETY_OK\nsource=default-package-globs\nfiles_scanned=212",
       "stderr_excerpt": ""
@@ -79,8 +79,8 @@
         "--npm-pack-dry-run"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-05T06:27:17Z",
-      "finished_at": "2026-05-05T06:27:18Z",
+      "started_at": "2026-05-05T06:28:54Z",
+      "finished_at": "2026-05-05T06:28:56Z",
       "exit_code": 0,
       "stdout_excerpt": "RUNTIME_PACKAGE_MANIFEST_OK\nstatus=ok\npolicy=references/runtime-package-readiness-policy.json\npackage_name=@redcap-ai/runtime\npackage_version=0.1.0-alpha.0\npublish_allowed=False\ncandidate_count=212\ncandidate_list=/private<temporary-candidate-list>\nsafety_checked=True\nnpm_pack_dry_run_checked=True",
       "stderr_excerpt": ""
