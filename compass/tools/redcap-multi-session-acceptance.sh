@@ -5013,7 +5013,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_TASK_FILE="$fake_task" \
             REDCAP_FAKE_CODEX_ARGV="$codex_argv" \
             REDCAP_FAKE_CODEX_STDIN="$codex_stdin" \
@@ -5190,7 +5190,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_TASK_FILE="$fake_task" \
             REDCAP_FAKE_CODEX_ARGV="$codex_argv" \
             REDCAP_FAKE_CODEX_STDIN="$codex_stdin" \
@@ -5333,7 +5333,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_FAKE_COPILOT_ARGV="$copilot_argv" \
             REDCAP_TASK_FILE="$fake_task" \
             REDCAP_REVIEW_AGENT_REGISTRY_FILE="$fake_registry" \
@@ -5397,7 +5397,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="copilot" \
             REDCAP_TASK_FILE="$task_file" \
@@ -5455,7 +5455,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_TASK_FILE="$task_file" \
@@ -5543,7 +5543,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_TASK_FILE="$fake_task" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture-repo-inspection" \
@@ -5597,7 +5597,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -5650,7 +5650,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -5704,7 +5704,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -5758,7 +5758,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -5810,7 +5810,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -5859,7 +5859,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -5922,7 +5922,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,copilot" \
             REDCAP_DISABLE_PROVIDER_POLICY=1 \
@@ -5989,7 +5989,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini,copilot" \
             REDCAP_DISABLE_PROVIDER_POLICY=1 \
@@ -6046,7 +6046,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -6097,7 +6097,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -6149,7 +6149,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -6201,7 +6201,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -6258,7 +6258,7 @@ EOF
     set +e
     output="$(
         printf '{}' | \
-            PATH="$fake_bin:/usr/bin:/bin" \
+            PATH="$fake_bin:$PATH" \
             REDCAP_STOP_REVIEW_HOST="copilot" \
             REDCAP_STOP_REVIEW_AGENT_ORDER="gemini" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
