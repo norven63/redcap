@@ -36,6 +36,7 @@ ALLOWED_POST_RESULT_DRIFT_PATHS = {
     "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
     "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
     "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
+    "compass/docs/task-reports/2026-05-06-redcap-public-distillation-preflight.md",
     "compass/knowledge/lessons.md",
 }
 
