@@ -215,6 +215,7 @@ REQUIRED_SUMMARY_SECTIONS=(
     "### 0.2 上一步完成的是"
     "### 0.3 下一步计划做的是"
     "### 0.4 整体计划脉络图与当前位置"
+    "### 0.5 是否需要 Norven 人工介入"
 )
 
 REQUIRED_CHANGED_ONLY_SECTIONS=(

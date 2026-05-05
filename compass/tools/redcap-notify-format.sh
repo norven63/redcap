@@ -172,6 +172,7 @@ summary_map = {
     "previous": ["0.2 上一步完成的是"],
     "next": ["0.3 下一步计划做的是", "0.3 后续动作"],
     "roadmap": ["0.4 整体计划脉络图与当前位置"],
+    "intervention": ["0.5 是否需要 Norven 人工介入"],
     "confirm": ["0.1 需你确认"],
     "verify": ["0.2 人工验证"],
 }
@@ -199,6 +200,13 @@ if not items:
         else:
             items = list_items(fallback_block)
 
+if kind in {"confirm", "verify"}:
+    items = [
+        item
+        for item in items
+        if not re.match(r"^(无|当前没有|不需要)([；。，、\s]|$)", item)
+    ]
+
 for item in items[:3]:
     print(item)
 PY
@@ -220,7 +228,7 @@ redcap_build_completion_message() {
     local project="${2:-redcap}"
     local commit_log="${3:-}"
     local source_label report_ref project_root report_path report_label
-    local commit_count latest_commit bullet_list done_items previous_items next_items roadmap_items confirm_items verify_items
+    local commit_count latest_commit bullet_list done_items previous_items next_items roadmap_items intervention_items confirm_items verify_items
 
     source_label=$(redcap_notify_flatten_field "${4:-}")
     report_ref="${5:-}"
@@ -236,6 +244,7 @@ redcap_build_completion_message() {
         previous_items=$(redcap_notify_extract_report_items "$report_path" "previous")
         next_items=$(redcap_notify_extract_report_items "$report_path" "next")
         roadmap_items=$(redcap_notify_extract_report_items "$report_path" "roadmap")
+        intervention_items=$(redcap_notify_extract_report_items "$report_path" "intervention")
         confirm_items=$(redcap_notify_extract_report_items "$report_path" "confirm")
         verify_items=$(redcap_notify_extract_report_items "$report_path" "verify")
     else
@@ -253,7 +262,13 @@ redcap_build_completion_message() {
         fi
         [[ -n "$latest_commit" ]] && printf -- '- 最新提交：%s\n' "$latest_commit"
 
-        printf '\n**人工协助**\n- 不需要；若需要 Norven 决策，RedCap 会改用 manual-intervention 通知。\n'
+        if [[ -n "$intervention_items" ]]; then
+            printf '\n**人工协助**\n%s\n' "$(redcap_notify_markdown_list_or_none "$intervention_items")"
+        elif [[ -n "$confirm_items" || -n "$verify_items" ]]; then
+            printf '\n**人工协助**\n- 需要；详见“仍需你介入 / 仍需人工验证”。\n'
+        else
+            printf '\n**人工协助**\n- 不需要；若需要 Norven 决策，RedCap 会改用 manual-intervention 通知。\n'
+        fi
         printf '\n**阻塞状态**\n- 无；此消息是节点汇报，不是内部审核失败告警。\n'
         printf '\n**下一步可直接开始**\n- 是；按“下一步计划做的是”继续，若已 closeout 则等待下一任务。\n'
 

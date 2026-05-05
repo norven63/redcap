@@ -230,6 +230,7 @@ def check_report(report_path: Path) -> None:
     zero_two = require_section(text, "0.2 上一步完成的是")
     zero_three = require_section(text, "0.3 下一步计划做的是")
     zero_four = require_section(text, "0.4 整体计划脉络图与当前位置")
+    zero_five = require_section(text, "0.5 是否需要 Norven 人工介入")
     glossary = require_section(text, "3.2.1 术语对照（按文件/功能解释）")
     completion = require_section(text, "5.4 完成等级（禁止混报）")
 
@@ -238,6 +239,7 @@ def check_report(report_path: Path) -> None:
         ("0.2 上一步完成的是", zero_two),
         ("0.3 下一步计划做的是", zero_three),
         ("0.4 整体计划脉络图与当前位置", zero_four),
+        ("0.5 是否需要 Norven 人工介入", zero_five),
         ("3.2.1 术语对照（按文件/功能解释）", glossary),
         ("5.4 完成等级（禁止混报）", completion),
     ]:
@@ -248,6 +250,10 @@ def check_report(report_path: Path) -> None:
     next_step = require_meaningful_line(zero_three, "- 下一步计划做的是：", "0.3 下一步计划做的是")
     require_meaningful_line(zero_four, "- 整体计划脉络图是：", "0.4 整体计划脉络图与当前位置")
     require_meaningful_line(zero_four, "- 当前所在位置：", "0.4 整体计划脉络图与当前位置")
+    intervention = require_meaningful_line(zero_five, "- 人工介入：", "0.5 是否需要 Norven 人工介入")
+    require_meaningful_line(zero_five, "- 说明：", "0.5 是否需要 Norven 人工介入")
+    if not any(marker in intervention for marker in ["需要", "不需要"]):
+        fail("0.5 是否需要 Norven 人工介入 must explicitly say 需要 or 不需要")
 
     if not has_table_data_row(glossary) and "无新增术语" not in glossary:
         fail("3.2.1 术语对照 must contain at least one explained term or explicitly say 无新增术语")

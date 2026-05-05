@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 24,
-    "size_bytes": 324161,
-    "lines": 6510,
-    "chars": 199952,
+    "size_bytes": 324546,
+    "lines": 6513,
+    "chars": 200085,
     "rough_token_pressure": {
-      "low": 49988,
-      "high": 99976
+      "low": 50021,
+      "high": 100042
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 9,
-        "size_bytes": 130640,
-        "lines": 1928,
-        "chars": 83585,
+        "size_bytes": 131025,
+        "lines": 1931,
+        "chars": 83718,
         "rough_token_pressure": {
-          "low": 20896,
-          "high": 41792
+          "low": 20929,
+          "high": 41859
         }
       }
     },
@@ -105,8 +105,8 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-05-redcap-cli-diagnostic-product-surface.md",
-        "chars": 9844,
-        "lines": 238,
+        "chars": 9977,
+        "lines": 241,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
@@ -518,9 +518,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 14548,
-      "lines": 238,
-      "chars": 9844,
+      "size_bytes": 14933,
+      "lines": 241,
+      "chars": 9977,
       "summary": "当前已完成：RedCap CLI 已补上面向外部用户和 Agent 容器的诊断产品面，`doctor`、`debug --json`、`--trace`、`help <command>` 和结构化错误都已进入机器门禁。 / 详情：本轮解决的是“内部脚本能跑，但公共 CLI 不好排障”的发布前阻塞。现在用户可以先用 `redcap doctor` 看人类可读健康摘要，Agent 或支持者可以用 `redcap debug --json` 获取脱敏诊断包，`--trace` 能解释命令路由但不会倾倒环境变量。发布前审判已把 `cli-debug-contract-incomplete` 从 release blocker 改为 pas…",
       "status_basis": "filename_recency_only",
       "summary_points": {
