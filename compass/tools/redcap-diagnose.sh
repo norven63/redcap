@@ -145,6 +145,7 @@ run_check "shared-knowledge-remote-binding" bash "$SCRIPT_DIR/redcap-shared-know
 run_check "information-architecture" bash "$SCRIPT_DIR/redcap-information-architecture-check.sh" || overall=1
 run_check "redcap-forge" bash "$SCRIPT_DIR/redcap-forge-check.sh" || overall=1
 run_check "public-arsenal-claim-boundary" bash "$SCRIPT_DIR/redcap-public-arsenal-claim-boundary.sh" || overall=1
+run_check "public-distillation-preflight" bash "$SCRIPT_DIR/redcap-public-distillation-preflight.sh" || overall=1
 run_check "retrieval-escalation" bash "$SCRIPT_DIR/redcap-retrieval-escalation-check.sh" || overall=1
 run_check "user-agent-identity" bash "$SCRIPT_DIR/redcap-user-agent-identity.sh" check --local || overall=1
 run_check "feishu-notification-policy" bash "$SCRIPT_DIR/redcap-feishu-notification-policy-check.sh" || overall=1

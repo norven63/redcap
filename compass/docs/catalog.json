@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 26,
-    "size_bytes": 357584,
-    "lines": 7013,
-    "chars": 221091,
+    "file_count": 27,
+    "size_bytes": 369960,
+    "lines": 7242,
+    "chars": 228561,
     "rough_token_pressure": {
-      "low": 55272,
-      "high": 110545
+      "low": 57140,
+      "high": 114280
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 11,
-        "size_bytes": 163909,
-        "lines": 2430,
-        "chars": 104618,
+        "file_count": 12,
+        "size_bytes": 176285,
+        "lines": 2659,
+        "chars": 112088,
         "rough_token_pressure": {
-          "low": 26154,
-          "high": 52309
+          "low": 28022,
+          "high": 56044
         }
       }
     },
@@ -448,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：父任务 receipt 聚合耐久性缺陷修复",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13641,
       "lines": 221,
@@ -513,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-2e public redcap-arsenal 内容策略与 claim 边界",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15215,
       "lines": 243,
       "chars": 9351,
       "summary": "当前已完成：RedCap 已把公共 `redcap-arsenal` 的 template-only 状态和宣传边界变成机器可检查规则。 / 详情：本轮解决的是“公共库已经初始化，但不能被误说成已有实质知识库”的问题。现在 `redcap-arsenal` 只能被描述为模板、schema、索引目录和用户命名空间已初始化；不能宣传为已迁移历史知识、已填充公共知识库或成熟 skill arsenal。未来只有经过 RedCap Forge 的脱敏、去重、append-only 条目写入和索引刷新后，才允许进入 populated claim 评估。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把公共 `redcap-arsenal` 的 template-only 状态和宣传边界变成机器可检查规则。",
-          "详情：本轮解决的是“公共库已经初始化，但不能被误说成已有实质知识库”的问题。现在 `redcap-arsenal` 只能被描述为模板、schema、索引目录和用户命名空间已初始化；不能宣传为已迁移历史知识、已填充公共知识库或成熟 skill arsenal。未来只有经过 RedCap Forge 的脱敏、去重、append-only 条目写入和索引刷新后，才允许进入 populated claim 评估。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2d 已准备 `@norven63/redcap` 包身份、包面和发布安全边界。"
-        ],
-        "next_step": [
-          "下一步计划做的是：P4-2h 历史资产公共蒸馏与 RedCap Forge export triage 仍保持 deferred；正式 npm 发布仍另开 release task。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-2a 产品架构审判 -> P4-2b workspace 边界 -> P4-2c CLI 产品面 -> P4-2d 包身份/包面 -> P4-2e 公共 arsenal claim 边界 -> P4-2h 历史资产公共蒸馏 -> P4-2 正式发布。",
-          "当前所在位置：P4-2e 已完成实现与棱镜修补；P4-2 正式发布仍未完成，也不能声明 public-release-ready。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
@@ -592,6 +576,35 @@
         "position": [
           "整体计划脉络图是：P4-2g 白名单预检与任务树重锚定 → P4-2b runtime/workspace 边界 → P4-2c CLI 诊断产品面 → P4-2d public package identity/license/surface → P4-2 正式 release readiness。",
           "当前所在位置：P4-2b 已进入实现收口；public release 仍保持 blocked，剩余 release blockers 还有 runtime layout、CLI debug surface、package identity/license。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-06-redcap-public-distillation-preflight.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-2h-0 historical asset public distillation preflight",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12376,
+      "lines": 229,
+      "chars": 7470,
+      "summary": "当前已完成：RedCap 已把“历史资产未来是否能进入公共 redcap-arsenal”先收束成 dry-run 预检强门。 / 详情：本轮解决的是“不能因为公共库还空，就把私有历史报告、经验库或运行证据直接搬出去填充内容”的风险。现在 RedCap Forge 只能先做候选分类和边界检查，公共写入、raw 私有资料导出、历史资产删除/移动、npm 发布都被明确禁止。这样后续如果真的要公开沉淀知识，必须先经过脱敏、去重、安全审查、append-only 条目和索引刷新。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把“历史资产未来是否能进入公共 redcap-arsenal”先收束成 dry-run 预检强门。",
+          "详情：本轮解决的是“不能因为公共库还空，就把私有历史报告、经验库或运行证据直接搬出去填充内容”的风险。现在 RedCap Forge 只能先做候选分类和边界检查，公共写入、raw 私有资料导出、历史资产删除/移动、npm 发布都被明确禁止。这样后续如果真的要公开沉淀知识，必须先经过脱敏、去重、安全审查、append-only 条目和索引刷新。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2e 已把公共 `redcap-arsenal` 仍为 template-only 的事实和宣传边界机器化，防止把空模板说成已填充知识库。"
+        ],
+        "next_step": [
+          "下一步计划做的是：本轮完成 closeout 后，P4-2h 仍保持真实公共蒸馏 deferred；若未来要公开具体条目，需要另开 RedCap Forge promotion 任务。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-2a 产品架构审判 -> P4-2b workspace 边界 -> P4-2c CLI 产品面 -> P4-2d 包身份/包面 -> P4-2e 公共 arsenal claim 边界 -> P4-2h-0 公共蒸馏预检 -> P4-2h 真实公共蒸馏 -> P4-2 正式发布。",
+          "当前所在位置：P4-2h-0 已实现并通过 targeted 回归，正在 closeout 前完成报告、全量验收和 receipt。"
         ]
       }
     }

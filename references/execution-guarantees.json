@@ -962,6 +962,31 @@
       "auto_enforceable": true
     },
     {
+      "id": "public-distillation-preflight",
+      "category": "redcap-forge",
+      "priority": "P1",
+      "rule": "Before any private historical asset may become a public redcap-arsenal candidate, RedCap must run a dry-run-only RedCap Forge preflight that forbids raw private export, public writes, deletion/move side effects, npm publishing, and populated-arsenal claims.",
+      "source_paths": [
+        "references/public-distillation-preflight-policy.json",
+        "references/redcap-forge-policy.json",
+        "references/information-architecture-artifact-governance-policy.json",
+        "references/public-arsenal-claim-boundary-policy.json",
+        "references/pre-release-structure-refactor-task-tree.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-public-distillation-preflight validates P4-2h-0 dry-run boundaries, source roots, triage classes, future public entry schema, cross-policy forbidden raw sources, template-only arsenal state, and task-tree anchoring before diagnose/spec-check can pass.",
+      "guarantee_paths": [
+        "compass/tools/redcap-public-distillation-preflight.sh",
+        "compass/tools/redcap-public-distillation-preflight.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "information-architecture-artifact-governance",
       "category": "information-architecture",
       "priority": "P1",

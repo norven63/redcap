@@ -179,6 +179,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh information-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh redcap-forge-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-arsenal-claim-boundary-check
+  bash compass/tools/redcap-multi-session-acceptance.sh public-distillation-preflight-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
@@ -11960,6 +11961,70 @@ PY
     assert_string_contains "$stale_output" "README contains forbidden phrase: /Users/"
 }
 
+run_public_distillation_preflight_check_case() {
+    local output bad_policy stale_output status
+
+    log "case: public-distillation-preflight-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-distillation-preflight.sh")"
+    assert_string_contains "$output" "PUBLIC_DISTILLATION_PREFLIGHT_OK"
+    assert_string_contains "$output" "mode=dry-run-only"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "public distillation preflight check failed"
+
+    bad_policy="$ACCEPT_ROOT/public-distillation-preflight-public-write.json"
+    python3 - "$REDCAP_ROOT/references/public-distillation-preflight-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["boundaries"]["public_write_allowed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-distillation-preflight.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "public distillation preflight should reject public writes in dry-run"
+    assert_string_contains "$stale_output" "dry-run boundary must remain false: public_write_allowed"
+
+    bad_policy="$ACCEPT_ROOT/public-distillation-preflight-missing-review.json"
+    python3 - "$REDCAP_ROOT/references/public-distillation-preflight-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+for item in payload["triage_classes"]:
+    if item["id"] == "distill_candidate":
+        item["requires_review"].remove("secret-scan")
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-distillation-preflight.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "public distillation preflight should reject missing review gate"
+    assert_string_contains "$stale_output" "distill_candidate missing review gate: secret-scan"
+
+    bad_policy="$ACCEPT_ROOT/public-distillation-preflight-missing-tree-link.json"
+    python3 - "$REDCAP_ROOT/references/public-distillation-preflight-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+del payload["policy_links"]["pre_release_task_tree"]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-distillation-preflight.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "public distillation preflight should reject missing task-tree policy link"
+    assert_string_contains "$stale_output" "policy_links: missing non-empty pre_release_task_tree"
+}
+
 run_package_publish_safety_check_case() {
     local fixture safe_file env_file key_file list_file output stale_output status
 
@@ -12559,7 +12624,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12785,6 +12850,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-public-distillation-preflight.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "public-distillation-preflight" ]]; then
+    echo "fixture public distillation preflight failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
             "$repo/compass/tools/redcap-docs-catalog.sh" \
             "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
@@ -12809,6 +12883,7 @@ EOF
             "$repo/compass/tools/redcap-information-architecture-check.sh" \
             "$repo/compass/tools/redcap-forge-check.sh" \
             "$repo/compass/tools/redcap-public-arsenal-claim-boundary.sh" \
+            "$repo/compass/tools/redcap-public-distillation-preflight.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
 
         case "$failing_gate" in
@@ -12837,6 +12912,7 @@ EOF
             information-architecture) expected_message="information architecture check failed" ;;
             redcap-forge) expected_message="RedCap Forge check failed" ;;
             public-arsenal-claim-boundary) expected_message="public arsenal claim boundary check failed" ;;
+            public-distillation-preflight) expected_message="public distillation preflight check failed" ;;
         esac
 
         set +e
@@ -13717,6 +13793,7 @@ run_all_cases() {
     run_information_architecture_check_case
     run_redcap_forge_check_case
     run_public_arsenal_claim_boundary_check_case
+    run_public_distillation_preflight_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
     run_public_package_surface_check_case
@@ -14213,6 +14290,9 @@ case "$COMMAND" in
         ;;
     public-arsenal-claim-boundary-check)
         run_public_arsenal_claim_boundary_check_case
+        ;;
+    public-distillation-preflight-check)
+        run_public_distillation_preflight_check_case
         ;;
     package-publish-safety-check)
         run_package_publish_safety_check_case

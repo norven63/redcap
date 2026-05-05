@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "policy_id": "public-distillation-preflight",
+  "parent_child_id": "P4-2h-0",
+  "status": "dry-run-only",
+  "purpose": "Classify private historical assets for future RedCap Forge public distillation without exporting, deleting, moving, publishing, or claiming populated redcap-arsenal content.",
+  "boundaries": {
+    "public_write_allowed": false,
+    "raw_public_export_allowed": false,
+    "delete_or_move_allowed": false,
+    "npm_publish_allowed": false,
+    "arsenal_populated_claim_allowed": false
+  },
+  "policy_links": {
+    "redcap_forge": "references/redcap-forge-policy.json",
+    "information_architecture": "references/information-architecture-artifact-governance-policy.json",
+    "public_arsenal_claim_boundary": "references/public-arsenal-claim-boundary-policy.json",
+    "remote_binding": "references/shared-knowledge-remote-binding.json",
+    "pre_release_task_tree": "references/pre-release-structure-refactor-task-tree.json"
+  },
+  "allowed_private_source_roots": [
+    {
+      "path": "compass/docs/task-reports",
+      "role": "current task-report inbox",
+      "raw_public_export": "forbidden"
+    },
+    {
+      "path": "redcap-knowledge/task-reports",
+      "role": "private task-report archive",
+      "raw_public_export": "forbidden"
+    },
+    {
+      "path": "compass/knowledge",
+      "role": "active private knowledge",
+      "raw_public_export": "forbidden"
+    },
+    {
+      "path": "compass/evolution/candidates.json",
+      "role": "private evolution candidate ledger",
+      "raw_public_export": "forbidden"
+    }
+  ],
+  "forbidden_raw_public_sources": [
+    ".dev-task.md",
+    ".env",
+    ".env.*",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    ".github/copilot-instructions.md",
+    "compass/docs/task-reports/**",
+    "redcap-knowledge/**",
+    "compass/knowledge/**",
+    "prism/runs/**",
+    "compass/evolution/identity-proposals/**",
+    "~/.cap/identity.md"
+  ],
+  "triage_classes": [
+    {
+      "id": "distill_candidate",
+      "meaning": "A private source may be rewritten into a public lesson candidate after privacy, secret, duplicate, value, evidence, and claim-boundary checks.",
+      "public_raw_allowed": false,
+      "requires_review": ["privacy-safety", "secret-scan", "dedupe", "public-value", "evidence", "claim-boundary"]
+    },
+    {
+      "id": "private_only",
+      "meaning": "The source contains identity, secrets, user-private context, local runtime evidence, or host-specific material that must remain private.",
+      "public_raw_allowed": false,
+      "requires_review": ["privacy-safety"]
+    },
+    {
+      "id": "no_promote_duplicate_or_low_value",
+      "meaning": "The source duplicates an existing lesson or lacks reusable public value; record a no-promote reason instead of exporting.",
+      "public_raw_allowed": false,
+      "requires_review": ["dedupe", "public-value"]
+    },
+    {
+      "id": "human_review_required",
+      "meaning": "The source has strategic, privacy, licensing, or public-positioning ambiguity that AI and Prism must not decide silently.",
+      "public_raw_allowed": false,
+      "requires_review": ["human-boundary"]
+    }
+  ],
+  "future_public_entry_schema": {
+    "path_pattern": "../redcap-arsenal/users/<user>/YYYYMMDDTHHMMSSZ-<kind>-<slug>.md",
+    "append_only": true,
+    "required_sections": [
+      "problem_source",
+      "solution",
+      "final_effect",
+      "applicability_boundary",
+      "evidence_refs",
+      "privacy_review",
+      "duplicate_review",
+      "public_claim_boundary"
+    ],
+    "forbidden_sections": [
+      "raw_private_transcript",
+      "raw_task_report",
+      "identity_anchor",
+      "environment_secret",
+      "runtime_trace_dump"
+    ]
+  },
+  "preflight_outputs": {
+    "tracked_policy_only": true,
+    "tracked_public_entries": false,
+    "tracked_raw_content_snapshot": false,
+    "runtime_summary_allowed": true
+  },
+  "must_not_claim": [
+    "Do not claim P4-2h-0 exports historical knowledge to redcap-arsenal.",
+    "Do not claim RedCap Forge preflight means public entries are approved.",
+    "Do not claim redcap-arsenal is populated while public-arsenal-claim-boundary reports zero substantive entries.",
+    "Do not claim npm release readiness from this dry-run preflight."
+  ]
+}

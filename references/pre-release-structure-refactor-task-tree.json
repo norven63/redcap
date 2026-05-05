@@ -91,6 +91,18 @@
       "reason": "Private historical assets may later be distilled into append-only public arsenal entries, but only through RedCap Forge review and safety checks."
     },
     {
+      "id": "P4-2h-0",
+      "title": "Historical asset public distillation preflight",
+      "status": "completed",
+      "priority": "P1",
+      "depends_on": [
+        "P4-2e",
+        "P4-2h"
+      ],
+      "release_blocker": false,
+      "reason": "Before any public export, deletion, or migration, RedCap must first prove the RedCap Forge dry-run gate can classify historical assets without writing raw private content to redcap-arsenal."
+    },
+    {
       "id": "P4-2",
       "title": "Formal runtime / CLI package public release",
       "status": "blocked",

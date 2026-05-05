@@ -1,4 +1,24 @@
 reports:
+  - id: "20260506-next-route-decision"
+    mode: test
+    date: "2026-05-06"
+    topic: "Public distillation preflight next-route review"
+    agents: ["claude-code", "copilot"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Proceed with P4-2h-0 dry-run historical asset public distillation preflight"
+      - "Do not start npm publish or release readiness from this route decision"
+      - "Do not write public arsenal entries, delete historical assets, or prune prism/runs evidence in this task"
+    open_questions:
+      - "Concrete public candidates discovered by preflight may still require later privacy/public-positioning escalation"
+      - "Coordinator registration could not attach a runtime owner in this host context; run-scoped direct CLI evidence was recorded instead"
+    lessons_updated: false
+    files_affected:
+      - "references/public-distillation-preflight-policy.json"
+      - "compass/tools/redcap-public-distillation-preflight.py"
+      - "compass/tools/redcap-public-distillation-preflight.sh"
+    archived: false
   - id: "20260505-public-arsenal-claim-boundary-review"
     mode: test
     date: "2026-05-05"

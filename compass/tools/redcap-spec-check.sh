@@ -560,6 +560,14 @@ if [[ -x "$PUBLIC_ARSENAL_CLAIM_BOUNDARY_CHECK" ]]; then
     fi
 fi
 
+PUBLIC_DISTILLATION_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-public-distillation-preflight.sh"
+if [[ -x "$PUBLIC_DISTILLATION_PREFLIGHT_CHECK" ]]; then
+    if ! bash "$PUBLIC_DISTILLATION_PREFLIGHT_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] public distillation preflight check failed" >&2
+        exit 1
+    fi
+fi
+
 RETRIEVAL_ESCALATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh"
 if [[ -x "$RETRIEVAL_ESCALATION_CHECK" ]]; then
     if ! bash "$RETRIEVAL_ESCALATION_CHECK" >/dev/null; then
