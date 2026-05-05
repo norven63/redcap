@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 26,
-    "size_bytes": 357185,
-    "lines": 7007,
-    "chars": 220880,
+    "size_bytes": 357584,
+    "lines": 7013,
+    "chars": 221091,
     "rough_token_pressure": {
-      "low": 55220,
-      "high": 110440
+      "low": 55272,
+      "high": 110545
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 11,
-        "size_bytes": 163510,
-        "lines": 2424,
-        "chars": 104407,
+        "size_bytes": 163909,
+        "lines": 2430,
+        "chars": 104618,
         "rough_token_pressure": {
-          "low": 26101,
-          "high": 52203
+          "low": 26154,
+          "high": 52309
         }
       }
     },
@@ -437,9 +437,9 @@
       "role": "closure-evidence",
       "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13385,
-      "lines": 186,
-      "chars": 9305,
+      "size_bytes": 13634,
+      "lines": 191,
+      "chars": 9442,
       "summary": "当前已完成：P4-3 clean workspace / cross-machine install E2E 已正式 closeout，clean clone 证据和 closeout runtime receipt 都已经生成。 / 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；E2E receipt 已做本机路径脱敏，避免把 `/Users/**`、macOS 临时目录或密钥片段泄漏成可提交证据。",
       "status_basis": "filename_recency_only"
     },
@@ -515,9 +515,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 15065,
-      "lines": 242,
-      "chars": 9277,
+      "size_bytes": 15215,
+      "lines": 243,
+      "chars": 9351,
       "summary": "当前已完成：RedCap 已把公共 `redcap-arsenal` 的 template-only 状态和宣传边界变成机器可检查规则。 / 详情：本轮解决的是“公共库已经初始化，但不能被误说成已有实质知识库”的问题。现在 `redcap-arsenal` 只能被描述为模板、schema、索引目录和用户命名空间已初始化；不能宣传为已迁移历史知识、已填充公共知识库或成熟 skill arsenal。未来只有经过 RedCap Forge 的脱敏、去重、append-only 条目写入和索引刷新后，才允许进入 populated claim 评估。",
       "status_basis": "filename_recency_only",
       "summary_points": {
