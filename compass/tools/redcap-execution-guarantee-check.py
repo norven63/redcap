@@ -66,6 +66,7 @@ REQUIRED_IDS = {
     "runtime-workspace-boundary-gate",
     "cli-product-surface-gate",
     "public-package-surface-gate",
+    "public-arsenal-claim-boundary",
 }
 
 ALLOWED_PRIORITIES = {"P0", "P1", "P2", "P3"}

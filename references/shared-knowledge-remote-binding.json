@@ -78,10 +78,10 @@
   ],
   "safety_policy_path": "references/package-publish-safety-policy.json",
   "last_verified": {
-    "checked_at_utc": "2026-04-26T17:55:21Z",
+    "checked_at_utc": "2026-05-05T11:50:52Z",
     "method": "git ls-remote --heads",
     "remote_ref": "refs/heads/main",
-    "remote_head": "2e3b954338a4c397d299da88f460c6edf5a312d6"
+    "remote_head": "2dbec751131e2cd611b07dd517356f431dda3a7e"
   },
   "notes": [
     "This binding only covers the minimal public template surface plus explicit per-user namespace placeholders.",

@@ -217,6 +217,11 @@ def validate_review(policy: dict[str, Any], review: dict[str, Any], root: Path) 
     package_safety = run_output(["bash", str(root / "compass/tools/redcap-package-publish-safety-check.sh")], cwd=root)
     if "PACKAGE_PUBLISH_SAFETY_OK" not in package_safety:
         fail("package safety did not pass")
+    public_arsenal_boundary = run_output(["bash", str(root / "compass/tools/redcap-public-arsenal-claim-boundary.sh")], cwd=root)
+    if "PUBLIC_ARSENAL_CLAIM_BOUNDARY_OK" not in public_arsenal_boundary:
+        fail("public arsenal claim boundary did not pass")
+    if facts.get("public_arsenal_claim_boundary_status") != "pass":
+        fail("review observed_facts must record public_arsenal_claim_boundary_status=pass")
     if facts.get("npm_pack_dry_run_checked") is not True:
         fail("review observed_facts must record npm_pack_dry_run_checked=true")
     pack_count = npm_pack_file_count(root, facts)

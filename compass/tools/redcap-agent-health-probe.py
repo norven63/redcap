@@ -8,9 +8,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -112,6 +114,111 @@ def active_freeze(policy: dict[str, object], agent: str, scope: str) -> dict[str
     return None
 
 
+def pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
+def direct_child_pids(pid: int) -> list[int]:
+    try:
+        result = subprocess.run(
+            ["pgrep", "-P", str(pid)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return []
+    children: list[int] = []
+    for line in (result.stdout or "").splitlines():
+        line = line.strip()
+        if line.isdigit():
+            children.append(int(line))
+    return children
+
+
+def descendant_pids(pid: int) -> list[int]:
+    seen: set[int] = set()
+    stack = [pid]
+    descendants: list[int] = []
+    while stack:
+        current = stack.pop()
+        for child in direct_child_pids(current):
+            if child in seen:
+                continue
+            seen.add(child)
+            descendants.append(child)
+            stack.append(child)
+    return descendants
+
+
+def signal_process_group(pid: int, sig: int) -> None:
+    try:
+        os.killpg(pid, sig)
+    except ProcessLookupError:
+        pass
+
+
+def signal_process_tree(pid: int, sig: int) -> None:
+    for child in reversed(descendant_pids(pid)):
+        try:
+            os.kill(child, sig)
+        except ProcessLookupError:
+            pass
+    signal_process_group(pid, sig)
+
+
+def process_tree_alive(pid: int) -> bool:
+    return pid_alive(pid) or any(pid_alive(child) for child in descendant_pids(pid))
+
+
+def wait_process_tree_gone(pid: int, seconds: float) -> bool:
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if not process_tree_alive(pid):
+            return True
+        time.sleep(0.05)
+    return not process_tree_alive(pid)
+
+
+def run_probe_command(
+    command: list[str],
+    *,
+    cwd: Path,
+    env: dict[str, str],
+    timeout_s: int,
+) -> tuple[str, str, int | None, bool]:
+    proc = subprocess.Popen(
+        command,
+        cwd=cwd,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        start_new_session=True,
+    )
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout_s)
+        return stdout or "", stderr or "", proc.returncode, False
+    except subprocess.TimeoutExpired:
+        signal_process_tree(proc.pid, signal.SIGTERM)
+        if not wait_process_tree_gone(proc.pid, 2):
+            signal_process_tree(proc.pid, signal.SIGKILL)
+            wait_process_tree_gone(proc.pid, 2)
+        try:
+            stdout, stderr = proc.communicate(timeout=1)
+        except subprocess.TimeoutExpired:
+            signal_process_tree(proc.pid, signal.SIGKILL)
+            wait_process_tree_gone(proc.pid, 2)
+            stdout, stderr = proc.communicate()
+        return stdout or "", stderr or "", None, True
+
+
 def probe_agent(root: Path, name: str, live: bool, timeout_s: int, provider_policy: dict[str, object]) -> dict[str, object]:
     spec = AGENTS[name]
     binary = str(spec["binary"])
@@ -160,28 +267,27 @@ def probe_agent(root: Path, name: str, live: bool, timeout_s: int, provider_poli
     effective_timeout_s = max(timeout_s, int(spec.get("min_timeout_s", timeout_s)))
     command = [str(part) for part in spec["command"]]
     try:
-        completed = subprocess.run(
+        stdout, stderr, returncode, timed_out = run_probe_command(
             command,
             cwd=root,
             env=env,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=effective_timeout_s,
-            check=False,
+            timeout_s=effective_timeout_s,
         )
-    except subprocess.TimeoutExpired:
-        row.update({"live_status": "timeout", "timeout_s": effective_timeout_s})
-        return row
     except Exception as exc:
         row.update({"live_status": "error", "reason": str(exc)})
         return row
+    if timed_out:
+        row.update({"live_status": "timeout", "timeout_s": effective_timeout_s})
+        return row
+    if returncode is None:
+        row.update({"live_status": "error", "reason": "probe exited without return code"})
+        return row
 
-    output = (completed.stdout + "\n" + completed.stderr).strip()
+    output = (stdout + "\n" + stderr).strip()
     row.update(
         {
-            "live_status": "pass" if completed.returncode == 0 else "fail",
-            "returncode": completed.returncode,
+            "live_status": "pass" if returncode == 0 else "fail",
+            "returncode": returncode,
             "output_excerpt": output[:500],
         }
     )

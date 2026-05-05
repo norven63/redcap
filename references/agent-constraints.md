@@ -42,6 +42,7 @@
 
 - 若父级控制面（如 RedCap Layer B 的 `.dev-task.md`）已声明自主推进、overlay advisory-only 或同类授权语义，子 Agent **不得**因为通用 brainstorming/澄清习惯就返回 `need_user` 或要求人工批准。
 - 若宿主 overlay skill 自带“设计完成后继续交给 writing-plans / planning 等下游 skill”的默认后继链，子 Agent 也**不得**把缺少该宿主下游 skill 当成 blocker；正确动作是回到父级 RedCap-native 控制面继续。
+- overlay / host skill 产物不得覆盖 `.dev-task.md`、任务账本、门禁结果、runtime receipt 或 closeout 结论；它们只能作为父级控制面的参考输入。
 - 只有在以下场景才允许返回 `need_user` / `blocked`：缺少 AI 无法推断的外部事实/凭证/偏好、缺少 AI 无法直接执行/验证的人类动作（如 GUI/manual verification）、或命中显式用户保留决策（包括新外部依赖与架构方向性变更）。
 - 若必须上抛，先在产出中写清楚**为什么 AI 不能自己算出来**，再返回对应状态。
 - Dispatcher 若要求上抛，也必须同时指出命中的是哪一个具体缺口；“Dispatcher 让我问用户”本身不构成合法理由。

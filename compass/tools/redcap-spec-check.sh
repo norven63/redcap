@@ -552,6 +552,14 @@ if [[ -x "$REDCAP_FORGE_CHECK" ]]; then
     fi
 fi
 
+PUBLIC_ARSENAL_CLAIM_BOUNDARY_CHECK="$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh"
+if [[ -x "$PUBLIC_ARSENAL_CLAIM_BOUNDARY_CHECK" ]]; then
+    if ! bash "$PUBLIC_ARSENAL_CLAIM_BOUNDARY_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] public arsenal claim boundary check failed" >&2
+        exit 1
+    fi
+fi
+
 RETRIEVAL_ESCALATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh"
 if [[ -x "$RETRIEVAL_ESCALATION_CHECK" ]]; then
     if ! bash "$RETRIEVAL_ESCALATION_CHECK" >/dev/null; then

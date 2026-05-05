@@ -1,4 +1,27 @@
 reports:
+  - id: "20260505-public-arsenal-claim-boundary-review"
+    mode: test
+    date: "2026-05-05"
+    topic: "Public redcap-arsenal template-only claim boundary"
+    agents: ["claude-code", "copilot"]
+    roles: ["reviewer", "security-reviewer"]
+    verdict: "pass-after-fixes"
+    consensus_actions:
+      - "Keep redcap-arsenal template-only claims honest until reviewed append-only entries exist"
+      - "Validate exact populated-claim gates instead of a generic non-empty list"
+      - "Count substantive entries only under users/<user>/"
+      - "Explicitly protect .dev-task.md, task ledger, gates, receipt and closeout from overlay override"
+    open_questions:
+      - "Kimi and Gemini were unavailable in this run; future Prism runs should use the 1-hour availability cache before dispatch"
+      - "Historical asset public distillation remains deferred to P4-2h"
+    lessons_updated: false
+    files_affected:
+      - "references/public-arsenal-claim-boundary-policy.json"
+      - "compass/tools/redcap-public-arsenal-claim-boundary.py"
+      - "compass/tools/redcap-public-arsenal-claim-boundary.sh"
+      - "compass/tools/redcap-overlay-governance-check.sh"
+      - "shared-knowledge/README.md"
+    archived: true
   - id: "20260421-redteam-001"
     mode: redteam
     date: "2026-04-21"

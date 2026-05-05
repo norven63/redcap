@@ -92,7 +92,7 @@ def sha256_file(path: Path) -> str:
 
 def build_cache_provenance(root: Path, cache_path: Path, health_probe: Path, provider_policy_path: Path) -> dict[str, str]:
     """Capture the runtime facts that make an availability cache trustworthy."""
-    return {
+    provenance = {
         "contract": PROVENANCE_CONTRACT,
         "root": stable_path(root),
         "cache_path": stable_path(cache_path),
@@ -102,6 +102,11 @@ def build_cache_provenance(root: Path, cache_path: Path, health_probe: Path, pro
         "provider_policy_sha256": sha256_file(provider_policy_path),
         "path_sha256": sha256_text(os.environ.get("PATH", "")),
     }
+    impl_candidate = health_probe.with_name(f"{health_probe.stem}.py")
+    if impl_candidate.is_file():
+        provenance["health_probe_impl"] = stable_path(impl_candidate)
+        provenance["health_probe_impl_sha256"] = sha256_file(impl_candidate)
+    return provenance
 
 
 def load_json(path: Path) -> dict[str, Any] | None:

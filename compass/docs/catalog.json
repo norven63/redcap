@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 25,
-    "size_bytes": 341947,
-    "lines": 6764,
-    "chars": 211478,
+    "file_count": 26,
+    "size_bytes": 357185,
+    "lines": 7007,
+    "chars": 220880,
     "rough_token_pressure": {
-      "low": 52869,
-      "high": 105739
+      "low": 55220,
+      "high": 110440
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 187991,
-        "lines": 4493,
-        "chars": 112593,
+        "size_bytes": 188145,
+        "lines": 4494,
+        "chars": 112699,
         "rough_token_pressure": {
-          "low": 28148,
-          "high": 56296
+          "low": 28174,
+          "high": 56349
         }
       },
       "task-reports": {
-        "file_count": 10,
-        "size_bytes": 148426,
-        "lines": 2182,
-        "chars": 95111,
+        "file_count": 11,
+        "size_bytes": 163510,
+        "lines": 2424,
+        "chars": 104407,
         "rough_token_pressure": {
-          "low": 23777,
-          "high": 47555
+          "low": 26101,
+          "high": 52203
         }
       }
     },
@@ -177,9 +177,9 @@
       "role": "design-snapshot",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 5986,
-      "lines": 129,
-      "chars": 3532,
+      "size_bytes": 6140,
+      "lines": 130,
+      "chars": 3638,
       "summary": "说明 overlay skill、shared skill 所有权与 ask_user 边界。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -435,11 +435,11 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-3 clean workspace / cross-machine install E2E",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13366,
+      "size_bytes": 13385,
       "lines": 186,
-      "chars": 9286,
+      "chars": 9305,
       "summary": "当前已完成：P4-3 clean workspace / cross-machine install E2E 已正式 closeout，clean clone 证据和 closeout runtime receipt 都已经生成。 / 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；E2E receipt 已做本机路径脱敏，避免把 `/Users/**`、macOS 临时目录或密钥片段泄漏成可提交证据。",
       "status_basis": "filename_recency_only"
     },
@@ -500,27 +500,40 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-2c CLI 诊断产品面加固",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14933,
       "lines": 241,
       "chars": 9977,
       "summary": "当前已完成：RedCap CLI 已补上面向外部用户和 Agent 容器的诊断产品面，`doctor`、`debug --json`、`--trace`、`help <command>` 和结构化错误都已进入机器门禁。 / 详情：本轮解决的是“内部脚本能跑，但公共 CLI 不好排障”的发布前阻塞。现在用户可以先用 `redcap doctor` 看人类可读健康摘要，Agent 或支持者可以用 `redcap debug --json` 获取脱敏诊断包，`--trace` 能解释命令路由但不会倾倒环境变量。发布前审判已把 `cli-debug-contract-incomplete` 从 release blocker 改为 pas…",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-05-redcap-public-arsenal-claim-boundary.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-2e public redcap-arsenal 内容策略与 claim 边界",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 15065,
+      "lines": 242,
+      "chars": 9277,
+      "summary": "当前已完成：RedCap 已把公共 `redcap-arsenal` 的 template-only 状态和宣传边界变成机器可检查规则。 / 详情：本轮解决的是“公共库已经初始化，但不能被误说成已有实质知识库”的问题。现在 `redcap-arsenal` 只能被描述为模板、schema、索引目录和用户命名空间已初始化；不能宣传为已迁移历史知识、已填充公共知识库或成熟 skill arsenal。未来只有经过 RedCap Forge 的脱敏、去重、append-only 条目写入和索引刷新后，才允许进入 populated claim 评估。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：RedCap CLI 已补上面向外部用户和 Agent 容器的诊断产品面，`doctor`、`debug --json`、`--trace`、`help <command>` 和结构化错误都已进入机器门禁。",
-          "详情：本轮解决的是“内部脚本能跑，但公共 CLI 不好排障”的发布前阻塞。现在用户可以先用 `redcap doctor` 看人类可读健康摘要，Agent 或支持者可以用 `redcap debug --json` 获取脱敏诊断包，`--trace` 能解释命令路由但不会倾倒环境变量。发布前审判已把 `cli-debug-contract-incomplete` 从 release blocker 改为 pass，但 RedCap 仍未进入正式 public release-ready。"
+          "当前已完成：RedCap 已把公共 `redcap-arsenal` 的 template-only 状态和宣传边界变成机器可检查规则。",
+          "详情：本轮解决的是“公共库已经初始化，但不能被误说成已有实质知识库”的问题。现在 `redcap-arsenal` 只能被描述为模板、schema、索引目录和用户命名空间已初始化；不能宣传为已迁移历史知识、已填充公共知识库或成熟 skill arsenal。未来只有经过 RedCap Forge 的脱敏、去重、append-only 条目写入和索引刷新后，才允许进入 populated claim 评估。"
         ],
         "previous_step": [
-          "上一步完成的是：P4-2b 已把 runtime、project workspace、user state 三层边界拆清，CLI 不再默认把 RedCap 自身 `.dev-task.md` 当成外部项目状态。"
+          "上一步完成的是：P4-2d 已准备 `@norven63/redcap` 包身份、包面和发布安全边界。"
         ],
         "next_step": [
-          "下一步计划做的是：P4-2d public package identity/license/surface 准备；这会处理包名、许可证、候选包面和 release readiness 边界，但不自动 npm publish。"
+          "下一步计划做的是：P4-2h 历史资产公共蒸馏与 RedCap Forge export triage 仍保持 deferred；正式 npm 发布仍另开 release task。"
         ],
         "position": [
-          "整体计划脉络图是：P4-2a 产品架构审判 → P4-2b 边界拆分 → P4-2c CLI 诊断产品面 → P4-2d 包身份/许可证/包面 → P4-2e 公共 arsenal 口径。",
-          "当前所在位置：P4-2c 已完成并 CLOSED；closeout receipt 已存在，P4-2d 是下一主线。"
+          "整体计划脉络图是：P4-2a 产品架构审判 -> P4-2b workspace 边界 -> P4-2c CLI 产品面 -> P4-2d 包身份/包面 -> P4-2e 公共 arsenal claim 边界 -> P4-2h 历史资产公共蒸馏 -> P4-2 正式发布。",
+          "当前所在位置：P4-2e 已完成实现与棱镜修补；P4-2 正式发布仍未完成，也不能声明 public-release-ready。"
         ]
       }
     },

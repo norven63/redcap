@@ -25,7 +25,8 @@
 1. 明确声明：宿主通用 skill 只是 **advisory overlay**，不是 Layer B authority。
 2. 明确人工介入门槛：仅限 AI 无法推断的外部事实/偏好/凭证、AI 无法直接执行/验证的人类动作、或 Norven 保留决策（包括架构方向禁区与外部依赖禁区）。
 3. 只在 RedCap-native 一侧建立可拥有的规则；共享宿主 skill 若仍冲突，只能被视为 degraded overlay，不能作为 RedCap 任务中的 patch surface。
-4. 把本次 P0 固化为 lesson 与 canonical ledger，防止后续长任务再次复现。
+4. 明确 authority chain：overlay / host skill 产物不得覆盖 `.dev-task.md`、任务账本、门禁结果、runtime receipt 或 closeout 结论。
+5. 把本次 P0 固化为 lesson 与 canonical ledger，防止后续长任务再次复现。
 
 ### 2.2 非目标
 

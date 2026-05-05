@@ -12,7 +12,7 @@
 
 RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 skill-root 承载形态逐步演进为可安装、可复活、可调度、可审计的 Agent runtime / CLI / 多层系统。
 
-当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略、P4-1 的历史资产 copy-first、delete-last 与 private canonical switch、P4-3 的 clean workspace / cross-machine-style 安装 E2E、P4-2a 发布前产品架构审判、P4-2f 信息架构与运行时产物治理、P4-2g npm 白名单预检与结构重构任务树重锚定、P4-2b runtime/project/user 边界与 CLI workspace context、P4-2c CLI doctor/debug/trace/error/help 产品面加固，以及 P4-2d public package identity/license/surface 准备；尚未完成的是 P4-2 正式公开发布与 P4-2e public redcap-arsenal 内容策略。P4-2 现在不能再被简化为“只差 npm publish”，它仍被 formal release task 的人工许可证/发布边界和剩余产品口径阻塞，并必须按 P4-2g 重新锚定后的任务树继续推进 P4-2e/h 与正式 release。
+当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略、P4-1 的历史资产 copy-first、delete-last 与 private canonical switch、P4-3 的 clean workspace / cross-machine-style 安装 E2E、P4-2a 发布前产品架构审判、P4-2f 信息架构与运行时产物治理、P4-2g npm 白名单预检与结构重构任务树重锚定、P4-2b runtime/project/user 边界与 CLI workspace context、P4-2c CLI doctor/debug/trace/error/help 产品面加固、P4-2d public package identity/license/surface 准备，以及 P4-2e public redcap-arsenal 内容策略与 claim 边界。P4-2 正式公开发布仍未完成，不能被简化为“只差 npm publish”；它仍被 formal release task 的人工许可证/发布边界和剩余产品口径阻塞，并必须按 P4-2g 重新锚定后的任务树继续推进 P4-2h 与正式 release。
 
 P4 numbering is a dependency/status map, not a promise of numeric execution order.
 
@@ -56,7 +56,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P4-2b | P4-2a finding | runtime/project/user boundary 物理拆分与 CLI workspace context | completed | P0-before-public-release | 已让 CLI 默认操作被管理项目工作区，npm 包只作为 runtime 实现；完成 runtime/project/user 三层边界的最小机器闭环 | receipt: `redcap-runtime-project-user-boundary-and-cli-workspace-context-*`；不得把它冒充为 runtime layout 物理大迁移 |
 | P4-2c | P4-2a finding | CLI doctor/debug/trace/error/help 产品面加固 | completed | P0-before-public-release | 已补齐外部用户可理解的诊断、调试、路径可见性、错误解释和 Agent 容器调用说明，并由 Prism + full acceptance 验收 | 不等于内部脚本调试入口；面向 public CLI 用户；不等于 release-ready |
 | P4-2d | P4-2a finding | public package identity/license/surface 准备 | completed | P0-before-public-release | 已准备 `@norven63/redcap` 包名、manual license boundary、package surface gate 和 release readiness 边界 | 不自动 npm publish；license 选择、`private=false`、`publish_allowed=true` 仍是未来 release task 决策 |
-| P4-2e | P4-2a finding | public redcap-arsenal 内容策略与 claim 边界 | open | P1-before-broad-marketing | 决定公共库 template-only 时的产品口径，或先补 append-only 实质条目再宣传 shared arsenal 能力 | 不得把空壳模板说成已经迁移真实知识库；默认不阻塞 CLI release engineering |
+| P4-2e | P4-2a finding | public redcap-arsenal 内容策略与 claim 边界 | completed | P1-before-broad-marketing | 已锁定 template-only 阶段允许/禁止 claim，接入机器检查、Prism 复核和外部公共库 README 口径修正；不迁移历史私有知识 | 不得把空壳模板说成已经迁移真实知识库；默认不阻塞 CLI release engineering |
 | P4-2f | user architecture review | RedCap 信息架构与运行时产物治理 | completed | P0-before-public-release | 已治理 report / private knowledge / runtime evidence / RedCap Forge / redcap-arsenal 的目录边界、生命周期和人类可读汇报规则 | 不等于 public release；不等于公共库已有实质内容；报告 `2026-05-04-redcap-information-architecture-and-artifact-governance.md` |
 | P4-2g | user release-path review | npm 白名单预检与结构重构任务树重锚定 | completed | P0-before-public-release | 已用 package whitelist preflight 确定包面，并按 release blocker 重排 P4-2b/c/d/e/h，避免盲目历史资产手术 | 不等于执行物理拆分、历史资产公共迁移或 npm publish |
 | P4-2h | user release-path review | 历史资产公共蒸馏与 RedCap Forge export triage | deferred | P1-before-broad-marketing | 仅在 RedCap Forge 脱敏、去重、安全审查和 append-only 边界明确后，把私有历史资产选择性导出为公共 arsenal 候选 | 不得把私有历史报告、identity、runtime evidence 直接写入 redcap-arsenal |
@@ -86,7 +86,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 19. `P4-2b`：runtime/project/user boundary 物理拆分与 CLI workspace context。（已完成最小 workspace context 闭环；不等于 runtime layout 大迁移）
 20. `P4-2c`：CLI doctor/debug/trace/error/help 产品面加固。（已完成最小 public diagnostic surface；不等于 release-ready）
 21. `P4-2d`：public package identity/license/surface 准备。（已完成 readiness 准备；不等于发布）
-22. `P4-2e`：public redcap-arsenal 内容策略与 claim 边界。（推荐下一步；P1，不默认阻塞 release engineering）
+22. `P4-2e`：public redcap-arsenal 内容策略与 claim 边界。（已完成；P1，不默认阻塞 release engineering）
 23. `P4-2h`：历史资产公共蒸馏与 RedCap Forge export triage。（deferred，独立于 npm 发布关键路径）
 24. `P4-2`：正式 runtime / CLI package public release。（blocked，需先完成 P4-2b/c/d，并确认发布目标与凭证决策）
 25. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）

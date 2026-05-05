@@ -106,7 +106,7 @@ P4-3 可以在本机通过临时 clean clone、隔离 HOME、隔离 runtime base
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | 正式 clean HEAD E2E receipt | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --check-result --timeout 180` | 通过，npm_pack_dry_run=true |
 | receipt 复验 | `bash compass/tools/redcap-clean-workspace-e2e.sh --check-result` | 通过 |
-| path leak scan | `rg -o '/Users/|/private/var/folders|/var/folders|norven|KIMI_API_KEY|GEMINI_API_KEY|AIza|cli_a957|Uer56' references/clean-workspace-install-e2e.json` | 无命中 |
+| path leak scan | `rg -o '/Users/|/private/var/folders|/var/folders|norven|KIMI_API_KEY|GEMINI_API_KEY|AIza|cli_a957|FEISHU_APP_SECRET_PREFIX' references/clean-workspace-install-e2e.json` | 无命中 |
 | Execution guarantees | `bash compass/tools/redcap-execution-guarantee-check.sh` | 通过 |
 | File Lookup Dictionary | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` | 通过，required_paths=165 |
 | Prism 独立评审 | Claude 初审 + Kimi 初审/复审 + acceptance binding | 初审发现 2 个 blocker，已修复；最终为 resource-limited-pass，不冒充 formal quorum |

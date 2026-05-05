@@ -11,7 +11,7 @@
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 215,
+    "package_candidate_count": 218,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
@@ -27,6 +27,7 @@
     "redcap_arsenal_local_worktree_ref": "shared-knowledge-remote-binding.preferred_local_worktree",
     "redcap_arsenal_content_state": "template-only",
     "redcap_arsenal_substantive_entries": 0,
+    "public_arsenal_claim_boundary_status": "pass",
     "source_visibility_model": "npm package source must be treated as visible to users"
   },
   "findings": [
@@ -130,9 +131,11 @@
       "id": "public-arsenal-template-only",
       "dimension": "knowledge-boundary",
       "severity": "should-fix",
-      "claim": "redcap-arsenal currently contains only templates, schema and Norven namespace placeholders. It must not be marketed as a populated shared knowledge/skill arsenal until append-only entries exist.",
+      "claim": "redcap-arsenal currently contains only templates, schema and Norven namespace placeholders. P4-2e now machine-gates this template-only claim boundary, and it must not be marketed as a populated shared knowledge/skill arsenal until reviewed append-only entries exist.",
       "evidence": [
-        "references/shared-knowledge-remote-binding.json"
+        "references/shared-knowledge-remote-binding.json",
+        "references/public-arsenal-claim-boundary-policy.json",
+        "compass/tools/redcap-public-arsenal-claim-boundary.sh"
       ],
       "required_before_public_release": false
     },

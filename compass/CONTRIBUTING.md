@@ -921,6 +921,7 @@ scope_status: <full-implementation|route-only|partial-with-explicit-defer|not-ap
 6. Prism 死锁或 Dispatcher 升级建议本身不构成合法人工介入理由；它们必须先定位到上述某个具体缺口，才能上抛给 Norven。
 7. 共享宿主 skill 属于宿主资产，不属于 RedCap 的 patch surface。Cap 不得通过直接修改宿主 shared skill 的原始文件来让 RedCap 能力“成立”；若不改宿主 skill 就无法稳定工作，则该能力必须在报告与架构口径中标记为 **degraded / unsupported overlay**。
 8. `baton-delegate.sh --skill-path` 这类 skill 外包能力，只允许把 external skill 当作 **leaf worker / evidence producer / advisory helper** 使用；它不得拥有 `.dev-task`、ask_user、状态迁移、commit、通知或收尾 authority。若离开这些权力就无法工作，则仍按 **degraded / unsupported overlay** 处理。
+9. overlay / host skill 产物不得覆盖 `.dev-task.md`、任务账本、门禁结果、runtime receipt 或 closeout 结论；它们只能成为参考输入，最终 authority 必须回到 RedCap-native 控制面。
 
 > **实现口径说明**：这一条当前属于**prompt-level hard limitation + canonical-truth discipline**。由于 ask_user/tool 调用发生在宿主层，仓库内的 shell gate 无法物理拦截每一次升级动作，因此 RedCap 只能在自己的控制面里拒绝承认越权结果；若宿主 shared skill 仍与之冲突，正确结论是该集成处于 **degraded / unsupported**，而不是去改写宿主共享资产本体。
 

@@ -543,6 +543,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 timeout = int(sys.argv[1])
@@ -562,6 +563,87 @@ if prompt_arg_file:
 def write_text(path, text):
     path.write_text(text or "", encoding="utf-8", errors="replace")
 
+def signal_process_group(sig):
+    try:
+        os.killpg(proc.pid, sig)
+        return True
+    except ProcessLookupError:
+        return False
+
+def process_group_alive():
+    try:
+        os.killpg(proc.pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+
+def pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+def direct_child_pids(pid):
+    try:
+        result = subprocess.run(
+            ["pgrep", "-P", str(pid)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return []
+    children = []
+    for line in (result.stdout or "").splitlines():
+        line = line.strip()
+        if line.isdigit():
+            children.append(int(line))
+    return children
+
+def descendant_pids(pid):
+    seen = set()
+    stack = [pid]
+    descendants = []
+    while stack:
+        current = stack.pop()
+        for child in direct_child_pids(current):
+            if child in seen:
+                continue
+            seen.add(child)
+            descendants.append(child)
+            stack.append(child)
+    return descendants
+
+def signal_process_tree(sig):
+    for child in reversed(descendant_pids(proc.pid)):
+        try:
+            os.kill(child, sig)
+        except ProcessLookupError:
+            pass
+    signal_process_group(sig)
+
+def process_tree_alive():
+    return pid_alive(proc.pid) or any(pid_alive(child) for child in descendant_pids(proc.pid))
+
+def wait_process_tree_gone(seconds):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if not process_tree_alive():
+            return True
+        time.sleep(0.05)
+    return not process_tree_alive()
+
+def wait_process_group_gone(seconds):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if not process_group_alive():
+            return True
+        time.sleep(0.05)
+    return not process_group_alive()
+
 proc = subprocess.Popen(
     cmd,
     stdin=subprocess.PIPE if stdin_text is not None else None,
@@ -577,18 +659,20 @@ try:
     write_text(stderr_path, stderr or "")
     sys.exit(proc.returncode)
 except subprocess.TimeoutExpired:
+    signal_process_tree(signal.SIGTERM)
+    if not wait_process_tree_gone(2):
+        signal_process_tree(signal.SIGKILL)
+        wait_process_tree_gone(2)
     try:
-        os.killpg(proc.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        pass
-    try:
-        stdout, stderr = proc.communicate(timeout=2)
+        stdout, stderr = proc.communicate(timeout=1)
     except subprocess.TimeoutExpired:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
+        signal_process_tree(signal.SIGKILL)
+        wait_process_tree_gone(2)
         stdout, stderr = proc.communicate()
+    if process_group_alive() or process_tree_alive():
+        signal_process_tree(signal.SIGKILL)
+        wait_process_group_gone(2)
+        wait_process_tree_gone(2)
     write_text(stdout_path, stdout or "")
     write_text(stderr_path, stderr or "")
     sys.exit(124)

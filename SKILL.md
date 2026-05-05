@@ -880,6 +880,7 @@ compass 指挥棒为 Cap 提供标准化调度原语，用于并行任务裂变�
 2. `ask_user` / `need_user` / `blocked_on_user` 只允许用于：缺少 AI 无法推断的外部事实或偏好、缺少 AI 无法直接完成的人工验证/操作、或命中 Norven 明确保留的决策（包括架构方向性变更与外部依赖引入）。
 3. Prism / Dispatcher 只能**建议**上抛，不构成独立理由；真正进入 ask_user 前，必须先明确指出缺失的是哪一个外部事实、人工动作或保留决策。
 4. 若 overlay skill 与 RedCap-native 规则冲突，以 RedCap-native 控制面为准。
+5. overlay / host skill 产物不得覆盖 `.dev-task.md`、任务账本、门禁结果、runtime receipt 或 closeout 结论；这些 truth surfaces 只能由 RedCap-native 控制面收口。
 
 ⛔ **自主执行禁区**（以下情形无论上述三条是否满足，必须等待 Norven）：
 - 架构方向性变更（影响多个子系统的接口设计或核心协议）

@@ -71,13 +71,13 @@
     {
       "id": "P4-2e",
       "title": "Public redcap-arsenal content strategy and claim boundary",
-      "status": "open",
+      "status": "completed",
       "priority": "P1",
       "depends_on": [
         "P4-2g"
       ],
       "release_blocker": false,
-      "reason": "The public arsenal is currently template-only; claim wording and future content strategy must be honest but need not block CLI release engineering."
+      "reason": "The public arsenal is currently template-only; this tranche turns honest claim wording and future populated-content thresholds into a machine-checked boundary without blocking CLI release engineering."
     },
     {
       "id": "P4-2h",
@@ -117,5 +117,5 @@
     "Release readiness must continue to fail closed while P4-2a release blockers remain open.",
     "Prism review must be bound before this task-tree reanchor can be closed."
   ],
-  "prism_run": "20260505-public-package-identity-surface-review"
+  "prism_run": "20260505-public-arsenal-claim-boundary-review"
 }

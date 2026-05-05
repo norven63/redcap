@@ -938,6 +938,30 @@
       "auto_enforceable": true
     },
     {
+      "id": "public-arsenal-claim-boundary",
+      "category": "shared-knowledge-remote",
+      "priority": "P1",
+      "rule": "While redcap-arsenal is template-only, RedCap must allow only initialization/schema/Forge-pipeline claims and must forbid populated knowledge-base, migrated-history, release-ready, or raw-private-publication claims.",
+      "source_paths": [
+        "references/public-arsenal-claim-boundary-policy.json",
+        "references/shared-knowledge-remote-binding.json",
+        "references/pre-release-product-architecture-review.json",
+        "shared-knowledge/README.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-public-arsenal-claim-boundary validates the current public arsenal content state, external worktree substantive-entry count, README wording, pre-release review facts, and template-only claim boundary before diagnose/spec-check can pass.",
+      "guarantee_paths": [
+        "compass/tools/redcap-public-arsenal-claim-boundary.sh",
+        "compass/tools/redcap-public-arsenal-claim-boundary.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "information-architecture-artifact-governance",
       "category": "information-architecture",
       "priority": "P1",

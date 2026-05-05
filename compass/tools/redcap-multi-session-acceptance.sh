@@ -178,6 +178,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check
   bash compass/tools/redcap-multi-session-acceptance.sh information-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh redcap-forge-check
+  bash compass/tools/redcap-multi-session-acceptance.sh public-arsenal-claim-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
@@ -4711,15 +4712,44 @@ PY
 
 redcap_acceptance_on_stop_review() {
     local fallback_task_file=""
+    local availability_probe="$ACCEPT_ROOT/on-stop-review-prism-health-probe.sh"
+    local availability_cache="$ACCEPT_ROOT/on-stop-review-prism-availability-cache.json"
+
+    if [[ ! -x "$availability_probe" ]]; then
+        cat >"$availability_probe" <<'EOF'
+#!/usr/bin/env bash
+cat <<'JSON'
+{
+  "version": 1,
+  "detected_at": "2099-01-01T00:00:00Z",
+  "live": true,
+  "timeout_s": 15,
+  "provider_policy": "references/prism-provider-policy.json",
+  "agents": [
+    {"agent": "claude-code", "binary": "claude", "installed": true, "path": "/tmp/acceptance/claude", "live_probe_requested": true, "live_status": "pass"},
+    {"agent": "copilot", "binary": "copilot", "installed": true, "path": "/tmp/acceptance/copilot", "live_probe_requested": true, "live_status": "pass"},
+    {"agent": "gemini", "binary": "gemini", "installed": true, "path": "/tmp/acceptance/gemini", "live_probe_requested": true, "live_status": "pass"},
+    {"agent": "kimi", "binary": "kimi", "installed": true, "path": "/tmp/acceptance/kimi", "live_probe_requested": true, "live_status": "pass"},
+    {"agent": "codex", "binary": "codex", "installed": true, "path": "/tmp/acceptance/codex", "live_probe_requested": true, "live_status": "unsupported", "reason": "acceptance fixture"}
+  ]
+}
+JSON
+EOF
+        chmod +x "$availability_probe"
+    fi
 
     seed_parent_receipt_aggregation_fixtures
     if [[ -z "${REDCAP_TASK_FILE:-}" ]]; then
         fallback_task_file="$(mktemp "$ACCEPT_ROOT/on-stop-review-task.XXXXXX")"
         TEMP_PROJECTS+=("$fallback_task_file")
         write_permissive_acceptance_task_file "$fallback_task_file"
+        PRISM_AGENT_HEALTH_PROBE_SCRIPT="${PRISM_AGENT_HEALTH_PROBE_SCRIPT:-$availability_probe}" \
+        PRISM_AVAILABILITY_CACHE="${PRISM_AVAILABILITY_CACHE:-$availability_cache}" \
         REDCAP_TASK_FILE="$fallback_task_file" bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh"
         return $?
     fi
+    PRISM_AGENT_HEALTH_PROBE_SCRIPT="${PRISM_AGENT_HEALTH_PROBE_SCRIPT:-$availability_probe}" \
+    PRISM_AVAILABILITY_CACHE="${PRISM_AVAILABILITY_CACHE:-$availability_cache}" \
     bash "$REDCAP_ROOT/compass/tools/redcap-on-stop-review.sh"
 }
 
@@ -11830,6 +11860,106 @@ PY
     assert_string_contains "$stale_output" "missing forbidden public raw source: compass/docs/task-reports/**"
 }
 
+run_public_arsenal_claim_boundary_check_case() {
+    local output bad_policy stale_output status fixture_worktree bad_binding
+
+    log "case: public-arsenal-claim-boundary-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh")"
+    assert_string_contains "$output" "PUBLIC_ARSENAL_CLAIM_BOUNDARY_OK"
+    assert_string_contains "$output" "state=template-only"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "public arsenal claim boundary check failed"
+
+    bad_policy="$ACCEPT_ROOT/public-arsenal-claim-boundary-bad-state.json"
+    python3 - "$REDCAP_ROOT/references/public-arsenal-claim-boundary-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["current_state"]["content_state"] = "populated"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "public arsenal checker should reject populated state in template-only tranche"
+    assert_string_contains "$stale_output" "current_state.content_state must be template-only"
+
+    bad_policy="$ACCEPT_ROOT/public-arsenal-claim-boundary-missing-gate.json"
+    python3 - "$REDCAP_ROOT/references/public-arsenal-claim-boundary-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["promotion_thresholds"]["required_before_populated_claim"].remove("duplicate check")
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "public arsenal checker should reject missing populated-claim gate"
+    assert_string_contains "$stale_output" "promotion thresholds missing required steps: duplicate check"
+
+    bad_policy="$ACCEPT_ROOT/public-arsenal-claim-boundary-extra-gate.json"
+    python3 - "$REDCAP_ROOT/references/public-arsenal-claim-boundary-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["promotion_thresholds"]["required_before_populated_claim"].append("marketing copy approval")
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "public arsenal checker should reject unsupported extra populated-claim gate"
+    assert_string_contains "$stale_output" "promotion thresholds contain unsupported extra steps: marketing copy approval"
+
+    fixture_worktree="$ACCEPT_ROOT/public-arsenal-claim-boundary-worktree"
+    mkdir -p "$fixture_worktree/users/Norven" "$fixture_worktree/schemas" "$fixture_worktree/indexes"
+    cp "$REDCAP_ROOT/shared-knowledge/README.md" "$fixture_worktree/README.md"
+    printf '{}\n' >"$fixture_worktree/schemas/entry.schema.json"
+    printf '{}\n' >"$fixture_worktree/indexes/generated-index.json"
+    touch "$fixture_worktree/users/Norven/.gitkeep" "$fixture_worktree/indexes/.gitkeep"
+
+    bad_binding="$ACCEPT_ROOT/public-arsenal-claim-boundary-bad-binding.json"
+    python3 - "$REDCAP_ROOT/references/shared-knowledge-remote-binding.json" "$bad_binding" "$fixture_worktree" <<'PY'
+import json
+import pathlib
+import sys
+src, dst, worktree = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["preferred_local_worktree"] = str(worktree)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    bad_policy="$ACCEPT_ROOT/public-arsenal-claim-boundary-bad-readme.json"
+    python3 - "$REDCAP_ROOT/references/public-arsenal-claim-boundary-policy.json" "$bad_policy" "$bad_binding" <<'PY'
+import json
+import pathlib
+import sys
+src, dst, binding = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["remote_binding_path"] = str(binding)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh" --policy "$bad_policy")"
+    assert_string_contains "$output" "substantive_entries=0"
+
+    printf '\n本机路径示例：/Users/example/private\n' >>"$fixture_worktree/README.md"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "public arsenal checker should reject local absolute path leakage in README"
+    assert_string_contains "$stale_output" "README contains forbidden phrase: /Users/"
+}
+
 run_package_publish_safety_check_case() {
     local fixture safe_file env_file key_file list_file output stale_output status
 
@@ -12429,7 +12559,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12646,6 +12776,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-public-arsenal-claim-boundary.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "public-arsenal-claim-boundary" ]]; then
+    echo "fixture public arsenal claim boundary failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
             "$repo/compass/tools/redcap-docs-catalog.sh" \
             "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
@@ -12669,6 +12808,7 @@ EOF
             "$repo/compass/tools/redcap-cli-product-surface-check.sh" \
             "$repo/compass/tools/redcap-information-architecture-check.sh" \
             "$repo/compass/tools/redcap-forge-check.sh" \
+            "$repo/compass/tools/redcap-public-arsenal-claim-boundary.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
 
         case "$failing_gate" in
@@ -12696,6 +12836,7 @@ EOF
             cli-product-surface) expected_message="CLI product surface check failed" ;;
             information-architecture) expected_message="information architecture check failed" ;;
             redcap-forge) expected_message="RedCap Forge check failed" ;;
+            public-arsenal-claim-boundary) expected_message="public arsenal claim boundary check failed" ;;
         esac
 
         set +e
@@ -13575,6 +13716,7 @@ run_all_cases() {
     run_shared_knowledge_remote_binding_check_case
     run_information_architecture_check_case
     run_redcap_forge_check_case
+    run_public_arsenal_claim_boundary_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
     run_public_package_surface_check_case
@@ -14068,6 +14210,9 @@ case "$COMMAND" in
         ;;
     redcap-forge-check)
         run_redcap_forge_check_case
+        ;;
+    public-arsenal-claim-boundary-check)
+        run_public_arsenal_claim_boundary_check_case
         ;;
     package-publish-safety-check)
         run_package_publish_safety_check_case
