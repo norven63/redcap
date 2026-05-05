@@ -64,6 +64,7 @@ REQUIRED_IDS = {
     "report-led-human-summary-boundary",
     "pre-release-structure-task-tree",
     "runtime-workspace-boundary-gate",
+    "cli-product-surface-gate",
 }
 
 ALLOWED_PRIORITIES = {"P0", "P1", "P2", "P3"}

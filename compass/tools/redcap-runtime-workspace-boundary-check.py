@@ -69,6 +69,9 @@ def require_policy(policy: dict[str, Any]) -> None:
     commands = policy.get("workspace_oriented_commands")
     if commands != ["status", "diagnose", "change-intake", "closeout"]:
         fail("workspace_oriented_commands must be status/diagnose/change-intake/closeout")
+    diagnostic_commands = policy.get("diagnostic_product_commands")
+    if diagnostic_commands != ["doctor", "debug"]:
+        fail("diagnostic_product_commands must be doctor/debug")
     guarantees = policy.get("required_guarantees")
     if not isinstance(guarantees, list) or len(guarantees) < 5:
         fail("required_guarantees must document the boundary contract")
@@ -89,7 +92,7 @@ def inspect_cli() -> None:
         if needle not in script:
             fail(f"bin/redcap missing workspace contract: {needle}")
 
-    for command in ["status", "diagnose", "change-intake"]:
+    for command in ["status", "diagnose", "change-intake", "doctor", "debug"]:
         body = command_branch(script, command)
         if "$REDCAP_ROOT/.dev-task.md" in body:
             fail(f"{command} still defaults to package-root .dev-task.md")
@@ -187,6 +190,44 @@ task_report: compass/docs/task-reports/fixture.md
             fail("closeout status workspace smoke failed:\n" + output[:2000])
         if "fixture-external-workspace" not in output or str(fixture) not in output:
             fail("closeout status must receive the workspace task file")
+
+        completed = subprocess.run(
+            [str(CLI), "doctor"],
+            cwd=workspace,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=env,
+            timeout=60,
+            check=False,
+        )
+        output = completed.stdout
+        if completed.returncode != 0:
+            fail("doctor workspace smoke failed:\n" + output[:2000])
+        if "Boundary mode: external-workspace" not in output or "Task card: exists" not in output:
+            fail("doctor must use the caller workspace task file")
+
+        completed = subprocess.run(
+            [str(CLI), "debug", "--json"],
+            cwd=workspace,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=env,
+            timeout=60,
+            check=False,
+        )
+        output = completed.stdout
+        if completed.returncode != 0:
+            fail("debug workspace smoke failed:\n" + output[:2000])
+        try:
+            debug_payload = json.loads(output)
+        except json.JSONDecodeError as exc:
+            fail(f"debug workspace smoke did not emit valid json: {exc}")
+        if debug_payload.get("task_id") != "fixture-external-workspace":
+            fail("debug must report the external workspace task_id")
+        if debug_payload.get("boundary_mode") != "external-workspace":
+            fail("debug must report external-workspace mode")
 
 
 def inspect_pre_release_review() -> None:

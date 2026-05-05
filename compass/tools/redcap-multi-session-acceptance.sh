@@ -183,6 +183,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-structure-task-tree-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-workspace-boundary-check
+  bash compass/tools/redcap-multi-session-acceptance.sh cli-product-surface-check
   bash compass/tools/redcap-multi-session-acceptance.sh clean-workspace-e2e-check
   bash compass/tools/redcap-multi-session-acceptance.sh skill-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-lifecycle-check
@@ -268,6 +269,10 @@ assert_not_contains() {
 
 assert_string_contains() {
     [[ "$1" == *"$2"* ]] || fail "expected '$1' to contain '$2'"
+}
+
+assert_not_string_contains() {
+    [[ "$1" != *"$2"* ]] || fail "expected '$1' not to contain '$2'"
 }
 
 assert_ne() {
@@ -11934,7 +11939,7 @@ run_pre_release_product_architecture_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh")"
     assert_string_contains "$output" "PRE_RELEASE_PRODUCT_ARCHITECTURE_OK"
-    assert_string_contains "$output" "release_blockers=4"
+    assert_string_contains "$output" "release_blockers=3"
 
     output="$(bash "$REDCAP_ROOT/bin/redcap" pre-release-review)"
     assert_string_contains "$output" "PRE_RELEASE_PRODUCT_ARCHITECTURE_OK"
@@ -11994,6 +11999,56 @@ run_runtime_workspace_boundary_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-runtime-workspace-boundary-check.sh")"
     assert_string_contains "$output" "RUNTIME_WORKSPACE_BOUNDARY_OK"
+}
+
+run_cli_product_surface_check_case() {
+    local output workspace trace_output debug_output typo_output status
+
+    log "case: cli-product-surface-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-cli-product-surface-check.sh")"
+    assert_string_contains "$output" "CLI_PRODUCT_SURFACE_OK"
+
+    workspace="$ACCEPT_ROOT/cli-product-surface-workspace"
+    mkdir -p "$workspace"
+    cat >"$workspace/.dev-task.md" <<'EOF'
+# 当前任务：cli product surface acceptance
+
+## 控制面元数据（机器校验）
+task_id: acceptance-cli-product-surface
+active_slice: acceptance-cli-product-surface
+task_report: compass/docs/task-reports/fixture.md
+EOF
+
+    output="$(cd "$workspace" && "$REDCAP_ROOT/bin/redcap" doctor)"
+    assert_string_contains "$output" "RedCap Doctor: healthy"
+    assert_string_contains "$output" "Boundary mode: external-workspace"
+    assert_not_string_contains "$output" "[ok]"
+    assert_not_string_contains "$output" "[fail]"
+
+    debug_output="$(cd "$workspace" && "$REDCAP_ROOT/bin/redcap" debug --json)"
+    assert_string_contains "$debug_output" "\"task_id\": \"acceptance-cli-product-surface\""
+    assert_string_contains "$debug_output" "\"boundary_mode\": \"external-workspace\""
+    assert_not_string_contains "$debug_output" "/Users/"
+    assert_not_string_contains "$debug_output" "/home/"
+    assert_not_string_contains "$debug_output" "identity_file"
+    assert_not_string_contains "$debug_output" "agent_name"
+
+    trace_output="$(cd "$workspace" && "$REDCAP_ROOT/bin/redcap" --trace doctor 2>&1)"
+    assert_string_contains "$trace_output" "RedCap Trace:"
+    assert_string_contains "$trace_output" "command: doctor"
+    assert_not_string_contains "$trace_output" "/Users/"
+    assert_not_string_contains "$trace_output" "TOKEN"
+
+    set +e
+    typo_output="$(cd "$workspace" && "$REDCAP_ROOT/bin/redcap" docter 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -eq 2 ]] || fail "redcap docter should exit 2"
+    assert_string_contains "$typo_output" "cause:"
+    assert_string_contains "$typo_output" "impact:"
+    assert_string_contains "$typo_output" "suggested_action:"
+    assert_string_contains "$typo_output" "redcap doctor"
 }
 
 run_clean_workspace_e2e_check_case() {
@@ -12317,7 +12372,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary information-architecture redcap-forge; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12498,6 +12553,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-cli-product-surface-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "cli-product-surface" ]]; then
+    echo "fixture CLI product surface failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         cat >"$repo/compass/tools/redcap-information-architecture-check.sh" <<EOF
 #!/usr/bin/env bash
 if [[ "$failing_gate" == "information-architecture" ]]; then
@@ -12535,6 +12599,7 @@ EOF
             "$repo/compass/tools/redcap-pre-release-product-architecture-check.sh" \
             "$repo/compass/tools/redcap-pre-release-structure-task-tree-check.sh" \
             "$repo/compass/tools/redcap-runtime-workspace-boundary-check.sh" \
+            "$repo/compass/tools/redcap-cli-product-surface-check.sh" \
             "$repo/compass/tools/redcap-information-architecture-check.sh" \
             "$repo/compass/tools/redcap-forge-check.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
@@ -12560,6 +12625,7 @@ EOF
             pre-release-product-architecture) expected_message="pre-release product architecture check failed" ;;
             pre-release-structure-task-tree) expected_message="pre-release structure task tree check failed" ;;
             runtime-workspace-boundary) expected_message="runtime workspace boundary check failed" ;;
+            cli-product-surface) expected_message="CLI product surface check failed" ;;
             information-architecture) expected_message="information architecture check failed" ;;
             redcap-forge) expected_message="RedCap Forge check failed" ;;
         esac
@@ -12632,6 +12698,7 @@ for rel in [
     "compass/tools/redcap-pre-release-product-architecture-check.sh",
     "compass/tools/redcap-pre-release-structure-task-tree-check.sh",
     "compass/tools/redcap-runtime-workspace-boundary-check.sh",
+    "compass/tools/redcap-cli-product-surface-check.sh",
 ]:
     script_path = dst / rel
     script_path.parent.mkdir(parents=True, exist_ok=True)
@@ -13444,6 +13511,7 @@ run_all_cases() {
     run_pre_release_product_architecture_check_case
     run_pre_release_structure_task_tree_check_case
     run_runtime_workspace_boundary_check_case
+    run_cli_product_surface_check_case
     run_clean_workspace_e2e_check_case
     run_skill_lifecycle_check_case
     run_legacy_asset_lifecycle_check_case
@@ -13945,6 +14013,9 @@ case "$COMMAND" in
         ;;
     runtime-workspace-boundary-check)
         run_runtime_workspace_boundary_check_case
+        ;;
+    cli-product-surface-check)
+        run_cli_product_surface_check_case
         ;;
     clean-workspace-e2e-check)
         run_clean_workspace_e2e_check_case

@@ -16,7 +16,23 @@ done
 SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 REDCAP_RUNTIME_ROOT="$REDCAP_ROOT"
+REDCAP_TRACE="${REDCAP_TRACE:-0}"
 REDCAP_CMD_REMAINING_ARGS=()
+
+redcap_error() {
+  local cause="$1"
+  local impact="$2"
+  local suggested_action="$3"
+  local exit_code="${4:-2}"
+
+  {
+    echo "RedCap error"
+    echo "cause: $cause"
+    echo "impact: $impact"
+    echo "suggested_action: $suggested_action"
+  } >&2
+  exit "$exit_code"
+}
 
 path_inside() {
   local child="$1"
@@ -47,8 +63,10 @@ default_workspace_root() {
 abs_dir() {
   local dir="$1"
   if ! cd -P "$dir" >/dev/null 2>&1; then
-    echo "redcap: workspace directory not found: $dir" >&2
-    exit 2
+    redcap_error \
+      "workspace directory not found: $dir" \
+      "RedCap cannot decide which project task card or state to use." \
+      "Pass an existing directory with --workspace <dir>, or run from the managed project root."
   fi
   pwd
 }
@@ -67,8 +85,10 @@ abs_file_from_workspace() {
   dir="$(dirname "$candidate")"
   base="$(basename "$candidate")"
   if ! cd -P "$dir" >/dev/null 2>&1; then
-    echo "redcap: task-file directory not found: $dir" >&2
-    exit 2
+    redcap_error \
+      "task-file directory not found: $dir" \
+      "RedCap cannot read the selected project task card." \
+      "Create the directory or pass a valid --task-file path."
   fi
   printf '%s/%s\n' "$(pwd)" "$base"
 }
@@ -82,8 +102,10 @@ resolve_workspace_task_args() {
     case "$1" in
       --workspace)
         if [[ $# -lt 2 ]]; then
-          echo "redcap: --workspace requires a value" >&2
-          exit 2
+          redcap_error \
+            "--workspace requires a value" \
+            "RedCap cannot resolve the managed project workspace." \
+            "Use --workspace <dir>, for example: redcap doctor --workspace ."
         fi
         workspace="$2"
         shift 2
@@ -94,8 +116,10 @@ resolve_workspace_task_args() {
         ;;
       --task-file)
         if [[ $# -lt 2 ]]; then
-          echo "redcap: --task-file requires a value" >&2
-          exit 2
+          redcap_error \
+            "--task-file requires a value" \
+            "RedCap cannot resolve the task card for this command." \
+            "Use --task-file <file>, or omit it to use <workspace>/.dev-task.md."
         fi
         task_file="$2"
         shift 2
@@ -107,7 +131,9 @@ resolve_workspace_task_args() {
       --)
         shift
         while [[ $# -gt 0 ]]; do
-          if [[ -z "$task_file" ]]; then
+          if [[ "$1" == "--trace" ]]; then
+            REDCAP_TRACE=1
+          elif [[ -z "$task_file" ]]; then
             task_file="$1"
           else
             REDCAP_CMD_REMAINING_ARGS+=("$1")
@@ -116,7 +142,11 @@ resolve_workspace_task_args() {
         done
         ;;
       -*)
-        REDCAP_CMD_REMAINING_ARGS+=("$1")
+        if [[ "$1" == "--trace" ]]; then
+          REDCAP_TRACE=1
+        else
+          REDCAP_CMD_REMAINING_ARGS+=("$1")
+        fi
         shift
         ;;
       *)
@@ -158,8 +188,10 @@ resolve_workspace_options_only() {
     case "$1" in
       --workspace)
         if [[ $# -lt 2 ]]; then
-          echo "redcap: --workspace requires a value" >&2
-          exit 2
+          redcap_error \
+            "--workspace requires a value" \
+            "RedCap cannot resolve the managed project workspace." \
+            "Use --workspace <dir>, for example: redcap closeout status --workspace ."
         fi
         workspace="$2"
         shift 2
@@ -170,14 +202,20 @@ resolve_workspace_options_only() {
         ;;
       --task-file)
         if [[ $# -lt 2 ]]; then
-          echo "redcap: --task-file requires a value" >&2
-          exit 2
+          redcap_error \
+            "--task-file requires a value" \
+            "RedCap cannot resolve the task card for this command." \
+            "Use --task-file <file>, or omit it to use <workspace>/.dev-task.md."
         fi
         task_file="$2"
         shift 2
         ;;
       --task-file=*)
         task_file="${1#--task-file=}"
+        shift
+        ;;
+      --trace)
+        REDCAP_TRACE=1
         shift
         ;;
       *)
@@ -207,6 +245,20 @@ resolve_workspace_options_only() {
   export REDCAP_TASK_FILE="$REDCAP_CMD_TASK_FILE"
 }
 
+emit_trace() {
+  local traced_command="$1"
+  local delegated_to="$2"
+  if [[ "$REDCAP_TRACE" != "1" ]]; then
+    return 0
+  fi
+  bash "$REDCAP_ROOT/compass/tools/redcap-cli-product-surface.sh" trace \
+    --runtime-root "$REDCAP_RUNTIME_ROOT" \
+    --workspace-root "$REDCAP_CMD_WORKSPACE_ROOT" \
+    --task-file "$REDCAP_CMD_TASK_FILE" \
+    --traced-command "$traced_command" \
+    --delegated-to "$delegated_to"
+}
+
 usage() {
   cat <<'EOF'
 usage: redcap <command> [args...]
@@ -215,6 +267,8 @@ commands:
   revive                 run ./revive-cap.sh
   status                 show current RedCap status for the workspace
   diagnose               run the diagnostic overview for the workspace
+  doctor                 explain CLI health in human-readable product language
+  debug                  emit a redacted diagnostic packet for support or Agent containers
   closeout               route to ./closeout-cap.sh for the workspace task file
   prism-availability     inspect or refresh Prism agent availability
   file-dictionary        validate the File Lookup Dictionary
@@ -224,28 +278,53 @@ commands:
   pre-release-review     validate product-architecture blockers before release readiness
   change-intake          validate mid-task inserted requirement handling
   version                print RedCap package version
+  help                   show command-specific help
 
 workspace options for status/diagnose/change-intake/closeout:
   --workspace <dir>      managed project workspace (default: current directory)
   --task-file <file>     task file path (default: <workspace>/.dev-task.md)
+  --trace                explain command routing without dumping env or secrets
   REDCAP_WORKSPACE       optional workspace env fallback when no flag is given
   REDCAP_TASK_FILE       optional task-file env fallback when no flag is given
 EOF
 }
 
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --trace)
+      REDCAP_TRACE=1
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
 COMMAND="${1:-}"
 if [[ -z "$COMMAND" ]]; then
-  usage
-  exit 2
+  usage >&2
+  redcap_error \
+    "missing command" \
+    "RedCap does not know which workflow action to run." \
+    "Run redcap help to list commands, or try redcap doctor."
 fi
 shift || true
 
 case "$COMMAND" in
   revive)
+    REDCAP_CMD_WORKSPACE_ROOT="$(default_workspace_root)"
+    REDCAP_CMD_TASK_FILE="$REDCAP_CMD_WORKSPACE_ROOT/.dev-task.md"
+    emit_trace "revive" "$REDCAP_ROOT/revive-cap.sh"
     exec "$REDCAP_ROOT/revive-cap.sh" "$@"
     ;;
   status)
     resolve_workspace_task_args "$@"
+    emit_trace "status" "$REDCAP_ROOT/compass/tools/redcap-current-status.sh"
     if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
       exec bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
     fi
@@ -253,13 +332,45 @@ case "$COMMAND" in
     ;;
   diagnose)
     resolve_workspace_task_args "$@"
+    emit_trace "diagnose" "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh"
     if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
       exec bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
     fi
     exec bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_CMD_TASK_FILE"
     ;;
+  doctor)
+    resolve_workspace_task_args "$@"
+    emit_trace "doctor" "$REDCAP_ROOT/compass/tools/redcap-cli-product-surface.sh"
+    if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
+      exec bash "$REDCAP_ROOT/compass/tools/redcap-cli-product-surface.sh" doctor \
+        --runtime-root "$REDCAP_RUNTIME_ROOT" \
+        --workspace-root "$REDCAP_CMD_WORKSPACE_ROOT" \
+        --task-file "$REDCAP_CMD_TASK_FILE" \
+        "${REDCAP_CMD_REMAINING_ARGS[@]}"
+    fi
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-cli-product-surface.sh" doctor \
+      --runtime-root "$REDCAP_RUNTIME_ROOT" \
+      --workspace-root "$REDCAP_CMD_WORKSPACE_ROOT" \
+      --task-file "$REDCAP_CMD_TASK_FILE"
+    ;;
+  debug)
+    resolve_workspace_task_args "$@"
+    emit_trace "debug" "$REDCAP_ROOT/compass/tools/redcap-cli-product-surface.sh"
+    if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
+      exec bash "$REDCAP_ROOT/compass/tools/redcap-cli-product-surface.sh" debug \
+        --runtime-root "$REDCAP_RUNTIME_ROOT" \
+        --workspace-root "$REDCAP_CMD_WORKSPACE_ROOT" \
+        --task-file "$REDCAP_CMD_TASK_FILE" \
+        "${REDCAP_CMD_REMAINING_ARGS[@]}"
+    fi
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-cli-product-surface.sh" debug \
+      --runtime-root "$REDCAP_RUNTIME_ROOT" \
+      --workspace-root "$REDCAP_CMD_WORKSPACE_ROOT" \
+      --task-file "$REDCAP_CMD_TASK_FILE"
+    ;;
   closeout)
     resolve_workspace_options_only "$@"
+    emit_trace "closeout" "$REDCAP_ROOT/closeout-cap.sh"
     exec "$REDCAP_ROOT/closeout-cap.sh" "${REDCAP_CMD_REMAINING_ARGS[@]}"
     ;;
   prism-availability)
@@ -282,13 +393,15 @@ case "$COMMAND" in
     ;;
   change-intake)
     resolve_workspace_task_args "$@"
+    emit_trace "change-intake" "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh"
     if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
       exec bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
     fi
     exec bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$REDCAP_CMD_TASK_FILE"
     ;;
   help|-h|--help)
-    usage
+    topic="${1:-}"
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-cli-product-surface.sh" help --topic "$topic"
     ;;
   version|-v|--version)
     python3 - "$REDCAP_ROOT/package.json" <<'PY'
@@ -302,8 +415,16 @@ print(payload.get("version", "unknown"))
 PY
     ;;
   *)
-    echo "unknown redcap command: $COMMAND" >&2
-    usage >&2
-    exit 2
+    suggestion="Run redcap help to list commands."
+    case "$COMMAND" in
+      docter) suggestion="Did you mean: redcap doctor ?" ;;
+      stauts) suggestion="Did you mean: redcap status ?" ;;
+      debg) suggestion="Did you mean: redcap debug ?" ;;
+      diagnoze) suggestion="Did you mean: redcap diagnose ?" ;;
+    esac
+    redcap_error \
+      "unknown command: $COMMAND" \
+      "RedCap cannot route this request to a workflow action." \
+      "$suggestion"
     ;;
 esac

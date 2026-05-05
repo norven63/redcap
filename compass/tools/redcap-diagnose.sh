@@ -153,6 +153,7 @@ run_check "runtime-package-manifest" bash "$SCRIPT_DIR/redcap-runtime-package-ma
 run_check "pre-release-product-architecture" bash "$SCRIPT_DIR/redcap-pre-release-product-architecture-check.sh" || overall=1
 run_check "pre-release-structure-task-tree" bash "$SCRIPT_DIR/redcap-pre-release-structure-task-tree-check.sh" || overall=1
 run_check "runtime-workspace-boundary" bash "$SCRIPT_DIR/redcap-runtime-workspace-boundary-check.sh" || overall=1
+run_check "cli-product-surface" bash "$SCRIPT_DIR/redcap-cli-product-surface-check.sh" || overall=1
 if [[ -f "$REDCAP_ROOT/references/clean-workspace-install-e2e.json" ]]; then
     run_check "clean-workspace-e2e" bash "$SCRIPT_DIR/redcap-clean-workspace-e2e.sh" --check-result || overall=1
 fi

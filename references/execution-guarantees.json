@@ -61,6 +61,7 @@
     "package-publish-safety",
     "pre-release-product-architecture",
     "runtime-workspace-boundary",
+    "cli-product-surface",
     "runtime-package",
     "information-architecture",
     "redcap-forge"
@@ -1203,6 +1204,36 @@
       "guarantee_paths": [
         "compass/tools/redcap-runtime-workspace-boundary-check.sh",
         "compass/tools/redcap-runtime-workspace-boundary-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "bin/redcap"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "cli-product-surface-gate",
+      "category": "cli-product-surface",
+      "priority": "P0",
+      "rule": "Before RedCap can claim public CLI readiness, the CLI must expose human-readable doctor/help, redacted debug JSON, safe trace output, and cause/impact/suggested_action errors without leaking local identity or secret data.",
+      "source_paths": [
+        "references/cli-product-surface-policy.json",
+        "bin/redcap",
+        "compass/tools/redcap-cli-product-surface.sh",
+        "compass/tools/redcap-cli-product-surface.py"
+      ],
+      "runtime_source_paths": [
+        "bin/redcap",
+        "compass/tools/redcap-cli-product-surface-check.sh",
+        "compass/tools/redcap-cli-product-surface-check.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-cli-product-surface-check validates doctor/debug/help/trace/error contracts with external-workspace and self-development smoke tests; diagnose, spec-check, execution guarantees, acceptance and pre-release review consume it before P4-2c can close.",
+      "guarantee_paths": [
+        "compass/tools/redcap-cli-product-surface-check.sh",
+        "compass/tools/redcap-cli-product-surface-check.py",
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-spec-check.sh",
         "compass/tools/redcap-multi-session-acceptance.sh",

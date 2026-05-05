@@ -124,7 +124,13 @@ def main() -> None:
             for node_id in ("P4-2b", "P4-2c", "P4-2d")
             if node_map[node_id]["status"] == "current"
         ]
-        if current_release_nodes != ["P4-2b"]:
+        if node_map["P4-2b"]["status"] == "completed" and node_map["P4-2c"]["status"] == "completed":
+            if current_release_nodes:
+                fail("after P4-2c completes, no later P0 remediation node may be current until a new task card starts it")
+        elif node_map["P4-2b"]["status"] == "completed":
+            if current_release_nodes != ["P4-2c"]:
+                fail("after P4-2b completes, exactly P4-2c must be the current P0 remediation node")
+        elif current_release_nodes != ["P4-2b"]:
             fail("after P4-2g completes, exactly P4-2b must be the current P0 remediation node")
     depends("P4-2g", {"P4-2f"})
     depends("P4-2b", {"P4-2g"})
@@ -158,10 +164,17 @@ def main() -> None:
             fail(f"parent ledger missing {node_id} row")
     p42g_line = next(line for line in ledger.splitlines() if line.startswith("| P4-2g |"))
     p42b_line = next(line for line in ledger.splitlines() if line.startswith("| P4-2b |"))
+    p42c_line = next(line for line in ledger.splitlines() if line.startswith("| P4-2c |"))
     if node_map["P4-2g"]["status"] == "completed" and "| completed |" not in p42g_line:
         fail("parent ledger must mark P4-2g completed after task-tree progression")
     if node_map["P4-2b"]["status"] == "current" and "| in-progress |" not in p42b_line:
         fail("parent ledger must mark P4-2b in-progress when it is current")
+    if node_map["P4-2b"]["status"] == "completed" and "| completed |" not in p42b_line:
+        fail("parent ledger must mark P4-2b completed after task-tree progression")
+    if node_map["P4-2c"]["status"] == "current" and "| in-progress |" not in p42c_line:
+        fail("parent ledger must mark P4-2c in-progress when it is current")
+    if node_map["P4-2c"]["status"] == "completed" and "| completed |" not in p42c_line:
+        fail("parent ledger must mark P4-2c completed after task-tree progression")
 
     package_policy = load_json(PACKAGE_POLICY, "runtime package readiness policy")
     if package_policy.get("publish_allowed") is not False:
@@ -174,7 +187,7 @@ def main() -> None:
     if not isinstance(findings, list):
         fail("pre-release findings must be a list")
     blockers = [item for item in findings if isinstance(item, dict) and item.get("severity") == "release-blocker"]
-    if len(blockers) < 4:
+    if len(blockers) < 3:
         fail("pre-release review must still expose the remaining release blockers")
 
     print("PRE_RELEASE_STRUCTURE_TASK_TREE_OK nodes=%d" % len(nodes))

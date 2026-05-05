@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 23,
-    "size_bytes": 309613,
-    "lines": 6272,
-    "chars": 190108,
+    "file_count": 24,
+    "size_bytes": 323441,
+    "lines": 6506,
+    "chars": 199228,
     "rough_token_pressure": {
-      "low": 47527,
-      "high": 95054
+      "low": 49807,
+      "high": 99614
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 8,
-        "size_bytes": 116092,
-        "lines": 1690,
-        "chars": 73741,
+        "file_count": 9,
+        "size_bytes": 129920,
+        "lines": 1924,
+        "chars": 82861,
         "rough_token_pressure": {
-          "low": 18435,
-          "high": 36870
+          "low": 20715,
+          "high": 41430
         }
       }
     },
@@ -89,7 +89,7 @@
         "path": "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md",
         "chars": 12803,
         "lines": 262,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+        "read_policy": "read-catalog-summary-by-default"
       },
       {
         "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
@@ -409,7 +409,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：历史资产 delete-last / canonical-switch 风险窗口",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8440,
       "lines": 120,
@@ -474,29 +474,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 信息架构与运行时产物治理",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 22349,
       "lines": 262,
       "chars": 12803,
       "summary": "当前已完成：RedCap 现在把任务报告、私有知识、运行时证据、公共模板、外部 arsenal 和 RedCap Forge 的职责边界正式分清，并接入了机器门禁与棱镜复审。 / 详情：本轮解决的是“报告和知识文档越积越散、用户很难判断哪些该读、哪些可公开、哪些只是运行痕迹”的信息架构问题。新的治理规则先定义每类资产的生命周期和出口边界，再让检查器阻断报告 inbox 膨胀、私有材料误进公共库、Forge/Arsenal 命名混淆和 P4 顺序误读。最终效果是：RedCap 可以继续保留考古与追踪能力，但默认不会把旧报告、身份信息、运行证据或私有知识直接推向公共沉淀库。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 现在把任务报告、私有知识、运行时证据、公共模板、外部 arsenal 和 RedCap Forge 的职责边界正式分清，并接入了机器门禁与棱镜复审。",
-          "详情：本轮解决的是“报告和知识文档越积越散、用户很难判断哪些该读、哪些可公开、哪些只是运行痕迹”的信息架构问题。新的治理规则先定义每类资产的生命周期和出口边界，再让检查器阻断报告 inbox 膨胀、私有材料误进公共库、Forge/Arsenal 命名混淆和 P4 顺序误读。最终效果是：RedCap 可以继续保留考古与追踪能力，但默认不会把旧报告、身份信息、运行证据或私有知识直接推向公共沉淀库。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2a 发布前产品架构审判确认 RedCap 不能只靠 npm pack 证明自己适合发布，随后用户进一步指出报告、知识、运行时产物和公共知识库之间的边界已经变成发布前的前置隐患。"
-        ],
-        "next_step": [
-          "下一步计划做的是：本轮信息架构治理已完成；如果继续 public CLI/runtime 主线，下一步应回到 P4-2b/P4-2c/P4-2d 这类发布前整改，而不是直接 npm publish。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-2a 产品架构审判 → P4-2f 信息架构与运行时产物治理 → P4-2b/c/d 发布前整改 → release readiness → npm publish。",
-          "当前所在位置：P4-2f 已完成实现与棱镜验收，父任务仍处在 public release 之前的整改阶段。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-04-redcap-pre-release-structure-refactor-task-tree-reanchor.md",
@@ -524,6 +508,35 @@
         "position": [
           "整体计划脉络图是：P4-2a 发布前审判 → P4-2f 信息架构治理 → P4-2g 任务树重锚定与 npm 白名单预检原则 → P4-2b/c/d 发布前 P0 整改 → release readiness → npm publish。",
           "当前所在位置：P4-2g 已完成实现与棱镜验收；父任务 P4-2 仍处于 public release 之前的整改阶段。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-05-redcap-cli-diagnostic-product-surface.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-2c CLI 诊断产品面加固",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 13828,
+      "lines": 234,
+      "chars": 9120,
+      "summary": "当前已完成：RedCap CLI 已补上面向外部用户和 Agent 容器的诊断产品面，`doctor`、`debug --json`、`--trace`、`help <command>` 和结构化错误都已进入机器门禁。 / 详情：本轮解决的是“内部脚本能跑，但公共 CLI 不好排障”的发布前阻塞。现在用户可以先用 `redcap doctor` 看人类可读健康摘要，Agent 或支持者可以用 `redcap debug --json` 获取脱敏诊断包，`--trace` 能解释命令路由但不会倾倒环境变量。发布前审判已把 `cli-debug-contract-incomplete` 从 release blocker 改为 pas…",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap CLI 已补上面向外部用户和 Agent 容器的诊断产品面，`doctor`、`debug --json`、`--trace`、`help <command>` 和结构化错误都已进入机器门禁。",
+          "详情：本轮解决的是“内部脚本能跑，但公共 CLI 不好排障”的发布前阻塞。现在用户可以先用 `redcap doctor` 看人类可读健康摘要，Agent 或支持者可以用 `redcap debug --json` 获取脱敏诊断包，`--trace` 能解释命令路由但不会倾倒环境变量。发布前审判已把 `cli-debug-contract-incomplete` 从 release blocker 改为 pass，但 RedCap 仍未进入正式 public release-ready。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2b 已把 runtime、project workspace、user state 三层边界拆清，CLI 不再默认把 RedCap 自身 `.dev-task.md` 当成外部项目状态。"
+        ],
+        "next_step": [
+          "下一步计划做的是：完成全量 acceptance、closeout receipt 和提交；主线下一刀是 P4-2d，处理 public package identity、license 和 package surface 策略。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-2a 产品架构审判 → P4-2b 边界拆分 → P4-2c CLI 诊断产品面 → P4-2d 包身份/许可证/包面 → P4-2e 公共 arsenal 口径。",
+          "当前所在位置：P4-2c 已实现并通过 targeted/spec/Prism 回归，正在执行 full acceptance 和 closeout 收口。"
         ]
       }
     },

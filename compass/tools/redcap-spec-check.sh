@@ -640,6 +640,16 @@ if ! bash "$RUNTIME_WORKSPACE_BOUNDARY_CHECK" >/dev/null; then
     exit 1
 fi
 
+CLI_PRODUCT_SURFACE_CHECK="$REDCAP_ROOT/compass/tools/redcap-cli-product-surface-check.sh"
+if [[ ! -f "$CLI_PRODUCT_SURFACE_CHECK" ]]; then
+    echo "[redcap-spec-check] CLI product surface check missing" >&2
+    exit 1
+fi
+if ! bash "$CLI_PRODUCT_SURFACE_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] CLI product surface check failed" >&2
+    exit 1
+fi
+
 CLEAN_WORKSPACE_E2E_CHECK="$REDCAP_ROOT/compass/tools/redcap-clean-workspace-e2e.sh"
 if [[ -f "$REDCAP_ROOT/references/clean-workspace-install-e2e.json" ]]; then
     if [[ ! -f "$CLEAN_WORKSPACE_E2E_CHECK" ]]; then

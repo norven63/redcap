@@ -31,12 +31,17 @@
     "change-intake",
     "closeout"
   ],
+  "diagnostic_product_commands": [
+    "doctor",
+    "debug"
+  ],
   "required_guarantees": [
     "Workspace-oriented CLI commands must not default to $REDCAP_ROOT/.dev-task.md.",
     "The default workspace must be the caller's discovered project workspace unless --workspace or REDCAP_WORKSPACE is provided.",
     "The default task file must be <workspace>/.dev-task.md unless --task-file or a backward-compatible positional task file is provided.",
     "When the caller is inside the RedCap runtime repository, the default workspace may equal the runtime root to preserve self-development.",
     "Status and diagnose output must expose runtime root, workspace root, task file, and user-state policy.",
+    "Doctor and debug must reuse the same workspace/task-file resolution and must not fall back to the RedCap runtime task card when an external workspace has its own task card.",
     "RedCap self-development remains supported because running the CLI from the RedCap repository makes workspace root equal runtime root."
   ],
   "checker": "compass/tools/redcap-runtime-workspace-boundary-check.sh"

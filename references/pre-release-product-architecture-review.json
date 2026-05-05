@@ -4,23 +4,23 @@
   "task_id": "pre-release-product-architecture-review",
   "status": "blocked-pending-remediation",
   "release_recommendation": "not-ready-before-product-architecture-remediation",
-  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, but it is not yet an excellent public npm CLI/runtime product. P4-2b has fixed the CLI workspace-context blocker by making workspace-oriented commands project-oriented by default. Before public release, the remaining runtime layout, public package identity, license posture, CLI debug contract and public knowledge claims still need remediation or explicit scope reduction.",
+  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, but it is not yet an excellent public npm CLI/runtime product. P4-2b fixed the CLI workspace-context blocker, and P4-2c added publish-grade doctor/debug/trace/help/error surfaces with redacted diagnostics. Before public release, the remaining runtime layout, public package identity, license posture and public knowledge claims still need remediation or explicit scope reduction.",
   "observed_facts": {
     "current_package_name": "@redcap-ai/runtime",
     "user_approved_public_package_name": "@norven63/redcap",
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 207,
+    "package_candidate_count": 212,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
     "execution_layer_split_status": "dry-run-only",
     "runtime_root_exists": false,
     "current_runtime_shape": "skill-root-runtime-plus-thin-cli-facade",
-    "cli_has_doctor_command": false,
-    "cli_has_debug_command": false,
-    "cli_has_trace_option": false,
+    "cli_has_doctor_command": true,
+    "cli_has_debug_command": true,
+    "cli_has_trace_option": true,
     "cli_has_version_command": true,
     "cli_defaults_to_package_task_file": false,
     "redcap_arsenal_local_worktree_ref": "shared-knowledge-remote-binding.preferred_local_worktree",
@@ -67,12 +67,15 @@
     {
       "id": "cli-debug-contract-incomplete",
       "dimension": "cli-product-quality",
-      "severity": "release-blocker",
-      "claim": "The current CLI facade exposes core commands but does not yet expose publish-grade doctor/debug/trace surfaces. This makes external-user support and Agent-container diagnosis too opaque.",
+      "severity": "pass",
+      "claim": "P4-2c adds publish-grade doctor, debug --json, --trace, help and structured error surfaces. The checker verifies external workspace and self-development smoke tests, redacted debug output, no raw internal diagnose dump, and cause/impact/suggested_action errors.",
       "evidence": [
-        "bin/redcap"
+        "bin/redcap",
+        "references/cli-product-surface-policy.json",
+        "compass/tools/redcap-cli-product-surface.py",
+        "compass/tools/redcap-cli-product-surface-check.py"
       ],
-      "required_before_public_release": true
+      "required_before_public_release": false
     },
     {
       "id": "cli-workspace-context-not-separated",
@@ -100,7 +103,7 @@
       "id": "package-surface-too-broad-for-public-cli",
       "dimension": "cli-product-quality",
       "severity": "should-fix",
-      "claim": "The npm package candidate surface currently contains 207 files and many internal governance artifacts. This is acceptable for internal runtime readiness, but should be curated before public product release.",
+      "claim": "The npm package candidate surface currently contains 212 files and many internal governance artifacts. This is acceptable for internal runtime readiness, but should be curated before public product release.",
       "evidence": [
         "references/runtime-package-readiness-policy.json",
         "npm pack --dry-run --json"
@@ -156,7 +159,7 @@
     {
       "id": "P4-2c",
       "title": "CLI product command surface hardening: doctor/debug/trace/errors/help",
-      "priority": "P0-before-public-release"
+      "priority": "completed-minimum-cli-diagnostics"
     },
     {
       "id": "P4-2d",
