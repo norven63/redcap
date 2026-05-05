@@ -20,12 +20,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：完成全量 acceptance、closeout receipt 和提交；主线下一刀是 P4-2d，处理 public package identity、license 和 package surface 策略。
+- 下一步计划做的是：P4-2d public package identity/license/surface 准备；这会处理包名、许可证、候选包面和 release readiness 边界，但不自动 npm publish。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：P4-2a 产品架构审判 → P4-2b 边界拆分 → P4-2c CLI 诊断产品面 → P4-2d 包身份/许可证/包面 → P4-2e 公共 arsenal 口径。
-- 当前所在位置：P4-2c 已实现并通过 targeted/spec/Prism 回归，正在执行 full acceptance 和 closeout 收口。
+- 当前所在位置：P4-2c 已完成并 CLOSED；closeout receipt 已存在，P4-2d 是下一主线。
 
 ---
 
@@ -143,7 +143,10 @@ P4-2a 的发布前产品架构审判指出：RedCap 虽然已有 CLI facade 和�
 | acceptance：边界回归 | `bash compass/tools/redcap-multi-session-acceptance.sh runtime-workspace-boundary-check` | ✅ |
 | acceptance：发布前审判 | `bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check` | ✅ |
 | acceptance：spec 传播 | `bash compass/tools/redcap-multi-session-acceptance.sh spec-check-propagates-control-gate-failures` | ✅ |
+| full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | ✅ |
 | umbrella spec | `bash compass/tools/redcap-spec-check.sh "$PWD"` | ✅ |
+| closeout status | `./closeout-cap.sh status --task-file .dev-task.md` | ✅ |
+| final diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | ✅ |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -153,10 +156,10 @@ P4-2a 的发布前产品架构审判指出：RedCap 虽然已有 CLI facade 和�
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 收口前仍在核对；closeout 后更新 |
+| 执行承诺账本 | 已清：completed=6 pending=0 total=6 |
 | 棱镜验收 | 通过：Kimi 与 Claude Code 实现复审均为 pass，binding 已通过 `redcap-prism-acceptance-check.sh` |
-| closeout summary | 收口后生成 |
-| closeout receipt | 收口后生成 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-cli-diagnostic-product-surface-hardening-c400dbec71b1d9ddc966237d89fcee2294245934ab16a93a70eafa35f1051176.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-cli-diagnostic-product-surface-hardening-c400dbec71b1d9ddc966237d89fcee2294245934ab16a93a70eafa35f1051176.json` |
 | rescue audit（如有） | 当前无 |
 
 ### 5.4 完成等级（禁止混报）
@@ -166,7 +169,7 @@ P4-2a 的发布前产品架构审判指出：RedCap 虽然已有 CLI facade 和�
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是；Prism acceptance 已通过 |
-| 已正式完成 | 否；receipt 尚未生成 |
+| 已正式完成 | 是；closeout receipt 已生成且 pending closure 已清 |
 
 ---
 
@@ -216,7 +219,8 @@ P4-2a 的发布前产品架构审判指出：RedCap 虽然已有 CLI facade 和�
 ### 附录 A：Commits
 
 ```
-收口提交后更新
+7dfa83c feat(cli): 加固诊断产品面
+d011eb8 test(release): 刷新 CLI 产品面安装验收
 ```
 
 ### 附录 B：棱镜调用记录（如有）

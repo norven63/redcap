@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 24,
-    "size_bytes": 323441,
-    "lines": 6506,
-    "chars": 199228,
+    "size_bytes": 324161,
+    "lines": 6510,
+    "chars": 199952,
     "rough_token_pressure": {
-      "low": 49807,
-      "high": 99614
+      "low": 49988,
+      "high": 99976
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 9,
-        "size_bytes": 129920,
-        "lines": 1924,
-        "chars": 82861,
+        "size_bytes": 130640,
+        "lines": 1928,
+        "chars": 83585,
         "rough_token_pressure": {
-          "low": 20715,
-          "high": 41430
+          "low": 20896,
+          "high": 41792
         }
       }
     },
@@ -104,10 +104,10 @@
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
-        "chars": 9286,
-        "lines": 186,
-        "read_policy": "read-catalog-summary-by-default"
+        "path": "compass/docs/task-reports/2026-05-05-redcap-cli-diagnostic-product-surface.md",
+        "chars": 9844,
+        "lines": 238,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
   },
@@ -518,9 +518,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13828,
-      "lines": 234,
-      "chars": 9120,
+      "size_bytes": 14548,
+      "lines": 238,
+      "chars": 9844,
       "summary": "当前已完成：RedCap CLI 已补上面向外部用户和 Agent 容器的诊断产品面，`doctor`、`debug --json`、`--trace`、`help <command>` 和结构化错误都已进入机器门禁。 / 详情：本轮解决的是“内部脚本能跑，但公共 CLI 不好排障”的发布前阻塞。现在用户可以先用 `redcap doctor` 看人类可读健康摘要，Agent 或支持者可以用 `redcap debug --json` 获取脱敏诊断包，`--trace` 能解释命令路由但不会倾倒环境变量。发布前审判已把 `cli-debug-contract-incomplete` 从 release blocker 改为 pas…",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -532,11 +532,11 @@
           "上一步完成的是：P4-2b 已把 runtime、project workspace、user state 三层边界拆清，CLI 不再默认把 RedCap 自身 `.dev-task.md` 当成外部项目状态。"
         ],
         "next_step": [
-          "下一步计划做的是：完成全量 acceptance、closeout receipt 和提交；主线下一刀是 P4-2d，处理 public package identity、license 和 package surface 策略。"
+          "下一步计划做的是：P4-2d public package identity/license/surface 准备；这会处理包名、许可证、候选包面和 release readiness 边界，但不自动 npm publish。"
         ],
         "position": [
           "整体计划脉络图是：P4-2a 产品架构审判 → P4-2b 边界拆分 → P4-2c CLI 诊断产品面 → P4-2d 包身份/许可证/包面 → P4-2e 公共 arsenal 口径。",
-          "当前所在位置：P4-2c 已实现并通过 targeted/spec/Prism 回归，正在执行 full acceptance 和 closeout 收口。"
+          "当前所在位置：P4-2c 已完成并 CLOSED；closeout receipt 已存在，P4-2d 是下一主线。"
         ]
       }
     },
