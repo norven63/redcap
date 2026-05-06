@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-06
 **执行者**：Cap（Codex + Prism: Kimi, Claude Code）
-**报告版本**：v0.1
+**报告版本**：v1.0
 
 ---
 
@@ -19,12 +19,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：完成本轮 closeout runtime 收口后，主任务线新增并保留 P4-2h-3，用于后续实现 LLM-wiki-lite 的最小生命周期：私有语义记忆 schema、来源锚点、过期检测、Forge 公共晋升边界和控制面接线。
+- 下一步计划做的是：回到父任务线，由 RedCap 按 P4-2g 结构重构任务树评估是否优先推进 P4-2h-3；P4-2h-3 才负责实现 LLM-wiki-lite 的最小生命周期：私有语义记忆 schema、来源锚点、过期检测、Forge 公共晋升边界和控制面接线。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h-2 LLM-wiki 资产分层评估 → P4-2h-3 LLM-wiki-lite 生命周期实现 → P4-2h 真实公共蒸馏与 P4-2 release 主线。
-- 当前所在位置：P4-2h-2 已完成资产评估、棱镜评审、主任务线登记和机器检查；正式完成凭证仍等待 closeout runtime receipt。
+- 当前所在位置：P4-2h-2 已完成资产评估、棱镜评审、主任务线登记、机器检查和 closeout runtime receipt；父任务线下一步回到 P4-2h-3 或 P4-2 其他发布前子任务。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -137,7 +137,10 @@ LLM-wiki 对 RedCap 有价值，因为它可以把跨报告、跨任务、跨长
 | 定向 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh llm-wiki-asset-stratification-check` | 通过 |
 | Prism acceptance | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过 |
 | 文件查找字典 | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` | 通过 |
-| 后续综合回归 | `spec-check` / `diagnose` / `full acceptance` | 等待 closeout 前最终重跑 |
+| spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
+| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过，closeout 前后均用于定位 pending closure 与最终健康面 |
+| package safety | `bash compass/tools/redcap-package-publish-safety-check.sh` | 通过，扫描 227 个 package candidate |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | 通过，source head 已刷新到本轮提交 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -147,11 +150,11 @@ LLM-wiki 对 RedCap 有价值，因为它可以把跨报告、跨任务、跨长
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 等待最终 closeout 前同步 |
+| 执行承诺账本 | 已清，7/7 完成 |
 | 棱镜验收 | 通过，Kimi challenger + Claude Code reviewer，2 个模型家族，无 blocker |
-| closeout summary | 无，等待 closeout runtime 收口 |
-| closeout receipt | 无，等待 closeout runtime 收口 |
-| rescue audit（如有） | 无 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-llm-wiki-asset-stratification-8b90d470d395e88ff2ce466dd43ef61047c61672a465fd2156e8ec7cbdfbd598.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-llm-wiki-asset-stratification-8b90d470d395e88ff2ce466dd43ef61047c61672a465fd2156e8ec7cbdfbd598.json` |
+| rescue audit（如有） | 首次 blocked：clean workspace E2E source head 过期、baseline 未传入导致 commit proof 误判、报告窗口锚点未正确参与 closeout。第二次 blocked：冷归档移动、clean workspace receipt 和 package candidate 计数属于必要连锁修复但未登记进 drift scope。均已修复并重跑通过。审计路径：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/audits/20260506T134544Z-redcap-llm-wiki-asset-stratification-8b90d470d395e88ff2ce466dd43ef61047c61672a465fd2156e8ec7cbdfbd598-on-complete-failed.json`；`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/audits/20260506T134930Z-redcap-llm-wiki-asset-stratification-8b90d470d395e88ff2ce466dd43ef61047c61672a465fd2156e8ec7cbdfbd598-on-complete-failed.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -160,7 +163,7 @@ LLM-wiki 对 RedCap 有价值，因为它可以把跨报告、跨任务、跨长
 | 已实现 | 是 |
 | 已自检 | 是，定向检查与 Prism acceptance 已通过 |
 | 已独立验收 | 是，Kimi + Claude Code 评审已归档 |
-| 已正式完成 | 否，等待 closeout runtime receipt |
+| 已正式完成 | 是，以上 closeout receipt 是正式完工凭证 |
 
 ---
 
@@ -211,7 +214,8 @@ LLM-wiki 对 RedCap 有价值，因为它可以把跨报告、跨任务、跨长
 ### 附录 A：Commits
 
 ```
-待提交：LLM-wiki 资产分层评估与需求登记
+58c7545 feat: 新增 LLM-wiki 资产分层评估
+36494b7 test: 刷新 LLM-wiki clean workspace E2E
 ```
 
 ### 附录 B：棱镜调用记录（如有）
