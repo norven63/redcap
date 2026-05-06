@@ -1,4 +1,28 @@
 reports:
+  - id: "20260507-prism-copilot-protected-fallback-review"
+    mode: resource-limited
+    date: "2026-05-07"
+    topic: "Copilot protected fallback policy"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "resource-limited-pass"
+    consensus_actions:
+      - "Treat Copilot as protected fallback, not a normal Prism or stop-review provider"
+      - "Suppress Copilot live-health probing when Claude Code or Kimi is available"
+      - "Keep Copilot available when Claude Code and Kimi are both unavailable"
+      - "Keep Codex as last-resort and allow protected Copilot to suppress Codex after its own gate passes"
+    open_questions:
+      - "Kimi post-fix review reached provider usage limit; this run is intentionally resource-limited rather than full quorum"
+      - "Public release and public arsenal tasks remain outside this provider-policy slice"
+    lessons_updated: false
+    files_affected:
+      - "references/prism-provider-policy.json"
+      - "compass/tools/redcap-agent-health-probe.py"
+      - "prism/tools/prism-availability.py"
+      - "compass/tools/redcap-reviewer-order.py"
+      - "compass/tools/redcap-on-stop-review.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+    archived: false
   - id: "20260506-llm-wiki-lite-lifecycle-review"
     mode: test
     date: "2026-05-06"

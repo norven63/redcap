@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 381087,
-    "lines": 7360,
-    "chars": 234172,
+    "size_bytes": 379569,
+    "lines": 7345,
+    "chars": 233508,
     "rough_token_pressure": {
-      "low": 58543,
-      "high": 117086
+      "low": 58377,
+      "high": 116754
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 187412,
-        "lines": 2777,
-        "chars": 117699,
+        "size_bytes": 185894,
+        "lines": 2762,
+        "chars": 117035,
         "rough_token_pressure": {
-          "low": 29424,
-          "high": 58849
+          "low": 29258,
+          "high": 58517
         }
       }
     },
@@ -470,19 +470,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-04-redcap-pre-release-structure-refactor-task-tree-reanchor.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap 发布前结构重构任务树重锚定",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13129,
-      "lines": 209,
-      "chars": 7943,
-      "summary": "当前已完成：RedCap 已把 public CLI/npm 发布前的结构重构任务树重新锚定。新的顺序是：先做 npm 白名单预检，确认哪些东西会进入包面；再做 runtime/project/user 物理边界拆分；再补 CLI 的 doctor/debug/trace/help 等公共产品面；最后处理 package 身份、license 和 release readiness。 / 详情：本轮没有做真实 npm 发布，也没有大规模移动历史资产。它解决的是“深水区任务树别再漂移”的问题：P4-2f 已从旧的 in-progress 纠正为 completed；P4-2g 成为当前任务树重锚点；历史资产默认保留为私有考古证据，只…",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-2d public package identity/license/surface 准备",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：LLM-wiki 资产分层评估与需求登记",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15558,
       "lines": 226,
       "chars": 9116,
       "summary": "当前已完成：RedCap 已完成一次全局资产分层评估，明确哪些内容适合进入未来的 LLM-wiki-lite 语义记忆层，哪些必须留在控制面、原始证据层、公共库、索引层或可执行流程层。 / 详情：本轮解决的是“长期记忆应该吸收什么、不能吸收什么”的边界问题。最终结论是：LLM-wiki 可以服务 AI 和人类的长期理解，但只能作为私有、非权威、带来源锚点的语义记忆缓存；它不能替代任务账本、承诺账本、receipt、Prism 验收、原始报告、运行证据或发布安全门禁。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已完成一次全局资产分层评估，明确哪些内容适合进入未来的 LLM-wiki-lite 语义记忆层，哪些必须留在控制面、原始证据层、公共库、索引层或可执行流程层。",
-          "详情：本轮解决的是“长期记忆应该吸收什么、不能吸收什么”的边界问题。最终结论是：LLM-wiki 可以服务 AI 和人类的长期理解，但只能作为私有、非权威、带来源锚点的语义记忆缓存；它不能替代任务账本、承诺账本、receipt、Prism 验收、原始报告、运行证据或发布安全门禁。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2h-1 已把 AI Era 导读资料中的长期记忆和工程纪律思想吸收到 RedCap 契约中，但没有直接建设完整 Wiki、RAG、GraphRAG 或公共写回能力。"
-        ],
-        "next_step": [
-          "下一步计划做的是：回到父任务线，由 RedCap 按 P4-2g 结构重构任务树评估是否优先推进 P4-2h-3；P4-2h-3 才负责实现 LLM-wiki-lite 的最小生命周期：私有语义记忆 schema、来源锚点、过期检测、Forge 公共晋升边界和控制面接线。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h-2 LLM-wiki 资产分层评估 → P4-2h-3 LLM-wiki-lite 生命周期实现 → P4-2h 真实公共蒸馏与 P4-2 release 主线。",
-          "当前所在位置：P4-2h-2 已完成资产评估、棱镜评审、主任务线登记、机器检查和 closeout runtime receipt；父任务线下一步回到 P4-2h-3 或 P4-2 其他发布前子任务。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-06-llm-wiki-lite-lifecycle.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：P4-2a 产品架构审判 -> P4-2b workspace 边界 -> P4-2c CLI 产品面 -> P4-2d 包身份/包面 -> P4-2e 公共 arsenal claim 边界 -> P4-2h-0 公共蒸馏预检 -> P4-2h 真实公共蒸馏 -> P4-2 正式发布。",
           "当前所在位置：P4-2h-0 已完成实现、回归、棱镜验收与 closeout receipt；真实 P4-2h 公共蒸馏仍保持 deferred。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-07-prism-copilot-protected-fallback-policy.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Copilot protected fallback 策略收紧",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 11611,
+      "lines": 194,
+      "chars": 7279,
+      "summary": "当前已完成：Copilot CLI 已从 RedCap 的普通棱镜/评审/健康嗅探资源中移出，改为“受保护兜底”。 / 详情：以后 RedCap 在 Prism、stop-review、live-health、baton/direct-cli 这些自动化路径里，只有在 Claude Code 与 Kimi 都不可用时，才允许探测或调用 Copilot。Claude Code 或 Kimi 任一可用时，Copilot 会被策略压制，且不会执行真实 CLI 命令。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：Copilot CLI 已从 RedCap 的普通棱镜/评审/健康嗅探资源中移出，改为“受保护兜底”。",
+          "详情：以后 RedCap 在 Prism、stop-review、live-health、baton/direct-cli 这些自动化路径里，只有在 Claude Code 与 Kimi 都不可用时，才允许探测或调用 Copilot。Claude Code 或 Kimi 任一可用时，Copilot 会被策略压制，且不会执行真实 CLI 命令。"
+        ],
+        "previous_step": [
+          "上一步完成的是：父任务线完成了 `P4-2h-3` LLM-wiki-lite 最小私有语义记忆生命周期。"
+        ],
+        "next_step": [
+          "下一步计划做的是：本轮收口后回到父任务线状态面。当前除 `P4-2h` deferred 与 `P4-2` blocked-external 外，没有新的可自动推进父任务。"
+        ],
+        "position": [
+          "整体计划脉络图是：父任务继续推进 → 用户发现 Copilot 配额保护风险 → 立项 `P2-6` → 策略、探测、排序、验收一起收紧 → Prism resource-limited 复审 → closeout。",
+          "当前所在位置：`P2-6` 已实现、已通过 targeted checks 与 Prism resource-limited acceptance，等待 closeout runtime receipt。"
         ]
       }
     }

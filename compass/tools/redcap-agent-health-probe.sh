@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Dictionary: references/file-lookup-dictionary.md#prism-and-providers
 # Probe local Agent CLI health. Default mode is installation/config only; --live runs bounded real calls.
-# Provider freezes from references/prism-provider-policy.json are reported as frozen without executing the CLI.
+# Provider freezes/protected fallbacks from references/prism-provider-policy.json are reported without executing protected CLIs.
 
 set -euo pipefail
 

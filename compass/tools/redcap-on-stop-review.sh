@@ -227,6 +227,7 @@ build_review_targets() {
     local detect_agents_script="$SCRIPT_DIR/redcap-detect-agents.sh"
     local reviewer_order_tool="$SCRIPT_DIR/redcap-reviewer-order.py"
     local order_output=""
+    local order_attempted=0
     local -a reviewer_order_args=()
 
     if [[ -x "$detect_agents_script" && ( "$REVIEW_AGENT_REGISTRY_FILE" == "$DEFAULT_REVIEW_AGENT_REGISTRY_FILE" || ! -f "$REVIEW_AGENT_REGISTRY_FILE" ) ]]; then
@@ -234,6 +235,7 @@ build_review_targets() {
     fi
 
     if [[ -f "$REVIEW_AGENT_REGISTRY_FILE" && -f "$REVIEW_CAPABILITY_MATRIX_FILE" && -f "$reviewer_order_tool" ]]; then
+        order_attempted=1
         reviewer_order_args=(
             --matrix "$REVIEW_CAPABILITY_MATRIX_FILE"
             --registry "$REVIEW_AGENT_REGISTRY_FILE"
@@ -253,7 +255,12 @@ build_review_targets() {
     fi
 
     if [[ -z "$order_output" ]]; then
-        local fallback_order="${manual_order:-codex,copilot,claude,kimi,gemini}"
+        if [[ "$order_attempted" == "1" ]]; then
+            REVIEW_TARGET_CANDIDATES=()
+            REVIEW_AGENT_ORDER=""
+            return 0
+        fi
+        local fallback_order="${manual_order:-claude,kimi,gemini,copilot,codex}"
         local target
         REVIEW_TARGET_CANDIDATES=()
         IFS=',' read -r -a REVIEW_AGENT_CANDIDATES <<< "$fallback_order"

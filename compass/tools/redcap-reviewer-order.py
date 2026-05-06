@@ -33,6 +33,7 @@ AGENT_NAME_MAP = {
 
 SPECIALIZED_CLI = {"claude", "gemini", "kimi", "codex"}
 LAST_RESORT_TIERS = {"last-resort", "last_resort", "fallback-only", "fallback_only"}
+PROTECTED_FALLBACK_TIERS = {"protected-fallback", "protected_fallback", "fallback-after-required-unavailable"}
 
 
 def strip_inline_comment(text: str) -> str:
@@ -255,10 +256,15 @@ def load_provider_policy(path: str | None) -> dict:
     return payload if isinstance(payload, dict) else {}
 
 
+def policy_agent_name(agent: str) -> str:
+    return "claude-code" if agent == "claude" else agent
+
+
 def provider_frozen(policy: dict, agent: str, scope: str) -> bool:
+    canonical_agent = policy_agent_name(agent)
     now = datetime.now(timezone.utc)
     for item in policy.get("freeze_windows", []) or []:
-        if not isinstance(item, dict) or item.get("agent") != agent:
+        if not isinstance(item, dict) or item.get("agent") != canonical_agent:
             continue
         scopes = item.get("scope", [])
         if isinstance(scopes, list) and scope not in scopes and "all" not in scopes:
@@ -284,16 +290,52 @@ def scopes_include(raw: object, scope: str) -> bool:
 
 
 def provider_routing_tier(policy: dict, agent: str, scope: str) -> str:
+    canonical_agent = policy_agent_name(agent)
     for item in policy.get("routing_overrides", []) or []:
-        if not isinstance(item, dict) or item.get("agent") != agent:
+        if not isinstance(item, dict) or item.get("agent") != canonical_agent:
             continue
         if not scopes_include(item.get("scope"), scope):
             continue
         raw = str(item.get("priority_tier") or item.get("mode") or "normal").strip().lower()
         if raw in LAST_RESORT_TIERS:
             return "last-resort"
+        if raw in PROTECTED_FALLBACK_TIERS:
+            return "protected-fallback"
         return raw or "normal"
     return "normal"
+
+
+def provider_required_unavailable(policy: dict, agent: str, scope: str) -> list[str]:
+    canonical_agent = policy_agent_name(agent)
+    for item in policy.get("routing_overrides", []) or []:
+        if not isinstance(item, dict) or item.get("agent") != canonical_agent:
+            continue
+        if not scopes_include(item.get("scope"), scope):
+            continue
+        raw = str(item.get("priority_tier") or item.get("mode") or "normal").strip().lower()
+        if raw not in PROTECTED_FALLBACK_TIERS:
+            return []
+        required = item.get("allowed_when_all_unavailable")
+        if not isinstance(required, list):
+            return []
+        return [policy_agent_name(str(value).strip()) for value in required if isinstance(value, str) and value.strip()]
+    return []
+
+
+def registry_meta_for_agent(registry: dict, agent: str) -> dict:
+    candidates = [agent, policy_agent_name(agent)]
+    for registry_name, mapped in AGENT_NAME_MAP.items():
+        if mapped == agent or policy_agent_name(mapped) == policy_agent_name(agent):
+            candidates.append(registry_name)
+    for candidate in candidates:
+        meta = registry.get("agents", {}).get(candidate)
+        if isinstance(meta, dict):
+            return meta
+    return {}
+
+
+def registry_agent_available(registry: dict, agent: str) -> bool:
+    return bool(registry_meta_for_agent(registry, agent).get("available", False))
 
 
 def model_profile_for(model_name: str, models: dict) -> dict:
@@ -353,10 +395,10 @@ def candidate_rows(
         if provider_frozen(provider_policy, agent, "stop-review"):
             continue
         routing_tier = provider_routing_tier(provider_policy, agent, "stop-review")
-        registry_meta = registry.get("agents", {}).get(agent) or registry.get("agents", {}).get(
-            next((name for name, mapped in AGENT_NAME_MAP.items() if mapped == agent and name in registry.get("agents", {})), ""),
-            {},
-        )
+        required_unavailable = provider_required_unavailable(provider_policy, agent, "stop-review")
+        if routing_tier == "protected-fallback" and any(registry_agent_available(registry, required) for required in required_unavailable):
+            continue
+        registry_meta = registry_meta_for_agent(registry, agent)
         if not manual_order and not registry_meta.get("available", False):
             continue
         canonical = canonical_model(raw_model or registry_meta.get("actual_model", ""), alias_map)
@@ -396,6 +438,9 @@ def candidate_rows(
             }
         )
 
+    # Protected fallbacks have their own provider-specific gate above. Once
+    # they pass that gate, they should behave like normal non-last-resort
+    # providers and still suppress Codex-style last-resort reviewers.
     if any(row.get("routing_tier") != "last-resort" for row in rows):
         rows = [row for row in rows if row.get("routing_tier") != "last-resort"]
 

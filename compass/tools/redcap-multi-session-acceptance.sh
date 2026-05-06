@@ -5256,10 +5256,10 @@ EOF
     # without making them the accepted review verdict.
 }
 
-run_on_stop_review_prefers_copilot_premium_model_over_lighter_clis_case() {
-    local case_name="on-stop-review-prefers-copilot-premium-model-over-lighter-clis"
+run_on_stop_review_suppresses_copilot_when_primary_available_case() {
+    local case_name="on-stop-review-suppresses-copilot-when-primary-available"
     local case_dir fake_bin head_file review_result review_log baseline output status fake_registry fake_task
-    local gemini_marker kimi_marker copilot_argv
+    local claude_marker copilot_argv
 
     log "case: $case_name"
 
@@ -5268,21 +5268,15 @@ run_on_stop_review_prefers_copilot_premium_model_over_lighter_clis_case() {
     fake_bin="$case_dir/bin"
     mkdir -p "$fake_bin"
 
-    gemini_marker="$case_dir/gemini-called.txt"
-    cat >"$fake_bin/gemini" <<EOF
+    claude_marker="$case_dir/claude-called.txt"
+    cat >"$fake_bin/claude" <<EOF
 #!/usr/bin/env bash
-printf '%s\n' called > "$gemini_marker"
-exit 97
+printf '%s\n' called > "$claude_marker"
+cat <<'OUT'
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"claude protected fallback ok"}
+OUT
 EOF
-    chmod +x "$fake_bin/gemini"
-
-    kimi_marker="$case_dir/kimi-called.txt"
-    cat >"$fake_bin/kimi" <<EOF
-#!/usr/bin/env bash
-printf '%s\n' called > "$kimi_marker"
-exit 98
-EOF
-    chmod +x "$fake_bin/kimi"
+    chmod +x "$fake_bin/claude"
 
     copilot_argv="$case_dir/copilot-argv.txt"
     cat >"$fake_bin/copilot" <<'EOF'
@@ -5344,17 +5338,11 @@ EOF
 detected_at: "2026-04-21T02:00:00Z"
 probe_mode: false
 agents:
-  gemini:
+  claude-code:
     available: true
-    actual_model: "gemini-3-flash"
+    actual_model: "claude-sonnet-4.6"
     supports_model_switch: true
     model_switch_flag: "--model"
-    known_issues:
-      - "L-7: headless 必须 --yolo"
-  kimi:
-    available: true
-    actual_model: "kimi-for-coding"
-    supports_model_switch: false
   copilot:
     available: true
     actual_model: "claude-opus-4.6"
@@ -5371,6 +5359,7 @@ EOF
             REDCAP_FAKE_COPILOT_ARGV="$copilot_argv" \
             REDCAP_TASK_FILE="$fake_task" \
             REDCAP_REVIEW_AGENT_REGISTRY_FILE="$fake_registry" \
+            REDCAP_STOP_REVIEW_AGENT_ORDER="copilot,claude" \
             REDCAP_STOP_REVIEW_HOST="acceptance-review-copilot" \
             REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture-copilot-rank" \
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
@@ -5378,24 +5367,120 @@ EOF
             REDCAP_REVIEW_LOG_FILE="$review_log" \
             REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
-            REDCAP_DISABLE_PROVIDER_POLICY=1 \
             REDCAP_SKIP_FEISHU=1 \
             redcap_acceptance_on_stop_review 2>&1
     )"
     status=$?
     set -e
 
-    [[ "$status" -eq 0 ]] || fail "copilot premium ranking case failed: $output"
+    [[ "$status" -eq 0 ]] || fail "copilot protected fallback suppression case failed: $output"
+    assert_exists "$review_result"
+    assert_eq "$(read_file_text "$review_result")" "PASS"
+    assert_exists "$review_log"
+    assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: claude@claude-sonnet-4.6"
+    assert_string_contains "$(read_file_text "$review_log")" "claude protected fallback ok"
+    assert_exists "$claude_marker"
+    assert_not_exists "$copilot_argv"
+}
+
+run_on_stop_review_allows_copilot_after_primary_unavailable_case() {
+    local case_name="on-stop-review-allows-copilot-after-primary-unavailable"
+    local case_dir fake_bin head_file review_result review_log baseline output status fake_registry fake_task
+    local copilot_argv codex_marker
+
+    log "case: $case_name"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/$case_name.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    fake_bin="$case_dir/bin"
+    mkdir -p "$fake_bin"
+
+    copilot_argv="$case_dir/copilot-argv.txt"
+    cat >"$fake_bin/copilot" <<'EOF'
+#!/usr/bin/env bash
+: "${REDCAP_FAKE_COPILOT_ARGV:?}"
+printf '%s\n' "$@" >"$REDCAP_FAKE_COPILOT_ARGV"
+cat <<'OUT'
+```json
+{"result":"PASS","track_verdicts":{"architecture":"PASS","governance":"PASS","contracts":"PASS"},"issues":[],"summary":"copilot protected fallback allowed ok"}
+```
+OUT
+EOF
+    chmod +x "$fake_bin/copilot"
+
+    codex_marker="$case_dir/codex-called.txt"
+    cat >"$fake_bin/codex" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called > "$codex_marker"
+exit 99
+EOF
+    chmod +x "$fake_bin/codex"
+
+    head_file="$case_dir/baseline.head"
+    review_result="$case_dir/review-result"
+    review_log="$case_dir/review-log.md"
+    fake_registry="$case_dir/agent-registry.yaml"
+    fake_task="$case_dir/.dev-task.md"
+    baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1)"
+    printf '%s\n' "$baseline" >"$head_file"
+    write_permissive_acceptance_task_file "$fake_task"
+    cat >"$fake_registry" <<'EOF'
+detected_at: "2026-04-21T02:00:00Z"
+probe_mode: false
+agents:
+  claude-code:
+    available: false
+    actual_model: "claude-sonnet-4.6"
+  kimi:
+    available: false
+    actual_model: "kimi-for-coding"
+  gemini:
+    available: true
+    actual_model: "gemini-3-flash"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+  copilot:
+    available: true
+    actual_model: "claude-opus-4.6"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+    switchable_models:
+      - "claude-opus-4.6"
+  codex:
+    available: true
+    actual_model: "gpt-5.4"
+    supports_model_switch: true
+    model_switch_flag: "--model"
+EOF
+
+    set +e
+    output="$(
+        printf '{}' | \
+            PATH="$fake_bin:$PATH" \
+            REDCAP_FAKE_COPILOT_ARGV="$copilot_argv" \
+            REDCAP_TASK_FILE="$fake_task" \
+            REDCAP_REVIEW_AGENT_REGISTRY_FILE="$fake_registry" \
+            REDCAP_STOP_REVIEW_HOST="acceptance-review-copilot-allowed" \
+            REDCAP_STOP_REVIEW_VALIDATOR_HOST="acceptance-fixture-copilot-allowed" \
+            REDCAP_BASELINE_HEAD_FILE="$head_file" \
+            REDCAP_REVIEW_RESULT_FILE="$review_result" \
+            REDCAP_REVIEW_LOG_FILE="$review_log" \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=10 \
+            REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
+            REDCAP_SKIP_FEISHU=1 \
+            redcap_acceptance_on_stop_review 2>&1
+    )"
+    status=$?
+    set -e
+
+    [[ "$status" -eq 0 ]] || fail "copilot protected fallback allowed case failed: $output"
     assert_exists "$review_result"
     assert_eq "$(read_file_text "$review_result")" "PASS"
     assert_exists "$review_log"
     assert_string_contains "$(read_file_text "$review_log")" "**评审 Agent**: copilot@claude-opus-4.6"
-    assert_string_contains "$(read_file_text "$review_log")" "copilot preferred ok"
+    assert_string_contains "$(read_file_text "$review_log")" "copilot protected fallback allowed ok"
     assert_exists "$copilot_argv"
-    assert_string_contains "$(read_file_text "$copilot_argv")" "--model"
-    assert_string_contains "$(read_file_text "$copilot_argv")" "claude-opus-4.6"
-    # As above, this fixture validates the accepted reviewer and model routing.
-    # Lower-ranked fake CLI touch markers are not a stable contract.
+    assert_not_exists "$codex_marker"
 }
 
 run_on_stop_review_records_unavailable_rate_limit_case() {
@@ -9680,7 +9765,7 @@ EOF
 }
 
 run_prism_availability_case() {
-    local fake_probe cache fallback_cache counter output status stale_output dispatch_output
+    local fake_probe cache fallback_cache counter output status stale_output dispatch_output local_probe_bin local_probe_marker
 
     log "case: prism-availability"
 
@@ -9707,7 +9792,7 @@ cat <<'JSON'
     {"agent": "claude-code", "binary": "claude", "installed": true, "path": "/tmp/claude", "live_probe_requested": true, "live_status": "pass"},
     {"agent": "gemini", "binary": "gemini", "installed": true, "path": "/tmp/gemini", "live_probe_requested": true, "live_status": "pass"},
     {"agent": "codex", "binary": "codex", "installed": true, "path": "/tmp/codex", "live_probe_requested": true, "live_status": "pass"},
-    {"agent": "copilot", "binary": "copilot", "installed": true, "path": "/tmp/copilot", "live_probe_requested": true, "live_status": "frozen", "reason": "acceptance freeze", "frozen_until": "2099-01-01T00:00:00Z"}
+    {"agent": "copilot", "binary": "copilot", "installed": true, "path": "/tmp/copilot", "live_probe_requested": true, "live_status": "pass"}
   ]
 }
 JSON
@@ -9811,8 +9896,53 @@ PY
     stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "copilot&gpt-5:reviewer" 2>&1)"
     status=$?
     set -e
-    [[ "$status" -ne 0 ]] || fail "frozen provider should be rejected by availability roster check"
-    assert_string_contains "$stale_output" "PRISM_AGENT_UNAVAILABLE"
+    [[ "$status" -ne 0 ]] || fail "copilot protected fallback should be rejected while claude-code or kimi is available"
+    assert_string_contains "$stale_output" "protected-fallback-suppressed"
+
+    fallback_cache="$ACCEPT_ROOT/prism-availability-copilot-fallback-cache.json"
+    cp "$cache" "$fallback_cache"
+    python3 - "$fallback_cache" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+for key in ("kimi", "claude", "claude-code"):
+    if key in payload["agents"]:
+        payload["agents"][key]["available"] = False
+        payload["agents"][key]["status"] = "timeout"
+        payload["agents"][key]["reason"] = "acceptance protected fallback fixture"
+payload["agents"]["copilot"]["available"] = True
+payload["agents"]["copilot"]["status"] = "pass"
+payload["agents"]["copilot"]["routing_tier"] = "protected-fallback"
+payload["agents"]["copilot"]["fallback_after_unavailable"] = ["claude-code", "kimi"]
+payload.setdefault("provenance", {})["cache_path"] = str(path.resolve())
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$fallback_cache" --ttl-seconds 3600 --timeout 20 --agents "copilot&gpt-5:reviewer")"
+    assert_string_contains "$output" "PRISM_AVAILABILITY_ROSTER_OK"
+
+    local_probe_bin="$ACCEPT_ROOT/prism-copilot-protected-fallback-bin"
+    local_probe_marker="$ACCEPT_ROOT/prism-copilot-called.txt"
+    mkdir -p "$local_probe_bin"
+    cat >"$local_probe_bin/claude" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' ok
+EOF
+    cat >"$local_probe_bin/kimi" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' ok
+EOF
+    cat >"$local_probe_bin/copilot" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' called > "$local_probe_marker"
+printf '%s\n' ok
+EOF
+    chmod +x "$local_probe_bin/claude" "$local_probe_bin/kimi" "$local_probe_bin/copilot"
+    output="$(PATH="$local_probe_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --timeout 5)"
+    assert_string_contains "$output" '"agent": "copilot"'
+    assert_string_contains "$output" '"live_status": "policy-suppressed"'
+    assert_not_exists "$local_probe_marker"
 
     set +e
     stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" check-roster --cache "$cache" --ttl-seconds 3600 --timeout 20 --agents "gpt-5:reviewer" 2>&1)"
@@ -9865,8 +9995,8 @@ PY
     stale_output="$(PRISM_AGENT_HEALTH_PROBE_SCRIPT="$fake_probe" PRISM_AVAILABILITY_CACHE="$cache" bash "$REDCAP_ROOT/prism/tools/prism-dispatch-check.sh" --mode test --agents "kimi&kimi-k2:reviewer,copilot&gpt-5:challenger" 2>&1)"
     status=$?
     set -e
-    [[ "$status" -ne 0 ]] || fail "dispatch-check should reject unavailable providers"
-    assert_string_contains "$stale_output" "PRISM_AGENT_UNAVAILABLE"
+    [[ "$status" -ne 0 ]] || fail "dispatch-check should reject copilot protected fallback while kimi is available"
+    assert_string_contains "$stale_output" "protected-fallback-suppressed"
 }
 
 run_file_lookup_dictionary_check_case() {
@@ -14004,7 +14134,8 @@ run_all_cases() {
     run_on_stop_review_falls_back_after_structured_pass_with_auth_error_line_case
     run_on_stop_review_falls_back_to_codex_after_unavailable_reviewers_case
     run_on_stop_review_prefers_codex_when_best_ranked_case
-    run_on_stop_review_prefers_copilot_premium_model_over_lighter_clis_case
+    run_on_stop_review_suppresses_copilot_when_primary_available_case
+    run_on_stop_review_allows_copilot_after_primary_unavailable_case
     run_on_stop_review_records_unavailable_rate_limit_case
     run_on_stop_review_rejects_invalid_track_structure_case
     run_on_stop_review_skips_prompt_only_reviewer_when_repo_inspection_required_case
@@ -14367,8 +14498,11 @@ case "$COMMAND" in
     on-stop-review-prefers-codex-when-best-ranked)
         run_on_stop_review_prefers_codex_when_best_ranked_case
         ;;
-    on-stop-review-prefers-copilot-premium-model-over-lighter-clis)
-        run_on_stop_review_prefers_copilot_premium_model_over_lighter_clis_case
+    on-stop-review-suppresses-copilot-when-primary-available)
+        run_on_stop_review_suppresses_copilot_when_primary_available_case
+        ;;
+    on-stop-review-allows-copilot-after-primary-unavailable)
+        run_on_stop_review_allows_copilot_after_primary_unavailable_case
         ;;
     on-stop-review-records-unavailable-rate-limit)
         run_on_stop_review_records_unavailable_rate_limit_case

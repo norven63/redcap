@@ -12,7 +12,7 @@
 
 RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 skill-root 承载形态逐步演进为可安装、可复活、可调度、可审计的 Agent runtime / CLI / 多层系统。
 
-当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略、P4-1 的历史资产 copy-first、delete-last 与 private canonical switch、P4-3 的 clean workspace / cross-machine-style 安装 E2E、P4-2a 发布前产品架构审判、P4-2f 信息架构与运行时产物治理、P4-2g npm 白名单预检与结构重构任务树重锚定、P4-2b runtime/project/user 边界与 CLI workspace context、P4-2c CLI doctor/debug/trace/error/help 产品面加固、P4-2d public package identity/license/surface 准备、P4-2e public redcap-arsenal 内容策略与 claim 边界、P4-2h-0 历史资产公共蒸馏 preflight、P4-2h-1 AI Era agent-reading 资料吸收、P4-2h-2 LLM-wiki 资产分层评估与需求登记，以及 P4-2h-3 LLM-wiki-lite 最小私有语义记忆生命周期。P4-2h-0 只完成 RedCap Forge dry-run 分类强门，不公开写入、不删除、不发布；P4-2h-1 只把 `ai-engineer.md` 与 `llm-wiki.md` 的可用设计吸收到 RedCap 的长期记忆和工程纪律契约，不等于启用完整 LLM Wiki、RAG/GraphRAG 或公共库直写；P4-2h-2 只完成 RedCap 资产是否适合进入 LLM-wiki-lite 语义记忆层的分层判断；P4-2h-3 只实现私有、非权威、带 source anchor、可过期检测、Forge 晋升受控的最小语义记忆层，不等于完整 LLM-wiki 产品、后台自动蒸馏、RAG/GraphRAG、向量库或公共写回。P4-2 正式公开发布仍未完成，不能被简化为“只差 npm publish”；它仍被 formal release task 的人工许可证/发布边界和剩余产品口径阻塞，并必须按 P4-2g 重新锚定后的任务树继续推进 P4-2h 与正式 release。
+当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略、P4-1 的历史资产 copy-first、delete-last 与 private canonical switch、P4-3 的 clean workspace / cross-machine-style 安装 E2E、P4-2a 发布前产品架构审判、P4-2f 信息架构与运行时产物治理、P4-2g npm 白名单预检与结构重构任务树重锚定、P4-2b runtime/project/user 边界与 CLI workspace context、P4-2c CLI doctor/debug/trace/error/help 产品面加固、P4-2d public package identity/license/surface 准备、P4-2e public redcap-arsenal 内容策略与 claim 边界、P4-2h-0 历史资产公共蒸馏 preflight、P4-2h-1 AI Era agent-reading 资料吸收、P4-2h-2 LLM-wiki 资产分层评估与需求登记、P4-2h-3 LLM-wiki-lite 最小私有语义记忆生命周期，以及 P2-6 Copilot protected fallback 策略收紧。P4-2h-0 只完成 RedCap Forge dry-run 分类强门，不公开写入、不删除、不发布；P4-2h-1 只把 `ai-engineer.md` 与 `llm-wiki.md` 的可用设计吸收到 RedCap 的长期记忆和工程纪律契约，不等于启用完整 LLM Wiki、RAG/GraphRAG 或公共库直写；P4-2h-2 只完成 RedCap 资产是否适合进入 LLM-wiki-lite 语义记忆层的分层判断；P4-2h-3 只实现私有、非权威、带 source anchor、可过期检测、Forge 晋升受控的最小语义记忆层，不等于完整 LLM-wiki 产品、后台自动蒸馏、RAG/GraphRAG、向量库或公共写回；P2-6 只把 Copilot CLI 从普通自动路径降级为 Claude Code 与 Kimi 均不可用时才允许调用的保护性 fallback，不等于禁用用户手动 Copilot。P4-2 正式公开发布仍未完成，不能被简化为“只差 npm publish”；它仍被 formal release task 的人工许可证/发布边界和剩余产品口径阻塞，并必须按 P4-2g 重新锚定后的任务树继续推进 P4-2h 与正式 release。
 
 P4 numbering is a dependency/status map, not a promise of numeric execution order.
 
@@ -66,6 +66,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P4-2h-3 | P4-2h-2 registered follow-up | LLM-wiki-lite 语义记忆生命周期实现 | completed | P1-before-broad-marketing | 已实现私有、非权威、带 source anchor、可过期检测的最小语义记忆层，并把 Forge 公共晋升边界接入检查 | 不等于完整 LLM-wiki 产品、公共知识库、RAG/GraphRAG、向量库、后台自动生成或 release-ready |
 | P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime: 本机 `cli_a9579f5b12219bb5` profile 已验证可发 |
 | P2-5 | user trust gap | Layer B 中插需求重排决策可见化 | completed | P2 | 已将“为什么中插需求这样排”升级为 `.dev-task.md` 必填摘要和 change-intake checker 强门 | report: `2026-04-27-layerb-change-intake-replan-visibility-gate.md` |
+| P2-6 | user inserted follow-up | Copilot protected fallback 策略收紧 | completed | P2 | 已将 Copilot CLI 从普通 Prism / stop-review / live-health 自动资源降级为保护性 fallback：只有 Claude Code 与 Kimi 都不可用时才允许调用；本轮旧 live-health 曾触碰 Copilot 的缺口已封堵 | report: `2026-05-07-prism-copilot-protected-fallback-policy.md`；Prism: `20260507-prism-copilot-protected-fallback-review` resource-limited-pass |
 
 ## 推荐执行顺序
 
@@ -80,24 +81,25 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 9. `P2-3`：formal Prism quorum 恢复复验。（已完成）
 10. `P2-4`：首次启动初始化用户与 AI Agent 信息。（已完成 repo-owned 链路；本机目标 Feishu profile 已在 2026-04-28 验证可发）
 11. `P2-5`：中插需求重排决策可见化。（已完成）
-12. `P3-2`：runtime receipt evidence correspondence hardening。（已完成）
-13. `P3-1`：GraphRAG / 向量检索阈值研究。（已完成阈值策略；当前不启用 GraphRAG）
-14. `P4-1a`：历史资产 main-tree copy-first apply。（已完成）
-15. `P4-1`：历史资产 delete-last / canonical switch。（已完成 private canonical switch；public export 不在本项范围）
-16. `P4-2a`：发布前产品架构审判。（已完成；结论是 public release 仍不 ready）
-17. `P4-2f`：RedCap 信息架构与运行时产物治理。（已完成；report/knowledge/runtime/arsenal/Forge 边界已机器化）
-18. `P4-2g`：npm 白名单预检与结构重构任务树重锚定。（已完成；先拍片再手术）
-19. `P4-2b`：runtime/project/user boundary 物理拆分与 CLI workspace context。（已完成最小 workspace context 闭环；不等于 runtime layout 大迁移）
-20. `P4-2c`：CLI doctor/debug/trace/error/help 产品面加固。（已完成最小 public diagnostic surface；不等于 release-ready）
-21. `P4-2d`：public package identity/license/surface 准备。（已完成 readiness 准备；不等于发布）
-22. `P4-2e`：public redcap-arsenal 内容策略与 claim 边界。（已完成；P1，不默认阻塞 release engineering）
-23. `P4-2h-0`：历史资产公共蒸馏 preflight。（已完成，只做 dry-run 强门，不公开导出）
-24. `P4-2h-1`：AI Era agent-reading 吸收与长期记忆对齐。（已完成契约吸收；不启用完整 LLM Wiki/RAG/公共直写）
-25. `P4-2h-2`：LLM-wiki 资产分层评估与需求登记。（已完成评估与需求登记；不启用 LLM-wiki-lite）
-26. `P4-2h-3`：LLM-wiki-lite 语义记忆生命周期实现。（已完成最小私有语义记忆生命周期；不启用完整 LLM Wiki/RAG/公共写回）
-27. `P4-2h`：历史资产公共蒸馏与 RedCap Forge export triage。（deferred，独立于 npm 发布关键路径）
-28. `P4-2`：正式 runtime / CLI package public release。（blocked，需先完成 P4-2b/c/d，并确认发布目标与凭证决策）
-29. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
+12. `P2-6`：Copilot protected fallback 策略收紧。（已完成；Copilot 自动路径只在 Claude Code 与 Kimi 都不可用时降级调用）
+13. `P3-2`：runtime receipt evidence correspondence hardening。（已完成）
+14. `P3-1`：GraphRAG / 向量检索阈值研究。（已完成阈值策略；当前不启用 GraphRAG）
+15. `P4-1a`：历史资产 main-tree copy-first apply。（已完成）
+16. `P4-1`：历史资产 delete-last / canonical switch。（已完成 private canonical switch；public export 不在本项范围）
+17. `P4-2a`：发布前产品架构审判。（已完成；结论是 public release 仍不 ready）
+18. `P4-2f`：RedCap 信息架构与运行时产物治理。（已完成；report/knowledge/runtime/arsenal/Forge 边界已机器化）
+19. `P4-2g`：npm 白名单预检与结构重构任务树重锚定。（已完成；先拍片再手术）
+20. `P4-2b`：runtime/project/user boundary 物理拆分与 CLI workspace context。（已完成最小 workspace context 闭环；不等于 runtime layout 大迁移）
+21. `P4-2c`：CLI doctor/debug/trace/error/help 产品面加固。（已完成最小 public diagnostic surface；不等于 release-ready）
+22. `P4-2d`：public package identity/license/surface 准备。（已完成 readiness 准备；不等于发布）
+23. `P4-2e`：public redcap-arsenal 内容策略与 claim 边界。（已完成；P1，不默认阻塞 release engineering）
+24. `P4-2h-0`：历史资产公共蒸馏 preflight。（已完成，只做 dry-run 强门，不公开导出）
+25. `P4-2h-1`：AI Era agent-reading 吸收与长期记忆对齐。（已完成契约吸收；不启用完整 LLM Wiki/RAG/公共直写）
+26. `P4-2h-2`：LLM-wiki 资产分层评估与需求登记。（已完成评估与需求登记；不启用 LLM-wiki-lite）
+27. `P4-2h-3`：LLM-wiki-lite 语义记忆生命周期实现。（已完成最小私有语义记忆生命周期；不启用完整 LLM Wiki/RAG/公共写回）
+28. `P4-2h`：历史资产公共蒸馏与 RedCap Forge export triage。（deferred，独立于 npm 发布关键路径）
+29. `P4-2`：正式 runtime / CLI package public release。（blocked，需先完成 P4-2b/c/d，并确认发布目标与凭证决策）
+30. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
 
 ## 当前不可声明
 
@@ -116,3 +118,4 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 - 不可声明 P4-2h-1 已经实现完整 LLM Wiki、自主公共库直写、RAG/GraphRAG 或 ai-professor 生产模式；它只完成外部导读资料的受控吸收和长期记忆契约化。
 - 不可声明 P4-2h-2 已经实现 LLM-wiki-lite；它只完成全局资产分层评估、棱镜审查和 P4-2h-3 需求登记。
 - 不可声明 P4-2h-3 是完整 LLM-wiki 产品、公共知识库、RAG/GraphRAG、向量库、后台自动生成或 release-ready；它只完成最小私有语义记忆生命周期和过期检测闭环。
+- 不可声明 Copilot CLI 已被 RedCap 禁用；P2-6 只限制 RedCap 自动路径，用户手动直接使用 Copilot 不在本任务范围。

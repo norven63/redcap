@@ -7,9 +7,18 @@
     "Separate installed/configured visibility from bounded live headless health.",
     "Temporary freezes override ranking because they represent explicit resource or quota constraints.",
     "When a provider is frozen, health probes must report frozen without executing the CLI command.",
+    "Copilot CLI is a protected fallback only: Prism, stop-review, live-health, baton delegation and direct RedCap CLI launch may use it only when both Claude Code and Kimi are unavailable.",
     "Codex CLI is a last-resort fallback only: if any non-Codex provider is live-available, normal Prism rosters must suppress Codex."
   ],
   "routing_overrides": [
+    {
+      "agent": "copilot",
+      "scope": ["prism", "stop-review", "live-health", "baton-delegate", "agent-detect", "direct-cli"],
+      "priority_tier": "protected-fallback",
+      "allowed_when_all_unavailable": ["claude-code", "kimi"],
+      "reason": "User explicitly reserves Copilot CLI quota. RedCap may call Copilot only after Claude Code and Kimi are both unavailable.",
+      "authority": "user-explicit"
+    },
     {
       "agent": "codex",
       "scope": ["prism", "stop-review", "baton-delegate"],

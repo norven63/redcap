@@ -49,6 +49,19 @@ AGENTS: dict[str, dict[str, object]] = {
 }
 
 DEFAULT_PROVIDER_POLICY = "references/prism-provider-policy.json"
+PROTECTED_FALLBACK_TIERS = {"protected-fallback", "protected_fallback", "fallback-after-required-unavailable"}
+PROVIDER_ALIASES = {
+    "claude": "claude-code",
+    "claude-code": "claude-code",
+    "copilot": "copilot",
+    "codex": "codex",
+    "gemini": "gemini",
+    "kimi": "kimi",
+}
+
+
+def normalize_agent_name(name: str) -> str:
+    return PROVIDER_ALIASES.get(name.strip().lower(), name.strip().lower())
 
 
 def load_dotenv(root: Path, env: dict[str, str]) -> None:
@@ -112,6 +125,52 @@ def active_freeze(policy: dict[str, object], agent: str, scope: str) -> dict[str
             continue
         return item
     return None
+
+
+def scopes_include(raw: object, scope: str) -> bool:
+    if raw is None:
+        return True
+    if isinstance(raw, str):
+        return raw in {scope, "all"}
+    if isinstance(raw, list):
+        return scope in raw or "all" in raw
+    return False
+
+
+def routing_override_for(policy: dict[str, object], agent: str, scope: str) -> dict[str, object] | None:
+    canonical = normalize_agent_name(agent)
+    for item in policy.get("routing_overrides", []) or []:
+        if not isinstance(item, dict):
+            continue
+        if normalize_agent_name(str(item.get("agent", ""))) != canonical:
+            continue
+        if not scopes_include(item.get("scope"), scope):
+            continue
+        return item
+    return None
+
+
+def normalize_routing_tier(raw: object) -> str:
+    tier = str(raw or "normal").strip().lower().replace("_", "-")
+    if tier in PROTECTED_FALLBACK_TIERS:
+        return "protected-fallback"
+    return tier or "normal"
+
+
+def protected_fallback_required(policy: dict[str, object], agent: str, scope: str) -> list[str]:
+    override = routing_override_for(policy, agent, scope)
+    if not override:
+        return []
+    if normalize_routing_tier(override.get("priority_tier") or override.get("mode")) != "protected-fallback":
+        return []
+    raw_required = override.get("allowed_when_all_unavailable")
+    if not isinstance(raw_required, list):
+        return []
+    result: list[str] = []
+    for item in raw_required:
+        if isinstance(item, str) and item.strip():
+            result.append(normalize_agent_name(item))
+    return result
 
 
 def pid_alive(pid: int) -> bool:
@@ -294,6 +353,26 @@ def probe_agent(root: Path, name: str, live: bool, timeout_s: int, provider_poli
     return row
 
 
+def policy_suppressed_probe_row(
+    name: str,
+    path: str,
+    required: list[str],
+    required_available: list[str],
+) -> dict[str, object]:
+    spec = AGENTS[name]
+    return {
+        "agent": name,
+        "binary": str(spec["binary"]),
+        "installed": bool(path),
+        "path": path or "",
+        "live_probe_requested": True,
+        "live_status": "policy-suppressed",
+        "reason": "protected fallback suppressed because required primary providers are available: "
+        + ",".join(required_available),
+        "fallback_after_unavailable": required,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("root")
@@ -308,13 +387,44 @@ def main() -> int:
     root = Path(args.root).resolve()
     names = args.agent or sorted(AGENTS)
     provider_policy = load_provider_policy(root, args.provider_policy)
+    rows_by_agent: dict[str, dict[str, object]] = {}
+    rows: list[dict[str, object]] = []
+    deferred: list[tuple[str, list[str]]] = []
+    for name in names:
+        required = protected_fallback_required(provider_policy, name, "live-health")
+        if bool(args.live) and required:
+            deferred.append((name, required))
+            continue
+        row = probe_agent(root, name, bool(args.live), int(args.timeout), provider_policy)
+        rows.append(row)
+        rows_by_agent[normalize_agent_name(name)] = row
+
+    for name, required in deferred:
+        for required_name in required:
+            if required_name in AGENTS and required_name not in rows_by_agent:
+                row = probe_agent(root, required_name, bool(args.live), int(args.timeout), provider_policy)
+                rows.append(row)
+                rows_by_agent[required_name] = row
+        required_available = sorted(
+            provider
+            for provider in required
+            if rows_by_agent.get(provider, {}).get("live_status") == "pass"
+        )
+        if required_available:
+            path = shutil.which(str(AGENTS[name]["binary"])) or ""
+            row = policy_suppressed_probe_row(name, path, required, required_available)
+        else:
+            row = probe_agent(root, name, bool(args.live), int(args.timeout), provider_policy)
+        rows.append(row)
+        rows_by_agent[normalize_agent_name(name)] = row
+
     payload = {
         "version": 1,
         "detected_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "live": bool(args.live),
         "timeout_s": args.timeout,
         "provider_policy": args.provider_policy,
-        "agents": [probe_agent(root, name, bool(args.live), int(args.timeout), provider_policy) for name in names],
+        "agents": rows,
     }
 
     text = json.dumps(payload, ensure_ascii=False, indent=2)

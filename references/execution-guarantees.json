@@ -448,7 +448,7 @@
         "references/prism-provider-policy.json"
       ],
       "status": "scripted",
-      "automation": "prism-availability refreshes compass/.workflow/prism-agent-availability.json when stale, too weak, or generated under a different root/probe/provider-policy/PATH provenance; probe and provider-policy content hashes are part of provenance. dispatch-check calls check-roster before role/diversity checks, and diagnose/spec-check surface cache health.",
+      "automation": "prism-availability refreshes compass/.workflow/prism-agent-availability.json when stale, too weak, or generated under a different root/probe/provider-policy/PATH provenance; probe and provider-policy content hashes are part of provenance. dispatch-check calls check-roster before role/diversity checks, and diagnose/spec-check surface cache health. Provider policy must suppress Copilot unless Claude Code and Kimi are both unavailable, and must suppress Codex as last-resort when non-Codex providers are available.",
       "guarantee_paths": [
         "prism/tools/prism-availability.sh",
         "prism/tools/prism-availability.py",

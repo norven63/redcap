@@ -24,6 +24,7 @@ AVAILABLE_STATUS = "pass"
 PROVENANCE_CONTRACT = "prism-availability-provenance-v1"
 ROUTING_SCOPE = "prism"
 LAST_RESORT_TIERS = {"last-resort", "last_resort", "fallback-only", "fallback_only"}
+PROTECTED_FALLBACK_TIERS = {"protected-fallback", "protected_fallback", "fallback-after-required-unavailable"}
 PROVIDER_ALIASES = {
     # Claude Code is the provider identity; `claude` is the local CLI command
     # and roster shorthand. Keep both so Prism users can write either form.
@@ -151,7 +152,19 @@ def normalize_routing_tier(raw: object) -> str:
     tier = str(raw or "normal").strip().lower().replace("_", "-")
     if tier in LAST_RESORT_TIERS:
         return "last-resort"
+    if tier in PROTECTED_FALLBACK_TIERS:
+        return "protected-fallback"
     return tier or "normal"
+
+
+def normalize_provider_list(raw: object) -> list[str]:
+    if not isinstance(raw, list):
+        return []
+    result: list[str] = []
+    for item in raw:
+        if isinstance(item, str) and item.strip():
+            result.append(normalize_agent_name(item))
+    return result
 
 
 def apply_provider_routing_policy(cache: dict[str, Any], policy: dict[str, Any], scope: str = ROUTING_SCOPE) -> dict[str, Any]:
@@ -173,6 +186,10 @@ def apply_provider_routing_policy(cache: dict[str, Any], policy: dict[str, Any],
             raw_row["routing_reason"] = str(override.get("reason"))
         if tier == "last-resort":
             raw_row["normal_roster_policy"] = "suppress-when-any-non-last-resort-provider-is-available"
+        if tier == "protected-fallback":
+            required = normalize_provider_list(override.get("allowed_when_all_unavailable"))
+            raw_row["fallback_after_unavailable"] = required
+            raw_row["normal_roster_policy"] = "suppress-unless-required-providers-unavailable"
     return cache
 
 
@@ -350,6 +367,10 @@ def is_last_resort(row: dict[str, Any]) -> bool:
     return normalize_routing_tier(row.get("routing_tier")) == "last-resort"
 
 
+def is_protected_fallback(row: dict[str, Any]) -> bool:
+    return normalize_routing_tier(row.get("routing_tier")) == "protected-fallback"
+
+
 def non_last_resort_available_providers(agents: dict[str, Any]) -> set[str]:
     providers: set[str] = set()
     for key, row in agents.items():
@@ -363,10 +384,25 @@ def non_last_resort_available_providers(agents: dict[str, Any]) -> set[str]:
     return providers
 
 
+def available_required_providers(agents: dict[str, Any], required: list[str]) -> set[str]:
+    required_set = {normalize_agent_name(item) for item in required}
+    providers: set[str] = set()
+    for key, row in agents.items():
+        if not isinstance(row, dict):
+            continue
+        canonical = canonical_provider(row, key)
+        if canonical in required_set and row.get("available") is True:
+            providers.add(canonical)
+    return providers
+
+
 def roster_status(cache: dict[str, Any], roster_raw: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     agents = cache.get("agents")
     if not isinstance(agents, dict):
         fail("availability cache has no agents map")
+    # Protected fallbacks can still prove that Codex-style last-resort providers
+    # are not needed. Their own roster eligibility is checked provider-by-provider
+    # below, so this set intentionally excludes only last-resort rows.
     normal_available = non_last_resort_available_providers(agents)
     available: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
@@ -394,6 +430,24 @@ def roster_status(cache: dict[str, Any], roster_raw: str) -> tuple[list[dict[str
                     ),
                 }
             )
+        elif row.get("available") is True and is_protected_fallback(row):
+            required = normalize_provider_list(row.get("fallback_after_unavailable"))
+            blockers = available_required_providers(agents, required)
+            if blockers:
+                rejected.append(
+                    {
+                        **merged,
+                        "provider": provider,
+                        "canonical_provider": canonical,
+                        "status": "protected-fallback-suppressed",
+                        "reason": (
+                            "provider is configured as protected fallback and required primary providers are available: "
+                            + ",".join(sorted(blockers))
+                        ),
+                    }
+                )
+            else:
+                available.append(merged)
         elif row.get("available") is True:
             available.append(merged)
         else:
