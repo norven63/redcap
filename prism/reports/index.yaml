@@ -1,4 +1,26 @@
 reports:
+  - id: "20260506-agent-reading-absorption-review"
+    mode: test
+    date: "2026-05-06"
+    topic: "AI Era agent-reading absorption and long-term memory alignment"
+    agents: ["kimi", "claude-code"]
+    roles: ["challenger", "reviewer"]
+    verdict: "pass"
+    consensus_actions:
+      - "Absorb explicit assumptions, simplicity-first, surgical changes and verifiable goal loops into the RedCap policy surface"
+      - "Map llm-wiki Raw/Wiki/Schema and Ingest/Query/Lint concepts onto existing RedCap evidence, knowledge and policy layers"
+      - "Keep query answer writeback candidate-only and keep public Arsenal writes behind RedCap Forge"
+      - "Defer full LLM Wiki, RAG/GraphRAG, schema-root split and ai-professor-mode production claims"
+    open_questions:
+      - "A future full wiki/schema subsystem remains possible but requires a separate architecture decision"
+      - "The first Claude Code direct-read attempt was invalid because it requested permission for external source files; only embedded-summary review evidence was counted"
+    lessons_updated: false
+    files_affected:
+      - "references/agent-reading-absorption-policy.json"
+      - "compass/knowledge/log.md"
+      - "compass/tools/redcap-agent-reading-absorption-check.py"
+      - "compass/tools/redcap-agent-reading-absorption-check.sh"
+    archived: false
   - id: "20260506-next-route-decision"
     mode: test
     date: "2026-05-06"

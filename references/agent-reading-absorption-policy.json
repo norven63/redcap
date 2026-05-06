@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "policy_id": "agent-reading-absorption",
+  "parent_child_id": "P4-2h-1",
+  "status": "implemented-contract-only",
+  "purpose": "Absorb AI Era agent-reading guidance into RedCap's engineering discipline and long-term memory architecture without bypassing RedCap Forge, identity protection, retrieval thresholds, or public-arsenal safety gates.",
+  "source_docs": [
+    {
+      "path": "external:AI Era/docs/agent-reading-guide.md",
+      "role": "navigation-only",
+      "disposition": "read-as-guide-not-authority"
+    },
+    {
+      "path": "external:AI Era/docs/ai-engineer.md",
+      "role": "engineering-discipline",
+      "disposition": "absorb-core-principles"
+    },
+    {
+      "path": "external:AI Era/docs/llm-wiki.md",
+      "role": "long-term-memory-pattern",
+      "disposition": "absorb-pattern-with-redcap-boundaries"
+    },
+    {
+      "path": "external:AI Era/docs/ai-professor-mode.md",
+      "role": "learning-coach-skill-material",
+      "disposition": "defer-until-learning-skill-scope"
+    }
+  ],
+  "absorbed_engineering_principles": [
+    {
+      "id": "explicit-assumptions",
+      "redcap_mapping": ".dev-task.md confirmed requirements, drift sentinels, and human-facing checkpoint summaries must surface assumptions rather than hide them in chat."
+    },
+    {
+      "id": "simplicity-first",
+      "redcap_mapping": "Prefer the smallest policy/checker slice that preserves existing safety gates; do not add a new knowledge layer when a deferred decision record is enough."
+    },
+    {
+      "id": "surgical-changes",
+      "redcap_mapping": "Touch only files inside the declared active_slice; unrelated cleanup remains a separate task."
+    },
+    {
+      "id": "verifiable-goal-loop",
+      "redcap_mapping": "Every absorbed rule must have a validator, acceptance case, closeout evidence, or an explicit manual-only/deferred boundary."
+    }
+  ],
+  "long_term_memory_mapping": {
+    "raw_sources": {
+      "meaning": "Immutable or private evidence that can be read for distillation but must not be rewritten as public knowledge.",
+      "redcap_paths": [
+        "compass/docs/task-reports",
+        "redcap-knowledge/task-reports",
+        "redcap-knowledge/research",
+        "prism/runs",
+        "closeout runtime receipts and summaries",
+        "external source documents explicitly supplied by the user"
+      ],
+      "raw_public_export": "forbidden"
+    },
+    "wiki_or_synthesis_layer": {
+      "meaning": "LLM-maintained synthesis is allowed only inside existing governed surfaces; RedCap does not introduce an unconstrained LLM-owned wiki layer by default.",
+      "redcap_paths": [
+        "compass/knowledge/index.md",
+        "compass/knowledge/log.md",
+        "compass/knowledge/lessons.md",
+        "compass/evolution/candidates.json",
+        "redcap-arsenal/users/<user>/*.md after RedCap Forge promotion"
+      ],
+      "llm_full_ownership": false
+    },
+    "schema_layer": {
+      "meaning": "Schema is represented by existing references policies and shared-knowledge schemas; a physically separate schema directory is deferred until scale requires it.",
+      "redcap_paths": [
+        "references/*.json",
+        "references/*policy*.json",
+        "shared-knowledge/schemas/*.json"
+      ],
+      "separate_schema_root_now": false
+    }
+  },
+  "operations": [
+    {
+      "id": "ingest",
+      "redcap_mapping": "RedCap Forge candidate capture, privacy scan, dedupe, structure, index, and promote/no-promote decision.",
+      "direct_public_write_allowed": false
+    },
+    {
+      "id": "query",
+      "redcap_mapping": "Read indexes, catalogs, dictionaries, and metadata first; load exact bodies only for precise evidence needs.",
+      "good_answer_writeback": "candidate-only"
+    },
+    {
+      "id": "lint",
+      "redcap_mapping": "Use knowledge index checks, token-risk audit, retrieval escalation checks, Forge checks, shared-knowledge checks, and this alignment checker to detect stale, unsafe, or overclaimed memory surfaces."
+    }
+  ],
+  "immediate_decisions": [
+    {
+      "id": "no-new-llm-owned-wiki-layer",
+      "decision": "defer",
+      "reason": "Kimi challenger identified structural and permission risks; RedCap can absorb index/log/lint concepts without introducing a new owner model."
+    },
+    {
+      "id": "query-answer-writeback",
+      "decision": "candidate-only",
+      "reason": "High-value answers may become Evolution candidates, but must not bypass lessons, identity, Forge, or public-arsenal gates."
+    },
+    {
+      "id": "rag-or-graphrag",
+      "decision": "keep-existing-threshold-policy",
+      "reason": "llm-wiki supports index-first operation at moderate scale; RedCap already has retrieval escalation thresholds for FTS/RAG/GraphRAG."
+    },
+    {
+      "id": "schema-root",
+      "decision": "defer",
+      "reason": "Claude reviewer identified a possible future schema-layer split, but current references policies and shared-knowledge schemas are sufficient."
+    },
+    {
+      "id": "ai-professor-mode",
+      "decision": "defer",
+      "reason": "The source is a short learning-coach prompt draft with noisy text; it should be cleaned only if RedCap later builds a learning-planning skill."
+    }
+  ],
+  "required_surfaces": [
+    "compass/knowledge/index.md",
+    "compass/knowledge/log.md",
+    "references/redcap-forge-policy.json",
+    "references/public-distillation-preflight-policy.json",
+    "references/retrieval-escalation-policy.json",
+    "references/shared-knowledge-policy.json",
+    "shared-knowledge/schemas/entry.schema.json"
+  ],
+  "must_not_claim": [
+    "Do not claim RedCap has implemented a complete LLM Wiki system.",
+    "Do not claim query answers can directly write public redcap-arsenal entries.",
+    "Do not claim this task enables RAG, GraphRAG, or vector search.",
+    "Do not claim ai-professor-mode is production-ready or part of RedCap core.",
+    "Do not claim raw private reports, identity, or runtime traces are safe public sources."
+  ]
+}

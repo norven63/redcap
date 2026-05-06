@@ -103,6 +103,17 @@
       "reason": "Before any public export, deletion, or migration, RedCap must first prove the RedCap Forge dry-run gate can classify historical assets without writing raw private content to redcap-arsenal."
     },
     {
+      "id": "P4-2h-1",
+      "title": "Agent reading absorption and long-term memory alignment",
+      "status": "completed",
+      "priority": "P1",
+      "depends_on": [
+        "P4-2h-0"
+      ],
+      "release_blocker": false,
+      "reason": "Absorb AI Era agent-design guidance into RedCap's long-term-memory and engineering discipline only through machine-checked boundaries, without enabling full LLM Wiki, direct public writeback, or RAG/GraphRAG by default."
+    },
+    {
       "id": "P4-2",
       "title": "Formal runtime / CLI package public release",
       "status": "blocked",
@@ -121,7 +132,8 @@
     "Do not claim historical assets have been publicly migrated into redcap-arsenal.",
     "Do not claim npm pack dry-run success equals a safe or excellent public CLI product.",
     "Do not bulk-delete or bulk-move historical evidence just to make package checks pass.",
-    "Do not claim redcap-arsenal contains substantive public knowledge while it remains template-only."
+    "Do not claim redcap-arsenal contains substantive public knowledge while it remains template-only.",
+    "Do not claim P4-2h-1 implements a complete LLM Wiki, RAG/GraphRAG, ai-professor production mode, or direct public writeback."
   ],
   "acceptance_gates": [
     "Parent ledger must mark P4-2b and P4-2c completed before P4-2d package identity/surface remediation starts.",

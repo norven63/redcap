@@ -230,8 +230,8 @@
       "operation": "blocked-translate",
       "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
       "item_scope": "file-level",
-      "actual_file_count": 19,
-      "manifest_item_count": 19,
+      "actual_file_count": 20,
+      "manifest_item_count": 20,
       "reason": "Knowledge files are active runtime guidance; cold material can move only after index preserves progressive disclosure and hot lessons remain available.",
       "catalog_update_plan": [
         "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
@@ -2975,6 +2975,35 @@
     {
       "id": "LAM-0087",
       "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/log.md",
+      "target": "redcap-knowledge/knowledge/log.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0090",
+      "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/long-task-context-defense.md",
       "target": "redcap-knowledge/knowledge/long-task-context-defense.md",
       "operation": "blocked-translate",
@@ -3061,9 +3090,9 @@
     }
   ],
   "summary": {
-    "total_items": 89,
+    "total_items": 90,
     "copy_first_items": 54,
-    "blocked_translate_items": 19,
+    "blocked_translate_items": 20,
     "preserve_items": 14,
     "archive_in_place_items": 2,
     "retention_check_only_items": 0,

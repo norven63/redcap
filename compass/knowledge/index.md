@@ -8,8 +8,9 @@
 2. `compass/knowledge/design-principles.md`：RedCap 设计元原则，适合做架构/治理取舍前置检查。
 3. `compass/knowledge/long-task-context-defense.md`：长任务 / 长对话上下文对抗策略，说明当前防线、行业常见方案与未完成边界。
 4. `compass/knowledge/runtime-memory-architecture.md`：人话词典，解释真相源、镜像、闭环证据、跨会话考古/追踪层与长期沉淀层。
-5. `compass/knowledge/governance-debt-register.md`：治理债务登记，说明哪些规则还没有完全变成可执行保障。
-6. `compass/knowledge/host-reliability.md`：宿主可靠性与 Hook 分层策略。
+5. `compass/knowledge/log.md`：长期记忆层的 append-only 时间线；只记录吸收、晋升、no-promote、lint 与边界决策，不存原始证据。
+6. `compass/knowledge/governance-debt-register.md`：治理债务登记，说明哪些规则还没有完全变成可执行保障。
+7. `compass/knowledge/host-reliability.md`：宿主可靠性与 Hook 分层策略。
 
 ## 宿主与 Hook
 

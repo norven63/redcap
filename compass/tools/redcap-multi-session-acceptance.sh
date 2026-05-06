@@ -180,6 +180,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh redcap-forge-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-arsenal-claim-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-distillation-preflight-check
+  bash compass/tools/redcap-multi-session-acceptance.sh agent-reading-absorption-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
@@ -12025,6 +12026,54 @@ PY
     assert_string_contains "$stale_output" "policy_links: missing non-empty pre_release_task_tree"
 }
 
+run_agent_reading_absorption_check_case() {
+    local output bad_policy stale_output status
+
+    log "case: agent-reading-absorption-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-agent-reading-absorption-check.sh")"
+    assert_string_contains "$output" "AGENT_READING_ABSORPTION_OK"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "agent reading absorption check failed"
+
+    bad_policy="$ACCEPT_ROOT/agent-reading-absorption-public-write.json"
+    python3 - "$REDCAP_ROOT/references/agent-reading-absorption-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+for item in payload["operations"]:
+    if item["id"] == "ingest":
+        item["direct_public_write_allowed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-agent-reading-absorption-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "agent reading absorption should reject direct public writes"
+    assert_string_contains "$stale_output" "ingest.direct_public_write_allowed must remain false"
+
+    bad_policy="$ACCEPT_ROOT/agent-reading-absorption-direct-writeback.json"
+    python3 - "$REDCAP_ROOT/references/agent-reading-absorption-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+for item in payload["operations"]:
+    if item["id"] == "query":
+        item["good_answer_writeback"] = "direct-public"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-agent-reading-absorption-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "agent reading absorption should reject direct query writeback"
+    assert_string_contains "$stale_output" "query.good_answer_writeback must be candidate-only"
+}
+
 run_package_publish_safety_check_case() {
     local fixture safe_file env_file key_file list_file output stale_output status
 
@@ -12624,7 +12673,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12859,6 +12908,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-agent-reading-absorption-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "agent-reading-absorption" ]]; then
+    echo "fixture agent reading absorption failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
             "$repo/compass/tools/redcap-docs-catalog.sh" \
             "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
@@ -12884,6 +12942,7 @@ EOF
             "$repo/compass/tools/redcap-forge-check.sh" \
             "$repo/compass/tools/redcap-public-arsenal-claim-boundary.sh" \
             "$repo/compass/tools/redcap-public-distillation-preflight.sh" \
+            "$repo/compass/tools/redcap-agent-reading-absorption-check.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
 
         case "$failing_gate" in
@@ -12913,6 +12972,7 @@ EOF
             redcap-forge) expected_message="RedCap Forge check failed" ;;
             public-arsenal-claim-boundary) expected_message="public arsenal claim boundary check failed" ;;
             public-distillation-preflight) expected_message="public distillation preflight check failed" ;;
+            agent-reading-absorption) expected_message="agent reading absorption check failed" ;;
         esac
 
         set +e
@@ -13794,6 +13854,7 @@ run_all_cases() {
     run_redcap_forge_check_case
     run_public_arsenal_claim_boundary_check_case
     run_public_distillation_preflight_check_case
+    run_agent_reading_absorption_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
     run_public_package_surface_check_case
@@ -14293,6 +14354,9 @@ case "$COMMAND" in
         ;;
     public-distillation-preflight-check)
         run_public_distillation_preflight_check_case
+        ;;
+    agent-reading-absorption-check)
+        run_agent_reading_absorption_check_case
         ;;
     package-publish-safety-check)
         run_package_publish_safety_check_case

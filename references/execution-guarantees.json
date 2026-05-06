@@ -987,6 +987,30 @@
       "auto_enforceable": true
     },
     {
+      "id": "agent-reading-absorption",
+      "category": "lessons-knowledge",
+      "priority": "P1",
+      "rule": "External agent-design reading materials may influence RedCap only after their source role, adopted principles, long-term-memory mapping, deferred boundaries, and must-not-claim limits are recorded in a machine-checkable policy.",
+      "source_paths": [
+        "references/agent-reading-absorption-policy.json",
+        "compass/knowledge/log.md",
+        "compass/knowledge/index.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-agent-reading-absorption-check validates that ai-engineer principles and llm-wiki patterns were absorbed through RedCap boundaries, while full LLM-owned Wiki, direct public writeback, RAG/GraphRAG and ai-professor-mode remain explicit deferred decisions.",
+      "guarantee_paths": [
+        "compass/tools/redcap-agent-reading-absorption-check.sh",
+        "compass/tools/redcap-agent-reading-absorption-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "references/file-lookup-dictionary.md"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "information-architecture-artifact-governance",
       "category": "information-architecture",
       "priority": "P1",

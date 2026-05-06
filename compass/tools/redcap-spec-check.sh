@@ -568,6 +568,14 @@ if [[ -x "$PUBLIC_DISTILLATION_PREFLIGHT_CHECK" ]]; then
     fi
 fi
 
+AGENT_READING_ABSORPTION_CHECK="$REDCAP_ROOT/compass/tools/redcap-agent-reading-absorption-check.sh"
+if [[ -x "$AGENT_READING_ABSORPTION_CHECK" ]]; then
+    if ! bash "$AGENT_READING_ABSORPTION_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] agent reading absorption check failed" >&2
+        exit 1
+    fi
+fi
+
 RETRIEVAL_ESCALATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh"
 if [[ -x "$RETRIEVAL_ESCALATION_CHECK" ]]; then
     if ! bash "$RETRIEVAL_ESCALATION_CHECK" >/dev/null; then

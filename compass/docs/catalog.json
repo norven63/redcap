@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 370889,
-    "lines": 7246,
-    "chars": 229358,
+    "size_bytes": 371332,
+    "lines": 7238,
+    "chars": 228223,
     "rough_token_pressure": {
-      "low": 57339,
-      "high": 114679
+      "low": 57055,
+      "high": 114111
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 177214,
-        "lines": 2663,
-        "chars": 112885,
+        "size_bytes": 177657,
+        "lines": 2655,
+        "chars": 111750,
         "rough_token_pressure": {
-          "low": 28221,
-          "high": 56442
+          "low": 27937,
+          "high": 55875
         }
       }
     },
@@ -95,7 +95,7 @@
         "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
         "chars": 11393,
         "lines": 251,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+        "read_policy": "read-catalog-summary-by-default"
       },
       {
         "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
@@ -496,19 +496,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-05-redcap-cli-diagnostic-product-surface.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-2c CLI 诊断产品面加固",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 14933,
-      "lines": 241,
-      "chars": 9977,
-      "summary": "当前已完成：RedCap CLI 已补上面向外部用户和 Agent 容器的诊断产品面，`doctor`、`debug --json`、`--trace`、`help <command>` 和结构化错误都已进入机器门禁。 / 详情：本轮解决的是“内部脚本能跑，但公共 CLI 不好排障”的发布前阻塞。现在用户可以先用 `redcap doctor` 看人类可读健康摘要，Agent 或支持者可以用 `redcap debug --json` 获取脱敏诊断包，`--trace` 能解释命令路由但不会倾倒环境变量。发布前审判已把 `cli-debug-contract-incomplete` 从 release blocker 改为 pas…",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-05-redcap-public-arsenal-claim-boundary.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-2e public redcap-arsenal 内容策略与 claim 边界",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-2d public package identity/license/surface 准备",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 17401,
       "lines": 251,
       "chars": 11393,
       "summary": "当前已完成：RedCap 的未来公共 npm 包身份已准备为 `@norven63/redcap`，但仍保持私有、不可发布、许可证待人工决策的安全姿态。 / 详情：本轮解决的是“包名和包面已经开始公共化，但不能把准备态冒充成发布态”的问题。现在 package metadata、runtime readiness policy、发布前产品审判和机器检查都统一到 `@norven63/redcap`；同时 `private=true`、`publish_allowed=false`、`license=UNLICENSED` 继续锁住真实发布边界。新增的 package surface gate 会检查候选包面、禁入路径和人工 rel…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 的未来公共 npm 包身份已准备为 `@norven63/redcap`，但仍保持私有、不可发布、许可证待人工决策的安全姿态。",
-          "详情：本轮解决的是“包名和包面已经开始公共化，但不能把准备态冒充成发布态”的问题。现在 package metadata、runtime readiness policy、发布前产品审判和机器检查都统一到 `@norven63/redcap`；同时 `private=true`、`publish_allowed=false`、`license=UNLICENSED` 继续锁住真实发布边界。新增的 package surface gate 会检查候选包面、禁入路径和人工 release 边界，防止把私有证据、运行时…"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2c 已补齐 public CLI 的 `doctor`、`debug --json`、`--trace`、help 和结构化错误产品面。"
-        ],
-        "next_step": [
-          "下一步计划做的是：推进 P4-2e public redcap-arsenal 内容策略与 claim 边界，决定公共 arsenal 仍是 template-only 时如何诚实描述，或是否补充实质内容后再宣传。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-2a 产品架构审判 -> P4-2b 边界拆分 -> P4-2c CLI 诊断产品面 -> P4-2d 包身份/许可证/包面准备 -> P4-2e 公共 arsenal 口径 -> P4-2 正式发布任务。",
-          "当前所在位置：P4-2d 已完成 readiness 准备；P4-2 正式发布仍未完成，也不能声明 public-release-ready。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
@@ -576,6 +547,35 @@
         "position": [
           "整体计划脉络图是：P4-2g 白名单预检与任务树重锚定 → P4-2b runtime/workspace 边界 → P4-2c CLI 诊断产品面 → P4-2d public package identity/license/surface → P4-2 正式 release readiness。",
           "当前所在位置：P4-2b 已进入实现收口；public release 仍保持 blocked，剩余 release blockers 还有 runtime layout、CLI debug surface、package identity/license。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-06-agent-reading-absorption.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：AI Era agent-reading 吸收与长期记忆对齐",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 15376,
+      "lines": 233,
+      "chars": 8842,
+      "summary": "当前已完成：RedCap 已把 AI Era 导读资料中适合当前阶段的工程纪律和长期记忆设计，吸收成可机器检查的契约。 / 详情：本轮解决的是“看到业内长期记忆 / LLM Wiki 思路后，RedCap 应该怎么吸收，而不是盲目照搬”的问题。最终做法是：保留 RedCap 现有 Forge、安全边界和检索阈值，只吸收显式假设、简单优先、外科式修改、可验证循环，以及 Raw/Wiki/Schema、Ingest/Query/Lint 这些可对齐的设计。现在 RedCap 有了 append-only 知识时间线和专门检查器，可以阻断“直接公共写入”“默认启用 RAG”“冒充完整 Wiki”等过度声明。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把 AI Era 导读资料中适合当前阶段的工程纪律和长期记忆设计，吸收成可机器检查的契约。",
+          "详情：本轮解决的是“看到业内长期记忆 / LLM Wiki 思路后，RedCap 应该怎么吸收，而不是盲目照搬”的问题。最终做法是：保留 RedCap 现有 Forge、安全边界和检索阈值，只吸收显式假设、简单优先、外科式修改、可验证循环，以及 Raw/Wiki/Schema、Ingest/Query/Lint 这些可对齐的设计。现在 RedCap 有了 append-only 知识时间线和专门检查器，可以阻断“直接公共写入”“默认启用 RAG”“冒充完整 Wiki”等过度声明。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2h-0 只建立了历史资产进入公共蒸馏前的 dry-run 预检强门。本轮接着把外部行业资料吸收到长期记忆和工程纪律层，但仍不进入真实公共蒸馏、不写公共 arsenal。"
+        ],
+        "next_step": [
+          "下一步计划做的是：本轮吸收契约完成后，主线仍回到 P4-2 的发布前整改与 P4-2h 的后续真实公共蒸馏；是否建设完整 LLM Wiki、独立 Schema 层、RAG/GraphRAG 或学习教练能力，都必须另开架构任务。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h 真实公共蒸馏候选 → P4-2 正式 release 任务。",
+          "当前所在位置：P4-2h-1 已实现并通过定向验收；正式完成仍等待 closeout receipt。"
         ]
       }
     },
