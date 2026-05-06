@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 378151,
-    "lines": 7344,
-    "chars": 231390,
+    "size_bytes": 379785,
+    "lines": 7348,
+    "chars": 232836,
     "rough_token_pressure": {
-      "low": 57847,
-      "high": 115695
+      "low": 58209,
+      "high": 116418
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 184476,
-        "lines": 2761,
-        "chars": 114917,
+        "size_bytes": 186110,
+        "lines": 2765,
+        "chars": 116363,
         "rough_token_pressure": {
-          "low": 28729,
-          "high": 57458
+          "low": 29090,
+          "high": 58181
         }
       }
     },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13924,
-      "lines": 222,
-      "chars": 7670,
+      "size_bytes": 15558,
+      "lines": 226,
+      "chars": 9116,
       "summary": "当前已完成：RedCap 已完成一次全局资产分层评估，明确哪些内容适合进入未来的 LLM-wiki-lite 语义记忆层，哪些必须留在控制面、原始证据层、公共库、索引层或可执行流程层。 / 详情：本轮解决的是“长期记忆应该吸收什么、不能吸收什么”的边界问题。最终结论是：LLM-wiki 可以服务 AI 和人类的长期理解，但只能作为私有、非权威、带来源锚点的语义记忆缓存；它不能替代任务账本、承诺账本、receipt、Prism 验收、原始报告、运行证据或发布安全门禁。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -571,11 +571,11 @@
           "上一步完成的是：P4-2h-1 已把 AI Era 导读资料中的长期记忆和工程纪律思想吸收到 RedCap 契约中，但没有直接建设完整 Wiki、RAG、GraphRAG 或公共写回能力。"
         ],
         "next_step": [
-          "下一步计划做的是：完成本轮 closeout runtime 收口后，主任务线新增并保留 P4-2h-3，用于后续实现 LLM-wiki-lite 的最小生命周期：私有语义记忆 schema、来源锚点、过期检测、Forge 公共晋升边界和控制面接线。"
+          "下一步计划做的是：回到父任务线，由 RedCap 按 P4-2g 结构重构任务树评估是否优先推进 P4-2h-3；P4-2h-3 才负责实现 LLM-wiki-lite 的最小生命周期：私有语义记忆 schema、来源锚点、过期检测、Forge 公共晋升边界和控制面接线。"
         ],
         "position": [
           "整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h-2 LLM-wiki 资产分层评估 → P4-2h-3 LLM-wiki-lite 生命周期实现 → P4-2h 真实公共蒸馏与 P4-2 release 主线。",
-          "当前所在位置：P4-2h-2 已完成资产评估、棱镜评审、主任务线登记和机器检查；正式完成凭证仍等待 closeout runtime receipt。"
+          "当前所在位置：P4-2h-2 已完成资产评估、棱镜评审、主任务线登记、机器检查和 closeout runtime receipt；父任务线下一步回到 P4-2h-3 或 P4-2 其他发布前子任务。"
         ]
       }
     },
