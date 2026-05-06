@@ -24,7 +24,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h 真实公共蒸馏候选 → P4-2 正式 release 任务。
-- 当前所在位置：P4-2h-1 已实现并通过定向验收；正式完成仍等待 closeout receipt。
+- 当前所在位置：P4-2h-1 已实现、已通过定向验收与 closeout runtime 收口；父任务仍回到 P4-2/P4-2h 后续边界。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -158,11 +158,11 @@ RedCap 刚完成公共蒸馏 preflight，正处在长期记忆、公共知识库
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 待 closeout runtime 核对 |
-| 棱镜验收 | 已有 Kimi + Claude Code 证据；formal receipt 前仍需 closeout runtime 最终确认 |
-| closeout summary | 待生成 |
-| closeout receipt | 待生成 |
-| rescue audit（如有） | 无 |
+| 执行承诺账本 | 已清，7/7 完成 |
+| 棱镜验收 | 通过，Kimi challenger + Claude Code reviewer，2 个模型家族，无 blocker |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-agent-reading-absorption-6e44be8e8d9d463fd1aa6cf8fa3a032050c0580f82a6e108d9ddd8d952265fa1.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-agent-reading-absorption-6e44be8e8d9d463fd1aa6cf8fa3a032050c0580f82a6e108d9ddd8d952265fa1.json` |
+| rescue audit（如有） | 首次 closeout 因 drift scope 未登记历史资产连锁修复而 blocked；已补 scope 并重跑通过。审计：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/audits/20260506T115708Z-redcap-agent-reading-absorption-6e44be8e8d9d463fd1aa6cf8fa3a032050c0580f82a6e108d9ddd8d952265fa1-on-complete-failed.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -171,7 +171,7 @@ RedCap 刚完成公共蒸馏 preflight，正处在长期记忆、公共知识库
 | 已实现 | 是 |
 | 已自检 | 是，定向门禁已通过 |
 | 已独立验收 | 是，Kimi + Claude Code 评审已归档 |
-| 已正式完成 | 否，等待 closeout receipt |
+| 已正式完成 | 是，以上 closeout receipt 是正式完工凭证 |
 
 ---
 
@@ -223,7 +223,8 @@ RedCap 刚完成公共蒸馏 preflight，正处在长期记忆、公共知识库
 ### 附录 A：Commits
 
 ```
-待提交
+89dc9f7 feat(memory): 吸收 agent reading 长期记忆契约
+bdea252 test(e2e): 刷新 agent reading 安装验收
 ```
 
 ### 附录 B：棱镜调用记录（如有）

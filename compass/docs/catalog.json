@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 371332,
-    "lines": 7238,
-    "chars": 228223,
+    "size_bytes": 372187,
+    "lines": 7239,
+    "chars": 228986,
     "rough_token_pressure": {
-      "low": 57055,
-      "high": 114111
+      "low": 57246,
+      "high": 114493
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 177657,
-        "lines": 2655,
-        "chars": 111750,
+        "size_bytes": 178512,
+        "lines": 2656,
+        "chars": 112513,
         "rough_token_pressure": {
-          "low": 27937,
-          "high": 55875
+          "low": 28128,
+          "high": 56256
         }
       }
     },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 15376,
-      "lines": 233,
-      "chars": 8842,
+      "size_bytes": 16231,
+      "lines": 234,
+      "chars": 9605,
       "summary": "当前已完成：RedCap 已把 AI Era 导读资料中适合当前阶段的工程纪律和长期记忆设计，吸收成可机器检查的契约。 / 详情：本轮解决的是“看到业内长期记忆 / LLM Wiki 思路后，RedCap 应该怎么吸收，而不是盲目照搬”的问题。最终做法是：保留 RedCap 现有 Forge、安全边界和检索阈值，只吸收显式假设、简单优先、外科式修改、可验证循环，以及 Raw/Wiki/Schema、Ingest/Query/Lint 这些可对齐的设计。现在 RedCap 有了 append-only 知识时间线和专门检查器，可以阻断“直接公共写入”“默认启用 RAG”“冒充完整 Wiki”等过度声明。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -575,7 +575,7 @@
         ],
         "position": [
           "整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h 真实公共蒸馏候选 → P4-2 正式 release 任务。",
-          "当前所在位置：P4-2h-1 已实现并通过定向验收；正式完成仍等待 closeout receipt。"
+          "当前所在位置：P4-2h-1 已实现、已通过定向验收与 closeout runtime 收口；父任务仍回到 P4-2/P4-2h 后续边界。"
         ]
       }
     },
