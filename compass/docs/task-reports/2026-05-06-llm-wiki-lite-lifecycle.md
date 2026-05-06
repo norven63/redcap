@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-06
 **执行者**：Cap（Codex.app 主执行，Prism 使用 Kimi + Claude Code）
-**报告版本**：v0.1
+**报告版本**：v1.0
 
 ---
 
@@ -24,7 +24,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：外部资料吸收 → 资产分层 → 私有语义记忆最小生命周期 → 未来 RedCap Forge 公共蒸馏或正式 release 决策。
-- 当前所在位置：`P4-2h-3` 已实现并通过独立 Prism 复审；正在等待 closeout runtime 生成正式 receipt。
+- 当前所在位置：`P4-2h-3` 已实现、已提交、已通过独立 Prism 复审与 closeout runtime receipt。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -160,6 +160,8 @@ source anchor 是本轮最关键的约束。每条 entry 必须写明来源路�
 | legacy migration apply preflight | `bash compass/tools/redcap-legacy-asset-migration-apply-plan.sh` | 通过 |
 | umbrella spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
+| full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --check-result` | 通过 |
 | Prism evidence | `bash prism/tools/prism-evidence-check.sh` | 通过 |
 | Prism acceptance | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过 |
 
@@ -171,11 +173,11 @@ source anchor 是本轮最关键的约束。每条 entry 必须写明来源路�
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 待 closeout runtime 核对 |
+| 执行承诺账本 | 已核对：7/7 完成，0 pending |
 | 棱镜验收 | 已通过：`20260506-llm-wiki-lite-lifecycle-review` |
-| closeout summary | 待生成 |
-| closeout receipt | 待生成 |
-| rescue audit（如有） | 无 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-llm-wiki-lite-lifecycle-75e709777559593d2b4a82d0301b62f1a0cf98edbc1ab18548deb478d666aad6.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-llm-wiki-lite-lifecycle-75e709777559593d2b4a82d0301b62f1a0cf98edbc1ab18548deb478d666aad6.json` |
+| rescue audit（如有） | 曾因未提交与 drift 范围登记不完整 blocked；已补边界、提交、刷新 clean workspace E2E 并重新 closeout 通过。 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -184,7 +186,7 @@ source anchor 是本轮最关键的约束。每条 entry 必须写明来源路�
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Kimi + Claude Code 无 blocking finding |
-| 已正式完成 | 否，等待 closeout receipt |
+| 已正式完成 | 是，closeout runtime receipt 已生成 |
 
 ---
 
@@ -234,7 +236,8 @@ Prism 提醒未来可以考虑把 `llm-wiki-lite-lifecycle` 从 `lessons-knowled
 ### 附录 A：Commits
 
 ```
-待提交
+f8b8228 feat: 实现 LLM-wiki-lite 生命周期
+778624b test: 刷新 clean workspace E2E 证据
 ```
 
 ### 附录 B：棱镜调用记录（如有）

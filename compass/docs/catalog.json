@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 380288,
-    "lines": 7357,
-    "chars": 233445,
+    "size_bytes": 381087,
+    "lines": 7360,
+    "chars": 234172,
     "rough_token_pressure": {
-      "low": 58361,
-      "high": 116722
+      "low": 58543,
+      "high": 117086
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 186613,
-        "lines": 2774,
-        "chars": 116972,
+        "size_bytes": 187412,
+        "lines": 2777,
+        "chars": 117699,
         "rough_token_pressure": {
-          "low": 29243,
-          "high": 58486
+          "low": 29424,
+          "high": 58849
         }
       }
     },
@@ -104,10 +104,10 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
-        "chars": 10012,
-        "lines": 231,
-        "read_policy": "read-catalog-summary-by-default"
+        "path": "compass/docs/task-reports/2026-05-06-llm-wiki-lite-lifecycle.md",
+        "chars": 10687,
+        "lines": 255,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
   },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 15718,
-      "lines": 252,
-      "chars": 9960,
+      "size_bytes": 16517,
+      "lines": 255,
+      "chars": 10687,
       "summary": "当前已完成：RedCap 已有一个最小可用的私有 LLM-wiki-lite 生命周期，不再只是“以后可以做”的规划。 / 详情：本轮把 LLM-wiki-lite 固定为私有、非权威、必须带来源锚点的语义记忆层。每条 entry 都要能回到原始来源，并用 `sha256` 摘要判断是否过期；如果来源变了、来源不可读、候选类型越界、想直接写公共库或启用 RAG/GraphRAG，检查器会 fail closed。这样它可以帮助理解长期概念，但不会抢走 `.dev-task.md`、policy、receipt、Prism acceptance 等控制面真相源的位置。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -575,7 +575,7 @@
         ],
         "position": [
           "整体计划脉络图是：外部资料吸收 → 资产分层 → 私有语义记忆最小生命周期 → 未来 RedCap Forge 公共蒸馏或正式 release 决策。",
-          "当前所在位置：`P4-2h-3` 已实现并通过独立 Prism 复审；正在等待 closeout runtime 生成正式 receipt。"
+          "当前所在位置：`P4-2h-3` 已实现、已提交、已通过独立 Prism 复审与 closeout runtime receipt。"
         ]
       }
     },
