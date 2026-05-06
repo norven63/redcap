@@ -162,7 +162,7 @@ RedCap 刚完成公共蒸馏 preflight，正处在长期记忆、公共知识库
 | 棱镜验收 | 通过，Kimi challenger + Claude Code reviewer，2 个模型家族，无 blocker |
 | closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-agent-reading-absorption-6e44be8e8d9d463fd1aa6cf8fa3a032050c0580f82a6e108d9ddd8d952265fa1.md` |
 | closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-agent-reading-absorption-6e44be8e8d9d463fd1aa6cf8fa3a032050c0580f82a6e108d9ddd8d952265fa1.json` |
-| rescue audit（如有） | 首次 closeout 因 drift scope 未登记历史资产连锁修复而 blocked；已补 scope 并重跑通过。审计：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/audits/20260506T115708Z-redcap-agent-reading-absorption-6e44be8e8d9d463fd1aa6cf8fa3a032050c0580f82a6e108d9ddd8d952265fa1-on-complete-failed.json` |
+| rescue audit（如有） | 首次 closeout 因 drift scope 未登记历史资产连锁修复而 blocked；第二次因当前报告后置更新未列入 clean workspace E2E 安全漂移而 blocked。两项均已补齐并重跑通过。审计：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/audits/20260506T115708Z-redcap-agent-reading-absorption-6e44be8e8d9d463fd1aa6cf8fa3a032050c0580f82a6e108d9ddd8d952265fa1-on-complete-failed.json`；`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/audits/20260506T120017Z-redcap-agent-reading-absorption-6e44be8e8d9d463fd1aa6cf8fa3a032050c0580f82a6e108d9ddd8d952265fa1-on-complete-failed.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -225,6 +225,9 @@ RedCap 刚完成公共蒸馏 preflight，正处在长期记忆、公共知识库
 ```
 89dc9f7 feat(memory): 吸收 agent reading 长期记忆契约
 bdea252 test(e2e): 刷新 agent reading 安装验收
+da8062b docs(report): 收口 agent reading 完成报告
+1b9ad85 test(e2e): 允许 agent reading 报告漂移
+0d2fbd6 test(e2e): 刷新最终安装验收
 ```
 
 ### 附录 B：棱镜调用记录（如有）
