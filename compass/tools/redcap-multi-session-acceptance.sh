@@ -181,6 +181,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh public-arsenal-claim-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-distillation-preflight-check
   bash compass/tools/redcap-multi-session-acceptance.sh agent-reading-absorption-check
+  bash compass/tools/redcap-multi-session-acceptance.sh llm-wiki-asset-stratification-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
@@ -12074,6 +12075,67 @@ PY
     assert_string_contains "$stale_output" "query.good_answer_writeback must be candidate-only"
 }
 
+run_llm_wiki_asset_stratification_check_case() {
+    local output bad_policy stale_output status
+
+    log "case: llm-wiki-asset-stratification-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-asset-stratification-check.sh")"
+    assert_string_contains "$output" "LLM_WIKI_ASSET_STRATIFICATION_OK"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "LLM-wiki asset stratification check failed"
+
+    bad_policy="$ACCEPT_ROOT/llm-wiki-asset-stratification-public.json"
+    python3 - "$REDCAP_ROOT/references/llm-wiki-asset-stratification-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["llm_wiki_role"]["public_by_default"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-asset-stratification-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "LLM-wiki asset stratification should reject public-by-default wiki"
+    assert_string_contains "$stale_output" "must not be public by default"
+
+    bad_policy="$ACCEPT_ROOT/llm-wiki-asset-stratification-missing-anchor.json"
+    python3 - "$REDCAP_ROOT/references/llm-wiki-asset-stratification-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["source_anchor_contract"]["minimum_fields"].remove("privacy_classification")
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-asset-stratification-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "LLM-wiki asset stratification should reject incomplete source anchors"
+    assert_string_contains "$stale_output" "source anchor minimum field missing: privacy_classification"
+
+    bad_policy="$ACCEPT_ROOT/llm-wiki-asset-stratification-implemented.json"
+    python3 - "$REDCAP_ROOT/references/llm-wiki-asset-stratification-policy.json" "$bad_policy" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["registered_followup_requirement"]["status"] = "completed"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-asset-stratification-check.sh" --policy "$bad_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "LLM-wiki asset stratification should reject unimplemented follow-up claims"
+    assert_string_contains "$stale_output" "P4-2h-3 must be planned"
+}
+
 run_package_publish_safety_check_case() {
     local fixture safe_file env_file key_file list_file output stale_output status
 
@@ -12673,7 +12735,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12917,6 +12979,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-llm-wiki-asset-stratification-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "llm-wiki-asset-stratification" ]]; then
+    echo "fixture LLM-wiki asset stratification failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
             "$repo/compass/tools/redcap-docs-catalog.sh" \
             "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
@@ -12943,6 +13014,7 @@ EOF
             "$repo/compass/tools/redcap-public-arsenal-claim-boundary.sh" \
             "$repo/compass/tools/redcap-public-distillation-preflight.sh" \
             "$repo/compass/tools/redcap-agent-reading-absorption-check.sh" \
+            "$repo/compass/tools/redcap-llm-wiki-asset-stratification-check.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
 
         case "$failing_gate" in
@@ -12973,6 +13045,7 @@ EOF
             public-arsenal-claim-boundary) expected_message="public arsenal claim boundary check failed" ;;
             public-distillation-preflight) expected_message="public distillation preflight check failed" ;;
             agent-reading-absorption) expected_message="agent reading absorption check failed" ;;
+            llm-wiki-asset-stratification) expected_message="LLM-wiki asset stratification check failed" ;;
         esac
 
         set +e
@@ -13855,6 +13928,7 @@ run_all_cases() {
     run_public_arsenal_claim_boundary_check_case
     run_public_distillation_preflight_check_case
     run_agent_reading_absorption_check_case
+    run_llm_wiki_asset_stratification_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
     run_public_package_surface_check_case
@@ -14357,6 +14431,9 @@ case "$COMMAND" in
         ;;
     agent-reading-absorption-check)
         run_agent_reading_absorption_check_case
+        ;;
+    llm-wiki-asset-stratification-check)
+        run_llm_wiki_asset_stratification_check_case
         ;;
     package-publish-safety-check)
         run_package_publish_safety_check_case

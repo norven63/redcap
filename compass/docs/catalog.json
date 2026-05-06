@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 372667,
-    "lines": 7242,
-    "chars": 229374,
+    "size_bytes": 378151,
+    "lines": 7344,
+    "chars": 231390,
     "rough_token_pressure": {
-      "low": 57343,
-      "high": 114687
+      "low": 57847,
+      "high": 115695
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 178992,
-        "lines": 2659,
-        "chars": 112901,
+        "size_bytes": 184476,
+        "lines": 2761,
+        "chars": 114917,
         "rough_token_pressure": {
-          "low": 28225,
-          "high": 56450
+          "low": 28729,
+          "high": 57458
         }
       }
     },
@@ -107,7 +107,7 @@
         "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
         "chars": 10012,
         "lines": 231,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+        "read_policy": "read-catalog-summary-by-default"
       }
     ]
   },
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：历史资产 delete-last / canonical-switch 风险窗口",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 8440,
-      "lines": 120,
-      "chars": 5654,
-      "summary": "当前已完成：P4-1 的 private delete-last / canonical switch 已完成。54 个旧 `compass/docs/**` 历史锚点已通过 preflight、Prism review、guarded apply、catalog 刷新和 resolver 复验后退休。 / 详情：旧历史文件不再作为 docs catalog 的普通入口；`redcap-knowledge/**` 中的私有副本成为迁移资产的 canonical path，旧路径只通过 alias resolver 和 receipt correspondence 承担历史对账角色。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
       "collection": "task-reports",
       "title": "任务完成报告：历史资产 main-tree copy-first apply",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-2a 发布前产品架构审判",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16953,
       "lines": 253,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-2b runtime/project/user 边界与 CLI workspace context",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15354,
       "lines": 231,
       "chars": 10012,
       "summary": "当前已完成：RedCap CLI 的任务类命令已经从“默认读 RedCap 包根目录任务卡”改为“默认读调用者所在项目 workspace 的任务卡”，并有机器门禁证明不会再静默回退到 package-root。 / 详情：这次解决的是 public CLI 发布前最危险的一类错位：工具本体、用户项目、用户身份状态三层混在一起。现在 `status`、`diagnose`、`change-intake`、`closeout status` 都会先解析 workspace 和 task file；外部项目默认读外部项目的 `.dev-task.md`，RedCap 自身开发仍能在仓库根目录或子目录正常读自己的任务卡。诊断输出也会直接…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap CLI 的任务类命令已经从“默认读 RedCap 包根目录任务卡”改为“默认读调用者所在项目 workspace 的任务卡”，并有机器门禁证明不会再静默回退到 package-root。",
-          "详情：这次解决的是 public CLI 发布前最危险的一类错位：工具本体、用户项目、用户身份状态三层混在一起。现在 `status`、`diagnose`、`change-intake`、`closeout status` 都会先解析 workspace 和 task file；外部项目默认读外部项目的 `.dev-task.md`，RedCap 自身开发仍能在仓库根目录或子目录正常读自己的任务卡。诊断输出也会直接展示 runtime root、workspace root、task file 和 user s…"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2g 已完成 npm 白名单预检与结构重构任务树重锚定，把“先拍片再手术”的顺序固定下来，并确认 P4-2b 是当前最优先的发布前 P0 blocker。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续推进 P4-2c，补齐面向外部用户的 CLI doctor / debug / trace / error / help 产品面；本轮不继续扩张到 npm 发布或 license/package identity 定稿。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-2g 白名单预检与任务树重锚定 → P4-2b runtime/workspace 边界 → P4-2c CLI 诊断产品面 → P4-2d public package identity/license/surface → P4-2 正式 release readiness。",
-          "当前所在位置：P4-2b 已进入实现收口；public release 仍保持 blocked，剩余 release blockers 还有 runtime layout、CLI debug surface、package identity/license。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-06-agent-reading-absorption.md",
@@ -576,6 +547,35 @@
         "position": [
           "整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h 真实公共蒸馏候选 → P4-2 正式 release 任务。",
           "当前所在位置：P4-2h-1 已实现、已通过定向验收与 closeout runtime 收口；父任务仍回到 P4-2/P4-2h 后续边界。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-06-llm-wiki-asset-stratification.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：LLM-wiki 资产分层评估与需求登记",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 13924,
+      "lines": 222,
+      "chars": 7670,
+      "summary": "当前已完成：RedCap 已完成一次全局资产分层评估，明确哪些内容适合进入未来的 LLM-wiki-lite 语义记忆层，哪些必须留在控制面、原始证据层、公共库、索引层或可执行流程层。 / 详情：本轮解决的是“长期记忆应该吸收什么、不能吸收什么”的边界问题。最终结论是：LLM-wiki 可以服务 AI 和人类的长期理解，但只能作为私有、非权威、带来源锚点的语义记忆缓存；它不能替代任务账本、承诺账本、receipt、Prism 验收、原始报告、运行证据或发布安全门禁。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已完成一次全局资产分层评估，明确哪些内容适合进入未来的 LLM-wiki-lite 语义记忆层，哪些必须留在控制面、原始证据层、公共库、索引层或可执行流程层。",
+          "详情：本轮解决的是“长期记忆应该吸收什么、不能吸收什么”的边界问题。最终结论是：LLM-wiki 可以服务 AI 和人类的长期理解，但只能作为私有、非权威、带来源锚点的语义记忆缓存；它不能替代任务账本、承诺账本、receipt、Prism 验收、原始报告、运行证据或发布安全门禁。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2h-1 已把 AI Era 导读资料中的长期记忆和工程纪律思想吸收到 RedCap 契约中，但没有直接建设完整 Wiki、RAG、GraphRAG 或公共写回能力。"
+        ],
+        "next_step": [
+          "下一步计划做的是：完成本轮 closeout runtime 收口后，主任务线新增并保留 P4-2h-3，用于后续实现 LLM-wiki-lite 的最小生命周期：私有语义记忆 schema、来源锚点、过期检测、Forge 公共晋升边界和控制面接线。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h-2 LLM-wiki 资产分层评估 → P4-2h-3 LLM-wiki-lite 生命周期实现 → P4-2h 真实公共蒸馏与 P4-2 release 主线。",
+          "当前所在位置：P4-2h-2 已完成资产评估、棱镜评审、主任务线登记和机器检查；正式完成凭证仍等待 closeout runtime receipt。"
         ]
       }
     },

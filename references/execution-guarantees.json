@@ -1011,6 +1011,32 @@
       "auto_enforceable": true
     },
     {
+      "id": "llm-wiki-asset-stratification",
+      "category": "lessons-knowledge",
+      "priority": "P1",
+      "rule": "Before RedCap implements any LLM-wiki-lite semantic memory layer, all major asset classes must be classified into control truth, raw evidence, active private knowledge, public arsenal, navigation index, executable runtime, package surface, or private semantic-memory candidate layers; LLM-wiki must remain private, non-authoritative, source-anchored, and subordinate to RedCap Forge and catalog + rg + metadata retrieval.",
+      "source_paths": [
+        "references/llm-wiki-asset-stratification-policy.json",
+        "references/pre-release-structure-refactor-task-tree.json",
+        "references/redcap-parent-task-ledger.md",
+        "references/retrieval-escalation-policy.json",
+        "references/redcap-forge-policy.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-llm-wiki-asset-stratification-check validates the P4-2h-2 asset classification, LLM-wiki non-authoritative private role, source-anchor and staleness contract, privacy/publication boundary, P4-2h-3 planned requirement, and RAG/GraphRAG deferral.",
+      "guarantee_paths": [
+        "compass/tools/redcap-llm-wiki-asset-stratification-check.sh",
+        "compass/tools/redcap-llm-wiki-asset-stratification-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "references/file-lookup-dictionary.md"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "information-architecture-artifact-governance",
       "category": "information-architecture",
       "priority": "P1",
@@ -1728,7 +1754,7 @@
         "references/legacy-asset-delete-last-preflight.json",
         "references/legacy-asset-migration-main-tree-apply.json",
         "references/redcap-parent-task-ledger.md",
-        "compass/docs/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md"
+        "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-delete-last-preflight.sh validates delete-last/canonical-switch readiness, distinguishes historical evidence references from live hard references, supports fail-closed blocked output, and is consumed by spec-check, diagnose and acceptance.",
@@ -1753,7 +1779,7 @@
         "references/legacy-asset-delete-last-apply.json",
         "references/legacy-asset-delete-last-preflight.json",
         "references/legacy-asset-migration-alias-resolver.json",
-        "compass/docs/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md"
+        "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-delete-last-apply.sh validates the delete-last apply receipt, refuses unsafe paths/hash drift, supports rollback from private copies, and is consumed by spec-check, diagnose and acceptance.",

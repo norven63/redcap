@@ -1,4 +1,27 @@
 reports:
+  - id: "20260506-llm-wiki-asset-stratification-review"
+    mode: redteam
+    date: "2026-05-06"
+    topic: "LLM-wiki asset stratification and semantic memory requirement registration"
+    agents: ["kimi", "claude-code"]
+    roles: ["challenger", "reviewer"]
+    verdict: "pass-after-corrections"
+    consensus_actions:
+      - "Keep LLM-wiki private, non-authoritative, and source-anchored"
+      - "Map all RedCap asset classes before implementing LLM-wiki-lite"
+      - "Keep control truth, raw private evidence, indexes, package surface and executable runtime out of wiki authority"
+      - "Register P4-2h-3 as a planned implementation task without claiming it complete"
+    open_questions:
+      - "P4-2h-3 must define the actual private wiki schema, source-anchor staleness checker and candidate allow/deny list"
+      - "Derived user-preference summaries need expiry behavior when identity.md changes"
+    lessons_updated: false
+    files_affected:
+      - "references/llm-wiki-asset-stratification-policy.json"
+      - "compass/tools/redcap-llm-wiki-asset-stratification-check.py"
+      - "compass/tools/redcap-llm-wiki-asset-stratification-check.sh"
+      - "references/pre-release-structure-refactor-task-tree.json"
+      - "references/redcap-parent-task-ledger.md"
+    archived: false
   - id: "20260506-agent-reading-absorption-review"
     mode: test
     date: "2026-05-06"

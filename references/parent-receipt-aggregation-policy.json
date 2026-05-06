@@ -147,7 +147,7 @@
       "title": "历史资产 delete-last / canonical switch",
       "status": "completed",
       "task_id": "historical-asset-migration-delete-last-canonical-switch",
-      "report_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md",
+      "report_path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md",
       "receipt_glob": "historical-asset-migration-delete-last-canonical-switch-*.json",
       "durable_evidence_status": "repo-owned-machine-evidence",
       "durable_evidence_reason": "P4-1 remains a completed modern child. Its repo-owned delete-last apply manifest records the exact task_id and canonical switch result, so parent aggregation can survive /tmp closeout receipt cleanup without downgrading this child to legacy evidence.",

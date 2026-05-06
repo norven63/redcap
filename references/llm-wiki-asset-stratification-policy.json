@@ -1,0 +1,333 @@
+{
+  "version": 1,
+  "policy_id": "llm-wiki-asset-stratification",
+  "parent_child_id": "P4-2h-2",
+  "status": "assessment-completed-requirement-registered",
+  "purpose": "Classify RedCap's current asset classes before any LLM-wiki-lite implementation, so semantic memory helps AI and humans without replacing control truth, leaking private evidence, or bypassing RedCap Forge.",
+  "llm_wiki_role": {
+    "classification": "private-semantic-memory-cache",
+    "audience": [
+      "AI agents",
+      "human maintainers"
+    ],
+    "authority": "non-authoritative-derived-context",
+    "public_by_default": false,
+    "retrieval_role": "optional-context-enrichment",
+    "must_not_replace": [
+      ".dev-task.md",
+      "promise ledger",
+      "closeout receipts",
+      "commits",
+      "Prism acceptance",
+      "source policies",
+      "raw private evidence"
+    ]
+  },
+  "asset_layers": [
+    {
+      "id": "current-task-truth",
+      "paths": [
+        ".dev-task.md"
+      ],
+      "storage_layer": "control-plane-truth",
+      "llm_wiki_disposition": "forbidden",
+      "reason": "Live task scope, promises, drift sentinels, and completion truth must remain machine-checkable and cannot become synthesized memory."
+    },
+    {
+      "id": "entry-host-surfaces",
+      "paths": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md",
+        "SKILL.md",
+        "README.md",
+        "compass/CONTRIBUTING.core.md",
+        "compass/CONTRIBUTING.md",
+        "compass/soul.md"
+      ],
+      "storage_layer": "host-entry-and-runtime-contract",
+      "llm_wiki_disposition": "metadata-only",
+      "reason": "Entry files and host contracts may be explained by wiki pages, but the executable/importable surfaces remain authoritative."
+    },
+    {
+      "id": "control-policies-references",
+      "paths": [
+        "references/*.json",
+        "references/*.md"
+      ],
+      "storage_layer": "control-policy-authority",
+      "llm_wiki_disposition": "derived-summary-only",
+      "reason": "Policies are control truth. A wiki page may explain a policy family with source anchors, but cannot override policy JSON or markdown."
+    },
+    {
+      "id": "tools-runtime",
+      "paths": [
+        "compass/tools/**",
+        "bin/**",
+        "dispatcher/**",
+        "loom/**"
+      ],
+      "storage_layer": "executable-runtime",
+      "llm_wiki_disposition": "forbidden-except-api-explainer",
+      "reason": "Executable scripts and dispatchers are code. Wiki can document behavior but cannot store or replace runnable logic."
+    },
+    {
+      "id": "active-docs-inbox",
+      "paths": [
+        "compass/docs/task-reports/**",
+        "compass/docs/catalog.json"
+      ],
+      "storage_layer": "current-report-inbox-and-doc-index",
+      "llm_wiki_disposition": "source-anchor-only",
+      "reason": "Current reports are private evidence. Stable lessons may be distilled from them, but raw reports are not wiki content."
+    },
+    {
+      "id": "active-private-knowledge",
+      "paths": [
+        "compass/knowledge/**"
+      ],
+      "storage_layer": "active-private-knowledge",
+      "llm_wiki_disposition": "priority-source-with-file-level-rules",
+      "file_level_rules": [
+        {
+          "path": "compass/knowledge/design-principles.md",
+          "llm_wiki_candidate": true,
+          "reason": "Stable design philosophy is a strong semantic-memory candidate."
+        },
+        {
+          "path": "compass/knowledge/lessons.md",
+          "llm_wiki_candidate": true,
+          "reason": "Repeated failure patterns and reusable fixes are strong semantic-memory candidates after dedupe and source anchoring."
+        },
+        {
+          "path": "compass/knowledge/log.md",
+          "llm_wiki_candidate": false,
+          "reason": "Append-only chronology is source evidence for memory updates, not a wiki page itself."
+        },
+        {
+          "path": "compass/knowledge/host-reliability.md",
+          "llm_wiki_candidate": "guarded",
+          "reason": "Host behavior changes over time; wiki entries derived from it must expire quickly."
+        },
+        {
+          "path": "compass/knowledge/long-task-context-defense.md",
+          "llm_wiki_candidate": "guarded",
+          "reason": "Useful as conceptual synthesis, but must stay anchored because control mechanisms evolve."
+        }
+      ]
+    },
+    {
+      "id": "private-knowledge-archive",
+      "paths": [
+        "redcap-knowledge/task-reports/**",
+        "redcap-knowledge/research/**",
+        "redcap-knowledge/traces/**"
+      ],
+      "storage_layer": "private-raw-evidence-archive",
+      "llm_wiki_disposition": "source-anchor-only-after-forge-safety",
+      "reason": "Cold archaeology remains private evidence. Wiki synthesis may cite it only through anchors after privacy and dedupe review."
+    },
+    {
+      "id": "prism-formal-reports",
+      "paths": [
+        "prism/reports/*.md",
+        "prism/reports/index.yaml"
+      ],
+      "storage_layer": "formal-review-evidence",
+      "llm_wiki_disposition": "source-anchor-only",
+      "reason": "Formal Prism reports are evidence and verdict records. Wiki may summarize stable conclusions but not replace the report."
+    },
+    {
+      "id": "prism-runtime-runs",
+      "paths": [
+        "prism/runs/**"
+      ],
+      "storage_layer": "local-runtime-evidence",
+      "llm_wiki_disposition": "forbidden-raw-source-only",
+      "reason": "Raw Prism outputs are local evidence with high privacy and token risk; only distilled conclusions may become candidates."
+    },
+    {
+      "id": "evolution-factory",
+      "paths": [
+        "compass/evolution/**"
+      ],
+      "storage_layer": "candidate-pipeline-state",
+      "llm_wiki_disposition": "candidate-source-only",
+      "reason": "Evolution candidates and identity proposals are pipeline state. Wiki can use promoted candidate conclusions, not raw candidate queues."
+    },
+    {
+      "id": "shared-knowledge-template",
+      "paths": [
+        "shared-knowledge/**"
+      ],
+      "storage_layer": "public-arsenal-template",
+      "llm_wiki_disposition": "public-template-not-private-wiki",
+      "reason": "This is the template for public redcap-arsenal entries, not the private LLM-wiki store."
+    },
+    {
+      "id": "external-redcap-arsenal",
+      "paths": [
+        "../redcap-arsenal/users/<user>/*.md"
+      ],
+      "storage_layer": "public-append-only-arsenal",
+      "llm_wiki_disposition": "public-output-after-forge",
+      "reason": "Public entries are produced by RedCap Forge. They may later feed wiki summaries, but private wiki must not write directly to this layer."
+    },
+    {
+      "id": "indexes-and-dictionaries",
+      "paths": [
+        "compass/docs/catalog.json",
+        "references/file-lookup-dictionary.md",
+        "references/file-lookup-dictionary-policy.json",
+        "shared-knowledge/indexes/**"
+      ],
+      "storage_layer": "navigation-index",
+      "llm_wiki_disposition": "forbidden",
+      "reason": "Indexes route reads and prevent token blowups. Wiki must be indexed by them, not replace them."
+    },
+    {
+      "id": "package-surface",
+      "paths": [
+        "package.json",
+        "LICENSE",
+        "NOTICE"
+      ],
+      "storage_layer": "distribution-contract",
+      "llm_wiki_disposition": "metadata-only",
+      "reason": "Package identity and legal surfaces are release contracts; wiki can explain them but not serve as authority."
+    }
+  ],
+  "llm_wiki_candidate_types": [
+    {
+      "id": "stable-concept",
+      "allowed": true,
+      "examples": [
+        "Layer B FSM",
+        "control plane",
+        "semantic memory",
+        "RedCap Forge"
+      ]
+    },
+    {
+      "id": "design-philosophy",
+      "allowed": true,
+      "examples": [
+        "truth-source separation",
+        "progressive disclosure",
+        "copy-first/delete-last migration"
+      ]
+    },
+    {
+      "id": "glossary",
+      "allowed": true,
+      "examples": [
+        "receipt",
+        "pending closure",
+        "Prism acceptance",
+        "source anchor"
+      ]
+    },
+    {
+      "id": "user-preference-derived-summary",
+      "allowed": "guarded",
+      "source_of_truth": "~/.cap/identity.md",
+      "rule": "Wiki may cache derived preference summaries, but identity.md remains the source of truth and identity changes must expire derived wiki entries."
+    },
+    {
+      "id": "repeated-failure-pattern",
+      "allowed": true,
+      "rule": "Must include problem source, solution, final effect, and source anchors."
+    },
+    {
+      "id": "decision-framework",
+      "allowed": true,
+      "rule": "Must cite original policy/report anchors and mark whether it is advisory or mandatory."
+    },
+    {
+      "id": "task-specific-state",
+      "allowed": false,
+      "reason": "Current task state belongs to .dev-task.md and closeout runtime."
+    },
+    {
+      "id": "raw-private-transcript",
+      "allowed": false,
+      "reason": "Raw private evidence must not be copied into wiki."
+    },
+    {
+      "id": "executable-code",
+      "allowed": false,
+      "reason": "Code belongs to runtime files; wiki may explain behavior only."
+    }
+  ],
+  "source_anchor_contract": {
+    "required": true,
+    "minimum_fields": [
+      "source_path",
+      "source_kind",
+      "commit_sha_or_digest",
+      "last_reviewed_at",
+      "privacy_classification"
+    ],
+    "raw_excerpt_rule": "Do not inline raw private passages into wiki entries; cite source anchors and paraphrase safely.",
+    "staleness_rule": "A wiki entry is stale when any required source anchor no longer resolves, its commit/digest no longer matches, or its source policy has changed since last_reviewed_at."
+  },
+  "privacy_and_publication": {
+    "default_wiki_visibility": "private",
+    "public_export": "forbidden-without-forge-promotion",
+    "forge_required_for": [
+      "public redcap-arsenal entries",
+      "team-shared wiki pages",
+      "skill candidates derived from private reports"
+    ],
+    "must_not_publicly_export": [
+      ".dev-task.md",
+      "raw task reports",
+      "redcap-knowledge raw archives",
+      "prism/runs raw outputs",
+      "identity files",
+      "secrets",
+      "runtime evidence"
+    ]
+  },
+  "retrieval_boundary": {
+    "current_default": "catalog-rg-metadata",
+    "llm_wiki_position": "after-index-before-raw-body-context-helper",
+    "forbid_full_corpus_load": true,
+    "rag_or_graphrag": "deferred-to-retrieval-escalation-policy",
+    "must_not_claim": "LLM-wiki is not a replacement for source-path-preserving retrieval."
+  },
+  "registered_followup_requirement": {
+    "id": "P4-2h-3",
+    "title": "LLM-wiki-lite semantic memory lifecycle implementation",
+    "status": "planned",
+    "priority": "P1-before-broad-marketing",
+    "depends_on": [
+      "P4-2h-1",
+      "P4-2h-2"
+    ],
+    "release_blocker": false,
+    "reason": "After asset stratification, RedCap can implement a private, source-anchored, non-authoritative semantic memory layer without enabling public writeback, RAG, GraphRAG, or raw private export.",
+    "minimum_scope": [
+      "schema for private LLM-wiki entries",
+      "source-anchor and staleness checker",
+      "candidate allowlist/denylist from this policy",
+      "Forge-gated promotion boundary",
+      "diagnose/spec/acceptance integration"
+    ],
+    "out_of_scope": [
+      "public wiki publication",
+      "automatic background generator",
+      "RAG/GraphRAG/vector store",
+      "rewriting existing control policies as wiki pages"
+    ]
+  },
+  "must_not_claim": [
+    "Do not claim P4-2h-2 implements a complete LLM-wiki system.",
+    "Do not claim LLM-wiki is a source of truth.",
+    "Do not claim raw private reports, Prism runs, identity, or runtime evidence are safe wiki content.",
+    "Do not claim LLM-wiki replaces catalog + rg + metadata retrieval.",
+    "Do not claim public redcap-arsenal entries can be written without RedCap Forge.",
+    "Do not claim RAG or GraphRAG is enabled by this policy."
+  ]
+}
