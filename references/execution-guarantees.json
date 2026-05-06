@@ -1023,10 +1023,38 @@
         "references/redcap-forge-policy.json"
       ],
       "status": "validator",
-      "automation": "redcap-llm-wiki-asset-stratification-check validates the P4-2h-2 asset classification, LLM-wiki non-authoritative private role, source-anchor and staleness contract, privacy/publication boundary, P4-2h-3 planned requirement, and RAG/GraphRAG deferral.",
+      "automation": "redcap-llm-wiki-asset-stratification-check validates the P4-2h-2 asset classification, LLM-wiki non-authoritative private role, source-anchor and staleness contract, privacy/publication boundary, P4-2h-3 requirement/evidence status, and RAG/GraphRAG deferral.",
       "guarantee_paths": [
         "compass/tools/redcap-llm-wiki-asset-stratification-check.sh",
         "compass/tools/redcap-llm-wiki-asset-stratification-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "references/file-lookup-dictionary.md"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "llm-wiki-lite-lifecycle",
+      "category": "lessons-knowledge",
+      "priority": "P1",
+      "rule": "LLM-wiki-lite entries must remain private, non-authoritative, source-anchored, digest-staleness-checkable, candidate-type-limited, and unable to write public arsenal/shared wiki content without RedCap Forge.",
+      "source_paths": [
+        "references/llm-wiki-lite-policy.json",
+        "references/llm-wiki-lite-entry.schema.json",
+        "compass/knowledge/llm-wiki/index.json",
+        "compass/knowledge/llm-wiki/README.md",
+        "references/llm-wiki-asset-stratification-policy.json",
+        "references/redcap-forge-policy.json",
+        "references/retrieval-escalation-policy.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-llm-wiki-lite-check validates the minimum private semantic-memory lifecycle: policy/schema surfaces, entry index coverage, source digest freshness, inherited candidate allowlist/denylist, secret/path leakage, Forge public promotion boundary, and RAG/GraphRAG disabled state.",
+      "guarantee_paths": [
+        "compass/tools/redcap-llm-wiki-lite-check.sh",
+        "compass/tools/redcap-llm-wiki-lite-check.py",
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-spec-check.sh",
         "compass/tools/redcap-multi-session-acceptance.sh",

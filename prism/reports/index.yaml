@@ -1,4 +1,50 @@
 reports:
+  - id: "20260506-llm-wiki-lite-lifecycle-review"
+    mode: test
+    date: "2026-05-06"
+    topic: "LLM-wiki-lite private semantic memory lifecycle implementation"
+    agents: ["kimi", "claude-code"]
+    roles: ["challenger", "reviewer"]
+    verdict: "pass-with-notes"
+    consensus_actions:
+      - "Keep LLM-wiki-lite private and non-authoritative"
+      - "Validate source anchors through sha256 digest staleness checks"
+      - "Inherit candidate allow/deny from the asset stratification policy"
+      - "Keep public promotion behind RedCap Forge and keep RAG/GraphRAG disabled"
+      - "Wire the new gate into spec-check, diagnose, acceptance, execution guarantees and file lookup dictionary"
+    open_questions:
+      - "Future production entries should use multiple anchors where concepts depend on multiple sources"
+      - "A future semantic-memory guarantee category may improve taxonomy clarity"
+    lessons_updated: false
+    files_affected:
+      - "references/llm-wiki-lite-policy.json"
+      - "references/llm-wiki-lite-entry.schema.json"
+      - "compass/knowledge/llm-wiki/index.json"
+      - "compass/tools/redcap-llm-wiki-lite-check.py"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+    archived: false
+  - id: "20260506-next-task-priority-review"
+    mode: test
+    date: "2026-05-06"
+    topic: "Next task priority after LLM-wiki asset stratification"
+    agents: ["kimi", "claude-code"]
+    roles: ["challenger", "reviewer"]
+    verdict: "pass"
+    consensus_actions:
+      - "Proceed with P4-2h-3 as the next safe parent-task slice"
+      - "Do not start npm public release or public distillation from this routing decision"
+      - "Keep the scope limited to private schema, source anchors, staleness checking, inherited allow/deny and Forge boundary"
+    open_questions:
+      - "Public arsenal population remains deferred"
+      - "Formal npm/public release remains a separate blocked release task"
+    lessons_updated: false
+    files_affected:
+      - ".dev-task.md"
+      - "references/pre-release-structure-refactor-task-tree.json"
+      - "references/redcap-parent-task-ledger.md"
+    archived: false
   - id: "20260506-llm-wiki-asset-stratification-review"
     mode: redteam
     date: "2026-05-06"

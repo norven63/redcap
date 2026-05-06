@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 379785,
-    "lines": 7348,
-    "chars": 232836,
+    "size_bytes": 380288,
+    "lines": 7357,
+    "chars": 233445,
     "rough_token_pressure": {
-      "low": 58209,
-      "high": 116418
+      "low": 58361,
+      "high": 116722
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 186110,
-        "lines": 2765,
-        "chars": 116363,
+        "size_bytes": 186613,
+        "lines": 2774,
+        "chars": 116972,
         "rough_token_pressure": {
-          "low": 29090,
-          "high": 58181
+          "low": 29243,
+          "high": 58486
         }
       }
     },
@@ -483,19 +483,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-05-redcap-public-arsenal-claim-boundary.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-2e public redcap-arsenal 内容策略与 claim 边界",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 15215,
-      "lines": 243,
-      "chars": 9351,
-      "summary": "当前已完成：RedCap 已把公共 `redcap-arsenal` 的 template-only 状态和宣传边界变成机器可检查规则。 / 详情：本轮解决的是“公共库已经初始化，但不能被误说成已有实质知识库”的问题。现在 `redcap-arsenal` 只能被描述为模板、schema、索引目录和用户命名空间已初始化；不能宣传为已迁移历史知识、已填充公共知识库或成熟 skill arsenal。未来只有经过 RedCap Forge 的脱敏、去重、append-only 条目写入和索引刷新后，才允许进入 populated claim 评估。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-2d public package identity/license/surface 准备",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：AI Era agent-reading 吸收与长期记忆对齐",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16711,
       "lines": 237,
       "chars": 9993,
       "summary": "当前已完成：RedCap 已把 AI Era 导读资料中适合当前阶段的工程纪律和长期记忆设计，吸收成可机器检查的契约。 / 详情：本轮解决的是“看到业内长期记忆 / LLM Wiki 思路后，RedCap 应该怎么吸收，而不是盲目照搬”的问题。最终做法是：保留 RedCap 现有 Forge、安全边界和检索阈值，只吸收显式假设、简单优先、外科式修改、可验证循环，以及 Raw/Wiki/Schema、Ingest/Query/Lint 这些可对齐的设计。现在 RedCap 有了 append-only 知识时间线和专门检查器，可以阻断“直接公共写入”“默认启用 RAG”“冒充完整 Wiki”等过度声明。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把 AI Era 导读资料中适合当前阶段的工程纪律和长期记忆设计，吸收成可机器检查的契约。",
-          "详情：本轮解决的是“看到业内长期记忆 / LLM Wiki 思路后，RedCap 应该怎么吸收，而不是盲目照搬”的问题。最终做法是：保留 RedCap 现有 Forge、安全边界和检索阈值，只吸收显式假设、简单优先、外科式修改、可验证循环，以及 Raw/Wiki/Schema、Ingest/Query/Lint 这些可对齐的设计。现在 RedCap 有了 append-only 知识时间线和专门检查器，可以阻断“直接公共写入”“默认启用 RAG”“冒充完整 Wiki”等过度声明。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2h-0 只建立了历史资产进入公共蒸馏前的 dry-run 预检强门。本轮接着把外部行业资料吸收到长期记忆和工程纪律层，但仍不进入真实公共蒸馏、不写公共 arsenal。"
-        ],
-        "next_step": [
-          "下一步计划做的是：本轮吸收契约完成后，主线仍回到 P4-2 的发布前整改与 P4-2h 的后续真实公共蒸馏；是否建设完整 LLM Wiki、独立 Schema 层、RAG/GraphRAG 或学习教练能力，都必须另开架构任务。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h 真实公共蒸馏候选 → P4-2 正式 release 任务。",
-          "当前所在位置：P4-2h-1 已实现、已通过定向验收与 closeout runtime 收口；父任务仍回到 P4-2/P4-2h 后续边界。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-06-llm-wiki-asset-stratification.md",
@@ -576,6 +547,35 @@
         "position": [
           "整体计划脉络图是：P4-2h-0 公共蒸馏预检 → P4-2h-1 行业资料吸收 → P4-2h-2 LLM-wiki 资产分层评估 → P4-2h-3 LLM-wiki-lite 生命周期实现 → P4-2h 真实公共蒸馏与 P4-2 release 主线。",
           "当前所在位置：P4-2h-2 已完成资产评估、棱镜评审、主任务线登记、机器检查和 closeout runtime receipt；父任务线下一步回到 P4-2h-3 或 P4-2 其他发布前子任务。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-06-llm-wiki-lite-lifecycle.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：LLM-wiki-lite 语义记忆生命周期实现",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 15718,
+      "lines": 252,
+      "chars": 9960,
+      "summary": "当前已完成：RedCap 已有一个最小可用的私有 LLM-wiki-lite 生命周期，不再只是“以后可以做”的规划。 / 详情：本轮把 LLM-wiki-lite 固定为私有、非权威、必须带来源锚点的语义记忆层。每条 entry 都要能回到原始来源，并用 `sha256` 摘要判断是否过期；如果来源变了、来源不可读、候选类型越界、想直接写公共库或启用 RAG/GraphRAG，检查器会 fail closed。这样它可以帮助理解长期概念，但不会抢走 `.dev-task.md`、policy、receipt、Prism acceptance 等控制面真相源的位置。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已有一个最小可用的私有 LLM-wiki-lite 生命周期，不再只是“以后可以做”的规划。",
+          "详情：本轮把 LLM-wiki-lite 固定为私有、非权威、必须带来源锚点的语义记忆层。每条 entry 都要能回到原始来源，并用 `sha256` 摘要判断是否过期；如果来源变了、来源不可读、候选类型越界、想直接写公共库或启用 RAG/GraphRAG，检查器会 fail closed。这样它可以帮助理解长期概念，但不会抢走 `.dev-task.md`、policy、receipt、Prism acceptance 等控制面真相源的位置。"
+        ],
+        "previous_step": [
+          "上一步完成的是：`P4-2h-2` 完成了“哪些资产适合进入 LLM-wiki，哪些绝对不能进入”的分层评估，并登记了 `P4-2h-3`。"
+        ],
+        "next_step": [
+          "下一步计划做的是：本轮收口后无同任务内下一刀；父任务线仍保持 `P4-2h` 公共蒸馏 deferred、`P4-2` 正式公开发布 blocked。"
+        ],
+        "position": [
+          "整体计划脉络图是：外部资料吸收 → 资产分层 → 私有语义记忆最小生命周期 → 未来 RedCap Forge 公共蒸馏或正式 release 决策。",
+          "当前所在位置：`P4-2h-3` 已实现并通过独立 Prism 复审；正在等待 closeout runtime 生成正式 receipt。"
         ]
       }
     },

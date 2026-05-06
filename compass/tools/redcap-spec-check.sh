@@ -584,6 +584,14 @@ if [[ -x "$LLM_WIKI_ASSET_STRATIFICATION_CHECK" ]]; then
     fi
 fi
 
+LLM_WIKI_LITE_CHECK="$REDCAP_ROOT/compass/tools/redcap-llm-wiki-lite-check.sh"
+if [[ -x "$LLM_WIKI_LITE_CHECK" ]]; then
+    if ! bash "$LLM_WIKI_LITE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] LLM-wiki-lite lifecycle check failed" >&2
+        exit 1
+    fi
+fi
+
 RETRIEVAL_ESCALATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh"
 if [[ -x "$RETRIEVAL_ESCALATION_CHECK" ]]; then
     if ! bash "$RETRIEVAL_ESCALATION_CHECK" >/dev/null; then

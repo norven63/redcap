@@ -182,6 +182,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh public-distillation-preflight-check
   bash compass/tools/redcap-multi-session-acceptance.sh agent-reading-absorption-check
   bash compass/tools/redcap-multi-session-acceptance.sh llm-wiki-asset-stratification-check
+  bash compass/tools/redcap-multi-session-acceptance.sh llm-wiki-lite-lifecycle-check
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
@@ -12126,14 +12127,149 @@ import sys
 src, dst = map(pathlib.Path, sys.argv[1:3])
 payload = json.loads(src.read_text(encoding="utf-8"))
 payload["registered_followup_requirement"]["status"] = "completed"
+payload["registered_followup_requirement"].pop("implementation_evidence", None)
 dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
     set +e
     stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-asset-stratification-check.sh" --policy "$bad_policy" 2>&1)"
     status=$?
     set -e
-    [[ "$status" -ne 0 ]] || fail "LLM-wiki asset stratification should reject unimplemented follow-up claims"
-    assert_string_contains "$stale_output" "P4-2h-3 must be planned"
+    [[ "$status" -ne 0 ]] || fail "LLM-wiki asset stratification should reject completed follow-up without evidence"
+    assert_string_contains "$stale_output" "completed P4-2h-3 must declare implementation_evidence"
+}
+
+run_llm_wiki_lite_lifecycle_check_case() {
+    local output fixture entry_root index_file entry_file source_file digest stale_output status
+
+    log "case: llm-wiki-lite-lifecycle-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-lite-check.sh")"
+    assert_string_contains "$output" "LLM_WIKI_LITE_OK"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "LLM-wiki-lite lifecycle check failed"
+
+    fixture="$(mktemp -d "$REDCAP_ROOT/.tmp-llm-wiki-lite.XXXXXX")"
+    TEMP_PROJECTS+=("$fixture")
+    entry_root="$fixture/entries"
+    index_file="$fixture/index.json"
+    entry_file="$entry_root/fixture-boundary.json"
+    source_file="$REDCAP_ROOT/references/llm-wiki-asset-stratification-policy.json"
+    mkdir -p "$entry_root"
+    digest="$(python3 - "$source_file" <<'PY'
+import hashlib
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+print("sha256:" + hashlib.sha256(path.read_bytes()).hexdigest())
+PY
+)"
+
+    python3 - "$REDCAP_ROOT" "$index_file" "$entry_file" "$digest" <<'PY'
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1]).resolve()
+index_file = pathlib.Path(sys.argv[2])
+entry_file = pathlib.Path(sys.argv[3])
+entry_rel = entry_file.resolve().relative_to(root).as_posix()
+digest = sys.argv[4]
+index = {
+    "version": 1,
+    "store_id": "redcap-private-llm-wiki-lite",
+    "visibility": "private",
+    "authority": "non-authoritative-derived-context",
+    "entries_root": entry_file.parent.as_posix(),
+    "entries": [
+        {
+            "id": "fixture-boundary",
+            "path": entry_rel,
+            "status": "active",
+            "candidate_type": "stable-concept"
+        }
+    ]
+}
+entry = {
+    "version": 1,
+    "id": "fixture-boundary",
+    "title": "Fixture boundary",
+    "status": "active",
+    "visibility": "private",
+    "authority": "non-authoritative-derived-context",
+    "candidate_type": "stable-concept",
+    "privacy_classification": "internal",
+    "source_anchors": [
+        {
+            "source_path": "references/llm-wiki-asset-stratification-policy.json",
+            "source_kind": "policy",
+            "commit_sha_or_digest": digest,
+            "last_reviewed_at": "2026-05-06T00:00:00Z",
+            "privacy_classification": "internal"
+        }
+    ],
+    "summary": "Fixture semantic memory entry for acceptance.",
+    "body": "This fixture proves private, non-authoritative, source-anchored LLM-wiki-lite entries pass only when their digest and Forge boundary are valid.",
+    "forge_promotion": {
+        "status": "not-promoted",
+        "requires_forge": True,
+        "public_write_allowed": False
+    }
+}
+index_file.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+entry_file.write_text(json.dumps(entry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-lite-check.sh" --index "$index_file" --entry-root "$entry_root")"
+    assert_string_contains "$output" "LLM_WIKI_LITE_OK"
+
+    python3 - "$entry_file" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+entry = json.loads(path.read_text(encoding="utf-8"))
+entry["source_anchors"][0]["commit_sha_or_digest"] = "sha256:deadbeef"
+path.write_text(json.dumps(entry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-lite-check.sh" --index "$index_file" --entry-root "$entry_root" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "LLM-wiki-lite checker should reject stale digest"
+    assert_string_contains "$stale_output" "source anchor stale digest"
+
+    python3 - "$entry_file" "$digest" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+digest = sys.argv[2]
+entry = json.loads(path.read_text(encoding="utf-8"))
+entry["source_anchors"][0]["commit_sha_or_digest"] = digest
+entry["authority"] = "source-of-truth"
+path.write_text(json.dumps(entry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-lite-check.sh" --index "$index_file" --entry-root "$entry_root" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "LLM-wiki-lite checker should reject authoritative entries"
+    assert_string_contains "$stale_output" "authority must be non-authoritative-derived-context"
+
+    python3 - "$entry_file" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+entry = json.loads(path.read_text(encoding="utf-8"))
+entry["authority"] = "non-authoritative-derived-context"
+entry["forge_promotion"]["public_write_allowed"] = True
+path.write_text(json.dumps(entry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-llm-wiki-lite-check.sh" --index "$index_file" --entry-root "$entry_root" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "LLM-wiki-lite checker should reject direct public writes"
+    assert_string_contains "$stale_output" "public_write_allowed must be false"
 }
 
 run_package_publish_safety_check_case() {
@@ -12735,7 +12871,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -12988,6 +13124,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-llm-wiki-lite-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "llm-wiki-lite" ]]; then
+    echo "fixture LLM-wiki-lite lifecycle failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
             "$repo/compass/tools/redcap-docs-catalog.sh" \
             "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
@@ -13015,6 +13160,7 @@ EOF
             "$repo/compass/tools/redcap-public-distillation-preflight.sh" \
             "$repo/compass/tools/redcap-agent-reading-absorption-check.sh" \
             "$repo/compass/tools/redcap-llm-wiki-asset-stratification-check.sh" \
+            "$repo/compass/tools/redcap-llm-wiki-lite-check.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
 
         case "$failing_gate" in
@@ -13046,6 +13192,7 @@ EOF
             public-distillation-preflight) expected_message="public distillation preflight check failed" ;;
             agent-reading-absorption) expected_message="agent reading absorption check failed" ;;
             llm-wiki-asset-stratification) expected_message="LLM-wiki asset stratification check failed" ;;
+            llm-wiki-lite) expected_message="LLM-wiki-lite lifecycle check failed" ;;
         esac
 
         set +e
@@ -13929,6 +14076,7 @@ run_all_cases() {
     run_public_distillation_preflight_check_case
     run_agent_reading_absorption_check_case
     run_llm_wiki_asset_stratification_check_case
+    run_llm_wiki_lite_lifecycle_check_case
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
     run_public_package_surface_check_case
@@ -14434,6 +14582,9 @@ case "$COMMAND" in
         ;;
     llm-wiki-asset-stratification-check)
         run_llm_wiki_asset_stratification_check_case
+        ;;
+    llm-wiki-lite-lifecycle-check)
+        run_llm_wiki_lite_lifecycle_check_case
         ;;
     package-publish-safety-check)
         run_package_publish_safety_check_case

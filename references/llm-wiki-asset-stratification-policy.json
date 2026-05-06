@@ -300,7 +300,7 @@
   "registered_followup_requirement": {
     "id": "P4-2h-3",
     "title": "LLM-wiki-lite semantic memory lifecycle implementation",
-    "status": "planned",
+    "status": "completed",
     "priority": "P1-before-broad-marketing",
     "depends_on": [
       "P4-2h-1",
@@ -320,6 +320,12 @@
       "automatic background generator",
       "RAG/GraphRAG/vector store",
       "rewriting existing control policies as wiki pages"
+    ],
+    "implementation_evidence": [
+      "references/llm-wiki-lite-policy.json",
+      "references/llm-wiki-lite-entry.schema.json",
+      "compass/knowledge/llm-wiki/index.json",
+      "compass/tools/redcap-llm-wiki-lite-check.sh"
     ]
   },
   "must_not_claim": [

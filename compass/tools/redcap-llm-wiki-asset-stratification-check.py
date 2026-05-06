@@ -153,8 +153,18 @@ def validate_policy(policy: dict[str, Any]) -> None:
         fail("registered_followup_requirement must be an object")
     if followup.get("id") != "P4-2h-3":
         fail("follow-up requirement must be P4-2h-3")
-    if followup.get("status") != "planned":
-        fail("P4-2h-3 must be planned, not claimed implemented")
+    followup_status = followup.get("status")
+    if followup_status not in {"planned", "completed"}:
+        fail("P4-2h-3 status must be planned or completed")
+    if followup_status == "completed":
+        evidence = followup.get("implementation_evidence")
+        if not isinstance(evidence, list) or not evidence:
+            fail("completed P4-2h-3 must declare implementation_evidence")
+        for path in evidence:
+            if not isinstance(path, str) or not path.strip():
+                fail("completed P4-2h-3 implementation_evidence entries must be strings")
+            if not (ROOT / path).exists():
+                fail(f"completed P4-2h-3 implementation_evidence missing: {path}")
     if followup.get("release_blocker") is not False:
         fail("P4-2h-3 must not be a public release blocker by default")
 
@@ -175,8 +185,9 @@ def validate_task_tree(policy: dict[str, Any]) -> None:
             fail(f"task tree missing {required}")
     if by_id["P4-2h-2"].get("status") != "completed":
         fail("P4-2h-2 must be completed after this assessment")
-    if by_id["P4-2h-3"].get("status") != "planned":
-        fail("P4-2h-3 must remain planned until implementation")
+    expected_status = policy["registered_followup_requirement"].get("status")
+    if by_id["P4-2h-3"].get("status") != expected_status:
+        fail(f"P4-2h-3 task tree status must match policy follow-up status: {expected_status}")
     if by_id["P4-2h-3"].get("release_blocker") is not False:
         fail("P4-2h-3 must not be a release blocker by default")
     if "P4-2h-2" not in by_id["P4-2h-3"].get("depends_on", []):

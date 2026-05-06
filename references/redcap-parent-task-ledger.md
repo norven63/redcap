@@ -12,7 +12,7 @@
 
 RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 skill-root 承载形态逐步演进为可安装、可复活、可调度、可审计的 Agent runtime / CLI / 多层系统。
 
-当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略、P4-1 的历史资产 copy-first、delete-last 与 private canonical switch、P4-3 的 clean workspace / cross-machine-style 安装 E2E、P4-2a 发布前产品架构审判、P4-2f 信息架构与运行时产物治理、P4-2g npm 白名单预检与结构重构任务树重锚定、P4-2b runtime/project/user 边界与 CLI workspace context、P4-2c CLI doctor/debug/trace/error/help 产品面加固、P4-2d public package identity/license/surface 准备、P4-2e public redcap-arsenal 内容策略与 claim 边界、P4-2h-0 历史资产公共蒸馏 preflight、P4-2h-1 AI Era agent-reading 资料吸收，以及 P4-2h-2 LLM-wiki 资产分层评估与需求登记。P4-2h-0 只完成 RedCap Forge dry-run 分类强门，不公开写入、不删除、不发布；P4-2h-1 只把 `ai-engineer.md` 与 `llm-wiki.md` 的可用设计吸收到 RedCap 的长期记忆和工程纪律契约，不等于启用完整 LLM Wiki、RAG/GraphRAG 或公共库直写；P4-2h-2 只完成 RedCap 资产是否适合进入 LLM-wiki-lite 语义记忆层的分层判断，并登记 P4-2h-3 实现需求。P4-2 正式公开发布仍未完成，不能被简化为“只差 npm publish”；它仍被 formal release task 的人工许可证/发布边界和剩余产品口径阻塞，并必须按 P4-2g 重新锚定后的任务树继续推进 P4-2h 与正式 release。
+当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略、P4-1 的历史资产 copy-first、delete-last 与 private canonical switch、P4-3 的 clean workspace / cross-machine-style 安装 E2E、P4-2a 发布前产品架构审判、P4-2f 信息架构与运行时产物治理、P4-2g npm 白名单预检与结构重构任务树重锚定、P4-2b runtime/project/user 边界与 CLI workspace context、P4-2c CLI doctor/debug/trace/error/help 产品面加固、P4-2d public package identity/license/surface 准备、P4-2e public redcap-arsenal 内容策略与 claim 边界、P4-2h-0 历史资产公共蒸馏 preflight、P4-2h-1 AI Era agent-reading 资料吸收、P4-2h-2 LLM-wiki 资产分层评估与需求登记，以及 P4-2h-3 LLM-wiki-lite 最小私有语义记忆生命周期。P4-2h-0 只完成 RedCap Forge dry-run 分类强门，不公开写入、不删除、不发布；P4-2h-1 只把 `ai-engineer.md` 与 `llm-wiki.md` 的可用设计吸收到 RedCap 的长期记忆和工程纪律契约，不等于启用完整 LLM Wiki、RAG/GraphRAG 或公共库直写；P4-2h-2 只完成 RedCap 资产是否适合进入 LLM-wiki-lite 语义记忆层的分层判断；P4-2h-3 只实现私有、非权威、带 source anchor、可过期检测、Forge 晋升受控的最小语义记忆层，不等于完整 LLM-wiki 产品、后台自动蒸馏、RAG/GraphRAG、向量库或公共写回。P4-2 正式公开发布仍未完成，不能被简化为“只差 npm publish”；它仍被 formal release task 的人工许可证/发布边界和剩余产品口径阻塞，并必须按 P4-2g 重新锚定后的任务树继续推进 P4-2h 与正式 release。
 
 P4 numbering is a dependency/status map, not a promise of numeric execution order.
 
@@ -63,7 +63,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P4-2h-0 | Prism route review | 历史资产公共蒸馏 preflight | completed | P1-before-broad-marketing | 已建立 RedCap Forge dry-run 预检强门，只分类来源和风险，不导出、不删除、不发布 | 不等于 P4-2h 真实公共蒸馏；不等于 redcap-arsenal 已有实质条目 |
 | P4-2h-1 | user industry-pattern follow-up | AI Era agent-reading 吸收与长期记忆对齐 | completed | P1-before-broad-marketing | 已吸收 `ai-engineer.md` 的工程纪律和 `llm-wiki.md` 的 Raw/Wiki/Schema、Ingest/Query/Lint 思路，并通过策略、知识日志和机器检查接入 RedCap | 不等于完整 LLM Wiki；不等于启用 RAG/GraphRAG；不等于把 query 答案或私有材料直接写入公共 arsenal |
 | P4-2h-2 | user long-term-memory follow-up | LLM-wiki 资产分层评估与需求登记 | completed | P1-before-broad-marketing | 已把 RedCap 主要资产分成控制面、原始证据、私有知识、公共库、索引、可执行流程、包面和未来 LLM-wiki-lite 候选层，并登记 P4-2h-3 | 不等于 LLM-wiki-lite 已实现；不等于公共写入、RAG/GraphRAG 或后台自动生成 |
-| P4-2h-3 | P4-2h-2 registered follow-up | LLM-wiki-lite 语义记忆生命周期实现 | planned | P1-before-broad-marketing | 后续应实现私有、非权威、带 source anchor、可过期检测的语义记忆层，并把 Forge 公共晋升边界接入检查 | 不得绕过控制面、原始证据、RedCap Forge 或当前 catalog + rg + metadata 检索路线 |
+| P4-2h-3 | P4-2h-2 registered follow-up | LLM-wiki-lite 语义记忆生命周期实现 | completed | P1-before-broad-marketing | 已实现私有、非权威、带 source anchor、可过期检测的最小语义记忆层，并把 Forge 公共晋升边界接入检查 | 不等于完整 LLM-wiki 产品、公共知识库、RAG/GraphRAG、向量库、后台自动生成或 release-ready |
 | P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime: 本机 `cli_a9579f5b12219bb5` profile 已验证可发 |
 | P2-5 | user trust gap | Layer B 中插需求重排决策可见化 | completed | P2 | 已将“为什么中插需求这样排”升级为 `.dev-task.md` 必填摘要和 change-intake checker 强门 | report: `2026-04-27-layerb-change-intake-replan-visibility-gate.md` |
 
@@ -94,7 +94,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 23. `P4-2h-0`：历史资产公共蒸馏 preflight。（已完成，只做 dry-run 强门，不公开导出）
 24. `P4-2h-1`：AI Era agent-reading 吸收与长期记忆对齐。（已完成契约吸收；不启用完整 LLM Wiki/RAG/公共直写）
 25. `P4-2h-2`：LLM-wiki 资产分层评估与需求登记。（已完成评估与需求登记；不启用 LLM-wiki-lite）
-26. `P4-2h-3`：LLM-wiki-lite 语义记忆生命周期实现。（planned，建议在真实公共蒸馏前完成 source anchor / 过期检测 / 私有语义记忆最小闭环）
+26. `P4-2h-3`：LLM-wiki-lite 语义记忆生命周期实现。（已完成最小私有语义记忆生命周期；不启用完整 LLM Wiki/RAG/公共写回）
 27. `P4-2h`：历史资产公共蒸馏与 RedCap Forge export triage。（deferred，独立于 npm 发布关键路径）
 28. `P4-2`：正式 runtime / CLI package public release。（blocked，需先完成 P4-2b/c/d，并确认发布目标与凭证决策）
 29. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
@@ -115,4 +115,4 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 - 不可声明 P3-1 已经启用 RAG/GraphRAG；P3-1 只完成检索升级阈值策略和机器强门。
 - 不可声明 P4-2h-1 已经实现完整 LLM Wiki、自主公共库直写、RAG/GraphRAG 或 ai-professor 生产模式；它只完成外部导读资料的受控吸收和长期记忆契约化。
 - 不可声明 P4-2h-2 已经实现 LLM-wiki-lite；它只完成全局资产分层评估、棱镜审查和 P4-2h-3 需求登记。
-- 不可声明 P4-2h-3 已经完成；它当前只是 planned follow-up，必须另行实现 schema、source anchor、过期检测和控制面接线。
+- 不可声明 P4-2h-3 是完整 LLM-wiki 产品、公共知识库、RAG/GraphRAG、向量库、后台自动生成或 release-ready；它只完成最小私有语义记忆生命周期和过期检测闭环。

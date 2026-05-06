@@ -127,10 +127,18 @@ def is_active_task_report_file(root: Path, item: Path) -> bool:
     return item.resolve(strict=False) == active
 
 
+def is_non_legacy_active_store_file(root: Path, item: Path) -> bool:
+    try:
+        rel = item.resolve(strict=False).relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return False
+    return rel.startswith("compass/knowledge/llm-wiki/")
+
+
 def iter_files(root: Path, source: str) -> list[Path]:
     path = root / source
     if path.is_file():
-        return [] if is_acceptance_tmp_file(root, path) or is_active_task_report_file(root, path) else [path]
+        return [] if is_acceptance_tmp_file(root, path) or is_active_task_report_file(root, path) or is_non_legacy_active_store_file(root, path) else [path]
     if not path.exists():
         fail(f"source path missing: {source}")
     return sorted(
@@ -140,6 +148,7 @@ def iter_files(root: Path, source: str) -> list[Path]:
             if item.is_file()
             and not is_acceptance_tmp_file(root, item)
             and not is_active_task_report_file(root, item)
+            and not is_non_legacy_active_store_file(root, item)
         ),
         key=lambda item: item.relative_to(root).as_posix(),
     )

@@ -109,14 +109,22 @@ def is_active_task_report_file(root: Path, item: Path) -> bool:
     return item.resolve(strict=False) == active
 
 
+def is_non_legacy_active_store_file(root: Path, item: Path) -> bool:
+    try:
+        rel = item.resolve(strict=False).relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return False
+    return rel.startswith("compass/knowledge/llm-wiki/")
+
+
 def count_files(root: Path, rel: str) -> int:
     path = root / rel
     if path.is_file():
-        return 0 if is_acceptance_tmp_file(root, path) or is_active_task_report_file(root, path) else 1
+        return 0 if is_acceptance_tmp_file(root, path) or is_active_task_report_file(root, path) or is_non_legacy_active_store_file(root, path) else 1
     return sum(
         1
         for item in path.rglob("*")
-        if item.is_file() and not is_acceptance_tmp_file(root, item) and not is_active_task_report_file(root, item)
+        if item.is_file() and not is_acceptance_tmp_file(root, item) and not is_active_task_report_file(root, item) and not is_non_legacy_active_store_file(root, item)
     )
 
 
@@ -125,7 +133,7 @@ def count_lines(root: Path, rel: str) -> int:
     files = [path] if path.is_file() else [item for item in path.rglob("*") if item.is_file()]
     total = 0
     for item in files:
-        if is_acceptance_tmp_file(root, item) or is_active_task_report_file(root, item):
+        if is_acceptance_tmp_file(root, item) or is_active_task_report_file(root, item) or is_non_legacy_active_store_file(root, item):
             continue
         try:
             total += len(item.read_text(encoding="utf-8", errors="ignore").splitlines())
