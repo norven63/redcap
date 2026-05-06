@@ -192,3 +192,15 @@ closeout 前还会运行 umbrella `spec-check`、`diagnose`、人类输出质量
 |---|---|---|---|---|
 | provider-policy-physical-coverage | provider 配额保护若只写文档，会被 live-health 或 stop-review 自动路径绕过 | provider policy 必须接入实际执行点和 acceptance | Copilot 在 Claude Code/Kimi 可用时被机器压制且不执行 | 后续由 RedCap Forge / lessons 流程判断是否晋升为通用 provider policy lesson |
 | fallback-vs-last-resort-separation | protected fallback 与 last-resort 很容易被同一过滤器误合并 | fallback 先过专属门禁，通过后作为非 last-resort 参与排序 | Copilot 合法降级时保留，Codex 仍最后兜底 | 后续沉淀为 reviewer-order 设计经验候选 |
+
+---
+
+## 八、附录
+
+### 8.1 归档与索引调整
+
+为保持 active task-report inbox 不超过 12 份，本轮将旧报告 `2026-05-04-redcap-pre-release-structure-refactor-task-tree-reanchor.md` 从 `compass/docs/task-reports/` 移入 `redcap-knowledge/task-reports/` 私有冷归档。该动作不删除考古证据，只降低默认上下文暴露面。
+
+### 8.2 Copilot 调用结论
+
+上一轮正式 Prism 没有登记 Copilot。当前任务开始阶段的旧 live-health 探测曾触碰 Copilot 并超时，这正是本轮修复的真实缺口。修复后 live status 抽样显示 Copilot 在 Claude Code/Kimi 可用时为 `policy-suppressed`，不会执行真实 Copilot CLI。

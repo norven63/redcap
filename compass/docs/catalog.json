@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 379569,
-    "lines": 7345,
-    "chars": 233508,
+    "size_bytes": 380257,
+    "lines": 7357,
+    "chars": 233950,
     "rough_token_pressure": {
-      "low": 58377,
-      "high": 116754
+      "low": 58487,
+      "high": 116975
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 185894,
-        "lines": 2762,
-        "chars": 117035,
+        "size_bytes": 186582,
+        "lines": 2774,
+        "chars": 117477,
         "rough_token_pressure": {
-          "low": 29258,
-          "high": 58517
+          "low": 29369,
+          "high": 58738
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11611,
-      "lines": 194,
-      "chars": 7279,
+      "size_bytes": 12299,
+      "lines": 206,
+      "chars": 7721,
       "summary": "当前已完成：Copilot CLI 已从 RedCap 的普通棱镜/评审/健康嗅探资源中移出，改为“受保护兜底”。 / 详情：以后 RedCap 在 Prism、stop-review、live-health、baton/direct-cli 这些自动化路径里，只有在 Claude Code 与 Kimi 都不可用时，才允许探测或调用 Copilot。Claude Code 或 Kimi 任一可用时，Copilot 会被策略压制，且不会执行真实 CLI 命令。",
       "status_basis": "filename_recency_only",
       "summary_points": {
