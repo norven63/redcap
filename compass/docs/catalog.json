@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 385193,
+    "size_bytes": 385189,
     "lines": 7392,
-    "chars": 234850,
+    "chars": 234846,
     "rough_token_pressure": {
-      "low": 58712,
-      "high": 117425
+      "low": 58711,
+      "high": 117423
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 191518,
+        "size_bytes": 191514,
         "lines": 2809,
-        "chars": 118377,
+        "chars": 118373,
         "rough_token_pressure": {
-          "low": 29594,
-          "high": 59188
+          "low": 29593,
+          "high": 59186
         }
       }
     },
@@ -93,7 +93,7 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-07-redcap-public-arsenal-forge-first-promotion.md",
-        "chars": 11306,
+        "chars": 11302,
         "lines": 260,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 18520,
+      "size_bytes": 18516,
       "lines": 260,
-      "chars": 11306,
+      "chars": 11302,
       "summary": "当前已完成：RedCap 公共知识库 `redcap-arsenal` 已从“只有模板”推进到“首批 reviewed-substantive 条目”状态。 / 详情：本轮解决的是公共 Arsenal 不能一直空转的问题，但没有越过安全边界。我们只晋升了 3 条经过蒸馏、去私密化、带来源边界的公共方法论/经验条目，并同步让机器检查承认“现在有首批实质内容”。结果是：未来可以证明公共库不再只是占位，但仍不能把它说成成熟知识库、完整历史迁移或 npm 发布就绪。",
       "status_basis": "filename_recency_only",
       "summary_points": {
