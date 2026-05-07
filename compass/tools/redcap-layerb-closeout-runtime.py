@@ -340,6 +340,34 @@ def pending_state_path(identity: TaskIdentity) -> Path:
     return matches[-1] if matches else exact
 
 
+def pending_state_values(identity: TaskIdentity) -> dict[str, str]:
+    path = pending_state_path(identity)
+    if not path.is_file():
+        return {}
+    values: dict[str, str] = {}
+    for raw_line in read_text(path).splitlines():
+        if ":" not in raw_line:
+            continue
+        key, value = raw_line.split(":", 1)
+        key = key.strip()
+        if key:
+            values[key] = value.strip()
+    return values
+
+
+def pending_baseline_head(identity: TaskIdentity) -> str:
+    values = pending_state_values(identity)
+    for key in ("baseline_head", "audited_head"):
+        value = values.get(key, "").strip()
+        if value:
+            return value
+    return ""
+
+
+def resolve_baseline_head(args: argparse.Namespace, identity: TaskIdentity) -> str:
+    return args.baseline_head or pending_baseline_head(identity) or initial_head(identity) or current_head(identity)
+
+
 def closure_ledger_path(identity: TaskIdentity) -> Path:
     return ledger_dir(identity.repo_root) / f"{identity.identity_key}.log"
 
@@ -730,7 +758,7 @@ def command_complete(args: argparse.Namespace) -> int:
     evolution_candidates = evolution_candidates_strict(identity)
     acceptance = prism_acceptance(identity)
     host = args.host
-    baseline_head = args.baseline_head or initial_head(identity) or current_head(identity)
+    baseline_head = resolve_baseline_head(args, identity)
     current = current_head(identity)
     report_rel = identity.meta.get("task_report", "")
 
@@ -1058,7 +1086,7 @@ def command_audit_open(args: argparse.Namespace) -> int:
     evolution_candidates = evolution_candidates_strict(identity)
     acceptance = prism_acceptance(identity)
     host = args.host
-    baseline_head = args.baseline_head or initial_head(identity) or current_head(identity)
+    baseline_head = resolve_baseline_head(args, identity)
     current = current_head(identity)
     receipt_path = closeout_receipt_path(identity)
     report_rel = identity.meta.get("task_report", "")
