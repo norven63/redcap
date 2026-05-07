@@ -1,4 +1,25 @@
 reports:
+  - id: "20260508-prism-runs-lifecycle-status-surface-hardening"
+    mode: test
+    date: "2026-05-08"
+    topic: "Prism runs lifecycle status surface and cleanup boundary hardening"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Print exact prism-runs lifecycle command paths in current-status"
+      - "Label inventory as read-only and prune-local as dry-run"
+      - "Keep prune-local --apply behind explicit user approval"
+      - "Keep physical prism/runs cleanup out of this task"
+    open_questions:
+      - "The 10 named-local-evidence prune candidates remain physical cleanup candidates only after explicit approval"
+      - "Formal npm/public release remains blocked-external"
+    lessons_updated: false
+    files_affected:
+      - "compass/tools/redcap-current-status.py"
+      - "references/token-structural-governance.json"
+      - "references/redcap-parent-task-ledger.md"
+    archived: false
   - id: "20260507-public-arsenal-forge-first-promotion"
     mode: resource-limited
     date: "2026-05-07"

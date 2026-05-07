@@ -318,7 +318,10 @@ def prism_summary(repo: Path) -> list[str]:
         )
         if prune_candidates:
             lines.append(
-                f"named-local-evidence 超过本地保留阈值 {prune_candidates} 个；可用 prism-runs-lifecycle.sh inventory / prune-local 审查清理"
+                f"named-local-evidence 超过本地保留阈值 {prune_candidates} 个；可先运行 `bash prism/tools/prism-runs-lifecycle.sh inventory`（只读）与 `bash prism/tools/prism-runs-lifecycle.sh prune-local`（dry-run）做审查计划"
+            )
+            lines.append(
+                "物理清理需要显式批准：不得在未确认前运行 `bash prism/tools/prism-runs-lifecycle.sh prune-local --apply`"
             )
         lines.append(
             f"本地 prism/runs 目录含 {active_runs} 个运行夹具/残留；这是运行证据，不等于当前任务已成功使用 Prism"
