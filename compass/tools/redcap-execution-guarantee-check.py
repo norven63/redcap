@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# 用途：控制面保障脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#control-plane-assurance
+
 from __future__ import annotations
 
 import json
@@ -63,6 +66,7 @@ REQUIRED_IDS = {
     "redcap-forge-promotion-boundary",
     "report-led-human-summary-boundary",
     "pre-release-structure-task-tree",
+    "midcourse-architecture-task-tree-review",
     "runtime-workspace-boundary-gate",
     "cli-product-surface-gate",
     "public-package-surface-gate",

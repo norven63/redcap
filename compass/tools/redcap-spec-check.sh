@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
+# 用途：运行时与收尾脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#runtime-and-closeout
+
 # Validate spec registry coverage, lifecycle policy, and changed spec entries.
 
 set -uo pipefail
@@ -677,6 +680,16 @@ if [[ ! -f "$PRE_RELEASE_STRUCTURE_TASK_TREE_CHECK" ]]; then
 fi
 if ! bash "$PRE_RELEASE_STRUCTURE_TASK_TREE_CHECK" >/dev/null; then
     echo "[redcap-spec-check] pre-release structure task tree check failed" >&2
+    exit 1
+fi
+
+MIDCOURSE_ARCHITECTURE_CHECK="$REDCAP_ROOT/compass/tools/redcap-midcourse-architecture-check.sh"
+if [[ ! -f "$MIDCOURSE_ARCHITECTURE_CHECK" ]]; then
+    echo "[redcap-spec-check] midcourse architecture check missing" >&2
+    exit 1
+fi
+if ! bash "$MIDCOURSE_ARCHITECTURE_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] midcourse architecture check failed" >&2
     exit 1
 fi
 

@@ -1,4 +1,31 @@
 reports:
+  - id: "20260507-midcourse-architecture-task-tree-review"
+    mode: resource-limited
+    date: "2026-05-07"
+    topic: "Midcourse architecture and task-tree consistency review"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "resource-limited-pass"
+    consensus_actions:
+      - "Enforce short Chinese purpose headers plus Dictionary backlinks for critical script-like dictionary entries"
+      - "Keep LLM-wiki-lite distinct from full LLM-wiki, RAG, GraphRAG, vector store and background-generation work"
+      - "Use a midcourse architecture review artifact to reconcile completed, inserted, open, deferred and blocked work"
+      - "Avoid runtime cache files as clean-clone evidence for spec-check hard gates"
+    open_questions:
+      - "Kimi timed out after 90 seconds; this run is resource-limited rather than full quorum"
+      - "P4-2 formal public release remains blocked-external"
+      - "P4-2h public distillation remains deferred"
+    lessons_updated: false
+    files_affected:
+      - "references/file-lookup-dictionary-policy.json"
+      - "references/midcourse-architecture-task-tree-review.json"
+      - "references/redcap-parent-task-ledger.md"
+      - "references/pre-release-structure-refactor-task-tree.json"
+      - "compass/tools/redcap-file-lookup-dictionary-check.py"
+      - "compass/tools/redcap-midcourse-architecture-check.py"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+    archived: false
   - id: "20260507-prism-copilot-protected-fallback-review"
     mode: resource-limited
     date: "2026-05-07"

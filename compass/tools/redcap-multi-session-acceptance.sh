@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：运行时与收尾脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#runtime-and-closeout
 
 set -euo pipefail
 
@@ -10000,7 +10002,7 @@ PY
 }
 
 run_file_lookup_dictionary_check_case() {
-    local output policy stale_output status
+    local output policy stale_output status header_root header_policy header_output
 
     log "case: file-lookup-dictionary-check"
 
@@ -10023,6 +10025,61 @@ EOF
     set -e
     [[ "$status" -ne 0 ]] || fail "dictionary checker should reject missing required entries"
     assert_string_contains "$stale_output" "required files missing from dictionary"
+
+    header_root="$ACCEPT_ROOT/file-lookup-header-root"
+    mkdir -p "$header_root/references" "$header_root/compass/tools"
+    cat >"$header_root/references/file-lookup-dictionary.md" <<'EOF'
+# Dictionary Fixture
+
+[`compass/tools/missing-header.sh`](../compass/tools/missing-header.sh)
+[`compass/tools/good-header.py`](../compass/tools/good-header.py)
+[`compass/tools/good-cli`](../compass/tools/good-cli)
+EOF
+    cat >"$header_root/compass/tools/missing-header.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+EOF
+    cat >"$header_root/compass/tools/good-header.py" <<'EOF'
+#!/usr/bin/env python3
+# 用途：验收夹具；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#product-shape-and-retrieval
+
+print("ok")
+EOF
+    cat >"$header_root/compass/tools/good-cli" <<'EOF'
+#!/usr/bin/env bash
+# 用途：验收夹具；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#product-shape-and-retrieval
+
+echo ok
+EOF
+    header_policy="$header_root/references/file-lookup-dictionary-policy.json"
+    cat >"$header_policy" <<'EOF'
+{
+  "version": 1,
+  "dictionary_path": "references/file-lookup-dictionary.md",
+  "script_header_policy": {
+    "enabled": true,
+    "applies_to_required_paths": true,
+    "path_prefixes": ["compass/tools/"],
+    "extensions": [".sh"],
+    "max_scan_lines": 20,
+    "required_purpose_markers": ["用途：", "作用："],
+    "required_dictionary_marker": "Dictionary:"
+  },
+  "required_paths": [
+    {"path": "compass/tools/missing-header.sh", "meaning": "acceptance fixture"},
+    {"path": "compass/tools/good-header.py", "meaning": "acceptance fixture"},
+    {"path": "compass/tools/good-cli", "meaning": "acceptance fixture"}
+  ]
+}
+EOF
+    set +e
+    header_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-file-lookup-dictionary-check.py" "$header_root" --policy "$header_policy" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "dictionary checker should reject script headers without short purpose/backlink"
+    assert_string_contains "$header_output" "script headers missing required short purpose/backlink"
 }
 
 run_r0_r22_registry_check_case() {
@@ -13001,7 +13058,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -13182,6 +13239,15 @@ fi
 exit 0
 EOF
 
+        cat >"$repo/compass/tools/redcap-midcourse-architecture-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "midcourse-architecture" ]]; then
+    echo "fixture midcourse architecture failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
         cat >"$repo/compass/tools/redcap-runtime-workspace-boundary-check.sh" <<EOF
 #!/usr/bin/env bash
 if [[ "$failing_gate" == "runtime-workspace-boundary" ]]; then
@@ -13282,6 +13348,7 @@ EOF
             "$repo/compass/tools/redcap-public-package-surface.sh" \
             "$repo/compass/tools/redcap-pre-release-product-architecture-check.sh" \
             "$repo/compass/tools/redcap-pre-release-structure-task-tree-check.sh" \
+            "$repo/compass/tools/redcap-midcourse-architecture-check.sh" \
             "$repo/compass/tools/redcap-runtime-workspace-boundary-check.sh" \
             "$repo/compass/tools/redcap-cli-product-surface-check.sh" \
             "$repo/compass/tools/redcap-information-architecture-check.sh" \
@@ -13314,6 +13381,7 @@ EOF
             public-package-surface) expected_message="public package surface check failed" ;;
             pre-release-product-architecture) expected_message="pre-release product architecture check failed" ;;
             pre-release-structure-task-tree) expected_message="pre-release structure task tree check failed" ;;
+            midcourse-architecture) expected_message="midcourse architecture check failed" ;;
             runtime-workspace-boundary) expected_message="runtime workspace boundary check failed" ;;
             cli-product-surface) expected_message="CLI product surface check failed" ;;
             information-architecture) expected_message="information architecture check failed" ;;
@@ -13393,6 +13461,7 @@ for rel in [
     "compass/tools/redcap-public-package-surface.sh",
     "compass/tools/redcap-pre-release-product-architecture-check.sh",
     "compass/tools/redcap-pre-release-structure-task-tree-check.sh",
+    "compass/tools/redcap-midcourse-architecture-check.sh",
     "compass/tools/redcap-runtime-workspace-boundary-check.sh",
     "compass/tools/redcap-cli-product-surface-check.sh",
 ]:

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# 用途：宿主适配与分发脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#skill-and-host-distribution
+
 # Validate RedCap skill lifecycle and host-export single-source policy.
 
 set -euo pipefail

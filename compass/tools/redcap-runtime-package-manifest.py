@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# 用途：发布安全治理脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#package-publish-safety
+
 from __future__ import annotations
 
 import argparse

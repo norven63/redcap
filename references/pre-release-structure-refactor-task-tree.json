@@ -137,6 +137,18 @@
       "reason": "Implemented the minimum private, source-anchored, non-authoritative LLM-wiki-lite lifecycle with Forge-gated public promotion and no RAG/GraphRAG by default."
     },
     {
+      "id": "P4-2h-full-llm-wiki",
+      "title": "Full LLM-wiki product, background distillation and advanced retrieval",
+      "status": "deferred",
+      "priority": "P2-thresholded-future",
+      "depends_on": [
+        "P4-2h-3",
+        "P3-1"
+      ],
+      "release_blocker": false,
+      "reason": "Full LLM-wiki, background generator, vector store, RAG/GraphRAG and public writeback remain future work behind retrieval-scale thresholds and a separate design/release boundary; LLM-wiki-lite must not be presented as this product."
+    },
+    {
       "id": "P4-2",
       "title": "Formal runtime / CLI package public release",
       "status": "blocked",

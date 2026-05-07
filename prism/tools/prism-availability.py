@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# 用途：棱镜与 Agent 路由脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#prism-and-providers
+
 """Maintain the Prism agent availability cache.
 
 The cache is intentionally separate from the lighter agent registry: Prism must

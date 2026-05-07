@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# 用途：产品形态与检索治理脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#product-shape-and-retrieval
+
 from __future__ import annotations
 
 import argparse
@@ -74,6 +77,50 @@ def validate_links(root: Path, dictionary_path: Path, text: str) -> list[str]:
     return broken
 
 
+def is_script_header_required(rel_path: str, row: dict[str, Any], policy: dict[str, Any]) -> bool:
+    header_policy = policy.get("script_header_policy")
+    if not isinstance(header_policy, dict) or not header_policy.get("enabled"):
+        return False
+    if row.get("header_required") is False:
+        return False
+    prefixes = header_policy.get("path_prefixes", [])
+    extensions = header_policy.get("extensions", [])
+    if not isinstance(prefixes, list) or not isinstance(extensions, list):
+        fail("script_header_policy path_prefixes/extensions must be lists")
+    path = Path(rel_path)
+    suffix = path.suffix
+    return any(rel_path.startswith(str(prefix)) for prefix in prefixes) and suffix in set(str(item) for item in extensions)
+
+
+def validate_script_header(path: Path, rel_path: str, policy: dict[str, Any]) -> list[str]:
+    header_policy = policy.get("script_header_policy", {})
+    max_scan_lines = int(header_policy.get("max_scan_lines", 20))
+    purpose_markers = header_policy.get("required_purpose_markers", ["用途：", "作用："])
+    dictionary_marker = str(header_policy.get("required_dictionary_marker", "Dictionary:"))
+    if not isinstance(purpose_markers, list) or not purpose_markers:
+        fail("script_header_policy required_purpose_markers must be a non-empty list")
+
+    try:
+        head = "\n".join(path.read_text(encoding="utf-8").splitlines()[:max_scan_lines])
+    except UnicodeDecodeError as exc:
+        return [f"{rel_path}: header is not utf-8 readable: {exc}"]
+
+    missing: list[str] = []
+    purpose_re = re.compile(
+        r"^\s*(#|//|/\*|\*)\s*("
+        + "|".join(re.escape(str(marker)) for marker in purpose_markers)
+        + ")",
+        flags=re.MULTILINE,
+    )
+    if not purpose_re.search(head):
+        missing.append("Chinese purpose marker")
+    if dictionary_marker not in head:
+        missing.append("Dictionary backlink")
+    if missing:
+        return [f"{rel_path}: missing {', '.join(missing)}"]
+    return []
+
+
 def load_required_paths(policy: dict[str, Any]) -> list[dict[str, Any]]:
     required = policy.get("required_paths")
     if not isinstance(required, list) or not required:
@@ -144,14 +191,18 @@ def main() -> int:
 
     missing_files: list[str] = []
     missing_entries: list[dict[str, Any]] = []
+    missing_headers: list[str] = []
     for row in load_required_paths(policy):
         rel = row["path"]
         optional = bool(row.get("optional"))
-        if not resolve_repo_path(root, rel).exists() and not optional:
+        repo_path = resolve_repo_path(root, rel)
+        if not repo_path.exists() and not optional:
             missing_files.append(rel)
             continue
         if not dictionary_mentions_path(text, rel):
             missing_entries.append(row)
+        if repo_path.exists() and is_script_header_required(rel, row, policy):
+            missing_headers.extend(validate_script_header(repo_path, rel, policy))
 
     broken_links = validate_links(root, dictionary_path, text)
     if args.plan and missing_entries:
@@ -163,6 +214,8 @@ def main() -> int:
         fail("required files missing from dictionary: " + ", ".join(row["path"] for row in missing_entries))
     if broken_links:
         fail("dictionary contains broken local links: " + ", ".join(sorted(set(broken_links))))
+    if missing_headers:
+        fail("script headers missing required short purpose/backlink: " + "; ".join(missing_headers))
 
     print(f"FILE_LOOKUP_DICTIONARY_OK required_paths={len(load_required_paths(policy))}")
     return 0

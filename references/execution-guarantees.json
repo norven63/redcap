@@ -869,13 +869,13 @@
       "id": "file-lookup-dictionary-coverage",
       "category": "file-lookup-navigation",
       "priority": "P0",
-      "rule": "Critical RedCap runtime, Prism, knowledge, host-adapter, and product-shape files must be discoverable through the File Lookup Dictionary without requiring a bulk repository read.",
+      "rule": "Critical RedCap runtime, Prism, knowledge, host-adapter, and product-shape files must be discoverable through the File Lookup Dictionary without requiring a bulk repository read; critical script-like entries must also carry a short Chinese purpose marker and Dictionary backlink near the file head.",
       "source_paths": [
         "references/file-lookup-dictionary.md",
         "references/file-lookup-dictionary-policy.json"
       ],
       "status": "validator",
-      "automation": "redcap-file-lookup-dictionary-check validates required path coverage and broken dictionary links; spec-check and diagnose consume it as a fail-closed control-plane gate.",
+      "automation": "redcap-file-lookup-dictionary-check validates required path coverage, broken dictionary links, and script-header short purpose/backlink coverage; spec-check and diagnose consume it as a fail-closed control-plane gate.",
       "guarantee_paths": [
         "compass/tools/redcap-file-lookup-dictionary-check.sh",
         "compass/tools/redcap-file-lookup-dictionary-check.py",
@@ -885,6 +885,29 @@
       ],
       "read_only_safe": true,
       "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
+      "id": "midcourse-architecture-task-tree-review",
+      "category": "parent-task-governance",
+      "priority": "P2",
+      "rule": "Before further broad structural work, RedCap must keep a mid-course review that reconciles completed, inserted, planned, deferred and blocked work without claiming public release readiness or full LLM-wiki completion.",
+      "source_paths": [
+        "references/midcourse-architecture-task-tree-review.json",
+        "references/redcap-parent-task-ledger.md",
+        "references/pre-release-structure-refactor-task-tree.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-midcourse-architecture-check validates seven review dimensions, deferred boundaries, evidence paths and must-not-claim guardrails; spec-check consumes it as a fail-closed gate.",
+      "guarantee_paths": [
+        "compass/tools/redcap-midcourse-architecture-check.sh",
+        "compass/tools/redcap-midcourse-architecture-check.py",
+        "compass/tools/redcap-spec-check.sh",
+        "references/midcourse-architecture-task-tree-review.json"
+      ],
+      "read_only_safe": true,
+      "revival_required": false,
       "hook_required": false,
       "auto_enforceable": true
     },

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 用途：棱镜与 Agent 路由脚本；详细职责见文件查阅字典。
+
 """Probe local Agent CLI health without violating provider freeze windows.
 
 Dictionary: references/file-lookup-dictionary.md#prism-and-providers

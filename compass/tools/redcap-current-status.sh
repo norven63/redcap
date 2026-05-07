@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# 用途：运行时与收尾脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#runtime-and-closeout
+
 # Print a compact RedCap Layer B status overview for handoff, Feishu, and user-facing updates.
 
 set -u

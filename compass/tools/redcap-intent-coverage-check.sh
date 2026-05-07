@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# 用途：控制面保障脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#control-plane-assurance
+
 # Validate that Layer B task cards preserve the user's original intent instead of only proving a narrowed plan.
 
 set -euo pipefail

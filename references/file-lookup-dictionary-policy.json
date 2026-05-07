@@ -2,6 +2,16 @@
   "version": 1,
   "description": "Critical-path coverage policy for references/file-lookup-dictionary.md. This is not a full repository manifest; it is the machine guard for files that humans or Agents must be able to locate without bulk-reading the repo.",
   "dictionary_path": "references/file-lookup-dictionary.md",
+  "script_header_policy": {
+    "enabled": true,
+    "purpose": "Critical script-like entries in this policy must carry a short Chinese purpose note plus a Dictionary backlink near the file head. Long explanations remain centralized in references/file-lookup-dictionary.md.",
+    "applies_to_required_paths": true,
+    "path_prefixes": ["bin/", "compass/tools/", "prism/tools/"],
+    "extensions": ["", ".py", ".sh"],
+    "max_scan_lines": 20,
+    "required_purpose_markers": ["用途：", "作用："],
+    "required_dictionary_marker": "Dictionary:"
+  },
   "required_paths": [
     {"path": "README.md", "section": "Product Shape And Retrieval", "meaning": "public RedCap landing page and design-pattern overview", "owner": "Product narrative", "check": "bash compass/tools/redcap-human-output-quality-check.sh"},
     {"path": "ARCHITECTURE.md", "section": "Product Shape And Retrieval", "meaning": "deep architecture map for RedCap layers and truth surfaces", "owner": "Architecture", "check": "bash compass/tools/redcap-mechanism-vitality-check.sh"},
@@ -25,6 +35,9 @@
     {"path": "references/file-lookup-dictionary-policy.json", "section": "Product Shape And Retrieval", "meaning": "machine-readable coverage list for the lookup dictionary", "owner": "Compass governance", "check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh"},
     {"path": "compass/tools/redcap-file-lookup-dictionary-check.sh", "section": "Product Shape And Retrieval", "meaning": "shell entry for dictionary coverage validation", "owner": "Compass validator", "check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh"},
     {"path": "compass/tools/redcap-file-lookup-dictionary-check.py", "section": "Product Shape And Retrieval", "meaning": "dictionary coverage validator and missing-entry planner", "owner": "Compass validator", "check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh --plan"},
+    {"path": "references/midcourse-architecture-task-tree-review.json", "section": "Product Shape And Retrieval", "meaning": "mid-course architecture and task-tree consistency review across completed, inserted, open and deferred work", "owner": "Architecture + PM Gate", "check": "bash compass/tools/redcap-midcourse-architecture-check.sh"},
+    {"path": "compass/tools/redcap-midcourse-architecture-check.sh", "section": "Product Shape And Retrieval", "meaning": "shell entry for the mid-course architecture and task-tree consistency review", "owner": "Compass validator", "check": "bash compass/tools/redcap-midcourse-architecture-check.sh"},
+    {"path": "compass/tools/redcap-midcourse-architecture-check.py", "section": "Product Shape And Retrieval", "meaning": "validates mid-course review dimensions, deferred boundaries, evidence paths and must-not-claim guardrails", "owner": "Compass validator", "check": "bash compass/tools/redcap-midcourse-architecture-check.sh"},
     {"path": "bin/redcap", "section": "Product Shape And Retrieval", "meaning": "thin CLI facade for revive, status, diagnose, closeout, Prism availability, dictionary and shared knowledge commands", "owner": "Runtime facade", "check": "bin/redcap help"},
     {"path": "references/package-publish-safety-policy.json", "section": "Package Publish Safety", "meaning": "fail-closed policy for future npm/runtime package candidate audits", "owner": "Release safety", "check": "bash compass/tools/redcap-package-publish-safety-check.sh"},
     {"path": "compass/tools/redcap-package-publish-safety-check.sh", "section": "Package Publish Safety", "meaning": "shell entry for package publish safety audit", "owner": "Release safety", "check": "bash compass/tools/redcap-package-publish-safety-check.sh"},

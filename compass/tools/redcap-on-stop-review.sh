@@ -256,6 +256,17 @@ build_review_targets() {
 
     if [[ -z "$order_output" ]]; then
         if [[ "$order_attempted" == "1" ]]; then
+            if [[ "$requires_repo_inspection" == "1" && -n "$manual_order" ]]; then
+                local skipped_target=""
+                IFS=',' read -r -a REVIEW_AGENT_CANDIDATES <<< "$manual_order"
+                for skipped_target in "${REVIEW_AGENT_CANDIDATES[@]}"; do
+                    skipped_target="${skipped_target//[[:space:]]/}"
+                    [[ -n "$skipped_target" ]] || continue
+                    if ! review_agent_supports_repo_inspection "$skipped_target"; then
+                        REVIEW_ATTEMPT_FAILURES+=("$skipped_target:insufficient-evidence")
+                    fi
+                done
+            fi
             REVIEW_TARGET_CANDIDATES=()
             REVIEW_AGENT_ORDER=""
             return 0
@@ -1135,18 +1146,20 @@ REVIEW_ATTEMPT_FAILURES=()
 REVIEW_TARGET_CANDIDATES=()
 build_review_targets "$REVIEW_AGENT_ORDER" "$REVIEW_REQUIRES_REPO_INSPECTION"
 
-for candidate in "${REVIEW_TARGET_CANDIDATES[@]}"; do
-    local_agent="${candidate%%@*}"
-    [[ -n "$candidate" ]] || continue
-    if ! command -v "$local_agent" >/dev/null 2>&1; then
-        REVIEW_ATTEMPT_FAILURES+=("$candidate:missing")
-        continue
-    fi
+if [[ ${#REVIEW_TARGET_CANDIDATES[@]} -gt 0 ]]; then
+    for candidate in "${REVIEW_TARGET_CANDIDATES[@]}"; do
+        local_agent="${candidate%%@*}"
+        [[ -n "$candidate" ]] || continue
+        if ! command -v "$local_agent" >/dev/null 2>&1; then
+            REVIEW_ATTEMPT_FAILURES+=("$candidate:missing")
+            continue
+        fi
 
-    if run_review_with_target "$candidate"; then
-        break
-    fi
-done
+        if run_review_with_target "$candidate"; then
+            break
+        fi
+    done
+fi
 
 if [[ -z "$REVIEW_OUTPUT" ]]; then
     rm -f "$REVIEW_PROMPT_FILE"

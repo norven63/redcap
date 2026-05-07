@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 用途：宿主适配与分发脚本；详细职责见文件查阅字典。
+
 """Validate RedCap skill lifecycle and host thin-entry policy.
 
 Dictionary: references/file-lookup-dictionary.md#skill-and-host-distribution

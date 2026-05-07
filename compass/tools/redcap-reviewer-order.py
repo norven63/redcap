@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# 用途：棱镜与 Agent 路由脚本；详细职责见文件查阅字典。
+
 """Compute stop-review reviewer targets from the capability matrix, local registry, and provider policy.
 
 This parser intentionally supports only the small YAML subset used by

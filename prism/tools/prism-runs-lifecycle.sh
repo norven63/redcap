@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# 用途：棱镜与 Agent 路由脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#prism-and-providers
+
 # prism-runs-lifecycle.sh — classify prism/runs evidence and prune only the safe acceptance set.
 
 set -euo pipefail

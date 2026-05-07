@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：控制面保障脚本；详细职责见文件查阅字典。
+
 # Dictionary: references/file-lookup-dictionary.md#control-plane-assurance
 # Validate the control-plane assurance registry.
 # Compatibility: the default file is still references/evolution-grade-baseline.json,

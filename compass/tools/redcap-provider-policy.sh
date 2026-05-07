@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：棱镜与 Agent 路由脚本；详细职责见文件查阅字典。
+
 # Dictionary: references/file-lookup-dictionary.md#prism-and-providers
 # Evaluate provider freeze windows before RedCap-owned CLI launchers start an Agent.
 

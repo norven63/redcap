@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# 用途：运行时与收尾脚本；详细职责见文件查阅字典。
+# Dictionary: references/file-lookup-dictionary.md#runtime-and-closeout
+
 """
 RedCap 飞书通知器 — 单一 lark-cli 单聊通道 + 窗口式接收
 

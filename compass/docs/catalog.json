@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 380257,
-    "lines": 7357,
-    "chars": 233950,
+    "size_bytes": 382038,
+    "lines": 7363,
+    "chars": 233573,
     "rough_token_pressure": {
-      "low": 58487,
-      "high": 116975
+      "low": 58393,
+      "high": 116786
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 186582,
-        "lines": 2774,
-        "chars": 117477,
+        "size_bytes": 188363,
+        "lines": 2780,
+        "chars": 117100,
         "rough_token_pressure": {
-          "low": 29369,
-          "high": 58738
+          "low": 29275,
+          "high": 58550
         }
       }
     },
@@ -92,22 +92,22 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
-        "chars": 11393,
-        "lines": 251,
-        "read_policy": "read-catalog-summary-by-default"
-      },
-      {
         "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
         "chars": 11055,
         "lines": 253,
         "read_policy": "read-catalog-summary-by-default"
       },
       {
+        "path": "compass/docs/task-reports/2026-05-07-redcap-midcourse-architecture-task-tree-review.md",
+        "chars": 11016,
+        "lines": 257,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+      },
+      {
         "path": "compass/docs/task-reports/2026-05-06-llm-wiki-lite-lifecycle.md",
         "chars": 10687,
         "lines": 255,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+        "read_policy": "read-catalog-summary-by-default"
       }
     ]
   },
@@ -470,19 +470,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-2d public package identity/license/surface 准备",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 17401,
-      "lines": 251,
-      "chars": 11393,
-      "summary": "当前已完成：RedCap 的未来公共 npm 包身份已准备为 `@norven63/redcap`，但仍保持私有、不可发布、许可证待人工决策的安全姿态。 / 详情：本轮解决的是“包名和包面已经开始公共化，但不能把准备态冒充成发布态”的问题。现在 package metadata、runtime readiness policy、发布前产品审判和机器检查都统一到 `@norven63/redcap`；同时 `private=true`、`publish_allowed=false`、`license=UNLICENSED` 继续锁住真实发布边界。新增的 package surface gate 会检查候选包面、禁入路径和人工 rel…",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-2b runtime/project/user 边界与 CLI workspace context",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：LLM-wiki-lite 语义记忆生命周期实现",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16517,
       "lines": 255,
       "chars": 10687,
       "summary": "当前已完成：RedCap 已有一个最小可用的私有 LLM-wiki-lite 生命周期，不再只是“以后可以做”的规划。 / 详情：本轮把 LLM-wiki-lite 固定为私有、非权威、必须带来源锚点的语义记忆层。每条 entry 都要能回到原始来源，并用 `sha256` 摘要判断是否过期；如果来源变了、来源不可读、候选类型越界、想直接写公共库或启用 RAG/GraphRAG，检查器会 fail closed。这样它可以帮助理解长期概念，但不会抢走 `.dev-task.md`、policy、receipt、Prism acceptance 等控制面真相源的位置。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已有一个最小可用的私有 LLM-wiki-lite 生命周期，不再只是“以后可以做”的规划。",
-          "详情：本轮把 LLM-wiki-lite 固定为私有、非权威、必须带来源锚点的语义记忆层。每条 entry 都要能回到原始来源，并用 `sha256` 摘要判断是否过期；如果来源变了、来源不可读、候选类型越界、想直接写公共库或启用 RAG/GraphRAG，检查器会 fail closed。这样它可以帮助理解长期概念，但不会抢走 `.dev-task.md`、policy、receipt、Prism acceptance 等控制面真相源的位置。"
-        ],
-        "previous_step": [
-          "上一步完成的是：`P4-2h-2` 完成了“哪些资产适合进入 LLM-wiki，哪些绝对不能进入”的分层评估，并登记了 `P4-2h-3`。"
-        ],
-        "next_step": [
-          "下一步计划做的是：本轮收口后无同任务内下一刀；父任务线仍保持 `P4-2h` 公共蒸馏 deferred、`P4-2` 正式公开发布 blocked。"
-        ],
-        "position": [
-          "整体计划脉络图是：外部资料吸收 → 资产分层 → 私有语义记忆最小生命周期 → 未来 RedCap Forge 公共蒸馏或正式 release 决策。",
-          "当前所在位置：`P4-2h-3` 已实现、已提交、已通过独立 Prism 复审与 closeout runtime receipt。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-06-redcap-public-distillation-preflight.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：父任务继续推进 → 用户发现 Copilot 配额保护风险 → 立项 `P2-6` → 策略、探测、排序、验收一起收紧 → Prism resource-limited 复审 → closeout。",
           "当前所在位置：`P2-6` 已实现、已通过 targeted checks 与 Prism resource-limited acceptance，等待 closeout runtime receipt。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-07-redcap-midcourse-architecture-task-tree-review.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RedCap 中途架构与任务树一致性审计",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 19182,
+      "lines": 257,
+      "chars": 11016,
+      "summary": "当前已完成：本轮把“脚本头中文短说明、LLM-wiki-lite 边界、中途任务树对账”从口头讨论升级成了机器可查的治理闭环。 / 详情：关键脚本现在不只依赖字典条目，也必须在文件头有一句短中文用途说明和 `Dictionary:` 反链，方便人类检索时快速判断文件作用。`LLM-wiki-lite` 被明确固定为私有、非权威、带来源锚点的最小语义记忆层；完整 LLM-wiki、后台生成、RAG/GraphRAG、向量库和公共写回仍是未来任务，不能被当前完成态冒充。中途审计产物会横向对齐已完成、近期中插、尚未完成、deferred 和 blocked-external 的任务边界。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：本轮把“脚本头中文短说明、LLM-wiki-lite 边界、中途任务树对账”从口头讨论升级成了机器可查的治理闭环。",
+          "详情：关键脚本现在不只依赖字典条目，也必须在文件头有一句短中文用途说明和 `Dictionary:` 反链，方便人类检索时快速判断文件作用。`LLM-wiki-lite` 被明确固定为私有、非权威、带来源锚点的最小语义记忆层；完整 LLM-wiki、后台生成、RAG/GraphRAG、向量库和公共写回仍是未来任务，不能被当前完成态冒充。中途审计产物会横向对齐已完成、近期中插、尚未完成、deferred 和 blocked-external 的任务边界。"
+        ],
+        "previous_step": [
+          "上一步完成的是：`P2-6 Copilot protected fallback` 已有 closeout receipt，父账本也已记录完成。"
+        ],
+        "next_step": [
+          "下一步计划做的是：无自动可继续推进的发布主线任务。`P4-2` 正式 public release 仍 blocked-external；`P4-2h` 历史资产公共蒸馏仍 deferred。若后续继续，应另开明确 release / public distillation / full LLM-wiki 任务。"
+        ],
+        "position": [
+          "整体计划脉络图是：父任务迁移与发布准备 → 用户发现治理缺口 → 立项 `P2-7` → 文件头规则机器化 → LLM-wiki 边界显性化 → 中途审计 → Prism 复核 → closeout。",
+          "当前所在位置：`P2-7` 已实现、已自检、已完成 Prism resource-limited 复核，并已通过 full acceptance；等待 closeout runtime 生成最终 receipt。"
         ]
       }
     }
