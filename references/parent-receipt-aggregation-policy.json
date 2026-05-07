@@ -207,32 +207,8 @@
     {
       "id": "P4-2",
       "status": "blocked-external",
-      "reason": "Runtime / CLI package readiness and P4-2a product architecture judgment are complete, but public release is still blocked by release blockers around runtime/project/user boundaries, CLI product surface, package identity/license, and later explicit registry/package credential decisions.",
-      "next_step": "Complete P4-2b/P4-2c/P4-2d remediation first, then open a release task with package registry target, secret handling, dry-run artifact review, and user-approved publish boundary."
-    },
-    {
-      "id": "P4-2b",
-      "status": "open",
-      "reason": "P4-2a found that the runtime/project/user boundary is still dry-run-only and the CLI defaults task operations to the package-root workspace.",
-      "next_step": "Implement the physical workspace-context split so the public CLI operates on the managed project by default while the package remains runtime implementation."
-    },
-    {
-      "id": "P4-2c",
-      "status": "open",
-      "reason": "P4-2a found that the public CLI lacks doctor/debug/trace/error/help surfaces needed for external users and Agent-container diagnosis.",
-      "next_step": "Add the public diagnostic command surface and human-readable error contract before public release."
-    },
-    {
-      "id": "P4-2d",
-      "status": "open",
-      "reason": "P4-2a found that package identity, license and public package surface remain in private readiness posture.",
-      "next_step": "Prepare the public package identity, license decision, curated package surface and release readiness gate without publishing until explicitly authorized."
-    },
-    {
-      "id": "P4-2e",
-      "status": "open",
-      "reason": "P4-2a found that redcap-arsenal is template-only and must not be marketed as a populated public arsenal.",
-      "next_step": "Either add append-only substantive public entries through the shared-knowledge workflow or narrow public claims to template-only status."
+      "reason": "Runtime / CLI package readiness, P4-2a product architecture judgment, P4-2b/c/d remediation readiness, and P4-2h first public arsenal promotion are complete, but public release is still blocked by the deliberate private package posture, license decision, runtime layout maturity, and explicit registry/package credential decisions.",
+      "next_step": "Open a separate release task only after confirming license, private=false/publish_allowed=true, registry target, secret handling, dry-run artifact review, rollback/deprecate plan, and user-approved publish boundary."
     }
   ],
   "gate_outputs": {

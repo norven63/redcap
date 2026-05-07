@@ -13,7 +13,7 @@
   "preferred_worktree_must_be_external": true,
   "initial_user_namespace": "Norven",
   "remote_root": ".",
-  "publish_mode": "template-only",
+  "publish_mode": "forge-append-only",
   "fixture_mode": false,
   "allowed_candidates": [
     {
@@ -78,16 +78,16 @@
   ],
   "safety_policy_path": "references/package-publish-safety-policy.json",
   "last_verified": {
-    "checked_at_utc": "2026-05-05T11:50:52Z",
+    "checked_at_utc": "2026-05-07T14:34:07Z",
     "method": "git ls-remote --heads",
     "remote_ref": "refs/heads/main",
-    "remote_head": "2dbec751131e2cd611b07dd517356f431dda3a7e"
+    "remote_head": "a73f971974984305437d24f7a45c947c09d1e5a5"
   },
   "notes": [
-    "This binding only covers the minimal public template surface plus explicit per-user namespace placeholders.",
+    "This binding now covers the minimal public template surface plus RedCap Forge-reviewed append-only public entries and generated metadata indexes.",
     "shared-knowledge/ is the RedCap-internal template source and intentionally has no .git directory.",
     "../redcap-arsenal is the preferred durable local public-library worktree for this installation.",
-    "Historical reports, lessons, identity files, runtime evidence, and host entry files are intentionally out of scope unless RedCap Forge produces a reviewed, deduplicated, safe public entry candidate.",
-    "After any legitimate template push, update last_verified.remote_head and checked_at_utc by rerunning the live check; head drift is intentional fail-closed behavior."
+    "Historical reports, lessons, identity files, runtime evidence, and host entry files remain out of scope unless RedCap Forge rewrites them into reviewed, deduplicated, safe public entries.",
+    "After any legitimate template or Forge entry push, update last_verified.remote_head and checked_at_utc by rerunning the live check; head drift is intentional fail-closed behavior."
   ]
 }

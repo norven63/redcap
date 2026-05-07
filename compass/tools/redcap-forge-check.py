@@ -93,7 +93,7 @@ def validate_policy(policy: dict[str, Any]) -> None:
         if not any(phrase in str(gate) for gate in gates):
             fail(f"public_promotion_gates missing phrase: {phrase}")
 
-    for phrase in ["raw reports", "redcap-arsenal is populated", "active identity"]:
+    for phrase in ["raw reports", "redcap-arsenal is mature", "active identity"]:
         if not any(phrase in str(item) for item in require_list(policy, "must_not_claim", "policy")):
             fail(f"must_not_claim missing phrase: {phrase}")
 
@@ -114,10 +114,10 @@ def validate_shared_policy(root: Path) -> None:
     for phrase in ["RedCap Forge", "append-only", "dedupe"]:
         if phrase not in json.dumps(shared, ensure_ascii=False):
             fail(f"shared knowledge policy missing phrase: {phrase}")
-    if remote.get("publish_mode") == "template-only":
+    if remote.get("publish_mode") in {"template-only", "forge-append-only"}:
         notes = "\n".join(str(item) for item in remote.get("notes", []))
         if "RedCap Forge" not in notes:
-            fail("template-only remote binding notes must explain RedCap Forge boundary")
+            fail("remote binding notes must explain RedCap Forge boundary")
 
 
 def main() -> int:

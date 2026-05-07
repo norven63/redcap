@@ -266,12 +266,21 @@ def validate_cross_policy(root: Path, policy: dict[str, Any]) -> tuple[int, int]
         if required not in info_forbidden:
             fail(f"information architecture missing forbidden raw source: {required}")
 
-    if binding.get("publish_mode") != "template-only":
-        fail("remote binding must remain template-only during preflight")
-    if claim.get("current_state", {}).get("content_state") != "template-only":
-        fail("public arsenal claim boundary must remain template-only during preflight")
-    if claim.get("current_state", {}).get("substantive_entries") != 0:
-        fail("public arsenal claim boundary must still report zero substantive entries")
+    publish_mode = binding.get("publish_mode")
+    claim_state = claim.get("current_state", {}).get("content_state")
+    claim_entries = claim.get("current_state", {}).get("substantive_entries")
+    if publish_mode == "template-only":
+        if claim_state != "template-only":
+            fail("template-only remote binding requires template-only claim boundary")
+        if claim_entries != 0:
+            fail("template-only claim boundary must report zero substantive entries")
+    elif publish_mode == "forge-append-only":
+        if claim_state != "reviewed-substantive":
+            fail("forge-append-only remote binding requires reviewed-substantive claim boundary")
+        if not isinstance(claim_entries, int) or claim_entries <= 0:
+            fail("reviewed-substantive claim boundary must report public entries")
+    else:
+        fail("remote binding publish_mode must be template-only or forge-append-only")
 
     p4h = None
     p4h0 = None
@@ -300,8 +309,10 @@ def validate_cross_policy(root: Path, policy: dict[str, Any]) -> tuple[int, int]
 
     worktree = resolve_worktree(root, binding)
     public_count = substantive_public_entries(worktree)
-    if public_count != 0:
-        fail(f"preflight cannot run while redcap-arsenal has substantive entries: {public_count}")
+    if publish_mode == "template-only" and public_count != 0:
+        fail(f"template-only preflight cannot run while redcap-arsenal has substantive entries: {public_count}")
+    if publish_mode == "forge-append-only" and public_count != claim_entries:
+        fail(f"reviewed-substantive public count mismatch: claim={claim_entries} actual={public_count}")
 
     return source_count, public_count
 
@@ -326,6 +337,12 @@ def validate_no_public_raw_content(root: Path, policy: dict[str, Any]) -> None:
                 fail(f"public worktree contains forbidden raw source path: {rel}")
 
 
+def loaded_mode(policy: dict[str, Any], public_count: int) -> str:
+    if public_count > 0:
+        return "preflight-completed-before-reviewed-promotion"
+    return str(policy.get("status", "dry-run-only"))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate P4-2h-0 public distillation preflight.")
     parser.add_argument("--root", default=str(ROOT))
@@ -345,7 +362,7 @@ def main() -> int:
     print("PUBLIC_DISTILLATION_PREFLIGHT_OK")
     print(f"private_source_files_seen={source_count}")
     print(f"public_substantive_entries={public_count}")
-    print("mode=dry-run-only")
+    print(f"mode={loaded_mode(policy, public_count)}")
     return 0
 
 

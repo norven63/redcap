@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -59,12 +60,16 @@ def resolve_worktree(binding: dict[str, Any]) -> Path | None:
 
 
 def substantive_entries(worktree: Path | None) -> int:
+    return len(substantive_entry_paths(worktree))
+
+
+def substantive_entry_paths(worktree: Path | None) -> list[Path]:
     if worktree is None or not worktree.is_dir():
-        return 0
+        return []
     users_root = worktree / "users"
     if not users_root.is_dir():
-        return 0
-    count = 0
+        return []
+    entries: list[Path] = []
     for path in users_root.rglob("*"):
         if not path.is_file():
             continue
@@ -74,8 +79,10 @@ def substantive_entries(worktree: Path | None) -> int:
         parts = rel.split("/")
         if len(parts) < 3 or parts[0] != "users" or not parts[1]:
             fail(f"substantive entry must live under users/<user>/: {rel}")
-        count += 1
-    return count
+        if not rel.endswith(".md"):
+            fail(f"substantive public entry must be markdown: {rel}")
+        entries.append(path)
+    return sorted(entries)
 
 
 def finding_by_id(review: dict[str, Any], finding_id: str) -> dict[str, Any] | None:
@@ -88,19 +95,48 @@ def finding_by_id(review: dict[str, Any], finding_id: str) -> dict[str, Any] | N
     return None
 
 
-def validate_readme(path: Path, policy: dict[str, Any], label: str) -> None:
+def validate_readme(path: Path, policy: dict[str, Any], label: str, contract_key: str = "readme_contract") -> None:
     if not path.is_file():
         fail(f"{label} README missing: {path}")
     text = path.read_text(encoding="utf-8", errors="replace")
-    contract = policy.get("readme_contract")
+    contract = policy.get(contract_key)
     if not isinstance(contract, dict):
-        fail("policy readme_contract must be an object")
-    for phrase in require_list(contract, "required_phrases", "readme_contract"):
+        fail(f"policy {contract_key} must be an object")
+    for phrase in require_list(contract, "required_phrases", contract_key):
         if not isinstance(phrase, str) or phrase not in text:
             fail(f"{label} README missing required phrase: {phrase}")
-    for phrase in require_list(contract, "forbidden_phrases", "readme_contract"):
+    for phrase in require_list(contract, "forbidden_phrases", contract_key):
         if isinstance(phrase, str) and phrase and phrase in text:
             fail(f"{label} README contains forbidden phrase: {phrase}")
+
+
+def validate_public_entries(worktree: Path | None, policy: dict[str, Any]) -> None:
+    state = policy["current_state"]
+    content_state = state["content_state"]
+    entries = substantive_entry_paths(worktree)
+    if content_state == "template-only":
+        return
+    requirements = policy.get("reviewed_substantive_entry_contract")
+    if not isinstance(requirements, dict):
+        fail("reviewed-substantive state requires reviewed_substantive_entry_contract")
+    required_sections = [str(item).strip() for item in require_list(requirements, "required_sections", "reviewed_substantive_entry_contract")]
+    forbidden_patterns = [str(item).strip() for item in require_list(requirements, "forbidden_patterns", "reviewed_substantive_entry_contract")]
+    minimum_entries = requirements.get("minimum_entries")
+    if not isinstance(minimum_entries, int) or minimum_entries < 1:
+        fail("reviewed_substantive_entry_contract.minimum_entries must be a positive integer")
+    if len(entries) < minimum_entries:
+        fail(f"reviewed-substantive state requires at least {minimum_entries} entries")
+    heading_re = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
+    for path in entries:
+        rel = path.relative_to(worktree).as_posix() if worktree else str(path)
+        text = path.read_text(encoding="utf-8", errors="replace")
+        headings = {match.group(1).strip() for match in heading_re.finditer(text)}
+        missing = sorted(section for section in required_sections if section not in headings)
+        if missing:
+            fail(f"public entry missing required sections {missing}: {rel}")
+        for pattern in forbidden_patterns:
+            if re.search(pattern, text):
+                fail(f"public entry contains forbidden pattern {pattern}: {rel}")
 
 
 def validate_policy(policy: dict[str, Any]) -> None:
@@ -108,21 +144,31 @@ def validate_policy(policy: dict[str, Any]) -> None:
         fail("policy version must be 1")
     if policy.get("policy_id") != "public-arsenal-claim-boundary":
         fail("policy_id must be public-arsenal-claim-boundary")
-    if policy.get("status") != "template-only-claim-boundary":
-        fail("policy status must be template-only-claim-boundary")
+    if policy.get("status") not in {"template-only-claim-boundary", "reviewed-substantive-claim-boundary"}:
+        fail("policy status must be template-only-claim-boundary or reviewed-substantive-claim-boundary")
     if require_text(policy, "public_repository_name", "policy") != "redcap-arsenal":
         fail("public_repository_name must be redcap-arsenal")
     state = policy.get("current_state")
     if not isinstance(state, dict):
         fail("policy current_state must be an object")
-    if state.get("content_state") != "template-only":
-        fail("policy current_state.content_state must be template-only")
-    if state.get("substantive_entries") != 0:
-        fail("policy current_state.substantive_entries must be 0 in this tranche")
+    content_state = state.get("content_state")
+    if content_state not in {"template-only", "reviewed-substantive"}:
+        fail("policy current_state.content_state must be template-only or reviewed-substantive")
+    entries = state.get("substantive_entries")
+    if not isinstance(entries, int) or entries < 0:
+        fail("policy current_state.substantive_entries must be a non-negative integer")
+    if content_state == "template-only" and entries != 0:
+        fail("template-only state must report zero substantive entries")
+    if content_state == "reviewed-substantive" and entries <= 0:
+        fail("reviewed-substantive state must report at least one substantive entry")
     for key in ["template_only_allowed_claims", "template_only_forbidden_claims", "must_not_claim"]:
         values = require_list(policy, key, "policy")
         if len(values) < 4:
             fail(f"policy {key} must contain at least 4 concrete claims")
+    if content_state == "reviewed-substantive":
+        values = require_list(policy, "reviewed_substantive_allowed_claims", "policy")
+        if len(values) < 4:
+            fail("policy reviewed_substantive_allowed_claims must contain at least 4 concrete claims")
     thresholds = policy.get("promotion_thresholds")
     if not isinstance(thresholds, dict):
         fail("policy promotion_thresholds must be an object")
@@ -178,18 +224,22 @@ def main() -> int:
         fail("shared knowledge policy must route public entries through RedCap Forge")
     if binding.get("remote_repo") != "redcap-arsenal":
         fail("remote binding remote_repo mismatch")
-    if binding.get("publish_mode") != "template-only":
-        fail("remote binding publish_mode must remain template-only")
+    expected_mode = "template-only" if policy["current_state"]["content_state"] == "template-only" else "forge-append-only"
+    if binding.get("publish_mode") != expected_mode:
+        fail(f"remote binding publish_mode must be {expected_mode}")
     if forge.get("canonical_names", {}).get("public_repository") != "redcap-arsenal":
         fail("RedCap Forge policy public repository mismatch")
-    if "redcap-arsenal is populated when it only contains templates" not in " ".join(map(str, forge.get("must_not_claim", []))):
-        fail("RedCap Forge must_not_claim must forbid populated-template claims")
+    forge_must_not_claim = " ".join(map(str, forge.get("must_not_claim", [])))
+    for phrase in ["raw reports", "active identity"]:
+        if phrase not in forge_must_not_claim:
+            fail(f"RedCap Forge must_not_claim missing phrase: {phrase}")
 
     worktree = resolve_worktree(binding)
     actual_entries = substantive_entries(worktree)
     expected_entries = policy["current_state"]["substantive_entries"]
     if actual_entries != expected_entries:
         fail(f"substantive entry count mismatch: policy={expected_entries} actual={actual_entries}")
+    validate_public_entries(worktree, policy)
 
     facts = review.get("observed_facts")
     if not isinstance(facts, dict):
@@ -199,23 +249,32 @@ def main() -> int:
     if facts.get("redcap_arsenal_substantive_entries") != actual_entries:
         fail("pre-release review redcap_arsenal_substantive_entries mismatch")
 
-    finding = finding_by_id(review, "public-arsenal-template-only")
+    expected_finding = "public-arsenal-template-only" if policy["current_state"]["content_state"] == "template-only" else "public-arsenal-reviewed-substantive-minimum"
+    finding = finding_by_id(review, expected_finding)
     if finding is None:
-        fail("pre-release review missing public-arsenal-template-only finding")
+        fail(f"pre-release review missing {expected_finding} finding")
     if finding.get("severity") not in {"should-fix", "pass"}:
-        fail("public-arsenal-template-only finding severity must be should-fix or pass")
-    if "must not be marketed" not in str(finding.get("claim", "")):
+        fail(f"{expected_finding} finding severity must be should-fix or pass")
+    if policy["current_state"]["content_state"] == "template-only" and "must not be marketed" not in str(finding.get("claim", "")):
         fail("public-arsenal-template-only finding must explicitly forbid marketing as populated")
+    if policy["current_state"]["content_state"] == "reviewed-substantive" and "does not make redcap-arsenal mature" not in str(finding.get("claim", "")):
+        fail("reviewed substantive finding must explicitly keep maturity claims bounded")
 
     must_not_claim = " ".join(map(str, review.get("must_not_claim", [])))
+    forbidden_claim_phrase = (
+        "redcap-arsenal contains substantive migrated knowledge"
+        if policy["current_state"]["content_state"] == "template-only"
+        else "redcap-arsenal is mature or complete"
+    )
     for phrase in [
-        "redcap-arsenal contains substantive migrated knowledge",
+        forbidden_claim_phrase,
         "public-release-ready",
     ]:
         if phrase not in must_not_claim:
             fail(f"pre-release review must_not_claim missing: {phrase}")
 
-    validate_readme(root / "shared-knowledge/README.md", policy, "shared-knowledge template")
+    shared_contract = "template_readme_contract" if policy["current_state"]["content_state"] == "reviewed-substantive" else "readme_contract"
+    validate_readme(root / "shared-knowledge/README.md", policy, "shared-knowledge template", shared_contract)
     if worktree is not None and worktree.is_dir():
         validate_readme(worktree / "README.md", policy, "public worktree")
 

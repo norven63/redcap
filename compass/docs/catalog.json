@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 382027,
-    "lines": 7363,
-    "chars": 233556,
+    "size_bytes": 385193,
+    "lines": 7392,
+    "chars": 234850,
     "rough_token_pressure": {
-      "low": 58389,
-      "high": 116778
+      "low": 58712,
+      "high": 117425
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 188352,
-        "lines": 2780,
-        "chars": 117083,
+        "size_bytes": 191518,
+        "lines": 2809,
+        "chars": 118377,
         "rough_token_pressure": {
-          "low": 29270,
-          "high": 58541
+          "low": 29594,
+          "high": 59188
         }
       }
     },
@@ -92,6 +92,12 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
+        "path": "compass/docs/task-reports/2026-05-07-redcap-public-arsenal-forge-first-promotion.md",
+        "chars": 11306,
+        "lines": 260,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+      },
+      {
         "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
         "chars": 11055,
         "lines": 253,
@@ -102,12 +108,6 @@
         "chars": 10999,
         "lines": 257,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
-      },
-      {
-        "path": "compass/docs/task-reports/2026-05-06-llm-wiki-lite-lifecycle.md",
-        "chars": 10687,
-        "lines": 255,
-        "read_policy": "read-catalog-summary-by-default"
       }
     ]
   },
@@ -470,19 +470,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-2b runtime/project/user 边界与 CLI workspace context",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 15354,
-      "lines": 231,
-      "chars": 10012,
-      "summary": "当前已完成：RedCap CLI 的任务类命令已经从“默认读 RedCap 包根目录任务卡”改为“默认读调用者所在项目 workspace 的任务卡”，并有机器门禁证明不会再静默回退到 package-root。 / 详情：这次解决的是 public CLI 发布前最危险的一类错位：工具本体、用户项目、用户身份状态三层混在一起。现在 `status`、`diagnose`、`change-intake`、`closeout status` 都会先解析 workspace 和 task file；外部项目默认读外部项目的 `.dev-task.md`，RedCap 自身开发仍能在仓库根目录或子目录正常读自己的任务卡。诊断输出也会直接…",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-06-agent-reading-absorption.md",
       "collection": "task-reports",
       "title": "任务完成报告：AI Era agent-reading 吸收与长期记忆对齐",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-2h-0 historical asset public distillation preflight",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13305,
       "lines": 233,
       "chars": 8267,
       "summary": "当前已完成：RedCap 已把“历史资产未来是否能进入公共 redcap-arsenal”先收束成 dry-run 预检强门。 / 详情：本轮解决的是“不能因为公共库还空，就把私有历史报告、经验库或运行证据直接搬出去填充内容”的风险。现在 RedCap Forge 只能先做候选分类和边界检查，公共写入、raw 私有资料导出、历史资产删除/移动、npm 发布都被明确禁止。这样后续如果真的要公开沉淀知识，必须先经过脱敏、去重、安全审查、append-only 条目和索引刷新。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把“历史资产未来是否能进入公共 redcap-arsenal”先收束成 dry-run 预检强门。",
-          "详情：本轮解决的是“不能因为公共库还空，就把私有历史报告、经验库或运行证据直接搬出去填充内容”的风险。现在 RedCap Forge 只能先做候选分类和边界检查，公共写入、raw 私有资料导出、历史资产删除/移动、npm 发布都被明确禁止。这样后续如果真的要公开沉淀知识，必须先经过脱敏、去重、安全审查、append-only 条目和索引刷新。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2e 已把公共 `redcap-arsenal` 仍为 template-only 的事实和宣传边界机器化，防止把空模板说成已填充知识库。"
-        ],
-        "next_step": [
-          "下一步计划做的是：本轮完成 closeout 后，P4-2h 仍保持真实公共蒸馏 deferred；若未来要公开具体条目，需要另开 RedCap Forge promotion 任务。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-2a 产品架构审判 -> P4-2b workspace 边界 -> P4-2c CLI 产品面 -> P4-2d 包身份/包面 -> P4-2e 公共 arsenal claim 边界 -> P4-2h-0 公共蒸馏预检 -> P4-2h 真实公共蒸馏 -> P4-2 正式发布。",
-          "当前所在位置：P4-2h-0 已完成实现、回归、棱镜验收与 closeout receipt；真实 P4-2h 公共蒸馏仍保持 deferred。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-07-prism-copilot-protected-fallback-policy.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：父任务迁移与发布准备 → 用户发现治理缺口 → 立项 `P2-7` → 文件头规则机器化 → LLM-wiki 边界显性化 → 中途审计 → Prism 复核 → closeout。",
           "当前所在位置：`P2-7` 已实现、已自检、已完成 Prism resource-limited 复核、通过 full acceptance，并已由 closeout runtime 生成最终 receipt。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-07-redcap-public-arsenal-forge-first-promotion.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RedCap Forge 首批公共 Arsenal 安全晋升",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 18520,
+      "lines": 260,
+      "chars": 11306,
+      "summary": "当前已完成：RedCap 公共知识库 `redcap-arsenal` 已从“只有模板”推进到“首批 reviewed-substantive 条目”状态。 / 详情：本轮解决的是公共 Arsenal 不能一直空转的问题，但没有越过安全边界。我们只晋升了 3 条经过蒸馏、去私密化、带来源边界的公共方法论/经验条目，并同步让机器检查承认“现在有首批实质内容”。结果是：未来可以证明公共库不再只是占位，但仍不能把它说成成熟知识库、完整历史迁移或 npm 发布就绪。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 公共知识库 `redcap-arsenal` 已从“只有模板”推进到“首批 reviewed-substantive 条目”状态。",
+          "详情：本轮解决的是公共 Arsenal 不能一直空转的问题，但没有越过安全边界。我们只晋升了 3 条经过蒸馏、去私密化、带来源边界的公共方法论/经验条目，并同步让机器检查承认“现在有首批实质内容”。结果是：未来可以证明公共库不再只是占位，但仍不能把它说成成熟知识库、完整历史迁移或 npm 发布就绪。"
+        ],
+        "previous_step": [
+          "上一步完成的是：`P2-7` 已完成中途架构与任务树一致性审计，确认 `P4-2h` 可以作为下一个安全推进点，但正式 npm/public release 仍是外部决策阻塞项。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续父任务中仍可自动推进的非发布项；正式 npm 发布、许可证、`private=false`、registry 凭据和完整公共迁移仍必须另立 release readiness / release task，不能由本轮静默完成。"
+        ],
+        "position": [
+          "整体计划脉络图是：信息架构治理 → 公共库模板与远端绑定 → 中途任务树审计 → `P4-2h` 首批公共晋升 → 后续 release readiness / 更大规模公共蒸馏。",
+          "当前所在位置：`P4-2h RedCap Forge 首批公共 Arsenal 安全晋升` 已实现并完成 targeted validation；等待 closeout runtime 生成正式 receipt。"
         ]
       }
     }

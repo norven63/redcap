@@ -38,7 +38,7 @@ redcap-runtime / redcap CLI
 
 RedCap 进入正式 public release 之前，不只要回答“能不能打包”，还要回答“好不好、优不优、能不能离开 Norven 本机独立工作”。这一步由 `references/pre-release-product-architecture-policy.json` 定义标准，由 `references/pre-release-product-architecture-review.json` 记录当前结论，并由 `redcap-pre-release-product-architecture-check.sh` 复验真实 package / CLI / execution split / redcap-arsenal 状态。
 
-当前 P4-2a 结论是：RedCap 已经是成熟的本地 skill-root runtime + CLI facade，但还不是优秀 public CLI/runtime 产品。发布前 blocker 包括 public package identity 未切换到用户确认包名、执行层仍停在 dry-run-only 物理拆分前状态、CLI 还缺少 doctor/debug/trace 这类外部用户支持面。`redcap-arsenal` 当前只有模板与命名空间占位，必须诚实标注为 template-only，不能冒充公共知识库已经有实质迁移内容。
+当前 P4-2a 结论是：RedCap 已经是成熟的本地 skill-root runtime + CLI facade，但还不是优秀 public CLI/runtime 产品。P4-2b/c/d 已补齐 workspace context、doctor/debug/trace/help/error 与包名准备；剩余 public release blocker 仍包括 runtime layout 成熟度、许可证选择与发布开关/凭据边界。`redcap-arsenal` 已有首批 reviewed-substantive 公共方法论样本，但只能诚实声明“首批样本已通过 Forge 晋升”，不能冒充成熟公共知识库或历史知识已批量迁移。
 
 ## Migration Tranches
 

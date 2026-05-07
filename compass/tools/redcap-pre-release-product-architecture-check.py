@@ -145,14 +145,15 @@ def arsenal_substantive_entries(review: dict[str, Any], root: Path) -> int:
     if worktree is None or not worktree.is_dir():
         return 0
     count = 0
-    ignored_names = {".gitkeep", "README.md", ".gitignore", "entry.schema.json"}
     for path in worktree.rglob("*"):
         if not path.is_file():
             continue
         rel = path.relative_to(worktree).as_posix()
         if rel.startswith(".git/"):
             continue
-        if path.name in ignored_names:
+        if path.name == ".gitkeep":
+            continue
+        if not (rel.startswith("users/") and rel.endswith(".md")):
             continue
         count += 1
     return count

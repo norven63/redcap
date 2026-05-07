@@ -73,20 +73,27 @@ def git_output(cwd: Path, args: list[str]) -> str:
     return completed.stdout.strip()
 
 
-def validate_preferred_worktree(
-    payload: dict[str, Any],
-    root: Path,
-    expected_files: list[tuple[str, str, Path]],
-) -> str | None:
+def preferred_worktree_path(payload: dict[str, Any], root: Path, required: bool = True) -> Path | None:
     raw = payload.get("preferred_local_worktree")
     if raw is None:
-        fail("preferred_local_worktree is required when --require-worktree is used")
+        if required:
+            fail("preferred_local_worktree is required")
+        return None
     if not isinstance(raw, str) or not raw.strip():
         fail("preferred_local_worktree must be a non-empty string")
     path = Path(raw.strip()).expanduser()
     if not path.is_absolute():
         path = root / path
-    path = path.resolve()
+    return path.resolve()
+
+
+def validate_preferred_worktree(
+    payload: dict[str, Any],
+    root: Path,
+    expected_files: list[tuple[str, str, Path]],
+) -> str | None:
+    path = preferred_worktree_path(payload, root, required=True)
+    assert path is not None
     if payload.get("preferred_worktree_must_be_external") is True and is_under(path, root):
         fail(f"preferred_local_worktree must live outside the RedCap repo: {path}")
     if not path.exists():
@@ -164,6 +171,10 @@ def matches_any(value: str, patterns: list[str]) -> bool:
 
 
 def candidate_files(payload: dict[str, Any], root: Path) -> list[tuple[str, str, Path]]:
+    publish_mode = payload.get("publish_mode")
+    if publish_mode == "forge-append-only":
+        return candidate_files_from_preferred_worktree(payload, root)
+
     local_root_rel = safe_rel(require_text(payload, "local_root", "policy"), "local_root")
     local_root = root / local_root_rel
     if not local_root.is_dir():
@@ -198,6 +209,58 @@ def candidate_files(payload: dict[str, Any], root: Path) -> list[tuple[str, str,
         if not is_under(path, local_root):
             fail(f"{label}: candidate escapes local_root: {local_rel}")
         resolved.append((repo_rel, remote_rel, path))
+    return resolved
+
+
+def candidate_files_from_preferred_worktree(payload: dict[str, Any], root: Path) -> list[tuple[str, str, Path]]:
+    worktree = preferred_worktree_path(payload, root, required=True)
+    assert worktree is not None
+    if payload.get("preferred_worktree_must_be_external") is True and is_under(worktree, root):
+        fail(f"preferred_local_worktree must live outside the RedCap repo: {worktree}")
+    if not worktree.is_dir() or not (worktree / ".git").exists():
+        fail(f"preferred_local_worktree must be an existing git worktree for forge-append-only mode: {worktree}")
+    if git_output(worktree, ["rev-parse", "--is-inside-work-tree"]) != "true":
+        fail(f"preferred_local_worktree is not inside a git worktree: {worktree}")
+    origin = git_output(worktree, ["remote", "get-url", "origin"])
+    if origin != require_text(payload, "remote_url", "policy"):
+        fail(f"preferred_local_worktree origin mismatch: {origin}")
+    if payload.get("remote_root") != ".":
+        fail("remote_root must remain '.' for the public shared-knowledge repository")
+    forbidden = payload.get("forbidden_path_globs")
+    if not isinstance(forbidden, list) or not all(isinstance(item, str) and item.strip() for item in forbidden):
+        fail("forbidden_path_globs must be a list of non-empty strings")
+
+    tracked = sorted(line for line in git_output(worktree, ["ls-files"]).splitlines() if line.strip())
+    if not tracked:
+        fail("preferred_local_worktree has no tracked files")
+    required_baseline = {"README.md", ".gitignore", "schemas/entry.schema.json", "users/Norven/.gitkeep"}
+    missing = sorted(required_baseline - set(tracked))
+    if missing:
+        fail("forge-append-only worktree missing baseline files: " + ", ".join(missing))
+    substantive = [
+        rel for rel in tracked
+        if rel.startswith("users/") and rel.endswith(".md") and not rel.endswith("/.gitkeep")
+    ]
+    if not substantive:
+        fail("forge-append-only mode requires at least one substantive users/<user>/*.md entry")
+    if "indexes/catalog.json" not in tracked:
+        fail("forge-append-only mode requires indexes/catalog.json")
+
+    resolved: list[tuple[str, str, Path]] = []
+    seen_remote: set[str] = set()
+    for rel in tracked:
+        safe = safe_rel(rel, "tracked worktree path")
+        if safe in seen_remote:
+            fail(f"duplicate tracked remote path: {safe}")
+        seen_remote.add(safe)
+        if matches_any(safe, forbidden):
+            fail(f"tracked public file matches forbidden path glob: {safe}")
+        path = worktree / safe
+        if not path.is_file():
+            fail(f"tracked public file missing: {safe}")
+        if not is_under(path, worktree):
+            fail(f"tracked public file escapes worktree: {safe}")
+        resolved.append((f"redcap-arsenal/{safe}", safe, path))
     return resolved
 
 
@@ -320,13 +383,14 @@ def check_policy(policy_path: Path, root: Path, live: bool, require_worktree: bo
         fail("binding_id must be redcap-shared-knowledge-gitee-remote-binding")
     if payload.get("status") not in {"prepared", "bound", "blocked-external"}:
         fail("status must be prepared, bound, or blocked-external")
-    if payload.get("publish_mode") != "template-only":
-        fail("publish_mode must remain template-only")
+    publish_mode = payload.get("publish_mode")
+    if publish_mode not in {"template-only", "forge-append-only"}:
+        fail("publish_mode must be template-only or forge-append-only")
     check_url(payload)
     safety_policy = load_safety_policy(root, require_text(payload, "safety_policy_path", "policy"))
     files = candidate_files(payload, root)
     scan_candidate_content(files, safety_policy)
-    preferred_worktree = validate_preferred_worktree(payload, root, files) if require_worktree else None
+    preferred_worktree = validate_preferred_worktree(payload, root, files) if (require_worktree or publish_mode == "forge-append-only") else None
     expected_head = check_last_verified(payload)
 
     live_value = None

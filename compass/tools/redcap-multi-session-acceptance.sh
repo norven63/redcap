@@ -11764,7 +11764,7 @@ run_retrieval_escalation_check_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh")"
     assert_string_contains "$output" "RETRIEVAL_ESCALATION_OK"
     assert_string_contains "$output" "active_route=index-rg-metadata"
-    assert_string_contains "$output" "shared_entries=0"
+    assert_string_contains "$output" "shared_entries=3"
 
     bad_policy="$ACCEPT_ROOT/retrieval-escalation-full-corpus.json"
     python3 - "$REDCAP_ROOT/references/retrieval-escalation-policy.json" "$bad_policy" <<'PY'
@@ -12120,13 +12120,14 @@ PY
 }
 
 run_public_arsenal_claim_boundary_check_case() {
-    local output bad_policy stale_output status fixture_worktree bad_binding
+    local output bad_policy stale_output status fixture_worktree bad_binding bad_review
 
     log "case: public-arsenal-claim-boundary-check"
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh")"
     assert_string_contains "$output" "PUBLIC_ARSENAL_CLAIM_BOUNDARY_OK"
-    assert_string_contains "$output" "state=template-only"
+    assert_string_contains "$output" "state=reviewed-substantive"
+    assert_string_contains "$output" "substantive_entries=3"
     assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "public arsenal claim boundary check failed"
 
     bad_policy="$ACCEPT_ROOT/public-arsenal-claim-boundary-bad-state.json"
@@ -12143,8 +12144,8 @@ PY
     stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh" --policy "$bad_policy" 2>&1)"
     status=$?
     set -e
-    [[ "$status" -ne 0 ]] || fail "public arsenal checker should reject populated state in template-only tranche"
-    assert_string_contains "$stale_output" "current_state.content_state must be template-only"
+    [[ "$status" -ne 0 ]] || fail "public arsenal checker should reject unsupported public arsenal state"
+    assert_string_contains "$stale_output" "current_state.content_state must be template-only or reviewed-substantive"
 
     bad_policy="$ACCEPT_ROOT/public-arsenal-claim-boundary-missing-gate.json"
     python3 - "$REDCAP_ROOT/references/public-arsenal-claim-boundary-policy.json" "$bad_policy" <<'PY'
@@ -12195,16 +12196,42 @@ import sys
 src, dst, worktree = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
 payload = json.loads(src.read_text(encoding="utf-8"))
 payload["preferred_local_worktree"] = str(worktree)
+payload["publish_mode"] = "template-only"
 dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
-    bad_policy="$ACCEPT_ROOT/public-arsenal-claim-boundary-bad-readme.json"
-    python3 - "$REDCAP_ROOT/references/public-arsenal-claim-boundary-policy.json" "$bad_policy" "$bad_binding" <<'PY'
+    bad_review="$ACCEPT_ROOT/public-arsenal-claim-boundary-template-review.json"
+    python3 - "$REDCAP_ROOT/references/pre-release-product-architecture-review.json" "$bad_review" <<'PY'
 import json
 import pathlib
 import sys
-src, dst, binding = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
+src, dst = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
 payload = json.loads(src.read_text(encoding="utf-8"))
+payload["observed_facts"]["redcap_arsenal_content_state"] = "template-only"
+payload["observed_facts"]["redcap_arsenal_substantive_entries"] = 0
+payload["findings"].append({
+    "id": "public-arsenal-template-only",
+    "dimension": "knowledge-boundary",
+    "severity": "should-fix",
+    "claim": "template-only public arsenal must not be marketed as populated.",
+    "evidence": ["references/public-arsenal-claim-boundary-policy.json"],
+    "required_before_public_release": False,
+})
+payload["must_not_claim"].append("Do not claim redcap-arsenal contains substantive migrated knowledge.")
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    bad_policy="$ACCEPT_ROOT/public-arsenal-claim-boundary-bad-readme.json"
+    python3 - "$REDCAP_ROOT/references/public-arsenal-claim-boundary-policy.json" "$bad_policy" "$bad_binding" "$bad_review" <<'PY'
+import json
+import pathlib
+import sys
+src, dst, binding, review = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3]), pathlib.Path(sys.argv[4])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["status"] = "template-only-claim-boundary"
+payload["current_state"]["content_state"] = "template-only"
+payload["current_state"]["substantive_entries"] = 0
+payload["readme_contract"] = payload["template_readme_contract"]
 payload["remote_binding_path"] = str(binding)
+payload["pre_release_review_path"] = str(review)
 dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh" --policy "$bad_policy")"
@@ -12226,7 +12253,7 @@ run_public_distillation_preflight_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-distillation-preflight.sh")"
     assert_string_contains "$output" "PUBLIC_DISTILLATION_PREFLIGHT_OK"
-    assert_string_contains "$output" "mode=dry-run-only"
+    assert_string_contains "$output" "mode=preflight-completed-before-reviewed-promotion"
     assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "public distillation preflight check failed"
 
     bad_policy="$ACCEPT_ROOT/public-distillation-preflight-public-write.json"

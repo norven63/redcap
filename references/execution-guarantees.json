@@ -939,7 +939,7 @@
       "id": "shared-knowledge-remote-binding",
       "category": "shared-knowledge-remote",
       "priority": "P1",
-      "rule": "The public shared-knowledge repository may be considered bound only when a machine-readable remote binding policy lists the exact safe template candidates, rejects credentials and private RedCap surfaces, and can verify the remote branch head in explicit live mode.",
+      "rule": "The public shared-knowledge repository may be considered bound only when a machine-readable remote binding policy can verify either the safe template surface or the Forge-reviewed append-only public entry set, rejects credentials and private RedCap surfaces, and can verify the remote branch head in explicit live mode.",
       "source_paths": [
         "references/shared-knowledge-remote-binding.json",
         "references/shared-knowledge-policy.json",
@@ -948,7 +948,7 @@
         "shared-knowledge/schemas/entry.schema.json"
       ],
       "status": "validator",
-      "automation": "redcap-shared-knowledge-remote-check validates the local policy and candidate safety by default; explicit --live verifies the Gitee branch head, remote tree, and candidate file content without making every spec-check depend on network availability.",
+      "automation": "redcap-shared-knowledge-remote-check validates template-only and forge-append-only modes, scans candidate content, requires an external clean public worktree when Forge entries are present, and explicit --live verifies the Gitee branch head, remote tree, and candidate file content without making every spec-check depend on network availability.",
       "guarantee_paths": [
         "compass/tools/redcap-shared-knowledge-remote-check.sh",
         "compass/tools/redcap-shared-knowledge-remote-check.py",
@@ -964,7 +964,7 @@
       "id": "public-arsenal-claim-boundary",
       "category": "shared-knowledge-remote",
       "priority": "P1",
-      "rule": "While redcap-arsenal is template-only, RedCap must allow only initialization/schema/Forge-pipeline claims and must forbid populated knowledge-base, migrated-history, release-ready, or raw-private-publication claims.",
+      "rule": "RedCap must keep redcap-arsenal claims aligned with its real content state: template-only allows only initialization/schema/Forge-pipeline claims, and reviewed-substantive allows first-entry claims while still forbidding mature knowledge-base, complete migration, release-ready, or raw-private-publication claims.",
       "source_paths": [
         "references/public-arsenal-claim-boundary-policy.json",
         "references/shared-knowledge-remote-binding.json",
@@ -972,7 +972,7 @@
         "shared-knowledge/README.md"
       ],
       "status": "validator",
-      "automation": "redcap-public-arsenal-claim-boundary validates the current public arsenal content state, external worktree substantive-entry count, README wording, pre-release review facts, and template-only claim boundary before diagnose/spec-check can pass.",
+      "automation": "redcap-public-arsenal-claim-boundary validates the current public arsenal content state, external worktree substantive-entry count, required Forge entry sections, README wording, pre-release review facts, and claim boundary before diagnose/spec-check can pass.",
       "guarantee_paths": [
         "compass/tools/redcap-public-arsenal-claim-boundary.sh",
         "compass/tools/redcap-public-arsenal-claim-boundary.py",
@@ -988,7 +988,7 @@
       "id": "public-distillation-preflight",
       "category": "redcap-forge",
       "priority": "P1",
-      "rule": "Before any private historical asset may become a public redcap-arsenal candidate, RedCap must run a dry-run-only RedCap Forge preflight that forbids raw private export, public writes, deletion/move side effects, npm publishing, and populated-arsenal claims.",
+      "rule": "Before any private historical asset may become a public redcap-arsenal candidate, RedCap must run a dry-run-only RedCap Forge preflight; after first promotion, the same gate must continue proving that raw private export, deletion/move side effects, npm publishing, and overbroad arsenal claims remain forbidden.",
       "source_paths": [
         "references/public-distillation-preflight-policy.json",
         "references/redcap-forge-policy.json",
@@ -997,7 +997,7 @@
         "references/pre-release-structure-refactor-task-tree.json"
       ],
       "status": "validator",
-      "automation": "redcap-public-distillation-preflight validates P4-2h-0 dry-run boundaries, source roots, triage classes, future public entry schema, cross-policy forbidden raw sources, template-only arsenal state, and task-tree anchoring before diagnose/spec-check can pass.",
+      "automation": "redcap-public-distillation-preflight validates P4-2h-0 dry-run boundaries, source roots, triage classes, future public entry schema, cross-policy forbidden raw sources, reviewed-substantive transition consistency, and task-tree anchoring before diagnose/spec-check can pass.",
       "guarantee_paths": [
         "compass/tools/redcap-public-distillation-preflight.sh",
         "compass/tools/redcap-public-distillation-preflight.py",

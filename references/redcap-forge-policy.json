@@ -98,7 +98,7 @@
   "must_not_claim": [
     "Do not claim Evolution Factory means every candidate is public.",
     "Do not claim RedCap Forge can publish raw reports.",
-    "Do not claim redcap-arsenal is populated when it only contains templates and placeholders.",
+    "Do not claim redcap-arsenal is mature or complete just because it contains a first reviewed-substantive entry set.",
     "Do not auto-edit active identity anchors from Forge output."
   ]
 }

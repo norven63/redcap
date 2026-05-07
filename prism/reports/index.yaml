@@ -1,4 +1,31 @@
 reports:
+  - id: "20260507-public-arsenal-forge-first-promotion"
+    mode: resource-limited
+    date: "2026-05-07"
+    topic: "Public Arsenal Forge first reviewed-substantive promotion"
+    agents: ["claude-code"]
+    roles: ["reviewer"]
+    verdict: "resource-limited-pass"
+    consensus_actions:
+      - "Move redcap-arsenal from template-only to reviewed-substantive with three safe public entries"
+      - "Keep mature, complete, full-migration and release-ready claims forbidden"
+      - "Verify Forge append-only remote binding against the live Gitee head"
+      - "Keep npm/public release blocked by release-readiness decisions"
+    open_questions:
+      - "Kimi and Gemini were unavailable; Copilot was policy-suppressed as protected fallback"
+      - "Bulk public distillation remains a future tranche"
+      - "Formal public release remains blocked-external"
+    lessons_updated: false
+    files_affected:
+      - "references/public-arsenal-claim-boundary-policy.json"
+      - "references/shared-knowledge-remote-binding.json"
+      - "references/pre-release-product-architecture-review.json"
+      - "references/pre-release-structure-refactor-task-tree.json"
+      - "references/redcap-parent-task-ledger.md"
+      - "compass/tools/redcap-public-arsenal-claim-boundary.py"
+      - "compass/tools/redcap-shared-knowledge-remote-check.py"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+    archived: false
   - id: "20260507-midcourse-architecture-task-tree-review"
     mode: resource-limited
     date: "2026-05-07"

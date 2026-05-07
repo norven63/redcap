@@ -19,5 +19,5 @@
   "retrieval_escalation_policy": "references/retrieval-escalation-policy.json",
   "forge_pipeline": "RedCap Forge is the concrete distillation pipeline between private RedCap runtime artifacts and public redcap-arsenal entries: distill, privacy-scan, dedupe, structure, index, then append-only public entry creation or no-promote.",
   "dedupe_rule": "before append, compute a normalized fingerprint and reject exact duplicates; near-duplicate review remains a Prism or human-review concern until semantic retrieval exists",
-  "remote_boundary": "The public RedCap Arsenal remote is bound in references/shared-knowledge-remote-binding.json. Only the minimal template surface and explicit per-user namespace placeholders may be pushed; historical reports, lessons, identity, runtime evidence, host entry files, and private configuration remain out of scope."
+  "remote_boundary": "The public RedCap Arsenal remote is bound in references/shared-knowledge-remote-binding.json. The remote may contain the minimal template surface plus RedCap Forge-reviewed append-only entries and generated metadata indexes; historical reports, raw lessons, identity, runtime evidence, host entry files, and private configuration remain out of scope."
 }

@@ -77,18 +77,18 @@
         "P4-2g"
       ],
       "release_blocker": false,
-      "reason": "The public arsenal is currently template-only; this tranche turns honest claim wording and future populated-content thresholds into a machine-checked boundary without blocking CLI release engineering."
+      "reason": "This tranche turns public arsenal claim wording and populated-content thresholds into a machine-checked boundary without blocking CLI release engineering; it now supports both template-only and first reviewed-substantive states."
     },
     {
       "id": "P4-2h",
       "title": "Historical asset public distillation and RedCap Forge export triage",
-      "status": "deferred",
+      "status": "completed",
       "priority": "P1",
       "depends_on": [
         "P4-2e"
       ],
       "release_blocker": false,
-      "reason": "Private historical assets may later be distilled into append-only public arsenal entries, but only through RedCap Forge review and safety checks."
+      "reason": "Private historical assets now have a first minimal RedCap Forge-reviewed public promotion sample set in redcap-arsenal; broader/bulk public migration remains out of scope."
     },
     {
       "id": "P4-2h-0",
@@ -167,7 +167,7 @@
     "Do not claim historical assets have been publicly migrated into redcap-arsenal.",
     "Do not claim npm pack dry-run success equals a safe or excellent public CLI product.",
     "Do not bulk-delete or bulk-move historical evidence just to make package checks pass.",
-    "Do not claim redcap-arsenal contains substantive public knowledge while it remains template-only.",
+    "Do not claim redcap-arsenal is mature or complete because it contains a first reviewed-substantive public entry set.",
     "Do not claim P4-2h-1 implements a complete LLM Wiki, RAG/GraphRAG, ai-professor production mode, or direct public writeback.",
     "Do not claim P4-2h-2 implements LLM-wiki-lite; it only completes asset stratification and registers P4-2h-3.",
     "Do not claim P4-2h-3 is a complete LLM-wiki product, public knowledge base, RAG/GraphRAG system, automatic background generator, or release blocker."
