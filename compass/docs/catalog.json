@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 382038,
+    "size_bytes": 382027,
     "lines": 7363,
-    "chars": 233573,
+    "chars": 233556,
     "rough_token_pressure": {
-      "low": 58393,
-      "high": 116786
+      "low": 58389,
+      "high": 116778
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 188363,
+        "size_bytes": 188352,
         "lines": 2780,
-        "chars": 117100,
+        "chars": 117083,
         "rough_token_pressure": {
-          "low": 29275,
-          "high": 58550
+          "low": 29270,
+          "high": 58541
         }
       }
     },
@@ -99,7 +99,7 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-07-redcap-midcourse-architecture-task-tree-review.md",
-        "chars": 11016,
+        "chars": 10999,
         "lines": 257,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 19182,
+      "size_bytes": 19171,
       "lines": 257,
-      "chars": 11016,
+      "chars": 10999,
       "summary": "当前已完成：本轮把“脚本头中文短说明、LLM-wiki-lite 边界、中途任务树对账”从口头讨论升级成了机器可查的治理闭环。 / 详情：关键脚本现在不只依赖字典条目，也必须在文件头有一句短中文用途说明和 `Dictionary:` 反链，方便人类检索时快速判断文件作用。`LLM-wiki-lite` 被明确固定为私有、非权威、带来源锚点的最小语义记忆层；完整 LLM-wiki、后台生成、RAG/GraphRAG、向量库和公共写回仍是未来任务，不能被当前完成态冒充。中途审计产物会横向对齐已完成、近期中插、尚未完成、deferred 和 blocked-external 的任务边界。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -604,7 +604,7 @@
         ],
         "position": [
           "整体计划脉络图是：父任务迁移与发布准备 → 用户发现治理缺口 → 立项 `P2-7` → 文件头规则机器化 → LLM-wiki 边界显性化 → 中途审计 → Prism 复核 → closeout。",
-          "当前所在位置：`P2-7` 已实现、已自检、已完成 Prism resource-limited 复核，并已通过 full acceptance；等待 closeout runtime 生成最终 receipt。"
+          "当前所在位置：`P2-7` 已实现、已自检、已完成 Prism resource-limited 复核、通过 full acceptance，并已由 closeout runtime 生成最终 receipt。"
         ]
       }
     }

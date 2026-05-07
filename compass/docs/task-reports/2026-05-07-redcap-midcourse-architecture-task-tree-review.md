@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-07  
 **执行者**：Cap（Codex.app 主执行，Prism 使用 Claude Code；Kimi 复审 90 秒超时）  
-**报告版本**：v1.1
+**报告版本**：v1.2
 
 ---
 
@@ -25,7 +25,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：父任务迁移与发布准备 → 用户发现治理缺口 → 立项 `P2-7` → 文件头规则机器化 → LLM-wiki 边界显性化 → 中途审计 → Prism 复核 → closeout。
-- 当前所在位置：`P2-7` 已实现、已自检、已完成 Prism resource-limited 复核，并已通过 full acceptance；等待 closeout runtime 生成最终 receipt。
+- 当前所在位置：`P2-7` 已实现、已自检、已完成 Prism resource-limited 复核、通过 full acceptance，并已由 closeout runtime 生成最终 receipt。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -175,8 +175,8 @@ LLM-wiki-lite 的位置被固定为“私有语义记忆层”。它可以帮助
 |---|---|
 | 执行承诺账本 | 待 closeout runtime 核对 |
 | 棱镜验收 | `20260507-midcourse-architecture-task-tree-review`，resource-limited-pass |
-| closeout summary | 待 closeout runtime 生成 |
-| closeout receipt | 待 closeout runtime 生成 |
+| closeout summary | 已生成 |
+| closeout receipt | 已生成 |
 | rescue audit（如有） | 当前无 |
 
 ### 5.4 完成等级（禁止混报）
@@ -186,7 +186,7 @@ LLM-wiki-lite 的位置被固定为“私有语义记忆层”。它可以帮助
 | 已实现 | 是 |
 | 已自检 | 是，targeted checks 已通过 |
 | 已独立验收 | 是，Claude Code 复核无 blocker；Kimi 90 秒超时，按 resource-limited 记录 |
-| 已正式完成 | 否，等待 closeout runtime receipt |
+| 已正式完成 | 是，closeout runtime receipt 已生成，pending closure 已清 |
 
 ---
 
