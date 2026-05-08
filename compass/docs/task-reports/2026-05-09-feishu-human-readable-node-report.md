@@ -127,13 +127,20 @@
 | human-communication-check | 通过 |
 | acceptance: human-communication-check | 通过 |
 
-### 5.2 待最终收口验证
+### 5.2 最终收口验证
 
 | 验证项 | 状态 |
 |---|---|
-| 棱镜独立评审 | 待执行 |
-| spec-check / diagnose | 待最终执行 |
-| closeout receipt | 待最终执行 |
+| 棱镜独立评审 | 通过，Claude Code 与 Kimi 均无 blocker |
+| spec-check / diagnose | 通过 |
+| closeout receipt | 通过 |
+
+### 5.3 closeout runtime / receipt
+
+| 项 | 证据 |
+|---|---|
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-feishu-human-readable-node-report-7cce16953330aa7aafd7b93c78111d676188939858f0b376d71584658d028fa5.json` |
+| Prism acceptance | `20260509-feishu-human-readable-node-report`，2 个角色响应，无 blocker |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -142,7 +149,7 @@
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code 与 Kimi 均无 blocker |
-| 已正式完成 | 否；等待最终 spec-check、diagnose、commit 与 closeout receipt |
+| 已正式完成 | 是；已完成 commit、回归、棱镜验收与 closeout receipt |
 
 ---
 
@@ -183,5 +190,6 @@
 ### 附录 B：Commits
 
 ```text
-待提交
+3efb587 fix: 优化飞书节点汇报可读性
+980e35a test: 刷新飞书可读化后的 E2E 证据
 ```
