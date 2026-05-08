@@ -120,6 +120,34 @@ def clean(value):
         "",
         value,
     )
+    replacements = {
+        "飞书 node-report": "飞书通知",
+        "closeout runtime": "收尾程序",
+        "closeout receipt": "收尾确认记录",
+        "closeout": "收尾确认",
+        "node-report": "飞书节点汇报",
+        "Prism acceptance": "棱镜验收",
+        "Prism": "棱镜",
+        "spec-check": "规范检查",
+        "diagnose": "诊断检查",
+        "public release": "公开发布",
+        "release task": "发布任务",
+        "runtime": "运行层",
+        "receipt": "确认记录",
+        "任务位置": "当前进展",
+        "阻塞状态": "是否卡住",
+        "关键证据": "查看记录",
+        "结论": "结果",
+        "是否需要 Norven": "是否需要你处理",
+        "manual-intervention": "人工介入",
+        "任务树": "整体任务",
+        "父任务线": "后续主线任务",
+        "结构治理": "项目结构整理",
+        "收尾确认 单出口": "完成通知统一出口",
+        "人工介入 语义": "需要你参与的判断规则",
+    }
+    for old, new in replacements.items():
+        value = value.replace(old, new)
     return value.strip(" -")
 
 
@@ -176,6 +204,7 @@ def table_items(block, primary_key, detail_keys):
 
 summary_map = {
     "done": ["0.1 当前已完成"],
+    "effect": ["3.2 人话解释", "3.3 效果", "7.3 最后效果"],
     "previous": ["0.2 上一步完成的是"],
     "next": ["0.3 下一步计划做的是", "0.3 后续动作"],
     "roadmap": ["0.4 整体计划脉络图与当前位置"],
@@ -186,6 +215,7 @@ summary_map = {
 
 fallback_map = {
     "done": ([], None, None),
+    "effect": ([], None, None),
     "previous": ([], None, None),
     "roadmap": ([], None, None),
     "confirm": (["四、人工审核要点"], "审核项", ["说明", "优先级"]),
@@ -235,7 +265,7 @@ redcap_build_completion_message() {
     local project="${2:-redcap}"
     local commit_log="${3:-}"
     local source_label report_ref project_root report_path report_label
-    local commit_count latest_commit bullet_list done_items previous_items next_items roadmap_items intervention_items confirm_items verify_items
+    local commit_count latest_commit bullet_list done_items effect_items previous_items next_items roadmap_items intervention_items confirm_items verify_items
 
     source_label=$(redcap_notify_flatten_field "${4:-}")
     report_ref="${5:-}"
@@ -248,6 +278,7 @@ redcap_build_completion_message() {
     if [[ -n "$report_path" && -f "$report_path" ]]; then
         report_label=$(redcap_notify_relative_path "$project_root" "$report_path" 2>/dev/null || true)
         done_items=$(redcap_notify_extract_report_items "$report_path" "done")
+        effect_items=$(redcap_notify_extract_report_items "$report_path" "effect")
         previous_items=$(redcap_notify_extract_report_items "$report_path" "previous")
         next_items=$(redcap_notify_extract_report_items "$report_path" "next")
         roadmap_items=$(redcap_notify_extract_report_items "$report_path" "roadmap")
@@ -261,42 +292,40 @@ redcap_build_completion_message() {
     {
         printf '%s\n\n' "$headline"
         printf -- '- 项目：%s\n' "$project"
-        [[ -n "$source_label" ]] && printf -- '- 来源：%s\n' "$source_label"
 
-        printf '\n**结论**\n'
+        printf '\n**这次完成了什么**\n'
         if [[ -n "$report_label" ]]; then
             printf '%s\n' "$(redcap_notify_markdown_list_or_none "$done_items")"
         else
             printf -- '- 详见本次节点提交或终端汇报\n'
         fi
 
+        printf '\n**带来的效果**\n'
         if [[ -n "$report_label" ]]; then
-            printf '\n**任务位置**\n'
-            if [[ -n "$previous_items" ]]; then
-                printf '%s\n' "$(redcap_notify_markdown_list_or_none "$previous_items")"
+            if [[ -n "$effect_items" ]]; then
+                printf '%s\n' "$(redcap_notify_markdown_list_or_none "$effect_items")"
+            else
+                printf -- '- 完成结果已落到本次任务报告；如果需要细节，可查看文末记录。\n'
             fi
-            printf '%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
         else
-            printf '\n**任务位置**\n- 未绑定任务报告；请以终端汇报或 closeout receipt 为准\n'
+            printf -- '- 暂未绑定任务报告；请以终端汇报为准。\n'
         fi
 
-        printf '\n**下一步**\n'
+        printf '\n**接下来做什么**\n'
         if [[ -n "$report_label" ]]; then
             printf '%s\n' "$(redcap_notify_markdown_list_or_none "$next_items")"
         else
             printf -- '- 详见本次节点提交或终端汇报\n'
         fi
 
-        printf '\n**需要 Norven**\n'
+        printf '\n**需要你做什么**\n'
         if [[ -n "$intervention_items" ]]; then
             printf '%s\n' "$(redcap_notify_markdown_list_or_none "$intervention_items")"
         elif [[ -n "$confirm_items" || -n "$verify_items" ]]; then
-            printf -- '- 需要；详见“仍需你介入 / 仍需人工验证”。\n'
+            printf -- '- 需要；下面列出了需要你确认或验证的事项。\n'
         else
-            printf -- '- 不需要；若需要 Norven 决策，RedCap 会改用 manual-intervention 通知。\n'
+            printf -- '- 不需要；我会继续按既定任务线推进。\n'
         fi
-
-        printf '\n**阻塞状态**\n- 无；此消息是节点汇报，不是内部审核失败告警。\n'
 
         if [[ -n "$confirm_items" ]]; then
             printf '\n**仍需你介入**\n%s\n' "$(redcap_notify_markdown_list_or_none "$confirm_items")"
@@ -305,14 +334,11 @@ redcap_build_completion_message() {
             printf '\n**仍需人工验证**\n%s\n' "$(redcap_notify_markdown_list_or_none "$verify_items")"
         fi
 
-        printf '\n**关键证据**\n'
-        [[ -n "$report_label" ]] && printf -- '- 任务报告：%s\n' "$report_label"
-        if [[ "$commit_count" -gt 0 ]]; then
-            printf -- '- 本轮提交数：%s\n' "$commit_count"
-        fi
-        [[ -n "$latest_commit" ]] && printf -- '- 最新提交：%s\n' "$latest_commit"
+        printf '\n**查看记录**\n'
+        [[ -n "$report_label" ]] && printf -- '- 完整报告：%s\n' "$report_label"
+        [[ -n "$latest_commit" ]] && printf -- '- 最新记录：%s\n' "$latest_commit"
         if [[ -z "$report_label" && "$commit_count" -eq 0 && -z "$latest_commit" ]]; then
-            printf -- '- 详见 closeout receipt 或终端汇报\n'
+            printf -- '- 详见终端汇报\n'
         fi
     }
 }

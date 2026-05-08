@@ -23,14 +23,17 @@ REQUIRED_FIELDS = [
     "下一步计划做的是",
 ]
 REQUIRED_FEISHU_FIELDS = [
-    "结论",
-    "任务位置",
-    "下一步",
-    "需要 Norven",
-    "阻塞状态",
-    "关键证据",
+    "这次完成了什么",
+    "带来的效果",
+    "接下来做什么",
+    "需要你做什么",
+    "查看记录",
 ]
 FORBIDDEN_FEISHU_SECTIONS = [
+    "**结论**",
+    "**任务位置**",
+    "**阻塞状态**",
+    "**关键证据**",
     "**任务全景图**",
     "**当前位置**",
     "**整体计划脉络图与当前位置**",
@@ -146,9 +149,13 @@ def main() -> int:
         if phrase not in report_rule:
             fail(f"report_led_summary_rule missing phrase: {phrase}")
     feishu_rule = str(policy.get("feishu_deduplication_rule", ""))
-    for phrase in ["任务全景图 / 当前位置 / 整体计划脉络图", "single 任务位置", "关键证据"]:
+    for phrase in ["任务全景图 / 当前位置 / 整体计划脉络图", "任务位置 / 阻塞状态 / 关键证据", "查看记录"]:
         if phrase not in feishu_rule:
             fail(f"feishu_deduplication_rule missing phrase: {phrase}")
+    reply_rule = str(policy.get("feishu_reply_command_boundary_rule", ""))
+    for phrase in ["outbound-only", "pending-scan", "ask/confirm/resume", "RedCap inbox", "change-intake"]:
+        if phrase not in reply_rule:
+            fail(f"feishu_reply_command_boundary_rule missing phrase: {phrase}")
     if set(policy.get("allowed_feishu_events") or []) != {"node-report", "manual-intervention"}:
         fail("allowed_feishu_events must be node-report/manual-intervention")
 

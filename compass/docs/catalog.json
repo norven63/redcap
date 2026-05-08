@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 359213,
-    "lines": 7218,
-    "chars": 217704,
+    "size_bytes": 359871,
+    "lines": 7239,
+    "chars": 216668,
     "rough_token_pressure": {
-      "low": 54426,
-      "high": 108852
+      "low": 54167,
+      "high": 108334
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 165538,
-        "lines": 2635,
-        "chars": 101231,
+        "size_bytes": 166196,
+        "lines": 2656,
+        "chars": 100195,
         "rough_token_pressure": {
-          "low": 25307,
-          "high": 50615
+          "low": 25048,
+          "high": 50097
         }
       }
     },
@@ -551,35 +551,6 @@
       }
     },
     {
-      "path": "compass/docs/task-reports/2026-05-08-redcap-runtime-layout-minimum-compatible-apply.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-2i runtime 最小兼容物理布局落地",
-      "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9232,
-      "lines": 187,
-      "chars": 5802,
-      "summary": "当前已完成：RedCap 已新增 package-visible 的最小 runtime 物理布局：`runtime/redcap-core/**` 与 `runtime/host-adapters/**`。 / 详情：新增 runtime wrapper 会委托回根入口，保持 `bin/redcap`、`revive-cap.sh`、`closeout-cap.sh` 继续作为兼容入口；没有移动 `compass/tools`、`prism/tools`，也没有删除任何旧入口或运行证据。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已新增 package-visible 的最小 runtime 物理布局：`runtime/redcap-core/**` 与 `runtime/host-adapters/**`。",
-          "详情：新增 runtime wrapper 会委托回根入口，保持 `bin/redcap`、`revive-cap.sh`、`closeout-cap.sh` 继续作为兼容入口；没有移动 `compass/tools`、`prism/tools`，也没有删除任何旧入口或运行证据。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P2-8 已把 `prism/runs` 的清理提示改成只读审查 / dry-run / 物理删除需显式批准的安全口径，并完成 closeout receipt。"
-        ],
-        "next_step": [
-          "下一步计划做的是：若继续推进 public release，只能进入独立 release task；当前仍不能替用户决定 `private=false`、license、npm 凭据和真实发布动作。"
-        ],
-        "position": [
-          "整体计划脉络图是：信息架构治理 → package 白名单预检 → CLI 产品面加固 → runtime 最小兼容布局 → 未来独立 release task。",
-          "当前所在位置：P4-2i `redcap-runtime-layout-minimum-compatible-apply`，这是发布前 blocker 的工程收敛切片，不是发布切片。"
-        ]
-      }
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-09-feishu-human-readable-node-report.md",
       "collection": "task-reports",
       "title": "任务完成报告：飞书节点汇报人类可读化",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：双通知修复 → 飞书内容可读化 → 回归/棱镜验收 → closeout → 回到父任务线。",
           "当前所在位置：P2-10 `redcap-feishu-human-readable-node-report`，这是人类可见汇报质量修复，不是发布任务。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-09-feishu-outcome-readable-and-reply-research.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：飞书成果汇报再人类化与回复通道调研",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9890,
+      "lines": 208,
+      "chars": 4766,
+      "summary": "当前已完成：飞书完成通知已改成任务结果摘要，正文优先说明“做完了什么、有什么用、下一步做什么、你需不需要参与”。 / 详情：原来偏内部流程的标题不再作为飞书主段落；可追溯记录只保留在末尾。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：飞书完成通知已改成任务结果摘要，正文优先说明“做完了什么、有什么用、下一步做什么、你需不需要参与”。",
+          "详情：原来偏内部流程的标题不再作为飞书主段落；可追溯记录只保留在末尾。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P2-10 已把飞书从字段堆叠改成六段式汇报，但仍保留了一些偏控制面的表达。"
+        ],
+        "next_step": [
+          "下一步计划做的是：把飞书回复指令入口另列为后续设计任务；当前先保持普通完成通知只负责“告知结果”，不直接执行你在飞书里的回复。"
+        ],
+        "position": [
+          "整体计划脉络图是：飞书单出口 → 飞书可读化 → 飞书成果摘要化 → 回复指令通道设计评估。",
+          "当前所在位置：P2-11 `redcap-feishu-outcome-readable-and-reply-research`，这是飞书人类可读性和交互边界修正，不是发布任务。"
         ]
       }
     }

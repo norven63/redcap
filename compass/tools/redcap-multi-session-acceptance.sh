@@ -14216,10 +14216,10 @@ run_human_communication_check_case() {
             "" \
             "$REDCAP_ROOT"
     )"
-    for field in "结论" "任务位置" "下一步" "需要 Norven" "阻塞状态" "关键证据"; do
+    for field in "这次完成了什么" "带来的效果" "接下来做什么" "需要你做什么" "查看记录"; do
         assert_string_contains "$notify_output" "$field"
     done
-    for field in "**任务全景图**" "**当前位置**" "**整体计划脉络图与当前位置**" "**下一步可直接开始**" "**提交清单**"; do
+    for field in "**结论**" "**任务位置**" "**阻塞状态**" "**关键证据**" "**任务全景图**" "**当前位置**" "**整体计划脉络图与当前位置**" "**下一步可直接开始**" "**提交清单**"; do
         assert_not_string_contains "$notify_output" "$field"
     done
     assert_not_contains "$REDCAP_ROOT/compass/tools/redcap-claude-hook-stop.sh" 'python3 "$NOTIFIER" notify'

@@ -98,10 +98,10 @@ def validate_source(policy: dict[str, Any]) -> None:
         fail("legacy Claude Stop hook must not send Feishu notifications")
     if "notification-muted legacy hook" not in legacy_claude_stop:
         fail("legacy Claude Stop hook must declare notification-muted behavior")
-    for field in ["结论", "任务位置", "下一步", "需要 Norven", "阻塞状态", "关键证据"]:
+    for field in ["这次完成了什么", "带来的效果", "接下来做什么", "需要你做什么", "查看记录"]:
         if field not in notify_format:
             fail(f"notify formatter missing human status field: {field}")
-    for field in ["**任务全景图**", "**当前位置**", "**整体计划脉络图与当前位置**", "**下一步可直接开始**", "**提交清单**"]:
+    for field in ["**结论**", "**任务位置**", "**阻塞状态**", "**关键证据**", "**任务全景图**", "**当前位置**", "**整体计划脉络图与当前位置**", "**下一步可直接开始**", "**提交清单**"]:
         if field in notify_format:
             fail(f"notify formatter must not emit redundant Feishu section: {field}")
 
