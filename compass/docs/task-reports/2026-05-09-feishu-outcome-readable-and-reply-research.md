@@ -184,16 +184,14 @@
 
 ---
 
-## 八、参考资料
+## 八、附录
+
+### 附录 A：参考资料
 
 - 飞书开放平台：接收消息事件 `im.message.receive_v1`。  
 - 飞书开放平台：消息回复接口。
 
----
-
-## 九、附录
-
-### 附录 A：关键文件
+### 附录 B：关键文件
 
 - `compass/tools/redcap-notify-format.sh`
 - `references/human-communication-policy.json`
@@ -201,7 +199,7 @@
 - `compass/tools/redcap-feishu-notification-policy-check.py`
 - `compass/tools/feishu-notifier.py`
 
-### 附录 B：Commits
+### 附录 C：Commits
 
 ```text
 待提交

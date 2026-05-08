@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 359871,
-    "lines": 7239,
-    "chars": 216668,
+    "size_bytes": 359872,
+    "lines": 7237,
+    "chars": 216667,
     "rough_token_pressure": {
-      "low": 54167,
-      "high": 108334
+      "low": 54166,
+      "high": 108333
     },
     "collections": {
       "archive": {
@@ -51,9 +51,9 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 166196,
-        "lines": 2656,
-        "chars": 100195,
+        "size_bytes": 166197,
+        "lines": 2654,
+        "chars": 100194,
         "rough_token_pressure": {
           "low": 25048,
           "high": 50097
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9890,
-      "lines": 208,
-      "chars": 4766,
+      "size_bytes": 9891,
+      "lines": 206,
+      "chars": 4765,
       "summary": "当前已完成：飞书完成通知已改成任务结果摘要，正文优先说明“做完了什么、有什么用、下一步做什么、你需不需要参与”。 / 详情：原来偏内部流程的标题不再作为飞书主段落；可追溯记录只保留在末尾。",
       "status_basis": "filename_recency_only",
       "summary_points": {
