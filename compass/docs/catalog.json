@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 373138,
-    "lines": 7304,
-    "chars": 227369,
+    "size_bytes": 373696,
+    "lines": 7311,
+    "chars": 227677,
     "rough_token_pressure": {
-      "low": 56842,
-      "high": 113684
+      "low": 56919,
+      "high": 113838
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 179463,
-        "lines": 2721,
-        "chars": 110896,
+        "size_bytes": 180021,
+        "lines": 2728,
+        "chars": 111204,
         "rough_token_pressure": {
-          "low": 27724,
-          "high": 55448
+          "low": 27801,
+          "high": 55602
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 8674,
-      "lines": 180,
-      "chars": 5494,
+      "size_bytes": 9232,
+      "lines": 187,
+      "chars": 5802,
       "summary": "当前已完成：RedCap 已新增 package-visible 的最小 runtime 物理布局：`runtime/redcap-core/**` 与 `runtime/host-adapters/**`。 / 详情：新增 runtime wrapper 会委托回根入口，保持 `bin/redcap`、`revive-cap.sh`、`closeout-cap.sh` 继续作为兼容入口；没有移动 `compass/tools`、`prism/tools`，也没有删除任何旧入口或运行证据。",
       "status_basis": "filename_recency_only",
       "summary_points": {

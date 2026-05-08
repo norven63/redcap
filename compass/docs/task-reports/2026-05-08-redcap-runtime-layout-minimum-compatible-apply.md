@@ -96,7 +96,13 @@
 
 ---
 
-## 四、棱镜评审
+## 四、人工审核要点
+
+- 目前不需要 Norven 人工介入。本轮没有触碰 `private=false`、license、npm 凭据或真实发布动作。
+- 需要人工保留的未来决策是：是否启动 public release、采用什么 license、使用哪个 npm 发布账号、是否允许完整 runtime 物理迁移。
+- 棱镜对本轮方案的结论是：可以做最小兼容 runtime 布局；不能把它宣传成完整 runtime 拆分或 public-release-ready。
+
+### 4.1 棱镜评审
 
 | 角色 | Agent | 结论 | 重点意见 |
 |---|---|---|---|
@@ -176,5 +182,6 @@
 ### 附录 B：Commits
 
 ```
-待提交
+32dfbc2 feat: 建立 runtime 最小兼容布局
+54b46e7 test: 刷新 runtime 布局后的 E2E 证据
 ```
