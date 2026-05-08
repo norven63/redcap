@@ -155,6 +155,7 @@
 | feishu-inbox-check | 通过 |
 | acceptance: feishu-inbox-safe-ingress | 通过 |
 | acceptance: all | 通过；过程中抓到 spec-check fixture 未补 Feishu Inbox 占位脚本，已修复并重跑全量通过 |
+| clean workspace E2E | 通过；基于提交 `76dc940` 重新验证干净克隆、隔离身份、revive/status、publish-safety 与 package-manifest，候选包文件数 242 |
 | Kimi 独立审查 | pass；非阻断建议（Claude 入口对齐、acceptance 缩进一致性）已吸收 |
 | Claude Code 独立审查 | 进程超时无 verdict，已终止，避免外部审查本身变成时间黑洞 |
 

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 364321,
-    "lines": 7263,
-    "chars": 218556,
+    "size_bytes": 364498,
+    "lines": 7264,
+    "chars": 218673,
     "rough_token_pressure": {
-      "low": 54639,
-      "high": 109278
+      "low": 54668,
+      "high": 109336
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 170646,
-        "lines": 2680,
-        "chars": 102083,
+        "size_bytes": 170823,
+        "lines": 2681,
+        "chars": 102200,
         "rough_token_pressure": {
-          "low": 25520,
-          "high": 51041
+          "low": 25550,
+          "high": 51100
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 14340,
-      "lines": 232,
-      "chars": 6654,
+      "size_bytes": 14517,
+      "lines": 233,
+      "chars": 6771,
       "summary": "当前已完成：飞书完成通知的人类可读性已经收口；飞书回复也已接成“安全收件箱”，可以被 RedCap 看到，但不会被当成远程命令直接执行。 / 详情：整体任务全景图已从“当前小任务路线”升级为“RedCap 这次超长主线任务的总览”；飞书回复会进入待处理入口，再由中插需求、人工决策或当前任务合并流程接管。",
       "status_basis": "filename_recency_only",
       "summary_points": {
