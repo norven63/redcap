@@ -341,6 +341,13 @@ RedCap 自身变更不走 Dispatcher 主状态机。飞书只做“节点汇报�
 bash compass/tools/redcap-feishu-notification-policy-check.sh
 ```
 
+**回复入口（允许，但只进收件箱）**：普通飞书回复可以由 `pending-scan` 收入 RedCap 收件箱；它只是“收到一条可能需要合并到任务树的用户消息”，不是远程命令通道。任何“继续、纠错、新需求、重新评审”等回复，都必须先进入中插需求、人工决策或当前任务合并流程，再经过任务账本与 closeout；不得因为飞书里出现一句话就直接执行。
+
+```bash
+bash compass/tools/redcap-feishu-inbox.sh check
+bash compass/tools/redcap-feishu-inbox.sh summary --human
+```
+
 **节点汇报（允许，低频）**：每轮真正完成 closeout 节点时，统一通过 on-complete 发送一次 `node-report`；不要在每个内部小状态都发飞书。
 
 ```bash

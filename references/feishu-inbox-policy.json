@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "policy_id": "redcap-feishu-inbox-safe-ingress",
+  "description": "Feishu replies are accepted as a safe inbox for later RedCap intake. They are not a remote command channel and must never bypass change-intake, task ledger, manual-decision, review, or closeout.",
+  "mode": "safe-ingress-inbox",
+  "state_path": "compass/.workflow/feishu/pending-items.json",
+  "capture_sources": [
+    "history-scan",
+    "queued-window"
+  ],
+  "legacy_capture_sources": [
+    "followup-window"
+  ],
+  "allowed_statuses": [
+    "open",
+    "promoted",
+    "dismissed"
+  ],
+  "scan_trigger_rule": "revive/install may run a soft pending-scan to refresh the inbox; current-status only reads the stored inbox and must not secretly block on Feishu network access.",
+  "execution_boundary_rule": "Open inbox items are user messages waiting for triage. Promoting an item only marks that it should enter RedCap change-intake or manual decision handling; it does not execute the message text.",
+  "routing_rule": "Inbox text may be classified as continue-request, review-request, change-request, or unknown for human-readable triage, but classification is advisory only.",
+  "legacy_source_rule": "followup-window is accepted only for historical pending-items compatibility; current production capture paths are history-scan and queued-window.",
+  "hard_guards": [
+    "no auto execution from Feishu text",
+    "no bypass of .dev-task.md",
+    "no bypass of change-intake",
+    "no bypass of manual-decision boundary",
+    "no bypass of closeout receipt"
+  ],
+  "human_surface_rule": "current-status and diagnose must expose whether open Feishu inbox items exist so Cap can decide whether to continue the existing task or merge a received message into the task tree."
+}

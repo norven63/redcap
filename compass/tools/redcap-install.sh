@@ -92,6 +92,8 @@ run_check() {
             printf '%s\n' "$output" | sed -n '1,4p' | sed 's/^/  /'
         elif [[ "$label" == "tracking-health" ]]; then
             printf '%s\n' "$output" | sed '/^REDCAP_TRACKING_HEALTH$/d;/^TRACKING_OK$/d' | sed 's/^/  /'
+        elif [[ "$label" == "feishu-inbox" ]]; then
+            printf '%s\n' "$output" | sed 's/^/  /'
         elif [[ "$label" == "host-hook-readiness" ]]; then
             printf '%s\n' "$output" | sed 's/^/  /'
         fi
@@ -120,6 +122,7 @@ fi
 
 run_check "user-agent-identity" bash "$SCRIPT_DIR/redcap-user-agent-identity.sh" init --host "$HOST"
 run_check "feishu-notification-policy" bash "$SCRIPT_DIR/redcap-feishu-notification-policy-check.sh"
+run_check "feishu-inbox" bash "$SCRIPT_DIR/redcap-feishu-inbox.sh" scan --soft
 run_check "current-status" bash "$SCRIPT_DIR/redcap-current-status.sh" "$TASK_FILE"
 run_check "tracking-health" bash "$SCRIPT_DIR/redcap-tracking-health.sh" "$TASK_FILE"
 run_check "host-hook-readiness" bash "$SCRIPT_DIR/redcap-host-hook-readiness.sh" "$HOST" "$REDCAP_ROOT"

@@ -162,7 +162,7 @@ def main() -> int:
         if phrase not in feishu_rule:
             fail(f"feishu_deduplication_rule missing phrase: {phrase}")
     reply_rule = str(policy.get("feishu_reply_command_boundary_rule", ""))
-    for phrase in ["outbound-only", "pending-scan", "ask/confirm/resume", "RedCap inbox", "change-intake"]:
+    for phrase in ["outbound-only", "pending-scan", "ask/confirm/resume", "RedCap inbox", "safe ingress", "does not auto execute", "change-intake"]:
         if phrase not in reply_rule:
             fail(f"feishu_reply_command_boundary_rule missing phrase: {phrase}")
     if set(policy.get("allowed_feishu_events") or []) != {"node-report", "manual-intervention"}:

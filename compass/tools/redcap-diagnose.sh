@@ -154,6 +154,7 @@ run_check "llm-wiki-asset-stratification" bash "$SCRIPT_DIR/redcap-llm-wiki-asse
 run_check "llm-wiki-lite" bash "$SCRIPT_DIR/redcap-llm-wiki-lite-check.sh" || overall=1
 run_check "retrieval-escalation" bash "$SCRIPT_DIR/redcap-retrieval-escalation-check.sh" || overall=1
 run_check "user-agent-identity" bash "$SCRIPT_DIR/redcap-user-agent-identity.sh" check --local || overall=1
+run_check "feishu-inbox" bash "$SCRIPT_DIR/redcap-feishu-inbox.sh" check || overall=1
 run_check "feishu-notification-policy" bash "$SCRIPT_DIR/redcap-feishu-notification-policy-check.sh" || overall=1
 run_check "human-communication" bash "$SCRIPT_DIR/redcap-human-communication-check.sh" || overall=1
 run_check "package-publish-safety" bash "$SCRIPT_DIR/redcap-package-publish-safety-check.sh" || overall=1

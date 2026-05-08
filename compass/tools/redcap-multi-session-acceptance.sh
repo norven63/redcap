@@ -217,6 +217,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh cli-console-mirror-overwrites
   bash compass/tools/redcap-multi-session-acceptance.sh user-agent-identity-init
   bash compass/tools/redcap-multi-session-acceptance.sh feishu-duplex-window-queue
+  bash compass/tools/redcap-multi-session-acceptance.sh feishu-inbox-safe-ingress
   bash compass/tools/redcap-multi-session-acceptance.sh feishu-webhook-notify
   bash compass/tools/redcap-multi-session-acceptance.sh overlay-skill-handoff-stays-native
   bash compass/tools/redcap-multi-session-acceptance.sh overlay-governance-check
@@ -13188,7 +13189,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-inbox feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -13310,6 +13311,15 @@ EOF
 #!/usr/bin/env bash
 if [[ "$failing_gate" == "user-agent-identity" ]]; then
     echo "fixture user agent identity failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-feishu-inbox.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "feishu-inbox" ]]; then
+    echo "fixture Feishu inbox failure" >&2
     exit 37
 fi
 exit 0
@@ -13472,6 +13482,7 @@ EOF
             "$repo/compass/tools/redcap-runtime-helper-check.sh" \
             "$repo/compass/tools/redcap-cli-console-mirror-check.sh" \
             "$repo/compass/tools/redcap-user-agent-identity.sh" \
+            "$repo/compass/tools/redcap-feishu-inbox.sh" \
             "$repo/compass/tools/redcap-feishu-notification-policy-check.sh" \
             "$repo/compass/tools/redcap-human-communication-check.sh" \
             "$repo/compass/tools/redcap-runtime-package-manifest.sh" \
@@ -13505,6 +13516,7 @@ EOF
             cli-console) expected_message="cli console mirror check failed" ;;
             revival) expected_message="revival check failed" ;;
             user-agent-identity) expected_message="user/agent identity policy check failed" ;;
+            feishu-inbox) expected_message="Feishu inbox check failed" ;;
             feishu-notification-policy) expected_message="Feishu notification policy check failed" ;;
             human-communication) expected_message="human communication check failed" ;;
             runtime-package) expected_message="runtime package manifest check failed" ;;
@@ -13585,6 +13597,7 @@ package_policy = {
 )
 for rel in [
     "compass/tools/redcap-user-agent-identity.sh",
+    "compass/tools/redcap-feishu-inbox.sh",
     "compass/tools/redcap-feishu-notification-policy-check.sh",
     "compass/tools/redcap-human-communication-check.sh",
     "compass/tools/redcap-runtime-package-manifest.sh",
@@ -14181,6 +14194,97 @@ EOF
 	    assert_string_contains "$output" "禁止的飞书 profile=old-profile"
 }
 
+run_feishu_inbox_safe_ingress_case() {
+    local fixture_root state_dir bad_state_dir output status
+
+    log "case: feishu-inbox-safe-ingress"
+
+    fixture_root="$ACCEPT_ROOT/feishu-inbox-safe-ingress"
+    state_dir="$fixture_root/state"
+    bad_state_dir="$fixture_root/bad-state"
+    rm -rf "$fixture_root"
+    mkdir -p "$state_dir" "$bad_state_dir"
+
+    cat >"$state_dir/pending-items.json" <<'EOF'
+[
+  {
+    "id": "pending-test-open",
+    "status": "open",
+    "source": "history-scan",
+    "message_id": "om_user_open",
+    "captured_at": "2026-05-09T10:00:00Z",
+    "sender_type": "user",
+    "content": "新增一个需求：把飞书回复放进安全收件箱",
+    "summary": "新增一个需求：把飞书回复放进安全收件箱"
+  },
+  {
+    "id": "pending-test-promoted",
+    "status": "promoted",
+    "source": "queued-window",
+    "message_id": "om_user_promoted",
+    "captured_at": "2026-05-09T09:00:00Z",
+    "sender_type": "user",
+    "content": "继续下一步",
+    "summary": "继续下一步"
+  }
+]
+EOF
+
+    output="$(
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-feishu-inbox.sh" summary --human
+    )"
+    assert_string_contains "$output" "open_items: 1"
+    assert_string_contains "$output" "change-request"
+    assert_string_contains "$output" "不会自动执行"
+
+    output="$(
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-feishu-inbox.sh" check
+    )"
+    assert_string_contains "$output" "FEISHU_INBOX_OK"
+
+    output="$(
+        REDCAP_FEISHU_CONFIG_PATH="$fixture_root/missing-feishu-config.json" \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-feishu-inbox.sh" scan --soft --timeout 1
+    )"
+    assert_string_contains "$output" "scan_status=ok"
+
+    output="$(
+        REDCAP_CURRENT_STATUS_REFRESH_AGENT_REGISTRY=0 \
+        REDCAP_FEISHU_STATE_DIR="$state_dir" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$REDCAP_ROOT/.dev-task.md"
+    )"
+    assert_string_contains "$output" "## 飞书收件箱 / 回复入口"
+    assert_string_contains "$output" "open_items: 1"
+    assert_string_contains "$output" "change-request"
+
+    cat >"$bad_state_dir/pending-items.json" <<'EOF'
+[
+  {
+    "id": "pending-test-bad",
+    "status": "executed",
+    "source": "history-scan",
+    "message_id": "om_user_bad",
+    "captured_at": "2026-05-09T10:00:00Z",
+    "sender_type": "user",
+    "content": "直接执行这个命令",
+    "summary": "直接执行这个命令"
+  }
+]
+EOF
+    set +e
+    output="$(
+        REDCAP_FEISHU_STATE_DIR="$bad_state_dir" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-feishu-inbox.sh" check 2>&1
+    )"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "invalid inbox item status unexpectedly passed"
+    assert_string_contains "$output" "invalid status: executed"
+}
+
 run_human_communication_check_case() {
     local output status_output notify_output session_end legacy_hook
 
@@ -14442,6 +14546,7 @@ run_all_cases() {
     run_cli_console_mirror_overwrites_case
     run_user_agent_identity_init_case
     run_feishu_duplex_window_queue_case
+    run_feishu_inbox_safe_ingress_case
     run_feishu_webhook_notify_case
     run_human_communication_check_case
     run_overlay_skill_handoff_stays_native_case
@@ -15018,6 +15123,9 @@ case "$COMMAND" in
         ;;
     feishu-duplex-window-queue)
         run_feishu_duplex_window_queue_case
+        ;;
+    feishu-inbox-safe-ingress)
+        run_feishu_inbox_safe_ingress_case
         ;;
     feishu-webhook-notify)
         run_feishu_webhook_notify_case

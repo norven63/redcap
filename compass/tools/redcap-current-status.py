@@ -428,6 +428,33 @@ def change_intake_summary(repo: Path, task_file: Path) -> list[str]:
     return lines
 
 
+def feishu_inbox_summary(repo: Path) -> list[str]:
+    script = repo / "compass/tools/redcap-feishu-inbox.sh"
+    if not script.is_file():
+        return ["feishu-inbox: missing redcap-feishu-inbox.sh"]
+    try:
+        proc = subprocess.run(
+            ["bash", str(script), "summary", "--human", "--limit", "3"],
+            cwd=repo,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=15,
+            check=False,
+        )
+    except Exception as exc:
+        return [f"feishu-inbox 无法读取：{exc}"]
+    if proc.returncode != 0:
+        detail = proc.stdout.strip().splitlines()[0] if proc.stdout.strip() else "unknown error"
+        return [f"feishu-inbox 失败：{detail}"]
+    lines = []
+    for raw in proc.stdout.splitlines():
+        line = raw.strip()
+        if line:
+            lines.append(line)
+    return lines or ["feishu-inbox: no output"]
+
+
 def closeout_runtime_summary(repo: Path, meta: dict[str, str], task_text: str) -> list[str]:
     task_id = meta.get("task_id", "").strip()
     confirmed_section = section(task_text, "已确认需求")
@@ -709,6 +736,11 @@ def main() -> int:
 
     print("## 中插需求 / 重计划")
     for line in change_intake_summary(repo, task_file):
+        print(f"- {line}")
+    print()
+
+    print("## 飞书收件箱 / 回复入口")
+    for line in feishu_inbox_summary(repo):
         print(f"- {line}")
     print()
 
