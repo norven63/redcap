@@ -2617,7 +2617,7 @@ EOF
 run_layerb_closeout_runtime_complete_writes_receipt_case() {
     local host="copilot"
     local current_head task_file report_path report_rel case_dir
-    local on_complete_stub session_end_stub on_complete_log session_end_log output receipt_path summary_path state_path
+    local on_complete_stub session_end_stub notifier_stub on_complete_log session_end_log notify_log output receipt_path summary_path state_path
 
     log "case: layerb-closeout-runtime-complete-writes-receipt"
 
@@ -2641,21 +2641,47 @@ EOF
     TEMP_PROJECTS+=("$case_dir")
     on_complete_stub="$case_dir/on-complete-stub.sh"
     session_end_stub="$case_dir/session-end-stub.sh"
+    notifier_stub="$case_dir/notifier-stub.py"
     on_complete_log="$case_dir/on-complete.log"
     session_end_log="$case_dir/session-end.log"
+    notify_log="$case_dir/notify.log"
     cat >"$on_complete_stub" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-printf '%s\n' "on-complete" >>"$on_complete_log"
+printf 'on-complete skip=%s\n' "\${REDCAP_SKIP_FEISHU:-}" >>"$on_complete_log"
 EOF
     cat >"$session_end_stub" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "session-end" >>"$session_end_log"
 EOF
-    chmod +x "$on_complete_stub" "$session_end_stub"
+    cat >"$notifier_stub" <<'PYEOF'
+#!/usr/bin/env python3
+import os
+import pathlib
+import sys
 
-    output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+log_path = pathlib.Path(os.environ["FAKE_NOTIFY_LOG"])
+receipt_path = pathlib.Path(os.environ.get("REDCAP_CLOSEOUT_RECEIPT_PATH", ""))
+summary_path = pathlib.Path(os.environ.get("REDCAP_CLOSEOUT_SUMMARY_PATH", ""))
+window_type = ""
+if "--window-type" in sys.argv:
+    idx = sys.argv.index("--window-type")
+    if idx + 1 < len(sys.argv):
+        window_type = sys.argv[idx + 1]
+message = sys.argv[2] if len(sys.argv) > 2 else ""
+with log_path.open("a", encoding="utf-8") as handle:
+    handle.write(
+        "called "
+        f"window_type={window_type} "
+        f"receipt_exists={'1' if receipt_path.exists() else '0'} "
+        f"summary_exists={'1' if summary_path.exists() else '0'} "
+        f"headline={'1' if 'closeout 已完成' in message else '0'}\n"
+    )
+PYEOF
+    chmod +x "$on_complete_stub" "$session_end_stub" "$notifier_stub"
+
+    output="$(FAKE_NOTIFY_LOG="$notify_log" REDCAP_SKIP_FEISHU=0 REDCAP_FEISHU_NOTIFIER="$notifier_stub" REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
     receipt_path="$(python3 - <<'PY' "$output"
 import json, sys
 payload = json.loads(sys.argv[1])
@@ -2679,7 +2705,14 @@ PY
     assert_eq "$receipt_path" "$state_path"
     assert_string_contains "$(cat "$summary_path")" "统一 closeout runtime 已完成收尾"
     assert_num_eq "$(wc -l < "$on_complete_log" | tr -d '[:space:]')" 1
+    assert_string_contains "$(cat "$on_complete_log")" "skip=1"
     assert_num_eq "$(wc -l < "$session_end_log" | tr -d '[:space:]')" 1
+    assert_exists "$notify_log"
+    assert_num_eq "$(wc -l < "$notify_log" | tr -d '[:space:]')" 1
+    assert_string_contains "$(cat "$notify_log")" "window_type=node-report"
+    assert_string_contains "$(cat "$notify_log")" "receipt_exists=1"
+    assert_string_contains "$(cat "$notify_log")" "summary_exists=1"
+    assert_string_contains "$(cat "$notify_log")" "headline=1"
 }
 
 run_layerb_closeout_runtime_uses_pending_baseline_case() {
@@ -2846,7 +2879,7 @@ exit 0
 EOF
     chmod +x "$on_complete_stub" "$session_end_stub"
 
-    output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    output="$(REDCAP_SKIP_FEISHU=1 REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
     receipt_path="$(python3 - <<'PY' "$output"
 import json, sys
 payload = json.loads(sys.argv[1])
@@ -2997,7 +3030,7 @@ exit 0
 EOF
     chmod +x "$on_complete_stub" "$session_end_stub"
 
-    complete_output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    complete_output="$(REDCAP_SKIP_FEISHU=1 REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
     receipt_path="$(python3 - <<'PY' "$complete_output"
 import json, sys
 payload = json.loads(sys.argv[1])
@@ -3081,7 +3114,7 @@ exit 0
 EOF
     chmod +x "$on_complete_stub" "$session_end_stub"
 
-    complete_output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    complete_output="$(REDCAP_SKIP_FEISHU=1 REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
     assert_string_contains "$complete_output" "\"status\": \"completed\""
 
     sync_output="$(bash "$REDCAP_ROOT/closeout-cap.sh" sync-promises --task-file "$task_file")"
@@ -3142,6 +3175,7 @@ EOF
     complete_output="$(
         REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" \
         REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" \
+        REDCAP_SKIP_FEISHU=1 \
             bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head"
     )"
     assert_string_contains "$complete_output" "\"status\": \"completed\""

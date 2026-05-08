@@ -15,7 +15,7 @@
   "status_update_rule": "Every interruption, checkpoint, and final node report must say whether Norven needs to act, whether the task is blocked, what the next step is, the task panorama, and the current node.",
   "narrative_quality_rule": "Human-facing reports must be paragraph-readable and conclusion-first. Prefer explaining the problem being solved, the chosen solution, the resulting effect, the next step, and whether human help is needed; do not make the primary explanation a changelog of files, scripts, moves, or command outputs.",
   "report_led_summary_rule": "When a task report exists, interruption/final updates must summarize report sections 0.1-0.4 first, then surface any non-empty 人工审核要点 or 人工验证项 before technical file/script details.",
-  "feishu_alignment_rule": "Feishu node-report and manual-intervention messages must reuse the same required status fields where a task report or status context is available.",
+  "feishu_alignment_rule": "Feishu node-report and manual-intervention messages must reuse the same required status fields where a task report or status context is available. Layer B final node-report is a closeout-runtime responsibility after receipt generation; on-complete and session-end must not also send a duplicate success node-report inside that path.",
   "internal_audit_gap_rule": "SessionEnd / Stop audit gaps are internal control-plane signals by default. They must be recorded to pending closure / ledger / diagnostics, but must not send Feishu unless the gap is a true manual-intervention blocker.",
   "allowed_feishu_events": [
     "node-report",

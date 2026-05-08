@@ -1,4 +1,27 @@
 reports:
+  - id: "20260508-feishu-closeout-single-node-report"
+    mode: acceptance-review
+    date: "2026-05-08"
+    topic: "Feishu closeout single node-report"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Make closeout runtime the only final Layer B node-report producer"
+      - "Mute on-complete inside closeout runtime with REDCAP_SKIP_FEISHU=1"
+      - "Send the final node-report only after receipt and summary are written"
+      - "Block completion with pending-closure if final node-report sending fails"
+    open_questions:
+      - "Explicit REDCAP_SKIP_FEISHU=1 or REDCAP_SKIP_CLOSEOUT_NODE_REPORT=1 still intentionally suppresses the final notification"
+      - "Standalone on-complete retains compatibility notification behavior outside closeout runtime"
+    lessons_updated: false
+    files_affected:
+      - "compass/tools/redcap-layerb-closeout-runtime.py"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "compass/tools/redcap-feishu-notification-policy-check.py"
+      - "references/feishu-notification-policy.json"
+      - "references/human-communication-policy.json"
+    archived: false
   - id: "20260508-runtime-layout-minimum-compatible-apply"
     mode: planning-review
     date: "2026-05-08"

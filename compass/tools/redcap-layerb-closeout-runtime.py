@@ -22,6 +22,8 @@ REDCAP_ROOT = SCRIPT_DIR.parent.parent
 BRIDGE_SCRIPT = Path(os.environ.get("REDCAP_LAYERB_CLOSEOUT_RUNTIME_BRIDGE", str(SCRIPT_DIR / "redcap-layerb-closeout-runtime-bridge.sh")))
 ON_COMPLETE_SCRIPT = Path(os.environ.get("REDCAP_ON_COMPLETE_SCRIPT", str(SCRIPT_DIR / "redcap-on-complete.sh")))
 SESSION_END_SCRIPT = Path(os.environ.get("REDCAP_LAYERB_SESSION_END_SCRIPT", str(SCRIPT_DIR / "redcap-layerB-session-end.sh")))
+NOTIFY_FORMAT_SCRIPT = Path(os.environ.get("REDCAP_NOTIFY_FORMAT_SCRIPT", str(SCRIPT_DIR / "redcap-notify-format.sh")))
+FEISHU_NOTIFIER_SCRIPT = Path(os.environ.get("REDCAP_FEISHU_NOTIFIER", str(SCRIPT_DIR / "feishu-notifier.py")))
 PRISM_ACCEPTANCE_SCRIPT = Path(os.environ.get("REDCAP_PRISM_ACCEPTANCE_SCRIPT", str(SCRIPT_DIR / "redcap-prism-acceptance-check.sh")))
 EVOLUTION_CANDIDATE_SCRIPT = Path(
     os.environ.get("REDCAP_EVOLUTION_CANDIDATE_SCRIPT", str(SCRIPT_DIR / "redcap-evolution-candidate-check.sh"))
@@ -483,6 +485,98 @@ def closeout_runtime_env(identity: TaskIdentity, host: str, baseline_head: str) 
         "returncode": init.returncode,
         "stdout": init.stdout,
         "stderr": init.stderr,
+    }
+
+
+def closeout_node_report(
+    identity: TaskIdentity,
+    *,
+    host: str,
+    baseline_head: str,
+    current: str,
+    report_rel: str,
+    receipt_path: Path,
+    summary_path: Path,
+) -> dict[str, Any]:
+    if os.environ.get("REDCAP_SKIP_FEISHU", "0") == "1" or os.environ.get("REDCAP_SKIP_CLOSEOUT_NODE_REPORT", "0") == "1":
+        return {
+            "status": "skipped",
+            "reason": "notification disabled by REDCAP_SKIP_FEISHU/REDCAP_SKIP_CLOSEOUT_NODE_REPORT",
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+        }
+
+    notifier = Path(os.environ.get("REDCAP_FEISHU_NOTIFIER", str(FEISHU_NOTIFIER_SCRIPT)))
+    if not NOTIFY_FORMAT_SCRIPT.is_file():
+        return {
+            "status": "failed",
+            "reason": f"missing notify formatter: {NOTIFY_FORMAT_SCRIPT}",
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "",
+        }
+    if not notifier.is_file():
+        return {
+            "status": "failed",
+            "reason": f"missing feishu notifier: {notifier}",
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "",
+        }
+
+    script = r'''
+set -euo pipefail
+repo_root="$1"
+baseline_head="$2"
+project_name="$3"
+report_ref="$4"
+notify_format="$5"
+notifier="$6"
+
+source "$notify_format"
+commit_log="$(git -C "$repo_root" --no-pager log --oneline "${baseline_head}..HEAD" 2>/dev/null || true)"
+message="$(redcap_build_completion_message \
+  "RedCap 节点汇报：Layer B closeout 已完成" \
+  "$project_name" \
+  "$commit_log" \
+  "closeout runtime receipt" \
+  "$report_ref" \
+  "$repo_root")"
+
+python3 "$notifier" notify \
+  "$message" \
+  --project "$project_name" \
+  --window-type node-report \
+  --no-background-watch
+'''
+    notify_env = {
+        "REDCAP_CLOSEOUT_HOST": host,
+        "REDCAP_CLOSEOUT_CURRENT_HEAD": current,
+        "REDCAP_CLOSEOUT_RECEIPT_PATH": str(receipt_path),
+        "REDCAP_CLOSEOUT_SUMMARY_PATH": str(summary_path),
+    }
+    completed = run_shell(
+        [
+            "bash",
+            "-c",
+            script,
+            "redcap-closeout-node-report",
+            str(identity.repo_root),
+            baseline_head,
+            identity.repo_root.name,
+            report_rel,
+            str(NOTIFY_FORMAT_SCRIPT),
+            str(notifier),
+        ],
+        env=notify_env,
+    )
+    return {
+        "status": "pass" if completed.returncode == 0 else "failed",
+        "reason": "" if completed.returncode == 0 else "feishu node-report failed during closeout runtime",
+        "returncode": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
     }
 
 
@@ -964,7 +1058,9 @@ def command_complete(args: argparse.Namespace) -> int:
         emit({"status": "blocked", "reason": detail, "audit_path": str(audit_path), "state": state})
         return 1
 
-    on_complete = run_shell(["bash", str(ON_COMPLETE_SCRIPT), str(identity.repo_root), baseline_head, identity.repo_root.name], env=runtime_env)
+    on_complete_env = dict(runtime_env)
+    on_complete_env["REDCAP_SKIP_FEISHU"] = "1"
+    on_complete = run_shell(["bash", str(ON_COMPLETE_SCRIPT), str(identity.repo_root), baseline_head, identity.repo_root.name], env=on_complete_env)
     current = current_head(identity)
     if on_complete.returncode != 0:
         detail = f"redcap-on-complete failed with status={on_complete.returncode}"
@@ -1060,6 +1156,72 @@ def command_complete(args: argparse.Namespace) -> int:
         phase="closeout-runtime",
         status="pass",
         detail="receipt generated",
+        host=host,
+        trigger="complete",
+        baseline_head=baseline_head,
+        current_head=current,
+        artifact_path=report_rel,
+    )
+    notify_result = closeout_node_report(
+        identity,
+        host=host,
+        baseline_head=baseline_head,
+        current=current,
+        report_rel=report_rel,
+        receipt_path=receipt_path,
+        summary_path=summary_path,
+    )
+    if notify_result["returncode"] != 0:
+        detail = f"closeout node-report notification failed with status={notify_result['returncode']}"
+        bridge_write_pending(
+            identity,
+            host=host,
+            trigger="layerb-closeout-runtime-notify",
+            required_redlines="notify,closeout-runtime",
+            detail=detail,
+            artifact_path=report_rel,
+            baseline_head=baseline_head,
+            audited_head=current,
+        )
+        bridge_append_ledger(
+            identity,
+            phase="notify",
+            status="blocked",
+            detail=detail,
+            host=host,
+            trigger="complete",
+            baseline_head=baseline_head,
+            current_head=current,
+            artifact_path=report_rel,
+        )
+        audit_path = append_audit(
+            identity,
+            "closeout-node-report-failed",
+            {
+                "detail": detail,
+                "notify": notify_result,
+                "receipt_path": str(receipt_path),
+                "summary_path": str(summary_path),
+            },
+        )
+        state = update_state(
+            identity,
+            status="blocked",
+            last_result="closeout-node-report-failed",
+            baseline_head=baseline_head,
+            current_head=current,
+            receipt_path=str(receipt_path),
+            summary_path=str(summary_path),
+            audit_path=str(audit_path),
+        )
+        emit({"status": "blocked", "reason": detail, "audit_path": str(audit_path), "state": state, "notify": notify_result})
+        return 1
+
+    bridge_append_ledger(
+        identity,
+        phase="notify",
+        status="pass" if notify_result["status"] != "skipped" else "skipped",
+        detail="closeout runtime node-report sent" if notify_result["status"] != "skipped" else notify_result["reason"],
         host=host,
         trigger="complete",
         baseline_head=baseline_head,

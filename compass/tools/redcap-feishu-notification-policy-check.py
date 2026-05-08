@@ -57,6 +57,7 @@ def validate_policy(policy: dict[str, Any]) -> None:
 def validate_source(policy: dict[str, Any]) -> None:
     notifier = text("compass/tools/feishu-notifier.py")
     on_complete = text("compass/tools/redcap-on-complete.sh")
+    closeout_runtime = text("compass/tools/redcap-layerb-closeout-runtime.py")
     on_stop_review = text("compass/tools/redcap-on-stop-review.sh")
     session_end = text("compass/tools/redcap-layerB-session-end.sh")
     explore_notes = text("compass/tools/redcap-explore-notes-check.sh")
@@ -70,7 +71,11 @@ def validate_source(policy: dict[str, Any]) -> None:
     if "--window-type followup" in on_complete or "--window-type followup" in session_end:
         fail("repo-owned closeout path must not send followup notifications")
     if "--window-type node-report" not in on_complete:
-        fail("on-complete must send exactly a node-report notification")
+        fail("standalone on-complete must retain node-report compatibility")
+    if 'on_complete_env["REDCAP_SKIP_FEISHU"] = "1"' not in closeout_runtime:
+        fail("closeout runtime must mute on-complete Feishu notification to prevent duplicate completion node-reports")
+    if "closeout_node_report" not in closeout_runtime or "--window-type node-report" not in closeout_runtime:
+        fail("closeout runtime must own the final Layer B node-report after receipt generation")
     if 'REDCAP_STOP_REVIEW_NOTIFY_CONTROL_PLANE_FAILURE:-0' not in on_stop_review:
         fail("stop-review control-plane failure notification must be disabled by default")
     if "NOTIFY_CONTROL_PLANE_FAILURE\" == \"1\"" not in on_stop_review:
