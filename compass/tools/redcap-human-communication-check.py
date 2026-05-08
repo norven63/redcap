@@ -22,6 +22,21 @@ REQUIRED_FIELDS = [
     "上一步完成的是",
     "下一步计划做的是",
 ]
+REQUIRED_FEISHU_FIELDS = [
+    "结论",
+    "任务位置",
+    "下一步",
+    "需要 Norven",
+    "阻塞状态",
+    "关键证据",
+]
+FORBIDDEN_FEISHU_SECTIONS = [
+    "**任务全景图**",
+    "**当前位置**",
+    "**整体计划脉络图与当前位置**",
+    "**下一步可直接开始**",
+    "**提交清单**",
+]
 
 
 def fail(message: str) -> None:
@@ -47,8 +62,8 @@ def load_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def require_all(text: str, label: str) -> None:
-    missing = [field for field in REQUIRED_FIELDS if field not in text]
+def require_all(text: str, label: str, fields: list[str]) -> None:
+    missing = [field for field in fields if field not in text]
     if missing:
         fail(f"{label} missing required fields: {', '.join(missing)}")
 
@@ -120,19 +135,30 @@ def main() -> int:
         fail("unexpected policy_id")
     if policy.get("required_status_fields") != REQUIRED_FIELDS:
         fail("required_status_fields drifted from the canonical status surface")
+    if policy.get("required_feishu_fields") != REQUIRED_FEISHU_FIELDS:
+        fail("required_feishu_fields drifted from the canonical Feishu surface")
     narrative_rule = str(policy.get("narrative_quality_rule", ""))
     for phrase in ["problem being solved", "chosen solution", "resulting effect", "not make the primary explanation a changelog"]:
         if phrase not in narrative_rule:
             fail(f"narrative_quality_rule missing phrase: {phrase}")
     report_rule = str(policy.get("report_led_summary_rule", ""))
-    for phrase in ["0.1-0.4", "人工审核", "人工验证", "technical file/script details"]:
+    for phrase in ["0.1-0.4", "0.5 human-intervention", "人工审核", "人工验证", "technical file/script details"]:
         if phrase not in report_rule:
             fail(f"report_led_summary_rule missing phrase: {phrase}")
+    feishu_rule = str(policy.get("feishu_deduplication_rule", ""))
+    for phrase in ["任务全景图 / 当前位置 / 整体计划脉络图", "single 任务位置", "关键证据"]:
+        if phrase not in feishu_rule:
+            fail(f"feishu_deduplication_rule missing phrase: {phrase}")
     if set(policy.get("allowed_feishu_events") or []) != {"node-report", "manual-intervention"}:
         fail("allowed_feishu_events must be node-report/manual-intervention")
 
-    require_all(render_status_sample(), "status formatter")
-    require_all(render_notify_sample(), "notify formatter")
+    status_sample = render_status_sample()
+    notify_sample = render_notify_sample()
+    require_all(status_sample, "status formatter", REQUIRED_FIELDS)
+    require_all(notify_sample, "notify formatter", REQUIRED_FEISHU_FIELDS)
+    for forbidden in FORBIDDEN_FEISHU_SECTIONS:
+        if forbidden in notify_sample:
+            fail(f"notify formatter must not emit redundant section: {forbidden}")
 
     session_end = read("compass/tools/redcap-layerB-session-end.sh")
     if 'AUDIT_GAP_NOTIFY="${REDCAP_SESSION_END_NOTIFY_AUDIT_GAP:-0}"' not in session_end:

@@ -115,6 +115,11 @@ def clean(value):
     value = re.sub(r"\*\*(.*?)\*\*", r"\1", value)
     value = re.sub(r"^\[[ xX]\]\s*", "", value)
     value = re.sub(r"\s+", " ", value)
+    value = re.sub(
+        r"^(当前已完成|详情|上一步完成的是|下一步计划做的是|整体计划脉络图是|当前所在位置|人工介入|说明)[：:]\s*",
+        "",
+        value,
+    )
     return value.strip(" -")
 
 
@@ -255,48 +260,59 @@ redcap_build_completion_message() {
 
     {
         printf '%s\n\n' "$headline"
-        printf -- '- 发送人：Cap\n'
         printf -- '- 项目：%s\n' "$project"
         [[ -n "$source_label" ]] && printf -- '- 来源：%s\n' "$source_label"
+
+        printf '\n**结论**\n'
+        if [[ -n "$report_label" ]]; then
+            printf '%s\n' "$(redcap_notify_markdown_list_or_none "$done_items")"
+        else
+            printf -- '- 详见本次节点提交或终端汇报\n'
+        fi
+
+        if [[ -n "$report_label" ]]; then
+            printf '\n**任务位置**\n'
+            if [[ -n "$previous_items" ]]; then
+                printf '%s\n' "$(redcap_notify_markdown_list_or_none "$previous_items")"
+            fi
+            printf '%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
+        else
+            printf '\n**任务位置**\n- 未绑定任务报告；请以终端汇报或 closeout receipt 为准\n'
+        fi
+
+        printf '\n**下一步**\n'
+        if [[ -n "$report_label" ]]; then
+            printf '%s\n' "$(redcap_notify_markdown_list_or_none "$next_items")"
+        else
+            printf -- '- 详见本次节点提交或终端汇报\n'
+        fi
+
+        printf '\n**需要 Norven**\n'
+        if [[ -n "$intervention_items" ]]; then
+            printf '%s\n' "$(redcap_notify_markdown_list_or_none "$intervention_items")"
+        elif [[ -n "$confirm_items" || -n "$verify_items" ]]; then
+            printf -- '- 需要；详见“仍需你介入 / 仍需人工验证”。\n'
+        else
+            printf -- '- 不需要；若需要 Norven 决策，RedCap 会改用 manual-intervention 通知。\n'
+        fi
+
+        printf '\n**阻塞状态**\n- 无；此消息是节点汇报，不是内部审核失败告警。\n'
+
+        if [[ -n "$confirm_items" ]]; then
+            printf '\n**仍需你介入**\n%s\n' "$(redcap_notify_markdown_list_or_none "$confirm_items")"
+        fi
+        if [[ -n "$verify_items" ]]; then
+            printf '\n**仍需人工验证**\n%s\n' "$(redcap_notify_markdown_list_or_none "$verify_items")"
+        fi
+
+        printf '\n**关键证据**\n'
         [[ -n "$report_label" ]] && printf -- '- 任务报告：%s\n' "$report_label"
         if [[ "$commit_count" -gt 0 ]]; then
             printf -- '- 本轮提交数：%s\n' "$commit_count"
         fi
         [[ -n "$latest_commit" ]] && printf -- '- 最新提交：%s\n' "$latest_commit"
-
-        if [[ -n "$intervention_items" ]]; then
-            printf '\n**人工协助**\n%s\n' "$(redcap_notify_markdown_list_or_none "$intervention_items")"
-        elif [[ -n "$confirm_items" || -n "$verify_items" ]]; then
-            printf '\n**人工协助**\n- 需要；详见“仍需你介入 / 仍需人工验证”。\n'
-        else
-            printf '\n**人工协助**\n- 不需要；若需要 Norven 决策，RedCap 会改用 manual-intervention 通知。\n'
-        fi
-        printf '\n**阻塞状态**\n- 无；此消息是节点汇报，不是内部审核失败告警。\n'
-        printf '\n**下一步可直接开始**\n- 是；按“下一步计划做的是”继续，若已 closeout 则等待下一任务。\n'
-
-        if [[ -n "$report_label" ]]; then
-            printf '\n**当前已完成**\n%s\n' "$(redcap_notify_markdown_list_or_none "$done_items")"
-            printf '\n**上一步完成的是**\n%s\n' "$(redcap_notify_markdown_list_or_none "$previous_items")"
-            printf '\n**下一步计划做的是**\n%s\n' "$(redcap_notify_markdown_list_or_none "$next_items")"
-            printf '\n**任务全景图**\n%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
-            printf '\n**当前位置**\n%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
-            printf '\n**整体计划脉络图与当前位置**\n%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
-            if [[ -n "$confirm_items" ]]; then
-                printf '\n**仍需你介入**\n%s\n' "$(redcap_notify_markdown_list_or_none "$confirm_items")"
-            fi
-            if [[ -n "$verify_items" ]]; then
-                printf '\n**仍需人工验证**\n%s\n' "$(redcap_notify_markdown_list_or_none "$verify_items")"
-            fi
-        else
-            printf '\n**当前已完成**\n- 详见本次节点提交或终端汇报\n'
-            printf '\n**上一步完成的是**\n- 详见本次节点提交或终端汇报\n'
-            printf '\n**下一步计划做的是**\n- 详见本次节点提交或终端汇报\n'
-            printf '\n**任务全景图**\n- 未绑定任务报告；请以终端汇报或 closeout receipt 为准\n'
-            printf '\n**当前位置**\n- 未绑定任务报告；请以终端汇报或 closeout receipt 为准\n'
-        fi
-
-        if [[ -n "$bullet_list" ]]; then
-            printf '\n**提交清单**\n%s\n' "$bullet_list"
+        if [[ -z "$report_label" && "$commit_count" -eq 0 && -z "$latest_commit" ]]; then
+            printf -- '- 详见 closeout receipt 或终端汇报\n'
         fi
     }
 }

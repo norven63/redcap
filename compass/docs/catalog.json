@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 369297,
-    "lines": 7283,
-    "chars": 224568,
+    "size_bytes": 358721,
+    "lines": 7210,
+    "chars": 217274,
     "rough_token_pressure": {
-      "low": 56142,
-      "high": 112284
+      "low": 54318,
+      "high": 108637
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 175622,
-        "lines": 2700,
-        "chars": 108095,
+        "size_bytes": 165046,
+        "lines": 2627,
+        "chars": 100801,
         "rough_token_pressure": {
-          "low": 27023,
-          "high": 54047
+          "low": 25200,
+          "high": 50400
         }
       }
     },
@@ -92,12 +92,6 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-07-redcap-public-arsenal-forge-first-promotion.md",
-        "chars": 11302,
-        "lines": 260,
-        "read_policy": "read-catalog-summary-by-default"
-      },
-      {
         "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
         "chars": 11055,
         "lines": 253,
@@ -107,6 +101,12 @@
         "path": "compass/docs/task-reports/2026-05-07-redcap-midcourse-architecture-task-tree-review.md",
         "chars": 10999,
         "lines": 257,
+        "read_policy": "read-catalog-summary-by-default"
+      },
+      {
+        "path": "compass/docs/task-reports/2026-05-06-agent-reading-absorption.md",
+        "chars": 9993,
+        "lines": 237,
         "read_policy": "read-catalog-summary-by-default"
       }
     ]
@@ -509,46 +509,17 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-07-redcap-public-arsenal-forge-first-promotion.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap Forge 首批公共 Arsenal 安全晋升",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 18516,
-      "lines": 260,
-      "chars": 11302,
-      "summary": "当前已完成：RedCap 公共知识库 `redcap-arsenal` 已从“只有模板”推进到“首批 reviewed-substantive 条目”状态。 / 详情：本轮解决的是公共 Arsenal 不能一直空转的问题，但没有越过安全边界。我们只晋升了 3 条经过蒸馏、去私密化、带来源边界的公共方法论/经验条目，并同步让机器检查承认“现在有首批实质内容”。结果是：未来可以证明公共库不再只是占位，但仍不能把它说成成熟知识库、完整历史迁移或 npm 发布就绪。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-08-feishu-closeout-single-node-report.md",
       "collection": "task-reports",
       "title": "任务完成报告：飞书完成通知单出口收敛",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 7900,
       "lines": 178,
       "chars": 4612,
       "summary": "当前已完成：RedCap Layer B 完成通知已从“双出口”收敛成 closeout runtime 单出口。 / 详情：closeout runtime 调用 `on-complete` 时会强制设置 `REDCAP_SKIP_FEISHU=1`，避免提前发送；receipt 写入后，再由 closeout runtime 统一发送一次 `node-report`。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap Layer B 完成通知已从“双出口”收敛成 closeout runtime 单出口。",
-          "详情：closeout runtime 调用 `on-complete` 时会强制设置 `REDCAP_SKIP_FEISHU=1`，避免提前发送；receipt 写入后，再由 closeout runtime 统一发送一次 `node-report`。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2i 已新增 package-visible 的最小 runtime 物理布局，并完成 closeout receipt。"
-        ],
-        "next_step": [
-          "下一步计划做的是：确认飞书单出口修复稳定后，再回到 RedCap 父任务线；public release 仍需单独 release task。"
-        ],
-        "position": [
-          "整体计划脉络图是：通知噪声定位 → 完成通知单出口 → targeted 回归 → closeout receipt → 回到父任务线。",
-          "当前所在位置：P2-9 `redcap-feishu-closeout-single-node-report`，这是人类可见节点通知质量修复，不是 npm 发布任务。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-08-redcap-prism-runs-lifecycle-status-surface-hardening.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：信息架构治理 → package 白名单预检 → CLI 产品面加固 → runtime 最小兼容布局 → 未来独立 release task。",
           "当前所在位置：P4-2i `redcap-runtime-layout-minimum-compatible-apply`，这是发布前 blocker 的工程收敛切片，不是发布切片。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-09-feishu-human-readable-node-report.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：飞书节点汇报人类可读化",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 7940,
+      "lines": 187,
+      "chars": 4008,
+      "summary": "当前已完成：飞书 node-report 已从“状态字段堆叠”改成更像聊天阶段汇报的六段式结构。 / 详情：飞书正文现在优先展示结论、任务位置、下一步、是否需要 Norven、阻塞状态和关键证据，不再重复输出三段路线信息。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：飞书 node-report 已从“状态字段堆叠”改成更像聊天阶段汇报的六段式结构。",
+          "详情：飞书正文现在优先展示结论、任务位置、下一步、是否需要 Norven、阻塞状态和关键证据，不再重复输出三段路线信息。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P2-9 已把飞书完成通知从双出口收敛为 closeout runtime 单出口，并验证同一完成节点只发一条飞书。"
+        ],
+        "next_step": [
+          "下一步计划做的是：确认新飞书模板稳定后，回到 RedCap 父任务线继续推进结构治理和发布前准备；public release 仍需单独 release task。"
+        ],
+        "position": [
+          "整体计划脉络图是：双通知修复 → 飞书内容可读化 → 回归/棱镜验收 → closeout → 回到父任务线。",
+          "当前所在位置：P2-10 `redcap-feishu-human-readable-node-report`，这是人类可见汇报质量修复，不是发布任务。"
         ]
       }
     }

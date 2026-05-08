@@ -1,4 +1,26 @@
 reports:
+  - id: "20260509-feishu-human-readable-node-report"
+    mode: acceptance-review
+    date: "2026-05-09"
+    topic: "Feishu node-report human-readable compact format"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Use compact Feishu fields: conclusion, task position, next step, human assistance, blocker state, key evidence"
+      - "Keep terminal status surface separate from Feishu notification surface"
+      - "Remove redundant Feishu route sections and long commit-list sections"
+      - "Keep closeout single notification exit and manual-intervention semantics unchanged"
+    open_questions:
+      - "Task position bullets may be further compressed in a future readability tuning task"
+      - "Label stripping may need more examples if future reports use unusual leading phrases"
+    lessons_updated: false
+    files_affected:
+      - "compass/tools/redcap-notify-format.sh"
+      - "compass/tools/redcap-human-communication-check.py"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "references/human-communication-policy.json"
+    archived: false
   - id: "20260508-feishu-closeout-single-node-report"
     mode: acceptance-review
     date: "2026-05-08"
