@@ -1,4 +1,28 @@
 reports:
+  - id: "20260508-runtime-layout-minimum-compatible-apply"
+    mode: planning-review
+    date: "2026-05-08"
+    topic: "Runtime minimum compatible physical layout"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass-with-warning"
+    consensus_actions:
+      - "Create minimum package-visible runtime layout with wrappers"
+      - "Keep root entrypoints and tool trees stable"
+      - "Synchronize package candidate count and pre-release architecture facts"
+      - "Keep npm publish, private=false and license decisions outside this task"
+    open_questions:
+      - "Full runtime tool-tree split remains should-fix, not completed by this tranche"
+      - "Formal npm/public release remains blocked by manual publish and license boundaries"
+    lessons_updated: false
+    files_affected:
+      - "runtime/redcap-core"
+      - "runtime/host-adapters"
+      - "references/execution-layer-split-dry-run.json"
+      - "references/pre-release-product-architecture-review.json"
+      - "references/runtime-package-readiness-policy.json"
+      - "references/public-package-surface-policy.json"
+    archived: false
   - id: "20260508-prism-runs-lifecycle-status-surface-hardening"
     mode: test
     date: "2026-05-08"

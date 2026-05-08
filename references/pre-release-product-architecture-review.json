@@ -4,21 +4,21 @@
   "task_id": "pre-release-product-architecture-review",
   "status": "blocked-pending-remediation",
   "release_recommendation": "not-ready-before-product-architecture-remediation",
-  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, but it is not yet an excellent public npm CLI/runtime product. P4-2b fixed the CLI workspace-context blocker, P4-2c added publish-grade doctor/debug/trace/help/error surfaces, P4-2d prepared the user-approved package identity @norven63/redcap while keeping private/readiness-only release boundaries, and P4-2h produced the first reviewed-substantive redcap-arsenal entries. Before public release, runtime layout, license choice, publication enablement and bounded product claims still need remediation or explicit scope reduction.",
+  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, and P4-2i has added a minimum package-visible runtime layout with compatibility wrappers. It is still not yet a public npm release: license choice and publication enablement remain explicit human release boundaries, and the full thin runtime split beyond compatibility wrappers remains a should-fix before broad public marketing.",
   "observed_facts": {
     "current_package_name": "@norven63/redcap",
     "user_approved_public_package_name": "@norven63/redcap",
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 234,
+    "package_candidate_count": 239,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
     "public_package_surface_status": "pass",
-    "execution_layer_split_status": "dry-run-only",
-    "runtime_root_exists": false,
-    "current_runtime_shape": "skill-root-runtime-plus-thin-cli-facade",
+    "execution_layer_split_status": "minimum-compatible-layout-exists",
+    "runtime_root_exists": true,
+    "current_runtime_shape": "skill-root-runtime-plus-thin-cli-facade-plus-minimum-package-visible-runtime-layout",
     "cli_has_doctor_command": true,
     "cli_has_debug_command": true,
     "cli_has_trace_option": true,
@@ -71,14 +71,14 @@
     {
       "id": "runtime-project-user-boundaries-not-physically-split",
       "dimension": "machine-independence",
-      "severity": "release-blocker",
-      "claim": "The execution-layer split remains dry-run-only. Current runtime implementation still lives in the RedCap skill-root shape, so public CLI release would ship an internal bundle rather than a clean independent runtime layout.",
+      "severity": "should-fix",
+      "claim": "P4-2i adds a package-visible runtime root with compatibility wrappers for the CLI, revive and closeout entrypoints. This removes the earlier 'no runtime root / dry-run-only' blocker, but the full tool-tree split remains deferred until import maps and hook adapters are ready.",
       "evidence": [
         "references/execution-layer-split-dry-run.json",
         "bin/redcap",
         "compass/tools/"
       ],
-      "required_before_public_release": true
+      "required_before_public_release": false
     },
     {
       "id": "cli-debug-contract-incomplete",
@@ -119,7 +119,7 @@
       "id": "package-surface-too-broad-for-public-cli",
       "dimension": "cli-product-quality",
       "severity": "should-fix",
-      "claim": "The npm package candidate surface currently contains 234 files after the P2-7 governance scripts and review artifacts. P4-2d makes this an explicit full-runtime-readiness surface with safety gates, but a thinner public product package may still be desirable before broad marketing.",
+      "claim": "The npm package candidate surface currently contains 239 files after the minimum runtime layout wrappers were added. P4-2d/P4-2i make this an explicit full-runtime-readiness surface with safety gates, but a thinner public product package may still be desirable before broad marketing.",
       "evidence": [
         "references/runtime-package-readiness-policy.json",
         "references/public-package-surface-policy.json",
@@ -168,6 +168,7 @@
     "Do not claim P4-2 public release is complete.",
     "Do not claim redcap-arsenal is mature or complete because it contains a first reviewed-substantive entry set.",
     "Do not claim npm source is hidden from users.",
+    "Do not claim P4-2i's minimum runtime layout equals a full execution-layer split.",
     "Do not claim clean workspace E2E equals a multi-OS external release matrix."
   ],
   "recommended_next_tranches": [

@@ -8,6 +8,8 @@
     "ARCHITECTURE.md",
     "revive-cap.sh",
     "closeout-cap.sh",
+    "runtime/redcap-core/**",
+    "runtime/host-adapters/**",
     "compass/tools/redcap-*.sh",
     "compass/tools/redcap-*.py",
     "prism/tools/*.sh",

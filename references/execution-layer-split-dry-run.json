@@ -1,15 +1,16 @@
 {
   "version": 1,
   "manifest_id": "redcap-execution-layer-split-dry-run",
-  "status": "dry-run-only",
+  "status": "minimum-compatible-layout-exists",
+  "minimum_compatible_applied": true,
   "created_for_task": "redcap-execution-layer-split-dry-run",
   "apply_allowed": false,
   "apply_policy": {
-    "rule": "This manifest is advisory. No file may be moved until a later apply task validates wrappers, hook adapters, import paths, docs catalog links, and rollback.",
+    "rule": "This manifest is no longer only advisory: a minimal package-visible runtime layout now exists. Full split apply remains blocked until a later task validates import maps, hook adapters, docs catalog links, and rollback.",
     "requires_before_apply": [
-      "Generate exact file move/copy/link manifest from this dry-run plan.",
-      "Run import/link impact check against every moved path.",
-      "Install compatibility wrappers for host-facing root entries.",
+      "Generate exact file move/copy/link manifest for the full split beyond the minimum runtime wrappers.",
+      "Run import/link impact check against every moved path before moving any tool tree.",
+      "Install compatibility wrappers for every host-facing root entry before changing root entry behavior.",
       "Run full acceptance and closeout on a throwaway branch or worktree.",
       "Keep rollback commands generated and reviewed before apply."
     ]
@@ -39,11 +40,11 @@
       "operation": "copy-then-link",
       "target_layer": "runtime-core",
       "risk": "medium",
-      "apply_status": "blocked_for_apply_until_adapter_exists",
-      "reason": "The thin CLI facade can move only after root-level bin/redcap remains as a compatibility shim.",
+      "apply_status": "minimum-wrapper-created-full-move-deferred",
+      "reason": "A package-visible runtime wrapper now delegates back to the root CLI facade; moving the authoritative root entry is still deferred.",
       "import_impact": ["root-relative command examples", "README navigation", "internal calls to compass/tools and prism/tools"],
       "hook_impact": ["none direct"],
-      "rollback_plan": ["Remove runtime/redcap-core/bin/redcap copy", "Keep original bin/redcap unchanged"]
+      "rollback_plan": ["Remove runtime/redcap-core/bin/redcap wrapper", "Keep original bin/redcap unchanged"]
     },
     {
       "id": "SPLIT-002",
@@ -52,11 +53,11 @@
       "operation": "copy-with-root-shim",
       "target_layer": "runtime-core",
       "risk": "high",
-      "apply_status": "blocked_for_apply_until_adapter_exists",
-      "reason": "revive-cap.sh is the one-shot revival entry users may run from the current root.",
+      "apply_status": "minimum-wrapper-created-full-move-deferred",
+      "reason": "A package-visible runtime wrapper now delegates back to the root revive entry; moving the authoritative root entry is still deferred.",
       "import_impact": ["AGENTS.md startup instructions", "README quick start", "internal call to compass/tools/redcap-install.sh"],
       "hook_impact": ["host revival/install chain"],
-      "rollback_plan": ["Keep root revive-cap.sh authoritative until shim acceptance passes"]
+      "rollback_plan": ["Remove runtime/redcap-core/revive-cap.sh wrapper", "Keep root revive-cap.sh authoritative"]
     },
     {
       "id": "SPLIT-003",
@@ -65,11 +66,11 @@
       "operation": "copy-with-root-shim",
       "target_layer": "runtime-core",
       "risk": "high",
-      "apply_status": "blocked_for_apply_until_adapter_exists",
-      "reason": "closeout-cap.sh is the repo-owned closeout facade used by Layer B receipt generation.",
+      "apply_status": "minimum-wrapper-created-full-move-deferred",
+      "reason": "A package-visible runtime wrapper now delegates back to the root closeout entry; moving the authoritative root entry is still deferred.",
       "import_impact": [".dev-task.md closeout workflow", "task reports", "internal call to compass/tools/redcap-layerb-closeout-runtime.sh"],
       "hook_impact": ["on-complete", "session-end", "receipt runtime"],
-      "rollback_plan": ["Keep root closeout-cap.sh unchanged", "Delete copied runtime version if shim validation fails"]
+      "rollback_plan": ["Remove runtime/redcap-core/closeout-cap.sh wrapper", "Keep root closeout-cap.sh unchanged"]
     },
     {
       "id": "SPLIT-004",
@@ -113,15 +114,15 @@
     {
       "id": "SPLIT-007",
       "source": "AGENTS.md",
-      "target": "runtime/host-adapters/codex/AGENTS.md",
+      "target": "runtime/host-adapters/codex/README.md",
       "operation": "copy-with-root-import-pointer",
       "target_layer": "host-adapters",
       "risk": "high",
-      "apply_status": "blocked_for_apply_until_host_import_contract_review",
-      "reason": "Codex automatically imports AGENTS.md from the current workspace root.",
+      "apply_status": "minimum-host-adapter-boundary-documented-full-import-switch-deferred",
+      "reason": "Codex still imports AGENTS.md from the current workspace root; package-visible host-adapter boundary documentation now exists, but root import switching is deferred.",
       "import_impact": ["Codex startup import", "revival protocol"],
       "hook_impact": ["Codex has no repo-owned reply-veto hook; startup import is the key adapter"],
-      "rollback_plan": ["Root AGENTS.md remains a thin import pointer until host import behavior is revalidated"]
+      "rollback_plan": ["Remove runtime/host-adapters/codex/README.md", "Keep root AGENTS.md unchanged until host import behavior is revalidated"]
     },
     {
       "id": "SPLIT-008",
@@ -138,10 +139,10 @@
     }
   ],
   "global_impact": {
-    "import_paths": "High. Most scripts assume repo-relative paths; apply requires a generated path map or compatibility shims.",
-    "host_hooks": "High. Root AGENTS/CLAUDE/GEMINI/Copilot entries and closeout hooks must remain stable.",
+    "import_paths": "High. Minimum runtime wrappers delegate to root entrypoints; full tool-tree moves still require a generated path map or compatibility shims.",
+    "host_hooks": "High. Root AGENTS/CLAUDE/GEMINI/Copilot entries and closeout hooks remain stable; package-visible host-adapter boundaries are documented but not authoritative.",
     "docs_catalog": "Medium. Catalog can track moved docs, but task-report anchors and historical links require migration tooling.",
     "rollback": "Apply task must be copy-first, link-second, delete-last. No destructive move is allowed in the first apply pass.",
-    "cross_plan_dependencies": "SPLIT-004 cannot apply before SPLIT-001/002/003 shims are rewired, and git hooks must be retargeted before compass/tools moves."
+    "cross_plan_dependencies": "SPLIT-004 cannot apply before import maps exist and git hooks are retargeted; current minimum layout intentionally stops before moving compass/tools or prism/tools."
   }
 }

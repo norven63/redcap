@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 380981,
-    "lines": 7379,
-    "chars": 232562,
+    "size_bytes": 373138,
+    "lines": 7304,
+    "chars": 227369,
     "rough_token_pressure": {
-      "low": 58140,
-      "high": 116281
+      "low": 56842,
+      "high": 113684
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 187306,
-        "lines": 2796,
-        "chars": 116089,
+        "size_bytes": 179463,
+        "lines": 2721,
+        "chars": 110896,
         "rough_token_pressure": {
-          "low": 29022,
-          "high": 58044
+          "low": 27724,
+          "high": 55448
         }
       }
     },
@@ -107,7 +107,7 @@
         "path": "compass/docs/task-reports/2026-05-07-redcap-midcourse-architecture-task-tree-review.md",
         "chars": 10999,
         "lines": 257,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+        "read_policy": "read-catalog-summary-by-default"
       }
     ]
   },
@@ -483,19 +483,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-06-llm-wiki-lite-lifecycle.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：LLM-wiki-lite 语义记忆生命周期实现",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 16517,
-      "lines": 255,
-      "chars": 10687,
-      "summary": "当前已完成：RedCap 已有一个最小可用的私有 LLM-wiki-lite 生命周期，不再只是“以后可以做”的规划。 / 详情：本轮把 LLM-wiki-lite 固定为私有、非权威、必须带来源锚点的语义记忆层。每条 entry 都要能回到原始来源，并用 `sha256` 摘要判断是否过期；如果来源变了、来源不可读、候选类型越界、想直接写公共库或启用 RAG/GraphRAG，检查器会 fail closed。这样它可以帮助理解长期概念，但不会抢走 `.dev-task.md`、policy、receipt、Prism acceptance 等控制面真相源的位置。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-06-redcap-public-distillation-preflight.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-2h-0 historical asset public distillation preflight",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 中途架构与任务树一致性审计",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 19171,
       "lines": 257,
       "chars": 10999,
       "summary": "当前已完成：本轮把“脚本头中文短说明、LLM-wiki-lite 边界、中途任务树对账”从口头讨论升级成了机器可查的治理闭环。 / 详情：关键脚本现在不只依赖字典条目，也必须在文件头有一句短中文用途说明和 `Dictionary:` 反链，方便人类检索时快速判断文件作用。`LLM-wiki-lite` 被明确固定为私有、非权威、带来源锚点的最小语义记忆层；完整 LLM-wiki、后台生成、RAG/GraphRAG、向量库和公共写回仍是未来任务，不能被当前完成态冒充。中途审计产物会横向对齐已完成、近期中插、尚未完成、deferred 和 blocked-external 的任务边界。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：本轮把“脚本头中文短说明、LLM-wiki-lite 边界、中途任务树对账”从口头讨论升级成了机器可查的治理闭环。",
-          "详情：关键脚本现在不只依赖字典条目，也必须在文件头有一句短中文用途说明和 `Dictionary:` 反链，方便人类检索时快速判断文件作用。`LLM-wiki-lite` 被明确固定为私有、非权威、带来源锚点的最小语义记忆层；完整 LLM-wiki、后台生成、RAG/GraphRAG、向量库和公共写回仍是未来任务，不能被当前完成态冒充。中途审计产物会横向对齐已完成、近期中插、尚未完成、deferred 和 blocked-external 的任务边界。"
-        ],
-        "previous_step": [
-          "上一步完成的是：`P2-6 Copilot protected fallback` 已有 closeout receipt，父账本也已记录完成。"
-        ],
-        "next_step": [
-          "下一步计划做的是：无自动可继续推进的发布主线任务。`P4-2` 正式 public release 仍 blocked-external；`P4-2h` 历史资产公共蒸馏仍 deferred。若后续继续，应另开明确 release / public distillation / full LLM-wiki 任务。"
-        ],
-        "position": [
-          "整体计划脉络图是：父任务迁移与发布准备 → 用户发现治理缺口 → 立项 `P2-7` → 文件头规则机器化 → LLM-wiki 边界显性化 → 中途审计 → Prism 复核 → closeout。",
-          "当前所在位置：`P2-7` 已实现、已自检、已完成 Prism resource-limited 复核、通过 full acceptance，并已由 closeout runtime 生成最终 receipt。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-07-redcap-public-arsenal-forge-first-promotion.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：信息架构治理 → 运行证据生命周期可视化 → 公共知识库首批晋升 → 状态面清理边界加固 → 后续 release readiness / 显式物理清理任务。",
           "当前所在位置：P2-8 `redcap-prism-runs-lifecycle-status-surface-hardening`，这是一个非破坏性的状态面治理切片。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-08-redcap-runtime-layout-minimum-compatible-apply.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-2i runtime 最小兼容物理布局落地",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 8674,
+      "lines": 180,
+      "chars": 5494,
+      "summary": "当前已完成：RedCap 已新增 package-visible 的最小 runtime 物理布局：`runtime/redcap-core/**` 与 `runtime/host-adapters/**`。 / 详情：新增 runtime wrapper 会委托回根入口，保持 `bin/redcap`、`revive-cap.sh`、`closeout-cap.sh` 继续作为兼容入口；没有移动 `compass/tools`、`prism/tools`，也没有删除任何旧入口或运行证据。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已新增 package-visible 的最小 runtime 物理布局：`runtime/redcap-core/**` 与 `runtime/host-adapters/**`。",
+          "详情：新增 runtime wrapper 会委托回根入口，保持 `bin/redcap`、`revive-cap.sh`、`closeout-cap.sh` 继续作为兼容入口；没有移动 `compass/tools`、`prism/tools`，也没有删除任何旧入口或运行证据。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P2-8 已把 `prism/runs` 的清理提示改成只读审查 / dry-run / 物理删除需显式批准的安全口径，并完成 closeout receipt。"
+        ],
+        "next_step": [
+          "下一步计划做的是：若继续推进 public release，只能进入独立 release task；当前仍不能替用户决定 `private=false`、license、npm 凭据和真实发布动作。"
+        ],
+        "position": [
+          "整体计划脉络图是：信息架构治理 → package 白名单预检 → CLI 产品面加固 → runtime 最小兼容布局 → 未来独立 release task。",
+          "当前所在位置：P4-2i `redcap-runtime-layout-minimum-compatible-apply`，这是发布前 blocker 的工程收敛切片，不是发布切片。"
         ]
       }
     }

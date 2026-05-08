@@ -201,8 +201,8 @@ def main() -> None:
     if not isinstance(findings, list):
         fail("pre-release findings must be a list")
     blockers = [item for item in findings if isinstance(item, dict) and item.get("severity") == "release-blocker"]
-    if len(blockers) < 3:
-        fail("pre-release review must still expose the remaining release blockers")
+    if len(blockers) < 2:
+        fail("pre-release review must still expose the remaining manual release blockers")
 
     print("PRE_RELEASE_STRUCTURE_TASK_TREE_OK nodes=%d" % len(nodes))
 

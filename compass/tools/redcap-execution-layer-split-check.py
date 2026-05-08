@@ -31,7 +31,10 @@ ALLOWED_APPLY_STATUS = {
     "blocked_for_apply_until_policy_ownership_split",
     "blocked_for_apply_until_host_import_contract_review",
     "deferred_to_legacy_asset_migration",
+    "minimum-wrapper-created-full-move-deferred",
+    "minimum-host-adapter-boundary-documented-full-import-switch-deferred",
 }
+ALLOWED_STATUSES = {"dry-run-only", "minimum-compatible-layout-exists"}
 
 
 def fail(message: str) -> None:
@@ -91,8 +94,11 @@ def check_manifest(path: Path, root: Path) -> None:
         fail("version must be 1")
     if payload.get("manifest_id") != "redcap-execution-layer-split-dry-run":
         fail("manifest_id must be redcap-execution-layer-split-dry-run")
-    if payload.get("status") != "dry-run-only":
-        fail("status must be dry-run-only")
+    status = payload.get("status")
+    if status not in ALLOWED_STATUSES:
+        fail("status must be one of: " + ", ".join(sorted(ALLOWED_STATUSES)))
+    if status == "minimum-compatible-layout-exists" and payload.get("minimum_compatible_applied") is not True:
+        fail("minimum-compatible-layout-exists requires minimum_compatible_applied=true")
     if payload.get("created_for_task") != "redcap-execution-layer-split-dry-run":
         fail("created_for_task must match the Layer B task id")
     if payload.get("apply_allowed") is not False:
@@ -140,10 +146,9 @@ def check_manifest(path: Path, root: Path) -> None:
         operation = require_text(plan, "operation", plan_id)
         if operation not in ALLOWED_OPERATIONS:
             fail(f"{plan_id}: unsupported operation: {operation}")
-        if operation != "defer-to-p1-2":
-            require_target_absent(root, require_text(plan, "target", plan_id), plan_id)
-        else:
-            require_safe_relative(require_text(plan, "target", plan_id), plan_id, "target")
+        target = require_text(plan, "target", plan_id)
+        if operation == "defer-to-p1-2":
+            require_safe_relative(target, plan_id, "target")
         target_layer = require_text(plan, "target_layer", plan_id)
         if target_layer not in layer_ids:
             fail(f"{plan_id}: target_layer not declared: {target_layer}")
@@ -155,9 +160,16 @@ def check_manifest(path: Path, root: Path) -> None:
         apply_status = require_text(plan, "apply_status", plan_id)
         if apply_status not in ALLOWED_APPLY_STATUS:
             fail(f"{plan_id}: unsupported apply_status: {apply_status}")
+        if operation != "defer-to-p1-2":
+            if apply_status.startswith("minimum-"):
+                rel = require_safe_relative(target, plan_id, "target")
+                if not (root / rel).exists():
+                    fail(f"{plan_id}: minimum-applied target missing: {rel}")
+            else:
+                require_target_absent(root, target, plan_id)
         if apply_status == "deferred_to_legacy_asset_migration":
             deferred_count += 1
-        if risk == "high" and not apply_status.startswith(("blocked_", "deferred_")):
+        if risk == "high" and not apply_status.startswith(("blocked_", "deferred_", "minimum-")):
             fail(f"{plan_id}: high-risk plans must be blocked or deferred")
         require_text(plan, "reason", plan_id)
         require_text_list(plan, "import_impact", plan_id)

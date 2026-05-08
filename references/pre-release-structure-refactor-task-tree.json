@@ -137,6 +137,19 @@
       "reason": "Implemented the minimum private, source-anchored, non-authoritative LLM-wiki-lite lifecycle with Forge-gated public promotion and no RAG/GraphRAG by default."
     },
     {
+      "id": "P4-2i",
+      "title": "Runtime minimum compatible physical layout",
+      "status": "completed",
+      "priority": "P0-before-public-release",
+      "depends_on": [
+        "P4-2g",
+        "P4-2b",
+        "P4-2d"
+      ],
+      "release_blocker": true,
+      "reason": "P4-2i creates a package-visible runtime root with compatibility wrappers, removing the previous no-runtime-root / dry-run-only release blocker without moving tool trees or enabling public publish."
+    },
+    {
       "id": "P4-2h-full-llm-wiki",
       "title": "Full LLM-wiki product, background distillation and advanced retrieval",
       "status": "deferred",
@@ -156,7 +169,8 @@
       "depends_on": [
         "P4-2b",
         "P4-2c",
-        "P4-2d"
+        "P4-2d",
+        "P4-2i"
       ],
       "release_blocker": false,
       "reason": "The actual npm/public release task remains blocked until all P0 release blockers are closed and the human release boundary is explicitly satisfied."
@@ -170,12 +184,13 @@
     "Do not claim redcap-arsenal is mature or complete because it contains a first reviewed-substantive public entry set.",
     "Do not claim P4-2h-1 implements a complete LLM Wiki, RAG/GraphRAG, ai-professor production mode, or direct public writeback.",
     "Do not claim P4-2h-2 implements LLM-wiki-lite; it only completes asset stratification and registers P4-2h-3.",
-    "Do not claim P4-2h-3 is a complete LLM-wiki product, public knowledge base, RAG/GraphRAG system, automatic background generator, or release blocker."
+    "Do not claim P4-2h-3 is a complete LLM-wiki product, public knowledge base, RAG/GraphRAG system, automatic background generator, or release blocker.",
+    "Do not claim P4-2i's minimum runtime layout equals a full execution-layer split or public-release-ready package."
   ],
   "acceptance_gates": [
     "Parent ledger must mark P4-2b and P4-2c completed before P4-2d package identity/surface remediation starts.",
     "Package surface preflight must be whitelist-driven and must explain historical assets as excluded evidence, not as deleted residue.",
-    "Release readiness must continue to fail closed while P4-2a release blockers remain open.",
+    "Release readiness must continue to fail closed while manual release blockers remain open.",
     "Prism review must be bound before this task-tree reanchor can be closed."
   ],
   "prism_run": "20260505-public-arsenal-claim-boundary-review"

@@ -10230,6 +10230,7 @@ source = pathlib.Path(sys.argv[1])
 target = pathlib.Path(sys.argv[2])
 payload = json.loads(source.read_text(encoding="utf-8"))
 payload["plans"][0]["target"] = "bin/redcap"
+payload["plans"][0]["apply_status"] = "blocked_for_apply_until_adapter_exists"
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
     set +e
@@ -12720,7 +12721,7 @@ run_pre_release_product_architecture_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh")"
     assert_string_contains "$output" "PRE_RELEASE_PRODUCT_ARCHITECTURE_OK"
-    assert_string_contains "$output" "release_blockers=3"
+    assert_string_contains "$output" "release_blockers=2"
 
     output="$(bash "$REDCAP_ROOT/bin/redcap" pre-release-review)"
     assert_string_contains "$output" "PRE_RELEASE_PRODUCT_ARCHITECTURE_OK"
@@ -12752,7 +12753,7 @@ payload = json.loads(src.read_text(encoding="utf-8"))
 payload["findings"] = [
     item
     for item in payload["findings"]
-    if item.get("id") != "runtime-project-user-boundaries-not-physically-split"
+    if item.get("id") != "public-package-publish-disabled"
 ]
 dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
