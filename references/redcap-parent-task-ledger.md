@@ -73,6 +73,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P2-9 | user trust gap | 飞书完成通知单出口收敛 | completed | P2 | 已让 closeout runtime 调用 on-complete 时静音，并在 receipt 写入后统一发送一次 node-report；重复通知回归已覆盖 | report: `2026-05-08-feishu-closeout-single-node-report.md`；不等于消除宿主最终回复与飞书到达之间的秒级差异 |
 | P2-10 | user trust gap | 飞书节点汇报人类可读化 | completed | P2 | 已将飞书 node-report 从终端状态字段堆叠改为结论、任务位置、下一步、需要 Norven、阻塞状态和关键证据六段式 compact 汇报，并删除重复路线三连 | report: `2026-05-09-feishu-human-readable-node-report.md`；不等于重构终端状态面或改变通知发送策略 |
 | P2-11 | user trust gap | 飞书成果摘要化与回复通道调研 | completed | P2 | 已将飞书完成通知主段落改为任务结果摘要，并记录普通回复、等待回复窗口、待处理扫描和未来 Feishu Inbox 的边界 | report: `2026-05-09-feishu-outcome-readable-and-reply-research.md`；不等于启用实时飞书指令入口 |
+| P2-12 | user trust gap | 飞书整体任务全景图人类可读化补回 | completed | P2 | 已在成果摘要式飞书通知中补回“整体任务全景图”，用于说明当前进展处在主线哪里，同时禁止退回内部节点、门禁、脚本名口径 | report: `2026-05-09-feishu-outcome-readable-and-reply-research.md`；不等于启用实时飞书指令入口或恢复旧的多字段路线噪声 |
 
 ## 推荐执行顺序
 
@@ -108,11 +109,12 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 30. `P2-9`：飞书完成通知单出口收敛。（已完成；正常完成节点由 closeout runtime 在 receipt 后发送一次 node-report）
 31. `P2-10`：飞书节点汇报人类可读化。（已完成；飞书正文改为 compact 人类阶段汇报）
 32. `P2-11`：飞书成果摘要化与回复通道调研。（已完成；普通飞书回复不自动执行，未来需 Feishu Inbox 任务）
-33. `P4-2h`：历史资产公共蒸馏与 RedCap Forge export triage。（已完成首批 reviewed-substantive 公共样本，独立于 npm 发布关键路径）
-34. `P4-2i`：runtime 最小兼容物理布局。（已完成 package-visible runtime root 与 wrappers；完整工具树迁移仍不在本项范围）
-35. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
-36. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界）
-37. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
+33. `P2-12`：飞书整体任务全景图人类可读化补回。（已完成；飞书正文保留一个主线位置段落，但不恢复内部流程口径）
+34. `P4-2h`：历史资产公共蒸馏与 RedCap Forge export triage。（已完成首批 reviewed-substantive 公共样本，独立于 npm 发布关键路径）
+35. `P4-2i`：runtime 最小兼容物理布局。（已完成 package-visible runtime root 与 wrappers；完整工具树迁移仍不在本项范围）
+36. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
+37. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界）
+38. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
 
 ## 当前不可声明
 
@@ -137,3 +139,4 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 - 不可声明 P2-9 消除了宿主对话最终回复与飞书消息到达之间的所有时间差；它只保证 RedCap 正常完成节点不再由 on-complete 和 closeout 各发一条 node-report。
 - 不可声明 P2-10 改变了飞书发送时机、账号或 closeout 单出口；它只优化飞书正文结构和去冗余。
 - 不可声明 P2-11 已经启用飞书实时指令入口；它只优化飞书正文为任务结果摘要，并确认回复通道需要另走 Feishu Inbox 安全设计。
+- 不可声明 P2-12 恢复了旧版任务位置/当前位置/整体计划脉络图的多字段路线面板；它只补回一个人类可读的整体任务全景图。

@@ -15,15 +15,16 @@
   "required_feishu_fields": [
     "这次完成了什么",
     "带来的效果",
+    "整体任务全景图",
     "接下来做什么",
     "需要你做什么",
     "查看记录"
   ],
-  "status_update_rule": "Terminal interruptions and checkpoints must expose the full required_status_fields surface. Feishu node-report messages should expose the compact required_feishu_fields surface so they stay readable on mobile and do not duplicate route fields.",
+  "status_update_rule": "Terminal interruptions and checkpoints must expose the full required_status_fields surface. Feishu node-report messages should expose the compact required_feishu_fields surface so they stay readable on mobile while still showing the human-readable whole-task position.",
   "narrative_quality_rule": "Human-facing reports must be paragraph-readable and conclusion-first. Prefer explaining the problem being solved, the chosen solution, the resulting effect, the next step, and whether human help is needed; do not make the primary explanation a changelog of files, scripts, moves, or command outputs.",
   "report_led_summary_rule": "When a task report exists, interruption/final updates must summarize report sections 0.1-0.4 first, include 0.5 human-intervention status when available, then surface any non-empty 人工审核要点 or 人工验证项 before technical file/script details.",
-  "feishu_alignment_rule": "Feishu node-report and manual-intervention messages must use the compact required_feishu_fields surface, not the full terminal status field list. The node-report body must lead with user-visible outcomes rather than control-plane stages, gates, scripts, or file operations.",
-  "feishu_deduplication_rule": "Feishu node-report must not repeat task route content as separate 任务全景图 / 当前位置 / 整体计划脉络图 sections, and must not use workflow-flavored primary sections such as 任务位置 / 阻塞状态 / 关键证据. Keep traceability under a short 查看记录 section instead of a long 提交清单.",
+  "feishu_alignment_rule": "Feishu node-report and manual-intervention messages must use the compact required_feishu_fields surface, not the full terminal status field list. The node-report body must lead with user-visible outcomes and a plain-language whole-task panorama rather than control-plane stages, gates, scripts, or file operations.",
+  "feishu_deduplication_rule": "Feishu node-report must include exactly one human-readable 整体任务全景图 section, but must not repeat route content as separate 任务全景图 / 当前位置 / 整体计划脉络图与当前位置 sections and must not use workflow-flavored primary sections such as 任务位置 / 阻塞状态 / 关键证据. Keep traceability under a short 查看记录 section instead of a long 提交清单.",
   "feishu_reply_command_boundary_rule": "Today, notify node-report is outbound-only: ordinary replies may be collected by pending-scan on a later session, while ask/confirm/resume can wait for replies during an explicit manual-intervention window. A future real-time Feishu command channel must ingest replies into a RedCap inbox and still pass change-intake, task ledger, manual-decision, and closeout gates before execution.",
   "internal_audit_gap_rule": "SessionEnd / Stop audit gaps are internal control-plane signals by default. They must be recorded to pending closure / ledger / diagnostics, but must not send Feishu unless the gap is a true manual-intervention blocker.",
   "allowed_feishu_events": [

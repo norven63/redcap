@@ -311,6 +311,17 @@ redcap_build_completion_message() {
             printf -- '- 暂未绑定任务报告；请以终端汇报为准。\n'
         fi
 
+        printf '\n**整体任务全景图**\n'
+        if [[ -n "$report_label" ]]; then
+            if [[ -n "$roadmap_items" ]]; then
+                printf '%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
+            else
+                printf -- '- 这次完成的是当前主线中的一个收尾点；下一步请看下方说明。\n'
+            fi
+        else
+            printf -- '- 暂未绑定任务报告；请以终端汇报为准。\n'
+        fi
+
         printf '\n**接下来做什么**\n'
         if [[ -n "$report_label" ]]; then
             printf '%s\n' "$(redcap_notify_markdown_list_or_none "$next_items")"
