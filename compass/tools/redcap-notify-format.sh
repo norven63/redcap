@@ -260,12 +260,63 @@ redcap_notify_markdown_list_or_none() {
     printf '%s\n' "$raw_items" | awk 'NF {print "- " $0}'
 }
 
+redcap_notify_parent_panorama_items() {
+    local project_root="${1:-}"
+    local ledger_path=""
+
+    if [[ -z "$project_root" ]]; then
+        return 0
+    fi
+
+    ledger_path="$project_root/references/redcap-parent-task-ledger.md"
+    if [[ ! -f "$ledger_path" ]]; then
+        return 0
+    fi
+
+    python3 - "$ledger_path" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8", errors="replace")
+lines = text.splitlines()
+capture = False
+level = 0
+items = []
+
+for raw in lines:
+    match = re.match(r"^(#+)\s*(.+?)\s*$", raw)
+    if match:
+        heading_level = len(match.group(1))
+        heading = match.group(2).strip()
+        if capture and heading_level <= level:
+            break
+        if heading == "人类可读父任务全景":
+            capture = True
+            level = heading_level
+            continue
+    if not capture:
+        continue
+    line = raw.strip()
+    if re.match(r"^[-*]\s+", line):
+        item = re.sub(r"^[-*]\s+", "", line).strip()
+        item = re.sub(r"`([^`]*)`", r"\1", item)
+        item = re.sub(r"\s+", " ", item)
+        if item:
+            items.append(item)
+
+for item in items[:5]:
+    print(item)
+PY
+}
+
 redcap_build_completion_message() {
     local headline="${1:-RedCap Layer B 收尾完成}"
     local project="${2:-redcap}"
     local commit_log="${3:-}"
     local source_label report_ref project_root report_path report_label
-    local commit_count latest_commit bullet_list done_items effect_items previous_items next_items roadmap_items intervention_items confirm_items verify_items
+    local commit_count latest_commit bullet_list done_items effect_items previous_items next_items roadmap_items parent_panorama_items intervention_items confirm_items verify_items
 
     source_label=$(redcap_notify_flatten_field "${4:-}")
     report_ref="${5:-}"
@@ -275,6 +326,7 @@ redcap_build_completion_message() {
     bullet_list=$(redcap_notify_commit_bullets "$commit_log")
 
     report_path=$(redcap_notify_resolve_report_path "$project_root" "$report_ref" 2>/dev/null || true)
+    parent_panorama_items=$(redcap_notify_parent_panorama_items "$project_root")
     if [[ -n "$report_path" && -f "$report_path" ]]; then
         report_label=$(redcap_notify_relative_path "$project_root" "$report_path" 2>/dev/null || true)
         done_items=$(redcap_notify_extract_report_items "$report_path" "done")
@@ -312,7 +364,9 @@ redcap_build_completion_message() {
         fi
 
         printf '\n**整体任务全景图**\n'
-        if [[ -n "$report_label" ]]; then
+        if [[ -n "$parent_panorama_items" ]]; then
+            printf '%s\n' "$(redcap_notify_markdown_list_or_none "$parent_panorama_items")"
+        elif [[ -n "$report_label" ]]; then
             if [[ -n "$roadmap_items" ]]; then
                 printf '%s\n' "$(redcap_notify_markdown_list_or_none "$roadmap_items")"
             else

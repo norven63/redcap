@@ -150,7 +150,15 @@ def main() -> int:
         if phrase not in report_rule:
             fail(f"report_led_summary_rule missing phrase: {phrase}")
     feishu_rule = str(policy.get("feishu_deduplication_rule", ""))
-    for phrase in ["exactly one human-readable 整体任务全景图", "任务全景图 / 当前位置 / 整体计划脉络图与当前位置", "任务位置 / 阻塞状态 / 关键证据", "查看记录"]:
+    for phrase in [
+        "exactly one human-readable 整体任务全景图",
+        "parent-line panorama",
+        "long-running main task",
+        "remaining blockers",
+        "任务全景图 / 当前位置 / 整体计划脉络图与当前位置",
+        "任务位置 / 阻塞状态 / 关键证据",
+        "查看记录",
+    ]:
         if phrase not in feishu_rule:
             fail(f"feishu_deduplication_rule missing phrase: {phrase}")
     reply_rule = str(policy.get("feishu_reply_command_boundary_rule", ""))
@@ -164,6 +172,9 @@ def main() -> int:
     notify_sample = render_notify_sample()
     require_all(status_sample, "status formatter", REQUIRED_FIELDS)
     require_all(notify_sample, "notify formatter", REQUIRED_FEISHU_FIELDS)
+    for phrase in ["主线目标", "已完成的大块", "仍未完成或仍被拦住的事"]:
+        if phrase not in notify_sample:
+            fail(f"notify formatter must render parent-line panorama phrase: {phrase}")
     for forbidden in FORBIDDEN_FEISHU_SECTIONS:
         if forbidden in notify_sample:
             fail(f"notify formatter must not emit redundant section: {forbidden}")

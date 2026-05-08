@@ -14,6 +14,14 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 
 当前已完成的是若干控制面、路线图子任务、package readiness、Prism quorum 复验、shared-knowledge 远端模板绑定、首次启动身份/通知策略链路、父任务 completed child 的 runtime receipt 内容对应强门、P3-1 检索升级阈值策略、P4-1 的历史资产 copy-first、delete-last 与 private canonical switch、P4-3 的 clean workspace / cross-machine-style 安装 E2E、P4-2a 发布前产品架构审判、P4-2f 信息架构与运行时产物治理、P4-2g npm 白名单预检与结构重构任务树重锚定、P4-2b runtime/project/user 边界与 CLI workspace context、P4-2c CLI doctor/debug/trace/error/help 产品面加固、P4-2d public package identity/license/surface 准备、P4-2e public redcap-arsenal 内容策略与 claim 边界、P4-2h 首批 RedCap Forge 公共晋升、P4-2h-0 历史资产公共蒸馏 preflight、P4-2h-1 AI Era agent-reading 资料吸收、P4-2h-2 LLM-wiki 资产分层评估与需求登记、P4-2h-3 LLM-wiki-lite 最小私有语义记忆生命周期、P4-2i runtime 最小兼容物理布局、P2-6 Copilot protected fallback 策略收紧、P2-7 中途架构与任务树一致性审计、P2-8 Prism runs 生命周期状态面与清理边界加固、P2-9 飞书完成通知单出口收敛，以及 P2-10 飞书节点汇报人类可读化。P4-2h 完成的是 3 条 reviewed-substantive 公共方法论样本、索引和远端一致性，不等于全部历史资产公共迁移或成熟公共知识库；P4-2h-0 只证明 RedCap Forge 预检和晋升前边界仍可审计；P4-2h-1 只把 `ai-engineer.md` 与 `llm-wiki.md` 的可用设计吸收到 RedCap 的长期记忆和工程纪律契约，不等于启用完整 LLM Wiki、RAG/GraphRAG 或公共库直写；P4-2h-2 只完成 RedCap 资产是否适合进入 LLM-wiki-lite 语义记忆层的分层判断；P4-2h-3 只实现私有、非权威、带 source anchor、可过期检测、Forge 晋升受控的最小语义记忆层，不等于完整 LLM-wiki 产品、后台自动蒸馏、RAG/GraphRAG、向量库或公共写回；P4-2i 只证明 package-visible runtime root 与兼容 wrappers 已存在，不等于完整执行层拆分、工具树迁移或 public-release-ready；P2-6 只把 Copilot CLI 从普通自动路径降级为 Claude Code 与 Kimi 均不可用时才允许调用的保护性 fallback，不等于禁用用户手动 Copilot；P2-7 只完成文件头/字典一致性、LLM-wiki-lite 边界可见性和中途任务树对账，不等于 public release ready；P2-8 只把 `prism/runs` 残留提示改成可执行、可审查且明确 `--apply` 需显式批准的状态面，不等于已经物理清理运行证据；P2-9 只把 Layer B 正常完成的飞书 node-report 收敛为 closeout runtime receipt 后单出口，不等于飞书平台侧延迟归零或所有宿主原生通知能力都可控；P2-10 只把飞书正文改成人类可读 compact 汇报，不等于重构终端状态面或改变通知发送策略。P4-2 正式公开发布仍未完成，不能被简化为“只差 npm publish”；它仍被 formal release task 的人工许可证、发布开关/凭据和剩余产品口径阻塞。
 
+## 人类可读父任务全景
+
+- 主线目标：RedCap 这轮超长任务不是补一个小功能，而是把它从 Norven 本机上的 skill 工程，推进成更像正式工具的 Agent runtime / CLI / 多层系统。
+- 已完成的大块：任务流和收尾机制已经重构；历史资产、知识库、公共 arsenal、Forge、LLM-wiki-lite、CLI 产品面、干净工作区安装验证和飞书通知治理都已完成一轮落地。
+- 当前所在位置：主线已经进入发布前深水区和体验打磨区；本次完成的是飞书汇报视角修正，不代表父任务整体结束。
+- 仍未完成或仍被拦住的事：正式公开发布还没有启动，仍需要处理发布开关、凭据、许可证和公开分发边界；完整 LLM-wiki、RAG/GraphRAG 和大规模公共知识库迁移仍是后续事项。
+- 下一步：如果不进入正式发布任务，就继续沿父任务线处理非发布类治理缺口；任何子任务完成都不能冒充整个父任务完成。
+
 P4 numbering is a dependency/status map, not a promise of numeric execution order.
 
 ## 已完成子任务
@@ -74,6 +82,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P2-10 | user trust gap | 飞书节点汇报人类可读化 | completed | P2 | 已将飞书 node-report 从终端状态字段堆叠改为结论、任务位置、下一步、需要 Norven、阻塞状态和关键证据六段式 compact 汇报，并删除重复路线三连 | report: `2026-05-09-feishu-human-readable-node-report.md`；不等于重构终端状态面或改变通知发送策略 |
 | P2-11 | user trust gap | 飞书成果摘要化与回复通道调研 | completed | P2 | 已将飞书完成通知主段落改为任务结果摘要，并记录普通回复、等待回复窗口、待处理扫描和未来 Feishu Inbox 的边界 | report: `2026-05-09-feishu-outcome-readable-and-reply-research.md`；不等于启用实时飞书指令入口 |
 | P2-12 | user trust gap | 飞书整体任务全景图人类可读化补回 | completed | P2 | 已在成果摘要式飞书通知中补回“整体任务全景图”，用于说明当前进展处在主线哪里，同时禁止退回内部节点、门禁、脚本名口径 | report: `2026-05-09-feishu-outcome-readable-and-reply-research.md`；不等于启用实时飞书指令入口或恢复旧的多字段路线噪声 |
+| P2-13 | user trust gap | 飞书父任务级全景图修正 | completed | P2 | 已把飞书“整体任务全景图”从当前子任务路线升级为父任务线总览，覆盖超长主线目标、已完成大块、当前位置、剩余边界和下一步 | report: `2026-05-09-feishu-outcome-readable-and-reply-research.md`；不等于父任务整体完成或进入正式公开发布 |
 
 ## 推荐执行顺序
 
@@ -110,11 +119,12 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 31. `P2-10`：飞书节点汇报人类可读化。（已完成；飞书正文改为 compact 人类阶段汇报）
 32. `P2-11`：飞书成果摘要化与回复通道调研。（已完成；普通飞书回复不自动执行，未来需 Feishu Inbox 任务）
 33. `P2-12`：飞书整体任务全景图人类可读化补回。（已完成；飞书正文保留一个主线位置段落，但不恢复内部流程口径）
-34. `P4-2h`：历史资产公共蒸馏与 RedCap Forge export triage。（已完成首批 reviewed-substantive 公共样本，独立于 npm 发布关键路径）
-35. `P4-2i`：runtime 最小兼容物理布局。（已完成 package-visible runtime root 与 wrappers；完整工具树迁移仍不在本项范围）
-36. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
-37. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界）
-38. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
+34. `P2-13`：飞书父任务级全景图修正。（已完成；飞书全景图优先展示超长父任务线，不再只展示当前子任务路线）
+35. `P4-2h`：历史资产公共蒸馏与 RedCap Forge export triage。（已完成首批 reviewed-substantive 公共样本，独立于 npm 发布关键路径）
+36. `P4-2i`：runtime 最小兼容物理布局。（已完成 package-visible runtime root 与 wrappers；完整工具树迁移仍不在本项范围）
+37. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
+38. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界）
+39. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
 
 ## 当前不可声明
 
@@ -140,3 +150,4 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 - 不可声明 P2-10 改变了飞书发送时机、账号或 closeout 单出口；它只优化飞书正文结构和去冗余。
 - 不可声明 P2-11 已经启用飞书实时指令入口；它只优化飞书正文为任务结果摘要，并确认回复通道需要另走 Feishu Inbox 安全设计。
 - 不可声明 P2-12 恢复了旧版任务位置/当前位置/整体计划脉络图的多字段路线面板；它只补回一个人类可读的整体任务全景图。
+- 不可声明 P2-13 证明父任务已经完成；它只修正飞书全景图的信息层级，让通知展示父任务线总览。
