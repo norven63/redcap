@@ -168,6 +168,7 @@ if [[ -f "$REDCAP_ROOT/references/clean-workspace-install-e2e.json" ]]; then
     run_check "clean-workspace-e2e" bash "$SCRIPT_DIR/redcap-clean-workspace-e2e.sh" --check-result || overall=1
 fi
 run_check "hook-contract" bash "$SCRIPT_DIR/redcap-hook-contract-check.sh" || overall=1
+run_check "codex-hooks-candidate" bash "$SCRIPT_DIR/redcap-codex-hooks-check.sh" || overall=1
 run_check "runtime-helper" bash "$SCRIPT_DIR/redcap-runtime-helper-check.sh" || overall=1
 run_check "cli-console-mirror" bash "$SCRIPT_DIR/redcap-cli-console-mirror-check.sh" || overall=1
 run_check "execution-guarantees" bash "$SCRIPT_DIR/redcap-execution-guarantee-check.sh" || overall=1

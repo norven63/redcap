@@ -200,6 +200,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh contributing-ia-check
   bash compass/tools/redcap-multi-session-acceptance.sh review-tracks-check
   bash compass/tools/redcap-multi-session-acceptance.sh hook-contract-check
+  bash compass/tools/redcap-multi-session-acceptance.sh codex-hooks-candidate-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-helper-check
   bash compass/tools/redcap-multi-session-acceptance.sh cli-console-mirror-check
   bash compass/tools/redcap-multi-session-acceptance.sh revival-protocol-check
@@ -13124,6 +13125,26 @@ run_hook_contract_check_case() {
     assert_string_contains "$output" "HOOK_CONTRACT_OK"
 }
 
+run_codex_hooks_candidate_check_case() {
+    local output block_output marker_dir stop_output start_output
+
+    log "case: codex-hooks-candidate-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-codex-hooks-check.sh")"
+    assert_string_contains "$output" "CODEX_HOOKS_CANDIDATE_OK"
+
+    block_output="$(printf '{"tool_name":"Bash","tool_input":{"command":"git reset --hard HEAD"}}' | bash "$REDCAP_ROOT/compass/tools/redcap-codex-pre-tool-use.sh")"
+    assert_string_contains "$block_output" "permissionDecision"
+    assert_string_contains "$block_output" "deny"
+
+    marker_dir="$ACCEPT_ROOT/codex-hook-markers"
+    start_output="$(printf '{"session_id":"codex-acceptance","cwd":"%s","hook_event_name":"SessionStart","source":"startup"}' "$REDCAP_ROOT" | REDCAP_CODEX_HOOK_MARKER_DIR="$marker_dir" REDCAP_SKIP_INSTALL_REVIVAL_ENTRY=1 REDCAP_SKIP_FEISHU=1 bash "$REDCAP_ROOT/compass/tools/redcap-codex-session-start.sh" || true)"
+    [[ -f "$marker_dir/session-start.json" ]] || fail "Codex SessionStart wrapper did not write marker"
+
+    stop_output="$(printf '{"session_id":"codex-acceptance","cwd":"%s","hook_event_name":"Stop","stop_hook_active":true}' "$REDCAP_ROOT" | REDCAP_CODEX_HOOK_MARKER_DIR="$marker_dir" REDCAP_SKIP_FEISHU=1 bash "$REDCAP_ROOT/compass/tools/redcap-codex-stop.sh")"
+    assert_string_contains "$stop_output" '"continue":true'
+}
+
 run_runtime_helper_check_case() {
     local output
 
@@ -15121,6 +15142,9 @@ case "$COMMAND" in
         ;;
     hook-contract-check)
         run_hook_contract_check_case
+        ;;
+    codex-hooks-candidate-check)
+        run_codex_hooks_candidate_check_case
         ;;
     runtime-helper-check)
         run_runtime_helper_check_case

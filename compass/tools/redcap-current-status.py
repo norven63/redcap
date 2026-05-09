@@ -548,14 +548,23 @@ def host_hook_summary(repo: Path) -> list[str]:
         deployed.append("gemini=SessionStart/SessionEnd configured")
     else:
         deployed.append("gemini=hook config incomplete-or-unreadable")
+    codex_config = read(repo / ".codex/config.toml")
+    codex_hooks = read(repo / ".codex/hooks.json")
     if "codex" in hosts:
-        deployed.append("codex=AGENTS startup import only; no repo-owned reply-veto hook")
+        if (
+            "codex_hooks = true" in codex_config
+            and "redcap-codex-session-start.sh" in codex_hooks
+            and "redcap-codex-stop.sh" in codex_hooks
+        ):
+            deployed.append("codex=SessionStart/Stop/PreToolUse candidate configured; live marker E2E pending")
+        else:
+            deployed.append("codex=AGENTS startup import only; no repo-owned hook config")
 
     lines: list[str] = []
     if host_lines:
         lines.append("capability matrix: " + ", ".join(host_lines))
     lines.append("hook configs: " + ", ".join(deployed))
-    lines.append("配置存在不等于登录态、限流或真实触发已验证；弱 Hook / 无 Hook 宿主仍必须走 pending closure、wrapper 或 degraded/unsupported 标记")
+    lines.append("配置存在不等于登录态、限流或真实触发已验证；Codex hooks 还需 project trust + feature flag + live marker E2E 后才能从 candidate 升级为 ready")
     return lines
 
 

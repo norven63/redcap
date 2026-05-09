@@ -111,10 +111,27 @@ check_copilot() {
 }
 
 check_codex() {
+    local config_rel=".codex/config.toml"
+    local hooks_rel=".codex/hooks.json"
+
+    require_file "$config_rel"
+    require_file "$hooks_rel"
+    require_file "compass/tools/redcap-codex-session-start.sh"
+    require_file "compass/tools/redcap-codex-pre-tool-use.sh"
+    require_file "compass/tools/redcap-codex-stop.sh"
+    require_contains "$config_rel" \
+        "codex_hooks = true"
+    require_contains "$hooks_rel" \
+        '"SessionStart"' \
+        'redcap-codex-session-start.sh' \
+        '"PreToolUse"' \
+        'redcap-codex-pre-tool-use.sh' \
+        '"Stop"' \
+        'redcap-codex-stop.sh'
     echo "host=codex"
-    echo "hook_scope=host-limited"
+    echo "hook_scope=repo-owned-candidate"
     echo "hook_status=degraded"
-    echo "note=Codex.app/Codex CLI currently has AGENTS startup import but no repo-owned SessionEnd/reply-veto hook surface"
+    echo "note=Codex official lifecycle hooks are configured in .codex/hooks.json, but remain degraded until project trust, feature flag loading, and live marker E2E verify physical SessionStart/Stop firing; no full reply-veto claim"
 }
 
 check_kimi() {

@@ -28,7 +28,7 @@
 14. **飞书不是唯一收尾动作**：飞书通知只是可见信号；真正收尾还要看承诺账本、Prism 验收、receipt、review、validator、task report、lessons、backlog、catalog、diagnose 与 pending closure。
 14.1. **飞书只能走单一生产路径**：RedCap 官方通知只允许 `cli_a9579f5b12219bb5` 的 lark-cli DM 通道；只在节点汇报或需要 Norven 人工介入的中断时发送，禁止 webhook、旧 profile、followup watcher 和重复 success 刷屏。
 15. **作者不得单独宣称 completed**：没有有效 Prism 验收、没有 receipt，或 pending closure 未清时，作者只能汇报“已实现/已自检”，不得宣称 completed，也不得汇报 completed。
-16. **首读/诊断入口已优先做成只读安全**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 的 repo-owned 首读链不再依赖临时可写目录；真正仍受宿主限制的是 reply-time veto、SessionEnd 等宿主控制点，而不是这些首读入口本身。
+16. **首读/诊断入口已优先做成只读安全**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 的 repo-owned 首读链不再依赖临时可写目录；真正仍受宿主限制的是 reply-time veto、SessionEnd/Stop 等宿主控制点，而不是这些首读入口本身。Codex lifecycle hooks 当前是 repo-owned candidate：必须同时满足 feature flag、project trust 与真实 marker E2E，才可从 degraded 升级为 ready。
 17. **identity 先于 soul**：`~/.cap/identity.md` 是 Cap 的个人灵魂锚点；`compass/soul.md` 负责培养指南、复活协议与执行纪律。缺失 identity 时，优先用 `redcap-install.sh --init-identity` 初始化，不要把 `soul.md` 误当成个人记忆本体。
 18. **有 SessionStart Hook 的宿主必须跑 installer**：Claude / Gemini / Copilot 这类已接入 Layer B SessionStart 的宿主，会在启动链里实际调用 `redcap-install.sh`；Codex.app 这类只有入口导入的宿主，仍需显式运行 installer 或 current-status。
 19. **Evolution 候选必须收口**：重要经验、用户纠偏、测试失败、人格成长、skill 候选和治理改良必须进入 `compass/evolution/candidates.json`，并在 closeout 前晋升、no-promote 或归档；未处理候选不得生成 receipt。

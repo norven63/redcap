@@ -56,6 +56,11 @@
 | [`references/skill-lifecycle-policy.json`](../references/skill-lifecycle-policy.json) | skill lifecycle source | 定义 RedCap-native capability、host-exported skill、portable package 的状态、门禁、回滚和弃用规则 | Host adapters | `bash compass/tools/redcap-skill-lifecycle-check.sh` |
 | [`compass/tools/redcap-skill-lifecycle-check.py`](../compass/tools/redcap-skill-lifecycle-check.py) | skill lifecycle validator | 防止宿主入口复制分叉规则，并校验 lifecycle fields | Host adapters | 由 `.sh` 包装调用 |
 | [`AGENTS.md`](../AGENTS.md) / [`CLAUDE.md`](../CLAUDE.md) / [`GEMINI.md`](../GEMINI.md) / [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) | host thin entries | 宿主入口只做轻量索引和复活，不承载权威规则正文 | Host adapters | revival / skill lifecycle checks |
+| [`.codex/config.toml`](../.codex/config.toml) / [`.codex/hooks.json`](../.codex/hooks.json) | Codex lifecycle hooks candidate | Codex 官方 Hook 的项目级候选接线；启用 feature flag 并把 SessionStart / PreToolUse / Stop 接到 RedCap wrapper，真实 marker E2E 前仍是 degraded | Host adapters | `bash compass/tools/redcap-codex-hooks-check.sh` |
+| [`compass/tools/redcap-codex-session-start.sh`](../compass/tools/redcap-codex-session-start.sh) | Codex SessionStart adapter | Codex 启动/恢复时转入 RedCap 复活与状态恢复；失败时只降级提醒，不阻断会话 | Host adapters | `bash compass/tools/redcap-codex-hooks-check.sh` |
+| [`compass/tools/redcap-codex-pre-tool-use.sh`](../compass/tools/redcap-codex-pre-tool-use.sh) | Codex PreToolUse safety guard | 在 Codex 支持的工具路径前阻止明显破坏性动作；它是护栏，不是完整沙箱 | Host adapters | `bash compass/tools/redcap-codex-hooks-check.sh` |
+| [`compass/tools/redcap-codex-stop.sh`](../compass/tools/redcap-codex-stop.sh) | Codex Stop adapter | Codex 回合停止时转入 Layer B 收口检查；若仍有 pending closeout，要求继续一轮，并用 `stop_hook_active` 防循环 | Host adapters | `bash compass/tools/redcap-codex-hooks-check.sh` |
+| [`compass/tools/redcap-codex-hooks-check.sh`](../compass/tools/redcap-codex-hooks-check.sh) | Codex hooks candidate validator | 校验 `.codex/` 配置、wrapper、危险动作拦截和“candidate 不冒充 ready”的知识边界 | Host adapters | `bash compass/tools/redcap-codex-hooks-check.sh` |
 
 ## Product Shape And Retrieval
 

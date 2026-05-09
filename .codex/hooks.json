@@ -1,0 +1,42 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env bash \"$(git rev-parse --show-toplevel)/compass/tools/redcap-codex-session-start.sh\"",
+            "timeout": 60,
+            "statusMessage": "Reviving RedCap"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env bash \"$(git rev-parse --show-toplevel)/compass/tools/redcap-codex-pre-tool-use.sh\"",
+            "timeout": 15,
+            "statusMessage": "Checking RedCap safety policy"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env bash \"$(git rev-parse --show-toplevel)/compass/tools/redcap-codex-stop.sh\"",
+            "timeout": 120,
+            "statusMessage": "Checking RedCap closeout"
+          }
+        ]
+      }
+    ]
+  }
+}

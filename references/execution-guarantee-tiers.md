@@ -116,6 +116,6 @@ G3 的正确承诺方式是：
 
 1. **大量 repo-owned gate / validator / closure 规则已经达到 G1。**
 2. **宿主 Hook、session identity、runtime attach 这类规则多数属于 G2。**
-3. **主 Agent 实时回复行为边界，在 Codex.app 这类未暴露 reply-veto 的宿主上仍属于 G3。**
+3. **主 Agent 实时回复行为边界，在 Codex.app 这类尚未提供完整 reply-veto 的宿主上仍属于 G3；Codex lifecycle hooks candidate 只能把 SessionStart / Stop / 部分工具前置护栏推进到 G2/G1 验证路径，不能自动解决最终回复拦截。**
 
 这不是 RedCap 失败，而是**边界被明确、承诺被校准、治理从“模糊自信”升级成“分层诚实”**。

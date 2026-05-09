@@ -347,6 +347,14 @@ if [[ -x "$HOOK_CONTRACT_CHECK" ]]; then
     fi
 fi
 
+CODEX_HOOKS_CHECK="$REDCAP_ROOT/compass/tools/redcap-codex-hooks-check.sh"
+if [[ -x "$CODEX_HOOKS_CHECK" ]]; then
+    if ! bash "$CODEX_HOOKS_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] Codex hooks candidate check failed" >&2
+        exit 1
+    fi
+fi
+
 LAYERB_FSM_CHECK="$REDCAP_ROOT/compass/tools/redcap-layerb-fsm-check.sh"
 if [[ -x "$LAYERB_FSM_CHECK" ]]; then
     if ! bash "$LAYERB_FSM_CHECK" >/dev/null; then

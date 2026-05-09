@@ -35,10 +35,10 @@
     },
     "codex": {
       "support_status": "supported",
-      "profile": "codex-agents-md-no-reply-veto",
+      "profile": "codex-lifecycle-hooks-candidate-no-full-reply-veto",
       "allow_safe_degraded": true,
       "allow_explicit_binding_key": true,
-      "allow_host_session_id_binding": false,
+      "allow_host_session_id_binding": true,
       "missing_identity_mode": "degraded"
     }
   }

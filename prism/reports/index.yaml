@@ -1,4 +1,34 @@
 reports:
+  - id: "20260509-codex-lifecycle-hooks-candidate"
+    mode: acceptance-review
+    date: "2026-05-09"
+    topic: "Codex lifecycle hooks candidate wiring"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Keep Codex lifecycle hooks as candidate/degraded until live marker E2E proves trusted physical firing"
+      - "Accept SessionStart, PreToolUse and Stop as a conservative first hook slice"
+      - "Do not claim full reply-veto, full sandbox, or full host parity for Codex"
+      - "Keep PermissionRequest, PostToolUse and UserPromptSubmit as follow-up strategy work"
+    open_questions:
+      - "Live trusted Codex marker E2E remains required before upgrading Codex to hook-ready"
+      - "Broader hook-event strategy remains future work after candidate baseline stabilizes"
+    lessons_updated: false
+    files_affected:
+      - ".codex/config.toml"
+      - ".codex/hooks.json"
+      - "compass/tools/redcap-codex-session-start.sh"
+      - "compass/tools/redcap-codex-pre-tool-use.sh"
+      - "compass/tools/redcap-codex-stop.sh"
+      - "compass/tools/redcap-codex-hooks-check.sh"
+      - "compass/tools/redcap-host-hook-readiness.sh"
+      - "compass/tools/redcap-current-status.py"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "runtime/host-adapters/codex/README.md"
+      - "compass/knowledge/hooks-codex-cli.md"
+      - "references/host-session-capability-matrix.json"
+    archived: false
   - id: "20260509-feishu-human-readable-node-report"
     mode: acceptance-review
     date: "2026-05-09"

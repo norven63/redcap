@@ -31,7 +31,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | Gemini CLI | 每次 prompt | 与 prompt 拼接 | ✅ 实测可用（v0.36.0）；Layer B 已部署 | [hooks-gemini-cli.md](hooks-gemini-cli.md) |
 | Kimi CLI | N/A（无指令文件） | N/A | ✅ 13 种事件（v1.30.0 实测） | [hooks-kimi-cli.md](hooks-kimi-cli.md) |
 | Copilot CLI | N/A（仅 `.github/copilot-instructions.md`） | 自动读取 | ✅ 仓库级 `.github/hooks/*.json`（Layer B 已部署） | [hooks-copilot-cli.md](hooks-copilot-cli.md) |
-| Codex.app / Codex CLI | 会话开始自动读 `AGENTS.md` | 宿主系统上下文 | ⚠️ 入口导入可用，但未见 repo-owned reply veto / SessionEnd Hook | [hooks-codex-cli.md](hooks-codex-cli.md) |
+| Codex.app / Codex CLI | 会话开始自动读 `AGENTS.md`；官方 lifecycle hooks candidate | 宿主系统上下文 + `.codex/`（需 trust） | ⚠️ `SessionStart` / `Stop` / `PreToolUse` candidate 已接线；live marker E2E 前仍 degraded，无完整 reply veto | [hooks-codex-cli.md](hooks-codex-cli.md) |
 
 ### 1.1 Codex.app 当前画像
 
@@ -44,7 +44,7 @@ Codex.app 当前对 RedCap 有两类能力：
 2. **当前未见公开支持面**
    - 回复发送前的 repo-owned veto
    - 对 `ask_user` / 中断 / commit 犹豫这类主 Agent 行为的物理拦截
-   - 可由仓库脚本稳定接管的 SessionEnd / Stop-review 原生 Hook
+   - 已有官方 lifecycle hooks candidate，但仍需 project trust、feature flag 和真实 marker E2E 后才能升级为 ready
 
 因此 Codex.app 在 RedCap 里应被视为：
 
@@ -117,7 +117,7 @@ Codex.app 当前对 RedCap 有两类能力：
 | Copilot CLI | ✅ | 仓库级 `.github/hooks/*.json`（Layer B 已部署；Layer A 按仓库安装） | [hooks-copilot-cli.md §3](hooks-copilot-cli.md) |
 | VS Code Copilot | ❌ | 退守 Layer 1-3 | [hooks-vscode-copilot.md §3](hooks-vscode-copilot.md) |
 | Gemini CLI | ✅ | `.gemini/settings.json` SessionStart + SessionEnd（Layer B 已部署） | [hooks-gemini-cli.md §3](hooks-gemini-cli.md) |
-| Codex.app / Codex CLI | ❌ | 退守 Layer 1-3 + `AGENTS.md` 入口恢复 + repo-owned 诊断/审计 | 本文件 §1.1 |
+| Codex.app / Codex CLI | ⚠️ candidate | `.codex/config.toml` + `.codex/hooks.json` 接入 SessionStart / Stop / PreToolUse；真实触发验证前仍退守 Layer 1-3 + repo-owned 诊断/审计 | [hooks-codex-cli.md §3.1](hooks-codex-cli.md) |
 
 ### 3.3 收尾脚本封装（已实现）
 
@@ -186,4 +186,4 @@ Codex.app 当前对 RedCap 有两类能力：
 | **唯一 100% 保证是 Hooks** | 绕过 LLM，宿主程序直接执行 shell（Claude Code / Gemini CLI / Kimi CLI / Copilot CLI 均支持） |
 | **需认知的关键动作** | Hook 确定性触发 × 新 Agent 生命周期认知能力（L-15）：Hook 保证 100% 触发，新 Agent 消除历史上下文污染保证认知质量，两者相乘解决"纯脚本无认知 vs 纯 LLM 会遗忘"的两难。实例：Layer B `redcap-on-stop-review.sh`、Layer A `redcap-layerA-review-fallback.sh` |
 | **RedCap 最佳策略** | 用脚本封装关键动作 + 宿主 Hooks（如有）+ 下次启动审计；对 Codex.app 这类无 reply-veto 宿主，要诚实标注 host-limited 行为保障；对 CLI 家族可优先考虑 wrapper / proxy 做入口控制，但不得把“启动包装”冒充成“实时拦截” |
-| **Hook 覆盖率** | 6 个宿主中 4 个有 Hooks（Claude Code、Gemini CLI、Kimi CLI、Copilot CLI），2 个无/弱（VS Code Copilot、Codex.app） |
+| **Hook 覆盖率** | 6 个宿主中 4 个有已部署/实测 Hooks（Claude Code、Gemini CLI、Kimi CLI、Copilot CLI），Codex 已进入官方 lifecycle hooks candidate，VS Code Copilot 仍弱 |
