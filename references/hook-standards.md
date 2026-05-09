@@ -27,6 +27,8 @@
 | **docs 读取必须渐进披露** | Layer B | 历史 evidence 体量过大，默认 bulk-read 会打爆新会话上下文 | `redcap-docs-catalog.sh summary/plan/budget` | acceptance 覆盖 plan 候选、budget 单文件通过、目录/超预算读取 fail-closed |
 | **knowledge 读取必须先走导航** | Layer B | 经验、宿主行为、探索记录分散在多文件，默认 bulk-read 会放大上下文污染 | `compass/knowledge/index.md` | `redcap-knowledge-index-check.sh` 已接入 `redcap-spec-check.sh` |
 | **token 风险审计不可遗漏** | Layer B | 入口文件、巨型 acceptance、ignored runtime 残留和历史证据都可能绕开 docs catalog 重新污染上下文 | `redcap-token-risk-audit.sh` + `redcap-acceptance-index.sh` | `redcap-diagnose.sh` / `redcap-spec-check.sh` / acceptance 回归 |
+| **Hook 唯一信源不可分叉** | Both | 各宿主 Hook 语法不同，若把业务规则写进宿主配置，会很快变成 Claude/Gemini/Copilot/Codex 四套互相漂移的规则 | RedCap-native 脚本作为唯一执行信源；宿主配置只做薄适配和转发 | `redcap-hook-contract-check.sh` / `redcap-host-hook-readiness.sh` / `redcap-spec-check.sh` |
+| **Codex Hook 升级必须有 live marker** | Layer B | `.codex/hooks.json` 存在只能证明“配置写了”，不能证明 Codex 真实加载、信任项目并物理触发 | `redcap-codex-live-marker-e2e.sh --run` 用安全探针验证 SessionStart/Stop 物理 marker | `redcap-codex-live-marker-e2e.sh --check-result` / `redcap-codex-hooks-check.sh`；未通过前只能称 candidate/degraded |
 
 > **扩展规则**：新增"必须保障"的动作，先在此表登记，再在 §2 中补充实现规范。不允许直接写进脚本而不在此表体现。
 
@@ -74,5 +76,7 @@
 本节只记录**不变的架构约束**：
 - 所有宿主的 SessionEnd/Stop Hook 入口必须最终汇聚到 `loom/tools/redcap-layerA-session-end.sh`（通用分发器）
 - Layer B 的最终收尾逻辑统一由 `compass/tools/redcap-layerB-session-end.sh` 承担；宿主配置只负责把事件接到通用分发器
+- 宿主配置不得内嵌 RedCap 业务规则；Claude / Gemini / Copilot / Codex 只能把宿主事件转发到 RedCap-native 脚本，规则变更必须先落到 RedCap 的唯一信源，再由适配层引用
+- Codex `.codex/` 是 repo-owned candidate adapter；只有 `redcap-codex-live-marker-e2e.sh --run` 写出 `references/codex-live-marker-e2e.json` 且通过 `--check-result` 后，才可声明“Codex CLI live marker E2E passed”。这仍不自动等于 Codex.app interactive ready 或完整 reply-veto
 - Layer A（用户项目）Hook 配置必须注册在**用户级**配置文件，使用 RedCap 安装目录的**绝对路径**，而非项目工作区
 - Layer B（RedCap 自身）Hook 配置注册在 RedCap 仓库的**项目级**配置文件

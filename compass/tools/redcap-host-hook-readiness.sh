@@ -113,12 +113,15 @@ check_copilot() {
 check_codex() {
     local config_rel=".codex/config.toml"
     local hooks_rel=".codex/hooks.json"
+    local marker_result_rel="references/codex-live-marker-e2e.json"
+    local marker_status="pending"
 
     require_file "$config_rel"
     require_file "$hooks_rel"
     require_file "compass/tools/redcap-codex-session-start.sh"
     require_file "compass/tools/redcap-codex-pre-tool-use.sh"
     require_file "compass/tools/redcap-codex-stop.sh"
+    require_file "compass/tools/redcap-codex-live-marker-e2e.sh"
     require_contains "$config_rel" \
         "codex_hooks = true"
     require_contains "$hooks_rel" \
@@ -128,10 +131,18 @@ check_codex() {
         'redcap-codex-pre-tool-use.sh' \
         '"Stop"' \
         'redcap-codex-stop.sh'
+    if [[ -f "$REDCAP_ROOT/$marker_result_rel" ]] && grep -Fq '"codex_cli_live_marker_e2e_passed": true' "$REDCAP_ROOT/$marker_result_rel"; then
+        marker_status="codex-cli-live-marker-pass"
+    fi
     echo "host=codex"
     echo "hook_scope=repo-owned-candidate"
-    echo "hook_status=degraded"
-    echo "note=Codex official lifecycle hooks are configured in .codex/hooks.json, but remain degraded until project trust, feature flag loading, and live marker E2E verify physical SessionStart/Stop firing; no full reply-veto claim"
+    if [[ "$marker_status" == "codex-cli-live-marker-pass" ]]; then
+        echo "hook_status=partial-ready"
+        echo "note=Codex CLI live marker E2E passed via $marker_result_rel; Codex.app interactive surface remains degraded unless separately observed; no full reply-veto claim"
+    else
+        echo "hook_status=degraded"
+        echo "note=Codex official lifecycle hooks are configured in .codex/hooks.json, but remain degraded until project trust, feature flag loading, and live marker E2E verify physical SessionStart/Stop firing; run redcap-codex-live-marker-e2e.sh --run to create $marker_result_rel; no full reply-veto claim"
+    fi
 }
 
 check_kimi() {

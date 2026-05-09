@@ -355,6 +355,14 @@ if [[ -x "$CODEX_HOOKS_CHECK" ]]; then
     fi
 fi
 
+CODEX_LIVE_MARKER_E2E_CHECK="$REDCAP_ROOT/compass/tools/redcap-codex-live-marker-e2e.sh"
+if [[ -x "$CODEX_LIVE_MARKER_E2E_CHECK" ]]; then
+    if ! bash "$CODEX_LIVE_MARKER_E2E_CHECK" --check-result >/dev/null; then
+        echo "[redcap-spec-check] Codex live marker E2E result check failed" >&2
+        exit 1
+    fi
+fi
+
 LAYERB_FSM_CHECK="$REDCAP_ROOT/compass/tools/redcap-layerb-fsm-check.sh"
 if [[ -x "$LAYERB_FSM_CHECK" ]]; then
     if ! bash "$LAYERB_FSM_CHECK" >/dev/null; then

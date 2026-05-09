@@ -11,5 +11,8 @@ boundary only:
 - `.codex/hooks.json` is a Codex-specific host wiring candidate.
 - RedCap must not claim full host parity until a real trusted Codex session
   proves SessionStart / Stop firing with marker evidence.
+- `compass/tools/redcap-codex-live-marker-e2e.sh --run` is the safe local
+  marker probe for Codex CLI; a passing CLI probe does not automatically prove
+  Codex.app interactive hook readiness.
 - Codex PreToolUse / PostToolUse coverage is a guardrail, not a complete
   sandbox or reply-time veto boundary.

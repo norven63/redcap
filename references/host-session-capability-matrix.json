@@ -35,7 +35,10 @@
     },
     "codex": {
       "support_status": "supported",
-      "profile": "codex-lifecycle-hooks-candidate-no-full-reply-veto",
+      "profile": "codex-lifecycle-hooks-cli-marker-pass-app-unverified-no-full-reply-veto",
+      "hook_verification_status": "codex-cli-live-marker-pass",
+      "hook_verification_evidence": "references/codex-live-marker-e2e.json",
+      "interactive_app_status": "unverified",
       "allow_safe_degraded": true,
       "allow_explicit_binding_key": true,
       "allow_host_session_id_binding": true,

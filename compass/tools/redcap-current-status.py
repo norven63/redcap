@@ -550,13 +550,24 @@ def host_hook_summary(repo: Path) -> list[str]:
         deployed.append("gemini=hook config incomplete-or-unreadable")
     codex_config = read(repo / ".codex/config.toml")
     codex_hooks = read(repo / ".codex/hooks.json")
+    codex_marker_result = repo / "references/codex-live-marker-e2e.json"
+    codex_marker_passed = False
+    if codex_marker_result.is_file():
+        try:
+            codex_marker_data = json.loads(codex_marker_result.read_text(encoding="utf-8"))
+            codex_marker_passed = codex_marker_data.get("codex_cli_live_marker_e2e_passed") is True
+        except Exception:
+            codex_marker_passed = False
     if "codex" in hosts:
         if (
             "codex_hooks = true" in codex_config
             and "redcap-codex-session-start.sh" in codex_hooks
             and "redcap-codex-stop.sh" in codex_hooks
         ):
-            deployed.append("codex=SessionStart/Stop/PreToolUse candidate configured; live marker E2E pending")
+            if codex_marker_passed:
+                deployed.append("codex=SessionStart/Stop/PreToolUse configured; Codex CLI live marker E2E passed; Codex.app still separately unproven")
+            else:
+                deployed.append("codex=SessionStart/Stop/PreToolUse candidate configured; live marker E2E pending")
         else:
             deployed.append("codex=AGENTS startup import only; no repo-owned hook config")
 
@@ -564,7 +575,7 @@ def host_hook_summary(repo: Path) -> list[str]:
     if host_lines:
         lines.append("capability matrix: " + ", ".join(host_lines))
     lines.append("hook configs: " + ", ".join(deployed))
-    lines.append("配置存在不等于登录态、限流或真实触发已验证；Codex hooks 还需 project trust + feature flag + live marker E2E 后才能从 candidate 升级为 ready")
+    lines.append("配置存在不等于登录态、限流或真实触发已验证；Codex hooks 需 project trust + feature flag + live marker E2E。CLI marker 通过也不自动证明 Codex.app interactive hook ready")
     return lines
 
 

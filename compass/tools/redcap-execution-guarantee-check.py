@@ -56,6 +56,8 @@ REQUIRED_IDS = {
     "cli-console-mirror-contract",
     "control-gate-failure-propagation",
     "host-hook-convergence",
+    "host-hook-single-source",
+    "codex-live-marker-e2e",
     "main-agent-interruption-boundary",
     "evolution-grade-baseline",
     "evolution-candidate-pool",

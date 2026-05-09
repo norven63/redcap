@@ -1,4 +1,33 @@
 reports:
+  - id: "20260509-codex-live-marker-e2e-hardening"
+    mode: acceptance-review
+    date: "2026-05-09"
+    topic: "Codex CLI live marker E2E hardening"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Accept local Codex CLI live marker E2E as partial-ready evidence for SessionStart and Stop physical firing"
+      - "Keep Codex.app interactive, full reply-veto and complete sandbox claims unverified"
+      - "Turn reviewer warnings into machine checks: production hooks must not inject probe mode and Stop loop guard must be acceptance-tested"
+      - "Require live marker script and sanitized evidence to be included with this task's commit"
+    open_questions:
+      - "Codex.app interactive live marker E2E remains a separate future validation"
+      - "PermissionRequest, PostToolUse and UserPromptSubmit strategy remains future work after candidate baseline stabilizes"
+      - "Package surface slimming remains a pre-release productization task"
+    lessons_updated: true
+    files_affected:
+      - "compass/tools/redcap-codex-live-marker-e2e.sh"
+      - "compass/tools/redcap-codex-session-start.sh"
+      - "compass/tools/redcap-codex-stop.sh"
+      - "compass/tools/redcap-codex-hooks-check.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "references/codex-live-marker-e2e.json"
+      - "references/hook-standards.md"
+      - "references/execution-guarantees.json"
+      - "compass/docs/task-reports/2026-05-09-codex-lifecycle-hooks-candidate.md"
+      - "compass/knowledge/lessons.md"
+    archived: false
   - id: "20260509-codex-lifecycle-hooks-candidate"
     mode: acceptance-review
     date: "2026-05-09"
@@ -7,12 +36,13 @@ reports:
     roles: ["reviewer", "challenger"]
     verdict: "pass"
     consensus_actions:
-      - "Keep Codex lifecycle hooks as candidate/degraded until live marker E2E proves trusted physical firing"
+      - "Upgrade local Codex CLI hook status to partial-ready after live marker E2E proves SessionStart and Stop physical firing"
+      - "Keep Codex.app interactive and full reply-veto unverified until a separate app-surface marker E2E exists"
       - "Accept SessionStart, PreToolUse and Stop as a conservative first hook slice"
       - "Do not claim full reply-veto, full sandbox, or full host parity for Codex"
       - "Keep PermissionRequest, PostToolUse and UserPromptSubmit as follow-up strategy work"
     open_questions:
-      - "Live trusted Codex marker E2E remains required before upgrading Codex to hook-ready"
+      - "Codex.app interactive live marker E2E remains required before upgrading the app surface to hook-ready"
       - "Broader hook-event strategy remains future work after candidate baseline stabilizes"
     lessons_updated: false
     files_affected:
@@ -21,6 +51,7 @@ reports:
       - "compass/tools/redcap-codex-session-start.sh"
       - "compass/tools/redcap-codex-pre-tool-use.sh"
       - "compass/tools/redcap-codex-stop.sh"
+      - "compass/tools/redcap-codex-live-marker-e2e.sh"
       - "compass/tools/redcap-codex-hooks-check.sh"
       - "compass/tools/redcap-host-hook-readiness.sh"
       - "compass/tools/redcap-current-status.py"
@@ -28,6 +59,7 @@ reports:
       - "runtime/host-adapters/codex/README.md"
       - "compass/knowledge/hooks-codex-cli.md"
       - "references/host-session-capability-matrix.json"
+      - "references/codex-live-marker-e2e.json"
     archived: false
   - id: "20260509-feishu-human-readable-node-report"
     mode: acceptance-review

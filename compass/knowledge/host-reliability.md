@@ -31,7 +31,7 @@ RedCap 既是开发工具，也是被开发的对象。因此 Hook 体系分为�
 | Gemini CLI | 每次 prompt | 与 prompt 拼接 | ✅ 实测可用（v0.36.0）；Layer B 已部署 | [hooks-gemini-cli.md](hooks-gemini-cli.md) |
 | Kimi CLI | N/A（无指令文件） | N/A | ✅ 13 种事件（v1.30.0 实测） | [hooks-kimi-cli.md](hooks-kimi-cli.md) |
 | Copilot CLI | N/A（仅 `.github/copilot-instructions.md`） | 自动读取 | ✅ 仓库级 `.github/hooks/*.json`（Layer B 已部署） | [hooks-copilot-cli.md](hooks-copilot-cli.md) |
-| Codex.app / Codex CLI | 会话开始自动读 `AGENTS.md`；官方 lifecycle hooks candidate | 宿主系统上下文 + `.codex/`（需 trust） | ⚠️ `SessionStart` / `Stop` / `PreToolUse` candidate 已接线；live marker E2E 前仍 degraded，无完整 reply veto | [hooks-codex-cli.md](hooks-codex-cli.md) |
+| Codex.app / Codex CLI | 会话开始自动读 `AGENTS.md`；官方 lifecycle hooks candidate | 宿主系统上下文 + `.codex/`（需 trust） | ⚠️ `SessionStart` / `Stop` / `PreToolUse` 已接线；本机 Codex CLI live marker E2E 已通过，Codex.app interactive 仍未单独证明，无完整 reply veto | [hooks-codex-cli.md](hooks-codex-cli.md) |
 
 ### 1.1 Codex.app 当前画像
 
@@ -44,7 +44,7 @@ Codex.app 当前对 RedCap 有两类能力：
 2. **当前未见公开支持面**
    - 回复发送前的 repo-owned veto
    - 对 `ask_user` / 中断 / commit 犹豫这类主 Agent 行为的物理拦截
-   - 已有官方 lifecycle hooks candidate，但仍需 project trust、feature flag 和真实 marker E2E 后才能升级为 ready
+   - 已有官方 lifecycle hooks candidate；本机 Codex CLI `exec` 已通过 live marker E2E，但 Codex.app interactive 仍需单独物理证据后才能升级为 ready
 
 因此 Codex.app 在 RedCap 里应被视为：
 
@@ -117,7 +117,7 @@ Codex.app 当前对 RedCap 有两类能力：
 | Copilot CLI | ✅ | 仓库级 `.github/hooks/*.json`（Layer B 已部署；Layer A 按仓库安装） | [hooks-copilot-cli.md §3](hooks-copilot-cli.md) |
 | VS Code Copilot | ❌ | 退守 Layer 1-3 | [hooks-vscode-copilot.md §3](hooks-vscode-copilot.md) |
 | Gemini CLI | ✅ | `.gemini/settings.json` SessionStart + SessionEnd（Layer B 已部署） | [hooks-gemini-cli.md §3](hooks-gemini-cli.md) |
-| Codex.app / Codex CLI | ⚠️ candidate | `.codex/config.toml` + `.codex/hooks.json` 接入 SessionStart / Stop / PreToolUse；真实触发验证前仍退守 Layer 1-3 + repo-owned 诊断/审计 | [hooks-codex-cli.md §3.1](hooks-codex-cli.md) |
+| Codex.app / Codex CLI | ⚠️ partial-ready | `.codex/config.toml` + `.codex/hooks.json` 接入 SessionStart / Stop / PreToolUse；Codex CLI marker 已通过，Codex.app interactive 与 reply-veto 仍退守 Layer 1-3 + repo-owned 诊断/审计 | [hooks-codex-cli.md §3.1](hooks-codex-cli.md) |
 
 ### 3.3 收尾脚本封装（已实现）
 

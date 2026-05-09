@@ -33,9 +33,29 @@ for phrase in [
     "复活与执行保障不可遗漏",
     "token 风险审计",
     "docs 读取必须渐进披露",
+    "Hook 唯一信源不可分叉",
+    "Codex Hook 升级必须有 live marker",
 ]:
     if phrase not in hook_standards:
         fail(f"hook standards missing invariant: {phrase}")
+
+host_readiness = read("compass/tools/redcap-host-hook-readiness.sh")
+for phrase in [
+    "redcap-codex-live-marker-e2e.sh",
+    "codex-live-marker-e2e.json",
+    "Codex.app interactive surface remains degraded",
+]:
+    if phrase not in host_readiness:
+        fail(f"host readiness missing hook single-source/live-marker boundary: {phrase}")
+
+codex_live_marker = read("compass/tools/redcap-codex-live-marker-e2e.sh")
+for phrase in [
+    "codex exec",
+    "REDCAP_CODEX_HOOK_E2E_PROBE",
+    "Codex.app interactive hook behavior must not be claimed",
+]:
+    if phrase not in codex_live_marker:
+        fail(f"Codex live marker E2E script missing boundary phrase: {phrase}")
 
 validator = read("compass/tools/redcap-validator-chain.sh")
 for mode in ["stop-review", "on-complete", "session-end"]:

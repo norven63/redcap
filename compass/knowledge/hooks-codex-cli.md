@@ -1,7 +1,7 @@
 # Codex CLI / Codex.app — 入口导入与宿主边界
 
 > 本文件记录 RedCap 对 Codex CLI / Codex.app 的当前宿主画像、已落地接入点，以及为什么它目前仍被诚实标成“candidate + degraded”，而不是“已具备完整 Hook 宿主能力”。
-> **当前状态**：Codex 的 `AGENTS.md` 启动导入已被 RedCap 正式采用；`codex exec` / `resume` / `mcp` 等非交互能力可以被仓库脚本消费；OpenAI 官方已经提供 Codex official lifecycle hooks（feature flag 后），本仓库已接入最小 `.codex/` candidate 配置；但在真实可信 Codex 会话完成 live marker E2E 前，不能宣称 full host parity，也不能宣称拥有完整 reply-time veto。
+> **当前状态**：Codex 的 `AGENTS.md` 启动导入已被 RedCap 正式采用；`codex exec` / `resume` / `mcp` 等非交互能力可以被仓库脚本消费；OpenAI 官方已经提供 Codex official lifecycle hooks（feature flag 后），本仓库已接入最小 `.codex/` candidate 配置；但在真实可信 Codex 会话完成 live marker E2E 前，不能宣称 full host parity，也不能宣称拥有完整 reply-time veto。即使 Codex CLI marker 通过，也不能自动宣称 Codex.app interactive surface 已经 ready，除非另有独立物理证据。
 
 ---
 
@@ -19,6 +19,7 @@
 | 项目级 `.codex/config.toml` | ✅ candidate 已接入 | `.codex/config.toml` 启用 `codex_hooks` feature flag |
 | 项目级 `.codex/hooks.json` | ✅ candidate 已接入 | `SessionStart`、`PreToolUse`、`Stop` 接到 RedCap wrapper |
 | repo-owned Stop Hook | ⚠ candidate / degraded | 需项目 `.codex/` trust + live marker E2E 证明物理触发 |
+| Codex CLI live marker E2E | ⚠ 可执行探针 | `redcap-codex-live-marker-e2e.sh --run`；通过后只证明本机 Codex CLI `exec` 触发，不自动证明 Codex.app interactive |
 | 回复前 veto / reply-time 拦截 | ❌ 仍未拥有完整能力 | Codex hooks 不等于完整 reply-time veto，见 `host-reliability.md` |
 
 ---
@@ -86,8 +87,14 @@ OpenAI 官方 Codex Hooks 文档已经把 `SessionStart`、`UserPromptSubmit`、
 
 1. **feature flag**：必须启用 `codex_hooks`。
 2. **project trust**：项目级 `.codex/` 只有被 Codex 信任后才会加载。
-3. **live marker E2E**：必须用真实 Codex 会话验证 `SessionStart` / `Stop` 物理触发，再把状态从 candidate 升级为 ready。
+3. **live marker E2E**：必须用真实 Codex 会话验证 `SessionStart` / `Stop` 物理触发，再把状态从 candidate 升级为 ready。当前标准入口是 `bash compass/tools/redcap-codex-live-marker-e2e.sh --run`，它只记录清洗后的 marker 证据到 `references/codex-live-marker-e2e.json`。
 4. **not full host parity**：即使 hooks 生效，也不能宣称完整 reply-time veto；`PreToolUse` / `PostToolUse` 不是完整沙箱。
+
+### 3.2 live marker E2E 的人话解释
+
+`redcap-codex-live-marker-e2e.sh --run` 做的事情很窄：开一个最小 `codex exec` 会话，让 Codex 宿主自己加载 `.codex/hooks.json`，再让 `SessionStart` 与 `Stop` wrapper 写两个 marker。它不会把 prompt、模型输出、本地绝对路径写进结果文件，也不会跑完整 closeout 副作用。
+
+这条证据回答的是：“本机 Codex CLI 是否真的触发了 RedCap 的 Codex lifecycle hooks？”它不回答：“当前 Codex.app 图形会话是否也触发了？”因此状态面必须拆开表述：Codex CLI marker 可以 partial-ready，Codex.app interactive 仍要保留 degraded / separately unproven。
 
 ---
 
@@ -126,7 +133,7 @@ Codex 这条线的关键边界不在“能不能读 AGENTS”，而在“RedCap 
 
 目前**不应**对外宣称已经拥有这些能力：
 
-1. Codex 原生 lifecycle hooks 已在本机真实会话中完成 live marker E2E
+1. Codex.app interactive lifecycle hooks 已完成独立 live marker E2E
 2. Codex 已支持 repo-owned reply veto
 3. Codex 当前宿主下的主 Agent 行为约束已达到 100% 物理强保障
 

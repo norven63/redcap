@@ -44,6 +44,21 @@ if [[ -z "$HOOK_CWD" ]]; then
     HOOK_CWD="$REDCAP_ROOT"
 fi
 
+write_marker() {
+    local status="$1"
+
+    if [[ -n "${REDCAP_CODEX_HOOK_MARKER_DIR:-}" ]]; then
+        mkdir -p "$REDCAP_CODEX_HOOK_MARKER_DIR" 2>/dev/null || true
+        printf '{"event":"Stop","status":%s,"host":"codex"}\n' "$status" >"$REDCAP_CODEX_HOOK_MARKER_DIR/stop.json" 2>/dev/null || true
+    fi
+}
+
+if [[ "${REDCAP_CODEX_HOOK_E2E_PROBE:-0}" == "1" ]]; then
+    write_marker 0
+    printf '{"continue":true}\n'
+    exit 0
+fi
+
 log_dir="${REDCAP_RUNTIME_BASE_DIR:-${TMPDIR:-/tmp}/redcap-runtime}/codex-hooks"
 mkdir -p "$log_dir" 2>/dev/null || true
 log_file="$log_dir/stop.log"
@@ -56,10 +71,7 @@ REDCAP_SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-1}" \
 status=$?
 set -e
 
-if [[ -n "${REDCAP_CODEX_HOOK_MARKER_DIR:-}" ]]; then
-    mkdir -p "$REDCAP_CODEX_HOOK_MARKER_DIR" 2>/dev/null || true
-    printf '{"event":"Stop","status":%s,"host":"codex"}\n' "$status" >"$REDCAP_CODEX_HOOK_MARKER_DIR/stop.json" 2>/dev/null || true
-fi
+write_marker "$status"
 
 if [[ "$status" -ne 0 ]]; then
     python3 - <<'PY'

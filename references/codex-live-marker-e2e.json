@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "manifest_id": "redcap-codex-live-marker-e2e",
+  "created_at": "2026-05-09T06:42:40Z",
+  "host": "codex",
+  "surface": "codex-cli-exec",
+  "scope": "local-machine-evidence",
+  "codex_cli_live_marker_e2e_passed": true,
+  "reason": "local Codex CLI invoked SessionStart and Stop hooks and both wrappers wrote marker evidence",
+  "command_exit_code": 0,
+  "codex_binary_observed": true,
+  "codex_version": "codex-cli 0.125.0",
+  "codex_hooks_feature": "true",
+  "source_head": "743ac634f2753e22f9efe4c31e63bd5c898af4f9",
+  "markers": {
+    "session_start": {
+      "event": "SessionStart",
+      "status": 0,
+      "host": "codex"
+    },
+    "stop": {
+      "event": "Stop",
+      "status": 0,
+      "host": "codex"
+    }
+  },
+  "privacy": {
+    "local_paths_redacted": true,
+    "prompt_content_recorded": false,
+    "model_output_recorded": false
+  },
+  "boundary": "This proves local Codex CLI lifecycle hook firing only; Codex.app interactive hook behavior must not be claimed unless separately observed."
+}

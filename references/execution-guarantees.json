@@ -1489,6 +1489,54 @@
       "auto_enforceable": true
     },
     {
+      "id": "host-hook-single-source",
+      "category": "host-adapter-hooks",
+      "priority": "P0",
+      "rule": "Host hook configurations may translate host events, but RedCap control behavior must live in RedCap-native scripts as the single source of truth.",
+      "source_paths": [
+        "references/hook-standards.md",
+        "compass/tools/redcap-host-hook-readiness.sh",
+        ".claude/settings.json",
+        ".gemini/settings.json",
+        ".github/hooks/redcap-layerB.json",
+        ".codex/hooks.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-hook-contract-check and host-hook-readiness verify that host configs point back into RedCap-owned scripts instead of carrying forked business logic.",
+      "guarantee_paths": [
+        "compass/tools/redcap-hook-contract-check.sh",
+        "compass/tools/redcap-host-hook-readiness.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "codex-live-marker-e2e",
+      "category": "host-adapter-hooks",
+      "priority": "P0",
+      "rule": "Codex lifecycle hooks must not be upgraded from candidate/degraded to ready unless a safe live marker E2E proves physical SessionStart and Stop firing.",
+      "source_paths": [
+        "references/hook-standards.md",
+        ".codex/config.toml",
+        ".codex/hooks.json",
+        "compass/knowledge/hooks-codex-cli.md",
+        "runtime/host-adapters/codex/README.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-codex-live-marker-e2e.sh provides a safe Codex CLI marker probe and redcap-codex-hooks-check/spec-check preserve the candidate boundary; CLI marker evidence still does not imply Codex.app interactive readiness.",
+      "guarantee_paths": [
+        "compass/tools/redcap-codex-live-marker-e2e.sh",
+        "compass/tools/redcap-codex-hooks-check.sh",
+        "compass/tools/redcap-host-hook-readiness.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
       "id": "main-agent-interruption-boundary",
       "category": "host-behavior",
       "priority": "P0",

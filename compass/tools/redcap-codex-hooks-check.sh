@@ -41,6 +41,9 @@ for event in ["SessionStart", "PreToolUse", "Stop"]:
         fail(f"hooks.json missing event: {event}")
 
 hooks_text = json.dumps(hooks, ensure_ascii=False)
+if "REDCAP_CODEX_HOOK_E2E_PROBE" in hooks_text:
+    fail("hooks.json must not inject REDCAP_CODEX_HOOK_E2E_PROBE; probe mode is only allowed inside the live marker E2E runner")
+
 for token in [
     "redcap-codex-session-start.sh",
     "redcap-codex-pre-tool-use.sh",
@@ -55,6 +58,7 @@ for rel in [
     "compass/tools/redcap-codex-session-start.sh",
     "compass/tools/redcap-codex-pre-tool-use.sh",
     "compass/tools/redcap-codex-stop.sh",
+    "compass/tools/redcap-codex-live-marker-e2e.sh",
 ]:
     script = root / rel
     if not script.is_file():
@@ -65,6 +69,12 @@ for rel in [
 
 if "decision" not in read("compass/tools/redcap-codex-stop.sh") or "stop_hook_active" not in read("compass/tools/redcap-codex-stop.sh"):
     fail("Stop wrapper must return Codex-compatible JSON and guard continuation loops")
+if "REDCAP_CODEX_HOOK_E2E_PROBE" not in read("compass/tools/redcap-codex-session-start.sh"):
+    fail("SessionStart wrapper must support safe live marker E2E probe mode")
+if "REDCAP_CODEX_HOOK_E2E_PROBE" not in read("compass/tools/redcap-codex-stop.sh"):
+    fail("Stop wrapper must support safe live marker E2E probe mode")
+if "codex exec" not in read("compass/tools/redcap-codex-live-marker-e2e.sh") or "--check-result" not in read("compass/tools/redcap-codex-live-marker-e2e.sh"):
+    fail("Codex live marker E2E script must provide run and check-result flows")
 
 pre_tool = read("compass/tools/redcap-codex-pre-tool-use.sh")
 for blocked in ["git reset --hard", "prune-local", "npm publish"]:
@@ -78,6 +88,7 @@ for phrase in [
     "project trust",
     "live marker E2E",
     "not full host parity",
+    "Codex.app interactive",
 ]:
     if phrase not in codex_doc:
         fail(f"Codex knowledge doc missing boundary phrase: {phrase}")
@@ -87,6 +98,7 @@ for phrase in [
     "repo-owned-candidate",
     "live marker E2E",
     ".codex/hooks.json",
+    "codex-live-marker-e2e.json",
 ]:
     if phrase not in readiness:
         fail(f"host readiness missing Codex candidate phrase: {phrase}")

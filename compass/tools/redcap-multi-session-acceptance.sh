@@ -201,6 +201,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh review-tracks-check
   bash compass/tools/redcap-multi-session-acceptance.sh hook-contract-check
   bash compass/tools/redcap-multi-session-acceptance.sh codex-hooks-candidate-check
+  bash compass/tools/redcap-multi-session-acceptance.sh codex-live-marker-e2e-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-helper-check
   bash compass/tools/redcap-multi-session-acceptance.sh cli-console-mirror-check
   bash compass/tools/redcap-multi-session-acceptance.sh revival-protocol-check
@@ -13126,7 +13127,7 @@ run_hook_contract_check_case() {
 }
 
 run_codex_hooks_candidate_check_case() {
-    local output block_output marker_dir stop_output start_output
+    local output block_output marker_dir stop_loop_output stop_output start_output
 
     log "case: codex-hooks-candidate-check"
 
@@ -13137,12 +13138,28 @@ run_codex_hooks_candidate_check_case() {
     assert_string_contains "$block_output" "permissionDecision"
     assert_string_contains "$block_output" "deny"
 
+    stop_loop_output="$(printf '{"session_id":"codex-acceptance","cwd":"%s","hook_event_name":"Stop","stop_hook_active":true}' "$REDCAP_ROOT" | REDCAP_SKIP_FEISHU=1 bash "$REDCAP_ROOT/compass/tools/redcap-codex-stop.sh")"
+    assert_string_contains "$stop_loop_output" '"continue":true'
+
     marker_dir="$ACCEPT_ROOT/codex-hook-markers"
     start_output="$(printf '{"session_id":"codex-acceptance","cwd":"%s","hook_event_name":"SessionStart","source":"startup"}' "$REDCAP_ROOT" | REDCAP_CODEX_HOOK_MARKER_DIR="$marker_dir" REDCAP_SKIP_INSTALL_REVIVAL_ENTRY=1 REDCAP_SKIP_FEISHU=1 bash "$REDCAP_ROOT/compass/tools/redcap-codex-session-start.sh" || true)"
     [[ -f "$marker_dir/session-start.json" ]] || fail "Codex SessionStart wrapper did not write marker"
 
-    stop_output="$(printf '{"session_id":"codex-acceptance","cwd":"%s","hook_event_name":"Stop","stop_hook_active":true}' "$REDCAP_ROOT" | REDCAP_CODEX_HOOK_MARKER_DIR="$marker_dir" REDCAP_SKIP_FEISHU=1 bash "$REDCAP_ROOT/compass/tools/redcap-codex-stop.sh")"
+    stop_output="$(printf '{"session_id":"codex-acceptance","cwd":"%s","hook_event_name":"Stop","stop_hook_active":false}' "$REDCAP_ROOT" | REDCAP_CODEX_HOOK_MARKER_DIR="$marker_dir" REDCAP_CODEX_HOOK_E2E_PROBE=1 REDCAP_SKIP_FEISHU=1 bash "$REDCAP_ROOT/compass/tools/redcap-codex-stop.sh")"
     assert_string_contains "$stop_output" '"continue":true'
+    [[ -f "$marker_dir/stop.json" ]] || fail "Codex Stop wrapper did not write marker in probe mode"
+}
+
+run_codex_live_marker_e2e_check_case() {
+    local output
+
+    log "case: codex-live-marker-e2e-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-codex-live-marker-e2e.sh" --self-test)"
+    assert_string_contains "$output" "CODEX_LIVE_MARKER_E2E_SELF_TEST_OK"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-codex-live-marker-e2e.sh" --check-result)"
+    assert_string_contains "$output" "CODEX_LIVE_MARKER_E2E"
 }
 
 run_runtime_helper_check_case() {
@@ -14596,6 +14613,8 @@ run_all_cases() {
     run_contributing_ia_check_case
     run_review_tracks_check_case
     run_hook_contract_check_case
+    run_codex_hooks_candidate_check_case
+    run_codex_live_marker_e2e_check_case
     run_runtime_helper_check_case
     run_cli_console_mirror_check_case
     run_revival_protocol_check_case
@@ -15145,6 +15164,9 @@ case "$COMMAND" in
         ;;
     codex-hooks-candidate-check)
         run_codex_hooks_candidate_check_case
+        ;;
+    codex-live-marker-e2e-check)
+        run_codex_live_marker_e2e_check_case
         ;;
     runtime-helper-check)
         run_runtime_helper_check_case

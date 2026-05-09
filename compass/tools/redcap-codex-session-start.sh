@@ -32,6 +32,20 @@ if [[ -z "$HOOK_CWD" ]]; then
     HOOK_CWD="$REDCAP_ROOT"
 fi
 
+write_marker() {
+    local status="$1"
+
+    if [[ -n "${REDCAP_CODEX_HOOK_MARKER_DIR:-}" ]]; then
+        mkdir -p "$REDCAP_CODEX_HOOK_MARKER_DIR" 2>/dev/null || true
+        printf '{"event":"SessionStart","status":%s,"host":"codex"}\n' "$status" >"$REDCAP_CODEX_HOOK_MARKER_DIR/session-start.json" 2>/dev/null || true
+    fi
+}
+
+if [[ "${REDCAP_CODEX_HOOK_E2E_PROBE:-0}" == "1" ]]; then
+    write_marker 0
+    exit 0
+fi
+
 set +e
 REDCAP_HOOK_CWD="$HOOK_CWD" \
 REDCAP_HOST_SESSION_ID="$HOST_SESSION_ID" \
@@ -40,10 +54,7 @@ REDCAP_SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-1}" \
 status=$?
 set -e
 
-if [[ -n "${REDCAP_CODEX_HOOK_MARKER_DIR:-}" ]]; then
-    mkdir -p "$REDCAP_CODEX_HOOK_MARKER_DIR" 2>/dev/null || true
-    printf '{"event":"SessionStart","status":%s,"host":"codex"}\n' "$status" >"$REDCAP_CODEX_HOOK_MARKER_DIR/session-start.json" 2>/dev/null || true
-fi
+write_marker "$status"
 
 if [[ "$status" -ne 0 ]]; then
     python3 - <<'PY'

@@ -11,7 +11,7 @@
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 246,
+    "package_candidate_count": 248,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
@@ -119,7 +119,7 @@
       "id": "package-surface-too-broad-for-public-cli",
       "dimension": "cli-product-quality",
       "severity": "should-fix",
-      "claim": "The npm package candidate surface currently contains 246 files after the minimum runtime layout wrappers, Feishu Inbox safe-ingress governance files, and Codex lifecycle hooks candidate wiring were added. P4-2d/P4-2i make this an explicit full-runtime-readiness surface with safety gates, but a thinner public product package may still be desirable before broad marketing.",
+      "claim": "The npm package candidate surface currently contains 248 files after the minimum runtime layout wrappers, Feishu Inbox safe-ingress governance files, Codex lifecycle hooks candidate wiring, and Codex live marker E2E evidence were added. P4-2d/P4-2i make this an explicit full-runtime-readiness surface with safety gates, but a thinner public product package may still be desirable before broad marketing.",
       "evidence": [
         "references/runtime-package-readiness-policy.json",
         "references/public-package-surface-policy.json",

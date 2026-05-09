@@ -60,6 +60,8 @@
 | [`compass/tools/redcap-codex-session-start.sh`](../compass/tools/redcap-codex-session-start.sh) | Codex SessionStart adapter | Codex 启动/恢复时转入 RedCap 复活与状态恢复；失败时只降级提醒，不阻断会话 | Host adapters | `bash compass/tools/redcap-codex-hooks-check.sh` |
 | [`compass/tools/redcap-codex-pre-tool-use.sh`](../compass/tools/redcap-codex-pre-tool-use.sh) | Codex PreToolUse safety guard | 在 Codex 支持的工具路径前阻止明显破坏性动作；它是护栏，不是完整沙箱 | Host adapters | `bash compass/tools/redcap-codex-hooks-check.sh` |
 | [`compass/tools/redcap-codex-stop.sh`](../compass/tools/redcap-codex-stop.sh) | Codex Stop adapter | Codex 回合停止时转入 Layer B 收口检查；若仍有 pending closeout，要求继续一轮，并用 `stop_hook_active` 防循环 | Host adapters | `bash compass/tools/redcap-codex-hooks-check.sh` |
+| [`compass/tools/redcap-codex-live-marker-e2e.sh`](../compass/tools/redcap-codex-live-marker-e2e.sh) | Codex live marker E2E | 用最小 `codex exec` 探针证明 Codex CLI 是否物理触发 SessionStart/Stop；结果只代表本机 CLI，不代表 Codex.app interactive 已 ready | Host adapters | `bash compass/tools/redcap-codex-live-marker-e2e.sh --check-result` |
+| [`references/codex-live-marker-e2e.json`](../references/codex-live-marker-e2e.json) | Codex live marker evidence | 安全清洗后的 Codex CLI marker 证据；不存在时表示尚未完成真实 live marker E2E | Host adapters | `bash compass/tools/redcap-codex-live-marker-e2e.sh --check-result` |
 | [`compass/tools/redcap-codex-hooks-check.sh`](../compass/tools/redcap-codex-hooks-check.sh) | Codex hooks candidate validator | 校验 `.codex/` 配置、wrapper、危险动作拦截和“candidate 不冒充 ready”的知识边界 | Host adapters | `bash compass/tools/redcap-codex-hooks-check.sh` |
 
 ## Product Shape And Retrieval
