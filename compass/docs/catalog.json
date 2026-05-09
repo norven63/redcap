@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 359181,
-    "lines": 7146,
-    "chars": 214722,
+    "size_bytes": 360207,
+    "lines": 7178,
+    "chars": 215244,
     "rough_token_pressure": {
-      "low": 53680,
-      "high": 107361
+      "low": 53811,
+      "high": 107622
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 165506,
-        "lines": 2563,
-        "chars": 98249,
+        "size_bytes": 166532,
+        "lines": 2595,
+        "chars": 98771,
         "rough_token_pressure": {
-          "low": 24562,
-          "high": 49124
+          "low": 24692,
+          "high": 49385
         }
       }
     },
@@ -586,16 +586,26 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 6033,
-      "lines": 95,
-      "chars": 2881,
-      "summary": "- 当前已完成：已把 Prism 本地证据清理从“按过期时间粗判”改成“先查证据链引用”；被历史报告或知识资产引用的目录会自动保全，不会进入删除计划。 - 当前效果：状态面现在会明确显示 9 个目录是证据链绑定保全，另有 1 个未绑定目录只是 dry-run 清理候选。",
+      "size_bytes": 7059,
+      "lines": 127,
+      "chars": 3403,
+      "summary": "当前已完成：已把 Prism 本地证据清理从“按过期时间粗判”改成“先查证据链引用”；被历史报告或知识资产引用的目录会自动保全，不会进入删除计划。 / 当前效果：状态面现在会明确显示 9 个目录是证据链绑定保全，另有 1 个未绑定目录只是 dry-run 清理候选。",
       "status_basis": "filename_recency_only",
       "summary_points": {
-        "current_done": [],
-        "previous_step": [],
-        "next_step": [],
-        "position": []
+        "current_done": [
+          "当前已完成：已把 Prism 本地证据清理从“按过期时间粗判”改成“先查证据链引用”；被历史报告或知识资产引用的目录会自动保全，不会进入删除计划。",
+          "当前效果：状态面现在会明确显示 9 个目录是证据链绑定保全，另有 1 个未绑定目录只是 dry-run 清理候选。"
+        ],
+        "previous_step": [
+          "上一步完成的是：先解释 10 个历史目录的性质、用途和删除风险；在用户认可后，本轮只做非破坏性治理，没有删除任何历史证据。"
+        ],
+        "next_step": [
+          "下一步计划做的是：本轮完成后继续回到 RedCap 父任务线；如果未来要处理那个未绑定候选目录，应另起删除前审查，并由用户显式批准物理删除。"
+        ],
+        "position": [
+          "整体计划脉络图是：RedCap 父任务线仍在推进“正式工具化、知识治理、公共库和证据治理”的长期工程；本轮属于证据治理补丁，解决的是 Prism 运行证据不能误删的问题。",
+          "当前所在位置：当前没有进入 npm 发布；也没有宣称 `prism/runs` 已完成大清理。本轮只把“保全边界”落成机器规则和人类可读状态。"
+        ]
       }
     }
   ]
