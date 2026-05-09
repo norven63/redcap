@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 356862,
+    "size_bytes": 356858,
     "lines": 7156,
-    "chars": 212944,
+    "chars": 212940,
     "rough_token_pressure": {
-      "low": 53236,
-      "high": 106472
+      "low": 53235,
+      "high": 106470
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 163187,
+        "size_bytes": 163183,
         "lines": 2573,
-        "chars": 96471,
+        "chars": 96467,
         "rough_token_pressure": {
-          "low": 24117,
-          "high": 48235
+          "low": 24116,
+          "high": 48233
         }
       }
     },
@@ -515,9 +515,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10296,
+      "size_bytes": 10292,
       "lines": 199,
-      "chars": 6216,
+      "chars": 6212,
       "summary": "当前已完成：RedCap 已把 Codex 官方 lifecycle hooks 纳入宿主能力画像，并完成最小项目级候选接线。 / 详情：Codex 现在不再被简单写成“只有 AGENTS 入口”；状态升级为 “repo-owned candidate / degraded until live marker E2E”。",
       "status_basis": "filename_recency_only"
     },
