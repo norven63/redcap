@@ -83,6 +83,12 @@
     "remote_ref": "refs/heads/main",
     "remote_head": "a73f971974984305437d24f7a45c947c09d1e5a5"
   },
+  "version_binding": {
+    "validated_local_head": "a73f971974984305437d24f7a45c947c09d1e5a5",
+    "validated_remote_head": "a73f971974984305437d24f7a45c947c09d1e5a5",
+    "validated_by": "bash compass/tools/redcap-shared-knowledge-remote-check.sh --live --require-worktree",
+    "release_readiness_rule": "Any future release-readiness claim must rerun live remote binding and arsenal-version-binding checks, then update this binding if the public worktree has intentionally advanced."
+  },
   "notes": [
     "This binding now covers the minimal public template surface plus RedCap Forge-reviewed append-only public entries and generated metadata indexes.",
     "shared-knowledge/ is the RedCap-internal template source and intentionally has no .git directory.",

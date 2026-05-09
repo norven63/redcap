@@ -1,1493 +1,478 @@
 # RedCap 框架级经验库（Framework Lessons Learned）
 
-> 本文件记录跨项目可复用的经验教训。由 Dispatcher 在识别到高价值经验时手动归档。
-> 项目级经验存放在各项目的 `开发手册/shared/lessons-learned.md`。
+> 本文件是经验库首读索引，不承载完整正文。先按热点簇或 L-编号定位，再打开 `compass/knowledge/lessons/<l-id>.md` 精读，避免新会话默认加载巨型经验库。
+>
+> 模块数：152；正文集合 sha256：c9f48a0a8496a799550a8c1b52840c31f20a1f2ca8371ed0e14c7cb1a0e2cd53。
 
 ## 热点主题速览
 
-- **收尾 / 账面一致性**：先看 L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124、L-135、L-148。适用于 pending closure、task report、validator chain、closure ledger、current-status、父子任务完成态打架、长期聚合证据耐久性时。
-- **宿主 / Hook / runtime 边界**：先看 L-15、L-16、L-39、L-41~L-49、L-62~L-69、L-77~L-90。适用于宿主适配、review runner、session-start/session-end、host-limited 行为边界。
-- **docs / knowledge / token 风险**：先看 L-50~L-52、L-64~L-66、L-91~L-97、L-122、L-132、L-134。适用于首读入口、说人话、渐进披露、shared-knowledge、`CONTRIBUTING` / docs / acceptance / `prism/runs` 的上下文压力治理。
-- **评审 / 对抗 / 执行保障**：先看 L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110、L-124、L-135。适用于 red team、review 轨道、治理规则落执行保障、manual-only / host-limited 诚实建模、中插需求重计划。
+- **收尾 / 账面一致性**：L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124、L-135、L-148。
+- **宿主 / Hook / runtime 边界**：L-15、L-16、L-39、L-41~L-49、L-62~L-69、L-77~L-90、L-155。
+- **docs / knowledge / token 风险**：L-50~L-52、L-64~L-66、L-91~L-97、L-122、L-132、L-134、L-150~L-154。
+- **评审 / 对抗 / 执行保障**：L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110、L-124、L-135、L-156。
 
-> 使用方式：先按主题命中热点簇，再精读对应 L-编号；不要为了找一条相关经验默认全量扫完整个 lessons 文件。
+## 使用规则
 
-### 归档触发检查点
+- 不要默认 bulk-read `compass/knowledge/lessons/**`。
+- `lessons.md#l-xxx` 旧引用会落到下面的短锚点；正文以模块文件为准。
+- 新增 lesson 时新增模块文件，并同步本索引、`compass/knowledge/index.md` 与 token-risk 结构治理。
 
-每轮框架变更完成后，Dispatcher 必须执行以下自检：
+## Lesson 模块索引与旧锚点
 
-1. 本轮是否发现了**新的失败模式或反直觉行为**？→ 如果是，归档为 Lesson
-2. 本轮是否验证了一个**之前文档中写错的假设**？→ 如果是，归档为 Lesson
-3. 本轮使用的**工作方法本身**是否值得复用？→ 如果是，归档为方法论 Lesson
-
-> 此检查点的目的：防止"做了但没沉淀"的遗漏。Lesson 的价值在于跨项目复用，漏掉一条可能导致下个项目踩同样的坑。
-
-### 字段说明
-
-每条 Lesson 包含以下元数据字段：
-
-| 字段 | 含义 | 取值 |
-|------|------|------|
-| **影响度** | 踩中后果的严重程度 | `high`（阻塞流程/数据损失）、`medium`（浪费 >5min）、`low`（小不便） |
-| **复现次数** | 同一问题被独立触发的累计次数 | 整数，初始 = 1，每次独立复现 +1 |
-| **最后命中** | 最近一次实际触发或被参考的日期 | `YYYY-MM` 格式 |
-
-### 容量管理与归档策略
-
-**触发条件**：`lessons.md` 行数 > 300（约 15-20 条活跃经验，LLM 上下文友好）
-
-**评分公式**（仅用于排序，不需精确计算）：
-
-```
-score = impact_weight × recency_decay × frequency_boost
-
-impact_weight:   high=4, medium=2, low=1
-recency_decay:   1.0 if <6mo, 0.6 if 6-12mo, 0.3 if >12mo（基于最后命中）
-frequency_boost: min(复现次数, 5) / 5  → [0.2, 1.0]
-```
-
-**处置规则**：
-- `score ≥ 1.0` → 保留在本文件（活跃层）
-- `score < 1.0` → 移入 `knowledge/lessons-archive.md`（归档层，不自动加载到上下文）
-- **豁免**：`影响度 = high` 的条目永不自动归档，只能由人工手动降级
-- **新增豁免**：最后命中 < 3 个月的条目不计入归档候选（豁免期）
-- 归档层不设删除——磁盘成本忽略不计，唯一成本是"是否占上下文"
-- 归档条目如再次复现，应"复活"回活跃层并 `复现次数 +1`
-
-**工具辅助**：运行 `bash compass/tools/lessons-score.sh` 可自动计算所有条目评分并输出归档候选清单
-
-**选型说明（为何不引入 RAG 或向量数据库）**：
-热/冷分层分文件加载是 LLM context management 的业内标准做法（活跃层直接加载，归档层按需查阅）。RAG 适合 > 500 条场景，向量检索的基础设施成本与运维复杂度远超收益；在 < 50 条规模下，关键词过滤即可满足需求。当前方案即长期设计，无需迁移到向量数据库。
-
----
+> 每个标题保留旧锚点；标题下只放正文模块链接，不复制正文。
 
 ### L-4: Agent Fallback 深度不足导致铁律系统性违反
-- **场景**：gemini 频控 + claude-code 幻觉，2 级 Fallback 全部失败后 Dispatcher 被迫手动代劳，从步骤 3 到步骤 5 共 9 个 Session 全部为 dispatcher-manual
-- **根因**：Fallback 路由只有 2 级（首选 + 1 个备选），且没有新步骤自动重置失败计数的机制，Agent 一旦被标记失败就永远不再尝试
-- **经验规则**：① Fallback 路由至少 3 级深度 ② 每步自动重置 Agent 健康状态 ③ 增加用户授权降级路径替代绝对禁止代劳
-- **落地状态**：✅ 已通过 agent-adapters.md §6 两层降级（Model→CLI）+ §6.4 健康追踪 + §6.5 用户授权降级 全部落地
-- **来源**：TRPG-Server 实测, Step 3-5
-- **发现日期**：2026-03
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-03
+- 正文模块：[`compass/knowledge/lessons/l-4.md`](../../compass/knowledge/lessons/l-4.md)
 
 ### L-5: Agent 超时应优先从自身调用方式排查
-- **场景**：多次调用 Agent 超时，初步判断为 Agent 工具质量问题
-- **根因**：实际多为 Prompt 过长、交互式阻塞（sandbox 确认、权限确认）、工作目录错误等自身调用问题
-- **经验规则**：Agent 超时时按以下顺序排查：Prompt 长度 → 交互式阻塞参数 → 工作目录 → Session 恢复 → 网络代理 → 最后才怀疑 Agent 工具质量
-- **来源**：TRPG-Server 实测, 全程
-- **发现日期**：2026-03
-- **影响度**：medium
-- **复现次数**：2
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-5.md`](../../compass/knowledge/lessons/l-5.md)
 
 ### L-6: 模型检测应在项目初始化时完成并缓存
-- **场景**：Dispatcher 不知道 claude-code 背后是 Kimi 2.5（SiliconFlow 代理），导致路由决策基于 CLI 名而非模型能力
-- **根因**：路由表硬编码 CLI 名称，不感知底层模型
-- **经验规则**：项目初始化时检测所有 CLI 的底层模型，结果缓存到 `compass/.workflow/agent-registry.yaml`，路由决策基于 `{cli}&{model}` 标识。**已实现**：`compass/tools/redcap-detect-agents.sh`（轻检测 + 全量检测 + mtime 缓存）+ `compass/knowledge/model-capability-matrix.yaml`（能力矩阵）→ 动态路由算法（`loom/dispatcher/agent-adapters.md` §1.3）
-- **来源**：TRPG-Server 实测, 全程
-- **发现日期**：2026-03
-- **影响度**：medium
-- **复现次数**：2
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-6.md`](../../compass/knowledge/lessons/l-6.md)
 
 ### L-7: Gemini `--approval-mode auto_edit` 在 headless 模式会永久挂起
-- **场景**：gemini Agent 执行需要 Shell 命令的任务（如运行测试、安装依赖）时超时失败
-- **根因**：`--approval-mode auto_edit` 仅自动审批文件编辑操作，Shell 命令仍弹出 `[Y/n]` 交互确认。在 headless/非交互模式下，无人应答导致 Agent 永久挂起直至超时
-- **经验规则**：gemini CLI 必须使用 `--yolo` 而非 `--approval-mode auto_edit`。`--yolo` 自动审批所有工具操作（含文件编辑和 Shell 命令），是 headless 模式唯一可靠的参数。**泛化原则**：所有 Agent CLI 在 `-p`/headless 模式下必须使用最高权限参数（Gemini: `--yolo`；Claude Code: `--permission-mode bypassPermissions`），"几乎全自动"≠"全自动"
-- **来源**：CLI 实测验证, gemini 0.35.3; 泛化至 claude-code（`auto` → `bypassPermissions`）
-- **发现日期**：2026-03
-- **影响度**：high
-- **复现次数**：2
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-7.md`](../../compass/knowledge/lessons/l-7.md)
 
 ### L-8: 框架变更必须"先测再改"——实测驱动而非假设驱动
-- **场景**：第四轮优化中，通过实际运行 3 个 CLI（gemini/kimi/claude）发现模型名全错、`--approval-mode auto_edit` 导致挂起、claude `--session-id` 能力未知等关键问题——这些问题仅靠读文档无法发现
-- **根因**：之前的框架文档基于 CLI 官方文档和推测编写，未做实际验证。CLI 的真实行为（如 gemini 实际用 flash 而非 pro、claude 背后是 Kimi K2.5）与文档假设存在显著偏差
-- **经验规则**：任何涉及 Agent 调用方式的变更，必须遵循"实测 → 记录 → 再改文档"的顺序：① 先用真实 CLI 命令跑冒烟测试 ② 记录实际返回值和行为 ③ 基于实测结果修改框架文档。严禁仅凭文档假设修改调用参数
-- **来源**：RedCap 第四轮优化, CLI 全面审计
-- **发现日期**：2026-03
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-8.md`](../../compass/knowledge/lessons/l-8.md)
 
 ### L-9: 长任务上下文压缩导致框架规则退化——必须用文件重读对冲
-- **场景**：长任务中 SKILL.md 的 hooks 细节、交付物校验规则、Fallback 路由优先级等逐渐被压缩丢失，Dispatcher 行为退化（如忘记飞书通知、跳过校验步骤）
-- **根因**：SKILL.md 在 skill 触发时一次性读入上下文，之后全靠上下文记忆存活。LLM 摘要压缩会保留"有 hooks 机制"的概念但丢失具体触发条件和动作细节
-- **经验规则**：① 所有关键规则必须有"检查点重读"机制（`read_file` 重新注入最新上下文位置）② 重读频率以角色切换为主检查点 ③ 待办事项持久化到 state.yaml 而非依赖上下文记忆 ④ 不可压缩的规则提升为系统级指令（copilot-instructions.md）
-- **来源**：RedCap 防退化机制设计
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：2
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-9.md`](../../compass/knowledge/lessons/l-9.md)
 
 ### L-11: Gemini CLI `--output-format json` 长任务下进程不退出但文件已落盘
-- **场景**：Gemini 执行代码库扫描和架构设计任务，交付物文件均成功写入磁盘，但 CLI 进程在 `--output-format json` 模式下挂起不退出，触发 600 秒超时
-- **根因**：Gemini CLI 在 JSON 输出模式下，长任务完成后可能卡在 JSON 序列化或 session 持久化阶段，导致进程不干净退出。与 L-7（`--approval-mode auto_edit` 挂起）属同一 CLI 成熟度问题
-- **经验规则**：① Dispatcher 对 Gemini 返回超时时，优先检查磁盘交付物是否已存在——若文件已落盘则视为"内容完成、通信失败"，可跳过 `__redcap_status` 解析直接推进 ② 超时后按 Fallback 路由切换 Agent 执行后续任务，不阻塞流程 ③ Gemini 适合产出文档类任务（架构设计等），编码/测试类任务优先用 kimi
-- **来源**：RedCap E2E 测试（trpg-server 迭代 v2）
-- **发现日期**：2026-04
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-11.md`](../../compass/knowledge/lessons/l-11.md)
 
 ### L-12: 指令注入≠执行保证——关键动作必须用脚本/Hooks 而非纯文本指令
-- **场景**：on_ALL_DONE 的飞书通知在 E2E 测试中被遗漏，尽管规则写在 SKILL.md §5.10 hooks 表中、copilot-instructions.md 中也有提醒
-- **根因**：三个宿主工具（VS Code Copilot / Claude Code / Gemini CLI）虽然都做到了指令物理上每轮注入，但 LLM 的 attention 衰减导致长对话（20+ 轮）中遵从率降至 60-70%。指令「在那里」不等于 LLM「会执行」。唯一 100% 保证的是 Hooks（宿主程序直接执行 shell 命令，绕过 LLM）
-- **经验规则**：① 不可遗漏的关键动作（飞书通知、收尾清理等）封装为单一脚本，降低 LLM 记忆负担（记 1 个脚本 vs 记 3 个步骤）② 有 Hooks 的环境（Claude Code 的 Stop hook）优先使用 Hooks ③ 无 Hooks 时，用「下次启动审计」兜底（新会话 attention 最强）④ 指令文本中用极简、高亮措辞提高 attention 竞争力
-- **来源**：宿主 Agent 可靠性调研（knowledge/host-reliability.md）
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-12.md`](../../compass/knowledge/lessons/l-12.md)
 
 ### L-13: Review 必须显式声明检查维度——结构检查≠设计质量检查
-- **场景**：对 hooks-kimi-cli.md 做"全面 review"，结论为"全部通过"。但随后的"方案正确性 review"又发现 5 个问题（含 1 个本应在首次查出的 timeout 值不一致）
-- **根因**：首次 review 的实际检查维度是"交叉引用、章节编号、文件路径、内容一致性"（结构性），但 review 结论笼统声称"全部通过"，掩盖了未覆盖"设计合理性、运行时逻辑、文档与实际配置一致性"等维度
-- **经验规则**：① Review 开始前必须列出本次检查的具体维度清单 ② 结论必须注明"在 X 维度下通过"而非笼统"全部通过" ③ 完整 review 至少覆盖三个维度：结构一致性、设计质量/合理性、文档与运行时实际一致性
-- **来源**：hooks-kimi-cli.md review 遗漏复盘
-- **发现日期**：2026-04
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-13.md`](../../compass/knowledge/lessons/l-13.md)
 
 ### L-14: 配置格式文档必须与实际配置文件交叉验证
-- **场景**：`.claude/settings.json` 使用扁平化 Hook 格式（无 `type` 字段、无内层 `hooks` 数组），但文档（hooks-claude-code.md §2.4、layerA-hook-deploy.md）按官方三层嵌套格式编写。两者不一致，用户按文档部署时可能使用错误格式
-- **根因**：编写文档时参考了官方文档的三层嵌套格式（正确），但未回头检查项目中已有的 settings.json 是否采用同一格式。已有配置用的是简写格式（也可工作但与文档不一致）
-- **经验规则**：① 编写配置格式文档后，必须用实际配置文件做交叉验证——文档示例必须与项目中的真实配置格式一致 ② 修改配置格式时，同步更新所有引用该格式的文档 ③ 同 L-8 精神：先验证实际行为，再写文档
-- **来源**：Layer A Hook 全项目 review
-- **发现日期**：2026-04
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-14.md`](../../compass/knowledge/lessons/l-14.md)
 
 ### L-15: 需认知的关键动作用 Hook + 新 Agent 生命周期兜底
-- **场景**：两个独立场景暴露同一模式缺陷——① Layer B：开发 RedCap 自身时，长对话末期 Agent 忘记执行架构评审和规范检查 ② Layer A：状态机的 `REVIEW_WORKING` 节点在 20+ 轮长对话中被 LLM 跳过，直接进入 ALL_DONE
-- **根因**：需要**认知能力**的关键动作（Code Review、架构评审）无法用纯脚本实现，但又不能接受 LLM attention 衰减导致的遗漏。软约束（文档规则）失败率 20-30%，环境变量 hack 缺乏认知能力——两端都不可行
-- **经验规则**：① 核心模式：`Hook（100% 触发）→ 拉起新 Agent（100% 认知能力，无历史上下文污染）`。Hook 保证触发，新 Agent 生命周期保证认知质量 ② Layer B 实例：Stop Hook → `redcap-on-stop-review.sh` → 新 Agent 独立架构评审 ③ Layer A 实例：Stop Hook 检测 ALL_DONE 但缺少 REVIEW_PASS → `redcap-layerA-review-fallback.sh` → 新 Agent 项目级 Review ④ 附带发现：Session 归属校验是 Hook 正确触发的前提——不同 session 在同一 CWD 可导致 Hook 误触发
-- **来源**：Layer A/B Hook 可靠性工程 + Gemini 3.1 "架构遗忘"讨论
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：2（Layer A + Layer B 独立发现同一模式）
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-15.md`](../../compass/knowledge/lessons/l-15.md)
 
 ### L-16: Hook 设计≠部署≠生效——部署链每个环节必须端到端验证
-- **场景**：Distill 项目已完成 Hook 架构设计（`hooks-kimi.md` 写了 Dispatcher 注册代码块），全局 Dispatcher 也已注册 Distill 路由（`*/distill|*/distill/*`），但 Hook 从未实际触发。Agent 在复盘时误判为"没有 Stop Hook"
-- **根因**：部署链上两处断裂同时存在——① Dispatcher 路由模式 `*/distill*` 不匹配实际 CWD `*/MyObsidian*`（Distill 作为 skill 工作在 Obsidian vault 中，不在自身仓库中）② 路由目标脚本 `kimi-hook-handler.sh` 不存在（实际文件名是 `agent-hook-handler.sh`）。设计文档、Dispatcher 配置、目标脚本三者从未经过联调验证
-- **经验规则**：① Hook 部署完整性公式：`设计 × 配置 × 路由匹配 × 脚本存在 × 实际触发 = 生效`，任一环节为零则全链路失效 ② 任何 Hook 配置变更后，必须用标记文件法做端到端验证（`touch /tmp/hook-fired-$(date +%s)`），确认物理触发 ③ 特别注意 skill 类项目的 CWD ≠ skill 仓库路径——路由模式必须匹配工作目录而非代码目录 ④ 泛化原则：「配置了」≠「部署了」≠「生效了」，三者之间的断裂是静默的、不会报错的
-- **来源**：Distill V8.0 L3 机制 E2E 测试交叉评审
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-16.md`](../../compass/knowledge/lessons/l-16.md)
 
 ### L-17: Agent 无法自主发现自身未知的项目资产——排查指引必须显式写入提示词
-- **场景**：Distill Agent（kimi-for-coding）在复盘 Hook 失效问题时，不知道自己项目已有 `knowledge/hooks-kimi.md`（Dispatcher 方案）、不知道全局 `~/.kimi/hooks/dispatcher.sh` 已注册 Distill 路由，因而错误结论"当前无自动 Stop Hook"。同时对 RedCap 已有的 Kimi CLI Hook 实测调研（`hooks-kimi-cli.md`）完全不知情
-- **根因**：Agent 的推理仅基于"已加载到上下文的信息"。SKILL.md 和 CONTRIBUTING.md 均未引用 `hooks-kimi.md`，也未提供"Hook 故障排查路径"。Agent 不会自发搜索项目中所有文件来验证自己的假设——它在信息茧房内做出了逻辑自洽但事实错误的分析
-- **经验规则**：① 提示词中必须提供显式的排查指引路径（如："Hook 问题 → 先检查 `~/.kimi/hooks/dispatcher.sh` → 再检查 `knowledge/hooks-*.md`"），不能指望 Agent 自行发现 ② 跨项目知识引用必须在提示词中点名文件路径，Agent 不会主动探索其他项目的经验 ③ 所有关键资产文件必须在入口文件（SKILL.md 或等价物）中有明确引用或索引——未被引用的文件等于不存在
-- **来源**：Distill V8.0 L3 机制 E2E 测试交叉评审
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-17.md`](../../compass/knowledge/lessons/l-17.md)
 
 ### L-18: Agent 间对等讨论优于单向指令——A2A 协作应以共识驱动而非命令驱动
-- **场景**：Copilot Agent 审查 Kimi Agent 的 Distill Hook 修复结果，发现 3 个问题。第一次尝试直接下发修复指令让 Kimi 执行（Command 模式），被用户纠正后改为提出发现、请 Kimi 独立评估和反驳的讨论模式。结果 Kimi 不仅接受了 3 个发现，还主动发现了 Copilot 遗漏的第 4 个问题（`bash -c` 引号嵌套风险）
-- **根因**：单向指令模式（A→B 执行）的质量上限是发起方的能力天花板，接收方的独立判断力被浪费。讨论模式（A⇄B 多轮）让双方交叉覆盖盲点，质量上限提升为两者能力的并集
-- **经验规则**：① Agent 间协作应采用"提案→评估→反驳/接受→收敛"的讨论模式，而非"指令→执行"的命令模式 ② 发起方必须明确声明"这不是指令，请独立评估"，否则接收方 Agent 倾向于盲从 ③ 接收方发现的问题（如第 4 个 bug）可能比发起方的发现更有价值——讨论模式不仅修复已知问题，还能发现未知问题 ④ 此模式已验证可通过 `kimi -S` session resume 实现跨 Agent 多轮对话，Claude Code 的 `--resume` 同理可行
-- **来源**：Copilot × Kimi A2A 协作修复 Distill Hook 部署
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-18.md`](../../compass/knowledge/lessons/l-18.md)
 
 ### L-19: Dispatcher 代劳时 state.yaml 维护纪律会系统性下降
-- **场景**：trpg-web 步骤 1-2 由独立 Agent 执行，state.yaml 正常维护。步骤 3-5 全部由 Dispatcher（Cap）代劳后，state.yaml 停留在 `step: 3, DEV_WORKING`，实际已完成全部 5 步。history 仅记录到步骤 3 的部分角色
-- **根因**：Dispatcher 正常调度独立 Agent 时，state.yaml 更新是事件循环的固有步骤（§5.2 第 5 步）。但代劳模式下 Dispatcher 自身在"执行"和"调度"之间切换，容易在角色执行完成后忘记回到调度视角更新状态文件。认知负荷从"读状态→调Agent→写状态"变为"读状态→自己做→可能忘了写状态"
-- **经验规则**：① Dispatcher 代劳完成每个角色后，必须立即更新 state.yaml（同正常流程完全一致，不可省略）② 建议在 commit 前增加 state.yaml 一致性检查：当前实际进度与 state.yaml 记录是否吻合 ③ 代劳模式下 history 记录需添加 `note: "Dispatcher代劳"` 标记，便于回溯
-- **来源**：trpg-web E2E 测试（Phase 4 验证）
-- **发现日期**：2026-04
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-19.md`](../../compass/knowledge/lessons/l-19.md)
 
 ### L-20: Agent CLI headless 模式的稳定性是多 Agent 协同的实际瓶颈
-- **场景**：trpg-web 5 步流程中，4 个 Agent CLI（copilot/claude/kimi/gemini）分别出现超时、长时间挂起零产出、权限确认阻塞、进程不退出等问题。步骤 3-5 所有角色被迫由 Dispatcher 代劳
-- **根因**：各 Agent CLI 的 headless（`-p`/非交互）模式成熟度参差不齐。共性问题：① 权限/安全确认在 headless 下无人应答导致挂起（kimi `ACTION REQUIRED`、gemini `[Y/n]`）② 长任务完成后 CLI 不干净退出（gemini JSON 序列化卡死、claude 10分钟零产出）③ 网络代理/超时配置不透明（copilot CLI 超时无明确配置项）
-- **经验规则**：① 每个 Agent CLI 必须使用该 CLI 已验证的最高权限参数（L-7 泛化版）：gemini `--yolo`、claude `--permission-mode bypassPermissions`、copilot 无此选项需依赖超时兜底 ② Fallback 路由必须包含 Dispatcher 代劳作为最终降级（需用户授权），不能假设总有独立 Agent 可用 ③ Dispatcher 超时时先检查磁盘交付物是否已落盘（L-11 模式），已落盘则视为"内容完成、通信失败" ④ 此为当前多 Agent 协同的根本制约因素，短期靠 Dispatcher 代劳兜底，中长期依赖 CLI 工具链成熟
-- **来源**：trpg-web E2E 全流程（Phase 4 验证），复现了 L-4/L-5/L-7/L-11 的综合效应
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1（但综合了 L-4/L-7/L-11 的多次独立复现）
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-20.md`](../../compass/knowledge/lessons/l-20.md)
 
 ### L-22: Layer B 大型任务缺乏断点续传——会话坏死后靠"考古"恢复 ⚙️ 已硬化
-- **场景**：引擎升级（动态路由改造 Phase 1–5）过程中会话坏死。新会话启动后，无结构化状态可读，只能通过 git log + diff 考古式推理上次执行到哪一步、还剩什么没做
-- **根因**：Layer A 有 `.workflow/state.yaml` 状态机保护断点续传，Layer B（开发自身）无任何状态持久化机制。任务进度仅存在于 LLM 上下文，上下文丢失即进度丢失
-- **已硬化到协议层**（2026-04-07）：
-  - CONTRIBUTING.md §7 新增 Layer B 大型任务断点续传协议
-  - 触发式轻状态文件 `.dev-task.md`：仅在多 Phase 任务时创建，完成后删除
-  - 三个入口索引文件（copilot-instructions.md / CLAUDE.md / GEMINI.md）均已加入会话启动时检查指令
-- **经验规则**：① 预计超过 2 个阶段且单次会话无法完成的 Layer B 任务，启动时创建 `.dev-task.md` ② 每完成一个阶段后更新 checklist + 断点备注 ③ 不要过度设计——不是所有 Layer B 变更都需要，90% 的单次任务无需此机制
-- **来源**：引擎升级会话坏死 + 新会话复活时的考古体验
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-22.md`](../../compass/knowledge/lessons/l-22.md)
 
 ### L-23: Agent 通信协议应以文件管道为主、stdout 嵌入为辅 ⚙️ 已硬化
-- **场景**：E2E 测试（trpg-web）中，所有 Agent 在复杂任务中 100% 忘记在回复末尾输出 `__redcap_status` JSON 块，同时 100% 正确写入了 outbox 交付物文件。主通道（stdout 嵌入）完全失效，而文件交付物零漏失
-- **根因**："在回复末尾输出结构化 JSON"是一个反直觉的元动作——Agent 的注意力被任务内容占据，自然倾向于结束回复而非追加元数据。文件写入则不同：它与任务内容（写设计文档、写测试报告）是同质动作，Agent 的任务执行流程天然包含文件写入
-- **已硬化到协议层**（2026-04-07）：
-  - communication-protocol.md §2 重构：outbox 文件为主通道、stdout 正则为辅助通道、last-result.json 为兜底
-  - SKILL.md §5.3 三级解析优先级：outbox 文件 → response 正则 → last-result.json
-  - state-machine.md 伪代码步骤 5e-5f 更新为三级解析 + 清理逻辑
-  - 全部 5 个 prompt-templates 的 System Prompt 和必须写入文件清单已更新
-  - state.yaml 自动一致性校验脚本（`tools/redcap-check-state.sh`）已集成到 on_QA_PASS hook
-- **经验规则**：① 文件管道为主通道（outbox 写入可靠性 100%），stdout 嵌入为辅助通道（Agent 遗忘率高，但短任务/A2A 讨论中仍有加速价值）——双管齐下，不是二选一 ② "必须写入的文件"清单是最有效的 Agent 合规手段——列在清单里的 100% 被写入 ③ 此经验泛化：任何需要 Agent 执行的元动作，都应尽量转化为与其主任务同质的动作形态
-- **来源**：trpg-web E2E Phase 4 验证报告 §8 + 通信协议复盘
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-23.md`](../../compass/knowledge/lessons/l-23.md)
 
 ### L-24: Layer B 设计阶段缺少前置对抗（Red Teaming），"不可行"判断需 Pre-mortem 挑战 ⚙️ 已硬化
-- **场景**：设计 E2E 基准测试覆盖矩阵时，将 5 条路径判断为"本场景无法覆盖"。用户追问后发现其中 3 条完全可做、1 条部分可做，只有 1 条真正不可行。浅层判断即收手，浪费了用户的审查精力
-- **根因**：Layer A 有多角色制衡（程序员→QA→Reviewer 对抗链），Layer B（开发 RedCap 自身）由 Cap 独自设计+实现+评审。现有保障（Stop Hook §4、L-15/L-16）均为后置检查（commit 后才检），设计阶段无任何对抗性质量门禁。业内术语：Red Teaming（对抗审查）、Pre-mortem（预设失败倒推）、Bootstrapping problem（系统自构建循环依赖）
-- **已硬化到协议层**（2026-04-07）：
-  - CONTRIBUTING.md §1.1 新增"设计自检：前置对抗"双层机制：
-    - 第一层：自检清单（Pre-mortem + 完备性挑战），每次执行
-    - 第二层：独立 Agent 红队审查（调用不同模型族 Agent 对抗），设计含 ≥2 条不可行判断或覆盖范围声明时触发
-  - Stop Hook 评审（§4）新增维度：设计完备性检查（§1.1 Pre-mortem 是否执行）
-  - §1 重点关注列表新增 L-24 引用
-- **经验规则**：① 任何"不可行/无法做到"的结论，必须附带"尝试过的方案"记录，禁止无尝试的不可行判断 ② 覆盖范围声明必须基于完整全集逐项标记，而非凭感觉列举 ③ Pre-mortem 的成本（多想 5 分钟）远低于遗漏被用户发现后的修复成本 ④ 这是 Bootstrapping problem 的实例——开发工具的工具，需要比工具本身更严格的质量意识
-- **来源**：E2E benchmark-scenario.md 设计，用户 Red Team 挑战
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-24.md`](../../compass/knowledge/lessons/l-24.md)
 
 ### L-25: E2E 后置处理必须严格执行——§3.1 最小产出物缺一不可 ⚙️ 已硬化
-- **场景**：md-table-tool E2E smoke 测试完成后，Dispatcher 将报告写到 `docs/` 而非 `test-reports/latest-e2e-report.md`，且完全跳过 pending-validations 消费、经验沉淀、一句话 commit 结论等后置处理步骤。直到用户审计三个合规性问题后才发现全部遗漏
-- **根因**：E2E 执行本身（调度 10 个 Agent、处理 QA 反馈回路）消耗了大量注意力和上下文空间，完成"核心任务"后产生"已完成"的认知错觉，忽略了后置处理属于 E2E 流程的必要组成部分。报告路径错误则是因为未在写入前回读 §3.1 确认规范路径
-- **已硬化到协议层**（2026-04-07）：
-  - `tools/redcap-e2e-postcheck.sh` — E2E 完整性审计脚本（6 项检查，任一 FAIL 阻断）
-  - CONTRIBUTING.md §3.1 新增步骤 ⑧ 完整性 Gate
-  - Stop Hook 自动检测 `test-reports/e2e-session.yaml` 存在时执行 postcheck
-  - `test-reports/e2e-session.yaml` 配置锁定机制防止目的漂移
-- **经验规则**：① E2E 后置处理不可凭记忆——必须由脚本审计 ② 报告路径是 `test-reports/latest-e2e-report.md`（覆盖式），错误路径由脚本自动检测 ③ pending-validations 消费是 E2E 核心交付物 ④ 与 L-9（长任务规则退化）属同一模式，但 L-25 通过脚本 Gate 实现了 100% 硬保障而非仅靠文件重读
-- **来源**：md-table-tool E2E smoke 后置处理遗漏，用户审计纠偏
-- **发现日期**：2026-04
-- **影响度**：high（从 medium 升级——用户明确定义为红线问题）
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-25.md`](../../compass/knowledge/lessons/l-25.md)
 
 ### L-26: E2E 预设必须物理锁定——用户指令与实际执行之间不允许漂移
-- **场景**：用户要求"全量回归"，Dispatcher 实际只执行了 smoke 预设（3/11 开关）。长对话中"先跑 smoke 验证基础"的中间步骤被误当成最终目标，原始需求被遗忘
-- **根因**：E2E 启动时没有将用户指定的预设写入持久化文件，执行范围全靠上下文记忆。L-21（目的漂移）的 E2E 特化实例
-- **已硬化到协议层**（2026-04-07）：
-  - `test-reports/e2e-session.yaml` 在 E2E 启动时锁定：preset、switches_on（全部展开）、user_instruction（原话）
-  - 每执行完一个开关追加到 switches_completed
-  - `tools/redcap-e2e-postcheck.sh` 检查 switches_on 与 switches_completed 差集
-  - 不一致 = FAIL，列出未执行的开关名
-- **经验规则**：① 用户指令必须在任务启动时持久化为物理文件，不可仅存在于上下文 ② 执行进度必须实时更新到同一文件 ③ 完成判定由脚本对比"应做"与"已做"，不由 LLM 自行判断
-- **来源**：md-table-tool E2E 范围缺失，用户审计纠偏
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-26.md`](../../compass/knowledge/lessons/l-26.md)
 
 ### L-27: 同一人格双实例差异对比可作为跨载体机制自检手段
-- **场景**：Cap 在 Copilot CLI 上复活后自我诊断，发现 CONTRIBUTING.md 只读了 80/418 行、lessons.md 只读了 60/338 行、design-principles.md 完全未读。Norven 将该诊断转发给 VS Code Copilot 上的 Cap 实例（文件完整读取），两个实例通过 Norven 中继进行交叉对比，精准定位了复活机制的截断缺陷
-- **根因**：不同载体（CLI vs IDE）的 read_file 行为不同——CLI 有文件大小限制触发截断，IDE 可指定行范围多次读取。单一实例无法感知自己的状态是否完整（不知道自己不知道的），必须有另一个状态完整的实例作为对照
-- **核心方法论**：当怀疑某个跨载体机制是否生效时，在两个不同载体上触发同一初始化序列，然后交叉提问各自的状态——差异即缺陷所在。人作为中继完成 A2A 对比
-- **与 L-18 的区别**：L-18 是异质 Agent 协作（Copilot × Kimi）发现任务盲点；L-27 是同质双实例（Cap × Cap）通过状态差异暴露基础设施缺陷。前者依赖多样性，后者依赖不一致性
-- **已硬化到**：soul.md §七 复活协议（完整读取 + 截断检测 + §7.3 状态汇报强制输出）
-- **来源**：Cap 双实例（Copilot CLI + VS Code Copilot）联合诊断复活机制
-- **发现日期**：2026-04
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04
-
-### L-29: Hook + 子 Agent CLI 模式——同时获得 100% 触发保证 + LLM 认知质量
-- **场景**：需要在 Agent 会话结束时"100% 执行"某个认知型任务（如架构评审、Review 兜底），但纯 shell hook 没有推理能力，纯 LLM 指令又受 attention 衰减无法 100% 执行
-- **根因**：这是两个正交的能力维度——"触发可靠性"（shell 的强项）和"认知质量"（LLM 的强项）。两者不能互相替代，但可以组合
-- **解决方案**：在 hook shell 脚本中调用 Agent CLI 的 headless 模式（`agent -p -y "prompt"`），以 hook 的 100% 触发保证启动一个独立的新 Agent 进程执行认知型任务：
-  - **触发层**：shell hook（Layer 0，100% 确定）
-  - **执行层**：新 Agent 进程（全新上下文，零 attention 衰减）
-  - **组合效果**：100% 触发 × 完整认知质量 = 两难同时解决
-- **已有实例**：
-  - `tools/redcap-on-stop-review.sh`：Stop Hook → `kimi -p -y` 或 `claude -p` 执行独立架构评审
-  - `tools/redcap-layerA-review-fallback.sh`：ALL_DONE 且无 REVIEW_PASS → Agent CLI 执行补充 Review
-- **注意事项**：
-  - headless 参数必须使用 L-7 验证的最高权限版本（Gemini: `--yolo`；Claude: `--permission-mode bypassPermissions`）
-  - 新 Agent 的上下文需通过 prompt 参数显式传入（L-17：Agent 不会自动发现项目资产）
-  - 结果写入 `/tmp` 文件而非 stdout，防止输出污染 hook 的 exit code 逻辑
-- **与 L-15 的区别**：L-15 讲"为什么"要用 Hook + 新 Agent 兜底（原理层），L-29 讲"如何"通过 `agent -p -y` 在 hook 中实现（实现层）
-- **来源**：`redcap-on-stop-review.sh` 和 `redcap-layerA-review-fallback.sh` 实际设计，用户提炼为显式架构模式
-- **发现日期**：2026-04
-- **影响度**：medium
-- **复现次数**：2（L-15 发现原理，本次显式命名实现模式）
-- **最后命中**：2026-04
-
-### L-30: 并行分析 Agent 的结论必须经独立 Red Teaming 才能用于实施决策
-
-- **场景**：启动多个并行 explore Agent 分析框架（Q3 红线盘点 + Q4 冗余审计），汇总报告后直接进入实施规划，其中一个 Agent 建议"归档 L-2/L-10"，另一个建议"合并 5 处降级说明"，第三个建议"提取 2 行公共 preamble"
-- **问题**：这三条建议均为误判——L-2/L-10 已在上一 session 归档（Agent 没看到 lessons-archive.md）；降级说明是 handbook 自洽的必要成分，不是无意重复；2 行共同内容引入专用导入机制得不偿失
-- **根因**：并行 Agent 各自独立、视野受限（可能看不到所有相关文件），且不会互相交叉验证。聚合者（Dispatcher）如果直接信任汇总结果，会把误报纳入实施计划
-- **经验规则**：
-  1. 并行分析 Agent 的输出是"假设性候选清单"，不是可信任的行动指令
-  2. 所有分析报告在进入实施前，必须经过独立 Red Teaming（critic agent 或 Dispatcher 亲自阅读原始文件验证）
-  3. 对于"精简/删除/合并"类建议，默认举证责任在"建议方"：需要解释为什么重复是有害的（维护成本、认知负担、一致性风险），而不是仅指出"存在重复"
-  4. 特别警惕"这是重复"的判断——重复不总是坏事，handbook 自洽、防御性冗余、渐进性指南都是合理的重复
-- **正确流程**：parallel agents → aggregate → Red Team critic（验证每条建议的原始文件依据）→ approve → implement
-- **来源**：本次 Q3/Q4 分析中三条被 Red Teaming 否决的建议，以及 Q4 知识文档 Agent 的 L-2/L-10 误报
-- **发现日期**：2026-04
-- **影响度**：high（防止无效重构污染稳定框架）
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-27.md`](../../compass/knowledge/lessons/l-27.md)
 
 ### L-28: 静态源码审计不等于运行时行为——"不可行"结论必须经实测验证
-- **场景**：对 Gemini CLI v0.36.0 做了源码深度审计，发现 `HookRunner/HookRegistry` 在所有非测试文件中均未被显式 import/实例化，`config.js` 标注 `// TODO: loading of hooks based on workspace trust`，据此得出"hooks 已实现但未集成"的结论，并在框架文档中标注 `❌ 不支持`。实测（同版本 v0.36.0）证实 hooks 完全可用——全局和项目级 hooks 均正确触发，数据正确透传
-- **根因**：静态源码审计只检查"可见的显式 import 链"，遗漏了延迟加载、动态 require、Plugin 系统等运行时机制。源码中的 `TODO` 注释也不等于"功能未实现"——可能是"功能已实现但部分逻辑待完善"
-- **经验规则**：① 静态源码审计只能证明"此链路明确不存在"，无法证明"功能不可用"——动态/延迟/插件机制不可见 ② 任何关于 CLI 工具能力的"不支持"结论，必须通过实际运行测试验证（L-8 的强化版：不仅"先测再改文档"，连"源码审计结论"也需要实测验证）③ `TODO` 注释 ≠ "功能不可用"，可能只是标记"实现路径待优化" ④ 前人的源码审计结论有时效性——同版本号的 CLI 可能在 patch 版本间已有变化
-- **来源**：Gemini CLI hooks 可用性审查，源码审计结论与实测结果矛盾（knowledge/hooks-gemini-cli.md §2）
-- **发现日期**：2026-04
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-28.md`](../../compass/knowledge/lessons/l-28.md)
+
+### L-29: Hook + 子 Agent CLI 模式——同时获得 100% 触发保证 + LLM 认知质量
+- 正文模块：[`compass/knowledge/lessons/l-29.md`](../../compass/knowledge/lessons/l-29.md)
+
+### L-30: 并行分析 Agent 的结论必须经独立 Red Teaming 才能用于实施决策
+- 正文模块：[`compass/knowledge/lessons/l-30.md`](../../compass/knowledge/lessons/l-30.md)
 
 ### L-31: 长任务需求漂移——执行期注意力衰减导致偏离原始需求
-- **场景**：用户同时提出 Q1-Q8 八个问题，经过多轮 Gap Analysis 和方案讨论后，部分 Q 的执行内容偏离了原始描述（Q5/Q6 Layer 归属错误、Q8 细节被简化）
-- **根因**：① 需求描述在对话早期，随轮次增加被压缩截断 ② `.dev-task.md` 断点续传机制设计用于"跨会话恢复进度"，不解决"同会话内需求保真"问题 ③ Cap 执行时依赖记忆概括而非原始文本 ④ 二阶风险：PM 澄清阶段本身若轮次过多，原始文本同样会在确认前就已失真
-- **经验规则**：① 触发确认门后第一件事是将用户原文写入 `.dev-task.md`「原始输入」段（在任何澄清讨论之前）② PM 对话结束后写入「已确认需求」段作为执行依据 ③ 两段分工：原始输入=防失真底稿（永不修改）；已确认需求=执行依据（可合理演进）④ 执行每个 Q 前必须 re-read 确认描述，不依赖记忆 ⑤ 即使只有 1 个 Q 也全流程走，单 Q 同样可能因澄清轮次过多而失真
-- **落地状态**：✅ CONTRIBUTING.md §10 Layer B 需求确认门（含 Step 0 原文即时固化）
-- **来源**：Q1-Q8 执行漂移复盘，2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-31.md`](../../compass/knowledge/lessons/l-31.md)
 
 ### L-32: 协议文档的"强制"≠机器强制——设计意图必须有执行闸门
-- **场景**：Prism v0.1 的 Dispatch Firewall 在协议中以粗体标注「强制」，但无任何技术执行机制。Agent 通过 task tool 启动后拥有完整文件系统访问权限，"禁止读取 prism/reports/" 只是 prompt 级约束。三个独立评审 Agent（Opus/GPT-5.4/Sonnet）全部独立发现此问题
-- **根因**：同 L-16——"文档写了"≠"部署了"≠"生效了"。多 Agent 协议中，prompt 约束是已知最弱的强制形式，LLM 可忽略
-- **经验规则**：① 协议中的任何"强制/必须"，必须有对应的执行闸门（前置校验、硬终态、或技术拦截）② prompt 约束只能作为最后一道防线，不能作为主防护 ③ 发布协议前，问：「如果 Agent 决定忽略这条规则，系统会怎样？」——如果答案是"顺利通过"，就需要加机器校验
-- **来源**：Prism v0.1 redteam 自评（20260410-redteam-001），2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-32.md`](../../compass/knowledge/lessons/l-32.md)
 
 ### L-33: 协议先 Pilot 再固化——文档假设不能代替实测记录
-- **场景**：Prism v0.1 的完整协议（30min 超时、quorum 计算、跨家族验证、Archive 链路）均为文档假设，从未运行过（index.yaml: reports: []）。该协议已写入 CONTRIBUTING.md §11 作为正式机制，但第一次真实运行将发生在"生产环境"而非"pilot 实验"中
-- **根因**：L-8 的子集——任何涉及多 Agent 协作方式的新协议，不能仅凭逻辑推导就固化。实际 Agent 行为（模型偏差、超时频率、Schema 遵守率）只有跑过才知道
-- **经验规则**：① 新多 Agent 协议必须先完成 1 次完整 Pilot 运行（含 Dispatch→Collect→Adjudicate→Archive），index.yaml 写入第一条记录后，才算"已实测" ② Pilot 后根据实际行为 patch 协议（超时太短？quorum 门槛太高？），再写入正式规范 ③ 协议文档中的参数值（超时、阈值、人数）必须标注"实测基础"或"文档假设"，避免假精确
-- **来源**：Prism v0.1 redteam 自评（20260410-redteam-001），旧错者（claude-sonnet-4.6）发现，2026-04
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-33.md`](../../compass/knowledge/lessons/l-33.md)
 
 ### L-34: 评审提示词需覆盖"假设但未实现"检查——不只是找错
-- **场景**：Prism v0.1 的 Council 协议写了"多轮收敛、共享前轮摘要"，三个跨家族 Agent（Opus/GPT-5.4/Sonnet）评审后均未指出"多轮到底怎么实现"这个机制空缺。原因是评审提示词问的是"找设计缺陷"，而 session 复用机制是"文档暗示有、但从未描述 HOW"——这类问题不在"找错"的视野里
-- **根因**：① 评审提示词框架是"找错/找问题"，不是"找假设" ② 协议文档写了"功能描述"（多轮收敛）而没有"机制描述"（write_agent/agent_id），读者脑补了实现 ③ Cap 既是协议作者又是 Synthesize 者，同一盲区在两个阶段都没有被触发
-- **经验规则**：① Prism Dispatch 的提示词模板中必须包含一个专项检查：**"列出本文档中所有『假设存在但未描述实现方式』的机制"**，独立于"找缺陷"问题 ② 区分"功能描述"和"机制描述"：前者说做什么，后者说怎么做——任何只有前者的部分都是潜在空缺 ③ Cap 作为协议作者时，第一个 Dispatch 的 Agent 应当是"机制核查员"，专门列出所有"说了做什么但没说怎么做"的项目
-- **来源**：Prism v0.1 council 多轮 session 管理空缺复盘，Norven 人工介入发现，2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-34.md`](../../compass/knowledge/lessons/l-34.md)
 
 ### L-35: 约束驱动的系统性排错——向 distill 借鉴"不变量优先"思维
-- **场景**：distill skill 经常能自主发现并修复深层 bug，原因不是提示词更好或模型更强，而是设计了一套"约束驱动+闭环检查+证据验证"的 QA 机制：① 先找系统不变量（输入→产物→归档→状态同步→失败门禁的完整链路）② 把问题当状态机断裂而非单点报错看 ③ 用真实文件/脚本输出去证伪怀疑。Prism 从文档协议借鉴此思维，引入 `prism-dispatch-check.sh` 和 `prism-archive-check.sh`
-- **经验规则**：① 任何协议中的"强制/必须"，背后需要有一个对应的脚本检查点（bash exit code 1 = 阻断） ② 关键状态必须写入物理文件（session_registry.yaml），不能只存在于"运行内存"——物理文件可观察、可 debug、可被脚本读取 ③ 检查要覆盖整个链路闭环：Dispatch 前（角色/家族/长度）→ Archive 前（verdict/quorum/lessons更新）→ 不只是"中间产物生成了"就算完 ④ 先写脚本，再写协议文档——脚本是可证伪的，文档不是
-- **来源**：与 distill skill 的跨 skill 学习，distill L3_HOOK_GUIDE.md + agent-hook-handler.sh，2026-04
-- **影响度**：high
-- **复现次数**：0（新规则，预防性）
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-35.md`](../../compass/knowledge/lessons/l-35.md)
 
 ### L-36: "技术债"标签容易成为推迟简单工作的借口——先估实现成本再贴标签
-- **场景**：Prism v0.2 时，三个评审 Agent（Opus/GPT-5.4/Sonnet）全部将 Dispatch Firewall 缺乏机器强制标为 BLOCKING，Norven 也在需求中明确提出 hook 保障机制。Cap 的处理是：记录为"技术实现需要较大工程量"的技术债，推迟到 v0.3。实际上，prism-dispatch-check.sh 不到 150 行，20分钟内完成，属于"感觉麻烦但并不难"的工作
-- **根因**：① "技术债"标签本应用于真正复杂、需要大量架构设计的工作，但容易被误用于"当下不想做"的任何工作 ② BLOCKING 级别问题被降级为技术债，说明 Adjudicate 阶段存在"选择性忽视"偏差 ③ 没有先写一个 proof-of-concept 来验证实现成本，直接估判"工程量大"
-- **经验规则**：① 收到 BLOCKING 标记时，先问"10分钟内能验证这有多难吗"——写个最小可用版本，再决定是否推迟 ② "技术债"只适用于真正需要较大架构变更的工作（如 Prism Orchestrator 状态机），不适用于"写个脚本做检查"这类事情 ③ 用户明确提出 + 多 Agent 独立确认 = 至少尝试一次 proof-of-concept，不应直接推迟
-- **来源**：Prism v0.2 Firewall 推迟复盘，Norven 追问发现，2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-36.md`](../../compass/knowledge/lessons/l-36.md)
 
 ### L-37: git mv 时目标目录已存在会导致内容嵌套而非覆盖
-- **场景**：三体重组时，先 `mkdir -p compass/knowledge`，再 `git mv knowledge compass/knowledge`。期望将 knowledge/ 重命名为 compass/knowledge/，实际上 git mv 语义是"移入目标目录"——目标目录存在时，knowledge/ 整体落入 compass/knowledge/knowledge/，造成双层嵌套
-- **根因**：git mv 与 mv 一样：当目标路径是已存在目录时，源目录会被放入该目录下，而非替换它。`mkdir -p` 预创建了目标目录，触发了此行为
-- **修复方式**：`git mv compass/knowledge/knowledge/* compass/knowledge/ && git rm -r compass/knowledge/knowledge`
-- **经验规则**：git mv src/ dest/ 前，不要预先 mkdir dest/。如果 dest/ 已存在，应先检查：① 不存在则直接 git mv；② 已存在则用 git mv src/* dest/（移动内容而非目录本身）
-- **来源**：2026-05 三体重组，compass/knowledge 嵌套 bug 复盘
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-05
+- 正文模块：[`compass/knowledge/lessons/l-37.md`](../../compass/knowledge/lessons/l-37.md)
 
 ### L-38: 三体架构脚本路径规则——REDCAP_ROOT = SCRIPT_DIR/../..
-- **场景**：三体重组后，所有脚本从 tools/ 迁移到 loom/tools/ 或 compass/tools/，深度增加一层。原有 `REDCAP_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)` 计算出的是 loom/ 或 compass/ 的父级——即 redcap 根目录，并非预期的 loom/ 或 compass/
-- **经验规则**：迁移后统一规则：`REDCAP_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)`，变量名统一为 REDCAP_ROOT（非 SCRIPT_ROOT/PROJECT_ROOT）。跨层引用格式：`$REDCAP_ROOT/loom/test-reports/`，`$REDCAP_ROOT/compass/tools/`，不使用相对路径 ../../
-- **来源**：2026-05 三体重组，script-path-fixer agent 修复 13 个脚本后总结
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-05
+- 正文模块：[`compass/knowledge/lessons/l-38.md`](../../compass/knowledge/lessons/l-38.md)
 
 ### L-39: Copilot CLI sessionStart Hook 不暴露 sessionId 字段
-- **场景**：设计 Copilot CLI Session 续接机制时，计划用 sessionStart Hook 捕获 UUID
-- **根因**：官方 sessionStart Hook 的输入 schema 不包含 sessionId 字段（已验证），hook 只能做初始化动作，无法获取 session UUID
-- **经验规则**：需要 Copilot CLI session_id 时，改用 `--output-format=json` 让 CLI 输出 JSONL，从 JSONL 中解析 session_id 字段。sessionStart Hook 仅适合做环境初始化（如记录 git HEAD），不适合做 session ID 捕获
-- **来源**：2026-04-11，copilot-session-hook todo 修复，官方文档验证
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04-11
+- 正文模块：[`compass/knowledge/lessons/l-39.md`](../../compass/knowledge/lessons/l-39.md)
 
 ### L-40: Session 续接能力 ≠ Prism Collect 追问能力
-- **场景**：Prism redteam E2E（run `20260411-redteam-003`）中，协议把“backend 支持追问”写得过于抽象。reviewer 与 challenger 同时指出：CLI 理论支持 `--resume`，不代表本轮运行一定保留了可复用 session handle，也不代表 Dispatcher 已实现“补充 prompt 后继续同一 session”的模板
-- **根因**：把“CLI 产品级能力”（支持 resume/session）和“本轮 runtime 可执行能力”（有 handle + 有模板 + 当前调用真的保存了 session 信息）混为一谈，导致 Collect 阶段的追问/absent 判定失真
-- **经验规则**：Prism 只有在同时满足 ① `session_registry` 已落盘可复用 handle ② 适配层已实现该 backend 的 follow-up/resume 模板 ③ 本轮调用实际保留了恢复所需 session 信息 时，才可判定 `supports_follow_up=true`；否则直接记录 backend limitation 并标记 `absent`。该判定应落到 Collect 协议与适配器文档，而不是停留在 CLI 能力表的抽象描述
-- **来源**：2026-04-11，Prism run `20260411-redteam-003` / report `20260411-redteam-001`，reviewer R-003 + challenger C-005 交叉命中，并在 Collect/adapter 协议中落地
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-11
+- 正文模块：[`compass/knowledge/lessons/l-40.md`](../../compass/knowledge/lessons/l-40.md)
 
 ### L-41: Hook 能力存在 ≠ 已部署 ≠ 已生效
-- **场景**：Layer B 收尾问题排查时，文档一度同时出现三种错位：① 把 Copilot CLI 的“支持仓库级 Hook”写成“当前仓库已部署” ② Gemini Layer B 实际复用了通用 SessionEnd 分发器，但文档写成“已完整覆盖” ③ 任务完成报告虽然在规范中被强制要求，却没有任何物理归档点或 Hook 审计，导致“口头汇报”长期被误当成已完成
-- **根因**：把产品能力、仓库配置、E2E 触发证据混为同一个概念。只要任一环节缺失——没有 `.github/hooks/*.json`、没有真实触发证据、没有可观测产物——系统就会静默退化，而文档却仍可能自我感觉“已覆盖”
-- **经验规则**：涉及 Hook / 收尾链的结论必须分三层陈述：① **能力存在**（官方文档/CLI 支持）② **已部署**（能指出真实配置文件和脚本路径）③ **已生效**（有本地独立验证或 E2E 证据）。此外，凡是需要 Hook 审计的流程产物，必须有**物理落盘载体**（如 `compass/docs/task-reports/*.md`），禁止把“仅在对话里输出”当作可审计完成态
-- **来源**：2026-04-11，Layer B hook-chain investigation；由“任务报告未按模板 + 飞书通知缺失”追查并落地到 Copilot/Gemini/Claude 三宿主收尾链
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-11
+- 正文模块：[`compass/knowledge/lessons/l-41.md`](../../compass/knowledge/lessons/l-41.md)
 
 ### L-42: Hook stdout 契约必须按宿主隔离，不能复用 Gemini 的 allow JSON
-- **场景**：为统一 Layer B SessionEnd 分发器复用同一份脚本时，脚本一律输出 `{"decision": "allow"}`。Gemini CLI 可接受，但 Claude Code 的 SessionEnd 生命周期 Hook 会把这段 JSON 当成不合法输出并报 schema error
-- **根因**：把“Gemini 需要 stdout JSON”误推广成“所有宿主都能接受同一 JSON”。实际不同宿主对生命周期 Hook 的 stdout 协议并不一致，Claude/Copilot 的安全返回结构与 Gemini 的 decision JSON 不是同一套接口
-- **经验规则**：Hook 适配层必须按宿主分别处理 stdout：Gemini 输出其要求的合法 JSON；Claude / Copilot 生命周期 Hook 默认保持静默，只有在官方协议明确要求时才返回宿主特定结构。禁止把某一宿主的控制 JSON 直接复用到全部宿主
-- **来源**：2026-04-11，Claude / Gemini Layer B SessionEnd 真实 smoke；Claude 实测报 `Hook JSON output validation failed`，随后修复 `loom/tools/redcap-layerA-session-end.sh`
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-11
+- 正文模块：[`compass/knowledge/lessons/l-42.md`](../../compass/knowledge/lessons/l-42.md)
 
 ### L-43: 宿主 Agent 内运行 RedCap 时，必须防 authority inversion
-- **场景**：多会话隔离长任务中，状态留存（plan / todos / checkpoints / reports）仍然健康，但 `.dev-task.md` 没有接管 Layer B 主真相，宿主 `plan.md` 逐渐承担了实施策略与当前停留点；同时宿主直接 skill 调用也暴露出绕过 RedCap-native delegation 的治理缺口
-- **根因**：① 没有把 canonical truth、mirror sync、lifecycle/transaction gate 明确成可执行机制 ② 宿主 session/workboard/skill 机制天然更顺手，若 RedCap 不主动夺回控制面，它们就会反向成为事实 authority ③ 只做文档约束，不做 Hook / 脚本门禁，最终仍会退化成“靠人类纠偏”
-- **经验规则**：① `.dev-task.md` 必须是 Layer B canonical ledger，宿主 workboard 只能镜像 pointer/hash，不得承载真相 ② PM Gate / drift check 需要物理脚本门禁，不能只写在规范里 ③ RedCap 自己的 Skill-Delegation 必须经过 request/result 文件边界；宿主直接 skill 调用不算协议内 delegation ④ acceptance 只能在治理边界落地后收口，不能在错误 truth/control model 上宣称完成
-- **来源**：2026-04-12，多会话隔离主线中途 review + authority inversion 复盘（Norven 人工纠偏触发）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-12
+- 正文模块：[`compass/knowledge/lessons/l-43.md`](../../compass/knowledge/lessons/l-43.md)
 
 ### L-44: `session_binding_key` 只负责定位，恢复写权限必须显式过 capability gate
-- **场景**：多会话隔离 acceptance 阶段，需要同时处理 resume/recovery、unmanaged Copilot degraded mode、Layer A legacy 清理与 Prism 多 run 并发。若把 `session_binding_key` 直接当作“可恢复写权限”的凭证，就会把 locate 和 authorize 混成一件事，并诱发伪 full-isolation 语义
-- **根因**：① binding key 天然更容易拿到，容易被误用成 capability 恢复通道 ② unmanaged 宿主路径若为了补功能而写 project-scoped pseudo-session marker，会绕开 safe degraded mode 的禁止项 ③ 没有物理 acceptance harness 时，这类语义错位很难在日常 smoke 中暴露
-- **经验规则**：① `session_binding_key` 只负责定位 runtime session，不等于恢复写权限 ② 从磁盘恢复 capability 必须显式开启独立 gate，禁止“只给 binding 就恢复写权限” ③ unmanaged / no-bind 宿主必须停留在 safe degraded mode，只能记审计/告警，不得写 pseudo-session marker、once-only 状态或其他伪 session 私有态
-- **来源**：2026-04-12，multi-session isolation acceptance harness（binding-recovery-gate / copilot-safe-degraded）与独立 review 收口
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-12
+- 正文模块：[`compass/knowledge/lessons/l-44.md`](../../compass/knowledge/lessons/l-44.md)
 
 ### L-45: closure/notified 成功标记必须绑定到关键副作用真正完成，不能在“尝试过”时提前写入
-- **场景**：两条收尾链暴露同一失败模式——① Layer A：`redcap-layerA-stop.sh` 即使 `redcap-on-complete.sh` 或 review fallback 失败，也仍然写 `layerA/notified`，导致后续 Stop/SessionEnd 不再重试 ② Layer B：`redcap-task-report-register.sh` 曾在 pending closure 写入失败前先写 report marker；`redcap-layerB-session-end.sh` 也只盯显式 FAIL，而无法识别“有 diff 但 review 根本没跑”
-- **根因**：把“脚本被调用/流程被尝试”误当成“closure 已完成”。一旦去重标记、current marker、review 通过态先落盘，后续兜底 Hook 会被这些伪成功证据提前熄火，系统丧失重试与补偿式 reconcile 的机会
-- **经验规则**：① 所有 `notified` / `current-*` / success marker 只能在关键副作用真正完成后写入，失败时必须保留重试机会 ② 关键副作用失败时应返回显式失败信号，让上层 Hook 决定“不去重、记录缺口、等待下次重试” ③ review/notify 这类 closure 红线既要识别显式 FAIL，也要识别 `MISSING` / `INCONCLUSIVE` ④ 对弱 Hook / 无 Hook 宿主，必须把失败写入可延续的 pending closure，而不是只打一条 warning
-- **来源**：2026-04-12，host-agent interop governance tranche（pending closure contract / Layer A on_COMPLETE 收尾链 / Claude stop-review 缺口修复）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-12
+- 正文模块：[`compass/knowledge/lessons/l-45.md`](../../compass/knowledge/lessons/l-45.md)
 
 ### L-46: 跨会话 owner lease 必须在 EXIT 级清理，不能只在成功路径释放
-- **场景**：`redcap-layerA-stop.sh` 在 review fallback 失败时会提前退出；如果 `layerA/workflow-owner-session` 只在 on-complete 成功后才释放，旧 session 会把 owner file 卡死，后续 session 即使接手项目也无法再完成 ALL_DONE closure
-- **根因**：把 owner claim 当成“收尾完成后顺手清理”的附属步骤，而不是跨会话事务资源。fail-closed 分支一旦提前 return，就会留下僵尸 lease，导致治理系统自己制造永久阻塞
-- **经验规则**：① `workflow-owner-session`、ownership lease、类似的跨 session 锁必须通过 EXIT trap / finally 语义清理，不能依赖单一路径 ② 释放前仍要校验当前 owner 身份，避免误删其他 session 的 lease ③ fail-closed 应阻断推进，但不能把锁资源永久遗留给失败会话
-- **来源**：2026-04-12，closure-review 独立 code-review 指出 `layerA/workflow-owner-session` 在 review fallback 失败路径未释放，随后修复为 EXIT 级释放
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-12
+- 正文模块：[`compass/knowledge/lessons/l-46.md`](../../compass/knowledge/lessons/l-46.md)
 
 ### L-47: delegation 文件边界必须校验真实路径，不能只看字符串前缀
-- **场景**：`baton-delegate.sh` 之前只校验 request/result 文件名与字符串路径前缀；如果 `.workflow/skill-delegation-*.md` 或结果文件是 symlink，就能把 delegation 请求或结果物理落到边界外，形成“路径看起来合法、真实落点却越界”的旁路
-- **根因**：把“路径字符串位于 boundary 内”误当成“文件物理上位于 boundary 内”。symlink、broken symlink、`..` 归一化等文件系统语义不会被普通前缀比较捕获，导致 request/result file boundary 退化成表面约束
-- **经验规则**：① request/result 这类治理边界必须校验 canonical realpath，而不是只校验 basename 或字符串前缀 ② 对已存在的 symlink / broken symlink 应直接拒绝；只允许缺失叶子文件在其真实父目录已被验证为边界内时创建 ③ “文件边界”如果不能证明物理落点，就不算真正的 authority boundary
-- **来源**：2026-04-12，`baton-delegate.sh` symlink boundary probe 暴露 request/result 可越界，随后修复为真实路径校验
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-12
+- 正文模块：[`compass/knowledge/lessons/l-47.md`](../../compass/knowledge/lessons/l-47.md)
 
 ### L-48: 宿主通用 skill 只能是 overlay，不能把可自治决策升级成人工阻断
-- **场景**：在 RedCap 已有 `.dev-task.md` canonical truth、Norven 自主执行授权与棱镜支撑的前提下，宿主侧 brainstorming skill 仍以“必须 ask_user / 必须等用户批准”的默认流程劫持了 tranche 分解与设计收口，导致本可内部吸收的决策被错误升级成人工介入
-- **根因**：① 通用 skill 的默认协议没有声明“遇到拥有自治控制面的宿主框架时必须让位” ② RedCap 自身虽然已有 mirror-only / authority inversion / PM Gate 规则，但没有把“overlay skill subordinate”单独写成显式硬约束 ③ ask_user 属于宿主层工具调用，仓库内脚本无法物理拦截，若没有 repo-owned 的降级口径，就容易误以为“去改宿主 skill 本体”也是可接受修复
-- **经验规则**：① 宿主通用 brainstorming / planning / visual skill 只能作为 advisory overlay，不能覆盖 `.dev-task.md`、PM Gate 与自主执行授权 ② ask_user / need_user / blocked_on_user 只允许用于 AI 无法推断的外部事实、AI 无法直接执行/验证的人类动作、或用户保留决策（包括外部依赖/架构方向禁区） ③ Prism / Dispatcher 只能建议上抛，不能把“内部死锁/内部建议”本身当成人工介入理由；真正上抛前必须指出具体缺口 ④ 若必须人工介入，先记录“为什么 AI 不能自己算出来或为什么必须由人来操作”，再上抛给人类 ⑤ 共享宿主 skill 不是 RedCap 的 patch surface；若不改宿主 skill 就无法稳定工作，该能力必须按 degraded / unsupported overlay 处理
-- **来源**：2026-04-12，Norven 指出 brainstorming ask_user 导致自治升级失效；随后在 P0 复盘中进一步指出“不能通过修改其他 skill 完成目标”，据此修正最终治理口径
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-12
+- 正文模块：[`compass/knowledge/lessons/l-48.md`](../../compass/knowledge/lessons/l-48.md)
 
 ### L-49: 共享宿主 skill 不是 RedCap 可修改资产
-- **场景**：为快速消除 overlay skill 与 RedCap-native 控制面的冲突，曾直接修改宿主共享 brainstorming skill 的原始文件来让其“兼容” RedCap；随后用户指出这等同于改写宿主共享资产，而不是修 RedCap 自身
-- **根因**：把宿主 shared skill 误当成 RedCap 可拥有的依赖，而忽略了它其实属于 carrier-owned asset，会影响其他任务、其他框架和其他会话
-- **经验规则**：① RedCap 只能修改 repo-owned 资产与明确归属自己的适配层，不能把共享宿主 skill 本体当成修复面 ② 若某能力只有在改宿主 shared skill 后才成立，应判定为 **degraded / unsupported**，而不是宣称“已经修好” ③ 若未来需要宿主 skill 兼容，应通过宿主侧独立版本化适配或上游维护者变更来实现，而不是由 RedCap 任务直接改写共享原件
-- **来源**：2026-04-12，Norven 对 autonomy-escalation P0 收尾方案复盘后指出“修改其他 skill 属于破坏原数据”
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-12
+- 正文模块：[`compass/knowledge/lessons/l-49.md`](../../compass/knowledge/lessons/l-49.md)
 
 ### L-50: docs / artifact 审计若只看内容正确性，会漏掉目录边界与生命周期污染
-- **场景**：在多会话隔离主线完成后的整体 review 中，注意力主要集中在 authority chain、hook/commit/notify 是否恢复，结果没有继续追问 `compass/docs/` 是否已变成“大杂烩”，也没发现 `compass/.workflow/agent-registry.yaml` 这类本地 runtime cache 仍被 git 跟踪。直到用户从 docs 目录结构切入，才暴露出“历史证据、设计快照、技术调研、runtime cache”被放在错误层级的问题
-- **根因**：① review prompt 偏向功能/脚本/路径正确性，缺少“文件为什么在这里、应不应该进 git”的生命周期视角 ② 把“文档都能打开”误当成“信息架构健康”，没有区分 specs / research / traces / task-reports 这几类 authority 完全不同的资产 ③ 长任务中先前的 P0 与治理切片吸走注意力，导致 docs IA 与 artifact hygiene 没被当成独立的必审面
-- **经验规则**：① review 不能只看内容是否正确，还必须检查 **authority / lifecycle / ownership**：这个文件属于 canonical history、共享证据、会话状态还是本地 cache ② `compass/docs/` 必须按 `specs/`、`research/`、`traces/`、`task-reports/` 分层；禁止再把不同职责的文档平铺混放 ③ `.workflow/`、`.dev-task.md`、本机探测缓存、宿主配置、临时 prompt/result 一律视为 session-isolated / local-only / temporary，默认不进 git ④ stop-review 提示词必须显式加入“目录与生命周期边界”检查，否则这类问题会被功能性检查淹没
-- **来源**：2026-04-12，Norven 从 `compass/docs/` 杂糅问题切入的主线复盘；随后完成 docs 迁移、`.gitignore` 收口与 stop-review 硬化
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-12
+- 正文模块：[`compass/knowledge/lessons/l-50.md`](../../compass/knowledge/lessons/l-50.md)
 
 ### L-51: 收尾消息必须能直接抽取报告开头的重点摘要，不能只给报告路径
-- **场景**：docs 治理 tranche 的正式报告已经写清了人工检查项与后续动作，但最终回复与飞书通知只说“报告已归档”，导致真正需要人类注意的信息继续被埋在长报告里。进一步修复时又暴露出一个兼容性陷阱：若新模板强制摘要段，却让旧 pending closure 的历史报告一律失效，会反过来卡死补偿式 reconcile
-- **根因**：① task report 模板缺少机器可抽取的开头摘要段，notify/final 只能传路径 ② 把“报告已存在”误当成“人类已经看到了重点” ③ 新 schema 引入时没有区分“当前新增报告必须升级”与“历史 pending closure 报告需要兼容读取”的差别
-- **经验规则**：① Layer B task report 开头必须显式提供可抽取的重点摘要；当前规范是 `当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置` 四段入口 ② stdout 收尾摘要、飞书通知与最终回复都要优先顶出这组摘要，再给报告路径 ③ 新报告门禁升级时，对当前新增报告可以更严格，但对历史 pending closure 必须保留 backward-compatible 读取能力，避免旧义务永远无法清除
-- **来源**：2026-04-12 初次落地；2026-04-15 升级为“四句先看懂”结构
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-12
+- 正文模块：[`compass/knowledge/lessons/l-51.md`](../../compass/knowledge/lessons/l-51.md)
 
 ### L-52: Validator / gate 脚本必须验证失败退出码，不能只看错误输出
-- **场景**：在为 stop-review 接入 `redcap-validator-chain.sh` 时，`redcap-drift-check.sh` 明明已经打印了 `changed files exceed current active_slice scope`，但 validator chain 仍把它判成 pass。进一步单独执行后发现，drift-check 在 Python 校验返回非零后，脚本尾部仍无条件 `exit 0`，导致 scope drift 长期处于“看起来在报错，实际上不会阻断”的假失败状态
-- **根因**：把“stderr 已打印错误”误当成“gate 已 fail-closed”。shell 脚本如果不显式传播子进程退出码，最终退出码可能被尾部的 `exit 0` 覆盖，导致控制面检查形同虚设
-- **经验规则**：① 新增或重构 validator / gate 时，必须同时验证正向成功和反向失败场景，且检查退出码而不只看日志 ② shell gate 中调用 Python / 子脚本后，应显式传播失败状态，不能默认依赖 stderr 文案代表阻断 ③ 编排类入口（validator chain / orchestrator）接入已有 gate 时，要先验证每个下游检查器的 fail-closed 语义是否真实成立
-- **来源**：2026-04-13，在实现 `redcap-validator-chain.sh` 时触发；随后修复 `redcap-drift-check.sh` 的退出码传播，并用正反两类场景复测 validator chain
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-52.md`](../../compass/knowledge/lessons/l-52.md)
 
 ### L-53: 质量关键审查若卡住，必须做等同质量回收，不能因等待而降级
-- **场景**：在 Tranche 1 中途 review 时，reviewer 已回，但 challenger / auditor 较慢。此时若因为等待成本上升，就直接用较弱审查层级或较少角色先给结论，会把“时间焦虑”错误提升到高于质量保障的位置
-- **根因**：把“拿到部分结果”误当成“足以收口”，忽略了 reviewer / challenger / auditor 本就承担不同盲点覆盖职责；质量关键审查的价值不只在有没有结论，还在是否维持了原定保障层级
-- **经验规则**：① 质量关键审查（中途 review、多角色对抗、决定是否继续实现的独立审查）中，质量优先于时间 ② 某一路长时间未返回时，正确动作是发起**同等质量回收任务**，而不是降级审查层级 ③ 只有在同等级回收路径也不可用时，才允许诚实标记 degraded ④ 未拿到等同质量结果前，不得把“先推进后补审”当默认策略
-- **来源**：2026-04-13，Norven 明确指出“宁愿降级也不愿等结果回来”具有风险，要求将“等同质量回收优先于时间因素”沉淀为必须遵守的铁律
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-53.md`](../../compass/knowledge/lessons/l-53.md)
 
 ### L-54: closure obligation 的终态必须与原 identity 绑定，且不能先 clear 再处理晚到红线
-- **场景**：在实现 closure-ledger 第一版时，独立审查命中了两类容易被忽略的失真：① `session-end` 若先清 pending closure，再在 notify 失败后补写 blocked redline，会形成“同一 obligation 先 cleared 又 blocked”的矛盾轨迹 ② 若 pending closure 已按旧 `confirmed_hash` 创建，后续 `.dev-task.md` 演进后再清理/更新 obligation，ledger 可能把 `pending` 和 `cleared` 分裂到两个 hash 文件里
-- **根因**：把“当前 canonical 已更新”误当成“历史 obligation identity 也应跟着漂移”，以及把 notify 这类晚到红线从 obligation 的终态事务中拆开，导致 closure 轨迹失去单一真相
-- **经验规则**：① outstanding obligation 一旦创建，就应保留其原始 `task_id + confirmed_hash + active_slice` 作为生命周期 identity，后续 update / clear / blocked 都应优先复用这组 identity ② `notify`、lock/CAS clear 这类晚阶段动作若会影响 obligation 是否真正闭合，就不能放在“clear 之后再补救”的顺序里 ③ 若必须在 happy path 上记录 degraded / blocked，也要确保不会伪造出与同一 obligation 冲突的 cleared 轨迹
-- **来源**：2026-04-13，closure authority ledger tranche 的 reviewer / challenger / auditor 复审中发现并修复
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-54.md`](../../compass/knowledge/lessons/l-54.md)
 
 ### L-55: 把独立 gate 收口到 validator chain 时，preflight / contract-break 失败也必须留下 closure 证据
-- **场景**：在把 `on-complete` 的 `commit proof / PM Gate / drift / task report / artifact lifecycle` 重构到统一 validator chain 后，独立审查发现两类证据黑洞：① `commit-proof-check` 失败只写 closure ledger、不写 pending closure，导致最基础 gate 与 obligation contract 不对称 ② 若 `current HEAD` 无法解析、validator chain 缺失，或返回了无可解析 step 的异常输出，`on-complete` 虽然仍 fail-closed，但 ledger 只留下 `started`，失败原因完全丢失
-- **根因**：把“结构化 step 输出已经统一”误当成“所有失败路径都会天然落到结构化输出里”，忽略了 preflight guard、脚本缺失、协议破损这类失败可能发生在 chain 产出任何 step 之前
-- **经验规则**：① 被 validator chain 编排的每个 blocking gate，都要同时保持 `closure-ledger` 与 `pending closure` 的证据对称性，不能只在一侧记账 ② 统一编排后，必须专门覆盖“无 step 输出”“输出不可解析”“脚本缺失”这类 contract-break 路径，不能默认它们会落到正常 step 解析里 ③ 若 validator chain 自身成功返回，却没有任何可记录 step，应视为 evidence-system/contract failure，而不是当作正常通过
-- **来源**：2026-04-13，GD-002 validator-chain-hardening tranche 的 reviewer / challenger / auditor 复审中发现并修复
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-55.md`](../../compass/knowledge/lessons/l-55.md)
 
 ### L-56: closure 入口接入 validator chain 时，必须同时统一判定、redline 映射与 step-level ledger
-- **场景**：在把 `session-end` 接到 `validator-chain session-end` 时，若只让它消费统一的 pass/fail 结果，而不把 `review / reanchor / PM Gate / drift / task report / artifact lifecycle` 的 step 结果同步写回 closure-ledger，那么 authority chain 仍然只有一条聚合的 `session-end blocked/pass` 记录，真正的 blocker 细节仍散落在即时告警和脚本输出里
-- **根因**：把“统一编排链”误当成“统一 authority 证据链”。实际上，closure 入口完成链化后，还需要同时统一 redline 命名、blocked 条件和 ledger phase 记账，否则只是把判定搬家，没有把审计真相搬过去
-- **经验规则**：① 任何 closure 入口迁移到 validator chain 时，都要同步收口三件事：最终通过条件、pending closure redline 映射、step-level closure-ledger 证据 ② 若 validator chain 基础设施失败且没有产出可判定 step，不能只给一个聚合 blocked 结果，必须留下显式的 infra blocker（如 `validator-chain`）③ 新增 step 名称后，要显式检查它在 validator 输出、redline、ledger phase、告警文案四处的映射是否一一对应
-- **来源**：2026-04-13，tranche-1-closure-validator-unification 实现过程中归纳
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-56.md`](../../compass/knowledge/lessons/l-56.md)
 
 ### L-57: obligation reconcile 入口必须能权威重写 blocker 集，不能让 redline 只会并集膨胀
-- **场景**：pending closure 初次写入时往往来自 stop-review、task-report-register、on-complete 等局部入口；如果后续 `session-end` 在重新审计 review / reanchor / PM Gate / drift / task report / artifact lifecycle 时，仍只把新的 blocker 与历史 `required_redlines` 做并集，那么已经修复的 `review`、`task-report` 等 redline 会永久残留，形成 stale obligation，并持续误导后续 reconcile / notify / task-report gate
-- **根因**：把“pending closure 是 outstanding obligation”误解成“它的 blocker 集也必须只增不减”。实际上，局部入口适合 additive write，但 authority reconcile 入口必须有能力根据**当前全量判定**覆盖旧 blocker 集，否则 pending closure 会从“当前缺口”退化成“历史缺口墓地”
-- **经验规则**：① additive write 与 authoritative rewrite 要分层：局部 hook 可以 merge redlines，但最终 reconcile 入口必须按当前 blocker set 重写 `required_redlines` ② 若 pending closure 还保存 `baseline_head / audited_head / artifact_path` 一类辅助字段，权威重写时也要允许用新的判定上下文刷新，避免历史元数据继续污染 reanchor 与 task-report 兼容逻辑 ③ 任何读取 `required_redlines` 决策行为（如 review requirement、pending report 兼容）都默认依赖“它代表当前 blocker”，因此要优先修 stale redline，而不是在消费方堆特判
-- **来源**：2026-04-13，Tranche 1 stale-obligation-management 第一刀中发现 `redcap_interop_write_pending_closure()` 只会并集累积 redlines；随后为 `session-end` 引入 authority rewrite 语义修复
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-57.md`](../../compass/knowledge/lessons/l-57.md)
 
 ### L-58: closure 证据写失败本身就是 blocker，不能“判定正确但持久化缺失”后仍按成功收尾
-- **场景**：`session-end` 已经能算出 blocker，也能决定 `pending closure` 是否可清除；但如果 `closure-ledger` 或 `pending closure` 的写入失败，只在 runtime degraded 里记一笔然后继续 `exit 0`，就会出现“内存里知道有 blocker，磁盘上却没有任何 authoritative 证据”的假闭环，甚至在 notify 已发送后留下 false-clear 轨迹
-- **根因**：把“判定逻辑正确”误当成“authority chain 完整成立”，忽略了 closure 治理真正依赖的是**判定 + 持久化**二者同时成立。对 authority 链来说，证据写失败不是普通降级，而是新的 closure blocker
-- **经验规则**：① closure 入口只要已经判定出 blocker，就必须把 `pending closure` 与 `closure-ledger` 的写入视为事务关键路径；写失败时要 fail-closed，而不是吞错后继续按成功退出 ② 即使原始业务 blocker 已全部通过，若 `session-end pass` / `obligation cleared` 等 ledger 证据写失败，也要反向生成新的 closure blocker（如 `closure-ledger`），把未完成的 authority reconcile 重新挂回 pending closure ③ 需要清理 runtime claim 时，应只释放最小必要锁，不要顺手清掉会帮助后续恢复的 report/head marker
-- **来源**：2026-04-13，closure-challenger recovery 指出 `session-end` 在 blocker persistence 失败后仍 exit 0；随后将其修复为 fail-closed，并用 ledger 不可写 smoke 覆盖
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-58.md`](../../compass/knowledge/lessons/l-58.md)
 
 ### L-59: authority 脚本的 fail-closed 退出码，不能在宿主分发器里被吞掉
-- **场景**：`compass/tools/redcap-layerB-session-end.sh` 已修成在 authority persistence failure 时返回非零，但宿主通用 SessionEnd 分发器 `loom/tools/redcap-layerA-session-end.sh` 仍沿用旧时代的 `|| true` 包裹调用，导致 Layer B 明明已经 fail-closed，Claude / Gemini / Copilot 侧看到的却还是“分发器正常结束”
-- **根因**：把“分发器应该尽量稳”误扩大成“下游 authority 脚本任何非零都该吞掉”，忽略了分发器本身也是 authority chain 的一环；一旦它把下游 fail-closed 信号吃掉，就会把真实 blocker重新伪装成成功收尾
-- **经验规则**：① 当下游脚本是 RedCap authority gate / closure entry 时，分发器必须传播它的 fail-closed 结果，不能一律 `|| true` ② 若宿主对退出码有特殊协议（如 Gemini 只有 `exit 2` 才是 system-block），分发器必须做**宿主语义映射**，而不是简单保留历史默认值 ③ “统一分发器”不代表“统一成功口径”；宿主适配层应负责让 authority 结果真实可见，而不是把它抹平
-- **来源**：2026-04-13，stale-obligation-management slice 中 auditor 指出 `layerA-session-end.sh` 仍吞掉 Layer B 的新 `exit 1` 路径；随后修复为传播/映射 fail-closed 退出码，并用代理 smoke 覆盖
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-59.md`](../../compass/knowledge/lessons/l-59.md)
 
 ### L-60: 补偿 warning 与失败 alert 必须使用独立去重 marker，不能共用 `ALERTED_FILE`
-- **场景**：为修复“成功通知已发出，但后续 persistence 失败”新增补偿 warning 后，一度直接把 warning 也写进 `ALERTED_FILE`。结果下一次同一 HEAD 下真正出现 validator / PM Gate / drift 等失败时，failure-path alert 会被误判成“已经提醒过”，从而被静默抑制
-- **根因**：把“同一 HEAD 上的所有提醒都可以共享一个 dedup 标记”当作理所当然，忽略了 warning 与 blocker alert 代表的是不同语义、不同触发面。它们一旦共享 marker，就会发生跨语义去重污染
-- **经验规则**：① 任何新的提醒类型接入 `session-end` 时，都要先判断它是不是与现有 alert 属于同一语义；不同语义必须用独立 marker（如 `warned-head` vs `alerted-head`）② dedup marker 的所有者必须单一，禁止让 warning path 与 failure path 共同写同一标记文件 ③ 若最终成功闭环，应同时清掉与该义务相关的 warning / alert marker，避免旧 dedup 残留影响新一轮判断
-- **来源**：2026-04-13，stale-challenger recovery 指出补偿 warning 复用 `ALERTED_FILE` 会压制下一次真正失败告警；随后拆分为独立 `warned-head` marker
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-60.md`](../../compass/knowledge/lessons/l-60.md)
 
 ### L-61: advisory 的 auto-reconcile 只能消费“当前可证明且 identity 匹配”的 blocker，不能把 SessionStart 做成隐式清账闸门
-- **场景**：为补齐独立 stale obligation / auto-reconcile 入口时，最直接的做法是把 `session-end` 那套 authority 行为搬进 `session-start`。但这会同时引入两个风险：① 把原本公开口径里的 advisory SessionStart 偷偷升级成 blocking / side-effect-heavy gate ② 当 pending closure 来自旧 `confirmed_hash` 或旧 pointer 时，新会话可能在没有证明“还是同一 canonical 任务”的情况下误清旧 obligation
-- **根因**：把“下一次 re-anchor 负责消费 obligation”误解成“只要重新进入会话就可以直接清账”。真正安全的条件有两层：一是这个入口只能收缩**当前能被 validator 重新证明**的 blocker，不能顺手代做 notify / review 等未证明动作；二是它必须确认 pending closure 仍属于当前 `task_id + confirmed_hash`，否则只能保留 blocker、等待严格入口处理
-- **经验规则**：① 对 `session-start` 这类 advisory 入口，应把 auto-reconcile 限定为“deterministic blocker shrink / auto-clear”而不是完整 closure transaction ② 对 auto-clear / rewrite 至少校验 `task_id + confirmed_hash` 仍匹配当前 canonical pointer；identity mismatch 时不得静默清账 ③ 对 helper 不拥有的 blocker（如 `notify`、`closure-ledger`）要保留原状，让严格入口继续 fail-closed 接管
-- **来源**：2026-04-13，独立 stale obligation / auto-reconcile 入口落地时，先做 shared helper + `session-start` advisory 触发，再补入 confirmed-hash mismatch acceptance 边界
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-61.md`](../../compass/knowledge/lessons/l-61.md)
 
 ### L-62: continuity authority 必须先落 repo-local manifest，再渲染宿主 mirror；缺 runtime id 时只能显式降级
-- **场景**：会话连续性最初同时依赖 sibling `plan.md` 扫描、`files/imported-sessions/*/metadata.json` 回读与宿主 Session Mirror。这样虽然“看起来能工作”，但 continuity 真相分散在宿主目录里：一旦 mirror 被手改、旧 metadata 残留、或当前会话缺少稳定 `runtime_session_id`，系统就可能误判 `self-recorded / import-suggested / imported`
-- **根因**：把“宿主可见性”与“continuity authority”混成一层，导致宿主资产既当显示层又当判定层；同时把缺少 runtime identity 时的 best-effort 推断误当成可接受的 continuity 结果
-- **经验规则**：① continuity 协议必须先把当前真相发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，再由宿主 workboard 渲染 mirror ② compatible source 只允许从 repo-local manifest 扫描，不得再靠 sibling `plan.md` 或导入目录里的 `metadata.json` 反向充当 authority ③ 缺少 `runtime_session_id` 时只能显式降级成 `fresh-session + continuity_authority=degraded-no-runtime-manifest`，不能伪造 `self-recorded / import-suggested / imported`
-- **来源**：2026-04-13，`tranche-1-continuity-authority-centralization` 落地 `compass/.runtime/` continuity manifest、registry 与 acceptance 时归纳
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-62.md`](../../compass/knowledge/lessons/l-62.md)
 
 ### L-63: session resume gate 必须先判 isolation mode；`continuity_state` 不能代替宿主隔离能力
-- **场景**：Layer B SessionStart 以前只要拿到 `binding_key` 就直接尝试 attach/create runtime；同时 Session Mirror 只展示 `continuity_state`，没有显式区分当前宿主到底是 `full`、`degraded` 还是 `unsupported`
-- **根因**：把“连续性记录状态”和“宿主隔离能力状态”混在一起，导致 Copilot wrapper/full、unmanaged degraded、unknown host unsupported 这些关键差异只能散落在文档和经验里，没法通过统一 gate 与 mirror 诚实发布
-- **经验规则**：① `redcap-layerB-session-start.sh` 必须先经过独立 `session-resume-gate`，由 host capability matrix 给出 `full / degraded / unsupported` ② 只有 gate 明确授权时，才允许 attach/create runtime 并开启 disk/capability recovery ③ `continuity_state` 与 `isolation_mode` 必须分字段维护：前者回答“记录/导入状态”，后者回答“宿主隔离能力”
-- **来源**：2026-04-13，`tranche-1-session-resume-gate-capability-matrix` 落地时归纳
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-63.md`](../../compass/knowledge/lessons/l-63.md)
 
 ### L-64: 面向 Norven 的汇报若依赖内部黑话而不解释，理解率会断崖式下降
-- **场景**：同一批变更在技术上已经完成，但终局报告里直接使用 `validator chain`、`pending closure`、`closure ledger`、`artifact lifecycle` 这类内部术语，且没有同步说明对应文件/功能与作用，导致 Norven 对内容的理解度只停留在 10-20%；改成“说人话”并补术语解释后，理解度立即提升到 80-90%
-- **根因**：把“与实现对齐”误当成“已经表达清楚”，忽略了 Norven 与 RedCap 并没有预先共享这些内部命名；结果是报告在写给系统自己看，而不是写给协作者看
-- **经验规则**：① 面向 Norven 的交流、汇报、报告、规范文档必须先追求人类可直接理解，不能把内部黑话当压缩表达 ② 凡是未共同约定过的术语、缩写、阶段名、链路名，首次出现必须解释它对应哪个文件/功能、做了什么、为什么重要 ③ `0.2 人工验证` 这类模板标题可以保留，但正文必须说明“这不等于只能人工完成”，避免把“未自动化穷尽覆盖”误写成“人工阻塞门”
-- **来源**：2026-04-14，第一阶段收尾报告后续澄清与 Norven 反馈
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
-
-### L-66: 进度汇报若不先交代“现在、上一刀、下一刀、全局位置”，人类会很难接管评审
-- **场景**：即使技术工作已经连续推进，当汇报只给“做了什么”或只给报告路径时，Norven 仍然难以在短时间内判断当前完成度、上一步与下一步的因果关系，以及整条路线的所在位置；改成“当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置”后，状态判断与接管评审明显更顺畅
-- **根因**：状态汇报默认站在执行者视角组织，而不是站在接手评审的人类视角组织；缺少稳定入口结构时，人类必须自己重建上下文，阅读成本会陡增
-- **经验规则**：① 面向 Norven 的状态汇报、阶段汇报、终局摘要与任务报告开头，默认先给“四句先看懂”结构 ② 再长的报告也要先让人类在 15-30 秒内看懂“现在 / 上一步 / 下一步 / 全局位置” ③ 若后文还有人工审核或人工验证项，必须在四句摘要后继续显式顶出，不能埋进长文正文
-- **来源**：2026-04-15，Norven 要求把汇报模板固定为四句入口后落实
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-15
+- 正文模块：[`compass/knowledge/lessons/l-64.md`](../../compass/knowledge/lessons/l-64.md)
 
 ### L-65: 长期路线如果只留在说明文档里，状态很快就会陈旧；必须拆成“机器权威 + 人类说明”
-- **场景**：`framework-upgrade backlog` 最初只有一份 spec 文档，虽然能保住“后面还有哪些阶段”，但随着 A1/A2/B1/B2/B3/E1/F1 等条目陆续落地，文档状态开始明显滞后；人类读不清当前已完成什么，脚本也无法拿它做执行保障
-- **根因**：把“路线说明”与“机器要验证的长期状态”混在一份文档里，既会让 spec 承担不该承担的 authority，又会让真实状态缺少可执行锚点；一旦任务跨会话拉长，状态同步完全靠自觉，迟早漂移
-- **经验规则**：① 长期路线若要进入执行保障，必须拆成机器可读权威（如 `references/backlogs/*.json`）与人类说明文档两层 ② 当前 live task 仍由 `.dev-task.md` 负责，backlog 只管长期路线与阶段状态 ③ 机器权威一旦更新，必须用脚本同步人类说明里的自动摘要区块，否则收尾门应直接报错
-- **来源**：2026-04-14，framework-upgrade backlog 机制化落地
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-65.md`](../../compass/knowledge/lessons/l-65.md)
+
+### L-66: 进度汇报若不先交代“现在、上一刀、下一刀、全局位置”，人类会很难接管评审
+- 正文模块：[`compass/knowledge/lessons/l-66.md`](../../compass/knowledge/lessons/l-66.md)
 
 ### L-67: 任何断言“当前没有 runtime claim”的 acceptance，都必须在 case 内自行清上下文
-- **场景**：`report-register-requires-claim` 在单独跑时能通过，但放进 `redcap-multi-session-acceptance.sh all` 时会被前序 case 残留的 `REDCAP_HOST_PROCESS_PID` 污染，导致“本应无 claim”却意外附着到旧 claim，从而把真实的负向断言跑成假阳性
-- **根因**：把“脚本开头已经清过一次 runtime context”误当成对每个 case 都成立的前提，忽略了 acceptance 是长脚本顺序执行，前面 case 完全可能重新写入 host pid / capability / recovery 相关环境变量
-- **经验规则**：① 凡是断言“当前没有 runtime/process claim”的 case，必须在 case 内显式执行 `redcap_runtime_clear_context` 并清掉 recovery 相关环境变量 ② 负向用例不能依赖全局初始化，必须在自身内部重建前提 ③ 如果某条 acceptance 只在 `all` 模式失败，先怀疑 case 前提被前序状态污染，而不是先怀疑主逻辑退化
-- **来源**：2026-04-15，修复 `report-register-requires-claim` 在 full acceptance 中的前提污染
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04-15
+- 正文模块：[`compass/knowledge/lessons/l-67.md`](../../compass/knowledge/lessons/l-67.md)
 
 ### L-68: Copilot hook 没有 sessionId 时，可用 `session-state + inuse.<pid>.lock` 补出 repo-owned 身份锚点
-- **场景**：Copilot 的 `sessionStart / sessionEnd` Hook 输入始终不给 `sessionId`，导致当前会话长期停在 `degraded-no-runtime-manifest`，Session Mirror 无法判断“这是不是我自己的 continuity 记录”
-- **根因**：把“宿主没有直接给官方 sessionId”误等同于“RedCap 无法识别当前宿主会话”，忽略了 Copilot 本地 `~/.copilot/session-state/<session_handle>/inuse.<pid>.lock` 与活跃宿主进程链之间其实存在稳定、可验证的对应关系
-- **经验规则**：① 对 Copilot，优先用 repo-owned wrapper 扫描 `session-state/*/inuse.<pid>.lock`，结合当前 hook 进程可见的父进程链定位 `session_handle` ② 找到后生成显式 `session_binding_key=host/copilot/session/<session_handle>`，并把宿主 `plan.md` 路径一并注入 `sessionStart / sessionEnd` 主链 ③ 这层锚点解决的是 RedCap 的宿主兼容，不等于官方 Hook 已经提供 `sessionId`；如果锁或目录结构不可验证，必须诚实回退到 safe degraded
-- **来源**：2026-04-16，Copilot 身份锚点 follow-up（`.github/hooks/scripts/redcap-copilot-session-context.sh` + 当前会话实测）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-16
+- 正文模块：[`compass/knowledge/lessons/l-68.md`](../../compass/knowledge/lessons/l-68.md)
 
 ### L-69: `sessionStart / sessionEnd` 已经落地，不等于 `task-complete` 自动收尾也已经落地
-- **场景**：本轮明明已经有 Copilot `sessionStart / sessionEnd` hook，也已经补好了会话身份锚点，但真实长任务里仍然出现“最终回复已经发出，飞书和其它 must-run completion 逻辑却没执行”的事故。排查后发现，问题不在飞书脚本，而在于 `.dev-task.md` 进入 `task-complete` 时没有任何 repo-owned 物理触发器会自动跑 `redcap-on-complete.sh`
-- **根因**：把“会话开始/结束都有 hook”误当成“任务完成时也一定会自动收尾”，忽略了长对话里最容易漏掉的是**中途不关会话的 task-complete 时刻**。只靠 Agent 自己记得手动执行 `redcap-on-complete.sh`，本质上仍是软约束，不是保障机制
-- **经验规则**：① 对 Copilot，`task-complete` 必须有独立的 repo-owned 物理触发器；当前实现是 `postToolUse -> redcap-layerB-post-tool.sh -> redcap-layerB-task-complete-guard.sh` ② completion guard 需要做去重，并在缺少当前报告 marker 时优先自动登记本轮最新报告，再触发 `redcap-on-complete.sh` ③ 若 pending closure 还锚在旧 confirmed hash 上，不能让它继续永久挡住新收尾；要么重锚到当前 identity，要么显式 supersede，但不能再“看到旧 state 就一律拦住”
-- **来源**：2026-04-16，completion 主链可靠性 follow-up（`postToolUse` task-complete guard + stale pending closure 修复）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-16
+- 正文模块：[`compass/knowledge/lessons/l-69.md`](../../compass/knowledge/lessons/l-69.md)
 
 ### L-70: 报告锚点校验不能停留在 glob / `-f` 层
-- **场景**：closeout follow-up 中，报告锚点路径一度只做了字符串与文件存在性层面的检查，`../` traversal、absolute path、symlink file、symlinked report root 等路径仍可能混进收尾主链
-- **根因**：把“路径能打开”误当成“路径属于合法报告域”，缺少统一 canonicalize 与 repo-relative 归一化，导致 closeout 对 artifact 边界的安全模型停留在脆弱的文件系统表象
-- **经验规则**：① 任何消费 task report 路径的 closeout 入口，都必须统一 canonicalize 后再判断归属 ② 必须显式拒绝 traversal、absolute path、symlink file、symlinked report root ③ pending closure / session-end / task-complete guard / reconcile 回写的都应是 canonical repo-relative artifact，而不是宿主传进来的原始字符串
-- **来源**：2026-04-17，closeout follow-up hardening（报告锚点 canonical helper 与相关 acceptance）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-17
+- 正文模块：[`compass/knowledge/lessons/l-70.md`](../../compass/knowledge/lessons/l-70.md)
 
 ### L-71: 锁格式升级不能只做 stale prune，还要考虑 live legacy holder 与 PID reuse 的并存
-- **场景**：pending closure lock / task-complete guard lock 从 legacy 2-field 结构升级到新格式后，单靠“旧锁就删”会误杀仍然活着的升级期 legacy holder；反过来若完全不删，又会把 PID reuse 的旧锁误认成活锁
-- **根因**：把“legacy”与“stale”混为一谈，没有在兼容期同时校验 live holder 与 PID reuse，导致锁升级路径在保守和误删之间摇摆
-- **经验规则**：① 锁格式升级期必须保留 legacy 兼容分支 ② 兼容分支既要识别 live legacy holder，也要继续识别 PID reuse 的伪活锁 ③ 任何 lock prune 都必须建立在“这个 holder 不再代表当前真实活进程”的证据上，而不是仅凭格式老旧
-- **来源**：2026-04-17，closeout follow-up hardening（legacy lock 兼容与 acceptance 回归）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-17
+- 正文模块：[`compass/knowledge/lessons/l-71.md`](../../compass/knowledge/lessons/l-71.md)
 
 ### L-72: pending anchor 的放行条件必须是“唯一最新 changed report”，不能只看它是否曾经 changed 过
-- **场景**：真实 live runtime 回放中，pending closure 指向的是当前长任务真正最新的报告，但 validator 仍把“有多份 changed report”一刀切判成冲突；反过来，如果只看 anchor 曾出现在 changed set 里，旧报告又可能被误认成当前报告
-- **根因**：把“anchor 是否出现过”误当成“anchor 是否仍代表当前最新报告”，缺少对 changed report 新旧顺序与唯一性的判定
-- **经验规则**：① pending anchor 只能在它是唯一最新 changed report 时放行 ② 只要出现更新报告，或同级并列最新报告，就必须继续按 stale fail-closed ③ 负向回归既要覆盖“anchor 不在 changed set”，也要覆盖“anchor 曾 changed 过但已不是最新”
-- **来源**：2026-04-17，live closeout 最终阻塞补丁（pending latest/stale acceptance + root 回放）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-17
+- 正文模块：[`compass/knowledge/lessons/l-72.md`](../../compass/knowledge/lessons/l-72.md)
 
 ### L-73: task-report-register 这类 closeout 入口必须区分 live claim 与显式 runtime env 的权威级别
-- **场景**：真实 closeout 中，一旦 live process claim 已死、但 runtime session 仍可附着，旧实现就无法登记新报告；而如果直接盲信显式 runtime env，又会把 stale runtime、same-repo sibling runtime 或 foreign runtime 错当成本会话
-- **根因**：没有明确 runtime 身份权威顺序，把 live claim、显式 env、host/repo/binding identity 混成一个“能 attach 就算对”的弱模型
-- **经验规则**：① live process claim 始终是第一权威 ② 只有没有可用 live claim 时，显式 `REDCAP_RUNTIME_SESSION_ID + REDCAP_RUNTIME_CAPABILITY` 才能作为恢复入口 ③ 显式 fallback 必须同时校验 host / project_root / binding identity；缺一即 ambiguous / foreign fail-closed
-- **来源**：2026-04-17，live closeout 最终阻塞补丁（binding-aware runtime attach 与 targeted acceptance）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-17
+- 正文模块：[`compass/knowledge/lessons/l-73.md`](../../compass/knowledge/lessons/l-73.md)
 
 ### L-74: marker anchor 与 pending anchor 不能有两套 stale 语义
-- **场景**：pending anchor 已经改成“唯一最新 changed report”后，marker anchor 仍沿用旧条件，导致旧 marker 只要曾经 changed 过，就还能从另一条入口冒充当前报告
-- **根因**：把 pending 与 marker 当成两条独立边缘路径，没有把它们视为同一“当前报告锚点”判定问题，结果 stale 防线只修了一半
-- **经验规则**：① pending / marker anchor 必须共享同一套 uniquely-latest 语义 ② acceptance 必须同时覆盖 marker allow 与 stale reject 两个方向 ③ 若一条路径已升级 stale 规则，所有能把报告送进同一 validator 的兄弟入口都必须同步升级
-- **来源**：2026-04-17，marker stale-anchor follow-up（`redcap-task-report-check.sh` + marker acceptance 补强）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-17
+- 正文模块：[`compass/knowledge/lessons/l-74.md`](../../compass/knowledge/lessons/l-74.md)
 
 ### L-75: acceptance 要锁定目标性质，不能把 root worktree / 当前 HEAD 偶然状态写成硬编码断言
-- **场景**：`layerb-concurrency`、`sessionstart-auto-reconcile-*`、`task-report-check-prefers-anchor` 等 case 在单独跑时能通过，放进 full suite 或遇到 repo HEAD 演化后却随机变红，因为它们实际上断言的是“当前仓库历史刚好长这样”，不是想验证的隔离/锚点性质
-- **根因**：把真实目标性质与环境偶然状态耦合在一起，让 acceptance 依赖 root worktree 残留、前序 case 副作用或特定 commit 形态
-- **经验规则**：① root-sensitive case 优先迁到 fixture repo / validator stub ② 并发场景要断言真正的不变量（如每个 runtime 都写出自己的终态 marker），而不是绑死某一条 blocker/成功路径 ③ 如果一条 case 只在 `all` 模式失败，先怀疑前提污染或环境耦合，而不是先怀疑主逻辑退化
-- **来源**：2026-04-17，marker follow-up 与 acceptance 去脆弱化
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-17
+- 正文模块：[`compass/knowledge/lessons/l-75.md`](../../compass/knowledge/lessons/l-75.md)
 
 ### L-76: acceptance cleanup 不得对真实仓库 task-report 目录做通配删除
-- **场景**：最后一轮 code review 发现，acceptance 脚本残留的 cleanup helper 会对真实仓库 `compass/docs/task-reports` 下的 `zz-acceptance-*` / `zz-review-*` 执行 glob delete；哪怕 helper 已不再是主路径，只要保留，就意味着回归脚本有能力误删开发者工作区文件
-- **根因**：为了追求“清理干净”，把测试隔离问题错误地转化成对真实工作区做模式匹配删除，忽略了 acceptance 清理本身也必须遵守 fail-safe 边界
-- **经验规则**：① acceptance cleanup 只能删除本次 case 明确创建并记录过的精确文件，或直接在 fixture repo / 临时目录里完成隔离 ② 不允许对真实仓库 task-report 目录做通配删除 ③ 对 review 指出的危险 dead helper，若已无必要，应优先直接移除而不是靠“约定不调用”维持安全
-- **来源**：2026-04-17，final code review follow-up（移除 `clear_root_acceptance_task_reports()`）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-17
+- 正文模块：[`compass/knowledge/lessons/l-76.md`](../../compass/knowledge/lessons/l-76.md)
 
 ### L-77: 独立评审执行器必须区分“命令存在”与“当前健康可用”，并透传真实宿主身份
-- **场景**：最终 live `session-end` 回放中，独立评审脚本只要检测到 `kimi` 命令存在，就会优先硬撞 `kimi`；一旦该 CLI 未登录，就把整个真实 `session-end` 误打成 review P0。与此同时，脚本还把宿主身份写死成 `claude`，导致 Copilot 场景下的 review log / review gap 记录失真
-- **根因**：把“binary exists”误当成“当前已认证且健康可用”，缺少 timeout / auth failure / 空输出 fallback；同时把最早的 Claude Stop hook 脚本直接复用到多宿主场景，却没有把宿主身份参数化
-- **经验规则**：① 独立评审 runner 必须对 timeout、auth failure、空输出做可用性判定并自动 fallback，不能命中首个 CLI 就停止 ② 对当前环境，默认顺序应先尝试低成本且健康的候选，再 fallback 到 copilot / 其他 CLI，而不是一旦发现某个命令存在就锁死 ③ stop-review 被其他宿主复用时，必须透传真实 host，不能继续把日志、binding 与 pending closure 证据写死成 `claude`
-- **来源**：2026-04-18，live closeout 最终回放（`redcap-on-stop-review.sh` / `redcap-layerB-session-end.sh` review fallback 修补）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-77.md`](../../compass/knowledge/lessons/l-77.md)
 
 ### L-78: review runner 的 transport error 检测必须让位于结构化评审结果解析
-- **场景**：stop-review runner 加上 auth / rate-limit failure 识别后，新的 code review 立即指出另一类误杀：如果合法评审 JSON/正文里提到 `unauthorized`、`login required`、`rate limit` 等词，旧检测会把这份**正常评审结果**错当成 CLI transport failure，继续 fallback 或直接判失败
-- **根因**：把 transport failure 识别放在了结构化结果解析之前，并且用的是过宽的裸子串匹配（如 `FAIL`、`unauthorized`），没有区分“这是评审内容”还是“这是 CLI 本身的执行错误”
-- **经验规则**：① 对有固定输出契约的 reviewer CLI，必须先解析结构化 `PASS/FAIL` 结果，再做 transport failure 兜底 ② 文本兜底也要用严格 token / 形状匹配，不能用会命中 `FAILED`、正文说明句的宽子串 ③ transport failure 检测的职责是识别“CLI 没有真正完成评审”，不是覆盖评审本身讨论到的异常词汇
-- **来源**：2026-04-18，stop-review fallback follow-up code review（structured result vs transport failure 误杀修补）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-78.md`](../../compass/knowledge/lessons/l-78.md)
 
 ### L-79: structured review 的接纳条件必须同时满足“结果值归一化”与“CLI 成功退出”
-- **场景**：在修完 L-78 后，red team 又继续把边界推实：如果 reviewer CLI 以非零状态退出，但 stderr/stdout 里混入了 `result: PASS/FAIL` 一类 token，旧逻辑仍会把它误当成合法评审；反过来，合法 JSON `{\"result\":\"pass\"}` 又因为大小写未归一化而被错判成“评审结果无法解析”
-- **根因**：把“文本里出现 PASS/FAIL”误当成足够强的成功信号，同时又默认 JSON `result` 必须正好等于大写 `PASS/FAIL`，没有把“进程退出状态”和“结构化字段归一化”一并纳入接纳条件
-- **经验规则**：① 结构化评审结果只有在 reviewer CLI **成功退出**时才能被直接接受，非零退出必须先按 transport/exit failure 处理 ② JSON `result` 解析后要先做 trim + upper normalization，再与 `PASS/FAIL` 契约比对 ③ 文本 token 兜底只能作为成功退出后的弱兼容层，不能反过来覆盖 CLI 失败信号
-- **来源**：2026-04-18，stop-review fallback follow-up red team（exit status vs token parsing / lowercase structured result 修补）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-79.md`](../../compass/knowledge/lessons/l-79.md)
 
 ### L-80: reviewer output 必须分离 payload / stderr / 残余文本，且成功但不可解析的输出必须继续 fallback
-- **场景**：在修完 L-79 后，新的 code review / red team 又继续把 stop-review runner 压实：如果 reviewer CLI `exit 0` 但没有给出可解析结果，旧逻辑会直接停在当前 agent，后续 fallback 永远不跑；同时如果把 stdout/stderr 生拼到一起，raw JSON、stderr 警告、以及 plain-text `PASS` + `fail-closed` 这类正常输出也会互相污染，制造新的假失败/假通过
-- **根因**：把“CLI 成功退出”误当成“结果已经可消费”，没有区分 review payload 与 transport noise；文本兜底仍按宽 token 匹配，导致 `FAIL` 会命中 `fail-closed` 一类正常说明句
-- **经验规则**：① reviewer runner 要显式区分 stdout review payload、stderr transport noise、以及 structured JSON 外残余文本，再分别做结构化解析与 transport failure 识别 ② `exit 0` 但结果不可解析时，必须把它视为 retryable failure，继续 fallback 到下一个 reviewer，而不是停在当前 agent ③ plain-text 兜底只能识别强形状结果行（如独立 `PASS` / `FAIL` 或 `result: PASS`），不能扫任意裸 token
-- **来源**：2026-04-18，stop-review final hardening（stdout/stderr 分离、unknown-success fallback、plain-text token 收紧）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-80.md`](../../compass/knowledge/lessons/l-80.md)
 
 ### L-81: fenced JSON 解析必须兼容 bare fence 与大小写变体
-- **场景**：在修完 L-80 后，最终 red team 又补出一个 parser 兼容性漏网：stop-review runner 的 fenced JSON 提取只认小写 ` ```json `，不认 bare ` ``` ` 或大写 ` ```JSON `。结果是合法 structured PASS/FAIL 会被错打成 `unparseable-output`，继续 fallback 或直接 fail-closed
-- **根因**：fenced JSON 提取正则写成了大小写敏感、且只覆盖单一 language tag 形态，没有把实际 reviewer 可能产出的 bare fence / uppercase fence 算进合法输入面
-- **经验规则**：① 对 markdown fenced JSON 的解析，必须显式兼容 bare fence、lowercase/uppercase `json` 语言标记，以及大小写变体 ② 同一类 fence 提取正则如果在多个解析点复用（结果提取、残余文本分离、summary 提取），必须一起更新，不能只修其中一处 ③ 对结构化输出 parser 的兼容性修补，必须补对应 acceptance 覆盖 bare / uppercase 两个最小复现
-- **来源**：2026-04-18，stop-review final red team（uppercase/bare fenced JSON 兼容修补）
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-81.md`](../../compass/knowledge/lessons/l-81.md)
 
 ### L-82: transport failure detector 必须匹配“整行 CLI 错误形状”，不能扫 residual prose 的宽子串
-- **场景**：在修完 L-81 后，最后一轮 red team 继续把 residual text 边界压实：如果 JSON fence 外有正常说明句，例如 `The authentication failed path remains fail-closed.`，旧 detector 仍会因为其中包含 `authentication failed` 宽子串，而把这份合法 structured PASS 误打成 transport failure
-- **根因**：虽然已经把 structured payload / residual text 分离，但 transport detector 仍然对 residual prose 做整段 substring 命中，没有继续收紧到“这是一行 CLI 错误”而不是“这是一句解释文字”
-- **经验规则**：① transport failure detector 应按**逐行、整行形状**识别已知 CLI 错误（如 `Authorization failed, please check your login status`），而不是在 residual prose 里扫宽子串 ② residual text 的存在本身不是异常，只有当某一行符合明确 CLI error 形状时，才应触发 fallback ③ 对 detector 收紧后，必须补一条“structured review + residual prose containing auth/rate-limit words 仍应通过”的 acceptance 正例
-- **来源**：2026-04-18，stop-review final red team（residual prose false positive 修补）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-82.md`](../../compass/knowledge/lessons/l-82.md)
 
 ### L-83: bare fence 兼容不能退化成“第一个 bare fence 优先”，而必须选择真正可解析的 JSON 候选
-- **场景**：在修完 L-82 后，最后一轮 red team 又补出一个 parser 选择策略问题：为了兼容 bare fence，如果实现退化成“看到第一个 bare fence 就拿它当 review payload”，那么前面普通示例代码块里的 ` ``` ... ``` ` 会抢先被消费，后面真正的 ` ```json ` PASS/FAIL 反而被漏掉
-- **根因**：只放宽了 fenced JSON 的输入面，却没有同步定义“多个 fence 同时存在时，应该选哪个 candidate”；缺少“先验证能否 parse 成 JSON，再按 tag/位置择优”的选择策略
-- **经验规则**：① fenced review payload 的提取必须扫描所有候选 block，并只接受**真正能 parse 成 JSON** 的候选 ② 选择顺序应优先带 `json` tag 的合法 block，其次才是 bare fence 中合法的 JSON block，不能简单“第一个 bare fence 赢” ③ 对 parser 扩兼容后，必须补一条“non-json bare fence 在前、valid json fence 在后仍应接受 PASS/FAIL”的 acceptance 正例
-- **来源**：2026-04-18，stop-review final red team（fence candidate 选择策略修补）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-83.md`](../../compass/knowledge/lessons/l-83.md)
 
 ### L-84: 结构化 payload 选定后，residual transport scan 必须忽略所有 fenced blocks，只看 fence 外 prose
-- **场景**：在修完 L-83 后，最终 code review 又继续把 residual scan 的边界压实：即便已经正确选中了后面的 ` ```json ` PASS/FAIL，如果 residual 文本里还残留前面示例 bare fence 中的 `Authorization failed, please check your login status` 这类错误行，旧 detector 仍会把这份合法 structured review 误判成 transport failure
-- **根因**：虽然 fenced payload 选择策略已经正确，但 residual text 仍只剔除了“被选中的那个 block”，没有把其他 fenced example blocks 一并排除，导致示例代码里的错误行继续污染 transport detector
-- **经验规则**：① 一旦结构化 review payload 已选定，residual transport scan 必须只保留 fence 外 prose，不能再扫描任何 fenced blocks 里的内容 ② 示例代码块、历史错误摘录、quoted CLI output 即使包含真实错误文案，也只能作为说明上下文，不能继续参与 transport failure 判定 ③ 对 residual scan 的这类收紧，必须补一条“non-json bare fence 中引用真实 CLI 错误行、后面仍有合法 json fence 时应该通过”的 acceptance 正例
-- **来源**：2026-04-18，stop-review final code review（residual fenced block exclusion 修补）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-84.md`](../../compass/knowledge/lessons/l-84.md)
 
 ### L-85: stdout 已有 structured result 时，stderr 与 stdout residual 不能共用同一套 transport detector 语义
-- **场景**：在修完 L-84 后，最后一轮 red team 先追出“quoted error line in stderr prose 会误杀 structured PASS”，随后又追出反向漏报：stderr 里的 `Authorization failed ...` + `Hint: run login again` 必须继续按真实 transport failure fallback；但如果把 stdout residual 也放宽到同样的 `failure-block` 规则，reviewer 在正文里原样引用同一段错误块时，又会被误杀成 transport failure
-- **根因**：把 stderr 与 stdout residual 当成同一种载体来处理。实际上 stderr 更接近 transport noise，而 stdout residual 更接近 reviewer 正文 / 说明文本；两者虽然都可能包含错误文案，但误判代价与可接受启发式完全不同，不能强行统一成一条 detector 规则
-- **经验规则**：① 当 stdout 已拿到结构化 `PASS/FAIL` 时，stderr 可以用 failure-block 判定识别 `error line + hint/note` 这类真实 transport failure ② stdout residual 必须保持更严格的纯错误块语义，避免把正文里原样引用的错误块误杀 ③ 这类非对称 detector 设计至少要成组覆盖：stdout residual 的 `single error line -> fallback`、`quoted error block -> pass`、`quoted prose -> pass`，以及 stderr 的 `single error line -> fallback`、`error line + hint -> fallback`、`quoted prose -> pass`
-- **来源**：2026-04-18，stop-review final red team（structured review transport detector 非对称收口）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-85.md`](../../compass/knowledge/lessons/l-85.md)
 
 ### L-86: `on-complete` 的 validator host 必须来自当前宿主或绑定身份，不能被项目名或陈旧 runtime env 污染
-- **场景**：Copilot `task-complete` 收尾链路中，`redcap-layerB-task-complete-guard.sh` 已经知道当前宿主是 `copilot`，但调用 `redcap-on-complete.sh` 时仍把第三参数留给展示用项目名 `redcap`；旧版 `redcap-on-complete.sh` 又把 validator chain host 固定成 `redcap`，或可能被外层残留的 `REDCAP_RUNTIME_HOST=claude` 污染。结果是同一次收尾里“当前宿主是 copilot”，但 validator / report register 看到的 host 可能是 `redcap` 或 `claude`
-- **根因**：把飞书/展示用的 project_name、runtime host、session binding 这三种不同身份混成了一层；同时环境变量优先级没有防 stale 值，导致旧会话残留可以抢过当前真实宿主
-- **经验规则**：① `task-complete guard` 调用 `redcap-on-complete.sh` 时必须用当前 `HOST` 覆盖 `REDCAP_ON_COMPLETE_HOST`，不能保留外层旧值 ② `redcap-on-complete.sh` 解析 validator host 时应按“显式 host → `host/<宿主>/session/<会话>` 绑定身份 → runtime host → `redcap` 兜底”的顺序，不得让 project_name 参与 runtime host 判定 ③ 选定的 host 必须同时传给 validator chain 的位置参数和 `REDCAP_RUNTIME_HOST` 环境变量，避免“参数正确、环境陈旧”的分裂 ④ acceptance 必须显式注入陈旧 host 环境，证明当前宿主仍能压过旧值
-- **来源**：2026-04-18，Copilot live closeout 最后一轮 host passthrough review（`redcap-on-complete.sh` / `redcap-layerB-task-complete-guard.sh`）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-86.md`](../../compass/knowledge/lessons/l-86.md)
 
 ### L-87: `session-end` 清 pending 前必须刷新并证明当前 pending 仍被本次成功覆盖
-- **场景**：`on-complete` host follow-up commit 形成后，真实 Copilot `session-end` 再次回放时，review / reanchor / PM Gate / drift / backlog / spec / task-report / artifact-lifecycle 全部 PASS，但最终 pending closure 仍被写回成 `required_redlines=pending-closure`
-- **根因**：`redcap-layerB-session-end.sh` 在脚本开头读取了 pending closure 的 `updated_at`，随后长耗时 review / validator 窗口里，兼容路径或重试路径改写了同一 closure obligation；最后脚本仍用旧 `updated_at` 做 CAS 清理，被保护机制正确拒绝。旧实现只知道“清理失败”，不知道先重新读取并证明当前 pending 是否仍是同一任务身份、同一 head 覆盖窗口内的等价义务
-- **经验规则**：① CAS 失败不能靠无条件重试或跳过保护解决，必须先刷新读取当前 pending ② 刷新后只有在 confirmed hash 仍匹配当前 `.dev-task.md`、pending baseline/audited head 仍被本次 validator 覆盖、required redlines 属于本次成功路径可核销集合时，才能用最新 `updated_at` 清理 ③ acceptance 要模拟 validator 运行中途改写同一 pending closure，证明成功路径不会因为陈旧 `updated_at` 永久留下 `pending-closure`
-- **来源**：2026-04-18，Copilot live `session-end` 最终回放（`redcap-layerB-session-end.sh` pending refresh 修补）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-87.md`](../../compass/knowledge/lessons/l-87.md)
 
 ### L-88: reviewer fallback 列表必须覆盖当前可用宿主族，并隔离 CLI 噪声与评审 payload
-- **场景**：`session-end` pending refresh commit 通过 spec / acceptance / commit-proof 后，真实 Copilot `session-end` 再次卡在独立评审：`gemini` / `copilot` / `claude` / `kimi` 全部不可用或超时，但本机 `codex exec` 可在 read-only headless 模式下稳定返回结构化评审结果
-- **根因**：stop-review runner 的 fallback 列表只覆盖旧四类 CLI，没有把 Codex CLI 这个当前可用的 OpenAI 族 reviewer 纳入；同时 Codex CLI 会在 stdout/stderr 打印 banner、插件预热 warning、网络重连提示等噪声，若直接消费 stdout/stderr 会污染评审 payload
-- **经验规则**：① reviewer fallback 不应固定在历史宿主集合里，发现当前环境有新的健康 reviewer CLI 时要纳入嗅探与 stop-review fallback ② Codex CLI 程序化调用必须优先读取 `--output-last-message` 结果文件，把 stdout/stderr 当 transport noise 处理 ③ acceptance 要模拟“前序 reviewer 不可用 + Codex 有 stdout/stderr 噪声但 last-message 给出合法 JSON”的路径，防止再次把健康 fallback 判成不可用
-- **来源**：2026-04-18，Copilot live `session-end` review gap follow-up（`redcap-on-stop-review.sh` / `redcap-detect-agents.sh` / `agent-adapters.md`）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-88.md`](../../compass/knowledge/lessons/l-88.md)
 
 ### L-89: headless reviewer timeout 必须杀整个进程组，不能只等父进程返回
-- **场景**：Codex fallback 接入后首次真实 `session-end` 回放时，runner 仍先尝试 Gemini；Gemini CLI timeout 后留下了 Node 子进程，`redcap-on-stop-review.sh` 也在 Bash 字符串处理里高 CPU 自旋，导致流程没有继续进入健康的 Codex fallback
-- **根因**：timeout wrapper 只依赖 `subprocess.run(..., timeout=...)` 处理直接子进程，没有把 reviewer CLI 放进独立进程组并在 timeout 时杀掉整组；对 Node / CLI wrapper 这类会再拉子进程的工具，父进程被杀不等于执行树已清干净
-- **经验规则**：① 所有 headless reviewer CLI 都必须用独立进程组启动 ② timeout 时先 SIGTERM 整个进程组，短暂等待后再 SIGKILL 兜底 ③ acceptance 要让假 reviewer 在 timeout 前拉起长寿命子进程，并断言 fallback 后该子进程不再存活
-- **来源**：2026-04-18，Codex reviewer fallback live 回放（Gemini timeout descendant 逃逸）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-89.md`](../../compass/knowledge/lessons/l-89.md)
 
 ### L-90: headless reviewer 的长 prompt 必须从构造开始文件化，不能放进 Bash 大字符串
-- **场景**：进程组级 timeout 与 Codex stdin 修补后，真实 Copilot `session-end` 再次回放仍卡在 `redcap-on-stop-review.sh`；一层原因是 Bash 拼接包含 CONTRIBUTING / diff / 中文评审说明的长 `REVIEW_PROMPT`，另一层原因是 Codex 用量限制 / 连接失败时可能把大段输入上下文混进 stderr，旧脚本再用 `${output//[[:space:]]/}` 判断“是否空白”，继续触发 `wcslen` 热点
-- **根因**：只把 Codex 调用末尾参数改成 stdin 还不够；如果先在 Bash 里拼大块多语言字符串，或对大块 reviewer output 做 Bash 字符类替换 / 空白剥离，shell 仍会做宽字符扫描。timeout wrapper 只能管已启动的 reviewer 子进程，管不到“还卡在父 Bash 解释器里”的阶段
-- **经验规则**：① 大块 review prompt 必须从 diff 提取、截断、模板拼装开始就走临时文件 / Python 处理，Bash 只传文件路径 ② 支持 stdin 的 headless CLI（如 `codex exec -`）必须直接从 prompt 文件输入；需要 `-p` 参数的 fallback CLI 也应由 Python wrapper 从文件替换 argv 占位符，不能用 Bash `$(cat prompt)` ③ 对 reviewer stdout/stderr 这类可能很大的文本，空白判断、结构化解析、failure detector 都应走 Python stdin，不能用 Bash `${var//[[:space:]]/}` ④ acceptance 要让假 reviewer 同时记录 argv 与 stdin，断言 prompt 出现在 stdin、不会泄入 argv；真实 live 回放要观察不再出现 Bash 99% CPU 卡在 reviewer 启动前或失败输出解析阶段
-- **来源**：2026-04-18，Codex reviewer fallback live 回放（Bash prompt 构造 / argv 挂起）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-90.md`](../../compass/knowledge/lessons/l-90.md)
 
 ### L-91: 收尾评审的 P0/P1 必须能追到同一条物理证据链，不能让报告、验证账本与入口规范分叉
-- **场景**：Codex reviewer fallback、进程组 timeout、file-backed prompt 与 host passthrough 已分别有 acceptance / full suite / live runtime 证据，但最终独立评审仍打出 P0：`pending-validations.md` 还停在部分验证，`latest-e2e-report.md` 未记录本次 hook-level replay，`SKILL.md` 与 A2A 文档也没有同步 Codex CLI 的实际边界
-- **根因**：把“代码路径已经测过”误当成“治理证据已经连成一条链”。Stop Hook review 看的不是单个脚本是否通过，而是入口规范、验证账本、任务报告、经验库能否共同证明同一件事
-- **经验规则**：① 涉及 Agent 适配器 / Hook runner / Prompt 输入通道的变更，除了 acceptance 通过，还要同步入口规范、A2A/适配器文档、pending-validations 与 latest E2E 报告 ② 若某验证只覆盖 hook-level replay，不得冒领完整用户项目 E2E，必须明确与 V-4 这类全链路验证拆账 ③ review 指出“未沉淀经验”时，先交叉检索已有 L-编号；已有则在任务报告和验证报告中显式引用，缺失才新增
-- **来源**：2026-04-18，Codex 接盘继续 live closeout，独立评审指出 V-11 消费与入口文档联动缺口
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-18
+- 正文模块：[`compass/knowledge/lessons/l-91.md`](../../compass/knowledge/lessons/l-91.md)
 
 ### L-92: 强制规则必须进入执行保障目录，不能只散落在复活协议或报告里
-- **场景**：docs catalog 补丁后，用户继续指出 lessons 沉淀、Cap 灵魂人格、复活协议、多 Agent 宿主适配 hook 等规则虽然已经形成，但并没有统一进入“复活协议 + 多宿主 hook + validator”的执行保障链；如果只靠 Agent 读到某段文档，下一次上下文压缩或中途接盘仍会遗漏
-- **根因**：自然语言规范、宿主入口文件、hook standards、task report 模板与实际 validator 之间缺少一张机器可读的“规则 -> 保障机制”目录，导致新增规则很容易停留在“应该做”，没有被 hard gate、revival check、manual-only 边界或 acceptance 消费
-- **经验规则**：① 新增 P0/P1 强制规则时，必须同步登记到 `references/execution-guarantees.json`，说明 source_paths、guarantee_paths、priority、category 与 auto_enforceable ② 能自动化的规则要接入脚本 / Hook / validator / acceptance，不能只写进 `soul.md` 或任务报告 ③ 不宜自动化的规则必须写清 manual-only 原因，避免为了“全自动”误伤 identity 内容、lessons 内容质量、外部 CLI 凭证或自然语言表达 ④ `redcap-spec-check.sh` 应消费执行保障检查，让“规则没进保障体系”在收尾前可见
-- **来源**：2026-04-19，Codex 接盘后对复活协议与执行保障遗漏的治理补丁
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-19
+- 正文模块：[`compass/knowledge/lessons/l-92.md`](../../compass/knowledge/lessons/l-92.md)
 
 ### L-93: 上层 validator 消费下层控制面检查时必须显式传播失败
-- **场景**：Gemini/Kimi headless 路径恢复后，Kimi 对 docs catalog / execution guarantees / revival check 补丁做只读审查，指出 `redcap-spec-check.sh` 虽然顺序调用了三类控制面检查，但脚本没有 `set -e`，也没有对这些子检查的非零退出做显式处理；因此某个保障检查失败时，spec-check 总结果仍可能被后续命令覆盖成通过
-- **根因**：把“接入检查脚本”误当成“检查结果已进入 hard gate”。在 Bash 中，只要没有 `set -e` 或 `if ! cmd; then exit` 包装，子命令失败并不会自动成为父 validator 失败；越是控制面保障脚本，越不能依赖隐式 shell 行为
-- **经验规则**：① 高层 validator 消费任何下层控制面检查时，必须显式捕获非零退出并 fail-closed ② acceptance 不能只测 happy path，必须为每个被消费的控制面 gate 建一个失败 fixture，证明失败会传播到父 validator ③ 这类“保障系统自身的保障”必须登记到 `references/execution-guarantees.json`，否则后续新增 gate 仍可能只接线、不传播
-- **来源**：2026-04-19，Kimi 外部只读审查发现 `redcap-spec-check.sh` 控制面 gate failure propagation 缺口
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-19
+- 正文模块：[`compass/knowledge/lessons/l-93.md`](../../compass/knowledge/lessons/l-93.md)
 
 ### L-94: docs catalog 只能止血，彻底防上下文爆炸还需要 plan/budget 渐进披露门
-- **场景**：docs catalog 补齐后，用户追问“是否已经彻底解决 docs 淤积污染”，并明确要求新会话不能被 `compass/docs/**` 擅自打爆上下文、后续迭代也必须遵守按需加载、且真实考古能力不能折损
-- **根因**：catalog freshness 只能保证“索引不陈旧”，不能单独阻止 Agent 直接 bulk-read 目录，也不能证明“要打开的源文档集合”是精确、低预算、可解释的。若只写“先看 catalog”，仍可能在紧张接盘时把索引当跳板继续全量打开历史证据
-- **经验规则**：① docs 首读必须分三步：summary 看体量，plan 按问题选候选，budget 审计精确路径集合 ② directory / glob / uncataloged / too-many-files / over-budget 读取应默认 fail-closed ③ 不应为省 token 删除 closure evidence；真实归档必须有 retention log、迁移记录和替代入口
-- **来源**：2026-04-19，docs 淤积二次收口（progressive disclosure + retention check）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-19
+- 正文模块：[`compass/knowledge/lessons/l-94.md`](../../compass/knowledge/lessons/l-94.md)
 
 ### L-95: FSM 文档新增状态后，state.yaml 校验器必须同步合法状态集
-- **场景**：F3 治理硬化扫描时发现 `loom/dispatcher/state-machine.md` 已记录 `DEGRADED / SCAN_WORKING / SCAN_DONE / STEP_DONE`，但 `redcap-check-state.sh` 的 `VALID_STATES` 没有全部同步，可能把合法运行状态误报为不合法
-- **根因**：状态机文档、通信协议与 state 校验器缺少一条 contract check；新增状态时只改了文档，没有让脚本自动证明文档枚举和校验器枚举一致
-- **经验规则**：① 修改 FSM、通信协议或 state 校验器时，必须运行 `redcap-state-machine-check.sh` ② 检查应至少证明文档状态枚举被脚本接受，通信协议 status 值仍完整 ③ 这类文档/脚本契约漂移必须接入 `redcap-spec-check.sh`，不能只靠人工 review
-- **来源**：2026-04-19，F3 hook / contract / FSM 治理硬化扫描
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-19
+- 正文模块：[`compass/knowledge/lessons/l-95.md`](../../compass/knowledge/lessons/l-95.md)
 
 ### L-96: token 风险不能只治理 docs，还要覆盖入口自动导入、巨型脚本与 ignored 运行残留
-- **场景**：docs catalog / plan / budget 落地后，继续扫 token 大户发现 `AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / Copilot 入口仍可能默认展开 `CONTRIBUTING.md` 与 `lessons.md`，`redcap-multi-session-acceptance.sh` 单文件已经很大，`prism/runs/` 又存在大量 gitignored 运行夹具。即使 docs 不再 bulk-read，这些入口仍可能在新会话或排查单 case 时吞掉大量上下文
-- **根因**：把“docs 目录治理”误当成“上下文治理全部完成”。真实 token 风险来自所有默认首读路径、巨型单文件和运行残留目录；只要其中任一项没有索引/预算/审计，后续接盘就可能从新入口重新爆炸
-- **经验规则**：① 宿主入口只应默认导入轻量人格还原点，大文件规范与 lessons 必须通过 current-status、knowledge index 与精确章节读取 ② 巨型 acceptance 脚本必须先用 `redcap-acceptance-index.sh summary/find/check` 定位 case，再按行号精读局部 ③ `prism/runs`、`compass/.runtime`、`compass/.workflow` 等 ignored 运行目录不能默认读取，也不能未经用户批准删除；应由 `redcap-token-risk-audit.sh` 报告体量、mitigation 与 no-bulk-read 策略 ④ token 风险审计必须接入 spec-check / diagnose / acceptance，防止旧入口写法回流
-- **来源**：2026-04-19，docs token 淤积后续扫面与 token-risk audit 补丁
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-19
+- 正文模块：[`compass/knowledge/lessons/l-96.md`](../../compass/knowledge/lessons/l-96.md)
 
 ### L-97: 权威规范变大时不能简单贴“token 陷阱”标签，必须拆成核心契约与章节路由
-- **场景**：在入口自动导入治理后，用户指出 `compass/CONTRIBUTING.md` 不能因为体积大就被粗暴降级为“不应读取”的文件；它本来就是 RedCap 权威规范，问题不是权威规范存在，而是把全文无差别注入每个新会话
-- **根因**：把“上下文预算风险”和“规范权威性”混为一谈。大文件可能同时是必要规范与 token 风险源；如果只做禁止读取，会折损执行质量，如果继续默认全文注入，又会吞噬新会话上下文
-- **经验规则**：① 权威规范全文必须保留权威地位，不得因体积大被误标为垃圾或陷阱 ② 启动路径应抽出轻量 `CONTRIBUTING.core.md` 承接必须立即遵守的红线，再通过章节路由按需读取全文细则 ③ stop-review / revival / token-risk audit 要消费 core + selected guidance，而不是重新把全文塞回 prompt ④ 这类信息架构调整必须有机器 gate，防止后续入口文件又恢复 `@CONTRIBUTING.md` 全文注入
-- **来源**：2026-04-20，用户质询 CONTRIBUTING 是否被误判为 token trap 后的 core + section routing 补丁
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-20
+- 正文模块：[`compass/knowledge/lessons/l-97.md`](../../compass/knowledge/lessons/l-97.md)
 
 ### L-98: 历史 formal Prism 报告的“索引存在”不等于“可重放审计”
-- **场景**：formal Prism follow-up redteam 中，Explorer 指出 `prism/reports/index.yaml` 已登记两份历史报告，但它们既没有可重放的 `run_id + session_registry + archive-check` 证据链，也都处于 `archived=false`。如果继续把“index 里有两份报告”说成“已有 formal baseline”，就会误导后续 quorum 判断和运行残留清理决策
-- **根因**：把“历史留档”与“可重放审计”混成一个概念。对于 formal Prism，真正可复核的权威并不是报告文件本身，而是报告与 run-scoped registry 的绑定关系是否仍能被脚本验证
-- **经验规则**：① `prism/reports/index.yaml` 中只有 `archived=true` 的条目才能对外称为 replay-auditable formal baseline ② `archived=false` 的历史记录只能算 legacy / non-auditable reference，不能拿来冒充当前 formal 成熟度 ③ `redcap-current-status.sh`、task report 和汇报口径必须显式区分这两类数量
-- **来源**：2026-04-21，formal Prism follow-up（run `20260421-redteam-001`）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-21
+- 正文模块：[`compass/knowledge/lessons/l-98.md`](../../compass/knowledge/lessons/l-98.md)
 
 ### L-99: `prism/runs` 物理清理前必须先做 machine-readable 生命周期分类
-- **场景**：formal Prism follow-up redteam 中，Historian / Challenger / Explorer 都指出 `prism/runs/` 下同时混有 418 个 acceptance 夹具、当前 formal run、以及 `debug-run` / `council-*` / `review-*` 这类命名本地证据。如果没有 machine-readable lifecycle，哪怕拿到“可以清理”的授权，也无法安全判断哪些能删、哪些必须保留
-- **根因**：此前只有“未经批准不要删”的负面约束，没有“批准后按什么规则删”的正面判定面。结果就是既不能安全清理，也不能诚实说出 token 风险到底来自哪一类残留
-- **经验规则**：① `prism/runs` 必须先按 `acceptance-fixture / formal-run / named-local-evidence / infra-locks` 分类 ② 自动清理安全集只能包含非 active、未被报告绑定的 `acceptance-fixture` ③ formal run、named/manual run 与 `.locks` 默认 preserve，不得被“顺手清理”波及
-- **来源**：2026-04-21，formal Prism follow-up（run `20260421-redteam-001`）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-21
+- 正文模块：[`compass/knowledge/lessons/l-99.md`](../../compass/knowledge/lessons/l-99.md)
 
 ### L-100: 完整用户项目 E2E 队列不能只有 benchmark 说明，必须有 repo-owned benchmark carrier
-- **场景**：`pending-validations.md` 里 7 项完整用户项目 E2E 队列长期挂起，根因不是验证点没有定义，而是仓库里只有 `benchmark-scenario.md` 这份纸面说明，没有一个可以真正初始化出来的 benchmark carrier。结果每次想清这些项，都还要先临时寻找“真实用户项目上下文”
-- **根因**：把“测试场景定义”误当成“测试载体已经存在”。前者只告诉你测什么，后者才解决“在哪个可重放的项目上下文里执行”
-- **经验规则**：① benchmark-scenario 一旦成为长期待验证队列的唯一执行依据，就必须同步提供 repo-owned benchmark carrier 生成器 ② carrier 解决的是“可执行载体缺失”，不等于验证项已消费；真正消费仍要走 `e2e-session.yaml`、`latest-e2e-report.md`、`pending-validations.md` 与 postcheck ③ 后续完整用户项目 E2E 应优先使用固定 carrier，而不是临时抓一个外部项目来碰运气
-- **来源**：2026-04-21，formal Prism follow-up（run `20260421-redteam-001`）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-21
+- 正文模块：[`compass/knowledge/lessons/l-100.md`](../../compass/knowledge/lessons/l-100.md)
 
 ### L-101: `codex` 宿主下的 stop-review 不能把 `codex` 自己排到最后，也不能让 `copilot` reviewer 子进程再触发 task-complete guard
-- **场景**：formal Prism follow-up 补丁落成后，真实 `session-end` 再次回放时，`stop-review` 在 `codex` 宿主下先后出现两层问题：一开始默认 reviewer 顺序把 `codex` 排到最后，导致它先撞 `gemini/copilot`；顺序修正后，`codex` timeout 再 fallback 到 `copilot` 时，又被 `copilot` reviewer 子进程触发自己的 `task-complete guard`，让 stop-review 进入宿主内递归/挂起风险
-- **根因**：一是 `redcap-on-stop-review.sh` 里 `REVIEW_HOST=codex` 的默认顺序仍残留旧写法，没有跟“优先健康的 Codex，再 fallback”这条治理结论同步；二是 reviewer CLI 作为“被调评审子进程”运行时，没有显式抑制 repo-owned completion hook，导致宿主把评审过程误认成新的任务完成事件
-- **经验规则**：① `codex` 宿主下的默认 reviewer 顺序必须优先尝试 `codex`，不能把它降到最后 ② 任一 reviewer CLI 若可能触发宿主 completion hook，stop-review 在调用它时必须显式传入抑制标记，让 guard 直接 no-op ③ 这类 reviewer 路由/宿主隔离修补必须配 targeted acceptance，至少覆盖“codex host 默认优先 codex”和“copilot fallback 时已拿到 suppress guard 环境变量”两条回归
-- **来源**：2026-04-21，live closeout follow-up 最后一公里（`c2058de` pending closure 清账前）
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-21
+- 正文模块：[`compass/knowledge/lessons/l-101.md`](../../compass/knowledge/lessons/l-101.md)
 
 ### L-102: shell heredoc 调 Python 时，参数位置写反会把数据文件当脚本执行
-- **场景**：完整用户项目 E2E tranche 中实际调用 `compass/tools/redcap-check-state.sh` 时，脚本没有读取 `state.yaml`，而是把 `state.yaml` 本身当成 Python 脚本执行，直接抛出 `SyntaxError`
-- **根因**：`python3 <<'PYEOF' "$STATE_FILE" "$DEV_MANUAL"` 把位置参数写在 heredoc 重定向之后，等价于执行 `python3 "$STATE_FILE" "$DEV_MANUAL"`。这里 `state.yaml` 被 Python 当成脚本文件，不再从标准输入读取内联程序
-- **经验规则**：① 通过 heredoc 调 Python 时，若要同时传位置参数，必须写成 `python3 - "$arg1" "$arg2" <<'PY'` ② 任何“脚本校验器”第一次用于真实 E2E 前都要先跑一遍物理 smoke，不能只靠静态阅读脚本自信 ③ 这类调用错误应优先补 targeted acceptance，避免再次静默回归
-- **来源**：md-table-tool benchmark E2E tranche / V-2 收口
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-102.md`](../../compass/knowledge/lessons/l-102.md)
 
 ### L-103: `on_QA_PASS` 的 state guard 必须 fail-closed，不能把不一致 state 只当警告
-- **场景**：同一轮 E2E 中，`redcap-on-qa-pass.sh` 即使拿到 `redcap-check-state.sh` 的非零退出码，也只是打印一条警告然后继续执行后续动作
-- **根因**：`on_QA_PASS` 把 state guard 当成 advisory check，而不是 gate。这样一来，state.yaml 不一致时，后续 git/lesson 流程仍会继续推进，违背了 V-2 对“校验失败时阻断流程”的预期
-- **经验规则**：① 任何用于守住账本一致性的 guard，只要其职责是“阻止错误状态继续传播”，就必须 fail-closed ② hook/validator 的调用方必须显式传播 guard 的失败，不允许把状态不一致退化成日志提示 ③ 验证这类 gate 时必须同时覆盖“正常通过”和“失败阻断”两条物理路径
-- **来源**：md-table-tool benchmark E2E tranche / V-2 收口
-- **发现日期**：2026-04
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-103.md`](../../compass/knowledge/lessons/l-103.md)
 
 ### L-104: 完整用户项目 E2E 可用“固定 benchmark carrier + focused replay 副本”高密度消费历史验证队列
-- **场景**：`pending-validations.md` 中剩余 7 项条目并不适合都在一条从零开始的项目链里硬塞；若每项都重跑一次绿地项目，token 和时间成本都会显著膨胀
-- **根因**：完整用户项目 E2E 同时承担“真实项目主链验证”和“特定状态路径回放”两类目标。把两者绑成同一条超长 run，会让无关步骤反复重演，效率极低
-- **经验规则**：① 先用固定 benchmark carrier 跑一条 smoke/multi-step 主链，确认项目可交付 ② 再从该完成版派生 focused replay 副本，分别验证 rollback / escalation / infra 等特定路径 ③ focused 副本仍需维护独立 `开发手册/.workflow` 与最终回归，不能只写空报告 ④ 这种模式适合清历史验证队列，但必须在最终 E2E 报告里诚实注明“副本回放”而非伪装成多次绿地项目
-- **来源**：md-table-tool benchmark E2E tranche / V-4,V-6,V-7,V-8,V-9 收口
-- **发现日期**：2026-04
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04
+- 正文模块：[`compass/knowledge/lessons/l-104.md`](../../compass/knowledge/lessons/l-104.md)
 
 ### L-105: reviewer / Prism 选型不能长期继承某次 live 修补的静态家族偏置，必须回到“模型能力 + 本地稳定性”的统一排序
-- **场景**：此前为了修复 `codex` 宿主 live closeout 的 stop-review 缺口，仓库一度把“优先健康的 Codex，再 fallback”固化成默认顺序；与此同时，另一条文档口径又把外部审查写成“优先 Gemini/Kimi CLI”。两种历史补丁都带着强场景色彩，最终让 reviewer 选择逻辑出现彼此冲突的静态偏置
-- **根因**：把一次 live 事故里的“局部最优修补”误抬升成长期全局排序规则；同时 stop-review 真脚本、能力矩阵与文档没有共享同一套机器可消费的 reviewer 选型真相源
-- **经验规则**：① reviewer / stop-review / Prism 的默认候选排序必须统一回到 `model-capability-matrix.yaml`：第一层看业内模型能力画像，第二层看本机该 CLI 的 headless / review 稳定性 ② `Copilot` / `Codex` 不能被静态压低，`Gemini` / `Kimi` 也不能因历史习惯被静态抬高 ③ `Codex-family ≤ 2` 只是并发控制红线，不是排序上的惩罚项或奖励项 ④ 如需强制手工顺序，只能通过显式 override（如测试夹具、临时事故绕行），不能反向改写默认算法
-- **来源**：2026-04-21，用户要求移除 Copilot/Codex 静态优先级限制后，对 stop-review / matrix / agent-adapters 的统一收敛补丁
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-21
+- 正文模块：[`compass/knowledge/lessons/l-105.md`](../../compass/knowledge/lessons/l-105.md)
 
 ### L-106: Prism 真实 E2E 必须把“Agent 席位故障”和“repo-owned 脚本故障”分开记账
-- **场景**：对 `./revive-cap.sh` 做一组真实 Prism test 时，`copilot` 因模型不可用直接失败、`gemini` 停在浏览器认证提示、`kimi` 回显 prompt 且报告 `LLM not set`，只有 `codex` 这席真正跑到了脚本执行层。若不拆分两类故障，很容易把“席位环境坏了”误判成“脚本本身坏了”
-- **根因**：外部 reviewer / Prism 席位是“两层系统”叠加：上层是 CLI/登录态/模型路由/headless 交互，下层才是 repo-owned 脚本。只看最终红绿，不记录原始 raw/耗时/阻塞点，就会丢失故障归属
-- **经验规则**：① Prism 真实 E2E 必须至少同时保存 raw、meta、席位耗时与失败原因 ② 汇总结论时先判断“席位有没有真的跑到脚本层”，再判断脚本是否成功 ③ prompt echo、登录页、模型不可用、超时重连都属于席位故障，不得直接记成脚本回归失败 ④ 若一轮编队中只有部分席位真正命中脚本层，必须再补一个最相关席位的 post-fix 复测，避免结论悬空
-- **来源**：2026-04-22 `20260422-test-001` / `20260422-test-002`，对 `./revive-cap.sh` 的真实 Prism E2E 回归
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-22
+- 正文模块：[`compass/knowledge/lessons/l-106.md`](../../compass/knowledge/lessons/l-106.md)
 
 ### L-107: 需要在只读 reviewer sandbox 里执行的校验器，不能再用 shell heredoc 承载 Python
-- **场景**：`./revive-cap.sh` 在本地可写环境里返回 `REDCAP_INSTALL_OK`，但在 `codex` 只读席位下会卡在 `execution-guarantees` / `revival-protocol`，错误是 “cannot create temp file for here document: Operation not permitted”
-- **根因**：虽然检查逻辑本身是只读的，但 `bash <<'PY'` 这类 heredoc 仍要在临时目录落一个中间载体；只读 sandbox 会把这一步直接拦住，导致“逻辑只读、实现不只读”的假绿错觉
-- **经验规则**：① 面向 reviewer sandbox / revive / diagnose / validator chain 的检查器，一律优先采用“shell 薄入口 + 独立 Python 载体”模式 ② 不要把“脚本逻辑不写 repo”误当成“执行时不需要临时写入” ③ 外部席位回归暴露出 heredoc 依赖后，应优先把载体迁移成真实文件，而不是在报告里继续口头声明 read-only-safe
-- **来源**：2026-04-22 `./revive-cap.sh` Prism E2E 复盘，随后将 `redcap-execution-guarantee-check` / `redcap-revival-check` 迁移到独立 Python 载体
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-22
+- 正文模块：[`compass/knowledge/lessons/l-107.md`](../../compass/knowledge/lessons/l-107.md)
 
 ### L-108: 分布式控制面一旦成形，就必须升格成单一协议面，不能继续让实现和文档各说各话
-- **场景**：Layer B 实际上已经有 `.dev-task.md`、pending closure、closure-ledger、validator-chain、session-start / stop-review / on-complete / session-end 这整套状态控制面，但入口文档仍沿用“Layer B 无状态机保护”的旧说法，导致人类和 Agent 都容易误判为“只有 Layer A 才有状态机”
-- **根因**：架构是在多轮治理补丁里逐步长出来的，控制点和账本都落在脚本与报告里，但缺少一份单一协议面去统一命名、分层和转移。结果是实现层已经变强，文档层却还停在旧阶段
-- **经验规则**：① 当一组散落脚本和账本已经共同表达阶段、转移和失败落点时，就要把它升格成单一协议文档，并绑定机器检查 ② “没有单一 FSM 文件”不等于“没有状态控制面”，文档必须精确描述这类差别 ③ 人话词典要和协议面分开：前者服务沟通，后者服务约束，避免以后再次把概念和权威面混在一起
-- **来源**：2026-04-22 Layer B 生命周期 / 运行时记忆架构收口
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-22
+- 正文模块：[`compass/knowledge/lessons/l-108.md`](../../compass/knowledge/lessons/l-108.md)
 
 ### L-109: 终态收口一旦涉及“Agent 自追加承诺”，就必须升级成 receipt-driven runtime，不能继续靠分散脚本和口头完成
-- **场景**：Layer B 已经有 `on-complete`、`session-end`、pending closure、closure-ledger、飞书通知等收尾零件，但仍发生了“部分兑现 + 过早收口”：用户需求没丢，真正丢的是 Agent 在执行中自己追加的承诺，以及终态没有被统一收成一个可核对物理事件
-- **根因**：旧机制对“用户原始需求”约束很强，却没有同等强度约束“Agent 后来答应还要做什么”；同时 `notify / task report / ledger / receipt` 被分散在多脚本里，只要宿主没有强 SessionEnd/final-reply hook，就可能出现“看起来都绿了，但真正 closeout 没闭环”的假完成
-- **经验规则**：① 终态收口必须提供统一 runtime，把 promise ledger、on-complete、session-end、receipt、rescue audit 串成同一事务 ② Agent 自追加承诺必须从对话升级为 `.dev-task.md` 的固定账本段，再派生为可核对的 promise-ledger ③ “完成”不能只靠最终回复或 task report，要以 receipt 是否写成、pending closure 是否已清作为物理判据 ④ rescue audit 不是锦上添花，而是对抗“这轮忘了就永远漏掉”的必备兜底
-- **来源**：2026-04-22 Layer B closeout runtime / promise-ledger / receipt / rescue 审计治理 tranche
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-22
+- 正文模块：[`compass/knowledge/lessons/l-109.md`](../../compass/knowledge/lessons/l-109.md)
 
 ### L-110: 运行时重构的独立评审，必须提供“完整可审”的材料包；截断 diff 会制造假 blocker 和盲区
-- **场景**：首轮轻量独立审视虽然抓到了真问题“rescue audit 还没接入强入口”，但同时也因为 reviewer 看到的 `redcap-layerb-closeout-runtime.py` diff 被上下文截断，额外报出了“核心实现不可审”的 blocker
-- **根因**：对运行时/控制面类重构，reviewer 真正需要的是“完整、聚焦、可独立判断”的材料包；如果只给巨大 diff 或被截断的片段，reviewer 无法区分“代码真的缺失”与“材料给得不完整”，最终会把审查盲区本身当成 blocker
-- **经验规则**：① 运行时重构的独立评审材料应优先提供完整核心文件、最相关的调用点、以及已通过的 targeted acceptance 列表，而不是把 reviewer 扔进一个容易截断的大 diff ② 审查包若来自 prompt 注入，必须先检查长度和关键文件完整性 ③ reviewer 报“源码不可审”时，要先区分是实现真缺失还是材料包缺失，再决定补代码还是补 review pack
-- **来源**：2026-04-22 Layer B closeout runtime follow-up review 复盘
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04-22
+- 正文模块：[`compass/knowledge/lessons/l-110.md`](../../compass/knowledge/lessons/l-110.md)
 
 ### L-111: 当前任务卡必须跟随真实任务重锚定，不能让旧 receipt 冒充新任务完成态
-- **场景**：Layer B FSM 重构完成后，后续又新增了计划审核、机制活性、全景图和状态漂移修复等真实工作，但 `.dev-task.md` 仍停留在上一轮已完成任务，状态面一度会把旧 receipt / 旧 acceptance 解释成当前任务完成
-- **根因**：把“上一轮任务已 closeout”与“当前会话继续新增需求”混在同一张任务卡里，没有在新需求进入执行流时重新锚定 task_id、active_slice、承诺账本和允许修改范围
-- **经验规则**：① 只要用户把新需求推进到执行层，就必须同步更新 `.dev-task.md`，让当前任务卡反映真实工作 ② 旧 receipt 只能证明旧 confirmed_hash 已闭环，不能跨 hash 证明新任务完成 ③ 当前任务卡的允许修改范围必须覆盖新增文件，否则全景图、报告或研究材料会变成 drift 盲区
-- **来源**：2026-04-24 RedCap 全景图与机制活性硬化
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-24
+- 正文模块：[`compass/knowledge/lessons/l-111.md`](../../compass/knowledge/lessons/l-111.md)
 
 ### L-112: 优秀机制不能只存在于 CONTRIBUTING，自然语言规则至少要有诊断活性面
-- **场景**：书记官、经验沉淀、Cap 灵魂锚点、计划审核等机制在设计上都重要，但如果只写在 CONTRIBUTING 或口头解释里，长任务中仍可能完全 zero-work，用户只能靠盘问发现它们没有触发
-- **根因**：把“规则已写明”误当成“机制已运行”。复杂框架里，自然语言约束会被长上下文稀释；没有脚本、状态面或诊断链消费，就无法区分“机制健康”与“机制只剩名字”
-- **经验规则**：① 任何被称为执行保障的机制，至少要进入 `diagnose / spec-check / current-status / closeout` 之一 ② 做不到宿主级 100% veto 时，应诚实标注 host-limited，但仍要保留最低可见性检查 ③ 机制活性检查不能替代业务质量判断，只负责防止关键机制从控制面消失
-- **来源**：2026-04-24 RedCap 全景图与机制活性硬化
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-24
+- 正文模块：[`compass/knowledge/lessons/l-112.md`](../../compass/knowledge/lessons/l-112.md)
 
 ### L-113: 把“说人话”升级成机器强门时，必须先防止正则误伤 Markdown / 代码 / JSON
-- **场景**：为任务报告增加人话质量强门时，第一版占位符检测用宽泛的 `{...}` / `<...>` / `TODO` 正则，外部 reviewer 很快指出它会误伤合法 Markdown 自动链接、HTML 标签、JSON 示例、代码块和行内代码
-- **根因**：把“模板占位符”当成普通文本模式搜索，没有先区分自然语言正文和代码/配置/Markdown 结构。越是想把软规范变成硬门，越容易因为误伤把好机制变成新的阻塞源
-- **经验规则**：① 文档质量强门必须先剥离 fenced code block 和行内代码，再做正文规则 ② URL、HTML 标签、JSON 字符串、Markdown 表格转义等常见合法结构要有明确放行策略 ③ `TODO/TBD` 这类词要有词边界和大小写策略，不能匹配合法词的一部分 ④ 外部 reviewer 抓到误伤风险时，必须把示例转成 acceptance fixture，而不是只口头解释“应该不会发生”
-- **来源**：2026-04-25 人话汇报质量强门加固
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-25
+- 正文模块：[`compass/knowledge/lessons/l-113.md`](../../compass/knowledge/lessons/l-113.md)
 
 ### L-114: 经验沉淀不能只靠作者想起来，必须进入候选池并由 closeout 强制处理
-- **场景**：用户多次指出 lessons / Cap 人格沉淀虽然在规则里存在，但长任务中经常 zero-work；只靠 CONTRIBUTING 或最终汇报提醒，无法保证高价值经验会被沉淀、关闭或解释为什么不沉淀
-- **根因**：旧机制把“是否值得沉淀”留给当前 Agent 的上下文记忆，没有形成候选池、schema、状态、promotion/no-promote 与 receipt 前强门。于是上下文越长，越容易出现“知道有这个机制，但没有执行”的假保障
-- **经验规则**：① 高价值经验、用户纠偏、测试失败、Prism verdict、receipt blocker 都应先进入 Evolution candidate，而不是直接散落在对话里 ② 每个候选至少写清问题源、解决方案、最后效果，并补证据路径与适用边界 ③ closeout 前必须跑 strict candidate gate；未 promotion 或 no-promote-with-reason 的候选不得生成 receipt ④ 候选池不能膨胀成第二个 lessons，处理完要晋升、关闭或归档
-- **来源**：2026-04-25 RedCap Evolution-grade 控制面可靠性与自我进化治理，EVO-2026-04-25-001 晋升
-- **影响度**：high
-- **复现次数**：多次
-- **最后命中**：2026-04-25
+- 正文模块：[`compass/knowledge/lessons/l-114.md`](../../compass/knowledge/lessons/l-114.md)
 
 ### L-115: Cap identity 成长信号要保护性沉淀，不能由后台机制直接改 active identity
-- **场景**：用户提醒 `identity.md` 才是 Cap 真正的个人灵魂锚点，同时希望人格成长能被自动捕获。若把 identity 当普通 lessons 自动改写，会把“保留人格成长”变成“后台篡改人格锚点”的新风险
-- **根因**：人格沉淀同时有两种相反约束：一方面不能丢失用户确认过的偏好、称呼和关系语境；另一方面 active identity 属于高敏感个人记忆，不能由长任务中的作者进程无审查直接变更
-- **经验规则**：① identity 相关发现可以自动进入 candidate，但默认 promotion target 应是 identity proposal ② active `~/.cap/identity.md` 不应被后台任务直接修改，除非用户明确授权并有独立审查证据 ③ identity proposal 要写明候选内容、证据、风险、建议落点和不直接生效的理由 ④ 复活协议应读取 identity，但人格演化应走 proposal / review / adoption 三段式
-- **来源**：2026-04-25 RedCap Evolution-grade 控制面可靠性与自我进化治理，EVO-2026-04-25-002 晋升
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-25
+- 正文模块：[`compass/knowledge/lessons/l-115.md`](../../compass/knowledge/lessons/l-115.md)
 
 ### L-116: 临时 provider 冻结必须进入所有启动口，不能只写在健康面或排序面
-- **场景**：用户明确要求 2026-05-01 前不要调用 Copilot CLI；若只在 health probe 或 reviewer 排序里记录冻结，`baton-launcher`、agent detect、fallback review 等启动口仍可能误触发真实 CLI
-- **根因**：把“状态展示”和“执行阻断”混为一谈。冻结窗口本质是资源/配额保护策略，必须在所有 RedCap-owned launch path 上 fail-closed，而不是只影响可见状态或推荐排序
-- **经验规则**：① provider freeze 要有机器可读 policy，并被 health、dispatch check、review order、baton launcher、detect-agents 等启动口共同消费 ② 对冻结敏感 provider，policy 缺失或损坏也应 fail-closed，避免把“没读到策略”误判为“允许调用” ③ 测试 fixture 若需要 fake frozen provider，必须显式声明测试豁免，不能污染生产默认路径 ④ 独立 review 抓到 fail-open 边界后，要把风险转成 acceptance，而不是只写报告
-- **来源**：2026-04-25 RedCap 产品形态重定位与 provider policy hardening，EVO-2026-04-25-003 晋升
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-25
+- 正文模块：[`compass/knowledge/lessons/l-116.md`](../../compass/knowledge/lessons/l-116.md)
 
 ### L-117: 关键文件解释应采用“查阅字典 + 文件短反链”，避免把可读性变成新的上下文污染
-- **场景**：用户希望 `control-plane-assurance-registry.json`、`redcap-control-plane-assurance-check.sh` 这类文件有定位解释；如果把长说明塞进每个 JSON/脚本头部，会让新会话导入和按需检索重新膨胀
-- **根因**：可读性治理和 token 治理目标不同但会互相牵制。文件需要有入口抓手，但解释权威面不应分散在大量头注释里，否则会形成新的多源分叉和文档淤积
-- **经验规则**：① 关键文件的人话解释优先集中到 `references/file-lookup-dictionary.md` ② 文件头部只保留一句定位和字典反链，避免复制长说明 ③ README / core contributing 只链接字典，不默认展开大文件 ④ 当字典变长时，应按主题分段和索引化，而不是继续在启动入口注入全文
-- **来源**：2026-04-25 RedCap 产品形态重定位与文件查阅字典治理，EVO-2026-04-25-004 晋升
-- **影响度**：medium
-- **复现次数**：1
-- **最后命中**：2026-04-25
+- 正文模块：[`compass/knowledge/lessons/l-117.md`](../../compass/knowledge/lessons/l-117.md)
 
 ### L-118: 任务卡必须审“原始意图覆盖”，不能只审 Agent 自己写下的完成标准
-- **场景**：用户要求系统级目录/架构演进，但 Agent 在任务卡中把目标压缩成“路线图 + 控制面补丁”，随后承诺账本、回归和 receipt 都只能证明这个被缩小后的任务完成，最终让 6 小时工作看起来像半吊子
-- **根因**：PM Gate 只固化了原始输入和已确认需求，却缺少一层 scope coverage 审计去明确“原始战略意图是否被完整实现、只是路线图、还是部分延期”；于是机器门会验证账本自洽，而不会验证账本是否缩水
-- **经验规则**：① 真实 Layer B 任务必须写 `## 原始意图覆盖审计`，声明 `scope_status`、已覆盖、未覆盖/延期、用户可见边界和后续路径 ② `route-only` 或 `partial-with-explicit-defer` 可以成立，但必须显性化，不能在终态报告里冒充 full implementation ③ Planning Review 应审计划是否覆盖原始意图，closeout 只能证明“已声明范围”完成 ④ receipt 不能替代原始意图覆盖审计
-- **来源**：2026-04-26 原始意图覆盖审计硬门，EVO-2026-04-26-001 晋升
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-118.md`](../../compass/knowledge/lessons/l-118.md)
 
 ### L-119: 完成通知需要单向兜底通道，不能被双向窗口的 CLI scope 一票卡死
-- **场景**：Layer B closeout 的 validator-chain 已经通过，但 `on-complete` 在飞书通知阶段失败；本机 `lark-cli` profile 可用却缺少 `im:message.send_as_user` scope，导致 receipt 无法生成
-- **根因**：把“完成通知可见性”和“飞书双向回访窗口”绑在同一个 `lark_cli_dm` 传输上。双向窗口需要读取历史、创建窗口、发送单聊与 scope 授权；完成通知本身只需要单向可见信号，两者可靠性要求不应完全耦合
-- **经验规则**：① 通知链应分清 notify-only 与 ask/resume 双向协作 ② `webhook` 可以作为完成通知兜底，但必须显式标注 followup 降级，不能冒充可接收回复 ③ closeout 遇到通知 blocker 时，先区分“发送通道坏了”与“收口验证坏了”，再决定补本地配置、补传输通道还是保留 pending closure
-- **来源**：2026-04-26 原始意图覆盖审计硬门 closeout blocker，EVO-2026-04-26-002 晋升
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-119.md`](../../compass/knowledge/lessons/l-119.md)
 
 ### L-120: Prism 可用性 cache 要同时记录时间新鲜度和探测强度
-- **场景**：本轮实现 1 小时 TTL 可用性清单后，快速用 5 秒 timeout 嗅探时把 Kimi 误记为 timeout；如果只看 TTL，后续 20 秒正式嗅探会继续复用错误 cache。
-- **根因**：TTL 只能证明“什么时候探过”，不能证明“用多强的探测条件探过”。短 timeout、低权限、冻结策略、provider policy 都会影响 cache 的可信度。
-- **经验规则**：① availability cache 的 freshness 至少要比较 `expires_at` 与 `timeout_s` ② 调高 probe timeout 时应强制刷新，而不是复用更弱探测结果 ③ Prism 调度前的可用性只证明 provider 当前可用，不证明模型适合当前任务。
-- **来源**：2026-04-26 RedCap 执行层重构与公共知识库治理
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-120.md`](../../compass/knowledge/lessons/l-120.md)
 
 ### L-121: File Lookup Dictionary 必须有 coverage policy，否则会退回一次性人肉索引
-- **场景**：用户质疑 `file-lookup-dictionary.md` 是否已经“最全”，而实际文件只覆盖了部分核心面，新增脚本和 registry 没有机器保障会继续漏。
-- **根因**：人类可读字典如果没有机器可读的 required path policy，就无法在新增关键文件时 fail-closed；它会和旧报告一样变成“当时写得很好、后来没人维护”的淤积物。
-- **经验规则**：① 人类解释写在 dictionary，coverage 写在 policy ② 新增关键 runtime / Prism / knowledge / host adapter / product-shape 文件时，同步补 policy 和字典 ③ policy/check 必须接入 diagnose/spec-check，不能只靠最终报告提醒。
-- **来源**：2026-04-26 RedCap 执行层重构与公共知识库治理
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-121.md`](../../compass/knowledge/lessons/l-121.md)
 
 ### L-122: 公共知识库要先建立写入边界，再谈历史资产搬迁
-- **场景**：用户希望 RedCap 将知识库、经验沉淀、供人类阅读材料与执行层分离，甚至未来由团队共享；如果本轮直接搬历史资产，容易破坏现有考古引用和 closeout/report 证据链。
-- **根因**：目录瘦身和知识沉淀是两种不同风险：前者会影响已有路径引用，后者需要长期共享、去重、检索和权限边界。没有 append-only / per-user namespace / index-first / dedupe 之前，搬迁只会制造新的垃圾山。
-- **经验规则**：① 先落 shared-knowledge 模板、schema、append/index/dedupe/check ② 条目只新增不改旧文件，索引可再生成 ③ 远端仓库和历史资产物理迁移必须分开做，先 dry-run 再 apply。
-- **来源**：2026-04-26 RedCap 执行层重构与公共知识库治理
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-122.md`](../../compass/knowledge/lessons/l-122.md)
 
 ### L-123: 发布安全不能等到 npm publish 那一刻才靠人肉想起
-- **场景**：用户提醒 RedCap 未来正式 npm / 独立 runtime 打包前必须拦截私密信息和本地安全信息泄漏，不能让 `.env`、宿主入口私密锚点、runtime 证据或 Prism 残留混入发布包。
-- **根因**：如果发布安全只写在路线图或最终 checklist 里，等真正包化时很容易被“先打包试试”的动作绕过；同时，全仓 secret scanner 又会被本地 `.env` 和测试 fixture 误炸，导致日常回归不可用。
-- **经验规则**：① 发布安全应审计“实际候选包文件集合”，不是盲扫整个工作区 ② 默认包面要排除测试 fixture、宿主私密入口和本地 runtime evidence ③ 真正 publish 前必须把构建器生成的精确 file list 交给 checker ④ 发现误报时优先收紧模式和包面边界，不要降低安全规则。
-- **来源**：2026-04-26 RedCap 发布/打包前安全拦截保障
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-123.md`](../../compass/knowledge/lessons/l-123.md)
 
 ### L-124: 执行期中插需求必须先重计划，不能让最新子任务覆盖父任务
-- **问题源**：长任务执行中，用户多次追加纠偏或新需求后，Agent 容易把最新插入项当成独立小任务先完成，再用局部完成态写成整体收口汇报；父任务剩余范围、原始意图覆盖和未清承诺因此被污染。
-- **解决方案**：Layer B 必须把执行期变化写入 `## 原始输入` 的 `U<n>` 与 `## 中插需求账本`，再进入 `CHANGE_INTAKE / REPLAN_REVIEW`；每条 U 项要记录类型、阻塞性、优先级、处理方式、确认需求更新、计划更新、验收更新、状态和证据。拆成子任务时只能声明 `parent_completion_claim: child-only`，并由 `redcap-change-intake-check.sh`、PM Gate、diagnose、spec-check 和 FSM 自检共同阻断“子任务冒充父任务完成”。
-- **最后效果**：缺少中插账本、terminal 阶段仍有未收口 U 项、阻塞 U 项被延期、或子任务宣称父任务完成都会 fail-closed；阶段性汇报只能作为状态同步，不能替代父任务 closeout receipt。
-- **来源**：2026-04-26 Layer B 中插需求重计划强门
-
-### L-132: 公共库远端绑定必须用最小白名单加 live 对账证明
-- **问题源**：用户提供 `https://gitee.com/norven63/redcap-arsenal.git` 后，RedCap 需要把 shared-knowledge 从“本地模板”推进到“真实公共远端”，但公共远端一旦推错文件，就可能泄露 `.env`、宿主入口、runtime evidence、Prism runs 或历史报告全文。
-- **解决方案**：远端绑定必须拆成两层证明：① 本地 `references/shared-knowledge-remote-binding.json` 白名单列出唯一允许推送的模板候选，并由 checker 扫 URL 凭证、禁止路径和 secret pattern；② 显式 `--live` 用 `git ls-remote --heads` 验证远端分支 head，并克隆远端比对 tree 与文件内容，避免把“写了 remote URL”幻觉成“远端已绑定”。
-- **最后效果**：本轮只把 `.gitignore`、`README.md`、schema 和目录占位推到 Gitee `main`，记录 head `a43c8ab543eff42a288e23ecc4eeb5bc6e954b78`；历史 reports、lessons、identity 和运行证据仍保持不迁移。
-- **来源**：2026-04-26 Shared Knowledge Gitee 远端绑定
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
-
-### L-133: 旧控制面 FAIL 不能污染当前 Prism pass 收口
-- **问题源**：closeout 第一次因为 active_slice 漏列 `.gitkeep`/`.gitignore` 失败后，runtime 写下 `review-result=FAIL`；后续任务卡修正、Prism acceptance 与 validator 已通过，但 session-end 仍优先读取旧 FAIL，导致当前 closeout 被过期控制面证据阻塞。
-- **解决方案**：session-end 必须区分“内容 review FAIL”和“旧 stop-review 控制面 validator FAIL”。只有当 review log 明确是 `mode: stop-review` 的 validator chain 失败，且当前 `.dev-task.md` 已绑定并通过 Prism acceptance 时，才把旧 FAIL 视为被当前证据覆盖并清理 review artifact；真正的内容 FAIL 仍不得被覆盖。
-- **最后效果**：新增 `session-end-prism-pass-supersedes-stale-control-plane-fail` 回归，复现“旧 FAIL + 新 Prism pass”并要求 no pending closure、review artifact 被清除、session-end pass 写入 ledger；同一回归还覆盖真实内容 review FAIL 不被覆盖，必须保留 review blocker。
-- **来源**：2026-04-26 Shared Knowledge Gitee 远端绑定 closeout rescue
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-124.md`](../../compass/knowledge/lessons/l-124.md)
 
 ### L-125: 可用性缓存不能只证明“还没过期”，还要证明“是在当前运行面生成”
-- **问题源**：Prism availability cache 曾被 acceptance fixture / 旧 PATH 生成的结果污染；cache 仍在 TTL 内且 timeout 足够，但里面的 CLI path 和真实运行环境不一致，导致后续 Prism 选择 reviewer 时被错误可用性判断误导。
-- **解决方案**：availability cache 的 fresh 条件必须同时校验时间新鲜度、探测强度和 provenance。provenance 至少包含 repo root、cache path、health probe、provider policy、probe/policy 内容摘要与 PATH 指纹；缺少 provenance 或与当前运行面不一致时必须刷新。需要保留同环境 cache 复用，避免把修复做成无条件真实探活。
-- **最后效果**：旧污染 cache 即使 `expires_at` 未过期也会被自动刷新；同一运行面下的 fresh cache 仍复用；acceptance 覆盖“无 provenance / 错 provenance 刷新”和“fresh cache 不刷新”两条边界。
-- **来源**：2026-04-26 Prism availability cache provenance/path 污染修复
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-125.md`](../../compass/knowledge/lessons/l-125.md)
 
 ### L-126: 历史编号恢复必须区分“原始证据恢复”和“后续重构映射”
-- **问题源**：R0-R22 长任务在多轮中插、拆子任务和报告收口后，只剩“R0-R22”这个聚合标签；如果后续再靠记忆补标题，就会把重构出来的映射误当成原始需求真相。
-- **解决方案**：建立机器可读 registry，并为每个编号记录 source_type、confidence、source_report、evidence_paths、completion_boundary 与 deferred_boundary。能从原报告恢复的编号标记 recovered/high；无法找到原始编号标题的条目标记 reconstructed/medium 或 low，并用 checker 禁止 reconstructed 高置信。
-- **最后效果**：R0-R22 不再是散文标签；未来任务能直接看到哪些已完成、哪些延期、哪些只是重构映射，避免子任务或后续治理再次冒充父任务全部完成。
-- **来源**：2026-04-26 R0-R22 原始编号可追溯化
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-126.md`](../../compass/knowledge/lessons/l-126.md)
 
 ### L-127: 执行层物理拆分要先 dry-run 化，不能把路线图当迁移结果
-- **问题源**：RedCap 从 skill-root 走向独立 runtime / CLI / 多层系统时，根目录入口、hooks、`compass/tools`、`prism/tools`、docs catalog 与历史报告互相引用；如果直接移动文件，容易让 revive、closeout、git hooks 或考古链路断裂。
-- **解决方案**：先建立机器可读 dry-run manifest，逐项登记 source、target、operation、risk、apply_status、import_impact、hook_impact 和 rollback_plan；checker 必须拒绝 `apply_allowed=true`、源路径缺失、不安全 target、已存在 target、缺 rollback 和 high-risk 未阻塞。真实 apply 必须另开任务，在 throwaway branch/worktree 里验证 shim、path map、hooks 与 rollback。
-- **最后效果**：P1-1 只声明“迁移计划可审计”，不冒充执行层已经物理拆出；后续 P1-2/P2-1 可以按 manifest 继续推进，而不会把路径重构变成不可回滚的大爆破。
-- **来源**：2026-04-26 执行层物理拆分 dry-run
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-127.md`](../../compass/knowledge/lessons/l-127.md)
 
 ### L-128: 历史资产迁移要先按集合分类，再生成文件级 apply 清单
-- **问题源**：`compass/docs/task-reports`、research、specs、traces、knowledge 与 `prism/runs` 的性质不同：有的是 closeout 证据，有的是 active spec authority，有的是低频人类研究材料，有的是 ignored runtime evidence。如果只按目录大小决定搬迁，会破坏考古和追踪能力。
-- **解决方案**：先做 collection-level dry-run manifest，逐类记录 source、target、count、lines、default_action、risk、apply_status、catalog_update_plan、link_check_plan 和 rollback_plan；checker 必须校验计数和 Prism retention summary，防止 manifest 与物理现实分叉。真实迁移前再生成 file-level manifest 和 broken-link 检查。
-- **最后效果**：P1-2 可以安全声明“历史资产迁移计划可审计”，但不会冒充 docs/knowledge 已经迁出；后续 apply 有清晰输入，且 closeout receipt、task-report-check、docs catalog 和 knowledge index 不会被静默破坏。
-- **来源**：2026-04-26 历史资产迁移 dry-run
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-128.md`](../../compass/knowledge/lessons/l-128.md)
 
 ### L-129: 父任务完成必须由聚合 gate 判断，不能由子任务 receipt 推断
-- **问题源**：长父任务被拆成多个子任务后，每个子任务都有自己的 report 和 receipt；如果没有父任务聚合规则，Agent 很容易把最近一个子任务 receipt 当成“整体任务完成”。
-- **解决方案**：建立 parent receipt aggregation policy，把 completed children、not-complete children、blocked-external、resource-limited、open 项和 allowed claim 写成机器可读表。checker 必须在 not-complete 项存在时强制 `parent_completion_allowed=false`，并要求每个未完成项都有原因和下一步。
-- **最后效果**：RedCap 可以诚实地说“P0/P1 若干子任务已完成”，但父任务仍会被 gate 标记为 not-eligible，直到所有子任务完成或显式关闭。
-- **来源**：2026-04-26 父任务 receipt 聚合 gate
-- **影响度**：high
-- **复现次数**：多次
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-129.md`](../../compass/knowledge/lessons/l-129.md)
 
 ### L-129A: receipt_glob 只是索引，不是完成证据
-- **问题源**：父任务聚合曾经只校验 completed child 的 report 是否存在、`receipt_glob` 形态是否合理；这能防止父任务误报 complete，却不能证明 glob 真实匹配了 runtime receipt，也不能证明 receipt 内容对应正确 child 和报告。
-- **解决方案**：把 parent receipt aggregation checker 升级为内容对应强门：根据 repo root 定位 runtime receipt 目录，至少找到一个匹配 receipt，并核对 `task_id`、`confirmed_hash`、`repo_path`、`status=completed`、`promise_pending=0`、`acceptance_status`、`report_path` 与 git head。当前 child closeout 前只允许由 `.dev-task.md` 明确锚定的 pre-receipt 例外，历史 child 不豁免。
-- **最后效果**：父任务账本不再把文件名模式当成证据；缺 receipt、错 receipt、过时 report 会在 spec/diagnose/acceptance 中 fail-closed。
-- **来源**：2026-04-28 Runtime receipt evidence correspondence hardening
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-28
+- 正文模块：[`compass/knowledge/lessons/l-129a.md`](../../compass/knowledge/lessons/l-129a.md)
 
 ### L-130: package readiness 要核对“声明的候选清单”和“真实打包面”
-- **问题源**：P2-1 开始建立 npm/package-style readiness 时，默认安全 gate 可以检查候选清单，但 `package.json.files` 的宽泛 glob 仍可能让真实 `npm pack` 包进未纳入候选清单的大文件或测试资产。
-- **解决方案**：package readiness 必须有机器可读 policy 生成精确 candidate list，并用 package safety gate 检查该清单；同时 `package.json` 必须保持 `private=true`，宽泛 tools glob 必须显式排除 `redcap-multi-session-acceptance.sh`，防止候选清单和真实包面分叉。
-- **最后效果**：RedCap 可以声明“package readiness 已可审计”，但不会冒充真实 publish；发布前仍需人工确认 registry / token / 包名，同时 package manifest 与 safety gate 会阻断本地私密信息和运行证据进入候选包。
-- **来源**：2026-04-26 Runtime / CLI / Package Readiness
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-130.md`](../../compass/knowledge/lessons/l-130.md)
 
 ### L-131: Prism provider 可用性要区分“慢启动”和“不可用”，Codex 只能做兜底
-- **问题源**：P2-3 复验时，Kimi 能稳定 pass，Claude Code 单独 probe 可 pass，但在统一 20 秒 availability refresh 中会因冷启动 / SessionEnd hook 噪声被误判 timeout；同时 Codex CLI 虽可作为强力 reviewer，却会消耗当前宿主资源，不能再进入普通 Prism roster。
-- **解决方案**：provider health probe 必须支持 provider-aware timeout，对 Claude Code 这类慢启动 CLI 给足最小探测时间；Prism provider policy 必须把 Codex 标记为 `last-resort`，availability / dispatch 在任一非 Codex provider 可用时拒绝 Codex 普通入队。Codex live probe 也必须显式 opt-in，避免健康嗅探自己制造嵌套 Agent 消耗。
-- **最后效果**：当前 Kimi + Claude Code 可形成非 Codex 双路 Prism quorum；Gemini timeout、Copilot frozen、Codex fallback-only 都被清单诚实记录。后续 provider 状态变化时，1 小时 TTL 清单会重新嗅探，但不会让 Codex 抢占常规评审位置。
-- **来源**：2026-04-26 Formal Prism quorum 恢复复验
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-26
+- 正文模块：[`compass/knowledge/lessons/l-131.md`](../../compass/knowledge/lessons/l-131.md)
+
+### L-132: 公共库远端绑定必须用最小白名单加 live 对账证明
+- 正文模块：[`compass/knowledge/lessons/l-132.md`](../../compass/knowledge/lessons/l-132.md)
+
+### L-133: 旧控制面 FAIL 不能污染当前 Prism pass 收口
+- 正文模块：[`compass/knowledge/lessons/l-133.md`](../../compass/knowledge/lessons/l-133.md)
 
 ### L-134: 公共库要区分“模板源、耐久本地仓库、远端仓库”
-- **问题源**：`shared-knowledge/` 被设计成 RedCap 仓库内的公共库模板源，因此没有 `.git`；上一轮远端初始化使用 `/tmp/redcap-arsenal-init` 临时仓库完成 push。用户看到模板目录没有 `.git` 时，会合理质疑“公共库到底放在哪里、又是怎么推送的”。
-- **解决方案**：公共知识库必须显式分三层：① `shared-knowledge/` 是 RedCap 内模板和验收 fixture；② `/Users/norven/.claude/skills/redcap-arsenal` 是本机耐久 Git 工作区；③ `https://gitee.com/norven63/redcap-arsenal.git` 是远端共享仓库。remote checker 增加 `--require-worktree`，收口时强制验证本地实体仓库 `.git`、origin、clean status、候选树和 Gitee live tree/content 一致。
-- **最后效果**：公共库不再只靠临时 push 工作区存在；`users/Norven/` 命名空间被模板、本地实体仓库和远端同时登记，后续真实沉淀可走 append-only、dedupe、index-first 流程，而不会把 RedCap 工作区私密内容误推到公共库。
-- **来源**：2026-04-27 redcap-arsenal 本地实体仓库与 Norven 命名空间
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-27
+- 正文模块：[`compass/knowledge/lessons/l-134.md`](../../compass/knowledge/lessons/l-134.md)
 
 ### L-135: 中插需求不能只入账，还要显性说明重排理由
-- **问题源**：P1-4 公共库中插需求处理后，技术结果和父任务边界基本正确，但用户仍合理追问“这是经过全景重排后立即执行，还是因为中插了就无脑高优执行”。这说明只有 `## 中插需求账本` 的处置字段还不够，缺少用户可见、后续可审计的决策依据。
-- **解决方案**：当 `.dev-task.md` 存在 `## 中插需求账本` 时，必须同时存在 `## 中插需求重排决策摘要`；每个 `U<n>` 都要写清 `处置`、`决策理由`、`全景影响`、`用户可见表达`，并由 `redcap-change-intake-check.sh` 校验处置与账本一致。重排解释必须接入 acceptance、PM Gate、diagnose、spec-check 和父任务聚合视图。
-- **最后效果**：后续中插需求不再只留下“做了什么”的表格，还必须留下“为什么这样排、影响了什么、应该如何向用户说明”的证据；这能降低用户靠反复盘问才能确认 Layer B 是否真的在工作流内运行的风险。
-- **来源**：2026-04-27 Layer B 中插需求重排决策可见化
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-27
+- 正文模块：[`compass/knowledge/lessons/l-135.md`](../../compass/knowledge/lessons/l-135.md)
 
 ### L-136: 通知通道要区分“机制收敛”和“外部 profile 可用”
-- **问题源**：RedCap 飞书通知曾同时保留 webhook、旧 profile、followup watcher 和 SessionEnd success 补发路径；用户明确只有 `cli_a9579f5b12219bb5` 能收到通知。排查时又发现本机 `lark-cli profile list` 里目标 profile 尚未注册，说明“代码想用哪个账号”和“本机真实可发”是两层不同问题。
-- **解决方案**：把 RedCap 官方通知收敛为 `references/feishu-notification-policy.json`：只允许 `lark_cli_dm`、`cli_a9579f5b12219bb5`、`node-report` / `manual-intervention`。`redcap-feishu-notification-policy-check.sh` 同时检查源码调用点和 ignored 本地配置；真实 profile 缺失时 fail-closed，不允许悄悄回退旧账号或 webhook。
-- **最后效果**：RedCap 不再因为旧配置漂移而发到 Norven 收不到的账号；但报告会诚实标注外部 `lark-cli` profile 仍需注册，避免把外部配置缺失冒充为已完成真实发送闭环。
-- **来源**：2026-04-27 首次启动身份初始化与飞书通知策略收敛
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-27
+- 正文模块：[`compass/knowledge/lessons/l-136.md`](../../compass/knowledge/lessons/l-136.md)
 
 ### L-137: 首次启动身份不能只停留在“读 identity”，还要写可复验本地状态面
-- **问题源**：复活协议已经知道 `~/.cap/identity.md` 是 Cap 的个人灵魂锚点，但 installer 只检查 identity 是否存在，没有把当前用户命名空间、Agent 摘要、公共沉淀库用户目录写成机器可读状态。新会话接盘时仍可能靠上下文记忆猜测 Norven/Cap 的关系。
-- **解决方案**：新增 `references/user-agent-identity-policy.json` 与 `redcap-user-agent-identity.sh`。installer 每次 revive 时写 ignored 的 `compass/.workflow/user-agent-identity.json`，并确保 `shared-knowledge/users/Norven` 与外部 `redcap-arsenal/users/Norven` 命名空间存在；私人 identity 全文仍不进入仓库。
-- **最后效果**：首次启动/复活可以通过脚本复验“当前用户是谁、当前 Agent 是谁、沉淀库该写到哪个用户目录”，而不需要默认全文导入私人 identity 或依赖长上下文记忆。
-- **来源**：2026-04-27 首次启动身份初始化与飞书通知策略收敛
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-27
+- 正文模块：[`compass/knowledge/lessons/l-137.md`](../../compass/knowledge/lessons/l-137.md)
 
 ### L-138: “暂不升级”也要有机器门禁
-- **问题源**：P3-1 长期写着 GraphRAG / 向量检索阈值研究 deferred，但 deferred 只有文字理由，缺少“什么规模下继续等待、什么规模下必须重新评估”的机器边界。后续 Agent 可能因为 GraphRAG 流行或用户提到 RAG，就过早引入复杂系统。
-- **解决方案**：把检索升级拆成路线和阈值：当前默认 `catalog + rg + metadata`，只统计索引和文件元数据，不默认读全文；当 shared-knowledge 条目数、体量、语义召回失败或关系型查询失败跨过策略阈值时，checker fail-closed，要求另开任务评估 FTS/RAG/GraphRAG。
-- **最后效果**：RedCap 可以诚实声明“当前不启用 RAG/GraphRAG 是经过机器可验阈值判断”，同时未来规模增长时不会悄悄继续沿用旧判断。
-- **来源**：2026-04-28 Retrieval escalation threshold policy
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-28
+- 正文模块：[`compass/knowledge/lessons/l-138.md`](../../compass/knowledge/lessons/l-138.md)
 
 ### L-139: 飞书不是内部审计日志
-- **问题源**：SessionEnd / Stop 内部审核缺口曾默认推送“Layer B审核失败”到飞书；这让 Norven 难以用飞书判断真正的节点汇报和最终完成结果，也把 RedCap 可自行记录和修复的控制面缺口误包装成人工介入。
-- **解决方案**：把人类状态面和内部审计面分层：飞书只保留 `node-report` 与真实 `manual-intervention`，且消息必须带“人工协助、阻塞状态、下一步可直接开始、任务全景图、当前位置”等固定字段；内部 audit gap 默认只写 pending closure / ledger / diagnostics，除非显式 `REDCAP_SESSION_END_NOTIFY_AUDIT_GAP=1`。
-- **最后效果**：后续内部审核失败不会默认刷屏飞书，但不会削弱 fail-closed 保护；中途汇报和飞书节点通知共用同一套状态面，用户能先看到是否需要自己介入、任务是否阻塞、下一步是什么。
-- **来源**：2026-04-29 Human communication and Feishu noise hardening
-- **影响度**：high
-- **复现次数**：多次
-- **最后命中**：2026-04-29
+- 正文模块：[`compass/knowledge/lessons/l-139.md`](../../compass/knowledge/lessons/l-139.md)
 
 ### L-140: 运行时证据目录不能用静态 exact count 当迁移门
-- **问题源**：P4-1 apply preflight 接入后，`prism/runs` 会因为 Prism 评审本身新增运行证据；如果 dry-run / preflight manifest 对这类运行时目录做静态精确计数，门禁会被自己的评审动作污染，出现“实现本身安全，但回归因动态证据增长失败”的假阴性。
-- **解决方案**：把 runtime evidence 与历史资产分开：`task-reports`、research、traces、knowledge、specs 等 file-level 历史资产继续 exact count；`prism-runs`、`runtime-working-dirs` 这类 collection-summary-only 目录只校验 snapshot integer、保留策略和清理/retention gate，不把动态数量当迁移安全证明。
-- **最后效果**：历史资产迁移安全门仍能阻断 delete/move/public export/路径逃逸/receipt anchor 破坏，同时不会因为棱镜评审、revive 或运行时状态写入导致自我污染式误报。
-- **来源**：2026-04-29 Historical asset migration apply preflight
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-29
+- 正文模块：[`compass/knowledge/lessons/l-140.md`](../../compass/knowledge/lessons/l-140.md)
 
 ### L-141: 通知降噪不能删除本地终态证据
-- **问题源**：飞书 audit-gap 通知默认降噪后，SessionEnd blocked/audit-gap 分支只写 pending closure，没有写本地 terminal marker；全量 acceptance 的 Layer B 并发用例因此无法证明每条会话已经到达稳定终态。
-- **解决方案**：人类通知和机器终态要分层处理：飞书降噪只影响外部消息，不得影响 runtime 本地 marker、pending closure、ledger 或 receipt 证据。SessionEnd 在通知被静默时也必须写 `layerB/alerted-head` 这类本地终止标记。
-- **最后效果**：用户不会再收到内部 audit-gap 飞书刷屏，但并发会话、SessionEnd 和 closeout 仍能用本地证据判断“已触达终态”，避免把降噪做成控制面失明。
-- **来源**：2026-04-29 Historical asset migration apply preflight 全量回归
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-29
+- 正文模块：[`compass/knowledge/lessons/l-141.md`](../../compass/knowledge/lessons/l-141.md)
 
 ### L-142: acceptance fixture 不能依赖真实当前任务卡
-- **问题源**：parent receipt 聚合和 spec lifecycle 的部分 acceptance fixture 依赖真实 `.dev-task.md` 或漏掉新增强门 stub；当当前任务从 P3-1 切到 P4-1，或 spec-check 新增 human communication 强门后，用例失败原因就从“被测机制”漂移成“夹具环境不完整”。
-- **解决方案**：验收夹具必须自带最小任务卡和完整依赖 stub，只把当前用例要验证的变量设为失败点。新增 spec-check 强门时，必须同步更新失败传播用例和所有会调用 spec-check 的夹具构造器。
-- **最后效果**：回归失败会更接近真实产品缺陷，而不是被当前会话状态、缺脚本或旧 fixture 偷换失败原因；长任务中插和任务切换也不会污染历史机制验收。
-- **来源**：2026-04-29 Historical asset migration apply preflight 全量回归
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-29
+- 正文模块：[`compass/knowledge/lessons/l-142.md`](../../compass/knowledge/lessons/l-142.md)
 
 ### L-143: “只处理安全项”的工具也必须先扫描危险项
-- **问题源**：历史资产迁移演练器第一版只筛出 `copy-first` 项执行沙箱复制；targeted acceptance 立即发现，如果同一个 manifest 混入 `move`，危险项可能因为“不在执行集合里”而没有被拒绝。
-- **解决方案**：任何 apply/rehearsal 工具都要分两层：第一层先扫描全量 manifest，拒绝 delete/move/public target/path traversal/unsafe flags；第二层才对允许集合执行实际动作。不能把“我不会执行它”当成“它可以留在计划里”。
-- **最后效果**：演练器现在会先全量审计，再执行 copy-first 沙箱演练；危险计划即使不属于本次执行集合，也会被 fail-closed 拦截。
-- **来源**：2026-04-30 Historical asset migration apply rehearsal
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-30
+- 正文模块：[`compass/knowledge/lessons/l-143.md`](../../compass/knowledge/lessons/l-143.md)
 
 ### L-144: 迁移演练要同时证明隔离环境和旧锚点不丢
-- **问题源**：temp-copy rehearsal 已经证明 copy-first 文件 hash 与 rollback 可行，但它没有证明真实 git worktree 隔离、main tree 状态不变、docs catalog 旧 task-report anchor 不丢，以及新 target 能通过 alias overlay 被定位。
-- **解决方案**：文件迁移进入 main-tree apply 前，必须先创建 detached throwaway git worktree，在隔离 worktree 内执行 copy-first、生成临时 docs catalog、验证旧 anchor、验证 alias overlay、新 target 与 rollback，再移除 worktree 并核对 main tree status digest 前后一致。
-- **最后效果**：RedCap 不再把“能复制文件”误当成“能安全迁移历史资产”；迁移安全证明同时覆盖执行环境、考古锚点、候选新路径和回滚边界。
-- **来源**：2026-04-30 Historical asset migration true worktree rehearsal
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-30
+- 正文模块：[`compass/knowledge/lessons/l-144.md`](../../compass/knowledge/lessons/l-144.md)
 
 ### L-145: 迁移 resolver 必须把“候选新路径”和“权威旧锚点”分开
-- **问题源**：历史资产迁移演练能产出 alias overlay，但如果没有持久 resolver，后续 Agent 很容易把 `redcap-knowledge/**` 候选路径误读为已经完成迁移，或在旧 `compass/docs/**` receipt/catalog anchor 仍是权威时提前删除、改写、全文搜索新路径。
-- **解决方案**：在真实 main-tree apply 前建立 durable alias resolver：旧路径保持 canonical/authoritative，新路径只作为 candidate target；resolver 生成结果必须绑定 worktree rehearsal hash 和 docs catalog，并在查询、spec、diagnose、acceptance 中拒绝 stale result、重复路径、缺失旧 catalog anchor、路径逃逸、公共库 target 和 target hash mismatch。
-- **最后效果**：RedCap 可以先获得可机器查询的路径解析层，又不会把“解析层可工作”冒充成“历史资产已经迁移”；后续 main-tree apply 风险窗口能基于同一 resolver 复审 receipt anchor、catalog 和 rollback。
-- **来源**：2026-04-30 Historical asset migration durable alias resolver
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-30
+- 正文模块：[`compass/knowledge/lessons/l-145.md`](../../compass/knowledge/lessons/l-145.md)
 
 ### L-146: copy-first apply 的 receipt 只能记录稳定事实，不能记录幂等命令过程数
-- **问题源**：main-tree copy-first apply 第一版把“本次命令刚复制了几个 target”写进 receipt summary；但同一个 receipt 做幂等复验时，target 已经存在，命令过程数天然从 54 变成 0，导致机器结果不稳定。
-- **解决方案**：把 receipt 改为只记录稳定事实：copy entries、applied/planned target 数、target hash、旧路径权威、rollback plan。一次性命令过程数只允许出现在 stdout，不进入需要长期 `--check-result` 对账的 receipt。
-- **最后效果**：main-tree apply receipt 可以反复验证而不因为“第一次执行”和“后续复验”的过程差异漂移；closeout、diagnose 和父任务聚合拿到的是稳定状态，而不是临时执行日志。
-- **来源**：2026-04-30 Historical asset migration main-tree copy-first apply
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-30
+- 正文模块：[`compass/knowledge/lessons/l-146.md`](../../compass/knowledge/lessons/l-146.md)
 
 ### L-147: 活跃任务报告不要参加同一轮历史资产迁移
-- **问题源**：历史资产迁移会复制 task report；但当前任务报告在执行、评审、回归、closeout 过程中会持续更新。如果它也被同一轮 copy-first 复制，source hash 会在复制后继续变化，制造自引用式 stale result。
-- **解决方案**：apply-plan 生成阶段跳过 `.dev-task.md` 当前 `task_report`，让活跃报告留在下一轮历史迁移处理；本轮只迁移已经稳定的历史报告和研究材料。
-- **最后效果**：当前任务可以继续更新报告和 closeout 证据，而不会污染本轮 copy-first target；历史资产迁移仍保持渐进式、安全可回滚。
-- **来源**：2026-04-30 Historical asset migration main-tree copy-first apply
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-04-30
+- 正文模块：[`compass/knowledge/lessons/l-147.md`](../../compass/knowledge/lessons/l-147.md)
 
 ### L-148: 长期聚合证据不能只放 `/tmp`
-- **问题源**：父任务 receipt aggregation 需要长期复验 completed child，但一批早期 closeout receipt 只写在 `/tmp/redcap/project/**`；当临时目录被清理后，父级聚合器会因为找不到历史 runtime receipt 而误失败。
-- **解决方案**：不要补造旧 receipt。对已知历史 child 使用显式 `legacy_evidence_status` 和 `legacy_evidence_reason` 说明非持久证据边界；对 P4-1/P4-3 等现代 child，要求真实 runtime receipt 或显式登记的 `references/**` repo-owned durable machine evidence，且 durable evidence 必须有 task_id 对应关系，不能借 legacy 绕过强门。
-- **最后效果**：父任务聚合恢复可复验，同时保留证据诚实性：旧证据不会被伪造，新任务缺 receipt 仍会 fail-closed。
-- **来源**：2026-05-03 Parent receipt durability reconciliation
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-05-03
+- 正文模块：[`compass/knowledge/lessons/l-148.md`](../../compass/knowledge/lessons/l-148.md)
 
 ### L-149: 发布前要审产品形态，不只审打包能力
-- **问题源**：`npm pack --dry-run`、package safety 和 clean workspace E2E 只能证明 RedCap 候选包能生成、候选文件未明显泄密、当前本机隔离场景可跑；它们不能证明 RedCap 已经是一个离开 Norven 本机后仍安全、独立、可调试、产品形态足够清晰的 public CLI/runtime。P4-2a 第一轮 Prism 还抓到包内文档泄漏本机路径、checker 用“必须永远有 blocker”自证、CLI 默认操作 package-root `.dev-task.md` 等问题，说明“能打包”如果被误报成“值得发布”，会掩盖更高层产品风险。
-- **解决方案**：把发布前审查拆成两层：release readiness 继续回答“候选包能不能安全生成”，pre-release product architecture gate 单独回答“现在像不像一个合格产品”。后者必须审 privacy safety、runtime/project/user boundary、CLI doctor/debug/trace、workspace context、source visibility、public arsenal claim、package identity/license，并允许诚实输出 release blocker / should-fix / deferred；checker 要从真实 package、CLI、arsenal 和 split 状态反推 finding 是否缺失，不能通过固定 blocker 数自证。
-- **最后效果**：RedCap 现在可以声明“P4-2a 产品架构审判完成”，但不能声明 public-release-ready；P4-2 public release 会被 5 个明确 release blocker 拦住，直到 runtime 边界、CLI 产品面、package 身份/license 和发布口径被真实修复或显式缩小。
-- **来源**：2026-05-04 P4-2a 发布前产品架构审判
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-05-04
+- 正文模块：[`compass/knowledge/lessons/l-149.md`](../../compass/knowledge/lessons/l-149.md)
 
 ### L-150: 信息架构治理要先定义边界，再谈目录清理
-- **问题源**：任务报告、私有知识、运行时证据、公共模板和外部 arsenal 曾经都被归入“docs/knowledge”这类粗粒度口径，导致用户很难判断哪些是人类结案证据、哪些是机器 receipt、哪些是私有归档、哪些可以公开沉淀。只靠口头解释会让后续 Agent 重新全文考古，继续制造 token 风险和目录膨胀。
-- **解决方案**：把 RedCap 信息资产按生命周期和出口边界建模：当前任务报告留在 active inbox，旧报告进入 private archive，Prism 运行目录是 ignored runtime evidence，`shared-knowledge/` 只是公共模板源，真正公共能力库由 RedCap Forge 脱敏、去重、结构化、索引化后再进入 `redcap-arsenal`。同时把这些边界接入 diagnose、spec-check、acceptance 与执行保障 registry。
-- **最后效果**：后续治理不再从“这个文件夹要不要清理”这种局部判断开始，而是先问“它属于哪个生命周期、能不能公开、谁会读取、何时归档”。这让 RedCap 可以继续保留考古能力，同时降低新会话误读、全文加载和私有内容外泄风险。
-- **来源**：2026-05-04 RedCap 信息架构与运行时产物治理
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-05-04
+- 正文模块：[`compass/knowledge/lessons/l-150.md`](../../compass/knowledge/lessons/l-150.md)
 
 ### L-151: 发布前结构手术要先拍片，再开刀
-- **问题源**：RedCap 进入 public CLI/npm 发布前结构重构深水区时，历史资产、receipt 锚点、Prism 证据、私有知识和 npm 包面容易被混成一个问题。如果为了“通过发布检测”先批量删除或移动历史资产，可能破坏考古证据；如果完全不检查包面，又无法判断哪些资产真的会污染发布物。
-- **解决方案**：把顺序固定为“npm 白名单预检 → 结构边界拆分 → 必要资产手术”。预检只读生成 package surface 和风险清单；历史资产默认 preserve-by-default，只有命中发布包面或 RedCap Forge 公共导出链路时才进入手术范围；父任务账本必须先纠正 stale 状态，防止后续任务继承假进度。
-- **最后效果**：RedCap 后续可以安全推进 P4-2b/c/d release blocker remediation，而不会把 npm dry-run 误报成 release-ready，也不会用历史资产清理掩盖 runtime/project/user 边界、CLI 产品面和 package identity/license 这些真正发布前阻塞项。
-- **来源**：2026-05-04 RedCap 发布前结构重构任务树重锚定
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-05-04
+- 正文模块：[`compass/knowledge/lessons/l-151.md`](../../compass/knowledge/lessons/l-151.md)
 
 ### L-152: CLI 化时必须先拆“工具位置”和“项目位置”
-- **问题源**：P4-2b 前，`bin/redcap status/diagnose/change-intake` 默认读取 RedCap package root 的 `.dev-task.md`。这在 RedCap 自开发时看似正常，但一旦作为 public CLI 安装到外部项目，就会把工具本体的开发现场误当成用户项目状态。
-- **解决方案**：CLI facade 必须先解析 runtime root、workspace root、task file 和 user state：外部项目默认使用调用者 workspace，RedCap 自开发模式允许 workspace 等于 runtime root；`closeout` 这类收尾命令也必须进入同一解析链。专项 checker 要用临时外部 workspace 和 RedCap 自开发场景同时回归，不能只做字符串检查。
-- **最后效果**：RedCap CLI 的任务类命令现在不会静默回退到 package-root 任务卡；status/diagnose 会展示三层边界，pre-release product architecture 的 workspace blocker 从 release-blocker 变为 pass，但 public release 仍被剩余 blocker 拦住。
-- **来源**：2026-05-05 P4-2b runtime/project/user 边界与 CLI workspace context
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-05-05
+- 正文模块：[`compass/knowledge/lessons/l-152.md`](../../compass/knowledge/lessons/l-152.md)
 
 ### L-153: CLI 诊断产品面不能复用内部门禁流水账
-- **问题源**：P4-2c 棱镜审查指出，如果 `redcap doctor` 只是 `diagnose` 改名，或者 `debug --json` 直接吐出现有状态对象，就会把内部 `[ok]/[fail]` 门禁噪声、本机绝对路径、identity 锚点和 host 配置细节暴露给外部用户或 Agent 容器。
-- **解决方案**：public CLI 诊断面必须独立定义产品契约：`doctor` 给人类可读摘要和下一步建议，`debug --json` 只输出稳定、脱敏、可解析字段，`--trace` 只打印 allowlist 路由信息，错误提示统一包含 cause、impact、suggested_action；这些契约必须由 checker 和 acceptance 回归验证。
-- **最后效果**：RedCap 可以关闭 `cli-debug-contract-incomplete` 这一发布前 blocker，而不会把“内部脚本可运行”误报成“公共 CLI 好用且安全”；后续 CLI 新命令也有了可复用的产品面验收模板。
-- **来源**：2026-05-05 P4-2c CLI 诊断产品面加固
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-05-05
+- 正文模块：[`compass/knowledge/lessons/l-153.md`](../../compass/knowledge/lessons/l-153.md)
 
 ### L-154: 公共包准备态不能冒充真实发布
-- **问题源**：P4-2d 需要把 npm 公共包身份推进到用户确认的 `@norven63/redcap`，但包名、许可证、`private=false`、`publish_allowed=true` 和 `npm publish` 分属不同风险层级。如果只改包名就宣称 release-ready，会把 readiness 准备、法律/产品决策和真实 registry 发布混成一件事。
-- **解决方案**：把 public package identity/surface 做成“准备态”强门：`package.json` 和 readiness policy 同步 `@norven63/redcap`，同时保持 `private=true`、`publish_allowed=false`、`license=UNLICENSED`；用 public package surface policy/checker 验证候选包面、禁入路径和人工 release 边界，并把 pre-release review 明确拆成 identity 已准备、publish/license 仍需独立 release 决策。
-- **最后效果**：RedCap 可以诚实声明“公共包身份和包面 readiness 已准备”，但仍会阻止“已发布、已选择许可证、已 public-release-ready”这类越权说法；后续正式发布必须另走 release task 和人工边界确认。
-- **来源**：2026-05-05 P4-2d public package identity/license/surface 准备
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-05-05
+- 正文模块：[`compass/knowledge/lessons/l-154.md`](../../compass/knowledge/lessons/l-154.md)
 
 ### L-155: 宿主 Hook 要区分“配置存在”和“物理触发”
-- **问题源**：Codex lifecycle hooks 接线后，`.codex/hooks.json` 能证明 RedCap 写了配置，却不能证明宿主已经 trust 项目、加载 feature flag 并真实执行 SessionStart/Stop。若直接把配置存在说成 ready，会重演“机制写在文档里但没有触发”的老问题。
-- **解决方案**：把宿主 Hook 接入拆成三层证据：RedCap-native 脚本是唯一信源；宿主配置只做薄适配；升级 ready 前必须跑 live marker E2E。对 Codex 还要继续拆分 Codex CLI 与 Codex.app interactive，CLI marker 通过不能外推到 App 交互面或 reply-veto。
-- **最后效果**：P2-16 现在有 `references/codex-live-marker-e2e.json` 证明本机 Codex CLI 会物理触发 SessionStart/Stop，同时状态面仍诚实保留 Codex.app interactive 未验证和完整 reply-veto 不支持的边界。
-- **来源**：2026-05-09 Codex lifecycle hooks candidate 接线
-- **影响度**：high
-- **复现次数**：1
-- **最后命中**：2026-05-09
+- 正文模块：[`compass/knowledge/lessons/l-155.md`](../../compass/knowledge/lessons/l-155.md)
+
+### L-156: 架构坏味治理不能只靠报告，必须绑定到索引、生命周期和检查器
+- 正文模块：[`compass/knowledge/lessons/l-156.md`](../../compass/knowledge/lessons/l-156.md)

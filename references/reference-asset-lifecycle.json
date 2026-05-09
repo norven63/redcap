@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "registry_id": "reference-asset-lifecycle",
+  "threshold_bytes": 20000,
+  "purpose": "Classify large/high-impact references so policies, ledgers, evidence and backlogs do not become an unowned pile.",
+  "entries": [
+    {
+      "path": "references/backlogs/redcap-architecture-smell-governance.json",
+      "bytes": 25918,
+      "asset_class": "backlog",
+      "lifecycle": "active-until-parent-closed-then-private-archive",
+      "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/execution-guarantees.json",
+      "bytes": 103359,
+      "asset_class": "control-plane-registry",
+      "lifecycle": "active-validator-registry",
+      "consumer_check": "bash compass/tools/redcap-execution-guarantee-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/file-lookup-dictionary-policy.json",
+      "bytes": 70571,
+      "asset_class": "lookup-index",
+      "lifecycle": "active-machine-and-human-index",
+      "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/file-lookup-dictionary.md",
+      "bytes": 77820,
+      "asset_class": "lookup-index",
+      "lifecycle": "active-machine-and-human-index",
+      "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/legacy-asset-delete-last-apply.json",
+      "bytes": 58146,
+      "asset_class": "legacy-migration-ledger",
+      "lifecycle": "retain-as-private-migration-evidence",
+      "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/legacy-asset-delete-last-preflight.json",
+      "bytes": 115273,
+      "asset_class": "legacy-migration-ledger",
+      "lifecycle": "retain-as-private-migration-evidence",
+      "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/legacy-asset-migration-alias-resolver.json",
+      "bytes": 47831,
+      "asset_class": "legacy-migration-ledger",
+      "lifecycle": "retain-as-private-migration-evidence",
+      "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/legacy-asset-migration-apply-plan.json",
+      "bytes": 285925,
+      "asset_class": "legacy-migration-ledger",
+      "lifecycle": "retain-as-private-migration-evidence",
+      "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/legacy-asset-migration-apply-rehearsal.json",
+      "bytes": 38000,
+      "asset_class": "legacy-migration-ledger",
+      "lifecycle": "retain-as-private-migration-evidence",
+      "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/legacy-asset-migration-main-tree-apply.json",
+      "bytes": 60946,
+      "asset_class": "legacy-migration-ledger",
+      "lifecycle": "retain-as-private-migration-evidence",
+      "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/legacy-asset-migration-worktree-rehearsal.json",
+      "bytes": 41963,
+      "asset_class": "legacy-migration-ledger",
+      "lifecycle": "retain-as-private-migration-evidence",
+      "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/redcap-knowledge-cold-archive-inventory.json",
+      "bytes": 25481,
+      "asset_class": "cold-archive-inventory",
+      "lifecycle": "generated-private-archive-index",
+      "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/redcap-parent-task-ledger.md",
+      "bytes": 37397,
+      "asset_class": "parent-task-ledger",
+      "lifecycle": "active-parent-state-ledger",
+      "consumer_check": "bash compass/tools/redcap-parent-receipt-aggregation-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    }
+  ]
+}

@@ -91,6 +91,8 @@ def mitigation_for(rel_path: str, size: int) -> str | None:
         return "entry-no-large-auto-import-and-targeted-rg"
     if rel_path.startswith("references/backlogs/"):
         return "current-status-backlog-summary"
+    if rel_path == "references/legacy-asset-migration-apply-plan.json":
+        return "file-lookup-dictionary-and-apply-preflight-check"
     if rel_path.startswith("prism/") and not rel_path.startswith("prism/runs/"):
         return "prism-protocol-targeted-read"
     if size < TRACKED_HARD_BYTES:

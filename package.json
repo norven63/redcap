@@ -60,7 +60,7 @@
     "!compass/tools/redcap-forge-check.*",
     "prism/tools/*.sh",
     "prism/tools/*.py",
-    "!prism/README.md",
+    "prism/README.md",
     "references/*.json",
     "!references/agent-reading-absorption-policy.json",
     "!references/clean-workspace-install-e2e.json",

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "matrix_id": "redcap-release-readiness-e2e-matrix",
+  "status": "pre-release-ready-to-run-not-published",
+  "purpose": "Define the test matrix that must pass before a future formal npm/public release task can change publish switches or run npm publish.",
+  "environments": [
+    {
+      "id": "source-worktree-self-development",
+      "status": "covered",
+      "required_checks": [
+        "bash compass/tools/redcap-spec-check.sh \"$PWD\"",
+        "bash compass/tools/redcap-diagnose.sh"
+      ]
+    },
+    {
+      "id": "clean-workspace-local-install",
+      "status": "covered",
+      "required_checks": [
+        "bash compass/tools/redcap-clean-workspace-e2e.sh --check-result"
+      ]
+    },
+    {
+      "id": "npm-pack-dry-run",
+      "status": "covered",
+      "required_checks": [
+        "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
+        "bash compass/tools/redcap-public-package-surface.sh"
+      ]
+    },
+    {
+      "id": "multi-os-external-machine",
+      "status": "deferred-to-formal-release-task",
+      "required_checks": [
+        "Run on target OS/machine after release task explicitly provisions credentials and install channel."
+      ]
+    }
+  ],
+  "manual_release_boundaries": [
+    "License selection",
+    "npm credentials and registry login",
+    "package.json private=false",
+    "runtime-package-readiness publish_allowed=true",
+    "npm publish"
+  ]
+}

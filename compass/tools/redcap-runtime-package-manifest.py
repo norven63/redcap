@@ -17,6 +17,7 @@ from typing import Any, Iterable
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_POLICY = ROOT / "references/runtime-package-readiness-policy.json"
 PACKAGE_SAFETY = ROOT / "compass/tools/redcap-package-publish-safety-check.sh"
+PACKAGE_SAFETY_POLICY = ROOT / "references/package-publish-safety-policy.json"
 
 
 def fail(message: str) -> None:
@@ -139,6 +140,22 @@ def validate_package_json(root: Path, policy: dict[str, Any]) -> None:
             fail(f"package.json files whitelist missing required entry: {required}")
     if "compass/tools/redcap-*.sh" in file_patterns and "!compass/tools/redcap-multi-session-acceptance.sh" not in file_patterns:
         fail("package.json files whitelist must exclude redcap-multi-session-acceptance.sh from broad tool globs")
+    positive_patterns = [item for item in file_patterns if not item.startswith("!")]
+    negative_patterns = [item[1:] for item in file_patterns if item.startswith("!")]
+    expected_positive = [item for item in require_text_list(policy, "candidate_globs") if item != "package.json"]
+    expected_negative = require_text_list(policy, "exclude_globs")
+    if positive_patterns != expected_positive:
+        fail("package.json files positive whitelist must exactly mirror runtime candidate_globs except implicit package.json")
+    if negative_patterns != expected_negative:
+        fail("package.json files exclusions must exactly mirror runtime exclude_globs")
+
+
+def validate_publish_safety_policy(root: Path, policy: dict[str, Any]) -> None:
+    safety_policy = load_json(PACKAGE_SAFETY_POLICY)
+    if safety_policy.get("default_package_globs") != require_text_list(policy, "candidate_globs"):
+        fail("publish safety default_package_globs must mirror runtime candidate_globs")
+    if safety_policy.get("default_exclude_globs") != require_text_list(policy, "exclude_globs"):
+        fail("publish safety default_exclude_globs must mirror runtime exclude_globs")
 
 
 def validate_npmignore(root: Path) -> None:
@@ -231,6 +248,7 @@ def main() -> int:
     policy = load_json(policy_path)
     globs, excludes, required = validate_policy(policy)
     validate_package_json(root, policy)
+    validate_publish_safety_policy(root, policy)
     validate_npmignore(root)
     candidates = expand_candidates(root, globs, excludes)
     validate_required(candidates, required)

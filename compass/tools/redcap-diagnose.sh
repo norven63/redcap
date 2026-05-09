@@ -133,6 +133,9 @@ run_source_check "layerb-lifecycle-contract" bash "$SCRIPT_DIR/redcap-layerb-lif
 run_source_check "layerb-fsm" bash "$SCRIPT_DIR/redcap-layerb-fsm-check.sh" || overall=1
 run_check "layerb-closeout-runtime" bash "$SCRIPT_DIR/redcap-layerb-closeout-runtime-check.sh" "$TASK_FILE" || overall=1
 run_source_check "token-risk-audit" bash "$SCRIPT_DIR/redcap-token-risk-audit.sh" || overall=1
+run_source_check "architecture-smell-governance" bash "$SCRIPT_DIR/redcap-architecture-smell-governance-check.sh" || overall=1
+run_source_check "reference-asset-lifecycle" bash "$SCRIPT_DIR/redcap-reference-asset-lifecycle.sh" check || overall=1
+run_source_check "layer-boundary" bash "$SCRIPT_DIR/redcap-layer-boundary-check.sh" || overall=1
 run_check "tracking-health" bash "$SCRIPT_DIR/redcap-tracking-health.sh" "$TASK_FILE" || overall=1
 run_check "intent-coverage" bash "$SCRIPT_DIR/redcap-intent-coverage-check.sh" "$TASK_FILE" || overall=1
 run_check "change-intake" bash "$SCRIPT_DIR/redcap-change-intake-check.sh" "$TASK_FILE" --mode closeout || overall=1
@@ -170,6 +173,7 @@ fi
 run_source_check "parent-receipt-aggregation" bash "$SCRIPT_DIR/redcap-parent-receipt-aggregation-check.sh" || overall=1
 run_source_check "shared-knowledge" bash "$SCRIPT_DIR/redcap-shared-knowledge-check.sh" || overall=1
 run_source_check "shared-knowledge-remote-binding" bash "$SCRIPT_DIR/redcap-shared-knowledge-remote-check.sh" || overall=1
+run_source_check "arsenal-version-binding" bash "$SCRIPT_DIR/redcap-arsenal-version-binding-check.sh" || overall=1
 run_source_check "information-architecture" bash "$SCRIPT_DIR/redcap-information-architecture-check.sh" || overall=1
 run_source_check "redcap-forge" bash "$SCRIPT_DIR/redcap-forge-check.sh" || overall=1
 run_source_check "public-arsenal-claim-boundary" bash "$SCRIPT_DIR/redcap-public-arsenal-claim-boundary.sh" || overall=1
@@ -177,6 +181,9 @@ run_source_check "public-distillation-preflight" bash "$SCRIPT_DIR/redcap-public
 run_source_check "agent-reading-absorption" bash "$SCRIPT_DIR/redcap-agent-reading-absorption-check.sh" || overall=1
 run_source_check "llm-wiki-asset-stratification" bash "$SCRIPT_DIR/redcap-llm-wiki-asset-stratification-check.sh" || overall=1
 run_source_check "llm-wiki-lite" bash "$SCRIPT_DIR/redcap-llm-wiki-lite-check.sh" || overall=1
+run_source_check "knowledge-gateway" bash "$SCRIPT_DIR/redcap-knowledge-gateway.sh" check || overall=1
+run_source_check "cold-archive-inventory" bash "$SCRIPT_DIR/redcap-cold-archive-inventory.sh" check || overall=1
+run_source_check "full-llm-wiki-roadmap" bash "$SCRIPT_DIR/redcap-full-llm-wiki-roadmap-check.sh" || overall=1
 run_source_check "retrieval-escalation" bash "$SCRIPT_DIR/redcap-retrieval-escalation-check.sh" || overall=1
 run_check "user-agent-identity" bash "$SCRIPT_DIR/redcap-user-agent-identity.sh" check --local || overall=1
 run_source_check "feishu-inbox" bash "$SCRIPT_DIR/redcap-feishu-inbox.sh" check || overall=1
@@ -185,6 +192,7 @@ run_check "human-communication" bash "$SCRIPT_DIR/redcap-human-communication-che
 run_check "package-publish-safety" bash "$SCRIPT_DIR/redcap-package-publish-safety-check.sh" || overall=1
 run_check "runtime-package-manifest" bash "$SCRIPT_DIR/redcap-runtime-package-manifest.sh" --check || overall=1
 run_check "public-package-surface" bash "$SCRIPT_DIR/redcap-public-package-surface.sh" || overall=1
+run_check "release-e2e-matrix" bash "$SCRIPT_DIR/redcap-release-e2e-matrix-check.sh" || overall=1
 run_check "pre-release-product-architecture" bash "$SCRIPT_DIR/redcap-pre-release-product-architecture-check.sh" || overall=1
 run_check "pre-release-structure-task-tree" bash "$SCRIPT_DIR/redcap-pre-release-structure-task-tree-check.sh" || overall=1
 run_check "runtime-workspace-boundary" bash "$SCRIPT_DIR/redcap-runtime-workspace-boundary-check.sh" || overall=1

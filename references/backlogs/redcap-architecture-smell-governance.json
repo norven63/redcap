@@ -1,0 +1,498 @@
+{
+  "version": 1,
+  "backlog_id": "redcap-architecture-smell-governance",
+  "title": "RedCap architecture smell governance backlog",
+  "status": "implemented-pending-final-review-and-closeout",
+  "created_at": "2026-05-09",
+  "owner_scope": "redcap-self",
+  "purpose": "Capture the architecture, knowledge, evidence, runtime, and productization smells found during the post-P4-2k global review so later work can close them deliberately instead of rediscovering them from chat context.",
+  "source_context": [
+    "The non-release pre-publication productization task is closed, but the user asked for a senior AI Agent engineering review beyond task-completion bookkeeping.",
+    "The directory/knowledge-layer concern is treated as an example, not as the whole problem space.",
+    "This backlog intentionally separates active commitments from improvement candidates. Items here are not automatically completed work and must be opened as implementation slices before being claimed done."
+  ],
+  "priority_semantics": {
+    "P0": "Should be handled before any serious public release readiness claim because it affects retrieval correctness, truth-source clarity, or future task reliability.",
+    "P1": "High-value productization or architecture debt; safe to schedule after P0, but should not be allowed to drift indefinitely.",
+    "P2": "Important governance hardening; not blocking current local usage, but prevents future entropy.",
+    "P3": "Longer-horizon capability or scale work; keep visible and threshold-triggered."
+  },
+  "tranches": [
+    {
+      "id": "T0",
+      "title": "Fast consistency and truth-surface repairs",
+      "intent": "Fix low-cost drift that misleads humans or agents even when runtime checks pass.",
+      "items": [
+        "RASG-003",
+        "RASG-007",
+        "RASG-009"
+      ]
+    },
+    {
+      "id": "T1",
+      "title": "Knowledge architecture foundations",
+      "intent": "Turn the current multi-root knowledge layout into a deliberate federated retrieval system instead of a loose pile of knowledge directories.",
+      "items": [
+        "RASG-001",
+        "RASG-002",
+        "RASG-004",
+        "RASG-014"
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "Policy, evidence, and legacy-asset hygiene",
+      "intent": "Reduce policy sprawl, evidence accumulation, and old/new transition ambiguity without damaging archaeology.",
+      "items": [
+        "RASG-005",
+        "RASG-008",
+        "RASG-013"
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "Runtime and host-adapter productization",
+      "intent": "Move from skill-root compatibility to a cleaner installable runtime and host-adapter shape.",
+      "items": [
+        "RASG-006",
+        "RASG-012",
+        "RASG-016"
+      ]
+    },
+    {
+      "id": "T4",
+      "title": "Advanced memory and shared arsenal evolution",
+      "intent": "Keep full LLM-wiki, retrieval escalation, and public arsenal maturity visible without prematurely enabling heavyweight memory systems.",
+      "items": [
+        "RASG-010",
+        "RASG-011",
+        "RASG-015"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "RASG-001",
+      "title": "Split the giant lessons.md into indexed topic modules",
+      "priority": "P0",
+      "category": "knowledge-architecture",
+      "problem_source": "compass/knowledge/lessons.md is an active private knowledge file of about 198KB, making it a single-file retrieval and token-pressure hotspot.",
+      "risk": "Index-first rules mitigate bulk-loading, but the physical single-file shape still degrades grep precision, makes exact slicing hard, and will get worse as lessons grow.",
+      "desired_outcome": "Lessons become a topic-indexed, small-file knowledge set with stable IDs, source anchors, and a human-readable index. No lesson should be lost or silently rewritten.",
+      "implementation_notes": [
+        "Design a reversible split plan before moving content.",
+        "Keep old L-number anchors resolvable through an alias map.",
+        "Update knowledge index, token-risk audit, and any lesson lookup checks."
+      ],
+      "acceptance": [
+        "No default import reads the old monolith.",
+        "Existing lesson references still resolve.",
+        "Knowledge index check and token-risk audit pass."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "compass/knowledge/lessons.md",
+        "compass/knowledge/lessons/",
+        "compass/tools/redcap-knowledge-index-check.sh",
+        "references/token-structural-governance.json"
+      ]
+    },
+    {
+      "id": "RASG-002",
+      "title": "Create a federated knowledge lookup route across active knowledge, LLM-wiki-lite, cold archive, and public arsenal",
+      "priority": "P0",
+      "category": "retrieval-architecture",
+      "problem_source": "RedCap currently has compass/knowledge, redcap-knowledge, shared-knowledge, and external redcap-arsenal with defined roles but no single user-facing lookup route.",
+      "risk": "Agents may either miss relevant cold/public knowledge or over-scan multiple roots, recreating the token and context-pollution problem through a different path.",
+      "desired_outcome": "A single knowledge gateway policy and command explain where to search first, when to fall back, and when exact-body reads are allowed.",
+      "implementation_notes": [
+        "Define route order: active index, LLM-wiki-lite metadata, public arsenal catalog, cold archive catalog, exact evidence.",
+        "Make cold archive fallback explicit and measurable.",
+        "Keep source files authoritative; derived summaries must not replace truth sources."
+      ],
+      "acceptance": [
+        "A user or agent can answer where to look for each knowledge class without reading multiple README files.",
+        "Spec/diagnose can validate the route policy.",
+        "The route prevents default full-corpus loading."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/knowledge-gateway-policy.json",
+        "compass/tools/redcap-knowledge-gateway.sh",
+        "compass/tools/redcap-knowledge-gateway.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ]
+    },
+    {
+      "id": "RASG-003",
+      "title": "Fix shared-knowledge template README drift against external redcap-arsenal state",
+      "priority": "P0",
+      "category": "truth-surface-consistency",
+      "problem_source": "shared-knowledge/README.md still says template-only while the external redcap-arsenal worktree already contains Forge-reviewed substantive entries.",
+      "risk": "Humans or agents may treat shared-knowledge as the real public repository state and make wrong write/read decisions.",
+      "desired_outcome": "The template README clearly distinguishes the template source from the external arsenal worktree and states that the external worktree may contain reviewed entries.",
+      "implementation_notes": [
+        "Do not move public entries back into shared-knowledge.",
+        "Reference shared-knowledge-remote-binding as the state source for external worktree status.",
+        "Keep claims conservative: first reviewed sample set, not mature public knowledge base."
+      ],
+      "acceptance": [
+        "No template-only wording contradicts reviewed-substantive external state.",
+        "Public-arsenal claim boundary check still passes."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "shared-knowledge/README.md",
+        "references/public-arsenal-claim-boundary-policy.json",
+        "compass/tools/redcap-public-arsenal-claim-boundary.py"
+      ]
+    },
+    {
+      "id": "RASG-004",
+      "title": "Triage redcap-knowledge cold archive into preserve, translate, or prune classes",
+      "priority": "P1",
+      "category": "legacy-asset-governance",
+      "problem_source": "redcap-knowledge contains about 69 files and nearly 1MB of private cold archive content, larger than the active knowledge layer.",
+      "risk": "Cold archive may hide valuable reusable knowledge, stale private reports, or dead evidence. Without triage, the archive becomes a silent maintenance burden.",
+      "desired_outcome": "Each cold archive asset has a lifecycle class: preserve for archaeology, translate into active/public knowledge through Forge, or prune when safe.",
+      "implementation_notes": [
+        "Start with inventory and metadata; do not bulk-read everything into the main context.",
+        "Preserve evidence needed by receipts, reports, and architecture traces.",
+        "Use RedCap Forge for any public distillation."
+      ],
+      "acceptance": [
+        "Cold archive inventory is machine-readable.",
+        "No raw private archive is exported to public arsenal.",
+        "Prune candidates are dry-run reviewed before apply."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/redcap-knowledge-cold-archive-inventory.json",
+        "compass/tools/redcap-cold-archive-inventory.sh",
+        "compass/tools/redcap-cold-archive-inventory.py",
+        "references/knowledge-gateway-policy.json"
+      ]
+    },
+    {
+      "id": "RASG-005",
+      "title": "De-sprawl references into authority policy, active configuration, and historical migration evidence",
+      "priority": "P1",
+      "category": "control-plane-architecture",
+      "problem_source": "references has 66 files and more than 1MB of mixed policy, migration manifests, one-off plans, and long-lived control truth.",
+      "risk": "A directory named references becomes a policy junk drawer; future agents cannot tell which files are executable authority and which are historical evidence.",
+      "desired_outcome": "References have explicit classes and retrieval routes; one-off migration evidence is not confused with active policy.",
+      "implementation_notes": [
+        "Do not physically move high-risk files before alias and consumer checks exist.",
+        "Prefer catalog/classification first, then migration in small reversible slices.",
+        "Keep file lookup dictionary in sync."
+      ],
+      "acceptance": [
+        "Each large reference file has a class and lifecycle.",
+        "Spec-check and file lookup dictionary checks pass.",
+        "No active policy loses its consumer."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/reference-asset-lifecycle.json",
+        "compass/tools/redcap-reference-asset-lifecycle.sh",
+        "compass/tools/redcap-reference-asset-lifecycle.py",
+        "references/file-lookup-dictionary.md"
+      ]
+    },
+    {
+      "id": "RASG-006",
+      "title": "Complete or explicitly block full runtime physical split before public release",
+      "priority": "P1",
+      "category": "runtime-productization",
+      "problem_source": "runtime/ currently provides package-visible wrappers and an import map, while authoritative tools still live under root compass/prism paths.",
+      "risk": "Publishing this shape as a public runtime may freeze compatibility wrappers as public API and make later physical split a breaking change.",
+      "desired_outcome": "Either complete a real runtime-core split, or make the wrapper-based shape an explicit alpha contract with clear non-stability boundaries.",
+      "implementation_notes": [
+        "Do not move tool trees in a single large patch.",
+        "First map runtime-required tools, host adapters, and source-maintainer-only tools.",
+        "Keep clean workspace E2E and package publish safety in the loop."
+      ],
+      "acceptance": [
+        "Release readiness can explain whether runtime is physically split or intentionally alpha-wrapper-based.",
+        "No hidden dependency on Norven's local skill-root path remains in packaged commands."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/runtime-workspace-boundary-policy.json",
+        "compass/tools/redcap-runtime-workspace-boundary-check.sh",
+        "references/redcap-system-layers.md",
+        "references/public-release-handoff.md"
+      ]
+    },
+    {
+      "id": "RASG-007",
+      "title": "Make package surface include/exclude rules single-source generated",
+      "priority": "P1",
+      "category": "release-safety",
+      "problem_source": "package.json files and runtime/package safety policies are currently checked for drift, but the include/exclude list still exists in multiple places.",
+      "risk": "Manual duplication can drift silently between package.json, runtime package policy, and publish-safety policy before a future release.",
+      "desired_outcome": "One machine-readable source generates or validates all package include/exclude surfaces.",
+      "implementation_notes": [
+        "Resolve the current special-case difference where package.json omits package.json implicitly and excludes prism/README.md while policy candidates mention it.",
+        "Fail closed if generated and checked surfaces differ."
+      ],
+      "acceptance": [
+        "Package manifest, public package surface, and publish safety read from the same source or prove exact equivalence.",
+        "npm pack dry-run still passes."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "compass/tools/redcap-runtime-package-manifest.py",
+        "package.json",
+        "references/runtime-package-readiness-policy.json",
+        "references/package-publish-safety-policy.json"
+      ]
+    },
+    {
+      "id": "RASG-008",
+      "title": "Add stronger prism/runs evidence rotation, compression, and lookup policy",
+      "priority": "P2",
+      "category": "evidence-lifecycle",
+      "problem_source": "prism/runs contains about 599 files and 8.5MB of raw run evidence, with only one currently pruneable local-evidence directory.",
+      "risk": "Gitignore prevents repo bloat, but local evidence can still become unreadable and expensive to scan.",
+      "desired_outcome": "Formal evidence remains replayable while raw bulky output is timeboxed, compressed, or summarized through indexes.",
+      "implementation_notes": [
+        "Preserve referenced formal runs by default.",
+        "Compress or prune only after lifecycle classification.",
+        "Expose a human-readable inventory summary."
+      ],
+      "acceptance": [
+        "prism-runs-lifecycle can report, dry-run, and safely apply approved cleanup.",
+        "No bound evidence referenced by reports is deleted."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "prism/tools/prism-runs-lifecycle.py",
+        "prism/tools/prism-runs-lifecycle.sh",
+        "prism/README.md"
+      ]
+    },
+    {
+      "id": "RASG-009",
+      "title": "Improve closeout final-state observability when earlier retries failed",
+      "priority": "P2",
+      "category": "workflow-observability",
+      "problem_source": "A previous on-complete retry failure can remain in audit logs even when a later receipt successfully closes the task.",
+      "risk": "External reviewers may see a failed audit and misread it as the final task state.",
+      "desired_outcome": "Status surfaces clearly show final state, previous failed attempts, and the successful repair/closure sequence.",
+      "implementation_notes": [
+        "Do not hide failed attempts.",
+        "Group attempts under a final-state timeline.",
+        "Make current-status and closeout status agree on the final outcome."
+      ],
+      "acceptance": [
+        "A user can tell at a glance that the task is completed despite earlier failed attempts.",
+        "Failed attempts remain auditable."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "compass/tools/redcap-layerb-closeout-runtime.py",
+        "closeout-cap.sh"
+      ]
+    },
+    {
+      "id": "RASG-010",
+      "title": "Promote full LLM-wiki from sleeping future item to a thresholded active roadmap",
+      "priority": "P1",
+      "category": "long-term-memory",
+      "problem_source": "LLM-wiki-lite exists with a private non-authoritative entry, while full LLM-wiki, background distillation, FTS/RAG/GraphRAG remain future thresholded capabilities.",
+      "risk": "The capability is not lost in machine files, but it can become invisible in day-to-day planning and never get activated when conditions are met.",
+      "desired_outcome": "Full LLM-wiki has explicit activation criteria, owner gates, non-goals, and a first implementation tranche that does not prematurely enable heavy RAG.",
+      "implementation_notes": [
+        "Keep LLM-wiki non-authoritative and source-anchored.",
+        "Separate full LLM-wiki product work from RAG/GraphRAG backend escalation.",
+        "Avoid turning semantic summaries into truth sources."
+      ],
+      "acceptance": [
+        "Roadmap status is visible in current-status or backlog views.",
+        "Threshold crossing opens a task instead of silently enabling heavy retrieval.",
+        "LLM-wiki-lite checks continue to pass."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/full-llm-wiki-roadmap.json",
+        "compass/tools/redcap-full-llm-wiki-roadmap-check.sh",
+        "compass/tools/redcap-full-llm-wiki-roadmap-check.py"
+      ]
+    },
+    {
+      "id": "RASG-011",
+      "title": "Enforce retrieval observation metrics for FTS, RAG, and GraphRAG escalation",
+      "priority": "P2",
+      "category": "retrieval-governance",
+      "problem_source": "retrieval-escalation-policy defines thresholds, but observation metrics depend on future reports recording retrieval misses.",
+      "risk": "Thresholded architecture can degrade into subjective judgment if misses are not consistently recorded.",
+      "desired_outcome": "Real retrieval misses and noisy lookup events are recorded in a structured place and checked before route escalation.",
+      "implementation_notes": [
+        "Add lightweight observation logging to task reports or current-status-compatible policy state.",
+        "Do not count guesses as misses.",
+        "Keep RAG/GraphRAG opt-in until thresholds and Prism review pass."
+      ],
+      "acceptance": [
+        "A task that reports retrieval failure updates observation metrics or explains why not.",
+        "retrieval-escalation-check enforces the rule."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/retrieval-escalation-policy.json",
+        "compass/tools/redcap-retrieval-escalation-check.sh",
+        "compass/tools/redcap-retrieval-escalation-check.py"
+      ]
+    },
+    {
+      "id": "RASG-012",
+      "title": "Unify host-adapter entry generation and avoid copied rule drift",
+      "priority": "P2",
+      "category": "host-adapter-architecture",
+      "problem_source": "AGENTS.md, CLAUDE.md, GEMINI.md, .github/copilot-instructions.md, and runtime host adapters coexist with root-level host directories.",
+      "risk": "Host-specific entry files can drift, and future adapters may duplicate RedCap authority rules instead of pointing to the same source.",
+      "desired_outcome": "Host adapters are generated or verified from a single source and remain thin entry points.",
+      "implementation_notes": [
+        "Do not assume all hosts support the same hook strength.",
+        "Keep host capability matrix explicit.",
+        "Preserve Codex.app host-limited boundaries."
+      ],
+      "acceptance": [
+        "Adapter drift is machine-detectable.",
+        "Host entries do not duplicate long rule bodies."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/skill-lifecycle-policy.json",
+        "compass/tools/redcap-skill-lifecycle-check.sh",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md"
+      ]
+    },
+    {
+      "id": "RASG-013",
+      "title": "Review Layer A loom legacy assets against modern Layer B and Prism architecture",
+      "priority": "P2",
+      "category": "legacy-architecture",
+      "problem_source": "loom still contains Layer A dispatcher roles, adapters, and reports while Layer B now uses a different FSM/receipt/Prism control model.",
+      "risk": "Old Dispatcher concepts can confuse RedCap self-development semantics and make new contributors believe Layer A and Layer B share the same runtime entry.",
+      "desired_outcome": "Layer A assets are either clearly retained for external user-project workflows, migrated, or archived with compatibility notes.",
+      "implementation_notes": [
+        "Do not delete Layer A simply because Layer B is newer.",
+        "Document the distinction in a human-readable system map.",
+        "Check references before moving anything."
+      ],
+      "acceptance": [
+        "Layer A vs Layer B ownership is obvious from file lookup and README surfaces.",
+        "No Layer A command used by acceptance tests breaks."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/layera-layerb-boundary-policy.json",
+        "compass/tools/redcap-layer-boundary-check.sh",
+        "compass/tools/redcap-layer-boundary-check.py",
+        "references/redcap-system-layers.md"
+      ]
+    },
+    {
+      "id": "RASG-014",
+      "title": "Automate active task-report rotation from compass/docs to private archive",
+      "priority": "P2",
+      "category": "docs-lifecycle",
+      "problem_source": "compass/docs/task-reports is capped by policy, but reports still accumulate in the active docs inbox until lifecycle work moves them.",
+      "risk": "The active docs area can become a date-sorted report pile and confuse current docs with historical evidence.",
+      "desired_outcome": "Recent reports stay visible; older reports move to redcap-knowledge with catalog and alias preservation.",
+      "implementation_notes": [
+        "Use dry-run first.",
+        "Keep docs catalog and links valid.",
+        "Do not break receipt report_path references."
+      ],
+      "acceptance": [
+        "Active report count remains within policy.",
+        "Archived reports remain discoverable by catalog/alias."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/information-architecture-artifact-governance-policy.json",
+        "compass/tools/redcap-information-architecture-check.sh",
+        "compass/tools/redcap-docs-catalog.sh",
+        "redcap-knowledge/task-reports/"
+      ]
+    },
+    {
+      "id": "RASG-015",
+      "title": "Define version coupling between RedCap runtime and external redcap-arsenal",
+      "priority": "P2",
+      "category": "shared-knowledge-versioning",
+      "problem_source": "The external redcap-arsenal repo is separate from RedCap runtime but can contain entries referenced by RedCap reports, policies, or future skills.",
+      "risk": "A runtime version may depend on knowledge entries whose external state has moved, making reproducibility unclear.",
+      "desired_outcome": "RedCap records which arsenal commit/head was validated and how runtime releases reference compatible arsenal states.",
+      "implementation_notes": [
+        "Do not force redcap-arsenal into the RedCap repo.",
+        "Use remote binding last_verified and optional tags or manifest pins.",
+        "Keep append-only public entry rules."
+      ],
+      "acceptance": [
+        "A release-readiness check can report the validated arsenal head.",
+        "Arsenal drift is visible and fail-closed when required."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/shared-knowledge-remote-binding.json",
+        "compass/tools/redcap-arsenal-version-binding-check.sh",
+        "compass/tools/redcap-arsenal-version-binding-check.py"
+      ]
+    },
+    {
+      "id": "RASG-016",
+      "title": "Expand clean workspace E2E from same-machine clone to release-grade environment matrix",
+      "priority": "P3",
+      "category": "release-readiness",
+      "problem_source": "Clean workspace E2E passes locally, but broader release confidence requires different host and environment assumptions.",
+      "risk": "A package can pass on Norven's machine while still failing for a fresh user, a different shell, or a different OS.",
+      "desired_outcome": "Release readiness can distinguish local clean clone confidence from multi-environment product confidence.",
+      "implementation_notes": [
+        "Keep this out of non-release task claims.",
+        "Start with documented matrix design before automation.",
+        "Do not require public npm publish for dry-run testing."
+      ],
+      "acceptance": [
+        "Release handoff lists the current environment coverage.",
+        "Future release task has a clear test matrix."
+      ],
+      "status": "done",
+      "completed_at": "2026-05-09",
+      "evidence": [
+        "references/release-readiness-e2e-matrix.json",
+        "compass/tools/redcap-release-e2e-matrix-check.sh",
+        "compass/tools/redcap-release-e2e-matrix-check.py",
+        "references/public-release-handoff.md"
+      ]
+    }
+  ],
+  "must_not_claim": [
+    "Do not claim these requirements are completed merely because they are listed here.",
+    "Do not treat future full LLM-wiki/RAG/GraphRAG as enabled by this backlog.",
+    "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
+    "Do not start npm publish from this backlog; release remains a separate task."
+  ],
+  "recommended_next_step": "Run source regression, Prism review, update the task report, then close out this RASG parent task. Formal npm/public release remains a separate future task."
+}

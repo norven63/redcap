@@ -237,6 +237,19 @@ def migrated_collection_known(root: Path, source: str) -> bool:
     return bool(migrated_collection_paths(root, source))
 
 
+def iter_source_entries(root: Path, source: str) -> list[tuple[str, Path]]:
+    snapshot_paths = migrated_collection_paths(root, source)
+    if snapshot_paths:
+        delete_map = delete_last_path_map(root)
+        entries: list[tuple[str, Path]] = []
+        for rel in snapshot_paths:
+            path = snapshot_source_path(root, rel, delete_map)
+            if path is not None:
+                entries.append((rel, path))
+        return entries
+    return [(path.relative_to(root).as_posix(), path) for path in iter_files(root, source)]
+
+
 def map_operation(default_action: str) -> str:
     if default_action == "copy-to-knowledge-then-index":
         return "copy-first"
@@ -263,6 +276,21 @@ def map_target(root: Path, collection: dict[str, Any], source_file: Path, operat
     if source_path.is_file():
         return safe_relative(target, collection["id"], "target")
     leaf = source_file.relative_to(source_path).as_posix()
+    return safe_relative((Path(target) / leaf).as_posix(), collection["id"], "target")
+
+
+def map_target_rel(root: Path, collection: dict[str, Any], source_rel: str, operation: str) -> str:
+    source = require_text(collection, "source", "collection")
+    target = require_text(collection, "target", collection.get("id", "collection"))
+    if operation in {"preserve", "archive-in-place", "retention-check-only", "ignore-runtime"}:
+        return source_rel
+    source_path = root / source
+    if source_path.is_file():
+        return safe_relative(target, collection["id"], "target")
+    prefix = source.rstrip("/") + "/"
+    if not source_rel.startswith(prefix):
+        fail(f"{collection['id']}: migrated source path escapes collection: {source_rel}")
+    leaf = source_rel[len(prefix) :]
     return safe_relative((Path(target) / leaf).as_posix(), collection["id"], "target")
 
 
@@ -337,7 +365,7 @@ def generate_manifest(root: Path, dry_run_path: Path) -> dict[str, Any]:
         cid = require_text(collection, "id", "collection")
         source = safe_relative(require_text(collection, "source", cid), cid, "source")
         operation = map_operation(require_text(collection, "default_action", cid))
-        files = [] if cid in RUNTIME_SUMMARY_ONLY else iter_files(root, source)
+        source_entries = [] if cid in RUNTIME_SUMMARY_ONLY else iter_source_entries(root, source)
 
         manifest_collections.append(
             {
@@ -350,8 +378,8 @@ def generate_manifest(root: Path, dry_run_path: Path) -> dict[str, Any]:
                 "operation": operation,
                 "apply_status": require_text(collection, "apply_status", cid),
                 "item_scope": item_scope(cid),
-                "actual_file_count": count_files(root, source),
-                "manifest_item_count": len(files),
+                "actual_file_count": len(source_entries) if cid not in RUNTIME_SUMMARY_ONLY else count_files(root, source),
+                "manifest_item_count": len(source_entries),
                 "reason": require_text(collection, "reason", cid),
                 "catalog_update_plan": require_text_list(collection, "catalog_update_plan", cid),
                 "link_check_plan": require_text_list(collection, "link_check_plan", cid),
@@ -359,9 +387,8 @@ def generate_manifest(root: Path, dry_run_path: Path) -> dict[str, Any]:
             }
         )
 
-        for source_file in files:
-            source_rel = source_file.relative_to(root).as_posix()
-            target_rel = map_target(root, collection, source_file, operation)
+        for source_rel, source_file in source_entries:
+            target_rel = map_target_rel(root, collection, source_rel, operation)
             item = {
                 "id": f"LAM-{sequence:04d}",
                 "collection_id": cid,

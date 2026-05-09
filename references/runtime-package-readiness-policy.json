@@ -10,8 +10,8 @@
   "license_status": "manual-before-public-publish",
   "surface_mode": "curated-runtime-readiness-surface",
   "candidate_count_target": {
-    "max_before_release_task": 150,
-    "reason": "Public npm candidates should contain the runnable CLI/runtime contract and release safety checks, not every RedCap self-maintenance, migration, historical E2E, or future-research tool."
+    "max_before_release_task": 180,
+    "reason": "Public npm candidates should contain the runnable CLI/runtime contract and release safety checks. The alpha readiness surface may temporarily include repo-governance checks required by diagnose/spec-check; the separate formal release task must decide whether to trim these into a smaller runtime profile or split a maintainer profile."
   },
   "bin": {
     "redcap": "bin/redcap"

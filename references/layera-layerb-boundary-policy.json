@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "policy_id": "redcap-layera-layerb-boundary",
+  "status": "active",
+  "purpose": "Keep Layer A external project dispatch and Layer B RedCap self-development visibly separate while sharing RedCap governance vocabulary.",
+  "layer_a": {
+    "name": "external-project-dispatch",
+    "owner": "Dispatcher FSM over user projects",
+    "state_surface": ".workflow/state.yaml",
+    "primary_assets": [
+      "开发手册/",
+      "dispatcher/",
+      "loom/"
+    ],
+    "must_not_claim": "Layer A project FSM is not the Layer B closeout runtime."
+  },
+  "layer_b": {
+    "name": "redcap-self-development-runtime",
+    "owner": "Cap main agent with Prism acceptance and closeout receipt",
+    "state_surface": ".dev-task.md + closeout-runtime + receipt",
+    "primary_assets": [
+      ".dev-task.md",
+      "compass/tools/redcap-layerb-*",
+      "closeout-cap.sh"
+    ],
+    "must_not_claim": "Layer B self-development does not require old Dispatcher outbox state to be healthy."
+  },
+  "shared_guardrails": [
+    "Do not route RedCap self-development blockers through old Layer A state.yaml.",
+    "Do not remove Layer A compatibility while acceptance tests still cover external project workflows.",
+    "Do not duplicate Layer B rules inside host entry files or Layer A manuals."
+  ],
+  "required_surfaces": [
+    "SKILL.md",
+    "references/redcap-system-layers.md",
+    "references/file-lookup-dictionary.md"
+  ]
+}

@@ -323,6 +323,36 @@ if [[ -x "$TOKEN_RISK_AUDIT" ]]; then
     fi
 fi
 
+ARCHITECTURE_SMELL_GOVERNANCE_CHECK="$REDCAP_ROOT/compass/tools/redcap-architecture-smell-governance-check.sh"
+if [[ ! -f "$ARCHITECTURE_SMELL_GOVERNANCE_CHECK" ]]; then
+    echo "[redcap-spec-check] architecture smell governance check missing" >&2
+    exit 1
+fi
+if ! bash "$ARCHITECTURE_SMELL_GOVERNANCE_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] architecture smell governance check failed" >&2
+    exit 1
+fi
+
+REFERENCE_ASSET_LIFECYCLE_CHECK="$REDCAP_ROOT/compass/tools/redcap-reference-asset-lifecycle.sh"
+if [[ ! -f "$REFERENCE_ASSET_LIFECYCLE_CHECK" ]]; then
+    echo "[redcap-spec-check] reference asset lifecycle check missing" >&2
+    exit 1
+fi
+if ! bash "$REFERENCE_ASSET_LIFECYCLE_CHECK" check >/dev/null; then
+    echo "[redcap-spec-check] reference asset lifecycle check failed" >&2
+    exit 1
+fi
+
+LAYER_BOUNDARY_CHECK="$REDCAP_ROOT/compass/tools/redcap-layer-boundary-check.sh"
+if [[ ! -f "$LAYER_BOUNDARY_CHECK" ]]; then
+    echo "[redcap-spec-check] Layer A/B boundary check missing" >&2
+    exit 1
+fi
+if ! bash "$LAYER_BOUNDARY_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] Layer A/B boundary check failed" >&2
+    exit 1
+fi
+
 CONTRIBUTING_IA_CHECK="$REDCAP_ROOT/compass/tools/redcap-contributing-ia-check.sh"
 if [[ -x "$CONTRIBUTING_IA_CHECK" ]]; then
     if ! bash "$CONTRIBUTING_IA_CHECK" >/dev/null; then
@@ -579,6 +609,16 @@ if [[ -x "$PUBLIC_ARSENAL_CLAIM_BOUNDARY_CHECK" ]]; then
     fi
 fi
 
+ARSENAL_VERSION_BINDING_CHECK="$REDCAP_ROOT/compass/tools/redcap-arsenal-version-binding-check.sh"
+if [[ ! -f "$ARSENAL_VERSION_BINDING_CHECK" ]]; then
+    echo "[redcap-spec-check] arsenal version binding check missing" >&2
+    exit 1
+fi
+if ! bash "$ARSENAL_VERSION_BINDING_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] arsenal version binding check failed" >&2
+    exit 1
+fi
+
 PUBLIC_DISTILLATION_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-public-distillation-preflight.sh"
 if [[ -x "$PUBLIC_DISTILLATION_PREFLIGHT_CHECK" ]]; then
     if ! bash "$PUBLIC_DISTILLATION_PREFLIGHT_CHECK" >/dev/null; then
@@ -609,6 +649,36 @@ if [[ -x "$LLM_WIKI_LITE_CHECK" ]]; then
         echo "[redcap-spec-check] LLM-wiki-lite lifecycle check failed" >&2
         exit 1
     fi
+fi
+
+KNOWLEDGE_GATEWAY_CHECK="$REDCAP_ROOT/compass/tools/redcap-knowledge-gateway.sh"
+if [[ ! -f "$KNOWLEDGE_GATEWAY_CHECK" ]]; then
+    echo "[redcap-spec-check] knowledge gateway check missing" >&2
+    exit 1
+fi
+if ! bash "$KNOWLEDGE_GATEWAY_CHECK" check >/dev/null; then
+    echo "[redcap-spec-check] knowledge gateway check failed" >&2
+    exit 1
+fi
+
+COLD_ARCHIVE_INVENTORY_CHECK="$REDCAP_ROOT/compass/tools/redcap-cold-archive-inventory.sh"
+if [[ ! -f "$COLD_ARCHIVE_INVENTORY_CHECK" ]]; then
+    echo "[redcap-spec-check] cold archive inventory check missing" >&2
+    exit 1
+fi
+if ! bash "$COLD_ARCHIVE_INVENTORY_CHECK" check >/dev/null; then
+    echo "[redcap-spec-check] cold archive inventory check failed" >&2
+    exit 1
+fi
+
+FULL_LLM_WIKI_ROADMAP_CHECK="$REDCAP_ROOT/compass/tools/redcap-full-llm-wiki-roadmap-check.sh"
+if [[ ! -f "$FULL_LLM_WIKI_ROADMAP_CHECK" ]]; then
+    echo "[redcap-spec-check] full LLM-wiki roadmap check missing" >&2
+    exit 1
+fi
+if ! bash "$FULL_LLM_WIKI_ROADMAP_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] full LLM-wiki roadmap check failed" >&2
+    exit 1
 fi
 
 RETRIEVAL_ESCALATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-retrieval-escalation-check.sh"
@@ -686,6 +756,16 @@ if [[ ! -f "$PUBLIC_PACKAGE_SURFACE_CHECK" ]]; then
 fi
 if ! bash "$PUBLIC_PACKAGE_SURFACE_CHECK" >/dev/null; then
     echo "[redcap-spec-check] public package surface check failed" >&2
+    exit 1
+fi
+
+RELEASE_E2E_MATRIX_CHECK="$REDCAP_ROOT/compass/tools/redcap-release-e2e-matrix-check.sh"
+if [[ ! -f "$RELEASE_E2E_MATRIX_CHECK" ]]; then
+    echo "[redcap-spec-check] release E2E matrix check missing" >&2
+    exit 1
+fi
+if ! bash "$RELEASE_E2E_MATRIX_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] release E2E matrix check failed" >&2
     exit 1
 fi
 

@@ -87,7 +87,8 @@
   },
   "template_readme_contract": {
     "required_phrases": [
-      "当前状态：template-only",
+      "本目录状态：template-source",
+      "外部 `redcap-arsenal` 绑定状态：reviewed-substantive",
       "不能声称",
       "RedCap Forge"
     ],

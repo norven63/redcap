@@ -10,12 +10,19 @@
       "trigger_for_revisit": "Any single new tranche adding more than 300 lines or 5 cases to the monolith must consider a domain shard."
     },
     {
-      "path": "compass/knowledge/lessons.md",
-      "kind": "tracked-large-knowledge",
-      "current_mitigation": "knowledge-index",
-      "structural_strategy": "Keep active hot lessons in lessons.md; archive cold or superseded lessons into lessons-archive.md only when the knowledge index still preserves archaeology.",
-      "trigger_for_revisit": "When active lessons exceed 130 entries or hotspot lookup becomes ambiguous, run a lessons archive/split tranche."
+      "path": "compass/tools/redcap-layerb-closeout-runtime.py",
+      "kind": "tracked-large-runtime-script",
+      "current_mitigation": "file-lookup-dictionary-and-targeted-function-search",
+      "structural_strategy": "Keep as the unified closeout runtime until the runtime package split is ready; new sizeable features should be extracted into focused helper modules instead of expanding this script.",
+      "trigger_for_revisit": "If the file grows above 65KB or receives another lifecycle feature, extract observability, notification, or audit helpers behind the same closeout-cap facade."
     },
+    {
+      "path": "compass/knowledge/lessons.md",
+    "kind": "tracked-knowledge-index",
+    "current_mitigation": "lessons-index-plus-small-modules",
+    "structural_strategy": "Keep lessons.md as a lightweight first-read index with legacy L-number redirects; store full lesson bodies in compass/knowledge/lessons/<l-id>.md modules.",
+    "trigger_for_revisit": "When the lightweight index exceeds 50KB, split topic catalogs further while preserving legacy L-number anchors."
+  },
     {
       "path": "compass/CONTRIBUTING.md",
       "kind": "tracked-large-norm",
@@ -63,7 +70,7 @@
       "kind": "tracked-large-generated-manifest",
       "current_mitigation": "file-lookup-dictionary-and-apply-preflight-check",
       "structural_strategy": "Keep as a generated file-level preflight ledger, not a startup document. Agents must discover it through File Lookup Dictionary or run redcap-legacy-asset-migration-apply-plan.sh; do not bulk-read it unless auditing a specific migration item.",
-      "trigger_for_revisit": "When the manifest exceeds 150KB or the item count exceeds 150, split it into generated shards with a compact summary index while preserving the same checker interface."
+      "trigger_for_revisit": "When this manifest becomes human-read frequently, exceeds 350KB, or item count exceeds 300, split it into generated shards with a compact summary index while preserving the same checker interface."
     },
     {
       "path": "references/legacy-asset-migration-apply-rehearsal.json",

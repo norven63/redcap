@@ -62,8 +62,8 @@
     "semantic_retrieval_miss_observations_30d": 0,
     "relationship_query_observations_30d": 0,
     "cross_entity_trace_failures_30d": 0,
-    "last_reviewed": "2026-04-28",
-    "review_basis": "The external redcap-arsenal worktree contains only template files and namespace placeholders; RedCap docs are already protected by catalog, file lookup dictionary, token-risk audit, and budgeted reads."
+    "last_reviewed": "2026-05-09",
+    "review_basis": "RedCap now has a knowledge gateway route, split lessons modules, cold archive inventory, reviewed-substantive redcap-arsenal samples, and unchanged zero retrieval-miss observations; index-rg-metadata remains sufficient."
   },
   "observation_update_rule": {
     "write_target": "current_observations",

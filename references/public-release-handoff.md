@@ -32,4 +32,5 @@
 
 - 如果 Norven 尚未给出上面的人工输入，RedCap 只能继续做非发布类治理，不得进入发布动作。
 - 如果 Norven 明确启动正式 release task，RedCap 应先重新运行 package manifest、publish safety、package surface、pre-release review、Prism review 和 clean workspace E2E，再触碰发布开关。
+- 正式 release task 的 E2E 覆盖面以 `references/release-readiness-e2e-matrix.json` 为准；其中外部机器 / 多 OS 验证仍属于正式发布任务内的待执行项，不能由本地 clean workspace E2E 代替。
 - 如果任一安全扫描失败，release task 必须 fail closed，不允许“先发再修”。

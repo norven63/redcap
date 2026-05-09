@@ -1,0 +1,580 @@
+{
+  "version": 1,
+  "inventory_id": "redcap-knowledge-cold-archive",
+  "root": "redcap-knowledge",
+  "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
+  "file_count": 70,
+  "bytes_total": 1004491,
+  "by_class": {
+    "private-research-archive": 3,
+    "private-task-report-archive": 66,
+    "private-trace-archive": 1
+  },
+  "must_not_claim": [
+    "This inventory is not a public knowledge export.",
+    "Raw private reports remain private cold archive evidence.",
+    "Use the knowledge gateway before opening exact archive bodies."
+  ],
+  "files": [
+    {
+      "path": "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html",
+      "class": "private-research-archive",
+      "bytes": 7936,
+      "sha256": "7f12f965073c75118bc7a87b7e7758c4591af2756d1a968d607cef04a412081e",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md",
+      "class": "private-research-archive",
+      "bytes": 6884,
+      "sha256": "b23ccb1dd1d9f2fcdf4e52065e7995b925d25e712f1b8a025f9880ccd691880a",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/research/feishu-ai-agent-collaboration-report.md",
+      "class": "private-research-archive",
+      "bytes": 34752,
+      "sha256": "25fd1395760ec378bfaf510716614f57033862b2b471a1fd81d26421acd31254",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-11-hook-chain-investigation.md",
+      "class": "private-task-report-archive",
+      "bytes": 14963,
+      "sha256": "015dc1fc2b2d5c928f8c7a32a40a7933d7f7d70157f8ecd202b3f6bf903a9b69",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-11-multi-session-isolation-foundation.md",
+      "class": "private-task-report-archive",
+      "bytes": 11796,
+      "sha256": "c13c5b5af8cc64f2e8c6d50bfe3b6161a3bd2a0b86d88c93d061988189dc9cea",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-12-autonomy-escalation-p0.md",
+      "class": "private-task-report-archive",
+      "bytes": 13083,
+      "sha256": "2260e0acd0e8ed2219423adf381c77d7b59e2e939722e6d46ac7c4310c9742c4",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-12-continuity-governance-session-adoption.md",
+      "class": "private-task-report-archive",
+      "bytes": 18602,
+      "sha256": "ac788da8dcf786710c593b215e427654671c1a4abb20b39c3627889e87ea9dc3",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-12-docs-governance-audit.md",
+      "class": "private-task-report-archive",
+      "bytes": 12701,
+      "sha256": "df10108b7eb30bb37c3bed245f2b69d85a170eaf3d05087edb1d41376081bd15",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-12-host-agent-interop-governance.md",
+      "class": "private-task-report-archive",
+      "bytes": 19261,
+      "sha256": "63e92fc7ea8c30c1bae3d396718d2dbe7be45db98a8f45da644329de32fe9827",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-12-multi-session-isolation-mainline.md",
+      "class": "private-task-report-archive",
+      "bytes": 15943,
+      "sha256": "6cc34a17c75ed1a5826f202d5c8db9b49ba803acccf3652daafc54651213f390",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-14-backlog-mechanism-and-spec-governance.md",
+      "class": "private-task-report-archive",
+      "bytes": 16295,
+      "sha256": "e42104dee81a8cb30a575e4e6fe0701be26a5db72aef6b57b6b66f623d46ceb1",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-14-framework-upgrade-stage1-closeout.md",
+      "class": "private-task-report-archive",
+      "bytes": 18126,
+      "sha256": "e86a66a4ed099bf416b86f66593501927c7b6b3df18e25c7786c71250e4252e3",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-15-report-template-and-d1-f2-followup.md",
+      "class": "private-task-report-archive",
+      "bytes": 17116,
+      "sha256": "3b39da445f53d23841ac039fe94411a3113b87fc2944336480b4eaef970f13d4",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-16-completion-hook-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 13758,
+      "sha256": "42facd66c41dcd792aa425f3dff1fcfa1e9582469e1e04bc1a061f7740245c09",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-16-copilot-session-anchor.md",
+      "class": "private-task-report-archive",
+      "bytes": 13579,
+      "sha256": "4bc9c5ae693cd201c82c5833811b56b190c25de584228875f4cd6a4fe8cf4760",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-16-feishu-duplex-and-overlay-p0.md",
+      "class": "private-task-report-archive",
+      "bytes": 15273,
+      "sha256": "58b78fd6e207bd406cea8c9132939c651a3965e800dacd8523e98fbeedf089f0",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-17-closeout-followup-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 16772,
+      "sha256": "43fdee9b7c3801452d74a93287eab2c2c57b19b3826584187630c8a370770c40",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-17-live-closeout-final-blockers.md",
+      "class": "private-task-report-archive",
+      "bytes": 68738,
+      "sha256": "0c0e47bae3c4969d295f3c7ab3685e4b1a37441b93a2b716e7410df4c976a3af",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-21-entry-surface-and-prism-positioning-sync.md",
+      "class": "private-task-report-archive",
+      "bytes": 7218,
+      "sha256": "34387f2832962bbc0a3ab2ee1a63d06498703cf52860408b438a9fe9af09d458",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-21-pending-validations-e2e-tranche.md",
+      "class": "private-task-report-archive",
+      "bytes": 3187,
+      "sha256": "de92309b69702475fcf9a849b9681580c36b8680b4de77b9729896680efd1805",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-21-reviewer-routing-rebalance-and-ledger-fix.md",
+      "class": "private-task-report-archive",
+      "bytes": 10051,
+      "sha256": "06661977b421eeac22ddce27659ec321e2676333461387af99190524ce4a09b7",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-22-install-revival-and-context-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 6543,
+      "sha256": "9d45f42f5b78a125722c3511c5b75b5777d98a473bb3c5cf401558958bac9deb",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-22-layerb-lifecycle-and-memory-architecture.md",
+      "class": "private-task-report-archive",
+      "bytes": 8942,
+      "sha256": "f1574b388bc5b0c2a5e7d026d255d416498e4ed7059d9d7f16782185785ece62",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-22-layerb-runtime-closeout-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 16169,
+      "sha256": "ef808cebfe67ba0464c87583beac4abfa3ea33c43056e8e39259daf6d88becfd",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-22-prism-revive-cap-e2e-and-readonly-fix.md",
+      "class": "private-task-report-archive",
+      "bytes": 5295,
+      "sha256": "f6a1c2026b4fdb7556066eb6ef75139cc011c7cc5357a2da74ea0e0cce7429a5",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-22-readonly-scribe-lifecycle-and-hook-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 6288,
+      "sha256": "221864d89e85b7179012ce8fd06e691890797994042e9e49ac9bad0a25989fcc",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-23-layerb-fsm-workmode-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 12862,
+      "sha256": "f0b6f4e6f5c19b46db9e980e9ea1fcd16110d8ce3408cd4b35a7bfc4a3812a6a",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-24-redcap-workflow-panorama-mechanism-vitality.md",
+      "class": "private-task-report-archive",
+      "bytes": 18887,
+      "sha256": "8143d38916e6ca069b81b415a8e4cf5c0bf57d40bb825b409f4fae9fda1ba257",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-25-redcap-evolution-grade-control-plane-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 15408,
+      "sha256": "ae253029e81e1eb26514fa128e3b76fb98b491dc4ba7f011cd04c910b6ad24c0",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-25-redcap-runtime-productization-and-architecture-decoupling.md",
+      "class": "private-task-report-archive",
+      "bytes": 14266,
+      "sha256": "cb904f89f8fe4bf3261498d87065aa5ce1fd2bce7e0ea608179d3457ab9fd399",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md",
+      "class": "private-task-report-archive",
+      "bytes": 16183,
+      "sha256": "9f9ae652381487dca64425140f0c60663a46c7825e95c58e3ad6683a30356a83",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-execution-layer-split-dry-run.md",
+      "class": "private-task-report-archive",
+      "bytes": 12475,
+      "sha256": "1ada0194251ff202269ab1c08f6c55710f240e8416f47e651ab844a77d1a6c38",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-layerb-change-intake-replan-gate.md",
+      "class": "private-task-report-archive",
+      "bytes": 15510,
+      "sha256": "21d6999c6b617e5560f7858bf5e1aecd441a41274a0548c50587625920f44829",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-legacy-asset-migration-dry-run.md",
+      "class": "private-task-report-archive",
+      "bytes": 12079,
+      "sha256": "cda5f89e4a132c3bf4d72ee5b75a9fe6e8d578a940951f81d66a49f452328e1b",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-original-intent-coverage-gate.md",
+      "class": "private-task-report-archive",
+      "bytes": 10216,
+      "sha256": "71491c9f1f47b25c17445e2105008a0fe341f0af6c6b72e30e1fe117c140ec64",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-package-publish-safety-gate.md",
+      "class": "private-task-report-archive",
+      "bytes": 8516,
+      "sha256": "a8f3b6fe5e03e80e393780beab692fc26140f142d935e877af9fb73028b7c190",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-parent-receipt-aggregation-gate.md",
+      "class": "private-task-report-archive",
+      "bytes": 12188,
+      "sha256": "ddf33795832aca2c732c7eef80f1248865e9e9b6c4624dc5d437105ac069253f",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-prism-availability-cache-provenance-guard.md",
+      "class": "private-task-report-archive",
+      "bytes": 8726,
+      "sha256": "81e743f54fd4d7f980cf73fb5c1d35b3f8d9e86ced3cb7a3f3a59b590adaf7a0",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-prism-formal-quorum-provider-revalidation.md",
+      "class": "private-task-report-archive",
+      "bytes": 10913,
+      "sha256": "751af390c129fcfc8e7a5bc400afcde54d4d3628fb20d59646aedbd0dfbbaef3",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md",
+      "class": "private-task-report-archive",
+      "bytes": 13744,
+      "sha256": "59b82f568b5757f92ffb4d0a062347ea34dc0162500cd85ea52ceea8efe3b23e",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-r0-r22-registry.md",
+      "class": "private-task-report-archive",
+      "bytes": 7908,
+      "sha256": "5c95f431f28707e3f0397e6b07aa862680d33cd1ca35f5079ddb6e779ff1de29",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-runtime-cli-package-readiness.md",
+      "class": "private-task-report-archive",
+      "bytes": 9897,
+      "sha256": "3290b8bfbe56a59d9eb8289b944023a3dd2624d86c4faca7187e5e12cdd82070",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-26-shared-knowledge-gitee-remote-binding.md",
+      "class": "private-task-report-archive",
+      "bytes": 10621,
+      "sha256": "8d3f73b884f20e771230ffede70326f6cb922f651b848c7f03dba70b49beacb2",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-27-first-start-identity-and-feishu-policy.md",
+      "class": "private-task-report-archive",
+      "bytes": 16584,
+      "sha256": "202f97ae0d51729b3203cb355498e42a16d67e9b2015418e184db63d1ab8baea",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-27-layerb-change-intake-replan-visibility-gate.md",
+      "class": "private-task-report-archive",
+      "bytes": 9594,
+      "sha256": "b18e332ea27b7728cf367f97dd3a8e990081f58dd279cbb6ca80ab5b22140eca",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-27-redcap-arsenal-local-worktree-and-user-namespace.md",
+      "class": "private-task-report-archive",
+      "bytes": 12549,
+      "sha256": "4e3a84b686aac3a8a61595adbb8b2a5858baa6338860cdf9287a43f400810a3a",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-28-retrieval-escalation-threshold-policy.md",
+      "class": "private-task-report-archive",
+      "bytes": 12503,
+      "sha256": "cad4dd4f073fa5fbcc24cf56cbdb923b333e3b2a947c5ec60ee4f2b819af843d",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 13342,
+      "sha256": "827a1b93945b56638f3323a29f9ea073a99678b71eed20a17cfab8bb634ba84a",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md",
+      "class": "private-task-report-archive",
+      "bytes": 16942,
+      "sha256": "32780950c6aebb34f30cb5eb549828eb6437ef97567b25dcec1721242e9efc4f",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 15048,
+      "sha256": "c7d2b7d64b8d9ee78f7403959e9c2cef603f3400e0b9bbba823d856dfe26b047",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md",
+      "class": "private-task-report-archive",
+      "bytes": 14785,
+      "sha256": "2a0a15a424acf61dfad8ee9afb75aca67c1695167bf1dd27e650350c062681b7",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-apply-rehearsal.md",
+      "class": "private-task-report-archive",
+      "bytes": 13077,
+      "sha256": "5dd0a72bf5cdf5aa0413ebb7cf99f7b161441a8460b12031301e5e55f577b720",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md",
+      "class": "private-task-report-archive",
+      "bytes": 8440,
+      "sha256": "b3550243b9e12e11c94c2227a4283b759f4257f0fdcbb9856aa7f32b5c46e103",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md",
+      "class": "private-task-report-archive",
+      "bytes": 13237,
+      "sha256": "a009a8876ac53b941cfa29ea6cfd380c1ab4cb9034ff14c1fc7fa4bfcf421aa5",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
+      "class": "private-task-report-archive",
+      "bytes": 13641,
+      "sha256": "49095c764aa5aba25939f025a3773117fba033724a9bef70283771089b9111f2",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-04-redcap-pre-release-structure-refactor-task-tree-reanchor.md",
+      "class": "private-task-report-archive",
+      "bytes": 13129,
+      "sha256": "7820c7f5aa1ceb8d591a76ed5ce1f8482557091f6831abc6ccade0b3c1a7e95c",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-05-redcap-cli-diagnostic-product-surface.md",
+      "class": "private-task-report-archive",
+      "bytes": 14933,
+      "sha256": "5ac5b185d271b9b06c233a08998bafbd5192ee528a301205c918a0047038f19c",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-05-redcap-public-arsenal-claim-boundary.md",
+      "class": "private-task-report-archive",
+      "bytes": 15215,
+      "sha256": "5fe8b9680964a405a39f6be32722023e9ee0968e8c2529773afde677fc71b0ff",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-05-redcap-public-package-identity-surface.md",
+      "class": "private-task-report-archive",
+      "bytes": 17401,
+      "sha256": "cdec740f92fdb33b62d17d2d0077a95271d94f051155e74b889772053f7b3016",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-05-redcap-runtime-project-user-boundary-cli-workspace.md",
+      "class": "private-task-report-archive",
+      "bytes": 15354,
+      "sha256": "c037d6a01cabee0da87da0cd3ae4074c7edb2a5f7e3343f5b180ec72318d6c91",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-06-agent-reading-absorption.md",
+      "class": "private-task-report-archive",
+      "bytes": 16711,
+      "sha256": "d966cf297b53aae329e99363a5d654807fe1c483493b0bdecfee4a6f21180527",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-06-llm-wiki-asset-stratification.md",
+      "class": "private-task-report-archive",
+      "bytes": 15558,
+      "sha256": "476393613cd6a3742e10ae6bca06475038978af98479e963c28ce8e6e9e8ca96",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-06-llm-wiki-lite-lifecycle.md",
+      "class": "private-task-report-archive",
+      "bytes": 16517,
+      "sha256": "afa9103ab1b83cfdbfc49e28868e53f43640c93cf91c36e2d7d9d1f79abfa375",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-06-redcap-public-distillation-preflight.md",
+      "class": "private-task-report-archive",
+      "bytes": 13305,
+      "sha256": "35a0c92740137f6751a5031eaba645ec5e712ff5422e3838d6f4668fadddb65a",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-07-prism-copilot-protected-fallback-policy.md",
+      "class": "private-task-report-archive",
+      "bytes": 12299,
+      "sha256": "a2f1787c265d6fe7916d475ac87707a27e725d332cd20055efc0f22564d3e9e2",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-07-redcap-public-arsenal-forge-first-promotion.md",
+      "class": "private-task-report-archive",
+      "bytes": 18516,
+      "sha256": "5817a4c87048ae51ed86cef310bbba782a6d35b58fc955f3bace4ea366f36368",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-08-feishu-closeout-single-node-report.md",
+      "class": "private-task-report-archive",
+      "bytes": 7900,
+      "sha256": "bc48a88af638b21fbff2cb922ec6feb8d5b546894437fe7d9038572eb831d3c6",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-08-redcap-prism-runs-lifecycle-status-surface-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 11350,
+      "sha256": "26c30b13e6a35dcdc811c1749acab3b5a7f8cce2a7923f30dd7bd7f19ba071b7",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-08-redcap-runtime-layout-minimum-compatible-apply.md",
+      "class": "private-task-report-archive",
+      "bytes": 9232,
+      "sha256": "2320fce91839e3704709e8a0ae2eca8aad8eb69cab372bc1ec35741a3dabca9c",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/traces/architecture-capability-trace.yaml",
+      "class": "private-trace-archive",
+      "bytes": 37659,
+      "sha256": "3b64b48843ae5e7ba196c0026093e94151a8bece02de15b68ba62c7ff8b00885",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    }
+  ]
+}

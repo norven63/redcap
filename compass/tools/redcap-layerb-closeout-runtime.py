@@ -436,6 +436,37 @@ def append_audit(identity: TaskIdentity, action: str, payload: dict[str, Any]) -
     return path
 
 
+def closeout_attempt_summary(identity: TaskIdentity) -> dict[str, Any]:
+    pattern = f"*-{identity.identity_key}-*.json"
+    paths = sorted(audit_dir(identity.repo_root).glob(pattern))
+    failed: list[dict[str, Any]] = []
+    for path in paths:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        status = str(payload.get("status", "")).strip().lower()
+        action = str(payload.get("action", "")).strip()
+        if status in {"pass", "passed", "ok", "completed", "clean", "skipped"}:
+            continue
+        if status or action:
+            failed.append(
+                {
+                    "path": str(path),
+                    "action": action,
+                    "status": payload.get("status", ""),
+                    "phase": payload.get("phase", ""),
+                    "detail": payload.get("detail", payload.get("reason", "")),
+                    "created_at": payload.get("created_at", ""),
+                }
+            )
+    return {
+        "audit_count": len(paths),
+        "failed_attempts": len(failed),
+        "last_failed_attempt": failed[-1] if failed else {},
+    }
+
+
 def run_shell(command: list[str], *, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     merged_env = os.environ.copy()
     if env:
@@ -826,6 +857,7 @@ def command_status(args: argparse.Namespace) -> int:
     evolution_candidates = evolution_candidates_strict(identity)
     receipt_path = closeout_receipt_path(identity)
     state = load_state(identity)
+    attempts = closeout_attempt_summary(identity)
     payload = {
         "task_id": identity.task_id,
         "task_file": str(identity.task_file),
@@ -837,6 +869,7 @@ def command_status(args: argparse.Namespace) -> int:
         "pending_closure_exists": pending_state_path(identity).is_file(),
         "receipt_exists": receipt_path.is_file(),
         "state": state,
+        "attempts": attempts,
         "acceptance": acceptance,
         "evolution_harvest": harvest,
         "evolution_candidates": evolution_candidates,

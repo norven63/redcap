@@ -4,7 +4,9 @@
 >
 > 公共条目必须先经过 `RedCap Forge`：把私有报告、lessons、失败链路或 Prism verdict 蒸馏、脱敏、去重、结构化和索引化之后，才允许 append 到 `redcap-arsenal`。原始报告、identity、runtime evidence 和私有 knowledge 不得直接进入公共库。
 >
-> 当前状态：template-only。它只能证明公共仓库模板、schema、索引目录和用户命名空间已初始化；不能声称已有历史知识迁移、已填充公共知识库、已形成成熟公共 skill arsenal。
+> 本目录状态：template-source。它只保存公共库模板、schema 和安全边界，不能冒充真实公共库工作区。
+>
+> 外部 `redcap-arsenal` 绑定状态：reviewed-substantive。当前本机绑定的公共库工作区已经有首批经过 RedCap Forge 风格审查的 append-only 公共沉淀条目；但不能声称已有历史知识批量迁移、已填充成熟公共知识库、已形成成熟公共 skill arsenal，或已经证明 RedCap public release ready。
 
 ## 目录约定
 

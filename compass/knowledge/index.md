@@ -4,7 +4,7 @@
 
 ## 首读顺序
 
-1. `compass/knowledge/lessons.md`：活跃经验库；先看开头的“热点主题速览”，再按命中的 L-编号精读具体经验。
+1. `compass/knowledge/lessons.md`：活跃经验库索引；先看开头的“热点主题速览”和 L-编号短锚点，再按命中的 L-编号打开 `compass/knowledge/lessons/<l-id>.md` 精读正文。
 2. `compass/knowledge/design-principles.md`：RedCap 设计元原则，适合做架构/治理取舍前置检查。
 3. `compass/knowledge/long-task-context-defense.md`：长任务 / 长对话上下文对抗策略，说明当前防线、行业常见方案与未完成边界。
 4. `compass/knowledge/runtime-memory-architecture.md`：人话词典，解释真相源、镜像、闭环证据、跨会话考古/追踪层与长期沉淀层。
@@ -34,4 +34,4 @@
 
 - 不要默认 bulk-read `compass/knowledge/**`。
 - 先读本索引，再按问题打开 1-3 个精确文件。
-- 若新增、移动或删除 `compass/knowledge/*.md` 或首读子目录，必须同步更新本索引并让 `redcap-knowledge-index-check.sh` 通过。
+- 若新增、移动或删除 `compass/knowledge/*.md`、`compass/knowledge/lessons/*.md` 或首读子目录，必须同步更新本索引 / lessons 索引并让 `redcap-knowledge-index-check.sh` 通过。
