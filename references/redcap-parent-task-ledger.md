@@ -84,6 +84,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P2-12 | user trust gap | 飞书整体任务全景图人类可读化补回 | completed | P2 | 已在成果摘要式飞书通知中补回“整体任务全景图”，用于说明当前进展处在主线哪里，同时禁止退回内部节点、门禁、脚本名口径 | report: `2026-05-09-feishu-outcome-readable-and-reply-research.md`；不等于启用实时飞书指令入口或恢复旧的多字段路线噪声 |
 | P2-13 | user trust gap | 飞书父任务级全景图修正 | completed | P2 | 已把飞书“整体任务全景图”从当前子任务路线升级为父任务线总览，覆盖超长主线目标、已完成大块、当前位置、剩余边界和下一步 | report: `2026-05-09-feishu-outcome-readable-and-reply-research.md`；不等于父任务整体完成或进入正式公开发布 |
 | P2-14 | user trust gap | 飞书回复安全收件箱 | completed | P2 | 已让飞书回复进入 safe inbox：revive/install 可软扫描，current-status 可展示待处理摘要，diagnose/spec-check 可校验“不自动执行、不绕过任务账本” | report: `2026-05-09-feishu-outcome-readable-and-reply-research.md`；不等于实时远程控制 RedCap 或后台常驻监听 |
+| P2-15 | user cleanup decision | Prism 本地证据保全边界修正 | completed | P2 | 已把 `prism/runs` 清理策略从“只看目录是否过期”升级为“先看是否被历史报告/知识资产引用”：被引用的本地证据进入 preserve-bound，不再出现在 prune-local 删除计划 | report: `2026-05-09-prism-runs-evidence-preservation-boundary.md`；不等于已物理删除任何历史运行证据 |
 
 ## 推荐执行顺序
 

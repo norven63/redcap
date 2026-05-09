@@ -56,7 +56,7 @@
       "path": "prism/runs",
       "kind": "ignored-runtime-evidence",
       "default_action": "prune-when-safe",
-      "authority": "formal and named local evidence are preserved; acceptance fixtures may be pruned only when prism-runs-lifecycle classifies them safe.",
+      "authority": "formal evidence and referenced named local evidence are preserved; acceptance fixtures or unreferenced named local evidence may be pruned only when prism-runs-lifecycle classifies them safe.",
       "check_paths": [
         "prism/tools/prism-runs-lifecycle.sh"
       ]
@@ -134,6 +134,7 @@
       "formal-run",
       "named-local-evidence",
       "infra-locks"
-    ]
+    ],
+    "evidence_bound_rule": "If a run id is referenced by tracked reports, knowledge assets, or task reports, local_prune_candidate must remain false even after the local retention threshold."
   }
 }

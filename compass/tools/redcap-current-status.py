@@ -277,35 +277,57 @@ def prism_summary(repo: Path) -> list[str]:
     consensus_reports = len(re.findall(r'^\s+verdict:\s*"?consensus"?\s*$', text, flags=re.MULTILINE))
     weak_reports = len(re.findall(r'^\s+verdict:\s*"?weak-consensus"?\s*$', text, flags=re.MULTILINE))
     blocked_reports = len(re.findall(r'^\s+verdict:\s*"?(deadlock|escalate)"?\s*$', text, flags=re.MULTILINE))
-    runs_root = repo / "prism/runs"
-    active_runs = 0
-    acceptance_runs = 0
-    formal_runs = 0
-    named_runs = 0
-    prune_candidates = 0
-    if runs_root.exists():
-        for path in runs_root.iterdir():
-            if not path.is_dir():
-                continue
-            name = path.name
-            if name == ".locks":
-                active_runs += 1
-                continue
-            active_runs += 1
-            registry = path / "session-registry.yaml"
-            statuses = re.findall(r'^\s+status:\s*"?([A-Za-z_-]+)"?\s*$', read(registry), flags=re.MULTILINE)
-            is_active = any(status == "dispatched" for status in statuses)
-            report_bound = name in text
-            if name.startswith("acceptance-prism-"):
-                acceptance_runs += 1
-            elif re.match(r"^20\d{6}-", name):
-                formal_runs += 1
-            else:
-                named_runs += 1
-                modified = datetime.fromtimestamp(path.stat().st_mtime).date()
-                age = max(0, (date.today() - modified).days)
-                if not is_active and not report_bound and age >= LOCAL_EVIDENCE_RETENTION_DAYS:
-                    prune_candidates += 1
+    rows: list[dict] = []
+    lifecycle_script = repo / "prism/tools/prism-runs-lifecycle.sh"
+    if lifecycle_script.is_file():
+        try:
+            lifecycle_output = subprocess.check_output(
+                ["bash", str(lifecycle_script), "json"],
+                cwd=repo,
+                text=True,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+            )
+            payload = json.loads(lifecycle_output)
+            rows = [row for row in payload.get("runs") or [] if isinstance(row, dict)]
+        except Exception:
+            rows = []
+
+    if not rows:
+        runs_root = repo / "prism/runs"
+        if runs_root.exists():
+            for path in runs_root.iterdir():
+                if not path.is_dir():
+                    continue
+                name = path.name
+                if name == ".locks":
+                    lifecycle_class = "infra-locks"
+                elif name.startswith("acceptance-prism-"):
+                    lifecycle_class = "acceptance-fixture"
+                elif re.match(r"^20\d{6}-", name):
+                    lifecycle_class = "formal-run"
+                else:
+                    lifecycle_class = "named-local-evidence"
+                rows.append(
+                    {
+                        "run_id": name,
+                        "class": lifecycle_class,
+                        "local_prune_candidate": False,
+                        "evidence_bound": False,
+                    }
+                )
+
+    counts = Counter(row.get("class", "unknown") for row in rows)
+    active_runs = len(rows)
+    acceptance_runs = counts.get("acceptance-fixture", 0)
+    formal_runs = counts.get("formal-run", 0)
+    named_runs = counts.get("named-local-evidence", 0)
+    prune_candidates = sum(1 for row in rows if row.get("local_prune_candidate"))
+    bound_local = sum(
+        1
+        for row in rows
+        if row.get("class") == "named-local-evidence" and row.get("evidence_bound")
+    )
     lines = [
         f"formal Prism 报告索引：{formal_reports} 份（replay-auditable/archived={archived_reports}，legacy/non-auditable={formal_reports - archived_reports}）",
         f"历史 verdict：consensus={consensus_reports}，weak-consensus={weak_reports}，deadlock/escalate={blocked_reports}",
@@ -316,9 +338,13 @@ def prism_summary(repo: Path) -> list[str]:
         lines.append(
             f"prism/runs 分类：acceptance-fixture={acceptance_runs}，formal-run={formal_runs}，named-local-evidence={named_runs}"
         )
+        if bound_local:
+            lines.append(
+                f"named-local-evidence 中 {bound_local} 个已被历史报告/知识资产引用，按证据链保留；不得直接物理删除"
+            )
         if prune_candidates:
             lines.append(
-                f"named-local-evidence 超过本地保留阈值 {prune_candidates} 个；可先运行 `bash prism/tools/prism-runs-lifecycle.sh inventory`（只读）与 `bash prism/tools/prism-runs-lifecycle.sh prune-local`（dry-run）做审查计划"
+                f"另有 {prune_candidates} 个未绑定的过期 named-local-evidence；可先运行 `bash prism/tools/prism-runs-lifecycle.sh inventory`（只读）与 `bash prism/tools/prism-runs-lifecycle.sh prune-local`（dry-run）做审查计划"
             )
             lines.append(
                 "物理清理需要显式批准：不得在未确认前运行 `bash prism/tools/prism-runs-lifecycle.sh prune-local --apply`"

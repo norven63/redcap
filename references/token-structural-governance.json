@@ -118,8 +118,8 @@
       "path": "prism/runs",
       "kind": "ignored-runtime-evidence",
       "current_mitigation": "gitignored-do-not-bulk-read",
-      "structural_strategy": "Preserve formal and named evidence by default; prune acceptance fixtures with bash prism/tools/prism-runs-lifecycle.sh prune-acceptance after tests; review local named evidence after retention threshold with inventory/prune-local dry-run first.",
-      "trigger_for_revisit": "When ignored prism/runs exceeds warn thresholds, run lifecycle summary and prune only tool-classified safe targets; physical prune-local --apply requires explicit user approval."
+      "structural_strategy": "Preserve formal evidence and any named local evidence referenced by tracked reports or knowledge assets. Prune acceptance fixtures after tests, and review only unreferenced named evidence after the retention threshold with inventory/prune-local dry-run first.",
+      "trigger_for_revisit": "When ignored prism/runs exceeds warn thresholds, run lifecycle summary and prune only tool-classified safe targets; physical prune-local --apply requires explicit user approval and must not break evidence references."
     }
   ]
 }

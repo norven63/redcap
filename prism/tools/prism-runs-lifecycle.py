@@ -35,6 +35,46 @@ def report_bound_run_ids(reports_root: Path) -> set[str]:
     return ids
 
 
+def tracked_reference_map(root: Path, run_ids: set[str]) -> dict[str, list[str]]:
+    """Find tracked human/audit files that reference run-scoped evidence IDs."""
+    if not run_ids:
+        return {}
+
+    reference_roots = [
+        root / "redcap-knowledge",
+        root / "references",
+        root / "compass/docs",
+        root / "compass/knowledge",
+        root / "prism/reports",
+    ]
+    reference_files: list[Path] = []
+    allowed_suffixes = {".md", ".json", ".yaml", ".yml", ".txt"}
+    for reference_root in reference_roots:
+        if reference_root.is_file() and reference_root.suffix in allowed_suffixes:
+            reference_files.append(reference_root)
+            continue
+        if not reference_root.is_dir():
+            continue
+        for path in reference_root.rglob("*"):
+            if not path.is_file() or path.suffix not in allowed_suffixes:
+                continue
+            if "prism/runs" in path.as_posix():
+                continue
+            reference_files.append(path)
+
+    refs: dict[str, list[str]] = {run_id: [] for run_id in run_ids}
+    for path in sorted(reference_files):
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        rel = path.relative_to(root).as_posix() if path.is_relative_to(root) else str(path)
+        for run_id in run_ids:
+            if run_id in text:
+                refs[run_id].append(rel)
+    return refs
+
+
 def registry_statuses(path: Path) -> list[str]:
     if not path.is_file():
         return []
@@ -57,7 +97,9 @@ def classify_runs(root: Path) -> list[dict[str, object]]:
     if not runs_root.exists():
         return []
 
+    run_ids = {path.name for path in runs_root.iterdir() if path.is_dir()}
     bound_ids = report_bound_run_ids(reports_root)
+    tracked_refs = tracked_reference_map(root, run_ids)
     rows: list[dict[str, object]] = []
     for path in sorted(p for p in runs_root.iterdir() if p.is_dir()):
         name = path.name
@@ -65,6 +107,8 @@ def classify_runs(root: Path) -> list[dict[str, object]]:
         statuses = registry_statuses(registry)
         active = any(status == "dispatched" for status in statuses)
         report_bound = name in bound_ids
+        external_references = tracked_refs.get(name, [])
+        evidence_bound = report_bound or bool(external_references)
         row_age_days = age_days(path)
         cleanup_eligible = False
         local_prune_candidate = False
@@ -76,7 +120,7 @@ def classify_runs(root: Path) -> list[dict[str, object]]:
         elif name.startswith("acceptance-prism-"):
             lifecycle_class = "acceptance-fixture"
             retention = "ephemeral-local"
-            cleanup_eligible = not active and not report_bound
+            cleanup_eligible = not active and not evidence_bound
             reason = "acceptance fixture run; safe cleanup set only after run is no longer active"
         elif re.match(r"^20\d{6}-", name):
             lifecycle_class = "formal-run"
@@ -87,9 +131,9 @@ def classify_runs(root: Path) -> list[dict[str, object]]:
             if active:
                 retention = "preserve-active"
                 reason = "local evidence still marked active"
-            elif report_bound:
+            elif evidence_bound:
                 retention = "preserve-bound"
-                reason = "local evidence is referenced by a formal report"
+                reason = "local evidence is referenced by tracked reports or knowledge assets"
             elif row_age_days >= LOCAL_RETENTION_DAYS:
                 retention = f"review-and-prune>{LOCAL_RETENTION_DAYS}d"
                 local_prune_candidate = True
@@ -108,6 +152,9 @@ def classify_runs(root: Path) -> list[dict[str, object]]:
                 "local_prune_candidate": local_prune_candidate,
                 "active": active,
                 "report_bound": report_bound,
+                "evidence_bound": evidence_bound,
+                "external_references": external_references[:20],
+                "external_reference_count": len(external_references),
                 "statuses": statuses,
                 "age_days": row_age_days,
                 "reason": reason,
@@ -130,6 +177,11 @@ def main() -> int:
         counts = Counter(row["class"] for row in rows)
         purgeable = [row for row in rows if row["cleanup_eligible"]]
         pruneable_local = [row for row in rows if row["local_prune_candidate"]]
+        bound_local = [
+            row
+            for row in rows
+            if row["class"] == "named-local-evidence" and row.get("evidence_bound")
+        ]
         print("PRISM_RUNS_LIFECYCLE_SUMMARY")
         print(f"total={len(rows)}")
         print(f"acceptance-fixture={counts.get('acceptance-fixture', 0)}")
@@ -137,6 +189,7 @@ def main() -> int:
         print(f"named-local-evidence={counts.get('named-local-evidence', 0)}")
         print(f"infra-locks={counts.get('infra-locks', 0)}")
         print(f"purgeable_acceptance={len(purgeable)}")
+        print(f"bound_local_evidence={len(bound_local)}")
         print(f"pruneable_local={len(pruneable_local)} retention_days={LOCAL_RETENTION_DAYS}")
         if pruneable_local:
             preview = ",".join(str(row["run_id"]) for row in pruneable_local[:5])
@@ -156,6 +209,8 @@ def main() -> int:
                         f"retention={row['retention']}",
                         f"active={str(row['active']).lower()}",
                         f"report_bound={str(row['report_bound']).lower()}",
+                        f"evidence_bound={str(row['evidence_bound']).lower()}",
+                        f"references={row['external_reference_count']}",
                         f"acceptance_cleanup={str(row['cleanup_eligible']).lower()}",
                         f"local_prune_candidate={str(row['local_prune_candidate']).lower()}",
                     ]
@@ -171,6 +226,8 @@ def main() -> int:
                 return fail(f"non-local evidence marked local prune candidate: {row['run_id']}")
             if row["local_prune_candidate"] and row["active"]:
                 return fail(f"active local evidence marked prune candidate: {row['run_id']}")
+            if row["local_prune_candidate"] and row.get("evidence_bound"):
+                return fail(f"referenced local evidence marked prune candidate: {row['run_id']}")
         print("PRISM_RUNS_LIFECYCLE_OK")
         return 0
 

@@ -1468,6 +1468,51 @@ run_prism_concurrency_case() {
     assert_eq "$handle_b" "session-b"
 }
 
+run_prism_runs_preserves_referenced_local_evidence_case() {
+    local fixture_root bound_run unbound_run inventory prune_plan
+
+    log "case: prism-runs-preserves-referenced-local-evidence"
+
+    fixture_root="$ACCEPT_ROOT/prism-runs-preservation-root"
+    bound_run="review-bound-evidence-${RANDOM}-$$"
+    unbound_run="review-unbound-evidence-${RANDOM}-$$"
+    mkdir -p \
+        "$fixture_root/prism/runs/$bound_run" \
+        "$fixture_root/prism/runs/$unbound_run" \
+        "$fixture_root/redcap-knowledge/task-reports"
+
+    cat >"$fixture_root/prism/runs/$bound_run/session-registry.yaml" <<'EOF'
+run_id: bound
+agents:
+  - role: reviewer
+    status: responded
+EOF
+    cat >"$fixture_root/prism/runs/$unbound_run/session-registry.yaml" <<'EOF'
+run_id: unbound
+agents:
+  - role: reviewer
+    status: responded
+EOF
+    printf '# Historical report\n\nEvidence: prism/runs/%s/session-registry.yaml\n' "$bound_run" \
+        >"$fixture_root/redcap-knowledge/task-reports/2026-01-01-bound-evidence.md"
+    touch -t 202401010000 "$fixture_root/prism/runs/$bound_run" "$fixture_root/prism/runs/$unbound_run"
+
+    inventory="$(python3 "$REDCAP_ROOT/prism/tools/prism-runs-lifecycle.py" "$fixture_root" inventory false)"
+    assert_string_contains "$inventory" "run_id=$bound_run"
+    assert_string_contains "$inventory" "run_id=$bound_run"$'\t'"class=named-local-evidence"
+    assert_string_contains "$inventory" "evidence_bound=true"
+    assert_string_contains "$inventory" "local_prune_candidate=false"
+    assert_string_contains "$inventory" "run_id=$unbound_run"
+    assert_string_contains "$inventory" "evidence_bound=false"
+    assert_string_contains "$inventory" "local_prune_candidate=true"
+
+    prune_plan="$(python3 "$REDCAP_ROOT/prism/tools/prism-runs-lifecycle.py" "$fixture_root" prune-local false)"
+    assert_string_contains "$prune_plan" "$unbound_run"
+    if printf '%s\n' "$prune_plan" | grep -Fq "$bound_run"; then
+        fail "referenced local evidence must not enter prune-local plan"
+    fi
+}
+
 run_report_register_requires_claim_case() {
     local report_path degraded_file before after
 
@@ -14393,6 +14438,7 @@ run_all_cases() {
     run_cross_layer_visibility_case
     run_layera_legacy_quarantine_case
     run_prism_concurrency_case
+    run_prism_runs_preserves_referenced_local_evidence_case
     run_prism_legacy_bridge_case
     run_report_register_requires_claim_case
     run_report_register_replaces_pending_artifact_case
@@ -14601,6 +14647,9 @@ case "$COMMAND" in
         ;;
     prism-concurrency)
         run_prism_concurrency_case
+        ;;
+    prism-runs-preserves-referenced-local-evidence)
+        run_prism_runs_preserves_referenced_local_evidence_case
         ;;
     prism-legacy-bridge)
         run_prism_legacy_bridge_case

@@ -120,9 +120,9 @@ Cap / Dispatcher 是 session_registry 的唯一写入方：Dispatch 阶段必须
 
 | lifecycle class | 含义 | 默认保留策略 | 是否允许纳入自动清理安全集 |
 |---|---|---|---|
-| `acceptance-fixture` | acceptance / regression 过程中生成的本地夹具运行证据（如 `acceptance-prism-*`） | `ephemeral-local` | ✅ 允许；但仅限非 active、未被报告绑定的 acceptance 目录 |
+| `acceptance-fixture` | acceptance / regression 过程中生成的本地夹具运行证据（如 `acceptance-prism-*`） | `ephemeral-local` | ✅ 允许；但仅限非 active、未被任何报告/知识资产引用的 acceptance 目录 |
 | `formal-run` | 以 `YYYYMMDD-*` 命名、用于 formal Prism 的 run-scoped 证据 | `preserve` | ❌ 默认不自动删 |
-| `named-local-evidence` | `debug-run` / `council-*` / `review-*` / `safe-default` 这类命名运行证据 | `review-and-prune`（超过保留期后进入审查清理候选） | ✅ 可在显式 dry-run / apply 下清理，但必须满足非 active、未被报告绑定、超过保留阈值 |
+| `named-local-evidence` | `debug-run` / `council-*` / `review-*` / `safe-default` 这类命名运行证据 | `review-and-prune`（超过保留期后进入审查清理候选）；若已被历史报告、知识库或任务报告引用，则升级为 `preserve-bound` | ✅ 可在显式 dry-run / apply 下清理，但必须满足非 active、未被任何报告/知识资产引用、超过保留阈值 |
 | `infra-locks` | `.locks` 等内部锁目录 | `preserve` | ❌ 默认不自动删 |
 
 执行入口：
@@ -140,6 +140,7 @@ bash prism/tools/prism-runs-lifecycle.sh prune-local --apply
 规则：
 - `prune-acceptance --apply` 只允许删除 `cleanup_eligible=true` 的 `acceptance-fixture`
 - `prune-local --apply` 只允许删除 `local_prune_candidate=true` 的 `named-local-evidence`
+- 被 tracked 报告、知识库、任务报告等资产引用的 run-scoped evidence 必须先保全引用链；不得因为目录过期就直接删除
 - formal run、本轮 active run 与 `.locks` 必须 preserve-by-default
 - 若当前任务只批准“降 token / 清 acceptance 残留”，不得顺手扩展到命名 run 或 formal run
 

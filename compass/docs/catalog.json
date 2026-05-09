@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 364498,
-    "lines": 7264,
-    "chars": 218673,
+    "size_bytes": 359181,
+    "lines": 7146,
+    "chars": 214722,
     "rough_token_pressure": {
-      "low": 54668,
-      "high": 109336
+      "low": 53680,
+      "high": 107361
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 170823,
-        "lines": 2681,
-        "chars": 102200,
+        "size_bytes": 165506,
+        "lines": 2563,
+        "chars": 98249,
         "rough_token_pressure": {
-          "low": 25550,
-          "high": 51100
+          "low": 24562,
+          "high": 49124
         }
       }
     },
@@ -522,35 +522,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-08-redcap-prism-runs-lifecycle-status-surface-hardening.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P2-8 Prism runs 生命周期状态面与清理边界加固",
-      "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11350,
-      "lines": 213,
-      "chars": 6832,
-      "summary": "当前已完成：`prism/runs` 的状态面提示已经从“模糊建议清理”改成“先只读审查、再 dry-run 计划、物理删除必须显式批准”的安全口径。 / 详情：本轮没有删除任何运行证据，也没有把 10 个清理候选当成可直接删除结论。现在 Cap 或其他 Agent 看到 current-status 时，会先拿到可复制的真实命令路径，并清楚知道 `prune-local --apply` 是需要 Norven 明确批准的破坏性动作。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：`prism/runs` 的状态面提示已经从“模糊建议清理”改成“先只读审查、再 dry-run 计划、物理删除必须显式批准”的安全口径。",
-          "详情：本轮没有删除任何运行证据，也没有把 10 个清理候选当成可直接删除结论。现在 Cap 或其他 Agent 看到 current-status 时，会先拿到可复制的真实命令路径，并清楚知道 `prune-local --apply` 是需要 Norven 明确批准的破坏性动作。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2h 已把公共 `redcap-arsenal` 从 template-only 推进到首批 reviewed-substantive 条目，并完成 receipt 收口。"
-        ],
-        "next_step": [
-          "下一步计划做的是：若继续自动推进，只能做非发布、非破坏性治理项；正式 npm/public release、许可证、发布凭据、`private=false`、以及真正物理清理 `prism/runs` 都仍需要单独任务和明确边界。"
-        ],
-        "position": [
-          "整体计划脉络图是：信息架构治理 → 运行证据生命周期可视化 → 公共知识库首批晋升 → 状态面清理边界加固 → 后续 release readiness / 显式物理清理任务。",
-          "当前所在位置：P2-8 `redcap-prism-runs-lifecycle-status-surface-hardening`，这是一个非破坏性的状态面治理切片。"
-        ]
-      }
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-09-feishu-human-readable-node-report.md",
       "collection": "task-reports",
       "title": "任务完成报告：飞书节点汇报人类可读化",
@@ -606,6 +577,25 @@
           "整体计划脉络图是：RedCap 这次超长主线的目标，是从本机 skill 工程演进为更像正式工具的 Agent runtime / CLI / 多层系统；任务流、知识治理、公共库、Forge、LLM-wiki-lite、CLI 产品面、干净工作区验证和飞书治理都已完成一轮落地。",
           "当前所在位置：主线仍未整体结束，正式公开发布还未启动；本次完成的是“飞书通知人类可读 + 父任务全景 + 回复安全入口”的一组治理收口。"
         ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-09-prism-runs-evidence-preservation-boundary.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Prism 本地证据保全边界修正",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 6033,
+      "lines": 95,
+      "chars": 2881,
+      "summary": "- 当前已完成：已把 Prism 本地证据清理从“按过期时间粗判”改成“先查证据链引用”；被历史报告或知识资产引用的目录会自动保全，不会进入删除计划。 - 当前效果：状态面现在会明确显示 9 个目录是证据链绑定保全，另有 1 个未绑定目录只是 dry-run 清理候选。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [],
+        "previous_step": [],
+        "next_step": [],
+        "position": []
       }
     }
   ]
