@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 359128,
-    "lines": 7168,
-    "chars": 214608,
+    "size_bytes": 356365,
+    "lines": 7158,
+    "chars": 212815,
     "rough_token_pressure": {
-      "low": 53652,
-      "high": 107304
+      "low": 53203,
+      "high": 106407
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 165453,
-        "lines": 2585,
-        "chars": 98135,
+        "size_bytes": 162690,
+        "lines": 2575,
+        "chars": 96342,
         "rough_token_pressure": {
-          "low": 24533,
-          "high": 49067
+          "low": 24085,
+          "high": 48171
         }
       }
     },
@@ -104,9 +104,9 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-06-agent-reading-absorption.md",
-        "chars": 9993,
-        "lines": 237,
+        "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
+        "chars": 9442,
+        "lines": 191,
         "read_policy": "read-catalog-summary-by-default"
       }
     ]
@@ -457,19 +457,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-06-agent-reading-absorption.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：AI Era agent-reading 吸收与长期记忆对齐",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 16711,
-      "lines": 237,
-      "chars": 9993,
-      "summary": "当前已完成：RedCap 已把 AI Era 导读资料中适合当前阶段的工程纪律和长期记忆设计，吸收成可机器检查的契约。 / 详情：本轮解决的是“看到业内长期记忆 / LLM Wiki 思路后，RedCap 应该怎么吸收，而不是盲目照搬”的问题。最终做法是：保留 RedCap 现有 Forge、安全边界和检索阈值，只吸收显式假设、简单优先、外科式修改、可验证循环，以及 Raw/Wiki/Schema、Ingest/Query/Lint 这些可对齐的设计。现在 RedCap 有了 append-only 知识时间线和专门检查器，可以阻断“直接公共写入”“默认启用 RAG”“冒充完整 Wiki”等过度声明。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-06-redcap-public-distillation-preflight.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-2h-0 historical asset public distillation preflight",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：飞书节点汇报人类可读化",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8432,
       "lines": 195,
       "chars": 4438,
       "summary": "当前已完成：飞书 node-report 已从“状态字段堆叠”改成更像聊天阶段汇报的六段式结构。 / 详情：飞书正文现在优先展示结论、任务位置、下一步、是否需要 Norven、阻塞状态和关键证据，不再重复输出三段路线信息。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：飞书 node-report 已从“状态字段堆叠”改成更像聊天阶段汇报的六段式结构。",
-          "详情：飞书正文现在优先展示结论、任务位置、下一步、是否需要 Norven、阻塞状态和关键证据，不再重复输出三段路线信息。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P2-9 已把飞书完成通知从双出口收敛为 closeout runtime 单出口，并验证同一完成节点只发一条飞书。"
-        ],
-        "next_step": [
-          "下一步计划做的是：确认新飞书模板稳定后，回到 RedCap 父任务线继续推进结构治理和发布前准备；public release 仍需单独 release task。"
-        ],
-        "position": [
-          "整体计划脉络图是：双通知修复 → 飞书内容可读化 → 回归/棱镜验收 → closeout → 回到父任务线。",
-          "当前所在位置：P2-10 `redcap-feishu-human-readable-node-report`，这是人类可见汇报质量修复，不是发布任务。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-09-feishu-outcome-readable-and-reply-research.md",
@@ -576,6 +547,35 @@
         "position": [
           "整体计划脉络图是：RedCap 这次超长主线的目标，是从本机 skill 工程演进为更像正式工具的 Agent runtime / CLI / 多层系统；任务流、知识治理、公共库、Forge、LLM-wiki-lite、CLI 产品面、干净工作区验证和飞书治理都已完成一轮落地。",
           "当前所在位置：主线仍未整体结束，正式公开发布还未启动；本次完成的是“飞书通知人类可读 + 父任务全景 + 回复安全入口”的一组治理收口。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-09-pre-release-final-convergence-audit.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-2 发布前最终收束审判",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 13948,
+      "lines": 227,
+      "chars": 8200,
+      "summary": "当前已完成：RedCap 已完成一次面向公开 CLI/npm 发布前的最终收束审判；结论是“工程安全网和本地打包预检通过，但仍不应直接公开发布”。 / 详情：本轮重新跑了发布安全、包面、runtime 包清单、发布前架构审判、结构任务树和 clean workspace E2E。现在可以明确说：RedCap 已具备本地 package readiness 和安全预检基础，但发布前架构审判仍明确保留 2 个 release blocker：许可证未定、发布开关/凭据/registry 权限未授权；此外，包面瘦身、完整执行层拆分和公开产品说明仍是发布质量层面的后续治理项。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已完成一次面向公开 CLI/npm 发布前的最终收束审判；结论是“工程安全网和本地打包预检通过，但仍不应直接公开发布”。",
+          "详情：本轮重新跑了发布安全、包面、runtime 包清单、发布前架构审判、结构任务树和 clean workspace E2E。现在可以明确说：RedCap 已具备本地 package readiness 和安全预检基础，但发布前架构审判仍明确保留 2 个 release blocker：许可证未定、发布开关/凭据/registry 权限未授权；此外，包面瘦身、完整执行层拆分和公开产品说明仍是发布质量层面的后续治理项。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P2-16 已把 Codex lifecycle hooks 纳入 RedCap 宿主适配，并用本机 Codex CLI live marker E2E 证明 `codex exec` 会触发 SessionStart / Stop；但 Codex.app interactive 和完整 reply-veto 仍未证明。"
+        ],
+        "next_step": [
+          "下一步计划做的是：如果 Norven 不进入正式 release task，就继续做非发布类产品化治理；如果要进入正式发布，则必须先由 Norven 决定许可证、发布窗口、npm 登录/权限和是否开启发布开关。"
+        ],
+        "position": [
+          "整体计划脉络图是：RedCap 工作流重构 → 信息架构/历史资产治理 → CLI 产品面与 package readiness → clean workspace E2E → Codex hooks 候选增强 → 发布前最终收束审判 → 等待正式 release task 或继续非发布治理。",
+          "当前所在位置：P4-2j `pre-release-final-convergence-audit`，这是发布前判断与收束审判，不是正式 npm 发布。"
         ]
       }
     },
