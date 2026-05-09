@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 355410,
-    "lines": 7141,
-    "chars": 211470,
+    "size_bytes": 355685,
+    "lines": 7143,
+    "chars": 211713,
     "rough_token_pressure": {
-      "low": 52867,
-      "high": 105735
+      "low": 52928,
+      "high": 105856
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 161735,
-        "lines": 2558,
-        "chars": 94997,
+        "size_bytes": 162010,
+        "lines": 2560,
+        "chars": 95240,
         "rough_token_pressure": {
-          "low": 23749,
-          "high": 47498
+          "low": 23810,
+          "high": 47620
         }
       }
     },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12350,
-      "lines": 216,
-      "chars": 6922,
+      "size_bytes": 12625,
+      "lines": 218,
+      "chars": 7165,
       "summary": "当前已完成：RedCap 已把正式发布任务之前还能由工程自动推进的产品化治理收束完成。 / 详情：本轮把 npm 候选包面从偏宽的内部工具集合，收窄为 150 个文件以内的 runtime-readiness surface；同时补上了未来正式发布任务需要看的交接说明、运行时入口边界和诊断分层。RedCap 现在更接近一个“可以进入 release task 审核的 CLI/runtime 产品候选”，但仍没有进入正式 npm 发布。",
       "status_basis": "filename_recency_only",
       "summary_points": {

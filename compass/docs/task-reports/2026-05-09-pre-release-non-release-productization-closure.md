@@ -134,6 +134,7 @@
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | targeted acceptance | `pre-release-product-architecture-check`、`pre-release-structure-task-tree-check`、`clean-workspace-e2e-check`、`prism-acceptance-binding-required` | 通过 |
 | full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过 |
+| clean workspace E2E 刷新 | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --result references/clean-workspace-install-e2e.json --timeout 240` | 通过；head=8ef6ebac87d4 |
 
 ### 5.2 棱镜评审
 
@@ -206,7 +207,8 @@
 ### 附录 A：Commits
 
 ```text
-待本轮提交后补入最终 commit。
+8ef6ebac87d4 refactor(release): 收束发布前非发布治理
+后续 clean workspace E2E 结果刷新将单独提交。
 ```
 
 ### 附录 B：棱镜调用记录
