@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 356365,
-    "lines": 7158,
-    "chars": 212815,
+    "size_bytes": 355410,
+    "lines": 7141,
+    "chars": 211470,
     "rough_token_pressure": {
-      "low": 53203,
-      "high": 106407
+      "low": 52867,
+      "high": 105735
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 162690,
-        "lines": 2575,
-        "chars": 96342,
+        "size_bytes": 161735,
+        "lines": 2558,
+        "chars": 94997,
         "rough_token_pressure": {
-          "low": 24085,
-          "high": 48171
+          "low": 23749,
+          "high": 47498
         }
       }
     },
@@ -457,19 +457,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-06-redcap-public-distillation-preflight.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-2h-0 historical asset public distillation preflight",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13305,
-      "lines": 233,
-      "chars": 8267,
-      "summary": "当前已完成：RedCap 已把“历史资产未来是否能进入公共 redcap-arsenal”先收束成 dry-run 预检强门。 / 详情：本轮解决的是“不能因为公共库还空，就把私有历史报告、经验库或运行证据直接搬出去填充内容”的风险。现在 RedCap Forge 只能先做候选分类和边界检查，公共写入、raw 私有资料导出、历史资产删除/移动、npm 发布都被明确禁止。这样后续如果真的要公开沉淀知识，必须先经过脱敏、去重、安全审查、append-only 条目和索引刷新。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-07-redcap-midcourse-architecture-task-tree-review.md",
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 中途架构与任务树一致性审计",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：飞书成果汇报、全景图与回复通道治理",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14517,
       "lines": 233,
       "chars": 6771,
       "summary": "当前已完成：飞书完成通知的人类可读性已经收口；飞书回复也已接成“安全收件箱”，可以被 RedCap 看到，但不会被当成远程命令直接执行。 / 详情：整体任务全景图已从“当前小任务路线”升级为“RedCap 这次超长主线任务的总览”；飞书回复会进入待处理入口，再由中插需求、人工决策或当前任务合并流程接管。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：飞书完成通知的人类可读性已经收口；飞书回复也已接成“安全收件箱”，可以被 RedCap 看到，但不会被当成远程命令直接执行。",
-          "详情：整体任务全景图已从“当前小任务路线”升级为“RedCap 这次超长主线任务的总览”；飞书回复会进入待处理入口，再由中插需求、人工决策或当前任务合并流程接管。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P2-10 已把飞书从字段堆叠改成六段式汇报，但仍保留了一些偏控制面的表达。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续推进 RedCap 父任务线；如果飞书收件箱出现新回复，先判断它是继续请求、复审请求还是新需求，再合并到任务树，而不是打断主线或自动执行。"
-        ],
-        "position": [
-          "整体计划脉络图是：RedCap 这次超长主线的目标，是从本机 skill 工程演进为更像正式工具的 Agent runtime / CLI / 多层系统；任务流、知识治理、公共库、Forge、LLM-wiki-lite、CLI 产品面、干净工作区验证和飞书治理都已完成一轮落地。",
-          "当前所在位置：主线仍未整体结束，正式公开发布还未启动；本次完成的是“飞书通知人类可读 + 父任务全景 + 回复安全入口”的一组治理收口。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-09-pre-release-final-convergence-audit.md",
@@ -576,6 +547,35 @@
         "position": [
           "整体计划脉络图是：RedCap 工作流重构 → 信息架构/历史资产治理 → CLI 产品面与 package readiness → clean workspace E2E → Codex hooks 候选增强 → 发布前最终收束审判 → 等待正式 release task 或继续非发布治理。",
           "当前所在位置：P4-2j `pre-release-final-convergence-audit`，这是发布前判断与收束审判，不是正式 npm 发布。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-09-pre-release-non-release-productization-closure.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-2k 发布前非发布产品化治理收束",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12350,
+      "lines": 216,
+      "chars": 6922,
+      "summary": "当前已完成：RedCap 已把正式发布任务之前还能由工程自动推进的产品化治理收束完成。 / 详情：本轮把 npm 候选包面从偏宽的内部工具集合，收窄为 150 个文件以内的 runtime-readiness surface；同时补上了未来正式发布任务需要看的交接说明、运行时入口边界和诊断分层。RedCap 现在更接近一个“可以进入 release task 审核的 CLI/runtime 产品候选”，但仍没有进入正式 npm 发布。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把正式发布任务之前还能由工程自动推进的产品化治理收束完成。",
+          "详情：本轮把 npm 候选包面从偏宽的内部工具集合，收窄为 150 个文件以内的 runtime-readiness surface；同时补上了未来正式发布任务需要看的交接说明、运行时入口边界和诊断分层。RedCap 现在更接近一个“可以进入 release task 审核的 CLI/runtime 产品候选”，但仍没有进入正式 npm 发布。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2j 已完成发布前最终收束审判，确认本地打包和安全预检基础成立，但正式公开发布仍被许可证、发布开关和 npm 权限等人工决策拦住。"
+        ],
+        "next_step": [
+          "下一步计划做的是：如果 Norven 决定启动正式 release task，先做 release readiness 全量复验，再处理许可证、发布开关、npm scope 权限、版本号和回滚策略；如果暂不发布，RedCap 父任务线可以转入正式发布之外的后续产品化治理。"
+        ],
+        "position": [
+          "整体计划脉络图是：工作流重构 → 信息架构/历史资产治理 → CLI 产品面 → package readiness → clean workspace E2E → Codex hooks 候选增强 → 发布前最终审判 → P4-2k 非发布产品化收束 → 等待正式 release task。",
+          "当前所在位置：P4-2k。它是正式发布任务之前的工程收束，不是 P4-2 正式 npm 发布。"
         ]
       }
     },

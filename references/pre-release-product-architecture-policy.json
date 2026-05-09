@@ -42,7 +42,8 @@
   ],
   "allowed_review_statuses": [
     "review-complete",
-    "blocked-pending-remediation"
+    "blocked-pending-remediation",
+    "blocked-pending-human-release-decisions"
   ],
   "allowed_finding_severities": [
     "release-blocker",

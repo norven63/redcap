@@ -1,4 +1,32 @@
 reports:
+  - id: "20260509-pre-release-non-release-productization-closure"
+    mode: acceptance-review
+    date: "2026-05-09"
+    topic: "P4-2k pre-release non-release productization closure"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass-after-fixes"
+    consensus_actions:
+      - "Accept P4-2k as non-release productization closure before the formal release task"
+      - "Keep npm publish, license choice, private=false and publish_allowed=true outside this tranche"
+      - "Use a curated runtime-readiness package surface with fresh npm pack and safety checks"
+      - "Split CLI diagnose into runtime profile and source-maintenance profile to avoid user-facing false failures"
+      - "Keep release blockers framed as Norven-held human release decisions, not automatic engineering defects"
+    open_questions:
+      - "Formal release task still needs license, publish switch, npm credentials/registry rights, version and rollback decisions"
+      - "Future package surface work should reduce duplicated exclude_globs or add stronger drift checks before public publish"
+    lessons_updated: false
+    files_affected:
+      - "package.json"
+      - "bin/redcap"
+      - "compass/tools/redcap-diagnose.sh"
+      - "references/runtime-package-readiness-policy.json"
+      - "references/public-package-surface-policy.json"
+      - "references/package-publish-safety-policy.json"
+      - "references/pre-release-product-architecture-review.json"
+      - "references/public-release-handoff.md"
+      - "runtime/redcap-core/import-map.json"
+    archived: false
   - id: "20260509-pre-release-final-convergence-audit"
     mode: test
     date: "2026-05-09"

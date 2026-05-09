@@ -40,7 +40,7 @@ ALLOWED_POST_RESULT_DRIFT_PATHS = {
     "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
     "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
     "redcap-knowledge/task-reports/2026-05-06-agent-reading-absorption.md",
-    "compass/docs/task-reports/2026-05-06-redcap-public-distillation-preflight.md",
+    "redcap-knowledge/task-reports/2026-05-06-redcap-public-distillation-preflight.md",
     "compass/knowledge/lessons.md",
 }
 

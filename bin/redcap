@@ -338,9 +338,11 @@ case "$COMMAND" in
     resolve_workspace_task_args "$@"
     emit_trace "diagnose" "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh"
     if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
-      exec bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
+      exec env REDCAP_DIAGNOSE_PROFILE="${REDCAP_DIAGNOSE_PROFILE:-runtime}" \
+        bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
     fi
-    exec bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_CMD_TASK_FILE"
+    exec env REDCAP_DIAGNOSE_PROFILE="${REDCAP_DIAGNOSE_PROFILE:-runtime}" \
+      bash "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" "$REDCAP_CMD_TASK_FILE"
     ;;
   doctor)
     resolve_workspace_task_args "$@"

@@ -195,7 +195,10 @@ def main() -> None:
         fail("publish_allowed must remain false during structure reanchor")
 
     review = load_json(PRE_RELEASE_REVIEW, "pre-release product architecture review")
-    if review.get("release_recommendation") != "not-ready-before-product-architecture-remediation":
+    if review.get("release_recommendation") not in {
+        "not-ready-before-product-architecture-remediation",
+        "not-ready-before-human-release-decisions",
+    }:
         fail("pre-release review must keep release not-ready recommendation")
     findings = review.get("findings")
     if not isinstance(findings, list):

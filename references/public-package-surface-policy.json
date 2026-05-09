@@ -9,8 +9,9 @@
   "license_status": "manual-before-public-publish",
   "current_license": "UNLICENSED",
   "source_visibility_model": "npm package source is visible to users; safety depends on explicit exclusion and scanning, not obfuscation",
-  "surface_mode": "full-runtime-readiness-surface",
-  "max_candidate_count": 260,
+  "surface_mode": "curated-runtime-readiness-surface",
+  "max_candidate_count": 150,
+  "candidate_count_rule": "Keep the package surface focused on runnable CLI/runtime, release safety checks, Prism availability, closeout/revive/status/diagnose support, and public handoff docs. Exclude RedCap self-maintenance migrations, historical E2E fixtures, full LLM-wiki/RAG research tooling, and private/public distillation maintenance tools until a separate maintainer package profile exists.",
   "required_runtime_checks": [
     "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
     "bash compass/tools/redcap-package-publish-safety-check.sh",

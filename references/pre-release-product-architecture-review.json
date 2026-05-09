@@ -2,23 +2,26 @@
   "version": 1,
   "review_id": "pre-release-product-architecture-review",
   "task_id": "pre-release-product-architecture-review",
-  "status": "blocked-pending-remediation",
-  "release_recommendation": "not-ready-before-product-architecture-remediation",
-  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E, and P4-2i has added a minimum package-visible runtime layout with compatibility wrappers. It is still not yet a public npm release: license choice and publication enablement remain explicit human release boundaries, and the full thin runtime split beyond compatibility wrappers remains a should-fix before broad public marketing.",
+  "status": "blocked-pending-human-release-decisions",
+  "release_recommendation": "not-ready-before-human-release-decisions",
+  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E. P4-2k has narrowed the npm candidate surface to a curated runtime-readiness profile and added a public release handoff/import map, so the remaining blockers are now explicit human release decisions: license choice and publication enablement.",
   "observed_facts": {
     "current_package_name": "@norven63/redcap",
     "user_approved_public_package_name": "@norven63/redcap",
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 248,
+    "package_candidate_count": 150,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
     "public_package_surface_status": "pass",
     "execution_layer_split_status": "minimum-compatible-layout-exists",
     "runtime_root_exists": true,
-    "current_runtime_shape": "skill-root-runtime-plus-thin-cli-facade-plus-minimum-package-visible-runtime-layout",
+    "current_runtime_shape": "skill-root-runtime-plus-thin-cli-facade-plus-curated-runtime-readiness-surface",
+    "package_surface_mode": "curated-runtime-readiness-surface",
+    "runtime_import_map_exists": true,
+    "public_release_handoff_exists": true,
     "cli_has_doctor_command": true,
     "cli_has_debug_command": true,
     "cli_has_trace_option": true,
@@ -71,10 +74,11 @@
     {
       "id": "runtime-project-user-boundaries-not-physically-split",
       "dimension": "machine-independence",
-      "severity": "should-fix",
-      "claim": "P4-2i adds a package-visible runtime root with compatibility wrappers for the CLI, revive and closeout entrypoints. This removes the earlier 'no runtime root / dry-run-only' blocker, but the full tool-tree split remains deferred until import maps and hook adapters are ready.",
+      "severity": "pass",
+      "claim": "P4-2k keeps the existing compatibility wrappers and adds a package-visible runtime import map that separates the public runtime contract from repo-maintenance tooling. Full physical movement of compass/tools and prism/tools remains a later maintainer refactor, but it is no longer a release-path ambiguity. CLI diagnose now defaults to the runtime profile while the source repo keeps the full maintenance profile.",
       "evidence": [
         "references/execution-layer-split-dry-run.json",
+        "runtime/redcap-core/import-map.json",
         "bin/redcap",
         "compass/tools/"
       ],
@@ -118,8 +122,8 @@
     {
       "id": "package-surface-too-broad-for-public-cli",
       "dimension": "cli-product-quality",
-      "severity": "should-fix",
-      "claim": "The npm package candidate surface currently contains 248 files after the minimum runtime layout wrappers, Feishu Inbox safe-ingress governance files, Codex lifecycle hooks candidate wiring, and Codex live marker E2E evidence were added. P4-2d/P4-2i make this an explicit full-runtime-readiness surface with safety gates, but a thinner public product package may still be desirable before broad marketing.",
+      "severity": "pass",
+      "claim": "P4-2k narrows the npm package candidate surface to 150 files by excluding RedCap self-maintenance migrations, historical E2E fixtures, full LLM-wiki/RAG research tooling, public distillation maintenance tools and one-off reconstruction assets. The package surface is now a curated runtime-readiness surface rather than a broad internal bundle.",
       "evidence": [
         "references/runtime-package-readiness-policy.json",
         "references/public-package-surface-policy.json",
@@ -154,11 +158,12 @@
     {
       "id": "agent-container-contract-needs-product-doc",
       "dimension": "agent-container-contract",
-      "severity": "deferred",
-      "claim": "The intended Agent container contract is conceptually clear: invoke CLI at revive/task/check/closeout nodes. A public user guide should still make this concrete before broad release.",
+      "severity": "pass",
+      "claim": "P4-2k adds a public release handoff that explains the Agent/container contract in human terms: use CLI at revive/status/diagnose/closeout and release-readiness nodes, while formal publish actions remain a separate authorized release task.",
       "evidence": [
         "README.md",
-        "ARCHITECTURE.md"
+        "ARCHITECTURE.md",
+        "references/public-release-handoff.md"
       ],
       "required_before_public_release": false
     }
