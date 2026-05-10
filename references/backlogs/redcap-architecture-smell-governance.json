@@ -84,6 +84,16 @@
       "items": [
         "RASG-018"
       ]
+    },
+    {
+      "id": "T7",
+      "title": "Holistic audit follow-up before release readiness",
+      "intent": "Track the P1 issues discovered by RASG-018 that should be closed before RedCap is treated as a polished public runtime or CLI product.",
+      "items": [
+        "RASG-019",
+        "RASG-020",
+        "RASG-021"
+      ]
     }
   ],
   "requirements": [
@@ -558,10 +568,87 @@
         "Every lower-priority finding has a recorded disposition and cannot be silently discarded from the audit output.",
         "The final closeout explicitly states that RASG-018 is not satisfied by RASG-017 alone."
       ],
+      "status": "done",
+      "completed_at": "2026-05-10",
+      "introduced_at": "2026-05-10",
+      "evidence": [
+        "references/redcap-holistic-smell-audit.json",
+        "prism/runs/20260510-rasg018-holistic-smell-audit/collect/architecture-review/parsed.json",
+        "prism/runs/20260510-rasg018-holistic-smell-audit/collect/risk-review/parsed.json",
+        "compass/docs/task-reports/2026-05-10-rasg-018-holistic-smell-audit.md"
+      ]
+    },
+    {
+      "id": "RASG-019",
+      "title": "Make human-facing CLI, status, and notification output understandable without RedCap internal jargon",
+      "priority": "P1-before-public-release",
+      "category": "human-product-surface",
+      "problem_source": "RASG-018 Prism review found that user-facing surfaces still expose internal terms such as Layer B, Prism quorum, FSM, closeout runtime, receipt, diagnose, and internal gate names as the main narrative.",
+      "risk": "A new user can see that RedCap did something but cannot tell what was solved, what remains, whether human help is needed, or where the current work sits in the larger task picture. This turns governance detail into product noise.",
+      "desired_outcome": "Human-facing output is framed by problem, action, result, current task panorama, next step, and whether human intervention is needed. Internal mechanism names may appear only as secondary evidence links or glossary-backed details.",
+      "implementation_notes": [
+        "Audit bin/redcap help/status/diagnose output, closeout summaries, Feishu node reports, progress-meter summaries, and task-report executive summaries.",
+        "Keep machine-readable evidence intact; this is a presentation-layer cleanup, not a reduction of governance rigor.",
+        "Use the existing glossary/file lookup dictionary only as supporting evidence, not as the primary explanation."
+      ],
+      "acceptance": [
+        "A first-time human can understand the current task state and next action without knowing RedCap internal component names.",
+        "Feishu and CLI summaries include a broad task panorama when the task is part of a larger parent line.",
+        "Mechanism names are either avoided in the main narrative or accompanied by a concise human explanation."
+      ],
       "status": "planned",
       "introduced_at": "2026-05-10",
       "evidence": [
-        "compass/docs/task-reports/2026-05-10-root-information-architecture-debt-intake.md"
+        "references/redcap-holistic-smell-audit.json"
+      ]
+    },
+    {
+      "id": "RASG-020",
+      "title": "Separate public runtime contract from maintainer-only governance validators before npm or CLI release",
+      "priority": "P1-before-public-release",
+      "category": "package-release-surface",
+      "problem_source": "RASG-018 Prism review found that the current npm candidate surface still exposes a broad mix of runtime entry points, governance validators, Prism tooling, package checks, and maintainer control-plane scripts.",
+      "risk": "If published as-is, internal validation tools can be mistaken for stable public API, future cleanup becomes a compatibility problem, and users are forced to understand maintainer-only machinery before using RedCap as a normal tool.",
+      "desired_outcome": "Release readiness distinguishes the public runtime contract from maintainer/developer governance tools. The package manifest, runtime package readiness policy, and publish safety check agree on that boundary from a single source or a proved-equivalent source set.",
+      "implementation_notes": [
+        "Do not publish or remove safety checks while this remains planned.",
+        "Classify package candidates as runtime-contract, host-adapter, documentation, maintainer-only, private-local, or excluded.",
+        "If the first release intentionally includes maintainer tools, make that an explicit alpha contract rather than an accidental public surface."
+      ],
+      "acceptance": [
+        "Release readiness can explain which commands are public user contract and which are maintainer/internal contract.",
+        "npm pack dry-run remains safe and does not include private files, secrets, volatile evidence, or Norven-local state.",
+        "Public package documentation does not present maintainer-only validators as normal end-user workflow."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-10",
+      "evidence": [
+        "references/redcap-holistic-smell-audit.json"
+      ]
+    },
+    {
+      "id": "RASG-021",
+      "title": "Track Prism degradation frequency and keep conclusion gates resilient when providers are flaky",
+      "priority": "P1-before-public-release",
+      "category": "prism-governance-resilience",
+      "problem_source": "RASG-018 Prism review found multiple recent formal Prism runs recorded as resource-limited-pass, mostly because one provider timed out, hit quota, or returned unusable output.",
+      "risk": "If resource-limited outcomes become normal, RedCap can slowly drift from multi-view review back to single-agent conclusion making while still sounding Prism-backed.",
+      "desired_outcome": "Prism status surfaces show the recent degradation rate, provider families involved, and whether the current task used full quorum or resource-limited evidence. Degradation above a defined threshold opens a governance action instead of being buried in reports.",
+      "implementation_notes": [
+        "Use existing prism/reports/index.yaml and session registries as the first data source; do not bulk-read raw prism/runs by default.",
+        "Keep Copilot protected fallback and Codex last-resort policy intact.",
+        "Consider a later P2 synthesis-faithfulness machine gate, but do not conflate it with the degradation-frequency P1 unless implementation scope remains small."
+      ],
+      "acceptance": [
+        "diagnose or an equivalent status surface reports Prism full-quorum versus resource-limited frequency over a recent window.",
+        "A threshold breach creates a visible action or warning instead of silently passing as normal.",
+        "Acceptance reports clearly distinguish full Prism quorum from honest resource-limited evidence."
+      ]
+      ,
+      "status": "planned",
+      "introduced_at": "2026-05-10",
+      "evidence": [
+        "references/redcap-holistic-smell-audit.json"
       ]
     }
   ],
@@ -570,9 +657,10 @@
     "Do not claim RASG-001..016 solved root-level physical product-shape consolidation; they solved indexing, lifecycle, retrieval, package safety, and specific root-local policies.",
     "Do not claim RASG-017 is complete until a separate receipt proves the root inventory, target model, consumer matrix, and migration/alias plan are done.",
     "Do not claim the user's '举一反三' request has been satisfied by registering only RASG-017; RASG-018 must complete a separate senior holistic audit.",
+    "Do not claim RASG-018 fixes the P1 issues it discovered; RASG-019, RASG-020, and RASG-021 remain separate planned follow-up work.",
     "Do not treat future full LLM-wiki/RAG/GraphRAG as enabled by this backlog.",
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Open RASG-018 first as the expert holistic audit slice, then feed any confirmed root/product-shape findings into RASG-017 or new backlog items. Formal npm/public release remains a separate future task."
+  "recommended_next_step": "After RASG-018, close the remaining planned pre-release architecture debt deliberately: RASG-017 root information architecture, RASG-019 human-facing output clarity, RASG-020 public package surface boundary, and RASG-021 Prism degradation resilience. Formal npm/public release remains a separate future task after these are handled or explicitly deferred."
 }

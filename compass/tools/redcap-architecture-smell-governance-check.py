@@ -12,7 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BACKLOG = ROOT / "references/backlogs/redcap-architecture-smell-governance.json"
-EXPECTED_REQUIREMENTS = {f"RASG-{index:03d}" for index in range(1, 19)}
+EXPECTED_REQUIREMENTS = {f"RASG-{index:03d}" for index in range(1, 22)}
 EXPECTED_TRANCHES = {
     "T0": {"RASG-003", "RASG-007", "RASG-009"},
     "T1": {"RASG-001", "RASG-002", "RASG-004", "RASG-014"},
@@ -21,6 +21,7 @@ EXPECTED_TRANCHES = {
     "T4": {"RASG-010", "RASG-011", "RASG-015"},
     "T5": {"RASG-017"},
     "T6": {"RASG-018"},
+    "T7": {"RASG-019", "RASG-020", "RASG-021"},
 }
 
 
@@ -80,7 +81,7 @@ def validate(payload: dict[str, Any], *, require_complete: bool) -> None:
 
     tranches = payload.get("tranches")
     if not isinstance(tranches, list) or len(tranches) != len(EXPECTED_TRANCHES):
-        fail("tranches must contain T0-T4")
+        fail("tranches must contain the expected tranche set")
     for tranche in tranches:
         if not isinstance(tranche, dict):
             fail("tranche entries must be objects")

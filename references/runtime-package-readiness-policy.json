@@ -89,6 +89,7 @@
     "references/pre-release-structure-refactor-task-tree.json",
     "references/public-distillation-preflight-policy.json",
     "references/redcap-r0-r22-registry.json",
+    "references/redcap-holistic-smell-audit.json",
     "references/retrieval-escalation-policy.json",
     "references/review-tracks.json",
     "references/skill-lifecycle-policy.json",

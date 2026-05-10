@@ -1,0 +1,305 @@
+{
+  "version": 1,
+  "audit_id": "redcap-senior-holistic-architecture-smell-audit",
+  "run_id": "20260510-rasg018-holistic-smell-audit",
+  "status": "completed",
+  "completed_at": "2026-05-10",
+  "scope": "Senior holistic RedCap architecture smell audit across product shape, workflow guarantees, truth sources, knowledge and evidence lifecycle, package surface, human status surfaces, retrieval pressure, old/new transition residue, and Prism governance.",
+  "prism_review": {
+    "mode": "full-two-family",
+    "reviewers": [
+      {
+        "role": "architecture-review",
+        "family": "claude",
+        "agent": "claude-code/claude-opus-4-7",
+        "parsed_evidence": "prism/runs/20260510-rasg018-holistic-smell-audit/collect/architecture-review/parsed.json",
+        "schema_ok": true
+      },
+      {
+        "role": "risk-review",
+        "family": "kimi",
+        "agent": "kimi-k2",
+        "parsed_evidence": "prism/runs/20260510-rasg018-holistic-smell-audit/collect/risk-review/parsed.json",
+        "schema_ok": true
+      }
+    ],
+    "normalization_note": "Both reviewers used their raw blockers field for major findings or known human release decisions. Parsed Prism payloads preserve those raw notes as provider_reported_blockers and normalize current-task blockers to an empty list because neither reviewer reported a P0 stop condition for completing the audit itself."
+  },
+  "domain_reviews": [
+    {
+      "domain": "root_product_shape",
+      "status": "found",
+      "summary": "Root-level structure and entry files remain cognitively broad for a future public product. The physical consolidation itself is already tracked by RASG-017, while related product-surface findings were linked or registered separately.",
+      "finding_ids": [
+        "HSA-001",
+        "HSA-002",
+        "HSA-004",
+        "HSA-007"
+      ]
+    },
+    {
+      "domain": "knowledge_lifecycle",
+      "status": "found",
+      "summary": "Knowledge lifecycle has strong gateway, cold archive, Forge, and LLM-wiki-lite controls. Remaining issues are lower-priority enforcement and archive-size observations, not new P1 blockers.",
+      "finding_ids": [
+        "HSA-008",
+        "HSA-012"
+      ]
+    },
+    {
+      "domain": "reports_receipts_evidence",
+      "status": "found",
+      "summary": "Receipt and evidence machinery is strong, but evidence/report roots remain physically scattered and prism/runs remains a local volume hotspot.",
+      "finding_ids": [
+        "HSA-006"
+      ]
+    },
+    {
+      "domain": "workflow_fsm_guarantees",
+      "status": "not_found",
+      "summary": "No new P1/P2 architecture smell was found in Layer B FSM, change intake, promise ledger, closeout runtime, or receipt aggregation for this audit scope.",
+      "finding_ids": []
+    },
+    {
+      "domain": "host_hooks_adapters",
+      "status": "found",
+      "summary": "Host entry duplication and incomplete runtime host-adapter shape remain visible, but are linked to existing host lifecycle and runtime productization requirements rather than new P1s.",
+      "finding_ids": [
+        "HSA-002",
+        "HSA-007",
+        "HSA-011"
+      ]
+    },
+    {
+      "domain": "package_release_surface",
+      "status": "found",
+      "summary": "The package candidate surface still mixes public runtime contract and maintainer-only governance tools. This was promoted to new pre-release debt RASG-020.",
+      "finding_ids": [
+        "HSA-004"
+      ]
+    },
+    {
+      "domain": "human_status_surfaces",
+      "status": "found",
+      "summary": "Human-facing CLI, Feishu, progress, and report summaries still leak internal workflow vocabulary as the main narrative. This was promoted to new pre-release debt RASG-019.",
+      "finding_ids": [
+        "HSA-003"
+      ]
+    },
+    {
+      "domain": "token_retrieval_pressure",
+      "status": "found",
+      "summary": "Indexing and gateway controls mitigate token pressure, but prism/runs and references remain notable pressure points if future tooling bypasses the intended lookup routes.",
+      "finding_ids": [
+        "HSA-006",
+        "HSA-008",
+        "HSA-012"
+      ]
+    },
+    {
+      "domain": "old_new_transition_residue",
+      "status": "found",
+      "summary": "Layer A loom residue, historical migration manifests, root SKILL.md positioning, and runtime wrapper alpha boundaries remain visible old/new transition residue. Most are linked to existing RASG lines or candidate pool.",
+      "finding_ids": [
+        "HSA-007",
+        "HSA-009"
+      ]
+    },
+    {
+      "domain": "prism_governance",
+      "status": "found",
+      "summary": "Prism is functional but resource-limited outcomes appear often enough to require a degradation-frequency status mechanism. This was promoted to new pre-release debt RASG-021.",
+      "finding_ids": [
+        "HSA-005",
+        "HSA-010"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "HSA-001",
+      "severity": "P1-before-public-release",
+      "title": "Root-level information architecture remains too broad for product release",
+      "disposition": "linked_existing_requirement",
+      "requirement": "RASG-017",
+      "evidence": [
+        "references/backlogs/redcap-architecture-smell-governance.json#RASG-017",
+        "prism/runs/20260510-rasg018-holistic-smell-audit/collect/architecture-review/parsed.json",
+        "prism/runs/20260510-rasg018-holistic-smell-audit/collect/risk-review/parsed.json"
+      ],
+      "acceptance_boundary": "RASG-017 must inventory root asset roots, define the target parent model, map consumers, and plan aliases before any physical migration."
+    },
+    {
+      "id": "HSA-002",
+      "severity": "P2",
+      "title": "Root Markdown and host entry files are still easy to confuse",
+      "disposition": "linked_existing_requirement",
+      "requirement": "RASG-017/RASG-012",
+      "evidence": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md",
+        "references/skill-lifecycle-policy.json"
+      ],
+      "acceptance_boundary": "Do not create a duplicate requirement unless RASG-017 implementation fails to cover root entry classification or RASG-012 fails to cover host-entry drift detection."
+    },
+    {
+      "id": "HSA-003",
+      "severity": "P1-before-public-release",
+      "title": "Human-facing output still uses internal workflow jargon as the main story",
+      "disposition": "new_backlog_requirement",
+      "requirement": "RASG-019",
+      "evidence": [
+        "prism/runs/20260510-rasg018-holistic-smell-audit/collect/architecture-review/parsed.json"
+      ],
+      "acceptance_boundary": "Human-facing CLI, Feishu, progress, and report summaries must explain problem/action/result/next-step first; mechanism names can remain only as secondary evidence."
+    },
+    {
+      "id": "HSA-004",
+      "severity": "P1-before-public-release",
+      "title": "Public runtime package surface and maintainer governance surface are still mixed",
+      "disposition": "new_backlog_requirement",
+      "requirement": "RASG-020",
+      "evidence": [
+        "package.json",
+        "references/runtime-package-readiness-policy.json",
+        "references/package-publish-safety-policy.json",
+        "prism/runs/20260510-rasg018-holistic-smell-audit/collect/risk-review/parsed.json"
+      ],
+      "acceptance_boundary": "Release readiness must classify public runtime contract, host adapters, documentation, maintainer tools, private-local files, and excluded files before public publish."
+    },
+    {
+      "id": "HSA-005",
+      "severity": "P1-before-public-release",
+      "title": "Prism resource-limited outcomes need visible degradation tracking",
+      "disposition": "new_backlog_requirement",
+      "requirement": "RASG-021",
+      "evidence": [
+        "prism/reports/index.yaml",
+        "prism/runs/20260510-rasg018-holistic-smell-audit/collect/risk-review/parsed.json"
+      ],
+      "acceptance_boundary": "A status surface must report recent full-quorum versus resource-limited frequency and warn when degradation crosses a threshold."
+    },
+    {
+      "id": "HSA-006",
+      "severity": "P2",
+      "title": "Evidence and report assets remain physically scattered and prism/runs remains a local volume hotspot",
+      "disposition": "linked_existing_requirement",
+      "requirement": "RASG-017/RASG-008/RASG-014",
+      "evidence": [
+        "prism/runs/",
+        "prism/reports/",
+        "compass/docs/task-reports/",
+        "redcap-knowledge/task-reports/",
+        "loom/test-reports/"
+      ],
+      "acceptance_boundary": "RASG-017 should include the evidence parent model; RASG-008/RASG-014 continue to govern lifecycle, rotation, and archive safety."
+    },
+    {
+      "id": "HSA-007",
+      "severity": "P2",
+      "title": "Runtime facade, host-adapter coverage, and root SKILL positioning still need clearer alpha/product boundaries",
+      "disposition": "linked_existing_requirement",
+      "requirement": "RASG-006/RASG-016",
+      "evidence": [
+        "runtime/redcap-core/",
+        "runtime/host-adapters/",
+        "SKILL.md",
+        "references/redcap-system-layers.md"
+      ],
+      "acceptance_boundary": "Do not treat wrapper-based runtime as fully split public API unless release handoff explicitly says alpha-wrapper contract."
+    },
+    {
+      "id": "HSA-008",
+      "severity": "P2",
+      "title": "Knowledge gateway is strong but still mostly advisory without host-level read interception",
+      "disposition": "candidate_pool",
+      "requirement": null,
+      "evidence": [
+        "references/knowledge-gateway-policy.json",
+        "compass/tools/redcap-knowledge-gateway.sh",
+        "references/host-session-capability-matrix.json"
+      ],
+      "acceptance_boundary": "Keep as a candidate until a host can enforce file-read policy broadly enough without breaking legitimate archaeology."
+    },
+    {
+      "id": "HSA-009",
+      "severity": "P2",
+      "title": "Historical migration manifests and Layer A loom residue still create old/new transition noise",
+      "disposition": "candidate_pool",
+      "requirement": null,
+      "evidence": [
+        "references/legacy-asset-migration-*.json",
+        "loom/"
+      ],
+      "acceptance_boundary": "Only physically move or rename after consumer checks, aliases, and Prism review; RASG-017 may absorb part of this."
+    },
+    {
+      "id": "HSA-010",
+      "severity": "P2",
+      "title": "Prism synthesis faithfulness and archive legacy bridge need later machine hardening",
+      "disposition": "candidate_pool_and_deferred",
+      "requirement": null,
+      "evidence": [
+        "prism/protocol.md",
+        "prism/tools/prism-archive-check.sh"
+      ],
+      "acceptance_boundary": "Track as Prism v0.3 hardening candidates; do not block RASG-018 because both are below the P1 threshold selected for this audit."
+    },
+    {
+      "id": "HSA-011",
+      "severity": "P2",
+      "title": "Read-only sandbox status surfaces may degrade because some diagnostics expect writable temporary state",
+      "disposition": "candidate_pool",
+      "requirement": null,
+      "evidence": [
+        "AGENTS.md",
+        "compass/tools/redcap-current-status.sh",
+        "compass/tools/redcap-diagnose.sh"
+      ],
+      "acceptance_boundary": "Candidate for later host-limited hardening; not a current release blocker unless release target includes read-only reviewer environments."
+    },
+    {
+      "id": "HSA-012",
+      "severity": "P3",
+      "title": "Cold archive size and stale report age remain watch items",
+      "disposition": "archive_only_note",
+      "requirement": null,
+      "evidence": [
+        "references/redcap-knowledge-cold-archive-inventory.json",
+        "prism/reports/index.yaml"
+      ],
+      "acceptance_boundary": "No new backlog item unless cold archive or report age crosses an explicit policy threshold."
+    }
+  ],
+  "new_requirements": [
+    "RASG-019",
+    "RASG-020",
+    "RASG-021"
+  ],
+  "existing_requirements_linked": [
+    "RASG-005",
+    "RASG-006",
+    "RASG-008",
+    "RASG-012",
+    "RASG-013",
+    "RASG-014",
+    "RASG-016",
+    "RASG-017"
+  ],
+  "candidate_pool": [
+    "HSA-008",
+    "HSA-009",
+    "HSA-010",
+    "HSA-011"
+  ],
+  "archive_only_notes": [
+    "HSA-012"
+  ],
+  "must_not_claim": [
+    "Do not claim RASG-018 fixes the P1 issues it discovered.",
+    "Do not claim all historical smells are repaired; RASG-017, RASG-019, RASG-020, and RASG-021 remain planned.",
+    "Do not physically move, delete, publish, or publicly migrate assets based only on this audit artifact."
+  ]
+}
