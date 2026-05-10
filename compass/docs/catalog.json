@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 361009,
-    "lines": 7215,
-    "chars": 214786,
+    "size_bytes": 361442,
+    "lines": 7223,
+    "chars": 214949,
     "rough_token_pressure": {
-      "low": 53696,
-      "high": 107393
+      "low": 53737,
+      "high": 107474
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 167334,
-        "lines": 2632,
-        "chars": 98313,
+        "size_bytes": 167767,
+        "lines": 2640,
+        "chars": 98476,
         "rough_token_pressure": {
-          "low": 24578,
-          "high": 49156
+          "low": 24619,
+          "high": 49238
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 8045,
-      "lines": 152,
-      "chars": 4358,
+      "size_bytes": 8478,
+      "lines": 160,
+      "chars": 4521,
       "summary": "当前已完成：之前由 Cap 单人提出的“三分 RedCap 前进刻度表”已经补做棱镜评审；Kimi 与 Claude Code 均给出 pass，且无 blocker。 / 详情：棱镜共同认可三分法方向，但要求它只能是“聚合视图”，不能变成新的任务真相源。也就是说，它负责让人和 AI 看懂 RedCap 当前处在什么阶段，而不是替代 `.dev-task.md`、backlog、receipt、evolution candidates、legacy lifecycle 等已有权威记录。",
       "status_basis": "filename_recency_only",
       "summary_points": {
