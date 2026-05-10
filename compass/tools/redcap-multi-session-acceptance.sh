@@ -9324,7 +9324,7 @@ EOF
 }
 
 run_change_intake_check_case() {
-    local fixture good no_ledger missing missing_decision missing_subsection missing_field mismatch_decision unresolved child_bad pm_output status output
+    local fixture good no_ledger continuation_good continuation_missing continuation_generic continuation_takeover_vague missing missing_decision missing_subsection missing_field mismatch_decision unresolved child_bad pm_output status output
 
     log "case: change-intake-check"
 
@@ -9332,6 +9332,10 @@ run_change_intake_check_case() {
     mkdir -p "$fixture"
     good="$fixture/good-task.md"
     no_ledger="$fixture/no-ledger-task.md"
+    continuation_good="$fixture/continuation-good-task.md"
+    continuation_missing="$fixture/continuation-missing-task.md"
+    continuation_generic="$fixture/continuation-generic-anchor-task.md"
+    continuation_takeover_vague="$fixture/continuation-takeover-vague-task.md"
     missing="$fixture/missing-ledger-task.md"
     missing_decision="$fixture/missing-decision-task.md"
     missing_subsection="$fixture/missing-subsection-task.md"
@@ -9432,6 +9436,188 @@ EOF
 
     bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$no_ledger" >/dev/null \
         || fail "expected no-ledger fixture to pass"
+
+    cat >"$continuation_good" <<'EOF'
+# 当前任务：continuation good
+
+## 控制面元数据（机器校验）
+task_id: continuation-good
+source_of_truth: .dev-task.md
+top_goal: continuation-good
+active_slice: normal-dev
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+### Q1
+请继续把 Norven 刚才确认的三步计划推进下去。
+
+## 已确认需求（执行依据）
+### R1
+本轮只执行三步计划中的第一步。
+
+## 原始意图覆盖审计
+scope_status: partial-with-explicit-defer
+
+- 原始意图：继续推进 Norven 刚确认的三步计划。
+- 已覆盖：本轮覆盖第一步。
+- 未覆盖/延期：第二步和第三步不在本轮。
+- 用户可见边界：不能冒充三步全部完成。
+- 后续路径：另立下一任务继续第二步。
+
+## 续接/中插任务意图确认
+
+- 续接锚点：Q1 / Norven 当前对话里的三步计划。
+- 锚点来源：current-conversation
+- 选定执行范围：只执行第一步。
+- 未执行范围：第二步和第三步延期。
+- 是否抢占旧任务线：no；不替换旧任务线。
+- 决策理由：先修第一步才能避免后续任务继续跑偏。
+- 用户可见边界：告知用户本轮只完成第一步。
+
+## 漂移哨兵
+- 不冒充全部完成。
+
+## 允许修改范围
+- compass/tools/**
+
+## 完成标准
+- [x] 续接确认通过
+EOF
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$continuation_good" >/dev/null \
+        || fail "expected continuation fixture to pass"
+
+    cat >"$continuation_missing" <<'EOF'
+# 当前任务：continuation missing
+
+## 控制面元数据（机器校验）
+task_id: continuation-missing
+source_of_truth: .dev-task.md
+top_goal: continuation-missing
+active_slice: normal-dev
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+请继续把刚才计划执行干净。
+
+## 已确认需求（执行依据）
+完成当前任务。
+
+## 原始意图覆盖审计
+scope_status: full-implementation
+
+- 原始意图：继续把刚才计划执行干净。
+- 已覆盖：当前任务。
+
+## 漂移哨兵
+- 不跑偏。
+
+## 允许修改范围
+- compass/tools/**
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$continuation_missing" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "missing continuation intent fixture unexpectedly passed"
+    assert_string_contains "$output" "missing section: ## 续接/中插任务意图确认"
+
+    cat >"$continuation_generic" <<'EOF'
+# 当前任务：continuation generic anchor
+
+## 控制面元数据（机器校验）
+task_id: continuation-generic-anchor
+source_of_truth: .dev-task.md
+top_goal: continuation-generic-anchor
+active_slice: normal-dev
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+请继续推进。
+
+## 已确认需求（执行依据）
+完成当前任务。
+
+## 原始意图覆盖审计
+scope_status: full-implementation
+
+- 原始意图：继续推进。
+- 已覆盖：当前任务。
+
+## 续接/中插任务意图确认
+
+- 续接锚点：继续推进
+- 锚点来源：current-conversation
+- 选定执行范围：当前任务。
+- 未执行范围：没有延期范围。
+- 是否抢占旧任务线：no；不替换旧任务线。
+- 决策理由：acceptance fixture。
+- 用户可见边界：acceptance fixture。
+
+## 漂移哨兵
+- 不跑偏。
+
+## 允许修改范围
+- compass/tools/**
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$continuation_generic" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "generic continuation anchor fixture unexpectedly passed"
+    assert_string_contains "$output" "continuation anchor is too generic"
+
+    cat >"$continuation_takeover_vague" <<'EOF'
+# 当前任务：continuation takeover vague
+
+## 控制面元数据（机器校验）
+task_id: continuation-takeover-vague
+source_of_truth: .dev-task.md
+top_goal: continuation-takeover-vague
+active_slice: normal-dev
+host_surface_policy: mirror_only
+delegation_boundary: redcap-native-first
+
+## 原始输入（用户原文，禁止改写）
+请接下来继续按计划执行。
+
+## 已确认需求（执行依据）
+完成当前任务。
+
+## 原始意图覆盖审计
+scope_status: full-implementation
+
+- 原始意图：接下来继续按计划执行。
+- 已覆盖：当前任务。
+
+## 续接/中插任务意图确认
+
+- 续接锚点：Q1 / Norven 当前对话里的计划。
+- 锚点来源：current-conversation
+- 选定执行范围：当前任务。
+- 未执行范围：没有延期范围。
+- 是否抢占旧任务线：yes；替换当前范围
+- 决策理由：acceptance fixture。
+- 用户可见边界：acceptance fixture。
+
+## 漂移哨兵
+- 不跑偏。
+
+## 允许修改范围
+- compass/tools/**
+EOF
+
+    set +e
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-change-intake-check.sh" "$continuation_takeover_vague" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "vague takeover continuation fixture unexpectedly passed"
+    assert_string_contains "$output" "continuation takeover must explicitly name the old task line"
 
     cat >"$missing" <<'EOF'
 # 当前任务：change intake missing ledger
@@ -10204,9 +10390,33 @@ EOF
 }
 
 run_prism_availability_case() {
-    local fake_probe cache fallback_cache counter output status stale_output dispatch_output local_probe_bin local_probe_marker
+    local fake_probe cache fallback_cache counter output status stale_output dispatch_output local_probe_bin local_probe_marker baton_bin prompt_file output_file baton_output
 
     log "case: prism-availability"
+
+    baton_bin="$ACCEPT_ROOT/prism-baton-timeout-bin"
+    prompt_file="$ACCEPT_ROOT/prism-baton-timeout-prompt.txt"
+    output_file="$ACCEPT_ROOT/prism-baton-timeout-output.txt"
+    mkdir -p "$baton_bin"
+    cat >"$baton_bin/kimi" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' '##DONE##'
+EOF
+    chmod +x "$baton_bin/kimi"
+    printf '%s\n' "respond done" >"$prompt_file"
+    baton_output="$(
+        PATH="$baton_bin:$PATH" \
+        bash "$REDCAP_ROOT/compass/tools/baton-delegate.sh" \
+            --cli kimi \
+            --prompt-file "$prompt_file" \
+            --role prism-timeout-fixture \
+            --work-dir "$ACCEPT_ROOT" \
+            --workflow-dir "$ACCEPT_ROOT/.workflow" \
+            --output-file "$output_file" \
+            2>&1
+    )"
+    assert_string_contains "$baton_output" "timeout=600s"
+    assert_string_contains "$baton_output" "DONE"
 
     fake_probe="$ACCEPT_ROOT/prism-health-probe.sh"
     cache="$ACCEPT_ROOT/prism-availability-cache.json"

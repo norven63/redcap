@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 72,
-  "bytes_total": 1024175,
+  "file_count": 73,
+  "bytes_total": 1038148,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 68,
+    "private-task-report-archive": 69,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -581,6 +581,14 @@
       "class": "private-task-report-archive",
       "bytes": 7059,
       "sha256": "de23d79afda997d91484140fa7cfd3e4bf473d23da2130431fbbd7eb64e061f8",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-09-redcap-architecture-smell-governance-closure.md",
+      "class": "private-task-report-archive",
+      "bytes": 13973,
+      "sha256": "a29a04bc6cdf11ad8b424bb1f8b14b00cde62ceacc59643330850ef907271fb0",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

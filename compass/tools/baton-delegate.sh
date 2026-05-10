@@ -18,7 +18,7 @@
 #     [--resume <id>]            # 可选，续接已有 session（优先于 --session-id）
 #     [--work-dir <dir>]         # Agent 工作目录，默认 $PWD
 #     [--output-file <path>]     # 可选，Agent 原始输出保存路径（便于调试）
-#     [--timeout <seconds>]      # 超时秒数，默认 300
+#     [--timeout <seconds>]      # 超时秒数，默认 600
 #     [--workflow-dir <dir>]     # blocked 文件写入目录，默认 $PWD/.workflow
 #
 # 退出码:
@@ -70,7 +70,7 @@ SESSION_ID=""
 RESUME_ID=""
 WORK_DIR="${PWD}"
 OUTPUT_FILE=""
-TIMEOUT=300
+TIMEOUT=600
 WORKFLOW_DIR=""
 
 while [[ $# -gt 0 ]]; do

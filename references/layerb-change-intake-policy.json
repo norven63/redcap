@@ -3,6 +3,57 @@
   "description": "Layer B policy for handling user requirements inserted during an already-running task. The policy turns mid-task changes into a ledger, a replan gate, and a parent/child completion guard. Inserted user changes are referenced as Markdown headings like '### U1', '### U2', etc.",
   "ledger_section": "中插需求账本",
   "replan_decision_section": "中插需求重排决策摘要",
+  "continuation_intent_section": "续接/中插任务意图确认",
+  "continuation_trigger_phrases": [
+    "继续",
+    "接下来",
+    "下一步",
+    "按照计划",
+    "按计划",
+    "把计划执行干净",
+    "按照你们的计划",
+    "你们按照",
+    "继续推进",
+    "稳步推进",
+    "开始吧"
+  ],
+  "required_continuation_fields": [
+    "续接锚点",
+    "锚点来源",
+    "选定执行范围",
+    "未执行范围",
+    "是否抢占旧任务线",
+    "决策理由",
+    "用户可见边界"
+  ],
+  "allowed_continuation_anchor_sources": [
+    "current-conversation",
+    "dev-task",
+    "runtime-state",
+    "parent-ledger",
+    "task-report",
+    "backlog",
+    "prism-review"
+  ],
+  "continuation_takeover_markers": [
+    "yes",
+    "是",
+    "替换",
+    "抢占",
+    "不继续",
+    "不再继续"
+  ],
+  "continuation_old_task_markers": [
+    "旧任务",
+    "旧任务线",
+    "上一轮",
+    "上一步",
+    "已关闭",
+    "不继续",
+    "不再继续",
+    "task_id",
+    "redcap-"
+  ],
   "required_columns": [
     "id",
     "触发",

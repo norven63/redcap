@@ -39,6 +39,8 @@
     }
   ],
   "communication_packet": {
+    "default_task_timeout_seconds": 600,
+    "availability_probe_timeout_policy": "Keep availability probes lightweight; the 600 second default applies to real Prism/baton Agent task execution, not to health checks.",
     "required_fields": [
       "task_frame",
       "allowed_read_scope",

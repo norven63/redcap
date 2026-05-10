@@ -96,6 +96,12 @@ def validate_policy(policy: dict[str, Any]) -> None:
         "required_columns",
         "replan_decision_section",
         "required_replan_decision_fields",
+        "continuation_intent_section",
+        "continuation_trigger_phrases",
+        "required_continuation_fields",
+        "allowed_continuation_anchor_sources",
+        "continuation_takeover_markers",
+        "continuation_old_task_markers",
         "allowed_types",
         "allowed_priorities",
         "allowed_blocking_values",
@@ -131,6 +137,59 @@ def decision_fields(body: str) -> dict[str, str]:
             continue
         result[match.group(1).strip()] = match.group(2).strip()
     return result
+
+
+def original_requires_continuation_confirmation(text: str, policy: dict[str, Any]) -> bool:
+    original = section(text, "原始输入")
+    if not original:
+        return False
+    phrases = policy.get("continuation_trigger_phrases", [])
+    if not isinstance(phrases, list):
+        fail("policy continuation_trigger_phrases must be a list")
+    return any(isinstance(item, str) and item and item in original for item in phrases)
+
+
+def validate_continuation_intent(text: str, policy: dict[str, Any]) -> None:
+    section_name = str(policy.get("continuation_intent_section", "续接/中插任务意图确认"))
+    body = section(text, section_name)
+    required = original_requires_continuation_confirmation(text, policy)
+    if not body:
+        if required:
+            fail(f"missing section: ## {section_name}")
+        return
+
+    fields = decision_fields(body)
+    required_fields = policy.get("required_continuation_fields", [])
+    if not isinstance(required_fields, list) or not all(isinstance(item, str) and item.strip() for item in required_fields):
+        fail("policy required_continuation_fields must be a non-empty string list")
+    for field in required_fields:
+        value = fields.get(field, "").strip()
+        if not value:
+            fail(f"continuation intent missing field: {field}")
+        if len(value) < 4:
+            fail(f"continuation intent field too short: {field}")
+
+    source = fields.get("锚点来源", "").strip()
+    allowed_sources = policy.get("allowed_continuation_anchor_sources", [])
+    if not isinstance(allowed_sources, list):
+        fail("policy allowed_continuation_anchor_sources must be a list")
+    if source not in {str(item) for item in allowed_sources}:
+        fail(f"unsupported continuation anchor source: {source}")
+
+    anchor = fields.get("续接锚点", "").strip()
+    generic_anchors = {"继续", "接下来", "下一步", "按照计划", "按计划", "继续推进", "开始吧"}
+    if anchor in generic_anchors:
+        fail("continuation anchor is too generic; name the concrete task, user request, parent ledger item, or prior task line")
+    if not re.search(r"(Q\d+|U\d+|P\d+(?:-\d+)?|task_id|redcap-|Norven|当前对话|本轮|上一轮|三分|棱镜|父任务|parent|backlog)", anchor, flags=re.IGNORECASE):
+        fail("continuation anchor must name a concrete conversation/request/task reference")
+
+    takeover_value = fields.get("是否抢占旧任务线", "").strip()
+    takeover_markers = [str(item) for item in policy.get("continuation_takeover_markers", []) if isinstance(item, str)]
+    old_task_markers = [str(item) for item in policy.get("continuation_old_task_markers", []) if isinstance(item, str)]
+    if any(marker and marker in takeover_value for marker in takeover_markers):
+        value_text = "\n".join(fields.values())
+        if not any(marker and marker in value_text for marker in old_task_markers):
+            fail("continuation takeover must explicitly name the old task line that is not being continued")
 
 
 def ledger_required(text: str, meta: dict[str, str], ledger: str, policy: dict[str, Any]) -> bool:
@@ -289,6 +348,8 @@ def main() -> int:
 
     text = task_file.read_text(encoding="utf-8", errors="replace")
     meta = metadata(text)
+    validate_continuation_intent(text, policy)
+
     ledger = section(text, str(policy.get("ledger_section", "中插需求账本")))
     required = ledger_required(text, meta, ledger, policy)
     if required and not ledger:

@@ -179,9 +179,11 @@ bash prism/tools/prism-availability.sh check-roster --agents "provider&model:rol
 
 这一步维护 `compass/.workflow/prism-agent-availability.json`：
 - TTL 为 1 小时
-- 过期自动用 `redcap-agent-health-probe` 重新嗅探
+- 过期自动用 `redcap-agent-health-probe` 重新嗅探；这是轻量健康探测，不等于完整评审任务执行窗口
 - `pass` 才算可用；`frozen`、`timeout`、`fail`、`unsupported` 都不能进入本轮 roster
 - 如果只是想看当前可用候选，可用 `filter-roster` 先过滤，再重新评估角色/家族是否还满足 quorum
+
+真实 Prism / baton Agent 任务的默认执行等待为 600 秒；若问题包明确属于长文审计、复杂设计评审或用户已要求更长等待，应显式提高任务执行 timeout。不要把 availability 的秒级健康探测放大成 600 秒，否则每次只是判断 CLI 是否可用都会变成时间黑洞。
 
 Agent 数量：
 - explore：3~5 个，≥2 家族

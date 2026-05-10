@@ -482,3 +482,6 @@
 
 ### L-158: receipt 与 pending closure 必须分开判定
 - 正文模块：[`compass/knowledge/lessons/l-158.md`](../../compass/knowledge/lessons/l-158.md)
+
+### L-159: “继续”类指令必须先确认任务锚点
+- 正文模块：[`compass/knowledge/lessons/l-159.md`](../../compass/knowledge/lessons/l-159.md)

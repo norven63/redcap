@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 366421,
-    "lines": 7289,
-    "chars": 219591,
+    "size_bytes": 364693,
+    "lines": 7277,
+    "chars": 217837,
     "rough_token_pressure": {
-      "low": 54897,
-      "high": 109795
+      "low": 54459,
+      "high": 108918
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 172746,
-        "lines": 2706,
-        "chars": 103118,
+        "size_bytes": 171018,
+        "lines": 2694,
+        "chars": 101364,
         "rough_token_pressure": {
-          "low": 25779,
-          "high": 51559
+          "low": 25341,
+          "high": 50682
         }
       }
     },
@@ -522,31 +522,31 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-09-redcap-architecture-smell-governance-closure.md",
+      "path": "compass/docs/task-reports/2026-05-10-change-intent-continuity-gate.md",
       "collection": "task-reports",
-      "title": "任务完成报告：RedCap 架构坏味治理收束",
+      "title": "任务完成报告：Layer B 中插/续接任务意图确认硬门",
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13973,
-      "lines": 231,
-      "chars": 8457,
-      "summary": "当前已完成：RASG-001..RASG-016 已全部从“坏味清单”落成可检查的工程边界或实体治理，非发布类主线已收束到只剩正式发布决策前的 release task。 / 详情：本轮重点解决了知识库单体膨胀、公共库状态口径分叉、冷归档不可查、reference 资产无生命周期、release package 清单多口径、Prism 运行残留、Layer A/B 边界不直观、full LLM-wiki 容易被遗忘等问题。解决方式不是只写说明，而是把每个问题绑定到索引、策略、脚本或状态面检查里，让后续会话能按需加载和机器复验。正式 npm 发布仍未启动，也没有改动许可证、发布开关或 registry 状态。",
+      "size_bytes": 12245,
+      "lines": 219,
+      "chars": 6703,
+      "summary": "当前已完成：RedCap 已补上“继续/接下来/按计划推进”类任务的续接确认硬门，防止任务再次被错误接到上一条旧任务线上。 / 详情：这次问题的根源不是代码实现难，而是任务锚点没有被机器强制确认。现在只要任务原文带有续接意味，就必须写清续接哪条线、本轮只做什么、不做什么、是否替换旧任务线，以及对 Norven 应该怎么说明边界。这样后续再说“继续推进”，RedCap 不能跳过确认直接把任务塞进旧 closeout 或内部发现的支线里。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：RASG-001..RASG-016 已全部从“坏味清单”落成可检查的工程边界或实体治理，非发布类主线已收束到只剩正式发布决策前的 release task。",
-          "详情：本轮重点解决了知识库单体膨胀、公共库状态口径分叉、冷归档不可查、reference 资产无生命周期、release package 清单多口径、Prism 运行残留、Layer A/B 边界不直观、full LLM-wiki 容易被遗忘等问题。解决方式不是只写说明，而是把每个问题绑定到索引、策略、脚本或状态面检查里，让后续会话能按需加载和机器复验。正式 npm 发布仍未启动，也没有改动许可证、发布开关或 registry 状态。"
+          "当前已完成：RedCap 已补上“继续/接下来/按计划推进”类任务的续接确认硬门，防止任务再次被错误接到上一条旧任务线上。",
+          "详情：这次问题的根源不是代码实现难，而是任务锚点没有被机器强制确认。现在只要任务原文带有续接意味，就必须写清续接哪条线、本轮只做什么、不做什么、是否替换旧任务线，以及对 Norven 应该怎么说明边界。这样后续再说“继续推进”，RedCap 不能跳过确认直接把任务塞进旧 closeout 或内部发现的支线里。"
         ],
         "previous_step": [
-          "上一步完成的是：P4-2k 已经把非发布类产品化治理推进到 package readiness / hook / 通知 / clean workspace 等边界，本轮是在这个基础上做“架构坏味清仓”，把之前评审发现但尚未落地的 RASG-001..016 全部收口。"
+          "上一步完成的是：上一轮修好了 closeout receipt 和 pending closure 的状态一致性问题；本轮是在修更上游的“任务续接不要跑偏”问题。"
         ],
         "next_step": [
-          "下一步计划做的是：无新的非发布类主线任务；下一步如果继续推进，应进入“正式发布前 release readiness”专项，由 Norven 提供许可证、npm registry、发布窗口和回滚策略等人工发布决策后再启动。"
+          "下一步计划做的是：提交本轮变更并生成正式 closeout receipt，然后回到 Norven 指定的第二步：补做“三分 RedCap 前进刻度表”相关结论的棱镜评审。"
         ],
         "position": [
-          "整体计划脉络图是：工作流重构 -> 信息架构治理 -> release package readiness -> 架构坏味治理收束 -> 正式发布专项。",
-          "当前所在位置：架构坏味治理收束已实现，Prism resource-limited acceptance 与全量回归已通过，等待 closeout receipt 作为正式完工凭证。"
+          "整体计划脉络图是：先修续接不跑偏 -> 补三分法结论的棱镜评审 -> 再落地三分进度仪与棱镜使用场景优化。",
+          "当前所在位置：第一步“续接/中插任务意图确认硬门”已实现，targeted checks、full acceptance、spec-check 与 diagnose 均已通过；正在执行最终提交与 closeout receipt。"
         ]
       }
     },

@@ -14,7 +14,7 @@
 #     [--resume <id>]            # 可选，续接已有 session（优先于 --session-id）
 #     [--skill-path <dir>]       # 可选，Skill 外包：在 prompt 前注入"加载此 skill"指令
 #     [--work-dir <dir>]         # Agent 工作目录，默认 $PWD
-#     [--timeout <seconds>]      # 超时秒数，默认 300
+#     [--timeout <seconds>]      # 超时秒数，默认 600
 #
 # 退出码:
 #   0   成功（CLI 正常退出）
@@ -34,7 +34,7 @@ SESSION_ID=""
 RESUME_ID=""
 SKILL_PATH=""
 WORK_DIR="${PWD}"
-TIMEOUT=300
+TIMEOUT=600
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
