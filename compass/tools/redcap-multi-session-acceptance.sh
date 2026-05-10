@@ -94,6 +94,10 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-uses-pending-baseline
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-attaches-session-end-binding
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-sync-preserves-completed-state
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-missing-runtime-ignores-completed-receipt
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-missing-runtime-accepts-resource-limited-receipt
+  bash compass/tools/redcap-multi-session-acceptance.sh session-end-missing-runtime-preserves-nonmatching-pending
+  bash compass/tools/redcap-multi-session-acceptance.sh current-status-receipt-overrides-stale-report-plan
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-session-end-failure-writes-pending
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-audit-open-repairs-receipt
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-audit-open-blocks-unresolved
@@ -3171,6 +3175,289 @@ EOF
     status_output="$(bash "$REDCAP_ROOT/closeout-cap.sh" status --task-file "$task_file")"
     assert_string_contains "$status_output" "\"receipt_exists\": true"
     assert_string_contains "$status_output" "\"status\": \"completed\""
+}
+
+run_session_end_missing_runtime_ignores_completed_receipt_case() {
+    local host="codex"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub complete_output pending_state host_pid
+
+    log "case: session-end-missing-runtime-ignores-completed-receipt"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-session-end-receipt-present-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-session-end-receipt-present-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance session-end receipt present
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：receipt 已经生成
+### 0.3 下一步计划做的是
+- 下一步计划做的是：等待 closeout receipt 作为正式完工凭证
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] receipt 已经生成"
+    bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate >/dev/null
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-receipt-present.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    complete_output="$(REDCAP_SKIP_FEISHU=1 REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    assert_string_contains "$complete_output" "\"status\": \"completed\""
+
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$task_file" \
+        "$host" \
+        "layerB-session-end-missing-runtime-claim" \
+        "pending-closure,notify" \
+        "stale missing runtime blocker after receipt" \
+        "$report_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed stale pending closure after receipt"
+
+    host_pid="$$"
+    REDCAP_TASK_FILE="$task_file" REDCAP_HOST_PROCESS_PID="$host_pid" bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null
+
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$task_file")"
+    [[ ! -f "$pending_state" ]] || fail "SessionEnd recreated or preserved pending closure despite receipt: $pending_state"
+}
+
+run_session_end_missing_runtime_accepts_resource_limited_receipt_case() {
+    local host="codex"
+    local current_head task_file report_path report_rel case_dir run_id confirmed_hash
+    local on_complete_stub session_end_stub complete_output pending_state host_pid
+
+    log "case: session-end-missing-runtime-accepts-resource-limited-receipt"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    run_id="acceptance-resource-limited-${RANDOM}-$$"
+    task_file="$REDCAP_ROOT/.acceptance-session-end-resource-limited-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-session-end-resource-limited-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance session-end resource-limited receipt
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：resource-limited acceptance receipt 已经生成
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] resource-limited receipt 已经生成"
+    python3 - <<'PY' "$task_file" "$run_id"
+from pathlib import Path
+import sys
+p=Path(sys.argv[1])
+run_id=sys.argv[2]
+text=p.read_text(encoding="utf-8")
+text=text.replace("acceptance_policy: not-required", "acceptance_policy: targeted-required")
+text=text.replace("prism_acceptance_run: none", f"prism_acceptance_run: {run_id}")
+p.write_text(text, encoding="utf-8")
+PY
+    confirmed_hash="$(redcap_dev_task_confirmed_hash "$task_file")"
+
+    mkdir -p "$REDCAP_ROOT/prism/runs/$run_id/collect/kimi-reviewer" "$REDCAP_ROOT/prism/runs/$run_id/artifacts"
+    TEMP_PROJECTS+=("$REDCAP_ROOT/prism/runs/$run_id")
+    cat >"$REDCAP_ROOT/prism/runs/$run_id/session-registry.yaml" <<'EOF'
+run_id: acceptance-resource-limited
+agents:
+  - handle_type: cli_session
+    role: kimi-reviewer
+    status: responded
+    schema_ok: true
+    family: kimi
+EOF
+    printf '{"verdict":"pass","blockers":[]}\n' >"$REDCAP_ROOT/prism/runs/$run_id/collect/kimi-reviewer/parsed.json"
+    printf 'resource limited acceptance\n' >"$REDCAP_ROOT/prism/runs/$run_id/collect/kimi-reviewer/raw.txt"
+    python3 - <<'PY' "$REDCAP_ROOT/prism/runs/$run_id/artifacts/acceptance-binding.json" "$task_file" "$confirmed_hash" "$run_id"
+from pathlib import Path
+import json, re, sys
+out=Path(sys.argv[1])
+task=Path(sys.argv[2]).read_text(encoding="utf-8")
+confirmed=sys.argv[3]
+run_id=sys.argv[4]
+task_id=re.search(r"^task_id:\s*(.+)$", task, re.M).group(1).strip()
+payload={"task_id":task_id,"confirmed_hash":confirmed,"run_id":run_id,"resource_limited":True}
+out.write_text(json.dumps(payload, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+PY
+    cat >"$REDCAP_ROOT/prism/runs/$run_id/artifacts/resource-limited.json" <<'EOF'
+{
+  "status": "resource-limited",
+  "provider_attempts": [
+    {"provider": "claude-code", "family": "claude", "status": "unavailable"}
+  ]
+}
+EOF
+    bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate >/dev/null
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-resource-limited.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    complete_output="$(REDCAP_SKIP_FEISHU=1 REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    assert_string_contains "$complete_output" "\"status\": \"completed\""
+
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$task_file" \
+        "$host" \
+        "layerB-session-end-missing-runtime-claim" \
+        "pending-closure,notify" \
+        "stale missing runtime blocker after resource-limited receipt" \
+        "$report_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed stale pending closure after resource-limited receipt"
+
+    host_pid="$$"
+    REDCAP_TASK_FILE="$task_file" REDCAP_HOST_PROCESS_PID="$host_pid" bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null
+
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$task_file")"
+    [[ ! -f "$pending_state" ]] || fail "SessionEnd preserved pending closure for resource-limited receipt: $pending_state"
+}
+
+run_session_end_missing_runtime_preserves_nonmatching_pending_case() {
+    local host="codex"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub complete_output pending_state host_pid trigger_after
+
+    log "case: session-end-missing-runtime-preserves-nonmatching-pending"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-session-end-nonmatching-pending-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-session-end-nonmatching-pending-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance session-end nonmatching pending
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：receipt 已经生成，但存在非 SessionEnd 的 pending closure
+### 0.3 下一步计划做的是
+- 下一步计划做的是：保留真实 pending closure
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] receipt 已经生成"
+    bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate >/dev/null
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/session-end-nonmatching-pending.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    complete_output="$(REDCAP_SKIP_FEISHU=1 REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    assert_string_contains "$complete_output" "\"status\": \"completed\""
+
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$task_file" \
+        "$host" \
+        "stop-review-real-blocker" \
+        "pending-closure,review" \
+        "nonmatching pending closure must not be cleared by missing runtime noise" \
+        "$report_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null || fail "failed to seed nonmatching pending closure after receipt"
+
+    host_pid="$$"
+    REDCAP_TASK_FILE="$task_file" REDCAP_HOST_PROCESS_PID="$host_pid" bash "$REDCAP_ROOT/compass/tools/redcap-layerB-session-end.sh" "$host" >/dev/null
+
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$task_file")"
+    [[ -f "$pending_state" ]] || fail "SessionEnd cleared nonmatching pending closure despite receipt"
+    trigger_after="$(redcap_interop_read_state_field "$pending_state" "trigger" 2>/dev/null || true)"
+    [[ "$trigger_after" == "stop-review-real-blocker" ]] || fail "SessionEnd rewrote nonmatching pending trigger: $trigger_after"
+}
+
+run_current_status_receipt_overrides_stale_report_plan_case() {
+    local host="codex"
+    local current_head task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub complete_output output
+
+    log "case: current-status-receipt-overrides-stale-report-plan"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_file="$REDCAP_ROOT/.acceptance-current-status-receipt-present-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-current-status-receipt-present-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance current status receipt present
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：实现和验收都已经完成
+### 0.3 下一步计划做的是
+- 下一步计划做的是：等待 closeout receipt 作为正式完工凭证
+### 0.4 整体计划脉络图与当前位置
+- 当前所在位置：等待 closeout receipt 作为正式完工凭证
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] receipt 已经生成"
+    bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" generate >/dev/null
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/current-status-receipt-present.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    cat >"$session_end_stub" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    complete_output="$(REDCAP_SKIP_FEISHU=1 REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" --baseline-head "$current_head")"
+    assert_string_contains "$complete_output" "\"status\": \"completed\""
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$task_file")"
+    assert_string_contains "$output" "closeout receipt 已生成"
+    assert_not_string_contains "$output" "等待 closeout receipt"
 }
 
 run_layerb_closeout_runtime_attaches_session_end_binding_case() {
@@ -13272,7 +13559,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk contributing-ia review-tracks hook-contract runtime-helper cli-console revival user-agent-identity feishu-inbox feishu-notification-policy human-communication runtime-package public-package-surface pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface information-architecture redcap-forge public-arsenal-claim-boundary public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication package-publish-safety runtime-package public-package-surface release-e2e-matrix pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -13340,6 +13627,33 @@ EOF
 #!/usr/bin/env bash
 if [[ "$failing_gate" == "token-risk" ]]; then
     echo "fixture token risk failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-architecture-smell-governance-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "architecture-smell" ]]; then
+    echo "fixture architecture smell governance failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-reference-asset-lifecycle.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "reference-asset-lifecycle" ]]; then
+    echo "fixture reference asset lifecycle failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-layer-boundary-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "layer-boundary" ]]; then
+    echo "fixture Layer A/B boundary failure" >&2
     exit 37
 fi
 exit 0
@@ -13552,6 +13866,27 @@ fi
 exit 0
 EOF
 
+        while IFS='|' read -r script_name gate_name fixture_message; do
+            [[ -n "$script_name" ]] || continue
+            cat >"$repo/compass/tools/$script_name" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "$gate_name" ]]; then
+    echo "$fixture_message" >&2
+    exit 37
+fi
+exit 0
+EOF
+        done <<'EOF'
+redcap-arsenal-version-binding-check.sh|arsenal-version|fixture arsenal version binding failure
+redcap-knowledge-gateway.sh|knowledge-gateway|fixture knowledge gateway failure
+redcap-cold-archive-inventory.sh|cold-archive-inventory|fixture cold archive inventory failure
+redcap-full-llm-wiki-roadmap-check.sh|full-llm-wiki-roadmap|fixture full LLM-wiki roadmap failure
+redcap-package-publish-safety-check.sh|package-publish-safety|fixture package publish safety failure
+redcap-release-e2e-matrix-check.sh|release-e2e-matrix|fixture release E2E matrix failure
+redcap-change-intake-check.sh|change-intake|fixture change intake failure
+redcap-conclusion-prism-check.sh|conclusion-prism|fixture conclusion Prism failure
+EOF
+
         chmod +x "$repo/compass/tools/redcap-spec-check.sh" \
             "$repo/compass/tools/redcap-docs-catalog.sh" \
             "$repo/compass/tools/redcap-execution-guarantee-check.sh" \
@@ -13559,6 +13894,9 @@ EOF
             "$repo/compass/tools/redcap-overlay-governance-check.sh" \
             "$repo/compass/tools/redcap-state-machine-check.sh" \
             "$repo/compass/tools/redcap-token-risk-audit.sh" \
+            "$repo/compass/tools/redcap-architecture-smell-governance-check.sh" \
+            "$repo/compass/tools/redcap-reference-asset-lifecycle.sh" \
+            "$repo/compass/tools/redcap-layer-boundary-check.sh" \
             "$repo/compass/tools/redcap-contributing-ia-check.sh" \
             "$repo/compass/tools/redcap-review-tracks-check.sh" \
             "$repo/compass/tools/redcap-hook-contract-check.sh" \
@@ -13583,6 +13921,7 @@ EOF
             "$repo/compass/tools/redcap-llm-wiki-asset-stratification-check.sh" \
             "$repo/compass/tools/redcap-llm-wiki-lite-check.sh" \
             "$repo/compass/tools/redcap-revival-check.sh"
+        chmod +x "$repo/compass/tools"/*.sh
 
         case "$failing_gate" in
             docs-catalog) expected_message="docs catalog check failed" ;;
@@ -13592,6 +13931,9 @@ EOF
             overlay-governance) expected_message="overlay governance check failed" ;;
             state-machine) expected_message="state machine contract check failed" ;;
             token-risk) expected_message="token risk audit failed" ;;
+            architecture-smell) expected_message="architecture smell governance check failed" ;;
+            reference-asset-lifecycle) expected_message="reference asset lifecycle check failed" ;;
+            layer-boundary) expected_message="Layer A/B boundary check failed" ;;
             contributing-ia) expected_message="contributing IA check failed" ;;
             review-tracks) expected_message="review tracks check failed" ;;
             hook-contract) expected_message="hook contract check failed" ;;
@@ -13612,10 +13954,17 @@ EOF
             information-architecture) expected_message="information architecture check failed" ;;
             redcap-forge) expected_message="RedCap Forge check failed" ;;
             public-arsenal-claim-boundary) expected_message="public arsenal claim boundary check failed" ;;
+            arsenal-version) expected_message="arsenal version binding check failed" ;;
             public-distillation-preflight) expected_message="public distillation preflight check failed" ;;
             agent-reading-absorption) expected_message="agent reading absorption check failed" ;;
             llm-wiki-asset-stratification) expected_message="LLM-wiki asset stratification check failed" ;;
             llm-wiki-lite) expected_message="LLM-wiki-lite lifecycle check failed" ;;
+            knowledge-gateway) expected_message="knowledge gateway check failed" ;;
+            cold-archive-inventory) expected_message="cold archive inventory check failed" ;;
+            full-llm-wiki-roadmap) expected_message="full LLM-wiki roadmap check failed" ;;
+            package-publish-safety) expected_message="package publish safety check failed" ;;
+            release-e2e-matrix) expected_message="release E2E matrix check failed" ;;
+            conclusion-prism) expected_message="conclusion Prism check failed" ;;
         esac
 
         set +e
@@ -13682,15 +14031,32 @@ for rel in [
     "compass/tools/redcap-user-agent-identity.sh",
     "compass/tools/redcap-feishu-inbox.sh",
     "compass/tools/redcap-feishu-notification-policy-check.sh",
-    "compass/tools/redcap-human-communication-check.sh",
-    "compass/tools/redcap-runtime-package-manifest.sh",
-    "compass/tools/redcap-public-package-surface.sh",
-    "compass/tools/redcap-pre-release-product-architecture-check.sh",
-    "compass/tools/redcap-pre-release-structure-task-tree-check.sh",
-    "compass/tools/redcap-midcourse-architecture-check.sh",
-    "compass/tools/redcap-runtime-workspace-boundary-check.sh",
-    "compass/tools/redcap-cli-product-surface-check.sh",
-]:
+	"compass/tools/redcap-human-communication-check.sh",
+	"compass/tools/redcap-architecture-smell-governance-check.sh",
+	"compass/tools/redcap-reference-asset-lifecycle.sh",
+	"compass/tools/redcap-layer-boundary-check.sh",
+	"compass/tools/redcap-information-architecture-check.sh",
+	"compass/tools/redcap-forge-check.sh",
+	"compass/tools/redcap-public-arsenal-claim-boundary.sh",
+	"compass/tools/redcap-arsenal-version-binding-check.sh",
+	"compass/tools/redcap-public-distillation-preflight.sh",
+	"compass/tools/redcap-agent-reading-absorption-check.sh",
+	"compass/tools/redcap-llm-wiki-asset-stratification-check.sh",
+	"compass/tools/redcap-llm-wiki-lite-check.sh",
+	"compass/tools/redcap-knowledge-gateway.sh",
+	"compass/tools/redcap-cold-archive-inventory.sh",
+	"compass/tools/redcap-full-llm-wiki-roadmap-check.sh",
+	"compass/tools/redcap-package-publish-safety-check.sh",
+	"compass/tools/redcap-runtime-package-manifest.sh",
+	"compass/tools/redcap-public-package-surface.sh",
+	"compass/tools/redcap-release-e2e-matrix-check.sh",
+	"compass/tools/redcap-pre-release-product-architecture-check.sh",
+	"compass/tools/redcap-pre-release-structure-task-tree-check.sh",
+	"compass/tools/redcap-midcourse-architecture-check.sh",
+	"compass/tools/redcap-runtime-workspace-boundary-check.sh",
+	"compass/tools/redcap-cli-product-surface-check.sh",
+	"compass/tools/redcap-conclusion-prism-check.sh",
+	]:
     script_path = dst / rel
     script_path.parent.mkdir(parents=True, exist_ok=True)
     script_path.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
@@ -14491,6 +14857,10 @@ run_all_cases() {
     run_layerb_closeout_runtime_evolution_harvest_blocks_case
     run_layerb_closeout_runtime_evolution_candidates_blocks_case
     run_layerb_closeout_runtime_uses_pending_baseline_case
+    run_session_end_missing_runtime_ignores_completed_receipt_case
+    run_session_end_missing_runtime_accepts_resource_limited_receipt_case
+    run_session_end_missing_runtime_preserves_nonmatching_pending_case
+    run_current_status_receipt_overrides_stale_report_plan_case
     run_task_complete_guard_passes_host_to_on_complete_case
     run_task_complete_guard_avoids_ambiguous_reports_case
     run_task_complete_guard_skips_stale_pending_artifact_case
@@ -14768,6 +15138,18 @@ case "$COMMAND" in
         ;;
     layerb-closeout-runtime-sync-preserves-completed-state)
         run_layerb_closeout_runtime_sync_preserves_completed_state_case
+        ;;
+    session-end-missing-runtime-ignores-completed-receipt)
+        run_session_end_missing_runtime_ignores_completed_receipt_case
+        ;;
+    session-end-missing-runtime-accepts-resource-limited-receipt)
+        run_session_end_missing_runtime_accepts_resource_limited_receipt_case
+        ;;
+    session-end-missing-runtime-preserves-nonmatching-pending)
+        run_session_end_missing_runtime_preserves_nonmatching_pending_case
+        ;;
+    current-status-receipt-overrides-stale-report-plan)
+        run_current_status_receipt_overrides_stale_report_plan_case
         ;;
     layerb-closeout-runtime-session-end-failure-writes-pending)
         run_layerb_closeout_runtime_session_end_failure_writes_pending_case

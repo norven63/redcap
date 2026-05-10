@@ -49,6 +49,11 @@ def section(text: str, heading_prefix: str) -> str:
     return "\n".join(buffer).strip()
 
 
+def closeout_runtime_identity(task_id: str, confirmed_hash: str) -> str:
+    safe_task = re.sub(r"[^A-Za-z0-9._-]+", "_", task_id).strip("._-") or "task"
+    return f"{safe_task}-{confirmed_hash}"
+
+
 def metadata(text: str) -> dict[str, str]:
     result: dict[str, str] = {}
     meta = section(text, "控制面元数据") or section(text, "Canonical Metadata")
@@ -488,7 +493,7 @@ def closeout_runtime_summary(repo: Path, meta: dict[str, str], task_text: str) -
     if not task_id or not confirmed:
         return ["closeout-runtime: task identity incomplete; unable to inspect receipt/promise state"]
 
-    identity = f"{task_id}-{confirmed}"
+    identity = closeout_runtime_identity(task_id, confirmed)
     project_hash = hashlib.md5(str(repo.resolve()).encode("utf-8")).hexdigest()
     runtime_root = Path(os.environ.get("REDCAP_RUNTIME_PROJECT_BASE_DIR", "/tmp/redcap/project")) / project_hash / "governance" / "closeout-runtime"
     state_path = runtime_root / "state" / f"{identity}.json"
@@ -520,6 +525,39 @@ def closeout_runtime_summary(repo: Path, meta: dict[str, str], task_text: str) -
 
     lines.append(f"closeout-receipt: {'present' if receipt_path.is_file() else 'missing'}")
     return lines
+
+
+def closeout_runtime_facts(repo: Path, meta: dict[str, str], task_text: str) -> dict[str, object]:
+    task_id = meta.get("task_id", "").strip()
+    confirmed_section = section(task_text, "已确认需求")
+    confirmed = hashlib.sha256(confirmed_section.encode("utf-8")).hexdigest() if confirmed_section else ""
+    if not task_id or not confirmed:
+        return {"receipt_exists": False, "promise_pending": None, "state_status": ""}
+
+    identity = closeout_runtime_identity(task_id, confirmed)
+    project_hash = hashlib.md5(str(repo.resolve()).encode("utf-8")).hexdigest()
+    runtime_root = Path(os.environ.get("REDCAP_RUNTIME_PROJECT_BASE_DIR", "/tmp/redcap/project")) / project_hash / "governance" / "closeout-runtime"
+    state_path = runtime_root / "state" / f"{identity}.json"
+    receipt_path = runtime_root / "receipts" / f"{identity}.json"
+    promise_path = runtime_root / "promise-ledger" / f"{identity}.json"
+
+    try:
+        promise_payload = json.loads(promise_path.read_text(encoding="utf-8")) if promise_path.is_file() else {}
+    except Exception:
+        promise_payload = {}
+    try:
+        state_payload = json.loads(state_path.read_text(encoding="utf-8")) if state_path.is_file() else {}
+    except Exception:
+        state_payload = {}
+
+    return {
+        "receipt_exists": receipt_path.is_file(),
+        "promise_pending": promise_payload.get("pending"),
+        "promise_completed": promise_payload.get("completed"),
+        "promise_total": promise_payload.get("total"),
+        "state_status": str(state_payload.get("status", "")).strip(),
+        "last_result": str(state_payload.get("last_result", "")).strip(),
+    }
 
 
 def host_hook_summary(repo: Path) -> list[str]:
@@ -672,6 +710,8 @@ def main() -> int:
     task_text = read(task_file)
     meta = metadata(task_text)
     pending = state_fields(pending_state)
+    closeout_facts = closeout_runtime_facts(repo, meta, task_text)
+    receipt_exists = bool(closeout_facts.get("receipt_exists"))
     pending_hash = pending.get("confirmed_hash", "")
     head = run_git(repo, "rev-parse", "--short", "HEAD") or "unknown"
     dirty = run_git(repo, "status", "--short")
@@ -692,15 +732,27 @@ def main() -> int:
     next_summary = next_items[0] if next_items else "未从任务报告抽取到下一步摘要"
     if pending:
         hash_label = pending_hash[:12] + "..." if pending_hash else "unknown"
+        receipt_label = "receipt 已生成" if receipt_exists else "receipt 尚未生成"
         done_summary = (
             f"当前 confirmed_hash（{hash_label}）对应的 pending closure 仍未清，"
-            f"required_redlines={pending.get('required_redlines', 'unknown')}；"
+            f"{receipt_label}，required_redlines={pending.get('required_redlines', 'unknown')}；"
             "历史报告里更早一次 closeout 的“已清/已完成”口径不能直接外推到当前工作区。"
         )
         next_summary = (
-            "先完成当前 pending closure、task report、current-status 与 closure ledger 的一致性收口，"
+            "先完成当前 pending closure 与 closure ledger 的一致性收口，"
             "再宣称当前 confirmed_hash 已 clean。"
         )
+        roadmap_items = [
+            "当前实时状态：receipt 与 pending closure 分开判断；pending closure 未清时，以 pending closure 为准。",
+            "下一步是清理或证明当前 pending closure，而不是重做已生成的 receipt。"
+        ]
+    elif receipt_exists:
+        next_summary = "当前任务 closeout receipt 已生成，pending closure 未显示阻塞；可转入后续任务或长期演进专项。"
+        if not roadmap_items or any("等待 closeout receipt" in item or "等待 receipt" in item or "receipt 作为正式完工凭证" in item for item in roadmap_items):
+            roadmap_items = [
+                "当前实时状态：closeout receipt 已生成，pending closure 未显示阻塞。",
+                "报告中的 closeout 前计划句只保留为历史记录，不再作为当前路线判断。"
+            ]
 
     print("当前已完成：" + done_summary)
     print("上一步完成的是：" + (previous_items[0] if previous_items else "未从任务报告抽取到上一步摘要"))

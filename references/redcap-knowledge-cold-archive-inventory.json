@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 71,
-  "bytes_total": 1017116,
+  "file_count": 72,
+  "bytes_total": 1024175,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 67,
+    "private-task-report-archive": 68,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -573,6 +573,14 @@
       "class": "private-task-report-archive",
       "bytes": 12625,
       "sha256": "e02ee18a09db15e6570ea080a7b18d63ee69505586ba7d64a1f6e58e068cd97d",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-09-prism-runs-evidence-preservation-boundary.md",
+      "class": "private-task-report-archive",
+      "bytes": 7059,
+      "sha256": "de23d79afda997d91484140fa7cfd3e4bf473d23da2130431fbbd7eb64e061f8",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

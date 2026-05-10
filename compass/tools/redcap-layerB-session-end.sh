@@ -23,6 +23,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+TASK_FILE="${REDCAP_TASK_FILE:-$REDCAP_ROOT/.dev-task.md}"
 source "$SCRIPT_DIR/redcap-runtime-state.sh"
 source "$SCRIPT_DIR/redcap-interop-governance.sh"
 source "$SCRIPT_DIR/redcap-notify-format.sh"
@@ -49,6 +50,27 @@ LEGACY_CLAUDE_HEAD_FILE="/tmp/redcap-claude-initial-head"
 RUNTIME_ATTACHED=0
 USED_LEGACY_CLAUDE_HEAD=0
 
+session_end_missing_runtime_can_exit_cleanly() {
+    local status_json acceptance_status
+
+    if [[ ! -f "$TASK_FILE" ]]; then
+        return 1
+    fi
+    status_json=$(bash "$SCRIPT_DIR/redcap-layerb-closeout-runtime.sh" status --task-file "$TASK_FILE" 2>/dev/null) || return 1
+    acceptance_status=$(printf '%s' "$status_json" | python3 -c 'import json,sys
+try:
+    payload=json.load(sys.stdin)
+except Exception:
+    raise SystemExit(2)
+acceptance=(payload.get("acceptance") or {}).get("status", "")
+receipt=payload.get("receipt_exists") is True
+pending=int(payload.get("promise_pending") or 0)
+print(acceptance)
+raise SystemExit(0 if receipt and pending == 0 and acceptance in {"pass", "not-required", "resource-limited-pass"} else 1)
+' 2>/dev/null) || return 1
+    [[ -n "$acceptance_status" ]]
+}
+
 if [[ -n "$BINDING_KEY" ]] && redcap_runtime_load_from_binding "$HOST" "$HOOK_CWD" "$BINDING_KEY"; then
     HEAD_FILE=$(redcap_runtime_path "layerB/initial-head")
     NOTIFIED_FILE=$(redcap_runtime_path "layerB/notified-head")
@@ -69,13 +91,54 @@ if [[ -x "$EXPLORE_NOTES_CHECK" ]]; then
 fi
 
 if [[ "$RUNTIME_ATTACHED" != "1" ]]; then
+    if session_end_missing_runtime_can_exit_cleanly; then
+        CLEAN_EXIT_STATUS="pass"
+        CLEAN_EXIT_DETAIL="missing-runtime-claim ignored because closeout receipt is present and promises are complete"
+        if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$TASK_FILE"; then
+            PENDING_STATE_FILE=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$TASK_FILE" 2>/dev/null || true)
+            PENDING_TRIGGER=""
+            if [[ -n "$PENDING_STATE_FILE" && -f "$PENDING_STATE_FILE" ]]; then
+                PENDING_TRIGGER=$(redcap_interop_read_state_field "$PENDING_STATE_FILE" "trigger" 2>/dev/null || true)
+            fi
+            if [[ "$PENDING_TRIGGER" == "layerB-session-end-missing-runtime-claim" ]]; then
+                if redcap_interop_clear_pending_closure \
+                    "$REDCAP_ROOT" \
+                    "$TASK_FILE" \
+                    "session-end-receipt-present" \
+                    "host=$HOST stale missing runtime claim ignored because closeout receipt is present" \
+                    >/dev/null 2>&1; then
+                    CLEAN_EXIT_DETAIL="stale missing-runtime pending closure cleared because closeout receipt is present and promises are complete"
+                else
+                    CLEAN_EXIT_STATUS="warn"
+                    CLEAN_EXIT_DETAIL="closeout receipt is present, but stale missing-runtime pending closure cleanup failed; pending closure remains visible"
+                fi
+            else
+                CLEAN_EXIT_STATUS="warn"
+                CLEAN_EXIT_DETAIL="closeout receipt is present; non-missing-runtime pending closure trigger=${PENDING_TRIGGER:-unknown} preserved and no new missing-runtime closure written"
+            fi
+        fi
+        redcap_interop_append_closure_ledger \
+            "$REDCAP_ROOT" \
+            "$TASK_FILE" \
+            "session-end" \
+            "$CLEAN_EXIT_STATUS" \
+            "$CLEAN_EXIT_DETAIL" \
+            "$HOST" \
+            "layerB-session-end-missing-runtime-claim" \
+            "" \
+            "$CURRENT_HEAD" \
+            "" \
+            >/dev/null 2>&1 || true
+        redcap_runtime_clear_process_claim "$HOST" "$HOST_PROCESS_PID" || true
+        exit 0
+    fi
     MISSING_RUNTIME_REDLINES="review,pm-gate,drift,artifact-lifecycle,task-report,notify"
-    if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+    if redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$TASK_FILE"; then
         MISSING_RUNTIME_REDLINES="pending-closure,$MISSING_RUNTIME_REDLINES"
     fi
     redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
-        "$REDCAP_ROOT/.dev-task.md" \
+        "$TASK_FILE" \
         "$HOST" \
         "layerB-session-end-missing-runtime-claim" \
         "$MISSING_RUNTIME_REDLINES" \
@@ -96,7 +159,7 @@ elif [[ "$HOST" == "claude" && -f "$LEGACY_CLAUDE_HEAD_FILE" ]]; then
     USED_LEGACY_CLAUDE_HEAD=1
 fi
 
-PENDING_CLOSURE_STATE=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+PENDING_CLOSURE_STATE=$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$TASK_FILE" 2>/dev/null || true)
 PENDING_CLOSURE_EXISTS=0
 PENDING_REQUIRED_REDLINES=""
 PENDING_ARTIFACT_PATH=""
@@ -177,7 +240,7 @@ run_session_end_validator_chain() {
         REDCAP_SESSION_END_REVIEW_STATUS="${REVIEW_STATUS:-}" \
         REDCAP_SESSION_END_PENDING_HEAD_MISMATCH="$PENDING_CLOSURE_HEAD_MISMATCH" \
         REDCAP_SESSION_END_PENDING_AUDITED_HEAD="${PENDING_AUDITED_HEAD:-}" \
-        bash "$VALIDATOR_CHAIN" session-end "$HOST" "$REDCAP_ROOT/.dev-task.md" "$BASELINE" "$CURRENT_HEAD" text 2>&1) || return 1
+        bash "$VALIDATOR_CHAIN" session-end "$HOST" "$TASK_FILE" "$BASELINE" "$CURRENT_HEAD" text 2>&1) || return 1
 
     return 0
 }
@@ -190,7 +253,7 @@ record_session_end_phase() {
 
     redcap_interop_append_closure_ledger \
         "$REDCAP_ROOT" \
-        "$REDCAP_ROOT/.dev-task.md" \
+        "$TASK_FILE" \
         "$phase" \
         "$status" \
         "$detail" \
@@ -291,7 +354,7 @@ if [[ -f "$REVIEW_RESULT_FILE" ]]; then
     INITIAL_REVIEW_STATUS=$(cat "$REVIEW_RESULT_FILE" 2>/dev/null || true)
 fi
 PRISM_ACCEPTANCE_PASSED=0
-if bash "$SCRIPT_DIR/redcap-prism-acceptance-check.sh" --task-file "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1; then
+if bash "$SCRIPT_DIR/redcap-prism-acceptance-check.sh" --task-file "$TASK_FILE" >/dev/null 2>&1; then
     PRISM_ACCEPTANCE_PASSED=1
     if [[ -z "$INITIAL_REVIEW_STATUS" ]]; then
         INITIAL_REVIEW_STATUS="PRISM_PASS"
@@ -438,7 +501,7 @@ session_end_pending_state_safe_to_clear_after_success() {
 
     [[ -n "$state_file" && -f "$state_file" ]] || return 1
 
-    current_confirmed_hash=$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+    current_confirmed_hash=$(redcap_dev_task_confirmed_hash "$TASK_FILE" 2>/dev/null || true)
     state_confirmed_hash=$(redcap_interop_read_state_field "$state_file" "confirmed_hash" 2>/dev/null || true)
     if [[ -n "$state_confirmed_hash" && -n "$current_confirmed_hash" && "$state_confirmed_hash" != "$current_confirmed_hash" ]]; then
         return 1
@@ -459,7 +522,7 @@ session_end_pending_state_safe_to_clear_after_success() {
 session_end_pending_clear_expected_updated_at() {
     local state_file updated_at
 
-    state_file=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+    state_file=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$TASK_FILE" 2>/dev/null || true)
     [[ -n "$state_file" && -f "$state_file" ]] || return 1
 
     updated_at=$(redcap_interop_read_state_field "$state_file" "updated_at" 2>/dev/null || true)
@@ -495,7 +558,7 @@ session_end_report_artifact_path() {
         return 0
     fi
 
-    marker_rel=$(redcap_interop_current_report_marker_rel "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+    marker_rel=$(redcap_interop_current_report_marker_rel "$REDCAP_ROOT" "$TASK_FILE" 2>/dev/null || true)
     resolved_rel=$(session_end_report_rel_path "$marker_rel" || true)
     if [[ -n "$resolved_rel" ]]; then
         printf '%s\n' "$resolved_rel"
@@ -582,7 +645,7 @@ session_end_audit_gap_notify_enabled() {
 }
 
 acquire_success_guard_lock() {
-    if redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+    if redcap_interop_acquire_pending_closure_lock "$REDCAP_ROOT" "$TASK_FILE"; then
         SUCCESS_GUARD_LOCK_HELD=1
         return 0
     fi
@@ -591,7 +654,7 @@ acquire_success_guard_lock() {
 
 release_success_guard_lock() {
     if [[ "$SUCCESS_GUARD_LOCK_HELD" -eq 1 ]]; then
-        redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" >/dev/null 2>&1 || true
+        redcap_interop_release_pending_closure_lock "$REDCAP_ROOT" "$TASK_FILE" >/dev/null 2>&1 || true
         SUCCESS_GUARD_LOCK_HELD=0
     fi
 }
@@ -680,7 +743,7 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
             CURRENT_PENDING_EXISTS=1
             if ! redcap_interop_clear_pending_closure \
                 "$REDCAP_ROOT" \
-                "$REDCAP_ROOT/.dev-task.md" \
+                "$TASK_FILE" \
                 "session-end-cleared" \
                 "host=$HOST current_head=$CURRENT_HEAD" \
                 "$PENDING_CLEAR_EXPECTED_AT" \
@@ -693,7 +756,7 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
                     "host=$HOST current_head=$CURRENT_HEAD pending_updated_at=${PENDING_CLEAR_EXPECTED_AT:-missing}" \
                     || true
             fi
-        elif redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        elif redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$TASK_FILE"; then
             CURRENT_PENDING_EXISTS=1
             PENDING_CLEAR_STATUS=0
             redcap_runtime_record_degraded_mode \
@@ -716,11 +779,11 @@ if [[ "$VALIDATOR_INFRA_FAILURE" -ne 1 && "$REPORT_STATUS" -eq 1 && "$PM_GATE_ST
                 "session-end-success-lock-failed" \
                 "host=$HOST current_head=$CURRENT_HEAD" \
                 >/dev/null 2>&1 || true
-        elif redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md"; then
+        elif redcap_interop_pending_closure_exists "$REDCAP_ROOT" "$TASK_FILE"; then
             append_required_redline "pending-closure"
         elif ! redcap_interop_append_closure_ledger \
             "$REDCAP_ROOT" \
-            "$REDCAP_ROOT/.dev-task.md" \
+            "$TASK_FILE" \
                 "session-end" \
                 "pass" \
                 "review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS backlog_status=$BACKLOG_STATUS spec_status=$SPEC_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS" \
@@ -883,7 +946,7 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
     PENDING_WRITE_AUDITED=$(pending_write_audited_head)
     if ! redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
-        "$REDCAP_ROOT/.dev-task.md" \
+        "$TASK_FILE" \
         "$HOST" \
         "layerB-session-end-audit-gap" \
         "$REQUIRED_REDLINES" \
@@ -901,7 +964,7 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
     fi
     if ! redcap_interop_append_closure_ledger \
         "$REDCAP_ROOT" \
-        "$REDCAP_ROOT/.dev-task.md" \
+        "$TASK_FILE" \
         "session-end" \
         "blocked" \
         "required_redlines=$REQUIRED_REDLINES review_status=${REVIEW_STATUS:-none} review_passed=$REVIEW_PASSED reanchor_status=$REANCHOR_STATUS validator_infra_failure=$VALIDATOR_INFRA_FAILURE pm_gate_status=$PM_GATE_STATUS drift_status=$DRIFT_STATUS backlog_status=$BACKLOG_STATUS spec_status=$SPEC_STATUS artifact_status=$ARTIFACT_STATUS report_status=$REPORT_STATUS notify_status=$NOTIFY_STATUS persistence_failure=$SESSION_END_PERSISTENCE_FAILURE persistence_detail=${SESSION_END_PERSISTENCE_DETAIL:-none}" \
@@ -917,7 +980,7 @@ if [[ -n "$REQUIRED_REDLINES" ]]; then
         append_required_redline "closure-ledger"
         if ! redcap_interop_write_pending_closure \
             "$REDCAP_ROOT" \
-            "$REDCAP_ROOT/.dev-task.md" \
+            "$TASK_FILE" \
             "$HOST" \
             "layerB-session-end-audit-gap" \
             "$REQUIRED_REDLINES" \

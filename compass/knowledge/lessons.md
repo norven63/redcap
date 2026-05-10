@@ -479,3 +479,6 @@
 
 ### L-157: 结论性输出不能单人自证，新增规则默认先找固化保障
 - 正文模块：[`compass/knowledge/lessons/l-157.md`](../../compass/knowledge/lessons/l-157.md)
+
+### L-158: receipt 与 pending closure 必须分开判定
+- 正文模块：[`compass/knowledge/lessons/l-158.md`](../../compass/knowledge/lessons/l-158.md)
