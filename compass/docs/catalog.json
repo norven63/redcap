@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 364689,
-    "lines": 7277,
-    "chars": 217833,
+    "size_bytes": 361009,
+    "lines": 7215,
+    "chars": 214786,
     "rough_token_pressure": {
-      "low": 54458,
-      "high": 108916
+      "low": 53696,
+      "high": 107393
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 171014,
-        "lines": 2694,
-        "chars": 101360,
+        "size_bytes": 167334,
+        "lines": 2632,
+        "chars": 98313,
         "rough_token_pressure": {
-          "low": 25340,
-          "high": 50680
+          "low": 24578,
+          "high": 49156
         }
       }
     },
@@ -551,35 +551,6 @@
       }
     },
     {
-      "path": "compass/docs/task-reports/2026-05-10-closeout-status-consistency-repair.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Layer B closeout 状态一致性修复",
-      "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11725,
-      "lines": 214,
-      "chars": 7405,
-      "summary": "当前已完成：RedCap 已修复“receipt 已生成后，SessionEnd 仍可能因为缺 runtime binding 重新写 pending closure”的状态漂移。 / 详情：这次解决的是完成态被后续 hook 反向污染的问题。现在 SessionEnd 在缺少 runtime claim 时，会先检查当前任务是否已经有 receipt、承诺账本是否已清、验收是否不阻塞；若满足，就清掉同任务 stale pending closure 并退出，不再把已完成任务重新挂成待收口。current-status 也会优先展示实时 receipt/pending 状态，不再沿用报告里 closeout 前的“等待 recei…",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已修复“receipt 已生成后，SessionEnd 仍可能因为缺 runtime binding 重新写 pending closure”的状态漂移。",
-          "详情：这次解决的是完成态被后续 hook 反向污染的问题。现在 SessionEnd 在缺少 runtime claim 时，会先检查当前任务是否已经有 receipt、承诺账本是否已清、验收是否不阻塞；若满足，就清掉同任务 stale pending closure 并退出，不再把已完成任务重新挂成待收口。current-status 也会优先展示实时 receipt/pending 状态，不再沿用报告里 closeout 前的“等待 receipt”旧句子。"
-        ],
-        "previous_step": [
-          "上一步完成的是：RedCap 已把“结论性输出必须 Prism-backed”和“新增能力优先固化保障”落成机制，并完成 receipt；随后复核时发现状态面仍有 pending closure 残留和摘要滞后。"
-        ],
-        "next_step": [
-          "下一步计划做的是：本轮完成后无新的非发布类阻塞任务；后续如果继续推进，应进入正式发布专项或长期演进专项，并按结论 gate 让架构/路线判断先过 Prism。"
-        ],
-        "position": [
-          "整体计划脉络图是：历史坏味治理 -> 结论/保障机制补强 -> closeout 状态一致性修复 -> 正式发布专项 / 长期演进专项。",
-          "当前所在位置：closeout 状态一致性修复已实现，Claude Code + Kimi 棱镜复核、targeted acceptance、完整 acceptance、spec-check 与 diagnose 均已通过；等待提交和 closeout receipt。"
-        ]
-      }
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-10-prism-conclusion-guarantee-hardening.md",
       "collection": "task-reports",
       "title": "任务完成报告：结论性输出 Prism 强制协作与固化保障优先级加固",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：历史坏味治理 -> 结论/保障机制补强 -> 正式发布专项 / 长期演进专项。",
           "当前所在位置：结论/保障机制补强已实现并通过 Claude Code + Kimi Prism 验收，等待 closeout receipt 作为正式完工凭证。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-10-progress-meter-prism-review.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：三分 RedCap 前进刻度表结论补棱镜评审",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 8045,
+      "lines": 152,
+      "chars": 4358,
+      "summary": "当前已完成：之前由 Cap 单人提出的“三分 RedCap 前进刻度表”已经补做棱镜评审；Kimi 与 Claude Code 均给出 pass，且无 blocker。 / 详情：棱镜共同认可三分法方向，但要求它只能是“聚合视图”，不能变成新的任务真相源。也就是说，它负责让人和 AI 看懂 RedCap 当前处在什么阶段，而不是替代 `.dev-task.md`、backlog、receipt、evolution candidates、legacy lifecycle 等已有权威记录。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：之前由 Cap 单人提出的“三分 RedCap 前进刻度表”已经补做棱镜评审；Kimi 与 Claude Code 均给出 pass，且无 blocker。",
+          "详情：棱镜共同认可三分法方向，但要求它只能是“聚合视图”，不能变成新的任务真相源。也就是说，它负责让人和 AI 看懂 RedCap 当前处在什么阶段，而不是替代 `.dev-task.md`、backlog、receipt、evolution candidates、legacy lifecycle 等已有权威记录。"
+        ],
+        "previous_step": [
+          "上一步完成的是：`redcap-change-intent-continuity-gate` 已修好“继续/接下来/按计划推进”类指令的任务锚点硬门，并生成 closeout receipt。"
+        ],
+        "next_step": [
+          "下一步计划做的是：按棱镜通过的结论，进入第 3 步实现：把 RedCap 前进刻度表与棱镜使用场景优化逐项落地。"
+        ],
+        "position": [
+          "整体计划脉络图是：续接不跑偏 -> 三分法结论补棱镜评审 -> 三分进度仪与棱镜使用优化落地。",
+          "当前所在位置：第二步“结论补棱镜评审”已完成；下一步是把评审通过的任务树转为实现任务。"
         ]
       }
     }

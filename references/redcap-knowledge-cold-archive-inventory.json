@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 73,
-  "bytes_total": 1038148,
+  "file_count": 74,
+  "bytes_total": 1049873,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 69,
+    "private-task-report-archive": 70,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -589,6 +589,14 @@
       "class": "private-task-report-archive",
       "bytes": 13973,
       "sha256": "a29a04bc6cdf11ad8b424bb1f8b14b00cde62ceacc59643330850ef907271fb0",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-10-closeout-status-consistency-repair.md",
+      "class": "private-task-report-archive",
+      "bytes": 11725,
+      "sha256": "9915aa91d5f54ae08ba1911d8f1ebcbcee121c8c5a1e57167874fc28f0c2f0fd",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

@@ -485,3 +485,6 @@
 
 ### L-159: “继续”类指令必须先确认任务锚点
 - 正文模块：[`compass/knowledge/lessons/l-159.md`](../../compass/knowledge/lessons/l-159.md)
+
+### L-160: 进度仪只能是聚合视图，不能成为新真相源
+- 正文模块：[`compass/knowledge/lessons/l-160.md`](../../compass/knowledge/lessons/l-160.md)
