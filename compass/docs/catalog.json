@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 361758,
-    "lines": 7196,
-    "chars": 215558,
+    "size_bytes": 361755,
+    "lines": 7202,
+    "chars": 215589,
     "rough_token_pressure": {
-      "low": 53889,
-      "high": 107779
+      "low": 53897,
+      "high": 107794
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 168083,
-        "lines": 2613,
-        "chars": 99085,
+        "size_bytes": 168080,
+        "lines": 2619,
+        "chars": 99116,
         "rough_token_pressure": {
-          "low": 24771,
-          "high": 49542
+          "low": 24779,
+          "high": 49558
         }
       }
     },
@@ -522,35 +522,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-09-pre-release-non-release-productization-closure.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-2k 发布前非发布产品化治理收束",
-      "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12625,
-      "lines": 218,
-      "chars": 7165,
-      "summary": "当前已完成：RedCap 已把正式发布任务之前还能由工程自动推进的产品化治理收束完成。 / 详情：本轮把 npm 候选包面从偏宽的内部工具集合，收窄为 150 个文件以内的 runtime-readiness surface；同时补上了未来正式发布任务需要看的交接说明、运行时入口边界和诊断分层。RedCap 现在更接近一个“可以进入 release task 审核的 CLI/runtime 产品候选”，但仍没有进入正式 npm 发布。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把正式发布任务之前还能由工程自动推进的产品化治理收束完成。",
-          "详情：本轮把 npm 候选包面从偏宽的内部工具集合，收窄为 150 个文件以内的 runtime-readiness surface；同时补上了未来正式发布任务需要看的交接说明、运行时入口边界和诊断分层。RedCap 现在更接近一个“可以进入 release task 审核的 CLI/runtime 产品候选”，但仍没有进入正式 npm 发布。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2j 已完成发布前最终收束审判，确认本地打包和安全预检基础成立，但正式公开发布仍被许可证、发布开关和 npm 权限等人工决策拦住。"
-        ],
-        "next_step": [
-          "下一步计划做的是：如果 Norven 决定启动正式 release task，先做 release readiness 全量复验，再处理许可证、发布开关、npm scope 权限、版本号和回滚策略；如果暂不发布，RedCap 父任务线可以转入正式发布之外的后续产品化治理。"
-        ],
-        "position": [
-          "整体计划脉络图是：工作流重构 → 信息架构/历史资产治理 → CLI 产品面 → package readiness → clean workspace E2E → Codex hooks 候选增强 → 发布前最终审判 → P4-2k 非发布产品化收束 → 等待正式 release task。",
-          "当前所在位置：P4-2k。它是正式发布任务之前的工程收束，不是 P4-2 正式 npm 发布。"
-        ]
-      }
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-09-prism-runs-evidence-preservation-boundary.md",
       "collection": "task-reports",
       "title": "任务完成报告：Prism 本地证据保全边界修正",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：工作流重构 -> 信息架构治理 -> release package readiness -> 架构坏味治理收束 -> 正式发布专项。",
           "当前所在位置：架构坏味治理收束已实现，Prism resource-limited acceptance 与全量回归已通过，等待 closeout receipt 作为正式完工凭证。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-10-prism-conclusion-guarantee-hardening.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：结论性输出 Prism 强制协作与固化保障优先级加固",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12622,
+      "lines": 224,
+      "chars": 7196,
+      "summary": "当前已完成：RedCap 已把“评估/结论性质输出必须由棱镜参与”和“新增能力优先进入固化保障”从口头约定升级为可检查机制。 / 详情：这次解决的是一个很危险的协作坏味：主 Agent 很容易先给出看似完整的架构结论，但它本质仍是单视角判断。现在 RedCap 把会指导后续工程的官方结论定义为 conclusion-class 输出，要求进入 Prism 协作、复核或验收；同时，新增能力默认先寻找脚本、validator、hook、acceptance、receipt、diagnose/spec-check 等固化落点。没有 Prism 的即时观点只能叫建议稿/初判，不能再写成“我们共同评审结论”。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把“评估/结论性质输出必须由棱镜参与”和“新增能力优先进入固化保障”从口头约定升级为可检查机制。",
+          "详情：这次解决的是一个很危险的协作坏味：主 Agent 很容易先给出看似完整的架构结论，但它本质仍是单视角判断。现在 RedCap 把会指导后续工程的官方结论定义为 conclusion-class 输出，要求进入 Prism 协作、复核或验收；同时，新增能力默认先寻找脚本、validator、hook、acceptance、receipt、diagnose/spec-check 等固化落点。没有 Prism 的即时观点只能叫建议稿/初判，不能再写成“我们共同评审结论”。"
+        ],
+        "previous_step": [
+          "上一步完成的是：RASG 架构坏味治理已经把非发布类坏味收束到 closeout，本轮是在这个干净基线上补强“评估性结论不能单人自证”的制度缺口。"
+        ],
+        "next_step": [
+          "下一步计划做的是：本轮完成后无新的非发布类阻塞任务；如继续推进，应进入正式发布专项或后续长期演进专项，并按本轮新规则让结论先经 Prism-backed gate。"
+        ],
+        "position": [
+          "整体计划脉络图是：历史坏味治理 -> 结论/保障机制补强 -> 正式发布专项 / 长期演进专项。",
+          "当前所在位置：结论/保障机制补强已实现并通过 Claude Code + Kimi Prism 验收，等待 closeout receipt 作为正式完工凭证。"
         ]
       }
     }

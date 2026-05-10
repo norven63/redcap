@@ -850,3 +850,13 @@ if [[ -x "$PRISM_AVAILABILITY_CHECK" ]]; then
         exit 1
     fi
 fi
+
+CONCLUSION_PRISM_CHECK="$REDCAP_ROOT/compass/tools/redcap-conclusion-prism-check.sh"
+if [[ ! -f "$CONCLUSION_PRISM_CHECK" ]]; then
+    echo "[redcap-spec-check] conclusion Prism check missing" >&2
+    exit 1
+fi
+if ! bash "$CONCLUSION_PRISM_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] conclusion Prism check failed" >&2
+    exit 1
+fi

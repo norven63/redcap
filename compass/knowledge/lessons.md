@@ -476,3 +476,6 @@
 
 ### L-156: 架构坏味治理不能只靠报告，必须绑定到索引、生命周期和检查器
 - 正文模块：[`compass/knowledge/lessons/l-156.md`](../../compass/knowledge/lessons/l-156.md)
+
+### L-157: 结论性输出不能单人自证，新增规则默认先找固化保障
+- 正文模块：[`compass/knowledge/lessons/l-157.md`](../../compass/knowledge/lessons/l-157.md)

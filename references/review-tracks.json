@@ -27,10 +27,12 @@
         "新增规则是否进入 references/execution-guarantees.json",
         "可执行规则是否接入脚本、validator、diagnose 或 acceptance",
         "不可自动化规则是否说明 manual-only 原因",
+        "评估性或结论性输出是否经过 Prism-backed conclusion gate，未经过时是否明确标为建议稿/初判",
         "backlog、governance debt、lessons 与任务报告是否一致"
       ],
       "primary_sources": [
         "references/execution-guarantees.json",
+        "references/conclusion-prism-policy.json",
         "references/governance-review-checklist.md",
         "compass/knowledge/governance-debt-register.md",
         "compass/knowledge/lessons.md"

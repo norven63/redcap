@@ -11,6 +11,7 @@ Prism 不是普通“多问几个模型”。
 - 核心治理补丁需要跨模型族审查
 - 重要争议需要独立视角而不是单 Agent 自证
 - 高风险结论需要 formal quorum，而不是单路 reviewer 口头背书
+- 结论性输出需要成为 RedCap 官方决议时，必须先经 Prism 参与或验收；没有 Prism 的主 Agent 观点只能算建议稿，不是单 Agent 自证后的“我们结论”
 
 ## 它不负责什么
 
@@ -55,6 +56,7 @@ Prism 候选 roster 的默认排序，现在和 stop-review 保持一致：
 - 不代表登录态、限流、MCP/Hook 噪声或真实可完成审计
 - 所以正式 Prism 前，必须先看 `prism-availability` 的 1 小时 TTL 可用性清单；过期、探测强度不足或 provenance 与当前 root / probe / policy / PATH 不一致时就重新嗅探，只让 `pass` 的 provider 进入 roster。provenance 会记录 probe / policy 的内容摘要，策略热变更不会被旧 cache 遮住。
 - Prism roster 必须写成 `provider&model:role`，例如 `kimi&kimi-k2:reviewer`，否则 dispatch gate 会拒绝
+- 如果当前只有部分 provider 可用，`resource-limited` 只能作为诚实降级证据，不等于 full quorum；报告和 closeout 必须把这个边界说清楚
 
 ## 运行证据长什么样
 

@@ -27,6 +27,7 @@
 
 - [ ] 本次治理规则若可执行，已经有明确的 gate / validator / script 落点
 - [ ] 本次治理规则若暂不可执行，已被明确标注为 design/debt，而非 runtime guarantee
+- [ ] 新增能力已先做“固化保障优先级”评估：能否进入脚本 / validator / hook / acceptance / receipt / diagnose / spec-check；若没有进入，已写明 non-automation reason
 - [ ] 本次新增或改写的保障规则，已明确自己属于哪一档：物理强保障 / 宿主耦合保障 / 人工-宿主边界保障，而不是把所有规则混叫成“已保障”
 - [ ] 若引用了业内标准，已说明“标准要求 → RedCap 映射”的关系
 - [ ] 面向人阅读的 repo-tracked 资产（如 backlog 说明、task report）已提供人话摘要 / 术语对照，并已接入对应检查
@@ -38,6 +39,7 @@
 
 - [ ] 已说明本 tranche 需要哪些 review 轨道（architecture / governance / contracts）
 - [ ] 三轨评审以 `references/review-tracks.json` 为机器权威；stop-review prompt 已消费该 registry，而不是只靠本 checklist 的自然语言提示
+- [ ] 若输出会形成 RedCap 官方结论，已按 `references/conclusion-prism-policy.json` 进入 Prism-backed conclusion gate；未进入时明确标为建议稿 / 初判
 - [ ] task report 中会体现“当前已完成 / 上一步完成的是 / 下一步计划做的是 / 整体计划脉络图与当前位置”
 - [ ] 如有遗留治理债务，已补录到 `compass/knowledge/governance-debt-register.md`
 

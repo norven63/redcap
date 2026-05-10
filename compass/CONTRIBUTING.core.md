@@ -28,6 +28,8 @@
 14. **飞书不是唯一收尾动作**：飞书通知只是可见信号；真正收尾还要看承诺账本、Prism 验收、receipt、review、validator、task report、lessons、backlog、catalog、diagnose 与 pending closure。
 14.1. **飞书只能走单一生产路径**：RedCap 官方通知只允许 `cli_a9579f5b12219bb5` 的 lark-cli DM 通道；只在节点汇报或需要 Norven 人工介入的中断时发送，禁止 webhook、旧 profile、followup watcher 和重复 success 刷屏。
 15. **作者不得单独宣称 completed**：没有有效 Prism 验收、没有 receipt，或 pending closure 未清时，作者只能汇报“已实现/已自检”，不得宣称 completed，也不得汇报 completed。
+15.1. **结论性输出必须 Prism-backed**：凡是会指导后续工程的架构判断、风险分类、完成性、可发布性、长期路线、治理决策等 RedCap 官方结论，必须经过 Prism 协作、复核或验收；未经 Prism 的主 Agent 观点只能叫建议稿 / 初判，不得写成“我们共同评审结论”。
+15.2. **新增能力默认先做固化保障评估**：新增能力、流程节点或纪律规则时，先评估能否进入脚本、validator、hook、acceptance、receipt、diagnose/spec-check 或 execution-guarantee；只有写清“不需要或不适合这么严格保障”的原因，才允许降级为 documented / manual-only。
 16. **首读/诊断入口已优先做成只读安全**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 的 repo-owned 首读链不再依赖临时可写目录；真正仍受宿主限制的是 reply-time veto、SessionEnd/Stop 等宿主控制点，而不是这些首读入口本身。Codex lifecycle hooks 当前是 repo-owned candidate：必须同时满足 feature flag、project trust 与真实 marker E2E，才可从 degraded 升级为 ready。
 17. **identity 先于 soul**：`~/.cap/identity.md` 是 Cap 的个人灵魂锚点；`compass/soul.md` 负责培养指南、复活协议与执行纪律。缺失 identity 时，优先用 `redcap-install.sh --init-identity` 初始化，不要把 `soul.md` 误当成个人记忆本体。
 18. **有 SessionStart Hook 的宿主必须跑 installer**：Claude / Gemini / Copilot 这类已接入 Layer B SessionStart 的宿主，会在启动链里实际调用 `redcap-install.sh`；Codex.app 这类只有入口导入的宿主，仍需显式运行 installer 或 current-status。
@@ -48,6 +50,7 @@
 | docs / knowledge / token 风险 | `CONTRIBUTING.md` §6、§7 的 docs/knowledge 边界、`compass/docs/index.yaml`、`compass/knowledge/index.md` |
 | hook / validator / runtime state | `CONTRIBUTING.md` §4、§7 控制面硬化、`references/hook-standards.md` |
 | Prism / 多 Agent 审查 | `CONTRIBUTING.md` §8、§9、§11、`prism/protocol.md` |
+| 结论性输出 / 固化保障优先级 | `references/conclusion-prism-policy.json`、`compass/tools/redcap-conclusion-prism-check.sh`、`CONTRIBUTING.md` §11 |
 | provider 调度 / 冻结 | `prism/tools/prism-availability.sh status`、`references/prism-provider-policy.json`、`compass/knowledge/model-capability-matrix.yaml` |
 | 需求确认 / 人工介入边界 | `CONTRIBUTING.md` §10、`references/agent-constraints.md` |
 | 中插需求 / 重计划 | `references/layerb-change-intake-policy.json`、`compass/tools/redcap-change-intake-check.sh`、`CONTRIBUTING.md` §10、§13 |
@@ -74,10 +77,11 @@
 11. 涉及多宿主 skill 分发：`bash compass/tools/redcap-skill-lifecycle-check.sh`
 12. 涉及旧资产或运行残留：`bash compass/tools/redcap-legacy-asset-lifecycle-check.sh`
 13. 涉及 Prism 调用：`bash prism/tools/prism-availability.sh status`，随后只调度可用 provider
-14. 涉及关键文件新增或解释：`bash compass/tools/redcap-file-lookup-dictionary-check.sh`
-15. 涉及公共沉淀库：`bash compass/tools/redcap-shared-knowledge-check.sh`
-16. 涉及 npm / runtime / portable package 发布：`bash compass/tools/redcap-package-publish-safety-check.sh --candidate-list <实际打包文件清单>`
-17. 涉及执行期中插需求或子任务完成边界：`bash compass/tools/redcap-change-intake-check.sh .dev-task.md --mode closeout`
-18. 涉及首次启动身份/用户命名空间：`bash compass/tools/redcap-user-agent-identity.sh check --local`
-19. 涉及飞书通知：`bash compass/tools/redcap-feishu-notification-policy-check.sh`
-20. 涉及飞书回复/收件箱：`bash compass/tools/redcap-feishu-inbox.sh check`；回复只作为待处理入口，不得自动执行
+14. 涉及评估性 / 结论性输出或新增能力保障等级：`bash compass/tools/redcap-conclusion-prism-check.sh`
+15. 涉及关键文件新增或解释：`bash compass/tools/redcap-file-lookup-dictionary-check.sh`
+16. 涉及公共沉淀库：`bash compass/tools/redcap-shared-knowledge-check.sh`
+17. 涉及 npm / runtime / portable package 发布：`bash compass/tools/redcap-package-publish-safety-check.sh --candidate-list <实际打包文件清单>`
+18. 涉及执行期中插需求或子任务完成边界：`bash compass/tools/redcap-change-intake-check.sh .dev-task.md --mode closeout`
+19. 涉及首次启动身份/用户命名空间：`bash compass/tools/redcap-user-agent-identity.sh check --local`
+20. 涉及飞书通知：`bash compass/tools/redcap-feishu-notification-policy-check.sh`
+21. 涉及飞书回复/收件箱：`bash compass/tools/redcap-feishu-inbox.sh check`；回复只作为待处理入口，不得自动执行

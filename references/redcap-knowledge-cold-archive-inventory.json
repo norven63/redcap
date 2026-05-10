@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 70,
-  "bytes_total": 1004491,
+  "file_count": 71,
+  "bytes_total": 1017116,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 66,
+    "private-task-report-archive": 67,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -565,6 +565,14 @@
       "class": "private-task-report-archive",
       "bytes": 9232,
       "sha256": "2320fce91839e3704709e8a0ae2eca8aad8eb69cab372bc1ec35741a3dabca9c",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-09-pre-release-non-release-productization-closure.md",
+      "class": "private-task-report-archive",
+      "bytes": 12625,
+      "sha256": "e02ee18a09db15e6570ea080a7b18d63ee69505586ba7d64a1f6e58e068cd97d",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

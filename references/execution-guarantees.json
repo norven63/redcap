@@ -437,6 +437,31 @@
       "auto_enforceable": true
     },
     {
+      "id": "prism-backed-conclusion-gate",
+      "category": "prism-multi-agent",
+      "priority": "P0",
+      "rule": "RedCap official conclusions that guide engineering work must be Prism-backed, explicitly resource-limited with evidence, or labeled as a main-agent proposal rather than a joint verdict.",
+      "source_paths": [
+        "references/conclusion-prism-policy.json",
+        "prism/protocol.md",
+        "prism/README.md",
+        "compass/CONTRIBUTING.core.md",
+        "compass/CONTRIBUTING.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-conclusion-prism-check validates the conclusion-class policy, Prism protocol wording, core contract, execution-guarantee registration, and file lookup coverage; spec-check and diagnose consume it so the rule cannot remain a chat-only convention.",
+      "guarantee_paths": [
+        "compass/tools/redcap-conclusion-prism-check.sh",
+        "compass/tools/redcap-conclusion-prism-check.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "references/conclusion-prism-policy.json"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "prism-availability-cache",
       "category": "prism-multi-agent",
       "priority": "P0",
@@ -1463,6 +1488,29 @@
       ],
       "revival_required": false,
       "hook_required": true,
+      "auto_enforceable": true
+    },
+    {
+      "id": "guarantee-first-capability-gate",
+      "category": "control-gates",
+      "priority": "P0",
+      "rule": "New RedCap capabilities, workflow nodes, or discipline rules must default to executable safeguards before they are accepted as lasting mechanism changes; documented/manual-only is allowed only with an explicit non-automation reason.",
+      "source_paths": [
+        "references/conclusion-prism-policy.json",
+        "references/execution-guarantees.json",
+        "compass/CONTRIBUTING.core.md",
+        "compass/CONTRIBUTING.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-conclusion-prism-check validates the guarantee-first capability rule, and redcap-execution-guarantee-check rejects missing executable guarantee entries or undocumented manual-only downgrades.",
+      "guarantee_paths": [
+        "compass/tools/redcap-conclusion-prism-check.sh",
+        "compass/tools/redcap-execution-guarantee-check.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
       "auto_enforceable": true
     },
     {

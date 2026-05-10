@@ -15,7 +15,7 @@
     },
     {
       "path": "references/execution-guarantees.json",
-      "bytes": 103359,
+      "bytes": 105749,
       "asset_class": "control-plane-registry",
       "lifecycle": "active-validator-registry",
       "consumer_check": "bash compass/tools/redcap-execution-guarantee-check.sh",
@@ -24,7 +24,7 @@
     },
     {
       "path": "references/file-lookup-dictionary-policy.json",
-      "bytes": 70571,
+      "bytes": 71572,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 77820,
+      "bytes": 78633,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -69,7 +69,7 @@
     },
     {
       "path": "references/legacy-asset-migration-apply-plan.json",
-      "bytes": 285925,
+      "bytes": 287010,
       "asset_class": "legacy-migration-ledger",
       "lifecycle": "retain-as-private-migration-evidence",
       "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
@@ -105,7 +105,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 25481,
+      "bytes": 25847,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",

@@ -13,6 +13,15 @@
         └─ YES → 议事协议（council）
 ```
 
+## 结论性输出 Prism Gate
+
+`official conclusion` 指会指导后续工程行动的 RedCap 官方结论，包括架构判断、风险分类、完成性判断、可发布性判断、长期路线归类和治理决策。它不是普通解释，也不是单 Agent 的即时想法。
+
+- official conclusion 必须通过 Prism 协作、复核或验收后才能作为工程决议落账。
+- 资源受限时，只能按 `resource-limited` 证据链诚实降级；不能把单路观点冒充为多人结论。
+- 未进入 Prism 的主 Agent 输出只能标为 `proposal / first-pass`，可以作为后续 Prism 的输入，但不能直接成为 closeout、task report 或 release posture 的最终 verdict。
+- 规则边界由 `references/conclusion-prism-policy.json` 与 `redcap-conclusion-prism-check.sh` 守住；缺少这些入口时，spec-check / diagnose 必须失败。
+
 ---
 
 ## 一、独立取样协议（Independent Sampling Protocol）

@@ -48,6 +48,8 @@
 | [`compass/tools/baton-launcher.sh`](../compass/tools/baton-launcher.sh) | direct CLI launcher | Loom / baton 的通用 Agent 启动器；启动前必须通过 provider freeze gate | Loom + Prism governance | baton acceptance / provider policy check |
 | [`compass/tools/redcap-reviewer-order.py`](../compass/tools/redcap-reviewer-order.py) | reviewer router | 按模型能力画像、本地稳定性、冻结策略生成 stop-review fallback 顺序 | Prism governance | stop-review acceptance |
 | [`prism/protocol.md`](../prism/protocol.md) | Prism protocol | 定义独立取样、council、evidence、provider 选择与 `prism/runs` 生命周期 | Prism | `bash prism/tools/prism-evidence-check.sh` |
+| [`references/conclusion-prism-policy.json`](../references/conclusion-prism-policy.json) | conclusion gate policy | 定义 RedCap 官方结论、哪些结论必须 Prism-backed、资源受限如何降级，以及新增能力为何默认要先做固化保障 | Prism governance + Control plane | `bash compass/tools/redcap-conclusion-prism-check.sh` |
+| [`compass/tools/redcap-conclusion-prism-check.py`](../compass/tools/redcap-conclusion-prism-check.py) / [`compass/tools/redcap-conclusion-prism-check.sh`](../compass/tools/redcap-conclusion-prism-check.sh) | conclusion gate validator | 校验结论性输出 Prism Gate、guarantee-first 规则、核心契约、Prism 协议、执行保障和字典覆盖是否一致 | Prism governance + Control plane | `bash compass/tools/redcap-conclusion-prism-check.sh` |
 
 ## Skill And Host Distribution
 

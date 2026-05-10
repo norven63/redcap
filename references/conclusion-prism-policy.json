@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "policy_id": "redcap-prism-backed-conclusion-policy",
+  "title": "Prism-backed conclusion and guarantee-first capability policy",
+  "purpose": "Make conclusion-class RedCap outputs multi-perspective by default, and make new capabilities prefer executable guarantees over oral agreements.",
+  "official_conclusion_definition": "A RedCap official conclusion is any answer, report, task state, roadmap decision, release posture, architecture classification, risk verdict, completion claim, or governance decision that is meant to guide future engineering work.",
+  "non_official_boundary": "A single main-agent reply that has not entered Prism, task report, closeout, receipt, or a tracked policy is only a proposal or first-pass interpretation. It must not be described as a joint reviewed verdict.",
+  "conclusion_classes": [
+    {
+      "id": "architecture",
+      "examples": [
+        "architecture boundary",
+        "directory structure judgement",
+        "Layer A/B or Prism role classification"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "governance",
+      "examples": [
+        "whether a rule is complete",
+        "whether a workflow is active",
+        "whether a guarantee is sufficient"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "completion",
+      "examples": [
+        "all tasks are done",
+        "no non-release todo remains",
+        "closeout can be claimed"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "release-readiness",
+      "examples": [
+        "npm package readiness",
+        "public release safety",
+        "source/privacy publish posture"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "long-term-roadmap",
+      "examples": [
+        "historical debt vs active tranche vs future evolution",
+        "full LLM-wiki/RAG/GraphRAG deferral",
+        "public arsenal evolution direction"
+      ],
+      "prism_required": true
+    }
+  ],
+  "allowed_non_prism_outputs": [
+    {
+      "id": "direct-source-restatement",
+      "rule": "A reply may restate a current command result, receipt field, or tracked policy without a new Prism run, if it cites the source and does not add a new engineering verdict."
+    },
+    {
+      "id": "proposal-draft",
+      "rule": "A reply may offer a main-agent proposal before Prism, but must label it as proposal/first-pass and must not call it a joint verdict."
+    },
+    {
+      "id": "low-risk-explanation",
+      "rule": "A reply that only explains an already-tracked mechanism in plain language does not require a new Prism run unless it changes the mechanism or draws a new risk/completion/release conclusion."
+    }
+  ],
+  "prism_evidence_requirement": {
+    "preferred": "formal Prism run with at least two responded/schema_ok reviewers from distinct available model families",
+    "resource_limited": "resource-limited-pass is allowed only when prism-availability, provider policy, attempted providers, and blocker-free responded evidence are recorded",
+    "forbidden": [
+      "claiming a main-agent opinion as a joint Prism verdict",
+      "using prism/runs directory count as proof",
+      "skipping Prism because the answer feels obvious"
+    ]
+  },
+  "guarantee_first_capability_rule": {
+    "default": "When RedCap adds a capability, rule, workflow node, or recurring discipline, first evaluate whether it can be enforced through a script, validator, hook, acceptance case, receipt, diagnose/spec-check gate, or execution-guarantee entry.",
+    "allowed_downgrade": "A capability may remain documented/manual-only only after the task records why stricter automation is unnecessary, unsafe, or host-limited.",
+    "minimum_record": [
+      "intended guarantee tier",
+      "chosen enforcement surface",
+      "if downgraded, the non-automation reason",
+      "how future closeout can detect drift"
+    ]
+  },
+  "enforcement_surfaces": [
+    "compass/CONTRIBUTING.core.md",
+    "compass/CONTRIBUTING.md",
+    "prism/protocol.md",
+    "prism/README.md",
+    "references/execution-guarantees.json",
+    "compass/tools/redcap-conclusion-prism-check.sh",
+    "compass/tools/redcap-spec-check.sh",
+    "compass/tools/redcap-diagnose.sh"
+  ],
+  "host_limited_boundary": "RedCap can fail-close tracked official conclusions and closeout claims, but cannot honestly promise a physical pre-send veto for every Codex.app live chat sentence until the host exposes and proves such a hook.",
+  "must_not_claim": [
+    "Every live chat sentence is physically intercepted by RedCap",
+    "A single Cap answer is automatically a Prism verdict",
+    "Documented-only rules are equivalent to executable guarantees",
+    "Resource-limited Prism is the same as full quorum"
+  ]
+}

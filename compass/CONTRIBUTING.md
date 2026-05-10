@@ -969,6 +969,19 @@ scope_status: <full-implementation|route-only|partial-with-explicit-defer|not-ap
 - 无法在 2 轮内自行解决的卡壳 → **council**
 - **`model-capability-matrix.yaml` 的 `next_review` 日期已到** → 触发矩阵更新流程（见下）
 
+### 结论性输出 Prism Gate
+
+RedCap 官方结论不能再由主 Agent 单路自证。凡是会指导后续工程的架构判断、完成性判断、风险分类、发布姿态、长期路线或治理决策，都属于 `references/conclusion-prism-policy.json` 定义的 conclusion-class 输出：
+
+1. 先判断这是否是 RedCap 官方结论，而不是只解释已有 receipt、命令输出或 tracked policy。
+2. 若是官方结论，必须走 Prism 协作、复核或验收；资源受限时必须留下 resource-limited 证据链，不能把单路观点写成“我们共同评审结论”。
+3. 未经 Prism 的即时回复只能叫“建议稿 / 初判 / proposal / first-pass”，不得作为工程决议落账。
+4. task report、closeout、release readiness、长期路线分类这类 repo-owned 结论，必须在收口前能被 `redcap-conclusion-prism-check.sh` 与 Prism acceptance / receipt 链复核。
+
+### 新增能力的固化保障优先级
+
+后续 RedCap 新增能力、流程节点或纪律规则时，默认先评估能否进入脚本、validator、hook、acceptance、receipt、diagnose/spec-check 或 `references/execution-guarantees.json`。只有在评估后确认“不需要这么严格保障”“自动化会误伤”“当前宿主没有物理控制点”时，才允许降级为 documented / manual-only，并必须写清降级理由和后续如何发现漂移。
+
 ### 模型矩阵更新流程
 
 Cap 每次任务启动时检查 `compass/knowledge/model-capability-matrix.yaml` 的 `next_review` 字段：
