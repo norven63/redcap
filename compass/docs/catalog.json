@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 344411,
-    "lines": 6998,
-    "chars": 202639,
+    "size_bytes": 346253,
+    "lines": 7028,
+    "chars": 203717,
     "rough_token_pressure": {
-      "low": 50659,
-      "high": 101319
+      "low": 50929,
+      "high": 101858
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 150736,
-        "lines": 2415,
-        "chars": 86166,
+        "size_bytes": 152578,
+        "lines": 2445,
+        "chars": 87244,
         "rough_token_pressure": {
-          "low": 21541,
-          "high": 43083
+          "low": 21811,
+          "high": 43622
         }
       }
     },
@@ -528,9 +528,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 5910,
-      "lines": 94,
-      "chars": 3104,
+      "size_bytes": 7752,
+      "lines": 124,
+      "chars": 4182,
       "summary": "- 当前已完成：RedCap 已为“根目录直接父级过散、知识/报告/证据/模板语义重叠”这项历史债务产出可审查的根目录信息架构目标模型。 - 关键结论：本轮没有搬目录、删资产或发布 npm；完成的是施工图和硬门禁。后续如果要真实移动目录，必须另开 apply 任务，重新经过别名、回滚、棱镜评审、package safety、clean workspace E2E 和 receipt。",
       "status_basis": "filename_recency_only",
       "summary_points": {
