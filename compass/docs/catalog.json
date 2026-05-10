@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 346253,
-    "lines": 7028,
-    "chars": 203717,
+    "size_bytes": 346650,
+    "lines": 7036,
+    "chars": 203908,
     "rough_token_pressure": {
-      "low": 50929,
-      "high": 101858
+      "low": 50977,
+      "high": 101954
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 152578,
-        "lines": 2445,
-        "chars": 87244,
+        "size_bytes": 152975,
+        "lines": 2453,
+        "chars": 87435,
         "rough_token_pressure": {
-          "low": 21811,
-          "high": 43622
+          "low": 21858,
+          "high": 43717
         }
       }
     },
@@ -528,16 +528,26 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 7752,
-      "lines": 124,
-      "chars": 4182,
-      "summary": "- 当前已完成：RedCap 已为“根目录直接父级过散、知识/报告/证据/模板语义重叠”这项历史债务产出可审查的根目录信息架构目标模型。 - 关键结论：本轮没有搬目录、删资产或发布 npm；完成的是施工图和硬门禁。后续如果要真实移动目录，必须另开 apply 任务，重新经过别名、回滚、棱镜评审、package safety、clean workspace E2E 和 receipt。",
+      "size_bytes": 8149,
+      "lines": 132,
+      "chars": 4373,
+      "summary": "当前已完成：RedCap 已为“根目录直接父级过散、知识/报告/证据/模板语义重叠”这项历史债务产出可审查的根目录信息架构目标模型。 / 关键结论：本轮没有搬目录、删资产或发布 npm；完成的是施工图和硬门禁。后续如果要真实移动目录，必须另开 apply 任务，重新经过别名、回滚、棱镜评审、package safety、clean workspace E2E 和 receipt。",
       "status_basis": "filename_recency_only",
       "summary_points": {
-        "current_done": [],
-        "previous_step": [],
-        "next_step": [],
-        "position": []
+        "current_done": [
+          "当前已完成：RedCap 已为“根目录直接父级过散、知识/报告/证据/模板语义重叠”这项历史债务产出可审查的根目录信息架构目标模型。",
+          "关键结论：本轮没有搬目录、删资产或发布 npm；完成的是施工图和硬门禁。后续如果要真实移动目录，必须另开 apply 任务，重新经过别名、回滚、棱镜评审、package safety、clean workspace E2E 和 receipt。"
+        ],
+        "previous_step": [
+          "上一步完成的是：`RASG-018` 全局架构坏味审判，确认 `RASG-017` 是发布准备前仍需处理的结构性历史债务。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续处理剩余开放债务 `RASG-019`、`RASG-020`、`RASG-021`。如果未来要执行真实根目录迁移，需要先把本报告中的目标模型转成单独的 apply tranche。"
+        ],
+        "position": [
+          "整体计划脉络图是：全局坏味审判 -> 根目录目标模型 -> 人类输出去术语化 -> public runtime contract 分层 -> Prism 降级韧性 -> release readiness。",
+          "当前所在位置：`RASG-017` 规划已完成；发布前开放债务从 4 个降为 3 个。"
+        ]
       }
     },
     {
