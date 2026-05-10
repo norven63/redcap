@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 356325,
-    "lines": 7151,
-    "chars": 211576,
+    "size_bytes": 357179,
+    "lines": 7167,
+    "chars": 212344,
     "rough_token_pressure": {
-      "low": 52894,
-      "high": 105788
+      "low": 53086,
+      "high": 106172
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 162650,
-        "lines": 2568,
-        "chars": 95103,
+        "size_bytes": 163504,
+        "lines": 2584,
+        "chars": 95871,
         "rough_token_pressure": {
-          "low": 23775,
-          "high": 47551
+          "low": 23967,
+          "high": 47935
         }
       }
     },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 7505,
-      "lines": 152,
-      "chars": 3823,
+      "size_bytes": 8359,
+      "lines": 168,
+      "chars": 4591,
       "summary": "当前已完成：RedCap 已有一个可执行的“前进刻度表”，能把历史债务坏味、当前专注任务集、长期演进专项合成一张人类可读的全景视图。 / 关键结论：它不是新账本，只是聚合器。真正的事实仍来自 `.dev-task.md`、任务报告、backlog、receipt、治理债务表、生命周期表和 Evolution candidates。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -571,11 +571,11 @@
           "上一步完成的是：三分法结论已经补做 Kimi 与 Claude Code 的棱镜评审，两个模型族均通过，无 blocker。"
         ],
         "next_step": [
-          "下一步计划做的是：提交本轮代码、刷新索引与治理检查，然后执行 closeout，生成本任务的正式完成 receipt。"
+          "下一步计划做的是：当前任务已经生成 closeout receipt；若继续推进，应回到父任务全景图，选择后续长期演进专项或正式发布专项，而不是继续停留在本轮实现。"
         ],
         "position": [
           "整体计划脉络图是：续接锚点不跑偏 -> 三分法结论补棱镜评审 -> 三分进度仪与棱镜使用边界落地 -> closeout receipt 收口。",
-          "当前所在位置：第三步“落地实现”已完成并通过双路棱镜复核；正在进入提交与 closeout 阶段。"
+          "当前所在位置：第三步“落地实现”已完成，提交、索引、回归、clean workspace E2E 与 closeout receipt 均已收口。"
         ]
       }
     },

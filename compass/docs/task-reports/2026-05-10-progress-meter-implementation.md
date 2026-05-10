@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-10
 **执行者**：Cap（Codex + Prism: Kimi / Claude Code）
-**报告版本**：v1.0
+**报告版本**：v1.1
 
 ---
 
@@ -19,12 +19,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：提交本轮代码、刷新索引与治理检查，然后执行 closeout，生成本任务的正式完成 receipt。
+- 下一步计划做的是：当前任务已经生成 closeout receipt；若继续推进，应回到父任务全景图，选择后续长期演进专项或正式发布专项，而不是继续停留在本轮实现。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：续接锚点不跑偏 -> 三分法结论补棱镜评审 -> 三分进度仪与棱镜使用边界落地 -> closeout receipt 收口。
-- 当前所在位置：第三步“落地实现”已完成并通过双路棱镜复核；正在进入提交与 closeout 阶段。
+- 当前所在位置：第三步“落地实现”已完成，提交、索引、回归、clean workspace E2E 与 closeout receipt 均已收口。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -99,6 +99,15 @@ Norven 希望 RedCap 后续迭代能有一个稳定的“前进刻度表”，�
 | Kimi 实现评审 | pass，无 blocker；两个低风险一致性建议已修复 |
 | Claude Code 实现评审 | pass，无 blocker；两个低风险一致性建议已修复 |
 
+### 5.3 closeout runtime / receipt
+
+| 项目 | 值 |
+|---|---|
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-progress-meter-implementation-c8cbb9d86a691962f9abd8f01529d6a2633b8d426e7b3a69a1dfe73f2926534e.json` |
+| closeout status | completed |
+| promise ledger | 4/4 completed |
+| acceptance | Prism acceptance pass，Kimi + Claude Code，2 个模型族 |
+
 ### 5.4 完成等级（禁止混报）
 
 | 等级 | 本轮结论 |
@@ -106,7 +115,7 @@ Norven 希望 RedCap 后续迭代能有一个稳定的“前进刻度表”，�
 | 已实现 | 是，策略、脚本、状态展示和门禁均已落地。 |
 | 已自检 | 是，进度仪检查、acceptance 与 current-status 集成都已通过。 |
 | 已独立验收 | 是，Kimi 与 Claude Code 均完成实现评审并给出 pass。 |
-| 已正式完成 | 否，仍待本报告提交后执行 closeout receipt；receipt 生成前不能宣称正式完成。 |
+| 已正式完成 | 是，closeout receipt 已生成，承诺账本 4/4 完成，Prism acceptance 为 pass。 |
 
 ---
 
@@ -148,5 +157,12 @@ no-promote：本轮没有新增 Evolution candidate pool 条目；本轮沉淀�
 ### 附录 B：Commits
 
 ```
-待提交
+3f78ac2 feat(redcap): 落地前进刻度表聚合视图
+e221d26 test(redcap): 刷新前进刻度表干净工作区证据
+```
+
+### 附录 C：Closeout Receipt
+
+```
+/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-progress-meter-implementation-c8cbb9d86a691962f9abd8f01529d6a2633b8d426e7b3a69a1dfe73f2926534e.json
 ```

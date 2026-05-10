@@ -222,6 +222,10 @@ def build_meter(task_file: Path) -> dict[str, Any]:
     next_step = first_bullet(section(report_text, "0.3 下一步计划做的是"), "继续推进当前任务的实现、评审与收口。")
     intervention = first_bullet(section(report_text, "0.5 是否需要 Norven 人工介入"), "不需要")
     roadmap = first_bullet(section(report_text, "0.4 整体计划脉络图与当前位置"), "历史债务坏味 -> 当前专注任务集 -> 长期演进专项")
+    if closeout.get("receipt") == "present":
+        next_step = "当前任务 closeout receipt 已生成；可转入后续任务或长期演进专项。"
+        if intervention == "不需要":
+            intervention = "不需要，本任务已正式收口。"
 
     current_position = (
         f"{meta.get('active_slice', 'unknown')}；closeout={closeout.get('receipt')}；"
