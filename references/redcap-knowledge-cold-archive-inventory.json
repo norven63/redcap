@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 77,
-  "bytes_total": 1090144,
+  "file_count": 78,
+  "bytes_total": 1103004,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 73,
+    "private-task-report-archive": 74,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -437,6 +437,14 @@
       "class": "private-task-report-archive",
       "bytes": 8440,
       "sha256": "b3550243b9e12e11c94c2227a4283b759f4257f0fdcbb9856aa7f32b5c46e103",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
+      "class": "private-task-report-archive",
+      "bytes": 12860,
+      "sha256": "ef19392cbffc1270602429e76bfa8636d7852ef98727fa1ea85160de3163ffa7",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

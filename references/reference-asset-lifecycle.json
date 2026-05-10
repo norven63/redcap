@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 41122,
+      "bytes": 41589,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -24,7 +24,7 @@
     },
     {
       "path": "references/file-lookup-dictionary-policy.json",
-      "bytes": 73174,
+      "bytes": 74232,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 79901,
+      "bytes": 80889,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -105,7 +105,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 27993,
+      "bytes": 28360,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",
@@ -118,6 +118,15 @@
       "asset_class": "parent-task-ledger",
       "lifecycle": "active-parent-state-ledger",
       "consumer_check": "bash compass/tools/redcap-parent-receipt-aggregation-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/root-information-architecture-consolidation-plan.json",
+      "bytes": 21793,
+      "asset_class": "reference-asset",
+      "lifecycle": "index-first-active-reference",
+      "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
       "read_policy": "index-or-checker-first",
       "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
     }

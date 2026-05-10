@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 351361,
-    "lines": 7112,
-    "chars": 208007,
+    "size_bytes": 344411,
+    "lines": 6998,
+    "chars": 202639,
     "rough_token_pressure": {
-      "low": 52001,
-      "high": 104003
+      "low": 50659,
+      "high": 101319
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 157686,
-        "lines": 2529,
-        "chars": 91534,
+        "size_bytes": 150736,
+        "lines": 2415,
+        "chars": 86166,
         "rough_token_pressure": {
-          "low": 22883,
-          "high": 45767
+          "low": 21541,
+          "high": 43083
         }
       }
     },
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：历史资产 main-tree copy-first apply",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12860,
-      "lines": 208,
-      "chars": 8472,
-      "summary": "当前已完成：P4-1 已从 durable alias resolver 推进到 main-tree copy-first 私有副本创建，54 个旧 `compass/docs/**` 历史资产已复制到 `redcap-knowledge/**`。 / 详情：本轮解决的是“resolver 证明未来可复制，但真实 main tree 还没有副本”的缺口。现在 copy target 已真实存在、hash 与旧源一致，旧 `compass/docs/**` 仍全部保留并继续作为权威锚点。此次没有执行删除、移动、公开导出、canonical path 切换或 package release。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-3 clean workspace / cross-machine install E2E",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：Codex lifecycle hooks candidate 接线",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12562,
       "lines": 211,
@@ -526,28 +513,31 @@
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 前进刻度表与棱镜使用边界落地",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10163,
       "lines": 183,
       "chars": 5469,
       "summary": "当前已完成：RedCap 已有一个可执行的“前进刻度表”，能把历史债务坏味、当前专注任务集、长期演进专项合成一张人类可读的全景视图。 / 关键结论：它不是新账本，只是聚合器。真正的事实仍来自 `.dev-task.md`、任务报告、backlog、receipt、治理债务表、生命周期表和 Evolution candidates。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-017 根目录信息架构目标模型",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 5910,
+      "lines": 94,
+      "chars": 3104,
+      "summary": "- 当前已完成：RedCap 已为“根目录直接父级过散、知识/报告/证据/模板语义重叠”这项历史债务产出可审查的根目录信息架构目标模型。 - 关键结论：本轮没有搬目录、删资产或发布 npm；完成的是施工图和硬门禁。后续如果要真实移动目录，必须另开 apply 任务，重新经过别名、回滚、棱镜评审、package safety、clean workspace E2E 和 receipt。",
       "status_basis": "filename_recency_only",
       "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已有一个可执行的“前进刻度表”，能把历史债务坏味、当前专注任务集、长期演进专项合成一张人类可读的全景视图。",
-          "关键结论：它不是新账本，只是聚合器。真正的事实仍来自 `.dev-task.md`、任务报告、backlog、receipt、治理债务表、生命周期表和 Evolution candidates。"
-        ],
-        "previous_step": [
-          "上一步完成的是：三分法结论已经补做 Kimi 与 Claude Code 的棱镜评审，两个模型族均通过，无 blocker。"
-        ],
-        "next_step": [
-          "下一步计划做的是：当前任务已经生成 closeout receipt；若继续推进，应回到父任务全景图，选择后续长期演进专项或正式发布专项，而不是继续停留在本轮实现。"
-        ],
-        "position": [
-          "整体计划脉络图是：续接锚点不跑偏 -> 三分法结论补棱镜评审 -> 三分进度仪与棱镜使用边界落地 -> closeout receipt 收口。",
-          "当前所在位置：第三步“落地实现”已完成，提交、索引、回归、clean workspace E2E 与 closeout receipt 均已收口。"
-        ]
+        "current_done": [],
+        "previous_step": [],
+        "next_step": [],
+        "position": []
       }
     },
     {

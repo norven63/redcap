@@ -603,6 +603,14 @@ if [[ -x "$INFORMATION_ARCHITECTURE_CHECK" ]]; then
     fi
 fi
 
+ROOT_INFORMATION_ARCHITECTURE_CHECK="$REDCAP_ROOT/compass/tools/redcap-root-information-architecture-check.sh"
+if [[ -x "$ROOT_INFORMATION_ARCHITECTURE_CHECK" ]]; then
+    if ! bash "$ROOT_INFORMATION_ARCHITECTURE_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] root information architecture check failed" >&2
+        exit 1
+    fi
+fi
+
 REDCAP_FORGE_CHECK="$REDCAP_ROOT/compass/tools/redcap-forge-check.sh"
 if [[ -x "$REDCAP_FORGE_CHECK" ]]; then
     if ! bash "$REDCAP_FORGE_CHECK" >/dev/null; then

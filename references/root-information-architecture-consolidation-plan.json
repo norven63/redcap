@@ -1,0 +1,500 @@
+{
+  "version": 1,
+  "plan_id": "redcap-root-information-architecture-consolidation-plan",
+  "requirement": "RASG-017",
+  "status": "target-model-complete-no-physical-migration",
+  "scope": "Direct children of the RedCap repository root that carry product, runtime, knowledge, evidence, policy, host-adapter, or local-state meaning.",
+  "created_at": "2026-05-10",
+  "prism_review_required": true,
+  "physical_migration_applied": false,
+  "summary": {
+    "problem": "RedCap's root currently exposes several directories with overlapping knowledge, report, evidence, runtime, policy, and host-adapter meanings. The system is governable, but the product shape is too hard to understand before public CLI/runtime release.",
+    "solution": "Freeze the current physical root as compatibility reality, define a target parent model, list consumers and risks, and require a separate apply tranche before any directory move.",
+    "effect": "Future cleanup has a safe map. New users and future Agents can tell which root items are public contract, internal source, private archive, local-only state, or compatibility shims."
+  },
+  "root_inventory": [
+    {
+      "path": ".claude",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Claude-host compatibility and skill metadata",
+      "visibility": "host-adapter-source",
+      "package_surface": "excluded",
+      "target_disposition": "host-adapter-compatibility-shim",
+      "target_parent": "root-host-entry",
+      "move_risk": "high",
+      "consumer_notes": "Claude skill loading and local host setup may expect this path."
+    },
+    {
+      "path": ".codex",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Codex hook and config candidate",
+      "visibility": "host-adapter-source",
+      "package_surface": "excluded",
+      "target_disposition": "host-adapter-compatibility-shim",
+      "target_parent": "root-host-entry",
+      "move_risk": "high",
+      "consumer_notes": "Codex hook checks and local app/CLI probes inspect this path."
+    },
+    {
+      "path": ".dev-task.md",
+      "type": "file",
+      "presence": "optional-local",
+      "current_role": "Current Layer B task truth",
+      "visibility": "private-local-control-plane",
+      "package_surface": "excluded",
+      "target_disposition": "stay-local-unpackaged",
+      "target_parent": "workspace-state",
+      "move_risk": "high",
+      "consumer_notes": "PM Gate, drift check, closeout runtime, current-status and tracking-health read it as the live task card."
+    },
+    {
+      "path": ".env",
+      "type": "file",
+      "presence": "optional-local",
+      "current_role": "Local secrets and CLI credentials",
+      "visibility": "private-local-secret",
+      "package_surface": "excluded",
+      "target_disposition": "stay-local-unpackaged",
+      "target_parent": "workspace-state",
+      "move_risk": "critical",
+      "consumer_notes": "Must never enter package, public arsenal, reports, or generated examples."
+    },
+    {
+      "path": ".gemini",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Gemini host compatibility config",
+      "visibility": "host-adapter-source",
+      "package_surface": "excluded",
+      "target_disposition": "host-adapter-compatibility-shim",
+      "target_parent": "root-host-entry",
+      "move_risk": "medium",
+      "consumer_notes": "Gemini host readiness and compatibility checks may inspect it."
+    },
+    {
+      "path": ".githooks",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Git hook implementation source",
+      "visibility": "developer-tooling",
+      "package_surface": "excluded",
+      "target_disposition": "move-under-internal-tooling-later",
+      "target_parent": "internal-control-plane",
+      "move_risk": "medium",
+      "consumer_notes": "Local git hook installer and commit-message checks depend on it."
+    },
+    {
+      "path": ".github",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "GitHub and Copilot entry metadata",
+      "visibility": "host-adapter-source",
+      "package_surface": "excluded",
+      "target_disposition": "host-adapter-compatibility-shim",
+      "target_parent": "root-host-entry",
+      "move_risk": "high",
+      "consumer_notes": "GitHub/Copilot import paths are host-owned; do not move without host-specific proof."
+    },
+    {
+      "path": ".gitignore",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "Local/private exclusion contract",
+      "visibility": "source-control-policy",
+      "package_surface": "excluded",
+      "target_disposition": "stay-root-source-control",
+      "target_parent": "root-contract",
+      "move_risk": "critical",
+      "consumer_notes": "Protects prompt, env, task card and local console files."
+    },
+    {
+      "path": ".npmignore",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "npm package exclusion compatibility",
+      "visibility": "package-policy",
+      "package_surface": "package-control",
+      "target_disposition": "stay-root-package-control",
+      "target_parent": "root-contract",
+      "move_risk": "critical",
+      "consumer_notes": "Package checks and npm tooling expect root package ignore semantics."
+    },
+    {
+      "path": ".tmp",
+      "type": "directory",
+      "presence": "optional-local",
+      "current_role": "Local scratch area",
+      "visibility": "private-local-runtime",
+      "package_surface": "excluded",
+      "target_disposition": "stay-local-unpackaged",
+      "target_parent": "workspace-state",
+      "move_risk": "low",
+      "consumer_notes": "Should remain ignored and never become evidence truth."
+    },
+    {
+      "path": "AGENTS.md",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "Codex host entry and lightweight import index",
+      "visibility": "host-entry",
+      "package_surface": "excluded",
+      "target_disposition": "stay-root-thin-entry",
+      "target_parent": "root-host-entry",
+      "move_risk": "critical",
+      "consumer_notes": "Codex app auto-loads it from repo root."
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "Human architecture overview",
+      "visibility": "human-reading",
+      "package_surface": "included",
+      "target_disposition": "stay-root-human-entry",
+      "target_parent": "root-human-entry",
+      "move_risk": "low",
+      "consumer_notes": "Package and README can link to it as user-facing overview."
+    },
+    {
+      "path": "CLAUDE.md",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "Claude host entry and lightweight import index",
+      "visibility": "host-entry",
+      "package_surface": "excluded",
+      "target_disposition": "stay-root-thin-entry",
+      "target_parent": "root-host-entry",
+      "move_risk": "critical",
+      "consumer_notes": "Claude Code auto-loads it from repo root."
+    },
+    {
+      "path": "GEMINI.md",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "Gemini host entry and lightweight import index",
+      "visibility": "host-entry",
+      "package_surface": "excluded",
+      "target_disposition": "stay-root-thin-entry",
+      "target_parent": "root-host-entry",
+      "move_risk": "critical",
+      "consumer_notes": "Gemini CLI reads it as host guidance."
+    },
+    {
+      "path": "README.md",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "Public product overview",
+      "visibility": "human-reading",
+      "package_surface": "included",
+      "target_disposition": "stay-root-human-entry",
+      "target_parent": "root-human-entry",
+      "move_risk": "low",
+      "consumer_notes": "Primary first-read surface for future package users."
+    },
+    {
+      "path": "SKILL.md",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "Claude skill compatibility entry",
+      "visibility": "host-entry",
+      "package_surface": "excluded",
+      "target_disposition": "stay-root-compatibility-entry-until-skill-mode-retired",
+      "target_parent": "root-host-entry",
+      "move_risk": "critical",
+      "consumer_notes": "Current installation still behaves as a skill-root; do not remove before independent runtime install is complete."
+    },
+    {
+      "path": "bin",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "CLI facade",
+      "visibility": "public-runtime-contract",
+      "package_surface": "included",
+      "target_disposition": "stay-root-public-cli",
+      "target_parent": "public-runtime",
+      "move_risk": "critical",
+      "consumer_notes": "npm bin entry maps here."
+    },
+    {
+      "path": "cli_console.md",
+      "type": "file",
+      "presence": "optional-local",
+      "current_role": "Local console scratch mirror",
+      "visibility": "private-local-note",
+      "package_surface": "excluded",
+      "target_disposition": "stay-local-unpackaged",
+      "target_parent": "workspace-state",
+      "move_risk": "low",
+      "consumer_notes": "Ignored local file; not product documentation."
+    },
+    {
+      "path": "closeout-cap.sh",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "Root closeout facade",
+      "visibility": "runtime-facade",
+      "package_surface": "included",
+      "target_disposition": "stay-root-compatibility-facade",
+      "target_parent": "public-runtime",
+      "move_risk": "high",
+      "consumer_notes": "Human and host entry docs still reference this short command."
+    },
+    {
+      "path": "compass",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Layer B control plane, tools, docs, active knowledge, evolution, workflow",
+      "visibility": "maintainer-control-plane",
+      "package_surface": "partially-included-tools-only",
+      "target_disposition": "future-internal-control-plane-parent",
+      "target_parent": "internal-control-plane",
+      "move_risk": "critical",
+      "consumer_notes": "Most validators, closeout, docs catalog, knowledge gateway and checks live here."
+    },
+    {
+      "path": "loom",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Layer A / external project workflow assets",
+      "visibility": "legacy-or-layer-a-source",
+      "package_surface": "excluded",
+      "target_disposition": "retain-until-layer-a-product-boundary-task",
+      "target_parent": "internal-layer-a",
+      "move_risk": "medium",
+      "consumer_notes": "Must not be deleted while Layer A compatibility remains in scope."
+    },
+    {
+      "path": "package.json",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "npm/package manifest and curated file surface",
+      "visibility": "package-policy",
+      "package_surface": "package-control",
+      "target_disposition": "stay-root-package-control",
+      "target_parent": "root-contract",
+      "move_risk": "critical",
+      "consumer_notes": "npm requires this at package root."
+    },
+    {
+      "path": "prism",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Multi-Agent review layer: roles, protocol, reports, runs, tools",
+      "visibility": "prism-layer-source-and-evidence",
+      "package_surface": "partially-included-tools-and-readme",
+      "target_disposition": "split-source-from-evidence-later",
+      "target_parent": "prism-layer-and-evidence",
+      "move_risk": "high",
+      "consumer_notes": "prism/tools may be runtime-supporting; prism/runs and reports are evidence, not public runtime API."
+    },
+    {
+      "path": "prompt.txt",
+      "type": "file",
+      "presence": "optional-local",
+      "current_role": "Local scratch prompt",
+      "visibility": "private-local-note",
+      "package_surface": "excluded",
+      "target_disposition": "stay-local-unpackaged",
+      "target_parent": "workspace-state",
+      "move_risk": "low",
+      "consumer_notes": "Ignored local scratch file; should never become source of truth."
+    },
+    {
+      "path": "redcap-knowledge",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Private cold archive for reports, research, traces",
+      "visibility": "private-cold-archive",
+      "package_surface": "excluded",
+      "target_disposition": "future-private-archive-parent-or-external-private-worktree",
+      "target_parent": "private-archive",
+      "move_risk": "high",
+      "consumer_notes": "Catalogs and alias resolvers preserve archaeology; raw content is private."
+    },
+    {
+      "path": "references",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Cross-layer policies, ledgers, contracts, machine-readable plans",
+      "visibility": "governance-contracts",
+      "package_surface": "partially-included-curated",
+      "target_disposition": "split-public-contracts-from-maintainer-ledgers-later",
+      "target_parent": "internal-control-plane",
+      "move_risk": "critical",
+      "consumer_notes": "Many validators and package checks read references/*.json."
+    },
+    {
+      "path": "revive-cap.sh",
+      "type": "file",
+      "presence": "required-source",
+      "current_role": "Root revival facade",
+      "visibility": "runtime-facade",
+      "package_surface": "included",
+      "target_disposition": "stay-root-compatibility-facade",
+      "target_parent": "public-runtime",
+      "move_risk": "high",
+      "consumer_notes": "Human and host entry docs still reference this short command."
+    },
+    {
+      "path": "runtime",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Package-visible runtime root and host adapters",
+      "visibility": "public-runtime-contract",
+      "package_surface": "included",
+      "target_disposition": "stay-root-public-runtime",
+      "target_parent": "public-runtime",
+      "move_risk": "critical",
+      "consumer_notes": "Already acts as the minimum compatible public runtime shape."
+    },
+    {
+      "path": "shared-knowledge",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "In-repo template source for external redcap-arsenal",
+      "visibility": "public-template-source",
+      "package_surface": "partially-included-template",
+      "target_disposition": "template-source-until-external-arsenal-matures",
+      "target_parent": "templates-and-external-arsenal",
+      "move_risk": "medium",
+      "consumer_notes": "Not the public arsenal itself; external worktree remains ../redcap-arsenal."
+    }
+  ],
+  "target_parent_model": [
+    {
+      "id": "root-human-entry",
+      "meaning": "Small files that explain RedCap to humans before any deep read.",
+      "keep_at_root": ["README.md", "ARCHITECTURE.md"],
+      "must_not_contain": ["private reports", "raw Prism runs", "secrets", "long task ledgers"]
+    },
+    {
+      "id": "root-host-entry",
+      "meaning": "Thin host-specific entry files required by host discovery conventions.",
+      "keep_at_root": ["AGENTS.md", "CLAUDE.md", "GEMINI.md", "SKILL.md"],
+      "must_not_contain": ["copied authoritative rules", "large knowledge bodies", "private identity text"]
+    },
+    {
+      "id": "public-runtime",
+      "meaning": "Installable runtime and CLI contract.",
+      "keep_at_root": ["bin", "runtime", "revive-cap.sh", "closeout-cap.sh"],
+      "future_rule": "If facades move, root wrappers must remain for at least one compatibility window."
+    },
+    {
+      "id": "root-contract",
+      "meaning": "Files npm/git/package tooling requires at root.",
+      "keep_at_root": ["package.json", ".npmignore", ".gitignore"],
+      "future_rule": "Do not hide package and source-control controls under internal parents."
+    },
+    {
+      "id": "internal-control-plane",
+      "meaning": "Maintainer-only RedCap governance, validators, active private knowledge, reports and workflow source.",
+      "current_roots": ["compass", "references"],
+      "future_shape": ["internal/control-plane", "contracts/public", "contracts/internal"],
+      "apply_gate": "RASG-020 should decide which contracts are public runtime contract before this split is applied."
+    },
+    {
+      "id": "prism-layer-and-evidence",
+      "meaning": "Separate Prism executable protocol from Prism historical evidence.",
+      "current_roots": ["prism"],
+      "future_shape": ["prism/protocol-tools", "evidence/prism-runs", "evidence/prism-reports"],
+      "apply_gate": "RASG-021 should add degradation metrics before moving evidence paths."
+    },
+    {
+      "id": "private-archive",
+      "meaning": "Private cold archaeology and Norven-local material.",
+      "current_roots": ["redcap-knowledge"],
+      "future_shape": ["private-archive/redcap-knowledge or external private worktree"],
+      "apply_gate": "Must preserve alias resolution, catalog routing and no-raw-public-export guarantees."
+    },
+    {
+      "id": "templates-and-external-arsenal",
+      "meaning": "Public reusable knowledge starts as templates, then moves to external redcap-arsenal through Forge.",
+      "current_roots": ["shared-knowledge"],
+      "future_shape": ["templates/shared-knowledge", "../redcap-arsenal"],
+      "apply_gate": "Do not bulk migrate private history; use Forge/arsenal append-only promotion."
+    },
+    {
+      "id": "internal-layer-a",
+      "meaning": "Layer A external-project workflow compatibility.",
+      "current_roots": ["loom"],
+      "future_shape": ["internal/layer-a"],
+      "apply_gate": "Requires separate Layer A product boundary decision, not part of this RASG-017 apply."
+    },
+    {
+      "id": "workspace-state",
+      "meaning": "Ignored local state, secrets, scratch files and current task state.",
+      "current_roots": [".dev-task.md", ".env", ".tmp", "prompt.txt", "cli_console.md"],
+      "future_shape": ["workspace-local ignored files"],
+      "apply_gate": "Must remain unpackaged and unpublished."
+    }
+  ],
+  "consumer_impact_matrix": [
+    {
+      "consumer": "host entries",
+      "paths": ["AGENTS.md", "CLAUDE.md", "GEMINI.md", "SKILL.md", ".github/copilot-instructions.md"],
+      "risk": "Host discovery depends on root or host-owned locations.",
+      "required_apply_check": "host hook readiness, skill lifecycle, revival protocol"
+    },
+    {
+      "consumer": "runtime facades",
+      "paths": ["bin/redcap", "revive-cap.sh", "closeout-cap.sh", "runtime/**"],
+      "risk": "Install, status and closeout commands can break if wrappers move without aliases.",
+      "required_apply_check": "clean workspace E2E, runtime workspace boundary, CLI product surface"
+    },
+    {
+      "consumer": "control-plane validators",
+      "paths": ["compass/tools/**", "references/*.json"],
+      "risk": "Many scripts have direct relative path expectations.",
+      "required_apply_check": "spec-check, diagnose, file lookup dictionary"
+    },
+    {
+      "consumer": "Prism evidence and provider governance",
+      "paths": ["prism/tools/**", "prism/runs/**", "prism/reports/**"],
+      "risk": "Moving evidence can break acceptance bindings and replay/audit references.",
+      "required_apply_check": "Prism evidence check, Prism runs lifecycle, Prism acceptance check"
+    },
+    {
+      "consumer": "docs and archaeology",
+      "paths": ["compass/docs/**", "redcap-knowledge/**", "references/legacy-asset-*.json"],
+      "risk": "Old reports and receipts may link to historical paths.",
+      "required_apply_check": "docs catalog, cold archive inventory, legacy alias resolver"
+    },
+    {
+      "consumer": "package and release surface",
+      "paths": ["package.json", ".npmignore", "references/runtime-package-readiness-policy.json", "references/package-publish-safety-policy.json"],
+      "risk": "Adding or moving files can silently change npm candidates.",
+      "required_apply_check": "package publish safety, runtime package manifest, npm pack dry-run"
+    },
+    {
+      "consumer": "human status and notification surfaces",
+      "paths": ["references/human-communication-policy.json", "compass/tools/redcap-notify-format.sh", "compass/tools/redcap-current-status.sh"],
+      "risk": "Path changes can make human reports point to stale anchors.",
+      "required_apply_check": "human communication check, Feishu notification policy"
+    }
+  ],
+  "future_apply_gate": {
+    "physical_migration_allowed_in_this_task": false,
+    "required_before_apply": [
+      "Norven approval if target parent philosophy changes public product shape",
+      "separate .dev-task.md apply tranche",
+      "dry-run migration manifest",
+      "alias and rollback plan",
+      "consumer impact matrix updated to exact file moves",
+      "Prism review of the apply plan",
+      "package publish safety and npm pack dry-run",
+      "clean workspace E2E from a clean HEAD",
+      "closeout receipt"
+    ],
+    "rollback_rule": "Every move must either leave a root compatibility shim or have a tested alias resolver and rollback-only cleanup path.",
+    "batching_rule": "Apply at most one semantic parent group per physical migration tranche."
+  },
+  "must_not_claim": [
+    "Do not claim root directories have been physically consolidated.",
+    "Do not claim this plan makes RedCap public release ready by itself.",
+    "Do not collapse active knowledge, private cold archive, public templates, and raw evidence into one undifferentiated knowledge folder.",
+    "Do not remove host entry root files while host discovery still depends on them.",
+    "Do not publish this internal plan as part of the public runtime surface."
+  ]
+}

@@ -536,9 +536,15 @@
         "Any future apply task has a dry-run, rollback plan, alias/compatibility window, Prism review, clean-workspace E2E, package-safety check, and closeout receipt.",
         "The progress meter shows this item as open historical debt until the planning and any approved apply tasks are separately receipted."
       ],
-      "status": "planned",
+      "status": "done",
+      "completed_at": "2026-05-10",
       "introduced_at": "2026-05-10",
       "evidence": [
+        "references/root-information-architecture-consolidation-plan.json",
+        "compass/tools/redcap-root-information-architecture-check.sh",
+        "prism/runs/20260510-rasg017-root-ia-target-model/collect/architecture-review/parsed.json",
+        "prism/runs/20260510-rasg017-root-ia-target-model/collect/risk-review/parsed.json",
+        "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md",
         "prism/runs/20260510-root-ia-consolidation-assessment/collect/kimi-reviewer.txt",
         "compass/docs/task-reports/2026-05-10-root-information-architecture-debt-intake.md"
       ]
