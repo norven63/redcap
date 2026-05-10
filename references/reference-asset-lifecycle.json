@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 33835,
+      "bytes": 34413,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",

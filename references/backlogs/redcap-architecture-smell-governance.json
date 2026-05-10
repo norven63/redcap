@@ -540,13 +540,14 @@
       "category": "meta-architecture-review-governance",
       "problem_source": "The root-level directory concern was originally meant as an example that should trigger a broader senior-engineering review. The intake for RASG-017 correctly registered the concrete root information-architecture debt, but it did not separately register the wider '举一反三' obligation to inspect RedCap for other expert-level smells beyond that single example.",
       "risk": "If every user example is handled as an isolated requirement, RedCap can repeatedly claim local closure while leaving adjacent design smells undiscovered: truth-source ambiguity, old/new transition residue, duplicate control planes, weak human status surfaces, package/runtime boundary leakage, evidence/report lifecycle drift, Prism governance gaps, or token/retrieval hotspots outside the originally named directory.",
-      "desired_outcome": "Produce a Prism-reviewed senior holistic architecture smell audit that explicitly reviews multiple domains, records 'found / not found / deferred' conclusions per domain, and turns any newly found P0/P1 bad smell into tracked requirements instead of relying on chat memory.",
+      "desired_outcome": "Produce a Prism-reviewed senior holistic architecture smell audit that explicitly reviews multiple domains, records 'found / not found / deferred' conclusions per domain, and gives every finding a durable disposition instead of relying on chat memory. Newly found P0/P1 bad smells must become tracked requirements; lower-priority findings must at least enter a candidate, archive, or deferred register with evidence and revisit criteria.",
       "implementation_notes": [
         "Treat RASG-017 as one concrete child concern; do not let it satisfy the broader holistic audit obligation.",
         "The audit must use at least two independent Prism reviewers when available, with Copilot protected as fallback according to provider policy.",
         "Review domains must include root/product shape, active vs cold knowledge, public vs private assets, reports and receipts, Prism evidence, workflow/FSM guarantees, host adapters/hooks, package/release surface, human-facing status/report quality, token/retrieval pressure, and old/new transition residue.",
         "For each domain, require a short human-readable conclusion and a machine-readable finding row; 'no issue found' must be explicit, not silent.",
-        "Any P0/P1 finding must either become a backlog requirement or be explicitly deferred with reason, owner surface, and acceptance boundary.",
+        "Every finding, including P2/P3 and informational observations, must have an explicit disposition: backlog requirement, linked existing requirement, candidate pool, archive-only note, or deferred item with reason, owner surface, and revisit criteria.",
+        "Any P0/P1 finding must either become a backlog requirement or be explicitly deferred with reason, owner surface, acceptance boundary, and Prism-reviewed justification.",
         "The audit must not physically move/delete assets; it is a discovery and task-tree hardening step."
       ],
       "acceptance": [
@@ -554,6 +555,7 @@
         "A human-readable report explains what was reviewed, what was found, what was not found, and what remains deferred without relying on internal jargon as the main narrative.",
         "At least two Prism reviewers pass the audit plan or result, or a resource-limited acceptance record explains why quorum was unavailable.",
         "Every newly discovered P0/P1 smell is either added to this backlog or explicitly linked to an existing requirement with no duplicate truth source.",
+        "Every lower-priority finding has a recorded disposition and cannot be silently discarded from the audit output.",
         "The final closeout explicitly states that RASG-018 is not satisfied by RASG-017 alone."
       ],
       "status": "planned",
