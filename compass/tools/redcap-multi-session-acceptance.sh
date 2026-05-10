@@ -155,6 +155,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh docs-retention-check
   bash compass/tools/redcap-multi-session-acceptance.sh backlog-check-strict
   bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview
+  bash compass/tools/redcap-multi-session-acceptance.sh progress-meter-check
   bash compass/tools/redcap-multi-session-acceptance.sh tracking-health-overview
   bash compass/tools/redcap-multi-session-acceptance.sh intent-coverage-check
   bash compass/tools/redcap-multi-session-acceptance.sh change-intake-check
@@ -9152,6 +9153,7 @@ run_current_status_overview_case() {
     assert_string_contains "$output" "## 追踪连续性"
     assert_string_contains "$output" "## Layer B FSM"
     assert_string_contains "$output" "## 中插需求 / 重计划"
+    assert_string_contains "$output" "## RedCap 前进刻度表"
     assert_string_contains "$output" "lifecycle-state:"
     assert_string_contains "$output" "independent-acceptance:"
     assert_string_contains "$output" "change-intake gate:"
@@ -9162,6 +9164,38 @@ run_current_status_overview_case() {
     assert_string_contains "$output" "promise-ledger:"
     assert_string_contains "$output" "closeout-receipt:"
     assert_string_contains "$output" "active_slice:"
+}
+
+run_progress_meter_check_case() {
+    local output json_output
+
+    log "case: progress-meter-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-progress-meter.sh" --task-file "$REDCAP_ROOT/.dev-task.md")"
+    assert_string_contains "$output" "REDCAP_PROGRESS_METER"
+    assert_string_contains "$output" "历史债务坏味 / 当前专注任务集 / 长期演进专项"
+    assert_string_contains "$output" "真实任务默认 600 秒"
+    assert_string_contains "$output" "PROGRESS_METER_OK"
+
+    json_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-progress-meter.sh" --task-file "$REDCAP_ROOT/.dev-task.md" --json)"
+    python3 - "$json_output" <<'PY'
+import json
+import sys
+
+payload = json.loads(sys.argv[1])
+assert payload["truth_source_mode"] == "aggregate-only"
+assert {row["id"] for row in payload["buckets"]} == {
+    "historical_debt_smell",
+    "current_focused_task_set",
+    "long_term_evolution_program",
+}
+assert payload["prism_boundary"]["real_task_default_timeout_seconds"] == 600
+human = payload["human"]
+for field in ["整体任务全景图", "当前位置", "当前已完成", "下一步计划做的是", "需要人工介入"]:
+    assert field in human
+PY
+
+    bash "$REDCAP_ROOT/compass/tools/redcap-progress-meter-check.sh" >/dev/null
 }
 
 run_tracking_health_overview_case() {
@@ -15144,6 +15178,7 @@ run_all_cases() {
     run_docs_retention_check_case
     run_backlog_check_strict_case
     run_current_status_overview_case
+    run_progress_meter_check_case
     run_tracking_health_overview_case
     run_intent_coverage_check_case
     run_change_intake_check_case
@@ -15606,6 +15641,9 @@ case "$COMMAND" in
         ;;
     current-status-overview)
         run_current_status_overview_case
+        ;;
+    progress-meter-check)
+        run_progress_meter_check_case
         ;;
     tracking-health-overview)
         run_tracking_health_overview_case

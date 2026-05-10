@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 361442,
-    "lines": 7223,
-    "chars": 214949,
+    "size_bytes": 356325,
+    "lines": 7151,
+    "chars": 211576,
     "rough_token_pressure": {
-      "low": 53737,
-      "high": 107474
+      "low": 52894,
+      "high": 105788
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 167767,
-        "lines": 2640,
-        "chars": 98476,
+        "size_bytes": 162650,
+        "lines": 2568,
+        "chars": 95103,
         "rough_token_pressure": {
-          "low": 24619,
-          "high": 49238
+          "low": 23775,
+          "high": 47551
         }
       }
     },
@@ -551,31 +551,31 @@
       }
     },
     {
-      "path": "compass/docs/task-reports/2026-05-10-prism-conclusion-guarantee-hardening.md",
+      "path": "compass/docs/task-reports/2026-05-10-progress-meter-implementation.md",
       "collection": "task-reports",
-      "title": "任务完成报告：结论性输出 Prism 强制协作与固化保障优先级加固",
+      "title": "任务完成报告：RedCap 前进刻度表与棱镜使用边界落地",
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12622,
-      "lines": 224,
-      "chars": 7196,
-      "summary": "当前已完成：RedCap 已把“评估/结论性质输出必须由棱镜参与”和“新增能力优先进入固化保障”从口头约定升级为可检查机制。 / 详情：这次解决的是一个很危险的协作坏味：主 Agent 很容易先给出看似完整的架构结论，但它本质仍是单视角判断。现在 RedCap 把会指导后续工程的官方结论定义为 conclusion-class 输出，要求进入 Prism 协作、复核或验收；同时，新增能力默认先寻找脚本、validator、hook、acceptance、receipt、diagnose/spec-check 等固化落点。没有 Prism 的即时观点只能叫建议稿/初判，不能再写成“我们共同评审结论”。",
+      "size_bytes": 7505,
+      "lines": 152,
+      "chars": 3823,
+      "summary": "当前已完成：RedCap 已有一个可执行的“前进刻度表”，能把历史债务坏味、当前专注任务集、长期演进专项合成一张人类可读的全景视图。 / 关键结论：它不是新账本，只是聚合器。真正的事实仍来自 `.dev-task.md`、任务报告、backlog、receipt、治理债务表、生命周期表和 Evolution candidates。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：RedCap 已把“评估/结论性质输出必须由棱镜参与”和“新增能力优先进入固化保障”从口头约定升级为可检查机制。",
-          "详情：这次解决的是一个很危险的协作坏味：主 Agent 很容易先给出看似完整的架构结论，但它本质仍是单视角判断。现在 RedCap 把会指导后续工程的官方结论定义为 conclusion-class 输出，要求进入 Prism 协作、复核或验收；同时，新增能力默认先寻找脚本、validator、hook、acceptance、receipt、diagnose/spec-check 等固化落点。没有 Prism 的即时观点只能叫建议稿/初判，不能再写成“我们共同评审结论”。"
+          "当前已完成：RedCap 已有一个可执行的“前进刻度表”，能把历史债务坏味、当前专注任务集、长期演进专项合成一张人类可读的全景视图。",
+          "关键结论：它不是新账本，只是聚合器。真正的事实仍来自 `.dev-task.md`、任务报告、backlog、receipt、治理债务表、生命周期表和 Evolution candidates。"
         ],
         "previous_step": [
-          "上一步完成的是：RASG 架构坏味治理已经把非发布类坏味收束到 closeout，本轮是在这个干净基线上补强“评估性结论不能单人自证”的制度缺口。"
+          "上一步完成的是：三分法结论已经补做 Kimi 与 Claude Code 的棱镜评审，两个模型族均通过，无 blocker。"
         ],
         "next_step": [
-          "下一步计划做的是：本轮完成后无新的非发布类阻塞任务；如继续推进，应进入正式发布专项或后续长期演进专项，并按本轮新规则让结论先经 Prism-backed gate。"
+          "下一步计划做的是：提交本轮代码、刷新索引与治理检查，然后执行 closeout，生成本任务的正式完成 receipt。"
         ],
         "position": [
-          "整体计划脉络图是：历史坏味治理 -> 结论/保障机制补强 -> 正式发布专项 / 长期演进专项。",
-          "当前所在位置：结论/保障机制补强已实现并通过 Claude Code + Kimi Prism 验收，等待 closeout receipt 作为正式完工凭证。"
+          "整体计划脉络图是：续接锚点不跑偏 -> 三分法结论补棱镜评审 -> 三分进度仪与棱镜使用边界落地 -> closeout receipt 收口。",
+          "当前所在位置：第三步“落地实现”已完成并通过双路棱镜复核；正在进入提交与 closeout 阶段。"
         ]
       }
     },

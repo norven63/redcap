@@ -333,6 +333,16 @@ if ! bash "$ARCHITECTURE_SMELL_GOVERNANCE_CHECK" >/dev/null; then
     exit 1
 fi
 
+PROGRESS_METER_CHECK="$REDCAP_ROOT/compass/tools/redcap-progress-meter-check.sh"
+if [[ ! -f "$PROGRESS_METER_CHECK" ]]; then
+    echo "[redcap-spec-check] progress meter check missing" >&2
+    exit 1
+fi
+if ! bash "$PROGRESS_METER_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] progress meter check failed" >&2
+    exit 1
+fi
+
 REFERENCE_ASSET_LIFECYCLE_CHECK="$REDCAP_ROOT/compass/tools/redcap-reference-asset-lifecycle.sh"
 if [[ ! -f "$REFERENCE_ASSET_LIFECYCLE_CHECK" ]]; then
     echo "[redcap-spec-check] reference asset lifecycle check missing" >&2

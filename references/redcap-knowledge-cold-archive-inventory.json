@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 74,
-  "bytes_total": 1049873,
+  "file_count": 75,
+  "bytes_total": 1062495,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 70,
+    "private-task-report-archive": 71,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -597,6 +597,14 @@
       "class": "private-task-report-archive",
       "bytes": 11725,
       "sha256": "9915aa91d5f54ae08ba1911d8f1ebcbcee121c8c5a1e57167874fc28f0c2f0fd",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-10-prism-conclusion-guarantee-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 12622,
+      "sha256": "e33b98a1aa09924f2ae0d7545bec798e9ee2d9ff63e699284782922fe6fb5efb",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

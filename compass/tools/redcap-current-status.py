@@ -163,6 +163,36 @@ def backlog_summary(repo: Path, meta: dict[str, str]) -> list[str]:
     return lines
 
 
+def progress_meter_summary(repo: Path, task_file: Path) -> list[str]:
+    script = repo / "compass/tools/redcap-progress-meter.sh"
+    if not script.is_file():
+        return ["progress-meter: missing redcap-progress-meter.sh"]
+    try:
+        proc = subprocess.run(
+            ["bash", str(script), "--task-file", str(task_file)],
+            cwd=repo,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=20,
+            check=False,
+        )
+    except Exception as exc:
+        return [f"progress-meter 无法运行：{exc}"]
+    if proc.returncode != 0:
+        detail = proc.stdout.strip().splitlines()[0] if proc.stdout.strip() else "unknown error"
+        return [f"progress-meter 失败：{detail}"]
+    lines: list[str] = []
+    for raw in proc.stdout.splitlines():
+        line = raw.strip()
+        if not line or line in {"REDCAP_PROGRESS_METER", "PROGRESS_METER_OK"}:
+            continue
+        if line.startswith("- "):
+            line = line[2:].strip()
+        lines.append(line)
+    return lines or ["progress-meter: no output"]
+
+
 def pending_validation_summary(repo: Path) -> str:
     path = repo / "loom/test-reports/pending-validations.md"
     text = read(path)
@@ -794,6 +824,11 @@ def main() -> int:
 
     print("## 长期 backlog")
     for line in backlog_summary(repo, meta):
+        print(f"- {line}")
+    print()
+
+    print("## RedCap 前进刻度表")
+    for line in progress_meter_summary(repo, task_file):
         print(f"- {line}")
     print()
 

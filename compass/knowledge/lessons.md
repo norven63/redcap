@@ -488,3 +488,6 @@
 
 ### L-160: 进度仪只能是聚合视图，不能成为新真相源
 - 正文模块：[`compass/knowledge/lessons/l-160.md`](../../compass/knowledge/lessons/l-160.md)
+
+### L-161: 声明的聚合源必须真的被读取，否则就是假覆盖
+- 正文模块：[`compass/knowledge/lessons/l-161.md`](../../compass/knowledge/lessons/l-161.md)

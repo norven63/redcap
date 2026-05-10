@@ -134,6 +134,7 @@ run_source_check "layerb-fsm" bash "$SCRIPT_DIR/redcap-layerb-fsm-check.sh" || o
 run_check "layerb-closeout-runtime" bash "$SCRIPT_DIR/redcap-layerb-closeout-runtime-check.sh" "$TASK_FILE" || overall=1
 run_source_check "token-risk-audit" bash "$SCRIPT_DIR/redcap-token-risk-audit.sh" || overall=1
 run_source_check "architecture-smell-governance" bash "$SCRIPT_DIR/redcap-architecture-smell-governance-check.sh" || overall=1
+run_source_check "progress-meter" bash "$SCRIPT_DIR/redcap-progress-meter-check.sh" || overall=1
 run_source_check "reference-asset-lifecycle" bash "$SCRIPT_DIR/redcap-reference-asset-lifecycle.sh" check || overall=1
 run_source_check "layer-boundary" bash "$SCRIPT_DIR/redcap-layer-boundary-check.sh" || overall=1
 run_check "tracking-health" bash "$SCRIPT_DIR/redcap-tracking-health.sh" "$TASK_FILE" || overall=1
