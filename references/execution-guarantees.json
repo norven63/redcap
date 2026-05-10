@@ -1876,7 +1876,7 @@
         "references/legacy-asset-migration-alias-resolver.json",
         "references/legacy-asset-migration-worktree-rehearsal.json",
         "references/redcap-parent-task-ledger.md",
-        "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+        "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-main-tree-apply.sh validates the main-tree copy-first receipt, rejects source drift, path traversal, public targets and mismatched applied targets, refreshes the alias resolver after apply, and is consumed by spec-check, diagnose and acceptance.",

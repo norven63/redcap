@@ -134,7 +134,7 @@
       "id": "P4-1a",
       "title": "历史资产 main-tree copy-first apply",
       "task_id": "historical-asset-migration-main-tree-copy-apply",
-      "report_path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
+      "report_path": "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
       "receipt_glob": "historical-asset-migration-main-tree-copy-apply-*.json",
       "durable_evidence_status": "repo-owned-machine-evidence",
       "durable_evidence_reason": "P4-1a is a completed modern child, but its closeout runtime receipt lived under /tmp and is not durable across host cleanup. The repo-owned apply manifest is machine-readable evidence for the exact task_id and must be retained instead of fabricating a historical runtime receipt.",
