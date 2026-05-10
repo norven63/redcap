@@ -15,7 +15,7 @@
     },
     {
       "path": "references/execution-guarantees.json",
-      "bytes": 105749,
+      "bytes": 105753,
       "asset_class": "control-plane-registry",
       "lifecycle": "active-validator-registry",
       "consumer_check": "bash compass/tools/redcap-execution-guarantee-check.sh",
