@@ -76,6 +76,14 @@
       "items": [
         "RASG-017"
       ]
+    },
+    {
+      "id": "T6",
+      "title": "Senior holistic smell audit",
+      "intent": "Prevent user examples from being narrowed into single-point fixes by requiring a Prism-reviewed, senior-engineering review across RedCap's product shape, workflow guarantees, truth sources, knowledge/evidence lifecycle, package surface, and human-facing status model.",
+      "items": [
+        "RASG-018"
+      ]
     }
   ],
   "requirements": [
@@ -524,15 +532,45 @@
         "prism/runs/20260510-root-ia-consolidation-assessment/collect/kimi-reviewer.txt",
         "compass/docs/task-reports/2026-05-10-root-information-architecture-debt-intake.md"
       ]
+    },
+    {
+      "id": "RASG-018",
+      "title": "Run a senior holistic RedCap architecture smell audit instead of closing user examples one by one",
+      "priority": "P1-before-public-release",
+      "category": "meta-architecture-review-governance",
+      "problem_source": "The root-level directory concern was originally meant as an example that should trigger a broader senior-engineering review. The intake for RASG-017 correctly registered the concrete root information-architecture debt, but it did not separately register the wider '举一反三' obligation to inspect RedCap for other expert-level smells beyond that single example.",
+      "risk": "If every user example is handled as an isolated requirement, RedCap can repeatedly claim local closure while leaving adjacent design smells undiscovered: truth-source ambiguity, old/new transition residue, duplicate control planes, weak human status surfaces, package/runtime boundary leakage, evidence/report lifecycle drift, Prism governance gaps, or token/retrieval hotspots outside the originally named directory.",
+      "desired_outcome": "Produce a Prism-reviewed senior holistic architecture smell audit that explicitly reviews multiple domains, records 'found / not found / deferred' conclusions per domain, and turns any newly found P0/P1 bad smell into tracked requirements instead of relying on chat memory.",
+      "implementation_notes": [
+        "Treat RASG-017 as one concrete child concern; do not let it satisfy the broader holistic audit obligation.",
+        "The audit must use at least two independent Prism reviewers when available, with Copilot protected as fallback according to provider policy.",
+        "Review domains must include root/product shape, active vs cold knowledge, public vs private assets, reports and receipts, Prism evidence, workflow/FSM guarantees, host adapters/hooks, package/release surface, human-facing status/report quality, token/retrieval pressure, and old/new transition residue.",
+        "For each domain, require a short human-readable conclusion and a machine-readable finding row; 'no issue found' must be explicit, not silent.",
+        "Any P0/P1 finding must either become a backlog requirement or be explicitly deferred with reason, owner surface, and acceptance boundary.",
+        "The audit must not physically move/delete assets; it is a discovery and task-tree hardening step."
+      ],
+      "acceptance": [
+        "A machine-readable holistic smell audit artifact exists and lists every reviewed domain with status, evidence, and follow-up disposition.",
+        "A human-readable report explains what was reviewed, what was found, what was not found, and what remains deferred without relying on internal jargon as the main narrative.",
+        "At least two Prism reviewers pass the audit plan or result, or a resource-limited acceptance record explains why quorum was unavailable.",
+        "Every newly discovered P0/P1 smell is either added to this backlog or explicitly linked to an existing requirement with no duplicate truth source.",
+        "The final closeout explicitly states that RASG-018 is not satisfied by RASG-017 alone."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-10",
+      "evidence": [
+        "compass/docs/task-reports/2026-05-10-root-information-architecture-debt-intake.md"
+      ]
     }
   ],
   "must_not_claim": [
     "Do not claim these requirements are completed merely because they are listed here.",
     "Do not claim RASG-001..016 solved root-level physical product-shape consolidation; they solved indexing, lifecycle, retrieval, package safety, and specific root-local policies.",
     "Do not claim RASG-017 is complete until a separate receipt proves the root inventory, target model, consumer matrix, and migration/alias plan are done.",
+    "Do not claim the user's '举一反三' request has been satisfied by registering only RASG-017; RASG-018 must complete a separate senior holistic audit.",
     "Do not treat future full LLM-wiki/RAG/GraphRAG as enabled by this backlog.",
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Open RASG-017 as a historical-debt planning slice before any broad public-release quality claim. Formal npm/public release remains a separate future task."
+  "recommended_next_step": "Open RASG-018 first as the expert holistic audit slice, then feed any confirmed root/product-shape findings into RASG-017 or new backlog items. Formal npm/public release remains a separate future task."
 }
