@@ -85,8 +85,8 @@ Kimi 重点确认：本轮方案保留了活知识、冷归档、公共模板和
 
 | 项目 | 当前状态 |
 | --- | --- |
-| closeout receipt | 无 |
-| 说明 | 本报告当前处于 closeout 前的验收态；正式 receipt 需要在 spec-check、diagnose、clean workspace E2E 与 Prism acceptance 全部通过后由 `closeout-cap.sh complete --host codex` 生成。 |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-root-information-architecture-consolidation-plan-726d0bebb70ef2b05e2a614a1b985100e85d9ad1e4a5a0082dffe0ec6babc575.json` |
+| 说明 | spec-check、diagnose、clean workspace E2E 与 Prism acceptance 均已通过，并由 `closeout-cap.sh complete --host codex --baseline-head 323b4b622dd993318d034987f7e2acb610dd609a` 生成正式 receipt。 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -95,7 +95,7 @@ Kimi 重点确认：本轮方案保留了活知识、冷归档、公共模板和
 | 已实现 | 是，root IA plan、checker、报告和 RASG backlog 证据已落地。 |
 | 已自检 | 是，root IA checker、architecture smell governance、file lookup、reference lifecycle、package manifest 与 public package surface 已通过。 |
 | 已独立验收 | 是，Claude Code 与 Kimi Prism acceptance 已通过且无 blocker。 |
-| 已正式完成 | 否，当前仍等待最终 closeout receipt；因此不能把本轮声明成已经收口完成。 |
+| 已正式完成 | 是，已生成 closeout receipt，且承诺账本 pending=0。 |
 
 ## 五、验证结果
 
