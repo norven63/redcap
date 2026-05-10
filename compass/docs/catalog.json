@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 349291,
-    "lines": 7089,
-    "chars": 207066,
+    "size_bytes": 350064,
+    "lines": 7101,
+    "chars": 207413,
     "rough_token_pressure": {
-      "low": 51766,
-      "high": 103533
+      "low": 51853,
+      "high": 103706
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 155616,
-        "lines": 2506,
-        "chars": 90593,
+        "size_bytes": 156389,
+        "lines": 2518,
+        "chars": 90940,
         "rough_token_pressure": {
-          "low": 22648,
-          "high": 45296
+          "low": 22735,
+          "high": 45470
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9479,
-      "lines": 164,
-      "chars": 4843,
+      "size_bytes": 10252,
+      "lines": 176,
+      "chars": 5190,
       "summary": "当前已完成：RedCap 已把“根目录直接父级目录过散、知识/报告/证据/模板语义重叠”登记为新的历史债务 `RASG-017`。 / 关键结论：之前的 RASG-001..016 并不是“假的完成”；它们解决的是索引、生命周期、token 风险、包面安全和具体子域治理。`RASG-017` 是更高一层的产品工程形态债务：RedCap 根目录本身是否足够清爽、集中、语义稳定。",
       "status_basis": "filename_recency_only",
       "summary_points": {
