@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 364693,
+    "size_bytes": 364689,
     "lines": 7277,
-    "chars": 217837,
+    "chars": 217833,
     "rough_token_pressure": {
-      "low": 54459,
-      "high": 108918
+      "low": 54458,
+      "high": 108916
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 171018,
+        "size_bytes": 171014,
         "lines": 2694,
-        "chars": 101364,
+        "chars": 101360,
         "rough_token_pressure": {
-          "low": 25341,
-          "high": 50682
+          "low": 25340,
+          "high": 50680
         }
       }
     },
@@ -528,9 +528,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12245,
+      "size_bytes": 12241,
       "lines": 219,
-      "chars": 6703,
+      "chars": 6699,
       "summary": "当前已完成：RedCap 已补上“继续/接下来/按计划推进”类任务的续接确认硬门，防止任务再次被错误接到上一条旧任务线上。 / 详情：这次问题的根源不是代码实现难，而是任务锚点没有被机器强制确认。现在只要任务原文带有续接意味，就必须写清续接哪条线、本轮只做什么、不做什么、是否替换旧任务线，以及对 Norven 应该怎么说明边界。这样后续再说“继续推进”，RedCap 不能跳过确认直接把任务塞进旧 closeout 或内部发现的支线里。",
       "status_basis": "filename_recency_only",
       "summary_points": {
