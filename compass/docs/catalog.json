@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 357179,
-    "lines": 7167,
-    "chars": 212344,
+    "size_bytes": 358983,
+    "lines": 7182,
+    "chars": 213222,
     "rough_token_pressure": {
-      "low": 53086,
-      "high": 106172
+      "low": 53305,
+      "high": 106611
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 163504,
-        "lines": 2584,
-        "chars": 95871,
+        "size_bytes": 165308,
+        "lines": 2599,
+        "chars": 96749,
         "rough_token_pressure": {
-          "low": 23967,
-          "high": 47935
+          "low": 24187,
+          "high": 48374
         }
       }
     },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 8359,
-      "lines": 168,
-      "chars": 4591,
+      "size_bytes": 10163,
+      "lines": 183,
+      "chars": 5469,
       "summary": "当前已完成：RedCap 已有一个可执行的“前进刻度表”，能把历史债务坏味、当前专注任务集、长期演进专项合成一张人类可读的全景视图。 / 关键结论：它不是新账本，只是聚合器。真正的事实仍来自 `.dev-task.md`、任务报告、backlog、receipt、治理债务表、生命周期表和 Evolution candidates。",
       "status_basis": "filename_recency_only",
       "summary_points": {

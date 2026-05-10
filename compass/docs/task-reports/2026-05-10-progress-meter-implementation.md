@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-10
 **执行者**：Cap（Codex + Prism: Kimi / Claude Code）
-**报告版本**：v1.1
+**报告版本**：v1.2
 
 ---
 
@@ -50,6 +50,17 @@ Norven 希望 RedCap 后续迭代能有一个稳定的“前进刻度表”，�
 ### 2.2 棱镜超时边界
 
 真实棱镜评审任务默认保留 600 秒等待时间，避免 Claude Code / Kimi 在复杂评审里被过早判定为超时。与此同时，availability probe 仍保持轻量短探测，不能继承 600 秒，否则健康嗅探会变成时间黑洞。
+
+### 2.3 Norven 关切的逐项结论
+
+| 问题 | 本轮结论 |
+|---|---|
+| 为什么要固化前进刻度表 | 因为 RedCap 的任务事实散落在任务卡、报告、receipt、backlog 和治理表里；如果没有稳定总览，人类和 Agent 都容易只看到局部，误以为“某个子任务完成”等于“父任务完成”。 |
+| 如何避免历史债务无限膨胀 | 前进刻度表只展示聚合后的数量、状态和少量代表项；债务本体仍按生命周期处理为 open / deferred / archived / blocked，不把每个历史碎片复制进新视图。 |
+| 公共资产还是 Norven 私有资产 | 机制、策略、脚本和术语解释属于 RedCap 公共资产；Norven 私有证据、个人上下文、未脱敏经验和本地运行痕迹不能自动进入公共 arsenal。 |
+| 怎么和现有机制配合 | 它读取现有真相源，并接入 current-status、diagnose、spec-check、acceptance 和文件查阅字典；它不替代 `.dev-task.md`、receipt、Prism acceptance 或 backlog。 |
+| 人类入口和 AI 入口如何分开 | 人类默认看“当前完成什么、下一步是什么、是否需要人工介入”；AI 和检查脚本读取 JSON、来源映射和计数，用于追溯与门禁审计。 |
+| 三个小点如何分类 | “公共 arsenal 大迁移”是长期演进专项；“历史资产物理删除”是历史债务治理但属于破坏性动作，不能默认执行；“Codex.app 交互式 hook 100% 证明”是长期演进专项兼宿主能力边界验证。 |
 
 ---
 
@@ -156,9 +167,13 @@ no-promote：本轮没有新增 Evolution candidate pool 条目；本轮沉淀�
 
 ### 附录 B：Commits
 
+本报告不把手写 commit 清单作为最终真相源；最终完成头以 closeout receipt 的 `current_head` 和 `git log` 为准。关键提交包括：
+
 ```
 3f78ac2 feat(redcap): 落地前进刻度表聚合视图
 e221d26 test(redcap): 刷新前进刻度表干净工作区证据
+7ce7818 fix(redcap): 修正前进刻度表收口后状态
+92c6e55 test(redcap): 刷新前进刻度表收口证据
 ```
 
 ### 附录 C：Closeout Receipt
