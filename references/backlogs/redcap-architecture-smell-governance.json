@@ -2,7 +2,7 @@
   "version": 1,
   "backlog_id": "redcap-architecture-smell-governance",
   "title": "RedCap architecture smell governance backlog",
-  "status": "implemented-pending-final-review-and-closeout",
+  "status": "active-new-historical-debt-open",
   "created_at": "2026-05-09",
   "owner_scope": "redcap-self",
   "purpose": "Capture the architecture, knowledge, evidence, runtime, and productization smells found during the post-P4-2k global review so later work can close them deliberately instead of rediscovering them from chat context.",
@@ -67,6 +67,14 @@
         "RASG-010",
         "RASG-011",
         "RASG-015"
+      ]
+    },
+    {
+      "id": "T5",
+      "title": "Root product-shape consolidation",
+      "intent": "Judge whether the repository root itself still exposes too many direct parent directories for knowledge, reports, evidence, runtime, and public templates before RedCap is treated as a clean product.",
+      "items": [
+        "RASG-017"
       ]
     }
   ],
@@ -486,13 +494,45 @@
         "compass/tools/redcap-release-e2e-matrix-check.py",
         "references/public-release-handoff.md"
       ]
+    },
+    {
+      "id": "RASG-017",
+      "title": "Consolidate root-level information architecture before product release",
+      "priority": "P1-before-public-release",
+      "category": "information-architecture-product-shape",
+      "problem_source": "RedCap still exposes multiple direct root children that carry overlapping docs, knowledge, report, archive, evidence, public-template, and control-plane meanings: compass/docs, compass/knowledge, redcap-knowledge, shared-knowledge, prism/reports, prism/runs, loom/test-reports, references, runtime, and related host/runtime roots. Previous RASG work made these roots indexed, safer, and release-filtered, but did not judge or consolidate the root-level parent model itself.",
+      "risk": "A future public runtime or contributor-facing repository may freeze the current root shape as product surface. Even if token and package leakage are controlled, humans and agents still pay cognitive cost when related knowledge/report/evidence assets live under several top-level parents with similar meanings.",
+      "desired_outcome": "Produce a Prism-reviewed root-level information architecture consolidation plan that inventories every root-level asset root, classifies it, defines a target parent model, maps aliases and consumers, and only then opens any physical migration task.",
+      "implementation_notes": [
+        "Do not immediately move or delete directories in the intake task.",
+        "Separate design debt registration from later physical apply.",
+        "Classify roots at least as runtime, control-plane, private-archive, public-template, evidence, legacy, host-config, or external-worktree pointer.",
+        "Identify consumers before migration: scripts, checks, package files list, host adapters, AGENTS/CLAUDE/GEMINI/Copilot entry files, revive/install/closeout, docs catalog, knowledge gateway, receipt paths, and Prism run evidence.",
+        "Require alias, import-map, or compatibility strategy before any path move.",
+        "Keep archaeology and receipt anchors discoverable after any future apply."
+      ],
+      "acceptance": [
+        "A machine-readable root asset inventory exists and classifies each direct root child that carries RedCap product/runtime/knowledge/evidence meaning.",
+        "A target parent model exists and explains which root-level parents should remain, merge, move under an internal root, move outside the repo, or stay as compatibility shims.",
+        "A consumer-impact matrix identifies affected scripts, policies, package manifests, host adapters, entry docs, receipt/report anchors, and ignored runtime evidence before any physical migration.",
+        "Any future apply task has a dry-run, rollback plan, alias/compatibility window, Prism review, clean-workspace E2E, package-safety check, and closeout receipt.",
+        "The progress meter shows this item as open historical debt until the planning and any approved apply tasks are separately receipted."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-10",
+      "evidence": [
+        "prism/runs/20260510-root-ia-consolidation-assessment/collect/kimi-reviewer.txt",
+        "compass/docs/task-reports/2026-05-10-root-information-architecture-debt-intake.md"
+      ]
     }
   ],
   "must_not_claim": [
     "Do not claim these requirements are completed merely because they are listed here.",
+    "Do not claim RASG-001..016 solved root-level physical product-shape consolidation; they solved indexing, lifecycle, retrieval, package safety, and specific root-local policies.",
+    "Do not claim RASG-017 is complete until a separate receipt proves the root inventory, target model, consumer matrix, and migration/alias plan are done.",
     "Do not treat future full LLM-wiki/RAG/GraphRAG as enabled by this backlog.",
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Run source regression, Prism review, update the task report, then close out this RASG parent task. Formal npm/public release remains a separate future task."
+  "recommended_next_step": "Open RASG-017 as a historical-debt planning slice before any broad public-release quality claim. Formal npm/public release remains a separate future task."
 }

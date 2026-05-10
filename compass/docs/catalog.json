@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 358983,
-    "lines": 7182,
-    "chars": 213222,
+    "size_bytes": 349291,
+    "lines": 7089,
+    "chars": 207066,
     "rough_token_pressure": {
-      "low": 53305,
-      "high": 106611
+      "low": 51766,
+      "high": 103533
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 165308,
-        "lines": 2599,
-        "chars": 96749,
+        "size_bytes": 155616,
+        "lines": 2506,
+        "chars": 90593,
         "rough_token_pressure": {
-          "low": 24187,
-          "high": 48374
+          "low": 22648,
+          "high": 45296
         }
       }
     },
@@ -98,16 +98,16 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-07-redcap-midcourse-architecture-task-tree-review.md",
-        "chars": 10999,
-        "lines": 257,
-        "read_policy": "read-catalog-summary-by-default"
-      },
-      {
         "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
         "chars": 9442,
         "lines": 191,
         "read_policy": "read-catalog-summary-by-default"
+      },
+      {
+        "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
+        "chars": 9116,
+        "lines": 348,
+        "read_policy": "read-registry-summary-first"
       }
     ]
   },
@@ -457,19 +457,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-07-redcap-midcourse-architecture-task-tree-review.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap 中途架构与任务树一致性审计",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 19171,
-      "lines": 257,
-      "chars": 10999,
-      "summary": "当前已完成：本轮把“脚本头中文短说明、LLM-wiki-lite 边界、中途任务树对账”从口头讨论升级成了机器可查的治理闭环。 / 详情：关键脚本现在不只依赖字典条目，也必须在文件头有一句短中文用途说明和 `Dictionary:` 反链，方便人类检索时快速判断文件作用。`LLM-wiki-lite` 被明确固定为私有、非权威、带来源锚点的最小语义记忆层；完整 LLM-wiki、后台生成、RAG/GraphRAG、向量库和公共写回仍是未来任务，不能被当前完成态冒充。中途审计产物会横向对齐已完成、近期中插、尚未完成、deferred 和 blocked-external 的任务边界。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-09-codex-lifecycle-hooks-candidate.md",
       "collection": "task-reports",
       "title": "任务完成报告：Codex lifecycle hooks candidate 接线",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：Layer B 中插/续接任务意图确认硬门",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12241,
       "lines": 219,
       "chars": 6699,
       "summary": "当前已完成：RedCap 已补上“继续/接下来/按计划推进”类任务的续接确认硬门，防止任务再次被错误接到上一条旧任务线上。 / 详情：这次问题的根源不是代码实现难，而是任务锚点没有被机器强制确认。现在只要任务原文带有续接意味，就必须写清续接哪条线、本轮只做什么、不做什么、是否替换旧任务线，以及对 Norven 应该怎么说明边界。这样后续再说“继续推进”，RedCap 不能跳过确认直接把任务塞进旧 closeout 或内部发现的支线里。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已补上“继续/接下来/按计划推进”类任务的续接确认硬门，防止任务再次被错误接到上一条旧任务线上。",
-          "详情：这次问题的根源不是代码实现难，而是任务锚点没有被机器强制确认。现在只要任务原文带有续接意味，就必须写清续接哪条线、本轮只做什么、不做什么、是否替换旧任务线，以及对 Norven 应该怎么说明边界。这样后续再说“继续推进”，RedCap 不能跳过确认直接把任务塞进旧 closeout 或内部发现的支线里。"
-        ],
-        "previous_step": [
-          "上一步完成的是：上一轮修好了 closeout receipt 和 pending closure 的状态一致性问题；本轮是在修更上游的“任务续接不要跑偏”问题。"
-        ],
-        "next_step": [
-          "下一步计划做的是：提交本轮变更并生成正式 closeout receipt，然后回到 Norven 指定的第二步：补做“三分 RedCap 前进刻度表”相关结论的棱镜评审。"
-        ],
-        "position": [
-          "整体计划脉络图是：先修续接不跑偏 -> 补三分法结论的棱镜评审 -> 再落地三分进度仪与棱镜使用场景优化。",
-          "当前所在位置：第一步“续接/中插任务意图确认硬门”已实现，targeted checks、full acceptance、spec-check 与 diagnose 均已通过；正在执行最终提交与 closeout receipt。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-10-progress-meter-implementation.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：续接不跑偏 -> 三分法结论补棱镜评审 -> 三分进度仪与棱镜使用优化落地。",
           "当前所在位置：第二步“结论补棱镜评审”已完成；下一步是把评审通过的任务树转为实现任务。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-10-root-information-architecture-debt-intake.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：Root-level 信息架构坏味登记",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9479,
+      "lines": 164,
+      "chars": 4843,
+      "summary": "当前已完成：RedCap 已把“根目录直接父级目录过散、知识/报告/证据/模板语义重叠”登记为新的历史债务 `RASG-017`。 / 关键结论：之前的 RASG-001..016 并不是“假的完成”；它们解决的是索引、生命周期、token 风险、包面安全和具体子域治理。`RASG-017` 是更高一层的产品工程形态债务：RedCap 根目录本身是否足够清爽、集中、语义稳定。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把“根目录直接父级目录过散、知识/报告/证据/模板语义重叠”登记为新的历史债务 `RASG-017`。",
+          "关键结论：之前的 RASG-001..016 并不是“假的完成”；它们解决的是索引、生命周期、token 风险、包面安全和具体子域治理。`RASG-017` 是更高一层的产品工程形态债务：RedCap 根目录本身是否足够清爽、集中、语义稳定。"
+        ],
+        "previous_step": [
+          "上一步完成的是：三分 RedCap 前进刻度表已经落地并 closeout；它暴露出当前历史债务账面仍有治理项，也让这次根目录坏味可以被正式纳入“历史债务坏味”桶。"
+        ],
+        "next_step": [
+          "下一步计划做的是：后续另开 `RASG-017` 实现任务，先做根目录资产 inventory、目标父级模型、消费者影响矩阵、别名兼容方案和回滚计划；只有这些通过后，才允许讨论真实目录迁移。"
+        ],
+        "position": [
+          "整体计划脉络图是：发现账面/物理现实不一致 -> 回顾用户“举一反三”要求 -> 扫描根目录资产分布 -> 棱镜 advisory 评审 -> 登记 RASG-017 -> 后续另开整合实现任务。",
+          "当前所在位置：坏味已进入需求树；本轮不是物理整理目录。"
         ]
       }
     }

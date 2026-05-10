@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 75,
-  "bytes_total": 1062495,
+  "file_count": 76,
+  "bytes_total": 1081666,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 71,
+    "private-task-report-archive": 72,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -533,6 +533,14 @@
       "class": "private-task-report-archive",
       "bytes": 12299,
       "sha256": "a2f1787c265d6fe7916d475ac87707a27e725d332cd20055efc0f22564d3e9e2",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-07-redcap-midcourse-architecture-task-tree-review.md",
+      "class": "private-task-report-archive",
+      "bytes": 19171,
+      "sha256": "ab7dc248fc9ae0a45151e3531d75df17a80595b3acc48b9f13bed4bee8102874",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },
