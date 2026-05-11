@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 347637,
-    "lines": 7062,
-    "chars": 204301,
+    "size_bytes": 347751,
+    "lines": 7063,
+    "chars": 204429,
     "rough_token_pressure": {
-      "low": 51075,
-      "high": 102150
+      "low": 51107,
+      "high": 102214
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 153962,
-        "lines": 2479,
-        "chars": 87828,
+        "size_bytes": 154076,
+        "lines": 2480,
+        "chars": 87956,
         "rough_token_pressure": {
-          "low": 21957,
-          "high": 43914
+          "low": 21989,
+          "high": 43978
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13370,
-      "lines": 237,
-      "chars": 8032,
+      "size_bytes": 13484,
+      "lines": 238,
+      "chars": 8160,
       "summary": "当前已完成：RedCap 已把 CLI、状态、深入诊断和飞书通知的默认主叙事改为“先讲人话、再给证据”。 / 详情：本轮解决的是一个产品表面问题：用户看到 RedCap 输出时，不应该先被内部术语、门禁名、收尾组件名淹没。现在 `redcap help`、`redcap doctor`、`redcap status` 首屏、`redcap diagnose` 开场和飞书样例都会先解释当前做到了什么、下一步是什么、是否需要人工介入；内部机制仍保留在后续诊断和机器证据里，不牺牲审计严谨性。",
       "status_basis": "filename_recency_only",
       "summary_points": {

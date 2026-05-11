@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-11  
 **执行者**：Cap（Codex.app + Prism: Claude Code；Kimi resource-limited）  
-**报告版本**：v0.3
+**报告版本**：v0.4
 
 ---
 
@@ -146,6 +146,7 @@ RASG-018 的全局审判后，发布前仍有三条开放债务：RASG-019、RAS
 | CLI runtime/workspace 边界 | `bash compass/tools/redcap-runtime-workspace-boundary-check.sh` | ✅ |
 | package manifest | `bash compass/tools/redcap-runtime-package-manifest.sh --check` | ✅ |
 | public package surface | `bash compass/tools/redcap-public-package-surface.sh` | ✅ |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 300` + `--check-result` | ✅ |
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | ✅ |
 | architecture smell backlog | `bash compass/tools/redcap-architecture-smell-governance-check.sh` | ✅ |
 | task report check | `bash compass/tools/redcap-task-report-check.sh "$PWD" 620e106fc532fc0e3c3eb44da201e23858ce169a HEAD codex` | ✅ |
@@ -196,8 +197,8 @@ RASG-018 的全局审判后，发布前仍有三条开放债务：RASG-019、RAS
 
 ### 6.3 推荐的下一步行动
 
-1. 运行最终 diagnose 与必要 E2E。
-2. 提交当前变更，通过 closeout runtime 生成正式 receipt。
+1. 提交 clean workspace E2E 重锚结果。
+2. 通过 closeout runtime 生成正式 receipt。
 3. 转入 RASG-020 或 RASG-021。
 
 ---
