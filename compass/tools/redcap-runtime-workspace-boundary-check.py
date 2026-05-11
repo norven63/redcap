@@ -207,7 +207,7 @@ task_report: compass/docs/task-reports/fixture.md
         output = completed.stdout
         if completed.returncode != 0:
             fail("doctor workspace smoke failed:\n" + output[:2000])
-        if "Boundary mode: external-workspace" not in output or "Task card: exists" not in output:
+        if "运行方式：外部项目工作区" not in output or "当前任务卡：exists" not in output:
             fail("doctor must use the caller workspace task file")
 
         completed = subprocess.run(

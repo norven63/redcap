@@ -1,4 +1,29 @@
 reports:
+  - id: "20260511-rasg019-human-product-surface"
+    mode: acceptance-review
+    date: "2026-05-11"
+    topic: "RASG-019 human-readable product surface hardening"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "resource-limited-pass"
+    consensus_actions:
+      - "Accept the human-first CLI/status/diagnose/Feishu product surface after fixing reviewer feedback"
+      - "Keep machine evidence and diagnostics intact as secondary evidence"
+      - "Record Kimi timeout as resource-limited evidence instead of claiming full two-agent consensus"
+      - "Exclude maintainer-only product-surface policy/checker from the npm package candidate surface"
+    open_questions:
+      - "RASG-020 public/internal runtime contract remains open"
+      - "RASG-021 Prism degradation tracking remains open"
+    lessons_updated: false
+    files_affected:
+      - "bin/redcap"
+      - "compass/tools/redcap-cli-product-surface.py"
+      - "compass/tools/redcap-current-status.py"
+      - "compass/tools/redcap-diagnose.sh"
+      - "references/human-product-surface-policy.json"
+      - "compass/tools/redcap-human-product-surface-check.py"
+      - "compass/docs/task-reports/2026-05-11-rasg-019-human-product-surface.md"
+    archived: false
   - id: "20260509-pre-release-non-release-productization-closure"
     mode: acceptance-review
     date: "2026-05-09"

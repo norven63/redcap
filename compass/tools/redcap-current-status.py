@@ -758,36 +758,36 @@ def main() -> int:
     next_items = capture_report_items(report_path, ["0.3 下一步计划做的是", "0.3 后续动作"], 1) if report_path else []
     roadmap_items = capture_report_items(report_path, ["0.4 整体计划脉络图与当前位置"], 2) if report_path else []
 
-    done_summary = done_items[0] if done_items else "未从任务报告抽取到摘要；请查看任务报告或 .dev-task.md"
-    next_summary = next_items[0] if next_items else "未从任务报告抽取到下一步摘要"
+    done_summary = done_items[0] if done_items else "本轮任务报告尚未生成；我会先依据当前任务卡继续推进。"
+    next_summary = next_items[0] if next_items else "继续完成当前任务的实现、评审、验证和正式收口。"
     if pending:
         hash_label = pending_hash[:12] + "..." if pending_hash else "unknown"
-        receipt_label = "receipt 已生成" if receipt_exists else "receipt 尚未生成"
+        receipt_label = "完工凭证已生成" if receipt_exists else "完工凭证尚未生成"
         done_summary = (
-            f"当前 confirmed_hash（{hash_label}）对应的 pending closure 仍未清，"
-            f"{receipt_label}，required_redlines={pending.get('required_redlines', 'unknown')}；"
-            "历史报告里更早一次 closeout 的“已清/已完成”口径不能直接外推到当前工作区。"
+            f"当前需求指纹（{hash_label}）对应的未清收尾项仍未处理，"
+            f"{receipt_label}，必须满足的收尾红线：{pending.get('required_redlines', 'unknown')}；"
+            "历史报告里更早一次收尾的“已清/已完成”口径不能直接外推到当前工作区。"
         )
         next_summary = (
-            "先完成当前 pending closure 与 closure ledger 的一致性收口，"
-            "再宣称当前 confirmed_hash 已 clean。"
+            "先完成当前未清收尾项与收尾记录的一致性核对，"
+            "再宣称当前需求版本已经干净收口。"
         )
         roadmap_items = [
-            "当前实时状态：receipt 与 pending closure 分开判断；pending closure 未清时，以 pending closure 为准。",
-            "下一步是清理或证明当前 pending closure，而不是重做已生成的 receipt。"
+            "当前实时状态：完工凭证与未清收尾项分开判断；未清收尾项存在时，以未清收尾项为准。",
+            "下一步是清理或证明当前未清收尾项，而不是重复生成已有凭证。"
         ]
     elif receipt_exists:
-        next_summary = "当前任务 closeout receipt 已生成，pending closure 未显示阻塞；可转入后续任务或长期演进专项。"
+        next_summary = "当前任务完工凭证已生成，未发现未清收尾阻塞；可转入后续任务或长期演进专项。"
         if not roadmap_items or any("等待 closeout receipt" in item or "等待 receipt" in item or "receipt 作为正式完工凭证" in item for item in roadmap_items):
             roadmap_items = [
-                "当前实时状态：closeout receipt 已生成，pending closure 未显示阻塞。",
-                "报告中的 closeout 前计划句只保留为历史记录，不再作为当前路线判断。"
+                "当前实时状态：完工凭证已生成，未发现未清收尾阻塞。",
+                "报告中的收尾前计划句只保留为历史记录，不再作为当前路线判断。"
             ]
 
     print("当前已完成：" + done_summary)
-    print("上一步完成的是：" + (previous_items[0] if previous_items else "未从任务报告抽取到上一步摘要"))
+    print("上一步完成的是：" + (previous_items[0] if previous_items else "本轮任务刚刚重锚，尚未形成上一步报告摘要"))
     print("下一步计划做的是：" + next_summary)
-    print("整体计划脉络图与当前位置：" + ("；".join(roadmap_items) if roadmap_items else "未从任务报告抽取到路线摘要"))
+    print("整体计划脉络图与当前位置：" + ("；".join(roadmap_items) if roadmap_items else "当前处于已授权任务的实现阶段，等待任务报告补齐更完整路线摘要"))
     print()
 
     print("## 当前任务锚点")

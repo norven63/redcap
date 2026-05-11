@@ -2036,25 +2036,28 @@
       "category": "human-status",
       "priority": "P1",
       "status": "validator",
-      "rule": "Human-facing checkpoints and Feishu notifications must expose whether Norven needs to act, whether the task is blocked, whether the next step can start, the task panorama, and the current node. Reports must be conclusion-first and paragraph-readable, not a changelog of files/scripts. Internal audit gaps must be ledger-only by default, not Feishu noise.",
+      "rule": "Human-facing checkpoints, CLI first screens, diagnosis introductions, reports and Feishu notifications must expose whether Norven needs to act, whether the task is blocked, whether the next step can start, the task panorama, and the current node. Reports must be conclusion-first and paragraph-readable, not a changelog of files/scripts. Internal audit gaps must be ledger-only by default, not Feishu noise. Internal RedCap mechanism names may appear as secondary evidence, but must not dominate the primary human narrative.",
       "source_paths": [
         "references/human-communication-policy.json",
+        "references/human-product-surface-policy.json",
         "references/feishu-notification-policy.json",
         "compass/tools/redcap-status-report-format.sh",
         "compass/tools/redcap-notify-format.sh",
+        "compass/tools/redcap-human-product-surface-check.sh",
         "compass/tools/redcap-layerB-session-end.sh",
         "compass/tools/redcap-claude-hook-stop.sh"
       ],
       "auto_enforceable": true,
       "guarantee_paths": [
         "compass/tools/redcap-human-communication-check.sh",
+        "compass/tools/redcap-human-product-surface-check.sh",
         "compass/tools/redcap-feishu-notification-policy-check.sh",
         "compass/tools/redcap-spec-check.sh",
         "compass/tools/redcap-multi-session-acceptance.sh"
       ],
       "revival_required": true,
       "hook_required": true,
-      "automation": "redcap-human-communication-check.sh validates the shared status surface, Feishu formatter fields, SessionEnd audit-gap notification mute, and legacy hook notification mute."
+      "automation": "redcap-human-communication-check.sh validates the shared status surface, Feishu formatter fields, SessionEnd audit-gap notification mute, and legacy hook notification mute. redcap-human-product-surface-check.sh runs real CLI/status/diagnose/Feishu samples and rejects unexplained internal terms in the primary human surface."
     }
   ],
   "manual_review_boundaries": [

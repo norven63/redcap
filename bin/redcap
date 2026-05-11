@@ -29,10 +29,10 @@ redcap_error() {
   local exit_code="${4:-2}"
 
   {
-    echo "RedCap error"
-    echo "cause: $cause"
-    echo "impact: $impact"
-    echo "suggested_action: $suggested_action"
+    echo "RedCap 出错"
+    echo "原因(cause): $cause"
+    echo "影响(impact): $impact"
+    echo "建议动作(suggested_action): $suggested_action"
   } >&2
   exit "$exit_code"
 }
@@ -264,32 +264,32 @@ emit_trace() {
 
 usage() {
   cat <<'EOF'
-usage: redcap <command> [args...]
+用法：redcap <命令> [参数...]
 
-commands:
-  revive                 run ./revive-cap.sh
-  status                 show current RedCap status for the workspace
-  diagnose               run the diagnostic overview for the workspace
-  doctor                 explain CLI health in human-readable product language
-  debug                  emit a redacted diagnostic packet for support or Agent containers
-  closeout               route to ./closeout-cap.sh for the workspace task file
-  prism-availability     inspect or refresh Prism agent availability
-  file-dictionary        validate the File Lookup Dictionary
-  shared-knowledge       manage the shared knowledge repository template
-  publish-safety         audit package candidate files before public release
-  package-manifest       generate/check runtime package candidate files
-  package-surface        validate public package identity and surface readiness
-  pre-release-review     validate product-architecture blockers before release readiness
-  change-intake          validate mid-task inserted requirement handling
-  version                print RedCap package version
-  help                   show command-specific help
+常用命令：
+  revive                 初始化或复活当前工作区。
+  status                 查看当前任务状态、全景位置和下一步。
+  diagnose               做深入体检，适合发布前、自查或排障。
+  doctor                 做短体检，快速判断现在能否继续。
+  debug                  生成脱敏调试包，方便给其他 Agent 或人工排查。
+  closeout               对当前任务执行正式收尾检查。
+  prism-availability     查看或刷新棱镜 Agent 可用性。
+  file-dictionary        检查文件查阅字典是否覆盖关键入口。
+  shared-knowledge       管理公共知识库模板。
+  publish-safety         公开发布前做包面安全审计。
+  package-manifest       生成或检查 runtime 包候选文件。
+  package-surface        检查公开包名、包面和发布边界。
+  pre-release-review     检查正式发布前的产品架构阻塞项。
+  change-intake          检查中途插入需求是否被正确合并和重排。
+  version                打印 RedCap 包版本。
+  help                   查看命令帮助。
 
-workspace options for status/diagnose/change-intake/closeout:
-  --workspace <dir>      managed project workspace (default: current directory)
-  --task-file <file>     task file path (default: <workspace>/.dev-task.md)
-  --trace                explain command routing without dumping env or secrets
-  REDCAP_WORKSPACE       optional workspace env fallback when no flag is given
-  REDCAP_TASK_FILE       optional task-file env fallback when no flag is given
+工作区参数（适用于 status/diagnose/change-intake/closeout 等命令）：
+  --workspace <dir>      被管理的项目工作区，默认是当前目录或自动识别结果。
+  --task-file <file>     当前任务卡，默认是 <workspace>/.dev-task.md。
+  --trace                解释命令路由，不输出环境变量或密钥。
+  REDCAP_WORKSPACE       未传 --workspace 时的环境变量兜底。
+  REDCAP_TASK_FILE       未传 --task-file 时的环境变量兜底。
 EOF
 }
 

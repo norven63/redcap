@@ -107,6 +107,10 @@ PY
         bash "$runtime_script" audit-open --task-file "$TASK_FILE" --host "${REDCAP_DIAGNOSE_RESCUE_HOST:-diagnose}" --mode diagnose
 }
 
+echo "RedCap 深入体检：正在检查当前工作区能否安全继续推进"
+echo "- 先展示人类可读的任务状态，再列出内部检查结果。"
+echo "- 如果只需要快速判断能否继续，请运行 redcap doctor。"
+echo
 echo "REDCAP_DIAGNOSE"
 echo "runtime_root=$REDCAP_RUNTIME_ROOT"
 echo "workspace_root=$REDCAP_WORKSPACE_ROOT"
@@ -192,6 +196,7 @@ run_check "user-agent-identity" bash "$SCRIPT_DIR/redcap-user-agent-identity.sh"
 run_source_check "feishu-inbox" bash "$SCRIPT_DIR/redcap-feishu-inbox.sh" check || overall=1
 run_source_check "feishu-notification-policy" bash "$SCRIPT_DIR/redcap-feishu-notification-policy-check.sh" || overall=1
 run_check "human-communication" bash "$SCRIPT_DIR/redcap-human-communication-check.sh" || overall=1
+run_check "human-product-surface" bash "$SCRIPT_DIR/redcap-human-product-surface-check.sh" || overall=1
 run_check "package-publish-safety" bash "$SCRIPT_DIR/redcap-package-publish-safety-check.sh" || overall=1
 run_check "runtime-package-manifest" bash "$SCRIPT_DIR/redcap-runtime-package-manifest.sh" --check || overall=1
 run_check "public-package-surface" bash "$SCRIPT_DIR/redcap-public-package-surface.sh" || overall=1

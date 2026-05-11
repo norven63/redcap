@@ -218,18 +218,20 @@ def build_meter(task_file: Path) -> dict[str, Any]:
     reference_lifecycle = lifecycle_status(ROOT / "references/reference-asset-lifecycle.json")
     legacy_lifecycle = lifecycle_status(ROOT / "references/legacy-asset-lifecycle.json")
 
-    done = first_bullet(section(report_text, "0.1 当前已完成"), "当前任务已建立，等待任务报告或 closeout 更新。")
+    done = first_bullet(section(report_text, "0.1 当前已完成"), "当前任务已建立，等待任务报告或完工凭证更新。")
     next_step = first_bullet(section(report_text, "0.3 下一步计划做的是"), "继续推进当前任务的实现、评审与收口。")
     intervention = first_bullet(section(report_text, "0.5 是否需要 Norven 人工介入"), "不需要")
     roadmap = first_bullet(section(report_text, "0.4 整体计划脉络图与当前位置"), "历史债务坏味 -> 当前专注任务集 -> 长期演进专项")
     if closeout.get("receipt") == "present":
-        next_step = "当前任务 closeout receipt 已生成；可转入后续任务或长期演进专项。"
+        next_step = "当前任务完工凭证已生成；可转入后续任务或长期演进专项。"
         if intervention == "不需要":
             intervention = "不需要，本任务已正式收口。"
 
+    receipt_label = "已生成" if closeout.get("receipt") == "present" else "未生成"
     current_position = (
-        f"{meta.get('active_slice', 'unknown')}；closeout={closeout.get('receipt')}；"
-        f"promise={closeout.get('promise_completed', 0)}/{closeout.get('promise_total', 0)}"
+        f"当前工作切片：{meta.get('active_slice', 'unknown')}；"
+        f"完工凭证：{receipt_label}；"
+        f"承诺完成：{closeout.get('promise_completed', 0)}/{closeout.get('promise_total', 0)}"
     )
     debt_counts = architecture_backlog.get("status_counts", {})
     governance_counts = governance_debt.get("counts", {})
@@ -265,7 +267,7 @@ def build_meter(task_file: Path) -> dict[str, Any]:
         {
             "id": "current_focused_task_set",
             "label": "当前专注任务集",
-            "summary": "当前任务由 .dev-task.md、任务报告、backlog current focus 和 closeout runtime 共同说明。",
+            "summary": "当前任务由任务卡、任务报告、长期任务焦点和完工凭证共同说明。",
             "task": {
                 "task_id": meta.get("task_id", ""),
                 "active_slice": meta.get("active_slice", ""),
@@ -317,8 +319,8 @@ def print_human(payload: dict[str, Any]) -> None:
     print(f"- 下一步计划做的是：{human.get('下一步计划做的是', 'unknown')}")
     print(f"- 需要人工介入：{human.get('需要人工介入', 'unknown')}")
     print("- 三类视图：历史债务坏味 / 当前专注任务集 / 长期演进专项")
-    print("- 真相源规则：只聚合既有账本和 receipt，不新增竞争性任务事实。")
-    print(f"- 棱镜边界：真实任务默认 {payload.get('prism_boundary', {}).get('real_task_default_timeout_seconds', 'unknown')} 秒；availability probe 保持轻量。")
+    print("- 真相源规则：只汇总已有任务记录和完工凭证，不新增竞争性任务事实。")
+    print(f"- 棱镜边界：真实任务默认 {payload.get('prism_boundary', {}).get('real_task_default_timeout_seconds', 'unknown')} 秒；可用性嗅探保持轻量。")
     print("PROGRESS_METER_OK")
 
 

@@ -747,6 +747,16 @@ if ! bash "$HUMAN_COMMUNICATION_CHECK" >/dev/null; then
     exit 1
 fi
 
+HUMAN_PRODUCT_SURFACE_CHECK="$REDCAP_ROOT/compass/tools/redcap-human-product-surface-check.sh"
+if [[ ! -f "$HUMAN_PRODUCT_SURFACE_CHECK" ]]; then
+    echo "[redcap-spec-check] human product surface check missing" >&2
+    exit 1
+fi
+if ! bash "$HUMAN_PRODUCT_SURFACE_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] human product surface check failed" >&2
+    exit 1
+fi
+
 PACKAGE_PUBLISH_SAFETY_CHECK="$REDCAP_ROOT/compass/tools/redcap-package-publish-safety-check.sh"
 if [[ ! -f "$PACKAGE_PUBLISH_SAFETY_CHECK" ]]; then
     echo "[redcap-spec-check] package publish safety check missing" >&2

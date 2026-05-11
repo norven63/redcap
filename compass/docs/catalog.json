@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 346829,
-    "lines": 7036,
-    "chars": 204149,
+    "size_bytes": 347637,
+    "lines": 7062,
+    "chars": 204301,
     "rough_token_pressure": {
-      "low": 51037,
-      "high": 102074
+      "low": 51075,
+      "high": 102150
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 153154,
-        "lines": 2453,
-        "chars": 87676,
+        "size_bytes": 153962,
+        "lines": 2479,
+        "chars": 87828,
         "rough_token_pressure": {
-          "low": 21919,
-          "high": 43838
+          "low": 21957,
+          "high": 43914
         }
       }
     },
@@ -444,24 +444,11 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-09-codex-lifecycle-hooks-candidate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Codex lifecycle hooks candidate 接线",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12562,
-      "lines": 211,
-      "chars": 7880,
-      "summary": "当前已完成：RedCap 已把 Codex 官方 lifecycle hooks 纳入宿主能力画像，完成最小项目级候选接线，并补做本机 Codex CLI live marker E2E。 / 详情：Codex 现在不再被简单写成“只有 AGENTS 入口”；状态升级为“本机 Codex CLI marker 已通过，但 Codex.app interactive 仍未单独证明”。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-09-feishu-human-readable-node-report.md",
       "collection": "task-reports",
       "title": "任务完成报告：飞书节点汇报人类可读化",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8432,
       "lines": 195,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-017 根目录信息架构目标模型",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8328,
       "lines": 132,
       "chars": 4614,
       "summary": "当前已完成：RedCap 已为“根目录直接父级过散、知识/报告/证据/模板语义重叠”这项历史债务产出可审查的根目录信息架构目标模型。 / 关键结论：本轮没有搬目录、删资产或发布 npm；完成的是施工图和硬门禁。后续如果要真实移动目录，必须另开 apply 任务，重新经过别名、回滚、棱镜评审、package safety、clean workspace E2E 和 receipt。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已为“根目录直接父级过散、知识/报告/证据/模板语义重叠”这项历史债务产出可审查的根目录信息架构目标模型。",
-          "关键结论：本轮没有搬目录、删资产或发布 npm；完成的是施工图和硬门禁。后续如果要真实移动目录，必须另开 apply 任务，重新经过别名、回滚、棱镜评审、package safety、clean workspace E2E 和 receipt。"
-        ],
-        "previous_step": [
-          "上一步完成的是：`RASG-018` 全局架构坏味审判，确认 `RASG-017` 是发布准备前仍需处理的结构性历史债务。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续处理剩余开放债务 `RASG-019`、`RASG-020`、`RASG-021`。如果未来要执行真实根目录迁移，需要先把本报告中的目标模型转成单独的 apply tranche。"
-        ],
-        "position": [
-          "整体计划脉络图是：全局坏味审判 -> 根目录目标模型 -> 人类输出去术语化 -> public runtime contract 分层 -> Prism 降级韧性 -> release readiness。",
-          "当前所在位置：`RASG-017` 规划已完成；发布前开放债务从 4 个降为 3 个。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-10-rasg-018-holistic-smell-audit.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：发现账面/物理现实不一致 -> 回顾用户“举一反三”要求 -> 扫描根目录资产分布 -> 棱镜 advisory 评审 -> 登记 RASG-017 -> 后续另开整合实现任务。",
           "当前所在位置：坏味已进入需求树；本轮不是物理整理目录。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-11-rasg-019-human-product-surface.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-019 人类可读产品表面治理",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 13370,
+      "lines": 237,
+      "chars": 8032,
+      "summary": "当前已完成：RedCap 已把 CLI、状态、深入诊断和飞书通知的默认主叙事改为“先讲人话、再给证据”。 / 详情：本轮解决的是一个产品表面问题：用户看到 RedCap 输出时，不应该先被内部术语、门禁名、收尾组件名淹没。现在 `redcap help`、`redcap doctor`、`redcap status` 首屏、`redcap diagnose` 开场和飞书样例都会先解释当前做到了什么、下一步是什么、是否需要人工介入；内部机制仍保留在后续诊断和机器证据里，不牺牲审计严谨性。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把 CLI、状态、深入诊断和飞书通知的默认主叙事改为“先讲人话、再给证据”。",
+          "详情：本轮解决的是一个产品表面问题：用户看到 RedCap 输出时，不应该先被内部术语、门禁名、收尾组件名淹没。现在 `redcap help`、`redcap doctor`、`redcap status` 首屏、`redcap diagnose` 开场和飞书样例都会先解释当前做到了什么、下一步是什么、是否需要人工介入；内部机制仍保留在后续诊断和机器证据里，不牺牲审计严谨性。"
+        ],
+        "previous_step": [
+          "上一步完成的是：已完成 RASG-017 根目录信息架构目标模型，并在该基础上接续到 RASG-019，优先修复人类无法快速读懂 RedCap 当前状态的问题。"
+        ],
+        "next_step": [
+          "下一步计划做的是：执行全量回归和正式 closeout；若通过，本轮后续可继续转入 RASG-020 或 RASG-021。"
+        ],
+        "position": [
+          "整体计划脉络图是：历史债务治理 -> RASG-017 根目录目标模型 -> RASG-019 人类可读产品表面 -> RASG-020 public/internal contract -> RASG-021 Prism 降级韧性 -> 正式发布准备。",
+          "当前所在位置：当前位于 RASG-019 的回归与正式收口阶段；产品表面改造、机器检查器和 resource-limited Prism acceptance 已完成，等待最终回归和 receipt。"
         ]
       }
     }

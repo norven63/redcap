@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 用途：发布安全治理脚本；详细职责见文件查阅字典。
+# 用途：提供 RedCap CLI 的人类可读体检、调试与帮助输出；详细职责见文件查阅字典。
 # Dictionary: references/file-lookup-dictionary.md#package-publish-safety
 
 from __future__ import annotations
@@ -74,6 +74,14 @@ def boundary_mode(runtime_root: Path, workspace_root: Path) -> str:
         return "unknown"
 
 
+def boundary_mode_label(value: str) -> str:
+    return {
+        "self-development": "开发 RedCap 自身",
+        "external-workspace": "外部项目工作区",
+        "unknown": "未知",
+    }.get(value, value)
+
+
 def build_state(args: argparse.Namespace, command: str) -> dict[str, Any]:
     runtime_root = Path(args.runtime_root).resolve()
     workspace_root = Path(args.workspace_root).resolve()
@@ -90,26 +98,26 @@ def build_state(args: argparse.Namespace, command: str) -> dict[str, Any]:
         {
             "id": "runtime-root",
             "status": "pass" if runtime_ok else "fail",
-            "message": "RedCap runtime files are present." if runtime_ok else "RedCap runtime files are missing.",
+            "message": "RedCap 运行时文件已就绪。" if runtime_ok else "RedCap 运行时文件缺失。",
         },
         {
             "id": "workspace-root",
             "status": "pass" if workspace_ok else "fail",
-            "message": "Managed workspace directory is reachable." if workspace_ok else "Managed workspace directory is missing.",
+            "message": "当前工作区可以访问。" if workspace_ok else "当前工作区不存在或无法访问。",
         },
         {
             "id": "task-file",
             "status": "pass" if task_exists else "warning",
             "message": (
-                "Project task card was found."
+                "已找到当前任务卡。"
                 if task_exists
-                else "No project task card was found; this workspace may not be initialized yet."
+                else "没有找到当前任务卡；这个工作区可能还没有完成 RedCap 初始化。"
             ),
         },
         {
             "id": "safe-debug-output",
             "status": "pass",
-            "message": "Debug and trace output use redacted paths and do not include local identity or environment secrets.",
+            "message": "调试和追踪输出会隐藏本机路径、身份信息和环境密钥。",
         },
     ]
     failed = any(item["status"] == "fail" for item in checks)
@@ -134,42 +142,47 @@ def build_state(args: argparse.Namespace, command: str) -> dict[str, Any]:
 def prioritized_findings(state: dict[str, Any]) -> list[str]:
     findings: list[str] = []
     if state["status"] == "healthy":
-        findings.append("[P3] CLI diagnostic surface is healthy for this workspace.")
+        findings.append("[P3] 这个工作区的 RedCap CLI 入口可以正常使用。")
     for check in state["checks"]:
         if check["status"] == "fail":
             findings.append(f"[P1] {check['message']}")
         elif check["status"] == "warning":
             findings.append(f"[P2] {check['message']}")
     if state["boundary_mode"] == "external-workspace":
-        findings.append("[P3] RedCap is running against an external managed workspace, not its own runtime repository.")
+        findings.append("[P3] RedCap 正在管理外部工作区，运行时和项目工作区是分开的。")
     else:
-        findings.append("[P3] RedCap is running in self-development mode; runtime root and workspace root intentionally match.")
+        findings.append("[P3] RedCap 正在开发自己本身，因此运行时和工作区相同，这是预期状态。")
     return findings[:5]
 
 
 def next_step(state: dict[str, Any]) -> str:
     if state["task_file_status"] == "missing":
-        return "Create or point RedCap at a project task card with --task-file, then rerun redcap doctor."
+        return "先创建或指定当前任务卡（--task-file），然后重新运行 redcap doctor。"
     if state["status"] == "healthy":
-        return "Continue with the planned RedCap workflow, or run redcap debug --json if an Agent needs a structured support packet."
-    return "Fix the highest-priority finding above, then rerun redcap doctor."
+        return "可以继续当前 RedCap 工作流；如果需要给 Agent 或人工排查，请运行 redcap debug --json。"
+    return "先处理上面优先级最高的问题，然后重新运行 redcap doctor。"
 
 
 def print_doctor(args: argparse.Namespace) -> int:
     state = build_state(args, "doctor")
-    print(f"RedCap Doctor: {state['status']}")
+    status_label = {
+        "healthy": "可继续",
+        "degraded": "可继续，但有提醒",
+        "unhealthy": "需要先修复",
+    }.get(state["status"], state["status"])
+    print(f"RedCap 体检：{status_label}")
     print()
-    print("What I checked:")
-    print(f"- Runtime: {state['runtime_root']}")
-    print(f"- Workspace: {state['workspace_root']}")
-    print(f"- Task card: {state['task_file_status']} ({state['task_file']})")
-    print(f"- Boundary mode: {state['boundary_mode']}")
+    print("我检查了什么：")
+    print(f"- RedCap 程序位置：{state['runtime_root']}")
+    print(f"- 当前工作区：{state['workspace_root']}")
+    print(f"- 当前任务卡：{state['task_file_status']} ({state['task_file']})")
+    print(f"- 运行方式：{boundary_mode_label(str(state['boundary_mode']))}")
     print()
-    print("Findings:")
+    print("发现：")
     for item in prioritized_findings(state):
         print(f"- {item}")
     print()
-    print("Next step:")
+    print("下一步：")
     print(f"- {next_step(state)}")
     return 0 if state["status"] in {"healthy", "degraded"} else 1
 
@@ -179,19 +192,19 @@ def print_debug(args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True))
     else:
-        print(f"RedCap Debug: {state['status']}")
-        print(f"- Workspace: {state['workspace_root']}")
-        print(f"- Task card: {state['task_file_status']} ({state['task_file']})")
-        print(f"- Task id: {state['task_id'] or '(none)'}")
-        print(f"- Boundary mode: {state['boundary_mode']}")
-        print("- For machine-readable output, rerun with: redcap debug --json")
+        print(f"RedCap 调试包：{state['status']}")
+        print(f"- 当前工作区：{state['workspace_root']}")
+        print(f"- 当前任务卡：{state['task_file_status']} ({state['task_file']})")
+        print(f"- 任务编号：{state['task_id'] or '(none)'}")
+        print(f"- 运行方式：{boundary_mode_label(str(state['boundary_mode']))}")
+        print("- 如需机器可读输出，请重新运行：redcap debug --json")
     return 0
 
 
 def print_trace(args: argparse.Namespace) -> int:
     state = build_state(args, "trace")
     delegated_to = getattr(args, "delegated_to", "") or "(none)"
-    print("RedCap Trace:", file=sys.stderr)
+    print("RedCap 路由追踪：", file=sys.stderr)
     print(f"- command: {args.traced_command}", file=sys.stderr)
     print(f"- runtime_root: {state['runtime_root']}", file=sys.stderr)
     print(f"- workspace_root: {state['workspace_root']}", file=sys.stderr)
@@ -201,49 +214,46 @@ def print_trace(args: argparse.Namespace) -> int:
 
 
 HELP_TOPICS = {
-    "": """usage: redcap [--trace] <command> [args...]
+    "": """用法：redcap [--trace] <命令> [参数...]
 
-Core commands:
-  revive                 Install/revive RedCap for the current host and workspace.
-  status                 Show the current compact RedCap state.
-  diagnose               Run the internal control-plane diagnostic chain.
-  doctor                 Explain CLI health in human-readable product language.
-  debug [--json]         Emit a safe diagnostic packet for support or Agent containers.
-  closeout               Run the task closeout controller for the workspace task file.
-  package-surface        Validate public package identity and surface readiness.
+常用命令：
+  revive                 初始化或复活当前工作区的 RedCap 工作流。
+  status                 查看当前任务的简明状态、全景位置和下一步。
+  diagnose               做一次深入体检；适合发布前、自查或排障。
+  doctor                 做一次短体检；适合人类或 Agent 容器快速判断能否继续。
+  debug [--json]         生成已脱敏的调试包，方便复制给其他 Agent 或 issue。
+  closeout               对当前任务做正式收尾检查。
+  package-surface        检查未来 npm/CLI 包面的安全与准备状态。
 
-Workspace options:
-  --workspace <dir>      Managed project workspace. Defaults to discovered caller workspace.
-  --task-file <file>     Task card. Defaults to <workspace>/.dev-task.md.
-  --trace                Explain command routing without dumping env or secrets.
+工作区参数：
+  --workspace <dir>      被 RedCap 管理的项目工作区，默认自动识别。
+  --task-file <file>     当前任务卡，默认是 <workspace>/.dev-task.md。
+  --trace                解释命令路由，不输出环境变量或密钥。
 
-Run redcap help <command> for command-specific guidance.""",
+运行 redcap help <命令> 查看某个命令的具体用法。""",
     "doctor": """redcap doctor [--workspace <dir>] [--task-file <file>]
 
-Explains whether RedCap can operate on the selected workspace. Use this when a
-human or Agent container needs a short, readable health summary.""",
+用一句话判断 RedCap 现在能不能继续工作，并说明发现、影响和下一步。
+当你只想快速知道“能不能继续”时，优先用这个命令。""",
     "debug": """redcap debug [--json] [--workspace <dir>] [--task-file <file>]
 
-Creates a redacted diagnostic packet. Use --json when the output will be copied
-into an issue, review, or another Agent. The packet excludes identity details,
-environment secrets, and raw local home paths.""",
+生成脱敏后的调试信息。加 --json 后适合复制给其他 Agent、issue 或审查流程。
+输出会排除 identity、环境密钥和原始本机路径。""",
     "status": """redcap status [--workspace <dir>] [--task-file <file>]
 
-Shows the compact current status for the selected project task card. This is the
-best first read after revive, before deciding the next workflow step.""",
+查看当前任务状态：已经完成什么、下一步是什么、整体任务全景在哪里。
+这是 revive 之后最适合作为第一眼状态面的命令。""",
     "diagnose": """redcap diagnose [--workspace <dir>] [--task-file <file>]
 
-Runs RedCap's internal control-plane checks. This is deeper and noisier than
-doctor, so prefer doctor for humans and diagnose for release/control gates.""",
+做深入体检：先给人类可读摘要，再列出内部检查结果。
+如果只是给人快速判断，请优先用 redcap doctor。""",
     "package-surface": """redcap package-surface
 
-Validates the prepared public package identity and package surface. This command
-must keep private=true, publish_allowed=false, and license selection manual until
-a separate release task explicitly authorizes publication.""",
+检查未来公开包的名称、包面和安全边界。在正式发布任务开始前，它必须保持
+private=true、publish_allowed=false，许可证也必须继续由人工明确决定。""",
     "closeout": """redcap closeout <subcommand> [--workspace <dir>] [--task-file <file>]
 
-Delegates to the closeout controller after resolving the managed workspace task
-file. Use closeout status to inspect receipt readiness.""",
+对当前任务执行正式收尾流程。可用 redcap closeout status 查看是否具备完工凭证。""",
 }
 
 

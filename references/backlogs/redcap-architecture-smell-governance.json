@@ -602,10 +602,16 @@
         "Feishu and CLI summaries include a broad task panorama when the task is part of a larger parent line.",
         "Mechanism names are either avoided in the main narrative or accompanied by a concise human explanation."
       ],
-      "status": "planned",
+      "status": "done",
+      "completed_at": "2026-05-11",
       "introduced_at": "2026-05-10",
       "evidence": [
-        "references/redcap-holistic-smell-audit.json"
+        "references/redcap-holistic-smell-audit.json",
+        "references/human-product-surface-policy.json",
+        "compass/tools/redcap-human-product-surface-check.py",
+        "compass/docs/task-reports/2026-05-11-rasg-019-human-product-surface.md",
+        "prism/reports/2026-05-11-rasg-019-human-product-surface.md",
+        "prism/runs/20260511-rasg019-human-product-surface/artifacts/acceptance-binding.json"
       ]
     },
     {

@@ -92,9 +92,9 @@ def inspect_cli() -> None:
         "help|-h|--help)",
         "--trace",
         "redcap_error()",
-        "cause:",
-        "impact:",
-        "suggested_action:",
+        "原因(cause):",
+        "影响(impact):",
+        "建议动作(suggested_action):",
         "redcap-cli-product-surface.sh",
     ]:
         if needle not in text:
@@ -184,9 +184,9 @@ task_report: compass/docs/task-reports/fixture.md
         doctor = run([str(CLI), "doctor"], cwd=workspace)
         if doctor.returncode != 0:
             fail("doctor external workspace smoke failed:\n" + doctor.stdout[:2000])
-        assert_contains(doctor.stdout, "RedCap Doctor: healthy", "doctor output")
-        assert_contains(doctor.stdout, "Boundary mode: external-workspace", "doctor output")
-        assert_contains(doctor.stdout, "Next step:", "doctor output")
+        assert_contains(doctor.stdout, "RedCap 体检：可继续", "doctor output")
+        assert_contains(doctor.stdout, "运行方式：外部项目工作区", "doctor output")
+        assert_contains(doctor.stdout, "下一步：", "doctor output")
         assert_not_contains(doctor.stdout, "[ok]", "doctor output")
         assert_not_contains(doctor.stdout, "[fail]", "doctor output")
 
@@ -200,7 +200,7 @@ task_report: compass/docs/task-reports/fixture.md
         trace = run([str(CLI), "--trace", "doctor"], cwd=workspace)
         if trace.returncode != 0:
             fail("trace doctor external workspace smoke failed:\n" + trace.stdout[:2000])
-        assert_contains(trace.stdout, "RedCap Trace:", "trace output")
+        assert_contains(trace.stdout, "RedCap 路由追踪", "trace output")
         assert_contains(trace.stdout, "command: doctor", "trace output")
         forbidden_output_checks(trace.stdout, "trace output", workspace, task_file)
         assert_not_contains(trace.stdout, "PATH=", "trace output")
@@ -215,15 +215,15 @@ task_report: compass/docs/task-reports/fixture.md
         typo = run([str(CLI), "docter"], cwd=workspace)
         if typo.returncode != 2:
             fail(f"unknown command should exit 2, got {typo.returncode}:\n{typo.stdout[:2000]}")
-        for needle in ["cause:", "impact:", "suggested_action:", "redcap doctor"]:
+        for needle in ["原因(cause):", "影响(impact):", "建议动作(suggested_action):", "redcap doctor"]:
             assert_contains(typo.stdout, needle, "unknown command output")
 
         missing_workspace = Path(tempfile.mkdtemp(prefix="redcap-cli-product-missing-")).resolve()
         missing = run([str(CLI), "doctor"], cwd=missing_workspace)
         if missing.returncode != 0:
             fail("doctor missing task file should degrade without failing:\n" + missing.stdout[:2000])
-        assert_contains(missing.stdout, "RedCap Doctor: degraded", "missing task doctor")
-        assert_contains(missing.stdout, "No project task card was found", "missing task doctor")
+        assert_contains(missing.stdout, "RedCap 体检：可继续，但有提醒", "missing task doctor")
+        assert_contains(missing.stdout, "没有找到当前任务卡", "missing task doctor")
 
         missing_debug = run([str(CLI), "debug", "--json"], cwd=missing_workspace)
         if missing_debug.returncode != 0:
@@ -244,7 +244,7 @@ task_report: compass/docs/task-reports/fixture.md
         no_args = run([str(CLI)], cwd=workspace)
         if no_args.returncode != 2:
             fail(f"no-args usage should exit 2, got {no_args.returncode}:\n{no_args.stdout[:2000]}")
-        for needle in ["doctor", "debug", "cause:", "impact:", "suggested_action:"]:
+        for needle in ["doctor", "debug", "原因(cause):", "影响(impact):", "建议动作(suggested_action):"]:
             assert_contains(no_args.stdout, needle, "no-args output")
 
 
@@ -252,7 +252,7 @@ def run_self_development_smoke() -> None:
     doctor = run([str(CLI), "doctor", "--workspace", str(ROOT)], cwd=ROOT)
     if doctor.returncode != 0:
         fail("doctor self-development smoke failed:\n" + doctor.stdout[:2000])
-    assert_contains(doctor.stdout, "Boundary mode: self-development", "doctor self-development")
+    assert_contains(doctor.stdout, "运行方式：开发 RedCap 自身", "doctor self-development")
 
     debug = run([str(CLI), "debug", "--json", "--workspace", str(ROOT)], cwd=ROOT)
     if debug.returncode != 0:

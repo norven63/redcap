@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 78,
-  "bytes_total": 1103004,
+  "file_count": 79,
+  "bytes_total": 1115713,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 74,
+    "private-task-report-archive": 75,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -581,6 +581,14 @@
       "class": "private-task-report-archive",
       "bytes": 9232,
       "sha256": "2320fce91839e3704709e8a0ae2eca8aad8eb69cab372bc1ec35741a3dabca9c",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-09-codex-lifecycle-hooks-candidate.md",
+      "class": "private-task-report-archive",
+      "bytes": 12709,
+      "sha256": "872187989d201ab33e62e484b264b7a46ee6717225ff3295ab91ccc526ec9aca",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

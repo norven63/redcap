@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "policy_id": "redcap-human-product-surface",
+  "status": "active-before-public-release",
+  "purpose": "Keep RedCap's primary human-facing output understandable before internal governance evidence appears.",
+  "primary_human_surfaces": [
+    "bin/redcap help",
+    "bin/redcap doctor",
+    "bin/redcap status first-screen",
+    "bin/redcap diagnose introduction",
+    "Feishu node-report"
+  ],
+  "required_primary_story_fields": [
+    "what_is_done",
+    "what_changed",
+    "why_it_matters",
+    "current_panorama",
+    "next_step",
+    "human_intervention"
+  ],
+  "main_narrative_rule": "The primary human surface must explain the user-visible problem, action, result, current task panorama, next step, and whether human help is needed before naming internal control-plane mechanisms.",
+  "secondary_evidence_rule": "Internal mechanism names may appear in diagnostic sections, machine-readable JSON, receipts, logs, glossary entries, or evidence links after the human summary. If they appear in the main narrative, they must be paired with a short plain-language explanation.",
+  "internal_terms": [
+    {
+      "term": "Layer B",
+      "plain_language": "RedCap 自身任务流"
+    },
+    {
+      "term": "FSM",
+      "plain_language": "任务流状态图"
+    },
+    {
+      "term": "Prism quorum",
+      "plain_language": "棱镜多方评审结果"
+    },
+    {
+      "term": "closeout runtime",
+      "plain_language": "正式收尾程序"
+    },
+    {
+      "term": "closeout receipt",
+      "plain_language": "完工凭证"
+    },
+    {
+      "term": "pending closure",
+      "plain_language": "未清收尾项"
+    },
+    {
+      "term": "active_slice",
+      "plain_language": "当前工作切片"
+    },
+    {
+      "term": "confirmed_hash",
+      "plain_language": "需求指纹"
+    },
+    {
+      "term": "validator-chain",
+      "plain_language": "自动检查链"
+    },
+    {
+      "term": "required_redlines",
+      "plain_language": "必须满足的收尾红线"
+    },
+    {
+      "term": "spec-check",
+      "plain_language": "规范检查"
+    }
+  ],
+  "primary_surface_forbidden_terms": [
+    "Layer B",
+    "FSM",
+    "Prism quorum",
+    "closeout runtime",
+    "closeout receipt",
+    "pending closure",
+    "active_slice",
+    "confirmed_hash",
+    "validator-chain",
+    "required_redlines",
+    "spec-check",
+    "Boundary mode:",
+    "What I checked:",
+    "Findings:",
+    "Next step:"
+  ],
+  "required_cli_phrases": {
+    "help": [
+      "常用命令",
+      "查看当前任务",
+      "短体检",
+      "工作区参数"
+    ],
+    "doctor": [
+      "RedCap 体检",
+      "我检查了什么",
+      "发现",
+      "下一步"
+    ],
+    "diagnose_intro": [
+      "RedCap 深入体检",
+      "先展示人类可读的任务状态",
+      "如果只需要快速判断能否继续"
+    ],
+    "status_first_screen": [
+      "当前已完成",
+      "上一步完成的是",
+      "下一步计划做的是",
+      "整体计划脉络图与当前位置"
+    ],
+    "feishu": [
+      "这次完成了什么",
+      "带来的效果",
+      "整体任务全景图",
+      "接下来做什么",
+      "需要你做什么"
+    ]
+  },
+  "new_surface_update_rule": "When adding a new human-facing CLI command, status section, notification type, or report summary surface, update this policy and redcap-human-product-surface-check so the new surface has a real sample test.",
+  "checker": "compass/tools/redcap-human-product-surface-check.sh"
+}
