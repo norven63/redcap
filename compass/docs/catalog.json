@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 348021,
-    "lines": 7067,
-    "chars": 204583,
+    "size_bytes": 348563,
+    "lines": 7079,
+    "chars": 205935,
     "rough_token_pressure": {
-      "low": 51145,
-      "high": 102291
+      "low": 51483,
+      "high": 102967
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 154346,
-        "lines": 2484,
-        "chars": 88110,
+        "size_bytes": 154888,
+        "lines": 2496,
+        "chars": 89462,
         "rough_token_pressure": {
-          "low": 22027,
-          "high": 44055
+          "low": 22365,
+          "high": 44731
         }
       }
     },
@@ -483,19 +483,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-10-change-intent-continuity-gate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：Layer B 中插/续接任务意图确认硬门",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12241,
-      "lines": 219,
-      "chars": 6699,
-      "summary": "当前已完成：RedCap 已补上“继续/接下来/按计划推进”类任务的续接确认硬门，防止任务再次被错误接到上一条旧任务线上。 / 详情：这次问题的根源不是代码实现难，而是任务锚点没有被机器强制确认。现在只要任务原文带有续接意味，就必须写清续接哪条线、本轮只做什么、不做什么、是否替换旧任务线，以及对 Norven 应该怎么说明边界。这样后续再说“继续推进”，RedCap 不能跳过确认直接把任务塞进旧 closeout 或内部发现的支线里。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-10-progress-meter-implementation.md",
       "collection": "task-reports",
       "title": "任务完成报告：RedCap 前进刻度表与棱镜使用边界落地",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-018 全局架构坏味审判",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9775,
       "lines": 171,
       "chars": 5115,
       "summary": "当前已完成：RedCap 已完成一次“资深 AI Agent 工程视角”的全局坏味审判，不再只围绕目录结构这个单点问题打补丁。 / 关键结论：这次审判没有发现新的 P0 停止项，但发现 3 个发布前应处理的 P1 债务，并已经写入需求树：`RASG-019`、`RASG-020`、`RASG-021`。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已完成一次“资深 AI Agent 工程视角”的全局坏味审判，不再只围绕目录结构这个单点问题打补丁。",
-          "关键结论：这次审判没有发现新的 P0 停止项，但发现 3 个发布前应处理的 P1 债务，并已经写入需求树：`RASG-019`、`RASG-020`、`RASG-021`。"
-        ],
-        "previous_step": [
-          "上一步完成的是：`RASG-017` 已把“根目录信息架构过散”登记为历史债务。"
-        ],
-        "next_step": [
-          "下一步计划做的是：按新的开放债务顺序继续推进 `RASG-017`、`RASG-019`、`RASG-020`、`RASG-021`。"
-        ],
-        "position": [
-          "整体计划脉络图是：先完成全局坏味审判 -> 把发现写入需求树 -> 再逐项修复发布前债务 -> 最后才进入正式发布准备。",
-          "当前所在位置：全局审判完成；还没有开始物理迁移目录、清理 package surface 或发布 npm。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-10-root-information-architecture-debt-intake.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：历史债务治理 -> RASG-017 根目录目标模型 -> RASG-019 人类可读产品表面 -> RASG-020 public/internal contract -> RASG-021 Prism 降级韧性 -> 正式发布准备。",
           "当前所在位置：当前位于 RASG-019 的回归与正式收口阶段；产品表面改造、机器检查器和 resource-limited Prism acceptance 已完成，等待最终回归和 receipt。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-11-rasg-020-runtime-contract-surface.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-020 公开 runtime 契约与维护者工具分层",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12783,
+      "lines": 231,
+      "chars": 8051,
+      "summary": "当前已完成：RedCap 已把未来普通用户可依赖的 CLI/runtime 命令，和维护者才该使用的发布准备、源码治理命令分开，并通过机器检查和棱镜评审。 / 详情：本轮解决的是发布前产品边界问题。以后即便 npm 候选包里为了 readiness 暂时保留维护者检查器，它们也不会被 README、help、runtime import map 或 package policy 误写成普通用户稳定 API。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把未来普通用户可依赖的 CLI/runtime 命令，和维护者才该使用的发布准备、源码治理命令分开，并通过机器检查和棱镜评审。",
+          "详情：本轮解决的是发布前产品边界问题。以后即便 npm 候选包里为了 readiness 暂时保留维护者检查器，它们也不会被 README、help、runtime import map 或 package policy 误写成普通用户稳定 API。"
+        ],
+        "previous_step": [
+          "上一步完成的是：RASG-019 已把 CLI、状态、诊断和飞书通知的人类首屏改成“先讲人话、再给证据”。"
+        ],
+        "next_step": [
+          "下一步计划做的是：完成 closeout receipt 和提交，然后转入 RASG-021。"
+        ],
+        "position": [
+          "整体计划脉络图是：历史债务治理 -> RASG-017 根目录目标模型 -> RASG-019 人类可读产品表面 -> RASG-020 公开/维护者契约分层 -> RASG-021 Prism 降级韧性 -> 正式发布准备。",
+          "当前所在位置：当前位于 RASG-020 的最终收口阶段；实现、本地回归和棱镜评审均已完成。"
         ]
       }
     }

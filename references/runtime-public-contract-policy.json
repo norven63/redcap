@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "policy_id": "redcap-runtime-public-contract",
+  "status": "alpha-readiness-split-contract",
+  "purpose": "Separate the commands and files future users can treat as RedCap's public runtime contract from maintainer-only governance, release-readiness, and source-repository support tools.",
+  "public_contract_summary": "The end-user runtime contract is the small CLI surface needed to revive a workspace, inspect status, run safe diagnostics, collect debug context, and close out a task.",
+  "alpha_readiness_boundary": "The package candidate may still include maintainer/readiness validators while RedCap remains private=true and publish_allowed=false. Those files are packaged only to support source-repo readiness checks and must not be presented as stable end-user API.",
+  "contract_boundary_policy": {
+    "public_api_must_not_depend_on": [
+      "compass/tools/* checker names as user-facing API",
+      "Prism raw evidence directories",
+      "Norven-local identity, reports, prompt scratch files, or credentials",
+      "full source-governance validators as normal end-user workflow"
+    ],
+    "release_task_must_redecide": [
+      "whether maintainer/readiness tools remain in the public npm tarball",
+      "whether a separate maintainer profile or package is needed",
+      "license, registry credentials, publish_allowed=true, and npm publish"
+    ]
+  },
+  "command_groups": [
+    {
+      "id": "end_user_runtime",
+      "heading": "普通使用命令",
+      "description": "未来普通用户可以依赖的 RedCap 日常入口。",
+      "commands": [
+        "revive",
+        "status",
+        "doctor",
+        "diagnose",
+        "debug",
+        "closeout",
+        "prism-availability",
+        "help",
+        "version"
+      ],
+      "public_api": true
+    },
+    {
+      "id": "maintainer_release_readiness",
+      "heading": "维护/发布准备命令",
+      "description": "维护者在准备 npm/CLI 发布或排查包面时使用；不是普通用户日常 workflow。",
+      "commands": [
+        "publish-safety",
+        "package-manifest",
+        "package-surface",
+        "pre-release-review"
+      ],
+      "public_api": false
+    },
+    {
+      "id": "maintainer_source_governance",
+      "heading": "源码仓库治理命令",
+      "description": "RedCap 自维护、知识库和任务控制面使用；可以保留入口，但不得被 README 写成普通用户必须理解的步骤。",
+      "commands": [
+        "file-dictionary",
+        "shared-knowledge",
+        "change-intake"
+      ],
+      "public_api": false
+    }
+  ],
+  "package_candidate_classes": [
+    {
+      "id": "package-metadata",
+      "description": "npm metadata and package controls.",
+      "public_api": false,
+      "patterns": [
+        "package.json"
+      ]
+    },
+    {
+      "id": "public-cli-runtime-contract",
+      "description": "Thin CLI facade, root compatibility facades, and package-visible runtime wrappers.",
+      "public_api": true,
+      "patterns": [
+        "bin/redcap",
+        "revive-cap.sh",
+        "closeout-cap.sh",
+        "runtime/redcap-core/**"
+      ]
+    },
+    {
+      "id": "host-adapter-contract",
+      "description": "Package-visible host adapter documentation and compatibility layer.",
+      "public_api": true,
+      "patterns": [
+        "runtime/host-adapters/**"
+      ]
+    },
+    {
+      "id": "public-documentation",
+      "description": "Human-readable product, architecture, handoff, dictionary, and public template documentation.",
+      "public_api": false,
+      "patterns": [
+        "README.md",
+        "ARCHITECTURE.md",
+        "references/file-lookup-dictionary.md",
+        "references/public-release-handoff.md",
+        "references/redcap-system-layers.md",
+        "shared-knowledge/README.md",
+        "shared-knowledge/schemas/*.json"
+      ]
+    },
+    {
+      "id": "runtime-support-not-public-api",
+      "description": "Scripts needed by revive/status/diagnose/closeout and alpha readiness checks. They may be packaged for operation but are not stable direct user API.",
+      "public_api": false,
+      "patterns": [
+        "compass/tools/redcap-*.sh",
+        "compass/tools/redcap-*.py"
+      ]
+    },
+    {
+      "id": "prism-support-not-public-api",
+      "description": "Prism availability, dispatch, evidence and lifecycle helpers packaged as support tooling, not as the core end-user runtime API.",
+      "public_api": false,
+      "patterns": [
+        "prism/tools/*.sh",
+        "prism/tools/*.py",
+        "prism/README.md"
+      ]
+    },
+    {
+      "id": "contract-policy-metadata",
+      "description": "Machine-readable policies that explain and validate the package/readiness boundary.",
+      "public_api": false,
+      "patterns": [
+        "references/*.json"
+      ]
+    }
+  ],
+  "forbidden_candidate_globs": [
+    ".env",
+    ".env.*",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    ".github/copilot-instructions.md",
+    "cli_console.md",
+    "prompt.txt",
+    "compass/.workflow/**",
+    "compass/.runtime/**",
+    "prism/runs/**",
+    "redcap-knowledge/**"
+  ],
+  "required_policy_links": [
+    "references/runtime-package-readiness-policy.json",
+    "references/public-package-surface-policy.json",
+    "references/package-publish-safety-policy.json",
+    "runtime/redcap-core/import-map.json",
+    "README.md",
+    "references/public-release-handoff.md",
+    "bin/redcap"
+  ],
+  "must_not_claim": [
+    "RASG-020 does not authorize npm publish.",
+    "RASG-020 does not choose a public license.",
+    "RASG-020 does not finish RASG-021 Prism degradation metrics.",
+    "A packaged maintainer/readiness helper is not automatically a stable public API."
+  ]
+}

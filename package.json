@@ -45,6 +45,7 @@
     "!compass/tools/redcap-reviewer-order.py",
     "!compass/tools/redcap-review-proof-check.sh",
     "!compass/tools/redcap-review-tracks-check.sh",
+    "!compass/tools/redcap-runtime-contract-surface-check.*",
     "!compass/tools/redcap-runtime-helper-check.sh",
     "!compass/tools/redcap-session-*.sh",
     "!compass/tools/redcap-state-machine-check.sh",

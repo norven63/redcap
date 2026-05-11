@@ -9,9 +9,11 @@
   "public_identity_status": "prepared-private-readiness",
   "license_status": "manual-before-public-publish",
   "surface_mode": "curated-runtime-readiness-surface",
+  "contract_profile": "alpha-readiness-split-contract",
+  "contract_boundary_policy": "references/runtime-public-contract-policy.json",
   "candidate_count_target": {
-    "max_before_release_task": 180,
-    "reason": "Public npm candidates should contain the runnable CLI/runtime contract and release safety checks. The alpha readiness surface may temporarily include repo-governance checks required by diagnose/spec-check; the separate formal release task must decide whether to trim these into a smaller runtime profile or split a maintainer profile."
+    "max_before_release_task": 190,
+    "reason": "Public npm candidates should contain the runnable CLI/runtime contract plus clearly labelled maintainer/readiness support and the contract-boundary policy itself. The alpha readiness surface may temporarily include repo-governance checks required by diagnose/spec-check, but these are not stable end-user API; the separate formal release task must decide whether to trim them into a smaller runtime profile or split a maintainer profile."
   },
   "bin": {
     "redcap": "bin/redcap"
@@ -66,6 +68,7 @@
     "compass/tools/redcap-reviewer-order.py",
     "compass/tools/redcap-review-proof-check.sh",
     "compass/tools/redcap-review-tracks-check.sh",
+    "compass/tools/redcap-runtime-contract-surface-check.*",
     "compass/tools/redcap-runtime-helper-check.sh",
     "compass/tools/redcap-session-*.sh",
     "compass/tools/redcap-state-machine-check.sh",
@@ -111,6 +114,7 @@
     "runtime/redcap-core/closeout-cap.sh",
     "runtime/host-adapters/codex/README.md",
     "runtime/redcap-core/import-map.json",
+    "references/runtime-public-contract-policy.json",
     "references/package-publish-safety-policy.json",
     "references/runtime-package-readiness-policy.json",
     "references/public-package-surface-policy.json",

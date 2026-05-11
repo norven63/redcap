@@ -632,10 +632,18 @@
         "npm pack dry-run remains safe and does not include private files, secrets, volatile evidence, or Norven-local state.",
         "Public package documentation does not present maintainer-only validators as normal end-user workflow."
       ],
-      "status": "planned",
+      "status": "done",
+      "completed_at": "2026-05-11",
       "introduced_at": "2026-05-10",
       "evidence": [
-        "references/redcap-holistic-smell-audit.json"
+        "references/redcap-holistic-smell-audit.json",
+        "references/runtime-public-contract-policy.json",
+        "compass/tools/redcap-runtime-contract-surface-check.sh",
+        "runtime/redcap-core/import-map.json",
+        "references/public-release-handoff.md",
+        "prism/reports/2026-05-11-rasg-020-runtime-contract-surface.md",
+        "prism/runs/20260511-rasg020-runtime-contract-surface/artifacts/acceptance-binding.json",
+        "compass/docs/task-reports/2026-05-11-rasg-020-runtime-contract-surface.md"
       ]
     },
     {
@@ -669,10 +677,10 @@
     "Do not claim RASG-001..016 solved root-level physical product-shape consolidation; they solved indexing, lifecycle, retrieval, package safety, and specific root-local policies.",
     "Do not claim RASG-017 is complete until a separate receipt proves the root inventory, target model, consumer matrix, and migration/alias plan are done.",
     "Do not claim the user's '举一反三' request has been satisfied by registering only RASG-017; RASG-018 must complete a separate senior holistic audit.",
-    "Do not claim RASG-018 fixes the P1 issues it discovered; RASG-019, RASG-020, and RASG-021 remain separate planned follow-up work.",
+    "Do not claim RASG-018 fixes the P1 issues it discovered; RASG-019, RASG-020, and RASG-021 remain separate follow-up work with independent receipts.",
     "Do not treat future full LLM-wiki/RAG/GraphRAG as enabled by this backlog.",
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "After RASG-018, close the remaining planned pre-release architecture debt deliberately: RASG-017 root information architecture, RASG-019 human-facing output clarity, RASG-020 public package surface boundary, and RASG-021 Prism degradation resilience. Formal npm/public release remains a separate future task after these are handled or explicitly deferred."
+  "recommended_next_step": "After RASG-020, close the final planned pre-release architecture debt deliberately: RASG-021 Prism degradation resilience. Formal npm/public release remains a separate future task after RASG-021 is handled or explicitly deferred."
 }

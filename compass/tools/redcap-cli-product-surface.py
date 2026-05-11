@@ -216,14 +216,27 @@ def print_trace(args: argparse.Namespace) -> int:
 HELP_TOPICS = {
     "": """用法：redcap [--trace] <命令> [参数...]
 
-常用命令：
+普通使用命令：
   revive                 初始化或复活当前工作区的 RedCap 工作流。
   status                 查看当前任务的简明状态、全景位置和下一步。
   diagnose               做一次深入体检；适合发布前、自查或排障。
   doctor                 做一次短体检；适合人类或 Agent 容器快速判断能否继续。
   debug [--json]         生成已脱敏的调试包，方便复制给其他 Agent 或 issue。
   closeout               对当前任务做正式收尾检查。
+  prism-availability     查看或刷新棱镜 Agent 可用性。
+  version                打印 RedCap 包版本。
+  help                   查看命令帮助。
+
+维护/发布准备命令（不是普通用户日常流程）：
+  publish-safety         公开发布前做包面安全审计。
+  package-manifest       生成或检查 runtime 包候选文件。
   package-surface        检查未来 npm/CLI 包面的安全与准备状态。
+  pre-release-review     检查正式发布前的产品架构阻塞项。
+
+源码仓库治理命令：
+  file-dictionary        检查文件查阅字典是否覆盖关键入口。
+  shared-knowledge       管理公共知识库模板。
+  change-intake          检查中途插入需求是否被正确合并和重排。
 
 工作区参数：
   --workspace <dir>      被 RedCap 管理的项目工作区，默认自动识别。

@@ -77,6 +77,10 @@ def validate_policy(payload: dict[str, Any]) -> tuple[list[str], list[str], list
         fail("only npm package readiness is supported in this tranche")
     require_text(payload, "package_name")
     require_text(payload, "package_version")
+    if require_text(payload, "contract_profile") != "alpha-readiness-split-contract":
+        fail("contract_profile must be alpha-readiness-split-contract")
+    if require_text(payload, "contract_boundary_policy") != "references/runtime-public-contract-policy.json":
+        fail("contract_boundary_policy must point to references/runtime-public-contract-policy.json")
     bin_map = payload.get("bin")
     if not isinstance(bin_map, dict) or bin_map.get("redcap") != "bin/redcap":
         fail("bin.redcap must point to bin/redcap")
@@ -156,6 +160,10 @@ def validate_publish_safety_policy(root: Path, policy: dict[str, Any]) -> None:
         fail("publish safety default_package_globs must mirror runtime candidate_globs")
     if safety_policy.get("default_exclude_globs") != require_text_list(policy, "exclude_globs"):
         fail("publish safety default_exclude_globs must mirror runtime exclude_globs")
+    if safety_policy.get("contract_profile") != policy.get("contract_profile"):
+        fail("publish safety contract_profile must mirror runtime package policy")
+    if safety_policy.get("contract_boundary_policy") != policy.get("contract_boundary_policy"):
+        fail("publish safety contract_boundary_policy must mirror runtime package policy")
 
 
 def validate_npmignore(root: Path) -> None:

@@ -1359,6 +1359,33 @@
       "runtime_limitation": "This gate does not choose a distribution license, does not make the package public, and does not publish to npm; those remain explicit release-task decisions."
     },
     {
+      "id": "runtime-public-contract-boundary-gate",
+      "category": "runtime-package",
+      "priority": "P0",
+      "rule": "Before RedCap may claim npm/CLI release readiness, the public end-user runtime contract must be separated from maintainer-only release-readiness and source-governance tooling. Packaged maintainer helpers must be labelled as alpha/readiness support, not stable user API.",
+      "source_paths": [
+        "references/runtime-public-contract-policy.json",
+        "runtime/redcap-core/import-map.json",
+        "bin/redcap",
+        "README.md",
+        "references/public-release-handoff.md",
+        "compass/tools/redcap-runtime-contract-surface-check.sh",
+        "compass/tools/redcap-runtime-contract-surface-check.py"
+      ],
+      "status": "validator",
+      "automation": "redcap-runtime-contract-surface-check.sh classifies the generated package candidate list, verifies command groups in CLI help, validates import-map separation, and ensures package/readiness policies link the same contract boundary; spec-check and diagnose consume it.",
+      "guarantee_paths": [
+        "compass/tools/redcap-runtime-contract-surface-check.sh",
+        "compass/tools/redcap-runtime-contract-surface-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true,
+      "runtime_limitation": "This gate does not publish RedCap and does not remove maintainer tools from the source tree; it only prevents public/maintainer contract ambiguity before the formal release task."
+    },
+    {
       "id": "pre-release-product-architecture-gate",
       "category": "pre-release-product-architecture",
       "priority": "P0",

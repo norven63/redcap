@@ -200,6 +200,7 @@ run_check "human-product-surface" bash "$SCRIPT_DIR/redcap-human-product-surface
 run_check "package-publish-safety" bash "$SCRIPT_DIR/redcap-package-publish-safety-check.sh" || overall=1
 run_check "runtime-package-manifest" bash "$SCRIPT_DIR/redcap-runtime-package-manifest.sh" --check || overall=1
 run_check "public-package-surface" bash "$SCRIPT_DIR/redcap-public-package-surface.sh" || overall=1
+run_source_check "runtime-contract-surface" bash "$SCRIPT_DIR/redcap-runtime-contract-surface-check.sh" || overall=1
 run_check "release-e2e-matrix" bash "$SCRIPT_DIR/redcap-release-e2e-matrix-check.sh" || overall=1
 run_check "pre-release-product-architecture" bash "$SCRIPT_DIR/redcap-pre-release-product-architecture-check.sh" || overall=1
 run_check "pre-release-structure-task-tree" bash "$SCRIPT_DIR/redcap-pre-release-structure-task-tree-check.sh" || overall=1

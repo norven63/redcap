@@ -10,8 +10,8 @@ RedCap 不是“再包一层提示词”。
 本轮已经补了一个低风险薄 CLI facade：`bin/redcap`，先把现有 root/tool 入口统一成 CLI 形态，底层逻辑仍保持原位，避免破坏宿主适配。
 当前 package 化进入 readiness 阶段：`package.json` 保持 `private: true` 防误发，`bin/redcap package-manifest --check` 会生成候选清单并跑发布安全 gate；真实 npm/Gitee/GitHub 发布仍需要单独 release 决策。
 正式 public release 之前还必须先过产品架构审判：`bin/redcap pre-release-review` 会检查 RedCap 是否已经足够安全、独立、可调试、可被新用户理解；它和 `npm pack` 不同，后者只回答“能不能打包”，前者回答“值不值得作为优秀 CLI/runtime 产品发布”。
-当前 npm 候选包面已经收窄为 150 个文件以内的 curated runtime-readiness surface：保留运行、复活、诊断、收尾、Prism 可用性、发布安全预检和交接文档，排除历史迁移、E2E 夹具、完整 LLM-wiki/RAG 研究工具和 RedCap 自维护手术工具。正式发布任务前的人类交接清单见 [`references/public-release-handoff.md`](./references/public-release-handoff.md)。
-这里的“诊断”分两层：CLI 用户默认看到 runtime profile，聚焦运行时和发布安全；源码仓库维护者仍可显式跑 source profile，覆盖完整治理链与历史维护检查。
+当前 npm 候选包面是约 180 个文件的 alpha readiness surface：保留运行、复活、诊断、收尾、Prism 可用性、发布安全预检、交接文档和契约边界说明，排除历史迁移、E2E 夹具、完整 LLM-wiki/RAG 研究工具和 RedCap 自维护手术工具。正式发布任务前的人类交接清单见 [`references/public-release-handoff.md`](./references/public-release-handoff.md)。
+这里的命令分两层：普通用户依赖 `revive/status/doctor/diagnose/debug/closeout` 这类 runtime 入口；`package-manifest/publish-safety/package-surface/pre-release-review` 是维护/发布准备命令，不是普通用户日常流程。这里的“诊断”也分两层：CLI 用户默认看到 runtime profile，聚焦运行时和发布安全；源码仓库维护者仍可显式跑 source profile，覆盖完整治理链与历史维护检查。
 
 ## 一眼看懂
 

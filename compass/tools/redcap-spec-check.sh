@@ -787,6 +787,16 @@ if ! bash "$PUBLIC_PACKAGE_SURFACE_CHECK" >/dev/null; then
     exit 1
 fi
 
+RUNTIME_CONTRACT_SURFACE_CHECK="$REDCAP_ROOT/compass/tools/redcap-runtime-contract-surface-check.sh"
+if [[ ! -f "$RUNTIME_CONTRACT_SURFACE_CHECK" ]]; then
+    echo "[redcap-spec-check] runtime contract surface check missing" >&2
+    exit 1
+fi
+if ! bash "$RUNTIME_CONTRACT_SURFACE_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] runtime contract surface check failed" >&2
+    exit 1
+fi
+
 RELEASE_E2E_MATRIX_CHECK="$REDCAP_ROOT/compass/tools/redcap-release-e2e-matrix-check.sh"
 if [[ ! -f "$RELEASE_E2E_MATRIX_CHECK" ]]; then
     echo "[redcap-spec-check] release E2E matrix check missing" >&2

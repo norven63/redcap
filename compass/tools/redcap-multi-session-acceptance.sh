@@ -13803,7 +13803,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication package-publish-safety runtime-package public-package-surface release-e2e-matrix pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -13880,6 +13880,15 @@ EOF
 #!/usr/bin/env bash
 if [[ "$failing_gate" == "architecture-smell" ]]; then
     echo "fixture architecture smell governance failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-progress-meter-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "progress-meter" ]]; then
+    echo "fixture progress meter failure" >&2
     exit 37
 fi
 exit 0
@@ -13979,6 +13988,15 @@ EOF
 #!/usr/bin/env bash
 if [[ "$failing_gate" == "human-communication" ]]; then
     echo "fixture human communication failure" >&2
+    exit 37
+fi
+exit 0
+EOF
+
+        cat >"$repo/compass/tools/redcap-human-product-surface-check.sh" <<EOF
+#!/usr/bin/env bash
+if [[ "$failing_gate" == "human-product-surface" ]]; then
+    echo "fixture human product surface failure" >&2
     exit 37
 fi
 exit 0
@@ -14126,6 +14144,7 @@ redcap-knowledge-gateway.sh|knowledge-gateway|fixture knowledge gateway failure
 redcap-cold-archive-inventory.sh|cold-archive-inventory|fixture cold archive inventory failure
 redcap-full-llm-wiki-roadmap-check.sh|full-llm-wiki-roadmap|fixture full LLM-wiki roadmap failure
 redcap-package-publish-safety-check.sh|package-publish-safety|fixture package publish safety failure
+redcap-runtime-contract-surface-check.sh|runtime-contract-surface|fixture runtime contract surface failure
 redcap-release-e2e-matrix-check.sh|release-e2e-matrix|fixture release E2E matrix failure
 redcap-change-intake-check.sh|change-intake|fixture change intake failure
 redcap-conclusion-prism-check.sh|conclusion-prism|fixture conclusion Prism failure
@@ -14139,6 +14158,7 @@ EOF
             "$repo/compass/tools/redcap-state-machine-check.sh" \
             "$repo/compass/tools/redcap-token-risk-audit.sh" \
             "$repo/compass/tools/redcap-architecture-smell-governance-check.sh" \
+            "$repo/compass/tools/redcap-progress-meter-check.sh" \
             "$repo/compass/tools/redcap-reference-asset-lifecycle.sh" \
             "$repo/compass/tools/redcap-layer-boundary-check.sh" \
             "$repo/compass/tools/redcap-contributing-ia-check.sh" \
@@ -14150,8 +14170,10 @@ EOF
             "$repo/compass/tools/redcap-feishu-inbox.sh" \
             "$repo/compass/tools/redcap-feishu-notification-policy-check.sh" \
             "$repo/compass/tools/redcap-human-communication-check.sh" \
+            "$repo/compass/tools/redcap-human-product-surface-check.sh" \
             "$repo/compass/tools/redcap-runtime-package-manifest.sh" \
             "$repo/compass/tools/redcap-public-package-surface.sh" \
+            "$repo/compass/tools/redcap-runtime-contract-surface-check.sh" \
             "$repo/compass/tools/redcap-pre-release-product-architecture-check.sh" \
             "$repo/compass/tools/redcap-pre-release-structure-task-tree-check.sh" \
             "$repo/compass/tools/redcap-midcourse-architecture-check.sh" \
@@ -14176,6 +14198,7 @@ EOF
             state-machine) expected_message="state machine contract check failed" ;;
             token-risk) expected_message="token risk audit failed" ;;
             architecture-smell) expected_message="architecture smell governance check failed" ;;
+            progress-meter) expected_message="progress meter check failed" ;;
             reference-asset-lifecycle) expected_message="reference asset lifecycle check failed" ;;
             layer-boundary) expected_message="Layer A/B boundary check failed" ;;
             contributing-ia) expected_message="contributing IA check failed" ;;
@@ -14188,8 +14211,10 @@ EOF
             feishu-inbox) expected_message="Feishu inbox check failed" ;;
             feishu-notification-policy) expected_message="Feishu notification policy check failed" ;;
             human-communication) expected_message="human communication check failed" ;;
+            human-product-surface) expected_message="human product surface check failed" ;;
             runtime-package) expected_message="runtime package manifest check failed" ;;
             public-package-surface) expected_message="public package surface check failed" ;;
+            runtime-contract-surface) expected_message="runtime contract surface check failed" ;;
             pre-release-product-architecture) expected_message="pre-release product architecture check failed" ;;
             pre-release-structure-task-tree) expected_message="pre-release structure task tree check failed" ;;
             midcourse-architecture) expected_message="midcourse architecture check failed" ;;

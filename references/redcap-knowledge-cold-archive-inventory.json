@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 79,
-  "bytes_total": 1115713,
+  "file_count": 80,
+  "bytes_total": 1127954,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 75,
+    "private-task-report-archive": 76,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -613,6 +613,14 @@
       "class": "private-task-report-archive",
       "bytes": 13973,
       "sha256": "a29a04bc6cdf11ad8b424bb1f8b14b00cde62ceacc59643330850ef907271fb0",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-10-change-intent-continuity-gate.md",
+      "class": "private-task-report-archive",
+      "bytes": 12241,
+      "sha256": "911fad2cb5369e535e21e3cb4fc99c3de08cd498aa4e4013b3f0af964bd994a0",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

@@ -121,6 +121,12 @@ def validate(root: Path, policy_path: Path) -> dict[str, Any]:
         fail("runtime package policy package_name must match prepared package name")
     if runtime_policy.get("license_status") != policy["license_status"]:
         fail("runtime package policy license_status must match public package policy")
+    if policy.get("contract_boundary_policy") != "references/runtime-public-contract-policy.json":
+        fail("public package surface policy must link the runtime public contract policy")
+    if runtime_policy.get("contract_boundary_policy") != policy.get("contract_boundary_policy"):
+        fail("runtime package policy contract boundary must match public package policy")
+    if runtime_policy.get("contract_profile") != policy.get("contract_profile"):
+        fail("runtime package policy contract_profile must match public package policy")
 
     run_output(["bash", str(root / "compass/tools/redcap-runtime-package-manifest.sh"), "--check", "--npm-pack-dry-run"], root)
     run_output(["bash", str(root / "compass/tools/redcap-package-publish-safety-check.sh")], root)
@@ -142,6 +148,7 @@ def validate(root: Path, policy_path: Path) -> dict[str, Any]:
         "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
         "bash compass/tools/redcap-package-publish-safety-check.sh",
         "bash compass/tools/redcap-public-package-surface.sh",
+        "bash compass/tools/redcap-runtime-contract-surface-check.sh",
     }
     if set(required_checks) != expected_checks:
         fail("required_runtime_checks must match the actual public package readiness command set")

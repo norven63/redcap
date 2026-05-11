@@ -48,14 +48,44 @@
       ]
     },
     {
+      "command": "redcap doctor / debug / help / version",
+      "delegates_to": "bin/redcap + compass/tools/redcap-cli-product-surface.sh",
+      "requires": [
+        "compass/tools/redcap-cli-product-surface.sh",
+        "compass/tools/redcap-cli-product-surface.py",
+        "references/cli-product-surface-policy.json"
+      ]
+    },
+    {
+      "command": "redcap prism-availability",
+      "delegates_to": "prism/tools/prism-availability.sh",
+      "requires": [
+        "prism/tools/prism-availability.sh",
+        "prism/tools/prism-availability.py",
+        "references/prism-provider-policy.json"
+      ],
+      "contract_boundary": "Public diagnostic entrypoint for viewing or refreshing Prism provider availability. It exposes provider health, not Prism raw evidence or maintainer governance internals."
+    }
+  ],
+  "maintainer_release_entrypoints": [
+    {
       "command": "redcap package-manifest / publish-safety / package-surface / pre-release-review",
-      "delegates_to": "compass/tools/redcap-runtime-package-manifest.sh",
+      "delegates_to": "compass/tools/redcap-runtime-package-manifest.sh and related release-readiness validators",
+      "contract_boundary": "Maintainer release-readiness commands. They may be packaged during alpha readiness, but they are not normal end-user workflow and not stable public runtime API.",
       "requires": [
         "references/runtime-package-readiness-policy.json",
+        "references/runtime-public-contract-policy.json",
         "references/public-package-surface-policy.json",
         "references/package-publish-safety-policy.json",
         "references/pre-release-product-architecture-review.json"
       ]
+    }
+  ],
+  "source_maintenance_entrypoints": [
+    {
+      "command": "redcap file-dictionary / shared-knowledge / change-intake",
+      "delegates_to": "source-repository governance helpers",
+      "contract_boundary": "Source-maintainer convenience commands. They support RedCap development and governance, but public users should not need to understand them before using the runtime."
     }
   ],
   "excluded_from_public_package": [

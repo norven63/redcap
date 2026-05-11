@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 41988,
+      "bytes": 42388,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -15,7 +15,7 @@
     },
     {
       "path": "references/execution-guarantees.json",
-      "bytes": 106257,
+      "bytes": 107911,
       "asset_class": "control-plane-registry",
       "lifecycle": "active-validator-registry",
       "consumer_check": "bash compass/tools/redcap-execution-guarantee-check.sh",
@@ -24,7 +24,7 @@
     },
     {
       "path": "references/file-lookup-dictionary-policy.json",
-      "bytes": 75209,
+      "bytes": 76318,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 82662,
+      "bytes": 83683,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -105,7 +105,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 28711,
+      "bytes": 29060,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",
@@ -114,7 +114,7 @@
     },
     {
       "path": "references/redcap-parent-task-ledger.md",
-      "bytes": 37427,
+      "bytes": 37401,
       "asset_class": "parent-task-ledger",
       "lifecycle": "active-parent-state-ledger",
       "consumer_check": "bash compass/tools/redcap-parent-receipt-aggregation-check.sh",
@@ -123,7 +123,7 @@
     },
     {
       "path": "references/root-information-architecture-consolidation-plan.json",
-      "bytes": 21793,
+      "bytes": 21881,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",

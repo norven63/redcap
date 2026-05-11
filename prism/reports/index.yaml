@@ -1,4 +1,34 @@
 reports:
+  - id: "20260511-rasg020-runtime-contract-surface"
+    mode: acceptance-review
+    date: "2026-05-11"
+    topic: "RASG-020 public runtime contract boundary"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass-after-fixes"
+    consensus_actions:
+      - "Accept the machine-checkable split between end-user runtime commands and maintainer/source governance commands"
+      - "Keep maintainer readiness helpers out of the stable public API promise even if they remain package candidates during alpha readiness"
+      - "Add prism-availability to the public runtime import map"
+      - "Require every end-user runtime command in the policy to be represented in public_runtime_entrypoints"
+    open_questions:
+      - "RASG-021 Prism degradation frequency remains open"
+      - "Formal npm release still requires license, registry, credentials, publish switch and final release readiness decisions"
+      - "Formal release must decide whether meta-checkers remain package-visible or source/CI-only"
+    lessons_updated: false
+    files_affected:
+      - "references/runtime-public-contract-policy.json"
+      - "compass/tools/redcap-runtime-contract-surface-check.py"
+      - "compass/tools/redcap-runtime-contract-surface-check.sh"
+      - "runtime/redcap-core/import-map.json"
+      - "bin/redcap"
+      - "runtime/redcap-core/README.md"
+      - "references/public-release-handoff.md"
+      - "references/runtime-package-readiness-policy.json"
+      - "references/public-package-surface-policy.json"
+      - "references/package-publish-safety-policy.json"
+      - "compass/docs/task-reports/2026-05-11-rasg-020-runtime-contract-surface.md"
+    archived: false
   - id: "20260511-rasg019-human-product-surface"
     mode: acceptance-review
     date: "2026-05-11"

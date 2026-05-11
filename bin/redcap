@@ -266,7 +266,7 @@ usage() {
   cat <<'EOF'
 用法：redcap <命令> [参数...]
 
-常用命令：
+普通使用命令：
   revive                 初始化或复活当前工作区。
   status                 查看当前任务状态、全景位置和下一步。
   diagnose               做深入体检，适合发布前、自查或排障。
@@ -274,15 +274,19 @@ usage() {
   debug                  生成脱敏调试包，方便给其他 Agent 或人工排查。
   closeout               对当前任务执行正式收尾检查。
   prism-availability     查看或刷新棱镜 Agent 可用性。
-  file-dictionary        检查文件查阅字典是否覆盖关键入口。
-  shared-knowledge       管理公共知识库模板。
+  version                打印 RedCap 包版本。
+  help                   查看命令帮助。
+
+维护/发布准备命令（不是普通用户日常流程）：
   publish-safety         公开发布前做包面安全审计。
   package-manifest       生成或检查 runtime 包候选文件。
   package-surface        检查公开包名、包面和发布边界。
   pre-release-review     检查正式发布前的产品架构阻塞项。
+
+源码仓库治理命令（维护 RedCap 自身时使用）：
+  file-dictionary        检查文件查阅字典是否覆盖关键入口。
+  shared-knowledge       管理公共知识库模板。
   change-intake          检查中途插入需求是否被正确合并和重排。
-  version                打印 RedCap 包版本。
-  help                   查看命令帮助。
 
 工作区参数（适用于 status/diagnose/change-intake/closeout 等命令）：
   --workspace <dir>      被管理的项目工作区，默认是当前目录或自动识别结果。

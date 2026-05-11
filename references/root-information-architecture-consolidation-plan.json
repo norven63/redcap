@@ -392,7 +392,7 @@
       "meaning": "Maintainer-only RedCap governance, validators, active private knowledge, reports and workflow source.",
       "current_roots": ["compass", "references"],
       "future_shape": ["internal/control-plane", "contracts/public", "contracts/internal"],
-      "apply_gate": "RASG-020 should decide which contracts are public runtime contract before this split is applied."
+      "apply_gate": "RASG-020 defines the public runtime versus maintainer-tool contract boundary; a later physical split task must still validate aliases, package profile and rollback before moving files."
     },
     {
       "id": "prism-layer-and-evidence",
