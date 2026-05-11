@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 import subprocess
 import tempfile
 from pathlib import Path
@@ -37,7 +38,7 @@ def load_policy() -> dict[str, Any]:
     return payload
 
 
-def run(args: list[str], cwd: Path, timeout: int = 90) -> subprocess.CompletedProcess[str]:
+def run(args: list[str], cwd: Path, timeout: int = 90, env_overrides: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     for key in [
         "REDCAP_TASK_FILE",
@@ -47,6 +48,8 @@ def run(args: list[str], cwd: Path, timeout: int = 90) -> subprocess.CompletedPr
     ]:
         env.pop(key, None)
     env["REDCAP_CURRENT_STATUS_REFRESH_AGENT_REGISTRY"] = "0"
+    if env_overrides:
+        env.update(env_overrides)
     return subprocess.run(
         args,
         cwd=str(cwd),
@@ -59,9 +62,9 @@ def run(args: list[str], cwd: Path, timeout: int = 90) -> subprocess.CompletedPr
     )
 
 
-def run_partial(args: list[str], cwd: Path, timeout: int = 12) -> str:
+def run_partial(args: list[str], cwd: Path, timeout: int = 12, env_overrides: dict[str, str] | None = None) -> str:
     try:
-        return run(args, cwd=cwd, timeout=timeout).stdout
+        return run(args, cwd=cwd, timeout=timeout, env_overrides=env_overrides).stdout
     except subprocess.TimeoutExpired as exc:
         output = exc.output or ""
         if isinstance(output, bytes):
@@ -85,6 +88,22 @@ def before_marker(text: str, marker: str) -> str:
     if marker in text:
         return text.split(marker, 1)[0]
     return text
+
+
+def markdown_section(text: str, heading_prefix: str) -> str:
+    capture = False
+    buffer: list[str] = []
+    for line in text.splitlines():
+        if line.startswith("## "):
+            heading = line[3:].strip()
+            if capture:
+                break
+            if heading.startswith(heading_prefix):
+                capture = True
+                continue
+        if capture:
+            buffer.append(line)
+    return "\n".join(buffer).strip()
 
 
 def create_fixture_workspace() -> tuple[tempfile.TemporaryDirectory[str], Path, Path]:
@@ -137,6 +156,56 @@ task_report: {report}
         encoding="utf-8",
     )
     return tmp, workspace, task
+
+
+def create_receipt_present_fixture() -> tuple[tempfile.TemporaryDirectory[str], Path, Path, dict[str, str]]:
+    tmp, workspace, task = create_fixture_workspace()
+    report = workspace / "report.md"
+    report.write_text(
+        """# RASG-019 receipt-present 样例报告
+
+## 0.1 当前已完成
+- 已完成 CLI、状态和通知首屏的人类可读样例检查。
+
+## 0.2 上一步完成的是
+- 已完成任务卡重锚和输出样例审计。
+
+## 0.3 下一步计划做的是
+- 执行全量回归和正式 closeout；若通过，本轮后续可继续转入下一项。
+
+## 0.4 整体计划脉络图与当前位置
+- 当前位于回归与正式收口阶段；产品表面改造已完成，等待最终回归和 receipt。
+
+## 0.5 是否需要 Norven 人工介入
+- 不需要。
+""",
+        encoding="utf-8",
+    )
+    task_text = task.read_text(encoding="utf-8")
+    confirmed = markdown_section(task_text, "已确认需求")
+    confirmed_hash = hashlib.sha256(confirmed.encode("utf-8")).hexdigest()
+    # redcap-current-status.sh keeps RedCap's runtime root as the governance
+    # anchor even when the task file comes from an external workspace.
+    project_hash = hashlib.md5(str(ROOT.resolve()).encode("utf-8")).hexdigest()
+    runtime_base = workspace / "runtime"
+    identity = f"fixture-human-product-surface-{confirmed_hash}"
+    receipt = runtime_base / project_hash / "governance" / "closeout-runtime" / "receipts" / f"{identity}.json"
+    receipt.parent.mkdir(parents=True, exist_ok=True)
+    receipt.write_text(
+        json.dumps(
+            {
+                "task_id": "fixture-human-product-surface",
+                "confirmed_hash": confirmed_hash,
+                "status": "completed",
+                "promise_pending": 0,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return tmp, workspace, task, {"REDCAP_RUNTIME_PROJECT_BASE_DIR": str(runtime_base)}
 
 
 def validate_policy(policy: dict[str, Any]) -> None:
@@ -230,6 +299,23 @@ task_report: /tmp/redcap-human-product-surface-report-does-not-exist.md
         require_phrases(missing_first_screen, phrases["status_first_screen"], "redcap status missing-report first-screen")
         require_phrases(missing_first_screen, ["本轮任务报告尚未生成"], "redcap status missing-report first-screen")
         forbid_terms(missing_first_screen, forbidden, "redcap status missing-report first-screen")
+
+    receipt_tmp, receipt_workspace, receipt_task, receipt_env = create_receipt_present_fixture()
+    try:
+        receipt_status = run(
+            [str(CLI), "status", "--workspace", str(receipt_workspace), "--task-file", str(receipt_task)],
+            cwd=receipt_workspace,
+            env_overrides=receipt_env,
+        )
+        if receipt_status.returncode != 0:
+            fail("redcap status receipt-present fixture failed:\n" + receipt_status.stdout[:2000])
+        receipt_first_screen = before_marker(receipt_status.stdout, "## 当前任务锚点")
+        require_phrases(receipt_first_screen, ["完工凭证已生成", "未发现未清收尾阻塞"], "redcap status receipt-present first-screen")
+        if "等待最终回归和 receipt" in receipt_first_screen:
+            fail("redcap status receipt-present first-screen still repeats stale report closeout plan\n" + receipt_first_screen[:2000])
+        forbid_terms(receipt_first_screen, forbidden, "redcap status receipt-present first-screen")
+    finally:
+        receipt_tmp.cleanup()
 
 
 def validate_feishu_surface(policy: dict[str, Any]) -> None:

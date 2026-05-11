@@ -778,7 +778,13 @@ def main() -> int:
         ]
     elif receipt_exists:
         next_summary = "当前任务完工凭证已生成，未发现未清收尾阻塞；可转入后续任务或长期演进专项。"
-        if not roadmap_items or any("等待 closeout receipt" in item or "等待 receipt" in item or "receipt 作为正式完工凭证" in item for item in roadmap_items):
+        if not roadmap_items or any(
+            "等待 closeout receipt" in item
+            or "等待 receipt" in item
+            or "receipt 作为正式完工凭证" in item
+            or ("receipt" in item.lower() and ("等待" in item or "待" in item))
+            for item in roadmap_items
+        ):
             roadmap_items = [
                 "当前实时状态：完工凭证已生成，未发现未清收尾阻塞。",
                 "报告中的收尾前计划句只保留为历史记录，不再作为当前路线判断。"
