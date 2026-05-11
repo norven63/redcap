@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-11  
 **执行者**：Cap（Codex.app + Prism: Claude Code；Kimi resource-limited）  
-**报告版本**：v0.4
+**报告版本**：v0.5
 
 ---
 
@@ -193,7 +193,11 @@ RASG-018 的全局审判后，发布前仍有三条开放债务：RASG-019、RAS
 
 ### 6.2 触发的新问题
 
-暂无新增必须登记的坏味；本轮发现并处理了“首屏检查不能拖成全量诊断”的检查器性能边界，以及“新增报告导致活跃 task-reports inbox 超上限”的活跃窗口治理问题。
+暂无新增必须登记的长期坏味；本轮发现并处理了三个收口内问题：
+
+- “首屏检查不能拖成全量诊断”的检查器性能边界。
+- “新增报告导致活跃 task-reports inbox 超上限”的活跃窗口治理问题。
+- “receipt 已生成后，状态首屏仍可能沿用报告里的等待 receipt 历史句”的状态面回流问题；已通过 `redcap-current-status.py` 覆盖逻辑和 `redcap-human-product-surface-check.py` 真实样例防回退。
 
 ### 6.3 推荐的下一步行动
 
