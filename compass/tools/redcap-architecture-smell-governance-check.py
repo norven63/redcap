@@ -12,16 +12,17 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BACKLOG = ROOT / "references/backlogs/redcap-architecture-smell-governance.json"
-EXPECTED_REQUIREMENTS = {f"RASG-{index:03d}" for index in range(1, 22)}
+EXPECTED_REQUIREMENTS = {f"RASG-{index:03d}" for index in range(1, 24)}
 EXPECTED_TRANCHES = {
     "T0": {"RASG-003", "RASG-007", "RASG-009"},
     "T1": {"RASG-001", "RASG-002", "RASG-004", "RASG-014"},
     "T2": {"RASG-005", "RASG-008", "RASG-013"},
     "T3": {"RASG-006", "RASG-012", "RASG-016"},
     "T4": {"RASG-010", "RASG-011", "RASG-015"},
-    "T5": {"RASG-017"},
+    "T5": {"RASG-017", "RASG-022"},
     "T6": {"RASG-018"},
     "T7": {"RASG-019", "RASG-020", "RASG-021"},
+    "T8": {"RASG-023"},
 }
 
 
@@ -74,10 +75,25 @@ def validate(payload: dict[str, Any], *, require_complete: bool) -> None:
                     fail(f"{req_id}: evidence entries must be non-empty strings")
         if require_complete and status != "done":
             fail(f"{req_id}: not done")
+        follow_ups = item.get("follow_up_requirements", [])
+        if follow_ups is None:
+            follow_ups = []
+        if not isinstance(follow_ups, list):
+            fail(f"{req_id}: follow_up_requirements must be a list when present")
+        for follow_id in follow_ups:
+            if not isinstance(follow_id, str) or not follow_id.strip():
+                fail(f"{req_id}: follow_up_requirements entries must be non-empty strings")
     missing = sorted(EXPECTED_REQUIREMENTS - set(by_id))
     extra = sorted(set(by_id) - EXPECTED_REQUIREMENTS)
     if missing or extra:
         fail(f"requirement id set mismatch missing={missing} extra={extra}")
+
+    for req_id, item in by_id.items():
+        for follow_id in item.get("follow_up_requirements", []) or []:
+            if follow_id not in by_id:
+                fail(f"{req_id}: follow-up requirement not registered: {follow_id}")
+    if "RASG-022" not in (by_id["RASG-017"].get("follow_up_requirements") or []):
+        fail("RASG-017 must keep RASG-022 as its physical consolidation follow-up")
 
     tranches = payload.get("tranches")
     if not isinstance(tranches, list) or len(tranches) != len(EXPECTED_TRANCHES):

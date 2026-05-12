@@ -166,6 +166,10 @@ def validate_apply_gate(plan: dict[str, Any]) -> None:
         fail("future_apply_gate must be an object")
     if gate.get("physical_migration_allowed_in_this_task") is not False:
         fail("physical migration must be forbidden in this task")
+    if gate.get("tracking_requirement") != "RASG-022":
+        fail("future_apply_gate must track physical apply through RASG-022")
+    if gate.get("closure_gap_guard_requirement") != "RASG-023":
+        fail("future_apply_gate must track closure-gap hardening through RASG-023")
     requirements = require_list(gate, "required_before_apply", "future_apply_gate")
     joined = "\n".join(str(item) for item in requirements)
     for phrase in [
@@ -195,6 +199,14 @@ def validate_backlog(root: Path, plan: dict[str, Any]) -> None:
     evidence = entry.get("evidence")
     if not isinstance(evidence, list) or "references/root-information-architecture-consolidation-plan.json" not in evidence:
         fail(f"{requirement} evidence must include root information architecture plan")
+    follow_up = plan.get("follow_up_requirement")
+    follow_entries = [item for item in backlog.get("requirements", []) if isinstance(item, dict) and item.get("id") == follow_up]
+    if len(follow_entries) != 1:
+        fail(f"backlog must contain exactly one follow-up requirement for {follow_up}")
+    if follow_entries[0].get("status") not in {"planned", "in_progress", "done", "deferred"}:
+        fail(f"{follow_up}: unsupported follow-up status")
+    if follow_up not in (entry.get("follow_up_requirements") or []):
+        fail(f"{requirement} must explicitly link follow-up requirement {follow_up}")
 
 
 def main() -> int:
@@ -215,6 +227,10 @@ def main() -> int:
         fail("unexpected plan_id")
     if plan.get("requirement") != "RASG-017":
         fail("plan must bind to RASG-017")
+    if plan.get("follow_up_requirement") != "RASG-022":
+        fail("plan must bind physical consolidation apply follow-up to RASG-022")
+    if plan.get("prism_gap_follow_up") != "RASG-023":
+        fail("plan must bind plan-only closure gap hardening to RASG-023")
     if plan.get("physical_migration_applied") is not False:
         fail("plan must not claim physical migration was applied")
     if plan.get("prism_review_required") is not True:

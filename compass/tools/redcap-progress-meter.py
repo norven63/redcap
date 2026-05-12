@@ -124,7 +124,7 @@ def backlog_status(path: Path) -> dict[str, Any]:
         status = str(item.get("status", "unknown"))
         counts[status] += 1
         if status not in {"done", "archived", "superseded"} and len(open_items) < 3:
-            open_items.append(f"{item.get('id', 'unknown')} {item.get('title', '')}".strip())
+            open_items.append(str(item.get("human_label") or f"{item.get('id', 'unknown')} {item.get('title', '')}").strip())
     for group in payload.get("groups") or []:
         if not isinstance(group, dict):
             continue
@@ -134,7 +134,7 @@ def backlog_status(path: Path) -> dict[str, Any]:
             status = str(item.get("status", "unknown"))
             counts[status] += 1
             if status not in {"done", "archived", "superseded"} and len(open_items) < 3:
-                open_items.append(f"{item.get('id', 'unknown')} {item.get('title', '')}".strip())
+                open_items.append(str(item.get("human_label") or f"{item.get('id', 'unknown')} {item.get('title', '')}").strip())
     return {
         "path": path.relative_to(ROOT).as_posix() if path.exists() else path.as_posix(),
         "current_focus": current_focus,
@@ -217,6 +217,7 @@ def build_meter(task_file: Path) -> dict[str, Any]:
     governance_debt = governance_debt_status(ROOT / "compass/knowledge/governance-debt-register.md")
     reference_lifecycle = lifecycle_status(ROOT / "references/reference-asset-lifecycle.json")
     legacy_lifecycle = lifecycle_status(ROOT / "references/legacy-asset-lifecycle.json")
+    architecture_open_examples = architecture_backlog.get("open_examples", [])
 
     done = first_bullet(section(report_text, "0.1 当前已完成"), "当前任务已建立，等待任务报告或完工凭证更新。")
     next_step = first_bullet(section(report_text, "0.3 下一步计划做的是"), "继续推进当前任务的实现、评审与收口。")
@@ -224,6 +225,8 @@ def build_meter(task_file: Path) -> dict[str, Any]:
     roadmap = first_bullet(section(report_text, "0.4 整体计划脉络图与当前位置"), "历史债务坏味 -> 当前专注任务集 -> 长期演进专项")
     if closeout.get("receipt") == "present":
         next_step = "当前任务完工凭证已生成；可转入后续任务或长期演进专项。"
+        if architecture_open_examples:
+            next_step = "当前任务完工凭证已生成；发布准备前仍需处理：" + "；".join(architecture_open_examples[:3]) + "。"
         if intervention == "不需要":
             intervention = "不需要，本任务已正式收口。"
 
@@ -244,6 +247,8 @@ def build_meter(task_file: Path) -> dict[str, Any]:
         f"长期演进专项：candidate/reviewing="
         f"{sum(v for k, v in evolution_counts.items() if k in {'candidate', 'reviewing'})}"
     )
+    if architecture_open_examples:
+        panorama += "；开放历史债务：" + "；".join(architecture_open_examples[:3])
 
     buckets = [
         {
@@ -256,7 +261,7 @@ def build_meter(task_file: Path) -> dict[str, Any]:
                 "reference_lifecycle": reference_lifecycle.get("counts", {}),
                 "legacy_lifecycle": legacy_lifecycle.get("counts", {}),
             },
-            "examples": architecture_backlog.get("open_examples", []) + governance_debt.get("open_examples", []),
+            "examples": architecture_open_examples + governance_debt.get("open_examples", []),
             "source_paths": [
                 "references/backlogs/redcap-architecture-smell-governance.json",
                 "references/reference-asset-lifecycle.json",

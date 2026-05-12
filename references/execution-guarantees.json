@@ -462,6 +462,33 @@
       "auto_enforceable": true
     },
     {
+      "id": "plan-only-follow-up-registration-gate",
+      "category": "prism-multi-agent",
+      "priority": "P0",
+      "rule": "Design-complete, plan-complete, route-only, or partial-with-explicit-defer conclusions must name what is not done and prove each deferred apply or follow-up item is durably tracked with owner surface, acceptance boundary, and revisit trigger before RedCap can treat the conclusion as closed.",
+      "source_paths": [
+        "references/conclusion-prism-policy.json",
+        "prism/protocol.md",
+        "prism/README.md",
+        "compass/CONTRIBUTING.core.md",
+        "compass/CONTRIBUTING.md",
+        "references/backlogs/redcap-architecture-smell-governance.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-conclusion-prism-check validates the plan-only follow-up policy text and execution guarantee registration; redcap-architecture-smell-governance-check validates that RASG-017 keeps RASG-022 as its physical consolidation follow-up regression fixture.",
+      "guarantee_paths": [
+        "compass/tools/redcap-conclusion-prism-check.sh",
+        "compass/tools/redcap-conclusion-prism-check.py",
+        "compass/tools/redcap-architecture-smell-governance-check.sh",
+        "compass/tools/redcap-architecture-smell-governance-check.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "prism-availability-cache",
       "category": "prism-multi-agent",
       "priority": "P0",

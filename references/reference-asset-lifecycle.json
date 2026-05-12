@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 42388,
+      "bytes": 48633,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -15,7 +15,7 @@
     },
     {
       "path": "references/execution-guarantees.json",
-      "bytes": 107911,
+      "bytes": 109420,
       "asset_class": "control-plane-registry",
       "lifecycle": "active-validator-registry",
       "consumer_check": "bash compass/tools/redcap-execution-guarantee-check.sh",
@@ -123,7 +123,7 @@
     },
     {
       "path": "references/root-information-architecture-consolidation-plan.json",
-      "bytes": 21881,
+      "bytes": 22044,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",

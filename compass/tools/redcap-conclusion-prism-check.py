@@ -110,6 +110,14 @@ def main() -> int:
         if phrase not in guarantee_text:
             fail(f"guarantee_first_capability_rule missing phrase: {phrase}")
 
+    follow_up = policy.get("plan_only_follow_up_requirement")
+    if not isinstance(follow_up, dict):
+        fail("plan_only_follow_up_requirement must be an object")
+    follow_up_text = json.dumps(follow_up, ensure_ascii=False)
+    for phrase in ["design-complete", "plan-complete", "partial-with-explicit-defer", "durably tracked", "revisit trigger", "acceptance boundary", "physical apply complete", "Norven's memory"]:
+        if phrase not in follow_up_text:
+            fail(f"plan_only_follow_up_requirement missing phrase: {phrase}")
+
     surfaces = policy.get("enforcement_surfaces")
     if not isinstance(surfaces, list):
         fail("enforcement_surfaces must be a list")
@@ -123,7 +131,7 @@ def main() -> int:
             fail(f"enforcement surface is empty: {rel}")
 
     must_not = " ".join(str(item) for item in policy.get("must_not_claim", []))
-    for phrase in ["Every live chat sentence", "single Cap answer", "Documented-only", "Resource-limited Prism"]:
+    for phrase in ["Every live chat sentence", "single Cap answer", "Documented-only", "Resource-limited Prism", "Plan-complete"]:
         if phrase not in must_not:
             fail(f"must_not_claim missing phrase: {phrase}")
 
@@ -135,6 +143,7 @@ def main() -> int:
             "结论性输出必须 Prism-backed",
             "未经 Prism 的主 Agent 观点只能叫建议稿",
             "新增能力默认先做固化保障评估",
+            "计划型完成不能吞掉后续任务",
         ],
     )
 
@@ -146,6 +155,7 @@ def main() -> int:
             "结论性输出 Prism Gate",
             "RedCap 官方结论",
             "新增能力的固化保障优先级",
+            "计划型完成与后续任务登记",
         ],
     )
 
@@ -157,6 +167,7 @@ def main() -> int:
             "结论性输出 Prism Gate",
             "official conclusion",
             "proposal / first-pass",
+            "plan-complete",
         ],
     )
 
@@ -168,12 +179,13 @@ def main() -> int:
             "结论性输出",
             "不是单 Agent 自证",
             "resource-limited",
+            "计划型完成",
         ],
     )
 
     guarantees = load_json("references/execution-guarantees.json")
     guarantee_ids = {item.get("id") for item in guarantees.get("guarantees", []) if isinstance(item, dict)}
-    for gid in ["prism-backed-conclusion-gate", "guarantee-first-capability-gate"]:
+    for gid in ["prism-backed-conclusion-gate", "guarantee-first-capability-gate", "plan-only-follow-up-registration-gate"]:
         if gid not in guarantee_ids:
             fail(f"execution guarantees missing: {gid}")
 

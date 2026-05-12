@@ -74,7 +74,8 @@
       "title": "Root product-shape consolidation",
       "intent": "Judge whether the repository root itself still exposes too many direct parent directories for knowledge, reports, evidence, runtime, and public templates before RedCap is treated as a clean product.",
       "items": [
-        "RASG-017"
+        "RASG-017",
+        "RASG-022"
       ]
     },
     {
@@ -93,6 +94,14 @@
         "RASG-019",
         "RASG-020",
         "RASG-021"
+      ]
+    },
+    {
+      "id": "T8",
+      "title": "Plan-only closure and Prism follow-up hardening",
+      "intent": "Prevent design-only, plan-only, or route-only work from being treated as fully closed when a later physical apply or governance hardening task was explicitly required.",
+      "items": [
+        "RASG-023"
       ]
     }
   ],
@@ -547,6 +556,9 @@
         "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md",
         "prism/runs/20260510-root-ia-consolidation-assessment/collect/kimi-reviewer.txt",
         "compass/docs/task-reports/2026-05-10-root-information-architecture-debt-intake.md"
+      ],
+      "follow_up_requirements": [
+        "RASG-022"
       ]
     },
     {
@@ -649,6 +661,7 @@
     {
       "id": "RASG-021",
       "title": "Track Prism degradation frequency and keep conclusion gates resilient when providers are flaky",
+      "human_label": "RASG-021 棱镜降级频率与结论韧性跟踪",
       "priority": "P1-before-public-release",
       "category": "prism-governance-resilience",
       "problem_source": "RASG-018 Prism review found multiple recent formal Prism runs recorded as resource-limited-pass, mostly because one provider timed out, hit quota, or returned unusable output.",
@@ -670,17 +683,76 @@
       "evidence": [
         "references/redcap-holistic-smell-audit.json"
       ]
+    },
+    {
+      "id": "RASG-022",
+      "title": "Apply root-level information architecture physical consolidation through safe semantic tranches",
+      "human_label": "RASG-022 根目录信息架构的真实物理合并",
+      "priority": "P1-before-public-release",
+      "category": "information-architecture-product-shape-apply",
+      "problem_source": "RASG-017 produced the root-level target model and explicitly set physical_migration_applied=false, but no open backlog item represented the required later physical apply. That made the directory-structure debt easy to lose from the live task rhythm.",
+      "risk": "Humans and agents can see RASG-017 as done and assume scattered docs, knowledge, report, evidence, runtime, and template roots were actually consolidated. This recreates the exact reliance on human memory that RedCap is supposed to reduce.",
+      "desired_outcome": "Execute or explicitly defer the approved root information architecture physical consolidation in small semantic apply tranches. Each tranche must preserve aliases, consumers, package safety, archaeology anchors, rollback paths, Prism review, clean-workspace E2E, and closeout receipt before any directory move is claimed complete.",
+      "implementation_notes": [
+        "Start from references/root-information-architecture-consolidation-plan.json; do not redesign the target model from chat memory.",
+        "Apply at most one semantic parent group per task, with dry-run manifest before any real move.",
+        "Keep host entries, package root controls, private local state, and ignored runtime evidence under their documented no-move boundaries unless a separate approval changes the product philosophy.",
+        "Update file lookup dictionary, docs catalog, package surface checks, runtime import maps, host adapters, receipt/report anchors, and legacy alias routes in the same tranche as any physical move.",
+        "If physical consolidation is still not safe before release readiness, record an explicit blocked/deferred receipt instead of letting this item disappear."
+      ],
+      "acceptance": [
+        "A separate apply task card or approved deferral receipt exists before RASG-022 can be closed.",
+        "Every physical move has a dry-run manifest, exact consumer matrix, alias/compatibility window, rollback plan, package-safety proof, clean-workspace E2E, and Prism review.",
+        "Current status and progress-meter surfaces show whether root physical consolidation is done, deferred, or still open; plan-only completion cannot satisfy this item.",
+        "No report claims scattered root information architecture was physically consolidated unless the apply receipt proves it."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-12",
+      "evidence": [
+        "references/root-information-architecture-consolidation-plan.json",
+        "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md"
+      ]
+    },
+    {
+      "id": "RASG-023",
+      "title": "Strengthen Prism and conclusion gates to catch plan-only closure follow-up gaps",
+      "human_label": "RASG-023 计划型完成必须登记后续任务的棱镜加固",
+      "priority": "P1-before-public-release",
+      "category": "prism-governance-resilience",
+      "problem_source": "RASG-017 reviewers correctly accepted the target model as a design artifact, but the workflow did not force the explicitly required physical apply follow-up to become an open backlog item. The gap was exposed by Norven's manual memory challenge rather than by RedCap itself.",
+      "risk": "Future plan-only, route-only, or partial-with-defer tasks can pass review while their deferred work remains only inside prose. That creates a false completed state and makes Prism look stronger than the orchestration contract actually is.",
+      "desired_outcome": "Prism prompts, conclusion policy, and closeout-facing validators require reviewers to check whether every deferred capability or future apply requirement has a durable task, backlog item, owner surface, or explicit no-follow-up justification before a completion or roadmap verdict is accepted.",
+      "implementation_notes": [
+        "Treat this as an orchestration and prompt/checker defect, not as a single provider quality defect.",
+        "Add a closure-gap question to Prism framing for completion, roadmap, architecture, and governance reviews: what is intentionally not done, and where is that follow-up tracked?",
+        "Make plan-only completion claims fail closed unless the deferred apply item is linked to a task tree, backlog requirement, receipt, or explicit deferral record.",
+        "Use RASG-017/RASG-022 as a regression fixture for the new rule."
+      ],
+      "acceptance": [
+        "Prism/conclusion policy explicitly distinguishes design-complete from physically applied completion.",
+        "A validator or review checklist can reject a plan-only completion claim when required follow-up tasks are not registered.",
+        "RASG-017 remains linked to RASG-022 as its physical apply follow-up, and status surfaces do not imply physical consolidation is complete.",
+        "Future official completion or roadmap conclusions must report deferred work, durable follow-up tracking, and a revisit trigger or deadline."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-12",
+      "evidence": [
+        "references/conclusion-prism-policy.json",
+        "prism/protocol.md",
+        "compass/tools/redcap-conclusion-prism-check.sh",
+        "references/root-information-architecture-consolidation-plan.json"
+      ]
     }
   ],
   "must_not_claim": [
     "Do not claim these requirements are completed merely because they are listed here.",
     "Do not claim RASG-001..016 solved root-level physical product-shape consolidation; they solved indexing, lifecycle, retrieval, package safety, and specific root-local policies.",
-    "Do not claim RASG-017 is complete until a separate receipt proves the root inventory, target model, consumer matrix, and migration/alias plan are done.",
+    "Do not claim RASG-017 physically consolidated root directories; it completed the target model and left RASG-022 open for apply.",
     "Do not claim the user's '举一反三' request has been satisfied by registering only RASG-017; RASG-018 must complete a separate senior holistic audit.",
-    "Do not claim RASG-018 fixes the P1 issues it discovered; RASG-019, RASG-020, and RASG-021 remain separate follow-up work with independent receipts.",
+    "Do not claim RASG-018 fixes the P1 issues it discovered; RASG-019, RASG-020, RASG-021, RASG-022, and RASG-023 remain separate follow-up work with independent receipts.",
     "Do not treat future full LLM-wiki/RAG/GraphRAG as enabled by this backlog.",
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "After RASG-020, close the final planned pre-release architecture debt deliberately: RASG-021 Prism degradation resilience. Formal npm/public release remains a separate future task after RASG-021 is handled or explicitly deferred."
+  "recommended_next_step": "Before formal npm/public release readiness, close or explicitly defer the remaining planned pre-release architecture debts deliberately: RASG-021 Prism degradation resilience, RASG-022 root physical information-architecture consolidation apply, and RASG-023 plan-only closure follow-up hardening. Do not let a plan-only receipt hide a physical apply task."
 }

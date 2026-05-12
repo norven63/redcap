@@ -978,6 +978,16 @@ RedCap 官方结论不能再由主 Agent 单路自证。凡是会指导后续工
 3. 未经 Prism 的即时回复只能叫“建议稿 / 初判 / proposal / first-pass”，不得作为工程决议落账。
 4. task report、closeout、release readiness、长期路线分类这类 repo-owned 结论，必须在收口前能被 `redcap-conclusion-prism-check.sh` 与 Prism acceptance / receipt 链复核。
 
+### 计划型完成与后续任务登记
+
+如果官方结论只是 `design-complete`、`plan-complete`、`route-only` 或 `partial-with-explicit-defer`，不能把它写成物理完成或全量完成。结论、报告和 closeout 必须同时说明：
+
+1. 哪些内容已经完成。
+2. 哪些内容没有完成，尤其是后续 physical apply、目录迁移、发布前置或治理加固。
+3. 每个后续项被登记在哪里：当前任务账本、架构/治理 backlog、receipt deferred item，或带 owner surface 的 no-follow-up 理由。
+
+缺少 durable follow-up 登记时，Prism reviewer 必须把它当作 closure-gap，而不是只给“方案合理”的通过意见。
+
 ### 新增能力的固化保障优先级
 
 后续 RedCap 新增能力、流程节点或纪律规则时，默认先评估能否进入脚本、validator、hook、acceptance、receipt、diagnose/spec-check 或 `references/execution-guarantees.json`。只有在评估后确认“不需要这么严格保障”“自动化会误伤”“当前宿主没有物理控制点”时，才允许降级为 documented / manual-only，并必须写清降级理由和后续如何发现漂移。

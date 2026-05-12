@@ -85,6 +85,26 @@
       "how future closeout can detect drift"
     ]
   },
+  "plan_only_follow_up_requirement": {
+    "default": "When an official conclusion says a task is design-complete, plan-complete, route-only, or partial-with-explicit-defer, the conclusion must also name what is not done and where each deferred apply or follow-up item is durably tracked.",
+    "acceptable_tracking_surfaces": [
+      "current task ledger item",
+      "architecture or governance backlog requirement",
+      "receipt deferred item",
+      "explicit no-follow-up justification with owner surface"
+    ],
+    "minimum_follow_up_record": [
+      "owner surface",
+      "revisit trigger or deadline",
+      "blocking relationship to current release or current parent task",
+      "acceptance boundary for closing the follow-up"
+    ],
+    "forbidden": [
+      "treating plan-complete as physical apply complete",
+      "leaving required future work only inside prose",
+      "requiring Norven's memory to rediscover a deferred apply task"
+    ]
+  },
   "enforcement_surfaces": [
     "compass/CONTRIBUTING.core.md",
     "compass/CONTRIBUTING.md",
@@ -102,6 +122,7 @@
     "Every live chat sentence is physically intercepted by RedCap",
     "A single Cap answer is automatically a Prism verdict",
     "Documented-only rules are equivalent to executable guarantees",
-    "Resource-limited Prism is the same as full quorum"
+    "Resource-limited Prism is the same as full quorum",
+    "Plan-complete means physical apply is complete"
   ]
 }

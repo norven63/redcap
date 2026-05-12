@@ -30,6 +30,7 @@
 15. **作者不得单独宣称 completed**：没有有效 Prism 验收、没有 receipt，或 pending closure 未清时，作者只能汇报“已实现/已自检”，不得宣称 completed，也不得汇报 completed。
 15.1. **结论性输出必须 Prism-backed**：凡是会指导后续工程的架构判断、风险分类、完成性、可发布性、长期路线、治理决策等 RedCap 官方结论，必须经过 Prism 协作、复核或验收；未经 Prism 的主 Agent 观点只能叫建议稿 / 初判，不得写成“我们共同评审结论”。
 15.2. **新增能力默认先做固化保障评估**：新增能力、流程节点或纪律规则时，先评估能否进入脚本、validator、hook、acceptance、receipt、diagnose/spec-check 或 execution-guarantee；只有写清“不需要或不适合这么严格保障”的原因，才允许降级为 documented / manual-only。
+15.3. **计划型完成不能吞掉后续任务**：若结论只是设计完成、计划完成、route-only 或 partial-with-explicit-defer，必须同时写清未完成内容和 durable follow-up 所在任务/账本/receipt；禁止把 plan-complete 说成 physical apply complete。
 16. **首读/诊断入口已优先做成只读安全**：`current-status`、`diagnose`、`docs-catalog`、`acceptance-index`、`token-risk-audit` 的 repo-owned 首读链不再依赖临时可写目录；真正仍受宿主限制的是 reply-time veto、SessionEnd/Stop 等宿主控制点，而不是这些首读入口本身。Codex lifecycle hooks 当前是 repo-owned candidate：必须同时满足 feature flag、project trust 与真实 marker E2E，才可从 degraded 升级为 ready。
 17. **identity 先于 soul**：`~/.cap/identity.md` 是 Cap 的个人灵魂锚点；`compass/soul.md` 负责培养指南、复活协议与执行纪律。缺失 identity 时，优先用 `redcap-install.sh --init-identity` 初始化，不要把 `soul.md` 误当成个人记忆本体。
 18. **有 SessionStart Hook 的宿主必须跑 installer**：Claude / Gemini / Copilot 这类已接入 Layer B SessionStart 的宿主，会在启动链里实际调用 `redcap-install.sh`；Codex.app 这类只有入口导入的宿主，仍需显式运行 installer 或 current-status。
