@@ -143,7 +143,7 @@ RASG-018 曾指出，最近几次棱镜评审里出现过 `resource-limited-pass
 | runtime package manifest | `bash compass/tools/redcap-runtime-package-manifest.sh --check` | ✅ candidate_count=187 |
 | pre-release product architecture | `bash compass/tools/redcap-pre-release-product-architecture-check.sh` | ✅ release blockers 仍为 Norven 保留决策 |
 | Prism acceptance | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | ✅ full-quorum，responded=2，family_count=2 |
-| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result` | ✅ head=edac1d5，candidate_count=187，npm_pack_dry_run=true |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result` | ✅ 以最终提交后的 clean workspace E2E 机器凭证为准；candidate_count=187，npm_pack_dry_run=true |
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | ✅ |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | ✅ |
 
