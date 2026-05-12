@@ -333,6 +333,16 @@ if ! bash "$ARCHITECTURE_SMELL_GOVERNANCE_CHECK" >/dev/null; then
     exit 1
 fi
 
+PLAN_ONLY_FOLLOWUP_CHECK="$REDCAP_ROOT/compass/tools/redcap-plan-only-followup-registration-check.sh"
+if [[ ! -f "$PLAN_ONLY_FOLLOWUP_CHECK" ]]; then
+    echo "[redcap-spec-check] plan-only follow-up registration check missing" >&2
+    exit 1
+fi
+if ! bash "$PLAN_ONLY_FOLLOWUP_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] plan-only follow-up registration check failed" >&2
+    exit 1
+fi
+
 PROGRESS_METER_CHECK="$REDCAP_ROOT/compass/tools/redcap-progress-meter-check.sh"
 if [[ ! -f "$PROGRESS_METER_CHECK" ]]; then
     echo "[redcap-spec-check] progress meter check missing" >&2

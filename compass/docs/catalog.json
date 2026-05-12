@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 348563,
-    "lines": 7079,
-    "chars": 205935,
+    "size_bytes": 351602,
+    "lines": 7140,
+    "chars": 208486,
     "rough_token_pressure": {
-      "low": 51483,
-      "high": 102967
+      "low": 52121,
+      "high": 104243
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 154888,
-        "lines": 2496,
-        "chars": 89462,
+        "size_bytes": 157927,
+        "lines": 2557,
+        "chars": 92013,
         "rough_token_pressure": {
-          "low": 22365,
-          "high": 44731
+          "low": 23003,
+          "high": 46006
         }
       }
     },
@@ -483,19 +483,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-10-progress-meter-implementation.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap 前进刻度表与棱镜使用边界落地",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10163,
-      "lines": 183,
-      "chars": 5469,
-      "summary": "当前已完成：RedCap 已有一个可执行的“前进刻度表”，能把历史债务坏味、当前专注任务集、长期演进专项合成一张人类可读的全景视图。 / 关键结论：它不是新账本，只是聚合器。真正的事实仍来自 `.dev-task.md`、任务报告、backlog、receipt、治理债务表、生命周期表和 Evolution candidates。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md",
       "collection": "task-reports",
       "title": "任务完成报告：RASG-017 根目录信息架构目标模型",
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：Root-level 信息架构坏味登记",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10252,
       "lines": 176,
       "chars": 5190,
       "summary": "当前已完成：RedCap 已把“根目录直接父级目录过散、知识/报告/证据/模板语义重叠”登记为新的历史债务 `RASG-017`。 / 关键结论：之前的 RASG-001..016 并不是“假的完成”；它们解决的是索引、生命周期、token 风险、包面安全和具体子域治理。`RASG-017` 是更高一层的产品工程形态债务：RedCap 根目录本身是否足够清爽、集中、语义稳定。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把“根目录直接父级目录过散、知识/报告/证据/模板语义重叠”登记为新的历史债务 `RASG-017`。",
-          "关键结论：之前的 RASG-001..016 并不是“假的完成”；它们解决的是索引、生命周期、token 风险、包面安全和具体子域治理。`RASG-017` 是更高一层的产品工程形态债务：RedCap 根目录本身是否足够清爽、集中、语义稳定。"
-        ],
-        "previous_step": [
-          "上一步完成的是：三分 RedCap 前进刻度表已经落地并 closeout；它暴露出当前历史债务账面仍有治理项，也让这次根目录坏味可以被正式纳入“历史债务坏味”桶。"
-        ],
-        "next_step": [
-          "下一步计划做的是：后续另开 `RASG-017` 实现任务，先做根目录资产 inventory、目标父级模型、消费者影响矩阵、别名兼容方案和回滚计划；只有这些通过后，才允许讨论真实目录迁移。"
-        ],
-        "position": [
-          "整体计划脉络图是：发现账面/物理现实不一致 -> 回顾用户“举一反三”要求 -> 扫描根目录资产分布 -> 棱镜 advisory 评审 -> 登记 RASG-017 -> 后续另开整合实现任务。",
-          "当前所在位置：坏味已进入需求树；本轮不是物理整理目录。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-11-rasg-019-human-product-surface.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：历史债务治理 -> RASG-017 根目录目标模型 -> RASG-019 人类可读产品表面 -> RASG-020 公开/维护者契约分层 -> RASG-021 Prism 降级韧性 -> 正式发布准备。",
           "当前所在位置：当前位于 RASG-020 的最终收口阶段；实现、本地回归和棱镜评审均已完成。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-12-rasg-023-plan-only-followup-gate.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-023 计划型完成后续登记门",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 13202,
+      "lines": 244,
+      "chars": 8020,
+      "summary": "当前已完成：RedCap 已把“计划已经做完，但真实执行还没做”的情况纳入机器门禁，防止后续任务只留在报告文字里而没有登记成可追踪待办项。 / 详情：本轮解决的是 RASG-017 暴露出的流程漏洞：根目录信息架构目标模型已经完成，但真实物理合并没有同步成为后续任务。现在，类似 `plan-complete`、`design-complete`、`route-only`、`partial-with-explicit-defer` 的结论，都必须登记后续任务、责任面、验收边界和复查触发条件，或者明确说明为什么不需要后续任务。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把“计划已经做完，但真实执行还没做”的情况纳入机器门禁，防止后续任务只留在报告文字里而没有登记成可追踪待办项。",
+          "详情：本轮解决的是 RASG-017 暴露出的流程漏洞：根目录信息架构目标模型已经完成，但真实物理合并没有同步成为后续任务。现在，类似 `plan-complete`、`design-complete`、`route-only`、`partial-with-explicit-defer` 的结论，都必须登记后续任务、责任面、验收边界和复查触发条件，或者明确说明为什么不需要后续任务。"
+        ],
+        "previous_step": [
+          "上一步完成的是：前一轮已经把 RASG-022 和 RASG-023 登记进历史债务队列，避免根目录物理合并和本次流程缺口继续靠 Norven 人工记忆兜底。"
+        ],
+        "next_step": [
+          "下一步计划做的是：完成提交与 clean workspace E2E receipt 刷新后，转入 RASG-021，治理 Prism 降级频率和结论韧性。"
+        ],
+        "position": [
+          "整体计划脉络图是：RASG-017 根目录目标模型 -> RASG-022 物理合并后续登记 -> RASG-023 计划型完成后续登记门 -> RASG-021 Prism 降级韧性 -> RASG-022 分批物理迁移。",
+          "当前所在位置：RASG-023 已完成实现、自检和 Prism 验收，正在等待提交、clean workspace E2E 刷新与 closeout receipt。"
         ]
       }
     }

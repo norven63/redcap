@@ -113,6 +113,7 @@
     "references/execution-guarantees.json",
     "references/redcap-progress-meter-policy.json",
     "compass/tools/redcap-conclusion-prism-check.sh",
+    "compass/tools/redcap-plan-only-followup-registration-check.sh",
     "compass/tools/redcap-progress-meter-check.sh",
     "compass/tools/redcap-spec-check.sh",
     "compass/tools/redcap-diagnose.sh"

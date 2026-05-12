@@ -734,13 +734,19 @@
         "RASG-017 remains linked to RASG-022 as its physical apply follow-up, and status surfaces do not imply physical consolidation is complete.",
         "Future official completion or roadmap conclusions must report deferred work, durable follow-up tracking, and a revisit trigger or deadline."
       ],
-      "status": "planned",
+      "status": "done",
+      "completed_at": "2026-05-12",
       "introduced_at": "2026-05-12",
       "evidence": [
         "references/conclusion-prism-policy.json",
         "prism/protocol.md",
         "compass/tools/redcap-conclusion-prism-check.sh",
-        "references/root-information-architecture-consolidation-plan.json"
+        "references/root-information-architecture-consolidation-plan.json",
+        "references/plan-only-followup-registration-fixtures.json",
+        "compass/tools/redcap-plan-only-followup-registration-check.sh",
+        "compass/docs/task-reports/2026-05-12-rasg-023-plan-only-followup-gate.md",
+        "prism/reports/2026-05-12-rasg-023-plan-only-followup-gate.md",
+        "prism/runs/20260512-rasg023-plan-only-followup-gate/artifacts/acceptance-binding.json"
       ]
     }
   ],

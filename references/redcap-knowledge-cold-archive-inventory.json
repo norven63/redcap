@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 80,
-  "bytes_total": 1127954,
+  "file_count": 81,
+  "bytes_total": 1138117,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 76,
+    "private-task-report-archive": 77,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -637,6 +637,14 @@
       "class": "private-task-report-archive",
       "bytes": 12622,
       "sha256": "e33b98a1aa09924f2ae0d7545bec798e9ee2d9ff63e699284782922fe6fb5efb",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-10-progress-meter-implementation.md",
+      "class": "private-task-report-archive",
+      "bytes": 10163,
+      "sha256": "4947989235507192cf9083b9c7c2edfe0599c89ec88ee7a12b4ddf2dc5fdb10d",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

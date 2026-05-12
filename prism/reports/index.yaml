@@ -1,4 +1,32 @@
 reports:
+  - id: "20260512-rasg023-plan-only-followup-gate"
+    mode: acceptance-review
+    date: "2026-05-12"
+    topic: "RASG-023 plan-only follow-up registration gate"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Accept the dedicated plan-only follow-up registration checker and fixtures"
+      - "Keep RASG-017 linked to RASG-022 with physical_migration_applied=false"
+      - "Treat no-follow-up justifications as structurally checkable but still Prism-reviewed for semantic honesty"
+    open_questions:
+      - "RASG-021 Prism degradation frequency remains open"
+      - "RASG-022 root information architecture physical consolidation remains open"
+      - "Formal npm release remains blocked on human release decisions"
+    lessons_updated: false
+    files_affected:
+      - "compass/tools/redcap-plan-only-followup-registration-check.py"
+      - "compass/tools/redcap-plan-only-followup-registration-check.sh"
+      - "references/plan-only-followup-registration-fixtures.json"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "references/conclusion-prism-policy.json"
+      - "references/execution-guarantees.json"
+      - "references/file-lookup-dictionary.md"
+      - "references/file-lookup-dictionary-policy.json"
+      - "compass/docs/task-reports/2026-05-12-rasg-023-plan-only-followup-gate.md"
+    archived: false
   - id: "20260511-rasg020-runtime-contract-surface"
     mode: acceptance-review
     date: "2026-05-11"

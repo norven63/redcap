@@ -55,6 +55,8 @@
 | [`prism/protocol.md`](../prism/protocol.md) | Prism protocol | 定义独立取样、council、evidence、provider 选择与 `prism/runs` 生命周期 | Prism | `bash prism/tools/prism-evidence-check.sh` |
 | [`references/conclusion-prism-policy.json`](../references/conclusion-prism-policy.json) | conclusion gate policy | 定义 RedCap 官方结论、哪些结论必须 Prism-backed、资源受限如何降级，以及新增能力为何默认要先做固化保障 | Prism governance + Control plane | `bash compass/tools/redcap-conclusion-prism-check.sh` |
 | [`compass/tools/redcap-conclusion-prism-check.py`](../compass/tools/redcap-conclusion-prism-check.py) / [`compass/tools/redcap-conclusion-prism-check.sh`](../compass/tools/redcap-conclusion-prism-check.sh) | conclusion gate validator | 校验结论性输出 Prism Gate、guarantee-first 规则、核心契约、Prism 协议、执行保障和字典覆盖是否一致 | Prism governance + Control plane | `bash compass/tools/redcap-conclusion-prism-check.sh` |
+| [`references/plan-only-followup-registration-fixtures.json`](../references/plan-only-followup-registration-fixtures.json) | plan-only follow-up fixtures | RASG-023 回归夹具：正例证明 RASG-017 的物理合并后续已登记到 RASG-022，负例证明缺少后续登记的 plan-complete 会失败 | Prism governance + Control plane | `bash compass/tools/redcap-plan-only-followup-registration-check.sh` |
+| [`compass/tools/redcap-plan-only-followup-registration-check.py`](../compass/tools/redcap-plan-only-followup-registration-check.py) / [`compass/tools/redcap-plan-only-followup-registration-check.sh`](../compass/tools/redcap-plan-only-followup-registration-check.sh) | plan-only follow-up validator | 校验 design/plan/route/partial 完成结论必须登记 deferred item、owner、验收边界与复查触发；包含负例回归 | Prism governance + Control plane | `bash compass/tools/redcap-plan-only-followup-registration-check.sh` |
 
 ## Skill And Host Distribution
 
