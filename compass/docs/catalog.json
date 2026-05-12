@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 349666,
+    "size_bytes": 349819,
     "lines": 7140,
-    "chars": 207766,
+    "chars": 207919,
     "rough_token_pressure": {
-      "low": 51941,
-      "high": 103883
+      "low": 51979,
+      "high": 103959
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 155991,
+        "size_bytes": 156144,
         "lines": 2557,
-        "chars": 91293,
+        "chars": 91446,
         "rough_token_pressure": {
-          "low": 22823,
-          "high": 45646
+          "low": 22861,
+          "high": 45723
         }
       }
     },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12012,
+      "size_bytes": 12165,
       "lines": 227,
-      "chars": 7480,
+      "chars": 7633,
       "summary": "当前已完成：RedCap 已能在状态面和门禁中看见最近 Prism 是否正在退化，而不是只看到“通过/未通过”。 / 详情：本轮把 formal Prism 最近 10 份报告作为轻量数据源，统计完整/常规评审、resource-limited 评审和阻塞评审的比例。当前结果是健康态：最近 10 份中 1 份为 resource-limited，比例 10%，低于 25% warning 阈值。这样以后如果外部 Agent 频繁超时、限额或不可用，RedCap 会在状态面给出 warning/action，而不是悄悄把资源受限评审当作完整多视角评审。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -571,11 +571,11 @@
           "上一步完成的是：RASG-023 已把“计划完成但后续未登记”的缺口补成机器门，避免设计/路线型任务收口后丢掉未完成项。"
         ],
         "next_step": [
-          "下一步计划做的是：刷新 clean workspace E2E、提交并生成 closeout receipt；随后进入 RASG-022 的根目录信息架构真实物理合并。"
+          "下一步计划做的是：生成 closeout receipt；随后进入 RASG-022 的根目录信息架构真实物理合并。"
         ],
         "position": [
           "整体计划脉络图是：RASG-023 计划型完成后续登记门 → RASG-021 棱镜降级频率治理 → RASG-022 根目录信息架构物理合并 → 正式发布 readiness。",
-          "当前所在位置：RASG-021 已完成实现、自检和 Prism 独立验收，等待 clean workspace E2E、提交和 closeout receipt。"
+          "当前所在位置：RASG-021 已完成实现、自检、Prism 独立验收、提交和 clean workspace E2E，等待 closeout receipt。"
         ]
       }
     },

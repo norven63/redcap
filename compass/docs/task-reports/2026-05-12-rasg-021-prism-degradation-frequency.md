@@ -19,12 +19,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：刷新 clean workspace E2E、提交并生成 closeout receipt；随后进入 RASG-022 的根目录信息架构真实物理合并。
+- 下一步计划做的是：生成 closeout receipt；随后进入 RASG-022 的根目录信息架构真实物理合并。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：RASG-023 计划型完成后续登记门 → RASG-021 棱镜降级频率治理 → RASG-022 根目录信息架构物理合并 → 正式发布 readiness。
-- 当前所在位置：RASG-021 已完成实现、自检和 Prism 独立验收，等待 clean workspace E2E、提交和 closeout receipt。
+- 当前所在位置：RASG-021 已完成实现、自检、Prism 独立验收、提交和 clean workspace E2E，等待 closeout receipt。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -143,6 +143,7 @@ RASG-018 曾指出，最近几次棱镜评审里出现过 `resource-limited-pass
 | runtime package manifest | `bash compass/tools/redcap-runtime-package-manifest.sh --check` | ✅ candidate_count=187 |
 | pre-release product architecture | `bash compass/tools/redcap-pre-release-product-architecture-check.sh` | ✅ release blockers 仍为 Norven 保留决策 |
 | Prism acceptance | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | ✅ full-quorum，responded=2，family_count=2 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result` | ✅ head=edac1d5，candidate_count=187，npm_pack_dry_run=true |
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | ✅ |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | ✅ |
 
@@ -186,9 +187,8 @@ RASG-018 曾指出，最近几次棱镜评审里出现过 `resource-limited-pass
 
 ### 6.3 推荐的下一步行动
 
-1. 刷新 clean workspace E2E。
-2. 提交本轮变更。
-3. 生成 closeout receipt 后进入 RASG-022。
+1. 提交 clean workspace E2E receipt 刷新。
+2. 生成 closeout receipt 后进入 RASG-022。
 
 ---
 
@@ -217,7 +217,7 @@ Prism 质量不应只靠“某份报告写了 resource-limited”来维持记忆
 ### 附录 A：Commits
 
 ```
-待提交
+edac1d5 feat(prism): 固化棱镜降级频率状态面
 ```
 
 ### 附录 B：棱镜调用记录（如有）
