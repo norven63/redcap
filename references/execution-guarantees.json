@@ -517,6 +517,30 @@
       "auto_enforceable": true
     },
     {
+      "id": "prism-degradation-frequency",
+      "category": "prism-multi-agent",
+      "priority": "P1",
+      "rule": "RedCap must surface recent formal Prism full-quorum versus resource-limited frequency, classify the current task's Prism acceptance, and turn threshold breaches into visible warnings or governance actions instead of silently treating degraded review as normal.",
+      "source_paths": [
+        "references/prism-degradation-policy.json",
+        "prism/reports/index.yaml",
+        "references/backlogs/redcap-architecture-smell-governance.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-prism-degradation-check reads prism/reports/index.yaml as the lightweight source, classifies current task acceptance from .dev-task/prism artifacts, and is consumed by current-status, diagnose, and spec-check with fail-on-action-required behavior.",
+      "guarantee_paths": [
+        "compass/tools/redcap-prism-degradation-check.sh",
+        "compass/tools/redcap-prism-degradation-check.py",
+        "compass/tools/redcap-current-status.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh",
+        "references/prism-degradation-policy.json"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "prism-cli-health",
       "category": "prism-multi-agent",
       "priority": "P1",

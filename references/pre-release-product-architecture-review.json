@@ -11,7 +11,7 @@
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 184,
+    "package_candidate_count": 187,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
@@ -123,7 +123,7 @@
       "id": "package-surface-too-broad-for-public-cli",
       "dimension": "cli-product-quality",
       "severity": "pass",
-      "claim": "P4-2k keeps the npm package candidate surface under the 190-file alpha readiness cap by excluding RedCap self-maintenance migrations, historical E2E fixtures, full LLM-wiki/RAG research tooling, public distillation maintenance tools and one-off reconstruction assets. The present count is 184 after adding the public/maintainer contract-boundary policy and the RASG-023 plan-only follow-up registration gate. The alpha readiness surface remains curated, while the formal public release task must decide whether to trim repo-governance checks into a smaller runtime profile or split a maintainer profile.",
+      "claim": "P4-2k keeps the npm package candidate surface under the 190-file alpha readiness cap by excluding RedCap self-maintenance migrations, historical E2E fixtures, full LLM-wiki/RAG research tooling, public distillation maintenance tools and one-off reconstruction assets. The present count is 187 after adding the public/maintainer contract-boundary policy, the RASG-023 plan-only follow-up registration gate, and the RASG-021 Prism degradation frequency guard. The alpha readiness surface remains curated, while the formal public release task must decide whether to trim repo-governance checks into a smaller runtime profile or split a maintainer profile.",
       "evidence": [
         "references/runtime-package-readiness-policy.json",
         "references/runtime-public-contract-policy.json",

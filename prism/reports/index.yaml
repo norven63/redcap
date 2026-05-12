@@ -1,4 +1,33 @@
 reports:
+  - id: "20260512-rasg021-prism-degradation-frequency"
+    mode: acceptance-review
+    date: "2026-05-12"
+    topic: "RASG-021 Prism degradation frequency and review resilience"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass-after-report-refresh"
+    consensus_actions:
+      - "Accept the Prism degradation frequency policy and checker"
+      - "Keep prism/reports/index.yaml as the default lightweight source; do not bulk-read prism/runs for status summaries"
+      - "Treat resource-limited outcomes as visible degradation, not full quorum"
+      - "Refresh the task report and acceptance binding before closeout"
+    open_questions:
+      - "RASG-022 root information architecture physical consolidation remains open"
+      - "Formal npm release remains blocked on human release decisions"
+      - "Future performance governance may split the large diagnose chain if cumulative runtime becomes disruptive"
+    lessons_updated: false
+    files_affected:
+      - "references/prism-degradation-policy.json"
+      - "compass/tools/redcap-prism-degradation-check.py"
+      - "compass/tools/redcap-prism-degradation-check.sh"
+      - "compass/tools/redcap-current-status.py"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-spec-check.sh"
+      - "references/execution-guarantees.json"
+      - "references/file-lookup-dictionary.md"
+      - "references/file-lookup-dictionary-policy.json"
+      - "compass/docs/task-reports/2026-05-12-rasg-021-prism-degradation-frequency.md"
+    archived: false
   - id: "20260512-rasg023-plan-only-followup-gate"
     mode: acceptance-review
     date: "2026-05-12"

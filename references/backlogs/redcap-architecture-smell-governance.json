@@ -678,10 +678,17 @@
         "Acceptance reports clearly distinguish full Prism quorum from honest resource-limited evidence."
       ]
       ,
-      "status": "planned",
+      "status": "done",
+      "completed_at": "2026-05-12",
       "introduced_at": "2026-05-10",
       "evidence": [
-        "references/redcap-holistic-smell-audit.json"
+        "references/redcap-holistic-smell-audit.json",
+        "references/prism-degradation-policy.json",
+        "compass/tools/redcap-prism-degradation-check.sh",
+        "compass/tools/redcap-current-status.py",
+        "compass/docs/task-reports/2026-05-12-rasg-021-prism-degradation-frequency.md",
+        "prism/reports/2026-05-12-rasg-021-prism-degradation-frequency.md",
+        "prism/runs/20260512-rasg021-prism-degradation-frequency/artifacts/acceptance-binding.json"
       ]
     },
     {

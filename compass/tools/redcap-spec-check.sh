@@ -899,6 +899,20 @@ if [[ -x "$PRISM_AVAILABILITY_CHECK" ]]; then
     fi
 fi
 
+PRISM_DEGRADATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-prism-degradation-check.sh"
+if [[ ! -f "$PRISM_DEGRADATION_CHECK" ]]; then
+    echo "[redcap-spec-check] prism degradation check missing" >&2
+    exit 1
+fi
+prism_degradation_args=(--fail-on-action-required)
+if [[ -f "$REDCAP_ROOT/.dev-task.md" ]]; then
+    prism_degradation_args+=(--task-file "$REDCAP_ROOT/.dev-task.md")
+fi
+if ! bash "$PRISM_DEGRADATION_CHECK" "${prism_degradation_args[@]}" >/dev/null; then
+    echo "[redcap-spec-check] prism degradation check failed" >&2
+    exit 1
+fi
+
 CONCLUSION_PRISM_CHECK="$REDCAP_ROOT/compass/tools/redcap-conclusion-prism-check.sh"
 if [[ ! -f "$CONCLUSION_PRISM_CHECK" ]]; then
     echo "[redcap-spec-check] conclusion Prism check missing" >&2

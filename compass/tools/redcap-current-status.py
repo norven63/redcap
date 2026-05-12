@@ -301,7 +301,7 @@ def agent_registry_summary(repo: Path) -> list[str]:
     return lines
 
 
-def prism_summary(repo: Path) -> list[str]:
+def prism_summary(repo: Path, task_file: Path) -> list[str]:
     index_path = repo / "prism/reports/index.yaml"
     text = read(index_path)
     if not text:
@@ -369,6 +369,38 @@ def prism_summary(repo: Path) -> list[str]:
         "未写入 Prism run registry / reports 的单路审查只能算轻量独立评审，不能冒充 formal Prism quorum",
         "当前任务新增的 formal quorum 不能从报告总数或 prism/runs 目录数量反推，必须看本次 run/report 是否真实归档",
     ]
+    degradation_script = repo / "compass/tools/redcap-prism-degradation-check.sh"
+    if degradation_script.is_file():
+        try:
+            degradation_output = subprocess.check_output(
+                ["bash", str(degradation_script), "--task-file", str(task_file), "--json"],
+                cwd=repo,
+                text=True,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+            )
+            degradation = json.loads(degradation_output)
+            counts_payload = degradation.get("counts") or {}
+            rates_payload = degradation.get("rates") or {}
+            current_acceptance = degradation.get("current_task_acceptance") or {}
+            lines.append(
+                "最近 Prism 降级率："
+                f"resource-limited={rates_payload.get('resource_limited', 0) * 100:.1f}% "
+                f"（完整/常规={counts_payload.get('full_or_normal', 0)}，"
+                f"资源受限={counts_payload.get('resource_limited', 0)}，"
+                f"阻塞={counts_payload.get('blocked', 0)}，"
+                f"状态={degradation.get('status', 'unknown')}）"
+            )
+            lines.append(
+                "当前任务 Prism 验收："
+                f"{current_acceptance.get('classification', 'unknown')} "
+                f"（run={current_acceptance.get('run_id', 'none')}）"
+            )
+            action = degradation.get("action")
+            if action:
+                lines.append(f"Prism 降级行动提示：{action}")
+        except Exception as exc:
+            lines.append(f"Prism 降级率统计不可用：{exc}")
     if active_runs:
         lines.append(
             f"prism/runs 分类：acceptance-fixture={acceptance_runs}，formal-run={formal_runs}，named-local-evidence={named_runs}"
@@ -849,7 +881,7 @@ def main() -> int:
     print()
 
     print("## 棱镜 / 独立评审")
-    for line in prism_summary(repo):
+    for line in prism_summary(repo, task_file):
         print(f"- {line}")
     print()
 
