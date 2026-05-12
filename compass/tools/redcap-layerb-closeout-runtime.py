@@ -366,8 +366,12 @@ def pending_baseline_head(identity: TaskIdentity) -> str:
     return ""
 
 
+def task_baseline_head(identity: TaskIdentity) -> str:
+    return identity.meta.get("baseline_head", "").strip()
+
+
 def resolve_baseline_head(args: argparse.Namespace, identity: TaskIdentity) -> str:
-    return args.baseline_head or pending_baseline_head(identity) or initial_head(identity) or current_head(identity)
+    return args.baseline_head or task_baseline_head(identity) or pending_baseline_head(identity) or initial_head(identity) or current_head(identity)
 
 
 def closure_ledger_path(identity: TaskIdentity) -> Path:

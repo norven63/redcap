@@ -12,6 +12,7 @@
 
 - 当前已完成：RedCap 已能在状态面和门禁中看见最近 Prism 是否正在退化，而不是只看到“通过/未通过”。
 - 详情：本轮把 formal Prism 最近 10 份报告作为轻量数据源，统计完整/常规评审、resource-limited 评审和阻塞评审的比例。当前结果是健康态：最近 10 份中 1 份为 resource-limited，比例 10%，低于 25% warning 阈值。这样以后如果外部 Agent 频繁超时、限额或不可用，RedCap 会在状态面给出 warning/action，而不是悄悄把资源受限评审当作完整多视角评审。
+- 追加完成：首次 closeout 暴露出一个真实收口缺口：运行时 `initial-head` 被后续步骤刷新后，closeout 会把本轮提交区间误判为空，进而误报“没有新 commit / 没有任务报告”。本轮已把任务卡里的 `baseline_head` 提升为优先真相源，并补了回归，防止收口阶段把已完成提交误判为零提交。
 
 ### 0.2 上一步完成的是
 
@@ -24,7 +25,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：RASG-023 计划型完成后续登记门 → RASG-021 棱镜降级频率治理 → RASG-022 根目录信息架构物理合并 → 正式发布 readiness。
-- 当前所在位置：RASG-021 已完成实现、自检、Prism 独立验收、提交和 clean workspace E2E，等待 closeout receipt。
+- 当前所在位置：RASG-021 已完成实现、自检、Prism 独立验收、clean workspace E2E 和 closeout baseline 缺口修复，等待重新生成 closeout receipt。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -97,12 +98,16 @@ RASG-018 曾指出，最近几次棱镜评审里出现过 `resource-limited-pass
 | `references/pre-release-product-architecture-review.json` | 修改 | 同步 package candidate count，避免 release-readiness 事实延迟。 |
 | `prism/reports/2026-05-12-rasg-021-prism-degradation-frequency.md` / `prism/reports/index.yaml` | 新建 / 修改 | 记录 Claude Code + Kimi 独立复核结论。 |
 | `redcap-knowledge/task-reports/2026-05-09-pre-release-final-convergence-audit.md` | 移动 | 将一个旧活跃报告移入私有知识区，保持活跃 task-reports 不膨胀。 |
+| `compass/tools/redcap-layerb-closeout-runtime.py` | 修改 | closeout runtime 优先使用任务卡声明的 `baseline_head`，避免运行时 `initial-head` 或旧 pending closure 把本轮提交区间误缩成空区间。 |
+| `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 新增回归：当任务卡 baseline、pending baseline 和 runtime initial-head 冲突时，closeout 必须选择任务卡 baseline；同时保留无任务卡 baseline 时可退回 pending baseline。 |
 
 ### 3.2 技术实现要点
 
 核心做法是把 Prism 健康从“单份报告里的备注”升级成“每次状态刷新都能看到的趋势指标”。默认只读取 `prism/reports/index.yaml`，最近窗口为 10 份报告，最低样本为 5 份；超过 25% resource-limited 时提示 warning，超过 50% 或出现 blocked/escalate 时触发 action-required。
 
 当前任务验收也被单独分类：如果 `.dev-task.md` 声明了 Prism run，但 run registry 或 acceptance binding 还没生成，状态面会显示 `pending`；如果后续发现 `resource-limited.json`，则显示 `resource-limited`，不会冒充 `full-quorum`。
+
+closeout runtime 的补丁原则是“任务卡优先”。任务卡代表本轮任务的授权边界和提交起点；pending closure 和 runtime initial-head 都是运行时衍生产物，可以帮助恢复，但不能反过来覆盖任务卡真相。这样即使后续 E2E 或诊断步骤刷新了运行时状态，最终收口仍会按本轮真实提交区间审计。
 
 ### 3.2.1 术语对照（按文件/功能解释）
 
@@ -112,6 +117,7 @@ RASG-018 曾指出，最近几次棱镜评审里出现过 `resource-limited-pass
 | resource-limited | Prism report verdict / artifact | 有 Agent 因超时、限额、登录态等原因没形成完整证据，但剩余证据仍允许继续。 |
 | full-quorum | 当前任务 Prism acceptance 分类 | 本任务已有完整多视角验收绑定。 |
 | action-required | `references/prism-degradation-policy.json` | 降级比例或阻塞情况已经不能当作正常，需要打开治理动作。 |
+| baseline_head | `.dev-task.md` / closeout runtime | 本轮任务开始前的提交点，用来证明“这轮到底新增了哪些提交和报告”。 |
 
 ### 3.3 关联变更
 
@@ -146,6 +152,7 @@ RASG-018 曾指出，最近几次棱镜评审里出现过 `resource-limited-pass
 | clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result` | ✅ 以最终提交后的 clean workspace E2E 机器凭证为准；candidate_count=187，npm_pack_dry_run=true |
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | ✅ |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | ✅ |
+| closeout baseline 回归 | `bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-prefers-task-baseline && bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-uses-pending-baseline` | ✅ |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -218,7 +225,10 @@ Prism 质量不应只靠“某份报告写了 resource-limited”来维持记忆
 
 ```
 edac1d5 feat(prism): 固化棱镜降级频率状态面
+后续提交：clean workspace E2E receipt 刷新、报告稳定化、closeout baseline 缺口修复
 ```
+
+说明：本节只列关键提交脉络；最终精确提交区间以 closeout receipt 中的 `baseline_head..current_head` 为准，避免任务报告为了追逐自身提交号而反复改写。
 
 ### 附录 B：棱镜调用记录（如有）
 

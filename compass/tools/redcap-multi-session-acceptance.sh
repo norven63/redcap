@@ -91,6 +91,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh review-proof-check-accepts-prism-acceptance
   bash compass/tools/redcap-multi-session-acceptance.sh session-end-prism-pass-supersedes-stale-control-plane-fail
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-complete-writes-receipt
+  bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-prefers-task-baseline
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-uses-pending-baseline
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-attaches-session-end-binding
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-sync-preserves-completed-state
@@ -2833,6 +2834,91 @@ EOF
     assert_eq "$(cat "$baseline_log")" "$pending_baseline"
 
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$task_file" "acceptance-cleanup" "layerb-closeout-runtime-uses-pending-baseline" >/dev/null 2>&1 || true
+}
+
+run_layerb_closeout_runtime_prefers_task_baseline_case() {
+    local host="codex"
+    local current_head task_baseline stale_runtime_baseline task_file report_path report_rel case_dir
+    local on_complete_stub session_end_stub baseline_log output status pending_state
+    local binding_key pid
+
+    log "case: layerb-closeout-runtime-prefers-task-baseline"
+
+    current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
+    task_baseline="$(git -C "$REDCAP_ROOT" rev-parse HEAD~1 2>/dev/null || printf '%s\n' "$current_head")"
+    if [[ "$task_baseline" == "$current_head" ]]; then
+        log "skip: repository has no earlier commit to prove task baseline priority"
+        return 0
+    fi
+    stale_runtime_baseline="$current_head"
+    task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-task-baseline-${RANDOM}-$$.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-task-baseline-${RANDOM}-$$.md"
+    report_rel="${report_path#$REDCAP_ROOT/}"
+    LEGACY_TMP_FILES+=("$task_file" "$report_path")
+    cat >"$report_path" <<'EOF'
+# 任务完成报告：acceptance closeout runtime task baseline
+
+## 零、先看懂当前局面
+### 0.1 当前已完成
+- 当前已完成：任务卡 baseline 优先级 fixture
+### 0.3 下一步计划做的是
+- 下一步计划做的是：无
+EOF
+    write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] task baseline 已准备"
+    python3 - "$task_file" "$task_baseline" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+baseline = sys.argv[2]
+text = path.read_text(encoding="utf-8")
+text = text.replace("active_slice: closeout-runtime-acceptance\n", f"active_slice: closeout-runtime-acceptance\nbaseline_head: {baseline}\n")
+path.write_text(text, encoding="utf-8")
+PY
+
+    binding_key="acceptance-closeout-task-baseline-${RANDOM}-$$"
+    pid="$$"
+    init_bound_runtime "$host" "$binding_key" "$pid"
+    redcap_runtime_write_text "layerB/initial-head" "$stale_runtime_baseline" || fail "failed to seed stale initial head for task baseline case"
+    redcap_interop_write_pending_closure \
+        "$REDCAP_ROOT" \
+        "$task_file" \
+        "$host" \
+        "acceptance-seed" \
+        "closeout-runtime" \
+        "stale pending baseline fixture" \
+        "$report_rel" \
+        "$stale_runtime_baseline" \
+        "$stale_runtime_baseline" \
+        >/dev/null || fail "failed to seed stale pending closure baseline"
+    pending_state="$(redcap_interop_pending_closure_file "$REDCAP_ROOT" "$task_file")"
+    assert_exists "$pending_state"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/closeout-runtime-task-baseline.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    baseline_log="$case_dir/baseline.log"
+    on_complete_stub="$case_dir/on-complete-stub.sh"
+    session_end_stub="$case_dir/session-end-stub.sh"
+    cat >"$on_complete_stub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "\${2:-}" >"$baseline_log"
+exit 44
+EOF
+    printf '#!/usr/bin/env bash\nexit 0\n' >"$session_end_stub"
+    chmod +x "$on_complete_stub" "$session_end_stub"
+
+    set +e
+    output="$(REDCAP_ON_COMPLETE_SCRIPT="$on_complete_stub" REDCAP_LAYERB_SESSION_END_SCRIPT="$session_end_stub" bash "$REDCAP_ROOT/compass/tools/redcap-layerb-closeout-runtime.sh" complete --task-file "$task_file" --host "$host" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task baseline fixture unexpectedly completed"
+    assert_string_contains "$output" "redcap-on-complete failed"
+    assert_eq "$(cat "$baseline_log")" "$task_baseline"
+
+    redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$task_file" "acceptance-cleanup" "layerb-closeout-runtime-prefers-task-baseline" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
 }
 
 run_layerb_closeout_runtime_session_end_failure_writes_pending_case() {
@@ -15125,6 +15211,7 @@ run_all_cases() {
     run_task_complete_guard_triggers_closeout_runtime_case
     run_layerb_closeout_runtime_evolution_harvest_blocks_case
     run_layerb_closeout_runtime_evolution_candidates_blocks_case
+    run_layerb_closeout_runtime_prefers_task_baseline_case
     run_layerb_closeout_runtime_uses_pending_baseline_case
     run_session_end_missing_runtime_ignores_completed_receipt_case
     run_session_end_missing_runtime_accepts_resource_limited_receipt_case
@@ -15399,6 +15486,9 @@ case "$COMMAND" in
         ;;
     layerb-closeout-runtime-complete-writes-receipt)
         run_layerb_closeout_runtime_complete_writes_receipt_case
+        ;;
+    layerb-closeout-runtime-prefers-task-baseline)
+        run_layerb_closeout_runtime_prefers_task_baseline_case
         ;;
     layerb-closeout-runtime-uses-pending-baseline)
         run_layerb_closeout_runtime_uses_pending_baseline_case
