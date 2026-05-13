@@ -61,7 +61,7 @@
     },
     {
       "id": "shared-knowledge-template",
-      "path": "shared-knowledge",
+      "path": "templates/shared-knowledge",
       "class": "public-arsenal-template-source",
       "visibility": "public-template",
       "lifecycle": "template-only-until-forge-promotion",

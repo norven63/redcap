@@ -204,7 +204,7 @@
       "confidence": "medium",
       "source_report": "redcap-knowledge/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md",
       "source_detail": "Section 3.1: shared-knowledge README/schema/tool/policy rows; report summary names shared-knowledge append-only template.",
-      "evidence_paths": ["shared-knowledge/README.md", "references/shared-knowledge-policy.json", "compass/tools/redcap-shared-knowledge.sh"],
+      "evidence_paths": ["templates/shared-knowledge/README.md", "references/shared-knowledge-policy.json", "compass/tools/redcap-shared-knowledge.sh"],
       "completion_boundary": "Local append-only shared-knowledge scaffold and checker exist.",
       "deferred_boundary": "Remote Gitee binding is deferred."
     },

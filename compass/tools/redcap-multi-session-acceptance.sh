@@ -12165,7 +12165,7 @@ target = pathlib.Path(sys.argv[2])
 payload = json.loads(source.read_text(encoding="utf-8"))
 for child in payload["completed_children"]:
     if child.get("id") == "P2-4":
-        child["report_path"] = "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+        child["report_path"] = "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
         break
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -12543,7 +12543,7 @@ run_shared_knowledge_remote_binding_check_case() {
     git init --bare "$bare" >/dev/null
     git init "$work" >/dev/null
     git -C "$work" checkout -b main >/dev/null
-    cp -R "$REDCAP_ROOT/shared-knowledge"/. "$work"/
+    cp -R "$REDCAP_ROOT/templates/shared-knowledge"/. "$work"/
     git -C "$work" add .
     git -C "$work" -c user.name="RedCap Acceptance" -c user.email="redcap@example.invalid" commit -m "chore: init shared knowledge fixture" >/dev/null
     git -C "$work" remote add origin "file://$bare"
@@ -12562,8 +12562,8 @@ payload = {
     "remote_owner": "fixture",
     "remote_repo": "redcap-arsenal",
     "default_branch": "main",
-    "local_root": "shared-knowledge",
-    "template_root": "shared-knowledge",
+    "local_root": "templates/shared-knowledge",
+    "template_root": "templates/shared-knowledge",
     "preferred_local_worktree": work,
     "preferred_worktree_must_be_external": False,
     "initial_user_namespace": "Norven",
@@ -12883,7 +12883,7 @@ PY
 
     fixture_worktree="$ACCEPT_ROOT/public-arsenal-claim-boundary-worktree"
     mkdir -p "$fixture_worktree/users/Norven" "$fixture_worktree/schemas" "$fixture_worktree/indexes"
-    cp "$REDCAP_ROOT/shared-knowledge/README.md" "$fixture_worktree/README.md"
+    cp "$REDCAP_ROOT/templates/shared-knowledge/README.md" "$fixture_worktree/README.md"
     printf '{}\n' >"$fixture_worktree/schemas/entry.schema.json"
     printf '{}\n' >"$fixture_worktree/indexes/generated-index.json"
     touch "$fixture_worktree/users/Norven/.gitkeep" "$fixture_worktree/indexes/.gitkeep"
@@ -14663,7 +14663,7 @@ run_user_agent_identity_init_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-user-agent-identity.sh" init --host acceptance)"
     assert_string_contains "$output" "USER_AGENT_IDENTITY_INIT_OK"
     bash "$REDCAP_ROOT/compass/tools/redcap-user-agent-identity.sh" check --local >/dev/null
-    assert_exists "$REDCAP_ROOT/shared-knowledge/users/Norven/.gitkeep"
+    assert_exists "$REDCAP_ROOT/templates/shared-knowledge/users/Norven/.gitkeep"
     if [[ -d "$REDCAP_ROOT/../redcap-arsenal" ]]; then
         assert_exists "$REDCAP_ROOT/../redcap-arsenal/users/Norven/.gitkeep"
     fi

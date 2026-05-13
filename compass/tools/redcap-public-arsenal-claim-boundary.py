@@ -274,7 +274,7 @@ def main() -> int:
             fail(f"pre-release review must_not_claim missing: {phrase}")
 
     shared_contract = "template_readme_contract" if policy["current_state"]["content_state"] == "reviewed-substantive" else "readme_contract"
-    validate_readme(root / "shared-knowledge/README.md", policy, "shared-knowledge template", shared_contract)
+    validate_readme(root / "templates/shared-knowledge/README.md", policy, "shared-knowledge template", shared_contract)
     if worktree is not None and worktree.is_dir():
         validate_readme(worktree / "README.md", policy, "public worktree")
 

@@ -6,7 +6,7 @@
   "local_state_path": "compass/.workflow/user-agent-identity.json",
   "default_user_namespace": "Norven",
   "default_agent_name": "Cap",
-  "shared_knowledge_template_root": "shared-knowledge",
+  "shared_knowledge_template_root": "templates/shared-knowledge",
   "shared_knowledge_preferred_worktree": "../redcap-arsenal",
   "shared_knowledge_user_path": "users/Norven",
   "private_identity_rule": "Never commit ~/.cap/identity.md or copied private identity text into the RedCap repository; installer writes only ignored local state.",

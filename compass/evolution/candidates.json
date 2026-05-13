@@ -178,8 +178,8 @@
       "recurrence_guard": "shared-knowledge policy, check script, file dictionary coverage, spec-check, diagnose, and acceptance now protect the local template and append-only behavior.",
       "applicability_boundary": "This is the local repository shape and tooling; remote Gitee creation, permissions, and historical asset physical migration remain explicit follow-up work.",
       "evidence_paths": [
-        "shared-knowledge/README.md",
-        "shared-knowledge/schemas/entry.schema.json",
+        "templates/shared-knowledge/README.md",
+        "templates/shared-knowledge/schemas/entry.schema.json",
         "references/shared-knowledge-policy.json",
         "compass/tools/redcap-shared-knowledge.sh",
         "compass/tools/redcap-shared-knowledge.py",
@@ -189,7 +189,7 @@
       "status": "promoted",
       "promotion_paths": [
         "compass/tools/redcap-shared-knowledge.sh",
-        "shared-knowledge/README.md"
+        "templates/shared-knowledge/README.md"
       ],
       "review_paths": [
         "references/redcap-system-layers.md",

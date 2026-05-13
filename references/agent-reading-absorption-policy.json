@@ -73,7 +73,7 @@
       "redcap_paths": [
         "references/*.json",
         "references/*policy*.json",
-        "shared-knowledge/schemas/*.json"
+        "templates/shared-knowledge/schemas/*.json"
       ],
       "separate_schema_root_now": false
     }
@@ -128,7 +128,7 @@
     "references/public-distillation-preflight-policy.json",
     "references/retrieval-escalation-policy.json",
     "references/shared-knowledge-policy.json",
-    "shared-knowledge/schemas/entry.schema.json"
+    "templates/shared-knowledge/schemas/entry.schema.json"
   ],
   "must_not_claim": [
     "Do not claim RedCap has implemented a complete LLM Wiki system.",

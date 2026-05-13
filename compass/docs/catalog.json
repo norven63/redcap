@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 351845,
-    "lines": 7150,
-    "chars": 209143,
+    "size_bytes": 353986,
+    "lines": 7208,
+    "chars": 209420,
     "rough_token_pressure": {
-      "low": 52285,
-      "high": 104571
+      "low": 52355,
+      "high": 104710
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 158170,
-        "lines": 2567,
-        "chars": 92670,
+        "size_bytes": 160311,
+        "lines": 2625,
+        "chars": 92947,
         "rough_token_pressure": {
-          "low": 23167,
-          "high": 46335
+          "low": 23236,
+          "high": 46473
         }
       }
     },
@@ -98,10 +98,10 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
-        "chars": 9442,
-        "lines": 191,
-        "read_policy": "read-catalog-summary-by-default"
+        "path": "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
+        "chars": 9719,
+        "lines": 249,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
       {
         "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-3 clean workspace / cross-machine install E2E",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13634,
-      "lines": 191,
-      "chars": 9442,
-      "summary": "当前已完成：P4-3 clean workspace / cross-machine install E2E 已正式 closeout，clean clone 证据和 closeout runtime receipt 都已经生成。 / 重要修正：`.dev-task.md` 被纠正为运行时任务输入，不再被 execution guarantees 当成 clean clone 必备仓库资产；E2E receipt 已做本机路径脱敏，避免把 `/Users/**`、macOS 临时目录或密钥片段泄漏成可提交证据。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-2a 发布前产品架构审判",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：飞书成果汇报、全景图与回复通道治理",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14517,
       "lines": 233,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-020 公开 runtime 契约与维护者工具分层",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12783,
       "lines": 231,
       "chars": 8051,
       "summary": "当前已完成：RedCap 已把未来普通用户可依赖的 CLI/runtime 命令，和维护者才该使用的发布准备、源码治理命令分开，并通过机器检查和棱镜评审。 / 详情：本轮解决的是发布前产品边界问题。以后即便 npm 候选包里为了 readiness 暂时保留维护者检查器，它们也不会被 README、help、runtime import map 或 package policy 误写成普通用户稳定 API。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把未来普通用户可依赖的 CLI/runtime 命令，和维护者才该使用的发布准备、源码治理命令分开，并通过机器检查和棱镜评审。",
-          "详情：本轮解决的是发布前产品边界问题。以后即便 npm 候选包里为了 readiness 暂时保留维护者检查器，它们也不会被 README、help、runtime import map 或 package policy 误写成普通用户稳定 API。"
-        ],
-        "previous_step": [
-          "上一步完成的是：RASG-019 已把 CLI、状态、诊断和飞书通知的人类首屏改成“先讲人话、再给证据”。"
-        ],
-        "next_step": [
-          "下一步计划做的是：完成 closeout receipt 和提交，然后转入 RASG-021。"
-        ],
-        "position": [
-          "整体计划脉络图是：历史债务治理 -> RASG-017 根目录目标模型 -> RASG-019 人类可读产品表面 -> RASG-020 公开/维护者契约分层 -> RASG-021 Prism 降级韧性 -> 正式发布准备。",
-          "当前所在位置：当前位于 RASG-020 的最终收口阶段；实现、本地回归和棱镜评审均已完成。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-12-rasg-021-prism-degradation-frequency.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：RASG-017 根目录目标模型 -> RASG-022 物理合并后续登记 -> RASG-023 计划型完成后续登记门 -> RASG-021 Prism 降级韧性 -> RASG-022 分批物理迁移。",
           "当前所在位置：RASG-023 已完成实现、自检和 Prism 验收，正在等待提交、clean workspace E2E 刷新与 closeout receipt。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-022 shared-knowledge 模板迁移切片",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 15775,
+      "lines": 249,
+      "chars": 9719,
+      "summary": "当前已完成：RedCap 已完成 RASG-022 的第一批低风险物理合并，把公共库模板源从根目录散点迁到更清晰的模板区。 / 详情：这次解决的是“根目录里还放着模板资产，容易让人误以为 RedCap 执行层、公共知识库和发布候选面混在一起”的问题。现在模板源统一位于 `templates/shared-knowledge`，活跃脚本、包候选面、公共库安全边界和检查器都已同步到新位置。棱镜发现的两个真实问题也已处理：legacy asset 脚本已识别新模板路径，RASG-022 backlog 已从计划态改为进行态。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已完成 RASG-022 的第一批低风险物理合并，把公共库模板源从根目录散点迁到更清晰的模板区。",
+          "详情：这次解决的是“根目录里还放着模板资产，容易让人误以为 RedCap 执行层、公共知识库和发布候选面混在一起”的问题。现在模板源统一位于 `templates/shared-knowledge`，活跃脚本、包候选面、公共库安全边界和检查器都已同步到新位置。棱镜发现的两个真实问题也已处理：legacy asset 脚本已识别新模板路径，RASG-022 backlog 已从计划态改为进行态。"
+        ],
+        "previous_step": [
+          "上一步完成的是：RASG-021 已完成 Prism degradation 治理，本轮接续 current-status 暴露出的 RASG-022，开始把“只规划未物理迁移”的目录结构债务变成真实可验证的物理迁移。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续评估 RASG-022 的下一批高风险根目录，是继续小切片迁移，还是在正式发布前显式延期。"
+        ],
+        "position": [
+          "整体计划脉络图是：历史债务与坏味治理 → 当前主推进任务集 → 正式发布准备 → 长期演进专项。",
+          "当前所在位置：历史债务与坏味治理中的 RASG-022，当前切片是 `shared-knowledge` 模板源迁移，不是 RASG-022 全部结束。"
         ]
       }
     }

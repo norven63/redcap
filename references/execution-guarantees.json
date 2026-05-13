@@ -997,8 +997,8 @@
       "rule": "Shared knowledge and sedimentation output must have an independent repository shape, per-user namespace, append-only entries, index-first retrieval, and exact duplicate rejection before RedCap treats it as a scalable team memory layer.",
       "source_paths": [
         "references/shared-knowledge-policy.json",
-        "shared-knowledge/README.md",
-        "shared-knowledge/schemas/entry.schema.json"
+        "templates/shared-knowledge/README.md",
+        "templates/shared-knowledge/schemas/entry.schema.json"
       ],
       "status": "validator",
       "automation": "redcap-shared-knowledge provides init, append, index, dedupe, and check commands; shared-knowledge-check, spec-check, and diagnose keep the local template and append-only contract visible.",
@@ -1022,9 +1022,9 @@
       "source_paths": [
         "references/shared-knowledge-remote-binding.json",
         "references/shared-knowledge-policy.json",
-        "shared-knowledge/README.md",
-        "shared-knowledge/.gitignore",
-        "shared-knowledge/schemas/entry.schema.json"
+        "templates/shared-knowledge/README.md",
+        "templates/shared-knowledge/.gitignore",
+        "templates/shared-knowledge/schemas/entry.schema.json"
       ],
       "status": "validator",
       "automation": "redcap-shared-knowledge-remote-check validates template-only and forge-append-only modes, scans candidate content, requires an external clean public worktree when Forge entries are present, and explicit --live verifies the Gitee branch head, remote tree, and candidate file content without making every spec-check depend on network availability.",
@@ -1048,7 +1048,7 @@
         "references/public-arsenal-claim-boundary-policy.json",
         "references/shared-knowledge-remote-binding.json",
         "references/pre-release-product-architecture-review.json",
-        "shared-knowledge/README.md"
+        "templates/shared-knowledge/README.md"
       ],
       "status": "validator",
       "automation": "redcap-public-arsenal-claim-boundary validates the current public arsenal content state, external worktree substantive-entry count, required Forge entry sections, README wording, pre-release review facts, and claim boundary before diagnose/spec-check can pass.",
@@ -1200,7 +1200,7 @@
         "references/shared-knowledge-policy.json",
         "references/shared-knowledge-remote-binding.json",
         "compass/evolution/README.md",
-        "shared-knowledge/README.md"
+        "templates/shared-knowledge/README.md"
       ],
       "status": "validator",
       "automation": "redcap-forge-check validates the canonical naming split between RedCap Evolution Factory, RedCap Forge, and redcap-arsenal; it also checks promotion gates, forbidden raw private sources, public target boundaries, and documentation links.",
@@ -1292,7 +1292,7 @@
       "source_paths": [
         "references/user-agent-identity-policy.json",
         "compass/soul.md",
-        "shared-knowledge/users/Norven/.gitkeep"
+        "templates/shared-knowledge/users/Norven/.gitkeep"
       ],
       "status": "validator",
       "automation": "redcap-install runs redcap-user-agent-identity init during revive; redcap-user-agent-identity check is consumed by spec-check, diagnose, and acceptance.",

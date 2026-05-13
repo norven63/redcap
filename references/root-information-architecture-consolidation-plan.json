@@ -354,14 +354,26 @@
     {
       "path": "shared-knowledge",
       "type": "directory",
-      "presence": "required-source",
-      "current_role": "In-repo template source for external redcap-arsenal",
-      "visibility": "public-template-source",
-      "package_surface": "partially-included-template",
-      "target_disposition": "template-source-until-external-arsenal-matures",
+      "presence": "optional-local",
+      "current_role": "Retired legacy root path for the in-repo shared knowledge template",
+      "visibility": "legacy-compatibility-anchor",
+      "package_surface": "excluded",
+      "target_disposition": "retired-by-RASG-022-shared-knowledge-template-tranche",
       "target_parent": "templates-and-external-arsenal",
       "move_risk": "medium",
-      "consumer_notes": "Not the public arsenal itself; external worktree remains ../redcap-arsenal."
+      "consumer_notes": "Historical reports may still mention this path, but active template source moved to templates/shared-knowledge; external worktree remains ../redcap-arsenal."
+    },
+    {
+      "path": "templates",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Canonical in-repo template parent for reusable public-adjacent scaffolds",
+      "visibility": "template-source-parent",
+      "package_surface": "partially-included-template",
+      "target_disposition": "canonical-template-parent",
+      "target_parent": "templates-and-external-arsenal",
+      "move_risk": "low",
+      "consumer_notes": "Currently contains templates/shared-knowledge; this is a template source, not the public arsenal itself."
     }
   ],
   "target_parent_model": [
@@ -413,7 +425,7 @@
     {
       "id": "templates-and-external-arsenal",
       "meaning": "Public reusable knowledge starts as templates, then moves to external redcap-arsenal through Forge.",
-      "current_roots": ["shared-knowledge"],
+      "current_roots": ["templates"],
       "future_shape": ["templates/shared-knowledge", "../redcap-arsenal"],
       "apply_gate": "Do not bulk migrate private history; use Forge/arsenal append-only promotion."
     },

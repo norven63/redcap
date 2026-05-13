@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 82,
-  "bytes_total": 1152065,
+  "file_count": 83,
+  "bytes_total": 1165699,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 78,
+    "private-task-report-archive": 79,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -453,6 +453,14 @@
       "class": "private-task-report-archive",
       "bytes": 13237,
       "sha256": "a009a8876ac53b941cfa29ea6cfd380c1ab4cb9034ff14c1fc7fa4bfcf421aa5",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
+      "class": "private-task-report-archive",
+      "bytes": 13634,
+      "sha256": "c0f9fe4ea77f3a5e2fd870df9d5d7cc398df990e24d521c2a31d2612995ecb7f",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

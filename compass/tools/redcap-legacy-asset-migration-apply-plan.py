@@ -39,6 +39,9 @@ PUBLIC_TARGET_PREFIXES = {
     "redcap-arsenal",
     "shared-knowledge",
 }
+PUBLIC_TARGET_NESTED_PREFIXES = {
+    ("templates", "shared-knowledge"),
+}
 RISK_CONTROLS = {
     "no_delete_or_move",
     "old_paths_remain_authoritative",
@@ -94,7 +97,10 @@ def safe_relative(raw: str, ctx: str, key: str) -> str:
 
 def is_public_target(raw: str) -> bool:
     parts = Path(raw).parts
-    return bool(parts and parts[0] in PUBLIC_TARGET_PREFIXES)
+    return bool(
+        (parts and parts[0] in PUBLIC_TARGET_PREFIXES)
+        or tuple(parts[:2]) in PUBLIC_TARGET_NESTED_PREFIXES
+    )
 
 
 def is_acceptance_tmp_file(root: Path, item: Path) -> bool:

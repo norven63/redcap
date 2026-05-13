@@ -1,4 +1,37 @@
 reports:
+  - id: "20260513-rasg022-root-ia-shared-knowledge-tranche"
+    mode: acceptance-review
+    date: "2026-05-13"
+    topic: "RASG-022 shared-knowledge template root consolidation tranche"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass-after-fixes"
+    consensus_actions:
+      - "Accept templates/shared-knowledge as the canonical RedCap-internal public knowledge template source"
+      - "Keep the external redcap-arsenal worktree outside this tranche"
+      - "Keep RASG-022 in_progress instead of claiming all root information architecture debt is closed"
+      - "Treat remaining high-risk root migrations as future explicit tranches or explicit deferrals"
+    open_questions:
+      - "Whether to continue RASG-022 with high-risk roots such as compass, references, prism, redcap-knowledge, and loom"
+      - "Formal npm release remains blocked on release readiness and Norven-held publish decisions"
+      - "If architecture-smell backlog grows past 75KB, closed items should be archived behind the same current-status surface"
+    lessons_updated: false
+    files_affected:
+      - "templates/shared-knowledge/README.md"
+      - "package.json"
+      - "compass/tools/redcap-shared-knowledge.py"
+      - "compass/tools/redcap-shared-knowledge-check.sh"
+      - "compass/tools/redcap-legacy-asset-migration-apply-plan.py"
+      - "compass/tools/redcap-legacy-asset-migration-rehearsal.py"
+      - "compass/tools/redcap-legacy-asset-main-tree-apply.py"
+      - "compass/tools/redcap-legacy-asset-delete-last-apply.py"
+      - "references/root-information-architecture-consolidation-plan.json"
+      - "references/root-ia-shared-knowledge-tranche-manifest.json"
+      - "references/backlogs/redcap-architecture-smell-governance.json"
+      - "references/token-structural-governance.json"
+      - "prism/reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md"
+      - "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md"
+    archived: false
   - id: "20260512-rasg021-prism-degradation-frequency"
     mode: acceptance-review
     date: "2026-05-12"

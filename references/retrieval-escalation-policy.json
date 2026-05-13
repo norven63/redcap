@@ -12,7 +12,7 @@
   },
   "roots": {
     "docs_catalog": "compass/docs/catalog.json",
-    "shared_knowledge_template": "shared-knowledge",
+    "shared_knowledge_template": "templates/shared-knowledge",
     "shared_knowledge_worktree": "../redcap-arsenal"
   },
   "shared_knowledge_entry_glob": "users/*/*.md",

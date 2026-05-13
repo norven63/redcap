@@ -1,6 +1,6 @@
 # RedCap Arsenal Template
 
-> 这是 RedCap 公共知识库/沉淀库 `redcap-arsenal` 的最小安全模板。当前绑定远端为 `https://gitee.com/norven63/redcap-arsenal.git`；在 RedCap 仓库中，`shared-knowledge/` 只是模板源，所以刻意没有 `.git`。真实公共库工作区应由 RedCap 安装环境配置，并位于 RedCap 工程目录之外。
+> 这是 RedCap 公共知识库/沉淀库 `redcap-arsenal` 的最小安全模板。当前绑定远端为 `https://gitee.com/norven63/redcap-arsenal.git`；在 RedCap 仓库中，`templates/shared-knowledge/` 只是模板源，所以刻意没有 `.git`。真实公共库工作区应由 RedCap 安装环境配置，并位于 RedCap 工程目录之外。
 >
 > 公共条目必须先经过 `RedCap Forge`：把私有报告、lessons、失败链路或 Prism verdict 蒸馏、脱敏、去重、结构化和索引化之后，才允许 append 到 `redcap-arsenal`。原始报告、identity、runtime evidence 和私有 knowledge 不得直接进入公共库。
 >

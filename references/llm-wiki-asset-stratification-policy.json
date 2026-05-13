@@ -159,7 +159,7 @@
     {
       "id": "shared-knowledge-template",
       "paths": [
-        "shared-knowledge/**"
+        "templates/shared-knowledge/**"
       ],
       "storage_layer": "public-arsenal-template",
       "llm_wiki_disposition": "public-template-not-private-wiki",
@@ -180,7 +180,7 @@
         "compass/docs/catalog.json",
         "references/file-lookup-dictionary.md",
         "references/file-lookup-dictionary-policy.json",
-        "shared-knowledge/indexes/**"
+        "templates/shared-knowledge/indexes/**"
       ],
       "storage_layer": "navigation-index",
       "llm_wiki_disposition": "forbidden",

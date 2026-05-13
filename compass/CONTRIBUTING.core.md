@@ -58,7 +58,7 @@
 | 调研结论 | `CONTRIBUTING.md` §14 |
 | 自我进化 / 经验人格沉淀 | `compass/evolution/README.md`、`references/evolution-candidate-schema.json`、`references/evolution-grade-baseline.json` |
 | 文件查阅 / 名词定位 | `references/file-lookup-dictionary.md` |
-| 共享知识 / 团队沉淀 | `references/shared-knowledge-policy.json`、`shared-knowledge/README.md` |
+| 共享知识 / 团队沉淀 | `references/shared-knowledge-policy.json`、`templates/shared-knowledge/README.md` |
 | skill 分发 / 多宿主入口 | `references/skill-lifecycle-policy.json` |
 | npm / runtime 打包发布 | `references/package-publish-safety-policy.json`、`compass/tools/redcap-package-publish-safety-check.sh` |
 | 旧资产 / 运行残留治理 | `references/legacy-asset-lifecycle.json`、`prism/protocol.md` |

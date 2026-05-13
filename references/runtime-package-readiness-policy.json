@@ -36,8 +36,8 @@
     "references/file-lookup-dictionary.md",
     "references/public-release-handoff.md",
     "references/redcap-system-layers.md",
-    "shared-knowledge/README.md",
-    "shared-knowledge/schemas/*.json"
+    "templates/shared-knowledge/README.md",
+    "templates/shared-knowledge/schemas/*.json"
   ],
   "exclude_globs": [
     "compass/tools/redcap-acceptance-index.*",

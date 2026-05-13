@@ -173,7 +173,7 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 | **收尾收据** | `closeout-receipts/*.json` | 解决“不能只靠一句‘完成了’，而要有物理 receipt 证明终态真的闭环” |
 | **进化候选池** | `compass/evolution/candidates.json` | 解决“重要经验、人格成长和治理改良不能靠作者记忆临时想起” |
 | **锻造流水线** | `references/redcap-forge-policy.json` + `compass/tools/redcap-forge-check.sh` | 解决“私有报告和运行痕迹不能直接变成公共知识，而要先蒸馏、脱敏、去重、索引和评审” |
-| **共享沉淀库** | `shared-knowledge/` 模板 + 外部 `redcap-arsenal` 本地实体仓库 + remote binding policy | 解决“团队经验要可共享、按用户隔离、只新增不改旧条目、先索引再读取，并且远端同步前可审计” |
+| **共享沉淀库** | `templates/shared-knowledge/` 模板 + 外部 `redcap-arsenal` 本地实体仓库 + remote binding policy | 解决“团队经验要可共享、按用户隔离、只新增不改旧条目、先索引再读取，并且远端同步前可审计” |
 | **文件定位字典** | `references/file-lookup-dictionary.md` + policy/check | 解决“人和 Agent 不知道该看哪个文件，只能全文乱翻”的问题 |
 | **skill 单一信源** | `references/skill-lifecycle-policy.json` | 解决“多个宿主各写一份规则，最后互相漂移”的问题 |
 | **旧资产生命周期** | `references/legacy-asset-lifecycle.json` | 解决“历史报告、运行残留、旧规范到底保留、翻译、归档还是清理” |
@@ -199,7 +199,7 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 | [`references/shared-knowledge-remote-binding.json`](./references/shared-knowledge-remote-binding.json) | 看公共知识库 Gitee 远端、候选白名单和 live head 验证证据 |
 | [`references/redcap-forge-policy.json`](./references/redcap-forge-policy.json) | 看 RedCap Forge 如何把私有经验蒸馏成安全的公共 arsenal 候选 |
 | [`references/information-architecture-artifact-governance-policy.json`](./references/information-architecture-artifact-governance-policy.json) | 看 report、knowledge、runtime evidence、Forge、arsenal 的目录边界和生命周期 |
-| [`shared-knowledge/README.md`](./shared-knowledge/README.md) | 看 `redcap-arsenal` 公共库的 RedCap 内模板，以及它和外部本地实体仓库的关系 |
+| [`templates/shared-knowledge/README.md`](./templates/shared-knowledge/README.md) | 看 `redcap-arsenal` 公共库的 RedCap 内模板，以及它和外部本地实体仓库的关系 |
 | [`references/skill-lifecycle-policy.json`](./references/skill-lifecycle-policy.json) | 看 RedCap-native capability、host-exported skill、portable skill package 的单一信源策略 |
 | [`references/legacy-asset-lifecycle.json`](./references/legacy-asset-lifecycle.json) | 看旧资产、运行残留与考古证据的生命周期策略 |
 | [`references/runtime-memory-architecture.md`](./references/runtime-memory-architecture.md) | 看 Layer B 生命周期如何与 `.dev-task.md`、承诺账本、closeout runtime、pending closure、session hooks 绑在一起 |

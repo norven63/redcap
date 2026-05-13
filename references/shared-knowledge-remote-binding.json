@@ -7,8 +7,8 @@
   "remote_owner": "norven63",
   "remote_repo": "redcap-arsenal",
   "default_branch": "main",
-  "local_root": "shared-knowledge",
-  "template_root": "shared-knowledge",
+  "local_root": "templates/shared-knowledge",
+  "template_root": "templates/shared-knowledge",
   "preferred_local_worktree": "../redcap-arsenal",
   "preferred_worktree_must_be_external": true,
   "initial_user_namespace": "Norven",
@@ -91,7 +91,7 @@
   },
   "notes": [
     "This binding now covers the minimal public template surface plus RedCap Forge-reviewed append-only public entries and generated metadata indexes.",
-    "shared-knowledge/ is the RedCap-internal template source and intentionally has no .git directory.",
+    "templates/shared-knowledge/ is the RedCap-internal template source and intentionally has no .git directory.",
     "../redcap-arsenal is the preferred durable local public-library worktree for this installation.",
     "Historical reports, lessons, identity files, runtime evidence, and host entry files remain out of scope unless RedCap Forge rewrites them into reviewed, deduplicated, safe public entries.",
     "After any legitimate template or Forge entry push, update last_verified.remote_head and checked_at_utc by rerunning the live check; head drift is intentional fail-closed behavior."

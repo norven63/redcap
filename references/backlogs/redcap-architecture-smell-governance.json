@@ -676,8 +676,7 @@
         "diagnose or an equivalent status surface reports Prism full-quorum versus resource-limited frequency over a recent window.",
         "A threshold breach creates a visible action or warning instead of silently passing as normal.",
         "Acceptance reports clearly distinguish full Prism quorum from honest resource-limited evidence."
-      ]
-      ,
+      ],
       "status": "done",
       "completed_at": "2026-05-12",
       "introduced_at": "2026-05-10",
@@ -713,11 +712,25 @@
         "Current status and progress-meter surfaces show whether root physical consolidation is done, deferred, or still open; plan-only completion cannot satisfy this item.",
         "No report claims scattered root information architecture was physically consolidated unless the apply receipt proves it."
       ],
-      "status": "planned",
+      "status": "in_progress",
+      "progress_note": "The first physical apply tranche moved the in-repo shared knowledge template source from shared-knowledge/ to templates/shared-knowledge/. RASG-022 remains open because higher-risk root parent groups still need later tranche decisions or explicit deferral receipts.",
       "introduced_at": "2026-05-12",
       "evidence": [
         "references/root-information-architecture-consolidation-plan.json",
+        "references/root-ia-shared-knowledge-tranche-manifest.json",
         "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md"
+      ],
+      "applied_tranches": [
+        {
+          "id": "rasg-022-shared-knowledge-template-tranche",
+          "status": "applied-selfcheck-passed-awaiting-closeout",
+          "canonical_root": "templates/shared-knowledge",
+          "retired_root": "shared-knowledge",
+          "evidence": [
+            "references/root-ia-shared-knowledge-tranche-manifest.json"
+          ],
+          "completion_boundary": "This tranche does not close all root information architecture physical consolidation."
+        }
       ]
     },
     {
@@ -767,5 +780,379 @@
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Before formal npm/public release readiness, close or explicitly defer the remaining planned pre-release architecture debts deliberately: RASG-021 Prism degradation resilience, RASG-022 root physical information-architecture consolidation apply, and RASG-023 plan-only closure follow-up hardening. Do not let a plan-only receipt hide a physical apply task."
+  "recommended_next_step": "Before formal npm/public release readiness, close or explicitly defer the remaining planned pre-release architecture debts deliberately: RASG-021 Prism degradation resilience, RASG-022 root physical information-architecture consolidation apply, and RASG-023 plan-only closure follow-up hardening. Do not let a plan-only receipt hide a physical apply task.",
+  "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
+  "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
+  "authority_boundary": {
+    "backlog_responsibility": "Machine-readable source for RASG debt items, status, priority, evidence and current focus.",
+    "dev_task_responsibility": "Current execution slice, promises, closeout report and active-slice boundary.",
+    "human_guide_responsibility": "Human-readable status explanation generated from the backlog authority; it must not override machine truth."
+  },
+  "human_contract": {
+    "required_headings": [
+      "# RedCap Architecture Smell Governance Backlog",
+      "## 使用说明",
+      "## 当前状态总览（自动同步）"
+    ],
+    "generated_block_start": "<!-- REDCAP_ARCHITECTURE_SMELL_GOVERNANCE:START -->",
+    "generated_block_end": "<!-- REDCAP_ARCHITECTURE_SMELL_GOVERNANCE:END -->"
+  },
+  "glossary": [
+    {
+      "term": "RASG",
+      "label": "Architecture smell governance item",
+      "meaning": "RedCap 架构坏味治理条目，用来记录仍会影响工程健康、发布准备或长期演进的设计债务。"
+    },
+    {
+      "term": "tranche",
+      "label": "Small safe implementation slice",
+      "meaning": "一次只处理一个可验证的小切片，避免大规模重构同时破坏多个真相源。"
+    },
+    {
+      "term": "current focus",
+      "label": "Active debt item",
+      "meaning": "当前正在执行或刚完成收口的 backlog 项，必须和 .dev-task.md 的 backlog_item 对齐。"
+    }
+  ],
+  "groups": [
+    {
+      "id": "T0",
+      "title": "Fast consistency and truth-surface repairs",
+      "items": [
+        {
+          "id": "RASG-003",
+          "title": "Fix shared-knowledge template README drift against external redcap-arsenal state",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "T0",
+          "summary": "The template README clearly distinguishes the template source from the external arsenal worktree and states that the external worktree may contain reviewed entries."
+        },
+        {
+          "id": "RASG-007",
+          "title": "Make package surface include/exclude rules single-source generated",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T0",
+          "summary": "One machine-readable source generates or validates all package include/exclude surfaces."
+        },
+        {
+          "id": "RASG-009",
+          "title": "Improve closeout final-state observability when earlier retries failed",
+          "status": "done",
+          "priority": "P2",
+          "phase_id": "T0",
+          "summary": "Status surfaces clearly show final state, previous failed attempts, and the successful repair/closure sequence."
+        }
+      ]
+    },
+    {
+      "id": "T1",
+      "title": "Knowledge architecture foundations",
+      "items": [
+        {
+          "id": "RASG-001",
+          "title": "Split the giant lessons.md into indexed topic modules",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "T1",
+          "summary": "Lessons become a topic-indexed, small-file knowledge set with stable IDs, source anchors, and a human-readable index. No lesson should be lost or silently rewritten."
+        },
+        {
+          "id": "RASG-002",
+          "title": "Create a federated knowledge lookup route across active knowledge, LLM-wiki-lite, cold archive, and public arsenal",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "T1",
+          "summary": "A single knowledge gateway policy and command explain where to search first, when to fall back, and when exact-body reads are allowed."
+        },
+        {
+          "id": "RASG-004",
+          "title": "Triage redcap-knowledge cold archive into preserve, translate, or prune classes",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T1",
+          "summary": "Each cold archive asset has a lifecycle class: preserve for archaeology, translate into active/public knowledge through Forge, or prune when safe."
+        },
+        {
+          "id": "RASG-014",
+          "title": "Automate active task-report rotation from compass/docs to private archive",
+          "status": "done",
+          "priority": "P2",
+          "phase_id": "T1",
+          "summary": "Recent reports stay visible; older reports move to redcap-knowledge with catalog and alias preservation."
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "Policy, evidence, and legacy-asset hygiene",
+      "items": [
+        {
+          "id": "RASG-005",
+          "title": "De-sprawl references into authority policy, active configuration, and historical migration evidence",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T2",
+          "summary": "References have explicit classes and retrieval routes; one-off migration evidence is not confused with active policy."
+        },
+        {
+          "id": "RASG-008",
+          "title": "Add stronger prism/runs evidence rotation, compression, and lookup policy",
+          "status": "done",
+          "priority": "P2",
+          "phase_id": "T2",
+          "summary": "Formal evidence remains replayable while raw bulky output is timeboxed, compressed, or summarized through indexes."
+        },
+        {
+          "id": "RASG-013",
+          "title": "Review Layer A loom legacy assets against modern Layer B and Prism architecture",
+          "status": "done",
+          "priority": "P2",
+          "phase_id": "T2",
+          "summary": "Layer A assets are either clearly retained for external user-project workflows, migrated, or archived with compatibility notes."
+        }
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "Runtime and host-adapter productization",
+      "items": [
+        {
+          "id": "RASG-006",
+          "title": "Complete or explicitly block full runtime physical split before public release",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T3",
+          "summary": "Either complete a real runtime-core split, or make the wrapper-based shape an explicit alpha contract with clear non-stability boundaries."
+        },
+        {
+          "id": "RASG-012",
+          "title": "Unify host-adapter entry generation and avoid copied rule drift",
+          "status": "done",
+          "priority": "P2",
+          "phase_id": "T3",
+          "summary": "Host adapters are generated or verified from a single source and remain thin entry points."
+        },
+        {
+          "id": "RASG-016",
+          "title": "Expand clean workspace E2E from same-machine clone to release-grade environment matrix",
+          "status": "done",
+          "priority": "P2",
+          "phase_id": "T3",
+          "summary": "Release readiness can distinguish local clean clone confidence from multi-environment product confidence."
+        }
+      ]
+    },
+    {
+      "id": "T4",
+      "title": "Advanced memory and shared arsenal evolution",
+      "items": [
+        {
+          "id": "RASG-010",
+          "title": "Promote full LLM-wiki from sleeping future item to a thresholded active roadmap",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T4",
+          "summary": "Full LLM-wiki has explicit activation criteria, owner gates, non-goals, and a first implementation tranche that does not prematurely enable heavy RAG."
+        },
+        {
+          "id": "RASG-011",
+          "title": "Enforce retrieval observation metrics for FTS, RAG, and GraphRAG escalation",
+          "status": "done",
+          "priority": "P2",
+          "phase_id": "T4",
+          "summary": "Real retrieval misses and noisy lookup events are recorded in a structured place and checked before route escalation."
+        },
+        {
+          "id": "RASG-015",
+          "title": "Define version coupling between RedCap runtime and external redcap-arsenal",
+          "status": "done",
+          "priority": "P2",
+          "phase_id": "T4",
+          "summary": "RedCap records which arsenal commit/head was validated and how runtime releases reference compatible arsenal states."
+        }
+      ]
+    },
+    {
+      "id": "T5",
+      "title": "Root product-shape consolidation",
+      "items": [
+        {
+          "id": "RASG-017",
+          "title": "Consolidate root-level information architecture before product release",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T5",
+          "summary": "Produce a Prism-reviewed root-level information architecture consolidation plan that inventories every root-level asset root, classifies it, defines a target parent model, maps aliases and consumers, and only then opens "
+        },
+        {
+          "id": "RASG-022",
+          "title": "Apply root-level information architecture physical consolidation through safe semantic tranches",
+          "status": "in_progress",
+          "priority": "P1",
+          "phase_id": "T5",
+          "summary": "Execute or explicitly defer the approved root information architecture physical consolidation in small semantic apply tranches. Each tranche must preserve aliases, consumers, package safety, archaeology anchors, rollback"
+        }
+      ]
+    },
+    {
+      "id": "T6",
+      "title": "Senior holistic smell audit",
+      "items": [
+        {
+          "id": "RASG-018",
+          "title": "Run a senior holistic RedCap architecture smell audit instead of closing user examples one by one",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T6",
+          "summary": "Produce a Prism-reviewed senior holistic architecture smell audit that explicitly reviews multiple domains, records 'found / not found / deferred' conclusions per domain, and gives every finding a durable disposition ins"
+        }
+      ]
+    },
+    {
+      "id": "T7",
+      "title": "Holistic audit follow-up before release readiness",
+      "items": [
+        {
+          "id": "RASG-019",
+          "title": "Make human-facing CLI, status, and notification output understandable without RedCap internal jargon",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T7",
+          "summary": "Human-facing output is framed by problem, action, result, current task panorama, next step, and whether human intervention is needed. Internal mechanism names may appear only as secondary evidence links or glossary-backe"
+        },
+        {
+          "id": "RASG-020",
+          "title": "Separate public runtime contract from maintainer-only governance validators before npm or CLI release",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T7",
+          "summary": "Release readiness distinguishes the public runtime contract from maintainer/developer governance tools. The package manifest, runtime package readiness policy, and publish safety check agree on that boundary from a singl"
+        },
+        {
+          "id": "RASG-021",
+          "title": "Track Prism degradation frequency and keep conclusion gates resilient when providers are flaky",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T7",
+          "summary": "Prism status surfaces show the recent degradation rate, provider families involved, and whether the current task used full quorum or resource-limited evidence. Degradation above a defined threshold opens a governance act"
+        }
+      ]
+    },
+    {
+      "id": "T8",
+      "title": "Plan-only closure and Prism follow-up hardening",
+      "items": [
+        {
+          "id": "RASG-023",
+          "title": "Strengthen Prism and conclusion gates to catch plan-only closure follow-up gaps",
+          "status": "done",
+          "priority": "P1",
+          "phase_id": "T8",
+          "summary": "Prism prompts, conclusion policy, and closeout-facing validators require reviewers to check whether every deferred capability or future apply requirement has a durable task, backlog item, owner surface, or explicit no-fo"
+        }
+      ]
+    }
+  ],
+  "execution_order": [
+    {
+      "id": "T0",
+      "title": "Fast consistency and truth-surface repairs",
+      "status": "done",
+      "summary": "Fix low-cost drift that misleads humans or agents even when runtime checks pass.",
+      "item_ids": [
+        "RASG-003",
+        "RASG-007",
+        "RASG-009"
+      ]
+    },
+    {
+      "id": "T1",
+      "title": "Knowledge architecture foundations",
+      "status": "done",
+      "summary": "Turn the current multi-root knowledge layout into a deliberate federated retrieval system instead of a loose pile of knowledge directories.",
+      "item_ids": [
+        "RASG-001",
+        "RASG-002",
+        "RASG-004",
+        "RASG-014"
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "Policy, evidence, and legacy-asset hygiene",
+      "status": "done",
+      "summary": "Reduce policy sprawl, evidence accumulation, and old/new transition ambiguity without damaging archaeology.",
+      "item_ids": [
+        "RASG-005",
+        "RASG-008",
+        "RASG-013"
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "Runtime and host-adapter productization",
+      "status": "done",
+      "summary": "Move from skill-root compatibility to a cleaner installable runtime and host-adapter shape.",
+      "item_ids": [
+        "RASG-006",
+        "RASG-012",
+        "RASG-016"
+      ]
+    },
+    {
+      "id": "T4",
+      "title": "Advanced memory and shared arsenal evolution",
+      "status": "done",
+      "summary": "Keep full LLM-wiki, retrieval escalation, and public arsenal maturity visible without prematurely enabling heavyweight memory systems.",
+      "item_ids": [
+        "RASG-010",
+        "RASG-011",
+        "RASG-015"
+      ]
+    },
+    {
+      "id": "T5",
+      "title": "Root product-shape consolidation",
+      "status": "in_progress",
+      "summary": "Judge whether the repository root itself still exposes too many direct parent directories for knowledge, reports, evidence, runtime, and public templates before RedCap is treated as a clean product.",
+      "item_ids": [
+        "RASG-017",
+        "RASG-022"
+      ]
+    },
+    {
+      "id": "T6",
+      "title": "Senior holistic smell audit",
+      "status": "done",
+      "summary": "Prevent user examples from being narrowed into single-point fixes by requiring a Prism-reviewed, senior-engineering review across RedCap's product shape, workflow guarantees, truth sources, knowledge/evidence lifecycle, package surface, and human-facing status model.",
+      "item_ids": [
+        "RASG-018"
+      ]
+    },
+    {
+      "id": "T7",
+      "title": "Holistic audit follow-up before release readiness",
+      "status": "done",
+      "summary": "Track the P1 issues discovered by RASG-018 that should be closed before RedCap is treated as a polished public runtime or CLI product.",
+      "item_ids": [
+        "RASG-019",
+        "RASG-020",
+        "RASG-021"
+      ]
+    },
+    {
+      "id": "T8",
+      "title": "Plan-only closure and Prism follow-up hardening",
+      "status": "done",
+      "summary": "Prevent design-only, plan-only, or route-only work from being treated as fully closed when a later physical apply or governance hardening task was explicitly required.",
+      "item_ids": [
+        "RASG-023"
+      ]
+    }
+  ],
+  "current_focus": {
+    "item_id": "RASG-022",
+    "summary": "当前正在执行根目录信息架构真实物理合并；本轮只关闭 shared-knowledge 模板迁移切片，整体 RASG-022 仍保持 in_progress。"
+  }
 }

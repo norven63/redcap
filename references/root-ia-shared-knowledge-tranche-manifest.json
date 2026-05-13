@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "manifest_id": "rasg-022-shared-knowledge-template-tranche",
+  "requirement": "RASG-022",
+  "created_at": "2026-05-13T15:21:36Z",
+  "status": "applied-prism-accepted-awaiting-closeout",
+  "target_parent": "templates-and-external-arsenal",
+  "scope": "Move the RedCap-internal shared knowledge template source out of the repository root into templates/shared-knowledge while keeping the external redcap-arsenal worktree as the durable public knowledge repository.",
+  "non_goals": [
+    "Do not migrate private reports, lessons, identity, runtime evidence, or historical task reports into public redcap-arsenal.",
+    "Do not publish npm or change package private=true.",
+    "Do not move compass, references, prism, redcap-knowledge, loom, host entries, package controls, or local workspace state in this tranche."
+  ],
+  "dry_run_move_manifest": [
+    {
+      "from": "shared-knowledge/.gitignore",
+      "to": "templates/shared-knowledge/.gitignore",
+      "kind": "git-move",
+      "reason": "Keep the public shared-knowledge template denylist under a dedicated template parent."
+    },
+    {
+      "from": "shared-knowledge/README.md",
+      "to": "templates/shared-knowledge/README.md",
+      "kind": "git-move",
+      "reason": "Make the in-repo public-arsenal template surface explicit and keep it out of the root product surface."
+    },
+    {
+      "from": "shared-knowledge/schemas/entry.schema.json",
+      "to": "templates/shared-knowledge/schemas/entry.schema.json",
+      "kind": "git-move",
+      "reason": "Keep the append-only public entry schema next to the template README."
+    },
+    {
+      "from": "shared-knowledge/indexes/.gitkeep",
+      "to": "templates/shared-knowledge/indexes/.gitkeep",
+      "kind": "git-move",
+      "reason": "Preserve the generated-index namespace for copied templates and fixtures."
+    },
+    {
+      "from": "shared-knowledge/users/.gitkeep",
+      "to": "templates/shared-knowledge/users/.gitkeep",
+      "kind": "git-move",
+      "reason": "Preserve the per-user namespace placeholder in the canonical template root."
+    },
+    {
+      "from": "shared-knowledge/users/Norven/.gitkeep",
+      "to": "templates/shared-knowledge/users/Norven/.gitkeep",
+      "kind": "git-move",
+      "reason": "Preserve the current default user namespace placeholder without making it a private identity source."
+    }
+  ],
+  "consumer_matrix": [
+    {
+      "consumer": "shared knowledge CLI and checks",
+      "current_paths": [
+        "compass/tools/redcap-shared-knowledge.py",
+        "compass/tools/redcap-shared-knowledge-check.sh"
+      ],
+      "required_update": "Use templates/shared-knowledge as the canonical template source and copy templates from that location."
+    },
+    {
+      "consumer": "remote binding and public arsenal claim checks",
+      "current_paths": [
+        "references/shared-knowledge-remote-binding.json",
+        "compass/tools/redcap-shared-knowledge-remote-check.py",
+        "compass/tools/redcap-public-arsenal-claim-boundary.py"
+      ],
+      "required_update": "Point template_root/local template references at templates/shared-knowledge while keeping preferred_local_worktree outside the RedCap repo."
+    },
+    {
+      "consumer": "package and release safety surface",
+      "current_paths": [
+        "package.json",
+        "references/runtime-package-readiness-policy.json",
+        "references/package-publish-safety-policy.json",
+        "references/runtime-public-contract-policy.json"
+      ],
+      "required_update": "Replace package candidate globs from shared-knowledge/* to templates/shared-knowledge/* and prove npm pack dry-run still matches the generated candidate list."
+    },
+    {
+      "consumer": "human entry and architecture docs",
+      "current_paths": [
+        "README.md",
+        "ARCHITECTURE.md",
+        "compass/CONTRIBUTING.core.md"
+      ],
+      "required_update": "Describe templates/shared-knowledge as the in-repo template source and ../redcap-arsenal as the durable public worktree."
+    },
+    {
+      "consumer": "identity and retrieval policies",
+      "current_paths": [
+        "references/user-agent-identity-policy.json",
+        "references/retrieval-escalation-policy.json",
+        "references/information-architecture-artifact-governance-policy.json"
+      ],
+      "required_update": "Keep user namespace initialization and retrieval references aligned with the new canonical template root."
+    },
+    {
+      "consumer": "acceptance fixtures",
+      "current_paths": [
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "required_update": "Copy template fixtures from templates/shared-knowledge and assert the new canonical placeholder exists."
+    }
+  ],
+  "compatibility_window": {
+    "canonical_template_root": "templates/shared-knowledge",
+    "legacy_root": "shared-knowledge",
+    "legacy_root_policy": "The legacy root path is retired from tracked source in this tranche. Historical reports may still mention it as an old anchor, but active checks and package candidates must use templates/shared-knowledge.",
+    "external_public_worktree": "../redcap-arsenal",
+    "compatibility_rule": "Commands that initialize or append to an explicit --root continue to work. The repo-owned default template root changes to templates/shared-knowledge."
+  },
+  "rollback_plan": [
+    "git mv templates/shared-knowledge shared-knowledge",
+    "Revert the path updates in package.json, references/*.json, README/ARCHITECTURE and shared-knowledge tools.",
+    "Run shared-knowledge checks, package manifest dry-run, root IA check and acceptance again before committing rollback."
+  ],
+  "required_validation": [
+    "bash compass/tools/redcap-shared-knowledge-check.sh",
+    "bash compass/tools/redcap-shared-knowledge-remote-check.sh",
+    "bash compass/tools/redcap-root-information-architecture-check.sh",
+    "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run --json",
+    "bash compass/tools/redcap-package-publish-safety-check.sh",
+    "bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check",
+    "bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check",
+    "bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check",
+    "bash compass/tools/redcap-spec-check.sh \"$PWD\""
+  ],
+  "completion_boundary": "This tranche can prove that the shared-knowledge template source was physically consolidated. It cannot close all of RASG-022 unless later tranches or explicit deferrals cover the remaining root parent groups."
+}

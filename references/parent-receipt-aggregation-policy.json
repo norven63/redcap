@@ -168,7 +168,7 @@
       "title": "跨机器 / clean workspace 安装 E2E",
       "status": "completed",
       "task_id": "redcap-clean-workspace-install-e2e",
-      "report_path": "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
+      "report_path": "redcap-knowledge/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
       "receipt_glob": "redcap-clean-workspace-install-e2e-*.json",
       "durable_evidence_status": "repo-owned-machine-evidence",
       "durable_evidence_reason": "P4-3 remains a completed modern child. Its repo-owned clean workspace E2E receipt records task_id, clean clone result, isolation, package safety and npm pack dry-run facts; parent aggregation may use it when volatile /tmp closeout receipts are unavailable.",

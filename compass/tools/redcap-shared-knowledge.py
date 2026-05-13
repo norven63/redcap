@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_ROOT = "shared-knowledge"
+DEFAULT_ROOT = "templates/shared-knowledge"
 ALLOWED_KINDS = {
     "lesson",
     "identity-signal",
@@ -94,10 +94,17 @@ def ensure_structure(root: Path) -> None:
     (root / "schemas").mkdir(parents=True, exist_ok=True)
 
 
+def template_root(repo_root: Path) -> Path:
+    canonical = repo_root / "templates" / "shared-knowledge"
+    legacy = repo_root / "shared-knowledge"
+    return canonical if canonical.is_dir() else legacy
+
+
 def copy_template(repo_root: Path, root: Path) -> None:
-    template_readme = repo_root / "shared-knowledge" / "README.md"
-    template_gitignore = repo_root / "shared-knowledge" / ".gitignore"
-    template_schema = repo_root / "shared-knowledge" / "schemas" / "entry.schema.json"
+    source_root = template_root(repo_root)
+    template_readme = source_root / "README.md"
+    template_gitignore = source_root / ".gitignore"
+    template_schema = source_root / "schemas" / "entry.schema.json"
     if template_readme.is_file() and not (root / "README.md").exists():
         shutil.copyfile(template_readme, root / "README.md")
     if template_gitignore.is_file() and not (root / ".gitignore").exists():

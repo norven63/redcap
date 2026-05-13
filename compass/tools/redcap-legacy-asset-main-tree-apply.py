@@ -30,6 +30,7 @@ TASK_ID = "historical-asset-migration-main-tree-copy-apply"
 PLAN_ID = "redcap-legacy-asset-migration-apply-preflight"
 WORKTREE_ID = "redcap-legacy-asset-migration-worktree-rehearsal"
 PUBLIC_TARGET_PREFIXES = {"redcap-arsenal", "shared-knowledge"}
+PUBLIC_TARGET_NESTED_PREFIXES = {("templates", "shared-knowledge")}
 
 
 def fail(message: str) -> None:
@@ -75,7 +76,10 @@ def safe_relative(raw: str, label: str) -> str:
 
 def is_public_target(raw: str) -> bool:
     parts = Path(raw).parts
-    return bool(parts and parts[0] in PUBLIC_TARGET_PREFIXES)
+    return bool(
+        (parts and parts[0] in PUBLIC_TARGET_PREFIXES)
+        or tuple(parts[:2]) in PUBLIC_TARGET_NESTED_PREFIXES
+    )
 
 
 def run_command(args: list[str]) -> str:

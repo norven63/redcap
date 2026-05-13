@@ -7,4 +7,4 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-bash "$SCRIPT_DIR/redcap-shared-knowledge.sh" check --root "$REDCAP_ROOT/shared-knowledge"
+bash "$SCRIPT_DIR/redcap-shared-knowledge.sh" check --root "$REDCAP_ROOT/templates/shared-knowledge"

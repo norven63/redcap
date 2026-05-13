@@ -66,6 +66,13 @@
       "trigger_for_revisit": "When the registry exceeds 75KB or when more than 5 new guarantees are added in one tranche, evaluate category sharding with a generated combined view."
     },
     {
+      "path": "references/backlogs/redcap-architecture-smell-governance.json",
+      "kind": "tracked-large-backlog-registry",
+      "current_mitigation": "current-status-backlog-summary",
+      "structural_strategy": "Keep as the active architecture-smell governance registry while exposing human progress through current-status and task reports. Do not bulk-read the full backlog during startup; use exact RASG ids or status summaries.",
+      "trigger_for_revisit": "When the backlog exceeds 75KB, split closed items into an archive registry and keep only open/current decision records in the active file behind the same current-status surface."
+    },
+    {
       "path": "references/legacy-asset-migration-apply-plan.json",
       "kind": "tracked-large-generated-manifest",
       "current_mitigation": "file-lookup-dictionary-and-apply-preflight-check",

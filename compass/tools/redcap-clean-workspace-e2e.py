@@ -37,7 +37,7 @@ ALLOWED_POST_RESULT_DRIFT_PATHS = {
     "references/legacy-asset-migration-dry-run.json",
     "compass/docs/catalog.json",
     "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md",
-    "compass/docs/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
+    "redcap-knowledge/task-reports/2026-05-01-redcap-clean-workspace-install-e2e.md",
     "compass/docs/task-reports/2026-05-03-parent-receipt-durability-reconciliation.md",
     "redcap-knowledge/task-reports/2026-05-06-agent-reading-absorption.md",
     "redcap-knowledge/task-reports/2026-05-06-redcap-public-distillation-preflight.md",

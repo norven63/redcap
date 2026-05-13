@@ -25,6 +25,7 @@ TASK_ID = "historical-asset-migration-apply-rehearsal"
 
 FORBIDDEN_OPERATIONS = {"delete", "move", "move-then-delete", "prune", "public-export"}
 PUBLIC_TARGET_PREFIXES = {"redcap-arsenal", "shared-knowledge"}
+PUBLIC_TARGET_NESTED_PREFIXES = {("templates", "shared-knowledge")}
 COPY_FIRST_GUARDS = {
     "catalog-alias-required-before-apply",
     "local-link-check-required-before-apply",
@@ -90,7 +91,10 @@ def assert_within_root(root: Path, rel: str, ctx: str, key: str) -> None:
 
 def is_public_target(raw: str) -> bool:
     parts = Path(raw).parts
-    return bool(parts and parts[0] in PUBLIC_TARGET_PREFIXES)
+    return bool(
+        (parts and parts[0] in PUBLIC_TARGET_PREFIXES)
+        or tuple(parts[:2]) in PUBLIC_TARGET_NESTED_PREFIXES
+    )
 
 
 def sha256_file(path: Path) -> str:

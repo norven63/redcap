@@ -48,12 +48,12 @@ RedCap 进入正式 public release 之前，不只要回答“能不能打包”
 | T1: Runtime facade | 把 `revive-cap.sh` / `closeout-cap.sh` / current-status 收敛成 CLI 形态的 facade | `bin/redcap revive/status/diagnose/closeout` 已等价调用现有入口 |
 | T2: Host adapter package | 宿主入口从手写镜像变为生成或 symlink 管理 | host entries 不再手工分叉，adapter check 可阻断漂移 |
 | T3: Evidence boundary | task reports、Prism runs、human reports 与 runtime receipts 分层存放 | 新会话只读索引，历史证据按需读取；大规模物理迁移必须另走 dry-run/apply |
-| T4: Knowledge gateway | lessons / docs / reports 从文件索引升级到 metadata/FTS；必要时接入 RAG | `shared-knowledge` 模板、外部 `redcap-arsenal` 本地工作区、append-only 写入、索引和 exact dedupe 已可运行 |
+| T4: Knowledge gateway | lessons / docs / reports 从文件索引升级到 metadata/FTS；必要时接入 RAG | `templates/shared-knowledge` 模板、外部 `redcap-arsenal` 本地工作区、append-only 写入、索引和 exact dedupe 已可运行 |
 | T5: Distribution | 从 skill 仓库演进为 npm/pip/brew 或独立 CLI 包 | 新工作区可安装 runtime，而不是复制整个 skill 仓库 |
 
 ## Shared Knowledge Boundary
 
-`shared-knowledge/` 是 RedCap 仓库内模板源，不是新的上下文大包，也不是公共库本体。实体公共库工作区由 `references/shared-knowledge-remote-binding.json` 的 `preferred_local_worktree` 指向，默认应在 RedCap 仓库外；远端是 `https://gitee.com/norven63/redcap-arsenal.git`。它的规则是：
+`templates/shared-knowledge/` 是 RedCap 仓库内模板源，不是新的上下文大包，也不是公共库本体。实体公共库工作区由 `references/shared-knowledge-remote-binding.json` 的 `preferred_local_worktree` 指向，默认应在 RedCap 仓库外；远端是 `https://gitee.com/norven63/redcap-arsenal.git`。它的规则是：
 
 - `users/<user>/` 按用户隔离沉淀内容；本安装已初始化 `users/Norven/`
 - 条目文件以 UTC 时间戳开头，只新增不改旧文件

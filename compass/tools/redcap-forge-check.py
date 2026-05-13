@@ -103,7 +103,7 @@ def validate_docs(root: Path) -> None:
     for phrase in ["RedCap Forge", "redcap-arsenal", "Evolution Factory"]:
         if phrase not in evolution_readme:
             fail(f"Evolution README missing phrase: {phrase}")
-    shared_readme = (root / "shared-knowledge/README.md").read_text(encoding="utf-8", errors="replace")
+    shared_readme = (root / "templates/shared-knowledge/README.md").read_text(encoding="utf-8", errors="replace")
     if "RedCap Forge" not in shared_readme:
         fail("shared-knowledge README must mention RedCap Forge")
 

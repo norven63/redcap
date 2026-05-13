@@ -635,7 +635,7 @@ governance_debts_addressed: []
 - continuity assets：`.dev-task.md`、`explore-notes.md`、宿主 `plan.md` / workboard、imported session artifacts
 - `compass/docs/catalog.json`：docs 首读索引，只承载摘要、读法策略与体量信息，不替代任何原始 evidence
 - `compass/knowledge/index.md`：knowledge 首读导航，只帮助定位经验/宿主/治理知识，不替代 lessons 或具体 host 记录
-- `shared-knowledge/`：未来独立公共知识库的本地模板，负责 append-only 团队沉淀、按用户隔离、索引优先读取；远端仓库未绑定前不得冒充已完成团队共享部署
+- `templates/shared-knowledge/`：未来独立公共知识库的本地模板，负责 append-only 团队沉淀、按用户隔离、索引优先读取；远端仓库未绑定前不得冒充已完成团队共享部署
 - `references/file-lookup-dictionary.md`：关键文件定位和人话解释入口；coverage 以 `references/file-lookup-dictionary-policy.json` + checker 为准
 
 补充规则：

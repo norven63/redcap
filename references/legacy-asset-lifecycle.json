@@ -85,10 +85,10 @@
     },
     {
       "id": "shared-knowledge-template",
-      "path": "shared-knowledge",
+      "path": "templates/shared-knowledge",
       "kind": "public-arsenal-template-source",
       "default_action": "preserve",
-      "authority": "shared-knowledge is only the safe template source for redcap-arsenal; public entries require RedCap Forge processing before append.",
+      "authority": "templates/shared-knowledge is only the safe template source for redcap-arsenal; public entries require RedCap Forge processing before append.",
       "check_paths": [
         "references/shared-knowledge-policy.json",
         "references/redcap-forge-policy.json",

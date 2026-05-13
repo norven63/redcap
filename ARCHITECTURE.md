@@ -424,7 +424,7 @@ Layer B 的“完成”不是一句自然语言，而是一个 closure transacti
 
 - `lessons.md`：活跃层，保持短小、常驻启动上下文
 - `lessons-archive.md`：归档层，按需检索
-- `shared-knowledge/`：未来独立团队共享库的本地模板，负责按用户隔离、append-only 沉淀、索引优先读取和 exact duplicate 拒绝
+- `templates/shared-knowledge/`：未来独立团队共享库的本地模板，负责按用户隔离、append-only 沉淀、索引优先读取和 exact duplicate 拒绝
 - `RedCap Forge`：公共沉淀前的锻造流水线，负责蒸馏、脱敏、去重、结构化、索引化和 promotion/no-promote
 
 高影响 lesson 不允许自动淡出。  
