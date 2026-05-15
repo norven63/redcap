@@ -195,7 +195,7 @@
       "target": "redcap-knowledge/knowledge",
       "kind": "active-knowledge",
       "current_count": 177,
-      "current_lines": 4784,
+      "current_lines": 4785,
       "default_action": "translate-after-index-split",
       "risk": "high",
       "apply_status": "blocked_until_hot_cold_knowledge_split_exists",

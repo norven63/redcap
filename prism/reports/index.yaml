@@ -1,4 +1,26 @@
 reports:
+  - id: "20260515-gd008-host-limited-boundary-closeout"
+    mode: test
+    date: "2026-05-15"
+    topic: "GD-008 host-limited boundary closeout"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass-with-concerns"
+    consensus_actions:
+      - "Close GD-008 as design-complete/done only for the RedCap-owned honest modeling work"
+      - "Keep full reply-time veto explicitly host-limited and do not claim Codex.app interactive readiness"
+      - "Add a reactivation sentinel so future host pre-reply/pre-send capability opens a new host-adapter upgrade task"
+    open_questions:
+      - "Actual full reply-time veto remains impossible until a host exposes and proves a repo-owned pre-reply or pre-send hook"
+      - "Formal npm release remains a separate task after release readiness and Norven-held decisions"
+    lessons_updated: false
+    files_affected:
+      - "compass/knowledge/governance-debt-register.md"
+      - "references/host-session-capability-matrix.json"
+      - "compass/tools/redcap-hook-contract-check.sh"
+      - "prism/reports/2026-05-15-gd-008-host-limited-boundary-closeout.md"
+      - "compass/docs/task-reports/2026-05-15-gd-008-host-limited-boundary-closeout.md"
+    archived: false
   - id: "20260514-rasg022-remaining-root-groups-deferral"
     mode: acceptance-review
     date: "2026-05-14"

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 362217,
-    "lines": 7270,
-    "chars": 215193,
+    "size_bytes": 359272,
+    "lines": 7263,
+    "chars": 215818,
     "rough_token_pressure": {
-      "low": 53798,
-      "high": 107596
+      "low": 53954,
+      "high": 107909
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 168542,
-        "lines": 2687,
-        "chars": 98720,
+        "size_bytes": 165597,
+        "lines": 2680,
+        "chars": 99345,
         "rough_token_pressure": {
-          "low": 24680,
-          "high": 49360
+          "low": 24836,
+          "high": 49672
         }
       }
     },
@@ -431,19 +431,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-09-feishu-outcome-readable-and-reply-research.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：飞书成果汇报、全景图与回复通道治理",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 14517,
-      "lines": 233,
-      "chars": 6771,
-      "summary": "当前已完成：飞书完成通知的人类可读性已经收口；飞书回复也已接成“安全收件箱”，可以被 RedCap 看到，但不会被当成远程命令直接执行。 / 详情：整体任务全景图已从“当前小任务路线”升级为“RedCap 这次超长主线任务的总览”；飞书回复会进入待处理入口，再由中插需求、人工决策或当前任务合并流程接管。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md",
       "collection": "task-reports",
       "title": "任务完成报告：RASG-017 根目录信息架构目标模型",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-018 全局架构坏味审判",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9775,
       "lines": 171,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-023 计划型完成后续登记门",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13202,
       "lines": 244,
       "chars": 8020,
       "summary": "当前已完成：RedCap 已把“计划已经做完，但真实执行还没做”的情况纳入机器门禁，防止后续任务只留在报告文字里而没有登记成可追踪待办项。 / 详情：本轮解决的是 RASG-017 暴露出的流程漏洞：根目录信息架构目标模型已经完成，但真实物理合并没有同步成为后续任务。现在，类似 `plan-complete`、`design-complete`、`route-only`、`partial-with-explicit-defer` 的结论，都必须登记后续任务、责任面、验收边界和复查触发条件，或者明确说明为什么不需要后续任务。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把“计划已经做完，但真实执行还没做”的情况纳入机器门禁，防止后续任务只留在报告文字里而没有登记成可追踪待办项。",
-          "详情：本轮解决的是 RASG-017 暴露出的流程漏洞：根目录信息架构目标模型已经完成，但真实物理合并没有同步成为后续任务。现在，类似 `plan-complete`、`design-complete`、`route-only`、`partial-with-explicit-defer` 的结论，都必须登记后续任务、责任面、验收边界和复查触发条件，或者明确说明为什么不需要后续任务。"
-        ],
-        "previous_step": [
-          "上一步完成的是：前一轮已经把 RASG-022 和 RASG-023 登记进历史债务队列，避免根目录物理合并和本次流程缺口继续靠 Norven 人工记忆兜底。"
-        ],
-        "next_step": [
-          "下一步计划做的是：完成提交与 clean workspace E2E receipt 刷新后，转入 RASG-021，治理 Prism 降级频率和结论韧性。"
-        ],
-        "position": [
-          "整体计划脉络图是：RASG-017 根目录目标模型 -> RASG-022 物理合并后续登记 -> RASG-023 计划型完成后续登记门 -> RASG-021 Prism 降级韧性 -> RASG-022 分批物理迁移。",
-          "当前所在位置：RASG-023 已完成实现、自检和 Prism 验收，正在等待提交、clean workspace E2E 刷新与 closeout receipt。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
@@ -605,6 +576,34 @@
         "position": [
           "整体计划脉络图是：历史债务与坏味治理 → 当前主推进任务集 → 正式发布准备 → 长期演进专项。",
           "当前所在位置：历史债务与坏味治理中的 RASG-022 收口切片；本轮处理的是 remaining-root-groups deferral，不是正式发布。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-15-gd-008-host-limited-boundary-closeout.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：GD-008 host-limited 边界收口",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 11572,
+      "lines": 226,
+      "chars": 7396,
+      "summary": "当前已完成：GD-008 已从“开放治理债务”收口为“已建模的 host-limited 宿主边界”。这表示 RedCap 已经把自己能控制的部分做好：执行保障、宿主画像、诊断、状态面和边界说明都在；但它没有、也不能冒充拥有完整 reply-time veto。 / 上一步完成的是：RASG-022 剩余高风险根目录已用显式延期收据完成当前阶段收口，架构坏味账本 open=0。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：GD-008 已从“开放治理债务”收口为“已建模的 host-limited 宿主边界”。这表示 RedCap 已经把自己能控制的部分做好：执行保障、宿主画像、诊断、状态面和边界说明都在；但它没有、也不能冒充拥有完整 reply-time veto。"
+        ],
+        "previous_step": [
+          "上一步完成的是：RASG-022 剩余高风险根目录已用显式延期收据完成当前阶段收口，架构坏味账本 open=0。"
+        ],
+        "next_step": [
+          "下一步计划做的是：如果后续状态面没有新的非发布类治理债务，可进入正式 release readiness / npm 发布准备；正式发布仍需要许可证、发布开关、registry 权限和发布窗口等人工决策。"
+        ],
+        "position": [
+          "整体计划脉络图是：历史债务与坏味治理 → 当前主推进任务集 → 正式发布准备 → 长期演进专项。",
+          "当前所在位置：历史债务与坏味治理中的 GD-008 收口切片；本轮处理的是 host-limited 边界，不是正式发布。"
         ]
       }
     }

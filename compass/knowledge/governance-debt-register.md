@@ -63,11 +63,12 @@
 - **gap**: 已收口：`spec-registry + spec-lifecycle-policy + spec-check` 承接 spec 维度；`docs catalog + knowledge index + execution guarantees + revival check` 承接 docs/knowledge/复活执行纪律；`acceptance index + token-risk audit` 承接巨型脚本、入口自动导入与 ignored 运行残留；`review-tracks + hook-contract + runtime-helper + cli-console-mirror` checks 承接三轨评审、hook 契约、runtime helper 收敛与宿主展示镜像边界。`cli_console.md` 的 repo-owned 边界已完成；宿主最终回复 UI 不由仓库脚本强控，不再作为本债务残留。
 
 ### GD-008：主 Agent 实时行为约束仍属 host-limited
-- **design_status**: `identified`
-- **implementation_status**: `in-progress`
+- **design_status**: `design-complete`
+- **implementation_status**: `done`
 - **owner_slice**: `宿主能力画像 / 行为保障诚实建模`
 - **source**: `references/execution-guarantees.json`（host-behavior 类别）+ `references/host-session-capability-matrix.json`
-- **gap**: 入口恢复、docs/knowledge 渐进披露、validator 与 diagnose 已有较强机械保障，但“主 Agent 不应无必要中断用户 / 不应把 commit 犹豫升级成人工确认”这类回复时行为，仍缺少完整 repo-owned pre-reply veto。2026-05-09 起 Codex 官方 lifecycle hooks 已进入 RedCap candidate 接线，能补强 SessionStart / Stop / PreToolUse，但在 project trust + live marker E2E 前仍是 degraded；即使验证通过，也不能把 `PreToolUse` 误说成完整沙箱或完整 reply-time veto。
+- **gap**: 已收口为 host-limited 边界：入口恢复、docs/knowledge 渐进披露、validator、diagnose、execution guarantees、evolution-grade baseline、host reliability 与 Codex hooks 画像已经完成 RedCap-owned 的诚实建模；剩余的“主 Agent live reply 前物理 veto / pre-send 拦截”不是仓库内脚本能继续补齐的实现缺口，而是宿主是否提供 repo-owned pre-reply/pre-send Hook 的能力边界。`done` 只表示该边界已被登记、审计和状态面显性化，不表示 RedCap 已拥有完整 reply-time veto。
+- **resolution**: Codex CLI live marker 通过只证明本机 `codex exec` 生命周期 Hook；Codex.app interactive 与完整 reply-veto 仍必须保持 degraded / separately-unproven 口径。若未来任一宿主在 `references/host-session-capability-matrix.json` 中声明并验证 repo-owned pre-reply 或 pre-send veto，应新开 host-adapter upgrade task，将对应宿主从 G3/manual-only 升级到更强保障；不得重开 GD-008 来表示历史债务未完成。
 
 ### GD-009：首读/诊断链尚未实现真正 read-only-safe
 - **design_status**: `identified`

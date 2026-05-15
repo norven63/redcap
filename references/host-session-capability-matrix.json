@@ -3,15 +3,30 @@
   "default": {
     "support_status": "unsupported",
     "profile": "unsupported-host",
+    "reply_veto_status": "not-provided",
+    "reply_veto_verification": "none",
     "allow_safe_degraded": false,
     "allow_explicit_binding_key": false,
     "allow_host_session_id_binding": false,
     "missing_identity_mode": "unsupported"
   },
+  "gd008_reactivation_sentinel": {
+    "capability": "repo-owned-pre-reply-or-pre-send-veto",
+    "current_default_status": "not-provided",
+    "trigger_statuses": [
+      "pre-reply-veto-verified",
+      "pre-send-veto-verified",
+      "reply-veto-verified"
+    ],
+    "required_action": "Open a new host-adapter upgrade task to strengthen the affected host from G3/manual-only; do not reopen GD-008.",
+    "claim_boundary": "GD-008 done means host-limited boundary is honestly modeled, not that full reply-time veto exists."
+  },
   "hosts": {
     "claude": {
       "support_status": "supported",
       "profile": "claude-sessionstart-host-session",
+      "reply_veto_status": "not-provided",
+      "reply_veto_verification": "none",
       "allow_safe_degraded": true,
       "allow_explicit_binding_key": true,
       "allow_host_session_id_binding": true,
@@ -20,6 +35,8 @@
     "gemini": {
       "support_status": "supported",
       "profile": "gemini-sessionstart-host-session",
+      "reply_veto_status": "not-provided",
+      "reply_veto_verification": "none",
       "allow_safe_degraded": true,
       "allow_explicit_binding_key": true,
       "allow_host_session_id_binding": true,
@@ -28,6 +45,8 @@
     "copilot": {
       "support_status": "supported",
       "profile": "copilot-sessionstart-wrapper-required",
+      "reply_veto_status": "not-provided",
+      "reply_veto_verification": "none",
       "allow_safe_degraded": true,
       "allow_explicit_binding_key": true,
       "allow_host_session_id_binding": false,
@@ -39,6 +58,8 @@
       "hook_verification_status": "codex-cli-live-marker-pass",
       "hook_verification_evidence": "references/codex-live-marker-e2e.json",
       "interactive_app_status": "unverified",
+      "reply_veto_status": "not-provided",
+      "reply_veto_verification": "codex-cli-marker-does-not-prove-app-reply-veto",
       "allow_safe_degraded": true,
       "allow_explicit_binding_key": true,
       "allow_host_session_id_binding": true,

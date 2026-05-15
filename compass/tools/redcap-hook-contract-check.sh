@@ -48,6 +48,18 @@ for phrase in [
     if phrase not in host_readiness:
         fail(f"host readiness missing hook single-source/live-marker boundary: {phrase}")
 
+host_matrix = read("references/host-session-capability-matrix.json")
+for phrase in [
+    "gd008_reactivation_sentinel",
+    "repo-owned-pre-reply-or-pre-send-veto",
+    "Open a new host-adapter upgrade task",
+    "GD-008 done means host-limited boundary is honestly modeled",
+    "reply_veto_status",
+    "codex-cli-marker-does-not-prove-app-reply-veto",
+]:
+    if phrase not in host_matrix:
+        fail(f"host capability matrix missing GD-008 reactivation sentinel: {phrase}")
+
 codex_live_marker = read("compass/tools/redcap-codex-live-marker-e2e.sh")
 for phrase in [
     "codex exec",

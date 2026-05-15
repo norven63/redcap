@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 84,
-  "bytes_total": 1174131,
+  "file_count": 85,
+  "bytes_total": 1188648,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 80,
+    "private-task-report-archive": 81,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -605,6 +605,14 @@
       "class": "private-task-report-archive",
       "bytes": 8432,
       "sha256": "ac8f0afa7c730d5a1a20bcb0faa9335ab82aa8d155aed884e3a8324c47df6248",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-09-feishu-outcome-readable-and-reply-research.md",
+      "class": "private-task-report-archive",
+      "bytes": 14517,
+      "sha256": "0f3bd8d2399ebbf621bffb34efe2f90fa8aadcc75db4382c550ebd3358df6ff8",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },
