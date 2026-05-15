@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 66066,
+      "bytes": 67196,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -15,7 +15,7 @@
     },
     {
       "path": "references/execution-guarantees.json",
-      "bytes": 111167,
+      "bytes": 112529,
       "asset_class": "control-plane-registry",
       "lifecycle": "active-validator-registry",
       "consumer_check": "bash compass/tools/redcap-execution-guarantee-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 85615,
+      "bytes": 86463,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -105,7 +105,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 30118,
+      "bytes": 30470,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",
@@ -123,7 +123,7 @@
     },
     {
       "path": "references/root-information-architecture-consolidation-plan.json",
-      "bytes": 22700,
+      "bytes": 23268,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",

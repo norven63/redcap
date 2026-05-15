@@ -40,6 +40,7 @@
     "!compass/tools/redcap-multi-session-acceptance.sh",
     "!compass/tools/redcap-pre-release-structure-task-tree-check.*",
     "!compass/tools/redcap-root-information-architecture-check.*",
+    "!compass/tools/redcap-root-ia-deferral-check.*",
     "!compass/tools/redcap-public-distillation-preflight.*",
     "!compass/tools/redcap-r0-r22-registry-check.*",
     "!compass/tools/redcap-reviewer-order.py",

@@ -3,7 +3,8 @@
   "manifest_id": "rasg-022-shared-knowledge-template-tranche",
   "requirement": "RASG-022",
   "created_at": "2026-05-13T15:21:36Z",
-  "status": "applied-prism-accepted-awaiting-closeout",
+  "status": "completed-closeout-receipted",
+  "completed_at": "2026-05-13T00:00:00Z",
   "target_parent": "templates-and-external-arsenal",
   "scope": "Move the RedCap-internal shared knowledge template source out of the repository root into templates/shared-knowledge while keeping the external redcap-arsenal worktree as the durable public knowledge repository.",
   "non_goals": [
@@ -127,4 +128,10 @@
     "bash compass/tools/redcap-spec-check.sh \"$PWD\""
   ],
   "completion_boundary": "This tranche can prove that the shared-knowledge template source was physically consolidated. It cannot close all of RASG-022 unless later tranches or explicit deferrals cover the remaining root parent groups."
+  ,
+  "completion_evidence": {
+    "task_report": "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
+    "prism_report": "prism/reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
+    "runtime_receipt_observed": "/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-root-information-architecture-physical-consolidation-9e04f59c518e37da963824820e1145cd855bb7695f3bfd639e53e9181c74f60f.json"
+  }
 }

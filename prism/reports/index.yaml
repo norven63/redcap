@@ -1,4 +1,34 @@
 reports:
+  - id: "20260514-rasg022-remaining-root-groups-deferral"
+    mode: acceptance-review
+    date: "2026-05-14"
+    topic: "RASG-022 remaining high-risk root groups explicit deferral closeout"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass-after-fixes"
+    consensus_actions:
+      - "Accept RASG-022 current-stage closure as one completed shared-knowledge physical tranche plus explicit deferral of high-risk root groups"
+      - "Do not claim all root information architecture physical consolidation is complete"
+      - "Do not claim release readiness or change npm publish posture in this tranche"
+      - "Require future physical moves of compass, references, prism, redcap-knowledge, loom, or workspace-local state to pass the deferral receipt's future apply gate"
+    open_questions:
+      - "Formal release readiness remains a separate task after non-release productization governance is closed"
+      - "Future high-risk root physical migration requires separate tranche, dry-run manifest, consumer matrix, alias/rollback plan, package-safety proof, clean workspace E2E, Prism review, and closeout receipt"
+    lessons_updated: false
+    files_affected:
+      - "references/root-ia-remaining-root-groups-deferral.json"
+      - "compass/tools/redcap-root-ia-deferral-check.py"
+      - "compass/tools/redcap-root-ia-deferral-check.sh"
+      - "references/backlogs/redcap-architecture-smell-governance.json"
+      - "references/root-information-architecture-consolidation-plan.json"
+      - "references/root-ia-shared-knowledge-tranche-manifest.json"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "references/execution-guarantees.json"
+      - "references/file-lookup-dictionary.md"
+      - "prism/reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md"
+      - "compass/docs/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md"
+    archived: false
   - id: "20260513-rasg022-root-ia-shared-knowledge-tranche"
     mode: acceptance-review
     date: "2026-05-13"

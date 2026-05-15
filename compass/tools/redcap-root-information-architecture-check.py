@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PLAN = ROOT / "references/root-information-architecture-consolidation-plan.json"
 IGNORED_ROOT_CHILDREN = {".git", ".DS_Store"}
+IGNORED_ROOT_CHILD_PATTERNS = (
+    ".acceptance-*.md",
+    ".tmp-*",
+)
 REQUIRED_CONSUMERS = {
     "host entries",
     "runtime facades",
@@ -59,6 +64,7 @@ def current_root_children(root: Path) -> set[str]:
         child.name
         for child in root.iterdir()
         if child.name not in IGNORED_ROOT_CHILDREN
+        and not any(fnmatch.fnmatch(child.name, pattern) for pattern in IGNORED_ROOT_CHILD_PATTERNS)
     }
 
 

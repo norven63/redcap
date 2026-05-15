@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "receipt_id": "rasg-022-remaining-root-groups-deferral",
+  "requirement": "RASG-022",
+  "source_plan": "references/root-information-architecture-consolidation-plan.json",
+  "status": "partial-apply-complete-remaining-root-groups-deferred-before-release",
+  "created_at": "2026-05-14T00:00:00Z",
+  "physical_migration_mode": "no-further-move-in-this-task",
+  "claim_boundary": {
+    "all_root_physical_consolidation_completed": false,
+    "release_ready_claimed": false,
+    "allowed_user_claim": "RASG-022 当前阶段已收口：shared-knowledge 模板根目录迁移已完成；剩余高风险根目录已有显式延期收据和后续触发条件。",
+    "forbidden_claims": [
+      "All root information architecture physical consolidation is complete.",
+      "All high-risk root directories were moved.",
+      "RedCap is release-ready for public npm publish."
+    ]
+  },
+  "applied_parent_groups": [
+    {
+      "target_parent": "templates-and-external-arsenal",
+      "applied_tranche": "rasg-022-shared-knowledge-template-tranche",
+      "status": "completed-closeout-receipted",
+      "canonical_root": "templates/shared-knowledge",
+      "retired_root": "shared-knowledge",
+      "evidence": [
+        "references/root-ia-shared-knowledge-tranche-manifest.json",
+        "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
+        "prism/reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md"
+      ],
+      "runtime_receipt_observed": "/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-root-information-architecture-physical-consolidation-9e04f59c518e37da963824820e1145cd855bb7695f3bfd639e53e9181c74f60f.json",
+      "completion_boundary": "This tranche closes only the shared-knowledge template root move, not the remaining high-risk root groups."
+    }
+  ],
+  "keep_at_root_boundaries": [
+    {
+      "target_parent": "root-human-entry",
+      "reason": "README.md and ARCHITECTURE.md are intentionally small root entry points for humans and should not be hidden before product packaging."
+    },
+    {
+      "target_parent": "root-host-entry",
+      "reason": "AGENTS.md, CLAUDE.md, GEMINI.md and SKILL.md are host discovery entry files; they must remain thin root adapters."
+    },
+    {
+      "target_parent": "public-runtime",
+      "reason": "bin, runtime, revive-cap.sh and closeout-cap.sh are the installable runtime facade and root compatibility surface."
+    },
+    {
+      "target_parent": "root-contract",
+      "reason": "package.json, .npmignore and .gitignore are tooling contracts and should stay at root."
+    }
+  ],
+  "deferred_root_groups": [
+    {
+      "target_parent": "internal-control-plane",
+      "current_roots": [
+        "compass",
+        "references"
+      ],
+      "future_shape": [
+        "internal/control-plane",
+        "contracts/public",
+        "contracts/internal"
+      ],
+      "status": "deferred-before-release-readiness",
+      "risk_level": "high",
+      "deferral_reason": "These roots contain validators, policies, docs indexes, runtime checks and backlog truth sources. Moving them before release readiness would require a broad alias layer and package contract split.",
+      "revisit_trigger": "Before formal release readiness if the public runtime profile is still too maintainer-heavy, or when RASG-020 contract-boundary work starts.",
+      "future_gate": "Separate apply tranche with dry-run manifest, consumer matrix, alias/rollback plan, package-safety proof, clean-workspace E2E, Prism review and closeout receipt.",
+      "package_safety": "Do not include new internal/control-plane paths in public package until runtime-public-contract-policy explicitly classifies the profile.",
+      "archaeology_rule": "Existing compass/docs, compass/knowledge and references anchors remain valid; future moves must add alias resolver entries before path changes.",
+      "closeout_rule": "Cannot be declared physically consolidated by this receipt."
+    },
+    {
+      "target_parent": "prism-layer-and-evidence",
+      "current_roots": [
+        "prism"
+      ],
+      "future_shape": [
+        "prism/protocol-tools",
+        "evidence/prism-runs",
+        "evidence/prism-reports"
+      ],
+      "status": "deferred-before-release-readiness",
+      "risk_level": "high",
+      "deferral_reason": "Prism mixes executable protocol, provider policy, reports and run evidence. Splitting it safely requires evidence-retention and provider-routing review in the same tranche.",
+      "revisit_trigger": "When Prism evidence lifecycle or provider governance needs a physical split beyond current policy/index controls.",
+      "future_gate": "Separate Prism evidence split task with retention policy, report index migration, compatibility aliases, Prism self-review and clean workspace E2E.",
+      "package_safety": "Keep prism/tools and prism/README package inclusion governed by runtime-package-readiness-policy; raw prism/runs remains ignored runtime evidence.",
+      "archaeology_rule": "Do not bulk-read or bulk-move prism/runs; formal reports and run IDs must remain resolvable through prism/reports/index.yaml.",
+      "closeout_rule": "Cannot be declared physically split by this receipt."
+    },
+    {
+      "target_parent": "private-archive",
+      "current_roots": [
+        "redcap-knowledge"
+      ],
+      "future_shape": [
+        "private-archive/redcap-knowledge or external private worktree"
+      ],
+      "status": "deferred-before-release-readiness",
+      "risk_level": "high",
+      "deferral_reason": "redcap-knowledge is private archaeology. Moving or publishing it risks breaking historical anchors and leaking local-only material unless an alias and safety proof comes first.",
+      "revisit_trigger": "When private archive extraction, cold archive inventory, or public package trimming requires a physical private worktree split.",
+      "future_gate": "Separate private-archive migration with safety scan, alias resolver, receipt-anchor preservation, rollback plan and Prism privacy review.",
+      "package_safety": "Must remain excluded from public package candidates unless a future public contract explicitly approves a sanitized derivative.",
+      "archaeology_rule": "Existing historical task report and knowledge anchors stay valid; any future migration must be append-only or alias-backed.",
+      "closeout_rule": "Cannot be declared physically consolidated by this receipt."
+    },
+    {
+      "target_parent": "internal-layer-a",
+      "current_roots": [
+        "loom"
+      ],
+      "future_shape": [
+        "internal/layer-a"
+      ],
+      "status": "deferred-before-release-readiness",
+      "risk_level": "medium-high",
+      "deferral_reason": "loom preserves Layer A compatibility and old dispatcher material. Moving it requires a product decision about whether Layer A remains part of public RedCap.",
+      "revisit_trigger": "When Layer A compatibility is product-scoped for runtime/CLI release or explicitly retired.",
+      "future_gate": "Separate Layer A boundary task with compatibility tests, host-entry review and rollback.",
+      "package_safety": "No package-surface change is allowed here without runtime contract review.",
+      "archaeology_rule": "Keep old Layer A paths as historical anchors until a dedicated compatibility decision exists.",
+      "closeout_rule": "Cannot be declared physically migrated by this receipt."
+    },
+    {
+      "target_parent": "workspace-state",
+      "current_roots": [
+        ".dev-task.md",
+        ".env",
+        ".tmp",
+        "prompt.txt",
+        "cli_console.md"
+      ],
+      "future_shape": [
+        "workspace-local ignored files"
+      ],
+      "status": "deferred-before-release-readiness",
+      "risk_level": "high",
+      "deferral_reason": "Workspace-local files include live task state, local secrets, scratch buffers and host mirrors. They are not product source and must not be normalized into public package structure.",
+      "revisit_trigger": "Before public packaging or when a new host adapter introduces a different local-state contract.",
+      "future_gate": "Package safety and workspace-boundary checks must prove local state is excluded, not moved into public source.",
+      "package_safety": "These paths must remain unpublished; .env and scratch files are never package candidates.",
+      "archaeology_rule": "Current task state may be replaced by future runtime state, but local-only files must not become shared knowledge.",
+      "closeout_rule": "Cannot be declared physically consolidated by this receipt."
+    }
+  ],
+  "global_future_apply_gate": {
+    "revisit_before": [
+      "formal-public-npm-release",
+      "any-future-root-directory-move",
+      "runtime-public-contract-profile-split",
+      "private-archive-extraction",
+      "Prism evidence split"
+    ],
+    "required_before_any_future_move": [
+      "separate .dev-task.md apply tranche",
+      "dry-run migration manifest",
+      "exact consumer matrix",
+      "alias and rollback plan",
+      "package-safety proof",
+      "clean workspace E2E",
+      "Prism review",
+      "closeout receipt"
+    ]
+  }
+}

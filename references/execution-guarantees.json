@@ -492,6 +492,29 @@
       "auto_enforceable": true
     },
     {
+      "id": "root-ia-remaining-deferral-receipt",
+      "category": "information-architecture",
+      "priority": "P1",
+      "rule": "RASG-022 cannot be closed merely because one low-risk physical tranche moved; remaining high-risk root groups must be covered by an explicit, machine-checked deferral receipt with revisit triggers and future apply gates.",
+      "source_paths": [
+        "references/root-information-architecture-consolidation-plan.json",
+        "references/root-ia-shared-knowledge-tranche-manifest.json",
+        "references/root-ia-remaining-root-groups-deferral.json",
+        "references/backlogs/redcap-architecture-smell-governance.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-root-ia-deferral-check validates the remaining-root deferral receipt, RASG-022 backlog closure evidence, shared-knowledge applied tranche evidence, and target-parent coverage; diagnose and acceptance consume it so explicit deferral cannot remain a report-only claim.",
+      "guarantee_paths": [
+        "compass/tools/redcap-root-ia-deferral-check.sh",
+        "compass/tools/redcap-root-ia-deferral-check.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "prism-availability-cache",
       "category": "prism-multi-agent",
       "priority": "P0",

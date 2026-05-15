@@ -15,7 +15,7 @@
 - 机器权威：`references/backlogs/redcap-architecture-smell-governance.json`
 - 人类说明：`references/backlogs/redcap-architecture-smell-governance.md`
 - 当前焦点：`RASG-022 Apply root-level information architecture physical consolidation through safe semantic tranches`
-- 当前焦点说明：当前正在执行根目录信息架构真实物理合并；本轮只关闭 shared-knowledge 模板迁移切片，整体 RASG-022 仍保持 in_progress。
+- 当前焦点说明：RASG-022 当前阶段已收口：shared-knowledge 模板根目录迁移已完成；剩余高风险根目录已用显式延期收据锁定后续触发条件。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -25,7 +25,7 @@
 | Policy, evidence, and legacy-asset hygiene | 已完成 | RASG-005 / RASG-008 / RASG-013 | Reduce policy sprawl, evidence accumulation, and old/new transition ambiguity without damaging archaeology. |
 | Runtime and host-adapter productization | 已完成 | RASG-006 / RASG-012 / RASG-016 | Move from skill-root compatibility to a cleaner installable runtime and host-adapter shape. |
 | Advanced memory and shared arsenal evolution | 已完成 | RASG-010 / RASG-011 / RASG-015 | Keep full LLM-wiki, retrieval escalation, and public arsenal maturity visible without prematurely enabling heavyweight memory systems. |
-| Root product-shape consolidation | 进行中 | RASG-017 / RASG-022 | Judge whether the repository root itself still exposes too many direct parent directories for knowledge, reports, evidence, runtime, and public templates before RedCap is treated as a clean product. |
+| Root product-shape consolidation | 已完成 | RASG-017 / RASG-022 | Root product-shape consolidation is closed for the current pre-release pass: RASG-017 produced the target model, and RASG-022 completed one safe physical tranche plus explicit deferral of high-risk root groups. |
 | Senior holistic smell audit | 已完成 | RASG-018 | Prevent user examples from being narrowed into single-point fixes by requiring a Prism-reviewed, senior-engineering review across RedCap's product shape, workflow guarantees, truth sources, knowledge/evidence lifecycle, package surface, and human-facing status model. |
 | Holistic audit follow-up before release readiness | 已完成 | RASG-019 / RASG-020 / RASG-021 | Track the P1 issues discovered by RASG-018 that should be closed before RedCap is treated as a polished public runtime or CLI product. |
 | Plan-only closure and Prism follow-up hardening | 已完成 | RASG-023 | Prevent design-only, plan-only, or route-only work from being treated as fully closed when a later physical apply or governance hardening task was explicitly required. |
@@ -50,7 +50,7 @@
 | RASG-011 Enforce retrieval observation metrics for FTS, RAG, and GraphRAG escalation | Advanced memory and shared arsenal evolution | 已完成 | P2 | Real retrieval misses and noisy lookup events are recorded in a structured place and checked before route escalation. |
 | RASG-015 Define version coupling between RedCap runtime and external redcap-arsenal | Advanced memory and shared arsenal evolution | 已完成 | P2 | RedCap records which arsenal commit/head was validated and how runtime releases reference compatible arsenal states. |
 | RASG-017 Consolidate root-level information architecture before product release | Root product-shape consolidation | 已完成 | P1 | Produce a Prism-reviewed root-level information architecture consolidation plan that inventories every root-level asset root, classifies it, defines a target parent model, maps aliases and consumers, and only then opens  |
-| RASG-022 Apply root-level information architecture physical consolidation through safe semantic tranches | Root product-shape consolidation | 进行中 | P1 | Execute or explicitly defer the approved root information architecture physical consolidation in small semantic apply tranches. Each tranche must preserve aliases, consumers, package safety, archaeology anchors, rollback |
+| RASG-022 Apply root-level information architecture physical consolidation through safe semantic tranches | Root product-shape consolidation | 已完成 | P1 | Closed for the current pre-release pass by completing the shared-knowledge template physical tranche and explicitly deferring high-risk root groups before release readiness. |
 | RASG-018 Run a senior holistic RedCap architecture smell audit instead of closing user examples one by one | Senior holistic smell audit | 已完成 | P1 | Produce a Prism-reviewed senior holistic architecture smell audit that explicitly reviews multiple domains, records 'found / not found / deferred' conclusions per domain, and gives every finding a durable disposition ins |
 | RASG-019 Make human-facing CLI, status, and notification output understandable without RedCap internal jargon | Holistic audit follow-up before release readiness | 已完成 | P1 | Human-facing output is framed by problem, action, result, current task panorama, next step, and whether human intervention is needed. Internal mechanism names may appear only as secondary evidence links or glossary-backe |
 | RASG-020 Separate public runtime contract from maintainer-only governance validators before npm or CLI release | Holistic audit follow-up before release readiness | 已完成 | P1 | Release readiness distinguishes the public runtime contract from maintainer/developer governance tools. The package manifest, runtime package readiness policy, and publish safety check agree on that boundary from a singl |

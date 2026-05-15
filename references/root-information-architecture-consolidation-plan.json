@@ -2,13 +2,21 @@
   "version": 1,
   "plan_id": "redcap-root-information-architecture-consolidation-plan",
   "requirement": "RASG-017",
-  "status": "target-model-complete-physical-apply-open",
+  "status": "target-model-complete-physical-apply-partial-and-deferral-receipted",
   "follow_up_requirement": "RASG-022",
   "prism_gap_follow_up": "RASG-023",
   "scope": "Direct children of the RedCap repository root that carry product, runtime, knowledge, evidence, policy, host-adapter, or local-state meaning.",
   "created_at": "2026-05-10",
   "prism_review_required": true,
   "physical_migration_applied": false,
+  "rasg_022_current_resolution": {
+    "status": "partial-apply-complete-remaining-root-groups-deferred-before-release",
+    "applied_tranches": [
+      "references/root-ia-shared-knowledge-tranche-manifest.json"
+    ],
+    "explicit_deferral_receipt": "references/root-ia-remaining-root-groups-deferral.json",
+    "claim_boundary": "The RASG-017 plan still does not claim full physical migration. RASG-022 is currently resolved by one low-risk physical tranche plus explicit deferral of high-risk root groups before release readiness."
+  },
   "summary": {
     "problem": "RedCap's root currently exposes several directories with overlapping knowledge, report, evidence, runtime, policy, and host-adapter meanings. The system is governable, but the product shape is too hard to understand before public CLI/runtime release.",
     "solution": "Freeze the current physical root as compatibility reality, define a target parent model, list consumers and risks, and require a separate apply tranche before any directory move.",

@@ -184,6 +184,7 @@ run_source_check "shared-knowledge-remote-binding" bash "$SCRIPT_DIR/redcap-shar
 run_source_check "arsenal-version-binding" bash "$SCRIPT_DIR/redcap-arsenal-version-binding-check.sh" || overall=1
 run_source_check "information-architecture" bash "$SCRIPT_DIR/redcap-information-architecture-check.sh" || overall=1
 run_source_check "root-information-architecture" bash "$SCRIPT_DIR/redcap-root-information-architecture-check.sh" || overall=1
+run_source_check "root-ia-deferral" bash "$SCRIPT_DIR/redcap-root-ia-deferral-check.sh" || overall=1
 run_source_check "redcap-forge" bash "$SCRIPT_DIR/redcap-forge-check.sh" || overall=1
 run_source_check "public-arsenal-claim-boundary" bash "$SCRIPT_DIR/redcap-public-arsenal-claim-boundary.sh" || overall=1
 run_source_check "public-distillation-preflight" bash "$SCRIPT_DIR/redcap-public-distillation-preflight.sh" || overall=1

@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 83,
-  "bytes_total": 1165699,
+  "file_count": 84,
+  "bytes_total": 1174131,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 79,
+    "private-task-report-archive": 80,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -597,6 +597,14 @@
       "class": "private-task-report-archive",
       "bytes": 12709,
       "sha256": "872187989d201ab33e62e484b264b7a46ee6717225ff3295ab91ccc526ec9aca",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "redcap-knowledge/task-reports/2026-05-09-feishu-human-readable-node-report.md",
+      "class": "private-task-report-archive",
+      "bytes": 8432,
+      "sha256": "ac8f0afa7c730d5a1a20bcb0faa9335ab82aa8d155aed884e3a8324c47df6248",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

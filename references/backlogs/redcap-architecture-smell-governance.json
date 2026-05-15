@@ -712,24 +712,45 @@
         "Current status and progress-meter surfaces show whether root physical consolidation is done, deferred, or still open; plan-only completion cannot satisfy this item.",
         "No report claims scattered root information architecture was physically consolidated unless the apply receipt proves it."
       ],
-      "status": "in_progress",
-      "progress_note": "The first physical apply tranche moved the in-repo shared knowledge template source from shared-knowledge/ to templates/shared-knowledge/. RASG-022 remains open because higher-risk root parent groups still need later tranche decisions or explicit deferral receipts.",
+      "status": "done",
+      "completed_at": "2026-05-14",
+      "progress_note": "The first physical apply tranche moved the in-repo shared knowledge template source from shared-knowledge/ to templates/shared-knowledge/. The remaining high-risk root parent groups are explicitly deferred before release readiness in references/root-ia-remaining-root-groups-deferral.json, so RASG-022 is closed for the current pre-release governance pass without claiming full physical consolidation.",
       "introduced_at": "2026-05-12",
       "evidence": [
         "references/root-information-architecture-consolidation-plan.json",
         "references/root-ia-shared-knowledge-tranche-manifest.json",
-        "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md"
+        "references/root-ia-remaining-root-groups-deferral.json",
+        "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md",
+        "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
+        "compass/docs/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md"
       ],
       "applied_tranches": [
         {
           "id": "rasg-022-shared-knowledge-template-tranche",
-          "status": "applied-selfcheck-passed-awaiting-closeout",
+          "status": "completed-closeout-receipted",
           "canonical_root": "templates/shared-knowledge",
           "retired_root": "shared-knowledge",
           "evidence": [
-            "references/root-ia-shared-knowledge-tranche-manifest.json"
+            "references/root-ia-shared-knowledge-tranche-manifest.json",
+            "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
+            "prism/reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md"
           ],
           "completion_boundary": "This tranche does not close all root information architecture physical consolidation."
+        }
+      ],
+      "explicit_deferrals": [
+        {
+          "id": "rasg-022-remaining-root-groups-deferral-before-release",
+          "status": "deferred-before-release-readiness",
+          "receipt": "references/root-ia-remaining-root-groups-deferral.json",
+          "covers_target_parents": [
+            "internal-control-plane",
+            "prism-layer-and-evidence",
+            "private-archive",
+            "internal-layer-a",
+            "workspace-state"
+          ],
+          "completion_boundary": "This closes RASG-022 for the current pre-release governance pass but does not claim these high-risk roots were physically moved."
         }
       ]
     },
@@ -773,14 +794,14 @@
   "must_not_claim": [
     "Do not claim these requirements are completed merely because they are listed here.",
     "Do not claim RASG-001..016 solved root-level physical product-shape consolidation; they solved indexing, lifecycle, retrieval, package safety, and specific root-local policies.",
-    "Do not claim RASG-017 physically consolidated root directories; it completed the target model and left RASG-022 open for apply.",
+    "Do not claim RASG-017 physically consolidated root directories; it completed the target model and required RASG-022 for apply or explicit deferral.",
     "Do not claim the user's '举一反三' request has been satisfied by registering only RASG-017; RASG-018 must complete a separate senior holistic audit.",
-    "Do not claim RASG-018 fixes the P1 issues it discovered; RASG-019, RASG-020, RASG-021, RASG-022, and RASG-023 remain separate follow-up work with independent receipts.",
+    "Do not claim RASG-018 fixes the P1 issues it discovered; RASG-019, RASG-020, RASG-021, RASG-022, and RASG-023 each required separate follow-up work with independent receipts.",
     "Do not treat future full LLM-wiki/RAG/GraphRAG as enabled by this backlog.",
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Before formal npm/public release readiness, close or explicitly defer the remaining planned pre-release architecture debts deliberately: RASG-021 Prism degradation resilience, RASG-022 root physical information-architecture consolidation apply, and RASG-023 plan-only closure follow-up hardening. Do not let a plan-only receipt hide a physical apply task.",
+  "recommended_next_step": "Before formal npm/public release readiness, run the release-readiness task tree deliberately. RASG-022 is closed for the current pass by one safe physical tranche plus explicit deferral of high-risk root moves; do not claim all high-risk roots were physically moved.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -988,10 +1009,10 @@
         {
           "id": "RASG-022",
           "title": "Apply root-level information architecture physical consolidation through safe semantic tranches",
-          "status": "in_progress",
+          "status": "done",
           "priority": "P1",
           "phase_id": "T5",
-          "summary": "Execute or explicitly defer the approved root information architecture physical consolidation in small semantic apply tranches. Each tranche must preserve aliases, consumers, package safety, archaeology anchors, rollback"
+          "summary": "Closed for the current pre-release pass by completing the shared-knowledge template physical tranche and explicitly deferring high-risk root groups before release readiness."
         }
       ]
     },
@@ -1114,8 +1135,8 @@
     {
       "id": "T5",
       "title": "Root product-shape consolidation",
-      "status": "in_progress",
-      "summary": "Judge whether the repository root itself still exposes too many direct parent directories for knowledge, reports, evidence, runtime, and public templates before RedCap is treated as a clean product.",
+      "status": "done",
+      "summary": "Root product-shape consolidation is closed for the current pre-release pass: RASG-017 produced the target model, and RASG-022 completed one safe physical tranche plus explicit deferral of high-risk root groups.",
       "item_ids": [
         "RASG-017",
         "RASG-022"
@@ -1153,6 +1174,6 @@
   ],
   "current_focus": {
     "item_id": "RASG-022",
-    "summary": "当前正在执行根目录信息架构真实物理合并；本轮只关闭 shared-knowledge 模板迁移切片，整体 RASG-022 仍保持 in_progress。"
+    "summary": "RASG-022 当前阶段已收口：shared-knowledge 模板根目录迁移已完成；剩余高风险根目录已用显式延期收据锁定后续触发条件。"
   }
 }

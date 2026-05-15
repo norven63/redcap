@@ -186,6 +186,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check
   bash compass/tools/redcap-multi-session-acceptance.sh information-architecture-check
+  bash compass/tools/redcap-multi-session-acceptance.sh root-ia-deferral-check
   bash compass/tools/redcap-multi-session-acceptance.sh redcap-forge-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-arsenal-claim-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-distillation-preflight-check
@@ -1529,7 +1530,7 @@ run_report_register_requires_claim_case() {
     redcap_runtime_clear_context
     unset REDCAP_RUNTIME_ALLOW_DISK_RECOVERY REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY REDCAP_RUNTIME_CAPABILITY 2>/dev/null || true
 
-    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     degraded_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "degraded-mode.count")"
     before="$(counter_value "$degraded_file")"
 
@@ -3543,7 +3544,7 @@ EOF
     assert_string_contains "$complete_output" "\"status\": \"completed\""
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$task_file")"
-    assert_string_contains "$output" "closeout receipt 已生成"
+    assert_string_contains "$output" "完工凭证已生成"
     assert_not_string_contains "$output" "等待 closeout receipt"
 }
 
@@ -4061,7 +4062,7 @@ run_pending_closure_clear_restores_on_ledger_failure_case() {
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "pending-closure-clear-restores-on-ledger-failure" >/dev/null 2>&1 || true
 
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     state_file="$(
         redcap_interop_write_pending_closure \
             "$REDCAP_ROOT" \
@@ -4115,7 +4116,7 @@ run_pending_closure_clear_locked_mode_case() {
             "acceptance-seed" \
             "pending-closure" \
             "pending-closure-clear-locked-mode" \
-            "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md" \
+            "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md" \
             "$current_head" \
             "$current_head"
     )" || fail "failed to seed pending closure for locked clear case"
@@ -4161,7 +4162,7 @@ run_session_end_clears_all_matching_pending_states_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end clear case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4245,7 +4246,7 @@ run_session_end_clears_compatible_pending_refresh_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end refresh case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4342,7 +4343,7 @@ run_session_end_clears_closeout_runtime_pending_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end closeout clear case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4659,7 +4660,7 @@ run_task_report_check_accepts_legacy_pending_anchor_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-report-legacy-pending-anchor/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    legacy_rel="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -4730,7 +4731,7 @@ run_task_complete_guard_replaces_stale_marker_with_unique_report_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-complete-stale-marker/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    legacy_rel="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -4859,7 +4860,7 @@ run_task_report_check_rejects_zero_diff_stale_marker_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-report-zero-diff-stale-marker/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    legacy_rel="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -5531,7 +5532,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md
+task_report: compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -5702,7 +5703,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md
+task_report: compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -5837,7 +5838,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md
+task_report: compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -6161,7 +6162,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md
+task_report: compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -6945,7 +6946,7 @@ run_session_end_success_notify_after_clear_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify order case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -7040,7 +7041,7 @@ run_session_end_success_notify_skip_for_closeout_runtime_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify skip case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -7132,7 +7133,7 @@ run_session_end_notify_timeout_releases_lock_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify timeout case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -7248,7 +7249,7 @@ run_session_end_blocked_rewrite_keeps_report_anchor_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for report anchor case"
     write_current_report_marker_fixture "$report_path"
     redcap_interop_write_pending_closure \
@@ -7328,7 +7329,7 @@ run_session_end_blocked_rewrite_normalizes_absolute_report_anchor_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_rel="compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+    report_rel="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
     report_abs="$REDCAP_ROOT/$report_rel"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for absolute report anchor case"
     redcap_interop_write_pending_closure \
@@ -9122,7 +9123,7 @@ run_docs_catalog_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check)"
     assert_string_contains "$output" "DOCS_CATALOG_OK"
-    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"'
+    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"read_policy": "read-catalog-summary-first-then-open-if-current-anchor"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"status_basis": "filename_recency_only"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md"'
@@ -9175,7 +9176,7 @@ run_docs_catalog_progressive_disclosure_case() {
     assert_string_contains "$budget_output" "files=1"
 
     set +e
-    blocked_output="$(REDCAP_DOCS_BUDGET_MAX_HIGH_TOKENS=1000 bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md" 2>&1)"
+    blocked_output="$(REDCAP_DOCS_BUDGET_MAX_HIGH_TOKENS=1000 bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md" 2>&1)"
     blocked_status=$?
     set -e
     [[ "$blocked_status" -ne 0 ]] || fail "oversized docs read budget unexpectedly passed"
@@ -12775,6 +12776,99 @@ PY
     )
 }
 
+run_root_ia_deferral_check_case() {
+    local output bad_receipt bad_backlog stale_output status root_ia_output
+
+    log "case: root-ia-deferral-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-root-ia-deferral-check.sh")"
+    assert_string_contains "$output" "ROOT_IA_DEFERRAL_OK"
+    assert_string_contains "$output" "deferred=5"
+
+    (
+        tmp_a="$REDCAP_ROOT/.acceptance-root-ia-ignore-$$.md"
+        tmp_b="$(mktemp -d "$REDCAP_ROOT/.tmp-root-ia-acceptance.XXXXXX")"
+        trap 'rm -f "$tmp_a"; rm -rf "$tmp_b"' EXIT
+        printf '# temporary acceptance fixture\n' >"$tmp_a"
+        root_ia_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-root-information-architecture-check.sh")"
+        assert_string_contains "$root_ia_output" "ROOT_INFORMATION_ARCHITECTURE_OK"
+    )
+
+    bad_receipt="$ACCEPT_ROOT/root-ia-deferral-bad-claim.json"
+    python3 - "$REDCAP_ROOT/references/root-ia-remaining-root-groups-deferral.json" "$bad_receipt" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["all_root_physical_consolidation_completed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-root-ia-deferral-check.sh" --receipt "$bad_receipt" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "root IA deferral checker should reject all-root completion claim"
+    assert_string_contains "$stale_output" "must not claim all root physical consolidation is complete"
+
+    bad_receipt="$ACCEPT_ROOT/root-ia-deferral-release-ready-claim.json"
+    python3 - "$REDCAP_ROOT/references/root-ia-remaining-root-groups-deferral.json" "$bad_receipt" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["release_ready_claimed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-root-ia-deferral-check.sh" --receipt "$bad_receipt" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "root IA deferral checker should reject release-ready claim"
+    assert_string_contains "$stale_output" "must not claim release readiness"
+
+    bad_receipt="$ACCEPT_ROOT/root-ia-deferral-missing-group.json"
+    python3 - "$REDCAP_ROOT/references/root-ia-remaining-root-groups-deferral.json" "$bad_receipt" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["deferred_root_groups"] = [
+    item for item in payload["deferred_root_groups"]
+    if item.get("target_parent") != "private-archive"
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-root-ia-deferral-check.sh" --receipt "$bad_receipt" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "root IA deferral checker should reject missing deferred group"
+    assert_string_contains "$stale_output" "missing deferred root groups: private-archive"
+
+    bad_backlog="$ACCEPT_ROOT/root-ia-deferral-bad-backlog.json"
+    python3 - "$REDCAP_ROOT/references/backlogs/redcap-architecture-smell-governance.json" "$bad_backlog" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+for item in payload["requirements"]:
+    if item.get("id") == "RASG-022":
+        item["status"] = "in_progress"
+        break
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-root-ia-deferral-check.sh" --backlog "$bad_backlog" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "root IA deferral checker should reject non-closed RASG-022 backlog"
+    assert_string_contains "$stale_output" "RASG-022 backlog status must be done"
+}
+
 run_redcap_forge_check_case() {
     local output bad_policy stale_output status
 
@@ -13502,8 +13596,8 @@ task_report: compass/docs/task-reports/fixture.md
 EOF
 
     output="$(cd "$workspace" && "$REDCAP_ROOT/bin/redcap" doctor)"
-    assert_string_contains "$output" "RedCap Doctor: healthy"
-    assert_string_contains "$output" "Boundary mode: external-workspace"
+    assert_string_contains "$output" "RedCap 体检：可继续"
+    assert_string_contains "$output" "运行方式：外部项目工作区"
     assert_not_string_contains "$output" "[ok]"
     assert_not_string_contains "$output" "[fail]"
 
@@ -13516,7 +13610,7 @@ EOF
     assert_not_string_contains "$debug_output" "agent_name"
 
     trace_output="$(cd "$workspace" && "$REDCAP_ROOT/bin/redcap" --trace doctor 2>&1)"
-    assert_string_contains "$trace_output" "RedCap Trace:"
+    assert_string_contains "$trace_output" "RedCap 路由追踪："
     assert_string_contains "$trace_output" "command: doctor"
     assert_not_string_contains "$trace_output" "/Users/"
     assert_not_string_contains "$trace_output" "TOKEN"
@@ -13526,9 +13620,9 @@ EOF
     status=$?
     set -e
     [[ "$status" -eq 2 ]] || fail "redcap docter should exit 2"
-    assert_string_contains "$typo_output" "cause:"
-    assert_string_contains "$typo_output" "impact:"
-    assert_string_contains "$typo_output" "suggested_action:"
+    assert_string_contains "$typo_output" "原因(cause):"
+    assert_string_contains "$typo_output" "影响(impact):"
+    assert_string_contains "$typo_output" "建议动作(suggested_action):"
     assert_string_contains "$typo_output" "redcap doctor"
 }
 
@@ -15320,6 +15414,7 @@ run_all_cases() {
     run_shared_knowledge_check_case
     run_shared_knowledge_remote_binding_check_case
     run_information_architecture_check_case
+    run_root_ia_deferral_check_case
     run_redcap_forge_check_case
     run_public_arsenal_claim_boundary_check_case
     run_public_distillation_preflight_check_case
@@ -15846,6 +15941,9 @@ case "$COMMAND" in
         ;;
     information-architecture-check)
         run_information_architecture_check_case
+        ;;
+    root-ia-deferral-check)
+        run_root_ia_deferral_check_case
         ;;
     redcap-forge-check)
         run_redcap_forge_check_case

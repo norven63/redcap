@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 from collections import Counter
 from datetime import datetime, timezone
@@ -97,7 +98,8 @@ def closeout_state(repo: Path, task_id: str, hash_value: str) -> dict[str, Any]:
     if not task_id or not hash_value:
         return {"receipt": "unknown", "promise": "unknown", "state": "unknown"}
     project_hash = hashlib.md5(str(repo.resolve()).encode("utf-8")).hexdigest()
-    runtime_root = Path("/tmp/redcap/project") / project_hash / "governance" / "closeout-runtime"
+    project_base = Path(os.environ.get("REDCAP_RUNTIME_PROJECT_BASE_DIR", "/tmp/redcap/project"))
+    runtime_root = project_base / project_hash / "governance" / "closeout-runtime"
     identity = closeout_identity(task_id, hash_value)
     receipt = runtime_root / "receipts" / f"{identity}.json"
     promise = runtime_root / "promise-ledger" / f"{identity}.json"

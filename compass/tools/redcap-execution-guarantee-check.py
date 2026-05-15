@@ -67,6 +67,7 @@ REQUIRED_IDS = {
     "skill-lifecycle-single-source",
     "legacy-asset-lifecycle",
     "information-architecture-artifact-governance",
+    "root-ia-remaining-deferral-receipt",
     "redcap-forge-promotion-boundary",
     "report-led-human-summary-boundary",
     "pre-release-structure-task-tree",
