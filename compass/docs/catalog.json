@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 359272,
-    "lines": 7263,
-    "chars": 215818,
+    "size_bytes": 359941,
+    "lines": 7266,
+    "chars": 216285,
     "rough_token_pressure": {
-      "low": 53954,
-      "high": 107909
+      "low": 54071,
+      "high": 108142
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 165597,
-        "lines": 2680,
-        "chars": 99345,
+        "size_bytes": 166266,
+        "lines": 2683,
+        "chars": 99812,
         "rough_token_pressure": {
-          "low": 24836,
-          "high": 49672
+          "low": 24953,
+          "high": 49906
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11572,
-      "lines": 226,
-      "chars": 7396,
+      "size_bytes": 12241,
+      "lines": 229,
+      "chars": 7863,
       "summary": "当前已完成：GD-008 已从“开放治理债务”收口为“已建模的 host-limited 宿主边界”。这表示 RedCap 已经把自己能控制的部分做好：执行保障、宿主画像、诊断、状态面和边界说明都在；但它没有、也不能冒充拥有完整 reply-time veto。 / 上一步完成的是：RASG-022 剩余高风险根目录已用显式延期收据完成当前阶段收口，架构坏味账本 open=0。",
       "status_basis": "filename_recency_only",
       "summary_points": {

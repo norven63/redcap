@@ -140,6 +140,7 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 | task-report check | `bash compass/tools/redcap-task-report-check.sh "$PWD" 59ae72b0d2d34463b116c979145d52d69e9fd182` | 通过 |
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
+| closeout audit replay | `./closeout-cap.sh complete --host codex --task-file .dev-task.md --baseline-head 59ae72b0d2d34463b116c979145d52d69e9fd182` | 首轮阻塞：PM Gate 只接受 JSON backlog，不能校验治理债务 Markdown 锚点；已补 `redcap-backlog-check.sh` 对 `governance-debt-register.md` 的锚点校验支持 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -176,7 +177,7 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 
 ### 6.2 触发的新问题
 
-无新增开放问题；本轮新增的是未来宿主能力升级触发器。
+无新增开放问题；本轮新增的是未来宿主能力升级触发器。closeout 过程中额外抓到一个已修复的兼容性问题：任务卡可以指向治理债务 Markdown 作为锚点，但 PM Gate 的 backlog checker 原先只支持 JSON backlog。
 
 ### 6.3 推荐的下一步行动
 
@@ -210,7 +211,9 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 ### 附录 A：Commits
 
 ```
-待提交；本报告对应提交生成后以 `git log -1` 为准。
+9807192 `fix(governance): 收口 GD-008 宿主边界`
+
+后续还会追加一条小修提交，用于保存 closeout 审计中发现的治理债务 Markdown 锚点兼容性修复和 clean workspace E2E 刷新结果。
 ```
 
 ### 附录 B：棱镜调用记录（如有）

@@ -38,6 +38,7 @@ esac
 python3 - "$MODE" "$REDCAP_ROOT" "$TASK_FILE" "$BACKLOG_SOURCE_ABS" "$BACKLOG_SOURCE_REL" "$BACKLOG_ID" "$BACKLOG_ITEM" <<'PY'
 import json
 import pathlib
+import re
 import sys
 
 MODE = sys.argv[1]
@@ -69,6 +70,46 @@ def load_json(path: pathlib.Path):
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         fail(f"invalid backlog json: {path} ({exc})")
+
+
+def markdown_field(block: str, key: str) -> str:
+    match = re.search(rf"^-\s+\*\*{re.escape(key)}\*\*:\s*`?([^`\n]+)`?\s*$", block, flags=re.MULTILINE)
+    return match.group(1).strip() if match else ""
+
+
+def validate_governance_debt_markdown() -> None:
+    """Governance debt is a markdown register, not a JSON backlog authority."""
+    if BACKLOG_SOURCE_REL != "compass/knowledge/governance-debt-register.md":
+        fail(f"unsupported markdown backlog source: {BACKLOG_SOURCE_REL}")
+    if BACKLOG_ID != "governance-debt-register":
+        fail(f"governance debt backlog_id mismatch: {BACKLOG_ID}")
+    if not BACKLOG_PATH.is_file():
+        fail(f"backlog source missing: {BACKLOG_PATH}")
+
+    text = BACKLOG_PATH.read_text(encoding="utf-8", errors="replace")
+    heading = re.search(rf"^###\s+{re.escape(BACKLOG_ITEM)}(?:：|:).*$", text, flags=re.MULTILINE)
+    if not heading:
+        fail(f"task backlog_item not found in governance debt register: {BACKLOG_ITEM}")
+    next_heading = re.search(r"^###\s+", text[heading.end():], flags=re.MULTILINE)
+    end = heading.end() + next_heading.start() if next_heading else len(text)
+    block = text[heading.start():end]
+
+    design_status = markdown_field(block, "design_status")
+    implementation_status = markdown_field(block, "implementation_status")
+    if design_status not in {"identified", "design-complete", "not-applicable"}:
+        fail(f"{BACKLOG_ITEM}: unsupported design_status: {design_status or 'missing'}")
+    if implementation_status not in {"pending", "in-progress", "done", "blocked"}:
+        fail(f"{BACKLOG_ITEM}: unsupported implementation_status: {implementation_status or 'missing'}")
+    if "**gap**" not in block:
+        fail(f"{BACKLOG_ITEM}: missing gap field")
+    if MODE in {"anchor", "strict"}:
+        return
+    if MODE == "render":
+        sys.stdout.write(block.rstrip() + "\n")
+        return
+    if MODE == "sync":
+        return
+    fail(f"unsupported mode for governance debt markdown: {MODE}")
 
 
 def require_string(data, key, ctx):
@@ -139,6 +180,10 @@ def render_block(data, items_by_id, groups_by_id):
     lines.append(end)
     return "\n".join(lines) + "\n"
 
+
+if BACKLOG_PATH.suffix.lower() == ".md":
+    validate_governance_debt_markdown()
+    raise SystemExit(0)
 
 data = load_json(BACKLOG_PATH)
 
