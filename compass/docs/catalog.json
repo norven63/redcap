@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 362221,
+    "size_bytes": 362217,
     "lines": 7270,
-    "chars": 215197,
+    "chars": 215193,
     "rough_token_pressure": {
-      "low": 53799,
-      "high": 107598
+      "low": 53798,
+      "high": 107596
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 168546,
+        "size_bytes": 168542,
         "lines": 2687,
-        "chars": 98724,
+        "chars": 98720,
         "rough_token_pressure": {
-          "low": 24681,
-          "high": 49362
+          "low": 24680,
+          "high": 49360
         }
       }
     },
@@ -99,7 +99,7 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md",
-        "chars": 10215,
+        "chars": 10211,
         "lines": 257,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 16667,
+      "size_bytes": 16663,
       "lines": 257,
-      "chars": 10215,
+      "chars": 10211,
       "summary": "当前已完成：RASG-022 已从“只完成一个迁移切片、其余靠口头说明”升级为“一个低风险迁移已完成，其余高风险根目录都有显式延期收据、机器检查和棱镜验收”。 / 详情：上一刀已经把 `shared-knowledge` 模板源移到 `templates/shared-knowledge`。这次解决的是剩余高风险根目录容易再次被遗忘的问题：`compass`、`references`、`prism`、`redcap-knowledge`、`loom` 和本地状态文件暂不搬迁，但每一类都写清了为什么不搬、未来什么时候必须重审、将来真的要搬时必须具备哪些安全门。这样 RASG-022 可以诚实收口，同时不会把“延期”冒充成“全部搬完”。",
       "status_basis": "filename_recency_only",
       "summary_points": {
