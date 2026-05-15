@@ -125,9 +125,85 @@ def load_backlog(repo: Path, meta: dict[str, str]) -> tuple[Path | None, dict]:
         return path, {}
 
 
+def markdown_field(block: str, key: str) -> str:
+    match = re.search(
+        rf"^[ \t]*[-*+]\s+\*\*{re.escape(key)}\*\*:\s*`?([^`\n]+)`?\s*$",
+        block,
+        flags=re.MULTILINE | re.IGNORECASE,
+    )
+    return match.group(1).strip() if match else ""
+
+
+def normalize_governance_debt_status(value: str) -> str:
+    normalized = value.strip().lower().replace("_", "-")
+    aliases = {
+        "已完成": "done",
+        "done": "done",
+        "进行中": "in-progress",
+        "in-progress": "in-progress",
+        "待推进": "pending",
+        "pending": "pending",
+        "阻塞": "blocked",
+        "blocked": "blocked",
+        "未知": "unknown",
+        "unknown": "unknown",
+    }
+    return aliases.get(normalized, normalized or "unknown")
+
+
+def governance_debt_backlog_summary(path: Path, meta: dict[str, str]) -> list[str]:
+    text = read(path)
+    if not text:
+        return [f"backlog 读取失败：{path}"]
+
+    item_id = meta.get("backlog_item", "")
+    rows: list[dict[str, str]] = []
+    headings = list(re.finditer(r"^###\s+(GD-\d+)[:：]\s*(.*?)\s*$", text, flags=re.MULTILINE))
+    for index, heading in enumerate(headings):
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(text)
+        block = text[heading.start():end]
+        rows.append(
+            {
+                "id": heading.group(1).strip(),
+                "title": heading.group(2).strip(),
+                "implementation_status": normalize_governance_debt_status(
+                    markdown_field(block, "implementation_status")
+                ),
+                "owner_slice": markdown_field(block, "owner_slice") or "unknown",
+            }
+        )
+
+    labels = {
+        "done": "已完成",
+        "in-progress": "进行中",
+        "pending": "待推进",
+        "blocked": "阻塞",
+        "unknown": "未知",
+    }
+    counts = Counter(row["implementation_status"] for row in rows)
+    count_text = " / ".join(f"{labels.get(k, k)}={v}" for k, v in sorted(counts.items()))
+    current_item = next((row for row in rows if row["id"] == item_id), None)
+
+    lines = [
+        "治理债务登记：Markdown authority（不是 JSON backlog）",
+        f"条目计数：{count_text or '无条目'}",
+    ]
+    if current_item:
+        status = labels.get(current_item["implementation_status"], current_item["implementation_status"])
+        lines.insert(1, f"当前焦点：{current_item['id']} — {current_item['title']}")
+        lines.append(
+            f"当前绑定条目：{current_item['id']} {current_item['title']}（{status}，{current_item['owner_slice']}）"
+        )
+    elif item_id:
+        lines.append(f"当前绑定条目：{item_id}（未在治理债务登记中找到）")
+    return lines
+
+
 def backlog_summary(repo: Path, meta: dict[str, str]) -> list[str]:
     path, data = load_backlog(repo, meta)
     if not data:
+        if path and path.name == "governance-debt-register.md":
+            return governance_debt_backlog_summary(path, meta)
         if path:
             return [f"backlog 读取失败：{path}"]
         return ["未绑定长期 backlog"]

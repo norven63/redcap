@@ -9225,14 +9225,20 @@ run_backlog_check_strict_case() {
 }
 
 run_current_status_overview_case() {
-    local output
+    local output long_backlog
 
     log "case: current-status-overview"
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$REDCAP_ROOT/.dev-task.md")"
+    long_backlog="$(printf '%s\n' "$output" | awk '/^## 长期 backlog/{flag=1; next} /^## / && flag{exit} flag')"
     assert_string_contains "$output" "当前已完成："
     assert_string_contains "$output" "## 收尾红线"
     assert_string_contains "$output" "## 长期 backlog"
+    assert_not_string_contains "$long_backlog" "backlog 读取失败"
+    assert_string_contains "$long_backlog" "治理债务登记：Markdown authority"
+    assert_string_contains "$long_backlog" "当前焦点：GD-008"
+    assert_string_contains "$long_backlog" "当前绑定条目：GD-008"
+    assert_string_contains "$long_backlog" "已完成"
     assert_string_contains "$output" "## CLI 工具族"
     assert_string_contains "$output" "## 棱镜 / 独立评审"
     assert_string_contains "$output" "## docs 考古入口"

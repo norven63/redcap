@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-15
 **执行者**：Cap（Codex 主执行，Claude Code / Kimi Prism 验收）
-**报告版本**：v1.0
+**报告版本**：v1.1
 
 ---
 
@@ -10,7 +10,7 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：GD-008 已从“开放治理债务”收口为“已建模的 host-limited 宿主边界”。这表示 RedCap 已经把自己能控制的部分做好：执行保障、宿主画像、诊断、状态面和边界说明都在；但它没有、也不能冒充拥有完整 reply-time veto。
+- 当前已完成：GD-008 已从“开放治理债务”收口为“已建模的 host-limited 宿主边界”。后续状态面尾修也已补齐：`current-status` 现在能正确读取治理债务 Markdown register，不会再出现“治理债务 open=0，但长期 backlog 读取失败”的矛盾提示。
 
 ### 0.2 上一步完成的是
 
@@ -92,12 +92,17 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 | `references/host-session-capability-matrix.json` | 修改 | 增加 GD-008 reactivation sentinel 与各宿主 reply-veto 状态字段。 |
 | `compass/tools/redcap-hook-contract-check.sh` | 修改 | 校验 host capability matrix 必须保留 GD-008 sentinel。 |
 | `prism/reports/2026-05-15-gd-008-host-limited-boundary-closeout.md` | 新建 | 归档 Claude Code / Kimi 的 Prism 结论。 |
+| `compass/tools/redcap-current-status.py` | 修改 | 让长期 backlog 展示支持治理债务 Markdown register，并标准化 done / in-progress / pending / blocked 状态。 |
+| `compass/tools/redcap-multi-session-acceptance.sh` | 修改 | 增加回归断言：不允许再输出 `backlog 读取失败`，并确认 GD-008 条目级展示为已完成。 |
+| `prism/runs/20260515-gd008-status-surface-backlog-readpath/**` | 新建 | 归档状态面尾修的 Claude Code / Kimi 轻量 Prism 验收。 |
 
 ### 3.2 技术实现要点
 
 这次的关键不是新增一个拦截器，而是把“不能拦截”从模糊失败改成清晰契约。GD-008 的 `done` 只表示 RedCap-owned 工作已经完成：相关文档、执行保障、状态面、诊断链都能诚实说明边界。宿主是否有 pre-reply/pre-send Hook，仍由宿主能力决定。
 
 新增的 reactivation sentinel 让未来升级有明确触发条件：如果某个宿主真的提供并验证了 repo-owned reply veto，RedCap 不需要把 GD-008 翻旧账，而是开一个新的 host-adapter upgrade task，把该宿主从 G3/manual-only 升到更强的保障层级。
+
+closeout 后补的状态面尾修只处理展示层：治理债务的权威源仍是 `compass/knowledge/governance-debt-register.md`，`current-status` 只是把它摘要成人能读懂的当前状态。这个修复避免了“权威源已经 done，但状态面还按 JSON backlog 读取失败”的假警报。
 
 ### 3.2.1 术语对照（按文件/功能解释）
 
@@ -108,6 +113,7 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 | reply-time veto | pre-reply / pre-send 拦截能力 | 如果宿主未来提供这个能力，RedCap 才可能在回复发出前做更强的自动阻断。 |
 | reactivation sentinel | `references/host-session-capability-matrix.json` | 一个未来升级触发器：一旦宿主证明有回复前拦截能力，就新开宿主适配升级任务。 |
 | hook contract | `compass/tools/redcap-hook-contract-check.sh` | 防止上面这个未来触发器被后续改动无意删除的机器检查。 |
+| Markdown backlog 展示 | `compass/tools/redcap-current-status.py` | 让状态面能读取治理债务这类 Markdown 登记册；它只是摘要展示，不改变权威源。 |
 
 ### 3.3 关联变更
 
@@ -141,6 +147,9 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 | spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
 | closeout audit replay | `./closeout-cap.sh complete --host codex --task-file .dev-task.md --baseline-head 59ae72b0d2d34463b116c979145d52d69e9fd182` | 首轮阻塞：PM Gate 只接受 JSON backlog，不能校验治理债务 Markdown 锚点；已补 `redcap-backlog-check.sh` 对 `governance-debt-register.md` 的锚点校验支持 |
+| current-status Markdown backlog follow-up | `bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview` | 通过：长期 backlog 不再读取失败，GD-008 条目级显示为已完成 |
+| Python syntax check | `python3 -m py_compile compass/tools/redcap-current-status.py` | 通过 |
+| status surface spot check | `bash compass/tools/redcap-current-status.sh .dev-task.md` | 通过：长期 backlog 显示 Markdown authority、当前焦点 GD-008、条目计数已完成=9 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -150,10 +159,10 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 已勾选，等待 closeout runtime 最终核验 |
+| 执行承诺账本 | 已勾选，由 closeout runtime 核验 |
 | 棱镜验收 | Claude Code / Kimi 已归档并通过 acceptance binding，无 blocker |
-| closeout summary | 无 |
-| closeout receipt | 无 |
+| closeout summary | 由 `closeout-cap.sh complete` 生成，最终路径以 runtime 输出和 `current-status` 为准 |
+| closeout receipt | 由 `closeout-cap.sh complete` 生成，最终路径以 runtime 输出和 `current-status` 为准 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -162,7 +171,7 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code / Kimi 无 blocker |
-| 已正式完成 | 否，receipt 将由 closeout runtime 生成 |
+| 已正式完成 | 以 closeout runtime receipt 为最终完成凭证；报告内不硬编码 receipt 路径，避免为更新路径反复制造新提交 |
 
 ---
 
@@ -177,7 +186,7 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 
 ### 6.2 触发的新问题
 
-无新增开放问题；本轮新增的是未来宿主能力升级触发器。closeout 过程中额外抓到一个已修复的兼容性问题：任务卡可以指向治理债务 Markdown 作为锚点，但 PM Gate 的 backlog checker 原先只支持 JSON backlog。
+无新增开放问题；本轮新增的是未来宿主能力升级触发器。closeout 过程中额外抓到两个已修复的兼容性问题：任务卡可以指向治理债务 Markdown 作为锚点，但 PM Gate 的 backlog checker 原先只支持 JSON backlog；状态面长期 backlog 展示原先也只按 JSON backlog 读取，导致 open=0 后仍显示读取失败。
 
 ### 6.3 推荐的下一步行动
 
@@ -203,6 +212,8 @@ GD-008 的剩余问题不是“RedCap 还没写完某个脚本”，而是“宿
 | 候选 | 来源 | 处理结果 | 证据 |
 |------|------|----------|------|
 | 无新增候选 | 本轮只是将已登记宿主边界收口 | 无新增候选 | `.dev-task.md` |
+
+状态面尾修没有新增可公开沉淀候选；它属于同一条 GD-008 边界收口的质量修正。
 
 ---
 
