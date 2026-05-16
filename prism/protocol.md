@@ -90,6 +90,7 @@ redteam 模式中，每个 Agent 必须携带对应角色的 System Prompt（见
 - 读取 `prism/reports/` 下的任何文件
 - 读取其他 Agent 的中间产出
 - 访问 `.dev-task.md` 或其他状态文件（Frame 内容除外）
+- 打开 `.env`、`.env.*`、`*-config.json`、credential、token、secret、key 等本地敏感文件；审查包面安全时只能检查忽略规则、安全策略、候选清单和扫描器输出，不能读取被排除的敏感文件正文
 
 分发方式：为每个 Agent 发送完全相同的问题包（Frame 内容 + 具体分析任务）。
 

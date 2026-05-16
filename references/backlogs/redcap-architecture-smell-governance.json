@@ -555,7 +555,7 @@
         "prism/runs/20260510-rasg017-root-ia-target-model/collect/risk-review/parsed.json",
         "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md",
         "prism/runs/20260510-root-ia-consolidation-assessment/collect/kimi-reviewer.txt",
-        "compass/docs/task-reports/2026-05-10-root-information-architecture-debt-intake.md"
+        "private-archive/redcap-knowledge/task-reports/2026-05-10-root-information-architecture-debt-intake.md"
       ],
       "follow_up_requirements": [
         "RASG-022"

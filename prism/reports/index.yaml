@@ -1,4 +1,28 @@
 reports:
+  - id: "20260516-post-migration-full-engineering-review"
+    mode: test
+    date: "2026-05-16"
+    topic: "Post-migration full RedCap engineering review after RASG-022 private archive tranche"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Treat the RASG-022 private archive migration as structurally review-clean for continued engineering work"
+      - "Keep npm release, license choice, registry credentials, destructive cleanup, and future root moves as separate explicit tasks"
+      - "Strengthen future Prism review prompts so secret files are never opened during package-surface checks"
+    open_questions:
+      - "Remaining high-risk root groups stay under the explicit deferral receipt and need future tranches before any physical move"
+      - "prism/runs still has local evidence volume and should be observed through lifecycle inventory instead of bulk-read"
+      - "Release readiness still requires a separate formal release task and Norven-held decisions"
+    lessons_updated: false
+    files_affected:
+      - ".dev-task.md"
+      - "prism/reports/2026-05-16-post-migration-full-engineering-review.md"
+      - "prism/runs/20260516-post-migration-full-engineering-review/session-registry.yaml"
+      - "prism/runs/20260516-post-migration-full-engineering-review/artifacts/acceptance-binding.json"
+      - "prism/runs/20260516-post-migration-full-engineering-review/collect/reviewer/parsed.json"
+      - "prism/runs/20260516-post-migration-full-engineering-review/collect/challenger/parsed.json"
+    archived: false
   - id: "20260515-rasg022-private-archive-physical-migration"
     mode: acceptance-review
     date: "2026-05-15"
