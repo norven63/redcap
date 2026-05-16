@@ -39,6 +39,7 @@
   ],
   "allowed_sources": [
     "compass/docs/task-reports/*.md",
+    "private-archive/redcap-knowledge/task-reports/*.md",
     "redcap-knowledge/task-reports/*.md",
     "compass/knowledge/lessons.md",
     "compass/evolution/candidates.json",
@@ -54,6 +55,7 @@
     "GEMINI.md",
     ".github/copilot-instructions.md",
     "compass/docs/task-reports/**",
+    "private-archive/redcap-knowledge/**",
     "redcap-knowledge/**",
     "compass/knowledge/**",
     "prism/runs/**",

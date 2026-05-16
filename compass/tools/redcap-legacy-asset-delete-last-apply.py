@@ -21,6 +21,8 @@ TASK_ID = "historical-asset-migration-delete-last-canonical-switch"
 PREFLIGHT_ID = "redcap-legacy-asset-delete-last-preflight"
 PUBLIC_TARGET_PREFIXES = {"redcap-arsenal", "shared-knowledge"}
 PUBLIC_TARGET_NESTED_PREFIXES = {("templates", "shared-knowledge")}
+LEGACY_PRIVATE_ARCHIVE_ROOT = "redcap-knowledge"
+PRIVATE_ARCHIVE_ROOT = "private-archive/redcap-knowledge"
 
 
 def fail(message: str) -> None:
@@ -62,6 +64,18 @@ def safe_relative(raw: str, label: str) -> str:
     if path.is_absolute() or raw.startswith("~") or ".." in path.parts:
         fail(f"{label} must be a safe repo-relative path: {raw}")
     return path.as_posix()
+
+
+def private_archive_fs_path(raw: str) -> str:
+    if raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/"):
+        return raw
+    if raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/"):
+        return f"{PRIVATE_ARCHIVE_ROOT}{raw[len(LEGACY_PRIVATE_ARCHIVE_ROOT):]}"
+    return raw
+
+
+def is_private_archive_path(raw: str) -> bool:
+    return raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/") or raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/")
 
 
 def is_public_target(raw: str) -> bool:
@@ -110,10 +124,10 @@ def validate_preflight(root: Path, path: Path) -> list[dict[str, Any]]:
         seen_new.add(new_path)
         if not old_path.startswith("compass/docs/"):
             fail(f"old path must stay under compass/docs: {old_path}")
-        if not new_path.startswith("redcap-knowledge/") or is_public_target(new_path):
+        if not is_private_archive_path(new_path) or is_public_target(new_path):
             fail(f"unsafe private copy target: {new_path}")
         old_file = root / old_path
-        new_file = root / new_path
+        new_file = root / private_archive_fs_path(new_path)
         if not old_file.is_file():
             fail(f"old source missing before delete-last apply: {old_path}")
         if not new_file.is_file():
@@ -145,7 +159,7 @@ def build_receipt(root: Path, preflight_path: Path, *, apply: bool) -> tuple[dic
         new_path = entry["new_path"]
         expected_sha = entry["source_sha256"]
         old_file = root / old_path
-        new_file = root / new_path
+        new_file = root / private_archive_fs_path(new_path)
         old_existed_before = old_file.is_file()
         if not old_existed_before:
             fail(f"old source missing during delete-last apply: {old_path}")
@@ -279,7 +293,7 @@ def validate_live_result(root: Path, result_path: Path) -> dict[str, Any]:
         old_path = safe_relative(str(entry["old_path"]), "result.old_path")
         new_path = safe_relative(str(entry["new_path"]), "result.new_path")
         expected_sha = str(entry["source_sha256"])
-        new_file = root / new_path
+        new_file = root / private_archive_fs_path(new_path)
         if not new_file.is_file() or sha256_file(new_file) != expected_sha:
             fail(f"private copy target missing or drifted: {new_path}")
         old_file = root / old_path
@@ -304,7 +318,7 @@ def rollback_from_receipt(root: Path, result_path: Path) -> int:
         new_path = safe_relative(str(step.get("new_path") or ""), f"rollback_plan[{index}].new_path")
         expected_sha = str(step.get("required_sha256") or "").strip()
         old_file = root / old_path
-        new_file = root / new_path
+        new_file = root / private_archive_fs_path(new_path)
         if old_file.exists():
             if not old_file.is_file() or sha256_file(old_file) != expected_sha:
                 fail(f"rollback refuses mismatched existing old source: {old_path}")

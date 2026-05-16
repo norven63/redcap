@@ -6,7 +6,7 @@
   "must_not_claim": [
     "The knowledge gateway is not a RAG system.",
     "The gateway must not replace source files as truth sources.",
-    "The gateway must not bulk-read redcap-knowledge, prism/runs, or public users/** bodies by default.",
+    "The gateway must not bulk-read private-archive/redcap-knowledge, legacy redcap-knowledge anchors, prism/runs, or public users/** bodies by default.",
     "The gateway must not export private raw reports or identity data into redcap-arsenal."
   ],
   "route_order": [
@@ -33,7 +33,7 @@
     },
     {
       "id": "private-cold-archive",
-      "root": "redcap-knowledge",
+      "root": "private-archive/redcap-knowledge",
       "first_read": "references/redcap-knowledge-cold-archive-inventory.json",
       "body_read_rule": "Use inventory and exact path lookups; never sweep the whole archive for live task context.",
       "allowed_default": false

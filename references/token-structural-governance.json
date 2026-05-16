@@ -122,11 +122,11 @@
       "trigger_for_revisit": "When delete entries exceed 150 or the file exceeds 150KB, shard entry details behind the same apply checker while preserving a compact receipt summary."
     },
     {
-      "path": "redcap-knowledge/task-reports/2026-04-17-live-closeout-final-blockers.md",
+      "path": "private-archive/redcap-knowledge/task-reports/2026-04-17-live-closeout-final-blockers.md",
       "kind": "tracked-large-private-copy",
       "current_mitigation": "alias-resolver-and-file-lookup-dictionary",
       "structural_strategy": "Keep as a private copy-first target, not a startup document. Agents should discover it through the alias resolver or File Lookup Dictionary and only open it when auditing that exact historical closeout lineage.",
-      "trigger_for_revisit": "If redcap-knowledge gains multiple large private copies, add a generated redcap-knowledge index or shard policy instead of relying on per-file exceptions."
+      "trigger_for_revisit": "If private-archive/redcap-knowledge gains multiple large private copies, add a generated private archive index or shard policy instead of relying on per-file exceptions."
     },
     {
       "path": "prism/runs",

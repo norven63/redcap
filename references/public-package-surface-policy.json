@@ -39,6 +39,7 @@
     "compass/.runtime/**",
     "compass/.workflow/**",
     "prism/runs/**",
+    "private-archive/redcap-knowledge/**",
     "redcap-knowledge/**"
   ]
 }

@@ -714,7 +714,7 @@
       ],
       "status": "done",
       "completed_at": "2026-05-14",
-      "progress_note": "The first physical apply tranche moved the in-repo shared knowledge template source from shared-knowledge/ to templates/shared-knowledge/. The remaining high-risk root parent groups are explicitly deferred before release readiness in references/root-ia-remaining-root-groups-deferral.json, so RASG-022 is closed for the current pre-release governance pass without claiming full physical consolidation.",
+      "progress_note": "shared-knowledge template root and private archive root have applied tranches; remaining high-risk root groups are still explicitly deferred before release readiness.",
       "introduced_at": "2026-05-12",
       "evidence": [
         "references/root-information-architecture-consolidation-plan.json",
@@ -722,7 +722,10 @@
         "references/root-ia-remaining-root-groups-deferral.json",
         "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md",
         "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
-        "compass/docs/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md"
+        "compass/docs/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md",
+        "references/root-ia-private-archive-tranche-manifest.json",
+        "compass/docs/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
+        "prism/reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
       ],
       "applied_tranches": [
         {
@@ -736,6 +739,18 @@
             "prism/reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md"
           ],
           "completion_boundary": "This tranche does not close all root information architecture physical consolidation."
+        },
+        {
+          "id": "rasg-022-private-archive-physical-migration",
+          "status": "completed-pending-closeout-receipted",
+          "canonical_root": "private-archive/redcap-knowledge",
+          "retired_root": "redcap-knowledge",
+          "evidence": [
+            "references/root-ia-private-archive-tranche-manifest.json",
+            "compass/docs/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
+            "prism/reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
+          ],
+          "completion_boundary": "This tranche does not close all root information architecture physical consolidation."
         }
       ],
       "explicit_deferrals": [
@@ -746,11 +761,10 @@
           "covers_target_parents": [
             "internal-control-plane",
             "prism-layer-and-evidence",
-            "private-archive",
             "internal-layer-a",
             "workspace-state"
           ],
-          "completion_boundary": "This closes RASG-022 for the current pre-release governance pass but does not claim these high-risk roots were physically moved."
+          "completion_boundary": "This keeps the remaining high-risk roots deferred; shared-knowledge and private-archive have applied tranches."
         }
       ]
     },

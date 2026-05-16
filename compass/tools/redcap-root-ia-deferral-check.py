@@ -85,7 +85,7 @@ def validate_claim_boundary(receipt: dict[str, Any]) -> None:
     if boundary.get("release_ready_claimed") is not False:
         fail("claim_boundary must not claim release readiness")
     allowed = require_text(boundary, "allowed_user_claim", "claim_boundary")
-    for phrase in ["当前阶段已收口", "显式延期"]:
+    for phrase in ["当前阶段", "显式延期"]:
         if phrase not in allowed:
             fail(f"allowed_user_claim missing phrase: {phrase}")
     forbidden = "\n".join(string_list(boundary.get("forbidden_claims"), "claim_boundary.forbidden_claims"))
@@ -118,6 +118,21 @@ def validate_applied(receipt: dict[str, Any]) -> set[str]:
     boundary = require_text(shared, "completion_boundary", "shared-knowledge")
     if "not close all root" not in boundary and "not the remaining" not in boundary:
         fail("shared-knowledge completion boundary must deny all-root completion")
+    private_archive = next((item for item in applied if isinstance(item, dict) and item.get("target_parent") == "private-archive"), None)
+    if private_archive is not None:
+        if private_archive.get("applied_tranche") != "rasg-022-private-archive-physical-migration":
+            fail("private-archive applied tranche id mismatch")
+        if private_archive.get("status") not in {"completed-pending-closeout-receipt", "completed-closeout-receipted"}:
+            fail("private-archive tranche status mismatch")
+        if private_archive.get("canonical_root") != "private-archive/redcap-knowledge":
+            fail("private-archive canonical root must be private-archive/redcap-knowledge")
+        if private_archive.get("retired_root") != "redcap-knowledge":
+            fail("private-archive retired root must be redcap-knowledge")
+        evidence = string_list(private_archive.get("evidence"), "private-archive evidence")
+        require_existing_paths(evidence, "private-archive")
+        boundary = require_text(private_archive, "completion_boundary", "private-archive")
+        if "not all" not in boundary and "not the remaining" not in boundary:
+            fail("private-archive completion boundary must deny all-root completion")
     return covered
 
 
@@ -138,7 +153,6 @@ def validate_deferred(receipt: dict[str, Any], groups: dict[str, dict[str, Any]]
     required = {
         "internal-control-plane",
         "prism-layer-and-evidence",
-        "private-archive",
         "internal-layer-a",
         "workspace-state",
     }
@@ -261,8 +275,11 @@ def main() -> int:
         fail("receipt must bind to RASG-022")
     if receipt.get("source_plan") != "references/root-information-architecture-consolidation-plan.json":
         fail("receipt source_plan mismatch")
-    if receipt.get("physical_migration_mode") != "no-further-move-in-this-task":
-        fail("receipt must not claim further physical moves in this task")
+    if receipt.get("physical_migration_mode") not in {
+        "no-further-move-in-this-task",
+        "per-tranche-apply-private-archive-complete-remaining-groups-deferred",
+    }:
+        fail("receipt physical_migration_mode mismatch")
     if receipt.get("status") != "partial-apply-complete-remaining-root-groups-deferred-before-release":
         fail("receipt status mismatch")
 

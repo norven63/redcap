@@ -122,7 +122,7 @@ def validate_policy(policy: dict[str, Any], root: Path) -> None:
                     "current task report inbox too large: "
                     f"files={actual} max={max_files}; "
                     "move old reports through the explicit legacy-asset lifecycle into "
-                    "redcap-knowledge/task-reports/ before claiming the active inbox is healthy"
+                    "private-archive/redcap-knowledge/task-reports/ before claiming the active inbox is healthy"
                 )
     missing = sorted(required_ids - seen)
     if missing:
@@ -150,7 +150,7 @@ def validate_policy(policy: dict[str, Any], root: Path) -> None:
     if not isinstance(boundaries, dict):
         fail("artifact_boundaries must be an object")
     forbidden = require_list(boundaries, "raw_private_sources_forbidden_in_public", "artifact_boundaries")
-    for required in ["compass/docs/task-reports/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**", ".env"]:
+    for required in ["compass/docs/task-reports/**", "private-archive/redcap-knowledge/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**", ".env"]:
         if required not in forbidden:
             fail(f"artifact boundary missing forbidden raw source: {required}")
     for required in ["privacy and secret scan", "normalized duplicate check", "append-only timestamped entry", "index-first retrieval metadata"]:
@@ -182,7 +182,7 @@ def validate_cross_policies(root: Path) -> None:
     forbidden = remote.get("forbidden_path_globs")
     if not isinstance(forbidden, list):
         fail("remote binding forbidden_path_globs must be a list")
-    for required in ["compass/docs/task-reports/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**"]:
+    for required in ["compass/docs/task-reports/**", "private-archive/redcap-knowledge/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**"]:
         if required not in forbidden:
             fail(f"remote binding missing forbidden path glob: {required}")
 

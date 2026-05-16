@@ -11,6 +11,7 @@ prompt.txt
 compass/.runtime/
 compass/.workflow/
 compass/tools/redcap-multi-session-acceptance.sh
+private-archive/
 prism/runs/
 __pycache__/
 *.pyc

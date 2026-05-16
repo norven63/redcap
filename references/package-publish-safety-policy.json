@@ -105,6 +105,7 @@
     "compass/.runtime/**",
     "prism/runs/**",
     "prism/reports/.session-registry.yaml",
+    "private-archive/redcap-knowledge/**",
     "redcap-knowledge/**",
     "references/human-product-surface-policy.json",
     "**/__pycache__/**",

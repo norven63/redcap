@@ -49,8 +49,8 @@
       "meaning": "Immutable or private evidence that can be read for distillation but must not be rewritten as public knowledge.",
       "redcap_paths": [
         "compass/docs/task-reports",
-        "redcap-knowledge/task-reports",
-        "redcap-knowledge/research",
+        "private-archive/redcap-knowledge/task-reports",
+        "private-archive/redcap-knowledge/research",
         "prism/runs",
         "closeout runtime receipts and summaries",
         "external source documents explicitly supplied by the user"

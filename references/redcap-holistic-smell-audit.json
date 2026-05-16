@@ -191,7 +191,7 @@
         "prism/runs/",
         "prism/reports/",
         "compass/docs/task-reports/",
-        "redcap-knowledge/task-reports/",
+        "private-archive/redcap-knowledge/task-reports/",
         "loom/test-reports/"
       ],
       "acceptance_boundary": "RASG-017 should include the evidence parent model; RASG-008/RASG-014 continue to govern lifecycle, rotation, and archive safety."

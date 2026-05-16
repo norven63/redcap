@@ -22,6 +22,8 @@ RESOLVER_ID = "redcap-legacy-asset-migration-alias-resolver"
 TASK_ID = "historical-asset-migration-alias-resolver"
 SOURCE_ID = "redcap-legacy-asset-migration-worktree-rehearsal"
 DELETE_LAST_ID = "redcap-legacy-asset-delete-last-apply"
+LEGACY_PRIVATE_ARCHIVE_ROOT = "redcap-knowledge"
+PRIVATE_ARCHIVE_ROOT = "private-archive/redcap-knowledge"
 
 
 def fail(message: str) -> None:
@@ -63,6 +65,19 @@ def safe_relative(raw: str, label: str) -> str:
     if path.is_absolute() or ".." in path.parts:
         fail(f"{label} must be a safe repo-relative path: {raw}")
     return path.as_posix()
+
+
+def is_private_archive_path(raw: str) -> bool:
+    return raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/") or raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/")
+
+
+def canonical_private_archive_path(raw: str) -> str:
+    if raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/"):
+        return raw
+    if raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/"):
+        return f"{PRIVATE_ARCHIVE_ROOT}{raw[len(LEGACY_PRIVATE_ARCHIVE_ROOT):]}"
+    fail(f"private archive path must stay under {PRIVATE_ARCHIVE_ROOT} or legacy {LEGACY_PRIVATE_ARCHIVE_ROOT}: {raw}")
+    raise AssertionError("unreachable")
 
 
 def load_catalog_paths(path: Path) -> set[str]:
@@ -154,8 +169,9 @@ def build_post_delete_resolver(root: Path, delete_last_path: Path, delete_last_r
         seen_new.add(new_path)
         if not old_path.startswith("compass/docs/"):
             fail(f"{item_id}: old path must remain under compass/docs: {old_path}")
-        if not new_path.startswith("redcap-knowledge/"):
-            fail(f"{item_id}: new path must remain under redcap-knowledge: {new_path}")
+        if not is_private_archive_path(new_path):
+            fail(f"{item_id}: new path must remain under private archive: {new_path}")
+        canonical_new_path = canonical_private_archive_path(new_path)
         if old_path in catalog_paths:
             fail(f"{item_id}: retired old path is still present in docs catalog: {old_path}")
         source_file = root / old_path
@@ -164,11 +180,11 @@ def build_post_delete_resolver(root: Path, delete_last_path: Path, delete_last_r
         expected_sha = str(row.get("source_sha256") or "").strip()
         if len(expected_sha) != 64:
             fail(f"{item_id}: source_sha256 must be a sha256 hex string")
-        target = root / new_path
+        target = root / canonical_new_path
         if not target.is_file():
-            fail(f"{item_id}: canonical target missing after delete-last: {new_path}")
+            fail(f"{item_id}: canonical target missing after delete-last: {canonical_new_path}")
         if sha256_file(target) != expected_sha:
-            fail(f"{item_id}: canonical target hash mismatch after delete-last: {new_path}")
+            fail(f"{item_id}: canonical target hash mismatch after delete-last: {canonical_new_path}")
         receipt_anchor = old_path.startswith("compass/docs/task-reports/")
         if receipt_anchor:
             task_report_anchors += 1
@@ -177,9 +193,10 @@ def build_post_delete_resolver(root: Path, delete_last_path: Path, delete_last_r
             {
                 "item_id": item_id,
                 "old_path": old_path,
-                "new_path": new_path,
-                "canonical_path": new_path,
-                "requested_new_path_resolves_to": new_path,
+                "legacy_new_path": new_path,
+                "new_path": canonical_new_path,
+                "canonical_path": canonical_new_path,
+                "requested_new_path_resolves_to": canonical_new_path,
                 "old_path_authoritative": False,
                 "old_catalog_anchor_present": False,
                 "old_path_retired": True,
@@ -262,8 +279,9 @@ def build_resolver(root: Path, source_path: Path, catalog_path: Path, delete_las
         seen_new.add(new_path)
         if not old_path.startswith("compass/docs/"):
             fail(f"{item_id}: old path must remain under compass/docs: {old_path}")
-        if not new_path.startswith("redcap-knowledge/"):
-            fail(f"{item_id}: new path must remain under redcap-knowledge: {new_path}")
+        if not is_private_archive_path(new_path):
+            fail(f"{item_id}: new path must remain under private archive: {new_path}")
+        canonical_new_path = canonical_private_archive_path(new_path)
         if old_path not in catalog_paths:
             fail(f"{item_id}: old path missing from docs catalog: {old_path}")
         source_file = root / old_path
@@ -274,7 +292,7 @@ def build_resolver(root: Path, source_path: Path, catalog_path: Path, delete_las
             fail(f"{item_id}: source_sha256 must be a sha256 hex string")
         if sha256_file(source_file) != expected_sha:
             fail(f"{item_id}: old source hash no longer matches worktree rehearsal result: {old_path}")
-        state, target_exists = target_state(root, old_path, new_path, expected_sha)
+        state, target_exists = target_state(root, old_path, canonical_new_path, expected_sha)
         if state == "planned-not-applied":
             planned_targets += 1
         else:
@@ -287,7 +305,8 @@ def build_resolver(root: Path, source_path: Path, catalog_path: Path, delete_las
             {
                 "item_id": item_id,
                 "old_path": old_path,
-                "new_path": new_path,
+                "legacy_new_path": new_path,
+                "new_path": canonical_new_path,
                 "canonical_path": old_path,
                 "requested_new_path_resolves_to": old_path,
                 "old_path_authoritative": True,
@@ -407,7 +426,7 @@ def resolve_path(result: dict[str, Any], catalog_paths: set[str], raw_path: str)
                     "candidate_path": entry["new_path"],
                     "target_state": entry["target_state"],
                     "old_path_authoritative": False,
-                    "authority_note": "old compass/docs anchor has been retired by delete-last; use canonical redcap-knowledge path",
+                    "authority_note": f"old compass/docs anchor has been retired by delete-last; use canonical {PRIVATE_ARCHIVE_ROOT} path",
                 }
             return {
                 "status": "old-anchor",
@@ -426,7 +445,7 @@ def resolve_path(result: dict[str, Any], catalog_paths: set[str], raw_path: str)
                     "candidate_path": entry["new_path"],
                     "target_state": entry["target_state"],
                     "old_path_authoritative": False,
-                    "authority_note": "new redcap-knowledge path is canonical after delete-last",
+                    "authority_note": f"{PRIVATE_ARCHIVE_ROOT} path is canonical after delete-last",
                 }
             return {
                 "status": "candidate-target",
@@ -435,6 +454,50 @@ def resolve_path(result: dict[str, Any], catalog_paths: set[str], raw_path: str)
                 "candidate_path": entry["new_path"],
                 "target_state": entry["target_state"],
                 "old_path_authoritative": True,
+            }
+        if requested == entry.get("legacy_new_path"):
+            return {
+                "status": "legacy-private-anchor",
+                "requested_path": requested,
+                "canonical_path": entry["new_path"],
+                "candidate_path": entry["new_path"],
+                "target_state": entry["target_state"],
+                "old_path_authoritative": bool(entry.get("old_path_authoritative")),
+                "authority_note": f"legacy {LEGACY_PRIVATE_ARCHIVE_ROOT} anchor resolves to canonical {PRIVATE_ARCHIVE_ROOT}",
+            }
+    if requested.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/"):
+        canonical = canonical_private_archive_path(requested)
+        if (ROOT / canonical).is_file():
+            return {
+                "status": "legacy-private-anchor",
+                "requested_path": requested,
+                "canonical_path": canonical,
+                "candidate_path": canonical,
+                "target_state": "canonical-copy-present",
+                "old_path_authoritative": False,
+                "authority_note": f"legacy {LEGACY_PRIVATE_ARCHIVE_ROOT} anchor resolves to canonical {PRIVATE_ARCHIVE_ROOT}",
+            }
+    if requested.startswith(f"{PRIVATE_ARCHIVE_ROOT}/") and (ROOT / requested).is_file():
+        return {
+            "status": "canonical-target",
+            "requested_path": requested,
+            "canonical_path": requested,
+            "candidate_path": requested,
+            "target_state": "canonical-copy-present",
+            "old_path_authoritative": False,
+            "authority_note": f"{PRIVATE_ARCHIVE_ROOT} path is canonical for private archive assets",
+        }
+    if requested.startswith("compass/docs/task-reports/") and requested not in catalog_paths:
+        archived = f"{PRIVATE_ARCHIVE_ROOT}/task-reports/{Path(requested).name}"
+        if (ROOT / archived).is_file():
+            return {
+                "status": "retired-old-anchor",
+                "requested_path": requested,
+                "canonical_path": archived,
+                "candidate_path": archived,
+                "target_state": "canonical-copy-present",
+                "old_path_authoritative": False,
+                "authority_note": "old compass/docs task-report anchor has been archived into private archive",
             }
     if requested in catalog_paths:
         return {

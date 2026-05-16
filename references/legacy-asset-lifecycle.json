@@ -74,10 +74,10 @@
     },
     {
       "id": "private-knowledge-archive",
-      "path": "redcap-knowledge",
+      "path": "private-archive/redcap-knowledge",
       "kind": "private-cold-archive",
       "default_action": "archive",
-      "authority": "redcap-knowledge is the private cold archive for reports and research; it must be exact-read and index-routed, not default-loaded or exported raw.",
+      "authority": "private-archive/redcap-knowledge is the private cold archive for reports and research; legacy redcap-knowledge anchors must resolve through alias/index paths and must not be default-loaded or exported raw.",
       "check_paths": [
         "references/information-architecture-artifact-governance-policy.json",
         "compass/tools/redcap-information-architecture-check.sh"

@@ -75,7 +75,7 @@ def validate_policy(policy: dict[str, Any]) -> None:
         fail("missing Forge responsibilities: " + ", ".join(missing))
 
     forbidden = require_list(policy, "forbidden_public_raw_sources", "policy")
-    for required_forbidden in ["compass/docs/task-reports/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**", ".env"]:
+    for required_forbidden in ["compass/docs/task-reports/**", "private-archive/redcap-knowledge/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**", ".env"]:
         if required_forbidden not in forbidden:
             fail(f"missing forbidden public raw source: {required_forbidden}")
 

@@ -133,7 +133,7 @@
       "evidence_paths": [
         "compass/tools/feishu-notifier.py",
         "compass/tools/redcap-multi-session-acceptance.sh",
-        "redcap-knowledge/task-reports/2026-04-26-original-intent-coverage-gate.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-26-original-intent-coverage-gate.md"
       ],
       "promotion_target": "lessons",
       "status": "promoted",
@@ -166,7 +166,7 @@
       ],
       "review_paths": [
         "prism/protocol.md",
-        "redcap-knowledge/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
       ]
     },
     {
@@ -193,7 +193,7 @@
       ],
       "review_paths": [
         "references/redcap-system-layers.md",
-        "redcap-knowledge/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-26-execution-layer-and-shared-knowledge-governance.md"
       ]
     },
     {
@@ -210,7 +210,7 @@
         "compass/tools/redcap-status-report-format.py",
         "compass/tools/redcap-notify-format.sh",
         "compass/tools/redcap-layerB-session-end.sh",
-        "redcap-knowledge/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-29-human-communication-feishu-noise-hardening.md"
       ],
       "promotion_target": "lessons",
       "status": "promoted",
@@ -234,7 +234,7 @@
         "references/pre-release-product-architecture-policy.json",
         "references/pre-release-product-architecture-review.json",
         "compass/tools/redcap-pre-release-product-architecture-check.py",
-        "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md"
+        "private-archive/redcap-knowledge/task-reports/2026-05-04-pre-release-product-architecture-review.md"
       ],
       "promotion_target": "lessons",
       "status": "promoted",

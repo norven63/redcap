@@ -68,6 +68,7 @@
     "**/prompt.txt",
     "compass/**",
     "prism/runs/**",
+    "private-archive/redcap-knowledge/**",
     "redcap-knowledge/**",
     "compass/docs/task-reports/**",
     "compass/knowledge/**",

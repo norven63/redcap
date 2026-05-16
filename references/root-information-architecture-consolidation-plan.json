@@ -312,16 +312,16 @@
       "consumer_notes": "Ignored local scratch file; should never become source of truth."
     },
     {
-      "path": "redcap-knowledge",
+      "path": "private-archive",
       "type": "directory",
       "presence": "required-source",
-      "current_role": "Private cold archive for reports, research, traces",
-      "visibility": "private-cold-archive",
+      "current_role": "Private archive parent for reports, research, traces",
+      "visibility": "private-cold-archive-parent",
       "package_surface": "excluded",
-      "target_disposition": "future-private-archive-parent-or-external-private-worktree",
+      "target_disposition": "applied-private-archive-parent-for-redcap-knowledge",
       "target_parent": "private-archive",
       "move_risk": "high",
-      "consumer_notes": "Catalogs and alias resolvers preserve archaeology; raw content is private."
+      "consumer_notes": "Contains private-archive/redcap-knowledge; catalogs and alias resolvers preserve old redcap-knowledge anchors; raw content is private."
     },
     {
       "path": "references",
@@ -388,110 +388,203 @@
     {
       "id": "root-human-entry",
       "meaning": "Small files that explain RedCap to humans before any deep read.",
-      "keep_at_root": ["README.md", "ARCHITECTURE.md"],
-      "must_not_contain": ["private reports", "raw Prism runs", "secrets", "long task ledgers"]
+      "keep_at_root": [
+        "README.md",
+        "ARCHITECTURE.md"
+      ],
+      "must_not_contain": [
+        "private reports",
+        "raw Prism runs",
+        "secrets",
+        "long task ledgers"
+      ]
     },
     {
       "id": "root-host-entry",
       "meaning": "Thin host-specific entry files required by host discovery conventions.",
-      "keep_at_root": ["AGENTS.md", "CLAUDE.md", "GEMINI.md", "SKILL.md"],
-      "must_not_contain": ["copied authoritative rules", "large knowledge bodies", "private identity text"]
+      "keep_at_root": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        "SKILL.md"
+      ],
+      "must_not_contain": [
+        "copied authoritative rules",
+        "large knowledge bodies",
+        "private identity text"
+      ]
     },
     {
       "id": "public-runtime",
       "meaning": "Installable runtime and CLI contract.",
-      "keep_at_root": ["bin", "runtime", "revive-cap.sh", "closeout-cap.sh"],
+      "keep_at_root": [
+        "bin",
+        "runtime",
+        "revive-cap.sh",
+        "closeout-cap.sh"
+      ],
       "future_rule": "If facades move, root wrappers must remain for at least one compatibility window."
     },
     {
       "id": "root-contract",
       "meaning": "Files npm/git/package tooling requires at root.",
-      "keep_at_root": ["package.json", ".npmignore", ".gitignore"],
+      "keep_at_root": [
+        "package.json",
+        ".npmignore",
+        ".gitignore"
+      ],
       "future_rule": "Do not hide package and source-control controls under internal parents."
     },
     {
       "id": "internal-control-plane",
       "meaning": "Maintainer-only RedCap governance, validators, active private knowledge, reports and workflow source.",
-      "current_roots": ["compass", "references"],
-      "future_shape": ["internal/control-plane", "contracts/public", "contracts/internal"],
+      "current_roots": [
+        "compass",
+        "references"
+      ],
+      "future_shape": [
+        "internal/control-plane",
+        "contracts/public",
+        "contracts/internal"
+      ],
       "apply_gate": "RASG-020 defines the public runtime versus maintainer-tool contract boundary; a later physical split task must still validate aliases, package profile and rollback before moving files."
     },
     {
       "id": "prism-layer-and-evidence",
       "meaning": "Separate Prism executable protocol from Prism historical evidence.",
-      "current_roots": ["prism"],
-      "future_shape": ["prism/protocol-tools", "evidence/prism-runs", "evidence/prism-reports"],
+      "current_roots": [
+        "prism"
+      ],
+      "future_shape": [
+        "prism/protocol-tools",
+        "evidence/prism-runs",
+        "evidence/prism-reports"
+      ],
       "apply_gate": "RASG-021 should add degradation metrics before moving evidence paths."
     },
     {
       "id": "private-archive",
       "meaning": "Private cold archaeology and Norven-local material.",
-      "current_roots": ["redcap-knowledge"],
-      "future_shape": ["private-archive/redcap-knowledge or external private worktree"],
-      "apply_gate": "Must preserve alias resolution, catalog routing and no-raw-public-export guarantees."
+      "current_roots": [
+        "private-archive"
+      ],
+      "future_shape": [
+        "private-archive/redcap-knowledge",
+        "optional external private worktree later"
+      ],
+      "apply_gate": "Private archive root applied for redcap-knowledge in RASG-022 private-archive tranche; future externalization still requires alias, package and privacy review."
     },
     {
       "id": "templates-and-external-arsenal",
       "meaning": "Public reusable knowledge starts as templates, then moves to external redcap-arsenal through Forge.",
-      "current_roots": ["templates"],
-      "future_shape": ["templates/shared-knowledge", "../redcap-arsenal"],
+      "current_roots": [
+        "templates"
+      ],
+      "future_shape": [
+        "templates/shared-knowledge",
+        "../redcap-arsenal"
+      ],
       "apply_gate": "Do not bulk migrate private history; use Forge/arsenal append-only promotion."
     },
     {
       "id": "internal-layer-a",
       "meaning": "Layer A external-project workflow compatibility.",
-      "current_roots": ["loom"],
-      "future_shape": ["internal/layer-a"],
+      "current_roots": [
+        "loom"
+      ],
+      "future_shape": [
+        "internal/layer-a"
+      ],
       "apply_gate": "Requires separate Layer A product boundary decision, not part of this RASG-017 apply."
     },
     {
       "id": "workspace-state",
       "meaning": "Ignored local state, secrets, scratch files and current task state.",
-      "current_roots": [".dev-task.md", ".env", ".tmp", "prompt.txt", "cli_console.md"],
-      "future_shape": ["workspace-local ignored files"],
+      "current_roots": [
+        ".dev-task.md",
+        ".env",
+        ".tmp",
+        "prompt.txt",
+        "cli_console.md"
+      ],
+      "future_shape": [
+        "workspace-local ignored files"
+      ],
       "apply_gate": "Must remain unpackaged and unpublished."
     }
   ],
   "consumer_impact_matrix": [
     {
       "consumer": "host entries",
-      "paths": ["AGENTS.md", "CLAUDE.md", "GEMINI.md", "SKILL.md", ".github/copilot-instructions.md"],
+      "paths": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        "SKILL.md",
+        ".github/copilot-instructions.md"
+      ],
       "risk": "Host discovery depends on root or host-owned locations.",
       "required_apply_check": "host hook readiness, skill lifecycle, revival protocol"
     },
     {
       "consumer": "runtime facades",
-      "paths": ["bin/redcap", "revive-cap.sh", "closeout-cap.sh", "runtime/**"],
+      "paths": [
+        "bin/redcap",
+        "revive-cap.sh",
+        "closeout-cap.sh",
+        "runtime/**"
+      ],
       "risk": "Install, status and closeout commands can break if wrappers move without aliases.",
       "required_apply_check": "clean workspace E2E, runtime workspace boundary, CLI product surface"
     },
     {
       "consumer": "control-plane validators",
-      "paths": ["compass/tools/**", "references/*.json"],
+      "paths": [
+        "compass/tools/**",
+        "references/*.json"
+      ],
       "risk": "Many scripts have direct relative path expectations.",
       "required_apply_check": "spec-check, diagnose, file lookup dictionary"
     },
     {
       "consumer": "Prism evidence and provider governance",
-      "paths": ["prism/tools/**", "prism/runs/**", "prism/reports/**"],
+      "paths": [
+        "prism/tools/**",
+        "prism/runs/**",
+        "prism/reports/**"
+      ],
       "risk": "Moving evidence can break acceptance bindings and replay/audit references.",
       "required_apply_check": "Prism evidence check, Prism runs lifecycle, Prism acceptance check"
     },
     {
       "consumer": "docs and archaeology",
-      "paths": ["compass/docs/**", "redcap-knowledge/**", "references/legacy-asset-*.json"],
-      "risk": "Old reports and receipts may link to historical paths.",
-      "required_apply_check": "docs catalog, cold archive inventory, legacy alias resolver"
+      "paths": [
+        "compass/docs/**",
+        "private-archive/redcap-knowledge/**",
+        "redcap-knowledge/** legacy anchors",
+        "references/legacy-asset-*.json"
+      ],
+      "risk": "Old reports and receipts may link to historical paths; legacy redcap-knowledge anchors now require resolver support.",
+      "required_apply_check": "docs catalog, cold archive inventory, legacy alias resolver, knowledge gateway"
     },
     {
       "consumer": "package and release surface",
-      "paths": ["package.json", ".npmignore", "references/runtime-package-readiness-policy.json", "references/package-publish-safety-policy.json"],
+      "paths": [
+        "package.json",
+        ".npmignore",
+        "references/runtime-package-readiness-policy.json",
+        "references/package-publish-safety-policy.json"
+      ],
       "risk": "Adding or moving files can silently change npm candidates.",
       "required_apply_check": "package publish safety, runtime package manifest, npm pack dry-run"
     },
     {
       "consumer": "human status and notification surfaces",
-      "paths": ["references/human-communication-policy.json", "compass/tools/redcap-notify-format.sh", "compass/tools/redcap-current-status.sh"],
+      "paths": [
+        "references/human-communication-policy.json",
+        "compass/tools/redcap-notify-format.sh",
+        "compass/tools/redcap-current-status.sh"
+      ],
       "risk": "Path changes can make human reports point to stale anchors.",
       "required_apply_check": "human communication check, Feishu notification policy"
     }

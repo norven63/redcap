@@ -1,4 +1,29 @@
 reports:
+  - id: "20260515-rasg022-private-archive-physical-migration"
+    mode: acceptance-review
+    date: "2026-05-15"
+    topic: "RASG-022 private archive root physical migration"
+    agents: ["kimi"]
+    roles: ["challenger"]
+    verdict: "resource-limited-pass"
+    consensus_actions:
+      - "Use redcap-knowledge -> private-archive/redcap-knowledge as the first high-risk root migration tranche"
+      - "Preserve old redcap-knowledge anchors with alias/resolver behavior instead of bulk-rewriting historical reports"
+      - "Synchronize cold archive inventory, package safety, knowledge gateway, active docs, and clean workspace validation"
+    open_questions:
+      - "compass/references, prism, loom, and workspace-local roots remain separate future tranches"
+      - "Formal npm release remains a separate release-readiness task"
+    lessons_updated: false
+    files_affected:
+      - "private-archive/redcap-knowledge/**"
+      - "references/root-ia-private-archive-tranche-manifest.json"
+      - "references/root-ia-remaining-root-groups-deferral.json"
+      - "compass/docs/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
+      - "prism/reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
+      - "prism/runs/20260515-rasg022-private-archive-physical-migration/session-registry.yaml"
+      - "prism/runs/20260515-rasg022-private-archive-physical-migration/artifacts/acceptance-binding.json"
+      - "prism/runs/20260515-rasg022-private-archive-physical-migration/artifacts/resource-limited.json"
+    archived: false
   - id: "20260515-gd008-host-limited-boundary-closeout"
     mode: test
     date: "2026-05-15"

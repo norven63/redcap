@@ -142,6 +142,7 @@
     "compass/.workflow/**",
     "compass/.runtime/**",
     "prism/runs/**",
+    "private-archive/redcap-knowledge/**",
     "redcap-knowledge/**"
   ],
   "required_policy_links": [

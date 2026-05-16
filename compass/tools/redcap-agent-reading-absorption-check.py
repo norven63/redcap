@@ -94,7 +94,7 @@ def validate_memory_mapping(policy: dict[str, Any]) -> None:
     if raw.get("raw_public_export") != "forbidden":
         fail("raw_sources.raw_public_export must remain forbidden")
     raw_paths = [str(item) for item in require_list(raw, "redcap_paths")]
-    for required in ["compass/docs/task-reports", "redcap-knowledge/task-reports", "prism/runs"]:
+    for required in ["compass/docs/task-reports", "private-archive/redcap-knowledge/task-reports", "prism/runs"]:
         if required not in raw_paths:
             fail(f"raw_sources missing {required}")
 

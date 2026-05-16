@@ -334,8 +334,8 @@
       "rule": "RedCap must keep a human-readable workflow panorama so users and future agents can understand the whole framework before diving into script names.",
       "source_paths": [
         "README.md",
-        "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md",
-        "redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html"
+        "private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md",
+        "private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html"
       ],
       "status": "validator",
       "automation": "redcap-mechanism-vitality-check.sh verifies the panorama surfaces exist and contain the core Layer A, Layer B, Prism, planning-review, closeout, and legacy-governance concepts.",
@@ -1809,7 +1809,7 @@
       "source_paths": [
         "references/redcap-r0-r22-registry.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-26-r0-r22-parent-reanchor-and-plan-audit.md"
       ],
       "status": "validator",
       "automation": "redcap-r0-r22-registry-check.sh validates contiguous R0-R22 coverage, required evidence paths, source type, confidence, status, and explicit boundaries; spec-check and diagnose consume it.",
@@ -1832,7 +1832,7 @@
       "source_paths": [
         "references/execution-layer-split-dry-run.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-26-execution-layer-split-dry-run.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-26-execution-layer-split-dry-run.md"
       ],
       "status": "validator",
       "automation": "redcap-execution-layer-split-check.sh validates the dry-run manifest, rejects apply_allowed=true, requires safe targets, existing sources, non-empty rollback plans, high-risk blockers, and explicit P1-2 deferral; spec-check, diagnose, and acceptance consume it.",
@@ -1855,7 +1855,7 @@
       "source_paths": [
         "references/legacy-asset-migration-dry-run.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-26-legacy-asset-migration-dry-run.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-26-legacy-asset-migration-dry-run.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-migration-check.sh validates asset collections, counts, actions, risks, apply status, catalog/link/rollback plans, and prism/runs retention summary; spec-check, diagnose, and acceptance consume it.",
@@ -1879,7 +1879,7 @@
         "references/legacy-asset-migration-apply-plan.json",
         "references/legacy-asset-migration-dry-run.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-29-historical-asset-migration-apply-preflight.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-migration-apply-plan.sh validates the file-level preflight manifest, blocks delete/move/public targets, rejects path traversal and duplicate targets, requires receipt-anchor guards, and is consumed by spec-check, diagnose, and acceptance.",
@@ -1903,7 +1903,7 @@
         "references/legacy-asset-migration-apply-rehearsal.json",
         "references/legacy-asset-migration-apply-plan.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-apply-rehearsal.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-apply-rehearsal.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-migration-rehearsal.sh runs the copy-first rehearsal in a temporary sandbox, rejects forbidden operations, traversal, public targets, duplicate targets and existing main-tree targets, validates alias-map and rollback counts, and is consumed by spec-check, diagnose, and acceptance.",
@@ -1928,7 +1928,7 @@
         "references/legacy-asset-migration-worktree-rehearsal.json",
         "references/legacy-asset-migration-apply-plan.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-worktree-rehearsal.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-migration-worktree-rehearsal.sh creates a detached temporary git worktree, performs copy-first rehearsal there, validates old docs catalog anchors, alias overlay, rollback, stale-result detection and main-tree no-mutation, and is consumed by spec-check, diagnose and acceptance.",
@@ -1954,7 +1954,7 @@
         "references/legacy-asset-migration-worktree-rehearsal.json",
         "compass/docs/catalog.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-alias-resolver.sh validates the resolver against worktree rehearsal output and docs catalog, rejects stale results, duplicate paths, missing old anchors, path traversal, public targets and target hash mismatch, and is consumed by spec-check, diagnose and acceptance.",
@@ -1980,7 +1980,7 @@
         "references/legacy-asset-migration-alias-resolver.json",
         "references/legacy-asset-migration-worktree-rehearsal.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-main-tree-apply.sh validates the main-tree copy-first receipt, rejects source drift, path traversal, public targets and mismatched applied targets, refreshes the alias resolver after apply, and is consumed by spec-check, diagnose and acceptance.",
@@ -2005,7 +2005,7 @@
         "references/legacy-asset-delete-last-preflight.json",
         "references/legacy-asset-migration-main-tree-apply.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-delete-last-preflight.sh validates delete-last/canonical-switch readiness, distinguishes historical evidence references from live hard references, supports fail-closed blocked output, and is consumed by spec-check, diagnose and acceptance.",
@@ -2030,7 +2030,7 @@
         "references/legacy-asset-delete-last-apply.json",
         "references/legacy-asset-delete-last-preflight.json",
         "references/legacy-asset-migration-alias-resolver.json",
-        "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-delete-last-canonical-switch.md"
       ],
       "status": "validator",
       "automation": "redcap-legacy-asset-delete-last-apply.sh validates the delete-last apply receipt, refuses unsafe paths/hash drift, supports rollback from private copies, and is consumed by spec-check, diagnose and acceptance.",
@@ -2054,8 +2054,8 @@
       "source_paths": [
         "references/parent-receipt-aggregation-policy.json",
         "references/redcap-parent-task-ledger.md",
-        "redcap-knowledge/task-reports/2026-04-26-parent-receipt-aggregation-gate.md",
-        "redcap-knowledge/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md"
+        "private-archive/redcap-knowledge/task-reports/2026-04-26-parent-receipt-aggregation-gate.md",
+        "private-archive/redcap-knowledge/task-reports/2026-04-28-runtime-receipt-evidence-correspondence-hardening.md"
       ],
       "status": "validator",
       "automation": "redcap-parent-receipt-aggregation-check.sh validates completed child evidence entries, requires modern child items to match runtime receipts or explicit repo-owned durable machine evidence with task_id correspondence, allows only explicitly listed historical child ids to use non-durable legacy evidence with a reason, validates not-complete reasons and next steps, and keeps parent_completion_allowed=false while open/blocked/resource-limited/deferred child items remain.",

@@ -2,7 +2,7 @@
 
 > **一句话定义**：RedCap 是一个由 Loom 执行平面、Compass 自演化控制面、Prism 分析裁决平面与 References 共约层组成的多 Agent 软件工程框架。
 >
-> **阅读方式**：本文件负责解释“系统现在是如何设计的”；`redcap-knowledge/traces/architecture-capability-trace.yaml` 负责冻结旧能力锚点并承载后续 `旧架构 -> 新架构 -> runtime evidence` 的回归审查。
+> **阅读方式**：本文件负责解释“系统现在是如何设计的”；`private-archive/redcap-knowledge/traces/architecture-capability-trace.yaml` 负责冻结旧能力锚点并承载后续 `旧架构 -> 新架构 -> runtime evidence` 的回归审查。
 
 ---
 
@@ -80,7 +80,7 @@ RedCap 当前把状态面划分为三类：
 
 | 类别 | 典型载体 | 是否进 git | 说明 |
 | --- | --- | --- | --- |
-| **repo-tracked canonical / evidence** | `ARCHITECTURE.md`、`references/**`、`compass/docs/specs/**`、近期 `compass/docs/task-reports/**`、私有归档 `redcap-knowledge/**`、`prism/reports/**`、`loom/test-reports/latest-e2e-report.md`、`loom/test-reports/pending-validations.md` | 是 | 这些文件要么是正式规范，要么是跨会话共享的历史证据，必须可审计、可考古；历史报告不再默认长期堆在 docs 当前入口 |
+| **repo-tracked canonical / evidence** | `ARCHITECTURE.md`、`references/**`、`compass/docs/specs/**`、近期 `compass/docs/task-reports/**`、私有归档 `private-archive/redcap-knowledge/**`、`prism/reports/**`、`loom/test-reports/latest-e2e-report.md`、`loom/test-reports/pending-validations.md` | 是 | 这些文件要么是正式规范，要么是跨会话共享的历史证据，必须可审计、可考古；历史报告不再默认长期堆在 docs 当前入口 |
 | **session-isolated process state** | `.dev-task.md`、`prism/runs/**`、宿主 `plan.md` / workboard mirror | 否 | 它们服务于当前会话或当前机器的推进，不应伪装成共享真相 |
 | **local-only host assets** | `.env.local`、`compass/tools/feishu-config.json`、`compass/.workflow/agent-registry.yaml`、宿主 CLI / hook 配置、机型/路径探测缓存 | 否 | 它们绑定本地环境、凭证或宿主能力，不适合作为 repo 历史的一部分 |
 | **temporary runtime outputs** | `/tmp/redcap-*`、临时 prompt / review 输出、`__pycache__/` | 否 | 只为当前执行服务，任务结束后应清理或自动覆盖 |
@@ -103,13 +103,13 @@ RedCap 当前把状态面划分为三类：
 | **frozen evidence** | `compass/docs/specs/**`、`research/**`、`traces/**`、`task-reports/**` | 冻结后的设计、审计、研究与 closure 证据 | 是 |
 | **canonical long-route truth** | `references/backlogs/*.json` | 机器可读的长期路线、阶段状态、当前焦点与人类说明锚点 | 是，但只负责长期路线，不接管 live task |
 | **live knowledge** | `compass/knowledge/lessons.md`、`host-reliability.md`、`hooks-*.md`、模型矩阵 | 活的经验、heuristics、宿主差异与操作知识 | 只作为规则与经验，不直接替代 closure evidence |
-| **private archive** | `redcap-knowledge/task-reports/**`、`redcap-knowledge/research/**` | 旧报告和研究材料的私有冷归档 | 是，但必须索引/精确读取，不默认加载 |
+| **private archive** | `private-archive/redcap-knowledge/task-reports/**`、`private-archive/redcap-knowledge/research/**` | 旧报告和研究材料的私有冷归档 | 是，但必须索引/精确读取，不默认加载 |
 | **continuity assets** | `.dev-task.md`、`compass/knowledge/explore-notes.md`、宿主 `plan.md` / workboard、导入的 session artifacts | 防偏航、防上下文稀释、断点恢复、显式继承 | 否 |
 
 因此：
 
 1. `compass/docs/` 与 `compass/knowledge/` 是**平级不同职**，不是父子关系。
-2. `compass/docs/task-reports/` 是近期结案报告入口，不是历史报告仓库；旧报告的 canonical 冷归档在 `redcap-knowledge/task-reports/`。
+2. `compass/docs/task-reports/` 是近期结案报告入口，不是历史报告仓库；旧报告的 canonical 冷归档在 `private-archive/redcap-knowledge/task-reports/`，旧 `redcap-knowledge/**` 仅作为别名/考古锚点保留。
 3. continuity assets 不是“第三个 docs”，而是围绕 canonical truth 运行的连续性状态链。
 4. backlog 这类“长期路线”如果要进入执行保障，机器权威应放在 `references/backlogs/*.json`，给人看的解释继续留在 `compass/docs/specs/**`；不要反过来把 spec 文档当运行时 authority。
 5. spec 文档若想继续保留在 `compass/docs/specs/**`，必须在 `references/spec-registry.json` 里登记自己的角色、当前状态和配套控制面；否则就只是匿名材料，应迁出或补登记。
@@ -619,7 +619,7 @@ References 是三体共享的协议层，承载：
 | `SKILL.md` | Loom/Dispatcher 入口协议 |
 | `compass/CONTRIBUTING.md` | Layer B 唯一权威规范 |
 | `compass/soul.md` | 人格连续性与 revive 基线 |
-| `redcap-knowledge/traces/architecture-capability-trace.yaml` | 旧能力锚点与全量 trace matrix |
+| `private-archive/redcap-knowledge/traces/architecture-capability-trace.yaml` | 旧能力锚点与全量 trace matrix |
 | `loom/dispatcher/state-machine.md` | Layer A 状态转移定义 |
 | `loom/dispatcher/agent-adapters.md` | 路由、适配、会话接力 |
 | `prism/protocol.md` | Prism 协议全文 |
@@ -651,7 +651,7 @@ References 是三体共享的协议层，承载：
 从本版本开始，架构审查采用**文档 + trace matrix + runtime evidence** 三件套：
 
 1. `ARCHITECTURE.md`：解释当前系统为什么这样设计
-2. `redcap-knowledge/traces/architecture-capability-trace.yaml`：冻结旧能力锚点，映射新架构锚点，记录 runtime evidence
+2. `private-archive/redcap-knowledge/traces/architecture-capability-trace.yaml`：冻结旧能力锚点，映射新架构锚点，记录 runtime evidence
 3. task report / acceptance / audit logs：提供物理证据
 
 当前 trace matrix 至少覆盖以下能力簇：

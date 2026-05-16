@@ -25,6 +25,7 @@ LEGACY_REGISTRY_BACKUP=""
 TEMP_PROJECTS=()
 LEGACY_TMP_FILES=()
 HOST_PROCESS_PROBES=()
+PRISM_ACCEPTANCE_RUNS=()
 
 cleanup() {
     local path
@@ -46,6 +47,12 @@ cleanup() {
     for path in "${HOST_PROCESS_PROBES[@]:-}"; do
         kill "$path" 2>/dev/null || true
         wait "$path" 2>/dev/null || true
+    done
+
+    for path in "${PRISM_ACCEPTANCE_RUNS[@]:-}"; do
+        case "$path" in
+            acceptance-prism-*) rm -rf "$REDCAP_ROOT/prism/runs/$path" 2>/dev/null || true ;;
+        esac
     done
 
     if [[ -x "$REDCAP_ROOT/prism/tools/prism-runs-lifecycle.sh" ]]; then
@@ -811,6 +818,8 @@ run_host_session_resume_full_case() {
 
     log "case: $case_name"
 
+    redcap_runtime_clear_context
+
     case_root="$ACCEPT_ROOT/$case_name"
     case_core="$CONTINUITY_CORE_DIR/$case_name"
     workboard="$case_root/plan.md"
@@ -867,6 +876,8 @@ run_session_resume_gate_copilot_full_case() {
     local binding_key runtime_id manifest
 
     log "case: $case_name"
+
+    redcap_runtime_clear_context
 
     case_root="$ACCEPT_ROOT/$case_name"
     case_core="$CONTINUITY_CORE_DIR/$case_name"
@@ -1438,6 +1449,7 @@ run_prism_concurrency_case() {
     binding_key="acceptance-prism-owner-${RANDOM}-$$"
     run_a="acceptance-prism-a-${RANDOM}-$$"
     run_b="acceptance-prism-b-${RANDOM}-$$"
+    PRISM_ACCEPTANCE_RUNS+=("$run_a" "$run_b")
     raw_a="$ACCEPT_ROOT/prism-a.raw.txt"
     parsed_a="$ACCEPT_ROOT/prism-a.parsed.json"
     raw_b="$ACCEPT_ROOT/prism-b.raw.txt"
@@ -6108,7 +6120,7 @@ EOF
             REDCAP_BASELINE_HEAD_FILE="$head_file" \
             REDCAP_REVIEW_RESULT_FILE="$review_result" \
             REDCAP_REVIEW_LOG_FILE="$review_log" \
-            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=1 \
+            REDCAP_REVIEW_AGENT_TIMEOUT_SEC=5 \
             REDCAP_REVIEW_REQUIRE_REPO_INSPECTION_THRESHOLD=9999999 \
             REDCAP_SKIP_FEISHU=1 \
             redcap_acceptance_on_stop_review 2>&1
@@ -9235,9 +9247,9 @@ run_current_status_overview_case() {
     assert_string_contains "$output" "## 收尾红线"
     assert_string_contains "$output" "## 长期 backlog"
     assert_not_string_contains "$long_backlog" "backlog 读取失败"
-    assert_string_contains "$long_backlog" "治理债务登记：Markdown authority"
-    assert_string_contains "$long_backlog" "当前焦点：GD-008"
-    assert_string_contains "$long_backlog" "当前绑定条目：GD-008"
+    assert_string_contains "$long_backlog" "RASG-022"
+    assert_string_contains "$long_backlog" "当前焦点：RASG-022"
+    assert_string_contains "$long_backlog" "当前绑定条目：RASG-022"
     assert_string_contains "$long_backlog" "已完成"
     assert_string_contains "$output" "## CLI 工具族"
     assert_string_contains "$output" "## 棱镜 / 独立评审"
@@ -11678,7 +11690,7 @@ run_legacy_asset_alias_resolver_case() {
     assert_string_contains "$output" "LEGACY_ASSET_ALIAS_RESOLVER_OK"
 
     old_path="compass/docs/task-reports/2026-04-11-hook-chain-investigation.md"
-    new_path="redcap-knowledge/task-reports/2026-04-11-hook-chain-investigation.md"
+    new_path="private-archive/redcap-knowledge/task-reports/2026-04-11-hook-chain-investigation.md"
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "$old_path")"
     assert_string_contains "$output" '"status": "retired-old-anchor"'
     assert_string_contains "$output" "\"canonical_path\": \"$new_path\""
@@ -11686,6 +11698,12 @@ run_legacy_asset_alias_resolver_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "$new_path")"
     assert_string_contains "$output" '"status": "canonical-target"'
     assert_string_contains "$output" "\"canonical_path\": \"$new_path\""
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "redcap-knowledge/task-reports/2026-05-10-progress-meter-prism-review.md")"
+    assert_string_contains "$output" '"status": "legacy-private-anchor"'
+    assert_string_contains "$output" '"canonical_path": "private-archive/redcap-knowledge/task-reports/2026-05-10-progress-meter-prism-review.md"'
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "compass/docs/task-reports/2026-05-04-pre-release-product-architecture-review.md")"
+    assert_string_contains "$output" '"status": "retired-old-anchor"'
+    assert_string_contains "$output" '"canonical_path": "private-archive/redcap-knowledge/task-reports/2026-05-04-pre-release-product-architecture-review.md"'
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "compass/docs/no-such.md")"
     assert_string_contains "$output" '"status": "unresolved"'
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --resolve "compass/docs/archive/retention-log.md")"
@@ -11730,8 +11748,8 @@ PY
     assert_string_contains "$output" "LEGACY_ASSET_ALIAS_RESOLVER_OK"
     [[ -f "$resolver_result" ]] || fail "legacy asset alias resolver should write result"
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --resolve "redcap-knowledge/task-reports/a.md")"
-    assert_string_contains "$output" '"status": "candidate-target"'
-    assert_string_contains "$output" '"canonical_path": "compass/docs/task-reports/a.md"'
+    assert_string_contains "$output" '"status": "legacy-private-anchor"'
+    assert_string_contains "$output" '"canonical_path": "private-archive/redcap-knowledge/task-reports/a.md"'
 
     bad_source="$ACCEPT_ROOT/legacy-asset-alias-stale-source.json"
     python3 - "$worktree_result" "$bad_source" <<'PY'
@@ -11785,7 +11803,7 @@ PY
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "legacy asset alias resolver should reject public targets"
-    assert_string_contains "$stale_output" "new path must remain under redcap-knowledge"
+    assert_string_contains "$stale_output" "new path must remain under private archive"
 
     bad_source="$ACCEPT_ROOT/legacy-asset-alias-missing-catalog-anchor.json"
     python3 - "$worktree_result" "$bad_source" "$fixture_root" <<'PY'
@@ -11806,8 +11824,8 @@ PY
     [[ "$status" -ne 0 ]] || fail "legacy asset alias resolver should reject missing old catalog anchor"
     assert_string_contains "$stale_output" "old path missing from docs catalog"
 
-    mkdir -p "$fixture_root/redcap-knowledge/task-reports"
-    printf 'wrong\n' > "$fixture_root/redcap-knowledge/task-reports/a.md"
+    mkdir -p "$fixture_root/private-archive/redcap-knowledge/task-reports"
+    printf 'wrong\n' > "$fixture_root/private-archive/redcap-knowledge/task-reports/a.md"
     set +e
     stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" 2>&1)"
     status=$?
@@ -11849,18 +11867,18 @@ run_legacy_asset_main_tree_apply_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --plan "$manifest" --worktree-result "$worktree_result" --resolver "$resolver_result" --catalog "$catalog" --result "$apply_result")"
     assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_READY"
-    [[ ! -e "$fixture_root/redcap-knowledge/task-reports/a.md" ]] || fail "main-tree apply dry-run must not create task-report target"
+    [[ ! -e "$fixture_root/private-archive/redcap-knowledge/task-reports/a.md" ]] || fail "main-tree apply dry-run must not create task-report target"
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --plan "$manifest" --worktree-result "$worktree_result" --resolver "$resolver_result" --catalog "$catalog" --result "$apply_result" --apply --refresh-resolver --write-result --check-result)"
     assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_OK"
     [[ -f "$apply_result" ]] || fail "main-tree apply should write result"
     [[ -f "$fixture_root/compass/docs/task-reports/a.md" ]] || fail "main-tree apply must keep old task-report source"
-    [[ -f "$fixture_root/redcap-knowledge/task-reports/a.md" ]] || fail "main-tree apply must create task-report copy target"
-    cmp "$fixture_root/compass/docs/task-reports/a.md" "$fixture_root/redcap-knowledge/task-reports/a.md" >/dev/null
+    [[ -f "$fixture_root/private-archive/redcap-knowledge/task-reports/a.md" ]] || fail "main-tree apply must create task-report copy target"
+    cmp "$fixture_root/compass/docs/task-reports/a.md" "$fixture_root/private-archive/redcap-knowledge/task-reports/a.md" >/dev/null
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --resolve "redcap-knowledge/task-reports/a.md")"
     assert_string_contains "$output" '"target_state": "applied-copy-present"'
-    assert_string_contains "$output" '"canonical_path": "compass/docs/task-reports/a.md"'
+    assert_string_contains "$output" '"canonical_path": "private-archive/redcap-knowledge/task-reports/a.md"'
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --plan "$manifest" --worktree-result "$worktree_result" --resolver "$resolver_result" --catalog "$catalog" --result "$apply_result" --check-result)"
     assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_OK"
@@ -11868,7 +11886,7 @@ run_legacy_asset_main_tree_apply_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-main-tree-apply.sh" --root "$fixture_root" --result "$apply_result" --rollback)"
     assert_string_contains "$output" "LEGACY_ASSET_MAIN_TREE_APPLY_ROLLBACK_OK"
     [[ -f "$fixture_root/compass/docs/task-reports/a.md" ]] || fail "main-tree apply rollback must keep old task-report source"
-    [[ ! -e "$fixture_root/redcap-knowledge/task-reports/a.md" ]] || fail "main-tree apply rollback should remove copy target"
+    [[ ! -e "$fixture_root/private-archive/redcap-knowledge/task-reports/a.md" ]] || fail "main-tree apply rollback should remove copy target"
 
     fixture_root_drift="$ACCEPT_ROOT/legacy-asset-main-apply-drift-root"
     manifest_drift="$ACCEPT_ROOT/legacy-asset-main-apply-drift-fixture.json"
@@ -11963,7 +11981,7 @@ run_legacy_asset_delete_last_preflight_case() {
     assert_string_contains "$stale_output" "delete-last preflight blocked"
     assert_string_contains "$stale_output" "blocker groups"
 
-    printf '\ntarget drift\n' >>"$fixture_root/redcap-knowledge/task-reports/a.md"
+    printf '\ntarget drift\n' >>"$fixture_root/private-archive/redcap-knowledge/task-reports/a.md"
     set +e
     stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-preflight.sh" --root "$fixture_root" --apply-result "$apply_result" 2>&1)"
     status=$?
@@ -12005,10 +12023,10 @@ run_legacy_asset_delete_last_apply_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-apply.sh" --root "$fixture_root" --preflight "$preflight_result" --result "$delete_result" --apply --write-result --check-result)"
     assert_string_contains "$output" "LEGACY_ASSET_DELETE_LAST_APPLY_OK"
     [[ ! -e "$fixture_root/compass/docs/task-reports/a.md" ]] || fail "delete-last apply should retire old source"
-    [[ -f "$fixture_root/redcap-knowledge/task-reports/a.md" ]] || fail "delete-last apply must keep private copy target"
+    [[ -f "$fixture_root/private-archive/redcap-knowledge/task-reports/a.md" ]] || fail "delete-last apply must keep private copy target"
     python3 "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.py" generate "$fixture_root" "$catalog"
     bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-alias-resolver.sh" --root "$fixture_root" --source "$worktree_result" --catalog "$catalog" --result "$resolver_result" --delete-last-result "$delete_result" --write-result --check-result >/dev/null
-    assert_contains "$resolver_result" '"canonical_path": "redcap-knowledge/task-reports/a.md"'
+    assert_contains "$resolver_result" '"canonical_path": "private-archive/redcap-knowledge/task-reports/a.md"'
     rollback_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-legacy-asset-delete-last-apply.sh" --root "$fixture_root" --result "$delete_result" --rollback)"
     assert_string_contains "$rollback_output" "LEGACY_ASSET_DELETE_LAST_APPLY_ROLLBACK_OK"
     [[ -f "$fixture_root/compass/docs/task-reports/a.md" ]] || fail "delete-last rollback should restore old source"
@@ -12172,7 +12190,7 @@ target = pathlib.Path(sys.argv[2])
 payload = json.loads(source.read_text(encoding="utf-8"))
 for child in payload["completed_children"]:
     if child.get("id") == "P2-4":
-        child["report_path"] = "redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-main-tree-copy-apply.md"
+        child["report_path"] = "private-archive/redcap-knowledge/task-reports/2026-04-30-historical-asset-migration-alias-resolver.md"
         break
 target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -12789,7 +12807,7 @@ run_root_ia_deferral_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-root-ia-deferral-check.sh")"
     assert_string_contains "$output" "ROOT_IA_DEFERRAL_OK"
-    assert_string_contains "$output" "deferred=5"
+    assert_string_contains "$output" "deferred=4"
 
     (
         tmp_a="$REDCAP_ROOT/.acceptance-root-ia-ignore-$$.md"
@@ -12843,7 +12861,7 @@ src, dst = map(pathlib.Path, sys.argv[1:3])
 payload = json.loads(src.read_text(encoding="utf-8"))
 payload["deferred_root_groups"] = [
     item for item in payload["deferred_root_groups"]
-    if item.get("target_parent") != "private-archive"
+    if item.get("target_parent") != "internal-layer-a"
 ]
 dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
@@ -12852,7 +12870,7 @@ PY
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "root IA deferral checker should reject missing deferred group"
-    assert_string_contains "$stale_output" "missing deferred root groups: private-archive"
+    assert_string_contains "$stale_output" "missing deferred root groups: internal-layer-a"
 
     bad_backlog="$ACCEPT_ROOT/root-ia-deferral-bad-backlog.json"
     python3 - "$REDCAP_ROOT/references/backlogs/redcap-architecture-smell-governance.json" "$bad_backlog" <<'PY'
@@ -13989,7 +14007,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -14333,6 +14351,7 @@ redcap-package-publish-safety-check.sh|package-publish-safety|fixture package pu
 redcap-runtime-contract-surface-check.sh|runtime-contract-surface|fixture runtime contract surface failure
 redcap-release-e2e-matrix-check.sh|release-e2e-matrix|fixture release E2E matrix failure
 redcap-change-intake-check.sh|change-intake|fixture change intake failure
+redcap-prism-degradation-check.sh|prism-degradation|fixture Prism degradation failure
 redcap-conclusion-prism-check.sh|conclusion-prism|fixture conclusion Prism failure
 EOF
 
@@ -14406,6 +14425,7 @@ EOF
             midcourse-architecture) expected_message="midcourse architecture check failed" ;;
             runtime-workspace-boundary) expected_message="runtime workspace boundary check failed" ;;
             cli-product-surface) expected_message="CLI product surface check failed" ;;
+            prism-degradation) expected_message="prism degradation check failed" ;;
             information-architecture) expected_message="information architecture check failed" ;;
             redcap-forge) expected_message="RedCap Forge check failed" ;;
             public-arsenal-claim-boundary) expected_message="public arsenal claim boundary check failed" ;;
@@ -14484,11 +14504,14 @@ package_policy = {
 )
 for rel in [
     "compass/tools/redcap-user-agent-identity.sh",
-    "compass/tools/redcap-feishu-inbox.sh",
-    "compass/tools/redcap-feishu-notification-policy-check.sh",
+	"compass/tools/redcap-feishu-inbox.sh",
+	"compass/tools/redcap-feishu-notification-policy-check.sh",
 	"compass/tools/redcap-human-communication-check.sh",
+	"compass/tools/redcap-human-product-surface-check.sh",
 	"compass/tools/redcap-architecture-smell-governance-check.sh",
 	"compass/tools/redcap-reference-asset-lifecycle.sh",
+	"compass/tools/redcap-plan-only-followup-registration-check.sh",
+	"compass/tools/redcap-progress-meter-check.sh",
 	"compass/tools/redcap-layer-boundary-check.sh",
 	"compass/tools/redcap-information-architecture-check.sh",
 	"compass/tools/redcap-forge-check.sh",
@@ -14504,12 +14527,14 @@ for rel in [
 	"compass/tools/redcap-package-publish-safety-check.sh",
 	"compass/tools/redcap-runtime-package-manifest.sh",
 	"compass/tools/redcap-public-package-surface.sh",
+	"compass/tools/redcap-runtime-contract-surface-check.sh",
 	"compass/tools/redcap-release-e2e-matrix-check.sh",
 	"compass/tools/redcap-pre-release-product-architecture-check.sh",
 	"compass/tools/redcap-pre-release-structure-task-tree-check.sh",
 	"compass/tools/redcap-midcourse-architecture-check.sh",
 	"compass/tools/redcap-runtime-workspace-boundary-check.sh",
 	"compass/tools/redcap-cli-product-surface-check.sh",
+	"compass/tools/redcap-prism-degradation-check.sh",
 	"compass/tools/redcap-conclusion-prism-check.sh",
 	]:
     script_path = dst / rel

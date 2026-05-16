@@ -12,7 +12,8 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-ARCHIVE_ROOT = ROOT / "redcap-knowledge"
+ARCHIVE_ROOT_REL = "private-archive/redcap-knowledge"
+ARCHIVE_ROOT = ROOT / ARCHIVE_ROOT_REL
 DEFAULT_OUTPUT = ROOT / "references/redcap-knowledge-cold-archive-inventory.json"
 
 
@@ -45,7 +46,7 @@ def classify(path: Path) -> str:
 
 def build_inventory() -> dict[str, Any]:
     if not ARCHIVE_ROOT.is_dir():
-        fail("redcap-knowledge archive root missing")
+        fail(f"{ARCHIVE_ROOT_REL} archive root missing")
     files: list[dict[str, Any]] = []
     for path in sorted(ARCHIVE_ROOT.rglob("*")):
         if not path.is_file() or path.name == ".gitkeep":
@@ -66,7 +67,7 @@ def build_inventory() -> dict[str, Any]:
     return {
         "version": 1,
         "inventory_id": "redcap-knowledge-cold-archive",
-        "root": "redcap-knowledge",
+        "root": ARCHIVE_ROOT_REL,
         "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
         "file_count": len(files),
         "bytes_total": sum(int(item["bytes"]) for item in files),

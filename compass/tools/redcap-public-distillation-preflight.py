@@ -146,7 +146,7 @@ def validate_policy_shape(policy: dict[str, Any]) -> None:
             fail(f"{path}: raw_public_export must be forbidden")
     for required in [
         "compass/docs/task-reports",
-        "redcap-knowledge/task-reports",
+        "private-archive/redcap-knowledge/task-reports",
         "compass/knowledge",
         "compass/evolution/candidates.json",
     ]:
@@ -158,6 +158,7 @@ def validate_policy_shape(policy: dict[str, Any]) -> None:
         ".dev-task.md",
         ".env",
         "compass/docs/task-reports/**",
+        "private-archive/redcap-knowledge/**",
         "redcap-knowledge/**",
         "compass/knowledge/**",
         "prism/runs/**",
@@ -250,7 +251,7 @@ def validate_cross_policy(root: Path, policy: dict[str, Any]) -> tuple[int, int]
 
     forbidden = [str(item) for item in require_list(policy, "forbidden_raw_public_sources", "policy")]
     forge_forbidden = [str(item) for item in require_list(forge, "forbidden_public_raw_sources", "RedCap Forge policy")]
-    for required in ["compass/docs/task-reports/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**", ".env"]:
+    for required in ["compass/docs/task-reports/**", "private-archive/redcap-knowledge/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**", ".env"]:
         if required not in forbidden or required not in forge_forbidden:
             fail(f"forbidden raw public source not aligned with Forge: {required}")
 
@@ -262,7 +263,7 @@ def validate_cross_policy(root: Path, policy: dict[str, Any]) -> tuple[int, int]
             "information architecture artifact boundaries",
         )
     ]
-    for required in ["compass/docs/task-reports/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**", ".env"]:
+    for required in ["compass/docs/task-reports/**", "private-archive/redcap-knowledge/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**", ".env"]:
         if required not in info_forbidden:
             fail(f"information architecture missing forbidden raw source: {required}")
 

@@ -25,7 +25,7 @@
     },
     {
       "id": "private-task-report-archive",
-      "path": "redcap-knowledge/task-reports",
+      "path": "private-archive/redcap-knowledge/task-reports",
       "class": "private-cold-archive",
       "visibility": "private-repo",
       "lifecycle": "private-archive-with-alias-resolution",
@@ -43,7 +43,7 @@
     },
     {
       "id": "private-research-archive",
-      "path": "redcap-knowledge/research",
+      "path": "private-archive/redcap-knowledge/research",
       "class": "private-cold-archive",
       "visibility": "private-repo",
       "lifecycle": "private-archive-with-exact-read",
@@ -80,7 +80,7 @@
   ],
   "report_lifecycle": {
     "active_root": "compass/docs/task-reports",
-    "private_archive_root": "redcap-knowledge/task-reports",
+    "private_archive_root": "private-archive/redcap-knowledge/task-reports",
     "active_root_role": "current-window report inbox, not the long-term report warehouse",
     "private_archive_role": "cold archaeology archive resolved through catalog/alias/exact reads",
     "new_report_rule": "Layer B task reports are still written to the active root during closeout, then older reports may be migrated to private archive by explicit lifecycle tasks.",
@@ -95,6 +95,7 @@
     "raw_private_sources_forbidden_in_public": [
       ".dev-task.md",
       "compass/docs/task-reports/**",
+      "private-archive/redcap-knowledge/**",
       "redcap-knowledge/**",
       "compass/knowledge/**",
       "prism/runs/**",

@@ -11,8 +11,8 @@
     {
       "source_path": "references/llm-wiki-asset-stratification-policy.json",
       "source_kind": "policy",
-      "commit_sha_or_digest": "sha256:767f48932ffe1ce05dba85502dba99aae80ea5075efed54353be4d175ed4d4be",
-      "last_reviewed_at": "2026-05-06T15:13:14Z",
+      "commit_sha_or_digest": "sha256:30b91353feab339e3638334f12be375ae6430147ee345f0f846563886e22d024",
+      "last_reviewed_at": "2026-05-15T00:00:00Z",
       "privacy_classification": "internal"
     }
   ],

@@ -50,6 +50,8 @@ RISK_CONTROLS = {
     "actual_apply_requires_throwaway_worktree",
 }
 RUNTIME_SUMMARY_ONLY = {"runtime-working-dirs", "prism-runs"}
+LEGACY_PRIVATE_ARCHIVE_ROOT = "redcap-knowledge"
+PRIVATE_ARCHIVE_ROOT = "private-archive/redcap-knowledge"
 
 
 def fail(message: str) -> None:
@@ -101,6 +103,18 @@ def is_public_target(raw: str) -> bool:
         (parts and parts[0] in PUBLIC_TARGET_PREFIXES)
         or tuple(parts[:2]) in PUBLIC_TARGET_NESTED_PREFIXES
     )
+
+
+def private_archive_fs_path(raw: str) -> str:
+    if raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/"):
+        return raw
+    if raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/"):
+        return f"{PRIVATE_ARCHIVE_ROOT}{raw[len(LEGACY_PRIVATE_ARCHIVE_ROOT):]}"
+    return raw
+
+
+def is_private_archive_path(raw: str) -> bool:
+    return raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/") or raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/")
 
 
 def is_acceptance_tmp_file(root: Path, item: Path) -> bool:
@@ -216,7 +230,7 @@ def snapshot_file_exists(root: Path, rel: str, delete_map: dict[str, str]) -> bo
     if (root / rel).is_file():
         return True
     new_rel = delete_map.get(rel)
-    return bool(new_rel and (root / new_rel).is_file())
+    return bool(new_rel and (root / private_archive_fs_path(new_rel)).is_file())
 
 
 def snapshot_source_path(root: Path, rel: str, delete_map: dict[str, str]) -> Path | None:
@@ -225,7 +239,7 @@ def snapshot_source_path(root: Path, rel: str, delete_map: dict[str, str]) -> Pa
         return source
     new_rel = delete_map.get(rel)
     if new_rel:
-        target = root / new_rel
+        target = root / private_archive_fs_path(new_rel)
         if target.is_file():
             return target
     return None
@@ -592,9 +606,9 @@ def validate_manifest(path: Path, root: Path) -> dict[str, Any]:
             if target in copy_targets:
                 fail(f"{item_id}: duplicate copy target: {target}")
             copy_targets.add(target)
-            if not target.startswith("redcap-knowledge/"):
-                fail(f"{item_id}: copy-first target must stay under redcap-knowledge: {target}")
-            target_path = root / target
+            if not is_private_archive_path(target):
+                fail(f"{item_id}: copy-first target must stay under private archive: {target}")
+            target_path = root / private_archive_fs_path(target)
             if target_path.exists():
                 if not target_path.is_file():
                     fail(f"{item_id}: copy-first target exists but is not a file: {target}")

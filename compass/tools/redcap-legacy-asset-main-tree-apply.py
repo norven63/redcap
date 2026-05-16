@@ -31,6 +31,8 @@ PLAN_ID = "redcap-legacy-asset-migration-apply-preflight"
 WORKTREE_ID = "redcap-legacy-asset-migration-worktree-rehearsal"
 PUBLIC_TARGET_PREFIXES = {"redcap-arsenal", "shared-knowledge"}
 PUBLIC_TARGET_NESTED_PREFIXES = {("templates", "shared-knowledge")}
+LEGACY_PRIVATE_ARCHIVE_ROOT = "redcap-knowledge"
+PRIVATE_ARCHIVE_ROOT = "private-archive/redcap-knowledge"
 
 
 def fail(message: str) -> None:
@@ -72,6 +74,18 @@ def safe_relative(raw: str, label: str) -> str:
     if path.is_absolute() or raw.startswith("~") or ".." in path.parts:
         fail(f"{label} must be a safe repo-relative path: {raw}")
     return path.as_posix()
+
+
+def private_archive_fs_path(raw: str) -> str:
+    if raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/"):
+        return raw
+    if raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/"):
+        return f"{PRIVATE_ARCHIVE_ROOT}{raw[len(LEGACY_PRIVATE_ARCHIVE_ROOT):]}"
+    return raw
+
+
+def is_private_archive_path(raw: str) -> bool:
+    return raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/") or raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/")
 
 
 def is_public_target(raw: str) -> bool:
@@ -123,8 +137,8 @@ def validate_plan(root: Path, plan_path: Path) -> dict[str, Any]:
         target = safe_relative(str(item.get("target") or ""), f"{item_id}.target")
         if not source.startswith("compass/docs/"):
             fail(f"{item_id}: copy source must stay under compass/docs: {source}")
-        if not target.startswith("redcap-knowledge/"):
-            fail(f"{item_id}: copy target must stay under redcap-knowledge: {target}")
+        if not is_private_archive_path(target):
+            fail(f"{item_id}: copy target must stay under private archive: {target}")
         if is_public_target(target):
             fail(f"{item_id}: copy target must not point to public/shared repository: {target}")
         if not (root / source).is_file():
@@ -200,8 +214,8 @@ def validate_resolver(root: Path, resolver_path: Path, *, require_applied: bool)
         if require_applied:
             if entry.get("target_state") != "applied-copy-present":
                 fail(f"resolver target_state must be applied-copy-present: {new_path}")
-            if not (root / new_path).is_file():
-                fail(f"resolver applied target missing: {new_path}")
+            if not (root / private_archive_fs_path(new_path)).is_file():
+                fail(f"resolver applied target missing: {private_archive_fs_path(new_path)}")
     return payload
 
 
@@ -231,14 +245,14 @@ def copy_entries(
             fail(f"{item_id}: alias old_path does not match apply plan source")
         if new_path != plan_item.get("target"):
             fail(f"{item_id}: alias new_path does not match apply plan target")
-        if not new_path.startswith("redcap-knowledge/") or is_public_target(new_path):
+        if not is_private_archive_path(new_path) or is_public_target(new_path):
             fail(f"{item_id}: unsafe copy target: {new_path}")
         if new_path in seen_targets:
             fail(f"{item_id}: duplicate copy target: {new_path}")
         seen_targets.add(new_path)
 
         source = root / old_path
-        target = root / new_path
+        target = root / private_archive_fs_path(new_path)
         if not source.is_file():
             fail(f"{item_id}: old source missing: {old_path}")
         expected_sha = str(raw_row.get("source_sha256") or "").strip()
@@ -449,11 +463,11 @@ def validate_historical_receipt_after_delete_last(root: Path, result_path: Path)
         expected_sha = str(entry.get("source_sha256") or "").strip()
         if len(expected_sha) != 64:
             fail(f"{new_path}: source_sha256 must be a sha256 hex string")
-        target = root / new_path
+        target = root / private_archive_fs_path(new_path)
         if not target.is_file():
-            fail(f"historical copy target missing after delete-last: {new_path}")
+            fail(f"historical copy target missing after delete-last: {private_archive_fs_path(new_path)}")
         if sha256_file(target) != expected_sha:
-            fail(f"historical copy target drifted after delete-last: {new_path}")
+            fail(f"historical copy target drifted after delete-last: {private_archive_fs_path(new_path)}")
     return result
 
 
@@ -469,13 +483,13 @@ def rollback_from_receipt(root: Path, result_path: Path) -> int:
         target_rel = safe_relative(str(step.get("path") or ""), f"rollback_plan[{index}].path")
         old_rel = safe_relative(str(step.get("must_keep_old_path") or ""), f"rollback_plan[{index}].must_keep_old_path")
         expected_sha = str(step.get("required_target_sha256") or "").strip()
-        if not target_rel.startswith("redcap-knowledge/"):
-            fail(f"rollback target must stay under redcap-knowledge: {target_rel}")
+        if not is_private_archive_path(target_rel):
+            fail(f"rollback target must stay under private archive: {target_rel}")
         if is_public_target(target_rel):
             fail(f"rollback target must not point to public/shared repository: {target_rel}")
         if not (root / old_rel).is_file():
             fail(f"rollback refuses to run because old source is missing: {old_rel}")
-        target = root / target_rel
+        target = root / private_archive_fs_path(target_rel)
         if not target.exists():
             continue
         if not target.is_file():

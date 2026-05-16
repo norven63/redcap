@@ -38,6 +38,8 @@ ALLOWED_APPLY_STATUS = {
     "ignore_runtime_state",
 }
 RUNTIME_SNAPSHOT_COLLECTIONS = {"prism-runs", "runtime-working-dirs"}
+LEGACY_PRIVATE_ARCHIVE_ROOT = "redcap-knowledge"
+PRIVATE_ARCHIVE_ROOT = "private-archive/redcap-knowledge"
 
 
 def fail(message: str) -> None:
@@ -76,6 +78,14 @@ def require_text_list(item: dict[str, Any], key: str, item_id: str) -> list[str]
 def require_safe_relative(raw: str, item_id: str, key: str) -> str:
     if raw.startswith("/") or ".." in Path(raw).parts:
         fail(f"{item_id}: {key} must be a safe repo-relative path: {raw}")
+    return raw
+
+
+def private_archive_fs_path(raw: str) -> str:
+    if raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/"):
+        return raw
+    if raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/"):
+        return f"{PRIVATE_ARCHIVE_ROOT}{raw[len(LEGACY_PRIVATE_ARCHIVE_ROOT):]}"
     return raw
 
 
@@ -197,7 +207,7 @@ def snapshot_file_path(root: Path, rel: str, delete_map: dict[str, str]) -> Path
         return old_path
     new_rel = delete_map.get(rel)
     if new_rel:
-        new_path = root / new_rel
+        new_path = root / private_archive_fs_path(new_rel)
         if new_path.is_file():
             return new_path
     return None

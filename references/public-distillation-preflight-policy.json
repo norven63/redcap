@@ -25,7 +25,7 @@
       "raw_public_export": "forbidden"
     },
     {
-      "path": "redcap-knowledge/task-reports",
+      "path": "private-archive/redcap-knowledge/task-reports",
       "role": "private task-report archive",
       "raw_public_export": "forbidden"
     },
@@ -49,6 +49,7 @@
     "GEMINI.md",
     ".github/copilot-instructions.md",
     "compass/docs/task-reports/**",
+    "private-archive/redcap-knowledge/**",
     "redcap-knowledge/**",
     "compass/knowledge/**",
     "prism/runs/**",

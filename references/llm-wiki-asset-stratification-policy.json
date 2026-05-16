@@ -120,9 +120,9 @@
     {
       "id": "private-knowledge-archive",
       "paths": [
-        "redcap-knowledge/task-reports/**",
-        "redcap-knowledge/research/**",
-        "redcap-knowledge/traces/**"
+        "private-archive/redcap-knowledge/task-reports/**",
+        "private-archive/redcap-knowledge/research/**",
+        "private-archive/redcap-knowledge/traces/**"
       ],
       "storage_layer": "private-raw-evidence-archive",
       "llm_wiki_disposition": "source-anchor-only-after-forge-safety",

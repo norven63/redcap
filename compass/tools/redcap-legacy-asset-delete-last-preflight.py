@@ -35,6 +35,8 @@ EVIDENCE_REFERENCE_PATHS = {
 SELF_GENERATED_REFERENCE_PATHS = {
     "references/legacy-asset-delete-last-preflight.json",
 }
+LEGACY_PRIVATE_ARCHIVE_ROOT = "redcap-knowledge"
+PRIVATE_ARCHIVE_ROOT = "private-archive/redcap-knowledge"
 
 
 def fail(message: str) -> None:
@@ -76,6 +78,18 @@ def safe_relative(raw: str, label: str) -> str:
     if path.is_absolute() or raw.startswith("~") or ".." in path.parts:
         fail(f"{label} must be a safe repo-relative path: {raw}")
     return path.as_posix()
+
+
+def private_archive_fs_path(raw: str) -> str:
+    if raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/"):
+        return raw
+    if raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/"):
+        return f"{PRIVATE_ARCHIVE_ROOT}{raw[len(LEGACY_PRIVATE_ARCHIVE_ROOT):]}"
+    return raw
+
+
+def is_private_archive_path(raw: str) -> bool:
+    return raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/") or raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/")
 
 
 def tracked_files(root: Path) -> list[str]:
@@ -162,11 +176,11 @@ def validate_apply_result(root: Path, apply_result_path: Path, delete_last: dict
         seen_new.add(new_path)
         if not old_path.startswith("compass/docs/"):
             fail(f"old path must stay under compass/docs: {old_path}")
-        if not new_path.startswith("redcap-knowledge/"):
-            fail(f"new path must stay under redcap-knowledge: {new_path}")
+        if not is_private_archive_path(new_path):
+            fail(f"new path must stay under private archive: {new_path}")
 
         old_file = root / old_path
-        new_file = root / new_path
+        new_file = root / private_archive_fs_path(new_path)
         old_exists = old_file.is_file()
         new_exists = new_file.is_file()
         old_sha = sha256_file(old_file) if old_exists else None
@@ -207,7 +221,7 @@ def classify_reference(file_path: str, old_path: str) -> str:
         return "acceptance-alias-compat-reference"
     if file_path == "compass/docs/catalog.json":
         return "docs-catalog-current-anchor"
-    if file_path.startswith("redcap-knowledge/"):
+    if is_private_archive_path(file_path):
         return "private-copy-self-or-history"
     if file_path == old_path:
         return "old-source-self"
@@ -219,7 +233,7 @@ def scan_references(root: Path, entries: list[dict[str, Any]]) -> list[dict[str,
     old_set = set(old_paths)
     references: list[dict[str, Any]] = []
     for rel in tracked_files(root):
-        if rel in old_set or rel.startswith("redcap-knowledge/") or rel in SELF_GENERATED_REFERENCE_PATHS:
+        if rel in old_set or is_private_archive_path(rel) or rel in SELF_GENERATED_REFERENCE_PATHS:
             continue
         path = root / rel
         try:
