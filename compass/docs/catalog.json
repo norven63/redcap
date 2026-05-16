@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 362905,
+    "size_bytes": 363307,
     "lines": 7307,
-    "chars": 219263,
+    "chars": 219681,
     "rough_token_pressure": {
-      "low": 54815,
-      "high": 109631
+      "low": 54920,
+      "high": 109840
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 169230,
+        "size_bytes": 169632,
         "lines": 2724,
-        "chars": 102790,
+        "chars": 103208,
         "rough_token_pressure": {
-          "low": 25697,
-          "high": 51395
+          "low": 25802,
+          "high": 51604
         }
       }
     },
@@ -105,7 +105,7 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-16-post-migration-full-engineering-review.md",
-        "chars": 9273,
+        "chars": 9691,
         "lines": 235,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
@@ -585,9 +585,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 14397,
+      "size_bytes": 14799,
       "lines": 235,
-      "chars": 9273,
+      "chars": 9691,
       "summary": "当前已完成：迁移后的 RedCap 工程状态已完成一轮独立全工程 review，结论是“当前没有新的 P0/P1 工程阻塞”。 / 详情：本轮重点检查了根目录结构、私有与公共资产边界、包面安全、历史考古链、token 风险、Prism 证据生命周期、任务状态一致性和发布前边界。Claude Code 与 Kimi 都参与了独立审查，二者一致认为 RASG-022 私有归档迁移后的工程结构可以继续推进。Kimi 审查中暴露了一个过程问题：它曾读取 `.env`，没有泄漏密钥值，但这违反了 secret-file 禁读边界；我已把这条约束补入 Prism 协议。后续全量回归又抓出任务卡字段不规范、active report inbox…",
       "status_basis": "filename_recency_only",
       "summary_points": {

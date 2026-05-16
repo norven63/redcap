@@ -155,10 +155,10 @@ RASG-022 private archive tranche 是一次“伤筋动骨”的结构迁移。�
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 待 closeout 前最终同步 |
+| 执行承诺账本 | completed=6 / pending=0 |
 | 棱镜验收 | pass |
-| closeout summary | 待生成 |
-| closeout receipt | 待生成 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-post-migration-full-engineering-review-4e440e369ac279fe15fcc8489d2109dcc57ee8ba2de89be700215e31440470d0.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-post-migration-full-engineering-review-4e440e369ac279fe15fcc8489d2109dcc57ee8ba2de89be700215e31440470d0.json` |
 | rescue audit（如有） | 无 |
 
 ### 5.4 完成等级（禁止混报）
@@ -168,7 +168,7 @@ RASG-022 private archive tranche 是一次“伤筋动骨”的结构迁移。�
 | 已实现 | 是，review 任务与过程加固已落地 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code + Kimi |
-| 已正式完成 | 待 closeout receipt |
+| 已正式完成 | 是，closeout receipt 已生成 |
 
 ---
 
