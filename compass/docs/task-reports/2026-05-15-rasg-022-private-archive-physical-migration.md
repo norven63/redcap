@@ -24,7 +24,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：发现根目录坏味 -> 先迁移低耦合私有归档 -> 保留旧锚点与安全排除 -> 再处理控制面、Prism、Layer A 与 workspace-local 边界。
-- 当前所在位置：RASG-022 / private archive tranche 已实现，并已通过 targeted checks、Prism resource-limited 验收与全量 acceptance；正在生成 closeout receipt。
+- 当前所在位置：RASG-022 / private archive tranche 已实现，并已通过 targeted checks、Prism resource-limited 验收、全量 acceptance 与 closeout runtime。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -170,8 +170,10 @@ RASG-022 已经把 shared-knowledge 迁移完成，但 `redcap-knowledge/` 仍�
 
 | 项 | 结果 |
 |---|---|
-| closeout receipt | 无 |
-| 说明 | closeout runtime 正在本报告回填后执行；生成 receipt 后需要回填本节。 |
+| closeout receipt | 已生成 |
+| receipt path | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/rasg-022-private-archive-physical-migration-tranche-b62ccb04b1151602b0455578ebcdadf192807912469a5b7e2ee3fbb3e5f0fb25.json` |
+| summary path | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/rasg-022-private-archive-physical-migration-tranche-b62ccb04b1151602b0455578ebcdadf192807912469a5b7e2ee3fbb3e5f0fb25.md` |
+| 说明 | closeout runtime 已生成 receipt；若后续报告或证明文件再次提交，需重新运行 closeout runtime 刷新 current_head。 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -180,7 +182,7 @@ RASG-022 已经把 shared-knowledge 迁移完成，但 `redcap-knowledge/` 仍�
 | 已实现 | 是，private archive 第一批迁移与配套策略已实现。 |
 | 已自检 | 是，相关单项检查和 spec-check 已通过。 |
 | 已独立验收 | 是，Kimi 给出 pass-with-concerns 且无 blocker；其他模型族不可用/超时，按 resource-limited Prism 证据收口。 |
-| 已正式完成 | 否，仍待 closeout receipt 生成。 |
+| 已正式完成 | 是，closeout receipt 已生成；禁止扩大为 RASG-022 全部高风险根目录完成。 |
 
 ---
 

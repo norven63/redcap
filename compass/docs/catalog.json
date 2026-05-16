@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 358198,
-    "lines": 7246,
-    "chars": 214656,
+    "size_bytes": 358760,
+    "lines": 7248,
+    "chars": 215180,
     "rough_token_pressure": {
-      "low": 53664,
-      "high": 107328
+      "low": 53795,
+      "high": 107590
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 164523,
-        "lines": 2663,
-        "chars": 98183,
+        "size_bytes": 165085,
+        "lines": 2665,
+        "chars": 98707,
         "rough_token_pressure": {
-          "low": 24545,
-          "high": 49091
+          "low": 24676,
+          "high": 49353
         }
       }
     },
@@ -585,9 +585,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13219,
-      "lines": 222,
-      "chars": 8077,
+      "size_bytes": 13781,
+      "lines": 224,
+      "chars": 8601,
       "summary": "当前已完成：RASG-022 的第一批高风险根目录迁移已落地，`redcap-knowledge/` 已从工程根目录迁入 `private-archive/redcap-knowledge/`。 / 详情：这一步解决的是“私有历史知识资产直接暴露在 RedCap 工程根目录”的结构坏味。迁移后，旧路径仍可通过别名解析找回，新路径被包发布安全规则排除，历史报告不需要被批量改写。它让后续 npm/CLI 发布准备少一个明显的私有资产暴露点。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -603,7 +603,7 @@
         ],
         "position": [
           "整体计划脉络图是：发现根目录坏味 -> 先迁移低耦合私有归档 -> 保留旧锚点与安全排除 -> 再处理控制面、Prism、Layer A 与 workspace-local 边界。",
-          "当前所在位置：RASG-022 / private archive tranche 已实现，并已通过 targeted checks、Prism resource-limited 验收与全量 acceptance；正在生成 closeout receipt。"
+          "当前所在位置：RASG-022 / private archive tranche 已实现，并已通过 targeted checks、Prism resource-limited 验收、全量 acceptance 与 closeout runtime。"
         ]
       }
     }
