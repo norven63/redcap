@@ -24,7 +24,7 @@
     },
     {
       "path": "references/file-lookup-dictionary-policy.json",
-      "bytes": 78441,
+      "bytes": 79884,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 86506,
+      "bytes": 87775,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -105,7 +105,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 32960,
+      "bytes": 33338,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",
@@ -114,7 +114,7 @@
     },
     {
       "path": "references/redcap-parent-task-ledger.md",
-      "bytes": 37500,
+      "bytes": 37840,
       "asset_class": "parent-task-ledger",
       "lifecycle": "active-parent-state-ledger",
       "consumer_check": "bash compass/tools/redcap-parent-receipt-aggregation-check.sh",

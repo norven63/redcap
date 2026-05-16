@@ -2,6 +2,12 @@
 
 > 这份文件回答一个很实际的问题：如果下一步真的要进入公开 npm/CLI 发布任务，工程侧已经准备好了什么，还剩哪些必须由 Norven 明确授权。
 
+## 先看这里：正式发布准备的两个新入口
+
+- 机器权威路线图：`references/formal-release-readiness-plan.json`。它把正式发布前后拆成 10 个阶段：任务锚点、延期根目录处置、包面收紧、CLI 体验、安全审计、E2E、人类决策、棱镜终审、registry 执行和发布后监控。
+- 授权矩阵：`references/release-authorization-matrix.json`。它区分 Norven 必须决策、Cap + Prism 可自主决策，以及可提前给出的条件授权。
+- E2E 边界仍以 `references/release-readiness-e2e-matrix.json` 为准；没有通过对应矩阵时，不能把发布准备说成正式发布已就绪。
+
 ## 当前可以确认的事
 
 - RedCap 已有可运行的 CLI 入口：`redcap revive`、`redcap status`、`redcap diagnose`、`redcap closeout`、`redcap package-manifest`、`redcap publish-safety`、`redcap package-surface`、`redcap pre-release-review`。

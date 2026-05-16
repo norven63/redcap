@@ -1,4 +1,31 @@
 reports:
+  - id: "20260516-formal-release-readiness-plan"
+    mode: review
+    date: "2026-05-16"
+    topic: "Formal release readiness plan and authorization gate"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Keep formal release readiness as a dedicated future task tree rather than scattered handoff notes"
+      - "Separate Norven-required legal/account/public-risk decisions from Cap and Prism technical autonomy"
+      - "Keep conditional authorization fail-closed and not-yet-granted until Norven answers the release questionnaire"
+      - "Validate plan, matrix, handoff, E2E matrix and package policies through a dedicated checker"
+    open_questions:
+      - "Norven still needs to answer the release questionnaire before real release switches can change"
+      - "External-machine and multi-OS validation remain formal release task evidence, not current-task proof"
+      - "Real registry release action remains blocked until explicit or conditional authorization is recorded"
+    lessons_updated: false
+    files_affected:
+      - "references/formal-release-readiness-plan.json"
+      - "references/release-authorization-matrix.json"
+      - "compass/tools/redcap-formal-release-readiness-plan-check.py"
+      - "compass/tools/redcap-formal-release-readiness-plan-check.sh"
+      - "references/public-release-handoff.md"
+      - "prism/reports/2026-05-16-formal-release-readiness-plan-review.md"
+      - "prism/runs/20260516-formal-release-readiness-plan/session-registry.yaml"
+      - "prism/runs/20260516-formal-release-readiness-plan/artifacts/acceptance-binding.json"
+    archived: false
   - id: "20260516-post-migration-full-engineering-review"
     mode: test
     date: "2026-05-16"

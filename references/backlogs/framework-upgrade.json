@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "F3",
-    "summary": "framework-upgrade 长期路线当前已全量收口：三轨评审、CONTRIBUTING core 路由、hook contract、runtime helper、CLI mirror、docs/knowledge/token 风险与复活执行保障均已接入可执行 gate；F3 保留为最后完成的治理硬化焦点。"
+    "item_id": "P4-2l",
+    "summary": "正式发布准备计划与人工授权矩阵已落成并接入机器检查；下一步只有在 Norven 回答发布授权问卷后，才进入真正 formal release task。"
   },
   "glossary": [
     {
@@ -363,6 +363,26 @@
           ]
         }
       ]
+    },
+    {
+      "id": "G",
+      "title": "发布前路线与授权边界",
+      "items": [
+        {
+          "id": "P4-2l",
+          "title": "正式发布准备计划与人工授权矩阵",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-6-release-readiness-control-plane",
+          "summary": "已把正式发布前 10 阶段路线、Norven 必须决策、Cap/Prism 可自主决策和条件授权模板落成机器可审计控制面；本项不执行真实发布、不改发布开关、不选择许可证。",
+          "evidence_paths": [
+            "references/formal-release-readiness-plan.json",
+            "references/release-authorization-matrix.json",
+            "compass/tools/redcap-formal-release-readiness-plan-check.sh",
+            "compass/docs/task-reports/2026-05-16-formal-release-readiness-plan-and-authorization-gate.md"
+          ]
+        }
+      ]
     }
   ],
   "execution_order": [
@@ -432,6 +452,15 @@
         "E3"
       ],
       "summary": "D2 / D3 / E2 / E3 均已收口：docs/knowledge 渐进披露、docs 保留策略、runtime helper 收敛与统一诊断均已接入检查。"
+    },
+    {
+      "id": "phase-6-release-readiness-control-plane",
+      "title": "阶段 6：发布准备控制面",
+      "status": "done",
+      "item_ids": [
+        "P4-2l"
+      ],
+      "summary": "正式发布动作之前，已把发布路线、人工授权和自动化边界收束成可审计控制面；当前不执行真实发布。"
     }
   ]
 }

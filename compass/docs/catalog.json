@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 363307,
-    "lines": 7307,
-    "chars": 219681,
+    "size_bytes": 367251,
+    "lines": 7390,
+    "chars": 222367,
     "rough_token_pressure": {
-      "low": 54920,
-      "high": 109840
+      "low": 55591,
+      "high": 111183
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 188145,
-        "lines": 4494,
-        "chars": 112699,
+        "size_bytes": 188572,
+        "lines": 4498,
+        "chars": 112822,
         "rough_token_pressure": {
-          "low": 28174,
-          "high": 56349
+          "low": 28205,
+          "high": 56411
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 169632,
-        "lines": 2724,
-        "chars": 103208,
+        "size_bytes": 173149,
+        "lines": 2803,
+        "chars": 105771,
         "rough_token_pressure": {
-          "low": 25802,
-          "high": 51604
+          "low": 26442,
+          "high": 52885
         }
       }
     },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 11670,
-      "lines": 149,
-      "chars": 6634,
+      "size_bytes": 12097,
+      "lines": 153,
+      "chars": 6757,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -418,19 +418,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-10-rasg-017-root-information-architecture-plan.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RASG-017 根目录信息架构目标模型",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 8328,
-      "lines": 132,
-      "chars": 4614,
-      "summary": "当前已完成：RedCap 已为“根目录直接父级过散、知识/报告/证据/模板语义重叠”这项历史债务产出可审查的根目录信息架构目标模型。 / 关键结论：本轮没有搬目录、删资产或发布 npm；完成的是施工图和硬门禁。后续如果要真实移动目录，必须另开 apply 任务，重新经过别名、回滚、棱镜评审、package safety、clean workspace E2E 和 receipt。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-10-rasg-018-holistic-smell-audit.md",
       "collection": "task-reports",
       "title": "任务完成报告：RASG-018 全局架构坏味审判",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-020 公开 runtime 契约与维护者工具分层",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12783,
       "lines": 231,
@@ -526,28 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：GD-008 host-limited 边界收口",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14232,
       "lines": 240,
       "chars": 9212,
       "summary": "当前已完成：GD-008 已从“开放治理债务”收口为“已建模的 host-limited 宿主边界”。后续状态面尾修也已补齐：`current-status` 现在能正确读取治理债务 Markdown register，不会再出现“治理债务 open=0，但长期 backlog 读取失败”的矛盾提示。 / 上一步完成的是：RASG-022 剩余高风险根目录已用显式延期收据完成当前阶段收口，架构坏味账本 open=0。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：GD-008 已从“开放治理债务”收口为“已建模的 host-limited 宿主边界”。后续状态面尾修也已补齐：`current-status` 现在能正确读取治理债务 Markdown register，不会再出现“治理债务 open=0，但长期 backlog 读取失败”的矛盾提示。"
-        ],
-        "previous_step": [
-          "上一步完成的是：RASG-022 剩余高风险根目录已用显式延期收据完成当前阶段收口，架构坏味账本 open=0。"
-        ],
-        "next_step": [
-          "下一步计划做的是：如果后续状态面没有新的非发布类治理债务，可进入正式 release readiness / npm 发布准备；正式发布仍需要许可证、发布开关、registry 权限和发布窗口等人工决策。"
-        ],
-        "position": [
-          "整体计划脉络图是：历史债务与坏味治理 → 当前主推进任务集 → 正式发布准备 → 长期演进专项。",
-          "当前所在位置：历史债务与坏味治理中的 GD-008 收口切片；本轮处理的是 host-limited 边界，不是正式发布。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
@@ -575,6 +547,35 @@
         "position": [
           "整体计划脉络图是：发现根目录坏味 -> 先迁移低耦合私有归档 -> 保留旧锚点与安全排除 -> 再处理控制面、Prism、Layer A 与 workspace-local 边界。",
           "当前所在位置：RASG-022 / private archive tranche 已实现，并已通过 targeted checks、Prism resource-limited 验收、全量 acceptance 与 closeout runtime。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-16-formal-release-readiness-plan-and-authorization-gate.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：正式发布准备计划与人工授权矩阵",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 11845,
+      "lines": 211,
+      "chars": 7177,
+      "summary": "当前已完成：RedCap 已把正式发布前的总计划、人工决策边界和自动执行边界落成机器可检查的 release readiness 控制面。 / 详情：本轮解决的是“发布计划散在 handoff、E2E matrix、package policy 和对话解释里”的问题。现在正式发布前路线被收束成 10 个阶段，授权边界被拆成 Norven 必须决策、Cap + Prism 可自主决策、可条件提前授权三类，并由新检查器防止它们漂移。Claude Code 与 Kimi 已做独立评审，结论是无 P0/P1 blocker。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把正式发布前的总计划、人工决策边界和自动执行边界落成机器可检查的 release readiness 控制面。",
+          "详情：本轮解决的是“发布计划散在 handoff、E2E matrix、package policy 和对话解释里”的问题。现在正式发布前路线被收束成 10 个阶段，授权边界被拆成 Norven 必须决策、Cap + Prism 可自主决策、可条件提前授权三类，并由新检查器防止它们漂移。Claude Code 与 Kimi 已做独立评审，结论是无 P0/P1 blocker。"
+        ],
+        "previous_step": [
+          "上一步完成的是：迁移后的 RedCap 全工程 review 已关闭，结论是没有新的 P0/P1 工程阻塞；但正式发布仍缺少独立 release 父任务树和授权矩阵。"
+        ],
+        "next_step": [
+          "下一步计划做的是：如果 Norven 想进入真实 formal release task，下一步应回答 `references/release-authorization-matrix.json` 中的 10 个发布授权问题；回答前 RedCap 仍保持 private/readiness-only，不改变发布开关。"
+        ],
+        "position": [
+          "整体计划脉络图是：迁移后全工程 review 完成 -> 发布准备计划与授权矩阵落盘 -> Norven 授权问卷 -> formal release task -> 最终发布前全量门禁。",
+          "当前所在位置：P4-2l / formal-release-readiness-plan-and-authorization-gate；本轮是发布任务前的控制面补齐，不是真实发布。"
         ]
       }
     },

@@ -24,6 +24,12 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 
 P4 numbering is a dependency/status map, not a promise of numeric execution order.
 
+## 当前新增子任务
+
+| id | 任务 | 状态 | 边界 |
+|---|---|---|---|
+| P4-2l | 正式发布准备计划与人工授权矩阵 | completed | 已把发布前路线图、Norven 必须决策、Cap/Prism 可自主决策和条件授权模板落成机器可查资产；不执行真实发布、不改发布开关、不选择许可证。 |
+
 ## 已完成子任务
 
 | 子任务 | 完成边界 | receipt / 证据 | 不能冒充的范围 |

@@ -9237,19 +9237,23 @@ run_backlog_check_strict_case() {
 }
 
 run_current_status_overview_case() {
-    local output long_backlog
+    local output long_backlog backlog_item
 
     log "case: current-status-overview"
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$REDCAP_ROOT/.dev-task.md")"
     long_backlog="$(printf '%s\n' "$output" | awk '/^## 长期 backlog/{flag=1; next} /^## / && flag{exit} flag')"
+    backlog_item="$(awk -F':' '/^backlog_item:/{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2; exit}' "$REDCAP_ROOT/.dev-task.md")"
     assert_string_contains "$output" "当前已完成："
     assert_string_contains "$output" "## 收尾红线"
     assert_string_contains "$output" "## 长期 backlog"
     assert_not_string_contains "$long_backlog" "backlog 读取失败"
-    assert_string_contains "$long_backlog" "RASG-022"
-    assert_string_contains "$long_backlog" "当前焦点：RASG-022"
-    assert_string_contains "$long_backlog" "当前绑定条目：RASG-022"
+    assert_string_contains "$long_backlog" "当前焦点："
+    assert_string_contains "$long_backlog" "当前绑定条目："
+    if [[ -n "$backlog_item" ]]; then
+        assert_string_contains "$long_backlog" "当前绑定条目：${backlog_item}"
+        assert_not_string_contains "$long_backlog" "当前绑定条目：${backlog_item}（未在 backlog 中找到）"
+    fi
     assert_string_contains "$long_backlog" "已完成"
     assert_string_contains "$output" "## CLI 工具族"
     assert_string_contains "$output" "## 棱镜 / 独立评审"

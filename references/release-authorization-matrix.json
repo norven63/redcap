@@ -1,0 +1,183 @@
+{
+  "version": 1,
+  "matrix_id": "redcap-release-authorization-matrix",
+  "status": "questions-unanswered-before-formal-release-task",
+  "purpose": "Separate decisions that Norven must make from decisions Cap and Prism may make autonomously during a future formal release task.",
+  "strict_rule": "If there is even a small non-technical, legal, account, public-claim, irreversible-data-loss, or risk-acceptance uncertainty, the item is Norven-required.",
+  "prepared_defaults": {
+    "package_name": "@norven63/redcap",
+    "registry_for_public_release": "https://registry.npmjs.org",
+    "china_install_note": "Use mirrors such as npmmirror for install acceleration only; do not treat mirrors as the public publish authority.",
+    "current_license": "UNLICENSED",
+    "current_publish_allowed": false,
+    "current_package_private_required": true
+  },
+  "norven_required_decisions": [
+    {
+      "id": "license-selection",
+      "question": "Which license should RedCap use for the public package?",
+      "why_human": "License choice is a legal and product decision.",
+      "example_answers": ["MIT", "Apache-2.0", "UNLICENSED / do not publish publicly", "other explicit license"]
+    },
+    {
+      "id": "public-distribution-target",
+      "question": "Should this release be public npm, private/internal validation only, or no release?",
+      "why_human": "This determines whether RedCap becomes externally visible."
+    },
+    {
+      "id": "release-level",
+      "question": "Is the target alpha, beta, or stable?",
+      "why_human": "Release level defines public expectation and tolerated limitations."
+    },
+    {
+      "id": "version",
+      "question": "Which semver version should be released?",
+      "why_human": "Versioning is part of the public contract even when Cap can suggest one."
+    },
+    {
+      "id": "npm-scope-and-account-permission",
+      "question": "Is the npm account/scope for @norven63/redcap ready and controlled by Norven?",
+      "why_human": "Registry ownership and account readiness are external facts."
+    },
+    {
+      "id": "private-flag-release-switch",
+      "question": "May RedCap change package private protection when all release gates pass?",
+      "why_human": "This is the switch from non-publishable to publishable package posture."
+    },
+    {
+      "id": "runtime-publish-allowed-switch",
+      "question": "May RedCap change runtime publish-allowed policy when all release gates pass?",
+      "why_human": "This is a formal release gate unlock."
+    },
+    {
+      "id": "registry-release-action",
+      "question": "May RedCap perform the external registry release action after all gates pass?",
+      "why_human": "This mutates external public package state."
+    },
+    {
+      "id": "known-limitation-risk-acceptance",
+      "question": "Which known limitations, if any, may ship with an alpha/beta release?",
+      "why_human": "Risk acceptance cannot be inferred by the implementer."
+    },
+    {
+      "id": "destructive-cleanup-or-history-loss",
+      "question": "May RedCap delete, overwrite, or irreversibly migrate any historical asset?",
+      "why_human": "Irrecoverable history loss needs explicit owner approval."
+    }
+  ],
+  "cap_prism_autonomous_decisions": [
+    {
+      "id": "technical-execution-order",
+      "scope": "Order technical checks and fixes as long as human release boundaries are unchanged."
+    },
+    {
+      "id": "required-check-selection",
+      "scope": "Run and expand safety, package, E2E, status, diagnose and Prism checks."
+    },
+    {
+      "id": "ordinary-bug-fix",
+      "scope": "Fix technical bugs that do not alter license, public claims, registry state, irreversible history, or release level."
+    },
+    {
+      "id": "fail-closed-release-block",
+      "scope": "Block release automatically when safety, package, clean install, E2E or Prism gates fail."
+    },
+    {
+      "id": "package-surface-technical-classification",
+      "scope": "Classify files as public runtime, maintainer-only, private, volatile, or excluded based on existing policy."
+    },
+    {
+      "id": "prism-routing",
+      "scope": "Choose available Prism reviewers under provider policy; Copilot remains protected fallback."
+    },
+    {
+      "id": "documentation-and-index-sync",
+      "scope": "Update docs, dictionary and task ledgers to reflect already-authorized facts."
+    }
+  ],
+  "conditional_authorization_template": {
+    "status": "not-yet-granted",
+    "meaning": "Norven may pre-answer release decisions so Cap can proceed without interruption only if every condition remains true.",
+    "safe_example": "If Norven selects license, version, release target and release level, and all security, package, clean workspace E2E and Prism gates pass, Cap may proceed through the authorized release route. All 13 required conditions listed below must also be satisfied. Any failed gate or unlisted risk stops the task.",
+    "required_conditions": [
+      "license selected",
+      "release target selected",
+      "release level selected",
+      "version selected",
+      "npm account/scope readiness confirmed",
+      "private package switch explicitly allowed for this release",
+      "runtime publish-allowed switch explicitly allowed for this release",
+      "external registry release action explicitly allowed for this release",
+      "security and privacy audit pass",
+      "package dry-run surface pass",
+      "clean workspace E2E pass",
+      "release E2E matrix pass or permitted alpha limitation recorded",
+      "Prism review pass with no P0/P1 blockers"
+    ],
+    "invalid_authorizations": [
+      "Any blanket permission to publish regardless of failed gates.",
+      "Any permission that omits license, version, target, account readiness, or package switch authority.",
+      "Any permission that allows secret exposure, private asset exposure, or destructive cleanup without stopping.",
+      "Any time-boxed waiver that allows a release gate to be skipped without a new explicit Norven decision.",
+      "Any partial gate override that lets one failed safety, package, E2E, or Prism gate be treated as pass."
+    ]
+  },
+  "release_questionnaire": [
+    {
+      "id": "Q1",
+      "decision": "license-selection",
+      "prompt": "请选择发布许可证：MIT / Apache-2.0 / 继续 UNLICENSED 不公开 / 其他明确许可证。"
+    },
+    {
+      "id": "Q2",
+      "decision": "public-distribution-target",
+      "prompt": "请选择发布目标：公开 npm / 仅本地或私有验证 / 暂不发布。"
+    },
+    {
+      "id": "Q3",
+      "decision": "release-level",
+      "prompt": "请选择发布级别：alpha / beta / stable。"
+    },
+    {
+      "id": "Q4",
+      "decision": "version",
+      "prompt": "请确认版本号，例如 0.1.0-alpha.0。"
+    },
+    {
+      "id": "Q5",
+      "decision": "npm-scope-and-account-permission",
+      "prompt": "请确认 @norven63/redcap 的 npm 账号/scope 权限是否已准备好。"
+    },
+    {
+      "id": "Q6",
+      "decision": "private-flag-release-switch",
+      "prompt": "若所有门禁通过，是否允许切换 package private 保护以进入本次发布？"
+    },
+    {
+      "id": "Q7",
+      "decision": "runtime-publish-allowed-switch",
+      "prompt": "若所有门禁通过，是否允许切换 runtime publish-allowed 策略以进入本次发布？"
+    },
+    {
+      "id": "Q8",
+      "decision": "registry-release-action",
+      "prompt": "若所有门禁通过，是否允许执行本次外部 registry 发布动作？"
+    },
+    {
+      "id": "Q9",
+      "decision": "known-limitation-risk-acceptance",
+      "prompt": "哪些已知限制允许随 alpha/beta 一起发布？若无，请写 none。"
+    },
+    {
+      "id": "Q10",
+      "decision": "destructive-cleanup-or-history-loss",
+      "prompt": "本次发布任务是否允许任何不可逆删除或历史资产损失？默认建议 no。"
+    }
+  ],
+  "must_stop_if": [
+    "Any Norven-required decision is unanswered before release switches are changed.",
+    "Any safety, package, E2E, or Prism gate fails.",
+    "Any candidate package content includes private identity, secret, local prompt, raw evidence, private archive, or host-local state.",
+    "Any task attempts irreversible history loss without explicit approval."
+  ]
+}

@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`F3 hook / lesson / contract / 状态机治理硬化`
-- 当前焦点说明：framework-upgrade 长期路线当前已全量收口：三轨评审、CONTRIBUTING core 路由、hook contract、runtime helper、CLI mirror、docs/knowledge/token 风险与复活执行保障均已接入可执行 gate；F3 保留为最后完成的治理硬化焦点。
+- 当前焦点：`P4-2l 正式发布准备计划与人工授权矩阵`
+- 当前焦点说明：正式发布准备计划与人工授权矩阵已落成并接入机器检查；下一步只有在 Norven 回答发布授权问卷后，才进入真正 formal release task。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -62,6 +62,7 @@
 | 阶段 3：治理可执行化 | 已完成 | D1 / F2 / F3 / A3 | D1 / F2 / F3 / A3 均已收口：spec、docs、knowledge、hook、contract、FSM、三轨评审与 token 风险均已进入可执行 gate。 |
 | 阶段 4：宿主体验与操作反馈 | 已完成 | C2 / C3 | C2 / C3 均已收口：`cli_console.md` 降格为 local-only 覆盖式展示镜像，overlay / ask_user 诚实降级也已接入审计。 |
 | 阶段 5：信息架构与运行时收敛 | 已完成 | D2 / D3 / E2 / E3 | D2 / D3 / E2 / E3 均已收口：docs/knowledge 渐进披露、docs 保留策略、runtime helper 收敛与统一诊断均已接入检查。 |
+| 阶段 6：发布准备控制面 | 已完成 | P4-2l | 正式发布动作之前，已把发布路线、人工授权和自动化边界收束成可审计控制面；当前不执行真实发布。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -85,6 +86,7 @@
 | F2 规范到 gate 的翻译链 | 治理与规范可执行化 | 已完成 | P1 | spec、docs、knowledge、overlay、execution guarantees、revival 与 diagnostics 均已从自然语言规则接入脚本 / gate / acceptance；更专门的 hook / contract / FSM 深水区交给 F3。 |
 | F3 hook / lesson / contract / 状态机治理硬化 | 治理与规范可执行化 | 已完成 | P1 | hook、lesson、contract、状态机、CONTRIBUTING 信息架构、token-risk、runtime helper 与 CLI mirror 均已登记到执行保障并接入 spec-check / diagnose / acceptance。 |
 | F4 backlog 长期路线机制化 | 治理与规范可执行化 | 已完成 | P0 | 机器可读 backlog 权威、人类说明文档自动同步、backlog 门禁与宿主镜像锚点都已落地。 |
+| P4-2l 正式发布准备计划与人工授权矩阵 | 发布前路线与授权边界 | 已完成 | P0 | 已把正式发布前 10 阶段路线、Norven 必须决策、Cap/Prism 可自主决策和条件授权模板落成机器可审计控制面；本项不执行真实发布、不改发布开关、不选择许可证。 |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -95,6 +97,8 @@
 | mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
 | spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
 <!-- redcap:backlog-generated:end -->
+
+
 
 
 
