@@ -63,7 +63,7 @@ R1 延期根目录分成两类：
 
 ---
 
-## 二、方案与决策
+## 二、方案讨论
 
 ### 2.1 方案
 
@@ -118,29 +118,35 @@ R1 延期根目录分成两类：
 
 ---
 
-## 四、验证与评审
+## 四、人工审核要点
 
-### 4.1 Prism 独立评审
+本轮不需要 Norven 做新的人工决策，因为没有触碰许可证、账号凭据、正式发布授权、不可逆删除或历史证据损失风险。
+
+需要人工继续关注的是后续任务边界：三个仍阻塞发布的根目录组不能被本轮预检自动视为已解决；未来进入真实发布前，仍需要单独处理它们的产品边界、证据保留和控制面拆分问题。
+
+## 五、验证结果
+
+### 5.1 Prism 独立评审
 
 | Agent | 结论 | 要点 |
 |---|---|---|
 | Claude Code | pass | 确认矩阵只使用 4 种 gate disposition，3 个历史组仍阻塞，workspace-state 有出包排除证明 |
 | Kimi | pass | 确认 release-readiness plan 把预检当作 blocker-aware input，acceptance 能拒绝第五种处置 |
 
-### 4.2 自动化验证
+### 5.2 自动化验证
 
 | 验证项 | 命令 | 结果 |
 |---|---|---|
 | R1 处置预检 | `bash compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh` | 通过，remaining_blockers=3 |
 | 正式发布计划检查 | `bash compass/tools/redcap-formal-release-readiness-plan-check.sh` | 通过，已登记 R1 preflight |
-| 处置预检 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh formal-release-r1-root-group-disposition-check` | 待最终回归填入 |
-| 发布计划 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check` | 待最终回归填入 |
-| spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 待最终回归填入 |
-| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 待最终回归填入 |
+| 处置预检 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh formal-release-r1-root-group-disposition-check` | 通过 |
+| 发布计划 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check` | 通过 |
+| spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
+| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过；closeout 前状态显示 receipt 待生成 |
 
 ---
 
-## 五、遗留问题与下一步
+## 六、遗留问题与下一步
 
 | 遗留项 | 为什么没在本轮做 | 后续触发 |
 |---|---|---|
@@ -159,7 +165,7 @@ R1 延期根目录分成两类：
 
 ---
 
-## 六、经验沉淀
+## 七、经验沉淀
 
 | 问题源 | 解决方案 | 最后效果 |
 |---|---|---|
@@ -171,7 +177,7 @@ R1 延期根目录分成两类：
 
 ---
 
-## 七、关键证据入口
+## 八、附录
 
 - R1 处置矩阵：`references/formal-release-r1-root-group-disposition-preflight.json`
 - R1 检查脚本：`compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh`
@@ -179,7 +185,7 @@ R1 延期根目录分成两类：
 - Prism 报告：`prism/reports/2026-05-17-formal-release-r1-root-group-disposition-preflight-review.md`
 - Prism 证据：`prism/runs/20260517-formal-release-r1-root-group-disposition-preflight/`
 
-### 7.3 Evolution Factory 候选处理
+### 8.3 Evolution Factory 候选处理
 
 | 候选 | 来源 | 处理结果 | 证据 |
 |---|---|---|---|
