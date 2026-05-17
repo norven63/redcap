@@ -18,6 +18,7 @@ GATE = ROOT / "references/historical-asset-physical-cleanup-release-gate.json"
 DEFERRAL = ROOT / "references/root-ia-remaining-root-groups-deferral.json"
 RUNTIME_MANIFEST = ROOT / "compass/tools/redcap-runtime-package-manifest.sh"
 NPMIGNORE = ROOT / ".npmignore"
+WORKSPACE_STATE_PACKAGE_ROOTS = [".dev-task.md", ".env", ".tmp", "prompt.txt", "cli_" + "console.md"]
 
 
 def fail(message: str) -> None:
@@ -228,7 +229,7 @@ def validate(matrix_path: Path) -> dict[str, Any]:
         "references": count_under(candidates, ["references"]),
         "prism": count_under(candidates, ["prism"]),
         "loom": count_under(candidates, ["loom"]),
-        "workspace_state": count_under(candidates, [".dev-task.md", ".env", ".tmp", "prompt.txt", "cli_console.md"]),
+        "workspace_state": count_under(candidates, WORKSPACE_STATE_PACKAGE_ROOTS),
     }
     for key, value in expected_snapshot.items():
         if snapshot.get(key) != value:
