@@ -817,6 +817,16 @@ if ! bash "$RELEASE_E2E_MATRIX_CHECK" >/dev/null; then
     exit 1
 fi
 
+FORMAL_RELEASE_R1_DISPOSITION_CHECK="$REDCAP_ROOT/compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh"
+if [[ ! -f "$FORMAL_RELEASE_R1_DISPOSITION_CHECK" ]]; then
+    echo "[redcap-spec-check] formal release R1 root group disposition check missing" >&2
+    exit 1
+fi
+if ! bash "$FORMAL_RELEASE_R1_DISPOSITION_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] formal release R1 root group disposition check failed" >&2
+    exit 1
+fi
+
 FORMAL_RELEASE_READINESS_PLAN_CHECK="$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.sh"
 if [[ ! -f "$FORMAL_RELEASE_READINESS_PLAN_CHECK" ]]; then
     echo "[redcap-spec-check] formal release readiness plan check missing" >&2

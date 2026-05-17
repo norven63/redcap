@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 370879,
-    "lines": 7411,
-    "chars": 225199,
+    "size_bytes": 370153,
+    "lines": 7398,
+    "chars": 224537,
     "rough_token_pressure": {
-      "low": 56299,
-      "high": 112599
+      "low": 56134,
+      "high": 112268
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 189234,
-        "lines": 4499,
-        "chars": 113152,
+        "size_bytes": 189655,
+        "lines": 4502,
+        "chars": 113431,
         "rough_token_pressure": {
-          "low": 28288,
-          "high": 56576
+          "low": 28357,
+          "high": 56715
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 176115,
-        "lines": 2823,
-        "chars": 108273,
+        "size_bytes": 174968,
+        "lines": 2807,
+        "chars": 107332,
         "rough_token_pressure": {
-          "low": 27068,
-          "high": 54136
+          "low": 26833,
+          "high": 53666
         }
       }
     },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 12759,
-      "lines": 154,
-      "chars": 7087,
+      "size_bytes": 13180,
+      "lines": 157,
+      "chars": 7366,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -522,35 +522,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-16-formal-release-readiness-plan-and-authorization-gate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：正式发布准备计划与人工授权矩阵",
-      "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11845,
-      "lines": 211,
-      "chars": 7177,
-      "summary": "当前已完成：RedCap 已把正式发布前的总计划、人工决策边界和自动执行边界落成机器可检查的 release readiness 控制面。 / 详情：本轮解决的是“发布计划散在 handoff、E2E matrix、package policy 和对话解释里”的问题。现在正式发布前路线被收束成 10 个阶段，授权边界被拆成 Norven 必须决策、Cap + Prism 可自主决策、可条件提前授权三类，并由新检查器防止它们漂移。Claude Code 与 Kimi 已做独立评审，结论是无 P0/P1 blocker。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把正式发布前的总计划、人工决策边界和自动执行边界落成机器可检查的 release readiness 控制面。",
-          "详情：本轮解决的是“发布计划散在 handoff、E2E matrix、package policy 和对话解释里”的问题。现在正式发布前路线被收束成 10 个阶段，授权边界被拆成 Norven 必须决策、Cap + Prism 可自主决策、可条件提前授权三类，并由新检查器防止它们漂移。Claude Code 与 Kimi 已做独立评审，结论是无 P0/P1 blocker。"
-        ],
-        "previous_step": [
-          "上一步完成的是：迁移后的 RedCap 全工程 review 已关闭，结论是没有新的 P0/P1 工程阻塞；但正式发布仍缺少独立 release 父任务树和授权矩阵。"
-        ],
-        "next_step": [
-          "下一步计划做的是：如果 Norven 想进入真实 formal release task，下一步应回答 `references/release-authorization-matrix.json` 中的 10 个发布授权问题；回答前 RedCap 仍保持 private/readiness-only，不改变发布开关。"
-        ],
-        "position": [
-          "整体计划脉络图是：迁移后全工程 review 完成 -> 发布准备计划与授权矩阵落盘 -> Norven 授权问卷 -> formal release task -> 最终发布前全量门禁。",
-          "当前所在位置：P4-2l / formal-release-readiness-plan-and-authorization-gate；本轮是发布任务前的控制面补齐，不是真实发布。"
-        ]
-      }
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-16-post-migration-full-engineering-review.md",
       "collection": "task-reports",
       "title": "任务完成报告：迁移后 RedCap 全工程深度 Review",
@@ -576,6 +547,35 @@
         "position": [
           "整体计划脉络图是：结构迁移第一批完成 -> 迁移后全工程 review -> 根据 review 结论继续后续治理或发布准备。",
           "当前所在位置：`redcap-post-migration-full-engineering-review`，迁移后独立 review tranche。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-17-formal-release-r1-root-group-disposition-preflight.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：R1 延期根目录处置预检",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 10698,
+      "lines": 195,
+      "chars": 6236,
+      "summary": "当前已完成：RedCap 已把正式发布 R1 阶段的 4 类延期根目录做成机器可查的处置预检。 / 结果：`workspace-state` 被证明只是本地状态和草稿，不进入候选包；`internal-control-plane`、`prism-layer-and-evidence`、`internal-layer-a` 仍然阻塞正式发布，不能被“没有泄漏到包里”冒充成“历史资产已清理”。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已把正式发布 R1 阶段的 4 类延期根目录做成机器可查的处置预检。",
+          "结果：`workspace-state` 被证明只是本地状态和草稿，不进入候选包；`internal-control-plane`、`prism-layer-and-evidence`、`internal-layer-a` 仍然阻塞正式发布，不能被“没有泄漏到包里”冒充成“历史资产已清理”。"
+        ],
+        "previous_step": [
+          "上一步完成的是：历史资产物理清理和高价值经验候选化已经升级为正式发布前硬门。"
+        ],
+        "next_step": [
+          "下一步计划做的是：后续真正进入正式发布任务时，先处理仍阻塞的 3 类根目录组，再谈发布授权、许可证、账号和版本。"
+        ],
+        "position": [
+          "整体计划脉络图是：发布准备计划 -> 历史资产硬门 -> 高价值经验硬门 -> R1 延期根目录处置预检 -> 后续正式发布任务分 tranche 处理 3 个 blocker。",
+          "当前所在位置：P4-2o / formal-release-r1-root-group-disposition-preflight。"
         ]
       }
     },

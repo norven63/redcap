@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-2n",
-    "summary": "高价值经验发现与候选化已升级为正式发布前硬门；下一阶段若启动 formal release task，必须先通过 Evolution harvest signal gate，不能用候选池 strict 通过替代候选发现。"
+    "item_id": "P4-2o",
+    "summary": "正式发布 R1 的 4 组延期根目录已进入 disposition preflight；当前目标是明确 workspace-state 可安全排除，其余三组继续作为 release blockers，不能把预检冒充 R1 完成。"
   },
   "glossary": [
     {
@@ -379,7 +379,7 @@
             "references/formal-release-readiness-plan.json",
             "references/release-authorization-matrix.json",
             "compass/tools/redcap-formal-release-readiness-plan-check.sh",
-            "compass/docs/task-reports/2026-05-16-formal-release-readiness-plan-and-authorization-gate.md"
+            "private-archive/redcap-knowledge/task-reports/2026-05-16-formal-release-readiness-plan-and-authorization-gate.md"
           ]
         },
         {
@@ -408,6 +408,20 @@
             "compass/tools/redcap-evolution-harvest-check.sh",
             "compass/evolution/candidates.json",
             "compass/knowledge/lessons/l-163.md"
+          ]
+        },
+        {
+          "id": "P4-2o",
+          "title": "正式发布 R1 延期根目录处置预检",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-6-release-readiness-control-plane",
+          "summary": "已把 4 组 deferred root groups 做成机器可查 disposition preflight：workspace-state 是本地状态且包面排除，internal-control-plane / prism-layer-and-evidence / internal-layer-a 仍是 release blockers；本项不关闭 R1、不执行发布、不移动目录。",
+          "evidence_paths": [
+            "references/formal-release-r1-root-group-disposition-preflight.json",
+            "compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
+            "references/formal-release-readiness-plan.json",
+            "compass/docs/task-reports/2026-05-17-formal-release-r1-root-group-disposition-preflight.md"
           ]
         }
       ]
@@ -488,9 +502,10 @@
       "item_ids": [
         "P4-2l",
         "P4-2m",
-        "P4-2n"
+        "P4-2n",
+        "P4-2o"
       ],
-      "summary": "正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门和高价值经验候选化硬门都已进入可审计控制面；当前仍不执行真实发布。"
+      "summary": "正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门、高价值经验候选化硬门和 R1 延期根目录处置预检都已进入可审计控制面；当前仍不执行真实发布。"
     }
   ]
 }

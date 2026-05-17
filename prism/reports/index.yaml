@@ -1,4 +1,35 @@
 reports:
+  - id: "20260517-formal-release-r1-root-group-disposition-preflight"
+    mode: review
+    date: "2026-05-17"
+    topic: "Formal release R1 deferred root group disposition preflight"
+    agents: ["claude-code", "kimi", "gemini-absent"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "pass"
+    consensus_actions:
+      - "Accept the R1 disposition preflight as a blocker-aware classification only, not as release authorization"
+      - "Keep internal-control-plane, prism-layer-and-evidence, and internal-layer-a as release blockers"
+      - "Treat workspace-state only as local nonhistorical state after package-candidate absence and .npmignore exclusion proof"
+      - "Reject any unsupported fifth disposition in acceptance"
+    open_questions:
+      - "Actual physical migration/split of the three blocker groups remains future formal-release work"
+      - "This review does not authorize public release, license changes, destructive deletion, or release switch changes"
+      - "Gemini observer was unavailable during roster probing; Claude Code and Kimi still satisfied the current RedCap Prism acceptance policy with two distinct families"
+      - "Claude Code raw output included a SessionEnd hook warning after the verdict; the JSON verdict itself was complete"
+    lessons_updated: false
+    files_affected:
+      - "references/formal-release-r1-root-group-disposition-preflight.json"
+      - "references/formal-release-readiness-plan.json"
+      - "references/redcap-parent-task-ledger.md"
+      - "compass/tools/redcap-formal-release-r1-root-group-disposition-check.py"
+      - "compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh"
+      - "compass/tools/redcap-formal-release-readiness-plan-check.py"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "prism/reports/2026-05-17-formal-release-r1-root-group-disposition-preflight-review.md"
+      - "prism/runs/20260517-formal-release-r1-root-group-disposition-preflight/session-registry.yaml"
+      - "prism/runs/20260517-formal-release-r1-root-group-disposition-preflight/collect/observer/unavailable.json"
+      - "prism/runs/20260517-formal-release-r1-root-group-disposition-preflight/artifacts/acceptance-binding.json"
+    archived: false
   - id: "20260517-evolution-harvest-signal-gate-review"
     mode: review
     date: "2026-05-17"

@@ -22,6 +22,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "package_surface": ROOT / "references/public-package-surface-policy.json",
         "runtime_policy": ROOT / "references/runtime-package-readiness-policy.json",
         "historical_cleanup": ROOT / "references/historical-asset-physical-cleanup-release-gate.json",
+        "r1_disposition": ROOT / "references/formal-release-r1-root-group-disposition-preflight.json",
         "evolution_harvest": ROOT / "references/evolution-harvest-signal-policy.json",
     }
     option_to_key = {
@@ -32,6 +33,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "--package-surface": "package_surface",
         "--runtime-policy": "runtime_policy",
         "--historical-cleanup": "historical_cleanup",
+        "--r1-disposition": "r1_disposition",
         "--evolution-harvest": "evolution_harvest",
     }
     index = 0
@@ -100,6 +102,7 @@ def main() -> int:
     package_surface_path = paths["package_surface"]
     runtime_policy_path = paths["runtime_policy"]
     historical_cleanup_path = paths["historical_cleanup"]
+    r1_disposition_path = paths["r1_disposition"]
     evolution_harvest_path = paths["evolution_harvest"]
 
     plan = load_json(plan_path, "formal release readiness plan")
@@ -108,6 +111,7 @@ def main() -> int:
     package_surface = load_json(package_surface_path, "public package surface policy")
     runtime_policy = load_json(runtime_policy_path, "runtime package readiness policy")
     historical_cleanup = load_json(historical_cleanup_path, "historical asset physical cleanup release gate")
+    r1_disposition = load_json(r1_disposition_path, "R1 root group disposition preflight")
     evolution_harvest = load_json(evolution_harvest_path, "evolution harvest signal policy")
 
     if not handoff_path.is_file():
@@ -212,6 +216,8 @@ def main() -> int:
     cleanup_required_sources = set(required_sources)
     if "references/historical-asset-physical-cleanup-release-gate.json" not in cleanup_required_sources:
         fail("plan required_sources must include historical asset cleanup release gate")
+    if "references/formal-release-r1-root-group-disposition-preflight.json" not in cleanup_required_sources:
+        fail("plan required_sources must include R1 root group disposition preflight")
     if "references/evolution-harvest-signal-policy.json" not in cleanup_required_sources:
         fail("plan required_sources must include evolution harvest signal policy")
     stage_map = {stage["id"]: stage for stage in stages}
@@ -221,6 +227,7 @@ def main() -> int:
         "release-blocking historical group",
         "package-visible",
         "release-safe disposition",
+        "R1 root group disposition preflight passes",
     ]:
         if required_concept not in r1_blob:
             fail(f"R1 must explicitly cover historical cleanup gate concept: {required_concept}")
@@ -464,6 +471,39 @@ def main() -> int:
     if "R1" not in release_task_rule or "R8" not in release_task_rule:
         fail("historical cleanup gate release_task_rule must bind R1 before R8")
 
+    require_keys(
+        r1_disposition,
+        [
+            "version",
+            "matrix_id",
+            "status",
+            "claim_boundary",
+            "allowed_disposition_ids",
+            "groups",
+            "remaining_release_blockers",
+            "resolved_nonhistorical_local_state",
+        ],
+        "R1 root group disposition preflight",
+    )
+    if r1_disposition["version"] != 1:
+        fail("R1 disposition matrix version must be 1")
+    if r1_disposition["matrix_id"] != "redcap-formal-release-r1-root-group-disposition-preflight":
+        fail("R1 disposition matrix id mismatch")
+    if r1_disposition["status"] != "preflight-analysis-only-release-still-blocked":
+        fail("R1 disposition matrix status must remain preflight-analysis-only-release-still-blocked")
+    r1_boundary = r1_disposition.get("claim_boundary")
+    if not isinstance(r1_boundary, dict):
+        fail("R1 disposition matrix claim_boundary must be an object")
+    for key in ["is_r1_closed", "is_public_release_ready", "release_gate_closed", "physical_moves_performed", "release_switches_changed"]:
+        require_bool(r1_boundary.get(key), False, f"r1_disposition.claim_boundary.{key}")
+    if set(r1_disposition.get("allowed_disposition_ids", [])) != disposition_ids:
+        fail("R1 disposition matrix must mirror historical cleanup disposition ids")
+    blockers = set(r1_disposition.get("remaining_release_blockers", []))
+    if blockers != {"internal-control-plane", "prism-layer-and-evidence", "internal-layer-a"}:
+        fail("R1 disposition matrix must keep the three unresolved root groups as release blockers")
+    if set(r1_disposition.get("resolved_nonhistorical_local_state", [])) != {"workspace-state"}:
+        fail("R1 disposition matrix must resolve only workspace-state as nonhistorical local state")
+
     for required_reference in [
         "references/formal-release-readiness-plan.json",
         "references/release-authorization-matrix.json",
@@ -478,6 +518,7 @@ def main() -> int:
         "FORMAL_RELEASE_READINESS_PLAN_OK "
         "stages=10 norven_required=10 conditional_authorization=not-yet-granted "
         "historical_asset_cleanup_hard_gate=registered "
+        "r1_root_group_disposition_preflight=registered "
         "evolution_harvest_signal_gate=registered"
     )
     return 0

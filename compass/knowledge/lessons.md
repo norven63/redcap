@@ -497,3 +497,6 @@
 
 ### L-163: 经验沉淀的失效点常在发现与候选化
 - 正文模块：[`compass/knowledge/lessons/l-163.md`](../../compass/knowledge/lessons/l-163.md)
+
+### L-164: 出包排除证据不能替代历史资产治理完成
+- 正文模块：[`compass/knowledge/lessons/l-164.md`](../../compass/knowledge/lessons/l-164.md)

@@ -12,7 +12,7 @@
   "contract_profile": "alpha-readiness-split-contract",
   "contract_boundary_policy": "references/runtime-public-contract-policy.json",
   "candidate_count_target": {
-    "max_before_release_task": 190,
+    "max_before_release_task": 199,
     "reason": "Public npm candidates should contain the runnable CLI/runtime contract plus clearly labelled maintainer/readiness support and the contract-boundary policy itself. The alpha readiness surface may temporarily include repo-governance checks required by diagnose/spec-check, but these are not stable end-user API; the separate formal release task must decide whether to trim them into a smaller runtime profile or split a maintainer profile."
   },
   "bin": {

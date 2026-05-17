@@ -203,6 +203,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
+  bash compass/tools/redcap-multi-session-acceptance.sh formal-release-r1-root-group-disposition-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-structure-task-tree-check
@@ -13622,6 +13623,7 @@ run_formal_release_readiness_plan_check_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.sh")"
     assert_string_contains "$output" "FORMAL_RELEASE_READINESS_PLAN_OK"
     assert_string_contains "$output" "historical_asset_cleanup_hard_gate=registered"
+    assert_string_contains "$output" "r1_root_group_disposition_preflight=registered"
     assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'formal release readiness plan check missing'
 
     bad_plan="$ACCEPT_ROOT/formal-release-readiness-missing-cleanup-gate.json"
@@ -13645,6 +13647,56 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "formal release readiness checker should reject missing historical cleanup gate"
     assert_string_contains "$stale_output" "historical_asset_physical_cleanup_gate_satisfied"
+
+    bad_plan="$ACCEPT_ROOT/formal-release-readiness-missing-r1-disposition.json"
+    python3 - "$REDCAP_ROOT/references/formal-release-readiness-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["required_sources"] = [
+    item
+    for item in payload["required_sources"]
+    if item != "references/formal-release-r1-root-group-disposition-preflight.json"
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "formal release readiness checker should reject missing R1 disposition preflight"
+    assert_string_contains "$stale_output" "R1 root group disposition preflight"
+}
+
+run_formal_release_r1_root_group_disposition_check_case() {
+    local output bad_matrix stale_output status
+
+    log "case: formal-release-r1-root-group-disposition-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh")"
+    assert_string_contains "$output" "FORMAL_RELEASE_R1_ROOT_GROUP_DISPOSITION_OK"
+    assert_string_contains "$output" "remaining_blockers=3"
+    assert_string_contains "$output" "release_gate_closed=false"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'formal release R1 root group disposition check missing'
+
+    bad_matrix="$ACCEPT_ROOT/formal-release-r1-disposition-bad-class.json"
+    python3 - "$REDCAP_ROOT/references/formal-release-r1-root-group-disposition-preflight.json" "$bad_matrix" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["groups"][0]["disposition_id"] = "package-visible-but-acceptable"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-formal-release-r1-root-group-disposition-check.py" --matrix "$bad_matrix" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 disposition checker should reject non-standard disposition"
+    assert_string_contains "$stale_output" "unsupported disposition_id"
 }
 
 run_pre_release_product_architecture_check_case() {
@@ -16122,6 +16174,9 @@ case "$COMMAND" in
         ;;
     public-package-surface-check)
         run_public_package_surface_check_case
+        ;;
+    formal-release-r1-root-group-disposition-check)
+        run_formal_release_r1_root_group_disposition_check_case
         ;;
     formal-release-readiness-plan-check)
         run_formal_release_readiness_plan_check_case
