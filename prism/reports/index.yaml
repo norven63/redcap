@@ -1,4 +1,33 @@
 reports:
+  - id: "20260517-historical-asset-physical-cleanup-release-hard-gate"
+    mode: review
+    date: "2026-05-17"
+    topic: "Historical asset physical cleanup release hard gate"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Treat unresolved historical asset physical cleanup as a formal public-release blocker"
+      - "Keep package-surface exclusion separate from proof that historical assets were physically cleaned"
+      - "Require future formal release tasks to resolve or safely classify historical asset groups before release switches can change"
+    open_questions:
+      - "Actual historical asset physical migration remains a future formal-release tranche"
+      - "Irreversible deletion still requires Norven decision, alias/rollback planning, and independent review"
+      - "This review does not authorize a real public release"
+    lessons_updated: false
+    files_affected:
+      - "references/historical-asset-physical-cleanup-release-gate.json"
+      - "references/formal-release-readiness-plan.json"
+      - "references/release-authorization-matrix.json"
+      - "references/public-release-handoff.md"
+      - "references/release-readiness-e2e-matrix.json"
+      - "references/public-package-surface-policy.json"
+      - "compass/tools/redcap-formal-release-readiness-plan-check.py"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md"
+      - "prism/reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate-review.md"
+      - "prism/runs/20260517-historical-asset-physical-cleanup-release-hard-gate/session-registry.yaml"
+    archived: false
   - id: "20260516-formal-release-readiness-plan"
     mode: review
     date: "2026-05-16"

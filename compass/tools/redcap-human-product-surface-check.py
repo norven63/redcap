@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import hashlib
+import signal
 import subprocess
 import tempfile
 from pathlib import Path
@@ -50,16 +51,26 @@ def run(args: list[str], cwd: Path, timeout: int = 90, env_overrides: dict[str, 
     env["REDCAP_CURRENT_STATUS_REFRESH_AGENT_REGISTRY"] = "0"
     if env_overrides:
         env.update(env_overrides)
-    return subprocess.run(
+    process = subprocess.Popen(
         args,
         cwd=str(cwd),
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        check=False,
         env=env,
-        timeout=timeout,
+        start_new_session=True,
     )
+    try:
+        stdout, _ = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGTERM)
+        try:
+            stdout, _ = process.communicate(timeout=3)
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGKILL)
+            stdout, _ = process.communicate()
+        raise subprocess.TimeoutExpired(args, timeout, output=stdout)
+    return subprocess.CompletedProcess(args=args, returncode=process.returncode, stdout=stdout, stderr=None)
 
 
 def run_partial(args: list[str], cwd: Path, timeout: int = 12, env_overrides: dict[str, str] | None = None) -> str:
@@ -259,6 +270,7 @@ def validate_cli_surfaces(policy: dict[str, Any]) -> None:
         diagnose_output = run_partial(
             [str(CLI), "diagnose", "--workspace", str(workspace), "--task-file", str(task)],
             cwd=workspace,
+            env_overrides={"REDCAP_DIAGNOSE_SKIP_HUMAN_PRODUCT_SURFACE": "1"},
         )
         intro = before_marker(diagnose_output, "REDCAP_DIAGNOSE")
         require_phrases(intro, phrases["diagnose_intro"], "redcap diagnose introduction")

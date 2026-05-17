@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 67847,
+      "bytes": 67867,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 87775,
+      "bytes": 88221,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -105,7 +105,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 33338,
+      "bytes": 33702,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",
@@ -114,7 +114,7 @@
     },
     {
       "path": "references/redcap-parent-task-ledger.md",
-      "bytes": 37840,
+      "bytes": 38939,
       "asset_class": "parent-task-ledger",
       "lifecycle": "active-parent-state-ledger",
       "consumer_check": "bash compass/tools/redcap-parent-receipt-aggregation-check.sh",

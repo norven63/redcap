@@ -199,7 +199,11 @@ run_check "user-agent-identity" bash "$SCRIPT_DIR/redcap-user-agent-identity.sh"
 run_source_check "feishu-inbox" bash "$SCRIPT_DIR/redcap-feishu-inbox.sh" check || overall=1
 run_source_check "feishu-notification-policy" bash "$SCRIPT_DIR/redcap-feishu-notification-policy-check.sh" || overall=1
 run_check "human-communication" bash "$SCRIPT_DIR/redcap-human-communication-check.sh" || overall=1
-run_check "human-product-surface" bash "$SCRIPT_DIR/redcap-human-product-surface-check.sh" || overall=1
+if [[ "${REDCAP_DIAGNOSE_SKIP_HUMAN_PRODUCT_SURFACE:-0}" == "1" ]]; then
+    echo "[skip] human-product-surface reason=called-from-human-product-surface-check"
+else
+    run_check "human-product-surface" bash "$SCRIPT_DIR/redcap-human-product-surface-check.sh" || overall=1
+fi
 run_check "package-publish-safety" bash "$SCRIPT_DIR/redcap-package-publish-safety-check.sh" || overall=1
 run_check "runtime-package-manifest" bash "$SCRIPT_DIR/redcap-runtime-package-manifest.sh" --check || overall=1
 run_check "public-package-surface" bash "$SCRIPT_DIR/redcap-public-package-surface.sh" || overall=1

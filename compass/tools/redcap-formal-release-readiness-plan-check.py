@@ -13,6 +13,38 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def parse_args(argv: list[str]) -> dict[str, Path]:
+    paths = {
+        "plan": ROOT / "references/formal-release-readiness-plan.json",
+        "matrix": ROOT / "references/release-authorization-matrix.json",
+        "handoff": ROOT / "references/public-release-handoff.md",
+        "e2e": ROOT / "references/release-readiness-e2e-matrix.json",
+        "package_surface": ROOT / "references/public-package-surface-policy.json",
+        "runtime_policy": ROOT / "references/runtime-package-readiness-policy.json",
+        "historical_cleanup": ROOT / "references/historical-asset-physical-cleanup-release-gate.json",
+    }
+    option_to_key = {
+        "--plan": "plan",
+        "--matrix": "matrix",
+        "--handoff": "handoff",
+        "--e2e": "e2e",
+        "--package-surface": "package_surface",
+        "--runtime-policy": "runtime_policy",
+        "--historical-cleanup": "historical_cleanup",
+    }
+    index = 0
+    while index < len(argv):
+        option = argv[index]
+        key = option_to_key.get(option)
+        if key is None:
+            fail(f"unsupported argument: {option}")
+        if index + 1 >= len(argv):
+            fail(f"{option} requires a path")
+        paths[key] = Path(argv[index + 1])
+        index += 2
+    return paths
+
+
 def fail(message: str) -> None:
     raise SystemExit(f"[redcap-formal-release-readiness-plan-check] {message}")
 
@@ -58,18 +90,21 @@ def repo_rel_exists(path_text: str) -> bool:
 
 
 def main() -> int:
-    plan_path = ROOT / "references/formal-release-readiness-plan.json"
-    matrix_path = ROOT / "references/release-authorization-matrix.json"
-    handoff_path = ROOT / "references/public-release-handoff.md"
-    e2e_path = ROOT / "references/release-readiness-e2e-matrix.json"
-    package_surface_path = ROOT / "references/public-package-surface-policy.json"
-    runtime_policy_path = ROOT / "references/runtime-package-readiness-policy.json"
+    paths = parse_args(sys.argv[1:])
+    plan_path = paths["plan"]
+    matrix_path = paths["matrix"]
+    handoff_path = paths["handoff"]
+    e2e_path = paths["e2e"]
+    package_surface_path = paths["package_surface"]
+    runtime_policy_path = paths["runtime_policy"]
+    historical_cleanup_path = paths["historical_cleanup"]
 
     plan = load_json(plan_path, "formal release readiness plan")
     matrix = load_json(matrix_path, "release authorization matrix")
     e2e = load_json(e2e_path, "release E2E matrix")
     package_surface = load_json(package_surface_path, "public package surface policy")
     runtime_policy = load_json(runtime_policy_path, "runtime package readiness policy")
+    historical_cleanup = load_json(historical_cleanup_path, "historical asset physical cleanup release gate")
 
     if not handoff_path.is_file():
         fail("missing public release handoff")
@@ -116,6 +151,11 @@ def main() -> int:
         False,
         "claim_boundary.is_authorized_for_registry_mutation",
     )
+    require_bool(
+        claim_boundary.get("historical_asset_physical_cleanup_gate_satisfied"),
+        False,
+        "claim_boundary.historical_asset_physical_cleanup_gate_satisfied",
+    )
 
     expected_stage_order = [
         "R0-release-task-anchor",
@@ -156,9 +196,36 @@ def main() -> int:
         fail("automation_policy must be an object")
     require_bool(automation.get("fail_closed"), True, "automation_policy.fail_closed")
     must_stop = require_list(automation.get("must_stop_for"), "automation_policy.must_stop_for", min_len=6)
+    for index, item in enumerate(must_stop):
+        if not isinstance(item, str):
+            fail(f"automation_policy.must_stop_for[{index}] must be a string")
     for required_phrase in ["license", "secret", "Prism", "external package registry"]:
         if not any(required_phrase in str(item) for item in must_stop):
             fail(f"automation_policy.must_stop_for missing concept: {required_phrase}")
+    if not any("historical asset physical cleanup" in str(item).lower() for item in must_stop):
+        fail("automation_policy.must_stop_for must include unresolved historical asset cleanup")
+
+    cleanup_required_sources = set(required_sources)
+    if "references/historical-asset-physical-cleanup-release-gate.json" not in cleanup_required_sources:
+        fail("plan required_sources must include historical asset cleanup release gate")
+    stage_map = {stage["id"]: stage for stage in stages}
+    r1_blob = json.dumps(stage_map["R1-deferred-root-group-disposition"], ensure_ascii=False)
+    for required_concept in [
+        "Historical asset physical cleanup release gate passes",
+        "release-blocking historical group",
+        "package-visible",
+        "release-safe disposition",
+    ]:
+        if required_concept not in r1_blob:
+            fail(f"R1 must explicitly cover historical cleanup gate concept: {required_concept}")
+    for stage_id in [
+        "R4-security-and-privacy-audit",
+        "R5-release-e2e-matrix",
+        "R6-human-release-decisions",
+    ]:
+        stage_blob = json.dumps(stage_map[stage_id], ensure_ascii=False).lower()
+        if "historical asset" not in stage_blob:
+            fail(f"{stage_id} must reference historical asset cleanup hard gate")
 
     require_keys(
         matrix,
@@ -230,9 +297,15 @@ def main() -> int:
     if conditional.get("status") != "not-yet-granted":
         fail("conditional authorization must not be granted by default")
     safe_example = require_text(conditional.get("safe_example"), "conditional_authorization_template.safe_example")
-    if "13 required conditions" not in safe_example:
+    if "14 required conditions" not in safe_example:
         fail("conditional authorization safe_example must point readers back to all required conditions")
-    require_list(conditional.get("required_conditions"), "conditional_authorization_template.required_conditions", min_len=13)
+    required_conditions = require_list(
+        conditional.get("required_conditions"),
+        "conditional_authorization_template.required_conditions",
+        min_len=14,
+    )
+    if "historical asset physical cleanup release gate pass" not in required_conditions:
+        fail("conditional authorization must require historical asset physical cleanup release gate pass")
     invalid_authorizations = require_list(conditional.get("invalid_authorizations"), "conditional_authorization_template.invalid_authorizations", min_len=5)
     invalid_blob = "\n".join(str(item).lower() for item in invalid_authorizations)
     for required_concept in ["blanket", "omits", "secret", "waiver", "override"]:
@@ -248,6 +321,14 @@ def main() -> int:
 
     if e2e.get("matrix_id") != "redcap-release-readiness-e2e-matrix":
         fail("release E2E matrix id mismatch")
+    e2e_envs = e2e.get("environments")
+    if not isinstance(e2e_envs, list) or not any(
+        isinstance(item, dict)
+        and item.get("id") == "historical-asset-physical-cleanup-release-gate"
+        and item.get("status") == "deferred-to-formal-release-task"
+        for item in e2e_envs
+    ):
+        fail("release E2E matrix must carry the historical asset cleanup release gate")
     manual_boundaries = e2e.get("manual_release_boundaries")
     require_list(manual_boundaries, "release E2E manual boundaries", min_len=4)
     for expected in [
@@ -265,21 +346,105 @@ def main() -> int:
     require_bool(package_surface.get("package_private_required"), True, "public_package_surface.package_private_required")
     if package_surface.get("license_status") != "manual-before-public-publish":
         fail("public package surface must keep license manual boundary")
+    manual_surface_boundaries = package_surface.get("manual_release_boundaries")
+    require_list(manual_surface_boundaries, "public package surface manual_release_boundaries", min_len=5)
+    if not any("historical asset physical cleanup" in str(item).lower() for item in manual_surface_boundaries):
+        fail("public package surface must mention historical asset physical cleanup release gate")
 
     if runtime_policy.get("package_name") != package_name:
         fail("runtime package readiness package name mismatch")
     require_bool(runtime_policy.get("publish_allowed"), False, "runtime_package_readiness.publish_allowed")
 
+    require_keys(
+        historical_cleanup,
+        [
+            "version",
+            "policy_id",
+            "status",
+            "blocks_public_release",
+            "required_before",
+            "scope",
+            "required_release_dispositions",
+            "forbidden_release_greenlights",
+            "current_known_blockers",
+            "required_checks",
+            "release_task_rule",
+        ],
+        "historical asset physical cleanup release gate",
+    )
+    if historical_cleanup["version"] != 1:
+        fail("historical asset cleanup gate version must be 1")
+    if historical_cleanup["policy_id"] != "redcap-historical-asset-physical-cleanup-release-gate":
+        fail("historical asset cleanup gate id mismatch")
+    if historical_cleanup["status"] != "hard-gate-before-formal-public-release":
+        fail("historical asset cleanup gate must be hard-gate-before-formal-public-release")
+    require_bool(
+        historical_cleanup.get("blocks_public_release"),
+        True,
+        "historical_cleanup.blocks_public_release",
+    )
+    dispositions = require_list(
+        historical_cleanup.get("required_release_dispositions"),
+        "historical_cleanup.required_release_dispositions",
+        min_len=4,
+    )
+    disposition_ids = {
+        require_text(item.get("id"), "historical cleanup disposition id")
+        for item in dispositions
+        if isinstance(item, dict)
+    }
+    for expected in {
+        "private-archive-migrated",
+        "public-arsenal-reviewed-export",
+        "workspace-local-excluded-nonhistorical",
+        "release-blocker-until-resolved",
+    }:
+        if expected not in disposition_ids:
+            fail(f"historical cleanup gate missing disposition: {expected}")
+    forbidden_greenlights = "\n".join(
+        str(item).lower()
+        for item in require_list(
+            historical_cleanup.get("forbidden_release_greenlights"),
+            "historical_cleanup.forbidden_release_greenlights",
+            min_len=5,
+        )
+    )
+    for expected in ["package exclusion alone", "deferred-before-release-readiness", "delete", "alias", "release-blocker"]:
+        if expected not in forbidden_greenlights:
+            fail(f"historical cleanup gate forbidden greenlights missing concept: {expected}")
+    cleanup_required_checks = require_list(
+        historical_cleanup.get("required_checks"),
+        "historical_cleanup.required_checks",
+        min_len=5,
+    )
+    for expected in [
+        "redcap-formal-release-readiness-plan-check.sh",
+        "redcap-root-ia-deferral-check.sh",
+        "redcap-package-publish-safety-check.sh",
+        "redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
+        "redcap-clean-workspace-e2e.sh --check-result",
+    ]:
+        if not any(expected in str(item) for item in cleanup_required_checks):
+            fail(f"historical cleanup gate missing required check: {expected}")
+    release_task_rule = require_text(historical_cleanup.get("release_task_rule"), "historical_cleanup.release_task_rule")
+    if "R1" not in release_task_rule or "R8" not in release_task_rule:
+        fail("historical cleanup gate release_task_rule must bind R1 before R8")
+
     for required_reference in [
         "references/formal-release-readiness-plan.json",
         "references/release-authorization-matrix.json",
+        "references/historical-asset-physical-cleanup-release-gate.json",
         "release-readiness-e2e-matrix",
         "@norven63/redcap",
     ]:
         if required_reference not in handoff:
             fail(f"public release handoff missing reference: {required_reference}")
 
-    print("FORMAL_RELEASE_READINESS_PLAN_OK stages=10 norven_required=10 conditional_authorization=not-yet-granted")
+    print(
+        "FORMAL_RELEASE_READINESS_PLAN_OK "
+        "stages=10 norven_required=10 conditional_authorization=not-yet-granted "
+        "historical_asset_cleanup_hard_gate=registered"
+    )
     return 0
 
 

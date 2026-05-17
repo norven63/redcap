@@ -8,6 +8,7 @@
     "is_public_release_ready": false,
     "is_published": false,
     "is_authorized_for_registry_mutation": false,
+    "historical_asset_physical_cleanup_gate_satisfied": false,
     "summary": "This plan makes the release route auditable. It does not grant release authority by itself."
   },
   "required_sources": [
@@ -17,7 +18,8 @@
     "references/public-package-surface-policy.json",
     "references/runtime-package-readiness-policy.json",
     "references/package-publish-safety-policy.json",
-    "references/root-ia-remaining-root-groups-deferral.json"
+    "references/root-ia-remaining-root-groups-deferral.json",
+    "references/historical-asset-physical-cleanup-release-gate.json"
   ],
   "stage_order": [
     "R0-release-task-anchor",
@@ -53,19 +55,23 @@
     },
     {
       "id": "R1-deferred-root-group-disposition",
-      "title": "处置剩余延期根目录组",
-      "problem": "Several high-risk root groups are intentionally deferred; before release they must be proved safe, moved, excluded, or explicitly deferred with evidence.",
+      "title": "历史资产物理清理与延期根目录处置",
+      "problem": "Historical assets and deferred high-risk root groups must not be left as a release-time ambiguity. Before public release, each historical asset class must be physically cleaned into a safe location or keep release blocked.",
       "actions": [
-        "Review internal-control-plane, prism-layer-and-evidence, internal-layer-a and workspace-state groups.",
-        "For each group choose one disposition: keep-at-root, package-exclude, move-in-small-tranche, or release-defer-with-proof.",
-        "Preserve archaeology aliases and rollback notes for any physical move."
+        "Review historical task reports, private knowledge, runtime evidence, Prism raw runs, old migration receipts, conversation drafts and host-local scratch files.",
+        "For every true historical asset choose a release-safe disposition: private archive migration, Forge-reviewed public arsenal export, or release-blocker-until-resolved.",
+        "For live local state that is not a historical asset, prove it is excluded from the public package and must not be moved into public source.",
+        "Preserve archaeology aliases, rollback notes, clean workspace proof and closeout receipts for any physical move."
       ],
       "acceptance": [
-        "root-ia deferral check passes.",
+        "Historical asset physical cleanup release gate passes.",
+        "root-ia deferral check either has no release-blocking historical group left or formal release remains blocked.",
         "Package safety and public package surface checks prove private or volatile groups are not exposed.",
         "Any physical move has its own task, dry-run manifest, rollback plan, Prism review and receipt."
       ],
       "stop_conditions": [
+        "Any historical asset remains in a package-visible or new-user runtime path without a release-safe disposition.",
+        "Any root group remains only deferred-before-release-readiness while the task tries to proceed to registry release execution.",
         "A deferred group would enter the package surface without explicit public contract.",
         "A move risks breaking receipt anchors, aliases or clean workspace E2E."
       ],
@@ -117,17 +123,20 @@
       "problem": "npm package contents are visible to users, so safety must come from exclusion and scanning rather than obscurity.",
       "actions": [
         "Run package publish safety, token risk, public package surface and secret-path checks.",
+        "Run the historical asset physical cleanup release gate and stop if any unresolved historical blocker remains.",
         "Run runtime contract surface, formal release plan, release E2E matrix and clean workspace E2E checks when the formal release task requires install confidence.",
         "Inspect dry-run package file list for local paths, credentials, identity, raw evidence and private archives.",
         "Fail closed on any suspected secret or private asset exposure."
       ],
       "acceptance": [
         "Package publish safety check passes.",
+        "Historical asset physical cleanup release gate passes or formal release stays blocked.",
         "Token risk audit and public package surface checks pass.",
         "No forbidden path is present in package candidates."
       ],
       "stop_conditions": [
         "Any credential-like content or private path is found in package candidates.",
+        "Any unresolved historical asset cleanup blocker remains while release switches are being changed.",
         "A reviewer needs to open a secret file to prove safety."
       ],
       "human_boundary": "Cap must stop on suspected leak; Norven decides only after the risk is described and fixed or explicitly rejected."
@@ -140,15 +149,18 @@
         "Run source worktree checks.",
         "Run clean workspace local install checks.",
         "Run dry-run package listing checks.",
+        "Run historical asset physical cleanup gate checks before treating the matrix as release-green.",
         "Either run external machine or multi-OS validation, or record an alpha-only limitation."
       ],
       "acceptance": [
         "Release E2E matrix check passes.",
+        "Historical asset physical cleanup release gate evidence is current.",
         "Every covered environment has current evidence.",
         "Any deferred external environment is reflected in release claims."
       ],
       "stop_conditions": [
         "Clean workspace installation fails.",
+        "Historical asset cleanup gate remains unresolved.",
         "Dry-run package listing is inconsistent with package policy.",
         "Stable release is requested without external environment proof."
       ],
@@ -160,15 +172,18 @@
       "problem": "Some release choices are legal, product, account, or risk-acceptance decisions and cannot be made by AI.",
       "actions": [
         "Ask the release authorization questionnaire.",
+        "Refuse to ask for publication permission if historical asset physical cleanup has not reached a release-safe state.",
         "Record license, release target, release level, version, registry scope, account readiness and risk acceptance.",
         "Convert any allowed automation into conditional authorization, not open-ended permission."
       ],
       "acceptance": [
         "Release authorization matrix has Norven answers for every required decision.",
+        "The historical asset cleanup hard gate is either satisfied or the release task remains stopped before publication permission.",
         "No manual boundary remains unresolved before release switches are changed."
       ],
       "stop_conditions": [
         "License, public distribution decision, release level, registry/account readiness or version is missing.",
+        "The task asks Norven to approve publication while unresolved historical asset cleanup blockers remain.",
         "The requested authorization would allow publishing despite failed safety gates."
       ],
       "human_boundary": "Norven required."
@@ -239,6 +254,7 @@
     "fail_closed": true,
     "must_stop_for": [
       "license decision missing",
+      "historical asset physical cleanup release gate unresolved",
       "public distribution decision missing",
       "release level missing",
       "version missing",

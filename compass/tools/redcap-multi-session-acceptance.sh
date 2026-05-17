@@ -203,6 +203,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh package-publish-safety-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
+  bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-structure-task-tree-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-workspace-boundary-check
@@ -13535,6 +13536,39 @@ PY
     assert_string_contains "$stale_output" "required_runtime_checks must match"
 }
 
+run_formal_release_readiness_plan_check_case() {
+    local output bad_plan stale_output status
+
+    log "case: formal-release-readiness-plan-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.sh")"
+    assert_string_contains "$output" "FORMAL_RELEASE_READINESS_PLAN_OK"
+    assert_string_contains "$output" "historical_asset_cleanup_hard_gate=registered"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'formal release readiness plan check missing'
+
+    bad_plan="$ACCEPT_ROOT/formal-release-readiness-missing-cleanup-gate.json"
+    python3 - "$REDCAP_ROOT/references/formal-release-readiness-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["required_sources"] = [
+    item
+    for item in payload["required_sources"]
+    if item != "references/historical-asset-physical-cleanup-release-gate.json"
+]
+payload["claim_boundary"].pop("historical_asset_physical_cleanup_gate_satisfied", None)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "formal release readiness checker should reject missing historical cleanup gate"
+    assert_string_contains "$stale_output" "historical_asset_physical_cleanup_gate_satisfied"
+}
+
 run_pre_release_product_architecture_check_case() {
     local output bad_review stale_output status
 
@@ -14011,7 +14045,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -14354,6 +14388,7 @@ redcap-full-llm-wiki-roadmap-check.sh|full-llm-wiki-roadmap|fixture full LLM-wik
 redcap-package-publish-safety-check.sh|package-publish-safety|fixture package publish safety failure
 redcap-runtime-contract-surface-check.sh|runtime-contract-surface|fixture runtime contract surface failure
 redcap-release-e2e-matrix-check.sh|release-e2e-matrix|fixture release E2E matrix failure
+redcap-formal-release-readiness-plan-check.sh|formal-release-readiness-plan|fixture formal release readiness plan failure
 redcap-change-intake-check.sh|change-intake|fixture change intake failure
 redcap-prism-degradation-check.sh|prism-degradation|fixture Prism degradation failure
 redcap-conclusion-prism-check.sh|conclusion-prism|fixture conclusion Prism failure
@@ -14443,6 +14478,7 @@ EOF
             full-llm-wiki-roadmap) expected_message="full LLM-wiki roadmap check failed" ;;
             package-publish-safety) expected_message="package publish safety check failed" ;;
             release-e2e-matrix) expected_message="release E2E matrix check failed" ;;
+            formal-release-readiness-plan) expected_message="formal release readiness plan check failed" ;;
             conclusion-prism) expected_message="conclusion Prism check failed" ;;
         esac
 
@@ -14533,6 +14569,7 @@ for rel in [
 	"compass/tools/redcap-public-package-surface.sh",
 	"compass/tools/redcap-runtime-contract-surface-check.sh",
 	"compass/tools/redcap-release-e2e-matrix-check.sh",
+	"compass/tools/redcap-formal-release-readiness-plan-check.sh",
 	"compass/tools/redcap-pre-release-product-architecture-check.sh",
 	"compass/tools/redcap-pre-release-structure-task-tree-check.sh",
 	"compass/tools/redcap-midcourse-architecture-check.sh",
@@ -15459,6 +15496,7 @@ run_all_cases() {
     run_package_publish_safety_check_case
     run_runtime_package_manifest_check_case
     run_public_package_surface_check_case
+    run_formal_release_readiness_plan_check_case
     run_pre_release_product_architecture_check_case
     run_pre_release_structure_task_tree_check_case
     run_runtime_workspace_boundary_check_case
@@ -16006,6 +16044,9 @@ case "$COMMAND" in
         ;;
     public-package-surface-check)
         run_public_package_surface_check_case
+        ;;
+    formal-release-readiness-plan-check)
+        run_formal_release_readiness_plan_check_case
         ;;
     pre-release-product-architecture-check)
         run_pre_release_product_architecture_check_case

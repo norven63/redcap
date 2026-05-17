@@ -144,6 +144,7 @@
     }
   ],
   "global_future_apply_gate": {
+    "formal_release_hard_gate": "As of P4-2m, remaining historical assets and high-risk deferred groups are release blockers until a later safe tranche resolves them or classifies them as nonhistorical local state with package exclusion proof. This receipt can preserve archaeology before formal release, but it cannot be used as a public-release-ready greenlight.",
     "revisit_before": [
       "formal-public-npm-release",
       "any-future-root-directory-move",

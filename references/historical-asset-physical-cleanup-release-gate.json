@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "policy_id": "redcap-historical-asset-physical-cleanup-release-gate",
+  "status": "hard-gate-before-formal-public-release",
+  "purpose": "Make historical asset physical cleanup a release-readiness hard gate before any public npm/CLI release can change publish switches or touch registry state.",
+  "blocks_public_release": true,
+  "required_before": [
+    "package.json private=false",
+    "runtime-package-readiness publish_allowed=true",
+    "external registry publication action",
+    "stable public-release-ready claim"
+  ],
+  "scope": {
+    "historical_assets": [
+      "historical task reports and specs",
+      "private knowledge and lessons",
+      "runtime evidence and Prism raw runs",
+      "old migration receipts and archaeology anchors",
+      "conversation drafts and host-local scratch files"
+    ],
+    "not_historical_assets_by_default": [
+      "thin root human entry files",
+      "host discovery adapters",
+      "package manager contracts",
+      "runtime facade commands"
+    ]
+  },
+  "required_release_dispositions": [
+    {
+      "id": "private-archive-migrated",
+      "meaning": "The asset has been physically moved or copied into an approved private archive with alias/resolver coverage, rollback plan and closeout receipt."
+    },
+    {
+      "id": "public-arsenal-reviewed-export",
+      "meaning": "The asset has been distilled through Forge into append-only public arsenal content with private/raw source excluded."
+    },
+    {
+      "id": "workspace-local-excluded-nonhistorical",
+      "meaning": "The path is live local state or scratch material, not a historical asset to preserve; package safety proves it is excluded and the release task records that it must not be moved into public source."
+    },
+    {
+      "id": "release-blocker-until-resolved",
+      "meaning": "The asset or root group is not clean enough for release. Formal publication remains blocked until a later tranche gives it one of the allowed safe dispositions."
+    }
+  ],
+  "forbidden_release_greenlights": [
+    "Treat package exclusion alone as proof that historical assets were physically cleaned.",
+    "Treat a deferred-before-release-readiness root group as release-safe without a later closeout receipt.",
+    "Delete or overwrite historical evidence to make the package look clean.",
+    "Move receipt anchors without alias, rollback and clean workspace proof.",
+    "Claim all historical assets are physically clean while any release-blocker-until-resolved item remains."
+  ],
+  "current_known_blockers": [
+    {
+      "source": "references/root-ia-remaining-root-groups-deferral.json",
+      "meaning": "Remaining deferred high-risk root groups are tolerated only before formal release. A formal release task must either resolve them by safe tranche or keep release blocked."
+    },
+    {
+      "source": "prism/runs lifecycle inventory",
+      "meaning": "Local run evidence may be preserved, archived or pruned only after evidence-retention checks; raw runs must never enter the public package."
+    }
+  ],
+  "required_checks": [
+    "bash compass/tools/redcap-formal-release-readiness-plan-check.sh",
+    "bash compass/tools/redcap-root-ia-deferral-check.sh",
+    "bash compass/tools/redcap-package-publish-safety-check.sh",
+    "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
+    "bash compass/tools/redcap-clean-workspace-e2e.sh --check-result"
+  ],
+  "release_task_rule": "R1 of the formal release task must close this gate before R8 registry release execution. If cleanup is not fully resolved, the release task must stop and report the unresolved blockers instead of asking for publication permission.",
+  "human_boundary": "Norven is required only for destructive cleanup, unrecoverable history loss, public release risk acceptance, license, registry credentials or external registry publication authority."
+}

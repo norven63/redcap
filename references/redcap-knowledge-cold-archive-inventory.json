@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 88,
-  "bytes_total": 1224181,
+  "file_count": 89,
+  "bytes_total": 1233956,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 84,
+    "private-task-report-archive": 85,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -701,6 +701,14 @@
       "class": "private-task-report-archive",
       "bytes": 8328,
       "sha256": "8aee0f9e371d6d8f16482cdd027c91751bffb99127f31c002f93647d78e03daa",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-10-rasg-018-holistic-smell-audit.md",
+      "class": "private-task-report-archive",
+      "bytes": 9775,
+      "sha256": "91fdaa307cd34acc6384387dbf16e0d7005eeb9e14f0252eabf11c9f207a21d9",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

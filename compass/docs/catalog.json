@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 367251,
-    "lines": 7390,
-    "chars": 222367,
+    "size_bytes": 367664,
+    "lines": 7392,
+    "chars": 223092,
     "rough_token_pressure": {
-      "low": 55591,
-      "high": 111183
+      "low": 55773,
+      "high": 111546
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 188572,
-        "lines": 4498,
-        "chars": 112822,
+        "size_bytes": 188890,
+        "lines": 4497,
+        "chars": 112964,
         "rough_token_pressure": {
-          "low": 28205,
-          "high": 56411
+          "low": 28241,
+          "high": 56482
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 173149,
-        "lines": 2803,
-        "chars": 105771,
+        "size_bytes": 173244,
+        "lines": 2806,
+        "chars": 106354,
         "rough_token_pressure": {
-          "low": 26442,
-          "high": 52885
+          "low": 26588,
+          "high": 53177
         }
       }
     },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 12097,
-      "lines": 153,
-      "chars": 6757,
+      "size_bytes": 12415,
+      "lines": 152,
+      "chars": 6899,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -418,19 +418,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-10-rasg-018-holistic-smell-audit.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RASG-018 全局架构坏味审判",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 9775,
-      "lines": 171,
-      "chars": 5115,
-      "summary": "当前已完成：RedCap 已完成一次“资深 AI Agent 工程视角”的全局坏味审判，不再只围绕目录结构这个单点问题打补丁。 / 关键结论：这次审判没有发现新的 P0 停止项，但发现 3 个发布前应处理的 P1 债务，并已经写入需求树：`RASG-019`、`RASG-020`、`RASG-021`。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-11-rasg-019-human-product-surface.md",
       "collection": "task-reports",
       "title": "任务完成报告：RASG-019 人类可读产品表面治理",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-021 棱镜降级频率与结论韧性跟踪",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14191,
       "lines": 237,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-022 私有冷归档根目录迁移",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13781,
       "lines": 224,
       "chars": 8601,
       "summary": "当前已完成：RASG-022 的第一批高风险根目录迁移已落地，`redcap-knowledge/` 已从工程根目录迁入 `private-archive/redcap-knowledge/`。 / 详情：这一步解决的是“私有历史知识资产直接暴露在 RedCap 工程根目录”的结构坏味。迁移后，旧路径仍可通过别名解析找回，新路径被包发布安全规则排除，历史报告不需要被批量改写。它让后续 npm/CLI 发布准备少一个明显的私有资产暴露点。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RASG-022 的第一批高风险根目录迁移已落地，`redcap-knowledge/` 已从工程根目录迁入 `private-archive/redcap-knowledge/`。",
-          "详情：这一步解决的是“私有历史知识资产直接暴露在 RedCap 工程根目录”的结构坏味。迁移后，旧路径仍可通过别名解析找回，新路径被包发布安全规则排除，历史报告不需要被批量改写。它让后续 npm/CLI 发布准备少一个明显的私有资产暴露点。"
-        ],
-        "previous_step": [
-          "上一步完成的是：shared-knowledge 模板根目录迁移已经收口，剩余高风险根目录曾被显式延期；本轮是在该延期清单中先执行 private archive 这一刀。"
-        ],
-        "next_step": [
-          "下一步计划做的是：生成 closeout receipt；之后剩余高风险根目录仍按后续 tranche 处理，不能在本轮冒充全部完成。"
-        ],
-        "position": [
-          "整体计划脉络图是：发现根目录坏味 -> 先迁移低耦合私有归档 -> 保留旧锚点与安全排除 -> 再处理控制面、Prism、Layer A 与 workspace-local 边界。",
-          "当前所在位置：RASG-022 / private archive tranche 已实现，并已通过 targeted checks、Prism resource-limited 验收、全量 acceptance 与 closeout runtime。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-16-formal-release-readiness-plan-and-authorization-gate.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：结构迁移第一批完成 -> 迁移后全工程 review -> 根据 review 结论继续后续治理或发布准备。",
           "当前所在位置：`redcap-post-migration-full-engineering-review`，迁移后独立 review tranche。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：历史资产物理清理发布硬门",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9870,
+      "lines": 174,
+      "chars": 5698,
+      "summary": "当前已完成：RedCap 已开始把“历史资产必须在正式发布前物理清理或安全归位”升级为 release-readiness 硬门。 / 详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”。现在硬门已经写入发布计划、授权矩阵、handoff、backlog 和检查脚本；正式发布任务后续必须先处理历史资产，否则会被阻断。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RedCap 已开始把“历史资产必须在正式发布前物理清理或安全归位”升级为 release-readiness 硬门。",
+          "详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”。现在硬门已经写入发布计划、授权矩阵、handoff、backlog 和检查脚本；正式发布任务后续必须先处理历史资产，否则会被阻断。"
+        ],
+        "previous_step": [
+          "上一步完成的是：正式发布准备计划与人工授权矩阵已经落盘，但旧计划仍允许部分高风险根目录在发布前保持“延期”口径。"
+        ],
+        "next_step": [
+          "下一步计划做的是：进入正式发布任务时，先执行历史资产物理清理 tranche；不能直接跳到发布授权或真实发布。"
+        ],
+        "position": [
+          "整体计划脉络图是：发布准备计划落盘 -> 历史资产物理清理硬门升级 -> formal release task 分 tranche 处理历史资产 -> 发布授权问卷 -> 最终发布前全量门禁。",
+          "当前所在位置：P4-2m / historical-asset-physical-cleanup-release-hard-gate；本轮是发布前硬门加固，不是真实发布。"
         ]
       }
     }

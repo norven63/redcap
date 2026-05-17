@@ -28,6 +28,15 @@
       ]
     },
     {
+      "id": "historical-asset-physical-cleanup-release-gate",
+      "status": "deferred-to-formal-release-task",
+      "required_checks": [
+        "bash compass/tools/redcap-formal-release-readiness-plan-check.sh",
+        "bash compass/tools/redcap-root-ia-deferral-check.sh",
+        "bash prism/tools/prism-runs-lifecycle.sh inventory"
+      ]
+    },
+    {
       "id": "multi-os-external-machine",
       "status": "deferred-to-formal-release-task",
       "required_checks": [

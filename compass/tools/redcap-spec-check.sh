@@ -817,6 +817,16 @@ if ! bash "$RELEASE_E2E_MATRIX_CHECK" >/dev/null; then
     exit 1
 fi
 
+FORMAL_RELEASE_READINESS_PLAN_CHECK="$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.sh"
+if [[ ! -f "$FORMAL_RELEASE_READINESS_PLAN_CHECK" ]]; then
+    echo "[redcap-spec-check] formal release readiness plan check missing" >&2
+    exit 1
+fi
+if ! bash "$FORMAL_RELEASE_READINESS_PLAN_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] formal release readiness plan check failed" >&2
+    exit 1
+fi
+
 PRE_RELEASE_PRODUCT_ARCHITECTURE_CHECK="$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh"
 if [[ ! -f "$PRE_RELEASE_PRODUCT_ARCHITECTURE_CHECK" ]]; then
     echo "[redcap-spec-check] pre-release product architecture check missing" >&2

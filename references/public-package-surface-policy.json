@@ -12,7 +12,7 @@
   "surface_mode": "curated-runtime-readiness-surface",
   "contract_profile": "alpha-readiness-split-contract",
   "contract_boundary_policy": "references/runtime-public-contract-policy.json",
-  "max_candidate_count": 194,
+  "max_candidate_count": 195,
   "candidate_count_rule": "Keep the package surface focused on runnable CLI/runtime, clearly labelled maintainer/readiness checks, Prism availability, closeout/revive/status/diagnose support, and public handoff docs. The alpha readiness surface may temporarily include repo-governance checks needed by diagnose/spec-check, but they are not normal end-user workflow; formal public release must either trim them or introduce a separate maintainer package profile.",
   "required_runtime_checks": [
     "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
@@ -24,6 +24,7 @@
     "Do not set package.json private=false in P4-2d.",
     "Do not set runtime-package-readiness publish_allowed=true in P4-2d.",
     "Do not choose a public distribution license without Norven's explicit legal/product decision.",
+    "Do not claim RedCap is public-release-ready before the historical asset physical cleanup release gate is satisfied.",
     "Do not run npm publish or mutate npm registry state in P4-2d.",
     "Do not claim RedCap is public-release-ready while license, runtime layout, or formal release task boundaries remain open."
   ],

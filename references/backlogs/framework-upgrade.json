@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-2l",
-    "summary": "正式发布准备计划与人工授权矩阵已落成并接入机器检查；下一步只有在 Norven 回答发布授权问卷后，才进入真正 formal release task。"
+    "item_id": "P4-2m",
+    "summary": "历史资产物理清理已升级为正式发布前硬门；下一阶段若启动 formal release task，必须先处理 R1 历史资产物理清理 tranche，不能用包面排除替代物理清理证明。"
   },
   "glossary": [
     {
@@ -381,6 +381,20 @@
             "compass/tools/redcap-formal-release-readiness-plan-check.sh",
             "compass/docs/task-reports/2026-05-16-formal-release-readiness-plan-and-authorization-gate.md"
           ]
+        },
+        {
+          "id": "P4-2m",
+          "title": "历史资产物理清理发布硬门",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-6-release-readiness-control-plane",
+          "summary": "已把“所有历史资产正式发布前必须物理清理或安全归位”升级为 release-readiness 硬门；本项不执行真实发布，也不做无证据删除。",
+          "evidence_paths": [
+            "references/historical-asset-physical-cleanup-release-gate.json",
+            "references/formal-release-readiness-plan.json",
+            "compass/tools/redcap-formal-release-readiness-plan-check.sh",
+            "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md"
+          ]
         }
       ]
     }
@@ -458,9 +472,10 @@
       "title": "阶段 6：发布准备控制面",
       "status": "done",
       "item_ids": [
-        "P4-2l"
+        "P4-2l",
+        "P4-2m"
       ],
-      "summary": "正式发布动作之前，已把发布路线、人工授权和自动化边界收束成可审计控制面；当前不执行真实发布。"
+      "summary": "正式发布动作之前，发布路线、人工授权和历史资产物理清理硬门都已进入可审计控制面；当前仍不执行真实发布。"
     }
   ]
 }

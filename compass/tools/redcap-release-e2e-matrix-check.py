@@ -24,10 +24,16 @@ def main() -> int:
     if payload.get("version") != 1 or payload.get("matrix_id") != "redcap-release-readiness-e2e-matrix":
         fail("matrix identity mismatch")
     environments = payload.get("environments")
-    if not isinstance(environments, list) or len(environments) < 4:
-        fail("matrix must cover source, clean install, npm pack, and external machine")
+    if not isinstance(environments, list) or len(environments) < 5:
+        fail("matrix must cover source, clean install, npm pack, historical cleanup, and external machine")
     ids = {item.get("id") for item in environments if isinstance(item, dict)}
-    required_ids = {"source-worktree-self-development", "clean-workspace-local-install", "npm-pack-dry-run", "multi-os-external-machine"}
+    required_ids = {
+        "source-worktree-self-development",
+        "clean-workspace-local-install",
+        "npm-pack-dry-run",
+        "historical-asset-physical-cleanup-release-gate",
+        "multi-os-external-machine",
+    }
     if ids != required_ids:
         fail(f"environment set mismatch: {ids}")
     for item in environments:

@@ -6,6 +6,7 @@
 
 - 机器权威路线图：`references/formal-release-readiness-plan.json`。它把正式发布前后拆成 10 个阶段：任务锚点、延期根目录处置、包面收紧、CLI 体验、安全审计、E2E、人类决策、棱镜终审、registry 执行和发布后监控。
 - 授权矩阵：`references/release-authorization-matrix.json`。它区分 Norven 必须决策、Cap + Prism 可自主决策，以及可提前给出的条件授权。
+- 历史资产物理清理硬门：`references/historical-asset-physical-cleanup-release-gate.json`。它把“历史资产不能污染公开包或新用户运行面”升级为正式发布前硬门；没过这道门时，不允许进入真实发布动作。
 - E2E 边界仍以 `references/release-readiness-e2e-matrix.json` 为准；没有通过对应矩阵时，不能把发布准备说成正式发布已就绪。
 
 ## 当前可以确认的事
@@ -18,6 +19,7 @@
 - 包内容按“源码对用户可见”处理：安全边界来自显式排除、扫描和 dry-run，不依赖混淆或隐藏源码。
 - 公开 runtime / 维护者工具的机器可读边界见 `references/runtime-public-contract-policy.json`。
 - `redcap-arsenal` 只能声明已有首批 Forge 审查样本，不能声明已经完成历史知识迁移或成熟公共知识库。
+- 历史资产物理清理现在是 release-readiness 硬门：包面排除只能证明“不打进包”，不能单独证明“历史资产已经搬干净”；正式发布任务必须逐类给出物理迁移、私有归档、公共晋升或继续阻断发布的证据。
 
 ## 仍然不能由 Agent 擅自完成的事
 
@@ -40,6 +42,7 @@
 ## RedCap 下一步应如何使用这份 handoff
 
 - 如果 Norven 尚未给出上面的人工输入，RedCap 只能继续做非发布类治理，不得进入发布动作。
-- 如果 Norven 明确启动正式 release task，RedCap 应先重新运行 package manifest、publish safety、package surface、pre-release review、Prism review 和 clean workspace E2E，再触碰发布开关。
+- 如果 Norven 明确启动正式 release task，RedCap 应先重新运行历史资产物理清理硬门、package manifest、publish safety、package surface、pre-release review、Prism review 和 clean workspace E2E，再触碰发布开关。
 - 正式 release task 的 E2E 覆盖面以 `references/release-readiness-e2e-matrix.json` 为准；其中外部机器 / 多 OS 验证仍属于正式发布任务内的待执行项，不能由本地 clean workspace E2E 代替。
 - 如果任一安全扫描失败，release task 必须 fail closed，不允许“先发再修”。
+- 如果历史资产物理清理硬门仍有 unresolved blocker，release task 必须停在发布前治理阶段，不得向 Norven 索要或使用外部 registry 发布授权。
