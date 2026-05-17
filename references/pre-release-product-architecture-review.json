@@ -11,7 +11,7 @@
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 195,
+    "package_candidate_count": 196,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
@@ -123,7 +123,7 @@
       "id": "package-surface-too-broad-for-public-cli",
       "dimension": "cli-product-quality",
       "severity": "pass",
-      "claim": "P4-2m keeps the package candidate surface inside the curated alpha-readiness cap while adding the historical asset physical cleanup release gate as explicit metadata. The present count is 195. The alpha readiness surface remains curated, while the formal public release task must decide whether to trim repo-governance checks into a smaller runtime profile or split a maintainer profile.",
+      "claim": "P4-2m and P4-2n keep the package candidate surface inside the curated alpha-readiness cap while adding historical asset cleanup and Evolution harvest signal gates as explicit metadata. The present count is 196. The alpha readiness surface remains curated, while the formal public release task must decide whether to trim repo-governance checks into a smaller runtime profile or split a maintainer profile.",
       "evidence": [
         "references/runtime-package-readiness-policy.json",
         "references/runtime-public-contract-policy.json",

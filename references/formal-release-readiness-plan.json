@@ -19,7 +19,8 @@
     "references/runtime-package-readiness-policy.json",
     "references/package-publish-safety-policy.json",
     "references/root-ia-remaining-root-groups-deferral.json",
-    "references/historical-asset-physical-cleanup-release-gate.json"
+    "references/historical-asset-physical-cleanup-release-gate.json",
+    "references/evolution-harvest-signal-policy.json"
   ],
   "stage_order": [
     "R0-release-task-anchor",
@@ -124,6 +125,7 @@
       "actions": [
         "Run package publish safety, token risk, public package surface and secret-path checks.",
         "Run the historical asset physical cleanup release gate and stop if any unresolved historical blocker remains.",
+        "Run the Evolution harvest signal gate so release-safety bugs, reviewer findings and user corrections cannot bypass candidate/no-promote judgment.",
         "Run runtime contract surface, formal release plan, release E2E matrix and clean workspace E2E checks when the formal release task requires install confidence.",
         "Inspect dry-run package file list for local paths, credentials, identity, raw evidence and private archives.",
         "Fail closed on any suspected secret or private asset exposure."
@@ -131,12 +133,14 @@
       "acceptance": [
         "Package publish safety check passes.",
         "Historical asset physical cleanup release gate passes or formal release stays blocked.",
+        "Evolution harvest signal gate passes for the formal release task and current pre-release hard-gate tasks.",
         "Token risk audit and public package surface checks pass.",
         "No forbidden path is present in package candidates."
       ],
       "stop_conditions": [
         "Any credential-like content or private path is found in package candidates.",
         "Any unresolved historical asset cleanup blocker remains while release switches are being changed.",
+        "Any high-value release, review, security, bugfix or user-correction signal lacks Evolution Factory candidate handling.",
         "A reviewer needs to open a secret file to prove safety."
       ],
       "human_boundary": "Cap must stop on suspected leak; Norven decides only after the risk is described and fixed or explicitly rejected."
@@ -150,17 +154,20 @@
         "Run clean workspace local install checks.",
         "Run dry-run package listing checks.",
         "Run historical asset physical cleanup gate checks before treating the matrix as release-green.",
+        "Run Evolution harvest signal gate checks before treating the matrix as release-green.",
         "Either run external machine or multi-OS validation, or record an alpha-only limitation."
       ],
       "acceptance": [
         "Release E2E matrix check passes.",
         "Historical asset physical cleanup release gate evidence is current.",
+        "Evolution harvest signal gate evidence is current.",
         "Every covered environment has current evidence.",
         "Any deferred external environment is reflected in release claims."
       ],
       "stop_conditions": [
         "Clean workspace installation fails.",
         "Historical asset cleanup gate remains unresolved.",
+        "Evolution harvest signal gate remains unresolved.",
         "Dry-run package listing is inconsistent with package policy.",
         "Stable release is requested without external environment proof."
       ],
@@ -173,17 +180,20 @@
       "actions": [
         "Ask the release authorization questionnaire.",
         "Refuse to ask for publication permission if historical asset physical cleanup has not reached a release-safe state.",
+        "Refuse to ask for publication permission if high-value release-task experience has not been candidate-reviewed, promoted, or no-promoted with a reason.",
         "Record license, release target, release level, version, registry scope, account readiness and risk acceptance.",
         "Convert any allowed automation into conditional authorization, not open-ended permission."
       ],
       "acceptance": [
         "Release authorization matrix has Norven answers for every required decision.",
         "The historical asset cleanup hard gate is either satisfied or the release task remains stopped before publication permission.",
+        "The Evolution harvest signal gate is satisfied before publication permission is used.",
         "No manual boundary remains unresolved before release switches are changed."
       ],
       "stop_conditions": [
         "License, public distribution decision, release level, registry/account readiness or version is missing.",
         "The task asks Norven to approve publication while unresolved historical asset cleanup blockers remain.",
+        "The task asks Norven to approve publication while high-value experience candidate handling is unresolved.",
         "The requested authorization would allow publishing despite failed safety gates."
       ],
       "human_boundary": "Norven required."
@@ -255,6 +265,7 @@
     "must_stop_for": [
       "license decision missing",
       "historical asset physical cleanup release gate unresolved",
+      "Evolution harvest signal gate unresolved",
       "public distribution decision missing",
       "release level missing",
       "version missing",

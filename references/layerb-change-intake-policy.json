@@ -75,7 +75,8 @@
     "priority-change",
     "scope-change",
     "status-question",
-    "bug-report"
+    "bug-report",
+    "control-plane-defect"
   ],
   "allowed_priorities": ["P0", "P1", "P2", "P3"],
   "allowed_blocking_values": ["yes", "no"],

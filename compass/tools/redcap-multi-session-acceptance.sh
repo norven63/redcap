@@ -10395,7 +10395,7 @@ EOF
 # 当前任务：evolution harvest fixture
 
 ## 控制面元数据（机器校验）
-task_id: evolution-harvest-fixture
+task_id: evolution-harvest-case
 source_of_truth: .dev-task.md
 top_goal: verify evolution harvest
 active_slice: acceptance
@@ -10439,6 +10439,84 @@ EOF
     set -e
     [[ "$stale_status" -ne 0 ]] || fail "evolution harvest check unexpectedly accepted unknown candidate id"
     assert_string_contains "$stale_output" "unknown candidate ids"
+
+    cat >"$report" <<'EOF'
+# report
+
+## 七、经验沉淀
+
+本报告故意缺少 7.3。
+EOF
+    cat >"$task_file" <<EOF
+# 当前任务：review harvest fixture
+
+## 控制面元数据（机器校验）
+task_id: review-harvest-case
+source_of_truth: .dev-task.md
+top_goal: 修复一个递归进程风暴缺陷
+active_slice: bugfix-review
+review_tranche: true
+bugfix_tranche: true
+task_report: ${report#$fixture/}
+
+## 已确认需求（执行依据）
+验证 review / bugfix / 递归等高价值信号不能跳过 Evolution harvest。
+EOF
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "review-tranche evolution harvest fixture unexpectedly skipped candidate handling"
+    assert_string_contains "$stale_output" "high-value task report missing section"
+    assert_string_contains "$stale_output" "task-flag:review_tranche"
+    assert_string_contains "$stale_output" "task-flag:bugfix_tranche"
+
+    cat >"$report" <<'EOF'
+# report
+
+## 七、经验沉淀
+
+### 7.3 Evolution Factory 候选处理
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|------|------|----------|------|
+| deferred-with-owner | acceptance fixture | deferred-with-owner；owner=release task；next trigger=formal release readiness | `.dev-task.md` |
+EOF
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file")"
+    assert_string_contains "$output" "EVOLUTION_HARVEST_OK"
+
+    cat >"$report" <<'EOF'
+# report
+
+## 七、经验沉淀
+
+### 7.3 Evolution Factory 候选处理
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|------|------|----------|------|
+| deferred-with-owner | acceptance fixture | deferred-with-owner | `.dev-task.md` |
+EOF
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "deferred-with-owner without owner/trigger unexpectedly passed"
+    assert_string_contains "$stale_output" "deferred-with-owner outcome must include owner"
+
+    cat >"$task_file" <<'EOF'
+# 当前任务：low signal fixture
+
+## 控制面元数据（机器校验）
+task_id: simple-case
+source_of_truth: .dev-task.md
+top_goal: simple bookkeeping
+active_slice: simple
+
+## 已确认需求（执行依据）
+验证低信号任务可以跳过 Evolution harvest。
+EOF
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file")"
+    assert_string_contains "$output" "status=skipped reason=no-high-value-signals"
 }
 
 run_agent_health_probe_case() {

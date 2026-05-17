@@ -5,6 +5,15 @@
   "purpose": "Classify large/high-impact references so policies, ledgers, evidence and backlogs do not become an unowned pile.",
   "entries": [
     {
+      "path": "references/backlogs/framework-upgrade.json",
+      "bytes": 20003,
+      "asset_class": "backlog",
+      "lifecycle": "active-until-parent-closed-then-private-archive",
+      "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
       "path": "references/backlogs/redcap-architecture-smell-governance.json",
       "bytes": 67867,
       "asset_class": "backlog",
@@ -15,7 +24,7 @@
     },
     {
       "path": "references/execution-guarantees.json",
-      "bytes": 112753,
+      "bytes": 113040,
       "asset_class": "control-plane-registry",
       "lifecycle": "active-validator-registry",
       "consumer_check": "bash compass/tools/redcap-execution-guarantee-check.sh",
@@ -24,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary-policy.json",
-      "bytes": 79884,
+      "bytes": 80242,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -33,7 +42,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 88221,
+      "bytes": 88580,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -69,7 +78,7 @@
     },
     {
       "path": "references/legacy-asset-migration-apply-plan.json",
-      "bytes": 292435,
+      "bytes": 293520,
       "asset_class": "legacy-migration-ledger",
       "lifecycle": "retain-as-private-migration-evidence",
       "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
@@ -114,7 +123,7 @@
     },
     {
       "path": "references/redcap-parent-task-ledger.md",
-      "bytes": 38939,
+      "bytes": 39922,
       "asset_class": "parent-task-ledger",
       "lifecycle": "active-parent-state-ledger",
       "consumer_check": "bash compass/tools/redcap-parent-receipt-aggregation-check.sh",

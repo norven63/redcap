@@ -37,6 +37,14 @@
       ]
     },
     {
+      "id": "evolution-harvest-signal-release-gate",
+      "status": "covered",
+      "required_checks": [
+        "bash compass/tools/redcap-evolution-harvest-check.sh .dev-task.md",
+        "bash compass/tools/redcap-evolution-candidate-check.sh --strict"
+      ]
+    },
+    {
       "id": "multi-os-external-machine",
       "status": "deferred-to-formal-release-task",
       "required_checks": [

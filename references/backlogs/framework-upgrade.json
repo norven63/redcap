@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-2m",
-    "summary": "历史资产物理清理已升级为正式发布前硬门；下一阶段若启动 formal release task，必须先处理 R1 历史资产物理清理 tranche，不能用包面排除替代物理清理证明。"
+    "item_id": "P4-2n",
+    "summary": "高价值经验发现与候选化已升级为正式发布前硬门；下一阶段若启动 formal release task，必须先通过 Evolution harvest signal gate，不能用候选池 strict 通过替代候选发现。"
   },
   "glossary": [
     {
@@ -395,6 +395,20 @@
             "compass/tools/redcap-formal-release-readiness-plan-check.sh",
             "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md"
           ]
+        },
+        {
+          "id": "P4-2n",
+          "title": "高价值经验发现与候选化发布硬门",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-6-release-readiness-control-plane",
+          "summary": "已把 review / bugfix / release / 安全 / 用户纠偏等高价值信号接入 Evolution harvest；正式发布前不能用候选池当前干净冒充候选发现已完成。",
+          "evidence_paths": [
+            "references/evolution-harvest-signal-policy.json",
+            "compass/tools/redcap-evolution-harvest-check.sh",
+            "compass/evolution/candidates.json",
+            "compass/knowledge/lessons/l-163.md"
+          ]
         }
       ]
     }
@@ -473,9 +487,10 @@
       "status": "done",
       "item_ids": [
         "P4-2l",
-        "P4-2m"
+        "P4-2m",
+        "P4-2n"
       ],
-      "summary": "正式发布动作之前，发布路线、人工授权和历史资产物理清理硬门都已进入可审计控制面；当前仍不执行真实发布。"
+      "summary": "正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门和高价值经验候选化硬门都已进入可审计控制面；当前仍不执行真实发布。"
     }
   ]
 }

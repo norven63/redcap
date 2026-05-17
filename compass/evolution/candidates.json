@@ -269,6 +269,29 @@
         "prism/runs/20260504-redcap-information-architecture-governance/collect/kimi-review/parsed.json",
         "prism/runs/20260504-redcap-information-architecture-governance/collect/claude-challenge/parsed.json"
       ]
+    },
+    {
+      "id": "EVO-2026-05-17-001",
+      "source_kind": "user-correction",
+      "problem_source": "The user observed that the high-value human-product-surface recursion bug was only distilled after manual prompting. Candidate strict checks were healthy, but the discovery/candidateization step failed because evolution harvest was gated only by governance_tranche and skipped the current review_tranche task.",
+      "solution": "Promote a signal-driven Evolution harvest gate: review, governance, architecture, release-safety, bugfix, user-correction, Prism, test-failure, closeout, recursion/process-storm, privacy and security signals must force a 7.3 candidate-handling decision before closeout.",
+      "final_effect": "Future high-signal tasks cannot treat an empty candidate pool as proof that no lesson is needed. They must explicitly promote, no-promote with reason, or defer with owner before release-readiness or closeout can proceed.",
+      "recurrence_guard": "references/evolution-harvest-signal-policy.json plus redcap-evolution-harvest-check.sh, diagnose, closeout runtime, spec-check and targeted acceptance enforce this broader discovery gate.",
+      "applicability_boundary": "This does not claim perfect semantic understanding of every conversation. It makes known high-value signals fail-closed and keeps identity changes on the proposal/review path.",
+      "evidence_paths": [
+        "references/evolution-harvest-signal-policy.json",
+        "compass/tools/redcap-evolution-harvest-check.py",
+        "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md",
+        "compass/knowledge/lessons/l-162.md"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons/l-163.md"
+      ],
+      "review_paths": [
+        "compass/tools/redcap-multi-session-acceptance.sh"
+      ]
     }
   ]
 }

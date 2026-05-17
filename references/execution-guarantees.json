@@ -116,14 +116,15 @@
       "id": "evolution-harvest-gate",
       "category": "evolution-factory",
       "priority": "P0",
-      "rule": "Governance tranches must explicitly report how Evolution candidates were handled; closeout must block when the task report omits candidate handling or strict candidates fail.",
+      "rule": "High-value Layer B tasks must explicitly report how Evolution candidates were handled; closeout must block when review/governance/architecture/release-safety/bugfix/user-correction/Prism/test-failure/closeout/recursion/security signals omit candidate handling or strict candidates fail.",
       "source_paths": [
         "compass/evolution/README.md",
+        "references/evolution-harvest-signal-policy.json",
         "references/task-report-template.md",
         "compass/tools/redcap-layerb-closeout-runtime.py"
       ],
       "status": "validator",
-      "automation": "redcap-evolution-harvest-check validates governance task reports and closeout runtime runs it before receipt generation.",
+      "automation": "redcap-evolution-harvest-check validates high-value signal task reports and closeout runtime runs it before receipt generation; candidate-check strict mode only validates already-recorded candidates and cannot replace harvest discovery.",
       "guarantee_paths": [
         "compass/tools/redcap-evolution-harvest-check.sh",
         "compass/tools/redcap-evolution-harvest-check.py",

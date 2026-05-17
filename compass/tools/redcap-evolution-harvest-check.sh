@@ -2,7 +2,7 @@
 # 用途：知识沉淀与自进化脚本；详细职责见文件查阅字典。
 # Dictionary: references/file-lookup-dictionary.md#docs-knowledge-and-evolution
 
-# Validate that governance tasks explicitly handle Evolution Factory candidates.
+# Validate that high-value task signals explicitly handle Evolution Factory candidates.
 
 set -euo pipefail
 

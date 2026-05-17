@@ -98,7 +98,7 @@
   "conditional_authorization_template": {
     "status": "not-yet-granted",
     "meaning": "Norven may pre-answer release decisions so Cap can proceed without interruption only if every condition remains true.",
-    "safe_example": "If Norven selects license, version, release target and release level, and all security, historical cleanup, package, clean workspace E2E and Prism gates pass, Cap may proceed through the authorized release route. All 14 required conditions listed below must also be satisfied. Any failed gate or unlisted risk stops the task.",
+    "safe_example": "If Norven selects license, version, release target and release level, and all security, historical cleanup, Evolution harvest, package, clean workspace E2E and Prism gates pass, Cap may proceed through the authorized release route. All 15 required conditions listed below must also be satisfied. Any failed gate or unlisted risk stops the task.",
     "required_conditions": [
       "license selected",
       "release target selected",
@@ -109,6 +109,7 @@
       "runtime publish-allowed switch explicitly allowed for this release",
       "external registry release action explicitly allowed for this release",
       "historical asset physical cleanup release gate pass",
+      "Evolution harvest signal gate pass",
       "security and privacy audit pass",
       "package dry-run surface pass",
       "clean workspace E2E pass",
@@ -178,6 +179,7 @@
   "must_stop_if": [
     "Any Norven-required decision is unanswered before release switches are changed.",
     "Historical asset physical cleanup release gate is unresolved before release switches are changed.",
+    "Evolution harvest signal gate is unresolved before release switches are changed.",
     "Any safety, package, E2E, or Prism gate fails.",
     "Any candidate package content includes private identity, secret, local prompt, raw evidence, private archive, or host-local state.",
     "Any task attempts irreversible history loss without explicit approval."

@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "policy_id": "redcap-evolution-harvest-signal-policy",
+  "purpose": "Make high-value experience discovery and candidateization fail-closed before closeout. The candidate pool checker only validates already-recorded candidates; this policy decides when a task must explicitly judge whether new Evolution candidates are required.",
+  "claim_boundary": {
+    "near_100_percent_goal": "Every Layer B task with review, governance, architecture, release-safety, bug-fix, user-correction, Prism, test-failure, closeout-blocker, process-storm, recursion, privacy or security signals must include an Evolution Factory candidate handling section before receipt.",
+    "not_claimed": "This policy does not let scripts semantically understand all natural language or auto-write active identity. It forces a visible candidate/no-promote decision for high-signal tasks."
+  },
+  "always_require_task_flags": [
+    "governance_tranche",
+    "review_tranche",
+    "architecture_tranche",
+    "bugfix_tranche",
+    "release_tranche",
+    "security_tranche",
+    "privacy_tranche"
+  ],
+  "task_field_keywords": {
+    "task_id": [
+      "release",
+      "security",
+      "privacy",
+      "hard-gate",
+      "bug",
+      "fix",
+      "closeout",
+      "review"
+    ],
+    "active_slice": [
+      "release",
+      "security",
+      "privacy",
+      "hard-gate",
+      "bug",
+      "fix",
+      "closeout",
+      "review"
+    ],
+    "top_goal": [
+      "发布",
+      "安全",
+      "隐私",
+      "硬门",
+      "缺陷",
+      "修复",
+      "评审",
+      "收尾"
+    ]
+  },
+  "signal_groups": [
+    {
+      "id": "user-correction-or-interrupt",
+      "meaning": "The user corrected, challenged, interrupted, or exposed a workflow miss.",
+      "terms": ["用户纠偏", "用户指出", "用户质疑", "人工提醒", "打断", "追问", "遗漏", "失效"]
+    },
+    {
+      "id": "test-failure-or-regression",
+      "meaning": "A failed check, regression, or acceptance finding changed the implementation.",
+      "terms": ["测试失败", "回归失败", "acceptance", "spec-check", "diagnose", "验证中发现", "回归", "失败"]
+    },
+    {
+      "id": "closeout-or-receipt-blocker",
+      "meaning": "The task touched closeout, receipt, pending closure, or completion truth.",
+      "terms": ["closeout", "receipt", "pending closure", "收尾", "完成态", "账本", "blocker"]
+    },
+    {
+      "id": "prism-review-signal",
+      "meaning": "Independent review or red-team evidence is involved.",
+      "terms": ["Prism", "棱镜", "独立评审", "red team", "评审"]
+    },
+    {
+      "id": "runtime-resource-risk",
+      "meaning": "Runtime behavior can create loops, process leaks, stale children, or resource storms.",
+      "terms": ["递归", "进程风暴", "进程组", "超时", "残留进程", "死循环", "资源泄漏", "self-cycle"]
+    },
+    {
+      "id": "security-release-risk",
+      "meaning": "Release, package, privacy, secret, or public-surface risk is involved.",
+      "terms": ["发布", "npm", "package", "secret", "隐私", "泄漏", "安全", "公开包", "release"]
+    }
+  ],
+  "required_report_section": "7.3 Evolution Factory 候选处理",
+  "accepted_outcomes": [
+    "promoted candidate id",
+    "no-promote with reason",
+    "deferred-with-owner with owner and next trigger",
+    "无新增候选 with reason"
+  ],
+  "release_readiness_rule": "Formal release readiness may not proceed to publication while the Evolution harvest signal gate is unresolved for the release task or any current pre-release hard-gate task.",
+  "fallback_rule": "If the checker cannot prove whether a high-signal task needs candidate handling, fail closed and require the report section rather than silently skipping."
+}

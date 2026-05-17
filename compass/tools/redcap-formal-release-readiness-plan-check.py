@@ -22,6 +22,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "package_surface": ROOT / "references/public-package-surface-policy.json",
         "runtime_policy": ROOT / "references/runtime-package-readiness-policy.json",
         "historical_cleanup": ROOT / "references/historical-asset-physical-cleanup-release-gate.json",
+        "evolution_harvest": ROOT / "references/evolution-harvest-signal-policy.json",
     }
     option_to_key = {
         "--plan": "plan",
@@ -31,6 +32,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "--package-surface": "package_surface",
         "--runtime-policy": "runtime_policy",
         "--historical-cleanup": "historical_cleanup",
+        "--evolution-harvest": "evolution_harvest",
     }
     index = 0
     while index < len(argv):
@@ -98,6 +100,7 @@ def main() -> int:
     package_surface_path = paths["package_surface"]
     runtime_policy_path = paths["runtime_policy"]
     historical_cleanup_path = paths["historical_cleanup"]
+    evolution_harvest_path = paths["evolution_harvest"]
 
     plan = load_json(plan_path, "formal release readiness plan")
     matrix = load_json(matrix_path, "release authorization matrix")
@@ -105,6 +108,7 @@ def main() -> int:
     package_surface = load_json(package_surface_path, "public package surface policy")
     runtime_policy = load_json(runtime_policy_path, "runtime package readiness policy")
     historical_cleanup = load_json(historical_cleanup_path, "historical asset physical cleanup release gate")
+    evolution_harvest = load_json(evolution_harvest_path, "evolution harvest signal policy")
 
     if not handoff_path.is_file():
         fail("missing public release handoff")
@@ -208,6 +212,8 @@ def main() -> int:
     cleanup_required_sources = set(required_sources)
     if "references/historical-asset-physical-cleanup-release-gate.json" not in cleanup_required_sources:
         fail("plan required_sources must include historical asset cleanup release gate")
+    if "references/evolution-harvest-signal-policy.json" not in cleanup_required_sources:
+        fail("plan required_sources must include evolution harvest signal policy")
     stage_map = {stage["id"]: stage for stage in stages}
     r1_blob = json.dumps(stage_map["R1-deferred-root-group-disposition"], ensure_ascii=False)
     for required_concept in [
@@ -226,6 +232,8 @@ def main() -> int:
         stage_blob = json.dumps(stage_map[stage_id], ensure_ascii=False).lower()
         if "historical asset" not in stage_blob:
             fail(f"{stage_id} must reference historical asset cleanup hard gate")
+        if "evolution harvest" not in stage_blob:
+            fail(f"{stage_id} must reference Evolution harvest signal gate")
 
     require_keys(
         matrix,
@@ -297,15 +305,17 @@ def main() -> int:
     if conditional.get("status") != "not-yet-granted":
         fail("conditional authorization must not be granted by default")
     safe_example = require_text(conditional.get("safe_example"), "conditional_authorization_template.safe_example")
-    if "14 required conditions" not in safe_example:
+    if "15 required conditions" not in safe_example:
         fail("conditional authorization safe_example must point readers back to all required conditions")
     required_conditions = require_list(
         conditional.get("required_conditions"),
         "conditional_authorization_template.required_conditions",
-        min_len=14,
+        min_len=15,
     )
     if "historical asset physical cleanup release gate pass" not in required_conditions:
         fail("conditional authorization must require historical asset physical cleanup release gate pass")
+    if "Evolution harvest signal gate pass" not in required_conditions:
+        fail("conditional authorization must require Evolution harvest signal gate pass")
     invalid_authorizations = require_list(conditional.get("invalid_authorizations"), "conditional_authorization_template.invalid_authorizations", min_len=5)
     invalid_blob = "\n".join(str(item).lower() for item in invalid_authorizations)
     for required_concept in ["blanket", "omits", "secret", "waiver", "override"]:
@@ -383,6 +393,30 @@ def main() -> int:
         True,
         "historical_cleanup.blocks_public_release",
     )
+    require_keys(
+        evolution_harvest,
+        [
+            "version",
+            "policy_id",
+            "always_require_task_flags",
+            "signal_groups",
+            "required_report_section",
+            "release_readiness_rule",
+        ],
+        "evolution harvest signal policy",
+    )
+    if evolution_harvest["version"] != 1:
+        fail("evolution harvest signal policy version must be 1")
+    if evolution_harvest["policy_id"] != "redcap-evolution-harvest-signal-policy":
+        fail("evolution harvest signal policy id mismatch")
+    harvest_flags = evolution_harvest.get("always_require_task_flags", [])
+    for required_flag in ["review_tranche", "bugfix_tranche", "release_tranche", "security_tranche", "privacy_tranche"]:
+        if required_flag not in harvest_flags:
+            fail(f"evolution harvest signal policy must cover {required_flag}")
+    if not any("recursion" in str(group).lower() or "递归" in str(group) for group in evolution_harvest.get("signal_groups", [])):
+        fail("evolution harvest signal policy must cover recursion/process storm signals")
+    if "release" not in require_text(evolution_harvest.get("release_readiness_rule"), "evolution_harvest.release_readiness_rule").lower():
+        fail("evolution harvest signal policy must bind release readiness")
     dispositions = require_list(
         historical_cleanup.get("required_release_dispositions"),
         "historical_cleanup.required_release_dispositions",
@@ -443,7 +477,8 @@ def main() -> int:
     print(
         "FORMAL_RELEASE_READINESS_PLAN_OK "
         "stages=10 norven_required=10 conditional_authorization=not-yet-granted "
-        "historical_asset_cleanup_hard_gate=registered"
+        "historical_asset_cleanup_hard_gate=registered "
+        "evolution_harvest_signal_gate=registered"
     )
     return 0
 

@@ -1,4 +1,34 @@
 reports:
+  - id: "20260517-evolution-harvest-signal-gate-review"
+    mode: review
+    date: "2026-05-17"
+    topic: "Evolution harvest signal gate for high-value experience discovery"
+    agents: ["kimi", "claude-code"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass"
+    consensus_actions:
+      - "Accept the signal-based Evolution harvest gate as a real discovery/candidateization control, not a strict-candidate-pool substitute"
+      - "Keep release-readiness blocked when high-value release-task experience has not been candidate-reviewed"
+      - "Require deferred-with-owner outcomes to name an owner and next trigger"
+      - "Validate closeout runtime harvest blocking in acceptance, not only the checker itself"
+    open_questions:
+      - "Keyword-based discovery can still false-positive; current policy intentionally fails closed"
+      - "Future PM Gate hardening may require explicit bugfix/release/security/privacy tranche flags for more tasks"
+      - "This review does not implement a full background Evolution Factory or semantic RAG classifier"
+    lessons_updated: true
+    files_affected:
+      - "references/evolution-harvest-signal-policy.json"
+      - "compass/tools/redcap-evolution-harvest-check.py"
+      - "compass/tools/redcap-evolution-harvest-check.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "references/formal-release-readiness-plan.json"
+      - "references/release-authorization-matrix.json"
+      - "references/public-release-handoff.md"
+      - "references/release-readiness-e2e-matrix.json"
+      - "compass/evolution/candidates.json"
+      - "compass/knowledge/lessons/l-163.md"
+      - "prism/reports/2026-05-17-evolution-harvest-signal-gate-review.md"
+    archived: false
   - id: "20260517-historical-asset-physical-cleanup-release-hard-gate"
     mode: review
     date: "2026-05-17"

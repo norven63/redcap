@@ -1,8 +1,8 @@
-# 任务完成报告：历史资产物理清理发布硬门
+# 任务完成报告：历史资产物理清理与高价值经验候选化发布硬门
 
 **报告日期**：2026-05-17
 **执行者**：Cap（Codex，Prism 已验收）
-**报告版本**：v0.2
+**报告版本**：v0.4
 
 ---
 
@@ -10,8 +10,8 @@
 
 ### 0.1 当前已完成
 
-- 当前已完成：RedCap 已开始把“历史资产必须在正式发布前物理清理或安全归位”升级为 release-readiness 硬门。
-- 详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”。现在硬门已经写入发布计划、授权矩阵、handoff、backlog 和检查脚本；正式发布任务后续必须先处理历史资产，否则会被阻断。
+- 当前已完成：RedCap 已把两个正式发布前硬门落地：历史资产必须安全归位，以及高价值经验必须先完成候选判断。
+- 详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”；随后补上一个控制面缺口：重大 bug、用户纠偏、评审缺口、递归/进程风暴等经验，不能再靠人工提醒才进入沉淀流程。现在这两类硬门都已写入发布计划、授权矩阵、handoff、backlog 和检查脚本。
 
 ### 0.2 上一步完成的是
 
@@ -19,12 +19,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：进入正式发布任务时，先执行历史资产物理清理 tranche；不能直接跳到发布授权或真实发布。
+- 下一步计划做的是：进入正式发布任务时，先处理历史资产物理清理 tranche，并确认当前 release task 的高价值经验候选判断已通过；不能直接跳到发布授权或真实发布。
 
 ### 0.4 整体计划脉络图与当前位置
 
-- 整体计划脉络图是：发布准备计划落盘 -> 历史资产物理清理硬门升级 -> formal release task 分 tranche 处理历史资产 -> 发布授权问卷 -> 最终发布前全量门禁。
-- 当前所在位置：P4-2m / historical-asset-physical-cleanup-release-hard-gate；本轮是发布前硬门加固，不是真实发布。
+- 整体计划脉络图是：发布准备计划落盘 -> 历史资产物理清理硬门升级 -> 高价值经验候选化硬门升级 -> formal release task 分 tranche 处理历史资产与发布授权 -> 最终发布前全量门禁。
+- 当前所在位置：P4-2n / historical-asset-physical-cleanup-release-hard-gate；本轮是发布前控制面加固，不是真实发布。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -50,7 +50,7 @@
 |---|---|
 | scope_status | full-implementation |
 | 原始意图 | 把历史资产物理清理升级为正式发布前硬门，并继续按最新任务清单推进 |
-| 已覆盖 | 硬门策略文件、正式发布计划、授权矩阵、handoff、backlog、父任务账本、字典和检查脚本 |
+| 已覆盖 | 硬门策略文件、正式发布计划、授权矩阵、handoff、backlog、父任务账本、字典、Evolution 候选池和检查脚本 |
 | 未覆盖/延期 | 真实 npm 发布、许可证选择、registry 操作、无证据删除、大规模不可逆物理迁移 |
 | 用户可见边界 | 本轮不能说“所有历史资产已经全部物理搬迁完成”，只能说“正式发布前硬门已经建立并会阻断未清理资产” |
 
@@ -79,6 +79,7 @@
 | 更新发布交接 | 告诉后续任务：未过硬门时不能索要或使用发布授权 |
 | 更新回归检查 | `spec-check`、`diagnose` 和 acceptance 能发现硬门缺失或弱化 |
 | 修复验证递归风暴 | 产品表面检查不再递归触发完整 diagnose；超时子进程会按进程组清理 |
+| 补上经验候选化硬门 | review / release / bugfix / 用户纠偏 / 进程风暴等高价值信号会强制进入候选判断 |
 
 ### 3.2 关键边界
 
@@ -91,6 +92,7 @@
 | 术语 | 对应文件/功能 | 人话解释 |
 |---|---|---|
 | historical asset physical cleanup gate | `references/historical-asset-physical-cleanup-release-gate.json` | 发布前硬门：历史资产没安全归位时，正式发布必须停止 |
+| Evolution harvest signal gate | `references/evolution-harvest-signal-policy.json` | 经验候选化硬门：高价值任务没判断是否要沉淀经验时，收尾或发布必须停止 |
 | package safety | `redcap-package-publish-safety-check.sh` | 检查哪些文件不会被打进候选包，负责防泄漏，不负责证明历史资产已搬完 |
 | root IA deferral | `references/root-ia-remaining-root-groups-deferral.json` | 记录哪些高风险根目录之前被允许延期；现在这些延期在正式发布前会变成 blocker |
 | release blocker | 本轮新增硬门 | 不是“任务失败”，而是“没解决前不能继续发布” |
@@ -110,20 +112,25 @@
 |---|---|---|
 | 发布计划硬门检查 | `bash compass/tools/redcap-formal-release-readiness-plan-check.sh` | 通过 |
 | Release E2E 矩阵 | `bash compass/tools/redcap-release-e2e-matrix-check.sh` | 通过 |
+| Evolution harvest signal gate | `bash compass/tools/redcap-evolution-harvest-check.sh .dev-task.md` | 通过，required=true |
+| Evolution candidate strict | `bash compass/tools/redcap-evolution-candidate-check.sh --strict` | 通过，promoted=12 |
 | backlog 严格检查 | `bash compass/tools/redcap-backlog-check.sh strict .dev-task.md` | 通过 |
+| 新增 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh evolution-harvest-check` | 通过 |
 | 新增 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check` | 通过 |
-| package safety | `bash compass/tools/redcap-package-publish-safety-check.sh` | 通过，files_scanned=195 |
-| package manifest dry-run | `bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run` | 通过，candidate_count=195 |
-| public package surface | `bash compass/tools/redcap-public-package-surface.sh` | 通过，candidate_count=195 |
+| package safety | `bash compass/tools/redcap-package-publish-safety-check.sh` | 通过，files_scanned=196 |
+| package manifest dry-run | `bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run` | 通过，candidate_count=196 |
+| public package surface | `bash compass/tools/redcap-public-package-surface.sh` | 通过，candidate_count=196 |
 
 ### 5.2 独立评审与完整回归
 
-- [x] Prism 独立评审：Claude Code 与 Kimi 均返回 `pass`，无 blocker。
+- [x] Prism 独立评审：Claude Code 与 Kimi 均返回 `pass`，无 blocker；新增复核报告 `prism/reports/2026-05-17-evolution-harvest-signal-gate-review.md`。
 - [x] `redcap-spec-check.sh "$PWD"`：通过。
 - [x] `redcap-diagnose.sh .dev-task.md`：通过。
-- [x] 本轮必要子集 acceptance：`formal-release-readiness-plan-check` 通过。
-- [x] full acceptance：通过；日志证据 `/tmp/redcap-acceptance-all.final.log` 末尾为 `ACCEPTANCE_OK`。
+- [x] 本轮必要子集 acceptance：`evolution-harvest-check`、`formal-release-readiness-plan-check` 通过。
+- [x] closeout runtime harvest 链路：`layerb-closeout-runtime-evolution-harvest-blocks` 通过。
+- [ ] full acceptance：本轮不计为通过。重新执行时在 `prism-concurrency` 附近长时间无输出，并生成 `sleep 600` 夹具进程；为避免回归套件本身制造进程风暴，已中断并清理相关进程。当前以 targeted acceptance、closeout runtime 链路和 Prism 双路评审作为本轮验收依据。
 - [x] 验证递归风暴回归：`redcap-human-product-surface-check.sh`、正常 `redcap-diagnose.sh .dev-task.md` 和进程残留检查均通过；临时夹具残留进程为 0。
+- [x] deferred-with-owner 防空壳：缺 owner / trigger 的 deferred 结果会被拒绝。
 
 ### 5.4 完成等级（禁止混报）
 
@@ -156,6 +163,16 @@
 | 包面安全容易被误当成历史资产治理完成 | 明确“包面排除”和“物理清理”是两层不同证据 | 汇报和检查都不能混报 |
 | 物理清理可能被误解成删除 | 默认要求 alias、rollback、receipt、Prism review | 保护考古链和回滚能力 |
 | 产品表面检查调用 diagnose 时递归触发自己 | diagnose 支持受控跳过该检查，Python 超时按进程组清理 | 完整 diagnose 不再留下临时子进程 |
+| 递归风暴修复最初没有自动沉淀 | 把 Evolution harvest 从只看 governance 扩展到 review / bugfix / release / 安全等高价值信号 | 后续同类问题必须先做候选判断，不能等用户提醒 |
+| full acceptance 在 Prism 并发段可能拖出长睡眠夹具 | 本轮不把 full acceptance 中断冒充为通过，并记录为 deferred-with-owner 候选处理 | 后续若要把 full acceptance 作为 release 硬门，需要先治理该套件的进程生命周期 |
+
+### 7.3 Evolution Factory 候选处理
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|------|------|----------|------|
+| EVO-2026-05-17-001 | 用户纠偏：重要 bug 经验没有自动候选化 | promoted；沉淀为 L-163，并接入 harvest signal gate | `compass/knowledge/lessons/l-163.md`、`references/evolution-harvest-signal-policy.json` |
+| deferred-with-owner | full acceptance 在 Prism 并发段出现长时间 sleep 夹具 | deferred-with-owner；owner=未来 acceptance lifecycle 治理任务；trigger=正式把 full acceptance 作为 release 硬门前 | 本报告；本轮进程清理记录 |
+| 无新增候选 | 历史资产发布硬门本身 | no-promote；本轮已作为 release-readiness 计划和检查脚本落地，不额外新增 Evolution candidate | `references/formal-release-readiness-plan.json`、`references/historical-asset-physical-cleanup-release-gate.json` |
 
 ## 八、附录
 

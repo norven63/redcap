@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 367664,
-    "lines": 7392,
-    "chars": 223092,
+    "size_bytes": 370879,
+    "lines": 7411,
+    "chars": 225199,
     "rough_token_pressure": {
-      "low": 55773,
-      "high": 111546
+      "low": 56299,
+      "high": 112599
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 188890,
-        "lines": 4497,
-        "chars": 112964,
+        "size_bytes": 189234,
+        "lines": 4499,
+        "chars": 113152,
         "rough_token_pressure": {
-          "low": 28241,
-          "high": 56482
+          "low": 28288,
+          "high": 56576
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 173244,
-        "lines": 2806,
-        "chars": 106354,
+        "size_bytes": 176115,
+        "lines": 2823,
+        "chars": 108273,
         "rough_token_pressure": {
-          "low": 26588,
-          "high": 53177
+          "low": 27068,
+          "high": 54136
         }
       }
     },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 12415,
-      "lines": 152,
-      "chars": 6899,
+      "size_bytes": 12759,
+      "lines": 154,
+      "chars": 7087,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -582,29 +582,29 @@
     {
       "path": "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md",
       "collection": "task-reports",
-      "title": "任务完成报告：历史资产物理清理发布硬门",
+      "title": "任务完成报告：历史资产物理清理与高价值经验候选化发布硬门",
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9870,
-      "lines": 174,
-      "chars": 5698,
-      "summary": "当前已完成：RedCap 已开始把“历史资产必须在正式发布前物理清理或安全归位”升级为 release-readiness 硬门。 / 详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”。现在硬门已经写入发布计划、授权矩阵、handoff、backlog 和检查脚本；正式发布任务后续必须先处理历史资产，否则会被阻断。",
+      "size_bytes": 12741,
+      "lines": 191,
+      "chars": 7617,
+      "summary": "当前已完成：RedCap 已把两个正式发布前硬门落地：历史资产必须安全归位，以及高价值经验必须先完成候选判断。 / 详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”；随后补上一个控制面缺口：重大 bug、用户纠偏、评审缺口、递归/进程风暴等经验，不能再靠人工提醒才进入沉淀流程。现在这两类硬门都已写入发布计划、授权矩阵、handoff、backlog 和检查脚本。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：RedCap 已开始把“历史资产必须在正式发布前物理清理或安全归位”升级为 release-readiness 硬门。",
-          "详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”。现在硬门已经写入发布计划、授权矩阵、handoff、backlog 和检查脚本；正式发布任务后续必须先处理历史资产，否则会被阻断。"
+          "当前已完成：RedCap 已把两个正式发布前硬门落地：历史资产必须安全归位，以及高价值经验必须先完成候选判断。",
+          "详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”；随后补上一个控制面缺口：重大 bug、用户纠偏、评审缺口、递归/进程风暴等经验，不能再靠人工提醒才进入沉淀流程。现在这两类硬门都已写入发布计划、授权矩阵、handoff、backlog 和检查脚本。"
         ],
         "previous_step": [
           "上一步完成的是：正式发布准备计划与人工授权矩阵已经落盘，但旧计划仍允许部分高风险根目录在发布前保持“延期”口径。"
         ],
         "next_step": [
-          "下一步计划做的是：进入正式发布任务时，先执行历史资产物理清理 tranche；不能直接跳到发布授权或真实发布。"
+          "下一步计划做的是：进入正式发布任务时，先处理历史资产物理清理 tranche，并确认当前 release task 的高价值经验候选判断已通过；不能直接跳到发布授权或真实发布。"
         ],
         "position": [
-          "整体计划脉络图是：发布准备计划落盘 -> 历史资产物理清理硬门升级 -> formal release task 分 tranche 处理历史资产 -> 发布授权问卷 -> 最终发布前全量门禁。",
-          "当前所在位置：P4-2m / historical-asset-physical-cleanup-release-hard-gate；本轮是发布前硬门加固，不是真实发布。"
+          "整体计划脉络图是：发布准备计划落盘 -> 历史资产物理清理硬门升级 -> 高价值经验候选化硬门升级 -> formal release task 分 tranche 处理历史资产与发布授权 -> 最终发布前全量门禁。",
+          "当前所在位置：P4-2n / historical-asset-physical-cleanup-release-hard-gate；本轮是发布前控制面加固，不是真实发布。"
         ]
       }
     }
