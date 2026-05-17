@@ -175,6 +175,14 @@ R1 延期根目录分成两类：
 
 经验正文已沉淀到 `compass/knowledge/lessons/l-164.md`，索引入口为 `compass/knowledge/lessons.md` 的 L-164。
 
+### 7.3 Evolution Factory 候选处理
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|---|---|---|---|
+| L-164 | 本轮发布前预检发现“出包排除证据容易被误当成历史资产治理完成” | promoted；沉淀为经验，供后续 release / package / historical cleanup 类任务复用 | `compass/knowledge/lessons/l-164.md` |
+| no-promote | 3 个剩余 blocker 的真实物理拆分/迁移 | no-promote-with-reason；它们不是经验条目，而是未来 formal release tranche 的工程任务 | `references/formal-release-r1-root-group-disposition-preflight.json` |
+| no-promote | Gemini observer unavailable | no-promote-with-reason；这是本轮 Prism availability 事实，不构成新的机制经验 | `prism/runs/20260517-formal-release-r1-root-group-disposition-preflight/collect/observer/unavailable.json` |
+
 ---
 
 ## 八、附录
@@ -185,15 +193,7 @@ R1 延期根目录分成两类：
 - Prism 报告：`prism/reports/2026-05-17-formal-release-r1-root-group-disposition-preflight-review.md`
 - Prism 证据：`prism/runs/20260517-formal-release-r1-root-group-disposition-preflight/`
 
-### 8.3 Evolution Factory 候选处理
-
-| 候选 | 来源 | 处理结果 | 证据 |
-|---|---|---|---|
-| L-164 | 本轮发布前预检发现“出包排除证据容易被误当成历史资产治理完成” | promoted；沉淀为经验，供后续 release / package / historical cleanup 类任务复用 | `compass/knowledge/lessons/l-164.md` |
-| no-promote | 3 个剩余 blocker 的真实物理拆分/迁移 | no-promote-with-reason；它们不是经验条目，而是未来 formal release tranche 的工程任务 | `references/formal-release-r1-root-group-disposition-preflight.json` |
-| no-promote | Gemini observer unavailable | no-promote-with-reason；这是本轮 Prism availability 事实，不构成新的机制经验 | `prism/runs/20260517-formal-release-r1-root-group-disposition-preflight/collect/observer/unavailable.json` |
-
-## 八、禁止外推
+### 8.4 禁止外推
 
 - 不能外推为 R1 历史资产清理完成。
 - 不能外推为 RedCap 已经正式发布就绪。

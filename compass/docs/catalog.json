@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 370557,
+    "size_bytes": 370556,
     "lines": 7404,
-    "chars": 224695,
+    "chars": 224698,
     "rough_token_pressure": {
-      "low": 56173,
-      "high": 112347
+      "low": 56174,
+      "high": 112349
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 175372,
+        "size_bytes": 175371,
         "lines": 2813,
-        "chars": 107490,
+        "chars": 107493,
         "rough_token_pressure": {
-          "low": 26872,
-          "high": 53745
+          "low": 26873,
+          "high": 53746
         }
       }
     },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11102,
+      "size_bytes": 11101,
       "lines": 201,
-      "chars": 6394,
+      "chars": 6397,
       "summary": "当前已完成：RedCap 已把正式发布 R1 阶段的 4 类延期根目录做成机器可查的处置预检。 / 结果：`workspace-state` 被证明只是本地状态和草稿，不进入候选包；`internal-control-plane`、`prism-layer-and-evidence`、`internal-layer-a` 仍然阻塞正式发布，不能被“没有泄漏到包里”冒充成“历史资产已清理”。",
       "status_basis": "filename_recency_only",
       "summary_points": {
