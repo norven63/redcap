@@ -205,6 +205,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-r1-root-group-disposition-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-contract-split-check
+  bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-evidence-retention-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-structure-task-tree-check
@@ -13646,6 +13647,7 @@ run_formal_release_readiness_plan_check_case() {
     assert_string_contains "$output" "FORMAL_RELEASE_READINESS_PLAN_OK"
     assert_string_contains "$output" "historical_asset_cleanup_hard_gate=registered"
     assert_string_contains "$output" "r1_root_group_disposition_preflight=registered"
+    assert_string_contains "$output" "r1_prism_evidence_retention_split_preflight=registered"
     assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'formal release readiness plan check missing'
 
     bad_plan="$ACCEPT_ROOT/formal-release-readiness-missing-cleanup-gate.json"
@@ -13711,6 +13713,27 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "formal release readiness checker should reject missing R1 control-plane preflight"
     assert_string_contains "$stale_output" "R1 control-plane contract split preflight"
+
+    bad_plan="$ACCEPT_ROOT/formal-release-readiness-missing-r1-prism-evidence.json"
+    python3 - "$REDCAP_ROOT/references/formal-release-readiness-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["required_sources"] = [
+    item
+    for item in payload["required_sources"]
+    if item != "references/r1-prism-evidence-retention-split-preflight.json"
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "formal release readiness checker should reject missing R1 Prism evidence preflight"
+    assert_string_contains "$stale_output" "R1 Prism evidence retention split preflight"
 }
 
 run_formal_release_r1_root_group_disposition_check_case() {
@@ -13769,6 +13792,62 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "R1 control-plane preflight checker should reject resolved/physical-split claims"
     assert_string_contains "$stale_output" "claim_boundary.is_control_plane_physically_split"
+}
+
+run_r1_prism_evidence_retention_split_check_case() {
+    local output bad_preflight stale_output status acceptance_run acceptance_run_dir fixture_output production_output
+
+    log "case: r1-prism-evidence-retention-split-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-prism-evidence-retention-split-check.sh")"
+    assert_string_contains "$output" "R1_PRISM_EVIDENCE_RETENTION_SPLIT_PREFLIGHT_OK"
+    assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'R1 Prism evidence retention split check missing'
+
+    acceptance_run="acceptance-prism-r1-evidence-retention-${RANDOM}-$$"
+    PRISM_ACCEPTANCE_RUNS+=("$acceptance_run")
+    acceptance_run_dir="$REDCAP_ROOT/prism/runs/$acceptance_run"
+    mkdir -p "$acceptance_run_dir"
+    cat > "$acceptance_run_dir/session-registry.yaml" <<EOF
+run_id: "$acceptance_run"
+mode: "acceptance"
+agents:
+  - handle_type: "fixture"
+    provider: "acceptance"
+    model: "fixture"
+    family: "fixture"
+    role: "reviewer"
+    injection_mode: "prefixed"
+    status: "responded"
+    schema_ok: true
+EOF
+    fixture_output="$(REDCAP_ACCEPTANCE_RUNNING=1 bash "$REDCAP_ROOT/compass/tools/redcap-r1-prism-evidence-retention-split-check.sh")"
+    assert_string_contains "$fixture_output" "R1_PRISM_EVIDENCE_RETENTION_SPLIT_PREFLIGHT_OK"
+    set +e
+    production_output="$(env -u REDCAP_ACCEPTANCE_RUNNING bash "$REDCAP_ROOT/compass/tools/redcap-r1-prism-evidence-retention-split-check.sh" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism evidence checker should reject purgeable acceptance residue outside acceptance runs"
+    assert_string_contains "$production_output" "purgeable acceptance fixtures"
+
+    bad_preflight="$ACCEPT_ROOT/r1-prism-evidence-retention-split-bad-cleaned.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-evidence-retention-split-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["is_prism_evidence_physically_cleaned"] = True
+payload["future_split_gate"]["evidence_cleanup_allowed_now"] = True
+payload["result"]["release_blocker_status"] = "resolved"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-evidence-retention-split-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism evidence preflight checker should reject cleaned/resolved claims"
+    assert_string_contains "$stale_output" "claim_boundary.is_prism_evidence_physically_cleaned"
 }
 
 run_pre_release_product_architecture_check_case() {
@@ -14247,7 +14326,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -14592,6 +14671,7 @@ redcap-runtime-contract-surface-check.sh|runtime-contract-surface|fixture runtim
 redcap-release-e2e-matrix-check.sh|release-e2e-matrix|fixture release E2E matrix failure
 redcap-formal-release-r1-root-group-disposition-check.sh|formal-release-r1-root-group-disposition|fixture formal release R1 root group disposition failure
 redcap-r1-control-plane-contract-split-check.sh|r1-control-plane-contract-split|fixture R1 control-plane contract split failure
+redcap-r1-prism-evidence-retention-split-check.sh|r1-prism-evidence-retention-split|fixture R1 Prism evidence retention split failure
 redcap-formal-release-readiness-plan-check.sh|formal-release-readiness-plan|fixture formal release readiness plan failure
 redcap-change-intake-check.sh|change-intake|fixture change intake failure
 redcap-prism-degradation-check.sh|prism-degradation|fixture Prism degradation failure
@@ -14684,6 +14764,7 @@ EOF
             release-e2e-matrix) expected_message="release E2E matrix check failed" ;;
             formal-release-r1-root-group-disposition) expected_message="formal release R1 root group disposition check failed" ;;
             r1-control-plane-contract-split) expected_message="R1 control-plane contract split check failed" ;;
+            r1-prism-evidence-retention-split) expected_message="R1 Prism evidence retention split check failed" ;;
             formal-release-readiness-plan) expected_message="formal release readiness plan check failed" ;;
             conclusion-prism) expected_message="conclusion Prism check failed" ;;
         esac
@@ -14777,6 +14858,7 @@ for rel in [
 	"compass/tools/redcap-release-e2e-matrix-check.sh",
 	"compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
 	"compass/tools/redcap-r1-control-plane-contract-split-check.sh",
+	"compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
 	"compass/tools/redcap-formal-release-readiness-plan-check.sh",
 	"compass/tools/redcap-pre-release-product-architecture-check.sh",
 	"compass/tools/redcap-pre-release-structure-task-tree-check.sh",
@@ -16258,6 +16340,9 @@ case "$COMMAND" in
         ;;
     r1-control-plane-contract-split-check)
         run_r1_control_plane_contract_split_check_case
+        ;;
+    r1-prism-evidence-retention-split-check)
+        run_r1_prism_evidence_retention_split_check_case
         ;;
     formal-release-readiness-plan-check)
         run_formal_release_readiness_plan_check_case

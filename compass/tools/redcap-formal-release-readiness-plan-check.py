@@ -24,6 +24,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "historical_cleanup": ROOT / "references/historical-asset-physical-cleanup-release-gate.json",
         "r1_disposition": ROOT / "references/formal-release-r1-root-group-disposition-preflight.json",
         "r1_control_plane": ROOT / "references/r1-control-plane-contract-split-preflight.json",
+        "r1_prism_evidence": ROOT / "references/r1-prism-evidence-retention-split-preflight.json",
         "evolution_harvest": ROOT / "references/evolution-harvest-signal-policy.json",
     }
     option_to_key = {
@@ -36,6 +37,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "--historical-cleanup": "historical_cleanup",
         "--r1-disposition": "r1_disposition",
         "--r1-control-plane": "r1_control_plane",
+        "--r1-prism-evidence": "r1_prism_evidence",
         "--evolution-harvest": "evolution_harvest",
     }
     index = 0
@@ -106,6 +108,7 @@ def main() -> int:
     historical_cleanup_path = paths["historical_cleanup"]
     r1_disposition_path = paths["r1_disposition"]
     r1_control_plane_path = paths["r1_control_plane"]
+    r1_prism_evidence_path = paths["r1_prism_evidence"]
     evolution_harvest_path = paths["evolution_harvest"]
 
     plan = load_json(plan_path, "formal release readiness plan")
@@ -116,6 +119,7 @@ def main() -> int:
     historical_cleanup = load_json(historical_cleanup_path, "historical asset physical cleanup release gate")
     r1_disposition = load_json(r1_disposition_path, "R1 root group disposition preflight")
     r1_control_plane = load_json(r1_control_plane_path, "R1 control-plane contract split preflight")
+    r1_prism_evidence = load_json(r1_prism_evidence_path, "R1 Prism evidence retention split preflight")
     evolution_harvest = load_json(evolution_harvest_path, "evolution harvest signal policy")
 
     if not handoff_path.is_file():
@@ -224,6 +228,8 @@ def main() -> int:
         fail("plan required_sources must include R1 root group disposition preflight")
     if "references/r1-control-plane-contract-split-preflight.json" not in cleanup_required_sources:
         fail("plan required_sources must include R1 control-plane contract split preflight")
+    if "references/r1-prism-evidence-retention-split-preflight.json" not in cleanup_required_sources:
+        fail("plan required_sources must include R1 Prism evidence retention split preflight")
     if "references/evolution-harvest-signal-policy.json" not in cleanup_required_sources:
         fail("plan required_sources must include evolution harvest signal policy")
     stage_map = {stage["id"]: stage for stage in stages}
@@ -234,6 +240,7 @@ def main() -> int:
         "package-visible",
         "release-safe disposition",
         "R1 root group disposition preflight passes",
+        "R1 Prism evidence retention split preflight passes",
     ]:
         if required_concept not in r1_blob:
             fail(f"R1 must explicitly cover historical cleanup gate concept: {required_concept}")
@@ -553,6 +560,51 @@ def main() -> int:
     if control_blockers != {"internal-control-plane", "prism-layer-and-evidence", "internal-layer-a"}:
         fail("R1 control-plane preflight must keep all three release blockers after this preflight")
 
+    require_keys(
+        r1_prism_evidence,
+        [
+            "version",
+            "preflight_id",
+            "status",
+            "claim_boundary",
+            "upstream_blocker",
+            "package_candidate_snapshot",
+            "evidence_lifecycle_snapshot",
+            "consumer_matrix",
+            "future_split_gate",
+            "result",
+        ],
+        "R1 Prism evidence retention split preflight",
+    )
+    if r1_prism_evidence["version"] != 1:
+        fail("R1 Prism evidence preflight version must be 1")
+    if r1_prism_evidence["preflight_id"] != "redcap-r1-prism-evidence-retention-split-preflight":
+        fail("R1 Prism evidence preflight id mismatch")
+    if r1_prism_evidence["status"] != "preflight-analysis-only-prism-layer-still-blocked":
+        fail("R1 Prism evidence preflight status must remain preflight-analysis-only-prism-layer-still-blocked")
+    prism_boundary = r1_prism_evidence.get("claim_boundary")
+    if not isinstance(prism_boundary, dict):
+        fail("R1 Prism evidence preflight claim_boundary must be an object")
+    for key in [
+        "is_prism_layer_physically_split",
+        "is_prism_evidence_physically_cleaned",
+        "is_prism_layer_release_safe",
+        "is_r1_closed",
+        "is_public_release_ready",
+        "physical_moves_performed",
+        "evidence_deletion_performed",
+        "release_switches_changed",
+    ]:
+        require_bool(prism_boundary.get(key), False, f"r1_prism_evidence.claim_boundary.{key}")
+    prism_result = r1_prism_evidence.get("result")
+    if not isinstance(prism_result, dict):
+        fail("R1 Prism evidence preflight result must be an object")
+    if prism_result.get("release_blocker_status") != "still-blocking-release-until-future-evidence-retention-split-or-contract-resolution":
+        fail("R1 Prism evidence preflight must keep prism-layer-and-evidence blocking")
+    prism_blockers = set(prism_result.get("remaining_release_blockers_after_this_preflight", []))
+    if prism_blockers != {"internal-control-plane", "prism-layer-and-evidence", "internal-layer-a"}:
+        fail("R1 Prism evidence preflight must keep all three release blockers after this preflight")
+
     for required_reference in [
         "references/formal-release-readiness-plan.json",
         "references/release-authorization-matrix.json",
@@ -570,6 +622,7 @@ def main() -> int:
         "r1_root_group_disposition_preflight=registered "
         "evolution_harvest_signal_gate=registered"
         " r1_control_plane_contract_split_preflight=registered"
+        " r1_prism_evidence_retention_split_preflight=registered"
     )
     return 0
 

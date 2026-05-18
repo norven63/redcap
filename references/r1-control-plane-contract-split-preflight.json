@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 202,
-    "control_plane_candidate_count": 178,
-    "compass": 130,
-    "references": 48,
-    "compass_tools_shell": 80,
-    "compass_tools_python": 50,
-    "references_json": 45,
+    "candidate_count": 205,
+    "control_plane_candidate_count": 181,
+    "compass": 132,
+    "references": 49,
+    "compass_tools_shell": 81,
+    "compass_tools_python": 51,
+    "references_json": 46,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },

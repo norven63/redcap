@@ -1,4 +1,37 @@
 reports:
+  - id: "20260518-r1-prism-evidence-retention-split-preflight"
+    mode: review
+    date: "2026-05-18"
+    topic: "Formal release R1 Prism layer and evidence retention split preflight"
+    agents: ["claude-code", "kimi", "gemini-absent"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "pass-with-concerns"
+    consensus_actions:
+      - "Accept P4-2q as a Prism evidence retention split preflight only, not as a physical Prism split or evidence cleanup"
+      - "Keep prism-layer-and-evidence blocking formal release until a future physical split and retention tranche produces stronger evidence"
+      - "Require future cleanup work to prove inactive/unreferenced run evidence and obtain explicit Norven approval before any apply"
+      - "Refresh count-based registries before closeout when reports or archive anchors move during the task"
+    open_questions:
+      - "Actual physical split of Prism package-visible tools from local evidence remains future formal-release work"
+      - "Actual cleanup of prism/runs remains forbidden until a separate inventory, approval, rollback, and archive-check tranche"
+      - "Internal-control-plane and internal-layer-a remain separate release blockers"
+      - "This review does not authorize public release, license changes, destructive deletion, release switch changes, or registry release"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-prism-evidence-retention-split-preflight.json"
+      - "compass/tools/redcap-r1-prism-evidence-retention-split-check.py"
+      - "compass/tools/redcap-r1-prism-evidence-retention-split-check.sh"
+      - "compass/tools/redcap-formal-release-readiness-plan-check.py"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "references/formal-release-readiness-plan.json"
+      - "references/formal-release-r1-root-group-disposition-preflight.json"
+      - "references/redcap-parent-task-ledger.md"
+      - "references/backlogs/framework-upgrade.json"
+      - "prism/reports/2026-05-18-r1-prism-evidence-retention-split-preflight-review.md"
+      - "prism/runs/20260518-r1-prism-evidence-retention-split-preflight/session-registry.yaml"
+    archived: false
   - id: "20260518-r1-control-plane-contract-split-preflight"
     mode: review
     date: "2026-05-18"
@@ -394,7 +427,7 @@ reports:
       - "compass/tools/redcap-diagnose.sh"
       - "references/human-product-surface-policy.json"
       - "compass/tools/redcap-human-product-surface-check.py"
-      - "compass/docs/task-reports/2026-05-11-rasg-019-human-product-surface.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-11-rasg-019-human-product-surface.md"
     archived: false
   - id: "20260509-pre-release-non-release-productization-closure"
     mode: acceptance-review

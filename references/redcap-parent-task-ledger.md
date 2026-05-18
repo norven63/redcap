@@ -18,6 +18,8 @@ P4-2o 完成的是 formal release R1 前置分类：当前包候选面为 199 �
 
 P4-2p 完成的是 `internal-control-plane` 的第一层技术预检：把 `compass` 与 `references` 为什么仍在包候选面、谁在消费它们、未来如何安全拆分、拆分前必须有哪些门禁，写成可机器复验的 contract split preflight。它不是物理迁移完成，也不是 internal-control-plane blocker resolved；三类 release blockers 仍然保留到后续 tranche。
 
+P4-2q 完成的是 `prism-layer-and-evidence` 的第一层技术预检：把 `prism/tools`、`prism/README.md`、`prism/reports` 与 `prism/runs` 的包面、考古面和本地运行证据面拆成可机器复验的 evidence retention split preflight。它不是物理迁移完成，也不是 Prism 证据清理完成；正式发布仍被 `internal-control-plane`、`prism-layer-and-evidence` 与 `internal-layer-a` 三类 blocker 阻塞。
+
 ## 人类可读父任务全景
 
 - 主线目标：RedCap 这轮超长任务不是补一个小功能，而是把它从 Norven 本机上的 skill 工程，推进成更像正式工具的 Agent runtime / CLI / 多层系统。
@@ -36,6 +38,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P4-2n | 高价值经验发现与候选化发布硬门 | completed | 已把 review / release / bugfix / 用户纠偏 / 进程风暴等高价值信号接入 Evolution harvest gate；不等于 LLM 能自动理解所有经验。 |
 | P4-2o | R1 延期根目录处置预检 | completed | 已把 4 类延期根目录映射到 release gate disposition：workspace-state 已证明不进包；其余 3 类仍阻塞正式发布。 |
 | P4-2p | R1 控制面契约拆分预检 | completed | 已把 internal-control-plane blocker 拆成可机器检查的控制面契约、消费者矩阵、包面边界和未来物理拆分门禁；不关闭 R1、不发布、不移动目录。 |
+| P4-2q | R1 Prism 证据保留拆分预检 | completed | 已把 prism-layer-and-evidence blocker 拆成可机器检查的工具/报告/运行证据边界、证据保留策略、包面边界和未来物理拆分/清理门禁；不关闭 R1、不发布、不移动或删除 Prism 证据。 |
 
 ## 已完成子任务
 
@@ -93,6 +96,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P4-2n | user control-plane defect follow-up | 高价值经验发现与候选化发布硬门 | completed | P0-before-release-task | 已把高价值信号发现、候选判断和 release-readiness 前置检查接入 Evolution harvest gate | 不等于完整后台自动蒸馏；不等于所有经验都会被 LLM 自然语义识别 |
 | P4-2o | formal release R1 preflight | R1 延期根目录处置预检 | completed | P0-before-release-task | 已建立 R1 disposition matrix 和机器检查：3 个历史/产品根目录组仍是 release blockers，workspace-state 仅作为本地状态排除出包 | 不等于 R1 cleanup closed；不等于物理迁移、删除、public-release-ready 或 release 授权 |
 | P4-2p | formal release R1 preflight | R1 控制面契约拆分预检 | completed | P0-before-release-task | 已建立 internal-control-plane 的 contract split preflight、消费者矩阵、包面快照和未来 split gate | 不等于控制面已物理拆分；不等于 release blocker resolved 或 public-release-ready |
+| P4-2q | formal release R1 preflight | R1 Prism 证据保留拆分预检 | completed | P0-before-release-task | 已建立 prism-layer-and-evidence 的 evidence retention split preflight、消费者矩阵、包面快照和未来 split/cleanup gate | 不等于 Prism 证据已物理清理；不等于 release blocker resolved 或 public-release-ready |
 | P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime: 本机 `cli_a9579f5b12219bb5` profile 已验证可发 |
 | P2-5 | user trust gap | Layer B 中插需求重排决策可见化 | completed | P2 | 已将“为什么中插需求这样排”升级为 `.dev-task.md` 必填摘要和 change-intake checker 强门 | report: `2026-04-27-layerb-change-intake-replan-visibility-gate.md` |
 | P2-6 | user inserted follow-up | Copilot protected fallback 策略收紧 | completed | P2 | 已将 Copilot CLI 从普通 Prism / stop-review / live-health 自动资源降级为保护性 fallback：只有 Claude Code 与 Kimi 都不可用时才允许调用；本轮旧 live-health 曾触碰 Copilot 的缺口已封堵 | report: `2026-05-07-prism-copilot-protected-fallback-policy.md`；Prism: `20260507-prism-copilot-protected-fallback-review` resource-limited-pass |
@@ -154,9 +158,10 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 43. `P4-2n`：高价值经验发现与候选化发布硬门。（已完成；硬门会拦住高价值任务未做候选判断就 closeout / release）
 44. `P4-2o`：R1 延期根目录处置预检。（已完成；3 个根目录组仍阻塞 release，workspace-state 已证明不进包）
 45. `P4-2p`：R1 控制面契约拆分预检。（已完成；已把 internal-control-plane 的拆分条件和仍阻塞发布边界机器化）
-46. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
-47. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界，并通过历史资产物理清理和 Evolution harvest signal 硬门）
-48. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
+46. `P4-2q`：R1 Prism 证据保留拆分预检。（已完成；已把 Prism 工具/报告/运行证据边界和未来清理门禁机器化）
+47. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
+48. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界，并通过历史资产物理清理和 Evolution harvest signal 硬门）
+49. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
 
 ## 当前不可声明
 

@@ -837,6 +837,16 @@ if ! bash "$R1_CONTROL_PLANE_CONTRACT_SPLIT_CHECK" >/dev/null; then
     exit 1
 fi
 
+R1_PRISM_EVIDENCE_RETENTION_SPLIT_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-prism-evidence-retention-split-check.sh"
+if [[ ! -f "$R1_PRISM_EVIDENCE_RETENTION_SPLIT_CHECK" ]]; then
+    echo "[redcap-spec-check] R1 Prism evidence retention split check missing" >&2
+    exit 1
+fi
+if ! bash "$R1_PRISM_EVIDENCE_RETENTION_SPLIT_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] R1 Prism evidence retention split check failed" >&2
+    exit 1
+fi
+
 FORMAL_RELEASE_READINESS_PLAN_CHECK="$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.sh"
 if [[ ! -f "$FORMAL_RELEASE_READINESS_PLAN_CHECK" ]]; then
     echo "[redcap-spec-check] formal release readiness plan check missing" >&2

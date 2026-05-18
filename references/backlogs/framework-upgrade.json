@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-2p",
-    "summary": "正式发布 R1 已完成 internal-control-plane 的契约拆分预检；compass / references 的控制面候选、消费者矩阵、未来物理拆分门禁和仍阻塞发布的边界已成为机器可查证据。"
+    "item_id": "P4-2q",
+    "summary": "正式发布 R1 已完成 prism-layer-and-evidence 的证据保留拆分预检；Prism 工具、报告、运行证据、包面边界、消费者矩阵和未来物理拆分/清理门禁已成为机器可查证据。"
   },
   "glossary": [
     {
@@ -437,6 +437,20 @@
             "references/formal-release-readiness-plan.json",
             "compass/docs/task-reports/2026-05-18-r1-control-plane-contract-split-preflight.md"
           ]
+        },
+        {
+          "id": "P4-2q",
+          "title": "R1 Prism 证据保留拆分预检",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-6-release-readiness-control-plane",
+          "summary": "已把 prism-layer-and-evidence blocker 拆成可机器检查的 Prism 工具、报告、运行证据、包面边界和后续物理拆分/清理门禁；本项不关闭 R1、不执行发布、不移动或删除 Prism 证据。",
+          "evidence_paths": [
+            "references/r1-prism-evidence-retention-split-preflight.json",
+            "compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
+            "references/formal-release-readiness-plan.json",
+            "compass/docs/task-reports/2026-05-18-r1-prism-evidence-retention-split-preflight.md"
+          ]
         }
       ]
     }
@@ -518,9 +532,10 @@
         "P4-2m",
         "P4-2n",
         "P4-2o",
-        "P4-2p"
+        "P4-2p",
+        "P4-2q"
       ],
-      "summary": "正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门、高价值经验候选化硬门、R1 延期根目录处置预检和 internal-control-plane 契约拆分预检都已进入可审计控制面；当前仍不执行真实发布。"
+      "summary": "正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门、高价值经验候选化硬门、R1 延期根目录处置预检、internal-control-plane 契约拆分预检和 prism-layer-and-evidence 证据保留拆分预检都已进入可审计控制面；当前仍不执行真实发布。"
     }
   ]
 }

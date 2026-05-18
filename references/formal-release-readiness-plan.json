@@ -22,6 +22,7 @@
     "references/historical-asset-physical-cleanup-release-gate.json",
     "references/formal-release-r1-root-group-disposition-preflight.json",
     "references/r1-control-plane-contract-split-preflight.json",
+    "references/r1-prism-evidence-retention-split-preflight.json",
     "references/evolution-harvest-signal-policy.json"
   ],
   "stage_order": [
@@ -64,6 +65,7 @@
         "Review historical task reports, private knowledge, runtime evidence, Prism raw runs, old migration receipts, conversation drafts and host-local scratch files.",
         "Classify every deferred root group through the R1 disposition preflight matrix before claiming any release-safe state.",
         "Run the R1 control-plane contract split preflight before treating compass/references as physically consolidated or release-safe.",
+        "Run the R1 Prism evidence retention split preflight before treating Prism tools, reports or run evidence as physically split, cleaned or release-safe.",
         "For every true historical asset choose a release-safe disposition: private archive migration, Forge-reviewed public arsenal export, or release-blocker-until-resolved.",
         "For live local state that is not a historical asset, prove it is excluded from the public package and must not be moved into public source.",
         "Preserve archaeology aliases, rollback notes, clean workspace proof and closeout receipts for any physical move."
@@ -71,6 +73,7 @@
       "acceptance": [
         "R1 root group disposition preflight passes and explicitly keeps unresolved groups as release blockers.",
         "R1 control-plane contract split preflight passes and keeps internal-control-plane blocking until a later physical split or contract resolution.",
+        "R1 Prism evidence retention split preflight passes and keeps prism-layer-and-evidence blocking until a later evidence retention split or contract resolution.",
         "Historical asset physical cleanup release gate passes.",
         "root-ia deferral check either has no release-blocking historical group left or formal release remains blocked.",
         "Package safety and public package surface checks prove private or volatile groups are not exposed.",
@@ -79,6 +82,7 @@
       "stop_conditions": [
         "The R1 disposition matrix is missing, stale, or tries to invent a release-gate disposition.",
         "The R1 control-plane contract split preflight is missing, stale, or claims physical split/release-safe completion.",
+        "The R1 Prism evidence retention split preflight is missing, stale, deletes evidence, or claims physical split/release-safe completion.",
         "Any historical asset remains in a package-visible or new-user runtime path without a release-safe disposition.",
         "Any root group remains only deferred-before-release-readiness while the task tries to proceed to registry release execution.",
         "A deferred group would enter the package surface without explicit public contract.",

@@ -621,7 +621,7 @@
         "references/redcap-holistic-smell-audit.json",
         "references/human-product-surface-policy.json",
         "compass/tools/redcap-human-product-surface-check.py",
-        "compass/docs/task-reports/2026-05-11-rasg-019-human-product-surface.md",
+        "private-archive/redcap-knowledge/task-reports/2026-05-11-rasg-019-human-product-surface.md",
         "prism/reports/2026-05-11-rasg-019-human-product-surface.md",
         "prism/runs/20260511-rasg019-human-product-surface/artifacts/acceptance-binding.json"
       ]

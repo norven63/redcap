@@ -12,7 +12,7 @@
   "surface_mode": "curated-runtime-readiness-surface",
   "contract_profile": "alpha-readiness-split-contract",
   "contract_boundary_policy": "references/runtime-public-contract-policy.json",
-  "max_candidate_count": 202,
+  "max_candidate_count": 205,
   "candidate_count_rule": "Keep the package surface focused on runnable CLI/runtime, clearly labelled maintainer/readiness checks, Prism availability, closeout/revive/status/diagnose support, and public handoff docs. The alpha readiness surface may temporarily include repo-governance checks needed by diagnose/spec-check, but they are not normal end-user workflow; formal public release must either trim them or introduce a separate maintainer package profile.",
   "required_runtime_checks": [
     "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
