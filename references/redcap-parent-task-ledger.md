@@ -16,11 +16,13 @@ RedCap 的长期父任务不是“继续补一个 skill”，而是把当前 ski
 
 P4-2o 完成的是 formal release R1 前置分类：当前包候选面为 199 个文件，workspace-state 已证明不进入候选包，但 `internal-control-plane`、`prism-layer-and-evidence`、`internal-layer-a` 仍是 release blockers；它不是 R1 cleanup closed、不是 public-release-ready，也不执行物理迁移、删除、license 或发布开关。
 
+P4-2p 完成的是 `internal-control-plane` 的第一层技术预检：把 `compass` 与 `references` 为什么仍在包候选面、谁在消费它们、未来如何安全拆分、拆分前必须有哪些门禁，写成可机器复验的 contract split preflight。它不是物理迁移完成，也不是 internal-control-plane blocker resolved；三类 release blockers 仍然保留到后续 tranche。
+
 ## 人类可读父任务全景
 
 - 主线目标：RedCap 这轮超长任务不是补一个小功能，而是把它从 Norven 本机上的 skill 工程，推进成更像正式工具的 Agent runtime / CLI / 多层系统。
 - 已完成的大块：任务流和收尾机制已经重构；历史资产、知识库、公共 arsenal、Forge、LLM-wiki-lite、CLI 产品面、干净工作区安装验证、飞书通知治理和飞书回复安全收件箱都已完成一轮落地。
-- 当前所在位置：主线已把“历史资产物理清理”和“高价值经验发现/候选化”都升级为正式发布前硬门；P4-2o 进一步把 R1 延期根目录分成“仍阻塞发布的三组”和“只需排除出包的一组本地状态”，避免未来发布任务把“没进包”误当成“历史资产已清理”。
+- 当前所在位置：主线已把“历史资产物理清理”和“高价值经验发现/候选化”都升级为正式发布前硬门；P4-2o 把 R1 延期根目录分成三组仍阻塞发布的根目录和一组本地状态，P4-2p 已完成三组 blocker 中候选面最大的 `internal-control-plane` 预检。
 - 仍未完成或仍被拦住的事：正式公开发布还没有启动，仍需要处理发布开关、凭据、许可证和公开分发边界；完整 LLM-wiki、RAG/GraphRAG 和大规模公共知识库迁移仍是后续事项。
 - 下一步：只有 Norven 明确启动 release task 后，才进入许可证、发布开关、npm registry、版本号和发布/回滚策略；任何子任务完成都不能冒充整个父任务完成。
 
@@ -33,6 +35,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P4-2m | 历史资产物理清理发布硬门 | completed | 已把“所有历史资产正式发布前必须物理清理或安全归位”升级为 release-readiness 硬门；不执行真实发布，不做无证据删除。 |
 | P4-2n | 高价值经验发现与候选化发布硬门 | completed | 已把 review / release / bugfix / 用户纠偏 / 进程风暴等高价值信号接入 Evolution harvest gate；不等于 LLM 能自动理解所有经验。 |
 | P4-2o | R1 延期根目录处置预检 | completed | 已把 4 类延期根目录映射到 release gate disposition：workspace-state 已证明不进包；其余 3 类仍阻塞正式发布。 |
+| P4-2p | R1 控制面契约拆分预检 | completed | 已把 internal-control-plane blocker 拆成可机器检查的控制面契约、消费者矩阵、包面边界和未来物理拆分门禁；不关闭 R1、不发布、不移动目录。 |
 
 ## 已完成子任务
 
@@ -89,6 +92,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P4-2m | user release gate follow-up | 历史资产物理清理发布硬门 | completed | P0-before-release-task | 已把历史资产物理清理升级为 formal release 前硬门，并要求未清理历史资产阻断正式发布 | 不等于历史资产已全部物理搬迁；不等于 public-release-ready |
 | P4-2n | user control-plane defect follow-up | 高价值经验发现与候选化发布硬门 | completed | P0-before-release-task | 已把高价值信号发现、候选判断和 release-readiness 前置检查接入 Evolution harvest gate | 不等于完整后台自动蒸馏；不等于所有经验都会被 LLM 自然语义识别 |
 | P4-2o | formal release R1 preflight | R1 延期根目录处置预检 | completed | P0-before-release-task | 已建立 R1 disposition matrix 和机器检查：3 个历史/产品根目录组仍是 release blockers，workspace-state 仅作为本地状态排除出包 | 不等于 R1 cleanup closed；不等于物理迁移、删除、public-release-ready 或 release 授权 |
+| P4-2p | formal release R1 preflight | R1 控制面契约拆分预检 | completed | P0-before-release-task | 已建立 internal-control-plane 的 contract split preflight、消费者矩阵、包面快照和未来 split gate | 不等于控制面已物理拆分；不等于 release blocker resolved 或 public-release-ready |
 | P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime: 本机 `cli_a9579f5b12219bb5` profile 已验证可发 |
 | P2-5 | user trust gap | Layer B 中插需求重排决策可见化 | completed | P2 | 已将“为什么中插需求这样排”升级为 `.dev-task.md` 必填摘要和 change-intake checker 强门 | report: `2026-04-27-layerb-change-intake-replan-visibility-gate.md` |
 | P2-6 | user inserted follow-up | Copilot protected fallback 策略收紧 | completed | P2 | 已将 Copilot CLI 从普通 Prism / stop-review / live-health 自动资源降级为保护性 fallback：只有 Claude Code 与 Kimi 都不可用时才允许调用；本轮旧 live-health 曾触碰 Copilot 的缺口已封堵 | report: `2026-05-07-prism-copilot-protected-fallback-policy.md`；Prism: `20260507-prism-copilot-protected-fallback-review` resource-limited-pass |
@@ -149,9 +153,10 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 42. `P4-2m`：历史资产物理清理发布硬门。（已完成；硬门会拦住未清理资产，后续按 release task 分 tranche 处置）
 43. `P4-2n`：高价值经验发现与候选化发布硬门。（已完成；硬门会拦住高价值任务未做候选判断就 closeout / release）
 44. `P4-2o`：R1 延期根目录处置预检。（已完成；3 个根目录组仍阻塞 release，workspace-state 已证明不进包）
-45. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
-46. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界，并通过历史资产物理清理和 Evolution harvest signal 硬门）
-47. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
+45. `P4-2p`：R1 控制面契约拆分预检。（已完成；已把 internal-control-plane 的拆分条件和仍阻塞发布边界机器化）
+46. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
+47. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界，并通过历史资产物理清理和 Evolution harvest signal 硬门）
+48. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
 
 ## 当前不可声明
 
@@ -176,6 +181,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 - 不可声明 P4-2m 证明历史资产已经全部物理搬迁完成；它证明该要求已升级成 formal release 前硬门，并让 unresolved blocker 阻断发布。
 - 不可声明 P4-2n 证明所有经验沉淀都已自动化；它证明高价值信号会先进入候选判断硬门，再由 promoted / no-promote / deferred-with-owner 收口。
 - 不可声明 P4-2o 证明 R1 历史资产清理已关闭或正式发布已就绪；它只证明 4 类延期根目录已经有机器可查的发布前处置预检，其中 3 类仍是 release blockers，workspace-state 只是本地状态排除出包。
+- 不可声明 P4-2p 证明 internal-control-plane 已经物理拆分或 release blocker 已解决；它只证明拆分前置契约、消费者矩阵、包面快照和 future split gate 已经可审计。
 - 不可声明 Copilot CLI 已被 RedCap 禁用；P2-6 只限制 RedCap 自动路径，用户手动直接使用 Copilot 不在本任务范围。
 - 不可声明 P2-7 中途审计完成后 RedCap 就进入 public-release-ready；它只证明当前任务树、文件头、长期记忆边界和结构治理状态被重新对齐。
 - 不可声明 P2-9 消除了宿主对话最终回复与飞书消息到达之间的所有时间差；它只保证 RedCap 正常完成节点不再由 on-complete 和 closeout 各发一条 node-report。

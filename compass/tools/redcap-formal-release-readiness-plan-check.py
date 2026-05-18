@@ -23,6 +23,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "runtime_policy": ROOT / "references/runtime-package-readiness-policy.json",
         "historical_cleanup": ROOT / "references/historical-asset-physical-cleanup-release-gate.json",
         "r1_disposition": ROOT / "references/formal-release-r1-root-group-disposition-preflight.json",
+        "r1_control_plane": ROOT / "references/r1-control-plane-contract-split-preflight.json",
         "evolution_harvest": ROOT / "references/evolution-harvest-signal-policy.json",
     }
     option_to_key = {
@@ -34,6 +35,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "--runtime-policy": "runtime_policy",
         "--historical-cleanup": "historical_cleanup",
         "--r1-disposition": "r1_disposition",
+        "--r1-control-plane": "r1_control_plane",
         "--evolution-harvest": "evolution_harvest",
     }
     index = 0
@@ -103,6 +105,7 @@ def main() -> int:
     runtime_policy_path = paths["runtime_policy"]
     historical_cleanup_path = paths["historical_cleanup"]
     r1_disposition_path = paths["r1_disposition"]
+    r1_control_plane_path = paths["r1_control_plane"]
     evolution_harvest_path = paths["evolution_harvest"]
 
     plan = load_json(plan_path, "formal release readiness plan")
@@ -112,6 +115,7 @@ def main() -> int:
     runtime_policy = load_json(runtime_policy_path, "runtime package readiness policy")
     historical_cleanup = load_json(historical_cleanup_path, "historical asset physical cleanup release gate")
     r1_disposition = load_json(r1_disposition_path, "R1 root group disposition preflight")
+    r1_control_plane = load_json(r1_control_plane_path, "R1 control-plane contract split preflight")
     evolution_harvest = load_json(evolution_harvest_path, "evolution harvest signal policy")
 
     if not handoff_path.is_file():
@@ -218,6 +222,8 @@ def main() -> int:
         fail("plan required_sources must include historical asset cleanup release gate")
     if "references/formal-release-r1-root-group-disposition-preflight.json" not in cleanup_required_sources:
         fail("plan required_sources must include R1 root group disposition preflight")
+    if "references/r1-control-plane-contract-split-preflight.json" not in cleanup_required_sources:
+        fail("plan required_sources must include R1 control-plane contract split preflight")
     if "references/evolution-harvest-signal-policy.json" not in cleanup_required_sources:
         fail("plan required_sources must include evolution harvest signal policy")
     stage_map = {stage["id"]: stage for stage in stages}
@@ -504,6 +510,49 @@ def main() -> int:
     if set(r1_disposition.get("resolved_nonhistorical_local_state", [])) != {"workspace-state"}:
         fail("R1 disposition matrix must resolve only workspace-state as nonhistorical local state")
 
+    require_keys(
+        r1_control_plane,
+        [
+            "version",
+            "preflight_id",
+            "status",
+            "claim_boundary",
+            "upstream_blocker",
+            "r1_blocker_execution_plan",
+            "package_candidate_snapshot",
+            "consumer_matrix",
+            "future_split_gate",
+            "result",
+        ],
+        "R1 control-plane contract split preflight",
+    )
+    if r1_control_plane["version"] != 1:
+        fail("R1 control-plane preflight version must be 1")
+    if r1_control_plane["preflight_id"] != "redcap-r1-control-plane-contract-split-preflight":
+        fail("R1 control-plane preflight id mismatch")
+    if r1_control_plane["status"] != "preflight-analysis-only-control-plane-still-blocked":
+        fail("R1 control-plane preflight status must remain preflight-analysis-only-control-plane-still-blocked")
+    control_boundary = r1_control_plane.get("claim_boundary")
+    if not isinstance(control_boundary, dict):
+        fail("R1 control-plane preflight claim_boundary must be an object")
+    for key in [
+        "is_control_plane_physically_split",
+        "is_internal_control_plane_release_safe",
+        "is_r1_closed",
+        "is_public_release_ready",
+        "physical_moves_performed",
+        "release_switches_changed",
+    ]:
+        require_bool(control_boundary.get(key), False, f"r1_control_plane.claim_boundary.{key}")
+    result = r1_control_plane.get("result")
+    if not isinstance(result, dict):
+        fail("R1 control-plane preflight result must be an object")
+    if result.get("release_blocker_status") != "still-blocking-release-until-future-physical-split-or-contract-resolution":
+        fail("R1 control-plane preflight must keep internal-control-plane blocking")
+    control_blockers = set(result.get("remaining_release_blockers_after_this_preflight", []))
+    if control_blockers != {"internal-control-plane", "prism-layer-and-evidence", "internal-layer-a"}:
+        fail("R1 control-plane preflight must keep all three release blockers after this preflight")
+
     for required_reference in [
         "references/formal-release-readiness-plan.json",
         "references/release-authorization-matrix.json",
@@ -520,6 +569,7 @@ def main() -> int:
         "historical_asset_cleanup_hard_gate=registered "
         "r1_root_group_disposition_preflight=registered "
         "evolution_harvest_signal_gate=registered"
+        " r1_control_plane_contract_split_preflight=registered"
     )
     return 0
 

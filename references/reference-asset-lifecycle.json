@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/framework-upgrade.json",
-      "bytes": 20980,
+      "bytes": 21838,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary-policy.json",
-      "bytes": 81457,
+      "bytes": 82625,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -42,7 +42,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 89604,
+      "bytes": 90592,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -78,7 +78,7 @@
     },
     {
       "path": "references/legacy-asset-migration-apply-plan.json",
-      "bytes": 294605,
+      "bytes": 295690,
       "asset_class": "legacy-migration-ledger",
       "lifecycle": "retain-as-private-migration-evidence",
       "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
@@ -114,7 +114,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 34090,
+      "bytes": 34463,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",
@@ -123,7 +123,7 @@
     },
     {
       "path": "references/redcap-parent-task-ledger.md",
-      "bytes": 41306,
+      "bytes": 42600,
       "asset_class": "parent-task-ledger",
       "lifecycle": "active-parent-state-ledger",
       "consumer_check": "bash compass/tools/redcap-parent-receipt-aggregation-check.sh",

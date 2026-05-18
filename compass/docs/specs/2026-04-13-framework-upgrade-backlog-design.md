@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`P4-2o 正式发布 R1 延期根目录处置预检`
-- 当前焦点说明：正式发布 R1 的 4 组延期根目录已进入 disposition preflight；当前目标是明确 workspace-state 可安全排除，其余三组继续作为 release blockers，不能把预检冒充 R1 完成。
+- 当前焦点：`P4-2p R1 控制面契约拆分预检`
+- 当前焦点说明：正式发布 R1 已完成 internal-control-plane 的契约拆分预检；compass / references 的控制面候选、消费者矩阵、未来物理拆分门禁和仍阻塞发布的边界已成为机器可查证据。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -62,7 +62,7 @@
 | 阶段 3：治理可执行化 | 已完成 | D1 / F2 / F3 / A3 | D1 / F2 / F3 / A3 均已收口：spec、docs、knowledge、hook、contract、FSM、三轨评审与 token 风险均已进入可执行 gate。 |
 | 阶段 4：宿主体验与操作反馈 | 已完成 | C2 / C3 | C2 / C3 均已收口：`cli_console.md` 降格为 local-only 覆盖式展示镜像，overlay / ask_user 诚实降级也已接入审计。 |
 | 阶段 5：信息架构与运行时收敛 | 已完成 | D2 / D3 / E2 / E3 | D2 / D3 / E2 / E3 均已收口：docs/knowledge 渐进披露、docs 保留策略、runtime helper 收敛与统一诊断均已接入检查。 |
-| 阶段 6：发布准备控制面 | 已完成 | P4-2l / P4-2m / P4-2n / P4-2o | 正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门、高价值经验候选化硬门和 R1 延期根目录处置预检都已进入可审计控制面；当前仍不执行真实发布。 |
+| 阶段 6：发布准备控制面 | 已完成 | P4-2l / P4-2m / P4-2n / P4-2o / P4-2p | 正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门、高价值经验候选化硬门、R1 延期根目录处置预检和 internal-control-plane 契约拆分预检都已进入可审计控制面；当前仍不执行真实发布。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -90,6 +90,7 @@
 | P4-2m 历史资产物理清理发布硬门 | 发布前路线与授权边界 | 已完成 | P0 | 已把“所有历史资产正式发布前必须物理清理或安全归位”升级为 release-readiness 硬门；本项不执行真实发布，也不做无证据删除。 |
 | P4-2n 高价值经验发现与候选化发布硬门 | 发布前路线与授权边界 | 已完成 | P0 | 已把 review / bugfix / release / 安全 / 用户纠偏等高价值信号接入 Evolution harvest；正式发布前不能用候选池当前干净冒充候选发现已完成。 |
 | P4-2o 正式发布 R1 延期根目录处置预检 | 发布前路线与授权边界 | 已完成 | P0 | 已把 4 组 deferred root groups 做成机器可查 disposition preflight：workspace-state 是本地状态且包面排除，internal-control-plane / prism-layer-and-evidence / internal-layer-a 仍是 release blockers；本项不关闭 R1、不执行发布、不移动目录。 |
+| P4-2p R1 控制面契约拆分预检 | 发布前路线与授权边界 | 已完成 | P0 | 已把 internal-control-plane blocker 拆成可机器检查的控制面契约、消费者矩阵、包面边界和后续物理拆分门禁；本项不关闭 R1、不执行发布、不移动目录。 |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -100,6 +101,8 @@
 | mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
 | spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
 <!-- redcap:backlog-generated:end -->
+
+
 
 
 

@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "preflight_id": "redcap-r1-control-plane-contract-split-preflight",
+  "status": "preflight-analysis-only-control-plane-still-blocked",
+  "created_at": "2026-05-18T00:00:00Z",
+  "purpose": "Turn the R1 internal-control-plane blocker into an auditable contract split preflight before any physical move, public release claim, or release-switch change.",
+  "claim_boundary": {
+    "is_control_plane_physically_split": false,
+    "is_internal_control_plane_release_safe": false,
+    "is_r1_closed": false,
+    "is_public_release_ready": false,
+    "physical_moves_performed": false,
+    "release_switches_changed": false,
+    "allowed_user_claim": "The internal-control-plane blocker now has a machine-checkable contract split preflight, consumer matrix, package-boundary snapshot, and future split gate.",
+    "forbidden_claims": [
+      "The internal control plane has been physically moved.",
+      "R1 historical asset cleanup is complete.",
+      "The control plane is release-safe.",
+      "RedCap is public-release-ready.",
+      "The registry release action may proceed."
+    ]
+  },
+  "upstream_blocker": {
+    "source": "references/formal-release-r1-root-group-disposition-preflight.json#internal-control-plane",
+    "target_parent": "internal-control-plane",
+    "current_roots": [
+      "compass",
+      "references"
+    ],
+    "upstream_disposition_id": "release-blocker-until-resolved",
+    "this_preflight_resolves_blocker": false
+  },
+  "r1_blocker_execution_plan": {
+    "status": "ordered-before-formal-release-task",
+    "source_prism_run": "20260518-r1-next-blocker-tranche-selection",
+    "selected_next": "internal-control-plane",
+    "selection_reason": "Claude Code recommended first making the three-blocker execution plan explicit; Kimi recommended the largest pure engineering blocker first. This preflight combines both: it records the three-blocker plan, then performs the internal-control-plane preflight.",
+    "ordered_blockers": [
+      {
+        "target_parent": "internal-control-plane",
+        "order": 1,
+        "current_task_action": "contract-split-preflight",
+        "autonomous_scope": "consumer matrix, package-boundary snapshot, future split gate, alias and rollback plan",
+        "human_boundary": "Norven only needed if a later tranche proposes destructive cleanup, unrecoverable history loss, or public release risk acceptance."
+      },
+      {
+        "target_parent": "prism-layer-and-evidence",
+        "order": 2,
+        "current_task_action": "defer-to-future-tranche",
+        "autonomous_scope": "future evidence retention and provider routing split can be prepared later without publishing.",
+        "human_boundary": "Norven only needed for deleting or losing historical evidence."
+      },
+      {
+        "target_parent": "internal-layer-a",
+        "order": 3,
+        "current_task_action": "defer-product-scope-decision",
+        "autonomous_scope": "compatibility inventory and tests can be prepared later.",
+        "human_boundary": "Norven required before deciding whether Layer A compatibility is included in public RedCap product scope or retired."
+      }
+    ]
+  },
+  "package_candidate_snapshot": {
+    "candidate_count": 202,
+    "control_plane_candidate_count": 178,
+    "compass": 130,
+    "references": 48,
+    "compass_tools_shell": 80,
+    "compass_tools_python": 50,
+    "references_json": 45,
+    "references_markdown": 3,
+    "source": "redcap-runtime-package-manifest.sh --output <temp>"
+  },
+  "current_surface_contract": {
+    "roots": [
+      {
+        "path": "compass",
+        "role": "maintainer-control-plane-tools",
+        "package_candidate_count": 130,
+        "current_contract": "Packaged for alpha readiness because root wrappers, revive/status/diagnose/closeout, release safety and validators still call these tools.",
+        "future_target": "internal/control-plane/tools with stable runtime facades and compatibility aliases"
+      },
+      {
+        "path": "references",
+        "role": "policy-and-contract-truth-sources",
+        "package_candidate_count": 48,
+        "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
+        "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
+      }
+    ],
+    "candidate_categories": [
+      {
+        "id": "runtime-public-support",
+        "meaning": "Commands or policies required by revive/status/diagnose/doctor/closeout/help and clean workspace validation.",
+        "future_target": "runtime/redcap-core or contracts/public",
+        "release_posture": "may remain package-visible if public help and contract wording are user-safe"
+      },
+      {
+        "id": "maintainer-control-plane",
+        "meaning": "Validators, governance checks, release readiness checks and task-control helpers mainly used by maintainers.",
+        "future_target": "internal/control-plane",
+        "release_posture": "must stay visibly labeled as maintainer/internal until a later physical split or public contract decision"
+      },
+      {
+        "id": "policy-reference-contract",
+        "meaning": "JSON or markdown contracts that tools read as truth sources.",
+        "future_target": "contracts/public or contracts/internal depending on consumer matrix",
+        "release_posture": "must not be moved without alias and consumer proof"
+      }
+    ]
+  },
+  "consumer_matrix": [
+    {
+      "consumer_id": "root-runtime-facade",
+      "consumer_paths": [
+        "bin/redcap",
+        "runtime/redcap-core/bin/redcap",
+        "revive-cap.sh",
+        "closeout-cap.sh"
+      ],
+      "depends_on": [
+        "compass/tools/redcap-install.sh",
+        "compass/tools/redcap-current-status.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.sh"
+      ],
+      "split_risk": "breaking first-run revive/status/closeout entry points",
+      "required_before_move": [
+        "wrapper compatibility aliases",
+        "clean workspace E2E"
+      ]
+    },
+    {
+      "consumer_id": "release-readiness-safety",
+      "consumer_paths": [
+        "compass/tools/redcap-runtime-package-manifest.sh",
+        "compass/tools/redcap-package-publish-safety-check.sh",
+        "compass/tools/redcap-public-package-surface.sh",
+        "compass/tools/redcap-formal-release-readiness-plan-check.sh"
+      ],
+      "depends_on": [
+        "references/runtime-package-readiness-policy.json",
+        "references/package-publish-safety-policy.json",
+        "references/public-package-surface-policy.json",
+        "references/formal-release-readiness-plan.json"
+      ],
+      "split_risk": "allowing package-safety or release-hard-gate checks to read stale policies",
+      "required_before_move": [
+        "policy import map",
+        "package candidate diff proof",
+        "Prism release review"
+      ]
+    },
+    {
+      "consumer_id": "layerb-closeout-and-governance",
+      "consumer_paths": [
+        "compass/tools/redcap-validator-chain.sh",
+        "compass/tools/redcap-drift-check.sh",
+        "compass/tools/redcap-task-report-check.sh",
+        "compass/tools/redcap-evolution-harvest-check.sh"
+      ],
+      "depends_on": [
+        "references/evolution-harvest-signal-policy.json",
+        "references/layerb-change-intake-policy.json",
+        "references/human-communication-policy.json"
+      ],
+      "split_risk": "weakening closeout receipt and promise-ledger gates",
+      "required_before_move": [
+        "validator import map",
+        "receipt rescue audit",
+        "diagnose pass"
+      ]
+    },
+    {
+      "consumer_id": "knowledge-and-lookup-gateway",
+      "consumer_paths": [
+        "compass/tools/redcap-file-lookup-dictionary-check.sh",
+        "compass/tools/redcap-knowledge-gateway.sh",
+        "compass/tools/redcap-docs-catalog.sh"
+      ],
+      "depends_on": [
+        "references/file-lookup-dictionary.md",
+        "references/file-lookup-dictionary-policy.json",
+        "compass/docs/catalog.json"
+      ],
+      "split_risk": "breaking progressive disclosure and archaeology lookup",
+      "required_before_move": [
+        "dictionary aliases",
+        "docs catalog regeneration",
+        "token-risk audit"
+      ]
+    },
+    {
+      "consumer_id": "prism-acceptance-binding",
+      "consumer_paths": [
+        "compass/tools/redcap-prism-acceptance-check.sh",
+        "compass/tools/redcap-prism-acceptance-bind.sh",
+        "prism/tools/prism-archive-check.sh"
+      ],
+      "depends_on": [
+        "references/prism-provider-policy.json",
+        "references/prism-degradation-policy.json",
+        "prism/reports/index.yaml"
+      ],
+      "split_risk": "making independent review evidence unbindable to closeout",
+      "required_before_move": [
+        "Prism self-review",
+        "report index migration proof",
+        "archive-check pass"
+      ]
+    }
+  ],
+  "future_split_gate": {
+    "physical_move_allowed_now": false,
+    "required_before_physical_move": [
+      "dry-run migration manifest",
+      "exact consumer matrix",
+      "alias and rollback plan",
+      "runtime import map update",
+      "package-safety proof",
+      "clean workspace E2E",
+      "Prism review",
+      "closeout receipt"
+    ],
+    "required_before_release_ready_claim": [
+      "internal-control-plane no longer marked release-blocker-until-resolved, or formal release stays blocked",
+      "all package-visible control-plane paths have public/maintainer contract classification",
+      "no private archive, secret, local scratch, raw evidence, or host-local path appears in package candidates"
+    ],
+    "alias_strategy": "Future physical moves must keep existing compass/** and references/** anchors resolvable through wrappers, import maps, or explicit alias resolver entries before path changes.",
+    "rollback_strategy": "Each future move tranche must be copy-first, verify, then delete-last; rollback must restore old anchors and package policy counts."
+  },
+  "result": {
+    "target_parent": "internal-control-plane",
+    "release_blocker_status": "still-blocking-release-until-future-physical-split-or-contract-resolution",
+    "this_preflight_completed": true,
+    "remaining_release_blockers_after_this_preflight": [
+      "internal-control-plane",
+      "prism-layer-and-evidence",
+      "internal-layer-a"
+    ],
+    "next_recommended_tranche": "R1-prism-evidence-retention-split or a future internal-control-plane physical split, depending on formal release scope and package surface pressure."
+  }
+}

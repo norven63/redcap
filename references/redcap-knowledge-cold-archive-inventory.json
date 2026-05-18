@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 90,
-  "bytes_total": 1245801,
+  "file_count": 91,
+  "bytes_total": 1260033,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 86,
+    "private-task-report-archive": 87,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -717,6 +717,14 @@
       "class": "private-task-report-archive",
       "bytes": 10252,
       "sha256": "1241af4b50d3f472131fe03d02b9f76702693dd500790bfef32121bac7d8fd74",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-15-gd-008-host-limited-boundary-closeout.md",
+      "class": "private-task-report-archive",
+      "bytes": 14232,
+      "sha256": "b9acc2a047aa51226c3f77879624518f77296730c8b6be33565ea2b69fdc4198",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

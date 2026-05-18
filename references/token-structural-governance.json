@@ -122,6 +122,13 @@
       "trigger_for_revisit": "When delete entries exceed 150 or the file exceeds 150KB, shard entry details behind the same apply checker while preserving a compact receipt summary."
     },
     {
+      "path": "prism/reports/index.yaml",
+      "kind": "tracked-prism-report-index",
+      "current_mitigation": "prism-protocol-targeted-read",
+      "structural_strategy": "Keep as the lightweight formal Prism report index for status and degradation checks. Agents should read it through prism archive/degradation checkers or exact report id searches instead of bulk-loading it during startup.",
+      "trigger_for_revisit": "When the index exceeds 75KB or formal report rows exceed 50, split archived legacy rows into a generated archive shard while preserving prism/reports/index.yaml as the compact current-window index."
+    },
+    {
       "path": "private-archive/redcap-knowledge/task-reports/2026-04-17-live-closeout-final-blockers.md",
       "kind": "tracked-large-private-copy",
       "current_mitigation": "alias-resolver-and-file-lookup-dictionary",

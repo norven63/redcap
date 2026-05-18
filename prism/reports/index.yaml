@@ -1,4 +1,38 @@
 reports:
+  - id: "20260518-r1-control-plane-contract-split-preflight"
+    mode: review
+    date: "2026-05-18"
+    topic: "Formal release R1 internal-control-plane contract split preflight"
+    agents: ["claude-code", "kimi", "gemini-absent"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "pass-with-concerns"
+    consensus_actions:
+      - "Accept P4-2p as a contract split preflight only, not as a physical control-plane split"
+      - "Keep internal-control-plane blocking formal release until a future physical split or contract resolution tranche produces stronger evidence"
+      - "Require future physical split work to expand the consumer matrix before moving compass or references paths"
+      - "Refresh registry/count-based evidence before closeout when file additions change docs or knowledge surfaces"
+    open_questions:
+      - "Actual physical migration of compass/references remains future formal-release work"
+      - "Prism evidence retention split and Layer A product-scope decision remain separate release blockers"
+      - "This review does not authorize public release, license changes, destructive deletion, release switch changes, or registry publishing"
+    lessons_updated: true
+    files_affected:
+      - "references/r1-control-plane-contract-split-preflight.json"
+      - "compass/tools/redcap-r1-control-plane-contract-split-check.py"
+      - "compass/tools/redcap-r1-control-plane-contract-split-check.sh"
+      - "compass/tools/redcap-formal-release-readiness-plan-check.py"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "references/formal-release-readiness-plan.json"
+      - "references/formal-release-r1-root-group-disposition-preflight.json"
+      - "references/redcap-parent-task-ledger.md"
+      - "references/backlogs/framework-upgrade.json"
+      - "compass/knowledge/lessons/l-165.md"
+      - "prism/reports/2026-05-18-r1-control-plane-contract-split-preflight-review.md"
+      - "prism/runs/20260518-r1-control-plane-contract-split-preflight/session-registry.yaml"
+      - "prism/runs/20260518-r1-control-plane-contract-split-preflight/artifacts/acceptance-binding.json"
+    archived: false
   - id: "20260517-formal-release-r1-root-group-disposition-preflight"
     mode: review
     date: "2026-05-17"
@@ -185,7 +219,7 @@ reports:
       - "references/host-session-capability-matrix.json"
       - "compass/tools/redcap-hook-contract-check.sh"
       - "prism/reports/2026-05-15-gd-008-host-limited-boundary-closeout.md"
-      - "compass/docs/task-reports/2026-05-15-gd-008-host-limited-boundary-closeout.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-15-gd-008-host-limited-boundary-closeout.md"
     archived: false
   - id: "20260514-rasg022-remaining-root-groups-deferral"
     mode: acceptance-review

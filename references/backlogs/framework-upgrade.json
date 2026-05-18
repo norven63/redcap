@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-2o",
-    "summary": "正式发布 R1 的 4 组延期根目录已进入 disposition preflight；当前目标是明确 workspace-state 可安全排除，其余三组继续作为 release blockers，不能把预检冒充 R1 完成。"
+    "item_id": "P4-2p",
+    "summary": "正式发布 R1 已完成 internal-control-plane 的契约拆分预检；compass / references 的控制面候选、消费者矩阵、未来物理拆分门禁和仍阻塞发布的边界已成为机器可查证据。"
   },
   "glossary": [
     {
@@ -423,6 +423,20 @@
             "references/formal-release-readiness-plan.json",
             "compass/docs/task-reports/2026-05-17-formal-release-r1-root-group-disposition-preflight.md"
           ]
+        },
+        {
+          "id": "P4-2p",
+          "title": "R1 控制面契约拆分预检",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-6-release-readiness-control-plane",
+          "summary": "已把 internal-control-plane blocker 拆成可机器检查的控制面契约、消费者矩阵、包面边界和后续物理拆分门禁；本项不关闭 R1、不执行发布、不移动目录。",
+          "evidence_paths": [
+            "references/r1-control-plane-contract-split-preflight.json",
+            "compass/tools/redcap-r1-control-plane-contract-split-check.sh",
+            "references/formal-release-readiness-plan.json",
+            "compass/docs/task-reports/2026-05-18-r1-control-plane-contract-split-preflight.md"
+          ]
         }
       ]
     }
@@ -503,9 +517,10 @@
         "P4-2l",
         "P4-2m",
         "P4-2n",
-        "P4-2o"
+        "P4-2o",
+        "P4-2p"
       ],
-      "summary": "正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门、高价值经验候选化硬门和 R1 延期根目录处置预检都已进入可审计控制面；当前仍不执行真实发布。"
+      "summary": "正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门、高价值经验候选化硬门、R1 延期根目录处置预检和 internal-control-plane 契约拆分预检都已进入可审计控制面；当前仍不执行真实发布。"
     }
   ]
 }

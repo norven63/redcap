@@ -204,6 +204,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-package-manifest-check
   bash compass/tools/redcap-multi-session-acceptance.sh public-package-surface-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-r1-root-group-disposition-check
+  bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-contract-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-structure-task-tree-check
@@ -2084,7 +2085,7 @@ write_layerb_closeout_task_fixture() {
     local task_file="$1"
     local report_rel="$2"
     local promise_block="$3"
-    local task_id
+    local task_id report_path
 
     task_id="$(basename "$task_file")"
     task_id="${task_id%.md}"
@@ -2094,6 +2095,21 @@ write_layerb_closeout_task_fixture() {
         acceptance-*) ;;
         *) task_id="acceptance-${task_id}" ;;
     esac
+
+    report_path="$report_rel"
+    if [[ "$report_path" != /* ]]; then
+        report_path="$REDCAP_ROOT/$report_path"
+    fi
+    if [[ -f "$report_path" ]] && ! grep -q "### 7.3 Evolution Factory 候选处理" "$report_path"; then
+        cat >>"$report_path" <<'EOF'
+
+### 7.3 Evolution Factory 候选处理
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|------|------|----------|------|
+| 无新增候选 | closeout acceptance fixture | no-promote：本用例只验证 closeout runtime 行为，不新增 Evolution candidate | report fixture |
+EOF
+    fi
 
     cat >"$task_file" <<EOF
 # 当前任务：Layer B closeout runtime acceptance
@@ -2265,6 +2281,12 @@ run_layerb_closeout_runtime_evolution_candidates_blocks_case() {
 
 ### 0.1 当前已完成
 - 当前已完成：Evolution candidate gate fixture
+
+### 7.3 Evolution Factory 候选处理
+
+| 候选 | 来源 | 处理结果 | 证据 |
+|------|------|----------|------|
+| 无新增候选 | acceptance fixture | no-promote：本用例只验证 candidate checker fail-fast，不新增候选 | report fixture |
 EOF
     write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 统一 runtime 已真正收尾"
 
@@ -13668,6 +13690,27 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "formal release readiness checker should reject missing R1 disposition preflight"
     assert_string_contains "$stale_output" "R1 root group disposition preflight"
+
+    bad_plan="$ACCEPT_ROOT/formal-release-readiness-missing-r1-control-plane.json"
+    python3 - "$REDCAP_ROOT/references/formal-release-readiness-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["required_sources"] = [
+    item
+    for item in payload["required_sources"]
+    if item != "references/r1-control-plane-contract-split-preflight.json"
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "formal release readiness checker should reject missing R1 control-plane preflight"
+    assert_string_contains "$stale_output" "R1 control-plane contract split preflight"
 }
 
 run_formal_release_r1_root_group_disposition_check_case() {
@@ -13697,6 +13740,35 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "R1 disposition checker should reject non-standard disposition"
     assert_string_contains "$stale_output" "unsupported disposition_id"
+}
+
+run_r1_control_plane_contract_split_check_case() {
+    local output bad_preflight stale_output status
+
+    log "case: r1-control-plane-contract-split-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-contract-split-check.sh")"
+    assert_string_contains "$output" "R1_CONTROL_PLANE_CONTRACT_SPLIT_PREFLIGHT_OK"
+    assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'R1 control-plane contract split check missing'
+
+    bad_preflight="$ACCEPT_ROOT/r1-control-plane-contract-split-bad-resolved.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-contract-split-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["is_control_plane_physically_split"] = True
+payload["result"]["release_blocker_status"] = "resolved"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-contract-split-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 control-plane preflight checker should reject resolved/physical-split claims"
+    assert_string_contains "$stale_output" "claim_boundary.is_control_plane_physically_split"
 }
 
 run_pre_release_product_architecture_check_case() {
@@ -14175,7 +14247,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -14518,6 +14590,8 @@ redcap-full-llm-wiki-roadmap-check.sh|full-llm-wiki-roadmap|fixture full LLM-wik
 redcap-package-publish-safety-check.sh|package-publish-safety|fixture package publish safety failure
 redcap-runtime-contract-surface-check.sh|runtime-contract-surface|fixture runtime contract surface failure
 redcap-release-e2e-matrix-check.sh|release-e2e-matrix|fixture release E2E matrix failure
+redcap-formal-release-r1-root-group-disposition-check.sh|formal-release-r1-root-group-disposition|fixture formal release R1 root group disposition failure
+redcap-r1-control-plane-contract-split-check.sh|r1-control-plane-contract-split|fixture R1 control-plane contract split failure
 redcap-formal-release-readiness-plan-check.sh|formal-release-readiness-plan|fixture formal release readiness plan failure
 redcap-change-intake-check.sh|change-intake|fixture change intake failure
 redcap-prism-degradation-check.sh|prism-degradation|fixture Prism degradation failure
@@ -14608,6 +14682,8 @@ EOF
             full-llm-wiki-roadmap) expected_message="full LLM-wiki roadmap check failed" ;;
             package-publish-safety) expected_message="package publish safety check failed" ;;
             release-e2e-matrix) expected_message="release E2E matrix check failed" ;;
+            formal-release-r1-root-group-disposition) expected_message="formal release R1 root group disposition check failed" ;;
+            r1-control-plane-contract-split) expected_message="R1 control-plane contract split check failed" ;;
             formal-release-readiness-plan) expected_message="formal release readiness plan check failed" ;;
             conclusion-prism) expected_message="conclusion Prism check failed" ;;
         esac
@@ -14699,6 +14775,8 @@ for rel in [
 	"compass/tools/redcap-public-package-surface.sh",
 	"compass/tools/redcap-runtime-contract-surface-check.sh",
 	"compass/tools/redcap-release-e2e-matrix-check.sh",
+	"compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
+	"compass/tools/redcap-r1-control-plane-contract-split-check.sh",
 	"compass/tools/redcap-formal-release-readiness-plan-check.sh",
 	"compass/tools/redcap-pre-release-product-architecture-check.sh",
 	"compass/tools/redcap-pre-release-structure-task-tree-check.sh",
@@ -16177,6 +16255,9 @@ case "$COMMAND" in
         ;;
     formal-release-r1-root-group-disposition-check)
         run_formal_release_r1_root_group_disposition_check_case
+        ;;
+    r1-control-plane-contract-split-check)
+        run_r1_control_plane_contract_split_check_case
         ;;
     formal-release-readiness-plan-check)
         run_formal_release_readiness_plan_check_case

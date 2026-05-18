@@ -827,6 +827,16 @@ if ! bash "$FORMAL_RELEASE_R1_DISPOSITION_CHECK" >/dev/null; then
     exit 1
 fi
 
+R1_CONTROL_PLANE_CONTRACT_SPLIT_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-contract-split-check.sh"
+if [[ ! -f "$R1_CONTROL_PLANE_CONTRACT_SPLIT_CHECK" ]]; then
+    echo "[redcap-spec-check] R1 control-plane contract split check missing" >&2
+    exit 1
+fi
+if ! bash "$R1_CONTROL_PLANE_CONTRACT_SPLIT_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] R1 control-plane contract split check failed" >&2
+    exit 1
+fi
+
 FORMAL_RELEASE_READINESS_PLAN_CHECK="$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.sh"
 if [[ ! -f "$FORMAL_RELEASE_READINESS_PLAN_CHECK" ]]; then
     echo "[redcap-spec-check] formal release readiness plan check missing" >&2
