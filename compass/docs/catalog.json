@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 373954,
+    "size_bytes": 373950,
     "lines": 7404,
-    "chars": 226928,
+    "chars": 226924,
     "rough_token_pressure": {
-      "low": 56732,
-      "high": 113464
+      "low": 56731,
+      "high": 113462
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 178043,
+        "size_bytes": 178039,
         "lines": 2807,
-        "chars": 109353,
+        "chars": 109349,
         "rough_token_pressure": {
-          "low": 27338,
-          "high": 54676
+          "low": 27337,
+          "high": 54674
         }
       }
     },
@@ -105,7 +105,7 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-18-r1-prism-evidence-retention-split-preflight.md",
-        "chars": 9703,
+        "chars": 9699,
         "lines": 242,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 15259,
+      "size_bytes": 15255,
       "lines": 242,
-      "chars": 9703,
+      "chars": 9699,
       "summary": "当前已完成：R1 的 `prism-layer-and-evidence` blocker 已被拆成可机器检查的“Prism 证据保留拆分预检”，但它仍然阻塞正式发布。 / 详情：本轮解决的是“Prism 里哪些是可打包工具、哪些是正式评审报告、哪些是本地运行证据”的边界问题。现在 RedCap 已经能证明：`prism/tools` 与 `prism/README.md` 是当前包面候选；`prism/reports` 与 `prism/runs` 不进入包面；未来如果要真实迁移或清理运行证据，必须另开任务并满足独立门禁。",
       "status_basis": "filename_recency_only",
       "summary_points": {
