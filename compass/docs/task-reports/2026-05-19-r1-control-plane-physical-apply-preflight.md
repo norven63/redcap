@@ -13,7 +13,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：完成本轮 Prism acceptance、clean workspace E2E 和 closeout receipt；之后再根据正式发布路线决定进入 control-plane 真实 copy-first apply、Prism evidence apply，或等待 Layer A 产品范围裁决。
+- 下一步计划做的是：P4-4 已正式收口；后续要根据正式发布路线决定是否进入 control-plane 真实 copy-first apply、Prism evidence apply，或等待 Layer A 产品范围裁决。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -81,6 +81,9 @@ P4-3e 收口后的下一步选择已由 Claude Code 与 Kimi 共同评审。两�
 - `bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-physical-apply-preflight-check`
 - `bash compass/tools/redcap-formal-release-readiness-plan-check.sh`
 - `bash compass/tools/redcap-backlog-check.sh strict .dev-task.md`
+- `bash compass/tools/redcap-spec-check.sh "$PWD"`
+- `bash compass/tools/redcap-clean-workspace-e2e.sh --check-result`
+- `bash compass/tools/redcap-diagnose.sh .dev-task.md`
 
 ## 四、人工审核要点
 
@@ -107,19 +110,19 @@ P4-3e 收口后的下一步选择已由 Claude Code 与 Kimi 共同评审。两�
 
 | 项目 | 结果 |
 | --- | --- |
-| 执行承诺账本 | 待 closeout 同步 |
+| 执行承诺账本 | 8/8 已兑现 |
 | 棱镜验收 | 已通过：Claude Code 与 Kimi 均给出 `pass`，并已绑定到当前任务哈希 |
-| closeout summary | 待生成 |
-| closeout receipt | 待生成 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-control-plane-physical-apply-preflight-2954936d6abb21687b3784ceeb35956e89759498d1d8c52967cedd6cf54536e3.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-control-plane-physical-apply-preflight-2954936d6abb21687b3784ceeb35956e89759498d1d8c52967cedd6cf54536e3.json` |
 
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 已完成 | apply preflight manifest、checker、targeted acceptance、release plan 接线、backlog 接线已落地。 |
-| 已自检 | 部分通过 | targeted checks 与 backlog check 已通过；仍需 full diagnose / spec-check / clean workspace E2E。 |
-| 已独立验收 | 已通过 | Claude Code 与 Kimi 均无 blocker；clean workspace E2E 刷新被列为 closeout 前正常必做项。 |
-| 已正式完成 | 否 | closeout receipt 尚未生成；生成 receipt 后才允许改为正式完成。 |
+| 已自检 | 已通过 | targeted checks、spec-check、diagnose、clean workspace E2E、backlog strict 均已通过。 |
+| 已独立验收 | 已通过 | Claude Code 与 Kimi 均无 blocker；clean workspace E2E 已刷新。 |
+| 已正式完成 | 是 | closeout receipt 已生成，pending closure 已清零，承诺账本 8/8。 |
 
 ## 六、遗留问题与下一步
 
@@ -133,13 +136,14 @@ P4-3e 收口后的下一步选择已由 Claude Code 与 Kimi 共同评审。两�
 
 ### 6.2 触发的新问题
 
-暂无新增阻塞问题。本轮如果后续验证发现 task-report inbox 超限、catalog 过期或 clean workspace E2E stale，将按既有信息架构门禁处理。
+- 收口时发现 `.dev-task.md` 的 `baseline_head` 使用了错误的完整 SHA，导致 commit proof 和 artifact lifecycle 无法解析基线；已修正为真实提交 `678c6ad1b66205d4b54f4ec1037715c8a7b0eb51`。
+- 收口时发现允许修改范围漏登记部分派生清单与归档清单，导致 drift-check 阻断；已补齐范围并重新通过 closeout。
 
 ### 6.3 推荐的下一步行动
 
-1. 完成本轮 Prism acceptance。
-2. 跑全量 spec / diagnose / clean workspace E2E。
-3. 生成 closeout receipt。
+1. 根据正式发布路线，选择下一个仍可自主推进的 release-readiness 切片。
+2. 如果进入真实 apply，必须继续保持 copy-first / alias-first，不允许直接删除或替换旧锚点。
+3. 如果触碰 Prism evidence apply、Layer A 产品边界、许可证、registry 或真实发布，必须进入人工决策点。
 
 ## 七、经验沉淀
 
@@ -164,7 +168,8 @@ P4-3e 收口后的下一步选择已由 Claude Code 与 Kimi 共同评审。两�
 ### 附录 A：Commits
 
 ```
-待提交
+4760509 feat(release): 增加控制面 apply 预检
+012092f test(release): 刷新 P4-4 clean workspace E2E
 ```
 
 ### 附录 B：棱镜调用记录（如有）
