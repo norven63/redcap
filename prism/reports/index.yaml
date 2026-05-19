@@ -1,4 +1,38 @@
 reports:
+  - id: "20260519-r1-layera-product-boundary-preflight"
+    mode: review
+    date: "2026-05-19"
+    topic: "Formal release R1 Layer A product boundary preflight"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass-with-concerns"
+    consensus_actions:
+      - "Accept P4-2r as a Layer A product-boundary preflight only, not as a product-scope decision"
+      - "Keep internal-layer-a blocking formal release until Norven makes a product decision or a future boundary-resolution tranche completes"
+      - "Treat loom package absence as anti-leakage evidence, not as proof that Layer A is retired or public-ready"
+      - "Require any future include/exclude/move path to carry compatibility tests, package-safety proof, clean workspace E2E, Prism review and closeout receipt"
+    open_questions:
+      - "Actual Layer A product-scope decision remains future Norven decision work"
+      - "Actual physical migration, retirement, or deletion of loom remains forbidden until a separate approved tranche"
+      - "Internal-control-plane and prism-layer-and-evidence remain separate release blockers"
+      - "This review does not authorize public release, license changes, destructive deletion, release switch changes, or registry release"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-layera-product-boundary-preflight.json"
+      - "compass/tools/redcap-r1-layera-product-boundary-check.py"
+      - "compass/tools/redcap-r1-layera-product-boundary-check.sh"
+      - "compass/tools/redcap-formal-release-readiness-plan-check.py"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "references/formal-release-readiness-plan.json"
+      - "references/formal-release-r1-root-group-disposition-preflight.json"
+      - "references/pre-release-product-architecture-review.json"
+      - "references/redcap-parent-task-ledger.md"
+      - "references/backlogs/framework-upgrade.json"
+      - "prism/reports/2026-05-19-r1-layera-product-boundary-preflight-review.md"
+      - "prism/runs/20260519-r1-layera-product-boundary-preflight/session-registry.yaml"
+    archived: false
   - id: "20260518-r1-prism-evidence-retention-split-preflight"
     mode: review
     date: "2026-05-18"

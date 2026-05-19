@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 205,
-    "control_plane_candidate_count": 181,
-    "compass": 132,
-    "references": 49,
-    "compass_tools_shell": 81,
-    "compass_tools_python": 51,
-    "references_json": 46,
+    "candidate_count": 208,
+    "control_plane_candidate_count": 184,
+    "compass": 134,
+    "references": 50,
+    "compass_tools_shell": 82,
+    "compass_tools_python": 52,
+    "references_json": 47,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -75,14 +75,14 @@
       {
         "path": "compass",
         "role": "maintainer-control-plane-tools",
-        "package_candidate_count": 130,
+        "package_candidate_count": 134,
         "current_contract": "Packaged for alpha readiness because root wrappers, revive/status/diagnose/closeout, release safety and validators still call these tools.",
         "future_target": "internal/control-plane/tools with stable runtime facades and compatibility aliases"
       },
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 48,
+        "package_candidate_count": 50,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }

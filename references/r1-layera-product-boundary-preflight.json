@@ -1,0 +1,291 @@
+{
+  "version": 1,
+  "preflight_id": "redcap-r1-layera-product-boundary-preflight",
+  "status": "preflight-analysis-only-layera-boundary-still-blocked",
+  "created_at": "2026-05-19T00:00:00Z",
+  "purpose": "Turn the R1 internal-layer-a blocker into an auditable product-boundary preflight before any public product decision, physical move, retirement, deletion, release-switch change, or registry release action.",
+  "claim_boundary": {
+    "is_layera_public_product_decided": false,
+    "is_layera_included_in_public_release": false,
+    "is_layera_retired_or_removed": false,
+    "is_layera_physically_moved": false,
+    "is_internal_layera_release_safe": false,
+    "is_r1_closed": false,
+    "is_public_release_ready": false,
+    "physical_moves_performed": false,
+    "release_switches_changed": false,
+    "allowed_user_claim": "Layer A / loom now has a machine-checkable product-boundary preflight, package-absence proof, consumer matrix, and future include/exclude gate.",
+    "forbidden_claims": [
+      "Layer A has been included in the public RedCap product.",
+      "Layer A has been retired or removed.",
+      "loom has been physically moved.",
+      "The internal-layer-a blocker is resolved.",
+      "RedCap is public-release-ready.",
+      "The registry release action may proceed."
+    ]
+  },
+  "upstream_blocker": {
+    "source": "references/formal-release-r1-root-group-disposition-preflight.json#internal-layer-a",
+    "target_parent": "internal-layer-a",
+    "current_roots": [
+      "loom"
+    ],
+    "upstream_disposition_id": "release-blocker-until-resolved",
+    "this_preflight_resolves_blocker": false
+  },
+  "package_candidate_snapshot": {
+    "candidate_count": 208,
+    "loom_candidate_count": 0,
+    "source": "redcap-runtime-package-manifest.sh --output <temp>"
+  },
+  "loom_inventory_snapshot": {
+    "source": "find loom -type f",
+    "total_files": 34,
+    "shell_files": 7,
+    "markdown_files": 25,
+    "yaml_files": 1,
+    "json_files": 1,
+    "total_lines": 4901,
+    "dispatcher_files": 8,
+    "roles_files": 12,
+    "tools_files": 7,
+    "test_reports_files": 3,
+    "fixtures_files": 4
+  },
+  "current_surface_contract": {
+    "roots": [
+      {
+        "path": "loom/dispatcher",
+        "role": "layera-state-machine-and-agent-routing-contract",
+        "package_candidate_count": 0,
+        "current_contract": "Layer A state machine, agent adapters, reload rules, and role prompt templates remain source-only compatibility assets until Norven makes a product-scope decision.",
+        "future_target": "runtime/loom, docs/layer-a, internal/layer-a, or private archive after explicit product boundary decision"
+      },
+      {
+        "path": "loom/roles",
+        "role": "layera-role-handbooks-and-workflow-prompts",
+        "package_candidate_count": 0,
+        "current_contract": "Role handbooks describe the old Dispatcher team workflow and must not be presented as public runtime UX without productization and compatibility proof.",
+        "future_target": "public docs, runtime role templates, or private archive after productization decision"
+      },
+      {
+        "path": "loom/tools",
+        "role": "layera-hooks-session-and-e2e-tools",
+        "package_candidate_count": 0,
+        "current_contract": "Layer A session hooks, fallback review helpers, and E2E scripts remain excluded from the package until their host-entry contract is explicitly productized.",
+        "future_target": "runtime/loom-tools or internal/layer-a-tools with stable command facades"
+      },
+      {
+        "path": "loom/test-reports",
+        "role": "layera-e2e-evidence-and-pending-validation-queue",
+        "package_candidate_count": 0,
+        "current_contract": "Historical Layer A E2E reports and pending validations stay as archaeology and release-blocking context; they are not completion proof for the current release.",
+        "future_target": "private evidence archive, public examples, or a refreshed validation suite after explicit review"
+      },
+      {
+        "path": "loom/fixtures",
+        "role": "layera-benchmark-fixtures",
+        "package_candidate_count": 0,
+        "current_contract": "Benchmark fixtures stay source-only and must not enter package candidates without fixture privacy and product-surface review.",
+        "future_target": "public fixtures, test fixtures, or private archive after safety review"
+      }
+    ],
+    "candidate_categories": [
+      {
+        "id": "layera-dispatcher-contract",
+        "meaning": "State machine, agent adapters, reload rules, and prompts that define the old Layer A dispatcher workflow.",
+        "future_target": "runtime/loom or docs/layer-a",
+        "release_posture": "must remain excluded from public package candidates until product scope is decided"
+      },
+      {
+        "id": "layera-role-workflow-assets",
+        "meaning": "PM, architect, developer, QA, and reviewer role handbooks.",
+        "future_target": "public docs, role templates, or private archive",
+        "release_posture": "must not be presented as the public CLI experience without productization"
+      },
+      {
+        "id": "layera-runtime-tools",
+        "meaning": "Layer A shell tools for session start/end, stop handling, fallback review, and E2E checks.",
+        "future_target": "runtime/loom-tools or internal/layer-a-tools",
+        "release_posture": "requires host-entry review and clean workspace E2E before any package exposure"
+      },
+      {
+        "id": "layera-e2e-evidence",
+        "meaning": "Latest report, pending validations, and benchmark scenario for historical Layer A behavior.",
+        "future_target": "private evidence archive or refreshed release validation suite",
+        "release_posture": "must not be used as current release completion proof without rerun evidence"
+      },
+      {
+        "id": "layera-fixtures",
+        "meaning": "Benchmark carrier fixtures used by Layer A tests.",
+        "future_target": "public test fixtures or private archive",
+        "release_posture": "requires privacy and package-surface review"
+      },
+      {
+        "id": "package-excluded-product-boundary",
+        "meaning": "loom currently has zero package candidates, but that absence is not a product decision.",
+        "future_target": "explicit include, exclude, retire, or archive decision",
+        "release_posture": "must remain a release blocker until the future decision gate is satisfied"
+      }
+    ]
+  },
+  "consumer_matrix": [
+    {
+      "consumer_id": "layera-state-machine-and-routing",
+      "consumer_paths": [
+        "loom/dispatcher/state-machine.md",
+        "loom/dispatcher/agent-adapters.md",
+        "loom/dispatcher/reload-rules.yaml"
+      ],
+      "depends_on": [
+        "references/layera-layerb-boundary-policy.json",
+        "loom/dispatcher/prompt-templates/*.md"
+      ],
+      "boundary_risk": "moving or publishing Layer A without deciding whether the old dispatcher model is product, internal compatibility layer, or private archaeology",
+      "required_before_include_or_move": [
+        "product scope decision",
+        "host-entry review",
+        "compatibility aliases",
+        "clean workspace E2E"
+      ]
+    },
+    {
+      "consumer_id": "layera-role-prompts-and-handbooks",
+      "consumer_paths": [
+        "loom/roles/**/handbook.md",
+        "loom/dispatcher/prompt-templates/*.md"
+      ],
+      "depends_on": [
+        "Layer A dispatcher role sequence",
+        "communication protocol expectations"
+      ],
+      "boundary_risk": "shipping old role handbooks as if they were current public RedCap UX",
+      "required_before_include_or_move": [
+        "public documentation review",
+        "terminology refresh",
+        "AI-readable index update"
+      ]
+    },
+    {
+      "consumer_id": "layera-session-hooks-and-tools",
+      "consumer_paths": [
+        "loom/tools/redcap-layerA-session-start.sh",
+        "loom/tools/redcap-layerA-session-end.sh",
+        "loom/tools/redcap-layerA-stop.sh",
+        "loom/tools/redcap-layerA-review-fallback.sh"
+      ],
+      "depends_on": [
+        "Layer A project workflow state",
+        "host-specific session lifecycle"
+      ],
+      "boundary_risk": "introducing unproven hooks into public CLI/runtime behavior",
+      "required_before_include_or_move": [
+        "host-entry review",
+        "hook readiness proof",
+        "rollback plan"
+      ]
+    },
+    {
+      "consumer_id": "layera-e2e-and-validation-queue",
+      "consumer_paths": [
+        "loom/test-reports/latest-e2e-report.md",
+        "loom/test-reports/pending-validations.md",
+        "loom/tools/redcap-e2e-session.sh",
+        "loom/tools/redcap-e2e-postcheck.sh"
+      ],
+      "depends_on": [
+        "Layer A compatibility expectations",
+        "historical complete-user-project E2E queue"
+      ],
+      "boundary_risk": "losing unresolved validation debt or treating old evidence as current completion",
+      "required_before_include_or_move": [
+        "pending validations disposition",
+        "fresh compatibility tests",
+        "receipt-preserving archive alias"
+      ]
+    },
+    {
+      "consumer_id": "architecture-and-human-docs",
+      "consumer_paths": [
+        "ARCHITECTURE.md",
+        "README.md",
+        "references/file-lookup-dictionary.md"
+      ],
+      "depends_on": [
+        "Layer A / Layer B terminology",
+        "progressive disclosure rules"
+      ],
+      "boundary_risk": "making human docs point to moved or retired Layer A assets without an alias and status explanation",
+      "required_before_include_or_move": [
+        "human-readable status wording",
+        "file lookup dictionary update",
+        "docs catalog update"
+      ]
+    },
+    {
+      "consumer_id": "layerb-review-fallback-and-boundary-checks",
+      "consumer_paths": [
+        "compass/tools/redcap-on-stop-review.sh",
+        "compass/tools/redcap-layer-boundary-check.sh",
+        "references/layera-layerb-boundary-policy.json"
+      ],
+      "depends_on": [
+        "loom/tools/redcap-e2e-postcheck.sh",
+        "loom/test-reports/e2e-session.yaml"
+      ],
+      "boundary_risk": "breaking Layer B stop-review fallback checks that still reference Layer A compatibility material",
+      "required_before_include_or_move": [
+        "boundary policy update",
+        "fallback path alias",
+        "spec-check regression"
+      ]
+    }
+  ],
+  "future_decision_gate": {
+    "product_scope_decision_allowed_now": false,
+    "physical_move_allowed_now": false,
+    "delete_or_retire_allowed_now": false,
+    "required_before_include_in_public_product": [
+      "explicit Norven product scope decision",
+      "Layer A public UX and terminology review",
+      "compatibility tests",
+      "host-entry review",
+      "package-safety proof",
+      "clean workspace E2E",
+      "Prism review",
+      "closeout receipt"
+    ],
+    "required_before_exclude_or_retire": [
+      "explicit Norven product scope decision",
+      "compatibility deprecation plan",
+      "archaeology and alias preservation",
+      "pending validations disposition",
+      "host-entry review",
+      "Prism review",
+      "closeout receipt"
+    ],
+    "required_before_physical_move": [
+      "dry-run migration manifest",
+      "consumer matrix review",
+      "compatibility aliases",
+      "rollback plan",
+      "package-safety proof",
+      "clean workspace E2E",
+      "Prism review",
+      "closeout receipt"
+    ],
+    "alias_strategy": "Any future move must provide path aliases or human/AI lookup redirects for dispatcher, roles, tools, reports, and fixtures before deleting old anchors.",
+    "rollback_strategy": "Any future include/exclude/move must preserve a rollback plan and receipt anchors before destructive cleanup."
+  },
+  "result": {
+    "target_parent": "internal-layer-a",
+    "this_preflight_completed": true,
+    "release_blocker_status": "still-blocking-release-until-human-product-scope-decision-or-future-boundary-resolution",
+    "remaining_release_blockers_after_this_preflight": [
+      "internal-control-plane",
+      "prism-layer-and-evidence",
+      "internal-layer-a"
+    ],
+    "next_required_tranche": "A future Layer A product decision or physical boundary-resolution task must decide include/exclude/retire/move with Norven authorization, compatibility proof, package-safety proof, clean workspace E2E, Prism review, and closeout receipt."
+  }
+}

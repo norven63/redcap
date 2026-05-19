@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 92,
-  "bytes_total": 1273787,
+  "file_count": 93,
+  "bytes_total": 1296136,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 88,
+    "private-task-report-archive": 89,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -477,6 +477,14 @@
       "class": "private-task-report-archive",
       "bytes": 16953,
       "sha256": "a992f386d4f70855147909be372786b8900738235c8efe4de7cc8ce85a092f2b",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md",
+      "class": "private-task-report-archive",
+      "bytes": 22349,
+      "sha256": "fcd7063e0afaa1aabc99dace363f86b9a9f0423b53370b3096fe0de29ba2b561",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

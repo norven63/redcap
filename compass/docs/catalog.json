@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 373950,
-    "lines": 7404,
-    "chars": 226924,
+    "size_bytes": 362662,
+    "lines": 7348,
+    "chars": 220976,
     "rough_token_pressure": {
-      "low": 56731,
-      "high": 113462
+      "low": 55244,
+      "high": 110488
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 190381,
-        "lines": 4508,
-        "chars": 113801,
+        "size_bytes": 190816,
+        "lines": 4511,
+        "chars": 114036,
         "rough_token_pressure": {
-          "low": 28450,
-          "high": 56900
+          "low": 28509,
+          "high": 57018
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 178039,
-        "lines": 2807,
-        "chars": 109349,
+        "size_bytes": 166316,
+        "lines": 2748,
+        "chars": 103166,
         "rough_token_pressure": {
-          "low": 27337,
-          "high": 54674
+          "low": 25791,
+          "high": 51583
         }
       }
     },
@@ -86,12 +86,6 @@
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md",
-        "chars": 12803,
-        "lines": 262,
-        "read_policy": "read-catalog-summary-by-default"
-      },
-      {
         "path": "compass/docs/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md",
         "chars": 10211,
         "lines": 257,
@@ -108,6 +102,12 @@
         "chars": 9699,
         "lines": 242,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+      },
+      {
+        "path": "compass/docs/task-reports/2026-05-16-post-migration-full-engineering-review.md",
+        "chars": 9691,
+        "lines": 235,
+        "read_policy": "read-catalog-summary-by-default"
       }
     ]
   },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 13906,
-      "lines": 163,
-      "chars": 7736,
+      "size_bytes": 14341,
+      "lines": 166,
+      "chars": 7971,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RedCap 信息架构与运行时产物治理",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 22349,
-      "lines": 262,
-      "chars": 12803,
-      "summary": "当前已完成：RedCap 现在把任务报告、私有知识、运行时证据、公共模板、外部 arsenal 和 RedCap Forge 的职责边界正式分清，并接入了机器门禁与棱镜复审。 / 详情：本轮解决的是“报告和知识文档越积越散、用户很难判断哪些该读、哪些可公开、哪些只是运行痕迹”的信息架构问题。新的治理规则先定义每类资产的生命周期和出口边界，再让检查器阻断报告 inbox 膨胀、私有材料误进公共库、Forge/Arsenal 命名混淆和 P4 顺序误读。最终效果是：RedCap 可以继续保留考古与追踪能力，但默认不会把旧报告、身份信息、运行证据或私有知识直接推向公共沉淀库。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-11-rasg-020-runtime-contract-surface.md",
       "collection": "task-reports",
       "title": "任务完成报告：RASG-020 公开 runtime 契约与维护者工具分层",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-022 shared-knowledge 模板迁移切片",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15775,
       "lines": 249,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：历史资产物理清理与高价值经验候选化发布硬门",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12741,
       "lines": 191,
       "chars": 7617,
       "summary": "当前已完成：RedCap 已把两个正式发布前硬门落地：历史资产必须安全归位，以及高价值经验必须先完成候选判断。 / 详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”；随后补上一个控制面缺口：重大 bug、用户纠偏、评审缺口、递归/进程风暴等经验，不能再靠人工提醒才进入沉淀流程。现在这两类硬门都已写入发布计划、授权矩阵、handoff、backlog 和检查脚本。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 已把两个正式发布前硬门落地：历史资产必须安全归位，以及高价值经验必须先完成候选判断。",
-          "详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”；随后补上一个控制面缺口：重大 bug、用户纠偏、评审缺口、递归/进程风暴等经验，不能再靠人工提醒才进入沉淀流程。现在这两类硬门都已写入发布计划、授权矩阵、handoff、backlog 和检查脚本。"
-        ],
-        "previous_step": [
-          "上一步完成的是：正式发布准备计划与人工授权矩阵已经落盘，但旧计划仍允许部分高风险根目录在发布前保持“延期”口径。"
-        ],
-        "next_step": [
-          "下一步计划做的是：进入正式发布任务时，先处理历史资产物理清理 tranche，并确认当前 release task 的高价值经验候选判断已通过；不能直接跳到发布授权或真实发布。"
-        ],
-        "position": [
-          "整体计划脉络图是：发布准备计划落盘 -> 历史资产物理清理硬门升级 -> 高价值经验候选化硬门升级 -> formal release task 分 tranche 处理历史资产与发布授权 -> 最终发布前全量门禁。",
-          "当前所在位置：P4-2n / historical-asset-physical-cleanup-release-hard-gate；本轮是发布前控制面加固，不是真实发布。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-18-r1-control-plane-contract-split-preflight.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → Prism 证据保留拆分预检 → 剩余物理拆分 / Layer A 产品边界 / 最终发布授权。",
           "当前所在位置：`framework-upgrade / P4-2q`，处于 `prism-layer-and-evidence` 技术预检完成点。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：R1 Layer A 产品边界预检",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 10626,
+      "lines": 203,
+      "chars": 6620,
+      "summary": "当前已完成：R1 的 `internal-layer-a` blocker 已被拆成可机器检查的“Layer A 产品边界预检”，但它仍然阻塞正式发布。 / 详情：本轮证明 `loom` 当前不进入 npm/package 候选面，并记录了 `loom/dispatcher`、`loom/roles`、`loom/tools`、`loom/test-reports`、`loom/fixtures` 的职责、消费者和未来决策门禁。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：R1 的 `internal-layer-a` blocker 已被拆成可机器检查的“Layer A 产品边界预检”，但它仍然阻塞正式发布。",
+          "详情：本轮证明 `loom` 当前不进入 npm/package 候选面，并记录了 `loom/dispatcher`、`loom/roles`、`loom/tools`、`loom/test-reports`、`loom/fixtures` 的职责、消费者和未来决策门禁。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2q 已把 `prism-layer-and-evidence` 做成证据保留拆分预检，并保留 R1 仍未关闭的事实。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续处理 R1 中仍未解决的物理拆分 / 产品范围裁决问题；正式 registry 发布、许可证和发布开关仍留到未来人工授权任务。"
+        ],
+        "position": [
+          "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → Prism 证据保留拆分预检 → Layer A 产品边界预检 → 剩余物理拆分 / 产品范围裁决 / 最终发布授权。",
+          "当前所在位置：`framework-upgrade / P4-2r`，处于 `internal-layer-a` 产品边界预检完成点。"
         ]
       }
     }

@@ -9,7 +9,7 @@
       "id": "P4-2f-status",
       "claim": "P4-2f information architecture and runtime artifact governance is completed, not in-progress.",
       "evidence": [
-        "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md",
+        "private-archive/redcap-knowledge/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md",
         "references/information-architecture-artifact-governance-policy.json",
         "references/redcap-forge-policy.json"
       ]

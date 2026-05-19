@@ -206,6 +206,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-r1-root-group-disposition-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-contract-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-evidence-retention-split-check
+  bash compass/tools/redcap-multi-session-acceptance.sh r1-layera-product-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-structure-task-tree-check
@@ -1546,7 +1547,7 @@ run_report_register_requires_claim_case() {
     redcap_runtime_clear_context
     unset REDCAP_RUNTIME_ALLOW_DISK_RECOVERY REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY REDCAP_RUNTIME_CAPABILITY 2>/dev/null || true
 
-    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     degraded_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "degraded-mode.count")"
     before="$(counter_value "$degraded_file")"
 
@@ -4099,7 +4100,7 @@ run_pending_closure_clear_restores_on_ledger_failure_case() {
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "pending-closure-clear-restores-on-ledger-failure" >/dev/null 2>&1 || true
 
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     state_file="$(
         redcap_interop_write_pending_closure \
             "$REDCAP_ROOT" \
@@ -4153,7 +4154,7 @@ run_pending_closure_clear_locked_mode_case() {
             "acceptance-seed" \
             "pending-closure" \
             "pending-closure-clear-locked-mode" \
-            "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md" \
+            "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md" \
             "$current_head" \
             "$current_head"
     )" || fail "failed to seed pending closure for locked clear case"
@@ -4199,7 +4200,7 @@ run_session_end_clears_all_matching_pending_states_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end clear case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4283,7 +4284,7 @@ run_session_end_clears_compatible_pending_refresh_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end refresh case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4380,7 +4381,7 @@ run_session_end_clears_closeout_runtime_pending_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end closeout clear case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4697,7 +4698,7 @@ run_task_report_check_accepts_legacy_pending_anchor_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-report-legacy-pending-anchor/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    legacy_rel="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -4768,7 +4769,7 @@ run_task_complete_guard_replaces_stale_marker_with_unique_report_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-complete-stale-marker/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    legacy_rel="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -4897,7 +4898,7 @@ run_task_report_check_rejects_zero_diff_stale_marker_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-report-zero-diff-stale-marker/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    legacy_rel="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -5569,7 +5570,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md
+task_report: compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -5740,7 +5741,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md
+task_report: compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -5875,7 +5876,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md
+task_report: compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -6199,7 +6200,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md
+task_report: compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -6983,7 +6984,7 @@ run_session_end_success_notify_after_clear_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify order case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -7078,7 +7079,7 @@ run_session_end_success_notify_skip_for_closeout_runtime_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify skip case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -7170,7 +7171,7 @@ run_session_end_notify_timeout_releases_lock_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify timeout case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -7286,7 +7287,7 @@ run_session_end_blocked_rewrite_keeps_report_anchor_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for report anchor case"
     write_current_report_marker_fixture "$report_path"
     redcap_interop_write_pending_closure \
@@ -7366,7 +7367,7 @@ run_session_end_blocked_rewrite_normalizes_absolute_report_anchor_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_rel="compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+    report_rel="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
     report_abs="$REDCAP_ROOT/$report_rel"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for absolute report anchor case"
     redcap_interop_write_pending_closure \
@@ -9160,7 +9161,7 @@ run_docs_catalog_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check)"
     assert_string_contains "$output" "DOCS_CATALOG_OK"
-    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"'
+    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"read_policy": "read-catalog-summary-first-then-open-if-current-anchor"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"status_basis": "filename_recency_only"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md"'
@@ -9213,7 +9214,7 @@ run_docs_catalog_progressive_disclosure_case() {
     assert_string_contains "$budget_output" "files=1"
 
     set +e
-    blocked_output="$(REDCAP_DOCS_BUDGET_MAX_HIGH_TOKENS=1000 bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md" 2>&1)"
+    blocked_output="$(REDCAP_DOCS_BUDGET_MAX_HIGH_TOKENS=1000 bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md" 2>&1)"
     blocked_status=$?
     set -e
     [[ "$blocked_status" -ne 0 ]] || fail "oversized docs read budget unexpectedly passed"
@@ -13648,6 +13649,7 @@ run_formal_release_readiness_plan_check_case() {
     assert_string_contains "$output" "historical_asset_cleanup_hard_gate=registered"
     assert_string_contains "$output" "r1_root_group_disposition_preflight=registered"
     assert_string_contains "$output" "r1_prism_evidence_retention_split_preflight=registered"
+    assert_string_contains "$output" "r1_layera_product_boundary_preflight=registered"
     assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'formal release readiness plan check missing'
 
     bad_plan="$ACCEPT_ROOT/formal-release-readiness-missing-cleanup-gate.json"
@@ -13734,6 +13736,27 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "formal release readiness checker should reject missing R1 Prism evidence preflight"
     assert_string_contains "$stale_output" "R1 Prism evidence retention split preflight"
+
+    bad_plan="$ACCEPT_ROOT/formal-release-readiness-missing-r1-layera-boundary.json"
+    python3 - "$REDCAP_ROOT/references/formal-release-readiness-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["required_sources"] = [
+    item
+    for item in payload["required_sources"]
+    if item != "references/r1-layera-product-boundary-preflight.json"
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-formal-release-readiness-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "formal release readiness checker should reject missing R1 Layer A product boundary preflight"
+    assert_string_contains "$stale_output" "R1 Layer A product boundary preflight"
 }
 
 run_formal_release_r1_root_group_disposition_check_case() {
@@ -13850,6 +13873,80 @@ PY
     assert_string_contains "$stale_output" "claim_boundary.is_prism_evidence_physically_cleaned"
 }
 
+run_r1_layera_product_boundary_check_case() {
+    local output bad_preflight stale_output status
+
+    log "case: r1-layera-product-boundary-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-layera-product-boundary-check.sh")"
+    assert_string_contains "$output" "R1_LAYERA_PRODUCT_BOUNDARY_PREFLIGHT_OK"
+    assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_string_contains "$output" "loom_candidates=0"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'R1 Layer A product boundary check missing'
+
+    bad_preflight="$ACCEPT_ROOT/r1-layera-product-boundary-bad-public-decision.json"
+    python3 - "$REDCAP_ROOT/references/r1-layera-product-boundary-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["is_layera_public_product_decided"] = True
+payload["claim_boundary"]["is_layera_included_in_public_release"] = True
+payload["future_decision_gate"]["product_scope_decision_allowed_now"] = True
+payload["result"]["release_blocker_status"] = "resolved"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-layera-product-boundary-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Layer A product boundary checker should reject public-decision/resolved claims"
+    assert_string_contains "$stale_output" "claim_boundary.is_layera_public_product_decided"
+
+    bad_preflight="$ACCEPT_ROOT/r1-layera-product-boundary-missing-consumer.json"
+    python3 - "$REDCAP_ROOT/references/r1-layera-product-boundary-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["consumer_matrix"] = [
+    item
+    for item in payload["consumer_matrix"]
+    if item.get("consumer_id") != "layerb-review-fallback-and-boundary-checks"
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-layera-product-boundary-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Layer A product boundary checker should reject missing consumer matrix entries"
+    assert_string_contains "$stale_output" "consumer_matrix must be a list with at least 6 item(s)"
+
+    bad_preflight="$ACCEPT_ROOT/r1-layera-product-boundary-missing-gate.json"
+    python3 - "$REDCAP_ROOT/references/r1-layera-product-boundary-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["future_decision_gate"]["required_before_physical_move"] = [
+    item
+    for item in payload["future_decision_gate"]["required_before_physical_move"]
+    if item != "Prism review"
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-layera-product-boundary-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Layer A product boundary checker should reject missing future decision gate entries"
+    assert_string_contains "$stale_output" "future_decision_gate.required_before_physical_move missing"
+}
+
 run_pre_release_product_architecture_check_case() {
     local output bad_review stale_output status
 
@@ -13857,7 +13954,7 @@ run_pre_release_product_architecture_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-pre-release-product-architecture-check.sh")"
     assert_string_contains "$output" "PRE_RELEASE_PRODUCT_ARCHITECTURE_OK"
-    assert_string_contains "$output" "release_blockers=2"
+    assert_string_contains "$output" "release_blockers=5"
 
     output="$(bash "$REDCAP_ROOT/bin/redcap" pre-release-review)"
     assert_string_contains "$output" "PRE_RELEASE_PRODUCT_ARCHITECTURE_OK"
@@ -14326,7 +14423,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -14672,6 +14769,7 @@ redcap-release-e2e-matrix-check.sh|release-e2e-matrix|fixture release E2E matrix
 redcap-formal-release-r1-root-group-disposition-check.sh|formal-release-r1-root-group-disposition|fixture formal release R1 root group disposition failure
 redcap-r1-control-plane-contract-split-check.sh|r1-control-plane-contract-split|fixture R1 control-plane contract split failure
 redcap-r1-prism-evidence-retention-split-check.sh|r1-prism-evidence-retention-split|fixture R1 Prism evidence retention split failure
+redcap-r1-layera-product-boundary-check.sh|r1-layera-product-boundary|fixture R1 Layer A product boundary failure
 redcap-formal-release-readiness-plan-check.sh|formal-release-readiness-plan|fixture formal release readiness plan failure
 redcap-change-intake-check.sh|change-intake|fixture change intake failure
 redcap-prism-degradation-check.sh|prism-degradation|fixture Prism degradation failure
@@ -14765,6 +14863,7 @@ EOF
             formal-release-r1-root-group-disposition) expected_message="formal release R1 root group disposition check failed" ;;
             r1-control-plane-contract-split) expected_message="R1 control-plane contract split check failed" ;;
             r1-prism-evidence-retention-split) expected_message="R1 Prism evidence retention split check failed" ;;
+            r1-layera-product-boundary) expected_message="R1 Layer A product boundary check failed" ;;
             formal-release-readiness-plan) expected_message="formal release readiness plan check failed" ;;
             conclusion-prism) expected_message="conclusion Prism check failed" ;;
         esac
@@ -14859,6 +14958,7 @@ for rel in [
 	"compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
 	"compass/tools/redcap-r1-control-plane-contract-split-check.sh",
 	"compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
+	"compass/tools/redcap-r1-layera-product-boundary-check.sh",
 	"compass/tools/redcap-formal-release-readiness-plan-check.sh",
 	"compass/tools/redcap-pre-release-product-architecture-check.sh",
 	"compass/tools/redcap-pre-release-structure-task-tree-check.sh",
@@ -16343,6 +16443,9 @@ case "$COMMAND" in
         ;;
     r1-prism-evidence-retention-split-check)
         run_r1_prism_evidence_retention_split_check_case
+        ;;
+    r1-layera-product-boundary-check)
+        run_r1_layera_product_boundary_check_case
         ;;
     formal-release-readiness-plan-check)
         run_formal_release_readiness_plan_check_case

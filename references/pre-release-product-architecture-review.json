@@ -4,14 +4,14 @@
   "task_id": "pre-release-product-architecture-review",
   "status": "blocked-pending-human-release-decisions",
   "release_recommendation": "not-ready-before-human-release-decisions",
-  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E. P4-2k narrowed the npm candidate surface to a curated runtime-readiness profile; RASG-020 now adds an explicit public-runtime versus maintainer-tool contract boundary. The remaining blockers are still explicit human release decisions: license choice and publication enablement.",
+  "summary": "RedCap is a mature local skill-root runtime with a CLI facade, package safety gate and clean workspace E2E. P4-2k narrowed the npm candidate surface to a curated runtime-readiness profile; RASG-020 now adds an explicit public-runtime versus maintainer-tool contract boundary. The remaining public-release blockers are explicit human release decisions plus R1 boundary blockers for internal-control-plane, prism-layer-and-evidence and internal-layer-a.",
   "observed_facts": {
     "current_package_name": "@norven63/redcap",
     "user_approved_public_package_name": "@norven63/redcap",
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 205,
+    "package_candidate_count": 208,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",
@@ -116,6 +116,39 @@
       "claim": "package.json currently declares UNLICENSED. That is acceptable while private=true, but a public npm release needs an explicit distribution/license decision before publish.",
       "evidence": [
         "package.json"
+      ],
+      "required_before_public_release": true
+    },
+    {
+      "id": "r1-internal-control-plane-boundary-unresolved",
+      "dimension": "machine-independence",
+      "severity": "release-blocker",
+      "claim": "The R1 internal-control-plane blocker remains unresolved. P4-2p made the control-plane split contract auditable, but did not physically split compass/references or claim release-safe completion.",
+      "evidence": [
+        "references/r1-control-plane-contract-split-preflight.json",
+        "references/formal-release-readiness-plan.json"
+      ],
+      "required_before_public_release": true
+    },
+    {
+      "id": "r1-prism-evidence-boundary-unresolved",
+      "dimension": "machine-independence",
+      "severity": "release-blocker",
+      "claim": "The R1 prism-layer-and-evidence blocker remains unresolved. P4-2q made Prism tools, reports and run evidence boundaries auditable, but did not physically split or clean Prism evidence.",
+      "evidence": [
+        "references/r1-prism-evidence-retention-split-preflight.json",
+        "references/formal-release-readiness-plan.json"
+      ],
+      "required_before_public_release": true
+    },
+    {
+      "id": "r1-layera-product-boundary-unresolved",
+      "dimension": "agent-container-contract",
+      "severity": "release-blocker",
+      "claim": "The R1 internal-layer-a blocker remains unresolved. P4-2r proves loom is absent from package candidates and records its consumers, but does not decide whether Layer A is public product, retired, moved or excluded.",
+      "evidence": [
+        "references/r1-layera-product-boundary-preflight.json",
+        "references/formal-release-readiness-plan.json"
       ],
       "required_before_public_release": true
     },

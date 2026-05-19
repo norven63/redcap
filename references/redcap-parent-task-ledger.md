@@ -159,9 +159,10 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 44. `P4-2o`：R1 延期根目录处置预检。（已完成；3 个根目录组仍阻塞 release，workspace-state 已证明不进包）
 45. `P4-2p`：R1 控制面契约拆分预检。（已完成；已把 internal-control-plane 的拆分条件和仍阻塞发布边界机器化）
 46. `P4-2q`：R1 Prism 证据保留拆分预检。（已完成；已把 Prism 工具/报告/运行证据边界和未来清理门禁机器化）
-47. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
-48. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界，并通过历史资产物理清理和 Evolution harvest signal 硬门）
-49. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
+47. `P4-2r`：R1 Layer A 产品边界预检。（已完成；已把 internal-layer-a / loom 的包面缺席、消费者矩阵和未来产品范围裁决门禁机器化）
+48. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
+49. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界，并通过历史资产物理清理和 Evolution harvest signal 硬门）
+50. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
 
 ## 当前不可声明
 
@@ -187,6 +188,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 - 不可声明 P4-2n 证明所有经验沉淀都已自动化；它证明高价值信号会先进入候选判断硬门，再由 promoted / no-promote / deferred-with-owner 收口。
 - 不可声明 P4-2o 证明 R1 历史资产清理已关闭或正式发布已就绪；它只证明 4 类延期根目录已经有机器可查的发布前处置预检，其中 3 类仍是 release blockers，workspace-state 只是本地状态排除出包。
 - 不可声明 P4-2p 证明 internal-control-plane 已经物理拆分或 release blocker 已解决；它只证明拆分前置契约、消费者矩阵、包面快照和 future split gate 已经可审计。
+- 不可声明 P4-2r 证明 Layer A 已纳入公开产品、已退休、已移动或 release blocker 已解决；它只证明 `loom` 当前不进包、职责/消费者矩阵和未来 include/exclude/move 决策门禁已经可审计。
 - 不可声明 Copilot CLI 已被 RedCap 禁用；P2-6 只限制 RedCap 自动路径，用户手动直接使用 Copilot 不在本任务范围。
 - 不可声明 P2-7 中途审计完成后 RedCap 就进入 public-release-ready；它只证明当前任务树、文件头、长期记忆边界和结构治理状态被重新对齐。
 - 不可声明 P2-9 消除了宿主对话最终回复与飞书消息到达之间的所有时间差；它只保证 RedCap 正常完成节点不再由 on-complete 和 closeout 各发一条 node-report。

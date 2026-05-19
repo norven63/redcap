@@ -258,7 +258,7 @@
         "references/information-architecture-artifact-governance-policy.json",
         "references/redcap-forge-policy.json",
         "references/execution-guarantees.json",
-        "compass/docs/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
+        "private-archive/redcap-knowledge/task-reports/2026-05-04-redcap-information-architecture-and-artifact-governance.md"
       ],
       "promotion_target": "lessons",
       "status": "promoted",
