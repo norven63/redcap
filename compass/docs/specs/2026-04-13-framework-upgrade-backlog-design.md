@@ -51,7 +51,7 @@
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
 - 当前焦点：`P4-6 R1 控制面 runtime facade copy-first`
-- 当前焦点说明：P4-6 进行中：把 internal-control-plane batch-1 runtime-public-support 条目推进为 runtime/redcap-core/tools 下的 copy-first facade；旧 compass/tools 仍是权威实现，不关闭 blocker，不执行发布。
+- 当前焦点说明：P4-6 已完成：internal-control-plane batch-1 runtime-public-support 条目已有 runtime/redcap-core/tools copy-first facade；旧 compass/tools 仍是权威实现，R1 blocker 仍未关闭，不执行发布。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -66,7 +66,7 @@
 | 阶段 7：发布准备证据边界 | 已完成 | P4-3e | 正式发布动作之前，先把 Prism 证据层拆分推进到 dry-run / no-apply 级别，避免 raw evidence、报告归档和 package-visible Prism 工具继续混成一个不可审计边界。 |
 | 阶段 8：发布准备控制面 apply 预检 | 已完成 | P4-4 | 正式发布动作之前，已把控制面未来 copy-first / alias-first apply 的前置护栏、旧锚点保留策略、回滚门禁和验证计划做成机器可检查状态；当前仍不执行真实复制、移动、删除或发布。 |
 | 阶段 9：发布准备 Prism evidence apply 预检 | 已完成 | P4-5 | 正式发布动作之前，已把 Prism evidence 未来 copy-first / alias-first apply 的前置护栏、证据保留策略、回滚门禁和验证计划做成机器可检查状态；当前仍不执行真实移动、删除、清理或发布。 |
-| 阶段 10：发布准备控制面 runtime facade | 进行中 | P4-6 | 正式发布动作之前，先把可公开运行时需要调用的控制面工具做成 copy-first facade，让 runtime 包面具备稳定入口；旧 compass/tools 仍保留为权威实现。 |
+| 阶段 10：发布准备控制面 runtime facade | 已完成 | P4-6 | 正式发布动作之前，已把可公开运行时需要调用的控制面工具做成 copy-first facade，让 runtime 包面具备稳定入口；旧 compass/tools 仍保留为权威实现。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -101,7 +101,7 @@
 | P4-3e R1 Prism 证据保留拆分干跑清单 | 发布前路线与授权边界 | 已完成 | P0 | 已把 prism-layer-and-evidence 的下一步拆成可机器检查的 dry-run manifest、证据保留分层、no-apply 清理预览边界、别名/回滚计划和验收门禁；本项不关闭 R1、不执行发布、不移动或删除 Prism 证据。 |
 | P4-4 R1 控制面物理拆分 apply 预检 | 发布前路线与授权边界 | 已完成 | P0 | 已把 internal-control-plane 的 dry-run 地图升级为可机器检查的 copy-first / alias-first apply 前置护栏；本项未复制、未移动、未删除旧 compass/references 锚点，不关闭 R1，不执行发布。 |
 | P4-5 R1 Prism 证据保留 apply 预检 | 发布前路线与授权边界 | 已完成 | P0 | 已把 prism-layer-and-evidence 的 dry-run 证据边界升级为可机器检查的 copy-first / alias-first apply 前置护栏；本项未移动、未删除、未清理 prism 证据，不关闭 R1，不执行发布。 |
-| P4-6 R1 控制面 runtime facade copy-first | 发布前路线与授权边界 | 进行中 | P0 | 把 internal-control-plane batch-1 runtime-public-support 条目推进为 runtime/redcap-core/tools 下的 copy-first facade；旧 compass/tools 仍保持权威锚点，本项不关闭 R1，不执行发布。 |
+| P4-6 R1 控制面 runtime facade copy-first | 发布前路线与授权边界 | 已完成 | P0 | 已把 internal-control-plane batch-1 runtime-public-support 条目推进为 runtime/redcap-core/tools 下的 copy-first facade；旧 compass/tools 仍保持权威锚点，本项不关闭 R1，不执行发布。 |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -112,6 +112,7 @@
 | mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
 | spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
 <!-- redcap:backlog-generated:end -->
+
 
 
 

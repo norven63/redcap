@@ -13,7 +13,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：用 closeout runtime 生成正式 receipt，并把 P4-6 标为 done。
+- 下一步计划做的是：进入后续发布前 R1 blocker 切片；本轮 P4-6 已完成，不进入发布动作。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -113,7 +113,7 @@ P4-4 已经把 `compass/tools` 与 `references` 这组控制面资产拆成了�
 | --- | --- |
 | 执行承诺账本 | 待 closeout runtime 核对 |
 | 棱镜验收 | 已通过；Claude Code 与 Kimi 均给出 pass，Gemini 不可用且 Copilot 按策略未调用 |
-| closeout receipt | 待生成 |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-control-plane-runtime-public-support-copy-first-apply-6c026931459975fb34ebc4d0ed8c8d412b20f467bf73e453e7780844f5310cd0.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -122,7 +122,7 @@ P4-4 已经把 `compass/tools` 与 `references` 这组控制面资产拆成了�
 | 已实现 | 是 | facade、manifest、checker、targeted acceptance 和包面快照同步已落地。 |
 | 已自检 | 是 | targeted checks、full spec-check、diagnose 与 clean workspace E2E 均已通过。 |
 | 已独立验收 | 是 | Prism formal acceptance 已绑定，2 个不同模型家族均无 blocker。 |
-| 已正式完成 | 否 | closeout receipt 尚未生成。 |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt，承诺账本 9/9 完成，pending closure 已清。 |
 
 ## 六、遗留问题与下一步
 
@@ -141,7 +141,7 @@ P4-4 已经把 `compass/tools` 与 `references` 这组控制面资产拆成了�
 
 ### 6.3 推荐的下一步行动
 
-1. 通过 closeout runtime 生成 receipt，并把 P4-6 标为 done。
+1. 后续另开切片处理 batch-2 / batch-3、Prism evidence physical split 或 Layer A 产品边界；本轮不抢跑这些任务。
 
 ## 七、经验沉淀
 

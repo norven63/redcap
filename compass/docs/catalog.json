@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 355767,
-    "lines": 7190,
-    "chars": 218521,
+    "size_bytes": 356132,
+    "lines": 7191,
+    "chars": 218814,
     "rough_token_pressure": {
-      "low": 54630,
-      "high": 109260
+      "low": 54703,
+      "high": 109407
     },
     "collections": {
       "archive": {
@@ -41,8 +41,8 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 193449,
-        "lines": 4529,
+        "size_bytes": 193445,
+        "lines": 4530,
         "chars": 115579,
         "rough_token_pressure": {
           "low": 28894,
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 156788,
+        "size_bytes": 157157,
         "lines": 2572,
-        "chars": 99168,
+        "chars": 99461,
         "rough_token_pressure": {
-          "low": 24792,
-          "high": 49584
+          "low": 24865,
+          "high": 49730
         }
       }
     },
@@ -106,7 +106,7 @@
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
         "chars": 9514,
-        "lines": 184,
+        "lines": 185,
         "read_policy": "read-registry-summary-first"
       }
     ]
@@ -197,8 +197,8 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 16974,
-      "lines": 184,
+      "size_bytes": 16970,
+      "lines": 185,
       "chars": 9514,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
@@ -515,9 +515,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 11215,
+      "size_bytes": 11584,
       "lines": 193,
-      "chars": 7463,
+      "chars": 7756,
       "summary": "当前已完成：`internal-control-plane` 的 batch-1 `runtime-public-support` 条目已经从“只有未来迁移地图”推进到“已有 runtime facade 入口”的状态。 / 详情：本轮新增的是 `runtime/redcap-core/tools` 下的轻量外壳入口；这些入口只把调用转发回旧的 `compass/tools` 权威实现，不复制旧实现内容，不移动、不删除、不替换旧锚点。",
       "status_basis": "filename_recency_only"
     },
