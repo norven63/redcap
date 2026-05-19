@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 359368,
-    "lines": 7242,
-    "chars": 219964,
+    "size_bytes": 359775,
+    "lines": 7243,
+    "chars": 220395,
     "rough_token_pressure": {
-      "low": 54991,
-      "high": 109982
+      "low": 55098,
+      "high": 110197
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 192891,
-        "lines": 4525,
-        "chars": 115191,
+        "size_bytes": 192897,
+        "lines": 4526,
+        "chars": 115197,
         "rough_token_pressure": {
-          "low": 28797,
-          "high": 57595
+          "low": 28799,
+          "high": 57598
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 160947,
+        "size_bytes": 161348,
         "lines": 2628,
-        "chars": 100999,
+        "chars": 101424,
         "rough_token_pressure": {
-          "low": 25249,
-          "high": 50499
+          "low": 25356,
+          "high": 50712
         }
       }
     },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 16416,
-      "lines": 180,
-      "chars": 9126,
+      "size_bytes": 16422,
+      "lines": 181,
+      "chars": 9132,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12869,
+      "size_bytes": 13270,
       "lines": 207,
-      "chars": 8557,
+      "chars": 8982,
       "summary": "当前已完成：`prism-layer-and-evidence` 从“只有 dry-run 地图”推进到“有 apply 前置护栏”的状态。 / 详情：本轮没有移动、删除、重命名、清理或替换任何 `prism/` 证据，也没有关闭 release blocker；只是把未来真正动手前必须满足的 copy-first、alias-first、证据保留、旧锚点保留、回滚和验收条件做成机器可检查清单。",
       "status_basis": "filename_recency_only",
       "summary_points": {

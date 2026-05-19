@@ -115,19 +115,19 @@ P4-4 收口后的下一步选择已由 Claude Code 与 Kimi 共同评审。Claud
 
 | 项目 | 结果 |
 | --- | --- |
-| 执行承诺账本 | 待 closeout 最终核对 |
+| 执行承诺账本 | 9/9 已兑现 |
 | 棱镜验收 | 已通过：Claude Code 与 Kimi 均给出 `pass`，并已绑定到当前任务哈希 |
-| closeout summary | 待生成 |
-| closeout receipt | 待生成 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-prism-evidence-retention-apply-preflight-ebdafb53a4b40186ccb07f55fba3e85fc8a1b1789948cdede0d70478a93d320a.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-prism-evidence-retention-apply-preflight-ebdafb53a4b40186ccb07f55fba3e85fc8a1b1789948cdede0d70478a93d320a.json` |
 
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 已完成 | apply preflight manifest、checker、targeted acceptance、release plan 接线、backlog 接线已落地。 |
-| 已自检 | 进行中 | targeted checks 与 Prism acceptance 已通过；full spec-check / diagnose / clean workspace E2E 仍待最终刷新。 |
+| 已自检 | 已通过 | targeted checks、Prism acceptance、full spec-check、diagnose 与 clean workspace E2E 均已通过。 |
 | 已独立验收 | 已通过 | Claude Code 与 Kimi 均无 blocker。 |
-| 已正式完成 | 否 | closeout receipt 尚未生成，pending closure 尚未清零。 |
+| 已正式完成 | 是 | closeout receipt 已生成，pending closure 已清零，承诺账本 9/9。 |
 
 ## 六、遗留问题与下一步
 
@@ -147,9 +147,8 @@ P4-4 收口后的下一步选择已由 Claude Code 与 Kimi 共同评审。Claud
 
 ### 6.3 推荐的下一步行动
 
-1. 完成 P4-5 的 full spec-check、diagnose、clean workspace E2E 和 closeout receipt。
-2. 根据正式发布路线，选择下一个仍可自主推进的 release-readiness 小切片。
-3. 如果触碰 Prism evidence cleanup、Layer A 产品边界、许可证、registry 或真实发布，必须进入人工决策点。
+1. 根据正式发布路线，选择下一个仍可自主推进的 release-readiness 小切片。
+2. 如果触碰 Prism evidence cleanup、Layer A 产品边界、许可证、registry 或真实发布，必须进入人工决策点。
 
 ## 七、经验沉淀
 
@@ -174,7 +173,8 @@ P4-4 收口后的下一步选择已由 Claude Code 与 Kimi 共同评审。Claud
 ### 附录 A：Commits
 
 ```
-待提交
+fe9148d feat(release): 增加 Prism evidence apply 预检
+487fcc8 test(release): 刷新 P4-5 clean workspace E2E
 ```
 
 ### 附录 B：棱镜调用记录
