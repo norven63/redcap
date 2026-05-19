@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 96,
-  "bytes_total": 1336312,
+  "file_count": 97,
+  "bytes_total": 1351131,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 92,
+    "private-task-report-archive": 93,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -773,6 +773,14 @@
       "class": "private-task-report-archive",
       "bytes": 11845,
       "sha256": "382ed93c376c58d9e4689e283abbe4bb624a8a6056b6f2cf948ecfba3ab1b093",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-16-post-migration-full-engineering-review.md",
+      "class": "private-task-report-archive",
+      "bytes": 14819,
+      "sha256": "0860081501fec69d806a8e7b743ebc4994d0ddf0ae1363e40e2dd8a6da7d5bad",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

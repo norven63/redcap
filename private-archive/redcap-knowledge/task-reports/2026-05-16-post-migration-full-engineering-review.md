@@ -86,7 +86,7 @@ RASG-022 private archive tranche 是一次“伤筋动骨”的结构迁移。�
 | `private-archive/redcap-knowledge/task-reports/2026-05-10-root-information-architecture-debt-intake.md` | 移动 | 将旧债务入口报告从 active inbox 轮转到私有冷归档，避免当前报告入口重新膨胀 |
 | `references/redcap-knowledge-cold-archive-inventory.json` | 修改 | 更新私有冷归档清单，保留新归档报告的精确读取入口 |
 | `references/backlogs/redcap-architecture-smell-governance.json` | 修改 | 将 RASG-017 的旧债务入口证据路径改为冷归档路径 |
-| `compass/docs/task-reports/2026-05-16-post-migration-full-engineering-review.md` | 新建 | 本任务完成报告 |
+| `private-archive/redcap-knowledge/task-reports/2026-05-16-post-migration-full-engineering-review.md` | 归档 | 本任务完成报告 |
 | `compass/docs/catalog.json` | 修改 | 重新生成文档目录，确保 active report inbox 与冷归档后的索引状态一致 |
 
 ### 3.2 技术实现要点

@@ -132,7 +132,7 @@
       "target": "compass/docs/specs",
       "kind": "active-spec-authority",
       "current_count": 13,
-      "current_lines": 4522,
+      "current_lines": 4525,
       "default_action": "preserve",
       "risk": "high",
       "apply_status": "preserve_until_spec_registry_migration_exists",

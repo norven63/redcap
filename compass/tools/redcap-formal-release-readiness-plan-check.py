@@ -26,6 +26,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "r1_control_plane": ROOT / "references/r1-control-plane-contract-split-preflight.json",
         "r1_control_apply": ROOT / "references/r1-control-plane-physical-apply-preflight.json",
         "r1_prism_evidence": ROOT / "references/r1-prism-evidence-retention-split-preflight.json",
+        "r1_prism_apply": ROOT / "references/r1-prism-evidence-retention-apply-preflight.json",
         "r1_layera_boundary": ROOT / "references/r1-layera-product-boundary-preflight.json",
         "evolution_harvest": ROOT / "references/evolution-harvest-signal-policy.json",
     }
@@ -41,6 +42,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "--r1-control-plane": "r1_control_plane",
         "--r1-control-apply": "r1_control_apply",
         "--r1-prism-evidence": "r1_prism_evidence",
+        "--r1-prism-apply": "r1_prism_apply",
         "--r1-layera-boundary": "r1_layera_boundary",
         "--evolution-harvest": "evolution_harvest",
     }
@@ -114,6 +116,7 @@ def main() -> int:
     r1_control_plane_path = paths["r1_control_plane"]
     r1_control_apply_path = paths["r1_control_apply"]
     r1_prism_evidence_path = paths["r1_prism_evidence"]
+    r1_prism_apply_path = paths["r1_prism_apply"]
     r1_layera_boundary_path = paths["r1_layera_boundary"]
     evolution_harvest_path = paths["evolution_harvest"]
 
@@ -127,6 +130,7 @@ def main() -> int:
     r1_control_plane = load_json(r1_control_plane_path, "R1 control-plane contract split preflight")
     r1_control_apply = load_json(r1_control_apply_path, "R1 control-plane physical apply preflight")
     r1_prism_evidence = load_json(r1_prism_evidence_path, "R1 Prism evidence retention split preflight")
+    r1_prism_apply = load_json(r1_prism_apply_path, "R1 Prism evidence retention apply preflight")
     r1_layera_boundary = load_json(r1_layera_boundary_path, "R1 Layer A product boundary preflight")
     evolution_harvest = load_json(evolution_harvest_path, "evolution harvest signal policy")
 
@@ -240,6 +244,8 @@ def main() -> int:
         fail("plan required_sources must include R1 control-plane physical apply preflight")
     if "references/r1-prism-evidence-retention-split-preflight.json" not in cleanup_required_sources:
         fail("plan required_sources must include R1 Prism evidence retention split preflight")
+    if "references/r1-prism-evidence-retention-apply-preflight.json" not in cleanup_required_sources:
+        fail("plan required_sources must include R1 Prism evidence retention apply preflight")
     if "references/r1-layera-product-boundary-preflight.json" not in cleanup_required_sources:
         fail("plan required_sources must include R1 Layer A product boundary preflight")
     if "references/evolution-harvest-signal-policy.json" not in cleanup_required_sources:
@@ -253,6 +259,7 @@ def main() -> int:
         "release-safe disposition",
         "R1 root group disposition preflight passes",
         "R1 Prism evidence retention split preflight and dry-run map pass",
+        "R1 Prism evidence retention apply preflight passes",
         "R1 control-plane physical apply preflight passes",
         "R1 Layer A product boundary preflight passes",
     ]:
@@ -697,6 +704,53 @@ def main() -> int:
         fail("R1 Prism evidence preflight must keep all three release blockers after this preflight")
 
     require_keys(
+        r1_prism_apply,
+        [
+            "version",
+            "preflight_id",
+            "status",
+            "source_truth",
+            "claim_boundary",
+            "operation_policy",
+            "old_anchor_policy",
+            "coverage",
+            "apply_preflight_batches",
+            "result",
+        ],
+        "R1 Prism evidence retention apply preflight",
+    )
+    if r1_prism_apply["version"] != 1:
+        fail("R1 Prism evidence apply preflight version must be 1")
+    if r1_prism_apply["preflight_id"] != "redcap-r1-prism-evidence-retention-apply-preflight":
+        fail("R1 Prism evidence apply preflight id mismatch")
+    if r1_prism_apply["status"] != "apply-preflight-only-no-evidence-moved-deleted-or-cleaned":
+        fail("R1 Prism evidence apply preflight status must remain apply-preflight-only-no-evidence-moved-deleted-or-cleaned")
+    prism_apply_boundary = r1_prism_apply.get("claim_boundary")
+    if not isinstance(prism_apply_boundary, dict):
+        fail("R1 Prism evidence apply preflight claim_boundary must be an object")
+    for key in [
+        "physical_split_completed",
+        "evidence_moved",
+        "evidence_deleted",
+        "evidence_cleaned",
+        "cleanup_apply_performed",
+        "old_anchors_removed",
+        "old_anchors_replaced",
+        "release_switches_changed",
+        "release_blocker_resolved",
+        "public_release_ready",
+    ]:
+        require_bool(prism_apply_boundary.get(key), False, f"r1_prism_apply.claim_boundary.{key}")
+    prism_apply_result = r1_prism_apply.get("result")
+    if not isinstance(prism_apply_result, dict):
+        fail("R1 Prism evidence apply preflight result must be an object")
+    if prism_apply_result.get("release_blocker_status") != "still-blocking-release-until-future-evidence-retention-split-or-contract-resolution":
+        fail("R1 Prism evidence apply preflight must keep prism-layer-and-evidence blocking")
+    prism_apply_blockers = set(prism_apply_result.get("remaining_release_blockers_after_this_preflight", []))
+    if prism_apply_blockers != {"internal-control-plane", "prism-layer-and-evidence", "internal-layer-a"}:
+        fail("R1 Prism evidence apply preflight must keep all three release blockers after this preflight")
+
+    require_keys(
         r1_layera_boundary,
         [
             "version",
@@ -761,6 +815,7 @@ def main() -> int:
         " r1_control_plane_contract_split_preflight=registered"
         " r1_control_plane_physical_apply_preflight=registered"
         " r1_prism_evidence_retention_split_preflight=registered"
+        " r1_prism_evidence_retention_apply_preflight=registered"
         " r1_layera_product_boundary_preflight=registered"
     )
     return 0

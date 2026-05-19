@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-4",
-    "summary": "正式发布 R1 的 control-plane apply 预检已完成：已把 P4-2s 的 dry-run 地图升级为 copy-first / alias-first apply 前置护栏；本项未复制、未移动、未删除旧 compass/references 锚点，未关闭 blocker，未执行发布。"
+    "item_id": "P4-5",
+    "summary": "正式发布 R1 的 Prism evidence apply 预检正在推进：把 P4-3e 的 dry-run 证据边界升级为 copy-first / alias-first apply 前置护栏；本项不移动、不删除、不清理 prism 证据，不关闭 blocker，不执行发布。"
   },
   "glossary": [
     {
@@ -504,6 +504,19 @@
             "compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh",
             "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-apply-preflight.md"
           ]
+        },
+        {
+          "id": "P4-5",
+          "title": "R1 Prism 证据保留 apply 预检",
+          "status": "in_progress",
+          "priority": "P0",
+          "phase_id": "phase-9-release-readiness-prism-evidence-apply-preflight",
+          "summary": "正在把 prism-layer-and-evidence 的 dry-run 证据边界升级为可机器检查的 copy-first / alias-first apply 前置护栏；本项不移动、不删除、不清理 prism 证据，不关闭 R1，不执行发布。",
+          "evidence_paths": [
+            "references/r1-prism-evidence-retention-apply-preflight.json",
+            "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
+            "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-apply-preflight.md"
+          ]
         }
       ]
     }
@@ -609,6 +622,15 @@
         "P4-4"
       ],
       "summary": "正式发布动作之前，已把控制面未来 copy-first / alias-first apply 的前置护栏、旧锚点保留策略、回滚门禁和验证计划做成机器可检查状态；当前仍不执行真实复制、移动、删除或发布。"
+    },
+    {
+      "id": "phase-9-release-readiness-prism-evidence-apply-preflight",
+      "title": "阶段 9：发布准备 Prism evidence apply 预检",
+      "status": "in_progress",
+      "item_ids": [
+        "P4-5"
+      ],
+      "summary": "正式发布动作之前，把 Prism evidence 未来 copy-first / alias-first apply 的前置护栏、证据保留策略、回滚门禁和验证计划做成机器可检查状态；当前仍不执行真实移动、删除、清理或发布。"
     }
   ]
 }

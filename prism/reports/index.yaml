@@ -1,4 +1,56 @@
 reports:
+  - id: "20260519-r1-prism-evidence-retention-apply-preflight-review"
+    mode: review
+    date: "2026-05-19"
+    topic: "R1 Prism evidence retention apply preflight implementation review"
+    agents: ["claude-code", "kimi", "gemini"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "consensus-pass"
+    consensus_actions:
+      - "Accept P4-5 as an apply-preflight-only Prism evidence retention guardrail with no evidence move, delete, cleanup, prune, release switch change or blocker closure"
+      - "Keep prism/tools, prism/reports and prism/runs old anchors authoritative until a future separately reviewed split or cleanup task"
+      - "Require task report, acceptance binding, clean workspace E2E and closeout receipt before claiming P4-5 done"
+    open_questions:
+      - "Future Prism evidence physical split remains a separate copy-first / alias-first tranche"
+      - "Any cleanup apply for prism/runs raw evidence still requires explicit approval and archive proof"
+      - "internal-control-plane and internal-layer-a remain separate release blockers"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-prism-evidence-retention-apply-preflight.json"
+      - "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.py"
+      - "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-apply-preflight.md"
+      - "prism/reports/2026-05-19-r1-prism-evidence-retention-apply-preflight-review.md"
+      - "prism/runs/20260519-r1-prism-evidence-retention-apply-preflight/session-registry.yaml"
+      - "prism/runs/20260519-r1-prism-evidence-retention-apply-preflight/prompt.md"
+      - "prism/runs/20260519-r1-prism-evidence-retention-apply-preflight/claude.raw.txt"
+      - "prism/runs/20260519-r1-prism-evidence-retention-apply-preflight/kimi.raw.txt"
+    archived: false
+  - id: "20260519-r1-next-slice-after-control-plane-apply-preflight-review"
+    mode: review
+    date: "2026-05-19"
+    topic: "Next R1 slice after P4-4 control-plane apply preflight closeout"
+    agents: ["claude-code", "kimi", "gemini"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "weak-consensus-select-prism-evidence-apply-preflight"
+    consensus_actions:
+      - "Select the smaller Prism evidence retention apply preflight slice before any larger control-plane batch copy-first apply"
+      - "Keep the slice no-apply, no-cleanup, no-release and no-blocker-closure"
+      - "Require Prism implementation review, closeout receipt and clean workspace E2E before claiming P4-5 done"
+    open_questions:
+      - "Control-plane batch-1 copy-first apply remains a future larger tranche"
+      - "Prism evidence physical split or cleanup remains forbidden until a later task proves no-delete/no-cleanup boundaries and required approvals"
+      - "Layer A product-scope decision remains a separate human decision boundary"
+    lessons_updated: false
+    files_affected:
+      - "prism/reports/2026-05-19-r1-next-slice-after-control-plane-apply-preflight-review.md"
+      - "prism/runs/20260519-r1-next-slice-after-control-plane-apply-preflight/session-registry.yaml"
+      - "prism/runs/20260519-r1-next-slice-after-control-plane-apply-preflight/prompt.md"
+      - "prism/runs/20260519-r1-next-slice-after-control-plane-apply-preflight/claude.raw.txt"
+      - "prism/runs/20260519-r1-next-slice-after-control-plane-apply-preflight/kimi.raw.txt"
+      - "prism/runs/20260519-r1-next-slice-after-control-plane-apply-preflight/gemini.raw.txt"
+    archived: false
   - id: "20260519-r1-control-plane-physical-apply-preflight-review"
     mode: review
     date: "2026-05-19"

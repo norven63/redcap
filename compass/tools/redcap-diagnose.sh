@@ -212,6 +212,7 @@ run_check "release-e2e-matrix" bash "$SCRIPT_DIR/redcap-release-e2e-matrix-check
 run_check "formal-release-r1-root-group-disposition" bash "$SCRIPT_DIR/redcap-formal-release-r1-root-group-disposition-check.sh" || overall=1
 run_check "r1-control-plane-contract-split" bash "$SCRIPT_DIR/redcap-r1-control-plane-contract-split-check.sh" || overall=1
 run_check "r1-prism-evidence-retention-split" bash "$SCRIPT_DIR/redcap-r1-prism-evidence-retention-split-check.sh" || overall=1
+run_check "r1-prism-evidence-retention-apply-preflight" bash "$SCRIPT_DIR/redcap-r1-prism-evidence-retention-apply-preflight-check.sh" || overall=1
 run_check "r1-control-plane-physical-apply-preflight" bash "$SCRIPT_DIR/redcap-r1-control-plane-physical-apply-preflight-check.sh" || overall=1
 run_check "r1-layera-product-boundary" bash "$SCRIPT_DIR/redcap-r1-layera-product-boundary-check.sh" || overall=1
 run_check "formal-release-readiness-plan" bash "$SCRIPT_DIR/redcap-formal-release-readiness-plan-check.sh" || overall=1
