@@ -13,7 +13,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：刷新 clean workspace E2E，处理 Evolution 候选复核，然后用 closeout runtime 生成正式 receipt。
+- 下一步计划做的是：用 closeout runtime 生成正式 receipt，并把 P4-6 标为 done。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -69,6 +69,7 @@ P4-4 已经把 `compass/tools` 与 `references` 这组控制面资产拆成了�
 - `bash compass/tools/redcap-spec-check.sh "$PWD"`
 - `bash compass/tools/redcap-diagnose.sh .dev-task.md`
 - `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md`
+- `bash compass/tools/redcap-clean-workspace-e2e.sh`
 
 ### 3.2.1 术语对照（按文件/功能解释）
 
@@ -100,6 +101,7 @@ P4-4 已经把 `compass/tools` 与 `references` 这组控制面资产拆成了�
 | full spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
 | Prism acceptance binding | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh` | 通过 |
 
 ### 5.2 人工验证项
 
@@ -118,7 +120,7 @@ P4-4 已经把 `compass/tools` 与 `references` 这组控制面资产拆成了�
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 是 | facade、manifest、checker、targeted acceptance 和包面快照同步已落地。 |
-| 已自检 | 进行中 | targeted checks、full spec-check、diagnose 已通过；clean workspace E2E 仍在收口。 |
+| 已自检 | 是 | targeted checks、full spec-check、diagnose 与 clean workspace E2E 均已通过。 |
 | 已独立验收 | 是 | Prism formal acceptance 已绑定，2 个不同模型家族均无 blocker。 |
 | 已正式完成 | 否 | closeout receipt 尚未生成。 |
 
@@ -139,8 +141,7 @@ P4-4 已经把 `compass/tools` 与 `references` 这组控制面资产拆成了�
 
 ### 6.3 推荐的下一步行动
 
-1. 刷新 clean workspace E2E，确认干净工作区仍能跑通基础命令。
-2. 通过 closeout runtime 生成 receipt，并把 P4-6 标为 done。
+1. 通过 closeout runtime 生成 receipt，并把 P4-6 标为 done。
 
 ## 七、经验沉淀
 
