@@ -1,4 +1,30 @@
 reports:
+  - id: "20260519-r1-control-plane-closeout-rescue-review"
+    mode: review
+    date: "2026-05-19"
+    topic: "P4-2s closeout rescue patch review"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "pass-with-concerns-no-blockers"
+    consensus_actions:
+      - "Allow commit of the closeout rescue patch after addressing Kimi's two non-blocking test concerns"
+      - "Keep rescue scope limited to task-report zero-diff anchoring and pending-closure auto-reconcile serialization"
+      - "Do not claim physical control-plane split, release readiness, npm publication, destructive cleanup, or Prism evidence cleanup"
+    open_questions:
+      - "Expose orphaned reconcile locks in a future diagnose/runtime cleanup enhancement if this pattern recurs"
+      - "Monitor continuity-manifest-mismatch only if it flakes again"
+    lessons_updated: true
+    files_affected:
+      - "compass/tools/redcap-task-report-check.sh"
+      - "compass/tools/redcap-pending-closure-reconcile.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
+      - "compass/knowledge/lessons.md"
+      - "compass/knowledge/lessons/l-166.md"
+      - "compass/knowledge/lessons/l-167.md"
+      - "prism/reports/2026-05-19-r1-control-plane-closeout-rescue-review.md"
+      - "prism/runs/20260519-r1-control-plane-closeout-rescue-review/session-registry.yaml"
+    archived: false
   - id: "20260519-r1-control-plane-physical-split-dry-run"
     mode: review
     date: "2026-05-19"

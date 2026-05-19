@@ -21,6 +21,8 @@ VALIDATOR_CHAIN="${REDCAP_VALIDATOR_CHAIN_SCRIPT:-$SCRIPT_DIR/redcap-validator-c
 TASK_FILE="$REDCAP_ROOT/.dev-task.md"
 CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null || true)
 [[ -n "$CURRENT_HEAD" ]] || exit 0
+RECONCILE_LOCK_HELD=0
+RECONCILE_LOCK_PATH=""
 
 append_required_redline() {
     local item="$1"
@@ -64,6 +66,44 @@ record_reconcile_event() {
         >/dev/null 2>&1 || true
 }
 
+release_reconcile_lock() {
+    if [[ "$RECONCILE_LOCK_HELD" -eq 1 && -n "$RECONCILE_LOCK_PATH" ]]; then
+        redcap_interop_release_pending_closure_lock_path "$RECONCILE_LOCK_PATH" >/dev/null 2>&1 || true
+        RECONCILE_LOCK_HELD=0
+    fi
+}
+
+acquire_reconcile_lock_once() {
+    local lock_tmp lock_dir created_at owner_started_at
+
+    RECONCILE_LOCK_PATH="$(redcap_interop_pending_closure_lock_path "$REDCAP_ROOT" "$TASK_FILE").reconcile" || return 1
+    lock_dir=$(dirname "$RECONCILE_LOCK_PATH")
+    lock_tmp="$RECONCILE_LOCK_PATH.reconcile.$$.$RANDOM.tmp"
+    created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    owner_started_at=$(redcap_runtime_process_started_at "$$" 2>/dev/null || true)
+    [[ -n "$owner_started_at" ]] || return 1
+
+    mkdir -p "$lock_dir" || return 1
+    chmod 700 "$lock_dir" 2>/dev/null || return 1
+    printf '%s\t%s\t%s\n' "$$" "$owner_started_at" "$created_at" > "$lock_tmp" || return 1
+    chmod 600 "$lock_tmp" 2>/dev/null || {
+        rm -f "$lock_tmp" 2>/dev/null || true
+        return 1
+    }
+
+    if ! ln "$lock_tmp" "$RECONCILE_LOCK_PATH" 2>/dev/null; then
+        redcap_interop_prune_stale_pending_closure_lock "$RECONCILE_LOCK_PATH" || true
+        if ! ln "$lock_tmp" "$RECONCILE_LOCK_PATH" 2>/dev/null; then
+            rm -f "$lock_tmp" 2>/dev/null || true
+            return 1
+        fi
+    fi
+
+    rm -f "$lock_tmp" 2>/dev/null || true
+    RECONCILE_LOCK_HELD=1
+    return 0
+}
+
 if ! redcap_runtime_attach_current_or_claim "$HOST"; then
     redcap_runtime_record_degraded_mode \
         "$REDCAP_ROOT" \
@@ -77,6 +117,14 @@ PENDING_STATE=$(redcap_interop_pending_closure_existing_file "$REDCAP_ROOT" "$TA
 if [[ -z "$PENDING_STATE" || ! -f "$PENDING_STATE" ]]; then
     exit 0
 fi
+
+if ! acquire_reconcile_lock_once; then
+    record_reconcile_event \
+        "lock-busy-skip" \
+        "host=$HOST current_head=$CURRENT_HEAD reason=another pending-closure reconcile is already running"
+    exit 0
+fi
+trap 'release_reconcile_lock' EXIT
 
 CURRENT_TASK_ID=$(redcap_dev_task_extract_kv "$TASK_FILE" "task_id" 2>/dev/null || true)
 CURRENT_CONFIRMED_HASH=$(redcap_dev_task_confirmed_hash "$TASK_FILE" 2>/dev/null || true)

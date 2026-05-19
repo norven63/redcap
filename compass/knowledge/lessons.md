@@ -2,11 +2,11 @@
 
 > 本文件是经验库首读索引，不承载完整正文。先按热点簇或 L-编号定位，再打开 `compass/knowledge/lessons/<l-id>.md` 精读，避免新会话默认加载巨型经验库。
 >
-> 模块数：161；正文集合 sha256：47c28bf8fa36fbec9dd15af48eaa519376304e601e862474f7e054909614d9fa。
+> 模块数：163；正文集合 sha256：4e52540d68cfe9a8ef74890de3994d2ca675f8107600b534ded86146e3ca091b。
 
 ## 热点主题速览
 
-- **收尾 / 账面一致性**：L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124、L-135、L-148。
+- **收尾 / 账面一致性**：L-54、L-56~L-61、L-70~L-74、L-86~L-93、L-109、L-118、L-124、L-135、L-148、L-166、L-167。
 - **宿主 / Hook / runtime 边界**：L-15、L-16、L-39、L-41~L-49、L-62~L-69、L-77~L-90、L-155、L-162。
 - **docs / knowledge / token 风险**：L-50~L-52、L-64~L-66、L-91~L-97、L-122、L-132、L-134、L-150~L-154。
 - **评审 / 对抗 / 执行保障**：L-24、L-30、L-32~L-34、L-53、L-91~L-97、L-110、L-124、L-135、L-156、L-162、L-163、L-165。
@@ -503,3 +503,9 @@
 
 ### L-165: 控制面拆分预检不能冒充物理拆分完成
 - 正文模块：[`compass/knowledge/lessons/l-165.md`](../../compass/knowledge/lessons/l-165.md)
+
+### L-166: 收口重验必须有任务卡报告锚点兜底
+- 正文模块：[`compass/knowledge/lessons/l-166.md`](../../compass/knowledge/lessons/l-166.md)
+
+### L-167: 自动补救重型检查必须非阻塞串行化
+- 正文模块：[`compass/knowledge/lessons/l-167.md`](../../compass/knowledge/lessons/l-167.md)

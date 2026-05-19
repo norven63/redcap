@@ -78,7 +78,7 @@
     },
     {
       "path": "references/legacy-asset-migration-apply-plan.json",
-      "bytes": 295690,
+      "bytes": 297860,
       "asset_class": "legacy-migration-ledger",
       "lifecycle": "retain-as-private-migration-evidence",
       "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",

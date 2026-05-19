@@ -40,6 +40,25 @@ report_anchor_rel_path() {
     redcap_interop_resolve_report_rel_path "$REDCAP_ROOT" "$rel_path" 2>/dev/null
 }
 
+task_file_report_anchor_rel_path() {
+    local task_file="$REDCAP_ROOT/.dev-task.md"
+    local raw_path=""
+    local resolved_rel=""
+
+    [[ -f "$task_file" ]] || return 1
+    raw_path=$(awk -F: '
+        $1 == "task_report" {
+            sub(/^[ \t]+/, "", $2)
+            sub(/[ \t]+$/, "", $2)
+            print $2
+            exit
+        }
+    ' "$task_file")
+    resolved_rel=$(report_anchor_rel_path "$raw_path" || true)
+    [[ -n "$resolved_rel" ]] || return 1
+    printf '%s\n' "$resolved_rel"
+}
+
 if [[ -n "$HOST" ]]; then
     if redcap_runtime_attach_current_or_claim "$HOST"; then
         :
@@ -83,6 +102,15 @@ if [[ -n "$PENDING_CLOSURE_STATE" && -f "$PENDING_CLOSURE_STATE" ]]; then
             ANCHORED_REPORT="$PENDING_ARTIFACT_PATH"
             ANCHOR_SOURCE="pending"
         fi
+    fi
+fi
+
+if [[ -z "$ANCHORED_REPORT" ]]; then
+    TASK_FILE_REPORT=$(task_file_report_anchor_rel_path || true)
+    if [[ -n "$TASK_FILE_REPORT" ]]; then
+        printf '%s\n' "$TASK_FILE_REPORT" >> "$TMP_REPORT_LIST"
+        ANCHORED_REPORT="$TASK_FILE_REPORT"
+        ANCHOR_SOURCE="task-file"
     fi
 fi
 
@@ -339,6 +367,13 @@ if [[ -n "$ANCHORED_REPORT" ]]; then
     if [[ "$ANCHOR_SOURCE" == "marker" && ${#CONFLICTING_CHANGED_REPORTS[@]} -gt 0 ]]; then
         if [[ "$ANCHOR_IS_UNIQUE_LATEST_CHANGED" -ne 1 ]]; then
             echo "[redcap-task-report-check] stale marker anchor conflicts with newer changed task reports:" >&2
+            printf '  - %s\n' "${CONFLICTING_CHANGED_REPORTS[@]}" | sort -u >&2
+            exit 1
+        fi
+    fi
+    if [[ "$ANCHOR_SOURCE" == "task-file" && ${#CONFLICTING_CHANGED_REPORTS[@]} -gt 0 ]]; then
+        if [[ "$ANCHOR_IS_UNIQUE_LATEST_CHANGED" -ne 1 ]]; then
+            echo "[redcap-task-report-check] stale task-file report anchor conflicts with newer changed task reports:" >&2
             printf '  - %s\n' "${CONFLICTING_CHANGED_REPORTS[@]}" | sort -u >&2
             exit 1
         fi

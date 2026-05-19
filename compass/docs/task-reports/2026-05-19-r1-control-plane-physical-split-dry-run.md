@@ -5,7 +5,7 @@
 ### 0.1 当前已完成
 
 - 当前已完成：`internal-control-plane` 的未来物理拆分已有 dry-run 地图，覆盖 `compass/**` 与 `references/**` 中当前 package-visible 的 184 个控制面候选。
-- 详情：本轮只生成未来目标分层、别名/回滚计划和机器检查；没有移动、复制、删除或重命名任何 `compass` / `references` 文件。
+- 详情：本轮只生成未来目标分层、别名/回滚计划和机器检查；没有移动、复制、删除或重命名任何 `compass` / `references` 文件。收口重验时发现并修复了任务报告在 zero-diff 窗口丢失锚点的控制面缺口。
 
 ### 0.2 上一步完成的是
 
@@ -86,6 +86,7 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 - `bash compass/tools/redcap-r1-control-plane-contract-split-check.sh`
 - targeted acceptance、spec-check、diagnose、clean workspace E2E 与 full acceptance 已通过。
 - 全量 acceptance 曾抓到 backlog guide / docs catalog / legacy asset dry-run 快照联动过期；本轮已同步人类 backlog guide、刷新 catalog，并更新 legacy asset dry-run 行数快照后复验通过。
+- 收口重验还抓到两个控制面救援缺口：第一，`task-report-check` 原本只依赖当前 report marker 或 pending closure artifact。任务已经提交后再次进入 zero-diff session-end 时，如果 pending 被新的 validator-chain 状态覆盖且 artifact 为空，它会找不到 `.dev-task.md` 已声明的 `task_report:`。本轮已补上 task-file 锚点兜底，并增加 `task-report-check-accepts-task-file-anchor-after-zero-diff` 与 `task-report-check-rejects-stale-task-file-anchor-conflict` 回归。第二，SessionStart 自动补救可以并发堆叠重型 validator 链；本轮已给 `pending-closure-reconcile` 增加独立非阻塞补救锁，防止重复跑完整 spec 链造成进程风暴，同时避免补救锁与 pending closure 写入锁互相自锁。
 
 ## 四、人工审核要点
 
@@ -118,20 +119,20 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 
 | 项目 | 结果 |
 | --- | --- |
-| 执行承诺账本 | 待 closeout runtime 最终核对 |
+| 执行承诺账本 | 8/8 已完成 |
 | 棱镜验收 | 通过，run=`20260519-r1-control-plane-physical-split-dry-run` |
-| closeout summary | 待生成 |
-| closeout receipt | 待生成 |
-| rescue audit（如有） | 无 |
+| closeout summary | 已生成 |
+| closeout receipt | 已生成 |
+| rescue audit（如有） | 已补 `task_report:` zero-diff 锚点兜底，并为 session-start 自动补救加独立非阻塞锁；棱镜 rescue review 无 blocker，等待救援补丁提交后的最终 session-end 清零 |
 
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 是 | dry-run manifest、目标分层、别名/回滚计划、checker、acceptance、报告与 Prism report 已落地。 |
-| 已自检 | 是 | targeted checks、spec-check、diagnose、clean workspace E2E 与 full acceptance 已通过。 |
-| 已独立验收 | 是 | Claude Code 与 Kimi 完成 Prism 验收，无 blocker。 |
-| 已正式完成 | 否 | closeout receipt 尚未生成。 |
+| 已自检 | 是 | targeted checks、spec-check、diagnose、clean workspace E2E、full acceptance 与 task-report zero-diff 回归已通过。 |
+| 已独立验收 | 是 | Claude Code 与 Kimi 完成 dry-run Prism 验收；closeout rescue 又完成 Claude Code / Kimi 复核，无 blocker。 |
+| 已正式完成 | 收口中 | closeout receipt 已生成；最终 session-end 需要在本次控制面救援补丁提交后重新跑通。 |
 
 ## 六、遗留问题与下一步
 
@@ -145,11 +146,11 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 
 ### 6.2 触发的新问题
 
-无新增需要独立立项的问题。全量 acceptance 暴露的 backlog guide / docs catalog / legacy asset dry-run 快照联动过期已在本轮内修复并复验通过。
+无新增需要独立立项的问题。全量 acceptance 暴露的 backlog guide / docs catalog / legacy asset dry-run 快照联动过期已在本轮内修复并复验通过。closeout 重验暴露的 `task-report-check` zero-diff 锚点缺口和 session-start 自动补救并发堆叠缺口，也已作为本轮救援项修复。
 
 ### 6.3 推荐的下一步行动
 
-1. 完成本轮 closeout receipt。
+1. 完成本轮救援补丁提交后的最终 session-end 收口。
 2. 后续可选择：控制面真实 apply tranche，或 Prism evidence retention split dry-run / apply tranche。
 
 ## 七、经验沉淀
@@ -158,7 +159,9 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 
 | 编号 | 标题 | 核心内容 |
 | --- | --- | --- |
-| 无新增 Lesson | 物理迁移前先做逐文件 dry-run | 本轮已将该经验固化到 R1 控制面检查器与 dry-run manifest。 |
+| L-165 | 物理迁移前先做逐文件 dry-run | 本轮已将该经验固化到 R1 控制面检查器与 dry-run manifest。 |
+| L-166 | 收口重验必须有任务卡报告锚点兜底 | report marker 和 pending artifact 都可能在补救链路中被清掉或覆盖；任务卡的 `task_report:` 应作为 zero-diff 重验的稳定真相源。 |
+| L-167 | 自动补救重型检查必须非阻塞串行化 | session-start / revive 等入口可高频触发；进入完整 validator 前必须先拿锁，避免补救链路本身变成进程风暴。 |
 
 ### 7.2 流程改进建议
 
@@ -169,6 +172,8 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 | 候选 | 来源 | 处理结果 | 证据 |
 | --- | --- | --- | --- |
 | 物理迁移前先做逐文件 dry-run | 本轮 control-plane blocker | no-promote-with-reason | 已固化到 `references/r1-control-plane-contract-split-preflight.json` 与 checker |
+| 收口重验必须有任务卡报告锚点兜底 | 本轮 closeout rescue | promoted-to-regression | `task-report-check-accepts-task-file-anchor-after-zero-diff`；`task-report-check-rejects-stale-task-file-anchor-conflict` |
+| 自动补救重型检查必须非阻塞串行化 | 本轮 closeout rescue | promoted-to-regression | `pending-closure-reconcile-nonblocking-lock` |
 
 ## 八、附录
 
@@ -184,6 +189,7 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 | --- | --- | --- | --- |
 | route-review | R1 下一工程切片选择 | Claude 建议 control-plane；Kimi 建议 Prism evidence；Cap 裁决先做 control-plane dry-run，并保留 no evidence cleanup 边界 | `prism/runs/20260519-r1-next-engineering-slice-selection/` |
 | acceptance-review | P4-2s dry-run manifest 是否可接受 | Claude Code + Kimi full-quorum；无 blocker | `prism/runs/20260519-r1-control-plane-physical-split-dry-run/` |
+| rescue-review | closeout rescue 补丁是否可提交 | Claude Code pass；Kimi pass-with-concerns；两项测试增强已补齐，无 blocker | `prism/runs/20260519-r1-control-plane-closeout-rescue-review/` |
 
 ### 附录 C：相关文档索引
 
@@ -202,4 +208,4 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 
 ## 十、棱镜状态
 
-下一切片选择评审与正式验收 Prism acceptance 均已完成；无 blocker。
+下一切片选择评审、正式验收 Prism acceptance 与 closeout rescue review 均已完成；无 blocker。

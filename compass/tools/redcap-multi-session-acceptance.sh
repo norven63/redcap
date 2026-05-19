@@ -90,6 +90,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-clear
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-hash-mismatch
   bash compass/tools/redcap-multi-session-acceptance.sh sessionstart-auto-reconcile-backlog-spec
+  bash compass/tools/redcap-multi-session-acceptance.sh pending-closure-reconcile-nonblocking-lock
   bash compass/tools/redcap-multi-session-acceptance.sh task-complete-guard-triggers-closeout-runtime
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-promise-ledger-blocks
   bash compass/tools/redcap-multi-session-acceptance.sh layerb-closeout-runtime-evolution-harvest-blocks
@@ -125,6 +126,8 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-rejects-stale-pending-anchor-conflict
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-requires-summary-for-untracked-anchor
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-accepts-legacy-pending-anchor
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-accepts-task-file-anchor-after-zero-diff
+  bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-rejects-stale-task-file-anchor-conflict
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-rejects-stale-marker-conflict
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-rejects-zero-diff-stale-marker
   bash compass/tools/redcap-multi-session-acceptance.sh task-report-check-ignores-invalid-pending-artifact
@@ -4724,6 +4727,86 @@ run_task_report_check_accepts_legacy_pending_anchor_case() {
     redcap_runtime_clear_context
 }
 
+run_task_report_check_accepts_task_file_anchor_after_zero_diff_case() {
+    local repo report_rel report_path current_head output
+
+    log "case: task-report-check-accepts-task-file-anchor-after-zero-diff"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-task-file-anchor-zero-diff/repo"
+    create_task_report_fixture_repo "$repo"
+    report_rel="compass/docs/task-reports/zz-acceptance-task-file-anchor-${RANDOM}-$$.md"
+    report_path="$repo/$report_rel"
+    write_valid_task_report_fixture "$report_path" "Acceptance Task File Anchor"
+    python3 - "$repo/.dev-task.md" "$report_rel" <<'PY'
+from pathlib import Path
+import sys
+
+task = Path(sys.argv[1])
+report_rel = sys.argv[2]
+lines = task.read_text(encoding="utf-8").splitlines()
+for index, line in enumerate(lines):
+    if line.startswith("task_report:"):
+        lines[index] = f"task_report: {report_rel}"
+        break
+else:
+    lines.append(f"task_report: {report_rel}")
+task.write_text("\n".join(lines) + "\n", encoding="utf-8")
+PY
+    git -C "$repo" add .dev-task.md "$report_rel"
+    git -C "$repo" commit --quiet -m "add task-file anchored report"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$current_head" "$current_head")" \
+        || fail "task-report-check should accept task_file task_report anchor after zero-diff window"
+    assert_eq "$output" "$report_rel"
+
+    redcap_runtime_clear_context
+}
+
+run_task_report_check_rejects_stale_task_file_anchor_conflict_case() {
+    local repo baseline_head current_head stale_rel fresh_report output status
+
+    log "case: task-report-check-rejects-stale-task-file-anchor-conflict"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/task-report-stale-task-file-anchor-conflict/repo"
+    create_task_report_fixture_repo "$repo"
+    baseline_head="$(git -C "$repo" rev-parse HEAD)"
+    stale_rel="compass/docs/task-reports/zz-acceptance-stale-task-file-old-${RANDOM}-$$.md"
+    write_valid_task_report_fixture "$repo/$stale_rel" "Acceptance Stale Task File Old"
+    python3 - "$repo/.dev-task.md" "$stale_rel" <<'PY'
+from pathlib import Path
+import sys
+
+task = Path(sys.argv[1])
+report_rel = sys.argv[2]
+lines = task.read_text(encoding="utf-8").splitlines()
+for index, line in enumerate(lines):
+    if line.startswith("task_report:"):
+        lines[index] = f"task_report: {report_rel}"
+        break
+else:
+    lines.append(f"task_report: {report_rel}")
+task.write_text("\n".join(lines) + "\n", encoding="utf-8")
+PY
+    git -C "$repo" add .dev-task.md "$stale_rel"
+    git -C "$repo" commit --quiet -m "add stale task-file anchored report"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+
+    fresh_report="$repo/compass/docs/task-reports/zz-acceptance-stale-task-file-new-${RANDOM}-$$.md"
+    write_valid_task_report_fixture "$fresh_report" "Acceptance Stale Task File New"
+
+    set +e
+    output="$(bash "$repo/compass/tools/redcap-task-report-check.sh" "$repo" "$baseline_head" "$current_head" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "task-report-check unexpectedly accepted stale task-file anchor conflict"
+    assert_string_contains "$output" "stale task-file report anchor conflicts with newer changed task reports"
+
+    redcap_runtime_clear_context
+}
+
 run_task_report_check_rejects_stale_marker_conflict_case() {
     local host="copilot"
     local repo legacy_rel baseline_head current_head binding_key pid new_report output
@@ -7795,6 +7878,91 @@ EOF
     assert_eq "$(normalize_csv "$required_redlines")" "$(normalize_csv "notify,backlog,spec")"
 
     redcap_interop_clear_pending_closure "$repo" "$repo/.dev-task.md" "acceptance-cleanup" "sessionstart-auto-reconcile-backlog-spec" >/dev/null 2>&1 || true
+    redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
+    redcap_runtime_clear_context
+}
+
+run_pending_closure_reconcile_nonblocking_lock_case() {
+    local host="claude"
+    local repo report_rel report_path current_head binding_key pid
+    local case_dir validator_stub validator_log first_pid line_count
+
+    log "case: pending-closure-reconcile-nonblocking-lock"
+
+    redcap_runtime_clear_context
+    repo="$ACCEPT_ROOT/pending-reconcile-nonblocking-lock/repo"
+    create_task_report_fixture_repo "$repo"
+    report_rel="compass/docs/task-reports/zz-acceptance-reconcile-lock-${RANDOM}-$$.md"
+    report_path="$repo/$report_rel"
+    write_valid_task_report_fixture "$report_path" "Acceptance Reconcile Lock"
+    current_head="$(git -C "$repo" rev-parse HEAD)"
+    redcap_interop_write_pending_closure \
+        "$repo" \
+        "$repo/.dev-task.md" \
+        "$host" \
+        "acceptance-seed" \
+        "task-report" \
+        "pending-closure-reconcile-nonblocking-lock" \
+        "$report_rel" \
+        "$current_head" \
+        "$current_head" \
+        >/dev/null
+
+    binding_key="acceptance-reconcile-lock-${RANDOM}-$$"
+    pid="$((64200 + RANDOM))"
+    init_bound_runtime_for_repo "$host" "$repo" "$binding_key" "$pid"
+    write_current_report_marker_fixture "$report_rel" "$repo/.dev-task.md"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/pending-reconcile-lock.XXXXXX")"
+    TEMP_PROJECTS+=("$case_dir")
+    validator_log="$case_dir/validator.log"
+    validator_stub="$case_dir/validator-stub.sh"
+    cat >"$validator_stub" <<EOF
+#!/usr/bin/env bash
+printf 'run\n' >> "$validator_log"
+sleep 1
+cat <<'OUT'
+[redcap-validator-chain] mode=obligation-reconcile overall=pass
+[1] review-proof-check :: pass
+review ok
+[2] reanchor-check :: pass
+reanchor ok
+[3] pm-gate :: pass
+pm-gate ok
+[4] drift-check :: pass
+drift ok
+[5] backlog-check :: pass
+backlog ok
+[6] spec-check :: pass
+spec ok
+[7] task-report-check :: pass
+task-report ok
+[8] artifact-lifecycle-check :: pass
+artifact ok
+OUT
+exit 0
+EOF
+    chmod +x "$validator_stub"
+
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$repo/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null &
+    first_pid=$!
+    for _ in {1..50}; do
+        [[ -s "$validator_log" ]] && break
+        sleep 0.05
+    done
+    [[ -s "$validator_log" ]] || fail "first pending closure reconcile did not enter validator before lock assertion"
+    REDCAP_VALIDATOR_CHAIN_SCRIPT="$validator_stub" \
+    REDCAP_HOST_PROCESS_PID="$pid" \
+        bash "$repo/compass/tools/redcap-pending-closure-reconcile.sh" "$host" >/dev/null \
+        || fail "second pending closure reconcile should exit cleanly while lock is busy"
+    wait "$first_pid" || fail "first pending closure reconcile failed"
+
+    line_count="$(wc -l < "$validator_log" | tr -d '[:space:]')"
+    assert_eq "$line_count" "1"
+
+    redcap_interop_clear_pending_closure "$repo" "$repo/.dev-task.md" "acceptance-cleanup" "pending-closure-reconcile-nonblocking-lock" >/dev/null 2>&1 || true
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
     redcap_runtime_clear_context
 }
@@ -15800,6 +15968,7 @@ run_all_cases() {
     run_sessionstart_auto_reconcile_clear_case
     run_sessionstart_auto_reconcile_hash_mismatch_case
     run_sessionstart_auto_reconcile_backlog_spec_case
+    run_pending_closure_reconcile_nonblocking_lock_case
     run_task_complete_guard_triggers_closeout_runtime_case
     run_layerb_closeout_runtime_evolution_harvest_blocks_case
     run_layerb_closeout_runtime_evolution_candidates_blocks_case
@@ -15824,6 +15993,8 @@ run_all_cases() {
     run_task_report_check_allows_marker_anchor_when_uniquely_latest_case
     run_task_report_check_requires_summary_for_untracked_anchor_case
     run_task_report_check_accepts_legacy_pending_anchor_case
+    run_task_report_check_accepts_task_file_anchor_after_zero_diff_case
+    run_task_report_check_rejects_stale_task_file_anchor_conflict_case
     run_task_report_check_rejects_stale_marker_conflict_case
     run_task_report_check_rejects_zero_diff_stale_marker_case
     run_task_report_check_ignores_invalid_pending_artifact_case
@@ -16054,6 +16225,9 @@ case "$COMMAND" in
     sessionstart-auto-reconcile-backlog-spec)
         run_sessionstart_auto_reconcile_backlog_spec_case
         ;;
+    pending-closure-reconcile-nonblocking-lock)
+        run_pending_closure_reconcile_nonblocking_lock_case
+        ;;
     task-complete-guard-triggers-on-complete|task-complete-guard-triggers-closeout-runtime)
         run_task_complete_guard_triggers_closeout_runtime_case
         ;;
@@ -16176,6 +16350,12 @@ case "$COMMAND" in
         ;;
     task-report-check-accepts-legacy-pending-anchor)
         run_task_report_check_accepts_legacy_pending_anchor_case
+        ;;
+    task-report-check-accepts-task-file-anchor-after-zero-diff)
+        run_task_report_check_accepts_task_file_anchor_after_zero_diff_case
+        ;;
+    task-report-check-rejects-stale-task-file-anchor-conflict)
+        run_task_report_check_rejects_stale_task_file_anchor_conflict_case
         ;;
     task-report-check-rejects-stale-marker-conflict)
         run_task_report_check_rejects_stale_marker_conflict_case

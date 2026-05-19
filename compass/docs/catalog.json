@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 361210,
-    "lines": 7325,
-    "chars": 220208,
+    "size_bytes": 363668,
+    "lines": 7331,
+    "chars": 221782,
     "rough_token_pressure": {
-      "low": 55052,
-      "high": 110104
+      "low": 55445,
+      "high": 110891
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 164668,
-        "lines": 2722,
-        "chars": 102264,
+        "size_bytes": 167126,
+        "lines": 2728,
+        "chars": 103838,
         "rough_token_pressure": {
-          "low": 25566,
-          "high": 51132
+          "low": 25959,
+          "high": 51919
         }
       }
     },
@@ -557,15 +557,15 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11135,
-      "lines": 205,
-      "chars": 7149,
-      "summary": "当前已完成：`internal-control-plane` 的未来物理拆分已有 dry-run 地图，覆盖 `compass/**` 与 `references/**` 中当前 package-visible 的 184 个控制面候选。 / 详情：本轮只生成未来目标分层、别名/回滚计划和机器检查；没有移动、复制、删除或重命名任何 `compass` / `references` 文件。",
+      "size_bytes": 13593,
+      "lines": 211,
+      "chars": 8723,
+      "summary": "当前已完成：`internal-control-plane` 的未来物理拆分已有 dry-run 地图，覆盖 `compass/**` 与 `references/**` 中当前 package-visible 的 184 个控制面候选。 / 详情：本轮只生成未来目标分层、别名/回滚计划和机器检查；没有移动、复制、删除或重命名任何 `compass` / `references` 文件。收口重验时发现并修复了任务报告在 zero-diff 窗口丢失锚点的控制面缺口。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
           "当前已完成：`internal-control-plane` 的未来物理拆分已有 dry-run 地图，覆盖 `compass/**` 与 `references/**` 中当前 package-visible 的 184 个控制面候选。",
-          "详情：本轮只生成未来目标分层、别名/回滚计划和机器检查；没有移动、复制、删除或重命名任何 `compass` / `references` 文件。"
+          "详情：本轮只生成未来目标分层、别名/回滚计划和机器检查；没有移动、复制、删除或重命名任何 `compass` / `references` 文件。收口重验时发现并修复了任务报告在 zero-diff 窗口丢失锚点的控制面缺口。"
         ],
         "previous_step": [
           "上一步完成的是：P4-2r 已把 `internal-layer-a / loom` 做成产品边界预检，并保留 Layer A 产品范围仍需未来裁决的事实。"
