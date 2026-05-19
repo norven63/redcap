@@ -84,6 +84,8 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 ### 3.2 已验证
 
 - `bash compass/tools/redcap-r1-control-plane-contract-split-check.sh`
+- targeted acceptance、spec-check、diagnose、clean workspace E2E 与 full acceptance 已通过。
+- 全量 acceptance 曾抓到 backlog guide / docs catalog / legacy asset dry-run 快照联动过期；本轮已同步人类 backlog guide、刷新 catalog，并更新 legacy asset dry-run 行数快照后复验通过。
 
 ## 四、人工审核要点
 
@@ -98,10 +100,15 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 | 验证项 | 命令 | 结果 |
 | --- | --- | --- |
 | 控制面 dry-run checker | `bash compass/tools/redcap-r1-control-plane-contract-split-check.sh` | 通过 |
-| targeted acceptance | 待执行 | 待完成 |
-| spec-check | 待执行 | 待完成 |
-| diagnose | 待执行 | 待完成 |
-| full acceptance | 待执行 | 待完成 |
+| 发布计划检查 | `bash compass/tools/redcap-formal-release-readiness-plan-check.sh` | 通过 |
+| 产品架构检查 | `bash compass/tools/redcap-pre-release-product-architecture-check.sh` | 通过 |
+| docs catalog / reference lifecycle / cold archive | `redcap-docs-catalog.sh check` / `redcap-reference-asset-lifecycle.sh check` / `redcap-cold-archive-inventory.sh check` | 通过 |
+| targeted acceptance | `r1-control-plane-contract-split-check` / `formal-release-readiness-plan-check` / `pre-release-product-architecture-check` / `on-stop-review-falls-back-after-timeout` | 通过 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --result references/clean-workspace-install-e2e.json --timeout 180` | 通过，head=`21ab7f6`，package candidates=208 |
+| spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
+| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
+| Prism acceptance | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过，Claude Code + Kimi full-quorum |
+| full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -111,8 +118,8 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 
 | 项目 | 结果 |
 | --- | --- |
-| 执行承诺账本 | 待 closeout runtime 核对 |
-| 棱镜验收 | 待完成 |
+| 执行承诺账本 | 待 closeout runtime 最终核对 |
+| 棱镜验收 | 通过，run=`20260519-r1-control-plane-physical-split-dry-run` |
 | closeout summary | 待生成 |
 | closeout receipt | 待生成 |
 | rescue audit（如有） | 无 |
@@ -121,9 +128,9 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
-| 已实现 | 否 | dry-run manifest 与 checker 已初步落地，仍需接入验收、Prism 和 closeout。 |
-| 已自检 | 部分 | checker 已通过，其他回归待执行。 |
-| 已独立验收 | 否 | Prism acceptance 待执行。 |
+| 已实现 | 是 | dry-run manifest、目标分层、别名/回滚计划、checker、acceptance、报告与 Prism report 已落地。 |
+| 已自检 | 是 | targeted checks、spec-check、diagnose、clean workspace E2E 与 full acceptance 已通过。 |
+| 已独立验收 | 是 | Claude Code 与 Kimi 完成 Prism 验收，无 blocker。 |
 | 已正式完成 | 否 | closeout receipt 尚未生成。 |
 
 ## 六、遗留问题与下一步
@@ -138,11 +145,11 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 
 ### 6.2 触发的新问题
 
-无新增需要独立立项的问题；棱镜分歧已通过本轮裁决和边界控制吸收。
+无新增需要独立立项的问题。全量 acceptance 暴露的 backlog guide / docs catalog / legacy asset dry-run 快照联动过期已在本轮内修复并复验通过。
 
 ### 6.3 推荐的下一步行动
 
-1. 完成本轮 targeted/full 回归、Prism acceptance 与 closeout。
+1. 完成本轮 closeout receipt。
 2. 后续可选择：控制面真实 apply tranche，或 Prism evidence retention split dry-run / apply tranche。
 
 ## 七、经验沉淀
@@ -168,7 +175,7 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 ### 附录 A：Commits
 
 ```
-待提交
+21ab7f6 feat(release): 增加 R1 控制面拆分干跑清单
 ```
 
 ### 附录 B：棱镜调用记录（如有）
@@ -176,6 +183,7 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 | 模式 | 问题 | 结论 | 报告路径 |
 | --- | --- | --- | --- |
 | route-review | R1 下一工程切片选择 | Claude 建议 control-plane；Kimi 建议 Prism evidence；Cap 裁决先做 control-plane dry-run，并保留 no evidence cleanup 边界 | `prism/runs/20260519-r1-next-engineering-slice-selection/` |
+| acceptance-review | P4-2s dry-run manifest 是否可接受 | Claude Code + Kimi full-quorum；无 blocker | `prism/runs/20260519-r1-control-plane-physical-split-dry-run/` |
 
 ### 附录 C：相关文档索引
 
@@ -194,4 +202,4 @@ R1 的 `internal-control-plane` blocker 已经有第一层契约预检，但那�
 
 ## 十、棱镜状态
 
-下一切片选择评审已完成；正式验收 Prism acceptance 待执行。
+下一切片选择评审与正式验收 Prism acceptance 均已完成；无 blocker。

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 359234,
-    "lines": 7314,
-    "chars": 218446,
+    "size_bytes": 361216,
+    "lines": 7324,
+    "chars": 220218,
     "rough_token_pressure": {
-      "low": 54611,
-      "high": 109223
+      "low": 55054,
+      "high": 110109
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 190816,
-        "lines": 4511,
-        "chars": 114036,
+        "size_bytes": 191018,
+        "lines": 4513,
+        "chars": 114180,
         "rough_token_pressure": {
-          "low": 28509,
-          "high": 57018
+          "low": 28545,
+          "high": 57090
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 162888,
-        "lines": 2714,
-        "chars": 100636,
+        "size_bytes": 164668,
+        "lines": 2722,
+        "chars": 102264,
         "rough_token_pressure": {
-          "low": 25159,
-          "high": 50318
+          "low": 25566,
+          "high": 51132
         }
       }
     },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 14341,
-      "lines": 166,
-      "chars": 7971,
+      "size_bytes": 14543,
+      "lines": 168,
+      "chars": 8115,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9355,
-      "lines": 197,
-      "chars": 5521,
+      "size_bytes": 11135,
+      "lines": 205,
+      "chars": 7149,
       "summary": "当前已完成：`internal-control-plane` 的未来物理拆分已有 dry-run 地图，覆盖 `compass/**` 与 `references/**` 中当前 package-visible 的 184 个控制面候选。 / 详情：本轮只生成未来目标分层、别名/回滚计划和机器检查；没有移动、复制、删除或重命名任何 `compass` / `references` 文件。",
       "status_basis": "filename_recency_only",
       "summary_points": {
