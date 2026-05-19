@@ -123,10 +123,11 @@
       "id": "r1-internal-control-plane-boundary-unresolved",
       "dimension": "machine-independence",
       "severity": "release-blocker",
-      "claim": "The R1 internal-control-plane blocker remains unresolved. P4-2p made the control-plane split contract auditable, but did not physically split compass/references or claim release-safe completion.",
+      "claim": "The R1 internal-control-plane blocker remains unresolved. P4-2p made the split contract auditable and P4-2s adds a dry-run target map, but neither physically splits compass/references nor claims release-safe completion.",
       "evidence": [
         "references/r1-control-plane-contract-split-preflight.json",
-        "references/formal-release-readiness-plan.json"
+        "references/formal-release-readiness-plan.json",
+        "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
       ],
       "required_before_public_release": true
     },
@@ -230,6 +231,11 @@
       "id": "P4-2e",
       "title": "Public arsenal content strategy and claim boundary",
       "priority": "P1-before-broad-marketing"
+    },
+    {
+      "id": "P4-2s",
+      "title": "R1 internal-control-plane physical split dry-run map",
+      "priority": "in-progress-before-release-apply"
     }
   ]
 }

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 362662,
-    "lines": 7348,
-    "chars": 220976,
+    "size_bytes": 359234,
+    "lines": 7314,
+    "chars": 218446,
     "rough_token_pressure": {
-      "low": 55244,
-      "high": 110488
+      "low": 54611,
+      "high": 109223
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 166316,
-        "lines": 2748,
-        "chars": 103166,
+        "size_bytes": 162888,
+        "lines": 2714,
+        "chars": 100636,
         "rough_token_pressure": {
-          "low": 25791,
-          "high": 51583
+          "low": 25159,
+          "high": 50318
         }
       }
     },
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-11-rasg-020-runtime-contract-surface.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RASG-020 公开 runtime 契约与维护者工具分层",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12783,
-      "lines": 231,
-      "chars": 8051,
-      "summary": "当前已完成：RedCap 已把未来普通用户可依赖的 CLI/runtime 命令，和维护者才该使用的发布准备、源码治理命令分开，并通过机器检查和棱镜评审。 / 详情：本轮解决的是发布前产品边界问题。以后即便 npm 候选包里为了 readiness 暂时保留维护者检查器，它们也不会被 README、help、runtime import map 或 package policy 误写成普通用户稳定 API。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-12-rasg-021-prism-degradation-frequency.md",
       "collection": "task-reports",
       "title": "任务完成报告：RASG-021 棱镜降级频率与结论韧性跟踪",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-022 剩余高风险根目录显式延期收口",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 16663,
       "lines": 257,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：正式发布 R1 控制面契约拆分预检",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15399,
       "lines": 234,
       "chars": 9683,
       "summary": "当前已完成：R1 的 `internal-control-plane` blocker 已被拆成可机器检查的“控制面契约拆分预检”，但它仍然阻塞正式发布。 / 详情：本轮解决的是“`compass` 和 `references` 还在包候选面里，后续到底该怎么安全拆”的问题。现在 RedCap 已经有一份可复验的预检：说明哪些入口还依赖它们、当前候选包面是多少、未来真搬目录前必须准备哪些门禁。重要边界也被锁住：这不是物理迁移完成，不是 R1 关闭，也不是 public release ready。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：R1 的 `internal-control-plane` blocker 已被拆成可机器检查的“控制面契约拆分预检”，但它仍然阻塞正式发布。",
-          "详情：本轮解决的是“`compass` 和 `references` 还在包候选面里，后续到底该怎么安全拆”的问题。现在 RedCap 已经有一份可复验的预检：说明哪些入口还依赖它们、当前候选包面是多少、未来真搬目录前必须准备哪些门禁。重要边界也被锁住：这不是物理迁移完成，不是 R1 关闭，也不是 public release ready。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2o 把 R1 延期根目录分成 4 类，其中 `workspace-state` 已证明不进包，`internal-control-plane`、`prism-layer-and-evidence`、`internal-layer-a` 仍是 release blockers。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续处理剩余 R1 release blockers，优先在 `prism-layer-and-evidence` 与后续 `internal-control-plane` 真实物理拆分之间选择下一条可自动推进的 tranche；正式 npm 发布、许可证、发布开关和 registry 发布仍需未来人工授权任务。"
-        ],
-        "position": [
-          "整体计划脉络图是：发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → 剩余证据层 / Layer A 产品边界 / 真实发布授权。",
-          "当前所在位置：`framework-upgrade / P4-2p`，处于正式发布 R1 的第一个 blocker 技术预检完成点。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-18-r1-prism-evidence-retention-split-preflight.md",
@@ -576,6 +547,35 @@
         "position": [
           "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → Prism 证据保留拆分预检 → 剩余物理拆分 / Layer A 产品边界 / 最终发布授权。",
           "当前所在位置：`framework-upgrade / P4-2q`，处于 `prism-layer-and-evidence` 技术预检完成点。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：R1 控制面物理拆分干跑清单",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9355,
+      "lines": 197,
+      "chars": 5521,
+      "summary": "当前已完成：`internal-control-plane` 的未来物理拆分已有 dry-run 地图，覆盖 `compass/**` 与 `references/**` 中当前 package-visible 的 184 个控制面候选。 / 详情：本轮只生成未来目标分层、别名/回滚计划和机器检查；没有移动、复制、删除或重命名任何 `compass` / `references` 文件。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：`internal-control-plane` 的未来物理拆分已有 dry-run 地图，覆盖 `compass/**` 与 `references/**` 中当前 package-visible 的 184 个控制面候选。",
+          "详情：本轮只生成未来目标分层、别名/回滚计划和机器检查；没有移动、复制、删除或重命名任何 `compass` / `references` 文件。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2r 已把 `internal-layer-a / loom` 做成产品边界预检，并保留 Layer A 产品范围仍需未来裁决的事实。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续处理 R1 中仍未解决的物理拆分 / 证据保留 / 产品范围裁决问题；正式 registry 发布、许可证和发布开关仍留到未来人工授权任务。"
+        ],
+        "position": [
+          "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → Prism 证据保留拆分预检 → Layer A 产品边界预检 → 控制面物理拆分 dry-run → 后续真实拆分 / 产品范围裁决 / 最终发布授权。",
+          "当前所在位置：`framework-upgrade / P4-2s`，处于 `internal-control-plane` 未来物理拆分的 dry-run 地图阶段。"
         ]
       }
     },

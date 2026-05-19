@@ -238,6 +238,1402 @@
       "prism-layer-and-evidence",
       "internal-layer-a"
     ],
-    "next_recommended_tranche": "R1-prism-evidence-retention-split or a future internal-control-plane physical split, depending on formal release scope and package surface pressure."
+    "next_recommended_tranche": "Future internal-control-plane physical split apply tranche may start only after this dry-run map passes Prism review and clean workspace E2E; otherwise formal release remains blocked.",
+    "dry_run_manifest_completed": true,
+    "physical_split_completed": false
+  },
+  "physical_split_dry_run_manifest": {
+    "status": "dry-run-only-no-files-moved",
+    "created_at": "2026-05-19T00:00:00Z",
+    "source": "redcap-runtime-package-manifest.sh --output <temp>",
+    "claim_boundary": {
+      "physical_moves_performed": false,
+      "files_deleted": false,
+      "files_copied": false,
+      "release_switches_changed": false,
+      "release_blocker_resolved": false,
+      "allowed_user_claim": "internal-control-plane now has a machine-checkable dry-run migration map and alias/rollback plan.",
+      "forbidden_claims": [
+        "The internal control plane has been physically split.",
+        "compass or references were moved.",
+        "The internal-control-plane blocker is resolved.",
+        "RedCap is public-release-ready."
+      ]
+    },
+    "package_candidate_snapshot": {
+      "candidate_count": 208,
+      "control_plane_candidate_count": 184,
+      "compass": 134,
+      "references": 50,
+      "compass_tools_shell": 82,
+      "compass_tools_python": 52,
+      "references_json": 47,
+      "references_markdown": 3
+    },
+    "target_layers": [
+      {
+        "id": "runtime-public-support",
+        "meaning": "package-visible runtime and first-run support tools that may need stable facades",
+        "future_root": "runtime/redcap-core"
+      },
+      {
+        "id": "internal-control-plane",
+        "meaning": "maintainer governance, validators and release-readiness tools",
+        "future_root": "internal/control-plane"
+      },
+      {
+        "id": "public-contract",
+        "meaning": "contracts and handoff documents safe to expose to advanced package users",
+        "future_root": "contracts/public"
+      },
+      {
+        "id": "internal-contract",
+        "meaning": "maintainer-only policies, governance contracts and release gates",
+        "future_root": "contracts/internal"
+      },
+      {
+        "id": "human-handoff",
+        "meaning": "human-facing release handoff material",
+        "future_root": "docs/release"
+      }
+    ],
+    "coverage": {
+      "total_entries": 184,
+      "by_target_layer": {
+        "human-handoff": 1,
+        "internal-contract": 38,
+        "internal-control-plane": 87,
+        "public-contract": 11,
+        "runtime-public-support": 47
+      }
+    },
+    "entries": [
+      {
+        "source": "compass/tools/redcap-agent-health-probe.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-agent-health-probe.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-agent-health-probe.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-agent-health-probe.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-architecture-smell-governance-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-architecture-smell-governance-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-architecture-smell-governance-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-architecture-smell-governance-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-arsenal-version-binding-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-arsenal-version-binding-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-arsenal-version-binding-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-arsenal-version-binding-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-change-intake-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-change-intake-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-change-intake-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-change-intake-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-cli-console-mirror-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-cli-console-mirror-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-cli-console-mirror.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-cli-console-mirror.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-cli-product-surface-check.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-cli-product-surface-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-cli-product-surface-check.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-cli-product-surface-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-cli-product-surface.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-cli-product-surface.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-cli-product-surface.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-cli-product-surface.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-codex-hooks-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-codex-hooks-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-cold-archive-inventory.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-cold-archive-inventory.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-cold-archive-inventory.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-cold-archive-inventory.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-conclusion-prism-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-conclusion-prism-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-conclusion-prism-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-conclusion-prism-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-current-status.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-current-status.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-current-status.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-current-status.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-detect-agents.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-detect-agents.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-dev-task.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-dev-task.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-diagnose.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-diagnose.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-docs-catalog.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-docs-catalog.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-docs-catalog.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-docs-catalog.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-drift-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-drift-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-evolution-candidate-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-evolution-candidate-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-evolution-candidate-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-evolution-candidate-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-evolution-harvest-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-evolution-harvest-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-evolution-harvest-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-evolution-harvest-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-execution-guarantee-check.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-execution-guarantee-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-execution-guarantee-check.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-execution-guarantee-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-feishu-inbox.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-feishu-inbox.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-feishu-inbox.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-feishu-inbox.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-feishu-notification-policy-check.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-feishu-notification-policy-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-feishu-notification-policy-check.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-feishu-notification-policy-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-file-lookup-dictionary-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-file-lookup-dictionary-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-file-lookup-dictionary-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-file-lookup-dictionary-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-formal-release-r1-root-group-disposition-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-formal-release-r1-root-group-disposition-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-formal-release-readiness-plan-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-formal-release-readiness-plan-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-formal-release-readiness-plan-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-formal-release-readiness-plan-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-full-llm-wiki-roadmap-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-full-llm-wiki-roadmap-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-full-llm-wiki-roadmap-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-full-llm-wiki-roadmap-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-hook-contract-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-hook-contract-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-host-hook-readiness.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-host-hook-readiness.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-human-communication-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-human-communication-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-human-communication-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-human-communication-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-human-output-quality-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-human-output-quality-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-human-output-quality-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-human-output-quality-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-install.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-install.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-intent-coverage-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-intent-coverage-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-knowledge-gateway.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-knowledge-gateway.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-knowledge-gateway.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-knowledge-gateway.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-knowledge-index-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-knowledge-index-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layer-boundary-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-layer-boundary-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layer-boundary-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-layer-boundary-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layerB-task-complete-guard.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-layerB-task-complete-guard.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layerb-closeout-runtime-bridge.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-layerb-closeout-runtime-bridge.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layerb-closeout-runtime-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-layerb-closeout-runtime-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layerb-closeout-runtime.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-layerb-closeout-runtime.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layerb-closeout-runtime.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-layerb-closeout-runtime.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layerb-fsm-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-layerb-fsm-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layerb-fsm.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-layerb-fsm.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layerb-fsm.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-layerb-fsm.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-layerb-lifecycle-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-layerb-lifecycle-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-mechanism-vitality-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-mechanism-vitality-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-mechanism-vitality-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-mechanism-vitality-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-notify-format.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-notify-format.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-on-complete.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-on-complete.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-on-stop-review.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-on-stop-review.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-overlay-governance-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-overlay-governance-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-package-publish-safety-check.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-package-publish-safety-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-package-publish-safety-check.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-package-publish-safety-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-parent-receipt-aggregation-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-parent-receipt-aggregation-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-parent-receipt-aggregation-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-parent-receipt-aggregation-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-pending-closure-reconcile.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-pending-closure-reconcile.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-plan-only-followup-registration-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-plan-only-followup-registration-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-plan-only-followup-registration-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-plan-only-followup-registration-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-pm-gate-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-pm-gate-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-pre-release-product-architecture-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-pre-release-product-architecture-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-pre-release-product-architecture-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-pre-release-product-architecture-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-prism-acceptance-bind.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-prism-acceptance-bind.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-prism-acceptance-bind.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-prism-acceptance-bind.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-prism-acceptance-check.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-prism-acceptance-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-prism-acceptance-check.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-prism-acceptance-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-prism-degradation-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-prism-degradation-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-prism-degradation-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-prism-degradation-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-progress-meter-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-progress-meter-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-progress-meter-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-progress-meter-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-progress-meter.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-progress-meter.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-progress-meter.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-progress-meter.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-public-arsenal-claim-boundary.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-public-arsenal-claim-boundary.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-public-arsenal-claim-boundary.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-public-arsenal-claim-boundary.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-public-package-surface.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-public-package-surface.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-public-package-surface.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-public-package-surface.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-control-plane-contract-split-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-control-plane-contract-split-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-control-plane-contract-split-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-control-plane-contract-split-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-layera-product-boundary-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-layera-product-boundary-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-layera-product-boundary-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-layera-product-boundary-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-prism-evidence-retention-split-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-evidence-retention-split-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-evidence-retention-split-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-reference-asset-lifecycle.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-reference-asset-lifecycle.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-reference-asset-lifecycle.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-reference-asset-lifecycle.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-release-e2e-matrix-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-release-e2e-matrix-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-release-e2e-matrix-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-release-e2e-matrix-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-revival-check.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-revival-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-revival-check.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-revival-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-runtime-package-manifest.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-runtime-package-manifest.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-runtime-package-manifest.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-runtime-package-manifest.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-runtime-state.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-runtime-state.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-runtime-workspace-boundary-check.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-runtime-workspace-boundary-check.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-shared-knowledge-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-shared-knowledge-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-shared-knowledge-remote-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-shared-knowledge-remote-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-shared-knowledge-remote-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-shared-knowledge-remote-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-shared-knowledge.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-shared-knowledge.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-shared-knowledge.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-shared-knowledge.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-skill-lifecycle-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-skill-lifecycle-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-skill-lifecycle-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-skill-lifecycle-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-spec-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-spec-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-status-report-format.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-status-report-format.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-status-report-format.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-status-report-format.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-task-report-check.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-task-report-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-task-report-register.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-task-report-register.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-token-risk-audit.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-token-risk-audit.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-token-risk-audit.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-token-risk-audit.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-tracking-health.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-tracking-health.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-tracking-health.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-tracking-health.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-user-agent-identity.py",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-user-agent-identity.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-user-agent-identity.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-user-agent-identity.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-validator-chain.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-validator-chain.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-validator-output.sh",
+        "target_layer": "runtime-public-support",
+        "target_path": "runtime/redcap-core/tools/redcap-validator-output.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/cli-product-surface-policy.json",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/cli-product-surface-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/codex-live-marker-e2e.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/codex-live-marker-e2e.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/conclusion-prism-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/conclusion-prism-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/evolution-candidate-schema.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/evolution-candidate-schema.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/evolution-harvest-signal-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/evolution-harvest-signal-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/execution-guarantees.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/execution-guarantees.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/execution-layer-split-dry-run.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/execution-layer-split-dry-run.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/feishu-inbox-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/feishu-inbox-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/feishu-notification-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/feishu-notification-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/file-lookup-dictionary-policy.json",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/file-lookup-dictionary-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/file-lookup-dictionary.md",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/file-lookup-dictionary.md",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/formal-release-r1-root-group-disposition-preflight.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/formal-release-r1-root-group-disposition-preflight.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/formal-release-readiness-plan.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/formal-release-readiness-plan.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/full-llm-wiki-roadmap.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/full-llm-wiki-roadmap.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/historical-asset-physical-cleanup-release-gate.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/historical-asset-physical-cleanup-release-gate.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/host-session-capability-matrix.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/host-session-capability-matrix.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/human-communication-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/human-communication-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/knowledge-gateway-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/knowledge-gateway-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/layera-layerb-boundary-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/layera-layerb-boundary-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/layerb-change-intake-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/layerb-change-intake-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/package-publish-safety-policy.json",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/package-publish-safety-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/parent-receipt-aggregation-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/parent-receipt-aggregation-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/plan-only-followup-registration-fixtures.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/plan-only-followup-registration-fixtures.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/pre-release-product-architecture-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/pre-release-product-architecture-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/pre-release-product-architecture-review.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/pre-release-product-architecture-review.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/prism-degradation-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/prism-degradation-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/prism-provider-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/prism-provider-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/public-arsenal-claim-boundary-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/public-arsenal-claim-boundary-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/public-package-surface-policy.json",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/public-package-surface-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/public-release-handoff.md",
+        "target_layer": "human-handoff",
+        "target_path": "docs/release/public-release-handoff.md",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-control-plane-contract-split-preflight.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-control-plane-contract-split-preflight.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-layera-product-boundary-preflight.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-layera-product-boundary-preflight.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-prism-evidence-retention-split-preflight.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-prism-evidence-retention-split-preflight.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/redcap-forge-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/redcap-forge-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/redcap-knowledge-cold-archive-inventory.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/redcap-knowledge-cold-archive-inventory.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/redcap-progress-meter-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/redcap-progress-meter-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/redcap-system-layers.md",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/redcap-system-layers.md",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/reference-asset-lifecycle.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/reference-asset-lifecycle.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/release-authorization-matrix.json",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/release-authorization-matrix.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/release-readiness-e2e-matrix.json",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/release-readiness-e2e-matrix.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/root-ia-private-archive-tranche-manifest.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/root-ia-private-archive-tranche-manifest.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/root-ia-remaining-root-groups-deferral.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/root-ia-remaining-root-groups-deferral.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/root-ia-shared-knowledge-tranche-manifest.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/root-ia-shared-knowledge-tranche-manifest.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/runtime-package-readiness-policy.json",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/runtime-package-readiness-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/runtime-public-contract-policy.json",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/runtime-public-contract-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/runtime-workspace-boundary-policy.json",
+        "target_layer": "public-contract",
+        "target_path": "contracts/public/runtime-workspace-boundary-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/shared-knowledge-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/shared-knowledge-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/shared-knowledge-remote-binding.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/shared-knowledge-remote-binding.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/token-structural-governance.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/token-structural-governance.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/user-agent-identity-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/user-agent-identity-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      }
+    ]
+  },
+  "alias_and_rollback_plan": {
+    "status": "planned-for-future-physical-move-no-runtime-path-change-now",
+    "applies_now": false,
+    "consumer_bindings": [
+      {
+        "consumer_id": "root-runtime-facade",
+        "alias_requirement": "Future move must keep existing source anchors resolvable through wrapper, import-map entry, or alias resolver before path changes.",
+        "rollback_requirement": "Rollback must restore old path visibility and package candidate counts before deleting any compatibility alias."
+      },
+      {
+        "consumer_id": "release-readiness-safety",
+        "alias_requirement": "Future move must keep existing source anchors resolvable through wrapper, import-map entry, or alias resolver before path changes.",
+        "rollback_requirement": "Rollback must restore old path visibility and package candidate counts before deleting any compatibility alias."
+      },
+      {
+        "consumer_id": "layerb-closeout-and-governance",
+        "alias_requirement": "Future move must keep existing source anchors resolvable through wrapper, import-map entry, or alias resolver before path changes.",
+        "rollback_requirement": "Rollback must restore old path visibility and package candidate counts before deleting any compatibility alias."
+      },
+      {
+        "consumer_id": "knowledge-and-lookup-gateway",
+        "alias_requirement": "Future move must keep existing source anchors resolvable through wrapper, import-map entry, or alias resolver before path changes.",
+        "rollback_requirement": "Rollback must restore old path visibility and package candidate counts before deleting any compatibility alias."
+      },
+      {
+        "consumer_id": "prism-acceptance-binding",
+        "alias_requirement": "Future move must keep existing source anchors resolvable through wrapper, import-map entry, or alias resolver before path changes.",
+        "rollback_requirement": "Rollback must restore old path visibility and package candidate counts before deleting any compatibility alias."
+      }
+    ],
+    "minimum_future_sequence": [
+      "copy target files into future root",
+      "add compatibility aliases before changing consumers",
+      "run package safety and clean workspace E2E",
+      "run Prism review and closeout receipt",
+      "delete old anchors only in a separate delete-last task with rollback proof"
+    ]
   }
 }

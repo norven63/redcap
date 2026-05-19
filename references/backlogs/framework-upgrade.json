@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-2r",
-    "summary": "正式发布 R1 已完成 internal-layer-a 的产品边界预检：loom 的职责、包面缺席、消费者矩阵和未来公开纳入/排除门禁已成为机器可查证据；本项不移动或删除 loom，也不替 Norven 裁决 Layer A 产品范围。"
+    "item_id": "P4-2s",
+    "summary": "正式发布 R1 正在推进 internal-control-plane 物理拆分 dry-run：为 compass/references 的 package-visible control-plane 候选生成目标分层、别名/回滚计划和机器验收；本项不移动目录、不关闭 blocker、不执行发布。"
   },
   "glossary": [
     {
@@ -465,6 +465,19 @@
             "references/formal-release-readiness-plan.json",
             "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
           ]
+        },
+        {
+          "id": "P4-2s",
+          "title": "R1 控制面物理拆分干跑清单",
+          "status": "in_progress",
+          "priority": "P0",
+          "phase_id": "phase-6-release-readiness-control-plane",
+          "summary": "正在把 internal-control-plane 的下一步物理拆分准备成可机器检查的 dry-run manifest、目标分层、别名/回滚计划和验收门禁；本项不关闭 R1、不执行发布、不移动 compass/references。",
+          "evidence_paths": [
+            "references/r1-control-plane-contract-split-preflight.json",
+            "compass/tools/redcap-r1-control-plane-contract-split-check.sh",
+            "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
+          ]
         }
       ]
     }
@@ -548,9 +561,10 @@
         "P4-2o",
         "P4-2p",
         "P4-2q",
-        "P4-2r"
+        "P4-2r",
+        "P4-2s"
       ],
-      "summary": "正式发布动作之前，发布路线、人工授权、历史资产物理清理硬门、高价值经验候选化硬门、R1 延期根目录处置预检、internal-control-plane 契约拆分预检、prism-layer-and-evidence 证据保留拆分预检和 internal-layer-a 产品边界预检都已进入可审计控制面；当前仍不执行真实发布。"
+      "summary": "正式发布动作之前，R1 延期根目录处置预检、三类 blocker 的专项预检，以及 internal-control-plane 的物理拆分 dry-run 正在进入可审计控制面；当前仍不执行真实发布。"
     }
   ]
 }

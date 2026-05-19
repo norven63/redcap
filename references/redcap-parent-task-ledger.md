@@ -20,11 +20,15 @@ P4-2p 完成的是 `internal-control-plane` 的第一层技术预检：把 `comp
 
 P4-2q 完成的是 `prism-layer-and-evidence` 的第一层技术预检：把 `prism/tools`、`prism/README.md`、`prism/reports` 与 `prism/runs` 的包面、考古面和本地运行证据面拆成可机器复验的 evidence retention split preflight。它不是物理迁移完成，也不是 Prism 证据清理完成；正式发布仍被 `internal-control-plane`、`prism-layer-and-evidence` 与 `internal-layer-a` 三类 blocker 阻塞。
 
+P4-2r 完成的是 `internal-layer-a` 的产品边界预检：把 `loom` 当前不进包、它承载的旧 Layer A 职责、消费者矩阵和未来 include/exclude/retire/move 的人工产品边界写成可机器复验的 product boundary preflight。它不是 Layer A 已纳入公开产品，也不是 Layer A 已退休或已物理迁移。
+
+P4-2s 当前推进的是 `internal-control-plane` 的物理拆分干跑清单：为 `compass` 与 `references` 的 package-visible 控制面候选生成未来目标分层、别名/回滚策略和机器验收。它不移动目录、不删除文件、不关闭 `internal-control-plane` release blocker。
+
 ## 人类可读父任务全景
 
 - 主线目标：RedCap 这轮超长任务不是补一个小功能，而是把它从 Norven 本机上的 skill 工程，推进成更像正式工具的 Agent runtime / CLI / 多层系统。
 - 已完成的大块：任务流和收尾机制已经重构；历史资产、知识库、公共 arsenal、Forge、LLM-wiki-lite、CLI 产品面、干净工作区安装验证、飞书通知治理和飞书回复安全收件箱都已完成一轮落地。
-- 当前所在位置：主线已把“历史资产物理清理”和“高价值经验发现/候选化”都升级为正式发布前硬门；P4-2o 把 R1 延期根目录分成三组仍阻塞发布的根目录和一组本地状态，P4-2p 已完成三组 blocker 中候选面最大的 `internal-control-plane` 预检。
+- 当前所在位置：主线已把“历史资产物理清理”和“高价值经验发现/候选化”都升级为正式发布前硬门；P4-2o 把 R1 延期根目录分成三组仍阻塞发布的根目录和一组本地状态，P4-2p/P4-2q/P4-2r 已完成三组 blocker 的第一层专项预检，P4-2s 正在推进 `internal-control-plane` 的物理拆分 dry-run 地图。
 - 仍未完成或仍被拦住的事：正式公开发布还没有启动，仍需要处理发布开关、凭据、许可证和公开分发边界；完整 LLM-wiki、RAG/GraphRAG 和大规模公共知识库迁移仍是后续事项。
 - 下一步：只有 Norven 明确启动 release task 后，才进入许可证、发布开关、npm registry、版本号和发布/回滚策略；任何子任务完成都不能冒充整个父任务完成。
 
@@ -39,6 +43,8 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P4-2o | R1 延期根目录处置预检 | completed | 已把 4 类延期根目录映射到 release gate disposition：workspace-state 已证明不进包；其余 3 类仍阻塞正式发布。 |
 | P4-2p | R1 控制面契约拆分预检 | completed | 已把 internal-control-plane blocker 拆成可机器检查的控制面契约、消费者矩阵、包面边界和未来物理拆分门禁；不关闭 R1、不发布、不移动目录。 |
 | P4-2q | R1 Prism 证据保留拆分预检 | completed | 已把 prism-layer-and-evidence blocker 拆成可机器检查的工具/报告/运行证据边界、证据保留策略、包面边界和未来物理拆分/清理门禁；不关闭 R1、不发布、不移动或删除 Prism 证据。 |
+| P4-2r | R1 Layer A 产品边界预检 | completed | 已把 internal-layer-a / loom 的职责、包面缺席、消费者矩阵和未来产品范围裁决门禁机器化；不关闭 R1、不移动或删除 loom、不替 Norven 裁决产品范围。 |
+| P4-2s | R1 控制面物理拆分干跑清单 | in_progress | 正在为 compass/references 的 package-visible control-plane 候选生成未来目标分层、别名/回滚计划和 dry-run 验收；不移动目录、不关闭 blocker、不发布。 |
 
 ## 已完成子任务
 
@@ -97,6 +103,8 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 | P4-2o | formal release R1 preflight | R1 延期根目录处置预检 | completed | P0-before-release-task | 已建立 R1 disposition matrix 和机器检查：3 个历史/产品根目录组仍是 release blockers，workspace-state 仅作为本地状态排除出包 | 不等于 R1 cleanup closed；不等于物理迁移、删除、public-release-ready 或 release 授权 |
 | P4-2p | formal release R1 preflight | R1 控制面契约拆分预检 | completed | P0-before-release-task | 已建立 internal-control-plane 的 contract split preflight、消费者矩阵、包面快照和未来 split gate | 不等于控制面已物理拆分；不等于 release blocker resolved 或 public-release-ready |
 | P4-2q | formal release R1 preflight | R1 Prism 证据保留拆分预检 | completed | P0-before-release-task | 已建立 prism-layer-and-evidence 的 evidence retention split preflight、消费者矩阵、包面快照和未来 split/cleanup gate | 不等于 Prism 证据已物理清理；不等于 release blocker resolved 或 public-release-ready |
+| P4-2r | formal release R1 preflight | R1 Layer A 产品边界预检 | completed | P0-before-release-task | 已建立 internal-layer-a / loom 的 product boundary preflight、消费者矩阵、包面缺席证明和未来产品范围裁决门禁 | 不等于 Layer A 已公开纳入、退休、移动或 release blocker resolved |
+| P4-2s | formal release R1 dry-run | R1 控制面物理拆分干跑清单 | in_progress | P0-before-release-task | 正在建立 internal-control-plane 的 future target map、alias/rollback plan 和 dry-run coverage proof | 不等于控制面已物理拆分；不等于 release blocker resolved 或 public-release-ready |
 | P2-4 | user inserted follow-up | 首次启动初始化用户与 AI Agent 信息 | completed | P2 | 已新增 policy、init/check 脚本、installer/revive 接线、spec/diagnose/acceptance；并合并飞书唯一账号与低频触发策略 | report: `2026-04-27-first-start-identity-and-feishu-policy.md`；runtime: 本机 `cli_a9579f5b12219bb5` profile 已验证可发 |
 | P2-5 | user trust gap | Layer B 中插需求重排决策可见化 | completed | P2 | 已将“为什么中插需求这样排”升级为 `.dev-task.md` 必填摘要和 change-intake checker 强门 | report: `2026-04-27-layerb-change-intake-replan-visibility-gate.md` |
 | P2-6 | user inserted follow-up | Copilot protected fallback 策略收紧 | completed | P2 | 已将 Copilot CLI 从普通 Prism / stop-review / live-health 自动资源降级为保护性 fallback：只有 Claude Code 与 Kimi 都不可用时才允许调用；本轮旧 live-health 曾触碰 Copilot 的缺口已封堵 | report: `2026-05-07-prism-copilot-protected-fallback-policy.md`；Prism: `20260507-prism-copilot-protected-fallback-review` resource-limited-pass |
@@ -160,9 +168,10 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 45. `P4-2p`：R1 控制面契约拆分预检。（已完成；已把 internal-control-plane 的拆分条件和仍阻塞发布边界机器化）
 46. `P4-2q`：R1 Prism 证据保留拆分预检。（已完成；已把 Prism 工具/报告/运行证据边界和未来清理门禁机器化）
 47. `P4-2r`：R1 Layer A 产品边界预检。（已完成；已把 internal-layer-a / loom 的包面缺席、消费者矩阵和未来产品范围裁决门禁机器化）
-48. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
-49. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界，并通过历史资产物理清理和 Evolution harvest signal 硬门）
-50. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
+48. `P4-2s`：R1 控制面物理拆分干跑清单。（in progress；只生成 future map / alias / rollback / coverage proof，不做物理迁移）
+49. `P4-2h-full-llm-wiki`：完整 LLM-wiki / 后台生成 / RAG / GraphRAG / 向量库。（deferred / thresholded future work，不由 LLM-wiki-lite 完成态自动触发）
+50. `P4-2`：正式 runtime / CLI package public release。（blocked，需先确认发布目标、凭证、许可证与发布边界，并通过历史资产物理清理和 Evolution harvest signal 硬门）
+51. `P4-3`：跨机器 / clean workspace 安装 E2E。（已完成本机 clean HEAD clone 验证；外部机器/多 OS 分发不在本项范围）
 
 ## 当前不可声明
 
@@ -189,6 +198,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 - 不可声明 P4-2o 证明 R1 历史资产清理已关闭或正式发布已就绪；它只证明 4 类延期根目录已经有机器可查的发布前处置预检，其中 3 类仍是 release blockers，workspace-state 只是本地状态排除出包。
 - 不可声明 P4-2p 证明 internal-control-plane 已经物理拆分或 release blocker 已解决；它只证明拆分前置契约、消费者矩阵、包面快照和 future split gate 已经可审计。
 - 不可声明 P4-2r 证明 Layer A 已纳入公开产品、已退休、已移动或 release blocker 已解决；它只证明 `loom` 当前不进包、职责/消费者矩阵和未来 include/exclude/move 决策门禁已经可审计。
+- 不可声明 P4-2s 证明 internal-control-plane 已经物理拆分或 release blocker 已解决；它只证明未来拆分的目标分层、dry-run 覆盖、别名与回滚计划已经可审计。
 - 不可声明 Copilot CLI 已被 RedCap 禁用；P2-6 只限制 RedCap 自动路径，用户手动直接使用 Copilot 不在本任务范围。
 - 不可声明 P2-7 中途审计完成后 RedCap 就进入 public-release-ready；它只证明当前任务树、文件头、长期记忆边界和结构治理状态被重新对齐。
 - 不可声明 P2-9 消除了宿主对话最终回复与飞书消息到达之间的所有时间差；它只保证 RedCap 正常完成节点不再由 on-complete 和 closeout 各发一条 node-report。

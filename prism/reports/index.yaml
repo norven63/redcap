@@ -1,4 +1,29 @@
 reports:
+  - id: "20260519-r1-control-plane-physical-split-dry-run"
+    mode: review
+    date: "2026-05-19"
+    topic: "Formal release R1 internal-control-plane physical split dry-run map"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "split-recommendation-accepted-with-boundary"
+    consensus_actions:
+      - "Proceed with internal-control-plane dry-run manifest because it is autonomous, no-move, no-delete and no-release"
+      - "Keep Prism evidence untouched; Kimi's evidence-boundary concern is absorbed as a hard drift sentinel"
+      - "Treat dry-run map as future physical split preparation, not as release blocker closure"
+    open_questions:
+      - "Actual internal-control-plane physical apply tranche remains future work"
+      - "Prism evidence retention physical split remains a separate future blocker"
+      - "Layer A product-scope decision remains Norven-only future work"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-control-plane-contract-split-preflight.json"
+      - "compass/tools/redcap-r1-control-plane-contract-split-check.py"
+      - "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
+      - "prism/reports/2026-05-19-r1-control-plane-physical-split-dry-run-review.md"
+      - "prism/runs/20260519-r1-next-engineering-slice-selection/prompt.md"
+      - "prism/runs/20260519-r1-next-engineering-slice-selection/claude-reviewer.raw.txt"
+      - "prism/runs/20260519-r1-next-engineering-slice-selection/kimi-challenger.raw.txt"
+    archived: false
   - id: "20260519-r1-layera-product-boundary-preflight"
     mode: review
     date: "2026-05-19"
@@ -436,7 +461,7 @@ reports:
       - "references/runtime-package-readiness-policy.json"
       - "references/public-package-surface-policy.json"
       - "references/package-publish-safety-policy.json"
-      - "compass/docs/task-reports/2026-05-11-rasg-020-runtime-contract-surface.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-11-rasg-020-runtime-contract-surface.md"
     archived: false
   - id: "20260511-rasg019-human-product-surface"
     mode: acceptance-review

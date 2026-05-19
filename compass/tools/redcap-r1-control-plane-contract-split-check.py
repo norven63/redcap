@@ -31,6 +31,13 @@ REQUIRED_FUTURE_GATES = {
     "Prism review",
     "closeout receipt",
 }
+REQUIRED_DRY_RUN_TARGET_LAYERS = {
+    "runtime-public-support",
+    "internal-control-plane",
+    "public-contract",
+    "internal-contract",
+    "human-handoff",
+}
 
 
 def fail(message: str) -> None:
@@ -172,6 +179,122 @@ def validate_consumers(consumers: list[Any]) -> None:
         require_list(item.get("required_before_move"), f"{consumer_id}.required_before_move")
 
 
+def validate_dry_run_manifest(
+    manifest: dict[str, Any],
+    control_candidates: set[str],
+    all_candidates: set[str],
+    consumers: list[Any],
+) -> None:
+    if manifest.get("status") != "dry-run-only-no-files-moved":
+        fail("physical_split_dry_run_manifest.status must remain dry-run-only-no-files-moved")
+
+    boundary = manifest.get("claim_boundary")
+    if not isinstance(boundary, dict):
+        fail("physical_split_dry_run_manifest.claim_boundary must be an object")
+    for key in [
+        "physical_moves_performed",
+        "files_deleted",
+        "files_copied",
+        "release_switches_changed",
+        "release_blocker_resolved",
+    ]:
+        require_bool(boundary.get(key), False, f"physical_split_dry_run_manifest.claim_boundary.{key}")
+    require_list(boundary.get("forbidden_claims"), "physical_split_dry_run_manifest.claim_boundary.forbidden_claims", min_len=4)
+
+    snapshot = manifest.get("package_candidate_snapshot")
+    if not isinstance(snapshot, dict):
+        fail("physical_split_dry_run_manifest.package_candidate_snapshot must be an object")
+    for key, value in expected_snapshot(all_candidates).items():
+        if snapshot.get(key) != value:
+            fail(f"physical_split_dry_run_manifest.package_candidate_snapshot.{key} stale: matrix={snapshot.get(key)} actual={value}")
+
+    layers = require_list(manifest.get("target_layers"), "physical_split_dry_run_manifest.target_layers", min_len=5)
+    layer_ids = {item.get("id") for item in layers if isinstance(item, dict)}
+    if layer_ids != REQUIRED_DRY_RUN_TARGET_LAYERS:
+        fail("physical_split_dry_run_manifest.target_layers must exactly cover " + ", ".join(sorted(REQUIRED_DRY_RUN_TARGET_LAYERS)))
+    for layer in layers:
+        if not isinstance(layer, dict):
+            fail("physical_split_dry_run_manifest.target_layers entries must be objects")
+        require_text(layer.get("meaning"), f"{layer.get('id')}.meaning")
+        require_text(layer.get("future_root"), f"{layer.get('id')}.future_root")
+
+    entries = require_list(manifest.get("entries"), "physical_split_dry_run_manifest.entries", min_len=1)
+    seen: set[str] = set()
+    by_layer: dict[str, int] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            fail("physical_split_dry_run_manifest.entries entries must be objects")
+        source = require_text(entry.get("source"), "physical_split_dry_run_manifest.entries.source")
+        target_layer = require_text(entry.get("target_layer"), f"{source}.target_layer")
+        target_path = require_text(entry.get("target_path"), f"{source}.target_path")
+        if source in seen:
+            fail(f"duplicate dry-run entry source: {source}")
+        if source not in control_candidates:
+            fail(f"dry-run entry source is not a live control-plane package candidate: {source}")
+        if target_layer not in REQUIRED_DRY_RUN_TARGET_LAYERS:
+            fail(f"dry-run entry target_layer invalid for {source}: {target_layer}")
+        if target_path == source:
+            fail(f"dry-run entry target_path must be a future target, not the current source: {source}")
+        if entry.get("current_state") != "unchanged-in-this-task":
+            fail(f"{source}.current_state must be unchanged-in-this-task")
+        require_text(entry.get("future_action"), f"{source}.future_action")
+        seen.add(source)
+        by_layer[target_layer] = by_layer.get(target_layer, 0) + 1
+    if seen != control_candidates:
+        missing = sorted(control_candidates - seen)
+        extra = sorted(seen - control_candidates)
+        detail = []
+        if missing:
+            detail.append("missing=" + ",".join(missing[:10]))
+        if extra:
+            detail.append("extra=" + ",".join(extra[:10]))
+        fail("physical_split_dry_run_manifest.entries must exactly cover live control-plane package candidates: " + "; ".join(detail))
+
+    coverage = manifest.get("coverage")
+    if not isinstance(coverage, dict):
+        fail("physical_split_dry_run_manifest.coverage must be an object")
+    if coverage.get("total_entries") != len(control_candidates):
+        fail("physical_split_dry_run_manifest.coverage.total_entries stale")
+    if coverage.get("by_target_layer") != by_layer:
+        fail("physical_split_dry_run_manifest.coverage.by_target_layer stale")
+
+    consumer_ids = {
+        require_text(item.get("consumer_id"), "consumer_matrix.consumer_id")
+        for item in consumers
+        if isinstance(item, dict)
+    }
+    alias_plan = manifest.get("alias_plan")
+    if alias_plan is not None:
+        fail("physical_split_dry_run_manifest.alias_plan is obsolete; use top-level alias_and_rollback_plan")
+
+
+def validate_alias_and_rollback_plan(plan: dict[str, Any], consumers: list[Any]) -> None:
+    if plan.get("status") != "planned-for-future-physical-move-no-runtime-path-change-now":
+        fail("alias_and_rollback_plan.status must remain planned-for-future-physical-move-no-runtime-path-change-now")
+    require_bool(plan.get("applies_now"), False, "alias_and_rollback_plan.applies_now")
+    bindings = require_list(plan.get("consumer_bindings"), "alias_and_rollback_plan.consumer_bindings", min_len=5)
+    consumer_ids = {
+        require_text(item.get("consumer_id"), "consumer_matrix.consumer_id")
+        for item in consumers
+        if isinstance(item, dict)
+    }
+    binding_ids: set[str] = set()
+    for binding in bindings:
+        if not isinstance(binding, dict):
+            fail("alias_and_rollback_plan.consumer_bindings entries must be objects")
+        consumer_id = require_text(binding.get("consumer_id"), "alias_and_rollback_plan.consumer_bindings.consumer_id")
+        binding_ids.add(consumer_id)
+        require_text(binding.get("alias_requirement"), f"{consumer_id}.alias_requirement")
+        require_text(binding.get("rollback_requirement"), f"{consumer_id}.rollback_requirement")
+    if binding_ids != consumer_ids:
+        fail("alias_and_rollback_plan.consumer_bindings must cover every consumer_matrix consumer")
+    sequence = require_list(plan.get("minimum_future_sequence"), "alias_and_rollback_plan.minimum_future_sequence", min_len=5)
+    joined = "\n".join(str(item) for item in sequence)
+    for phrase in ["copy", "alias", "clean workspace", "Prism review", "delete-last"]:
+        if phrase not in joined:
+            fail(f"alias_and_rollback_plan.minimum_future_sequence missing {phrase}")
+
+
 def validate(args: argparse.Namespace) -> dict[str, Any]:
     preflight = load_json(args.preflight, "R1 control-plane preflight")
     upstream = load_json(UPSTREAM_MATRIX, "R1 disposition matrix")
@@ -234,7 +357,23 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
         if required not in category_ids:
             fail(f"candidate_categories missing {required}")
 
-    validate_consumers(require_list(preflight.get("consumer_matrix"), "consumer_matrix", min_len=5))
+    consumers = require_list(preflight.get("consumer_matrix"), "consumer_matrix", min_len=5)
+    validate_consumers(consumers)
+
+    dry_run_manifest = preflight.get("physical_split_dry_run_manifest")
+    if not isinstance(dry_run_manifest, dict):
+        fail("physical_split_dry_run_manifest must be an object")
+    control_candidates = {
+        path
+        for path in candidates
+        if path == "compass" or path.startswith("compass/") or path == "references" or path.startswith("references/")
+    }
+    validate_dry_run_manifest(dry_run_manifest, control_candidates, candidates, consumers)
+
+    alias_plan = preflight.get("alias_and_rollback_plan")
+    if not isinstance(alias_plan, dict):
+        fail("alias_and_rollback_plan must be an object")
+    validate_alias_and_rollback_plan(alias_plan, consumers)
 
     gate = preflight.get("future_split_gate")
     if not isinstance(gate, dict):
@@ -257,6 +396,8 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
     if result.get("release_blocker_status") != "still-blocking-release-until-future-physical-split-or-contract-resolution":
         fail("result.release_blocker_status must keep control plane blocking")
     require_bool(result.get("this_preflight_completed"), True, "result.this_preflight_completed")
+    require_bool(result.get("dry_run_manifest_completed"), True, "result.dry_run_manifest_completed")
+    require_bool(result.get("physical_split_completed"), False, "result.physical_split_completed")
     blockers = set(require_list(result.get("remaining_release_blockers_after_this_preflight"), "result.remaining_release_blockers_after_this_preflight", min_len=3))
     if blockers != REQUIRED_BLOCKERS:
         fail("remaining_release_blockers_after_this_preflight must keep all three blockers")
@@ -265,6 +406,7 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
         "candidate_count": len(candidates),
         "control_plane_count": expected_snapshot(candidates)["control_plane_candidate_count"],
         "consumers": len(preflight["consumer_matrix"]),
+        "dry_run_entries": len(control_candidates),
     }
 
 
@@ -286,6 +428,7 @@ def main() -> int:
         f"candidate_count={result['candidate_count']} "
         f"control_plane_candidates={result['control_plane_count']} "
         f"consumers={result['consumers']} "
+        f"dry_run_entries={result['dry_run_entries']} "
         "release_blocker_status=still-blocking"
     )
     return 0

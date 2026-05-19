@@ -13796,6 +13796,7 @@ run_r1_control_plane_contract_split_check_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-contract-split-check.sh")"
     assert_string_contains "$output" "R1_CONTROL_PLANE_CONTRACT_SPLIT_PREFLIGHT_OK"
     assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_string_contains "$output" "dry_run_entries="
     assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'R1 control-plane contract split check missing'
 
     bad_preflight="$ACCEPT_ROOT/r1-control-plane-contract-split-bad-resolved.json"
@@ -13815,6 +13816,41 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "R1 control-plane preflight checker should reject resolved/physical-split claims"
     assert_string_contains "$stale_output" "claim_boundary.is_control_plane_physically_split"
+
+    bad_preflight="$ACCEPT_ROOT/r1-control-plane-contract-split-missing-dry-run.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-contract-split-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload.pop("physical_split_dry_run_manifest", None)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-contract-split-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 control-plane preflight checker should require dry-run manifest"
+    assert_string_contains "$stale_output" "physical_split_dry_run_manifest"
+
+    bad_preflight="$ACCEPT_ROOT/r1-control-plane-contract-split-stale-dry-run.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-contract-split-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["physical_split_dry_run_manifest"]["entries"] = payload["physical_split_dry_run_manifest"]["entries"][1:]
+payload["physical_split_dry_run_manifest"]["coverage"]["total_entries"] -= 1
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-contract-split-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 control-plane preflight checker should reject stale dry-run coverage"
+    assert_string_contains "$stale_output" "entries must exactly cover"
 }
 
 run_r1_prism_evidence_retention_split_check_case() {

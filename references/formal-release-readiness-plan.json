@@ -67,6 +67,7 @@
         "Classify every deferred root group through the R1 disposition preflight matrix before claiming any release-safe state.",
         "Run the R1 control-plane contract split preflight before treating compass/references as physically consolidated or release-safe.",
         "Run the R1 Prism evidence retention split preflight before treating Prism tools, reports or run evidence as physically split, cleaned or release-safe.",
+        "Use the R1 control-plane physical split dry-run map before starting any real compass/references move.",
         "Run the R1 Layer A product boundary preflight before treating loom as public product, retired, physically moved, or release-safe.",
         "For every true historical asset choose a release-safe disposition: private archive migration, Forge-reviewed public arsenal export, or release-blocker-until-resolved.",
         "For live local state that is not a historical asset, prove it is excluded from the public package and must not be moved into public source.",
@@ -75,6 +76,7 @@
       "acceptance": [
         "R1 root group disposition preflight passes and explicitly keeps unresolved groups as release blockers.",
         "R1 control-plane contract split preflight passes and keeps internal-control-plane blocking until a later physical split or contract resolution.",
+        "R1 control-plane physical split dry-run map passes and still keeps internal-control-plane blocking until a later apply tranche or contract resolution.",
         "R1 Prism evidence retention split preflight passes and keeps prism-layer-and-evidence blocking until a later evidence retention split or contract resolution.",
         "R1 Layer A product boundary preflight passes and keeps internal-layer-a blocking until Norven makes a product-scope decision or a future boundary-resolution task completes.",
         "Historical asset physical cleanup release gate passes.",
@@ -86,6 +88,7 @@
         "The R1 disposition matrix is missing, stale, or tries to invent a release-gate disposition.",
         "The R1 control-plane contract split preflight is missing, stale, or claims physical split/release-safe completion.",
         "The R1 Prism evidence retention split preflight is missing, stale, deletes evidence, or claims physical split/release-safe completion.",
+        "The R1 control-plane physical split dry-run map is missing, stale, or claims physical split/release-safe completion.",
         "The R1 Layer A product boundary preflight is missing, stale, moves or deletes loom, or claims public inclusion/retirement/release-safe completion.",
         "Any historical asset remains in a package-visible or new-user runtime path without a release-safe disposition.",
         "Any root group remains only deferred-before-release-readiness while the task tries to proceed to registry release execution.",

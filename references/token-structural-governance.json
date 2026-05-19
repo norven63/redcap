@@ -122,6 +122,13 @@
       "trigger_for_revisit": "When delete entries exceed 150 or the file exceeds 150KB, shard entry details behind the same apply checker while preserving a compact receipt summary."
     },
     {
+      "path": "references/r1-control-plane-contract-split-preflight.json",
+      "kind": "tracked-large-generated-manifest",
+      "current_mitigation": "file-lookup-dictionary-and-r1-control-plane-check",
+      "structural_strategy": "Keep the R1 control-plane dry-run manifest as a machine-readable generated map, not a startup document. Agents should inspect summary fields or run redcap-r1-control-plane-contract-split-check.sh; only open specific entries when auditing a future control-plane move tranche.",
+      "trigger_for_revisit": "When dry-run entries exceed 250 or the file exceeds 150KB, shard entries into generated detail files behind the same checker while preserving a compact preflight summary."
+    },
+    {
       "path": "prism/reports/index.yaml",
       "kind": "tracked-prism-report-index",
       "current_mitigation": "prism-protocol-targeted-read",

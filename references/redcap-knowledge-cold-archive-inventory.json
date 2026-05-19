@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 93,
-  "bytes_total": 1296136,
+  "file_count": 94,
+  "bytes_total": 1308919,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 89,
+    "private-task-report-archive": 90,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -733,6 +733,14 @@
       "class": "private-task-report-archive",
       "bytes": 13754,
       "sha256": "e27859897f2e7129f8db458419610f2eecdd011af6ea15f8b9988befaee85841",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-11-rasg-020-runtime-contract-surface.md",
+      "class": "private-task-report-archive",
+      "bytes": 12783,
+      "sha256": "8e27cc944d30aa0255bada2871481098df245a5bec4ccc873449ae89a2ff42b9",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },
