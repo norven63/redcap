@@ -113,7 +113,7 @@
       "operation": "retention-check-only",
       "apply_status": "retention_check_only",
       "item_scope": "collection-summary-only",
-      "actual_file_count": 835,
+      "actual_file_count": 842,
       "manifest_item_count": 0,
       "reason": "prism/runs is ignored runtime evidence; current lifecycle summary has no purgeable acceptance residue, so physical cleanup is not required now but future prune candidates must pass retention.",
       "catalog_update_plan": [

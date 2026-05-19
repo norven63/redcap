@@ -112,6 +112,7 @@
 | Prism acceptance binding | `bash compass/tools/redcap-prism-acceptance-bind.sh --run-id 20260519-r1-prism-evidence-retention-split-dry-run --task-file .dev-task.md && bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过 |
 | Prism implementation review archive check | `bash prism/tools/prism-archive-check.sh --report prism/reports/2026-05-19-r1-prism-evidence-retention-split-dry-run-review.md` | 通过 |
 | Prism evidence check | `bash prism/tools/prism-evidence-check.sh` | 通过 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --result references/clean-workspace-install-e2e.json --timeout 180` | 通过 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -151,8 +152,7 @@
 
 ### 6.3 推荐的下一步行动
 
-1. 跑通 clean workspace E2E。
-2. 生成 closeout receipt。
+1. 生成 closeout receipt。
 
 ## 七、经验沉淀
 
@@ -177,7 +177,7 @@
 ### 附录 A：Commits
 
 ```
-待提交
+ddc6a1c feat(release): 增加 Prism 证据保留拆分干跑清单
 ```
 
 ### 附录 B：棱镜调用记录（如有）

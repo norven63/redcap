@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 361271,
-    "lines": 7305,
-    "chars": 220589,
+    "size_bytes": 361459,
+    "lines": 7306,
+    "chars": 220765,
     "rough_token_pressure": {
-      "low": 55147,
-      "high": 110294
+      "low": 55191,
+      "high": 110382
     },
     "collections": {
       "archive": {
@@ -41,8 +41,8 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 191682,
-        "lines": 4517,
+        "size_bytes": 191678,
+        "lines": 4518,
         "chars": 114522,
         "rough_token_pressure": {
           "low": 28630,
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 164059,
+        "size_bytes": 164251,
         "lines": 2699,
-        "chars": 102293,
+        "chars": 102469,
         "rough_token_pressure": {
-          "low": 25573,
-          "high": 51146
+          "low": 25617,
+          "high": 51234
         }
       }
     },
@@ -197,8 +197,8 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 15207,
-      "lines": 172,
+      "size_bytes": 15203,
+      "lines": 173,
       "chars": 8457,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11124,
+      "size_bytes": 11316,
       "lines": 208,
-      "chars": 7312,
+      "chars": 7488,
       "summary": "当前已完成：`prism-layer-and-evidence` 从“只有预检结论”推进到“有 dry-run 地图”的状态。 / 详情：本轮区分了可打包 Prism 支撑工具、源码审计报告归档、本地 raw run evidence、provider routing 规则四类资产；没有删除、移动或清理任何 Prism 证据，也没有关闭 release blocker。",
       "status_basis": "filename_recency_only",
       "summary_points": {

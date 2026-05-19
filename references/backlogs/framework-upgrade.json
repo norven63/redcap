@@ -22,7 +22,7 @@
   },
   "current_focus": {
     "item_id": "P4-3e",
-    "summary": "正在推进正式发布 R1 的 Prism 证据保留拆分 dry-run：为 prism/tools、prism/README.md、prism/reports、prism/runs 建立证据保留分层、no-apply 清理预览边界、别名/回滚计划和机器验收；本项不删除证据、不移动目录、不关闭 blocker、不执行发布。"
+    "summary": "正式发布 R1 的 Prism 证据保留拆分 dry-run 已完成：为 prism/tools、prism/README.md、prism/reports、prism/runs 建立证据保留分层、no-apply 清理预览边界、别名/回滚计划和机器验收；本项未删除证据、未移动目录、未关闭 blocker、未执行发布。"
   },
   "glossary": [
     {
@@ -482,10 +482,10 @@
         {
           "id": "P4-3e",
           "title": "R1 Prism 证据保留拆分干跑清单",
-          "status": "in_progress",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-7-release-readiness-evidence-boundary",
-          "summary": "正在把 prism-layer-and-evidence 的下一步拆成可机器检查的 dry-run manifest、证据保留分层、no-apply 清理预览边界、别名/回滚计划和验收门禁；本项不关闭 R1、不执行发布、不移动或删除 Prism 证据。",
+          "summary": "已把 prism-layer-and-evidence 的下一步拆成可机器检查的 dry-run manifest、证据保留分层、no-apply 清理预览边界、别名/回滚计划和验收门禁；本项不关闭 R1、不执行发布、不移动或删除 Prism 证据。",
           "evidence_paths": [
             "references/r1-prism-evidence-retention-split-preflight.json",
             "compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
@@ -582,7 +582,7 @@
     {
       "id": "phase-7-release-readiness-evidence-boundary",
       "title": "阶段 7：发布准备证据边界",
-      "status": "in_progress",
+      "status": "done",
       "item_ids": [
         "P4-3e"
       ],
