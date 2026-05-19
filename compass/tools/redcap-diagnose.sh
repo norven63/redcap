@@ -214,6 +214,7 @@ run_check "r1-control-plane-contract-split" bash "$SCRIPT_DIR/redcap-r1-control-
 run_check "r1-prism-evidence-retention-split" bash "$SCRIPT_DIR/redcap-r1-prism-evidence-retention-split-check.sh" || overall=1
 run_check "r1-prism-evidence-retention-apply-preflight" bash "$SCRIPT_DIR/redcap-r1-prism-evidence-retention-apply-preflight-check.sh" || overall=1
 run_check "r1-control-plane-physical-apply-preflight" bash "$SCRIPT_DIR/redcap-r1-control-plane-physical-apply-preflight-check.sh" || overall=1
+run_check "r1-control-plane-runtime-public-support-copy-first-apply" bash "$SCRIPT_DIR/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh" || overall=1
 run_check "r1-layera-product-boundary" bash "$SCRIPT_DIR/redcap-r1-layera-product-boundary-check.sh" || overall=1
 run_check "formal-release-readiness-plan" bash "$SCRIPT_DIR/redcap-formal-release-readiness-plan-check.sh" || overall=1
 run_check "pre-release-product-architecture" bash "$SCRIPT_DIR/redcap-pre-release-product-architecture-check.sh" || overall=1

@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 97,
-  "bytes_total": 1351131,
+  "file_count": 98,
+  "bytes_total": 1366906,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 93,
+    "private-task-report-archive": 94,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -757,6 +757,14 @@
       "class": "private-task-report-archive",
       "bytes": 13202,
       "sha256": "63c0b28eeec0d5357e24172d8ba552d38dd492e02f6bf0e7fdd0e9b1d312c3d4",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
+      "class": "private-task-report-archive",
+      "bytes": 15775,
+      "sha256": "fd8edc1f53a16c58f1654af012fc258bcabe7850630b09702b482e8ed1dc1086",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

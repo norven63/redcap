@@ -509,3 +509,6 @@
 
 ### L-167: 自动补救重型检查必须非阻塞串行化
 - 正文模块：[`compass/knowledge/lessons/l-167.md`](../../compass/knowledge/lessons/l-167.md)
+
+### L-168: runtime facade 优先委托旧实现，不能急着复制实现
+- 正文模块：[`compass/knowledge/lessons/l-168.md`](../../compass/knowledge/lessons/l-168.md)

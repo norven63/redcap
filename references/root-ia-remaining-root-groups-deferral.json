@@ -25,7 +25,7 @@
       "retired_root": "shared-knowledge",
       "evidence": [
         "references/root-ia-shared-knowledge-tranche-manifest.json",
-        "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
+        "private-archive/redcap-knowledge/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
         "prism/reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md"
       ],
       "runtime_receipt_observed": "/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-root-information-architecture-physical-consolidation-9e04f59c518e37da963824820e1145cd855bb7695f3bfd639e53e9181c74f60f.json",

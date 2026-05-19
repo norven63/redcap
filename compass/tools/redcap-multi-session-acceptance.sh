@@ -210,6 +210,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-contract-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-evidence-retention-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-evidence-retention-apply-preflight-check
+  bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-runtime-public-support-copy-first-apply-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-layera-product-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
@@ -14291,6 +14292,87 @@ PY
     assert_string_contains "$stale_output" "claim_boundary.release_blocker_resolved"
 }
 
+run_r1_control_plane_runtime_public_support_copy_first_apply_check_case() {
+    local output bad_manifest stale_output status
+
+    log "case: r1-control-plane-runtime-public-support-copy-first-apply-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh")"
+    assert_string_contains "$output" "R1_CONTROL_PLANE_RUNTIME_PUBLIC_SUPPORT_COPY_FIRST_APPLY_OK"
+    assert_string_contains "$output" "facades=47"
+    assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'R1 control-plane runtime public support copy-first apply check missing'
+
+    bad_manifest="$ACCEPT_ROOT/r1-control-plane-runtime-public-support-copy-first-apply-missing-source.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-runtime-public-support-copy-first-apply.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload.pop("source_truth", None)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 runtime facade checker should require source_truth"
+    assert_string_contains "$stale_output" "source_truth"
+
+    bad_manifest="$ACCEPT_ROOT/r1-control-plane-runtime-public-support-copy-first-apply-stale-source.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-runtime-public-support-copy-first-apply.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["source_truth"]["sha256"] = "stale"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 runtime facade checker should reject stale source hash"
+    assert_string_contains "$stale_output" "source_truth.sha256"
+
+    bad_manifest="$ACCEPT_ROOT/r1-control-plane-runtime-public-support-copy-first-apply-resolved.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-runtime-public-support-copy-first-apply.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["release_blocker_resolved"] = True
+payload["claim_boundary"]["public_release_ready"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 runtime facade checker should reject resolved blocker claims"
+    assert_string_contains "$stale_output" "claim_boundary.release_blocker_resolved"
+
+    bad_manifest="$ACCEPT_ROOT/r1-control-plane-runtime-public-support-copy-first-apply-missing-facade.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-runtime-public-support-copy-first-apply.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["facades"][0]["target_path"] = "runtime/redcap-core/tools/missing-redcap-facade.sh"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 runtime facade checker should reject missing facade"
+    assert_string_contains "$stale_output" "runtime facade missing"
+}
+
 run_r1_layera_product_boundary_check_case() {
     local output bad_preflight stale_output status
 
@@ -16879,6 +16961,9 @@ case "$COMMAND" in
         ;;
     r1-control-plane-physical-apply-preflight-check)
         run_r1_control_plane_physical_apply_preflight_check_case
+        ;;
+    r1-control-plane-runtime-public-support-copy-first-apply-check)
+        run_r1_control_plane_runtime_public_support_copy_first_apply_check_case
         ;;
     r1-layera-product-boundary-check)
         run_r1_layera_product_boundary_check_case

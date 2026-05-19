@@ -1,4 +1,59 @@
 reports:
+  - id: "20260519-r1-control-plane-runtime-public-support-copy-first-apply-review"
+    mode: review
+    date: "2026-05-19"
+    topic: "P4-6 runtime public support facade copy-first apply implementation review"
+    agents: ["claude-code", "kimi", "gemini"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "consensus-pass"
+    consensus_actions:
+      - "Accept P4-6 as a copy-first runtime facade tranche for 47 runtime-public-support entries"
+      - "Keep old compass/tools implementations authoritative and do not close the internal-control-plane blocker"
+      - "Require clean workspace E2E, integrated spec-check/diagnose, Evolution candidate review and closeout receipt before claiming done"
+    open_questions:
+      - "Control-plane batch-2 and batch-3 remain separate future tranches"
+      - "Prism evidence cleanup and Layer A product scope remain separate release blockers"
+      - "The archived task-report path move is outside P4-6 but must remain visible in the evidence chain"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-control-plane-runtime-public-support-copy-first-apply.json"
+      - "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py"
+      - "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "runtime/redcap-core/tools/"
+      - "compass/docs/task-reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply.md"
+      - "prism/reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply-review.md"
+      - "prism/runs/20260519-r1-control-plane-runtime-public-support-copy-first-apply/session-registry.yaml"
+      - "prism/runs/20260519-r1-control-plane-runtime-public-support-copy-first-apply/prompt.md"
+      - "prism/runs/20260519-r1-control-plane-runtime-public-support-copy-first-apply/claude.raw.txt"
+      - "prism/runs/20260519-r1-control-plane-runtime-public-support-copy-first-apply/kimi.raw.txt"
+    archived: false
+  - id: "20260519-r1-next-slice-after-prism-apply-preflight-review"
+    mode: review
+    date: "2026-05-19"
+    topic: "Next R1 slice after P4-5 Prism evidence apply preflight closeout"
+    agents: ["claude-code", "kimi", "gemini"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "weak-consensus-select-control-plane-runtime-public-support-copy-first"
+    consensus_actions:
+      - "Proceed with a non-destructive internal-control-plane batch-1 runtime-public-support facade copy-first apply"
+      - "Keep old compass/tools anchors authoritative and do not close the internal-control-plane blocker"
+      - "Do not execute control-plane batch-2, batch-3, Prism cleanup, Layer A product decisions, release switches or registry actions"
+    open_questions:
+      - "Kimi preferred an R2 analysis-only slice; this was not selected because it would not materially reduce R1 blocker implementation debt"
+      - "Future batch-2 and batch-3 control-plane work remain separate tranches"
+      - "Prism evidence physical apply and Layer A product scope remain separate release blockers"
+    lessons_updated: false
+    files_affected:
+      - "prism/reports/2026-05-19-r1-next-slice-after-prism-apply-preflight-review.md"
+      - "prism/runs/20260519-r1-next-slice-after-prism-apply-preflight/session-registry.yaml"
+      - "prism/runs/20260519-r1-next-slice-after-prism-apply-preflight/prompt.md"
+      - "prism/runs/20260519-r1-next-slice-after-prism-apply-preflight/claude.raw.txt"
+      - "prism/runs/20260519-r1-next-slice-after-prism-apply-preflight/kimi.raw.txt"
+      - "prism/runs/20260519-r1-next-slice-after-prism-apply-preflight/gemini.raw.txt"
+    archived: false
   - id: "20260519-r1-prism-evidence-retention-apply-preflight-review"
     mode: review
     date: "2026-05-19"

@@ -292,6 +292,29 @@
       "review_paths": [
         "compass/tools/redcap-multi-session-acceptance.sh"
       ]
+    },
+    {
+      "id": "EVO-2026-05-19-001",
+      "source_kind": "prism-verdict",
+      "problem_source": "P4-6 showed that runtime-public-support tools should not be physically copied before their path assumptions, clean workspace behavior and old-anchor delegation boundaries are proven.",
+      "solution": "Promote the copy-first runtime facade rule: add thin runtime/redcap-core/tools wrappers that delegate to old compass/tools implementations first, then consider physical implementation migration only after alias proof, clean workspace E2E, Prism review and receipt.",
+      "final_effect": "RedCap can expose runtime package entry points without silently changing old script path semantics or pretending the internal-control-plane blocker is already closed.",
+      "recurrence_guard": "The P4-6 manifest, facade checker, acceptance case and task report require old anchors to remain authoritative and reject blocker-closure or release-ready claims.",
+      "applicability_boundary": "This applies to path-sensitive RedCap tool migration. It does not forbid future physical migration after a separate reviewed tranche proves aliases, rollback and clean workspace behavior.",
+      "evidence_paths": [
+        "references/r1-control-plane-runtime-public-support-copy-first-apply.json",
+        "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py",
+        "compass/docs/task-reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply.md",
+        "compass/knowledge/lessons/l-168.md"
+      ],
+      "promotion_target": "lessons",
+      "status": "promoted",
+      "promotion_paths": [
+        "compass/knowledge/lessons/l-168.md"
+      ],
+      "review_paths": [
+        "prism/reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply-review.md"
+      ]
     }
   ]
 }

@@ -867,6 +867,16 @@ if ! bash "$R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK" >/dev/null; then
     exit 1
 fi
 
+R1_CONTROL_PLANE_RUNTIME_PUBLIC_SUPPORT_COPY_FIRST_APPLY_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh"
+if [[ ! -f "$R1_CONTROL_PLANE_RUNTIME_PUBLIC_SUPPORT_COPY_FIRST_APPLY_CHECK" ]]; then
+    echo "[redcap-spec-check] R1 control-plane runtime public support copy-first apply check missing" >&2
+    exit 1
+fi
+if ! bash "$R1_CONTROL_PLANE_RUNTIME_PUBLIC_SUPPORT_COPY_FIRST_APPLY_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] R1 control-plane runtime public support copy-first apply check failed" >&2
+    exit 1
+fi
+
 R1_LAYERA_PRODUCT_BOUNDARY_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-layera-product-boundary-check.sh"
 if [[ ! -f "$R1_LAYERA_PRODUCT_BOUNDARY_CHECK" ]]; then
     echo "[redcap-spec-check] R1 Layer A product boundary check missing" >&2

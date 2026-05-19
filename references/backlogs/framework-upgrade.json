@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-5",
-    "summary": "P4-5 已完成：正式发布 R1 的 Prism evidence apply 预检已把 P4-3e 的 dry-run 证据边界升级为 copy-first / alias-first apply 前置护栏；本项未移动、未删除、未清理 prism 证据，不关闭 blocker，不执行发布。"
+    "item_id": "P4-6",
+    "summary": "P4-6 进行中：把 internal-control-plane batch-1 runtime-public-support 条目推进为 runtime/redcap-core/tools 下的 copy-first facade；旧 compass/tools 仍是权威实现，不关闭 blocker，不执行发布。"
   },
   "glossary": [
     {
@@ -517,6 +517,19 @@
             "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
             "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-apply-preflight.md"
           ]
+        },
+        {
+          "id": "P4-6",
+          "title": "R1 控制面 runtime facade copy-first",
+          "status": "in_progress",
+          "priority": "P0",
+          "phase_id": "phase-10-release-readiness-control-plane-runtime-facade",
+          "summary": "把 internal-control-plane batch-1 runtime-public-support 条目推进为 runtime/redcap-core/tools 下的 copy-first facade；旧 compass/tools 仍保持权威锚点，本项不关闭 R1，不执行发布。",
+          "evidence_paths": [
+            "references/r1-control-plane-runtime-public-support-copy-first-apply.json",
+            "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
+            "compass/docs/task-reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply.md"
+          ]
         }
       ]
     }
@@ -631,6 +644,15 @@
         "P4-5"
       ],
       "summary": "正式发布动作之前，已把 Prism evidence 未来 copy-first / alias-first apply 的前置护栏、证据保留策略、回滚门禁和验证计划做成机器可检查状态；当前仍不执行真实移动、删除、清理或发布。"
+    },
+    {
+      "id": "phase-10-release-readiness-control-plane-runtime-facade",
+      "title": "阶段 10：发布准备控制面 runtime facade",
+      "status": "in_progress",
+      "item_ids": [
+        "P4-6"
+      ],
+      "summary": "正式发布动作之前，先把可公开运行时需要调用的控制面工具做成 copy-first facade，让 runtime 包面具备稳定入口；旧 compass/tools 仍保留为权威实现。"
     }
   ]
 }
