@@ -1,4 +1,53 @@
 reports:
+  - id: "20260519-r1-prism-evidence-retention-split-dry-run-review"
+    mode: review
+    date: "2026-05-19"
+    topic: "R1 Prism evidence retention split dry-run implementation review"
+    agents: ["claude-code", "kimi", "gemini"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "consensus-pass"
+    consensus_actions:
+      - "Accept P4-3e as a dry-run-only Prism evidence retention split map with no evidence deletion, physical move, release switch change, license decision or publish action"
+      - "Keep prism-layer-and-evidence, internal-control-plane and internal-layer-a as formal release blockers"
+      - "Require closeout receipt and execution ledger reconciliation before claiming P4-3e done"
+    open_questions:
+      - "Future Prism evidence apply or cleanup remains forbidden until a separate tranche proves inactive/unreferenced evidence, rollback/preservation, archive checks and any required Norven approval"
+      - "Actual release readiness remains blocked by other R1 release blockers and future publish decisions"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-prism-evidence-retention-split-preflight.json"
+      - "compass/tools/redcap-r1-prism-evidence-retention-split-check.py"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-split-dry-run.md"
+      - "prism/reports/2026-05-19-r1-prism-evidence-retention-split-dry-run-review.md"
+      - "prism/runs/20260519-r1-prism-evidence-retention-split-dry-run/session-registry.yaml"
+      - "prism/runs/20260519-r1-prism-evidence-retention-split-dry-run/prompt.md"
+      - "prism/runs/20260519-r1-prism-evidence-retention-split-dry-run/claude.raw.txt"
+      - "prism/runs/20260519-r1-prism-evidence-retention-split-dry-run/kimi.raw.txt"
+    archived: false
+  - id: "20260519-r1-next-release-blocker-selection-review"
+    mode: review
+    date: "2026-05-19"
+    topic: "R1 next release blocker selection after P4-2s"
+    agents: ["claude-code", "kimi", "gemini"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "weak-consensus-select-prism-evidence"
+    consensus_actions:
+      - "Proceed with P4-3e Prism evidence retention split dry-run because it is lower-risk than immediate control-plane physical apply"
+      - "Keep Layer A product boundary as future Norven decision work"
+      - "Treat Gemini as absent because the CLI opened an authentication prompt instead of returning review output"
+    open_questions:
+      - "Control-plane physical apply remains a future release-blocker tranche"
+      - "Prism evidence apply or cleanup remains forbidden until dry-run, no-apply boundary, rollback plan, clean workspace E2E and Prism review pass"
+    lessons_updated: false
+    files_affected:
+      - "prism/reports/2026-05-19-r1-next-release-blocker-selection-review.md"
+      - "prism/runs/20260519-r1-next-release-blocker-selection/session-registry.yaml"
+      - "prism/runs/20260519-r1-next-release-blocker-selection/prompt.md"
+      - "prism/runs/20260519-r1-next-release-blocker-selection/claude.raw.txt"
+      - "prism/runs/20260519-r1-next-release-blocker-selection/kimi.raw.txt"
+      - "prism/runs/20260519-r1-next-release-blocker-selection/gemini.raw.txt"
+    archived: false
   - id: "20260519-r1-control-plane-closeout-rescue-review"
     mode: review
     date: "2026-05-19"

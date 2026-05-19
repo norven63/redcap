@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-2s",
-    "summary": "正式发布 R1 的 internal-control-plane 物理拆分 dry-run 已完成：为 compass/references 的 package-visible 控制面候选生成目标分层、别名/回滚计划和机器验收；本项未移动目录、未关闭 blocker、未执行发布。"
+    "item_id": "P4-3e",
+    "summary": "正在推进正式发布 R1 的 Prism 证据保留拆分 dry-run：为 prism/tools、prism/README.md、prism/reports、prism/runs 建立证据保留分层、no-apply 清理预览边界、别名/回滚计划和机器验收；本项不删除证据、不移动目录、不关闭 blocker、不执行发布。"
   },
   "glossary": [
     {
@@ -478,6 +478,19 @@
             "compass/tools/redcap-r1-control-plane-contract-split-check.sh",
             "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
           ]
+        },
+        {
+          "id": "P4-3e",
+          "title": "R1 Prism 证据保留拆分干跑清单",
+          "status": "in_progress",
+          "priority": "P0",
+          "phase_id": "phase-7-release-readiness-evidence-boundary",
+          "summary": "正在把 prism-layer-and-evidence 的下一步拆成可机器检查的 dry-run manifest、证据保留分层、no-apply 清理预览边界、别名/回滚计划和验收门禁；本项不关闭 R1、不执行发布、不移动或删除 Prism 证据。",
+          "evidence_paths": [
+            "references/r1-prism-evidence-retention-split-preflight.json",
+            "compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
+            "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-split-dry-run.md"
+          ]
         }
       ]
     }
@@ -565,6 +578,15 @@
         "P4-2s"
       ],
       "summary": "正式发布动作之前，R1 延期根目录处置预检、三类 blocker 的专项预检，以及 internal-control-plane 的物理拆分 dry-run 均已进入可审计控制面；当前仍不执行真实发布。"
+    },
+    {
+      "id": "phase-7-release-readiness-evidence-boundary",
+      "title": "阶段 7：发布准备证据边界",
+      "status": "in_progress",
+      "item_ids": [
+        "P4-3e"
+      ],
+      "summary": "正式发布动作之前，先把 Prism 证据层拆分推进到 dry-run / no-apply 级别，避免 raw evidence、报告归档和 package-visible Prism 工具继续混成一个不可审计边界。"
     }
   ]
 }

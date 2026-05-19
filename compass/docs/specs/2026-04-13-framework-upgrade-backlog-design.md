@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`P4-2s R1 控制面物理拆分干跑清单`
-- 当前焦点说明：正式发布 R1 的 internal-control-plane 物理拆分 dry-run 已完成：为 compass/references 的 package-visible 控制面候选生成目标分层、别名/回滚计划和机器验收；本项未移动目录、未关闭 blocker、未执行发布。
+- 当前焦点：`P4-3e R1 Prism 证据保留拆分干跑清单`
+- 当前焦点说明：正在推进正式发布 R1 的 Prism 证据保留拆分 dry-run：为 prism/tools、prism/README.md、prism/reports、prism/runs 建立证据保留分层、no-apply 清理预览边界、别名/回滚计划和机器验收；本项不删除证据、不移动目录、不关闭 blocker、不执行发布。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -63,6 +63,7 @@
 | 阶段 4：宿主体验与操作反馈 | 已完成 | C2 / C3 | C2 / C3 均已收口：`cli_console.md` 降格为 local-only 覆盖式展示镜像，overlay / ask_user 诚实降级也已接入审计。 |
 | 阶段 5：信息架构与运行时收敛 | 已完成 | D2 / D3 / E2 / E3 | D2 / D3 / E2 / E3 均已收口：docs/knowledge 渐进披露、docs 保留策略、runtime helper 收敛与统一诊断均已接入检查。 |
 | 阶段 6：发布准备控制面 | 已完成 | P4-2l / P4-2m / P4-2n / P4-2o / P4-2p / P4-2q / P4-2r / P4-2s | 正式发布动作之前，R1 延期根目录处置预检、三类 blocker 的专项预检，以及 internal-control-plane 的物理拆分 dry-run 均已进入可审计控制面；当前仍不执行真实发布。 |
+| 阶段 7：发布准备证据边界 | 进行中 | P4-3e | 正式发布动作之前，先把 Prism 证据层拆分推进到 dry-run / no-apply 级别，避免 raw evidence、报告归档和 package-visible Prism 工具继续混成一个不可审计边界。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -94,6 +95,7 @@
 | P4-2q R1 Prism 证据保留拆分预检 | 发布前路线与授权边界 | 已完成 | P0 | 已把 prism-layer-and-evidence blocker 拆成可机器检查的 Prism 工具、报告、运行证据、包面边界和后续物理拆分/清理门禁；本项不关闭 R1、不执行发布、不移动或删除 Prism 证据。 |
 | P4-2r R1 Layer A 产品边界预检 | 发布前路线与授权边界 | 已完成 | P0 | 把 internal-layer-a blocker 拆成可机器检查的 Layer A/loom 产品边界、包面缺席证明、消费者矩阵和未来公开纳入/排除门禁；本项不关闭 R1、不执行发布、不移动或删除 loom、不替 Norven 裁决产品范围。 |
 | P4-2s R1 控制面物理拆分干跑清单 | 发布前路线与授权边界 | 已完成 | P0 | 已把 internal-control-plane 的下一步物理拆分准备成可机器检查的 dry-run manifest、目标分层、别名/回滚计划和验收门禁；本项不关闭 R1、不执行发布、不移动 compass/references。 |
+| P4-3e R1 Prism 证据保留拆分干跑清单 | 发布前路线与授权边界 | 进行中 | P0 | 正在把 prism-layer-and-evidence 的下一步拆成可机器检查的 dry-run manifest、证据保留分层、no-apply 清理预览边界、别名/回滚计划和验收门禁；本项不关闭 R1、不执行发布、不移动或删除 Prism 证据。 |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -104,6 +106,7 @@
 | mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
 | spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
 <!-- redcap:backlog-generated:end -->
+
 
 
 

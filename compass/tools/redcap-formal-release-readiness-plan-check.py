@@ -246,7 +246,7 @@ def main() -> int:
         "package-visible",
         "release-safe disposition",
         "R1 root group disposition preflight passes",
-        "R1 Prism evidence retention split preflight passes",
+        "R1 Prism evidence retention split preflight and dry-run map pass",
         "R1 Layer A product boundary preflight passes",
     ]:
         if required_concept not in r1_blob:

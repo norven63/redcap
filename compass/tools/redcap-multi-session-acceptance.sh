@@ -14075,6 +14075,57 @@ PY
     set -e
     [[ "$status" -ne 0 ]] || fail "R1 Prism evidence preflight checker should reject cleaned/resolved claims"
     assert_string_contains "$stale_output" "claim_boundary.is_prism_evidence_physically_cleaned"
+
+    bad_preflight="$ACCEPT_ROOT/r1-prism-evidence-retention-split-missing-dry-run.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-evidence-retention-split-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload.pop("evidence_split_dry_run_manifest", None)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-evidence-retention-split-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism evidence checker should require dry-run manifest"
+    assert_string_contains "$stale_output" "evidence_split_dry_run_manifest"
+
+    bad_preflight="$ACCEPT_ROOT/r1-prism-evidence-retention-split-stale-dry-run.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-evidence-retention-split-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["evidence_split_dry_run_manifest"]["package_visible_targets"] = payload["evidence_split_dry_run_manifest"]["package_visible_targets"][1:]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-evidence-retention-split-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism evidence checker should reject stale dry-run coverage"
+    assert_string_contains "$stale_output" "package_visible_targets"
+
+    bad_preflight="$ACCEPT_ROOT/r1-prism-evidence-retention-split-apply-allowed.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-evidence-retention-split-preflight.json" "$bad_preflight" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["evidence_split_dry_run_manifest"]["cleanup_preview"]["apply_allowed_now"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-evidence-retention-split-check.py" --preflight "$bad_preflight" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism evidence checker should reject cleanup apply allowance"
+    assert_string_contains "$stale_output" "cleanup_preview.apply_allowed_now"
 }
 
 run_r1_layera_product_boundary_check_case() {

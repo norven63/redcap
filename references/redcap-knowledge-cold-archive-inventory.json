@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 94,
-  "bytes_total": 1308919,
+  "file_count": 95,
+  "bytes_total": 1323110,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 90,
+    "private-task-report-archive": 91,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -741,6 +741,14 @@
       "class": "private-task-report-archive",
       "bytes": 12783,
       "sha256": "8e27cc944d30aa0255bada2871481098df245a5bec4ccc873449ae89a2ff42b9",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-12-rasg-021-prism-degradation-frequency.md",
+      "class": "private-task-report-archive",
+      "bytes": 14191,
+      "sha256": "331888ea7326cb9d9c4c6f8a92c4608494ccbb2860146e287632e320ac0b8536",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

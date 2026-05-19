@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 363668,
-    "lines": 7331,
-    "chars": 221782,
+    "size_bytes": 361271,
+    "lines": 7305,
+    "chars": 220589,
     "rough_token_pressure": {
-      "low": 55445,
-      "high": 110891
+      "low": 55147,
+      "high": 110294
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 191012,
-        "lines": 4514,
-        "chars": 114170,
+        "size_bytes": 191682,
+        "lines": 4517,
+        "chars": 114522,
         "rough_token_pressure": {
-          "low": 28542,
-          "high": 57085
+          "low": 28630,
+          "high": 57261
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 167126,
-        "lines": 2728,
-        "chars": 103838,
+        "size_bytes": 164059,
+        "lines": 2699,
+        "chars": 102293,
         "rough_token_pressure": {
-          "low": 25959,
-          "high": 51919
+          "low": 25573,
+          "high": 51146
         }
       }
     },
@@ -101,7 +101,7 @@
         "path": "compass/docs/task-reports/2026-05-18-r1-prism-evidence-retention-split-preflight.md",
         "chars": 9699,
         "lines": 242,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+        "read_policy": "read-catalog-summary-by-default"
       },
       {
         "path": "compass/docs/task-reports/2026-05-16-post-migration-full-engineering-review.md",
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 14537,
-      "lines": 169,
-      "chars": 8105,
+      "size_bytes": 15207,
+      "lines": 172,
+      "chars": 8457,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-12-rasg-021-prism-degradation-frequency.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RASG-021 棱镜降级频率与结论韧性跟踪",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 14191,
-      "lines": 237,
-      "chars": 8857,
-      "summary": "当前已完成：RedCap 已能在状态面和门禁中看见最近 Prism 是否正在退化，而不是只看到“通过/未通过”。 / 详情：本轮把 formal Prism 最近 10 份报告作为轻量数据源，统计完整/常规评审、resource-limited 评审和阻塞评审的比例。当前结果是健康态：最近 10 份中 1 份为 resource-limited，比例 10%，低于 25% warning 阈值。这样以后如果外部 Agent 频繁超时、限额或不可用，RedCap 会在状态面给出 warning/action，而不是悄悄把资源受限评审当作完整多视角评审。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-12-rasg-023-plan-only-followup-gate.md",
       "collection": "task-reports",
       "title": "任务完成报告：RASG-023 计划型完成后续登记门",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-022 私有冷归档根目录迁移",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13781,
       "lines": 224,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：R1 Prism 证据保留拆分预检",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15255,
       "lines": 242,
       "chars": 9699,
       "summary": "当前已完成：R1 的 `prism-layer-and-evidence` blocker 已被拆成可机器检查的“Prism 证据保留拆分预检”，但它仍然阻塞正式发布。 / 详情：本轮解决的是“Prism 里哪些是可打包工具、哪些是正式评审报告、哪些是本地运行证据”的边界问题。现在 RedCap 已经能证明：`prism/tools` 与 `prism/README.md` 是当前包面候选；`prism/reports` 与 `prism/runs` 不进入包面；未来如果要真实迁移或清理运行证据，必须另开任务并满足独立门禁。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：R1 的 `prism-layer-and-evidence` blocker 已被拆成可机器检查的“Prism 证据保留拆分预检”，但它仍然阻塞正式发布。",
-          "详情：本轮解决的是“Prism 里哪些是可打包工具、哪些是正式评审报告、哪些是本地运行证据”的边界问题。现在 RedCap 已经能证明：`prism/tools` 与 `prism/README.md` 是当前包面候选；`prism/reports` 与 `prism/runs` 不进入包面；未来如果要真实迁移或清理运行证据，必须另开任务并满足独立门禁。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2p 已把 `internal-control-plane` 做成控制面契约拆分预检，并保留 R1 仍未关闭的事实。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续推进正式发布前剩余 R1 边界，优先处理真实物理拆分 dry-run 或 `internal-layer-a` 产品边界；正式 registry 发布、许可证和发布开关仍留到未来人工授权任务。"
-        ],
-        "position": [
-          "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → Prism 证据保留拆分预检 → 剩余物理拆分 / Layer A 产品边界 / 最终发布授权。",
-          "当前所在位置：`framework-upgrade / P4-2q`，处于 `prism-layer-and-evidence` 技术预检完成点。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → Prism 证据保留拆分预检 → Layer A 产品边界预检 → 剩余物理拆分 / 产品范围裁决 / 最终发布授权。",
           "当前所在位置：`framework-upgrade / P4-2r`，处于 `internal-layer-a` 产品边界预检完成点。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-split-dry-run.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：R1 Prism 证据保留拆分干跑清单",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 11124,
+      "lines": 208,
+      "chars": 7312,
+      "summary": "当前已完成：`prism-layer-and-evidence` 从“只有预检结论”推进到“有 dry-run 地图”的状态。 / 详情：本轮区分了可打包 Prism 支撑工具、源码审计报告归档、本地 raw run evidence、provider routing 规则四类资产；没有删除、移动或清理任何 Prism 证据，也没有关闭 release blocker。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：`prism-layer-and-evidence` 从“只有预检结论”推进到“有 dry-run 地图”的状态。",
+          "详情：本轮区分了可打包 Prism 支撑工具、源码审计报告归档、本地 raw run evidence、provider routing 规则四类资产；没有删除、移动或清理任何 Prism 证据，也没有关闭 release blocker。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-2s 已把 `internal-control-plane` 的未来物理拆分做成 dry-run 地图，并修复了收口重验中的 zero-diff 报告锚点与自动补救并发堆叠缺口。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续完成 P4-3e 的 clean workspace E2E 与 closeout receipt；之后再进入 Prism evidence apply tranche 或 control-plane physical apply tranche。"
+        ],
+        "position": [
+          "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → Prism 证据保留拆分预检 → Layer A 产品边界预检 → 控制面物理拆分 dry-run → Prism evidence dry-run → 后续真实拆分 / 产品范围裁决 / 最终发布授权。",
+          "当前所在位置：`framework-upgrade / P4-3e`，处于 `prism-layer-and-evidence` 未来拆分/清理的 dry-run 地图阶段。"
         ]
       }
     }

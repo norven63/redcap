@@ -235,10 +235,96 @@
     "alias_strategy": "Future physical moves must keep existing prism/tools, prism/reports and prism/runs references resolvable through wrappers, index migration, import maps or explicit alias resolver entries before path changes.",
     "rollback_strategy": "Each future Prism move tranche must be copy-first, verify, then delete-last; rollback must restore old anchors, report index bindings, package policy counts and Prism acceptance evidence."
   },
+  "evidence_split_dry_run_manifest": {
+    "status": "dry-run-only-no-evidence-moved-or-deleted",
+    "created_at": "2026-05-19T00:00:00Z",
+    "claim_boundary": {
+      "physical_moves_performed": false,
+      "evidence_deletion_performed": false,
+      "cleanup_apply_performed": false,
+      "release_switches_changed": false,
+      "is_prism_evidence_physically_cleaned": false,
+      "is_prism_layer_release_safe": false
+    },
+    "target_layers": [
+      {
+        "id": "package-visible-prism-support",
+        "meaning": "Prism CLI support tools and the human overview that may remain in the alpha package as maintainer/readiness support.",
+        "package_visible": true
+      },
+      {
+        "id": "tracked-report-archive",
+        "meaning": "Tracked Prism reports and report index used as durable audit summaries, but not package candidates.",
+        "package_visible": false
+      },
+      {
+        "id": "local-run-evidence-store",
+        "meaning": "Ignored raw run evidence under prism/runs; never package-visible and never cleaned without explicit future approval.",
+        "package_visible": false
+      },
+      {
+        "id": "provider-routing-contract",
+        "meaning": "Provider policy and availability contract consumed by Prism routing and independent review governance.",
+        "package_visible": true
+      }
+    ],
+    "package_visible_targets": [
+      {"path": "prism/tools/prism-archive-check.sh", "target_layer": "package-visible-prism-support"},
+      {"path": "prism/tools/prism-availability.sh", "target_layer": "provider-routing-contract"},
+      {"path": "prism/tools/prism-coordinator.sh", "target_layer": "package-visible-prism-support"},
+      {"path": "prism/tools/prism-dispatch-check.sh", "target_layer": "provider-routing-contract"},
+      {"path": "prism/tools/prism-evidence-check.sh", "target_layer": "package-visible-prism-support"},
+      {"path": "prism/tools/prism-run-state.sh", "target_layer": "package-visible-prism-support"},
+      {"path": "prism/tools/prism-runs-lifecycle.sh", "target_layer": "local-run-evidence-store"},
+      {"path": "prism/tools/prism-availability.py", "target_layer": "provider-routing-contract"},
+      {"path": "prism/tools/prism-runs-lifecycle.py", "target_layer": "local-run-evidence-store"},
+      {"path": "prism/README.md", "target_layer": "package-visible-prism-support"}
+    ],
+    "source_evidence_targets": [
+      {
+        "path": "prism/reports",
+        "target_layer": "tracked-report-archive",
+        "package_candidate_count": 0,
+        "future_action": "keep source-tracked report summaries indexed; any public/private split needs report index migration and archive check"
+      },
+      {
+        "path": "prism/runs",
+        "target_layer": "local-run-evidence-store",
+        "package_candidate_count": 0,
+        "future_action": "keep raw evidence local and ignored; cleanup remains preview-only until explicit future approval"
+      }
+    ],
+    "cleanup_preview": {
+      "source": "prism-runs-lifecycle.sh summary",
+      "apply_allowed_now": false,
+      "forbidden_command": "prism-runs-lifecycle.sh prune-local --apply",
+      "required_before_apply": [
+        "explicit Norven approval for any destructive cleanup",
+        "proof targets are inactive and unreferenced",
+        "rollback or preservation plan",
+        "post-cleanup archive check"
+      ]
+    }
+  },
+  "alias_and_rollback_plan": {
+    "status": "planned-for-future-evidence-split-no-runtime-path-change-now",
+    "consumer_groups": [
+      "runtime-package-manifest",
+      "prism-acceptance-and-closeout",
+      "archive-and-report-checks",
+      "provider-routing-and-availability",
+      "runs-lifecycle-status-surface"
+    ],
+    "alias_strategy": "Future physical moves must preserve the current prism/tools, prism/reports and prism/runs anchors through wrappers, report index migration, compatibility aliases or explicit path resolver entries before any old path disappears.",
+    "rollback_strategy": "Future apply must be copy-first and verify-before-delete; rollback restores old anchors, report index bindings, package policy counts, Prism acceptance evidence and clean workspace E2E proof."
+  },
   "result": {
     "target_parent": "prism-layer-and-evidence",
     "release_blocker_status": "still-blocking-release-until-future-evidence-retention-split-or-contract-resolution",
     "this_preflight_completed": true,
+    "this_dry_run_completed": true,
+    "physical_moves_performed": false,
+    "evidence_deletion_performed": false,
     "remaining_release_blockers_after_this_preflight": [
       "internal-control-plane",
       "prism-layer-and-evidence",

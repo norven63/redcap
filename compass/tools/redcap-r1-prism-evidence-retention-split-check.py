@@ -42,6 +42,19 @@ REQUIRED_CLEANUP_GATES = {
     "rollback or preservation plan",
     "post-cleanup archive check",
 }
+REQUIRED_DRY_RUN_TARGET_LAYERS = {
+    "package-visible-prism-support",
+    "tracked-report-archive",
+    "local-run-evidence-store",
+    "provider-routing-contract",
+}
+REQUIRED_ALIAS_CONSUMERS = {
+    "runtime-package-manifest",
+    "prism-acceptance-and-closeout",
+    "archive-and-report-checks",
+    "provider-routing-and-availability",
+    "runs-lifecycle-status-surface",
+}
 
 
 def fail(message: str) -> None:
@@ -216,6 +229,105 @@ def validate_consumers(consumers: list[Any]) -> None:
             fail(f"consumer_matrix missing {required}")
 
 
+def validate_dry_run(preflight: dict[str, Any], candidates: set[str]) -> None:
+    manifest = preflight.get("evidence_split_dry_run_manifest")
+    if not isinstance(manifest, dict):
+        fail("evidence_split_dry_run_manifest must be an object")
+    if manifest.get("status") != "dry-run-only-no-evidence-moved-or-deleted":
+        fail("evidence_split_dry_run_manifest.status must remain dry-run-only-no-evidence-moved-or-deleted")
+
+    boundary = manifest.get("claim_boundary")
+    if not isinstance(boundary, dict):
+        fail("evidence_split_dry_run_manifest.claim_boundary must be an object")
+    for key in [
+        "physical_moves_performed",
+        "evidence_deletion_performed",
+        "cleanup_apply_performed",
+        "release_switches_changed",
+        "is_prism_evidence_physically_cleaned",
+        "is_prism_layer_release_safe",
+    ]:
+        require_bool(boundary.get(key), False, f"evidence_split_dry_run_manifest.claim_boundary.{key}")
+
+    layers = require_list(manifest.get("target_layers"), "evidence_split_dry_run_manifest.target_layers", min_len=4)
+    layer_ids = {require_text(item.get("id"), "target_layers.id") for item in layers if isinstance(item, dict)}
+    missing_layers = sorted(REQUIRED_DRY_RUN_TARGET_LAYERS - layer_ids)
+    if missing_layers:
+        fail("evidence_split_dry_run_manifest target layers missing: " + ", ".join(missing_layers))
+
+    prism_candidates = {path for path in candidates if path.startswith("prism/")}
+    package_targets = require_list(
+        manifest.get("package_visible_targets"),
+        "evidence_split_dry_run_manifest.package_visible_targets",
+        min_len=len(prism_candidates),
+    )
+    target_paths: set[str] = set()
+    for item in package_targets:
+        if not isinstance(item, dict):
+            fail("package_visible_targets entries must be objects")
+        path = require_text(item.get("path"), "package_visible_targets.path")
+        target_layer = require_text(item.get("target_layer"), "package_visible_targets.target_layer")
+        if target_layer not in REQUIRED_DRY_RUN_TARGET_LAYERS:
+            fail(f"package_visible_targets target_layer not declared: {target_layer}")
+        target_paths.add(path)
+    if target_paths != prism_candidates:
+        missing = sorted(prism_candidates - target_paths)
+        extra = sorted(target_paths - prism_candidates)
+        fail(
+            "package_visible_targets must exactly match current prism package candidates"
+            + (f"; missing={missing}" if missing else "")
+            + (f"; extra={extra}" if extra else "")
+        )
+
+    evidence_targets = require_list(manifest.get("source_evidence_targets"), "evidence_split_dry_run_manifest.source_evidence_targets", min_len=2)
+    evidence_paths = {item.get("path") for item in evidence_targets if isinstance(item, dict)}
+    if evidence_paths != {"prism/reports", "prism/runs"}:
+        fail("source_evidence_targets must cover prism/reports and prism/runs")
+    for item in evidence_targets:
+        if not isinstance(item, dict):
+            fail("source_evidence_targets entries must be objects")
+        if item.get("package_candidate_count") != 0:
+            fail(f"{item.get('path')}.package_candidate_count must stay 0")
+        target_layer = require_text(item.get("target_layer"), "source_evidence_targets.target_layer")
+        if target_layer not in REQUIRED_DRY_RUN_TARGET_LAYERS:
+            fail(f"source_evidence_targets target_layer not declared: {target_layer}")
+        require_text(item.get("future_action"), "source_evidence_targets.future_action")
+
+    cleanup_preview = manifest.get("cleanup_preview")
+    if not isinstance(cleanup_preview, dict):
+        fail("cleanup_preview must be an object")
+    require_bool(cleanup_preview.get("apply_allowed_now"), False, "cleanup_preview.apply_allowed_now")
+    if cleanup_preview.get("forbidden_command") != "prism-runs-lifecycle.sh prune-local --apply":
+        fail("cleanup_preview.forbidden_command must block prune-local --apply")
+    cleanup_required = set(
+        require_text(item, "cleanup_preview.required_before_apply item")
+        for item in require_list(cleanup_preview.get("required_before_apply"), "cleanup_preview.required_before_apply", min_len=4)
+    )
+    for required in [
+        "explicit Norven approval for any destructive cleanup",
+        "proof targets are inactive and unreferenced",
+        "rollback or preservation plan",
+        "post-cleanup archive check",
+    ]:
+        if required not in cleanup_required:
+            fail(f"cleanup_preview.required_before_apply missing {required}")
+
+    alias_plan = preflight.get("alias_and_rollback_plan")
+    if not isinstance(alias_plan, dict):
+        fail("alias_and_rollback_plan must be an object")
+    if alias_plan.get("status") != "planned-for-future-evidence-split-no-runtime-path-change-now":
+        fail("alias_and_rollback_plan.status must keep no-runtime-path-change-now")
+    consumers = {
+        require_text(item, "alias_and_rollback_plan.consumer_groups item")
+        for item in require_list(alias_plan.get("consumer_groups"), "alias_and_rollback_plan.consumer_groups", min_len=5)
+    }
+    missing_consumers = sorted(REQUIRED_ALIAS_CONSUMERS - consumers)
+    if missing_consumers:
+        fail("alias_and_rollback_plan missing consumers: " + ", ".join(missing_consumers))
+    require_text(alias_plan.get("alias_strategy"), "alias_and_rollback_plan.alias_strategy")
+    require_text(alias_plan.get("rollback_strategy"), "alias_and_rollback_plan.rollback_strategy")
+
+
 def validate(args: argparse.Namespace) -> dict[str, Any]:
     preflight = load_json(args.preflight, "R1 Prism evidence retention split preflight")
     upstream = load_json(UPSTREAM_MATRIX, "R1 disposition matrix")
@@ -316,12 +428,17 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
     require_text(gate.get("alias_strategy"), "future_split_gate.alias_strategy")
     require_text(gate.get("rollback_strategy"), "future_split_gate.rollback_strategy")
 
+    validate_dry_run(preflight, candidates)
+
     result = preflight.get("result")
     if not isinstance(result, dict):
         fail("result must be an object")
     if result.get("release_blocker_status") != "still-blocking-release-until-future-evidence-retention-split-or-contract-resolution":
         fail("result.release_blocker_status must keep Prism layer blocking")
     require_bool(result.get("this_preflight_completed"), True, "result.this_preflight_completed")
+    require_bool(result.get("this_dry_run_completed"), True, "result.this_dry_run_completed")
+    require_bool(result.get("physical_moves_performed"), False, "result.physical_moves_performed")
+    require_bool(result.get("evidence_deletion_performed"), False, "result.evidence_deletion_performed")
     blockers = set(require_list(result.get("remaining_release_blockers_after_this_preflight"), "result.remaining_release_blockers_after_this_preflight", min_len=3))
     if blockers != REQUIRED_BLOCKERS:
         fail("remaining_release_blockers_after_this_preflight must keep all three blockers")

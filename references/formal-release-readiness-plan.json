@@ -77,7 +77,7 @@
         "R1 root group disposition preflight passes and explicitly keeps unresolved groups as release blockers.",
         "R1 control-plane contract split preflight passes and keeps internal-control-plane blocking until a later physical split or contract resolution.",
         "R1 control-plane physical split dry-run map passes and still keeps internal-control-plane blocking until a later apply tranche or contract resolution.",
-        "R1 Prism evidence retention split preflight passes and keeps prism-layer-and-evidence blocking until a later evidence retention split or contract resolution.",
+        "R1 Prism evidence retention split preflight and dry-run map pass and keep prism-layer-and-evidence blocking until a later evidence retention apply tranche or contract resolution.",
         "R1 Layer A product boundary preflight passes and keeps internal-layer-a blocking until Norven makes a product-scope decision or a future boundary-resolution task completes.",
         "Historical asset physical cleanup release gate passes.",
         "root-ia deferral check either has no release-blocking historical group left or formal release remains blocked.",
@@ -87,7 +87,7 @@
       "stop_conditions": [
         "The R1 disposition matrix is missing, stale, or tries to invent a release-gate disposition.",
         "The R1 control-plane contract split preflight is missing, stale, or claims physical split/release-safe completion.",
-        "The R1 Prism evidence retention split preflight is missing, stale, deletes evidence, or claims physical split/release-safe completion.",
+        "The R1 Prism evidence retention split preflight or dry-run map is missing, stale, deletes evidence, allows cleanup apply, or claims physical split/release-safe completion.",
         "The R1 control-plane physical split dry-run map is missing, stale, or claims physical split/release-safe completion.",
         "The R1 Layer A product boundary preflight is missing, stale, moves or deletes loom, or claims public inclusion/retirement/release-safe completion.",
         "Any historical asset remains in a package-visible or new-user runtime path without a release-safe disposition.",
