@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 361216,
-    "lines": 7324,
-    "chars": 220218,
+    "size_bytes": 361210,
+    "lines": 7325,
+    "chars": 220208,
     "rough_token_pressure": {
-      "low": 55054,
-      "high": 110109
+      "low": 55052,
+      "high": 110104
     },
     "collections": {
       "archive": {
@@ -41,12 +41,12 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 191018,
-        "lines": 4513,
-        "chars": 114180,
+        "size_bytes": 191012,
+        "lines": 4514,
+        "chars": 114170,
         "rough_token_pressure": {
-          "low": 28545,
-          "high": 57090
+          "low": 28542,
+          "high": 57085
         }
       },
       "task-reports": {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 14543,
-      "lines": 168,
-      "chars": 8115,
+      "size_bytes": 14537,
+      "lines": 169,
+      "chars": 8105,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
