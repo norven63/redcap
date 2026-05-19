@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-3e",
-    "summary": "正式发布 R1 的 Prism 证据保留拆分 dry-run 已完成：为 prism/tools、prism/README.md、prism/reports、prism/runs 建立证据保留分层、no-apply 清理预览边界、别名/回滚计划和机器验收；本项未删除证据、未移动目录、未关闭 blocker、未执行发布。"
+    "item_id": "P4-4",
+    "summary": "正式发布 R1 的 control-plane apply 预检正在推进：把 P4-2s 的 dry-run 地图升级为 copy-first / alias-first apply 前置护栏；本项不复制、不移动、不删除旧 compass/references 锚点，不关闭 blocker，不执行发布。"
   },
   "glossary": [
     {
@@ -491,6 +491,19 @@
             "compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
             "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-split-dry-run.md"
           ]
+        },
+        {
+          "id": "P4-4",
+          "title": "R1 控制面物理拆分 apply 预检",
+          "status": "in_progress",
+          "priority": "P0",
+          "phase_id": "phase-8-release-readiness-control-plane-apply-preflight",
+          "summary": "正在把 internal-control-plane 的 dry-run 地图升级为可机器检查的 copy-first / alias-first apply 前置护栏；本项不复制、不移动、不删除旧 compass/references 锚点，不关闭 R1，不执行发布。",
+          "evidence_paths": [
+            "references/r1-control-plane-physical-apply-preflight.json",
+            "compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh",
+            "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-apply-preflight.md"
+          ]
         }
       ]
     }
@@ -587,6 +600,15 @@
         "P4-3e"
       ],
       "summary": "正式发布动作之前，先把 Prism 证据层拆分推进到 dry-run / no-apply 级别，避免 raw evidence、报告归档和 package-visible Prism 工具继续混成一个不可审计边界。"
+    },
+    {
+      "id": "phase-8-release-readiness-control-plane-apply-preflight",
+      "title": "阶段 8：发布准备控制面 apply 预检",
+      "status": "in_progress",
+      "item_ids": [
+        "P4-4"
+      ],
+      "summary": "正式发布动作之前，把控制面未来 copy-first / alias-first apply 的前置护栏、旧锚点保留策略、回滚门禁和验证计划做成机器可检查状态；当前仍不执行真实复制、移动、删除或发布。"
     }
   ]
 }

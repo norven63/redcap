@@ -1,4 +1,31 @@
 reports:
+  - id: "20260519-r1-control-plane-physical-apply-preflight-review"
+    mode: review
+    date: "2026-05-19"
+    topic: "R1 control-plane physical apply preflight implementation review"
+    agents: ["claude-code", "kimi", "gemini"]
+    roles: ["reviewer", "challenger", "observer"]
+    verdict: "consensus-pass"
+    consensus_actions:
+      - "Accept P4-4 as an apply-preflight-only control-plane guardrail with no file copy, move, delete, old-anchor replacement, release switch change or blocker closure"
+      - "Keep internal-control-plane, prism-layer-and-evidence and internal-layer-a as formal release blockers"
+      - "Require clean workspace E2E refresh and closeout receipt before claiming P4-4 done"
+    open_questions:
+      - "Future control-plane copy-first apply remains a separate tranche and must still prove aliases, rollback, clean workspace E2E, Prism review and receipt"
+      - "Prism evidence apply and Layer A product-scope decisions remain separate release blockers"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-control-plane-physical-apply-preflight.json"
+      - "compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.py"
+      - "compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-apply-preflight.md"
+      - "prism/reports/2026-05-19-r1-control-plane-physical-apply-preflight-review.md"
+      - "prism/runs/20260519-r1-control-plane-physical-apply-preflight/session-registry.yaml"
+      - "prism/runs/20260519-r1-control-plane-physical-apply-preflight/prompt.md"
+      - "prism/runs/20260519-r1-control-plane-physical-apply-preflight/claude.raw.txt"
+      - "prism/runs/20260519-r1-control-plane-physical-apply-preflight/kimi.raw.txt"
+    archived: false
   - id: "20260519-r1-next-slice-after-prism-dry-run-review"
     mode: review
     date: "2026-05-19"

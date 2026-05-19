@@ -24,6 +24,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "historical_cleanup": ROOT / "references/historical-asset-physical-cleanup-release-gate.json",
         "r1_disposition": ROOT / "references/formal-release-r1-root-group-disposition-preflight.json",
         "r1_control_plane": ROOT / "references/r1-control-plane-contract-split-preflight.json",
+        "r1_control_apply": ROOT / "references/r1-control-plane-physical-apply-preflight.json",
         "r1_prism_evidence": ROOT / "references/r1-prism-evidence-retention-split-preflight.json",
         "r1_layera_boundary": ROOT / "references/r1-layera-product-boundary-preflight.json",
         "evolution_harvest": ROOT / "references/evolution-harvest-signal-policy.json",
@@ -38,6 +39,7 @@ def parse_args(argv: list[str]) -> dict[str, Path]:
         "--historical-cleanup": "historical_cleanup",
         "--r1-disposition": "r1_disposition",
         "--r1-control-plane": "r1_control_plane",
+        "--r1-control-apply": "r1_control_apply",
         "--r1-prism-evidence": "r1_prism_evidence",
         "--r1-layera-boundary": "r1_layera_boundary",
         "--evolution-harvest": "evolution_harvest",
@@ -110,6 +112,7 @@ def main() -> int:
     historical_cleanup_path = paths["historical_cleanup"]
     r1_disposition_path = paths["r1_disposition"]
     r1_control_plane_path = paths["r1_control_plane"]
+    r1_control_apply_path = paths["r1_control_apply"]
     r1_prism_evidence_path = paths["r1_prism_evidence"]
     r1_layera_boundary_path = paths["r1_layera_boundary"]
     evolution_harvest_path = paths["evolution_harvest"]
@@ -122,6 +125,7 @@ def main() -> int:
     historical_cleanup = load_json(historical_cleanup_path, "historical asset physical cleanup release gate")
     r1_disposition = load_json(r1_disposition_path, "R1 root group disposition preflight")
     r1_control_plane = load_json(r1_control_plane_path, "R1 control-plane contract split preflight")
+    r1_control_apply = load_json(r1_control_apply_path, "R1 control-plane physical apply preflight")
     r1_prism_evidence = load_json(r1_prism_evidence_path, "R1 Prism evidence retention split preflight")
     r1_layera_boundary = load_json(r1_layera_boundary_path, "R1 Layer A product boundary preflight")
     evolution_harvest = load_json(evolution_harvest_path, "evolution harvest signal policy")
@@ -232,6 +236,8 @@ def main() -> int:
         fail("plan required_sources must include R1 root group disposition preflight")
     if "references/r1-control-plane-contract-split-preflight.json" not in cleanup_required_sources:
         fail("plan required_sources must include R1 control-plane contract split preflight")
+    if "references/r1-control-plane-physical-apply-preflight.json" not in cleanup_required_sources:
+        fail("plan required_sources must include R1 control-plane physical apply preflight")
     if "references/r1-prism-evidence-retention-split-preflight.json" not in cleanup_required_sources:
         fail("plan required_sources must include R1 Prism evidence retention split preflight")
     if "references/r1-layera-product-boundary-preflight.json" not in cleanup_required_sources:
@@ -247,6 +253,7 @@ def main() -> int:
         "release-safe disposition",
         "R1 root group disposition preflight passes",
         "R1 Prism evidence retention split preflight and dry-run map pass",
+        "R1 control-plane physical apply preflight passes",
         "R1 Layer A product boundary preflight passes",
     ]:
         if required_concept not in r1_blob:
@@ -568,6 +575,83 @@ def main() -> int:
         fail("R1 control-plane preflight must keep all three release blockers after this preflight")
 
     require_keys(
+        r1_control_apply,
+        [
+            "version",
+            "preflight_id",
+            "status",
+            "source_truth",
+            "claim_boundary",
+            "operation_policy",
+            "old_anchor_policy",
+            "coverage",
+            "apply_preflight_batches",
+            "result",
+        ],
+        "R1 control-plane physical apply preflight",
+    )
+    if r1_control_apply["version"] != 1:
+        fail("R1 control-plane physical apply preflight version must be 1")
+    if r1_control_apply["preflight_id"] != "redcap-r1-control-plane-physical-apply-preflight":
+        fail("R1 control-plane physical apply preflight id mismatch")
+    if r1_control_apply["status"] != "apply-preflight-only-no-files-copied-moved-or-deleted":
+        fail("R1 control-plane physical apply preflight status must remain no-files-copied-moved-or-deleted")
+    apply_source = r1_control_apply.get("source_truth")
+    if not isinstance(apply_source, dict):
+        fail("R1 control-plane physical apply preflight source_truth must be an object")
+    if apply_source.get("path") != "references/r1-control-plane-contract-split-preflight.json":
+        fail("R1 control-plane physical apply preflight must bind to the contract split preflight")
+    if apply_source.get("source_release_blocker_status") != "still-blocking-release-until-future-physical-split-or-contract-resolution":
+        fail("R1 control-plane physical apply preflight source must keep internal-control-plane blocking")
+    apply_boundary = r1_control_apply.get("claim_boundary")
+    if not isinstance(apply_boundary, dict):
+        fail("R1 control-plane physical apply preflight claim_boundary must be an object")
+    for key in [
+        "physical_split_completed",
+        "files_copied",
+        "files_moved",
+        "files_deleted",
+        "old_anchors_removed",
+        "old_anchors_replaced",
+        "release_switches_changed",
+        "release_blocker_resolved",
+        "public_release_ready",
+    ]:
+        require_bool(apply_boundary.get(key), False, f"r1_control_apply.claim_boundary.{key}")
+    apply_policy = r1_control_apply.get("operation_policy")
+    if not isinstance(apply_policy, dict):
+        fail("R1 control-plane physical apply preflight operation_policy must be an object")
+    for key in [
+        "apply_allowed_now",
+        "destructive_operations_allowed",
+        "old_anchor_mutation_allowed",
+        "release_operations_allowed",
+    ]:
+        require_bool(apply_policy.get(key), False, f"r1_control_apply.operation_policy.{key}")
+    apply_old_anchor = r1_control_apply.get("old_anchor_policy")
+    if not isinstance(apply_old_anchor, dict):
+        fail("R1 control-plane physical apply preflight old_anchor_policy must be an object")
+    for key in [
+        "old_compass_and_references_remain_authoritative",
+        "old_paths_must_remain_resolvable",
+        "delete_last_forbidden_in_this_task",
+        "future_delete_last_requires_separate_task",
+    ]:
+        require_bool(apply_old_anchor.get(key), True, f"r1_control_apply.old_anchor_policy.{key}")
+    apply_batches = require_list(r1_control_apply.get("apply_preflight_batches"), "r1_control_apply.apply_preflight_batches", min_len=3)
+    if len(apply_batches) != 3:
+        fail("R1 control-plane physical apply preflight must define exactly 3 apply batches")
+    apply_result = r1_control_apply.get("result")
+    if not isinstance(apply_result, dict):
+        fail("R1 control-plane physical apply preflight result must be an object")
+    if apply_result.get("release_blocker_status") != "still-blocking-release-until-future-physical-split-or-contract-resolution":
+        fail("R1 control-plane physical apply preflight must keep internal-control-plane blocking")
+    require_bool(apply_result.get("physical_apply_completed"), False, "r1_control_apply.result.physical_apply_completed")
+    apply_blockers = set(apply_result.get("remaining_release_blockers_after_this_preflight", []))
+    if apply_blockers != {"internal-control-plane", "prism-layer-and-evidence", "internal-layer-a"}:
+        fail("R1 control-plane physical apply preflight must keep all three release blockers after this preflight")
+
+    require_keys(
         r1_prism_evidence,
         [
             "version",
@@ -675,6 +759,7 @@ def main() -> int:
         "r1_root_group_disposition_preflight=registered "
         "evolution_harvest_signal_gate=registered"
         " r1_control_plane_contract_split_preflight=registered"
+        " r1_control_plane_physical_apply_preflight=registered"
         " r1_prism_evidence_retention_split_preflight=registered"
         " r1_layera_product_boundary_preflight=registered"
     )

@@ -847,6 +847,16 @@ if ! bash "$R1_PRISM_EVIDENCE_RETENTION_SPLIT_CHECK" >/dev/null; then
     exit 1
 fi
 
+R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh"
+if [[ ! -f "$R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK" ]]; then
+    echo "[redcap-spec-check] R1 control-plane physical apply preflight check missing" >&2
+    exit 1
+fi
+if ! bash "$R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] R1 control-plane physical apply preflight check failed" >&2
+    exit 1
+fi
+
 R1_LAYERA_PRODUCT_BOUNDARY_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-layera-product-boundary-check.sh"
 if [[ ! -f "$R1_LAYERA_PRODUCT_BOUNDARY_CHECK" ]]; then
     echo "[redcap-spec-check] R1 Layer A product boundary check missing" >&2

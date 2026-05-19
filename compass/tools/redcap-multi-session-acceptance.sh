@@ -14128,6 +14128,87 @@ PY
     assert_string_contains "$stale_output" "cleanup_preview.apply_allowed_now"
 }
 
+run_r1_control_plane_physical_apply_preflight_check_case() {
+    local output bad_manifest stale_output status
+
+    log "case: r1-control-plane-physical-apply-preflight-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh")"
+    assert_string_contains "$output" "R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_OK"
+    assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'R1 control-plane physical apply preflight check missing'
+
+    bad_manifest="$ACCEPT_ROOT/r1-control-plane-physical-apply-missing-source.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-physical-apply-preflight.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload.pop("source_truth", None)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 control-plane physical apply checker should require source_truth"
+    assert_string_contains "$stale_output" "source_truth"
+
+    bad_manifest="$ACCEPT_ROOT/r1-control-plane-physical-apply-delete-allowed.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-physical-apply-preflight.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["operation_policy"]["destructive_operations_allowed"] = True
+payload["operation_policy"]["forbidden_operations"] = [item for item in payload["operation_policy"]["forbidden_operations"] if item != "delete"]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 control-plane physical apply checker should reject destructive operations"
+    assert_string_contains "$stale_output" "destructive_operations_allowed"
+
+    bad_manifest="$ACCEPT_ROOT/r1-control-plane-physical-apply-stale-source.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-physical-apply-preflight.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["source_truth"]["sha256"] = "stale"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 control-plane physical apply checker should reject stale source hash"
+    assert_string_contains "$stale_output" "source_truth.sha256"
+
+    bad_manifest="$ACCEPT_ROOT/r1-control-plane-physical-apply-resolved.json"
+    python3 - "$REDCAP_ROOT/references/r1-control-plane-physical-apply-preflight.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["release_blocker_resolved"] = True
+payload["result"]["release_blocker_status"] = "resolved"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 control-plane physical apply checker should reject resolved blocker claims"
+    assert_string_contains "$stale_output" "claim_boundary.release_blocker_resolved"
+}
+
 run_r1_layera_product_boundary_check_case() {
     local output bad_preflight stale_output status
 
@@ -16710,6 +16791,9 @@ case "$COMMAND" in
         ;;
     r1-prism-evidence-retention-split-check)
         run_r1_prism_evidence_retention_split_check_case
+        ;;
+    r1-control-plane-physical-apply-preflight-check)
+        run_r1_control_plane_physical_apply_preflight_check_case
         ;;
     r1-layera-product-boundary-check)
         run_r1_layera_product_boundary_check_case

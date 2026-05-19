@@ -33,7 +33,7 @@
     "this_preflight_resolves_blocker": false
   },
   "package_candidate_snapshot": {
-    "candidate_count": 208,
+    "candidate_count": 211,
     "prism_candidate_count": 10,
     "prism_tools_candidate_count": 9,
     "prism_tools_shell": 7,
@@ -269,16 +269,46 @@
       }
     ],
     "package_visible_targets": [
-      {"path": "prism/tools/prism-archive-check.sh", "target_layer": "package-visible-prism-support"},
-      {"path": "prism/tools/prism-availability.sh", "target_layer": "provider-routing-contract"},
-      {"path": "prism/tools/prism-coordinator.sh", "target_layer": "package-visible-prism-support"},
-      {"path": "prism/tools/prism-dispatch-check.sh", "target_layer": "provider-routing-contract"},
-      {"path": "prism/tools/prism-evidence-check.sh", "target_layer": "package-visible-prism-support"},
-      {"path": "prism/tools/prism-run-state.sh", "target_layer": "package-visible-prism-support"},
-      {"path": "prism/tools/prism-runs-lifecycle.sh", "target_layer": "local-run-evidence-store"},
-      {"path": "prism/tools/prism-availability.py", "target_layer": "provider-routing-contract"},
-      {"path": "prism/tools/prism-runs-lifecycle.py", "target_layer": "local-run-evidence-store"},
-      {"path": "prism/README.md", "target_layer": "package-visible-prism-support"}
+      {
+        "path": "prism/tools/prism-archive-check.sh",
+        "target_layer": "package-visible-prism-support"
+      },
+      {
+        "path": "prism/tools/prism-availability.sh",
+        "target_layer": "provider-routing-contract"
+      },
+      {
+        "path": "prism/tools/prism-coordinator.sh",
+        "target_layer": "package-visible-prism-support"
+      },
+      {
+        "path": "prism/tools/prism-dispatch-check.sh",
+        "target_layer": "provider-routing-contract"
+      },
+      {
+        "path": "prism/tools/prism-evidence-check.sh",
+        "target_layer": "package-visible-prism-support"
+      },
+      {
+        "path": "prism/tools/prism-run-state.sh",
+        "target_layer": "package-visible-prism-support"
+      },
+      {
+        "path": "prism/tools/prism-runs-lifecycle.sh",
+        "target_layer": "local-run-evidence-store"
+      },
+      {
+        "path": "prism/tools/prism-availability.py",
+        "target_layer": "provider-routing-contract"
+      },
+      {
+        "path": "prism/tools/prism-runs-lifecycle.py",
+        "target_layer": "local-run-evidence-store"
+      },
+      {
+        "path": "prism/README.md",
+        "target_layer": "package-visible-prism-support"
+      }
     ],
     "source_evidence_targets": [
       {

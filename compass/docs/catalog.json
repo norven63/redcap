@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 361459,
-    "lines": 7306,
-    "chars": 220765,
+    "size_bytes": 359678,
+    "lines": 7261,
+    "chars": 219950,
     "rough_token_pressure": {
-      "low": 55191,
-      "high": 110382
+      "low": 54987,
+      "high": 109975
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 191678,
-        "lines": 4518,
-        "chars": 114522,
+        "size_bytes": 192265,
+        "lines": 4521,
+        "chars": 114847,
         "rough_token_pressure": {
-          "low": 28630,
-          "high": 57261
+          "low": 28711,
+          "high": 57423
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 164251,
-        "lines": 2699,
-        "chars": 102469,
+        "size_bytes": 161883,
+        "lines": 2651,
+        "chars": 101329,
         "rough_token_pressure": {
-          "low": 25617,
-          "high": 51234
+          "low": 25332,
+          "high": 50664
         }
       }
     },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 15203,
-      "lines": 173,
-      "chars": 8457,
+      "size_bytes": 15790,
+      "lines": 176,
+      "chars": 8782,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-12-rasg-023-plan-only-followup-gate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RASG-023 计划型完成后续登记门",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13202,
-      "lines": 244,
-      "chars": 8020,
-      "summary": "当前已完成：RedCap 已把“计划已经做完，但真实执行还没做”的情况纳入机器门禁，防止后续任务只留在报告文字里而没有登记成可追踪待办项。 / 详情：本轮解决的是 RASG-017 暴露出的流程漏洞：根目录信息架构目标模型已经完成，但真实物理合并没有同步成为后续任务。现在，类似 `plan-complete`、`design-complete`、`route-only`、`partial-with-explicit-defer` 的结论，都必须登记后续任务、责任面、验收边界和复查触发条件，或者明确说明为什么不需要后续任务。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
       "collection": "task-reports",
       "title": "任务完成报告：RASG-022 shared-knowledge 模板迁移切片",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：迁移后 RedCap 全工程深度 Review",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14799,
       "lines": 235,
@@ -519,6 +506,19 @@
       "lines": 242,
       "chars": 9699,
       "summary": "当前已完成：R1 的 `prism-layer-and-evidence` blocker 已被拆成可机器检查的“Prism 证据保留拆分预检”，但它仍然阻塞正式发布。 / 详情：本轮解决的是“Prism 里哪些是可打包工具、哪些是正式评审报告、哪些是本地运行证据”的边界问题。现在 RedCap 已经能证明：`prism/tools` 与 `prism/README.md` 是当前包面候选；`prism/reports` 与 `prism/runs` 不进入包面；未来如果要真实迁移或清理运行证据，必须另开任务并满足独立门禁。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-apply-preflight.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：R1 控制面物理拆分 apply 预检",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 10834,
+      "lines": 196,
+      "chars": 6880,
+      "summary": "当前已完成：`internal-control-plane` 从“有 dry-run 地图”推进到“有 apply 前置护栏”的状态。 / 详情：本轮没有复制、移动、删除或替换任何旧 `compass/` / `references/` 锚点，也没有关闭 release blocker；只是把未来真正动手前必须满足的 copy-first、alias-first、回滚和验收条件做成机器可检查清单。",
       "status_basis": "filename_recency_only"
     },
     {
