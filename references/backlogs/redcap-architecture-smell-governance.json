@@ -96,15 +96,23 @@
         "RASG-021"
       ]
     },
-    {
-      "id": "T8",
-      "title": "Plan-only closure and Prism follow-up hardening",
-      "intent": "Prevent design-only, plan-only, or route-only work from being treated as fully closed when a later physical apply or governance hardening task was explicitly required.",
-      "items": [
-        "RASG-023"
-      ]
-    }
-  ],
+  {
+    "id": "T8",
+    "title": "Plan-only closure and Prism follow-up hardening",
+    "intent": "Prevent design-only, plan-only, or route-only work from being treated as fully closed when a later physical apply or governance hardening task was explicitly required.",
+    "items": [
+      "RASG-023"
+    ]
+  },
+  {
+    "id": "T9",
+    "title": "Workflow latency and gate stratification",
+    "intent": "Reduce avoidable multi-hour task latency by making validation strength explicit, risk-based, and visible without weakening release-readiness rigor.",
+    "items": [
+      "RASG-024"
+    ]
+  }
+],
   "requirements": [
     {
       "id": "RASG-001",
@@ -803,6 +811,32 @@
         "prism/reports/2026-05-12-rasg-023-plan-only-followup-gate.md",
         "prism/runs/20260512-rasg023-plan-only-followup-gate/artifacts/acceptance-binding.json"
       ]
+    },
+    {
+      "id": "RASG-024",
+      "title": "Stratify workflow gates by task risk to reduce avoidable multi-hour task latency",
+      "human_label": "RASG-024 按任务风险分级 RedCap 门禁，降低不必要的数小时级耗时",
+      "priority": "P1-before-public-release",
+      "category": "workflow-latency-and-gate-stratification",
+      "problem_source": "Norven observed that recent RedCap tasks frequently take several hours. P4-8 showed that even a small copy-first implementation can trigger implementation, docs/catalog updates, package safety, full acceptance, clean workspace E2E, closeout runtime and repeated evidence refreshes. Some of this is legitimate release-readiness rigor, but some is avoidable coupling and over-broad default gate selection.",
+      "risk": "If every small or documentation-adjacent task pays the full release-grade validation cost, RedCap becomes slow, fragile, and interruption-prone. The workflow also creates evidence-refresh loops: a late report/catalog commit can stale clean-workspace E2E source_head and force another E2E/commit/closeout cycle.",
+      "desired_outcome": "Define and implement a risk-based gate matrix so RedCap preserves fail-closed rigor for release and structural migrations while allowing small, low-risk tasks to use targeted validation and lightweight closeout. The workflow must make the chosen gate tier visible in the task card, report, diagnose output and closeout evidence.",
+      "implementation_notes": [
+        "Audit recent long-running tasks and classify which validations were necessary, redundant, or caused by ordering/evidence coupling.",
+        "Define at least three tiers: lightweight change, normal implementation change, and release/structural migration change.",
+        "Specify which checks are mandatory per tier: targeted checks, spec-check, diagnose, Prism quorum, full acceptance, clean workspace E2E, package safety, and closeout runtime.",
+        "Fix or document ordering hazards where post-closeout report/catalog commits stale release-grade E2E evidence.",
+        "Do not use this item to weaken release-readiness, secret-safety, package-surface, or destructive-migration gates."
+      ],
+      "acceptance": [
+        "A machine-readable gate-tier policy exists and is consumed by spec-check or diagnose.",
+        "Task reports and current-status can show which gate tier was selected and why.",
+        "Low-risk tasks no longer require release-grade clean workspace E2E unless their declared tier or touched files demand it.",
+        "Release, package-surface, destructive migration, and root information architecture tasks still require the full gate set.",
+        "A regression fixture captures the P4-8 evidence-refresh loop so future changes do not reintroduce avoidable E2E/receipt churn."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-21"
     }
   ],
   "must_not_claim": [
@@ -815,7 +849,7 @@
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Before formal npm/public release readiness, run the release-readiness task tree deliberately. RASG-022 is closed for the current pass by one safe physical tranche plus explicit deferral of high-risk root moves; do not claim all high-risk roots were physically moved.",
+  "recommended_next_step": "Before formal public release readiness, run the release-readiness task tree deliberately. RASG-024 is now an open workflow-latency governance item and should be scheduled as a bounded gate-stratification slice; do not claim it is implemented merely because it is registered.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -847,6 +881,11 @@
       "term": "current focus",
       "label": "Active debt item",
       "meaning": "当前正在执行或刚完成收口的 backlog 项，必须和 .dev-task.md 的 backlog_item 对齐。"
+    },
+    {
+      "term": "gate stratification",
+      "label": "Risk-based validation matrix",
+      "meaning": "按任务风险选择验证强度：小改动走轻量门，普通实现走标准门，发布/迁移类任务才走完整发布级门禁。"
     }
   ],
   "groups": [
@@ -1087,6 +1126,20 @@
           "summary": "Prism prompts, conclusion policy, and closeout-facing validators require reviewers to check whether every deferred capability or future apply requirement has a durable task, backlog item, owner surface, or explicit no-fo"
         }
       ]
+    },
+    {
+      "id": "T9",
+      "title": "Workflow latency and gate stratification",
+      "items": [
+        {
+          "id": "RASG-024",
+          "title": "Stratify workflow gates by task risk to reduce avoidable multi-hour task latency",
+          "status": "pending",
+          "priority": "P1",
+          "phase_id": "T9",
+          "summary": "Define a risk-based validation matrix so small tasks do not always pay release-grade validation cost, while release, package-safety and destructive-migration tasks remain fully guarded."
+        }
+      ]
     }
   ],
   "execution_order": [
@@ -1184,10 +1237,19 @@
       "item_ids": [
         "RASG-023"
       ]
+    },
+    {
+      "id": "T9",
+      "title": "Workflow latency and gate stratification",
+      "status": "pending",
+      "summary": "Reduce avoidable multi-hour task latency by making validation strength explicit, risk-based, and visible without weakening release-readiness rigor.",
+      "item_ids": [
+        "RASG-024"
+      ]
     }
   ],
   "current_focus": {
-    "item_id": "RASG-022",
-    "summary": "RASG-022 当前阶段已收口：shared-knowledge 模板根目录迁移已完成；剩余高风险根目录已用显式延期收据锁定后续触发条件。"
+    "item_id": "RASG-024",
+    "summary": "RASG-024 已登记为开放治理项：需要对 recent long-running tasks 做耗时审计，并把 RedCap 验证门禁改造成按任务风险分级的可执行矩阵。"
   }
 }

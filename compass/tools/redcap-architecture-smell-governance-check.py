@@ -12,7 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BACKLOG = ROOT / "references/backlogs/redcap-architecture-smell-governance.json"
-EXPECTED_REQUIREMENTS = {f"RASG-{index:03d}" for index in range(1, 24)}
+EXPECTED_REQUIREMENTS = {f"RASG-{index:03d}" for index in range(1, 25)}
 EXPECTED_TRANCHES = {
     "T0": {"RASG-003", "RASG-007", "RASG-009"},
     "T1": {"RASG-001", "RASG-002", "RASG-004", "RASG-014"},
@@ -23,6 +23,7 @@ EXPECTED_TRANCHES = {
     "T6": {"RASG-018"},
     "T7": {"RASG-019", "RASG-020", "RASG-021"},
     "T8": {"RASG-023"},
+    "T9": {"RASG-024"},
 }
 
 

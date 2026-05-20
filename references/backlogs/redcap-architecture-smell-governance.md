@@ -14,8 +14,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/redcap-architecture-smell-governance.json`
 - 人类说明：`references/backlogs/redcap-architecture-smell-governance.md`
-- 当前焦点：`RASG-022 Apply root-level information architecture physical consolidation through safe semantic tranches`
-- 当前焦点说明：RASG-022 当前阶段已收口：shared-knowledge 模板根目录迁移已完成；剩余高风险根目录已用显式延期收据锁定后续触发条件。
+- 当前焦点：`RASG-024 Stratify workflow gates by task risk to reduce avoidable multi-hour task latency`
+- 当前焦点说明：RASG-024 已登记为开放治理项：需要对 recent long-running tasks 做耗时审计，并把 RedCap 验证门禁改造成按任务风险分级的可执行矩阵。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -29,6 +29,7 @@
 | Senior holistic smell audit | 已完成 | RASG-018 | Prevent user examples from being narrowed into single-point fixes by requiring a Prism-reviewed, senior-engineering review across RedCap's product shape, workflow guarantees, truth sources, knowledge/evidence lifecycle, package surface, and human-facing status model. |
 | Holistic audit follow-up before release readiness | 已完成 | RASG-019 / RASG-020 / RASG-021 | Track the P1 issues discovered by RASG-018 that should be closed before RedCap is treated as a polished public runtime or CLI product. |
 | Plan-only closure and Prism follow-up hardening | 已完成 | RASG-023 | Prevent design-only, plan-only, or route-only work from being treated as fully closed when a later physical apply or governance hardening task was explicitly required. |
+| Workflow latency and gate stratification | 待推进 | RASG-024 | Reduce avoidable multi-hour task latency by making validation strength explicit, risk-based, and visible without weakening release-readiness rigor. |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -56,6 +57,7 @@
 | RASG-020 Separate public runtime contract from maintainer-only governance validators before npm or CLI release | Holistic audit follow-up before release readiness | 已完成 | P1 | Release readiness distinguishes the public runtime contract from maintainer/developer governance tools. The package manifest, runtime package readiness policy, and publish safety check agree on that boundary from a singl |
 | RASG-021 Track Prism degradation frequency and keep conclusion gates resilient when providers are flaky | Holistic audit follow-up before release readiness | 已完成 | P1 | Prism status surfaces show the recent degradation rate, provider families involved, and whether the current task used full quorum or resource-limited evidence. Degradation above a defined threshold opens a governance act |
 | RASG-023 Strengthen Prism and conclusion gates to catch plan-only closure follow-up gaps | Plan-only closure and Prism follow-up hardening | 已完成 | P1 | Prism prompts, conclusion policy, and closeout-facing validators require reviewers to check whether every deferred capability or future apply requirement has a durable task, backlog item, owner surface, or explicit no-fo |
+| RASG-024 Stratify workflow gates by task risk to reduce avoidable multi-hour task latency | Workflow latency and gate stratification | 待推进 | P1 | Define a risk-based validation matrix so small tasks do not always pay release-grade validation cost, while release, package-safety and destructive-migration tasks remain fully guarded. |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -63,4 +65,6 @@
 | RASG（Architecture smell governance item） | RedCap 架构坏味治理条目，用来记录仍会影响工程健康、发布准备或长期演进的设计债务。 |
 | tranche（Small safe implementation slice） | 一次只处理一个可验证的小切片，避免大规模重构同时破坏多个真相源。 |
 | current focus（Active debt item） | 当前正在执行或刚完成收口的 backlog 项，必须和 .dev-task.md 的 backlog_item 对齐。 |
+| gate stratification（Risk-based validation matrix） | 按任务风险选择验证强度：小改动走轻量门，普通实现走标准门，发布/迁移类任务才走完整发布级门禁。 |
 <!-- REDCAP_ARCHITECTURE_SMELL_GOVERNANCE:END -->
+
