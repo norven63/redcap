@@ -16,12 +16,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：完成 Prism 独立评审、`diagnose`、clean workspace E2E 刷新和 closeout receipt。如果评审发现 blocker，先修 blocker；如果没有 blocker，本任务进入正式收口。
+- 下一步计划做的是：RASG-024 已正式收口；下一步回到 RedCap 发布前 readiness 主线，继续处理尚未开始的发布前任务，不进入真实发布动作。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：历史债务坏味 -> RASG-024 工作流门禁分级治理 -> 正式发布前 readiness 任务集。
-- 当前所在位置：RASG-024 正在收口前验证；它完成后，RedCap 再回到发布前 readiness 主线。
+- 当前所在位置：RASG-024 已完成并收口；RedCap 可以回到发布前 readiness 主线。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -87,18 +87,18 @@ RedCap 之前的门禁策略偏“全局高强度默认”。这对发布安全�
 
 | 项目 | 当前结果 |
 | --- | --- |
-| 执行承诺账本 | 正在收口前核对 |
+| 执行承诺账本 | 已由 closeout runtime 核对通过，7 项承诺无 pending |
 | 棱镜验收 | Claude Code 与 Kimi 已完成；Gemini 作为 absent 槽位记录；Copilot 未调用 |
-| closeout receipt | 尚未生成，需等待最终 closeout runtime 通过 |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-rasg-024-workflow-gate-stratification-4ba3264a55ece9fba1427b062c63d922b5578d7936a1068baf280f199550335d.json` |
 
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 是 | 门禁分级政策、样本、检查器与接入点已落地。 |
-| 已自检 | 是 | 专项检查、acceptance、字典检查与 Prism acceptance 已通过；完整 diagnose 正在收口。 |
+| 已自检 | 是 | 专项检查、acceptance、字典检查、spec-check、clean workspace E2E 与 Prism acceptance 已通过。 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 均无 blocker，相关建议已回填。 |
-| 已正式完成 | 否 | 还需最终 `diagnose`、clean workspace E2E 和 closeout receipt 完成后才能改为“是”。 |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt，任务承诺账本无 pending。 |
 
 ## 六、遗留问题与下一步
 

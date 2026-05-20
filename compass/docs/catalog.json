@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 344715,
+    "size_bytes": 344843,
     "lines": 7030,
-    "chars": 211763,
+    "chars": 211919,
     "rough_token_pressure": {
-      "low": 52940,
-      "high": 105881
+      "low": 52979,
+      "high": 105959
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 143865,
+        "size_bytes": 143993,
         "lines": 2399,
-        "chars": 91347,
+        "chars": 91503,
         "rough_token_pressure": {
-          "low": 22836,
-          "high": 45673
+          "low": 22875,
+          "high": 45751
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 8279,
+      "size_bytes": 8407,
       "lines": 133,
-      "chars": 4867,
+      "chars": 5023,
       "summary": "当前已完成：已把 RedCap 的任务检查强度拆成三档：轻量任务、标准实现任务、发布/结构迁移任务。核心效果是：报告、索引这类低风险收尾漂移不会再自动拖进发布级回归；但发布、安全、包公开面、破坏性迁移、validator 链路和 closeout runtime 仍然保持最高强度。 / 已新增机器检查，校验“高风险任务不能降级”“当前任务必须声明门禁层级和原因”“样本预期不能漂移”。这避免以后只靠口头判断任务该跑多少回归。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -600,11 +600,11 @@
           "上一步完成的是：完成 P4-8 正式发布前最终 E2E 证据刷新与 closeout 收口后，发现 RedCap 工作流仍有一个系统性坏味：小任务经常被迫支付发布级验证成本，导致任务耗时变成数小时，并增加被打断风险。"
         ],
         "next_step": [
-          "下一步计划做的是：完成 Prism 独立评审、`diagnose`、clean workspace E2E 刷新和 closeout receipt。如果评审发现 blocker，先修 blocker；如果没有 blocker，本任务进入正式收口。"
+          "下一步计划做的是：RASG-024 已正式收口；下一步回到 RedCap 发布前 readiness 主线，继续处理尚未开始的发布前任务，不进入真实发布动作。"
         ],
         "position": [
           "整体计划脉络图是：历史债务坏味 -> RASG-024 工作流门禁分级治理 -> 正式发布前 readiness 任务集。",
-          "当前所在位置：RASG-024 正在收口前验证；它完成后，RedCap 再回到发布前 readiness 主线。"
+          "当前所在位置：RASG-024 已完成并收口；RedCap 可以回到发布前 readiness 主线。"
         ]
       }
     }
