@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 351691,
-    "lines": 7139,
-    "chars": 216595,
+    "size_bytes": 344398,
+    "lines": 7023,
+    "chars": 211530,
     "rough_token_pressure": {
-      "low": 54148,
-      "high": 108297
+      "low": 52882,
+      "high": 105765
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 150841,
-        "lines": 2508,
-        "chars": 96179,
+        "size_bytes": 143548,
+        "lines": 2392,
+        "chars": 91114,
         "rough_token_pressure": {
-          "low": 24044,
-          "high": 48089
+          "low": 22778,
+          "high": 45557
         }
       }
     },
@@ -98,16 +98,16 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-18-r1-prism-evidence-retention-split-preflight.md",
-        "chars": 9699,
-        "lines": 242,
-        "read_policy": "read-catalog-summary-by-default"
-      },
-      {
         "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
         "chars": 9116,
         "lines": 348,
         "read_policy": "read-registry-summary-first"
+      },
+      {
+        "path": "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-apply-preflight.md",
+        "chars": 8982,
+        "lines": 207,
+        "read_policy": "read-catalog-summary-by-default"
       }
     ]
   },
@@ -444,24 +444,11 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-18-r1-prism-evidence-retention-split-preflight.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：R1 Prism 证据保留拆分预检",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 15255,
-      "lines": 242,
-      "chars": 9699,
-      "summary": "当前已完成：R1 的 `prism-layer-and-evidence` blocker 已被拆成可机器检查的“Prism 证据保留拆分预检”，但它仍然阻塞正式发布。 / 详情：本轮解决的是“Prism 里哪些是可打包工具、哪些是正式评审报告、哪些是本地运行证据”的边界问题。现在 RedCap 已经能证明：`prism/tools` 与 `prism/README.md` 是当前包面候选；`prism/reports` 与 `prism/runs` 不进入包面；未来如果要真实迁移或清理运行证据，必须另开任务并满足独立门禁。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-apply-preflight.md",
       "collection": "task-reports",
       "title": "任务完成报告：R1 控制面物理拆分 apply 预检",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 11828,
       "lines": 201,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：R1 Prism 证据保留拆分干跑清单",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 11316,
       "lines": 208,
       "chars": 7488,
       "summary": "当前已完成：`prism-layer-and-evidence` 从“只有预检结论”推进到“有 dry-run 地图”的状态。 / 详情：本轮区分了可打包 Prism 支撑工具、源码审计报告归档、本地 raw run evidence、provider routing 规则四类资产；没有删除、移动或清理任何 Prism 证据，也没有关闭 release blocker。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：`prism-layer-and-evidence` 从“只有预检结论”推进到“有 dry-run 地图”的状态。",
-          "详情：本轮区分了可打包 Prism 支撑工具、源码审计报告归档、本地 raw run evidence、provider routing 规则四类资产；没有删除、移动或清理任何 Prism 证据，也没有关闭 release blocker。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-2s 已把 `internal-control-plane` 的未来物理拆分做成 dry-run 地图，并修复了收口重验中的 zero-diff 报告锚点与自动补救并发堆叠缺口。"
-        ],
-        "next_step": [
-          "下一步计划做的是：继续完成 P4-3e 的 clean workspace E2E 与 closeout receipt；之后再进入 Prism evidence apply tranche 或 control-plane physical apply tranche。"
-        ],
-        "position": [
-          "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → Prism 证据保留拆分预检 → Layer A 产品边界预检 → 控制面物理拆分 dry-run → Prism evidence dry-run → 后续真实拆分 / 产品范围裁决 / 最终发布授权。",
-          "当前所在位置：`framework-upgrade / P4-3e`，处于 `prism-layer-and-evidence` 未来拆分/清理的 dry-run 地图阶段。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-20-r1-next-slice-after-runtime-facade.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面与 Prism 预检 → 控制面 runtime facade → P4-7 选择下一小切片 → **P4-8 Prism package-visible support facade** → 后续 Prism report archive / local run evidence / 控制面 batch-2 / Layer A 人工边界。",
           "当前所在位置：`framework-upgrade / P4-8`，属于 release-readiness 前的非破坏性支撑实现，不是正式发布。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-21-rasg-024-workflow-gate-stratification.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-024 工作流门禁分级治理",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 7962,
+      "lines": 126,
+      "chars": 4634,
+      "summary": "当前已完成：已把 RedCap 的任务检查强度拆成三档：轻量任务、标准实现任务、发布/结构迁移任务。核心效果是：报告、索引这类低风险收尾漂移不会再自动拖进发布级回归；但发布、安全、包公开面、破坏性迁移、validator 链路和 closeout runtime 仍然保持最高强度。 / 已新增机器检查，校验“高风险任务不能降级”“当前任务必须声明门禁层级和原因”“样本预期不能漂移”。这避免以后只靠口头判断任务该跑多少回归。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：已把 RedCap 的任务检查强度拆成三档：轻量任务、标准实现任务、发布/结构迁移任务。核心效果是：报告、索引这类低风险收尾漂移不会再自动拖进发布级回归；但发布、安全、包公开面、破坏性迁移、validator 链路和 closeout runtime 仍然保持最高强度。",
+          "已新增机器检查，校验“高风险任务不能降级”“当前任务必须声明门禁层级和原因”“样本预期不能漂移”。这避免以后只靠口头判断任务该跑多少回归。"
+        ],
+        "previous_step": [
+          "上一步完成的是：完成 P4-8 正式发布前最终 E2E 证据刷新与 closeout 收口后，发现 RedCap 工作流仍有一个系统性坏味：小任务经常被迫支付发布级验证成本，导致任务耗时变成数小时，并增加被打断风险。"
+        ],
+        "next_step": [
+          "下一步计划做的是：完成 Prism 独立评审、`diagnose`、clean workspace E2E 刷新和 closeout receipt。如果评审发现 blocker，先修 blocker；如果没有 blocker，本任务进入正式收口。"
+        ],
+        "position": [
+          "整体计划脉络图是：历史债务坏味 -> RASG-024 工作流门禁分级治理 -> 正式发布前 readiness 任务集。",
+          "当前所在位置：RASG-024 正在收口前验证；它完成后，RedCap 再回到发布前 readiness 主线。"
         ]
       }
     }

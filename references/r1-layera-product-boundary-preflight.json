@@ -34,7 +34,7 @@
     "this_preflight_resolves_blocker": false
   },
   "package_candidate_snapshot": {
-    "candidate_count": 272,
+    "candidate_count": 276,
     "loom_candidate_count": 0,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },

@@ -160,6 +160,16 @@ def validate_output() -> None:
     missing_human = sorted(REQUIRED_HUMAN_FIELDS - set(human))
     if missing_human:
         fail("progress meter human fields missing: " + ", ".join(missing_human))
+    current_position = str(human.get("当前位置", ""))
+    if "门禁层级" not in current_position:
+        fail("progress meter human current position must expose gate tier")
+    if "门禁层级：未声明" in current_position:
+        fail("progress meter human current position must not expose an undeclared gate tier")
+    current_bucket = next((row for row in payload.get("buckets", []) if row.get("id") == "current_focused_task_set"), {})
+    task = current_bucket.get("task") if isinstance(current_bucket, dict) else {}
+    gate_tier = task.get("gate_tier") if isinstance(task, dict) else None
+    if gate_tier not in {"lightweight", "standard", "release-structural"}:
+        fail("progress meter current task gate_tier must be a supported tier")
     boundary = payload.get("prism_boundary")
     if not isinstance(boundary, dict) or boundary.get("real_task_default_timeout_seconds") != 600:
         fail("progress meter output lost prism timeout boundary")

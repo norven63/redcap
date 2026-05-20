@@ -6,9 +6,9 @@
   "purpose": "Create runtime/redcap-core/prism-tools package-visible facade wrappers for Prism batch-1 support and provider-routing contract entries while keeping prism/tools and prism/README.md as authoritative anchors.",
   "source_truth": {
     "path": "references/r1-prism-evidence-retention-apply-preflight.json",
-    "sha256": "d56c37e72bc9e9c4c0e81b1d664a26216efd7a2e21bd5dd813205aa8d20250c9",
+    "sha256": "78de7e20d73a5ac67bf96941e64aaa8621c73d02a5e3add5bd9fd0611b32e4c0",
     "split_preflight_path": "references/r1-prism-evidence-retention-split-preflight.json",
-    "split_preflight_sha256": "1c0e88cffb384a311a00d787489195998b4cc5e70c4cd257f9485e9d7a9d3109",
+    "split_preflight_sha256": "e77372154c3dc6222f42e9b05aa61bbff8fedd007cecb22f27d47c75fdee638e",
     "source_batch_id": "batch-1-package-visible-prism-support",
     "source_target_layers": [
       "package-visible-prism-support",
@@ -82,9 +82,9 @@
   },
   "package_surface_delta": {
     "previous_candidate_count": 264,
-    "current_candidate_count": 272,
-    "delta": 8,
-    "reason": "Adding 8 runtime/redcap-core/prism-tools facades for the exact batch-1 package-visible Prism support/provider-routing entries. The task-specific manifest and checker are source-governance assets and are explicitly excluded from the package candidate surface. This is alpha readiness support, not public release authorization."
+    "current_candidate_count": 276,
+    "delta": 12,
+    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets for workflow gate stratification, so the live alpha readiness surface is now 276 candidates. This remains readiness support, not public release authorization."
   },
   "facades": [
     {

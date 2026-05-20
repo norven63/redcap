@@ -343,6 +343,16 @@ if ! bash "$PLAN_ONLY_FOLLOWUP_CHECK" >/dev/null; then
     exit 1
 fi
 
+WORKFLOW_GATE_STRATIFICATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-workflow-gate-stratification-check.sh"
+if [[ ! -f "$WORKFLOW_GATE_STRATIFICATION_CHECK" ]]; then
+    echo "[redcap-spec-check] workflow gate stratification check missing" >&2
+    exit 1
+fi
+if ! bash "$WORKFLOW_GATE_STRATIFICATION_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] workflow gate stratification check failed" >&2
+    exit 1
+fi
+
 PROGRESS_METER_CHECK="$REDCAP_ROOT/compass/tools/redcap-progress-meter-check.sh"
 if [[ ! -f "$PROGRESS_METER_CHECK" ]]; then
     echo "[redcap-spec-check] progress meter check missing" >&2

@@ -1,4 +1,33 @@
 reports:
+  - id: "20260521-rasg-024-workflow-gate-stratification"
+    mode: acceptance
+    date: "2026-05-21"
+    topic: "RASG-024 workflow gate stratification review"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-pass-after-follow-up"
+    consensus_actions:
+      - "Accept risk-based workflow gate stratification after follow-up fixes"
+      - "Keep release, package, validator, secret, destructive migration and closeout boundaries release-structural"
+      - "Use policy-owned post-result drift rules instead of letting old hardcoded allowlists bypass block rules"
+    open_questions:
+      - "No RASG-024 blocker remains; registry publication remains a separate human-authorized release task"
+    lessons_updated: true
+    files_affected:
+      - "references/workflow-gate-stratification-policy.json"
+      - "references/workflow-gate-stratification-samples.json"
+      - "compass/tools/redcap-workflow-gate-stratification-check.py"
+      - "compass/tools/redcap-workflow-gate-stratification-check.sh"
+      - "compass/tools/redcap-clean-workspace-e2e.py"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-progress-meter.py"
+      - "compass/tools/redcap-progress-meter-check.py"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "prism/reports/2026-05-21-rasg-024-workflow-gate-stratification.md"
+      - "prism/runs/20260521-rasg-024-workflow-gate-stratification/session-registry.yaml"
+      - "prism/runs/20260521-rasg-024-workflow-gate-stratification/artifacts/acceptance-binding.json"
+    archived: false
   - id: "20260520-r1-prism-package-visible-support-copy-first-review"
     mode: review
     date: "2026-05-20"

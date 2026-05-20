@@ -20,6 +20,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_RESULT = ROOT / "references/clean-workspace-install-e2e.json"
 PACKAGE_SAFETY_POLICY = ROOT / "references/package-publish-safety-policy.json"
+GATE_STRATIFICATION_POLICY = ROOT / "references/workflow-gate-stratification-policy.json"
 MANIFEST_ID = "redcap-clean-workspace-install-e2e"
 TASK_ID = "redcap-clean-workspace-install-e2e"
 
@@ -180,7 +181,44 @@ def forbidden_candidate_matches(candidates: list[str], patterns: list[str]) -> l
     return matches
 
 
+def workflow_gate_post_result_allowlist() -> tuple[set[str], tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
+    if not GATE_STRATIFICATION_POLICY.is_file():
+        return set(), (), (), ()
+    try:
+        payload = json.loads(GATE_STRATIFICATION_POLICY.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return set(), (), (), ()
+    allow = payload.get("post_result_drift_allowlist")
+    if not isinstance(allow, dict):
+        return set(), (), (), ()
+    paths = tuple(item for item in allow.get("paths", []) if isinstance(item, str) and item)
+    prefixes = tuple(item for item in allow.get("prefixes", []) if isinstance(item, str) and item)
+    globs = tuple(item for item in allow.get("globs", []) if isinstance(item, str) and item)
+    blocked = tuple(item for item in allow.get("must_not_include", []) if isinstance(item, str) and item)
+    return set(paths), prefixes, globs, blocked
+
+
+def blocked_by_post_result_policy(path: str, blocked: tuple[str, ...]) -> bool:
+    for pattern in blocked:
+        if pattern.endswith("/") and path.startswith(pattern):
+            return True
+        if fnmatch.fnmatch(path, pattern):
+            return True
+    return False
+
+
 def allowed_post_result_drift(path: str) -> bool:
+    policy_paths, policy_prefixes, policy_globs, policy_blocked = workflow_gate_post_result_allowlist()
+    policy_loaded = bool(policy_paths or policy_prefixes or policy_globs or policy_blocked)
+    policy_allowed = (
+        path in policy_paths
+        or any(path.startswith(prefix) for prefix in policy_prefixes)
+        or any(fnmatch.fnmatch(path, pattern) for pattern in policy_globs)
+    )
+    if policy_loaded:
+        if blocked_by_post_result_policy(path, policy_blocked):
+            return False
+        return policy_allowed
     return path in ALLOWED_POST_RESULT_DRIFT_PATHS or any(path.startswith(prefix) for prefix in ALLOWED_POST_RESULT_DRIFT_PREFIXES)
 
 

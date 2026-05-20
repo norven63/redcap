@@ -512,3 +512,6 @@
 
 ### L-168: runtime facade 优先委托旧实现，不能急着复制实现
 - 正文模块：[`compass/knowledge/lessons/l-168.md`](../../compass/knowledge/lessons/l-168.md)
+
+### L-169: 重型门禁要按风险触发，不能让轻量证据漂移制造回归循环
+- 正文模块：[`compass/knowledge/lessons/l-169.md`](../../compass/knowledge/lessons/l-169.md)

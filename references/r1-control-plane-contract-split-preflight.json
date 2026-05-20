@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 272,
-    "control_plane_candidate_count": 193,
-    "compass": 140,
-    "references": 53,
-    "compass_tools_shell": 85,
-    "compass_tools_python": 55,
-    "references_json": 50,
+    "candidate_count": 276,
+    "control_plane_candidate_count": 197,
+    "compass": 142,
+    "references": 55,
+    "compass_tools_shell": 86,
+    "compass_tools_python": 56,
+    "references_json": 52,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -75,14 +75,14 @@
       {
         "path": "compass",
         "role": "maintainer-control-plane-tools",
-        "package_candidate_count": 140,
+        "package_candidate_count": 142,
         "current_contract": "Packaged for alpha readiness because root wrappers, revive/status/diagnose/closeout, release safety and validators still call these tools.",
         "future_target": "internal/control-plane/tools with stable runtime facades and compatibility aliases"
       },
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 53,
+        "package_candidate_count": 55,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 272,
-      "control_plane_candidate_count": 193,
-      "compass": 140,
-      "references": 53,
-      "compass_tools_shell": 85,
-      "compass_tools_python": 55,
-      "references_json": 50,
+      "candidate_count": 276,
+      "control_plane_candidate_count": 197,
+      "compass": 142,
+      "references": 55,
+      "compass_tools_shell": 86,
+      "compass_tools_python": 56,
+      "references_json": 52,
       "references_markdown": 3
     },
     "target_layers": [
@@ -298,11 +298,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 193,
+      "total_entries": 197,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 41,
-        "internal-control-plane": 93,
+        "internal-contract": 43,
+        "internal-control-plane": 95,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -960,6 +960,20 @@
         "current_state": "unchanged-in-this-task"
       },
       {
+        "source": "compass/tools/redcap-workflow-gate-stratification-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-workflow-gate-stratification-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-workflow-gate-stratification-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-workflow-gate-stratification-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
         "source": "compass/tools/redcap-public-arsenal-claim-boundary.py",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-public-arsenal-claim-boundary.py",
@@ -1558,6 +1572,20 @@
         "source": "references/redcap-progress-meter-policy.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/redcap-progress-meter-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/workflow-gate-stratification-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/workflow-gate-stratification-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/workflow-gate-stratification-samples.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/workflow-gate-stratification-samples.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

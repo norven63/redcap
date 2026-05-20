@@ -167,6 +167,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh backlog-check-strict
   bash compass/tools/redcap-multi-session-acceptance.sh current-status-overview
   bash compass/tools/redcap-multi-session-acceptance.sh progress-meter-check
+  bash compass/tools/redcap-multi-session-acceptance.sh workflow-gate-stratification-check
   bash compass/tools/redcap-multi-session-acceptance.sh tracking-health-overview
   bash compass/tools/redcap-multi-session-acceptance.sh intent-coverage-check
   bash compass/tools/redcap-multi-session-acceptance.sh change-intake-check
@@ -9499,9 +9500,75 @@ assert payload["prism_boundary"]["real_task_default_timeout_seconds"] == 600
 human = payload["human"]
 for field in ["整体任务全景图", "当前位置", "当前已完成", "下一步计划做的是", "需要人工介入"]:
     assert field in human
+assert "门禁层级" in human["当前位置"]
 PY
 
     bash "$REDCAP_ROOT/compass/tools/redcap-progress-meter-check.sh" >/dev/null
+}
+
+run_workflow_gate_stratification_check_case() {
+    local output weak_policy bad_samples stale_output stale_status
+
+    log "case: workflow-gate-stratification-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-workflow-gate-stratification-check.sh" --task-file "$REDCAP_ROOT/.dev-task.md")"
+    assert_string_contains "$output" "WORKFLOW_GATE_STRATIFICATION_OK"
+
+    weak_policy="$ACCEPT_ROOT/workflow-gate-stratification-weak-release.json"
+    python3 - "$REDCAP_ROOT/references/workflow-gate-stratification-policy.json" "$weak_policy" <<'PY'
+import json
+import pathlib
+import sys
+
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+release_tier = next(tier for tier in payload["tiers"] if tier["id"] == "release-structural")
+mandatory = release_tier["mandatory_checks"]
+release_tier["mandatory_checks"] = [item for item in mandatory if item != "clean-workspace-e2e"]
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-workflow-gate-stratification-check.sh" --policy "$weak_policy" --task-file "$REDCAP_ROOT/.dev-task.md" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "workflow gate stratification accepted weak release-structural policy"
+    assert_string_contains "$stale_output" "release-structural tier missing mandatory checks"
+
+    bad_samples="$ACCEPT_ROOT/workflow-gate-stratification-bad-samples.json"
+    python3 - "$REDCAP_ROOT/references/workflow-gate-stratification-samples.json" "$bad_samples" <<'PY'
+import json
+import pathlib
+import sys
+
+source = pathlib.Path(sys.argv[1])
+target = pathlib.Path(sys.argv[2])
+payload = json.loads(source.read_text(encoding="utf-8"))
+payload["samples"][0]["expected_tier"] = "release-structural"
+target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-workflow-gate-stratification-check.sh" --samples "$bad_samples" --task-file "$REDCAP_ROOT/.dev-task.md" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -ne 0 ]] || fail "workflow gate stratification accepted stale sample expectation"
+    assert_string_contains "$stale_output" "expected tier"
+
+    python3 - "$REDCAP_ROOT/compass/tools/redcap-clean-workspace-e2e.py" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+module_path = pathlib.Path(sys.argv[1])
+spec = importlib.util.spec_from_file_location("redcap_clean_workspace_e2e", module_path)
+module = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(module)
+assert module.allowed_post_result_drift("compass/docs/task-reports/example.md")
+assert module.allowed_post_result_drift("compass/docs/catalog.json")
+assert not module.allowed_post_result_drift("compass/tools/redcap-multi-session-acceptance.sh")
+assert not module.allowed_post_result_drift("runtime/redcap-core/bin/redcap")
+PY
 }
 
 run_tracking_health_overview_case() {
@@ -15022,7 +15089,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell workflow-gate-stratification progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -15375,6 +15442,7 @@ redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh|r1-cont
 redcap-r1-layera-product-boundary-check.sh|r1-layera-product-boundary|fixture R1 Layer A product boundary failure
 redcap-formal-release-readiness-plan-check.sh|formal-release-readiness-plan|fixture formal release readiness plan failure
 redcap-change-intake-check.sh|change-intake|fixture change intake failure
+redcap-workflow-gate-stratification-check.sh|workflow-gate-stratification|fixture workflow gate stratification failure
 redcap-prism-degradation-check.sh|prism-degradation|fixture Prism degradation failure
 redcap-conclusion-prism-check.sh|conclusion-prism|fixture conclusion Prism failure
 EOF
@@ -15427,6 +15495,7 @@ EOF
             state-machine) expected_message="state machine contract check failed" ;;
             token-risk) expected_message="token risk audit failed" ;;
             architecture-smell) expected_message="architecture smell governance check failed" ;;
+            workflow-gate-stratification) expected_message="workflow gate stratification check failed" ;;
             progress-meter) expected_message="progress meter check failed" ;;
             reference-asset-lifecycle) expected_message="reference asset lifecycle check failed" ;;
             layer-boundary) expected_message="Layer A/B boundary check failed" ;;
@@ -15535,48 +15604,49 @@ package_policy = {
 )
 for rel in [
     "compass/tools/redcap-user-agent-identity.sh",
-	"compass/tools/redcap-feishu-inbox.sh",
-	"compass/tools/redcap-feishu-notification-policy-check.sh",
-	"compass/tools/redcap-human-communication-check.sh",
-	"compass/tools/redcap-human-product-surface-check.sh",
-	"compass/tools/redcap-architecture-smell-governance-check.sh",
-	"compass/tools/redcap-reference-asset-lifecycle.sh",
-	"compass/tools/redcap-plan-only-followup-registration-check.sh",
-	"compass/tools/redcap-progress-meter-check.sh",
-	"compass/tools/redcap-layer-boundary-check.sh",
-	"compass/tools/redcap-information-architecture-check.sh",
-	"compass/tools/redcap-forge-check.sh",
-	"compass/tools/redcap-public-arsenal-claim-boundary.sh",
-	"compass/tools/redcap-arsenal-version-binding-check.sh",
-	"compass/tools/redcap-public-distillation-preflight.sh",
-	"compass/tools/redcap-agent-reading-absorption-check.sh",
-	"compass/tools/redcap-llm-wiki-asset-stratification-check.sh",
-	"compass/tools/redcap-llm-wiki-lite-check.sh",
-	"compass/tools/redcap-knowledge-gateway.sh",
-	"compass/tools/redcap-cold-archive-inventory.sh",
-	"compass/tools/redcap-full-llm-wiki-roadmap-check.sh",
-	"compass/tools/redcap-package-publish-safety-check.sh",
-	"compass/tools/redcap-runtime-package-manifest.sh",
-	"compass/tools/redcap-public-package-surface.sh",
-	"compass/tools/redcap-runtime-contract-surface-check.sh",
-	"compass/tools/redcap-release-e2e-matrix-check.sh",
-	"compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
-	"compass/tools/redcap-r1-control-plane-contract-split-check.sh",
-	"compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
-	"compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
-	"compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh",
-	"compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh",
-	"compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
-	"compass/tools/redcap-r1-layera-product-boundary-check.sh",
-	"compass/tools/redcap-formal-release-readiness-plan-check.sh",
-	"compass/tools/redcap-pre-release-product-architecture-check.sh",
-	"compass/tools/redcap-pre-release-structure-task-tree-check.sh",
-	"compass/tools/redcap-midcourse-architecture-check.sh",
-	"compass/tools/redcap-runtime-workspace-boundary-check.sh",
-	"compass/tools/redcap-cli-product-surface-check.sh",
-	"compass/tools/redcap-prism-degradation-check.sh",
-	"compass/tools/redcap-conclusion-prism-check.sh",
-	]:
+    "compass/tools/redcap-feishu-inbox.sh",
+    "compass/tools/redcap-feishu-notification-policy-check.sh",
+    "compass/tools/redcap-human-communication-check.sh",
+    "compass/tools/redcap-human-product-surface-check.sh",
+    "compass/tools/redcap-architecture-smell-governance-check.sh",
+    "compass/tools/redcap-reference-asset-lifecycle.sh",
+    "compass/tools/redcap-plan-only-followup-registration-check.sh",
+    "compass/tools/redcap-workflow-gate-stratification-check.sh",
+    "compass/tools/redcap-progress-meter-check.sh",
+    "compass/tools/redcap-layer-boundary-check.sh",
+    "compass/tools/redcap-information-architecture-check.sh",
+    "compass/tools/redcap-forge-check.sh",
+    "compass/tools/redcap-public-arsenal-claim-boundary.sh",
+    "compass/tools/redcap-arsenal-version-binding-check.sh",
+    "compass/tools/redcap-public-distillation-preflight.sh",
+    "compass/tools/redcap-agent-reading-absorption-check.sh",
+    "compass/tools/redcap-llm-wiki-asset-stratification-check.sh",
+    "compass/tools/redcap-llm-wiki-lite-check.sh",
+    "compass/tools/redcap-knowledge-gateway.sh",
+    "compass/tools/redcap-cold-archive-inventory.sh",
+    "compass/tools/redcap-full-llm-wiki-roadmap-check.sh",
+    "compass/tools/redcap-package-publish-safety-check.sh",
+    "compass/tools/redcap-runtime-package-manifest.sh",
+    "compass/tools/redcap-public-package-surface.sh",
+    "compass/tools/redcap-runtime-contract-surface-check.sh",
+    "compass/tools/redcap-release-e2e-matrix-check.sh",
+    "compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
+    "compass/tools/redcap-r1-control-plane-contract-split-check.sh",
+    "compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
+    "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
+    "compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh",
+    "compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh",
+    "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
+    "compass/tools/redcap-r1-layera-product-boundary-check.sh",
+    "compass/tools/redcap-formal-release-readiness-plan-check.sh",
+    "compass/tools/redcap-pre-release-product-architecture-check.sh",
+    "compass/tools/redcap-pre-release-structure-task-tree-check.sh",
+    "compass/tools/redcap-midcourse-architecture-check.sh",
+    "compass/tools/redcap-runtime-workspace-boundary-check.sh",
+    "compass/tools/redcap-cli-product-surface-check.sh",
+    "compass/tools/redcap-prism-degradation-check.sh",
+    "compass/tools/redcap-conclusion-prism-check.sh",
+]:
     script_path = dst / rel
     script_path.parent.mkdir(parents=True, exist_ok=True)
     script_path.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
@@ -16938,6 +17008,9 @@ case "$COMMAND" in
         ;;
     progress-meter-check)
         run_progress_meter_check_case
+        ;;
+    workflow-gate-stratification-check)
+        run_workflow_gate_stratification_check_case
         ;;
     tracking-health-overview)
         run_tracking_health_overview_case

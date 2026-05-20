@@ -835,8 +835,23 @@
         "Release, package-surface, destructive migration, and root information architecture tasks still require the full gate set.",
         "A regression fixture captures the P4-8 evidence-refresh loop so future changes do not reintroduce avoidable E2E/receipt churn."
       ],
-      "status": "planned",
-      "introduced_at": "2026-05-21"
+      "status": "done",
+      "introduced_at": "2026-05-21",
+      "completed_at": "2026-05-21",
+      "evidence": [
+        "references/workflow-gate-stratification-policy.json",
+        "references/workflow-gate-stratification-samples.json",
+        "compass/tools/redcap-workflow-gate-stratification-check.sh",
+        "compass/tools/redcap-workflow-gate-stratification-check.py",
+        "compass/tools/redcap-clean-workspace-e2e.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-progress-meter.py",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "compass/docs/task-reports/2026-05-21-rasg-024-workflow-gate-stratification.md",
+        "prism/reports/2026-05-21-rasg-024-workflow-gate-stratification.md",
+        "prism/runs/20260521-rasg-024-workflow-gate-stratification/artifacts/acceptance-binding.json"
+      ]
     }
   ],
   "must_not_claim": [
@@ -849,7 +864,7 @@
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Before formal public release readiness, run the release-readiness task tree deliberately. RASG-024 is now an open workflow-latency governance item and should be scheduled as a bounded gate-stratification slice; do not claim it is implemented merely because it is registered.",
+  "recommended_next_step": "Before formal public release readiness, run the release-readiness task tree deliberately. RASG-024 is completed as workflow-latency governance: future tasks must declare a gate tier and high-risk release/structure/security work must remain release-structural.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -1134,10 +1149,10 @@
         {
           "id": "RASG-024",
           "title": "Stratify workflow gates by task risk to reduce avoidable multi-hour task latency",
-          "status": "pending",
+          "status": "done",
           "priority": "P1",
           "phase_id": "T9",
-          "summary": "Define a risk-based validation matrix so small tasks do not always pay release-grade validation cost, while release, package-safety and destructive-migration tasks remain fully guarded."
+          "summary": "Risk-based validation matrix implemented and wired into spec-check, diagnose, progress meter, clean workspace E2E post-result drift handling, and acceptance regression."
         }
       ]
     }
@@ -1241,8 +1256,8 @@
     {
       "id": "T9",
       "title": "Workflow latency and gate stratification",
-      "status": "pending",
-      "summary": "Reduce avoidable multi-hour task latency by making validation strength explicit, risk-based, and visible without weakening release-readiness rigor.",
+      "status": "done",
+      "summary": "Workflow gate stratification is implemented: low-risk report/index drift no longer automatically invalidates release-grade E2E, while release, package, validator, secret and destructive-migration work remains fail-closed.",
       "item_ids": [
         "RASG-024"
       ]
@@ -1250,6 +1265,6 @@
   ],
   "current_focus": {
     "item_id": "RASG-024",
-    "summary": "RASG-024 已登记为开放治理项：需要对 recent long-running tasks 做耗时审计，并把 RedCap 验证门禁改造成按任务风险分级的可执行矩阵。"
+    "summary": "RASG-024 已完成：RedCap 任务现在必须声明门禁层级，轻量报告/索引漂移可避免重复发布级回归，高风险发布/结构/安全任务仍强制最高门禁。下一步可回到正式发布前 readiness 主线。"
   }
 }

@@ -240,10 +240,13 @@ def build_meter(task_file: Path) -> dict[str, Any]:
             intervention = "不需要，本任务已正式收口。"
 
     receipt_label = "已生成" if closeout.get("receipt") == "present" else "未生成"
+    gate_tier = (meta.get("gate_tier") or "未声明").strip()
+    gate_reason = (meta.get("gate_reason") or "").strip()
     current_position = (
         f"当前工作切片：{meta.get('active_slice', 'unknown')}；"
         f"完工凭证：{receipt_label}；"
-        f"承诺完成：{closeout.get('promise_completed', 0)}/{closeout.get('promise_total', 0)}"
+        f"承诺完成：{closeout.get('promise_completed', 0)}/{closeout.get('promise_total', 0)}；"
+        f"门禁层级：{gate_tier}"
     )
     debt_counts = architecture_backlog.get("status_counts", {})
     governance_counts = governance_debt.get("counts", {})
@@ -286,6 +289,8 @@ def build_meter(task_file: Path) -> dict[str, Any]:
                 "task_id": meta.get("task_id", ""),
                 "active_slice": meta.get("active_slice", ""),
                 "task_report": meta.get("task_report", ""),
+                "gate_tier": gate_tier,
+                "gate_reason": gate_reason,
                 "closeout": closeout,
                 "framework_backlog": framework_backlog,
             },
