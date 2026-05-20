@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 356041,
-    "lines": 7185,
-    "chars": 219065,
+    "size_bytes": 356271,
+    "lines": 7184,
+    "chars": 219287,
     "rough_token_pressure": {
-      "low": 54766,
-      "high": 109532
+      "low": 54821,
+      "high": 109643
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 155772,
-        "lines": 2558,
-        "chars": 98970,
+        "size_bytes": 156002,
+        "lines": 2557,
+        "chars": 99192,
         "rough_token_pressure": {
-          "low": 24742,
-          "high": 49485
+          "low": 24798,
+          "high": 49596
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9716,
-      "lines": 187,
-      "chars": 5906,
+      "size_bytes": 9946,
+      "lines": 186,
+      "chars": 6128,
       "summary": "当前已完成：P4-7 已通过 Claude Code 与 Kimi 的棱镜路线评审，选出下一条可自主推进的小切片：`prism-layer-and-evidence batch-1`，也就是 package-visible Prism support 与 provider-routing contract。 / 详情：这只是路线选择和任务锚点登记，不是实际执行 Prism 物理拆分，也不是关闭 release blocker。",
       "status_basis": "filename_recency_only",
       "summary_points": {
