@@ -101,18 +101,18 @@ Kimi 在评审时质疑过一个 coverage 统计项，复核后确认不是缺�
 
 | 项目 | 当前结果 |
 | --- | --- |
-| 执行承诺账本 | 待 closeout runtime 最终核对 |
+| 执行承诺账本 | 已由 closeout runtime 核对通过，8 项承诺无 pending |
 | 棱镜验收 | Claude Code 与 Kimi 已完成；acceptance binding 已生成 |
-| closeout receipt | 待最终 closeout 生成 |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-prism-package-visible-support-copy-first-a2d45b90c5ccdc4ce67f1ebfd9b09c0ab6d217eb7799f4d3389f4a1972e61949.json` |
 
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 是 | 8 个 Prism runtime facade 与 provider-routing contract proof 已落地。 |
-| 已自检 | 进行中 | 专项检查与包面检查已通过；full spec / diagnose 将在 closeout 前再跑。 |
+| 已自检 | 是 | 专项检查、包面检查、full acceptance、spec-check、diagnose 与 clean workspace E2E 均已通过。 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 均无 blocker。 |
-| 已正式完成 | 否 | 仍需最终 spec-check、diagnose、commit 与 closeout receipt。 |
+| 已正式完成 | 是 | 功能提交、clean workspace E2E 刷新提交与 closeout receipt 均已完成。 |
 
 ## 六、遗留问题与下一步
 
@@ -131,8 +131,8 @@ Kimi 在评审时质疑过一个 coverage 统计项，复核后确认不是缺�
 
 ### 6.3 推荐的下一步行动
 
-1. 完成本轮 closeout receipt。
-2. 后续从剩余 R1 blocker 中选择下一条小切片，优先保持“非破坏性、可回归、可棱镜验收”的节奏。
+1. 进入 P4-9 路线选择，从剩余 R1 blocker 中选择下一条小切片。
+2. 后续仍优先保持“非破坏性、可回归、可棱镜验收”的节奏。
 
 ## 七、经验沉淀
 
