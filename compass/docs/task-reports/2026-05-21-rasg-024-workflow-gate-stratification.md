@@ -28,13 +28,13 @@
 - 人工介入：不需要。
 - 说明：本轮不涉及许可证、发布开关、registry 凭据、私密资产公开、破坏性迁移或是否正式发布的人工决策。
 
-## 1. 问题与结论
+## 一、需求背景
 
 RedCap 之前的门禁策略偏“全局高强度默认”。这对发布安全是好事，但对轻量收尾、报告补记、索引刷新会变成成本黑洞。最危险的不是“跑得多”，而是“跑得多但没有说明为什么”：用户看不到任务为什么要几小时，Agent 也容易把所有任务都当成同一级别。
 
 本轮的结论是：检查强度必须显式分级。轻量任务可以轻，但发布级任务不能轻；低风险漂移可以不刷新 clean workspace E2E，但包面和 runtime 变化必须继续 fail-closed。
 
-## 2. 关键实现
+## 二、方案讨论
 
 - 门禁分级政策：`references/workflow-gate-stratification-policy.json`
 - 分级回归样本：`references/workflow-gate-stratification-samples.json`
@@ -42,7 +42,7 @@ RedCap 之前的门禁策略偏“全局高强度默认”。这对发布安全�
 - 上层接入点：`redcap-spec-check.sh`、`redcap-diagnose.sh`、`redcap-progress-meter.py`、`redcap-clean-workspace-e2e.py`
 - 回归覆盖：`redcap-multi-session-acceptance.sh workflow-gate-stratification-check` 与 `spec-check-propagates-control-gate-failures`
 
-## 3. 验证记录
+## 三、落地结果
 
 - `bash compass/tools/redcap-workflow-gate-stratification-check.sh --task-file .dev-task.md`：通过
 - `bash compass/tools/redcap-progress-meter-check.sh`：通过
@@ -60,13 +60,13 @@ RedCap 之前的门禁策略偏“全局高强度默认”。这对发布安全�
 | package surface | 将来公开包可能包含的文件集合 | 本轮新增治理资产后，同步证明公开面数量变化可解释 |
 | release-structural | 发布、安全、迁移、validator、closeout 等高风险层级 | 保证关键任务继续 fail-closed，不因分级而变松 |
 
-## 4. 人工审核要点
+## 四、人工审核要点
 
 | 序号 | 审核项 | 说明 | 优先级 |
 | --- | --- | --- | --- |
 | 1 | 无需本轮人工审核 | 本轮只是内部工作流治理，不触碰发布开关、凭据、许可证或破坏性删除。 | P1 |
 
-## 5. 验证结果
+## 五、验证结果
 
 ### 5.1 自动化验证
 
@@ -100,14 +100,14 @@ RedCap 之前的门禁策略偏“全局高强度默认”。这对发布安全�
 | 已独立验收 | 是 | Claude Code 与 Kimi 均无 blocker，相关建议已回填。 |
 | 已正式完成 | 否 | 还需最终 `diagnose`、clean workspace E2E 和 closeout receipt 完成后才能改为“是”。 |
 
-## 6. 未完成与边界
+## 六、遗留问题与下一步
 
 - 本轮不宣称 RedCap 已正式发布。
 - 本轮不改变许可证、发布开关或 npm registry 状态。
 - 本轮不做大规模历史资产迁移，也不删除历史证据。
 - 本轮不是降低发布前安全标准，而是让不同风险等级的任务使用不同验证强度。
 
-## 7. 经验沉淀
+## 七、经验沉淀
 
 ### 7.1 新增 Lesson（建议写入 knowledge/lessons.md）
 
@@ -124,3 +124,10 @@ RedCap 之前的门禁策略偏“全局高强度默认”。这对发布安全�
 | 候选 | 来源 | 处理结果 | 证据 |
 | --- | --- | --- | --- |
 | RASG-024-risk-tier-gate | 本轮 RASG-024 | no-promote；已沉淀为 L-169，暂不晋升 public arsenal，因为它仍是 RedCap 内部控制面经验 | 本报告、`compass/knowledge/lessons/l-169.md`、Prism review 报告 |
+
+## 八、附录
+
+- 任务卡：`.dev-task.md`
+- Prism 报告：`prism/reports/2026-05-21-rasg-024-workflow-gate-stratification.md`
+- 工作流门禁策略：`references/workflow-gate-stratification-policy.json`
+- 工作流门禁样本：`references/workflow-gate-stratification-samples.json`
