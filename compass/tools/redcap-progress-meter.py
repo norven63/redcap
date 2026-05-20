@@ -120,9 +120,13 @@ def backlog_status(path: Path) -> dict[str, Any]:
     counts: Counter[str] = Counter()
     current_focus = payload.get("current_focus") if isinstance(payload.get("current_focus"), dict) else {}
     open_items: list[str] = []
+    seen_ids: set[str] = set()
     for item in payload.get("requirements") or []:
         if not isinstance(item, dict):
             continue
+        item_id = str(item.get("id") or "").strip()
+        if item_id:
+            seen_ids.add(item_id)
         status = str(item.get("status", "unknown"))
         counts[status] += 1
         if status not in {"done", "archived", "superseded"} and len(open_items) < 3:
@@ -132,6 +136,9 @@ def backlog_status(path: Path) -> dict[str, Any]:
             continue
         for item in group.get("items") or []:
             if not isinstance(item, dict):
+                continue
+            item_id = str(item.get("id") or "").strip()
+            if item_id and item_id in seen_ids:
                 continue
             status = str(item.get("status", "unknown"))
             counts[status] += 1
