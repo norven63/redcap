@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 356271,
-    "lines": 7184,
-    "chars": 219287,
+    "size_bytes": 351435,
+    "lines": 7139,
+    "chars": 216363,
     "rough_token_pressure": {
-      "low": 54821,
-      "high": 109643
+      "low": 54090,
+      "high": 108181
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 194739,
-        "lines": 4538,
-        "chars": 116321,
+        "size_bytes": 195320,
+        "lines": 4542,
+        "chars": 116642,
         "rough_token_pressure": {
-          "low": 29080,
-          "high": 58160
+          "low": 29160,
+          "high": 58321
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 156002,
-        "lines": 2557,
-        "chars": 99192,
+        "size_bytes": 150585,
+        "lines": 2508,
+        "chars": 95947,
         "rough_token_pressure": {
-          "low": 24798,
-          "high": 49596
+          "low": 23986,
+          "high": 47973
         }
       }
     },
@@ -87,8 +87,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 10256,
-        "lines": 193,
+        "chars": 10577,
+        "lines": 197,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -104,10 +104,10 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-18-r1-control-plane-contract-split-preflight.md",
-        "chars": 9683,
-        "lines": 234,
-        "read_policy": "read-catalog-summary-by-default"
+        "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
+        "chars": 9116,
+        "lines": 348,
+        "read_policy": "read-registry-summary-first"
       }
     ]
   },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 18264,
-      "lines": 193,
-      "chars": 10256,
+      "size_bytes": 18845,
+      "lines": 197,
+      "chars": 10577,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -444,24 +444,11 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-18-r1-control-plane-contract-split-preflight.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：正式发布 R1 控制面契约拆分预检",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 15399,
-      "lines": 234,
-      "chars": 9683,
-      "summary": "当前已完成：R1 的 `internal-control-plane` blocker 已被拆成可机器检查的“控制面契约拆分预检”，但它仍然阻塞正式发布。 / 详情：本轮解决的是“`compass` 和 `references` 还在包候选面里，后续到底该怎么安全拆”的问题。现在 RedCap 已经有一份可复验的预检：说明哪些入口还依赖它们、当前候选包面是多少、未来真搬目录前必须准备哪些门禁。重要边界也被锁住：这不是物理迁移完成，不是 R1 关闭，也不是 public release ready。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-18-r1-prism-evidence-retention-split-preflight.md",
       "collection": "task-reports",
       "title": "任务完成报告：R1 Prism 证据保留拆分预检",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 15255,
       "lines": 242,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：R1 Prism 证据保留 apply 预检",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13270,
       "lines": 207,
       "chars": 8982,
       "summary": "当前已完成：`prism-layer-and-evidence` 从“只有 dry-run 地图”推进到“有 apply 前置护栏”的状态。 / 详情：本轮没有移动、删除、重命名、清理或替换任何 `prism/` 证据，也没有关闭 release blocker；只是把未来真正动手前必须满足的 copy-first、alias-first、证据保留、旧锚点保留、回滚和验收条件做成机器可检查清单。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：`prism-layer-and-evidence` 从“只有 dry-run 地图”推进到“有 apply 前置护栏”的状态。",
-          "详情：本轮没有移动、删除、重命名、清理或替换任何 `prism/` 证据，也没有关闭 release blocker；只是把未来真正动手前必须满足的 copy-first、alias-first、证据保留、旧锚点保留、回滚和验收条件做成机器可检查清单。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-4 已把 `internal-control-plane` 推进到 apply preflight 状态，并完成 clean workspace E2E、Prism 复核和 closeout receipt。"
-        ],
-        "next_step": [
-          "下一步计划做的是：P4-5 已正式收口后，继续沿正式发布 R1 路线处理仍开放的 blockers；真实 Prism evidence split / cleanup、control-plane batch apply、Layer A 产品范围、许可证和 registry 决策都仍是独立后续项。"
-        ],
-        "position": [
-          "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面契约拆分预检 → Layer A / Prism 边界预检 → 控制面 dry-run 地图 → Prism evidence dry-run → 控制面 apply 预检 → Prism evidence apply 预检 → 后续真实 apply / 产品范围裁决 / 最终发布授权。",
-          "当前所在位置：`framework-upgrade / P4-5`，处于 `prism-layer-and-evidence` 未来 copy-first / alias-first apply 的前置护栏阶段。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-split-dry-run.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面与 Prism 预检 → 控制面 runtime facade → 下一 blocker 切片选择 → Prism package-visible support 小切片 → 后续控制面 batch-2 / Prism report archive / Layer A 人工边界。",
           "当前所在位置：`framework-upgrade / P4-7`，处于 P4-6 收口后的“下一条安全切片选择”阶段。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-20-r1-prism-package-visible-support-copy-first.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：R1 Prism package-visible support 小切片",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9982,
+      "lines": 185,
+      "chars": 6438,
+      "summary": "当前已完成：P4-8 已为 Prism 的 package-visible support 与 provider-routing contract 建立 8 个 runtime facade。 / 人话解释：未来包面和 CLI 可以从 `runtime/redcap-core/prism-tools` 找到 Prism 支撑入口，但真正逻辑仍委托旧 `prism/*` 锚点，避免一次性搬动证据层。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P4-8 已为 Prism 的 package-visible support 与 provider-routing contract 建立 8 个 runtime facade。",
+          "人话解释：未来包面和 CLI 可以从 `runtime/redcap-core/prism-tools` 找到 Prism 支撑入口，但真正逻辑仍委托旧 `prism/*` 锚点，避免一次性搬动证据层。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-7 路线选择。Claude Code 与 Kimi 评审后，选择 P4-8 这个更小、更安全的 Prism 小切片，而不是直接进入更大的控制面 batch-2。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续按 R1 blocker 小切片推进；Prism report archive、local run evidence、control-plane batch-2 或 Layer A 产品边界都必须另开任务、单独评审，不能直接进入正式发布动作。"
+        ],
+        "position": [
+          "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面与 Prism 预检 → 控制面 runtime facade → P4-7 选择下一小切片 → **P4-8 Prism package-visible support facade** → 后续 Prism report archive / local run evidence / 控制面 batch-2 / Layer A 人工边界。",
+          "当前所在位置：`framework-upgrade / P4-8`，属于 release-readiness 前的非破坏性支撑实现，不是正式发布。"
         ]
       }
     }

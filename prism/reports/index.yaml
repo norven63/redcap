@@ -1,4 +1,37 @@
 reports:
+  - id: "20260520-r1-prism-package-visible-support-copy-first-review"
+    mode: review
+    date: "2026-05-20"
+    topic: "P4-8 Prism package-visible support copy-first implementation review"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-pass-with-notes"
+    consensus_actions:
+      - "Accept P4-8 as a non-destructive Prism batch-1 copy-first facade tranche"
+      - "Keep old prism/tools, prism/reports and prism/runs anchors authoritative"
+      - "Keep Copilot protected fallback and Codex last-resort provider routing rules"
+      - "Require task report, acceptance binding, spec-check, diagnose and closeout receipt before claiming P4-8 done"
+    open_questions:
+      - "Prism report archive migration remains a separate future tranche"
+      - "Local run evidence cleanup remains forbidden until a separate task proves preservation and receives any required approval"
+      - "The prism-layer-and-evidence blocker remains open after this copy-first facade slice"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-prism-package-visible-support-copy-first-apply.json"
+      - "runtime/redcap-core/prism-tools/"
+      - "bin/redcap"
+      - "runtime/redcap-core/import-map.json"
+      - "compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.py"
+      - "compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "prism/reports/2026-05-20-r1-prism-package-visible-support-copy-first-review.md"
+      - "prism/runs/20260520-r1-prism-package-visible-support-copy-first/session-registry.yaml"
+      - "prism/runs/20260520-r1-prism-package-visible-support-copy-first/prompt.md"
+      - "prism/runs/20260520-r1-prism-package-visible-support-copy-first/claude.raw.txt"
+      - "prism/runs/20260520-r1-prism-package-visible-support-copy-first/kimi.raw.txt"
+    archived: false
   - id: "20260520-r1-next-slice-after-runtime-facade-review"
     mode: review
     date: "2026-05-20"

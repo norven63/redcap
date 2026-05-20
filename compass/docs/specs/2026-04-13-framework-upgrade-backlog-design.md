@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`P4-8 R1 Prism package-visible support copy-first`
-- 当前焦点说明：P4-8 待推进：根据 P4-7 Prism 路线评审，下一条可自主推进的小切片是 prism-layer-and-evidence batch-1，即 package-visible Prism support 与 provider-routing contract；仍不执行发布、不清理证据、不移动旧锚点。
+- 当前焦点：`P4-9 R1 下一发布前 blocker 切片选择 after Prism package-visible support`
+- 当前焦点说明：P4-9 待推进：P4-8 已完成 Prism package-visible support copy-first 小切片；下一步应先做剩余 R1 blocker 的路线评审，在 Prism report archive、local run evidence、control-plane batch-2 与 Layer A 人工边界中选择下一条安全切片。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -68,7 +68,8 @@
 | 阶段 9：发布准备 Prism evidence apply 预检 | 已完成 | P4-5 | 正式发布动作之前，已把 Prism evidence 未来 copy-first / alias-first apply 的前置护栏、证据保留策略、回滚门禁和验证计划做成机器可检查状态；当前仍不执行真实移动、删除、清理或发布。 |
 | 阶段 10：发布准备控制面 runtime facade | 已完成 | P4-6 | 正式发布动作之前，已把可公开运行时需要调用的控制面工具做成 copy-first facade，让 runtime 包面具备稳定入口；旧 compass/tools 仍保留为权威实现。 |
 | 阶段 11：发布准备下一 blocker 切片选择 | 已完成 | P4-7 | 正式发布动作之前，先对 P4-6 后的剩余 R1 blocker 做多视角路线评审，选出下一条可自主推进且不会破坏旧锚点、证据链或人工保留决策的切片。 |
-| 阶段 12：发布准备 Prism package-visible support | 待推进 | P4-8 | 正式发布动作之前，按 P4-7 路线评审推进 Prism package-visible support 与 provider-routing contract 的非破坏性 copy-first / alias-first 小切片。 |
+| 阶段 12：发布准备 Prism package-visible support | 已完成 | P4-8 | 正式发布动作之前，按 P4-7 路线评审推进 Prism package-visible support 与 provider-routing contract 的非破坏性 copy-first / alias-first 小切片。 |
+| 阶段 13：发布准备下一 blocker 切片选择 | 待推进 | P4-9 | 正式发布动作之前，在 P4-8 收口后重新评审剩余 R1 blocker，先选下一条安全小切片，再进入任何具体实现。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -105,7 +106,8 @@
 | P4-5 R1 Prism 证据保留 apply 预检 | 发布前路线与授权边界 | 已完成 | P0 | 已把 prism-layer-and-evidence 的 dry-run 证据边界升级为可机器检查的 copy-first / alias-first apply 前置护栏；本项未移动、未删除、未清理 prism 证据，不关闭 R1，不执行发布。 |
 | P4-6 R1 控制面 runtime facade copy-first | 发布前路线与授权边界 | 已完成 | P0 | 已把 internal-control-plane batch-1 runtime-public-support 条目推进为 runtime/redcap-core/tools 下的 copy-first facade；旧 compass/tools 仍保持权威锚点，本项不关闭 R1，不执行发布。 |
 | P4-7 R1 下一发布前 blocker 切片选择 | 发布前路线与授权边界 | 已完成 | P0 | P4-6 收口后先由 Claude Code 与 Kimi 评审下一条可自主推进、非破坏性的 R1 blocker 切片；本项只产出路线结论和后续锚点，不关闭 blocker、不执行发布、不清理证据、不移动旧锚点。 |
-| P4-8 R1 Prism package-visible support copy-first | 发布前路线与授权边界 | 待推进 | P0 | 根据 P4-7 Prism 路线评审，下一条可自主推进的小切片应处理 prism-layer-and-evidence batch-1：package-visible Prism support 与 provider-routing contract；本项未来仍必须 copy-first / alias-first，不清理证据、不移动旧锚点、不关闭整个 blocker。 |
+| P4-8 R1 Prism package-visible support copy-first | 发布前路线与授权边界 | 已完成 | P0 | 已按 P4-7 路线评审完成 prism-layer-and-evidence batch-1：新增 8 个 runtime Prism facade，保留旧 prism 锚点权威性，保持 provider fallback 保护；本项不清理证据、不移动旧锚点、不关闭整个 blocker。 |
+| P4-9 R1 下一发布前 blocker 切片选择 after Prism package-visible support | 发布前路线与授权边界 | 待推进 | P0 | P4-8 收口后，下一步必须先做路线评审，比较 Prism report archive、local run evidence、control-plane batch-2 与 Layer A 人工边界；不得直接跳进证据清理、旧锚点删除或产品范围裁决。 |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -116,6 +118,8 @@
 | mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
 | spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
 <!-- redcap:backlog-generated:end -->
+
+
 
 
 

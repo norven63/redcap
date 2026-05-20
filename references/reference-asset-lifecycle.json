@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/framework-upgrade.json",
-      "bytes": 31730,
+      "bytes": 33140,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -42,7 +42,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 94710,
+      "bytes": 95842,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -123,7 +123,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 37466,
+      "bytes": 37844,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",

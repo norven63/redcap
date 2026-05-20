@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-8",
-    "summary": "P4-8 待推进：根据 P4-7 Prism 路线评审，下一条可自主推进的小切片是 prism-layer-and-evidence batch-1，即 package-visible Prism support 与 provider-routing contract；仍不执行发布、不清理证据、不移动旧锚点。"
+    "item_id": "P4-9",
+    "summary": "P4-9 待推进：P4-8 已完成 Prism package-visible support copy-first 小切片；下一步应先做剩余 R1 blocker 的路线评审，在 Prism report archive、local run evidence、control-plane batch-2 与 Layer A 人工边界中选择下一条安全切片。"
   },
   "glossary": [
     {
@@ -435,7 +435,7 @@
             "references/r1-control-plane-contract-split-preflight.json",
             "compass/tools/redcap-r1-control-plane-contract-split-check.sh",
             "references/formal-release-readiness-plan.json",
-            "compass/docs/task-reports/2026-05-18-r1-control-plane-contract-split-preflight.md"
+            "private-archive/redcap-knowledge/task-reports/2026-05-18-r1-control-plane-contract-split-preflight.md"
           ]
         },
         {
@@ -547,13 +547,28 @@
         {
           "id": "P4-8",
           "title": "R1 Prism package-visible support copy-first",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-12-release-readiness-prism-package-visible-support",
-          "summary": "根据 P4-7 Prism 路线评审，下一条可自主推进的小切片应处理 prism-layer-and-evidence batch-1：package-visible Prism support 与 provider-routing contract；本项未来仍必须 copy-first / alias-first，不清理证据、不移动旧锚点、不关闭整个 blocker。",
+          "summary": "已按 P4-7 路线评审完成 prism-layer-and-evidence batch-1：新增 8 个 runtime Prism facade，保留旧 prism 锚点权威性，保持 provider fallback 保护；本项不清理证据、不移动旧锚点、不关闭整个 blocker。",
           "evidence_paths": [
             "prism/reports/2026-05-20-r1-next-slice-after-runtime-facade-review.md",
-            "references/r1-prism-evidence-retention-apply-preflight.json"
+            "references/r1-prism-evidence-retention-apply-preflight.json",
+            "references/r1-prism-package-visible-support-copy-first-apply.json",
+            "prism/reports/2026-05-20-r1-prism-package-visible-support-copy-first-review.md",
+            "compass/docs/task-reports/2026-05-20-r1-prism-package-visible-support-copy-first.md"
+          ]
+        },
+        {
+          "id": "P4-9",
+          "title": "R1 下一发布前 blocker 切片选择 after Prism package-visible support",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-13-release-readiness-next-slice-after-prism-support",
+          "summary": "P4-8 收口后，下一步必须先做路线评审，比较 Prism report archive、local run evidence、control-plane batch-2 与 Layer A 人工边界；不得直接跳进证据清理、旧锚点删除或产品范围裁决。",
+          "evidence_paths": [
+            "compass/docs/task-reports/2026-05-20-r1-prism-package-visible-support-copy-first.md",
+            "prism/reports/2026-05-20-r1-prism-package-visible-support-copy-first-review.md"
           ]
         }
       ]
@@ -691,11 +706,20 @@
     {
       "id": "phase-12-release-readiness-prism-package-visible-support",
       "title": "阶段 12：发布准备 Prism package-visible support",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-8"
       ],
       "summary": "正式发布动作之前，按 P4-7 路线评审推进 Prism package-visible support 与 provider-routing contract 的非破坏性 copy-first / alias-first 小切片。"
+    },
+    {
+      "id": "phase-13-release-readiness-next-slice-after-prism-support",
+      "title": "阶段 13：发布准备下一 blocker 切片选择",
+      "status": "pending",
+      "item_ids": [
+        "P4-9"
+      ],
+      "summary": "正式发布动作之前，在 P4-8 收口后重新评审剩余 R1 blocker，先选下一条安全小切片，再进入任何具体实现。"
     }
   ]
 }

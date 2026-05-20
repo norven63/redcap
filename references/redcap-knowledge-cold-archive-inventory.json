@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 99,
-  "bytes_total": 1378007,
+  "file_count": 100,
+  "bytes_total": 1393492,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 95,
+    "private-task-report-archive": 96,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -797,6 +797,14 @@
       "class": "private-task-report-archive",
       "bytes": 11101,
       "sha256": "75d9b69dc0ea7f2db6485a25fcb092e4110422e105b3feb7b44472f006d4f5c1",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-18-r1-control-plane-contract-split-preflight.md",
+      "class": "private-task-report-archive",
+      "bytes": 15485,
+      "sha256": "92699a79e6f21cd07be3089c777301e62a127f3989e0dd9a411e35cd51f78554",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

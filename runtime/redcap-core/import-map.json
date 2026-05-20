@@ -58,10 +58,10 @@
     },
     {
       "command": "redcap prism-availability",
-      "delegates_to": "prism/tools/prism-availability.sh",
+      "delegates_to": "runtime/redcap-core/prism-tools/prism-availability.sh",
       "requires": [
-        "prism/tools/prism-availability.sh",
-        "prism/tools/prism-availability.py",
+        "runtime/redcap-core/prism-tools/prism-availability.sh",
+        "runtime/redcap-core/prism-tools/prism-availability.py",
         "references/prism-provider-policy.json"
       ],
       "contract_boundary": "Public diagnostic entrypoint for viewing or refreshing Prism provider availability. It exposes provider health, not Prism raw evidence or maintainer governance internals."

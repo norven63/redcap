@@ -60,7 +60,7 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 264,
+    "candidate_count": 272,
     "control_plane_candidate_count": 193,
     "compass": 140,
     "references": 53,
@@ -261,7 +261,7 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 264,
+      "candidate_count": 272,
       "control_plane_candidate_count": 193,
       "compass": 140,
       "references": 53,

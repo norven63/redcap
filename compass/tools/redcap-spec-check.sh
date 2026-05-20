@@ -857,6 +857,16 @@ if ! bash "$R1_PRISM_EVIDENCE_RETENTION_APPLY_PREFLIGHT_CHECK" >/dev/null; then
     exit 1
 fi
 
+R1_PRISM_PACKAGE_VISIBLE_SUPPORT_COPY_FIRST_APPLY_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh"
+if [[ ! -f "$R1_PRISM_PACKAGE_VISIBLE_SUPPORT_COPY_FIRST_APPLY_CHECK" ]]; then
+    echo "[redcap-spec-check] R1 Prism package-visible support copy-first apply check missing" >&2
+    exit 1
+fi
+if ! bash "$R1_PRISM_PACKAGE_VISIBLE_SUPPORT_COPY_FIRST_APPLY_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] R1 Prism package-visible support copy-first apply check failed" >&2
+    exit 1
+fi
+
 R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh"
 if [[ ! -f "$R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK" ]]; then
     echo "[redcap-spec-check] R1 control-plane physical apply preflight check missing" >&2

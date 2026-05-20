@@ -210,6 +210,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-contract-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-evidence-retention-split-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-evidence-retention-apply-preflight-check
+  bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-package-visible-support-copy-first-apply-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-runtime-public-support-copy-first-apply-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-layera-product-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
@@ -14373,6 +14374,104 @@ PY
     assert_string_contains "$stale_output" "runtime facade missing"
 }
 
+run_r1_prism_package_visible_support_copy_first_apply_check_case() {
+    local output bad_manifest stale_output status
+
+    log "case: r1-prism-package-visible-support-copy-first-apply-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh")"
+    assert_string_contains "$output" "R1_PRISM_PACKAGE_VISIBLE_SUPPORT_COPY_FIRST_APPLY_OK"
+    assert_string_contains "$output" "facades=8"
+    assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'R1 Prism package-visible support copy-first apply check missing'
+
+    bad_manifest="$ACCEPT_ROOT/r1-prism-package-visible-support-copy-first-apply-missing-source.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-package-visible-support-copy-first-apply.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload.pop("source_truth", None)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism package-visible checker should require source_truth"
+    assert_string_contains "$stale_output" "source_truth"
+
+    bad_manifest="$ACCEPT_ROOT/r1-prism-package-visible-support-copy-first-apply-stale-source.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-package-visible-support-copy-first-apply.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["source_truth"]["sha256"] = "stale"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism package-visible checker should reject stale source hash"
+    assert_string_contains "$stale_output" "source_truth.sha256"
+
+    bad_manifest="$ACCEPT_ROOT/r1-prism-package-visible-support-copy-first-apply-weak-copilot.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-package-visible-support-copy-first-apply.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["provider_routing_contract"]["copilot_allowed_when_all_unavailable"] = ["kimi"]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism package-visible checker should reject weakened Copilot fallback"
+    assert_string_contains "$stale_output" "copilot_allowed_when_all_unavailable"
+
+    bad_manifest="$ACCEPT_ROOT/r1-prism-package-visible-support-copy-first-apply-resolved.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-package-visible-support-copy-first-apply.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["release_blocker_resolved"] = True
+payload["claim_boundary"]["public_release_ready"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism package-visible checker should reject resolved blocker claims"
+    assert_string_contains "$stale_output" "claim_boundary.release_blocker_resolved"
+
+    bad_manifest="$ACCEPT_ROOT/r1-prism-package-visible-support-copy-first-apply-missing-facade.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-package-visible-support-copy-first-apply.json" "$bad_manifest" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["facades"][0]["target_path"] = "runtime/redcap-core/prism-tools/missing-prism-facade.sh"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.py" --manifest "$bad_manifest" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism package-visible checker should reject missing facade"
+    assert_string_contains "$stale_output" "runtime Prism facade missing"
+}
+
 run_r1_layera_product_boundary_check_case() {
     local output bad_preflight stale_output status
 
@@ -14923,7 +15022,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -15269,6 +15368,10 @@ redcap-release-e2e-matrix-check.sh|release-e2e-matrix|fixture release E2E matrix
 redcap-formal-release-r1-root-group-disposition-check.sh|formal-release-r1-root-group-disposition|fixture formal release R1 root group disposition failure
 redcap-r1-control-plane-contract-split-check.sh|r1-control-plane-contract-split|fixture R1 control-plane contract split failure
 redcap-r1-prism-evidence-retention-split-check.sh|r1-prism-evidence-retention-split|fixture R1 Prism evidence retention split failure
+redcap-r1-prism-evidence-retention-apply-preflight-check.sh|r1-prism-evidence-retention-apply-preflight|fixture R1 Prism evidence retention apply preflight failure
+redcap-r1-prism-package-visible-support-copy-first-apply-check.sh|r1-prism-package-visible-support-copy-first-apply|fixture R1 Prism package-visible support copy-first apply failure
+redcap-r1-control-plane-physical-apply-preflight-check.sh|r1-control-plane-physical-apply-preflight|fixture R1 control-plane physical apply preflight failure
+redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh|r1-control-plane-runtime-public-support-copy-first-apply|fixture R1 control-plane runtime public support copy-first apply failure
 redcap-r1-layera-product-boundary-check.sh|r1-layera-product-boundary|fixture R1 Layer A product boundary failure
 redcap-formal-release-readiness-plan-check.sh|formal-release-readiness-plan|fixture formal release readiness plan failure
 redcap-change-intake-check.sh|change-intake|fixture change intake failure
@@ -15363,6 +15466,8 @@ EOF
             formal-release-r1-root-group-disposition) expected_message="formal release R1 root group disposition check failed" ;;
             r1-control-plane-contract-split) expected_message="R1 control-plane contract split check failed" ;;
             r1-prism-evidence-retention-split) expected_message="R1 Prism evidence retention split check failed" ;;
+            r1-prism-evidence-retention-apply-preflight) expected_message="R1 Prism evidence retention apply preflight check failed" ;;
+            r1-prism-package-visible-support-copy-first-apply) expected_message="R1 Prism package-visible support copy-first apply check failed" ;;
             r1-layera-product-boundary) expected_message="R1 Layer A product boundary check failed" ;;
             formal-release-readiness-plan) expected_message="formal release readiness plan check failed" ;;
             conclusion-prism) expected_message="conclusion Prism check failed" ;;
@@ -15458,6 +15563,10 @@ for rel in [
 	"compass/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
 	"compass/tools/redcap-r1-control-plane-contract-split-check.sh",
 	"compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
+	"compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
+	"compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh",
+	"compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh",
+	"compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
 	"compass/tools/redcap-r1-layera-product-boundary-check.sh",
 	"compass/tools/redcap-formal-release-readiness-plan-check.sh",
 	"compass/tools/redcap-pre-release-product-architecture-check.sh",
@@ -16958,6 +17067,9 @@ case "$COMMAND" in
         ;;
     r1-prism-evidence-retention-apply-preflight-check)
         run_r1_prism_evidence_retention_apply_preflight_check_case
+        ;;
+    r1-prism-package-visible-support-copy-first-apply-check)
+        run_r1_prism_package_visible_support_copy_first_apply_check_case
         ;;
     r1-control-plane-physical-apply-preflight-check)
         run_r1_control_plane_physical_apply_preflight_check_case

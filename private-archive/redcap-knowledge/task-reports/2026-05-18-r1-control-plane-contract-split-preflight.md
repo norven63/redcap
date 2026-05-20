@@ -3,6 +3,7 @@
 **报告日期**：2026-05-18
 **执行者**：Cap（Codex.app 主执行；Prism：Claude Code + Kimi）
 **报告版本**：v1.0
+**归档状态**：2026-05-20 迁入 private-archive，保留为低频考古证据。
 
 ---
 

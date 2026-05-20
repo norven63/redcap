@@ -384,7 +384,7 @@ case "$COMMAND" in
     exec "$REDCAP_ROOT/closeout-cap.sh" "${REDCAP_CMD_REMAINING_ARGS[@]}"
     ;;
   prism-availability)
-    exec bash "$REDCAP_ROOT/prism/tools/prism-availability.sh" "${1:-status}" "${@:2}"
+    exec bash "$REDCAP_ROOT/runtime/redcap-core/prism-tools/prism-availability.sh" "${1:-status}" "${@:2}"
     ;;
   file-dictionary)
     exec bash "$REDCAP_ROOT/compass/tools/redcap-file-lookup-dictionary-check.sh" "$@"
