@@ -104,9 +104,9 @@ Layer A 产品边界仍保留为 Norven 人工决策，不允许由 Cap 或棱�
 
 | 项目 | 当前结果 |
 | --- | --- |
-| 执行承诺账本 | 已勾选，待 closeout runtime 最终核对 |
+| 执行承诺账本 | 已通过 closeout runtime 核对 |
 | 棱镜验收 | 已完成路线评审；Claude Code 与 Kimi 均返回 proceed，但推荐切片不同 |
-| closeout receipt | 待生成 |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-next-slice-after-runtime-facade-1809e41d695b1c39af2639375f182a331a4af2b97c7d36c519f4b9db3adc32e3.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -115,7 +115,7 @@ Layer A 产品边界仍保留为 Norven 人工决策，不允许由 Cap 或棱�
 | 已实现 | 是 | P4-7 路线评审、Prism 报告、session registry、P4-8 后续锚点已落地。 |
 | 已自检 | 是 | change-intake、backlog、human-output、archive-check、full spec-check 与 diagnose 均已通过。 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 已完成独立路线评审；Gemini 不可用，Copilot 按策略未调用。 |
-| 已正式完成 | 否 | closeout receipt 尚未生成。 |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt，承诺账本 8/8 完成，pending closure 已清。 |
 
 ## 六、遗留问题与下一步
 
@@ -134,8 +134,7 @@ Layer A 产品边界仍保留为 Norven 人工决策，不允许由 Cap 或棱�
 
 ### 6.3 推荐的下一步行动
 
-1. 完成 P4-7 closeout。
-2. 启动 Prism package-visible support copy-first 小切片。
+1. 启动 P4-8：Prism package-visible support copy-first 小切片。
 
 ## 七、经验沉淀
 
