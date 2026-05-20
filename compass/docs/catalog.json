@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 344398,
-    "lines": 7023,
-    "chars": 211530,
+    "size_bytes": 344715,
+    "lines": 7030,
+    "chars": 211763,
     "rough_token_pressure": {
-      "low": 52882,
-      "high": 105765
+      "low": 52940,
+      "high": 105881
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 143548,
-        "lines": 2392,
-        "chars": 91114,
+        "size_bytes": 143865,
+        "lines": 2399,
+        "chars": 91347,
         "rough_token_pressure": {
-          "low": 22778,
-          "high": 45557
+          "low": 22836,
+          "high": 45673
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 7962,
-      "lines": 126,
-      "chars": 4634,
+      "size_bytes": 8279,
+      "lines": 133,
+      "chars": 4867,
       "summary": "当前已完成：已把 RedCap 的任务检查强度拆成三档：轻量任务、标准实现任务、发布/结构迁移任务。核心效果是：报告、索引这类低风险收尾漂移不会再自动拖进发布级回归；但发布、安全、包公开面、破坏性迁移、validator 链路和 closeout runtime 仍然保持最高强度。 / 已新增机器检查，校验“高风险任务不能降级”“当前任务必须声明门禁层级和原因”“样本预期不能漂移”。这避免以后只靠口头判断任务该跑多少回归。",
       "status_basis": "filename_recency_only",
       "summary_points": {
