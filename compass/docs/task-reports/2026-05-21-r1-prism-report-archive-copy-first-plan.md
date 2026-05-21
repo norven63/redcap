@@ -101,7 +101,7 @@ RedCap 现在不会再只靠“我们计划以后安全迁移”这种软承诺�
 | targeted acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-report-archive-copy-first-plan-check` | 通过 |
 | full spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过；当前仅剩 closeout receipt 未生成 |
-| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | 通过；干净工作区 HEAD `ce9a0a3`，候选数 284，npm pack dry-run 已执行 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | 通过；干净工作区 HEAD `c3535f8`，候选数 284，npm pack dry-run 已执行 |
 
 ### 5.2 closeout runtime / receipt
 
