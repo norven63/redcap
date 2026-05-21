@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 344554,
+    "size_bytes": 344827,
     "lines": 7007,
-    "chars": 211042,
+    "chars": 211285,
     "rough_token_pressure": {
-      "low": 52760,
-      "high": 105521
+      "low": 52821,
+      "high": 105642
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 141609,
+        "size_bytes": 141882,
         "lines": 2367,
-        "chars": 89275,
+        "chars": 89518,
         "rough_token_pressure": {
-          "low": 22318,
-          "high": 44637
+          "low": 22379,
+          "high": 44759
         }
       }
     },
@@ -515,9 +515,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10156,
+      "size_bytes": 10429,
       "lines": 185,
-      "chars": 6274,
+      "chars": 6517,
       "summary": "当前已完成：P4-11 已通过 Claude Code 与 Kimi 的棱镜路线评审，选定下一条正式发布前安全小切片：`Prism report archive copy-first / alias-first migration planning`。 / 人话解释：下一步先写清楚 Prism 报告将来如何安全归档、旧报告路径如何继续可访问、失败如何回滚；不是现在就搬文件。",
       "status_basis": "filename_recency_only"
     },
