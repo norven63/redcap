@@ -13,7 +13,7 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：完成 P4-10 的最终回归和 closeout receipt；随后进入 P4-11，重新评审剩余发布前 blocker 并选择下一条安全小切片。
+- 下一步计划做的是：进入 P4-11，重新评审剩余发布前 blocker，选择下一条足够小、非破坏性、可自主推进且不越过 Norven 保留决策的安全小切片。
 
 ### 0.4 整体计划脉络图与当前位置
 
@@ -98,9 +98,10 @@ RedCap 现在有一个明确的发布前护栏：任何未来想迁移 Prism 报
 | P4-10 acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-report-archive-copy-first-preflight-check` | 通过 |
 | file lookup dictionary | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` | 通过 |
 | package surface chain | `bash compass/tools/redcap-public-package-surface.sh` 等相关链路 | 通过 |
-| full spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 待最终复跑 |
-| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 待最终复跑 |
-| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | 待最终复跑 |
+| full acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh all` | 通过 |
+| full spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
+| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | 通过；绑定提交 `1222747` |
 
 ### 5.2 棱镜评审
 
@@ -115,18 +116,18 @@ RedCap 现在有一个明确的发布前护栏：任何未来想迁移 Prism 报
 
 | 项目 | 当前结果 |
 | --- | --- |
-| 执行承诺账本 | 待最终 closeout 同步 |
+| 执行承诺账本 | 9/9 已兑现 |
 | 棱镜验收 | 通过；run=`20260521-r1-prism-report-archive-copy-first-preflight` |
-| closeout receipt | 待生成 |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-prism-report-archive-copy-first-preflight-f1d000bf1605d67500e50381399e540ec722ad4f44dcebdc0d94462b51baa890.json` |
 
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 是 | 预检资产、checker、索引补强、包面计数和门禁接入已落地。 |
-| 已自检 | 进行中 | 关键局部自检通过，full spec-check / diagnose / clean E2E 正在最终复跑。 |
+| 已自检 | 是 | full acceptance、spec-check、diagnose 与 clean workspace E2E 已通过。 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 已完成评审，Prism acceptance 已绑定当前任务。 |
-| 已正式完成 | 否 | 还没有 closeout receipt。 |
+| 已正式完成 | 是 | closeout receipt 已生成，pending closure 已清理。 |
 
 ## 六、遗留问题与下一步
 
