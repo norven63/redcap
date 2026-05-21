@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 277,
-    "control_plane_candidate_count": 198,
-    "compass": 142,
-    "references": 56,
-    "compass_tools_shell": 86,
-    "compass_tools_python": 56,
-    "references_json": 53,
+    "candidate_count": 280,
+    "control_plane_candidate_count": 201,
+    "compass": 144,
+    "references": 57,
+    "compass_tools_shell": 87,
+    "compass_tools_python": 57,
+    "references_json": 54,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -75,14 +75,14 @@
       {
         "path": "compass",
         "role": "maintainer-control-plane-tools",
-        "package_candidate_count": 142,
+        "package_candidate_count": 144,
         "current_contract": "Packaged for alpha readiness because root wrappers, revive/status/diagnose/closeout, release safety and validators still call these tools.",
         "future_target": "internal/control-plane/tools with stable runtime facades and compatibility aliases"
       },
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 56,
+        "package_candidate_count": 57,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 277,
-      "control_plane_candidate_count": 198,
-      "compass": 142,
-      "references": 56,
-      "compass_tools_shell": 86,
-      "compass_tools_python": 56,
-      "references_json": 53,
+      "candidate_count": 280,
+      "control_plane_candidate_count": 201,
+      "compass": 144,
+      "references": 57,
+      "compass_tools_shell": 87,
+      "compass_tools_python": 57,
+      "references_json": 54,
       "references_markdown": 3
     },
     "target_layers": [
@@ -298,11 +298,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 198,
+      "total_entries": 201,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 44,
-        "internal-control-plane": 95,
+        "internal-contract": 45,
+        "internal-control-plane": 97,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -960,20 +960,6 @@
         "current_state": "unchanged-in-this-task"
       },
       {
-        "source": "compass/tools/redcap-workflow-gate-stratification-check.py",
-        "target_layer": "internal-control-plane",
-        "target_path": "internal/control-plane/tools/redcap-workflow-gate-stratification-check.py",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
-        "source": "compass/tools/redcap-workflow-gate-stratification-check.sh",
-        "target_layer": "internal-control-plane",
-        "target_path": "internal/control-plane/tools/redcap-workflow-gate-stratification-check.sh",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
         "source": "compass/tools/redcap-public-arsenal-claim-boundary.py",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-public-arsenal-claim-boundary.py",
@@ -1030,6 +1016,20 @@
         "current_state": "unchanged-in-this-task"
       },
       {
+        "source": "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
         "source": "compass/tools/redcap-r1-layera-product-boundary-check.py",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-r1-layera-product-boundary-check.py",
@@ -1040,6 +1040,20 @@
         "source": "compass/tools/redcap-r1-layera-product-boundary-check.sh",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-r1-layera-product-boundary-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1058,16 +1072,16 @@
         "current_state": "unchanged-in-this-task"
       },
       {
-        "source": "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.py",
+        "source": "compass/tools/redcap-r1-prism-report-archive-copy-first-preflight-check.py",
         "target_layer": "internal-control-plane",
-        "target_path": "internal/control-plane/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.py",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-copy-first-preflight-check.py",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
       {
-        "source": "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
+        "source": "compass/tools/redcap-r1-prism-report-archive-copy-first-preflight-check.sh",
         "target_layer": "internal-control-plane",
-        "target_path": "internal/control-plane/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-copy-first-preflight-check.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1233,20 +1247,6 @@
         "current_state": "unchanged-in-this-task"
       },
       {
-        "source": "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py",
-        "target_layer": "internal-control-plane",
-        "target_path": "internal/control-plane/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
-        "source": "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
-        "target_layer": "internal-control-plane",
-        "target_path": "internal/control-plane/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
         "source": "compass/tools/redcap-token-risk-audit.py",
         "target_layer": "runtime-public-support",
         "target_path": "runtime/redcap-core/tools/redcap-token-risk-audit.py",
@@ -1299,6 +1299,20 @@
         "source": "compass/tools/redcap-validator-output.sh",
         "target_layer": "runtime-public-support",
         "target_path": "runtime/redcap-core/tools/redcap-validator-output.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-workflow-gate-stratification-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-workflow-gate-stratification-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-workflow-gate-stratification-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-workflow-gate-stratification-check.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1548,6 +1562,13 @@
         "current_state": "unchanged-in-this-task"
       },
       {
+        "source": "references/r1-prism-evidence-retention-apply-preflight.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-prism-evidence-retention-apply-preflight.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
         "source": "references/r1-prism-evidence-retention-split-preflight.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/r1-prism-evidence-retention-split-preflight.json",
@@ -1555,9 +1576,9 @@
         "current_state": "unchanged-in-this-task"
       },
       {
-        "source": "references/r1-prism-evidence-retention-apply-preflight.json",
+        "source": "references/r1-prism-report-archive-copy-first-preflight.json",
         "target_layer": "internal-contract",
-        "target_path": "contracts/internal/r1-prism-evidence-retention-apply-preflight.json",
+        "target_path": "contracts/internal/r1-prism-report-archive-copy-first-preflight.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1579,20 +1600,6 @@
         "source": "references/redcap-progress-meter-policy.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/redcap-progress-meter-policy.json",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
-        "source": "references/workflow-gate-stratification-policy.json",
-        "target_layer": "internal-contract",
-        "target_path": "contracts/internal/workflow-gate-stratification-policy.json",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
-        "source": "references/workflow-gate-stratification-samples.json",
-        "target_layer": "internal-contract",
-        "target_path": "contracts/internal/workflow-gate-stratification-samples.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1691,6 +1698,20 @@
         "source": "references/user-agent-identity-policy.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/user-agent-identity-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/workflow-gate-stratification-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/workflow-gate-stratification-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/workflow-gate-stratification-samples.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/workflow-gate-stratification-samples.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       }
