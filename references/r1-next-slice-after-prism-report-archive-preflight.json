@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "decision_id": "redcap-r1-next-slice-after-prism-report-archive-preflight",
+  "status": "selected-next-slice-no-blocker-closed",
+  "created_at": "2026-05-21T02:29:39Z",
+  "source_task": {
+    "backlog_id": "framework-upgrade",
+    "item_id": "P4-11",
+    "active_slice": "r1-next-slice-after-prism-report-archive-preflight",
+    "previous_item_id": "P4-10",
+    "previous_summary": "Prism tracked report archive and report index migration preflight completed; old prism/reports anchors remain authoritative and prism/runs raw evidence remains untouched."
+  },
+  "claim_boundary": {
+    "route_selection_completed": true,
+    "selected_next_item_registered": true,
+    "next_slice_implemented": false,
+    "release_blocker_closed": false,
+    "prism_layer_and_evidence_closed": false,
+    "report_archive_physically_migrated": false,
+    "report_files_copied_moved_or_deleted": false,
+    "old_report_anchors_removed_or_replaced": false,
+    "raw_run_evidence_deleted_or_cleaned": false,
+    "layer_a_product_decision_made": false,
+    "release_switch_changed": false,
+    "public_release_ready": false,
+    "allowed_user_claim": "After P4-10, RedCap has selected the next safe pre-release slice: a plan-only Prism report archive copy-first / alias-first migration manifest and rollback/verification bridge.",
+    "forbidden_claims": [
+      "Prism reports have already been physically migrated.",
+      "Old prism/reports anchors have been retired or replaced.",
+      "The prism-layer-and-evidence blocker is closed.",
+      "Prism raw run evidence has been cleaned or pruned.",
+      "Layer A product scope has been decided.",
+      "RedCap is ready for public release."
+    ]
+  },
+  "candidate_matrix": [
+    {
+      "id": "A",
+      "title": "Prism report archive copy-first / alias-first migration planning bridge",
+      "source": "references/r1-prism-report-archive-copy-first-preflight.json",
+      "risk": "low",
+      "size": "small",
+      "requires_human_decision": false,
+      "destructive": false,
+      "selected": true,
+      "reason": "It directly follows P4-10, stays inside allowed future planning operations, and can produce a machine-checkable manifest, alias draft, rollback plan and verification checklist without copying, moving or deleting files."
+    },
+    {
+      "id": "B",
+      "title": "Internal control-plane batch-2 policy/contract classification",
+      "source": "references/r1-control-plane-physical-apply-preflight.json#batch-2-policy-contract-classification",
+      "risk": "medium",
+      "size": "large",
+      "requires_human_decision": false,
+      "destructive": false,
+      "selected": false,
+      "reason": "It remains release-relevant, but it is a larger 50-plus-file control-plane tranche and should not displace the smaller Prism report archive bridge immediately after P4-10."
+    },
+    {
+      "id": "C",
+      "title": "Internal control-plane batch-3 maintainer tools",
+      "source": "references/r1-control-plane-physical-apply-preflight.json#batch-3-maintainer-control-plane-tools",
+      "risk": "medium-high",
+      "size": "large",
+      "requires_human_decision": false,
+      "destructive": false,
+      "selected": false,
+      "reason": "It is the largest remaining control-plane batch and should not be chosen as the next small autonomous slice."
+    },
+    {
+      "id": "D",
+      "title": "Prism local raw run evidence cleanup / retention apply",
+      "source": "references/r1-prism-evidence-retention-apply-preflight.json#batch-3-local-run-evidence-store",
+      "risk": "high",
+      "size": "manual-boundary",
+      "requires_human_decision": true,
+      "destructive": "possible",
+      "selected": false,
+      "reason": "Any cleanup, prune, movement or deletion of raw run evidence is forbidden without preservation proof and explicit Norven approval when evidence loss is possible."
+    },
+    {
+      "id": "E",
+      "title": "Layer A product boundary decision",
+      "source": "references/r1-layera-product-boundary-preflight.json",
+      "risk": "manual-boundary",
+      "size": "product-scope",
+      "requires_human_decision": true,
+      "destructive": false,
+      "selected": false,
+      "reason": "Whether Layer A / loom belongs in the public product remains a Norven-reserved product decision."
+    }
+  ],
+  "selected_next_slice": {
+    "backlog_item_id": "P4-12",
+    "phase_id": "phase-16-release-readiness-prism-report-archive-planning",
+    "title": "R1 Prism report archive copy-first / alias-first migration planning",
+    "selected_candidate": "A",
+    "scope": [
+      "Create a plan-only manifest mapping current tracked Prism reports to future archive locations.",
+      "Draft alias-first compatibility rules so old prism/reports anchors remain resolvable.",
+      "Define rollback and verification steps before any future apply.",
+      "Do not copy, move, delete, rename or replace report files.",
+      "Do not touch prism/runs raw evidence.",
+      "Do not claim prism-layer-and-evidence is closed."
+    ],
+    "minimum_acceptance": [
+      "plan-only migration manifest",
+      "old-anchor resolvability and alias draft",
+      "rollback plan",
+      "archive/check proof contract",
+      "Prism review by Claude Code and Kimi when available",
+      "spec-check and diagnose pass",
+      "closeout receipt"
+    ]
+  },
+  "prism_review": {
+    "run_id": "20260521-r1-next-slice-after-prism-report-archive-preflight",
+    "verdict": "consensus-select-prism-report-archive-planning-bridge",
+    "agents": [
+      {
+        "provider": "claude-code",
+        "status": "responded",
+        "recommendation": "A",
+        "blockers": []
+      },
+      {
+        "provider": "kimi",
+        "status": "responded",
+        "recommendation": "A",
+        "blockers": [],
+        "normalization_note": "Raw output mislabeled provider as claude-code; invocation path and registry confirm Kimi."
+      },
+      {
+        "provider": "gemini",
+        "status": "not-invoked",
+        "reason": "Current Prism availability classified Gemini as unreliable for this workspace; Claude Code and Kimi formed quorum."
+      },
+      {
+        "provider": "copilot",
+        "status": "policy-suppressed",
+        "reason": "Copilot is protected fallback and was not called while Claude Code and Kimi were available."
+      }
+    ]
+  }
+}

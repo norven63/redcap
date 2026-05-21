@@ -1,4 +1,30 @@
 reports:
+  - id: "20260521-r1-next-slice-after-prism-report-archive-preflight"
+    mode: review
+    date: "2026-05-21"
+    topic: "Next R1 slice after P4-10 Prism report archive preflight closeout"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-select-prism-report-archive-planning-bridge"
+    consensus_actions:
+      - "Select Prism report archive copy-first / alias-first migration planning as the next R1 slice"
+      - "Keep old prism/reports anchors authoritative and keep prism/runs raw evidence untouched"
+      - "Keep control-plane batch-2, raw evidence cleanup and Layer A product boundary as separate future tasks"
+    open_questions:
+      - "P4-12 is plan-only; physical report migration remains a future apply task"
+      - "The prism-layer-and-evidence blocker remains open after this route selection"
+      - "Any raw evidence cleanup remains forbidden without preservation proof and explicit human approval when evidence loss is possible"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-next-slice-after-prism-report-archive-preflight.json"
+      - "references/backlogs/framework-upgrade.json"
+      - "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-report-archive-preflight.md"
+      - "prism/reports/2026-05-21-r1-next-slice-after-prism-report-archive-preflight.md"
+      - "prism/runs/20260521-r1-next-slice-after-prism-report-archive-preflight/session-registry.yaml"
+      - "prism/runs/20260521-r1-next-slice-after-prism-report-archive-preflight/prompt.md"
+      - "prism/runs/20260521-r1-next-slice-after-prism-report-archive-preflight/collect/reviewer/claude.raw.txt"
+      - "prism/runs/20260521-r1-next-slice-after-prism-report-archive-preflight/collect/challenger/kimi.raw.txt"
+    archived: false
   - id: "20260521-r1-prism-report-archive-copy-first-preflight"
     mode: review
     date: "2026-05-21"
@@ -268,7 +294,7 @@ reports:
       - "compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.py"
       - "compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh"
       - "compass/tools/redcap-multi-session-acceptance.sh"
-      - "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-apply-preflight.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-19-r1-control-plane-physical-apply-preflight.md"
       - "prism/reports/2026-05-19-r1-control-plane-physical-apply-preflight-review.md"
       - "prism/runs/20260519-r1-control-plane-physical-apply-preflight/session-registry.yaml"
       - "prism/runs/20260519-r1-control-plane-physical-apply-preflight/prompt.md"

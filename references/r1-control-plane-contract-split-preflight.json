@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 280,
-    "control_plane_candidate_count": 201,
+    "candidate_count": 281,
+    "control_plane_candidate_count": 202,
     "compass": 144,
-    "references": 57,
+    "references": 58,
     "compass_tools_shell": 87,
     "compass_tools_python": 57,
-    "references_json": 54,
+    "references_json": 55,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -82,7 +82,7 @@
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 57,
+        "package_candidate_count": 58,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 280,
-      "control_plane_candidate_count": 201,
+      "candidate_count": 281,
+      "control_plane_candidate_count": 202,
       "compass": 144,
-      "references": 57,
+      "references": 58,
       "compass_tools_shell": 87,
       "compass_tools_python": 57,
-      "references_json": 54,
+      "references_json": 55,
       "references_markdown": 3
     },
     "target_layers": [
@@ -298,10 +298,10 @@
       }
     ],
     "coverage": {
-      "total_entries": 201,
+      "total_entries": 202,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 45,
+        "internal-contract": 46,
         "internal-control-plane": 97,
         "public-contract": 11,
         "runtime-public-support": 47
@@ -1558,6 +1558,13 @@
         "source": "references/r1-next-slice-after-prism-support.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/r1-next-slice-after-prism-support.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-next-slice-after-prism-report-archive-preflight.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-next-slice-after-prism-report-archive-preflight.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

@@ -6,9 +6,9 @@
   "purpose": "Convert the P4-2s internal-control-plane dry-run map into a machine-checkable copy-first / alias-first apply preflight without changing old compass/references anchors.",
   "source_truth": {
     "path": "references/r1-control-plane-contract-split-preflight.json",
-    "sha256": "55e8dbd1e01a0b75e5c2d85b4fe14373cfef75420c4c5a668e32048096acd551",
+    "sha256": "0e91cc3d7eb6f6bd7586edf4738ebcdd87c22eb844d56ecd207f310376313f7b",
     "manifest_path": "physical_split_dry_run_manifest",
-    "source_entries_count": 201,
+    "source_entries_count": 202,
     "source_status": "dry-run-only-no-files-moved",
     "source_release_blocker_status": "still-blocking-release-until-future-physical-split-or-contract-resolution"
   },
@@ -66,10 +66,10 @@
     ]
   },
   "coverage": {
-    "control_plane_candidates": 201,
+    "control_plane_candidates": 202,
     "by_target_layer": {
       "human-handoff": 1,
-      "internal-contract": 45,
+      "internal-contract": 46,
       "internal-control-plane": 97,
       "public-contract": 11,
       "runtime-public-support": 47
@@ -106,7 +106,7 @@
         "human-handoff"
       ],
       "mode": "plan-only-copy-first-alias-first",
-      "candidate_count": 57,
+      "candidate_count": 58,
       "apply_now": false,
       "required_before_apply": [
         "contract import map proof",
