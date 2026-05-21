@@ -6,9 +6,9 @@
   "purpose": "Create runtime/redcap-core/prism-tools package-visible facade wrappers for Prism batch-1 support and provider-routing contract entries while keeping prism/tools and prism/README.md as authoritative anchors.",
   "source_truth": {
     "path": "references/r1-prism-evidence-retention-apply-preflight.json",
-    "sha256": "78de7e20d73a5ac67bf96941e64aaa8621c73d02a5e3add5bd9fd0611b32e4c0",
+    "sha256": "c95339ed56365a9f064fdc6c79399cf74b7f5a89c6cb4bed6344d710fc844a8c",
     "split_preflight_path": "references/r1-prism-evidence-retention-split-preflight.json",
-    "split_preflight_sha256": "e77372154c3dc6222f42e9b05aa61bbff8fedd007cecb22f27d47c75fdee638e",
+    "split_preflight_sha256": "9ef8e62881dc13de2e6abc24f51957cd4feac6da3d6ea06381289f1e628d8056",
     "source_batch_id": "batch-1-package-visible-prism-support",
     "source_target_layers": [
       "package-visible-prism-support",
@@ -82,9 +82,9 @@
   },
   "package_surface_delta": {
     "previous_candidate_count": 264,
-    "current_candidate_count": 276,
-    "delta": 12,
-    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets for workflow gate stratification, so the live alpha readiness surface is now 276 candidates. This remains readiness support, not public release authorization."
+    "current_candidate_count": 277,
+    "delta": 13,
+    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets for workflow gate stratification, and P4-9 added 1 package-visible route-decision asset under references. The live alpha readiness surface is now 277 candidates. This remains readiness support, not public release authorization."
   },
   "facades": [
     {

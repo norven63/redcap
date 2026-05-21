@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "decision_id": "redcap-r1-next-slice-after-prism-support",
+  "status": "selected-next-slice-no-blocker-closed",
+  "created_at": "2026-05-21T00:00:00Z",
+  "source_task": {
+    "backlog_id": "framework-upgrade",
+    "item_id": "P4-9",
+    "active_slice": "r1-next-slice-after-prism-support",
+    "previous_item_id": "P4-8",
+    "previous_summary": "Prism package-visible support and provider-routing contract facades completed without moving old prism anchors."
+  },
+  "claim_boundary": {
+    "route_selection_completed": true,
+    "selected_next_item_registered": true,
+    "next_slice_implemented": false,
+    "release_blocker_closed": false,
+    "prism_layer_and_evidence_closed": false,
+    "evidence_deleted_or_cleaned": false,
+    "old_anchor_moved_or_replaced": false,
+    "layer_a_product_decision_made": false,
+    "release_switch_changed": false,
+    "public_release_ready": false,
+    "allowed_user_claim": "After P4-8, RedCap has selected and registered the next safe pre-release slice: Prism tracked report archive copy-first / report-index migration preflight.",
+    "forbidden_claims": [
+      "The Prism report archive migration has already been implemented.",
+      "The prism-layer-and-evidence blocker is closed.",
+      "Prism raw run evidence has been cleaned or pruned.",
+      "Old prism report anchors have been retired.",
+      "Layer A product scope has been decided.",
+      "RedCap is ready for public release."
+    ]
+  },
+  "candidate_matrix": [
+    {
+      "id": "A",
+      "title": "Prism tracked report archive copy-first / report-index migration preflight",
+      "source": "references/r1-prism-evidence-retention-apply-preflight.json#batch-2-report-archive-index-migration",
+      "risk": "low",
+      "size": "small",
+      "requires_human_decision": false,
+      "destructive": false,
+      "reason": "It is the smallest meaningful remaining Prism slice, stays within copy-first / alias-first boundaries, does not touch raw run evidence, and prepares the archive/index proof required before any future cleanup."
+    },
+    {
+      "id": "B",
+      "title": "Prism local run evidence cleanup",
+      "source": "references/r1-prism-evidence-retention-apply-preflight.json#batch-3-local-run-evidence-store",
+      "risk": "high",
+      "size": "large",
+      "requires_human_decision": true,
+      "destructive": "possible",
+      "reason": "Cleanup or prune operations may destroy local raw evidence and require explicit human approval plus preservation proof."
+    },
+    {
+      "id": "C",
+      "title": "Internal control-plane batch-2 policy/contract classification",
+      "source": "references/r1-control-plane-physical-apply-preflight.json#batch-2-policy-contract-classification",
+      "risk": "medium",
+      "size": "large",
+      "requires_human_decision": false,
+      "destructive": false,
+      "reason": "It is still release-relevant but has 53 candidates and should be sub-batched before implementation."
+    },
+    {
+      "id": "D",
+      "title": "Layer A product boundary",
+      "source": "references/r1-layera-product-boundary-preflight.json",
+      "risk": "manual-boundary",
+      "size": "product-scope",
+      "requires_human_decision": true,
+      "destructive": false,
+      "reason": "Whether Layer A / loom belongs in the public product is a Norven-reserved product decision."
+    }
+  ],
+  "selected_next_slice": {
+    "backlog_item_id": "P4-10",
+    "phase_id": "phase-14-release-readiness-prism-report-archive-preflight",
+    "title": "R1 Prism report archive copy-first / index migration preflight",
+    "selected_candidate": "A",
+    "scope": [
+      "Prove the tracked Prism report archive and report index can be copy-first / alias-first migrated.",
+      "Keep old prism/reports anchors resolvable.",
+      "Do not delete, move, clean, or prune prism/runs raw evidence.",
+      "Do not claim the prism-layer-and-evidence blocker is closed."
+    ],
+    "minimum_acceptance": [
+      "report index migration proof",
+      "archive-check pass",
+      "acceptance binding proof",
+      "Prism review by Claude Code and Kimi when available",
+      "spec-check and diagnose pass",
+      "package publish safety check if package-visible files are affected",
+      "closeout receipt"
+    ]
+  },
+  "prism_review": {
+    "run_id": "20260521-r1-next-slice-after-prism-support",
+    "verdict": "consensus-select-prism-report-archive-copy-first-preflight",
+    "agents": [
+      {
+        "provider": "claude-code",
+        "status": "responded",
+        "recommendation": "A",
+        "blockers": []
+      },
+      {
+        "provider": "kimi",
+        "status": "responded",
+        "recommendation": "A",
+        "blockers": []
+      },
+      {
+        "provider": "gemini",
+        "status": "not-invoked",
+        "reason": "Current status showed Gemini unreliable for this workspace; Claude Code and Kimi formed quorum."
+      },
+      {
+        "provider": "copilot",
+        "status": "policy-suppressed",
+        "reason": "Copilot is protected fallback and was not needed while Claude Code and Kimi were available."
+      }
+    ]
+  }
+}

@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-9",
-    "summary": "P4-9 待推进：P4-8 已完成 Prism package-visible support copy-first 小切片；下一步应先做剩余 R1 blocker 的路线评审，在 Prism report archive、local run evidence、control-plane batch-2 与 Layer A 人工边界中选择下一条安全切片。"
+    "item_id": "P4-10",
+    "summary": "P4-10 待推进：P4-9 已由 Claude Code 与 Kimi 评审选定下一条安全切片；下一步进入 Prism tracked report archive copy-first / report-index migration preflight，继续保留旧报告锚点且不清理 raw run evidence。"
   },
   "glossary": [
     {
@@ -489,7 +489,7 @@
           "evidence_paths": [
             "references/r1-prism-evidence-retention-split-preflight.json",
             "compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
-            "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-split-dry-run.md"
+            "private-archive/redcap-knowledge/task-reports/2026-05-19-r1-prism-evidence-retention-split-dry-run.md"
           ]
         },
         {
@@ -562,13 +562,29 @@
         {
           "id": "P4-9",
           "title": "R1 下一发布前 blocker 切片选择 after Prism package-visible support",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-13-release-readiness-next-slice-after-prism-support",
-          "summary": "P4-8 收口后，下一步必须先做路线评审，比较 Prism report archive、local run evidence、control-plane batch-2 与 Layer A 人工边界；不得直接跳进证据清理、旧锚点删除或产品范围裁决。",
+          "summary": "P4-8 收口后，已由 Claude Code 与 Kimi 评审剩余 R1 blocker 并选定下一条安全小切片：Prism tracked report archive copy-first / report-index migration preflight；本项只完成路线选择与锚点登记，不关闭 blocker、不执行发布、不清理证据。",
           "evidence_paths": [
             "compass/docs/task-reports/2026-05-20-r1-prism-package-visible-support-copy-first.md",
-            "prism/reports/2026-05-20-r1-prism-package-visible-support-copy-first-review.md"
+            "prism/reports/2026-05-20-r1-prism-package-visible-support-copy-first-review.md",
+            "references/r1-next-slice-after-prism-support.json",
+            "prism/reports/2026-05-21-r1-next-slice-after-prism-support.md",
+            "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-support.md"
+          ]
+        },
+        {
+          "id": "P4-10",
+          "title": "R1 Prism report archive copy-first / index migration preflight",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-14-release-readiness-prism-report-archive-preflight",
+          "summary": "按 P4-9 路线评审，下一步只推进 Prism tracked report archive 的 copy-first / report-index migration preflight：证明报告索引与归档边界，保留旧 prism/reports 锚点，不删除、不移动、不清理 prism/runs raw evidence，不关闭整个 prism-layer-and-evidence blocker。",
+          "evidence_paths": [
+            "references/r1-next-slice-after-prism-support.json",
+            "references/r1-prism-evidence-retention-apply-preflight.json",
+            "prism/reports/2026-05-21-r1-next-slice-after-prism-support.md"
           ]
         }
       ]
@@ -715,11 +731,20 @@
     {
       "id": "phase-13-release-readiness-next-slice-after-prism-support",
       "title": "阶段 13：发布准备下一 blocker 切片选择",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-9"
       ],
-      "summary": "正式发布动作之前，在 P4-8 收口后重新评审剩余 R1 blocker，先选下一条安全小切片，再进入任何具体实现。"
+      "summary": "正式发布动作之前，在 P4-8 收口后已重新评审剩余 R1 blocker，并选定 Prism tracked report archive copy-first / report-index migration preflight 作为下一条安全小切片。"
+    },
+    {
+      "id": "phase-14-release-readiness-prism-report-archive-preflight",
+      "title": "阶段 14：发布准备 Prism report archive 预检",
+      "status": "pending",
+      "item_ids": [
+        "P4-10"
+      ],
+      "summary": "正式发布动作之前，下一步应证明 Prism tracked report archive 与 report index 可以 copy-first / alias-first 迁移；旧报告锚点必须保留，raw run evidence 不得清理。"
     }
   ]
 }

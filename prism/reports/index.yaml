@@ -1,4 +1,29 @@
 reports:
+  - id: "20260521-r1-next-slice-after-prism-support"
+    mode: review
+    date: "2026-05-21"
+    topic: "Next R1 slice after P4-8 Prism package-visible support closeout"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-select-prism-report-archive-copy-first-preflight"
+    consensus_actions:
+      - "Select Prism tracked report archive copy-first / report-index migration preflight as the next R1 slice"
+      - "Keep old prism reports anchors resolvable and keep raw prism/runs evidence untouched"
+      - "Keep control-plane batch-2, local run evidence cleanup and Layer A product boundary as separate future tasks"
+    open_questions:
+      - "The prism-layer-and-evidence blocker remains open until future report archive, raw evidence and old-anchor boundaries are resolved"
+      - "Any raw evidence cleanup remains forbidden without preservation proof and explicit human approval"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-next-slice-after-prism-support.json"
+      - "references/backlogs/framework-upgrade.json"
+      - "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-support.md"
+      - "prism/reports/2026-05-21-r1-next-slice-after-prism-support.md"
+      - "prism/runs/20260521-r1-next-slice-after-prism-support/session-registry.yaml"
+      - "prism/runs/20260521-r1-next-slice-after-prism-support/prompt.md"
+      - "prism/runs/20260521-r1-next-slice-after-prism-support/claude.raw.txt"
+      - "prism/runs/20260521-r1-next-slice-after-prism-support/kimi.raw.txt"
+    archived: false
   - id: "20260521-rasg-024-workflow-gate-stratification"
     mode: acceptance
     date: "2026-05-21"
@@ -261,7 +286,7 @@ reports:
       - "references/r1-prism-evidence-retention-split-preflight.json"
       - "compass/tools/redcap-r1-prism-evidence-retention-split-check.py"
       - "compass/tools/redcap-multi-session-acceptance.sh"
-      - "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-split-dry-run.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-19-r1-prism-evidence-retention-split-dry-run.md"
       - "prism/reports/2026-05-19-r1-prism-evidence-retention-split-dry-run-review.md"
       - "prism/runs/20260519-r1-prism-evidence-retention-split-dry-run/session-registry.yaml"
       - "prism/runs/20260519-r1-prism-evidence-retention-split-dry-run/prompt.md"

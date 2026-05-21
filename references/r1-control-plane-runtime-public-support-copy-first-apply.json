@@ -6,9 +6,9 @@
   "purpose": "Create runtime/redcap-core/tools facade wrappers for internal-control-plane batch-1 runtime-public-support entries while keeping compass/tools as the authoritative implementation.",
   "source_truth": {
     "path": "references/r1-control-plane-physical-apply-preflight.json",
-    "sha256": "b591c3e68b9f5e8b42c2cae19494097d97d28856312caf1fd3ad6243b9eafba4",
+    "sha256": "05ec05ea81beb7df1fd1111d64298039f24b2b03e5a7db42553e6c470983d504",
     "contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
-    "contract_split_sha256": "757677c24436431ffb5f682d53b8d503ea605f4be1d47961b35b68c80b6f085b",
+    "contract_split_sha256": "8086500bff28e62305df1e448e6630212b73e440b6ec5232a3392fbd9efd6c94",
     "source_batch_id": "batch-1-runtime-public-support-facades",
     "source_target_layer": "runtime-public-support",
     "source_entries_count": 47,

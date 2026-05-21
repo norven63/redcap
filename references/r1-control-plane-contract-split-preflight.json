@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 276,
-    "control_plane_candidate_count": 197,
+    "candidate_count": 277,
+    "control_plane_candidate_count": 198,
     "compass": 142,
-    "references": 55,
+    "references": 56,
     "compass_tools_shell": 86,
     "compass_tools_python": 56,
-    "references_json": 52,
+    "references_json": 53,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -82,7 +82,7 @@
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 55,
+        "package_candidate_count": 56,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 276,
-      "control_plane_candidate_count": 197,
+      "candidate_count": 277,
+      "control_plane_candidate_count": 198,
       "compass": 142,
-      "references": 55,
+      "references": 56,
       "compass_tools_shell": 86,
       "compass_tools_python": 56,
-      "references_json": 52,
+      "references_json": 53,
       "references_markdown": 3
     },
     "target_layers": [
@@ -298,10 +298,10 @@
       }
     ],
     "coverage": {
-      "total_entries": 197,
+      "total_entries": 198,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 43,
+        "internal-contract": 44,
         "internal-control-plane": 95,
         "public-contract": 11,
         "runtime-public-support": 47
@@ -1537,6 +1537,13 @@
         "source": "references/r1-layera-product-boundary-preflight.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/r1-layera-product-boundary-preflight.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-next-slice-after-prism-support.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-next-slice-after-prism-support.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

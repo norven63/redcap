@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/framework-upgrade.json",
-      "bytes": 33160,
+      "bytes": 34799,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -114,7 +114,7 @@
     },
     {
       "path": "references/r1-control-plane-contract-split-preflight.json",
-      "bytes": 81666,
+      "bytes": 81997,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -123,7 +123,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 38223,
+      "bytes": 38600,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",
