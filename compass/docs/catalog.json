@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 343988,
+    "size_bytes": 344301,
     "lines": 7011,
-    "chars": 210908,
+    "chars": 211237,
     "rough_token_pressure": {
-      "low": 52727,
-      "high": 105454
+      "low": 52809,
+      "high": 105618
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 142355,
+        "size_bytes": 142668,
         "lines": 2377,
-        "chars": 89901,
+        "chars": 90230,
         "rough_token_pressure": {
-          "low": 22475,
-          "high": 44950
+          "low": 22557,
+          "high": 45115
         }
       }
     },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9678,
+      "size_bytes": 9991,
       "lines": 186,
-      "chars": 5886,
+      "chars": 6215,
       "summary": "当前已完成：P4-9 已通过 Claude Code 与 Kimi 的棱镜路线评审，选定下一条正式发布前安全小切片：`Prism tracked report archive copy-first / report-index migration preflight`。 / 人话解释：下一步先证明 Prism 报告归档和索引迁移怎么安全做，而不是直接清理 `prism/runs` 运行证据，也不是进入 Layer A 产品裁决。",
       "status_basis": "filename_recency_only",
       "summary_points": {

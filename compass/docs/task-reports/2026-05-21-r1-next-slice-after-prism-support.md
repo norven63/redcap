@@ -87,12 +87,12 @@ RedCap 的长期路线现在从“P4-8 后下一步未知”变成“下一步�
 
 | 验证项 | 命令 | 当前结果 |
 | --- | --- | --- |
-| change-intake | `bash compass/tools/redcap-change-intake-check.sh .dev-task.md --mode closeout` | 待收口复验 |
-| PM Gate | `bash compass/tools/redcap-pm-gate-check.sh strict codex .dev-task.md` | 待收口复验 |
-| Prism acceptance | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 待收口复验 |
-| backlog check | `bash compass/tools/redcap-backlog-check.sh` | 待收口复验 |
-| full spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 待收口复验 |
-| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 待收口复验 |
+| change-intake | `bash compass/tools/redcap-change-intake-check.sh .dev-task.md --mode closeout` | 通过 |
+| PM Gate | `bash compass/tools/redcap-pm-gate-check.sh strict codex .dev-task.md` | 通过 |
+| Prism acceptance | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | 通过 |
+| full spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
+| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
 
 ### 5.2 人工验证项
 
@@ -102,18 +102,18 @@ RedCap 的长期路线现在从“P4-8 后下一步未知”变成“下一步�
 
 | 项目 | 当前结果 |
 | --- | --- |
-| 执行承诺账本 | 待 closeout runtime 核对 |
+| 执行承诺账本 | 已由 closeout runtime 核对通过，8 项承诺无 pending |
 | 棱镜验收 | Claude Code 与 Kimi 已返回，无 blocker |
-| closeout receipt | 待生成 |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-next-slice-after-prism-support-92b9cac82691b546621169e5ed09879ffdd9f01008a69a41886aca47ed7259d9.json` |
 
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 是 | P4-9 路线评审、Prism 报告、候选矩阵与 P4-10 后续锚点已落地。 |
-| 已自检 | 待收口复验 | 自动化检查将在 closeout 前完成。 |
+| 已自检 | 是 | change-intake、PM Gate、Prism acceptance、clean workspace E2E、full spec-check 与 diagnose 均已通过。 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 均选择 A，无 blocker。 |
-| 已正式完成 | 待 closeout | receipt 尚未生成。 |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt，承诺账本 8/8 完成。 |
 
 ## 六、遗留问题与下一步
 
