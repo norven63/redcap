@@ -94,7 +94,7 @@ RedCap 的长期路线现在从“P4-10 后下一步未知”变成“下一步�
 | backlog sync | `bash compass/tools/redcap-backlog-check.sh sync .dev-task.md` | 通过 |
 | package surface | `bash compass/tools/redcap-public-package-surface.sh` | 通过，候选数 281 |
 | targeted acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-report-archive-copy-first-preflight-check` | 通过 |
-| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --check-result` | 通过；正式写入版需提交后在 clean worktree 复跑 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | 通过；干净临时工作区候选数 281，npm pack dry-run 已执行 |
 | full spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
 | diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
 
