@@ -5,7 +5,7 @@
   "created_at": "2026-05-21T00:00:00Z",
   "source_truth": {
     "preflight_path": "references/r1-prism-report-archive-copy-first-preflight.json",
-    "preflight_sha256": "eb5f5eb9d54437eb4e1b1045a57b213b43b59f11e0f97f63f0b094b6b413adca",
+  "preflight_sha256": "750134804e2d68c7c8054b7357dd0a8913d1eddb353390cbb21c8400bf996f9b",
     "route_decision_path": "references/r1-next-slice-after-prism-report-archive-preflight.json",
     "route_decision_sha256": "3d2aa770236ddd4da51f32fcdba4ab6a01f8d834f6b79a68aa81b817b11da482"
   },
@@ -59,7 +59,7 @@
     "future_index_path": "private-archive/prism-reports/index.yaml",
     "alias_manifest_path": "references/r1-prism-report-archive-copy-first-plan.json",
     "old_anchor_policy": "old prism/reports paths remain authoritative until a future copy-first apply receipt, alias proof, archive-check pass, package surface proof, clean workspace E2E, Prism review, and explicit delete-last task approve retirement.",
-    "report_count": 53,
+    "report_count": 54,
     "mappings": [
       {
         "report_id": "20260505-public-arsenal-claim-boundary-review",
@@ -480,6 +480,15 @@
         "source_path": "prism/reports/2026-05-21-r1-next-slice-after-prism-support.md",
         "future_archive_path": "private-archive/prism-reports/2026-05-21-r1-next-slice-after-prism-support.md",
         "source_sha256": "c4a393ee5a50e83ce2929c5c06844e9e2b622d2e182ff44ac5a0e75bb9a5953d",
+        "old_anchor_must_remain_resolvable": true,
+        "copy_now": false,
+        "delete_old_now": false
+      },
+      {
+        "report_id": "20260521-r1-prism-report-archive-apply-readiness",
+        "source_path": "prism/reports/2026-05-21-r1-prism-report-archive-apply-readiness.md",
+        "future_archive_path": "private-archive/prism-reports/2026-05-21-r1-prism-report-archive-apply-readiness.md",
+        "source_sha256": "bceead4f7604016e6cc9b6da23de515937265c10541ff94658f934cc2c8c2805",
         "old_anchor_must_remain_resolvable": true,
         "copy_now": false,
         "delete_old_now": false

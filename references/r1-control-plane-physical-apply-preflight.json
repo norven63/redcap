@@ -6,9 +6,9 @@
   "purpose": "Convert the P4-2s internal-control-plane dry-run map into a machine-checkable copy-first / alias-first apply preflight without changing old compass/references anchors.",
   "source_truth": {
     "path": "references/r1-control-plane-contract-split-preflight.json",
-    "sha256": "6ea4fb8000b8a4e007392ade635e95ea7cfe41c47058aa27f5dab0a58bd5724a",
+    "sha256": "ca68738ccbdb06b94f621d04b4fbffef4b030f384ce4451d5fa351cc16d930b1",
     "manifest_path": "physical_split_dry_run_manifest",
-    "source_entries_count": 205,
+    "source_entries_count": 208,
     "source_status": "dry-run-only-no-files-moved",
     "source_release_blocker_status": "still-blocking-release-until-future-physical-split-or-contract-resolution"
   },
@@ -66,11 +66,11 @@
     ]
   },
   "coverage": {
-    "control_plane_candidates": 205,
+    "control_plane_candidates": 208,
     "by_target_layer": {
       "human-handoff": 1,
-      "internal-contract": 47,
-      "internal-control-plane": 99,
+      "internal-contract": 48,
+      "internal-control-plane": 101,
       "public-contract": 11,
       "runtime-public-support": 47
     },
@@ -106,7 +106,7 @@
         "human-handoff"
       ],
       "mode": "plan-only-copy-first-alias-first",
-      "candidate_count": 58,
+      "candidate_count": 60,
       "apply_now": false,
       "required_before_apply": [
         "contract import map proof",
@@ -121,7 +121,7 @@
         "internal-control-plane"
       ],
       "mode": "plan-only-copy-first-alias-first",
-      "candidate_count": 97,
+      "candidate_count": 101,
       "apply_now": false,
       "required_before_apply": [
         "validator import map proof",

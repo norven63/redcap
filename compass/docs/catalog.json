@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 345995,
-    "lines": 7037,
-    "chars": 212183,
+    "size_bytes": 346816,
+    "lines": 7018,
+    "chars": 212740,
     "rough_token_pressure": {
-      "low": 53045,
-      "high": 106091
+      "low": 53185,
+      "high": 106370
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 198017,
-        "lines": 4555,
-        "chars": 118399,
+        "size_bytes": 198802,
+        "lines": 4558,
+        "chars": 118866,
         "rough_token_pressure": {
-          "low": 29599,
-          "high": 59199
+          "low": 29716,
+          "high": 59433
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 142448,
-        "lines": 2393,
-        "chars": 90010,
+        "size_bytes": 142484,
+        "lines": 2371,
+        "chars": 90100,
         "rough_token_pressure": {
-          "low": 22502,
-          "high": 45005
+          "low": 22525,
+          "high": 45050
         }
       }
     },
@@ -87,8 +87,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 12334,
-        "lines": 210,
+        "chars": 12801,
+        "lines": 213,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 21542,
-      "lines": 210,
-      "chars": 12334,
+      "size_bytes": 22327,
+      "lines": 213,
+      "chars": 12801,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -522,31 +522,31 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-support.md",
+      "path": "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-apply-readiness.md",
       "collection": "task-reports",
-      "title": "任务完成报告：P4-9 发布前下一小切片选择",
+      "title": "任务完成报告：P4-13 Prism 报告归档 apply readiness / rehearsal",
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9991,
-      "lines": 186,
-      "chars": 6215,
-      "summary": "当前已完成：P4-9 已通过 Claude Code 与 Kimi 的棱镜路线评审，选定下一条正式发布前安全小切片：`Prism tracked report archive copy-first / report-index migration preflight`。 / 人话解释：下一步先证明 Prism 报告归档和索引迁移怎么安全做，而不是直接清理 `prism/runs` 运行证据，也不是进入 Layer A 产品裁决。",
+      "size_bytes": 10027,
+      "lines": 164,
+      "chars": 6305,
+      "summary": "当前已完成：P4-13 已把 Prism 报告归档从“只有迁移规划”推进到“未来执行前可先完整演练并被机器检查”。 / 人话解释：我们现在不只是知道未来要把报告复制到哪里，还能在临时目录里真实演练复制、校验 checksum、生成索引草案、证明旧路径仍可用，并确认这些内容不会进入公开包候选面。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：P4-9 已通过 Claude Code 与 Kimi 的棱镜路线评审，选定下一条正式发布前安全小切片：`Prism tracked report archive copy-first / report-index migration preflight`。",
-          "人话解释：下一步先证明 Prism 报告归档和索引迁移怎么安全做，而不是直接清理 `prism/runs` 运行证据，也不是进入 Layer A 产品裁决。"
+          "当前已完成：P4-13 已把 Prism 报告归档从“只有迁移规划”推进到“未来执行前可先完整演练并被机器检查”。",
+          "人话解释：我们现在不只是知道未来要把报告复制到哪里，还能在临时目录里真实演练复制、校验 checksum、生成索引草案、证明旧路径仍可用，并确认这些内容不会进入公开包候选面。"
         ],
         "previous_step": [
-          "上一步完成的是：P4-8 已为 Prism package-visible support 和 provider-routing contract 建立 8 个 runtime facade；旧 `prism/*` 锚点继续是权威来源。"
+          "上一步完成的是：P4-12 迁移规划。它列出了当前 Prism 正式报告的未来归档路径、旧锚点兼容要求、回滚条件和验证清单，但只停留在 plan-only。"
         ],
         "next_step": [
-          "下一步计划做的是：进入 P4-10，只做 Prism 报告归档 copy-first / 索引迁移预检；保留旧报告锚点，不删除、不移动、不清理 raw run evidence，不宣称 release blocker 关闭。"
+          "下一步计划做的是：继续选择 `prism-layer-and-evidence` blocker 的下一条安全小切片。合理方向是独立评审“是否进入 live copy-first apply preflight / apply”，但仍不得顺手退休旧锚点或清理 raw evidence。"
         ],
         "position": [
-          "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面与 Prism 预检 → 控制面 runtime facade → P4-7 下一切片选择 → P4-8 Prism package-visible support → **P4-9 下一切片选择** → P4-10 Prism report archive 预检。",
-          "当前所在位置：`framework-upgrade / P4-9`，属于路线选择与后续锚点登记，不是具体迁移实现，也不是正式发布。"
+          "整体计划脉络图是：正式发布准备路线 → 控制面与 Prism 预检 → runtime facade → Prism package-visible support → Prism report archive 预检 → 下一切片选择 → 迁移规划 → **P4-13 apply readiness / rehearsal** → 后续 live apply preflight / apply。",
+          "当前所在位置：`framework-upgrade / P4-13`，属于发布前 R1 的安全小切片，不是正式发布任务。"
         ]
       }
     },

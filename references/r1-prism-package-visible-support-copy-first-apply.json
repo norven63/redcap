@@ -6,9 +6,9 @@
   "purpose": "Create runtime/redcap-core/prism-tools package-visible facade wrappers for Prism batch-1 support and provider-routing contract entries while keeping prism/tools and prism/README.md as authoritative anchors.",
   "source_truth": {
     "path": "references/r1-prism-evidence-retention-apply-preflight.json",
-    "sha256": "43ae259dabcff964541da3e6ea912f20435176c8aef97187b99184e04922769a",
+    "sha256": "ab1a0793c7186b6aaf3d800d191dea7e1e4ea8480e69cf07655fcb5998326318",
     "split_preflight_path": "references/r1-prism-evidence-retention-split-preflight.json",
-    "split_preflight_sha256": "cb254e8e39df7348776316c691a984d830ca7452dc31d3fdf870e45cc84a7699",
+    "split_preflight_sha256": "e7e6bef03650199676223f54a838dee7b0afcf2d7ea42040a16cb49a34210c2c",
     "source_batch_id": "batch-1-package-visible-prism-support",
     "source_target_layers": [
       "package-visible-prism-support",
@@ -82,9 +82,9 @@
   },
   "package_surface_delta": {
     "previous_candidate_count": 264,
-    "current_candidate_count": 284,
-    "delta": 20,
-    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets, P4-9 added 1 route-decision asset, P4-10 added 3 Prism report archive preflight assets, P4-11 added 1 route-decision asset, and P4-12 added 3 plan/check assets. The live alpha readiness surface is now 284 candidates. This remains readiness support, not public release authorization."
+    "current_candidate_count": 287,
+    "delta": 23,
+    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets, P4-9 added 1 route-decision asset, P4-10 added 3 Prism report archive preflight assets, P4-11 added 1 route-decision asset, P4-12 added 3 plan/check assets, and P4-13 added 3 apply-readiness rehearsal/check assets. The live alpha readiness surface is now 287 candidates. This remains readiness support, not public release authorization."
   },
   "facades": [
     {

@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-13",
-    "summary": "P4-13 待推进：基于 P4-12 已完成的 Prism report archive plan，下一步只做 copy-first apply readiness / rehearsal，不退休旧锚点、不清理 raw evidence、不执行正式发布。"
+    "item_id": "P4-14",
+    "summary": "P4-14 待推进：P4-13 apply readiness / rehearsal 收口后，先由 Prism 选择下一条最小安全切片；不得把 readiness 冒充为 live apply、旧锚点退休、raw evidence cleanup 或 release-ready。"
   },
   "glossary": [
     {
@@ -571,7 +571,7 @@
             "prism/reports/2026-05-20-r1-prism-package-visible-support-copy-first-review.md",
             "references/r1-next-slice-after-prism-support.json",
             "prism/reports/2026-05-21-r1-next-slice-after-prism-support.md",
-            "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-support.md"
+            "private-archive/redcap-knowledge/task-reports/2026-05-21-r1-next-slice-after-prism-support.md"
           ]
         },
         {
@@ -605,36 +605,51 @@
             "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-report-archive-preflight.md"
           ]
         },
-    {
-      "id": "P4-12",
-      "title": "R1 Prism report archive copy-first / alias-first migration planning",
-      "status": "done",
-      "priority": "P0",
-      "phase_id": "phase-16-release-readiness-prism-report-archive-planning",
-      "summary": "已基于 P4-11 路线评审产出 Prism report archive 的 plan-only 迁移清单、旧锚点兼容要求、回滚方案与验证清单；本项未执行物理复制、移动、删除、旧锚点退休或 raw evidence cleanup。",
-      "evidence_paths": [
-        "references/r1-next-slice-after-prism-report-archive-preflight.json",
-        "references/r1-prism-report-archive-copy-first-preflight.json",
-        "references/r1-prism-report-archive-copy-first-plan.json",
-        "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh",
-        "prism/reports/2026-05-21-r1-next-slice-after-prism-report-archive-preflight.md",
-        "prism/reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md",
-        "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md"
-      ]
-    },
-    {
-      "id": "P4-13",
-      "title": "R1 Prism report archive copy-first apply readiness / rehearsal",
-      "status": "pending",
-      "priority": "P0",
-      "phase_id": "phase-17-release-readiness-prism-report-archive-apply-readiness",
-      "summary": "基于 P4-12 plan，验证未来 copy-first apply 的执行顺序、alias 兼容、archive/package proof 与回滚路径；默认仍不退休旧锚点、不清理 raw evidence、不执行正式发布。",
-      "evidence_paths": [
-        "references/r1-prism-report-archive-copy-first-plan.json",
-        "prism/reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md",
-        "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md"
-      ]
-    }
+        {
+          "id": "P4-12",
+          "title": "R1 Prism report archive copy-first / alias-first migration planning",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-16-release-readiness-prism-report-archive-planning",
+          "summary": "已基于 P4-11 路线评审产出 Prism report archive 的 plan-only 迁移清单、旧锚点兼容要求、回滚方案与验证清单；本项未执行物理复制、移动、删除、旧锚点退休或 raw evidence cleanup。",
+          "evidence_paths": [
+            "references/r1-next-slice-after-prism-report-archive-preflight.json",
+            "references/r1-prism-report-archive-copy-first-preflight.json",
+            "references/r1-prism-report-archive-copy-first-plan.json",
+            "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh",
+            "prism/reports/2026-05-21-r1-next-slice-after-prism-report-archive-preflight.md",
+            "prism/reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md",
+            "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md"
+          ]
+        },
+        {
+          "id": "P4-13",
+          "title": "R1 Prism report archive copy-first apply readiness / rehearsal",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-17-release-readiness-prism-report-archive-apply-readiness",
+          "summary": "已基于 P4-12 plan 完成 Prism report archive 的 apply readiness / rehearsal：临时目录复制演练、checksum、archive index 草案、alias 兼容、包面排除和回滚门已可机器检查；本项未执行真实归档复制、旧锚点退休或 raw evidence cleanup。",
+          "evidence_paths": [
+            "references/r1-prism-report-archive-copy-first-plan.json",
+            "references/r1-prism-report-archive-apply-readiness.json",
+            "compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh",
+            "prism/reports/2026-05-21-r1-prism-report-archive-apply-readiness.md",
+            "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-apply-readiness.md"
+          ]
+        },
+        {
+          "id": "P4-14",
+          "title": "R1 下一发布前 blocker 切片选择 after Prism report archive apply readiness",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-18-release-readiness-next-slice-after-prism-report-archive-readiness",
+          "summary": "P4-13 收口后，先由 Claude Code 与 Kimi 重新评审剩余 R1 blocker 并选择下一条非破坏性安全小切片；本项只做路线选择，不执行 live apply、旧锚点退休、raw evidence cleanup 或正式发布。",
+          "evidence_paths": [
+            "references/r1-prism-report-archive-apply-readiness.json",
+            "prism/reports/2026-05-21-r1-prism-report-archive-apply-readiness.md",
+            "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-apply-readiness.md"
+          ]
+        }
       ]
     }
   ],
@@ -815,11 +830,20 @@
     {
       "id": "phase-17-release-readiness-prism-report-archive-apply-readiness",
       "title": "阶段 17：发布准备 Prism report archive apply readiness",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-13"
       ],
-      "summary": "基于 P4-12 plan，验证未来 copy-first apply 的执行顺序、alias 兼容、archive/package proof 与回滚路径；仍不退休旧锚点、不清理 raw evidence、不执行正式发布。"
+      "summary": "正式发布动作之前，已基于 P4-12 plan 完成 Prism report archive apply readiness / rehearsal：临时目录演练、alias 兼容、archive/package proof 与回滚路径已可机器检查；仍不退休旧锚点、不清理 raw evidence、不执行正式发布。"
+    },
+    {
+      "id": "phase-18-release-readiness-next-slice-after-prism-report-archive-readiness",
+      "title": "阶段 18：发布准备下一 blocker 切片选择",
+      "status": "pending",
+      "item_ids": [
+        "P4-14"
+      ],
+      "summary": "P4-13 收口后，先由 Prism 重新选择下一条安全小切片，避免把 readiness 直接升级成 live apply 或 delete-last。"
     }
   ]
 }

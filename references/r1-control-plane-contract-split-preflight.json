@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 284,
-    "control_plane_candidate_count": 205,
-    "compass": 146,
-    "references": 59,
-    "compass_tools_shell": 88,
-    "compass_tools_python": 58,
-    "references_json": 56,
+    "candidate_count": 287,
+    "control_plane_candidate_count": 208,
+    "compass": 148,
+    "references": 60,
+    "compass_tools_shell": 89,
+    "compass_tools_python": 59,
+    "references_json": 57,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -261,14 +261,15 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 284,
-      "control_plane_candidate_count": 205,
-      "compass": 146,
-      "references": 59,
-      "compass_tools_shell": 88,
-      "compass_tools_python": 58,
-      "references_json": 56,
-      "references_markdown": 3
+      "candidate_count": 287,
+      "control_plane_candidate_count": 208,
+      "compass": 148,
+      "references": 60,
+      "compass_tools_shell": 89,
+      "compass_tools_python": 59,
+      "references_json": 57,
+      "references_markdown": 3,
+      "source": "redcap-runtime-package-manifest.sh --output <temp>"
     },
     "target_layers": [
       {
@@ -298,11 +299,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 205,
+      "total_entries": 208,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 47,
-        "internal-control-plane": 99,
+        "internal-contract": 48,
+        "internal-control-plane": 101,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -1072,6 +1073,20 @@
         "current_state": "unchanged-in-this-task"
       },
       {
+        "source": "compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-apply-readiness-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
         "source": "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py",
@@ -1593,6 +1608,13 @@
         "source": "references/r1-prism-evidence-retention-split-preflight.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/r1-prism-evidence-retention-split-preflight.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-prism-report-archive-apply-readiness.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-prism-report-archive-apply-readiness.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

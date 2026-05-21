@@ -11,7 +11,7 @@
     "package_private": true,
     "package_license": "UNLICENSED",
     "package_bin": "bin/redcap",
-    "package_candidate_count": 284,
+    "package_candidate_count": 287,
     "npm_pack_dry_run_checked": true,
     "package_publish_safety_status": "pass",
     "runtime_package_manifest_status": "pass",

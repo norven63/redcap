@@ -1,4 +1,35 @@
 reports:
+  - id: "20260521-r1-prism-report-archive-apply-readiness"
+    mode: review
+    date: "2026-05-21"
+    topic: "P4-13 Prism report archive apply readiness / rehearsal review"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-pass-with-concerns-addressed"
+    consensus_actions:
+      - "Accept P4-13 as a temporary-directory readiness / rehearsal slice"
+      - "Keep old prism/reports anchors authoritative and keep prism/runs raw evidence untouched"
+      - "Require a separate live copy-first apply task before any physical archive copy or old-anchor retirement"
+    open_questions:
+      - "Physical report archive copy-first apply remains a future task"
+      - "Old-anchor retirement remains forbidden until a separate delete-last task with proof and receipt"
+      - "Prism raw run evidence cleanup remains forbidden without preservation proof and explicit human approval when evidence loss is possible"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-prism-report-archive-apply-readiness.json"
+      - "compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.py"
+      - "compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-apply-readiness.md"
+      - "prism/reports/2026-05-21-r1-prism-report-archive-apply-readiness.md"
+      - "prism/runs/20260521-r1-prism-report-archive-apply-readiness/session-registry.yaml"
+      - "prism/runs/20260521-r1-prism-report-archive-apply-readiness/artifacts/acceptance-binding.json"
+      - "prism/runs/20260521-r1-prism-report-archive-apply-readiness/prompt.md"
+      - "prism/runs/20260521-r1-prism-report-archive-apply-readiness/collect/reviewer/claude.raw.txt"
+      - "prism/runs/20260521-r1-prism-report-archive-apply-readiness/collect/challenger/kimi.raw.txt"
+    archived: false
   - id: "20260521-r1-prism-report-archive-copy-first-plan"
     mode: review
     date: "2026-05-21"
@@ -105,7 +136,7 @@ reports:
     files_affected:
       - "references/r1-next-slice-after-prism-support.json"
       - "references/backlogs/framework-upgrade.json"
-      - "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-support.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-21-r1-next-slice-after-prism-support.md"
       - "prism/reports/2026-05-21-r1-next-slice-after-prism-support.md"
       - "prism/runs/20260521-r1-next-slice-after-prism-support/session-registry.yaml"
       - "prism/runs/20260521-r1-next-slice-after-prism-support/prompt.md"

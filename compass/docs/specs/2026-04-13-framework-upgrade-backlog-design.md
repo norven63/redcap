@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`P4-13 R1 Prism report archive copy-first apply readiness / rehearsal`
-- 当前焦点说明：P4-13 待推进：基于 P4-12 已完成的 Prism report archive plan，下一步只做 copy-first apply readiness / rehearsal，不退休旧锚点、不清理 raw evidence、不执行正式发布。
+- 当前焦点：`P4-14 R1 下一发布前 blocker 切片选择 after Prism report archive apply readiness`
+- 当前焦点说明：P4-14 待推进：P4-13 apply readiness / rehearsal 收口后，先由 Prism 选择下一条最小安全切片；不得把 readiness 冒充为 live apply、旧锚点退休、raw evidence cleanup 或 release-ready。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -73,7 +73,8 @@
 | 阶段 14：发布准备 Prism report archive 预检 | 已完成 | P4-10 | 正式发布动作之前，已证明 Prism tracked report archive 与 report index 可以进入 copy-first / alias-first 迁移预检；旧报告锚点保留，raw run evidence 未清理。 |
 | 阶段 15：发布准备下一 blocker 切片选择 | 已完成 | P4-11 | 正式发布动作之前，在 P4-10 收口后已重新评审剩余 R1 blocker，并选定 Prism report archive copy-first / alias-first migration planning 作为下一条安全小切片。 |
 | 阶段 16：发布准备 Prism report archive 迁移规划 | 已完成 | P4-12 | 正式发布动作之前，只规划 Prism 报告归档的 copy-first / alias-first 清单、旧锚点 alias、回滚和验证方案；当前仍不执行物理复制、移动、删除或证据清理。 |
-| 阶段 17：发布准备 Prism report archive apply readiness | 待推进 | P4-13 | 基于 P4-12 plan，验证未来 copy-first apply 的执行顺序、alias 兼容、archive/package proof 与回滚路径；仍不退休旧锚点、不清理 raw evidence、不执行正式发布。 |
+| 阶段 17：发布准备 Prism report archive apply readiness | 已完成 | P4-13 | 正式发布动作之前，已基于 P4-12 plan 完成 Prism report archive apply readiness / rehearsal：临时目录演练、alias 兼容、archive/package proof 与回滚路径已可机器检查；仍不退休旧锚点、不清理 raw evidence、不执行正式发布。 |
+| 阶段 18：发布准备下一 blocker 切片选择 | 待推进 | P4-14 | P4-13 收口后，先由 Prism 重新选择下一条安全小切片，避免把 readiness 直接升级成 live apply 或 delete-last。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -115,7 +116,8 @@
 | P4-10 R1 Prism report archive copy-first / index migration preflight | 发布前路线与授权边界 | 已完成 | P0 | 已按 P4-9 路线评审完成 Prism tracked report archive 的 copy-first / report-index migration preflight：报告索引与归档边界已可机器检查，旧 prism/reports 锚点保留，prism/runs raw evidence 未删除、未移动、未清理；本项不关闭整个 prism-layer-and-evidence blocker。 |
 | P4-11 R1 下一发布前 blocker 切片选择 after Prism report archive preflight | 发布前路线与授权边界 | 已完成 | P0 | P4-10 收口后，已由 Claude Code 与 Kimi 评审剩余 R1 blocker，并选定下一条安全小切片：Prism report archive copy-first / alias-first migration planning；本项只完成路线选择与锚点登记，不执行物理迁移、不清理证据、不关闭 blocker。 |
 | P4-12 R1 Prism report archive copy-first / alias-first migration planning | 发布前路线与授权边界 | 已完成 | P0 | 已基于 P4-11 路线评审产出 Prism report archive 的 plan-only 迁移清单、旧锚点兼容要求、回滚方案与验证清单；本项未执行物理复制、移动、删除、旧锚点退休或 raw evidence cleanup。 |
-| P4-13 R1 Prism report archive copy-first apply readiness / rehearsal | 发布前路线与授权边界 | 待推进 | P0 | 基于 P4-12 plan，验证未来 copy-first apply 的执行顺序、alias 兼容、archive/package proof 与回滚路径；默认仍不退休旧锚点、不清理 raw evidence、不执行正式发布。 |
+| P4-13 R1 Prism report archive copy-first apply readiness / rehearsal | 发布前路线与授权边界 | 已完成 | P0 | 已基于 P4-12 plan 完成 Prism report archive 的 apply readiness / rehearsal：临时目录复制演练、checksum、archive index 草案、alias 兼容、包面排除和回滚门已可机器检查；本项未执行真实归档复制、旧锚点退休或 raw evidence cleanup。 |
+| P4-14 R1 下一发布前 blocker 切片选择 after Prism report archive apply readiness | 发布前路线与授权边界 | 待推进 | P0 | P4-13 收口后，先由 Claude Code 与 Kimi 重新评审剩余 R1 blocker 并选择下一条非破坏性安全小切片；本项只做路线选择，不执行 live apply、旧锚点退休、raw evidence cleanup 或正式发布。 |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -126,6 +128,7 @@
 | mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
 | spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
 <!-- redcap:backlog-generated:end -->
+
 
 
 

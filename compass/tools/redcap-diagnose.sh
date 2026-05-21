@@ -217,6 +217,7 @@ run_check "r1-prism-evidence-retention-apply-preflight" bash "$SCRIPT_DIR/redcap
 run_check "r1-prism-package-visible-support-copy-first-apply" bash "$SCRIPT_DIR/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh" || overall=1
 run_check "r1-prism-report-archive-copy-first-preflight" bash "$SCRIPT_DIR/redcap-r1-prism-report-archive-copy-first-preflight-check.sh" || overall=1
 run_check "r1-prism-report-archive-copy-first-plan" bash "$SCRIPT_DIR/redcap-r1-prism-report-archive-copy-first-plan-check.sh" || overall=1
+run_check "r1-prism-report-archive-apply-readiness" bash "$SCRIPT_DIR/redcap-r1-prism-report-archive-apply-readiness-check.sh" || overall=1
 run_check "r1-control-plane-physical-apply-preflight" bash "$SCRIPT_DIR/redcap-r1-control-plane-physical-apply-preflight-check.sh" || overall=1
 run_check "r1-control-plane-runtime-public-support-copy-first-apply" bash "$SCRIPT_DIR/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh" || overall=1
 run_check "r1-layera-product-boundary" bash "$SCRIPT_DIR/redcap-r1-layera-product-boundary-check.sh" || overall=1

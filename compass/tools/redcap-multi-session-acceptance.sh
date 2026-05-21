@@ -214,6 +214,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-package-visible-support-copy-first-apply-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-report-archive-copy-first-preflight-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-report-archive-copy-first-plan-check
+  bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-report-archive-apply-readiness-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-runtime-public-support-copy-first-apply-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-layera-product-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
@@ -14792,6 +14793,140 @@ PY
     assert_string_contains "$stale_output" "claim_boundary.release_blocker_resolved"
 }
 
+run_r1_prism_report_archive_apply_readiness_check_case() {
+    local output bad_readiness stale_output status temp_archive_report
+
+    log "case: r1-prism-report-archive-apply-readiness-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh")"
+    assert_string_contains "$output" "R1_PRISM_REPORT_ARCHIVE_APPLY_READINESS_OK"
+    assert_string_contains "$output" "reports="
+    assert_string_contains "$output" "rehearsed_copies="
+    assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'R1 Prism report archive apply readiness check missing'
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-diagnose.sh" 'r1-prism-report-archive-apply-readiness'
+
+    bad_readiness="$ACCEPT_ROOT/r1-prism-report-archive-apply-readiness-missing-source.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-apply-readiness.json" "$bad_readiness" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload.pop("source_truth", None)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.py" --readiness "$bad_readiness" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive apply readiness checker should require source_truth"
+    assert_string_contains "$stale_output" "source_truth"
+
+    bad_readiness="$ACCEPT_ROOT/r1-prism-report-archive-apply-readiness-stale-plan.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-apply-readiness.json" "$bad_readiness" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["source_truth"]["plan_sha256"] = "stale"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.py" --readiness "$bad_readiness" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive apply readiness checker should reject stale plan hash"
+    assert_string_contains "$stale_output" "source_truth.plan_sha256"
+
+    bad_readiness="$ACCEPT_ROOT/r1-prism-report-archive-apply-readiness-live-apply.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-apply-readiness.json" "$bad_readiness" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["live_apply_performed"] = True
+payload["claim_boundary"]["live_report_copy_performed"] = True
+payload["operation_policy"]["live_apply_allowed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.py" --readiness "$bad_readiness" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive apply readiness checker should reject live apply claims"
+    assert_string_contains "$stale_output" "claim_boundary.live_apply_performed"
+
+    bad_readiness="$ACCEPT_ROOT/r1-prism-report-archive-apply-readiness-raw-evidence.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-apply-readiness.json" "$bad_readiness" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["raw_run_evidence_touched"] = True
+payload["operation_policy"]["raw_evidence_cleanup_allowed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.py" --readiness "$bad_readiness" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive apply readiness checker should reject raw evidence claims"
+    assert_string_contains "$stale_output" "claim_boundary.raw_run_evidence_touched"
+
+    bad_readiness="$ACCEPT_ROOT/r1-prism-report-archive-apply-readiness-old-anchor.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-apply-readiness.json" "$bad_readiness" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["old_anchor_retirement_performed"] = True
+payload["operation_policy"]["old_anchor_mutation_allowed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.py" --readiness "$bad_readiness" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive apply readiness checker should reject old-anchor retirement claims"
+    assert_string_contains "$stale_output" "claim_boundary.old_anchor_retirement_performed"
+
+    bad_readiness="$ACCEPT_ROOT/r1-prism-report-archive-apply-readiness-resolved.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-apply-readiness.json" "$bad_readiness" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["release_blocker_resolved"] = True
+payload["claim_boundary"]["public_release_ready"] = True
+payload["result"]["release_blocker_status"] = "resolved"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.py" --readiness "$bad_readiness" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive apply readiness checker should reject resolved blocker claims"
+    assert_string_contains "$stale_output" "claim_boundary.release_blocker_resolved"
+
+    temp_archive_report="$REDCAP_ROOT/private-archive/prism-reports/__acceptance-temporary.md"
+    mkdir -p "$(dirname "$temp_archive_report")"
+    printf 'temporary acceptance copy must be rejected\n' >"$temp_archive_report"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh" 2>&1)"
+    status=$?
+    rm -f "$temp_archive_report"
+    rmdir "$REDCAP_ROOT/private-archive/prism-reports" 2>/dev/null || true
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive apply readiness checker should reject live archive copies"
+    assert_string_contains "$stale_output" "private-archive/prism-reports"
+}
+
 run_r1_layera_product_boundary_check_case() {
     local output bad_preflight stale_output status
 
@@ -15692,6 +15827,7 @@ redcap-r1-prism-evidence-retention-apply-preflight-check.sh|r1-prism-evidence-re
 redcap-r1-prism-package-visible-support-copy-first-apply-check.sh|r1-prism-package-visible-support-copy-first-apply|fixture R1 Prism package-visible support copy-first apply failure
 redcap-r1-prism-report-archive-copy-first-preflight-check.sh|r1-prism-report-archive-copy-first-preflight|fixture R1 Prism report archive copy-first preflight failure
 redcap-r1-prism-report-archive-copy-first-plan-check.sh|r1-prism-report-archive-copy-first-plan|fixture R1 Prism report archive copy-first plan failure
+redcap-r1-prism-report-archive-apply-readiness-check.sh|r1-prism-report-archive-apply-readiness|fixture R1 Prism report archive apply readiness failure
 redcap-r1-control-plane-physical-apply-preflight-check.sh|r1-control-plane-physical-apply-preflight|fixture R1 control-plane physical apply preflight failure
 redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh|r1-control-plane-runtime-public-support-copy-first-apply|fixture R1 control-plane runtime public support copy-first apply failure
 redcap-r1-layera-product-boundary-check.sh|r1-layera-product-boundary|fixture R1 Layer A product boundary failure
@@ -15794,6 +15930,7 @@ EOF
             r1-prism-package-visible-support-copy-first-apply) expected_message="R1 Prism package-visible support copy-first apply check failed" ;;
             r1-prism-report-archive-copy-first-preflight) expected_message="R1 Prism report archive copy-first preflight check failed" ;;
             r1-prism-report-archive-copy-first-plan) expected_message="R1 Prism report archive copy-first plan check failed" ;;
+            r1-prism-report-archive-apply-readiness) expected_message="R1 Prism report archive apply readiness check failed" ;;
             r1-layera-product-boundary) expected_message="R1 Layer A product boundary check failed" ;;
             formal-release-readiness-plan) expected_message="formal release readiness plan check failed" ;;
             conclusion-prism) expected_message="conclusion Prism check failed" ;;
@@ -16828,6 +16965,8 @@ run_all_cases() {
     run_runtime_package_manifest_check_case
     run_public_package_surface_check_case
     run_r1_prism_report_archive_copy_first_preflight_check_case
+    run_r1_prism_report_archive_copy_first_plan_check_case
+    run_r1_prism_report_archive_apply_readiness_check_case
     run_formal_release_readiness_plan_check_case
     run_pre_release_product_architecture_check_case
     run_pre_release_structure_task_tree_check_case
@@ -17409,6 +17548,9 @@ case "$COMMAND" in
         ;;
     r1-prism-report-archive-copy-first-plan-check)
         run_r1_prism_report_archive_copy_first_plan_check_case
+        ;;
+    r1-prism-report-archive-apply-readiness-check)
+        run_r1_prism_report_archive_apply_readiness_check_case
         ;;
     r1-control-plane-physical-apply-preflight-check)
         run_r1_control_plane_physical_apply_preflight_check_case
