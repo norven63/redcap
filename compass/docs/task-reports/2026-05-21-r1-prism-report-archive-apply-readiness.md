@@ -111,7 +111,7 @@ RedCap 现在不会只靠“未来迁移应该安全”这种软承诺。P4-13 �
 | 项目 | 当前结果 |
 | --- | --- |
 | 执行承诺账本 | 11/11 已核对 |
-| closeout receipt | 待本报告提交后由 closeout runtime 生成 |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-prism-report-archive-apply-readiness-afaf934d000dc9f5e44cebbc43db1c4c5cd60e65fb6a02ee1b84bc6921199a48.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -120,7 +120,7 @@ RedCap 现在不会只靠“未来迁移应该安全”这种软承诺。P4-13 �
 | 已实现 | 是 | apply readiness 资产、临时目录 rehearsal checker、targeted acceptance 和 Prism 报告已落地。 |
 | 已自检 | 是 | readiness checker、targeted acceptance、package surface、reference lifecycle、full spec-check、diagnose、clean workspace E2E 均已通过。 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 已完成棱镜评审，无 blocker，concerns 已处理或纳入 closeout 必做项。 |
-| 已正式完成 | 待 closeout receipt | 自动化验证已通过；剩余动作是生成机器 receipt。 |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt，且 11/11 执行承诺已核对。 |
 
 ## 六、遗留问题与下一步
 
