@@ -100,8 +100,8 @@ RedCap 的长期路线现在从“P4-13 后可能直接 live apply”变成“�
 
 | 项目 | 当前结果 |
 | --- | --- |
-| 执行承诺账本 | 待 closeout runtime 最终核对 |
-| closeout receipt | 待生成 |
+| 执行承诺账本 | 已核对，11 项承诺全部兑现 |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-next-slice-after-prism-report-archive-apply-readiness-7dc3dd3089b37153993e29951e306e9f6f1333aa586e58a0424f7edd4dfeb942.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -110,7 +110,7 @@ RedCap 的长期路线现在从“P4-13 后可能直接 live apply”变成“�
 | 已实现 | 是 | 路线评审、路线资产、Prism 报告已落地。 |
 | 已自检 | 进行中 | PM Gate、change-intake、intent coverage 已通过；full spec/diagnose/clean E2E 待最终复跑。 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 均已返回，无 blocker，存在路线分歧但已裁决。 |
-| 已正式完成 | 否 | 需要最终 Prism acceptance、spec-check、diagnose、clean workspace E2E 与 closeout receipt。 |
+| 已正式完成 | 是 | Prism acceptance、spec-check、diagnose、clean workspace E2E 与 closeout receipt 均已通过；本结论仅覆盖 P4-14 路线选择，不覆盖真实迁移或正式发布。 |
 
 ## 六、遗留问题与下一步
 
