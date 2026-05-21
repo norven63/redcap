@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 345153,
+    "size_bytes": 345133,
     "lines": 7019,
-    "chars": 211627,
+    "chars": 211607,
     "rough_token_pressure": {
-      "low": 52906,
-      "high": 105813
+      "low": 52901,
+      "high": 105803
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 142990,
+        "size_bytes": 142970,
         "lines": 2382,
-        "chars": 90390,
+        "chars": 90370,
         "rough_token_pressure": {
-          "low": 22597,
-          "high": 45195
+          "low": 22592,
+          "high": 45185
         }
       }
     },
@@ -515,9 +515,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10258,
+      "size_bytes": 10238,
       "lines": 185,
-      "chars": 6690,
+      "chars": 6670,
       "summary": "当前已完成：P4-8 已为 Prism 的 package-visible support 与 provider-routing contract 建立 8 个 runtime facade。 / 人话解释：未来包面和 CLI 可以从 `runtime/redcap-core/prism-tools` 找到 Prism 支撑入口，但真正逻辑仍委托旧 `prism/*` 锚点，避免一次性搬动证据层。",
       "status_basis": "filename_recency_only"
     },

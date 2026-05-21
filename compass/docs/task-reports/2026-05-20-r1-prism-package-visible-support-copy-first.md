@@ -160,7 +160,7 @@ Kimi 在评审时质疑过一个 coverage 统计项，复核后确认不是缺�
 - 实施清单：`references/r1-prism-package-visible-support-copy-first-apply.json`
 - Prism review 报告：`prism/reports/2026-05-20-r1-prism-package-visible-support-copy-first-review.md`
 - Prism 运行目录：`prism/runs/20260520-r1-prism-package-visible-support-copy-first/`
-- P4-7 路线报告：`private-archive/redcap-knowledge/task-reports/2026-05-20-r1-next-slice-after-runtime-facade.md`
+- P4-7 路线报告：`compass/docs/task-reports/2026-05-20-r1-next-slice-after-runtime-facade.md`
 
 ## 九、剩余边界
 
