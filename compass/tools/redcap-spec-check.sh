@@ -887,6 +887,16 @@ if ! bash "$R1_PRISM_REPORT_ARCHIVE_COPY_FIRST_PREFLIGHT_CHECK" >/dev/null; then
     exit 1
 fi
 
+R1_PRISM_REPORT_ARCHIVE_COPY_FIRST_PLAN_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh"
+if [[ ! -f "$R1_PRISM_REPORT_ARCHIVE_COPY_FIRST_PLAN_CHECK" ]]; then
+    echo "[redcap-spec-check] R1 Prism report archive copy-first plan check missing" >&2
+    exit 1
+fi
+if ! bash "$R1_PRISM_REPORT_ARCHIVE_COPY_FIRST_PLAN_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] R1 Prism report archive copy-first plan check failed" >&2
+    exit 1
+fi
+
 R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh"
 if [[ ! -f "$R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK" ]]; then
     echo "[redcap-spec-check] R1 control-plane physical apply preflight check missing" >&2

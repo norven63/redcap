@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 281,
-    "control_plane_candidate_count": 202,
-    "compass": 144,
-    "references": 58,
-    "compass_tools_shell": 87,
-    "compass_tools_python": 57,
-    "references_json": 55,
+    "candidate_count": 284,
+    "control_plane_candidate_count": 205,
+    "compass": 146,
+    "references": 59,
+    "compass_tools_shell": 88,
+    "compass_tools_python": 58,
+    "references_json": 56,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -75,14 +75,14 @@
       {
         "path": "compass",
         "role": "maintainer-control-plane-tools",
-        "package_candidate_count": 144,
+        "package_candidate_count": 146,
         "current_contract": "Packaged for alpha readiness because root wrappers, revive/status/diagnose/closeout, release safety and validators still call these tools.",
         "future_target": "internal/control-plane/tools with stable runtime facades and compatibility aliases"
       },
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 58,
+        "package_candidate_count": 59,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 281,
-      "control_plane_candidate_count": 202,
-      "compass": 144,
-      "references": 58,
-      "compass_tools_shell": 87,
-      "compass_tools_python": 57,
-      "references_json": 55,
+      "candidate_count": 284,
+      "control_plane_candidate_count": 205,
+      "compass": 146,
+      "references": 59,
+      "compass_tools_shell": 88,
+      "compass_tools_python": 58,
+      "references_json": 56,
       "references_markdown": 3
     },
     "target_layers": [
@@ -298,11 +298,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 202,
+      "total_entries": 205,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 46,
-        "internal-control-plane": 97,
+        "internal-contract": 47,
+        "internal-control-plane": 99,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -715,6 +715,13 @@
         "current_state": "unchanged-in-this-task"
       },
       {
+        "source": "compass/tools/redcap-layerB-task-complete-guard.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-layerB-task-complete-guard.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
         "source": "compass/tools/redcap-layerb-closeout-runtime-bridge.sh",
         "target_layer": "runtime-public-support",
         "target_path": "runtime/redcap-core/tools/redcap-layerb-closeout-runtime-bridge.sh",
@@ -767,13 +774,6 @@
         "source": "compass/tools/redcap-layerb-lifecycle-check.sh",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-layerb-lifecycle-check.sh",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
-        "source": "compass/tools/redcap-layerB-task-complete-guard.sh",
-        "target_layer": "internal-control-plane",
-        "target_path": "internal/control-plane/tools/redcap-layerB-task-complete-guard.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1068,6 +1068,20 @@
         "source": "compass/tools/redcap-r1-prism-evidence-retention-split-check.sh",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-r1-prism-evidence-retention-split-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1555,16 +1569,16 @@
         "current_state": "unchanged-in-this-task"
       },
       {
-        "source": "references/r1-next-slice-after-prism-support.json",
+        "source": "references/r1-next-slice-after-prism-report-archive-preflight.json",
         "target_layer": "internal-contract",
-        "target_path": "contracts/internal/r1-next-slice-after-prism-support.json",
+        "target_path": "contracts/internal/r1-next-slice-after-prism-report-archive-preflight.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
       {
-        "source": "references/r1-next-slice-after-prism-report-archive-preflight.json",
+        "source": "references/r1-next-slice-after-prism-support.json",
         "target_layer": "internal-contract",
-        "target_path": "contracts/internal/r1-next-slice-after-prism-report-archive-preflight.json",
+        "target_path": "contracts/internal/r1-next-slice-after-prism-support.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1579,6 +1593,13 @@
         "source": "references/r1-prism-evidence-retention-split-preflight.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/r1-prism-evidence-retention-split-preflight.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-prism-report-archive-copy-first-plan.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-prism-report-archive-copy-first-plan.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

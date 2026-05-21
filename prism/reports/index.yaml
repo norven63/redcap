@@ -1,4 +1,35 @@
 reports:
+  - id: "20260521-r1-prism-report-archive-copy-first-plan"
+    mode: review
+    date: "2026-05-21"
+    topic: "P4-12 Prism report archive copy-first / alias-first migration planning review"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-pass-plan-only-with-followups"
+    consensus_actions:
+      - "Accept P4-12 as a plan-only Prism report archive migration planning slice"
+      - "Keep old prism/reports anchors authoritative and keep prism/runs raw evidence untouched"
+      - "Require future copy-first apply readiness / rehearsal before any physical migration or old-anchor retirement"
+    open_questions:
+      - "Physical report archive copy-first apply remains a future task"
+      - "Old-anchor retirement remains forbidden until a separate delete-last task with proof and receipt"
+      - "Prism raw run evidence cleanup remains forbidden without preservation proof and explicit human approval when evidence loss is possible"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-prism-report-archive-copy-first-plan.json"
+      - "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py"
+      - "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "compass/tools/redcap-multi-session-acceptance.sh"
+      - "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md"
+      - "prism/reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md"
+      - "prism/runs/20260521-r1-prism-report-archive-copy-first-plan/session-registry.yaml"
+      - "prism/runs/20260521-r1-prism-report-archive-copy-first-plan/artifacts/acceptance-binding.json"
+      - "prism/runs/20260521-r1-prism-report-archive-copy-first-plan/prompt.md"
+      - "prism/runs/20260521-r1-prism-report-archive-copy-first-plan/collect/reviewer/claude.raw.txt"
+      - "prism/runs/20260521-r1-prism-report-archive-copy-first-plan/collect/challenger/kimi.raw.txt"
+    archived: false
   - id: "20260521-r1-next-slice-after-prism-report-archive-preflight"
     mode: review
     date: "2026-05-21"

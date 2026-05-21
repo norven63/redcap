@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/framework-upgrade.json",
-      "bytes": 38009,
+      "bytes": 39359,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -15,7 +15,7 @@
     },
     {
       "path": "references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 73195,
+      "bytes": 73215,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -42,7 +42,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 98334,
+      "bytes": 99411,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -114,7 +114,16 @@
     },
     {
       "path": "references/r1-control-plane-contract-split-preflight.json",
-      "bytes": 83501,
+      "bytes": 84610,
+      "asset_class": "reference-asset",
+      "lifecycle": "index-first-active-reference",
+      "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
+      "path": "references/r1-prism-report-archive-copy-first-plan.json",
+      "bytes": 31348,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -123,7 +132,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 39347,
+      "bytes": 39719,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",

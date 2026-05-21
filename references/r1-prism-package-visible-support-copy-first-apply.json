@@ -6,9 +6,9 @@
   "purpose": "Create runtime/redcap-core/prism-tools package-visible facade wrappers for Prism batch-1 support and provider-routing contract entries while keeping prism/tools and prism/README.md as authoritative anchors.",
   "source_truth": {
     "path": "references/r1-prism-evidence-retention-apply-preflight.json",
-    "sha256": "d2bfcb8d14ec84ef1dad38b35c883d3a08df2fbb65645f2fa7da9a4bfd9b0680",
+    "sha256": "43ae259dabcff964541da3e6ea912f20435176c8aef97187b99184e04922769a",
     "split_preflight_path": "references/r1-prism-evidence-retention-split-preflight.json",
-    "split_preflight_sha256": "302adab08b603b3e1c910cddf521336d8cdd920ab17aa0a7678620b8208fda6c",
+    "split_preflight_sha256": "cb254e8e39df7348776316c691a984d830ca7452dc31d3fdf870e45cc84a7699",
     "source_batch_id": "batch-1-package-visible-prism-support",
     "source_target_layers": [
       "package-visible-prism-support",
@@ -82,9 +82,9 @@
   },
   "package_surface_delta": {
     "previous_candidate_count": 264,
-    "current_candidate_count": 281,
-    "delta": 17,
-    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets for workflow gate stratification, P4-9 added 1 package-visible route-decision asset under references, P4-10 added 3 package-visible Prism report archive preflight assets, and P4-11 added 1 package-visible route-decision asset under references. The live alpha readiness surface is now 281 candidates. This remains readiness support, not public release authorization."
+    "current_candidate_count": 284,
+    "delta": 20,
+    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets, P4-9 added 1 route-decision asset, P4-10 added 3 Prism report archive preflight assets, P4-11 added 1 route-decision asset, and P4-12 added 3 plan/check assets. The live alpha readiness surface is now 284 candidates. This remains readiness support, not public release authorization."
   },
   "facades": [
     {

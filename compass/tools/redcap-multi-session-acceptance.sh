@@ -213,6 +213,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-evidence-retention-apply-preflight-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-package-visible-support-copy-first-apply-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-report-archive-copy-first-preflight-check
+  bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-report-archive-copy-first-plan-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-control-plane-runtime-public-support-copy-first-apply-check
   bash compass/tools/redcap-multi-session-acceptance.sh r1-layera-product-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
@@ -14625,6 +14626,172 @@ PY
     assert_string_contains "$stale_output" "claim_boundary.release_blocker_resolved"
 }
 
+run_r1_prism_report_archive_copy_first_plan_check_case() {
+    local output bad_plan stale_output status
+
+    log "case: r1-prism-report-archive-copy-first-plan-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh")"
+    assert_string_contains "$output" "R1_PRISM_REPORT_ARCHIVE_COPY_FIRST_PLAN_OK"
+    assert_string_contains "$output" "mappings="
+    assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_string_contains "$output" "release_blocker_status=still-blocking"
+    assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" 'R1 Prism report archive copy-first plan check missing'
+
+    bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-missing-source.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload.pop("source_truth", None)
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should require source_truth"
+    assert_string_contains "$stale_output" "source_truth"
+
+    bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-stale-source.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["source_truth"]["preflight_sha256"] = "stale"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject stale source hash"
+    assert_string_contains "$stale_output" "source_truth.preflight_sha256"
+
+    bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-missing-mapping.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["archive_plan"]["mappings"] = payload["archive_plan"]["mappings"][:-1]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject missing mappings"
+    assert_string_contains "$stale_output" "archive_plan.mappings"
+
+    bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-copy-now.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["copy_performed_now"] = True
+payload["archive_plan"]["mappings"][0]["copy_now"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject copy-now claims"
+    assert_string_contains "$stale_output" "claim_boundary.copy_performed_now"
+
+    bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-delete-last.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["delete_last_performed_now"] = True
+payload["archive_plan"]["mappings"][0]["delete_old_now"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject delete-last claims"
+    assert_string_contains "$stale_output" "claim_boundary.delete_last_performed_now"
+
+    bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-raw-evidence.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["raw_run_evidence_touched"] = True
+payload["operation_policy"]["raw_evidence_cleanup_allowed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject raw evidence claims"
+    assert_string_contains "$stale_output" "claim_boundary.raw_run_evidence_touched"
+
+    bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-destructive.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["operation_policy"]["destructive_operations_allowed"] = True
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject destructive operation claims"
+    assert_string_contains "$stale_output" "operation_policy.destructive_operations_allowed"
+
+    local temp_archive_report="$REDCAP_ROOT/private-archive/prism-reports/__acceptance-temporary.md"
+    mkdir -p "$(dirname "$temp_archive_report")"
+    printf 'temporary acceptance copy must be rejected\n' >"$temp_archive_report"
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh" 2>&1)"
+    status=$?
+    rm -f "$temp_archive_report"
+    rmdir "$REDCAP_ROOT/private-archive/prism-reports" 2>/dev/null || true
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject physical archive copies"
+    assert_string_contains "$stale_output" "plan-only task must not create private-archive/prism-reports"
+
+    bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-resolved.json"
+    python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
+import json
+import pathlib
+import sys
+src, dst = map(pathlib.Path, sys.argv[1:3])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["claim_boundary"]["release_blocker_resolved"] = True
+payload["claim_boundary"]["public_release_ready"] = True
+payload["result"]["release_blocker_status"] = "resolved"
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(python3 "$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py" --plan "$bad_plan" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject resolved blocker claims"
+    assert_string_contains "$stale_output" "claim_boundary.release_blocker_resolved"
+}
+
 run_r1_layera_product_boundary_check_case() {
     local output bad_preflight stale_output status
 
@@ -15175,7 +15342,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell workflow-gate-stratification progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-prism-report-archive-copy-first-preflight r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell workflow-gate-stratification progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-prism-report-archive-copy-first-preflight r1-prism-report-archive-copy-first-plan r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -15524,6 +15691,7 @@ redcap-r1-prism-evidence-retention-split-check.sh|r1-prism-evidence-retention-sp
 redcap-r1-prism-evidence-retention-apply-preflight-check.sh|r1-prism-evidence-retention-apply-preflight|fixture R1 Prism evidence retention apply preflight failure
 redcap-r1-prism-package-visible-support-copy-first-apply-check.sh|r1-prism-package-visible-support-copy-first-apply|fixture R1 Prism package-visible support copy-first apply failure
 redcap-r1-prism-report-archive-copy-first-preflight-check.sh|r1-prism-report-archive-copy-first-preflight|fixture R1 Prism report archive copy-first preflight failure
+redcap-r1-prism-report-archive-copy-first-plan-check.sh|r1-prism-report-archive-copy-first-plan|fixture R1 Prism report archive copy-first plan failure
 redcap-r1-control-plane-physical-apply-preflight-check.sh|r1-control-plane-physical-apply-preflight|fixture R1 control-plane physical apply preflight failure
 redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh|r1-control-plane-runtime-public-support-copy-first-apply|fixture R1 control-plane runtime public support copy-first apply failure
 redcap-r1-layera-product-boundary-check.sh|r1-layera-product-boundary|fixture R1 Layer A product boundary failure
@@ -15625,6 +15793,7 @@ EOF
             r1-prism-evidence-retention-apply-preflight) expected_message="R1 Prism evidence retention apply preflight check failed" ;;
             r1-prism-package-visible-support-copy-first-apply) expected_message="R1 Prism package-visible support copy-first apply check failed" ;;
             r1-prism-report-archive-copy-first-preflight) expected_message="R1 Prism report archive copy-first preflight check failed" ;;
+            r1-prism-report-archive-copy-first-plan) expected_message="R1 Prism report archive copy-first plan check failed" ;;
             r1-layera-product-boundary) expected_message="R1 Layer A product boundary check failed" ;;
             formal-release-readiness-plan) expected_message="formal release readiness plan check failed" ;;
             conclusion-prism) expected_message="conclusion Prism check failed" ;;
@@ -15724,6 +15893,7 @@ for rel in [
     "compass/tools/redcap-r1-prism-evidence-retention-apply-preflight-check.sh",
     "compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh",
     "compass/tools/redcap-r1-prism-report-archive-copy-first-preflight-check.sh",
+    "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh",
     "compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh",
     "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
     "compass/tools/redcap-r1-layera-product-boundary-check.sh",
@@ -17236,6 +17406,9 @@ case "$COMMAND" in
         ;;
     r1-prism-report-archive-copy-first-preflight-check)
         run_r1_prism_report_archive_copy_first_preflight_check_case
+        ;;
+    r1-prism-report-archive-copy-first-plan-check)
+        run_r1_prism_report_archive_copy_first_plan_check_case
         ;;
     r1-control-plane-physical-apply-preflight-check)
         run_r1_control_plane_physical_apply_preflight_check_case

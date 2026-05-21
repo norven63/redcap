@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 104,
-  "bytes_total": 1441837,
+  "file_count": 105,
+  "bytes_total": 1450244,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 100,
+    "private-task-report-archive": 101,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -837,6 +837,14 @@
       "class": "private-task-report-archive",
       "bytes": 9946,
       "sha256": "d2b27b8e7e09b55bc6502bf2f46609f2b9f50ed74189a4ed451770d22c1dc743",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-21-rasg-024-workflow-gate-stratification.md",
+      "class": "private-task-report-archive",
+      "bytes": 8407,
+      "sha256": "edd6e9e40927217b391d2b1de5190a3d94584b4bfa83d5e4adacc30569da7f4f",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

@@ -848,7 +848,7 @@
         "compass/tools/redcap-diagnose.sh",
         "compass/tools/redcap-progress-meter.py",
         "compass/tools/redcap-multi-session-acceptance.sh",
-        "compass/docs/task-reports/2026-05-21-rasg-024-workflow-gate-stratification.md",
+        "private-archive/redcap-knowledge/task-reports/2026-05-21-rasg-024-workflow-gate-stratification.md",
         "prism/reports/2026-05-21-rasg-024-workflow-gate-stratification.md",
         "prism/runs/20260521-rasg-024-workflow-gate-stratification/artifacts/acceptance-binding.json"
       ]
