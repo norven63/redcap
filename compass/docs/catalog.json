@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 346816,
+    "size_bytes": 346834,
     "lines": 7018,
-    "chars": 212740,
+    "chars": 212752,
     "rough_token_pressure": {
-      "low": 53185,
-      "high": 106370
+      "low": 53188,
+      "high": 106376
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 142484,
+        "size_bytes": 142502,
         "lines": 2371,
-        "chars": 90100,
+        "chars": 90112,
         "rough_token_pressure": {
-          "low": 22525,
-          "high": 45050
+          "low": 22528,
+          "high": 45056
         }
       }
     },
@@ -528,9 +528,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 10027,
+      "size_bytes": 10045,
       "lines": 164,
-      "chars": 6305,
+      "chars": 6317,
       "summary": "当前已完成：P4-13 已把 Prism 报告归档从“只有迁移规划”推进到“未来执行前可先完整演练并被机器检查”。 / 人话解释：我们现在不只是知道未来要把报告复制到哪里，还能在临时目录里真实演练复制、校验 checksum、生成索引草案、证明旧路径仍可用，并确认这些内容不会进入公开包候选面。",
       "status_basis": "filename_recency_only",
       "summary_points": {

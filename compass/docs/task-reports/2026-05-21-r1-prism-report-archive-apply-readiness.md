@@ -102,25 +102,25 @@ RedCap 现在不会只靠“未来迁移应该安全”这种软承诺。P4-13 �
 | targeted acceptance | `bash compass/tools/redcap-multi-session-acceptance.sh r1-prism-report-archive-apply-readiness-check` | 通过 |
 | package surface | `bash compass/tools/redcap-public-package-surface.sh --json` | 通过；candidate_count=287 |
 | reference lifecycle | `bash compass/tools/redcap-reference-asset-lifecycle.sh check` | 通过 |
-| full spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 待最终 closeout 前复跑 |
-| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 待最终 closeout 前复跑 |
-| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | 待最终 closeout 前复跑 |
+| full spec-check | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
+| diagnose | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` | 通过；head=6276487，candidate_count=287 |
 
 ### 5.3 closeout runtime / receipt
 
 | 项目 | 当前结果 |
 | --- | --- |
-| 执行承诺账本 | 待 closeout runtime 最终核对 |
-| closeout receipt | 待生成 |
+| 执行承诺账本 | 11/11 已核对 |
+| closeout receipt | 待本报告提交后由 closeout runtime 生成 |
 
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 是 | apply readiness 资产、临时目录 rehearsal checker、targeted acceptance 和 Prism 报告已落地。 |
-| 已自检 | 进行中 | targeted checker、package surface、reference lifecycle 已通过；full spec/diagnose/clean E2E 待最终复跑。 |
+| 已自检 | 是 | readiness checker、targeted acceptance、package surface、reference lifecycle、full spec-check、diagnose、clean workspace E2E 均已通过。 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 已完成棱镜评审，无 blocker，concerns 已处理或纳入 closeout 必做项。 |
-| 已正式完成 | 否 | 需要最终 spec-check、diagnose、clean workspace E2E 与 closeout receipt。 |
+| 已正式完成 | 待 closeout receipt | 自动化验证已通过；剩余动作是生成机器 receipt。 |
 
 ## 六、遗留问题与下一步
 
