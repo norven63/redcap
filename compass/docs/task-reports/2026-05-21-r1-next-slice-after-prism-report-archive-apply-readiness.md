@@ -94,7 +94,7 @@ RedCap 的长期路线现在从“P4-13 后可能直接 live apply”变成“�
 | information architecture / cold archive inventory | 通过 |
 | spec-check | 通过 |
 | diagnose | closeout receipt 生成前仍显示 pending closure，符合当前阶段 |
-| clean workspace E2E | 待提交当前账本后复跑 |
+| clean workspace E2E | 通过，已在干净克隆和隔离 HOME 下验证 revive/status/publish-safety/package-manifest |
 
 ### 5.3 closeout runtime / receipt
 
