@@ -107,17 +107,17 @@ RedCap 现在不会再只靠“我们计划以后安全迁移”这种软承诺�
 
 | 项目 | 当前结果 |
 | --- | --- |
-| 执行承诺账本 | 待 closeout runtime 核对 |
-| closeout receipt | 待生成 |
+| 执行承诺账本 | 已由 closeout runtime 核对通过，11 项承诺无 pending |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-prism-report-archive-copy-first-plan-9c56280c8e2f640ad370dc8473f3ffae9350046d57720ee5cb07e9e5098eee36.json` |
 
 ### 5.4 完成等级（禁止混报）
 
 | 层级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 是 | plan-only 迁移清单、机器检查、targeted acceptance 和 Prism 报告已落地。 |
-| 已自检 | 待最终回归更新 | closeout 前仍需刷新 spec-check、diagnose 与 clean workspace E2E。 |
+| 已自检 | 是 | plan checker、targeted acceptance、spec-check、diagnose 与 clean workspace E2E 已通过。 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 已完成棱镜评审，无 blocker。 |
-| 已正式完成 | 待 receipt | 未生成 closeout receipt 前，不声明任务正式完成。 |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt，承诺账本 11/11 完成。 |
 
 ## 六、遗留问题与下一步
 

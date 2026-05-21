@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 345751,
+    "size_bytes": 345995,
     "lines": 7037,
-    "chars": 211937,
+    "chars": 212183,
     "rough_token_pressure": {
-      "low": 52984,
-      "high": 105968
+      "low": 53045,
+      "high": 106091
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 142204,
+        "size_bytes": 142448,
         "lines": 2393,
-        "chars": 89764,
+        "chars": 90010,
         "rough_token_pressure": {
-          "low": 22441,
-          "high": 44882
+          "low": 22502,
+          "high": 45005
         }
       }
     },
@@ -557,9 +557,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 8729,
+      "size_bytes": 8973,
       "lines": 159,
-      "chars": 5269,
+      "chars": 5515,
       "summary": "当前已完成：P4-12 已把 Prism 报告归档从“路线已选定”推进到“迁移规划可机器检查”。 / 人话解释：我们现在知道当前正式 Prism 报告将来应该复制到哪里、旧路径必须如何继续可用、失败如何回滚、未来真正执行前要通过哪些验证。",
       "status_basis": "filename_recency_only",
       "summary_points": {
