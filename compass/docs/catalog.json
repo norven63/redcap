@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 346995,
-    "lines": 7018,
-    "chars": 212937,
+    "size_bytes": 344541,
+    "lines": 6977,
+    "chars": 210741,
     "rough_token_pressure": {
-      "low": 53234,
-      "high": 106468
+      "low": 52685,
+      "high": 105370
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 198802,
-        "lines": 4558,
-        "chars": 118866,
+        "size_bytes": 199463,
+        "lines": 4561,
+        "chars": 119261,
         "rough_token_pressure": {
-          "low": 29716,
-          "high": 59433
+          "low": 29815,
+          "high": 59630
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 142663,
-        "lines": 2371,
-        "chars": 90297,
+        "size_bytes": 139548,
+        "lines": 2327,
+        "chars": 87706,
         "rough_token_pressure": {
-          "low": 22574,
-          "high": 45148
+          "low": 21926,
+          "high": 43853
         }
       }
     },
@@ -87,8 +87,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 12801,
-        "lines": 213,
+        "chars": 13196,
+        "lines": 216,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 22327,
-      "lines": 213,
-      "chars": 12801,
+      "size_bytes": 22988,
+      "lines": 216,
+      "chars": 13196,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -457,19 +457,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：R1 控制面 runtime facade copy-first",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 11584,
-      "lines": 193,
-      "chars": 7756,
-      "summary": "当前已完成：`internal-control-plane` 的 batch-1 `runtime-public-support` 条目已经从“只有未来迁移地图”推进到“已有 runtime facade 入口”的状态。 / 详情：本轮新增的是 `runtime/redcap-core/tools` 下的轻量外壳入口；这些入口只把调用转发回旧的 `compass/tools` 权威实现，不复制旧实现内容，不移动、不删除、不替换旧锚点。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md",
       "collection": "task-reports",
       "title": "任务完成报告：R1 Layer A 产品边界预检",
@@ -506,6 +493,19 @@
       "lines": 185,
       "chars": 6670,
       "summary": "当前已完成：P4-8 已为 Prism 的 package-visible support 与 provider-routing contract 建立 8 个 runtime facade。 / 人话解释：未来包面和 CLI 可以从 `runtime/redcap-core/prism-tools` 找到 Prism 支撑入口，但真正逻辑仍委托旧 `prism/*` 锚点，避免一次性搬动证据层。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-report-archive-apply-readiness.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-14 发布前下一小切片选择",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 8469,
+      "lines": 149,
+      "chars": 5165,
+      "summary": "当前已完成：P4-14 已通过 Claude Code 与 Kimi 的棱镜路线评审，选定下一条正式发布前安全小切片：`Prism report archive churn/freeze guard`。 / 人话解释：下一步先解决“每新增一份正式 Prism 报告，归档计划就过期”的问题；还不是开始真实复制报告。",
       "status_basis": "filename_recency_only"
     },
     {

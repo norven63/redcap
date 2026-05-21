@@ -5,7 +5,7 @@
   "created_at": "2026-05-21T00:00:00Z",
   "source_truth": {
     "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
-    "plan_sha256": "2888f6e9e41aab5245dfb5cc2c07af0d64638293ad7f825f93c04b7fed6a3a8d",
+    "plan_sha256": "1e4ae1baf2c7c614be0febc300be84527964d584fc9710cf75f5dea0b16fe6bd",
     "plan_id": "redcap-r1-prism-report-archive-copy-first-plan"
   },
   "claim_boundary": {
@@ -62,7 +62,7 @@
     "source_root": "prism/reports",
     "future_archive_root": "private-archive/prism-reports",
     "future_index_path": "private-archive/prism-reports/index.yaml",
-    "report_count": 54,
+    "report_count": 55,
     "copy_order": "lexicographic-by-source-path",
     "archive_index_draft_fields": [
       "report_id",

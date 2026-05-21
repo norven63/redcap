@@ -304,7 +304,7 @@
       "evidence_paths": [
         "references/r1-control-plane-runtime-public-support-copy-first-apply.json",
         "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.py",
-        "compass/docs/task-reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply.md",
+        "private-archive/redcap-knowledge/task-reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply.md",
         "compass/knowledge/lessons/l-168.md"
       ],
       "promotion_target": "lessons",

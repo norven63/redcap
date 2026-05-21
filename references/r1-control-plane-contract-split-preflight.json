@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 287,
-    "control_plane_candidate_count": 208,
+    "candidate_count": 288,
+    "control_plane_candidate_count": 209,
     "compass": 148,
-    "references": 60,
+    "references": 61,
     "compass_tools_shell": 89,
     "compass_tools_python": 59,
-    "references_json": 57,
+    "references_json": 58,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 287,
-      "control_plane_candidate_count": 208,
+      "candidate_count": 288,
+      "control_plane_candidate_count": 209,
       "compass": 148,
-      "references": 60,
+      "references": 61,
       "compass_tools_shell": 89,
       "compass_tools_python": 59,
-      "references_json": 57,
+      "references_json": 58,
       "references_markdown": 3,
       "source": "redcap-runtime-package-manifest.sh --output <temp>"
     },
@@ -299,13 +299,13 @@
       }
     ],
     "coverage": {
-      "total_entries": 208,
+      "total_entries": 209,
       "by_target_layer": {
-        "human-handoff": 1,
-        "internal-contract": 48,
         "internal-control-plane": 101,
+        "runtime-public-support": 47,
         "public-contract": 11,
-        "runtime-public-support": 47
+        "internal-contract": 49,
+        "human-handoff": 1
       }
     },
     "entries": [
@@ -1580,6 +1580,13 @@
         "source": "references/r1-layera-product-boundary-preflight.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/r1-layera-product-boundary-preflight.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-next-slice-after-prism-report-archive-apply-readiness.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-next-slice-after-prism-report-archive-apply-readiness.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "decision_id": "redcap-r1-next-slice-after-prism-report-archive-apply-readiness",
+  "status": "selected-next-slice-no-blocker-closed",
+  "created_at": "2026-05-21T14:50:00Z",
+  "source_task": {
+    "backlog_id": "framework-upgrade",
+    "item_id": "P4-14",
+    "active_slice": "r1-next-slice-after-prism-report-archive-apply-readiness",
+    "previous_item_id": "P4-13",
+    "previous_summary": "Prism report archive apply readiness / rehearsal completed; old prism/reports anchors remain authoritative, private archive copies do not exist yet, and prism/runs raw evidence remains untouched."
+  },
+  "claim_boundary": {
+    "route_selection_completed": true,
+    "selected_next_item_registered": true,
+    "next_slice_implemented": false,
+    "release_blocker_closed": false,
+    "prism_layer_and_evidence_closed": false,
+    "report_archive_physically_migrated": false,
+    "report_files_copied_moved_or_deleted": false,
+    "old_report_anchors_removed_or_replaced": false,
+    "raw_run_evidence_deleted_or_cleaned": false,
+    "layer_a_product_decision_made": false,
+    "release_switch_changed": false,
+    "public_release_ready": false,
+    "allowed_user_claim": "After P4-13, RedCap has selected the next safe pre-release slice: a Prism report archive churn/freeze guard that stabilizes the report set before any live copy-first apply.",
+    "forbidden_claims": [
+      "Prism reports have already been physically migrated.",
+      "Old prism/reports anchors have been retired or replaced.",
+      "The prism-layer-and-evidence blocker is closed.",
+      "Prism raw run evidence has been cleaned or pruned.",
+      "Layer A product scope has been decided.",
+      "RedCap is ready for public release."
+    ]
+  },
+  "candidate_matrix": [
+    {
+      "id": "A",
+      "title": "Prism report archive live copy-first apply",
+      "source": "references/r1-prism-report-archive-apply-readiness.json",
+      "risk": "medium",
+      "size": "medium",
+      "requires_human_decision": false,
+      "destructive": false,
+      "selected": false,
+      "reason": "Claude Code selected this as the natural next step after plan and rehearsal. Cap adjudication did not choose it yet because it creates real private-archive/prism-reports files and should follow a smaller churn/freeze guard that stabilizes report-set assumptions."
+    },
+    {
+      "id": "B",
+      "title": "Prism report archive churn/freeze guard",
+      "source": "references/r1-prism-report-archive-copy-first-plan.json + references/r1-prism-report-archive-apply-readiness.json",
+      "risk": "low",
+      "size": "small",
+      "requires_human_decision": false,
+      "destructive": false,
+      "selected": true,
+      "reason": "It directly addresses the observed route-report churn problem: every new formal Prism report changes report_count and hashes. It is smaller than live apply, does not create archive files, and makes the subsequent copy-first apply safer."
+    },
+    {
+      "id": "C",
+      "title": "Internal control-plane batch-2 policy/contract classification",
+      "source": "references/r1-control-plane-physical-apply-preflight.json#batch-2-policy-contract-classification",
+      "risk": "medium",
+      "size": "large",
+      "requires_human_decision": false,
+      "destructive": false,
+      "selected": false,
+      "reason": "Still release-relevant, but larger and would switch away from the nearly-ready Prism report archive line."
+    },
+    {
+      "id": "D",
+      "title": "Internal control-plane batch-3 maintainer tools",
+      "source": "references/r1-control-plane-physical-apply-preflight.json#batch-3-maintainer-control-plane-tools",
+      "risk": "medium-high",
+      "size": "large",
+      "requires_human_decision": false,
+      "destructive": false,
+      "selected": false,
+      "reason": "It is the largest remaining control-plane batch and is not the next smallest safe slice."
+    },
+    {
+      "id": "E",
+      "title": "Prism raw run evidence retention / cleanup apply",
+      "source": "references/r1-prism-evidence-retention-apply-preflight.json#batch-3-local-run-evidence-store",
+      "risk": "high",
+      "size": "manual-boundary",
+      "requires_human_decision": true,
+      "destructive": "possible",
+      "selected": false,
+      "reason": "Any cleanup or pruning of raw run evidence requires preservation proof and explicit Norven approval when evidence loss is possible."
+    },
+    {
+      "id": "F",
+      "title": "Layer A product boundary decision",
+      "source": "references/r1-layera-product-boundary-preflight.json",
+      "risk": "manual-boundary",
+      "size": "product-scope",
+      "requires_human_decision": true,
+      "destructive": false,
+      "selected": false,
+      "reason": "Whether Layer A / loom belongs in the public product is a Norven-reserved product decision."
+    }
+  ],
+  "selected_next_slice": {
+    "backlog_item_id": "P4-15",
+    "phase_id": "phase-19-release-readiness-prism-report-archive-churn-freeze-guard",
+    "title": "R1 Prism report archive churn/freeze guard",
+    "selected_candidate": "B",
+    "scope": [
+      "Define a machine-readable churn/freeze policy for Prism report archive planning.",
+      "Make planned formal Prism report additions explicit before live copy-first apply.",
+      "Provide an auto-refresh or frozen-window rule for P4-12/P4-13 report_count/hash drift.",
+      "Do not create private-archive/prism-reports live files.",
+      "Do not copy, move, delete, rename or replace report files.",
+      "Do not touch prism/runs raw evidence.",
+      "Do not claim prism-layer-and-evidence is closed."
+    ],
+    "minimum_acceptance": [
+      "machine-readable churn/freeze policy",
+      "checker or script support for distinguishing planned report additions from unexpected drift",
+      "P4-12 and P4-13 snapshots refreshed to the current report set",
+      "Prism review by Claude Code and Kimi when available",
+      "spec-check and diagnose pass",
+      "clean workspace E2E",
+      "closeout receipt"
+    ]
+  },
+  "adjudication": {
+    "verdict": "split-decision-cap-adjudicates-conservative-B",
+    "reason": "Claude Code selected live copy-first apply. Kimi selected churn/freeze guard. Cap chose the smaller non-destructive guard first because the route-selection task itself adds a formal Prism report and repeats the exact report-set churn that could make live apply fragile.",
+    "tie_breaker": "When one option creates live archive files and another stabilizes the assumptions needed for that copy-first apply, choose the stabilizing non-destructive guard first unless a human asks to accelerate."
+  },
+  "prism_review": {
+    "run_id": "20260521-r1-next-slice-after-prism-report-archive-apply-readiness",
+    "verdict": "split-decision-cap-adjudicates-conservative-B",
+    "agents": [
+      {
+        "provider": "claude-code",
+        "status": "responded",
+        "recommendation": "A",
+        "blockers": []
+      },
+      {
+        "provider": "kimi",
+        "status": "responded",
+        "recommendation": "B",
+        "blockers": []
+      },
+      {
+        "provider": "gemini",
+        "status": "not-invoked",
+        "reason": "Availability check returned Operation not permitted; Claude Code and Kimi formed quorum."
+      },
+      {
+        "provider": "copilot",
+        "status": "policy-suppressed",
+        "reason": "Copilot is protected fallback and was not called while Claude Code and Kimi were available."
+      }
+    ]
+  }
+}

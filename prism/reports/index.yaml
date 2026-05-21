@@ -1,4 +1,30 @@
 reports:
+  - id: "20260521-r1-next-slice-after-prism-report-archive-apply-readiness"
+    mode: review
+    date: "2026-05-21"
+    topic: "P4-14 next R1 slice after Prism report archive apply readiness closeout"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "split-decision-cap-adjudicates-conservative-B"
+    consensus_actions:
+      - "Select Prism report archive churn/freeze guard as the next R1 slice"
+      - "Keep old prism/reports anchors authoritative and keep prism/runs raw evidence untouched"
+      - "Defer live copy-first apply until report-set churn/freeze rules are in place"
+    open_questions:
+      - "P4-15 must define the churn/freeze guard before live archive copy"
+      - "Physical report archive copy-first apply remains a future task"
+      - "Prism raw run evidence cleanup remains forbidden without preservation proof and explicit human approval when evidence loss is possible"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-next-slice-after-prism-report-archive-apply-readiness.json"
+      - "references/backlogs/framework-upgrade.json"
+      - "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-report-archive-apply-readiness.md"
+      - "prism/reports/2026-05-21-r1-next-slice-after-prism-report-archive-apply-readiness.md"
+      - "prism/runs/20260521-r1-next-slice-after-prism-report-archive-apply-readiness/session-registry.yaml"
+      - "prism/runs/20260521-r1-next-slice-after-prism-report-archive-apply-readiness/prompt.md"
+      - "prism/runs/20260521-r1-next-slice-after-prism-report-archive-apply-readiness/collect/reviewer/claude.raw.txt"
+      - "prism/runs/20260521-r1-next-slice-after-prism-report-archive-apply-readiness/collect/challenger/kimi.raw.txt"
+    archived: false
   - id: "20260521-r1-prism-report-archive-apply-readiness"
     mode: review
     date: "2026-05-21"
@@ -253,7 +279,7 @@ reports:
       - "compass/tools/redcap-spec-check.sh"
       - "compass/tools/redcap-diagnose.sh"
       - "runtime/redcap-core/tools/"
-      - "compass/docs/task-reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply.md"
       - "prism/reports/2026-05-19-r1-control-plane-runtime-public-support-copy-first-apply-review.md"
       - "prism/runs/20260519-r1-control-plane-runtime-public-support-copy-first-apply/session-registry.yaml"
       - "prism/runs/20260519-r1-control-plane-runtime-public-support-copy-first-apply/prompt.md"
