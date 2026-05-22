@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 342244,
-    "lines": 6964,
-    "chars": 209216,
+    "size_bytes": 338520,
+    "lines": 6933,
+    "chars": 206662,
     "rough_token_pressure": {
-      "low": 52304,
-      "high": 104608
+      "low": 51665,
+      "high": 103331
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 200840,
-        "lines": 4567,
-        "chars": 120092,
+        "size_bytes": 201654,
+        "lines": 4570,
+        "chars": 120538,
         "rough_token_pressure": {
-          "low": 30023,
-          "high": 60046
+          "low": 30134,
+          "high": 60269
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 135874,
-        "lines": 2308,
-        "chars": 85350,
+        "size_bytes": 131336,
+        "lines": 2274,
+        "chars": 82350,
         "rough_token_pressure": {
-          "low": 21337,
-          "high": 42675
+          "low": 20587,
+          "high": 41175
         }
       }
     },
@@ -81,8 +81,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 14027,
-        "lines": 222,
+        "chars": 14473,
+        "lines": 225,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -90,12 +90,6 @@
         "chars": 13482,
         "lines": 555,
         "read_policy": "read-registry-summary-first"
-      },
-      {
-        "path": "compass/docs/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md",
-        "chars": 10211,
-        "lines": 257,
-        "read_policy": "read-catalog-summary-by-default"
       },
       {
         "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",
@@ -108,6 +102,12 @@
         "chars": 8982,
         "lines": 207,
         "read_policy": "read-catalog-summary-by-default"
+      },
+      {
+        "path": "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
+        "chars": 8791,
+        "lines": 229,
+        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
   },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 24365,
-      "lines": 222,
-      "chars": 14027,
+      "size_bytes": 25179,
+      "lines": 225,
+      "chars": 14473,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：RASG-022 剩余高风险根目录显式延期收口",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 16663,
-      "lines": 257,
-      "chars": 10211,
-      "summary": "当前已完成：RASG-022 已从“只完成一个迁移切片、其余靠口头说明”升级为“一个低风险迁移已完成，其余高风险根目录都有显式延期收据、机器检查和棱镜验收”。 / 详情：上一刀已经把 `shared-knowledge` 模板源移到 `templates/shared-knowledge`。这次解决的是剩余高风险根目录容易再次被遗忘的问题：`compass`、`references`、`prism`、`redcap-knowledge`、`loom` 和本地状态文件暂不搬迁，但每一类都写清了为什么不搬、未来什么时候必须重审、将来真的要搬时必须具备哪些安全门。这样 RASG-022 可以诚实收口，同时不会把“延期”冒充成“全部搬完”。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
       "collection": "task-reports",
       "title": "任务完成报告：RASG-022 私有冷归档根目录迁移",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：R1 Prism package-visible support 小切片",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10238,
       "lines": 185,
@@ -526,27 +513,40 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-10 Prism 报告归档预检",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10559,
       "lines": 192,
       "chars": 6583,
       "summary": "当前已完成：P4-10 已把 Prism 报告归档从“后续想做”变成了可机器检查的安全预检。 / 人话解释：现在 RedCap 能证明 `prism/reports` 里的报告、报告索引和 `prism/runs` 的原始运行证据还在原位，并且不会被这一步误删、误搬、误清理。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-17 Prism 报告归档后的下一安全切片选择",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 12125,
+      "lines": 223,
+      "chars": 7211,
+      "summary": "当前已完成：P4-16 之后的下一安全切片已经选定；下一步先做正式发布就绪差距地图，而不是直接删除旧报告、清理原始证据、裁决 Layer A 或进入正式发布。 / 详情：Claude Code 和 Kimi 都完成了独立路线评审。两边对下一刀有分歧：Claude Code 建议先恢复全局发布视角，Kimi 建议顺着 copy-first 链路做旧锚点 delete-last 预检。Cap 选择更保守的全局收敛评估，防止长时间局部推进后遗漏其他 blocker。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：P4-10 已把 Prism 报告归档从“后续想做”变成了可机器检查的安全预检。",
-          "人话解释：现在 RedCap 能证明 `prism/reports` 里的报告、报告索引和 `prism/runs` 的原始运行证据还在原位，并且不会被这一步误删、误搬、误清理。"
+          "当前已完成：P4-16 之后的下一安全切片已经选定；下一步先做正式发布就绪差距地图，而不是直接删除旧报告、清理原始证据、裁决 Layer A 或进入正式发布。",
+          "详情：Claude Code 和 Kimi 都完成了独立路线评审。两边对下一刀有分歧：Claude Code 建议先恢复全局发布视角，Kimi 建议顺着 copy-first 链路做旧锚点 delete-last 预检。Cap 选择更保守的全局收敛评估，防止长时间局部推进后遗漏其他 blocker。"
         ],
         "previous_step": [
-          "上一步完成的是：P4-9 通过 Claude Code 与 Kimi 评审，选定“先做 Prism 报告归档预检”作为下一条安全小切片。"
+          "上一步完成的是：P4-16 已把冻结的 55 份 Prism 报告复制到私有归档区，并继续保留旧 `prism/reports` 锚点。"
         ],
         "next_step": [
-          "下一步计划做的是：进入 P4-11，重新评审剩余发布前 blocker，选择下一条足够小、非破坏性、可自主推进且不越过 Norven 保留决策的安全小切片。"
+          "下一步计划做的是：P4-18 将做正式发布就绪收敛评估，把 internal-control-plane、prism-layer-and-evidence、Layer A 产品边界和包面状态整理成一张剩余差距地图。"
         ],
         "position": [
-          "整体计划脉络图是：正式发布准备路线 → R1 延期根目录分类 → 控制面与 Prism 预检 → 控制面 runtime facade → Prism package-visible support → P4-9 下一切片选择 → **P4-10 Prism report archive 预检**。",
-          "当前所在位置：`framework-upgrade / P4-10`，属于发布前结构安全预检，不是正式发布，也不是报告物理迁移。"
+          "整体计划脉络图是：P4-12 规划报告归档集合 → P4-13 临时演练 → P4-15 冻结集合防漂移 → P4-16 真实 copy-first 副本 → P4-17 选择下一安全切片 → P4-18 汇总正式发布前剩余差距。",
+          "当前所在位置：framework-upgrade / P4-17，处在 release-route-selection 的最终收口前阶段；路线评审、manifest、Prism 报告和 backlog 更新已完成，receipt 还需最终 closeout 生成。"
         ]
       }
     },

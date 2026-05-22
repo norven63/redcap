@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 294,
-    "control_plane_candidate_count": 215,
+    "candidate_count": 295,
+    "control_plane_candidate_count": 216,
     "compass": 152,
-    "references": 63,
+    "references": 64,
     "compass_tools_shell": 91,
     "compass_tools_python": 61,
-    "references_json": 60,
+    "references_json": 61,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 294,
-      "control_plane_candidate_count": 215,
+      "candidate_count": 295,
+      "control_plane_candidate_count": 216,
       "compass": 152,
-      "references": 63,
+      "references": 64,
       "compass_tools_shell": 91,
       "compass_tools_python": 61,
-      "references_json": 60,
+      "references_json": 61,
       "references_markdown": 3,
       "source": "redcap-runtime-package-manifest.sh --output <temp>"
     },
@@ -299,10 +299,10 @@
       }
     ],
     "coverage": {
-      "total_entries": 215,
+      "total_entries": 216,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 51,
+        "internal-contract": 52,
         "internal-control-plane": 105,
         "public-contract": 11,
         "runtime-public-support": 47
@@ -1664,6 +1664,13 @@
         "source": "references/r1-prism-report-archive-live-copy-first-apply.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/r1-prism-report-archive-live-copy-first-apply.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-17",
-    "summary": "P4-17 待推进：P4-16 已完成冻结 Prism 报告集合的 live copy-first 归档；下一刀需要先评审 delete-last、raw evidence 保全/清理、Layer A 边界或 release readiness 的安全顺序，仍不得无授权执行破坏性清理或正式公开发布动作。"
+    "item_id": "P4-18",
+    "summary": "P4-18 待推进：在 P4-17 已选定下一安全切片后，先做正式发布就绪收敛评估，把剩余 blocker、人工决策点和可自主推进的小切片整理成一张可审计差距地图；仍不得执行旧锚点删除、raw evidence 清理、Layer A 产品裁决或正式公开发布动作。"
   },
   "glossary": [
     {
@@ -683,14 +683,30 @@
         {
           "id": "P4-17",
           "title": "R1 next safe slice after Prism report archive live copy-first apply",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-21-release-readiness-next-safe-slice-after-prism-report-archive-live-copy-first-apply",
-          "summary": "P4-16 收口后的下一安全切片选择：评审 delete-last、raw evidence 保全/清理、Layer A 产品边界和 release readiness 的优先级；本项只做路线选择和边界锁定，不执行旧锚点删除、raw evidence 清理、Layer A 产品裁决或正式公开发布动作。",
+          "summary": "P4-17 已完成：Claude Code 与 Kimi 对 delete-last、raw evidence、Layer A 产品边界和 release readiness 做了路线评审；Cap 裁决下一刀先做正式发布就绪收敛评估，不执行任何破坏性操作或产品裁决。",
           "evidence_paths": [
+            "references/r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.json",
+            "prism/reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
+            "compass/docs/task-reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
             "references/r1-prism-report-archive-live-copy-first-apply.json",
             "prism/reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
             "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md"
+          ]
+        },
+        {
+          "id": "P4-18",
+          "title": "R1 formal release readiness convergence assessment after Prism report archive apply",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-22-release-readiness-formal-convergence-assessment",
+          "summary": "P4-18 待推进：汇总 internal-control-plane、prism-layer-and-evidence、Layer A 产品边界和包面状态，形成正式发布前剩余差距地图与下一步安全顺序；本项不删除旧锚点、不清理 raw evidence、不裁决 Layer A、不修改发布开关。",
+          "evidence_paths": [
+            "references/r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.json",
+            "prism/reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
+            "compass/docs/task-reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md"
           ]
         }
       ]
@@ -909,11 +925,20 @@
     {
       "id": "phase-21-release-readiness-next-safe-slice-after-prism-report-archive-live-copy-first-apply",
       "title": "阶段 21：发布准备下一安全切片选择",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-17"
       ],
-      "summary": "P4-16 收口后，先评审下一条 release-readiness 安全切片，避免在未锁定边界时直接进入旧锚点退休、raw evidence cleanup、Layer A 产品裁决或正式公开发布动作。"
+      "summary": "P4-16 收口后，已由 Claude Code 与 Kimi 评审下一条 release-readiness 安全切片；Cap 裁决 P4-18 先做正式发布就绪收敛评估，避免在未恢复全局视角时直接进入 delete-last、raw evidence cleanup、Layer A 产品裁决或正式发布。"
+    },
+    {
+      "id": "phase-22-release-readiness-formal-convergence-assessment",
+      "title": "阶段 22：发布准备正式就绪收敛评估",
+      "status": "pending",
+      "item_ids": [
+        "P4-18"
+      ],
+      "summary": "正式发布动作之前，先把剩余 R1 blocker、人工决策点和可自主推进的小切片整理成一张可审计差距地图；当前仍不执行旧锚点删除、raw evidence cleanup、Layer A 产品裁决或正式公开发布动作。"
     }
   ]
 }

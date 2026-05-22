@@ -225,7 +225,7 @@ def validate_backlog(backlog: dict[str, Any]) -> None:
         "references/root-information-architecture-consolidation-plan.json",
         "references/root-ia-shared-knowledge-tranche-manifest.json",
         "references/root-ia-remaining-root-groups-deferral.json",
-        "compass/docs/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md",
+        "private-archive/redcap-knowledge/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md",
     ]:
         if required not in evidence:
             fail(f"RASG-022 evidence missing: {required}")
