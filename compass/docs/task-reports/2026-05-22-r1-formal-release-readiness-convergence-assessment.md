@@ -24,7 +24,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：P4-16 完成 Prism 报告 copy-first → P4-17 选择先做全局差距地图 → P4-18 完成正式发布差距地图 → P4-19 做旧报告锚点退休预检。
-- 当前所在位置：framework-upgrade / P4-18 已完成主体落地，等待 closeout receipt 最终生成；P4-19 已登记为下一步。
+- 当前所在位置：framework-upgrade / P4-18 已正式完成并生成 closeout receipt；P4-19 已登记为下一步。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -143,8 +143,8 @@ P4-18 把 release readiness 拆成四类信息：仍然阻塞正式发布的事�
 |------|------|
 | 执行承诺账本 | 收口前待最终核对 |
 | 棱镜验收 | Claude Code 与 Kimi 已完成，split recommendation 后由 Cap 保守裁决 |
-| closeout summary | 收口前待生成 |
-| closeout receipt | 收口前待生成 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-formal-release-readiness-convergence-assessment-38bd64adc2ac9f893858943be56de551c83786d25c4f008f9959d5dc1cb463c1.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-formal-release-readiness-convergence-assessment-38bd64adc2ac9f893858943be56de551c83786d25c4f008f9959d5dc1cb463c1.json` |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -153,7 +153,7 @@ P4-18 把 release readiness 拆成四类信息：仍然阻塞正式发布的事�
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code 与 Kimi 已完成路线评审 |
-| 已正式完成 | 否，closeout receipt 还需最终生成 |
+| 已正式完成 | 是，closeout receipt 已生成 |
 
 ---
 
@@ -171,9 +171,9 @@ P4-18 把 release readiness 拆成四类信息：仍然阻塞正式发布的事�
 
 ### 6.2 推荐的下一步行动
 
-1. 完成本轮 closeout runtime，生成 P4-18 receipt。
-2. 进入 P4-19：旧 `prism/reports` 锚点 delete-last 预检。
-3. P4-19 之后再回到 internal-control-plane physical split copy-first 任务。
+1. 进入 P4-19：旧 `prism/reports` 锚点 delete-last 预检。
+2. P4-19 之后再回到 internal-control-plane physical split copy-first 任务。
+3. 进入真实删除、发布、许可证或 Layer A 产品边界裁决前，必须重新触发人工决策。
 
 ---
 
@@ -202,7 +202,8 @@ P4-18 把 release readiness 拆成四类信息：仍然阻塞正式发布的事�
 ### 附录 A：Commits
 
 ```
-本报告生成时尚未提交；最终 commit 会在 closeout 后记录。
+ca6c80b test(release): 完成 P4-18 正式发布差距地图
+642ae16 test(release): 刷新 P4-18 clean workspace 结果
 ```
 
 ### 附录 B：棱镜调用记录
