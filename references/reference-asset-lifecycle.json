@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/framework-upgrade.json",
-      "bytes": 54601,
+      "bytes": 55860,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary-policy.json",
-      "bytes": 105667,
+      "bytes": 107078,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -42,7 +42,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 107075,
+      "bytes": 108331,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -132,7 +132,7 @@
     },
     {
       "path": "references/r1-prism-report-archive-live-copy-first-apply.json",
-      "bytes": 36220,
+      "bytes": 36872,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -141,7 +141,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 43125,
+      "bytes": 43516,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",

@@ -361,6 +361,27 @@
       "check": "bash compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.sh"
     },
     {
+      "path": "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.json",
+      "section": "Package Publish Safety",
+      "meaning": "machine-readable P4-22 next safe slice route decision after the internal-control-plane maintainer facade batch",
+      "owner": "Release architecture + route governance",
+      "check": "bash compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for validating the P4-22 next safe slice route decision",
+      "owner": "Release architecture + route governance",
+      "check": "bash compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates that P4-22 only selects the next route and does not implement a slice, clean evidence, change release switches or close blockers",
+      "owner": "Release architecture + route governance",
+      "check": "bash compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh"
+    },
+    {
       "path": "references/r1-prism-evidence-retention-apply-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 prism-layer-and-evidence copy-first / alias-first apply preflight with no-cleanup and still-blocking release boundary",

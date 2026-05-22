@@ -10,10 +10,10 @@
     "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
     "readiness_sha256": "2b7b01fd845b237f7f37c9b74b2aebfd49ba0baf96b95f160fcf73b980069c01",
     "guard_path": "references/r1-prism-report-archive-churn-freeze-guard.json",
-    "guard_sha256": "16065ef1f80d98d906a441db6aba6e707868bb4d98a0413887e3d5af835df6af",
+    "guard_sha256": "a920fab8e464a1229b96b89ad722663ff5da89270f5fca0d3fc81a8f1bbd4918",
     "frozen_mapping_sha256": "4a30820ec272e430398475e635a159b4930acfd9668c92f7343e509b740afc63",
     "source_report_count": 55,
-    "post_freeze_report_count": 7
+    "post_freeze_report_count": 8
   },
   "claim_boundary": {
     "live_archive_copies_created": true,
@@ -647,6 +647,22 @@
       "required_before_future_plan_refresh": "A future route decision must explicitly decide whether to refresh the frozen archive cohort before any old-anchor retirement or delete-last tranche."
     },
     {
+      "report_id": "20260523-r1-control-plane-internal-maintainer-facade-copy-first-apply",
+      "source_path": "prism/reports/2026-05-23-r1-control-plane-internal-maintainer-facade-copy-first-apply.md",
+      "source_sha256": "07e6b9d91dd9cf1c703fa70b37e11d1e6c76997a5f87be0666af9526c7c9009c",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane or old-anchor archive refresh task must explicitly preserve or absorb this P4-21 facade review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.md",
+      "source_sha256": "9e9e8e8d981dd44edba7e77aca6e9eebfc0958e77a75c592940fc69e873d27af",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane or old-anchor archive refresh task must explicitly preserve or absorb this P4-22 route-selection review before retiring prism/reports anchors."
+    },
+    {
       "report_id": "20260523-r1-next-safe-slice-after-old-anchor-preflight",
       "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-old-anchor-preflight.md",
       "source_sha256": "6e53fb081866bd8b5f3e1af0f246a8660656819dc4f17226058676eae690e17e",
@@ -661,14 +677,6 @@
       "classification": "post-freeze-formal-prism-review",
       "include_in_current_archive_plan": false,
       "required_before_future_plan_refresh": "A future old-anchor delete-last apply task must refresh or explicitly preserve this P4-19 preflight report before any retirement action."
-    },
-    {
-      "report_id": "20260523-r1-control-plane-internal-maintainer-facade-copy-first-apply",
-      "source_path": "prism/reports/2026-05-23-r1-control-plane-internal-maintainer-facade-copy-first-apply.md",
-      "source_sha256": "07e6b9d91dd9cf1c703fa70b37e11d1e6c76997a5f87be0666af9526c7c9009c",
-      "classification": "post-freeze-formal-prism-review",
-      "include_in_current_archive_plan": false,
-      "required_before_future_plan_refresh": "A future internal-control-plane or old-anchor archive refresh task must explicitly preserve or absorb this P4-21 facade review before retiring prism/reports anchors."
     }
   ],
   "package_surface_policy": {

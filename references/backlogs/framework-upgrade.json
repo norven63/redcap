@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-22",
-    "summary": "P4-22 待推进：P4-21 已完成 8 个 internal-control-plane 维护工具 facade 小批次；下一步在无人工硬门时自动进入下一安全切片选择。"
+    "item_id": "P4-23",
+    "summary": "P4-23 待推进：P4-22 已选定下一安全切片为继续 internal-control-plane 小批次 copy-first facade；下一步在无人工硬门时自动进入批次实施。"
   },
   "glossary": [
     {
@@ -770,15 +770,27 @@
         {
           "id": "P4-22",
           "title": "R1 next safe slice after internal-control-plane maintainer facade batch",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-26-release-readiness-next-safe-slice-after-internal-maintainer-facade-batch",
-          "summary": "P4-22 待推进：P4-21 已完成 internal-control-plane 8 个维护工具 facade 小批次；下一步应由 Prism 重新比较继续 internal-control-plane、public/internal contract mirror、旧报告入口别名/查询网关等非破坏性候选，选择下一条安全切片。",
+          "summary": "P4-22 已完成：Claude Code / Kimi 共识选择 A，下一条安全切片为继续 internal-control-plane 小批次 copy-first facade；本轮只做路线裁决，未实施下一批、未关闭 release blocker、未触碰发布或证据清理硬门。",
           "evidence_paths": [
-            "references/r1-control-plane-internal-maintainer-facade-copy-first-apply.json",
-            "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.sh",
-            "prism/reports/2026-05-23-r1-control-plane-internal-maintainer-facade-copy-first-apply.md",
-            "compass/docs/task-reports/2026-05-23-r1-control-plane-internal-maintainer-facade-copy-first-apply.md"
+            "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.json",
+            "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh",
+            "prism/reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.md",
+            "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.md"
+          ]
+        },
+        {
+          "id": "P4-23",
+          "title": "R1 internal-control-plane maintainer facade batch-2 copy-first apply",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-27-release-readiness-internal-control-plane-maintainer-facade-batch-2",
+          "summary": "P4-23 待推进：按 P4-22 路线裁决继续 internal-control-plane 小批次 copy-first facade；下一轮只允许选择不大于 P4-21 的低风险维护工具批次，旧 compass/tools 仍保持权威，release blockers 仍保持 open。",
+          "evidence_paths": [
+            "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.json",
+            "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh"
           ]
         }
       ]
@@ -1042,11 +1054,20 @@
     {
       "id": "phase-26-release-readiness-next-safe-slice-after-internal-maintainer-facade-batch",
       "title": "阶段 26：发布准备 P4-21 后下一安全切片选择",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-22"
       ],
-      "summary": "P4-21 小批次 facade 完成后，继续用 Prism 路线评审选择下一条非破坏、非发布、非人工保留的安全切片。"
+      "summary": "P4-22 已完成下一安全切片选择：继续 internal-control-plane 小批次 copy-first facade。"
+    },
+    {
+      "id": "phase-27-release-readiness-internal-control-plane-maintainer-facade-batch-2",
+      "title": "阶段 27：发布准备 internal-control-plane 维护工具第二小批次",
+      "status": "pending",
+      "item_ids": [
+        "P4-23"
+      ],
+      "summary": "按 P4-22 路线裁决，继续用小批次 copy-first facade 推进 internal-control-plane；不得批量处理全部 111 个条目，不得删除旧锚点或关闭 release blocker。"
     }
   ]
 }

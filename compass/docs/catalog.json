@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 335307,
-    "lines": 6869,
-    "chars": 202329,
+    "size_bytes": 332485,
+    "lines": 6828,
+    "chars": 200411,
     "rough_token_pressure": {
-      "low": 50582,
-      "high": 101164
+      "low": 50102,
+      "high": 100205
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 204229,
-        "lines": 4581,
-        "chars": 122195,
+        "size_bytes": 204834,
+        "lines": 4584,
+        "chars": 122608,
         "rough_token_pressure": {
-          "low": 30548,
-          "high": 61097
+          "low": 30652,
+          "high": 61304
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 125548,
-        "lines": 2199,
-        "chars": 76360,
+        "size_bytes": 122121,
+        "lines": 2155,
+        "chars": 74029,
         "rough_token_pressure": {
-          "low": 19090,
-          "high": 38180
+          "low": 18507,
+          "high": 37014
         }
       }
     },
@@ -69,8 +69,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 16130,
-        "lines": 236,
+        "chars": 16543,
+        "lines": 239,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 27754,
-      "lines": 236,
-      "chars": 16130,
+      "size_bytes": 28359,
+      "lines": 239,
+      "chars": 16543,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-report-archive-apply-readiness.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-14 发布前下一小切片选择",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 8834,
-      "lines": 149,
-      "chars": 5466,
-      "summary": "当前已完成：P4-14 已通过 Claude Code 与 Kimi 的棱镜路线评审，选定下一条正式发布前安全小切片：`Prism report archive churn/freeze guard`。 / 人话解释：下一步先解决“每新增一份正式 Prism 报告，归档计划就过期”的问题；还不是开始真实复制报告。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-report-archive-preflight.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-11 发布前下一小切片选择",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-10 Prism 报告归档预检",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10559,
       "lines": 192,
@@ -526,26 +513,39 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-21 internal-control-plane 小批次镜像",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 7221,
       "lines": 124,
       "chars": 3927,
       "summary": "当前已完成：P4-21 已完成一小批 internal-control-plane 维护工具镜像。RedCap 新增了 8 个内部维护入口，它们只把调用转交给旧的权威脚本，不改变旧位置、不删除旧资产，也不宣称发布 blocker 已关闭。 / 上一步完成的是：P4-20 已选择下一条安全路线，结论是先回到 internal-control-plane，用小批次、可回滚、非破坏的方式继续拆正式发布前的结构风险。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-22 下一安全切片选择",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 5407,
+      "lines": 105,
+      "chars": 3135,
+      "summary": "当前已完成：P4-22 已完成下一安全切片选择。Claude Code 与 Kimi 一致建议继续 internal-control-plane 的小批次 copy-first facade 路线；本轮没有实施下一批 facade，也没有关闭任何 release blocker。 / 上一步完成的是：P4-21 已完成 8 个 internal-control-plane 维护工具 facade 小批次，证明新入口可以委托旧 `compass/tools`，但旧锚点仍保持权威。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：P4-21 已完成一小批 internal-control-plane 维护工具镜像。RedCap 新增了 8 个内部维护入口，它们只把调用转交给旧的权威脚本，不改变旧位置、不删除旧资产，也不宣称发布 blocker 已关闭。"
+          "当前已完成：P4-22 已完成下一安全切片选择。Claude Code 与 Kimi 一致建议继续 internal-control-plane 的小批次 copy-first facade 路线；本轮没有实施下一批 facade，也没有关闭任何 release blocker。"
         ],
         "previous_step": [
-          "上一步完成的是：P4-20 已选择下一条安全路线，结论是先回到 internal-control-plane，用小批次、可回滚、非破坏的方式继续拆正式发布前的结构风险。"
+          "上一步完成的是：P4-21 已完成 8 个 internal-control-plane 维护工具 facade 小批次，证明新入口可以委托旧 `compass/tools`，但旧锚点仍保持权威。"
         ],
         "next_step": [
-          "下一步计划做的是：P4-22 将重新比较下一条安全切片，判断是继续扩大 internal-control-plane 镜像、推进 public/internal contract mirror，还是先补旧报告入口别名或查询网关。"
+          "下一步计划做的是：P4-23 将按本轮路线裁决，实施下一批小规模 internal-control-plane facade；批次规模不得超过 P4-21，仍不得触碰发布、证据清理或 Layer A 硬门。"
         ],
         "position": [
-          "整体计划脉络图是：P4-18 处理发布前旧资产预检，P4-19 处理旧报告入口，P4-20 选择下一条安全切片，P4-21 完成 internal-control-plane 小批次镜像，P4-22 再选择下一条安全切片。",
-          "当前所在位置：P4-21 已完成实现、棱镜评审和主要机器验收，正在进入正式 closeout 收口；RedCap 仍处于发布前治理阶段，不是 npm 正式发布阶段。"
+          "整体计划脉络图是：P4-20 选择 P4-21，P4-21 完成第一批 internal-control-plane facade，P4-22 选择 P4-23，P4-23 将实施第二小批次 facade。",
+          "当前所在位置：P4-22 已完成路线裁决，RedCap 仍处于发布前治理阶段，不是正式发布阶段。"
         ]
       }
     },

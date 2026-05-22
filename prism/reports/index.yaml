@@ -1,4 +1,28 @@
 reports:
+  - id: "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight"
+    mode: route-selection
+    date: "2026-05-23"
+    topic: "P4-22 next safe slice after internal-control-plane maintainer facade batch"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-A-continue-small-internal-control-plane-facade-batch"
+    consensus_actions:
+      - "Select P4-23 as another small internal-control-plane copy-first facade batch"
+      - "Keep old compass/tools anchors authoritative"
+      - "Keep release blockers, Prism reports/raw evidence, release switches and Layer A product boundary untouched"
+    open_questions:
+      - "P4-23 must choose a small batch no larger than P4-21"
+      - "Public/internal contract mirrors and old report alias/query gateway remain later candidates"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.json"
+      - "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.py"
+      - "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh"
+      - "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.md"
+      - "prism/reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.md"
+      - "prism/runs/20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight/claude-code-review.txt"
+      - "prism/runs/20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight/kimi-review.txt"
+    archived: false
   - id: "20260523-r1-control-plane-internal-maintainer-facade-copy-first-apply"
     mode: explore
     date: "2026-05-23"
