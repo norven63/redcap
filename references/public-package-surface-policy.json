@@ -12,8 +12,8 @@
   "surface_mode": "curated-runtime-readiness-surface",
   "contract_profile": "alpha-readiness-split-contract",
   "contract_boundary_policy": "references/runtime-public-contract-policy.json",
-  "max_candidate_count": 295,
-  "candidate_count_rule": "Keep the package surface focused on runnable CLI/runtime, clearly labelled maintainer/readiness checks, Prism availability, closeout/revive/status/diagnose support, and public handoff docs. P4-17 raises the alpha readiness ceiling to 295 because the next-safe-slice route-selection task adds one package-visible reference manifest while archived report copies remain private-archive-only and excluded. These are still not stable end-user API; formal public release must either trim them or introduce a separate maintainer package profile.",
+  "max_candidate_count": 296,
+  "candidate_count_rule": "Keep the package surface focused on runnable CLI/runtime, clearly labelled maintainer/readiness checks, Prism availability, closeout/revive/status/diagnose support, and public handoff docs. P4-18 raises the alpha readiness ceiling to 296 because the formal convergence assessment adds one package-visible reference manifest after P4-17 while archived report copies remain private-archive-only and excluded. These are still not stable end-user API; formal public release must either trim them or introduce a separate maintainer package profile.",
   "required_runtime_checks": [
     "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
     "bash compass/tools/redcap-package-publish-safety-check.sh",

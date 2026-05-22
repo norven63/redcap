@@ -732,7 +732,7 @@
         "compass/docs/task-reports/2026-05-13-rasg-022-root-ia-shared-knowledge-tranche.md",
         "private-archive/redcap-knowledge/task-reports/2026-05-14-rasg-022-remaining-root-groups-deferral.md",
         "references/root-ia-private-archive-tranche-manifest.json",
-        "compass/docs/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
+        "private-archive/redcap-knowledge/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
         "prism/reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
       ],
       "applied_tranches": [
@@ -755,7 +755,7 @@
           "retired_root": "redcap-knowledge",
           "evidence": [
             "references/root-ia-private-archive-tranche-manifest.json",
-            "compass/docs/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
+            "private-archive/redcap-knowledge/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
             "prism/reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
           ],
           "completion_boundary": "This tranche does not close all root information architecture physical consolidation."

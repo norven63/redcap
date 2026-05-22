@@ -39,7 +39,7 @@
       "retired_root": "redcap-knowledge",
       "evidence": [
         "references/root-ia-private-archive-tranche-manifest.json",
-        "compass/docs/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
+        "private-archive/redcap-knowledge/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md",
         "prism/reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
       ],
       "runtime_receipt_observed": "pending-closeout-runtime-receipt",

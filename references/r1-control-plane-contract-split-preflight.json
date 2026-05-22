@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 295,
-    "control_plane_candidate_count": 216,
+    "candidate_count": 296,
+    "control_plane_candidate_count": 217,
     "compass": 152,
-    "references": 64,
+    "references": 65,
     "compass_tools_shell": 91,
     "compass_tools_python": 61,
-    "references_json": 61,
+    "references_json": 62,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -82,7 +82,7 @@
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 63,
+        "package_candidate_count": 64,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 295,
-      "control_plane_candidate_count": 216,
+      "candidate_count": 296,
+      "control_plane_candidate_count": 217,
       "compass": 152,
-      "references": 64,
+      "references": 65,
       "compass_tools_shell": 91,
       "compass_tools_python": 61,
-      "references_json": 61,
+      "references_json": 62,
       "references_markdown": 3,
       "source": "redcap-runtime-package-manifest.sh --output <temp>"
     },
@@ -299,10 +299,10 @@
       }
     ],
     "coverage": {
-      "total_entries": 216,
+      "total_entries": 217,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 52,
+        "internal-contract": 53,
         "internal-control-plane": 105,
         "public-contract": 11,
         "runtime-public-support": 47
@@ -1671,6 +1671,13 @@
         "source": "references/r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-formal-release-readiness-convergence-assessment.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-formal-release-readiness-convergence-assessment.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-18",
-    "summary": "P4-18 待推进：在 P4-17 已选定下一安全切片后，先做正式发布就绪收敛评估，把剩余 blocker、人工决策点和可自主推进的小切片整理成一张可审计差距地图；仍不得执行旧锚点删除、raw evidence 清理、Layer A 产品裁决或正式公开发布动作。"
+    "item_id": "P4-19",
+    "summary": "P4-19 待推进：在 P4-18 已完成正式发布差距地图后，先做旧 prism/reports 锚点 delete-last 预检；本项只证明未来是否具备安全退休旧锚点的条件，不执行真实删除、不清理 raw evidence、不修改发布开关。"
   },
   "glossary": [
     {
@@ -699,14 +699,30 @@
         {
           "id": "P4-18",
           "title": "R1 formal release readiness convergence assessment after Prism report archive apply",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-22-release-readiness-formal-convergence-assessment",
-          "summary": "P4-18 待推进：汇总 internal-control-plane、prism-layer-and-evidence、Layer A 产品边界和包面状态，形成正式发布前剩余差距地图与下一步安全顺序；本项不删除旧锚点、不清理 raw evidence、不裁决 Layer A、不修改发布开关。",
+          "summary": "P4-18 已完成：正式发布前剩余差距已收敛成一张地图，明确 internal-control-plane、prism-layer-and-evidence、Layer A 产品边界、发布授权、历史资产清理硬门和多 OS 外部验证仍阻塞正式公开发布；下一刀选定为旧 prism/reports 锚点 delete-last 预检。",
           "evidence_paths": [
+            "references/r1-formal-release-readiness-convergence-assessment.json",
+            "prism/reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md",
+            "compass/docs/task-reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md",
             "references/r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.json",
             "prism/reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
             "compass/docs/task-reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md"
+          ]
+        },
+        {
+          "id": "P4-19",
+          "title": "R1 Prism report archive old-anchor delete-last preflight after convergence assessment",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-23-release-readiness-prism-report-archive-old-anchor-delete-last-preflight",
+          "summary": "P4-19 待推进：基于 P4-16 copy-first 与 P4-18 差距地图，评估旧 prism/reports 锚点未来能否安全退休；本项只做 delete-last 预检、引用检查、回滚方案和人工边界，不执行真实删除、不清理 prism/runs raw evidence、不修改发布开关。",
+          "evidence_paths": [
+            "references/r1-formal-release-readiness-convergence-assessment.json",
+            "prism/reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md",
+            "compass/docs/task-reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md"
           ]
         }
       ]
@@ -934,11 +950,20 @@
     {
       "id": "phase-22-release-readiness-formal-convergence-assessment",
       "title": "阶段 22：发布准备正式就绪收敛评估",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-18"
       ],
-      "summary": "正式发布动作之前，先把剩余 R1 blocker、人工决策点和可自主推进的小切片整理成一张可审计差距地图；当前仍不执行旧锚点删除、raw evidence cleanup、Layer A 产品裁决或正式公开发布动作。"
+      "summary": "正式发布动作之前，已把剩余 R1 blocker、人工决策点、已满足证据、风险漂移和可自主推进小切片整理成一张可审计差距地图；正式公开发布仍保持 blocked。"
+    },
+    {
+      "id": "phase-23-release-readiness-prism-report-archive-old-anchor-delete-last-preflight",
+      "title": "阶段 23：发布准备 Prism report archive 旧锚点退休预检",
+      "status": "pending",
+      "item_ids": [
+        "P4-19"
+      ],
+      "summary": "基于 P4-16 copy-first 和 P4-18 差距地图，只做旧 prism/reports 锚点 delete-last 预检、引用检查与回滚方案；当前仍不执行真实删除、不清理 raw evidence、不修改发布开关。"
     }
   ]
 }

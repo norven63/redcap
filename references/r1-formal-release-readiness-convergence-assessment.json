@@ -1,0 +1,233 @@
+{
+  "version": 1,
+  "assessment_id": "redcap-r1-formal-release-readiness-convergence-assessment",
+  "status": "release-still-blocked-assessment-completed",
+  "created_at": "2026-05-22T16:35:00Z",
+  "source_task": {
+    "backlog_id": "framework-upgrade",
+    "item_id": "P4-18",
+    "active_slice": "r1-formal-release-readiness-convergence-assessment",
+    "previous_item_id": "P4-17",
+    "previous_summary": "P4-17 selected formal release readiness convergence as the next safe non-destructive slice after Prism report archive live copy-first apply."
+  },
+  "claim_boundary": {
+    "convergence_assessment_completed": true,
+    "release_blocker_closed": false,
+    "public_release_ready": false,
+    "public_release_executed": false,
+    "release_switch_changed": false,
+    "license_selected": false,
+    "old_report_anchors_removed_or_replaced": false,
+    "raw_run_evidence_deleted_or_cleaned": false,
+    "layer_a_product_decision_made": false,
+    "allowed_user_claim": "RedCap has a current formal-release gap map and a recommended next safe slice; public release remains blocked.",
+    "forbidden_claims": [
+      "RedCap is ready for public npm/CLI release.",
+      "All release blockers are closed.",
+      "R1 historical asset physical cleanup is complete.",
+      "internal-control-plane is resolved.",
+      "prism-layer-and-evidence is resolved.",
+      "internal-layer-a is resolved.",
+      "Old prism/reports anchors have been retired or deleted.",
+      "Prism raw run evidence has been cleaned or pruned.",
+      "Layer A product scope has been decided.",
+      "License, registry, package privacy, or publish authorization has been changed.",
+      "Clean workspace E2E equals multi-OS external release validation."
+    ]
+  },
+  "remaining_release_blockers": [
+    {
+      "id": "r1-internal-control-plane",
+      "status": "still-blocking",
+      "owner_boundary": "engineering-autonomous-copy-first-possible; release closure still requires future task evidence",
+      "summary": "compass/references control-plane assets remain package-visible in the old source anchors; contract and physical apply preflights exist, but no full physical split or release-safe contract resolution is complete.",
+      "evidence": [
+        "references/formal-release-r1-root-group-disposition-preflight.json",
+        "references/r1-control-plane-contract-split-preflight.json",
+        "references/r1-control-plane-physical-apply-preflight.json"
+      ]
+    },
+    {
+      "id": "r1-prism-layer-and-evidence",
+      "status": "still-blocking",
+      "owner_boundary": "engineering-autonomous-preflight-possible; raw evidence cleanup requires explicit approval",
+      "summary": "Prism tools, formal reports, and run evidence boundaries are understood, but the evidence retention split is not physically complete and raw run cleanup remains forbidden without separate authorization.",
+      "evidence": [
+        "references/formal-release-r1-root-group-disposition-preflight.json",
+        "references/r1-prism-evidence-retention-split-preflight.json",
+        "references/r1-prism-evidence-retention-apply-preflight.json"
+      ]
+    },
+    {
+      "id": "r1-internal-layer-a",
+      "status": "still-blocking",
+      "owner_boundary": "human-product-decision-required-before-public-scope-claim",
+      "summary": "Layer A / loom has zero package candidates, but absence from the package is not a product decision; Norven must decide public inclusion, exclusion, retirement, or future boundary-resolution path.",
+      "evidence": [
+        "references/formal-release-r1-root-group-disposition-preflight.json",
+        "references/r1-layera-product-boundary-preflight.json"
+      ]
+    },
+    {
+      "id": "release-authorization-and-distribution",
+      "status": "still-blocking",
+      "owner_boundary": "human-release-decision-required",
+      "summary": "The package remains private, publish authorization remains false, license remains UNLICENSED, and registry/account release decisions are intentionally locked.",
+      "evidence": [
+        "package.json",
+        "references/runtime-package-readiness-policy.json",
+        "references/public-package-surface-policy.json",
+        "references/pre-release-product-architecture-review.json",
+        "references/formal-release-readiness-plan.json"
+      ]
+    },
+    {
+      "id": "historical-asset-physical-cleanup-release-gate",
+      "status": "deferred-to-formal-release-task",
+      "owner_boundary": "release-hard-gate-before-public-release",
+      "summary": "Historical asset cleanup has a release hard gate, but the formal release task still must prove all historical assets are physically safe, archived, excluded, or explicitly blocked.",
+      "evidence": [
+        "references/historical-asset-physical-cleanup-release-gate.json",
+        "references/release-readiness-e2e-matrix.json"
+      ]
+    },
+    {
+      "id": "multi-os-external-machine-validation",
+      "status": "deferred-to-formal-release-task",
+      "owner_boundary": "alpha-limitation-or-release-matrix-proof-required",
+      "summary": "Local clean workspace install E2E passes, but no separate external-machine or multi-OS proof is present.",
+      "evidence": [
+        "references/release-readiness-e2e-matrix.json",
+        "references/clean-workspace-install-e2e.json"
+      ]
+    }
+  ],
+  "already_satisfied": [
+    {
+      "id": "package-publish-safety-baseline",
+      "summary": "Package safety, private path exclusion, npm pack dry-run, and runtime package manifest checks currently pass.",
+      "evidence": [
+        "references/clean-workspace-install-e2e.json",
+        "references/package-publish-safety-policy.json",
+        "references/runtime-package-readiness-policy.json"
+      ]
+    },
+    {
+      "id": "workspace-state-exclusion",
+      "summary": "Workspace-local state is classified as nonhistorical local state and excluded from package candidates.",
+      "evidence": [
+        "references/formal-release-r1-root-group-disposition-preflight.json"
+      ]
+    },
+    {
+      "id": "cli-runtime-product-baseline",
+      "summary": "CLI status, diagnose, doctor/debug/version/help surfaces and workspace/runtime boundary checks are in place for the current alpha-readiness surface.",
+      "evidence": [
+        "references/pre-release-product-architecture-review.json",
+        "references/runtime-workspace-boundary-policy.json",
+        "references/cli-product-surface-policy.json"
+      ]
+    },
+    {
+      "id": "r1-preflight-analysis",
+      "summary": "R1 disposition, control-plane, Prism evidence, and Layer A preflights are machine-checkable; this is analysis readiness, not blocker closure.",
+      "evidence": [
+        "references/formal-release-r1-root-group-disposition-preflight.json",
+        "references/r1-control-plane-contract-split-preflight.json",
+        "references/r1-control-plane-physical-apply-preflight.json",
+        "references/r1-prism-evidence-retention-split-preflight.json",
+        "references/r1-prism-evidence-retention-apply-preflight.json",
+        "references/r1-layera-product-boundary-preflight.json"
+      ]
+    },
+    {
+      "id": "prism-report-archive-copy-first",
+      "summary": "The frozen 55-report Prism report cohort has a private-archive copy-first backup; old anchors remain intentionally live.",
+      "evidence": [
+        "references/r1-prism-report-archive-live-copy-first-apply.json",
+        "private-archive/prism-reports/index.yaml"
+      ]
+    }
+  ],
+  "human_only_decisions": [
+    "license selection",
+    "public distribution authorization",
+    "release level and semver version",
+    "registry/account publication authority",
+    "Layer A / loom product boundary",
+    "destructive delete-last or raw evidence cleanup apply authorization",
+    "whether an alpha release may proceed without multi-OS external-machine proof"
+  ],
+  "risks_and_policy_drifts": [
+    {
+      "id": "candidate-count-policy-drift",
+      "severity": "medium",
+      "summary": "runtime-package-readiness-policy still states max_before_release_task=280 while public-package-surface-policy has raised the alpha-readiness ceiling to 296. Current checks pass, but the formal release convergence report should keep this visible until the release task either trims the package or reconciles the policy language.",
+      "evidence": [
+        "references/runtime-package-readiness-policy.json",
+        "references/public-package-surface-policy.json"
+      ]
+    },
+    {
+      "id": "local-clean-e2e-not-external-release-matrix",
+      "severity": "medium",
+      "summary": "Clean workspace E2E proves a local clean clone flow; it does not prove multi-OS or external-machine installability.",
+      "evidence": [
+        "references/clean-workspace-install-e2e.json",
+        "references/release-readiness-e2e-matrix.json"
+      ]
+    }
+  ],
+  "recommended_next_order": [
+    {
+      "rank": 1,
+      "backlog_item_id": "P4-19",
+      "title": "R1 Prism report archive old-anchor delete-last preflight after convergence assessment",
+      "scope": "preflight only; no real deletion, no raw evidence cleanup, no release switch changes",
+      "reason": "This is the smallest bounded next slice after P4-16/P4-17/P4-18: it completes the already-started Prism report archive copy-first lifecycle with a delete-last readiness proof, while still refusing destructive apply."
+    },
+    {
+      "rank": 2,
+      "title": "R1 internal-control-plane physical split next copy-first tranche",
+      "scope": "copy-first / alias-first implementation only after the current control-plane preflight is refreshed",
+      "reason": "This addresses the largest remaining engineering blocker, but it has broader consumer and package-surface risk than an old-anchor preflight."
+    },
+    {
+      "rank": 3,
+      "title": "Runtime/public package policy wording reconciliation",
+      "scope": "policy-language alignment only; no release switch changes",
+      "reason": "The 280 vs 296 package-count language drift should be removed before formal release decisions, but it is not the next highest blocker."
+    }
+  ],
+  "prism_review": {
+    "run_id": "20260522-r1-formal-release-readiness-convergence-assessment",
+    "verdict": "weak-consensus-pass-with-recommendation-split-cap-adjudicates-bounded-preflight",
+    "agents": [
+      {
+        "provider": "claude-code",
+        "status": "responded",
+        "verdict": "pass",
+        "recommendation": "internal-control-plane physical split copy-first apply",
+        "blockers": []
+      },
+      {
+        "provider": "kimi",
+        "status": "responded",
+        "verdict": "pass",
+        "recommendation": "old prism/reports anchor delete-last preflight",
+        "blockers": []
+      },
+      {
+        "provider": "gemini",
+        "status": "not-invoked",
+        "reason": "availability cache marked gemini unavailable"
+      },
+      {
+        "provider": "copilot",
+        "status": "policy-suppressed",
+        "reason": "protected fallback policy: Copilot is not called when Claude Code and Kimi are available"
+      }
+    ],
+    "adjudication": "Cap selects the old-anchor delete-last preflight as P4-19 because it is bounded and non-destructive as a preflight. Claude Code's internal-control-plane recommendation remains rank 2 because it addresses the largest blocker but has a larger blast radius."
+  }
+}

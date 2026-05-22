@@ -1,4 +1,28 @@
 reports:
+  - id: "20260522-r1-formal-release-readiness-convergence-assessment"
+    mode: review
+    date: "2026-05-22"
+    topic: "P4-18 formal release readiness convergence assessment"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "weak-consensus-pass-with-recommendation-split-cap-adjudicates-bounded-preflight"
+    consensus_actions:
+      - "Keep RedCap public release blocked until the remaining R1 blockers and human release decisions are resolved"
+      - "Treat package safety, clean workspace E2E, CLI/runtime baseline, workspace-state exclusion, and R1 preflight analysis as already satisfied evidence"
+      - "Select old prism/reports anchor delete-last preflight as the next bounded P4-19 slice, with no real deletion"
+    open_questions:
+      - "internal-control-plane remains the largest engineering release blocker after the bounded old-anchor preflight"
+      - "prism-layer-and-evidence remains open until future split/cleanup tasks with explicit evidence-preservation boundaries"
+      - "Layer A product boundary, license, registry/account, release switch, and release level remain Norven-only decisions"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-formal-release-readiness-convergence-assessment.json"
+      - "references/backlogs/framework-upgrade.json"
+      - "compass/docs/task-reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md"
+      - "prism/reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md"
+      - "prism/runs/20260522-r1-formal-release-readiness-convergence-assessment/claude-code-review.txt"
+      - "prism/runs/20260522-r1-formal-release-readiness-convergence-assessment/kimi-review.txt"
+    archived: false
   - id: "20260522-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply"
     mode: review
     date: "2026-05-22"
@@ -853,7 +877,7 @@ reports:
       - "private-archive/redcap-knowledge/**"
       - "references/root-ia-private-archive-tranche-manifest.json"
       - "references/root-ia-remaining-root-groups-deferral.json"
-      - "compass/docs/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
       - "prism/reports/2026-05-15-rasg-022-private-archive-physical-migration.md"
       - "prism/runs/20260515-rasg022-private-archive-physical-migration/session-registry.yaml"
       - "prism/runs/20260515-rasg022-private-archive-physical-migration/artifacts/acceptance-binding.json"
