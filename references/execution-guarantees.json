@@ -2079,7 +2079,9 @@
       "source_paths": [
         "compass/CONTRIBUTING.md#13",
         "compass/CONTRIBUTING.core.md",
-        "references/backlogs/framework-upgrade.json",
+        "references/backlogs/framework-upgrade.json"
+      ],
+      "runtime_source_paths": [
         ".dev-task.md"
       ],
       "status": "validator",
