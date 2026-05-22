@@ -263,6 +263,13 @@ if [[ "$SPEC_CHECK_STATUS" -ne 0 ]]; then
     exit "$SPEC_CHECK_STATUS"
 fi
 
+if [[ -x "$REDCAP_ROOT/compass/tools/redcap-parent-autocontinue-check.sh" ]]; then
+    if ! bash "$REDCAP_ROOT/compass/tools/redcap-parent-autocontinue-check.sh" "$REDCAP_ROOT/.dev-task.md"; then
+        echo "[redcap-spec-check] parent auto-continuation check failed" >&2
+        exit 1
+    fi
+fi
+
 DOCS_CATALOG_CHECK="$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh"
 if [[ -x "$DOCS_CATALOG_CHECK" ]]; then
     if ! REDCAP_DOCS_CATALOG_PATH="$REDCAP_ROOT/compass/docs/catalog.json" bash "$DOCS_CATALOG_CHECK" check >/dev/null; then

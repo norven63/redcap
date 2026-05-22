@@ -193,6 +193,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-delete-last-preflight
   bash compass/tools/redcap-multi-session-acceptance.sh legacy-asset-delete-last-apply
   bash compass/tools/redcap-multi-session-acceptance.sh parent-receipt-aggregation-check
+  bash compass/tools/redcap-multi-session-acceptance.sh parent-autocontinue-check
   bash compass/tools/redcap-multi-session-acceptance.sh retrieval-escalation-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-check
   bash compass/tools/redcap-multi-session-acceptance.sh shared-knowledge-remote-binding-check
@@ -12794,6 +12795,118 @@ PY
     assert_string_contains "$stale_output" "allowed_claim must explicitly say the parent task is still incomplete"
 }
 
+run_parent_autocontinue_check_case() {
+    local case_dir backlog task_file output active_output done_output done_status blocked_output missing_output missing_status
+
+    log "case: parent-autocontinue-check"
+
+    case_dir="$(mktemp -d "$ACCEPT_ROOT/parent-autocontinue.XXXXXX")"
+    backlog="$case_dir/framework-upgrade.json"
+    task_file="$case_dir/.dev-task.md"
+
+    cat >"$backlog" <<'JSON'
+{
+  "version": 1,
+  "current_focus": {
+    "item_id": "P2"
+  },
+  "groups": [
+    {
+      "id": "release",
+      "items": [
+        {
+          "id": "P1",
+          "status": "done",
+          "summary": "completed child"
+        },
+        {
+          "id": "P2",
+          "status": "pending",
+          "summary": "next child"
+        }
+      ]
+    }
+  ]
+}
+JSON
+
+    cat >"$task_file" <<EOF
+# Acceptance task
+
+## 控制面元数据
+task_id: acceptance-parent-autocontinue
+backlog_source: $backlog
+backlog_item: P1
+EOF
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-autocontinue-check.sh" "$task_file")"
+    assert_string_contains "$output" "PARENT_AUTOCONTINUE_OK"
+    assert_string_contains "$output" "state=auto-continue-required"
+    assert_string_contains "$output" "completed=P1"
+    assert_string_contains "$output" "next=P2"
+
+    python3 - "$backlog" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["groups"][0]["items"][0]["status"] = "in_progress"
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    active_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-autocontinue-check.sh" "$task_file")"
+    assert_string_contains "$active_output" "state=current-task-active"
+
+    python3 - "$backlog" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["groups"][0]["items"][0]["status"] = "done"
+payload["current_focus"]["item_id"] = "P1"
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    done_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-autocontinue-check.sh" "$task_file" 2>&1)"
+    done_status=$?
+    set -e
+    [[ "$done_status" -ne 0 ]] || fail "parent autocontinue should reject completed child still selected as current_focus"
+    assert_string_contains "$done_output" "PARENT_AUTOCONTINUE_FAIL"
+    assert_string_contains "$done_output" "state=current-focus-still-on-completed-child"
+
+    python3 - "$backlog" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["current_focus"]["item_id"] = "P2"
+payload["groups"][0]["items"][1]["status"] = "blocked"
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    blocked_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-autocontinue-check.sh" "$task_file")"
+    assert_string_contains "$blocked_output" "state=no-active-next-child"
+    assert_not_string_contains "$blocked_output" "state=auto-continue-required"
+
+    python3 - "$backlog" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["current_focus"]["item_id"] = "P404"
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    missing_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-autocontinue-check.sh" "$task_file" 2>&1)"
+    missing_status=$?
+    set -e
+    [[ "$missing_status" -ne 0 ]] || fail "parent autocontinue should reject current_focus pointing to a missing backlog item"
+    assert_string_contains "$missing_output" "PARENT_AUTOCONTINUE_FAIL"
+    assert_string_contains "$missing_output" "state=focus-item-missing"
+}
+
 run_shared_knowledge_check_case() {
     local fixture body output stale_output status
 
@@ -16950,6 +17063,7 @@ run_all_cases() {
     run_legacy_asset_delete_last_preflight_case
     run_legacy_asset_delete_last_apply_case
     run_parent_receipt_aggregation_check_case
+    run_parent_autocontinue_check_case
     run_retrieval_escalation_check_case
     run_shared_knowledge_check_case
     run_shared_knowledge_remote_binding_check_case
@@ -17485,6 +17599,9 @@ case "$COMMAND" in
         ;;
     parent-receipt-aggregation-check)
         run_parent_receipt_aggregation_check_case
+        ;;
+    parent-autocontinue-check)
+        run_parent_autocontinue_check_case
         ;;
     retrieval-escalation-check)
         run_retrieval_escalation_check_case

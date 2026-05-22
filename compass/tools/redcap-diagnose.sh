@@ -180,6 +180,7 @@ if [[ -f "$REDCAP_ROOT/references/legacy-asset-delete-last-apply.json" ]]; then
     run_source_check "legacy-asset-delete-last-apply" bash "$SCRIPT_DIR/redcap-legacy-asset-delete-last-apply.sh" --check-result || overall=1
 fi
 run_source_check "parent-receipt-aggregation" bash "$SCRIPT_DIR/redcap-parent-receipt-aggregation-check.sh" || overall=1
+run_check "parent-autocontinue" bash "$SCRIPT_DIR/redcap-parent-autocontinue-check.sh" "$TASK_FILE" || overall=1
 run_source_check "shared-knowledge" bash "$SCRIPT_DIR/redcap-shared-knowledge-check.sh" || overall=1
 run_source_check "shared-knowledge-remote-binding" bash "$SCRIPT_DIR/redcap-shared-knowledge-remote-check.sh" || overall=1
 run_source_check "arsenal-version-binding" bash "$SCRIPT_DIR/redcap-arsenal-version-binding-check.sh" || overall=1

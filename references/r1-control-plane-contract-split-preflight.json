@@ -60,12 +60,12 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 296,
-    "control_plane_candidate_count": 217,
-    "compass": 152,
+    "candidate_count": 298,
+    "control_plane_candidate_count": 219,
+    "compass": 154,
     "references": 65,
-    "compass_tools_shell": 91,
-    "compass_tools_python": 61,
+    "compass_tools_shell": 92,
+    "compass_tools_python": 62,
     "references_json": 62,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
@@ -261,12 +261,12 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 296,
-      "control_plane_candidate_count": 217,
-      "compass": 152,
+      "candidate_count": 298,
+      "control_plane_candidate_count": 219,
+      "compass": 154,
       "references": 65,
-      "compass_tools_shell": 91,
-      "compass_tools_python": 61,
+      "compass_tools_shell": 92,
+      "compass_tools_python": 62,
       "references_json": 62,
       "references_markdown": 3,
       "source": "redcap-runtime-package-manifest.sh --output <temp>"
@@ -299,11 +299,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 217,
+      "total_entries": 219,
       "by_target_layer": {
         "human-handoff": 1,
         "internal-contract": 53,
-        "internal-control-plane": 105,
+        "internal-control-plane": 107,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -845,6 +845,20 @@
         "source": "compass/tools/redcap-parent-receipt-aggregation-check.sh",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-parent-receipt-aggregation-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-parent-autocontinue-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-parent-autocontinue-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-parent-autocontinue-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-parent-autocontinue-check.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

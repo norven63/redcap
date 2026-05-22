@@ -28,6 +28,7 @@
 14. **飞书不是唯一收尾动作**：飞书通知只是可见信号；真正收尾还要看承诺账本、Prism 验收、receipt、review、validator、task report、lessons、backlog、catalog、diagnose 与 pending closure。
 14.1. **飞书只能走单一生产路径**：RedCap 官方通知只允许 `cli_a9579f5b12219bb5` 的 lark-cli DM 通道；只在节点汇报或需要 Norven 人工介入的中断时发送，禁止 webhook、旧 profile、followup watcher 和重复 success 刷屏。
 15. **作者不得单独宣称 completed**：没有有效 Prism 验收、没有 receipt，或 pending closure 未清时，作者只能汇报“已实现/已自检”，不得宣称 completed，也不得汇报 completed。
+15.0.1. **父任务线必须自动续跑**：子任务 receipt 生成后，若 backlog/current_focus 仍指向下一项且未命中人工硬门，Cap 必须自动重锚并继续，不得停下来等待 Norven 机械回复“继续”。
 15.1. **结论性输出必须 Prism-backed**：凡是会指导后续工程的架构判断、风险分类、完成性、可发布性、长期路线、治理决策等 RedCap 官方结论，必须经过 Prism 协作、复核或验收；未经 Prism 的主 Agent 观点只能叫建议稿 / 初判，不得写成“我们共同评审结论”。
 15.2. **新增能力默认先做固化保障评估**：新增能力、流程节点或纪律规则时，先评估能否进入脚本、validator、hook、acceptance、receipt、diagnose/spec-check 或 execution-guarantee；只有写清“不需要或不适合这么严格保障”的原因，才允许降级为 documented / manual-only。
 15.3. **计划型完成不能吞掉后续任务**：若结论只是设计完成、计划完成、route-only 或 partial-with-explicit-defer，必须同时写清未完成内容和 durable follow-up 所在任务/账本/receipt；禁止把 plan-complete 说成 physical apply complete。

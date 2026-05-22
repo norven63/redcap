@@ -239,6 +239,28 @@ def backlog_summary(repo: Path, meta: dict[str, str]) -> list[str]:
     return lines
 
 
+def parent_autocontinue_summary(repo: Path, task_file: Path) -> list[str]:
+    script = repo / "compass/tools/redcap-parent-autocontinue-check.sh"
+    if not script.is_file():
+        return ["parent-autocontinue: checker missing"]
+    try:
+        proc = subprocess.run(
+            ["bash", str(script), str(task_file)],
+            cwd=repo,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=20,
+            check=False,
+        )
+    except Exception as exc:
+        return [f"parent-autocontinue 无法运行：{exc}"]
+    output = proc.stdout.strip() or "no output"
+    if proc.returncode != 0:
+        return [f"parent-autocontinue: fail {output}"]
+    return [output]
+
+
 def progress_meter_summary(repo: Path, task_file: Path) -> list[str]:
     script = repo / "compass/tools/redcap-progress-meter.sh"
     if not script.is_file():
@@ -865,6 +887,7 @@ def main() -> int:
     previous_items = capture_report_items(report_path, ["0.2 上一步完成的是"], 1) if report_path else []
     next_items = capture_report_items(report_path, ["0.3 下一步计划做的是", "0.3 后续动作"], 1) if report_path else []
     roadmap_items = capture_report_items(report_path, ["0.4 整体计划脉络图与当前位置"], 2) if report_path else []
+    autocontinue_lines = parent_autocontinue_summary(repo, task_file)
 
     done_summary = done_items[0] if done_items else "本轮任务报告尚未生成；我会先依据当前任务卡继续推进。"
     next_summary = next_items[0] if next_items else "继续完成当前任务的实现、评审、验证和正式收口。"
@@ -885,7 +908,30 @@ def main() -> int:
             "下一步是清理或证明当前未清收尾项，而不是重复生成已有凭证。"
         ]
     elif receipt_exists:
-        next_summary = "当前任务完工凭证已生成，未发现未清收尾阻塞；可转入后续任务或长期演进专项。"
+        auto_line = next((line for line in autocontinue_lines if "state=auto-continue-required" in line), "")
+        stale_focus_line = next(
+            (
+                line
+                for line in autocontinue_lines
+                if "state=current-focus-still-on-completed-child" in line
+                or "state=focus-item-missing" in line
+            ),
+            "",
+        )
+        if stale_focus_line:
+            next_summary = (
+                "当前子任务完工凭证已生成，但父任务 backlog 焦点没有安全指向下一项；"
+                "必须先修正 current_focus，再继续父任务线。"
+            )
+        elif auto_line:
+            next_match = re.search(r"\bnext=([^ ]+)", auto_line)
+            next_label = next_match.group(1) if next_match else "下一项"
+            next_summary = (
+                f"当前子任务完工凭证已生成，父任务线还有 {next_label}；"
+                "未命中人工硬门时应由 Cap/Prism 自动续跑，不应等待 Norven 机械回复“继续”。"
+            )
+        else:
+            next_summary = "当前任务完工凭证已生成，未发现未清收尾阻塞；可转入后续任务或长期演进专项。"
         if not roadmap_items or any(
             "等待 closeout receipt" in item
             or "等待 receipt" in item
@@ -938,6 +984,11 @@ def main() -> int:
 
     print("## 长期 backlog")
     for line in backlog_summary(repo, meta):
+        print(f"- {line}")
+    print()
+
+    print("## 父任务自动续跑")
+    for line in autocontinue_lines:
         print(f"- {line}")
     print()
 

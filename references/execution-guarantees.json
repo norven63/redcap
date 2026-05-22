@@ -2072,6 +2072,30 @@
       "auto_enforceable": true
     },
     {
+      "id": "parent-autocontinue-gate",
+      "category": "parent-task-governance",
+      "priority": "P0",
+      "rule": "After a child task receipt is generated, if the bound backlog current_focus points to another active item and no manual-intervention boundary is hit, Cap must auto-reanchor and continue instead of waiting for Norven to send a mechanical continue instruction.",
+      "source_paths": [
+        "compass/CONTRIBUTING.md#13",
+        "compass/CONTRIBUTING.core.md",
+        "references/backlogs/framework-upgrade.json",
+        ".dev-task.md"
+      ],
+      "status": "validator",
+      "automation": "redcap-parent-autocontinue-check.sh reports whether the current closed child requires parent-line auto continuation; redcap-current-status surfaces this state, while diagnose and spec-check keep the gate visible.",
+      "guarantee_paths": [
+        "compass/tools/redcap-parent-autocontinue-check.sh",
+        "compass/tools/redcap-parent-autocontinue-check.py",
+        "compass/tools/redcap-current-status.py",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-spec-check.sh"
+      ],
+      "revival_required": true,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "hook-contract-audit",
       "category": "hook-contracts",
       "priority": "P1",

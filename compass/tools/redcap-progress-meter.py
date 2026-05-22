@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -152,6 +153,32 @@ def backlog_status(path: Path) -> dict[str, Any]:
     }
 
 
+def parent_autocontinue_status(task_file: Path) -> dict[str, str]:
+    script = ROOT / "compass/tools/redcap-parent-autocontinue-check.sh"
+    if not script.is_file():
+        return {"state": "checker-missing", "raw": "checker missing"}
+    try:
+        proc = subprocess.run(
+            ["bash", str(script), str(task_file)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=20,
+            check=False,
+        )
+    except Exception as exc:
+        return {"state": "checker-error", "raw": str(exc)}
+    raw = proc.stdout.strip()
+    state_match = re.search(r"\bstate=([^ ]+)", raw)
+    next_match = re.search(r"\bnext=([^ ]+)", raw)
+    return {
+        "state": state_match.group(1) if state_match else ("fail" if proc.returncode else "unknown"),
+        "next": next_match.group(1) if next_match else "",
+        "raw": raw,
+    }
+
+
 def evolution_status(path: Path) -> dict[str, Any]:
     payload = load_json(path)
     counts: Counter[str] = Counter()
@@ -222,6 +249,7 @@ def build_meter(task_file: Path) -> dict[str, Any]:
     closeout = closeout_state(ROOT, meta.get("task_id", ""), hash_value)
     architecture_backlog = backlog_status(ROOT / "references/backlogs/redcap-architecture-smell-governance.json")
     framework_backlog = backlog_status(ROOT / "references/backlogs/framework-upgrade.json")
+    parent_autocontinue = parent_autocontinue_status(task_file)
     evolution = evolution_status(ROOT / "compass/evolution/candidates.json")
     governance_debt = governance_debt_status(ROOT / "compass/knowledge/governance-debt-register.md")
     reference_lifecycle = lifecycle_status(ROOT / "references/reference-asset-lifecycle.json")
@@ -233,7 +261,15 @@ def build_meter(task_file: Path) -> dict[str, Any]:
     intervention = first_bullet(section(report_text, "0.5 是否需要 Norven 人工介入"), "不需要")
     roadmap = first_bullet(section(report_text, "0.4 整体计划脉络图与当前位置"), "历史债务坏味 -> 当前专注任务集 -> 长期演进专项")
     if closeout.get("receipt") == "present":
-        next_step = "当前任务完工凭证已生成；可转入后续任务或长期演进专项。"
+        if parent_autocontinue.get("state") in {"current-focus-still-on-completed-child", "focus-item-missing"}:
+            next_step = "当前子任务完工凭证已生成，但父任务 backlog 焦点没有安全指向下一项；必须先修正 current_focus，再继续父任务线。"
+        elif parent_autocontinue.get("state") == "auto-continue-required":
+            next_step = (
+                f"当前子任务完工凭证已生成，父任务线还有 {parent_autocontinue.get('next') or '下一项'}；"
+                "未命中人工硬门时应自动续跑，不应等待 Norven 机械回复。"
+            )
+        else:
+            next_step = "当前任务完工凭证已生成；可转入后续任务或长期演进专项。"
         if architecture_open_examples:
             next_step = "当前任务完工凭证已生成；发布准备前仍需处理：" + "；".join(architecture_open_examples[:3]) + "。"
         if intervention == "不需要":
@@ -293,6 +329,7 @@ def build_meter(task_file: Path) -> dict[str, Any]:
                 "gate_reason": gate_reason,
                 "closeout": closeout,
                 "framework_backlog": framework_backlog,
+                "parent_autocontinue": parent_autocontinue,
             },
             "source_paths": [".dev-task.md", meta.get("task_report", ""), "closeout-cap.sh", "references/backlogs/framework-upgrade.json"],
         },
