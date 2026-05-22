@@ -72,8 +72,8 @@ Cap 采纳合并方案：本轮做完预检；下一步只自动进入路线选�
 
 | 项目 | 当前值 |
 | --- | --- |
-| closeout receipt | 待 closeout runtime 生成 |
-| 当前状态 | 等待最终回归后收口 |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-control-plane-public-internal-contract-mirror-preflight-0c91526732ba37084e4bc7c9497ed8c4e43e22c74d0c8c083bbc8487588a9f65.json` |
+| 当前状态 | 已完成正式 closeout 收口 |
 | 人工介入 | 不需要 |
 
 ### 5.4 完成等级（禁止混报）
@@ -81,9 +81,9 @@ Cap 采纳合并方案：本轮做完预检；下一步只自动进入路线选�
 | 等级 | 结论 | 说明 |
 | --- | --- | --- |
 | 已实现 | 是 | preflight manifest、checker、Prism 报告和 backlog 更新已落地 |
-| 已自检 | 待最终回归 | 专项 checker 与 spec-check 需要最终执行 |
+| 已自检 | 是 | 专项 checker、spec-check、diagnose、包面安全和 clean workspace E2E 已通过 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 两路评审已绑定 |
-| 已正式完成 | 待 closeout | closeout runtime 待生成 receipt |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt |
 
 ## 六、遗留问题与下一步
 

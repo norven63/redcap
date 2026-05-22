@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 321903,
+    "size_bytes": 322124,
     "lines": 6654,
-    "chars": 192957,
+    "chars": 193188,
     "rough_token_pressure": {
-      "low": 48239,
-      "high": 96478
+      "low": 48297,
+      "high": 96594
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 109724,
+        "size_bytes": 109945,
         "lines": 1972,
-        "chars": 65374,
+        "chars": 65605,
         "rough_token_pressure": {
-          "low": 16343,
-          "high": 32687
+          "low": 16401,
+          "high": 32802
         }
       }
     },
@@ -502,9 +502,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 5628,
+      "size_bytes": 5849,
       "lines": 111,
-      "chars": 3114,
+      "chars": 3345,
       "summary": "当前已完成：P4-25 已完成 internal-control-plane 的 public/internal contract mirror preflight。 / 详情：本轮把 225 条控制面候选按未来边界分成公开合同、内部合同、运行时公开支撑、维护控制面和人工交接面，并建立了机器检查。它没有实施合同镜像，也没有移动或删除旧锚点。",
       "status_basis": "filename_recency_only"
     },
