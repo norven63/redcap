@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 341824,
+    "size_bytes": 342244,
     "lines": 6964,
-    "chars": 208778,
+    "chars": 209216,
     "rough_token_pressure": {
-      "low": 52194,
-      "high": 104389
+      "low": 52304,
+      "high": 104608
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 135454,
+        "size_bytes": 135874,
         "lines": 2308,
-        "chars": 84912,
+        "chars": 85350,
         "rough_token_pressure": {
-          "low": 21228,
-          "high": 42456
+          "low": 21337,
+          "high": 42675
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 13633,
+      "size_bytes": 14053,
       "lines": 229,
-      "chars": 8353,
+      "chars": 8791,
       "summary": "当前已完成：冻结的 55 份 Prism 报告已经复制到私有归档区，旧报告位置仍保留，发布和证据边界没有越界。 / 详情：本轮解决的是“可以先复制归档，但不能误删旧锚点、不能吸收新报告、不能冒充已发布就绪”的问题。现在 `private-archive/prism-reports` 有 55 份副本和一个索引，`prism/reports` 仍保留旧锚点，新产生的 P4-16 Prism 报告被登记为 post-freeze，不进入这批冻结归档。包面检查继续排除私有归档、旧报告和 raw run evidence。",
       "status_basis": "filename_recency_only",
       "summary_points": {

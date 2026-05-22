@@ -149,11 +149,11 @@ Prism 评审给出 pass-with-nits。Claude Code 建议补清 P4-15 guard 与 P4-
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 收口前：已准备，待最终 closeout 核对 |
+| 执行承诺账本 | 通过，11/11 项承诺已核对 |
 | 棱镜验收 | Claude Code + Kimi pass-with-nits，无 blocker |
-| closeout summary | 收口前：尚未生成 |
-| closeout receipt | 收口前：尚未生成 |
-| rescue audit（如有） | 收口前：无 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-prism-report-archive-live-copy-first-apply-91b74169c7e42da4395f09052d06a9f3dac3fbdea85536a26a5318bba16871da.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-prism-report-archive-live-copy-first-apply-91b74169c7e42da4395f09052d06a9f3dac3fbdea85536a26a5318bba16871da.json` |
+| rescue audit（如有） | 曾因 clean workspace 结果停留在旧 commit 被阻断；已刷新写入版并重新收口通过 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -162,7 +162,7 @@ Prism 评审给出 pass-with-nits。Claude Code 建议补清 P4-15 guard 与 P4-
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Prism pass-with-nits 且无 blocker |
-| 已正式完成 | 否，receipt 将由最终 closeout 生成后才可改为是 |
+| 已正式完成 | 是，closeout receipt 已生成 |
 
 ---
 
