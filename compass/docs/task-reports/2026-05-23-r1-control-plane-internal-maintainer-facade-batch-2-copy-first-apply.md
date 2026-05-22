@@ -69,8 +69,8 @@ Claude Code 与 Kimi 均审查了 8 个候选脚本。它们都来自现有 dry-
 
 | 项目 | 当前值 |
 | --- | --- |
-| closeout receipt | 无 |
-| 当前状态 | 正在执行正式 closeout 收口前验证 |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-7772beb8c2a35a513e09a49aa8f8d5ad49a16a6ba081145876089c7970c1c596.json` |
+| 当前状态 | 已完成正式 closeout 收口 |
 | 人工介入 | 不需要 |
 
 ### 5.4 完成等级（禁止混报）
@@ -80,7 +80,7 @@ Claude Code 与 Kimi 均审查了 8 个候选脚本。它们都来自现有 dry-
 | 已实现 | 是 | 8 个 facade、manifest、checker、Prism 报告和 backlog 更新已落地 |
 | 已自检 | 是 | 专项 checker 已通过 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 两路评审已绑定 |
-| 已正式完成 | 否 | 等待 closeout runtime 生成 receipt 后才能声明正式完成 |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt |
 
 ## 六、遗留问题与下一步
 
