@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 334930,
-    "lines": 6865,
-    "chars": 201962,
+    "size_bytes": 335307,
+    "lines": 6869,
+    "chars": 202329,
     "rough_token_pressure": {
-      "low": 50490,
-      "high": 100981
+      "low": 50582,
+      "high": 101164
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 125171,
-        "lines": 2195,
-        "chars": 75993,
+        "size_bytes": 125548,
+        "lines": 2199,
+        "chars": 76360,
         "rough_token_pressure": {
-          "low": 18998,
-          "high": 37996
+          "low": 19090,
+          "high": 38180
         }
       }
     },
@@ -528,16 +528,25 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 6844,
-      "lines": 120,
-      "chars": 3560,
-      "summary": "- 当前已完成：P4-21 已完成一小批 internal-control-plane 维护工具镜像。RedCap 新增了 8 个内部维护入口，它们只把调用转交给旧的权威脚本，不改变旧位置、不删除旧资产，也不宣称发布 blocker 已关闭。",
+      "size_bytes": 7221,
+      "lines": 124,
+      "chars": 3927,
+      "summary": "当前已完成：P4-21 已完成一小批 internal-control-plane 维护工具镜像。RedCap 新增了 8 个内部维护入口，它们只把调用转交给旧的权威脚本，不改变旧位置、不删除旧资产，也不宣称发布 blocker 已关闭。 / 上一步完成的是：P4-20 已选择下一条安全路线，结论是先回到 internal-control-plane，用小批次、可回滚、非破坏的方式继续拆正式发布前的结构风险。",
       "status_basis": "filename_recency_only",
       "summary_points": {
-        "current_done": [],
-        "previous_step": [],
-        "next_step": [],
-        "position": []
+        "current_done": [
+          "当前已完成：P4-21 已完成一小批 internal-control-plane 维护工具镜像。RedCap 新增了 8 个内部维护入口，它们只把调用转交给旧的权威脚本，不改变旧位置、不删除旧资产，也不宣称发布 blocker 已关闭。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-20 已选择下一条安全路线，结论是先回到 internal-control-plane，用小批次、可回滚、非破坏的方式继续拆正式发布前的结构风险。"
+        ],
+        "next_step": [
+          "下一步计划做的是：P4-22 将重新比较下一条安全切片，判断是继续扩大 internal-control-plane 镜像、推进 public/internal contract mirror，还是先补旧报告入口别名或查询网关。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-18 处理发布前旧资产预检，P4-19 处理旧报告入口，P4-20 选择下一条安全切片，P4-21 完成 internal-control-plane 小批次镜像，P4-22 再选择下一条安全切片。",
+          "当前所在位置：P4-21 已完成实现、棱镜评审和主要机器验收，正在进入正式 closeout 收口；RedCap 仍处于发布前治理阶段，不是 npm 正式发布阶段。"
+        ]
       }
     },
     {
