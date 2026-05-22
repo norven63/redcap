@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-20",
-    "summary": "P4-20 待推进：P4-19 已证明旧 prism/reports 锚点现在不能真实退休；下一刀必须在 internal-control-plane 物理拆分与旧报告入口别名/查询网关之间选择最小安全切片，继续保持不发布、不破坏旧锚点、不清理 raw evidence。"
+    "item_id": "P4-21",
+    "summary": "P4-21 待推进：P4-20 已在 Claude Code / Kimi 分歧后裁决下一刀回到 internal-control-plane，以非破坏性 support-copy-first 小切片继续拆发布 blocker；旧报告入口别名/查询网关保留为后续 Prism-layer 候选。"
   },
   "glossary": [
     {
@@ -730,14 +730,31 @@
     {
       "id": "P4-20",
       "title": "R1 next safe slice after Prism report archive old-anchor preflight",
-      "status": "pending",
+      "status": "done",
       "priority": "P0",
       "phase_id": "phase-24-release-readiness-next-safe-slice-after-old-anchor-preflight",
-      "summary": "P4-20 待推进：在 P4-19 已证明旧报告入口不能直接 delete-last 后，选择下一条最小安全切片；候选方向包括继续推进 internal-control-plane 物理拆分，或先补旧报告入口别名/查询网关。",
+      "summary": "P4-20 已完成：在 P4-19 证明旧报告入口不能直接 delete-last 后，Claude Code 选 A、Kimi 选 B；Cap 裁决下一条安全切片回到 internal-control-plane 的非破坏性 support-copy-first 续切片，避免局部 Prism 报告线无限延长。",
       "evidence_paths": [
         "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json",
+        "references/r1-next-safe-slice-after-old-anchor-preflight.json",
+        "compass/tools/redcap-r1-next-safe-slice-after-old-anchor-preflight-check.sh",
+        "prism/reports/2026-05-23-r1-next-safe-slice-after-old-anchor-preflight.md",
+        "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-old-anchor-preflight.md",
         "prism/reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md",
         "compass/docs/task-reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md"
+      ]
+    },
+    {
+      "id": "P4-21",
+      "title": "R1 internal-control-plane support-copy-first continuation after old-anchor route selection",
+      "status": "pending",
+      "priority": "P0",
+      "phase_id": "phase-25-release-readiness-internal-control-plane-support-copy-first-continuation",
+      "summary": "P4-21 待推进：基于 P4-20 路线裁决，用非破坏性 support-copy-first 方式继续推进 internal-control-plane 物理拆分；不得删除旧报告、清理 raw evidence、修改发布开关或触碰 Layer A 产品边界。",
+      "evidence_paths": [
+        "references/r1-next-safe-slice-after-old-anchor-preflight.json",
+        "references/r1-control-plane-physical-apply-preflight.json",
+        "references/r1-control-plane-runtime-public-support-copy-first-apply.json"
       ]
     }
       ]
@@ -983,11 +1000,20 @@
   {
     "id": "phase-24-release-readiness-next-safe-slice-after-old-anchor-preflight",
     "title": "阶段 24：发布准备下一安全切片选择",
-    "status": "pending",
+    "status": "done",
     "item_ids": [
       "P4-20"
     ],
-    "summary": "P4-19 收口后，选择下一条 release-readiness 安全切片；候选方向包括 internal-control-plane 物理拆分继续推进，或先补旧报告入口别名/查询网关。"
+    "summary": "P4-19 收口后，已由 Claude Code 与 Kimi 评审下一条 release-readiness 安全切片；Cap 在 A/B 分歧中裁决回到 internal-control-plane 的非破坏性 support-copy-first 续切片，C/D/E 继续留在人类硬门外。"
+  },
+  {
+    "id": "phase-25-release-readiness-internal-control-plane-support-copy-first-continuation",
+    "title": "阶段 25：发布准备 internal-control-plane support-copy-first 续切片",
+    "status": "pending",
+    "item_ids": [
+      "P4-21"
+    ],
+    "summary": "P4-20 路线裁决后，继续推进 internal-control-plane 这个正式发布前大型 blocker，但只能选择非破坏性、可回滚、可机器检查的小切片。"
   }
   ]
 }

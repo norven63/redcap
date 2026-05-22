@@ -226,6 +226,9 @@ fi
 if [[ -f "$REDCAP_ROOT/references/r1-prism-report-archive-old-anchor-delete-last-preflight.json" ]]; then
     run_check "r1-prism-report-archive-old-anchor-delete-last-preflight" bash "$SCRIPT_DIR/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.sh" || overall=1
 fi
+if [[ -f "$REDCAP_ROOT/references/r1-next-safe-slice-after-old-anchor-preflight.json" ]]; then
+    run_check "r1-next-safe-slice-after-old-anchor-preflight" bash "$SCRIPT_DIR/redcap-r1-next-safe-slice-after-old-anchor-preflight-check.sh" || overall=1
+fi
 run_check "r1-control-plane-physical-apply-preflight" bash "$SCRIPT_DIR/redcap-r1-control-plane-physical-apply-preflight-check.sh" || overall=1
 run_check "r1-control-plane-runtime-public-support-copy-first-apply" bash "$SCRIPT_DIR/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh" || overall=1
 run_check "r1-layera-product-boundary" bash "$SCRIPT_DIR/redcap-r1-layera-product-boundary-check.sh" || overall=1

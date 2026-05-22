@@ -162,7 +162,7 @@
     {
       "id": "candidate-count-policy-drift",
       "severity": "medium",
-      "summary": "runtime-package-readiness-policy still states max_before_release_task=280 while public-package-surface-policy has raised the alpha-readiness ceiling to 301. Current checks pass, but the formal release convergence report should keep this visible until the release task either trims the package or reconciles the policy language.",
+      "summary": "runtime-package-readiness-policy still states max_before_release_task=280 while public-package-surface-policy has raised the alpha-readiness ceiling to 304. Current checks pass, but the formal release convergence report should keep this visible until the release task either trims the package or reconciles the policy language.",
       "evidence": [
         "references/runtime-package-readiness-policy.json",
         "references/public-package-surface-policy.json"
@@ -196,7 +196,7 @@
       "rank": 3,
       "title": "Runtime/public package policy wording reconciliation",
       "scope": "policy-language alignment only; no release switch changes",
-      "reason": "The 280 vs 301 package-count language drift should be removed before formal release decisions, but it is not the next highest blocker."
+      "reason": "The 280 vs 304 package-count language drift should be removed before formal release decisions, but it is not the next highest blocker."
     }
   ],
   "prism_review": {

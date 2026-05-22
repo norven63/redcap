@@ -948,6 +948,18 @@ if [[ -f "$REDCAP_ROOT/references/r1-prism-report-archive-old-anchor-delete-last
     fi
 fi
 
+R1_NEXT_SAFE_SLICE_AFTER_OLD_ANCHOR_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-next-safe-slice-after-old-anchor-preflight-check.sh"
+if [[ -f "$REDCAP_ROOT/references/r1-next-safe-slice-after-old-anchor-preflight.json" ]]; then
+    if [[ ! -f "$R1_NEXT_SAFE_SLICE_AFTER_OLD_ANCHOR_PREFLIGHT_CHECK" ]]; then
+        echo "[redcap-spec-check] R1 next safe slice after old-anchor preflight check missing" >&2
+        exit 1
+    fi
+    if ! bash "$R1_NEXT_SAFE_SLICE_AFTER_OLD_ANCHOR_PREFLIGHT_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] R1 next safe slice after old-anchor preflight check failed" >&2
+        exit 1
+    fi
+fi
+
 R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh"
 if [[ ! -f "$R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK" ]]; then
     echo "[redcap-spec-check] R1 control-plane physical apply preflight check missing" >&2

@@ -5,9 +5,9 @@
   "summary": "Freezes the P4-12/P4-13 Prism report archive migration cohort and requires any later formal Prism reports to be recorded as post-freeze reports instead of silently changing the current archive plan.",
   "source_truth": {
     "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
-    "plan_sha256": "646fb7d0b15a0ade1e68e688c06351682c3f3e8a1f100cd1ec4e1fe875d90b5f",
+    "plan_sha256": "2f4524b94125515c4553fb892a4bee3e26da6d723585cd43f42e7f675f20f52d",
     "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
-    "readiness_sha256": "043b11d12ce367856bdd61baa97582e5c97fa610e80a900383f18bcbdb8cac26"
+    "readiness_sha256": "2b7b01fd845b237f7f37c9b74b2aebfd49ba0baf96b95f160fcf73b980069c01"
   },
   "claim_boundary": {
     "freeze_guard_completed": true,
@@ -59,6 +59,22 @@
   },
   "post_freeze_reports": [
     {
+      "report_id": "20260522-r1-formal-release-readiness-convergence-assessment",
+      "source_path": "prism/reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md",
+      "source_sha256": "cf72a50f6c6939a8be98ea54a585bfff04048ef9ff8944c1716986b292b2b99f",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future old-anchor delete-last tranche must explicitly decide whether to refresh the frozen archive cohort before any retirement action."
+    },
+    {
+      "report_id": "20260522-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply",
+      "source_path": "prism/reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
+      "source_sha256": "1ff8d804e288b8e863a0027be942b6b344b59887bffcd6c66cef44a71b9ff2ff",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future release convergence task must explicitly decide whether to refresh the frozen archive cohort before any old-anchor retirement or delete-last tranche."
+    },
+    {
       "report_id": "20260522-r1-prism-report-archive-churn-freeze-guard",
       "source_path": "prism/reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md",
       "source_sha256": "9683a2f6f433e3775d0f7acdb6ffa7f5b4956841872a4086535dd85efe8fd5c2",
@@ -75,20 +91,12 @@
       "required_before_future_plan_refresh": "A future route decision must explicitly decide whether to refresh the frozen archive cohort before any old-anchor retirement or delete-last tranche."
     },
     {
-      "report_id": "20260522-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply",
-      "source_path": "prism/reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
-      "source_sha256": "1ff8d804e288b8e863a0027be942b6b344b59887bffcd6c66cef44a71b9ff2ff",
+      "report_id": "20260523-r1-next-safe-slice-after-old-anchor-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-old-anchor-preflight.md",
+      "source_sha256": "6e53fb081866bd8b5f3e1af0f246a8660656819dc4f17226058676eae690e17e",
       "classification": "post-freeze-formal-prism-review",
       "include_in_current_archive_plan": false,
-      "required_before_future_plan_refresh": "A future release convergence task must explicitly decide whether to refresh the frozen archive cohort before any old-anchor retirement or delete-last tranche."
-    },
-    {
-      "report_id": "20260522-r1-formal-release-readiness-convergence-assessment",
-      "source_path": "prism/reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md",
-      "source_sha256": "cf72a50f6c6939a8be98ea54a585bfff04048ef9ff8944c1716986b292b2b99f",
-      "classification": "post-freeze-formal-prism-review",
-      "include_in_current_archive_plan": false,
-      "required_before_future_plan_refresh": "A future old-anchor delete-last tranche must explicitly decide whether to refresh the frozen archive cohort before any retirement action."
+      "required_before_future_plan_refresh": "A future old-anchor delete-last or archive refresh task must explicitly preserve or absorb this post-freeze route-selection review before retiring prism/reports anchors."
     },
     {
       "report_id": "20260523-r1-prism-report-archive-old-anchor-delete-last-preflight",

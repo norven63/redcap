@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 340068,
-    "lines": 6935,
-    "chars": 207134,
+    "size_bytes": 337806,
+    "lines": 6927,
+    "chars": 204734,
     "rough_token_pressure": {
-      "low": 51783,
-      "high": 103567
+      "low": 51183,
+      "high": 102367
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 202972,
-        "lines": 4576,
-        "chars": 121306,
+        "size_bytes": 203711,
+        "lines": 4578,
+        "chars": 121857,
         "rough_token_pressure": {
-          "low": 30326,
-          "high": 60653
+          "low": 30464,
+          "high": 60928
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 131566,
-        "lines": 2270,
-        "chars": 82054,
+        "size_bytes": 128565,
+        "lines": 2260,
+        "chars": 79103,
         "rough_token_pressure": {
-          "low": 20513,
-          "high": 41027
+          "low": 19775,
+          "high": 39551
         }
       }
     },
@@ -74,15 +74,15 @@
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/specs/multi-session-isolation-design.md",
-        "chars": 15361,
-        "lines": 620,
+        "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
+        "chars": 15792,
+        "lines": 233,
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 15241,
-        "lines": 231,
+        "path": "compass/docs/specs/multi-session-isolation-design.md",
+        "chars": 15361,
+        "lines": 620,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -98,16 +98,16 @@
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-apply-preflight.md",
-        "chars": 8982,
-        "lines": 207,
-        "read_policy": "read-catalog-summary-by-default"
-      },
-      {
         "path": "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
         "chars": 8791,
         "lines": 229,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+      },
+      {
+        "path": "compass/docs/task-reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
+        "chars": 8054,
+        "lines": 225,
+        "read_policy": "read-catalog-summary-by-default"
       }
     ]
   },
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 26497,
-      "lines": 231,
-      "chars": 15241,
+      "size_bytes": 27236,
+      "lines": 233,
+      "chars": 15792,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-apply-preflight.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：R1 Prism 证据保留 apply 预检",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 13270,
-      "lines": 207,
-      "chars": 8982,
-      "summary": "当前已完成：`prism-layer-and-evidence` 从“只有 dry-run 地图”推进到“有 apply 前置护栏”的状态。 / 详情：本轮没有移动、删除、重命名、清理或替换任何 `prism/` 证据，也没有关闭 release blocker；只是把未来真正动手前必须满足的 copy-first、alias-first、证据保留、旧锚点保留、回滚和验收条件做成机器可检查清单。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-20-r1-prism-package-visible-support-copy-first.md",
       "collection": "task-reports",
       "title": "任务完成报告：R1 Prism package-visible support 小切片",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-13 Prism 报告归档 apply readiness / rehearsal",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10206,
       "lines": 164,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-15 Prism 报告归档漂移冻结",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8242,
       "lines": 154,
       "chars": 4892,
       "summary": "当前已完成：P4-15 已把 Prism 报告归档迁移集合从“实时目录数量”改成“冻结集合 + 后冻结报告登记”。 / 人话解释：以前每新增一份正式 Prism 审查报告，P4-12/P4-13 的迁移计划就会被判定为过期；现在已验证的 55 份报告被固定为当前迁移集合，新报告必须单独登记，不能偷偷改变旧计划。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P4-15 已把 Prism 报告归档迁移集合从“实时目录数量”改成“冻结集合 + 后冻结报告登记”。",
-          "人话解释：以前每新增一份正式 Prism 审查报告，P4-12/P4-13 的迁移计划就会被判定为过期；现在已验证的 55 份报告被固定为当前迁移集合，新报告必须单独登记，不能偷偷改变旧计划。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-14 通过 Claude Code 与 Kimi 的路线评审，选择先做 churn/freeze guard，而不是直接进入 live copy-first apply。"
-        ],
-        "next_step": [
-          "下一步计划做的是：在 P4-15 收口后，重新评审是否进入 Prism report archive live copy-first apply。"
-        ],
-        "position": [
-          "整体计划脉络图是：正式发布准备路线 → Prism 证据保留拆分 → Prism 报告归档预检 → 迁移规划 → apply readiness / rehearsal → 下一切片选择 → **P4-15 漂移冻结** → 后续 live copy-first apply。",
-          "当前所在位置：`framework-upgrade / P4-15`，属于发布前 Prism 报告归档治理，不是正式发布，也不是旧锚点退休。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
@@ -576,6 +547,35 @@
         "position": [
           "整体计划脉络图是：P4-12 规划归档集合 → P4-13 临时演练 → P4-15 冻结集合防漂移 → P4-16 真实 copy-first 副本 → 后续另行评审 delete-last / raw evidence / release readiness。",
           "当前所在位置：framework-upgrade / P4-16，处在 release-structural 任务的 closeout 前阶段；实现、自检和 Prism 独立评审已完成，receipt 尚需在最终 closeout 中生成。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-old-anchor-preflight.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-20 发布准备下一安全切片选择",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 10269,
+      "lines": 197,
+      "chars": 6031,
+      "summary": "当前已完成：P4-20 已完成下一条发布前安全切片的路线选择。Claude Code 建议回到 `internal-control-plane`，Kimi 建议先做旧报告入口别名/查询网关；Cap 裁决下一步登记为 P4-21，选择 `internal-control-plane` 的非破坏性 support-copy-first 续切片。 / 详情：本轮只完成路线裁决和下一任务登记，没有执行 P4-21 本身，也没有修改发布开关、删除旧报告或清理 raw evidence。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：P4-20 已完成下一条发布前安全切片的路线选择。Claude Code 建议回到 `internal-control-plane`，Kimi 建议先做旧报告入口别名/查询网关；Cap 裁决下一步登记为 P4-21，选择 `internal-control-plane` 的非破坏性 support-copy-first 续切片。",
+          "详情：本轮只完成路线裁决和下一任务登记，没有执行 P4-21 本身，也没有修改发布开关、删除旧报告或清理 raw evidence。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-19 证明旧 `prism/reports` 入口现在不能直接退休，原因是后冻结报告、旧路径引用、别名/查询契约和人工授权边界还没有闭合。"
+        ],
+        "next_step": [
+          "下一步计划做的是：自动进入 P4-21，挑选 `internal-control-plane` 中一个最小、非破坏、可回滚、可机器检查的 support-copy-first 子切片继续推进。旧报告入口别名/查询网关保留为后续候选。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-18 发布差距地图 → P4-19 旧报告入口退休预检 → P4-20 下一安全切片路线裁决 → P4-21 internal-control-plane 非破坏性续切片。",
+          "当前所在位置：framework-upgrade / P4-20 已完成路线裁决；正式公开发布仍保持 blocked。"
         ]
       }
     },

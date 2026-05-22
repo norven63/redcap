@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 112,
-  "bytes_total": 1539223,
+  "file_count": 113,
+  "bytes_total": 1552493,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 108,
+    "private-task-report-archive": 109,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -869,6 +869,14 @@
       "class": "private-task-report-archive",
       "bytes": 10626,
       "sha256": "4cb2a080a5ae5a47330386e93f18377db24bdfd3dc8c02bc64efc60c2eddf390",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-19-r1-prism-evidence-retention-apply-preflight.md",
+      "class": "private-task-report-archive",
+      "bytes": 13270,
+      "sha256": "53703b6a8134930e2d3eba7d5d0eb338f89465dc65f957717bfe373a85868236",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

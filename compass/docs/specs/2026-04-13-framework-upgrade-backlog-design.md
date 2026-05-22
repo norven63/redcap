@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`P4-20 R1 next safe slice after Prism report archive old-anchor preflight`
-- 当前焦点说明：P4-20 待推进：P4-19 已证明旧 prism/reports 锚点现在不能真实退休；下一刀必须在 internal-control-plane 物理拆分与旧报告入口别名/查询网关之间选择最小安全切片，继续保持不发布、不破坏旧锚点、不清理 raw evidence。
+- 当前焦点：`P4-21 R1 internal-control-plane support-copy-first continuation after old-anchor route selection`
+- 当前焦点说明：P4-21 待推进：P4-20 已在 Claude Code / Kimi 分歧后裁决下一刀回到 internal-control-plane，以非破坏性 support-copy-first 小切片继续拆发布 blocker；旧报告入口别名/查询网关保留为后续 Prism-layer 候选。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -80,7 +80,8 @@
 | 阶段 21：发布准备下一安全切片选择 | 已完成 | P4-17 | P4-16 收口后，已由 Claude Code 与 Kimi 评审下一条 release-readiness 安全切片；Cap 裁决 P4-18 先做正式发布就绪收敛评估，避免在未恢复全局视角时直接进入 delete-last、raw evidence cleanup、Layer A 产品裁决或正式发布。 |
 | 阶段 22：发布准备正式就绪收敛评估 | 已完成 | P4-18 | 正式发布动作之前，已把剩余 R1 blocker、人工决策点、已满足证据、风险漂移和可自主推进小切片整理成一张可审计差距地图；正式公开发布仍保持 blocked。 |
 | 阶段 23：发布准备 Prism report archive 旧锚点退休预检 | 已完成 | P4-19 | 基于 P4-16 copy-first 和 P4-18 差距地图，已完成旧 prism/reports 锚点 delete-last 预检、引用检查与回滚方案；结论是当前不能真实退休旧入口，仍不删除旧报告、不清理 raw evidence、不修改发布开关。 |
-| 阶段 24：发布准备下一安全切片选择 | 待推进 | P4-20 | P4-19 收口后，选择下一条 release-readiness 安全切片；候选方向包括 internal-control-plane 物理拆分继续推进，或先补旧报告入口别名/查询网关。 |
+| 阶段 24：发布准备下一安全切片选择 | 已完成 | P4-20 | P4-19 收口后，已由 Claude Code 与 Kimi 评审下一条 release-readiness 安全切片；Cap 在 A/B 分歧中裁决回到 internal-control-plane 的非破坏性 support-copy-first 续切片，C/D/E 继续留在人类硬门外。 |
+| 阶段 25：发布准备 internal-control-plane support-copy-first 续切片 | 待推进 | P4-21 | P4-20 路线裁决后，继续推进 internal-control-plane 这个正式发布前大型 blocker，但只能选择非破坏性、可回滚、可机器检查的小切片。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -129,7 +130,8 @@
 | P4-17 R1 next safe slice after Prism report archive live copy-first apply | 发布前路线与授权边界 | 已完成 | P0 | P4-17 已完成：Claude Code 与 Kimi 对 delete-last、raw evidence、Layer A 产品边界和 release readiness 做了路线评审；Cap 裁决下一刀先做正式发布就绪收敛评估，不执行任何破坏性操作或产品裁决。 |
 | P4-18 R1 formal release readiness convergence assessment after Prism report archive apply | 发布前路线与授权边界 | 已完成 | P0 | P4-18 已完成：正式发布前剩余差距已收敛成一张地图，明确 internal-control-plane、prism-layer-and-evidence、Layer A 产品边界、发布授权、历史资产清理硬门和多 OS 外部验证仍阻塞正式公开发布；下一刀选定为旧 prism/reports 锚点 delete-last 预检。 |
 | P4-19 R1 Prism report archive old-anchor delete-last preflight after convergence assessment | 发布前路线与授权边界 | 已完成 | P0 | P4-19 已完成：基于 P4-16 copy-first 与 P4-18 差距地图，旧 prism/reports 锚点 delete-last 预检已证明当前不能真实退休旧入口；报告引用、后冻结报告、别名/查询网关和人工授权边界仍是后续前置条件。 |
-| P4-20 R1 next safe slice after Prism report archive old-anchor preflight | 发布前路线与授权边界 | 待推进 | P0 | P4-20 待推进：在 P4-19 已证明旧报告入口不能直接 delete-last 后，选择下一条最小安全切片；候选方向包括继续推进 internal-control-plane 物理拆分，或先补旧报告入口别名/查询网关。 |
+| P4-20 R1 next safe slice after Prism report archive old-anchor preflight | 发布前路线与授权边界 | 已完成 | P0 | P4-20 已完成：在 P4-19 证明旧报告入口不能直接 delete-last 后，Claude Code 选 A、Kimi 选 B；Cap 裁决下一条安全切片回到 internal-control-plane 的非破坏性 support-copy-first 续切片，避免局部 Prism 报告线无限延长。 |
+| P4-21 R1 internal-control-plane support-copy-first continuation after old-anchor route selection | 发布前路线与授权边界 | 待推进 | P0 | P4-21 待推进：基于 P4-20 路线裁决，用非破坏性 support-copy-first 方式继续推进 internal-control-plane 物理拆分；不得删除旧报告、清理 raw evidence、修改发布开关或触碰 Layer A 产品边界。 |
 
 ### 术语对照
 | 术语 | 人话解释 |

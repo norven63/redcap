@@ -2211,6 +2211,29 @@
       "revival_required": true,
       "hook_required": true,
       "automation": "redcap-human-communication-check.sh validates the shared status surface, Feishu formatter fields, SessionEnd audit-gap notification mute, and legacy hook notification mute. redcap-human-product-surface-check.sh runs real CLI/status/diagnose/Feishu samples and rejects unexplained internal terms in the primary human surface."
+    },
+    {
+      "id": "r1-next-safe-slice-after-old-anchor-preflight",
+      "category": "package-publish-safety",
+      "priority": "P0",
+      "rule": "After P4-19 proves old prism/reports anchors cannot be safely retired, RedCap must route to the next safe release-readiness slice without implementing it, crossing human gates, deleting old anchors, cleaning raw evidence, or claiming public release readiness.",
+      "source_paths": [
+        "references/r1-next-safe-slice-after-old-anchor-preflight.json",
+        "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json",
+        "references/r1-control-plane-physical-apply-preflight.json",
+        "references/backlogs/framework-upgrade.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-r1-next-safe-slice-after-old-anchor-preflight-check.sh validates the route manifest, split Prism verdict, selected P4-21 backlog registration, forbidden claims and route-only boundary; spec-check and diagnose keep the gate visible.",
+      "guarantee_paths": [
+        "compass/tools/redcap-r1-next-safe-slice-after-old-anchor-preflight-check.sh",
+        "compass/tools/redcap-r1-next-safe-slice-after-old-anchor-preflight-check.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
     }
   ],
   "manual_review_boundaries": [
