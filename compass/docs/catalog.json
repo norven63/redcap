@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 337806,
-    "lines": 6927,
-    "chars": 204734,
+    "size_bytes": 334930,
+    "lines": 6865,
+    "chars": 201962,
     "rough_token_pressure": {
-      "low": 51183,
-      "high": 102367
+      "low": 50490,
+      "high": 100981
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 203711,
-        "lines": 4578,
-        "chars": 121857,
+        "size_bytes": 204229,
+        "lines": 4581,
+        "chars": 122195,
         "rough_token_pressure": {
-          "low": 30464,
-          "high": 60928
+          "low": 30548,
+          "high": 61097
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 128565,
-        "lines": 2260,
-        "chars": 79103,
+        "size_bytes": 125171,
+        "lines": 2195,
+        "chars": 75993,
         "rough_token_pressure": {
-          "low": 19775,
-          "high": 39551
+          "low": 18998,
+          "high": 37996
         }
       }
     },
@@ -68,15 +68,15 @@
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/specs/session-isolation-continuity-guide.md",
-        "chars": 16126,
-        "lines": 594,
+        "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
+        "chars": 16130,
+        "lines": 236,
         "read_policy": "read-registry-summary-first"
       },
       {
-        "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 15792,
-        "lines": 233,
+        "path": "compass/docs/specs/session-isolation-continuity-guide.md",
+        "chars": 16126,
+        "lines": 594,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -101,7 +101,7 @@
         "path": "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
         "chars": 8791,
         "lines": 229,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+        "read_policy": "read-catalog-summary-by-default"
       },
       {
         "path": "compass/docs/task-reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 27236,
-      "lines": 233,
-      "chars": 15792,
+      "size_bytes": 27754,
+      "lines": 236,
+      "chars": 16130,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-20-r1-prism-package-visible-support-copy-first.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：R1 Prism package-visible support 小切片",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10238,
-      "lines": 185,
-      "chars": 6670,
-      "summary": "当前已完成：P4-8 已为 Prism 的 package-visible support 与 provider-routing contract 建立 8 个 runtime facade。 / 人话解释：未来包面和 CLI 可以从 `runtime/redcap-core/prism-tools` 找到 Prism 支撑入口，但真正逻辑仍委托旧 `prism/*` 锚点，避免一次性搬动证据层。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-report-archive-apply-readiness.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-14 发布前下一小切片选择",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-12 Prism 报告归档迁移规划",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8973,
       "lines": 159,
@@ -526,28 +513,31 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-16 Prism 报告归档 live copy-first apply",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 14053,
       "lines": 229,
       "chars": 8791,
       "summary": "当前已完成：冻结的 55 份 Prism 报告已经复制到私有归档区，旧报告位置仍保留，发布和证据边界没有越界。 / 详情：本轮解决的是“可以先复制归档，但不能误删旧锚点、不能吸收新报告、不能冒充已发布就绪”的问题。现在 `private-archive/prism-reports` 有 55 份副本和一个索引，`prism/reports` 仍保留旧锚点，新产生的 P4-16 Prism 报告被登记为 post-freeze，不进入这批冻结归档。包面检查继续排除私有归档、旧报告和 raw run evidence。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-23-r1-control-plane-internal-maintainer-facade-copy-first-apply.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-21 internal-control-plane 小批次镜像",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 6844,
+      "lines": 120,
+      "chars": 3560,
+      "summary": "- 当前已完成：P4-21 已完成一小批 internal-control-plane 维护工具镜像。RedCap 新增了 8 个内部维护入口，它们只把调用转交给旧的权威脚本，不改变旧位置、不删除旧资产，也不宣称发布 blocker 已关闭。",
       "status_basis": "filename_recency_only",
       "summary_points": {
-        "current_done": [
-          "当前已完成：冻结的 55 份 Prism 报告已经复制到私有归档区，旧报告位置仍保留，发布和证据边界没有越界。",
-          "详情：本轮解决的是“可以先复制归档，但不能误删旧锚点、不能吸收新报告、不能冒充已发布就绪”的问题。现在 `private-archive/prism-reports` 有 55 份副本和一个索引，`prism/reports` 仍保留旧锚点，新产生的 P4-16 Prism 报告被登记为 post-freeze，不进入这批冻结归档。包面检查继续排除私有归档、旧报告和 raw run evidence。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-15 已把报告归档集合冻结，防止评审报告自增导致迁移计划反复漂移。"
-        ],
-        "next_step": [
-          "下一步计划做的是：本轮收口后进入下一条 release-readiness 子任务选择；旧锚点退休、raw evidence cleanup、Layer A 产品范围裁决和正式公开发布动作仍然不能在本轮声明完成。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-12 规划归档集合 → P4-13 临时演练 → P4-15 冻结集合防漂移 → P4-16 真实 copy-first 副本 → 后续另行评审 delete-last / raw evidence / release readiness。",
-          "当前所在位置：framework-upgrade / P4-16，处在 release-structural 任务的 closeout 前阶段；实现、自检和 Prism 独立评审已完成，receipt 尚需在最终 closeout 中生成。"
-        ]
+        "current_done": [],
+        "previous_step": [],
+        "next_step": [],
+        "position": []
       }
     },
     {

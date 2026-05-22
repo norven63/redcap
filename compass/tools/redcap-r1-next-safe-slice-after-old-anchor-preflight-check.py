@@ -176,13 +176,19 @@ def iter_backlog_items(backlog: dict[str, Any]) -> list[dict[str, Any]]:
 
 def validate_backlog() -> None:
     backlog = load_json(BACKLOG, "framework upgrade backlog")
-    if backlog.get("current_focus", {}).get("item_id") != "P4-21":
-        fail("backlog current_focus.item_id must be P4-21 after route selection")
     items = {item.get("id"): item for item in iter_backlog_items(backlog)}
     if items.get("P4-20", {}).get("status") != "done":
         fail("P4-20 must be marked done in framework-upgrade backlog")
-    if items.get("P4-21", {}).get("status") != "pending":
-        fail("P4-21 must be registered as pending in framework-upgrade backlog")
+    p4_21_status = items.get("P4-21", {}).get("status")
+    current_focus = backlog.get("current_focus", {}).get("item_id")
+    if p4_21_status == "pending":
+        if current_focus != "P4-21":
+            fail("backlog current_focus.item_id must be P4-21 while P4-21 is pending")
+    elif p4_21_status == "done":
+        if current_focus == "P4-21":
+            fail("backlog current_focus.item_id must advance after P4-21 is done")
+    else:
+        fail("P4-21 must be registered as pending or done in framework-upgrade backlog")
     p4_20_paths = "\n".join(str(path) for path in items["P4-20"].get("evidence_paths", []))
     for rel in [
         "references/r1-next-safe-slice-after-old-anchor-preflight.json",

@@ -1,4 +1,36 @@
 reports:
+  - id: "20260523-r1-control-plane-internal-maintainer-facade-copy-first-apply"
+    mode: explore
+    date: "2026-05-23"
+    topic: "P4-21 internal-control-plane maintainer facade copy-first apply"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-C-internal-control-plane-small-facade-batch"
+    consensus_actions:
+      - "Create an 8-entry internal-control-plane maintainer shell facade batch"
+      - "Keep old compass/tools anchors authoritative"
+      - "Keep release blockers, Prism reports/raw evidence, release switches and Layer A product boundary untouched"
+    open_questions:
+      - "P4-22 must choose the next safe slice after this small facade batch"
+      - "Future tasks must decide whether to continue internal-control-plane, contract mirrors, or old report alias/query gateway"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-control-plane-internal-maintainer-facade-copy-first-apply.json"
+      - "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.py"
+      - "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.sh"
+      - "internal/control-plane/tools/redcap-agent-health-probe.sh"
+      - "internal/control-plane/tools/redcap-architecture-smell-governance-check.sh"
+      - "internal/control-plane/tools/redcap-arsenal-version-binding-check.sh"
+      - "internal/control-plane/tools/redcap-change-intake-check.sh"
+      - "internal/control-plane/tools/redcap-conclusion-prism-check.sh"
+      - "internal/control-plane/tools/redcap-detect-agents.sh"
+      - "internal/control-plane/tools/redcap-dev-task.sh"
+      - "internal/control-plane/tools/redcap-drift-check.sh"
+      - "compass/docs/task-reports/2026-05-23-r1-control-plane-internal-maintainer-facade-copy-first-apply.md"
+      - "prism/reports/2026-05-23-r1-control-plane-internal-maintainer-facade-copy-first-apply.md"
+      - "prism/runs/20260523-r1-control-plane-internal-maintainer-facade-copy-first-apply/claude-code-review.txt"
+      - "prism/runs/20260523-r1-control-plane-internal-maintainer-facade-copy-first-apply/kimi-review.txt"
+    archived: false
   - id: "20260523-r1-next-safe-slice-after-old-anchor-preflight"
     mode: explore
     date: "2026-05-23"

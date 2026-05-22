@@ -264,6 +264,18 @@
       "consumer_notes": "Most validators, closeout, docs catalog, knowledge gateway and checks live here."
     },
     {
+      "path": "internal",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "Copy-first internal-control-plane facade parent created by P4-21",
+      "visibility": "maintainer-control-plane",
+      "package_surface": "excluded-until-profile-decides",
+      "target_disposition": "future-internal-control-plane-parent",
+      "target_parent": "internal-control-plane",
+      "move_risk": "medium",
+      "consumer_notes": "P4-21 only adds mirror-only internal/control-plane/tool facades; compass/tools remains authoritative until a future delete-last task."
+    },
+    {
       "path": "loom",
       "type": "directory",
       "presence": "required-source",

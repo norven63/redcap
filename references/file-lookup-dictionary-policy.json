@@ -340,6 +340,27 @@
       "check": "bash compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh"
     },
     {
+      "path": "references/r1-control-plane-internal-maintainer-facade-copy-first-apply.json",
+      "section": "Package Publish Safety",
+      "meaning": "machine-readable P4-21 internal-control-plane maintainer facade small-batch apply manifest with old compass/tools anchors retained and release blocker still open",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for validating the P4-21 internal-control-plane maintainer facade small batch",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates the P4-21 internal-control-plane facade batch without allowing mass mirror, old-anchor mutation, raw evidence cleanup, release switch changes, Layer A product decisions or blocker closure claims",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.sh"
+    },
+    {
       "path": "references/r1-prism-evidence-retention-apply-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 prism-layer-and-evidence copy-first / alias-first apply preflight with no-cleanup and still-blocking release boundary",
