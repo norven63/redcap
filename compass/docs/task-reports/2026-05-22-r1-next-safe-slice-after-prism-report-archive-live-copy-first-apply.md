@@ -25,7 +25,7 @@
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：P4-12 规划报告归档集合 → P4-13 临时演练 → P4-15 冻结集合防漂移 → P4-16 真实 copy-first 副本 → P4-17 选择下一安全切片 → P4-18 汇总正式发布前剩余差距。
-- 当前所在位置：framework-upgrade / P4-17，处在 release-route-selection 的最终收口前阶段；路线评审、manifest、Prism 报告和 backlog 更新已完成，receipt 还需最终 closeout 生成。
+- 当前所在位置：framework-upgrade / P4-17 已正式收口；路线评审、manifest、Prism 报告、backlog 更新、clean workspace E2E 和 closeout receipt 都已完成。下一步进入 P4-18。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -137,6 +137,8 @@ P4-17 的核心不是实现某个功能，而是防止下一步走错。P4-16 �
 | P4-16 live apply 检查 | `bash compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.sh` | 通过 |
 | Prism archive 报告归档 | `bash prism/tools/prism-archive-check.sh --report prism/reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md` | 通过 |
 | docs catalog | `bash compass/tools/redcap-docs-catalog.sh check` | 通过 |
+| clean workspace E2E | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --check-result --timeout 180` | 通过 |
+| closeout runtime | `./closeout-cap.sh complete --host codex --task-file .dev-task.md --baseline-head c2c3bf3eac94cee9689e87b52196dd28c5b05ba4` | 通过 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -146,11 +148,11 @@ P4-17 的核心不是实现某个功能，而是防止下一步走错。P4-16 �
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 收口前待最终核对 |
-| 棱镜验收 | Claude Code 与 Kimi 已完成，split decision 后由 Cap 保守裁决 |
-| closeout summary | 收口前待生成 |
-| closeout receipt | 收口前待生成 |
-| rescue audit（如有） | 当前无 rescue audit |
+| 执行承诺账本 | 10/10 已完成 |
+| 棱镜验收 | pass；Claude Code 与 Kimi 已完成，split decision 后由 Cap 保守裁决 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply-3b5bf6320523419ce30adeca50caffdaf2bc39031e034e2326896c85957766f3.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply-3b5bf6320523419ce30adeca50caffdaf2bc39031e034e2326896c85957766f3.json` |
+| rescue audit（如有） | 无 rescue；首次 closeout 暴露任务卡 allowed-scope 漏写 `references/reference-asset-lifecycle.json`，补齐范围声明后重跑通过 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -159,7 +161,7 @@ P4-17 的核心不是实现某个功能，而是防止下一步走错。P4-16 �
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code 与 Kimi 已完成路线评审 |
-| 已正式完成 | 否，closeout receipt 还需最终生成 |
+| 已正式完成 | 是，closeout receipt 已生成 |
 
 ---
 
@@ -180,9 +182,8 @@ P4-17 的核心不是实现某个功能，而是防止下一步走错。P4-16 �
 
 ### 6.3 推荐的下一步行动
 
-1. 完成本轮 closeout runtime，生成 P4-17 receipt。
-2. 进入 P4-18：正式发布就绪收敛评估。
-3. P4-18 后再决定是否进入旧锚点 delete-last 预检、raw evidence 治理或人工产品决策。
+1. 进入 P4-18：正式发布就绪收敛评估。
+2. P4-18 先整理正式发布前剩余差距，再决定是否进入旧锚点 delete-last 预检、raw evidence 治理或人工产品决策。
 
 ---
 
@@ -211,7 +212,8 @@ P4-17 的核心不是实现某个功能，而是防止下一步走错。P4-16 �
 ### 附录 A：Commits
 
 ```
-本报告生成时尚未提交；最终 commit 会在 closeout 后记录。
+b41687c test(release): 完成 P4-17 下一安全切片选择
+6bfc7d6 test(release): 刷新 P4-17 clean workspace 结果
 ```
 
 ### 附录 B：棱镜调用记录（如有）

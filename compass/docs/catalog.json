@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 338520,
-    "lines": 6933,
-    "chars": 206662,
+    "size_bytes": 339363,
+    "lines": 6935,
+    "chars": 207505,
     "rough_token_pressure": {
-      "low": 51665,
-      "high": 103331
+      "low": 51876,
+      "high": 103752
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 131336,
-        "lines": 2274,
-        "chars": 82350,
+        "size_bytes": 132179,
+        "lines": 2276,
+        "chars": 83193,
         "rough_token_pressure": {
-          "low": 20587,
-          "high": 41175
+          "low": 20798,
+          "high": 41596
         }
       }
     },
@@ -528,9 +528,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12125,
-      "lines": 223,
-      "chars": 7211,
+      "size_bytes": 12968,
+      "lines": 225,
+      "chars": 8054,
       "summary": "当前已完成：P4-16 之后的下一安全切片已经选定；下一步先做正式发布就绪差距地图，而不是直接删除旧报告、清理原始证据、裁决 Layer A 或进入正式发布。 / 详情：Claude Code 和 Kimi 都完成了独立路线评审。两边对下一刀有分歧：Claude Code 建议先恢复全局发布视角，Kimi 建议顺着 copy-first 链路做旧锚点 delete-last 预检。Cap 选择更保守的全局收敛评估，防止长时间局部推进后遗漏其他 blocker。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -546,7 +546,7 @@
         ],
         "position": [
           "整体计划脉络图是：P4-12 规划报告归档集合 → P4-13 临时演练 → P4-15 冻结集合防漂移 → P4-16 真实 copy-first 副本 → P4-17 选择下一安全切片 → P4-18 汇总正式发布前剩余差距。",
-          "当前所在位置：framework-upgrade / P4-17，处在 release-route-selection 的最终收口前阶段；路线评审、manifest、Prism 报告和 backlog 更新已完成，receipt 还需最终 closeout 生成。"
+          "当前所在位置：framework-upgrade / P4-17 已正式收口；路线评审、manifest、Prism 报告、backlog 更新、clean workspace E2E 和 closeout receipt 都已完成。下一步进入 P4-18。"
         ]
       }
     },
