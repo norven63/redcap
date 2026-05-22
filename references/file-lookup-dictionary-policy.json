@@ -445,6 +445,34 @@
       "check": "bash compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh"
     },
     {
+      "path": "references/r1-prism-report-archive-live-copy-first-apply.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-16 Prism report archive live copy-first apply asset recording private archive copies, old-anchor retention, post-freeze exclusion and no release-ready boundary",
+      "owner": "Release architecture + Prism governance",
+      "check": "bash compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for P4-16 Prism report archive live copy-first apply validation",
+      "owner": "Release architecture + Prism governance",
+      "check": "bash compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates P4-16 archive copies, source hashes, old-anchor retention, post-freeze exclusion, package exclusion and raw evidence boundary",
+      "owner": "Release architecture + Prism governance",
+      "check": "bash compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.sh"
+    },
+    {
+      "path": "private-archive/prism-reports/index.yaml",
+      "section": "Package Publish Safety",
+      "meaning": "private Prism report archive index for the frozen P4-12/P4-15 cohort; not a public package asset and not an old-anchor replacement",
+      "owner": "Release architecture + Prism governance",
+      "check": "bash compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.sh"
+    },
+    {
       "path": "references/r1-layera-product-boundary-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 internal-layer-a product-boundary preflight with package-absence proof, loom inventory, consumer matrix, future decision gate and still-blocking release boundary",

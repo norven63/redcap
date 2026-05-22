@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 340216,
-    "lines": 6923,
-    "chars": 207604,
+    "size_bytes": 341824,
+    "lines": 6964,
+    "chars": 208778,
     "rough_token_pressure": {
-      "low": 51901,
-      "high": 103802
+      "low": 52194,
+      "high": 104389
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 200124,
-        "lines": 4564,
-        "chars": 119654,
+        "size_bytes": 200840,
+        "lines": 4567,
+        "chars": 120092,
         "rough_token_pressure": {
-          "low": 29913,
-          "high": 59827
+          "low": 30023,
+          "high": 60046
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 134562,
-        "lines": 2270,
-        "chars": 84176,
+        "size_bytes": 135454,
+        "lines": 2308,
+        "chars": 84912,
         "rough_token_pressure": {
-          "low": 21044,
-          "high": 42088
+          "low": 21228,
+          "high": 42456
         }
       }
     },
@@ -81,8 +81,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 13589,
-        "lines": 219,
+        "chars": 14027,
+        "lines": 222,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 23649,
-      "lines": 219,
-      "chars": 13589,
+      "size_bytes": 24365,
+      "lines": 222,
+      "chars": 14027,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -431,19 +431,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：历史资产物理清理与高价值经验候选化发布硬门",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 12741,
-      "lines": 191,
-      "chars": 7617,
-      "summary": "当前已完成：RedCap 已把两个正式发布前硬门落地：历史资产必须安全归位，以及高价值经验必须先完成候选判断。 / 详情：本轮先解决一个发布风险：不能只证明私密内容“不进入包”，就把它冒充成“历史资产已经搬干净”；随后补上一个控制面缺口：重大 bug、用户纠偏、评审缺口、递归/进程风暴等经验，不能再靠人工提醒才进入沉淀流程。现在这两类硬门都已写入发布计划、授权矩阵、handoff、backlog 和检查脚本。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md",
       "collection": "task-reports",
       "title": "任务完成报告：R1 Layer A 产品边界预检",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：R1 Prism 证据保留 apply 预检",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 13270,
       "lines": 207,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-12 Prism 报告归档迁移规划",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8973,
       "lines": 159,
       "chars": 5515,
       "summary": "当前已完成：P4-12 已把 Prism 报告归档从“路线已选定”推进到“迁移规划可机器检查”。 / 人话解释：我们现在知道当前正式 Prism 报告将来应该复制到哪里、旧路径必须如何继续可用、失败如何回滚、未来真正执行前要通过哪些验证。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P4-12 已把 Prism 报告归档从“路线已选定”推进到“迁移规划可机器检查”。",
-          "人话解释：我们现在知道当前正式 Prism 报告将来应该复制到哪里、旧路径必须如何继续可用、失败如何回滚、未来真正执行前要通过哪些验证。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-11 路线选择。Claude Code 与 Kimi 共同建议先做 Prism 报告归档的 copy-first / alias-first 规划桥，而不是直接搬文件、清理证据或推进更大的控制面批次。"
-        ],
-        "next_step": [
-          "下一步计划做的是：P4-13 “copy-first apply readiness / rehearsal”，先验证未来真实执行的顺序、别名兼容、回滚和包面证明。"
-        ],
-        "position": [
-          "整体计划脉络图是：正式发布准备路线 → 控制面与 Prism 预检 → runtime facade → Prism package-visible support → Prism report archive 预检 → 下一切片选择 → **P4-12 迁移规划** → P4-13 apply readiness / rehearsal。",
-          "当前所在位置：`framework-upgrade / P4-12`，属于发布前 R1 的安全小切片，不是正式发布任务。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-copy-first-preflight.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：正式发布准备路线 → Prism 证据保留拆分 → Prism 报告归档预检 → 迁移规划 → apply readiness / rehearsal → 下一切片选择 → **P4-15 漂移冻结** → 后续 live copy-first apply。",
           "当前所在位置：`framework-upgrade / P4-15`，属于发布前 Prism 报告归档治理，不是正式发布，也不是旧锚点退休。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-16 Prism 报告归档 live copy-first apply",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 13633,
+      "lines": 229,
+      "chars": 8353,
+      "summary": "当前已完成：冻结的 55 份 Prism 报告已经复制到私有归档区，旧报告位置仍保留，发布和证据边界没有越界。 / 详情：本轮解决的是“可以先复制归档，但不能误删旧锚点、不能吸收新报告、不能冒充已发布就绪”的问题。现在 `private-archive/prism-reports` 有 55 份副本和一个索引，`prism/reports` 仍保留旧锚点，新产生的 P4-16 Prism 报告被登记为 post-freeze，不进入这批冻结归档。包面检查继续排除私有归档、旧报告和 raw run evidence。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：冻结的 55 份 Prism 报告已经复制到私有归档区，旧报告位置仍保留，发布和证据边界没有越界。",
+          "详情：本轮解决的是“可以先复制归档，但不能误删旧锚点、不能吸收新报告、不能冒充已发布就绪”的问题。现在 `private-archive/prism-reports` 有 55 份副本和一个索引，`prism/reports` 仍保留旧锚点，新产生的 P4-16 Prism 报告被登记为 post-freeze，不进入这批冻结归档。包面检查继续排除私有归档、旧报告和 raw run evidence。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-15 已把报告归档集合冻结，防止评审报告自增导致迁移计划反复漂移。"
+        ],
+        "next_step": [
+          "下一步计划做的是：本轮收口后进入下一条 release-readiness 子任务选择；旧锚点退休、raw evidence cleanup、Layer A 产品范围裁决和正式公开发布动作仍然不能在本轮声明完成。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-12 规划归档集合 → P4-13 临时演练 → P4-15 冻结集合防漂移 → P4-16 真实 copy-first 副本 → 后续另行评审 delete-last / raw evidence / release readiness。",
+          "当前所在位置：framework-upgrade / P4-16，处在 release-structural 任务的 closeout 前阶段；实现、自检和 Prism 独立评审已完成，receipt 尚需在最终 closeout 中生成。"
         ]
       }
     }

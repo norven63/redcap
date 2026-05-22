@@ -1,4 +1,32 @@
 reports:
+  - id: "20260522-r1-prism-report-archive-live-copy-first-apply"
+    mode: review
+    date: "2026-05-22"
+    topic: "P4-16 R1 Prism report archive live copy-first apply"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "weak-consensus-pass-with-nits"
+    consensus_actions:
+      - "Accept the live copy-first archive apply as the P4-16 release-readiness slice"
+      - "Keep old prism/reports anchors authoritative while private-archive/prism-reports holds copied report bodies"
+      - "Keep post-freeze reports excluded from the frozen 55-report archive cohort"
+      - "Document the P4-15 guard to P4-16 live-apply bridge so freeze policy and physical copy state are not contradictory"
+    open_questions:
+      - "Old-anchor retirement remains forbidden until a separate delete-last task with proof and receipt"
+      - "Prism raw run evidence cleanup remains forbidden without preservation proof and explicit human approval when evidence loss is possible"
+      - "The prism-layer-and-evidence blocker remains open beyond this copy-first archive apply"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-prism-report-archive-live-copy-first-apply.json"
+      - "references/r1-prism-report-archive-churn-freeze-guard.json"
+      - "compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.py"
+      - "compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.sh"
+      - "compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.py"
+      - "private-archive/prism-reports/index.yaml"
+      - "prism/reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md"
+      - "prism/runs/20260522-r1-prism-report-archive-live-copy-first-apply/claude-code-review.txt"
+      - "prism/runs/20260522-r1-prism-report-archive-live-copy-first-apply/kimi-review.txt"
+    archived: false
   - id: "20260522-r1-prism-report-archive-churn-freeze-guard"
     mode: review
     date: "2026-05-22"
@@ -726,7 +754,7 @@ reports:
       - "references/public-package-surface-policy.json"
       - "compass/tools/redcap-formal-release-readiness-plan-check.py"
       - "compass/tools/redcap-multi-session-acceptance.sh"
-      - "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md"
       - "prism/reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate-review.md"
       - "prism/runs/20260517-historical-asset-physical-cleanup-release-hard-gate/session-registry.yaml"
     archived: false

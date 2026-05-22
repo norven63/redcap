@@ -6,7 +6,7 @@
   "entries": [
     {
       "path": "references/backlogs/framework-upgrade.json",
-      "bytes": 43949,
+      "bytes": 45578,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "references/file-lookup-dictionary-policy.json",
-      "bytes": 102411,
+      "bytes": 104168,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -42,7 +42,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 102025,
+      "bytes": 103485,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -114,7 +114,7 @@
     },
     {
       "path": "references/r1-control-plane-contract-split-preflight.json",
-      "bytes": 87294,
+      "bytes": 88439,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -131,8 +131,17 @@
       "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
     },
     {
+      "path": "references/r1-prism-report-archive-live-copy-first-apply.json",
+      "bytes": 32597,
+      "asset_class": "reference-asset",
+      "lifecycle": "index-first-active-reference",
+      "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
+      "read_policy": "index-or-checker-first",
+      "public_export": "forbidden-unless-explicit-template-or-release-allowlist"
+    },
+    {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 40854,
+      "bytes": 41241,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",

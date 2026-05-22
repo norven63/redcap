@@ -5,7 +5,7 @@
   "created_at": "2026-05-21T00:00:00Z",
   "source_truth": {
     "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
-    "plan_sha256": "858a79f63bd32108a6869d38330ae0410b37934b7556d3242385de538ba2f4bb",
+    "plan_sha256": "75554a9321238c2f8a1cae8fe4f13aee54b0bf1f4d7645ad40242abc55d029ba",
     "plan_id": "redcap-r1-prism-report-archive-copy-first-plan"
   },
   "claim_boundary": {

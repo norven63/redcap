@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-16",
-    "summary": "P4-16 待推进：在 P4-15 已稳定 Prism 报告归档集合边界后，重新评审并推进 Prism report archive 的 live copy-first apply；仍不得执行旧锚点退休、raw evidence cleanup 或正式发布动作。"
+    "item_id": "P4-17",
+    "summary": "P4-17 待推进：P4-16 已完成冻结 Prism 报告集合的 live copy-first 归档；下一刀需要先评审 delete-last、raw evidence 保全/清理、Layer A 边界或 release readiness 的安全顺序，仍不得无授权执行破坏性清理或正式公开发布动作。"
   },
   "glossary": [
     {
@@ -393,7 +393,7 @@
             "references/historical-asset-physical-cleanup-release-gate.json",
             "references/formal-release-readiness-plan.json",
             "compass/tools/redcap-formal-release-readiness-plan-check.sh",
-            "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md"
+            "private-archive/redcap-knowledge/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md"
           ]
         },
         {
@@ -667,15 +667,30 @@
         {
           "id": "P4-16",
           "title": "R1 Prism report archive live copy-first apply after freeze guard",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-20-release-readiness-prism-report-archive-live-copy-first-apply",
-          "summary": "P4-15 收口后的下一安全切片：基于已冻结的报告归档集合推进 live copy-first apply，并证明旧锚点、索引、包面排除、回滚路径和 post-freeze 报告登记仍一致；本项不退休旧锚点、不清理 raw evidence、不执行正式发布动作。",
+          "summary": "P4-16 已完成：冻结集合 55 份 Prism 报告已 copy-first 到 private-archive/prism-reports，并生成归档索引；旧 prism/reports 锚点、post-freeze 报告边界、raw evidence、包面排除和发布开关均保持不变。",
           "evidence_paths": [
             "references/r1-prism-report-archive-churn-freeze-guard.json",
-            "references/r1-prism-report-archive-copy-first-plan.json",
-            "references/r1-prism-report-archive-apply-readiness.json",
-            "prism/reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md"
+            "references/r1-prism-report-archive-live-copy-first-apply.json",
+            "private-archive/prism-reports/index.yaml",
+            "compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.sh",
+            "prism/reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
+            "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md"
+          ]
+        },
+        {
+          "id": "P4-17",
+          "title": "R1 next safe slice after Prism report archive live copy-first apply",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-21-release-readiness-next-safe-slice-after-prism-report-archive-live-copy-first-apply",
+          "summary": "P4-16 收口后的下一安全切片选择：评审 delete-last、raw evidence 保全/清理、Layer A 产品边界和 release readiness 的优先级；本项只做路线选择和边界锁定，不执行旧锚点删除、raw evidence 清理、Layer A 产品裁决或正式公开发布动作。",
+          "evidence_paths": [
+            "references/r1-prism-report-archive-live-copy-first-apply.json",
+            "prism/reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
+            "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md"
           ]
         }
       ]
@@ -885,11 +900,20 @@
     {
       "id": "phase-20-release-readiness-prism-report-archive-live-copy-first-apply",
       "title": "阶段 20：发布准备 Prism report archive live copy-first apply",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-16"
       ],
-      "summary": "正式发布动作之前，在 P4-15 的冻结集合保护下推进 Prism 报告归档 live copy-first apply；旧锚点、raw evidence cleanup 和正式发布动作仍保持禁止。"
+      "summary": "正式发布动作之前，已在 P4-15 的冻结集合保护下完成 Prism 报告归档 live copy-first apply；旧锚点、raw evidence cleanup 和正式发布动作仍保持禁止。"
+    },
+    {
+      "id": "phase-21-release-readiness-next-safe-slice-after-prism-report-archive-live-copy-first-apply",
+      "title": "阶段 21：发布准备下一安全切片选择",
+      "status": "pending",
+      "item_ids": [
+        "P4-17"
+      ],
+      "summary": "P4-16 收口后，先评审下一条 release-readiness 安全切片，避免在未锁定边界时直接进入旧锚点退休、raw evidence cleanup、Layer A 产品裁决或正式公开发布动作。"
     }
   ]
 }

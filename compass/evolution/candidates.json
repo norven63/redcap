@@ -281,7 +281,7 @@
       "evidence_paths": [
         "references/evolution-harvest-signal-policy.json",
         "compass/tools/redcap-evolution-harvest-check.py",
-        "compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md",
+        "private-archive/redcap-knowledge/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md",
         "compass/knowledge/lessons/l-162.md"
       ],
       "promotion_target": "lessons",

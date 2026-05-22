@@ -18,6 +18,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PLAN = ROOT / "references/r1-prism-report-archive-copy-first-plan.json"
 DEFAULT_CHURN_FREEZE_GUARD = ROOT / "references/r1-prism-report-archive-churn-freeze-guard.json"
+DEFAULT_LIVE_APPLY_MANIFEST = ROOT / "references/r1-prism-report-archive-live-copy-first-apply.json"
 RUNTIME_MANIFEST = ROOT / "compass/tools/redcap-runtime-package-manifest.sh"
 
 
@@ -129,6 +130,34 @@ def load_optional_churn_freeze_guard() -> dict[str, Any] | None:
     if guard.get("status") != "active-freeze-guard-no-live-report-copy-move-delete-or-cleanup":
         fail("churn/freeze guard status mismatch")
     return guard
+
+
+def validate_optional_live_apply_copies(copied_reports: list[Path]) -> None:
+    if not copied_reports:
+        return
+    if not DEFAULT_LIVE_APPLY_MANIFEST.is_file():
+        fail("private-archive/prism-reports/*.md files require live copy-first apply manifest")
+    manifest = load_json(DEFAULT_LIVE_APPLY_MANIFEST, "Prism report archive live copy-first apply manifest")
+    if manifest.get("apply_id") != "redcap-r1-prism-report-archive-live-copy-first-apply":
+        fail("live copy-first apply manifest id mismatch")
+    if manifest.get("status") != "copy-first-archive-apply-old-anchors-retained":
+        fail("live copy-first apply manifest status mismatch")
+    contract = manifest.get("archive_contract")
+    if not isinstance(contract, dict):
+        fail("live copy-first apply manifest archive_contract must be an object")
+    if contract.get("archive_root") != "private-archive/prism-reports":
+        fail("live copy-first apply archive_root mismatch")
+    copies = require_list(manifest.get("archive_copies"), "live copy-first apply archive_copies", min_len=len(copied_reports))
+    expected = {path.relative_to(ROOT).as_posix() for path in copied_reports}
+    actual = {
+        require_text(item.get("archive_path"), "live copy-first apply archive_copies.archive_path")
+        for item in copies
+        if isinstance(item, dict)
+    }
+    if expected != actual:
+        fail("live copy-first apply archive_copies do not match private archive files")
+    if contract.get("copied_report_count") != len(copied_reports):
+        fail("live copy-first apply copied_report_count is stale")
 
 
 def validate_churn_freeze_guard(
@@ -372,8 +401,7 @@ def validate_archive_plan(payload: dict[str, Any]) -> dict[str, int]:
 
     archive_root = ROOT / "private-archive/prism-reports"
     copied_reports = sorted(archive_root.glob("*.md")) if archive_root.exists() else []
-    if copied_reports:
-        fail("plan-only task must not create private-archive/prism-reports/*.md files")
+    validate_optional_live_apply_copies(copied_reports)
 
     candidates = package_candidates()
     for prefix in ["prism/reports/", "prism/runs/", "private-archive/prism-reports/"]:

@@ -17,6 +17,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_GUARD = ROOT / "references/r1-prism-report-archive-churn-freeze-guard.json"
+LIVE_APPLY_MANIFEST = ROOT / "references/r1-prism-report-archive-live-copy-first-apply.json"
 PLAN_CHECKER = ROOT / "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh"
 READINESS_CHECKER = ROOT / "compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh"
 RUNTIME_MANIFEST = ROOT / "compass/tools/redcap-runtime-package-manifest.sh"
@@ -304,7 +305,44 @@ def validate_package_surface(payload: dict[str, Any]) -> int:
     archive_root = ROOT / "private-archive/prism-reports"
     copied_reports = sorted(archive_root.glob("*.md")) if archive_root.exists() else []
     if copied_reports:
-        fail("freeze guard task must not create private-archive/prism-reports/*.md files")
+        if not LIVE_APPLY_MANIFEST.is_file():
+            fail("private-archive/prism-reports/*.md requires P4-16 live copy-first apply manifest")
+        live_apply = load_json(LIVE_APPLY_MANIFEST, "P4-16 Prism report archive live copy-first apply")
+        if live_apply.get("apply_id") != "redcap-r1-prism-report-archive-live-copy-first-apply":
+            fail("P4-16 live apply manifest apply_id mismatch")
+        if live_apply.get("status") != "copy-first-archive-apply-old-anchors-retained":
+            fail("P4-16 live apply manifest status mismatch")
+        bridge = payload.get("operation_policy", {}).get("downstream_live_apply_bridge")
+        if not isinstance(bridge, dict):
+            fail("operation_policy.downstream_live_apply_bridge must document the P4-16 handoff")
+        if bridge.get("allowed_when_manifest_exists") != LIVE_APPLY_MANIFEST.relative_to(ROOT).as_posix():
+            fail("downstream_live_apply_bridge.allowed_when_manifest_exists mismatch")
+        if bridge.get("handled_by_apply_id") != "redcap-r1-prism-report-archive-live-copy-first-apply":
+            fail("downstream_live_apply_bridge.handled_by_apply_id mismatch")
+        if "do-not-authorize-old-anchor-retirement-or-raw-evidence-cleanup" not in require_text(
+            bridge.get("guard_scope_after_bridge"),
+            "downstream_live_apply_bridge.guard_scope_after_bridge",
+        ):
+            fail("downstream_live_apply_bridge.guard_scope_after_bridge must keep old-anchor/raw-evidence limits")
+        archive_contract = live_apply.get("archive_contract")
+        if not isinstance(archive_contract, dict):
+            fail("P4-16 live apply archive_contract must be an object")
+        expected = {
+            require_text(item.get("archive_path"), "archive_copies.archive_path")
+            for item in require_list(live_apply.get("archive_copies"), "archive_copies", min_len=1)
+            if isinstance(item, dict)
+        }
+        actual = {
+            path.relative_to(ROOT).as_posix()
+            for path in copied_reports
+        }
+        if actual != expected:
+            missing = sorted(expected - actual)
+            extra = sorted(actual - expected)
+            if missing:
+                fail("P4-16 live apply archive copies missing: " + ", ".join(missing[:8]))
+            if extra:
+                fail("unexpected private archive report copies: " + ", ".join(extra[:8]))
     return len(candidates)
 
 

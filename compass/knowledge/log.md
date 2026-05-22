@@ -11,7 +11,7 @@
 
 ## [2026-05-17] lesson | self-check-recursion-guard
 
-- Source: `compass/docs/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md` and live `human-product-surface` recursion review.
+- Source: `private-archive/redcap-knowledge/task-reports/2026-05-17-historical-asset-physical-cleanup-release-hard-gate.md` and live `human-product-surface` recursion review.
 - Decision: self-checkers that call aggregate diagnostics must declare recursion guards and clean timeout descendants by process group.
 - Boundary: keep raw process listings and private runtime evidence out of the long-term knowledge log; store only the reusable rule and source anchor.
 - Evidence: `compass/knowledge/lessons/l-162.md`.

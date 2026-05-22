@@ -17,6 +17,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_READINESS = ROOT / "references/r1-prism-report-archive-apply-readiness.json"
+DEFAULT_LIVE_APPLY_MANIFEST = ROOT / "references/r1-prism-report-archive-live-copy-first-apply.json"
 PLAN_CHECKER = ROOT / "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh"
 RUNTIME_MANIFEST = ROOT / "compass/tools/redcap-runtime-package-manifest.sh"
 
@@ -94,6 +95,41 @@ def package_candidates() -> set[str]:
             candidate_path.unlink()
         except OSError:
             pass
+
+
+def validate_optional_live_apply_files(live_archive_files: list[Path]) -> set[str]:
+    if not live_archive_files:
+        return set()
+    if not DEFAULT_LIVE_APPLY_MANIFEST.is_file():
+        fail("live private-archive/prism-reports files require live copy-first apply manifest")
+    manifest = load_json(DEFAULT_LIVE_APPLY_MANIFEST, "Prism report archive live copy-first apply manifest")
+    if manifest.get("apply_id") != "redcap-r1-prism-report-archive-live-copy-first-apply":
+        fail("live copy-first apply manifest id mismatch")
+    if manifest.get("status") != "copy-first-archive-apply-old-anchors-retained":
+        fail("live copy-first apply manifest status mismatch")
+    contract = manifest.get("archive_contract")
+    if not isinstance(contract, dict):
+        fail("live copy-first apply archive_contract must be an object")
+    if contract.get("archive_root") != "private-archive/prism-reports":
+        fail("live copy-first apply archive_root mismatch")
+    index_rel = require_text(contract.get("archive_index_path"), "live copy-first apply archive_index_path")
+    expected_index_path = ROOT / index_rel
+    report_files = [path for path in live_archive_files if path.suffix == ".md"]
+    non_report_files = {path.relative_to(ROOT).as_posix() for path in live_archive_files if path.suffix != ".md"}
+    if non_report_files != {index_rel}:
+        fail("live private archive contains unexpected non-report files: " + ", ".join(sorted(non_report_files)[:8]))
+    if not expected_index_path.is_file():
+        fail("live copy-first apply archive index missing")
+    copies = require_list(manifest.get("archive_copies"), "live copy-first apply archive_copies", min_len=len(report_files))
+    expected = {path.relative_to(ROOT).as_posix() for path in report_files}
+    actual = {
+        require_text(item.get("archive_path"), "live copy-first apply archive_copies.archive_path")
+        for item in copies
+        if isinstance(item, dict)
+    }
+    if expected != actual:
+        fail("live copy-first apply archive_copies do not match live private archive files")
+    return expected | {index_rel}
 
 
 def validate_source_truth(payload: dict[str, Any]) -> dict[str, Any]:
@@ -205,8 +241,7 @@ def validate_rehearsal(payload: dict[str, Any], plan: dict[str, Any]) -> dict[st
 
     live_archive_root = ROOT / "private-archive/prism-reports"
     live_archive_files = sorted(path for path in live_archive_root.rglob("*") if path.is_file()) if live_archive_root.exists() else []
-    if live_archive_files:
-        fail("readiness rehearsal must not create live private-archive/prism-reports files")
+    live_archive_before = validate_optional_live_apply_files(live_archive_files)
 
     seen_targets: set[str] = set()
     with tempfile.TemporaryDirectory(prefix="redcap-prism-report-archive-rehearsal-") as tmp_name:
@@ -267,7 +302,8 @@ def validate_rehearsal(payload: dict[str, Any], plan: dict[str, Any]) -> dict[st
             fail("temporary archive index was not created")
 
     live_archive_files_after = sorted(path for path in live_archive_root.rglob("*") if path.is_file()) if live_archive_root.exists() else []
-    if live_archive_files_after:
+    live_archive_after = validate_optional_live_apply_files(live_archive_files_after)
+    if live_archive_after != live_archive_before:
         fail("live private archive changed during rehearsal")
 
     candidates = package_candidates()
