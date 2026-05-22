@@ -67,8 +67,8 @@ Cap 裁决选择 B。A 的安全性没有问题，但连续两批 facade 后，�
 
 | 项目 | 当前值 |
 | --- | --- |
-| closeout receipt | 无 |
-| 当前状态 | 正在执行正式 closeout 收口前验证 |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2-623243b0ecde2145b4320d877db4165176f3303befb0ea8761d074be1c6d20f4.json` |
+| 当前状态 | 已完成正式 closeout 收口 |
 | 人工介入 | 不需要 |
 
 ### 5.4 完成等级（禁止混报）
@@ -78,7 +78,7 @@ Cap 裁决选择 B。A 的安全性没有问题，但连续两批 facade 后，�
 | 已实现 | 是 | 路线 manifest、checker、Prism 报告和 backlog 更新已落地 |
 | 已自检 | 是 | 专项 checker 已通过 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 两路评审已绑定 |
-| 已正式完成 | 否 | 等待 closeout runtime 生成 receipt 后才能声明正式完成 |
+| 已正式完成 | 是 | closeout runtime 已生成 receipt |
 
 ## 六、遗留问题与下一步
 

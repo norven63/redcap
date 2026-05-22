@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 324443,
+    "size_bytes": 324624,
     "lines": 6699,
-    "chars": 194801,
+    "chars": 195012,
     "rough_token_pressure": {
-      "low": 48700,
-      "high": 97400
+      "low": 48753,
+      "high": 97506
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 112888,
+        "size_bytes": 113069,
         "lines": 2020,
-        "chars": 67564,
+        "chars": 67775,
         "rough_token_pressure": {
-          "low": 16891,
-          "high": 33782
+          "low": 16943,
+          "high": 33887
         }
       }
     },
@@ -515,9 +515,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 5416,
+      "size_bytes": 5597,
       "lines": 106,
-      "chars": 3144,
+      "chars": 3355,
       "summary": "当前已完成：P4-24 已完成下一安全切片选择，裁决下一步进入 P4-25：internal-control-plane 的 public/internal contract mirror preflight。 / 详情：本轮没有实施 P4-25，只是选择路线。选择 B 的原因是 RedCap 已连续完成两批 facade，下一步需要先把公开面与内部面边界预检清楚，避免继续堆 facade 时让迁移边界更模糊。",
       "status_basis": "filename_recency_only"
     },
