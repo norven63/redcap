@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 321279,
-    "lines": 6651,
-    "chars": 192611,
+    "size_bytes": 321903,
+    "lines": 6654,
+    "chars": 192957,
     "rough_token_pressure": {
-      "low": 48152,
-      "high": 96305
+      "low": 48239,
+      "high": 96478
     },
     "collections": {
       "archive": {
@@ -41,12 +41,12 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 206025,
-        "lines": 4590,
-        "chars": 123463,
+        "size_bytes": 206649,
+        "lines": 4593,
+        "chars": 123809,
         "rough_token_pressure": {
-          "low": 30865,
-          "high": 61731
+          "low": 30952,
+          "high": 61904
         }
       },
       "task-reports": {
@@ -69,8 +69,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 17398,
-        "lines": 245,
+        "chars": 17744,
+        "lines": 248,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 29550,
-      "lines": 245,
-      "chars": 17398,
+      "size_bytes": 30174,
+      "lines": 248,
+      "chars": 17744,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
