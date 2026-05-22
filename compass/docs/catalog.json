@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 328567,
+    "size_bytes": 328757,
     "lines": 6754,
-    "chars": 197539,
+    "chars": 197759,
     "rough_token_pressure": {
-      "low": 49384,
-      "high": 98769
+      "low": 49439,
+      "high": 98879
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 117488,
+        "size_bytes": 117678,
         "lines": 2078,
-        "chars": 70702,
+        "chars": 70922,
         "rough_token_pressure": {
-          "low": 17675,
-          "high": 35351
+          "low": 17730,
+          "high": 35461
         }
       }
     },
@@ -502,9 +502,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 5796,
+      "size_bytes": 5986,
       "lines": 108,
-      "chars": 3190,
+      "chars": 3410,
       "summary": "当前已完成：P4-23 已实施第二个 internal-control-plane 维护工具 facade 小批次，新增 8 个兼容入口。 / 详情：这些新入口不复制业务逻辑，只把调用转给旧 `compass/tools` 脚本。这样做的效果是继续把维护者控制面从旧目录向更清晰的 internal/control-plane 结构过渡，同时避免破坏旧锚点或误报发布准备完成。",
       "status_basis": "filename_recency_only"
     },
