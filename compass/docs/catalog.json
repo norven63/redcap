@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 339412,
-    "lines": 6924,
-    "chars": 206556,
+    "size_bytes": 340068,
+    "lines": 6935,
+    "chars": 207134,
     "rough_token_pressure": {
-      "low": 51639,
-      "high": 103278
+      "low": 51783,
+      "high": 103567
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 130910,
-        "lines": 2259,
-        "chars": 81476,
+        "size_bytes": 131566,
+        "lines": 2270,
+        "chars": 82054,
         "rough_token_pressure": {
-          "low": 20369,
-          "high": 40738
+          "low": 20513,
+          "high": 41027
         }
       }
     },
@@ -586,9 +586,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 11564,
-      "lines": 194,
-      "chars": 6376,
+      "size_bytes": 12220,
+      "lines": 205,
+      "chars": 6954,
       "summary": "当前已完成：旧 `prism/reports` 报告入口未来能否安全下线，已经完成第一轮机器预检。结论很明确：现在还不能执行真实退休，因为仍有后冻结报告、旧路径引用、别名/跳转契约和人工授权边界没有补齐。 / 详情：本轮只新增预检资产和检查器，没有删除、移动、重命名或替换任何旧报告文件，也没有清理 `prism/runs` 原始证据。",
       "status_basis": "filename_recency_only",
       "summary_points": {

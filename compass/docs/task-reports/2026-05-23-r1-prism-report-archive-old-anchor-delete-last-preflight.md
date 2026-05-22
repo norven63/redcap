@@ -133,25 +133,36 @@ P4-18 结束后，父任务线已经明确把 P4-19 登记为下一条 pending �
 | R1 control-plane contract split | `bash compass/tools/redcap-r1-control-plane-contract-split-check.sh` | 通过，candidate_count=301 |
 | Prism package visible support | `bash compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh` | 通过，candidate_count=301 |
 
-### 5.2 待最终收口验证
+### 5.2 最终收口验证
 
-- `bash compass/tools/redcap-spec-check.sh "$PWD"`
-- `bash compass/tools/redcap-diagnose.sh .dev-task.md`
-- `bash compass/tools/redcap-clean-workspace-e2e.sh --check-result --timeout 180`
-- closeout runtime / receipt
+| 验证项 | 结果 |
+|---|---|
+| spec-check | 通过 |
+| diagnose | 通过 |
+| Prism acceptance | 通过，Claude Code + Kimi 形成 full quorum |
+| clean workspace E2E | 通过，candidate_count=301 |
+| closeout runtime | 通过，receipt 已生成 |
+
+### 5.3 closeout runtime / receipt
+
+| 项目 | 结果 |
+|---|---|
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-4c113775bd023391d9cb3115bc8b16544a0b129fdf40ae3c44e328d1239594bd.json` |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-4c113775bd023391d9cb3115bc8b16544a0b129fdf40ae3c44e328d1239594bd.md` |
+| 承诺账本 | 6/6 已兑现 |
 
 ### 5.4 完成等级（禁止混报）
 
 | 等级 | 当前结论 | 说明 |
 |---|---|---|
 | 已实现 | 是 | 预检资产和检查器已经落地 |
-| 已自检 | 是 | 核心预检、包面和结构检查已执行，最终全量回归仍在收口 |
+| 已自检 | 是 | 核心预检、包面、结构检查和最终全量回归均已执行 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 完成棱镜审查，Gemini 因交互认证未产出有效意见 |
-| 已正式完成 | 否 | closeout receipt 尚未生成，不能混报为正式完成 |
+| 已正式完成 | 是 | closeout receipt 已生成；本结论只覆盖 P4-19 预检，不覆盖真实删除或正式发布 |
 | P4-19 预检资产 | 已完成 | 预检 manifest、checker、Prism 报告和索引已落地 |
 | 真实旧锚点退休 | 未完成 | 本轮禁止删除、移动、替换或切换旧 `prism/reports` 入口 |
 | 正式发布准备完成 | 未完成 | 本轮不修改发布开关，也不解除 release blocker |
-| 当前任务正式收口 | 待完成 | 仍需通过最终 spec-check、diagnose、clean workspace E2E 和 closeout runtime |
+| 当前任务正式收口 | 已完成 | spec-check、diagnose、clean workspace E2E 与 closeout runtime 均已通过 |
 
 ---
 
