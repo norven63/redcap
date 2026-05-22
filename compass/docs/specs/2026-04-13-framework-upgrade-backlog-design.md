@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`P4-15 R1 Prism report archive churn/freeze guard`
-- 当前焦点说明：P4-15 待推进：先为 Prism report archive 建立 churn/freeze guard，稳定报告数量、索引、哈希链和候选公开面，避免 live copy-first apply 前继续因为新审查报告自增而反复漂移。
+- 当前焦点：`P4-16 R1 Prism report archive live copy-first apply after freeze guard`
+- 当前焦点说明：P4-16 待推进：在 P4-15 已稳定 Prism 报告归档集合边界后，重新评审并推进 Prism report archive 的 live copy-first apply；仍不得执行旧锚点退休、raw evidence cleanup 或正式发布动作。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -75,7 +75,8 @@
 | 阶段 16：发布准备 Prism report archive 迁移规划 | 已完成 | P4-12 | 正式发布动作之前，只规划 Prism 报告归档的 copy-first / alias-first 清单、旧锚点 alias、回滚和验证方案；当前仍不执行物理复制、移动、删除或证据清理。 |
 | 阶段 17：发布准备 Prism report archive apply readiness | 已完成 | P4-13 | 正式发布动作之前，已基于 P4-12 plan 完成 Prism report archive apply readiness / rehearsal：临时目录演练、alias 兼容、archive/package proof 与回滚路径已可机器检查；仍不退休旧锚点、不清理 raw evidence、不执行正式发布。 |
 | 阶段 18：发布准备下一 blocker 切片选择 | 已完成 | P4-14 | P4-14 已由 Claude Code 与 Kimi 完成路线评审；Cap 采纳保守路径，选定先做 Prism report archive churn/freeze guard。 |
-| 阶段 19：发布准备 Prism report archive 漂移冻结 | 待推进 | P4-15 | 正式发布动作之前，先冻结/隔离 Prism 报告归档演练与后续 live apply 之间的报告自增、索引和哈希漂移，避免把审查本身变成反复改变迁移目标的噪声源。 |
+| 阶段 19：发布准备 Prism report archive 漂移冻结 | 已完成 | P4-15 | 正式发布动作之前，已冻结/隔离 Prism 报告归档演练与后续 live apply 之间的报告自增、索引和哈希漂移，避免把审查本身变成反复改变迁移目标的噪声源。 |
+| 阶段 20：发布准备 Prism report archive live copy-first apply | 待推进 | P4-16 | 正式发布动作之前，在 P4-15 的冻结集合保护下推进 Prism 报告归档 live copy-first apply；旧锚点、raw evidence cleanup 和正式发布动作仍保持禁止。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -119,7 +120,8 @@
 | P4-12 R1 Prism report archive copy-first / alias-first migration planning | 发布前路线与授权边界 | 已完成 | P0 | 已基于 P4-11 路线评审产出 Prism report archive 的 plan-only 迁移清单、旧锚点兼容要求、回滚方案与验证清单；本项未执行物理复制、移动、删除、旧锚点退休或 raw evidence cleanup。 |
 | P4-13 R1 Prism report archive copy-first apply readiness / rehearsal | 发布前路线与授权边界 | 已完成 | P0 | 已基于 P4-12 plan 完成 Prism report archive 的 apply readiness / rehearsal：临时目录复制演练、checksum、archive index 草案、alias 兼容、包面排除和回滚门已可机器检查；本项未执行真实归档复制、旧锚点退休或 raw evidence cleanup。 |
 | P4-14 R1 下一发布前 blocker 切片选择 after Prism report archive apply readiness | 发布前路线与授权边界 | 已完成 | P0 | P4-14 已完成：Claude Code 建议 live copy-first apply，Kimi 建议先做 churn/freeze guard；Cap 采纳保守路径，选定 P4-15 先稳定报告归档账本漂移，不执行 live apply、旧锚点退休、raw evidence cleanup 或 release。 |
-| P4-15 R1 Prism report archive churn/freeze guard | 发布前路线与授权边界 | 待推进 | P0 | P4-14 选定的下一步：在任何 live copy-first apply、旧锚点退休或 raw evidence cleanup 前，先建立 Prism report archive 的 churn/freeze guard，确保报告数量、索引、哈希链和 package candidate 计数不会被同一条切片的审查报告反复扰动。 |
+| P4-15 R1 Prism report archive churn/freeze guard | 发布前路线与授权边界 | 已完成 | P0 | P4-15 已完成：Prism report archive 已从实时目录扫描改为冻结迁移集合 + 后冻结正式报告登记，copy-first plan、apply readiness、index 与包面候选计数不再被本轮审查报告反复扰动。 |
+| P4-16 R1 Prism report archive live copy-first apply after freeze guard | 发布前路线与授权边界 | 待推进 | P0 | P4-15 收口后的下一安全切片：基于已冻结的报告归档集合推进 live copy-first apply，并证明旧锚点、索引、包面排除、回滚路径和 post-freeze 报告登记仍一致；本项不退休旧锚点、不清理 raw evidence、不执行正式发布动作。 |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -130,6 +132,7 @@
 | mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
 | spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
 <!-- redcap:backlog-generated:end -->
+
 
 
 

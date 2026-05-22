@@ -424,6 +424,27 @@
       "check": "bash compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh"
     },
     {
+      "path": "references/r1-prism-report-archive-churn-freeze-guard.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-15 Prism report archive churn/freeze guard that freezes the P4-12/P4-13 migration cohort and forces later formal reports to be listed as post-freeze reports instead of silently changing the current plan",
+      "owner": "Release architecture + Prism governance",
+      "check": "bash compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for P4-15 Prism report archive churn/freeze guard validation",
+      "owner": "Release architecture + Prism governance",
+      "check": "bash compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates P4-15 frozen migration set, post-freeze report registration, package exclusion, raw evidence exclusion and no release-ready claim",
+      "owner": "Release architecture + Prism governance",
+      "check": "bash compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh"
+    },
+    {
       "path": "references/r1-layera-product-boundary-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 internal-layer-a product-boundary preflight with package-absence proof, loom inventory, consumer matrix, future decision gate and still-blocking release boundary",

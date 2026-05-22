@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-15",
-    "summary": "P4-15 待推进：先为 Prism report archive 建立 churn/freeze guard，稳定报告数量、索引、哈希链和候选公开面，避免 live copy-first apply 前继续因为新审查报告自增而反复漂移。"
+    "item_id": "P4-16",
+    "summary": "P4-16 待推进：在 P4-15 已稳定 Prism 报告归档集合边界后，重新评审并推进 Prism report archive 的 live copy-first apply；仍不得执行旧锚点退休、raw evidence cleanup 或正式发布动作。"
   },
   "glossary": [
     {
@@ -476,7 +476,7 @@
           "evidence_paths": [
             "references/r1-control-plane-contract-split-preflight.json",
             "compass/tools/redcap-r1-control-plane-contract-split-check.sh",
-            "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
+            "private-archive/redcap-knowledge/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
           ]
         },
         {
@@ -653,13 +653,29 @@
         {
           "id": "P4-15",
           "title": "R1 Prism report archive churn/freeze guard",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-19-release-readiness-prism-report-archive-churn-freeze-guard",
-          "summary": "P4-14 选定的下一步：在任何 live copy-first apply、旧锚点退休或 raw evidence cleanup 前，先建立 Prism report archive 的 churn/freeze guard，确保报告数量、索引、哈希链和 package candidate 计数不会被同一条切片的审查报告反复扰动。",
+          "summary": "P4-15 已完成：Prism report archive 已从实时目录扫描改为冻结迁移集合 + 后冻结正式报告登记，copy-first plan、apply readiness、index 与包面候选计数不再被本轮审查报告反复扰动。",
           "evidence_paths": [
-            "references/r1-next-slice-after-prism-report-archive-apply-readiness.json",
-            "prism/reports/2026-05-21-r1-next-slice-after-prism-report-archive-apply-readiness.md"
+            "references/r1-prism-report-archive-churn-freeze-guard.json",
+            "compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh",
+            "prism/reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md",
+            "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md"
+          ]
+        },
+        {
+          "id": "P4-16",
+          "title": "R1 Prism report archive live copy-first apply after freeze guard",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-20-release-readiness-prism-report-archive-live-copy-first-apply",
+          "summary": "P4-15 收口后的下一安全切片：基于已冻结的报告归档集合推进 live copy-first apply，并证明旧锚点、索引、包面排除、回滚路径和 post-freeze 报告登记仍一致；本项不退休旧锚点、不清理 raw evidence、不执行正式发布动作。",
+          "evidence_paths": [
+            "references/r1-prism-report-archive-churn-freeze-guard.json",
+            "references/r1-prism-report-archive-copy-first-plan.json",
+            "references/r1-prism-report-archive-apply-readiness.json",
+            "prism/reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md"
           ]
         }
       ]
@@ -860,11 +876,20 @@
     {
       "id": "phase-19-release-readiness-prism-report-archive-churn-freeze-guard",
       "title": "阶段 19：发布准备 Prism report archive 漂移冻结",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-15"
       ],
-      "summary": "正式发布动作之前，先冻结/隔离 Prism 报告归档演练与后续 live apply 之间的报告自增、索引和哈希漂移，避免把审查本身变成反复改变迁移目标的噪声源。"
+      "summary": "正式发布动作之前，已冻结/隔离 Prism 报告归档演练与后续 live apply 之间的报告自增、索引和哈希漂移，避免把审查本身变成反复改变迁移目标的噪声源。"
+    },
+    {
+      "id": "phase-20-release-readiness-prism-report-archive-live-copy-first-apply",
+      "title": "阶段 20：发布准备 Prism report archive live copy-first apply",
+      "status": "pending",
+      "item_ids": [
+        "P4-16"
+      ],
+      "summary": "正式发布动作之前，在 P4-15 的冻结集合保护下推进 Prism 报告归档 live copy-first apply；旧锚点、raw evidence cleanup 和正式发布动作仍保持禁止。"
     }
   ]
 }

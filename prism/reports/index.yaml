@@ -1,4 +1,31 @@
 reports:
+  - id: "20260522-r1-prism-report-archive-churn-freeze-guard"
+    mode: review
+    date: "2026-05-22"
+    topic: "P4-15 R1 Prism report archive churn/freeze guard"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-pass"
+    consensus_actions:
+      - "Accept the churn/freeze guard as the P4-15 release-readiness slice"
+      - "Freeze the P4-12/P4-13 report archive migration cohort at the existing 55 mappings"
+      - "Require later formal Prism reports to be listed as post-freeze reports instead of silently changing the current archive plan"
+    open_questions:
+      - "Physical report archive copy-first apply remains a future task"
+      - "Old-anchor retirement remains forbidden until a separate delete-last task with proof and receipt"
+      - "Prism raw run evidence cleanup remains forbidden without preservation proof and explicit human approval when evidence loss is possible"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-prism-report-archive-churn-freeze-guard.json"
+      - "compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.py"
+      - "compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh"
+      - "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py"
+      - "compass/tools/redcap-spec-check.sh"
+      - "compass/tools/redcap-diagnose.sh"
+      - "prism/reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md"
+      - "prism/runs/20260522-r1-prism-report-archive-churn-freeze-guard/claude-code-review.txt"
+      - "prism/runs/20260522-r1-prism-report-archive-churn-freeze-guard/kimi-review.txt"
+    archived: false
   - id: "20260521-r1-next-slice-after-prism-report-archive-apply-readiness"
     mode: review
     date: "2026-05-21"
@@ -480,7 +507,7 @@ reports:
       - "compass/tools/redcap-task-report-check.sh"
       - "compass/tools/redcap-pending-closure-reconcile.sh"
       - "compass/tools/redcap-multi-session-acceptance.sh"
-      - "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
       - "compass/knowledge/lessons.md"
       - "compass/knowledge/lessons/l-166.md"
       - "compass/knowledge/lessons/l-167.md"
@@ -506,7 +533,7 @@ reports:
     files_affected:
       - "references/r1-control-plane-contract-split-preflight.json"
       - "compass/tools/redcap-r1-control-plane-contract-split-check.py"
-      - "compass/docs/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
+      - "private-archive/redcap-knowledge/task-reports/2026-05-19-r1-control-plane-physical-split-dry-run.md"
       - "prism/reports/2026-05-19-r1-control-plane-physical-split-dry-run-review.md"
       - "prism/runs/20260519-r1-next-engineering-slice-selection/prompt.md"
       - "prism/runs/20260519-r1-next-engineering-slice-selection/claude-reviewer.raw.txt"

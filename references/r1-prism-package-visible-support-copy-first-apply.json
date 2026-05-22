@@ -6,9 +6,9 @@
   "purpose": "Create runtime/redcap-core/prism-tools package-visible facade wrappers for Prism batch-1 support and provider-routing contract entries while keeping prism/tools and prism/README.md as authoritative anchors.",
   "source_truth": {
     "path": "references/r1-prism-evidence-retention-apply-preflight.json",
-    "sha256": "d4a0d7028389235ead4b6de8aeffd4fdbda4770b52179a029de2e09a61bf2249",
+    "sha256": "95b631d1d9959b6cda778baf5491e14f802bc9ee9b8e9db7ad46add311ef6c2c",
     "split_preflight_path": "references/r1-prism-evidence-retention-split-preflight.json",
-    "split_preflight_sha256": "a247b83ad7b240a7ec091df06a145b546e1902d26c169ac90fc7fe8005f54b70",
+    "split_preflight_sha256": "05cf87595a8b67a41d1d88cfa2a01cc23eca2476da06fb94470712c1840868fb",
     "source_batch_id": "batch-1-package-visible-prism-support",
     "source_target_layers": [
       "package-visible-prism-support",
@@ -82,9 +82,9 @@
   },
   "package_surface_delta": {
     "previous_candidate_count": 264,
-    "current_candidate_count": 288,
-    "delta": 24,
-    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets, P4-9 added 1 route-decision asset, P4-10 added 3 Prism report archive preflight assets, P4-11 added 1 route-decision asset, P4-12 added 3 plan/check assets, P4-13 added 3 apply-readiness rehearsal/check assets, and P4-14 added 1 route-decision asset. The live alpha readiness surface is now 288 candidates. This remains readiness support, not public release authorization."
+    "current_candidate_count": 291,
+    "delta": 27,
+    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets, P4-9 added 1 route-decision asset, P4-10 added 3 Prism report archive preflight assets, P4-11 added 1 route-decision asset, P4-12 added 3 plan/check assets, P4-13 added 3 apply-readiness rehearsal/check assets, P4-14 added 1 route-decision asset, and P4-15 added 3 Prism report archive churn/freeze guard assets. The live alpha readiness surface is now 291 candidates. This remains readiness support, not public release authorization."
   },
   "facades": [
     {

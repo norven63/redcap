@@ -8,7 +8,7 @@
     "route_decision_path": "references/r1-next-slice-after-prism-support.json",
     "route_decision_sha256": "088492b3aeb4dd31cf277725f0df4af8e8b6d4e55adcccd49b5e31676b162224",
     "apply_preflight_path": "references/r1-prism-evidence-retention-apply-preflight.json",
-    "apply_preflight_sha256": "d4a0d7028389235ead4b6de8aeffd4fdbda4770b52179a029de2e09a61bf2249",
+    "apply_preflight_sha256": "95b631d1d9959b6cda778baf5491e14f802bc9ee9b8e9db7ad46add311ef6c2c",
     "apply_batch_id": "batch-2-report-archive-index-migration"
   },
   "claim_boundary": {

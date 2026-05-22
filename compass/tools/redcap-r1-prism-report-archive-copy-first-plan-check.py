@@ -17,6 +17,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PLAN = ROOT / "references/r1-prism-report-archive-copy-first-plan.json"
+DEFAULT_CHURN_FREEZE_GUARD = ROOT / "references/r1-prism-report-archive-churn-freeze-guard.json"
 RUNTIME_MANIFEST = ROOT / "compass/tools/redcap-runtime-package-manifest.sh"
 
 
@@ -114,6 +115,116 @@ def git_tracked(rel: str) -> bool:
     return rel in {line.strip() for line in completed.stdout.splitlines()}
 
 
+def canonical_sha256(value: Any) -> str:
+    payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def load_optional_churn_freeze_guard() -> dict[str, Any] | None:
+    if not DEFAULT_CHURN_FREEZE_GUARD.is_file():
+        return None
+    guard = load_json(DEFAULT_CHURN_FREEZE_GUARD, "Prism report archive churn/freeze guard")
+    if guard.get("guard_id") != "redcap-r1-prism-report-archive-churn-freeze-guard":
+        fail("churn/freeze guard id mismatch")
+    if guard.get("status") != "active-freeze-guard-no-live-report-copy-move-delete-or-cleanup":
+        fail("churn/freeze guard status mismatch")
+    return guard
+
+
+def validate_churn_freeze_guard(
+    guard: dict[str, Any],
+    payload: dict[str, Any],
+    mappings: list[Any],
+    live_source_set: set[str],
+    mapped_sources: set[str],
+    index_text: str,
+    index: set[str],
+) -> dict[str, int]:
+    source = guard.get("source_truth")
+    if not isinstance(source, dict):
+        fail("churn/freeze guard source_truth must be an object")
+    plan_rel = require_text(source.get("plan_path"), "churn_freeze_guard.source_truth.plan_path")
+    if plan_rel != "references/r1-prism-report-archive-copy-first-plan.json":
+        fail("churn/freeze guard source_truth.plan_path mismatch")
+    expected_plan_hash = require_text(source.get("plan_sha256"), "churn_freeze_guard.source_truth.plan_sha256")
+    if sha256(DEFAULT_PLAN) != expected_plan_hash:
+        fail("churn/freeze guard source_truth.plan_sha256 is stale")
+
+    policy = guard.get("freeze_policy")
+    if not isinstance(policy, dict):
+        fail("churn/freeze guard freeze_policy must be an object")
+    if policy.get("frozen_source") != "references/r1-prism-report-archive-copy-first-plan.json::archive_plan.mappings":
+        fail("churn/freeze guard freeze_policy.frozen_source mismatch")
+    if policy.get("frozen_report_count") != len(mappings):
+        fail(f"churn/freeze guard frozen_report_count stale: expected {len(mappings)}")
+    expected_mapping_hash = require_text(policy.get("frozen_mapping_sha256"), "freeze_policy.frozen_mapping_sha256")
+    if canonical_sha256(mappings) != expected_mapping_hash:
+        fail("churn/freeze guard frozen_mapping_sha256 is stale")
+    for key in [
+        "new_report_handling",
+        "unlisted_new_report_policy",
+        "next_plan_refresh_policy",
+    ]:
+        require_text(policy.get(key), f"freeze_policy.{key}")
+
+    if not mapped_sources <= live_source_set:
+        missing = sorted(mapped_sources - live_source_set)
+        fail("frozen mapped reports missing from live anchors: " + ", ".join(missing[:8]))
+
+    post_freeze_entries = guard.get("post_freeze_reports", [])
+    if not isinstance(post_freeze_entries, list):
+        fail("post_freeze_reports must be a list")
+    expected_post_freeze = live_source_set - mapped_sources
+    seen_post_freeze: set[str] = set()
+    for item in post_freeze_entries:
+        if not isinstance(item, dict):
+            fail("post_freeze_reports entries must be objects")
+        source_rel = require_text(item.get("source_path"), "post_freeze_report.source_path")
+        if source_rel in seen_post_freeze:
+            fail(f"duplicate post-freeze report: {source_rel}")
+        seen_post_freeze.add(source_rel)
+        if source_rel not in expected_post_freeze:
+            fail(f"post-freeze report is not a live unmapped report: {source_rel}")
+        if item.get("include_in_current_archive_plan") is not False:
+            fail(f"post-freeze report must not be included in current archive plan: {source_rel}")
+        source_path = ROOT / source_rel
+        if not git_tracked(source_rel):
+            fail(f"post-freeze report must remain git-tracked: {source_rel}")
+        if sha256(source_path) != require_text(item.get("source_sha256"), "post_freeze_report.source_sha256"):
+            fail(f"post-freeze report hash stale: {source_rel}")
+        report_id = require_text(item.get("report_id"), "post_freeze_report.report_id")
+        if report_id not in {source_path.stem, normalized_report_id(source_path)}:
+            fail(f"post-freeze report id does not match source path: {source_rel}")
+        if report_id not in index and source_path.stem not in index and source_rel not in index_text:
+            fail(f"prism report index missing post-freeze report id: {report_id}")
+
+    if seen_post_freeze != expected_post_freeze:
+        missing = sorted(expected_post_freeze - seen_post_freeze)
+        extra = sorted(seen_post_freeze - expected_post_freeze)
+        if missing:
+            fail("unlisted post-freeze Prism reports: " + ", ".join(missing[:8]))
+        if extra:
+            fail("stale post-freeze Prism report entries: " + ", ".join(extra[:8]))
+
+    result = guard.get("result")
+    if not isinstance(result, dict):
+        fail("churn/freeze guard result must be an object")
+    if result.get("target_parent") != "prism-layer-and-evidence":
+        fail("churn/freeze guard result.target_parent mismatch")
+    if "still-blocking" not in require_text(result.get("release_blocker_status"), "result.release_blocker_status"):
+        fail("churn/freeze guard must keep release blocker still-blocking")
+    require_bool(result.get("this_guard_completed"), True, "result.this_guard_completed")
+    for key in [
+        "live_physical_archive_completed",
+        "old_anchor_retirement_completed",
+        "raw_evidence_cleanup_completed",
+        "public_release_ready",
+    ]:
+        require_bool(result.get(key), False, f"result.{key}")
+
+    return {"frozen_reports": len(mappings), "post_freeze_reports": len(seen_post_freeze)}
+
+
 def validate_source_truth(payload: dict[str, Any]) -> None:
     source = payload.get("source_truth")
     if not isinstance(source, dict):
@@ -201,14 +312,10 @@ def validate_archive_plan(payload: dict[str, Any]) -> dict[str, int]:
         fail("archive_plan.future_index_path must be private-archive/prism-reports/index.yaml")
 
     report_files = sorted((ROOT / "prism/reports").glob("*.md"))
-    if plan.get("report_count") != len(report_files):
-        fail(f"archive_plan.report_count stale: expected {len(report_files)}")
-    mappings = require_list(plan.get("mappings"), "archive_plan.mappings", min_len=len(report_files))
-    if len(mappings) != len(report_files):
-        fail(f"archive_plan.mappings must cover {len(report_files)} reports")
+    mappings = require_list(plan.get("mappings"), "archive_plan.mappings", min_len=1)
 
     index_text, index = index_text_and_ids(ROOT / "prism/reports/index.yaml")
-    source_set = {path.relative_to(ROOT).as_posix() for path in report_files}
+    live_source_set = {path.relative_to(ROOT).as_posix() for path in report_files}
     seen_sources: set[str] = set()
     seen_targets: set[str] = set()
     for item in mappings:
@@ -223,8 +330,8 @@ def validate_archive_plan(payload: dict[str, Any]) -> dict[str, int]:
             fail(f"duplicate future_archive_path: {target_rel}")
         seen_sources.add(source_rel)
         seen_targets.add(target_rel)
-        if source_rel not in source_set:
-            fail(f"mapping source_path is not a current report: {source_rel}")
+        if source_rel not in live_source_set:
+            fail(f"mapping source_path is not a current report anchor: {source_rel}")
         if not target_rel.startswith("private-archive/prism-reports/") or not target_rel.endswith(".md"):
             fail(f"future archive path must stay under private-archive/prism-reports: {target_rel}")
         source_path = ROOT / source_rel
@@ -240,9 +347,28 @@ def validate_archive_plan(payload: dict[str, Any]) -> dict[str, int]:
         require_bool(item.get("copy_now"), False, f"{source_rel}.copy_now")
         require_bool(item.get("delete_old_now"), False, f"{source_rel}.delete_old_now")
 
-    missing_sources = sorted(source_set - seen_sources)
-    if missing_sources:
-        fail("archive_plan missing source reports: " + ", ".join(missing_sources[:8]))
+    guard = load_optional_churn_freeze_guard()
+    if guard is None:
+        if plan.get("report_count") != len(report_files):
+            fail(f"archive_plan.report_count stale: expected {len(report_files)}")
+        if len(mappings) != len(report_files):
+            fail(f"archive_plan.mappings must cover {len(report_files)} reports")
+        missing_sources = sorted(live_source_set - seen_sources)
+        if missing_sources:
+            fail("archive_plan missing source reports: " + ", ".join(missing_sources[:8]))
+        guard_summary = {"frozen_reports": len(report_files), "post_freeze_reports": 0}
+    else:
+        if plan.get("report_count") != len(mappings):
+            fail(f"archive_plan.report_count must equal frozen mapping count: expected {len(mappings)}")
+        guard_summary = validate_churn_freeze_guard(
+            guard,
+            payload,
+            mappings,
+            live_source_set,
+            seen_sources,
+            index_text,
+            index,
+        )
 
     archive_root = ROOT / "private-archive/prism-reports"
     copied_reports = sorted(archive_root.glob("*.md")) if archive_root.exists() else []
@@ -264,7 +390,12 @@ def validate_archive_plan(payload: dict[str, Any]) -> dict[str, int]:
     if tracked_runs:
         fail("prism/runs raw evidence must remain untracked/local-only")
 
-    return {"reports": len(report_files), "mappings": len(mappings), "candidates": len(candidates)}
+    return {
+        "reports": guard_summary["frozen_reports"],
+        "mappings": len(mappings),
+        "post_freeze_reports": guard_summary["post_freeze_reports"],
+        "candidates": len(candidates),
+    }
 
 
 def validate_future_gates(payload: dict[str, Any]) -> None:
@@ -322,7 +453,8 @@ def main() -> int:
     summary = validate(args)
     print(
         "R1_PRISM_REPORT_ARCHIVE_COPY_FIRST_PLAN_OK "
-        f"reports={summary['reports']} mappings={summary['mappings']} candidates={summary['candidates']} "
+        f"reports={summary['reports']} mappings={summary['mappings']} "
+        f"post_freeze_reports={summary['post_freeze_reports']} candidates={summary['candidates']} "
         "release_blocker_status=still-blocking"
     )
     return 0

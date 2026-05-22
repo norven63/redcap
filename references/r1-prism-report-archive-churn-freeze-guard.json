@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "guard_id": "redcap-r1-prism-report-archive-churn-freeze-guard",
+  "status": "active-freeze-guard-no-live-report-copy-move-delete-or-cleanup",
+  "summary": "Freezes the P4-12/P4-13 Prism report archive migration cohort and requires any later formal Prism reports to be recorded as post-freeze reports instead of silently changing the current archive plan.",
+  "source_truth": {
+    "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
+    "plan_sha256": "858a79f63bd32108a6869d38330ae0410b37934b7556d3242385de538ba2f4bb",
+    "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
+    "readiness_sha256": "b449cc61f1400b570cae7d54a5e4f808f3b2a001edc7cbce84df44dc3648d892"
+  },
+  "claim_boundary": {
+    "freeze_guard_completed": true,
+    "live_apply_performed": false,
+    "live_report_copy_performed": false,
+    "old_anchor_retirement_performed": false,
+    "raw_run_evidence_touched": false,
+    "release_blocker_resolved": false,
+    "public_release_ready": false,
+    "forbidden_claims": [
+      "Prism reports have not been physically migrated.",
+      "Old prism/reports anchors have not been retired or replaced.",
+      "raw run evidence has not been cleaned.",
+      "The prism-layer-and-evidence blocker is not closed.",
+      "RedCap is not public-release-ready because of this guard alone."
+    ]
+  },
+  "operation_policy": {
+    "live_apply_allowed": false,
+    "destructive_operations_allowed": false,
+    "old_anchor_mutation_allowed": false,
+    "raw_evidence_cleanup_allowed": false,
+    "release_operations_allowed": false,
+    "forbidden_now": [
+      "live-copy-report",
+      "live-move-report",
+      "live-delete-report",
+      "replace-old-report-anchor",
+      "retire-old-report-anchor",
+      "create-private-archive-report-copy",
+      "delete-run-evidence",
+      "cleanup-run-evidence",
+      "public-publish",
+      "release-switch-change"
+    ]
+  },
+  "freeze_policy": {
+    "frozen_source": "references/r1-prism-report-archive-copy-first-plan.json::archive_plan.mappings",
+    "frozen_report_count": 55,
+    "frozen_mapping_sha256": "4a30820ec272e430398475e635a159b4930acfd9668c92f7343e509b740afc63",
+    "new_report_handling": "Formal Prism reports added after this guard are allowed to remain under prism/reports only when they are listed in post_freeze_reports and explicitly excluded from the current archive plan.",
+    "unlisted_new_report_policy": "Any live prism/reports/*.md file that is not part of the frozen mapping set and is not listed in post_freeze_reports must fail validation.",
+    "next_plan_refresh_policy": "A future live apply or archive-plan refresh may absorb post-freeze reports only through a new explicit route decision, Prism review and closeout receipt."
+  },
+  "post_freeze_reports": [
+    {
+      "report_id": "20260522-r1-prism-report-archive-churn-freeze-guard",
+      "source_path": "prism/reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md",
+      "source_sha256": "9683a2f6f433e3775d0f7acdb6ffa7f5b4956841872a4086535dd85efe8fd5c2",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future route decision must explicitly decide whether to refresh the frozen archive cohort before live apply."
+    }
+  ],
+  "package_surface_policy": {
+    "prism_reports_must_remain_excluded": true,
+    "prism_runs_must_remain_excluded": true,
+    "private_archive_prism_reports_must_remain_excluded": true
+  },
+  "verification_plan": {
+    "required_checks": [
+      "bash compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh",
+      "bash compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh",
+      "bash compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh",
+      "bash compass/tools/redcap-runtime-package-manifest.sh --check",
+      "bash compass/tools/redcap-spec-check.sh \"$PWD\"",
+      "bash compass/tools/redcap-diagnose.sh .dev-task.md",
+      "bash compass/tools/redcap-clean-workspace-e2e.sh --timeout 180"
+    ],
+    "required_before_future_apply": [
+      "Run the churn/freeze guard check and confirm no unlisted post-freeze reports exist.",
+      "Run the copy-first plan check and confirm frozen mappings still match old anchors.",
+      "Run the readiness rehearsal and confirm only the frozen cohort is rehearsed.",
+      "Run package manifest checks and confirm report/raw evidence paths stay excluded.",
+      "Run Prism independent review before any live apply, old-anchor retirement or raw evidence cleanup."
+    ]
+  },
+  "result": {
+    "target_parent": "prism-layer-and-evidence",
+    "release_blocker_status": "still-blocking-after-freeze-guard",
+    "this_guard_completed": true,
+    "live_physical_archive_completed": false,
+    "old_anchor_retirement_completed": false,
+    "raw_evidence_cleanup_completed": false,
+    "public_release_ready": false
+  }
+}

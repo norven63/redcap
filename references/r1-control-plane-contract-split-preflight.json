@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 288,
-    "control_plane_candidate_count": 209,
-    "compass": 148,
-    "references": 61,
-    "compass_tools_shell": 89,
-    "compass_tools_python": 59,
-    "references_json": 58,
+    "candidate_count": 291,
+    "control_plane_candidate_count": 212,
+    "compass": 150,
+    "references": 62,
+    "compass_tools_shell": 90,
+    "compass_tools_python": 60,
+    "references_json": 59,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -75,14 +75,14 @@
       {
         "path": "compass",
         "role": "maintainer-control-plane-tools",
-        "package_candidate_count": 146,
+        "package_candidate_count": 150,
         "current_contract": "Packaged for alpha readiness because root wrappers, revive/status/diagnose/closeout, release safety and validators still call these tools.",
         "future_target": "internal/control-plane/tools with stable runtime facades and compatibility aliases"
       },
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 59,
+        "package_candidate_count": 62,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 288,
-      "control_plane_candidate_count": 209,
-      "compass": 148,
-      "references": 61,
-      "compass_tools_shell": 89,
-      "compass_tools_python": 59,
-      "references_json": 58,
+      "candidate_count": 291,
+      "control_plane_candidate_count": 212,
+      "compass": 150,
+      "references": 62,
+      "compass_tools_shell": 90,
+      "compass_tools_python": 60,
+      "references_json": 59,
       "references_markdown": 3,
       "source": "redcap-runtime-package-manifest.sh --output <temp>"
     },
@@ -299,13 +299,13 @@
       }
     ],
     "coverage": {
-      "total_entries": 209,
+      "total_entries": 212,
       "by_target_layer": {
-        "internal-control-plane": 101,
-        "runtime-public-support": 47,
+        "human-handoff": 1,
+        "internal-contract": 50,
+        "internal-control-plane": 103,
         "public-contract": 11,
-        "internal-contract": 49,
-        "human-handoff": 1
+        "runtime-public-support": 47
       }
     },
     "entries": [
@@ -1087,6 +1087,20 @@
         "current_state": "unchanged-in-this-task"
       },
       {
+        "source": "compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
         "source": "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-r1-prism-report-archive-copy-first-plan-check.py",
@@ -1622,6 +1636,13 @@
         "source": "references/r1-prism-report-archive-apply-readiness.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/r1-prism-report-archive-apply-readiness.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/r1-prism-report-archive-churn-freeze-guard.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/r1-prism-report-archive-churn-freeze-guard.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
