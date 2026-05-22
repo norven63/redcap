@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 337843,
-    "lines": 6930,
-    "chars": 206467,
+    "size_bytes": 338836,
+    "lines": 6913,
+    "chars": 206268,
     "rough_token_pressure": {
-      "low": 51616,
-      "high": 103233
+      "low": 51567,
+      "high": 103134
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 202341,
-        "lines": 4573,
-        "chars": 120973,
+        "size_bytes": 202972,
+        "lines": 4576,
+        "chars": 121306,
         "rough_token_pressure": {
-          "low": 30243,
-          "high": 60486
+          "low": 30326,
+          "high": 60653
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 129972,
-        "lines": 2268,
-        "chars": 81720,
+        "size_bytes": 130334,
+        "lines": 2248,
+        "chars": 81188,
         "rough_token_pressure": {
-          "low": 20430,
-          "high": 40860
+          "low": 20297,
+          "high": 40594
         }
       }
     },
@@ -81,8 +81,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 14908,
-        "lines": 228,
+        "chars": 15241,
+        "lines": 231,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 25866,
-      "lines": 228,
-      "chars": 14908,
+      "size_bytes": 26497,
+      "lines": 231,
+      "chars": 15241,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：R1 Layer A 产品边界预检",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10626,
-      "lines": 203,
-      "chars": 6620,
-      "summary": "当前已完成：R1 的 `internal-layer-a` blocker 已被拆成可机器检查的“Layer A 产品边界预检”，但它仍然阻塞正式发布。 / 详情：本轮证明 `loom` 当前不进入 npm/package 候选面，并记录了 `loom/dispatcher`、`loom/roles`、`loom/tools`、`loom/test-reports`、`loom/fixtures` 的职责、消费者和未来决策门禁。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-19-r1-prism-evidence-retention-apply-preflight.md",
       "collection": "task-reports",
       "title": "任务完成报告：R1 Prism 证据保留 apply 预检",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-11 发布前下一小切片选择",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10429,
       "lines": 185,
@@ -526,29 +513,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-17 Prism 报告归档后的下一安全切片选择",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12968,
       "lines": 225,
       "chars": 8054,
       "summary": "当前已完成：P4-16 之后的下一安全切片已经选定；下一步先做正式发布就绪差距地图，而不是直接删除旧报告、清理原始证据、裁决 Layer A 或进入正式发布。 / 详情：Claude Code 和 Kimi 都完成了独立路线评审。两边对下一刀有分歧：Claude Code 建议先恢复全局发布视角，Kimi 建议顺着 copy-first 链路做旧锚点 delete-last 预检。Cap 选择更保守的全局收敛评估，防止长时间局部推进后遗漏其他 blocker。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P4-16 之后的下一安全切片已经选定；下一步先做正式发布就绪差距地图，而不是直接删除旧报告、清理原始证据、裁决 Layer A 或进入正式发布。",
-          "详情：Claude Code 和 Kimi 都完成了独立路线评审。两边对下一刀有分歧：Claude Code 建议先恢复全局发布视角，Kimi 建议顺着 copy-first 链路做旧锚点 delete-last 预检。Cap 选择更保守的全局收敛评估，防止长时间局部推进后遗漏其他 blocker。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-16 已把冻结的 55 份 Prism 报告复制到私有归档区，并继续保留旧 `prism/reports` 锚点。"
-        ],
-        "next_step": [
-          "下一步计划做的是：P4-18 将做正式发布就绪收敛评估，把 internal-control-plane、prism-layer-and-evidence、Layer A 产品边界和包面状态整理成一张剩余差距地图。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-12 规划报告归档集合 → P4-13 临时演练 → P4-15 冻结集合防漂移 → P4-16 真实 copy-first 副本 → P4-17 选择下一安全切片 → P4-18 汇总正式发布前剩余差距。",
-          "当前所在位置：framework-upgrade / P4-17 已正式收口；路线评审、manifest、Prism 报告、backlog 更新、clean workspace E2E 和 closeout receipt 都已完成。下一步进入 P4-18。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md",
@@ -605,6 +576,35 @@
         "position": [
           "整体计划脉络图是：P4-12 规划归档集合 → P4-13 临时演练 → P4-15 冻结集合防漂移 → P4-16 真实 copy-first 副本 → 后续另行评审 delete-last / raw evidence / release readiness。",
           "当前所在位置：framework-upgrade / P4-16，处在 release-structural 任务的 closeout 前阶段；实现、自检和 Prism 独立评审已完成，receipt 尚需在最终 closeout 中生成。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-19 旧 Prism 报告锚点退休预检",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 10988,
+      "lines": 183,
+      "chars": 6088,
+      "summary": "当前已完成：旧 `prism/reports` 报告入口未来能否安全下线，已经完成第一轮机器预检。结论很明确：现在还不能执行真实退休，因为仍有后冻结报告、旧路径引用、别名/跳转契约和人工授权边界没有补齐。 / 详情：本轮只新增预检资产和检查器，没有删除、移动、重命名或替换任何旧报告文件，也没有清理 `prism/runs` 原始证据。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：旧 `prism/reports` 报告入口未来能否安全下线，已经完成第一轮机器预检。结论很明确：现在还不能执行真实退休，因为仍有后冻结报告、旧路径引用、别名/跳转契约和人工授权边界没有补齐。",
+          "详情：本轮只新增预检资产和检查器，没有删除、移动、重命名或替换任何旧报告文件，也没有清理 `prism/runs` 原始证据。"
+        ],
+        "previous_step": [
+          "上一步完成的是：P4-18 把正式发布前剩余差距整理成地图，并把 P4-19 选为下一条最小安全切片。P0 自动续跑缺口修复后，本轮没有再等待 Norven 机械回复“继续”，而是自动进入 P4-19。"
+        ],
+        "next_step": [
+          "下一步计划做的是：不要直接删除旧报告入口。后续应先补“旧报告入口别名/查询网关”或回到更大的 `internal-control-plane` 物理拆分任务；真实删除必须另立任务、重新评审并获得明确授权。"
+        ],
+        "position": [
+          "整体计划脉络图是：P4-16 完成 Prism 报告 copy-first → P4-18 完成发布差距地图 → P4-19 完成旧报告入口退休预检 → 后续再决定是补别名契约还是推进控制面拆分。",
+          "当前所在位置：framework-upgrade / P4-19 已完成预检；正式公开发布仍保持 blocked。"
         ]
       }
     }

@@ -1,4 +1,29 @@
 reports:
+  - id: "20260523-r1-prism-report-archive-old-anchor-delete-last-preflight"
+    mode: review
+    date: "2026-05-23"
+    topic: "P4-19 old Prism report anchor delete-last preflight"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-pass-with-nits"
+    consensus_actions:
+      - "Accept P4-19 as a preflight-only task with no real old-anchor retirement"
+      - "Keep old prism/reports anchors retained until post-freeze reports, old-path references, alias/query gateway and destructive authorization are resolved"
+      - "Keep prism-layer-and-evidence release blocker open"
+    open_questions:
+      - "Whether the next slice should be internal-control-plane or an old-anchor alias/query gateway task"
+      - "Runtime/package count wording drift remains a future release-readiness cleanup item"
+      - "Gemini CLI returned an auth prompt and did not contribute an effective review"
+    lessons_updated: true
+    files_affected:
+      - "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json"
+      - "compass/tools/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.py"
+      - "compass/tools/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.sh"
+      - "compass/docs/task-reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md"
+      - "prism/reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md"
+      - "prism/runs/20260523-r1-prism-report-archive-old-anchor-delete-last-preflight/claude-code-review.txt"
+      - "prism/runs/20260523-r1-prism-report-archive-old-anchor-delete-last-preflight/kimi-review.txt"
+    archived: false
   - id: "20260522-r1-formal-release-readiness-convergence-assessment"
     mode: review
     date: "2026-05-22"

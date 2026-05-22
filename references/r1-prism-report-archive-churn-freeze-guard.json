@@ -5,9 +5,9 @@
   "summary": "Freezes the P4-12/P4-13 Prism report archive migration cohort and requires any later formal Prism reports to be recorded as post-freeze reports instead of silently changing the current archive plan.",
   "source_truth": {
     "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
-    "plan_sha256": "38418bfbc1bd376a55ab52c9cabf203ca7de1776d870a6d90e3511f94822a5bf",
+    "plan_sha256": "646fb7d0b15a0ade1e68e688c06351682c3f3e8a1f100cd1ec4e1fe875d90b5f",
     "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
-    "readiness_sha256": "18ddba5f6dc2e40c7359fa0708e4775c0e995ca93689a204b2745fa5d760cd95"
+    "readiness_sha256": "043b11d12ce367856bdd61baa97582e5c97fa610e80a900383f18bcbdb8cac26"
   },
   "claim_boundary": {
     "freeze_guard_completed": true,
@@ -89,6 +89,14 @@
       "classification": "post-freeze-formal-prism-review",
       "include_in_current_archive_plan": false,
       "required_before_future_plan_refresh": "A future old-anchor delete-last tranche must explicitly decide whether to refresh the frozen archive cohort before any retirement action."
+    },
+    {
+      "report_id": "20260523-r1-prism-report-archive-old-anchor-delete-last-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md",
+      "source_sha256": "0270ce3fe7724687f431b526d6778efca4ccd1df01d5bad5767edcf36f35b052",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future old-anchor delete-last apply task must refresh or explicitly preserve this P4-19 preflight report before any retirement action."
     }
   ],
   "package_surface_policy": {

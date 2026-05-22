@@ -2072,6 +2072,28 @@
       "auto_enforceable": true
     },
     {
+      "id": "r1-prism-report-archive-old-anchor-delete-last-preflight",
+      "category": "package-publish-safety",
+      "priority": "P0",
+      "rule": "Old prism/reports anchors may not be retired by implication; a delete-last preflight must prove current old anchors, private archive copies, post-freeze reports, package exclusion, references, rollback requirements and human/destructive boundaries before any future apply task.",
+      "source_paths": [
+        "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json",
+        "references/r1-prism-report-archive-live-copy-first-apply.json",
+        "references/r1-formal-release-readiness-convergence-assessment.json"
+      ],
+      "status": "validator",
+      "automation": "redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.sh recomputes report counts, private archive hashes, package exclusion and reference floors, while spec-check and diagnose keep the gate visible. It deliberately keeps old anchors retained and release blockers open.",
+      "guarantee_paths": [
+        "compass/tools/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.sh",
+        "compass/tools/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh"
+      ],
+      "revival_required": false,
+      "hook_required": false,
+      "auto_enforceable": true
+    },
+    {
       "id": "parent-autocontinue-gate",
       "category": "parent-task-governance",
       "priority": "P0",

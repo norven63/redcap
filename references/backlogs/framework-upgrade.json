@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-19",
-    "summary": "P4-19 待推进：在 P4-18 已完成正式发布差距地图后，先做旧 prism/reports 锚点 delete-last 预检；本项只证明未来是否具备安全退休旧锚点的条件，不执行真实删除、不清理 raw evidence、不修改发布开关。"
+    "item_id": "P4-20",
+    "summary": "P4-20 待推进：P4-19 已证明旧 prism/reports 锚点现在不能真实退休；下一刀必须在 internal-control-plane 物理拆分与旧报告入口别名/查询网关之间选择最小安全切片，继续保持不发布、不破坏旧锚点、不清理 raw evidence。"
   },
   "glossary": [
     {
@@ -712,19 +712,34 @@
             "compass/docs/task-reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md"
           ]
         },
-        {
-          "id": "P4-19",
-          "title": "R1 Prism report archive old-anchor delete-last preflight after convergence assessment",
-          "status": "pending",
-          "priority": "P0",
-          "phase_id": "phase-23-release-readiness-prism-report-archive-old-anchor-delete-last-preflight",
-          "summary": "P4-19 待推进：基于 P4-16 copy-first 与 P4-18 差距地图，评估旧 prism/reports 锚点未来能否安全退休；本项只做 delete-last 预检、引用检查、回滚方案和人工边界，不执行真实删除、不清理 prism/runs raw evidence、不修改发布开关。",
-          "evidence_paths": [
-            "references/r1-formal-release-readiness-convergence-assessment.json",
-            "prism/reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md",
-            "compass/docs/task-reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md"
-          ]
-        }
+    {
+      "id": "P4-19",
+      "title": "R1 Prism report archive old-anchor delete-last preflight after convergence assessment",
+      "status": "done",
+      "priority": "P0",
+      "phase_id": "phase-23-release-readiness-prism-report-archive-old-anchor-delete-last-preflight",
+      "summary": "P4-19 已完成：基于 P4-16 copy-first 与 P4-18 差距地图，旧 prism/reports 锚点 delete-last 预检已证明当前不能真实退休旧入口；报告引用、后冻结报告、别名/查询网关和人工授权边界仍是后续前置条件。",
+      "evidence_paths": [
+        "references/r1-formal-release-readiness-convergence-assessment.json",
+        "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json",
+        "compass/tools/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.sh",
+        "prism/reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md",
+        "compass/docs/task-reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md"
+      ]
+    },
+    {
+      "id": "P4-20",
+      "title": "R1 next safe slice after Prism report archive old-anchor preflight",
+      "status": "pending",
+      "priority": "P0",
+      "phase_id": "phase-24-release-readiness-next-safe-slice-after-old-anchor-preflight",
+      "summary": "P4-20 待推进：在 P4-19 已证明旧报告入口不能直接 delete-last 后，选择下一条最小安全切片；候选方向包括继续推进 internal-control-plane 物理拆分，或先补旧报告入口别名/查询网关。",
+      "evidence_paths": [
+        "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json",
+        "prism/reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md",
+        "compass/docs/task-reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md"
+      ]
+    }
       ]
     }
   ],
@@ -956,14 +971,23 @@
       ],
       "summary": "正式发布动作之前，已把剩余 R1 blocker、人工决策点、已满足证据、风险漂移和可自主推进小切片整理成一张可审计差距地图；正式公开发布仍保持 blocked。"
     },
-    {
-      "id": "phase-23-release-readiness-prism-report-archive-old-anchor-delete-last-preflight",
-      "title": "阶段 23：发布准备 Prism report archive 旧锚点退休预检",
-      "status": "pending",
-      "item_ids": [
-        "P4-19"
-      ],
-      "summary": "基于 P4-16 copy-first 和 P4-18 差距地图，只做旧 prism/reports 锚点 delete-last 预检、引用检查与回滚方案；当前仍不执行真实删除、不清理 raw evidence、不修改发布开关。"
-    }
+  {
+    "id": "phase-23-release-readiness-prism-report-archive-old-anchor-delete-last-preflight",
+    "title": "阶段 23：发布准备 Prism report archive 旧锚点退休预检",
+    "status": "done",
+    "item_ids": [
+      "P4-19"
+    ],
+    "summary": "基于 P4-16 copy-first 和 P4-18 差距地图，已完成旧 prism/reports 锚点 delete-last 预检、引用检查与回滚方案；结论是当前不能真实退休旧入口，仍不删除旧报告、不清理 raw evidence、不修改发布开关。"
+  },
+  {
+    "id": "phase-24-release-readiness-next-safe-slice-after-old-anchor-preflight",
+    "title": "阶段 24：发布准备下一安全切片选择",
+    "status": "pending",
+    "item_ids": [
+      "P4-20"
+    ],
+    "summary": "P4-19 收口后，选择下一条 release-readiness 安全切片；候选方向包括 internal-control-plane 物理拆分继续推进，或先补旧报告入口别名/查询网关。"
+  }
   ]
 }

@@ -936,6 +936,18 @@ if [[ -f "$REDCAP_ROOT/references/r1-prism-report-archive-live-copy-first-apply.
     fi
 fi
 
+R1_PRISM_REPORT_ARCHIVE_OLD_ANCHOR_DELETE_LAST_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.sh"
+if [[ -f "$REDCAP_ROOT/references/r1-prism-report-archive-old-anchor-delete-last-preflight.json" ]]; then
+    if [[ ! -f "$R1_PRISM_REPORT_ARCHIVE_OLD_ANCHOR_DELETE_LAST_PREFLIGHT_CHECK" ]]; then
+        echo "[redcap-spec-check] R1 Prism report archive old-anchor delete-last preflight check missing" >&2
+        exit 1
+    fi
+    if ! bash "$R1_PRISM_REPORT_ARCHIVE_OLD_ANCHOR_DELETE_LAST_PREFLIGHT_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] R1 Prism report archive old-anchor delete-last preflight check failed" >&2
+        exit 1
+    fi
+fi
+
 R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh"
 if [[ ! -f "$R1_CONTROL_PLANE_PHYSICAL_APPLY_PREFLIGHT_CHECK" ]]; then
     echo "[redcap-spec-check] R1 control-plane physical apply preflight check missing" >&2
