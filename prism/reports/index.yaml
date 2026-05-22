@@ -1,4 +1,28 @@
 reports:
+  - id: "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-2"
+    mode: route-selection
+    date: "2026-05-23"
+    topic: "P4-24 next safe slice after internal-control-plane maintainer facade batch-2"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "split-decision-cap-adjudicates-B-contract-mirror-preflight"
+    consensus_actions:
+      - "Select P4-25 as an internal-control-plane public/internal contract mirror preflight"
+      - "Keep old compass/tools anchors authoritative"
+      - "Keep release blockers, Prism reports/raw evidence, release switches and Layer A product boundary untouched"
+    open_questions:
+      - "P4-25 must stay preflight-only and not perform physical migration or blocker closure"
+      - "Future implementation still needs explicit safe-slice authorization after the contract mirror preflight"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-2.json"
+      - "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2-check.py"
+      - "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2-check.sh"
+      - "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-2.md"
+      - "prism/reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-2.md"
+      - "prism/runs/20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-2/claude-code-review.txt"
+      - "prism/runs/20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-2/kimi-review.txt"
+    archived: false
   - id: "20260523-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply"
     mode: apply-batch-review
     date: "2026-05-23"

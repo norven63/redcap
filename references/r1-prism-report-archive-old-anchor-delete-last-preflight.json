@@ -6,7 +6,7 @@
   "purpose": "Assess whether the old prism/reports anchors can be safely retired in a future delete-last apply. This preflight does not move, delete, rename, replace, symlink, or clean any report or raw Prism evidence.",
   "source_truth": {
     "live_copy_first_apply_path": "references/r1-prism-report-archive-live-copy-first-apply.json",
-    "live_copy_first_apply_sha256": "1929978ed94bb18b849580ddd4daacd2ea6319b072fee8894bd23d06db3bce4e",
+    "live_copy_first_apply_sha256": "511754780e1f1cced4b8cfb892102da5d5a280e48b4e6b3ec961fbb8d1b86cb6",
     "convergence_assessment_path": "references/r1-formal-release-readiness-convergence-assessment.json",
     "convergence_assessment_sha256": "a70fae93e13e4140f77b45a441baa2e0d61e7c7b2c1dad912c1e949c49c86e11"
   },
@@ -33,9 +33,9 @@
     "private_archive_root": "private-archive/prism-reports",
     "old_anchor_index_path": "prism/reports/index.yaml",
     "private_archive_index_path": "private-archive/prism-reports/index.yaml",
-    "current_report_markdown_count": 64,
+    "current_report_markdown_count": 65,
     "copied_report_count": 55,
-    "post_freeze_report_count": 9,
+    "post_freeze_report_count": 10,
     "package_surface_includes_old_report_anchors": false,
     "package_surface_includes_private_archive_reports": false,
     "post_freeze_reports_not_in_archive_cohort": [
@@ -83,6 +83,11 @@
         "report_id": "20260523-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply",
         "source_path": "prism/reports/2026-05-23-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.md",
         "reason": "Created by the P4-23 second internal-control-plane facade batch review after the frozen copy-first archive cohort; must be explicitly handled by a future apply task before old-anchor retirement."
+      },
+      {
+        "report_id": "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-2",
+        "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-2.md",
+        "reason": "Created by the P4-24 next-safe-slice route-selection review after the frozen copy-first archive cohort; must be explicitly handled by a future apply task before old-anchor retirement."
       }
     ]
   },

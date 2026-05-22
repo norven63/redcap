@@ -1,18 +1,18 @@
 {
   "version": 1,
-  "decision_id": "redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight",
-  "created_at": "2026-05-22T21:16:02Z",
+  "decision_id": "redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2",
+  "created_at": "2026-05-22T22:15:00Z",
   "status": "selected-next-slice-no-blocker-closed",
   "source_task": {
-    "backlog_item": "P4-22",
-    "active_slice": "r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight",
-    "baseline_head": "9dcd0ae972b86dce61fde68225d6377560845e49"
+    "backlog_item": "P4-24",
+    "active_slice": "r1-next-safe-slice-after-internal-maintainer-facade-batch-2",
+    "baseline_head": "f1ef801a38dbaec8235f2e2444b01d793295ffc5"
   },
   "source_truth": {
-    "p4_21_manifest_path": "references/r1-control-plane-internal-maintainer-facade-copy-first-apply.json",
-    "p4_21_manifest_sha256": "84f3299e46ce8fd96bcf49bff421d10d08e545dcfae0197c9bf1acda69c2036e",
-    "p4_20_route_manifest_path": "references/r1-next-safe-slice-after-old-anchor-preflight.json",
-    "p4_20_route_manifest_sha256": "678d638fbec4dc15dcfa7adf57d5a5e3638bf6a5c03b25ff06ca40c7c3250458",
+    "p4_23_manifest_path": "references/r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.json",
+    "p4_23_manifest_sha256": "d2484f788febd1b8a1f9cb5fc01cf5fb59320ed764201b08c4b066373b9569ed",
+    "control_plane_contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
+    "control_plane_contract_split_sha256": "dc71050d9ab9872b9c9145bb76213a919b5f22fe3e0fa27634d4dd9704ee405d",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
     "control_plane_physical_preflight_sha256": "b6e736bc0ffab4bb7e888a9bec791a062c44826050e49152db8aa60a9e4169de"
   },
@@ -20,18 +20,18 @@
     {
       "id": "A",
       "title": "Continue internal-control-plane small copy-first facade batch",
-      "selected": true,
+      "selected": false,
       "requires_human_decision": false,
       "destructive": false,
-      "reason": "P4-21 proved the facade-batch pattern works and keeps old compass/tools authoritative without triggering release, cleanup, deletion or Layer A gates."
+      "reason": "Still safe and low-risk, but after two 8-entry batches its marginal value is lower than defining public/internal contract boundaries before more copy-first work."
     },
     {
       "id": "B",
       "title": "Start public/internal contract mirror preflight",
-      "selected": false,
+      "selected": true,
       "requires_human_decision": false,
       "destructive": false,
-      "reason": "Safe as a later preflight, but less incremental than continuing the already-proven P4-21 pattern."
+      "reason": "Preflight-only contract boundary work reduces future migration risk without physical moves, publishing, evidence cleanup or Layer A decisions."
     },
     {
       "id": "C",
@@ -39,7 +39,7 @@
       "selected": false,
       "requires_human_decision": false,
       "destructive": false,
-      "reason": "Safe as a later preflight if old report anchors become the next bottleneck; not selected because internal-control-plane still benefits from another low-risk slice."
+      "reason": "Safe as a later preflight, but P4-24 keeps focus on internal-control-plane after two facade batches."
     },
     {
       "id": "D",
@@ -67,34 +67,34 @@
     }
   ],
   "selected_next_slice": {
-    "backlog_item_id": "P4-23",
-    "selected_candidate": "A",
-    "title": "R1 internal-control-plane maintainer facade batch-2 copy-first apply",
+    "backlog_item_id": "P4-25",
+    "selected_candidate": "B",
+    "title": "R1 internal-control-plane public/internal contract mirror preflight",
     "scope": [
-      "Implement another small internal-control-plane copy-first facade batch no larger than the P4-21 batch.",
-      "Every new facade must delegate to old compass/tools; old anchors remain authoritative.",
-      "No prism/reports anchor deletion, movement, replacement or symlink switch.",
+      "Build a preflight-only public/internal contract mirror plan for internal-control-plane.",
+      "Do not move, delete, replace or symlink switch any old compass/tools anchors.",
+      "Do not implement the contract mirror itself unless the P4-25 task explicitly authorizes a preflight-only artifact.",
       "No prism/runs raw evidence cleanup.",
       "No release switches, credentials, registry, license or public distribution changes.",
       "No Layer A product-boundary decision."
     ],
     "minimum_acceptance": [
-      "P4-23 manifest records selected facade batch and source dry-run entries.",
-      "P4-23 checker proves non-destructive copy-first behavior and old-anchor retention.",
-      "Prism review validates batch size and boundary safety.",
+      "P4-25 preflight manifest records candidate contract boundaries and no physical moves.",
+      "P4-25 checker proves preflight-only behavior and old-anchor retention.",
+      "Prism review validates boundary safety.",
       "spec-check and diagnose pass.",
       "clean workspace E2E result check passes.",
       "closeout receipt is generated."
     ]
   },
   "prism_review": {
-    "run_id": "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight",
+    "run_id": "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-2",
     "agents": [
       {
         "provider": "claude-code",
         "role": "reviewer",
         "status": "responded",
-        "recommendation": "A",
+        "recommendation": "B",
         "confidence": "high"
       },
       {
@@ -105,21 +105,14 @@
         "confidence": "high"
       },
       {
-        "provider": "gemini",
-        "role": "third-reviewer",
-        "status": "absent",
-        "recommendation": "not-needed",
-        "reason": "Claude Code and Kimi produced two-family consensus."
-      },
-      {
         "provider": "copilot",
         "role": "fallback",
         "status": "policy-suppressed",
         "recommendation": "not-called",
-        "reason": "Copilot is protected fallback and was not needed."
+        "reason": "Claude Code and Kimi produced two-family quorum."
       }
     ],
-    "verdict": "consensus-A-continue-small-internal-control-plane-facade-batch"
+    "verdict": "split-decision-cap-adjudicates-B-contract-mirror-preflight"
   },
   "claim_boundary": {
     "route_selection_completed": true,
@@ -134,7 +127,7 @@
     "layer_a_product_decision_made": false,
     "release_switch_changed": false,
     "public_release_ready": false,
-    "allowed_user_claim": "After P4-21, RedCap selected the next safe pre-release slice: another small internal-control-plane copy-first facade batch. No release blocker is closed by this route decision.",
+    "allowed_user_claim": "After P4-23, RedCap selected the next safe pre-release slice: a public/internal contract mirror preflight for internal-control-plane. No release blocker is closed by this route decision.",
     "forbidden_claims": [
       "The selected next slice has already been implemented.",
       "internal-control-plane is resolved.",
@@ -146,9 +139,9 @@
   },
   "result": {
     "release_blocker_status": "still-blocking-after-route-selection",
-    "selected_next_backlog_item": "P4-23",
+    "selected_next_backlog_item": "P4-25",
     "selected_next_slice_implemented": false,
     "public_release_ready": false,
-    "next_recommended_slice": "R1 internal-control-plane maintainer facade batch-2 copy-first apply"
+    "next_recommended_slice": "R1 internal-control-plane public/internal contract mirror preflight"
   }
 }
