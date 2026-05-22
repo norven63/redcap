@@ -83,22 +83,37 @@ if redcap_runtime_attach_current_or_claim "$HOST"; then
         fi
     fi
     if [[ -n "$STAMPED_BACKLOG_SOURCE" && "$STAMPED_BACKLOG_SOURCE" != "$BACKLOG_SOURCE" ]]; then
-        echo "[redcap-drift-check] backlog_source drift detected" >&2
-        echo "  stamped: $STAMPED_BACKLOG_SOURCE" >&2
-        echo "  current: $BACKLOG_SOURCE" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" == "1" ]]; then
+            redcap_runtime_write_text "layerB/control-plane/reanchor-from-backlog-source" "$STAMPED_BACKLOG_SOURCE" || true
+            redcap_runtime_write_text "layerB/control-plane/reanchor-to-backlog-source" "$BACKLOG_SOURCE" || true
+        else
+            echo "[redcap-drift-check] backlog_source drift detected" >&2
+            echo "  stamped: $STAMPED_BACKLOG_SOURCE" >&2
+            echo "  current: $BACKLOG_SOURCE" >&2
+            exit 1
+        fi
     fi
     if [[ -n "$STAMPED_BACKLOG_ID" && "$STAMPED_BACKLOG_ID" != "$BACKLOG_ID" ]]; then
-        echo "[redcap-drift-check] backlog_id drift detected" >&2
-        echo "  stamped: $STAMPED_BACKLOG_ID" >&2
-        echo "  current: $BACKLOG_ID" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" == "1" ]]; then
+            redcap_runtime_write_text "layerB/control-plane/reanchor-from-backlog-id" "$STAMPED_BACKLOG_ID" || true
+            redcap_runtime_write_text "layerB/control-plane/reanchor-to-backlog-id" "$BACKLOG_ID" || true
+        else
+            echo "[redcap-drift-check] backlog_id drift detected" >&2
+            echo "  stamped: $STAMPED_BACKLOG_ID" >&2
+            echo "  current: $BACKLOG_ID" >&2
+            exit 1
+        fi
     fi
     if [[ -n "$STAMPED_BACKLOG_ITEM" && "$STAMPED_BACKLOG_ITEM" != "$BACKLOG_ITEM" ]]; then
-        echo "[redcap-drift-check] backlog_item drift detected" >&2
-        echo "  stamped: $STAMPED_BACKLOG_ITEM" >&2
-        echo "  current: $BACKLOG_ITEM" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" == "1" ]]; then
+            redcap_runtime_write_text "layerB/control-plane/reanchor-from-backlog-item" "$STAMPED_BACKLOG_ITEM" || true
+            redcap_runtime_write_text "layerB/control-plane/reanchor-to-backlog-item" "$BACKLOG_ITEM" || true
+        else
+            echo "[redcap-drift-check] backlog_item drift detected" >&2
+            echo "  stamped: $STAMPED_BACKLOG_ITEM" >&2
+            echo "  current: $BACKLOG_ITEM" >&2
+            exit 1
+        fi
     fi
 
     redcap_runtime_write_text "layerB/control-plane/confirmed.hash" "$CONFIRMED_HASH" || true
@@ -139,22 +154,40 @@ elif [[ -n "$HOST" ]]; then
         fi
     fi
     if [[ -n "$STAMPED_BACKLOG_SOURCE" && "$STAMPED_BACKLOG_SOURCE" != "$BACKLOG_SOURCE" ]]; then
-        echo "[redcap-drift-check] compat fallback backlog_source drift detected" >&2
-        echo "  stamped: $STAMPED_BACKLOG_SOURCE" >&2
-        echo "  current: $BACKLOG_SOURCE" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" == "1" ]]; then
+            mkdir -p "$(dirname "${COMPAT_PREFIX}-confirmed.hash")" 2>/dev/null || true
+            printf '%s\n' "$STAMPED_BACKLOG_SOURCE" > "${COMPAT_PREFIX}-reanchor-from-backlog-source"
+            printf '%s\n' "$BACKLOG_SOURCE" > "${COMPAT_PREFIX}-reanchor-to-backlog-source"
+        else
+            echo "[redcap-drift-check] compat fallback backlog_source drift detected" >&2
+            echo "  stamped: $STAMPED_BACKLOG_SOURCE" >&2
+            echo "  current: $BACKLOG_SOURCE" >&2
+            exit 1
+        fi
     fi
     if [[ -n "$STAMPED_BACKLOG_ID" && "$STAMPED_BACKLOG_ID" != "$BACKLOG_ID" ]]; then
-        echo "[redcap-drift-check] compat fallback backlog_id drift detected" >&2
-        echo "  stamped: $STAMPED_BACKLOG_ID" >&2
-        echo "  current: $BACKLOG_ID" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" == "1" ]]; then
+            mkdir -p "$(dirname "${COMPAT_PREFIX}-confirmed.hash")" 2>/dev/null || true
+            printf '%s\n' "$STAMPED_BACKLOG_ID" > "${COMPAT_PREFIX}-reanchor-from-backlog-id"
+            printf '%s\n' "$BACKLOG_ID" > "${COMPAT_PREFIX}-reanchor-to-backlog-id"
+        else
+            echo "[redcap-drift-check] compat fallback backlog_id drift detected" >&2
+            echo "  stamped: $STAMPED_BACKLOG_ID" >&2
+            echo "  current: $BACKLOG_ID" >&2
+            exit 1
+        fi
     fi
     if [[ -n "$STAMPED_BACKLOG_ITEM" && "$STAMPED_BACKLOG_ITEM" != "$BACKLOG_ITEM" ]]; then
-        echo "[redcap-drift-check] compat fallback backlog_item drift detected" >&2
-        echo "  stamped: $STAMPED_BACKLOG_ITEM" >&2
-        echo "  current: $BACKLOG_ITEM" >&2
-        exit 1
+        if [[ "$ALLOW_REANCHOR" == "1" ]]; then
+            mkdir -p "$(dirname "${COMPAT_PREFIX}-confirmed.hash")" 2>/dev/null || true
+            printf '%s\n' "$STAMPED_BACKLOG_ITEM" > "${COMPAT_PREFIX}-reanchor-from-backlog-item"
+            printf '%s\n' "$BACKLOG_ITEM" > "${COMPAT_PREFIX}-reanchor-to-backlog-item"
+        else
+            echo "[redcap-drift-check] compat fallback backlog_item drift detected" >&2
+            echo "  stamped: $STAMPED_BACKLOG_ITEM" >&2
+            echo "  current: $BACKLOG_ITEM" >&2
+            exit 1
+        fi
     fi
 
     mkdir -p "$(dirname "${COMPAT_PREFIX}-confirmed.hash")" 2>/dev/null || true
