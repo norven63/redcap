@@ -137,6 +137,14 @@
       "classification": "post-freeze-formal-prism-review",
       "include_in_current_archive_plan": false,
       "required_before_future_plan_refresh": "A future internal-control-plane or old-anchor archive refresh task must explicitly preserve or absorb this P4-24 route-selection review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-control-plane-public-internal-contract-mirror-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-control-plane-public-internal-contract-mirror-preflight.md",
+      "source_sha256": "e304f18b97c5c58846df4d2e64eaf362bac11786b77cf3c42c4c13556d655655",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-25 contract mirror preflight review before retiring prism/reports anchors."
     }
   ],
   "package_surface_policy": {

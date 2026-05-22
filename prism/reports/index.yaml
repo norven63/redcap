@@ -1,4 +1,28 @@
 reports:
+  - id: "20260523-r1-control-plane-public-internal-contract-mirror-preflight"
+    mode: preflight-review
+    date: "2026-05-23"
+    topic: "P4-25 internal-control-plane public/internal contract mirror preflight"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "red-team"]
+    verdict: "safe-to-complete-preflight-next-auto-continuation-route-selection-only"
+    consensus_actions:
+      - "Complete P4-25 as preflight-only contract classification"
+      - "Keep old compass/references anchors authoritative"
+      - "Do not auto-upgrade to physical apply, delete-last, raw evidence cleanup, formal publish, or Layer A product decision"
+    open_questions:
+      - "P4-26 must choose the next safe slice after this preflight"
+      - "Future physical apply still needs a separate route decision and compatibility proof"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-control-plane-public-internal-contract-mirror-preflight.json"
+      - "compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.py"
+      - "compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh"
+      - "compass/docs/task-reports/2026-05-23-r1-control-plane-public-internal-contract-mirror-preflight.md"
+      - "prism/reports/2026-05-23-r1-control-plane-public-internal-contract-mirror-preflight.md"
+      - "prism/runs/20260523-r1-control-plane-public-internal-contract-mirror-preflight/claude-code-review.txt"
+      - "prism/runs/20260523-r1-control-plane-public-internal-contract-mirror-preflight/kimi-review.txt"
+    archived: false
   - id: "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-2"
     mode: route-selection
     date: "2026-05-23"

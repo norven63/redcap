@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 324624,
-    "lines": 6699,
-    "chars": 195012,
+    "size_bytes": 321279,
+    "lines": 6651,
+    "chars": 192611,
     "rough_token_pressure": {
-      "low": 48753,
-      "high": 97506
+      "low": 48152,
+      "high": 96305
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 113069,
-        "lines": 2020,
-        "chars": 67775,
+        "size_bytes": 109724,
+        "lines": 1972,
+        "chars": 65374,
         "rough_token_pressure": {
-          "low": 16943,
-          "high": 33887
+          "low": 16343,
+          "high": 32687
         }
       }
     },
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-12 Prism 报告归档迁移规划",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 8973,
-      "lines": 159,
-      "chars": 5515,
-      "summary": "当前已完成：P4-12 已把 Prism 报告归档从“路线已选定”推进到“迁移规划可机器检查”。 / 人话解释：我们现在知道当前正式 Prism 报告将来应该复制到哪里、旧路径必须如何继续可用、失败如何回滚、未来真正执行前要通过哪些验证。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-copy-first-preflight.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-10 Prism 报告归档预检",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-15 Prism 报告归档漂移冻结",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8242,
       "lines": 154,
@@ -506,6 +493,19 @@
       "lines": 124,
       "chars": 3927,
       "summary": "当前已完成：P4-21 已完成一小批 internal-control-plane 维护工具镜像。RedCap 新增了 8 个内部维护入口，它们只把调用转交给旧的权威脚本，不改变旧位置、不删除旧资产，也不宣称发布 blocker 已关闭。 / 上一步完成的是：P4-20 已选择下一条安全路线，结论是先回到 internal-control-plane，用小批次、可回滚、非破坏的方式继续拆正式发布前的结构风险。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-23-r1-control-plane-public-internal-contract-mirror-preflight.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-25 控制面 public/internal contract mirror 预检",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 5628,
+      "lines": 111,
+      "chars": 3114,
+      "summary": "当前已完成：P4-25 已完成 internal-control-plane 的 public/internal contract mirror preflight。 / 详情：本轮把 225 条控制面候选按未来边界分成公开合同、内部合同、运行时公开支撑、维护控制面和人工交接面，并建立了机器检查。它没有实施合同镜像，也没有移动或删除旧锚点。",
       "status_basis": "filename_recency_only"
     },
     {

@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 117,
-  "bytes_total": 1592200,
+  "file_count": 118,
+  "bytes_total": 1601173,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 113,
+    "private-task-report-archive": 114,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -933,6 +933,14 @@
       "class": "private-task-report-archive",
       "bytes": 10206,
       "sha256": "786c97f2a8b4a9a2cec05c988d63e9eba5d7f5d68c3a61199926973d7f94bc46",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-21-r1-prism-report-archive-copy-first-plan.md",
+      "class": "private-task-report-archive",
+      "bytes": 8973,
+      "sha256": "a941215500f65ed86b1ac2ea16c89b113ddbd16398bc12f78fc17c7b457697be",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

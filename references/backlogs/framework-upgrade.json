@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-25",
-    "summary": "P4-25 待推进：P4-24 已裁决下一安全切片为 internal-control-plane public/internal contract mirror preflight；下一步只做预检，不做物理迁移或发布收口。"
+    "item_id": "P4-26",
+    "summary": "P4-26 待推进：P4-25 已完成 internal-control-plane public/internal contract mirror preflight；下一步只做后续安全切片路线选择，不得直接进入物理迁移、删除、发布或 Layer A 产品裁决。"
   },
   "glossary": [
     {
@@ -821,13 +821,28 @@
         {
           "id": "P4-25",
           "title": "R1 internal-control-plane public/internal contract mirror preflight",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-29-release-readiness-internal-control-plane-contract-mirror-preflight",
-          "summary": "P4-25 待推进：按 P4-24 路线裁决，只做 internal-control-plane public/internal contract mirror preflight；不得物理移动、删除、替换旧锚点，不得关闭 release blocker，不得进入正式发布。",
+          "summary": "P4-25 已完成：按 P4-24 路线裁决，完成 internal-control-plane public/internal contract mirror preflight；本轮只做预检，未物理移动、删除、替换旧锚点，未关闭 release blocker，未进入正式发布。",
           "evidence_paths": [
             "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-2.json",
-            "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2-check.sh"
+            "references/r1-control-plane-public-internal-contract-mirror-preflight.json",
+            "compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh",
+            "prism/reports/2026-05-23-r1-control-plane-public-internal-contract-mirror-preflight.md",
+            "compass/docs/task-reports/2026-05-23-r1-control-plane-public-internal-contract-mirror-preflight.md"
+          ]
+        },
+        {
+          "id": "P4-26",
+          "title": "R1 next safe slice after internal-control-plane contract mirror preflight",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-30-release-readiness-next-safe-slice-after-contract-mirror-preflight",
+          "summary": "P4-26 待推进：P4-25 完成合同镜像预检后，只做下一条安全切片路线选择；不得直接物理迁移、删除旧锚点、清理 raw evidence、关闭 release blocker 或进入正式发布。",
+          "evidence_paths": [
+            "references/r1-control-plane-public-internal-contract-mirror-preflight.json",
+            "compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh"
           ]
         }
       ]
@@ -1118,11 +1133,20 @@
     {
       "id": "phase-29-release-readiness-internal-control-plane-contract-mirror-preflight",
       "title": "阶段 29：发布准备 internal-control-plane 契约镜像预检",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-25"
       ],
-      "summary": "只做 public/internal contract mirror preflight，不做物理迁移、不删除旧锚点、不关闭 release blocker。"
+      "summary": "P4-25 已完成 public/internal contract mirror preflight，未做物理迁移、未删除旧锚点、未关闭 release blocker。"
+    },
+    {
+      "id": "phase-30-release-readiness-next-safe-slice-after-contract-mirror-preflight",
+      "title": "阶段 30：发布准备 P4-25 后下一安全切片选择",
+      "status": "pending",
+      "item_ids": [
+        "P4-26"
+      ],
+      "summary": "只做 P4-25 后下一安全切片路线选择，不直接进入物理迁移、删除、发布或 Layer A 产品裁决。"
     }
   ]
 }

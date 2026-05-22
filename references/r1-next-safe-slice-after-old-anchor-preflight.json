@@ -12,7 +12,7 @@
   },
   "source_truth": {
     "old_anchor_preflight_path": "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json",
-    "old_anchor_preflight_sha256": "132cf8496d10cc2cf51f746695bf69a8c6933140a7491741a626ee01dda90a87",
+    "old_anchor_preflight_sha256": "09aef67e238ddc8e20b6b111f66d4e124d8633a90445da3c2c440386c1373189",
     "convergence_assessment_path": "references/r1-formal-release-readiness-convergence-assessment.json",
     "convergence_assessment_sha256": "a70fae93e13e4140f77b45a441baa2e0d61e7c7b2c1dad912c1e949c49c86e11",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",

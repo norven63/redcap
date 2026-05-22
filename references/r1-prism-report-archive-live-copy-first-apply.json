@@ -10,10 +10,10 @@
     "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
     "readiness_sha256": "2b7b01fd845b237f7f37c9b74b2aebfd49ba0baf96b95f160fcf73b980069c01",
     "guard_path": "references/r1-prism-report-archive-churn-freeze-guard.json",
-    "guard_sha256": "0c3b27bd24d9f826719bcf531d18bcab1878a42467aacd61452c5ecd751c626e",
+    "guard_sha256": "bed9d3f024ab85a2b9aa44dcf6110eafe1ceca7288cff79f91443e674c281c5a",
     "frozen_mapping_sha256": "4a30820ec272e430398475e635a159b4930acfd9668c92f7343e509b740afc63",
     "source_report_count": 55,
-    "post_freeze_report_count": 10
+    "post_freeze_report_count": 11
   },
   "claim_boundary": {
     "live_archive_copies_created": true,
@@ -693,6 +693,14 @@
       "classification": "post-freeze-formal-prism-review",
       "include_in_current_archive_plan": false,
       "required_before_future_plan_refresh": "A future internal-control-plane or old-anchor archive refresh task must explicitly preserve or absorb this P4-24 route-selection review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-control-plane-public-internal-contract-mirror-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-control-plane-public-internal-contract-mirror-preflight.md",
+      "source_sha256": "e304f18b97c5c58846df4d2e64eaf362bac11786b77cf3c42c4c13556d655655",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-25 contract mirror preflight review before retiring prism/reports anchors."
     }
   ],
   "package_surface_policy": {

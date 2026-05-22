@@ -424,6 +424,27 @@
       "check": "bash compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2-check.sh"
     },
     {
+      "path": "references/r1-control-plane-public-internal-contract-mirror-preflight.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-25 internal-control-plane public/internal contract mirror preflight; classifies the 225 control-plane candidates without implementing physical migration or closing blockers",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for P4-25 public/internal contract mirror preflight validation",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates that P4-25 only completes contract mirror preflight, keeps blockers open, preserves source anchors, and does not auto-upgrade to physical apply or publish",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh"
+    },
+    {
       "path": "references/r1-prism-evidence-retention-apply-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 prism-layer-and-evidence copy-first / alias-first apply preflight with no-cleanup and still-blocking release boundary",
