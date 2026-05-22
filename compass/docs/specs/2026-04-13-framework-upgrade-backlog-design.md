@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`P4-23 R1 internal-control-plane maintainer facade batch-2 copy-first apply`
-- 当前焦点说明：P4-23 待推进：P4-22 已选定下一安全切片为继续 internal-control-plane 小批次 copy-first facade；下一步在无人工硬门时自动进入批次实施。
+- 当前焦点：`P4-24 R1 next safe slice after internal-control-plane maintainer facade batch-2`
+- 当前焦点说明：P4-24 待推进：P4-23 已完成第二个 internal-control-plane 小批次 facade；下一步在无人工硬门时重新用 Prism 选择下一条 release-readiness 安全切片。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -83,7 +83,8 @@
 | 阶段 24：发布准备下一安全切片选择 | 已完成 | P4-20 | P4-19 收口后，已由 Claude Code 与 Kimi 评审下一条 release-readiness 安全切片；Cap 在 A/B 分歧中裁决回到 internal-control-plane 的非破坏性 support-copy-first 续切片，C/D/E 继续留在人类硬门外。 |
 | 阶段 25：发布准备 internal-control-plane support-copy-first 续切片 | 已完成 | P4-21 | P4-21 已完成 internal-control-plane 8 个维护工具 facade 小批次；旧锚点和 release blockers 均保持 open。 |
 | 阶段 26：发布准备 P4-21 后下一安全切片选择 | 已完成 | P4-22 | P4-22 已完成下一安全切片选择：继续 internal-control-plane 小批次 copy-first facade。 |
-| 阶段 27：发布准备 internal-control-plane 维护工具第二小批次 | 待推进 | P4-23 | 按 P4-22 路线裁决，继续用小批次 copy-first facade 推进 internal-control-plane；不得批量处理全部 111 个条目，不得删除旧锚点或关闭 release blocker。 |
+| 阶段 27：发布准备 internal-control-plane 维护工具第二小批次 | 已完成 | P4-23 | P4-23 已完成第二个 internal-control-plane 维护工具 facade 小批次；旧锚点和 release blockers 均保持 open。 |
+| 阶段 28：发布准备 P4-23 后下一安全切片选择 | 待推进 | P4-24 | P4-23 收口后，重新由 Prism 评审下一条 release-readiness 安全切片；不得跳过人工硬门进入正式发布、证据清理或 Layer A 产品裁决。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -135,7 +136,8 @@
 | P4-20 R1 next safe slice after Prism report archive old-anchor preflight | 发布前路线与授权边界 | 已完成 | P0 | P4-20 已完成：在 P4-19 证明旧报告入口不能直接 delete-last 后，Claude Code 选 A、Kimi 选 B；Cap 裁决下一条安全切片回到 internal-control-plane 的非破坏性 support-copy-first 续切片，避免局部 Prism 报告线无限延长。 |
 | P4-21 R1 internal-control-plane support-copy-first continuation after old-anchor route selection | 发布前路线与授权边界 | 已完成 | P0 | P4-21 已完成：按 Claude Code / Kimi 共识选择 C，落地 8 个 internal-control-plane 维护工具 copy-first facade；旧 compass/tools 仍是权威，未删除旧锚点、未清理 Prism 证据、未修改发布开关，release blocker 仍保持 open。 |
 | P4-22 R1 next safe slice after internal-control-plane maintainer facade batch | 发布前路线与授权边界 | 已完成 | P0 | P4-22 已完成：Claude Code / Kimi 共识选择 A，下一条安全切片为继续 internal-control-plane 小批次 copy-first facade；本轮只做路线裁决，未实施下一批、未关闭 release blocker、未触碰发布或证据清理硬门。 |
-| P4-23 R1 internal-control-plane maintainer facade batch-2 copy-first apply | 发布前路线与授权边界 | 待推进 | P0 | P4-23 待推进：按 P4-22 路线裁决继续 internal-control-plane 小批次 copy-first facade；下一轮只允许选择不大于 P4-21 的低风险维护工具批次，旧 compass/tools 仍保持权威，release blockers 仍保持 open。 |
+| P4-23 R1 internal-control-plane maintainer facade batch-2 copy-first apply | 发布前路线与授权边界 | 已完成 | P0 | P4-23 已完成：按 Claude Code / Kimi 共识实施第二个 internal-control-plane 维护工具 copy-first facade 小批次；新增 8 个 thin bash facade，旧 compass/tools 仍是权威，未删除旧锚点、未清理 Prism 证据、未修改发布开关，release blockers 仍保持 open。 |
+| P4-24 R1 next safe slice after internal-control-plane maintainer facade batch-2 | 发布前路线与授权边界 | 待推进 | P0 | P4-24 待推进：P4-23 完成第二个小批次后，必须重新比较继续 internal-control-plane、转向 Prism report alias/query gateway preflight、contract mirror preflight、Layer A 产品边界和正式发布等候选；只允许选择下一条最小安全切片，不得直接进入发布或硬门。 |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -146,6 +148,7 @@
 | mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
 | spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
 <!-- redcap:backlog-generated:end -->
+
 
 
 

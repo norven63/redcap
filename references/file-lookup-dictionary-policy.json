@@ -382,6 +382,27 @@
       "check": "bash compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh"
     },
     {
+      "path": "references/r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-23 internal-control-plane maintainer facade batch-2 apply manifest; records 8 additional mirror-only shell facades, old compass/tools authority retention and still-open release blockers",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for P4-23 internal-control-plane maintainer facade batch-2 validation",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates P4-23 second maintainer facade batch without allowing previous-batch overlap, old-anchor mutation, evidence cleanup, release switch changes or blocker closure",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-check.sh"
+    },
+    {
       "path": "references/r1-prism-evidence-retention-apply-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 prism-layer-and-evidence copy-first / alias-first apply preflight with no-cleanup and still-blocking release boundary",

@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-23",
-    "summary": "P4-23 待推进：P4-22 已选定下一安全切片为继续 internal-control-plane 小批次 copy-first facade；下一步在无人工硬门时自动进入批次实施。"
+    "item_id": "P4-24",
+    "summary": "P4-24 待推进：P4-23 已完成第二个 internal-control-plane 小批次 facade；下一步在无人工硬门时重新用 Prism 选择下一条 release-readiness 安全切片。"
   },
   "glossary": [
     {
@@ -784,13 +784,36 @@
         {
           "id": "P4-23",
           "title": "R1 internal-control-plane maintainer facade batch-2 copy-first apply",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "phase-27-release-readiness-internal-control-plane-maintainer-facade-batch-2",
-          "summary": "P4-23 待推进：按 P4-22 路线裁决继续 internal-control-plane 小批次 copy-first facade；下一轮只允许选择不大于 P4-21 的低风险维护工具批次，旧 compass/tools 仍保持权威，release blockers 仍保持 open。",
+          "summary": "P4-23 已完成：按 Claude Code / Kimi 共识实施第二个 internal-control-plane 维护工具 copy-first facade 小批次；新增 8 个 thin bash facade，旧 compass/tools 仍是权威，未删除旧锚点、未清理 Prism 证据、未修改发布开关，release blockers 仍保持 open。",
           "evidence_paths": [
             "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.json",
-            "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh"
+            "references/r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.json",
+            "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-check.sh",
+            "internal/control-plane/tools/redcap-cli-console-mirror-check.sh",
+            "internal/control-plane/tools/redcap-cli-console-mirror.sh",
+            "internal/control-plane/tools/redcap-codex-hooks-check.sh",
+            "internal/control-plane/tools/redcap-cold-archive-inventory.sh",
+            "internal/control-plane/tools/redcap-evolution-candidate-check.sh",
+            "internal/control-plane/tools/redcap-evolution-harvest-check.sh",
+            "internal/control-plane/tools/redcap-file-lookup-dictionary-check.sh",
+            "internal/control-plane/tools/redcap-formal-release-r1-root-group-disposition-check.sh",
+            "prism/reports/2026-05-23-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.md",
+            "compass/docs/task-reports/2026-05-23-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.md"
+          ]
+        },
+        {
+          "id": "P4-24",
+          "title": "R1 next safe slice after internal-control-plane maintainer facade batch-2",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "phase-28-release-readiness-next-safe-slice-after-internal-maintainer-facade-batch-2",
+          "summary": "P4-24 待推进：P4-23 完成第二个小批次后，必须重新比较继续 internal-control-plane、转向 Prism report alias/query gateway preflight、contract mirror preflight、Layer A 产品边界和正式发布等候选；只允许选择下一条最小安全切片，不得直接进入发布或硬门。",
+          "evidence_paths": [
+            "references/r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.json",
+            "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-check.sh"
           ]
         }
       ]
@@ -1063,11 +1086,20 @@
     {
       "id": "phase-27-release-readiness-internal-control-plane-maintainer-facade-batch-2",
       "title": "阶段 27：发布准备 internal-control-plane 维护工具第二小批次",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-23"
       ],
-      "summary": "按 P4-22 路线裁决，继续用小批次 copy-first facade 推进 internal-control-plane；不得批量处理全部 111 个条目，不得删除旧锚点或关闭 release blocker。"
+      "summary": "P4-23 已完成第二个 internal-control-plane 维护工具 facade 小批次；旧锚点和 release blockers 均保持 open。"
+    },
+    {
+      "id": "phase-28-release-readiness-next-safe-slice-after-internal-maintainer-facade-batch-2",
+      "title": "阶段 28：发布准备 P4-23 后下一安全切片选择",
+      "status": "pending",
+      "item_ids": [
+        "P4-24"
+      ],
+      "summary": "P4-23 收口后，重新由 Prism 评审下一条 release-readiness 安全切片；不得跳过人工硬门进入正式发布、证据清理或 Layer A 产品裁决。"
     }
   ]
 }

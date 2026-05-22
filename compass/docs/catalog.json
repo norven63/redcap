@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 332485,
-    "lines": 6828,
-    "chars": 200411,
+    "size_bytes": 328567,
+    "lines": 6754,
+    "chars": 197539,
     "rough_token_pressure": {
-      "low": 50102,
-      "high": 100205
+      "low": 49384,
+      "high": 98769
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 204834,
-        "lines": 4584,
-        "chars": 122608,
+        "size_bytes": 205549,
+        "lines": 4587,
+        "chars": 123063,
         "rough_token_pressure": {
-          "low": 30652,
-          "high": 61304
+          "low": 30765,
+          "high": 61531
         }
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 122121,
-        "lines": 2155,
-        "chars": 74029,
+        "size_bytes": 117488,
+        "lines": 2078,
+        "chars": 70702,
         "rough_token_pressure": {
-          "low": 18507,
-          "high": 37014
+          "low": 17675,
+          "high": 35351
         }
       }
     },
@@ -69,8 +69,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 16543,
-        "lines": 239,
+        "chars": 16998,
+        "lines": 242,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 28359,
-      "lines": 239,
-      "chars": 16543,
+      "size_bytes": 29074,
+      "lines": 242,
+      "chars": 16998,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -405,19 +405,6 @@
       "paired_debt_ids": []
     },
     {
-      "path": "compass/docs/task-reports/2026-05-21-r1-next-slice-after-prism-report-archive-preflight.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-11 发布前下一小切片选择",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10429,
-      "lines": 185,
-      "chars": 6517,
-      "summary": "当前已完成：P4-11 已通过 Claude Code 与 Kimi 的棱镜路线评审，选定下一条正式发布前安全小切片：`Prism report archive copy-first / alias-first migration planning`。 / 人话解释：下一步先写清楚 Prism 报告将来如何安全归档、旧报告路径如何继续可访问、失败如何回滚；不是现在就搬文件。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-21-r1-prism-report-archive-apply-readiness.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-13 Prism 报告归档 apply readiness / rehearsal",
@@ -461,7 +448,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-18 正式发布就绪收敛评估",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 11574,
       "lines": 216,
@@ -506,6 +493,19 @@
       "lines": 229,
       "chars": 8791,
       "summary": "当前已完成：冻结的 55 份 Prism 报告已经复制到私有归档区，旧报告位置仍保留，发布和证据边界没有越界。 / 详情：本轮解决的是“可以先复制归档，但不能误删旧锚点、不能吸收新报告、不能冒充已发布就绪”的问题。现在 `private-archive/prism-reports` 有 55 份副本和一个索引，`prism/reports` 仍保留旧锚点，新产生的 P4-16 Prism 报告被登记为 post-freeze，不进入这批冻结归档。包面检查继续排除私有归档、旧报告和 raw run evidence。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-23-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-23 internal-control-plane 第二小批次 facade 实施",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 5796,
+      "lines": 108,
+      "chars": 3190,
+      "summary": "当前已完成：P4-23 已实施第二个 internal-control-plane 维护工具 facade 小批次，新增 8 个兼容入口。 / 详情：这些新入口不复制业务逻辑，只把调用转给旧 `compass/tools` 脚本。这样做的效果是继续把维护者控制面从旧目录向更清晰的 internal/control-plane 结构过渡，同时避免破坏旧锚点或误报发布准备完成。",
       "status_basis": "filename_recency_only"
     },
     {

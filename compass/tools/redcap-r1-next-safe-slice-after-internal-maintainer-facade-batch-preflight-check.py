@@ -182,8 +182,14 @@ def validate_backlog() -> None:
     elif p4_22_status == "done":
         if current_focus == "P4-22":
             fail("current_focus.item_id must advance after P4-22 is done")
-        if items.get("P4-23", {}).get("status") != "pending":
-            fail("P4-23 must be registered as pending after P4-22 is done")
+        p4_23_status = items.get("P4-23", {}).get("status")
+        if p4_23_status not in {"pending", "done"}:
+            fail("P4-23 must be registered as pending or done after P4-22 is done")
+        if p4_23_status == "done":
+            if current_focus == "P4-23":
+                fail("current_focus.item_id must advance after P4-23 is done")
+            if items.get("P4-24", {}).get("status") != "pending":
+                fail("P4-24 must be registered as pending after P4-23 is done")
     else:
         fail("P4-22 must be registered as pending or done")
 
