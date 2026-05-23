@@ -130,9 +130,9 @@ P4-26 的关键不是“多做一点”，而是避免越权：P4-25 之后可�
 |------|------|
 | 执行承诺账本 | 已清 |
 | 棱镜验收 | 通过 |
-| closeout summary | 待 closeout runtime 生成 |
-| closeout receipt | 待 closeout runtime 生成 |
-| rescue audit（如有） | 无 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-0987e368b68c993e44bf33d7fddc8c54cf34608d110f5cfd402fabdbe5368f09.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-0987e368b68c993e44bf33d7fddc8c54cf34608d110f5cfd402fabdbe5368f09.json` |
+| rescue audit（如有） | 中途失败审计已保留，最终 receipt 已完成 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -141,7 +141,7 @@ P4-26 的关键不是“多做一点”，而是避免越权：P4-25 之后可�
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code 与 Kimi 已形成棱镜共识 |
-| 已正式完成 | 否，receipt 待生成 |
+| 已正式完成 | 是，receipt 已生成 |
 
 ## 六、遗留问题与下一步
 

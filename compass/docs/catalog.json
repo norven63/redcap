@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 321388,
+    "size_bytes": 321850,
     "lines": 6635,
-    "chars": 192550,
+    "chars": 192996,
     "rough_token_pressure": {
-      "low": 48137,
-      "high": 96275
+      "low": 48249,
+      "high": 96498
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 108549,
+        "size_bytes": 109011,
         "lines": 1950,
-        "chars": 64489,
+        "chars": 64935,
         "rough_token_pressure": {
-          "low": 16122,
-          "high": 32244
+          "low": 16233,
+          "high": 32467
         }
       }
     },
@@ -502,9 +502,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 9163,
+      "size_bytes": 9625,
       "lines": 170,
-      "chars": 5467,
+      "chars": 5913,
       "summary": "当前已完成：P4-26 已完成下一安全切片选择。 / 详情：本轮解决的是“P4-25 完成合同镜像预检后，下一步该做哪一刀”。Claude Code 和 Kimi 独立评审后形成共识：下一步应登记 P4-27，但 P4-26 本身只做路线裁决，不实施迁移、不关闭 release blocker。",
       "status_basis": "filename_recency_only"
     },
