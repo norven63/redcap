@@ -145,10 +145,10 @@ P4-27 新增的 manifest 和 checker 会被包面规则排除，避免它们作�
 
 | 项目 | 结果 |
 |------|------|
-| 执行承诺账本 | 待 closeout 生成最终结论 |
+| 执行承诺账本 | 已清，7/7 完成 |
 | 棱镜验收 | 通过 |
-| closeout summary | `待生成` |
-| closeout receipt | `待生成` |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-contract-mirror-apply-preflight-subset-2f0247a5f113533bc95d6a1e96f3b90407ade3b933c388fbb10acf2d780b78ea.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-contract-mirror-apply-preflight-subset-2f0247a5f113533bc95d6a1e96f3b90407ade3b933c388fbb10acf2d780b78ea.json` |
 | rescue audit（如有） | `无` |
 
 ### 5.4 完成等级（禁止混报）
@@ -158,7 +158,7 @@ P4-27 新增的 manifest 和 checker 会被包面规则排除，避免它们作�
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是 |
-| 已正式完成 | 否；receipt 生成后才是正式完成 |
+| 已正式完成 | 是；closeout receipt 已生成 |
 
 ---
 
@@ -208,7 +208,8 @@ P4-27 新增的 manifest 和 checker 会被包面规则排除，避免它们作�
 ### 附录 A：Commits
 
 ```text
-待提交
+da75ff9 feat(release): 完成合同镜像小范围预检
+43e8c06 test(release): 刷新合同镜像预检干净工作区证据
 ```
 
 ### 附录 B：棱镜调用记录（如有）

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 28,
-    "size_bytes": 333202,
-    "lines": 6862,
-    "chars": 199710,
+    "size_bytes": 333694,
+    "lines": 6863,
+    "chars": 200184,
     "rough_token_pressure": {
-      "low": 49927,
-      "high": 99855
+      "low": 50046,
+      "high": 100092
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 13,
-        "size_bytes": 119617,
-        "lines": 2174,
-        "chars": 71225,
+        "size_bytes": 120109,
+        "lines": 2175,
+        "chars": 71699,
         "rough_token_pressure": {
-          "low": 17806,
-          "high": 35612
+          "low": 17924,
+          "high": 35849
         }
       }
     },
@@ -463,9 +463,9 @@
       "role": "closure-evidence",
       "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 10606,
-      "lines": 224,
-      "chars": 6290,
+      "size_bytes": 11098,
+      "lines": 225,
+      "chars": 6764,
       "summary": "当前已完成：P4-27 已把 7 条 public/internal contract 候选整理成“未来 apply 前的安全预检”，并通过 Claude Code 与 Kimi 独立评审。 / 详情：这次没有实施迁移，也没有复制、移动、删除旧文件。它解决的是“如果后面要把合同类资产镜像到更清晰的位置，第一小组应该选哪些、未来要满足哪些条件、出问题怎么回滚、哪些动作必须立刻停下”。这样后续不会把“计划/预检”误报成“已经迁移完成”。",
       "status_basis": "filename_recency_only"
     },
