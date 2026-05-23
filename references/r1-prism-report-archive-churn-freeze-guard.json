@@ -165,7 +165,7 @@
     {
       "report_id": "20260523-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset",
       "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md",
-      "source_sha256": "4abaeba09d84e56a68aa76a57d2d752e935f24ddbfda312cffdde6caec9fa9c8",
+      "source_sha256": "90265d69a402775112d44e8470fb6a4a686f393196b00ab9cd1e86f03bab6073",
       "classification": "post-freeze-formal-prism-review",
       "include_in_current_archive_plan": false,
       "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-28 route-selection review before retiring prism/reports anchors."

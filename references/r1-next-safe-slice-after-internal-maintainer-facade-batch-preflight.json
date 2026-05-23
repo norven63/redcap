@@ -10,9 +10,9 @@
   },
   "source_truth": {
     "p4_21_manifest_path": "references/r1-control-plane-internal-maintainer-facade-copy-first-apply.json",
-    "p4_21_manifest_sha256": "bafe22629ecf54e6cba5c3f59290e4222250748398c499de29af1b8d5d3354e0",
+    "p4_21_manifest_sha256": "238329484842fc2653936270ec2635fa3ba51da4138cb7e0ac1c972a8aa04be4",
     "p4_20_route_manifest_path": "references/r1-next-safe-slice-after-old-anchor-preflight.json",
-    "p4_20_route_manifest_sha256": "7b306a52aa70f14a9a290197b93c99866cbffbcf688787274b54d899dbd06540",
+    "p4_20_route_manifest_sha256": "2633e0512a24841421a2404d0d14af3bfef3f62cfb86f2a550acaea97c5ad5e3",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
     "control_plane_physical_preflight_sha256": "b6e736bc0ffab4bb7e888a9bec791a062c44826050e49152db8aa60a9e4169de"
   },

@@ -10,11 +10,11 @@
   },
   "source_truth": {
     "p4_27_preflight_path": "references/r1-contract-mirror-apply-preflight-subset.json",
-    "p4_27_preflight_sha256": "55db738f143c574a353eb7d089a1658c45d72045efa4e2cbcac0586efd340f78",
+    "p4_27_preflight_sha256": "9972028dff83fe07a3560d0bc2b8ad8e43e214bbbfbbcfbe2cc2a95ca7bbcbfa",
     "p4_26_route_path": "references/r1-next-safe-slice-after-control-plane-contract-mirror-preflight.json",
-    "p4_26_route_sha256": "61bc9709abf26264f22b6d59a9392b8077acd5e34e42557b8f65c1420f6fb0fb",
+    "p4_26_route_sha256": "685233d4fc87cf0d97597b3d77f5458a6a50c0b95ff2ba04f4a0a0c82fe1397e",
     "p4_25_manifest_path": "references/r1-control-plane-public-internal-contract-mirror-preflight.json",
-    "p4_25_manifest_sha256": "364a924cd1bb82c77f35c549d8c92381f9e55f0ca2ebe52d0b02c54d26fb2a37",
+    "p4_25_manifest_sha256": "a220bf39514246d4ea2722cdb74ea3cf2b25ca5bfe11daa27520123820739b2c",
     "contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
     "contract_split_sha256": "dc71050d9ab9872b9c9145bb76213a919b5f22fe3e0fa27634d4dd9704ee405d"
   },

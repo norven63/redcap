@@ -6,7 +6,7 @@
   "purpose": "Assess whether the old prism/reports anchors can be safely retired in a future delete-last apply. This preflight does not move, delete, rename, replace, symlink, or clean any report or raw Prism evidence.",
   "source_truth": {
     "live_copy_first_apply_path": "references/r1-prism-report-archive-live-copy-first-apply.json",
-    "live_copy_first_apply_sha256": "8a4ea3b91f92863666fec5c5ccbf4d2b9e4565e3068bba7d822cfb44bec594f8",
+    "live_copy_first_apply_sha256": "0b5b88ae1b7d6260959ec132cb6f3ccfeb6c91f447553d743b588c3cfcf3fcc3",
     "convergence_assessment_path": "references/r1-formal-release-readiness-convergence-assessment.json",
     "convergence_assessment_sha256": "a70fae93e13e4140f77b45a441baa2e0d61e7c7b2c1dad912c1e949c49c86e11"
   },
@@ -112,7 +112,7 @@
       {
         "report_id": "20260523-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset",
         "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md",
-        "source_sha256": "4abaeba09d84e56a68aa76a57d2d752e935f24ddbfda312cffdde6caec9fa9c8",
+        "source_sha256": "90265d69a402775112d44e8470fb6a4a686f393196b00ab9cd1e86f03bab6073",
         "classification": "post-freeze-formal-prism-review",
         "reason": "Created by the P4-28 next-safe-slice route-selection review after the frozen copy-first archive cohort; must be explicitly handled by a future apply task before old-anchor retirement.",
         "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-28 route-selection review before retiring prism/reports anchors."
