@@ -1076,6 +1076,18 @@ if [[ -f "$REDCAP_ROOT/references/r1-next-safe-slice-after-contract-mirror-apply
     fi
 fi
 
+R1_CONTRACT_MIRROR_BOUNDED_COPY_FIRST_APPLY_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+if [[ -f "$REDCAP_ROOT/references/r1-contract-mirror-bounded-copy-first-apply.json" ]]; then
+    if [[ ! -f "$R1_CONTRACT_MIRROR_BOUNDED_COPY_FIRST_APPLY_CHECK" ]]; then
+        echo "[redcap-spec-check] R1 contract mirror bounded copy-first apply check missing" >&2
+        exit 1
+    fi
+    if ! bash "$R1_CONTRACT_MIRROR_BOUNDED_COPY_FIRST_APPLY_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] R1 contract mirror bounded copy-first apply check failed" >&2
+        exit 1
+    fi
+fi
+
 R1_LAYERA_PRODUCT_BOUNDARY_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-layera-product-boundary-check.sh"
 if [[ ! -f "$R1_LAYERA_PRODUCT_BOUNDARY_CHECK" ]]; then
     echo "[redcap-spec-check] R1 Layer A product boundary check missing" >&2

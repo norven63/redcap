@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-29",
-    "summary": "P4-29 待推进：P4-28 已选择下一安全切片为 7 个 public/internal contract 文件的 bounded copy-first apply；下一步若执行，只能复制到 contracts/** 并保留旧 references/** 锚点，不得删除、发布、清理 raw evidence、关闭 release blocker 或裁决 Layer A 产品边界。"
+    "item_id": "P4-30",
+    "summary": "P4-29 完成后，下一焦点是正式发布人工授权硬门；这不是机械继续，而是真实需要 Norven 决策的发布边界。"
   },
   "glossary": [
     {
@@ -847,46 +847,68 @@
             "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-control-plane-contract-mirror-preflight.md"
           ]
         },
-    {
-      "id": "P4-27",
-      "title": "R1 contract-mirror apply preflight for small public/internal subset",
-      "status": "done",
-      "priority": "P0",
-      "phase_id": "phase-31-release-readiness-contract-mirror-apply-preflight-subset",
-      "summary": "P4-27 已完成：按 P4-26 路线裁决，完成 7 条 public/internal contract 小范围 apply preflight；本轮只做预检，未复制、移动、删除、替换旧锚点，未清理 raw evidence，未关闭 release blocker，未进入正式发布。",
-      "evidence_paths": [
-        "references/r1-contract-mirror-apply-preflight-subset.json",
-        "compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh",
-        "prism/reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md",
-        "compass/docs/task-reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md"
-      ]
-    },
-    {
-      "id": "P4-28",
-      "title": "R1 next safe slice after contract-mirror apply preflight subset",
-      "status": "done",
-      "priority": "P0",
-      "phase_id": "phase-32-release-readiness-next-safe-slice-after-contract-mirror-apply-preflight-subset",
-      "summary": "P4-28 已完成：Claude Code 与 Kimi 共识选择 A，即下一步登记 P4-29 为 7 个 public/internal contract 文件的 bounded copy-first apply。P4-28 只做路线裁决，未创建 contracts/**、未删除旧锚点、未清理 raw evidence、未关闭 release blocker，未进入正式发布。",
-      "evidence_paths": [
-        "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
-        "compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh",
-        "prism/reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md",
-        "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md"
-      ]
-    },
-    {
-      "id": "P4-29",
-      "title": "R1 contract-mirror bounded copy-first apply for selected public/internal contracts",
-      "status": "pending",
-      "priority": "P0",
-      "phase_id": "phase-33-release-readiness-contract-mirror-bounded-copy-first-apply",
-      "summary": "P4-29 待推进：按 P4-28 路线裁决，后续只允许对 P4-27 选出的 7 个文件执行 copy-first；必须保留旧 references/** 锚点权威，不得删除、移动、替换旧锚点，不得清理 raw evidence，不得修改发布开关或关闭 release blocker。",
-      "evidence_paths": [
-        "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
-        "references/r1-contract-mirror-apply-preflight-subset.json"
-      ]
-    }
+        {
+          "id": "P4-27",
+          "title": "R1 contract-mirror apply preflight for small public/internal subset",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-31-release-readiness-contract-mirror-apply-preflight-subset",
+          "summary": "P4-27 已完成：按 P4-26 路线裁决，完成 7 条 public/internal contract 小范围 apply preflight；本轮只做预检，未复制、移动、删除、替换旧锚点，未清理 raw evidence，未关闭 release blocker，未进入正式发布。",
+          "evidence_paths": [
+            "references/r1-contract-mirror-apply-preflight-subset.json",
+            "compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh",
+            "prism/reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md",
+            "compass/docs/task-reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md"
+          ]
+        },
+        {
+          "id": "P4-28",
+          "title": "R1 next safe slice after contract-mirror apply preflight subset",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-32-release-readiness-next-safe-slice-after-contract-mirror-apply-preflight-subset",
+          "summary": "P4-28 已完成：Claude Code 与 Kimi 共识选择 A，即下一步登记 P4-29 为 7 个 public/internal contract 文件的 bounded copy-first apply。P4-28 只做路线裁决，未创建 contracts/**、未删除旧锚点、未清理 raw evidence、未关闭 release blocker，未进入正式发布。",
+          "evidence_paths": [
+            "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
+            "compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh",
+            "prism/reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md",
+            "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md"
+          ]
+        },
+        {
+          "id": "P4-29",
+          "title": "R1 contract-mirror bounded copy-first apply for selected public/internal contracts",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "phase-33-release-readiness-contract-mirror-bounded-copy-first-apply",
+          "summary": "P4-29 已完成：7 个 public/internal contract 文件已 copy-first 到 contracts/public 与 contracts/internal；旧 references/** 锚点继续存在、可读且权威；未删除旧锚点、未清理 raw evidence、未关闭 release blocker、未进入正式发布。",
+          "evidence_paths": [
+            "contracts/public/runtime-public-contract-policy.json",
+            "contracts/public/runtime-workspace-boundary-policy.json",
+            "contracts/public/public-package-surface-policy.json",
+            "contracts/public/package-publish-safety-policy.json",
+            "contracts/internal/execution-guarantees.json",
+            "contracts/internal/workflow-gate-stratification-policy.json",
+            "contracts/internal/layerb-change-intake-policy.json",
+            "references/r1-contract-mirror-bounded-copy-first-apply.json",
+            "compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh",
+            "prism/reports/2026-05-23-r1-contract-mirror-bounded-copy-first-apply.md",
+            "compass/docs/task-reports/2026-05-23-r1-contract-mirror-bounded-copy-first-apply.md"
+          ]
+        },
+        {
+          "id": "P4-30",
+          "title": "Formal release human authorization gate",
+          "status": "blocked",
+          "priority": "P0",
+          "phase_id": "phase-34-formal-release-human-authorization-gate",
+          "summary": "P4-30 阻塞于真实人工发布授权：许可证、publish_allowed/private、registry/npm 登录态、版本/tag、是否 alpha/beta/stable 不能由 Cap/Prism 自动决定。",
+          "evidence_paths": [
+            "references/public-release-handoff.md",
+            "references/runtime-package-readiness-policy.json",
+            "references/package-publish-safety-policy.json"
+          ]
+        }
       ]
     }
   ],
@@ -1211,11 +1233,20 @@
     {
       "id": "phase-33-release-readiness-contract-mirror-bounded-copy-first-apply",
       "title": "阶段 33：发布准备合同镜像 bounded copy-first apply",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-29"
       ],
-      "summary": "后续若执行 P4-29，只能复制 P4-27 选出的 7 个文件到 contracts/public/** 与 contracts/internal/**，并保留旧 references/** 锚点；不得删除、发布、清理 raw evidence、关闭 release blocker 或裁决 Layer A 产品边界。"
+      "summary": "P4-29 completed bounded copy-first apply for 7 selected contract files; no delete-last, raw evidence cleanup, release blocker closure or formal publish decision was performed."
+    },
+    {
+      "id": "phase-34-formal-release-human-authorization-gate",
+      "title": "阶段 34：正式发布人工授权硬门",
+      "status": "blocked",
+      "item_ids": [
+        "P4-30"
+      ],
+      "summary": "正式 npm/CLI 发布前必须由 Norven 决定许可证、发布开关、registry/npm 登录态、版本与发布级别；这是人工硬门，不允许自动续跑绕过。"
     }
   ]
 }

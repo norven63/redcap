@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "apply_id": "redcap-r1-contract-mirror-bounded-copy-first-apply",
+  "created_at": "2026-05-23T00:00:00Z",
+  "status": "copy-first-apply-old-anchors-retained-no-release-blocker-closed",
+  "source_task": {
+    "backlog_item": "P4-29",
+    "active_slice": "r1-contract-mirror-bounded-copy-first-apply",
+    "baseline_head": "87281f385643855e96447c4d4625a0039c18c520"
+  },
+  "source_truth": {
+    "p4_28_route_path": "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
+    "p4_28_route_sha256": "6b40eb22ffb3fc45fef74f8bc83ae90f1a123dd13b017cbf15bcdd3af11ac268",
+    "p4_27_preflight_path": "references/r1-contract-mirror-apply-preflight-subset.json",
+    "p4_27_preflight_sha256": "2ec027237ef4f0126d08f4db7d4688b04a6758a90e6f13bb5044dd2c58f225a5"
+  },
+  "source_updates_after_preflight": [
+    {
+      "source": "references/package-publish-safety-policy.json",
+      "target": "contracts/public/package-publish-safety-policy.json",
+      "preflight_source_sha256": "57e41b906bc8de09aa96d1fb1a20c183483c83565a779fb69bb7db40c2a54e72",
+      "current_source_sha256": "79d51f410c8eee334a07c8158a735da32fe861c099ea9c94b98823403b2de0d7",
+      "reason": "P4-29 added package-surface exclusions for this task's checker and manifest before mirroring the current authoritative old anchor."
+    }
+  ],
+  "copy_policy": {
+    "mode": "bounded-copy-first",
+    "selected_count": 7,
+    "target_roots": [
+      "contracts/public",
+      "contracts/internal"
+    ],
+    "old_anchors_retained": true,
+    "old_anchors_remain_authoritative": true,
+    "delete_last_authorized": false,
+    "release_blocker_closure_authorized": false,
+    "raw_evidence_cleanup_authorized": false,
+    "layer_a_product_decision_authorized": false
+  },
+  "copies": [
+    {
+      "id": "public-runtime-contract",
+      "source": "references/runtime-public-contract-policy.json",
+      "target": "contracts/public/runtime-public-contract-policy.json",
+      "target_layer": "public-contract",
+      "source_sha256": "c7ae2bfb7664cd19024b926548561cd99bcaee7bf7f4ebbc07d64a8b54afb958",
+      "target_sha256": "c7ae2bfb7664cd19024b926548561cd99bcaee7bf7f4ebbc07d64a8b54afb958",
+      "byte_identical": true,
+      "old_anchor_retained": true,
+      "copy_mode": "copy-first"
+    },
+    {
+      "id": "public-runtime-workspace-boundary",
+      "source": "references/runtime-workspace-boundary-policy.json",
+      "target": "contracts/public/runtime-workspace-boundary-policy.json",
+      "target_layer": "public-contract",
+      "source_sha256": "a67c7c7b52ba80251dacfac7629eb27c9a0d71807cfffc61fd4a1df64762c706",
+      "target_sha256": "a67c7c7b52ba80251dacfac7629eb27c9a0d71807cfffc61fd4a1df64762c706",
+      "byte_identical": true,
+      "old_anchor_retained": true,
+      "copy_mode": "copy-first"
+    },
+    {
+      "id": "public-package-surface",
+      "source": "references/public-package-surface-policy.json",
+      "target": "contracts/public/public-package-surface-policy.json",
+      "target_layer": "public-contract",
+      "source_sha256": "374f3fc69434db6ac5cbb569ce8bb895610ef02e09f4442d91272811b595583d",
+      "target_sha256": "374f3fc69434db6ac5cbb569ce8bb895610ef02e09f4442d91272811b595583d",
+      "byte_identical": true,
+      "old_anchor_retained": true,
+      "copy_mode": "copy-first"
+    },
+    {
+      "id": "public-package-publish-safety",
+      "source": "references/package-publish-safety-policy.json",
+      "target": "contracts/public/package-publish-safety-policy.json",
+      "target_layer": "public-contract",
+      "source_sha256": "79d51f410c8eee334a07c8158a735da32fe861c099ea9c94b98823403b2de0d7",
+      "target_sha256": "79d51f410c8eee334a07c8158a735da32fe861c099ea9c94b98823403b2de0d7",
+      "byte_identical": true,
+      "old_anchor_retained": true,
+      "copy_mode": "copy-first"
+    },
+    {
+      "id": "internal-execution-guarantees",
+      "source": "references/execution-guarantees.json",
+      "target": "contracts/internal/execution-guarantees.json",
+      "target_layer": "internal-contract",
+      "source_sha256": "42afed76bd67bde53e6b66e78794b1d339e1583772b04be13faa57ccd6e3eb89",
+      "target_sha256": "42afed76bd67bde53e6b66e78794b1d339e1583772b04be13faa57ccd6e3eb89",
+      "byte_identical": true,
+      "old_anchor_retained": true,
+      "copy_mode": "copy-first"
+    },
+    {
+      "id": "internal-workflow-gate-stratification",
+      "source": "references/workflow-gate-stratification-policy.json",
+      "target": "contracts/internal/workflow-gate-stratification-policy.json",
+      "target_layer": "internal-contract",
+      "source_sha256": "67079c93fbe2ecbaf11d7577f0dd6a6851df2095983183c470906f6e3090d63f",
+      "target_sha256": "67079c93fbe2ecbaf11d7577f0dd6a6851df2095983183c470906f6e3090d63f",
+      "byte_identical": true,
+      "old_anchor_retained": true,
+      "copy_mode": "copy-first"
+    },
+    {
+      "id": "internal-change-intake",
+      "source": "references/layerb-change-intake-policy.json",
+      "target": "contracts/internal/layerb-change-intake-policy.json",
+      "target_layer": "internal-contract",
+      "source_sha256": "c328115a3902e1eabc9ad22d22c9edfdd91fc51e6eb8440be38fdcee3e6fde36",
+      "target_sha256": "c328115a3902e1eabc9ad22d22c9edfdd91fc51e6eb8440be38fdcee3e6fde36",
+      "byte_identical": true,
+      "old_anchor_retained": true,
+      "copy_mode": "copy-first"
+    }
+  ],
+  "claim_boundary": {
+    "copy_first_apply_completed": true,
+    "target_files_created": true,
+    "old_anchors_retained": true,
+    "old_anchors_removed_or_replaced": false,
+    "extra_contract_files_created": false,
+    "raw_run_evidence_deleted_or_cleaned": false,
+    "release_switch_changed": false,
+    "release_blocker_closed": false,
+    "public_release_ready": false,
+    "layer_a_product_decision_made": false,
+    "allowed_user_claim": "P4-29 created 7 byte-identical contract mirror copies under contracts/public and contracts/internal while keeping old references anchors retained and authoritative.",
+    "forbidden_claims": [
+      "Old references anchors were retired, deleted, moved, replaced, or redirected.",
+      "Release blockers are closed.",
+      "RedCap is ready for formal public distribution.",
+      "Prism raw evidence was cleaned.",
+      "Layer A product scope was decided."
+    ]
+  },
+  "prism_review": {
+    "run_id": "20260523-r1-contract-mirror-bounded-copy-first-apply",
+    "agents": [
+      {
+        "provider": "claude-code",
+        "role": "reviewer",
+        "status": "responded",
+        "recommendation": "approve",
+        "safe_to_apply": true
+      },
+      {
+        "provider": "kimi",
+        "role": "challenger",
+        "status": "responded",
+        "recommendation": "approve",
+        "safe_to_apply": true
+      },
+      {
+        "provider": "copilot",
+        "role": "fallback",
+        "status": "policy-suppressed",
+        "recommendation": "not-called",
+        "reason": "Claude Code and Kimi produced two-family quorum."
+      }
+    ],
+    "verdict": "consensus-approve-bounded-copy-first-apply"
+  },
+  "result": {
+    "release_blocker_status": "still-blocking-after-copy-first-apply",
+    "remaining_release_blockers_after_this_apply": [
+      "internal-control-plane",
+      "prism-layer-and-evidence",
+      "internal-layer-a"
+    ],
+    "next_recommended_slice": "run parent-autocontinue route selection after P4-29 closeout",
+    "public_release_ready": false
+  }
+}

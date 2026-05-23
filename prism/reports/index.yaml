@@ -1,4 +1,35 @@
 reports:
+  - id: "20260523-r1-contract-mirror-bounded-copy-first-apply"
+    mode: apply-review
+    date: "2026-05-23"
+    topic: "P4-29 bounded copy-first apply for selected public/internal contract files"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-approve-bounded-copy-first-apply"
+    consensus_actions:
+      - "Create exactly seven byte-identical contract mirror copies under contracts/public and contracts/internal"
+      - "Keep old references anchors retained, readable and authoritative"
+      - "Keep release blockers, Prism raw evidence, release switches, credentials and Layer A product boundary untouched"
+    open_questions:
+      - "P4-30 formal release authorization remains a real human gate"
+      - "Future delete-last or raw evidence cleanup must be separate tasks with explicit approval"
+    lessons_updated: false
+    files_affected:
+      - "contracts/public/runtime-public-contract-policy.json"
+      - "contracts/public/runtime-workspace-boundary-policy.json"
+      - "contracts/public/public-package-surface-policy.json"
+      - "contracts/public/package-publish-safety-policy.json"
+      - "contracts/internal/execution-guarantees.json"
+      - "contracts/internal/workflow-gate-stratification-policy.json"
+      - "contracts/internal/layerb-change-intake-policy.json"
+      - "references/r1-contract-mirror-bounded-copy-first-apply.json"
+      - "compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.py"
+      - "compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+      - "compass/docs/task-reports/2026-05-23-r1-contract-mirror-bounded-copy-first-apply.md"
+      - "prism/reports/2026-05-23-r1-contract-mirror-bounded-copy-first-apply.md"
+      - "prism/runs/20260523-r1-contract-mirror-bounded-copy-first-apply/claude-code-review.txt"
+      - "prism/runs/20260523-r1-contract-mirror-bounded-copy-first-apply/kimi-review.txt"
+    archived: false
   - id: "20260523-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset"
     mode: route-selection
     date: "2026-05-23"

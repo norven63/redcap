@@ -508,6 +508,76 @@
       "check": "bash compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh"
     },
     {
+      "path": "contracts/public/runtime-public-contract-policy.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-29 public contract mirror copy for runtime public contract policy; byte-identical to references/runtime-public-contract-policy.json while old reference anchor remains authoritative",
+      "owner": "Release architecture + public contracts",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
+      "path": "contracts/public/runtime-workspace-boundary-policy.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-29 public contract mirror copy for runtime/workspace boundary policy; byte-identical to references/runtime-workspace-boundary-policy.json",
+      "owner": "Release architecture + public contracts",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
+      "path": "contracts/public/public-package-surface-policy.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-29 public contract mirror copy for public package surface policy; byte-identical to references/public-package-surface-policy.json",
+      "owner": "Release architecture + public contracts",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
+      "path": "contracts/public/package-publish-safety-policy.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-29 public contract mirror copy for package publish safety policy; byte-identical to references/package-publish-safety-policy.json",
+      "owner": "Release architecture + public contracts",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
+      "path": "contracts/internal/execution-guarantees.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-29 internal contract mirror copy for execution guarantees; byte-identical to references/execution-guarantees.json",
+      "owner": "Release architecture + internal contracts",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
+      "path": "contracts/internal/workflow-gate-stratification-policy.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-29 internal contract mirror copy for workflow gate stratification; byte-identical to references/workflow-gate-stratification-policy.json",
+      "owner": "Release architecture + internal contracts",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
+      "path": "contracts/internal/layerb-change-intake-policy.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-29 internal contract mirror copy for Layer B change intake policy; byte-identical to references/layerb-change-intake-policy.json",
+      "owner": "Release architecture + internal contracts",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
+      "path": "references/r1-contract-mirror-bounded-copy-first-apply.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-29 bounded copy-first apply manifest; records 7 contract mirror copies, old-anchor retention, Prism approval and still-blocking release boundary",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for P4-29 bounded contract mirror copy-first apply validation",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates that P4-29 created exactly 7 byte-identical contract copies, retained old references anchors, kept release blockers open and did not cross human hard gates",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh"
+    },
+    {
       "path": "references/r1-prism-evidence-retention-apply-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 prism-layer-and-evidence copy-first / alias-first apply preflight with no-cleanup and still-blocking release boundary",

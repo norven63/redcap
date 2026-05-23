@@ -13,9 +13,9 @@
   },
   "source_truth": {
     "p4_26_route_path": "references/r1-next-safe-slice-after-control-plane-contract-mirror-preflight.json",
-    "p4_26_route_sha256": "685233d4fc87cf0d97597b3d77f5458a6a50c0b95ff2ba04f4a0a0c82fe1397e",
+    "p4_26_route_sha256": "61995473c30bf22f8745da48bf908fa0c8088905138048abc74b07f63d967fab",
     "p4_25_manifest_path": "references/r1-control-plane-public-internal-contract-mirror-preflight.json",
-    "p4_25_manifest_sha256": "a220bf39514246d4ea2722cdb74ea3cf2b25ca5bfe11daa27520123820739b2c",
+    "p4_25_manifest_sha256": "29fa17747c620a5fae30a6afb597f6e8189d195bcabee2e52d777b7440f34c94",
     "contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
     "contract_split_sha256": "dc71050d9ab9872b9c9145bb76213a919b5f22fe3e0fa27634d4dd9704ee405d"
   },

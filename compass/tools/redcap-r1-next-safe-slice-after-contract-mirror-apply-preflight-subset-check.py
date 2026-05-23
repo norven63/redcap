@@ -20,6 +20,7 @@ CONTRACT_SPLIT = ROOT / "references/r1-control-plane-contract-split-preflight.js
 BACKLOG = ROOT / "references/backlogs/framework-upgrade.json"
 PRISM_REPORT = ROOT / "prism/reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md"
 TASK_REPORT = ROOT / "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md"
+P4_29_APPLY = ROOT / "references/r1-contract-mirror-bounded-copy-first-apply.json"
 EXPECTED_BLOCKERS = {"internal-control-plane", "prism-layer-and-evidence", "internal-layer-a"}
 EXPECTED_RUN_ID = "20260523-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset"
 
@@ -63,6 +64,60 @@ def iter_backlog_items(backlog: dict[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
+def downstream_apply_manifest() -> dict[str, Any] | None:
+    if not P4_29_APPLY.is_file():
+        return None
+    payload = load_json(P4_29_APPLY, "P4-29 bounded copy-first apply")
+    if payload.get("apply_id") != "redcap-r1-contract-mirror-bounded-copy-first-apply":
+        fail("P4-29 apply manifest apply_id mismatch")
+    if payload.get("status") != "copy-first-apply-old-anchors-retained-no-release-blocker-closed":
+        fail("P4-29 apply manifest status mismatch")
+    return payload
+
+
+def downstream_copy(payload: dict[str, Any] | None, source_rel: str, target_rel: str) -> dict[str, Any] | None:
+    if payload is None:
+        return None
+    copies = payload.get("copies")
+    if not isinstance(copies, list):
+        fail("P4-29 apply manifest copies must be a list")
+    for item in copies:
+        if isinstance(item, dict) and item.get("source") == source_rel and item.get("target") == target_rel:
+            return item
+    return None
+
+
+def downstream_source_update(payload: dict[str, Any] | None, source_rel: str, old_hash: str, current_hash: str) -> bool:
+    if payload is None:
+        return False
+    updates = payload.get("source_updates_after_preflight", [])
+    if not isinstance(updates, list):
+        fail("P4-29 apply source_updates_after_preflight must be a list")
+    for item in updates:
+        if not isinstance(item, dict) or item.get("source") != source_rel:
+            continue
+        if item.get("preflight_source_sha256") != old_hash:
+            fail(f"P4-29 source update preflight hash mismatch: {source_rel}")
+        if item.get("current_source_sha256") != current_hash:
+            fail(f"P4-29 source update current hash mismatch: {source_rel}")
+        return True
+    return False
+
+
+def target_allowed_by_downstream_apply(payload: dict[str, Any] | None, source_rel: str, target_rel: str, current_source_hash: str) -> bool:
+    copy = downstream_copy(payload, source_rel, target_rel)
+    if copy is None:
+        return False
+    target = ROOT / target_rel
+    if not target.is_file() or target.is_symlink():
+        return False
+    if copy.get("byte_identical") is not True or copy.get("old_anchor_retained") is not True:
+        fail(f"P4-29 copy entry must keep byte-identical/old-anchor boundary: {target_rel}")
+    if copy.get("source_sha256") != current_source_hash or copy.get("target_sha256") != sha256(target):
+        fail(f"P4-29 copy entry hash is stale: {target_rel}")
+    return sha256(target) == current_source_hash
+
+
 def validate_source_truth(manifest: dict[str, Any]) -> None:
     source = manifest.get("source_truth")
     if not isinstance(source, dict):
@@ -81,6 +136,7 @@ def validate_source_truth(manifest: dict[str, Any]) -> None:
 
 
 def validate_p4_27_preflight() -> list[dict[str, Any]]:
+    downstream_apply = downstream_apply_manifest()
     p4_27 = load_json(P4_27_PREFLIGHT, "P4-27 preflight")
     if p4_27.get("status") != "apply-preflight-only-no-files-copied-moved-or-deleted":
         fail("P4-27 preflight status must remain preflight-only")
@@ -112,12 +168,24 @@ def validate_p4_27_preflight() -> list[dict[str, Any]]:
         target = item.get("future_target")
         if not isinstance(source, str) or not (ROOT / source).is_file():
             fail(f"P4-27 selected source missing: {source}")
-        if item.get("source_sha256") != sha256(ROOT / source):
-            fail(f"P4-27 selected source hash stale: {source}")
+        current_source_hash = sha256(ROOT / source)
+        preflight_source_hash = item.get("source_sha256")
+        if preflight_source_hash != current_source_hash and not downstream_source_update(
+            downstream_apply,
+            source,
+            str(preflight_source_hash),
+            current_source_hash,
+        ):
+            fail(f"P4-27 selected source hash stale without P4-29 downstream bridge: {source}")
         if not isinstance(target, str) or not target.startswith("contracts/"):
             fail(f"P4-27 future target must be under contracts/: {target}")
-        if (ROOT / target).exists():
-            fail(f"P4-28 must not create future target during route selection: {target}")
+        if (ROOT / target).exists() and not target_allowed_by_downstream_apply(
+            downstream_apply,
+            source,
+            target,
+            current_source_hash,
+        ):
+            fail(f"P4-28 route target exists without valid P4-29 downstream apply bridge: {target}")
     return selected
 
 

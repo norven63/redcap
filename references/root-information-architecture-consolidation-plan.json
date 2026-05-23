@@ -264,6 +264,18 @@
       "consumer_notes": "Most validators, closeout, docs catalog, knowledge gateway and checks live here."
     },
     {
+      "path": "contracts",
+      "type": "directory",
+      "presence": "required-source",
+      "current_role": "P4-29 copy-first public/internal contract mirror root",
+      "visibility": "release-contract-source",
+      "package_surface": "included-selected-contracts",
+      "target_disposition": "stay-root-contract-mirror-until-delete-last-or-runtime-contract-switch",
+      "target_parent": "internal-control-plane",
+      "move_risk": "medium",
+      "consumer_notes": "Contains copy-first mirrors for selected references/** contracts. Old references anchors remain authoritative until a later task explicitly changes authority."
+    },
+    {
       "path": "internal",
       "type": "directory",
       "presence": "required-source",
@@ -452,6 +464,7 @@
       "meaning": "Maintainer-only RedCap governance, validators, active private knowledge, reports and workflow source.",
       "current_roots": [
         "compass",
+        "contracts",
         "references"
       ],
       "future_shape": [
