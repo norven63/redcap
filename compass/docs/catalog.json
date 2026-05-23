@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 317623,
-    "lines": 6577,
-    "chars": 190221,
+    "size_bytes": 321386,
+    "lines": 6635,
+    "chars": 192560,
     "rough_token_pressure": {
-      "low": 47555,
-      "high": 95110
+      "low": 48140,
+      "high": 96280
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 104784,
-        "lines": 1892,
-        "chars": 62160,
+        "size_bytes": 108547,
+        "lines": 1950,
+        "chars": 64499,
         "rough_token_pressure": {
-          "low": 15540,
-          "high": 31080
+          "low": 16124,
+          "high": 32249
         }
       }
     },
@@ -502,10 +502,10 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 5398,
-      "lines": 112,
-      "chars": 3138,
-      "summary": "当前已完成：P4-26 已完成下一安全切片选择。 / 详情：本轮让 Claude Code 和 Kimi 独立评审 P4-25 后应该先做哪一刀，并把结论落成可检查的路线裁决。",
+      "size_bytes": 9161,
+      "lines": 170,
+      "chars": 5477,
+      "summary": "当前已完成：P4-26 已完成下一安全切片选择。 / 详情：本轮解决的是“P4-25 完成合同镜像预检后，下一步该做哪一刀”。Claude Code 和 Kimi 独立评审后形成共识：下一步应登记 P4-27，但 P4-26 本身只做路线裁决，不实施迁移、不关闭 release blocker。",
       "status_basis": "filename_recency_only"
     },
     {
