@@ -141,11 +141,11 @@ P4-28 的核心风险是“把选路误说成执行”。如果 P4-28 一边说�
 
 | 项目 | 结果 |
 |---|---|
-| 执行承诺账本 | 待 closeout runtime 核对 |
-| 棱镜验收 | 待 acceptance binding |
-| closeout summary | 待生成 |
-| closeout receipt | 待生成 |
-| rescue audit（如有） | 待确认 |
+| 执行承诺账本 | 8/8 已完成 |
+| 棱镜验收 | 通过，run=`20260523-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset` |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-46f59d7bc0a1527a8ee7f58df65ead1f443c9fde8c8039b76c8df040dd3a3046.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-46f59d7bc0a1527a8ee7f58df65ead1f443c9fde8c8039b76c8df040dd3a3046.json` |
+| rescue audit（如有） | 不需要；第二次 closeout 已完成 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -154,7 +154,7 @@ P4-28 的核心风险是“把选路误说成执行”。如果 P4-28 一边说�
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code / Kimi 共识 |
-| 已正式完成 | 待 closeout receipt |
+| 已正式完成 | 是；closeout receipt 已生成 |
 
 ---
 
@@ -204,7 +204,10 @@ P4-28 的核心风险是“把选路误说成执行”。如果 P4-28 一边说�
 ### 附录 A：Commits
 
 ```text
-待提交
+30da595 feat(release): 选择合同镜像下一安全切片
+b3df8b1 docs(release): 刷新 P4-28 文档索引
+7c6b58e docs(release): 刷新 P4-28 证据哈希链
+e682b37 test(release): 刷新 P4-28 干净工作区证据
 ```
 
 ### 附录 B：棱镜调用记录

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 28,
-    "size_bytes": 335600,
-    "lines": 6926,
-    "chars": 201410,
+    "size_bytes": 336348,
+    "lines": 6929,
+    "chars": 202082,
     "rough_token_pressure": {
-      "low": 50352,
-      "high": 100705
+      "low": 50520,
+      "high": 101041
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 13,
-        "size_bytes": 121162,
-        "lines": 2235,
-        "chars": 72296,
+        "size_bytes": 121910,
+        "lines": 2238,
+        "chars": 72968,
         "rough_token_pressure": {
-          "low": 18074,
-          "high": 36148
+          "low": 18242,
+          "high": 36484
         }
       }
     },
@@ -502,9 +502,9 @@
       "role": "closure-evidence",
       "status": "warm",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 9295,
-      "lines": 214,
-      "chars": 5489,
+      "size_bytes": 10043,
+      "lines": 217,
+      "chars": 6161,
       "summary": "当前已完成：P4-28 已完成路线选择，决定把 P4-29 登记为下一条安全切片；本轮不实施 P4-29。 / 详情：P4-28 没有创建 `contracts/**` 文件，也没有复制、移动、删除、替换旧锚点。它只是把“下一刀”确定为一个后续的 bounded copy-first apply 任务：只复制 P4-27 已预检的 7 个 contract 文件，并继续保留旧 `references/**` 锚点。",
       "status_basis": "filename_recency_only"
     },
