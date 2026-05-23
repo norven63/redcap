@@ -487,6 +487,27 @@
       "check": "bash compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh"
     },
     {
+      "path": "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-28 next safe slice route decision after the small contract mirror apply preflight; selects P4-29 bounded copy-first apply while keeping P4-28 route-only",
+      "owner": "Release architecture + route governance",
+      "check": "bash compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for P4-28 route-selection validation after P4-27 contract mirror apply preflight",
+      "owner": "Release architecture + route governance",
+      "check": "bash compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates that P4-28 only registers P4-29 as next slice, creates no contracts/** targets, keeps blockers open, and records Claude Code / Kimi consensus without Copilot",
+      "owner": "Release architecture + route governance",
+      "check": "bash compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh"
+    },
+    {
       "path": "references/r1-prism-evidence-retention-apply-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 prism-layer-and-evidence copy-first / alias-first apply preflight with no-cleanup and still-blocking release boundary",

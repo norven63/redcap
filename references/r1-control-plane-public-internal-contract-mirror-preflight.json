@@ -12,7 +12,7 @@
   },
   "source_truth": {
     "p4_24_route_path": "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-2.json",
-    "p4_24_route_sha256": "dab37422769eab306b03e2ed0f0b1c1da97030a5c35277b5dd8edda143182d38",
+    "p4_24_route_sha256": "116a1bf715a7b072902ca3ca77e6da385a471743b249966c9f0de0d477c07634",
     "control_plane_contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
     "control_plane_contract_split_sha256": "dc71050d9ab9872b9c9145bb76213a919b5f22fe3e0fa27634d4dd9704ee405d",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",

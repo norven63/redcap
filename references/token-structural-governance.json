@@ -80,6 +80,13 @@
       "trigger_for_revisit": "When the backlog exceeds 75KB or when another 10 closed P4 items accumulate, split closed historical route entries into an archived registry consumed by the same backlog checker and keep active/current route items in the live authority."
     },
     {
+      "path": "compass/tools/redcap-spec-check.sh",
+      "kind": "tracked-large-umbrella-validator",
+      "current_mitigation": "file-lookup-dictionary-and-targeted-error-output",
+      "structural_strategy": "Keep as the umbrella validator facade, but do not add substantial new validation logic inline. New release-readiness checks should live in focused redcap-*-check modules and spec-check should only route to them.",
+      "trigger_for_revisit": "When spec-check grows above 60KB or gains more than 10 new route-only invocations, split release-readiness route checks into a sourced shard or generated check registry while preserving the same public command."
+    },
+    {
       "path": "references/legacy-asset-migration-apply-plan.json",
       "kind": "tracked-large-generated-manifest",
       "current_mitigation": "file-lookup-dictionary-and-apply-preflight-check",

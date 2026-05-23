@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 28,
-    "size_bytes": 333694,
-    "lines": 6863,
-    "chars": 200184,
+    "size_bytes": 335606,
+    "lines": 6926,
+    "chars": 201416,
     "rough_token_pressure": {
-      "low": 50046,
-      "high": 100092
+      "low": 50354,
+      "high": 100708
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 208055,
-        "lines": 4599,
-        "chars": 124711,
+        "size_bytes": 208908,
+        "lines": 4602,
+        "chars": 125340,
         "rough_token_pressure": {
-          "low": 31177,
-          "high": 62355
+          "low": 31335,
+          "high": 62670
         }
       },
       "task-reports": {
         "file_count": 13,
-        "size_bytes": 120109,
-        "lines": 2175,
-        "chars": 71699,
+        "size_bytes": 121168,
+        "lines": 2235,
+        "chars": 72302,
         "rough_token_pressure": {
-          "low": 17924,
-          "high": 35849
+          "low": 18075,
+          "high": 36151
         }
       }
     },
@@ -69,8 +69,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 18646,
-        "lines": 254,
+        "chars": 19275,
+        "lines": 257,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 31580,
-      "lines": 254,
-      "chars": 18646,
+      "size_bytes": 32433,
+      "lines": 257,
+      "chars": 19275,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -431,19 +431,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：P4-15 Prism 报告归档漂移冻结",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 8242,
-      "lines": 154,
-      "chars": 4892,
-      "summary": "当前已完成：P4-15 已把 Prism 报告归档迁移集合从“实时目录数量”改成“冻结集合 + 后冻结报告登记”。 / 人话解释：以前每新增一份正式 Prism 审查报告，P4-12/P4-13 的迁移计划就会被判定为过期；现在已验证的 55 份报告被固定为当前迁移集合，新报告必须单独登记，不能偷偷改变旧计划。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-16 Prism 报告归档 live copy-first apply",
@@ -474,7 +461,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-23 internal-control-plane 第二小批次 facade 实施",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 5986,
       "lines": 108,
@@ -506,6 +493,19 @@
       "lines": 111,
       "chars": 3345,
       "summary": "当前已完成：P4-25 已完成 internal-control-plane 的 public/internal contract mirror preflight。 / 详情：本轮把 225 条控制面候选按未来边界分成公开合同、内部合同、运行时公开支撑、维护控制面和人工交接面，并建立了机器检查。它没有实施合同镜像，也没有移动或删除旧锚点。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-28 P4-27 后下一安全切片路线选择",
+      "role": "closure-evidence",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 9301,
+      "lines": 214,
+      "chars": 5495,
+      "summary": "当前已完成：P4-28 已完成路线选择，决定把 P4-29 登记为下一条安全切片；本轮不实施 P4-29。 / 详情：P4-28 没有创建 `contracts/**` 文件，也没有复制、移动、删除、替换旧锚点。它只是把“下一刀”确定为一个后续的 bounded copy-first apply 任务：只复制 P4-27 已预检的 7 个 contract 文件，并继续保留旧 `references/**` 锚点。",
       "status_basis": "filename_recency_only"
     },
     {

@@ -1,4 +1,28 @@
 reports:
+  - id: "20260523-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset"
+    mode: route-selection
+    date: "2026-05-23"
+    topic: "P4-28 next safe slice after small contract mirror apply preflight subset"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-selects-A-register-p4-29-copy-first-apply"
+    consensus_actions:
+      - "Select P4-29 as a bounded copy-first apply task for the 7 P4-27 selected contract files"
+      - "Keep P4-28 route-selection-only with no contracts/** targets created"
+      - "Keep old references anchors authoritative and release blockers open"
+    open_questions:
+      - "P4-29 must be an independent copy-first apply task with separate Prism review and closeout"
+      - "Future delete-last, raw evidence cleanup, formal publish and Layer A product decisions remain behind human hard gates"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json"
+      - "compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.py"
+      - "compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh"
+      - "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md"
+      - "prism/reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md"
+      - "prism/runs/20260523-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset/claude-code-review.txt"
+      - "prism/runs/20260523-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset/kimi-review.txt"
+    archived: false
   - id: "20260523-r1-contract-mirror-apply-preflight-subset"
     mode: preflight-review
     date: "2026-05-23"

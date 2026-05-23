@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-28",
-    "summary": "P4-28 待推进：P4-27 已完成小范围 public/internal contract apply preflight；下一步仍只做路线选择，不得自动升级为物理迁移、删除旧锚点、清理 raw evidence、关闭 release blocker、进入正式发布或裁决 Layer A 产品边界。"
+    "item_id": "P4-29",
+    "summary": "P4-29 待推进：P4-28 已选择下一安全切片为 7 个 public/internal contract 文件的 bounded copy-first apply；下一步若执行，只能复制到 contracts/** 并保留旧 references/** 锚点，不得删除、发布、清理 raw evidence、关闭 release blocker 或裁决 Layer A 产品边界。"
   },
   "glossary": [
     {
@@ -864,13 +864,27 @@
     {
       "id": "P4-28",
       "title": "R1 next safe slice after contract-mirror apply preflight subset",
-      "status": "pending",
+      "status": "done",
       "priority": "P0",
       "phase_id": "phase-32-release-readiness-next-safe-slice-after-contract-mirror-apply-preflight-subset",
-      "summary": "P4-28 待推进：在 P4-27 小范围 apply 预检后，重新选择下一条安全切片；本项只能做路线裁决，不得实施物理迁移、删除旧锚点、清理 raw evidence、关闭 release blocker、进入正式发布或裁决 Layer A 产品边界。",
+      "summary": "P4-28 已完成：Claude Code 与 Kimi 共识选择 A，即下一步登记 P4-29 为 7 个 public/internal contract 文件的 bounded copy-first apply。P4-28 只做路线裁决，未创建 contracts/**、未删除旧锚点、未清理 raw evidence、未关闭 release blocker，未进入正式发布。",
       "evidence_paths": [
-        "references/r1-contract-mirror-apply-preflight-subset.json",
-        "prism/reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md"
+        "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
+        "compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh",
+        "prism/reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md",
+        "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md"
+      ]
+    },
+    {
+      "id": "P4-29",
+      "title": "R1 contract-mirror bounded copy-first apply for selected public/internal contracts",
+      "status": "pending",
+      "priority": "P0",
+      "phase_id": "phase-33-release-readiness-contract-mirror-bounded-copy-first-apply",
+      "summary": "P4-29 待推进：按 P4-28 路线裁决，后续只允许对 P4-27 选出的 7 个文件执行 copy-first；必须保留旧 references/** 锚点权威，不得删除、移动、替换旧锚点，不得清理 raw evidence，不得修改发布开关或关闭 release blocker。",
+      "evidence_paths": [
+        "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
+        "references/r1-contract-mirror-apply-preflight-subset.json"
       ]
     }
       ]
@@ -1188,11 +1202,20 @@
     {
       "id": "phase-32-release-readiness-next-safe-slice-after-contract-mirror-apply-preflight-subset",
       "title": "阶段 32：发布准备 P4-27 后下一安全切片选择",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-28"
       ],
-      "summary": "P4-27 收口后，下一步只做 release-readiness 后续安全切片路线选择；不得自动升级为物理迁移、删除、发布、raw evidence cleanup 或 Layer A 产品裁决。"
+      "summary": "P4-28 已完成下一安全切片选择：Claude Code 与 Kimi 共识选择 P4-29 bounded copy-first apply；P4-28 未实施 copy、未创建 contracts/**、未关闭 blocker。"
+    },
+    {
+      "id": "phase-33-release-readiness-contract-mirror-bounded-copy-first-apply",
+      "title": "阶段 33：发布准备合同镜像 bounded copy-first apply",
+      "status": "pending",
+      "item_ids": [
+        "P4-29"
+      ],
+      "summary": "后续若执行 P4-29，只能复制 P4-27 选出的 7 个文件到 contracts/public/** 与 contracts/internal/**，并保留旧 references/** 锚点；不得删除、发布、清理 raw evidence、关闭 release blocker 或裁决 Layer A 产品边界。"
     }
   ]
 }

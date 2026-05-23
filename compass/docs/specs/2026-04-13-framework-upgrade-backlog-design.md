@@ -50,8 +50,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/framework-upgrade.json`
 - 人类说明：`compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md`
-- 当前焦点：`P4-28 R1 next safe slice after contract-mirror apply preflight subset`
-- 当前焦点说明：P4-28 待推进：P4-27 已完成小范围 public/internal contract apply preflight；下一步仍只做路线选择，不得自动升级为物理迁移、删除旧锚点、清理 raw evidence、关闭 release blocker、进入正式发布或裁决 Layer A 产品边界。
+- 当前焦点：`P4-29 R1 contract-mirror bounded copy-first apply for selected public/internal contracts`
+- 当前焦点说明：P4-29 待推进：P4-28 已选择下一安全切片为 7 个 public/internal contract 文件的 bounded copy-first apply；下一步若执行，只能复制到 contracts/** 并保留旧 references/** 锚点，不得删除、发布、清理 raw evidence、关闭 release blocker 或裁决 Layer A 产品边界。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -88,7 +88,8 @@
 | 阶段 29：发布准备 internal-control-plane 契约镜像预检 | 已完成 | P4-25 | P4-25 已完成 public/internal contract mirror preflight，未做物理迁移、未删除旧锚点、未关闭 release blocker。 |
 | 阶段 30：发布准备 P4-25 后下一安全切片选择 | 已完成 | P4-26 | P4-26 已完成下一安全切片选择：Claude Code 与 Kimi 共识选择 P4-27 小范围 public/internal contract apply preflight。 |
 | 阶段 31：发布准备小范围合同镜像 apply 预检 | 已完成 | P4-27 | P4-27 已完成小范围 public/internal contract apply preflight；未复制、移动、删除旧锚点，未清理 raw evidence，未关闭 release blocker。 |
-| 阶段 32：发布准备 P4-27 后下一安全切片选择 | 待推进 | P4-28 | P4-27 收口后，下一步只做 release-readiness 后续安全切片路线选择；不得自动升级为物理迁移、删除、发布、raw evidence cleanup 或 Layer A 产品裁决。 |
+| 阶段 32：发布准备 P4-27 后下一安全切片选择 | 已完成 | P4-28 | P4-28 已完成下一安全切片选择：Claude Code 与 Kimi 共识选择 P4-29 bounded copy-first apply；P4-28 未实施 copy、未创建 contracts/**、未关闭 blocker。 |
+| 阶段 33：发布准备合同镜像 bounded copy-first apply | 待推进 | P4-29 | 后续若执行 P4-29，只能复制 P4-27 选出的 7 个文件到 contracts/public/** 与 contracts/internal/**，并保留旧 references/** 锚点；不得删除、发布、清理 raw evidence、关闭 release blocker 或裁决 Layer A 产品边界。 |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -145,7 +146,8 @@
 | P4-25 R1 internal-control-plane public/internal contract mirror preflight | 发布前路线与授权边界 | 已完成 | P0 | P4-25 已完成：按 P4-24 路线裁决，完成 internal-control-plane public/internal contract mirror preflight；本轮只做预检，未物理移动、删除、替换旧锚点，未关闭 release blocker，未进入正式发布。 |
 | P4-26 R1 next safe slice after internal-control-plane contract mirror preflight | 发布前路线与授权边界 | 已完成 | P0 | P4-26 已完成：Claude Code 与 Kimi 共识选择 A，即下一步进入小范围 public/internal contract apply preflight。P4-26 只做路线裁决，未实施 P4-27，未关闭 release blocker，未触碰发布、raw evidence cleanup 或 Layer A 产品裁决。 |
 | P4-27 R1 contract-mirror apply preflight for small public/internal subset | 发布前路线与授权边界 | 已完成 | P0 | P4-27 已完成：按 P4-26 路线裁决，完成 7 条 public/internal contract 小范围 apply preflight；本轮只做预检，未复制、移动、删除、替换旧锚点，未清理 raw evidence，未关闭 release blocker，未进入正式发布。 |
-| P4-28 R1 next safe slice after contract-mirror apply preflight subset | 发布前路线与授权边界 | 待推进 | P0 | P4-28 待推进：在 P4-27 小范围 apply 预检后，重新选择下一条安全切片；本项只能做路线裁决，不得实施物理迁移、删除旧锚点、清理 raw evidence、关闭 release blocker、进入正式发布或裁决 Layer A 产品边界。 |
+| P4-28 R1 next safe slice after contract-mirror apply preflight subset | 发布前路线与授权边界 | 已完成 | P0 | P4-28 已完成：Claude Code 与 Kimi 共识选择 A，即下一步登记 P4-29 为 7 个 public/internal contract 文件的 bounded copy-first apply。P4-28 只做路线裁决，未创建 contracts/**、未删除旧锚点、未清理 raw evidence、未关闭 release blocker，未进入正式发布。 |
+| P4-29 R1 contract-mirror bounded copy-first apply for selected public/internal contracts | 发布前路线与授权边界 | 待推进 | P0 | P4-29 待推进：按 P4-28 路线裁决，后续只允许对 P4-27 选出的 7 个文件执行 copy-first；必须保留旧 references/** 锚点权威，不得删除、移动、替换旧锚点，不得清理 raw evidence，不得修改发布开关或关闭 release blocker。 |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -156,6 +158,7 @@
 | mirror-only（只读镜像面） | 宿主 plan.md / workboard 只能展示 RedCap 当前指针和状态，不能反向改写真相源。 |
 | spec（设计说明文档） | 负责给人看清设计意图、边界和证据，不负责替代脚本或 gate 成为运行时权威。 |
 <!-- redcap:backlog-generated:end -->
+
 
 
 

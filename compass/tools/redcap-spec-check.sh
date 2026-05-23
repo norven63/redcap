@@ -1064,6 +1064,18 @@ if [[ -f "$REDCAP_ROOT/references/r1-contract-mirror-apply-preflight-subset.json
     fi
 fi
 
+R1_NEXT_SAFE_SLICE_AFTER_CONTRACT_MIRROR_APPLY_PREFLIGHT_SUBSET_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh"
+if [[ -f "$REDCAP_ROOT/references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json" ]]; then
+    if [[ ! -f "$R1_NEXT_SAFE_SLICE_AFTER_CONTRACT_MIRROR_APPLY_PREFLIGHT_SUBSET_CHECK" ]]; then
+        echo "[redcap-spec-check] R1 next safe slice after contract mirror apply preflight subset check missing" >&2
+        exit 1
+    fi
+    if ! bash "$R1_NEXT_SAFE_SLICE_AFTER_CONTRACT_MIRROR_APPLY_PREFLIGHT_SUBSET_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] R1 next safe slice after contract mirror apply preflight subset check failed" >&2
+        exit 1
+    fi
+fi
+
 R1_LAYERA_PRODUCT_BOUNDARY_CHECK="$REDCAP_ROOT/compass/tools/redcap-r1-layera-product-boundary-check.sh"
 if [[ ! -f "$R1_LAYERA_PRODUCT_BOUNDARY_CHECK" ]]; then
     echo "[redcap-spec-check] R1 Layer A product boundary check missing" >&2
