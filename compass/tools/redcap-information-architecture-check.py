@@ -65,10 +65,31 @@ def parse_task_metadata(task_file: Path) -> dict[str, str]:
     return metadata
 
 
-def file_count(path: Path) -> int:
+def active_task_report_path(root: Path) -> Path | None:
+    meta = parse_task_metadata(root / ".dev-task.md")
+    report = meta.get("task_report", "")
+    if not report or report.startswith("/") or ".." in Path(report).parts:
+        return None
+    return (root / report).resolve(strict=False)
+
+
+def is_active_task_report_file(root: Path, item: Path) -> bool:
+    active = active_task_report_path(root)
+    if active is None:
+        return False
+    return item.resolve(strict=False) == active
+
+
+def file_count(root: Path, path: Path) -> int:
     if not path.exists():
         return 0
-    return sum(1 for item in path.iterdir() if item.is_file() and not is_acceptance_tmp_file(item))
+    return sum(
+        1
+        for item in path.iterdir()
+        if item.is_file()
+        and not is_acceptance_tmp_file(item)
+        and not is_active_task_report_file(root, item)
+    )
 
 
 def is_acceptance_tmp_file(item: Path) -> bool:
@@ -116,7 +137,7 @@ def validate_policy(policy: dict[str, Any], root: Path) -> None:
             max_files = item.get("max_files")
             if not isinstance(max_files, int) or max_files <= 0:
                 fail("current-task-reports must declare positive max_files")
-            actual = file_count(resolve(root, path))
+            actual = file_count(root, resolve(root, path))
             if actual > max_files:
                 fail(
                     "current task report inbox too large: "

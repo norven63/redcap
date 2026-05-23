@@ -466,6 +466,27 @@
       "check": "bash compass/tools/redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-check.sh"
     },
     {
+      "path": "references/r1-contract-mirror-apply-preflight-subset.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-27 small public/internal contract mirror apply preflight subset; records future copy-first targets, rollback conditions and no-apply boundary without copying, moving or deleting files",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for P4-27 contract mirror apply preflight subset validation",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates that P4-27 remains preflight-only, selected targets do not exist yet, release blockers stay open, and Prism review confirms no human hard gate was crossed",
+      "owner": "Release architecture + Control plane",
+      "check": "bash compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh"
+    },
+    {
       "path": "references/r1-prism-evidence-retention-apply-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 prism-layer-and-evidence copy-first / alias-first apply preflight with no-cleanup and still-blocking release boundary",

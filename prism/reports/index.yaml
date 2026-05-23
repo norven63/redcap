@@ -1,4 +1,28 @@
 reports:
+  - id: "20260523-r1-contract-mirror-apply-preflight-subset"
+    mode: preflight-review
+    date: "2026-05-23"
+    topic: "P4-27 small public/internal contract mirror apply preflight subset"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-pass-no-human-hard-gate-crossed"
+    consensus_actions:
+      - "Complete P4-27 as preflight-only evidence for a 7-entry public/internal contract subset"
+      - "Keep old references anchors authoritative"
+      - "Keep release blockers, Prism raw evidence, release switches, credentials and Layer A product boundary untouched"
+    open_questions:
+      - "P4-28 must remain route-selection-only unless a later explicit task authorizes another safe preflight"
+      - "Future physical apply still needs a separate copy-first apply task and compatibility proof"
+    lessons_updated: false
+    files_affected:
+      - "references/r1-contract-mirror-apply-preflight-subset.json"
+      - "compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.py"
+      - "compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh"
+      - "compass/docs/task-reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md"
+      - "prism/reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md"
+      - "prism/runs/20260523-r1-contract-mirror-apply-preflight-subset/claude-code-review.txt"
+      - "prism/runs/20260523-r1-contract-mirror-apply-preflight-subset/kimi-review.txt"
+    archived: false
   - id: "20260523-r1-next-safe-slice-after-control-plane-contract-mirror-preflight"
     mode: route-selection
     date: "2026-05-23"

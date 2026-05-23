@@ -21,8 +21,8 @@
     "generated_block_end": "<!-- redcap:backlog-generated:end -->"
   },
   "current_focus": {
-    "item_id": "P4-27",
-    "summary": "P4-27 待推进：P4-26 已选择小范围 public/internal contract apply preflight 作为下一条安全切片；下一步仍只做预检，不得实施物理迁移、删除旧锚点、清理 raw evidence、关闭 release blocker 或进入正式发布。"
+    "item_id": "P4-28",
+    "summary": "P4-28 待推进：P4-27 已完成小范围 public/internal contract apply preflight；下一步仍只做路线选择，不得自动升级为物理迁移、删除旧锚点、清理 raw evidence、关闭 release blocker、进入正式发布或裁决 Layer A 产品边界。"
   },
   "glossary": [
     {
@@ -847,18 +847,32 @@
             "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-control-plane-contract-mirror-preflight.md"
           ]
         },
-        {
-          "id": "P4-27",
-          "title": "R1 contract-mirror apply preflight for small public/internal subset",
-          "status": "pending",
-          "priority": "P0",
-          "phase_id": "phase-31-release-readiness-contract-mirror-apply-preflight-subset",
-          "summary": "P4-27 待推进：按 P4-26 路线裁决，只做小范围 public/internal contract apply preflight；不得实施物理迁移、删除旧锚点、清理 raw evidence、关闭 release blocker 或进入正式发布。",
-          "evidence_paths": [
-            "references/r1-next-safe-slice-after-control-plane-contract-mirror-preflight.json",
-            "references/r1-control-plane-public-internal-contract-mirror-preflight.json"
-          ]
-        }
+    {
+      "id": "P4-27",
+      "title": "R1 contract-mirror apply preflight for small public/internal subset",
+      "status": "done",
+      "priority": "P0",
+      "phase_id": "phase-31-release-readiness-contract-mirror-apply-preflight-subset",
+      "summary": "P4-27 已完成：按 P4-26 路线裁决，完成 7 条 public/internal contract 小范围 apply preflight；本轮只做预检，未复制、移动、删除、替换旧锚点，未清理 raw evidence，未关闭 release blocker，未进入正式发布。",
+      "evidence_paths": [
+        "references/r1-contract-mirror-apply-preflight-subset.json",
+        "compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh",
+        "prism/reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md",
+        "compass/docs/task-reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md"
+      ]
+    },
+    {
+      "id": "P4-28",
+      "title": "R1 next safe slice after contract-mirror apply preflight subset",
+      "status": "pending",
+      "priority": "P0",
+      "phase_id": "phase-32-release-readiness-next-safe-slice-after-contract-mirror-apply-preflight-subset",
+      "summary": "P4-28 待推进：在 P4-27 小范围 apply 预检后，重新选择下一条安全切片；本项只能做路线裁决，不得实施物理迁移、删除旧锚点、清理 raw evidence、关闭 release blocker、进入正式发布或裁决 Layer A 产品边界。",
+      "evidence_paths": [
+        "references/r1-contract-mirror-apply-preflight-subset.json",
+        "prism/reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md"
+      ]
+    }
       ]
     }
   ],
@@ -1165,11 +1179,20 @@
     {
       "id": "phase-31-release-readiness-contract-mirror-apply-preflight-subset",
       "title": "阶段 31：发布准备小范围合同镜像 apply 预检",
-      "status": "pending",
+      "status": "done",
       "item_ids": [
         "P4-27"
       ],
-      "summary": "只做小范围 public/internal contract apply preflight，不直接进入物理迁移、删除、发布或 Layer A 产品裁决。"
+      "summary": "P4-27 已完成小范围 public/internal contract apply preflight；未复制、移动、删除旧锚点，未清理 raw evidence，未关闭 release blocker。"
+    },
+    {
+      "id": "phase-32-release-readiness-next-safe-slice-after-contract-mirror-apply-preflight-subset",
+      "title": "阶段 32：发布准备 P4-27 后下一安全切片选择",
+      "status": "pending",
+      "item_ids": [
+        "P4-28"
+      ],
+      "summary": "P4-27 收口后，下一步只做 release-readiness 后续安全切片路线选择；不得自动升级为物理迁移、删除、发布、raw evidence cleanup 或 Layer A 产品裁决。"
     }
   ]
 }

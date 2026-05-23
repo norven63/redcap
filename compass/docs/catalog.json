@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 27,
-    "size_bytes": 321850,
-    "lines": 6635,
-    "chars": 192996,
+    "file_count": 28,
+    "size_bytes": 333202,
+    "lines": 6862,
+    "chars": 199710,
     "rough_token_pressure": {
-      "low": 48249,
-      "high": 96498
+      "low": 49927,
+      "high": 99855
     },
     "collections": {
       "archive": {
@@ -41,22 +41,22 @@
       },
       "specs": {
         "file_count": 13,
-        "size_bytes": 207309,
-        "lines": 4596,
-        "chars": 124287,
+        "size_bytes": 208055,
+        "lines": 4599,
+        "chars": 124711,
         "rough_token_pressure": {
-          "low": 31071,
-          "high": 62143
+          "low": 31177,
+          "high": 62355
         }
       },
       "task-reports": {
-        "file_count": 12,
-        "size_bytes": 109011,
-        "lines": 1950,
-        "chars": 64935,
+        "file_count": 13,
+        "size_bytes": 119617,
+        "lines": 2174,
+        "chars": 71225,
         "rough_token_pressure": {
-          "low": 16233,
-          "high": 32467
+          "low": 17806,
+          "high": 35612
         }
       }
     },
@@ -69,8 +69,8 @@
       },
       {
         "path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md",
-        "chars": 18222,
-        "lines": 251,
+        "chars": 18646,
+        "lines": 254,
         "read_policy": "read-registry-summary-first"
       },
       {
@@ -197,9 +197,9 @@
       "role": "human-guide",
       "status": "active",
       "read_policy": "read-registry-summary-first",
-      "size_bytes": 30834,
-      "lines": 251,
-      "chars": 18222,
+      "size_bytes": 31580,
+      "lines": 254,
+      "chars": 18646,
       "summary": "给 Norven 解释长期路线；真实状态由机器可读 backlog 权威提供。",
       "runtime_authority": false,
       "paired_control_paths": [
@@ -454,6 +454,19 @@
       "lines": 229,
       "chars": 8791,
       "summary": "当前已完成：冻结的 55 份 Prism 报告已经复制到私有归档区，旧报告位置仍保留，发布和证据边界没有越界。 / 详情：本轮解决的是“可以先复制归档，但不能误删旧锚点、不能吸收新报告、不能冒充已发布就绪”的问题。现在 `private-archive/prism-reports` 有 55 份副本和一个索引，`prism/reports` 仍保留旧锚点，新产生的 P4-16 Prism 报告被登记为 post-freeze，不进入这批冻结归档。包面检查继续排除私有归档、旧报告和 raw run evidence。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：P4-27 小范围合同镜像 apply 预检",
+      "role": "closure-evidence",
+      "status": "cold-candidate",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 10606,
+      "lines": 224,
+      "chars": 6290,
+      "summary": "当前已完成：P4-27 已把 7 条 public/internal contract 候选整理成“未来 apply 前的安全预检”，并通过 Claude Code 与 Kimi 独立评审。 / 详情：这次没有实施迁移，也没有复制、移动、删除旧文件。它解决的是“如果后面要把合同类资产镜像到更清晰的位置，第一小组应该选哪些、未来要满足哪些条件、出问题怎么回滚、哪些动作必须立刻停下”。这样后续不会把“计划/预检”误报成“已经迁移完成”。",
       "status_basis": "filename_recency_only"
     },
     {
