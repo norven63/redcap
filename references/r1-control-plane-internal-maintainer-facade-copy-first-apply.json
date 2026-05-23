@@ -5,7 +5,7 @@
   "purpose": "Create a small non-destructive internal-control-plane maintainer facade batch while keeping compass/tools as the authoritative implementation and all release blockers open.",
   "source_truth": {
     "route_path": "references/r1-next-safe-slice-after-old-anchor-preflight.json",
-    "route_sha256": "1722523e1e8167c59d87e22f36e4352f620cdf9fa424999eacffb68a4190d44f",
+    "route_sha256": "e99efc27524adc4ceb288af782ea371ecb2deffbe098abc42fcc16ceb64e023e",
     "physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
     "physical_preflight_sha256": "b6e736bc0ffab4bb7e888a9bec791a062c44826050e49152db8aa60a9e4169de",
     "contract_split_path": "references/r1-control-plane-contract-split-preflight.json",

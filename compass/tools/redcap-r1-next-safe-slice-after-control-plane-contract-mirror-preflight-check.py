@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# 用途：正式发布 R1 第二批 facade 后下一安全切片路线裁决验收；详细职责见文件查阅字典。
+# 用途：校验 P4-26 在 P4-25 合同镜像预检后只做下一安全切片路线选择；详细职责见文件查阅字典。
 # Dictionary: references/file-lookup-dictionary.md#package-publish-safety
 
 from __future__ import annotations
@@ -12,13 +12,13 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_MANIFEST = ROOT / "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-2.json"
-P4_23_MANIFEST = ROOT / "references/r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.json"
+DEFAULT_MANIFEST = ROOT / "references/r1-next-safe-slice-after-control-plane-contract-mirror-preflight.json"
+P4_25_MANIFEST = ROOT / "references/r1-control-plane-public-internal-contract-mirror-preflight.json"
 CONTRACT_SPLIT = ROOT / "references/r1-control-plane-contract-split-preflight.json"
 PHYSICAL_PREFLIGHT = ROOT / "references/r1-control-plane-physical-apply-preflight.json"
 BACKLOG = ROOT / "references/backlogs/framework-upgrade.json"
-PRISM_REPORT = ROOT / "prism/reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-2.md"
-TASK_REPORT = ROOT / "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-2.md"
+PRISM_REPORT = ROOT / "prism/reports/2026-05-23-r1-next-safe-slice-after-control-plane-contract-mirror-preflight.md"
+TASK_REPORT = ROOT / "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-control-plane-contract-mirror-preflight.md"
 EXPECTED_STATUS = "selected-next-slice-no-blocker-closed"
 REQUIRED_BLOCKERS = {
     "internal-control-plane",
@@ -28,7 +28,7 @@ REQUIRED_BLOCKERS = {
 
 
 def fail(message: str) -> None:
-    raise SystemExit(f"[redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2-check] {message}")
+    raise SystemExit(f"[redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-check] {message}")
 
 
 def load_json(path: Path, label: str) -> dict[str, Any]:
@@ -72,33 +72,21 @@ def backlog_items(backlog: dict[str, Any]) -> dict[str, dict[str, Any]]:
 def validate_backlog() -> None:
     backlog = load_json(BACKLOG, "framework upgrade backlog")
     items = backlog_items(backlog)
-    if items.get("P4-23", {}).get("status") != "done":
-        fail("P4-23 must be marked done")
-    p4_24_status = items.get("P4-24", {}).get("status")
+    if items.get("P4-25", {}).get("status") != "done":
+        fail("P4-25 must be marked done")
+    p4_26_status = items.get("P4-26", {}).get("status")
     current_focus = backlog.get("current_focus", {}).get("item_id")
-    if p4_24_status == "pending":
-        if current_focus != "P4-24":
-            fail("current_focus.item_id must be P4-24 while P4-24 is pending")
-    elif p4_24_status == "done":
-        if current_focus == "P4-24":
-            fail("current_focus.item_id must advance after P4-24 is done")
-        p4_25_status = items.get("P4-25", {}).get("status")
-        if p4_25_status not in {"pending", "done"}:
-            fail("P4-25 must be registered as pending or done after P4-24 is done")
-        if p4_25_status == "done":
-            if current_focus == "P4-25":
-                fail("current_focus.item_id must advance after P4-25 is done")
-            p4_26_status = items.get("P4-26", {}).get("status")
-            if p4_26_status not in {"pending", "done"}:
-                fail("P4-26 must be registered as pending or done after P4-25 is done")
-            if p4_26_status == "done":
-                if current_focus == "P4-26":
-                    fail("current_focus.item_id must advance after P4-26 is done")
-                p4_27_status = items.get("P4-27", {}).get("status")
-                if p4_27_status not in {"pending", "done"}:
-                    fail("P4-27 must be registered as pending or done after P4-26 is done")
+    if p4_26_status == "pending":
+        if current_focus != "P4-26":
+            fail("current_focus.item_id must be P4-26 while P4-26 is pending")
+    elif p4_26_status == "done":
+        if current_focus == "P4-26":
+            fail("current_focus.item_id must advance after P4-26 is done")
+        p4_27_status = items.get("P4-27", {}).get("status")
+        if p4_27_status not in {"pending", "done"}:
+            fail("P4-27 must be registered as pending or done after P4-26 is done")
     else:
-        fail("P4-24 must be registered as pending or done")
+        fail("P4-26 must be registered as pending or done")
 
 
 def validate_reports() -> None:
@@ -106,13 +94,17 @@ def validate_reports() -> None:
         if not path.is_file():
             fail(f"missing {label}: {path.relative_to(ROOT)}")
         text = path.read_text(encoding="utf-8")
-        if "正式发布" in text and "不是正式发布" not in text and "正式发布前" not in text:
-            fail(f"{label} may imply formal public distribution completion")
+        required_phrases = ["P4-26", "路线", "不实施", "P4-27"]
+        for phrase in required_phrases:
+            if phrase not in text:
+                fail(f"{label} missing required phrase: {phrase}")
+        if "已可发布" in text or "release blocker 已关闭" in text:
+            fail(f"{label} may overclaim release readiness or blocker closure")
 
 
 def validate(manifest: dict[str, Any]) -> dict[str, Any]:
-    if manifest.get("decision_id") != "redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2":
-        fail("decision_id must match P4-24")
+    if manifest.get("decision_id") != "redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight":
+        fail("decision_id must match P4-26")
     if manifest.get("status") != EXPECTED_STATUS:
         fail(f"status must be {EXPECTED_STATUS}")
 
@@ -120,7 +112,7 @@ def validate(manifest: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(source_truth, dict):
         fail("source_truth must be an object")
     expected_truth = {
-        "p4_23_manifest_path": ("references/r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.json", sha256(P4_23_MANIFEST)),
+        "p4_25_manifest_path": ("references/r1-control-plane-public-internal-contract-mirror-preflight.json", sha256(P4_25_MANIFEST)),
         "control_plane_contract_split_path": ("references/r1-control-plane-contract-split-preflight.json", sha256(CONTRACT_SPLIT)),
         "control_plane_physical_preflight_path": ("references/r1-control-plane-physical-apply-preflight.json", sha256(PHYSICAL_PREFLIGHT)),
     }
@@ -131,31 +123,43 @@ def validate(manifest: dict[str, Any]) -> dict[str, Any]:
         if source_truth.get(hash_key) != expected_hash:
             fail(f"source_truth.{hash_key} is stale")
 
-    candidates = require_list(manifest.get("candidate_matrix"), "candidate_matrix", min_len=6)
+    p4_25 = load_json(P4_25_MANIFEST, "P4-25 manifest")
+    blockers = set(p4_25.get("result", {}).get("remaining_release_blockers_after_this_preflight", []))
+    if blockers != REQUIRED_BLOCKERS:
+        fail("P4-25 manifest must still keep all release blockers open")
+    require_bool(p4_25.get("claim_boundary", {}).get("physical_split_completed"), False, "P4-25 physical_split_completed")
+    require_bool(p4_25.get("claim_boundary", {}).get("release_blocker_resolved"), False, "P4-25 release_blocker_resolved")
+
+    candidates = require_list(manifest.get("candidate_matrix"), "candidate_matrix", min_len=7)
     by_id = {item.get("id"): item for item in candidates if isinstance(item, dict)}
-    if by_id.get("B", {}).get("selected") is not True:
-        fail("candidate B must be selected")
-    for candidate_id in ["A", "C", "D", "E", "F"]:
+    if by_id.get("A", {}).get("selected") is not True:
+        fail("candidate A must be selected")
+    for candidate_id in ["B", "C", "D", "E", "F", "G"]:
         if by_id.get(candidate_id, {}).get("selected") is not False:
             fail(f"candidate {candidate_id} must not be selected")
-    for candidate_id in ["D", "E", "F"]:
+    for candidate_id in ["D", "E", "F", "G"]:
         require_bool(by_id.get(candidate_id, {}).get("requires_human_decision"), True, f"candidate {candidate_id}.requires_human_decision")
 
     selected = manifest.get("selected_next_slice")
     if not isinstance(selected, dict):
         fail("selected_next_slice must be an object")
-    if selected.get("backlog_item_id") != "P4-25":
-        fail("selected_next_slice.backlog_item_id must be P4-25")
-    if selected.get("selected_candidate") != "B":
-        fail("selected_next_slice.selected_candidate must be B")
+    if selected.get("backlog_item_id") != "P4-27":
+        fail("selected_next_slice.backlog_item_id must be P4-27")
+    if selected.get("selected_candidate") != "A":
+        fail("selected_next_slice.selected_candidate must be A")
 
     review = manifest.get("prism_review")
     if not isinstance(review, dict):
         fail("prism_review must be an object")
-    if review.get("run_id") != "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-2":
-        fail("prism_review.run_id must match P4-24")
-    if review.get("verdict") != "split-decision-cap-adjudicates-B-contract-mirror-preflight":
-        fail("prism_review.verdict must record Cap adjudication")
+    if review.get("run_id") != "20260523-r1-next-safe-slice-after-control-plane-contract-mirror-preflight":
+        fail("prism_review.run_id must match P4-26")
+    if review.get("verdict") != "consensus-selects-A-contract-mirror-apply-preflight-subset":
+        fail("prism_review.verdict must record route A consensus")
+    agents = review.get("agents")
+    if not isinstance(agents, list) or len(agents) < 3:
+        fail("prism_review.agents must record reviewer, challenger and fallback status")
+    if {agent.get("recommendation") for agent in agents if isinstance(agent, dict) and agent.get("status") == "responded"} != {"A"}:
+        fail("responded Prism agents must recommend A")
 
     boundary = manifest.get("claim_boundary")
     if not isinstance(boundary, dict):
@@ -164,11 +168,12 @@ def validate(manifest: dict[str, Any]) -> dict[str, Any]:
         require_bool(boundary.get(key), True, f"claim_boundary.{key}")
     for key in [
         "selected_next_slice_implemented",
+        "contract_mirror_apply_preflight_completed",
+        "physical_apply_completed",
         "release_blocker_closed",
         "internal_control_plane_closed",
         "prism_layer_and_evidence_closed",
-        "old_report_anchor_alias_gateway_implemented",
-        "old_report_anchors_removed_or_replaced",
+        "old_anchors_removed_or_replaced",
         "raw_run_evidence_deleted_or_cleaned",
         "layer_a_product_decision_made",
         "release_switch_changed",
@@ -181,26 +186,25 @@ def validate(manifest: dict[str, Any]) -> dict[str, Any]:
         fail("result must be an object")
     if result.get("release_blocker_status") != "still-blocking-after-route-selection":
         fail("result.release_blocker_status must remain still-blocking-after-route-selection")
-    if result.get("selected_next_backlog_item") != "P4-25":
-        fail("result.selected_next_backlog_item must be P4-25")
+    if result.get("selected_next_backlog_item") != "P4-27":
+        fail("result.selected_next_backlog_item must be P4-27")
     require_bool(result.get("selected_next_slice_implemented"), False, "result.selected_next_slice_implemented")
     require_bool(result.get("public_release_ready"), False, "result.public_release_ready")
-    remaining = set(load_json(P4_23_MANIFEST, "P4-23 manifest").get("result", {}).get("remaining_release_blockers_after_this_apply", []))
-    if remaining != REQUIRED_BLOCKERS:
-        fail("P4-23 manifest must still keep all release blockers open")
+    if set(result.get("remaining_release_blockers_after_this_route_selection", [])) != REQUIRED_BLOCKERS:
+        fail("result.remaining_release_blockers_after_this_route_selection must keep all release blockers open")
 
     validate_backlog()
     validate_reports()
-    return {"selected": "B", "next": "P4-25"}
+    return {"selected": "A", "next": "P4-27"}
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate P4-24 next safe slice after internal maintainer facade batch-2.")
+    parser = argparse.ArgumentParser(description="Validate P4-26 next safe slice after control-plane contract mirror preflight.")
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     args = parser.parse_args()
-    summary = validate(load_json(Path(args.manifest), "P4-24 route-selection manifest"))
+    summary = validate(load_json(Path(args.manifest), "P4-26 route-selection manifest"))
     print(
-        "R1_NEXT_SAFE_SLICE_AFTER_INTERNAL_MAINTAINER_FACADE_BATCH_2_OK "
+        "R1_NEXT_SAFE_SLICE_AFTER_CONTROL_PLANE_CONTRACT_MIRROR_PREFLIGHT_OK "
         f"selected={summary['selected']} next={summary['next']} release_blocker_status=still-blocking"
     )
     return 0

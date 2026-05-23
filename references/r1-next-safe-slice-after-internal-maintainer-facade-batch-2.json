@@ -10,7 +10,7 @@
   },
   "source_truth": {
     "p4_23_manifest_path": "references/r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.json",
-    "p4_23_manifest_sha256": "ee55240b1acdb336333e9b034c4e57bb691fb51f8690b82ea4721794e008062e",
+    "p4_23_manifest_sha256": "4b82daafc639976a8825847bbe3c038bb8eeed00fbd441be9667cb32ed0f5808",
     "control_plane_contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
     "control_plane_contract_split_sha256": "dc71050d9ab9872b9c9145bb76213a919b5f22fe3e0fa27634d4dd9704ee405d",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",

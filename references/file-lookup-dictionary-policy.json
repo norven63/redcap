@@ -445,6 +445,27 @@
       "check": "bash compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh"
     },
     {
+      "path": "references/r1-next-safe-slice-after-control-plane-contract-mirror-preflight.json",
+      "section": "Package Publish Safety",
+      "meaning": "P4-26 next safe slice route decision after the control-plane contract mirror preflight; selects P4-27 small contract-mirror apply preflight while keeping release blockers open",
+      "owner": "Release architecture + route governance",
+      "check": "bash compass/tools/redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-check.sh",
+      "section": "Package Publish Safety",
+      "meaning": "shell entry for P4-26 next safe slice route decision validation",
+      "owner": "Release architecture + route governance",
+      "check": "bash compass/tools/redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-check.py",
+      "section": "Package Publish Safety",
+      "meaning": "validates that P4-26 only selects the next route and does not implement P4-27, clean evidence, change release switches or close blockers",
+      "owner": "Release architecture + route governance",
+      "check": "bash compass/tools/redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-check.sh"
+    },
+    {
       "path": "references/r1-prism-evidence-retention-apply-preflight.json",
       "section": "Package Publish Safety",
       "meaning": "machine-readable R1 prism-layer-and-evidence copy-first / alias-first apply preflight with no-cleanup and still-blocking release boundary",
