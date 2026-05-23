@@ -192,7 +192,7 @@ P4-29 的核心风险不是复制本身，而是“把复制副本误说成迁�
 
 | 候选 | 来源 | 处理结果 | 证据 |
 |---|---|---|---|
-| preflight-successor-bridge | P4-29 实施回归 | promote-candidate | `compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.py` |
+| preflight-successor-bridge | P4-29 实施回归 | deferred-with-owner owner=RedCap-Forge trigger=next-evolution-harvest-cycle | `compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.py` |
 
 ---
 

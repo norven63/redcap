@@ -69,6 +69,7 @@
       "target_parent": "internal-control-plane",
       "current_roots": [
         "compass",
+        "contracts",
         "references"
       ],
       "future_shape": [
