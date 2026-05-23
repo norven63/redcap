@@ -227,6 +227,7 @@ def validate_policy(policy: dict[str, Any]) -> None:
         "secondary_evidence_rule",
         "internal_terms",
         "primary_surface_forbidden_terms",
+        "chat_summary_forbidden_terms",
         "required_cli_phrases",
         "checker",
     ]
@@ -240,6 +241,12 @@ def validate_policy(policy: dict[str, Any]) -> None:
         fail("policy checker path mismatch")
     if "new human-facing CLI command" not in str(policy.get("new_surface_update_rule", "")):
         fail("policy must define the update rule for newly added human-facing surfaces")
+    surfaces = policy.get("primary_human_surfaces")
+    if not isinstance(surfaces, list) or "assistant chat reply" not in surfaces or "bin/redcap summary" not in surfaces:
+        fail("policy must cover assistant chat reply and bin/redcap summary surfaces")
+    chat_forbidden = policy.get("chat_summary_forbidden_terms")
+    if not isinstance(chat_forbidden, list) or "门禁" not in chat_forbidden or "receipt" not in chat_forbidden:
+        fail("policy must define stricter forbidden terms for chat summaries")
 
 
 def validate_cli_surfaces(policy: dict[str, Any]) -> None:
@@ -266,6 +273,12 @@ def validate_cli_surfaces(policy: dict[str, Any]) -> None:
         first_screen = before_marker(status.stdout, "## 当前任务锚点")
         require_phrases(first_screen, phrases["status_first_screen"], "redcap status first-screen")
         forbid_terms(first_screen, forbidden, "redcap status first-screen")
+
+        summary = run([str(CLI), "summary", "--workspace", str(workspace), "--task-file", str(task)], cwd=workspace)
+        if summary.returncode != 0:
+            fail("redcap summary fixture failed:\n" + summary.stdout[:2000])
+        require_phrases(summary.stdout, phrases["chat_summary"], "redcap summary")
+        forbid_terms(summary.stdout, list(policy["chat_summary_forbidden_terms"]), "redcap summary")
 
         diagnose_output = run_partial(
             [str(CLI), "diagnose", "--workspace", str(workspace), "--task-file", str(task)],

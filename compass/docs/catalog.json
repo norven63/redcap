@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 27,
-    "size_bytes": 321866,
-    "lines": 6702,
-    "chars": 193086,
+    "file_count": 28,
+    "size_bytes": 329984,
+    "lines": 6909,
+    "chars": 197410,
     "rough_token_pressure": {
-      "low": 48271,
-      "high": 96543
+      "low": 49352,
+      "high": 98705
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 12,
-        "size_bytes": 107206,
-        "lines": 2008,
-        "chars": 63804,
+        "file_count": 13,
+        "size_bytes": 115324,
+        "lines": 2215,
+        "chars": 68128,
         "rough_token_pressure": {
-          "low": 15951,
-          "high": 31902
+          "low": 17032,
+          "high": 34064
         }
       }
     },
@@ -415,6 +415,19 @@
       "lines": 229,
       "chars": 8791,
       "summary": "当前已完成：冻结的 55 份 Prism 报告已经复制到私有归档区，旧报告位置仍保留，发布和证据边界没有越界。 / 详情：本轮解决的是“可以先复制归档，但不能误删旧锚点、不能吸收新报告、不能冒充已发布就绪”的问题。现在 `private-archive/prism-reports` 有 55 份副本和一个索引，`prism/reports` 仍保留旧锚点，新产生的 P4-16 Prism 报告被登记为 post-freeze，不进入这批冻结归档。包面检查继续排除私有归档、旧报告和 raw run evidence。",
+      "status_basis": "filename_recency_only"
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-23-human-chat-summary-surface-hardening.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：人类可读汇报出口加固",
+      "role": "closure-evidence",
+      "status": "cold-candidate",
+      "read_policy": "read-catalog-summary-by-default",
+      "size_bytes": 8118,
+      "lines": 207,
+      "chars": 4324,
+      "summary": "当前已完成：聊天汇报不再只靠口头约定；RedCap 现在有一个可直接调用的 `redcap summary` 摘要出口，并且这个出口已经纳入自动检查。 / 上一步完成的是：在飞书和 CLI 首屏已经做过人类可读优化后，本轮补上了“聊天回复本身”这个遗漏出口，避免我在对你汇报时继续把内部工作流术语当作正文主线。",
       "status_basis": "filename_recency_only"
     },
     {

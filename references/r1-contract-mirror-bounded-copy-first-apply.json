@@ -21,6 +21,13 @@
       "preflight_source_sha256": "57e41b906bc8de09aa96d1fb1a20c183483c83565a779fb69bb7db40c2a54e72",
       "current_source_sha256": "79d51f410c8eee334a07c8158a735da32fe861c099ea9c94b98823403b2de0d7",
       "reason": "P4-29 added package-surface exclusions for this task's checker and manifest before mirroring the current authoritative old anchor."
+    },
+    {
+      "source": "references/public-package-surface-policy.json",
+      "target": "contracts/public/public-package-surface-policy.json",
+      "preflight_source_sha256": "374f3fc69434db6ac5cbb569ce8bb895610ef02e09f4442d91272811b595583d",
+      "current_source_sha256": "3480a95731aae01600141880fa982a5d4052b7aeda0c148d1bdc0a036d0eca7f",
+      "reason": "P4-29 package-surface exclusion/count policy was updated for this task's new summary runtime scripts before mirroring the current authoritative old anchor."
     }
   ],
   "copy_policy": {
@@ -65,8 +72,8 @@
       "source": "references/public-package-surface-policy.json",
       "target": "contracts/public/public-package-surface-policy.json",
       "target_layer": "public-contract",
-      "source_sha256": "374f3fc69434db6ac5cbb569ce8bb895610ef02e09f4442d91272811b595583d",
-      "target_sha256": "374f3fc69434db6ac5cbb569ce8bb895610ef02e09f4442d91272811b595583d",
+      "source_sha256": "3480a95731aae01600141880fa982a5d4052b7aeda0c148d1bdc0a036d0eca7f",
+      "target_sha256": "3480a95731aae01600141880fa982a5d4052b7aeda0c148d1bdc0a036d0eca7f",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"

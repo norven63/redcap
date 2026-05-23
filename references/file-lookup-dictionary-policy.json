@@ -1237,6 +1237,20 @@
       "check": "bash compass/tools/redcap-human-product-surface-check.sh"
     },
     {
+      "path": "compass/tools/redcap-human-chat-summary.sh",
+      "section": "Runtime And Closeout",
+      "meaning": "shell entry for chat-ready human task panorama summaries",
+      "owner": "Human communication governance",
+      "check": "bash compass/tools/redcap-human-product-surface-check.sh"
+    },
+    {
+      "path": "compass/tools/redcap-human-chat-summary.py",
+      "section": "Runtime And Closeout",
+      "meaning": "renders the assistant/live-chat summary from existing progress sources without using internal workflow terms as the main narrative",
+      "owner": "Human communication governance",
+      "check": "bash compass/tools/redcap-human-product-surface-check.sh"
+    },
+    {
       "path": "compass/tools/redcap-status-report-format.sh",
       "section": "Runtime And Closeout",
       "meaning": "shell entry for rendering compact human-facing RedCap status checkpoints",

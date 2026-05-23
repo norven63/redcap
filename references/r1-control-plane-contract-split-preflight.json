@@ -60,12 +60,12 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 304,
-    "control_plane_candidate_count": 225,
-    "compass": 158,
+    "candidate_count": 306,
+    "control_plane_candidate_count": 227,
+    "compass": 160,
     "references": 67,
-    "compass_tools_shell": 94,
-    "compass_tools_python": 64,
+    "compass_tools_shell": 95,
+    "compass_tools_python": 65,
     "references_json": 64,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
@@ -261,12 +261,12 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 304,
-      "control_plane_candidate_count": 225,
-      "compass": 158,
+      "candidate_count": 306,
+      "control_plane_candidate_count": 227,
+      "compass": 160,
       "references": 67,
-      "compass_tools_shell": 94,
-      "compass_tools_python": 64,
+      "compass_tools_shell": 95,
+      "compass_tools_python": 65,
       "references_json": 64,
       "references_markdown": 3,
       "source": "redcap-runtime-package-manifest.sh --output <temp>"
@@ -299,11 +299,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 225,
+      "total_entries": 227,
       "by_target_layer": {
         "human-handoff": 1,
         "internal-contract": 55,
-        "internal-control-plane": 111,
+        "internal-control-plane": 113,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -635,6 +635,20 @@
         "source": "compass/tools/redcap-host-hook-readiness.sh",
         "target_layer": "runtime-public-support",
         "target_path": "runtime/redcap-core/tools/redcap-host-hook-readiness.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-human-chat-summary.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-human-chat-summary.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-human-chat-summary.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-human-chat-summary.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

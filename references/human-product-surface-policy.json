@@ -6,9 +6,11 @@
   "primary_human_surfaces": [
     "bin/redcap help",
     "bin/redcap doctor",
+    "bin/redcap summary",
     "bin/redcap status first-screen",
     "bin/redcap diagnose introduction",
-    "Feishu node-report"
+    "Feishu node-report",
+    "assistant chat reply"
   ],
   "required_primary_story_fields": [
     "what_is_done",
@@ -83,6 +85,25 @@
     "Findings:",
     "Next step:"
   ],
+  "chat_summary_forbidden_terms": [
+    "Layer B",
+    "FSM",
+    "Prism",
+    "closeout",
+    "receipt",
+    "pending",
+    "active_slice",
+    "confirmed_hash",
+    "validator",
+    "spec-check",
+    "backlog",
+    "门禁",
+    "硬门",
+    "工作切片",
+    "需求指纹",
+    "收尾红线",
+    "收口"
+  ],
   "required_cli_phrases": {
     "help": [
       "普通使用命令",
@@ -106,6 +127,13 @@
       "上一步完成的是",
       "下一步计划做的是",
       "整体计划脉络图与当前位置"
+    ],
+    "chat_summary": [
+      "这次完成了什么",
+      "带来的效果",
+      "当前任务全景",
+      "接下来做什么",
+      "需要你做什么"
     ],
     "feishu": [
       "这次完成了什么",

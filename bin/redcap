@@ -268,6 +268,7 @@ usage() {
 
 普通使用命令：
   revive                 初始化或复活当前工作区。
+  summary                生成适合直接发给人的任务全景摘要。
   status                 查看当前任务状态、全景位置和下一步。
   diagnose               做深入体检，适合发布前、自查或排障。
   doctor                 做短体检，快速判断现在能否继续。
@@ -337,6 +338,11 @@ case "$COMMAND" in
       exec bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
     fi
     exec bash "$REDCAP_ROOT/compass/tools/redcap-current-status.sh" "$REDCAP_CMD_TASK_FILE"
+    ;;
+  summary)
+    resolve_workspace_task_args "$@"
+    emit_trace "summary" "$REDCAP_ROOT/compass/tools/redcap-human-chat-summary.sh"
+    exec bash "$REDCAP_ROOT/compass/tools/redcap-human-chat-summary.sh" --task-file "$REDCAP_CMD_TASK_FILE"
     ;;
   diagnose)
     resolve_workspace_task_args "$@"

@@ -31,6 +31,7 @@ REQUIRED_HUMAN_FIELDS = {
     "整体任务全景图",
     "当前位置",
     "当前已完成",
+    "带来的效果",
     "下一步计划做的是",
     "需要人工介入",
 }
@@ -161,10 +162,8 @@ def validate_output() -> None:
     if missing_human:
         fail("progress meter human fields missing: " + ", ".join(missing_human))
     current_position = str(human.get("当前位置", ""))
-    if "门禁层级" not in current_position:
-        fail("progress meter human current position must expose gate tier")
-    if "门禁层级：未声明" in current_position:
-        fail("progress meter human current position must not expose an undeclared gate tier")
+    if "门禁" in current_position or "gate_tier" in current_position:
+        fail("progress meter human current position must not expose internal gate wording")
     current_bucket = next((row for row in payload.get("buckets", []) if row.get("id") == "current_focused_task_set"), {})
     task = current_bucket.get("task") if isinstance(current_bucket, dict) else {}
     gate_tier = task.get("gate_tier") if isinstance(task, dict) else None
