@@ -12,11 +12,11 @@
   },
   "source_truth": {
     "old_anchor_preflight_path": "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json",
-    "old_anchor_preflight_sha256": "0cb1902c49ece3cc9e31cf7876b42b484a2f6bba94c3b3c703c1de76cde3b945",
+    "old_anchor_preflight_sha256": "afdb117ba554b1a99312b521e8a27cc6bacb6f70d871c323cebd33fd9ad66dc8",
     "convergence_assessment_path": "references/r1-formal-release-readiness-convergence-assessment.json",
-    "convergence_assessment_sha256": "a70fae93e13e4140f77b45a441baa2e0d61e7c7b2c1dad912c1e949c49c86e11",
+    "convergence_assessment_sha256": "8d105d5a6483f7c261d762713b540a21306e4fe44cb58f2c28a545bf8c68402c",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
-    "control_plane_physical_preflight_sha256": "b6e736bc0ffab4bb7e888a9bec791a062c44826050e49152db8aa60a9e4169de"
+    "control_plane_physical_preflight_sha256": "ea5b1226f7268f90eabd618b066f6adb9a72994b81a8c8e4c2254f64c76b88bc"
   },
   "claim_boundary": {
     "route_selection_completed": true,

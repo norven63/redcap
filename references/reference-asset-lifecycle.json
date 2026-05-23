@@ -132,7 +132,7 @@
     },
     {
       "path": "references/r1-prism-report-archive-live-copy-first-apply.json",
-      "bytes": 41355,
+      "bytes": 41923,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",

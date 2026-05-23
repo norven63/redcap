@@ -5,14 +5,14 @@
   "purpose": "Create a small non-destructive internal-control-plane maintainer facade batch while keeping compass/tools as the authoritative implementation and all release blockers open.",
   "source_truth": {
     "route_path": "references/r1-next-safe-slice-after-old-anchor-preflight.json",
-    "route_sha256": "8d77dd7a648638dba971e33a313a4608170a1b29e7cffc888224628d67255c8f",
+  "route_sha256": "ea2c9acfefd31dfd461cf7eefb1bf87e0455fb448e2c136e178f3f9cc741d991",
     "physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
-    "physical_preflight_sha256": "b6e736bc0ffab4bb7e888a9bec791a062c44826050e49152db8aa60a9e4169de",
+  "physical_preflight_sha256": "ea5b1226f7268f90eabd618b066f6adb9a72994b81a8c8e4c2254f64c76b88bc",
     "contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
-    "contract_split_sha256": "dc71050d9ab9872b9c9145bb76213a919b5f22fe3e0fa27634d4dd9704ee405d",
+  "contract_split_sha256": "f1984aa37603a75b4ce23abc8a24329d47039db9bc8ddcbebc909139e5788c9e",
     "selected_backlog_item": "P4-21",
     "source_target_layer": "internal-control-plane",
-    "source_entries_count": 111,
+  "source_entries_count": 113,
     "selected_count": 8,
     "source_release_blocker_resolved": false
   },

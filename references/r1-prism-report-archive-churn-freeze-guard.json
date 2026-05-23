@@ -5,9 +5,9 @@
   "summary": "Freezes the P4-12/P4-13 Prism report archive migration cohort and requires any later formal Prism reports to be recorded as post-freeze reports instead of silently changing the current archive plan.",
   "source_truth": {
     "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
-    "plan_sha256": "2f4524b94125515c4553fb892a4bee3e26da6d723585cd43f42e7f675f20f52d",
+    "plan_sha256": "a42946d112846947d7dd7572ad6dca9efe664cb86d1cbe93f252639379c8f908",
     "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
-    "readiness_sha256": "2b7b01fd845b237f7f37c9b74b2aebfd49ba0baf96b95f160fcf73b980069c01"
+    "readiness_sha256": "25b0720b45fb3605cf1a903e137aee5733c7bed897b9665bc8d41d76023b859d"
   },
   "claim_boundary": {
     "freeze_guard_completed": true,
@@ -177,6 +177,14 @@
       "classification": "post-freeze-formal-prism-review",
       "include_in_current_archive_plan": false,
       "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-29 copy-first apply review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-human-chat-summary-surface-hardening",
+      "source_path": "prism/reports/2026-05-23-human-chat-summary-surface-hardening.md",
+      "source_sha256": "c457b16a83153c35a051432d5a400d45fcbe2da5653377ab5d188cc3e30ea5a9",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future archive-plan refresh must explicitly decide whether to include this post-freeze report before any old-anchor retirement or delete-last tranche."
     }
   ],
   "package_surface_policy": {

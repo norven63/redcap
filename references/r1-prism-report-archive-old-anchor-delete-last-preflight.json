@@ -6,9 +6,9 @@
   "purpose": "Assess whether the old prism/reports anchors can be safely retired in a future delete-last apply. This preflight does not move, delete, rename, replace, symlink, or clean any report or raw Prism evidence.",
   "source_truth": {
     "live_copy_first_apply_path": "references/r1-prism-report-archive-live-copy-first-apply.json",
-    "live_copy_first_apply_sha256": "b569f130a30a82b56acf4931e1883f8c5357919d658d17b3b935bcb94b6fbeeb",
+    "live_copy_first_apply_sha256": "4ea6bc2013369540a89a91e1737190b094a449c81b5a26338d90d15c5cd4f060",
     "convergence_assessment_path": "references/r1-formal-release-readiness-convergence-assessment.json",
-    "convergence_assessment_sha256": "a70fae93e13e4140f77b45a441baa2e0d61e7c7b2c1dad912c1e949c49c86e11"
+    "convergence_assessment_sha256": "8d105d5a6483f7c261d762713b540a21306e4fe44cb58f2c28a545bf8c68402c"
   },
   "claim_boundary": {
     "delete_last_preflight_completed": true,
@@ -33,9 +33,9 @@
     "private_archive_root": "private-archive/prism-reports",
     "old_anchor_index_path": "prism/reports/index.yaml",
     "private_archive_index_path": "private-archive/prism-reports/index.yaml",
-    "current_report_markdown_count": 70,
+    "current_report_markdown_count": 71,
     "copied_report_count": 55,
-    "post_freeze_report_count": 15,
+    "post_freeze_report_count": 16,
     "package_surface_includes_old_report_anchors": false,
     "package_surface_includes_private_archive_reports": false,
     "post_freeze_reports_not_in_archive_cohort": [
@@ -117,15 +117,23 @@
         "reason": "Created by the P4-28 next-safe-slice route-selection review after the frozen copy-first archive cohort; must be explicitly handled by a future apply task before old-anchor retirement.",
         "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-28 route-selection review before retiring prism/reports anchors."
       },
-      {
-        "report_id": "20260523-r1-contract-mirror-bounded-copy-first-apply",
-        "source_path": "prism/reports/2026-05-23-r1-contract-mirror-bounded-copy-first-apply.md",
-        "source_sha256": "adff9603eec8c42a866b2cb84f0308c3a85efe769459106681c18c8bd2f82310",
-        "classification": "post-freeze-formal-prism-review",
-        "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-29 copy-first apply review before retiring prism/reports anchors.",
-        "reason": "Created by the P4-29 bounded contract mirror copy-first apply review after the frozen copy-first archive cohort; must be explicitly handled by a future apply task before old-anchor retirement."
-      }
-    ]
+    {
+      "report_id": "20260523-r1-contract-mirror-bounded-copy-first-apply",
+      "source_path": "prism/reports/2026-05-23-r1-contract-mirror-bounded-copy-first-apply.md",
+      "source_sha256": "adff9603eec8c42a866b2cb84f0308c3a85efe769459106681c18c8bd2f82310",
+      "classification": "post-freeze-formal-prism-review",
+      "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-29 copy-first apply review before retiring prism/reports anchors.",
+      "reason": "Created by the P4-29 bounded contract mirror copy-first apply review after the frozen copy-first archive cohort; must be explicitly handled by a future apply task before old-anchor retirement."
+    },
+    {
+      "report_id": "20260523-human-chat-summary-surface-hardening",
+      "source_path": "prism/reports/2026-05-23-human-chat-summary-surface-hardening.md",
+      "source_sha256": "c457b16a83153c35a051432d5a400d45fcbe2da5653377ab5d188cc3e30ea5a9",
+      "classification": "post-freeze-formal-prism-review",
+      "required_before_future_plan_refresh": "A future archive-plan refresh must explicitly decide whether to include this post-freeze report before any old-anchor retirement or delete-last tranche.",
+      "reason": "Created by the human chat summary surface review after the frozen copy-first archive cohort; must be explicitly handled by a future apply task before old-anchor retirement."
+    }
+  ]
   },
   "reference_scan": {
     "minimum_files_with_old_anchor_references_excluding_report_roots": 99,

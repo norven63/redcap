@@ -10,11 +10,11 @@
   },
   "source_truth": {
     "p4_25_manifest_path": "references/r1-control-plane-public-internal-contract-mirror-preflight.json",
-    "p4_25_manifest_sha256": "29fa17747c620a5fae30a6afb597f6e8189d195bcabee2e52d777b7440f34c94",
+  "p4_25_manifest_sha256": "055dbcfdba015f3eab3cb2bd69f10b994f7c284ff685965f2ad9f045175e1b70",
     "control_plane_contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
-    "control_plane_contract_split_sha256": "dc71050d9ab9872b9c9145bb76213a919b5f22fe3e0fa27634d4dd9704ee405d",
+  "control_plane_contract_split_sha256": "f1984aa37603a75b4ce23abc8a24329d47039db9bc8ddcbebc909139e5788c9e",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
-    "control_plane_physical_preflight_sha256": "b6e736bc0ffab4bb7e888a9bec791a062c44826050e49152db8aa60a9e4169de"
+  "control_plane_physical_preflight_sha256": "ea5b1226f7268f90eabd618b066f6adb9a72994b81a8c8e4c2254f64c76b88bc"
   },
   "candidate_matrix": [
     {
