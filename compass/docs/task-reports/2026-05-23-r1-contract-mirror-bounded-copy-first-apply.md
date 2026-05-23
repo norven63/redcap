@@ -136,11 +136,11 @@ P4-29 的核心风险不是复制本身，而是“把复制副本误说成迁�
 
 | 项目 | 结果 |
 |---|---|
-| 执行承诺账本 | 待 closeout 前最终同步 |
+| 执行承诺账本 | 8/8 已兑现，pending=0 |
 | 棱镜验收 | 通过，run=`20260523-r1-contract-mirror-bounded-copy-first-apply` |
-| closeout summary | 待生成 |
-| closeout receipt | 待生成 |
-| rescue audit（如有） | 待 closeout 后判断 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-r1-contract-mirror-bounded-copy-first-apply-3e789904218cb7f1394ac144645204e441cfb0208e85bb4cc9e22718999e55e5.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-r1-contract-mirror-bounded-copy-first-apply-3e789904218cb7f1394ac144645204e441cfb0208e85bb4cc9e22718999e55e5.json` |
+| rescue audit（如有） | 无需 rescue；一次 on-complete 失败审计已在重锚与证据刷新后解决 |
 
 ### 5.4 完成等级（禁止混报）
 
@@ -149,7 +149,7 @@ P4-29 的核心风险不是复制本身，而是“把复制副本误说成迁�
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code / Kimi 共识 |
-| 已正式完成 | 待 closeout receipt 生成后更新 |
+| 已正式完成 | 是，closeout receipt 已生成 |
 
 ---
 

@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 27,
-    "size_bytes": 321407,
+    "size_bytes": 321866,
     "lines": 6702,
-    "chars": 192643,
+    "chars": 193086,
     "rough_token_pressure": {
-      "low": 48160,
-      "high": 96321
+      "low": 48271,
+      "high": 96543
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 12,
-        "size_bytes": 106747,
+        "size_bytes": 107206,
         "lines": 2008,
-        "chars": 63361,
+        "chars": 63804,
         "rough_token_pressure": {
-          "low": 15840,
-          "high": 31680
+          "low": 15951,
+          "high": 31902
         }
       }
     },
@@ -437,9 +437,9 @@
       "role": "closure-evidence",
       "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 9379,
+      "size_bytes": 9838,
       "lines": 211,
-      "chars": 5575,
+      "chars": 6018,
       "summary": "当前已完成：P4-29 已把 7 个已预检合同文件复制到新的 `contracts/public/**` 与 `contracts/internal/**` 位置。 / 详情：这些新文件是副本，不是迁移。旧 `references/**` 文件继续保留、可读、被 git 跟踪，仍是当前权威锚点。",
       "status_basis": "filename_recency_only"
     },
