@@ -128,6 +128,8 @@
 - `bash compass/tools/redcap-public-package-surface.sh`
 - `bash compass/tools/redcap-package-publish-safety-check.sh`
 - `bash compass/tools/redcap-reference-asset-lifecycle.sh check`
+- `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180`
+- `bash compass/tools/redcap-clean-workspace-e2e.sh --check-result --timeout 180`
 
 ### 5.3 closeout runtime / receipt
 
@@ -142,7 +144,7 @@
 | 等级 | 结论 | 说明 |
 |---|---|---|
 | 已实现 | 是 | 会话归属门、摘要修复、RASG-025 状态对齐和经验沉淀已落地 |
-| 已自检 | 是 | targeted checks、spec-check、diagnose、package surface 和 package safety 均已通过 |
+| 已自检 | 是 | targeted checks、spec-check、diagnose、package surface、package safety 和 clean workspace E2E 均已通过 |
 | 已独立验收 | 是 | Claude Code 与 Kimi 棱镜评审通过 |
 | 已正式完成 | 否 | closeout receipt 尚未生成，不能冒充正式完成 |
 

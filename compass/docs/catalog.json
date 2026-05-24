@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 29,
-    "size_bytes": 340248,
-    "lines": 7103,
-    "chars": 203586,
+    "size_bytes": 340434,
+    "lines": 7105,
+    "chars": 203770,
     "rough_token_pressure": {
-      "low": 50896,
-      "high": 101793
+      "low": 50942,
+      "high": 101885
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 13,
-        "size_bytes": 117018,
-        "lines": 2183,
-        "chars": 69014,
+        "size_bytes": 117204,
+        "lines": 2185,
+        "chars": 69198,
         "rough_token_pressure": {
-          "low": 17253,
-          "high": 34507
+          "low": 17299,
+          "high": 34599
         }
       }
     },
@@ -620,9 +620,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9812,
-      "lines": 175,
-      "chars": 5210,
+      "size_bytes": 9998,
+      "lines": 177,
+      "chars": 5394,
       "summary": "当前已完成：已修复 Codex Stop hook 的会话归属缺口、人类进度摘要旧焦点污染、RASG-025 账本状态漂移，并补齐棱镜评审与经验沉淀。 / 详情：普通讨论、只读会话、无 session id 或跨 session 情况只做 advisory，不再接管别的任务；危险命令被拒绝后立即返回，不会继续声明任务所有权；只读命令即使提到 `rm` 等词也不会被当作写动作。",
       "status_basis": "filename_recency_only",
       "summary_points": {
