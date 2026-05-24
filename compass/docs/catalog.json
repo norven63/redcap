@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 28,
-    "size_bytes": 330886,
-    "lines": 6913,
-    "chars": 198242,
+    "file_count": 29,
+    "size_bytes": 339456,
+    "lines": 7139,
+    "chars": 203532,
     "rough_token_pressure": {
-      "low": 49560,
-      "high": 99121
+      "low": 50883,
+      "high": 101766
     },
     "collections": {
       "archive": {
@@ -40,13 +40,13 @@
         }
       },
       "specs": {
-        "file_count": 13,
-        "size_bytes": 209130,
-        "lines": 4605,
-        "chars": 125508,
+        "file_count": 14,
+        "size_bytes": 217700,
+        "lines": 4831,
+        "chars": 130798,
         "rough_token_pressure": {
-          "low": 31377,
-          "high": 62754
+          "low": 32699,
+          "high": 65399
         }
       },
       "task-reports": {
@@ -293,6 +293,21 @@
       "paired_control_paths": [
         "compass/tools/baton-delegate.sh"
       ],
+      "paired_debt_ids": []
+    },
+    {
+      "path": "compass/docs/specs/codex-stop-hook-session-ownership-gap.md",
+      "collection": "specs",
+      "title": "Codex Stop Hook Session Ownership Gap",
+      "role": "design-snapshot",
+      "status": "unregistered",
+      "read_policy": "read-on-demand",
+      "size_bytes": 8570,
+      "lines": 226,
+      "chars": 5290,
+      "summary": "> 定位：给负责开发的会话阅读的缺陷交接文档。本文记录一次真实 Codex hook 交互暴露出的会话归属问题，供后续修复 RedCap Codex hook 策略时使用。 > > 本文不是 runtime authority；真正的实现权威仍应落在 `.codex/hooks.json`、hook wrapper、session runtime state、acceptance 和相关 checker 中。",
+      "runtime_authority": false,
+      "paired_control_paths": [],
       "paired_debt_ids": []
     },
     {
