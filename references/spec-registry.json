@@ -94,6 +94,22 @@
       ]
     },
     {
+      "path": "compass/docs/specs/codex-stop-hook-session-ownership-gap.md",
+      "title": "Codex Stop hook 会话归属缺口",
+      "role": "design-snapshot",
+      "status": "active",
+      "runtime_authority": false,
+      "summary": "记录 Codex Stop hook 只按工作区 pending closeout 判断会劫持无关会话的问题，要求后续实现 session ownership gate。",
+      "paired_control_paths": [
+        ".codex/hooks.json",
+        "compass/tools/redcap-layerB-task-complete-guard.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.sh"
+      ],
+      "paired_debt_ids": [
+        "RASG-025"
+      ]
+    },
+    {
       "path": "compass/docs/specs/multi-session-isolation-design.md",
       "title": "多会话隔离设计",
       "role": "design-snapshot",

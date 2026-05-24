@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "policy_id": "pre-release-freeze-and-artifact-churn-policy",
+  "title": "Pre-release freeze and artifact churn control",
+  "human_summary": "首次发布收敛期不能把每一次治理动作产生的新报告、新证据、新索引都继续升级成新的治理任务；新发现必须先分级，只有真正影响发布安全、隐私、会话正确性或用户可用性的缺陷才进入发布前必须修复清单。",
+  "problem": {
+    "symptom": "运行证据和本地残留治理会产生新的报告、证据、索引和回归记录；如果这些新产物继续被当作新的结构治理对象，任务会变成自我增殖循环。",
+    "root_cause": "产品化发布准备、历史资产清理、治理机制建设混在同一条执行流里，缺少发布前冻结边界和新发现分级入口。",
+    "risk": "RedCap 会长期停留在治理自身的循环中，用户无法判断距离首次发布还剩什么，也容易把局部治理完成误报成整体清空。"
+  },
+  "scope": {
+    "applies_when": [
+      "formal release readiness 已经成为当前主推进任务集",
+      "任务属于历史资产治理、运行证据治理、报告归档、目录结构治理、发布前检查或工作流治理",
+      "新发现来自 closeout、Prism review、spec-check、diagnose、current-status、clean workspace E2E 或人工追问"
+    ],
+    "does_not_weaken": [
+      "secret leakage checks",
+      "package surface checks",
+      "session ownership correctness",
+      "destructive cleanup authorization",
+      "receipt and archaeology safety",
+      "public CLI/runtime usability"
+    ]
+  },
+  "freeze_rule": {
+    "mode": "release-convergence",
+    "default_for_new_findings": "classify-first-do-not-auto-expand-current-scope",
+    "current_scope_can_expand_only_if": [
+      "privacy_or_secret_leak_risk",
+      "package_publish_safety_risk",
+      "session_or_task_ownership_correctness_risk",
+      "data_loss_or_destructive_cleanup_risk",
+      "public_cli_runtime_install_or_basic_use_failure",
+      "false_completion_or_false_release_ready_claim",
+      "explicit_norven_release_scope_decision"
+    ],
+    "non_blocking_findings_go_to": [
+      "post_release_roadmap",
+      "long_term_evolution_program",
+      "evidence_archive_only",
+      "rejected_noise_with_reason"
+    ]
+  },
+  "artifact_budget": {
+    "per_task_default": {
+      "human_report": "at-most-one-summary-report",
+      "machine_receipt": "at-most-one-closeout-receipt",
+      "prism_review": "only-if-conclusion-or-risk-tier-requires-it",
+      "catalog_update": "only-for-new-or-moved-readable-assets",
+      "raw_run_evidence": "ignored-local-or-archived-by-explicit-lifecycle-policy"
+    },
+    "forbidden_loop": "Do not create a new active cleanup task merely because the previous cleanup produced normal evidence such as reports, receipts, indexes, or Prism run folders.",
+    "allowed_exception": "If generated evidence exposes a concrete P0/P1 defect under freeze_rule.current_scope_can_expand_only_if, register that defect as a bounded requirement with owner, acceptance, and stop condition."
+  },
+  "classification_lanes": [
+    {
+      "id": "release_blocker",
+      "human_label": "首次发布前必须修",
+      "meaning": "不修会导致泄密、发布包错误、会话串扰、误报完成、安装不可用或基础使用失败。",
+      "allowed_action": "enter current focused task set"
+    },
+    {
+      "id": "active_current_scope",
+      "human_label": "当前任务内顺手修",
+      "meaning": "同一文件或同一机制内的小修，不扩大任务面，也不会要求额外大规模回归。",
+      "allowed_action": "merge into current slice if acceptance remains bounded"
+    },
+    {
+      "id": "post_release_roadmap",
+      "human_label": "发布后路线",
+      "meaning": "有价值但不影响首次发布承诺，必须保留原因和触发条件。",
+      "allowed_action": "record as roadmap item, not active blocker"
+    },
+    {
+      "id": "evidence_archive_only",
+      "human_label": "只归档不治理",
+      "meaning": "只是本轮工作的正常证据，不应继续产生新的治理任务。",
+      "allowed_action": "index or archive according to lifecycle policy"
+    },
+    {
+      "id": "rejected_noise_with_reason",
+      "human_label": "拒绝扩张",
+      "meaning": "不具备工程价值或会引发无意义治理循环。",
+      "allowed_action": "record rejection reason only when needed"
+    }
+  ],
+  "human_reporting_contract": {
+    "must_say": [
+      "当前小任务是否完成",
+      "父任务线是否仍有未完成项",
+      "新增发现被分到哪一类",
+      "为什么它阻塞或不阻塞首次发布",
+      "下一步是否需要人工决策"
+    ],
+    "must_not_say": [
+      "把当前小任务完成说成全部清空",
+      "把 post-release roadmap 伪装成发布前 blocker",
+      "把正常证据产出说成必须继续治理的新债务",
+      "用内部 gate 名称替代人类可理解结论"
+    ]
+  },
+  "enforcement_surfaces": [
+    "compass/CONTRIBUTING.core.md",
+    "references/backlogs/redcap-architecture-smell-governance.json",
+    "references/redcap-progress-meter-policy.json",
+    "compass/tools/redcap-pre-release-freeze-policy-check.sh",
+    "compass/tools/redcap-spec-check.sh"
+  ],
+  "related_requirements": [
+    "RASG-024",
+    "RASG-025"
+  ],
+  "status": "active"
+}

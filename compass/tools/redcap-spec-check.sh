@@ -1204,6 +1204,16 @@ if ! bash "$PRISM_DEGRADATION_CHECK" "${prism_degradation_args[@]}" >/dev/null; 
     exit 1
 fi
 
+PRE_RELEASE_FREEZE_POLICY_CHECK="$REDCAP_ROOT/compass/tools/redcap-pre-release-freeze-policy-check.sh"
+if [[ ! -f "$PRE_RELEASE_FREEZE_POLICY_CHECK" ]]; then
+    echo "[redcap-spec-check] pre-release freeze policy check missing" >&2
+    exit 1
+fi
+if ! bash "$PRE_RELEASE_FREEZE_POLICY_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] pre-release freeze policy check failed" >&2
+    exit 1
+fi
+
 CONCLUSION_PRISM_CHECK="$REDCAP_ROOT/compass/tools/redcap-conclusion-prism-check.sh"
 if [[ ! -f "$CONCLUSION_PRISM_CHECK" ]]; then
     echo "[redcap-spec-check] conclusion Prism check missing" >&2

@@ -32,9 +32,9 @@
     "release-blocker-until-resolved"
   ],
   "package_candidate_snapshot": {
-    "candidate_count": 306,
-    "compass": 160,
-    "references": 67,
+    "candidate_count": 309,
+    "compass": 162,
+    "references": 68,
     "prism": 10,
     "loom": 0,
     "workspace_state": 0,
@@ -51,7 +51,7 @@
       "disposition_id": "release-blocker-until-resolved",
       "is_release_blocker": true,
       "reason": "This group contains validators, control-plane policies, indexes and task truth sources. Parts of compass/tools and references/*.json remain package-visible in the alpha readiness surface, but that visibility is not a historical cleanup disposition.",
-      "package_candidate_count": 227,
+      "package_candidate_count": 230,
       "policy_references": [
         "references/root-ia-remaining-root-groups-deferral.json#internal-control-plane",
         "references/historical-asset-physical-cleanup-release-gate.json",

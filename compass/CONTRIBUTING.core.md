@@ -42,6 +42,7 @@
 23. **Prism 先看可用性清单**：Prism roster 必须写成 `provider&model:role`；dispatch 前先过 `prism-availability` 1 小时 TTL 清单，过期先嗅探，`frozen/timeout/fail/unsupported` 不得进入本轮调用。
 24. **共享沉淀库 append-only**：公共经验/方法论/skill 候选要走 `shared-knowledge` 独立仓库形态：按用户隔离、先查重复、只新增不改旧条目、先索引再读取；远端 Gitee 未绑定前不得冒充团队共享已完成。
 25. **发布/打包前必须安全审计**：正式 npm、独立 runtime 或 portable package 发布前，必须先跑 `redcap-package-publish-safety-check.sh` 检查实际候选文件集合；`.env`、宿主私密入口、runtime evidence、Prism run 残留和 credential-like 内容一律 fail-closed。
+26. **发布前冻结要阻断治理任务自我增殖**：进入首次发布收敛期后，新报告、receipt、索引、Prism run 等正常证据产物不得自动变成新的清理任务；新发现必须先按 `references/pre-release-freeze-and-artifact-churn-policy.json` 分级，只有隐私/包面安全、会话归属、误报完成、安装可用性、破坏性清理风险或 Norven 显式纳入发布范围时，才允许扩大当前发布前必须修复清单。
 
 ## 章节路由
 
@@ -63,6 +64,7 @@
 | skill 分发 / 多宿主入口 | `references/skill-lifecycle-policy.json` |
 | npm / runtime 打包发布 | `references/package-publish-safety-policy.json`、`compass/tools/redcap-package-publish-safety-check.sh` |
 | 旧资产 / 运行残留治理 | `references/legacy-asset-lifecycle.json`、`prism/protocol.md` |
+| 发布前冻结 / 治理产物防增殖 | `references/pre-release-freeze-and-artifact-churn-policy.json`、`compass/tools/redcap-pre-release-freeze-policy-check.sh` |
 
 ## 必跑入口
 
@@ -87,3 +89,4 @@
 19. 涉及首次启动身份/用户命名空间：`bash compass/tools/redcap-user-agent-identity.sh check --local`
 20. 涉及飞书通知：`bash compass/tools/redcap-feishu-notification-policy-check.sh`
 21. 涉及飞书回复/收件箱：`bash compass/tools/redcap-feishu-inbox.sh check`；回复只作为待处理入口，不得自动执行
+22. 涉及发布前治理、运行证据、历史资产或报告归档收敛：`bash compass/tools/redcap-pre-release-freeze-policy-check.sh`

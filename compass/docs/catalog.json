@@ -298,17 +298,23 @@
     {
       "path": "compass/docs/specs/codex-stop-hook-session-ownership-gap.md",
       "collection": "specs",
-      "title": "Codex Stop Hook Session Ownership Gap",
+      "title": "Codex Stop hook 会话归属缺口",
       "role": "design-snapshot",
-      "status": "unregistered",
-      "read_policy": "read-on-demand",
+      "status": "active",
+      "read_policy": "read-registry-summary-first",
       "size_bytes": 8570,
       "lines": 226,
       "chars": 5290,
-      "summary": "> 定位：给负责开发的会话阅读的缺陷交接文档。本文记录一次真实 Codex hook 交互暴露出的会话归属问题，供后续修复 RedCap Codex hook 策略时使用。 > > 本文不是 runtime authority；真正的实现权威仍应落在 `.codex/hooks.json`、hook wrapper、session runtime state、acceptance 和相关 checker 中。",
+      "summary": "记录 Codex Stop hook 只按工作区 pending closeout 判断会劫持无关会话的问题，要求后续实现 session ownership gate。",
       "runtime_authority": false,
-      "paired_control_paths": [],
-      "paired_debt_ids": []
+      "paired_control_paths": [
+        ".codex/hooks.json",
+        "compass/tools/redcap-layerB-task-complete-guard.sh",
+        "compass/tools/redcap-layerb-closeout-runtime.sh"
+      ],
+      "paired_debt_ids": [
+        "RASG-025"
+      ]
     },
     {
       "path": "compass/docs/specs/engine-upgrade-part1-design-philosophy.md",

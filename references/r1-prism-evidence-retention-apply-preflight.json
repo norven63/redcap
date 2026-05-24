@@ -6,7 +6,7 @@
   "purpose": "Convert the P4-3e prism-layer-and-evidence dry-run map into a machine-checkable copy-first / alias-first apply preflight without moving, deleting, cleaning, or replacing Prism evidence anchors.",
   "source_truth": {
     "path": "references/r1-prism-evidence-retention-split-preflight.json",
-    "sha256": "1a811b1f23c15bcb4260f267204cd02bf0e13141354de9c3032f8c215f9b2919",
+    "sha256": "9d17092768dcbdb03564ccefff030fdfafbf87b4314a9459dca38f96619a94d7",
     "manifest_path": "evidence_split_dry_run_manifest",
     "package_visible_targets_count": 10,
     "source_evidence_targets_count": 2,

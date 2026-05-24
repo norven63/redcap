@@ -24,9 +24,9 @@ EXPECTED_STATUS = "contract-mirror-preflight-only-no-files-copied-moved-or-delet
 EXPECTED_COUNTS = {
     "runtime-public-support": 47,
     "public-contract": 11,
-    "internal-contract": 55,
+    "internal-contract": 56,
     "human-handoff": 1,
-    "internal-control-plane": 113,
+    "internal-control-plane": 115,
 }
 EXPECTED_PREFIXES = {
     "runtime-public-support": "runtime/redcap-core/",
@@ -112,8 +112,8 @@ def validate_source_truth(manifest: dict[str, Any]) -> None:
         hash_key = path_key.replace("_path", "_sha256")
         if source_truth.get(hash_key) != expected_hash:
             fail(f"source_truth.{hash_key} is stale")
-    if source_truth.get("source_entries_count") != 227:
-        fail("source_truth.source_entries_count must be 227")
+    if source_truth.get("source_entries_count") != 230:
+        fail("source_truth.source_entries_count must be 230")
     if source_truth.get("source_status") != "dry-run-only-no-files-moved":
         fail("source_truth.source_status must remain dry-run-only-no-files-moved")
 
@@ -125,9 +125,9 @@ def validate_contract_split() -> dict[str, int]:
         fail("source physical_split_dry_run_manifest must be an object")
     if dry_run.get("status") != "dry-run-only-no-files-moved":
         fail("source dry-run status must remain dry-run-only-no-files-moved")
-    entries = require_list(dry_run.get("entries"), "source dry-run entries", min_len=227)
-    if len(entries) != 227:
-        fail("source dry-run entries must contain exactly 227 items")
+    entries = require_list(dry_run.get("entries"), "source dry-run entries", min_len=230)
+    if len(entries) != 230:
+        fail("source dry-run entries must contain exactly 230 items")
 
     counts: dict[str, int] = {}
     sources: set[str] = set()
@@ -236,8 +236,8 @@ def validate_manifest(manifest: dict[str, Any], source_counts: dict[str, int]) -
     classification = manifest.get("contract_classification")
     if not isinstance(classification, dict):
         fail("contract_classification must be an object")
-    if classification.get("total_entries") != 227:
-        fail("contract_classification.total_entries must be 227")
+    if classification.get("total_entries") != 230:
+        fail("contract_classification.total_entries must be 230")
     groups = require_list(classification.get("groups"), "contract_classification.groups", min_len=5)
     manifest_counts: dict[str, int] = {}
     for group in groups:
@@ -315,7 +315,7 @@ def validate_manifest(manifest: dict[str, Any], source_counts: dict[str, int]) -
     if blockers != REQUIRED_BLOCKERS:
         fail("remaining_release_blockers_after_this_preflight must keep all three blockers")
 
-    return {"entries": 227, "groups": len(groups), "next": "P4-26"}
+    return {"entries": 230, "groups": len(groups), "next": "P4-26"}
 
 
 def validate_backlog() -> None:

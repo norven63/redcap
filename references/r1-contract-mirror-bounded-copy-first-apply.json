@@ -10,9 +10,9 @@
   },
   "source_truth": {
     "p4_28_route_path": "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
-  "p4_28_route_sha256": "342710ea9209906404d2deefb53d393ab0ad53382f2e52848e94b76820110197",
+  "p4_28_route_sha256": "d430154f5b4baf78dfd3fb7ac036fbb2940cd65660ec57f7a805dbed7a6c8bc9",
     "p4_27_preflight_path": "references/r1-contract-mirror-apply-preflight-subset.json",
-  "p4_27_preflight_sha256": "c427db1ce17940a2cae2d79afaec16e1732e8446b3a358cde38f8f45a5fcad17"
+  "p4_27_preflight_sha256": "e07c9ac1b08b5f81fb0a34601c2ed9b522163981080cb8476b4b14c479c0e00d"
   },
   "source_updates_after_preflight": [
     {
@@ -26,8 +26,8 @@
       "source": "references/public-package-surface-policy.json",
       "target": "contracts/public/public-package-surface-policy.json",
       "preflight_source_sha256": "374f3fc69434db6ac5cbb569ce8bb895610ef02e09f4442d91272811b595583d",
-      "current_source_sha256": "3480a95731aae01600141880fa982a5d4052b7aeda0c148d1bdc0a036d0eca7f",
-      "reason": "P4-29 package-surface exclusion/count policy was updated for this task's new summary runtime scripts before mirroring the current authoritative old anchor."
+      "current_source_sha256": "4d14a647190da3a6b18aa53e582d1ecc93c8d15b1cfb160350ac2917bcfa0f75",
+      "reason": "P4-29 package-surface exclusion/count policy was updated for this task's new summary runtime scripts and later RASG-025 freeze-policy governance assets before mirroring the current authoritative old anchor."
     }
   ],
   "copy_policy": {
@@ -72,8 +72,8 @@
       "source": "references/public-package-surface-policy.json",
       "target": "contracts/public/public-package-surface-policy.json",
       "target_layer": "public-contract",
-      "source_sha256": "3480a95731aae01600141880fa982a5d4052b7aeda0c148d1bdc0a036d0eca7f",
-      "target_sha256": "3480a95731aae01600141880fa982a5d4052b7aeda0c148d1bdc0a036d0eca7f",
+      "source_sha256": "4d14a647190da3a6b18aa53e582d1ecc93c8d15b1cfb160350ac2917bcfa0f75",
+      "target_sha256": "4d14a647190da3a6b18aa53e582d1ecc93c8d15b1cfb160350ac2917bcfa0f75",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"

@@ -15,6 +15,8 @@
 | [`references/evolution-grade-baseline.json`](../references/evolution-grade-baseline.json) | control-plane assurance registry 兼容路径 | 用统一维度审计 RedCap 各保障节点是否达到、降级或受宿主限制；文件名保留 `evolution-grade` 是兼容历史，语义上不是只服务自升级 | Compass governance | `bash compass/tools/redcap-evolution-grade-check.sh` |
 | [`compass/tools/redcap-evolution-grade-check.sh`](../compass/tools/redcap-evolution-grade-check.sh) | assurance registry shell entry | 轻量入口；默认校验上面的 registry | Compass validator | `bash compass/tools/redcap-evolution-grade-check.sh` |
 | [`compass/tools/redcap-evolution-grade-check.py`](../compass/tools/redcap-evolution-grade-check.py) | assurance registry validator | 校验节点、路径、降级理由、remediation 是否完整 | Compass validator | 由 `.sh` 包装调用 |
+| [`references/pre-release-freeze-and-artifact-churn-policy.json`](../references/pre-release-freeze-and-artifact-churn-policy.json) | pre-release convergence policy | 首次发布收敛期的冻结边界：正常报告、receipt、索引和 Prism run 不能自动变成新的治理任务，新发现必须先分级 | Release governance | `bash compass/tools/redcap-pre-release-freeze-policy-check.sh` |
+| [`compass/tools/redcap-pre-release-freeze-policy-check.py`](../compass/tools/redcap-pre-release-freeze-policy-check.py) / [`compass/tools/redcap-pre-release-freeze-policy-check.sh`](../compass/tools/redcap-pre-release-freeze-policy-check.sh) | pre-release freeze validator | 校验冻结策略、分类车道、证据预算、RASG-025 登记和核心契约是否一致 | Release governance | `bash compass/tools/redcap-pre-release-freeze-policy-check.sh` |
 
 ## Runtime And Closeout
 
