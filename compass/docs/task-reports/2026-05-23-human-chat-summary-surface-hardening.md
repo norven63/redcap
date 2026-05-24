@@ -2,7 +2,7 @@
 
 **报告日期**：2026-05-23
 **执行者**：Cap（Codex + Claude Code / Kimi 棱镜评审）
-**报告版本**：v0.1
+**报告版本**：v0.2
 
 ---
 
@@ -18,12 +18,12 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：执行完整回归、生成最终完成证明，然后回到发布前主线；当前不需要 Norven 人工介入。
+- 下一步计划做的是：回到发布前主线；当前不需要 Norven 人工介入。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：发现聊天汇报仍然难读 → 把聊天回复纳入人类可读检查 → 新增摘要出口 → 棱镜复审 → 回归验证 → 最终完成证明。
-- 当前所在位置：代码和棱镜复审已完成，正在进行完整回归与最终完成证明。
+- 当前所在位置：代码、棱镜复审、完整回归、干净环境试跑和最终完成证明均已完成。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -50,7 +50,7 @@ RedCap 已经对飞书通知和部分 CLI 首屏做过人类可读优化，但�
 |---|---|
 | scope_status | full-for-this-defect |
 | 原始意图 | 聊天汇报也必须讲人话，不能继续把内部工作流术语当正文主线。 |
-| 已覆盖 | 已新增 `redcap summary`，并把 `assistant chat reply` 与 `bin/redcap summary` 纳入自动检查。 |
+| 已覆盖 | 已新增 `redcap summary`，并把 `assistant chat reply` 与 `bin/redcap summary` 纳入自动检查；完整回归、干净环境试跑与最终完成证明已通过。 |
 | 未覆盖/延期 | 正式发布、历史资产迁移、飞书实时回复监听不属于本轮。 |
 | 用户可见边界 | 可以说“聊天汇报出口已纳入可回归检查”；不能说“所有沟通质量问题已永久根治”。 |
 
@@ -121,6 +121,9 @@ RedCap 已经对飞书通知和部分 CLI 首屏做过人类可读优化，但�
 | 进度仪表检查 | `bash compass/tools/redcap-progress-meter-check.sh` | 通过 |
 | 文件查阅索引 | `bash compass/tools/redcap-file-lookup-dictionary-check.sh` | 通过 |
 | 棱镜验收 | `bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md` | 通过 |
+| 全量回归 | `bash compass/tools/redcap-spec-check.sh "$PWD"` | 通过 |
+| 干净环境试跑 | `bash compass/tools/redcap-clean-workspace-e2e.sh --write-result --timeout 180` / `bash compass/tools/redcap-clean-workspace-e2e.sh --check-result` | 通过，head=`2843a23`，package candidates=306 |
+| 诊断复验 | `bash compass/tools/redcap-diagnose.sh .dev-task.md` | 通过 |
 
 ### 5.2 人工验证项（Cap 无法自动化验证的）
 
@@ -130,10 +133,10 @@ RedCap 已经对飞书通知和部分 CLI 首屏做过人类可读优化，但�
 
 | 项目 | 结果 |
 |---|---|
-| 执行承诺账本 | 待最终完成证明生成 |
+| 执行承诺账本 | 6/6 已兑现 |
 | 棱镜验收 | 通过，run=`20260523-human-chat-summary-surface-hardening` |
-| closeout summary | 待最终完成证明生成 |
-| closeout receipt | 待最终完成证明生成 |
+| closeout summary | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/summaries/redcap-human-chat-summary-surface-hardening-3eaadc442992c65671fa1494376d14e0f04552e8c855c139da9ce5feab92f5ef.md` |
+| closeout receipt | `/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/redcap-human-chat-summary-surface-hardening-3eaadc442992c65671fa1494376d14e0f04552e8c855c139da9ce5feab92f5ef.json` |
 | rescue audit（如有） | 当前无需 rescue |
 
 ### 5.4 完成等级（禁止混报）
@@ -143,7 +146,7 @@ RedCap 已经对飞书通知和部分 CLI 首屏做过人类可读优化，但�
 | 已实现 | 是 |
 | 已自检 | 是 |
 | 已独立验收 | 是，Claude Code / Kimi 共识 |
-| 已正式完成 | 否，等待最终完成证明生成 |
+| 已正式完成 | 是 |
 
 ---
 
@@ -166,9 +169,8 @@ RedCap 已经对飞书通知和部分 CLI 首屏做过人类可读优化，但�
 
 ### 6.3 推荐的下一步行动
 
-1. 执行 spec-check 与 diagnose。
-2. 生成最终完成证明。
-3. 回到发布前主线，不需要等待 Norven 机械回复。
+1. 回到发布前主线，不需要等待 Norven 机械回复。
+2. 正式发布前仍需 Norven 对许可证、registry、发布开关和版本策略做保留决策。
 
 ---
 
@@ -197,7 +199,9 @@ RedCap 已经对飞书通知和部分 CLI 首屏做过人类可读优化，但�
 ### 附录 A：Commits
 
 ```text
-待提交
+7986e6a feat(human-surface): 加固聊天摘要出口
+ce67570 test(release): 同步摘要出口发布快照
+2843a23 test(release): 刷新干净环境试跑证据
 ```
 
 ### 附录 B：棱镜调用记录

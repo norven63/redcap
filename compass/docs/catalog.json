@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 28,
-    "size_bytes": 329984,
-    "lines": 6909,
-    "chars": 197410,
+    "size_bytes": 330886,
+    "lines": 6913,
+    "chars": 198242,
     "rough_token_pressure": {
-      "low": 49352,
-      "high": 98705
+      "low": 49560,
+      "high": 99121
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 13,
-        "size_bytes": 115324,
-        "lines": 2215,
-        "chars": 68128,
+        "size_bytes": 116226,
+        "lines": 2219,
+        "chars": 68960,
         "rough_token_pressure": {
-          "low": 17032,
-          "high": 34064
+          "low": 17240,
+          "high": 34480
         }
       }
     },
@@ -424,9 +424,9 @@
       "role": "closure-evidence",
       "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 8118,
-      "lines": 207,
-      "chars": 4324,
+      "size_bytes": 9020,
+      "lines": 211,
+      "chars": 5156,
       "summary": "当前已完成：聊天汇报不再只靠口头约定；RedCap 现在有一个可直接调用的 `redcap summary` 摘要出口，并且这个出口已经纳入自动检查。 / 上一步完成的是：在飞书和 CLI 首屏已经做过人类可读优化后，本轮补上了“聊天回复本身”这个遗漏出口，避免我在对你汇报时继续把内部工作流术语当作正文主线。",
       "status_basis": "filename_recency_only"
     },
