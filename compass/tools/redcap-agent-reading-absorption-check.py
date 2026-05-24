@@ -94,7 +94,7 @@ def validate_memory_mapping(policy: dict[str, Any]) -> None:
     if raw.get("raw_public_export") != "forbidden":
         fail("raw_sources.raw_public_export must remain forbidden")
     raw_paths = [str(item) for item in require_list(raw, "redcap_paths")]
-    for required in ["compass/docs/task-reports", "private-archive/redcap-knowledge/task-reports", "prism/runs"]:
+    for required in ["assets/docs/task-reports", "assets/private-archive/redcap-knowledge/task-reports", "prism/runs"]:
         if required not in raw_paths:
             fail(f"raw_sources missing {required}")
 
@@ -104,7 +104,7 @@ def validate_memory_mapping(policy: dict[str, Any]) -> None:
     if synthesis.get("llm_full_ownership") is not False:
         fail("llm_full_ownership must remain false")
     synthesis_paths = [str(item) for item in require_list(synthesis, "redcap_paths")]
-    for required in ["compass/knowledge/index.md", "compass/knowledge/log.md", "compass/evolution/candidates.json"]:
+    for required in ["assets/knowledge/index.md", "assets/knowledge/log.md", "compass/evolution/candidates.json"]:
         if required not in synthesis_paths:
             fail(f"synthesis layer missing {required}")
 
@@ -148,11 +148,11 @@ def validate_surfaces(policy: dict[str, Any]) -> None:
     for path in [str(item) for item in require_list(policy, "required_surfaces")]:
         require_surface(path)
 
-    index = (ROOT / "compass/knowledge/index.md").read_text(encoding="utf-8")
-    if "compass/knowledge/log.md" not in index:
-        fail("knowledge index must mention compass/knowledge/log.md")
+    index = (ROOT / "assets/knowledge/index.md").read_text(encoding="utf-8")
+    if "assets/knowledge/log.md" not in index:
+        fail("knowledge index must mention assets/knowledge/log.md")
 
-    log_path = ROOT / "compass/knowledge/log.md"
+    log_path = ROOT / "assets/knowledge/log.md"
     log = log_path.read_text(encoding="utf-8")
     if "agent-reading-absorption" not in log:
         fail("knowledge log must record agent-reading-absorption")

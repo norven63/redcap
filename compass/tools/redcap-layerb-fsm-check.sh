@@ -28,14 +28,14 @@ def read(rel: str) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-runtime_arch = read("references/runtime-memory-architecture.md")
+runtime_arch = read("assets/references/runtime-memory-architecture.md")
 current_status = read("compass/tools/redcap-current-status.py")
 closeout_runtime = read("compass/tools/redcap-layerb-closeout-runtime.py")
 diagnose = read("compass/tools/redcap-diagnose.sh")
 contributing = read("compass/CONTRIBUTING.md")
 core = read("compass/CONTRIBUTING.core.md")
-task_report_template = read("references/task-report-template.md")
-guarantees = read("references/execution-guarantees.json")
+task_report_template = read("assets/references/task-report-template.md")
+guarantees = read("assets/references/execution-guarantees.json")
 
 for required_state in ["REANCHORED", "TASK_LOCKED", "PLANNING", "PLANNING_REVIEW", "EXECUTING", "CHANGE_INTAKE", "REPLAN_REVIEW", "REVIEW_PENDING", "CLOSEOUT_PENDING", "CLOSED", "BLOCKED"]:
     if required_state not in runtime_arch:

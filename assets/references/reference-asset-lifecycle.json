@@ -24,7 +24,7 @@
     },
     {
       "path": "assets/references/execution-guarantees.json",
-      "bytes": 117203,
+      "bytes": 117264,
       "asset_class": "control-plane-registry",
       "lifecycle": "active-validator-registry",
       "consumer_check": "bash compass/tools/redcap-execution-guarantee-check.sh",
@@ -168,7 +168,7 @@
     },
     {
       "path": "assets/references/root-information-architecture-consolidation-plan.json",
-      "bytes": 28053,
+      "bytes": 28315,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",

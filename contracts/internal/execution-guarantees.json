@@ -312,9 +312,9 @@
       "id": "knowledge-index-navigation",
       "category": "knowledge-navigation",
       "priority": "P1",
-      "rule": "Knowledge archaeology must start from compass/knowledge/index.md and open only the specific knowledge files needed for the task.",
+      "rule": "Knowledge archaeology must start from assets/knowledge/index.md and open only the specific knowledge files needed for the task; compass/knowledge remains a compatibility shim only.",
       "source_paths": [
-        "compass/knowledge/index.md",
+        "assets/knowledge/index.md",
         "compass/CONTRIBUTING.md"
       ],
       "status": "validator",
@@ -322,7 +322,7 @@
       "guarantee_paths": [
         "compass/tools/redcap-knowledge-index-check.sh",
         "compass/tools/redcap-spec-check.sh",
-        "compass/knowledge/index.md"
+        "assets/knowledge/index.md"
       ],
       "revival_required": true,
       "hook_required": false,
@@ -771,8 +771,8 @@
       "priority": "P1",
       "rule": "Layer B distributed control-plane lifecycle and runtime-memory terminology must stay aligned with the scripts, ledgers, and entry documents that actually implement them.",
       "source_paths": [
-        "references/runtime-memory-architecture.md",
-        "compass/knowledge/runtime-memory-architecture.md",
+        "assets/references/runtime-memory-architecture.md",
+        "assets/knowledge/runtime-memory-architecture.md",
         "ARCHITECTURE.md",
         "compass/CONTRIBUTING.md"
       ],
@@ -780,8 +780,8 @@
       "automation": "redcap-layerb-lifecycle-check.sh verifies the lifecycle contract, glossary surface, referenced script files, guarantee registration, and key entry wording; diagnose consumes it directly.",
       "guarantee_paths": [
         "compass/tools/redcap-layerb-lifecycle-check.sh",
-        "references/runtime-memory-architecture.md",
-        "compass/knowledge/runtime-memory-architecture.md",
+        "assets/references/runtime-memory-architecture.md",
+        "assets/knowledge/runtime-memory-architecture.md",
         "compass/tools/redcap-diagnose.sh"
       ],
       "revival_required": true,
@@ -939,7 +939,7 @@
       "guarantee_paths": [
         "compass/tools/redcap-docs-catalog.sh",
         "compass/tools/redcap-spec-check.sh",
-        "compass/docs/catalog.json"
+        "assets/docs/catalog.json"
       ],
       "read_only_safe": true,
       "revival_required": true,

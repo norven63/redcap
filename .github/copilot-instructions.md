@@ -15,8 +15,8 @@
 3. 优先运行或消费 `./revive-cap.sh` — 它会转调 `compass/tools/redcap-install.sh`，并将用户/Agent 本地状态初始化、workflow import、`current-status`（`redcap-current-status.sh`）、`tracking-health`（`redcap-tracking-health.sh`）、宿主 Hook 就绪检查（`redcap-host-hook-readiness.sh`）、飞书单通道策略检查（`redcap-feishu-notification-policy-check.sh`）、飞书收件箱软扫描/安全检查（`redcap-feishu-inbox.sh`）、`execution-guarantee-check`（`redcap-execution-guarantee-check.sh`）、`revival-check`（`redcap-revival-check.sh`）收口为单一安装/复活动作；需要显式指定宿主时再加 `--host <name>`
 4. 若 installer 不可用，再退回：运行或消费 `bash compass/tools/redcap-current-status.sh`，检查 `.dev-task.md` 是否存在，必要时 `git log --oneline -10` 交叉验证实际进度（详见 `compass/CONTRIBUTING.md §7`）
 5. 使用 `rg -n "^## |^### " compass/CONTRIBUTING.md` 定位所需章节，再按精确行段读取；不要默认全文读取 `CONTRIBUTING.md`
-6. 需要查经验时先读 `compass/knowledge/index.md`，再用 `rg` 定位相关 L-编号；不要默认全文读取 `compass/knowledge/lessons.md`
-7. 需要读取 `compass/docs/**` 时先用 `redcap-docs-catalog.sh summary/plan` 定位候选，再用 `redcap-docs-catalog.sh budget <path...>` 审计读取集合；需要定位 acceptance case 时先用 `redcap-acceptance-index.sh find <case>`，不要默认全量扫历史文档、知识库或巨型测试脚本
+6. 需要查经验时先读 `assets/knowledge/index.md`，再用 `rg` 定位相关 L-编号；不要默认全文读取 `assets/knowledge/lessons.md`
+7. 需要读取 `assets/docs/**` 时先用 `redcap-docs-catalog.sh summary/plan` 定位候选，再用 `redcap-docs-catalog.sh budget <path...>` 审计读取集合；需要定位 acceptance case 时先用 `redcap-acceptance-index.sh find <case>`，不要默认全量扫历史文档、知识库或巨型测试脚本。旧 `compass/docs/**` 与 `compass/knowledge/**` 只是兼容入口，不是新会话首读主线。
 
 > 步骤 0~7 是强制前置条件，不可跳过。步骤 0~2 还原人格与核心契约，步骤 3 把“Cap 复活 + 导入 RedCap 工作流”统一成单一安装动作，步骤 4~7 保证后续只按需、渐进式加载。
 

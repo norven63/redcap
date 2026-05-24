@@ -12,14 +12,14 @@ import re
 import sys
 
 root = Path(sys.argv[1])
-lifecycle = root / "references/runtime-memory-architecture.md"
-terms = root / "compass/knowledge/runtime-memory-architecture.md"
+lifecycle = root / "assets/references/runtime-memory-architecture.md"
+terms = root / "assets/knowledge/runtime-memory-architecture.md"
 architecture = root / "ARCHITECTURE.md"
 contributing = root / "compass/CONTRIBUTING.md"
 readme = root / "README.md"
-knowledge_index = root / "compass/knowledge/index.md"
+knowledge_index = root / "assets/knowledge/index.md"
 diagnose = root / "compass/tools/redcap-diagnose.sh"
-execution_guarantees = root / "references/execution-guarantees.json"
+execution_guarantees = root / "assets/references/execution-guarantees.json"
 
 
 def fail(message: str) -> None:
@@ -104,15 +104,15 @@ for required_phrase in (
 if "Layer B 无状态机保护" in contributing_text:
     fail("CONTRIBUTING.md still contains the outdated 'Layer B 无状态机保护' wording")
 
-if "references/runtime-memory-architecture.md" not in architecture_text:
-    fail("ARCHITECTURE.md must reference references/runtime-memory-architecture.md")
-if "compass/knowledge/runtime-memory-architecture.md" not in architecture_text:
-    fail("ARCHITECTURE.md must reference compass/knowledge/runtime-memory-architecture.md")
-if "compass/knowledge/runtime-memory-architecture.md" not in readme_text:
+if "assets/references/runtime-memory-architecture.md" not in architecture_text:
+    fail("ARCHITECTURE.md must reference assets/references/runtime-memory-architecture.md")
+if "assets/knowledge/runtime-memory-architecture.md" not in architecture_text:
+    fail("ARCHITECTURE.md must reference assets/knowledge/runtime-memory-architecture.md")
+if "assets/knowledge/runtime-memory-architecture.md" not in readme_text:
     fail("README.md must surface the runtime memory glossary")
 if "./closeout-cap.sh" not in readme_text and "closeout-cap.sh" not in readme_text:
     fail("README.md must surface the unified closeout runtime entry")
-if "compass/knowledge/runtime-memory-architecture.md" not in index_text:
+if "assets/knowledge/runtime-memory-architecture.md" not in index_text:
     fail("knowledge index must include the runtime memory glossary")
 if "redcap-layerb-lifecycle-check.sh" not in diagnose_text:
     fail("redcap-diagnose.sh must execute redcap-layerb-lifecycle-check.sh")
@@ -120,8 +120,8 @@ if '"id": "layerb-lifecycle-contract"' not in execution_guarantees_text:
     fail("execution-guarantees.json must register layerb-lifecycle-contract")
 for required_path in (
     "compass/tools/redcap-layerb-lifecycle-check.sh",
-    "references/runtime-memory-architecture.md",
-    "compass/knowledge/runtime-memory-architecture.md",
+    "assets/references/runtime-memory-architecture.md",
+    "assets/knowledge/runtime-memory-architecture.md",
 ):
     if required_path not in execution_guarantees_text:
         fail(f"execution-guarantees.json missing guarantee path: {required_path}")

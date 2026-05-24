@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 30,
-    "size_bytes": 349994,
-    "lines": 7274,
-    "chars": 209054,
+    "size_bytes": 351280,
+    "lines": 7283,
+    "chars": 209602,
     "rough_token_pressure": {
-      "low": 52263,
-      "high": 104527
+      "low": 52400,
+      "high": 104801
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 14,
-        "size_bytes": 126764,
-        "lines": 2354,
-        "chars": 74482,
+        "size_bytes": 128050,
+        "lines": 2363,
+        "chars": 75030,
         "rough_token_pressure": {
-          "low": 18620,
-          "high": 37241
+          "low": 18757,
+          "high": 37515
         }
       }
     },
@@ -633,9 +633,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9560,
-      "lines": 169,
-      "chars": 5284,
+      "size_bytes": 10846,
+      "lines": 178,
+      "chars": 5832,
       "summary": "当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置。 / 详情：docs、knowledge、references、formal Prism reports、private archive 的真实内容已迁移到 `assets/` 下；host 入口、runtime 源码、工具源码、包控制文件、本地状态和 Prism raw runs 没有迁移。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -647,11 +647,11 @@
           "上一步完成的是：修正迁移后的检查器口径，让结构检查、包面检查、索引检查能识别 `assets/` 是新的资产父级，而不是继续按旧根目录判断。"
         ],
         "next_step": [
-          "下一步计划做的是：生成 closeout receipt，并把最终任务状态与提交一起收口。"
+          "下一步计划做的是：先完成活跃首读入口去旧路径化，再生成 closeout receipt，并把最终任务状态与提交一起收口。"
         ],
         "position": [
-          "整体计划脉络图是：历史目录坏味识别 -> 统一资产父级设计 -> 真实迁移与兼容入口 -> 检查器和索引同步 -> 棱镜评审与回归 -> closeout receipt。",
-          "当前所在位置：资产迁移、本地回归、包面验证和棱镜复验已通过；正在生成最终 closeout receipt。"
+          "整体计划脉络图是：历史目录坏味识别 -> 统一资产父级设计 -> 真实迁移与兼容入口 -> 首读入口去旧路径化 -> 检查器和索引同步 -> 棱镜评审与回归 -> closeout receipt。",
+          "当前所在位置：资产迁移、本地回归、包面验证和棱镜复验已通过；正在补齐首读入口去旧路径化。"
         ]
       }
     }

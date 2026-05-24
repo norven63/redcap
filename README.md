@@ -6,14 +6,14 @@ RedCap 不是“再包一层提示词”。
 它真正做的事，是把复杂开发任务拆成**分工明确、状态可追踪、过程可复盘、关键结论可独立验证**的一套工程协作流程。
 目标不是让一个 Agent 更拼，而是让一组 Agent 更可靠。
 
-当前仓库仍以 skill-root 方式承载 RedCap，但长期形态不是“某个宿主的 skill 文件夹”，而是可安装、可复活、可调度、可审计的独立 runtime。产品化分层与迁移路线见 [`references/redcap-system-layers.md`](./references/redcap-system-layers.md)。
+当前仓库仍以 skill-root 方式承载 RedCap，但长期形态不是“某个宿主的 skill 文件夹”，而是可安装、可复活、可调度、可审计的独立 runtime。产品化分层与迁移路线见 [`assets/references/redcap-system-layers.md`](./assets/references/redcap-system-layers.md)。
 本轮已经补了一个低风险薄 CLI facade：`bin/redcap`，先把现有 root/tool 入口统一成 CLI 形态，底层逻辑仍保持原位，避免破坏宿主适配。
 当前 package 化进入 readiness 阶段：`package.json` 保持 `private: true` 防误发，`bin/redcap package-manifest --check` 会生成候选清单并跑发布安全 gate；真实 npm/Gitee/GitHub 发布仍需要单独 release 决策。
 正式 public release 之前还必须先过产品架构审判：`bin/redcap pre-release-review` 会检查 RedCap 是否已经足够安全、独立、可调试、可被新用户理解；它和 `npm pack` 不同，后者只回答“能不能打包”，前者回答“值不值得作为优秀 CLI/runtime 产品发布”。
-当前 npm 候选包面是约 310 个文件的 alpha readiness surface：保留运行、复活、诊断、收尾、Prism 可用性、发布安全预检、交接文档和契约边界说明，排除历史迁移、E2E 夹具、完整 LLM-wiki/RAG 研究工具和 RedCap 自维护手术工具。正式发布任务前的人类交接清单见 [`references/public-release-handoff.md`](./references/public-release-handoff.md)。
+当前 npm 候选包面是约 310 个文件的 alpha readiness surface：保留运行、复活、诊断、收尾、Prism 可用性、发布安全预检、交接文档和契约边界说明，排除历史迁移、E2E 夹具、完整 LLM-wiki/RAG 研究工具和 RedCap 自维护手术工具。正式发布任务前的人类交接清单见 [`assets/references/public-release-handoff.md`](./assets/references/public-release-handoff.md)。
 这里的命令分两层：普通用户依赖 `revive/status/doctor/diagnose/debug/closeout` 这类 runtime 入口；`package-manifest/publish-safety/package-surface/pre-release-review` 是维护/发布准备命令，不是普通用户日常流程。这里的“诊断”也分两层：CLI 用户默认看到 runtime profile，聚焦运行时和发布安全；源码仓库维护者仍可显式跑 source profile，覆盖完整治理链与历史维护检查。
 
-项目资产已经收敛到 [`assets/`](./assets/README.md)：`assets/docs` 放设计和报告，`assets/knowledge` 放活知识，`assets/references` 放机器契约，`assets/evidence/prism-reports` 放 formal Prism 报告，`assets/private-archive` 放私有冷归档。`compass/docs`、`compass/knowledge`、`references`、`prism/reports`、`private-archive` 仍保留为兼容入口，避免旧脚本和历史 receipt 断链。
+项目资产已经收敛到 [`assets/`](./assets/README.md)：`assets/docs` 放设计和报告，`assets/knowledge` 放活知识，`assets/references` 放机器契约，`assets/evidence/prism-reports` 放 formal Prism 报告，`assets/private-archive` 放私有冷归档。旧的 `compass/docs`、`compass/knowledge`、`references`、`prism/reports`、`private-archive` 只保留为兼容入口，避免旧脚本和历史 receipt 断链；新读者和新 Agent 默认从 `assets/` 进入。
 
 ## 一眼看懂
 
@@ -168,17 +168,17 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 | **复活手册** | `compass/soul.md` | 解决“Cap 应该怎样恢复自己并开始工作” |
 | **当前任务卡** | `.dev-task.md` | 解决“当前这轮到底在做什么、做到哪了” |
 | **承诺账本** | `.dev-task.md` 的 `## 执行承诺账本` + closeout runtime 派生账本 | 解决“Agent 自己承诺过要做的事不能只活在对话里” |
-| **讨论草稿本** | `compass/knowledge/explore-notes.md` | 解决“多轮讨论的原始演进不要在长对话里蒸发” |
+| **讨论草稿本** | `assets/knowledge/explore-notes.md` | 解决“多轮讨论的原始演进不要在长对话里蒸发” |
 | **当前状态板** | `redcap-current-status.sh` | 解决“接盘时先看全局状态，而不是先翻一堆旧文档” |
 | **追踪体检表** | `redcap-tracking-health.sh` | 解决“书记官、任务卡、结案报告到底有没有真的在工作” |
-| **结案报告** | `compass/docs/task-reports/*.md` | 解决“这轮到底改了什么、验证了什么、还剩什么” |
+| **结案报告** | `assets/docs/task-reports/*.md` | 解决“这轮到底改了什么、验证了什么、还剩什么” |
 | **收尾收据** | `closeout-receipts/*.json` | 解决“不能只靠一句‘完成了’，而要有物理 receipt 证明终态真的闭环” |
 | **进化候选池** | `compass/evolution/candidates.json` | 解决“重要经验、人格成长和治理改良不能靠作者记忆临时想起” |
-| **锻造流水线** | `references/redcap-forge-policy.json` + `compass/tools/redcap-forge-check.sh` | 解决“私有报告和运行痕迹不能直接变成公共知识，而要先蒸馏、脱敏、去重、索引和评审” |
+| **锻造流水线** | `assets/references/redcap-forge-policy.json` + `compass/tools/redcap-forge-check.sh` | 解决“私有报告和运行痕迹不能直接变成公共知识，而要先蒸馏、脱敏、去重、索引和评审” |
 | **共享沉淀库** | `templates/shared-knowledge/` 模板 + 外部 `redcap-arsenal` 本地实体仓库 + remote binding policy | 解决“团队经验要可共享、按用户隔离、只新增不改旧条目、先索引再读取，并且远端同步前可审计” |
-| **文件定位字典** | `references/file-lookup-dictionary.md` + policy/check | 解决“人和 Agent 不知道该看哪个文件，只能全文乱翻”的问题 |
-| **skill 单一信源** | `references/skill-lifecycle-policy.json` | 解决“多个宿主各写一份规则，最后互相漂移”的问题 |
-| **旧资产生命周期** | `references/legacy-asset-lifecycle.json` | 解决“历史报告、运行残留、旧规范到底保留、翻译、归档还是清理” |
+| **文件定位字典** | `assets/references/file-lookup-dictionary.md` + policy/check | 解决“人和 Agent 不知道该看哪个文件，只能全文乱翻”的问题 |
+| **skill 单一信源** | `assets/references/skill-lifecycle-policy.json` | 解决“多个宿主各写一份规则，最后互相漂移”的问题 |
+| **旧资产生命周期** | `assets/references/legacy-asset-lifecycle.json` | 解决“历史报告、运行残留、旧规范到底保留、翻译、归档还是清理” |
 
 这套词典的目的很简单：
 **先让人理解 RedCap 的对象分工，再决定要不要深入到具体脚本名。**
@@ -187,27 +187,27 @@ Layer B 现在不再把“完成”理解成一句自然语言。
 
 | 文档 | 作用 |
 |---|---|
-| [`private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md`](./private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md) | 用一张全景图理解 RedCap 的 Layer A、Layer B、Prism、书记官、计划审核、收尾与老旧资产治理 |
-| [`private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html`](./private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html) | 面向人类阅读的网页版全景材料 |
+| [`assets/private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md`](./assets/private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.md) | 用一张全景图理解 RedCap 的 Layer A、Layer B、Prism、书记官、计划审核、收尾与老旧资产治理 |
+| [`assets/private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html`](./assets/private-archive/redcap-knowledge/research/2026-04-24-redcap-workflow-panorama.html) | 面向人类阅读的网页版全景材料 |
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | 看整体系统怎么拼起来 |
 | [`compass/CONTRIBUTING.md`](./compass/CONTRIBUTING.md) | 看框架自身开发的权威规范 |
-| [`compass/knowledge/long-task-context-defense.md`](./compass/knowledge/long-task-context-defense.md) | 看 RedCap 如何对抗长任务/长对话上下文漂移 |
-| [`compass/knowledge/runtime-memory-architecture.md`](./compass/knowledge/runtime-memory-architecture.md) | 看“真相源 / 镜像 / 考古追踪 / 长期沉淀”等术语到底是什么意思 |
+| [`assets/knowledge/long-task-context-defense.md`](./assets/knowledge/long-task-context-defense.md) | 看 RedCap 如何对抗长任务/长对话上下文漂移 |
+| [`assets/knowledge/runtime-memory-architecture.md`](./assets/knowledge/runtime-memory-architecture.md) | 看“真相源 / 镜像 / 考古追踪 / 长期沉淀”等术语到底是什么意思 |
 | [`compass/evolution/README.md`](./compass/evolution/README.md) | 看 RedCap Evolution Factory 如何把候选经验、人格、skill 与治理项收口 |
-| [`references/file-lookup-dictionary.md`](./references/file-lookup-dictionary.md) | 看关键 JSON、脚本和 registry 的定位、人话解释与检查入口 |
-| [`references/file-lookup-dictionary-policy.json`](./references/file-lookup-dictionary-policy.json) | 看哪些关键文件必须被 File Lookup Dictionary 覆盖 |
-| [`references/redcap-system-layers.md`](./references/redcap-system-layers.md) | 看 RedCap 从 skill-root 演进为 Agent Runtime / CLI / 多层系统的架构路线 |
-| [`references/shared-knowledge-policy.json`](./references/shared-knowledge-policy.json) | 看公共知识库的按用户隔离、append-only、索引优先和远端边界策略 |
-| [`references/shared-knowledge-remote-binding.json`](./references/shared-knowledge-remote-binding.json) | 看公共知识库 Gitee 远端、候选白名单和 live head 验证证据 |
-| [`references/redcap-forge-policy.json`](./references/redcap-forge-policy.json) | 看 RedCap Forge 如何把私有经验蒸馏成安全的公共 arsenal 候选 |
-| [`references/information-architecture-artifact-governance-policy.json`](./references/information-architecture-artifact-governance-policy.json) | 看 report、knowledge、runtime evidence、Forge、arsenal 的目录边界和生命周期 |
+| [`assets/references/file-lookup-dictionary.md`](./assets/references/file-lookup-dictionary.md) | 看关键 JSON、脚本和 registry 的定位、人话解释与检查入口 |
+| [`assets/references/file-lookup-dictionary-policy.json`](./assets/references/file-lookup-dictionary-policy.json) | 看哪些关键文件必须被 File Lookup Dictionary 覆盖 |
+| [`assets/references/redcap-system-layers.md`](./assets/references/redcap-system-layers.md) | 看 RedCap 从 skill-root 演进为 Agent Runtime / CLI / 多层系统的架构路线 |
+| [`assets/references/shared-knowledge-policy.json`](./assets/references/shared-knowledge-policy.json) | 看公共知识库的按用户隔离、append-only、索引优先和远端边界策略 |
+| [`assets/references/shared-knowledge-remote-binding.json`](./assets/references/shared-knowledge-remote-binding.json) | 看公共知识库 Gitee 远端、候选白名单和 live head 验证证据 |
+| [`assets/references/redcap-forge-policy.json`](./assets/references/redcap-forge-policy.json) | 看 RedCap Forge 如何把私有经验蒸馏成安全的公共 arsenal 候选 |
+| [`assets/references/information-architecture-artifact-governance-policy.json`](./assets/references/information-architecture-artifact-governance-policy.json) | 看 report、knowledge、runtime evidence、Forge、arsenal 的目录边界和生命周期 |
 | [`templates/shared-knowledge/README.md`](./templates/shared-knowledge/README.md) | 看 `redcap-arsenal` 公共库的 RedCap 内模板，以及它和外部本地实体仓库的关系 |
-| [`references/skill-lifecycle-policy.json`](./references/skill-lifecycle-policy.json) | 看 RedCap-native capability、host-exported skill、portable skill package 的单一信源策略 |
-| [`references/legacy-asset-lifecycle.json`](./references/legacy-asset-lifecycle.json) | 看旧资产、运行残留与考古证据的生命周期策略 |
-| [`references/runtime-memory-architecture.md`](./references/runtime-memory-architecture.md) | 看 Layer B 生命周期如何与 `.dev-task.md`、承诺账本、closeout runtime、pending closure、session hooks 绑在一起 |
+| [`assets/references/skill-lifecycle-policy.json`](./assets/references/skill-lifecycle-policy.json) | 看 RedCap-native capability、host-exported skill、portable skill package 的单一信源策略 |
+| [`assets/references/legacy-asset-lifecycle.json`](./assets/references/legacy-asset-lifecycle.json) | 看旧资产、运行残留与考古证据的生命周期策略 |
+| [`assets/references/runtime-memory-architecture.md`](./assets/references/runtime-memory-architecture.md) | 看 Layer B 生命周期如何与 `.dev-task.md`、承诺账本、closeout runtime、pending closure、session hooks 绑在一起 |
 | [`prism/protocol.md`](./prism/protocol.md) | 看 Prism 的正式协议 |
 | [`prism/README.md`](./prism/README.md) | 快速理解 Prism 的定位与使用边界 |
-| [`compass/knowledge/design-principles.md`](./compass/knowledge/design-principles.md) | 看框架的设计哲学 |
+| [`assets/knowledge/design-principles.md`](./assets/knowledge/design-principles.md) | 看框架的设计哲学 |
 
 ## 一句收束
 

@@ -67,8 +67,8 @@ RedCap 当前把状态面划分为三类：
 | --- | --- | --- | --- | --- |
 | `loom/**/state.yaml` | canonical truth | Loom | Layer A 流程状态与回退依据 | 只能由 Dispatcher / Layer A 工具推进 |
 | `.dev-task.md` | canonical truth | Compass | Layer B 需求、slice、边界、原始输入、已确认需求 | 宿主面板不得替代它 |
-| `references/backlogs/*.json` | canonical long-route truth | References | 跨会话长期路线、阶段状态、当前焦点与证据锚点 | 不替代 `.dev-task.md`；当前任务必须显式锚定到具体 backlog 条目 |
-| `references/spec-registry.json` + `references/spec-lifecycle-policy.json` | canonical governance index | References | 给 `compass/docs/specs/*.md` / `compass/docs/archive/specs/*.md` 做机器登记与生命周期约束，说明每份 spec 的角色、状态、归档位置与执行链绑定 | 用于治理和校验，不把 spec 重新抬成 runtime authority |
+| `assets/references/backlogs/*.json` | canonical long-route truth | References | 跨会话长期路线、阶段状态、当前焦点与证据锚点 | 不替代 `.dev-task.md`；当前任务必须显式锚定到具体 backlog 条目 |
+| `assets/references/spec-registry.json` + `assets/references/spec-lifecycle-policy.json` | canonical governance index | References | 给 `assets/docs/specs/*.md` / `assets/docs/archive/specs/*.md` 做机器登记与生命周期约束，说明每份 spec 的角色、状态、归档位置与执行链绑定 | 用于治理和校验，不把 spec 重新抬成 runtime authority |
 | `prism` run state | run-scoped truth | Prism | 每次 Prism 运行的 run_id、registry、collect、resolve/archive 记录 | 以 run 为隔离边界 |
 | runtime project state | derived state | runtime tools | session/capability/binding/process claim、compat、audit、pending closure、closure-ledger | 不能反向篡改 canonical truth |
 | 宿主 `plan.md` / workboard | mirror state | host surface | 展示当前 pointer/hash，辅助长任务导航 | **mirror-only** |
@@ -106,26 +106,26 @@ RedCap 现在把项目资产统一放在 `assets/` 下：
 
 更完整的运行时记忆分层与 Layer B 生命周期定义，见：
 
-- [references/runtime-memory-architecture.md](references/runtime-memory-architecture.md)
-- [compass/knowledge/runtime-memory-architecture.md](compass/knowledge/runtime-memory-architecture.md)
+- [assets/references/runtime-memory-architecture.md](assets/references/runtime-memory-architecture.md)
+- [assets/knowledge/runtime-memory-architecture.md](assets/knowledge/runtime-memory-architecture.md)
 
 文件放哪一层，不取决于“看起来像不像记录”，而取决于它承担的是哪种记忆职责：
 
 | 层 | 典型载体 | 职责 | 是否可直接当作长期 evidence |
 | --- | --- | --- | --- |
-| **frozen evidence** | `compass/docs/specs/**`、`research/**`、`traces/**`、`task-reports/**` | 冻结后的设计、审计、研究与 closure 证据 | 是 |
-| **canonical long-route truth** | `references/backlogs/*.json` | 机器可读的长期路线、阶段状态、当前焦点与人类说明锚点 | 是，但只负责长期路线，不接管 live task |
-| **live knowledge** | `compass/knowledge/lessons.md`、`host-reliability.md`、`hooks-*.md`、模型矩阵 | 活的经验、heuristics、宿主差异与操作知识 | 只作为规则与经验，不直接替代 closure evidence |
-| **private archive** | `private-archive/redcap-knowledge/task-reports/**`、`private-archive/redcap-knowledge/research/**` | 旧报告和研究材料的私有冷归档 | 是，但必须索引/精确读取，不默认加载 |
-| **continuity assets** | `.dev-task.md`、`compass/knowledge/explore-notes.md`、宿主 `plan.md` / workboard、导入的 session artifacts | 防偏航、防上下文稀释、断点恢复、显式继承 | 否 |
+| **frozen evidence** | `assets/docs/specs/**`、`assets/docs/research/**`、`assets/docs/traces/**`、`assets/docs/task-reports/**` | 冻结后的设计、审计、研究与 closure 证据 | 是 |
+| **canonical long-route truth** | `assets/references/backlogs/*.json` | 机器可读的长期路线、阶段状态、当前焦点与人类说明锚点 | 是，但只负责长期路线，不接管 live task |
+| **live knowledge** | `assets/knowledge/lessons.md`、`assets/knowledge/host-reliability.md`、`assets/knowledge/hooks-*.md`、模型矩阵 | 活的经验、heuristics、宿主差异与操作知识 | 只作为规则与经验，不直接替代 closure evidence |
+| **private archive** | `assets/private-archive/redcap-knowledge/task-reports/**`、`assets/private-archive/redcap-knowledge/research/**` | 旧报告和研究材料的私有冷归档 | 是，但必须索引/精确读取，不默认加载 |
+| **continuity assets** | `.dev-task.md`、`assets/knowledge/explore-notes.md`、宿主 `plan.md` / workboard、导入的 session artifacts | 防偏航、防上下文稀释、断点恢复、显式继承 | 否 |
 
 因此：
 
 1. `assets/docs/` 与 `assets/knowledge/` 是**平级不同职**，不是父子关系；`compass/docs/` 与 `compass/knowledge/` 只是兼容入口。
 2. `assets/docs/task-reports/` 是近期结案报告入口，不是历史报告仓库；旧报告的 canonical 冷归档在 `assets/private-archive/redcap-knowledge/task-reports/`，旧 `redcap-knowledge/**` 仅作为别名/考古锚点保留。
 3. continuity assets 不是“第三个 docs”，而是围绕 canonical truth 运行的连续性状态链。
-4. backlog 这类“长期路线”如果要进入执行保障，机器权威应放在 `references/backlogs/*.json`，给人看的解释继续留在 `compass/docs/specs/**`；不要反过来把 spec 文档当运行时 authority。
-5. spec 文档若想继续保留在 `compass/docs/specs/**`，必须在 `references/spec-registry.json` 里登记自己的角色、当前状态和配套控制面；否则就只是匿名材料，应迁出或补登记。
+4. backlog 这类“长期路线”如果要进入执行保障，机器权威应放在 `assets/references/backlogs/*.json`，给人看的解释继续留在 `assets/docs/specs/**`；不要反过来把 spec 文档当运行时 authority。
+5. spec 文档若想继续保留在 `assets/docs/specs/**`，必须在 `assets/references/spec-registry.json` 里登记自己的角色、当前状态和配套控制面；否则就只是匿名材料，应迁出或补登记。
 6. 若某类资产要从 continuity 层升级为 evidence，必须经过**显式发布**，而不是因为“写成了 markdown”就自动变成 docs。
 7. 公共沉淀必须先过 `RedCap Forge`，不能把私有报告、identity、runtime evidence 或 lessons 原文直接推入 `redcap-arsenal`。
 8. `assets/docs/index.yaml` 负责冻结 docs collection 的 retention / archive 规则，兼容入口为 `compass/docs/index.yaml`，避免 docs 根目录再次回到大杂烩状态。
@@ -152,7 +152,7 @@ RedCap 现在把项目资产统一放在 `assets/` 下：
 2. **宿主耦合保障**：RedCap 已有接线，但是否成立取决于宿主能力矩阵。
 3. **人工/宿主边界保障**：规则已被登记、审计、诊断，但当前没有 repo-owned reply veto 一类的物理拦截点。
 
-具体解释见 [execution-guarantee-tiers.md](references/execution-guarantee-tiers.md)；机器权威仍以 `references/execution-guarantees.json` 为准。
+具体解释见 [execution-guarantee-tiers.md](assets/references/execution-guarantee-tiers.md)；机器权威仍以 `assets/references/execution-guarantees.json` 为准。
 
 这里还要额外加一条资产边界：**共享宿主 skill 是 carrier-owned overlay，不是 RedCap 的 patch surface**。  
 RedCap 可以消费它们的能力，但不能把“修改宿主 shared skill 原始文件”当成自身能力成立的前提；若不改宿主 skill 就无法稳定工作，该路径只能被标记为 **degraded / unsupported overlay**。
@@ -260,7 +260,7 @@ Loom 的可靠性工程面向“长任务 + 宿主差异 + LLM 遗忘”三类�
 | **reload rules** | 在关键检查点重读规则，抵抗上下文压缩 |
 | **pending_actions 原子写入** | 防止“状态更新了，但后续动作忘了执行” |
 | **fallback / degraded 路径** | 在宿主能力不足或会话恢复异常时，保留可恢复性而不是伪成功 |
-| **execution guarantees** | 用 `references/execution-guarantees.json` 登记哪些规则必须有复活、Hook、validator 或 manual-only 保障，避免规则只停在自然语言文档里 |
+| **execution guarantees** | 用 `assets/references/execution-guarantees.json` 登记哪些规则必须有复活、Hook、validator 或 manual-only 保障，避免规则只停在自然语言文档里 |
 
 其中 `pending_actions` 的原则仍然成立：**状态推进与后续动作必须同批次固化**，否则就会产生递归遗忘。
 
@@ -275,7 +275,7 @@ Compass 是 RedCap 的自我开发平面。这里管理的不是用户项目，�
 Layer B 的核心执行序列是：
 
 1. 读取 `compass/soul.md`，恢复人格与协作默契
-2. 读取 `compass/CONTRIBUTING.md` 与 `compass/knowledge/lessons.md`
+2. 读取 `compass/CONTRIBUTING.md` 与 `assets/knowledge/lessons.md`
 3. 恢复 `.dev-task.md`、plan mirror 与最近工作停点
 4. PM Gate 锁定需求，再进入实现
 5. 变更后执行影响范围检查、任务报告、棱镜独立验收，再交给统一 closeout runtime 完成通知与收尾
@@ -283,7 +283,7 @@ Layer B 的核心执行序列是：
 Layer B **不走 Layer A 那种单一 `state.yaml` FSM**，但它并不是“无状态控制面”。
 当前 Layer B 采用的是**分布式控制面生命周期**：由 `.dev-task.md`、PM Gate、
 anti-drift、stop-review、pending closure、closure-ledger 与 session-end 共同表达
-状态与转移。正式定义见 [references/runtime-memory-architecture.md](references/runtime-memory-architecture.md)。
+状态与转移。正式定义见 [assets/references/runtime-memory-architecture.md](assets/references/runtime-memory-architecture.md)。
 
 ### 4.2 PM Gate（需求确认门）
 
@@ -313,7 +313,7 @@ PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 
 当前 Layer B 的控制面不再依赖“Agent 应该记得当前在做哪一刀”，而是依赖
 **显式 metadata + gate 脚本 + drift 审计**。`.dev-task.md` 只是其中一个真相源，
-不是全部生命周期本身；完整状态链见 [references/runtime-memory-architecture.md](references/runtime-memory-architecture.md)。
+不是全部生命周期本身；完整状态链见 [assets/references/runtime-memory-architecture.md](assets/references/runtime-memory-architecture.md)。
 
 ### 4.4 宿主 workboard mirror-only 边界
 
@@ -357,7 +357,7 @@ PM Gate 是 Layer B 的第一道强约束，核心由两段组成：
 - 存在多个互斥选项
 - 用户明确指出分歧或风险预警
 
-记录载体是 `compass/knowledge/explore-notes.md`。  
+记录载体是 `assets/knowledge/explore-notes.md`。
 当 PM Gate 真正开始时，书记笔记是前情底稿，不是可忽略的“聊天记录”。
 
 ### 4.6 指挥棒（Baton）
@@ -489,7 +489,7 @@ shared knowledge 的职责不同：它不是当前任务真相源，也不默认
 
 RedCap 当前把“最近会话继承”落成了**显式导入协议**，而不是默认自动恢复：
 
-1. `redcap-layerB-session-start.sh` 会先调用 `redcap-session-resume-gate.sh`，按 `references/host-session-capability-matrix.json` 把当前宿主判定到 `full / degraded / unsupported`
+1. `redcap-layerB-session-start.sh` 会先调用 `redcap-session-resume-gate.sh`，按 `assets/references/host-session-capability-matrix.json` 把当前宿主判定到 `full / degraded / unsupported`
 2. 只有 `full` 才允许 attach/create runtime session；`degraded / unsupported` 只能继续 safe advisory sync
 3. SessionStart 再同步 canonical pointer，然后由 `redcap-session-continuity.sh` 把当前会话 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml`
 4. manifest 同目录还会维护 `provenance.yaml`；跨会话导入时，再追加 `compass/.runtime/continuity/import-registry.jsonl` 与 `audit-log.jsonl`
@@ -632,14 +632,14 @@ References 是三体共享的协议层，承载：
 | `SKILL.md` | Loom/Dispatcher 入口协议 |
 | `compass/CONTRIBUTING.md` | Layer B 唯一权威规范 |
 | `compass/soul.md` | 人格连续性与 revive 基线 |
-| `private-archive/redcap-knowledge/traces/architecture-capability-trace.yaml` | 旧能力锚点与全量 trace matrix |
+| `assets/private-archive/redcap-knowledge/traces/architecture-capability-trace.yaml` | 旧能力锚点与全量 trace matrix |
 | `loom/dispatcher/state-machine.md` | Layer A 状态转移定义 |
 | `loom/dispatcher/agent-adapters.md` | 路由、适配、会话接力 |
 | `prism/protocol.md` | Prism 协议全文 |
-| `references/communication-protocol.md` | `__redcap_status` 完整协议 |
-| `references/execution-guarantees.json` | 执行保障目录，说明哪些规则必须被脚本、Hook、validator 或人工边界保护 |
-| `references/task-report-template.md` | 任务完成报告模板 |
-| `compass/knowledge/lessons.md` | 活跃经验库 |
+| `assets/references/communication-protocol.md` | `__redcap_status` 完整协议 |
+| `assets/references/execution-guarantees.json` | 执行保障目录，说明哪些规则必须被脚本、Hook、validator 或人工边界保护 |
+| `assets/references/task-report-template.md` | 任务完成报告模板 |
+| `assets/knowledge/lessons.md` | 活跃经验库 |
 
 ### 7.3 设计决策速查
 
@@ -664,7 +664,7 @@ References 是三体共享的协议层，承载：
 从本版本开始，架构审查采用**文档 + trace matrix + runtime evidence** 三件套：
 
 1. `ARCHITECTURE.md`：解释当前系统为什么这样设计
-2. `private-archive/redcap-knowledge/traces/architecture-capability-trace.yaml`：冻结旧能力锚点，映射新架构锚点，记录 runtime evidence
+2. `assets/private-archive/redcap-knowledge/traces/architecture-capability-trace.yaml`：冻结旧能力锚点，映射新架构锚点，记录 runtime evidence
 3. task report / acceptance / audit logs：提供物理证据
 
 当前 trace matrix 至少覆盖以下能力簇：

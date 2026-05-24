@@ -1,6 +1,6 @@
 # RedCap 自身开发规范
 
-> 本文件约束 **RedCap 框架自身** 的变更流程。项目 Agent 在开发用户项目时遵守的规范见 `references/` 目录。
+> 本文件约束 **RedCap 框架自身** 的变更流程。项目 Agent 在开发用户项目时遵守的规范见 `assets/references/` 目录。
 
 ---
 
@@ -8,8 +8,8 @@
 
 修改框架文件前，**必须先按需检查以下入口**，不得为了“完整复活”默认全文读取大文件：
 
-1. **`compass/knowledge/design-principles.md`**（元原则）— 确认本次变更不违背 P-1 至 P-5 五项战略层原则
-2. **`compass/knowledge/index.md` → `compass/knowledge/lessons.md` 热点主题速览 → 精确 L-编号**（经验库）— 先用 knowledge index 与热点簇定位，再打开相关 lessons；不要默认全文读 lessons
+1. **`assets/knowledge/design-principles.md`**（元原则）— 确认本次变更不违背 P-1 至 P-5 五项战略层原则
+2. **`assets/knowledge/index.md` → `assets/knowledge/lessons.md` 热点主题速览 → 精确 L-编号**（经验库）— 先用 knowledge index 与热点簇定位，再打开相关 lessons；不要默认全文读 lessons
 3. **`rg -n "^## |^### " compass/CONTRIBUTING.md`** — 先定位本次变更涉及的规范章节，再按精确行段读取
 
 重点关注：
@@ -139,9 +139,9 @@ type(scope): 简要描述
 | `适配器` | loom/dispatcher/agent-adapters.md |
 | `模板` | dispatcher/prompt-templates/ |
 | `角色` | roles/ 下的角色手册 |
-| `规范` | references/ 下的规范文件 |
+| `规范` | assets/references/ 下的规范文件 |
 | `feishu` | compass/tools/feishu-notifier.py + 相关配置 |
-| `经验` | compass/knowledge/lessons.md |
+| `经验` | assets/knowledge/lessons.md |
 | `铁律` | 涉及安全铁律的变更 |
 
 **示例**：
@@ -170,11 +170,11 @@ docs(经验): 新增 L-9 飞书架构局限性
 10. **汇报要有结论和段落感**：阶段汇报、最终汇报、飞书节点通知和任务报告开头都要优先讲人能直接判断的结论：本次要解决什么问题、采用了什么解法、解决后的效果如何、下一步是什么、是否还需要 Norven 协助。若任务本身不适合这些维度，可按实际情况表达，但不得刻意堆砌“新增文件/修改脚本/移动到某处/跑了某命令”这类工程流水账来冒充完成说明；工程细节可以放在报告后半部分或验证表里。
 11. **`cli_console.md` 只允许做覆盖式镜像**：它不是第二份答案，也不是历史日志；如需镜像长回复，必须保持与最终回复一致，并使用覆盖写入而不是追加堆积。当前可用 `compass/tools/redcap-cli-console-mirror.sh` 统一处理本地镜像。
 
-**执行口径**：本条分两层执行。第一层是正式落盘产物：`compass/docs/task-reports/*.md` 已由 `redcap-task-report-check.sh` 调用 `redcap-human-output-quality-check.sh` 做结构化质量审计，检查“四句先看懂”、术语对照、完成等级与 receipt 证据是否自洽。第二层是即时对话、命令输出、代码片段等宿主实时回复：当前仍不新增全局正则拦截，避免误伤路径、键名与代码；这部分必须在最终 review / 棱镜验收 / 任务复盘中审查，并诚实标为 host-limited。
+**执行口径**：本条分两层执行。第一层是正式落盘产物：`assets/docs/task-reports/*.md` 已由 `redcap-task-report-check.sh` 调用 `redcap-human-output-quality-check.sh` 做结构化质量审计，检查“四句先看懂”、术语对照、完成等级与 receipt 证据是否自洽。第二层是即时对话、命令输出、代码片段等宿主实时回复：当前仍不新增全局正则拦截，避免误伤路径、键名与代码；这部分必须在最终 review / 棱镜验收 / 任务复盘中审查，并诚实标为 host-limited。
 
 ## 3. 变更后：经验沉淀检查
 
-每轮变更完成后，执行以下自检（同 `compass/knowledge/lessons.md` 中的归档触发检查点）：
+每轮变更完成后，执行以下自检（同 `assets/knowledge/lessons.md` 中的归档触发检查点）：
 
 1. 本轮是否发现了**新的失败模式或反直觉行为**？→ 归档为 Lesson
 2. 本轮是否验证了一个**之前文档中写错的假设**？→ 归档为 Lesson
@@ -222,7 +222,7 @@ bash loom/tools/redcap-e2e-session.sh status
 
 **最小产出物**——E2E 不要求写完整报告，但必须产出以下内容并融入框架：
 
-1. **经验条目**（L-编号）：每个新发现的失败模式/反直觉行为 → 沉淀到 `compass/knowledge/lessons.md`
+1. **经验条目**（L-编号）：每个新发现的失败模式/反直觉行为 → 沉淀到 `assets/knowledge/lessons.md`
 2. **Bug 修复**：发现的问题当场修复并 commit
 3. **E2E 报告更新**：更新 `loom/test-reports/latest-e2e-report.md`（覆盖范围、核心发现、遗留问题）
 4. **消费 pending-validations**：验证通过的条目标记 ✅ 并移入归档区
@@ -331,11 +331,11 @@ E2E 执行完毕
 
 ## 5. 飞书通知
 
-> **本节属于 Layer B（开发 RedCap 自身）**。Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10 定义，通过 Dispatcher 状态机触发。两层架构详见 `compass/knowledge/host-reliability.md` §0。
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A（RedCap 开发用户项目）的 Hook 由 SKILL.md §5.10 定义，通过 Dispatcher 状态机触发。两层架构详见 `assets/knowledge/host-reliability.md` §0。
 
 RedCap 自身变更不走 Dispatcher 主状态机。飞书只做“节点汇报”和“需要 Norven 人工介入的中断”两类用户可见信号；宿主 SessionEnd Hook 只负责兜底审计与 blocker 告警，不应重复发送成功刷屏。
 
-**账号与通道（强约束）**：RedCap 官方通知路径只允许 `references/feishu-notification-policy.json` 指定的 `cli_a9579f5b12219bb5` lark-cli DM profile。`webhook`、旧 profile、followup watcher、SessionEnd 默认成功通知都不是合法生产路径。策略与本地 ignored 配置由以下检查兜底：
+**账号与通道（强约束）**：RedCap 官方通知路径只允许 `assets/references/feishu-notification-policy.json` 指定的 `cli_a9579f5b12219bb5` lark-cli DM profile。`webhook`、旧 profile、followup watcher、SessionEnd 默认成功通知都不是合法生产路径。策略与本地 ignored 配置由以下检查兜底：
 
 ```bash
 bash compass/tools/redcap-feishu-notification-policy-check.sh
@@ -371,30 +371,30 @@ python3 compass/tools/feishu-notifier.py pending-list --limit 5
 |-----------|---------------------|
 | SKILL.md §5.2 事件循环 | loom/dispatcher/state-machine.md 伪代码 |
 | SKILL.md §5.10 Hooks | loom/dispatcher/state-machine.md 对应触发点 |
-| references/communication-protocol.md | roles/ 下各角色手册中的状态返回说明 + compass/knowledge/a2a-communication.md §5.4 |
-| loom/dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 + compass/knowledge/a2a-communication.md §2 |
-| loom/dispatcher/state-machine.md 状态枚举 | compass/knowledge/a2a-communication.md §4（NEGOTIATING 状态同步） |
+| assets/references/communication-protocol.md | roles/ 下各角色手册中的状态返回说明 + assets/knowledge/a2a-communication.md §5.4 |
+| loom/dispatcher/agent-adapters.md | SKILL.md §5.5 路由表 + assets/knowledge/a2a-communication.md §2 |
+| loom/dispatcher/state-machine.md 状态枚举 | assets/knowledge/a2a-communication.md §4（NEGOTIATING 状态同步） |
 | SKILL.md §5.10 Hooks 表 | loom/dispatcher/state-machine.md `populate_pending_actions` + SKILL.md §5.13 映射表 |
 | CONTRIBUTING.md 自身 | `compass/CONTRIBUTING.core.md` + .github/copilot-instructions.md + CLAUDE.md + GEMINI.md（`AGENTS.md` 仅作本地 Codex carrier，不再视为 fresh clone 必备输入）；不得通过 `@compass/CONTRIBUTING.md` 默认导入全文，修改入口规则后需运行 `redcap-contributing-ia-check.sh` 与 `redcap-token-risk-audit.sh` |
-| references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
+| assets/references/agent-constraints.md | 项目级 CLAUDE.md / GEMINI.md 通过 `@` 导入此文件；修改此文件影响所有子 Agent 行为 |
 | knowledge/design-principles.md | ARCHITECTURE.md 设计哲学章节 + CONTRIBUTING.md §1（元原则引用） |
-| compass/knowledge/a2a-communication.md | ARCHITECTURE.md 通信协议章节 + loom/dispatcher/state-machine.md（前瞻标注） |
+| assets/knowledge/a2a-communication.md | ARCHITECTURE.md 通信协议章节 + loom/dispatcher/state-machine.md（前瞻标注） |
 | 任何 Agent 调用方式 | 先实测（L-8），再改文档 |
 | CONTRIBUTING.md §7 | .github/copilot-instructions.md + CLAUDE.md + GEMINI.md（入口索引中的断点续传检查指令）|
-| tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ .gemini/settings.json（Gemini 注册）+ compass/knowledge/host-reliability.md（防线文档）+ references/hook-standards.md §1（不变量清单）|
-| loom/tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ compass/knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
-| references/hook-standards.md | loom/tools/redcap-layerA-session-end.sh（实现必须满足§1不变量）+ compass/knowledge/host-reliability.md §3（宿主覆盖率）|
-| references/communication-protocol.md §2 | SKILL.md §5.3 + loom/dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + ARCHITECTURE.md 通信协议节 |
+| tools/ 下 Hook 脚本 | .claude/settings.json（Hook 注册）+ .gemini/settings.json（Gemini 注册）+ assets/knowledge/host-reliability.md（防线文档）+ assets/references/hook-standards.md §1（不变量清单）|
+| loom/tools/redcap-layerA-*.sh | ~/.claude/settings.json（用户级 Hook 注册）+ assets/knowledge/host-reliability.md §3.3/§3.5 + CONTRIBUTING.md §4 |
+| assets/references/hook-standards.md | loom/tools/redcap-layerA-session-end.sh（实现必须满足§1不变量）+ assets/knowledge/host-reliability.md §3（宿主覆盖率）|
+| assets/references/communication-protocol.md §2 | SKILL.md §5.3 + loom/dispatcher/state-machine.md 伪代码 5e-5f + 全部 prompt-templates + ARCHITECTURE.md 通信协议节 |
 | compass/tools/redcap-check-state.sh | compass/tools/redcap-on-qa-pass.sh（集成调用）|
 | 涉及 §3.1 触发类型的任何变更 | loom/test-reports/pending-validations.md（登记待验证条目）|
 | loom/test-reports/benchmark-scenario.md | loom/test-reports/pending-validations.md（验证矩阵变更可能影响待验证项的验证方法）|
-| loom/test-reports/latest-e2e-report.md | loom/test-reports/pending-validations.md（报告产出后消费待验证条目）+ compass/knowledge/lessons.md（经验沉淀）|
+| loom/test-reports/latest-e2e-report.md | loom/test-reports/pending-validations.md（报告产出后消费待验证条目）+ assets/knowledge/lessons.md（经验沉淀）|
 | loom/tools/redcap-e2e-postcheck.sh | CONTRIBUTING.md §3.1 步骤⑧ + compass/tools/redcap-on-stop-review.sh（E2E gate 集成）|
-| loom/test-reports/e2e-session.yaml（新增/删除）| loom/test-reports/latest-e2e-report.md + loom/test-reports/pending-validations.md + compass/knowledge/lessons.md |
+| loom/test-reports/e2e-session.yaml（新增/删除）| loom/test-reports/latest-e2e-report.md + loom/test-reports/pending-validations.md + assets/knowledge/lessons.md |
 
 ## 7. Layer B 大型任务断点续传
 
-> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的断点续传由 `.workflow/state.yaml` 这类单一显式 FSM 自动保证；Layer B 不采用同一种单中心状态文件，而是使用 `.dev-task.md + 承诺账本 + closeout runtime + pending closure + closure-ledger + validator-chain + session-start/stop-review/on-complete/session-end` 组成的分布式控制面生命周期。详见 `references/runtime-memory-architecture.md`。
+> **本节属于 Layer B（开发 RedCap 自身）**。Layer A 的断点续传由 `.workflow/state.yaml` 这类单一显式 FSM 自动保证；Layer B 不采用同一种单中心状态文件，而是使用 `.dev-task.md + 承诺账本 + closeout runtime + pending closure + closure-ledger + validator-chain + session-start/stop-review/on-complete/session-end` 组成的分布式控制面生命周期。详见 `assets/references/runtime-memory-architecture.md`。
 
 **问题**：Layer B 曾经缺少像 Layer A 那样显眼的单一 FSM 表达，导致会话中断后容易被误判成“只能靠上下文记忆恢复”，也让入口文档和实际控制面之间出现口径漂移。
 
@@ -498,11 +498,11 @@ governance_debts_addressed: []
   - 统一维护 interop audit、pending closure obligation 与 `closure-ledger/` 事务日志
   - `pending-closure/` 表示当前 outstanding obligation；`closure-ledger/` 负责保留阶段性 closure 证据，不得互相冒充
 - `compass/tools/redcap-artifact-lifecycle-check.sh`
-  - 复用 `compass/tools/redcap-artifact-classifier.sh` 统一给路径做 lifecycle 分类，并读取 `compass/docs/index.yaml` 的根目录准入规则
+  - 复用 `compass/tools/redcap-artifact-classifier.sh` 统一给路径做 lifecycle 分类，并读取 `assets/docs/index.yaml` 的根目录准入规则
   - 对 **RedCap 自身工作区**，`.githooks/pre-commit` 会用 staged set 模式在提交前拦住 session/local/temp artifact；若 repo-tracked 与非 repo-tracked 产物混提，必须显式报 mixed-lifecycle
   - `stop-review` / `on-complete` / `session-end` 继续检查本轮 commit 区间里所有曾进入历史的路径，而不是只看最终 net diff
   - 一旦命中违规路径，会阻断收尾通过，并显式暴露这批违规产物
-  - 阻断 `compass/docs/` 根目录重新长成未分类条目
+  - 阻断 `assets/docs/` 根目录重新长成未分类条目
 - `compass/tools/redcap-ensure-git-hooks.sh`
   - 由 `redcap-layerB-session-start.sh` 尝试自动设置 repo-local `core.hooksPath=.githooks`
   - 若仓库原先已经有其他 `core.hooksPath`，必须先写入 `redcap.previousHooksPath`，再由 `.githooks/pre-commit` 在 RedCap 闸门通过后回调旧 hook，避免静默覆盖
@@ -541,26 +541,26 @@ governance_debts_addressed: []
   - 审计书记官、经验沉淀、灵魂锚点、计划审核与人话全景图是否仍有 runtime 可见面，防止优秀机制只剩自然语言规则
   - 它不能替代宿主级 pre-reply veto，但会被 `diagnose / spec-check` 消费，至少让“zero work”机制在状态面里暴露出来
 - `compass/tools/redcap-docs-catalog.sh`
-  - 维护 `compass/docs/catalog.json`，把 specs / research / traces / task-reports 的标题、摘要、读法策略、体量与粗略 token 压力压成首读索引
-  - 接盘、考古或长任务恢复时，优先运行 `redcap-docs-catalog.sh summary` / `redcap-docs-catalog.sh plan "<问题>"` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；不得默认全量读取 `compass/docs/**`
+  - 维护 `assets/docs/catalog.json`，把 specs / research / traces / task-reports 的标题、摘要、读法策略、体量与粗略 token 压力压成首读索引
+  - 接盘、考古或长任务恢复时，优先运行 `redcap-docs-catalog.sh summary` / `redcap-docs-catalog.sh plan "<问题>"` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；不得默认全量读取 `assets/docs/**`
   - 当前实现要求宿主提供可写临时目录；只读 sandbox 下不再冒充强保障入口
   - `budget` 会拒绝目录、glob、未登记路径、过多文件与超预算读取；真实需要大规模考古时，必须在任务报告中写明范围、理由与折中
-  - 修改、移动、新增 `compass/docs/**` 后，必须重新执行 `redcap-docs-catalog.sh generate` 并让 `redcap-docs-catalog.sh check` 通过，避免首读索引陈旧
+  - 修改、移动、新增 `assets/docs/**` 后，必须重新执行 `redcap-docs-catalog.sh generate` 并让 `redcap-docs-catalog.sh check` 通过，避免首读索引陈旧
   - catalog 中 task report 的 `hot / warm / cold-candidate` 只是文件名近因提示，不代表当前 active truth；当前任务锚点必须以 `redcap-current-status.sh`、pending closure 与 `.dev-task.md` 为准
-- `references/execution-guarantees.json`
+- `assets/references/execution-guarantees.json`
   - 作为“执行保障目录”，把已经形成规则、但必须进入复活协议 / Hook / validator / manual-only 边界的事项列成机器可读清单
   - 后续新增强制规则时，必须先登记 `id / category / priority / source_paths / guarantee_paths / auto_enforceable`；不能只把规则写进自然语言文档
   - 对不能或不宜自动化的规则，必须写 `non_automation_reason`，例如 identity 内容判断、lessons 内容质量、外部 CLI 登录态修复与自然语言风格细节
-- `compass/knowledge/index.md`
+- `assets/knowledge/index.md`
   - 作为 knowledge 首读导航，说明 lessons、design principles、host hooks、A2A、部署状态、治理债务分别去哪查
-  - 需要读取 `compass/knowledge/**` 时，先读 index，再打开 1-3 个精确文件；不得默认 bulk-read 整个 knowledge 目录
-  - 新增、移动或删除 `compass/knowledge/*.md` 后，必须同步更新 index，并让 `redcap-knowledge-index-check.sh` 通过
+  - 需要读取 `assets/knowledge/**` 时，先读 index，再打开 1-3 个精确文件；不得默认 bulk-read 整个 knowledge 目录
+  - 新增、移动或删除 `assets/knowledge/*.md` 后，必须同步更新 index，并让 `redcap-knowledge-index-check.sh` 通过
 - `compass/tools/redcap-execution-guarantee-check.sh`
-  - 校验 `references/execution-guarantees.json` 的必备类别、必备规则 ID、来源文件、保障文件与 manual-only 原因
+  - 校验 `assets/references/execution-guarantees.json` 的必备类别、必备规则 ID、来源文件、保障文件与 manual-only 原因
   - 已接入 `redcap-spec-check.sh`；若检查失败，说明某条规则只停在文档里，没有进入执行保障体系
 - `compass/tools/redcap-revival-check.sh`
   - 维护“复活协议是否真正重载执行纪律”的静态门禁，检查 `compass/soul.md`、宿主入口文件、reload-rules、hook standards 与执行保障目录是否对齐
-  - 已接入 `redcap-spec-check.sh`；后续新增必须复活时执行的规则，应先补进 `soul.md §6.5` 与 `references/execution-guarantees.json`，再补本检查脚本
+  - 已接入 `redcap-spec-check.sh`；后续新增必须复活时执行的规则，应先补进 `soul.md §6.5` 与 `assets/references/execution-guarantees.json`，再补本检查脚本
 - `compass/tools/redcap-acceptance-index.sh`
   - 为巨型 `redcap-multi-session-acceptance.sh` 生成 case 首读索引；需要定位 acceptance case 时先用 `summary/find`，再打开精确行段，不得默认全文读测试脚本
   - 当前实现要求宿主提供可写临时目录；只读 sandbox 下必须退回手工 case 定位或 wrapper
@@ -573,12 +573,12 @@ governance_debts_addressed: []
   - 负责把 `cli_console.md` 维护成**覆盖式本地展示镜像**，避免继续追加旧回复而让人误以为这里是第二份历史日志
   - 它只能帮助“镜像一致”，不能替代最终对话回复本身；如果镜像内容与最终回复不一致，以最终回复为准
 - `compass/tools/redcap-spec-check.sh`
-  - `references/spec-registry.json` 是 `compass/docs/specs/*.md` / `compass/docs/archive/specs/*.md` 的机器登记表；每份 spec 必须声明自己的角色、状态、是否 runtime authority、以及它对应哪条控制面或治理债务
-  - `references/spec-lifecycle-policy.json` 负责声明 spec 能放哪、什么状态必须归档、何时必须补 `replaced_by`
-  - `references/spec-contribution-standard.md` 负责给人说明新增 spec 的命名、role、状态与替代关系该怎么写
+  - `assets/references/spec-registry.json` 是 `assets/docs/specs/*.md` / `assets/docs/archive/specs/*.md` 的机器登记表；每份 spec 必须声明自己的角色、状态、是否 runtime authority、以及它对应哪条控制面或治理债务
+  - `assets/references/spec-lifecycle-policy.json` 负责声明 spec 能放哪、什么状态必须归档、何时必须补 `replaced_by`
+  - `assets/references/spec-contribution-standard.md` 负责给人说明新增 spec 的命名、role、状态与替代关系该怎么写
   - 校验目标不是把 spec 变成新 authority，而是防止 `specs/` 再次退化成匿名堆放区；凡是被修改的 spec，必须先在 registry 里说清楚“它是什么、它不是什么、它和哪条执行链相关”
 - `compass/tools/redcap-session-resume-gate.sh`
-  - 基于 `references/host-session-capability-matrix.json` 统一判定 Layer B `full / degraded / unsupported` 隔离模式
+  - 基于 `assets/references/host-session-capability-matrix.json` 统一判定 Layer B `full / degraded / unsupported` 隔离模式
   - 只有 gate 明确给出 `full` 与受允 recovery path 时，`redcap-layerB-session-start.sh` 才能 attach/create runtime session
 - `compass/tools/redcap-session-continuity.sh`
   - 先把 continuity authority 发布到 `compass/.runtime/sessions/<runtime_session_id>/manifest.yaml` / `provenance.yaml`，再向宿主 workboard 追加 session mirror（`session_handle / binding_key / task metadata / isolation_mode / resume_gate_reason / resume_gate_profile / resume_gate_evidence / continuity_state / import_protocol / next_action / import_ready_signal / import_ready_summary / import_success_summary`；其中 `import_ready_signal` 允许值为 `blocked-no-runtime / not-needed-own-record / not-ready-no-compatible-source / ready / completed`）
@@ -587,7 +587,7 @@ governance_debts_addressed: []
   - 缺少可验证 `runtime_session_id` 时只能输出 `continuity_authority=degraded-no-runtime-manifest` 的 no-runtime mirror；此时 `isolation_mode` 可由 resume gate 判成 `degraded` 或 `unsupported`，但仍不得伪造 `self-recorded / import-suggested / imported`
   - `import_protocol` 是 continuity engine 对当前导入姿态的权威枚举：`runtime-session-unavailable`、`no-compatible-source-detected`、`not-needed-current-session-has-own-record`、`explicit-only`、`explicit-copy-preserve-source`
   - `import` 的 source task metadata 以 source manifest 为唯一 authority；source manifest 必须是 `continuity_state=self-recorded` 的 self-recorded source，携带完整 `task_id / top_goal / confirmed_hash`，且 `own_record_present=1`，同时 source 当前 Session Mirror/runtime 也必须仍与该 manifest 绑定。缺失 source manifest、缺关键 metadata、`continuity_state!=self-recorded`、`own_record_present!=1`、source 当前 mirror/runtime 已退化失绑，或 source/target task metadata mismatch 时必须 fail-closed，不能回退成“只看 source workboard pointer”
-  - cross-host continuity 也走这同一套协议：**唯一 host-specific 输入**只有 `references/host-session-capability-matrix.json` 对宿主 full/degraded/unsupported 的判定与恢复路径；只要 source/target 两侧都已是 verified `full` runtime，manifest / explicit import contract 在 claude、gemini、copilot 等受支持宿主之间保持 host-agnostic，不得为某个宿主另写一套“特殊导入语义”
+  - cross-host continuity 也走这同一套协议：**唯一 host-specific 输入**只有 `assets/references/host-session-capability-matrix.json` 对宿主 full/degraded/unsupported 的判定与恢复路径；只要 source/target 两侧都已是 verified `full` runtime，manifest / explicit import contract 在 claude、gemini、copilot 等受支持宿主之间保持 host-agnostic，不得为某个宿主另写一套“特殊导入语义”
 
 > 该文件已加入 `.gitignore`——它是临时过程状态，不应进入版本控制。
 
@@ -602,15 +602,15 @@ governance_debts_addressed: []
 当 `governance_tranche: true` 时，额外要求如下：
 
 1. `.dev-task.md` 中必须填写 `governance_debts_addressed`
-2. 任务执行前后都要对照 `references/governance-review-checklist.md`
-3. 若发现“设计已完成、实现未完成”的治理项，必须补录到 `compass/knowledge/governance-debt-register.md`
+2. 任务执行前后都要对照 `assets/references/governance-review-checklist.md`
+3. 若发现“设计已完成、实现未完成”的治理项，必须补录到 `assets/knowledge/governance-debt-register.md`
 4. task report 中必须显式说明：
    - 本 tranche 触及了哪些治理边界
    - 哪些规则已经脚本化 / gate 化
    - 哪些仍是 debt，为什么暂不实现
 5. 若任务绑定了长期路线 backlog，`.dev-task.md` 中必须声明 `backlog_source / backlog_id / backlog_item`，并在收尾前确保人类说明文档已由 `redcap-backlog-check.sh sync` 对齐
-6. 若任务修改了 `compass/docs/specs/*.md` 或 `compass/docs/archive/specs/*.md`，必须同步更新 `references/spec-registry.json`；若这份 spec 暂无对应执行链，至少要诚实挂到治理债务，不能假装它已经是 runtime guarantee
-7. 若某份 spec 被新版替代，必须同步执行三件事：移动到 `compass/docs/archive/specs/`、在 registry 中把状态改为 `superseded`、并填写 `replaced_by`
+6. 若任务修改了 `assets/docs/specs/*.md` 或 `assets/docs/archive/specs/*.md`，必须同步更新 `assets/references/spec-registry.json`；若这份 spec 暂无对应执行链，至少要诚实挂到治理债务，不能假装它已经是 runtime guarantee
+7. 若某份 spec 被新版替代，必须同步执行三件事：移动到 `assets/docs/archive/specs/`、在 registry 中把状态改为 `superseded`、并填写 `replaced_by`
 
 ---
 
@@ -620,7 +620,7 @@ governance_debts_addressed: []
 
 | 类别 | 判断标准 | 典型位置 | git 策略 |
 |------|---------|---------|---------|
-| **共享规范 / 历史证据** | 需要跨会话共享、可审计、后续要考古 | `compass/docs/specs/`、`compass/docs/traces/`、`compass/docs/task-reports/`、`prism/reports/`、`loom/test-reports/` | **必须进 git** |
+| **共享规范 / 历史证据** | 需要跨会话共享、可审计、后续要考古 | `assets/docs/specs/`、`assets/docs/traces/`、`assets/docs/task-reports/`、`assets/evidence/prism-reports/`、`loom/test-reports/` | **必须进 git** |
 | **会话隔离状态** | 只服务当前会话/当前运行态，换机会重建 | `.dev-task.md`、`prism/runs/`、`compass/.workflow/`、`compass/.runtime/`、宿主 `plan.md` | **不得进 git** |
 | **本地宿主资产** | 绑定本机路径、凭证、CLI 配置或探测结果 | `.env.local`、`compass/tools/feishu-config.json`、agent registry cache | **不得进 git** |
 | **纯临时产物** | 只在脚本执行期间存在，用完即删 | `/tmp/redcap-*`、临时 prompt/result、`__pycache__/` | **不得进 git** |
@@ -630,23 +630,23 @@ governance_debts_addressed: []
 
 ### `docs / knowledge / continuity assets` 的硬边界
 
-- `compass/docs/`：冻结后的正式资产，只放 spec / research / trace / task-report 这类跨会话 evidence
-- `compass/knowledge/`：活的操作知识与 heuristics，只放 lessons / host behavior / routing knowledge
+- `assets/docs/`：冻结后的正式资产，只放 spec / research / trace / task-report 这类跨会话 evidence
+- `assets/knowledge/`：活的操作知识与 heuristics，只放 lessons / host behavior / routing knowledge
 - continuity assets：`.dev-task.md`、`explore-notes.md`、宿主 `plan.md` / workboard、imported session artifacts
-- `compass/docs/catalog.json`：docs 首读索引，只承载摘要、读法策略与体量信息，不替代任何原始 evidence
-- `compass/knowledge/index.md`：knowledge 首读导航，只帮助定位经验/宿主/治理知识，不替代 lessons 或具体 host 记录
+- `assets/docs/catalog.json`：docs 首读索引，只承载摘要、读法策略与体量信息，不替代任何原始 evidence
+- `assets/knowledge/index.md`：knowledge 首读导航，只帮助定位经验/宿主/治理知识，不替代 lessons 或具体 host 记录
 - `templates/shared-knowledge/`：未来独立公共知识库的本地模板，负责 append-only 团队沉淀、按用户隔离、索引优先读取；远端仓库未绑定前不得冒充已完成团队共享部署
-- `references/file-lookup-dictionary.md`：关键文件定位和人话解释入口；coverage 以 `references/file-lookup-dictionary-policy.json` + checker 为准
+- `assets/references/file-lookup-dictionary.md`：关键文件定位和人话解释入口；coverage 以 `assets/references/file-lookup-dictionary-policy.json` + checker 为准
 
 补充规则：
 
 1. `docs/` 与 `knowledge/` 是**平级不同职**，不得互相吞并。
 2. continuity assets 可以索引、镜像、显式导入，但**不能**直接伪装成 `docs/` evidence。
-3. `compass/docs/index.yaml` 是 docs collection 的 retention / archive 索引；新增 docs collection 前先改它，再改目录。
-4. spec 生命周期的机器策略以 `references/spec-lifecycle-policy.json` 为准；对人解释以 `references/spec-contribution-standard.md` 为准。两者若不一致，先改策略与说明，再继续改 spec 文件。
-5. `compass/docs/**` 不再作为默认工作记忆批量导入；需要考古时，先用 `redcap-docs-catalog.sh summary/plan` 定位，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合，只打开 budget 通过的必要源文档。
-6. `compass/docs/catalog.json` 只能作为导航索引；涉及 closure verdict、历史根因、runtime authority 或当前 pending 时，必须打开对应原文核对。
-7. `compass/knowledge/**` 不再作为默认工作记忆批量导入；需要查经验、宿主行为或治理债务时，先看 `compass/knowledge/index.md`，只打开必要原文。
+3. `assets/docs/index.yaml` 是 docs collection 的 retention / archive 索引；新增 docs collection 前先改它，再改目录。
+4. spec 生命周期的机器策略以 `assets/references/spec-lifecycle-policy.json` 为准；对人解释以 `assets/references/spec-contribution-standard.md` 为准。两者若不一致，先改策略与说明，再继续改 spec 文件。
+5. `assets/docs/**` 不再作为默认工作记忆批量导入；需要考古时，先用 `redcap-docs-catalog.sh summary/plan` 定位，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合，只打开 budget 通过的必要源文档。
+6. `assets/docs/catalog.json` 只能作为导航索引；涉及 closure verdict、历史根因、runtime authority 或当前 pending 时，必须打开对应原文核对。
+7. `assets/knowledge/**` 不再作为默认工作记忆批量导入；需要查经验、宿主行为或治理债务时，先看 `assets/knowledge/index.md`，只打开必要原文。
 8. `redcap-multi-session-acceptance.sh` 不再作为默认工作记忆批量读取；需要查 case 时先运行 `redcap-acceptance-index.sh find <关键词>`。
 9. 入口文件（AGENTS/CLAUDE/GEMINI/Copilot）必须自动导入小型 `compass/CONTRIBUTING.core.md`，但不得自动导入 `CONTRIBUTING.md` 全文或 `lessons.md` 这类大文件；新会话必须先走 core / current-status / index / rg / budget。
 10. `CONTRIBUTING.md` 不是 token 陷阱本身，它仍是权威规范全文；风险点是无差别全文注入。若全文继续膨胀，应优先做 core/section 信息架构、合并重复、迁移历史事故到 lessons/task report，而不是简单削弱规范权威。
@@ -905,7 +905,7 @@ scope_status: <full-implementation|route-only|partial-with-explicit-defer|not-ap
 **执行规范**：
 - 自主执行时仍需完整走 PM Gate 流程（Step 0 固化原始输入 + Phase 1 澄清 + Phase 2 锁定）
 - 棱镜评审结论写入 `.dev-task.md` 的 `## 自主决策依据` 段，作为可追溯的授权记录
-- 任务完成后，**必须**按 `references/task-report-template.md` 归档到 `compass/docs/task-reports/YYYY-MM-DD-<topic>.md`，再同步给 Norven
+- 任务完成后，**必须**按 `assets/references/task-report-template.md` 归档到 `assets/docs/task-reports/YYYY-MM-DD-<topic>.md`，再同步给 Norven
 - 若执行过程中出现超出预期的影响范围扩大，立即暂停并向 Norven 透传
 - Stop review / SessionEnd 若 `redcap-pm-gate-check.sh` 或 `redcap-drift-check.sh` 失败，则不得宣称 Layer B 任务收尾完成
 
@@ -971,7 +971,7 @@ scope_status: <full-implementation|route-only|partial-with-explicit-defer|not-ap
 
 ### 结论性输出 Prism Gate
 
-RedCap 官方结论不能再由主 Agent 单路自证。凡是会指导后续工程的架构判断、完成性判断、风险分类、发布姿态、长期路线或治理决策，都属于 `references/conclusion-prism-policy.json` 定义的 conclusion-class 输出：
+RedCap 官方结论不能再由主 Agent 单路自证。凡是会指导后续工程的架构判断、完成性判断、风险分类、发布姿态、长期路线或治理决策，都属于 `assets/references/conclusion-prism-policy.json` 定义的 conclusion-class 输出：
 
 1. 先判断这是否是 RedCap 官方结论，而不是只解释已有 receipt、命令输出或 tracked policy。
 2. 若是官方结论，必须走 Prism 协作、复核或验收；资源受限时必须留下 resource-limited 证据链，不能把单路观点写成“我们共同评审结论”。
@@ -990,15 +990,15 @@ RedCap 官方结论不能再由主 Agent 单路自证。凡是会指导后续工
 
 ### 新增能力的固化保障优先级
 
-后续 RedCap 新增能力、流程节点或纪律规则时，默认先评估能否进入脚本、validator、hook、acceptance、receipt、diagnose/spec-check 或 `references/execution-guarantees.json`。只有在评估后确认“不需要这么严格保障”“自动化会误伤”“当前宿主没有物理控制点”时，才允许降级为 documented / manual-only，并必须写清降级理由和后续如何发现漂移。
+后续 RedCap 新增能力、流程节点或纪律规则时，默认先评估能否进入脚本、validator、hook、acceptance、receipt、diagnose/spec-check 或 `assets/references/execution-guarantees.json`。只有在评估后确认“不需要这么严格保障”“自动化会误伤”“当前宿主没有物理控制点”时，才允许降级为 documented / manual-only，并必须写清降级理由和后续如何发现漂移。
 
 ### 模型矩阵更新流程
 
-Cap 每次任务启动时检查 `compass/knowledge/model-capability-matrix.yaml` 的 `next_review` 字段：
+Cap 每次任务启动时检查 `assets/knowledge/model-capability-matrix.yaml` 的 `next_review` 字段：
 
 ```bash
 TODAY=$(date +%Y-%m-%d)
-NEXT_REVIEW=$(grep 'next_review:' compass/knowledge/model-capability-matrix.yaml | awk '{print $2}')
+NEXT_REVIEW=$(grep 'next_review:' assets/knowledge/model-capability-matrix.yaml | awk '{print $2}')
 if [[ "$TODAY" > "$NEXT_REVIEW" || "$TODAY" == "$NEXT_REVIEW" ]]; then
   # 触发更新
 fi
@@ -1023,8 +1023,8 @@ Prism 发现需求边界问题 → escalate → 回到 §10 PM Gate 重新锁定
 
 - 协议全文：`prism/protocol.md`
 - 模式说明：`prism/modes/README.md`
-- 报告归档：`prism/reports/`（git 追踪）
-- 报告索引：`prism/reports/index.yaml`
+- 报告归档：`assets/evidence/prism-reports/`（git 追踪）
+- 报告索引：`assets/evidence/prism-reports/index.yaml`
 
 ---
 
@@ -1042,7 +1042,7 @@ Prism 发现需求边界问题 → escalate → 回到 §10 PM Gate 重新锁定
 
 ### 执行动作
 
-触发后，Cap 立即将当前讨论状态写入 `compass/knowledge/explore-notes.md`（书记模式）：
+触发后，Cap 立即将当前讨论状态写入 `assets/knowledge/explore-notes.md`（书记模式）：
 
 1. **即时性**：触发条件成立后**本轮对话结束前**完成写入，不推迟到下一轮
 2. **完整性**：用户原始问题必须逐字原文记录（与 §10 PM Gate 同等要求，禁止概括）
@@ -1094,7 +1094,7 @@ PM Gate 触发时，**必须先读 `explore-notes.md`** 的相关活跃条目，
 
 ### 文件位置
 
-`compass/knowledge/explore-notes.md`（持久化，git 追踪，与 lessons.md 同级）
+`assets/knowledge/explore-notes.md`（持久化，git 追踪，与 lessons.md 同级）
 
 ---
 
@@ -1142,8 +1142,8 @@ Step 3: 全量 rubber-duck 对抗评审
   - 所有 blocking 问题修复后才能进入 Step 4
 
 Step 4: 任务完成报告
-  - 按 references/task-report-template.md 整理完整报告
-  - 归档到 `compass/docs/task-reports/YYYY-MM-DD-<topic>.md`
+  - 按 assets/references/task-report-template.md 整理完整报告
+  - 归档到 `assets/docs/task-reports/YYYY-MM-DD-<topic>.md`
   - 同步给 Norven（对话中引用报告内容/路径）
   - 完成所有 todo 后，优先通过 `./closeout-cap.sh` 或 `bash compass/tools/redcap-layerb-closeout-runtime.sh complete ...` 执行统一 closeout runtime，而不是手工拼接棱镜验收 / on-complete / session-end
   - closeout runtime 会核对 `## 执行承诺账本`、Prism 独立验收、summary / receipt / rescue audit；承诺未清、验收缺失、receipt 缺失或 blocker 未清时，不得伪装成收口完成

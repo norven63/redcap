@@ -14,7 +14,15 @@
     "p4_27_preflight_path": "references/r1-contract-mirror-apply-preflight-subset.json",
   "p4_27_preflight_sha256": "9e59bbe621062fb5b59b6f17998148e90f30b3899b82831413904d686e5a8fca"
   },
-  "source_updates_after_preflight": [],
+  "source_updates_after_preflight": [
+    {
+      "source": "references/execution-guarantees.json",
+      "target": "contracts/internal/execution-guarantees.json",
+      "preflight_source_sha256": "42afed76bd67bde53e6b66e78794b1d339e1583772b04be13faa57ccd6e3eb89",
+      "current_source_sha256": "0c9ca1d8d2e0dd8c8b0f83705881280be491e78587a35bc6d16d96c94a9593f8",
+      "reason": "P4-29 keeps the internal contract mirror byte-identical after the root asset first-read canonicalization updated execution-guarantees paths; package-surface exclusion remains unchanged."
+    }
+  ],
   "copy_policy": {
     "mode": "bounded-copy-first",
     "selected_count": 7,
@@ -79,8 +87,8 @@
       "source": "references/execution-guarantees.json",
       "target": "contracts/internal/execution-guarantees.json",
       "target_layer": "internal-contract",
-      "source_sha256": "42afed76bd67bde53e6b66e78794b1d339e1583772b04be13faa57ccd6e3eb89",
-      "target_sha256": "42afed76bd67bde53e6b66e78794b1d339e1583772b04be13faa57ccd6e3eb89",
+      "source_sha256": "0c9ca1d8d2e0dd8c8b0f83705881280be491e78587a35bc6d16d96c94a9593f8",
+      "target_sha256": "0c9ca1d8d2e0dd8c8b0f83705881280be491e78587a35bc6d16d96c94a9593f8",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"

@@ -2,12 +2,12 @@
   "version": 1,
   "manifest_id": "redcap-root-asset-ia-physical-convergence",
   "task_id": "root-asset-ia-physical-convergence",
-  "status": "applied-with-compatibility-shims",
+  "status": "applied-with-compatibility-shims-and-first-read-canonicalized",
   "applied_at": "2026-05-24",
   "purpose": "Record the physical convergence of RedCap project assets under assets/ while preserving old path compatibility for scripts, reports, receipts, and archaeology.",
   "problem": "Project assets were spread across compass/docs, compass/knowledge, references, prism/reports, and private-archive. Indexes and package exclusions reduced token and leak risk, but the repository shape still looked like several competing asset systems.",
   "solution": "Move real project-asset content under assets/ and leave old roots as compatibility shims. Package candidate globs now point at assets/references so npm dry-run sees the real files instead of relying on symlink packing.",
-  "effect": "Humans can understand one project asset parent; existing tools and historical references continue to work through compatibility paths; package readiness checks no longer depend on symlink inclusion.",
+  "effect": "Humans can understand one project asset parent; first-read surfaces point to assets/ as the default entry; existing tools and historical references continue to work through compatibility paths; package readiness checks no longer depend on symlink inclusion.",
   "canonical_assets": {
     "assets/docs": "Design docs, specs, research, traces, recent task reports, and docs catalog.",
     "assets/knowledge": "Active lessons, host notes, runtime memory explanations, and LLM-wiki-lite assets.",
@@ -42,6 +42,19 @@
       "reason": "Old receipt and report anchors remain stable while the real cold archive lives under assets."
     }
   ],
+  "first_read_policy": {
+    "default_entry": "assets/",
+    "legacy_paths_are": "compatibility shims and archaeology anchors only",
+    "guard": "redcap-root-information-architecture-check validates active first-read markdown links do not point at legacy shim paths",
+    "active_first_read_files": [
+      "README.md",
+      "ARCHITECTURE.md",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "GEMINI.md",
+      ".github/copilot-instructions.md"
+    ]
+  },
   "not_claimed": [
     "This task does not delete historical assets.",
     "This task does not move prism/runs raw evidence.",

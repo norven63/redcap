@@ -48,9 +48,9 @@
     "raw_sources": {
       "meaning": "Immutable or private evidence that can be read for distillation but must not be rewritten as public knowledge.",
       "redcap_paths": [
-        "compass/docs/task-reports",
-        "private-archive/redcap-knowledge/task-reports",
-        "private-archive/redcap-knowledge/research",
+        "assets/docs/task-reports",
+        "assets/private-archive/redcap-knowledge/task-reports",
+        "assets/private-archive/redcap-knowledge/research",
         "prism/runs",
         "closeout runtime receipts and summaries",
         "external source documents explicitly supplied by the user"
@@ -60,9 +60,9 @@
     "wiki_or_synthesis_layer": {
       "meaning": "LLM-maintained synthesis is allowed only inside existing governed surfaces; RedCap does not introduce an unconstrained LLM-owned wiki layer by default.",
       "redcap_paths": [
-        "compass/knowledge/index.md",
-        "compass/knowledge/log.md",
-        "compass/knowledge/lessons.md",
+        "assets/knowledge/index.md",
+        "assets/knowledge/log.md",
+        "assets/knowledge/lessons.md",
         "compass/evolution/candidates.json",
         "redcap-arsenal/users/<user>/*.md after RedCap Forge promotion"
       ],
@@ -122,8 +122,8 @@
     }
   ],
   "required_surfaces": [
-    "compass/knowledge/index.md",
-    "compass/knowledge/log.md",
+    "assets/knowledge/index.md",
+    "assets/knowledge/log.md",
     "references/redcap-forge-policy.json",
     "references/public-distillation-preflight-policy.json",
     "references/retrieval-escalation-policy.json",

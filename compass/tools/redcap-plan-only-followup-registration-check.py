@@ -22,7 +22,7 @@ PLAN_ONLY_STATUSES = {
     "route-only",
     "partial-with-explicit-defer",
 }
-ROOT_IA_APPLIED_STATUS = "target-model-complete-physical-convergence-applied-with-compatibility-shims"
+ROOT_IA_APPLIED_STATUS = "target-model-complete-physical-convergence-applied-with-compatibility-shims-and-first-read-canonicalized"
 
 
 def fail(message: str) -> None:

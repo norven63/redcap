@@ -21,11 +21,11 @@
 
 ## 复活后的执行保障
 
-完成自动导入与断点续传后，优先运行 `./revive-cap.sh`，把 identity 检查/初始化、用户/Agent 本地状态初始化（`redcap-user-agent-identity.sh`）、workflow import、`current-status`（`redcap-current-status.sh`）、`tracking-health`（`redcap-tracking-health.sh`）、宿主 Hook 就绪检查（`redcap-host-hook-readiness.sh`）、飞书单通道策略检查（`redcap-feishu-notification-policy-check.sh`）、飞书收件箱软扫描/安全检查（`redcap-feishu-inbox.sh`）、`execution-guarantee-check`（`redcap-execution-guarantee-check.sh`）与 `revival-check`（`redcap-revival-check.sh`）收口成单一安装动作。Codex 若已加载 `.codex/hooks.json`，SessionStart 会自动尝试这条链；但在 live marker E2E 通过前，仍按 candidate/degraded 处理。`./revive-cap.sh` 会自动转调 `compass/tools/redcap-install.sh` 并尽量轻量识别宿主；需要显式指定时再加 `--host <name>`。若 installer 不可用，再退回 `current-status`、`diagnose`、`execution-guarantee-check` / `revival-check` 的手工链路。需要读取 `compass/docs/**` 时，先用 `redcap-docs-catalog.sh summary/plan` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；需要读取 `compass/knowledge/**` 时先看 `compass/knowledge/index.md`。不要默认全量扫历史文档或知识库。
+完成自动导入与断点续传后，优先运行 `./revive-cap.sh`，把 identity 检查/初始化、用户/Agent 本地状态初始化（`redcap-user-agent-identity.sh`）、workflow import、`current-status`（`redcap-current-status.sh`）、`tracking-health`（`redcap-tracking-health.sh`）、宿主 Hook 就绪检查（`redcap-host-hook-readiness.sh`）、飞书单通道策略检查（`redcap-feishu-notification-policy-check.sh`）、飞书收件箱软扫描/安全检查（`redcap-feishu-inbox.sh`）、`execution-guarantee-check`（`redcap-execution-guarantee-check.sh`）与 `revival-check`（`redcap-revival-check.sh`）收口成单一安装动作。Codex 若已加载 `.codex/hooks.json`，SessionStart 会自动尝试这条链；但在 live marker E2E 通过前，仍按 candidate/degraded 处理。`./revive-cap.sh` 会自动转调 `compass/tools/redcap-install.sh` 并尽量轻量识别宿主；需要显式指定时再加 `--host <name>`。若 installer 不可用，再退回 `current-status`、`diagnose`、`execution-guarantee-check` / `revival-check` 的手工链路。需要读取 `assets/docs/**` 时，先用 `redcap-docs-catalog.sh summary/plan` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；需要读取 `assets/knowledge/**` 时先看 `assets/knowledge/index.md`。旧 `compass/docs/**` 与 `compass/knowledge/**` 只是兼容入口，不是新会话首读主线。不要默认全量扫历史文档或知识库。
 这些首读/诊断脚本当前要求宿主提供可写临时目录；在 read-only reviewer sandbox 中，不得再把它们宣称为 100% 可运行的物理强保障。
 
 ## Codex 特有说明
 
 - Codex 的 `AGENTS.md` 在每次会话自动加载到系统上下文
-- 本文件仅作轻量索引；不得通过 `@compass/CONTRIBUTING.md` 或 `@compass/knowledge/lessons.md` 默认展开大文件，避免新会话上下文爆炸
+- 本文件仅作轻量索引；不得通过 `@compass/CONTRIBUTING.md` 或 `@assets/knowledge/lessons.md` 默认展开大文件，避免新会话上下文爆炸
 - 等价索引文件：`.github/copilot-instructions.md`（Copilot）、`GEMINI.md`（Gemini CLI）

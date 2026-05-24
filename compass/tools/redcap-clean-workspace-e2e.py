@@ -18,9 +18,9 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RESULT = ROOT / "references/clean-workspace-install-e2e.json"
-PACKAGE_SAFETY_POLICY = ROOT / "references/package-publish-safety-policy.json"
-GATE_STRATIFICATION_POLICY = ROOT / "references/workflow-gate-stratification-policy.json"
+DEFAULT_RESULT = ROOT / "assets/references/clean-workspace-install-e2e.json"
+PACKAGE_SAFETY_POLICY = ROOT / "assets/references/package-publish-safety-policy.json"
+GATE_STRATIFICATION_POLICY = ROOT / "assets/references/workflow-gate-stratification-policy.json"
 MANIFEST_ID = "redcap-clean-workspace-install-e2e"
 TASK_ID = "redcap-clean-workspace-install-e2e"
 
@@ -28,6 +28,7 @@ ALLOWED_POST_RESULT_DRIFT_PATHS = {
     "compass/tools/redcap-execution-guarantee-check.py",
     "compass/tools/redcap-multi-session-acceptance.sh",
     "compass/tools/redcap-parent-receipt-aggregation-check.py",
+    "assets/references/clean-workspace-install-e2e.json",
     "references/clean-workspace-install-e2e.json",
     "references/execution-guarantees.json",
     "references/file-lookup-dictionary.md",

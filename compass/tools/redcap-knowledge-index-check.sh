@@ -2,7 +2,7 @@
 # 用途：知识沉淀与自进化脚本；详细职责见文件查阅字典。
 # Dictionary: references/file-lookup-dictionary.md#docs-knowledge-and-evolution
 
-# Validate that compass/knowledge has a first-read navigation index.
+# Validate that assets/knowledge has a first-read navigation index.
 
 set -euo pipefail
 
@@ -14,7 +14,7 @@ import pathlib
 import sys
 
 root = pathlib.Path(sys.argv[1])
-knowledge = root / "compass/knowledge"
+knowledge = root / "assets/knowledge"
 index_path = knowledge / "index.md"
 
 
@@ -23,10 +23,10 @@ def fail(message: str) -> None:
 
 
 if not index_path.is_file():
-    fail("missing compass/knowledge/index.md")
+    fail("missing assets/knowledge/index.md")
 
 text = index_path.read_text(encoding="utf-8", errors="replace")
-for required in ("首读导航", "不要默认 bulk-read", "redcap-knowledge-index-check.sh", "热点主题速览", "compass/knowledge/lessons/<l-id>.md"):
+for required in ("首读导航", "不要默认 bulk-read", "redcap-knowledge-index-check.sh", "热点主题速览", "assets/knowledge/lessons/<l-id>.md"):
     if required not in text:
         fail(f"index missing required phrase: {required}")
 

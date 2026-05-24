@@ -2,7 +2,7 @@
   "version": 1,
   "plan_id": "redcap-root-information-architecture-consolidation-plan",
   "requirement": "RASG-017",
-  "status": "target-model-complete-physical-convergence-applied-with-compatibility-shims",
+  "status": "target-model-complete-physical-convergence-applied-with-compatibility-shims-and-first-read-canonicalized",
   "follow_up_requirement": "RASG-022",
   "prism_gap_follow_up": "RASG-023",
   "scope": "Direct children of the RedCap repository root that carry product, runtime, knowledge, evidence, policy, host-adapter, or local-state meaning.",
@@ -17,7 +17,7 @@
       "assets/references/root-asset-ia-physical-convergence.json"
     ],
     "explicit_deferral_receipt": "assets/references/root-ia-remaining-root-groups-deferral.json",
-    "claim_boundary": "Docs, knowledge, references, formal Prism reports, and private archive now have canonical physical homes under assets/. Root-level legacy paths remain compatibility shims for existing scripts, reports, receipts, and archaeology; this is not a destructive deletion claim."
+    "claim_boundary": "Docs, knowledge, references, formal Prism reports, and private archive now have canonical physical homes under assets/. Root-level legacy paths remain compatibility shims for existing scripts, reports, receipts, and archaeology; active first-read surfaces must point to assets/ as the default entry; this is not a destructive deletion claim."
   },
   "physical_convergence_result": {
     "applied_at": "2026-05-24",
@@ -44,7 +44,8 @@
       "prism/runs raw evidence",
       "workspace local state",
       "package control files"
-    ]
+    ],
+    "first_read_policy": "Active first-read files must link canonical assets/* paths; legacy shim paths may be mentioned only as compatibility/history context."
   },
   "summary": {
     "problem": "RedCap's root currently exposes several directories with overlapping knowledge, report, evidence, runtime, policy, and host-adapter meanings. The system is governable, but the product shape is too hard to understand before public CLI/runtime release.",

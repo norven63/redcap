@@ -7,6 +7,8 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import posixpath
+import re
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +29,7 @@ REQUIRED_CONSUMERS = {
     "package and release surface",
     "human status and notification surfaces",
 }
-APPLIED_STATUS = "target-model-complete-physical-convergence-applied-with-compatibility-shims"
+APPLIED_STATUS = "target-model-complete-physical-convergence-applied-with-compatibility-shims-and-first-read-canonicalized"
 REQUIRED_MOVED_ROOTS = {
     "compass/docs": "assets/docs",
     "compass/knowledge": "assets/knowledge",
@@ -42,6 +44,37 @@ REQUIRED_COMPATIBILITY_SHIMS = {
     "prism/reports": "../assets/evidence/prism-reports",
     "private-archive": "assets/private-archive",
 }
+ACTIVE_FIRST_READ_FILES = [
+    "README.md",
+    "ARCHITECTURE.md",
+    "compass/soul.md",
+    "compass/CONTRIBUTING.core.md",
+    "compass/CONTRIBUTING.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    ".github/copilot-instructions.md",
+]
+LEGACY_REPO_PREFIXES = (
+    "references/",
+    "compass/docs/",
+    "compass/knowledge/",
+    "prism/reports/",
+    "private-archive/",
+)
+MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+LEGACY_TOKEN_RE = re.compile(
+    r"(?<!assets/)references/|compass/docs/|compass/knowledge/|prism/reports/|(?<!assets/)private-archive/"
+)
+LEGACY_COMPATIBILITY_MARKERS = (
+    "旧",
+    "兼容",
+    "compat",
+    "compatibility",
+    "legacy",
+    "history",
+    "历史",
+)
 
 
 def fail(message: str) -> None:
@@ -238,6 +271,38 @@ def validate_physical_migration_state(plan: dict[str, Any], root: Path) -> None:
             fail(f"canonical asset path missing after migration: {new_path}")
 
 
+def validate_active_first_read_links(root: Path) -> None:
+    """Keep human first-read surfaces from presenting legacy shims as primary links."""
+    offenders: list[str] = []
+    for rel in ACTIVE_FIRST_READ_FILES:
+        path = root / rel
+        if not path.is_file():
+            continue
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        for index, line in enumerate(lines):
+            lineno = index + 1
+            context = "\n".join(lines[max(0, index - 4) : min(len(lines), index + 5)])
+            if LEGACY_TOKEN_RE.search(line) and not any(marker in context for marker in LEGACY_COMPATIBILITY_MARKERS):
+                offenders.append(f"{rel}:{lineno}:legacy token in primary prose")
+            for match in MARKDOWN_LINK_RE.finditer(line):
+                target = match.group(1).strip().split("#", 1)[0]
+                if target.startswith(("http://", "https://", "mailto:")):
+                    continue
+                if target.startswith("/"):
+                    normalized = target.lstrip("/")
+                else:
+                    normalized = posixpath.normpath(posixpath.join(Path(rel).parent.as_posix(), target))
+                    if normalized == "." or normalized.startswith("../"):
+                        continue
+                if any(normalized == prefix.rstrip("/") or normalized.startswith(prefix) for prefix in LEGACY_REPO_PREFIXES):
+                    offenders.append(f"{rel}:{lineno}:{target}")
+    if offenders:
+        fail(
+            "active first-read files must link canonical assets/* paths instead of legacy compatibility shims: "
+            + ", ".join(offenders)
+        )
+
+
 def validate_backlog(root: Path, plan: dict[str, Any]) -> None:
     backlog = load_json(root / "references/backlogs/redcap-architecture-smell-governance.json", "architecture smell backlog")
     requirement = plan.get("requirement")
@@ -301,6 +366,7 @@ def main() -> int:
     validate_consumers(plan)
     validate_apply_gate(plan)
     validate_backlog(root, plan)
+    validate_active_first_read_links(root)
 
     print("ROOT_INFORMATION_ARCHITECTURE_OK")
     print(f"inventory={len(plan.get('root_inventory', []))}")

@@ -24,7 +24,7 @@ REQUIRED_IGNORED_PATHS = [
     "cli_" "console.md",
 ]
 
-STRUCTURAL_GOVERNANCE_PATH = "references/token-structural-governance.json"
+STRUCTURAL_GOVERNANCE_PATH = "assets/references/token-structural-governance.json"
 
 CANONICAL_ASSET_ALIASES = {
     "assets/docs/": "compass/docs/",
@@ -37,11 +37,13 @@ CANONICAL_ASSET_ALIASES = {
 FORBIDDEN_AUTO_IMPORTS = [
     "compass/CONTRIBUTING.md",
     "compass/knowledge/lessons.md",
+    "assets/knowledge/lessons.md",
 ]
 
 COPILOT_FORBIDDEN_FULL_READS = [
     "read_file` 读取 `compass/CONTRIBUTING.md`",
     "read_file` 读取 `compass/knowledge/lessons.md`",
+    "read_file` 读取 `assets/knowledge/lessons.md`",
 ]
 
 ENTRY_FILES = [
@@ -190,7 +192,7 @@ def main() -> int:
         for required in (
             "compass/CONTRIBUTING.core.md",
             "redcap-current-status.sh",
-            "compass/knowledge/index.md",
+            "assets/knowledge/index.md",
             "redcap-docs-catalog.sh",
         ):
             if required not in text:
@@ -207,7 +209,7 @@ def main() -> int:
         for required in (
             "compass/CONTRIBUTING.core.md",
             "redcap-current-status.sh",
-            "compass/knowledge/index.md",
+            "assets/knowledge/index.md",
             "redcap-docs-catalog.sh",
         ):
             if required not in text:
