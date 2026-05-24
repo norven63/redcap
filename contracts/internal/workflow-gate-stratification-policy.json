@@ -143,11 +143,17 @@
   "post_result_drift_allowlist": {
     "meaning": "Paths that may change after a clean workspace E2E result without invalidating install/package evidence. These are report, catalog, or evidence-index surfaces that are not package candidates and do not alter runtime behavior.",
     "paths": [
+      "assets/docs/catalog.json",
+      "assets/references/clean-workspace-install-e2e.json",
+      "assets/references/file-lookup-dictionary.md",
       "compass/docs/catalog.json",
       "references/clean-workspace-install-e2e.json",
       "references/file-lookup-dictionary.md"
     ],
     "prefixes": [
+      "assets/docs/task-reports/",
+      "assets/private-archive/redcap-knowledge/task-reports/",
+      "assets/evidence/prism-reports/",
       "compass/docs/task-reports/",
       "private-archive/redcap-knowledge/task-reports/",
       "prism/reports/"
@@ -160,6 +166,9 @@
       "runtime/",
       "bin/",
       "compass/tools/",
+      "assets/references/*package*.json",
+      "assets/references/*release*.json",
+      "assets/references/*publish*.json",
       "references/*package*.json",
       "references/*release*.json",
       "references/*publish*.json"
