@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 30,
-    "size_bytes": 351280,
+    "size_bytes": 351389,
     "lines": 7283,
-    "chars": 209602,
+    "chars": 209715,
     "rough_token_pressure": {
-      "low": 52400,
-      "high": 104801
+      "low": 52428,
+      "high": 104857
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 14,
-        "size_bytes": 128050,
+        "size_bytes": 128159,
         "lines": 2363,
-        "chars": 75030,
+        "chars": 75143,
         "rough_token_pressure": {
-          "low": 18757,
-          "high": 37515
+          "low": 18785,
+          "high": 37571
         }
       }
     },
@@ -633,25 +633,25 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 10846,
+      "size_bytes": 10955,
       "lines": 178,
-      "chars": 5832,
-      "summary": "当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置。 / 详情：docs、knowledge、references、formal Prism reports、private archive 的真实内容已迁移到 `assets/` 下；host 入口、runtime 源码、工具源码、包控制文件、本地状态和 Prism raw runs 没有迁移。",
+      "chars": 5945,
+      "summary": "当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置；活跃首读入口也已经改为 `assets/` 优先。 / 详情：docs、knowledge、references、formal Prism reports、private archive 的真实内容已迁移到 `assets/` 下；host 入口、runtime 源码、工具源码、包控制文件、本地状态和 Prism raw runs 没有迁移。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置。",
+          "当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置；活跃首读入口也已经改为 `assets/` 优先。",
           "详情：docs、knowledge、references、formal Prism reports、private archive 的真实内容已迁移到 `assets/` 下；host 入口、runtime 源码、工具源码、包控制文件、本地状态和 Prism raw runs 没有迁移。"
         ],
         "previous_step": [
           "上一步完成的是：修正迁移后的检查器口径，让结构检查、包面检查、索引检查能识别 `assets/` 是新的资产父级，而不是继续按旧根目录判断。"
         ],
         "next_step": [
-          "下一步计划做的是：先完成活跃首读入口去旧路径化，再生成 closeout receipt，并把最终任务状态与提交一起收口。"
+          "下一步计划做的是：生成 closeout receipt，并确认 pending closure 清零。"
         ],
         "position": [
           "整体计划脉络图是：历史目录坏味识别 -> 统一资产父级设计 -> 真实迁移与兼容入口 -> 首读入口去旧路径化 -> 检查器和索引同步 -> 棱镜评审与回归 -> closeout receipt。",
-          "当前所在位置：资产迁移、本地回归、包面验证和棱镜复验已通过；正在补齐首读入口去旧路径化。"
+          "当前所在位置：资产迁移、首读入口收敛、本地回归、包面验证和棱镜复验已通过；正在执行最终 closeout。"
         ]
       }
     }
