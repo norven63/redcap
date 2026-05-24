@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "store_id": "redcap-private-llm-wiki-lite",
+  "visibility": "private",
+  "authority": "non-authoritative-derived-context",
+  "entries_root": "compass/knowledge/llm-wiki/entries",
+  "entries": [
+    {
+      "id": "llm-wiki-lite-boundary",
+      "path": "assets/knowledge/llm-wiki/entries/llm-wiki-lite-boundary.json",
+      "status": "active",
+      "candidate_type": "stable-concept"
+    }
+  ]
+}

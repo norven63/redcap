@@ -1,0 +1,230 @@
+{
+  "version": 1,
+  "guard_id": "redcap-r1-prism-report-archive-churn-freeze-guard",
+  "status": "active-freeze-guard-no-live-report-copy-move-delete-or-cleanup",
+  "summary": "Freezes the P4-12/P4-13 Prism report archive migration cohort and requires any later formal Prism reports to be recorded as post-freeze reports instead of silently changing the current archive plan.",
+  "source_truth": {
+    "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
+  "plan_sha256": "03bc9db90e57b1c57bf025d033e23cdc89d4d28dd856df5d0de4837b9203b8fd",
+    "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
+  "readiness_sha256": "d4986d53e23d455363a52c5f7c807a8b7017bf808c230bf959996f8f091ffb9d"
+  },
+  "claim_boundary": {
+    "freeze_guard_completed": true,
+    "live_apply_performed": false,
+    "live_report_copy_performed": false,
+    "old_anchor_retirement_performed": false,
+    "raw_run_evidence_touched": false,
+    "release_blocker_resolved": false,
+    "public_release_ready": false,
+    "forbidden_claims": [
+      "Prism reports have not been physically migrated.",
+      "Old prism/reports anchors have not been retired or replaced.",
+      "raw run evidence has not been cleaned.",
+      "The prism-layer-and-evidence blocker is not closed.",
+      "RedCap is not public-release-ready because of this guard alone."
+    ]
+  },
+  "operation_policy": {
+    "live_apply_allowed": false,
+    "destructive_operations_allowed": false,
+    "old_anchor_mutation_allowed": false,
+    "raw_evidence_cleanup_allowed": false,
+    "release_operations_allowed": false,
+    "downstream_live_apply_bridge": {
+      "allowed_when_manifest_exists": "references/r1-prism-report-archive-live-copy-first-apply.json",
+      "handled_by_apply_id": "redcap-r1-prism-report-archive-live-copy-first-apply",
+      "guard_scope_after_bridge": "continue-freezing-cohort-and-post-freeze-boundary; do-not-authorize-old-anchor-retirement-or-raw-evidence-cleanup"
+    },
+    "forbidden_now": [
+      "live-copy-report",
+      "live-move-report",
+      "live-delete-report",
+      "replace-old-report-anchor",
+      "retire-old-report-anchor",
+      "create-private-archive-report-copy",
+      "delete-run-evidence",
+      "cleanup-run-evidence",
+      "public-publish",
+      "release-switch-change"
+    ]
+  },
+  "freeze_policy": {
+    "frozen_source": "references/r1-prism-report-archive-copy-first-plan.json::archive_plan.mappings",
+    "frozen_report_count": 55,
+    "frozen_mapping_sha256": "4a30820ec272e430398475e635a159b4930acfd9668c92f7343e509b740afc63",
+    "new_report_handling": "Formal Prism reports added after this guard are allowed to remain under prism/reports only when they are listed in post_freeze_reports and explicitly excluded from the current archive plan.",
+    "unlisted_new_report_policy": "Any live prism/reports/*.md file that is not part of the frozen mapping set and is not listed in post_freeze_reports must fail validation.",
+    "next_plan_refresh_policy": "A future live apply or archive-plan refresh may absorb post-freeze reports only through a new explicit route decision, Prism review and closeout receipt."
+  },
+  "post_freeze_reports": [
+    {
+      "report_id": "20260522-r1-formal-release-readiness-convergence-assessment",
+      "source_path": "prism/reports/2026-05-22-r1-formal-release-readiness-convergence-assessment.md",
+      "source_sha256": "cf72a50f6c6939a8be98ea54a585bfff04048ef9ff8944c1716986b292b2b99f",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future old-anchor delete-last tranche must explicitly decide whether to refresh the frozen archive cohort before any retirement action."
+    },
+    {
+      "report_id": "20260522-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply",
+      "source_path": "prism/reports/2026-05-22-r1-next-safe-slice-after-prism-report-archive-live-copy-first-apply.md",
+      "source_sha256": "1ff8d804e288b8e863a0027be942b6b344b59887bffcd6c66cef44a71b9ff2ff",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future release convergence task must explicitly decide whether to refresh the frozen archive cohort before any old-anchor retirement or delete-last tranche."
+    },
+    {
+      "report_id": "20260522-r1-prism-report-archive-churn-freeze-guard",
+      "source_path": "prism/reports/2026-05-22-r1-prism-report-archive-churn-freeze-guard.md",
+      "source_sha256": "9683a2f6f433e3775d0f7acdb6ffa7f5b4956841872a4086535dd85efe8fd5c2",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future route decision must explicitly decide whether to refresh the frozen archive cohort before live apply."
+    },
+    {
+      "report_id": "20260522-r1-prism-report-archive-live-copy-first-apply",
+      "source_path": "prism/reports/2026-05-22-r1-prism-report-archive-live-copy-first-apply.md",
+      "source_sha256": "581771bd728cdb1f1b95d3c96c8702c287bef63a5f4d50f5fc8e6ae08da46e49",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future route decision must explicitly decide whether to refresh the frozen archive cohort before any old-anchor retirement or delete-last tranche."
+    },
+    {
+      "report_id": "20260523-r1-control-plane-internal-maintainer-facade-copy-first-apply",
+      "source_path": "prism/reports/2026-05-23-r1-control-plane-internal-maintainer-facade-copy-first-apply.md",
+      "source_sha256": "07e6b9d91dd9cf1c703fa70b37e11d1e6c76997a5f87be0666af9526c7c9009c",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane or old-anchor archive refresh task must explicitly preserve or absorb this P4-21 facade review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.md",
+      "source_sha256": "9e9e8e8d981dd44edba7e77aca6e9eebfc0958e77a75c592940fc69e873d27af",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane or old-anchor archive refresh task must explicitly preserve or absorb this P4-22 route-selection review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-next-safe-slice-after-old-anchor-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-old-anchor-preflight.md",
+      "source_sha256": "6e53fb081866bd8b5f3e1af0f246a8660656819dc4f17226058676eae690e17e",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future old-anchor delete-last or archive refresh task must explicitly preserve or absorb this post-freeze route-selection review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-prism-report-archive-old-anchor-delete-last-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md",
+      "source_sha256": "0270ce3fe7724687f431b526d6778efca4ccd1df01d5bad5767edcf36f35b052",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future old-anchor delete-last apply task must refresh or explicitly preserve this P4-19 preflight report before any retirement action."
+    },
+    {
+      "report_id": "20260523-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply",
+      "source_path": "prism/reports/2026-05-23-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.md",
+      "source_sha256": "3c9049f80fb07a98c64bb3ab5097421099797d3981f15f2662fc6cdccfa64a52",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane or old-anchor archive refresh task must explicitly preserve or absorb this P4-23 facade review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-next-safe-slice-after-internal-maintainer-facade-batch-2",
+      "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-internal-maintainer-facade-batch-2.md",
+      "source_sha256": "09775781e2fa760deee13b2b2759776514ef744e962ea19ed162c0dec2f04ccf",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane or old-anchor archive refresh task must explicitly preserve or absorb this P4-24 route-selection review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-control-plane-public-internal-contract-mirror-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-control-plane-public-internal-contract-mirror-preflight.md",
+      "source_sha256": "e304f18b97c5c58846df4d2e64eaf362bac11786b77cf3c42c4c13556d655655",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-25 contract mirror preflight review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-next-safe-slice-after-control-plane-contract-mirror-preflight",
+      "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-control-plane-contract-mirror-preflight.md",
+      "source_sha256": "67d0bc07b5e34f2ffb4fd386e1e7340092dcdf4fa2950a50fc2fa6f1f8588fcc",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-26 route-selection review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-contract-mirror-apply-preflight-subset",
+      "source_path": "prism/reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md",
+      "source_sha256": "02ea2f82a978f053768321377193245f3d5986570901370dd35d653549c8edbe",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-27 apply-preflight review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset",
+      "source_path": "prism/reports/2026-05-23-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.md",
+      "source_sha256": "90265d69a402775112d44e8470fb6a4a686f393196b00ab9cd1e86f03bab6073",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-28 route-selection review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-r1-contract-mirror-bounded-copy-first-apply",
+      "source_path": "prism/reports/2026-05-23-r1-contract-mirror-bounded-copy-first-apply.md",
+      "source_sha256": "adff9603eec8c42a866b2cb84f0308c3a85efe769459106681c18c8bd2f82310",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future internal-control-plane physical apply or archive refresh task must explicitly preserve or absorb this P4-29 copy-first apply review before retiring prism/reports anchors."
+    },
+    {
+      "report_id": "20260523-human-chat-summary-surface-hardening",
+      "source_path": "prism/reports/2026-05-23-human-chat-summary-surface-hardening.md",
+      "source_sha256": "c457b16a83153c35a051432d5a400d45fcbe2da5653377ab5d188cc3e30ea5a9",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future archive-plan refresh must explicitly decide whether to include this post-freeze report before any old-anchor retirement or delete-last tranche."
+    },
+    {
+      "report_id": "20260524-non-publish-pre-release-convergence",
+      "source_path": "prism/reports/2026-05-24-non-publish-pre-release-convergence.md",
+      "source_sha256": "0dc69b78990bc4f5d845b2fa203f21281cfea19519bb3eb4f5d93e25edda2c26",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future archive-plan refresh must explicitly decide whether to include this non-publish pre-release convergence review before any old-anchor retirement or delete-last tranche."
+    }
+  ],
+  "package_surface_policy": {
+    "prism_reports_must_remain_excluded": true,
+    "prism_runs_must_remain_excluded": true,
+    "private_archive_prism_reports_must_remain_excluded": true
+  },
+  "verification_plan": {
+    "required_checks": [
+      "bash compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh",
+      "bash compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh",
+      "bash compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh",
+      "bash compass/tools/redcap-runtime-package-manifest.sh --check",
+      "bash compass/tools/redcap-spec-check.sh \"$PWD\"",
+      "bash compass/tools/redcap-diagnose.sh .dev-task.md",
+      "bash compass/tools/redcap-clean-workspace-e2e.sh --timeout 180"
+    ],
+    "required_before_future_apply": [
+      "Run the churn/freeze guard check and confirm no unlisted post-freeze reports exist.",
+      "Run the copy-first plan check and confirm frozen mappings still match old anchors.",
+      "Run the readiness rehearsal and confirm only the frozen cohort is rehearsed.",
+      "Run package manifest checks and confirm report/raw evidence paths stay excluded.",
+      "Run Prism independent review before any live apply, old-anchor retirement or raw evidence cleanup."
+    ]
+  },
+  "result": {
+    "target_parent": "prism-layer-and-evidence",
+    "release_blocker_status": "still-blocking-after-freeze-guard",
+    "this_guard_completed": true,
+    "live_physical_archive_completed": false,
+    "old_anchor_retirement_completed": false,
+    "raw_evidence_cleanup_completed": false,
+    "public_release_ready": false
+  }
+}

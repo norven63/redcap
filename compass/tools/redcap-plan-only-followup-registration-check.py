@@ -22,6 +22,7 @@ PLAN_ONLY_STATUSES = {
     "route-only",
     "partial-with-explicit-defer",
 }
+ROOT_IA_APPLIED_STATUS = "target-model-complete-physical-convergence-applied-with-compatibility-shims"
 
 
 def fail(message: str) -> None:
@@ -168,8 +169,16 @@ def validate_live_rasg_chain(backlog: dict[str, Any], root_plan: dict[str, Any])
         fail("root information architecture plan must name RASG-022 as follow_up_requirement")
     if root_plan.get("prism_gap_follow_up") != "RASG-023":
         fail("root information architecture plan must name RASG-023 as prism_gap_follow_up")
-    if root_plan.get("physical_migration_applied") is not False:
-        fail("root information architecture plan must not claim physical migration was applied")
+    migration_applied = root_plan.get("physical_migration_applied")
+    if migration_applied is True:
+        if root_plan.get("status") != ROOT_IA_APPLIED_STATUS:
+            fail("root information architecture applied migration status is not the approved applied status")
+        if not isinstance(root_plan.get("physical_convergence_result"), dict):
+            fail("root information architecture applied migration must document physical_convergence_result")
+        if rows["RASG-022"].get("status") != "done":
+            fail("RASG-022 must be done when root information architecture migration is marked applied")
+    elif migration_applied is not False:
+        fail("root information architecture physical_migration_applied must be boolean")
     if rows["RASG-023"].get("status") not in {"planned", "in_progress", "done"}:
         fail("RASG-023 must remain visible until done")
 

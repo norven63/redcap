@@ -2,7 +2,8 @@
 
 > **一句话定义**：RedCap 是一个由 Loom 执行平面、Compass 自演化控制面、Prism 分析裁决平面与 References 共约层组成的多 Agent 软件工程框架。
 >
-> **阅读方式**：本文件负责解释“系统现在是如何设计的”；`private-archive/redcap-knowledge/traces/architecture-capability-trace.yaml` 负责冻结旧能力锚点并承载后续 `旧架构 -> 新架构 -> runtime evidence` 的回归审查。
+> **阅读方式**：本文件负责解释“系统现在是如何设计的”；`assets/private-archive/redcap-knowledge/traces/architecture-capability-trace.yaml` 负责冻结旧能力锚点并承载后续 `旧架构 -> 新架构 -> runtime evidence` 的回归审查。
+> 旧入口 `private-archive/` 仍作为兼容路径存在，但真实资产主位置已经迁入 `assets/private-archive/`。
 
 ---
 
@@ -76,11 +77,23 @@ RedCap 当前把状态面划分为三类：
 
 ### 2.2.1 artifact lifecycle 分类
 
+RedCap 现在把项目资产统一放在 `assets/` 下：
+
+| 资产层 | 真实主位置 | 旧兼容入口 | 职责 |
+| --- | --- | --- | --- |
+| docs | `assets/docs/` | `compass/docs/` | specs、research、traces、近期 task reports 与 docs catalog |
+| knowledge | `assets/knowledge/` | `compass/knowledge/` | lessons、宿主知识、运行记忆解释与 LLM-wiki-lite |
+| references | `assets/references/` | `references/` | 机器契约、策略、backlog、发布安全政策和文件查阅字典 |
+| Prism reports | `assets/evidence/prism-reports/` | `prism/reports/` | formal Prism 评审报告，不包含 raw runs |
+| private archive | `assets/private-archive/` | `private-archive/` | 私有冷归档和旧证据 |
+
+兼容入口用于保护旧报告、旧脚本和 receipt 的历史路径，不再是新内容的主位置。
+
 文件不只按“内容主题”分，还必须按 **authority / 生命周期 / 共享必要性** 分层：
 
 | 类别 | 典型载体 | 是否进 git | 说明 |
 | --- | --- | --- | --- |
-| **repo-tracked canonical / evidence** | `ARCHITECTURE.md`、`references/**`、`compass/docs/specs/**`、近期 `compass/docs/task-reports/**`、私有归档 `private-archive/redcap-knowledge/**`、`prism/reports/**`、`loom/test-reports/latest-e2e-report.md`、`loom/test-reports/pending-validations.md` | 是 | 这些文件要么是正式规范，要么是跨会话共享的历史证据，必须可审计、可考古；历史报告不再默认长期堆在 docs 当前入口 |
+| **repo-tracked canonical / evidence** | `ARCHITECTURE.md`、`assets/references/**`、`assets/docs/specs/**`、近期 `assets/docs/task-reports/**`、私有归档 `assets/private-archive/redcap-knowledge/**`、`assets/evidence/prism-reports/**`、`loom/test-reports/latest-e2e-report.md`、`loom/test-reports/pending-validations.md` | 是 | 这些文件要么是正式规范，要么是跨会话共享的历史证据，必须可审计、可考古；历史报告不再默认长期堆在 docs 当前入口 |
 | **session-isolated process state** | `.dev-task.md`、`prism/runs/**`、宿主 `plan.md` / workboard mirror | 否 | 它们服务于当前会话或当前机器的推进，不应伪装成共享真相 |
 | **local-only host assets** | `.env.local`、`compass/tools/feishu-config.json`、`compass/.workflow/agent-registry.yaml`、宿主 CLI / hook 配置、机型/路径探测缓存 | 否 | 它们绑定本地环境、凭证或宿主能力，不适合作为 repo 历史的一部分 |
 | **temporary runtime outputs** | `/tmp/redcap-*`、临时 prompt / review 输出、`__pycache__/` | 否 | 只为当前执行服务，任务结束后应清理或自动覆盖 |
@@ -108,14 +121,14 @@ RedCap 当前把状态面划分为三类：
 
 因此：
 
-1. `compass/docs/` 与 `compass/knowledge/` 是**平级不同职**，不是父子关系。
-2. `compass/docs/task-reports/` 是近期结案报告入口，不是历史报告仓库；旧报告的 canonical 冷归档在 `private-archive/redcap-knowledge/task-reports/`，旧 `redcap-knowledge/**` 仅作为别名/考古锚点保留。
+1. `assets/docs/` 与 `assets/knowledge/` 是**平级不同职**，不是父子关系；`compass/docs/` 与 `compass/knowledge/` 只是兼容入口。
+2. `assets/docs/task-reports/` 是近期结案报告入口，不是历史报告仓库；旧报告的 canonical 冷归档在 `assets/private-archive/redcap-knowledge/task-reports/`，旧 `redcap-knowledge/**` 仅作为别名/考古锚点保留。
 3. continuity assets 不是“第三个 docs”，而是围绕 canonical truth 运行的连续性状态链。
 4. backlog 这类“长期路线”如果要进入执行保障，机器权威应放在 `references/backlogs/*.json`，给人看的解释继续留在 `compass/docs/specs/**`；不要反过来把 spec 文档当运行时 authority。
 5. spec 文档若想继续保留在 `compass/docs/specs/**`，必须在 `references/spec-registry.json` 里登记自己的角色、当前状态和配套控制面；否则就只是匿名材料，应迁出或补登记。
 6. 若某类资产要从 continuity 层升级为 evidence，必须经过**显式发布**，而不是因为“写成了 markdown”就自动变成 docs。
 7. 公共沉淀必须先过 `RedCap Forge`，不能把私有报告、identity、runtime evidence 或 lessons 原文直接推入 `redcap-arsenal`。
-8. `compass/docs/index.yaml` 负责冻结 docs collection 的 retention / archive 规则，避免 docs 根目录再次回到大杂烩状态。
+8. `assets/docs/index.yaml` 负责冻结 docs collection 的 retention / archive 规则，兼容入口为 `compass/docs/index.yaml`，避免 docs 根目录再次回到大杂烩状态。
 9. `compass/CONTRIBUTING.core.md` 是**首读压缩层**，不是第二权威；它只负责把“新会话立刻必须遵守的规则”压到小体积入口里，权威解释仍回到 `compass/CONTRIBUTING.md`。
 
 ### 2.3 host-agent interop governance

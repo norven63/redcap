@@ -27,6 +27,21 @@ REQUIRED_CONSUMERS = {
     "package and release surface",
     "human status and notification surfaces",
 }
+APPLIED_STATUS = "target-model-complete-physical-convergence-applied-with-compatibility-shims"
+REQUIRED_MOVED_ROOTS = {
+    "compass/docs": "assets/docs",
+    "compass/knowledge": "assets/knowledge",
+    "references": "assets/references",
+    "prism/reports": "assets/evidence/prism-reports",
+    "private-archive": "assets/private-archive",
+}
+REQUIRED_COMPATIBILITY_SHIMS = {
+    "compass/docs": "../assets/docs",
+    "compass/knowledge": "../assets/knowledge",
+    "references": "assets/references",
+    "prism/reports": "../assets/evidence/prism-reports",
+    "private-archive": "assets/private-archive",
+}
 
 
 def fail(message: str) -> None:
@@ -193,6 +208,36 @@ def validate_apply_gate(plan: dict[str, Any]) -> None:
     require_text(gate, "batching_rule", "future_apply_gate")
 
 
+def validate_physical_migration_state(plan: dict[str, Any], root: Path) -> None:
+    applied = plan.get("physical_migration_applied")
+    status = plan.get("status")
+    result = plan.get("physical_convergence_result")
+
+    if applied is False:
+        if result is not None:
+            fail("physical_convergence_result must be absent until physical migration is applied")
+        return
+    if applied is not True:
+        fail("physical_migration_applied must be a boolean")
+    if status != APPLIED_STATUS:
+        fail("physical migration can only be marked applied under the approved applied status")
+    if not isinstance(result, dict):
+        fail("physical_convergence_result must document the applied migration")
+    if result.get("canonical_parent") != "assets":
+        fail("physical_convergence_result must use assets as canonical parent")
+    if result.get("moved_roots") != REQUIRED_MOVED_ROOTS:
+        fail("physical_convergence_result moved_roots does not match approved move set")
+    if result.get("compatibility_shims") != REQUIRED_COMPATIBILITY_SHIMS:
+        fail("physical_convergence_result compatibility_shims does not match approved shim set")
+    if not require_text(result, "task_id", "physical_convergence_result"):
+        fail("physical_convergence_result missing task_id")
+    for old_path, new_path in REQUIRED_MOVED_ROOTS.items():
+        if not (root / old_path).exists():
+            fail(f"compatibility path missing after migration: {old_path}")
+        if not (root / new_path).exists():
+            fail(f"canonical asset path missing after migration: {new_path}")
+
+
 def validate_backlog(root: Path, plan: dict[str, Any]) -> None:
     backlog = load_json(root / "references/backlogs/redcap-architecture-smell-governance.json", "architecture smell backlog")
     requirement = plan.get("requirement")
@@ -237,8 +282,7 @@ def main() -> int:
         fail("plan must bind physical consolidation apply follow-up to RASG-022")
     if plan.get("prism_gap_follow_up") != "RASG-023":
         fail("plan must bind plan-only closure gap hardening to RASG-023")
-    if plan.get("physical_migration_applied") is not False:
-        fail("plan must not claim physical migration was applied")
+    validate_physical_migration_state(plan, root)
     if plan.get("prism_review_required") is not True:
         fail("plan must require Prism review")
     require_text(plan, "status", "plan")

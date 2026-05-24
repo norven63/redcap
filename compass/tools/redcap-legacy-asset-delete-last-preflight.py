@@ -30,13 +30,21 @@ EVIDENCE_REFERENCE_PATHS = {
     "references/legacy-asset-migration-main-tree-apply.json",
     "references/legacy-asset-migration-alias-resolver.json",
     "references/legacy-asset-delete-last-apply.json",
+    "assets/references/legacy-asset-migration-apply-plan.json",
+    "assets/references/legacy-asset-migration-apply-rehearsal.json",
+    "assets/references/legacy-asset-migration-worktree-rehearsal.json",
+    "assets/references/legacy-asset-migration-main-tree-apply.json",
+    "assets/references/legacy-asset-migration-alias-resolver.json",
+    "assets/references/legacy-asset-delete-last-apply.json",
 }
 
 SELF_GENERATED_REFERENCE_PATHS = {
     "references/legacy-asset-delete-last-preflight.json",
+    "assets/references/legacy-asset-delete-last-preflight.json",
 }
 LEGACY_PRIVATE_ARCHIVE_ROOT = "redcap-knowledge"
 PRIVATE_ARCHIVE_ROOT = "private-archive/redcap-knowledge"
+ASSETS_PRIVATE_ARCHIVE_ROOT = "assets/private-archive/redcap-knowledge"
 
 
 def fail(message: str) -> None:
@@ -81,6 +89,8 @@ def safe_relative(raw: str, label: str) -> str:
 
 
 def private_archive_fs_path(raw: str) -> str:
+    if raw.startswith(f"{ASSETS_PRIVATE_ARCHIVE_ROOT}/"):
+        return raw
     if raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/"):
         return raw
     if raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/"):
@@ -89,7 +99,11 @@ def private_archive_fs_path(raw: str) -> str:
 
 
 def is_private_archive_path(raw: str) -> bool:
-    return raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/") or raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/")
+    return (
+        raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/")
+        or raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/")
+        or raw.startswith(f"{ASSETS_PRIVATE_ARCHIVE_ROOT}/")
+    )
 
 
 def tracked_files(root: Path) -> list[str]:

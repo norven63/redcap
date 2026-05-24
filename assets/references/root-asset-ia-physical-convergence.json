@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "manifest_id": "redcap-root-asset-ia-physical-convergence",
+  "task_id": "root-asset-ia-physical-convergence",
+  "status": "applied-with-compatibility-shims",
+  "applied_at": "2026-05-24",
+  "purpose": "Record the physical convergence of RedCap project assets under assets/ while preserving old path compatibility for scripts, reports, receipts, and archaeology.",
+  "problem": "Project assets were spread across compass/docs, compass/knowledge, references, prism/reports, and private-archive. Indexes and package exclusions reduced token and leak risk, but the repository shape still looked like several competing asset systems.",
+  "solution": "Move real project-asset content under assets/ and leave old roots as compatibility shims. Package candidate globs now point at assets/references so npm dry-run sees the real files instead of relying on symlink packing.",
+  "effect": "Humans can understand one project asset parent; existing tools and historical references continue to work through compatibility paths; package readiness checks no longer depend on symlink inclusion.",
+  "canonical_assets": {
+    "assets/docs": "Design docs, specs, research, traces, recent task reports, and docs catalog.",
+    "assets/knowledge": "Active lessons, host notes, runtime memory explanations, and LLM-wiki-lite assets.",
+    "assets/references": "Machine-readable contracts, policies, backlogs, handoff docs, and lookup dictionary.",
+    "assets/evidence/prism-reports": "Formal Prism review reports and report index.",
+    "assets/private-archive": "Private cold archive and old archaeology evidence."
+  },
+  "compatibility_shims": [
+    {
+      "legacy_path": "compass/docs",
+      "target": "assets/docs",
+      "reason": "Existing docs catalog commands, task reports, and old links still use compass/docs."
+    },
+    {
+      "legacy_path": "compass/knowledge",
+      "target": "assets/knowledge",
+      "reason": "Existing knowledge index, lessons references, and revival instructions still use compass/knowledge."
+    },
+    {
+      "legacy_path": "references",
+      "target": "assets/references",
+      "reason": "Control-plane scripts still resolve references/* as the logical contract entry."
+    },
+    {
+      "legacy_path": "prism/reports",
+      "target": "assets/evidence/prism-reports",
+      "reason": "Prism report index and old formal review evidence links remain stable."
+    },
+    {
+      "legacy_path": "private-archive",
+      "target": "assets/private-archive",
+      "reason": "Old receipt and report anchors remain stable while the real cold archive lives under assets."
+    }
+  ],
+  "not_claimed": [
+    "This task does not delete historical assets.",
+    "This task does not move prism/runs raw evidence.",
+    "This task does not complete formal public release.",
+    "This task does not implement GraphRAG or full LLM-wiki."
+  ],
+  "verification_commands": [
+    "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
+    "bash compass/tools/redcap-public-package-surface.sh",
+    "bash compass/tools/redcap-runtime-contract-surface-check.sh",
+    "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
+    "bash compass/tools/redcap-docs-catalog.sh check"
+  ]
+}

@@ -124,8 +124,8 @@ def validate_applied(receipt: dict[str, Any]) -> set[str]:
             fail("private-archive applied tranche id mismatch")
         if private_archive.get("status") not in {"completed-pending-closeout-receipt", "completed-closeout-receipted"}:
             fail("private-archive tranche status mismatch")
-        if private_archive.get("canonical_root") != "private-archive/redcap-knowledge":
-            fail("private-archive canonical root must be private-archive/redcap-knowledge")
+        if private_archive.get("canonical_root") not in {"private-archive/redcap-knowledge", "assets/private-archive/redcap-knowledge"}:
+            fail("private-archive canonical root mismatch")
         if private_archive.get("retired_root") != "redcap-knowledge":
             fail("private-archive retired root must be redcap-knowledge")
         evidence = string_list(private_archive.get("evidence"), "private-archive evidence")
@@ -278,9 +278,13 @@ def main() -> int:
     if receipt.get("physical_migration_mode") not in {
         "no-further-move-in-this-task",
         "per-tranche-apply-private-archive-complete-remaining-groups-deferred",
+        "assets-parent-physical-convergence-applied-with-compatibility-shims",
     }:
         fail("receipt physical_migration_mode mismatch")
-    if receipt.get("status") != "partial-apply-complete-remaining-root-groups-deferred-before-release":
+    if receipt.get("status") not in {
+        "partial-apply-complete-remaining-root-groups-deferred-before-release",
+        "asset-parent-convergence-applied-remaining-source-groups-deferred-before-release",
+    }:
         fail("receipt status mismatch")
 
     groups = target_groups(plan)

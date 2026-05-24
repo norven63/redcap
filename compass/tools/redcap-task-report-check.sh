@@ -3,7 +3,7 @@
 # RedCap 框架 — Layer B 任务报告模板审计
 #
 # 目标：把“最终汇报必须按模板”从对话约束升级为可机器检查的不变量。
-# 审计范围：本次 commit 区间内新增/修改的 `compass/docs/task-reports/*.md`
+# 审计范围：本次 commit 区间内新增/修改的 canonical `assets/docs/task-reports/*.md`
 # ─────────────────────────────────────────────────────────
 
 set -u
@@ -26,7 +26,7 @@ if [[ -z "$CURRENT_HEAD" ]]; then
     CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null) || exit 1
 fi
 
-REPORT_GLOB='compass/docs/task-reports/*.md'
+REPORT_GLOB='assets/docs/task-reports/*.md'
 PENDING_CLOSURE_STATE=""
 TMP_CHANGED_REPORT_LIST=$(mktemp)
 ANCHORED_REPORT=""
@@ -215,13 +215,30 @@ print("1" if is_unique else "0")
 PY
 }
 
+changed_report_is_pure_asset_migration() {
+    local changed="$1"
+    local suffix old_path old_blob new_blob
+
+    case "$changed" in
+        assets/docs/task-reports/*) ;;
+        *) return 1 ;;
+    esac
+
+    suffix="${changed#assets/docs/task-reports/}"
+    old_path="compass/docs/task-reports/$suffix"
+    old_blob=$(git -C "$REDCAP_ROOT" rev-parse -q --verify "HEAD:$old_path" 2>/dev/null || true)
+    new_blob=$(git -C "$REDCAP_ROOT" rev-parse -q --verify ":$changed" 2>/dev/null || true)
+
+    [[ -n "$old_blob" && -n "$new_blob" && "$old_blob" == "$new_blob" ]]
+}
+
 if [[ "$ANCHOR_MISMATCH" -eq 1 ]]; then
     echo "[redcap-task-report-check] report marker and pending closure artifact disagree" >&2
     exit 1
 fi
 
 if [[ ${#REPORT_FILES[@]} -eq 0 ]]; then
-    echo "[redcap-task-report-check] missing task report under compass/docs/task-reports/" >&2
+    echo "[redcap-task-report-check] missing task report under assets/docs/task-reports/" >&2
     exit 1
 fi
 
@@ -354,6 +371,9 @@ if [[ -n "$ANCHORED_REPORT" ]]; then
     if [[ ${#CHANGED_REPORTS[@]} -gt 0 ]]; then
         for CHANGED in "${CHANGED_REPORTS[@]}"; do
             [[ "$CHANGED" == "$ANCHORED_REPORT" ]] && continue
+            if changed_report_is_pure_asset_migration "$CHANGED"; then
+                continue
+            fi
             CONFLICTING_CHANGED_REPORTS+=("$CHANGED")
         done
     fi

@@ -70,7 +70,15 @@ def validate_links(root: Path, dictionary_path: Path, text: str) -> list[str]:
         candidate = Path(target)
         if not candidate.is_absolute():
             candidate = (base / candidate).resolve()
-        if not candidate.exists():
+        exists = candidate.exists()
+        if not exists and dictionary_path.resolve().is_relative_to((root / "assets/references").resolve()) and target.startswith("../"):
+            # The dictionary is now physically stored under assets/references, but
+            # most markdown links intentionally keep the old references/ logical
+            # entry semantics where ../ points at the repository root.
+            logical_candidate = root / target[3:]
+            exists = logical_candidate.exists()
+            candidate = logical_candidate.resolve() if exists else candidate
+        if not exists:
             broken.append(target)
         elif root not in [candidate, *candidate.parents]:
             broken.append(target)

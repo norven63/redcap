@@ -26,6 +26,14 @@ REQUIRED_IGNORED_PATHS = [
 
 STRUCTURAL_GOVERNANCE_PATH = "references/token-structural-governance.json"
 
+CANONICAL_ASSET_ALIASES = {
+    "assets/docs/": "compass/docs/",
+    "assets/knowledge/": "compass/knowledge/",
+    "assets/references/": "references/",
+    "assets/evidence/prism-reports/": "prism/reports/",
+    "assets/private-archive/": "private-archive/",
+}
+
 FORBIDDEN_AUTO_IMPORTS = [
     "compass/CONTRIBUTING.md",
     "compass/knowledge/lessons.md",
@@ -79,6 +87,9 @@ def git_ignored(root: pathlib.Path, rel_path: str) -> bool:
 
 
 def mitigation_for(rel_path: str, size: int) -> str | None:
+    legacy_rel_path = legacy_alias_for(rel_path)
+    if legacy_rel_path != rel_path:
+        return mitigation_for(legacy_rel_path, size)
     if rel_path.startswith("compass/docs/"):
         return "docs-catalog-plan-budget"
     if rel_path.startswith("compass/knowledge/"):
@@ -100,6 +111,13 @@ def mitigation_for(rel_path: str, size: int) -> str | None:
     return None
 
 
+def legacy_alias_for(rel_path: str) -> str:
+    for canonical_prefix, legacy_prefix in CANONICAL_ASSET_ALIASES.items():
+        if rel_path.startswith(canonical_prefix):
+            return legacy_prefix + rel_path[len(canonical_prefix) :]
+    return rel_path
+
+
 def load_structural_plan(root: pathlib.Path) -> dict[str, dict]:
     path = root / STRUCTURAL_GOVERNANCE_PATH
     try:
@@ -114,7 +132,11 @@ def load_structural_plan(root: pathlib.Path) -> dict[str, dict]:
             continue
         rel = entry.get("path")
         if isinstance(rel, str) and rel.strip():
-            result[rel.strip()] = entry
+            rel = rel.strip()
+            result[rel] = entry
+            for canonical_prefix, legacy_prefix in CANONICAL_ASSET_ALIASES.items():
+                if rel.startswith(legacy_prefix):
+                    result[canonical_prefix + rel[len(legacy_prefix) :]] = entry
     return result
 
 

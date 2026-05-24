@@ -14,7 +14,10 @@ compass/.runtime/
 compass/.workflow/
 compass/tools/redcap-multi-session-acceptance.sh
 private-archive/
+assets/private-archive/
 prism/runs/
+assets/evidence/prism-runs/
+assets/evidence/prism-reports/
 __pycache__/
 *.pyc
 .DS_Store

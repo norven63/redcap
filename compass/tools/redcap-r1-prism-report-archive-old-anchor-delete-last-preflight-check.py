@@ -221,6 +221,8 @@ def should_scan(path: Path) -> bool:
         "node_modules/",
         "prism/reports/",
         "private-archive/prism-reports/",
+        "assets/evidence/prism-reports/",
+        "assets/private-archive/prism-reports/",
         "prism/runs/",
         ".redcap-runtime/",
     )
@@ -231,6 +233,7 @@ def should_scan(path: Path) -> bool:
         "README.md",
         "AGENTS.md",
         "SKILL.md",
+        "assets/",
         "compass/",
         "references/",
         "prism/",

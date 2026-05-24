@@ -323,10 +323,15 @@ import sys
 
 root = Path(sys.argv[1]).resolve()
 raw = sys.argv[2]
-reports_root_raw = root / "compass/docs/task-reports"
-if not reports_root_raw.is_dir():
-    raise SystemExit(1)
-if reports_root_raw.resolve() != reports_root_raw:
+report_roots_raw = [
+    root / "assets/docs/task-reports",
+    root / "compass/docs/task-reports",
+]
+report_roots = []
+for report_root in report_roots_raw:
+    if report_root.is_dir():
+        report_roots.append(report_root.resolve())
+if not report_roots:
     raise SystemExit(1)
 
 candidate_raw = Path(raw)
@@ -337,9 +342,7 @@ if candidate_raw.is_symlink():
 
 candidate = candidate_raw.resolve()
 
-try:
-    candidate.relative_to(reports_root_raw)
-except ValueError:
+if not any(_root == candidate or candidate.is_relative_to(_root) for _root in report_roots):
     raise SystemExit(1)
 
 if candidate.suffix != ".md" or not candidate.is_file():

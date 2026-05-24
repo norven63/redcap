@@ -67,7 +67,7 @@ def expected_ids() -> list[str]:
 
 
 def check_registry(path: Path) -> None:
-    repo_root = path.resolve().parents[1] if path.name == "redcap-r0-r22-registry.json" else ROOT
+    repo_root = ROOT
     payload = load_json(path)
     if payload.get("version") != 1:
         fail("version must be 1")

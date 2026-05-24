@@ -106,14 +106,18 @@ def index_text_and_ids(index_path: Path) -> tuple[str, set[str]]:
 
 
 def git_tracked(rel: str) -> bool:
+    candidates = [rel]
+    if rel.startswith("prism/reports/"):
+        candidates.append("assets/evidence/prism-reports/" + rel[len("prism/reports/") :])
     completed = subprocess.run(
-        ["git", "-C", str(ROOT), "ls-files", "--", rel],
+        ["git", "-C", str(ROOT), "ls-files", "--", *candidates],
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
         check=False,
     )
-    return rel in {line.strip() for line in completed.stdout.splitlines()}
+    tracked = {line.strip() for line in completed.stdout.splitlines()}
+    return any(candidate in tracked for candidate in candidates)
 
 
 def canonical_sha256(value: Any) -> str:

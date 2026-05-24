@@ -116,13 +116,13 @@ def count_under(candidates: set[str], roots: list[str]) -> int:
 def expected_snapshot(candidates: set[str]) -> dict[str, int]:
     return {
         "candidate_count": len(candidates),
-        "control_plane_candidate_count": count_under(candidates, ["compass", "references"]),
+        "control_plane_candidate_count": count_under(candidates, ["compass", "references", "assets/references"]),
         "compass": count_under(candidates, ["compass"]),
-        "references": count_under(candidates, ["references"]),
+        "references": count_under(candidates, ["references", "assets/references"]),
         "compass_tools_shell": sum(1 for path in candidates if path.startswith("compass/tools/") and path.endswith(".sh")),
         "compass_tools_python": sum(1 for path in candidates if path.startswith("compass/tools/") and path.endswith(".py")),
-        "references_json": sum(1 for path in candidates if path.startswith("references/") and path.endswith(".json")),
-        "references_markdown": sum(1 for path in candidates if path.startswith("references/") and path.endswith(".md")),
+        "references_json": sum(1 for path in candidates if (path.startswith("references/") or path.startswith("assets/references/")) and path.endswith(".json")),
+        "references_markdown": sum(1 for path in candidates if (path.startswith("references/") or path.startswith("assets/references/")) and path.endswith(".md")),
     }
 
 
@@ -366,7 +366,18 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
     control_candidates = {
         path
         for path in candidates
-        if path == "compass" or path.startswith("compass/") or path == "references" or path.startswith("references/")
+        if path == "compass"
+        or path.startswith("compass/")
+        or path == "references"
+        or path.startswith("references/")
+        or path == "assets/references"
+        or path.startswith("assets/references/")
+    }
+    control_candidates = {
+        "references/" + path[len("assets/references/") :]
+        if path.startswith("assets/references/")
+        else path
+        for path in control_candidates
     }
     validate_dry_run_manifest(dry_run_manifest, control_candidates, candidates, consumers)
 

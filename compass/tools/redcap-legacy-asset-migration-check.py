@@ -40,6 +40,7 @@ ALLOWED_APPLY_STATUS = {
 RUNTIME_SNAPSHOT_COLLECTIONS = {"prism-runs", "runtime-working-dirs"}
 LEGACY_PRIVATE_ARCHIVE_ROOT = "redcap-knowledge"
 PRIVATE_ARCHIVE_ROOT = "private-archive/redcap-knowledge"
+ASSETS_PRIVATE_ARCHIVE_ROOT = "assets/private-archive/redcap-knowledge"
 
 
 def fail(message: str) -> None:
@@ -82,6 +83,8 @@ def require_safe_relative(raw: str, item_id: str, key: str) -> str:
 
 
 def private_archive_fs_path(raw: str) -> str:
+    if raw.startswith(f"{ASSETS_PRIVATE_ARCHIVE_ROOT}/"):
+        return raw
     if raw.startswith(f"{PRIVATE_ARCHIVE_ROOT}/"):
         return raw
     if raw.startswith(f"{LEGACY_PRIVATE_ARCHIVE_ROOT}/"):
@@ -110,7 +113,7 @@ def active_task_report_path(root: Path) -> Path | None:
         raw = line.split(":", 1)[1].strip()
         if not raw or raw.startswith("/") or ".." in Path(raw).parts:
             return None
-        if raw.startswith("compass/docs/task-reports/"):
+        if raw.startswith("compass/docs/task-reports/") or raw.startswith("assets/docs/task-reports/"):
             return (root / raw).resolve(strict=False)
     return None
 
@@ -127,7 +130,7 @@ def is_non_legacy_active_store_file(root: Path, item: Path) -> bool:
         rel = item.resolve(strict=False).relative_to(root.resolve()).as_posix()
     except ValueError:
         return False
-    return rel.startswith("compass/knowledge/llm-wiki/")
+    return rel.startswith("compass/knowledge/llm-wiki/") or rel.startswith("assets/knowledge/llm-wiki/")
 
 
 def count_files(root: Path, rel: str) -> int:

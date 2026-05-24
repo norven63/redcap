@@ -66,14 +66,18 @@ def require_list(value: Any, label: str, *, min_len: int) -> list[Any]:
 
 
 def git_tracked(rel: str) -> bool:
+    candidates = [rel]
+    if rel.startswith("references/"):
+        candidates.append(f"assets/references/{rel.removeprefix('references/')}")
     completed = subprocess.run(
-        ["git", "-C", str(ROOT), "ls-files", "--", rel],
+        ["git", "-C", str(ROOT), "ls-files", "--", *candidates],
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
         check=False,
     )
-    return rel in {line.strip() for line in completed.stdout.splitlines()}
+    tracked = {line.strip() for line in completed.stdout.splitlines()}
+    return any(candidate in tracked for candidate in candidates)
 
 
 def actual_contract_files() -> set[str]:

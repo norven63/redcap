@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "policy_id": "llm-wiki-lite-lifecycle",
+  "parent_child_id": "P4-2h-3",
+  "status": "implemented-minimum-lifecycle",
+  "purpose": "Implement the minimum private LLM-wiki-lite lifecycle without creating a full wiki product, public writeback, background generator, RAG, GraphRAG, or vector store.",
+  "inherits_from": [
+    "references/llm-wiki-asset-stratification-policy.json",
+    "references/redcap-forge-policy.json",
+    "references/retrieval-escalation-policy.json"
+  ],
+  "storage": {
+    "root": "assets/knowledge/llm-wiki",
+    "index": "assets/knowledge/llm-wiki/index.json",
+    "entries": "assets/knowledge/llm-wiki/entries",
+    "schema": "assets/references/llm-wiki-lite-entry.schema.json",
+    "visibility": "private",
+    "authority": "non-authoritative-derived-context"
+  },
+  "entry_contract": {
+    "required_fields": [
+      "version",
+      "id",
+      "title",
+      "status",
+      "visibility",
+      "authority",
+      "candidate_type",
+      "privacy_classification",
+      "source_anchors",
+      "summary",
+      "body",
+      "forge_promotion"
+    ],
+    "allowed_status": [
+      "active",
+      "stale",
+      "retired"
+    ],
+    "allowed_visibility": [
+      "private"
+    ],
+    "required_authority": "non-authoritative-derived-context",
+    "candidate_types_source": "references/llm-wiki-asset-stratification-policy.json#llm_wiki_candidate_types",
+    "deny_candidate_types": [
+      "task-specific-state",
+      "raw-private-transcript",
+      "executable-code"
+    ]
+  },
+  "source_anchor_contract": {
+    "required": true,
+    "minimum_fields": [
+      "source_path",
+      "source_kind",
+      "commit_sha_or_digest",
+      "last_reviewed_at",
+      "privacy_classification"
+    ],
+    "digest_prefix": "sha256:",
+    "stale_when": [
+      "source_path no longer resolves inside the RedCap repo",
+      "commit_sha_or_digest does not match the current file digest",
+      "last_reviewed_at is missing or not ISO-8601 UTC",
+      "privacy_classification is missing or weaker than the source rule",
+      "source path belongs to a denied asset layer"
+    ],
+    "raw_excerpt_rule": "Entry bodies must paraphrase. They must not inline raw private report passages, Prism raw output, identity text, runtime evidence, secrets, or local credential material."
+  },
+  "candidate_selection": {
+    "allowlist_source": "references/llm-wiki-asset-stratification-policy.json",
+    "allowed_if_candidate_type_allowed": [
+      true,
+      "guarded"
+    ],
+    "denied_asset_dispositions": [
+      "forbidden",
+      "forbidden-raw-source-only",
+      "forbidden-except-api-explainer"
+    ],
+    "denied_source_paths": [
+      ".dev-task.md",
+      "prism/runs/**",
+      "bin/**",
+      "compass/tools/**",
+      "dispatcher/**",
+      "loom/**",
+      "compass/docs/catalog.json",
+      "references/file-lookup-dictionary.md",
+      "references/file-lookup-dictionary-policy.json"
+    ]
+  },
+  "forge_promotion_boundary": {
+    "public_write_allowed_from_wiki": false,
+    "requires_redcap_forge": true,
+    "allowed_public_targets_after_forge": [
+      "redcap-arsenal append-only entries",
+      "shared-knowledge reviewed exports"
+    ],
+    "must_not_write_directly": [
+      "redcap-arsenal",
+      "shared-knowledge",
+      "public wiki pages"
+    ]
+  },
+  "disabled_capabilities": {
+    "full_wiki_product": false,
+    "background_generator": false,
+    "rag": false,
+    "graphrag": false,
+    "vector_store": false,
+    "automatic_public_writeback": false
+  },
+  "required_surfaces": [
+    "assets/references/llm-wiki-lite-policy.json",
+    "assets/references/llm-wiki-lite-entry.schema.json",
+    "assets/knowledge/llm-wiki/index.json",
+    "assets/knowledge/llm-wiki/README.md",
+    "compass/tools/redcap-llm-wiki-lite-check.sh",
+    "compass/tools/redcap-llm-wiki-lite-check.py"
+  ],
+  "must_not_claim": [
+    "Do not claim P4-2h-3 implements a complete LLM-wiki product.",
+    "Do not claim LLM-wiki-lite is a source of truth.",
+    "Do not claim RAG, GraphRAG, vector search, or background auto-generation is enabled.",
+    "Do not claim private reports, Prism runs, identity, or runtime evidence are wiki content.",
+    "Do not claim private wiki entries can write public arsenal content without RedCap Forge.",
+    "Do not claim P4-2h-3 unblocks npm/public release."
+  ]
+}

@@ -171,7 +171,17 @@ def validate_policy(policy: dict[str, Any], root: Path) -> None:
     if not isinstance(boundaries, dict):
         fail("artifact_boundaries must be an object")
     forbidden = require_list(boundaries, "raw_private_sources_forbidden_in_public", "artifact_boundaries")
-    for required in ["compass/docs/task-reports/**", "private-archive/redcap-knowledge/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**", ".env"]:
+    for required in [
+        "assets/docs/task-reports/**",
+        "compass/docs/task-reports/**",
+        "assets/private-archive/redcap-knowledge/**",
+        "private-archive/redcap-knowledge/**",
+        "redcap-knowledge/**",
+        "assets/knowledge/**",
+        "compass/knowledge/**",
+        "prism/runs/**",
+        ".env",
+    ]:
         if required not in forbidden:
             fail(f"artifact boundary missing forbidden raw source: {required}")
     for required in ["privacy and secret scan", "normalized duplicate check", "append-only timestamped entry", "index-first retrieval metadata"]:
@@ -203,7 +213,16 @@ def validate_cross_policies(root: Path) -> None:
     forbidden = remote.get("forbidden_path_globs")
     if not isinstance(forbidden, list):
         fail("remote binding forbidden_path_globs must be a list")
-    for required in ["compass/docs/task-reports/**", "private-archive/redcap-knowledge/**", "redcap-knowledge/**", "compass/knowledge/**", "prism/runs/**"]:
+    for required in [
+        "assets/docs/task-reports/**",
+        "compass/docs/task-reports/**",
+        "assets/private-archive/redcap-knowledge/**",
+        "private-archive/redcap-knowledge/**",
+        "redcap-knowledge/**",
+        "assets/knowledge/**",
+        "compass/knowledge/**",
+        "prism/runs/**",
+    ]:
         if required not in forbidden:
             fail(f"remote binding missing forbidden path glob: {required}")
 
@@ -215,7 +234,10 @@ def validate_cross_policies(root: Path) -> None:
 def validate_task_card(root: Path) -> None:
     meta = parse_task_metadata(root / ".dev-task.md")
     report = meta.get("task_report", "")
-    if report and not report.startswith("compass/docs/task-reports/"):
+    if report and not (
+        report.startswith("assets/docs/task-reports/")
+        or report.startswith("compass/docs/task-reports/")
+    ):
         fail(f"current task_report must live in active report inbox: {report}")
 
 

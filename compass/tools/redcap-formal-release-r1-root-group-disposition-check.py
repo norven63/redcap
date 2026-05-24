@@ -227,6 +227,7 @@ def validate(matrix_path: Path) -> dict[str, Any]:
         "candidate_count": len(candidates),
         "compass": count_under(candidates, ["compass"]),
         "references": count_under(candidates, ["references"]),
+        "assets_references": count_under(candidates, ["assets/references"]),
         "prism": count_under(candidates, ["prism"]),
         "loom": count_under(candidates, ["loom"]),
         "workspace_state": count_under(candidates, WORKSPACE_STATE_PACKAGE_ROOTS),

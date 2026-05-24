@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "decision_id": "redcap-r1-next-safe-slice-after-old-anchor-preflight",
+  "status": "selected-next-slice-no-blocker-closed",
+  "created_at": "2026-05-23",
+  "source_task": {
+    "backlog_id": "framework-upgrade",
+    "item_id": "P4-20",
+    "active_slice": "r1-next-safe-slice-after-old-anchor-preflight",
+    "previous_item_id": "P4-19",
+    "previous_summary": "P4-19 proved that old prism/reports anchors are not ready for delete-last retirement; post-freeze reports, canonical references, alias/query contract and destructive authorization remain blockers."
+  },
+  "source_truth": {
+    "old_anchor_preflight_path": "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json",
+    "old_anchor_preflight_sha256": "b583a9ad7397a6807cab43a8adf4e80ca00bf2fd9f174228d0e655caba8b3a0c",
+    "convergence_assessment_path": "references/r1-formal-release-readiness-convergence-assessment.json",
+    "convergence_assessment_sha256": "8d105d5a6483f7c261d762713b540a21306e4fe44cb58f2c28a545bf8c68402c",
+    "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
+    "control_plane_physical_preflight_sha256": "2e7ef60a218265671d5d023dd687a94f9d0f4b4e12b17ee8308fb9611c65e44f"
+  },
+  "claim_boundary": {
+    "route_selection_completed": true,
+    "selected_next_item_registered": true,
+    "next_slice_implemented": false,
+    "release_blocker_closed": false,
+    "internal_control_plane_closed": false,
+    "prism_layer_and_evidence_closed": false,
+    "old_report_anchor_alias_gateway_implemented": false,
+    "old_report_anchors_removed_or_replaced": false,
+    "raw_run_evidence_deleted_or_cleaned": false,
+    "layer_a_product_decision_made": false,
+    "release_switch_changed": false,
+    "public_release_ready": false,
+    "allowed_user_claim": "After P4-19, RedCap selected the next safe pre-release slice: a non-destructive internal-control-plane support-copy-first continuation. No release blocker is closed by this route decision.",
+    "forbidden_claims": [
+      "The selected next slice has already been implemented.",
+      "internal-control-plane is resolved.",
+      "Old prism/reports anchors have been retired, deleted, replaced, or redirected.",
+      "Prism raw run evidence has been cleaned or pruned.",
+      "Layer A product scope has been decided.",
+      "RedCap is ready for public npm/CLI release."
+    ]
+  },
+  "candidate_matrix": [
+    {
+      "id": "A",
+      "title": "Internal-control-plane physical split continuation",
+      "source": "references/r1-control-plane-physical-apply-preflight.json",
+      "risk": "medium",
+      "size": "medium",
+      "requires_human_decision": false,
+      "destructive": false,
+      "selected": true,
+      "reason": "It is one of the largest remaining release blockers. Claude Code selected it, and Cap adjudicates it as the next route because it can be advanced as a non-destructive support-copy-first slice without touching release switches, credentials, old report anchors, raw evidence or Layer A product scope."
+    },
+    {
+      "id": "B",
+      "title": "Old report alias / query gateway",
+      "source": "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json#future_apply_requirements",
+      "risk": "low",
+      "size": "small",
+      "requires_human_decision": false,
+      "destructive": false,
+      "selected": false,
+      "reason": "Kimi selected this as the smallest safe follow-up to P4-19. Cap keeps it as the next Prism-layer candidate, but does not select it now because P4-19 already preserved old anchors and the route should now move back to the larger internal-control-plane blocker instead of extending the localized Prism-report line indefinitely."
+    },
+    {
+      "id": "C",
+      "title": "Prism raw run evidence retention / cleanup",
+      "source": "prism/protocol.md#prism-runs",
+      "risk": "high",
+      "size": "manual-boundary",
+      "requires_human_decision": true,
+      "destructive": "possible",
+      "selected": false,
+      "reason": "Any raw evidence cleanup may break auditability and requires explicit preservation proof plus Norven approval before apply."
+    },
+    {
+      "id": "D",
+      "title": "Layer A product boundary decision",
+      "source": "references/r1-layera-product-boundary-preflight.json",
+      "risk": "manual-product-scope",
+      "size": "product-boundary",
+      "requires_human_decision": true,
+      "destructive": false,
+      "selected": false,
+      "reason": "Layer A inclusion/exclusion is a Norven-reserved product decision and cannot be delegated to Cap or Prism."
+    },
+    {
+      "id": "E",
+      "title": "Formal npm / CLI publish",
+      "source": "references/package-publish-safety-policy.json",
+      "risk": "release-human-gate",
+      "size": "release",
+      "requires_human_decision": true,
+      "destructive": false,
+      "selected": false,
+      "reason": "Formal publish requires license, registry, credentials, package privacy and explicit publish authorization decisions."
+    }
+  ],
+  "selected_next_slice": {
+    "backlog_item_id": "P4-21",
+    "phase_id": "phase-25-release-readiness-internal-control-plane-support-copy-first-continuation",
+    "title": "R1 internal-control-plane support-copy-first continuation after old-anchor route selection",
+    "selected_candidate": "A",
+    "scope": [
+      "Advance the internal-control-plane physical split using a non-destructive support-copy-first slice.",
+      "Prefer package-visible runtime support files, compatibility wrappers or contract mirrors that reduce internal-control-plane release blocker scope.",
+      "Do not delete, move, rename, replace or symlink-switch old prism/reports anchors.",
+      "Do not clean or prune prism/runs raw evidence.",
+      "Do not decide Layer A product scope.",
+      "Do not change release switches, package privacy, registry, credentials or license."
+    ],
+    "minimum_acceptance": [
+      "machine-readable support-copy-first manifest for the selected internal-control-plane subset",
+      "checker proving the slice is non-destructive and does not close release blockers prematurely",
+      "Prism review by Claude Code and Kimi when available",
+      "spec-check and diagnose pass",
+      "clean workspace E2E",
+      "closeout receipt"
+    ]
+  },
+  "deferred_candidates": [
+    {
+      "candidate": "B",
+      "follow_up_rule": "After at least one internal-control-plane continuation slice or if a Prism-layer checker starts failing because of old report lookup ambiguity, re-evaluate a bounded old report alias/query gateway task."
+    },
+    {
+      "candidate": "C",
+      "follow_up_rule": "Only enter after explicit preservation proof and human authorization for evidence cleanup."
+    },
+    {
+      "candidate": "D",
+      "follow_up_rule": "Only enter after Norven asks for Layer A product scope adjudication."
+    },
+    {
+      "candidate": "E",
+      "follow_up_rule": "Only enter after release readiness is green and Norven confirms license, registry, package privacy and publish authorization."
+    }
+  ],
+  "adjudication": {
+    "verdict": "split-decision-cap-adjudicates-A",
+    "reason": "Claude Code recommended A because it attacks the largest remaining release blocker; Kimi recommended B because it is the smallest safe follow-up to P4-19. Cap selects A because P4-19 already preserved old anchors and proved no destructive old-anchor action is allowed now. Continuing with B would further deepen the localized Prism-report line while internal-control-plane remains the larger release blocker. A remains acceptable only as a non-destructive support-copy-first slice.",
+    "tie_breaker": "When one option is smaller but continues a localized line that has already been safely deferred, and another option addresses a larger release blocker without crossing human gates, choose the larger blocker as a bounded non-destructive slice."
+  },
+  "prism_review": {
+    "run_id": "20260523-r1-next-safe-slice-after-old-anchor-preflight",
+    "verdict": "split-decision-cap-adjudicates-A",
+    "agents": [
+      {
+        "provider": "claude-code",
+        "status": "responded",
+        "recommendation": "A",
+        "blockers": []
+      },
+      {
+        "provider": "kimi",
+        "status": "responded",
+        "recommendation": "B",
+        "blockers": []
+      },
+      {
+        "provider": "gemini",
+        "status": "not-invoked",
+        "reason": "Availability filter selected Claude Code and Kimi quorum; Gemini was not needed for this route-only review."
+      },
+      {
+        "provider": "copilot",
+        "status": "policy-suppressed",
+        "reason": "Protected fallback policy: Copilot is not called when Claude Code and Kimi are available."
+      }
+    ]
+  },
+  "verification_plan": [
+    "bash compass/tools/redcap-r1-next-safe-slice-after-old-anchor-preflight-check.sh",
+    "bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md",
+    "bash compass/tools/redcap-spec-check.sh \"$PWD\"",
+    "bash compass/tools/redcap-diagnose.sh .dev-task.md",
+    "bash compass/tools/redcap-clean-workspace-e2e.sh --check-result --timeout 180"
+  ],
+  "result": {
+    "release_blocker_status": "still-blocking-after-route-selection",
+    "selected_next_backlog_item": "P4-21",
+    "selected_next_slice_implemented": false,
+    "public_release_ready": false,
+    "next_recommended_slice": "R1 internal-control-plane support-copy-first continuation"
+  }
+}
