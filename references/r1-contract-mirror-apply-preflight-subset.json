@@ -13,11 +13,11 @@
   },
   "source_truth": {
     "p4_26_route_path": "references/r1-next-safe-slice-after-control-plane-contract-mirror-preflight.json",
-  "p4_26_route_sha256": "fbf6b818688845b3ae83fb1d069063d8a8aa3c0a182652a7c777fa1b33bddfcc",
+  "p4_26_route_sha256": "101fcc245fca98fbac6647ab7a05eb909b917f7a0fefb0e1d1c11abee208d233",
     "p4_25_manifest_path": "references/r1-control-plane-public-internal-contract-mirror-preflight.json",
-  "p4_25_manifest_sha256": "a940a0cdd67d970abf6fb0de844d5bc1e710382436cc8228f37dabbd76dd7f04",
+  "p4_25_manifest_sha256": "26994b87c576e40c226e1c1f7e05e656980fb79670e5d44334f085230d004fb9",
     "contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
-  "contract_split_sha256": "720ecf2eb00ca74c68f3e1de1a7d17a4428a3436ec538c0581bde37d738ed82c"
+  "contract_split_sha256": "e4f420176c160fc808cca6746e2c62e7c09e4cbccc9990de4e7b554016715e59"
   },
   "subset_policy": {
     "source_groups_allowed": [
@@ -54,7 +54,7 @@
     {
       "id": "public-package-surface",
       "source": "references/public-package-surface-policy.json",
-      "source_sha256": "374f3fc69434db6ac5cbb569ce8bb895610ef02e09f4442d91272811b595583d",
+      "source_sha256": "527b9a0e34fcb7f5bb9a627d43aeb1b7cc529c9228e70d33f62e9b12cfa6693e",
       "source_target_layer": "public-contract",
       "future_target": "contracts/public/public-package-surface-policy.json",
       "why_selected": "Defines which files and user-facing promises may appear in the public package surface.",
@@ -63,7 +63,7 @@
     {
       "id": "public-package-publish-safety",
       "source": "references/package-publish-safety-policy.json",
-      "source_sha256": "57e41b906bc8de09aa96d1fb1a20c183483c83565a779fb69bb7db40c2a54e72",
+      "source_sha256": "79d51f410c8eee334a07c8158a735da32fe861c099ea9c94b98823403b2de0d7",
       "source_target_layer": "public-contract",
       "future_target": "contracts/public/package-publish-safety-policy.json",
       "why_selected": "Defines the release safety boundary that prevents private data, credentials, raw evidence, or local-only material from entering a package.",

@@ -340,7 +340,9 @@ def build_meter(task_file: Path) -> dict[str, Any]:
     current_summary = human_sentence_fragment(task_goal or focus_summary or "当前任务正在推进")
     focus_id = str(focus.get("item_id") or focus.get("id") or "").strip()
     task_id = str(meta.get("task_id") or "").strip()
-    if focus_summary and focus_id and focus_id != task_id:
+    bound_backlog = str(meta.get("backlog_source") or "").strip()
+    task_uses_framework_backlog = bool(bound_backlog and Path(bound_backlog).name == "framework-upgrade.json")
+    if task_uses_framework_backlog and focus_summary and focus_id and focus_id != task_id:
         current_summary += "；主推进任务仍停在：" + human_sentence_fragment(focus_summary)
     panorama = f"{debt_summary}；当前主线：{current_summary}；{evolution_summary}"
     if architecture_open_examples:

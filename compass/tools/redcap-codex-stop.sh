@@ -64,6 +64,28 @@ mkdir -p "$log_dir" 2>/dev/null || true
 log_file="$log_dir/stop.log"
 
 set +e
+OWNERSHIP_OUTPUT="$(
+    bash "$SCRIPT_DIR/redcap-codex-session-ownership.sh" check \
+        --root "$REDCAP_ROOT" \
+        --task-file "$REDCAP_ROOT/.dev-task.md" \
+        --host codex \
+        --session-id "$HOST_SESSION_ID" 2>/dev/null
+)"
+ownership_status=$?
+set -e
+
+if [[ "$ownership_status" -ne 0 || "$OWNERSHIP_OUTPUT" != *"state=owned"* ]]; then
+    {
+        printf 'advisory-only stop: session does not own current RedCap task\n'
+        printf 'ownership_status=%s\n' "$ownership_status"
+        printf 'ownership_output=%s\n' "$OWNERSHIP_OUTPUT"
+    } >"$log_file" 2>&1 || true
+    write_marker 0
+    printf '{"continue":true}\n'
+    exit 0
+fi
+
+set +e
 REDCAP_HOOK_CWD="$HOOK_CWD" \
 REDCAP_HOST_SESSION_ID="$HOST_SESSION_ID" \
 REDCAP_SKIP_FEISHU="${REDCAP_SKIP_FEISHU:-1}" \

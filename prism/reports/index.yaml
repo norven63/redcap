@@ -1,4 +1,37 @@
 reports:
+  - id: "20260524-non-publish-pre-release-convergence"
+    mode: redteam
+    date: "2026-05-24"
+    topic: "Codex session ownership, human status alignment, and RASG-025 closure"
+    agents: ["claude-code", "kimi"]
+    roles: ["reviewer", "challenger"]
+    verdict: "consensus-pass-after-follow-up"
+    consensus_actions:
+      - "Gate Codex Stop closeout on current session ownership instead of workspace-level pending closeout alone"
+      - "Short-circuit dangerous-command denial before ownership claim"
+      - "Keep human progress summaries bound to the current task rather than stale framework backlog focus"
+      - "Close RASG-025 after freeze policy and checks prove governance cleanup no longer self-spawns by default"
+    open_questions:
+      - "This review does not authorize package publication, registry changes, credentials, destructive cleanup, or license decisions"
+      - "Ownership claim expiry can be improved in a future non-blocking hardening task"
+    lessons_updated: false
+    files_affected:
+      - "compass/tools/redcap-codex-session-ownership.sh"
+      - "compass/tools/redcap-codex-pre-tool-use.sh"
+      - "compass/tools/redcap-codex-stop.sh"
+      - "compass/tools/redcap-codex-hooks-check.sh"
+      - "compass/tools/redcap-progress-meter.py"
+      - "references/backlogs/redcap-architecture-smell-governance.json"
+      - "references/backlogs/redcap-architecture-smell-governance.md"
+      - "references/file-lookup-dictionary.md"
+      - "prism/reports/2026-05-24-non-publish-pre-release-convergence.md"
+      - "prism/runs/20260524-non-publish-pre-release-convergence/prompt.md"
+      - "prism/runs/20260524-non-publish-pre-release-convergence/followup-prompt.md"
+      - "prism/runs/20260524-non-publish-pre-release-convergence/claude-code-review.txt"
+      - "prism/runs/20260524-non-publish-pre-release-convergence/kimi-review.txt"
+      - "prism/runs/20260524-non-publish-pre-release-convergence/claude-code-followup-review.txt"
+      - "prism/runs/20260524-non-publish-pre-release-convergence/kimi-followup-review.txt"
+    archived: false
   - id: "20260523-human-chat-summary-surface-hardening"
     mode: human-surface-review
     date: "2026-05-23"

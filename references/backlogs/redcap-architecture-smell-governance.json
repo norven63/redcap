@@ -883,8 +883,9 @@
         "Spec-check executes a validator for the policy.",
         "Human summaries must distinguish current child completion, parent-line completion, release blockers, post-release roadmap, and evidence-archive-only items."
       ],
-      "status": "planned",
+      "status": "done",
       "introduced_at": "2026-05-24",
+      "completed_at": "2026-05-24",
       "evidence": [
         "references/pre-release-freeze-and-artifact-churn-policy.json",
         "compass/tools/redcap-pre-release-freeze-policy-check.sh",
@@ -904,7 +905,7 @@
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Before formal public release readiness, close RASG-025 so release convergence has a hard boundary against governance cleanup self-spawn.",
+  "recommended_next_step": "All currently registered RASG items are closed for the pre-release pass. New findings must pass the release-convergence freeze policy before they can expand active scope.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -1203,10 +1204,10 @@
         {
           "id": "RASG-025",
           "title": "Stop pre-release governance cleanup from spawning endless cleanup work",
-          "status": "planned",
+          "status": "done",
           "priority": "P0",
           "phase_id": "T10",
-          "summary": "Open P0: add a release-convergence boundary so normal evidence from cleanup work is archived or indexed instead of automatically becoming new cleanup scope."
+          "summary": "Done: release-convergence cleanup now has a hard boundary that prevents normal reports, receipts, indexes and Prism evidence from automatically becoming fresh cleanup scope."
         }
       ]
     }
@@ -1319,8 +1320,8 @@
     {
       "id": "T10",
       "title": "Pre-release freeze and artifact churn control",
-      "status": "planned",
-      "summary": "Close the governance self-spawn loop before first release by classifying new findings and preventing normal evidence from becoming fresh cleanup work.",
+      "status": "done",
+      "summary": "Release-convergence cleanup has a hard boundary: normal evidence is archived or indexed, while only concrete first-release blockers may expand scope.",
       "item_ids": [
         "RASG-025"
       ]
@@ -1328,6 +1329,6 @@
   ],
   "current_focus": {
     "item_id": "RASG-025",
-    "summary": "RASG-025 已登记为发布前 P0：先阻断治理任务自我增殖，再继续推进正式发布前剩余清理与 readiness。"
+    "summary": "RASG-025 已完成：发布前治理清理不会再因普通报告、索引、receipt 或 Prism evidence 自动生成新清理任务。"
   }
 }

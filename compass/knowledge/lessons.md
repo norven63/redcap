@@ -515,3 +515,6 @@
 
 ### L-169: 重型门禁要按风险触发，不能让轻量证据漂移制造回归循环
 - 正文模块：[`compass/knowledge/lessons/l-169.md`](../../compass/knowledge/lessons/l-169.md)
+
+### L-170: 会话归属门要判定真实写动作，不能把“提到危险词”当作拥有任务
+- 正文模块：[`compass/knowledge/lessons/l-170.md`](../../compass/knowledge/lessons/l-170.md)

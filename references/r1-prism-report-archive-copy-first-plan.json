@@ -5,7 +5,7 @@
   "created_at": "2026-05-21T00:00:00Z",
   "source_truth": {
     "preflight_path": "references/r1-prism-report-archive-copy-first-preflight.json",
-    "preflight_sha256": "18ed8bfb3cf61ece22902292adfd89d757043de95ddb8c15add6463ae5f765e2",
+    "preflight_sha256": "934a847ae43c105b2e1d71faa337842a4ba1868761b0922dfe39f8462eefe46f",
     "route_decision_path": "references/r1-next-slice-after-prism-report-archive-preflight.json",
     "route_decision_sha256": "3d2aa770236ddd4da51f32fcdba4ab6a01f8d834f6b79a68aa81b817b11da482"
   },

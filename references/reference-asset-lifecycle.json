@@ -15,7 +15,7 @@
     },
     {
       "path": "references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 76943,
+      "bytes": 77025,
       "asset_class": "backlog",
       "lifecycle": "active-until-parent-closed-then-private-archive",
       "consumer_check": "bash compass/tools/redcap-architecture-smell-governance-check.sh",
@@ -42,7 +42,7 @@
     },
     {
       "path": "references/file-lookup-dictionary.md",
-      "bytes": 120722,
+      "bytes": 121061,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -78,7 +78,7 @@
     },
     {
       "path": "references/legacy-asset-migration-apply-plan.json",
-      "bytes": 300939,
+      "bytes": 302024,
       "asset_class": "legacy-migration-ledger",
       "lifecycle": "retain-as-private-migration-evidence",
       "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
@@ -114,7 +114,7 @@
     },
     {
       "path": "references/r1-control-plane-contract-split-preflight.json",
-      "bytes": 93966,
+      "bytes": 94303,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -132,7 +132,7 @@
     },
     {
       "path": "references/r1-prism-report-archive-live-copy-first-apply.json",
-      "bytes": 41923,
+      "bytes": 42513,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -141,7 +141,7 @@
     },
     {
       "path": "references/redcap-knowledge-cold-archive-inventory.json",
-      "bytes": 46197,
+      "bytes": 46568,
       "asset_class": "cold-archive-inventory",
       "lifecycle": "generated-private-archive-index",
       "consumer_check": "bash compass/tools/redcap-cold-archive-inventory.sh check",

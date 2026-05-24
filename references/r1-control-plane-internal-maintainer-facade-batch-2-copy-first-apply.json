@@ -10,16 +10,16 @@
   },
   "source_truth": {
     "route_path": "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight.json",
-  "route_sha256": "075731e328adf748c39bbed7ed07e094dae11fbf794e988ff537f5ba07c8fdb8",
+  "route_sha256": "8d2e74594c15be8e53ea15ff66ead7b51d87cf6926613108dc77425d8682da5d",
     "physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
-  "physical_preflight_sha256": "556503f3def36924e95d6e92cf00c4f0782703a3b4bcce06a2d5129c8a1b34f9",
+  "physical_preflight_sha256": "aed5159ef9a5ef12f44c92e91e5ed3d6b7e8c5d43401d041f16944f945fceb73",
     "contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
-  "contract_split_sha256": "720ecf2eb00ca74c68f3e1de1a7d17a4428a3436ec538c0581bde37d738ed82c",
+  "contract_split_sha256": "e4f420176c160fc808cca6746e2c62e7c09e4cbccc9990de4e7b554016715e59",
     "previous_batch_path": "references/r1-control-plane-internal-maintainer-facade-copy-first-apply.json",
-  "previous_batch_sha256": "958b78b8ffed48119ddc7889466c2341ac158f7f9991def726442ef72da4d7c9",
+  "previous_batch_sha256": "ce727f59cc4d793a1e5ecb5b2c9fa0d9aadf3235eb2b4bcb614f4ffd29d8612b",
     "selected_backlog_item": "P4-23",
     "source_target_layer": "internal-control-plane",
-  "source_entries_count": 115,
+  "source_entries_count": 116,
     "previous_batch_count": 8,
     "selected_count": 8
   },
@@ -41,7 +41,7 @@
     "allowed_user_claim": "P4-23 completed a second small internal-control-plane copy-first facade batch. Old compass/tools anchors remain authoritative and release blockers remain open.",
     "forbidden_claims": [
       "The internal-control-plane blocker is resolved.",
-      "All 111 internal-control-plane entries were mirrored.",
+      "All internal-control-plane entries were mirrored.",
       "compass/tools anchors were moved, deleted, or replaced.",
       "Prism raw evidence or reports were cleaned.",
       "RedCap is public-release-ready."

@@ -3,11 +3,11 @@
   "inventory_id": "redcap-knowledge-cold-archive",
   "root": "private-archive/redcap-knowledge",
   "purpose": "Machine-readable private cold archive inventory for progressive retrieval and no-raw-public-export governance.",
-  "file_count": 122,
-  "bytes_total": 1644516,
+  "file_count": 123,
+  "bytes_total": 1653536,
   "by_class": {
     "private-research-archive": 3,
-    "private-task-report-archive": 118,
+    "private-task-report-archive": 119,
     "private-trace-archive": 1
   },
   "must_not_claim": [
@@ -981,6 +981,14 @@
       "class": "private-task-report-archive",
       "bytes": 8242,
       "sha256": "eb4fc28d5e03198f8db9f5bdcd52627454178784b5102abca1299cc1f3dfccbf",
+      "read_policy": "exact-read-only-after-gateway",
+      "public_export": "forbidden-raw"
+    },
+    {
+      "path": "private-archive/redcap-knowledge/task-reports/2026-05-23-human-chat-summary-surface-hardening.md",
+      "class": "private-task-report-archive",
+      "bytes": 9020,
+      "sha256": "d676fba6798789b122e8ff2a46f0a69f2042046ead3e1b3ecc0cb6ca2f59a774",
       "read_policy": "exact-read-only-after-gateway",
       "public_export": "forbidden-raw"
     },

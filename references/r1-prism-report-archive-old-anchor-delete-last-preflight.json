@@ -6,7 +6,7 @@
   "purpose": "Assess whether the old prism/reports anchors can be safely retired in a future delete-last apply. This preflight does not move, delete, rename, replace, symlink, or clean any report or raw Prism evidence.",
   "source_truth": {
     "live_copy_first_apply_path": "references/r1-prism-report-archive-live-copy-first-apply.json",
-    "live_copy_first_apply_sha256": "e5ec8f03d7c5ae2ca5d4e67858b210908415fee12616c82b253a00b922d9e2d4",
+    "live_copy_first_apply_sha256": "949714d259ef84ca012c855ab63d411166a65faa947688d1ad5d6304f12afc11",
     "convergence_assessment_path": "references/r1-formal-release-readiness-convergence-assessment.json",
     "convergence_assessment_sha256": "8d105d5a6483f7c261d762713b540a21306e4fe44cb58f2c28a545bf8c68402c"
   },
@@ -33,9 +33,9 @@
     "private_archive_root": "private-archive/prism-reports",
     "old_anchor_index_path": "prism/reports/index.yaml",
     "private_archive_index_path": "private-archive/prism-reports/index.yaml",
-    "current_report_markdown_count": 71,
+    "current_report_markdown_count": 72,
     "copied_report_count": 55,
-    "post_freeze_report_count": 16,
+    "post_freeze_report_count": 17,
     "package_surface_includes_old_report_anchors": false,
     "package_surface_includes_private_archive_reports": false,
     "post_freeze_reports_not_in_archive_cohort": [
@@ -132,6 +132,14 @@
       "classification": "post-freeze-formal-prism-review",
       "required_before_future_plan_refresh": "A future archive-plan refresh must explicitly decide whether to include this post-freeze report before any old-anchor retirement or delete-last tranche.",
       "reason": "Created by the human chat summary surface review after the frozen copy-first archive cohort; must be explicitly handled by a future apply task before old-anchor retirement."
+    },
+    {
+      "report_id": "20260524-non-publish-pre-release-convergence",
+      "source_path": "prism/reports/2026-05-24-non-publish-pre-release-convergence.md",
+      "source_sha256": "0dc69b78990bc4f5d845b2fa203f21281cfea19519bb3eb4f5d93e25edda2c26",
+      "classification": "post-freeze-formal-prism-review",
+      "required_before_future_plan_refresh": "A future archive-plan refresh must explicitly decide whether to include this non-publish pre-release convergence report before any old-anchor retirement or delete-last tranche.",
+      "reason": "Created by the non-publish pre-release convergence review after the frozen copy-first archive cohort; must be explicitly handled by a future apply task before old-anchor retirement."
     }
   ]
   },

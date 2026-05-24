@@ -6,14 +6,14 @@
   "purpose": "Copy the frozen P4-12/P4-15 Prism report archive cohort into private-archive/prism-reports while retaining old prism/reports anchors and excluding post-freeze reports.",
   "source_truth": {
     "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
-    "plan_sha256": "d0356945b4f145326de2a0f7b2aca6e5e33b54193214975226f1cc04898e3819",
+    "plan_sha256": "53188b092b13968ca2b8f86005a4ec63f31e8db9fb41b4fe5efd846369bfce97",
     "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
-    "readiness_sha256": "ca759988c04af9e827f504295718762507ac7b69e3a0bacdd3990174397569be",
+    "readiness_sha256": "865be6af0acee35f3834ed82ac75653084e4af654af430117aab78ea009603b6",
     "guard_path": "references/r1-prism-report-archive-churn-freeze-guard.json",
-    "guard_sha256": "379ffad5ed8c52c8222718d2904e80c39220b9e7e2d9f7aa1018ab3723b1257a",
+    "guard_sha256": "2bfa8e456f176710fc8d40dab9170e62cfaee75def83915568c0cdb4b410ef9a",
     "frozen_mapping_sha256": "4a30820ec272e430398475e635a159b4930acfd9668c92f7343e509b740afc63",
     "source_report_count": 55,
-    "post_freeze_report_count": 16
+    "post_freeze_report_count": 17
   },
   "claim_boundary": {
     "live_archive_copies_created": true,
@@ -741,6 +741,14 @@
       "classification": "post-freeze-formal-prism-review",
       "include_in_current_archive_plan": false,
       "required_before_future_plan_refresh": "A future archive-plan refresh must explicitly decide whether to include this post-freeze report before any old-anchor retirement or delete-last tranche."
+    },
+    {
+      "report_id": "20260524-non-publish-pre-release-convergence",
+      "source_path": "prism/reports/2026-05-24-non-publish-pre-release-convergence.md",
+      "source_sha256": "0dc69b78990bc4f5d845b2fa203f21281cfea19519bb3eb4f5d93e25edda2c26",
+      "classification": "post-freeze-formal-prism-review",
+      "include_in_current_archive_plan": false,
+      "required_before_future_plan_refresh": "A future archive-plan refresh must explicitly decide whether to include this non-publish pre-release convergence report before any old-anchor retirement or delete-last tranche."
     }
   ],
   "package_surface_policy": {

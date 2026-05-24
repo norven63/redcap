@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 29,
-    "size_bytes": 339456,
-    "lines": 7139,
-    "chars": 203532,
+    "size_bytes": 340248,
+    "lines": 7103,
+    "chars": 203586,
     "rough_token_pressure": {
-      "low": 50883,
-      "high": 101766
+      "low": 50896,
+      "high": 101793
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 13,
-        "size_bytes": 116226,
-        "lines": 2219,
-        "chars": 68960,
+        "size_bytes": 117018,
+        "lines": 2183,
+        "chars": 69014,
         "rough_token_pressure": {
-          "low": 17240,
-          "high": 34480
+          "low": 17253,
+          "high": 34507
         }
       }
     },
@@ -439,19 +439,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-23-human-chat-summary-surface-hardening.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：人类可读汇报出口加固",
-      "role": "closure-evidence",
-      "status": "cold-candidate",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 9020,
-      "lines": 211,
-      "chars": 5156,
-      "summary": "当前已完成：聊天汇报不再只靠口头约定；RedCap 现在有一个可直接调用的 `redcap summary` 摘要出口，并且这个出口已经纳入自动检查。 / 上一步完成的是：在飞书和 CLI 首屏已经做过人类可读优化后，本轮补上了“聊天回复本身”这个遗漏出口，避免我在对你汇报时继续把内部工作流术语当作正文主线。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-23-r1-contract-mirror-apply-preflight-subset.md",
       "collection": "task-reports",
       "title": "任务完成报告：P4-27 小范围合同镜像 apply 预检",
@@ -495,7 +482,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-21 internal-control-plane 小批次镜像",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 7221,
       "lines": 124,
@@ -560,28 +547,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-22 下一安全切片选择",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 5407,
       "lines": 105,
       "chars": 3135,
       "summary": "当前已完成：P4-22 已完成下一安全切片选择。Claude Code 与 Kimi 一致建议继续 internal-control-plane 的小批次 copy-first facade 路线；本轮没有实施下一批 facade，也没有关闭任何 release blocker。 / 上一步完成的是：P4-21 已完成 8 个 internal-control-plane 维护工具 facade 小批次，证明新入口可以委托旧 `compass/tools`，但旧锚点仍保持权威。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：P4-22 已完成下一安全切片选择。Claude Code 与 Kimi 一致建议继续 internal-control-plane 的小批次 copy-first facade 路线；本轮没有实施下一批 facade，也没有关闭任何 release blocker。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-21 已完成 8 个 internal-control-plane 维护工具 facade 小批次，证明新入口可以委托旧 `compass/tools`，但旧锚点仍保持权威。"
-        ],
-        "next_step": [
-          "下一步计划做的是：P4-23 将按本轮路线裁决，实施下一批小规模 internal-control-plane facade；批次规模不得超过 P4-21，仍不得触碰发布、证据清理或 Layer A 硬门。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-20 选择 P4-21，P4-21 完成第一批 internal-control-plane facade，P4-22 选择 P4-23，P4-23 将实施第二小批次 facade。",
-          "当前所在位置：P4-22 已完成路线裁决，RedCap 仍处于发布前治理阶段，不是正式发布阶段。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-23-r1-next-safe-slice-after-old-anchor-preflight.md",
@@ -638,6 +610,35 @@
         "position": [
           "整体计划脉络图是：P4-16 完成 Prism 报告 copy-first → P4-18 完成发布差距地图 → P4-19 完成旧报告入口退休预检 → 后续再决定是补别名契约还是推进控制面拆分。",
           "当前所在位置：framework-upgrade / P4-19 已完成预检；正式公开发布仍保持 blocked。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-24-non-publish-pre-release-convergence.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：正式发布外收敛父任务",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9812,
+      "lines": 175,
+      "chars": 5210,
+      "summary": "当前已完成：已修复 Codex Stop hook 的会话归属缺口、人类进度摘要旧焦点污染、RASG-025 账本状态漂移，并补齐棱镜评审与经验沉淀。 / 详情：普通讨论、只读会话、无 session id 或跨 session 情况只做 advisory，不再接管别的任务；危险命令被拒绝后立即返回，不会继续声明任务所有权；只读命令即使提到 `rm` 等词也不会被当作写动作。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：已修复 Codex Stop hook 的会话归属缺口、人类进度摘要旧焦点污染、RASG-025 账本状态漂移，并补齐棱镜评审与经验沉淀。",
+          "详情：普通讨论、只读会话、无 session id 或跨 session 情况只做 advisory，不再接管别的任务；危险命令被拒绝后立即返回，不会继续声明任务所有权；只读命令即使提到 `rm` 等词也不会被当作写动作。"
+        ],
+        "previous_step": [
+          "上一步完成的是：Claude Code + Kimi 棱镜审查已完成，Kimi 提出的误判风险已通过 follow-up 修复和回归夹具闭环；经验 L-170 已沉淀。"
+        ],
+        "next_step": [
+          "下一步计划做的是：生成 closeout receipt，并提交本轮变更；后续才进入真实发布决策。"
+        ],
+        "position": [
+          "整体计划脉络图是：历史债务坏味清理 -> 当前正式发布外收敛 -> 最终回归与收口 -> 后续才进入真实发布决策。",
+          "当前所在位置：本轮实现、棱镜评审、经验沉淀、Prism acceptance、spec-check、diagnose 与专项回归均已通过，正在生成 closeout receipt。"
         ]
       }
     }

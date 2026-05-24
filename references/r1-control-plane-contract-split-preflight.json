@@ -60,11 +60,11 @@
     ]
   },
   "package_candidate_snapshot": {
-    "candidate_count": 309,
-    "control_plane_candidate_count": 230,
-    "compass": 162,
+    "candidate_count": 310,
+    "control_plane_candidate_count": 231,
+    "compass": 163,
     "references": 68,
-    "compass_tools_shell": 96,
+    "compass_tools_shell": 97,
     "compass_tools_python": 66,
     "references_json": 65,
     "references_markdown": 3,
@@ -75,7 +75,7 @@
       {
         "path": "compass",
         "role": "maintainer-control-plane-tools",
-        "package_candidate_count": 160,
+      "package_candidate_count": 161,
         "current_contract": "Packaged for alpha readiness because root wrappers, revive/status/diagnose/closeout, release safety and validators still call these tools.",
         "future_target": "internal/control-plane/tools with stable runtime facades and compatibility aliases"
       },
@@ -261,11 +261,11 @@
       ]
     },
     "package_candidate_snapshot": {
-      "candidate_count": 309,
-      "control_plane_candidate_count": 230,
-      "compass": 162,
+      "candidate_count": 310,
+      "control_plane_candidate_count": 231,
+      "compass": 163,
       "references": 68,
-      "compass_tools_shell": 96,
+      "compass_tools_shell": 97,
       "compass_tools_python": 66,
       "references_json": 65,
       "references_markdown": 3,
@@ -299,11 +299,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 230,
+      "total_entries": 231,
       "by_target_layer": {
         "human-handoff": 1,
         "internal-contract": 56,
-        "internal-control-plane": 115,
+        "internal-control-plane": 116,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -411,6 +411,13 @@
         "source": "compass/tools/redcap-codex-hooks-check.sh",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-codex-hooks-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-codex-session-ownership.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-codex-session-ownership.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

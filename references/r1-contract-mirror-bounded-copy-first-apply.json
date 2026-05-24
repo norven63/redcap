@@ -10,26 +10,11 @@
   },
   "source_truth": {
     "p4_28_route_path": "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
-  "p4_28_route_sha256": "d430154f5b4baf78dfd3fb7ac036fbb2940cd65660ec57f7a805dbed7a6c8bc9",
+  "p4_28_route_sha256": "a9cccf8cc65c0c515012afb493bbc3fb3fe99919ca84ba8836c5367e359eba32",
     "p4_27_preflight_path": "references/r1-contract-mirror-apply-preflight-subset.json",
-  "p4_27_preflight_sha256": "e07c9ac1b08b5f81fb0a34601c2ed9b522163981080cb8476b4b14c479c0e00d"
+  "p4_27_preflight_sha256": "563b77b71cd5155e546d91df6a12d435d322ced8ada6217857d0df4b568396bf"
   },
-  "source_updates_after_preflight": [
-    {
-      "source": "references/package-publish-safety-policy.json",
-      "target": "contracts/public/package-publish-safety-policy.json",
-      "preflight_source_sha256": "57e41b906bc8de09aa96d1fb1a20c183483c83565a779fb69bb7db40c2a54e72",
-      "current_source_sha256": "79d51f410c8eee334a07c8158a735da32fe861c099ea9c94b98823403b2de0d7",
-      "reason": "P4-29 added package-surface exclusions for this task's checker and manifest before mirroring the current authoritative old anchor."
-    },
-    {
-      "source": "references/public-package-surface-policy.json",
-      "target": "contracts/public/public-package-surface-policy.json",
-      "preflight_source_sha256": "374f3fc69434db6ac5cbb569ce8bb895610ef02e09f4442d91272811b595583d",
-      "current_source_sha256": "4d14a647190da3a6b18aa53e582d1ecc93c8d15b1cfb160350ac2917bcfa0f75",
-      "reason": "P4-29 package-surface exclusion/count policy was updated for this task's new summary runtime scripts and later RASG-025 freeze-policy governance assets before mirroring the current authoritative old anchor."
-    }
-  ],
+  "source_updates_after_preflight": [],
   "copy_policy": {
     "mode": "bounded-copy-first",
     "selected_count": 7,
@@ -72,8 +57,8 @@
       "source": "references/public-package-surface-policy.json",
       "target": "contracts/public/public-package-surface-policy.json",
       "target_layer": "public-contract",
-      "source_sha256": "4d14a647190da3a6b18aa53e582d1ecc93c8d15b1cfb160350ac2917bcfa0f75",
-      "target_sha256": "4d14a647190da3a6b18aa53e582d1ecc93c8d15b1cfb160350ac2917bcfa0f75",
+      "source_sha256": "527b9a0e34fcb7f5bb9a627d43aeb1b7cc529c9228e70d33f62e9b12cfa6693e",
+      "target_sha256": "527b9a0e34fcb7f5bb9a627d43aeb1b7cc529c9228e70d33f62e9b12cfa6693e",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"

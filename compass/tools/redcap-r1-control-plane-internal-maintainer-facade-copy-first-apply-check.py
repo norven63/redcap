@@ -186,7 +186,7 @@ def validate(manifest: dict[str, Any]) -> dict[str, Any]:
     }
     for phrase in [
         "The internal-control-plane blocker is resolved.",
-        "All 111 internal-control-plane entries were mirrored.",
+        "All internal-control-plane entries were mirrored.",
         "compass/tools anchors were moved, deleted, or replaced.",
         "Prism raw evidence or reports were cleaned.",
         "RedCap is public-release-ready.",
