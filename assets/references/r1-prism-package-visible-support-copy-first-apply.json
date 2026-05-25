@@ -6,9 +6,9 @@
   "purpose": "Create runtime/redcap-core/prism-tools package-visible facade wrappers for Prism batch-1 support and provider-routing contract entries while keeping prism/tools and prism/README.md as authoritative anchors.",
   "source_truth": {
     "path": "references/r1-prism-evidence-retention-apply-preflight.json",
-  "sha256": "2292d24f740a20ac4e8442928119fcbf6469a32b97c0222e667b3085a0937fd2",
+  "sha256": "1a58f6f2c551b93e511e0504a69cb9931c873cd6b58a154488c5710daf231f44",
     "split_preflight_path": "references/r1-prism-evidence-retention-split-preflight.json",
-    "split_preflight_sha256": "5014339e8e4c0b791b2c010acdf7a30df88b31dbcaf9789463647847a927c62e",
+    "split_preflight_sha256": "5fa2230f6a0ca6ee153450147684a15cdf8754d02671c931258ee9a4298fd505",
     "source_batch_id": "batch-1-package-visible-prism-support",
     "source_target_layers": [
       "package-visible-prism-support",
@@ -82,9 +82,9 @@
   },
   "package_surface_delta": {
     "previous_candidate_count": 264,
-    "current_candidate_count": 311,
-    "delta": 47,
-    "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets, P4-9 added 1 route-decision asset, P4-10 added 3 Prism report archive preflight assets, P4-11 added 1 route-decision asset, P4-12 added 3 plan/check assets, P4-13 added 3 apply-readiness rehearsal/check assets, P4-14 added 1 route-decision asset, P4-15 added 3 Prism report archive churn/freeze guard assets, P4-16 added 3 Prism report archive live copy-first apply assets, P4-17 added 1 next-safe-slice route-decision asset, P4-18 added 1 formal convergence assessment asset, the parent auto-continuation gate added 2 control-plane checker scripts, P4-19 added one old-anchor preflight manifest plus two checker scripts, P4-20 added one route-selection manifest plus two checker scripts, human-chat-summary-surface added 2 package-visible summary runtime scripts, RASG-025 added 3 package-visible freeze-policy governance assets, non-publish-pre-release-convergence added 1 Codex session ownership gate script, and root-asset-ia-physical-convergence added the assets/README package-facing explainer. The live alpha readiness surface is now 311 candidates. This remains readiness support, not public release authorization."
+        "current_candidate_count": 313,
+        "delta": 49,
+        "reason": "The original copy-first Prism support tranche added 8 runtime/redcap-core/prism-tools facades. RASG-024 later added 4 package-visible control-plane governance assets, P4-9 added 1 route-decision asset, P4-10 added 3 Prism report archive preflight assets, P4-11 added 1 route-decision asset, P4-12 added 3 plan/check assets, P4-13 added 3 apply-readiness rehearsal/check assets, P4-14 added 1 route-decision asset, P4-15 added 3 Prism report archive churn/freeze guard assets, P4-16 added 3 Prism report archive live copy-first apply assets, P4-17 added 1 next-safe-slice route-decision asset, P4-18 added 1 formal convergence assessment asset, the parent auto-continuation gate added 2 control-plane checker scripts, P4-19 added one old-anchor preflight manifest plus two checker scripts, P4-20 added one route-selection manifest plus two checker scripts, human-chat-summary-surface added 2 package-visible summary runtime scripts, RASG-025 added 3 package-visible freeze-policy governance assets, non-publish-pre-release-convergence added 1 Codex session ownership gate script, root-asset-ia-physical-convergence added the assets/README package-facing explainer, and pre-release-non-publish-final-closure added 2 package-visible Prism provider policy validator scripts required by spec-check/diagnose. The live alpha readiness surface is now 313 candidates. This remains readiness support, not public release authorization."
   },
   "facades": [
     {

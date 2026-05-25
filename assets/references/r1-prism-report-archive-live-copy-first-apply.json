@@ -6,11 +6,11 @@
   "purpose": "Copy the frozen P4-12/P4-15 Prism report archive cohort into private-archive/prism-reports while retaining old prism/reports anchors and excluding post-freeze reports.",
   "source_truth": {
     "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
-  "plan_sha256": "03bc9db90e57b1c57bf025d033e23cdc89d4d28dd856df5d0de4837b9203b8fd",
+  "plan_sha256": "22e9822aaf8cf628455cfab827870f7023d700904ee6d3c830ad15a8e8d5c331",
     "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
-  "readiness_sha256": "d4986d53e23d455363a52c5f7c807a8b7017bf808c230bf959996f8f091ffb9d",
+  "readiness_sha256": "a1019ed367722c09247de15b61164e97bde38713226c9cbde72554112ed6bacf",
     "guard_path": "references/r1-prism-report-archive-churn-freeze-guard.json",
-  "guard_sha256": "f685aa12040256de55c192e9eba2a98f28e78e3abb2b98dc078e56585b552558",
+  "guard_sha256": "490420bb1d4de0cd64b0834a804c34b542147e3d87b55446f65e951383b1e0a5",
     "frozen_mapping_sha256": "4a30820ec272e430398475e635a159b4930acfd9668c92f7343e509b740afc63",
     "source_report_count": 55,
     "post_freeze_report_count": 17

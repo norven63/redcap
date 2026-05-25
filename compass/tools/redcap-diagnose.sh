@@ -156,6 +156,7 @@ run_source_check "human-output-quality" bash "$SCRIPT_DIR/redcap-human-output-qu
 run_source_check "contributing-ia" bash "$SCRIPT_DIR/redcap-contributing-ia-check.sh" || overall=1
 run_source_check "review-tracks" bash "$SCRIPT_DIR/redcap-review-tracks-check.sh" || overall=1
 run_source_check "conclusion-prism" bash "$SCRIPT_DIR/redcap-conclusion-prism-check.sh" || overall=1
+run_source_check "prism-provider-policy" bash "$SCRIPT_DIR/redcap-prism-provider-policy-check.sh" || overall=1
 run_source_check "prism-degradation" bash "$SCRIPT_DIR/redcap-prism-degradation-check.sh" --task-file "$TASK_FILE" --fail-on-action-required || overall=1
 run_source_check "prism-evidence" bash "$REDCAP_ROOT/prism/tools/prism-evidence-check.sh" || overall=1
 run_source_check "prism-runs-lifecycle" bash "$REDCAP_ROOT/prism/tools/prism-runs-lifecycle.sh" check || overall=1

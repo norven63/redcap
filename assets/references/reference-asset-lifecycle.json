@@ -33,7 +33,7 @@
     },
     {
       "path": "assets/references/file-lookup-dictionary-policy.json",
-      "bytes": 120883,
+      "bytes": 121632,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -42,7 +42,7 @@
     },
     {
       "path": "assets/references/file-lookup-dictionary.md",
-      "bytes": 122644,
+      "bytes": 123143,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -114,7 +114,7 @@
     },
     {
       "path": "assets/references/r1-control-plane-contract-split-preflight.json",
-      "bytes": 94303,
+      "bytes": 95057,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",

@@ -10,11 +10,11 @@
   },
   "source_truth": {
     "p4_21_manifest_path": "references/r1-control-plane-internal-maintainer-facade-copy-first-apply.json",
-  "p4_21_manifest_sha256": "197e78d579a6ee62e3d41734fba1e7a6216ea30253881c4fbbc2ddf603e5f231",
+  "p4_21_manifest_sha256": "d451ca8e1fb8207bdf8b692e7ecd0865b23f422a881b8f650a9a3293b0dd65ff",
     "p4_20_route_manifest_path": "references/r1-next-safe-slice-after-old-anchor-preflight.json",
-  "p4_20_route_manifest_sha256": "ee40522e4bf25caa69c4e49971947e2177e1cebccee6803a884b0ac05013ed4d",
+  "p4_20_route_manifest_sha256": "54934518da64940b9a5a07e3b3f965c649125b9e3f03b3db1ab87ad6c2e3d7da",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
-  "control_plane_physical_preflight_sha256": "2e7ef60a218265671d5d023dd687a94f9d0f4b4e12b17ee8308fb9611c65e44f"
+  "control_plane_physical_preflight_sha256": "0a62d6adc444a7a020ba0ea25ad65abf9c6490d7bed17420dde4b13637c4f76f"
   },
   "candidate_matrix": [
     {

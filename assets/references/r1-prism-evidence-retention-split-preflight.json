@@ -33,7 +33,7 @@
     "this_preflight_resolves_blocker": false
   },
   "package_candidate_snapshot": {
-    "candidate_count": 311,
+        "candidate_count": 313,
     "prism_candidate_count": 10,
     "prism_tools_candidate_count": 9,
     "prism_tools_shell": 7,

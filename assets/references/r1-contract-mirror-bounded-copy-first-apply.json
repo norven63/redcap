@@ -10,11 +10,18 @@
   },
   "source_truth": {
     "p4_28_route_path": "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
-  "p4_28_route_sha256": "aa0ea6c0158dbd78e62a606ea81d2344fd5e411da36b150414c9a3f36597fbe5",
+  "p4_28_route_sha256": "921d2cdbc702d89207b8c2daa69af8a267d151308ff7614800e9263687d21f97",
     "p4_27_preflight_path": "references/r1-contract-mirror-apply-preflight-subset.json",
-  "p4_27_preflight_sha256": "9e59bbe621062fb5b59b6f17998148e90f30b3899b82831413904d686e5a8fca"
+  "p4_27_preflight_sha256": "841e1dce45e836260bfdfdeb160cc454abbfc281de3c2d8e4ea6c19367ca1154"
   },
   "source_updates_after_preflight": [
+    {
+      "source": "references/public-package-surface-policy.json",
+      "target": "contracts/public/public-package-surface-policy.json",
+      "preflight_source_sha256": "639e25430e13c6848eff1b3d83188a51a2a709c1a1af4ac848514c61bcba7fda",
+      "current_source_sha256": "56afc68ba5013ff672f00a7dbb1da163c40189fbd96413ddcd7570b19154f710",
+      "reason": "P4-29 keeps the public contract mirror byte-identical after provider-policy validation increased the package candidate count and clarified the package-surface exclusion rule."
+    },
     {
       "source": "references/execution-guarantees.json",
       "target": "contracts/internal/execution-guarantees.json",
@@ -72,8 +79,8 @@
       "source": "references/public-package-surface-policy.json",
       "target": "contracts/public/public-package-surface-policy.json",
       "target_layer": "public-contract",
-      "source_sha256": "639e25430e13c6848eff1b3d83188a51a2a709c1a1af4ac848514c61bcba7fda",
-      "target_sha256": "639e25430e13c6848eff1b3d83188a51a2a709c1a1af4ac848514c61bcba7fda",
+      "source_sha256": "56afc68ba5013ff672f00a7dbb1da163c40189fbd96413ddcd7570b19154f710",
+      "target_sha256": "56afc68ba5013ff672f00a7dbb1da163c40189fbd96413ddcd7570b19154f710",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"

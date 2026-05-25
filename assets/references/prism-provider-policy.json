@@ -7,9 +7,36 @@
     "Separate installed/configured visibility from bounded live headless health.",
     "Temporary freezes override ranking because they represent explicit resource or quota constraints.",
     "When a provider is frozen, health probes must report frozen without executing the CLI command.",
+    "For long-form analysis, historical archaeology, broad task-tree review and large-document synthesis, prefer Kimi as the primary workload carrier and use Claude Code as cross-check/review unless the task explicitly requires Claude Code's repo-inspection strength.",
     "Copilot CLI is a protected fallback only: Prism, stop-review, live-health, baton delegation and direct RedCap CLI launch may use it only when both Claude Code and Kimi are unavailable.",
     "Codex CLI is a last-resort fallback only: if any non-Codex provider is live-available, normal Prism rosters must suppress Codex."
   ],
+  "workload_distribution": {
+    "version": 1,
+    "scope": ["prism", "stop-review", "baton-delegate"],
+    "scope_note": "The workload ratio applies to long-form review and delegation work only; lightweight availability probes, agent detection and direct CLI presence checks are governed by routing_overrides but are not counted as Kimi/Claude long-text workload.",
+    "target_ratio": {
+      "kimi": {
+        "share_min": 0.6,
+        "share_max": 0.7,
+        "default_roles": ["long-form-analysis", "historical-archaeology", "task-tree-review", "large-document-synthesis"],
+        "reason": "User requested that Prism workload lean toward Kimi, especially for long-text analysis, while keeping Claude Code as a lower-volume independent reviewer."
+      },
+      "claude-code": {
+        "share_min": 0.3,
+        "share_max": 0.4,
+        "default_roles": ["cross-check", "engineering-risk-review", "repo-inspection"],
+        "reason": "Claude Code remains important for independent review and repository-aware risk checks, but should not carry the majority of routine long-text Prism workload while Kimi is available."
+      }
+    },
+    "selection_policy": [
+      "When both Kimi and Claude Code are available, assign long-form or archaeology-heavy first-pass work to Kimi and reserve Claude Code for cross-check / blocker review.",
+      "For two-agent Prism quorum, prefer Kimi + Claude Code with Kimi carrying the larger prompt or first-pass synthesis.",
+      "For three-agent or larger Prism runs, keep Kimi at roughly 60-70% of total long-text workload where feasible; use Claude Code for 30-40% and add other providers only when the task benefits from family diversity or Kimi/Claude are unavailable.",
+      "This ratio is a workload target, not a quorum replacement; Prism still requires independent evidence and must record resource-limited status when the roster cannot meet policy."
+    ],
+    "fallback_policy": "If Kimi is unavailable, Claude Code may temporarily carry more work and the run must record the deviation. If Claude Code is unavailable, Kimi may proceed with another available non-protected provider or resource-limited evidence. Copilot and Codex fallback rules remain unchanged."
+  },
   "routing_overrides": [
     {
       "agent": "copilot",

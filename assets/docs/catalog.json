@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 30,
-    "size_bytes": 353429,
-    "lines": 7297,
-    "chars": 211051,
+    "file_count": 31,
+    "size_bytes": 362658,
+    "lines": 7461,
+    "chars": 216210,
     "rough_token_pressure": {
-      "low": 52762,
-      "high": 105525
+      "low": 54052,
+      "high": 108105
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 14,
-        "size_bytes": 130199,
-        "lines": 2377,
-        "chars": 76479,
+        "file_count": 15,
+        "size_bytes": 139428,
+        "lines": 2541,
+        "chars": 81638,
         "rough_token_pressure": {
-          "low": 19119,
-          "high": 38239
+          "low": 20409,
+          "high": 40819
         }
       }
     },
@@ -508,7 +508,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-28 P4-27 后下一安全切片路线选择",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10043,
       "lines": 217,
@@ -573,29 +573,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-19 旧 Prism 报告锚点退休预检",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12220,
       "lines": 205,
       "chars": 6954,
       "summary": "当前已完成：旧 `prism/reports` 报告入口未来能否安全下线，已经完成第一轮机器预检。结论很明确：现在还不能执行真实退休，因为仍有后冻结报告、旧路径引用、别名/跳转契约和人工授权边界没有补齐。 / 详情：本轮只新增预检资产和检查器，没有删除、移动、重命名或替换任何旧报告文件，也没有清理 `prism/runs` 原始证据。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：旧 `prism/reports` 报告入口未来能否安全下线，已经完成第一轮机器预检。结论很明确：现在还不能执行真实退休，因为仍有后冻结报告、旧路径引用、别名/跳转契约和人工授权边界没有补齐。",
-          "详情：本轮只新增预检资产和检查器，没有删除、移动、重命名或替换任何旧报告文件，也没有清理 `prism/runs` 原始证据。"
-        ],
-        "previous_step": [
-          "上一步完成的是：P4-18 把正式发布前剩余差距整理成地图，并把 P4-19 选为下一条最小安全切片。P0 自动续跑缺口修复后，本轮没有再等待 Norven 机械回复“继续”，而是自动进入 P4-19。"
-        ],
-        "next_step": [
-          "下一步计划做的是：不要直接删除旧报告入口。后续应先补“旧报告入口别名/查询网关”或回到更大的 `internal-control-plane` 物理拆分任务；真实删除必须另立任务、重新评审并获得明确授权。"
-        ],
-        "position": [
-          "整体计划脉络图是：P4-16 完成 Prism 报告 copy-first → P4-18 完成发布差距地图 → P4-19 完成旧报告入口退休预检 → 后续再决定是补别名契约还是推进控制面拆分。",
-          "当前所在位置：framework-upgrade / P4-19 已完成预检；正式公开发布仍保持 blocked。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-24-non-publish-pre-release-convergence.md",
@@ -652,6 +636,34 @@
         "position": [
           "整体计划脉络图是：历史目录坏味识别 -> 统一资产父级设计 -> 真实迁移与兼容入口 -> 首读入口去旧路径化 -> 检查器和索引同步 -> 棱镜评审与回归 -> closeout receipt。",
           "当前所在位置：资产迁移、首读入口收敛、本地回归、包面验证、棱镜复验和 closeout receipt 均已通过。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-25-pre-release-non-publish-final-closure.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：正式发布外最终清账",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9229,
+      "lines": 164,
+      "chars": 5159,
+      "summary": "当前已完成：正式发布外最终清账的实现、专项回归、完整 `spec-check`、`diagnose` 和棱镜独立验收已经通过；当前只剩 closeout runtime 生成正式完成凭证。 / 上一步完成的是：Kimi 完成长文/任务树主审，Claude Code 完成工程风险复核；两边都给出可收口结论，且无阻塞项。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：正式发布外最终清账的实现、专项回归、完整 `spec-check`、`diagnose` 和棱镜独立验收已经通过；当前只剩 closeout runtime 生成正式完成凭证。"
+        ],
+        "previous_step": [
+          "上一步完成的是：Kimi 完成长文/任务树主审，Claude Code 完成工程风险复核；两边都给出可收口结论，且无阻塞项。"
+        ],
+        "next_step": [
+          "下一步计划做的是：执行 closeout runtime 生成 receipt；若通过，本轮正式发布外清账任务完成，后续只进入正式发布准备线。"
+        ],
+        "position": [
+          "整体计划脉络图是：重新锚定非发布清账任务 -> 固化 Kimi/Claude 工作量策略 -> 裁决旧路径、运行证据和 full LLM-wiki 三类容易误判事项 -> 棱镜评审 -> 回归 -> closeout receipt。",
+          "当前所在位置：任务锚点、实现、回归和棱镜验收都已完成；正在执行最后的 receipt 收口。"
         ]
       }
     }

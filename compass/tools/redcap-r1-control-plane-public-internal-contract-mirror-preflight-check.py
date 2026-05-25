@@ -26,7 +26,7 @@ EXPECTED_COUNTS = {
     "public-contract": 11,
     "internal-contract": 56,
     "human-handoff": 1,
-    "internal-control-plane": 116,
+    "internal-control-plane": 118,
 }
 EXPECTED_PREFIXES = {
     "runtime-public-support": "runtime/redcap-core/",

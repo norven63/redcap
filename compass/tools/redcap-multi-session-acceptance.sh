@@ -15610,7 +15610,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell workflow-gate-stratification progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-prism-report-archive-copy-first-preflight r1-prism-report-archive-copy-first-plan r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell workflow-gate-stratification progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-prism-report-archive-copy-first-preflight r1-prism-report-archive-copy-first-plan r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-provider-policy prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -15961,12 +15961,27 @@ redcap-r1-prism-package-visible-support-copy-first-apply-check.sh|r1-prism-packa
 redcap-r1-prism-report-archive-copy-first-preflight-check.sh|r1-prism-report-archive-copy-first-preflight|fixture R1 Prism report archive copy-first preflight failure
 redcap-r1-prism-report-archive-copy-first-plan-check.sh|r1-prism-report-archive-copy-first-plan|fixture R1 Prism report archive copy-first plan failure
 redcap-r1-prism-report-archive-apply-readiness-check.sh|r1-prism-report-archive-apply-readiness|fixture R1 Prism report archive apply readiness failure
+redcap-r1-prism-report-archive-churn-freeze-guard-check.sh|r1-prism-report-archive-churn-freeze-guard|fixture R1 Prism report archive churn freeze guard failure
+redcap-r1-prism-report-archive-live-copy-first-apply-check.sh|r1-prism-report-archive-live-copy-first-apply|fixture R1 Prism report archive live copy-first apply failure
+redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.sh|r1-prism-report-archive-old-anchor-delete-last-preflight|fixture R1 Prism report archive old-anchor delete-last preflight failure
+redcap-r1-next-safe-slice-after-old-anchor-preflight-check.sh|r1-next-safe-slice-after-old-anchor-preflight|fixture R1 next safe slice after old-anchor preflight failure
 redcap-r1-control-plane-physical-apply-preflight-check.sh|r1-control-plane-physical-apply-preflight|fixture R1 control-plane physical apply preflight failure
 redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh|r1-control-plane-runtime-public-support-copy-first-apply|fixture R1 control-plane runtime public support copy-first apply failure
+redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.sh|r1-control-plane-internal-maintainer-facade-copy-first-apply|fixture R1 control-plane internal maintainer facade copy-first apply failure
+redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh|r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight|fixture R1 next safe slice after internal maintainer facade batch preflight failure
+redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-check.sh|r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply|fixture R1 control-plane internal maintainer facade batch 2 copy-first apply failure
+redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2-check.sh|r1-next-safe-slice-after-internal-maintainer-facade-batch-2|fixture R1 next safe slice after internal maintainer facade batch 2 failure
+redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh|r1-control-plane-public-internal-contract-mirror-preflight|fixture R1 control-plane public/internal contract mirror preflight failure
+redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-check.sh|r1-next-safe-slice-after-control-plane-contract-mirror-preflight|fixture R1 next safe slice after control-plane contract mirror preflight failure
+redcap-r1-contract-mirror-apply-preflight-subset-check.sh|r1-contract-mirror-apply-preflight-subset|fixture R1 contract mirror apply preflight subset failure
+redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh|r1-next-safe-slice-after-contract-mirror-apply-preflight-subset|fixture R1 next safe slice after contract mirror apply preflight subset failure
+redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh|r1-contract-mirror-bounded-copy-first-apply|fixture R1 contract mirror bounded copy-first apply failure
 redcap-r1-layera-product-boundary-check.sh|r1-layera-product-boundary|fixture R1 Layer A product boundary failure
 redcap-formal-release-readiness-plan-check.sh|formal-release-readiness-plan|fixture formal release readiness plan failure
+redcap-pre-release-freeze-policy-check.sh|pre-release-freeze-policy|fixture pre-release freeze policy failure
 redcap-change-intake-check.sh|change-intake|fixture change intake failure
 redcap-workflow-gate-stratification-check.sh|workflow-gate-stratification|fixture workflow gate stratification failure
+redcap-prism-provider-policy-check.sh|prism-provider-policy|fixture Prism provider policy failure
 redcap-prism-degradation-check.sh|prism-degradation|fixture Prism degradation failure
 redcap-conclusion-prism-check.sh|conclusion-prism|fixture conclusion Prism failure
 EOF
@@ -16042,6 +16057,7 @@ EOF
             midcourse-architecture) expected_message="midcourse architecture check failed" ;;
             runtime-workspace-boundary) expected_message="runtime workspace boundary check failed" ;;
             cli-product-surface) expected_message="CLI product surface check failed" ;;
+            prism-provider-policy) expected_message="prism provider policy check failed" ;;
             prism-degradation) expected_message="prism degradation check failed" ;;
             information-architecture) expected_message="information architecture check failed" ;;
             redcap-forge) expected_message="RedCap Forge check failed" ;;
@@ -16173,6 +16189,7 @@ for rel in [
     "compass/tools/redcap-midcourse-architecture-check.sh",
     "compass/tools/redcap-runtime-workspace-boundary-check.sh",
     "compass/tools/redcap-cli-product-surface-check.sh",
+    "compass/tools/redcap-prism-provider-policy-check.sh",
     "compass/tools/redcap-prism-degradation-check.sh",
     "compass/tools/redcap-conclusion-prism-check.sh",
 ]:

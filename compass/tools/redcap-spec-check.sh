@@ -1190,6 +1190,16 @@ if [[ -x "$PRISM_AVAILABILITY_CHECK" ]]; then
     fi
 fi
 
+PRISM_PROVIDER_POLICY_CHECK="$REDCAP_ROOT/compass/tools/redcap-prism-provider-policy-check.sh"
+if [[ ! -f "$PRISM_PROVIDER_POLICY_CHECK" ]]; then
+    echo "[redcap-spec-check] prism provider policy check missing" >&2
+    exit 1
+fi
+if ! bash "$PRISM_PROVIDER_POLICY_CHECK" >/dev/null; then
+    echo "[redcap-spec-check] prism provider policy check failed" >&2
+    exit 1
+fi
+
 PRISM_DEGRADATION_CHECK="$REDCAP_ROOT/compass/tools/redcap-prism-degradation-check.sh"
 if [[ ! -f "$PRISM_DEGRADATION_CHECK" ]]; then
     echo "[redcap-spec-check] prism degradation check missing" >&2

@@ -10,11 +10,11 @@
   },
   "source_truth": {
     "p4_23_manifest_path": "references/r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply.json",
-  "p4_23_manifest_sha256": "addbe070b3b1d13cc7b0891917ab83603030262f0e8d0a0557c71dcf6ba55de2",
+  "p4_23_manifest_sha256": "3729441d275f78558bc8a49286527e8ad43547696a7f33ead47cf800c4850770",
     "control_plane_contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
-  "control_plane_contract_split_sha256": "95f852b194ca70c89ebe42650a00f8769c6985f88a4f2ebce455416d95993863",
+  "control_plane_contract_split_sha256": "e50bbf2b7a3d1bbad4b1f36b45587d9e1e4556ad19398fef119bc0c23ef37eb4",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
-  "control_plane_physical_preflight_sha256": "2e7ef60a218265671d5d023dd687a94f9d0f4b4e12b17ee8308fb9611c65e44f"
+  "control_plane_physical_preflight_sha256": "0a62d6adc444a7a020ba0ea25ad65abf9c6490d7bed17420dde4b13637c4f76f"
   },
   "candidate_matrix": [
     {

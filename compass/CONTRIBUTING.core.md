@@ -39,7 +39,7 @@
 20. **skill 生命周期保持单一信源**：RedCap-native capability、host-exported skill、portable skill package 由 `assets/references/skill-lifecycle-policy.json` 约束；宿主入口只做轻量索引，不得复制并分叉权威规则。
 21. **旧资产按生命周期处理**：历史报告、spec、运行残留、知识库和本地 runtime 证据由 `assets/references/legacy-asset-lifecycle.json` 分类；先审计保留/归档/翻译/安全清理策略，再做物理动作。
 22. **文件解释走字典优先**：关键 JSON、registry、script 的人类解释优先进入 `assets/references/file-lookup-dictionary.md`，文件头只放短注解和反链；新增关键文件要同步补 `assets/references/file-lookup-dictionary-policy.json`，让 `redcap-file-lookup-dictionary-check.sh` 兜住遗漏。
-23. **Prism 先看可用性清单**：Prism roster 必须写成 `provider&model:role`；dispatch 前先过 `prism-availability` 1 小时 TTL 清单，过期先嗅探，`frozen/timeout/fail/unsupported` 不得进入本轮调用。
+23. **Prism 先看可用性清单，并按工作量策略分配**：Prism roster 必须写成 `provider&model:role`；dispatch 前先过 `prism-availability` 1 小时 TTL 清单，过期先嗅探，`frozen/timeout/fail/unsupported` 不得进入本轮调用。长文分析、历史考古、大范围任务树梳理默认让 Kimi 承担 60-70% 工作量，Claude Code 承担 30-40% 交叉复核与工程风险审查；Copilot 仍只能在 Claude Code 与 Kimi 都不可用时降级调用，Codex 仍是 last-resort。
 24. **共享沉淀库 append-only**：公共经验/方法论/skill 候选要走 `shared-knowledge` 独立仓库形态：按用户隔离、先查重复、只新增不改旧条目、先索引再读取；远端 Gitee 未绑定前不得冒充团队共享已完成。
 25. **发布/打包前必须安全审计**：正式 npm、独立 runtime 或 portable package 发布前，必须先跑 `redcap-package-publish-safety-check.sh` 检查实际候选文件集合；`.env`、宿主私密入口、runtime evidence、Prism run 残留和 credential-like 内容一律 fail-closed。
 26. **发布前冻结要阻断治理任务自我增殖**：进入首次发布收敛期后，新报告、receipt、索引、Prism run 等正常证据产物不得自动变成新的清理任务；新发现必须先按 `assets/references/pre-release-freeze-and-artifact-churn-policy.json` 分级，只有隐私/包面安全、会话归属、误报完成、安装可用性、破坏性清理风险或 Norven 显式纳入发布范围时，才允许扩大当前发布前必须修复清单。
@@ -54,7 +54,7 @@
 | hook / validator / runtime state | `CONTRIBUTING.md` §4、§7 控制面硬化、`assets/references/hook-standards.md` |
 | Prism / 多 Agent 审查 | `CONTRIBUTING.md` §8、§9、§11、`prism/protocol.md` |
 | 结论性输出 / 固化保障优先级 | `assets/references/conclusion-prism-policy.json`、`compass/tools/redcap-conclusion-prism-check.sh`、`CONTRIBUTING.md` §11 |
-| provider 调度 / 冻结 | `prism/tools/prism-availability.sh status`、`assets/references/prism-provider-policy.json`、`assets/knowledge/model-capability-matrix.yaml` |
+| provider 调度 / 冻结 / 工作量比例 | `prism/tools/prism-availability.sh status`、`assets/references/prism-provider-policy.json`、`compass/tools/redcap-prism-provider-policy-check.sh`、`assets/knowledge/model-capability-matrix.yaml` |
 | 需求确认 / 人工介入边界 | `CONTRIBUTING.md` §10、`assets/references/agent-constraints.md` |
 | 中插需求 / 重计划 | `assets/references/layerb-change-intake-policy.json`、`compass/tools/redcap-change-intake-check.sh`、`CONTRIBUTING.md` §10、§13 |
 | 调研结论 | `CONTRIBUTING.md` §14 |
@@ -80,7 +80,7 @@
 10. 涉及经验、人格、skill 或治理沉淀：`bash compass/tools/redcap-evolution-candidate-check.sh --strict`
 11. 涉及多宿主 skill 分发：`bash compass/tools/redcap-skill-lifecycle-check.sh`
 12. 涉及旧资产或运行残留：`bash compass/tools/redcap-legacy-asset-lifecycle-check.sh`
-13. 涉及 Prism 调用：`bash prism/tools/prism-availability.sh status`，随后只调度可用 provider
+13. 涉及 Prism 调用：`bash prism/tools/prism-availability.sh status` 和 `bash compass/tools/redcap-prism-provider-policy-check.sh`，随后只调度可用 provider，并按 Kimi 60-70% / Claude Code 30-40% 的长文工作量策略分配
 14. 涉及评估性 / 结论性输出或新增能力保障等级：`bash compass/tools/redcap-conclusion-prism-check.sh`
 15. 涉及关键文件新增或解释：`bash compass/tools/redcap-file-lookup-dictionary-check.sh`
 16. 涉及公共沉淀库：`bash compass/tools/redcap-shared-knowledge-check.sh`

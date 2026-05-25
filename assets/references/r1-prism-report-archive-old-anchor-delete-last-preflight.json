@@ -6,7 +6,7 @@
   "purpose": "Assess whether the old prism/reports anchors can be safely retired in a future delete-last apply. This preflight does not move, delete, rename, replace, symlink, or clean any report or raw Prism evidence.",
   "source_truth": {
     "live_copy_first_apply_path": "references/r1-prism-report-archive-live-copy-first-apply.json",
-  "live_copy_first_apply_sha256": "03476677c3bc3a21b4e6985c2d22fc69f7cd59347d1556af90df4002443ba3de",
+  "live_copy_first_apply_sha256": "d0add9572042b6d23743c6c74eef87332346403d5186faa3bbd3a8cda1597c54",
     "convergence_assessment_path": "references/r1-formal-release-readiness-convergence-assessment.json",
     "convergence_assessment_sha256": "8d105d5a6483f7c261d762713b540a21306e4fe44cb58f2c28a545bf8c68402c"
   },

@@ -1789,15 +1789,29 @@
       "owner": "Prism",
       "check": "bash prism/tools/prism-runs-lifecycle.sh check"
     },
-    {
-      "path": "references/prism-provider-policy.json",
-      "section": "Prism And Providers",
-      "meaning": "provider freeze, quota, evidence policy, and real task timeout defaults",
-      "owner": "Prism governance",
-      "check": "bash compass/tools/redcap-provider-policy.sh assert-not-frozen <agent> <scope>"
-    },
-    {
-      "path": "compass/tools/redcap-provider-policy.sh",
+        {
+            "path": "references/prism-provider-policy.json",
+            "section": "Prism And Providers",
+            "meaning": "provider freeze, quota, Kimi/Claude workload, evidence policy, and real task timeout defaults",
+            "owner": "Prism governance",
+            "check": "bash compass/tools/redcap-prism-provider-policy-check.sh"
+        },
+        {
+            "path": "compass/tools/redcap-prism-provider-policy-check.py",
+            "section": "Prism And Providers",
+            "meaning": "provider policy validator for Kimi/Claude workload split and fallback invariants",
+            "owner": "Prism governance",
+            "check": "bash compass/tools/redcap-prism-provider-policy-check.sh"
+        },
+        {
+            "path": "compass/tools/redcap-prism-provider-policy-check.sh",
+            "section": "Prism And Providers",
+            "meaning": "shell entry for provider policy validator",
+            "owner": "Prism governance",
+            "check": "bash compass/tools/redcap-prism-provider-policy-check.sh"
+        },
+        {
+            "path": "compass/tools/redcap-provider-policy.sh",
       "section": "Prism And Providers",
       "meaning": "provider freeze gate for RedCap-owned launch paths",
       "owner": "Prism governance",

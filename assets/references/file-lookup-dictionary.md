@@ -62,7 +62,8 @@
 
 | 文件 | 定位 | 含义 | owner | check |
 |---|---|---|---|---|
-| [`references/prism-provider-policy.json`](../references/prism-provider-policy.json) | provider policy | 记录 provider 选择、冻结窗口、evidence 口径，以及真实 Prism/baton 任务 600 秒默认执行等待与 availability 轻探测边界 | Prism governance | `bash compass/tools/redcap-agent-health-probe.sh --stdout --live ...` |
+| [`references/prism-provider-policy.json`](../references/prism-provider-policy.json) | provider policy | 记录 provider 选择、冻结窗口、Kimi/Claude Code 工作量比例、evidence 口径，以及真实 Prism/baton 任务 600 秒默认执行等待与 availability 轻探测边界 | Prism governance | `bash compass/tools/redcap-prism-provider-policy-check.sh` |
+| [`compass/tools/redcap-prism-provider-policy-check.py`](../compass/tools/redcap-prism-provider-policy-check.py) / [`compass/tools/redcap-prism-provider-policy-check.sh`](../compass/tools/redcap-prism-provider-policy-check.sh) | provider policy validator | 校验 Kimi 60-70% / Claude Code 30-40% 长文工作量策略、Copilot protected fallback 和 Codex last-resort 没有被回归删除 | Prism governance | `bash compass/tools/redcap-prism-provider-policy-check.sh` |
 | [`compass/tools/redcap-provider-policy.sh`](../compass/tools/redcap-provider-policy.sh) | provider freeze gate | RedCap-owned CLI launcher 的冻结期硬门，调用前判断 provider 是否可启动 | Prism governance | `bash compass/tools/redcap-provider-policy.sh assert-not-frozen <agent> <scope>` |
 | [`compass/tools/redcap-agent-health-probe.py`](../compass/tools/redcap-agent-health-probe.py) | live health probe | 区分“已安装”与“真实 headless 可用”；遇到冻结 provider 时返回 `frozen` 且不执行 CLI | Prism governance | `bash compass/tools/redcap-agent-health-probe.sh --stdout` |
 | [`compass/tools/redcap-detect-agents.sh`](../compass/tools/redcap-detect-agents.sh) | registry refresh | 轻量刷新本地 CLI 可见性；冻结 provider 只记录 frozen，不调用其 version/probe | Prism governance | `bash compass/tools/redcap-detect-agents.sh /tmp/registry.yaml --agent <agent>` |

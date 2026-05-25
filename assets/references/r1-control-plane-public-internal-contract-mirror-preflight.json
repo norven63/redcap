@@ -12,12 +12,12 @@
   },
   "source_truth": {
     "p4_24_route_path": "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-2.json",
-  "p4_24_route_sha256": "315dbadb4d8bd55e465126144be11102d23af4d8dc5028c0e6d53834122c5151",
+  "p4_24_route_sha256": "9c013274cf59dcfdbac0e69bf104ba53c433c532caf6820febcf7ff1ab606e2c",
     "control_plane_contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
-  "control_plane_contract_split_sha256": "95f852b194ca70c89ebe42650a00f8769c6985f88a4f2ebce455416d95993863",
+  "control_plane_contract_split_sha256": "e50bbf2b7a3d1bbad4b1f36b45587d9e1e4556ad19398fef119bc0c23ef37eb4",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
-  "control_plane_physical_preflight_sha256": "2e7ef60a218265671d5d023dd687a94f9d0f4b4e12b17ee8308fb9611c65e44f",
-  "source_entries_count": 231,
+  "control_plane_physical_preflight_sha256": "0a62d6adc444a7a020ba0ea25ad65abf9c6490d7bed17420dde4b13637c4f76f",
+  "source_entries_count": 233,
     "source_status": "dry-run-only-no-files-moved",
     "source_release_blocker_status": "still-blocking-release-until-future-physical-split-or-contract-resolution"
   },
@@ -75,7 +75,7 @@
   },
   "contract_classification": {
     "source": "references/r1-control-plane-contract-split-preflight.json#physical_split_dry_run_manifest.entries",
-    "total_entries": 231,
+    "total_entries": 233,
     "groups": [
       {
         "id": "runtime-public-support",
@@ -109,7 +109,7 @@
         "id": "internal-control-plane",
         "source_target_layer": "internal-control-plane",
         "future_target_prefix": "internal/control-plane/",
-        "count": 116,
+        "count": 118,
         "contract_posture": "maintainer-only control-plane tools; not stable end-user CLI API"
       }
     ],
