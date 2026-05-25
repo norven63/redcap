@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 31,
-    "size_bytes": 362658,
+    "size_bytes": 363000,
     "lines": 7461,
-    "chars": 216210,
+    "chars": 216426,
     "rough_token_pressure": {
-      "low": 54052,
-      "high": 108105
+      "low": 54106,
+      "high": 108213
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 15,
-        "size_bytes": 139428,
+        "size_bytes": 139770,
         "lines": 2541,
-        "chars": 81638,
+        "chars": 81854,
         "rough_token_pressure": {
-          "low": 20409,
-          "high": 40819
+          "low": 20463,
+          "high": 40927
         }
       }
     },
@@ -646,24 +646,24 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9229,
+      "size_bytes": 9571,
       "lines": 164,
-      "chars": 5159,
-      "summary": "当前已完成：正式发布外最终清账的实现、专项回归、完整 `spec-check`、`diagnose` 和棱镜独立验收已经通过；当前只剩 closeout runtime 生成正式完成凭证。 / 上一步完成的是：Kimi 完成长文/任务树主审，Claude Code 完成工程风险复核；两边都给出可收口结论，且无阻塞项。",
+      "chars": 5375,
+      "summary": "当前已完成：正式发布外最终清账已经完成；实现、专项回归、完整 `spec-check`、`diagnose`、棱镜独立验收和 closeout receipt 均已通过。 / 上一步完成的是：Kimi 完成长文/任务树主审，Claude Code 完成工程风险复核；两边都给出可收口结论，且无阻塞项。",
       "status_basis": "filename_recency_only",
       "summary_points": {
         "current_done": [
-          "当前已完成：正式发布外最终清账的实现、专项回归、完整 `spec-check`、`diagnose` 和棱镜独立验收已经通过；当前只剩 closeout runtime 生成正式完成凭证。"
+          "当前已完成：正式发布外最终清账已经完成；实现、专项回归、完整 `spec-check`、`diagnose`、棱镜独立验收和 closeout receipt 均已通过。"
         ],
         "previous_step": [
           "上一步完成的是：Kimi 完成长文/任务树主审，Claude Code 完成工程风险复核；两边都给出可收口结论，且无阻塞项。"
         ],
         "next_step": [
-          "下一步计划做的是：执行 closeout runtime 生成 receipt；若通过，本轮正式发布外清账任务完成，后续只进入正式发布准备线。"
+          "下一步计划做的是：本轮非发布清账不再追加开发事项；后续进入正式发布准备线，并继续保留人工授权、许可证、registry 和发布开关等发布前决策边界。"
         ],
         "position": [
           "整体计划脉络图是：重新锚定非发布清账任务 -> 固化 Kimi/Claude 工作量策略 -> 裁决旧路径、运行证据和 full LLM-wiki 三类容易误判事项 -> 棱镜评审 -> 回归 -> closeout receipt。",
-          "当前所在位置：任务锚点、实现、回归和棱镜验收都已完成；正在执行最后的 receipt 收口。"
+          "当前所在位置：本轮已完成 receipt 收口；正式发布之外的已知可做事项已完成、正式延期或转入发布任务边界。"
         ]
       }
     }
