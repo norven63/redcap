@@ -13,6 +13,7 @@
 - 当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置；活跃首读入口也已经改为 `assets/` 优先。
 - 详情：docs、knowledge、references、formal Prism reports、private archive 的真实内容已迁移到 `assets/` 下；host 入口、runtime 源码、工具源码、包控制文件、本地状态和 Prism raw runs 没有迁移。
 - 追加校正：上一版只证明了“真实内容主位置已迁移”，但没有充分证明“人类首读入口不会继续被旧路径误导”。本版已补齐 R7：README、ARCHITECTURE、宿主入口、CONTRIBUTING 和检查器一起收口。
+- closeout 补救：最终收口时发现内部健康嗅探会调用宿主 CLI 并触发 RedCap 自己的生命周期 hook，容易形成嵌套检查和临时进程风暴。本版已把健康嗅探标记为内部探测，并让 RedCap 生命周期 hook 在该标记下轻量跳过。
 
 ### 0.2 上一步完成的是
 
@@ -26,6 +27,7 @@
 
 - 整体计划脉络图是：历史目录坏味识别 -> 统一资产父级设计 -> 真实迁移与兼容入口 -> 首读入口去旧路径化 -> 检查器和索引同步 -> 棱镜评审与回归 -> closeout receipt。
 - 当前所在位置：资产迁移、首读入口收敛、本地回归、包面验证和棱镜复验已通过；正在执行最终 closeout。
+- 当前所在位置更新：最终 closeout 的递归嗅探 blocker 已修复并通过 targeted acceptance；下一步重新生成 closeout receipt。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -99,6 +101,14 @@
 
 效果：这次收敛不再只是包面和脚本层成立，也在人类第一眼看到的产品说明里成立。兼容入口仍能保护旧报告和 receipt，但不再被当作新主线。
 
+### 3.5 健康嗅探生命周期递归保护
+
+问题：收口链路里的 `spec-check` 会刷新 Prism provider 可用性；可用性嗅探调用 `claude -p` 时，宿主 Hook 又会启动 RedCap 的 SessionStart / SessionEnd / Stop 类生命周期逻辑，导致“检查触发检查”的嵌套链路。轻则拖慢 closeout，重则产生临时进程风暴。
+
+修复：`redcap-agent-health-probe` 在执行外部 CLI 探测时确定性写入内部探测环境变量；RedCap 生命周期 hook 看到该标记后直接轻量退出，不进入 install、validator、pending closure、飞书、Prism 或 stop-review 链路。
+
+效果：真实用户会话仍会正常触发 RedCap 复活和工作流；只有 RedCap 自己发起的健康探针会被隔离，避免收口、状态刷新或可用性扫描自我递归。
+
 ## 四、人工审核要点
 
 本轮不需要 Norven 人工介入。它没有触及需要人工保留决策的事项：许可证、registry、凭据、正式发布开关、私密文件处理或破坏性删除。
@@ -121,6 +131,10 @@
 - `bash compass/tools/redcap-spec-check.sh "$PWD"`
 - `bash compass/tools/redcap-diagnose.sh .dev-task.md`
 - `bash compass/tools/redcap-clean-workspace-e2e.sh --check-result --timeout 180`
+- `bash compass/tools/redcap-multi-session-acceptance.sh agent-health-probe`
+- `REDCAP_INTERNAL_HEALTH_PROBE=1 bash loom/tools/redcap-layerA-session-end.sh claude <<< '{"session_id":"probe","cwd":"'$PWD'"}'`
+- `REDCAP_INTERNAL_HEALTH_PROBE=1 bash compass/tools/redcap-codex-stop.sh <<< '{"cwd":"'$PWD'","session_id":"probe"}'`
+- `bash compass/tools/redcap-agent-health-probe.sh --stdout --live --agent claude-code --timeout 5`
 
 ### 5.2 棱镜独立评审
 
@@ -137,14 +151,14 @@
 | 项目 | 当前值 |
 |---|---|
 | closeout receipt | 待生成 |
-| 当前状态 | 迁移、核心检查、完整回归、首读入口去旧路径化和棱镜复验已通过；正在生成最终 closeout receipt |
+| 当前状态 | 迁移、核心检查、完整回归、首读入口去旧路径化、健康嗅探递归保护和棱镜复验已通过；正在生成最终 closeout receipt |
 | 人工介入 | 不需要 |
 
 ### 5.4 完成等级（禁止混报）
 
 | 等级 | 结论 | 说明 |
 |---|---|---|
-| 已实现 | 是 | 统一资产父级、真实迁移、兼容入口、检查器同步和首读入口去旧路径化已落地 |
+| 已实现 | 是 | 统一资产父级、真实迁移、兼容入口、检查器同步、首读入口去旧路径化和健康嗅探生命周期递归保护已落地 |
 | 已自检 | 是 | 结构、包面、索引、安全、spec-check、diagnose 和 clean workspace E2E 已通过 |
 | 已独立验收 | 是 | Claude Code + Kimi 棱镜复验通过，acceptance 已绑定当前任务 |
 | 已正式完成 | 待 closeout | closeout receipt 尚未生成前，不能冒充正式完成 |

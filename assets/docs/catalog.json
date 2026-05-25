@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 30,
-    "size_bytes": 351389,
-    "lines": 7283,
-    "chars": 209715,
+    "size_bytes": 353138,
+    "lines": 7297,
+    "chars": 210804,
     "rough_token_pressure": {
-      "low": 52428,
-      "high": 104857
+      "low": 52701,
+      "high": 105402
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 14,
-        "size_bytes": 128159,
-        "lines": 2363,
-        "chars": 75143,
+        "size_bytes": 129908,
+        "lines": 2377,
+        "chars": 76232,
         "rough_token_pressure": {
-          "low": 18785,
-          "high": 37571
+          "low": 19058,
+          "high": 38116
         }
       }
     },
@@ -104,9 +104,9 @@
         "read_policy": "read-catalog-summary-by-default"
       },
       {
-        "path": "compass/docs/task-reports/2026-05-23-r1-prism-report-archive-old-anchor-delete-last-preflight.md",
-        "chars": 6954,
-        "lines": 205,
+        "path": "compass/docs/task-reports/2026-05-24-root-asset-ia-physical-convergence.md",
+        "chars": 7034,
+        "lines": 192,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
     ]
@@ -633,9 +633,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 10955,
-      "lines": 178,
-      "chars": 5945,
+      "size_bytes": 12704,
+      "lines": 192,
+      "chars": 7034,
       "summary": "当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置；活跃首读入口也已经改为 `assets/` 优先。 / 详情：docs、knowledge、references、formal Prism reports、private archive 的真实内容已迁移到 `assets/` 下；host 入口、runtime 源码、工具源码、包控制文件、本地状态和 Prism raw runs 没有迁移。",
       "status_basis": "filename_recency_only",
       "summary_points": {

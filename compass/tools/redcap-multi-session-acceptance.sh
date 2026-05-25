@@ -10787,7 +10787,7 @@ EOF
 }
 
 run_agent_health_probe_case() {
-    local output fixture_bin policy_file copilot_marker codex_marker prompt_file output_file frozen_status
+    local output fixture_bin policy_file copilot_marker codex_marker claude_env_file prompt_file output_file frozen_status
 
     log "case: agent-health-probe"
 
@@ -10806,6 +10806,26 @@ EOF
     output="$(PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --agent kimi --timeout 5)"
     assert_string_contains "$output" '"agent": "kimi"'
     assert_string_contains "$output" '"live_status": "pass"'
+
+    claude_env_file="$ACCEPT_ROOT/agent-health-claude-env"
+    cat >"$fixture_bin/claude" <<EOF
+#!/usr/bin/env bash
+printf 'REDCAP_INTERNAL_HEALTH_PROBE=%s\n' "\${REDCAP_INTERNAL_HEALTH_PROBE:-}" > "$claude_env_file"
+printf 'REDCAP_SUPPRESS_LIFECYCLE_HOOKS=%s\n' "\${REDCAP_SUPPRESS_LIFECYCLE_HOOKS:-}" >> "$claude_env_file"
+printf 'REDCAP_SUPPRESS_SESSION_START_HOOKS=%s\n' "\${REDCAP_SUPPRESS_SESSION_START_HOOKS:-}" >> "$claude_env_file"
+printf 'REDCAP_SKIP_INSTALL_REVIVAL_ENTRY=%s\n' "\${REDCAP_SKIP_INSTALL_REVIVAL_ENTRY:-}" >> "$claude_env_file"
+printf 'REDCAP_SKIP_FEISHU=%s\n' "\${REDCAP_SKIP_FEISHU:-}" >> "$claude_env_file"
+echo ok
+EOF
+    chmod +x "$fixture_bin/claude"
+    output="$(PATH="$fixture_bin:$PATH" bash "$REDCAP_ROOT/compass/tools/redcap-agent-health-probe.sh" --stdout --live --agent claude-code --timeout 5)"
+    assert_string_contains "$output" '"agent": "claude-code"'
+    assert_string_contains "$output" '"live_status": "pass"'
+    assert_contains "$claude_env_file" 'REDCAP_INTERNAL_HEALTH_PROBE=1'
+    assert_contains "$claude_env_file" 'REDCAP_SUPPRESS_LIFECYCLE_HOOKS=1'
+    assert_contains "$claude_env_file" 'REDCAP_SUPPRESS_SESSION_START_HOOKS=1'
+    assert_contains "$claude_env_file" 'REDCAP_SKIP_INSTALL_REVIVAL_ENTRY=1'
+    assert_contains "$claude_env_file" 'REDCAP_SKIP_FEISHU=1'
 
     codex_marker="$ACCEPT_ROOT/agent-health-codex-called"
     cat >"$fixture_bin/codex" <<EOF

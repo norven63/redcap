@@ -19,6 +19,11 @@ if [[ -z "$HOST" ]]; then
     exit 2
 fi
 
+if [[ "${REDCAP_SUPPRESS_LIFECYCLE_HOOKS:-0}" == "1" || "${REDCAP_SUPPRESS_SESSION_START_HOOKS:-0}" == "1" || "${REDCAP_INTERNAL_HEALTH_PROBE:-0}" == "1" ]]; then
+    echo "[redcap-layerB-session-start] suppressed for internal health probe host=$HOST" >&2
+    exit 0
+fi
+
 INPUT=$(cat)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

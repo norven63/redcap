@@ -16,6 +16,11 @@
 
 set -u
 
+if [[ "${REDCAP_SUPPRESS_LIFECYCLE_HOOKS:-0}" == "1" || "${REDCAP_INTERNAL_HEALTH_PROBE:-0}" == "1" ]]; then
+    cat > /dev/null 2>&1 || true
+    exit 0
+fi
+
 cat > /dev/null  # 消费 stdin
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

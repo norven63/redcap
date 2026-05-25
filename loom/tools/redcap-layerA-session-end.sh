@@ -24,6 +24,14 @@ LAYER_B_SESSION_END_STATUS=0
 
 # ── 1. 接收并解析上下文 ──────────────────────────────────
 
+if [[ "${REDCAP_SUPPRESS_LIFECYCLE_HOOKS:-0}" == "1" || "${REDCAP_INTERNAL_HEALTH_PROBE:-0}" == "1" ]]; then
+    cat >/dev/null 2>&1 || true
+    if [[ "$HOST" == "gemini" ]]; then
+        echo '{"decision": "allow"}'
+    fi
+    exit 0
+fi
+
 INPUT=$(cat)
 # 简单的正则解析（不依赖 jq 以保证环境兼容性）
 SESSION_ID=$(echo "$INPUT" | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')

@@ -254,6 +254,12 @@ def run_probe_command(
     env: dict[str, str],
     timeout_s: int,
 ) -> tuple[str, str, int | None, bool]:
+    env = env.copy()
+    env["REDCAP_INTERNAL_HEALTH_PROBE"] = "1"
+    env["REDCAP_SUPPRESS_LIFECYCLE_HOOKS"] = "1"
+    env["REDCAP_SUPPRESS_SESSION_START_HOOKS"] = "1"
+    env["REDCAP_SKIP_INSTALL_REVIVAL_ENTRY"] = "1"
+    env["REDCAP_SKIP_FEISHU"] = "1"
     proc = subprocess.Popen(
         command,
         cwd=cwd,

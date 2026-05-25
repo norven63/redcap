@@ -21,6 +21,11 @@ if [[ -z "$HOST" ]]; then
     exit 2
 fi
 
+if [[ "${REDCAP_SUPPRESS_LIFECYCLE_HOOKS:-0}" == "1" || "${REDCAP_INTERNAL_HEALTH_PROBE:-0}" == "1" ]]; then
+    echo "[redcap-layerB-session-end] suppressed for internal health probe host=$HOST" >&2
+    exit 0
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REDCAP_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TASK_FILE="${REDCAP_TASK_FILE:-$REDCAP_ROOT/.dev-task.md}"
