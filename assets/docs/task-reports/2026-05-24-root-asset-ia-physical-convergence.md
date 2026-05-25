@@ -21,13 +21,13 @@
 
 ### 0.3 下一步计划做的是
 
-- 下一步计划做的是：生成 closeout receipt，并确认 pending closure 清零。
+- 下一步计划做的是：当前父任务已生成 closeout receipt；接下来回到 RedCap 父任务线，继续清点正式发布之外的剩余事项。
 
 ### 0.4 整体计划脉络图与当前位置
 
 - 整体计划脉络图是：历史目录坏味识别 -> 统一资产父级设计 -> 真实迁移与兼容入口 -> 首读入口去旧路径化 -> 检查器和索引同步 -> 棱镜评审与回归 -> closeout receipt。
-- 当前所在位置：资产迁移、首读入口收敛、本地回归、包面验证和棱镜复验已通过；正在执行最终 closeout。
-- 当前所在位置更新：最终 closeout 的递归嗅探 blocker 已修复并通过 targeted acceptance；下一步重新生成 closeout receipt。
+- 当前所在位置：资产迁移、首读入口收敛、本地回归、包面验证、棱镜复验和 closeout receipt 均已通过。
+- 当前所在位置更新：最终 closeout 曾暴露递归嗅探 blocker；本版已修复并通过 targeted acceptance、真实健康探针、spec-check、clean workspace E2E 与 closeout receipt。
 
 ### 0.5 是否需要 Norven 人工介入
 
@@ -150,8 +150,8 @@
 
 | 项目 | 当前值 |
 |---|---|
-| closeout receipt | 待生成 |
-| 当前状态 | 迁移、核心检查、完整回归、首读入口去旧路径化、健康嗅探递归保护和棱镜复验已通过；正在生成最终 closeout receipt |
+| closeout receipt | 已生成：`/tmp/redcap/project/d9d581491be7d5ef6880b56dbd0dc65f/governance/closeout-runtime/receipts/root-asset-ia-physical-convergence-19e442cc707eb0db7de8df759e04453c5511525ec2a7d0b676e9ef1e7f40e5c2.json` |
+| 当前状态 | 迁移、核心检查、完整回归、首读入口去旧路径化、健康嗅探生命周期递归保护、棱镜复验和 closeout receipt 已通过 |
 | 人工介入 | 不需要 |
 
 ### 5.4 完成等级（禁止混报）
@@ -161,11 +161,11 @@
 | 已实现 | 是 | 统一资产父级、真实迁移、兼容入口、检查器同步、首读入口去旧路径化和健康嗅探生命周期递归保护已落地 |
 | 已自检 | 是 | 结构、包面、索引、安全、spec-check、diagnose 和 clean workspace E2E 已通过 |
 | 已独立验收 | 是 | Claude Code + Kimi 棱镜复验通过，acceptance 已绑定当前任务 |
-| 已正式完成 | 待 closeout | closeout receipt 尚未生成前，不能冒充正式完成 |
+| 已正式完成 | 是 | closeout receipt 已生成，pending closure 已由 runtime 收口 |
 
 ## 六、遗留问题与下一步
 
-本轮剩余动作是 closeout receipt。正式发布本身仍是单独任务，不在本轮执行。
+本轮父任务已完成。正式发布本身仍是单独任务，不在本轮执行。
 
 仍未迁移的根级内容属于有意保留边界：host 入口、runtime 源码、工具源码、包控制文件、本地状态、Prism raw runs。这些不应该被无脑搬进 `assets/`。
 

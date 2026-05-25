@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 30,
-    "size_bytes": 353138,
+    "size_bytes": 353429,
     "lines": 7297,
-    "chars": 210804,
+    "chars": 211051,
     "rough_token_pressure": {
-      "low": 52701,
-      "high": 105402
+      "low": 52762,
+      "high": 105525
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 14,
-        "size_bytes": 129908,
+        "size_bytes": 130199,
         "lines": 2377,
-        "chars": 76232,
+        "chars": 76479,
         "rough_token_pressure": {
-          "low": 19058,
-          "high": 38116
+          "low": 19119,
+          "high": 38239
         }
       }
     },
@@ -105,7 +105,7 @@
       },
       {
         "path": "compass/docs/task-reports/2026-05-24-root-asset-ia-physical-convergence.md",
-        "chars": 7034,
+        "chars": 7281,
         "lines": 192,
         "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
       }
@@ -633,9 +633,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 12704,
+      "size_bytes": 12995,
       "lines": 192,
-      "chars": 7034,
+      "chars": 7281,
       "summary": "当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置；活跃首读入口也已经改为 `assets/` 优先。 / 详情：docs、knowledge、references、formal Prism reports、private archive 的真实内容已迁移到 `assets/` 下；host 入口、runtime 源码、工具源码、包控制文件、本地状态和 Prism raw runs 没有迁移。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -647,11 +647,11 @@
           "上一步完成的是：修正迁移后的检查器口径，让结构检查、包面检查、索引检查能识别 `assets/` 是新的资产父级，而不是继续按旧根目录判断。"
         ],
         "next_step": [
-          "下一步计划做的是：生成 closeout receipt，并确认 pending closure 清零。"
+          "下一步计划做的是：当前父任务已生成 closeout receipt；接下来回到 RedCap 父任务线，继续清点正式发布之外的剩余事项。"
         ],
         "position": [
           "整体计划脉络图是：历史目录坏味识别 -> 统一资产父级设计 -> 真实迁移与兼容入口 -> 首读入口去旧路径化 -> 检查器和索引同步 -> 棱镜评审与回归 -> closeout receipt。",
-          "当前所在位置：资产迁移、首读入口收敛、本地回归、包面验证和棱镜复验已通过；正在执行最终 closeout。"
+          "当前所在位置：资产迁移、首读入口收敛、本地回归、包面验证、棱镜复验和 closeout receipt 均已通过。"
         ]
       }
     }
