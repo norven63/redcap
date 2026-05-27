@@ -255,7 +255,7 @@ PY
 
 changed_report_is_pure_asset_migration() {
     local changed="$1"
-    local suffix old_path old_blob new_blob
+    local suffix old_path old_blob new_blob old_abs new_abs old_real new_real
 
     case "$changed" in
         assets/docs/task-reports/*) ;;
@@ -267,7 +267,33 @@ changed_report_is_pure_asset_migration() {
     old_blob=$(git -C "$REDCAP_ROOT" rev-parse -q --verify "HEAD:$old_path" 2>/dev/null || true)
     new_blob=$(git -C "$REDCAP_ROOT" rev-parse -q --verify ":$changed" 2>/dev/null || true)
 
-    [[ -n "$old_blob" && -n "$new_blob" && "$old_blob" == "$new_blob" ]]
+    if [[ -n "$old_blob" && -n "$new_blob" && "$old_blob" == "$new_blob" ]]; then
+        return 0
+    fi
+
+    # `compass/docs` may be a compatibility symlink to `assets/docs`. In that
+    # state, newly tracked assets reports are the same physical report exposed
+    # through the old anchor, not a competing task report.
+    old_abs="$REDCAP_ROOT/$old_path"
+    new_abs="$REDCAP_ROOT/$changed"
+    if [[ -e "$old_abs" && -e "$new_abs" ]]; then
+        old_real=$(python3 - "$old_abs" <<'PY'
+import pathlib
+import sys
+print(pathlib.Path(sys.argv[1]).resolve())
+PY
+)
+        new_real=$(python3 - "$new_abs" <<'PY'
+import pathlib
+import sys
+print(pathlib.Path(sys.argv[1]).resolve())
+PY
+)
+        [[ -n "$old_real" && "$old_real" == "$new_real" ]]
+        return $?
+    fi
+
+    return 1
 }
 
 if [[ "$ANCHOR_MISMATCH" -eq 1 ]]; then
