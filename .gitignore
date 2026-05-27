@@ -8,6 +8,8 @@ __pycache__/
 *.pyc
 docs*/
 !compass/docs/
+!assets/docs/
+!assets/docs/**
 round-table/
 .dev-task.md
 prism/reports/.session-registry.yaml

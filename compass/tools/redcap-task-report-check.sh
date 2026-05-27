@@ -4,6 +4,7 @@
 #
 # 目标：把“最终汇报必须按模板”从对话约束升级为可机器检查的不变量。
 # 审计范围：本次 commit 区间内新增/修改的 canonical `assets/docs/task-reports/*.md`
+# 兼容范围：旧项目/旧锚点仍可通过 `compass/docs/task-reports/*.md` 解析后归一。
 # ─────────────────────────────────────────────────────────
 
 set -u
@@ -26,12 +27,22 @@ if [[ -z "$CURRENT_HEAD" ]]; then
     CURRENT_HEAD=$(git -C "$REDCAP_ROOT" rev-parse HEAD 2>/dev/null) || exit 1
 fi
 
-REPORT_GLOB='assets/docs/task-reports/*.md'
+REPORT_GLOBS=(
+    'assets/docs/task-reports/*.md'
+    'compass/docs/task-reports/*.md'
+)
 PENDING_CLOSURE_STATE=""
 TMP_CHANGED_REPORT_LIST=$(mktemp)
 ANCHORED_REPORT=""
 ANCHOR_MISMATCH=0
 ANCHOR_SOURCE=""
+STALE_MARKER_REPORT=""
+RAW_MARKER_PATH=""
+RAW_MARKER_REPORT=""
+RAW_MARKER_IDENTITY_PATH=""
+RAW_MARKER_IDENTITY_REPORT=""
+RAW_MARKER_IDENTITY_HASH=""
+CURRENT_TASK_CONFIRMED_HASH=""
 
 report_anchor_rel_path() {
     local rel_path="${1:-}"
@@ -75,20 +86,47 @@ fi
 
 TMP_REPORT_LIST=$(mktemp)
 
-git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only "$BASELINE..$CURRENT_HEAD" -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
-git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only "$BASELINE..$CURRENT_HEAD" -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
-git -C "$REDCAP_ROOT" --no-pager diff --cached --diff-filter=ACMR --name-only -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
-git -C "$REDCAP_ROOT" --no-pager diff --cached --diff-filter=ACMR --name-only -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
-git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
-git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
-git -C "$REDCAP_ROOT" --no-pager ls-files --others --exclude-standard -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
-git -C "$REDCAP_ROOT" --no-pager ls-files --others --exclude-standard -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
+RAW_MARKER_PATH=$(redcap_interop_current_report_marker_path 2>/dev/null || true)
+if [[ -n "$RAW_MARKER_PATH" && -f "$RAW_MARKER_PATH" ]]; then
+    RAW_MARKER_REPORT=$(cat "$RAW_MARKER_PATH" 2>/dev/null || true)
+    RAW_MARKER_REPORT=$(report_anchor_rel_path "$RAW_MARKER_REPORT" || true)
+    RAW_MARKER_IDENTITY_PATH=$(redcap_interop_current_report_identity_path 2>/dev/null || true)
+    CURRENT_TASK_CONFIRMED_HASH=$(redcap_dev_task_confirmed_hash "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
+    if [[ -n "$RAW_MARKER_IDENTITY_PATH" && -f "$RAW_MARKER_IDENTITY_PATH" && -n "$RAW_MARKER_REPORT" && -n "$CURRENT_TASK_CONFIRMED_HASH" ]]; then
+        RAW_MARKER_IDENTITY_REPORT=$(redcap_interop_read_state_field "$RAW_MARKER_IDENTITY_PATH" "report_path" 2>/dev/null || true)
+        RAW_MARKER_IDENTITY_REPORT=$(report_anchor_rel_path "$RAW_MARKER_IDENTITY_REPORT" || true)
+        RAW_MARKER_IDENTITY_HASH=$(redcap_interop_read_state_field "$RAW_MARKER_IDENTITY_PATH" "confirmed_hash" 2>/dev/null || true)
+        if [[ "$RAW_MARKER_IDENTITY_REPORT" == "$RAW_MARKER_REPORT" && "$RAW_MARKER_IDENTITY_HASH" != "$CURRENT_TASK_CONFIRMED_HASH" ]]; then
+            STALE_MARKER_REPORT="$RAW_MARKER_REPORT"
+        fi
+    fi
+fi
+
+for REPORT_GLOB in "${REPORT_GLOBS[@]}"; do
+    git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only "$BASELINE..$CURRENT_HEAD" -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
+    git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only "$BASELINE..$CURRENT_HEAD" -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
+    git -C "$REDCAP_ROOT" --no-pager diff --cached --diff-filter=ACMR --name-only -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
+    git -C "$REDCAP_ROOT" --no-pager diff --cached --diff-filter=ACMR --name-only -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
+    git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
+    git -C "$REDCAP_ROOT" --no-pager diff --diff-filter=ACMR --name-only -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
+    git -C "$REDCAP_ROOT" --no-pager ls-files --others --exclude-standard -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_REPORT_LIST" || true
+    git -C "$REDCAP_ROOT" --no-pager ls-files --others --exclude-standard -- "$REPORT_GLOB" 2>/dev/null >> "$TMP_CHANGED_REPORT_LIST" || true
+done
 
 MARKED_REPORT=$(redcap_interop_current_report_marker_rel "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" 2>/dev/null || true)
 if [[ -n "$MARKED_REPORT" ]]; then
     printf '%s\n' "$MARKED_REPORT" >> "$TMP_REPORT_LIST"
     ANCHORED_REPORT="$MARKED_REPORT"
     ANCHOR_SOURCE="marker"
+else
+    if [[ -n "$RAW_MARKER_PATH" && -f "$RAW_MARKER_PATH" ]]; then
+        RAW_MARKED_REPORT=$(cat "$RAW_MARKER_PATH" 2>/dev/null || true)
+        RAW_MARKED_REPORT=$(report_anchor_rel_path "$RAW_MARKED_REPORT" || true)
+        if [[ -n "$RAW_MARKED_REPORT" ]]; then
+            STALE_MARKER_REPORT="${STALE_MARKER_REPORT:-$RAW_MARKED_REPORT}"
+            printf '%s\n' "$STALE_MARKER_REPORT" >> "$TMP_REPORT_LIST"
+        fi
+    fi
 fi
 
 if [[ -n "$PENDING_CLOSURE_STATE" && -f "$PENDING_CLOSURE_STATE" ]]; then
@@ -358,6 +396,11 @@ done
 if [[ ${#INVALID_CHANGED_REPORTS[@]} -gt 0 ]]; then
     echo "[redcap-task-report-check] changed reports failed template audit:" >&2
     printf '  - %s\n' "${INVALID_CHANGED_REPORTS[@]}" | sort -u >&2
+    exit 1
+fi
+
+if [[ -n "$STALE_MARKER_REPORT" ]]; then
+    echo "[redcap-task-report-check] stale marker report anchor does not match current task identity: $STALE_MARKER_REPORT" >&2
     exit 1
 fi
 

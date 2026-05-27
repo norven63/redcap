@@ -330,7 +330,9 @@ report_roots_raw = [
 report_roots = []
 for report_root in report_roots_raw:
     if report_root.is_dir():
-        report_roots.append(report_root.resolve())
+        resolved = report_root.resolve()
+        if root == resolved or resolved.is_relative_to(root):
+            report_roots.append(resolved)
 if not report_roots:
     raise SystemExit(1)
 

@@ -10,9 +10,9 @@
   },
   "source_truth": {
     "p4_28_route_path": "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
-  "p4_28_route_sha256": "921d2cdbc702d89207b8c2daa69af8a267d151308ff7614800e9263687d21f97",
+  "p4_28_route_sha256": "9bae823ac10f4ce029f290244fa1d91f572ffbda430ee9c4699ff763b73776a2",
     "p4_27_preflight_path": "references/r1-contract-mirror-apply-preflight-subset.json",
-  "p4_27_preflight_sha256": "841e1dce45e836260bfdfdeb160cc454abbfc281de3c2d8e4ea6c19367ca1154"
+  "p4_27_preflight_sha256": "9e801cf1d01022f2415646b95ab903cc6d56c2eaff6067e7a3f528f5d6f0b4c6"
   },
   "source_updates_after_preflight": [
     {
@@ -35,6 +35,13 @@
       "preflight_source_sha256": "67079c93fbe2ecbaf11d7577f0dd6a6851df2095983183c470906f6e3090d63f",
       "current_source_sha256": "cd35033ee75bd87f3b32d8fe880457ecdd9420e2b4c48c6707b8a985b54fafc6",
       "reason": "P4-29 keeps the internal contract mirror byte-identical after the post-result drift allowlist was canonicalized to assets paths; package-surface exclusion remains unchanged."
+    },
+    {
+      "source": "references/package-publish-safety-policy.json",
+      "target": "contracts/public/package-publish-safety-policy.json",
+      "preflight_source_sha256": "2e2a0901d7b0a2b32257953f770b4526524d0b540dae0336f793ca9e039e7816",
+      "current_source_sha256": "183e32d1893a6f3d8396c1e8d92e4f9703c7b85418add82ae7055e6ea186a2ca",
+      "reason": "P4-29 keeps the public release-safety contract mirror byte-identical after the pre-release debt tranche added internal-only full LLM-wiki, RAG boundary, and debt receipt exclusions."
     }
   ],
   "copy_policy": {
@@ -90,8 +97,8 @@
       "source": "references/package-publish-safety-policy.json",
       "target": "contracts/public/package-publish-safety-policy.json",
       "target_layer": "public-contract",
-      "source_sha256": "2e2a0901d7b0a2b32257953f770b4526524d0b540dae0336f793ca9e039e7816",
-      "target_sha256": "2e2a0901d7b0a2b32257953f770b4526524d0b540dae0336f793ca9e039e7816",
+      "source_sha256": "183e32d1893a6f3d8396c1e8d92e4f9703c7b85418add82ae7055e6ea186a2ca",
+      "target_sha256": "183e32d1893a6f3d8396c1e8d92e4f9703c7b85418add82ae7055e6ea186a2ca",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"

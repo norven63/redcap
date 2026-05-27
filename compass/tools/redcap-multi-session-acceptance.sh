@@ -342,6 +342,18 @@ counter_value() {
     fi
 }
 
+canonical_acceptance_report_rel() {
+    local path="$1"
+    local rel="${path#$REDCAP_ROOT/}"
+
+    case "$rel" in
+        compass/docs/task-reports/*)
+            rel="assets/docs/task-reports/${rel#compass/docs/task-reports/}"
+            ;;
+    esac
+    printf '%s\n' "$rel"
+}
+
 attach_binding_with_capability_recovery() {
     local host="$1"
     local project_root="$2"
@@ -1558,7 +1570,7 @@ run_report_register_requires_claim_case() {
     redcap_runtime_clear_context
     unset REDCAP_RUNTIME_ALLOW_DISK_RECOVERY REDCAP_RUNTIME_ALLOW_CAPABILITY_FILE_RECOVERY REDCAP_RUNTIME_CAPABILITY 2>/dev/null || true
 
-    report_path="$REDCAP_ROOT/compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_path="$REDCAP_ROOT/assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     degraded_file="$(redcap_runtime_compat_path_for_root "$REDCAP_ROOT" "degraded-mode.count")"
     before="$(counter_value "$degraded_file")"
 
@@ -1580,7 +1592,7 @@ run_report_register_accepts_explicit_runtime_env_case() {
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "report-register-accepts-explicit-runtime-env" >/dev/null 2>&1 || true
 
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-explicit-runtime-${RANDOM}-$$.md"
-    rel_path="${report_path#$REDCAP_ROOT/}"
+    rel_path="$(canonical_acceptance_report_rel "$report_path")"
     printf '# acceptance explicit runtime report\n' >"$report_path"
     LEGACY_TMP_FILES+=("$report_path")
 
@@ -1667,7 +1679,7 @@ run_report_register_prefers_live_claim_over_stale_explicit_runtime_case() {
     init_bound_runtime "$host" "$binding_b" "$pid_b"
 
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-review-runtime-priority-${RANDOM}-$$.md"
-    rel_path="${report_path#$REDCAP_ROOT/}"
+    rel_path="$(canonical_acceptance_report_rel "$report_path")"
     printf '# acceptance runtime priority report\n' >"$report_path"
     LEGACY_TMP_FILES+=("$report_path")
 
@@ -1747,10 +1759,10 @@ run_report_register_replaces_pending_artifact_case() {
 
     report_a="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-report-a-${RANDOM}-$$.md"
     report_b="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-report-b-${RANDOM}-$$.md"
-    rel_a="${report_a#$REDCAP_ROOT/}"
-    rel_b="${report_b#$REDCAP_ROOT/}"
     printf '# acceptance report a\n' >"$report_a"
     printf '# acceptance report b\n' >"$report_b"
+    rel_a="$(redcap_interop_resolve_report_rel_path "$REDCAP_ROOT" "$report_a")"
+    rel_b="$(redcap_interop_resolve_report_rel_path "$REDCAP_ROOT" "$report_b")"
     LEGACY_TMP_FILES+=("$report_a" "$report_b")
 
     binding_key="acceptance-report-register-replace-${RANDOM}-$$"
@@ -2029,8 +2041,8 @@ run_task_complete_guard_triggers_closeout_runtime_case() {
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for task complete guard case"
 
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-guard-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
     printf '# acceptance guard report\n' >"$report_path"
+    report_rel="$(redcap_interop_resolve_report_rel_path "$REDCAP_ROOT" "$report_path")"
     LEGACY_TMP_FILES+=("$report_path")
     redcap_interop_write_pending_closure \
         "$REDCAP_ROOT" \
@@ -2062,7 +2074,13 @@ source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
 source "$REDCAP_ROOT/compass/tools/redcap-interop-governance.sh"
 redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNTIME_CAPABILITY:?}" >/dev/null
 printf '%s\n' "\$REPORT" >>"$register_log"
-redcap_interop_write_current_report_marker "\${REPORT#$REDCAP_ROOT/}" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+REPORT_REL="\${REPORT#$REDCAP_ROOT/}"
+case "\$REPORT_REL" in
+  compass/docs/task-reports/*)
+    REPORT_REL="assets/docs/task-reports/\${REPORT_REL#compass/docs/task-reports/}"
+    ;;
+esac
+redcap_interop_write_current_report_marker "\$REPORT_REL" "$REDCAP_ROOT/.dev-task.md" >/dev/null
 EOF
     cat >"$runtime_stub" <<EOF
 #!/usr/bin/env bash
@@ -2172,7 +2190,7 @@ run_layerb_closeout_runtime_promise_ledger_blocks_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-pending-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-pending-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance closeout runtime
@@ -2728,7 +2746,7 @@ run_layerb_closeout_runtime_complete_writes_receipt_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-complete-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-complete-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance closeout runtime
@@ -2834,7 +2852,7 @@ run_layerb_closeout_runtime_uses_pending_baseline_case() {
     fi
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-pending-baseline-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-pending-baseline-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance closeout runtime pending baseline
@@ -2903,7 +2921,7 @@ run_layerb_closeout_runtime_prefers_task_baseline_case() {
     stale_runtime_baseline="$current_head"
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-task-baseline-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-task-baseline-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance closeout runtime task baseline
@@ -2981,7 +2999,7 @@ run_layerb_closeout_runtime_session_end_failure_writes_pending_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-session-end-fail-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-session-end-fail-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance closeout runtime session-end failure
@@ -3040,7 +3058,7 @@ run_layerb_closeout_runtime_audit_open_repairs_receipt_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-repair-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-repair-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance closeout runtime
@@ -3105,7 +3123,7 @@ run_layerb_closeout_runtime_audit_open_blocks_unresolved_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-audit-block-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-audit-block-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     printf '# acceptance report\n' >"$report_path"
     write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] 代码已改完，但 blocker 还没清"
@@ -3151,7 +3169,7 @@ run_layerb_closeout_runtime_audit_open_preserves_existing_blockers_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-audit-merge-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-audit-merge-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     printf '# acceptance report\n' >"$report_path"
     write_layerb_closeout_task_fixture "$task_file" "$report_rel" "- [x] closeout 之外的 blocker 仍存在"
@@ -3189,7 +3207,7 @@ run_diagnose_auto_repairs_closeout_receipt_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-diagnose-closeout-repair-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-diagnose-closeout-repair-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance diagnose rescue audit
@@ -3241,7 +3259,7 @@ run_closeout_cap_root_entry_basic_commands_case() {
 
     task_file="$REDCAP_ROOT/.acceptance-closeout-cap-root-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-cap-root-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance closeout cap root entry
@@ -3273,7 +3291,7 @@ run_layerb_closeout_runtime_sync_preserves_completed_state_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-sync-preserves-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-sync-preserves-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance closeout runtime sync preserves completed state
@@ -3324,7 +3342,7 @@ run_session_end_missing_runtime_ignores_completed_receipt_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-session-end-receipt-present-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-session-end-receipt-present-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance session-end receipt present
@@ -3387,7 +3405,7 @@ run_session_end_missing_runtime_accepts_resource_limited_receipt_case() {
     run_id="acceptance-resource-limited-${RANDOM}-$$"
     task_file="$REDCAP_ROOT/.acceptance-session-end-resource-limited-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-session-end-resource-limited-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance session-end resource-limited receipt
@@ -3493,7 +3511,7 @@ run_session_end_missing_runtime_preserves_nonmatching_pending_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-session-end-nonmatching-pending-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-session-end-nonmatching-pending-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance session-end nonmatching pending
@@ -3557,7 +3575,7 @@ run_current_status_receipt_overrides_stale_report_plan_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-current-status-receipt-present-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-current-status-receipt-present-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance current status receipt present
@@ -3607,7 +3625,7 @@ run_layerb_closeout_runtime_attaches_session_end_binding_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     task_file="$REDCAP_ROOT/.acceptance-closeout-runtime-binding-${RANDOM}-$$.md"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-closeout-runtime-binding-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     LEGACY_TMP_FILES+=("$task_file" "$report_path")
     cat >"$report_path" <<'EOF'
 # 任务完成报告：acceptance closeout runtime binding
@@ -3669,7 +3687,7 @@ run_task_complete_guard_passes_host_to_on_complete_case() {
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for host passthrough case"
 
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-host-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     printf '# acceptance guard host report\n' >"$report_path"
     LEGACY_TMP_FILES+=("$report_path")
     redcap_interop_write_pending_closure \
@@ -3701,7 +3719,13 @@ source "$REDCAP_ROOT/compass/tools/redcap-runtime-state.sh"
 source "$REDCAP_ROOT/compass/tools/redcap-interop-governance.sh"
 redcap_runtime_attach_existing "\${REDCAP_RUNTIME_SESSION_ID:?}" "\${REDCAP_RUNTIME_CAPABILITY:?}" >/dev/null
 printf '%s\n' "\$REPORT" >>"$register_log"
-redcap_interop_write_current_report_marker "\${REPORT#$REDCAP_ROOT/}" "$REDCAP_ROOT/.dev-task.md" >/dev/null
+REPORT_REL="\${REPORT#$REDCAP_ROOT/}"
+case "\$REPORT_REL" in
+  compass/docs/task-reports/*)
+    REPORT_REL="assets/docs/task-reports/\${REPORT_REL#compass/docs/task-reports/}"
+    ;;
+esac
+redcap_interop_write_current_report_marker "\$REPORT_REL" "$REDCAP_ROOT/.dev-task.md" >/dev/null
 EOF
     cat >"$closeout_stub" <<EOF
 #!/usr/bin/env bash
@@ -3823,7 +3847,7 @@ run_task_complete_guard_skips_stale_pending_artifact_case() {
 
     report_old="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-stale-old-${RANDOM}-$$.md"
     report_new="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-stale-new-${RANDOM}-$$.md"
-    report_old_rel="${report_old#$REDCAP_ROOT/}"
+    report_old_rel="$(canonical_acceptance_report_rel "$report_old")"
     printf '# acceptance stale old report\n' >"$report_old"
     printf '# acceptance stale new report\n' >"$report_new"
     LEGACY_TMP_FILES+=("$report_old" "$report_new")
@@ -4111,7 +4135,7 @@ run_pending_closure_clear_restores_on_ledger_failure_case() {
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "pending-closure-clear-restores-on-ledger-failure" >/dev/null 2>&1 || true
 
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_path="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     state_file="$(
         redcap_interop_write_pending_closure \
             "$REDCAP_ROOT" \
@@ -4165,7 +4189,7 @@ run_pending_closure_clear_locked_mode_case() {
             "acceptance-seed" \
             "pending-closure" \
             "pending-closure-clear-locked-mode" \
-            "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md" \
+            "assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md" \
             "$current_head" \
             "$current_head"
     )" || fail "failed to seed pending closure for locked clear case"
@@ -4211,7 +4235,7 @@ run_session_end_clears_all_matching_pending_states_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_path="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end clear case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4295,7 +4319,7 @@ run_session_end_clears_compatible_pending_refresh_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_path="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end refresh case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4392,7 +4416,7 @@ run_session_end_clears_closeout_runtime_pending_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_path="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for session-end closeout clear case"
     write_current_report_marker_fixture "$report_path"
 
@@ -4633,7 +4657,7 @@ run_task_report_check_requires_summary_for_untracked_anchor_case() {
     redcap_interop_clear_pending_closure "$REDCAP_ROOT" "$REDCAP_ROOT/.dev-task.md" "acceptance-reset" "task-report-check-requires-summary-for-untracked-anchor" >/dev/null 2>&1 || true
 
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-report-incomplete-${RANDOM}-$$.md"
-    rel_path="${report_path#$REDCAP_ROOT/}"
+    rel_path="$(canonical_acceptance_report_rel "$report_path")"
     cat >"$report_path" <<'EOF'
 # 任务完成报告：Acceptance Incomplete Report
 
@@ -4709,7 +4733,7 @@ run_task_report_check_accepts_legacy_pending_anchor_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-report-legacy-pending-anchor/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    legacy_rel="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -4860,7 +4884,7 @@ run_task_complete_guard_replaces_stale_marker_with_unique_report_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-complete-stale-marker/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    legacy_rel="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -4989,7 +5013,7 @@ run_task_report_check_rejects_zero_diff_stale_marker_case() {
     redcap_runtime_clear_context
     repo="$ACCEPT_ROOT/task-report-zero-diff-stale-marker/repo"
     create_task_report_fixture_repo "$repo"
-    legacy_rel="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    legacy_rel="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     mkdir -p "$(dirname "$repo/$legacy_rel")"
     cp "$REDCAP_ROOT/$legacy_rel" "$repo/$legacy_rel"
     git -C "$repo" add "$legacy_rel"
@@ -5007,7 +5031,7 @@ run_task_report_check_rejects_zero_diff_stale_marker_case() {
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "task-report-check unexpectedly accepted zero diff stale marker"
-    assert_string_contains "$output" "missing task report under compass/docs/task-reports/"
+    assert_string_contains "$output" "stale marker report anchor does not match current task identity"
 
     redcap_runtime_clear_process_claim "$host" "$pid" >/dev/null 2>&1 || true
     redcap_runtime_clear_context
@@ -5148,7 +5172,7 @@ run_task_complete_guard_serializes_on_complete_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for serialize case"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-serialize-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     printf '# acceptance serialize report\n' >"$report_path"
     LEGACY_TMP_FILES+=("$report_path")
     write_current_report_marker_fixture "$report_rel"
@@ -5199,7 +5223,7 @@ run_task_complete_guard_prunes_stale_lock_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for stale lock case"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-stale-lock-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     printf '# acceptance stale lock report\n' >"$report_path"
     LEGACY_TMP_FILES+=("$report_path")
     write_current_report_marker_fixture "$report_rel"
@@ -5246,7 +5270,7 @@ run_task_complete_guard_keeps_live_legacy_lock_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for live legacy lock case"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-live-legacy-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     printf '# acceptance live legacy lock report\n' >"$report_path"
     LEGACY_TMP_FILES+=("$report_path")
     write_current_report_marker_fixture "$report_rel"
@@ -5294,7 +5318,7 @@ run_task_complete_guard_retries_after_report_change_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for retry case"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-retry-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     printf '# acceptance retry report\n' >"$report_path"
     LEGACY_TMP_FILES+=("$report_path")
     write_current_report_marker_fixture "$report_rel"
@@ -5661,7 +5685,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md
+task_report: assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -5832,7 +5856,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md
+task_report: assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -5967,7 +5991,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md
+task_report: assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -6291,7 +6315,7 @@ host_surface_policy: mirror_only
 delegation_boundary: redcap-native-first
 human_escalation_policy: ai-uncomputable-only
 overlay_skill_policy: advisory_only
-task_report: compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md
+task_report: assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md
 
 ## 原始输入（用户原文，禁止改写）
 ### Q1
@@ -7075,7 +7099,7 @@ run_session_end_success_notify_after_clear_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_path="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify order case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -7170,7 +7194,7 @@ run_session_end_success_notify_skip_for_closeout_runtime_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_path="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify skip case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -7262,7 +7286,7 @@ run_session_end_notify_timeout_releases_lock_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_path="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for notify timeout case"
     write_current_report_marker_fixture "$report_path"
     pending_state="$(
@@ -7378,7 +7402,7 @@ run_session_end_blocked_rewrite_keeps_report_anchor_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_path="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_path="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for report anchor case"
     write_current_report_marker_fixture "$report_path"
     redcap_interop_write_pending_closure \
@@ -7458,7 +7482,7 @@ run_session_end_blocked_rewrite_normalizes_absolute_report_anchor_case() {
     export REDCAP_HOST_PROCESS_PID REDCAP_SESSION_ISOLATION_MODE REDCAP_RUNTIME_SESSION_ID REDCAP_RUNTIME_BINDING_KEY REDCAP_RUNTIME_HOST REDCAP_RUNTIME_CAPABILITY
     unset REDCAP_HOST_PROCESS_PROBE_PID
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
-    report_rel="compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"
+    report_rel="assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
     report_abs="$REDCAP_ROOT/$report_rel"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for absolute report anchor case"
     redcap_interop_write_pending_closure \
@@ -7568,7 +7592,7 @@ run_task_complete_guard_prunes_reused_pid_lock_case() {
     current_head="$(git -C "$REDCAP_ROOT" rev-parse HEAD)"
     redcap_runtime_write_text "layerB/initial-head" "$current_head" || fail "failed to seed initial head for reused pid lock case"
     report_path="$REDCAP_ROOT/compass/docs/task-reports/zz-acceptance-task-complete-reused-pid-${RANDOM}-$$.md"
-    report_rel="${report_path#$REDCAP_ROOT/}"
+    report_rel="$(canonical_acceptance_report_rel "$report_path")"
     printf '# acceptance reused pid report\n' >"$report_path"
     LEGACY_TMP_FILES+=("$report_path")
     write_current_report_marker_fixture "$report_rel"
@@ -9337,7 +9361,7 @@ run_docs_catalog_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" check)"
     assert_string_contains "$output" "DOCS_CATALOG_OK"
-    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md"'
+    assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"read_policy": "read-catalog-summary-first-then-open-if-current-anchor"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"status_basis": "filename_recency_only"'
     assert_contains "$REDCAP_ROOT/compass/docs/catalog.json" '"path": "compass/docs/specs/2026-04-13-framework-upgrade-backlog-design.md"'
@@ -9390,7 +9414,7 @@ run_docs_catalog_progressive_disclosure_case() {
     assert_string_contains "$budget_output" "files=1"
 
     set +e
-    blocked_output="$(REDCAP_DOCS_BUDGET_MAX_HIGH_TOKENS=1000 bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/task-reports/2026-05-19-r1-layera-product-boundary-preflight.md" 2>&1)"
+    blocked_output="$(REDCAP_DOCS_BUDGET_MAX_HIGH_TOKENS=1000 bash "$REDCAP_ROOT/compass/tools/redcap-docs-catalog.sh" budget "compass/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md" 2>&1)"
     blocked_status=$?
     set -e
     [[ "$blocked_status" -ne 0 ]] || fail "oversized docs read budget unexpectedly passed"
@@ -9450,13 +9474,15 @@ run_current_status_overview_case() {
     assert_string_contains "$output" "## 收尾红线"
     assert_string_contains "$output" "## 长期 backlog"
     assert_not_string_contains "$long_backlog" "backlog 读取失败"
-    assert_string_contains "$long_backlog" "当前焦点："
-    assert_string_contains "$long_backlog" "当前绑定条目："
     if [[ -n "$backlog_item" ]]; then
+        assert_string_contains "$long_backlog" "当前焦点："
+        assert_string_contains "$long_backlog" "当前绑定条目："
         assert_string_contains "$long_backlog" "当前绑定条目：${backlog_item}"
         assert_not_string_contains "$long_backlog" "当前绑定条目：${backlog_item}（未在 backlog 中找到）"
+        assert_string_contains "$long_backlog" "已完成"
+    else
+        assert_string_contains "$long_backlog" "未绑定长期 backlog"
     fi
-    assert_string_contains "$long_backlog" "已完成"
     assert_string_contains "$output" "## CLI 工具族"
     assert_string_contains "$output" "## 棱镜 / 独立评审"
     assert_string_contains "$output" "## docs 考古入口"
@@ -9484,8 +9510,11 @@ run_progress_meter_check_case() {
 
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-progress-meter.sh" --task-file "$REDCAP_ROOT/.dev-task.md")"
     assert_string_contains "$output" "REDCAP_PROGRESS_METER"
-    assert_string_contains "$output" "历史债务坏味 / 当前专注任务集 / 长期演进专项"
-    assert_string_contains "$output" "真实任务默认 600 秒"
+    assert_string_contains "$output" "整体任务全景图："
+    assert_string_contains "$output" "历史债务"
+    assert_string_contains "$output" "当前主线"
+    assert_string_contains "$output" "长期演进"
+    assert_string_contains "$output" "需要人工介入："
     assert_string_contains "$output" "PROGRESS_METER_OK"
 
     json_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-progress-meter.sh" --task-file "$REDCAP_ROOT/.dev-task.md" --json)"
@@ -9504,7 +9533,9 @@ assert payload["prism_boundary"]["real_task_default_timeout_seconds"] == 600
 human = payload["human"]
 for field in ["整体任务全景图", "当前位置", "当前已完成", "下一步计划做的是", "需要人工介入"]:
     assert field in human
-assert "门禁层级" in human["当前位置"]
+panorama = human["整体任务全景图"]
+for needle in ["历史债务", "当前主线", "长期演进"]:
+    assert needle in panorama
 PY
 
     bash "$REDCAP_ROOT/compass/tools/redcap-progress-meter-check.sh" >/dev/null
@@ -10454,11 +10485,9 @@ run_knowledge_index_check_case() {
     assert_string_contains "$output" "KNOWLEDGE_INDEX_OK"
 
     fixture="$ACCEPT_ROOT/knowledge-index-fixture"
-    mkdir -p "$fixture/compass/knowledge" "$fixture/compass/tools"
+    mkdir -p "$fixture/assets/knowledge" "$fixture/compass/tools"
     cp "$REDCAP_ROOT/compass/tools/redcap-knowledge-index-check.sh" "$fixture/compass/tools/redcap-knowledge-index-check.sh"
-    cp "$REDCAP_ROOT/compass/knowledge/lessons.md" "$fixture/compass/knowledge/lessons.md"
-    cp "$REDCAP_ROOT/compass/knowledge/design-principles.md" "$fixture/compass/knowledge/design-principles.md"
-    printf '# bad index\n\n首读导航\n不要默认 bulk-read\nredcap-knowledge-index-check.sh\ncompass/knowledge/lessons.md\n' >"$fixture/compass/knowledge/index.md"
+    printf '# bad index\n\n首读导航\n不要默认 bulk-read\nredcap-knowledge-index-check.sh\nassets/knowledge/lessons.md\n' >"$fixture/assets/knowledge/index.md"
     chmod +x "$fixture/compass/tools/redcap-knowledge-index-check.sh"
 
     set +e
@@ -14821,7 +14850,7 @@ PY
     status=$?
     set -e
     [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject missing mappings"
-    assert_string_contains "$stale_output" "archive_plan.mappings"
+    assert_string_contains "$stale_output" "archive_plan.report_count"
 
     bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-copy-now.json"
     python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
@@ -14904,7 +14933,7 @@ PY
     rmdir "$REDCAP_ROOT/private-archive/prism-reports" 2>/dev/null || true
     set -e
     [[ "$status" -ne 0 ]] || fail "R1 Prism report archive plan checker should reject physical archive copies"
-    assert_string_contains "$stale_output" "plan-only task must not create private-archive/prism-reports"
+    assert_string_contains "$stale_output" "live copy-first apply archive_copies"
 
     bad_plan="$ACCEPT_ROOT/r1-prism-report-archive-copy-first-plan-resolved.json"
     python3 - "$REDCAP_ROOT/references/r1-prism-report-archive-copy-first-plan.json" "$bad_plan" <<'PY'
@@ -15057,7 +15086,7 @@ PY
     rmdir "$REDCAP_ROOT/private-archive/prism-reports" 2>/dev/null || true
     set -e
     [[ "$status" -ne 0 ]] || fail "R1 Prism report archive apply readiness checker should reject live archive copies"
-    assert_string_contains "$stale_output" "private-archive/prism-reports"
+    assert_string_contains "$stale_output" "live copy-first apply archive_copies"
 }
 
 run_r1_layera_product_boundary_check_case() {
@@ -15610,7 +15639,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell workflow-gate-stratification progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-prism-report-archive-copy-first-preflight r1-prism-report-archive-copy-first-plan r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface prism-provider-policy prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell workflow-gate-stratification progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-prism-report-archive-copy-first-preflight r1-prism-report-archive-copy-first-plan r1-prism-report-archive-apply-readiness r1-prism-report-archive-churn-freeze-guard r1-control-plane-physical-apply-preflight r1-control-plane-runtime-public-support-copy-first-apply r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface pre-release-freeze-policy prism-provider-policy prism-degradation conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -16080,8 +16109,25 @@ EOF
             r1-prism-report-archive-copy-first-preflight) expected_message="R1 Prism report archive copy-first preflight check failed" ;;
             r1-prism-report-archive-copy-first-plan) expected_message="R1 Prism report archive copy-first plan check failed" ;;
             r1-prism-report-archive-apply-readiness) expected_message="R1 Prism report archive apply readiness check failed" ;;
+            r1-prism-report-archive-churn-freeze-guard) expected_message="R1 Prism report archive churn/freeze guard check failed" ;;
+            r1-prism-report-archive-live-copy-first-apply) expected_message="R1 Prism report archive live copy-first apply check failed" ;;
+            r1-prism-report-archive-old-anchor-delete-last-preflight) expected_message="R1 Prism report archive old-anchor delete-last preflight check failed" ;;
+            r1-next-safe-slice-after-old-anchor-preflight) expected_message="R1 next safe slice after old-anchor preflight check failed" ;;
+            r1-control-plane-physical-apply-preflight) expected_message="R1 control-plane physical apply preflight check failed" ;;
+            r1-control-plane-runtime-public-support-copy-first-apply) expected_message="R1 control-plane runtime public support copy-first apply check failed" ;;
+            r1-control-plane-internal-maintainer-facade-copy-first-apply) expected_message="R1 control-plane internal maintainer facade copy-first apply check failed" ;;
+            r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight) expected_message="R1 next safe slice after internal maintainer facade batch preflight check failed" ;;
+            r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply) expected_message="R1 control-plane internal maintainer facade batch-2 copy-first apply check failed" ;;
+            r1-next-safe-slice-after-internal-maintainer-facade-batch-2) expected_message="R1 next safe slice after internal maintainer facade batch-2 check failed" ;;
+            r1-control-plane-public-internal-contract-mirror-preflight) expected_message="R1 control-plane public/internal contract mirror preflight check failed" ;;
+            r1-next-safe-slice-after-control-plane-contract-mirror-preflight) expected_message="R1 next safe slice after control-plane contract mirror preflight check failed" ;;
+            r1-contract-mirror-apply-preflight-subset) expected_message="R1 contract mirror apply preflight subset check failed" ;;
+            r1-next-safe-slice-after-contract-mirror-apply-preflight-subset) expected_message="R1 next safe slice after contract mirror apply preflight subset check failed" ;;
+            r1-contract-mirror-bounded-copy-first-apply) expected_message="R1 contract mirror bounded copy-first apply check failed" ;;
             r1-layera-product-boundary) expected_message="R1 Layer A product boundary check failed" ;;
             formal-release-readiness-plan) expected_message="formal release readiness plan check failed" ;;
+            change-intake) expected_message="change intake check failed" ;;
+            pre-release-freeze-policy) expected_message="pre-release freeze policy check failed" ;;
             conclusion-prism) expected_message="conclusion Prism check failed" ;;
         esac
 
@@ -16180,10 +16226,25 @@ for rel in [
     "compass/tools/redcap-r1-prism-package-visible-support-copy-first-apply-check.sh",
     "compass/tools/redcap-r1-prism-report-archive-copy-first-preflight-check.sh",
     "compass/tools/redcap-r1-prism-report-archive-copy-first-plan-check.sh",
+    "compass/tools/redcap-r1-prism-report-archive-apply-readiness-check.sh",
+    "compass/tools/redcap-r1-prism-report-archive-churn-freeze-guard-check.sh",
+    "compass/tools/redcap-r1-prism-report-archive-live-copy-first-apply-check.sh",
+    "compass/tools/redcap-r1-prism-report-archive-old-anchor-delete-last-preflight-check.sh",
+    "compass/tools/redcap-r1-next-safe-slice-after-old-anchor-preflight-check.sh",
     "compass/tools/redcap-r1-control-plane-physical-apply-preflight-check.sh",
     "compass/tools/redcap-r1-control-plane-runtime-public-support-copy-first-apply-check.sh",
+    "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-copy-first-apply-check.sh",
+    "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-preflight-check.sh",
+    "compass/tools/redcap-r1-control-plane-internal-maintainer-facade-batch-2-copy-first-apply-check.sh",
+    "compass/tools/redcap-r1-next-safe-slice-after-internal-maintainer-facade-batch-2-check.sh",
+    "compass/tools/redcap-r1-control-plane-public-internal-contract-mirror-preflight-check.sh",
+    "compass/tools/redcap-r1-next-safe-slice-after-control-plane-contract-mirror-preflight-check.sh",
+    "compass/tools/redcap-r1-contract-mirror-apply-preflight-subset-check.sh",
+    "compass/tools/redcap-r1-next-safe-slice-after-contract-mirror-apply-preflight-subset-check.sh",
+    "compass/tools/redcap-r1-contract-mirror-bounded-copy-first-apply-check.sh",
     "compass/tools/redcap-r1-layera-product-boundary-check.sh",
     "compass/tools/redcap-formal-release-readiness-plan-check.sh",
+    "compass/tools/redcap-pre-release-freeze-policy-check.sh",
     "compass/tools/redcap-pre-release-product-architecture-check.sh",
     "compass/tools/redcap-pre-release-structure-task-tree-check.sh",
     "compass/tools/redcap-midcourse-architecture-check.sh",

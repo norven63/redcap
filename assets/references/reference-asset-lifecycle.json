@@ -42,7 +42,7 @@
     },
     {
       "path": "assets/references/file-lookup-dictionary.md",
-      "bytes": 123143,
+      "bytes": 127040,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -114,7 +114,7 @@
     },
     {
       "path": "assets/references/r1-control-plane-contract-split-preflight.json",
-      "bytes": 95057,
+      "bytes": 94056,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",

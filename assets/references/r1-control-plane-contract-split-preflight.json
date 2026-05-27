@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-        "candidate_count": 313,
-        "control_plane_candidate_count": 233,
-        "compass": 165,
-    "references": 68,
-        "compass_tools_shell": 98,
-        "compass_tools_python": 67,
-    "references_json": 65,
+        "candidate_count": 310,
+        "control_plane_candidate_count": 230,
+        "compass": 163,
+    "references": 67,
+        "compass_tools_shell": 97,
+        "compass_tools_python": 66,
+    "references_json": 64,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -82,7 +82,7 @@
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 68,
+        "package_candidate_count": 67,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-            "candidate_count": 313,
-            "control_plane_candidate_count": 233,
-            "compass": 165,
-      "references": 68,
-            "compass_tools_shell": 98,
-            "compass_tools_python": 67,
-      "references_json": 65,
+            "candidate_count": 310,
+            "control_plane_candidate_count": 230,
+            "compass": 163,
+      "references": 67,
+            "compass_tools_shell": 97,
+            "compass_tools_python": 66,
+      "references_json": 64,
       "references_markdown": 3,
       "source": "redcap-runtime-package-manifest.sh --output <temp>"
     },
@@ -299,11 +299,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 233,
+      "total_entries": 230,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 56,
-        "internal-control-plane": 118,
+        "internal-contract": 55,
+        "internal-control-plane": 116,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -628,20 +628,6 @@
         "source": "compass/tools/redcap-formal-release-readiness-plan-check.sh",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-formal-release-readiness-plan-check.sh",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
-        "source": "compass/tools/redcap-full-llm-wiki-roadmap-check.py",
-        "target_layer": "internal-control-plane",
-        "target_path": "internal/control-plane/tools/redcap-full-llm-wiki-roadmap-check.py",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
-        "source": "compass/tools/redcap-full-llm-wiki-roadmap-check.sh",
-        "target_layer": "internal-control-plane",
-        "target_path": "internal/control-plane/tools/redcap-full-llm-wiki-roadmap-check.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1552,13 +1538,6 @@
         "source": "references/formal-release-readiness-plan.json",
         "target_layer": "internal-contract",
         "target_path": "contracts/internal/formal-release-readiness-plan.json",
-        "future_action": "copy-first-verify-alias-delete-last",
-        "current_state": "unchanged-in-this-task"
-      },
-      {
-        "source": "references/full-llm-wiki-roadmap.json",
-        "target_layer": "internal-contract",
-        "target_path": "contracts/internal/full-llm-wiki-roadmap.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

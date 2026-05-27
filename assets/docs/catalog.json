@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 31,
-    "size_bytes": 363000,
-    "lines": 7461,
-    "chars": 216426,
+    "file_count": 32,
+    "size_bytes": 372849,
+    "lines": 7613,
+    "chars": 222005,
     "rough_token_pressure": {
-      "low": 54106,
-      "high": 108213
+      "low": 55501,
+      "high": 111002
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 15,
-        "size_bytes": 139770,
-        "lines": 2541,
-        "chars": 81854,
+        "file_count": 16,
+        "size_bytes": 149619,
+        "lines": 2693,
+        "chars": 87433,
         "rough_token_pressure": {
-          "low": 20463,
-          "high": 40927
+          "low": 21858,
+          "high": 43716
         }
       }
     },
@@ -521,7 +521,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-26 P4-25 后下一安全切片选择",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9625,
       "lines": 170,
@@ -586,29 +586,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：正式发布外收敛父任务",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9998,
       "lines": 177,
       "chars": 5394,
       "summary": "当前已完成：已修复 Codex Stop hook 的会话归属缺口、人类进度摘要旧焦点污染、RASG-025 账本状态漂移，并补齐棱镜评审与经验沉淀。 / 详情：普通讨论、只读会话、无 session id 或跨 session 情况只做 advisory，不再接管别的任务；危险命令被拒绝后立即返回，不会继续声明任务所有权；只读命令即使提到 `rm` 等词也不会被当作写动作。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：已修复 Codex Stop hook 的会话归属缺口、人类进度摘要旧焦点污染、RASG-025 账本状态漂移，并补齐棱镜评审与经验沉淀。",
-          "详情：普通讨论、只读会话、无 session id 或跨 session 情况只做 advisory，不再接管别的任务；危险命令被拒绝后立即返回，不会继续声明任务所有权；只读命令即使提到 `rm` 等词也不会被当作写动作。"
-        ],
-        "previous_step": [
-          "上一步完成的是：Claude Code + Kimi 棱镜审查已完成，Kimi 提出的误判风险已通过 follow-up 修复和回归夹具闭环；经验 L-170 已沉淀。"
-        ],
-        "next_step": [
-          "下一步计划做的是：生成 closeout receipt，并提交本轮变更；后续才进入真实发布决策。"
-        ],
-        "position": [
-          "整体计划脉络图是：历史债务坏味清理 -> 当前正式发布外收敛 -> 最终回归与收口 -> 后续才进入真实发布决策。",
-          "当前所在位置：本轮实现、棱镜评审、经验沉淀、Prism acceptance、spec-check、diagnose 与专项回归均已通过，正在生成 closeout receipt。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-24-root-asset-ia-physical-convergence.md",
@@ -664,6 +648,34 @@
         "position": [
           "整体计划脉络图是：重新锚定非发布清账任务 -> 固化 Kimi/Claude 工作量策略 -> 裁决旧路径、运行证据和 full LLM-wiki 三类容易误判事项 -> 棱镜评审 -> 回归 -> closeout receipt。",
           "当前所在位置：本轮已完成 receipt 收口；正式发布之外的已知可做事项已完成、正式延期或转入发布任务边界。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：发布前阻塞债务完成",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9849,
+      "lines": 152,
+      "chars": 5579,
+      "summary": "当前已完成：棱镜范围评审已完成；资产历史债务已落成机器可检 receipt；full LLM-wiki 已从 lite/deferred 升级为受控本地产品层，包含索引、队列、候选 worker、receipt 和 RAG/GraphRAG 禁用边界。 / 上一步完成的是：上一条“正式发布外最终清账”任务已生成 receipt，工作区干净；本轮从新的阻塞债务任务开始。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：棱镜范围评审已完成；资产历史债务已落成机器可检 receipt；full LLM-wiki 已从 lite/deferred 升级为受控本地产品层，包含索引、队列、候选 worker、receipt 和 RAG/GraphRAG 禁用边界。"
+        ],
+        "previous_step": [
+          "上一步完成的是：上一条“正式发布外最终清账”任务已生成 receipt，工作区干净；本轮从新的阻塞债务任务开始。"
+        ],
+        "next_step": [
+          "下一步计划做的是：提交已验证工程变更，随后由 closeout runtime 生成正式完工凭证并复验 pending closure 已清零。"
+        ],
+        "position": [
+          "整体计划脉络图是：重锚发布前阻塞债务 -> 棱镜范围评审 -> 资产历史债务清理 -> full LLM-wiki/worker/RAG 边界补全 -> 全量回归 -> 最终棱镜验收 -> closeout receipt。",
+          "当前所在位置：资产债务和长期记忆补全已实现，全量回归和最终棱镜验收已通过；closeout runtime 要求先提交干净工作树，再生成正式完工凭证。"
         ]
       }
     }

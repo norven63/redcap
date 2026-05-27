@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-05-26T14:16:17Z",
+  "receipt_index_id": "redcap-full-llm-wiki-receipts",
+  "receipt_rule": "Receipts prove candidate generation, review, staleness checks, or future backend activation attempts. They do not replace source truth.",
+  "receipts": [
+    {
+      "candidate_path": "assets/knowledge/llm-wiki-full/queue/llm-wiki-worker-boundary.json",
+      "path": "assets/knowledge/llm-wiki-full/receipts/llm-wiki-worker-boundary.json",
+      "receipt_id": "llm-wiki-worker-boundary",
+      "status": "candidate-generated"
+    }
+  ],
+  "status": "active",
+  "version": 1
+}

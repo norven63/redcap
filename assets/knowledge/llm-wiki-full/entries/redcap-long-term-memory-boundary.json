@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "id": "redcap-long-term-memory-boundary",
+  "title": "RedCap 长期记忆边界",
+  "status": "active",
+  "visibility": "private",
+  "authority": "non-authoritative-derived-context",
+  "candidate_type": "decision-framework",
+  "privacy_classification": "internal",
+  "source_anchors": [
+    {
+      "source_path": "assets/references/llm-wiki-asset-stratification-policy.json",
+      "source_kind": "policy",
+      "commit_sha_or_digest": "sha256:30b91353feab339e3638334f12be375ae6430147ee345f0f846563886e22d024",
+      "last_reviewed_at": "2026-05-26T13:55:00Z",
+      "privacy_classification": "internal"
+    },
+    {
+      "source_path": "assets/references/retrieval-escalation-policy.json",
+      "source_kind": "policy",
+      "commit_sha_or_digest": "sha256:fa77cdf78513b52206461c57e8e4e71191cb507e934e0b331aebe0189bed2078",
+      "last_reviewed_at": "2026-05-26T13:55:00Z",
+      "privacy_classification": "internal"
+    },
+    {
+      "source_path": "assets/references/redcap-forge-policy.json",
+      "source_kind": "policy",
+      "commit_sha_or_digest": "sha256:8eddcccdbdfb8e614c3268952dfd75411d1ac30c6ca93fbd556cbc5075b96d5c",
+      "last_reviewed_at": "2026-05-26T13:55:00Z",
+      "privacy_classification": "internal"
+    }
+  ],
+  "summary": "RedCap 的长期记忆不是一个单一仓库：LLM-wiki 负责私有、渐进式、可复查的概念记忆；Forge 负责安全审查和晋升；arsenal 才是可公开复用的能力库。",
+  "body": "Full LLM-wiki 的职责是把稳定概念、设计哲学、术语解释和反复失败后的经验模式组织成可检索条目。它的条目必须有 source anchor，必须能被标记 stale，且只能作为非权威的上下文辅助。Forge 是公开晋升门：它决定哪些候选可以进入 public arsenal。RAG/GraphRAG 不是默认能力，而是当索引和文件检索不足时才可能被单独立项启用的检索后端。这个边界防止语义摘要污染任务账本、receipt、Prism verdict 和原始证据。",
+  "review_state": {
+    "state": "accepted",
+    "reviewed_by": "cap-prism-scope-review",
+    "reviewed_at": "2026-05-26T13:55:00Z",
+    "receipt": "prism/runs/20260526-pre-release-blocking-debt-scope-review-v2/collect/kimi_reviewer/parsed.json"
+  },
+  "staleness": {
+    "mode": "source-digest",
+    "last_checked_at": "2026-05-26T13:55:00Z",
+    "source_digest_match": true
+  },
+  "forge_promotion": {
+    "status": "requires-forge-review",
+    "requires_forge": true,
+    "public_write_allowed": false
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "candidate_schema": "assets/references/full-llm-wiki-candidate.schema.json",
+  "candidates": [
+    {
+      "candidate_id": "llm-wiki-worker-boundary",
+      "candidate_type": "decision-framework",
+      "path": "assets/knowledge/llm-wiki-full/queue/llm-wiki-worker-boundary.json",
+      "receipt": "assets/knowledge/llm-wiki-full/receipts/llm-wiki-worker-boundary.json",
+      "status": "candidate"
+    }
+  ],
+  "generated_at": "2026-05-26T14:16:17Z",
+  "policy": "assets/references/full-llm-wiki-policy.json",
+  "queue_id": "redcap-full-llm-wiki-ingest-queue",
+  "rules": [
+    "The worker may add candidates here.",
+    "Candidates require human or Prism review before becoming accepted entries.",
+    "Candidates must not contain raw private transcripts, secrets, raw Prism output, identity text, or runtime evidence bodies."
+  ],
+  "status": "active",
+  "version": 1,
+  "worker_entrypoint": "compass/tools/redcap-full-llm-wiki-worker.sh"
+}

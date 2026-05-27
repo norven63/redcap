@@ -1,9 +1,9 @@
 {
   "version": 1,
   "roadmap_id": "full-llm-wiki-roadmap",
-  "status": "deferred-until-threshold-or-explicit-task",
-  "current_capability": "llm-wiki-lite",
-  "purpose": "Keep the complete LLM-wiki product visible without silently enabling a background memory generator, vector store, RAG, or GraphRAG.",
+  "status": "implemented-controlled-local-product",
+  "current_capability": "full-llm-wiki-controlled-local",
+  "purpose": "Keep the complete LLM-wiki product visible and implemented as a private, source-anchored, review-gated local memory product without silently enabling a live vector store, RAG, or GraphRAG backend.",
   "phases": [
     {
       "id": "lite",
@@ -12,29 +12,29 @@
     },
     {
       "id": "full-wiki-product",
-      "status": "not-started",
-      "meaning": "A maintained wiki product with ingestion queues, review states, staleness management, human-friendly pages, and source-backed update receipts."
+      "status": "implemented-controlled-local",
+      "meaning": "A maintained private wiki product with entry model, ingestion queue, review states, staleness management, human/AI indexes, and source-backed receipts."
     },
     {
       "id": "background-distillation-worker",
-      "status": "not-started",
-      "meaning": "A scheduled or event-driven worker that proposes memory updates, never mutating source truth without review."
+      "status": "implemented-proposal-only",
+      "meaning": "A manual and future-scheduler-compatible worker that proposes memory candidates with source anchors, duplicate detection, privacy scans and receipts; it never mutates source truth without review."
     },
     {
       "id": "fts-rag-graphrag",
-      "status": "not-started",
-      "meaning": "Escalated retrieval backends that must be opened only by retrieval thresholds and Prism-reviewed design."
+      "status": "controlled-boundary-disabled-by-default",
+      "meaning": "A controlled adapter boundary exists, but real FTS/RAG/GraphRAG/vector backends remain disabled until a separate Prism-reviewed activation task opens them."
     }
   ],
   "promotion_triggers": [
     "references/retrieval-escalation-policy.json threshold crossed",
-    "explicit RedCap task approved for full LLM-wiki implementation",
+    "explicit RedCap task approved for live RAG/GraphRAG backend activation",
     "repeated retrieval-miss observations show metadata/index route is insufficient"
   ],
   "must_not_claim": [
-    "LLM-wiki-lite is not the full LLM-wiki product.",
-    "No background generator is enabled.",
-    "No vector store, RAG, or GraphRAG is enabled.",
+    "Full LLM-wiki controlled-local product is still not a source of truth.",
+    "The background worker is proposal-only and does not rewrite source truth.",
+    "No live vector store, RAG, or GraphRAG backend is enabled.",
     "Wiki summaries never replace source policies, task ledgers, receipts, or raw evidence."
   ]
 }

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "schema_id": "full-llm-wiki-candidate",
+  "type": "object",
+  "required": [
+    "version",
+    "candidate_id",
+    "status",
+    "candidate_type",
+    "source_anchors",
+    "dedupe_key",
+    "privacy_scan",
+    "proposed_entry"
+  ],
+  "properties": {
+    "version": {"type": "integer", "const": 1},
+    "candidate_id": {"type": "string"},
+    "status": {"type": "string", "enum": ["candidate", "reviewing", "accepted", "rejected"]},
+    "candidate_type": {"type": "string"},
+    "source_anchors": {"type": "array", "minItems": 1},
+    "dedupe_key": {"type": "string"},
+    "privacy_scan": {
+      "type": "object",
+      "required": ["status", "patterns_checked", "matches"]
+    },
+    "proposed_entry": {"type": "object"}
+  },
+  "additionalProperties": false
+}

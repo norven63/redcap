@@ -133,10 +133,25 @@ from pathlib import Path
 import subprocess
 import sys
 
-root = Path(sys.argv[1])
+root = Path(sys.argv[1]).resolve()
 initial_head_file = Path(sys.argv[2])
-report_dir = root / "compass/docs/task-reports"
-if not report_dir.is_dir():
+report_roots_raw = [
+    root / "assets/docs/task-reports",
+    root / "compass/docs/task-reports",
+]
+report_roots: list[Path] = []
+git_report_args: list[str] = []
+for raw_root in report_roots_raw:
+    if not raw_root.is_dir():
+        continue
+    resolved = raw_root.resolve()
+    if not (root == resolved or resolved.is_relative_to(root)):
+        continue
+    report_roots.append(resolved)
+    rel = raw_root.relative_to(root).as_posix()
+    if rel not in git_report_args:
+        git_report_args.append(rel)
+if not report_roots:
     raise SystemExit(0)
 
 initial_head = ""
@@ -156,18 +171,28 @@ def git_lines(*args: str) -> list[str]:
     return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
 
 paths: set[str] = set()
-if initial_head:
-    paths.update(git_lines("diff", "--name-only", "--diff-filter=AMRT", initial_head, "--", "compass/docs/task-reports"))
-paths.update(git_lines("diff", "--cached", "--name-only", "--diff-filter=AMRT", "--", "compass/docs/task-reports"))
-paths.update(git_lines("diff", "--name-only", "--diff-filter=AMRT", "--", "compass/docs/task-reports"))
-paths.update(git_lines("ls-files", "--others", "--exclude-standard", "--", "compass/docs/task-reports"))
+for git_report_arg in git_report_args:
+    if initial_head:
+        paths.update(git_lines("diff", "--name-only", "--diff-filter=AMRT", initial_head, "--", git_report_arg))
+    paths.update(git_lines("diff", "--cached", "--name-only", "--diff-filter=AMRT", "--", git_report_arg))
+    paths.update(git_lines("diff", "--name-only", "--diff-filter=AMRT", "--", git_report_arg))
+    paths.update(git_lines("ls-files", "--others", "--exclude-standard", "--", git_report_arg))
 
-for rel in sorted(paths):
+canonical_paths: set[str] = set()
+for rel in paths:
     if not rel.endswith(".md"):
         continue
     path = root / rel
-    if path.is_file():
-        print(rel)
+    if not path.is_file():
+        continue
+    resolved = path.resolve()
+    if not any(report_root == resolved or resolved.is_relative_to(report_root) for report_root in report_roots):
+        continue
+    if root == resolved or resolved.is_relative_to(root):
+        canonical_paths.add(resolved.relative_to(root).as_posix())
+
+for rel in sorted(canonical_paths):
+    print(rel)
 PY
 }
 

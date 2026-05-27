@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "receipt_id": "pre-release-blocking-debt-completion",
+  "status": "completed",
+  "task_id": "pre-release-blocking-debt-completion",
+  "purpose": "Track the two user-upgraded release-blocking historical debts: asset historical debt governance and full long-term memory capability completion.",
+  "claim_boundary": {
+    "formal_release_performed": false,
+    "license_or_registry_changed": false,
+    "secrets_read": false,
+    "unrecoverable_deletion_performed": false,
+    "allowed_claim": "本轮可以完成发布前阻塞债务的可验证工程治理，但不能声明已经执行正式发布、启用真实 RAG/GraphRAG 后端，或完成需要 Norven 授权的不可恢复删除。"
+  },
+  "asset_historical_debt": {
+    "status": "implemented-with-human-destructive-boundaries",
+    "compatibility_shims": [
+      {
+        "path": "compass/docs",
+        "canonical_target": "../assets/docs",
+        "disposition": "preserve-with-proof",
+        "delete_requires_human_decision": true
+      },
+      {
+        "path": "compass/knowledge",
+        "canonical_target": "../assets/knowledge",
+        "disposition": "preserve-with-proof",
+        "delete_requires_human_decision": true
+      },
+      {
+        "path": "references",
+        "canonical_target": "assets/references",
+        "disposition": "preserve-with-proof",
+        "delete_requires_human_decision": true
+      },
+      {
+        "path": "prism/reports",
+        "canonical_target": "../assets/evidence/prism-reports",
+        "disposition": "preserve-with-proof",
+        "delete_requires_human_decision": true
+      },
+      {
+        "path": "private-archive",
+        "canonical_target": "assets/private-archive",
+        "disposition": "preserve-with-proof",
+        "delete_requires_human_decision": true
+      }
+    ],
+    "prism_runs": {
+      "disposition": "governed-local-evidence-layer",
+      "summary_command": "bash prism/tools/prism-runs-lifecycle.sh summary",
+      "check_command": "bash prism/tools/prism-runs-lifecycle.sh check",
+      "formal_run_policy": "preserve",
+      "named_local_policy": "review-and-prune-only-when-lifecycle-eligible",
+      "acceptance_fixture_policy": "prune-only-when-cleanup-eligible",
+      "bulk_delete_allowed": false
+    },
+    "remaining_root_groups": [
+      {
+        "id": "internal-control-plane",
+        "roots": ["compass", "contracts", "assets/references"],
+        "disposition": "preserve-with-proof",
+        "reason": "Source-level control plane and public/internal contract split require a separate runtime profile decision."
+      },
+      {
+        "id": "internal-layer-a",
+        "roots": ["loom"],
+        "disposition": "preserve-with-proof",
+        "reason": "Layer A compatibility is a product boundary decision and cannot be silently retired."
+      },
+      {
+        "id": "workspace-state",
+        "roots": [".dev-task.md", ".env", ".tmp", "prompt.txt", "cli_console.md"],
+        "disposition": "workspace-local-excluded-nonhistorical",
+        "reason": "Live local state and secrets must stay local/excluded rather than moved into public source."
+      }
+    ]
+  },
+  "long_term_memory_debt": {
+    "status": "implemented-controlled-local-product",
+    "full_llm_wiki_policy": "assets/references/full-llm-wiki-policy.json",
+    "full_llm_wiki_index": "assets/knowledge/llm-wiki-full/index.json",
+    "worker": "compass/tools/redcap-full-llm-wiki-worker.sh",
+    "rag_boundary": "assets/references/rag-graphrag-boundary-policy.json",
+    "real_rag_backend_enabled": false,
+    "real_graphrag_backend_enabled": false,
+    "activation_requires_separate_task": true
+  },
+  "prism_scope_review": {
+    "run_id": "20260526-pre-release-blocking-debt-scope-review-v2",
+    "roles": ["kimi_reviewer", "claude_risk"],
+    "blockers": []
+  },
+  "prism_final_acceptance": {
+    "run_id": "20260526-pre-release-blocking-debt-final-acceptance",
+    "roles": ["claude_acceptance", "codex_acceptance"],
+    "blockers": [],
+    "provider_notes": [
+      "Kimi final attempt was excluded from quorum because it crossed the review-only boundary and was terminated.",
+      "Gemini final attempt was unavailable due account/location eligibility.",
+      "Codex CLI was used as last-resort read-only fallback after Kimi and Gemini were unavailable for clean quorum."
+    ]
+  },
+  "required_checks": [
+    "bash compass/tools/redcap-pre-release-blocking-debt-check.sh",
+    "bash compass/tools/redcap-full-llm-wiki-check.sh",
+    "bash compass/tools/redcap-full-llm-wiki-worker.sh --check",
+    "bash compass/tools/redcap-rag-graphrag-boundary-check.sh",
+    "bash prism/tools/prism-runs-lifecycle.sh check",
+    "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
+    "bash compass/tools/redcap-package-publish-safety-check.sh",
+    "bash compass/tools/redcap-knowledge-gateway.sh check",
+    "bash compass/tools/redcap-multi-session-acceptance.sh all",
+    "bash compass/tools/redcap-spec-check.sh .",
+    "bash compass/tools/redcap-diagnose.sh .dev-task.md",
+    "bash compass/tools/redcap-prism-acceptance-check.sh --task-file .dev-task.md"
+  ]
+}

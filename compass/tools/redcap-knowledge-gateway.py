@@ -71,6 +71,7 @@ def validate_policy(root: Path, policy: dict[str, Any]) -> list[dict[str, Any]]:
     expected = [
         "active-private-index",
         "llm-wiki-lite",
+        "llm-wiki-full",
         "public-arsenal-catalog",
         "private-cold-archive",
         "raw-evidence",
@@ -93,7 +94,7 @@ def validate_policy(root: Path, policy: dict[str, Any]) -> list[dict[str, Any]]:
             if not first_path.exists():
                 fail(f"{route_id}: first_read does not exist: {first_read}")
     if actual != expected:
-        fail("route_order must remain active -> wiki-lite -> public catalog -> cold archive -> raw evidence")
+        fail("route_order must remain active -> wiki-lite -> full wiki -> public catalog -> cold archive -> raw evidence")
     if sum(1 for item in routes if item.get("allowed_default") is True) != 1:
         fail("only the active private index may be default-readable")
     if routes[0].get("allowed_default") is not True:

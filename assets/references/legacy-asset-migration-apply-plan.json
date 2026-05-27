@@ -230,7 +230,7 @@
       "operation": "blocked-translate",
       "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
       "item_scope": "file-level",
-      "actual_file_count": 189,
+      "actual_file_count": 196,
       "manifest_item_count": 189,
       "reason": "Knowledge files are active runtime guidance; cold material can move only after index preserves progressive disclosure and hot lessons remain available.",
       "catalog_update_plan": [
