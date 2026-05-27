@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 32,
-    "size_bytes": 372849,
+    "size_bytes": 372841,
     "lines": 7613,
-    "chars": 222005,
+    "chars": 221997,
     "rough_token_pressure": {
-      "low": 55501,
-      "high": 111002
+      "low": 55499,
+      "high": 110998
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 16,
-        "size_bytes": 149619,
+        "size_bytes": 149611,
         "lines": 2693,
-        "chars": 87433,
+        "chars": 87425,
         "rough_token_pressure": {
-          "low": 21858,
-          "high": 43716
+          "low": 21856,
+          "high": 43712
         }
       }
     },
@@ -630,9 +630,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9571,
+      "size_bytes": 9567,
       "lines": 164,
-      "chars": 5375,
+      "chars": 5371,
       "summary": "当前已完成：正式发布外最终清账已经完成；实现、专项回归、完整 `spec-check`、`diagnose`、棱镜独立验收和 closeout receipt 均已通过。 / 上一步完成的是：Kimi 完成长文/任务树主审，Claude Code 完成工程风险复核；两边都给出可收口结论，且无阻塞项。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -658,9 +658,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9849,
+      "size_bytes": 9845,
       "lines": 152,
-      "chars": 5579,
+      "chars": 5575,
       "summary": "当前已完成：棱镜范围评审已完成；资产历史债务已落成机器可检 receipt；full LLM-wiki 已从 lite/deferred 升级为受控本地产品层，包含索引、队列、候选 worker、receipt 和 RAG/GraphRAG 禁用边界。 / 上一步完成的是：上一条“正式发布外最终清账”任务已生成 receipt，工作区干净；本轮从新的阻塞债务任务开始。",
       "status_basis": "filename_recency_only",
       "summary_points": {
