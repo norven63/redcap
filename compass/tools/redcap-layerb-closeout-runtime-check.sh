@@ -14,6 +14,7 @@ RUNTIME_SCRIPT="$SCRIPT_DIR/redcap-layerb-closeout-runtime.sh"
 ROOT_ENTRY="$REDCAP_ROOT/closeout-cap.sh"
 PRISM_ACCEPTANCE_SCRIPT="$SCRIPT_DIR/redcap-prism-acceptance-check.sh"
 PRISM_ACCEPTANCE_BIND_SCRIPT="$SCRIPT_DIR/redcap-prism-acceptance-bind.sh"
+COMPLETION_SEMANTICS_SCRIPT="$SCRIPT_DIR/redcap-completion-semantics-check.sh"
 EVOLUTION_CANDIDATE_SCRIPT="$SCRIPT_DIR/redcap-evolution-candidate-check.sh"
 EVOLUTION_HARVEST_SCRIPT="$SCRIPT_DIR/redcap-evolution-harvest-check.sh"
 CHANGE_INTAKE_SCRIPT="$SCRIPT_DIR/redcap-change-intake-check.sh"
@@ -35,6 +36,11 @@ CHANGE_INTAKE_SCRIPT="$SCRIPT_DIR/redcap-change-intake-check.sh"
 
 [[ -x "$PRISM_ACCEPTANCE_BIND_SCRIPT" ]] || {
     echo "[redcap-layerb-closeout-runtime-check] missing prism acceptance bind script: $PRISM_ACCEPTANCE_BIND_SCRIPT" >&2
+    exit 1
+}
+
+[[ -x "$COMPLETION_SEMANTICS_SCRIPT" ]] || {
+    echo "[redcap-layerb-closeout-runtime-check] missing completion semantics script: $COMPLETION_SEMANTICS_SCRIPT" >&2
     exit 1
 }
 
@@ -65,6 +71,7 @@ PY
 bash "$RUNTIME_SCRIPT" sync-promises --task-file "$TASK_FILE" >/dev/null
 bash "$RUNTIME_SCRIPT" status --task-file "$TASK_FILE" >/dev/null
 bash "$PRISM_ACCEPTANCE_SCRIPT" --task-file "$TASK_FILE" >/dev/null || true
+bash "$COMPLETION_SEMANTICS_SCRIPT" --task-file "$TASK_FILE" >/dev/null
 bash "$EVOLUTION_CANDIDATE_SCRIPT" >/dev/null
 bash "$EVOLUTION_HARVEST_SCRIPT" "$TASK_FILE" >/dev/null
 bash "$CHANGE_INTAKE_SCRIPT" "$TASK_FILE" --mode closeout >/dev/null

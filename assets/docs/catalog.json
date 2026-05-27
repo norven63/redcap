@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 32,
-    "size_bytes": 372841,
-    "lines": 7613,
-    "chars": 221997,
+    "file_count": 33,
+    "size_bytes": 381771,
+    "lines": 7764,
+    "chars": 226941,
     "rough_token_pressure": {
-      "low": 55499,
-      "high": 110998
+      "low": 56735,
+      "high": 113470
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 16,
-        "size_bytes": 149611,
-        "lines": 2693,
-        "chars": 87425,
+        "file_count": 17,
+        "size_bytes": 158541,
+        "lines": 2844,
+        "chars": 92369,
         "rough_token_pressure": {
-          "low": 21856,
-          "high": 43712
+          "low": 23092,
+          "high": 46184
         }
       }
     },
@@ -107,7 +107,7 @@
         "path": "compass/docs/task-reports/2026-05-24-root-asset-ia-physical-convergence.md",
         "chars": 7281,
         "lines": 192,
-        "read_policy": "read-catalog-summary-first-then-open-if-current-anchor"
+        "read_policy": "read-catalog-summary-by-default"
       }
     ]
   },
@@ -534,7 +534,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-24 P4-23 后下一安全切片选择",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 5597,
       "lines": 106,
@@ -599,29 +599,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：根级项目资产信息架构物理收敛",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12995,
       "lines": 192,
       "chars": 7281,
       "summary": "当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置；活跃首读入口也已经改为 `assets/` 优先。 / 详情：docs、knowledge、references、formal Prism reports、private archive 的真实内容已迁移到 `assets/` 下；host 入口、runtime 源码、工具源码、包控制文件、本地状态和 Prism raw runs 没有迁移。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RedCap 的长期项目资产已经收敛到统一的 `assets/` 父级，旧的分散路径保留为兼容入口，不再作为真实内容主位置；活跃首读入口也已经改为 `assets/` 优先。",
-          "详情：docs、knowledge、references、formal Prism reports、private archive 的真实内容已迁移到 `assets/` 下；host 入口、runtime 源码、工具源码、包控制文件、本地状态和 Prism raw runs 没有迁移。"
-        ],
-        "previous_step": [
-          "上一步完成的是：修正迁移后的检查器口径，让结构检查、包面检查、索引检查能识别 `assets/` 是新的资产父级，而不是继续按旧根目录判断。"
-        ],
-        "next_step": [
-          "下一步计划做的是：当前父任务已生成 closeout receipt；接下来回到 RedCap 父任务线，继续清点正式发布之外的剩余事项。"
-        ],
-        "position": [
-          "整体计划脉络图是：历史目录坏味识别 -> 统一资产父级设计 -> 真实迁移与兼容入口 -> 首读入口去旧路径化 -> 检查器和索引同步 -> 棱镜评审与回归 -> closeout receipt。",
-          "当前所在位置：资产迁移、首读入口收敛、本地回归、包面验证、棱镜复验和 closeout receipt 均已通过。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-25-pre-release-non-publish-final-closure.md",
@@ -658,9 +642,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 9845,
-      "lines": 152,
-      "chars": 5575,
+      "size_bytes": 10682,
+      "lines": 160,
+      "chars": 6058,
       "summary": "当前已完成：棱镜范围评审已完成；资产历史债务已落成机器可检 receipt；full LLM-wiki 已从 lite/deferred 升级为受控本地产品层，包含索引、队列、候选 worker、receipt 和 RAG/GraphRAG 禁用边界。 / 上一步完成的是：上一条“正式发布外最终清账”任务已生成 receipt，工作区干净；本轮从新的阻塞债务任务开始。",
       "status_basis": "filename_recency_only",
       "summary_points": {
@@ -676,6 +660,34 @@
         "position": [
           "整体计划脉络图是：重锚发布前阻塞债务 -> 棱镜范围评审 -> 资产历史债务清理 -> full LLM-wiki/worker/RAG 边界补全 -> 全量回归 -> 最终棱镜验收 -> closeout receipt。",
           "当前所在位置：资产债务和长期记忆补全已实现，全量回归和最终棱镜验收已通过；closeout runtime 要求先提交干净工作树，再生成正式完工凭证。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-27-completion-semantics-hard-gate.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：完成语义硬门修复",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 8093,
+      "lines": 143,
+      "chars": 4461,
+      "summary": "当前已完成：完成语义硬门已实现；RedCap 现在会把“证明、保留、延期、禁用、需要人工决策”识别为非完成状态，不能再直接包装成“全部完成”。 / 上一步完成的是：完整回归与棱镜独立评审已通过；回归期间发现两个 acceptance 夹具漏接新硬门，已同步修复并重跑通过。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：完成语义硬门已实现；RedCap 现在会把“证明、保留、延期、禁用、需要人工决策”识别为非完成状态，不能再直接包装成“全部完成”。"
+        ],
+        "previous_step": [
+          "上一步完成的是：完整回归与棱镜独立评审已通过；回归期间发现两个 acceptance 夹具漏接新硬门，已同步修复并重跑通过。"
+        ],
+        "next_step": [
+          "下一步计划做的是：进入 closeout runtime 收口，生成本任务 receipt；本报告不宣称资产历史债务、full LLM-wiki 或正式发布已经完成。"
+        ],
+        "position": [
+          "整体计划脉络图是：定位 false-completion 根因 -> 新增完成语义政策 -> 接入总检和诊断 -> 纠偏旧报告 -> 增加负例回归 -> 独立评审 -> 完整回归 -> closeout。",
+          "当前所在位置：实现、棱镜评审和完整回归已完成，正在进入 receipt 收口。"
         ]
       }
     }

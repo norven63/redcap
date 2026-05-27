@@ -14,8 +14,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/redcap-architecture-smell-governance.json`
 - 人类说明：`references/backlogs/redcap-architecture-smell-governance.md`
-- 当前焦点：`RASG-025 Stop pre-release governance cleanup from spawning endless cleanup work`
-- 当前焦点说明：RASG-025 已完成：发布前治理清理不会再因普通报告、索引、receipt 或 Prism evidence 自动生成新清理任务。
+- 当前焦点：`RASG-026 Harden completion semantics against proof/defer false closure`
+- 当前焦点说明：RASG-026 已完成：完成判定防线已阻止证明、保留、延期、禁用或人工决策边界冒充 must-complete 任务完成，并已通过棱镜评审与完整回归。
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -31,6 +31,7 @@
 | Plan-only closure and Prism follow-up hardening | 已完成 | RASG-023 | Prevent design-only, plan-only, or route-only work from being treated as fully closed when a later physical apply or governance hardening task was explicitly required. |
 | Workflow latency and gate stratification | 已完成 | RASG-024 | Workflow gate stratification is implemented: low-risk report/index drift no longer automatically invalidates release-grade E2E, while release, package, validator, secret and destructive-migration work remains fail-closed. |
 | Pre-release freeze and artifact churn control | 已完成 | RASG-025 | Release-convergence cleanup has a hard boundary: normal evidence is archived or indexed, while only concrete first-release blockers may expand scope. |
+| Completion semantics hardening | 已完成 | RASG-026 | Completion claims now fail when must-complete work is satisfied only by proof, preserve, defer, disabled, proposal-only, or human-decision boundary language; closeout runtime now checks this before receipt generation. |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -60,6 +61,7 @@
 | RASG-023 Strengthen Prism and conclusion gates to catch plan-only closure follow-up gaps | Plan-only closure and Prism follow-up hardening | 已完成 | P1 | Prism prompts, conclusion policy, and closeout-facing validators require reviewers to check whether every deferred capability or future apply requirement has a durable task, backlog item, owner surface, or explicit no-fo |
 | RASG-024 Stratify workflow gates by task risk to reduce avoidable multi-hour task latency | Workflow latency and gate stratification | 已完成 | P1 | Risk-based validation matrix implemented and wired into spec-check, diagnose, progress meter, clean workspace E2E post-result drift handling, and acceptance regression. |
 | RASG-025 Stop pre-release governance cleanup from spawning endless cleanup work | Pre-release freeze and artifact churn control | 已完成 | P0 | Done: release-convergence cleanup now has a hard boundary that prevents normal reports, receipts, indexes and Prism evidence from automatically becoming fresh cleanup scope. |
+| RASG-026 Harden completion semantics against proof/defer false closure | Completion semantics hardening | 已完成 | P0 | Done: completion claims now fail when must-complete work is satisfied only by preserve, defer, disabled, proposal-only, or human-decision boundary language; spec-check, diagnose, closeout runtime, Prism review, and full acceptance have passed. |
 
 ### 术语对照
 | 术语 | 人话解释 |

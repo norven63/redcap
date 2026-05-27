@@ -119,6 +119,14 @@
     "items": [
       "RASG-025"
     ]
+  },
+  {
+    "id": "T11",
+    "title": "Completion semantics hardening",
+    "intent": "Prevent proof, defer, preserve, disabled-by-default, or human-decision boundaries from being counted as completion for must-complete work.",
+    "items": [
+      "RASG-026"
+    ]
   }
 ],
   "requirements": [
@@ -906,6 +914,42 @@
         "compass/CONTRIBUTING.core.md",
         "compass/tools/redcap-spec-check.sh"
       ]
+    },
+    {
+      "id": "RASG-026",
+      "title": "Harden completion semantics against proof/defer false closure",
+      "human_label": "RASG-026 完成判定防线：禁止证明、延期、保留冒充完成",
+      "priority": "P0-before-public-release",
+      "category": "completion-semantics-hardening",
+      "problem_source": "Norven pointed out that asset historical debt and long-term memory tasks had repeatedly been recorded, proven, or deferred instead of truly executed, while RedCap still reported them as done-like outcomes.",
+      "risk": "Without a hard completion-semantics gate, RedCap can keep producing evidence-rich reports and receipts that satisfy machinery but fail the user's actual must-complete intent.",
+      "desired_outcome": "Done means implemented and verified. Preserve-with-proof, deferred, disabled-by-default, implemented-proposal-only, or human-decision boundaries remain visible as non-completion states and cannot satisfy a must-complete closeout claim.",
+      "implementation_notes": [
+        "Add a machine-readable completion semantics policy.",
+        "Wire the policy into spec-check and diagnose.",
+        "Mark the previous pre-release blocking debt report as invalidated for full-completion claims rather than silently treating it as proof.",
+        "Add an acceptance regression where a must-complete checked line with preserve/defer/proof language fails."
+      ],
+      "acceptance": [
+        "The policy defines completion and non-completion states.",
+        "The checker rejects checked completion-standard lines that contain proof/defer/preserve/human-decision escape clauses.",
+        "The checker requires the previous false-completion report to carry a visible corrective marker.",
+        "Spec-check and diagnose execute the checker.",
+        "Acceptance includes a negative fixture for must-complete false closure."
+      ],
+      "status": "done",
+      "introduced_at": "2026-05-27",
+      "completed_at": "2026-05-27",
+      "evidence": [
+        "references/completion-semantics-policy.json",
+        "compass/tools/redcap-completion-semantics-check.sh",
+        "compass/tools/redcap-completion-semantics-check.py",
+        "compass/tools/redcap-spec-check.sh",
+        "compass/tools/redcap-diagnose.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "compass/CONTRIBUTING.core.md",
+        "assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
+      ]
     }
   ],
   "must_not_claim": [
@@ -916,9 +960,10 @@
     "Do not claim RASG-018 fixes the P1 issues it discovered; RASG-019, RASG-020, RASG-021, RASG-022, and RASG-023 each required separate follow-up work with independent receipts.",
     "Do not treat future full LLM-wiki/RAG/GraphRAG as enabled by this backlog.",
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
+    "Do not treat preserve-with-proof, deferred, disabled-by-default, implemented-proposal-only, or human-decision boundaries as completion for must-complete work.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "All currently registered RASG items are closed for the pre-release pass. New findings must pass the release-convergence freeze policy before they can expand active scope.",
+  "recommended_next_step": "All currently registered RASG items are closed for the pre-release pass, but any future completion claim must pass completion-semantics before it can count as done. New findings must pass the release-convergence freeze policy before they can expand active scope.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -1223,6 +1268,20 @@
           "summary": "Done: release-convergence cleanup now has a hard boundary that prevents normal reports, receipts, indexes and Prism evidence from automatically becoming fresh cleanup scope."
         }
       ]
+    },
+    {
+      "id": "T11",
+      "title": "Completion semantics hardening",
+      "items": [
+        {
+          "id": "RASG-026",
+          "title": "Harden completion semantics against proof/defer false closure",
+          "status": "done",
+          "priority": "P0",
+          "phase_id": "T11",
+          "summary": "Done: completion claims now fail when must-complete work is satisfied only by preserve, defer, disabled, proposal-only, or human-decision boundary language; spec-check, diagnose, closeout runtime, Prism review, and full acceptance have passed."
+        }
+      ]
     }
   ],
   "execution_order": [
@@ -1338,10 +1397,19 @@
       "item_ids": [
         "RASG-025"
       ]
+    },
+    {
+      "id": "T11",
+      "title": "Completion semantics hardening",
+      "status": "done",
+      "summary": "Completion claims now fail when must-complete work is satisfied only by proof, preserve, defer, disabled, proposal-only, or human-decision boundary language; closeout runtime now checks this before receipt generation.",
+      "item_ids": [
+        "RASG-026"
+      ]
     }
   ],
   "current_focus": {
-    "item_id": "RASG-025",
-    "summary": "RASG-025 已完成：发布前治理清理不会再因普通报告、索引、receipt 或 Prism evidence 自动生成新清理任务。"
+    "item_id": "RASG-026",
+    "summary": "RASG-026 已完成：完成判定防线已阻止证明、保留、延期、禁用或人工决策边界冒充 must-complete 任务完成，并已通过棱镜评审与完整回归。"
   }
 }

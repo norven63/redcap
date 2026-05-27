@@ -24,9 +24,9 @@ EXPECTED_STATUS = "contract-mirror-preflight-only-no-files-copied-moved-or-delet
 EXPECTED_COUNTS = {
     "runtime-public-support": 47,
     "public-contract": 11,
-    "internal-contract": 55,
+    "internal-contract": 56,
     "human-handoff": 1,
-    "internal-control-plane": 116,
+    "internal-control-plane": 118,
 }
 EXPECTED_PREFIXES = {
     "runtime-public-support": "runtime/redcap-core/",

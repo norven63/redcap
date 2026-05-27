@@ -60,13 +60,13 @@
     ]
   },
   "package_candidate_snapshot": {
-        "candidate_count": 310,
-        "control_plane_candidate_count": 230,
-        "compass": 163,
-    "references": 67,
-        "compass_tools_shell": 97,
-        "compass_tools_python": 66,
-    "references_json": 64,
+        "candidate_count": 313,
+        "control_plane_candidate_count": 233,
+        "compass": 165,
+    "references": 68,
+        "compass_tools_shell": 98,
+        "compass_tools_python": 67,
+    "references_json": 65,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
   },
@@ -75,14 +75,14 @@
       {
         "path": "compass",
         "role": "maintainer-control-plane-tools",
-                "package_candidate_count": 163,
+                "package_candidate_count": 165,
         "current_contract": "Packaged for alpha readiness because root wrappers, revive/status/diagnose/closeout, release safety and validators still call these tools.",
         "future_target": "internal/control-plane/tools with stable runtime facades and compatibility aliases"
       },
       {
         "path": "references",
         "role": "policy-and-contract-truth-sources",
-        "package_candidate_count": 67,
+        "package_candidate_count": 68,
         "current_contract": "Packaged policy contracts used by runtime checks, release safety checks, file lookup, and human handoff documents.",
         "future_target": "contracts/public for end-user/runtime contracts, contracts/internal for maintainer-only release/governance contracts"
       }
@@ -261,13 +261,13 @@
       ]
     },
     "package_candidate_snapshot": {
-            "candidate_count": 310,
-            "control_plane_candidate_count": 230,
-            "compass": 163,
-      "references": 67,
-            "compass_tools_shell": 97,
-            "compass_tools_python": 66,
-      "references_json": 64,
+            "candidate_count": 313,
+            "control_plane_candidate_count": 233,
+            "compass": 165,
+      "references": 68,
+            "compass_tools_shell": 98,
+            "compass_tools_python": 67,
+      "references_json": 65,
       "references_markdown": 3,
       "source": "redcap-runtime-package-manifest.sh --output <temp>"
     },
@@ -299,11 +299,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 230,
+      "total_entries": 233,
       "by_target_layer": {
         "human-handoff": 1,
-        "internal-contract": 55,
-        "internal-control-plane": 116,
+        "internal-contract": 56,
+        "internal-control-plane": 118,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -334,6 +334,20 @@
         "source": "compass/tools/redcap-architecture-smell-governance-check.sh",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-architecture-smell-governance-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-completion-semantics-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-completion-semantics-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-completion-semantics-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-completion-semantics-check.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },
@@ -1454,6 +1468,13 @@
         "source": "references/cli-product-surface-policy.json",
         "target_layer": "public-contract",
         "target_path": "contracts/public/cli-product-surface-policy.json",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "references/completion-semantics-policy.json",
+        "target_layer": "internal-contract",
+        "target_path": "contracts/internal/completion-semantics-policy.json",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

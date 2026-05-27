@@ -32,10 +32,10 @@
     "release-blocker-until-resolved"
   ],
   "package_candidate_snapshot": {
-        "candidate_count": 310,
-        "compass": 163,
+        "candidate_count": 313,
+        "compass": 165,
     "references": 0,
-    "assets_references": 67,
+    "assets_references": 68,
     "prism": 10,
     "loom": 0,
     "workspace_state": 0,
@@ -52,7 +52,7 @@
       "disposition_id": "release-blocker-until-resolved",
       "is_release_blocker": true,
       "reason": "This group contains validators, control-plane policies, indexes and task truth sources. Project assets now live under assets/, and parts of compass/tools plus assets/references/*.json remain package-visible in the alpha readiness surface; that visibility is not a formal release-ready disposition.",
-            "package_candidate_count": 230,
+            "package_candidate_count": 233,
       "policy_references": [
         "references/root-ia-remaining-root-groups-deferral.json#internal-control-plane",
         "references/historical-asset-physical-cleanup-release-gate.json",

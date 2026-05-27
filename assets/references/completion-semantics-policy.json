@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "policy_id": "completion-semantics-policy",
+  "title": "RedCap completion semantics hard gate",
+  "status": "active",
+  "human_summary": "完成只能表示真实实施已经完成；证明、保留、延期、禁用、等待人工决策和不阻塞说明都不能计入完成。",
+  "problem": {
+    "symptom": "历史资产债务和长期记忆任务多次被记录、证明、形成边界或写入 roadmap 后，就在报告里被表述为已经完成。",
+    "root_cause": "RedCap 之前检查了任务是否有证据、是否有 receipt、是否有 follow-up，却没有单独校验“完成”这个词是否被 preserve/defer/proof/blocked 语义偷换。",
+    "risk": "Agent 可以生成看似完整的报告和 receipt，但实际仍没有完成用户要求的债务清理或能力建设，迫使 Norven 反复人工盘问。"
+  },
+  "completion_states": {
+    "done": {
+      "meaning": "真实实施已完成，并通过对应验收。",
+      "can_count_as_complete": true
+    },
+    "implemented-controlled-local-product": {
+      "meaning": "本轮目标明确要求本地受控产品层，且已实现、验收、边界清楚。",
+      "can_count_as_complete": true,
+      "requires_task_goal_match": true
+    },
+    "preserve-with-proof": {
+      "meaning": "保留并证明原因；这是治理边界，不是执行完成。",
+      "can_count_as_complete": false
+    },
+    "governed-local-evidence-layer": {
+      "meaning": "证明本地证据层受控；这是保留策略，不是清理完成。",
+      "can_count_as_complete": false
+    },
+    "implemented-proposal-only": {
+      "meaning": "只实现候选/提案/worker 骨架，不能替代完整产品能力。",
+      "can_count_as_complete": false
+    },
+    "disabled-by-default-controlled-boundary": {
+      "meaning": "禁用并加边界，不能冒充后端能力已启用或已完成。",
+      "can_count_as_complete": false
+    },
+    "blocked-by-human-destructive-decision": {
+      "meaning": "需要人工批准破坏性动作；这是阻塞，不是完成。",
+      "can_count_as_complete": false
+    },
+    "deferred": {
+      "meaning": "延期，不得计入当前任务完成。",
+      "can_count_as_complete": false
+    }
+  },
+  "forbidden_escape_terms": [
+    "preserve-with-proof",
+    "governed-local-evidence-layer",
+    "implemented-proposal-only",
+    "disabled-by-default-controlled-boundary",
+    "blocked-by-human-destructive-decision",
+    "formal-defer",
+    "release-scope",
+    "deferred",
+    "not-started",
+    "no-apply",
+    "plan-only",
+    "preflight-only",
+    "只做证明",
+    "仅剩需要 Norven",
+    "不阻塞本轮",
+    "真实后端启用需另立任务",
+    "需 Norven 明确授权"
+  ],
+  "completion_claim_terms": [
+    "已完成",
+    "完成",
+    "不阻塞",
+    "closeout receipt",
+    "receipt 已生成",
+    "正式完成",
+    "全部完成",
+    "所有任务"
+  ],
+  "allowed_non_completion_labels": [
+    "blocked-awaiting-human-decision",
+    "open-release-blocker",
+    "governed-not-executed",
+    "post-release-roadmap",
+    "not-complete"
+  ],
+  "current_task_gate": {
+    "enabled": true,
+    "rule": "A checked completion-standard line must not contain forbidden escape terms. If a must-complete item is blocked by human decision, it must stay unchecked or be labeled blocked-awaiting-human-decision rather than done."
+  },
+  "historical_corrective_audits": [
+    {
+      "task_id": "pre-release-blocking-debt-completion",
+      "report_path": "assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md",
+      "required_marker": "completion_semantics_status: invalidated-as-full-completion",
+      "reason": "This report contains preserve/defer/proof states that were previously counted as completion; it must remain visibly invalidated as a full-completion proof."
+    }
+  ],
+  "enforcement_surfaces": [
+    "compass/CONTRIBUTING.core.md",
+    "compass/tools/redcap-completion-semantics-check.sh",
+    "compass/tools/redcap-spec-check.sh",
+    "compass/tools/redcap-diagnose.sh",
+    "compass/tools/redcap-multi-session-acceptance.sh",
+    "references/backlogs/redcap-architecture-smell-governance.json",
+    "assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
+  ],
+  "related_requirements": [
+    "RASG-026"
+  ]
+}

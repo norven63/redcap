@@ -27,6 +27,8 @@
 | [`compass/tools/redcap-evolution-grade-check.py`](../compass/tools/redcap-evolution-grade-check.py) | assurance registry validator | 校验节点、路径、降级理由、remediation 是否完整 | Compass validator | 由 `.sh` 包装调用 |
 | [`references/pre-release-freeze-and-artifact-churn-policy.json`](../references/pre-release-freeze-and-artifact-churn-policy.json) | pre-release convergence policy | 首次发布收敛期的冻结边界：正常报告、receipt、索引和 Prism run 不能自动变成新的治理任务，新发现必须先分级 | Release governance | `bash compass/tools/redcap-pre-release-freeze-policy-check.sh` |
 | [`compass/tools/redcap-pre-release-freeze-policy-check.py`](../compass/tools/redcap-pre-release-freeze-policy-check.py) / [`compass/tools/redcap-pre-release-freeze-policy-check.sh`](../compass/tools/redcap-pre-release-freeze-policy-check.sh) | pre-release freeze validator | 校验冻结策略、分类车道、证据预算、RASG-025 登记和核心契约是否一致 | Release governance | `bash compass/tools/redcap-pre-release-freeze-policy-check.sh` |
+| [`references/completion-semantics-policy.json`](../references/completion-semantics-policy.json) | completion semantics policy | 定义什么才算真实完成；证明、保留、延期、禁用和人工决策边界不能计入完成 | Control plane assurance | `bash compass/tools/redcap-completion-semantics-check.sh --task-file .dev-task.md` |
+| [`compass/tools/redcap-completion-semantics-check.py`](../compass/tools/redcap-completion-semantics-check.py) / [`compass/tools/redcap-completion-semantics-check.sh`](../compass/tools/redcap-completion-semantics-check.sh) | completion semantics validator | 检查当前任务完成标准和历史纠偏报告，防止 must-complete 项用 preserve/defer/proof 结案 | Control plane assurance | `bash compass/tools/redcap-completion-semantics-check.sh --task-file .dev-task.md` |
 
 ## Runtime And Closeout
 

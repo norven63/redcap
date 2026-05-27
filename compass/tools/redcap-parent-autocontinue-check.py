@@ -134,6 +134,12 @@ def main() -> int:
         return 0
 
     if focus_id == backlog_item:
+        if all(str(item.get("status", "unknown")).strip() in DONE_STATUSES for item in items.values()):
+            print(
+                "PARENT_AUTOCONTINUE_OK "
+                f"state=all-children-closed completed={backlog_item} focus={focus_id} focus_status={focus_status}"
+            )
+            return 0
         print(
             "PARENT_AUTOCONTINUE_FAIL "
             f"state=current-focus-still-on-completed-child completed={backlog_item} focus_status={focus_status}"

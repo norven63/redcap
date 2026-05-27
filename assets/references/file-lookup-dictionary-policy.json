@@ -1489,6 +1489,27 @@
       "check": "bash compass/tools/redcap-intent-coverage-check.sh .dev-task.md"
     },
     {
+      "path": "references/completion-semantics-policy.json",
+      "section": "Control Plane Assurance",
+      "meaning": "policy defining which states can count as real completion and which proof/defer/blocker states cannot",
+      "owner": "Control plane assurance",
+      "check": "bash compass/tools/redcap-completion-semantics-check.sh --task-file .dev-task.md"
+    },
+    {
+      "path": "compass/tools/redcap-completion-semantics-check.sh",
+      "section": "Control Plane Assurance",
+      "meaning": "completion semantics shell entry",
+      "owner": "Compass validator",
+      "check": "bash compass/tools/redcap-completion-semantics-check.sh --task-file .dev-task.md"
+    },
+    {
+      "path": "compass/tools/redcap-completion-semantics-check.py",
+      "section": "Control Plane Assurance",
+      "meaning": "validator that rejects checked completion standards and historical reports that count preserve/defer/proof states as done",
+      "owner": "Compass validator",
+      "check": "bash compass/tools/redcap-completion-semantics-check.sh --task-file .dev-task.md"
+    },
+    {
       "path": "compass/tools/redcap-pm-gate-check.sh",
       "section": "Control Plane Assurance",
       "meaning": "PM Gate task-card validation and scope anchoring",

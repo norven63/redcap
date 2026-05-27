@@ -12,12 +12,12 @@
   },
   "source_truth": {
     "p4_24_route_path": "references/r1-next-safe-slice-after-internal-maintainer-facade-batch-2.json",
-  "p4_24_route_sha256": "2392ad34098b1c2bc9b48a27f29d47f5e211b39464c96f7d60bec4c9eba0ec9b",
+  "p4_24_route_sha256": "2554d60f260397b355866defda502712592722c4de5eba19c078dfbef5968b45",
     "control_plane_contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
-  "control_plane_contract_split_sha256": "41470135d2d9460dbcf19807acb6af3e26f11b3137f5f51c8b43cb3a4733b7ae",
+  "control_plane_contract_split_sha256": "03b7844bac813d17054dfdd0a30def31494967b76557dc0d24a411bf6ce12ef1",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
-  "control_plane_physical_preflight_sha256": "4cd74e37f18e2d712ac413e34e2b9c8e8959cb0ac5ff1912bbf6a7080bf9a629",
-  "source_entries_count": 230,
+  "control_plane_physical_preflight_sha256": "dcc890cb48a706598d59dd70bae0c713d368ee5c1a9d36874283b73ae25f55ff",
+  "source_entries_count": 233,
     "source_status": "dry-run-only-no-files-moved",
     "source_release_blocker_status": "still-blocking-release-until-future-physical-split-or-contract-resolution"
   },
@@ -75,7 +75,7 @@
   },
   "contract_classification": {
     "source": "references/r1-control-plane-contract-split-preflight.json#physical_split_dry_run_manifest.entries",
-    "total_entries": 230,
+    "total_entries": 233,
     "groups": [
       {
         "id": "runtime-public-support",
@@ -95,7 +95,7 @@
         "id": "internal-contract",
         "source_target_layer": "internal-contract",
         "future_target_prefix": "contracts/internal/",
-        "count": 55,
+        "count": 56,
         "contract_posture": "maintainer/internal governance and release-readiness contracts"
       },
       {
@@ -109,7 +109,7 @@
         "id": "internal-control-plane",
         "source_target_layer": "internal-control-plane",
         "future_target_prefix": "internal/control-plane/",
-        "count": 116,
+        "count": 118,
         "contract_posture": "maintainer-only control-plane tools; not stable end-user CLI API"
       }
     ],

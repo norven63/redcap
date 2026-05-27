@@ -13,11 +13,11 @@
   },
   "source_truth": {
     "p4_26_route_path": "references/r1-next-safe-slice-after-control-plane-contract-mirror-preflight.json",
-  "p4_26_route_sha256": "a54b89ed872b1d601fe2384c4fe17916b4014f1e8ec28c84e547fef79e10e799",
+  "p4_26_route_sha256": "0a7f7c40ba8ffa41856f174e2be666b89d3f9b2ca11e03e79904b0e87a8fd382",
     "p4_25_manifest_path": "references/r1-control-plane-public-internal-contract-mirror-preflight.json",
-  "p4_25_manifest_sha256": "1af5c0f11553eeb821662cd204b5af2db7ddb00836d3a6abb0100e6660f5b03e",
+  "p4_25_manifest_sha256": "8e8ce68b58fa188bd9191384b2cd6c59007abc6cbfe258d58ef381797fc29200",
     "contract_split_path": "references/r1-control-plane-contract-split-preflight.json",
-  "contract_split_sha256": "41470135d2d9460dbcf19807acb6af3e26f11b3137f5f51c8b43cb3a4733b7ae"
+  "contract_split_sha256": "03b7844bac813d17054dfdd0a30def31494967b76557dc0d24a411bf6ce12ef1"
   },
   "subset_policy": {
     "source_groups_allowed": [

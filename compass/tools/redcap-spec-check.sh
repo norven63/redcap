@@ -1224,6 +1224,22 @@ if ! bash "$PRE_RELEASE_FREEZE_POLICY_CHECK" >/dev/null; then
     exit 1
 fi
 
+COMPLETION_SEMANTICS_CHECK="$REDCAP_ROOT/compass/tools/redcap-completion-semantics-check.sh"
+if [[ ! -f "$COMPLETION_SEMANTICS_CHECK" ]]; then
+    echo "[redcap-spec-check] completion semantics check missing" >&2
+    exit 1
+fi
+completion_semantics_args=()
+if [[ -f "$REDCAP_ROOT/.dev-task.md" ]]; then
+    completion_semantics_args+=(--task-file "$REDCAP_ROOT/.dev-task.md")
+else
+    completion_semantics_args+=(--skip-task-file)
+fi
+if ! bash "$COMPLETION_SEMANTICS_CHECK" "${completion_semantics_args[@]}" >/dev/null; then
+    echo "[redcap-spec-check] completion semantics check failed" >&2
+    exit 1
+fi
+
 CONCLUSION_PRISM_CHECK="$REDCAP_ROOT/compass/tools/redcap-conclusion-prism-check.sh"
 if [[ ! -f "$CONCLUSION_PRISM_CHECK" ]]; then
     echo "[redcap-spec-check] conclusion Prism check missing" >&2

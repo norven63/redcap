@@ -6,6 +6,14 @@
 
 ---
 
+## 完成语义纠偏（2026-05-27）
+
+completion_semantics_status: invalidated-as-full-completion
+
+这份报告不能作为全部完成证据。它仍然保留为当时工作的证据链，但其中把 `preserve-with-proof`、`governed-local-evidence-layer`、`implemented-proposal-only`、`disabled-by-default-controlled-boundary` 和“需要 Norven 明确授权”等边界写成“不阻塞本轮”的口径，已经被新的 completion semantics 硬门判定为 false-completion 风险。
+
+人类可读结论：这份报告只能证明“当时做过治理、证明和边界划分”，不能证明“资产历史债务和长期记忆任务已经按 Norven 后续要求全部真实执行完成”。后续判断必须以 `completion-semantics-policy`、当前任务账本、真实执行结果和新的 closeout receipt 为准。
+
 ## 零、先看懂当前局面
 
 ### 0.1 当前已完成

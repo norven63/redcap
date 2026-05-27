@@ -221,6 +221,7 @@ usage:
   bash compass/tools/redcap-multi-session-acceptance.sh formal-release-readiness-plan-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-product-architecture-check
   bash compass/tools/redcap-multi-session-acceptance.sh pre-release-structure-task-tree-check
+  bash compass/tools/redcap-multi-session-acceptance.sh completion-semantics-check
   bash compass/tools/redcap-multi-session-acceptance.sh runtime-workspace-boundary-check
   bash compass/tools/redcap-multi-session-acceptance.sh cli-product-surface-check
   bash compass/tools/redcap-multi-session-acceptance.sh clean-workspace-e2e-check
@@ -12845,7 +12846,7 @@ PY
 }
 
 run_parent_autocontinue_check_case() {
-    local case_dir backlog task_file output active_output done_output done_status blocked_output missing_output missing_status
+    local case_dir backlog task_file output active_output done_output done_status all_done_output blocked_output missing_output missing_status
 
     log "case: parent-autocontinue-check"
 
@@ -12923,6 +12924,18 @@ PY
     [[ "$done_status" -ne 0 ]] || fail "parent autocontinue should reject completed child still selected as current_focus"
     assert_string_contains "$done_output" "PARENT_AUTOCONTINUE_FAIL"
     assert_string_contains "$done_output" "state=current-focus-still-on-completed-child"
+
+    python3 - "$backlog" <<'PY'
+import json
+import pathlib
+import sys
+path = pathlib.Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8"))
+payload["groups"][0]["items"][1]["status"] = "done"
+path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    all_done_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-parent-autocontinue-check.sh" "$task_file")"
+    assert_string_contains "$all_done_output" "state=all-children-closed"
 
     python3 - "$backlog" <<'PY'
 import json
@@ -15223,6 +15236,69 @@ run_pre_release_structure_task_tree_check_case() {
     assert_string_contains "$output" "PRE_RELEASE_STRUCTURE_TASK_TREE_OK"
 }
 
+run_completion_semantics_check_case() {
+    local output bad_task bad_policy bad_report stale_output status
+
+    log "case: completion-semantics-check"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-completion-semantics-check.sh" --task-file "$REDCAP_ROOT/.dev-task.md")"
+    assert_string_contains "$output" "COMPLETION_SEMANTICS_OK"
+    assert_string_contains "$output" "historical_corrective_audits=1"
+
+    bad_task="$ACCEPT_ROOT/completion-semantics-bad-task.md"
+    cat >"$bad_task" <<'EOF'
+# 当前任务：completion semantics bad fixture
+
+## 控制面元数据（机器校验）
+task_id: bad-completion-semantics
+
+## 完成标准
+
+- [x] 资产历史债务完成，或仅剩需要 Norven 明确授权的不可恢复删除边界。
+EOF
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-completion-semantics-check.sh" --task-file "$bad_task" 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "completion semantics should reject checked escape completion"
+    assert_string_contains "$stale_output" "checked completion standards contain non-completion escape clauses"
+
+    bad_policy="$ACCEPT_ROOT/completion-semantics-bad-policy.json"
+    bad_report="$ACCEPT_ROOT/completion-semantics-bad-report.md"
+    cat >"$bad_report" <<'EOF'
+# Bad report
+
+| 事项 | 当前裁决 | 是否阻塞本轮 |
+|---|---|---|
+| 旧兼容入口 | preserve-with-proof | 不阻塞本轮 |
+
+结论：已完成。
+EOF
+    python3 - "$REDCAP_ROOT/references/completion-semantics-policy.json" "$bad_policy" "$bad_report" <<'PY'
+import json
+import pathlib
+import sys
+
+src, dst, report = map(pathlib.Path, sys.argv[1:4])
+payload = json.loads(src.read_text(encoding="utf-8"))
+payload["historical_corrective_audits"] = [
+    {
+        "task_id": "acceptance-bad-completion-report",
+        "report_path": str(report),
+        "required_marker": "completion_semantics_status: invalidated-as-full-completion",
+        "reason": "negative fixture"
+    }
+]
+dst.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+    set +e
+    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-completion-semantics-check.sh" --policy "$bad_policy" --skip-task-file 2>&1)"
+    status=$?
+    set -e
+    [[ "$status" -ne 0 ]] || fail "completion semantics should reject bad historical report"
+    assert_string_contains "$stale_output" "lacks corrective marker"
+}
+
 run_runtime_workspace_boundary_check_case() {
     local output
 
@@ -15639,7 +15715,7 @@ run_spec_check_propagates_control_gate_failures_case() {
 
     log "case: spec-check-propagates-control-gate-failures"
 
-    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell workflow-gate-stratification progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-prism-report-archive-copy-first-preflight r1-prism-report-archive-copy-first-plan r1-prism-report-archive-apply-readiness r1-prism-report-archive-churn-freeze-guard r1-control-plane-physical-apply-preflight r1-control-plane-runtime-public-support-copy-first-apply r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface pre-release-freeze-policy prism-provider-policy prism-degradation conclusion-prism; do
+    for failing_gate in docs-catalog docs-retention execution-guarantee knowledge-index overlay-governance state-machine token-risk architecture-smell workflow-gate-stratification progress-meter reference-asset-lifecycle layer-boundary contributing-ia review-tracks hook-contract runtime-helper cli-console revival information-architecture redcap-forge public-arsenal-claim-boundary arsenal-version public-distillation-preflight agent-reading-absorption llm-wiki-asset-stratification llm-wiki-lite knowledge-gateway cold-archive-inventory full-llm-wiki-roadmap user-agent-identity feishu-inbox feishu-notification-policy human-communication human-product-surface package-publish-safety runtime-package public-package-surface runtime-contract-surface release-e2e-matrix formal-release-r1-root-group-disposition r1-control-plane-contract-split r1-prism-evidence-retention-split r1-prism-evidence-retention-apply-preflight r1-prism-package-visible-support-copy-first-apply r1-prism-report-archive-copy-first-preflight r1-prism-report-archive-copy-first-plan r1-prism-report-archive-apply-readiness r1-prism-report-archive-churn-freeze-guard r1-control-plane-physical-apply-preflight r1-control-plane-runtime-public-support-copy-first-apply r1-layera-product-boundary formal-release-readiness-plan pre-release-product-architecture pre-release-structure-task-tree midcourse-architecture runtime-workspace-boundary cli-product-surface pre-release-freeze-policy prism-provider-policy prism-degradation completion-semantics conclusion-prism; do
         repo="$ACCEPT_ROOT/spec-check-control-gate-fixture-$failing_gate"
         create_spec_registry_fixture "$repo"
         mkdir -p "$repo/compass/tools" "$repo/compass/docs"
@@ -16012,6 +16088,7 @@ redcap-change-intake-check.sh|change-intake|fixture change intake failure
 redcap-workflow-gate-stratification-check.sh|workflow-gate-stratification|fixture workflow gate stratification failure
 redcap-prism-provider-policy-check.sh|prism-provider-policy|fixture Prism provider policy failure
 redcap-prism-degradation-check.sh|prism-degradation|fixture Prism degradation failure
+redcap-completion-semantics-check.sh|completion-semantics|fixture completion semantics failure
 redcap-conclusion-prism-check.sh|conclusion-prism|fixture conclusion Prism failure
 EOF
 
@@ -16128,6 +16205,7 @@ EOF
             formal-release-readiness-plan) expected_message="formal release readiness plan check failed" ;;
             change-intake) expected_message="change intake check failed" ;;
             pre-release-freeze-policy) expected_message="pre-release freeze policy check failed" ;;
+            completion-semantics) expected_message="completion semantics check failed" ;;
             conclusion-prism) expected_message="conclusion Prism check failed" ;;
         esac
 
@@ -16252,6 +16330,7 @@ for rel in [
     "compass/tools/redcap-cli-product-surface-check.sh",
     "compass/tools/redcap-prism-provider-policy-check.sh",
     "compass/tools/redcap-prism-degradation-check.sh",
+    "compass/tools/redcap-completion-semantics-check.sh",
     "compass/tools/redcap-conclusion-prism-check.sh",
 ]:
     script_path = dst / rel
@@ -17182,6 +17261,7 @@ run_all_cases() {
     run_formal_release_readiness_plan_check_case
     run_pre_release_product_architecture_check_case
     run_pre_release_structure_task_tree_check_case
+    run_completion_semantics_check_case
     run_runtime_workspace_boundary_check_case
     run_cli_product_surface_check_case
     run_clean_workspace_e2e_check_case
@@ -17784,6 +17864,9 @@ case "$COMMAND" in
         ;;
     pre-release-structure-task-tree-check)
         run_pre_release_structure_task_tree_check_case
+        ;;
+    completion-semantics-check)
+        run_completion_semantics_check_case
         ;;
     runtime-workspace-boundary-check)
         run_runtime_workspace_boundary_check_case

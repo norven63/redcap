@@ -15,7 +15,7 @@
     },
     {
       "path": "assets/references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 77933,
+      "bytes": 81962,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -33,7 +33,7 @@
     },
     {
       "path": "assets/references/file-lookup-dictionary-policy.json",
-      "bytes": 121632,
+      "bytes": 122725,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -42,7 +42,7 @@
     },
     {
       "path": "assets/references/file-lookup-dictionary.md",
-      "bytes": 127040,
+      "bytes": 127871,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -114,7 +114,7 @@
     },
     {
       "path": "assets/references/r1-control-plane-contract-split-preflight.json",
-      "bytes": 94056,
+      "bytes": 95065,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",

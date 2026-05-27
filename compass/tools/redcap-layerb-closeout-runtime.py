@@ -25,6 +25,9 @@ SESSION_END_SCRIPT = Path(os.environ.get("REDCAP_LAYERB_SESSION_END_SCRIPT", str
 NOTIFY_FORMAT_SCRIPT = Path(os.environ.get("REDCAP_NOTIFY_FORMAT_SCRIPT", str(SCRIPT_DIR / "redcap-notify-format.sh")))
 FEISHU_NOTIFIER_SCRIPT = Path(os.environ.get("REDCAP_FEISHU_NOTIFIER", str(SCRIPT_DIR / "feishu-notifier.py")))
 PRISM_ACCEPTANCE_SCRIPT = Path(os.environ.get("REDCAP_PRISM_ACCEPTANCE_SCRIPT", str(SCRIPT_DIR / "redcap-prism-acceptance-check.sh")))
+COMPLETION_SEMANTICS_SCRIPT = Path(
+    os.environ.get("REDCAP_COMPLETION_SEMANTICS_SCRIPT", str(SCRIPT_DIR / "redcap-completion-semantics-check.sh"))
+)
 EVOLUTION_CANDIDATE_SCRIPT = Path(
     os.environ.get("REDCAP_EVOLUTION_CANDIDATE_SCRIPT", str(SCRIPT_DIR / "redcap-evolution-candidate-check.sh"))
 )
@@ -628,6 +631,20 @@ def prism_acceptance(identity: TaskIdentity) -> dict[str, Any]:
     return payload
 
 
+def completion_semantics(identity: TaskIdentity) -> dict[str, Any]:
+    if not COMPLETION_SEMANTICS_SCRIPT.is_file():
+        return {"status": "fail", "detail": f"missing script: {COMPLETION_SEMANTICS_SCRIPT}", "exit_code": 127}
+    completed = run_shell(["bash", str(COMPLETION_SEMANTICS_SCRIPT), "--task-file", str(identity.task_file)])
+    detail = completed.stdout.strip() or completed.stderr.strip()
+    return {
+        "status": "pass" if completed.returncode == 0 else "fail",
+        "detail": detail or ("completion semantics passed" if completed.returncode == 0 else "completion semantics failed"),
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "exit_code": completed.returncode,
+    }
+
+
 def evolution_candidates_strict(identity: TaskIdentity) -> dict[str, Any]:
     if not EVOLUTION_CANDIDATE_SCRIPT.is_file():
         return {"status": "fail", "detail": f"missing script: {EVOLUTION_CANDIDATE_SCRIPT}", "exit_code": 127}
@@ -857,6 +874,7 @@ def command_status(args: argparse.Namespace) -> int:
     identity = load_identity(resolve_task_file(args.task_file))
     promise_info = sync_promises(identity)
     acceptance = prism_acceptance(identity)
+    completion = completion_semantics(identity)
     harvest = evolution_harvest(identity)
     evolution_candidates = evolution_candidates_strict(identity)
     receipt_path = closeout_receipt_path(identity)
@@ -875,6 +893,7 @@ def command_status(args: argparse.Namespace) -> int:
         "state": state,
         "attempts": attempts,
         "acceptance": acceptance,
+        "completion_semantics": completion,
         "evolution_harvest": harvest,
         "evolution_candidates": evolution_candidates,
     }
@@ -888,6 +907,7 @@ def command_complete(args: argparse.Namespace) -> int:
     harvest = evolution_harvest(identity)
     evolution_candidates = evolution_candidates_strict(identity)
     acceptance = prism_acceptance(identity)
+    completion = completion_semantics(identity)
     host = args.host
     baseline_head = resolve_baseline_head(args, identity)
     current = current_head(identity)
@@ -936,6 +956,49 @@ def command_complete(args: argparse.Namespace) -> int:
         )
         state = update_state(identity, status="blocked", last_result="promise-ledger-pending", audit_path=str(audit_path))
         emit({"status": "blocked", "reason": detail, "audit_path": str(audit_path), "state": state})
+        return 1
+
+    if completion.get("status") == "fail":
+        detail = f"completion semantics unresolved: {completion.get('detail', 'unknown reason')}"
+        bridge_write_pending(
+            identity,
+            host=host,
+            trigger="layerb-closeout-runtime-completion-semantics",
+            required_redlines="completion-semantics,closeout-runtime",
+            detail=detail,
+            artifact_path=report_rel,
+            baseline_head=baseline_head,
+            audited_head=current,
+        )
+        bridge_append_ledger(
+            identity,
+            phase="closeout-runtime",
+            status="blocked",
+            detail=detail,
+            host=host,
+            trigger="complete",
+            baseline_head=baseline_head,
+            current_head=current,
+            artifact_path=report_rel,
+        )
+        audit_path = append_audit(
+            identity,
+            "completion-semantics-blocked",
+            {
+                "detail": detail,
+                "completion_semantics": completion,
+            },
+        )
+        state = update_state(identity, status="blocked", last_result="completion-semantics-unresolved", audit_path=str(audit_path))
+        emit(
+            {
+                "status": "blocked",
+                "reason": detail,
+                "audit_path": str(audit_path),
+                "state": state,
+                "completion_semantics": completion,
+            }
+        )
         return 1
 
     if harvest.get("status") == "fail":
@@ -1284,6 +1347,7 @@ def command_audit_open(args: argparse.Namespace) -> int:
     harvest = evolution_harvest(identity)
     evolution_candidates = evolution_candidates_strict(identity)
     acceptance = prism_acceptance(identity)
+    completion = completion_semantics(identity)
     host = args.host
     baseline_head = resolve_baseline_head(args, identity)
     current = current_head(identity)
@@ -1297,6 +1361,8 @@ def command_audit_open(args: argparse.Namespace) -> int:
 
     if acceptance.get("status") == "fail":
         repairable, reason = (False, f"independent acceptance missing or failed: {acceptance.get('detail', 'unknown reason')}")
+    elif completion.get("status") == "fail":
+        repairable, reason = (False, f"completion semantics unresolved: {completion.get('detail', 'unknown reason')}")
     else:
         repairable, reason = can_repair_receipt(identity, promise_info, harvest, evolution_candidates)
     if repairable:
@@ -1342,6 +1408,8 @@ def command_audit_open(args: argparse.Namespace) -> int:
     detail = f"audit-open could not repair receipt: {reason}"
     if promise_info["pending"] > 0:
         required_redlines = "promise-ledger,closeout-runtime"
+    elif completion.get("status") == "fail":
+        required_redlines = "completion-semantics,closeout-runtime"
     elif harvest.get("status") == "fail":
         required_redlines = "evolution-harvest,closeout-runtime"
     elif evolution_candidates.get("status") == "fail":
