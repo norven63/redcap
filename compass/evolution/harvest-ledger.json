@@ -147,7 +147,7 @@
       "id": "HARVEST-2026-05-28-rasg-029-engineering-directory-final-convergence",
       "task_id": "rasg-029-engineering-directory-final-convergence",
       "source_report": "assets/docs/task-reports/2026-05-28-rasg-029-engineering-directory-final-convergence.md",
-      "source_digest": "sha256:c5284838bacbc7917375653742ef18b46b3ca140686a0e373157967fbc7d854c",
+      "source_digest": "sha256:af03c8b853ba904a007a90dabacd213dbb82fdb232d4e8629fbaf4f9abb0b409",
       "source_kind": "prism-verdict",
       "reasons": [
         "signal:anti-drift-or-mechanism-only:反空转",
@@ -178,7 +178,7 @@
         "assets/references/rasg-029-engineering-directory-final-convergence-manifest.json"
       ],
       "generated_by": "redcap-evolution-harvest-producer",
-      "generated_at": "2026-05-28T21:00:07Z"
+      "generated_at": "2026-05-28T21:13:58Z"
     }
   ]
 }
