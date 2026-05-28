@@ -118,6 +118,8 @@
 
 ## 七、经验沉淀
 
+### 7.3 Evolution Factory 候选处理
+
 无新增候选：本轮本身会成为 `RASG-027` 的早期真实 harvest 样本；在 `RASG-027` 生产线尚未实现前，不手写新的 Evolution candidate 冒充自动候选。reason=hotfix evidence preserved for later active harvest.
 
 ## 八、附录
