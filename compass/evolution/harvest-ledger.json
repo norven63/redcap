@@ -111,7 +111,7 @@
       "id": "HARVEST-2026-05-28-rasg-028-forge-batch-public-arsenal",
       "task_id": "rasg-028-forge-batch-public-arsenal",
       "source_report": "assets/docs/task-reports/2026-05-28-rasg-028-forge-batch-public-arsenal.md",
-      "source_digest": "sha256:976888972e2226414bf0fcc1993a33aa627f320af7c2057f46a86aaa85081669",
+      "source_digest": "sha256:fc6551e06babea8ddcecf46f05a338d69c0045e5dc81cf1837136c9bce64f116",
       "source_kind": "prism-verdict",
       "reasons": [
         "signal:anti-drift-or-mechanism-only:擦边球",
@@ -141,7 +141,7 @@
         "assets/docs/task-reports/2026-05-28-rasg-028-forge-batch-public-arsenal.md"
       ],
       "generated_by": "redcap-evolution-harvest-producer",
-      "generated_at": "2026-05-28T20:29:21Z"
+      "generated_at": "2026-05-28T20:35:22Z"
     }
   ]
 }
