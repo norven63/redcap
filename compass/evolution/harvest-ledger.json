@@ -40,7 +40,7 @@
       "id": "HARVEST-2026-05-28-rasg-027-active-evolution-harvest",
       "task_id": "rasg-027-active-evolution-harvest",
       "source_report": "assets/docs/task-reports/2026-05-28-rasg-027-active-evolution-harvest.md",
-      "source_digest": "sha256:056eec7ad0549bf8e54e9915c2e70bdce5d339b3a014e1c85b5ca2d1f0717ecb",
+      "source_digest": "sha256:eeacd9335920430a8e8d91f5ce04ec7cbe2524577d9247d1a88c16e41692a26c",
       "source_kind": "prism-verdict",
       "reasons": [
         "signal:closeout-or-receipt-blocker:closeout",
@@ -69,7 +69,7 @@
         "assets/docs/task-reports/2026-05-28-rasg-027-active-evolution-harvest.md"
       ],
       "generated_by": "redcap-evolution-harvest-producer",
-      "generated_at": "2026-05-28T18:21:56Z"
+      "generated_at": "2026-05-28T18:35:17Z"
     }
   ]
 }
