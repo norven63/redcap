@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "manifest_id": "rasg-028-forge-batch-public-arsenal",
+  "task_id": "rasg-028-forge-batch-public-arsenal",
+  "created_at": "2026-05-28T20:10:00Z",
+  "batch": {
+    "label": "second-reviewed-substantive-batch",
+    "source_class": "promoted-evolution-candidates",
+    "previous_public_entry_count": 4,
+    "new_public_entry_count": 4,
+    "resulting_public_entry_count": 8,
+    "external_repository": "https://gitee.com/norven63/redcap-arsenal.git",
+    "validated_head": "95f0783dd6d304c340d3209a2ba44da0f187cbdf"
+  },
+  "selected_sources": [
+    {
+      "id": "EVO-2026-04-25-001",
+      "public_entry": "users/Norven/20260528T200617Z-methodology-candidate-first-experience-sedimentation.md",
+      "reason": "Covers the inbound candidate-capture layer that prevents valuable lessons from being lost before public promotion."
+    },
+    {
+      "id": "EVO-2026-04-26-003",
+      "public_entry": "users/Norven/20260528T200617Z-lesson-ttl-roster-gate-for-multi-agent-dispatch.md",
+      "reason": "Covers provider availability gating for multi-agent dispatch, a distinct operational pattern not covered by existing entries."
+    },
+    {
+      "id": "EVO-2026-05-17-001",
+      "public_entry": "users/Norven/20260528T200617Z-methodology-fail-closed-signal-gate-for-experience-harvest.md",
+      "reason": "Covers signal-driven harvest enforcement, distinct from both candidate-capture and public-promotion pipeline entries."
+    },
+    {
+      "id": "EVO-2026-05-19-001",
+      "public_entry": "users/Norven/20260528T200617Z-methodology-facade-first-rule-before-physical-tool-migration.md",
+      "reason": "Covers facade-first migration for path-sensitive runtime tools, a concrete technique adjacent to but not duplicating outcome-first completion."
+    }
+  ],
+  "rejected_or_deferred_sources": [
+    {
+      "class": "raw_private_reports",
+      "decision": "rejected",
+      "reason": "Raw private reports, private task logs, identity material, secrets and Prism raw transcripts are not public sources."
+    },
+    {
+      "class": "full_historical_migration",
+      "decision": "deferred",
+      "reason": "RASG-028 is a bounded second Forge batch, not a bulk historical migration or maturity claim."
+    },
+    {
+      "class": "full_llm_wiki_or_rag",
+      "decision": "deferred",
+      "reason": "The batch uses cataloged public entries only; full LLM-wiki, RAG and GraphRAG remain separate long-horizon work."
+    }
+  ],
+  "privacy_review": {
+    "raw_private_content_used": false,
+    "identity_content_used": false,
+    "secret_scan": "passed",
+    "path_scan": "passed",
+    "forbidden_public_sources": [
+      "private-archive/**",
+      "prism/runs/**",
+      "raw task conversations",
+      "identity anchors",
+      "credentials and local secrets"
+    ]
+  },
+  "duplicate_review": {
+    "decision": "pass_with_nits",
+    "notes": [
+      "Candidate-first capture is inbound experience capture; Forge pipeline is outbound public promotion.",
+      "Signal-driven harvest gate defines when capture is mandatory; candidate-first capture defines the intermediate layer.",
+      "Facade-first migration is a technique for path-sensitive runtime migration; outcome-first completion is the broader anti-drift rule.",
+      "TTL roster gate is distinct from existing public entries."
+    ]
+  },
+  "public_claim_boundary": {
+    "allowed": [
+      "redcap-arsenal now contains two reviewed append-only public batches",
+      "the catalog can discover the eight current public entries",
+      "this batch proves RedCap Forge can produce real append-only public entries beyond seed samples"
+    ],
+    "forbidden": [
+      "redcap-arsenal is mature or complete",
+      "all historical RedCap knowledge has been migrated",
+      "public arsenal maturity proves release readiness",
+      "raw private reports or runtime evidence may be published directly"
+    ]
+  },
+  "prism_review": {
+    "run_id": "20260528-rasg-028-forge-batch-public-arsenal",
+    "kimi": "pass_with_nits",
+    "claude_code": "pass_with_nits",
+    "blockers": []
+  },
+  "verification": {
+    "redcap_arsenal_check": "passed",
+    "remote_binding_check": "passed",
+    "version_binding_check": "passed",
+    "claim_boundary_check": "passed",
+    "public_distillation_preflight": "passed",
+    "pre_release_product_architecture_check": "passed",
+    "package_surface_manifest_exclusion": "passed",
+    "prism_acceptance_check": "passed",
+    "spec_check": "passed",
+    "diagnose": "passed"
+  },
+  "non_completion_boundaries": [
+    "Does not complete RASG-029.",
+    "Does not complete formal npm release readiness.",
+    "Does not claim full historical migration.",
+    "Does not claim full LLM-wiki, RAG or GraphRAG implementation."
+  ]
+}

@@ -46,9 +46,9 @@
     {
       "source": "references/package-publish-safety-policy.json",
       "target": "contracts/public/package-publish-safety-policy.json",
-      "preflight_source_sha256": "2e2a0901d7b0a2b32257953f770b4526524d0b540dae0336f793ca9e039e7816",
-      "current_source_sha256": "183e32d1893a6f3d8396c1e8d92e4f9703c7b85418add82ae7055e6ea186a2ca",
-      "reason": "P4-29 keeps the public release-safety contract mirror byte-identical after the pre-release debt tranche added internal-only full LLM-wiki, RAG boundary, and debt receipt exclusions."
+      "preflight_source_sha256": "183e32d1893a6f3d8396c1e8d92e4f9703c7b85418add82ae7055e6ea186a2ca",
+      "current_source_sha256": "a89a998c623961da57171fba01181063acbd463746d906680fc1e18a398e2872",
+      "reason": "P4-29 keeps the public release-safety contract mirror byte-identical after package-surface exclusions changed; the bridge records post-preflight drift without closing release blockers."
     }
   ],
   "copy_policy": {
@@ -104,8 +104,8 @@
       "source": "references/package-publish-safety-policy.json",
       "target": "contracts/public/package-publish-safety-policy.json",
       "target_layer": "public-contract",
-      "source_sha256": "183e32d1893a6f3d8396c1e8d92e4f9703c7b85418add82ae7055e6ea186a2ca",
-      "target_sha256": "183e32d1893a6f3d8396c1e8d92e4f9703c7b85418add82ae7055e6ea186a2ca",
+      "source_sha256": "a89a998c623961da57171fba01181063acbd463746d906680fc1e18a398e2872",
+      "target_sha256": "a89a998c623961da57171fba01181063acbd463746d906680fc1e18a398e2872",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"

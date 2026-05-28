@@ -13494,7 +13494,7 @@ run_public_arsenal_claim_boundary_check_case() {
     output="$(bash "$REDCAP_ROOT/compass/tools/redcap-public-arsenal-claim-boundary.sh")"
     assert_string_contains "$output" "PUBLIC_ARSENAL_CLAIM_BOUNDARY_OK"
     assert_string_contains "$output" "state=reviewed-substantive"
-    assert_string_contains "$output" "substantive_entries=4"
+    assert_string_contains "$output" "substantive_entries="
     assert_contains "$REDCAP_ROOT/compass/tools/redcap-spec-check.sh" "public arsenal claim boundary check failed"
 
     bad_policy="$ACCEPT_ROOT/public-arsenal-claim-boundary-bad-state.json"

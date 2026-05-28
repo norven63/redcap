@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 36,
-    "size_bytes": 407612,
-    "lines": 8231,
-    "chars": 241882,
+    "file_count": 37,
+    "size_bytes": 418479,
+    "lines": 8415,
+    "chars": 247821,
     "rough_token_pressure": {
-      "low": 60470,
-      "high": 120941
+      "low": 61955,
+      "high": 123910
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 20,
-        "size_bytes": 184382,
-        "lines": 3311,
-        "chars": 107310,
+        "file_count": 21,
+        "size_bytes": 195249,
+        "lines": 3495,
+        "chars": 113249,
         "rough_token_pressure": {
-          "low": 26827,
-          "high": 53655
+          "low": 28312,
+          "high": 56624
         }
       }
     },
@@ -586,7 +586,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：正式发布外收敛父任务",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9998,
       "lines": 177,
@@ -651,28 +651,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：修复 redcap revive 外部工作区边界盲区",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 6877,
       "lines": 129,
       "chars": 4269,
       "summary": "当前已完成：已复现并修复 `redcap revive` 在外部项目中可能回落到 RedCap 自身任务卡的问题；外部 workspace 的默认、`--workspace`、`--task-file` 三种 revive 路径已经进入边界检查。 / 上一步完成的是：完成语义硬门已经收口；本轮承接父任务线，在进入 `RASG-027` 之前先处理棱镜确认的 runtime/workspace 边界缺陷。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：已复现并修复 `redcap revive` 在外部项目中可能回落到 RedCap 自身任务卡的问题；外部 workspace 的默认、`--workspace`、`--task-file` 三种 revive 路径已经进入边界检查。"
-        ],
-        "previous_step": [
-          "上一步完成的是：完成语义硬门已经收口；本轮承接父任务线，在进入 `RASG-027` 之前先处理棱镜确认的 runtime/workspace 边界缺陷。"
-        ],
-        "next_step": [
-          "下一步计划做的是：完成 targeted Prism 复核和总回归后，把 `HOTFIX-REVIVE-WORKSPACE-BOUNDARY` 标记为已完成，并回到 `RASG-027` 自我升级实体化。"
-        ],
-        "position": [
-          "整体计划脉络图是：完成语义硬门 -> 前置热修 `redcap revive` 边界 -> `RASG-027` Evolution Factory 主动候选生产线 -> `RASG-030` 反空转方法论 -> `RASG-028` 公共武器库批量蒸馏 -> `RASG-029` 工程目录最终收敛。",
-          "当前所在位置：前置热修已经实现，棱镜复核和总回归已通过；仍在等待 closeout receipt。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-28-rasg-027-active-evolution-harvest.md",
@@ -699,6 +684,34 @@
         "position": [
           "整体计划脉络图是：先修 revive 工作区边界，再修主动 harvest 生产线，然后继续公共武器库、目录收敛和反空转方法论，最后才进入正式发布授权。",
           "当前所在位置：正式发布前历史债务治理中的“自我升级能力补强”。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-28-rasg-028-forge-batch-public-arsenal.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-028 公共武器库实质扩容",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 10867,
+      "lines": 184,
+      "chars": 5939,
+      "summary": "当前已完成：redcap-arsenal 已新增第二批 4 条 reviewed append-only public entries，公共条目数量从 4 条增加到 8 条；RedCap 侧的公共库状态、远端绑定、边界声明、父任务账本、棱镜验收记录和发布前架构事实都已同步到同一个提交。 / 上一步完成的是：RASG-027 把“经验是否值得沉淀”从报告里的口头判断升级成主动 harvest 账本，避免高价值经验在任务收尾后静默丢失。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：redcap-arsenal 已新增第二批 4 条 reviewed append-only public entries，公共条目数量从 4 条增加到 8 条；RedCap 侧的公共库状态、远端绑定、边界声明、父任务账本、棱镜验收记录和发布前架构事实都已同步到同一个提交。"
+        ],
+        "previous_step": [
+          "上一步完成的是：RASG-027 把“经验是否值得沉淀”从报告里的口头判断升级成主动 harvest 账本，避免高价值经验在任务收尾后静默丢失。"
+        ],
+        "next_step": [
+          "下一步计划做的是：生成 RASG-028 的最终 closeout receipt 后，父任务线自动进入 RASG-029，继续处理工程目录最终收敛；不会等待 Norven 机械回复“继续”。"
+        ],
+        "position": [
+          "整体计划脉络图是：先修外部工作区边界，再补强主动经验收割，然后让公共武器库真实增长，再做工程目录最终收敛，最后才进入正式发布授权。",
+          "当前所在位置：正式发布前历史债务治理中的“公共武器库实质扩容”。"
         ]
       }
     },

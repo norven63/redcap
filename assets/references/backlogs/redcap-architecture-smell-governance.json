@@ -1058,7 +1058,20 @@
         "Public catalog lookup can find the new entries without loading private source reports.",
         "Package safety and shared-knowledge checks pass after the batch."
       ],
-      "status": "planned",
+      "status": "done",
+      "completed_at": "2026-05-28",
+      "completion_summary": "Done: redcap-arsenal gained a second reviewed, append-only RedCap Forge batch, growing from 4 to 8 public entries; catalog, remote binding, claim boundary, Prism review and privacy/dedupe manifest are synchronized without claiming maturity or full historical migration.",
+      "evidence": [
+        "assets/references/rasg-028-forge-batch-public-arsenal-manifest.json",
+        "assets/docs/task-reports/2026-05-28-rasg-028-forge-batch-public-arsenal.md",
+        "references/shared-knowledge-remote-binding.json",
+        "references/public-arsenal-claim-boundary-policy.json",
+        "prism/runs/20260528-rasg-028-forge-batch-public-arsenal",
+        "/Users/norven/.claude/skills/redcap-arsenal/users/Norven/20260528T200617Z-lesson-ttl-roster-gate-for-multi-agent-dispatch.md",
+        "/Users/norven/.claude/skills/redcap-arsenal/users/Norven/20260528T200617Z-methodology-candidate-first-experience-sedimentation.md",
+        "/Users/norven/.claude/skills/redcap-arsenal/users/Norven/20260528T200617Z-methodology-facade-first-rule-before-physical-tool-migration.md",
+        "/Users/norven/.claude/skills/redcap-arsenal/users/Norven/20260528T200617Z-methodology-fail-closed-signal-gate-for-experience-harvest.md"
+      ],
       "introduced_at": "2026-05-28",
       "follow_up_requirements": [
         "RASG-027",
@@ -1155,7 +1168,7 @@
     "Do not treat preserve-with-proof, deferred, disabled-by-default, implemented-proposal-only, or human-decision boundaries as completion for must-complete work.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Start RASG-028 next: run a safe, deduplicated, append-only Forge batch to grow redcap-arsenal beyond the current reviewed seed entries, then continue RASG-029 engineering directory final convergence before any public release claim.",
+  "recommended_next_step": "Start RASG-029 next: finish engineering directory final convergence after the second public arsenal batch, then continue toward formal release readiness without claiming public release completion.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -1490,10 +1503,10 @@
         {
           "id": "RASG-028",
           "title": "Execute RedCap Forge batch distillation into redcap-arsenal",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "T12",
-          "summary": "Grow redcap-arsenal beyond the current reviewed seed entries through a safe, deduplicated, append-only Forge batch."
+          "summary": "Done: redcap-arsenal grew from 4 to 8 reviewed-substantive append-only entries through a bounded, privacy-reviewed Forge batch."
         }
       ]
     },
@@ -1652,8 +1665,8 @@
     {
       "id": "T12",
       "title": "Self-evolution and public arsenal completion",
-      "status": "pending",
-      "summary": "Evolution Factory and RedCap Forge must become real recurring production systems, not policy/check/report surfaces.",
+      "status": "done",
+      "summary": "Evolution Factory now has active harvest, and redcap-arsenal has grown through a second reviewed Forge batch instead of remaining a policy-only surface.",
       "item_ids": [
         "RASG-027",
         "RASG-028"
@@ -1662,8 +1675,8 @@
     {
       "id": "T13",
       "title": "Engineering directory final convergence",
-      "status": "done",
-      "summary": "The physical directory foundation must be made clean enough to support self-evolution, public arsenal growth and public release.",
+      "status": "pending",
+      "summary": "Next: finish the physical directory foundation that self-evolution, public arsenal growth and public release depend on.",
       "item_ids": [
         "RASG-029"
       ]
@@ -1679,7 +1692,7 @@
     }
   ],
   "current_focus": {
-    "item_id": "RASG-028",
-    "summary": "RASG-030 反空转方法论已完成；下一步执行 RedCap Forge 批量公共蒸馏，让 redcap-arsenal 从小规模种子样本走向更实质的公共武器库。"
+    "item_id": "RASG-029",
+    "summary": "RASG-028 公共武器库第二批实质扩容已完成；下一步推进工程目录最终收敛，为自升级、公共武器库和正式发布前检查提供更干净的工程地基。"
   }
 }

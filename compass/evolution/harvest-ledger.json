@@ -106,6 +106,42 @@
       ],
       "generated_by": "redcap-evolution-harvest-producer",
       "generated_at": "2026-05-28T19:52:02Z"
+    },
+    {
+      "id": "HARVEST-2026-05-28-rasg-028-forge-batch-public-arsenal",
+      "task_id": "rasg-028-forge-batch-public-arsenal",
+      "source_report": "assets/docs/task-reports/2026-05-28-rasg-028-forge-batch-public-arsenal.md",
+      "source_digest": "sha256:976888972e2226414bf0fcc1993a33aa627f320af7c2057f46a86aaa85081669",
+      "source_kind": "prism-verdict",
+      "reasons": [
+        "signal:anti-drift-or-mechanism-only:擦边球",
+        "signal:closeout-or-receipt-blocker:closeout",
+        "signal:prism-review-signal:Prism",
+        "signal:security-release-risk:发布",
+        "signal:test-failure-or-regression:acceptance",
+        "task-field:top_goal:安全",
+        "task-flag:architecture_tranche",
+        "task-flag:governance_tranche",
+        "task-flag:review_tranche"
+      ],
+      "outcome": "no-promote",
+      "status": "processed",
+      "decision": {
+        "reason": "RASG-028 already promoted the selected experience batch directly into public redcap-arsenal entries with manifest, remote binding, Prism review and claim-boundary evidence; do not rewrap the same completed batch as another candidate."
+      },
+      "generated_candidate": {
+        "source_kind": "prism-verdict",
+        "problem_source": "Norven 指出过一个非常关键的问题：RedCap 过去很容易把“机制已经建立”包装成“能力已经真正运转”。公共武器库就是典型例子：如果没有真实新增条目、没有 catalog、没有远端绑定、没有隐私和重复审查，那么“公共知识库”仍然只是设计图。",
+        "solution": "本轮没有做“全量迁移”，而是采用更安全的 Forge 批次策略：",
+        "final_effect": "python3 compass/tools/redcap-shared-knowledge.py \"$PWD\" check --root /Users/norven/.claude/skills/redcap-arsenal",
+        "recurrence_guard": "Keep the generated harvest record fresh by source digest; stale or missing records fail the harvest gate before closeout."
+      },
+      "evidence_paths": [
+        ".dev-task.md",
+        "assets/docs/task-reports/2026-05-28-rasg-028-forge-batch-public-arsenal.md"
+      ],
+      "generated_by": "redcap-evolution-harvest-producer",
+      "generated_at": "2026-05-28T20:29:21Z"
     }
   ]
 }

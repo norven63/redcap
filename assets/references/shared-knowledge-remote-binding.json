@@ -82,14 +82,14 @@
   ],
   "safety_policy_path": "references/package-publish-safety-policy.json",
   "last_verified": {
-    "checked_at_utc": "2026-05-28T19:12:25Z",
+    "checked_at_utc": "2026-05-28T20:10:00Z",
     "method": "git ls-remote --heads",
     "remote_ref": "refs/heads/main",
-    "remote_head": "e8f08f2acdfcef7e8e50d729ab290e9081e99ce3"
+    "remote_head": "95f0783dd6d304c340d3209a2ba44da0f187cbdf"
   },
   "version_binding": {
-    "validated_local_head": "e8f08f2acdfcef7e8e50d729ab290e9081e99ce3",
-    "validated_remote_head": "e8f08f2acdfcef7e8e50d729ab290e9081e99ce3",
+    "validated_local_head": "95f0783dd6d304c340d3209a2ba44da0f187cbdf",
+    "validated_remote_head": "95f0783dd6d304c340d3209a2ba44da0f187cbdf",
     "validated_by": "bash compass/tools/redcap-shared-knowledge-remote-check.sh --live --require-worktree",
     "release_readiness_rule": "Any future release-readiness claim must rerun live remote binding and arsenal-version-binding checks, then update this binding if the public worktree has intentionally advanced."
   },

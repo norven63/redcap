@@ -126,6 +126,7 @@
     "assets/references/redcap-holistic-smell-audit.json",
     "assets/references/root-information-architecture-consolidation-plan.json",
     "assets/references/root-asset-*.json",
+    "assets/references/rasg-*.json",
     "assets/references/retrieval-escalation-policy.json",
     "assets/references/review-tracks.json",
     "assets/references/skill-lifecycle-policy.json",
