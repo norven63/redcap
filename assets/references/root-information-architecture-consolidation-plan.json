@@ -19,6 +19,18 @@
     "explicit_deferral_receipt": "assets/references/root-ia-remaining-root-groups-deferral.json",
     "claim_boundary": "Docs, knowledge, references, formal Prism reports, and private archive now have canonical physical homes under assets/. Root-level legacy paths remain compatibility shims for existing scripts, reports, receipts, and archaeology; active first-read surfaces must point to assets/ as the default entry; this is not a destructive deletion claim."
   },
+  "rasg_029_current_resolution": {
+    "status": "engineering-directory-final-convergence-implemented-pending-closeout",
+    "manifest": "assets/references/rasg-029-engineering-directory-final-convergence-manifest.json",
+    "human_summary": "RASG-029 does not try to make every old path name disappear. It makes the current directory model explicit: assets/ is the canonical project-asset parent; compatibility anchors are bridges; prism/runs is local raw evidence with bounded lifecycle checks; host/runtime/control-plane roots are intentionally visible because moving them is a release/profile decision.",
+    "not_claimed": [
+      "formal public release readiness",
+      "all compatibility anchors physically removed",
+      "all prism/runs evidence deleted",
+      "all historical assets publicly migrated"
+    ],
+    "next_release_boundary": "The formal release task must still decide package profile, license, publication switches, registry credentials and any destructive cleanup."
+  },
   "physical_convergence_result": {
     "applied_at": "2026-05-24",
     "task_id": "root-asset-ia-physical-convergence",

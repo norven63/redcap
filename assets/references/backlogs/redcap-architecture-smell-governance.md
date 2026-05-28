@@ -15,7 +15,7 @@
 - 机器权威：`references/backlogs/redcap-architecture-smell-governance.json`
 - 人类说明：`references/backlogs/redcap-architecture-smell-governance.md`
 - 当前焦点：`RASG-029 Finish engineering directory convergence as the foundation for self-evolution and arsenal growth`
-- 当前焦点说明：RASG-028 公共武器库第二批实质扩容已完成；下一步推进工程目录最终收敛，为自升级、公共武器库和正式发布前检查提供更干净的工程地基。
+- 当前焦点说明：RASG-029 工程目录最终收敛已完成；发布之外已知 RASG 历史债务均已闭环，下一步只应进入单独的正式发布准备与人工授权边界。
 
 ### 进入当前焦点前的前置热修
 | 阻塞项 | 状态 | 阻塞对象 | 为什么必须先做 |
@@ -38,7 +38,7 @@
 | Pre-release freeze and artifact churn control | 已完成 | RASG-025 | Release-convergence cleanup has a hard boundary: normal evidence is archived or indexed, while only concrete first-release blockers may expand scope. |
 | Completion semantics hardening | 已完成 | RASG-026 | Completion claims now fail when must-complete work is satisfied only by proof, preserve, defer, disabled, proposal-only, or human-decision boundary language; closeout runtime now checks this before receipt generation. |
 | Self-evolution and public arsenal completion | 已完成 | RASG-027 / RASG-028 | Evolution Factory now has active harvest, and redcap-arsenal has grown through a second reviewed Forge batch instead of remaining a policy-only surface. |
-| Engineering directory final convergence | 待推进 | RASG-029 | Next: finish the physical directory foundation that self-evolution, public arsenal growth and public release depend on. |
+| Engineering directory final convergence | 已完成 | RASG-029 | Engineering directory convergence is closed for the non-release pass: root entries, compatibility anchors, raw evidence and local state now have explicit lifecycle and package boundaries. |
 | Anti-edge-ball drift methodology | 已完成 | RASG-030 | The recent mechanism-completion drift must be turned into a reusable lesson, Forge candidate and completion-regression pattern. |
 
 ### 条目状态
@@ -72,7 +72,7 @@
 | RASG-026 Harden completion semantics against proof/defer false closure | Completion semantics hardening | 已完成 | P0 | Done: completion claims now fail when must-complete work is satisfied only by preserve, defer, disabled, proposal-only, or human-decision boundary language; spec-check, diagnose, closeout runtime, Prism review, and full acceptance have passed. |
 | RASG-027 Make Evolution Factory an active harvest pipeline instead of report-section compliance | Self-evolution and public arsenal completion | 已完成 | P0 | Done: self-upgrade now has an active harvest ledger, producer, stale-record gate, real hotfix sample, closeout/spec/diagnose/progress integrations, and targeted Kimi + Claude Code Prism pass. |
 | RASG-028 Execute RedCap Forge batch distillation into redcap-arsenal | Self-evolution and public arsenal completion | 已完成 | P0 | Done: redcap-arsenal grew from 4 to 8 reviewed-substantive append-only entries through a bounded, privacy-reviewed Forge batch. |
-| RASG-029 Finish engineering directory convergence as the foundation for self-evolution and arsenal growth | Engineering directory final convergence | 待推进 | P0 | Close the remaining root-directory, compatibility-anchor and prism/runs lifecycle confusion before public release. |
+| RASG-029 Finish engineering directory convergence as the foundation for self-evolution and arsenal growth | Engineering directory final convergence | 已完成 | P0 | Done: root directory roles, compatibility anchors, prism/runs lifecycle and local-state package boundaries are explicitly documented, reviewable and package-bounded. |
 | RASG-030 Promote anti-edge-ball drift methodology into lessons and public arsenal candidates | Anti-edge-ball drift methodology | 已完成 | P0 | Done: outcome-first anti-drift methodology is now in lessons, policy checks, Evolution harvest, Prism conclusion rules, and a reviewed public arsenal entry. |
 
 ### 术语对照

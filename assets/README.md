@@ -4,6 +4,20 @@
 
 这次收敛的目标不是把所有东西塞进一个桶里，而是让人和 Agent 能一眼分清：哪些是可读文档，哪些是活知识，哪些是机器契约，哪些是审计证据，哪些只是私有冷归档。
 
+## 先看这张地图
+
+RedCap 根目录不是要压缩成一个目录，而是要让每个可见入口都有清楚身份：
+
+| 根目录区域 | 人话解释 | 是否应该搬进 `assets/` |
+|---|---|---|
+| 人类入口 | `README.md`、`ARCHITECTURE.md`，让第一次接触 RedCap 的人快速理解它。 | 否，应该留在根目录。 |
+| 宿主入口 | `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`SKILL.md` 和 `.claude/.codex/.gemini/.github`。 | 否，宿主会按固定位置发现它们。 |
+| 运行入口 | `bin/`、`runtime/`、`revive-cap.sh`、`closeout-cap.sh`。 | 否，它们是 runtime/CLI facade。 |
+| 长期资产 | `assets/` 本身。 | 是，docs、knowledge、references、formal reports、private archive 都以这里为主位置。 |
+| 兼容桥 | `references`、`private-archive`、`compass/docs`、`compass/knowledge`、`prism/reports`。 | 已经指向 `assets/`；保留是为了避免旧 receipt 和旧脚本断链。 |
+| 评审系统 | `prism/`。 | 不整体搬入 `assets/`；只有 formal reports 进 `assets/evidence/`，raw runs 留在 `prism/runs/` 生命周期里。 |
+| 本地状态 | `.dev-task.md`、`.env`、`.tmp/`、`prompt.txt`、`cli_console.md`。 | 否，它们是本机状态，应忽略、排除出包。 |
+
 ## 目录职责
 
 | 目录 | 人话解释 | 读取原则 |

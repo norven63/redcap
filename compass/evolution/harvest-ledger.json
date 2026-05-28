@@ -142,6 +142,43 @@
       ],
       "generated_by": "redcap-evolution-harvest-producer",
       "generated_at": "2026-05-28T20:35:22Z"
+    },
+    {
+      "id": "HARVEST-2026-05-28-rasg-029-engineering-directory-final-convergence",
+      "task_id": "rasg-029-engineering-directory-final-convergence",
+      "source_report": "assets/docs/task-reports/2026-05-28-rasg-029-engineering-directory-final-convergence.md",
+      "source_digest": "sha256:c5284838bacbc7917375653742ef18b46b3ca140686a0e373157967fbc7d854c",
+      "source_kind": "prism-verdict",
+      "reasons": [
+        "signal:anti-drift-or-mechanism-only:反空转",
+        "signal:closeout-or-receipt-blocker:closeout",
+        "signal:prism-review-signal:Prism",
+        "signal:security-release-risk:发布",
+        "signal:test-failure-or-regression:acceptance",
+        "task-field:top_goal:发布",
+        "task-flag:architecture_tranche",
+        "task-flag:governance_tranche",
+        "task-flag:review_tranche"
+      ],
+      "outcome": "no-promote",
+      "status": "processed",
+      "decision": {
+        "reason": "RASG-029 的可复用经验已经沉淀到工程目录 manifest、README、ARCHITECTURE 与报告中；当前不再生成单独 public arsenal 候选，未来发生真实兼容桥删除或 Prism raw evidence 归档时再另行晋升。"
+      },
+      "generated_candidate": {
+        "source_kind": "prism-verdict",
+        "problem_source": "Norven 多次指出一个核心坏味：RedCap 的目录和资产治理耗时很长，却仍然容易让人看到分散的 docs、knowledge、references、private-archive、prism/runs 路径，从而怀疑“是不是一直在清理清理产生的新资产”。",
+        "solution": "对已经迁入 assets/ 的长期资产，明确 assets/ 是主位置，旧路径只是兼容桥。",
+        "final_effect": "bash compass/tools/redcap-root-information-architecture-check.sh",
+        "recurrence_guard": "Keep the generated harvest record fresh by source digest; stale or missing records fail the harvest gate before closeout."
+      },
+      "evidence_paths": [
+        ".dev-task.md",
+        "assets/docs/task-reports/2026-05-28-rasg-029-engineering-directory-final-convergence.md",
+        "assets/references/rasg-029-engineering-directory-final-convergence-manifest.json"
+      ],
+      "generated_by": "redcap-evolution-harvest-producer",
+      "generated_at": "2026-05-28T21:00:07Z"
     }
   ]
 }

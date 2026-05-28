@@ -15,6 +15,8 @@ RedCap 不是“再包一层提示词”。
 
 项目资产已经收敛到 [`assets/`](./assets/README.md)：`assets/docs` 放设计和报告，`assets/knowledge` 放活知识，`assets/references` 放机器契约，`assets/evidence/prism-reports` 放 formal Prism 报告，`assets/private-archive` 放私有冷归档。旧的 `compass/docs`、`compass/knowledge`、`references`、`prism/reports`、`private-archive` 只保留为兼容入口，避免旧脚本和历史 receipt 断链；新读者和新 Agent 默认从 `assets/` 进入。
 
+根目录现在按“角色”而不是按历史来源理解：`README.md` / `ARCHITECTURE.md` 是给人的入口，`AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / `SKILL.md` 是宿主入口，`bin` / `runtime` / `revive-cap.sh` / `closeout-cap.sh` 是运行入口，`assets/` 是长期资产入口，`compass` / `contracts` / `internal` 是维护者控制面源码，`prism` 是多 Agent 评审系统，`loom` 是 Layer A 兼容层。看起来像旧路径的 `references`、`private-archive`、`compass/docs`、`compass/knowledge`、`prism/reports` 是兼容桥，不是新资产主位置；`prism/runs`、`.dev-task.md`、`.env`、`.tmp`、`prompt.txt`、`cli_console.md` 是本地状态或运行证据，不进入公开包，也不应该默认读取。
+
 ## 一眼看懂
 
 ```text

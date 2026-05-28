@@ -16,6 +16,18 @@
       "RedCap is release-ready for public npm publish."
     ]
   },
+  "rasg_029_final_convergence_resolution": {
+    "status": "classified-not-hidden",
+    "manifest": "assets/references/rasg-029-engineering-directory-final-convergence-manifest.json",
+    "summary": "The remaining root groups are no longer treated as unknown directory clutter. They are intentionally classified as control-plane source, Prism evidence layer, Layer A compatibility and workspace-local state. They remain release-sensitive, but their presence is now explained, package-bounded and reviewable.",
+    "why_not_physically_moved_in_rasg_029": [
+      "control-plane source split affects runtime/public maintainer profile",
+      "Prism raw evidence cleanup can destroy replay and review evidence if done without retention proof",
+      "Layer A loom is a product-scope decision",
+      "workspace-local state is not source material and should be excluded rather than moved into public structure"
+    ],
+    "completion_boundary": "RASG-029 closes the non-release confusion about why these groups remain visible. It does not close the formal release profile decisions that may later move, hide, archive or remove some of them."
+  },
   "applied_parent_groups": [
     {
       "target_parent": "assets-project-assets",

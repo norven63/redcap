@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 37,
-    "size_bytes": 418479,
-    "lines": 8415,
-    "chars": 247821,
+    "size_bytes": 418559,
+    "lines": 8410,
+    "chars": 247461,
     "rough_token_pressure": {
-      "low": 61955,
-      "high": 123910
+      "low": 61865,
+      "high": 123730
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 21,
-        "size_bytes": 195249,
-        "lines": 3495,
-        "chars": 113249,
+        "size_bytes": 195329,
+        "lines": 3490,
+        "chars": 112889,
         "rough_token_pressure": {
-          "low": 28312,
-          "high": 56624
+          "low": 28222,
+          "high": 56444
         }
       }
     },
@@ -608,19 +608,6 @@
       "status_basis": "filename_recency_only"
     },
     {
-      "path": "compass/docs/task-reports/2026-05-25-pre-release-non-publish-final-closure.md",
-      "collection": "task-reports",
-      "title": "任务完成报告：正式发布外最终清账",
-      "role": "closure-evidence",
-      "status": "warm",
-      "read_policy": "read-catalog-summary-by-default",
-      "size_bytes": 9567,
-      "lines": 164,
-      "chars": 5371,
-      "summary": "当前已完成：正式发布外最终清账已经完成；实现、专项回归、完整 `spec-check`、`diagnose`、棱镜独立验收和 closeout receipt 均已通过。 / 上一步完成的是：Kimi 完成长文/任务树主审，Claude Code 完成工程风险复核；两边都给出可收口结论，且无阻塞项。",
-      "status_basis": "filename_recency_only"
-    },
-    {
       "path": "compass/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md",
       "collection": "task-reports",
       "title": "任务完成报告：发布前阻塞债务完成",
@@ -664,28 +651,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：RASG-027 自我升级实体化",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9396,
       "lines": 162,
       "chars": 4844,
       "summary": "当前已完成：RASG-027 已把自我升级从“报告里手写候选处理小节”推进为“主动收割账本”。现在高价值任务信号需要先生成 harvest 记录，再明确进入候选、暂缓或不晋升；如果缺少这条记录，检查会失败。 / 上一步完成的是：revive 外部工作区边界热修，确保外部项目执行 `redcap revive` 时不会误读 RedCap 自己仓库的任务卡。该热修已经生成 receipt，并作为本轮真实历史样本，被新的 harvest 产线处理。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：RASG-027 已把自我升级从“报告里手写候选处理小节”推进为“主动收割账本”。现在高价值任务信号需要先生成 harvest 记录，再明确进入候选、暂缓或不晋升；如果缺少这条记录，检查会失败。"
-        ],
-        "previous_step": [
-          "上一步完成的是：revive 外部工作区边界热修，确保外部项目执行 `redcap revive` 时不会误读 RedCap 自己仓库的任务卡。该热修已经生成 receipt，并作为本轮真实历史样本，被新的 harvest 产线处理。"
-        ],
-        "next_step": [
-          "下一步计划做的是：本轮完成 RASG-027 后，父任务线继续推进后续债务项：公共武器库真实扩容、目录结构最终收敛、以及反空转方法论沉淀。它们不能被 RASG-027 冒充完成。"
-        ],
-        "position": [
-          "整体计划脉络图是：先修 revive 工作区边界，再修主动 harvest 生产线，然后继续公共武器库、目录收敛和反空转方法论，最后才进入正式发布授权。",
-          "当前所在位置：正式发布前历史债务治理中的“自我升级能力补强”。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-28-rasg-028-forge-batch-public-arsenal.md",
@@ -712,6 +684,34 @@
         "position": [
           "整体计划脉络图是：先修外部工作区边界，再补强主动经验收割，然后让公共武器库真实增长，再做工程目录最终收敛，最后才进入正式发布授权。",
           "当前所在位置：正式发布前历史债务治理中的“公共武器库实质扩容”。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-28-rasg-029-engineering-directory-final-convergence.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-029 工程目录最终收敛",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9647,
+      "lines": 159,
+      "chars": 5011,
+      "summary": "当前已完成：RASG-029 已把 RedCap 根目录重新解释成可验证的工程目录模型，并把兼容入口、`prism/runs` 生命周期、本地状态、包边界和正式发布边界同步到 manifest、README、ARCHITECTURE、assets README 和发布前硬门中。 / 上一步完成的是：RASG-028 让 redcap-arsenal 完成第二批真实公共条目扩容，避免“只有机制、没有内容”的公共武器库假完成。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RASG-029 已把 RedCap 根目录重新解释成可验证的工程目录模型，并把兼容入口、`prism/runs` 生命周期、本地状态、包边界和正式发布边界同步到 manifest、README、ARCHITECTURE、assets README 和发布前硬门中。"
+        ],
+        "previous_step": [
+          "上一步完成的是：RASG-028 让 redcap-arsenal 完成第二批真实公共条目扩容，避免“只有机制、没有内容”的公共武器库假完成。"
+        ],
+        "next_step": [
+          "下一步计划做的是：完成 RASG-029 的最终回归、提交和 closeout receipt；通过后，发布之外的工程目录历史债务应只剩正式发布任务里的人工授权和 release readiness 边界。"
+        ],
+        "position": [
+          "整体计划脉络图是：先修外部工作区边界，再补强主动经验收割，再让公共武器库真实增长，然后完成工程目录最终收敛，最后才进入正式发布授权。",
+          "当前所在位置：正式发布前历史债务治理中的“工程目录最终收敛”。"
         ]
       }
     },

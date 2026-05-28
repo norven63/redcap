@@ -2,7 +2,7 @@
   "version": 1,
   "backlog_id": "redcap-architecture-smell-governance",
   "title": "RedCap architecture smell governance backlog",
-  "status": "active-new-historical-debt-open",
+  "status": "non-release-historical-debt-closed-pending-formal-release-task",
   "created_at": "2026-05-09",
   "owner_scope": "redcap-self",
   "purpose": "Capture the architecture, knowledge, evidence, runtime, and productization smells found during the post-P4-2k global review so later work can close them deliberately instead of rediscovering them from chat context.",
@@ -118,64 +118,64 @@
         "RASG-021"
       ]
     },
-  {
-    "id": "T8",
-    "title": "Plan-only closure and Prism follow-up hardening",
-    "intent": "Prevent design-only, plan-only, or route-only work from being treated as fully closed when a later physical apply or governance hardening task was explicitly required.",
-    "items": [
-      "RASG-023"
-    ]
-  },
-  {
-    "id": "T9",
-    "title": "Workflow latency and gate stratification",
-    "intent": "Reduce avoidable multi-hour task latency by making validation strength explicit, risk-based, and visible without weakening release-readiness rigor.",
-    "items": [
-      "RASG-024"
-    ]
-  },
-  {
-    "id": "T10",
-    "title": "Pre-release freeze and artifact churn control",
-    "intent": "Stop release-convergence cleanup from spawning new active cleanup work unless the new finding is a real release blocker.",
-    "items": [
-      "RASG-025"
-    ]
-  },
-  {
-    "id": "T11",
-    "title": "Completion semantics hardening",
-    "intent": "Prevent proof, defer, preserve, disabled-by-default, or human-decision boundaries from being counted as completion for must-complete work.",
-    "items": [
-      "RASG-026"
-    ]
-  },
-  {
-    "id": "T12",
-    "title": "Self-evolution and public arsenal completion",
-    "intent": "Turn Evolution Factory, RedCap Forge and redcap-arsenal from policy/check/report surfaces into real recurring production systems.",
-    "items": [
-      "RASG-027",
-      "RASG-028"
-    ]
-  },
-  {
-    "id": "T13",
-    "title": "Engineering directory final convergence",
-    "intent": "Finish the physical directory foundation that self-evolution and public-arsenal growth depend on, instead of relying on compatibility anchors forever.",
-    "items": [
-      "RASG-029"
-    ]
-  },
-  {
-    "id": "T14",
-    "title": "Anti-edge-ball drift methodology",
-    "intent": "Distill the month-long false-completion and defer-loop failure into a reusable method, then require it to influence future planning and Forge promotion.",
-    "items": [
-      "RASG-030"
-    ]
-  }
-],
+    {
+      "id": "T8",
+      "title": "Plan-only closure and Prism follow-up hardening",
+      "intent": "Prevent design-only, plan-only, or route-only work from being treated as fully closed when a later physical apply or governance hardening task was explicitly required.",
+      "items": [
+        "RASG-023"
+      ]
+    },
+    {
+      "id": "T9",
+      "title": "Workflow latency and gate stratification",
+      "intent": "Reduce avoidable multi-hour task latency by making validation strength explicit, risk-based, and visible without weakening release-readiness rigor.",
+      "items": [
+        "RASG-024"
+      ]
+    },
+    {
+      "id": "T10",
+      "title": "Pre-release freeze and artifact churn control",
+      "intent": "Stop release-convergence cleanup from spawning new active cleanup work unless the new finding is a real release blocker.",
+      "items": [
+        "RASG-025"
+      ]
+    },
+    {
+      "id": "T11",
+      "title": "Completion semantics hardening",
+      "intent": "Prevent proof, defer, preserve, disabled-by-default, or human-decision boundaries from being counted as completion for must-complete work.",
+      "items": [
+        "RASG-026"
+      ]
+    },
+    {
+      "id": "T12",
+      "title": "Self-evolution and public arsenal completion",
+      "intent": "Turn Evolution Factory, RedCap Forge and redcap-arsenal from policy/check/report surfaces into real recurring production systems.",
+      "items": [
+        "RASG-027",
+        "RASG-028"
+      ]
+    },
+    {
+      "id": "T13",
+      "title": "Engineering directory final convergence",
+      "intent": "Finish the physical directory foundation that self-evolution and public-arsenal growth depend on, instead of relying on compatibility anchors forever.",
+      "items": [
+        "RASG-029"
+      ]
+    },
+    {
+      "id": "T14",
+      "title": "Anti-edge-ball drift methodology",
+      "intent": "Distill the month-long false-completion and defer-loop failure into a reusable method, then require it to influence future planning and Forge promotion.",
+      "items": [
+        "RASG-030"
+      ]
+    }
+  ],
   "requirements": [
     {
       "id": "RASG-001",
@@ -1099,11 +1099,21 @@
         "prism/runs has a bounded retention/apply plan with cited-evidence protection.",
         "Human-facing documentation explains the final directory model without requiring internal gate vocabulary."
       ],
-      "status": "planned",
+      "status": "done",
       "introduced_at": "2026-05-28",
       "follow_up_requirements": [
         "RASG-027",
         "RASG-028"
+      ],
+      "completed_at": "2026-05-28",
+      "completion_summary": "Done: RedCap root directory roles, compatibility anchors, prism/runs lifecycle, local-state package boundaries and human-facing directory explanations are now converged through a dedicated manifest, README/ARCHITECTURE updates, targeted Kimi + Claude Code Prism review and package-safety validation. This does not remove all compatibility anchors or authorize formal release.",
+      "evidence": [
+        "assets/references/rasg-029-engineering-directory-final-convergence-manifest.json",
+        "assets/references/root-information-architecture-consolidation-plan.json",
+        "assets/references/root-ia-remaining-root-groups-deferral.json",
+        "assets/references/historical-asset-physical-cleanup-release-gate.json",
+        "assets/docs/task-reports/2026-05-28-rasg-029-engineering-directory-final-convergence.md",
+        "prism/runs/20260528-rasg-029-engineering-directory-final-convergence"
       ]
     },
     {
@@ -1168,7 +1178,7 @@
     "Do not treat preserve-with-proof, deferred, disabled-by-default, implemented-proposal-only, or human-decision boundaries as completion for must-complete work.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Start RASG-029 next: finish engineering directory final convergence after the second public arsenal batch, then continue toward formal release readiness without claiming public release completion.",
+  "recommended_next_step": "Open the separate formal release readiness task only after Norven provides the required release decisions; do not treat RASG completion as publication authorization.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -1517,10 +1527,10 @@
         {
           "id": "RASG-029",
           "title": "Finish engineering directory convergence as the foundation for self-evolution and arsenal growth",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "T13",
-          "summary": "Close the remaining root-directory, compatibility-anchor and prism/runs lifecycle confusion before public release."
+          "summary": "Done: root directory roles, compatibility anchors, prism/runs lifecycle and local-state package boundaries are explicitly documented, reviewable and package-bounded."
         }
       ]
     },
@@ -1675,8 +1685,8 @@
     {
       "id": "T13",
       "title": "Engineering directory final convergence",
-      "status": "pending",
-      "summary": "Next: finish the physical directory foundation that self-evolution, public arsenal growth and public release depend on.",
+      "status": "done",
+      "summary": "Engineering directory convergence is closed for the non-release pass: root entries, compatibility anchors, raw evidence and local state now have explicit lifecycle and package boundaries.",
       "item_ids": [
         "RASG-029"
       ]
@@ -1693,6 +1703,6 @@
   ],
   "current_focus": {
     "item_id": "RASG-029",
-    "summary": "RASG-028 公共武器库第二批实质扩容已完成；下一步推进工程目录最终收敛，为自升级、公共武器库和正式发布前检查提供更干净的工程地基。"
+    "summary": "RASG-029 工程目录最终收敛已完成；发布之外已知 RASG 历史债务均已闭环，下一步只应进入单独的正式发布准备与人工授权边界。"
   }
 }

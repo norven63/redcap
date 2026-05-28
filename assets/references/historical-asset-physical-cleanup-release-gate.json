@@ -52,6 +52,10 @@
   ],
   "current_known_blockers": [
     {
+      "source": "assets/references/rasg-029-engineering-directory-final-convergence-manifest.json",
+      "meaning": "RASG-029 classifies the remaining visible roots and compatibility anchors so they no longer look like unowned clutter. It does not remove the formal release responsibility to recheck high-risk root groups before public distribution."
+    },
+    {
       "source": "references/root-ia-remaining-root-groups-deferral.json",
       "meaning": "Remaining deferred high-risk root groups are tolerated only before formal release. A formal release task must either resolve them by safe tranche or keep release blocked."
     },

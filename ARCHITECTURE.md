@@ -89,6 +89,25 @@ RedCap 现在把项目资产统一放在 `assets/` 下：
 
 兼容入口用于保护旧报告、旧脚本和 receipt 的历史路径，不再是新内容的主位置。
 
+### 2.2.1.1 root directory model
+
+RASG-029 之后，RedCap 根目录按职责理解，而不是按“旧目录名是否还在”判断是否干净：
+
+| 根目录区域 | 代表路径 | 留在根目录的原因 |
+| --- | --- | --- |
+| human entry | `README.md`、`ARCHITECTURE.md` | 第一次阅读和包用户入口，必须短而清楚 |
+| host adapter entry | `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`、`SKILL.md`、`.claude`、`.codex`、`.gemini`、`.github` | 各宿主按固定文件名或目录发现规则，不能为了目录美观随意搬走 |
+| runtime facade | `bin`、`runtime`、`revive-cap.sh`、`closeout-cap.sh` | CLI/runtime 的薄入口和兼容入口 |
+| package contracts | `package.json`、`.npmignore`、`.gitignore`、`.githooks` | 包管理器和 git 需要根级契约 |
+| canonical assets | `assets` | docs、knowledge、references、formal Prism reports、private archive 的主位置 |
+| compatibility anchors | `references`、`private-archive`、`compass/docs`、`compass/knowledge`、`prism/reports` | 旧报告、旧脚本和 receipt 仍可解析；新内容不得以旧入口为主位置 |
+| maintainer control plane | `compass`、`contracts`、`internal` | 源码和控制面，不是历史资产堆；未来发布 profile 可再拆 |
+| Prism layer | `prism` | Prism 工具、协议、角色和 raw run evidence；formal reports 已桥接到 `assets/evidence/prism-reports` |
+| Layer A compatibility | `loom` | 仍承载 Layer A / 外部项目工作流兼容，是否公开属于产品范围决策 |
+| local workspace state | `.dev-task.md`、`.env`、`.tmp`、`prompt.txt`、`cli_console.md`、`prism/runs` | 本机状态或运行证据，不应进入公共包或默认上下文 |
+
+这套模型的结论是：**目录收敛不等于把所有根级名字都删除**。真正的收敛标准是每个可见入口都有 owner、生命周期、包边界和读取规则；危险删除、公开发布和产品范围裁决必须留给专门 release task。
+
 文件不只按“内容主题”分，还必须按 **authority / 生命周期 / 共享必要性** 分层：
 
 | 类别 | 典型载体 | 是否进 git | 说明 |

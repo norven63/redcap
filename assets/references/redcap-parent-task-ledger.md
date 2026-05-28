@@ -24,11 +24,13 @@ P4-2r 完成的是 `internal-layer-a` 的产品边界预检：把 `loom` 当前�
 
 P4-2s 已完成 `internal-control-plane` 的物理拆分干跑清单：为 `compass` 与 `references` 的 package-visible 控制面候选生成未来目标分层、别名/回滚策略和机器验收。它不移动目录、不删除文件、不关闭 `internal-control-plane` release blocker。
 
+RASG-029 已完成工程目录最终收敛：根目录现在按人类入口、宿主入口、runtime、包契约、canonical assets、兼容桥、控制面源码、Prism 层、Layer A 兼容和本地状态来解释；`prism/runs` 明确为本地 raw evidence，不默认读取、不进公开包、只通过生命周期工具安全检查。它不删除所有兼容入口、不清空所有运行证据、不授权正式发布。
+
 ## 人类可读父任务全景
 
 - 主线目标：RedCap 这轮超长任务不是补一个小功能，而是把它从 Norven 本机上的 skill 工程，推进成更像正式工具的 Agent runtime / CLI / 多层系统。
 - 已完成的大块：任务流和收尾机制已经重构；历史资产、知识库、公共 arsenal、Forge、LLM-wiki-lite、CLI 产品面、干净工作区安装验证、飞书通知治理和飞书回复安全收件箱都已完成一轮落地。
-- 当前所在位置：主线已把“历史资产物理清理”和“高价值经验发现/候选化”都升级为正式发布前硬门；P4-2o 把 R1 延期根目录分成三组仍阻塞发布的根目录和一组本地状态，P4-2p/P4-2q/P4-2r 已完成三组 blocker 的第一层专项预检，P4-2s 已完成 `internal-control-plane` 的物理拆分 dry-run 地图。
+- 当前所在位置：发布之外已知 RASG 历史债务已经收敛到 RASG-029 closeout；下一阶段应进入单独正式发布准备，不应再把普通目录治理和发布授权混在同一条任务线里。
 - 仍未完成或仍被拦住的事：正式公开发布还没有启动，仍需要处理发布开关、凭据、许可证和公开分发边界；完整 LLM-wiki、RAG/GraphRAG 和大规模公共知识库迁移仍是后续事项。
 - 下一步：只有 Norven 明确启动 release task 后，才进入许可证、发布开关、npm registry、版本号和发布/回滚策略；任何子任务完成都不能冒充整个父任务完成。
 
