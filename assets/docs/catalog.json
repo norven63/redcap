@@ -11,12 +11,12 @@
   ],
   "summary": {
     "file_count": 34,
-    "size_bytes": 388606,
-    "lines": 7891,
-    "chars": 231176,
+    "size_bytes": 388648,
+    "lines": 7893,
+    "chars": 231210,
     "rough_token_pressure": {
-      "low": 57794,
-      "high": 115588
+      "low": 57802,
+      "high": 115605
     },
     "collections": {
       "archive": {
@@ -51,12 +51,12 @@
       },
       "task-reports": {
         "file_count": 18,
-        "size_bytes": 165376,
-        "lines": 2971,
-        "chars": 96604,
+        "size_bytes": 165418,
+        "lines": 2973,
+        "chars": 96638,
         "rough_token_pressure": {
-          "low": 24151,
-          "high": 48302
+          "low": 24159,
+          "high": 48319
         }
       }
     },
@@ -683,9 +683,9 @@
       "role": "closure-evidence",
       "status": "hot",
       "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
-      "size_bytes": 6835,
-      "lines": 127,
-      "chars": 4235,
+      "size_bytes": 6877,
+      "lines": 129,
+      "chars": 4269,
       "summary": "当前已完成：已复现并修复 `redcap revive` 在外部项目中可能回落到 RedCap 自身任务卡的问题；外部 workspace 的默认、`--workspace`、`--task-file` 三种 revive 路径已经进入边界检查。 / 上一步完成的是：完成语义硬门已经收口；本轮承接父任务线，在进入 `RASG-027` 之前先处理棱镜确认的 runtime/workspace 边界缺陷。",
       "status_basis": "filename_recency_only",
       "summary_points": {
