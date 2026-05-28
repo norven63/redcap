@@ -16,6 +16,13 @@
   },
   "source_updates_after_preflight": [
     {
+      "source": "references/runtime-workspace-boundary-policy.json",
+      "target": "contracts/public/runtime-workspace-boundary-policy.json",
+      "preflight_source_sha256": "a67c7c7b52ba80251dacfac7629eb27c9a0d71807cfffc61fd4a1df64762c706",
+      "current_source_sha256": "f46183adc087228ac7a89e4b306b62d8173deb2e5f0e0ec420c83287673fe0c2",
+      "reason": "P4-29 keeps the public runtime/workspace boundary mirror byte-identical after revive and summary were added to the workspace-aware command contract; package-surface exclusion remains unchanged."
+    },
+    {
       "source": "references/public-package-surface-policy.json",
       "target": "contracts/public/public-package-surface-policy.json",
       "preflight_source_sha256": "639e25430e13c6848eff1b3d83188a51a2a709c1a1af4ac848514c61bcba7fda",
@@ -75,8 +82,8 @@
       "source": "references/runtime-workspace-boundary-policy.json",
       "target": "contracts/public/runtime-workspace-boundary-policy.json",
       "target_layer": "public-contract",
-      "source_sha256": "a67c7c7b52ba80251dacfac7629eb27c9a0d71807cfffc61fd4a1df64762c706",
-      "target_sha256": "a67c7c7b52ba80251dacfac7629eb27c9a0d71807cfffc61fd4a1df64762c706",
+      "source_sha256": "f46183adc087228ac7a89e4b306b62d8173deb2e5f0e0ec420c83287673fe0c2",
+      "target_sha256": "f46183adc087228ac7a89e4b306b62d8173deb2e5f0e0ec420c83287673fe0c2",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"

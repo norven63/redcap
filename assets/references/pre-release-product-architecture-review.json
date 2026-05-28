@@ -101,7 +101,7 @@
       "id": "cli-workspace-context-not-separated",
       "dimension": "machine-independence",
       "severity": "pass",
-      "claim": "P4-2b makes workspace-oriented CLI commands resolve a managed project workspace by default. status, diagnose and change-intake now support --workspace/--task-file, default task state to <workspace>/.dev-task.md, and expose runtime root, workspace root, task file and user-state policy in status/diagnose output.",
+      "claim": "P4-2b plus HOTFIX-REVIVE-WORKSPACE-BOUNDARY make workspace-oriented CLI commands resolve a managed project workspace by default. revive, summary, status, diagnose and change-intake now support --workspace/--task-file where applicable, default task state to <workspace>/.dev-task.md, and avoid falling back to the RedCap runtime task card when an external workspace task card exists.",
       "evidence": [
         "bin/redcap",
         "references/runtime-workspace-boundary-policy.json",

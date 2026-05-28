@@ -14,8 +14,13 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/redcap-architecture-smell-governance.json`
 - 人类说明：`references/backlogs/redcap-architecture-smell-governance.md`
-- 当前焦点：`RASG-026 Harden completion semantics against proof/defer false closure`
-- 当前焦点说明：RASG-026 已完成：完成判定防线已阻止证明、保留、延期、禁用或人工决策边界冒充 must-complete 任务完成，并已通过棱镜评审与完整回归。
+- 当前焦点：`RASG-027 Make Evolution Factory an active harvest pipeline instead of report-section compliance`
+- 当前焦点说明：HOTFIX-REVIVE-WORKSPACE-BOUNDARY 已完成；下一步把 Evolution Factory 从报告小节检查升级为真实候选生产线。
+
+### 进入当前焦点前的前置热修
+| 阻塞项 | 状态 | 阻塞对象 | 为什么必须先做 |
+|---|---|---|---|
+| HOTFIX-REVIVE-WORKSPACE-BOUNDARY 前置热修：修复 redcap revive 外部工作区边界盲区 | 已完成 | RASG-027 | External projects running redcap revive can mix the managed project's state with RedCap self-development state, corrupting the foundation that self-evolution and public arsenal work would depend on. |
 
 ### 阶段顺序
 | 阶段 | 状态 | 主要条目 | 说明 |
@@ -32,6 +37,9 @@
 | Workflow latency and gate stratification | 已完成 | RASG-024 | Workflow gate stratification is implemented: low-risk report/index drift no longer automatically invalidates release-grade E2E, while release, package, validator, secret and destructive-migration work remains fail-closed. |
 | Pre-release freeze and artifact churn control | 已完成 | RASG-025 | Release-convergence cleanup has a hard boundary: normal evidence is archived or indexed, while only concrete first-release blockers may expand scope. |
 | Completion semantics hardening | 已完成 | RASG-026 | Completion claims now fail when must-complete work is satisfied only by proof, preserve, defer, disabled, proposal-only, or human-decision boundary language; closeout runtime now checks this before receipt generation. |
+| Self-evolution and public arsenal completion | 待推进 | RASG-027 / RASG-028 | Evolution Factory and RedCap Forge must become real recurring production systems, not policy/check/report surfaces. |
+| Engineering directory final convergence | 待推进 | RASG-029 | The physical directory foundation must be made clean enough to support self-evolution, public arsenal growth and public release. |
+| Anti-edge-ball drift methodology | 待推进 | RASG-030 | The recent mechanism-completion drift must be turned into a reusable lesson, Forge candidate and completion-regression pattern. |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -62,6 +70,10 @@
 | RASG-024 Stratify workflow gates by task risk to reduce avoidable multi-hour task latency | Workflow latency and gate stratification | 已完成 | P1 | Risk-based validation matrix implemented and wired into spec-check, diagnose, progress meter, clean workspace E2E post-result drift handling, and acceptance regression. |
 | RASG-025 Stop pre-release governance cleanup from spawning endless cleanup work | Pre-release freeze and artifact churn control | 已完成 | P0 | Done: release-convergence cleanup now has a hard boundary that prevents normal reports, receipts, indexes and Prism evidence from automatically becoming fresh cleanup scope. |
 | RASG-026 Harden completion semantics against proof/defer false closure | Completion semantics hardening | 已完成 | P0 | Done: completion claims now fail when must-complete work is satisfied only by preserve, defer, disabled, proposal-only, or human-decision boundary language; spec-check, diagnose, closeout runtime, Prism review, and full acceptance have passed. |
+| RASG-027 Make Evolution Factory an active harvest pipeline instead of report-section compliance | Self-evolution and public arsenal completion | 待推进 | P0 | Turn self-upgrade from report-section compliance into an active candidate production and processing pipeline. |
+| RASG-028 Execute RedCap Forge batch distillation into redcap-arsenal | Self-evolution and public arsenal completion | 待推进 | P0 | Grow redcap-arsenal beyond the first three sample entries through a safe, deduplicated, append-only Forge batch. |
+| RASG-029 Finish engineering directory convergence as the foundation for self-evolution and arsenal growth | Engineering directory final convergence | 待推进 | P0 | Close the remaining root-directory, compatibility-anchor and prism/runs lifecycle confusion before public release. |
+| RASG-030 Promote anti-edge-ball drift methodology into lessons and public arsenal candidates | Anti-edge-ball drift methodology | 待推进 | P0 | Distill the recent false-completion/defer-loop failure into a reusable lesson and Forge/arsenal methodology candidate. |
 
 ### 术语对照
 | 术语 | 人话解释 |
@@ -71,3 +83,7 @@
 | current focus（Active debt item） | 当前正在执行或刚完成收口的 backlog 项，必须和 .dev-task.md 的 backlog_item 对齐。 |
 | gate stratification（Risk-based validation matrix） | 按任务风险选择验证强度：小改动走轻量门，普通实现走标准门，发布/迁移类任务才走完整发布级门禁。 |
 <!-- REDCAP_ARCHITECTURE_SMELL_GOVERNANCE:END -->
+
+
+
+

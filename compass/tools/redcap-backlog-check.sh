@@ -57,6 +57,12 @@ STATUS_LABELS = {
     "pending": "待推进",
     "blocked": "阻塞",
 }
+PREFLIGHT_STATUS_LABELS = {
+    "planned": "待推进",
+    "in_progress": "进行中",
+    "done": "已完成",
+    "blocked": "阻塞",
+}
 
 
 def fail(message: str) -> None:
@@ -141,10 +147,33 @@ def render_block(data, items_by_id, groups_by_id):
         f"- 当前焦点：`{current_item['id']} {current_item['title']}`",
         f"- 当前焦点说明：{data['current_focus']['summary']}",
         "",
-        "### 阶段顺序",
-        "| 阶段 | 状态 | 主要条目 | 说明 |",
-        "|---|---|---|---|",
     ]
+    preflight_blockers = data.get("preflight_blockers", [])
+    if isinstance(preflight_blockers, list) and preflight_blockers:
+        lines.extend(
+            [
+                "### 进入当前焦点前的前置热修",
+                "| 阻塞项 | 状态 | 阻塞对象 | 为什么必须先做 |",
+                "|---|---|---|---|",
+            ]
+        )
+        for blocker in preflight_blockers:
+            if not isinstance(blocker, dict):
+                continue
+            blocker_id = blocker.get("id", "")
+            label = blocker.get("human_label", blocker.get("title", blocker_id))
+            status = PREFLIGHT_STATUS_LABELS.get(blocker.get("status", ""), blocker.get("status", ""))
+            blocks = " / ".join(str(item) for item in blocker.get("blocks", []))
+            risk = blocker.get("risk", "")
+            lines.append(f"| {blocker_id} {label} | {status} | {blocks} | {risk} |")
+        lines.append("")
+    lines.extend(
+        [
+            "### 阶段顺序",
+            "| 阶段 | 状态 | 主要条目 | 说明 |",
+            "|---|---|---|---|",
+        ]
+    )
     for phase in data["execution_order"]:
         item_text = " / ".join(phase["item_ids"])
         lines.append(

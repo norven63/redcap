@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 33,
-    "size_bytes": 381771,
-    "lines": 7764,
-    "chars": 226941,
+    "file_count": 34,
+    "size_bytes": 388606,
+    "lines": 7891,
+    "chars": 231176,
     "rough_token_pressure": {
-      "low": 56735,
-      "high": 113470
+      "low": 57794,
+      "high": 115588
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 17,
-        "size_bytes": 158541,
-        "lines": 2844,
-        "chars": 92369,
+        "file_count": 18,
+        "size_bytes": 165376,
+        "lines": 2971,
+        "chars": 96604,
         "rough_token_pressure": {
-          "low": 23092,
-          "high": 46184
+          "low": 24151,
+          "high": 48302
         }
       }
     },
@@ -547,7 +547,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-22 下一安全切片选择",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 5407,
       "lines": 105,
@@ -612,28 +612,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：正式发布外最终清账",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 9567,
       "lines": 164,
       "chars": 5371,
       "summary": "当前已完成：正式发布外最终清账已经完成；实现、专项回归、完整 `spec-check`、`diagnose`、棱镜独立验收和 closeout receipt 均已通过。 / 上一步完成的是：Kimi 完成长文/任务树主审，Claude Code 完成工程风险复核；两边都给出可收口结论，且无阻塞项。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：正式发布外最终清账已经完成；实现、专项回归、完整 `spec-check`、`diagnose`、棱镜独立验收和 closeout receipt 均已通过。"
-        ],
-        "previous_step": [
-          "上一步完成的是：Kimi 完成长文/任务树主审，Claude Code 完成工程风险复核；两边都给出可收口结论，且无阻塞项。"
-        ],
-        "next_step": [
-          "下一步计划做的是：本轮非发布清账不再追加开发事项；后续进入正式发布准备线，并继续保留人工授权、许可证、registry 和发布开关等发布前决策边界。"
-        ],
-        "position": [
-          "整体计划脉络图是：重新锚定非发布清账任务 -> 固化 Kimi/Claude 工作量策略 -> 裁决旧路径、运行证据和 full LLM-wiki 三类容易误判事项 -> 棱镜评审 -> 回归 -> closeout receipt。",
-          "当前所在位置：本轮已完成 receipt 收口；正式发布之外的已知可做事项已完成、正式延期或转入发布任务边界。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md",
@@ -688,6 +673,34 @@
         "position": [
           "整体计划脉络图是：定位 false-completion 根因 -> 新增完成语义政策 -> 接入总检和诊断 -> 纠偏旧报告 -> 增加负例回归 -> 独立评审 -> 完整回归 -> closeout。",
           "当前所在位置：实现、棱镜评审和完整回归已完成，正在进入 receipt 收口。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-28-hotfix-revive-workspace-boundary.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：修复 redcap revive 外部工作区边界盲区",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 6835,
+      "lines": 127,
+      "chars": 4235,
+      "summary": "当前已完成：已复现并修复 `redcap revive` 在外部项目中可能回落到 RedCap 自身任务卡的问题；外部 workspace 的默认、`--workspace`、`--task-file` 三种 revive 路径已经进入边界检查。 / 上一步完成的是：完成语义硬门已经收口；本轮承接父任务线，在进入 `RASG-027` 之前先处理棱镜确认的 runtime/workspace 边界缺陷。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：已复现并修复 `redcap revive` 在外部项目中可能回落到 RedCap 自身任务卡的问题；外部 workspace 的默认、`--workspace`、`--task-file` 三种 revive 路径已经进入边界检查。"
+        ],
+        "previous_step": [
+          "上一步完成的是：完成语义硬门已经收口；本轮承接父任务线，在进入 `RASG-027` 之前先处理棱镜确认的 runtime/workspace 边界缺陷。"
+        ],
+        "next_step": [
+          "下一步计划做的是：完成 targeted Prism 复核和总回归后，把 `HOTFIX-REVIVE-WORKSPACE-BOUNDARY` 标记为已完成，并回到 `RASG-027` 自我升级实体化。"
+        ],
+        "position": [
+          "整体计划脉络图是：完成语义硬门 -> 前置热修 `redcap revive` 边界 -> `RASG-027` Evolution Factory 主动候选生产线 -> `RASG-030` 反空转方法论 -> `RASG-028` 公共武器库批量蒸馏 -> `RASG-029` 工程目录最终收敛。",
+          "当前所在位置：前置热修已经实现，棱镜复核和总回归已通过；仍在等待 closeout receipt。"
         ]
       }
     }

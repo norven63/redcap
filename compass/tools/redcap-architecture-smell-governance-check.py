@@ -12,7 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BACKLOG = ROOT / "references/backlogs/redcap-architecture-smell-governance.json"
-EXPECTED_REQUIREMENTS = {f"RASG-{index:03d}" for index in range(1, 27)}
+EXPECTED_REQUIREMENTS = {f"RASG-{index:03d}" for index in range(1, 31)}
 EXPECTED_TRANCHES = {
     "T0": {"RASG-003", "RASG-007", "RASG-009"},
     "T1": {"RASG-001", "RASG-002", "RASG-004", "RASG-014"},
@@ -26,7 +26,11 @@ EXPECTED_TRANCHES = {
     "T9": {"RASG-024"},
     "T10": {"RASG-025"},
     "T11": {"RASG-026"},
+    "T12": {"RASG-027", "RASG-028"},
+    "T13": {"RASG-029"},
+    "T14": {"RASG-030"},
 }
+EXPECTED_PREFLIGHT_BLOCKERS = {"HOTFIX-REVIVE-WORKSPACE-BOUNDARY": "RASG-027"}
 
 
 def fail(message: str) -> None:
@@ -97,6 +101,42 @@ def validate(payload: dict[str, Any], *, require_complete: bool) -> None:
                 fail(f"{req_id}: follow-up requirement not registered: {follow_id}")
     if "RASG-022" not in (by_id["RASG-017"].get("follow_up_requirements") or []):
         fail("RASG-017 must keep RASG-022 as its physical consolidation follow-up")
+
+    blockers = payload.get("preflight_blockers")
+    if not isinstance(blockers, list) or not blockers:
+        fail("preflight_blockers must record bounded blockers that are not new RASG tranches")
+    blockers_by_id: dict[str, dict[str, Any]] = {}
+    for blocker in blockers:
+        if not isinstance(blocker, dict):
+            fail("preflight_blockers entries must be objects")
+        blocker_id = blocker.get("id")
+        if not isinstance(blocker_id, str) or blocker_id in blockers_by_id:
+            fail(f"invalid or duplicate preflight blocker id: {blocker_id}")
+        blockers_by_id[blocker_id] = blocker
+        for key in ("title", "human_label", "status", "priority", "problem_source", "risk", "desired_outcome", "scope_guard"):
+            if not isinstance(blocker.get(key), str) or not blocker[key].strip():
+                fail(f"{blocker_id}: missing {key}")
+        if blocker["status"] not in {"planned", "in_progress", "done", "blocked"}:
+            fail(f"{blocker_id}: unsupported status {blocker['status']}")
+        blocks = blocker.get("blocks")
+        if not isinstance(blocks, list) or not blocks:
+            fail(f"{blocker_id}: blocks must be a non-empty array")
+        for target in blocks:
+            if target not in by_id:
+                fail(f"{blocker_id}: blocks unknown requirement {target}")
+        acceptance = blocker.get("acceptance")
+        if not isinstance(acceptance, list) or len(acceptance) < 2:
+            fail(f"{blocker_id}: acceptance must contain at least two checks")
+    for blocker_id, blocked_item in EXPECTED_PREFLIGHT_BLOCKERS.items():
+        blocker = blockers_by_id.get(blocker_id)
+        if blocker is None:
+            fail(f"missing expected preflight blocker: {blocker_id}")
+        if blocked_item not in blocker.get("blocks", []):
+            fail(f"{blocker_id}: must block {blocked_item}")
+        if blocker["status"] != "done":
+            notes = " ".join(str(note) for note in by_id[blocked_item].get("implementation_notes", []))
+            if blocker_id not in notes:
+                fail(f"{blocked_item}: implementation notes must name active preflight blocker {blocker_id}")
 
     tranches = payload.get("tranches")
     if not isinstance(tranches, list) or len(tranches) != len(EXPECTED_TRANCHES):

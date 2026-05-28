@@ -26,6 +26,8 @@
     "local_state_path": "compass/.workflow/user-agent-identity.json"
   },
   "workspace_oriented_commands": [
+    "revive",
+    "summary",
     "status",
     "diagnose",
     "change-intake",
@@ -41,6 +43,8 @@
     "The default task file must be <workspace>/.dev-task.md unless --task-file or a backward-compatible positional task file is provided.",
     "When the caller is inside the RedCap runtime repository, the default workspace may equal the runtime root to preserve self-development.",
     "Status and diagnose output must expose runtime root, workspace root, task file, and user-state policy.",
+    "Revive must reuse the same workspace/task-file resolution and must not fall back to the RedCap runtime task card when an external workspace has its own task card.",
+    "Summary must reuse the same workspace/task-file resolution so human-facing task overviews describe the managed project, not the runtime repository.",
     "Doctor and debug must reuse the same workspace/task-file resolution and must not fall back to the RedCap runtime task card when an external workspace has its own task card.",
     "RedCap self-development remains supported because running the CLI from the RedCap repository makes workspace root equal runtime root."
   ],

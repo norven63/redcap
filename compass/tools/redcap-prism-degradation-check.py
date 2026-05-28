@@ -139,7 +139,13 @@ def classify_current_acceptance(repo: Path, task_file: Path | None) -> dict[str,
     meta = parse_task_meta(task_file)
     policy = meta.get("acceptance_policy", "").strip().lower().replace("_", "-")
     run_id = meta.get("prism_acceptance_run", "").strip()
-    if policy not in {"prism-required", "prism-required-when-available"}:
+    required_policies = {
+        "prism-required",
+        "prism-required-when-available",
+        "targeted-prism-review",
+        "targeted-required",
+    }
+    if policy not in required_policies:
         return {"status": "not-required", "classification": "not-required", "policy": policy or "missing"}
     if not run_id:
         return {"status": "missing", "classification": "missing", "policy": policy, "detail": "prism_acceptance_run is not declared"}

@@ -17,6 +17,28 @@
     "P2": "Important governance hardening; not blocking current local usage, but prevents future entropy.",
     "P3": "Longer-horizon capability or scale work; keep visible and threshold-triggered."
   },
+  "preflight_blockers": [
+    {
+      "id": "HOTFIX-REVIVE-WORKSPACE-BOUNDARY",
+      "title": "Fix redcap revive workspace boundary before RASG-027",
+      "human_label": "前置热修：修复 redcap revive 外部工作区边界盲区",
+      "status": "done",
+      "priority": "P0-before-RASG-027",
+      "blocks": [
+        "RASG-027"
+      ],
+      "problem_source": "A cross-session RedCap review found that bin/redcap computes an external workspace task file for revive but does not pass it to revive-cap.sh, while revive-cap.sh can fall back to the RedCap runtime repo's own .dev-task.md.",
+      "risk": "External projects running redcap revive can mix the managed project's state with RedCap self-development state, corrupting the foundation that self-evolution and public arsenal work would depend on.",
+      "desired_outcome": "External redcap revive uses the caller workspace task file by default, supports --workspace and --task-file, and is covered by the runtime/workspace boundary checker before RASG-027 begins.",
+      "acceptance": [
+        "bin/redcap revive resolves workspace/task-file through the same workspace-aware path as status/diagnose/summary and explicitly passes --task-file to revive-cap.sh.",
+        "redcap-runtime-workspace-boundary-check covers revive with external workspace smoke tests for default, --workspace, --task-file, REDCAP_WORKSPACE, and REDCAP_TASK_FILE invocation.",
+        "The checker proves revive does not read the RedCap runtime repo .dev-task.md when an external workspace task file exists.",
+        "summary coverage is reviewed, added to the boundary matrix, and covered with default, --workspace, --task-file, REDCAP_WORKSPACE, and REDCAP_TASK_FILE smoke tests."
+      ],
+      "scope_guard": "This is a bounded hotfix, not a new RASG tranche. It may update bin/redcap, revive-cap.sh argument handling if needed, runtime-workspace-boundary policy/checker, and direct regression coverage only."
+    }
+  ],
   "tranches": [
     {
       "id": "T0",
@@ -126,6 +148,31 @@
     "intent": "Prevent proof, defer, preserve, disabled-by-default, or human-decision boundaries from being counted as completion for must-complete work.",
     "items": [
       "RASG-026"
+    ]
+  },
+  {
+    "id": "T12",
+    "title": "Self-evolution and public arsenal completion",
+    "intent": "Turn Evolution Factory, RedCap Forge and redcap-arsenal from policy/check/report surfaces into real recurring production systems.",
+    "items": [
+      "RASG-027",
+      "RASG-028"
+    ]
+  },
+  {
+    "id": "T13",
+    "title": "Engineering directory final convergence",
+    "intent": "Finish the physical directory foundation that self-evolution and public-arsenal growth depend on, instead of relying on compatibility anchors forever.",
+    "items": [
+      "RASG-029"
+    ]
+  },
+  {
+    "id": "T14",
+    "title": "Anti-edge-ball drift methodology",
+    "intent": "Distill the month-long false-completion and defer-loop failure into a reusable method, then require it to influence future planning and Forge promotion.",
+    "items": [
+      "RASG-030"
     ]
   }
 ],
@@ -950,6 +997,120 @@
         "compass/CONTRIBUTING.core.md",
         "assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
       ]
+    },
+    {
+      "id": "RASG-027",
+      "title": "Make Evolution Factory an active harvest pipeline instead of report-section compliance",
+      "human_label": "RASG-027 自我升级实体化：从报告小节检查变成主动候选生产线",
+      "priority": "P0-before-public-release",
+      "category": "self-evolution-runtime",
+      "problem_source": "Norven pointed out that the so-called self-upgrade mechanism had mostly produced reports, gates and policy claims, while high-value experience still depended on manual reminders and task-report sections.",
+      "risk": "If Evolution Factory only checks whether a report contains a candidate-handling section, RedCap can keep satisfying machinery while failing the real goal: automatically capturing and processing valuable user corrections, failures, personality growth, skill ideas and governance improvements.",
+      "desired_outcome": "Evolution Factory becomes a real active pipeline: it scans task reports, closeout blockers, Prism verdicts, test failures and user corrections; generates concrete candidates; deduplicates them; and blocks closeout or release when high-value signals remain unprocessed.",
+      "implementation_notes": [
+        "Do not start the active harvest implementation until HOTFIX-REVIVE-WORKSPACE-BOUNDARY is closed; the harvest pipeline must not learn from a known-buggy revive workspace boundary.",
+        "Inventory current harvest coverage and identify where it only validates report wording.",
+        "Add candidate generation or extraction output, not only report-section validation.",
+        "Connect active harvest output to closeout runtime, diagnose, spec-check and progress meter.",
+        "Keep identity mutation proposal-only and preserve source anchors for every generated candidate."
+      ],
+      "acceptance": [
+        "A high-value user-correction fixture produces a concrete Evolution candidate or explicit no-promote/deferred-with-owner record without relying on the author to hand-write it in the report.",
+        "Closeout fails when a high-value signal is detected but no generated/processed candidate record exists.",
+        "Current-status and progress meter show open self-evolution work until candidates are actually processed.",
+        "The implementation proves at least one non-trivial historical signal can be harvested through the new pipeline."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-28",
+      "follow_up_requirements": [
+        "RASG-030"
+      ]
+    },
+    {
+      "id": "RASG-028",
+      "title": "Execute RedCap Forge batch distillation into redcap-arsenal",
+      "human_label": "RASG-028 公共武器库实质扩容：批量蒸馏历史高价值经验",
+      "priority": "P0-before-public-release",
+      "category": "public-arsenal-forge-apply",
+      "problem_source": "redcap-arsenal has only a first reviewed-substantive sample set, while the broader promise was a growing public weapon library of reusable methods and experience.",
+      "risk": "If only three sample entries exist, RedCap can claim a public-arsenal mechanism while the actual team-shared knowledge base remains mostly empty and unused.",
+      "desired_outcome": "Run a real RedCap Forge batch distillation tranche over historical high-value reports and Evolution candidates, producing safe, deduplicated, indexed, append-only public entries in redcap-arsenal without leaking private raw evidence.",
+      "implementation_notes": [
+        "Select a bounded historical source window and classify candidates before writing public entries.",
+        "Run privacy, path, credential, duplicate and public-claim boundary checks.",
+        "Update redcap-arsenal catalog and remote binding evidence after append-only writes.",
+        "Keep raw private reports, identity text, runtime evidence and Prism transcripts out of public entries."
+      ],
+      "acceptance": [
+        "A batch manifest lists selected sources, rejected sources, privacy outcomes, duplicate outcomes and public entry targets.",
+        "redcap-arsenal gains more than the current first three sample entries through reviewed append-only writes.",
+        "Public catalog lookup can find the new entries without loading private source reports.",
+        "Package safety and shared-knowledge checks pass after the batch."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-28",
+      "follow_up_requirements": [
+        "RASG-027",
+        "RASG-030"
+      ]
+    },
+    {
+      "id": "RASG-029",
+      "title": "Finish engineering directory convergence as the foundation for self-evolution and arsenal growth",
+      "human_label": "RASG-029 工程目录最终收敛：为自升级和武器库提供干净地基",
+      "priority": "P0-before-public-release",
+      "category": "engineering-directory-final-convergence",
+      "problem_source": "Norven originally raised directory disorder as the foundation problem: scattered docs, knowledge, references, private archive and prism evidence made RedCap hard to reason about and easy to misread as complete when only compatibility anchors had moved.",
+      "risk": "If root compatibility anchors and raw run evidence remain visually and operationally confusing, self-evolution and public-arsenal tasks will keep rediscovering the same asset-boundary questions and may create another cleanup loop.",
+      "desired_outcome": "Before public release, RedCap has a clean, explicit engineering directory model: canonical asset roots, compatibility anchors, raw evidence retention, runtime state, public arsenal and private archives each have a physical location, lifecycle rule, cleanup/apply path and human-readable explanation.",
+      "implementation_notes": [
+        "Re-audit root directories after the latest symlink and asset moves.",
+        "Decide which compatibility anchors must remain, which can be hidden/internalized, and which require physical removal or externalization.",
+        "Give prism/runs an apply-capable retention plan that preserves cited evidence but stops unlimited visible growth.",
+        "Verify package surface, clean workspace E2E, docs catalog, knowledge gateway and receipt archaeology after changes."
+      ],
+      "acceptance": [
+        "A root inventory proves every root-level directory or symlink has an owner, lifecycle and package/public-surface disposition.",
+        "No directory is kept only because earlier reports happened to reference it; references must resolve through aliases, catalogs or explicit preserved anchors.",
+        "prism/runs has a bounded retention/apply plan with cited-evidence protection.",
+        "Human-facing documentation explains the final directory model without requiring internal gate vocabulary."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-28",
+      "follow_up_requirements": [
+        "RASG-027",
+        "RASG-028"
+      ]
+    },
+    {
+      "id": "RASG-030",
+      "title": "Promote anti-edge-ball drift methodology into lessons and public arsenal candidates",
+      "human_label": "RASG-030 反空转方法论沉淀：阻止机制完成冒充目标完成",
+      "priority": "P0-before-public-release",
+      "category": "anti-drift-methodology",
+      "problem_source": "The recent month-long loop showed a recurring failure mode: RedCap recorded policies, proofs, reports and deferred boundaries, then drifted away from the user's root goal of physical completion, self-upgrade and public arsenal growth.",
+      "risk": "Without a distilled reusable method, future work can repeat the same pattern: register the problem, prove the registration, defer the physical work, then report apparent progress while the real target remains untouched.",
+      "desired_outcome": "Create and enforce an outcome-first methodology: every strategic requirement must name its physical target, mechanism target, evidence target and non-completion labels; any mechanism-only result must create an open apply task before it can close. Promote the method to private lessons and, after Forge review, redcap-arsenal.",
+      "implementation_notes": [
+        "Write a concise lesson with problem source, solution and final effect.",
+        "Create a Forge candidate for a public arsenal methodology entry.",
+        "Add a regression fixture where policy/report/deferred-only work cannot satisfy an outcome-completion claim.",
+        "Add a Prism coordinator reopen/follow-up obligation: if Cap sees a substantive flaw in Prism synthesis or verdict, it must record the defect and trigger follow-up/council/deadlock instead of blindly accepting or silently overriding Prism.",
+        "Tie the methodology back to RASG-027 and RASG-028 so it affects future self-evolution and Forge work."
+      ],
+      "acceptance": [
+        "A private lesson exists and is indexed.",
+        "A Forge/public-arsenal candidate exists or a reviewed public entry is appended.",
+        "The methodology can be cited by completion-semantics, plan-only follow-up, and Evolution harvest checks.",
+        "Prism protocol or conclusion gate explicitly requires coordinator-observed substantive flaws to reopen/follow up before consensus can be claimed.",
+        "A future task cannot claim a root outcome complete when only mechanism setup was completed."
+      ],
+      "status": "planned",
+      "introduced_at": "2026-05-28",
+      "follow_up_requirements": [
+        "RASG-027",
+        "RASG-028"
+      ]
     }
   ],
   "must_not_claim": [
@@ -960,10 +1121,17 @@
     "Do not claim RASG-018 fixes the P1 issues it discovered; RASG-019, RASG-020, RASG-021, RASG-022, and RASG-023 each required separate follow-up work with independent receipts.",
     "Do not treat future full LLM-wiki/RAG/GraphRAG as enabled by this backlog.",
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
+    "Do not claim Evolution Factory is complete merely because candidates.json exists or task reports include candidate-handling sections.",
+    "Do not claim Evolution Factory is active merely because candidate count increased; at least one non-trivial candidate must be auto-generated, processed to completion/archive, and verified by a closeout blocker before that claim is allowed.",
+    "Do not claim RedCap Forge or redcap-arsenal are mature merely because the first three reviewed-substantive entries exist.",
+    "Do not claim engineering directory convergence is complete merely because old paths are compatibility symlinks into assets/.",
+    "Do not claim anti-drift methodology is complete until it exists as a lesson and a Forge/arsenal candidate or reviewed public entry.",
+    "HOTFIX-REVIVE-WORKSPACE-BOUNDARY is closed as a bounded preflight hotfix; do not reopen it unless runtime/workspace boundary regression evidence appears.",
+    "Do not claim Prism-backed conclusions are final if Cap has observed a substantive synthesis/verdict defect that was not reopened, followed up, deadlocked, or escalated.",
     "Do not treat preserve-with-proof, deferred, disabled-by-default, implemented-proposal-only, or human-decision boundaries as completion for must-complete work.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "All currently registered RASG items are closed for the pre-release pass, but any future completion claim must pass completion-semantics before it can count as done. New findings must pass the release-convergence freeze policy before they can expand active scope.",
+  "recommended_next_step": "Start RASG-027, using the completed revive workspace-boundary hotfix as an early real signal for Evolution harvest. Fold Prism coordinator reopen/follow-up hardening into RASG-030, then continue RASG-028 and RASG-029 as bounded physical outcome tranches before any public release claim.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -1282,6 +1450,56 @@
           "summary": "Done: completion claims now fail when must-complete work is satisfied only by preserve, defer, disabled, proposal-only, or human-decision boundary language; spec-check, diagnose, closeout runtime, Prism review, and full acceptance have passed."
         }
       ]
+    },
+    {
+      "id": "T12",
+      "title": "Self-evolution and public arsenal completion",
+      "items": [
+        {
+          "id": "RASG-027",
+          "title": "Make Evolution Factory an active harvest pipeline instead of report-section compliance",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "T12",
+          "summary": "Turn self-upgrade from report-section compliance into an active candidate production and processing pipeline."
+        },
+        {
+          "id": "RASG-028",
+          "title": "Execute RedCap Forge batch distillation into redcap-arsenal",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "T12",
+          "summary": "Grow redcap-arsenal beyond the first three sample entries through a safe, deduplicated, append-only Forge batch."
+        }
+      ]
+    },
+    {
+      "id": "T13",
+      "title": "Engineering directory final convergence",
+      "items": [
+        {
+          "id": "RASG-029",
+          "title": "Finish engineering directory convergence as the foundation for self-evolution and arsenal growth",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "T13",
+          "summary": "Close the remaining root-directory, compatibility-anchor and prism/runs lifecycle confusion before public release."
+        }
+      ]
+    },
+    {
+      "id": "T14",
+      "title": "Anti-edge-ball drift methodology",
+      "items": [
+        {
+          "id": "RASG-030",
+          "title": "Promote anti-edge-ball drift methodology into lessons and public arsenal candidates",
+          "status": "pending",
+          "priority": "P0",
+          "phase_id": "T14",
+          "summary": "Distill the recent false-completion/defer-loop failure into a reusable lesson and Forge/arsenal methodology candidate."
+        }
+      ]
     }
   ],
   "execution_order": [
@@ -1406,10 +1624,38 @@
       "item_ids": [
         "RASG-026"
       ]
+    },
+    {
+      "id": "T12",
+      "title": "Self-evolution and public arsenal completion",
+      "status": "pending",
+      "summary": "Evolution Factory and RedCap Forge must become real recurring production systems, not policy/check/report surfaces.",
+      "item_ids": [
+        "RASG-027",
+        "RASG-028"
+      ]
+    },
+    {
+      "id": "T13",
+      "title": "Engineering directory final convergence",
+      "status": "pending",
+      "summary": "The physical directory foundation must be made clean enough to support self-evolution, public arsenal growth and public release.",
+      "item_ids": [
+        "RASG-029"
+      ]
+    },
+    {
+      "id": "T14",
+      "title": "Anti-edge-ball drift methodology",
+      "status": "pending",
+      "summary": "The recent mechanism-completion drift must be turned into a reusable lesson, Forge candidate and completion-regression pattern.",
+      "item_ids": [
+        "RASG-030"
+      ]
     }
   ],
   "current_focus": {
-    "item_id": "RASG-026",
-    "summary": "RASG-026 已完成：完成判定防线已阻止证明、保留、延期、禁用或人工决策边界冒充 must-complete 任务完成，并已通过棱镜评审与完整回归。"
+    "item_id": "RASG-027",
+    "summary": "HOTFIX-REVIVE-WORKSPACE-BOUNDARY 已完成；下一步把 Evolution Factory 从报告小节检查升级为真实候选生产线。"
   }
 }

@@ -326,10 +326,12 @@ shift || true
 
 case "$COMMAND" in
   revive)
-    REDCAP_CMD_WORKSPACE_ROOT="$(default_workspace_root)"
-    REDCAP_CMD_TASK_FILE="$REDCAP_CMD_WORKSPACE_ROOT/.dev-task.md"
+    resolve_workspace_task_args "$@"
     emit_trace "revive" "$REDCAP_ROOT/revive-cap.sh"
-    exec "$REDCAP_ROOT/revive-cap.sh" "$@"
+    if [[ "${#REDCAP_CMD_REMAINING_ARGS[@]}" -gt 0 ]]; then
+      exec "$REDCAP_ROOT/revive-cap.sh" --task-file "$REDCAP_CMD_TASK_FILE" "${REDCAP_CMD_REMAINING_ARGS[@]}"
+    fi
+    exec "$REDCAP_ROOT/revive-cap.sh" --task-file "$REDCAP_CMD_TASK_FILE"
     ;;
   status)
     resolve_workspace_task_args "$@"

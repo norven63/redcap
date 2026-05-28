@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 POLICY = ROOT / "references/runtime-workspace-boundary-policy.json"
 CLI = ROOT / "bin/redcap"
 PRE_RELEASE_REVIEW = ROOT / "references/pre-release-product-architecture-review.json"
+FIXTURE_TASK_ID = "fixture-external-workspace"
 
 
 def fail(message: str) -> None:
@@ -41,6 +42,35 @@ def command_branch(script: str, command: str) -> str:
     if not match:
         fail(f"CLI command branch missing: {command}")
     return match.group("body")
+
+
+def task_id_from(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    match = re.search(r"^task_id:\s*(\S+)\s*$", path.read_text(encoding="utf-8", errors="replace"), re.M)
+    return match.group(1).strip() if match else ""
+
+
+def assert_fixture_output(output: str, label: str) -> None:
+    if (
+        f"task_id: {FIXTURE_TASK_ID}" not in output
+        and f"task_id={FIXTURE_TASK_ID}" not in output
+        and FIXTURE_TASK_ID not in output
+        and "Fixture external workspace boundary top goal." not in output
+    ):
+        fail(f"{label} must receive the external workspace task file")
+
+
+def assert_no_runtime_task_leak(output: str, runtime_task_id: str, label: str) -> None:
+    if not runtime_task_id or runtime_task_id == FIXTURE_TASK_ID:
+        return
+    leak_needles = [
+        f"task_id: {runtime_task_id}",
+        f"task_id={runtime_task_id}",
+    ]
+    for needle in leak_needles:
+        if needle in output:
+            fail(f"{label} leaked the RedCap package-root task card: {runtime_task_id}")
 
 
 def require_policy(policy: dict[str, Any]) -> None:
@@ -70,8 +100,8 @@ def require_policy(policy: dict[str, Any]) -> None:
     if user.get("identity_anchor") != "~/.cap/identity.md":
         fail("user_layer.identity_anchor must remain outside the repository")
     commands = policy.get("workspace_oriented_commands")
-    if commands != ["status", "diagnose", "change-intake", "closeout"]:
-        fail("workspace_oriented_commands must be status/diagnose/change-intake/closeout")
+    if commands != ["revive", "summary", "status", "diagnose", "change-intake", "closeout"]:
+        fail("workspace_oriented_commands must be revive/summary/status/diagnose/change-intake/closeout")
     diagnostic_commands = policy.get("diagnostic_product_commands")
     if diagnostic_commands != ["doctor", "debug"]:
         fail("diagnostic_product_commands must be doctor/debug")
@@ -95,7 +125,7 @@ def inspect_cli() -> None:
         if needle not in script:
             fail(f"bin/redcap missing workspace contract: {needle}")
 
-    for command in ["status", "diagnose", "change-intake", "doctor", "debug"]:
+    for command in ["revive", "summary", "status", "diagnose", "change-intake", "doctor", "debug"]:
         body = command_branch(script, command)
         if "$REDCAP_ROOT/.dev-task.md" in body:
             fail(f"{command} still defaults to package-root .dev-task.md")
@@ -116,16 +146,22 @@ def run_external_workspace_smoke() -> None:
     with tempfile.TemporaryDirectory(prefix="redcap-workspace-boundary-") as tmp:
         workspace = Path(tmp).resolve()
         fixture = workspace / ".dev-task.md"
+        runtime_task_id = task_id_from(ROOT / ".dev-task.md")
         fixture.write_text(
             """# 当前任务：workspace boundary fixture
 
 ## 控制面元数据（机器校验）
 task_id: fixture-external-workspace
 active_slice: runtime-workspace-boundary-fixture
-task_report: compass/docs/task-reports/fixture.md
+top_goal: Fixture external workspace boundary top goal.
+task_report: assets/docs/task-reports/2026-05-27-completion-semantics-hard-gate.md
+
+## 原始输入（用户原文，禁止改写）
+
+"Fixture external workspace boundary smoke."
 
 ## 已确认需求
-- This fixture proves bin/redcap status reads the caller workspace task file.
+- This fixture proves bin/redcap workspace-aware commands read the caller workspace task file.
 """,
             encoding="utf-8",
         )
@@ -157,8 +193,7 @@ task_report: compass/docs/task-reports/fixture.md
         for needle in required:
             if needle not in output:
                 fail(f"external workspace status missing: {needle}")
-        if "task_id: redcap-runtime-project-user-boundary-and-cli-workspace-context" in output:
-            fail("external workspace status leaked the RedCap package-root task card")
+        assert_no_runtime_task_leak(output, runtime_task_id, "external workspace status")
 
         subdir = workspace / "src" / "module"
         subdir.mkdir(parents=True)
@@ -175,8 +210,49 @@ task_report: compass/docs/task-reports/fixture.md
         output = completed.stdout
         if completed.returncode != 0:
             fail("external workspace subdir status smoke failed:\n" + output[:2000])
-        if f"workspace root: {workspace}" not in output or "task_id: fixture-external-workspace" not in output:
+        if f"workspace root: {workspace}" not in output or f"task_id: {FIXTURE_TASK_ID}" not in output:
             fail("subdirectory invocation must walk up to the workspace task file")
+        assert_no_runtime_task_leak(output, runtime_task_id, "external workspace subdir status")
+
+        def run_redcap(args: list[str], label: str, cwd: Path = workspace, extra_env: dict[str, str] | None = None) -> str:
+            run_env = env.copy()
+            if extra_env:
+                run_env.update(extra_env)
+            completed = subprocess.run(
+                [str(CLI), *args],
+                cwd=cwd,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=run_env,
+                timeout=60,
+                check=False,
+            )
+            output = completed.stdout
+            if completed.returncode != 0:
+                fail(f"{label} smoke failed:\n" + output[:2000])
+            assert_no_runtime_task_leak(output, runtime_task_id, label)
+            return output
+
+        def assert_revive_uses_fixture(args: list[str], label: str, cwd: Path = workspace, extra_env: dict[str, str] | None = None) -> None:
+            output = run_redcap(["revive", *args], f"external workspace revive ({label})", cwd=cwd, extra_env=extra_env)
+            assert_fixture_output(output, f"revive ({label})")
+
+        def assert_summary_uses_fixture(args: list[str], label: str, cwd: Path = workspace, extra_env: dict[str, str] | None = None) -> None:
+            output = run_redcap(["summary", *args], f"summary workspace ({label})", cwd=cwd, extra_env=extra_env)
+            assert_fixture_output(output, f"summary ({label})")
+
+        assert_revive_uses_fixture([], "default")
+        assert_revive_uses_fixture(["--workspace", str(workspace)], "workspace-option", cwd=ROOT)
+        assert_revive_uses_fixture(["--task-file", str(fixture)], "task-file-option", cwd=ROOT)
+        assert_revive_uses_fixture([], "workspace-env", cwd=ROOT, extra_env={"REDCAP_WORKSPACE": str(workspace)})
+        assert_revive_uses_fixture([], "task-file-env", cwd=ROOT, extra_env={"REDCAP_TASK_FILE": str(fixture)})
+
+        assert_summary_uses_fixture([], "default")
+        assert_summary_uses_fixture(["--workspace", str(workspace)], "workspace-option", cwd=ROOT)
+        assert_summary_uses_fixture(["--task-file", str(fixture)], "task-file-option", cwd=ROOT)
+        assert_summary_uses_fixture([], "workspace-env", cwd=ROOT, extra_env={"REDCAP_WORKSPACE": str(workspace)})
+        assert_summary_uses_fixture([], "task-file-env", cwd=ROOT, extra_env={"REDCAP_TASK_FILE": str(fixture)})
 
         completed = subprocess.run(
             [str(CLI), "closeout", "status"],
