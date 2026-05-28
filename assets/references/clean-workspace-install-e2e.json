@@ -2,10 +2,10 @@
   "version": 1,
   "manifest_id": "redcap-clean-workspace-install-e2e",
   "task_id": "redcap-clean-workspace-install-e2e",
-  "created_at": "2026-05-28T18:35:48Z",
+  "created_at": "2026-05-28T19:46:30Z",
   "source_repo_path": "<source-repo>",
-  "source_head": "4c9f036af19d66792d6f50075cf50085fc6e8927",
-  "tested_head": "4c9f036af19d66792d6f50075cf50085fc6e8927",
+  "source_head": "b03a0b2cf77331c84fb39e0676a7a8034f09f1e2",
+  "tested_head": "b03a0b2cf77331c84fb39e0676a7a8034f09f1e2",
   "source_worktree_dirty_allowed": false,
   "source_worktree_dirty": false,
   "source_worktree_snapshot_applied": false,
@@ -36,8 +36,8 @@
         "--init-identity"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-28T18:35:42Z",
-      "finished_at": "2026-05-28T18:35:46Z",
+      "started_at": "2026-05-28T19:46:24Z",
+      "finished_at": "2026-05-28T19:46:28Z",
       "exit_code": 0,
       "stdout_excerpt": "REDCAP_INSTALL\nhost=codex\nrepo=/private<clean-clone>\nidentity=initialized:<temporary-identity-file>\n[ok] user-agent-identity\n[ok] feishu-notification-policy\n[ok] feishu-inbox\n  scan_status=ok added=OK\n[ok] current-status\n  当前已完成：本轮任务报告尚未生成；我会先依据当前任务卡继续推进。\n  上一步完成的是：本轮任务刚刚重锚，尚未形成上一步报告摘要\n  下一步计划做的是：继续完成当前任务的实现、评审、验证和正式收口。\n  整体计划脉络图与当前位置：当前处于已授权任务的实现阶段，等待任务报告补齐更完整路线摘要\n[ok] tracking-health\n  explore_notes=active:0 archived:10\n  note=书记官账面已归档或当前无活跃探讨条目\n  task_anchor=absent\n  task_report=unbound\n  original_input=absent\n[ok] host-hook-readiness\n  host=codex\n  hook_scope=repo-owned-candidate\n  hook_status=partial-ready\n  note=Codex CLI live marker E2E passed via references/codex-live-marker-e2e.json; Codex.app interactive surface remains degraded unless separately observed; no full reply-veto claim\n[ok] execution-guarantees\n[ok] revival-protocol\nREDCAP_INSTALL_OK",
       "stderr_excerpt": ""
@@ -49,10 +49,10 @@
         "status"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-28T18:35:46Z",
-      "finished_at": "2026-05-28T18:35:47Z",
+      "started_at": "2026-05-28T19:46:28Z",
+      "finished_at": "2026-05-28T19:46:29Z",
       "exit_code": 0,
-      "stdout_excerpt": "当前已完成：本轮任务报告尚未生成；我会先依据当前任务卡继续推进。\n上一步完成的是：本轮任务刚刚重锚，尚未形成上一步报告摘要\n下一步计划做的是：继续完成当前任务的实现、评审、验证和正式收口。\n整体计划脉络图与当前位置：当前处于已授权任务的实现阶段，等待任务报告补齐更完整路线摘要\n\n## 当前任务锚点\n- task_id: unknown\n- active_slice: unknown\n- backlog: none / none\n- git: 4c9f036（干净）\n\n## runtime / workspace / user 边界\n- runtime root: /private<clean-clone>\n- workspace root: /private<clean-clone>\n- task file: /private<clean-clone>/.dev-task.md (missing)\n- user state: compass/.workflow/user-agent-identity.json; private identity anchor: ~/.cap/identity.md\n- boundary mode: same-root；CLI 默认应以 workspace 为项目状态目录，runtime root 只提供工具实现\n\n## 收尾红线\n- status: clear（未找到当前 .dev-task 对应的 pending closure）\n\n## 长期 backlog\n- 未绑定长期 backlog\n\n## 父任务自动续跑\n- PARENT_AUTOCONTINUE_OK state=no-backlog-bound-task\n\n## RedCap 前进刻度表\n- 整体任务全景图：历史债务仍有 3 项开放；当前主线：P4-29 完成后，下一焦点是正式发布前的人工决策点；这不是例行继续，而是真实需要 Norven 决策的发布边界；长期演进暂无待评审候选；开放历史债务：RASG-028 公共武器库实质扩容：批量蒸馏历史高价值经验；RASG-029 工程目录最终收敛：为自升级和武器库提供干净地基；RASG-030 反空转方法论沉淀：阻止机制完成冒充目标完成\n- 当前位置：这段任务正在执行；承诺项会在完工核验时统一核对。\n- 当前已完成：当前任务已建立，等待任务报告或完工凭证更新。\n- 下一步计划做的是：继续推进当前任务的实现、评审与最终完成。\n- 需要人工介入：不需要\n- 说明：以上是给人看的摘要；需要证据时再展开检查记录和报告链接。\n\n## CLI 工具族\n- registry cache: detected_at=2026-05-28T18:35:43Z\n- registry 已在本次 current-status 前做轻量刷新\n- registry 只代表安装/配置嗅探，不等于登录态、限流或 headless 调用健康\n- agents: claude-code=true, gemini=true, kimi=true, copilot=true, codex=true\n- agent health cache: missin\n...<truncated>",
+      "stdout_excerpt": "当前已完成：本轮任务报告尚未生成；我会先依据当前任务卡继续推进。\n上一步完成的是：本轮任务刚刚重锚，尚未形成上一步报告摘要\n下一步计划做的是：继续完成当前任务的实现、评审、验证和正式收口。\n整体计划脉络图与当前位置：当前处于已授权任务的实现阶段，等待任务报告补齐更完整路线摘要\n\n## 当前任务锚点\n- task_id: unknown\n- active_slice: unknown\n- backlog: none / none\n- git: b03a0b2（干净）\n\n## runtime / workspace / user 边界\n- runtime root: /private<clean-clone>\n- workspace root: /private<clean-clone>\n- task file: /private<clean-clone>/.dev-task.md (missing)\n- user state: compass/.workflow/user-agent-identity.json; private identity anchor: ~/.cap/identity.md\n- boundary mode: same-root；CLI 默认应以 workspace 为项目状态目录，runtime root 只提供工具实现\n\n## 收尾红线\n- status: clear（未找到当前 .dev-task 对应的 pending closure）\n\n## 长期 backlog\n- 未绑定长期 backlog\n\n## 父任务自动续跑\n- PARENT_AUTOCONTINUE_OK state=no-backlog-bound-task\n\n## RedCap 前进刻度表\n- 整体任务全景图：历史债务仍有 2 项开放；当前主线：P4-29 完成后，下一焦点是正式发布前的人工决策点；这不是例行继续，而是真实需要 Norven 决策的发布边界；长期演进暂无待评审候选；开放历史债务：RASG-028 公共武器库实质扩容：批量蒸馏历史高价值经验；RASG-029 工程目录最终收敛：为自升级和武器库提供干净地基\n- 当前位置：这段任务正在执行；承诺项会在完工核验时统一核对。\n- 当前已完成：当前任务已建立，等待任务报告或完工凭证更新。\n- 下一步计划做的是：继续推进当前任务的实现、评审与最终完成。\n- 需要人工介入：不需要\n- 说明：以上是给人看的摘要；需要证据时再展开检查记录和报告链接。\n\n## CLI 工具族\n- registry cache: detected_at=2026-05-28T19:46:25Z\n- registry 已在本次 current-status 前做轻量刷新\n- registry 只代表安装/配置嗅探，不等于登录态、限流或 headless 调用健康\n- agents: claude-code=true, gemini=true, kimi=true, copilot=true, codex=true\n- agent health cache: missing；需要区分登录态/限流/headless 健康时运行 red\n...<truncated>",
       "stderr_excerpt": ""
     },
     {
@@ -62,8 +62,8 @@
         "publish-safety"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-28T18:35:47Z",
-      "finished_at": "2026-05-28T18:35:47Z",
+      "started_at": "2026-05-28T19:46:29Z",
+      "finished_at": "2026-05-28T19:46:29Z",
       "exit_code": 0,
       "stdout_excerpt": "PACKAGE_PUBLISH_SAFETY_OK\nsource=default-package-globs\nfiles_scanned=317",
       "stderr_excerpt": ""
@@ -79,8 +79,8 @@
         "--npm-pack-dry-run"
       ],
       "cwd": "<clean-clone>",
-      "started_at": "2026-05-28T18:35:47Z",
-      "finished_at": "2026-05-28T18:35:48Z",
+      "started_at": "2026-05-28T19:46:29Z",
+      "finished_at": "2026-05-28T19:46:30Z",
       "exit_code": 0,
       "stdout_excerpt": "RUNTIME_PACKAGE_MANIFEST_OK\nstatus=ok\npolicy=assets/references/runtime-package-readiness-policy.json\npackage_name=@norven63/redcap\npackage_version=0.1.0-alpha.0\npublish_allowed=False\ncandidate_count=317\ncandidate_list=/private<temporary-candidate-list>\nsafety_checked=True\nnpm_pack_dry_run_checked=True",
       "stderr_excerpt": ""
