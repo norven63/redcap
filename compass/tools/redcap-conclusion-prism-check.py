@@ -118,6 +118,22 @@ def main() -> int:
         if phrase not in follow_up_text:
             fail(f"plan_only_follow_up_requirement missing phrase: {phrase}")
 
+    flaw = policy.get("coordinator_observed_flaw_requirement")
+    if not isinstance(flaw, dict):
+        fail("coordinator_observed_flaw_requirement must be an object")
+    flaw_text = json.dumps(flaw, ensure_ascii=False)
+    for phrase in [
+        "substantive flaw",
+        "follow-up",
+        "council",
+        "deadlock",
+        "mechanism-only",
+        "root outcome complete",
+        "silently overriding Prism",
+    ]:
+        if phrase not in flaw_text:
+            fail(f"coordinator_observed_flaw_requirement missing phrase: {phrase}")
+
     surfaces = policy.get("enforcement_surfaces")
     if not isinstance(surfaces, list):
         fail("enforcement_surfaces must be a list")
@@ -168,6 +184,7 @@ def main() -> int:
             "official conclusion",
             "proposal / first-pass",
             "plan-complete",
+            "substantive flaw",
         ],
     )
 
@@ -180,6 +197,7 @@ def main() -> int:
             "不是单 Agent 自证",
             "resource-limited",
             "计划型完成",
+            "substantive flaw",
         ],
     )
 

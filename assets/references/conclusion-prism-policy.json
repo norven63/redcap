@@ -105,6 +105,26 @@
       "requiring Norven's memory to rediscover a deferred apply task"
     ]
   },
+  "coordinator_observed_flaw_requirement": {
+    "default": "If the Prism coordinator or Cap observes a substantive flaw in Prism synthesis, verdict framing, evidence coverage, or completion semantics, the coordinator must record the flaw and trigger follow-up, council, deadlock, or durable follow-up registration before consensus can be claimed.",
+    "substantive_flaw_examples": [
+      "reviewers answered a narrower question than the task asked",
+      "the synthesis omits a blocker or mislabels a mechanism-only result as root outcome complete",
+      "the conclusion conflicts with PM Gate, completion semantics, package safety, or privacy boundaries",
+      "resource-limited evidence is presented as full quorum"
+    ],
+    "allowed_resolutions": [
+      "follow-up prompt and updated parsed verdict",
+      "Prism council or deadlock record",
+      "task/backlog follow-up with owner, trigger and acceptance boundary",
+      "explicit resource-limited boundary with no completion claim"
+    ],
+    "forbidden": [
+      "blindly accepting flawed Prism output",
+      "silently overriding Prism without recording the defect",
+      "claiming consensus while coordinator-observed substantive flaws remain open"
+    ]
+  },
   "enforcement_surfaces": [
     "compass/CONTRIBUTING.core.md",
     "compass/CONTRIBUTING.md",

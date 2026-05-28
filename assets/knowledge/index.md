@@ -4,7 +4,7 @@
 
 ## 首读顺序
 
-1. `assets/knowledge/lessons.md`：活跃经验库索引；先看开头的“热点主题速览”和 L-编号短锚点，再按命中的 L-编号打开 `assets/knowledge/lessons/<l-id>.md` 精读正文；旧 `compass/knowledge/**` 仅为兼容入口。
+1. `assets/knowledge/lessons.md`：活跃经验库索引；先看开头的“热点主题速览”和 L-编号短锚点，再按命中的 L-编号打开 `assets/knowledge/lessons/<l-id>.md` 精读正文；遇到“机制完成冒充目标完成”的风险优先读取 L-171；旧 `compass/knowledge/**` 仅为兼容入口。
 2. `assets/knowledge/design-principles.md`：RedCap 设计元原则，适合做架构/治理取舍前置检查。
 3. `assets/knowledge/long-task-context-defense.md`：长任务 / 长对话上下文对抗策略，说明当前防线、行业常见方案与未完成边界。
 4. `assets/knowledge/runtime-memory-architecture.md`：人话词典，解释真相源、镜像、闭环证据、跨会话考古/追踪层与长期沉淀层。

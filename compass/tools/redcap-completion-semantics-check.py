@@ -97,6 +97,27 @@ def validate_policy(policy: dict[str, Any]) -> tuple[list[str], list[str]]:
     labels = set(str(item) for item in require_list(policy, "allowed_non_completion_labels", minimum=3))
     if "blocked-awaiting-human-decision" not in labels or "not-complete" not in labels:
         fail("allowed_non_completion_labels must include blocked-awaiting-human-decision and not-complete")
+    outcome = policy.get("outcome_first_methodology")
+    if not isinstance(outcome, dict):
+        fail("outcome_first_methodology must be an object")
+    if outcome.get("lesson_id") != "L-171":
+        fail("outcome_first_methodology must cite L-171")
+    lesson_path = str(outcome.get("lesson_path", ""))
+    if lesson_path != "assets/knowledge/lessons/l-171.md":
+        fail("outcome_first_methodology lesson_path mismatch")
+    if not (ROOT / lesson_path).is_file():
+        fail(f"outcome_first_methodology lesson missing: {lesson_path}")
+    outcome_text = json.dumps(outcome, ensure_ascii=False)
+    for phrase in [
+        "physical target",
+        "mechanism target",
+        "evidence target",
+        "non-completion labels",
+        "mechanism-only",
+        "open apply task",
+    ]:
+        if phrase not in outcome_text:
+            fail(f"outcome_first_methodology missing phrase: {phrase}")
     audits = require_list(policy, "historical_corrective_audits", minimum=1)
     for audit in audits:
         if not isinstance(audit, dict):

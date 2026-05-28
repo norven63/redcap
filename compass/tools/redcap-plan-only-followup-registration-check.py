@@ -133,6 +133,12 @@ def validate_fixtures(fixtures: dict[str, Any], backlog_rows: dict[str, dict[str
         fail("fixtures version must be 1")
     if fixtures.get("fixture_id") != "redcap-plan-only-followup-registration-fixtures":
         fail("unexpected fixture_id")
+    if fixtures.get("methodology_anchor") != "assets/knowledge/lessons/l-171.md":
+        fail("fixtures must cite the L-171 outcome-first methodology anchor")
+    methodology_rule = str(fixtures.get("methodology_rule") or "")
+    for phrase in ["Outcome-first", "mechanism-only", "open apply task", "root outcome"]:
+        if phrase not in methodology_rule:
+            fail(f"fixtures methodology_rule missing phrase: {phrase}")
     cases = fixtures.get("cases")
     if not isinstance(cases, list) or not cases:
         fail("fixtures must contain cases")
@@ -155,6 +161,8 @@ def validate_fixtures(fixtures: dict[str, Any], backlog_rows: dict[str, dict[str
         passed += 1
     if negative == 0:
         fail("fixtures must include at least one expected-fail regression")
+    if not any(isinstance(case, dict) and case.get("id") == "mechanism-only-root-outcome-negative" for case in cases):
+        fail("fixtures must include mechanism-only-root-outcome-negative")
     return passed, negative
 
 

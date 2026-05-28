@@ -210,6 +210,16 @@ def load_signal_policy(root: pathlib.Path) -> dict[str, Any]:
         fail("evolution harvest signal policy version must be 1")
     if policy.get("policy_id") != "redcap-evolution-harvest-signal-policy":
         fail("evolution harvest signal policy id mismatch")
+    methodology = policy.get("methodology_anchor")
+    if not isinstance(methodology, dict):
+        fail("evolution harvest signal policy missing methodology_anchor")
+    if methodology.get("lesson_id") != "L-171":
+        fail("evolution harvest methodology_anchor must cite L-171")
+    lesson_path = methodology.get("lesson_path")
+    if lesson_path != "assets/knowledge/lessons/l-171.md":
+        fail("evolution harvest methodology_anchor lesson_path mismatch")
+    if not (root / str(lesson_path)).is_file():
+        fail(f"evolution harvest methodology lesson missing: {lesson_path}")
     for key in ["always_require_task_flags", "task_field_keywords", "signal_groups", "required_report_section"]:
         if key not in policy:
             fail(f"evolution harvest signal policy missing {key}")
@@ -219,6 +229,9 @@ def load_signal_policy(root: pathlib.Path) -> dict[str, Any]:
         fail("evolution harvest signal policy task_field_keywords must be an object")
     if not isinstance(policy["signal_groups"], list) or not policy["signal_groups"]:
         fail("evolution harvest signal policy signal_groups must be non-empty")
+    group_ids = {group.get("id") for group in policy["signal_groups"] if isinstance(group, dict)}
+    if "anti-drift-or-mechanism-only" not in group_ids:
+        fail("evolution harvest signal policy must include anti-drift-or-mechanism-only")
     return policy
 
 

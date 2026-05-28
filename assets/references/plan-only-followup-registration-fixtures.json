@@ -3,6 +3,8 @@
   "fixture_id": "redcap-plan-only-followup-registration-fixtures",
   "purpose": "Regression fixtures for RASG-023. They prove that plan-complete, design-complete, route-only, or partial-with-explicit-defer conclusions cannot close unless every deferred item has durable tracking, owner surface, acceptance boundary, and revisit trigger.",
   "policy_path": "references/conclusion-prism-policy.json",
+  "methodology_anchor": "assets/knowledge/lessons/l-171.md",
+  "methodology_rule": "Outcome-first completion requires mechanism-only work to leave an open apply task, non-completion label, or no-follow-up justification before any root outcome completion claim.",
   "live_regression": {
     "source_requirement": "RASG-017",
     "physical_apply_follow_up": "RASG-022",
@@ -34,6 +36,17 @@
       "deferred_items": [
         {
           "description": "Physical apply remains open but has no durable tracking."
+        }
+      ]
+    },
+    {
+      "id": "mechanism-only-root-outcome-negative",
+      "expected_result": "fail",
+      "scope_status": "plan-complete",
+      "completed_claim": "The root outcome is complete because the mechanism policy and report were created.",
+      "deferred_items": [
+        {
+          "description": "The physical target remains open but no apply task, owner, revisit trigger, blocking relationship, or acceptance boundary was registered."
         }
       ]
     },

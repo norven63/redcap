@@ -15,7 +15,7 @@
     },
     {
       "path": "assets/references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 98991,
+      "bytes": 100036,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -78,7 +78,7 @@
     },
     {
       "path": "assets/references/legacy-asset-migration-apply-plan.json",
-      "bytes": 305345,
+      "bytes": 314341,
       "asset_class": "legacy-migration-ledger",
       "lifecycle": "retain-as-private-migration-evidence",
       "consumer_check": "bash compass/tools/redcap-legacy-asset-migration-check.sh",
@@ -150,7 +150,7 @@
     },
     {
       "path": "assets/references/redcap-parent-task-ledger.md",
-      "bytes": 46426,
+      "bytes": 46420,
       "asset_class": "parent-task-ledger",
       "lifecycle": "active-parent-state-ledger",
       "consumer_check": "bash compass/tools/redcap-parent-receipt-aggregation-check.sh",

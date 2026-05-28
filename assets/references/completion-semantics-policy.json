@@ -55,6 +55,8 @@
     "deferred",
     "not-started",
     "no-apply",
+    "mechanism-only",
+    "proof-only",
     "plan-only",
     "preflight-only",
     "只做证明",
@@ -84,6 +86,20 @@
     "enabled": true,
     "rule": "A checked completion-standard line must not contain forbidden escape terms. If a must-complete item is blocked by human decision, it must stay unchecked or be labeled blocked-awaiting-human-decision rather than done."
   },
+  "outcome_first_methodology": {
+    "lesson_id": "L-171",
+    "lesson_path": "assets/knowledge/lessons/l-171.md",
+    "public_entry_title": "Outcome-first completion for anti-drift RedCap work",
+    "rule": "A strategic requirement cannot claim root outcome complete unless it names the physical target, mechanism target, evidence target, and non-completion labels. Mechanism-only or proof-only completion must leave an open apply task, non-completion label, or explicit no-follow-up justification.",
+    "required_terms": [
+      "physical target",
+      "mechanism target",
+      "evidence target",
+      "non-completion labels",
+      "mechanism-only",
+      "open apply task"
+    ]
+  },
   "historical_corrective_audits": [
     {
       "task_id": "pre-release-blocking-debt-completion",
@@ -102,6 +118,7 @@
     "assets/docs/task-reports/2026-05-26-pre-release-blocking-debt-completion.md"
   ],
   "related_requirements": [
-    "RASG-026"
+    "RASG-026",
+    "RASG-030"
   ]
 }

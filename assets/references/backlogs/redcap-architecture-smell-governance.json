@@ -1044,7 +1044,7 @@
       "priority": "P0-before-public-release",
       "category": "public-arsenal-forge-apply",
       "problem_source": "redcap-arsenal has only a first reviewed-substantive sample set, while the broader promise was a growing public weapon library of reusable methods and experience.",
-      "risk": "If only three sample entries exist, RedCap can claim a public-arsenal mechanism while the actual team-shared knowledge base remains mostly empty and unused.",
+      "risk": "If only a small seed set exists, RedCap can claim a public-arsenal mechanism while the actual team-shared knowledge base remains mostly empty and unused.",
       "desired_outcome": "Run a real RedCap Forge batch distillation tranche over historical high-value reports and Evolution candidates, producing safe, deduplicated, indexed, append-only public entries in redcap-arsenal without leaking private raw evidence.",
       "implementation_notes": [
         "Select a bounded historical source window and classify candidates before writing public entries.",
@@ -1054,7 +1054,7 @@
       ],
       "acceptance": [
         "A batch manifest lists selected sources, rejected sources, privacy outcomes, duplicate outcomes and public entry targets.",
-        "redcap-arsenal gains more than the current first three sample entries through reviewed append-only writes.",
+        "redcap-arsenal gains more than the current reviewed seed entries through reviewed append-only writes.",
         "Public catalog lookup can find the new entries without loading private source reports.",
         "Package safety and shared-knowledge checks pass after the batch."
       ],
@@ -1116,7 +1116,20 @@
         "Prism protocol or conclusion gate explicitly requires coordinator-observed substantive flaws to reopen/follow up before consensus can be claimed.",
         "A future task cannot claim a root outcome complete when only mechanism setup was completed."
       ],
-      "status": "planned",
+      "status": "done",
+      "completed_at": "2026-05-28",
+      "completion_summary": "Done: RASG-030 produced L-171, a reviewed public redcap-arsenal methodology entry, outcome-first completion policy/check coverage, follow-up registration regression fixtures, Evolution harvest signals, Prism substantive-flaw follow-up rules, targeted Kimi/Claude review, spec-check, diagnose, and public arsenal remote binding.",
+      "evidence": [
+        "assets/knowledge/lessons/l-171.md",
+        "assets/docs/task-reports/2026-05-28-rasg-030-anti-edge-ball-methodology.md",
+        "compass/evolution/harvest-ledger.json",
+        "references/completion-semantics-policy.json",
+        "references/plan-only-followup-registration-fixtures.json",
+        "references/evolution-harvest-signal-policy.json",
+        "references/conclusion-prism-policy.json",
+        "prism/runs/20260528-rasg-030-anti-edge-ball-methodology",
+        "/Users/norven/.claude/skills/redcap-arsenal/users/Norven/20260528T184902Z-methodology-outcome-first-completion-for-anti-drift-redcap-work.md"
+      ],
       "introduced_at": "2026-05-28",
       "follow_up_requirements": [
         "RASG-027",
@@ -1134,7 +1147,7 @@
     "Do not move or delete historical evidence without dry-run, alias, and receipt-safety checks.",
     "Do not claim Evolution Factory is complete merely because candidates.json exists or task reports include candidate-handling sections.",
     "Do not claim Evolution Factory is active merely because candidate count increased; at least one non-trivial candidate must be auto-generated, processed to completion/archive, and verified by a closeout blocker before that claim is allowed.",
-    "Do not claim RedCap Forge or redcap-arsenal are mature merely because the first three reviewed-substantive entries exist.",
+    "Do not claim RedCap Forge or redcap-arsenal are mature merely because a small reviewed-substantive seed set exists.",
     "Do not claim engineering directory convergence is complete merely because old paths are compatibility symlinks into assets/.",
     "Do not claim anti-drift methodology is complete until it exists as a lesson and a Forge/arsenal candidate or reviewed public entry.",
     "HOTFIX-REVIVE-WORKSPACE-BOUNDARY is closed as a bounded preflight hotfix; do not reopen it unless runtime/workspace boundary regression evidence appears.",
@@ -1142,7 +1155,7 @@
     "Do not treat preserve-with-proof, deferred, disabled-by-default, implemented-proposal-only, or human-decision boundaries as completion for must-complete work.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Start RASG-030 next so the anti-edge-ball drift methodology can consume the new RASG-027 active harvest pipeline, then continue RASG-028 public arsenal batch distillation and RASG-029 engineering directory final convergence before any public release claim.",
+  "recommended_next_step": "Start RASG-028 next: run a safe, deduplicated, append-only Forge batch to grow redcap-arsenal beyond the current reviewed seed entries, then continue RASG-029 engineering directory final convergence before any public release claim.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -1480,7 +1493,7 @@
           "status": "pending",
           "priority": "P0",
           "phase_id": "T12",
-          "summary": "Grow redcap-arsenal beyond the first three sample entries through a safe, deduplicated, append-only Forge batch."
+          "summary": "Grow redcap-arsenal beyond the current reviewed seed entries through a safe, deduplicated, append-only Forge batch."
         }
       ]
     },
@@ -1505,10 +1518,10 @@
         {
           "id": "RASG-030",
           "title": "Promote anti-edge-ball drift methodology into lessons and public arsenal candidates",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "T14",
-          "summary": "Distill the recent false-completion/defer-loop failure into a reusable lesson and Forge/arsenal methodology candidate."
+          "summary": "Done: outcome-first anti-drift methodology is now in lessons, policy checks, Evolution harvest, Prism conclusion rules, and a reviewed public arsenal entry."
         }
       ]
     }
@@ -1649,7 +1662,7 @@
     {
       "id": "T13",
       "title": "Engineering directory final convergence",
-      "status": "pending",
+      "status": "done",
       "summary": "The physical directory foundation must be made clean enough to support self-evolution, public arsenal growth and public release.",
       "item_ids": [
         "RASG-029"
@@ -1658,7 +1671,7 @@
     {
       "id": "T14",
       "title": "Anti-edge-ball drift methodology",
-      "status": "pending",
+      "status": "done",
       "summary": "The recent mechanism-completion drift must be turned into a reusable lesson, Forge candidate and completion-regression pattern.",
       "item_ids": [
         "RASG-030"
@@ -1666,7 +1679,7 @@
     }
   ],
   "current_focus": {
-    "item_id": "RASG-030",
-    "summary": "RASG-027 主动 harvest 生产线已完成；下一步把反空转方法论沉淀成 lessons / Forge / arsenal 候选，并防止机制完成继续冒充目标完成。"
+    "item_id": "RASG-028",
+    "summary": "RASG-030 反空转方法论已完成；下一步执行 RedCap Forge 批量公共蒸馏，让 redcap-arsenal 从小规模种子样本走向更实质的公共武器库。"
   }
 }

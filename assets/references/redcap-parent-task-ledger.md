@@ -181,7 +181,7 @@ P4 numbering is a dependency/status map, not a promise of numeric execution orde
 - 不可声明 P4 子任务编号代表严格执行时间顺序；P4-3 已完成的是 clean workspace / cross-machine-style E2E 证据，P4-2 系列仍是发布前整改主线。
 - 不可声明历史报告和研究材料已经进入公共库或可公开发布；当前只完成私有 `private-archive/redcap-knowledge/**` canonical switch，公共导出仍需单独安全审查。
 - 不可声明 shared-knowledge 历史 reports/lessons/identity 已经迁移到远端公共库；本轮只绑定并初始化公共库模板。
-- 不可声明 `redcap-arsenal` 已经成熟或完成历史知识迁移；当前只有 3 条首批 reviewed-substantive 公共方法论样本、索引和 `users/Norven/` 命名空间。
+- 不可声明 `redcap-arsenal` 已经成熟或完成历史知识迁移；当前只有 4 条 reviewed-substantive 公共方法论样本、索引和 `users/Norven/` 命名空间。
 - 当前机器已能通过 `cli_a9579f5b12219bb5` 真实发送飞书；后续若 profile/token 再次失效，RedCap 仍必须 fail-closed，不得回退旧账号或 webhook。
 - 不可声明 P1-1 dry-run 已经执行真实 move/copy/link；它只证明迁移边界和风险已可审计。
 - 不可声明 P1-2 dry-run 已经执行真实历史资产搬迁或删除；它只证明分类、断链计划、catalog 计划和回滚边界已可审计。

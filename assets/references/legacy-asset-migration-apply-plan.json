@@ -113,7 +113,7 @@
       "operation": "retention-check-only",
       "apply_status": "retention_check_only",
       "item_scope": "collection-summary-only",
-      "actual_file_count": 1093,
+      "actual_file_count": 1113,
       "manifest_item_count": 0,
       "reason": "prism/runs is ignored runtime evidence; current lifecycle summary has no purgeable acceptance residue, so physical cleanup is not required now but future prune candidates must pass retention.",
       "catalog_update_plan": [
@@ -230,8 +230,8 @@
       "operation": "blocked-translate",
       "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
       "item_scope": "file-level",
-      "actual_file_count": 196,
-      "manifest_item_count": 189,
+      "actual_file_count": 197,
+      "manifest_item_count": 197,
       "reason": "Knowledge files are active runtime guidance; cold material can move only after index preserves progressive disclosure and hot lessons remain available.",
       "catalog_update_plan": [
         "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
@@ -5293,6 +5293,35 @@
     {
       "id": "LAM-0167",
       "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/lessons/l-171.md",
+      "target": "redcap-knowledge/knowledge/lessons/l-171.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0168",
+      "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-18.md",
       "target": "redcap-knowledge/knowledge/lessons/l-18.md",
       "operation": "blocked-translate",
@@ -5320,7 +5349,7 @@
       ]
     },
     {
-      "id": "LAM-0168",
+      "id": "LAM-0169",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-19.md",
       "target": "redcap-knowledge/knowledge/lessons/l-19.md",
@@ -5349,7 +5378,7 @@
       ]
     },
     {
-      "id": "LAM-0169",
+      "id": "LAM-0170",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-20.md",
       "target": "redcap-knowledge/knowledge/lessons/l-20.md",
@@ -5378,7 +5407,7 @@
       ]
     },
     {
-      "id": "LAM-0170",
+      "id": "LAM-0171",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-22.md",
       "target": "redcap-knowledge/knowledge/lessons/l-22.md",
@@ -5407,7 +5436,7 @@
       ]
     },
     {
-      "id": "LAM-0171",
+      "id": "LAM-0172",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-23.md",
       "target": "redcap-knowledge/knowledge/lessons/l-23.md",
@@ -5436,7 +5465,7 @@
       ]
     },
     {
-      "id": "LAM-0172",
+      "id": "LAM-0173",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-24.md",
       "target": "redcap-knowledge/knowledge/lessons/l-24.md",
@@ -5465,7 +5494,7 @@
       ]
     },
     {
-      "id": "LAM-0173",
+      "id": "LAM-0174",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-25.md",
       "target": "redcap-knowledge/knowledge/lessons/l-25.md",
@@ -5494,7 +5523,7 @@
       ]
     },
     {
-      "id": "LAM-0174",
+      "id": "LAM-0175",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-26.md",
       "target": "redcap-knowledge/knowledge/lessons/l-26.md",
@@ -5523,7 +5552,7 @@
       ]
     },
     {
-      "id": "LAM-0175",
+      "id": "LAM-0176",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-27.md",
       "target": "redcap-knowledge/knowledge/lessons/l-27.md",
@@ -5552,7 +5581,7 @@
       ]
     },
     {
-      "id": "LAM-0176",
+      "id": "LAM-0177",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-28.md",
       "target": "redcap-knowledge/knowledge/lessons/l-28.md",
@@ -5581,7 +5610,7 @@
       ]
     },
     {
-      "id": "LAM-0177",
+      "id": "LAM-0178",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-29.md",
       "target": "redcap-knowledge/knowledge/lessons/l-29.md",
@@ -5610,7 +5639,7 @@
       ]
     },
     {
-      "id": "LAM-0178",
+      "id": "LAM-0179",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-30.md",
       "target": "redcap-knowledge/knowledge/lessons/l-30.md",
@@ -5639,7 +5668,7 @@
       ]
     },
     {
-      "id": "LAM-0179",
+      "id": "LAM-0180",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-31.md",
       "target": "redcap-knowledge/knowledge/lessons/l-31.md",
@@ -5668,7 +5697,7 @@
       ]
     },
     {
-      "id": "LAM-0180",
+      "id": "LAM-0181",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-32.md",
       "target": "redcap-knowledge/knowledge/lessons/l-32.md",
@@ -5697,7 +5726,7 @@
       ]
     },
     {
-      "id": "LAM-0181",
+      "id": "LAM-0182",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-33.md",
       "target": "redcap-knowledge/knowledge/lessons/l-33.md",
@@ -5726,7 +5755,7 @@
       ]
     },
     {
-      "id": "LAM-0182",
+      "id": "LAM-0183",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-34.md",
       "target": "redcap-knowledge/knowledge/lessons/l-34.md",
@@ -5755,7 +5784,7 @@
       ]
     },
     {
-      "id": "LAM-0183",
+      "id": "LAM-0184",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-35.md",
       "target": "redcap-knowledge/knowledge/lessons/l-35.md",
@@ -5784,7 +5813,7 @@
       ]
     },
     {
-      "id": "LAM-0184",
+      "id": "LAM-0185",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-36.md",
       "target": "redcap-knowledge/knowledge/lessons/l-36.md",
@@ -5813,7 +5842,7 @@
       ]
     },
     {
-      "id": "LAM-0185",
+      "id": "LAM-0186",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-37.md",
       "target": "redcap-knowledge/knowledge/lessons/l-37.md",
@@ -5842,7 +5871,7 @@
       ]
     },
     {
-      "id": "LAM-0186",
+      "id": "LAM-0187",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-38.md",
       "target": "redcap-knowledge/knowledge/lessons/l-38.md",
@@ -5871,7 +5900,7 @@
       ]
     },
     {
-      "id": "LAM-0187",
+      "id": "LAM-0188",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-39.md",
       "target": "redcap-knowledge/knowledge/lessons/l-39.md",
@@ -5900,7 +5929,7 @@
       ]
     },
     {
-      "id": "LAM-0188",
+      "id": "LAM-0189",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-4.md",
       "target": "redcap-knowledge/knowledge/lessons/l-4.md",
@@ -5929,7 +5958,7 @@
       ]
     },
     {
-      "id": "LAM-0189",
+      "id": "LAM-0190",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-40.md",
       "target": "redcap-knowledge/knowledge/lessons/l-40.md",
@@ -5958,7 +5987,7 @@
       ]
     },
     {
-      "id": "LAM-0190",
+      "id": "LAM-0191",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-41.md",
       "target": "redcap-knowledge/knowledge/lessons/l-41.md",
@@ -5987,7 +6016,7 @@
       ]
     },
     {
-      "id": "LAM-0191",
+      "id": "LAM-0192",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-42.md",
       "target": "redcap-knowledge/knowledge/lessons/l-42.md",
@@ -6016,7 +6045,7 @@
       ]
     },
     {
-      "id": "LAM-0192",
+      "id": "LAM-0193",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-43.md",
       "target": "redcap-knowledge/knowledge/lessons/l-43.md",
@@ -6045,7 +6074,7 @@
       ]
     },
     {
-      "id": "LAM-0193",
+      "id": "LAM-0194",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-44.md",
       "target": "redcap-knowledge/knowledge/lessons/l-44.md",
@@ -6074,7 +6103,7 @@
       ]
     },
     {
-      "id": "LAM-0194",
+      "id": "LAM-0195",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-45.md",
       "target": "redcap-knowledge/knowledge/lessons/l-45.md",
@@ -6103,7 +6132,7 @@
       ]
     },
     {
-      "id": "LAM-0195",
+      "id": "LAM-0196",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-46.md",
       "target": "redcap-knowledge/knowledge/lessons/l-46.md",
@@ -6132,7 +6161,7 @@
       ]
     },
     {
-      "id": "LAM-0196",
+      "id": "LAM-0197",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-47.md",
       "target": "redcap-knowledge/knowledge/lessons/l-47.md",
@@ -6161,7 +6190,7 @@
       ]
     },
     {
-      "id": "LAM-0197",
+      "id": "LAM-0198",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-48.md",
       "target": "redcap-knowledge/knowledge/lessons/l-48.md",
@@ -6190,7 +6219,7 @@
       ]
     },
     {
-      "id": "LAM-0198",
+      "id": "LAM-0199",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-49.md",
       "target": "redcap-knowledge/knowledge/lessons/l-49.md",
@@ -6219,7 +6248,7 @@
       ]
     },
     {
-      "id": "LAM-0199",
+      "id": "LAM-0200",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-5.md",
       "target": "redcap-knowledge/knowledge/lessons/l-5.md",
@@ -6248,7 +6277,7 @@
       ]
     },
     {
-      "id": "LAM-0200",
+      "id": "LAM-0201",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-50.md",
       "target": "redcap-knowledge/knowledge/lessons/l-50.md",
@@ -6277,7 +6306,7 @@
       ]
     },
     {
-      "id": "LAM-0201",
+      "id": "LAM-0202",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-51.md",
       "target": "redcap-knowledge/knowledge/lessons/l-51.md",
@@ -6306,7 +6335,7 @@
       ]
     },
     {
-      "id": "LAM-0202",
+      "id": "LAM-0203",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-52.md",
       "target": "redcap-knowledge/knowledge/lessons/l-52.md",
@@ -6335,7 +6364,7 @@
       ]
     },
     {
-      "id": "LAM-0203",
+      "id": "LAM-0204",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-53.md",
       "target": "redcap-knowledge/knowledge/lessons/l-53.md",
@@ -6364,7 +6393,7 @@
       ]
     },
     {
-      "id": "LAM-0204",
+      "id": "LAM-0205",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-54.md",
       "target": "redcap-knowledge/knowledge/lessons/l-54.md",
@@ -6393,7 +6422,7 @@
       ]
     },
     {
-      "id": "LAM-0205",
+      "id": "LAM-0206",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-55.md",
       "target": "redcap-knowledge/knowledge/lessons/l-55.md",
@@ -6422,7 +6451,7 @@
       ]
     },
     {
-      "id": "LAM-0206",
+      "id": "LAM-0207",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-56.md",
       "target": "redcap-knowledge/knowledge/lessons/l-56.md",
@@ -6451,7 +6480,7 @@
       ]
     },
     {
-      "id": "LAM-0207",
+      "id": "LAM-0208",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-57.md",
       "target": "redcap-knowledge/knowledge/lessons/l-57.md",
@@ -6480,7 +6509,7 @@
       ]
     },
     {
-      "id": "LAM-0208",
+      "id": "LAM-0209",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-58.md",
       "target": "redcap-knowledge/knowledge/lessons/l-58.md",
@@ -6509,7 +6538,7 @@
       ]
     },
     {
-      "id": "LAM-0209",
+      "id": "LAM-0210",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-59.md",
       "target": "redcap-knowledge/knowledge/lessons/l-59.md",
@@ -6538,7 +6567,7 @@
       ]
     },
     {
-      "id": "LAM-0210",
+      "id": "LAM-0211",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-6.md",
       "target": "redcap-knowledge/knowledge/lessons/l-6.md",
@@ -6567,7 +6596,7 @@
       ]
     },
     {
-      "id": "LAM-0211",
+      "id": "LAM-0212",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-60.md",
       "target": "redcap-knowledge/knowledge/lessons/l-60.md",
@@ -6596,7 +6625,7 @@
       ]
     },
     {
-      "id": "LAM-0212",
+      "id": "LAM-0213",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-61.md",
       "target": "redcap-knowledge/knowledge/lessons/l-61.md",
@@ -6625,7 +6654,7 @@
       ]
     },
     {
-      "id": "LAM-0213",
+      "id": "LAM-0214",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-62.md",
       "target": "redcap-knowledge/knowledge/lessons/l-62.md",
@@ -6654,7 +6683,7 @@
       ]
     },
     {
-      "id": "LAM-0214",
+      "id": "LAM-0215",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-63.md",
       "target": "redcap-knowledge/knowledge/lessons/l-63.md",
@@ -6683,7 +6712,7 @@
       ]
     },
     {
-      "id": "LAM-0215",
+      "id": "LAM-0216",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-64.md",
       "target": "redcap-knowledge/knowledge/lessons/l-64.md",
@@ -6712,7 +6741,7 @@
       ]
     },
     {
-      "id": "LAM-0216",
+      "id": "LAM-0217",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-65.md",
       "target": "redcap-knowledge/knowledge/lessons/l-65.md",
@@ -6741,7 +6770,7 @@
       ]
     },
     {
-      "id": "LAM-0217",
+      "id": "LAM-0218",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-66.md",
       "target": "redcap-knowledge/knowledge/lessons/l-66.md",
@@ -6770,7 +6799,7 @@
       ]
     },
     {
-      "id": "LAM-0218",
+      "id": "LAM-0219",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-67.md",
       "target": "redcap-knowledge/knowledge/lessons/l-67.md",
@@ -6799,7 +6828,7 @@
       ]
     },
     {
-      "id": "LAM-0219",
+      "id": "LAM-0220",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-68.md",
       "target": "redcap-knowledge/knowledge/lessons/l-68.md",
@@ -6828,7 +6857,7 @@
       ]
     },
     {
-      "id": "LAM-0220",
+      "id": "LAM-0221",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-69.md",
       "target": "redcap-knowledge/knowledge/lessons/l-69.md",
@@ -6857,7 +6886,7 @@
       ]
     },
     {
-      "id": "LAM-0221",
+      "id": "LAM-0222",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-7.md",
       "target": "redcap-knowledge/knowledge/lessons/l-7.md",
@@ -6886,7 +6915,7 @@
       ]
     },
     {
-      "id": "LAM-0222",
+      "id": "LAM-0223",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-70.md",
       "target": "redcap-knowledge/knowledge/lessons/l-70.md",
@@ -6915,7 +6944,7 @@
       ]
     },
     {
-      "id": "LAM-0223",
+      "id": "LAM-0224",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-71.md",
       "target": "redcap-knowledge/knowledge/lessons/l-71.md",
@@ -6944,7 +6973,7 @@
       ]
     },
     {
-      "id": "LAM-0224",
+      "id": "LAM-0225",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-72.md",
       "target": "redcap-knowledge/knowledge/lessons/l-72.md",
@@ -6973,7 +7002,7 @@
       ]
     },
     {
-      "id": "LAM-0225",
+      "id": "LAM-0226",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-73.md",
       "target": "redcap-knowledge/knowledge/lessons/l-73.md",
@@ -7002,7 +7031,7 @@
       ]
     },
     {
-      "id": "LAM-0226",
+      "id": "LAM-0227",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-74.md",
       "target": "redcap-knowledge/knowledge/lessons/l-74.md",
@@ -7031,7 +7060,7 @@
       ]
     },
     {
-      "id": "LAM-0227",
+      "id": "LAM-0228",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-75.md",
       "target": "redcap-knowledge/knowledge/lessons/l-75.md",
@@ -7060,7 +7089,7 @@
       ]
     },
     {
-      "id": "LAM-0228",
+      "id": "LAM-0229",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-76.md",
       "target": "redcap-knowledge/knowledge/lessons/l-76.md",
@@ -7089,7 +7118,7 @@
       ]
     },
     {
-      "id": "LAM-0229",
+      "id": "LAM-0230",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-77.md",
       "target": "redcap-knowledge/knowledge/lessons/l-77.md",
@@ -7118,7 +7147,7 @@
       ]
     },
     {
-      "id": "LAM-0230",
+      "id": "LAM-0231",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-78.md",
       "target": "redcap-knowledge/knowledge/lessons/l-78.md",
@@ -7147,7 +7176,7 @@
       ]
     },
     {
-      "id": "LAM-0231",
+      "id": "LAM-0232",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-79.md",
       "target": "redcap-knowledge/knowledge/lessons/l-79.md",
@@ -7176,7 +7205,7 @@
       ]
     },
     {
-      "id": "LAM-0232",
+      "id": "LAM-0233",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-8.md",
       "target": "redcap-knowledge/knowledge/lessons/l-8.md",
@@ -7205,7 +7234,7 @@
       ]
     },
     {
-      "id": "LAM-0233",
+      "id": "LAM-0234",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-80.md",
       "target": "redcap-knowledge/knowledge/lessons/l-80.md",
@@ -7234,7 +7263,7 @@
       ]
     },
     {
-      "id": "LAM-0234",
+      "id": "LAM-0235",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-81.md",
       "target": "redcap-knowledge/knowledge/lessons/l-81.md",
@@ -7263,7 +7292,7 @@
       ]
     },
     {
-      "id": "LAM-0235",
+      "id": "LAM-0236",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-82.md",
       "target": "redcap-knowledge/knowledge/lessons/l-82.md",
@@ -7292,7 +7321,7 @@
       ]
     },
     {
-      "id": "LAM-0236",
+      "id": "LAM-0237",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-83.md",
       "target": "redcap-knowledge/knowledge/lessons/l-83.md",
@@ -7321,7 +7350,7 @@
       ]
     },
     {
-      "id": "LAM-0237",
+      "id": "LAM-0238",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-84.md",
       "target": "redcap-knowledge/knowledge/lessons/l-84.md",
@@ -7350,7 +7379,7 @@
       ]
     },
     {
-      "id": "LAM-0238",
+      "id": "LAM-0239",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-85.md",
       "target": "redcap-knowledge/knowledge/lessons/l-85.md",
@@ -7379,7 +7408,7 @@
       ]
     },
     {
-      "id": "LAM-0239",
+      "id": "LAM-0240",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-86.md",
       "target": "redcap-knowledge/knowledge/lessons/l-86.md",
@@ -7408,7 +7437,7 @@
       ]
     },
     {
-      "id": "LAM-0240",
+      "id": "LAM-0241",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-87.md",
       "target": "redcap-knowledge/knowledge/lessons/l-87.md",
@@ -7437,7 +7466,7 @@
       ]
     },
     {
-      "id": "LAM-0241",
+      "id": "LAM-0242",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-88.md",
       "target": "redcap-knowledge/knowledge/lessons/l-88.md",
@@ -7466,7 +7495,7 @@
       ]
     },
     {
-      "id": "LAM-0242",
+      "id": "LAM-0243",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-89.md",
       "target": "redcap-knowledge/knowledge/lessons/l-89.md",
@@ -7495,7 +7524,7 @@
       ]
     },
     {
-      "id": "LAM-0243",
+      "id": "LAM-0244",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-9.md",
       "target": "redcap-knowledge/knowledge/lessons/l-9.md",
@@ -7524,7 +7553,7 @@
       ]
     },
     {
-      "id": "LAM-0244",
+      "id": "LAM-0245",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-90.md",
       "target": "redcap-knowledge/knowledge/lessons/l-90.md",
@@ -7553,7 +7582,7 @@
       ]
     },
     {
-      "id": "LAM-0245",
+      "id": "LAM-0246",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-91.md",
       "target": "redcap-knowledge/knowledge/lessons/l-91.md",
@@ -7582,7 +7611,7 @@
       ]
     },
     {
-      "id": "LAM-0246",
+      "id": "LAM-0247",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-92.md",
       "target": "redcap-knowledge/knowledge/lessons/l-92.md",
@@ -7611,7 +7640,7 @@
       ]
     },
     {
-      "id": "LAM-0247",
+      "id": "LAM-0248",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-93.md",
       "target": "redcap-knowledge/knowledge/lessons/l-93.md",
@@ -7640,7 +7669,7 @@
       ]
     },
     {
-      "id": "LAM-0248",
+      "id": "LAM-0249",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-94.md",
       "target": "redcap-knowledge/knowledge/lessons/l-94.md",
@@ -7669,7 +7698,7 @@
       ]
     },
     {
-      "id": "LAM-0249",
+      "id": "LAM-0250",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-95.md",
       "target": "redcap-knowledge/knowledge/lessons/l-95.md",
@@ -7698,7 +7727,7 @@
       ]
     },
     {
-      "id": "LAM-0250",
+      "id": "LAM-0251",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-96.md",
       "target": "redcap-knowledge/knowledge/lessons/l-96.md",
@@ -7727,7 +7756,7 @@
       ]
     },
     {
-      "id": "LAM-0251",
+      "id": "LAM-0252",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-97.md",
       "target": "redcap-knowledge/knowledge/lessons/l-97.md",
@@ -7756,7 +7785,7 @@
       ]
     },
     {
-      "id": "LAM-0252",
+      "id": "LAM-0253",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-98.md",
       "target": "redcap-knowledge/knowledge/lessons/l-98.md",
@@ -7785,7 +7814,7 @@
       ]
     },
     {
-      "id": "LAM-0253",
+      "id": "LAM-0254",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/lessons/l-99.md",
       "target": "redcap-knowledge/knowledge/lessons/l-99.md",
@@ -7814,7 +7843,210 @@
       ]
     },
     {
-      "id": "LAM-0254",
+      "id": "LAM-0255",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/llm-wiki-full/README.md",
+      "target": "redcap-knowledge/knowledge/llm-wiki-full/README.md",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0256",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/llm-wiki-full/entries/redcap-long-term-memory-boundary.json",
+      "target": "redcap-knowledge/knowledge/llm-wiki-full/entries/redcap-long-term-memory-boundary.json",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0257",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/llm-wiki-full/index.json",
+      "target": "redcap-knowledge/knowledge/llm-wiki-full/index.json",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0258",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/llm-wiki-full/queue/index.json",
+      "target": "redcap-knowledge/knowledge/llm-wiki-full/queue/index.json",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0259",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/llm-wiki-full/queue/llm-wiki-worker-boundary.json",
+      "target": "redcap-knowledge/knowledge/llm-wiki-full/queue/llm-wiki-worker-boundary.json",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0260",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/llm-wiki-full/receipts/index.json",
+      "target": "redcap-knowledge/knowledge/llm-wiki-full/receipts/index.json",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0261",
+      "collection_id": "knowledge-lessons",
+      "source": "compass/knowledge/llm-wiki-full/receipts/llm-wiki-worker-boundary.json",
+      "target": "redcap-knowledge/knowledge/llm-wiki-full/receipts/llm-wiki-worker-boundary.json",
+      "operation": "blocked-translate",
+      "risk": "high",
+      "apply_status": "blocked_until_hot_cold_knowledge_split_exists",
+      "apply_allowed": false,
+      "old_path_retained": true,
+      "public_export_allowed": false,
+      "guards": [
+        "apply-allowed-false",
+        "source-path-remains-authoritative",
+        "no-delete-or-move",
+        "hot-cold-index-split-required",
+        "knowledge-index-preserve-first-read",
+        "no-public-export-without-redaction-review"
+      ],
+      "catalog_update_plan": [
+        "Use compass/knowledge/index.md as the first-read source until external knowledge index is ready"
+      ],
+      "link_check_plan": [
+        "Check lessons index and revival references before moving cold knowledge"
+      ],
+      "rollback_plan": [
+        "Keep compass/knowledge authoritative until external knowledge checks pass"
+      ]
+    },
+    {
+      "id": "LAM-0262",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/llm-wiki/README.md",
       "target": "redcap-knowledge/knowledge/llm-wiki/README.md",
@@ -7843,7 +8075,7 @@
       ]
     },
     {
-      "id": "LAM-0255",
+      "id": "LAM-0263",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/llm-wiki/entries/llm-wiki-lite-boundary.json",
       "target": "redcap-knowledge/knowledge/llm-wiki/entries/llm-wiki-lite-boundary.json",
@@ -7872,7 +8104,7 @@
       ]
     },
     {
-      "id": "LAM-0256",
+      "id": "LAM-0264",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/llm-wiki/index.json",
       "target": "redcap-knowledge/knowledge/llm-wiki/index.json",
@@ -7901,7 +8133,7 @@
       ]
     },
     {
-      "id": "LAM-0257",
+      "id": "LAM-0265",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/log.md",
       "target": "redcap-knowledge/knowledge/log.md",
@@ -7930,7 +8162,7 @@
       ]
     },
     {
-      "id": "LAM-0258",
+      "id": "LAM-0266",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/long-task-context-defense.md",
       "target": "redcap-knowledge/knowledge/long-task-context-defense.md",
@@ -7959,7 +8191,7 @@
       ]
     },
     {
-      "id": "LAM-0259",
+      "id": "LAM-0267",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/model-capability-matrix.yaml",
       "target": "redcap-knowledge/knowledge/model-capability-matrix.yaml",
@@ -7988,7 +8220,7 @@
       ]
     },
     {
-      "id": "LAM-0260",
+      "id": "LAM-0268",
       "collection_id": "knowledge-lessons",
       "source": "compass/knowledge/runtime-memory-architecture.md",
       "target": "redcap-knowledge/knowledge/runtime-memory-architecture.md",
@@ -8018,9 +8250,9 @@
     }
   ],
   "summary": {
-    "total_items": 260,
+    "total_items": 268,
     "copy_first_items": 54,
-    "blocked_translate_items": 189,
+    "blocked_translate_items": 197,
     "preserve_items": 15,
     "archive_in_place_items": 2,
     "retention_check_only_items": 0,

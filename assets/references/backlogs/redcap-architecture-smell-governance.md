@@ -14,8 +14,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/redcap-architecture-smell-governance.json`
 - 人类说明：`references/backlogs/redcap-architecture-smell-governance.md`
-- 当前焦点：`RASG-030 Promote anti-edge-ball drift methodology into lessons and public arsenal candidates`
-- 当前焦点说明：RASG-027 主动 harvest 生产线已完成；下一步把反空转方法论沉淀成 lessons / Forge / arsenal 候选，并防止机制完成继续冒充目标完成。
+- 当前焦点：`RASG-028 Execute RedCap Forge batch distillation into redcap-arsenal`
+- 当前焦点说明：RASG-030 反空转方法论已完成；下一步执行 RedCap Forge 批量公共蒸馏，让 redcap-arsenal 从小规模种子样本走向更实质的公共武器库。
 
 ### 进入当前焦点前的前置热修
 | 阻塞项 | 状态 | 阻塞对象 | 为什么必须先做 |
@@ -38,8 +38,8 @@
 | Pre-release freeze and artifact churn control | 已完成 | RASG-025 | Release-convergence cleanup has a hard boundary: normal evidence is archived or indexed, while only concrete first-release blockers may expand scope. |
 | Completion semantics hardening | 已完成 | RASG-026 | Completion claims now fail when must-complete work is satisfied only by proof, preserve, defer, disabled, proposal-only, or human-decision boundary language; closeout runtime now checks this before receipt generation. |
 | Self-evolution and public arsenal completion | 待推进 | RASG-027 / RASG-028 | Evolution Factory and RedCap Forge must become real recurring production systems, not policy/check/report surfaces. |
-| Engineering directory final convergence | 待推进 | RASG-029 | The physical directory foundation must be made clean enough to support self-evolution, public arsenal growth and public release. |
-| Anti-edge-ball drift methodology | 待推进 | RASG-030 | The recent mechanism-completion drift must be turned into a reusable lesson, Forge candidate and completion-regression pattern. |
+| Engineering directory final convergence | 已完成 | RASG-029 | The physical directory foundation must be made clean enough to support self-evolution, public arsenal growth and public release. |
+| Anti-edge-ball drift methodology | 已完成 | RASG-030 | The recent mechanism-completion drift must be turned into a reusable lesson, Forge candidate and completion-regression pattern. |
 
 ### 条目状态
 | 条目 | 所属能力 | 状态 | 优先级 | 一句话说明 |
@@ -71,9 +71,9 @@
 | RASG-025 Stop pre-release governance cleanup from spawning endless cleanup work | Pre-release freeze and artifact churn control | 已完成 | P0 | Done: release-convergence cleanup now has a hard boundary that prevents normal reports, receipts, indexes and Prism evidence from automatically becoming fresh cleanup scope. |
 | RASG-026 Harden completion semantics against proof/defer false closure | Completion semantics hardening | 已完成 | P0 | Done: completion claims now fail when must-complete work is satisfied only by preserve, defer, disabled, proposal-only, or human-decision boundary language; spec-check, diagnose, closeout runtime, Prism review, and full acceptance have passed. |
 | RASG-027 Make Evolution Factory an active harvest pipeline instead of report-section compliance | Self-evolution and public arsenal completion | 已完成 | P0 | Done: self-upgrade now has an active harvest ledger, producer, stale-record gate, real hotfix sample, closeout/spec/diagnose/progress integrations, and targeted Kimi + Claude Code Prism pass. |
-| RASG-028 Execute RedCap Forge batch distillation into redcap-arsenal | Self-evolution and public arsenal completion | 待推进 | P0 | Grow redcap-arsenal beyond the first three sample entries through a safe, deduplicated, append-only Forge batch. |
+| RASG-028 Execute RedCap Forge batch distillation into redcap-arsenal | Self-evolution and public arsenal completion | 待推进 | P0 | Grow redcap-arsenal beyond the current reviewed seed entries through a safe, deduplicated, append-only Forge batch. |
 | RASG-029 Finish engineering directory convergence as the foundation for self-evolution and arsenal growth | Engineering directory final convergence | 待推进 | P0 | Close the remaining root-directory, compatibility-anchor and prism/runs lifecycle confusion before public release. |
-| RASG-030 Promote anti-edge-ball drift methodology into lessons and public arsenal candidates | Anti-edge-ball drift methodology | 待推进 | P0 | Distill the recent false-completion/defer-loop failure into a reusable lesson and Forge/arsenal methodology candidate. |
+| RASG-030 Promote anti-edge-ball drift methodology into lessons and public arsenal candidates | Anti-edge-ball drift methodology | 已完成 | P0 | Done: outcome-first anti-drift methodology is now in lessons, policy checks, Evolution harvest, Prism conclusion rules, and a reviewed public arsenal entry. |
 
 ### 术语对照
 | 术语 | 人话解释 |

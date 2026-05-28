@@ -9,7 +9,7 @@
   "pre_release_review_path": "references/pre-release-product-architecture-review.json",
   "current_state": {
     "content_state": "reviewed-substantive",
-    "substantive_entries": 3,
+    "substantive_entries": 4,
     "meaning": "The public repository/worktree now contains a first reviewed, append-only set of RedCap Forge public knowledge entries. This proves the promotion pipeline can work, but it is not a mature or complete public knowledge base."
   },
   "template_only_allowed_claims": [

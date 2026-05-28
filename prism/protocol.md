@@ -21,6 +21,7 @@
 - 资源受限时，只能按 `resource-limited` 证据链诚实降级；不能把单路观点冒充为多人结论。
 - 未进入 Prism 的主 Agent 输出只能标为 `proposal / first-pass`，可以作为后续 Prism 的输入，但不能直接成为 closeout、task report 或 release posture 的最终 verdict。
 - 若结论属于 `design-complete`、`plan-complete`、`route-only` 或 `partial-with-explicit-defer`，Prism 必须同时审查“未完成项是否有 durable follow-up”。缺少任务账本、backlog、receipt deferred item 或明确 no-follow-up 理由时，不能把方案通过当成 closure 通过。
+- 若 coordinator / Cap 观察到 Prism synthesis、verdict framing、证据覆盖或完成语义存在 `substantive flaw`，必须记录缺陷并触发 follow-up、council、deadlock 或 durable follow-up registration；不能盲从，也不能静默覆盖后继续宣称 consensus。
 - 规则边界由 `references/conclusion-prism-policy.json` 与 `redcap-conclusion-prism-check.sh` 守住；缺少这些入口时，spec-check / diagnose 必须失败。
 
 ---

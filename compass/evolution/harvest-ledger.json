@@ -70,6 +70,42 @@
       ],
       "generated_by": "redcap-evolution-harvest-producer",
       "generated_at": "2026-05-28T18:35:17Z"
+    },
+    {
+      "id": "HARVEST-2026-05-28-rasg-030-anti-edge-ball-methodology",
+      "task_id": "rasg-030-anti-edge-ball-methodology",
+      "source_report": "assets/docs/task-reports/2026-05-28-rasg-030-anti-edge-ball-methodology.md",
+      "source_digest": "sha256:5174d358a01dfc36c687a5aa59226450ce335a4093ae30759027aa90ce47e21c",
+      "source_kind": "prism-verdict",
+      "reasons": [
+        "signal:anti-drift-or-mechanism-only:反空转",
+        "signal:closeout-or-receipt-blocker:closeout",
+        "signal:prism-review-signal:Prism",
+        "signal:security-release-risk:发布",
+        "signal:test-failure-or-regression:acceptance",
+        "signal:user-correction-or-interrupt:用户指出",
+        "task-flag:architecture_tranche",
+        "task-flag:governance_tranche",
+        "task-flag:review_tranche"
+      ],
+      "outcome": "no-promote",
+      "status": "processed",
+      "decision": {
+        "reason": "RASG-030 has already been promoted as a reviewed public arsenal methodology entry and private lesson, so no separate internal candidate is needed."
+      },
+      "generated_candidate": {
+        "source_kind": "prism-verdict",
+        "problem_source": "Norven 指出的核心不是“缺一份总结”，而是 RedCap 的执行机制出现了结构性漂移：很多任务先完成了治理外壳，再把外壳当作本体汇报。这样会让系统看起来很忙、证据很多、报告也很多，但真实目标并没有完成。",
+        "solution": "把战略需求先拆成物理目标、机制目标、证据目标和非完成标签；如果只完成机制或证据，必须留下 open apply task、owner、触发条件和验收边界，不能关闭 root outcome。",
+        "final_effect": "RASG-030 已生成 L-171 私有 lesson、公共 arsenal 方法论条目，并把 outcome-first 规则接入 completion semantics、plan-only follow-up、Evolution harvest 与 Prism 结论门。",
+        "recurrence_guard": "Keep the generated harvest record fresh by source digest; stale or missing records fail the harvest gate before closeout."
+      },
+      "evidence_paths": [
+        ".dev-task.md",
+        "assets/docs/task-reports/2026-05-28-rasg-030-anti-edge-ball-methodology.md"
+      ],
+      "generated_by": "redcap-evolution-harvest-producer",
+      "generated_at": "2026-05-28T19:22:16Z"
     }
   ]
 }

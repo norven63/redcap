@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 35,
-    "size_bytes": 398044,
-    "lines": 8055,
-    "chars": 236054,
+    "file_count": 36,
+    "size_bytes": 407612,
+    "lines": 8231,
+    "chars": 241882,
     "rough_token_pressure": {
-      "low": 59013,
-      "high": 118027
+      "low": 60470,
+      "high": 120941
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 19,
-        "size_bytes": 174814,
-        "lines": 3135,
-        "chars": 101482,
+        "file_count": 20,
+        "size_bytes": 184382,
+        "lines": 3311,
+        "chars": 107310,
         "rough_token_pressure": {
-          "low": 25370,
-          "high": 50741
+          "low": 26827,
+          "high": 53655
         }
       }
     },
@@ -573,7 +573,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-19 旧 Prism 报告锚点退休预检",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 12220,
       "lines": 205,
@@ -638,28 +638,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：完成语义硬门修复",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 8093,
       "lines": 143,
       "chars": 4461,
       "summary": "当前已完成：完成语义硬门已实现；RedCap 现在会把“证明、保留、延期、禁用、需要人工决策”识别为非完成状态，不能再直接包装成“全部完成”。 / 上一步完成的是：完整回归与棱镜独立评审已通过；回归期间发现两个 acceptance 夹具漏接新硬门，已同步修复并重跑通过。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：完成语义硬门已实现；RedCap 现在会把“证明、保留、延期、禁用、需要人工决策”识别为非完成状态，不能再直接包装成“全部完成”。"
-        ],
-        "previous_step": [
-          "上一步完成的是：完整回归与棱镜独立评审已通过；回归期间发现两个 acceptance 夹具漏接新硬门，已同步修复并重跑通过。"
-        ],
-        "next_step": [
-          "下一步计划做的是：进入 closeout runtime 收口，生成本任务 receipt；本报告不宣称资产历史债务、full LLM-wiki 或正式发布已经完成。"
-        ],
-        "position": [
-          "整体计划脉络图是：定位 false-completion 根因 -> 新增完成语义政策 -> 接入总检和诊断 -> 纠偏旧报告 -> 增加负例回归 -> 独立评审 -> 完整回归 -> closeout。",
-          "当前所在位置：实现、棱镜评审和完整回归已完成，正在进入 receipt 收口。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-28-hotfix-revive-workspace-boundary.md",
@@ -714,6 +699,35 @@
         "position": [
           "整体计划脉络图是：先修 revive 工作区边界，再修主动 harvest 生产线，然后继续公共武器库、目录收敛和反空转方法论，最后才进入正式发布授权。",
           "当前所在位置：正式发布前历史债务治理中的“自我升级能力补强”。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-28-rasg-030-anti-edge-ball-methodology.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-030 反空转方法论沉淀",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9568,
+      "lines": 176,
+      "chars": 5828,
+      "summary": "当前已完成：RASG-030 已把“机制完成不能冒充目标完成”沉淀为 L-171 私有 lesson，并追加了一个 public redcap-arsenal 方法论条目。 / 当前已完成：completion semantics、plan-only follow-up、Evolution harvest 和 Prism 结论门都已经能引用或检查这套 outcome-first 方法论。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RASG-030 已把“机制完成不能冒充目标完成”沉淀为 L-171 私有 lesson，并追加了一个 public redcap-arsenal 方法论条目。",
+          "当前已完成：completion semantics、plan-only follow-up、Evolution harvest 和 Prism 结论门都已经能引用或检查这套 outcome-first 方法论。"
+        ],
+        "previous_step": [
+          "上一步完成的是：RASG-027 主动 harvest 生产线，让高价值经验信号不再只靠报告作者自觉登记。"
+        ],
+        "next_step": [
+          "下一步计划做的是：继续 RASG-028 公共武器库批量蒸馏，以及 RASG-029 工程目录最终收敛。RASG-030 不能冒充它们已经完成。"
+        ],
+        "position": [
+          "整体计划脉络图是：先修复经验沉淀失效，再把反空转方法论接入关键检查，随后继续公共武器库扩容和工程目录最终收敛，最后才进入正式发布授权。",
+          "当前所在位置：RASG-030 正在收口；方法论、私有 lesson、公共 arsenal 条目和关键 gate 已落地，仍需通过最终回归并生成 closeout receipt。"
         ]
       }
     }

@@ -13,6 +13,7 @@ Prism 不是普通“多问几个模型”。
 - 高风险结论需要 formal quorum，而不是单路 reviewer 口头背书
 - 结论性输出需要成为 RedCap 官方决议时，必须先经 Prism 参与或验收；没有 Prism 的主 Agent 观点只能算建议稿，不是单 Agent 自证后的“我们结论”
 - 计划型完成需要额外检查后续任务登记：如果只是设计完成、plan-complete 或延期执行，Prism 要确认没完成的部分已经进入任务账本、backlog、receipt deferred item 或明确 no-follow-up 理由
+- 如果 Cap 或 coordinator 观察到 `substantive flaw`，例如评审回答了更窄的问题、遗漏 blocker、把 mechanism-only 结果说成 root outcome complete，必须记录并 follow-up/council/deadlock 后才能宣称 consensus
 
 ## 它不负责什么
 

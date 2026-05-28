@@ -6,6 +6,11 @@
     "near_100_percent_goal": "Every Layer B task with review, governance, architecture, release-safety, bug-fix, user-correction, Prism, test-failure, closeout-blocker, process-storm, recursion, privacy or security signals must include an Evolution Factory candidate handling section before receipt.",
     "not_claimed": "This policy does not let scripts semantically understand all natural language or auto-write active identity. It forces a visible candidate/no-promote decision for high-signal tasks."
   },
+  "methodology_anchor": {
+    "lesson_id": "L-171",
+    "lesson_path": "assets/knowledge/lessons/l-171.md",
+    "rule": "Anti-drift and mechanism-only signals are high-value self-evolution candidates because they expose a gap between root outcomes and mechanism/evidence completion."
+  },
   "always_require_task_flags": [
     "governance_tranche",
     "review_tranche",
@@ -77,6 +82,11 @@
       "id": "security-release-risk",
       "meaning": "Release, package, privacy, secret, or public-surface risk is involved.",
       "terms": ["发布", "npm", "package", "secret", "隐私", "泄漏", "安全", "公开包", "release"]
+    },
+    {
+      "id": "anti-drift-or-mechanism-only",
+      "meaning": "The task exposes a risk that a mechanism, policy, report or proof is being treated as the root outcome.",
+      "terms": ["反空转", "擦边球", "机制完成", "目标完成", "mechanism-only", "root outcome", "outcome-first", "proof-only"]
     }
   ],
   "required_report_section": "7.3 Evolution Factory 候选处理",
