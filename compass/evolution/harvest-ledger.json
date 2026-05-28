@@ -75,7 +75,7 @@
       "id": "HARVEST-2026-05-28-rasg-030-anti-edge-ball-methodology",
       "task_id": "rasg-030-anti-edge-ball-methodology",
       "source_report": "assets/docs/task-reports/2026-05-28-rasg-030-anti-edge-ball-methodology.md",
-      "source_digest": "sha256:5bc3a8df90f8509506a612aee5d36f50cd2adbeb73eb12819e259568185ca391",
+      "source_digest": "sha256:1dd287944f883a75035bf635e7c3b3847a55f7bf40946fe2ef78f928a3479aa1",
       "source_kind": "prism-verdict",
       "reasons": [
         "signal:anti-drift-or-mechanism-only:反空转",
@@ -105,7 +105,7 @@
         "assets/docs/task-reports/2026-05-28-rasg-030-anti-edge-ball-methodology.md"
       ],
       "generated_by": "redcap-evolution-harvest-producer",
-      "generated_at": "2026-05-28T19:49:03Z"
+      "generated_at": "2026-05-28T19:52:02Z"
     }
   ]
 }

@@ -40,8 +40,8 @@
       "source": "references/workflow-gate-stratification-policy.json",
       "target": "contracts/internal/workflow-gate-stratification-policy.json",
       "preflight_source_sha256": "67079c93fbe2ecbaf11d7577f0dd6a6851df2095983183c470906f6e3090d63f",
-      "current_source_sha256": "cd35033ee75bd87f3b32d8fe880457ecdd9420e2b4c48c6707b8a985b54fafc6",
-      "reason": "P4-29 keeps the internal contract mirror byte-identical after the post-result drift allowlist was canonicalized to assets paths; package-surface exclusion remains unchanged."
+      "current_source_sha256": "498cd8494225ec4ebabd7bae8868423c1059269ff0ebfeeaafaaec3d963f039b",
+      "reason": "P4-29 keeps the internal contract mirror byte-identical after the post-result drift allowlist was extended for harvest-ledger evidence; package-surface exclusion remains unchanged."
     },
     {
       "source": "references/package-publish-safety-policy.json",
@@ -126,8 +126,8 @@
       "source": "references/workflow-gate-stratification-policy.json",
       "target": "contracts/internal/workflow-gate-stratification-policy.json",
       "target_layer": "internal-contract",
-      "source_sha256": "cd35033ee75bd87f3b32d8fe880457ecdd9420e2b4c48c6707b8a985b54fafc6",
-      "target_sha256": "cd35033ee75bd87f3b32d8fe880457ecdd9420e2b4c48c6707b8a985b54fafc6",
+      "source_sha256": "498cd8494225ec4ebabd7bae8868423c1059269ff0ebfeeaafaaec3d963f039b",
+      "target_sha256": "498cd8494225ec4ebabd7bae8868423c1059269ff0ebfeeaafaaec3d963f039b",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"
