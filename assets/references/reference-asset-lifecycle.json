@@ -15,7 +15,7 @@
     },
     {
       "path": "assets/references/backlogs/redcap-architecture-smell-governance.json",
-      "bytes": 98156,
+      "bytes": 98991,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -24,7 +24,7 @@
     },
     {
       "path": "assets/references/execution-guarantees.json",
-      "bytes": 117264,
+      "bytes": 117739,
       "asset_class": "control-plane-registry",
       "lifecycle": "active-validator-registry",
       "consumer_check": "bash compass/tools/redcap-execution-guarantee-check.sh",
@@ -42,7 +42,7 @@
     },
     {
       "path": "assets/references/file-lookup-dictionary.md",
-      "bytes": 127871,
+      "bytes": 129261,
       "asset_class": "lookup-index",
       "lifecycle": "active-machine-and-human-index",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -114,7 +114,7 @@
     },
     {
       "path": "assets/references/r1-control-plane-contract-split-preflight.json",
-      "bytes": 95065,
+      "bytes": 96463,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -123,7 +123,7 @@
     },
     {
       "path": "assets/references/r1-prism-report-archive-copy-first-plan.json",
-      "bytes": 32407,
+      "bytes": 32409,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",
@@ -132,7 +132,7 @@
     },
     {
       "path": "assets/references/r1-prism-report-archive-live-copy-first-apply.json",
-      "bytes": 42507,
+      "bytes": 42513,
       "asset_class": "reference-asset",
       "lifecycle": "index-first-active-reference",
       "consumer_check": "bash compass/tools/redcap-file-lookup-dictionary-check.sh",

@@ -14,8 +14,8 @@
 ### 这份机制对应哪里
 - 机器权威：`references/backlogs/redcap-architecture-smell-governance.json`
 - 人类说明：`references/backlogs/redcap-architecture-smell-governance.md`
-- 当前焦点：`RASG-027 Make Evolution Factory an active harvest pipeline instead of report-section compliance`
-- 当前焦点说明：HOTFIX-REVIVE-WORKSPACE-BOUNDARY 已完成；下一步把 Evolution Factory 从报告小节检查升级为真实候选生产线。
+- 当前焦点：`RASG-030 Promote anti-edge-ball drift methodology into lessons and public arsenal candidates`
+- 当前焦点说明：RASG-027 主动 harvest 生产线已完成；下一步把反空转方法论沉淀成 lessons / Forge / arsenal 候选，并防止机制完成继续冒充目标完成。
 
 ### 进入当前焦点前的前置热修
 | 阻塞项 | 状态 | 阻塞对象 | 为什么必须先做 |
@@ -70,7 +70,7 @@
 | RASG-024 Stratify workflow gates by task risk to reduce avoidable multi-hour task latency | Workflow latency and gate stratification | 已完成 | P1 | Risk-based validation matrix implemented and wired into spec-check, diagnose, progress meter, clean workspace E2E post-result drift handling, and acceptance regression. |
 | RASG-025 Stop pre-release governance cleanup from spawning endless cleanup work | Pre-release freeze and artifact churn control | 已完成 | P0 | Done: release-convergence cleanup now has a hard boundary that prevents normal reports, receipts, indexes and Prism evidence from automatically becoming fresh cleanup scope. |
 | RASG-026 Harden completion semantics against proof/defer false closure | Completion semantics hardening | 已完成 | P0 | Done: completion claims now fail when must-complete work is satisfied only by preserve, defer, disabled, proposal-only, or human-decision boundary language; spec-check, diagnose, closeout runtime, Prism review, and full acceptance have passed. |
-| RASG-027 Make Evolution Factory an active harvest pipeline instead of report-section compliance | Self-evolution and public arsenal completion | 待推进 | P0 | Turn self-upgrade from report-section compliance into an active candidate production and processing pipeline. |
+| RASG-027 Make Evolution Factory an active harvest pipeline instead of report-section compliance | Self-evolution and public arsenal completion | 已完成 | P0 | Done: self-upgrade now has an active harvest ledger, producer, stale-record gate, real hotfix sample, closeout/spec/diagnose/progress integrations, and targeted Kimi + Claude Code Prism pass. |
 | RASG-028 Execute RedCap Forge batch distillation into redcap-arsenal | Self-evolution and public arsenal completion | 待推进 | P0 | Grow redcap-arsenal beyond the first three sample entries through a safe, deduplicated, append-only Forge batch. |
 | RASG-029 Finish engineering directory convergence as the foundation for self-evolution and arsenal growth | Engineering directory final convergence | 待推进 | P0 | Close the remaining root-directory, compatibility-anchor and prism/runs lifecycle confusion before public release. |
 | RASG-030 Promote anti-edge-ball drift methodology into lessons and public arsenal candidates | Anti-edge-ball drift methodology | 待推进 | P0 | Distill the recent false-completion/defer-loop failure into a reusable lesson and Forge/arsenal methodology candidate. |
@@ -83,7 +83,3 @@
 | current focus（Active debt item） | 当前正在执行或刚完成收口的 backlog 项，必须和 .dev-task.md 的 backlog_item 对齐。 |
 | gate stratification（Risk-based validation matrix） | 按任务风险选择验证强度：小改动走轻量门，普通实现走标准门，发布/迁移类任务才走完整发布级门禁。 |
 <!-- REDCAP_ARCHITECTURE_SMELL_GOVERNANCE:END -->
-
-
-
-

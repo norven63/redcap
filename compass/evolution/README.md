@@ -24,17 +24,22 @@ Do not bulk-read future candidate pools. Start from:
 1. `references/evolution-grade-baseline.json`（历史兼容路径；语义上是 control-plane assurance registry）
 2. `references/evolution-candidate-schema.json`
 3. `references/evolution-harvest-signal-policy.json`
-4. `compass/evolution/candidates.json`
-5. `compass/tools/redcap-evolution-grade-check.sh`
-6. `compass/tools/redcap-evolution-harvest-check.sh .dev-task.md`
-7. `compass/tools/redcap-evolution-candidate-check.sh --strict`
+4. `compass/evolution/harvest-ledger.json`
+5. `compass/evolution/candidates.json`
+6. `compass/tools/redcap-evolution-harvest-producer.sh --task-file .dev-task.md --write`
+7. `compass/tools/redcap-evolution-harvest-ledger-check.sh`
+8. `compass/tools/redcap-evolution-grade-check.sh`
+9. `compass/tools/redcap-evolution-harvest-check.sh .dev-task.md`
+10. `compass/tools/redcap-evolution-candidate-check.sh --strict`
 
 ## Lifecycle
 
 ```text
-runtime trace
-→ RedCap Forge distillation
-→ evolution candidate
+runtime trace / task report / Prism verdict / closeout blocker / user correction
+→ active harvest producer
+→ harvest ledger record
+→ RedCap Forge distillation when public/private promotion is appropriate
+→ evolution candidate or no-promote/deferred-with-owner decision
 → schema check
 → privacy / dedupe / structure / index gate
 → Prism / independent review when risk requires it
@@ -48,7 +53,9 @@ The first implementation is intentionally sidecar-first. It audits and gates Red
 
 `redcap-layerb-closeout-runtime.sh complete` runs two gates before it can write a receipt.
 
-1. `redcap-evolution-harvest-check.sh` decides whether the current task has high-value signals that require a candidate-handling section. It looks at review/governance/architecture flags and signals such as user correction, Prism verdict, test failure, closeout blocker, recursion/process storm, release safety, privacy and security.
-2. `redcap-evolution-candidate-check.sh --strict` verifies that all candidates already in the pool are promoted, explicitly marked `no-promote` with a reason, or archived by policy.
+1. `redcap-evolution-harvest-producer.sh` can generate or update a machine-readable harvest ledger record from a task card/report or from a historical report-only source.
+2. `redcap-evolution-harvest-ledger-check.sh` validates that generated records are structured, source-anchored, processed/deferred correctly, and do not cite home-relative private paths.
+3. `redcap-evolution-harvest-check.sh` decides whether the current task has high-value signals. It looks at review/governance/architecture flags and signals such as user correction, Prism verdict, test failure, closeout blocker, recursion/process storm, release safety, privacy and security. High-value tasks must have a fresh processed harvest ledger record; a report section alone is not enough.
+4. `redcap-evolution-candidate-check.sh --strict` verifies that all candidates already in the pool are promoted, explicitly marked `no-promote` with a reason, or archived by policy.
 
-The second gate cannot replace the first one. An empty or clean candidate pool only proves there are no unresolved recorded candidates; it does not prove the current task discovered every candidate it should have recorded.
+The candidate gate cannot replace the active harvest ledger. An empty or clean candidate pool only proves there are no unresolved recorded candidates; it does not prove the current task discovered every candidate it should have recorded.

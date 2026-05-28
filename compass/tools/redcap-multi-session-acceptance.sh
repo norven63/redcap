@@ -10669,7 +10669,7 @@ PY
 }
 
 run_evolution_harvest_check_case() {
-    local fixture report task_file output stale_output stale_status
+    local fixture report task_file ledger output stale_output stale_status
 
     log "case: evolution-harvest-check"
 
@@ -10677,6 +10677,7 @@ run_evolution_harvest_check_case() {
     mkdir -p "$fixture/compass/docs/task-reports"
     report="$fixture/compass/docs/task-reports/report.md"
     task_file="$fixture/.dev-task.md"
+    ledger="$fixture/harvest-ledger.json"
     cat >"$report" <<'EOF'
 # report
 
@@ -10702,7 +10703,9 @@ task_report: ${report#$fixture/}
 ## 已确认需求（执行依据）
 验证 Evolution harvest gate。
 EOF
-    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file")"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-producer.sh" --task-file "$task_file" --ledger "$ledger" --write --outcome no-promote --reason "acceptance fixture explicitly decides no promotion is needed after active harvest generated the record")"
+    assert_string_contains "$output" "EVOLUTION_HARVEST_PRODUCER_OK"
+    output="$(REDCAP_EVOLUTION_HARVEST_LEDGER="$ledger" bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file")"
     assert_string_contains "$output" "EVOLUTION_HARVEST_OK"
 
     python3 - "$report" <<'PY'
@@ -10712,12 +10715,22 @@ path = pathlib.Path(sys.argv[1])
 text = path.read_text(encoding="utf-8").replace("### 7.3 Evolution Factory 候选处理", "### 7.3 Missing")
 path.write_text(text, encoding="utf-8")
 PY
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-producer.sh" --task-file "$task_file" --ledger "$ledger" --write --outcome no-promote --reason "acceptance fixture verifies generated ledger handling when the report omits the 7.3 candidate section")"
+    assert_string_contains "$output" "EVOLUTION_HARVEST_PRODUCER_OK"
     set +e
-    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
+    stale_output="$(REDCAP_EVOLUTION_HARVEST_LEDGER="$ledger" bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
+    stale_status=$?
+    set -e
+    [[ "$stale_status" -eq 0 ]] || fail "evolution harvest with generated ledger and missing report section should pass"
+    assert_string_contains "$stale_output" "report_section=missing"
+
+    rm -f "$ledger"
+    set +e
+    stale_output="$(REDCAP_EVOLUTION_HARVEST_LEDGER="$ledger" bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
     stale_status=$?
     set -e
     [[ "$stale_status" -ne 0 ]] || fail "bad evolution harvest fixture unexpectedly passed"
-    assert_string_contains "$stale_output" "missing section: 7.3 Evolution Factory 候选处理"
+    assert_string_contains "$stale_output" "generated harvest ledger record"
 
     cat >"$report" <<'EOF'
 # report
@@ -10730,8 +10743,10 @@ PY
 |------|------|----------|------|
 | EVO-2099-01-01-001 | acceptance fixture | promoted | `.dev-task.md` |
 EOF
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-producer.sh" --task-file "$task_file" --ledger "$ledger" --write --outcome no-promote --reason "acceptance fixture keeps the active harvest record processed before testing unknown candidate ids")"
+    assert_string_contains "$output" "EVOLUTION_HARVEST_PRODUCER_OK"
     set +e
-    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
+    stale_output="$(REDCAP_EVOLUTION_HARVEST_LEDGER="$ledger" bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
     stale_status=$?
     set -e
     [[ "$stale_status" -ne 0 ]] || fail "evolution harvest check unexpectedly accepted unknown candidate id"
@@ -10760,13 +10775,19 @@ task_report: ${report#$fixture/}
 验证 review / bugfix / 递归等高价值信号不能跳过 Evolution harvest。
 EOF
     set +e
-    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
+    stale_output="$(REDCAP_EVOLUTION_HARVEST_LEDGER="$ledger" bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
     stale_status=$?
     set -e
     [[ "$stale_status" -ne 0 ]] || fail "review-tranche evolution harvest fixture unexpectedly skipped candidate handling"
-    assert_string_contains "$stale_output" "high-value task report missing section"
+    assert_string_contains "$stale_output" "generated harvest ledger record"
     assert_string_contains "$stale_output" "task-flag:review_tranche"
     assert_string_contains "$stale_output" "task-flag:bugfix_tranche"
+
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-producer.sh" --task-file "$task_file" --ledger "$ledger" --write --outcome no-promote --reason "acceptance fixture verifies that producer can handle high-value review and bugfix signals without a hand-written 7.3 section")"
+    assert_string_contains "$output" "EVOLUTION_HARVEST_PRODUCER_OK"
+    output="$(REDCAP_EVOLUTION_HARVEST_LEDGER="$ledger" bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file")"
+    assert_string_contains "$output" "report_section=missing"
+    assert_string_contains "$output" "EVOLUTION_HARVEST_OK"
 
     cat >"$report" <<'EOF'
 # report
@@ -10779,7 +10800,9 @@ EOF
 |------|------|----------|------|
 | deferred-with-owner | acceptance fixture | deferred-with-owner；owner=release task；next trigger=formal release readiness | `.dev-task.md` |
 EOF
-    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file")"
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-producer.sh" --task-file "$task_file" --ledger "$ledger" --write --outcome deferred-with-owner --owner "release task" --next-trigger "formal release readiness")"
+    assert_string_contains "$output" "EVOLUTION_HARVEST_PRODUCER_OK"
+    output="$(REDCAP_EVOLUTION_HARVEST_LEDGER="$ledger" bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file")"
     assert_string_contains "$output" "EVOLUTION_HARVEST_OK"
 
     cat >"$report" <<'EOF'
@@ -10793,8 +10816,10 @@ EOF
 |------|------|----------|------|
 | deferred-with-owner | acceptance fixture | deferred-with-owner | `.dev-task.md` |
 EOF
+    output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-producer.sh" --task-file "$task_file" --ledger "$ledger" --write --outcome deferred-with-owner --owner "release task" --next-trigger "formal release readiness")"
+    assert_string_contains "$output" "EVOLUTION_HARVEST_PRODUCER_OK"
     set +e
-    stale_output="$(bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
+    stale_output="$(REDCAP_EVOLUTION_HARVEST_LEDGER="$ledger" bash "$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh" "$task_file" 2>&1)"
     stale_status=$?
     set -e
     [[ "$stale_status" -ne 0 ]] || fail "deferred-with-owner without owner/trigger unexpectedly passed"

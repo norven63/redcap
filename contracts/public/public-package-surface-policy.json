@@ -12,8 +12,8 @@
   "surface_mode": "curated-runtime-readiness-surface",
   "contract_profile": "alpha-readiness-split-contract",
   "contract_boundary_policy": "references/runtime-public-contract-policy.json",
-    "max_candidate_count": 313,
-    "candidate_count_rule": "Keep the package surface focused on runnable CLI/runtime, clearly labelled maintainer/readiness checks, Prism availability, closeout/revive/status/diagnose support, provider policy validation and public handoff docs. P4-21 keeps its internal-control-plane facade manifest, checker scripts and new internal/control-plane facade files outside the current public package profile because they are maintainer-only governance evidence, not stable end-user API. Old reports, private archive report bodies, raw evidence and local state remain excluded. Formal public release must either trim maintainer governance further or introduce a separate maintainer package profile.",
+    "max_candidate_count": 317,
+    "candidate_count_rule": "Keep the package surface focused on runnable CLI/runtime, clearly labelled maintainer/readiness checks, Prism availability, closeout/revive/status/diagnose support, provider policy validation and public handoff docs. RASG-027 adds four package-visible active Evolution harvest control-plane scripts because diagnose/spec-check/closeout consume them before release readiness. P4-21 keeps its internal-control-plane facade manifest, checker scripts and new internal/control-plane facade files outside the current public package profile because they are maintainer-only governance evidence, not stable end-user API. Old reports, private archive report bodies, raw evidence and local state remain excluded. Formal public release must either trim maintainer governance further or introduce a separate maintainer package profile.",
   "required_runtime_checks": [
     "bash compass/tools/redcap-runtime-package-manifest.sh --check --npm-pack-dry-run",
     "bash compass/tools/redcap-package-publish-safety-check.sh",

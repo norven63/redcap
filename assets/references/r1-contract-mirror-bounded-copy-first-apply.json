@@ -10,9 +10,9 @@
   },
   "source_truth": {
     "p4_28_route_path": "references/r1-next-safe-slice-after-contract-mirror-apply-preflight-subset.json",
-  "p4_28_route_sha256": "9e78db231885e575da9f5368a64e213ab464866c460ed4406808227166d349d0",
+    "p4_28_route_sha256": "db31c4eb5ca4f37de3732086934bef331f5888917813e263e484c6e6ee864471",
     "p4_27_preflight_path": "references/r1-contract-mirror-apply-preflight-subset.json",
-  "p4_27_preflight_sha256": "0b4bce7b057d9197e5dbdb371f4f2cc0cb705c6da471401442df8a821354781c"
+    "p4_27_preflight_sha256": "0b5738aa403c2adc31b9730855441db16ea9463503cb24c660cf1ce8d85fde58"
   },
   "source_updates_after_preflight": [
     {
@@ -26,15 +26,15 @@
       "source": "references/public-package-surface-policy.json",
       "target": "contracts/public/public-package-surface-policy.json",
       "preflight_source_sha256": "639e25430e13c6848eff1b3d83188a51a2a709c1a1af4ac848514c61bcba7fda",
-      "current_source_sha256": "56afc68ba5013ff672f00a7dbb1da163c40189fbd96413ddcd7570b19154f710",
-      "reason": "P4-29 keeps the public contract mirror byte-identical after provider-policy validation increased the package candidate count and clarified the package-surface exclusion rule."
+      "current_source_sha256": "615298b582b66bc394df20952b07c311bd421d24134ce92ae21d231a85ae7069",
+      "reason": "P4-29 keeps the public contract mirror byte-identical after provider-policy validation and RASG-027 increased the package candidate count and clarified the package-surface exclusion rule."
     },
     {
       "source": "references/execution-guarantees.json",
       "target": "contracts/internal/execution-guarantees.json",
       "preflight_source_sha256": "42afed76bd67bde53e6b66e78794b1d339e1583772b04be13faa57ccd6e3eb89",
-      "current_source_sha256": "0c9ca1d8d2e0dd8c8b0f83705881280be491e78587a35bc6d16d96c94a9593f8",
-      "reason": "P4-29 keeps the internal contract mirror byte-identical after the root asset first-read canonicalization updated execution-guarantees paths; package-surface exclusion remains unchanged."
+      "current_source_sha256": "5d915e3fbd12618a669c1060d3a2b3eefcc01dffffaa379278d5f44a56256f84",
+      "reason": "P4-29 keeps the internal contract mirror byte-identical after the root asset first-read canonicalization and RASG-027 active Evolution harvest gate updated execution-guarantees paths; package-surface exclusion remains unchanged."
     },
     {
       "source": "references/workflow-gate-stratification-policy.json",
@@ -93,8 +93,8 @@
       "source": "references/public-package-surface-policy.json",
       "target": "contracts/public/public-package-surface-policy.json",
       "target_layer": "public-contract",
-      "source_sha256": "56afc68ba5013ff672f00a7dbb1da163c40189fbd96413ddcd7570b19154f710",
-      "target_sha256": "56afc68ba5013ff672f00a7dbb1da163c40189fbd96413ddcd7570b19154f710",
+      "source_sha256": "615298b582b66bc394df20952b07c311bd421d24134ce92ae21d231a85ae7069",
+      "target_sha256": "615298b582b66bc394df20952b07c311bd421d24134ce92ae21d231a85ae7069",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"
@@ -115,8 +115,8 @@
       "source": "references/execution-guarantees.json",
       "target": "contracts/internal/execution-guarantees.json",
       "target_layer": "internal-contract",
-      "source_sha256": "0c9ca1d8d2e0dd8c8b0f83705881280be491e78587a35bc6d16d96c94a9593f8",
-      "target_sha256": "0c9ca1d8d2e0dd8c8b0f83705881280be491e78587a35bc6d16d96c94a9593f8",
+      "source_sha256": "5d915e3fbd12618a669c1060d3a2b3eefcc01dffffaa379278d5f44a56256f84",
+      "target_sha256": "5d915e3fbd12618a669c1060d3a2b3eefcc01dffffaa379278d5f44a56256f84",
       "byte_identical": true,
       "old_anchor_retained": true,
       "copy_mode": "copy-first"

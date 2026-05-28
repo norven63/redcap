@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 import json
+import os
 from typing import Any
 
 
@@ -82,6 +83,119 @@ def known_candidate_ids(root: pathlib.Path) -> set[str]:
         if isinstance(candidate, dict) and isinstance(candidate.get("id"), str):
             ids.add(candidate["id"])
     return ids
+
+
+def candidate_statuses(root: pathlib.Path) -> dict[str, str]:
+    pool_path = root / "compass/evolution/candidates.json"
+    try:
+        pool = json.loads(pool_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        fail(f"unable to read candidate pool: {exc}")
+    candidates = pool.get("candidates")
+    if not isinstance(candidates, list):
+        fail("candidate pool candidates must be a list")
+    result: dict[str, str] = {}
+    for candidate in candidates:
+        if isinstance(candidate, dict) and isinstance(candidate.get("id"), str):
+            result[candidate["id"]] = str(candidate.get("status") or "")
+    return result
+
+
+def source_digest(task_text: str, report_text: str) -> str:
+    body = json.dumps({"task": task_text, "report": report_text}, ensure_ascii=False, sort_keys=True)
+    return "sha256:" + json_hash(body)
+
+
+def json_hash(value: str) -> str:
+    import hashlib
+
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def load_harvest_ledger(root: pathlib.Path) -> dict[str, Any]:
+    ledger_raw = os.environ.get("REDCAP_EVOLUTION_HARVEST_LEDGER", "compass/evolution/harvest-ledger.json")
+    ledger_arg = pathlib.Path(ledger_raw)
+    ledger_path = ledger_arg if ledger_arg.is_absolute() else root / ledger_arg
+    if not ledger_path.exists():
+        return {"version": 1, "records": []}
+    try:
+        payload = json.loads(ledger_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        fail(f"unable to read evolution harvest ledger: {exc}")
+    if not isinstance(payload, dict) or payload.get("version") != 1:
+        fail("evolution harvest ledger must be a version=1 object")
+    if not isinstance(payload.get("records"), list):
+        fail("evolution harvest ledger records must be a list")
+    return payload
+
+
+def find_harvest_record(
+    root: pathlib.Path,
+    task_id: str,
+    report_rel: str,
+    digest: str,
+) -> dict[str, Any] | None:
+    stale_record: dict[str, Any] | None = None
+    ledger = load_harvest_ledger(root)
+    for record in ledger["records"]:
+        if not isinstance(record, dict):
+            fail("evolution harvest ledger records must be objects")
+        if record.get("task_id") != task_id or record.get("source_report") != report_rel:
+            continue
+        if record.get("source_digest") == digest:
+            return record
+        stale_record = record
+    if stale_record is not None:
+        fail(
+            "Evolution harvest ledger record is stale for "
+            f"{task_id}; run redcap-evolution-harvest-producer.sh --task-file <task> --write"
+        )
+    return None
+
+
+def validate_harvest_record(root: pathlib.Path, record: dict[str, Any], task_id: str, report_rel: str) -> None:
+    record_id = record.get("id")
+    if not isinstance(record_id, str) or not record_id.strip():
+        fail("Evolution harvest ledger record missing id")
+    status = record.get("status")
+    outcome = record.get("outcome")
+    if status not in {"processed", "deferred"}:
+        fail(f"Evolution harvest ledger record is unprocessed: {record_id}")
+    if outcome not in {"candidate", "no-promote", "deferred-with-owner"}:
+        fail(f"Evolution harvest ledger record has unsupported outcome: {record_id}")
+    if not isinstance(record.get("reasons"), list) or not record["reasons"]:
+        fail(f"Evolution harvest ledger record missing reasons: {record_id}")
+    evidence_paths = record.get("evidence_paths")
+    if not isinstance(evidence_paths, list) or len(evidence_paths) < 2:
+        fail(f"Evolution harvest ledger record missing evidence paths: {record_id}")
+    if report_rel not in evidence_paths:
+        fail(f"Evolution harvest ledger record does not cite task report: {record_id}")
+    decision = record.get("decision")
+    if not isinstance(decision, dict):
+        fail(f"Evolution harvest ledger record missing decision: {record_id}")
+    if outcome == "candidate":
+        candidate_id = decision.get("candidate_id")
+        if not isinstance(candidate_id, str) or not candidate_id.strip():
+            fail(f"candidate harvest record missing candidate_id: {record_id}")
+        statuses = candidate_statuses(root)
+        pool_status = statuses.get(candidate_id)
+        if not pool_status:
+            fail(f"candidate harvest record references unknown candidate: {candidate_id}")
+        if pool_status in {"candidate", "reviewing"}:
+            fail(f"candidate harvest record references unresolved candidate: {candidate_id}")
+    elif outcome == "no-promote":
+        reason = decision.get("reason")
+        if not isinstance(reason, str) or len(reason.strip()) < 20:
+            fail(f"no-promote harvest record missing reason: {record_id}")
+    elif outcome == "deferred-with-owner":
+        owner = decision.get("owner")
+        trigger = decision.get("next_trigger")
+        if not isinstance(owner, str) or not owner.strip():
+            fail(f"deferred harvest record missing owner: {record_id}")
+        if not isinstance(trigger, str) or len(trigger.strip()) < 10:
+            fail(f"deferred harvest record missing next_trigger: {record_id}")
+    if record.get("task_id") != task_id:
+        fail(f"Evolution harvest ledger record task_id mismatch: {record_id}")
 
 
 def load_signal_policy(root: pathlib.Path) -> dict[str, Any]:
@@ -193,10 +307,29 @@ def main() -> None:
     if not report_text:
         fail(f"high-value evolution harvest task report missing or unreadable: {report_rel}")
 
+    digest = source_digest(task_text, report_text)
+    record = find_harvest_record(root, meta.get("task_id", ""), report_rel, digest)
+    if record is None:
+        fail(
+            "high-value evolution harvest signals require generated harvest ledger record; "
+            "run redcap-evolution-harvest-producer.sh --task-file <task> --write; reasons="
+            + ",".join(reasons)
+        )
+    validate_harvest_record(root, record, meta.get("task_id", ""), report_rel)
+
     required_section = str(policy["required_report_section"])
     body = section(report_text, required_section)
     if not body:
-        fail(f"high-value task report missing section: {required_section}; reasons=" + ",".join(reasons))
+        print("EVOLUTION_HARVEST")
+        print(f"task_report={report_rel}")
+        print("required=true")
+        print("report_section=missing")
+        print(f"harvest_record={record.get('id')}")
+        print("reasons=" + ",".join(reasons))
+        print("strict_candidates=pass")
+        run_strict_candidates(root)
+        print("EVOLUTION_HARVEST_OK")
+        return
     referenced_ids = set(re.findall(r"\bEVO-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{3}\b", body))
     if not referenced_ids and not re.search(r"无新增候选|no-promote|deferred-with-owner", body):
         fail("Evolution candidate handling must reference candidate ids, no-promote, deferred-with-owner, or 无新增候选")
@@ -210,6 +343,7 @@ def main() -> None:
     print("EVOLUTION_HARVEST")
     print(f"task_report={report_rel}")
     print("required=true")
+    print(f"harvest_record={record.get('id')}")
     print("reasons=" + ",".join(reasons))
     print("strict_candidates=pass")
     print("EVOLUTION_HARVEST_OK")

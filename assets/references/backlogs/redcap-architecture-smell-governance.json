@@ -1020,7 +1020,18 @@
         "Current-status and progress meter show open self-evolution work until candidates are actually processed.",
         "The implementation proves at least one non-trivial historical signal can be harvested through the new pipeline."
       ],
-      "status": "planned",
+      "status": "done",
+      "completed_at": "2026-05-28",
+      "completion_summary": "Done: Evolution Factory now has an active harvest ledger, producer, ledger check, fresh-record gate, closeout/spec/diagnose/progress integrations, real hotfix sample, and Kimi + Claude Code targeted Prism pass.",
+      "evidence": [
+        "compass/evolution/harvest-ledger.json",
+        "compass/tools/redcap-evolution-harvest-producer.sh",
+        "compass/tools/redcap-evolution-harvest-ledger-check.sh",
+        "compass/tools/redcap-evolution-harvest-check.sh",
+        "compass/tools/redcap-multi-session-acceptance.sh",
+        "assets/docs/task-reports/2026-05-28-rasg-027-active-evolution-harvest.md",
+        "prism/runs/20260528-rasg-027-active-evolution-harvest"
+      ],
       "introduced_at": "2026-05-28",
       "follow_up_requirements": [
         "RASG-030"
@@ -1131,7 +1142,7 @@
     "Do not treat preserve-with-proof, deferred, disabled-by-default, implemented-proposal-only, or human-decision boundaries as completion for must-complete work.",
     "Do not start npm publish from this backlog; release remains a separate task."
   ],
-  "recommended_next_step": "Start RASG-027, using the completed revive workspace-boundary hotfix as an early real signal for Evolution harvest. Fold Prism coordinator reopen/follow-up hardening into RASG-030, then continue RASG-028 and RASG-029 as bounded physical outcome tranches before any public release claim.",
+  "recommended_next_step": "Start RASG-030 next so the anti-edge-ball drift methodology can consume the new RASG-027 active harvest pipeline, then continue RASG-028 public arsenal batch distillation and RASG-029 engineering directory final convergence before any public release claim.",
   "source_of_truth": "references/backlogs/redcap-architecture-smell-governance.json",
   "human_readable_path": "references/backlogs/redcap-architecture-smell-governance.md",
   "authority_boundary": {
@@ -1458,10 +1469,10 @@
         {
           "id": "RASG-027",
           "title": "Make Evolution Factory an active harvest pipeline instead of report-section compliance",
-          "status": "pending",
+          "status": "done",
           "priority": "P0",
           "phase_id": "T12",
-          "summary": "Turn self-upgrade from report-section compliance into an active candidate production and processing pipeline."
+          "summary": "Done: self-upgrade now has an active harvest ledger, producer, stale-record gate, real hotfix sample, closeout/spec/diagnose/progress integrations, and targeted Kimi + Claude Code Prism pass."
         },
         {
           "id": "RASG-028",
@@ -1655,7 +1666,7 @@
     }
   ],
   "current_focus": {
-    "item_id": "RASG-027",
-    "summary": "HOTFIX-REVIVE-WORKSPACE-BOUNDARY 已完成；下一步把 Evolution Factory 从报告小节检查升级为真实候选生产线。"
+    "item_id": "RASG-030",
+    "summary": "RASG-027 主动 harvest 生产线已完成；下一步把反空转方法论沉淀成 lessons / Forge / arsenal 候选，并防止机制完成继续冒充目标完成。"
   }
 }

@@ -45,6 +45,7 @@
     {"id": "reference_asset_lifecycle", "path": "references/reference-asset-lifecycle.json", "bucket": "historical_debt_smell", "kind": "asset-lifecycle"},
     {"id": "governance_debt_register", "path": "compass/knowledge/governance-debt-register.md", "bucket": "historical_debt_smell", "kind": "private-knowledge"},
     {"id": "evolution_candidates", "path": "compass/evolution/candidates.json", "bucket": "long_term_evolution_program", "kind": "candidate-pool"},
+    {"id": "evolution_harvest_ledger", "path": "compass/evolution/harvest-ledger.json", "bucket": "long_term_evolution_program", "kind": "active-harvest-ledger"},
     {"id": "conclusion_prism_policy", "path": "references/conclusion-prism-policy.json", "bucket": "long_term_evolution_program", "kind": "policy"},
     {"id": "full_llm_wiki_roadmap", "path": "references/full-llm-wiki-roadmap.json", "bucket": "long_term_evolution_program", "kind": "roadmap"},
     {"id": "public_arsenal_policy", "path": "references/redcap-forge-policy.json", "bucket": "long_term_evolution_program", "kind": "policy"}

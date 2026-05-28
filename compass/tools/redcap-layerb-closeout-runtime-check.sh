@@ -16,6 +16,7 @@ PRISM_ACCEPTANCE_SCRIPT="$SCRIPT_DIR/redcap-prism-acceptance-check.sh"
 PRISM_ACCEPTANCE_BIND_SCRIPT="$SCRIPT_DIR/redcap-prism-acceptance-bind.sh"
 COMPLETION_SEMANTICS_SCRIPT="$SCRIPT_DIR/redcap-completion-semantics-check.sh"
 EVOLUTION_CANDIDATE_SCRIPT="$SCRIPT_DIR/redcap-evolution-candidate-check.sh"
+EVOLUTION_HARVEST_LEDGER_SCRIPT="$SCRIPT_DIR/redcap-evolution-harvest-ledger-check.sh"
 EVOLUTION_HARVEST_SCRIPT="$SCRIPT_DIR/redcap-evolution-harvest-check.sh"
 CHANGE_INTAKE_SCRIPT="$SCRIPT_DIR/redcap-change-intake-check.sh"
 
@@ -49,6 +50,11 @@ CHANGE_INTAKE_SCRIPT="$SCRIPT_DIR/redcap-change-intake-check.sh"
     exit 1
 }
 
+[[ -x "$EVOLUTION_HARVEST_LEDGER_SCRIPT" ]] || {
+    echo "[redcap-layerb-closeout-runtime-check] missing evolution harvest ledger script: $EVOLUTION_HARVEST_LEDGER_SCRIPT" >&2
+    exit 1
+}
+
 [[ -x "$EVOLUTION_HARVEST_SCRIPT" ]] || {
     echo "[redcap-layerb-closeout-runtime-check] missing evolution harvest script: $EVOLUTION_HARVEST_SCRIPT" >&2
     exit 1
@@ -73,6 +79,7 @@ bash "$RUNTIME_SCRIPT" status --task-file "$TASK_FILE" >/dev/null
 bash "$PRISM_ACCEPTANCE_SCRIPT" --task-file "$TASK_FILE" >/dev/null || true
 bash "$COMPLETION_SEMANTICS_SCRIPT" --task-file "$TASK_FILE" >/dev/null
 bash "$EVOLUTION_CANDIDATE_SCRIPT" >/dev/null
+bash "$EVOLUTION_HARVEST_LEDGER_SCRIPT" >/dev/null
 bash "$EVOLUTION_HARVEST_SCRIPT" "$TASK_FILE" >/dev/null
 bash "$CHANGE_INTAKE_SCRIPT" "$TASK_FILE" --mode closeout >/dev/null
 

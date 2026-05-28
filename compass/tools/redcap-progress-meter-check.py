@@ -46,6 +46,7 @@ REQUIRED_SOURCE_IDS = {
     "reference_asset_lifecycle",
     "governance_debt_register",
     "evolution_candidates",
+    "evolution_harvest_ledger",
     "conclusion_prism_policy",
     "full_llm_wiki_roadmap",
     "public_arsenal_policy",

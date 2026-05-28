@@ -12,11 +12,11 @@
   },
   "source_truth": {
     "old_anchor_preflight_path": "references/r1-prism-report-archive-old-anchor-delete-last-preflight.json",
-    "old_anchor_preflight_sha256": "19059e98adfc187613c1a44d02c9332553c83b8e02d2b5ae4bcf46e03967ee60",
+    "old_anchor_preflight_sha256": "fbc09c84e4a1e1ce13baf6efabe9098e14fb714bf69e6d6a63797bd79472347a",
     "convergence_assessment_path": "references/r1-formal-release-readiness-convergence-assessment.json",
     "convergence_assessment_sha256": "8d105d5a6483f7c261d762713b540a21306e4fe44cb58f2c28a545bf8c68402c",
     "control_plane_physical_preflight_path": "references/r1-control-plane-physical-apply-preflight.json",
-    "control_plane_physical_preflight_sha256": "dcc890cb48a706598d59dd70bae0c713d368ee5c1a9d36874283b73ae25f55ff"
+    "control_plane_physical_preflight_sha256": "6b88f5c0a4820c1367b05ce4971c1bb2a11b9ada6ff2db51ff4ffa0159757898"
   },
   "claim_boundary": {
     "route_selection_completed": true,

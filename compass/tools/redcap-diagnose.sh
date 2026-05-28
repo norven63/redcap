@@ -150,6 +150,7 @@ run_check "change-intake" bash "$SCRIPT_DIR/redcap-change-intake-check.sh" "$TAS
 run_source_check "mechanism-vitality" bash "$SCRIPT_DIR/redcap-mechanism-vitality-check.sh" || overall=1
 run_source_check "evolution-grade-baseline" bash "$SCRIPT_DIR/redcap-evolution-grade-check.sh" || overall=1
 run_source_check "evolution-candidates" bash "$SCRIPT_DIR/redcap-evolution-candidate-check.sh" || overall=1
+run_source_check "evolution-harvest-ledger" bash "$SCRIPT_DIR/redcap-evolution-harvest-ledger-check.sh" || overall=1
 run_check "evolution-harvest" bash "$SCRIPT_DIR/redcap-evolution-harvest-check.sh" "$TASK_FILE" || overall=1
 run_source_check "skill-lifecycle" bash "$SCRIPT_DIR/redcap-skill-lifecycle-check.sh" || overall=1
 run_source_check "legacy-asset-lifecycle" bash "$SCRIPT_DIR/redcap-legacy-asset-lifecycle-check.sh" || overall=1

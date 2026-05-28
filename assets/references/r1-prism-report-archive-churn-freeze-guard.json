@@ -5,9 +5,9 @@
   "summary": "Freezes the P4-12/P4-13 Prism report archive migration cohort and requires any later formal Prism reports to be recorded as post-freeze reports instead of silently changing the current archive plan.",
   "source_truth": {
     "plan_path": "references/r1-prism-report-archive-copy-first-plan.json",
-  "plan_sha256": "22e9822aaf8cf628455cfab827870f7023d700904ee6d3c830ad15a8e8d5c331",
+    "plan_sha256": "efa702b5c9f949f163d6c9b07ae36deaf16ebc5db07661be744fbdc92472f280",
     "readiness_path": "references/r1-prism-report-archive-apply-readiness.json",
-  "readiness_sha256": "a1019ed367722c09247de15b61164e97bde38713226c9cbde72554112ed6bacf"
+    "readiness_sha256": "50878f8c3348f169e31c3ebb65df57376fae9726d3514f4cf8b26176bc8840e6"
   },
   "claim_boundary": {
     "freeze_guard_completed": true,

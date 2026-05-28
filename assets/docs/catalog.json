@@ -10,13 +10,13 @@
     "Regenerate with: bash compass/tools/redcap-docs-catalog.sh generate"
   ],
   "summary": {
-    "file_count": 34,
-    "size_bytes": 388648,
-    "lines": 7893,
-    "chars": 231210,
+    "file_count": 35,
+    "size_bytes": 398044,
+    "lines": 8055,
+    "chars": 236054,
     "rough_token_pressure": {
-      "low": 57802,
-      "high": 115605
+      "low": 59013,
+      "high": 118027
     },
     "collections": {
       "archive": {
@@ -50,13 +50,13 @@
         }
       },
       "task-reports": {
-        "file_count": 18,
-        "size_bytes": 165418,
-        "lines": 2973,
-        "chars": 96638,
+        "file_count": 19,
+        "size_bytes": 174814,
+        "lines": 3135,
+        "chars": 101482,
         "rough_token_pressure": {
-          "low": 24159,
-          "high": 48319
+          "low": 25370,
+          "high": 50741
         }
       }
     },
@@ -560,7 +560,7 @@
       "collection": "task-reports",
       "title": "任务完成报告：P4-20 发布准备下一安全切片选择",
       "role": "closure-evidence",
-      "status": "warm",
+      "status": "cold-candidate",
       "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10269,
       "lines": 197,
@@ -625,28 +625,13 @@
       "collection": "task-reports",
       "title": "任务完成报告：发布前阻塞债务完成",
       "role": "closure-evidence",
-      "status": "hot",
-      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "status": "warm",
+      "read_policy": "read-catalog-summary-by-default",
       "size_bytes": 10682,
       "lines": 160,
       "chars": 6058,
       "summary": "当前已完成：棱镜范围评审已完成；资产历史债务已落成机器可检 receipt；full LLM-wiki 已从 lite/deferred 升级为受控本地产品层，包含索引、队列、候选 worker、receipt 和 RAG/GraphRAG 禁用边界。 / 上一步完成的是：上一条“正式发布外最终清账”任务已生成 receipt，工作区干净；本轮从新的阻塞债务任务开始。",
-      "status_basis": "filename_recency_only",
-      "summary_points": {
-        "current_done": [
-          "当前已完成：棱镜范围评审已完成；资产历史债务已落成机器可检 receipt；full LLM-wiki 已从 lite/deferred 升级为受控本地产品层，包含索引、队列、候选 worker、receipt 和 RAG/GraphRAG 禁用边界。"
-        ],
-        "previous_step": [
-          "上一步完成的是：上一条“正式发布外最终清账”任务已生成 receipt，工作区干净；本轮从新的阻塞债务任务开始。"
-        ],
-        "next_step": [
-          "下一步计划做的是：提交已验证工程变更，随后由 closeout runtime 生成正式完工凭证并复验 pending closure 已清零。"
-        ],
-        "position": [
-          "整体计划脉络图是：重锚发布前阻塞债务 -> 棱镜范围评审 -> 资产历史债务清理 -> full LLM-wiki/worker/RAG 边界补全 -> 全量回归 -> 最终棱镜验收 -> closeout receipt。",
-          "当前所在位置：资产债务和长期记忆补全已实现，全量回归和最终棱镜验收已通过；closeout runtime 要求先提交干净工作树，再生成正式完工凭证。"
-        ]
-      }
+      "status_basis": "filename_recency_only"
     },
     {
       "path": "compass/docs/task-reports/2026-05-27-completion-semantics-hard-gate.md",
@@ -701,6 +686,34 @@
         "position": [
           "整体计划脉络图是：完成语义硬门 -> 前置热修 `redcap revive` 边界 -> `RASG-027` Evolution Factory 主动候选生产线 -> `RASG-030` 反空转方法论 -> `RASG-028` 公共武器库批量蒸馏 -> `RASG-029` 工程目录最终收敛。",
           "当前所在位置：前置热修已经实现，棱镜复核和总回归已通过；仍在等待 closeout receipt。"
+        ]
+      }
+    },
+    {
+      "path": "compass/docs/task-reports/2026-05-28-rasg-027-active-evolution-harvest.md",
+      "collection": "task-reports",
+      "title": "任务完成报告：RASG-027 自我升级实体化",
+      "role": "closure-evidence",
+      "status": "hot",
+      "read_policy": "read-catalog-summary-first-then-open-if-current-anchor",
+      "size_bytes": 9396,
+      "lines": 162,
+      "chars": 4844,
+      "summary": "当前已完成：RASG-027 已把自我升级从“报告里手写候选处理小节”推进为“主动收割账本”。现在高价值任务信号需要先生成 harvest 记录，再明确进入候选、暂缓或不晋升；如果缺少这条记录，检查会失败。 / 上一步完成的是：revive 外部工作区边界热修，确保外部项目执行 `redcap revive` 时不会误读 RedCap 自己仓库的任务卡。该热修已经生成 receipt，并作为本轮真实历史样本，被新的 harvest 产线处理。",
+      "status_basis": "filename_recency_only",
+      "summary_points": {
+        "current_done": [
+          "当前已完成：RASG-027 已把自我升级从“报告里手写候选处理小节”推进为“主动收割账本”。现在高价值任务信号需要先生成 harvest 记录，再明确进入候选、暂缓或不晋升；如果缺少这条记录，检查会失败。"
+        ],
+        "previous_step": [
+          "上一步完成的是：revive 外部工作区边界热修，确保外部项目执行 `redcap revive` 时不会误读 RedCap 自己仓库的任务卡。该热修已经生成 receipt，并作为本轮真实历史样本，被新的 harvest 产线处理。"
+        ],
+        "next_step": [
+          "下一步计划做的是：本轮完成 RASG-027 后，父任务线继续推进后续债务项：公共武器库真实扩容、目录结构最终收敛、以及反空转方法论沉淀。它们不能被 RASG-027 冒充完成。"
+        ],
+        "position": [
+          "整体计划脉络图是：先修 revive 工作区边界，再修主动 harvest 生产线，然后继续公共武器库、目录收敛和反空转方法论，最后才进入正式发布授权。",
+          "当前所在位置：正式发布前历史债务治理中的“自我升级能力补强”。"
         ]
       }
     }

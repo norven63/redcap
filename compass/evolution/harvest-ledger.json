@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "description": "Machine-generated RedCap Evolution harvest records. This ledger records active discovery outcomes; it is not a replacement for the candidate pool, lessons, identity proposals, or public arsenal.",
+  "records": [
+    {
+      "id": "HARVEST-2026-05-28-hotfix-revive-workspace-boundary",
+      "task_id": "hotfix-revive-workspace-boundary",
+      "source_report": "assets/docs/task-reports/2026-05-28-hotfix-revive-workspace-boundary.md",
+      "source_digest": "sha256:28c854254fd764eaa6e5c9183d92b08b602af33f3e4ed2dca4a71d048ff37a83",
+      "source_kind": "prism-verdict",
+      "reasons": [
+        "signal:closeout-or-receipt-blocker:closeout",
+        "signal:prism-review-signal:Prism",
+        "signal:security-release-risk:发布",
+        "signal:test-failure-or-regression:acceptance",
+        "task-field:top_goal:修复",
+        "task-flag:bugfix_tranche",
+        "task-flag:review_tranche"
+      ],
+      "outcome": "no-promote",
+      "status": "processed",
+      "decision": {
+        "reason": "Active harvest sample: this high-value workspace-boundary bug was already fixed and reviewed in the hotfix task, so it is recorded as a processed no-promote sample rather than a new separate candidate."
+      },
+      "generated_candidate": {
+        "source_kind": "prism-verdict",
+        "problem_source": "另一个会话指出：bin/redcap 在执行 revive 时虽然算出了外部 workspace 的 .dev-task.md，但没有把它传给 revive-cap.sh。revive-cap.sh 没收到任务卡时，会默认使用 RedCap 自己仓库里的 .dev-task.md。",
+        "solution": "redcap revive 现在复用统一的 workspace/task-file 解析逻辑。",
+        "final_effect": "The harvest record makes this signal visible to closeout and future status surfaces before the task can be considered complete: 修复外部项目执行 redcap revive 时可能回落到 RedCap 自身 .dev-task.md 的边界 bug.",
+        "recurrence_guard": "Keep the generated harvest record fresh by source digest; stale or missing records fail the harvest gate before closeout."
+      },
+      "evidence_paths": [
+        "assets/docs/task-reports/2026-05-28-hotfix-revive-workspace-boundary.md",
+        "references/backlogs/redcap-architecture-smell-governance.json"
+      ],
+      "generated_by": "redcap-evolution-harvest-producer",
+      "generated_at": "2026-05-28T16:54:17Z"
+    },
+    {
+      "id": "HARVEST-2026-05-28-rasg-027-active-evolution-harvest",
+      "task_id": "rasg-027-active-evolution-harvest",
+      "source_report": "assets/docs/task-reports/2026-05-28-rasg-027-active-evolution-harvest.md",
+      "source_digest": "sha256:056eec7ad0549bf8e54e9915c2e70bdce5d339b3a014e1c85b5ca2d1f0717ecb",
+      "source_kind": "prism-verdict",
+      "reasons": [
+        "signal:closeout-or-receipt-blocker:closeout",
+        "signal:prism-review-signal:Prism",
+        "signal:security-release-risk:发布",
+        "signal:test-failure-or-regression:测试失败",
+        "signal:user-correction-or-interrupt:用户纠偏",
+        "task-flag:architecture_tranche",
+        "task-flag:governance_tranche",
+        "task-flag:review_tranche"
+      ],
+      "outcome": "no-promote",
+      "status": "processed",
+      "decision": {
+        "reason": "RASG-027 directly implements the active Evolution harvest pipeline as RedCap-native control-plane capability, so it should not be duplicated as a separate unresolved candidate."
+      },
+      "generated_candidate": {
+        "source_kind": "prism-verdict",
+        "problem_source": "Norven 多次指出 RedCap 的“自我升级”和“公共武器库”长期停留在记录、报告和声明层面，没有稳定地在真实任务中自动触发。尤其是经验沉淀失效在第一步：不是候选池没有规则，而是值得进入候选池的信号根本没有被稳定发现。",
+        "solution": "任务卡、任务报告、用户纠偏、review/bugfix 标签、closeout 与回归信号会被生产器汇总成 harvest 记录。",
+        "final_effect": "python3 -m py_compile 覆盖新增 Python 脚本与被修改检查器。",
+        "recurrence_guard": "Keep the generated harvest record fresh by source digest; stale or missing records fail the harvest gate before closeout."
+      },
+      "evidence_paths": [
+        ".dev-task.md",
+        "assets/docs/task-reports/2026-05-28-rasg-027-active-evolution-harvest.md"
+      ],
+      "generated_by": "redcap-evolution-harvest-producer",
+      "generated_at": "2026-05-28T18:21:56Z"
+    }
+  ]
+}

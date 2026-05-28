@@ -486,6 +486,22 @@ if [[ -x "$EVOLUTION_CANDIDATE_CHECK" ]]; then
     fi
 fi
 
+EVOLUTION_HARVEST_LEDGER_CHECK="$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-ledger-check.sh"
+if [[ -x "$EVOLUTION_HARVEST_LEDGER_CHECK" ]]; then
+    if ! bash "$EVOLUTION_HARVEST_LEDGER_CHECK" >/dev/null; then
+        echo "[redcap-spec-check] evolution harvest ledger check failed" >&2
+        exit 1
+    fi
+fi
+
+EVOLUTION_HARVEST_CHECK="$REDCAP_ROOT/compass/tools/redcap-evolution-harvest-check.sh"
+if [[ -x "$EVOLUTION_HARVEST_CHECK" && -f "$REDCAP_ROOT/.dev-task.md" ]]; then
+    if ! bash "$EVOLUTION_HARVEST_CHECK" "$REDCAP_ROOT/.dev-task.md" >/dev/null; then
+        echo "[redcap-spec-check] evolution harvest check failed" >&2
+        exit 1
+    fi
+fi
+
 SKILL_LIFECYCLE_CHECK="$REDCAP_ROOT/compass/tools/redcap-skill-lifecycle-check.sh"
 if [[ -x "$SKILL_LIFECYCLE_CHECK" ]]; then
     if ! bash "$SKILL_LIFECYCLE_CHECK" >/dev/null; then

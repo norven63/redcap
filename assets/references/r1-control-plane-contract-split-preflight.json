@@ -60,12 +60,12 @@
     ]
   },
   "package_candidate_snapshot": {
-        "candidate_count": 313,
-        "control_plane_candidate_count": 233,
-        "compass": 165,
+        "candidate_count": 317,
+        "control_plane_candidate_count": 237,
+        "compass": 169,
     "references": 68,
-        "compass_tools_shell": 98,
-        "compass_tools_python": 67,
+        "compass_tools_shell": 100,
+        "compass_tools_python": 69,
     "references_json": 65,
     "references_markdown": 3,
     "source": "redcap-runtime-package-manifest.sh --output <temp>"
@@ -75,7 +75,7 @@
       {
         "path": "compass",
         "role": "maintainer-control-plane-tools",
-                "package_candidate_count": 165,
+                "package_candidate_count": 169,
         "current_contract": "Packaged for alpha readiness because root wrappers, revive/status/diagnose/closeout, release safety and validators still call these tools.",
         "future_target": "internal/control-plane/tools with stable runtime facades and compatibility aliases"
       },
@@ -261,12 +261,12 @@
       ]
     },
     "package_candidate_snapshot": {
-            "candidate_count": 313,
-            "control_plane_candidate_count": 233,
-            "compass": 165,
+            "candidate_count": 317,
+            "control_plane_candidate_count": 237,
+            "compass": 169,
       "references": 68,
-            "compass_tools_shell": 98,
-            "compass_tools_python": 67,
+            "compass_tools_shell": 100,
+            "compass_tools_python": 69,
       "references_json": 65,
       "references_markdown": 3,
       "source": "redcap-runtime-package-manifest.sh --output <temp>"
@@ -299,11 +299,11 @@
       }
     ],
     "coverage": {
-      "total_entries": 233,
+      "total_entries": 237,
       "by_target_layer": {
         "human-handoff": 1,
         "internal-contract": 56,
-        "internal-control-plane": 118,
+        "internal-control-plane": 122,
         "public-contract": 11,
         "runtime-public-support": 47
       }
@@ -558,6 +558,34 @@
         "source": "compass/tools/redcap-evolution-harvest-check.sh",
         "target_layer": "internal-control-plane",
         "target_path": "internal/control-plane/tools/redcap-evolution-harvest-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-evolution-harvest-ledger-check.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-evolution-harvest-ledger-check.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-evolution-harvest-ledger-check.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-evolution-harvest-ledger-check.sh",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-evolution-harvest-producer.py",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-evolution-harvest-producer.py",
+        "future_action": "copy-first-verify-alias-delete-last",
+        "current_state": "unchanged-in-this-task"
+      },
+      {
+        "source": "compass/tools/redcap-evolution-harvest-producer.sh",
+        "target_layer": "internal-control-plane",
+        "target_path": "internal/control-plane/tools/redcap-evolution-harvest-producer.sh",
         "future_action": "copy-first-verify-alias-delete-last",
         "current_state": "unchanged-in-this-task"
       },

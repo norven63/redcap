@@ -232,6 +232,20 @@ def evolution_status(path: Path) -> dict[str, Any]:
     return {"status_counts": dict(sorted(counts.items())), "open_examples": examples}
 
 
+def harvest_ledger_status(path: Path) -> dict[str, Any]:
+    payload = load_json(path)
+    counts: Counter[str] = Counter()
+    examples: list[str] = []
+    for item in payload.get("records") or []:
+        if not isinstance(item, dict):
+            continue
+        status = str(item.get("status", "unknown"))
+        counts[status] += 1
+        if status == "generated" and len(examples) < 3:
+            examples.append(f"{item.get('id', 'unknown')} {item.get('task_id', '')}".strip())
+    return {"status_counts": dict(sorted(counts.items())), "open_examples": examples}
+
+
 def governance_debt_status(path: Path) -> dict[str, Any]:
     text = read(path)
     counts: Counter[str] = Counter()
@@ -289,6 +303,7 @@ def build_meter(task_file: Path) -> dict[str, Any]:
     framework_backlog = backlog_status(ROOT / "references/backlogs/framework-upgrade.json")
     parent_autocontinue = parent_autocontinue_status(task_file)
     evolution = evolution_status(ROOT / "compass/evolution/candidates.json")
+    harvest_ledger = harvest_ledger_status(ROOT / "compass/evolution/harvest-ledger.json")
     governance_debt = governance_debt_status(ROOT / "compass/knowledge/governance-debt-register.md")
     reference_lifecycle = lifecycle_status(ROOT / "references/reference-asset-lifecycle.json")
     legacy_lifecycle = lifecycle_status(ROOT / "references/legacy-asset-lifecycle.json")
@@ -329,13 +344,20 @@ def build_meter(task_file: Path) -> dict[str, Any]:
     debt_counts = architecture_backlog.get("status_counts", {})
     governance_counts = governance_debt.get("counts", {})
     evolution_counts = evolution.get("status_counts", {})
+    harvest_counts = harvest_ledger.get("status_counts", {})
     debt_open = sum(v for k, v in debt_counts.items() if k not in {"done", "archived", "superseded"})
     governance_open = sum(v for k, v in governance_counts.items() if k != "done")
     evolution_open = sum(v for k, v in evolution_counts.items() if k in {"candidate", "reviewing"})
+    harvest_open = sum(v for k, v in harvest_counts.items() if k == "generated")
     focus = framework_backlog.get("current_focus") if isinstance(framework_backlog.get("current_focus"), dict) else {}
     focus_summary = str(focus.get("summary") or "").strip()
     debt_summary = "历史债务暂无开放项" if debt_open + governance_open == 0 else f"历史债务仍有 {debt_open + governance_open} 项开放"
-    evolution_summary = "长期演进暂无待评审候选" if evolution_open == 0 else f"长期演进仍有 {evolution_open} 项待评审候选"
+    evolution_total_open = evolution_open + harvest_open
+    evolution_summary = (
+        "长期演进暂无待评审候选"
+        if evolution_total_open == 0
+        else f"长期演进仍有 {evolution_total_open} 项待评审/待处理候选"
+    )
     task_goal = str(meta.get("top_goal") or "").strip()
     current_summary = human_sentence_fragment(task_goal or focus_summary or "当前任务正在推进")
     focus_id = str(focus.get("item_id") or focus.get("id") or "").strip()
@@ -387,10 +409,11 @@ def build_meter(task_file: Path) -> dict[str, Any]:
             "id": "long_term_evolution_program",
             "label": "长期演进专项",
             "summary": "未来增强通过 Evolution candidates、路线图和 Prism-backed policy 保持可见，晋升前不打断当前任务。",
-            "counts": {"evolution_candidates": evolution_counts},
-            "examples": evolution.get("open_examples", []),
+            "counts": {"evolution_candidates": evolution_counts, "harvest_ledger": harvest_counts},
+            "examples": evolution.get("open_examples", []) + harvest_ledger.get("open_examples", []),
             "source_paths": [
                 "compass/evolution/candidates.json",
+                "compass/evolution/harvest-ledger.json",
                 "references/conclusion-prism-policy.json",
                 "references/full-llm-wiki-roadmap.json",
                 "references/redcap-forge-policy.json",

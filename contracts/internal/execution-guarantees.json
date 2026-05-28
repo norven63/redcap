@@ -116,16 +116,21 @@
       "id": "evolution-harvest-gate",
       "category": "evolution-factory",
       "priority": "P0",
-      "rule": "High-value Layer B tasks must explicitly report how Evolution candidates were handled; closeout must block when review/governance/architecture/release-safety/bugfix/user-correction/Prism/test-failure/closeout/recursion/security signals omit candidate handling or strict candidates fail.",
+      "rule": "High-value Layer B tasks must have a fresh machine-generated Evolution harvest ledger record before closeout; closeout must block when review/governance/architecture/release-safety/bugfix/user-correction/Prism/test-failure/closeout/recursion/security signals omit active harvest handling or strict candidates fail.",
       "source_paths": [
         "compass/evolution/README.md",
         "references/evolution-harvest-signal-policy.json",
+        "compass/evolution/harvest-ledger.json",
         "references/task-report-template.md",
         "compass/tools/redcap-layerb-closeout-runtime.py"
       ],
       "status": "validator",
-      "automation": "redcap-evolution-harvest-check validates high-value signal task reports and closeout runtime runs it before receipt generation; candidate-check strict mode only validates already-recorded candidates and cannot replace harvest discovery.",
+      "automation": "redcap-evolution-harvest-producer generates active harvest records; redcap-evolution-harvest-ledger-check validates the ledger; redcap-evolution-harvest-check validates fresh processed records for high-value tasks and closeout runtime runs it before receipt generation. Candidate-check strict mode only validates already-recorded candidates and cannot replace harvest discovery.",
       "guarantee_paths": [
+        "compass/tools/redcap-evolution-harvest-producer.sh",
+        "compass/tools/redcap-evolution-harvest-producer.py",
+        "compass/tools/redcap-evolution-harvest-ledger-check.sh",
+        "compass/tools/redcap-evolution-harvest-ledger-check.py",
         "compass/tools/redcap-evolution-harvest-check.sh",
         "compass/tools/redcap-evolution-harvest-check.py",
         "compass/tools/redcap-layerb-closeout-runtime.py",
