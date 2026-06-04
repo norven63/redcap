@@ -19,6 +19,7 @@ Usage:
   runtime/bin/redcap e2e-trace check|self-check [...]
   runtime/bin/redcap fsm check|status|transition [...]
   runtime/bin/redcap knowledge-gateway check|search [...]
+  runtime/bin/redcap evidence-restore restore [...]
   runtime/bin/redcap session-ownership claim|check|self-check [...]
   runtime/bin/redcap host-hook-audit
   runtime/bin/redcap prism-dispatch [...]
@@ -47,6 +48,8 @@ Commands:
   fsm           Run the minimal RedCap workflow FSM kernel.
   knowledge-gateway
                 Run the minimal index-first RedCap knowledge gateway.
+  evidence-restore
+                Restore bounded generated evidence through a RedCap-owned writer.
   session-ownership
                 Run the minimal RedCap host/session ownership kernel.
   host-hook-audit
@@ -115,6 +118,9 @@ case "$cmd" in
     ;;
   knowledge-gateway-check)
     exec python3 "$REPO_ROOT/runtime/core/knowledge_gateway.py" check "$@"
+    ;;
+  evidence-restore)
+    exec python3 "$REPO_ROOT/runtime/core/evidence_restore.py" "$@"
     ;;
   session-ownership)
     exec python3 "$REPO_ROOT/runtime/core/session_ownership.py" "$@"

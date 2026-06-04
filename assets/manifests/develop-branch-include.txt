@@ -47,6 +47,7 @@ runtime/core/__init__.py
 runtime/core/archaeology_shards.py
 runtime/core/development_lifecycle.py
 runtime/core/e2e_trace.py
+runtime/core/evidence_restore.py
 runtime/core/final_claim_guard.py
 runtime/core/fsm.py
 runtime/core/knowledge_gateway.py
