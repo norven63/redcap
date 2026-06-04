@@ -1,0 +1,254 @@
+#!/usr/bin/env python3
+"""Verify RedCap's enforcement matrix with behavioral probes."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import pathlib
+import subprocess
+import sys
+from typing import Any
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[1]
+MATRIX_PATH = REPO_ROOT / "assets" / "contracts" / "enforcement-matrix.json"
+SCHEMA_PATH = REPO_ROOT / "assets" / "contracts" / "enforcement-matrix.schema.json"
+
+DECISIONS = {
+    "required_now",
+    "required_by_protocol_not_auto_enforced",
+    "deferred_not_claimed",
+    "not_required",
+}
+STATUSES = {"operational", "manual_protocol", "not_implemented", "not_applicable"}
+
+
+def load_json(path: pathlib.Path) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid json: {path}: {exc}") from exc
+
+
+def require(condition: bool, failures: list[str], message: str) -> None:
+    if not condition:
+        failures.append(message)
+
+
+def path_exists(rel_path: str) -> bool:
+    return (REPO_ROOT / rel_path).exists()
+
+
+def is_non_placeholder(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    normalized = value.strip().lower()
+    return bool(normalized) and normalized not in {"tbd", "todo", "none", "n/a", "placeholder"}
+
+
+def validate_hook_contract(
+    entry_id: str,
+    hook_contract: Any,
+    implementation_paths: list[Any],
+    probes: list[Any],
+) -> list[str]:
+    failures: list[str] = []
+    if not isinstance(hook_contract, dict):
+        return [f"{entry_id}: hook claims require hook_contract metadata"]
+    for key in ["host_source", "event", "adapter_path", "live_marker_probe"]:
+        require(key in hook_contract, failures, f"{entry_id}: hook_contract missing {key}")
+    if failures:
+        return failures
+
+    for key in ["host_source", "event", "adapter_path"]:
+        require(
+            is_non_placeholder(hook_contract.get(key)),
+            failures,
+            f"{entry_id}: hook_contract.{key} must be concrete, not placeholder text",
+        )
+    adapter_path = hook_contract.get("adapter_path")
+    if is_non_placeholder(adapter_path):
+        require(path_exists(adapter_path), failures, f"{entry_id}: hook adapter_path does not exist: {adapter_path}")
+        require(adapter_path in implementation_paths, failures, f"{entry_id}: hook adapter_path must be listed in implementation_paths")
+
+    live_marker_probe = hook_contract.get("live_marker_probe")
+    if not isinstance(live_marker_probe, dict):
+        failures.append(f"{entry_id}: hook_contract.live_marker_probe must be an object")
+        return failures
+    probe_name = live_marker_probe.get("name")
+    probe_argv = live_marker_probe.get("argv")
+    require(is_non_placeholder(probe_name), failures, f"{entry_id}: live_marker_probe.name must be concrete")
+    require(
+        isinstance(probe_argv, list) and bool(probe_argv) and all(isinstance(item, str) and item.strip() for item in probe_argv),
+        failures,
+        f"{entry_id}: live_marker_probe.argv must be a non-empty string list",
+    )
+    matching_probe = next((probe for probe in probes if isinstance(probe, dict) and probe.get("name") == probe_name), None)
+    require(matching_probe is not None, failures, f"{entry_id}: verification.probes must include live_marker_probe by name")
+    if matching_probe is not None:
+        require(matching_probe.get("argv") == probe_argv, failures, f"{entry_id}: live_marker_probe argv must match verification probe argv")
+    return failures
+
+
+def run_probe(entry_id: str, probe: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    argv = probe.get("argv")
+    if not isinstance(argv, list) or not argv or not all(isinstance(item, str) for item in argv):
+        return [f"{entry_id}: probe {probe.get('name', '<unnamed>')} argv must be a non-empty string list"]
+    completed = subprocess.run(
+        argv,
+        cwd=str(REPO_ROOT),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    expected_exit = probe.get("expect_exit")
+    if completed.returncode != expected_exit:
+        failures.append(
+            f"{entry_id}: probe {probe.get('name')} expected exit {expected_exit}, got {completed.returncode}"
+        )
+    for needle in probe.get("stdout_contains", []) or []:
+        if needle not in completed.stdout:
+            failures.append(f"{entry_id}: probe {probe.get('name')} stdout missing {needle!r}")
+    for needle in probe.get("stderr_contains", []) or []:
+        if needle not in completed.stderr:
+            failures.append(f"{entry_id}: probe {probe.get('name')} stderr missing {needle!r}")
+    return failures
+
+
+def validate_entry(entry: dict[str, Any]) -> tuple[list[str], list[str], list[str]]:
+    failures: list[str] = []
+    warnings: list[str] = []
+    probes_run: list[str] = []
+    entry_id = entry.get("id", "<missing-id>")
+
+    for key in ["id", "title", "kind", "source_paths", "evaluation", "enforcement", "verification", "gaps"]:
+        require(key in entry, failures, f"{entry_id}: missing {key}")
+    if failures:
+        return failures, warnings, probes_run
+
+    source_paths = entry["source_paths"]
+    require(isinstance(source_paths, list) and bool(source_paths), failures, f"{entry_id}: source_paths must be non-empty")
+    for rel_path in source_paths:
+        require(isinstance(rel_path, str) and path_exists(rel_path), failures, f"{entry_id}: missing source path {rel_path}")
+
+    evaluation = entry["evaluation"]
+    enforcement = entry["enforcement"]
+    verification = entry["verification"]
+    gaps = entry["gaps"]
+    require(isinstance(evaluation, dict), failures, f"{entry_id}: evaluation must be an object")
+    require(isinstance(enforcement, dict), failures, f"{entry_id}: enforcement must be an object")
+    require(isinstance(verification, dict), failures, f"{entry_id}: verification must be an object")
+    require(isinstance(gaps, list), failures, f"{entry_id}: gaps must be a list")
+    if failures:
+        return failures, warnings, probes_run
+
+    decision = evaluation.get("decision")
+    status = enforcement.get("status")
+    evaluated = evaluation.get("evaluated")
+    host_level = enforcement.get("host_level_automatic")
+    trigger_surfaces = enforcement.get("trigger_surfaces", [])
+    implementation_paths = enforcement.get("implementation_paths", [])
+    probes = verification.get("probes", [])
+    hook_contract = entry.get("hook_contract")
+
+    require(evaluated is True, failures, f"{entry_id}: evaluation.evaluated must be true")
+    require(decision in DECISIONS, failures, f"{entry_id}: invalid decision {decision}")
+    require(status in STATUSES, failures, f"{entry_id}: invalid status {status}")
+    require(isinstance(host_level, bool), failures, f"{entry_id}: host_level_automatic must be boolean")
+    require(isinstance(trigger_surfaces, list), failures, f"{entry_id}: trigger_surfaces must be a list")
+    require(isinstance(implementation_paths, list), failures, f"{entry_id}: implementation_paths must be a list")
+    require(isinstance(probes, list), failures, f"{entry_id}: probes must be a list")
+
+    if decision == "required_now":
+        require(status == "operational", failures, f"{entry_id}: required_now entries must be operational")
+        require(trigger_surfaces, failures, f"{entry_id}: required_now entries need trigger surfaces")
+        require(implementation_paths, failures, f"{entry_id}: required_now entries need implementation paths")
+        require(verification.get("mode") == "commands", failures, f"{entry_id}: required_now entries need command verification")
+        require(probes, failures, f"{entry_id}: required_now entries need behavioral probes")
+    if status == "operational":
+        require(probes, failures, f"{entry_id}: operational entries need behavioral probes")
+    if status == "not_implemented":
+        require(not implementation_paths, failures, f"{entry_id}: not_implemented entries must not list implementation paths")
+        require(gaps, failures, f"{entry_id}: not_implemented entries must list gaps")
+    if entry.get("kind") == "hook":
+        if status == "not_implemented":
+            require(hook_contract is None, failures, f"{entry_id}: not_implemented hooks must not carry fake hook_contract metadata")
+        if status == "operational" or host_level:
+            require(host_level is True, failures, f"{entry_id}: operational hook entries must set host_level_automatic true")
+            failures.extend(validate_hook_contract(entry_id, hook_contract, implementation_paths, probes))
+    elif host_level:
+        failures.append(f"{entry_id}: only hook entries may claim host_level_automatic")
+    if decision == "required_by_protocol_not_auto_enforced":
+        require(status == "manual_protocol", failures, f"{entry_id}: protocol-only required entries must be manual_protocol")
+        require(gaps, failures, f"{entry_id}: manual protocol entries must list the missing automatic enforcement gap")
+        warnings.append(f"{entry_id}: required by protocol but not automatically enforced")
+    if decision == "deferred_not_claimed":
+        require(status in {"not_implemented", "not_applicable"}, failures, f"{entry_id}: deferred entries must not claim implementation")
+        require(gaps, failures, f"{entry_id}: deferred entries must list gaps")
+        warnings.append(f"{entry_id}: deferred and not claimed as enforced")
+
+    if failures:
+        return failures, warnings, probes_run
+
+    for probe in probes:
+        failures.extend(run_probe(entry_id, probe))
+        probes_run.append(f"{entry_id}:{probe.get('name')}")
+    return failures, warnings, probes_run
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Verify RedCap's enforcement matrix with behavioral probes")
+    parser.add_argument("--matrix", default=str(MATRIX_PATH), help="Matrix JSON file to verify")
+    args = parser.parse_args()
+    # Keep schema loading as a sanity check even though this script is the
+    # executable validator.
+    load_json(SCHEMA_PATH)
+    matrix = load_json(pathlib.Path(args.matrix).resolve())
+    failures: list[str] = []
+    warnings: list[str] = []
+    probes_run: list[str] = []
+
+    require(isinstance(matrix, dict), failures, "matrix must be an object")
+    if failures:
+        print(json.dumps({"ok": False, "failures": failures}, ensure_ascii=False, indent=2))
+        return 1
+    require(matrix.get("schema_id") == "redcap-enforcement-matrix", failures, "invalid schema_id")
+    entries = matrix.get("entries")
+    require(isinstance(entries, list) and bool(entries), failures, "entries must be a non-empty list")
+    if failures:
+        print(json.dumps({"ok": False, "failures": failures}, ensure_ascii=False, indent=2))
+        return 1
+
+    seen: set[str] = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            failures.append("entry must be an object")
+            continue
+        entry_id = entry.get("id")
+        if entry_id in seen:
+            failures.append(f"duplicate entry id: {entry_id}")
+        seen.add(entry_id)
+        entry_failures, entry_warnings, entry_probes = validate_entry(entry)
+        failures.extend(entry_failures)
+        warnings.extend(entry_warnings)
+        probes_run.extend(entry_probes)
+
+    result = {
+        "ok": not failures,
+        "entries": len(entries),
+        "probes_run": probes_run,
+        "warnings": warnings,
+        "failures": failures,
+    }
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if failures:
+        return 1
+    print("REDCAP_ENFORCEMENT_MATRIX_OK")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,19 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The rebuttal evidence does not answer the original concern.",
+  "main_concern": "Rejecting this concern would still be a RedCap-only dismissal.",
+  "top_risks": [
+    "Concern rejection hides unresolved provider disagreement"
+  ],
+  "missing_evidence": [
+    "Provider acceptance of the rebuttal"
+  ],
+  "minimum_fix": "Accept the concern or escalate instead of rejecting it.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "A second rebuttal would create an unbounded loop."
+  },
+  "user_intent_alignment": "aligned"
+}

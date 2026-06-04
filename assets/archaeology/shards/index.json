@@ -1,0 +1,95 @@
+{
+  "read_policy": "exact-files-before-shard; no directory bulk-read",
+  "schema_id": "redcap-archaeology-shard-index",
+  "shards": [
+    {
+      "acceptance": "Boundary extraction exists, has exactly bounded sources, and preserves required guarantees.",
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "id": "runtime-workspace-boundary",
+      "output": "assets/archaeology/extractions/runtime-workspace-boundary-v1.json",
+      "question": "Which old RedCap rules separate runtime root, project workspace, and user-private state?",
+      "status": "extracted"
+    },
+    {
+      "acceptance": "Produces lifecycle evidence rules mapped to existing FSM transitions, not a second state machine.",
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ],
+      "id": "development-lifecycle-review",
+      "output": null,
+      "question": "Which old review tracks are portable without duplicating the new FSM?",
+      "status": "planned"
+    },
+    {
+      "acceptance": "Produces shard split/acceptance rules and explicit anti-bulk-read limits.",
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "id": "long-task-context-defense",
+      "output": null,
+      "question": "Which old long-task defenses should become Prism shard ledger rules?",
+      "status": "planned"
+    },
+    {
+      "acceptance": "Produces anti-pattern rules that distinguish useful reports from report-as-progress pathology, with no task-report body migration.",
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-task-report-check.sh",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-task-report-check.sh"
+      ],
+      "id": "pathology-report-as-progress",
+      "output": null,
+      "question": "Which old report rules helped verification, and which report mechanics let written reports substitute for changed reality?",
+      "status": "planned",
+      "stop_condition": "extract only report/progress semantics and guardrail candidates; do not read historical task-report bodies"
+    },
+    {
+      "acceptance": "Produces receipt semantics that keep receipts as proof after reality changes, never as completion itself.",
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/references/parent-receipt-aggregation-policy.json",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.sh"
+      ],
+      "id": "pathology-receipt-as-completion",
+      "output": null,
+      "question": "Which old receipt rules are useful proof chains, and which allowed receipts or aggregation to masquerade as completion?",
+      "status": "planned",
+      "stop_condition": "extract receipt/completion boundary only; do not inspect receipt archives or private task bodies"
+    },
+    {
+      "acceptance": "Produces closeout recursion limits and cut lines between closeout, implementation, and verification.",
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/runtime/redcap-core/closeout-cap.sh",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-layerb-closeout-runtime.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-layerb-closeout-runtime.py",
+        "/Users/norven/workspace/redcap/assets/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md"
+      ],
+      "id": "pathology-closeout-recursion",
+      "output": null,
+      "question": "Which old closeout mechanics are needed for safe recovery, and which created closeout work before implementation reality changed?",
+      "status": "planned",
+      "stop_condition": "extract closeout recursion and ownership limits only; do not execute old closeout scripts"
+    },
+    {
+      "acceptance": "Produces raw-evidence access limits that keep evidence queryable without making raw dumps default context.",
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/prism/tools/prism-evidence-check.sh",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/prism-tools/prism-evidence-check.sh",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-r1-prism-evidence-retention-split-check.py",
+        "/Users/norven/workspace/redcap/assets/references/r1-prism-evidence-retention-split-preflight.json"
+      ],
+      "id": "pathology-raw-evidence-default",
+      "output": null,
+      "question": "Which old evidence retention rules preserve proof, and which made raw evidence the default context surface?",
+      "status": "planned",
+      "stop_condition": "extract evidence-retention and context-default rules only; do not read raw prism runs or evidence archives"
+    }
+  ],
+  "updated_at": "2026-06-01T12:07:28Z",
+  "version": 2
+}

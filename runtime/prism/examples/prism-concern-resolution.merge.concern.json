@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "claude-code",
+    "kimi"
+  ],
+  "verdicts": [
+    {
+      "provider": "claude-code",
+      "verdict": "pass",
+      "confidence": "medium"
+    },
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "claude-code",
+      "concern": "No blocking concern for this fixture."
+    },
+    {
+      "provider": "kimi",
+      "concern": "Rejection needs bounded same-provider rebuttal evidence instead of a RedCap-only assertion."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "claude-code",
+      "minimum_fix": "No minimum fix required for this provider fixture."
+    },
+    {
+      "provider": "kimi",
+      "minimum_fix": "Require accept, reject-with-bounded-rebuttal, or escalate for every concern/block."
+    }
+  ],
+  "anti_loop_detected": true
+}

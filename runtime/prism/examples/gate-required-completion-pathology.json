@@ -1,0 +1,7 @@
+{
+  "task": "Diagnose old-disease recurrence: claim inflation and documentation-as-completion may be replacing real implementation.",
+  "risk_level": "high",
+  "changed_paths": ["runtime/prism/rules/prism-gate-rules.json"],
+  "tags": ["anti-loop", "completion semantics"],
+  "expected_decision": "required"
+}

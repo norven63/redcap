@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+"""Verify that required RedCap guardrails have concrete host hook coverage."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import pathlib
+import sys
+from typing import Any
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[1]
+DEFAULT_COVERAGE = REPO_ROOT / "assets" / "contracts" / "hook-coverage.json"
+DEFAULT_MATRIX = REPO_ROOT / "assets" / "contracts" / "enforcement-matrix.json"
+
+
+def load_json(path: pathlib.Path) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid json: {path}: {exc}") from exc
+
+
+def require(condition: bool, failures: list[str], message: str) -> None:
+    if not condition:
+        failures.append(message)
+
+
+def rel_exists(rel_path: str) -> bool:
+    return (REPO_ROOT / rel_path).exists()
+
+
+def hook_commands_for(config: dict[str, Any], event: str) -> list[str]:
+    commands: list[str] = []
+    for group in config.get("hooks", {}).get(event, []) or []:
+        if not isinstance(group, dict):
+            continue
+        for hook in group.get("hooks", []) or []:
+            if isinstance(hook, dict) and hook.get("type") == "command":
+                command = hook.get("command")
+                if isinstance(command, str):
+                    commands.append(command)
+    return commands
+
+
+def matrix_entries_by_id(matrix: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    entries = matrix.get("entries", [])
+    return {entry.get("id"): entry for entry in entries if isinstance(entry, dict)}
+
+
+def matrix_hook_for_event(matrix_entries: dict[str, dict[str, Any]], event: str, host_source: str) -> dict[str, Any] | None:
+    for entry in matrix_entries.values():
+        hook_contract = entry.get("hook_contract")
+        if not isinstance(hook_contract, dict):
+            continue
+        if hook_contract.get("event") == event and hook_contract.get("host_source") == host_source:
+            return entry
+    return None
+
+
+def validate(coverage: dict[str, Any], matrix: dict[str, Any]) -> dict[str, Any]:
+    failures: list[str] = []
+    warnings: list[str] = []
+    require(coverage.get("schema_id") == "redcap-hook-coverage", failures, "invalid hook coverage schema_id")
+    require(matrix.get("schema_id") == "redcap-enforcement-matrix", failures, "invalid enforcement matrix schema_id")
+    if failures:
+        return {"ok": False, "failures": failures, "warnings": warnings}
+
+    host_source = coverage.get("host_source")
+    adapter_path = coverage.get("adapter_path")
+    hook_config_path = coverage.get("hook_config_path")
+    require(isinstance(host_source, str) and bool(host_source.strip()), failures, "host_source must be a non-empty string")
+    require(isinstance(adapter_path, str) and rel_exists(adapter_path), failures, f"adapter_path missing: {adapter_path}")
+    require(isinstance(hook_config_path, str) and rel_exists(hook_config_path), failures, f"hook_config_path missing: {hook_config_path}")
+    if failures:
+        return {"ok": False, "failures": failures, "warnings": warnings}
+
+    hook_config = load_json(REPO_ROOT / hook_config_path)
+    require(isinstance(hook_config.get("hooks"), dict), failures, "hooks.json must contain a hooks object")
+    required_events = coverage.get("required_events")
+    guardrails = coverage.get("guardrails")
+    deferred_events = coverage.get("deferred_events")
+    policy = coverage.get("future_hook_policy")
+    require(isinstance(required_events, list) and bool(required_events), failures, "required_events must be non-empty")
+    require(isinstance(guardrails, list) and bool(guardrails), failures, "guardrails must be non-empty")
+    require(isinstance(deferred_events, list), failures, "deferred_events must be a list")
+    require(isinstance(policy, dict), failures, "future_hook_policy must be an object")
+    if failures:
+        return {"ok": False, "failures": failures, "warnings": warnings}
+
+    require(
+        policy.get("default") == "fail_closed_when_required_event_missing",
+        failures,
+        "future_hook_policy.default must fail closed for missing required hook events",
+    )
+
+    matrix_entries = matrix_entries_by_id(matrix)
+    required_now_ids = {
+        entry_id
+        for entry_id, entry in matrix_entries.items()
+        if isinstance(entry.get("evaluation"), dict)
+        and entry["evaluation"].get("decision") == "required_now"
+    }
+    coverage_by_entry = {
+        guardrail.get("entry_id"): guardrail
+        for guardrail in guardrails
+        if isinstance(guardrail, dict)
+    }
+    missing_required = sorted(required_now_ids - set(coverage_by_entry))
+    require(not missing_required, failures, f"required_now entries missing hook coverage mapping: {missing_required}")
+
+    required_event_by_name = {
+        event_record.get("event"): event_record
+        for event_record in required_events
+        if isinstance(event_record, dict)
+    }
+    for event, event_record in required_event_by_name.items():
+        if not isinstance(event, str) or not event.strip():
+            failures.append("required_events includes an invalid event")
+            continue
+        matrix_hook_id = event_record.get("matrix_hook_id")
+        require(isinstance(matrix_hook_id, str) and matrix_hook_id in matrix_entries, failures, f"{event}: matrix_hook_id missing from matrix")
+        commands = hook_commands_for(hook_config, event)
+        require(commands, failures, f"{event}: no deployed Codex hook command in hooks.json")
+        require(
+            any(adapter_path in command and f"--event {event}" in command for command in commands),
+            failures,
+            f"{event}: deployed hook command does not call {adapter_path} --event {event}",
+        )
+        matrix_hook = matrix_hook_for_event(matrix_entries, event, host_source)
+        require(matrix_hook is not None, failures, f"{event}: no operational hook_contract matrix entry for host {host_source}")
+        if matrix_hook is not None:
+            enforcement = matrix_hook.get("enforcement", {})
+            verification = matrix_hook.get("verification", {})
+            require(matrix_hook.get("id") == matrix_hook_id, failures, f"{event}: matrix_hook_id does not match hook_contract entry")
+            require(enforcement.get("status") == "operational", failures, f"{event}: matrix hook is not operational")
+            require(enforcement.get("host_level_automatic") is True, failures, f"{event}: matrix hook must be host_level_automatic")
+            require(verification.get("probes"), failures, f"{event}: matrix hook needs live-marker probes")
+        covered = event_record.get("covers_guardrails", [])
+        require(isinstance(covered, list), failures, f"{event}: covers_guardrails must be a list")
+        for entry_id in covered:
+            require(entry_id in matrix_entries, failures, f"{event}: covers unknown guardrail {entry_id}")
+
+    for entry_id, guardrail in coverage_by_entry.items():
+        require(entry_id in matrix_entries, failures, f"coverage references unknown matrix entry: {entry_id}")
+        coverage_state = guardrail.get("coverage")
+        required_event = guardrail.get("required_event")
+        if entry_id in required_now_ids:
+            require(coverage_state == "hook_required", failures, f"{entry_id}: required_now entries must be hook_required")
+        if coverage_state == "hook_required":
+            require(isinstance(required_event, str) and required_event in required_event_by_name, failures, f"{entry_id}: hook_required guardrail must name a deployed required_event")
+            if isinstance(required_event, str) and required_event in required_event_by_name:
+                covered = required_event_by_name[required_event].get("covers_guardrails", [])
+                require(entry_id in covered, failures, f"{entry_id}: required_event {required_event} does not list this guardrail")
+        elif coverage_state == "manual_protocol":
+            warnings.append(f"{entry_id}: manual protocol is not host-level automatic yet")
+        elif coverage_state == "deferred_not_claimed":
+            warnings.append(f"{entry_id}: deferred and not claimed as hook-covered")
+        else:
+            failures.append(f"{entry_id}: invalid coverage state {coverage_state}")
+
+    for event_record in deferred_events:
+        if not isinstance(event_record, dict):
+            failures.append("deferred_events entries must be objects")
+            continue
+        event = event_record.get("event")
+        require(event not in required_event_by_name, failures, f"{event}: event cannot be both deferred and required")
+        require(event_record.get("status") == "deferred_not_claimed", failures, f"{event}: deferred event status must be deferred_not_claimed")
+        require(
+            isinstance(event_record.get("unblock_condition"), str) and bool(event_record["unblock_condition"].strip()),
+            failures,
+            f"{event}: deferred event needs an unblock_condition",
+        )
+
+    return {
+        "ok": not failures,
+        "required_now_entries": sorted(required_now_ids),
+        "required_events": sorted(required_event_by_name),
+        "warnings": warnings,
+        "failures": failures,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Verify RedCap host hook coverage")
+    parser.add_argument("--coverage", default=str(DEFAULT_COVERAGE))
+    parser.add_argument("--matrix", default=str(DEFAULT_MATRIX))
+    args = parser.parse_args()
+
+    coverage = load_json(pathlib.Path(args.coverage).resolve())
+    matrix = load_json(pathlib.Path(args.matrix).resolve())
+    if not isinstance(coverage, dict) or not isinstance(matrix, dict):
+        raise SystemExit("coverage and matrix must both be JSON objects")
+    result = validate(coverage, matrix)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["ok"]:
+        return 1
+    print("REDCAP_HOOK_COVERAGE_OK")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,11 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "fixture-prism-concern-resolution-pass",
+  "merge_path": "runtime/prism/examples/prism-concern-resolution.merge.pass.json",
+  "reviews": [],
+  "resolutions": [],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "The merge has no concern/block verdicts."
+  }
+}

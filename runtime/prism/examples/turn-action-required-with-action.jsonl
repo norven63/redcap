@@ -1,0 +1,2 @@
+{"schema_id":"redcap-codex-hook-live-marker","host_source":"codex","event":"UserPromptSubmit","session_id":"fixture-session","turn_id":"fixture-required-with-action","recorded_at":"2026-05-31T00:00:00+00:00","gate_decision":"required","gate_matched_rules":["completion-pathology"]}
+{"schema_id":"redcap-codex-hook-live-marker","host_source":"codex","event":"PostToolUse","session_id":"fixture-session","turn_id":"fixture-required-with-action","recorded_at":"2026-05-31T00:00:01+00:00","tool_name":"apply_patch","tool_use_id":"fixture-tool"}

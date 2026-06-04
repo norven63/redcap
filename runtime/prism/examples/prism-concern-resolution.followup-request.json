@@ -1,0 +1,29 @@
+{
+  "task": "Bounded Prism rebuttal for kimi concern",
+  "user_intent": "Give the same Prism provider one bounded opportunity to evaluate RedCap's proposed rejection evidence.",
+  "main_claim": "RedCap proposes to reject the Kimi concern because executable resolution checking now prevents silent dismissal.",
+  "changed_reality": [
+    "RedCap provided explicit rejection evidence for the Kimi concern.",
+    "The rebuttal request is limited to one same-provider review."
+  ],
+  "review_mode": "rebuttal_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi"
+  ],
+  "evidence": [
+    "runtime/prism/examples/prism-concern-resolution.valid-reject.json"
+  ],
+  "known_constraints": [
+    "This is a one-round same-provider rebuttal request.",
+    "The provider must return one Prism review JSON and must not open an unbounded discussion loop.",
+    "The request preserves the original concern context and adds only rebuttal evidence."
+  ],
+  "generated_by": "runtime/prism/bin/prism rebuttal-request",
+  "rebuttal_for": {
+    "provider": "kimi",
+    "original_merge_path": "runtime/prism/examples/prism-concern-resolution.merge.concern.json",
+    "original_review_path": "runtime/prism/examples/prism-concern-resolution.kimi-concern.json"
+  },
+  "additive_rebuttal_only": true
+}

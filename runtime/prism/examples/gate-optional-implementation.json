@@ -1,0 +1,7 @@
+{
+  "task": "Implement a local status formatting helper with targeted tests.",
+  "risk_level": "medium",
+  "changed_paths": ["runtime/status.py"],
+  "tags": ["implementation"],
+  "expected_decision": "optional"
+}

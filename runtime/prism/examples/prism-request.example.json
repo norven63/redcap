@@ -1,0 +1,30 @@
+{
+  "task": "Review whether the new RedCap directory cleanup task is complete.",
+  "user_intent": "The user wanted the project directory to become understandable and not keep producing cleanup artifacts forever.",
+  "main_claim": "The directory cleanup is complete because a manifest, README update, and receipt were generated.",
+  "changed_reality": [
+    "README now explains root directory zones.",
+    "A machine-readable manifest classifies root paths.",
+    "No physical deletion or migration was performed."
+  ],
+  "evidence": [
+    {
+      "kind": "diff",
+      "reference": "README.md",
+      "summary": "Human-facing root directory explanation"
+    },
+    {
+      "kind": "document",
+      "reference": "assets/references/root-manifest.json",
+      "summary": "Path classification manifest"
+    }
+  ],
+  "review_mode": "completion_review",
+  "risk_level": "high",
+  "requested_providers": ["kimi", "claude-code"],
+  "known_constraints": [
+    "No irreversible deletion without user approval.",
+    "Do not claim all old paths disappeared."
+  ]
+}
+

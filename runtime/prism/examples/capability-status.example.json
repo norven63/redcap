@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-capability-status",
+  "capability": "prism-provider-dispatcher",
+  "status": "manually_runnable",
+  "completion_claim": "Provider review can be run manually with task-scoped session handles, but automatic provider dispatch is not complete.",
+  "evidence": [
+    "runtime/prism/bin/prism brief",
+    "runtime/prism/bin/prism session-update",
+    "runtime/prism/bin/prism merge"
+  ]
+}

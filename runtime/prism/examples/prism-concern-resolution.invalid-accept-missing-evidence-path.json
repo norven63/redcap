@@ -1,0 +1,29 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "fixture-prism-concern-resolution",
+  "merge_path": "runtime/prism/examples/prism-concern-resolution.merge.concern.json",
+  "reviews": [
+    "runtime/prism/examples/prism-concern-resolution.kimi-concern.json",
+    "runtime/prism/examples/prism-concern-resolution.claude-pass.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "This fixture intentionally points to fabricated evidence.",
+      "implementation_evidence": [
+        "runtime/prism/examples/does-not-exist.json"
+      ],
+      "verification_evidence": [
+        "runtime/bin/redcap prism-resolution --self-check"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Invalid fixture."
+  }
+}

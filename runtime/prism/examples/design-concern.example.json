@@ -1,0 +1,22 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The proposed design introduces a review protocol but no enforcement point where the main AI must respond to concerns.",
+  "main_concern": "Prism could become advisory decoration if RedCap is allowed to ignore concern or block results.",
+  "top_risks": [
+    "The main AI may quote Prism without changing behavior.",
+    "Completion claims may proceed after unresolved concerns."
+  ],
+  "missing_evidence": [
+    "No response contract for concern or block.",
+    "No high-risk stop condition."
+  ],
+  "minimum_fix": "Add a required main-AI response contract and stop conditions for deletion, release, secrets, and repeated anti-loop signals.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "This is a design-stage gap, not yet an evidence loop."
+  },
+  "user_intent_alignment": "aligned"
+}
+

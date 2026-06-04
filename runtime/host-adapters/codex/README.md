@@ -1,18 +1,32 @@
-# Codex Host Adapter Boundary
+# Codex Host Adapter
 
-Codex still imports root `AGENTS.md` from the managed workspace.
+Purpose: project-local Codex lifecycle hooks for the revived RedCap workspace.
 
-As of 2026-05-09, Codex also documents official lifecycle hooks behind the
-`codex_hooks` feature flag. RedCap now carries a repo-local candidate
-configuration in `.codex/`, but this directory remains a package-visible adapter
-boundary only:
+This adapter is a host bridge. RedCap rules stay in `runtime/` and
+`assets/contracts/`; Codex hook files only forward host events into RedCap-owned
+commands.
 
-- `AGENTS.md` is still the thin startup import.
-- `.codex/hooks.json` is a Codex-specific host wiring candidate.
-- RedCap must not claim full host parity until a real trusted Codex session
-  proves SessionStart / Stop firing with marker evidence.
-- `compass/tools/redcap-codex-live-marker-e2e.sh --run` is the safe local
-  marker probe for Codex CLI; a passing CLI probe does not automatically prove
-  Codex.app interactive hook readiness.
-- Codex PreToolUse / PostToolUse coverage is a guardrail, not a complete
-  sandbox or reply-time veto boundary.
+Current deployed surface:
+
+- `SessionStart`: writes a live-marker record and injects a short RedCap context
+  reminder.
+- `UserPromptSubmit`: writes a live-marker record, runs the deterministic
+  RedCap/Prism prompt gate, and injects the resulting gate context without
+  storing the raw prompt.
+- `PreToolUse`: writes a live-marker record, blocks known destructive commands
+  before execution, and claims session ownership for mutating supported tool
+  calls when Codex supplies a real session id.
+- `PostToolUse`: writes same-turn supported tool-use fingerprints so `Stop` can
+  distinguish action-backed work from explanation-only closure.
+- `Stop`: writes a live-marker record and runs `runtime/bin/redcap check` before
+  a turn closes cleanly. If the matching prompt was RedCap-required and no
+  `PostToolUse` action evidence exists for the same turn, `Stop` asks Codex to
+  continue instead of closing with explanation/status only.
+
+Not currently claimed:
+
+- Events not exposed as verified project hooks in this workspace:
+  `PermissionRequest`, `PreCompact`, and `PostCompact`.
+- Complete cross-host hook parity. Kimi and Claude Code provider calls are
+  controlled through the Prism dispatcher instead of through provider-native
+  lifecycle hooks.

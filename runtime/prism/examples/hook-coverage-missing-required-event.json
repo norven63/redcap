@@ -1,0 +1,29 @@
+{
+  "schema_id": "redcap-hook-coverage",
+  "host_source": "codex",
+  "adapter_path": "runtime/host-adapters/codex/codex-hook.py",
+  "hook_config_path": ".codex/hooks.json",
+  "required_events": [
+    {
+      "event": "SessionStart",
+      "matrix_hook_id": "codex-session-start-hook",
+      "mode": "session-anchor-live-marker",
+      "covers_guardrails": [
+        "codex-session-start-hook"
+      ]
+    }
+  ],
+  "guardrails": [
+    {
+      "entry_id": "layout-check",
+      "coverage": "hook_required",
+      "required_event": "PostToolUse",
+      "rationale": "Bad fixture: claims a required guardrail needs PostToolUse without deploying PostToolUse."
+    }
+  ],
+  "deferred_events": [],
+  "future_hook_policy": {
+    "default": "fail_closed_when_required_event_missing",
+    "reason": "Bad fixture must fail when a required hook event is missing."
+  }
+}

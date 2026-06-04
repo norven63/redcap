@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "policy_id": "prism-gate-rules",
+  "purpose": "Deterministically decide whether a task must invoke full Prism, may optionally invoke Prism, or can skip provider review.",
+  "default": {
+    "decision": "optional",
+    "review_mode": "strategy_review",
+    "reason": "No skip or required rule matched; Prism is optional but available."
+  },
+  "rules": [
+    {
+      "id": "completion-pathology",
+      "decision": "required",
+      "review_mode": "anti_loop_review",
+      "reason": "Anti-loop, claim-inflation, documentation-as-completion, or old-disease diagnosis requires full Prism.",
+      "match": {
+        "any_terms": ["anti-loop", "anti loop", "old-disease", "旧疾", "pathology", "病灶", "recurrence", "复燃", "claim inflation", "completion pathology", "completion semantics", "documentation-as-completion", "文档完成", "治理记录", "空转"]
+      }
+    },
+    {
+      "id": "release-or-public-surface",
+      "decision": "required",
+      "review_mode": "release_review",
+      "reason": "Release, publication, package, registry, license, credential, or public-surface changes require full Prism.",
+      "match": {
+        "any_terms": ["release", "publish", "package", "registry", "license", "credential", "secret", "public surface", "public release", "npm", "gitee", "github release"]
+      }
+    },
+    {
+      "id": "architecture-or-directory",
+      "decision": "required",
+      "review_mode": "design_review",
+      "reason": "Architecture, directory structure, runtime boundary, hooks, sessions, FSM, knowledge, retrieval, or provider policy changes require full Prism.",
+      "match": {
+        "any_terms": ["architecture", "directory", "目录", "runtime", "hook", "session", "会话", "fsm", "state machine", "workflow gate", "knowledge", "知识库", "retrieval", "rag", "graphrag", "provider policy", "prism gate"]
+      }
+    },
+    {
+      "id": "sensitive-control-path",
+      "decision": "required",
+      "review_mode": "design_review",
+      "reason": "Changes to workspace instructions, Prism rules, contracts, host adapters, or directory architecture affect future task control.",
+      "match": {
+        "path_globs": ["AGENTS.md", "contracts/**", "prism/rules/**", "host-adapters/**", "docs/directory-architecture.md"]
+      }
+    },
+    {
+      "id": "migration-or-deletion",
+      "decision": "required",
+      "review_mode": "migration_review",
+      "reason": "Moving, deleting, archiving, retiring anchors, or changing rollback-sensitive assets requires full Prism.",
+      "match": {
+        "any_terms": ["delete", "remove", "move", "migrate", "archive", "retire", "rename", "删除", "迁移", "归档", "移动"]
+      }
+    },
+    {
+      "id": "completion-claim",
+      "decision": "required",
+      "review_mode": "completion_review",
+      "reason": "Completion claims for RedCap work require Prism challenge before they can be official.",
+      "match": {
+        "any_terms": ["complete", "completed", "done", "finish", "完成", "收尾", "closeout", "receipt"]
+      }
+    },
+    {
+      "id": "implementation-change",
+      "decision": "optional",
+      "review_mode": "implementation_review",
+      "reason": "Normal implementation work should keep Prism available and escalate if risk rises.",
+      "match": {
+        "any_terms": ["implement", "code", "script", "validator", "test", "实现", "脚本", "测试"]
+      }
+    },
+    {
+      "id": "low-risk-text-only",
+      "decision": "skipped",
+      "review_mode": "strategy_review",
+      "reason": "Trivial low-risk wording or typo work can skip provider review after rule review.",
+      "match": {
+        "risk_levels": ["low"],
+        "any_terms": ["typo", "spelling", "formatting", "copy edit", "wording", "错别字", "格式", "措辞"]
+      }
+    }
+  ]
+}

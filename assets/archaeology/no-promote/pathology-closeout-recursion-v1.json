@@ -1,0 +1,55 @@
+{
+  "schema_id": "redcap-archaeology-no-promote-decision",
+  "version": 1,
+  "shard_id": "pathology-closeout-recursion",
+  "scope": "redcap-revival-1.0",
+  "decision": "no-promote",
+  "reason": "The old closeout runtime is not promoted into RedCap 1.0. The useful 1.0 requirement is narrower: closeout, closure, pending-closure, closure-ledger, closeout receipt, and closeout summary artifacts may support evidence after changed runtime reality exists, but they must never complete a revival loop item by themselves.",
+  "bounded_old_sources_considered": [
+    "/Users/norven/workspace/redcap/runtime/redcap-core/closeout-cap.sh",
+    "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-layerb-closeout-runtime.py",
+    "/Users/norven/workspace/redcap/compass/tools/redcap-layerb-closeout-runtime.py",
+    "/Users/norven/workspace/redcap/assets/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md"
+  ],
+  "old_source_read_policy": {
+    "bulk_read": false,
+    "old_closeout_scripts_executed": false,
+    "full_migration_attempted": false,
+    "term_scan_only": true
+  },
+  "bounded_term_scan": {
+    "command_shape": "rg -n -i closeout|close-out|closure|closing|wrap-up|sign-off|finishing|finalize|handoff|promise ledger over the four bounded sources",
+    "terms_kept_for_marker_guard": [
+      "closeout",
+      "close-out",
+      "close out",
+      "closure",
+      "closing"
+    ],
+    "terms_already_covered_by_existing_markers": [
+      "ledger",
+      "receipt",
+      "summary"
+    ]
+  },
+  "kept_for_1_0": [
+    "Closeout-related evidence can support proof after changed reality exists.",
+    "Closeout and closure artifacts are explicitly classified as proof-only loop evidence unless paired with runtime, contract, knowledge, or RedCap command evidence.",
+    "A no-promote decision may preserve the design lesson without importing old closeout runtime."
+  ],
+  "not_promoted_for_1_0": [
+    "Old Layer B closeout runtime.",
+    "Old closeout receipt and summary generation as completion authority.",
+    "Pending-closure and closure-ledger machinery as a task completion source.",
+    "Promise-ledger based closeout as a 1.0 loop exit mechanism."
+  ],
+  "consumption_evidence": [
+    "runtime/core/revival_loop.py",
+    "assets/contracts/redcap-1.0-loop.json",
+    "runtime/bin/redcap check"
+  ],
+  "verification": [
+    "python3 runtime/core/revival_loop.py self-check",
+    "runtime/bin/redcap check"
+  ]
+}

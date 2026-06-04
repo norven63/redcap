@@ -1,0 +1,15 @@
+{
+  "provider": "claude-code",
+  "verdict": "pass",
+  "confidence": "medium",
+  "reality_delta": "The proposed workflow has a concrete implementation route.",
+  "main_concern": "No blocking concern for this fixture.",
+  "top_risks": [],
+  "missing_evidence": [],
+  "minimum_fix": "No minimum fix required for this provider fixture.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "Fixture pass."
+  },
+  "user_intent_alignment": "aligned"
+}

@@ -1,0 +1,11 @@
+{
+  "task": "Review current capability status before choosing the next step.",
+  "risk_level": "high",
+  "changed_reality": [
+    "No automatic invocation exists yet.",
+    "The current flow is not implemented.",
+    "There is no positive target behavior change."
+  ],
+  "tags": [],
+  "expected_decision": "required"
+}

@@ -1,0 +1,1767 @@
+{
+  "schema_id": "redcap-enforcement-matrix",
+  "entries": [
+    {
+      "id": "prism-task-intake-gate",
+      "title": "Prism rule review for RedCap-owned task intake",
+      "kind": "gate",
+      "source_paths": [
+        "AGENTS.md",
+        "assets/contracts/gate-protocol.md",
+        "runtime/prism/rules/prism-gate-rules.json"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Architecture, runtime, hook, session, FSM, knowledge, provider policy, and high-risk implementation work must run deterministic Prism rule review before proceeding through RedCap-owned entrypoints."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap intake",
+          "runtime/prism/bin/prism gate --fail-when-required"
+        ],
+        "implementation_paths": [
+          "runtime/bin/redcap",
+          "runtime/prism/bin/prism",
+          "runtime/prism/rules/prism-gate-rules.json"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "architecture work is halted by intake",
+            "argv": [
+              "runtime/bin/redcap",
+              "intake",
+              "--task",
+              "Design runtime hook session FSM knowledge architecture",
+              "--risk-level",
+              "high"
+            ],
+            "expect_exit": 2,
+            "stdout_contains": [
+              "\"decision\": \"required\""
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "Host-level automatic interception is not claimed."
+      ]
+    },
+    {
+      "id": "completion-pathology-gate",
+      "title": "Old-disease and documentation-as-completion gate",
+      "kind": "gate",
+      "source_paths": [
+        "runtime/prism/rules/prism-gate-rules.json",
+        "runtime/prism/examples/gate-required-completion-pathology.json"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Anti-loop, old-disease, claim inflation, documentation-as-completion, and proof-as-completion tasks require full Prism."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap intake"
+        ],
+        "implementation_paths": [
+          "runtime/prism/rules/prism-gate-rules.json",
+          "runtime/prism/bin/prism"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "old-disease language is halted by intake",
+            "argv": [
+              "runtime/bin/redcap",
+              "intake",
+              "--task",
+              "Diagnose old-disease recurrence where 文档完成 and 治理记录 replace real implementation",
+              "--risk-level",
+              "high"
+            ],
+            "expect_exit": 2,
+            "stdout_contains": [
+              "\"matched_rules\":",
+              "completion-pathology"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "Host-level automatic interception is not claimed."
+      ]
+    },
+    {
+      "id": "completion-semantics-gate",
+      "title": "Completion claim semantics gate",
+      "kind": "gate",
+      "source_paths": [
+        "runtime/prism/bin/completion-semantics-check",
+        "runtime/prism/schemas/capability-status.schema.json",
+        "runtime/prism/examples/capability-status.example.json"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Completion claims with partial, manual, tested-only, proof-only, proposal-only, or blocked labels must be rejected before official completion."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap intake --completion-claim ... --capability-status ...",
+          "runtime/prism/bin/completion-semantics-check"
+        ],
+        "implementation_paths": [
+          "runtime/prism/bin/prism",
+          "runtime/prism/bin/completion-semantics-check"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "tested-only completion claim is halted",
+            "argv": [
+              "runtime/bin/redcap",
+              "intake",
+              "--task",
+              "Claim tests pass so the capability is complete",
+              "--risk-level",
+              "high",
+              "--completion-claim",
+              "Tests passed, so this capability is complete.",
+              "--capability-status",
+              "tested"
+            ],
+            "expect_exit": 2,
+            "stdout_contains": [
+              "completion-semantics-check",
+              "\"decision\": \"required\""
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "Completion semantics are enforced only when completion metadata is supplied to the RedCap gate."
+      ]
+    },
+    {
+      "id": "diagnostic-only-changed-reality-gate",
+      "title": "Diagnostic-only changed_reality anti-loop gate",
+      "kind": "gate",
+      "source_paths": [
+        "runtime/prism/bin/prism",
+        "runtime/prism/examples/gate-required-diagnostic-only-changed-reality.json"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Requests whose changed_reality only describes missing, unimplemented, or not-yet behavior must not pass as implementation progress."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap intake --request ..."
+        ],
+        "implementation_paths": [
+          "runtime/prism/bin/prism"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "diagnostic-only changed_reality is halted",
+            "argv": [
+              "runtime/bin/redcap",
+              "intake",
+              "--request",
+              "runtime/prism/examples/gate-required-diagnostic-only-changed-reality.json"
+            ],
+            "expect_exit": 2,
+            "stdout_contains": [
+              "diagnostic-only-changed-reality",
+              "\"decision\": \"required\""
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "This is a conservative diagnostic heuristic, not a semantic proof engine."
+      ]
+    },
+    {
+      "id": "layout-check",
+      "title": "Runtime and asset layer layout check",
+      "kind": "workflow",
+      "source_paths": [
+        "assets/contracts/directory-structure.json",
+        "assets/contracts/directory-structure.schema.json",
+        "assets/docs/directory-architecture.md",
+        "runtime/core/layout_guard.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "The revival workspace must keep executable runtime units and durable asset units separated so RedCap does not fall back into root-level scatter."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap layout-check",
+          "runtime/bin/redcap check"
+        ],
+        "implementation_paths": [
+          "assets/contracts/directory-structure.json",
+          "runtime/core/layout_guard.py",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "directory policy accepts current workspace",
+            "argv": [
+              "runtime/bin/redcap",
+              "layout-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_LAYOUT_OK"
+            ]
+          },
+          {
+            "name": "directory policy rejects sprawl fixtures",
+            "argv": [
+              "runtime/bin/redcap",
+              "layout-check",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "root-sprawl",
+              "asset-executable-extension",
+              "placement-rule-executable-bit-drift",
+              "runtime-asset-source-drift",
+              "source-logic-runtime-asset-drift",
+              "contract-in-docs-drift",
+              "archaeology-source-drift",
+              "prism-root-file-drift",
+              "functional-directory-without-placement-rule",
+              "placement-rule-functional-role-outside-map",
+              "duplicate-placement-rule-path",
+              "policy-erosion",
+              "REDCAP_LAYOUT_SELF_CHECK_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": []
+    },
+    {
+      "id": "hook-coverage-gate",
+      "title": "Host hook coverage gate for required guardrails",
+      "kind": "gate",
+      "source_paths": [
+        "assets/contracts/hook-coverage.json",
+        "assets/contracts/hook-coverage.schema.json",
+        "runtime/prism/bin/hook-coverage-check",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Any RedCap capability judged hook-required must name a deployed host event, operational adapter, matrix hook entry, and live-marker probe before RedCap check can pass."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap hook-coverage-check",
+          "runtime/bin/redcap check"
+        ],
+        "implementation_paths": [
+          "assets/contracts/hook-coverage.json",
+          "runtime/prism/bin/hook-coverage-check",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "required guardrails have deployed hook coverage",
+            "argv": [
+              "runtime/bin/redcap",
+              "hook-coverage-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_HOOK_COVERAGE_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "This checks hook coverage contracts; it does not invent missing guardrail semantics for future hook events."
+      ]
+    },
+    {
+      "id": "required-prompt-action-evidence",
+      "title": "Required RedCap prompt action evidence gate",
+      "kind": "gate",
+      "source_paths": [
+        "runtime/prism/bin/turn-action-check",
+        "runtime/prism/examples/turn-action-required-no-action.jsonl",
+        "runtime/prism/examples/turn-action-required-git-read-only.jsonl",
+        "runtime/prism/examples/turn-action-required-read-only.jsonl",
+        "runtime/prism/examples/turn-action-required-with-action.jsonl",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "A required RedCap prompt must not close with explanation, status, evidence bookkeeping, or apology alone; the same turn needs supported tool/action evidence or an explicit blocked continuation."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/prism/bin/turn-action-check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/prism/bin/turn-action-check",
+          "runtime/host-adapters/codex/codex-hook.py"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "required prompt without action evidence is blocked",
+            "argv": [
+              "runtime/prism/bin/turn-action-check",
+              "--events",
+              "runtime/prism/examples/turn-action-required-no-action.jsonl",
+              "--session-id",
+              "fixture-session",
+              "--turn-id",
+              "fixture-required-no-action"
+            ],
+            "expect_exit": 1,
+            "stdout_contains": [
+              "\"ok\": false",
+              "no same-turn PostToolUse substantive action evidence"
+            ]
+          },
+          {
+            "name": "required prompt with read-only evidence is blocked",
+            "argv": [
+              "runtime/prism/bin/turn-action-check",
+              "--events",
+              "runtime/prism/examples/turn-action-required-read-only.jsonl",
+              "--session-id",
+              "fixture-session",
+              "--turn-id",
+              "fixture-required-read-only"
+            ],
+            "expect_exit": 1,
+            "stdout_contains": [
+              "\"ok\": false",
+              "no same-turn PostToolUse substantive action evidence"
+            ]
+          },
+          {
+            "name": "required prompt with git read-only evidence is blocked",
+            "argv": [
+              "runtime/prism/bin/turn-action-check",
+              "--events",
+              "runtime/prism/examples/turn-action-required-git-read-only.jsonl",
+              "--session-id",
+              "fixture-session",
+              "--turn-id",
+              "fixture-required-git-read-only"
+            ],
+            "expect_exit": 1,
+            "stdout_contains": [
+              "\"ok\": false",
+              "no same-turn PostToolUse substantive action evidence"
+            ]
+          },
+          {
+            "name": "required prompt with action evidence passes",
+            "argv": [
+              "runtime/prism/bin/turn-action-check",
+              "--events",
+              "runtime/prism/examples/turn-action-required-with-action.jsonl",
+              "--session-id",
+              "fixture-session",
+              "--turn-id",
+              "fixture-required-with-action"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"ok\": true",
+              "REDCAP_TURN_ACTION_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "PostToolUse records supported Codex tool events and cannot prove every possible external action outside the Codex hook surface."
+      ]
+    },
+    {
+      "id": "prism-session-followup-check",
+      "title": "Prism provider follow-up session continuity check",
+      "kind": "protocol",
+      "source_paths": [
+        "assets/contracts/prism-session-protocol.md",
+        "runtime/prism/schemas/prism-session.schema.json",
+        "runtime/prism/examples/prism-session.example.json",
+        "runtime/prism/bin/prism-dispatch"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Provider follow-up continuity must be enforced before every dispatcher-routed provider call."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/prism/bin/prism session-check --require-existing-session",
+          "runtime/prism/bin/prism-dispatch",
+          "runtime/bin/redcap prism-dispatch",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/prism/bin/prism",
+          "runtime/prism/bin/prism-dispatch"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "session-check allows a valid continuing Prism task",
+            "argv": [
+              "runtime/prism/bin/prism",
+              "session-check",
+              "--manifest",
+              "runtime/prism/examples/prism-session.example.json",
+              "--require-existing-session"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"blocked\": []"
+            ]
+          },
+          {
+            "name": "dispatcher blocks follow-up without session handle",
+            "argv": [
+              "runtime/prism/bin/prism-dispatch",
+              "--self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "PRISM_DISPATCH_SELF_CHECK_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": []
+    },
+    {
+      "id": "prism-concern-resolution-gate",
+      "title": "Prism concern and block resolution gate",
+      "kind": "gate",
+      "source_paths": [
+        "assets/contracts/prism-session-protocol.md",
+        "runtime/prism/schemas/prism-concern-resolution.schema.json",
+        "runtime/prism/examples/prism-concern-resolution.valid-accept.json",
+        "runtime/prism/bin/prism",
+        "runtime/core/development_lifecycle.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Any Prism concern or block must be accepted with implementation evidence, rejected only after one bounded same-provider rebuttal returns pass, or escalated; RedCap must not silently ignore or blindly obey Prism."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap prism-resolution",
+          "runtime/prism/bin/prism resolution-check",
+          "runtime/bin/redcap lifecycle check",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/prism/bin/prism",
+          "runtime/core/development_lifecycle.py",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "Prism concern resolution fixtures pass and fail correctly",
+            "argv": [
+              "runtime/bin/redcap",
+              "prism-resolution",
+              "--self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "PRISM_CONCERN_RESOLUTION_SELF_CHECK_OK"
+            ]
+          },
+          {
+            "name": "lifecycle blocks unresolved Prism concern merges",
+            "argv": [
+              "runtime/bin/redcap",
+              "lifecycle",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_DEVELOPMENT_LIFECYCLE_SELF_CHECK_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "Cross-host provider-call interception is not claimed; this gate covers RedCap-owned runtime and lifecycle entrypoints."
+      ]
+    },
+    {
+      "id": "codex-session-start-hook",
+      "title": "Codex project-local SessionStart hook live marker",
+      "kind": "hook",
+      "source_paths": [
+        ".codex/hooks.json",
+        "runtime/host-adapters/codex/README.md",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "The revived RedCap workspace needs at least one real host hook deployment before broader hook claims are allowed. Codex is the current host and supports project-local SessionStart hooks."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": true,
+        "trigger_surfaces": [
+          "codex:SessionStart"
+        ],
+        "implementation_paths": [
+          ".codex/hooks.json",
+          "runtime/host-adapters/codex/codex-hook.py"
+        ]
+      },
+      "hook_contract": {
+        "host_source": "codex",
+        "event": "SessionStart",
+        "adapter_path": "runtime/host-adapters/codex/codex-hook.py",
+        "live_marker_probe": {
+          "name": "latest Codex SessionStart marker matches current hook config",
+          "argv": [
+            "runtime/host-adapters/codex/codex-hook.py",
+            "--event",
+            "SessionStart",
+            "--verify-live-marker",
+            "--require-real-codex-session",
+            "--require-soul-load",
+            "--max-age-seconds",
+            "86400"
+          ]
+        }
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "latest Codex SessionStart marker matches current hook config",
+            "argv": [
+              "runtime/host-adapters/codex/codex-hook.py",
+              "--event",
+              "SessionStart",
+              "--verify-live-marker",
+              "--require-real-codex-session",
+              "--require-soul-load",
+              "--max-age-seconds",
+              "86400"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"ok\": true",
+              "\"event\": \"SessionStart\""
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "UserPromptSubmit, PreToolUse, PostToolUse, and Stop are deployed for Codex; cross-host parity is not claimed."
+      ]
+    },
+    {
+      "id": "cap-soul-loader",
+      "title": "Cap identity source loader",
+      "kind": "workflow",
+      "source_paths": [
+        "assets/docs/cap-soul-loader.md",
+        "runtime/core/soul_loader.py",
+        "runtime/bin/redcap",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Cap identity must be loaded through an executable source check and SessionStart attempt, not only by an AGENTS include or chat memory."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap soul-load check",
+          "runtime/bin/redcap soul-load load",
+          "runtime/bin/redcap check",
+          "codex:SessionStart"
+        ],
+        "implementation_paths": [
+          "runtime/core/soul_loader.py",
+          "runtime/bin/redcap",
+          "runtime/host-adapters/codex/codex-hook.py"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "Cap identity source is loadable",
+            "argv": [
+              "runtime/bin/redcap",
+              "soul-load",
+              "check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_SOUL_SOURCE_OK"
+            ]
+          },
+          {
+            "name": "Cap soul loader redacts private fixture evidence",
+            "argv": [
+              "runtime/bin/redcap",
+              "soul-load",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_SOUL_LOADER_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "The legacy soul.md source is optional because the current revived workspace only has the private Cap identity source available."
+      ]
+    },
+    {
+      "id": "codex-user-prompt-submit-gate-hook",
+      "title": "Codex project-local UserPromptSubmit prompt gate hook",
+      "kind": "hook",
+      "source_paths": [
+        ".codex/hooks.json",
+        "assets/contracts/hook-coverage.json",
+        "runtime/host-adapters/codex/README.md",
+        "runtime/host-adapters/codex/codex-hook.py",
+        "runtime/host-adapters/examples/codex-pre-tool-use-deny.sh",
+        "runtime/host-adapters/examples/codex-pre-tool-use-evidence-write-deny.sh",
+        "runtime/host-adapters/examples/codex-pre-tool-use-evidence-shell-deny.sh"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Prompt-time RedCap guardrails must fire through a real Codex UserPromptSubmit hook so rule review is not merely documented in protocol text."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": true,
+        "trigger_surfaces": [
+          "codex:UserPromptSubmit"
+        ],
+        "implementation_paths": [
+          ".codex/hooks.json",
+          "runtime/host-adapters/codex/codex-hook.py"
+        ]
+      },
+      "hook_contract": {
+        "host_source": "codex",
+        "event": "UserPromptSubmit",
+        "adapter_path": "runtime/host-adapters/codex/codex-hook.py",
+        "live_marker_probe": {
+          "name": "latest Codex UserPromptSubmit marker has gate decision",
+          "argv": [
+            "runtime/host-adapters/codex/codex-hook.py",
+            "--event",
+            "UserPromptSubmit",
+            "--verify-live-marker",
+            "--require-real-codex-session",
+            "--require-gate-decision",
+            "--max-age-seconds",
+            "86400"
+          ]
+        }
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "latest Codex UserPromptSubmit marker has gate decision",
+            "argv": [
+              "runtime/host-adapters/codex/codex-hook.py",
+              "--event",
+              "UserPromptSubmit",
+              "--verify-live-marker",
+              "--require-real-codex-session",
+              "--require-gate-decision",
+              "--max-age-seconds",
+              "86400"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"ok\": true",
+              "\"event\": \"UserPromptSubmit\""
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "The hook injects context and records gate evidence; it does not block every prompt because RedCap task intake semantics are task-scoped."
+      ]
+    },
+    {
+      "id": "codex-pre-tool-use-guard",
+      "title": "Codex project-local PreToolUse dangerous command guard",
+      "kind": "hook",
+      "source_paths": [
+        ".codex/hooks.json",
+        "assets/contracts/hook-coverage.json",
+        "runtime/host-adapters/codex/README.md",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Known destructive commands and mutating tool ownership claims must be handled before tool execution, not only after PostToolUse evidence."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": true,
+        "trigger_surfaces": [
+          "codex:PreToolUse"
+        ],
+        "implementation_paths": [
+          ".codex/hooks.json",
+          "runtime/host-adapters/codex/codex-hook.py"
+        ]
+      },
+      "hook_contract": {
+        "host_source": "codex",
+        "event": "PreToolUse",
+        "adapter_path": "runtime/host-adapters/codex/codex-hook.py",
+        "live_marker_probe": {
+          "name": "latest Codex PreToolUse marker records guard decision",
+          "argv": [
+            "runtime/host-adapters/codex/codex-hook.py",
+            "--event",
+            "PreToolUse",
+            "--verify-live-marker",
+            "--require-real-codex-session",
+            "--require-pre-tool-guard",
+            "--max-age-seconds",
+            "86400"
+          ]
+        }
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "latest Codex PreToolUse marker records guard decision",
+            "argv": [
+              "runtime/host-adapters/codex/codex-hook.py",
+              "--event",
+              "PreToolUse",
+              "--verify-live-marker",
+              "--require-real-codex-session",
+              "--require-pre-tool-guard",
+              "--max-age-seconds",
+              "86400"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"ok\": true",
+              "\"event\": \"PreToolUse\""
+            ]
+          },
+          {
+            "name": "PreToolUse denies destructive git reset",
+            "argv": [
+              "runtime/host-adapters/examples/codex-pre-tool-use-deny.sh"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"permissionDecision\": \"deny\"",
+              "git reset --hard"
+            ]
+          },
+          {
+            "name": "PreToolUse denies direct evidence file writes",
+            "argv": [
+              "runtime/host-adapters/examples/codex-pre-tool-use-evidence-write-deny.sh"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"permissionDecision\": \"deny\"",
+              "assets/evidence"
+            ]
+          },
+          {
+            "name": "PreToolUse denies shell evidence file writes",
+            "argv": [
+              "runtime/host-adapters/examples/codex-pre-tool-use-evidence-shell-deny.sh"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"permissionDecision\": \"deny\"",
+              "copy/move into assets/evidence",
+              "In-place edit of assets/evidence",
+              "dd write into assets/evidence",
+              "Direct shell writes into assets/evidence",
+              "Download write into assets/evidence"
+            ]
+          },
+          {
+            "name": "latest Codex PreToolUse mutating marker records session ownership claim",
+            "argv": [
+              "runtime/host-adapters/codex/codex-hook.py",
+              "--event",
+              "PreToolUse",
+              "--verify-live-marker",
+              "--require-real-codex-session",
+              "--require-pre-tool-guard",
+              "--require-session-claim-attempt",
+              "--max-age-seconds",
+              "86400"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"ok\": true",
+              "\"event\": \"PreToolUse\""
+            ]
+          }
+        ]
+      },
+      "gaps": []
+    },
+    {
+      "id": "codex-stop-redcap-check-hook",
+      "title": "Codex project-local Stop hook RedCap check",
+      "kind": "hook",
+      "source_paths": [
+        ".codex/hooks.json",
+        "assets/contracts/hook-coverage.json",
+        "runtime/host-adapters/codex/README.md",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Closeout-sensitive guardrails must run before a turn closes cleanly, so Codex Stop must attempt runtime/bin/redcap check and record live-marker evidence."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": true,
+        "trigger_surfaces": [
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          ".codex/hooks.json",
+          "runtime/host-adapters/codex/codex-hook.py"
+        ]
+      },
+      "hook_contract": {
+        "host_source": "codex",
+        "event": "Stop",
+        "adapter_path": "runtime/host-adapters/codex/codex-hook.py",
+        "live_marker_probe": {
+          "name": "latest Codex Stop marker records check attempt",
+            "argv": [
+              "runtime/host-adapters/codex/codex-hook.py",
+              "--event",
+              "Stop",
+              "--verify-live-marker",
+              "--require-real-codex-session",
+              "--require-stop-check-attempt",
+              "--require-action-check-ok",
+              "--require-final-claim-guard",
+              "--max-age-seconds",
+              "86400"
+            ]
+        }
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "latest Codex Stop marker records check attempt",
+            "argv": [
+              "runtime/host-adapters/codex/codex-hook.py",
+              "--event",
+              "Stop",
+              "--verify-live-marker",
+              "--require-real-codex-session",
+              "--require-stop-check-attempt",
+              "--require-action-check-ok",
+              "--require-final-claim-guard",
+              "--max-age-seconds",
+              "86400"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"ok\": true",
+              "\"event\": \"Stop\""
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "The live marker proves the Stop hook attempted redcap check; repeated failure handling remains bounded by Codex Stop continuation semantics."
+      ]
+    },
+    {
+      "id": "codex-post-tool-use-action-evidence-hook",
+      "title": "Codex project-local PostToolUse action evidence hook",
+      "kind": "hook",
+      "source_paths": [
+        ".codex/hooks.json",
+        "assets/contracts/hook-coverage.json",
+        "runtime/host-adapters/codex/README.md",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Stop enforcement for required RedCap prompts needs same-turn supported tool-use evidence, so PostToolUse must record action fingerprints."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": true,
+        "trigger_surfaces": [
+          "codex:PostToolUse"
+        ],
+        "implementation_paths": [
+          ".codex/hooks.json",
+          "runtime/host-adapters/codex/codex-hook.py"
+        ]
+      },
+      "hook_contract": {
+        "host_source": "codex",
+        "event": "PostToolUse",
+        "adapter_path": "runtime/host-adapters/codex/codex-hook.py",
+        "live_marker_probe": {
+          "name": "latest Codex PostToolUse marker records action evidence",
+          "argv": [
+            "runtime/host-adapters/codex/codex-hook.py",
+            "--event",
+            "PostToolUse",
+            "--verify-live-marker",
+            "--require-real-codex-session",
+            "--max-age-seconds",
+            "86400"
+          ]
+        }
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "latest Codex PostToolUse marker records action evidence",
+            "argv": [
+              "runtime/host-adapters/codex/codex-hook.py",
+              "--event",
+              "PostToolUse",
+              "--verify-live-marker",
+              "--require-real-codex-session",
+              "--max-age-seconds",
+              "86400"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"ok\": true",
+              "\"event\": \"PostToolUse\""
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "PostToolUse cannot undo completed tool side effects and only covers supported Codex tool events."
+      ]
+    },
+    {
+      "id": "provider-dispatcher",
+      "title": "Automatic Kimi and Claude Code provider dispatcher",
+      "kind": "workflow",
+      "source_paths": [
+        "runtime/prism/README.md",
+        "assets/evidence/prism/20260601-timeout-retry-accountability/session.json",
+        "runtime/prism/bin/prism",
+        "runtime/prism/bin/prism-dispatch",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Full Prism must have a single runtime entrypoint that prepares briefs, enforces session continuity, calls only approved providers, extracts review JSON, and updates the session manifest."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/prism/bin/prism-dispatch",
+          "runtime/bin/redcap prism-dispatch",
+          "runtime/prism/bin/prism-dispatch --verify-evidence",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/prism/bin/prism-dispatch",
+          "runtime/prism/bin/prism",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "provider dispatcher self-check enforces sessions, retries timeouts, and extracts nested reviews",
+            "argv": [
+              "runtime/prism/bin/prism-dispatch",
+              "--self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "PRISM_DISPATCH_SELF_CHECK_OK"
+            ]
+          },
+          {
+            "name": "provider dispatcher verifies persisted real provider evidence",
+            "argv": [
+              "runtime/prism/bin/prism-dispatch",
+              "--verify-evidence",
+              "--evidence-run-dir",
+              "assets/evidence/prism/20260601-timeout-retry-accountability",
+              "--max-age-hours",
+              "168"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "PRISM_DISPATCH_EVIDENCE_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": []
+    },
+    {
+      "id": "prism-task-execution-ledger",
+      "title": "Prism task execution health ledger",
+      "kind": "workflow",
+      "source_paths": [
+        "assets/docs/prism-task-ledger.md",
+        "runtime/prism/lib/prism_ledger.py",
+        "runtime/prism/bin/prism-ledger",
+        "runtime/prism/bin/prism",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Prism task execution must leave structured duration, executor, provider, verdict, success, and health records that can be queried after the task."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/prism/bin/prism session-init",
+          "runtime/prism/bin/prism session-update",
+          "runtime/prism/bin/prism gate",
+          "runtime/prism/bin/prism-ledger summary",
+          "runtime/bin/redcap prism-ledger",
+          "runtime/prism/bin/prism check"
+        ],
+        "implementation_paths": [
+          "runtime/prism/lib/prism_ledger.py",
+          "runtime/prism/bin/prism-ledger",
+          "runtime/prism/bin/prism",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "Prism task ledger records and summarizes fixture execution",
+            "argv": [
+              "runtime/prism/bin/prism-ledger",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "PRISM_LEDGER_SELF_CHECK_OK"
+            ]
+          },
+          {
+            "name": "Prism gate evaluations append to the ledger",
+            "argv": [
+              "runtime/bin/redcap",
+              "gate",
+              "--task",
+              "ledger probe for deterministic gate recording",
+              "--risk-level",
+              "low",
+              "--tag",
+              "ledger-probe"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"gate\": \"prism-rule-review\"",
+              "\"decision\":"
+            ]
+          },
+          {
+            "name": "Prism task ledger summary is queryable",
+            "argv": [
+              "runtime/prism/bin/prism-ledger",
+              "summary"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "PRISM_LEDGER_SUMMARY_OK",
+              "prism-task-health-summary",
+              "gate_event_count"
+            ]
+          }
+        ]
+      },
+      "gaps": []
+    },
+    {
+      "id": "runtime-boundary-kernel",
+      "title": "Runtime project user boundary kernel",
+      "kind": "workflow",
+      "source_paths": [
+        "assets/docs/runtime-boundary-kernel.md",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json",
+        "runtime/core/runtime_boundary.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Formal RedCap revival must distinguish RedCap runtime root, managed project workspace, and user-private state before managing external projects."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap boundary check",
+          "runtime/bin/redcap boundary self-check",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/core/runtime_boundary.py",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "runtime boundary accepts current self-development context",
+            "argv": [
+              "runtime/bin/redcap",
+              "boundary",
+              "check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_RUNTIME_BOUNDARY_OK",
+              "\"boundary_mode\": \"self-development\""
+            ]
+          },
+          {
+            "name": "runtime boundary self-check rejects cross-boundary leaks",
+            "argv": [
+              "runtime/bin/redcap",
+              "boundary",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_RUNTIME_BOUNDARY_SELF_CHECK_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "Workspace-aware CLI command migration is not complete; this kernel is the shared resolver/checker that future commands must consume."
+      ]
+    },
+    {
+      "id": "old-redcap-archaeology-shards",
+      "title": "Bounded old RedCap archaeology shard ledger",
+      "kind": "workflow",
+      "source_paths": [
+        "assets/docs/archaeology-shards.md",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json",
+        "assets/archaeology/shards/index.json",
+        "runtime/core/archaeology_shards.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Old RedCap extraction must be exact-file, shard-scoped, and classification-bearing so revival does not bulk-read or copy old pathology."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap archaeology extract-boundary",
+          "runtime/bin/redcap archaeology check",
+          "runtime/bin/redcap archaeology self-check",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/core/archaeology_shards.py",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "old RedCap boundary rules are extracted from bounded sources",
+            "argv": [
+              "runtime/bin/redcap",
+              "archaeology",
+              "check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_ARCHAEOLOGY_SHARDS_OK"
+            ]
+          },
+          {
+            "name": "archaeology shards reject missing extraction and wildcard sources",
+            "argv": [
+              "runtime/bin/redcap",
+              "archaeology",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_ARCHAEOLOGY_SHARDS_SELF_CHECK_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "Only the runtime-workspace-boundary shard is extracted; lifecycle and long-task-defense shards are planned exact-file shards."
+      ]
+    },
+    {
+      "id": "development-lifecycle-evidence-gate",
+      "title": "Development lifecycle evidence gate",
+      "kind": "workflow",
+      "source_paths": [
+        "assets/docs/development-lifecycle.md",
+        "runtime/prism/examples/self-development-lifecycle-packet.json",
+        "runtime/prism/examples/self-development-lifecycle-events.jsonl",
+        "runtime/prism/bin/prism",
+        "runtime/core/runtime_boundary.py",
+        "runtime/core/development_lifecycle.py",
+        "runtime/core/fsm.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Requirements and technical review must gate RedCap self-development without creating a second task state machine or permitting documentation-only completion."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap intake --lifecycle-packet ...",
+          "runtime/bin/redcap gate --lifecycle-packet ...",
+          "runtime/bin/redcap lifecycle check",
+          "runtime/bin/redcap lifecycle self-check",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/prism/bin/prism",
+          "runtime/core/runtime_boundary.py",
+          "runtime/core/development_lifecycle.py",
+          "runtime/core/fsm.py",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "development lifecycle rejects documentation-only completion",
+            "argv": [
+              "runtime/bin/redcap",
+              "lifecycle",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_DEVELOPMENT_LIFECYCLE_SELF_CHECK_OK"
+            ]
+          },
+          {
+            "name": "self-development lifecycle packet is required by intake",
+            "argv": [
+              "runtime/bin/redcap",
+              "intake",
+              "--task",
+              "RedCap architecture self-development change",
+              "--risk-level",
+              "medium",
+              "--tag",
+              "architecture",
+              "--tag",
+              "redcap-revival"
+            ],
+            "expect_exit": 2,
+            "stdout_contains": [
+              "self-development-lifecycle-gate",
+              "\"required\": true"
+            ]
+          },
+          {
+            "name": "self-development lifecycle packet is checked by gate",
+            "argv": [
+              "runtime/bin/redcap",
+              "gate",
+              "--task",
+              "RedCap architecture self-development change",
+              "--risk-level",
+              "medium",
+              "--tag",
+              "architecture",
+              "--tag",
+              "redcap-revival",
+              "--lifecycle-packet",
+              "runtime/prism/examples/self-development-lifecycle-packet.json",
+              "--lifecycle-events",
+              "runtime/prism/examples/self-development-lifecycle-events.jsonl"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"checked\": true",
+              "\"ok\": true"
+            ]
+          },
+          {
+            "name": "external workspace architecture does not require self-development packet",
+            "argv": [
+              "runtime/bin/redcap",
+              "gate",
+              "--task",
+              "External project architecture change",
+              "--risk-level",
+              "medium",
+              "--tag",
+              "architecture",
+              "--boundary-cwd",
+              "/tmp"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"boundary_mode\": \"external-workspace\"",
+              "\"required\": false"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "This lifecycle gate validates packets and FSM transition evidence; it is not a persistent task tracker."
+      ]
+    },
+    {
+      "id": "final-claim-guard",
+      "title": "Final completion claim task-body guard",
+      "kind": "workflow",
+      "source_paths": [
+        "runtime/core/final_claim_guard.py",
+        "runtime/core/development_lifecycle.py",
+        "runtime/host-adapters/codex/codex-hook.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Required RedCap prompts must not close with a completion claim unless a fresh lifecycle completion marker proves the user-requested task body is verified."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap final-claim check",
+          "runtime/bin/redcap final-claim self-check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/core/final_claim_guard.py",
+          "runtime/core/development_lifecycle.py",
+          "runtime/host-adapters/codex/codex-hook.py",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "final claim guard blocks completion without task-body marker",
+            "argv": [
+              "runtime/bin/redcap",
+              "final-claim",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_FINAL_CLAIM_GUARD_SELF_CHECK_OK"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "The guard detects explicit completion wording; ambiguous human-language optimism may still require Prism or user challenge."
+      ]
+    },
+    {
+      "id": "session-ownership-kernel",
+      "title": "Minimal host/session ownership kernel",
+      "kind": "workflow",
+      "source_paths": [
+        "runtime/core/session_ownership.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "The temporary scaffold needs a runnable ownership check so a host/session/task claim can be distinguished from advisory-only state."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap session-ownership claim",
+          "runtime/bin/redcap session-ownership check",
+          "runtime/bin/redcap session-ownership self-check",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/core/session_ownership.py",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "session ownership self-check distinguishes owned from mismatch",
+            "argv": [
+              "runtime/bin/redcap",
+              "session-ownership",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_SESSION_OWNERSHIP_OK",
+              "\"mismatch_probe\": \"advisory-only\""
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "This is a minimal ownership kernel; Codex hook claim/check integration is still intentionally narrower than old RedCap's LayerB closeout ownership chain."
+      ]
+    },
+    {
+      "id": "host-level-hook-interception",
+      "title": "Host hook capability audit and provider-call interception boundary",
+      "kind": "workflow",
+      "source_paths": [
+        "runtime/host-adapters/README.md",
+        "runtime/host-adapters/host-hook-audit.py",
+        "assets/contracts/gate-protocol.md"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "RedCap must not claim generic cross-host hooks; it must audit the real host hook surface and enforce Kimi/Claude provider calls through the dispatcher."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap host-hook-audit",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/host-adapters/host-hook-audit.py",
+          "runtime/prism/bin/prism-dispatch",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "host hook audit verifies Codex hooks and dispatcher boundary",
+            "argv": [
+              "runtime/bin/redcap",
+              "host-hook-audit"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_HOST_HOOK_AUDIT_OK",
+              "\"dispatcher-enforced\""
+            ]
+          }
+        ]
+      },
+      "gaps": []
+    },
+    {
+      "id": "fsm-workflow-gates",
+      "title": "FSM workflow transition gates",
+      "kind": "workflow",
+      "source_paths": [
+        "assets/docs/redcap-revival-map.md",
+        "runtime/core/fsm.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "The temporary revival scaffold needs an executable workflow gate so it cannot jump from intake to completion without Prism, implementation, and verification evidence."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap fsm check",
+          "runtime/bin/redcap fsm transition",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/core/fsm.py",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "FSM kernel validates transition table",
+            "argv": [
+              "runtime/bin/redcap",
+              "fsm",
+              "check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_FSM_OK"
+            ]
+          },
+          {
+            "name": "FSM allows verified temporary usable transition",
+            "argv": [
+              "runtime/bin/redcap",
+              "fsm",
+              "transition",
+              "--from",
+              "VERIFYING",
+              "--to",
+              "TEMPORARY_USABLE",
+              "--evidence",
+              "redcap_check_passed"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"ok\": true"
+            ]
+          },
+          {
+            "name": "FSM blocks direct intake to temporary usable",
+            "argv": [
+              "runtime/bin/redcap",
+              "fsm",
+              "transition",
+              "--from",
+              "INTAKE",
+              "--to",
+              "TEMPORARY_USABLE",
+              "--evidence",
+              "redcap_check_passed"
+            ],
+            "expect_exit": 1,
+            "stdout_contains": [
+              "\"ok\": false",
+              "transition not allowed"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "This is a minimal workflow kernel; it does not yet implement the old LayerB closeout runtime."
+      ]
+    },
+    {
+      "id": "knowledge-gateway",
+      "title": "Knowledge capture and retrieval gateway",
+      "kind": "workflow",
+      "source_paths": [
+        "assets/docs/redcap-revival-map.md",
+        "assets/knowledge/README.md",
+        "assets/knowledge/entries/README.md",
+        "assets/knowledge/index.json",
+        "runtime/core/knowledge_gateway.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "The temporary revival scaffold needs an index-first retrieval gate so old RedCap archaeology and durable knowledge do not become bulk-read chaos."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap knowledge-gateway check",
+          "runtime/bin/redcap knowledge-gateway search",
+          "runtime/bin/redcap knowledge-gateway draft",
+          "runtime/bin/redcap knowledge-gateway review",
+          "runtime/bin/redcap knowledge-gateway promote",
+          "runtime/bin/redcap knowledge-gateway self-check",
+          "runtime/bin/redcap check",
+          "codex:Stop"
+        ],
+        "implementation_paths": [
+          "runtime/core/knowledge_gateway.py",
+          "assets/knowledge/README.md",
+          "assets/knowledge/entries/README.md",
+          "assets/knowledge/index.json",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "knowledge gateway validates index-first policy",
+            "argv": [
+              "runtime/bin/redcap",
+              "knowledge-gateway",
+              "check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_KNOWLEDGE_GATEWAY_OK"
+            ]
+          },
+          {
+            "name": "knowledge gateway can search session references",
+            "argv": [
+              "runtime/bin/redcap",
+              "knowledge-gateway",
+              "search",
+              "session"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"old-session-ownership-pattern\"",
+              "\"read_policy\""
+            ]
+          },
+          {
+            "name": "knowledge gateway writes, reviews, promotes, and searches a fixture",
+            "argv": [
+              "runtime/bin/redcap",
+              "knowledge-gateway",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_KNOWLEDGE_WRITE_REVIEW_OK"
+            ]
+          },
+          {
+            "name": "knowledge gateway fails required unknown query",
+            "argv": [
+              "runtime/bin/redcap",
+              "knowledge-gateway",
+              "search",
+              "definitely-not-indexed",
+              "--require-match"
+            ],
+            "expect_exit": 1,
+            "stdout_contains": [
+              "REDCAP_KNOWLEDGE_GATEWAY_NO_MATCH",
+              "\"ok\": false"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "This is an index-first write/review/retrieval gateway, not RAG or GraphRAG."
+      ]
+    }
+  ]
+}

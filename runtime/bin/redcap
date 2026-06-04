@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PRISM="$REPO_ROOT/runtime/prism/bin/prism"
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  runtime/bin/redcap gate [--task TEXT|--request FILE] [--risk-level LEVEL]
+  runtime/bin/redcap intake [--task TEXT|--request FILE] [--risk-level LEVEL]
+  runtime/bin/redcap enforcement-check
+  runtime/bin/redcap hook-coverage-check
+  runtime/bin/redcap boundary resolve|check|self-check [...]
+  runtime/bin/redcap archaeology extract-boundary|seed|check|self-check [...]
+  runtime/bin/redcap lifecycle check|self-check [...]
+  runtime/bin/redcap final-claim check|self-check [...]
+  runtime/bin/redcap phase2-blueprint check|self-check [...]
+  runtime/bin/redcap e2e-trace check|self-check [...]
+  runtime/bin/redcap fsm check|status|transition [...]
+  runtime/bin/redcap knowledge-gateway check|search [...]
+  runtime/bin/redcap session-ownership claim|check|self-check [...]
+  runtime/bin/redcap host-hook-audit
+  runtime/bin/redcap prism-dispatch [...]
+  runtime/bin/redcap prism-resolution [...]
+  runtime/bin/redcap prism-rebuttal-request [...]
+  runtime/bin/redcap prism-ledger [...]
+  runtime/bin/redcap soul-load check|load|self-check [...]
+  runtime/bin/redcap temporary-usable-check
+  runtime/bin/redcap layout-check [check|self-check]
+  runtime/bin/redcap check
+
+Commands:
+  gate          Run deterministic Prism rule review.
+  intake        Run gate and exit 2 when full Prism is required.
+  enforcement-check
+                Verify the protocol/workflow enforcement matrix with probes.
+  hook-coverage-check
+                Verify required guardrails have deployed host hook coverage.
+  boundary      Resolve and verify runtime/project/user-private boundaries.
+  archaeology   Run bounded old-RedCap archaeology shard extraction.
+  lifecycle     Validate development lifecycle evidence against the FSM.
+  final-claim   Guard final completion claims against task-body evidence.
+  phase2-blueprint
+                Validate the RedCap 1.1 Phase 2 blueprint contract.
+  e2e-trace     Run the RedCap 1.0 hook/session/FSM/completion trace.
+  fsm           Run the minimal RedCap workflow FSM kernel.
+  knowledge-gateway
+                Run the minimal index-first RedCap knowledge gateway.
+  session-ownership
+                Run the minimal RedCap host/session ownership kernel.
+  host-hook-audit
+                Audit current host hook and provider-call interception coverage.
+  prism-dispatch
+                Dispatch a Prism provider review through the enforced dispatcher.
+  prism-resolution
+                Verify accept/reject/escalate resolution for Prism concern/block verdicts.
+  prism-rebuttal-request
+                Generate a bounded same-provider rebuttal request for a rejected concern.
+  prism-ledger  Record and summarize Prism task execution health.
+  soul-load     Load or verify Cap identity sources without leaking private text.
+  temporary-usable-check
+                Verify the current scaffold is usable enough for revival work.
+  layout-check  Verify directory policy, root thinness, and unit boundaries.
+  check         Run Prism, FSM, knowledge, and layout checks.
+USAGE
+}
+
+cmd="${1:-}"
+if [[ -z "$cmd" ]]; then
+  usage
+  exit 2
+fi
+shift
+
+case "$cmd" in
+  gate)
+    exec "$PRISM" gate "$@"
+    ;;
+  intake)
+    exec "$PRISM" gate --fail-when-required "$@"
+    ;;
+  enforcement-check)
+    exec "$REPO_ROOT/runtime/prism/bin/enforcement-check" "$@"
+    ;;
+  hook-coverage-check)
+    exec "$REPO_ROOT/runtime/prism/bin/hook-coverage-check" "$@"
+    ;;
+  boundary)
+    exec python3 "$REPO_ROOT/runtime/core/runtime_boundary.py" "$@"
+    ;;
+  archaeology)
+    exec python3 "$REPO_ROOT/runtime/core/archaeology_shards.py" "$@"
+    ;;
+  lifecycle)
+    exec python3 "$REPO_ROOT/runtime/core/development_lifecycle.py" "$@"
+    ;;
+  final-claim)
+    exec python3 "$REPO_ROOT/runtime/core/final_claim_guard.py" "$@"
+    ;;
+  phase2-blueprint)
+    exec python3 "$REPO_ROOT/runtime/core/phase2_blueprint.py" "$@"
+    ;;
+  e2e-trace)
+    exec python3 "$REPO_ROOT/runtime/core/e2e_trace.py" "$@"
+    ;;
+  fsm)
+    exec python3 "$REPO_ROOT/runtime/core/fsm.py" "$@"
+    ;;
+  fsm-check)
+    exec python3 "$REPO_ROOT/runtime/core/fsm.py" check "$@"
+    ;;
+  knowledge-gateway)
+    exec python3 "$REPO_ROOT/runtime/core/knowledge_gateway.py" "$@"
+    ;;
+  knowledge-gateway-check)
+    exec python3 "$REPO_ROOT/runtime/core/knowledge_gateway.py" check "$@"
+    ;;
+  session-ownership)
+    exec python3 "$REPO_ROOT/runtime/core/session_ownership.py" "$@"
+    ;;
+  session-ownership-check)
+    exec python3 "$REPO_ROOT/runtime/core/session_ownership.py" self-check "$@"
+    ;;
+  host-hook-audit)
+    exec python3 "$REPO_ROOT/runtime/host-adapters/host-hook-audit.py" "$@"
+    ;;
+  prism-dispatch)
+    exec "$REPO_ROOT/runtime/prism/bin/prism-dispatch" "$@"
+    ;;
+  prism-resolution)
+    exec "$PRISM" resolution-check "$@"
+    ;;
+  prism-rebuttal-request)
+    exec "$PRISM" rebuttal-request "$@"
+    ;;
+  prism-ledger)
+    exec "$REPO_ROOT/runtime/prism/bin/prism-ledger" "$@"
+    ;;
+  soul-load)
+    exec python3 "$REPO_ROOT/runtime/core/soul_loader.py" "$@"
+    ;;
+  temporary-usable-check)
+    exec python3 "$REPO_ROOT/runtime/core/temporary_usable_check.py" "$@"
+    ;;
+  layout-check)
+    exec python3 "$REPO_ROOT/runtime/core/layout_guard.py" "$@"
+    ;;
+  check)
+    "$PRISM" check
+    "$REPO_ROOT/runtime/bin/redcap" prism-resolution --self-check
+    "$REPO_ROOT/runtime/bin/redcap" session-ownership self-check
+    "$REPO_ROOT/runtime/bin/redcap" host-hook-audit
+    "$REPO_ROOT/runtime/bin/redcap" boundary check
+    "$REPO_ROOT/runtime/bin/redcap" boundary self-check
+    "$REPO_ROOT/runtime/bin/redcap" archaeology check
+    "$REPO_ROOT/runtime/bin/redcap" archaeology self-check
+    "$REPO_ROOT/runtime/bin/redcap" lifecycle self-check
+    "$REPO_ROOT/runtime/bin/redcap" final-claim self-check
+    "$REPO_ROOT/runtime/bin/redcap" phase2-blueprint check
+    "$REPO_ROOT/runtime/bin/redcap" phase2-blueprint self-check
+    "$REPO_ROOT/runtime/bin/redcap" e2e-trace self-check
+    "$REPO_ROOT/runtime/bin/redcap" fsm check
+    "$REPO_ROOT/runtime/bin/redcap" knowledge-gateway check
+    "$REPO_ROOT/runtime/bin/redcap" knowledge-gateway self-check
+    python3 "$REPO_ROOT/runtime/core/revival_loop.py" check
+    python3 "$REPO_ROOT/runtime/core/revival_loop.py" self-check
+    "$REPO_ROOT/runtime/bin/redcap" soul-load check
+    "$REPO_ROOT/runtime/bin/redcap" soul-load self-check
+    "$REPO_ROOT/runtime/bin/redcap" layout-check
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    echo "unknown command: $cmd" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

@@ -1,0 +1,1279 @@
+#!/usr/bin/env python3
+"""Dispatch Prism reviews through approved providers with session enforcement."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import pathlib
+import re
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+import uuid
+from typing import Any
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[1]
+PRISM = ROOT / "bin" / "prism"
+ALLOWED_PROVIDERS = {"kimi", "claude-code"}
+DEFAULT_TIMEOUT_SECONDS = 300
+DEFAULT_MAX_RETRIES = 5
+TIMEOUT_KILL_GRACE_SECONDS = 0.5
+REQUIRED_REVIEW_KEYS = {
+    "provider",
+    "verdict",
+    "confidence",
+    "reality_delta",
+    "main_concern",
+    "top_risks",
+    "missing_evidence",
+    "minimum_fix",
+    "anti_loop_signal",
+    "user_intent_alignment",
+}
+
+
+def load_json(path: pathlib.Path) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid json: {path}: {exc}") from exc
+
+
+def run(argv: list[str], *, timeout: float | None = None) -> subprocess.CompletedProcess[str]:
+    if timeout is not None:
+        return run_with_hard_timeout(argv, timeout)
+    return subprocess.run(
+        argv,
+        cwd=str(REPO_ROOT),
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+
+
+def output_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def process_group_alive(pgid: int) -> bool:
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def terminate_process_group(proc: subprocess.Popen[str], grace_seconds: float) -> None:
+    try:
+        pgid = os.getpgid(proc.pid)
+    except ProcessLookupError:
+        return
+    for sig in [signal.SIGTERM, signal.SIGKILL]:
+        if not process_group_alive(pgid):
+            return
+        try:
+            os.killpg(pgid, sig)
+        except ProcessLookupError:
+            return
+        deadline = time.monotonic() + grace_seconds
+        while time.monotonic() < deadline:
+            proc.poll()
+            if not process_group_alive(pgid):
+                return
+            time.sleep(0.02)
+
+
+def run_with_hard_timeout(argv: list[str], timeout: float) -> subprocess.CompletedProcess[str]:
+    proc = subprocess.Popen(
+        argv,
+        cwd=str(REPO_ROOT),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    )
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        terminate_process_group(proc, TIMEOUT_KILL_GRACE_SECONDS)
+        try:
+            stdout, stderr = proc.communicate(timeout=TIMEOUT_KILL_GRACE_SECONDS)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            stdout, stderr = proc.communicate()
+        raise subprocess.TimeoutExpired(
+            cmd=argv,
+            timeout=timeout,
+            output=stdout or output_text(exc.stdout),
+            stderr=stderr or output_text(exc.stderr),
+        ) from exc
+    return subprocess.CompletedProcess(argv, proc.returncode, stdout, stderr)
+
+
+class ProviderTimeoutError(Exception):
+    def __init__(self, attempts: list[dict[str, Any]], captured_handle: str | None, timeout_seconds: float):
+        super().__init__("provider command timed out")
+        self.attempts = attempts
+        self.captured_handle = captured_handle
+        self.timeout_seconds = timeout_seconds
+
+
+def redacted_argv(argv: list[str]) -> list[str]:
+    return argv[:6] + ["<prompt>"]
+
+
+def require_session_allowed(manifest: pathlib.Path, provider: str) -> dict[str, Any]:
+    completed = run([
+        str(PRISM),
+        "session-check",
+        "--manifest",
+        str(manifest),
+        "--provider",
+        provider,
+        "--require-existing-session",
+    ])
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"session-check returned invalid JSON: {completed.stdout}") from exc
+    if completed.returncode != 0:
+        raise SystemExit(json.dumps({
+            "ok": False,
+            "stage": "session-check",
+            "provider": provider,
+            "blocked": payload.get("blocked", []),
+        }, ensure_ascii=False))
+    return payload
+
+
+def provider_record(manifest: pathlib.Path, provider: str) -> dict[str, Any]:
+    payload = load_json(manifest)
+    if not isinstance(payload, dict):
+        raise SystemExit("session manifest must be a JSON object")
+    providers = payload.get("providers")
+    if not isinstance(providers, dict) or provider not in providers:
+        raise SystemExit(f"session manifest missing provider: {provider}")
+    record = providers[provider]
+    if not isinstance(record, dict):
+        raise SystemExit(f"provider record must be object: {provider}")
+    return record
+
+
+def build_brief(provider: str, request: pathlib.Path, out_path: pathlib.Path) -> str:
+    completed = run([
+        str(PRISM),
+        "brief",
+        "--provider",
+        provider,
+        "--request",
+        str(request),
+        "--out",
+        str(out_path),
+        "--inline-request",
+    ])
+    if completed.returncode != 0:
+        raise SystemExit(completed.stderr or completed.stdout)
+    return out_path.read_text(encoding="utf-8")
+
+
+def iter_json_objects(text: str) -> list[dict[str, Any]]:
+    objects: list[dict[str, Any]] = []
+    starts = [index for index, char in enumerate(text) if char == "{"]
+    decoder = json.JSONDecoder()
+    for start in starts:
+        try:
+            parsed, _ = decoder.raw_decode(text[start:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            objects.append(parsed)
+            result = parsed.get("result")
+            if isinstance(result, str):
+                objects.extend(iter_json_objects(result))
+    return objects
+
+
+def extract_review(raw_text: str, provider: str) -> dict[str, Any]:
+    for obj in iter_json_objects(raw_text):
+        if REQUIRED_REVIEW_KEYS.issubset(obj.keys()) and obj.get("provider") == provider:
+            if obj.get("verdict") not in {"pass", "concern", "block"}:
+                continue
+            return normalize_review(obj, provider)
+    for text in candidate_markdown_texts(raw_text):
+        markdown_review = extract_markdown_review(text, provider)
+        if markdown_review is not None:
+            return normalize_review(markdown_review, provider)
+    raise SystemExit(json.dumps({
+        "ok": False,
+        "stage": "extract-review",
+        "provider": provider,
+        "reason": "provider output did not contain a valid Prism review JSON object",
+    }, ensure_ascii=False))
+
+
+def normalize_review(review: dict[str, Any], provider: str) -> dict[str, Any]:
+    normalized = dict(review)
+    normalized["provider"] = provider
+    for key in ["top_risks", "missing_evidence"]:
+        value = normalized.get(key)
+        if isinstance(value, str):
+            normalized[key] = [value] if value.strip() else []
+        elif isinstance(value, list):
+            normalized[key] = [str(item) for item in value]
+        else:
+            normalized[key] = []
+    anti_loop = normalized.get("anti_loop_signal")
+    if not isinstance(anti_loop, dict):
+        text = str(anti_loop or "").strip()
+        normalized["anti_loop_signal"] = {
+            "present": bool(text),
+            "reason": text or "No anti-loop signal provided.",
+        }
+    else:
+        anti_loop_reason = str(anti_loop.get("reason") or "No anti-loop signal provided.")
+        anti_loop_present = bool(anti_loop.get("present"))
+        if re.search(r"\bpresent\s*:\s*false\b", anti_loop_reason, flags=re.I):
+            anti_loop_present = False
+        normalized["anti_loop_signal"] = {
+            "present": anti_loop_present,
+            "reason": anti_loop_reason,
+        }
+    for key in ["reality_delta", "main_concern", "minimum_fix", "user_intent_alignment"]:
+        normalized[key] = str(normalized.get(key) or "")
+    return normalized
+
+
+def candidate_markdown_texts(raw_text: str) -> list[str]:
+    candidates: list[str] = []
+    for obj in iter_json_objects(raw_text):
+        result = obj.get("result")
+        if isinstance(result, str):
+            candidates.append(result)
+        for stream_name in ["stdout", "stderr"]:
+            stream = obj.get(stream_name)
+            if isinstance(stream, str):
+                for nested in iter_json_objects(stream):
+                    nested_result = nested.get("result")
+                    if isinstance(nested_result, str):
+                        candidates.append(nested_result)
+                candidates.append(stream)
+    candidates.append(raw_text)
+    return candidates
+
+
+def markdown_section(text: str, name: str) -> str:
+    target = normalize_heading(name)
+    patterns = [
+        r"\*\*([^*\n]+?):\*\*\s*(.*?)(?=\s*/?\s*\*{2}[^*\n]+(?::\*\*|\*\*\s*:)|\n\*\*[^*\n]+(?::\*\*|\*\*\s*:)|\n#{2,6}\s+|\n---|\Z)",
+        r"\*\*([^*\n]+?)\*\*\s*:\s*(.*?)(?=\s*/?\s*\*{2}[^*\n]+(?::\*\*|\*\*\s*:)|\n\*\*[^*\n]+(?::\*\*|\*\*\s*:)|\n#{2,6}\s+|\n---|\Z)",
+    ]
+    for pattern in patterns:
+        for match in re.finditer(pattern, text, flags=re.S):
+            label = normalize_heading(match.group(1))
+            if label == target or label.startswith(f"{target}_"):
+                return match.group(2).strip()
+    heading_value = markdown_heading_section(text, name)
+    if heading_value:
+        return heading_value
+    return ""
+
+
+def first_heading_body(text: str) -> str:
+    headings = list(re.finditer(r"(?:^|\n)#{2,6}\s+(.+?)(?:\n|$)", text))
+    if not headings:
+        return text.strip()
+    body_start = headings[0].end()
+    body_end = headings[1].start() if len(headings) > 1 else len(text)
+    return text[body_start:body_end].strip()
+
+
+def normalize_heading(value: str) -> str:
+    cleaned = re.sub(r"[*`]", "", value).strip().lower()
+    return re.sub(r"[^a-z0-9]+", "_", cleaned).strip("_")
+
+
+def markdown_heading_section(text: str, name: str) -> str:
+    target = normalize_heading(name)
+    headings = list(re.finditer(r"(?:^|\n)#{2,6}\s+(.+?)(?:\n|$)", text))
+    for index, match in enumerate(headings):
+        raw_heading = match.group(1).strip()
+        heading_name = raw_heading
+        inline_value = ""
+        if ":" in raw_heading:
+            heading_name, inline_value = raw_heading.split(":", 1)
+        if normalize_heading(heading_name) != target:
+            continue
+        body_start = match.end()
+        body_end = headings[index + 1].start() if index + 1 < len(headings) else len(text)
+        parts = []
+        if inline_value.strip():
+            parts.append(inline_value.strip())
+        body = text[body_start:body_end].strip()
+        if body:
+            parts.append(body)
+        return "\n".join(parts).strip()
+    return ""
+
+
+def markdown_scalar(text: str, name: str) -> str:
+    if name.lower() == "confidence":
+        for line in text.splitlines():
+            if re.search(r"\bverdict\b", line, flags=re.I) and re.search(r"\bconfidence\b", line, flags=re.I):
+                verdict_line = re.search(r"\bconfidence\s*:\s*[*`\s]*([a-z]+)", line, flags=re.I)
+                if verdict_line:
+                    cleaned_confidence = re.sub(r"[*`]", "", verdict_line.group(1)).strip().lower()
+                    for allowed in ["low", "medium", "high"]:
+                        if cleaned_confidence == allowed or re.match(rf"^{re.escape(allowed)}(?:[\s.:-]|$)", cleaned_confidence):
+                            return allowed
+    inline = re.search(
+        rf"\*\*\s*{re.escape(name)}\s*:\s*([^*\n]+?)\s*\*\*",
+        text,
+        flags=re.I,
+    )
+    if inline:
+        cleaned_inline = re.sub(r"[*`]", "", inline.group(1)).strip().lower()
+        for allowed in ["pass", "concern", "block", "low", "medium", "high", "aligned", "unclear", "drifting", "misaligned"]:
+            if cleaned_inline == allowed or re.match(rf"^{re.escape(allowed)}(?:[\s.:-]|$)", cleaned_inline):
+                return allowed
+        return cleaned_inline
+    value = markdown_section(text, name)
+    first_line = value.splitlines()[0].strip() if value else ""
+    cleaned = re.sub(r"[*`]", "", first_line).strip()
+    for allowed in ["pass", "concern", "block", "low", "medium", "high", "aligned", "unclear", "drifting", "misaligned"]:
+        if cleaned == allowed or re.match(rf"^{re.escape(allowed)}(?:[\s.:-]|$)", cleaned):
+            return allowed
+    return cleaned
+
+
+def markdown_list(section: str) -> list[str]:
+    items: list[str] = []
+    current: list[str] = []
+    for line in section.splitlines():
+        if re.match(r"^\s*(?:[-*]|\d+\.)\s+", line):
+            if current:
+                items.append(" ".join(part.strip() for part in current if part.strip()))
+            current = [re.sub(r"^\s*(?:[-*]|\d+\.)\s+", "", line).strip()]
+        elif current and line.strip():
+            current.append(line.strip())
+    if current:
+        items.append(" ".join(part.strip() for part in current if part.strip()))
+    if not items and section.strip():
+        items = [section.strip()]
+    return items[:3]
+
+
+def parse_anti_loop(section: str) -> dict[str, Any]:
+    json_match = re.search(r"```json\s*(\{.*?\})\s*```", section, flags=re.S)
+    if json_match:
+        try:
+            payload = json.loads(json_match.group(1))
+        except json.JSONDecodeError:
+            payload = {}
+        if isinstance(payload, dict):
+            return {
+                "present": bool(payload.get("present")),
+                "reason": str(payload.get("reason") or section.strip()),
+            }
+    normalized = re.sub(r"\s+", " ", section.strip().lower())
+    if re.search(r"\b(no|none|not)\b.{0,40}\b(anti[- ]?loop|loop signal)\b", normalized):
+        return {
+            "present": False,
+            "reason": section.strip() or "No anti-loop signal provided.",
+        }
+    return {
+        "present": bool(section.strip()),
+        "reason": section.strip() or "No anti-loop signal provided.",
+    }
+
+
+def summary_required_now_finding(text: str) -> str:
+    match = re.search(
+        r"\*\*(?:one\s+)?(?:required-now\s+)?(?:finding|concern)[^:]*:\s*(.+?)\*\*",
+        text,
+        flags=re.I | re.S,
+    )
+    if match:
+        return re.sub(r"\s+", " ", match.group(1)).strip()
+    return ""
+
+
+def summary_minimum_fix(text: str) -> str:
+    match = re.search(r"\bFix is\s+(.+?)(?:\n\s*\n|$)", text, flags=re.I | re.S)
+    if match:
+        return re.sub(r"\s+", " ", match.group(1)).strip()
+    match = re.search(r"\bMinimum fix(?:\s+is)?[:\s]+(.+?)(?:\n\s*\n|$)", text, flags=re.I | re.S)
+    if match:
+        return re.sub(r"\s+", " ", match.group(1)).strip()
+    return ""
+
+
+def extract_markdown_review(raw_text: str, provider: str) -> dict[str, Any] | None:
+    verdict = markdown_scalar(raw_text, "verdict")
+    confidence = markdown_scalar(raw_text, "confidence")
+    if verdict not in {"pass", "concern", "block"} or confidence not in {"low", "medium", "high"}:
+        return None
+    summary_body = first_heading_body(raw_text)
+    review = {
+        "provider": provider,
+        "verdict": verdict,
+        "confidence": confidence,
+        "reality_delta": markdown_section(raw_text, "reality_delta"),
+        "main_concern": markdown_section(raw_text, "main_concern"),
+        "top_risks": markdown_list(markdown_section(raw_text, "top_risks")),
+        "missing_evidence": markdown_list(markdown_section(raw_text, "missing_evidence")),
+        "minimum_fix": markdown_section(raw_text, "minimum_fix"),
+        "anti_loop_signal": parse_anti_loop(markdown_section(raw_text, "anti_loop_signal")),
+        "user_intent_alignment": markdown_scalar(raw_text, "user_intent_alignment"),
+    }
+    if not review["reality_delta"] and verdict == "pass":
+        review["reality_delta"] = summary_body
+    if not review["main_concern"] and verdict == "pass":
+        review["main_concern"] = "No blocking concern provided by provider."
+    if not review["minimum_fix"] and verdict == "pass":
+        review["minimum_fix"] = "Accept. No code changes needed."
+    if verdict in {"concern", "block"}:
+        if not review["reality_delta"]:
+            review["reality_delta"] = summary_body
+        if not review["main_concern"]:
+            review["main_concern"] = summary_required_now_finding(raw_text) or summary_body
+        if not review["minimum_fix"]:
+            review["minimum_fix"] = (
+                summary_minimum_fix(raw_text)
+                or "Address the provider concern before claiming completion."
+            )
+    if not REQUIRED_REVIEW_KEYS.issubset(review.keys()):
+        return None
+    if review["user_intent_alignment"] not in {"aligned", "unclear", "drifting", "misaligned"}:
+        review["user_intent_alignment"] = "unclear"
+    if not review["reality_delta"] or not review["main_concern"] or not review["minimum_fix"]:
+        return None
+    return review
+
+
+def extract_kimi_handle(raw_text: str, fallback: str | None) -> str | None:
+    match = re.search(r"kimi\s+-r\s+([0-9a-fA-F-]{36})", raw_text)
+    if match:
+        return match.group(1)
+    return fallback
+
+
+def extract_provider_handle(raw_text: str, provider: str, fallback: str | None) -> str | None:
+    if provider == "kimi":
+        return extract_kimi_handle(raw_text, fallback)
+    if provider == "claude-code":
+        for obj in iter_json_objects(raw_text):
+            session_id = obj.get("session_id")
+            if isinstance(session_id, str) and session_id:
+                return session_id
+            for stream_name in ["stdout", "stderr"]:
+                stream = obj.get(stream_name)
+                if isinstance(stream, str):
+                    for nested in iter_json_objects(stream):
+                        session_id = nested.get("session_id")
+                        if isinstance(session_id, str) and session_id:
+                            return session_id
+    return fallback
+
+
+def provider_command(provider: str, handle: str | None, prompt: str, max_steps: int) -> tuple[list[str], str | None]:
+    if provider == "kimi":
+        argv = [
+            "kimi",
+            "--work-dir",
+            str(REPO_ROOT),
+            "--quiet",
+            "--max-steps-per-turn",
+            str(max_steps),
+        ]
+        if handle:
+            argv.extend(["-r", handle])
+        argv.extend(["-p", prompt])
+        return argv, handle
+    if provider == "claude-code":
+        if handle:
+            return [
+                "claude",
+                "--print",
+                "--output-format",
+                "json",
+                "--permission-mode",
+                "bypassPermissions",
+                "--resume",
+                handle,
+                prompt,
+            ], handle
+        next_handle = str(uuid.uuid4())
+        return [
+            "claude",
+            "--print",
+            "--output-format",
+            "json",
+            "--permission-mode",
+            "bypassPermissions",
+            "--session-id",
+            next_handle,
+            prompt,
+        ], next_handle
+    raise SystemExit(f"unsupported provider: {provider}")
+
+
+def write_provider_timeout_raw(
+    raw_out: pathlib.Path,
+    argv: list[str],
+    exc: ProviderTimeoutError,
+    max_retries: int,
+) -> dict[str, Any]:
+    payload = {
+        "argv": redacted_argv(argv),
+        "attempts": exc.attempts,
+        "exit_code": None,
+        "timeout_seconds": exc.timeout_seconds,
+        "max_retries": max_retries,
+    }
+    raw_out.parent.mkdir(parents=True, exist_ok=True)
+    raw_out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return payload
+
+
+def update_session(manifest: pathlib.Path, provider: str, handle: str | None, review_path: pathlib.Path) -> None:
+    argv = [
+        str(PRISM),
+        "session-update",
+        "--manifest",
+        str(manifest),
+        "--provider",
+        provider,
+        "--increment-round",
+        "--provider-status",
+        "active",
+        "--last-review",
+        str(review_path),
+    ]
+    if handle:
+        argv.extend(["--session-handle", handle])
+    completed = run(argv)
+    if completed.returncode != 0:
+        raise SystemExit(completed.stderr or completed.stdout)
+
+
+def update_session_handle(manifest: pathlib.Path, provider: str, handle: str) -> None:
+    completed = run([
+        str(PRISM),
+        "session-update",
+        "--manifest",
+        str(manifest),
+        "--provider",
+        provider,
+        "--session-handle",
+        handle,
+        "--provider-status",
+        "active",
+    ])
+    if completed.returncode != 0:
+        raise SystemExit(completed.stderr or completed.stdout)
+
+
+def provider_success_raw(run_dir: pathlib.Path, provider: str, max_age_hours: float | None) -> bool:
+    raw_files = sorted(run_dir.glob(f"{provider}*.raw.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    now = time.time()
+    for path in raw_files:
+        if max_age_hours is not None and now - path.stat().st_mtime > max_age_hours * 3600:
+            continue
+        try:
+            payload = load_json(path)
+        except SystemExit:
+            continue
+        if payload.get("exit_code") == 0 and (
+            isinstance(payload.get("stdout"), str) or isinstance(payload.get("stderr"), str)
+        ):
+            return True
+    return False
+
+
+def provider_valid_review(run_dir: pathlib.Path, provider: str) -> bool:
+    for path in run_dir.glob(f"{provider}*.review.json"):
+        try:
+            payload = load_json(path)
+        except SystemExit:
+            continue
+        if REQUIRED_REVIEW_KEYS.issubset(payload.keys()) and payload.get("provider") == provider:
+            return True
+    return False
+
+
+def cmd_verify_evidence(args: argparse.Namespace) -> int:
+    run_dir = pathlib.Path(args.evidence_run_dir).resolve()
+    providers = [provider.strip() for provider in args.providers.split(",") if provider.strip()]
+    max_age_hours = args.max_age_hours
+    manifest = load_json(run_dir / "session.json")
+    failures: list[str] = []
+    provider_records = manifest.get("providers", {}) if isinstance(manifest, dict) else {}
+    for provider in providers:
+        if provider not in ALLOWED_PROVIDERS:
+            failures.append(f"unsupported provider in evidence check: {provider}")
+            continue
+        record = provider_records.get(provider) if isinstance(provider_records, dict) else None
+        if not isinstance(record, dict):
+            failures.append(f"{provider}: missing session manifest record")
+            continue
+        if not isinstance(record.get("session_handle"), str) or not record.get("session_handle"):
+            failures.append(f"{provider}: missing provider session handle")
+        if not isinstance(record.get("round_count"), int) or record.get("round_count", 0) < 1:
+            failures.append(f"{provider}: no completed provider round recorded")
+        if not provider_success_raw(run_dir, provider, max_age_hours):
+            failures.append(f"{provider}: no successful raw provider output found")
+        if not provider_valid_review(run_dir, provider):
+            failures.append(f"{provider}: no valid extracted review found")
+    result = {
+        "ok": not failures,
+        "run_dir": str(run_dir),
+        "providers": providers,
+        "max_age_hours": max_age_hours,
+        "failures": failures,
+    }
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if failures:
+        return 1
+    print("PRISM_DISPATCH_EVIDENCE_OK")
+    return 0
+
+
+def run_provider_command(
+    provider: str,
+    argv: list[str],
+    prompt: str,
+    handle: str | None,
+    planned_handle: str | None,
+    max_steps: int,
+    timeout_seconds: float,
+    max_retries: int,
+    *,
+    rebuild_on_retry: bool = True,
+    retry_command_builder=provider_command,
+) -> tuple[subprocess.CompletedProcess[str], list[dict[str, Any]], str | None]:
+    attempts: list[dict[str, Any]] = []
+    current_argv = list(argv)
+    current_handle = handle
+    current_planned_handle = planned_handle
+    captured_handle = handle or planned_handle
+
+    for attempt_number in range(1, max_retries + 2):
+        try:
+            completed = run(current_argv, timeout=timeout_seconds)
+        except subprocess.TimeoutExpired as exc:
+            stdout = output_text(exc.stdout)
+            stderr = output_text(exc.stderr)
+            captured_handle = extract_provider_handle(stdout + "\n" + stderr, provider, captured_handle)
+            attempts.append({
+                "attempt": attempt_number,
+                "argv": redacted_argv(current_argv),
+                "exit_code": None,
+                "timed_out": True,
+                "timeout_seconds": timeout_seconds,
+                "stdout": stdout,
+                "stderr": stderr,
+                "captured_session_handle": captured_handle,
+            })
+            if attempt_number <= max_retries:
+                current_handle = captured_handle
+                if rebuild_on_retry:
+                    current_argv, current_planned_handle = retry_command_builder(provider, current_handle, prompt, max_steps)
+                    captured_handle = current_handle or current_planned_handle
+                continue
+            raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds) from exc
+
+        attempts.append({
+            "attempt": attempt_number,
+            "argv": redacted_argv(current_argv),
+            "exit_code": completed.returncode,
+            "timed_out": False,
+            "stdout": completed.stdout,
+            "stderr": completed.stderr,
+        })
+        if (
+            provider == "claude-code"
+            and completed.returncode != 0
+            and current_handle
+            and "already in use" in (completed.stderr or "")
+        ):
+            fallback_handle = str(uuid.uuid4())
+            fallback_argv = [
+                "claude",
+                "--print",
+                "--output-format",
+                "json",
+                "--permission-mode",
+                "bypassPermissions",
+                "--session-id",
+                fallback_handle,
+                prompt,
+            ]
+            try:
+                completed = run(fallback_argv, timeout=timeout_seconds)
+            except subprocess.TimeoutExpired as exc:
+                stdout = output_text(exc.stdout)
+                stderr = output_text(exc.stderr)
+                captured_handle = extract_provider_handle(stdout + "\n" + stderr, provider, fallback_handle)
+                attempts.append({
+                    "attempt": attempt_number,
+                    "argv": redacted_argv(fallback_argv),
+                    "exit_code": None,
+                    "timed_out": True,
+                    "timeout_seconds": timeout_seconds,
+                    "stdout": stdout,
+                    "stderr": stderr,
+                    "captured_session_handle": captured_handle,
+                    "recovery": "fresh-session-after-resume-busy",
+                })
+                if attempt_number <= max_retries:
+                    current_handle = captured_handle
+                    if rebuild_on_retry:
+                        current_argv, current_planned_handle = retry_command_builder(provider, current_handle, prompt, max_steps)
+                        captured_handle = current_handle or current_planned_handle
+                    continue
+                raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds) from exc
+            attempts.append({
+                "attempt": attempt_number,
+                "argv": redacted_argv(fallback_argv),
+                "exit_code": completed.returncode,
+                "timed_out": False,
+                "stdout": completed.stdout,
+                "stderr": completed.stderr,
+                "recovery": "fresh-session-after-resume-busy",
+            })
+            return completed, attempts, fallback_handle
+        return completed, attempts, current_handle or current_planned_handle
+
+    raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds)
+
+
+def cmd_dispatch(args: argparse.Namespace) -> int:
+    provider = args.provider
+    if provider not in ALLOWED_PROVIDERS:
+        raise SystemExit(f"excluded provider: {provider}")
+    manifest = pathlib.Path(args.manifest).resolve()
+    if not args.review_out:
+        raise SystemExit("--review-out is required")
+    review_out = pathlib.Path(args.review_out).resolve()
+    raw_out = pathlib.Path(args.raw_out).resolve() if args.raw_out else review_out.with_suffix(".raw.txt")
+    brief_out = pathlib.Path(args.brief_out).resolve() if args.brief_out else review_out.with_suffix(".brief.md")
+
+    if args.extract_from_raw:
+        raw_text = pathlib.Path(args.extract_from_raw).resolve().read_text(encoding="utf-8")
+        record = provider_record(manifest, provider)
+        handle = record.get("session_handle") if isinstance(record.get("session_handle"), str) else None
+        review = extract_review(raw_text, provider)
+        review_out.parent.mkdir(parents=True, exist_ok=True)
+        review_out.write_text(json.dumps(review, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        next_handle = extract_provider_handle(raw_text, provider, handle)
+        update_session(manifest, provider, next_handle, review_out)
+        print(json.dumps({
+            "ok": True,
+            "provider": provider,
+            "review_path": str(review_out),
+            "raw_path": str(pathlib.Path(args.extract_from_raw).resolve()),
+            "session_handle": next_handle,
+            "extract_from_raw": True,
+        }, ensure_ascii=False, indent=2))
+        print("PRISM_DISPATCH_EXTRACT_OK")
+        return 0
+
+    if not args.request:
+        raise SystemExit("--request is required unless --extract-from-raw is used")
+    request = pathlib.Path(args.request).resolve()
+    session_payload = require_session_allowed(manifest, provider)
+    record = provider_record(manifest, provider)
+    handle = record.get("session_handle") if isinstance(record.get("session_handle"), str) else None
+    prompt = build_brief(provider, request, brief_out)
+    argv, planned_handle = provider_command(provider, handle, prompt, args.max_steps)
+
+    if args.dry_run:
+        print(json.dumps({
+            "ok": True,
+            "dry_run": True,
+            "provider": provider,
+            "session_check": session_payload,
+            "has_existing_handle": bool(handle),
+            "planned_handle": planned_handle,
+            "argv_head": argv[:6],
+            "brief_path": str(brief_out),
+            "timeout_seconds": args.timeout_seconds,
+            "max_retries": args.max_retries,
+        }, ensure_ascii=False, indent=2))
+        print("PRISM_DISPATCH_DRY_RUN_OK")
+        return 0
+
+    try:
+        completed, attempts, command_handle = run_provider_command(
+            provider,
+            argv,
+            prompt,
+            handle,
+            planned_handle,
+            args.max_steps,
+            args.timeout_seconds,
+            args.max_retries,
+        )
+    except ProviderTimeoutError as exc:
+        write_provider_timeout_raw(raw_out, argv, exc, args.max_retries)
+        captured_handle = exc.captured_handle
+        if captured_handle and captured_handle != handle:
+            update_session_handle(manifest, provider, captured_handle)
+        raise SystemExit(json.dumps({
+            "ok": False,
+            "stage": "provider-timeout",
+            "provider": provider,
+            "timeout_seconds": exc.timeout_seconds,
+            "attempts": len(exc.attempts),
+            "max_retries": args.max_retries,
+            "captured_session_handle": captured_handle,
+            "raw_path": str(raw_out),
+        }, ensure_ascii=False))
+    raw_text = json.dumps({
+        "argv": argv[:6] + ["<prompt>"],
+        "attempts": attempts,
+        "exit_code": completed.returncode,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }, ensure_ascii=False, indent=2)
+    raw_out.parent.mkdir(parents=True, exist_ok=True)
+    raw_out.write_text(raw_text + "\n", encoding="utf-8")
+    if completed.returncode != 0:
+        captured_handle = None
+        if provider == "kimi":
+            captured_handle = extract_kimi_handle(completed.stdout + "\n" + completed.stderr, handle)
+            if captured_handle and captured_handle != handle:
+                update_session_handle(manifest, provider, captured_handle)
+        raise SystemExit(json.dumps({
+            "ok": False,
+            "stage": "provider-call",
+            "provider": provider,
+            "exit_code": completed.returncode,
+            "captured_session_handle": captured_handle,
+            "raw_path": str(raw_out),
+        }, ensure_ascii=False))
+
+    review = extract_review(completed.stdout + "\n" + completed.stderr, provider)
+    review_out.parent.mkdir(parents=True, exist_ok=True)
+    review_out.write_text(json.dumps(review, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    next_handle = command_handle or planned_handle
+    if provider == "kimi":
+        next_handle = extract_kimi_handle(completed.stdout + "\n" + completed.stderr, command_handle or handle)
+        if not next_handle:
+            raise SystemExit(json.dumps({
+                "ok": False,
+                "stage": "session-handle",
+                "provider": provider,
+                "reason": "Kimi review succeeded but no resume handle was captured",
+                "raw_path": str(raw_out),
+            }, ensure_ascii=False))
+    update_session(manifest, provider, next_handle, review_out)
+    print(json.dumps({
+        "ok": True,
+        "provider": provider,
+        "review_path": str(review_out),
+        "raw_path": str(raw_out),
+        "session_handle": next_handle,
+    }, ensure_ascii=False, indent=2))
+    print("PRISM_DISPATCH_OK")
+    return 0
+
+
+def cmd_self_check(_: argparse.Namespace) -> int:
+    with tempfile.TemporaryDirectory(prefix="redcap-prism-dispatch-") as tmp_raw:
+        tmp = pathlib.Path(tmp_raw)
+        request = tmp / "request.json"
+        request.write_text(json.dumps({
+            "task": "dispatcher self-check",
+            "user_intent": "verify dispatcher gates provider calls",
+            "main_claim": "dry-run dispatch should enforce session checks",
+            "changed_reality": ["self-check fixture"],
+            "review_mode": "implementation_review",
+            "risk_level": "low",
+            "requested_providers": ["kimi", "claude-code"],
+        }, ensure_ascii=False), encoding="utf-8")
+        manifest_dir = tmp / "run"
+        init = run([str(PRISM), "session-init", "--task-id", "dispatcher-self-check", "--run-dir", str(manifest_dir)])
+        if init.returncode != 0:
+            raise SystemExit(init.stderr or init.stdout)
+        manifest = manifest_dir / "session.json"
+        first = run([
+            str(pathlib.Path(__file__).resolve()),
+            "--provider",
+            "kimi",
+            "--manifest",
+            str(manifest),
+            "--request",
+            str(request),
+            "--review-out",
+            str(tmp / "kimi.review.json"),
+            "--dry-run",
+        ])
+        run([
+            str(PRISM),
+            "session-update",
+            "--manifest",
+            str(manifest),
+            "--provider",
+            "kimi",
+            "--round-count",
+            "1",
+        ])
+        blocked = run([
+            str(pathlib.Path(__file__).resolve()),
+            "--provider",
+            "kimi",
+            "--manifest",
+            str(manifest),
+            "--request",
+            str(request),
+            "--review-out",
+            str(tmp / "blocked.review.json"),
+            "--dry-run",
+        ])
+        nested = extract_review(json.dumps({"result": "{\"provider\":\"kimi\",\"verdict\":\"pass\",\"confidence\":\"high\",\"reality_delta\":\"x\",\"main_concern\":\"x\",\"top_risks\":[],\"missing_evidence\":[],\"minimum_fix\":\"x\",\"anti_loop_signal\":{\"present\":false,\"reason\":\"x\"},\"user_intent_alignment\":\"aligned\"}"}), "kimi")
+        contradictory_anti_loop = extract_review(json.dumps({"result": "{\"provider\":\"kimi\",\"verdict\":\"concern\",\"confidence\":\"high\",\"reality_delta\":\"x\",\"main_concern\":\"x\",\"top_risks\":[],\"missing_evidence\":[],\"minimum_fix\":\"x\",\"anti_loop_signal\":{\"present\":true,\"reason\":\"Present: false. No loop signal.\"},\"user_intent_alignment\":\"aligned\"}"}), "kimi")
+        retry_fixture = tmp / "timeout_then_success.py"
+        retry_counter = tmp / "retry-count.txt"
+        retry_handle = "11111111-1111-4111-8111-111111111111"
+        retry_fixture.write_text(
+            "\n".join([
+                "import pathlib, sys, time",
+                f"counter = pathlib.Path({str(retry_counter)!r})",
+                f"handle = {retry_handle!r}",
+                "value = int(counter.read_text() or '0') if counter.exists() else 0",
+                "value += 1",
+                "counter.write_text(str(value))",
+                "print(f'kimi -r {handle}', flush=True)",
+                "if value <= 5:",
+                "    time.sleep(2)",
+                "print('retry-ok')",
+            ]) + "\n",
+            encoding="utf-8",
+        )
+        rebuild_calls: list[str | None] = []
+
+        def retry_builder(provider: str, current_handle: str | None, prompt: str, max_steps: int) -> tuple[list[str], str | None]:
+            rebuild_calls.append(current_handle)
+            return [sys.executable, str(retry_fixture)], current_handle
+
+        retry_completed, retry_attempts, _ = run_provider_command(
+            "kimi",
+            [sys.executable, str(retry_fixture)],
+            "",
+            None,
+            None,
+            1,
+            0.2,
+            5,
+            retry_command_builder=retry_builder,
+        )
+        exhausted_fixture = tmp / "always_timeout.py"
+        exhausted_counter = tmp / "always-timeout-count.txt"
+        exhausted_fixture.write_text(
+            "\n".join([
+                "import pathlib, time",
+                f"counter = pathlib.Path({str(exhausted_counter)!r})",
+                f"handle = {retry_handle!r}",
+                "value = int(counter.read_text() or '0') if counter.exists() else 0",
+                "counter.write_text(str(value + 1))",
+                "print(f'kimi -r {handle}', flush=True)",
+                "time.sleep(2)",
+            ]) + "\n",
+            encoding="utf-8",
+        )
+        timeout_raw = tmp / "timeout.raw.json"
+        timeout_payload: dict[str, Any] = {}
+        try:
+            run_provider_command(
+                "kimi",
+                [sys.executable, str(exhausted_fixture)],
+                "",
+                None,
+                None,
+                1,
+                0.2,
+                2,
+                retry_command_builder=lambda provider, current_handle, prompt, max_steps: (
+                    [sys.executable, str(exhausted_fixture)],
+                    current_handle,
+                ),
+            )
+        except ProviderTimeoutError as exc:
+            timeout_payload = write_provider_timeout_raw(timeout_raw, [sys.executable, str(exhausted_fixture)], exc, 2)
+        stubborn_fixture = tmp / "stubborn_child_timeout.py"
+        stubborn_child_pid = tmp / "stubborn-child.pid"
+        stubborn_timeout_raw = tmp / "stubborn-timeout.raw.json"
+        stubborn_fixture.write_text(
+            "\n".join([
+                "import pathlib, signal, subprocess, sys",
+                f"pid_path = pathlib.Path({str(stubborn_child_pid)!r})",
+                f"handle = {retry_handle!r}",
+                "child = subprocess.Popen([",
+                "    sys.executable,",
+                "    '-c',",
+                "    'import signal, time; signal.signal(signal.SIGTERM, signal.SIG_IGN); print(\"child-started\", flush=True); time.sleep(999)',",
+                "])",
+                "pid_path.write_text(str(child.pid))",
+                "print(f'kimi -r {handle}', flush=True)",
+                "child.wait()",
+            ]) + "\n",
+            encoding="utf-8",
+        )
+        stubborn_payload: dict[str, Any] = {}
+        stubborn_elapsed = 0.0
+        stubborn_child_survived = False
+        try:
+            stubborn_start = time.monotonic()
+            run_provider_command(
+                "kimi",
+                [sys.executable, str(stubborn_fixture)],
+                "",
+                None,
+                None,
+                1,
+                0.2,
+                0,
+                retry_command_builder=lambda provider, current_handle, prompt, max_steps: (
+                    [sys.executable, str(stubborn_fixture)],
+                    current_handle,
+                ),
+            )
+        except ProviderTimeoutError as exc:
+            stubborn_elapsed = time.monotonic() - stubborn_start
+            stubborn_payload = write_provider_timeout_raw(
+                stubborn_timeout_raw,
+                [sys.executable, str(stubborn_fixture)],
+                exc,
+                0,
+            )
+            time.sleep(0.2)
+            if stubborn_child_pid.exists():
+                child_pid = int(stubborn_child_pid.read_text(encoding="utf-8"))
+                try:
+                    os.kill(child_pid, 0)
+                    stubborn_child_survived = True
+                    os.kill(child_pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    stubborn_child_survived = False
+        markdown_review = extract_review(
+            "\n".join([
+                "**Provider:** claude-code",
+                "**Verdict:** `concern`",
+                "**Confidence:** `high`",
+                "",
+                "### Reality Delta",
+                "x",
+                "### Main Concern",
+                "x",
+                "### Top Risks",
+                "- x",
+                "### Missing Evidence",
+                "- x",
+                "### Minimum Fix",
+                "x",
+                "### Anti Loop Signal",
+                "x",
+                "### User Intent Alignment",
+                "aligned",
+            ]),
+            "claude-code",
+        )
+        pass_summary_review = extract_review(
+            "\n".join([
+                "## Follow-up Prism Review - Summary",
+                "",
+                "**Verdict:** `pass` / **Confidence:** `high`",
+                "",
+                "All concrete concerns are addressed with executable checks.",
+                "",
+                "**Minimum fix:** Accept. No code changes needed.",
+            ]),
+            "claude-code",
+        )
+        concern_summary_review = extract_review(
+            "\n".join([
+                "Prism review complete. Here's the summary:",
+                "",
+                "**Verdict: concern** | **Confidence: medium**",
+                "",
+                "The probe runs and one narrow guard mismatch remains.",
+                "",
+                "**One required-now finding: redirect pattern inconsistency at `codex-hook.py:203`**",
+                "",
+                "Fix is a one-line regex swap.",
+                "",
+                "**Anti loop signal:** No loop signal detected.",
+            ]),
+            "claude-code",
+        )
+        compressed_pass_review = extract_review(
+            "\n".join([
+                "Prism review complete. Here's the summary:",
+                "",
+                "**Verdict: pass (confidence: high)**",
+                "",
+                "The loop can stop. No required-now bypass remains.",
+            ]),
+            "claude-code",
+        )
+        split_bold_confidence_review = extract_review(
+            "\n".join([
+                "## Prism Review",
+                "",
+                "**Verdict:** `concern` (Confidence: **high**)",
+                "",
+                "### Reality Delta",
+                "x",
+                "### Main Concern",
+                "x",
+                "### Minimum Fix",
+                "x",
+            ]),
+            "kimi",
+        )
+        lowercase_split_bold_review = extract_review(
+            "\n".join([
+                "## Prism Review",
+                "",
+                "**verdict**: `concern`",
+                "**confidence**: `medium`",
+                "",
+                "### reality_delta",
+                "x",
+                "### main_concern",
+                "x",
+                "### minimum_fix",
+                "x",
+            ]),
+            "claude-code",
+        )
+        defaults = build_parser().parse_args([
+            "--provider",
+            "kimi",
+            "--manifest",
+            str(manifest),
+            "--request",
+            str(request),
+            "--review-out",
+            str(tmp / "defaults.review.json"),
+        ])
+        failures: list[str] = []
+        if first.returncode != 0 or "PRISM_DISPATCH_DRY_RUN_OK" not in first.stdout:
+            failures.append("first dry-run dispatch did not pass")
+        if blocked.returncode == 0:
+            failures.append("follow-up without session handle was not blocked")
+        if nested.get("provider") != "kimi":
+            failures.append("nested review extraction failed")
+        if contradictory_anti_loop.get("anti_loop_signal", {}).get("present") is not False:
+            failures.append("contradictory anti-loop JSON normalization failed")
+        if defaults.timeout_seconds != DEFAULT_TIMEOUT_SECONDS:
+            failures.append("dispatcher default timeout is not 300 seconds")
+        if defaults.max_retries != DEFAULT_MAX_RETRIES:
+            failures.append("dispatcher default max retries is not 5")
+        if retry_completed.returncode != 0:
+            failures.append("timeout retry fixture did not eventually succeed")
+        if len(retry_attempts) != 6:
+            failures.append("timeout retry fixture did not exercise five retries plus final success")
+        if sum(1 for attempt in retry_attempts if attempt.get("timed_out") is True) != 5:
+            failures.append("timeout retry fixture did not record exactly five timeout retries")
+        if len(rebuild_calls) != 5 or any(handle != retry_handle for handle in rebuild_calls):
+            failures.append("timeout retry fixture did not rebuild retry commands with the captured provider handle")
+        if timeout_payload.get("max_retries") != 2 or len(timeout_payload.get("attempts", [])) != 3:
+            failures.append("timeout raw evidence writer did not persist exhausted retry attempts")
+        if not timeout_raw.is_file():
+            failures.append("timeout raw evidence file was not written")
+        if not stubborn_payload:
+            failures.append("stubborn child timeout fixture did not raise ProviderTimeoutError")
+        if stubborn_elapsed > 5:
+            failures.append("stubborn child timeout fixture exceeded hard-timeout budget")
+        if stubborn_child_survived:
+            failures.append("stubborn child timeout fixture left a child process alive")
+        if stubborn_payload and len(stubborn_payload.get("attempts", [])) != 1:
+            failures.append("stubborn child timeout fixture did not record exactly one timeout attempt")
+        if stubborn_payload and stubborn_payload.get("attempts", [{}])[0].get("timed_out") is not True:
+            failures.append("stubborn child timeout fixture did not record a timed-out attempt")
+        if not stubborn_timeout_raw.is_file():
+            failures.append("stubborn timeout raw evidence file was not written")
+        if markdown_review.get("provider") != "claude-code":
+            failures.append("Claude markdown review extraction failed")
+        if pass_summary_review.get("verdict") != "pass":
+            failures.append("Claude pass summary extraction failed")
+        if concern_summary_review.get("verdict") != "concern":
+            failures.append("Claude concern summary extraction failed")
+        if "redirect pattern inconsistency" not in concern_summary_review.get("main_concern", ""):
+            failures.append("Claude concern summary did not preserve the main concern")
+        if concern_summary_review.get("anti_loop_signal", {}).get("present") is not False:
+            failures.append("Claude negative anti-loop summary was treated as present")
+        if compressed_pass_review.get("verdict") != "pass" or compressed_pass_review.get("confidence") != "high":
+            failures.append("Claude compressed pass/confidence extraction failed")
+        if split_bold_confidence_review.get("verdict") != "concern" or split_bold_confidence_review.get("confidence") != "high":
+            failures.append("split bold verdict/confidence extraction failed")
+        if lowercase_split_bold_review.get("verdict") != "concern" or lowercase_split_bold_review.get("confidence") != "medium":
+            failures.append("lowercase split bold verdict/confidence extraction failed")
+        result = {"ok": not failures, "failures": failures}
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if failures:
+            return 1
+        print("PRISM_DISPATCH_SELF_CHECK_OK")
+        return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Dispatch Prism provider reviews")
+    parser.add_argument("--self-check", action="store_true")
+    parser.add_argument("--verify-evidence", action="store_true")
+    parser.add_argument("--evidence-run-dir")
+    parser.add_argument("--providers", default="kimi,claude-code")
+    parser.add_argument("--max-age-hours", type=float)
+    parser.add_argument("--provider", choices=sorted(ALLOWED_PROVIDERS))
+    parser.add_argument("--manifest")
+    parser.add_argument("--request")
+    parser.add_argument("--review-out")
+    parser.add_argument("--raw-out")
+    parser.add_argument("--extract-from-raw")
+    parser.add_argument("--brief-out")
+    parser.add_argument("--max-steps", type=int, default=5)
+    parser.add_argument("--timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
+    parser.add_argument("--max-retries", type=int, default=DEFAULT_MAX_RETRIES)
+    parser.add_argument("--dry-run", action="store_true")
+    return parser
+
+
+def main() -> int:
+    parser = build_parser()
+    args = parser.parse_args()
+    if args.self_check:
+        return cmd_self_check(args)
+    if args.verify_evidence:
+        if not args.evidence_run_dir:
+            parser.error("--evidence-run-dir is required with --verify-evidence")
+        return cmd_verify_evidence(args)
+    required = ["provider", "manifest", "review_out"]
+    if not args.extract_from_raw:
+        required.append("request")
+    for name in required:
+        if not getattr(args, name):
+            parser.error(f"--{name.replace('_', '-')} is required unless --self-check is used")
+    if args.timeout_seconds <= 0:
+        parser.error("--timeout-seconds must be greater than 0")
+    if args.max_retries < 0:
+        parser.error("--max-retries must be greater than or equal to 0")
+    return cmd_dispatch(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

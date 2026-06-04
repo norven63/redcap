@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://redcap.local/schemas/directory-structure.schema.json",
+  "title": "RedCap Directory Structure Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "root_allowed_entries",
+    "direct_children_allowed",
+    "required_paths",
+    "functional_directories",
+    "file_placement_rules",
+    "ignored_names",
+    "forbidden_names",
+    "asset_unit",
+    "future_expansion_policy"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "redcap-directory-structure-policy"
+    },
+    "root_allowed_entries": {
+      "type": "object",
+      "minProperties": 1
+    },
+    "direct_children_allowed": {
+      "type": "object"
+    },
+    "required_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "functional_directories": {
+      "type": "object",
+      "minProperties": 1
+    },
+    "file_placement_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "role",
+          "recursive"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "allowed_names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "allowed_extensions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "deny_executable_bits": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "ignored_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "forbidden_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "asset_unit": {
+      "type": "object",
+      "required": [
+        "path",
+        "deny_executable_bits",
+        "deny_executable_extensions",
+        "exceptions"
+      ]
+    },
+    "future_expansion_policy": {
+      "type": "object",
+      "required": [
+        "default",
+        "reason"
+      ]
+    }
+  }
+}

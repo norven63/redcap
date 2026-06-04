@@ -1,0 +1,91 @@
+{
+  "schema_id": "redcap-archaeology-no-promote-decision",
+  "version": 1,
+  "shard_id": "pathology-raw-evidence-default",
+  "scope": "redcap-revival-1.0",
+  "decision": "no-promote",
+  "reason": "The old raw evidence retention and split machinery is not promoted into RedCap 1.0. The useful 1.0 requirement is narrower: raw evidence remains preserved and queryable only through explicit access boundaries, never as default context or a completion substitute.",
+  "bounded_old_sources_considered": [
+    "/Users/norven/workspace/redcap/prism/tools/prism-evidence-check.sh",
+    "/Users/norven/workspace/redcap/runtime/redcap-core/prism-tools/prism-evidence-check.sh",
+    "/Users/norven/workspace/redcap/compass/tools/redcap-r1-prism-evidence-retention-split-check.py",
+    "/Users/norven/workspace/redcap/assets/references/r1-prism-evidence-retention-split-preflight.json"
+  ],
+  "old_source_read_policy": {
+    "bulk_read": false,
+    "raw_prism_runs_read": false,
+    "raw_evidence_archives_read": false,
+    "evidence_moved_or_deleted": false,
+    "full_migration_attempted": false,
+    "term_and_rule_scan_only": true
+  },
+  "boundary_rules": [
+    {
+      "rule": "raw evidence is not default context",
+      "redcap_1_0_status": "enforced",
+      "evidence": [
+        "runtime/core/knowledge_gateway.py",
+        "assets/knowledge/index.json"
+      ]
+    },
+    {
+      "rule": "prism/reports and prism/runs are absent from package candidates",
+      "redcap_1_0_status": "recorded-not-promoted",
+      "evidence": [
+        "assets/knowledge/entries/raw-evidence-access-boundary.md"
+      ]
+    },
+    {
+      "rule": "evidence is not physically cleaned or deleted without explicit future approval",
+      "redcap_1_0_status": "recorded-not-promoted",
+      "evidence": [
+        "assets/knowledge/entries/raw-evidence-access-boundary.md"
+      ]
+    },
+    {
+      "rule": "cleanup or prune apply commands stay forbidden by default",
+      "redcap_1_0_status": "recorded-not-promoted",
+      "evidence": [
+        "assets/knowledge/entries/raw-evidence-access-boundary.md"
+      ]
+    },
+    {
+      "rule": "minimum run count integrity must not drop without cleanup proof",
+      "redcap_1_0_status": "recorded-not-promoted",
+      "evidence": [
+        "assets/knowledge/entries/raw-evidence-access-boundary.md"
+      ]
+    },
+    {
+      "rule": "release readiness remains blocked while evidence retention is unresolved",
+      "redcap_1_0_status": "recorded-not-promoted",
+      "evidence": [
+        "assets/knowledge/entries/raw-evidence-access-boundary.md"
+      ]
+    }
+  ],
+  "kept_for_1_0": [
+    "Index-first retrieval and explicit raw archive access.",
+    "Executable validation that the knowledge index forbids raw archive default reads.",
+    "A searchable knowledge entry that preserves the six old boundary rules without importing old raw evidence runtime."
+  ],
+  "not_promoted_for_1_0": [
+    "Old Prism evidence retention split checker as runtime.",
+    "Old raw run lifecycle machinery.",
+    "Old package candidate snapshot machinery.",
+    "Evidence cleanup, deletion, prune-local apply, or physical split operations."
+  ],
+  "consumption_evidence": [
+    "runtime/core/knowledge_gateway.py",
+    "assets/knowledge/index.json",
+    "assets/knowledge/entries/raw-evidence-access-boundary.md",
+    "assets/contracts/redcap-1.0-loop.json",
+    "runtime/bin/redcap check"
+  ],
+  "verification": [
+    "runtime/bin/redcap knowledge-gateway check",
+    "runtime/bin/redcap knowledge-gateway search raw --require-match",
+    "python3 runtime/core/revival_loop.py check",
+    "runtime/bin/redcap check"
+  ]
+}

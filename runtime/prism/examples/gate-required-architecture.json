@@ -1,0 +1,7 @@
+{
+  "task": "Design the directory architecture, Prism invocation gate, session isolation, and FSM workflow gates.",
+  "risk_level": "high",
+  "changed_paths": ["README.md", "runtime/prism/bin/prism", "runtime/README.md"],
+  "tags": ["architecture", "prism"],
+  "expected_decision": "required"
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://redcap.local/schemas/capability-status.schema.json",
+  "title": "RedCap Capability Status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "capability", "status", "completion_claim"],
+  "properties": {
+    "schema_id": {
+      "const": "redcap-capability-status"
+    },
+    "capability": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "documented_only",
+        "partially_implemented",
+        "manually_runnable",
+        "tested",
+        "operational"
+      ]
+    },
+    "completion_claim": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

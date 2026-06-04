@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://redcap.local/schemas/prism-session.schema.json",
+  "title": "Prism Task Session Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "task_id",
+    "run_dir",
+    "status",
+    "max_rounds_per_provider",
+    "created_at",
+    "updated_at",
+    "providers",
+    "convergence"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "prism-session-manifest"
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_dir": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "converged", "main-decided", "escalated", "expired", "closed"]
+    },
+    "max_rounds_per_provider": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "default": 3
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claude-code", "kimi"],
+      "properties": {
+        "claude-code": {
+          "$ref": "#/$defs/provider_session"
+        },
+        "kimi": {
+          "$ref": "#/$defs/provider_session"
+        }
+      }
+    },
+    "convergence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reason"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["unresolved", "converged", "main-decided", "escalated"]
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "provider_session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_handle", "round_count", "status", "last_review"],
+      "properties": {
+        "session_handle": {
+          "type": ["string", "null"]
+        },
+        "round_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "active", "converged", "escalated", "expired", "closed"]
+        },
+        "last_review": {
+          "type": ["string", "null"]
+        }
+      }
+    }
+  }
+}

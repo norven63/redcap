@@ -1,0 +1,280 @@
+{
+  "schema_id": "redcap-revival-1-loop",
+  "version": 1,
+  "status": "completed",
+  "purpose": "Drive Cap plus Prism from the current scaffold to verified RedCap revival 1.0 without turning plans, shards, reports, ledgers, or receipts into completion.",
+  "driver": {
+    "command_surface": "existing-redcap-check-and-lifecycle",
+    "no_new_cli_command": true,
+    "cycle_state_authority": "this contract is guidance and queue state; lifecycle packets and verified runtime changes are authoritative for each item"
+  },
+  "cycle_budget": {
+    "max_cycles_before_human_review": 12,
+    "max_consecutive_non_runtime_change_cycles": 1,
+    "max_attempts_per_item_before_skip_or_escalate": 2,
+    "hard_stop": "if two consecutive cycles produce only documents, extraction summaries, reports, ledgers, receipts, closeout artifacts, or closure artifacts, stop and escalate before continuing"
+  },
+  "cycle_phases": [
+    "select exactly one current item",
+    "create or update that item's lifecycle packet",
+    "run RedCap gate; dispatch Kimi and Claude Code when required",
+    "execute the item with a changed-reality target",
+    "run item verification plus runtime/bin/redcap check",
+    "merge Prism review when the item is structural, high-risk, completion-facing, or old-RedCap-derived",
+    "resolve every concern or block by accept, reject-with-bounded-rebuttal, or escalate",
+    "advance the queue only when the item has verified changed reality or an explicit no-promote decision"
+  ],
+  "kernel_verification_protocol": {
+    "batch_evidence_role": "corroborating-history-only-after-kernel-runtime-boundary-verified",
+    "fresh_item_probe_required": true,
+    "serial_advancement_required": true,
+    "fresh_probe_rule": "Every kernel-verification queue item after kernel-runtime-boundary-verified must re-run at least the verification command(s) named on that item and save item-specific output before advancement.",
+    "aggregate_check_role": "runtime/bin/redcap check is a follow-up guard, not a replacement for the item-specific probe.",
+    "final_claim_exclusion": "This protocol does not authorize redcap-1.0-final-claim."
+  },
+  "prism": {
+    "providers": [
+      "kimi",
+      "claude-code"
+    ],
+    "trigger": "run RedCap-owned Prism rule review at every item intake; dispatch both providers when the gate returns required",
+    "concern_triage": [
+      "blocks-this-item",
+      "blocks-1.0",
+      "valid-observation-recorded",
+      "needs-norven-decision"
+    ],
+    "triage_rules": [
+      "blocks-this-item prevents the current item from advancing",
+      "blocks-1.0 prevents the final 1.0 exit claim",
+      "valid-observation-recorded may create a future candidate, but does not block the item or 1.0 by itself",
+      "needs-norven-decision is used only for value-laden, irreversible, identity-affecting, release-facing, secret, provider-policy, destructive migration, or evidence-insufficient choices",
+      "ambiguous concern triage after one additional cycle escalates to Norven instead of extending debate"
+    ]
+  },
+  "queue": [
+    {
+      "id": "loop-bootstrap-contract",
+      "status": "verified",
+      "type": "bootstrap",
+      "changed_reality": "The 1.0 loop exists as a bounded contract, short runbook, and redcap check-covered validator.",
+      "verification": [
+        "runtime/bin/redcap check"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "pathology-report-as-progress-consumed",
+      "status": "no-promote",
+      "type": "extract-and-consume",
+      "shard_id": "pathology-report-as-progress",
+      "changed_reality": "Report-as-progress pathology is extracted and consumed into an executable guardrail, contract rule, checker, or explicit no-promote decision.",
+      "bounded_sources_from": "assets/archaeology/shards/index.json",
+      "forbidden_completion_evidence": [
+        "extraction JSON alone",
+        "summary document alone",
+        "Prism review alone"
+      ],
+      "verification": [
+        "runtime/bin/redcap check"
+      ],
+      "no_promote_decision": "assets/archaeology/no-promote/pathology-report-as-progress-v1.json",
+      "decision_evidence": [
+        "runtime/core/revival_loop.py",
+        "assets/contracts/redcap-1.0-loop.json",
+        "runtime/bin/redcap check"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "pathology-receipt-as-completion-consumed",
+      "status": "no-promote",
+      "type": "extract-and-consume",
+      "shard_id": "pathology-receipt-as-completion",
+      "changed_reality": "Receipt-as-completion pathology is extracted and consumed into an executable guardrail, contract rule, checker, or explicit no-promote decision.",
+      "bounded_sources_from": "assets/archaeology/shards/index.json",
+      "forbidden_completion_evidence": [
+        "extraction JSON alone",
+        "summary document alone",
+        "Prism review alone"
+      ],
+      "verification": [
+        "runtime/bin/redcap check"
+      ],
+      "no_promote_decision": "assets/archaeology/no-promote/pathology-receipt-as-completion-v1.json",
+      "decision_evidence": [
+        "runtime/core/development_lifecycle.py",
+        "runtime/core/revival_loop.py",
+        "assets/contracts/redcap-1.0-loop.json",
+        "runtime/bin/redcap check"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "pathology-closeout-recursion-consumed",
+      "status": "no-promote",
+      "type": "extract-and-consume",
+      "shard_id": "pathology-closeout-recursion",
+      "changed_reality": "Closeout-recursion pathology is extracted and consumed into an executable guardrail, contract rule, checker, or explicit no-promote decision.",
+      "bounded_sources_from": "assets/archaeology/shards/index.json",
+      "forbidden_completion_evidence": [
+        "extraction JSON alone",
+        "summary document alone",
+        "Prism review alone"
+      ],
+      "verification": [
+        "runtime/bin/redcap check"
+      ],
+      "no_promote_decision": "assets/archaeology/no-promote/pathology-closeout-recursion-v1.json",
+      "decision_evidence": [
+        "runtime/core/revival_loop.py",
+        "assets/contracts/redcap-1.0-loop.json",
+        "runtime/bin/redcap check"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "pathology-raw-evidence-default-consumed",
+      "status": "no-promote",
+      "type": "extract-and-consume",
+      "shard_id": "pathology-raw-evidence-default",
+      "changed_reality": "Raw-evidence-default pathology is extracted and consumed into an executable guardrail, contract rule, checker, or explicit no-promote decision.",
+      "bounded_sources_from": "assets/archaeology/shards/index.json",
+      "forbidden_completion_evidence": [
+        "extraction JSON alone",
+        "summary document alone",
+        "Prism review alone"
+      ],
+      "verification": [
+        "runtime/bin/redcap check"
+      ],
+      "no_promote_decision": "assets/archaeology/no-promote/pathology-raw-evidence-default-v1.json",
+      "decision_evidence": [
+        "runtime/core/knowledge_gateway.py",
+        "assets/knowledge/index.json",
+        "assets/knowledge/entries/raw-evidence-access-boundary.md",
+        "assets/contracts/redcap-1.0-loop.json",
+        "runtime/bin/redcap check"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "e2e-trace-hook-ownership-fsm-completion",
+      "status": "verified",
+      "type": "runtime-trace-test",
+      "changed_reality": "A trace test proves Hook Adapter Contract -> Session Ownership Kernel -> Minimal FSM Kernel -> Completion Semantics Validator using only new workspace artifacts.",
+      "verification": [
+        "runtime/bin/redcap e2e-trace self-check",
+        "assert no old RedCap module path is imported",
+        "runtime/bin/redcap check"
+      ],
+      "prism_required": true
+    },
+    {
+      "id": "kernel-runtime-boundary-verified",
+      "status": "verified",
+      "type": "kernel-verification",
+      "kernel": "runtime-boundary",
+      "changed_reality": "Runtime boundary kernel has an executable probe and passes it.",
+      "verification": [
+        "runtime/bin/redcap boundary check",
+        "runtime/bin/redcap boundary self-check"
+      ],
+      "prism_required": false
+    },
+    {
+      "id": "kernel-session-ownership-verified",
+      "status": "verified",
+      "type": "kernel-verification",
+      "kernel": "session-ownership",
+      "changed_reality": "Session ownership kernel has an executable probe and passes it.",
+      "verification": [
+        "runtime/bin/redcap session-ownership self-check"
+      ],
+      "prism_required": false
+    },
+    {
+      "id": "kernel-fsm-verified",
+      "status": "verified",
+      "type": "kernel-verification",
+      "kernel": "fsm",
+      "changed_reality": "Minimal FSM kernel has executable transition probes and passes them.",
+      "verification": [
+        "runtime/bin/redcap fsm check"
+      ],
+      "prism_required": false
+    },
+    {
+      "id": "kernel-hook-adapter-verified",
+      "status": "verified",
+      "type": "kernel-verification",
+      "kernel": "hook-adapter",
+      "changed_reality": "Codex hook adapter contract has live marker and action-evidence probes and passes them.",
+      "verification": [
+        "runtime/bin/redcap host-hook-audit",
+        "runtime/bin/redcap hook-coverage-check"
+      ],
+      "prism_required": false
+    },
+    {
+      "id": "kernel-completion-semantics-verified",
+      "status": "verified",
+      "type": "kernel-verification",
+      "kernel": "completion-semantics",
+      "changed_reality": "Completion semantics guard rejects proof-only, plan-only, proposal-only, and documentation-only completion claims.",
+      "verification": [
+        "runtime/bin/redcap final-claim self-check",
+        "runtime/bin/redcap lifecycle self-check"
+      ],
+      "prism_required": false
+    },
+    {
+      "id": "kernel-knowledge-gateway-verified",
+      "status": "verified",
+      "type": "kernel-verification",
+      "kernel": "knowledge-gateway",
+      "changed_reality": "Knowledge gateway v1 has index-first and write-review probes and passes them.",
+      "verification": [
+        "runtime/bin/redcap knowledge-gateway check",
+        "runtime/bin/redcap knowledge-gateway self-check"
+      ],
+      "prism_required": false
+    },
+    {
+      "id": "kernel-prism-integration-verified",
+      "status": "verified",
+      "type": "kernel-verification",
+      "kernel": "prism-integration",
+      "changed_reality": "Prism integration has gate, dispatcher, concern-resolution, and ledger probes and passes them.",
+      "verification": [
+        "runtime/prism/bin/prism check",
+        "runtime/bin/redcap prism-resolution --self-check",
+        "runtime/bin/redcap prism-ledger summary"
+      ],
+      "prism_required": false
+    },
+    {
+      "id": "redcap-1.0-final-claim",
+      "status": "verified",
+      "type": "final-claim",
+      "changed_reality": "All 1.0 exit criteria are proven by current-state evidence, then Cap may leave the loop and mark the active goal complete.",
+      "verification": [
+        "runtime/bin/redcap temporary-usable-check",
+        "runtime/bin/redcap check",
+        "final lifecycle packet passes",
+        "final Prism completion review passes or all concerns are resolved"
+      ],
+      "prism_required": true
+    }
+  ],
+  "exit_criteria": [
+    "Every queue item before redcap-1.0-final-claim is verified, no-promote, or explicitly out-of-scope with evidence.",
+    "No extract-and-consume item is completed by extraction, summary, ledger, report, closeout, closure, or Prism review alone.",
+    "The end-to-end trace test passes and asserts no old RedCap module path import.",
+    "The seven 1.0 kernel verification items each have their own executable probe evidence.",
+    "runtime/bin/redcap temporary-usable-check passes.",
+    "runtime/bin/redcap check passes.",
+    "All Prism concerns scoped as blocks-this-item or blocks-1.0 are resolved.",
+    "Human-gated decisions are either not needed for 1.0 or explicitly resolved by Norven."
+  ]
+}

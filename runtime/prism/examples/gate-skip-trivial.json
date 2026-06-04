@@ -1,0 +1,7 @@
+{
+  "task": "Fix a typo in README wording.",
+  "risk_level": "low",
+  "changed_paths": ["README.md"],
+  "tags": ["docs"],
+  "expected_decision": "skipped"
+}

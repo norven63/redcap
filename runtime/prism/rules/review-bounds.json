@@ -1,0 +1,28 @@
+{
+  "schema_id": "redcap-prism-review-bounds",
+  "version": 1,
+  "default_bounds": {
+    "max_evidence_lines": 250,
+    "max_questions": 4,
+    "providers": [
+      "kimi",
+      "claude-code"
+    ],
+    "old_redcap_access": "exact-source-paths-only",
+    "missing_provider_result": "not_acceptance"
+  },
+  "split_protocol": {
+    "required_fields": [
+      "shard_id",
+      "single_question",
+      "candidate_sources",
+      "stop_condition",
+      "acceptance_checks"
+    ],
+    "merge_rule": "merge only same-shard reviews by strictest verdict",
+    "main_agent_response": "accept, reject, or implement each shard result before using it as revival guidance"
+  },
+  "deferred_capability": {
+    "long_task_ledger": "do not build until a concrete task repeatedly breaks these manual bounds"
+  }
+}

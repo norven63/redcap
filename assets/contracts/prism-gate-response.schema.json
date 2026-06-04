@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "schema_id": "prism-gate-response",
+  "type": "object",
+  "required": ["gate", "decision", "risk_level", "matched_rules", "reason", "host_enforcement", "next_step"],
+  "properties": {
+    "gate": { "const": "prism-rule-review" },
+    "decision": { "enum": ["required", "optional", "skipped"] },
+    "review_mode": { "type": ["string", "null"] },
+    "risk_level": { "enum": ["low", "medium", "high", "critical"] },
+    "matched_rules": { "type": "array", "items": { "type": "string" } },
+    "reason": { "type": "string" },
+    "required_providers": { "type": "array", "items": { "enum": ["kimi", "claude-code"] } },
+    "host_enforcement": { "type": "string" },
+    "next_step": { "type": "string" }
+  }
+}

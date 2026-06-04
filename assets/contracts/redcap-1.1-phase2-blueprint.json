@@ -1,0 +1,435 @@
+{
+  "schema_id": "redcap-1.1-phase2-blueprint-contract",
+  "version": 1,
+  "status": "active",
+  "activation_boundary": {
+    "authoritative_path_when_accepted": "assets/contracts/redcap-1.1-phase2-blueprint.json",
+    "not_authoritative_until": [
+      "Prism reviews this proposed-contract.json, not only the request summary",
+      "Cap decides on Prism concerns with accept, reject-with-bounded-followup, or escalate",
+      "A contract-specific checker exists and accepts the authoritative contract",
+      "runtime/bin/redcap check includes or delegates that checker"
+    ],
+    "forbidden_uses": [
+      "claim Phase 2 governance exists",
+      "bulk-read the old RedCap repository",
+      "migrate concrete old RedCap modules",
+      "treat this draft as a bypass for future Prism review"
+    ]
+  },
+  "purpose": "Govern 360-degree old RedCap archaeology by making every scan, extraction, migration decision, directory impact, and no-promote decision a bounded queue item before concrete module migration starts.",
+  "authority_inheritance": {
+    "source_contract": "assets/contracts/redcap-1.0-loop.json",
+    "binding_rule": "RedCap 1.0 verified and no_promote decisions are inherited by Phase 2 and cannot be reopened by queue placement alone.",
+    "reopen_rule": "A 1.0 decision may be challenged only by a new bounded shard with exact sources, a new user directive or explicit Cap risk finding, Prism review, and a resolution that names which prior decision is being challenged.",
+    "non_override_rule": "Phase 2 queue items may refine migration governance, but they may not override RedCap 1.0 exit criteria, terminal decisions, or no-promote records.",
+    "handoff_records": [
+      "assets/evidence/lifecycle/latest-completion.json",
+      "assets/evidence/prism/20260603-redcap-1.0-final-claim/session.json",
+      "assets/archaeology/no-promote/pathology-report-as-progress-v1.json",
+      "assets/archaeology/no-promote/pathology-receipt-as-completion-v1.json",
+      "assets/archaeology/no-promote/pathology-closeout-recursion-v1.json",
+      "assets/archaeology/no-promote/pathology-raw-evidence-default-v1.json"
+    ]
+  },
+  "queue_amendment_protocol": {
+    "allowed_actors": [
+      "Cap as main executor after RedCap gate",
+      "Norven by explicit directive"
+    ],
+    "required_steps": [
+      "Run runtime/bin/redcap gate for the amendment task",
+      "Name exact old source files before any old RedCap read",
+      "Provide one question, stop condition, acceptance criteria, risk level, expected output, and destination boundary hypothesis",
+      "Run Prism review for high-risk, structural, migration, deletion, hook, lifecycle, or directory-impacting amendments",
+      "Re-run runtime/bin/redcap phase2-blueprint check against the amended contract",
+      "Re-run runtime/bin/redcap check before treating the amendment as active"
+    ],
+    "fresh_prism_required_when": [
+      "the amendment adds a new old-source domain",
+      "the amendment changes classification taxonomy or destination boundaries",
+      "the amendment reopens a 1.0 verified or no_promote decision",
+      "the amendment changes hook, gate, lifecycle, or directory policy"
+    ],
+    "forbidden_amendments": [
+      "append a queue item with directory-only old sources",
+      "append a queue item without a stop condition",
+      "append a queue item that authorizes concrete module migration directly",
+      "use this contract as standing approval to bulk-read old RedCap"
+    ]
+  },
+  "global_invariants": [
+    {
+      "id": "P2-I01",
+      "rule": "Old RedCap access is exact-file-first; directory-wide bulk reads are invalid unless Norven explicitly authorizes a bounded exception.",
+      "enforcement_target": "runtime checker plus lifecycle review"
+    },
+    {
+      "id": "P2-I02",
+      "rule": "A shard cannot advance only because it produced a report, review, receipt, ledger entry, closeout artifact, or summary.",
+      "enforcement_target": "runtime checker plus final-claim guard integration"
+    },
+    {
+      "id": "P2-I03",
+      "rule": "Every extracted design idea must be classified as keep, redesign, discard, pathology, or no_promote before migration.",
+      "enforcement_target": "phase2 blueprint checker"
+    },
+    {
+      "id": "P2-I04",
+      "rule": "Every keep or redesign decision must name a destination boundary: runtime, runtime_prism, assets_contracts, assets_archaeology, assets_knowledge, assets_docs, host_adapter, or external_project_policy.",
+      "enforcement_target": "phase2 blueprint checker"
+    },
+    {
+      "id": "P2-I05",
+      "rule": "Every pathology or discard decision must state whether it needs a hard hook, deterministic gate, lifecycle rule, knowledge entry, no-promote decision, or no further action.",
+      "enforcement_target": "phase2 blueprint checker"
+    },
+    {
+      "id": "P2-I06",
+      "rule": "The current scaffold is a constraint, not a prison; any directory-structure change must be explicit, reviewed, and checked against the thin-root policy.",
+      "enforcement_target": "layout guard plus Prism"
+    },
+    {
+      "id": "P2-I07",
+      "rule": "Provider disagreement is not hidden: Cap must record accept, reject-with-followup, or escalate for each concern/block before a shard advances.",
+      "enforcement_target": "Prism resolution checker"
+    }
+  ],
+  "classification_taxonomy": {
+    "allowed_values": [
+      "keep",
+      "redesign",
+      "discard",
+      "pathology",
+      "no_promote"
+    ],
+    "definitions": {
+      "keep": "Portable old RedCap design can be copied or mirrored with small adaptation.",
+      "redesign": "Design intent is valuable but old implementation shape is not portable.",
+      "discard": "Neither design nor implementation should enter new RedCap.",
+      "pathology": "Old design or workflow contributed to failure modes and needs an explicit guardrail decision.",
+      "no_promote": "The lesson is retained, but the old module or mechanism is intentionally not promoted."
+    }
+  },
+  "destination_boundaries": {
+    "allowed_values": [
+      "runtime",
+      "runtime_prism",
+      "runtime_host_adapter",
+      "assets_contracts",
+      "assets_archaeology",
+      "assets_knowledge",
+      "assets_docs",
+      "external_project_policy",
+      "no_destination"
+    ],
+    "directory_contract_sources": [
+      "assets/contracts/directory-structure.json",
+      "assets/docs/directory-architecture.md"
+    ]
+  },
+  "queue_entry_shape": {
+    "required_fields": [
+      "id",
+      "phase",
+      "question",
+      "exact_old_sources",
+      "stop_condition",
+      "acceptance_criteria",
+      "risk_level",
+      "requires_prism",
+      "expected_output",
+      "status"
+    ],
+    "allowed_status": [
+      "queued",
+      "extracting",
+      "classified",
+      "ready_for_migration_review",
+      "migrating",
+      "verified",
+      "no_promote",
+      "blocked"
+    ],
+    "source_limits": {
+      "default_max_files_per_shard": 7,
+      "directory_paths_allowed": false,
+      "private_archives_allowed": false,
+      "raw_prism_runs_allowed_by_default": false,
+      "enforced_by_checker": [
+        "directory-like source paths are rejected",
+        "wildcard source paths are rejected",
+        "private archive and raw prism run path patterns are rejected when disabled",
+        "when the old RedCap root is reachable, every exact source must be a readable file"
+      ]
+    }
+  },
+  "idea_record_shape": {
+    "required_fields": [
+      "id",
+      "source_shard",
+      "source_refs",
+      "summary",
+      "classification",
+      "destination_boundary",
+      "migration_action",
+      "hook_or_gate_assessment",
+      "verification_route"
+    ],
+    "migration_action_values": [
+      "copy",
+      "redesign",
+      "record_no_promote",
+      "discard",
+      "ask_norven",
+      "defer"
+    ],
+    "hook_or_gate_values": [
+      "hard_hook",
+      "deterministic_gate",
+      "lifecycle_validator",
+      "final_claim_guard",
+      "prism_protocol",
+      "knowledge_gateway",
+      "layout_guard",
+      "no_hook_needed",
+      "needs_design"
+    ]
+  },
+  "phases": [
+    {
+      "id": "P2-A",
+      "name": "Inventory From Existing Source Maps",
+      "entry_rule": "Use assets/archaeology/shards/index.json and current no-promote/extraction records before opening any old RedCap file.",
+      "exit_rule": "Every candidate domain has an exact-source shard or an explicit blocked reason."
+    },
+    {
+      "id": "P2-B",
+      "name": "Bounded Extraction",
+      "entry_rule": "One shard question, exact source list, stop condition, and acceptance criteria exist.",
+      "exit_rule": "Extraction records portable guarantees, discard/defer choices, read policy, and verification evidence."
+    },
+    {
+      "id": "P2-C",
+      "name": "Classification And Governance",
+      "entry_rule": "Extraction exists or a no-promote record exists.",
+      "exit_rule": "Every design idea has a classification, destination boundary, hook/gate assessment, and verification route."
+    },
+    {
+      "id": "P2-D",
+      "name": "Migration Review",
+      "entry_rule": "Only keep/redesign ideas with destination boundaries can enter migration review.",
+      "exit_rule": "Prism and lifecycle authorize concrete implementation or the item is blocked/escalated."
+    },
+    {
+      "id": "P2-E",
+      "name": "Verified Migration",
+      "entry_rule": "Concrete implementation has a lifecycle packet and gate decision.",
+      "exit_rule": "Changed runtime/contract/knowledge reality is verified by item-specific checks and runtime/bin/redcap check."
+    }
+  ],
+  "initial_queue": [
+    {
+      "id": "runtime-workspace-boundary",
+      "phase": "P2-C",
+      "question": "Which old RedCap rules separate runtime root, project workspace, and user-private state?",
+      "exact_old_sources": [
+        "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "stop_condition": "Use the already extracted boundary shard; do not reopen old sources unless a later review names a missing question.",
+      "acceptance_criteria": [
+        "Existing extraction remains bounded",
+        "Portable guarantees are mapped to runtime boundary implementation or explicit defer choices",
+        "Self-development exception remains explicit"
+      ],
+      "risk_level": "high",
+      "requires_prism": true,
+      "expected_output": "idea records mapped from assets/archaeology/extractions/runtime-workspace-boundary-v1.json",
+      "status": "classified"
+    },
+    {
+      "id": "development-lifecycle-review",
+      "phase": "P2-B",
+      "question": "Which old review tracks are portable without duplicating the new FSM?",
+      "exact_old_sources": [
+        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ],
+      "stop_condition": "Extract review-track semantics only; do not migrate old report bodies or create a second state machine.",
+      "acceptance_criteria": [
+        "Useful lifecycle evidence maps to the current development_lifecycle validator",
+        "Any duplicate FSM behavior is classified redesign or no_promote",
+        "Report-as-progress pathology is not reintroduced"
+      ],
+      "risk_level": "high",
+      "requires_prism": true,
+      "expected_output": "assets/archaeology/extractions/development-lifecycle-review-v1.json",
+      "status": "queued"
+    },
+    {
+      "id": "long-task-context-defense",
+      "phase": "P2-B",
+      "question": "Which old long-task defenses should become Prism shard ledger rules?",
+      "exact_old_sources": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "stop_condition": "Extract split, budget, context, and acceptance rules only; do not import old task ledgers wholesale.",
+      "acceptance_criteria": [
+        "Long tasks split into bounded shard accounts",
+        "Cap-owned acceptance remains separate from provider output",
+        "Context-heavy artifacts are index-first rather than default-loaded"
+      ],
+      "risk_level": "high",
+      "requires_prism": true,
+      "expected_output": "assets/archaeology/extractions/long-task-context-defense-v1.json",
+      "status": "queued"
+    }
+  ],
+  "prior_decisions": [
+    {
+      "id": "pathology-report-as-progress",
+      "decision": "no_promote",
+      "source": "assets/archaeology/no-promote/pathology-report-as-progress-v1.json",
+      "binding_effect": "Reports remain support evidence only and cannot satisfy completion alone.",
+      "reopen_requires": "new bounded evidence plus Prism concern resolution"
+    },
+    {
+      "id": "pathology-receipt-as-completion",
+      "decision": "no_promote",
+      "source": "assets/archaeology/no-promote/pathology-receipt-as-completion-v1.json",
+      "binding_effect": "Receipts remain proof after changed reality and cannot become completion authority.",
+      "reopen_requires": "new bounded evidence plus Prism concern resolution"
+    },
+    {
+      "id": "pathology-closeout-recursion",
+      "decision": "no_promote",
+      "source": "assets/archaeology/no-promote/pathology-closeout-recursion-v1.json",
+      "binding_effect": "Closeout evidence is support-only and old closeout runtime is not promoted by default.",
+      "reopen_requires": "new bounded evidence plus Prism concern resolution"
+    },
+    {
+      "id": "pathology-raw-evidence-default",
+      "decision": "no_promote",
+      "source": "assets/archaeology/no-promote/pathology-raw-evidence-default-v1.json",
+      "binding_effect": "Raw evidence stays explicit-access and is not default context.",
+      "reopen_requires": "new bounded evidence plus Prism concern resolution"
+    }
+  ],
+  "initial_idea_records": [
+    {
+      "id": "boundary-default-project-workspace",
+      "source_shard": "runtime-workspace-boundary",
+      "source_refs": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G01",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G02",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G03"
+      ],
+      "summary": "Workspace-oriented commands must resolve the managed project workspace and task file from caller context instead of defaulting into RedCap runtime root.",
+      "classification": "keep",
+      "destination_boundary": "runtime",
+      "migration_action": "copy",
+      "hook_or_gate_assessment": "lifecycle_validator",
+      "verification_route": [
+        "runtime/bin/redcap boundary self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "boundary-self-development-exception",
+      "source_shard": "runtime-workspace-boundary",
+      "source_refs": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G04",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G09"
+      ],
+      "summary": "Self-development may make project_workspace equal runtime_root, but only as an explicit exception; the old idea is valuable while the exception handling must be redesigned around the current boundary resolver and lifecycle gate.",
+      "classification": "redesign",
+      "destination_boundary": "runtime",
+      "migration_action": "redesign",
+      "hook_or_gate_assessment": "lifecycle_validator",
+      "verification_route": [
+        "runtime/bin/redcap boundary check",
+        "runtime/bin/redcap lifecycle self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "boundary-status-diagnostics",
+      "source_shard": "runtime-workspace-boundary",
+      "source_refs": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G05"
+      ],
+      "summary": "Status and diagnose output should expose runtime root, project workspace, task file, and user-state policy.",
+      "classification": "keep",
+      "destination_boundary": "runtime",
+      "migration_action": "copy",
+      "hook_or_gate_assessment": "no_hook_needed",
+      "verification_route": [
+        "runtime/bin/redcap boundary check"
+      ]
+    },
+    {
+      "id": "boundary-command-resolution-parity",
+      "source_shard": "runtime-workspace-boundary",
+      "source_refs": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G06",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G07",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G08"
+      ],
+      "summary": "Revive, summary, doctor, and debug-style commands should share the same workspace and task-file resolution instead of each command inventing a fallback.",
+      "classification": "redesign",
+      "destination_boundary": "runtime",
+      "migration_action": "redesign",
+      "hook_or_gate_assessment": "deterministic_gate",
+      "verification_route": [
+        "runtime/bin/redcap boundary self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "report-presence-as-completion",
+      "source_shard": "pathology-report-as-progress",
+      "source_refs": [
+        "assets/archaeology/no-promote/pathology-report-as-progress-v1.json"
+      ],
+      "summary": "Report or summary presence must never complete a task without runtime, contract, knowledge, or RedCap command evidence.",
+      "classification": "pathology",
+      "destination_boundary": "assets_archaeology",
+      "migration_action": "record_no_promote",
+      "hook_or_gate_assessment": "final_claim_guard",
+      "verification_route": [
+        "python3 runtime/core/revival_loop.py self-check",
+        "runtime/bin/redcap check"
+      ]
+    }
+  ],
+  "required_checker": {
+    "proposed_command": "runtime/bin/redcap phase2-blueprint check --contract assets/contracts/redcap-1.1-phase2-blueprint.json",
+    "minimum_assertions": [
+      "status is active only for authoritative contract path, never for evidence drafts",
+      "all queue entries contain exact_old_sources and no directory paths",
+      "all queue entries contain stop_condition and acceptance_criteria",
+      "all idea records use constrained classification and destination values",
+      "keep/redesign ideas have non-empty verification_route",
+      "pathology/no_promote/discard ideas have hook_or_gate_assessment",
+      "no entry with status verified depends only on docs, reports, ledgers, receipts, or reviews",
+      "runtime/bin/redcap check delegates or includes this checker"
+    ]
+  },
+  "human_intervention_rules": [
+    "Ask Norven before reading private archives, raw prism runs, old task bodies, old receipts, or old closeout ledgers.",
+    "Ask Norven before deleting, moving, or pruning old RedCap evidence.",
+    "Ask Norven before changing provider policy or adding providers beyond Kimi and Claude Code.",
+    "Ask Norven before changing Cap identity, soul loader semantics, or user-private state boundaries."
+  ],
+  "phase2_exit_criteria": [
+    "The authoritative contract exists under assets/contracts.",
+    "The contract-specific checker exists and is included in runtime/bin/redcap check.",
+    "Every initial queue item is represented in the authoritative contract.",
+    "At least one item that is currently queued in the authoritative contract reaches verified through bounded extraction before Phase 2 can authorize concrete old module migration.",
+    "At least one keep/redesign idea and one pathology/no_promote prior decision pass checker validation.",
+    "Prism has reviewed the authoritative contract and any concerns have accepted/rejected/escalated resolutions.",
+    "No concrete old module migration has started before the contract is active."
+  ]
+}

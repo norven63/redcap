@@ -1,0 +1,3 @@
+{"event":"UserPromptSubmit","session_id":"fixture-session","turn_id":"fixture-required-git-read-only","recorded_at":"2026-06-01T00:00:00+00:00","gate_decision":"required"}
+{"event":"PostToolUse","session_id":"fixture-session","turn_id":"fixture-required-git-read-only","tool_name":"exec_command","tool_command":{"text":"git status --short"}}
+{"event":"PostToolUse","session_id":"fixture-session","turn_id":"fixture-required-git-read-only","tool_name":"Bash","tool_command":{"text":"git diff -- runtime/core/development_lifecycle.py"}}

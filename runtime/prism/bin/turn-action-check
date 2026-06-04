@@ -1,0 +1,266 @@
+#!/usr/bin/env python3
+"""Check whether a required RedCap prompt has same-turn action evidence."""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import pathlib
+import re
+import shlex
+import sys
+from typing import Any
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[1]
+sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
+from prompt_intent import prompt_intent_from_event  # noqa: E402
+
+DEFAULT_EVENTS = REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
+READ_ONLY_TOOL_NAMES = {"ReadFile", "Grep", "Glob", "FetchURL", "SearchWeb", "ReadMediaFile"}
+SHELL_TOOL_NAMES = {"exec_command", "functions.exec_command", "Bash", "Shell"}
+MUTATING_COMMANDS = {"chmod", "cp", "mkdir", "mv", "rm", "rmdir", "touch"}
+MUTATING_GIT_SUBCOMMANDS = {"add", "apply", "checkout", "cherry-pick", "clean", "commit", "merge", "mv", "pull", "push", "rebase", "reset", "restore", "rm", "stash", "switch", "tag"}
+SUBSTANTIVE_REDCAP_COMMANDS = {
+    ("runtime/bin/redcap", "prism-dispatch"),
+    ("runtime/bin/redcap", "prism-ledger"),
+    ("runtime/prism/bin/prism", "merge"),
+    ("runtime/prism/bin/prism", "session-init"),
+    ("runtime/prism/bin/prism-dispatch",),
+    ("runtime/prism/bin/prism-ledger",),
+}
+
+
+def load_events(path: pathlib.Path) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    if not path.exists():
+        return events
+    for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not raw_line.strip():
+            continue
+        try:
+            payload = json.loads(raw_line)
+        except json.JSONDecodeError as exc:
+            raise SystemExit(f"invalid JSONL at {path}:{line_number}: {exc}") from exc
+        if isinstance(payload, dict):
+            events.append(payload)
+    return events
+
+
+def parse_time(value: Any) -> dt.datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed
+
+
+def same_turn(event: dict[str, Any], session_id: str, turn_id: str) -> bool:
+    return event.get("session_id") == session_id and event.get("turn_id") == turn_id
+
+
+def command_text(event: dict[str, Any]) -> str:
+    command = event.get("tool_command_text")
+    if isinstance(command, str):
+        return command
+    tool_command = event.get("tool_command")
+    if isinstance(tool_command, dict):
+        for key in ["text", "excerpt", "normalized_excerpt"]:
+            value = tool_command.get(key)
+            if isinstance(value, str):
+                return value
+    tool_input = event.get("tool_input")
+    if isinstance(tool_input, dict):
+        for key in ["command", "cmd"]:
+            value = tool_input.get(key)
+            if isinstance(value, str):
+                return value
+    return ""
+
+
+def split_command_segments(command: str) -> list[list[str]]:
+    segments: list[list[str]] = []
+    for segment in re.split(r"\s*(?:&&|\|\||;|\|)\s*", command):
+        if not segment.strip():
+            continue
+        try:
+            parts = shlex.split(segment)
+        except ValueError:
+            parts = segment.split()
+        if parts:
+            segments.append(parts)
+    return segments
+
+
+def normalized_head(parts: list[str]) -> str:
+    return parts[0].split("/")[-1] if parts else ""
+
+
+def matches_command_tuple(parts: list[str], expected: tuple[str, ...]) -> bool:
+    if len(parts) < len(expected):
+        return False
+    return tuple(part.strip() for part in parts[:len(expected)]) == expected
+
+
+def shell_command_is_substantive(command: str) -> bool:
+    if not command.strip():
+        return False
+    for parts in split_command_segments(command):
+        head = normalized_head(parts)
+        if head in MUTATING_COMMANDS:
+            return True
+        if head == "git" and len(parts) > 1 and parts[1] in MUTATING_GIT_SUBCOMMANDS:
+            return True
+        if head == "sed" and any(part.startswith("-") and "i" in part and not part.startswith("--") for part in parts[1:]):
+            return True
+        if head == "perl" and any(part.startswith("-") and "i" in part and not part.startswith("--") for part in parts[1:]):
+            return True
+        if head == "find" and any(part in {"-delete", "-exec", "-execdir"} for part in parts[1:]):
+            return True
+        for expected in SUBSTANTIVE_REDCAP_COMMANDS:
+            if matches_command_tuple(parts, expected):
+                return True
+    return False
+
+
+def is_substantive_action(event: dict[str, Any]) -> bool:
+    tool_name = str(event.get("tool_name") or "")
+    if tool_name in READ_ONLY_TOOL_NAMES:
+        return False
+    if tool_name in SHELL_TOOL_NAMES:
+        return shell_command_is_substantive(command_text(event))
+    return True
+
+
+def is_diagnostic_evidence(event: dict[str, Any]) -> bool:
+    tool_name = str(event.get("tool_name") or "")
+    if tool_name in READ_ONLY_TOOL_NAMES:
+        return True
+    if tool_name in SHELL_TOOL_NAMES:
+        command = command_text(event)
+        return bool(command.strip()) and not shell_command_is_substantive(command)
+    return not is_substantive_action(event)
+
+
+def latest_prompt(events: list[dict[str, Any]], session_id: str | None, turn_id: str | None) -> dict[str, Any] | None:
+    prompts = [
+        event for event in events
+        if event.get("event") == "UserPromptSubmit"
+        and (session_id is None or event.get("session_id") == session_id)
+        and (turn_id is None or event.get("turn_id") == turn_id)
+    ]
+    return prompts[-1] if prompts else None
+
+
+def check_turn(events: list[dict[str, Any]], session_id: str | None, turn_id: str | None, max_age_seconds: int | None) -> dict[str, Any]:
+    prompt = latest_prompt(events, session_id, turn_id)
+    if prompt is None:
+        return {
+            "ok": True,
+            "required_prompt": False,
+            "reason": "No UserPromptSubmit marker found for the requested scope.",
+            "actions": 0,
+        }
+    prompt_session = prompt.get("session_id")
+    prompt_turn = prompt.get("turn_id")
+    if not isinstance(prompt_session, str) or not isinstance(prompt_turn, str):
+        return {
+            "ok": False,
+            "required_prompt": prompt.get("gate_decision") == "required",
+            "reason": "Latest UserPromptSubmit marker is missing session_id or turn_id.",
+            "actions": 0,
+        }
+    if max_age_seconds is not None:
+        recorded_at = parse_time(prompt.get("recorded_at"))
+        if recorded_at is None:
+            return {
+                "ok": False,
+                "required_prompt": prompt.get("gate_decision") == "required",
+                "reason": "Latest UserPromptSubmit marker has invalid recorded_at.",
+                "actions": 0,
+            }
+        age = dt.datetime.now(dt.timezone.utc) - recorded_at
+        if age.total_seconds() > max_age_seconds:
+            return {
+                "ok": False,
+                "required_prompt": prompt.get("gate_decision") == "required",
+                "reason": f"Latest UserPromptSubmit marker is stale: {int(age.total_seconds())}s old.",
+                "actions": 0,
+            }
+    required = prompt.get("gate_decision") == "required"
+    actions = [
+        event for event in events
+        if same_turn(event, prompt_session, prompt_turn)
+        and event.get("event") == "PostToolUse"
+        and is_substantive_action(event)
+    ]
+    diagnostic_actions = [
+        event for event in events
+        if same_turn(event, prompt_session, prompt_turn)
+        and event.get("event") == "PostToolUse"
+        and is_diagnostic_evidence(event)
+    ]
+    prompt_intent = prompt_intent_from_event(prompt)
+    action_policy = prompt_intent.get("action_evidence", "substantive")
+    if not required:
+        ok = True
+        reason = "Prompt is not required."
+    elif action_policy == "none":
+        ok = True
+        reason = "Required answer-only prompt does not require same-turn task-body action evidence."
+    elif action_policy == "diagnostic":
+        ok = bool(diagnostic_actions or actions)
+        reason = (
+            "Required diagnostic/review prompt has same-turn diagnostic evidence."
+            if ok else "Required diagnostic/review prompt has no same-turn diagnostic evidence."
+        )
+    else:
+        ok = bool(actions)
+        reason = (
+            "Required prompt has same-turn substantive action evidence."
+            if ok else "Required prompt has no same-turn PostToolUse substantive action evidence."
+        )
+    return {
+        "ok": ok,
+        "required_prompt": required,
+        "session_id": prompt_session,
+        "turn_id": prompt_turn,
+        "gate_decision": prompt.get("gate_decision"),
+        "gate_matched_rules": prompt.get("gate_matched_rules", []),
+        "prompt_intent": prompt_intent,
+        "action_evidence_policy": action_policy,
+        "actions": len(actions),
+        "diagnostic_actions": len(diagnostic_actions),
+        "action_tools": sorted({str(action.get("tool_name")) for action in actions if action.get("tool_name")}),
+        "diagnostic_action_tools": sorted({
+            str(action.get("tool_name")) for action in diagnostic_actions if action.get("tool_name")
+        }),
+        "reason": reason,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Check required-prompt action evidence")
+    parser.add_argument("--events", default=str(DEFAULT_EVENTS))
+    parser.add_argument("--session-id")
+    parser.add_argument("--turn-id")
+    parser.add_argument("--max-age-seconds", type=int)
+    args = parser.parse_args()
+
+    events = load_events(pathlib.Path(args.events).resolve())
+    result = check_turn(events, args.session_id, args.turn_id, args.max_age_seconds)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["ok"]:
+        return 1
+    print("REDCAP_TURN_ACTION_OK")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

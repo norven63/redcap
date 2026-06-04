@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "schema_id": "prism-gate-request",
+  "type": "object",
+  "required": ["task"],
+  "properties": {
+    "task": { "type": "string", "minLength": 1 },
+    "user_intent": { "type": "string" },
+    "main_claim": { "type": "string" },
+    "risk_level": { "enum": ["low", "medium", "high", "critical"] },
+    "changed_paths": { "type": "array", "items": { "type": "string" } },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}

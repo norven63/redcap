@@ -1,0 +1,1874 @@
+#!/usr/bin/env python3
+"""Small local Prism helper.
+
+This command does not call providers. It prepares review briefs for Kimi or
+Claude Code, performs lightweight JSON validation, and merges provider verdicts
+without hiding disagreement.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import fnmatch
+import json
+import pathlib
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from typing import Any
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[1]
+sys.path.insert(0, str(ROOT / "lib"))
+from prism_lock import file_lock, write_json_atomic, write_text_atomic  # noqa: E402
+from prism_ledger import record_gate, record_manifest  # noqa: E402
+
+ALLOWED_PROVIDERS = {"kimi", "claude-code"}
+VERDICT_RANK = {"pass": 0, "concern": 1, "block": 2}
+GATE_RANK = {"skipped": 0, "optional": 1, "required": 2}
+PRISM_CONCERN_RESOLUTION_SCHEMA_ID = "prism-concern-resolution"
+PRISM_REBUTTAL_REQUEST_GENERATOR = "runtime/prism/bin/prism rebuttal-request"
+SESSION_STATUSES = {"active", "converged", "main-decided", "escalated", "expired", "closed"}
+PROVIDER_SESSION_STATUSES = {"pending", "active", "converged", "escalated", "expired", "closed"}
+SELF_DEVELOPMENT_LIFECYCLE_RISKS = {"medium", "high", "critical"}
+SELF_DEVELOPMENT_LIFECYCLE_TERMS = {
+    "redcap",
+    "prism",
+    "棱镜",
+    "复活",
+    "scaffold",
+    "脚手架",
+    "architecture",
+    "directory",
+    "目录",
+    "runtime",
+    "hook",
+    "session",
+    "会话",
+    "fsm",
+    "workflow",
+    "工作流",
+    "lifecycle",
+    "archaeology",
+    "考古",
+    "provider",
+    "dispatcher",
+    "knowledge",
+    "知识库",
+}
+SELF_DEVELOPMENT_LIFECYCLE_TAGS = {
+    "architecture",
+    "redcap-revival",
+    "redcap-self-development",
+    "runtime",
+    "hook",
+    "session",
+    "fsm",
+    "lifecycle",
+    "archaeology",
+    "provider-dispatcher",
+    "knowledge",
+}
+SELF_DEVELOPMENT_LIFECYCLE_PATH_GLOBS = {
+    "AGENTS.md",
+    "runtime/**",
+    "assets/contracts/**",
+    "assets/docs/**",
+    "assets/archaeology/**",
+    "assets/knowledge/**",
+}
+DIAGNOSTIC_ONLY_TERMS = {
+    "not",
+    "no ",
+    "does not",
+    "do not",
+    "without",
+    "missing",
+    "unimplemented",
+    "not implemented",
+    "not yet",
+    "has not",
+    "have not",
+    "未",
+    "没有",
+    "尚未",
+    "不能",
+}
+
+
+def iso_now() -> str:
+    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+
+
+def load_json(path: pathlib.Path) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid json: {path}: {exc}") from exc
+
+
+def require_keys(payload: dict[str, Any], keys: list[str], label: str) -> None:
+    missing = [key for key in keys if key not in payload]
+    if missing:
+        raise SystemExit(f"{label} missing required keys: {', '.join(missing)}")
+
+
+def validate_request(path: pathlib.Path) -> None:
+    payload = load_json(path)
+    if not isinstance(payload, dict):
+        raise SystemExit(f"request must be an object: {path}")
+    require_keys(
+        payload,
+        [
+            "task",
+            "user_intent",
+            "main_claim",
+            "changed_reality",
+            "review_mode",
+            "risk_level",
+            "requested_providers",
+        ],
+        "request",
+    )
+    providers = payload.get("requested_providers")
+    if not isinstance(providers, list) or not providers:
+        raise SystemExit("request requested_providers must be a non-empty list")
+    unknown = sorted(set(providers) - ALLOWED_PROVIDERS)
+    if unknown:
+        raise SystemExit(f"request includes excluded providers: {', '.join(unknown)}")
+
+
+def validate_review(path: pathlib.Path) -> None:
+    payload = load_json(path)
+    if not isinstance(payload, dict):
+        raise SystemExit(f"review must be an object: {path}")
+    require_keys(
+        payload,
+        [
+            "provider",
+            "verdict",
+            "confidence",
+            "reality_delta",
+            "main_concern",
+            "top_risks",
+            "missing_evidence",
+            "minimum_fix",
+            "anti_loop_signal",
+            "user_intent_alignment",
+        ],
+        "review",
+    )
+    provider = payload.get("provider")
+    if provider not in ALLOWED_PROVIDERS:
+        raise SystemExit(f"review provider is excluded: {provider}")
+    verdict = payload.get("verdict")
+    if verdict not in VERDICT_RANK:
+        raise SystemExit(f"review verdict must be pass, concern, or block: {verdict}")
+
+
+def validate_capability_status(path: pathlib.Path) -> None:
+    payload = load_json(path)
+    if not isinstance(payload, dict):
+        raise SystemExit(f"capability status must be an object: {path}")
+    require_keys(payload, ["schema_id", "capability", "status", "completion_claim"], "capability status")
+    if payload["schema_id"] != "redcap-capability-status":
+        raise SystemExit("capability status schema_id must be redcap-capability-status")
+    if payload["status"] not in {
+        "not_started",
+        "documented_only",
+        "partially_implemented",
+        "manually_runnable",
+        "tested",
+        "operational",
+    }:
+        raise SystemExit(f"invalid capability status: {payload['status']}")
+    if not str(payload["completion_claim"]).strip():
+        raise SystemExit("capability status completion_claim must be non-empty")
+
+
+def validate_session_manifest(path: pathlib.Path) -> None:
+    payload = load_json(path)
+    if not isinstance(payload, dict):
+        raise SystemExit(f"session manifest must be an object: {path}")
+    require_keys(
+        payload,
+        [
+            "schema_id",
+            "task_id",
+            "run_dir",
+            "status",
+            "max_rounds_per_provider",
+            "created_at",
+            "updated_at",
+            "providers",
+            "convergence",
+        ],
+        "session manifest",
+    )
+    if payload["schema_id"] != "prism-session-manifest":
+        raise SystemExit("session manifest schema_id must be prism-session-manifest")
+    if payload["status"] not in SESSION_STATUSES:
+        raise SystemExit(f"session manifest status invalid: {payload['status']}")
+    max_rounds = payload["max_rounds_per_provider"]
+    if not isinstance(max_rounds, int) or max_rounds < 1 or max_rounds > 5:
+        raise SystemExit("session manifest max_rounds_per_provider must be an integer from 1 to 5")
+    providers = payload["providers"]
+    if not isinstance(providers, dict):
+        raise SystemExit("session manifest providers must be an object")
+    for provider in ALLOWED_PROVIDERS:
+        if provider not in providers:
+            raise SystemExit(f"session manifest missing provider: {provider}")
+        record = providers[provider]
+        if not isinstance(record, dict):
+            raise SystemExit(f"session manifest provider record must be an object: {provider}")
+        require_keys(
+            record,
+            ["session_handle", "round_count", "status", "last_review"],
+            f"session manifest provider {provider}",
+        )
+        handle = record["session_handle"]
+        if handle is not None and not isinstance(handle, str):
+            raise SystemExit(f"session_handle must be string or null: {provider}")
+        round_count = record["round_count"]
+        if not isinstance(round_count, int) or round_count < 0 or round_count > max_rounds:
+            raise SystemExit(f"round_count invalid for {provider}")
+        if record["status"] not in PROVIDER_SESSION_STATUSES:
+            raise SystemExit(f"provider session status invalid for {provider}: {record['status']}")
+        last_review = record["last_review"]
+        if last_review is not None and not isinstance(last_review, str):
+            raise SystemExit(f"last_review must be string or null: {provider}")
+    convergence = payload["convergence"]
+    if not isinstance(convergence, dict):
+        raise SystemExit("session manifest convergence must be an object")
+    require_keys(convergence, ["state", "reason"], "session manifest convergence")
+    if convergence["state"] not in {"unresolved", "converged", "main-decided", "escalated"}:
+        raise SystemExit(f"convergence state invalid: {convergence['state']}")
+    if not isinstance(convergence["reason"], str):
+        raise SystemExit("convergence reason must be a string")
+
+
+def validate_gate_request(payload: dict[str, Any], label: str = "gate request") -> None:
+    task = payload.get("task")
+    if not isinstance(task, str) or not task.strip():
+        raise SystemExit(f"{label} task must be a non-empty string")
+    risk_level = payload.get("risk_level", "medium")
+    if risk_level not in {"low", "medium", "high", "critical"}:
+        raise SystemExit(f"{label} risk_level must be low, medium, high, or critical")
+    for list_key in ["changed_paths", "tags"]:
+        value = payload.get(list_key, [])
+        if value is not None and not (
+            isinstance(value, list) and all(isinstance(item, str) for item in value)
+        ):
+            raise SystemExit(f"{label} {list_key} must be a list of strings")
+
+
+def non_empty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def non_empty_string_list(value: Any) -> bool:
+    return (
+        isinstance(value, list)
+        and bool(value)
+        and all(isinstance(item, str) and item.strip() for item in value)
+    )
+
+
+def resolve_reference_path(raw: str, base_dir: pathlib.Path | None = None) -> pathlib.Path:
+    path = pathlib.Path(raw)
+    if path.is_absolute():
+        return path.resolve()
+    if base_dir is not None:
+        candidate = (base_dir / path).resolve()
+        if candidate.exists():
+            return candidate
+    return (REPO_ROOT / path).resolve()
+
+
+def path_matches_reference(raw: str, actual: pathlib.Path, base_dir: pathlib.Path | None = None) -> bool:
+    try:
+        return resolve_reference_path(raw, base_dir) == actual.resolve()
+    except OSError:
+        return False
+
+
+def load_review_for_resolution(path: pathlib.Path, failures: list[str], label: str) -> dict[str, Any] | None:
+    try:
+        validate_review(path)
+        review = load_json(path)
+    except SystemExit as exc:
+        failures.append(f"{label} invalid Prism review: {exc}")
+        return None
+    if not isinstance(review, dict):
+        failures.append(f"{label} review must be an object")
+        return None
+    return review
+
+
+def concern_review_key(review: dict[str, Any]) -> tuple[str, str]:
+    return str(review.get("provider")), str(review.get("verdict"))
+
+
+def merge_verdicts(merge: dict[str, Any]) -> list[dict[str, Any]]:
+    verdicts = merge.get("verdicts")
+    if isinstance(verdicts, list):
+        return [item for item in verdicts if isinstance(item, dict)]
+    strictest_provider = merge.get("strictest_provider")
+    strictest_verdict = merge.get("strictest_verdict")
+    if strictest_provider in ALLOWED_PROVIDERS and strictest_verdict in VERDICT_RANK:
+        return [{"provider": strictest_provider, "verdict": strictest_verdict, "confidence": "unknown"}]
+    return []
+
+
+def load_resolution_reviews(
+    resolution: dict[str, Any],
+    resolution_dir: pathlib.Path,
+    cli_reviews: list[str] | None,
+    failures: list[str],
+) -> list[dict[str, Any]]:
+    review_refs = cli_reviews or resolution.get("reviews", [])
+    if not isinstance(review_refs, list):
+        failures.append("resolution.reviews must be a list when present")
+        return []
+    reviews: list[dict[str, Any]] = []
+    for index, raw_ref in enumerate(review_refs):
+        if not non_empty_string(raw_ref):
+            failures.append(f"resolution.reviews[{index}] must be a non-empty path string")
+            continue
+        review_path = resolve_reference_path(str(raw_ref), resolution_dir)
+        review = load_review_for_resolution(review_path, failures, f"resolution.reviews[{index}]")
+        if review is not None:
+            review["_path"] = str(review_path)
+            reviews.append(review)
+    return reviews
+
+
+def expected_concern_reviews(
+    merge: dict[str, Any],
+    resolution_reviews: list[dict[str, Any]],
+    failures: list[str],
+) -> list[dict[str, Any]]:
+    expected: list[dict[str, Any]] = [
+        review for review in resolution_reviews if review.get("verdict") in {"concern", "block"}
+    ]
+    if expected:
+        return expected
+    if merge.get("must_respond") is not True:
+        return []
+    for item in merge_verdicts(merge):
+        provider = item.get("provider")
+        verdict = item.get("verdict")
+        if provider in ALLOWED_PROVIDERS and verdict in {"concern", "block"}:
+            expected.append({"provider": provider, "verdict": verdict, "_path": None})
+    if not expected:
+        failures.append("merge.must_respond=true requires concern/block review attribution through resolution.reviews or merge.verdicts")
+    return expected
+
+
+def validate_rebuttal_request(
+    request_path: pathlib.Path,
+    merge_path: pathlib.Path,
+    original_review: dict[str, Any],
+    failures: list[str],
+) -> None:
+    try:
+        validate_request(request_path)
+        request = load_json(request_path)
+    except SystemExit as exc:
+        failures.append(f"reject decision followup_request invalid: {exc}")
+        return
+    provider = original_review.get("provider")
+    if request.get("generated_by") != PRISM_REBUTTAL_REQUEST_GENERATOR:
+        failures.append("reject decision followup_request must be generated by prism rebuttal-request")
+    if request.get("review_mode") != "rebuttal_review":
+        failures.append("reject decision followup_request.review_mode must be rebuttal_review")
+    if request.get("requested_providers") != [provider]:
+        failures.append("reject decision followup_request must target only the original provider")
+    if request.get("additive_rebuttal_only") is not True:
+        failures.append("reject decision followup_request must set additive_rebuttal_only=true")
+    rebuttal_for = request.get("rebuttal_for")
+    if not isinstance(rebuttal_for, dict):
+        failures.append("reject decision followup_request.rebuttal_for must be an object")
+        return
+    if rebuttal_for.get("provider") != provider:
+        failures.append("reject decision followup_request.rebuttal_for.provider must match the original provider")
+    original_merge_path = rebuttal_for.get("original_merge_path")
+    if not (non_empty_string(original_merge_path) and path_matches_reference(str(original_merge_path), merge_path, request_path.parent)):
+        failures.append("reject decision followup_request.rebuttal_for.original_merge_path must match the checked merge")
+    original_review_path = rebuttal_for.get("original_review_path")
+    expected_review_path = original_review.get("_path")
+    if expected_review_path and not (
+        non_empty_string(original_review_path)
+        and path_matches_reference(str(original_review_path), pathlib.Path(str(expected_review_path)), request_path.parent)
+    ):
+        failures.append("reject decision followup_request.rebuttal_for.original_review_path must match the original review")
+
+
+def validate_reject_followup(
+    resolution_item: dict[str, Any],
+    resolution_dir: pathlib.Path,
+    merge_path: pathlib.Path,
+    original_review: dict[str, Any],
+    failures: list[str],
+) -> None:
+    if not non_empty_string_list(resolution_item.get("rejection_evidence")):
+        failures.append("reject decision requires non-empty rejection_evidence")
+    followup_request_raw = resolution_item.get("followup_request")
+    followup_review_raw = resolution_item.get("followup_review")
+    if not (non_empty_string(followup_request_raw) and non_empty_string(followup_review_raw)):
+        failures.append("reject decision requires bounded same-provider followup_request and followup_review")
+        return
+    request_path = resolve_reference_path(str(followup_request_raw), resolution_dir)
+    review_path = resolve_reference_path(str(followup_review_raw), resolution_dir)
+    validate_rebuttal_request(request_path, merge_path, original_review, failures)
+    followup_review = load_review_for_resolution(review_path, failures, "reject decision followup_review")
+    if followup_review is None:
+        return
+    if followup_review.get("provider") != original_review.get("provider"):
+        failures.append("reject decision followup_review provider must match the original provider")
+    if followup_review.get("verdict") != "pass":
+        failures.append("reject decision is invalid while bounded followup_review still returns concern/block")
+
+
+def evidence_entry_exists(raw: str, base_dir: pathlib.Path) -> bool:
+    try:
+        tokens = shlex.split(raw)
+    except ValueError:
+        tokens = raw.split()
+    target = tokens[0] if tokens else raw.strip()
+    if not target:
+        return False
+    if target.startswith(("http://", "https://")):
+        return True
+    target_path = pathlib.Path(target)
+    if target_path.is_absolute() or "/" in target:
+        return resolve_reference_path(target, base_dir).exists()
+    return shutil.which(target) is not None
+
+
+def validate_evidence_entries(
+    entries: Any,
+    label: str,
+    base_dir: pathlib.Path,
+    failures: list[str],
+) -> None:
+    if not non_empty_string_list(entries):
+        failures.append(f"{label} requires non-empty evidence entries")
+        return
+    for index, raw in enumerate(entries):
+        if not evidence_entry_exists(str(raw), base_dir):
+            failures.append(f"{label}[{index}] does not resolve to an existing file or command: {raw}")
+
+
+def validate_concern_references(
+    resolution_item: dict[str, Any],
+    expected_review: dict[str, Any],
+    failures: list[str],
+) -> None:
+    concern_ref = resolution_item.get("concern_ref")
+    if concern_ref != "main_concern":
+        failures.append("resolution item concern_ref must be main_concern so it structurally references the provider concern")
+    minimum_fix_ref = resolution_item.get("minimum_fix_ref")
+    if minimum_fix_ref is not None and minimum_fix_ref != "minimum_fix":
+        failures.append("resolution item minimum_fix_ref must be minimum_fix when present")
+    if not non_empty_string(expected_review.get("main_concern")):
+        failures.append("expected review main_concern must be non-empty")
+
+
+def validate_resolution_item(
+    resolution_item: dict[str, Any],
+    expected_review: dict[str, Any],
+    resolution_dir: pathlib.Path,
+    merge_path: pathlib.Path,
+    failures: list[str],
+) -> str | None:
+    for key in ["provider", "verdict", "decision", "concern_ref", "rationale"]:
+        if key not in resolution_item:
+            failures.append(f"resolution item missing {key}")
+    provider = resolution_item.get("provider")
+    verdict = resolution_item.get("verdict")
+    decision = resolution_item.get("decision")
+    if provider != expected_review.get("provider") or verdict != expected_review.get("verdict"):
+        failures.append(
+            f"resolution item for {provider}/{verdict} does not match expected concern {expected_review.get('provider')}/{expected_review.get('verdict')}"
+        )
+    if decision not in {"accept", "reject", "escalate"}:
+        failures.append(f"resolution decision invalid: {decision}")
+        return None
+    if not non_empty_string(resolution_item.get("concern_ref")):
+        failures.append("resolution item concern_ref must be non-empty")
+    if not non_empty_string(resolution_item.get("rationale")):
+        failures.append("resolution item rationale must be non-empty")
+    validate_concern_references(resolution_item, expected_review, failures)
+    if decision == "accept":
+        validate_evidence_entries(
+            resolution_item.get("implementation_evidence"),
+            "accept decision implementation_evidence",
+            resolution_dir,
+            failures,
+        )
+        validate_evidence_entries(
+            resolution_item.get("verification_evidence"),
+            "accept decision verification_evidence",
+            resolution_dir,
+            failures,
+        )
+    elif decision == "reject":
+        validate_reject_followup(resolution_item, resolution_dir, merge_path, expected_review, failures)
+    elif decision == "escalate":
+        escalation = resolution_item.get("escalation")
+        if not isinstance(escalation, dict):
+            failures.append("escalate decision requires escalation object")
+        else:
+            for key in ["target", "blocking_reason", "user_visible_question"]:
+                if not non_empty_string(escalation.get(key)):
+                    failures.append(f"escalate decision escalation.{key} must be non-empty")
+    return str(decision)
+
+
+def validate_concern_resolution(
+    merge_path: pathlib.Path,
+    resolution_path: pathlib.Path,
+    cli_reviews: list[str] | None = None,
+    manifest_path: pathlib.Path | None = None,
+) -> dict[str, Any]:
+    failures: list[str] = []
+    merge = load_json(merge_path)
+    resolution = load_json(resolution_path)
+    if not isinstance(merge, dict):
+        failures.append("merge must be an object")
+        merge = {}
+    if not isinstance(resolution, dict):
+        failures.append("resolution must be an object")
+        resolution = {}
+    if resolution.get("schema_id") != PRISM_CONCERN_RESOLUTION_SCHEMA_ID:
+        failures.append(f"resolution.schema_id must be {PRISM_CONCERN_RESOLUTION_SCHEMA_ID}")
+    if not (non_empty_string(resolution.get("merge_path")) and path_matches_reference(str(resolution.get("merge_path")), merge_path, resolution_path.parent)):
+        failures.append("resolution.merge_path must match the checked merge path")
+    reviews = load_resolution_reviews(resolution, resolution_path.parent, cli_reviews, failures)
+    expected = expected_concern_reviews(merge, reviews, failures)
+    resolution_items = resolution.get("resolutions")
+    if not isinstance(resolution_items, list):
+        failures.append("resolution.resolutions must be a list")
+        resolution_items = []
+    by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    for item in resolution_items:
+        if not isinstance(item, dict):
+            failures.append("resolution.resolutions entries must be objects")
+            continue
+        key = (str(item.get("provider")), str(item.get("verdict")))
+        if key in by_key:
+            failures.append(f"duplicate resolution entry for {key[0]}/{key[1]}")
+        by_key[key] = item
+
+    decisions: list[str] = []
+    for review in expected:
+        key = concern_review_key(review)
+        item = by_key.get(key)
+        if item is None:
+            failures.append(f"missing resolution for {key[0]} {key[1]}")
+            continue
+        decision = validate_resolution_item(item, review, resolution_path.parent, merge_path, failures)
+        if decision is not None:
+            decisions.append(decision)
+    for key in by_key:
+        if key not in {concern_review_key(review) for review in expected}:
+            failures.append(f"resolution entry has no matching concern/block review: {key[0]} {key[1]}")
+
+    conclusion = resolution.get("conclusion")
+    if not isinstance(conclusion, dict):
+        failures.append("resolution.conclusion must be an object")
+        conclusion_state = None
+    else:
+        conclusion_state = conclusion.get("state")
+        if conclusion_state not in {"resolved", "escalated"}:
+            failures.append("resolution.conclusion.state must be resolved or escalated")
+        if not non_empty_string(conclusion.get("reason")):
+            failures.append("resolution.conclusion.reason must be non-empty")
+    expected_state = "escalated" if "escalate" in decisions else "resolved"
+    if decisions and conclusion_state != expected_state:
+        failures.append(f"resolution.conclusion.state must be {expected_state} for the recorded decisions")
+
+    if manifest_path is not None:
+        try:
+            validate_session_manifest(manifest_path)
+            manifest = load_json(manifest_path)
+            convergence_state = (manifest.get("convergence") or {}).get("state")
+            if conclusion_state == "resolved" and convergence_state not in {"converged", "main-decided"}:
+                failures.append("resolved Prism concern resolution requires manifest convergence converged or main-decided")
+            if conclusion_state == "escalated" and convergence_state != "escalated":
+                failures.append("escalated Prism concern resolution requires manifest convergence escalated")
+        except SystemExit as exc:
+            failures.append(f"manifest invalid: {exc}")
+
+    return {
+        "ok": not failures,
+        "merge_path": str(merge_path),
+        "resolution_path": str(resolution_path),
+        "must_respond": bool(merge.get("must_respond")),
+        "expected_resolutions": [
+            {"provider": review.get("provider"), "verdict": review.get("verdict")}
+            for review in expected
+        ],
+        "conclusion_state": conclusion_state,
+        "failures": failures,
+    }
+
+
+def parse_leading_json_object(stdout: str) -> dict[str, Any]:
+    parsed, _ = json.JSONDecoder().raw_decode(stdout.lstrip())
+    if not isinstance(parsed, dict):
+        raise ValueError("leading JSON value is not an object")
+    return parsed
+
+
+def load_gate_rules() -> dict[str, Any]:
+    path = ROOT / "rules" / "prism-gate-rules.json"
+    payload = load_json(path)
+    if not isinstance(payload, dict):
+        raise SystemExit(f"gate rules must be an object: {path}")
+    rules = payload.get("rules")
+    if not isinstance(rules, list) or not rules:
+        raise SystemExit("gate rules must contain a non-empty rules list")
+    for rule in rules:
+        if not isinstance(rule, dict):
+            raise SystemExit("gate rule must be an object")
+        require_keys(rule, ["id", "decision", "review_mode", "reason", "match"], "gate rule")
+        if rule["decision"] not in GATE_RANK:
+            raise SystemExit(f"gate rule decision invalid: {rule['id']}")
+        if not isinstance(rule["match"], dict):
+            raise SystemExit(f"gate rule match must be an object: {rule['id']}")
+    return payload
+
+
+def _text_terms(payload: dict[str, Any]) -> str:
+    parts = [
+        payload.get("task", ""),
+        payload.get("user_intent", ""),
+        payload.get("main_claim", ""),
+        " ".join(payload.get("tags", []) or []),
+    ]
+    return "\n".join(str(part).lower() for part in parts)
+
+
+def _rule_matches(rule: dict[str, Any], payload: dict[str, Any]) -> bool:
+    match = rule["match"]
+    text = _text_terms(payload)
+    risk_level = payload.get("risk_level", "medium")
+    changed_paths = payload.get("changed_paths", []) or []
+    tags = {tag.lower() for tag in (payload.get("tags", []) or [])}
+
+    if "risk_levels" in match and risk_level not in match["risk_levels"]:
+        return False
+    if "any_terms" in match:
+        terms = [str(term).lower() for term in match["any_terms"]]
+        if not any(term in text for term in terms):
+            return False
+    if "all_terms" in match:
+        terms = [str(term).lower() for term in match["all_terms"]]
+        if not all(term in text for term in terms):
+            return False
+    if "tags_any" in match:
+        wanted = {str(tag).lower() for tag in match["tags_any"]}
+        if not (tags & wanted):
+            return False
+    if "path_globs" in match:
+        globs = [str(item) for item in match["path_globs"]]
+        if not any(fnmatch.fnmatch(path, glob) for path in changed_paths for glob in globs):
+            return False
+    return True
+
+
+def command_json(argv: list[str]) -> tuple[int, dict[str, Any] | None, str]:
+    completed = subprocess.run(argv, cwd=str(REPO_ROOT), check=False, capture_output=True, text=True)
+    try:
+        parsed = parse_leading_json_object(completed.stdout)
+    except (json.JSONDecodeError, ValueError) as exc:
+        return completed.returncode, None, str(exc)
+    return completed.returncode, parsed, ""
+
+
+def resolve_boundary_context(payload: dict[str, Any], args: argparse.Namespace) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    argv = [str(REPO_ROOT / "runtime" / "bin" / "redcap"), "boundary", "resolve"]
+    boundary_cwd = getattr(args, "boundary_cwd", None) or payload.get("boundary_cwd")
+    project_workspace = getattr(args, "project_workspace", None) or payload.get("project_workspace")
+    if isinstance(boundary_cwd, str) and boundary_cwd.strip():
+        argv.extend(["--cwd", boundary_cwd])
+    if isinstance(project_workspace, str) and project_workspace.strip():
+        argv.extend(["--project-workspace", project_workspace])
+    exit_code, parsed, parse_error = command_json(argv)
+    meta: dict[str, Any] = {
+        "boundary_command": argv,
+        "boundary_exit_code": exit_code,
+        "boundary_parse_error": parse_error or None,
+    }
+    if exit_code != 0 or parsed is None:
+        return None, meta
+    return parsed, meta
+
+
+def self_development_lifecycle_topic(payload: dict[str, Any]) -> bool:
+    text = _text_terms(payload)
+    if any(term in text for term in SELF_DEVELOPMENT_LIFECYCLE_TERMS):
+        return True
+    tags = {tag.lower() for tag in (payload.get("tags", []) or [])}
+    if tags & SELF_DEVELOPMENT_LIFECYCLE_TAGS:
+        return True
+    changed_paths = payload.get("changed_paths", []) or []
+    return any(
+        fnmatch.fnmatch(path, glob)
+        for path in changed_paths
+        for glob in SELF_DEVELOPMENT_LIFECYCLE_PATH_GLOBS
+    )
+
+
+def mark_required(result: dict[str, Any], rule_id: str, reason: str, next_step: str) -> None:
+    if rule_id not in result["matched_rules"]:
+        result["matched_rules"].append(rule_id)
+    result["decision"] = "required"
+    result["review_mode"] = "lifecycle_review"
+    result["reason"] = reason
+    result["required_providers"] = ["kimi", "claude-code"]
+    result["next_step"] = next_step
+
+
+def apply_self_development_lifecycle_gate(
+    payload: dict[str, Any],
+    result: dict[str, Any],
+    args: argparse.Namespace,
+) -> None:
+    lifecycle_packet = getattr(args, "lifecycle_packet", None) or payload.get("lifecycle_packet")
+    boundary_context, boundary_meta = resolve_boundary_context(payload, args)
+    lifecycle = {
+        "required": False,
+        "checked": False,
+        "ok": None,
+        **boundary_meta,
+    }
+    if boundary_context is not None:
+        lifecycle["boundary_mode"] = boundary_context.get("boundary_mode")
+        lifecycle["project_workspace"] = boundary_context.get("project_workspace")
+        lifecycle["cwd"] = boundary_context.get("cwd")
+    result["self_development_lifecycle"] = lifecycle
+
+    if boundary_context is None:
+        mark_required(
+            result,
+            "self-development-lifecycle-gate",
+            "Self-development lifecycle gate could not resolve runtime boundary context.",
+            "Resolve the runtime boundary and rerun the gate with a lifecycle packet if this is RedCap self-development.",
+        )
+        return
+    if boundary_context.get("boundary_mode") != "self-development":
+        return
+    if payload.get("risk_level", "medium") not in SELF_DEVELOPMENT_LIFECYCLE_RISKS:
+        return
+
+    lifecycle["required"] = True
+    if not isinstance(lifecycle_packet, str) or not lifecycle_packet.strip():
+        mark_required(
+            result,
+            "self-development-lifecycle-gate",
+            "Medium-or-higher RedCap self-development work requires a lifecycle packet before implementation or completion claims.",
+            "Create or update a lifecycle packet and rerun with --lifecycle-packet so requirements, technical review, FSM transition, and verification evidence are checked.",
+        )
+        return
+
+    lifecycle["packet"] = lifecycle_packet
+    argv = [
+        str(REPO_ROOT / "runtime" / "bin" / "redcap"),
+        "lifecycle",
+        "check",
+        "--packet",
+        lifecycle_packet,
+    ]
+    lifecycle_events = getattr(args, "lifecycle_events", None) or payload.get("lifecycle_events")
+    if isinstance(lifecycle_events, str) and lifecycle_events.strip():
+        argv.extend(["--events", lifecycle_events])
+    exit_code, parsed, parse_error = command_json(argv)
+    lifecycle.update({
+        "checked": True,
+        "check_command": argv,
+        "check_exit_code": exit_code,
+        "check_parse_error": parse_error or None,
+    })
+    if isinstance(parsed, dict):
+        lifecycle["ok"] = parsed.get("ok")
+        lifecycle["failures"] = parsed.get("failures", [])
+    if exit_code != 0 or not isinstance(parsed, dict) or parsed.get("ok") is not True:
+        mark_required(
+            result,
+            "self-development-lifecycle-gate",
+            "RedCap self-development lifecycle packet failed validation.",
+            "Fix the lifecycle packet failures before implementation or completion claims proceed.",
+        )
+
+
+def evaluate_gate(payload: dict[str, Any], rules_payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    validate_gate_request(payload)
+    rules_payload = rules_payload or load_gate_rules()
+    matched = [rule for rule in rules_payload["rules"] if _rule_matches(rule, payload)]
+    if "changed_reality" in payload and changed_reality_warning(payload):
+        matched.append({
+            "id": "diagnostic-only-changed-reality",
+            "decision": "required",
+            "review_mode": "anti_loop_review",
+            "reason": "changed_reality only describes missing, unimplemented, or not-yet behavior.",
+            "match": {},
+        })
+    if matched:
+        strictest = max(matched, key=lambda rule: GATE_RANK[rule["decision"]])
+    else:
+        strictest = rules_payload.get("default", {})
+    decision = strictest.get("decision", "optional")
+    review_mode = strictest.get("review_mode", "strategy_review")
+    result = {
+        "gate": "prism-rule-review",
+        "decision": decision,
+        "review_mode": review_mode if decision != "skipped" else None,
+        "risk_level": payload.get("risk_level", "medium"),
+        "matched_rules": [rule["id"] for rule in matched],
+        "reason": strictest.get("reason", "Default Prism rule review decision."),
+        "required_providers": ["kimi", "claude-code"] if decision == "required" else [],
+        "host_enforcement": "redcap-owned-intake-only; host-level automatic interception is not claimed",
+        "next_step": {
+            "required": "Run full Prism before implementation or completion claim.",
+            "optional": "Main agent may proceed, but should request Prism if uncertainty or risk rises.",
+            "skipped": "No Prism provider call needed; continue with normal verification.",
+        }[decision],
+    }
+    return result
+
+
+def cmd_check(_: argparse.Namespace) -> int:
+    for path in [
+        ROOT / "schemas" / "prism-request.schema.json",
+        ROOT / "schemas" / "prism-review.schema.json",
+        ROOT / "schemas" / "prism-session.schema.json",
+        ROOT / "schemas" / "prism-concern-resolution.schema.json",
+        ROOT / "schemas" / "capability-status.schema.json",
+        REPO_ROOT / "assets" / "contracts" / "prism-gate-request.schema.json",
+        REPO_ROOT / "assets" / "contracts" / "prism-gate-response.schema.json",
+        REPO_ROOT / "assets" / "contracts" / "enforcement-matrix.schema.json",
+        REPO_ROOT / "assets" / "contracts" / "enforcement-matrix.json",
+        REPO_ROOT / "assets" / "contracts" / "hook-coverage.schema.json",
+        REPO_ROOT / "assets" / "contracts" / "hook-coverage.json",
+        ROOT / "rules" / "prism-gate-rules.json",
+        ROOT / "examples" / "prism-request.example.json",
+        ROOT / "examples" / "capability-status.example.json",
+        ROOT / "examples" / "completion-block.example.json",
+        ROOT / "examples" / "design-concern.example.json",
+        ROOT / "examples" / "prism-session.example.json",
+        ROOT / "examples" / "prism-concern-resolution.merge.concern.json",
+        ROOT / "examples" / "prism-concern-resolution.merge.pass.json",
+        ROOT / "examples" / "prism-concern-resolution.kimi-concern.json",
+        ROOT / "examples" / "prism-concern-resolution.claude-pass.json",
+        ROOT / "examples" / "prism-concern-resolution.kimi-followup-pass.json",
+        ROOT / "examples" / "prism-concern-resolution.kimi-followup-concern.json",
+        ROOT / "examples" / "prism-concern-resolution.followup-request.json",
+        ROOT / "examples" / "prism-concern-resolution.valid-accept.json",
+        ROOT / "examples" / "prism-concern-resolution.valid-reject.json",
+        ROOT / "examples" / "prism-concern-resolution.valid-escalate.json",
+        ROOT / "examples" / "prism-concern-resolution.valid-pass-merge.json",
+        ROOT / "examples" / "prism-concern-resolution.invalid-accept-missing-verification.json",
+        ROOT / "examples" / "prism-concern-resolution.invalid-accept-missing-evidence-path.json",
+        ROOT / "examples" / "prism-concern-resolution.invalid-reject-missing-followup.json",
+        ROOT / "examples" / "prism-concern-resolution.invalid-reject-followup-still-concern.json",
+        ROOT / "examples" / "self-development-lifecycle-packet.json",
+        ROOT / "examples" / "gate-skip-trivial.json",
+        ROOT / "examples" / "gate-optional-implementation.json",
+        ROOT / "examples" / "gate-required-architecture.json",
+        ROOT / "examples" / "gate-required-completion-pathology.json",
+        ROOT / "examples" / "gate-required-diagnostic-only-changed-reality.json",
+        ROOT / "examples" / "enforcement-matrix-hook-bad.json",
+        ROOT / "examples" / "enforcement-matrix-hook-good.json",
+        ROOT / "examples" / "hook-coverage-missing-required-event.json",
+    ]:
+        load_json(path)
+    load_gate_rules()
+    validate_request(ROOT / "examples" / "prism-request.example.json")
+    validate_review(ROOT / "examples" / "completion-block.example.json")
+    validate_review(ROOT / "examples" / "design-concern.example.json")
+    validate_review(ROOT / "examples" / "prism-concern-resolution.kimi-concern.json")
+    validate_review(ROOT / "examples" / "prism-concern-resolution.claude-pass.json")
+    validate_review(ROOT / "examples" / "prism-concern-resolution.kimi-followup-pass.json")
+    validate_review(ROOT / "examples" / "prism-concern-resolution.kimi-followup-concern.json")
+    validate_session_manifest(ROOT / "examples" / "prism-session.example.json")
+    validate_capability_status(ROOT / "examples" / "capability-status.example.json")
+    blocked_status = subprocess.run(
+        [
+            str(ROOT / "bin" / "completion-semantics-check"),
+            "--json",
+            str(ROOT / "examples" / "capability-status.example.json"),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if blocked_status.returncode != 2:
+        raise SystemExit(
+            "completion-semantics example should reject manually_runnable status"
+        )
+    allowed_status = subprocess.run(
+        [
+            str(ROOT / "bin" / "completion-semantics-check"),
+            "--capability",
+            "prism-check",
+            "--status",
+            "operational",
+            "--claim",
+            "Prism check exercises completion semantics.",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if allowed_status.returncode != 0:
+        raise SystemExit("completion-semantics operational status should pass")
+    tested_status = subprocess.run(
+        [
+            str(ROOT / "bin" / "completion-semantics-check"),
+            "--capability",
+            "tested-only-capability",
+            "--status",
+            "tested",
+            "--claim",
+            "Tests passed, so the capability is complete.",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if tested_status.returncode != 2:
+        raise SystemExit("completion-semantics tested status should not complete by default")
+    completion_probe = evaluate_gate({
+        "task": "Claim provider dispatcher is complete",
+        "risk_level": "high",
+        "changed_paths": [],
+        "tags": [],
+    })
+    apply_completion_semantics(
+        completion_probe,
+        run_completion_semantics_check(
+            status="manually_runnable",
+            claim="Provider dispatcher is complete",
+            labels=[],
+        ),
+    )
+    if "completion-semantics-check" not in completion_probe["matched_rules"]:
+        raise SystemExit("gate must attach completion-semantics-check when completion is rejected")
+    for path in [
+        ROOT / "examples" / "gate-skip-trivial.json",
+        ROOT / "examples" / "gate-optional-implementation.json",
+        ROOT / "examples" / "gate-required-architecture.json",
+        ROOT / "examples" / "gate-required-completion-pathology.json",
+        ROOT / "examples" / "gate-required-diagnostic-only-changed-reality.json",
+    ]:
+        payload = load_json(path)
+        expected = payload.pop("expected_decision")
+        validate_gate_request(payload, str(path))
+        actual = evaluate_gate(payload)["decision"]
+        if actual != expected:
+            raise SystemExit(f"gate example failed: {path}: expected {expected}, got {actual}")
+    enforcement_check = subprocess.run(
+        [str(ROOT / "bin" / "enforcement-check")],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if enforcement_check.stdout:
+        print(enforcement_check.stdout.rstrip())
+    if enforcement_check.returncode != 0:
+        if enforcement_check.stderr:
+            print(enforcement_check.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("enforcement-check failed")
+    bad_hook = subprocess.run(
+        [
+            str(ROOT / "bin" / "enforcement-check"),
+            "--matrix",
+            str(ROOT / "examples" / "enforcement-matrix-hook-bad.json"),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if bad_hook.returncode == 0:
+        raise SystemExit("hook claim fixture without hook_contract should fail enforcement-check")
+    if "hook claims require hook_contract metadata" not in bad_hook.stdout:
+        raise SystemExit("bad hook fixture did not fail for the expected hook_contract reason")
+    good_hook = subprocess.run(
+        [
+            str(ROOT / "bin" / "enforcement-check"),
+            "--matrix",
+            str(ROOT / "examples" / "enforcement-matrix-hook-good.json"),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if good_hook.returncode != 0:
+        if good_hook.stdout:
+            print(good_hook.stdout.rstrip())
+        if good_hook.stderr:
+            print(good_hook.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("hook claim fixture with live-marker contract should pass enforcement-check")
+    bad_hook_coverage = subprocess.run(
+        [
+            str(ROOT / "bin" / "hook-coverage-check"),
+            "--coverage",
+            str(ROOT / "examples" / "hook-coverage-missing-required-event.json"),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if bad_hook_coverage.returncode == 0:
+        raise SystemExit("hook coverage fixture with missing required event should fail")
+    if "hook_required guardrail must name a deployed required_event" not in bad_hook_coverage.stdout:
+        raise SystemExit("bad hook coverage fixture did not fail for the expected missing event reason")
+    bad_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-no-action.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-required-no-action",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if bad_turn_action.returncode == 0:
+        raise SystemExit("required prompt without action evidence should fail turn-action-check")
+    if "no same-turn PostToolUse substantive action evidence" not in bad_turn_action.stdout:
+        raise SystemExit("bad turn action fixture did not fail for the expected missing action reason")
+    read_only_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-read-only.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-required-read-only",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if read_only_turn_action.returncode == 0:
+        raise SystemExit("required prompt with read-only tool evidence should fail turn-action-check")
+    if "no same-turn PostToolUse substantive action evidence" not in read_only_turn_action.stdout:
+        raise SystemExit("read-only turn action fixture did not fail for the expected missing substantive action reason")
+    git_read_only_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-git-read-only.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-required-git-read-only",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if git_read_only_turn_action.returncode == 0:
+        raise SystemExit("required prompt with git read-only evidence should fail turn-action-check")
+    if "no same-turn PostToolUse substantive action evidence" not in git_read_only_turn_action.stdout:
+        raise SystemExit("git read-only turn action fixture did not fail for the expected missing substantive action reason")
+    answer_only_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-answer-only-no-action.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-required-answer-only-no-action",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if answer_only_turn_action.returncode != 0:
+        if answer_only_turn_action.stdout:
+            print(answer_only_turn_action.stdout.rstrip())
+        if answer_only_turn_action.stderr:
+            print(answer_only_turn_action.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("required answer-only prompt should pass without task-body action evidence")
+    diagnostic_no_evidence_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-diagnostic-no-evidence.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-required-diagnostic-no-evidence",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if diagnostic_no_evidence_turn_action.returncode == 0:
+        raise SystemExit("required diagnostic prompt without diagnostic evidence should fail turn-action-check")
+    if "no same-turn diagnostic evidence" not in diagnostic_no_evidence_turn_action.stdout:
+        raise SystemExit("diagnostic turn action fixture did not fail for the expected missing diagnostic evidence reason")
+    diagnostic_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-diagnostic-read-only.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-required-diagnostic-read-only",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if diagnostic_turn_action.returncode != 0:
+        if diagnostic_turn_action.stdout:
+            print(diagnostic_turn_action.stdout.rstrip())
+        if diagnostic_turn_action.stderr:
+            print(diagnostic_turn_action.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("required diagnostic prompt with read-only evidence should pass turn-action-check")
+    english_review_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-english-review-read-only.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-required-english-review-read-only",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if english_review_turn_action.returncode != 0:
+        if english_review_turn_action.stdout:
+            print(english_review_turn_action.stdout.rstrip())
+        if english_review_turn_action.stderr:
+            print(english_review_turn_action.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("required English review-only prompt with read-only evidence should pass turn-action-check")
+    good_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-with-action.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-required-with-action",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if good_turn_action.returncode != 0:
+        if good_turn_action.stdout:
+            print(good_turn_action.stdout.rstrip())
+        if good_turn_action.stderr:
+            print(good_turn_action.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("required prompt with action evidence should pass turn-action-check")
+    dispatcher_check = subprocess.run(
+        [str(ROOT / "bin" / "prism-dispatch"), "--self-check"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if dispatcher_check.returncode != 0:
+        if dispatcher_check.stdout:
+            print(dispatcher_check.stdout.rstrip())
+        if dispatcher_check.stderr:
+            print(dispatcher_check.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("prism dispatcher self-check should pass")
+    ledger_check = subprocess.run(
+        [str(ROOT / "bin" / "prism-ledger"), "self-check"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if ledger_check.returncode != 0:
+        if ledger_check.stdout:
+            print(ledger_check.stdout.rstrip())
+        if ledger_check.stderr:
+            print(ledger_check.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("prism ledger self-check should pass")
+    resolution_failures = run_resolution_self_check()
+    if resolution_failures:
+        raise SystemExit(f"prism concern resolution self-check failed: {resolution_failures}")
+    print("PRISM_CHECK_OK")
+    return 0
+
+
+def cmd_gate(args: argparse.Namespace) -> int:
+    started_at = iso_now()
+    start = time.perf_counter()
+    if args.request:
+        payload = load_json(pathlib.Path(args.request).resolve())
+        if not isinstance(payload, dict):
+            raise SystemExit("gate request must be an object")
+    else:
+        task = args.task
+        if task is None and not sys.stdin.isatty():
+            task = sys.stdin.read().strip()
+        payload = {
+            "task": task or "",
+            "risk_level": args.risk_level,
+            "changed_paths": args.changed_paths or [],
+            "tags": args.tags or [],
+        }
+    if args.boundary_cwd:
+        payload["boundary_cwd"] = args.boundary_cwd
+    if args.project_workspace:
+        payload["project_workspace"] = args.project_workspace
+    if args.task_id:
+        payload["task_id"] = args.task_id
+    result = evaluate_gate(payload)
+    if args.completion_claim or args.capability_status or args.completion_label:
+        completion_semantics = run_completion_semantics_check(
+            status=args.capability_status,
+            claim=args.completion_claim,
+            labels=args.completion_label or [],
+        )
+        apply_completion_semantics(result, completion_semantics)
+    apply_self_development_lifecycle_gate(payload, result, args)
+    ended_at = iso_now()
+    elapsed = round(time.perf_counter() - start, 3)
+    planned_exit_code = 2 if args.fail_when_required and result["decision"] == "required" else 0
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    sys.stdout.flush()
+    trigger = "codex-UserPromptSubmit" if "codex-user-prompt" in set(payload.get("tags", [])) else "cli-gate"
+    try:
+        record_gate(
+            payload,
+            result,
+            trigger=trigger,
+            executor="prism",
+            started_at=started_at,
+            ended_at=ended_at,
+            duration_seconds_value=elapsed,
+            planned_exit_code=planned_exit_code,
+        )
+    except Exception as exc:
+        print(f"prism gate ledger append failed: {exc}", file=sys.stderr)
+        return planned_exit_code if planned_exit_code else 1
+    return planned_exit_code
+
+
+def run_completion_semantics_check(status: str | None, claim: str | None, labels: list[str]) -> dict[str, Any]:
+    if not status:
+        raise SystemExit("--capability-status is required when checking a completion claim")
+    if not claim:
+        raise SystemExit("--completion-claim is required when checking completion semantics")
+    cmd = [
+        str(ROOT / "bin" / "completion-semantics-check"),
+        "--capability",
+        "gate-completion-claim",
+        "--status",
+        status,
+        "--claim",
+        claim,
+    ]
+    for label in labels:
+        cmd.extend(["--label", label])
+    completed = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"completion-semantics-check returned invalid JSON: {completed.stdout}") from exc
+    payload["exit_code"] = completed.returncode
+    return payload
+
+
+def apply_completion_semantics(result: dict[str, Any], completion_semantics: dict[str, Any]) -> None:
+    result["completion_semantics"] = completion_semantics
+    if not completion_semantics["completion_allowed"]:
+        result["decision"] = "required"
+        result["review_mode"] = "completion_review"
+        result["matched_rules"] = sorted(
+            set(result.get("matched_rules", [])) | {"completion-semantics-check"}
+        )
+        result["reason"] = "Completion semantics check rejected the completion claim."
+        result["required_providers"] = ["kimi", "claude-code"]
+        result["next_step"] = "Do not claim completion; run full Prism or narrow the claim."
+
+
+def cmd_brief(args: argparse.Namespace) -> int:
+    provider = args.provider
+    if provider not in ALLOWED_PROVIDERS:
+        raise SystemExit(f"excluded provider: {provider}")
+    request_path = pathlib.Path(args.request).resolve()
+    validate_request(request_path)
+    request = load_json(request_path)
+    shared = (ROOT / "prompts" / "prism-shared-brief.md").read_text(encoding="utf-8")
+    provider_prompt = (
+        ROOT / "prompts" / f"{provider}-prism-review.md"
+    ).read_text(encoding="utf-8")
+    sections = [
+        shared.rstrip(),
+        "\n--- PROVIDER PROMPT ---\n",
+        provider_prompt.rstrip(),
+        "\n--- REVIEW REQUEST FILE ---\n",
+        str(request_path),
+        "\n--- REVIEW REQUEST SUMMARY ---\n",
+        json.dumps(
+            {
+                "task": request["task"],
+                "review_mode": request["review_mode"],
+                "risk_level": request["risk_level"],
+                "requested_providers": request["requested_providers"],
+                "evidence_count": len(request.get("evidence", [])),
+                "known_constraint_count": len(request.get("known_constraints", [])),
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+    ]
+    diagnostic_warning = changed_reality_warning(request)
+    if diagnostic_warning:
+        sections.extend([
+            "\n--- DIAGNOSTIC WARNING ---\n",
+            diagnostic_warning,
+        ])
+    if args.inline_request:
+        sections.extend([
+            "\n--- REVIEW REQUEST JSON ---\n",
+            json.dumps(request, ensure_ascii=False, indent=2),
+        ])
+    text = "\n".join(sections)
+    if args.out:
+        out_path = pathlib.Path(args.out).resolve()
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(text + "\n", encoding="utf-8")
+        print(json.dumps({"brief_path": str(out_path), "inline_request": args.inline_request}, ensure_ascii=False))
+    else:
+        print(text)
+    return 0
+
+
+def changed_reality_warning(request: dict[str, Any]) -> str | None:
+    changed_reality = request.get("changed_reality", [])
+    if not changed_reality:
+        return "changed_reality is empty; this request may be proof-only or diagnostic-only."
+    items = [str(item).strip().lower() for item in changed_reality if str(item).strip()]
+    if not items:
+        return "changed_reality has no non-empty entries; this request may be proof-only or diagnostic-only."
+    negative_count = sum(
+        1 for item in items if any(term in item for term in DIAGNOSTIC_ONLY_TERMS)
+    )
+    if negative_count == len(items):
+        return (
+            "Every changed_reality entry appears to describe missing, unimplemented, "
+            "or not-yet behavior. Treat this as diagnostic-only unless a positive "
+            "behavioral or filesystem change is added."
+        )
+    return None
+
+
+def cmd_merge(args: argparse.Namespace) -> int:
+    reviews = []
+    for raw_path in args.reviews:
+        path = pathlib.Path(raw_path).resolve()
+        validate_review(path)
+        reviews.append(load_json(path))
+    strictest = max(reviews, key=lambda item: VERDICT_RANK[item["verdict"]])
+    providers = [item["provider"] for item in reviews]
+    merged = {
+        "providers": providers,
+        "verdicts": [
+            {
+                "provider": item["provider"],
+                "verdict": item["verdict"],
+                "confidence": item["confidence"],
+            }
+            for item in reviews
+        ],
+        "strictest_verdict": strictest["verdict"],
+        "strictest_provider": strictest["provider"],
+        "must_respond": strictest["verdict"] in {"concern", "block"},
+        "main_concerns": [
+            {"provider": item["provider"], "concern": item["main_concern"]}
+            for item in reviews
+        ],
+        "minimum_fixes": [
+            {"provider": item["provider"], "minimum_fix": item["minimum_fix"]}
+            for item in reviews
+        ],
+        "anti_loop_detected": any(
+            bool(item.get("anti_loop_signal", {}).get("present")) for item in reviews
+        ),
+    }
+    text = json.dumps(merged, ensure_ascii=False, indent=2)
+    if args.out:
+        out_path = pathlib.Path(args.out).resolve()
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(text + "\n", encoding="utf-8")
+        print(json.dumps({"merge_path": str(out_path), "strictest_verdict": merged["strictest_verdict"]}, ensure_ascii=False))
+    else:
+        print(text)
+    return 0
+
+
+def cmd_rebuttal_request(args: argparse.Namespace) -> int:
+    merge_path = pathlib.Path(args.merge).resolve()
+    review_path = pathlib.Path(args.review).resolve()
+    provider = args.provider
+    validate_review(review_path)
+    review = load_json(review_path)
+    if review.get("provider") != provider:
+        raise SystemExit("rebuttal-request provider must match the original review provider")
+    if review.get("verdict") not in {"concern", "block"}:
+        raise SystemExit("rebuttal-request is only valid for an original concern/block review")
+    payload = {
+        "task": f"Bounded Prism rebuttal for {provider} concern",
+        "user_intent": "Give the same Prism provider one bounded opportunity to evaluate RedCap's proposed rejection evidence.",
+        "main_claim": args.main_claim,
+        "changed_reality": args.changed_reality or [
+            "RedCap provided explicit rejection evidence for a Prism concern or block.",
+        ],
+        "review_mode": "rebuttal_review",
+        "risk_level": args.risk_level,
+        "requested_providers": [provider],
+        "evidence": args.evidence or [],
+        "known_constraints": [
+            "This is a one-round same-provider rebuttal request.",
+            "The provider must return one Prism review JSON and must not open an unbounded discussion loop.",
+            "The request preserves the original concern context and adds only rebuttal evidence.",
+        ],
+        "generated_by": PRISM_REBUTTAL_REQUEST_GENERATOR,
+        "rebuttal_for": {
+            "provider": provider,
+            "original_merge_path": str(merge_path),
+            "original_review_path": str(review_path),
+        },
+        "additive_rebuttal_only": True,
+    }
+    validate_request_dict = dict(payload)
+    validate_gate_request({"task": payload["task"]}, "rebuttal request task")
+    # Reuse the normal Prism request validator through a temporary file because
+    # it is intentionally file-oriented elsewhere in this command.
+    if args.out:
+        out_path = pathlib.Path(args.out).resolve()
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        write_text_atomic(out_path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+        validate_request(out_path)
+        print(json.dumps({"rebuttal_request": str(out_path), "provider": provider}, ensure_ascii=False))
+    else:
+        # Validate the in-memory request shape without adding another dependency.
+        for key in ["task", "user_intent", "main_claim", "changed_reality", "review_mode", "risk_level", "requested_providers"]:
+            if key not in validate_request_dict:
+                raise SystemExit(f"rebuttal request missing {key}")
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0
+
+
+def run_resolution_self_check() -> list[str]:
+    failures: list[str] = []
+    good_cases = [
+        "prism-concern-resolution.valid-accept.json",
+        "prism-concern-resolution.valid-reject.json",
+        "prism-concern-resolution.valid-escalate.json",
+    ]
+    bad_cases = [
+        ("prism-concern-resolution.invalid-accept-missing-verification.json", "accept decision verification_evidence requires non-empty evidence entries"),
+        ("prism-concern-resolution.invalid-accept-missing-evidence-path.json", "does not resolve to an existing file or command"),
+        ("prism-concern-resolution.invalid-reject-missing-followup.json", "reject decision requires bounded same-provider followup_request and followup_review"),
+        ("prism-concern-resolution.invalid-reject-followup-still-concern.json", "reject decision is invalid while bounded followup_review still returns concern/block"),
+    ]
+    merge_path = ROOT / "examples" / "prism-concern-resolution.merge.concern.json"
+    for name in good_cases:
+        result = validate_concern_resolution(merge_path, ROOT / "examples" / name)
+        if result["failures"]:
+            failures.append(f"{name} should pass: {result['failures']}")
+    for name, expected_failure in bad_cases:
+        result = validate_concern_resolution(merge_path, ROOT / "examples" / name)
+        if result["ok"]:
+            failures.append(f"{name} should fail")
+        if expected_failure not in "\n".join(result["failures"]):
+            failures.append(f"{name} did not fail for expected reason: {expected_failure}")
+    pass_merge_result = validate_concern_resolution(
+        ROOT / "examples" / "prism-concern-resolution.merge.pass.json",
+        ROOT / "examples" / "prism-concern-resolution.valid-pass-merge.json",
+    )
+    if not pass_merge_result["ok"]:
+        failures.append(f"pass merge resolution fixture should pass: {pass_merge_result['failures']}")
+    with tempfile.TemporaryDirectory(prefix="prism-rebuttal-request-") as tmp_raw:
+        out_path = pathlib.Path(tmp_raw) / "request.json"
+        generated = subprocess.run(
+            [
+                str(ROOT / "bin" / "prism"),
+                "rebuttal-request",
+                "--merge",
+                str(ROOT / "examples" / "prism-concern-resolution.merge.concern.json"),
+                "--review",
+                str(ROOT / "examples" / "prism-concern-resolution.kimi-concern.json"),
+                "--provider",
+                "kimi",
+                "--main-claim",
+                "Fixture rebuttal request generation is executable.",
+                "--evidence",
+                "runtime/prism/examples/prism-concern-resolution.valid-reject.json",
+                "--out",
+                str(out_path),
+            ],
+            cwd=str(REPO_ROOT),
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if generated.returncode != 0:
+            failures.append(f"rebuttal-request command should pass: {generated.stdout} {generated.stderr}")
+        elif load_json(out_path).get("generated_by") != PRISM_REBUTTAL_REQUEST_GENERATOR:
+            failures.append("rebuttal-request command did not stamp generated_by")
+    return failures
+
+
+def cmd_resolution_check(args: argparse.Namespace) -> int:
+    if args.self_check:
+        failures = run_resolution_self_check()
+        print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
+        if failures:
+            return 1
+        print("PRISM_CONCERN_RESOLUTION_SELF_CHECK_OK")
+        return 0
+    if not args.merge or not args.resolution:
+        raise SystemExit("resolution-check requires --merge and --resolution unless --self-check is used")
+    manifest_path = pathlib.Path(args.manifest).resolve() if args.manifest else None
+    result = validate_concern_resolution(
+        pathlib.Path(args.merge).resolve(),
+        pathlib.Path(args.resolution).resolve(),
+        args.review,
+        manifest_path,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["ok"]:
+        return 1
+    print("PRISM_CONCERN_RESOLUTION_OK")
+    return 0
+
+
+def cmd_session_init(args: argparse.Namespace) -> int:
+    run_dir = pathlib.Path(args.run_dir).resolve()
+    run_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = run_dir / "session.json"
+    now = iso_now()
+    payload = {
+        "schema_id": "prism-session-manifest",
+        "task_id": args.task_id,
+        "run_dir": str(run_dir),
+        "status": "active",
+        "max_rounds_per_provider": args.max_rounds,
+        "created_at": now,
+        "updated_at": now,
+        "providers": {
+            provider: {
+                "session_handle": None,
+                "round_count": 0,
+                "status": "pending",
+                "last_review": None,
+            }
+            for provider in sorted(ALLOWED_PROVIDERS)
+        },
+        "convergence": {
+            "state": "unresolved",
+            "reason": "Initial Prism task session manifest.",
+        },
+    }
+    validate_session_payload(payload, "session init")
+    write_json_atomic(manifest_path, payload)
+    ledger = record_manifest(manifest_path, trigger="session-init", executor="prism")
+    print(json.dumps({
+        "session_manifest": str(manifest_path),
+        "ledger_path": ledger["ledger_path"],
+        "health_path": ledger["health_path"],
+    }, ensure_ascii=False))
+    return 0
+
+
+def validate_session_payload(payload: dict[str, Any], label: str) -> None:
+    temp_path = pathlib.Path(f"<{label}>")
+    try:
+        # Reuse the file validator's logic without introducing a schema library.
+        require_keys(
+            payload,
+            [
+                "schema_id",
+                "task_id",
+                "run_dir",
+                "status",
+                "max_rounds_per_provider",
+                "created_at",
+                "updated_at",
+                "providers",
+                "convergence",
+            ],
+            "session manifest",
+        )
+        if payload["schema_id"] != "prism-session-manifest":
+            raise SystemExit("session manifest schema_id must be prism-session-manifest")
+        if payload["status"] not in SESSION_STATUSES:
+            raise SystemExit(f"session manifest status invalid: {payload['status']}")
+        max_rounds = payload["max_rounds_per_provider"]
+        if not isinstance(max_rounds, int) or max_rounds < 1 or max_rounds > 5:
+            raise SystemExit("session manifest max_rounds_per_provider must be an integer from 1 to 5")
+        providers = payload["providers"]
+        if not isinstance(providers, dict):
+            raise SystemExit("session manifest providers must be an object")
+        for provider in ALLOWED_PROVIDERS:
+            if provider not in providers:
+                raise SystemExit(f"session manifest missing provider: {provider}")
+            record = providers[provider]
+            if not isinstance(record, dict):
+                raise SystemExit(f"session manifest provider record must be an object: {provider}")
+            require_keys(
+                record,
+                ["session_handle", "round_count", "status", "last_review"],
+                f"session manifest provider {provider}",
+            )
+            if record["session_handle"] is not None and not isinstance(record["session_handle"], str):
+                raise SystemExit(f"session_handle must be string or null: {provider}")
+            if not isinstance(record["round_count"], int) or record["round_count"] < 0 or record["round_count"] > max_rounds:
+                raise SystemExit(f"round_count invalid for {provider}")
+            if record["status"] not in PROVIDER_SESSION_STATUSES:
+                raise SystemExit(f"provider session status invalid for {provider}: {record['status']}")
+            if record["last_review"] is not None and not isinstance(record["last_review"], str):
+                raise SystemExit(f"last_review must be string or null: {provider}")
+        convergence = payload["convergence"]
+        if not isinstance(convergence, dict):
+            raise SystemExit("session manifest convergence must be an object")
+        require_keys(convergence, ["state", "reason"], "session manifest convergence")
+        if convergence["state"] not in {"unresolved", "converged", "main-decided", "escalated"}:
+            raise SystemExit(f"convergence state invalid: {convergence['state']}")
+        if not isinstance(convergence["reason"], str):
+            raise SystemExit("convergence reason must be a string")
+    except SystemExit as exc:
+        raise SystemExit(f"{temp_path}: {exc}") from exc
+
+
+def cmd_session_update(args: argparse.Namespace) -> int:
+    manifest_path = pathlib.Path(args.manifest).resolve()
+    provider = args.provider
+    with file_lock(manifest_path):
+        payload = load_json(manifest_path)
+        if not isinstance(payload, dict):
+            raise SystemExit("session manifest must be an object")
+        validate_session_payload(payload, str(manifest_path))
+        record = payload["providers"][provider]
+        if args.session_handle is not None:
+            record["session_handle"] = args.session_handle
+        if args.round_count is not None:
+            record["round_count"] = args.round_count
+        elif args.increment_round:
+            record["round_count"] += 1
+        if args.provider_status is not None:
+            record["status"] = args.provider_status
+        if args.last_review is not None:
+            record["last_review"] = args.last_review
+        if args.status is not None:
+            payload["status"] = args.status
+        if args.convergence_state is not None:
+            payload["convergence"]["state"] = args.convergence_state
+        if args.convergence_reason is not None:
+            payload["convergence"]["reason"] = args.convergence_reason
+        payload["updated_at"] = iso_now()
+        validate_session_payload(payload, str(manifest_path))
+        write_text_atomic(manifest_path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    ledger = record_manifest(manifest_path, trigger="session-update", executor="prism")
+    print(json.dumps({
+        "session_manifest": str(manifest_path),
+        "provider": provider,
+        "ledger_path": ledger["ledger_path"],
+        "health_path": ledger["health_path"],
+    }, ensure_ascii=False))
+    return 0
+
+
+def cmd_session_check(args: argparse.Namespace) -> int:
+    manifest_path = pathlib.Path(args.manifest).resolve()
+    payload = load_json(manifest_path)
+    if not isinstance(payload, dict):
+        raise SystemExit("session manifest must be an object")
+    validate_session_payload(payload, str(manifest_path))
+    providers = [args.provider] if args.provider else sorted(ALLOWED_PROVIDERS)
+    blocked = []
+    allowed = []
+    max_rounds = payload["max_rounds_per_provider"]
+    if payload["status"] != "active":
+        blocked.append({
+            "scope": "task",
+            "reason": f"task status is {payload['status']}",
+        })
+    for provider in providers:
+        record = payload["providers"][provider]
+        remaining = max_rounds - record["round_count"]
+        if record["round_count"] >= max_rounds:
+            blocked.append({
+                "provider": provider,
+                "reason": f"{provider} at round {record['round_count']} of {max_rounds}; escalate or decide",
+            })
+        elif args.require_existing_session and record["round_count"] > 0 and not record["session_handle"]:
+            blocked.append({
+                "provider": provider,
+                "reason": f"{provider} has prior rounds but no recorded session handle",
+            })
+        elif record["status"] in {"escalated", "expired", "closed"}:
+            blocked.append({
+                "provider": provider,
+                "reason": f"{provider} status is {record['status']}",
+            })
+        else:
+            allowed.append({
+                "provider": provider,
+                "round_count": record["round_count"],
+                "max_rounds": max_rounds,
+                "remaining_rounds": remaining,
+                "session_handle": record["session_handle"],
+            })
+    result = {
+        "session_manifest": str(manifest_path),
+        "allowed": allowed,
+        "blocked": blocked,
+    }
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 2 if blocked else 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Prism local helper")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    check = subparsers.add_parser("check", help="validate local Prism files")
+    check.set_defaults(func=cmd_check)
+
+    gate = subparsers.add_parser("gate", help="evaluate deterministic Prism invocation rules")
+    gate.add_argument("--task", help="Task text to classify")
+    gate.add_argument("--request", help="JSON request file to classify")
+    gate.add_argument("--risk-level", default="medium", choices=["low", "medium", "high", "critical"])
+    gate.add_argument("--changed-path", dest="changed_paths", action="append", default=[])
+    gate.add_argument("--tag", dest="tags", action="append", default=[])
+    gate.add_argument("--task-id", help="Optional stable task id to attach to the gate ledger record")
+    gate.add_argument("--boundary-cwd", help="CWD used by runtime boundary resolution for lifecycle gating")
+    gate.add_argument("--project-workspace", help="Project workspace used by runtime boundary resolution")
+    gate.add_argument("--lifecycle-packet", help="Development lifecycle packet checked for RedCap self-development work")
+    gate.add_argument("--lifecycle-events", help="UserPromptSubmit event JSONL used to verify lifecycle prompt_context excerpts")
+    gate.add_argument("--completion-claim", help="Completion claim text to validate before returning the gate decision")
+    gate.add_argument(
+        "--capability-status",
+        choices=[
+            "not_started",
+            "documented_only",
+            "partially_implemented",
+            "manually_runnable",
+            "tested",
+            "operational",
+        ],
+        help="Capability status for completion semantics validation",
+    )
+    gate.add_argument(
+        "--completion-label",
+        action="append",
+        default=[],
+        help="Non-completion label attached to the completion claim",
+    )
+    gate.add_argument(
+        "--fail-when-required",
+        action="store_true",
+        help="Exit 2 when full Prism is required, for intake wrappers that must halt.",
+    )
+    gate.set_defaults(func=cmd_gate)
+
+    brief = subparsers.add_parser("brief", help="print a provider review brief")
+    brief.add_argument("--provider", required=True, choices=sorted(ALLOWED_PROVIDERS))
+    brief.add_argument("--request", required=True)
+    brief.add_argument("--out", help="Write the brief to a file and print only its path")
+    brief.add_argument(
+        "--inline-request",
+        action="store_true",
+        help="Include the full request JSON in the brief. Use only for bounded/manual provider calls.",
+    )
+    brief.set_defaults(func=cmd_brief)
+
+    merge = subparsers.add_parser("merge", help="merge provider reviews")
+    merge.add_argument("--out", help="Write the merged review to a file and print only its path")
+    merge.add_argument("reviews", nargs="+")
+    merge.set_defaults(func=cmd_merge)
+
+    rebuttal_request = subparsers.add_parser(
+        "rebuttal-request",
+        help="generate a bounded same-provider rebuttal request for a rejected Prism concern",
+    )
+    rebuttal_request.add_argument("--merge", required=True)
+    rebuttal_request.add_argument("--review", required=True)
+    rebuttal_request.add_argument("--provider", required=True, choices=sorted(ALLOWED_PROVIDERS))
+    rebuttal_request.add_argument("--main-claim", required=True)
+    rebuttal_request.add_argument("--risk-level", default="medium", choices=["low", "medium", "high", "critical"])
+    rebuttal_request.add_argument("--changed-reality", action="append", default=[])
+    rebuttal_request.add_argument("--evidence", action="append", default=[])
+    rebuttal_request.add_argument("--out", help="Write the generated rebuttal request to a file")
+    rebuttal_request.set_defaults(func=cmd_rebuttal_request)
+
+    resolution_check = subparsers.add_parser(
+        "resolution-check",
+        help="check that Prism concern/block verdicts were accepted, rejected with bounded rebuttal, or escalated",
+    )
+    resolution_check.add_argument("--merge", help="Merged Prism review JSON")
+    resolution_check.add_argument("--resolution", help="Prism concern resolution JSON")
+    resolution_check.add_argument("--review", action="append", default=[], help="Original provider review JSON; may repeat")
+    resolution_check.add_argument("--manifest", help="Optional Prism session manifest to check convergence consistency")
+    resolution_check.add_argument("--self-check", action="store_true")
+    resolution_check.set_defaults(func=cmd_resolution_check)
+
+    session_init = subparsers.add_parser("session-init", help="create a Prism task session manifest")
+    session_init.add_argument("--task-id", required=True)
+    session_init.add_argument("--run-dir", required=True)
+    session_init.add_argument("--max-rounds", type=int, default=3)
+    session_init.set_defaults(func=cmd_session_init)
+
+    session_update = subparsers.add_parser("session-update", help="update a Prism task session manifest")
+    session_update.add_argument("--manifest", required=True)
+    session_update.add_argument("--provider", required=True, choices=sorted(ALLOWED_PROVIDERS))
+    session_update.add_argument("--session-handle")
+    session_update.add_argument("--round-count", type=int)
+    session_update.add_argument("--increment-round", action="store_true")
+    session_update.add_argument("--provider-status", choices=sorted(PROVIDER_SESSION_STATUSES))
+    session_update.add_argument("--last-review")
+    session_update.add_argument("--status", choices=sorted(SESSION_STATUSES))
+    session_update.add_argument("--convergence-state", choices=["unresolved", "converged", "main-decided", "escalated"])
+    session_update.add_argument("--convergence-reason")
+    session_update.set_defaults(func=cmd_session_update)
+
+    session_check = subparsers.add_parser("session-check", help="check whether another provider round is allowed")
+    session_check.add_argument("--manifest", required=True)
+    session_check.add_argument("--provider", choices=sorted(ALLOWED_PROVIDERS))
+    session_check.add_argument(
+        "--require-existing-session",
+        action="store_true",
+        help="For follow-up rounds, fail if prior rounds exist without a recorded session handle.",
+    )
+    session_check.set_defaults(func=cmd_session_check)
+
+    return parser
+
+
+def main() -> int:
+    parser = build_parser()
+    args = parser.parse_args()
+    return int(args.func(args))
+
+
+if __name__ == "__main__":
+    sys.exit(main())

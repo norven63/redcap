@@ -1,0 +1,122 @@
+{
+  "bounded_sources": [
+    {
+      "line_count": 52,
+      "path": "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
+      "role": "source-policy",
+      "sha256": "f46183adc087228ac7a89e4b306b62d8173deb2e5f0e0ec420c83287673fe0c2"
+    },
+    {
+      "line_count": 17,
+      "path": "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+      "role": "runtime-facade",
+      "sha256": "4c6bbad03b89291c2690f02042ab79acc4ff687bf7dcd4b2b203e05c52f8acd9"
+    },
+    {
+      "line_count": 344,
+      "path": "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py",
+      "role": "authoritative-checker",
+      "sha256": "836282959ed56fc7174bf70f893f8155a9164062d390bc3741db6c7f2b8f2b26"
+    }
+  ],
+  "checker_behaviors": {
+    "checks_doctor_debug": true,
+    "rejects_runtime_task_leak": true,
+    "runs_external_workspace_smoke": true,
+    "validates_policy_shape": true,
+    "walks_up_to_task_file": true
+  },
+  "discard_or_defer": [
+    "old release-readiness review coupling is deferred; the new kernel should first enforce boundary resolution",
+    "old command-specific shell branch inspection is not copied wholesale; new commands should expose one shared boundary resolver"
+  ],
+  "extracted_at": "2026-05-31T16:08:35+00:00",
+  "guarantees": [
+    {
+      "classification": "portable",
+      "id": "G01",
+      "text": "Workspace-oriented CLI commands must not default to $REDCAP_ROOT/.dev-task.md."
+    },
+    {
+      "classification": "portable",
+      "id": "G02",
+      "text": "The default workspace must be the caller's discovered project workspace unless --workspace or REDCAP_WORKSPACE is provided."
+    },
+    {
+      "classification": "portable",
+      "id": "G03",
+      "text": "The default task file must be <workspace>/.dev-task.md unless --task-file or a backward-compatible positional task file is provided."
+    },
+    {
+      "classification": "portable_with_self_development_exception",
+      "id": "G04",
+      "text": "When the caller is inside the RedCap runtime repository, the default workspace may equal the runtime root to preserve self-development."
+    },
+    {
+      "classification": "portable",
+      "id": "G05",
+      "text": "Status and diagnose output must expose runtime root, workspace root, task file, and user-state policy."
+    },
+    {
+      "classification": "portable",
+      "id": "G06",
+      "text": "Revive must reuse the same workspace/task-file resolution and must not fall back to the RedCap runtime task card when an external workspace has its own task card."
+    },
+    {
+      "classification": "portable",
+      "id": "G07",
+      "text": "Summary must reuse the same workspace/task-file resolution so human-facing task overviews describe the managed project, not the runtime repository."
+    },
+    {
+      "classification": "portable",
+      "id": "G08",
+      "text": "Doctor and debug must reuse the same workspace/task-file resolution and must not fall back to the RedCap runtime task card when an external workspace has its own task card."
+    },
+    {
+      "classification": "portable_with_self_development_exception",
+      "id": "G09",
+      "text": "RedCap self-development remains supported because running the CLI from the RedCap repository makes workspace root equal runtime root."
+    }
+  ],
+  "layers": {
+    "project": {
+      "env": "REDCAP_WORKSPACE_ROOT",
+      "meaning": "The project being managed by RedCap, including its task file and project-local workflow state.",
+      "task_file_default": "<workspace>/.dev-task.md",
+      "task_file_env": "REDCAP_TASK_FILE",
+      "task_file_option": "--task-file",
+      "workspace_default": "$PWD",
+      "workspace_discovery": "If cwd is inside the RedCap runtime root, default to the runtime root for self-development; otherwise walk upward from cwd for .dev-task.md, falling back to cwd when no task file is found.",
+      "workspace_env": "REDCAP_WORKSPACE",
+      "workspace_option": "--workspace"
+    },
+    "runtime": {
+      "env": "REDCAP_RUNTIME_ROOT",
+      "meaning": "RedCap's shipped tools, scripts, policies, package metadata, and runtime implementation.",
+      "root_source": "directory containing bin/redcap's package root"
+    },
+    "user": {
+      "identity_anchor": "~/.cap/identity.md",
+      "local_state_path": "compass/.workflow/user-agent-identity.json",
+      "local_state_policy": "references/user-agent-identity-policy.json",
+      "meaning": "Local user and Agent identity, notification profile, and host-specific state that must not be packed as project state."
+    }
+  },
+  "old_root": "/Users/norven/workspace/redcap",
+  "portable_rules_for_new_redcap": [
+    "workspace-oriented commands must resolve project_workspace from caller context, not from RedCap runtime root",
+    "task_file defaults to <project_workspace>/.dev-task.md unless explicit task file is supplied",
+    "self-development is the only case where project_workspace may equal runtime_root",
+    "status/diagnose/debug-style outputs must expose runtime_root, project_workspace, task_file, and user_private_root",
+    "user identity and private local state stay outside runtime_root and project_workspace",
+    "external project evidence and runtime state must not default into RedCap runtime_root or the managed project workspace"
+  ],
+  "read_policy": {
+    "bulk_read": false,
+    "mode": "bounded-exact-files",
+    "source_count": 3,
+    "stop_condition": "extract runtime/project/user boundary guarantees only"
+  },
+  "schema_id": "old-redcap-boundary-extraction",
+  "version": 1
+}

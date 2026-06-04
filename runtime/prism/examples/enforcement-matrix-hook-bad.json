@@ -1,0 +1,42 @@
+{
+  "schema_id": "redcap-enforcement-matrix",
+  "entries": [
+    {
+      "id": "bad-hook-claim",
+      "title": "Bad hook claim missing host contract",
+      "kind": "hook",
+      "source_paths": [
+        "runtime/host-adapters/README.md"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Fixture: a claimed hook must not pass without concrete host metadata."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": true,
+        "trigger_surfaces": [
+          "codex:SessionStart"
+        ],
+        "implementation_paths": [
+          "runtime/host-adapters/README.md"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "placeholder probe",
+            "argv": [
+              "runtime/bin/redcap",
+              "layout-check"
+            ],
+            "expect_exit": 0
+          }
+        ]
+      },
+      "gaps": []
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "claude-code",
+    "kimi"
+  ],
+  "verdicts": [
+    {
+      "provider": "claude-code",
+      "verdict": "pass",
+      "confidence": "medium"
+    },
+    {
+      "provider": "kimi",
+      "verdict": "pass",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "pass",
+  "strictest_provider": "claude-code",
+  "must_respond": false,
+  "main_concerns": [
+    {
+      "provider": "claude-code",
+      "concern": "No concern."
+    },
+    {
+      "provider": "kimi",
+      "concern": "No concern."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "claude-code",
+      "minimum_fix": "No fix."
+    },
+    {
+      "provider": "kimi",
+      "minimum_fix": "No fix."
+    }
+  ],
+  "anti_loop_detected": false
+}

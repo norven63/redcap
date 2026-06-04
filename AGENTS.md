@@ -1,31 +1,23 @@
-# RedCap 自身开发 — Codex 系统级指令
+# RedCap Workspace Instructions
 
-> 本文件是 Codex（Codex CLI / Codex IDE 扩展）的入口索引。
-> **权威规范唯一来源：`compass/CONTRIBUTING.md`**。本文件不复制规则内容。
+Before starting any RedCap development task, run the deterministic Prism gate:
 
----
+```bash
+runtime/bin/redcap gate --task "<task summary>" --risk-level medium
+```
 
-## 轻量自动导入（由 Codex 原生导入指令加载）
+If the gate returns `required`, do not implement or claim completion until full
+Prism has reviewed the task, or until Norven explicitly overrides the gate.
 
-@compass/soul.md
-@compass/CONTRIBUTING.core.md
+This instruction is a workspace convention. It does not claim host-level
+automatic interception.
 
-> `~/.cap/identity.md` 才是 Cap 的个人灵魂锚点；`compass/soul.md` 负责培养指南与复活协议。为兼容尚未初始化的环境，本入口不直接 `@~/.cap/identity.md`；若 identity 缺失，先运行 `./revive-cap.sh --init-identity`（等价于 installer 初始化链路）。
-> 自动导入 `soul.md` 作为公开灵魂指南，并导入 `CONTRIBUTING.core.md` 作为启动必读核心契约；`CONTRIBUTING.md` 全文与 `lessons.md` 是大文件，不再默认展开注入上下文。
-> 所有规则细节以 `CONTRIBUTING.md` 为准；先遵守核心契约，再通过 `redcap-current-status.sh`、索引、`rg`/精确章节按需读取全文细则。
-> Codex 官方 lifecycle hooks 已接入 `.codex/` candidate 配置；只有在项目 `.codex` 已被 trust 且真实 SessionStart/Stop marker E2E 通过后，才允许把 Codex 从 degraded candidate 升级为 hook-ready。
+Read order for this clean workspace:
 
-## 会话启动时“断点续传”检查
+1. `README.md`
+2. `assets/docs/redcap-revival-doctrine.md`
+3. `assets/docs/redcap-revival-map.md`
+4. `assets/contracts/gate-protocol.md`
 
-进入 RedCap 工作区后，检查 `.dev-task.md` 是否存在。若存在，读取并恢复上次中断的任务进度，然后 `git log --oneline -10` 交叉验证实际进度（详见 compass/CONTRIBUTING.md §7）。
-
-## 复活后的执行保障
-
-完成自动导入与断点续传后，优先运行 `./revive-cap.sh`，把 identity 检查/初始化、用户/Agent 本地状态初始化（`redcap-user-agent-identity.sh`）、workflow import、`current-status`（`redcap-current-status.sh`）、`tracking-health`（`redcap-tracking-health.sh`）、宿主 Hook 就绪检查（`redcap-host-hook-readiness.sh`）、飞书单通道策略检查（`redcap-feishu-notification-policy-check.sh`）、飞书收件箱软扫描/安全检查（`redcap-feishu-inbox.sh`）、`execution-guarantee-check`（`redcap-execution-guarantee-check.sh`）与 `revival-check`（`redcap-revival-check.sh`）收口成单一安装动作。Codex 若已加载 `.codex/hooks.json`，SessionStart 会自动尝试这条链；但在 live marker E2E 通过前，仍按 candidate/degraded 处理。`./revive-cap.sh` 会自动转调 `compass/tools/redcap-install.sh` 并尽量轻量识别宿主；需要显式指定时再加 `--host <name>`。若 installer 不可用，再退回 `current-status`、`diagnose`、`execution-guarantee-check` / `revival-check` 的手工链路。需要读取 `assets/docs/**` 时，先用 `redcap-docs-catalog.sh summary/plan` 定位候选，再用 `redcap-docs-catalog.sh budget <精确路径...>` 审计读取集合；需要读取 `assets/knowledge/**` 时先看 `assets/knowledge/index.md`。旧 `compass/docs/**` 与 `compass/knowledge/**` 只是兼容入口，不是新会话首读主线。不要默认全量扫历史文档或知识库。
-这些首读/诊断脚本当前要求宿主提供可写临时目录；在 read-only reviewer sandbox 中，不得再把它们宣称为 100% 可运行的物理强保障。
-
-## Codex 特有说明
-
-- Codex 的 `AGENTS.md` 在每次会话自动加载到系统上下文
-- 本文件仅作轻量索引；不得通过 `@compass/CONTRIBUTING.md` 或 `@assets/knowledge/lessons.md` 默认展开大文件，避免新会话上下文爆炸
-- 等价索引文件：`.github/copilot-instructions.md`（Copilot）、`GEMINI.md`（Gemini CLI）
+Do not bulk-read the old RedCap repository. Use `assets/archaeology/` source
+maps and exact paths only.

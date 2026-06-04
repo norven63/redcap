@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "fixture-prism-concern-resolution",
+  "merge_path": "runtime/prism/examples/prism-concern-resolution.merge.concern.json",
+  "reviews": [
+    "runtime/prism/examples/prism-concern-resolution.kimi-concern.json",
+    "runtime/prism/examples/prism-concern-resolution.claude-pass.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "escalate",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "RedCap and Prism cannot safely resolve whether the concern should be accepted or rejected.",
+      "escalation": {
+        "target": "user",
+        "blocking_reason": "The next action depends on user-owned risk tolerance.",
+        "user_visible_question": "Should RedCap accept this concern as a required fix, or narrow the task scope?"
+      }
+    }
+  ],
+  "conclusion": {
+    "state": "escalated",
+    "reason": "The concern remains a user-facing decision instead of an implementation clearance."
+  }
+}

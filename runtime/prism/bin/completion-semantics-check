@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Reject completion claims that are only proof, plans, docs, or partial mechanisms."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import pathlib
+import sys
+from typing import Any
+
+
+COMPLETION_STATUSES = {"operational"}
+NON_COMPLETION_STATUSES = {
+    "not_started": "No implementation exists yet.",
+    "documented_only": "Documentation records intent but does not implement behavior.",
+    "partially_implemented": "Partial implementation cannot support a full completion claim.",
+    "manually_runnable": "Manual operation is useful, but it is not automated or fully operational.",
+    "tested": "Tests are evidence, but completion requires operational target reality by default.",
+}
+FORBIDDEN_LABELS = {
+    "proof-only",
+    "mechanism-only",
+    "plan-only",
+    "preflight-only",
+    "preserve-with-proof",
+    "implemented-proposal-only",
+    "disabled-by-default",
+    "blocked-by-human-decision",
+}
+
+
+def load_payload(path: str | None, has_cli_payload: bool) -> dict[str, Any]:
+    if path:
+        payload = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+    elif has_cli_payload:
+        payload = {}
+    elif not sys.stdin.isatty():
+        raw = sys.stdin.read().strip()
+        payload = json.loads(raw) if raw else {}
+    else:
+        payload = {}
+    if not isinstance(payload, dict):
+        raise SystemExit("claim payload must be a JSON object")
+    return payload
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Check whether a capability status supports a completion claim")
+    parser.add_argument("--json", help="Capability-status JSON file. If omitted, JSON may be read from stdin.")
+    parser.add_argument("--capability", help="Capability name when not using --json")
+    parser.add_argument("--status", choices=sorted(COMPLETION_STATUSES | set(NON_COMPLETION_STATUSES)))
+    parser.add_argument("--claim", default="", help="Completion claim text")
+    parser.add_argument("--label", action="append", default=[], help="Non-completion label attached to the claim")
+    args = parser.parse_args()
+
+    payload = load_payload(
+        args.json,
+        bool(args.status or args.capability or args.claim or args.label),
+    )
+    status = args.status or payload.get("status")
+    capability = args.capability or payload.get("capability") or "<unknown>"
+    claim = args.claim or payload.get("completion_claim") or ""
+    labels = set(args.label or []) | set(payload.get("non_completion_labels", []) or [])
+    blocked_labels = sorted(labels & FORBIDDEN_LABELS)
+
+    blocked_reasons = []
+    if status in NON_COMPLETION_STATUSES:
+        blocked_reasons.append(NON_COMPLETION_STATUSES[status])
+    elif status not in COMPLETION_STATUSES:
+        blocked_reasons.append(f"Unknown capability status: {status!r}.")
+    if blocked_labels:
+        blocked_reasons.append(f"Non-completion labels are present: {', '.join(blocked_labels)}.")
+    if not claim.strip():
+        blocked_reasons.append("Completion claim text is empty.")
+
+    result = {
+        "capability": capability,
+        "status": status,
+        "completion_allowed": not blocked_reasons,
+        "blocked_reasons": blocked_reasons,
+    }
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 2 if blocked_reasons else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

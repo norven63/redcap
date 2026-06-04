@@ -1,0 +1,60 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "self-development-lifecycle-gate-fixture",
+  "fsm_state": "IMPLEMENTING",
+  "requirement_review": {
+    "user_intent": "Exercise the RedCap self-development lifecycle packet gate.",
+    "target_reality": "A medium-or-higher RedCap self-development task can prove that requirement review, technical review, FSM transition, implementation evidence, and verification evidence were checked.",
+    "non_goals": [
+      "claim task completion",
+      "start a persistent task tracker"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "Remove this fixture or the gate change that references it.",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet runtime/prism/examples/self-development-lifecycle-packet.json"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "runtime/prism/examples/prism-concern-resolution.merge.pass.json",
+    "resolution_path": "runtime/prism/examples/prism-concern-resolution.valid-pass-merge.json"
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "Implement the self-development lifecycle packet gate fixture.",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation"
+  },
+  "task_body": {
+    "requested_outcome": "Exercise the RedCap self-development lifecycle packet gate.",
+    "primary_deliverable": "A lifecycle packet fixture that proves the validator can inspect task-body fields.",
+    "acceptance_criteria": [
+      "The fixture passes lifecycle check",
+      "The fixture does not claim completion"
+    ],
+    "status": "implemented",
+    "evidence_kind": "code",
+    "evidence": [
+      "runtime/core/development_lifecycle.py"
+    ]
+  },
+  "fsm_transition": {
+    "from": "PRISM_REVIEW",
+    "to": "IMPLEMENTING",
+    "evidence": [
+      "prism_review_or_explicit_skip"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/prism/bin/prism"
+  ],
+  "verification_evidence": [
+    "runtime/bin/redcap lifecycle check --packet runtime/prism/examples/self-development-lifecycle-packet.json"
+  ],
+  "completion_claim": {
+    "present": false
+  }
+}

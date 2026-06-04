@@ -1,0 +1,40 @@
+{
+  "schema_id": "redcap-archaeology-no-promote-decision",
+  "version": 1,
+  "shard_id": "pathology-receipt-as-completion",
+  "scope": "redcap-revival-1.0",
+  "decision": "no-promote",
+  "reason": "The old receipt aggregation mechanism is not promoted into RedCap 1.0. The useful 1.0 requirement is narrower: receipt evidence must remain proof after runtime reality changes and must never be accepted as completion by itself.",
+  "bounded_old_sources_considered": [
+    "/Users/norven/workspace/redcap/assets/references/parent-receipt-aggregation-policy.json",
+    "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.py",
+    "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.sh"
+  ],
+  "old_source_read_policy": {
+    "bulk_read": false,
+    "receipt_archives_read": false,
+    "private_task_bodies_read": false,
+    "full_migration_attempted": false
+  },
+  "kept_for_1_0": [
+    "Receipts may support proof chains after changed reality exists.",
+    "Receipt-only completion is explicitly proof-only and rejected.",
+    "Receipt-like evidence cannot complete extract-and-consume loop items without runtime, contract, knowledge, or RedCap command evidence."
+  ],
+  "not_promoted_for_1_0": [
+    "Old receipt aggregation machinery.",
+    "Receipt file presence as completion evidence.",
+    "Receipt aggregation as the authority that a task is complete."
+  ],
+  "consumption_evidence": [
+    "runtime/core/development_lifecycle.py",
+    "runtime/core/revival_loop.py",
+    "assets/contracts/redcap-1.0-loop.json",
+    "runtime/bin/redcap check"
+  ],
+  "verification": [
+    "runtime/bin/redcap lifecycle self-check",
+    "python3 runtime/core/revival_loop.py self-check",
+    "runtime/bin/redcap check"
+  ]
+}

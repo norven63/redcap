@@ -1,0 +1,354 @@
+{
+  "schema_id": "redcap-directory-structure-policy",
+  "root_allowed_entries": {
+    ".codex": {
+      "kind": "host-entry",
+      "reason": "Codex project-local hook deployment config; this is a host entry, not a RedCap asset unit."
+    },
+    ".gitignore": {
+      "kind": "git-worktree-entry",
+      "reason": "Git worktree ignore policy for host-local and generated RedCap runtime evidence."
+    },
+    "AGENTS.md": {
+      "kind": "host-entry",
+      "reason": "Codex project instruction entrypoint."
+    },
+    "README.md": {
+      "kind": "discovery",
+      "reason": "Human first-read discovery file."
+    },
+    "assets": {
+      "kind": "asset-unit",
+      "reason": "Durable non-executable contracts, docs, knowledge, evidence, and archaeology."
+    },
+    "runtime": {
+      "kind": "running-unit",
+      "reason": "Executable and operational RedCap capability."
+    }
+  },
+  "direct_children_allowed": {
+    ".codex": [
+      "hooks.json"
+    ],
+    "assets": [
+      "README.md",
+      "archaeology",
+      "contracts",
+      "docs",
+      "evidence",
+      "knowledge",
+      "manifests"
+    ],
+    "runtime": [
+      "README.md",
+      "bin",
+      "bootstrap",
+      "core",
+      "host-adapters",
+      "prism"
+    ]
+  },
+  "required_paths": [
+    ".codex/hooks.json",
+    "AGENTS.md",
+    "README.md",
+    "assets/README.md",
+    "assets/archaeology/README.md",
+    "assets/contracts/README.md",
+    "assets/contracts/directory-structure.json",
+    "assets/docs/README.md",
+    "assets/docs/directory-architecture.md",
+    "assets/evidence/README.md",
+    "assets/knowledge/README.md",
+    "assets/knowledge/entries/README.md",
+    "runtime/README.md",
+    "runtime/bin/redcap",
+    "runtime/bootstrap/README.md",
+    "runtime/core/__init__.py",
+    "runtime/core/layout_guard.py",
+    "runtime/host-adapters/README.md",
+    "runtime/prism/README.md"
+  ],
+  "functional_directories": {
+    "source_execution_logic": {
+      "paths": [
+        "runtime/bin",
+        "runtime/core",
+        "runtime/host-adapters",
+        "runtime/prism/bin",
+        "runtime/prism/lib"
+      ],
+      "reason": "Source and command logic that can execute or directly support execution."
+    },
+    "runtime_assets": {
+      "paths": [
+        "runtime/prism/docs",
+        "runtime/prism/examples",
+        "runtime/prism/prompts",
+        "runtime/prism/rules",
+        "runtime/prism/schemas"
+      ],
+      "reason": "Non-code material consumed by runtime behavior: prompts, rules, schemas, examples, and local protocol docs."
+    },
+    "archaeology_archive_assets": {
+      "paths": [
+        "assets/archaeology"
+      ],
+      "reason": "Bounded old-RedCap reference maps and exact-path extracts only."
+    },
+    "migration_manifest_assets": {
+      "paths": [
+        "assets/manifests"
+      ],
+      "reason": "Non-executable inventories and manifests for bounded workspace migrations."
+    }
+  },
+  "file_placement_rules": [
+    {
+      "path": ".codex",
+      "role": "host_entry_config",
+      "recursive": false,
+      "allowed_names": [
+        "hooks.json"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "assets",
+      "role": "asset_unit_root",
+      "recursive": false,
+      "allowed_names": [
+        "README.md"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "assets/archaeology",
+      "role": "archaeology_archive_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".json",
+        ".jsonl",
+        ".md",
+        ".txt"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "assets/contracts",
+      "role": "machine_contract_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".json",
+        ".md"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "assets/docs",
+      "role": "human_doctrine_docs",
+      "recursive": true,
+      "allowed_extensions": [
+        ".md"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "assets/evidence",
+      "role": "bounded_evidence_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".json",
+        ".jsonl",
+        ".lock",
+        ".md",
+        ".txt"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "assets/knowledge",
+      "role": "reviewed_knowledge_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".json",
+        ".md"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "assets/manifests",
+      "role": "migration_manifest_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".txt"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime",
+      "role": "runtime_unit_root",
+      "recursive": false,
+      "allowed_names": [
+        "README.md"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/bin",
+      "role": "source_execution_logic",
+      "recursive": true,
+      "allowed_extensions": [
+        ""
+      ]
+    },
+    {
+      "path": "runtime/bootstrap",
+      "role": "bootstrap_entrypoints",
+      "recursive": true,
+      "allowed_extensions": [
+        ".md",
+        ".sh"
+      ]
+    },
+    {
+      "path": "runtime/core",
+      "role": "source_execution_logic",
+      "recursive": true,
+      "allowed_extensions": [
+        ".py"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/host-adapters",
+      "role": "source_execution_logic",
+      "recursive": true,
+      "allowed_extensions": [
+        ".md",
+        ".py",
+        ".sh"
+      ]
+    },
+    {
+      "path": "runtime/prism",
+      "role": "runtime_prism_root",
+      "recursive": false,
+      "allowed_names": [
+        "README.md"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/prism/bin",
+      "role": "source_execution_logic",
+      "recursive": true,
+      "allowed_extensions": [
+        ""
+      ]
+    },
+    {
+      "path": "runtime/prism/docs",
+      "role": "runtime_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".md"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/prism/examples",
+      "role": "runtime_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".json",
+        ".jsonl"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/prism/lib",
+      "role": "source_execution_logic",
+      "recursive": true,
+      "allowed_extensions": [
+        ".py"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/prism/prompts",
+      "role": "runtime_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".md"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/prism/rules",
+      "role": "runtime_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".json"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/prism/schemas",
+      "role": "runtime_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".json"
+      ],
+      "deny_executable_bits": true
+    }
+  ],
+  "ignored_names": [
+    ".DS_Store",
+    ".git",
+    "__pycache__"
+  ],
+  "forbidden_names": [
+    ".next",
+    ".venv",
+    "backup",
+    "backups",
+    "build",
+    "dist",
+    "node_modules",
+    "out",
+    "report",
+    "reports",
+    "scratch",
+    "temp",
+    "tmp",
+    "venv"
+  ],
+  "asset_unit": {
+    "path": "assets",
+    "deny_executable_bits": true,
+    "deny_executable_extensions": [
+      ".bash",
+      ".cjs",
+      ".fish",
+      ".go",
+      ".java",
+      ".js",
+      ".mjs",
+      ".php",
+      ".pl",
+      ".ps1",
+      ".py",
+      ".rb",
+      ".rs",
+      ".sh",
+      ".ts",
+      ".zsh"
+    ],
+    "exceptions": []
+  },
+  "future_expansion_policy": {
+    "default": "fail_closed",
+    "reason": "New root entries or direct children under runtime/assets/.codex must be deliberately classified here and must keep runtime code out of assets."
+  }
+}

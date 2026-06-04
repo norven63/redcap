@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://redcap.local/schemas/prism-review.schema.json",
+  "title": "Prism Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "provider",
+    "verdict",
+    "confidence",
+    "reality_delta",
+    "main_concern",
+    "top_risks",
+    "missing_evidence",
+    "minimum_fix",
+    "anti_loop_signal",
+    "user_intent_alignment"
+  ],
+  "properties": {
+    "provider": {
+      "type": "string",
+      "enum": ["kimi", "claude-code"]
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["pass", "concern", "block"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "reality_delta": {
+      "type": "string",
+      "minLength": 1
+    },
+    "main_concern": {
+      "type": "string",
+      "minLength": 1
+    },
+    "top_risks": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_evidence": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string"
+      }
+    },
+    "minimum_fix": {
+      "type": "string",
+      "minLength": 1
+    },
+    "anti_loop_signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "reason"],
+      "properties": {
+        "present": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "user_intent_alignment": {
+      "type": "string",
+      "enum": ["aligned", "unclear", "drifting", "misaligned"]
+    }
+  }
+}
+

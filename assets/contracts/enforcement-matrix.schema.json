@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://redcap.local/contracts/enforcement-matrix.schema.json",
+  "title": "RedCap Enforcement Matrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_id", "entries"],
+  "properties": {
+    "schema_id": {
+      "const": "redcap-enforcement-matrix"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "source_paths",
+          "evaluation",
+          "enforcement",
+          "verification",
+          "gaps"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["workflow", "protocol", "gate", "hook", "future-design"]
+          },
+          "source_paths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "evaluation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["evaluated", "decision", "reason"],
+            "properties": {
+              "evaluated": {
+                "type": "boolean"
+              },
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "required_now",
+                  "required_by_protocol_not_auto_enforced",
+                  "deferred_not_claimed",
+                  "not_required"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "enforcement": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "host_level_automatic",
+              "trigger_surfaces",
+              "implementation_paths"
+            ],
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "operational",
+                  "manual_protocol",
+                  "not_implemented",
+                  "not_applicable"
+                ]
+              },
+              "host_level_automatic": {
+                "type": "boolean"
+              },
+              "trigger_surfaces": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "implementation_paths": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "hook_contract": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["host_source", "event", "adapter_path", "live_marker_probe"],
+            "properties": {
+              "host_source": {
+                "type": "string",
+                "minLength": 1
+              },
+              "event": {
+                "type": "string",
+                "minLength": 1
+              },
+              "adapter_path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "live_marker_probe": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "argv"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "argv": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "verification": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["mode", "probes"],
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": ["commands", "none"]
+              },
+              "probes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "argv", "expect_exit"],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "argv": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "expect_exit": {
+                      "type": "integer"
+                    },
+                    "stdout_contains": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "stderr_contains": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "gaps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

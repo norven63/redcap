@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-# 用途：运行正式发布 R1 Layer A 产品边界预检；详细职责见文件查阅字典。
-# Dictionary: references/file-lookup-dictionary.md#package-publish-safety
-set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec python3 "$SCRIPT_DIR/redcap-r1-layera-product-boundary-check.py" "$@"

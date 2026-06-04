@@ -1,0 +1,38 @@
+{
+  "schema_id": "redcap-archaeology-no-promote-decision",
+  "version": 1,
+  "shard_id": "pathology-report-as-progress",
+  "scope": "redcap-revival-1.0",
+  "decision": "no-promote",
+  "reason": "The old task-report mechanism is not promoted into RedCap 1.0. The useful 1.0 requirement is already narrower and executable: report, extraction, Prism review, ledger, receipt, or summary artifacts must not complete an extract-and-consume loop item unless paired with runtime, contract, knowledge, or RedCap command evidence.",
+  "bounded_old_sources_considered": [
+    "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+    "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-task-report-check.sh",
+    "/Users/norven/workspace/redcap/compass/tools/redcap-task-report-check.sh"
+  ],
+  "old_source_read_policy": {
+    "bulk_read": false,
+    "historical_task_report_bodies_read": false,
+    "full_migration_attempted": false
+  },
+  "kept_for_1_0": [
+    "Human-readable status can support communication after changed reality exists.",
+    "Completion evidence must preserve original intent coverage and unresolved-work boundaries.",
+    "Reports or summaries may support verification but cannot serve as completion."
+  ],
+  "not_promoted_for_1_0": [
+    "Mandatory old task-report template migration.",
+    "Report file presence as completion evidence.",
+    "Receipt or Prism result as the sole completed-state authority.",
+    "Closeout/report generation before changed runtime reality."
+  ],
+  "consumption_evidence": [
+    "runtime/core/revival_loop.py",
+    "assets/contracts/redcap-1.0-loop.json",
+    "runtime/bin/redcap check"
+  ],
+  "verification": [
+    "python3 runtime/core/revival_loop.py self-check",
+    "runtime/bin/redcap check"
+  ]
+}

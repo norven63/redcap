@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://redcap.local/schemas/prism-concern-resolution.schema.json",
+  "title": "Prism Concern Resolution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "task_id",
+    "merge_path",
+    "reviews",
+    "resolutions",
+    "conclusion"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "prism-concern-resolution"
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "merge_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviews": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "resolutions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider",
+          "verdict",
+          "decision",
+          "concern_ref",
+          "rationale"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": ["kimi", "claude-code"]
+          },
+          "verdict": {
+            "type": "string",
+            "enum": ["concern", "block"]
+          },
+          "decision": {
+            "type": "string",
+            "enum": ["accept", "reject", "escalate"]
+          },
+          "concern_ref": {
+            "type": "string",
+            "const": "main_concern"
+          },
+          "minimum_fix_ref": {
+            "type": "string",
+            "enum": ["minimum_fix"]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "implementation_evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "verification_evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "rejection_evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "followup_request": {
+            "type": "string"
+          },
+          "followup_review": {
+            "type": "string"
+          },
+          "escalation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["target", "blocking_reason", "user_visible_question"],
+            "properties": {
+              "target": {
+                "type": "string",
+                "minLength": 1
+              },
+              "blocking_reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "user_visible_question": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "conclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reason"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["resolved", "escalated"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

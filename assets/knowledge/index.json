@@ -1,0 +1,96 @@
+{
+  "schema_id": "redcap-knowledge-index",
+  "version": 1,
+  "default_read": "index-only",
+  "raw_archive_default": "forbidden",
+  "entries": [
+    {
+      "id": "revival-doctrine",
+      "title": "RedCap revival doctrine",
+      "route": "revival-doc",
+      "path": "assets/docs/redcap-revival-doctrine.md",
+      "first_read": "assets/docs/redcap-revival-doctrine.md",
+      "body_read_rule": "index-first",
+      "tags": [
+        "doctrine",
+        "revival",
+        "anti-loop"
+      ],
+      "summary": "Compact doctrine for reviving RedCap without importing old pathology or treating documents as completion."
+    },
+    {
+      "id": "revival-map",
+      "title": "RedCap revival map",
+      "route": "revival-doc",
+      "path": "assets/docs/redcap-revival-map.md",
+      "first_read": "assets/docs/redcap-revival-map.md",
+      "body_read_rule": "index-first",
+      "tags": [
+        "migration",
+        "architecture",
+        "old-redcap"
+      ],
+      "summary": "Map of useful old RedCap ideas, redesign targets, and designs that should not be carried forward wholesale."
+    },
+    {
+      "id": "directory-architecture",
+      "title": "Runtime and assets directory architecture",
+      "route": "revival-doc",
+      "path": "assets/docs/directory-architecture.md",
+      "first_read": "assets/docs/directory-architecture.md",
+      "body_read_rule": "index-first",
+      "tags": [
+        "directory",
+        "runtime",
+        "assets"
+      ],
+      "summary": "Thin-root layout rule separating executable runtime units from durable asset units."
+    },
+    {
+      "id": "old-prism-lock-pattern",
+      "title": "Old Prism run lock pattern",
+      "route": "old-redcap-reference",
+      "path": "/Users/norven/workspace/redcap/prism/tools/prism-run-state.sh",
+      "first_read": "assets/evidence/prism/20260531-171337-old-redcap-implementation-reuse-review/merge.json",
+      "body_read_rule": "explicit-only",
+      "tags": [
+        "prism",
+        "lock",
+        "atomic-write"
+      ],
+      "summary": "Old hard-link lock pattern adapted into runtime/prism/lib/prism_lock.py for session manifest writes."
+    },
+    {
+      "id": "old-session-ownership-pattern",
+      "title": "Old Codex session ownership pattern",
+      "route": "old-redcap-reference",
+      "path": "/Users/norven/workspace/redcap/compass/tools/redcap-codex-session-ownership.sh",
+      "first_read": "assets/evidence/prism/20260531-171337-old-redcap-implementation-reuse-review/merge.json",
+      "body_read_rule": "explicit-only",
+      "tags": [
+        "session",
+        "ownership",
+        "codex"
+      ],
+      "summary": "Old session ownership model should be adapted by concept, not copied with .dev-task.md coupling."
+    },
+    {
+      "id": "raw-evidence-access-boundary",
+      "title": "Raw Evidence Access Boundary",
+      "route": "active-local-index",
+      "path": "assets/knowledge/entries/raw-evidence-access-boundary.md",
+      "first_read": "assets/knowledge/entries/raw-evidence-access-boundary.md",
+      "body_read_rule": "index-first",
+      "tags": [
+        "raw",
+        "evidence",
+        "archive",
+        "package",
+        "cleanup",
+        "lifecycle",
+        "release"
+      ],
+      "summary": "Raw evidence is explicit-access only: not default context, not a package candidate, not physically cleaned, no cleanup apply, protected by minimum run count and release blocker rules."
+    }
+  ]
+}

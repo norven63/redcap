@@ -1,0 +1,63 @@
+{
+  "schema_id": "redcap-enforcement-matrix",
+  "entries": [
+    {
+      "id": "good-hook-contract-fixture",
+      "title": "Good hook contract fixture with live-marker probe",
+      "kind": "hook",
+      "source_paths": [
+        "runtime/host-adapters/examples/codex-session-start-live-marker.sh"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Fixture: a hook claim must name the host, event, adapter, and live-marker probe."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": true,
+        "trigger_surfaces": [
+          "codex:SessionStart"
+        ],
+        "implementation_paths": [
+          "runtime/host-adapters/examples/codex-session-start-live-marker.sh"
+        ]
+      },
+      "hook_contract": {
+        "host_source": "codex",
+        "event": "SessionStart",
+        "adapter_path": "runtime/host-adapters/examples/codex-session-start-live-marker.sh",
+        "live_marker_probe": {
+          "name": "fixture live marker reports hook event",
+          "argv": [
+            "runtime/host-adapters/examples/codex-session-start-live-marker.sh",
+            "--probe",
+            "codex",
+            "SessionStart"
+          ]
+        }
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "fixture live marker reports hook event",
+            "argv": [
+              "runtime/host-adapters/examples/codex-session-start-live-marker.sh",
+              "--probe",
+              "codex",
+              "SessionStart"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_HOOK_LIVE_MARKER_OK",
+              "codex",
+              "SessionStart"
+            ]
+          }
+        ]
+      },
+      "gaps": []
+    }
+  ]
+}
