@@ -16,6 +16,8 @@ QUESTION_ONLY_MARKERS = {
     "what is",
     "what are",
     "how should",
+    "how does",
+    "how do",
     "是否",
     "是不是",
     "要不要",
@@ -23,6 +25,9 @@ QUESTION_ONLY_MARKERS = {
     "可以吗",
     "对吗",
     "为什么",
+    "如何",
+    "怎么",
+    "什么是",
     "是什么",
 }
 
@@ -152,6 +157,24 @@ ANSWER_ONLY_EXECUTION_CONTEXT_PHRASES = {
     "不会执行",
 }
 
+MECHANISM_QUESTION_CONTEXT_PHRASES = {
+    "trigger execution",
+    "execution flow",
+    "execution logic",
+    "execution mechanism",
+    "hook execution",
+    "触发执行脚本",
+    "触发执行",
+    "执行流程",
+    "执行逻辑",
+    "执行机制",
+    "执行判断",
+    "执行过程",
+    "脚本执行",
+    "hook执行",
+    "hook 执行",
+}
+
 STRONG_IMPLEMENTATION_MARKERS = {
     "go ahead",
     "approved",
@@ -216,11 +239,14 @@ def prompt_text_from_event(event: dict[str, Any]) -> str | None:
 def prompt_has_directive_authority(prompt: str) -> bool:
     normalized = normalize_prompt_text(prompt)
     directive_text = normalized
+    question_context = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
     for phrase in NEGATED_IMPLEMENTATION_PHRASES:
         directive_text = directive_text.replace(phrase, " ")
     for phrase in ANSWER_ONLY_EXECUTION_CONTEXT_PHRASES:
         directive_text = directive_text.replace(phrase, " ")
-    question_only = any(marker in normalized for marker in QUESTION_ONLY_MARKERS)
+    if question_context:
+        for phrase in MECHANISM_QUESTION_CONTEXT_PHRASES:
+            directive_text = directive_text.replace(phrase, " ")
     directive = any(marker in directive_text for marker in IMPLEMENTATION_MARKERS)
     strong_directive = any(marker in directive_text for marker in STRONG_IMPLEMENTATION_MARKERS)
     conditional_directive = (
@@ -228,7 +254,7 @@ def prompt_has_directive_authority(prompt: str) -> bool:
         and any(marker in directive_text for marker in CONDITIONAL_IMPLEMENTATION_MARKERS)
         and not any(marker in normalized for marker in META_QUESTION_MARKERS)
     )
-    if question_only and not (strong_directive or conditional_directive):
+    if question_context and not (strong_directive or conditional_directive):
         return False
     return directive
 

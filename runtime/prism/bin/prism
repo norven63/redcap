@@ -1075,6 +1075,31 @@ def cmd_check(_: argparse.Namespace) -> int:
             "substantive",
         ),
         (
+            "有一个问题，就是hook只能触发执行脚本吧？那脚本是如何触发逻辑判断呢？因为我理解，脚本写的代码没办法知道“什么是纯问题，什么是空转”的吧？",
+            "answer_only",
+            "none",
+        ),
+        (
+            "hook执行流程是什么？",
+            "answer_only",
+            "none",
+        ),
+        (
+            "这个脚本如何执行判断？",
+            "answer_only",
+            "none",
+        ),
+        (
+            "请执行脚本",
+            "implementation",
+            "substantive",
+        ),
+        (
+            "请触发执行脚本来修复这个bug",
+            "implementation",
+            "substantive",
+        ),
+        (
             "请先诊断 hook 为什么过度拦截，不要修改文件。",
             "review_only",
             "diagnostic",
