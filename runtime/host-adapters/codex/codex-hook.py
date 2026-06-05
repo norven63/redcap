@@ -15,6 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 from typing import Any
 
 
@@ -34,6 +35,11 @@ REDCAP = REPO_ROOT / "runtime" / "bin" / "redcap"
 TURN_ACTION_CHECK = REPO_ROOT / "runtime" / "prism" / "bin" / "turn-action-check"
 FINAL_CLAIM_GUARD = REPO_ROOT / "runtime" / "core" / "final_claim_guard.py"
 SUPPORTED_EVENTS = {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"}
+INTENT_JUDGE_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_INTENT_JUDGE_TIMEOUT_SECONDS", "75"))
+INTENT_JUDGE_PROVIDER = os.environ.get("REDCAP_INTENT_JUDGE_PROVIDER", "claude-code")
+INTENT_JUDGE_FALLBACK_PROVIDER = os.environ.get("REDCAP_INTENT_JUDGE_FALLBACK_PROVIDER", "claude-code")
+INTENT_JUDGE_FAKE_RESPONSE = os.environ.get("REDCAP_INTENT_JUDGE_FAKE_RESPONSE")
+INTENT_JUDGE_FAKE_DELAY_SECONDS = os.environ.get("REDCAP_INTENT_JUDGE_FAKE_DELAY_SECONDS")
 MAX_GATE_PROMPT_CHARS = 12000
 MAX_TEXT_EVIDENCE_CHARS = 12000
 PROTECTED_EVIDENCE_ROOT = (REPO_ROOT / "assets" / "evidence").resolve()
@@ -451,11 +457,107 @@ def latest_user_prompt_marker() -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def effective_prompt_intent(prompt_marker: dict[str, Any]) -> dict[str, Any] | None:
+    for key in ["prompt_intent_effective", "prompt_intent"]:
+        intent = prompt_marker.get(key)
+        if isinstance(intent, dict):
+            return intent
+    return None
+
+
 def prompt_intent_allows_mutation(prompt_marker: dict[str, Any]) -> bool:
-    intent = prompt_marker.get("prompt_intent")
+    intent = effective_prompt_intent(prompt_marker)
     if not isinstance(intent, dict):
         return True
     return intent.get("authorized_scope") in {"implementation", "completion"}
+
+
+def prompt_text_from_marker(prompt_marker: dict[str, Any]) -> str:
+    prompt = prompt_marker.get("prompt")
+    if isinstance(prompt, str):
+        return prompt
+    if isinstance(prompt, dict):
+        excerpt = prompt.get("normalized_excerpt")
+        if isinstance(excerpt, str):
+            return excerpt
+    return ""
+
+
+def prompt_marker_is_fresh_for_tool(prompt_marker: dict[str, Any], payload: dict[str, Any]) -> bool:
+    if not prompt_text_from_marker(prompt_marker).strip():
+        return False
+    for key in ["session_id", "turn_id"]:
+        expected = payload.get(key)
+        if isinstance(expected, str) and expected.strip() and prompt_marker.get(key) != expected:
+            return False
+    return True
+
+
+def run_intent_judge_for_marker(prompt_marker: dict[str, Any]) -> dict[str, Any]:
+    prompt = prompt_text_from_marker(prompt_marker)
+    if not prompt.strip():
+        return {
+            "ok": False,
+            "llm_attempted": False,
+            "reason": "latest prompt text is unavailable",
+        }
+    argv = [
+        str(REDCAP),
+        "intent-judge",
+        "classify",
+        "--prompt",
+        prompt,
+        "--llm-policy",
+        "force",
+        "--provider",
+        INTENT_JUDGE_PROVIDER,
+        "--fallback-provider",
+        INTENT_JUDGE_FALLBACK_PROVIDER,
+        "--timeout-seconds",
+        str(INTENT_JUDGE_TIMEOUT_SECONDS),
+    ]
+    if INTENT_JUDGE_FAKE_RESPONSE:
+        argv.extend(["--fake-response", INTENT_JUDGE_FAKE_RESPONSE])
+    if INTENT_JUDGE_FAKE_DELAY_SECONDS:
+        argv.extend(["--fake-delay-seconds", INTENT_JUDGE_FAKE_DELAY_SECONDS])
+    provider_count = 1 + int(bool(INTENT_JUDGE_FALLBACK_PROVIDER) and INTENT_JUDGE_FALLBACK_PROVIDER != INTENT_JUDGE_PROVIDER)
+    try:
+        completed = subprocess.run(
+            argv,
+            cwd=str(REPO_ROOT),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=(INTENT_JUDGE_TIMEOUT_SECONDS * provider_count) + 5,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "ok": False,
+            "llm_attempted": True,
+            "reason": "intent judge timeout",
+            "timeout_seconds": INTENT_JUDGE_TIMEOUT_SECONDS,
+            "stdout_length": len(exc.stdout or ""),
+            "stderr_length": len(exc.stderr or ""),
+        }
+    parsed, parse_error = parse_leading_json_object(completed.stdout or "")
+    if parsed is None:
+        parsed = {}
+    parsed.update({
+        "exit_code": completed.returncode,
+        "stdout_length": len(completed.stdout or ""),
+        "stdout_sha256": hashlib.sha256((completed.stdout or "").encode("utf-8")).hexdigest()
+        if completed.stdout
+        else None,
+        "stderr_length": len(completed.stderr or ""),
+        "stderr_sha256": hashlib.sha256((completed.stderr or "").encode("utf-8")).hexdigest()
+        if completed.stderr
+        else None,
+        "parse_error": parse_error,
+    })
+    if parse_error is not None:
+        parsed["ok"] = False
+        parsed["reason"] = f"intent judge returned invalid JSON: {parse_error}"
+    return parsed
 
 
 def pre_tool_claim(payload: dict[str, Any], marker: dict[str, Any], command: str) -> dict[str, Any]:
@@ -622,6 +724,8 @@ def cmd_event(args: argparse.Namespace) -> int:
             "gate_stderr_length": gate.get("stderr_length"),
             "gate_stderr_sha256": gate.get("stderr_sha256"),
             "prompt_intent": prompt_intent,
+            "prompt_intent_effective": None,
+            "prompt_intent_llm": None,
         }, base_marker=marker)
         decision = marker.get("gate_decision")
         if decision == "required":
@@ -661,13 +765,33 @@ def cmd_event(args: argparse.Namespace) -> int:
         cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) else None
         prompt_marker = latest_user_prompt_marker()
         intent_deny_reason = None
-        if tool_is_mutating(payload, command) and not prompt_intent_allows_mutation(prompt_marker):
-            intent = prompt_marker.get("prompt_intent") if isinstance(prompt_marker, dict) else {}
-            scope = intent.get("authorized_scope") if isinstance(intent, dict) else "unknown"
-            intent_deny_reason = (
-                "Latest RedCap prompt is classified as "
-                f"{scope}; answer/review turns cannot authorize mutating tool use."
-            )
+        intent_judge = None
+        prompt_marker_fresh = prompt_marker_is_fresh_for_tool(prompt_marker, payload)
+        if tool_is_mutating(payload, command):
+            if not prompt_marker_fresh:
+                intent_deny_reason = (
+                    "Latest RedCap prompt marker is missing or stale for this tool event; "
+                    "mutation requires a fresh UserPromptSubmit marker."
+                )
+            elif not prompt_intent_allows_mutation(prompt_marker):
+                intent = effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else {}
+                scope = intent.get("authorized_scope") if isinstance(intent, dict) else "unknown"
+                intent_judge = run_intent_judge_for_marker(prompt_marker)
+                judge_intent = intent_judge.get("prompt_intent") if isinstance(intent_judge, dict) else None
+                if isinstance(judge_intent, dict) and judge_intent.get("authorized_scope") in {"implementation", "completion"}:
+                    prompt_marker = update_latest_marker("UserPromptSubmit", {
+                        "prompt_intent_effective": judge_intent,
+                        "prompt_intent_llm": intent_judge,
+                    }, base_marker=prompt_marker)
+                else:
+                    judge_reason = intent_judge.get("reason") if isinstance(intent_judge, dict) else None
+                    intent_deny_reason = (
+                        "Latest RedCap prompt is classified as "
+                        f"{scope}; Prism LLM intent judge did not authorize mutation"
+                        f"{': ' + judge_reason if judge_reason else ''}."
+                    )
+            else:
+                pass
         deny_reason = (
             dangerous_command_reason(command, cwd)
             or protected_evidence_write_reason(payload)
@@ -678,7 +802,10 @@ def cmd_event(args: argparse.Namespace) -> int:
             "dangerous_command_denied": bool(deny_reason),
             "dangerous_command_reason": deny_reason,
             "prompt_intent_mutation_denied": bool(intent_deny_reason),
-            "latest_prompt_intent": prompt_marker.get("prompt_intent") if isinstance(prompt_marker, dict) else None,
+            "latest_prompt_marker_fresh": prompt_marker_fresh,
+            "latest_prompt_intent": effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else None,
+            "prompt_intent_llm_attempted": bool(intent_judge),
+            "prompt_intent_llm_result": intent_judge,
             "session_ownership_claim": claim,
         }, base_marker=marker)
         if claim.get("attempted") is True:
@@ -823,6 +950,201 @@ def cmd_event(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_hook_event_for_self_check(
+    event: str,
+    payload: dict[str, Any],
+    *,
+    evidence_dir: pathlib.Path,
+    extra_env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env["REDCAP_CODEX_HOOK_EVIDENCE_DIR"] = str(evidence_dir)
+    if extra_env:
+        env.update(extra_env)
+    return subprocess.run(
+        [sys.executable, str(pathlib.Path(__file__).resolve()), "--event", event],
+        cwd=str(REPO_ROOT),
+        input=json.dumps(payload, ensure_ascii=False),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=30,
+    )
+
+
+def load_self_check_marker(evidence_dir: pathlib.Path, event: str) -> dict[str, Any]:
+    path = evidence_dir / f"latest-{event}.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="redcap-codex-hook-intent-") as raw_tmp:
+        evidence_dir = pathlib.Path(raw_tmp)
+        prompt_payload = {
+            "prompt": "让这个机制以后自己判断真实意图",
+            "cwd": str(REPO_ROOT),
+            "source": "codex-hook-intent-self-check",
+        }
+        first_prompt = run_hook_event_for_self_check("UserPromptSubmit", prompt_payload, evidence_dir=evidence_dir)
+        if first_prompt.returncode != 0:
+            failures.append(f"first UserPromptSubmit failed: {first_prompt.stderr or first_prompt.stdout}")
+        allow = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-allow",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_INTENT_JUDGE_FAKE_RESPONSE": json.dumps({
+                    "prompt_kind": "directive",
+                    "authorized_scope": "implementation",
+                    "action_evidence": "substantive",
+                    "confidence": "high",
+                    "reason": "fixture hook branch allow",
+                }, ensure_ascii=False),
+            },
+        )
+        if allow.returncode != 0:
+            failures.append(f"allow PreToolUse failed: {allow.stderr or allow.stdout}")
+        allow_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        allow_prompt = load_self_check_marker(evidence_dir, "UserPromptSubmit")
+        if allow_marker.get("dangerous_command_denied") is not False:
+            failures.append("LLM-authorized fixture branch should not deny mutation")
+        if allow_marker.get("prompt_intent_llm_attempted") is not True:
+            failures.append("LLM-authorized fixture branch did not attempt intent judge")
+        effective = allow_prompt.get("prompt_intent_effective")
+        if not (isinstance(effective, dict) and effective.get("authorized_scope") == "implementation"):
+            failures.append("LLM-authorized fixture branch did not write implementation prompt_intent_effective")
+
+        reset_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "把这段代码贴出来给我看",
+                "cwd": str(REPO_ROOT),
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if reset_prompt.returncode != 0:
+            failures.append(f"reset UserPromptSubmit failed: {reset_prompt.stderr or reset_prompt.stdout}")
+        reset_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
+        if reset_marker.get("prompt_intent_effective") is not None:
+            failures.append("UserPromptSubmit did not clear prior prompt_intent_effective")
+        deny = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-deny",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_INTENT_JUDGE_FAKE_RESPONSE": json.dumps({
+                    "prompt_kind": "question",
+                    "authorized_scope": "answer_only",
+                    "action_evidence": "none",
+                    "confidence": "high",
+                    "reason": "fixture hook branch deny",
+                }, ensure_ascii=False),
+            },
+        )
+        if deny.returncode != 0:
+            failures.append(f"deny PreToolUse failed: {deny.stderr or deny.stdout}")
+        deny_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        if deny_marker.get("dangerous_command_denied") is not True:
+            failures.append("LLM-denied fixture branch should deny mutation")
+        if deny_marker.get("prompt_intent_llm_attempted") is not True:
+            failures.append("LLM-denied fixture branch did not attempt intent judge")
+
+        stale = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "different-session",
+                "turn_id": "different-turn",
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-stale",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_INTENT_JUDGE_FAKE_RESPONSE": json.dumps({
+                    "prompt_kind": "directive",
+                    "authorized_scope": "implementation",
+                    "action_evidence": "substantive",
+                    "confidence": "high",
+                    "reason": "should not bypass stale prompt marker",
+                }, ensure_ascii=False),
+            },
+        )
+        if stale.returncode != 0:
+            failures.append(f"stale PreToolUse failed: {stale.stderr or stale.stdout}")
+        stale_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        if stale_marker.get("latest_prompt_marker_fresh") is not False:
+            failures.append("stale prompt marker was not detected")
+        if stale_marker.get("dangerous_command_denied") is not True:
+            failures.append("stale prompt marker should deny mutation")
+        if stale_marker.get("prompt_intent_llm_attempted") is not False:
+            failures.append("stale prompt marker must not call LLM using old prompt text")
+
+        timeout_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "让这个机制以后自己判断真实意图",
+                "cwd": str(REPO_ROOT),
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if timeout_prompt.returncode != 0:
+            failures.append(f"timeout UserPromptSubmit failed: {timeout_prompt.stderr or timeout_prompt.stdout}")
+        timeout_branch = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-timeout",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_INTENT_JUDGE_TIMEOUT_SECONDS": "0.1",
+                "REDCAP_INTENT_JUDGE_FAKE_DELAY_SECONDS": "7",
+                "REDCAP_INTENT_JUDGE_FAKE_RESPONSE": json.dumps({
+                    "prompt_kind": "directive",
+                    "authorized_scope": "implementation",
+                    "action_evidence": "substantive",
+                    "confidence": "high",
+                    "reason": "should be timed out by hook outer guard",
+                }, ensure_ascii=False),
+            },
+        )
+        if timeout_branch.returncode != 0:
+            failures.append(f"timeout PreToolUse failed: {timeout_branch.stderr or timeout_branch.stdout}")
+        timeout_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        if timeout_marker.get("dangerous_command_denied") is not True:
+            failures.append("timeout fixture branch should deny mutation")
+        timeout_result = timeout_marker.get("prompt_intent_llm_result")
+        if not (isinstance(timeout_result, dict) and timeout_result.get("reason") == "intent judge timeout"):
+            failures.append("timeout fixture branch did not record intent judge timeout")
+    print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
+    return 0 if not failures else 1
+
+
 def cmd_verify(args: argparse.Namespace) -> int:
     marker_name = f"latest-{args.event}.json"
     if args.event == "PreToolUse" and args.require_session_claim_attempt:
@@ -891,6 +1213,7 @@ def is_non_empty_string(value: Any) -> bool:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="RedCap Codex host hook adapter")
     parser.add_argument("--event", choices=sorted(SUPPORTED_EVENTS), help="Codex hook event being handled")
+    parser.add_argument("--self-check-intent-judge", action="store_true")
     parser.add_argument("--verify-live-marker", action="store_true", help="Verify latest live marker for --event")
     parser.add_argument("--max-age-seconds", type=int, default=86400)
     parser.add_argument("--require-real-codex-session", action="store_true")
@@ -908,6 +1231,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
+    if args.self_check_intent_judge:
+        return cmd_self_check_intent_judge(args)
     if not args.event:
         raise SystemExit("--event is required")
     if args.verify_live_marker:

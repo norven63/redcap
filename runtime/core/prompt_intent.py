@@ -69,6 +69,8 @@ IMPLEMENTATION_MARKERS = {
     "清理",
     "跑",
     "继续",
+    "升级",
+    "改造",
     "赞同",
     "同意",
 }
@@ -330,8 +332,10 @@ def classify_prompt_intent(prompt: str) -> dict[str, str]:
 
 
 def prompt_intent_from_event(event: dict[str, Any]) -> dict[str, str]:
-    stored = event.get("prompt_intent")
-    if isinstance(stored, dict):
+    for key in ["prompt_intent_effective", "prompt_intent"]:
+        stored = event.get(key)
+        if not isinstance(stored, dict):
+            continue
         scope = stored.get("authorized_scope")
         evidence = stored.get("action_evidence")
         kind = stored.get("prompt_kind")
@@ -340,7 +344,7 @@ def prompt_intent_from_event(event: dict[str, Any]) -> dict[str, str]:
                 "prompt_kind": kind,
                 "authorized_scope": scope,
                 "action_evidence": evidence,
-                "reason": str(stored.get("reason") or "stored prompt_intent"),
+                "reason": str(stored.get("reason") or f"stored {key}"),
             }
     prompt = prompt_text_from_event(event)
     if isinstance(prompt, str) and prompt.strip():
