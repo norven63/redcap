@@ -93,6 +93,8 @@ NEGATED_IMPLEMENTATION_PHRASES = {
     "don't modify",
     "no changes",
     "without changing",
+    "not executing",
+    "not actually executing",
     "不要修改",
     "不要改",
     "不要执行",
@@ -104,10 +106,19 @@ NEGATED_IMPLEMENTATION_PHRASES = {
     "不要 commit",
     "不用修改",
     "不用改",
+    "不用执行",
+    "不需要执行",
+    "无需执行",
     "不用提交",
     "不用推送",
     "不修改",
     "不改",
+    "不是实际执行",
+    "不是执行",
+    "不是任务执行",
+    "并非执行",
+    "没有执行",
+    "不会执行",
     "不提交",
     "不推送",
     "先别改",
@@ -116,6 +127,29 @@ NEGATED_IMPLEMENTATION_PHRASES = {
     "别改",
     "别提交",
     "别推送",
+}
+
+ANSWER_ONLY_EXECUTION_CONTEXT_PHRASES = {
+    "answer only",
+    "just answer",
+    "only answer",
+    "question only",
+    "只是回答问题",
+    "只是回答",
+    "仅回答",
+    "只回答",
+    "回答问题",
+    "不是实际执行任务",
+    "不是实际执行",
+    "是不是实际执行",
+    "是否实际执行",
+    "不是执行任务",
+    "不是执行",
+    "不需要执行",
+    "不用执行",
+    "无需执行",
+    "没有执行",
+    "不会执行",
 }
 
 STRONG_IMPLEMENTATION_MARKERS = {
@@ -183,6 +217,8 @@ def prompt_has_directive_authority(prompt: str) -> bool:
     normalized = normalize_prompt_text(prompt)
     directive_text = normalized
     for phrase in NEGATED_IMPLEMENTATION_PHRASES:
+        directive_text = directive_text.replace(phrase, " ")
+    for phrase in ANSWER_ONLY_EXECUTION_CONTEXT_PHRASES:
         directive_text = directive_text.replace(phrase, " ")
     question_only = any(marker in normalized for marker in QUESTION_ONLY_MARKERS)
     directive = any(marker in directive_text for marker in IMPLEMENTATION_MARKERS)

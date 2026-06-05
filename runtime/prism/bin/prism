@@ -1055,6 +1055,26 @@ def cmd_check(_: argparse.Namespace) -> int:
             "none",
         ),
         (
+            "好的，另外，如果只是回答问题这种，不是实际执行任务，会被拦截吗？还有，这些改动需要重启Codex才生效吗？还是现在就已经生效了？",
+            "answer_only",
+            "none",
+        ),
+        (
+            "如果只是回答问题，不是实际执行任务，会被拦截吗？",
+            "answer_only",
+            "none",
+        ),
+        (
+            "是不是实际执行的操作？",
+            "answer_only",
+            "none",
+        ),
+        (
+            "不是只诊断，而是要执行修复并 commit",
+            "implementation",
+            "substantive",
+        ),
+        (
             "请先诊断 hook 为什么过度拦截，不要修改文件。",
             "review_only",
             "diagnostic",
