@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 
@@ -87,6 +88,29 @@ REVIEW_MARKERS = {
     "分析",
     "复盘",
     "看看",
+}
+
+CODE_EXCERPT_REQUEST_MARKERS = {
+    "show me the code",
+    "paste the code",
+    "show the code",
+    "paste the script",
+    "show the script",
+    "贴出来",
+    "贴出",
+    "列出来",
+    "列出",
+    "展示",
+    "给我看看",
+}
+
+CODE_REFERENCE_MARKERS = {
+    "code",
+    "script",
+    "source",
+    "代码",
+    "脚本",
+    "源码",
 }
 
 NEGATED_IMPLEMENTATION_PHRASES = {
@@ -220,6 +244,17 @@ def normalize_prompt_text(value: str) -> str:
     return " ".join(value.casefold().split())
 
 
+def strip_quoted_spans(value: str) -> str:
+    return re.sub(r"`[^`]*`|“[^”]*”|\"[^\"]*\"|'[^']*'|‘[^’]*’", " ", value)
+
+
+def prompt_requests_code_excerpt(normalized: str) -> bool:
+    return (
+        any(marker in normalized for marker in CODE_EXCERPT_REQUEST_MARKERS)
+        and any(marker in normalized for marker in CODE_REFERENCE_MARKERS)
+    )
+
+
 def prompt_text_from_event(event: dict[str, Any]) -> str | None:
     for key in ["prompt_text", "prompt_excerpt", "source_prompt"]:
         value = event.get(key)
@@ -238,7 +273,7 @@ def prompt_text_from_event(event: dict[str, Any]) -> str | None:
 
 def prompt_has_directive_authority(prompt: str) -> bool:
     normalized = normalize_prompt_text(prompt)
-    directive_text = normalized
+    directive_text = strip_quoted_spans(normalized)
     question_context = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
     for phrase in NEGATED_IMPLEMENTATION_PHRASES:
         directive_text = directive_text.replace(phrase, " ")
@@ -263,7 +298,7 @@ def classify_prompt_intent(prompt: str) -> dict[str, str]:
     normalized = normalize_prompt_text(prompt)
     question = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
     implementation = prompt_has_directive_authority(prompt)
-    review = any(marker in normalized for marker in REVIEW_MARKERS)
+    review = any(marker in normalized for marker in REVIEW_MARKERS) or prompt_requests_code_excerpt(normalized)
 
     if implementation:
         return {

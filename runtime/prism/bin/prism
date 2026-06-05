@@ -1100,6 +1100,21 @@ def cmd_check(_: argparse.Namespace) -> int:
             "substantive",
         ),
         (
+            "来，把你脚本里如何判断“问题词、执行词、否定词、机制语境词、commit/push 等高风险词”的代码贴出来",
+            "review_only",
+            "diagnostic",
+        ),
+        (
+            "把 `commit/push` 判断代码贴出来",
+            "review_only",
+            "diagnostic",
+        ),
+        (
+            "贴出代码然后执行修复并 commit",
+            "implementation",
+            "substantive",
+        ),
+        (
             "请先诊断 hook 为什么过度拦截，不要修改文件。",
             "review_only",
             "diagnostic",
