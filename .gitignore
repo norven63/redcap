@@ -1,5 +1,5 @@
+.DS_Store
 .codex/
 assets/evidence/*
 !assets/evidence/
 !assets/evidence/README.md
-

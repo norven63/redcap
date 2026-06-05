@@ -25,8 +25,10 @@ from typing import Any
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT.parents[1]
 sys.path.insert(0, str(ROOT / "lib"))
+sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
 from prism_lock import file_lock, write_json_atomic, write_text_atomic  # noqa: E402
 from prism_ledger import record_gate, record_manifest  # noqa: E402
+from prompt_intent import classify_prompt_intent  # noqa: E402
 
 ALLOWED_PROVIDERS = {"kimi", "claude-code"}
 VERDICT_RANK = {"pass": 0, "concern": 1, "block": 2}
@@ -1031,6 +1033,50 @@ def cmd_check(_: argparse.Namespace) -> int:
         raise SystemExit("hook coverage fixture with missing required event should fail")
     if "hook_required guardrail must name a deployed required_event" not in bad_hook_coverage.stdout:
         raise SystemExit("bad hook coverage fixture did not fail for the expected missing event reason")
+    prompt_intent_cases = [
+        (
+            "你看看gitignore还有没有要加的，以及整个目录还有没有要调整的？如果没有的话，再次commit+push试试看",
+            "implementation",
+            "substantive",
+        ),
+        (
+            "看看有没有新加的 ignore，如果有你就加上",
+            "implementation",
+            "substantive",
+        ),
+        (
+            "这次拦截是不是有些过激了？我本身让你看看有没有新加的ignore，潜台词是如果有，你就加上，而这次拦截是为了什么？",
+            "review_only",
+            "diagnostic",
+        ),
+        (
+            "是不是应该 push？",
+            "answer_only",
+            "none",
+        ),
+        (
+            "请先诊断 hook 为什么过度拦截，不要修改文件。",
+            "review_only",
+            "diagnostic",
+        ),
+        (
+            "执行 gitignore 修复并 commit+push",
+            "implementation",
+            "substantive",
+        ),
+    ]
+    for prompt, expected_scope, expected_evidence in prompt_intent_cases:
+        intent = classify_prompt_intent(prompt)
+        if intent.get("authorized_scope") != expected_scope:
+            raise SystemExit(
+                "prompt intent scope mismatch: "
+                f"{prompt!r} expected {expected_scope}, got {intent.get('authorized_scope')}"
+            )
+        if intent.get("action_evidence") != expected_evidence:
+            raise SystemExit(
+                "prompt intent evidence mismatch: "
+                f"{prompt!r} expected {expected_evidence}, got {intent.get('action_evidence')}"
+            )
     bad_turn_action = subprocess.run(
         [
             str(ROOT / "bin" / "turn-action-check"),

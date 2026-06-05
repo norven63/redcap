@@ -27,9 +27,11 @@ QUESTION_ONLY_MARKERS = {
 }
 
 IMPLEMENTATION_MARKERS = {
+    "commit",
     "implement",
     "fix",
     "complete ",
+    "push",
     "run ",
     "execute",
     "go ahead",
@@ -49,8 +51,16 @@ IMPLEMENTATION_MARKERS = {
     "新分支",
     "修改",
     "改掉",
+    "调整",
     "补齐",
     "补上",
+    "提交",
+    "推送",
+    "添加",
+    "加入",
+    "加上",
+    "新加",
+    "清理",
     "跑",
     "继续",
     "赞同",
@@ -86,12 +96,26 @@ NEGATED_IMPLEMENTATION_PHRASES = {
     "不要修改",
     "不要改",
     "不要执行",
+    "不要提交",
+    "不要推送",
+    "不要push",
+    "不要 push",
+    "不要commit",
+    "不要 commit",
     "不用修改",
     "不用改",
+    "不用提交",
+    "不用推送",
     "不修改",
     "不改",
+    "不提交",
+    "不推送",
     "先别改",
+    "先别提交",
+    "先别推送",
     "别改",
+    "别提交",
+    "别推送",
 }
 
 STRONG_IMPLEMENTATION_MARKERS = {
@@ -108,6 +132,30 @@ STRONG_IMPLEMENTATION_MARKERS = {
     "先把",
     "帮我",
     "do it",
+}
+
+CONDITIONAL_IMPLEMENTATION_MARKERS = {
+    "if needed",
+    "if necessary",
+    "as needed",
+    "when needed",
+    "如果",
+    "有的话",
+    "没有的话",
+    "需要的话",
+    "必要的话",
+    "发现",
+}
+
+META_QUESTION_MARKERS = {
+    "why",
+    "为什么",
+    "是为了什么",
+    "拦截",
+    "过激",
+    "误判",
+    "意图",
+    "原因",
 }
 
 
@@ -139,7 +187,12 @@ def prompt_has_directive_authority(prompt: str) -> bool:
     question_only = any(marker in normalized for marker in QUESTION_ONLY_MARKERS)
     directive = any(marker in directive_text for marker in IMPLEMENTATION_MARKERS)
     strong_directive = any(marker in directive_text for marker in STRONG_IMPLEMENTATION_MARKERS)
-    if question_only and not strong_directive:
+    conditional_directive = (
+        directive
+        and any(marker in directive_text for marker in CONDITIONAL_IMPLEMENTATION_MARKERS)
+        and not any(marker in normalized for marker in META_QUESTION_MARKERS)
+    )
+    if question_only and not (strong_directive or conditional_directive):
         return False
     return directive
 
