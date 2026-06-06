@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260606-old-redcap-360-scan-start",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260606-old-redcap-360-scan-start",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-06T15:26:22+00:00",
+  "task_started_at": "2026-06-06T15:26:22+00:00",
+  "updated_at": "2026-06-06T15:34:48+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "6761c212-8862-44ea-a911-c6eeb7dd772d",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260606-old-redcap-360-scan-start/claude.review.json"
+    },
+    "kimi": {
+      "session_handle": "77826262-9c0a-4ca4-b69d-d12edebbcd1d",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260606-old-redcap-360-scan-start/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Claude Code block accepted with versioned scan-start artifacts, real check receipts, and coverage proof before scan-start claim."
+  }
+}

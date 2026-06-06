@@ -1,0 +1,54 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260606-old-redcap-360-scan-start",
+  "merge_path": "assets/evidence/prism/20260606-old-redcap-360-scan-start/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260606-old-redcap-360-scan-start/kimi.review.json",
+    "assets/evidence/prism/20260606-old-redcap-360-scan-start/claude.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受 Kimi 的核心关注：仅创建扫描配置不能等同于扫描启动。已补运行回执、覆盖清单、任务事实 in_progress 状态，并将 Cap 仲裁写成可记录、可升级的有限裁决，而不是无声否决。对于“始终交给 Norven 仲裁”的部分不全盘接受，因为 Norven 之前明确确认最大轮次后由 Cap 强制仲裁；但价值性、不可逆或证据不足问题仍会升级给 Norven。",
+      "implementation_evidence": [
+        "assets/archaeology/shards/old-redcap-360-scan-account.json",
+        "assets/archaeology/shards/old-redcap-360-scan-coverage.json",
+        "runtime/bin/redcap task-facts summary"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260606-old-redcap-360-scan-start/prism-shard-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-old-redcap-360-scan-start/phase2-blueprint-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-old-redcap-360-scan-start/coverage-manifest-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-old-redcap-360-scan-start/task-facts-summary.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "block",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受 Claude Code 的阻断：未版本化文件不能支撑扫描启动声明，未运行命令也不能作为证据。已运行真实检查、写入回执、验证蓝图 prior_decisions 中保留四个病灶决策，并准备把扫描启动文件、评审结果和回执纳入 develop 版本记录后推送。",
+      "implementation_evidence": [
+        "assets/archaeology/shards/old-redcap-360-scan-account.json",
+        "assets/archaeology/shards/old-redcap-360-scan-coverage.json",
+        "assets/contracts/old-redcap-360-scan-prism-request.json",
+        "assets/contracts/old-redcap-360-scan-lifecycle.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260606-old-redcap-360-scan-start/prism-shard-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-old-redcap-360-scan-start/phase2-blueprint-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-old-redcap-360-scan-start/coverage-manifest-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-old-redcap-360-scan-start/task-facts-summary.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两方核心关注均已转化为实际修复：扫描账目进入 active，首个分片进入 active，覆盖清单证明七分片覆盖当前考古索引，检查回执记录真实执行结果；版本化与推送将在本轮收口前完成。"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -c import json; d=json.load(open('assets/archaeology/shards/old-redcap-360-scan-coverage.json')); assert d['all_sources_match'] and d['index_shard_count']==7 and d['account_shard_count']==7; print('OLD_REDCAP_360_COVERAGE_OK')",
+  "argv": [
+    "python3",
+    "-c",
+    "import json; d=json.load(open('assets/archaeology/shards/old-redcap-360-scan-coverage.json')); assert d['all_sources_match'] and d['index_shard_count']==7 and d['account_shard_count']==7; print('OLD_REDCAP_360_COVERAGE_OK')"
+  ],
+  "exit_code": 0,
+  "executed_at": "2026-06-06T15:33:59+00:00",
+  "executor": "cap",
+  "stdout_sha256": "68aad8c2cf4d7e8884f7164c0c9578719ce31093ca1e7382589524f241c89fc7",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 27,
+  "stderr_bytes": 0,
+  "stdout_excerpt": "OLD_REDCAP_360_COVERAGE_OK\n",
+  "stderr_excerpt": ""
+}

@@ -1,0 +1,127 @@
+{
+  "schema_id": "old-redcap-360-scan-coverage-manifest",
+  "generated_at": "2026-06-06T14:00:00+00:00",
+  "index_path": "assets/archaeology/shards/index.json",
+  "index_sha256": "adad215ea8f74a3c949ef1e3fc6dc837f5d85c956ad36212acc186e0d7fc4c0d",
+  "account_path": "assets/archaeology/shards/old-redcap-360-scan-account.json",
+  "account_sha256": "8bbcb8419e0a47b6d1b8274534825c5231e1f2b188c05f0071c4edcd33ef7960",
+  "index_shard_count": 7,
+  "account_shard_count": 7,
+  "missing_from_account": [],
+  "extra_in_account": [],
+  "all_sources_match": true,
+  "coverage": [
+    {
+      "shard_id": "runtime-workspace-boundary",
+      "index_sources": [
+        "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "account_sources": [
+        "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "sources_match": true,
+      "account_status": "active"
+    },
+    {
+      "shard_id": "development-lifecycle-review",
+      "index_sources": [
+        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ],
+      "account_sources": [
+        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ],
+      "sources_match": true,
+      "account_status": "planned"
+    },
+    {
+      "shard_id": "long-task-context-defense",
+      "index_sources": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "account_sources": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "sources_match": true,
+      "account_status": "planned"
+    },
+    {
+      "shard_id": "pathology-report-as-progress",
+      "index_sources": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-task-report-check.sh",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-task-report-check.sh"
+      ],
+      "account_sources": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-task-report-check.sh",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-task-report-check.sh"
+      ],
+      "sources_match": true,
+      "account_status": "no_promote"
+    },
+    {
+      "shard_id": "pathology-receipt-as-completion",
+      "index_sources": [
+        "/Users/norven/workspace/redcap/assets/references/parent-receipt-aggregation-policy.json",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.sh"
+      ],
+      "account_sources": [
+        "/Users/norven/workspace/redcap/assets/references/parent-receipt-aggregation-policy.json",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.sh"
+      ],
+      "sources_match": true,
+      "account_status": "no_promote"
+    },
+    {
+      "shard_id": "pathology-closeout-recursion",
+      "index_sources": [
+        "/Users/norven/workspace/redcap/runtime/redcap-core/closeout-cap.sh",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-layerb-closeout-runtime.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-layerb-closeout-runtime.py",
+        "/Users/norven/workspace/redcap/assets/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md"
+      ],
+      "account_sources": [
+        "/Users/norven/workspace/redcap/runtime/redcap-core/closeout-cap.sh",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-layerb-closeout-runtime.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-layerb-closeout-runtime.py",
+        "/Users/norven/workspace/redcap/assets/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md"
+      ],
+      "sources_match": true,
+      "account_status": "no_promote"
+    },
+    {
+      "shard_id": "pathology-raw-evidence-default",
+      "index_sources": [
+        "/Users/norven/workspace/redcap/prism/tools/prism-evidence-check.sh",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/prism-tools/prism-evidence-check.sh",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-r1-prism-evidence-retention-split-check.py",
+        "/Users/norven/workspace/redcap/assets/references/r1-prism-evidence-retention-split-preflight.json"
+      ],
+      "account_sources": [
+        "/Users/norven/workspace/redcap/prism/tools/prism-evidence-check.sh",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/prism-tools/prism-evidence-check.sh",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-r1-prism-evidence-retention-split-check.py",
+        "/Users/norven/workspace/redcap/assets/references/r1-prism-evidence-retention-split-preflight.json"
+      ],
+      "sources_match": true,
+      "account_status": "no_promote"
+    }
+  ],
+  "prior_decision_visibility": {
+    "pathology_shards": [
+      "pathology-report-as-progress",
+      "pathology-receipt-as-completion",
+      "pathology-closeout-recursion",
+      "pathology-raw-evidence-default"
+    ],
+    "policy": "病灶分片在扫描账目中可见；旧机制不因可见而被重新迁移。"
+  }
+}
