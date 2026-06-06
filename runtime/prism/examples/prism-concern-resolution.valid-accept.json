@@ -18,7 +18,7 @@
         "runtime/prism/bin/prism"
       ],
       "verification_evidence": [
-        "runtime/bin/redcap prism-resolution --self-check"
+        "runtime/prism/examples/prism-resolution-check.receipt.json"
       ]
     }
   ],

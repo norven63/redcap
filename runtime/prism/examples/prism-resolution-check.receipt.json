@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap prism-resolution --self-check",
+  "exit_code": 0,
+  "executed_at": "2026-06-01T00:00:00+00:00",
+  "executor": "redcap-fixture",
+  "stdout_sha256": "fixture-stdout-sha256",
+  "stderr_sha256": "fixture-stderr-sha256"
+}

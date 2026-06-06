@@ -166,6 +166,27 @@ def parse_leading_json_object(stdout: str) -> tuple[dict[str, Any] | None, str |
     return parsed, None
 
 
+def stop_task_anchor_clause(action_result: dict[str, Any]) -> str:
+    anchor = action_result.get("task_anchor")
+    if not isinstance(anchor, dict):
+        return ""
+    excerpt = anchor.get("prompt_excerpt")
+    prompt_sha = anchor.get("prompt_sha256")
+    turn_id = anchor.get("turn_id")
+    parts: list[str] = []
+    if isinstance(excerpt, str) and excerpt.strip():
+        parts.append(f'Original task excerpt: "{excerpt.strip()}".')
+    if isinstance(prompt_sha, str) and prompt_sha.strip():
+        parts.append(f"Original prompt sha256: {prompt_sha.strip()}.")
+    if isinstance(turn_id, str) and turn_id.strip():
+        parts.append(f"Original turn_id: {turn_id.strip()}.")
+    parts.append(
+        "Recovery rule: return to that original task first, then report same-turn actions/checks or a concrete blocker; "
+        "mention this Stop hook only as recovery context."
+    )
+    return " ".join(parts)
+
+
 def run_prompt_gate(payload: dict[str, Any], prompt: str) -> dict[str, Any]:
     trimmed = prompt[:MAX_GATE_PROMPT_CHARS]
     argv = [
@@ -858,15 +879,20 @@ def cmd_event(args: argparse.Namespace) -> int:
             "required_prompt_action_count": action_result.get("actions"),
             "required_prompt_action_tools": action_result.get("action_tools", []),
             "required_prompt_action_reason": action_result.get("reason"),
+            "required_prompt_task_anchor": action_result.get("task_anchor"),
+            "required_prompt_recovery_guidance": action_result.get("recovery_guidance", []),
             "required_prompt_action_sentinel_present": action_sentinel_present,
         }, base_marker=marker)
         if action["exit_code"] != 0 or action_result.get("ok") is not True:
             action_reason = action_result.get("reason")
+            anchor_clause = stop_task_anchor_clause(action_result)
             reason = (
                 "RedCap Stop hook found a required RedCap prompt with no same-turn action evidence. "
                 "Do not close with explanation/status only; perform the concrete remediation, run the required checks, "
                 "or explicitly mark the task blocked with the blocking condition."
             )
+            if anchor_clause:
+                reason = f"{reason} {anchor_clause}"
             if isinstance(action_reason, str) and action_reason.strip():
                 reason = f"{reason} Action check reason: {action_reason}"
             print(json.dumps({
@@ -910,6 +936,9 @@ def cmd_event(args: argparse.Namespace) -> int:
                 "either perform the task body and run lifecycle check with completion_claim.present=true, "
                 "or remove/narrow the completion claim."
             )
+            anchor_clause = stop_task_anchor_clause(action_result)
+            if anchor_clause:
+                reason = f"{reason} {anchor_clause}"
             guard_reason = final_guard_result.get("reason")
             if isinstance(guard_reason, str) and guard_reason.strip():
                 reason = f"{reason} Guard reason: {guard_reason}"
@@ -1141,6 +1170,51 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         timeout_result = timeout_marker.get("prompt_intent_llm_result")
         if not (isinstance(timeout_result, dict) and timeout_result.get("reason") == "intent judge timeout"):
             failures.append("timeout fixture branch did not record intent judge timeout")
+
+        anchor_prompt_text = "修复 Stop hook 恢复时偏离原始任务的问题"
+        anchor_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": anchor_prompt_text,
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-session",
+                "turn_id": "fixture-stop-anchor",
+                "source": "codex-hook-stop-anchor-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if anchor_prompt.returncode != 0:
+            failures.append(f"anchor UserPromptSubmit failed: {anchor_prompt.stderr or anchor_prompt.stdout}")
+        anchor_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-session",
+                "turn_id": "fixture-stop-anchor",
+                "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
+                "source": "codex-hook-stop-anchor-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if anchor_stop.returncode != 0:
+            failures.append(f"anchor Stop failed: {anchor_stop.stderr or anchor_stop.stdout}")
+        anchor_stop_result, anchor_stop_error = parse_leading_json_object(anchor_stop.stdout or "")
+        if anchor_stop_error is not None or not isinstance(anchor_stop_result, dict):
+            failures.append(f"anchor Stop did not emit JSON: {anchor_stop_error}")
+        else:
+            reason = str(anchor_stop_result.get("reason") or "")
+            if anchor_stop_result.get("decision") != "block":
+                failures.append("anchor Stop fixture should block a required prompt without action evidence")
+            if anchor_prompt_text not in reason:
+                failures.append("anchor Stop block reason is missing the original task excerpt")
+            if "return to that original task first" not in reason:
+                failures.append("anchor Stop block reason is missing the re-anchor recovery rule")
+        anchor_stop_marker = load_self_check_marker(evidence_dir, "Stop")
+        anchor = anchor_stop_marker.get("required_prompt_task_anchor")
+        if not isinstance(anchor, dict):
+            failures.append("anchor Stop marker is missing required_prompt_task_anchor")
+        elif anchor.get("prompt_excerpt") != anchor_prompt_text:
+            failures.append("anchor Stop marker task anchor does not preserve the original task excerpt")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     return 0 if not failures else 1
 

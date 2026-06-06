@@ -75,6 +75,9 @@ def main() -> int:
     dispatcher = run(["runtime/prism/bin/prism-dispatch", "--self-check"])
     if dispatcher.returncode != 0 or "PRISM_DISPATCH_SELF_CHECK_OK" not in dispatcher.stdout:
         failures.append("provider dispatcher self-check failed")
+    codex_hook = run([sys.executable, CODEX_ADAPTER, "--self-check-intent-judge"])
+    if codex_hook.returncode != 0:
+        failures.append("codex hook self-check failed")
 
     result = {
         "ok": not failures,
@@ -84,6 +87,7 @@ def main() -> int:
             "providers": sorted(provider_cli),
             "dispatcher_self_check": dispatcher.returncode == 0,
         },
+        "codex_hook_self_check": codex_hook.returncode == 0,
         "unsupported_events": AUDITED_UNSUPPORTED_EVENTS,
         "failures": failures,
     }

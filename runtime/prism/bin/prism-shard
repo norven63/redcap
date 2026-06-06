@@ -1,0 +1,522 @@
+#!/usr/bin/env python3
+"""Validate and merge bounded Prism long-task shard accounts."""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import os
+import pathlib
+import sys
+import tempfile
+from typing import Any
+
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
+ALLOWED_PROVIDERS = {"kimi", "claude-code"}
+ACCOUNT_SCHEMA_ID = "prism-shard-account"
+OUTPUT_SCHEMA_ID = "prism-shard-output"
+MERGE_SCHEMA_ID = "prism-shard-merge"
+ACCOUNT_STATUSES = {"draft", "active", "ready_for_merge", "merged", "blocked"}
+SHARD_STATUSES = {"planned", "active", "reviewing", "verified", "blocked", "no_promote"}
+PROVIDER_SESSION_STATUSES = {"pending", "active", "converged", "expired", "blocked"}
+CONFIDENCE_LEVELS = {"low", "medium", "high"}
+REQUIRED_OUTPUT_FIELDS = {
+    "portable_designs",
+    "risk_designs",
+    "evidence_paths",
+    "confidence",
+    "open_questions",
+}
+MAX_FILES_PER_SHARD_HARD_LIMIT = 10
+
+
+def iso_now() -> str:
+    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+
+
+def load_json(path: pathlib.Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid JSON: {path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise SystemExit(f"expected JSON object: {path}")
+    return payload
+
+
+def write_json(path: pathlib.Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def non_empty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def string_list(value: Any) -> bool:
+    return isinstance(value, list) and all(non_empty_string(item) for item in value)
+
+
+def resolve_ref(raw: str, base_dir: pathlib.Path | None = None) -> pathlib.Path:
+    path = pathlib.Path(raw)
+    if path.is_absolute():
+        return path.resolve()
+    if base_dir is not None:
+        candidate = (base_dir / path).resolve()
+        if candidate.exists():
+            return candidate
+    return (REPO_ROOT / path).resolve()
+
+
+def has_glob(raw: str) -> bool:
+    return any(char in raw for char in "*?[]")
+
+
+def validate_source_refs(
+    values: Any,
+    *,
+    label: str,
+    base_dir: pathlib.Path,
+    max_files: int,
+    failures: list[str],
+) -> list[pathlib.Path]:
+    if not string_list(values):
+        failures.append(f"{label} must be a non-empty string list")
+        return []
+    if len(values) > max_files:
+        failures.append(f"{label} exceeds max files per shard: {len(values)} > {max_files}")
+    resolved: list[pathlib.Path] = []
+    for raw in values:
+        if has_glob(raw):
+            failures.append(f"{label} must use exact files, not globs: {raw}")
+            continue
+        path = resolve_ref(raw, base_dir)
+        if not path.exists():
+            failures.append(f"{label} source does not exist: {raw}")
+            continue
+        if path.is_dir():
+            failures.append(f"{label} source must be a file, not a directory: {raw}")
+            continue
+        resolved.append(path)
+    return resolved
+
+
+def validate_provider_sessions(shard: dict[str, Any], shard_id: str, failures: list[str]) -> None:
+    providers = shard.get("providers")
+    if not isinstance(providers, list) or not providers:
+        failures.append(f"shard {shard_id}: providers must be a non-empty list")
+        return
+    unknown = sorted(set(str(provider) for provider in providers) - ALLOWED_PROVIDERS)
+    if unknown:
+        failures.append(f"shard {shard_id}: unsupported providers: {', '.join(unknown)}")
+    sessions = shard.get("provider_sessions")
+    if not isinstance(sessions, dict):
+        failures.append(f"shard {shard_id}: provider_sessions must be an object")
+        return
+    for provider in providers:
+        session = sessions.get(provider)
+        if not isinstance(session, dict):
+            failures.append(f"shard {shard_id}: provider_sessions missing provider {provider}")
+            continue
+        status = session.get("status")
+        if status not in PROVIDER_SESSION_STATUSES:
+            failures.append(f"shard {shard_id}: provider {provider} status invalid: {status}")
+        manifest_path = session.get("manifest_path")
+        if manifest_path is not None and not non_empty_string(manifest_path):
+            failures.append(f"shard {shard_id}: provider {provider} manifest_path must be string or null")
+
+
+def validate_output_schema(shard: dict[str, Any], shard_id: str, failures: list[str]) -> None:
+    output_schema = shard.get("output_schema")
+    if not isinstance(output_schema, dict):
+        failures.append(f"shard {shard_id}: output_schema must be an object")
+        return
+    required = output_schema.get("required_fields")
+    if not isinstance(required, list):
+        failures.append(f"shard {shard_id}: output_schema.required_fields must be a list")
+        return
+    missing = sorted(REQUIRED_OUTPUT_FIELDS - set(str(item) for item in required))
+    if missing:
+        failures.append(f"shard {shard_id}: output_schema missing required fields: {', '.join(missing)}")
+
+
+def validate_shard_output(
+    output_path: pathlib.Path,
+    shard: dict[str, Any],
+    account_base_dir: pathlib.Path,
+    source_paths: list[pathlib.Path],
+    failures: list[str],
+) -> dict[str, Any] | None:
+    shard_id = str(shard.get("id") or "")
+    try:
+        output = load_json(output_path)
+    except SystemExit as exc:
+        failures.append(str(exc))
+        return None
+    if output.get("schema_id") != OUTPUT_SCHEMA_ID:
+        failures.append(f"shard {shard_id}: output schema_id must be {OUTPUT_SCHEMA_ID}")
+    if output.get("shard_id") != shard_id:
+        failures.append(f"shard {shard_id}: output shard_id mismatch")
+    if not isinstance(output.get("portable_designs"), list):
+        failures.append(f"shard {shard_id}: output.portable_designs must be a list")
+    if not isinstance(output.get("risk_designs"), list):
+        failures.append(f"shard {shard_id}: output.risk_designs must be a list")
+    if output.get("confidence") not in CONFIDENCE_LEVELS:
+        failures.append(f"shard {shard_id}: output.confidence invalid")
+    if not isinstance(output.get("open_questions"), list):
+        failures.append(f"shard {shard_id}: output.open_questions must be a list")
+    evidence_paths = output.get("evidence_paths")
+    if not string_list(evidence_paths):
+        failures.append(f"shard {shard_id}: output.evidence_paths must be a non-empty string list")
+    source_files_read = output.get("source_files_read")
+    if not string_list(source_files_read):
+        failures.append(f"shard {shard_id}: output.source_files_read must be a non-empty string list")
+    else:
+        allowed = {str(path) for path in source_paths}
+        for raw in source_files_read:
+            resolved = str(resolve_ref(raw, account_base_dir))
+            if resolved not in allowed:
+                failures.append(f"shard {shard_id}: output.source_files_read escapes candidate_sources: {raw}")
+    return output
+
+
+def validate_account_payload(payload: dict[str, Any], account_path: pathlib.Path) -> tuple[list[str], list[dict[str, Any]]]:
+    failures: list[str] = []
+    outputs: list[dict[str, Any]] = []
+    base_dir = account_path.parent
+    if payload.get("schema_id") != ACCOUNT_SCHEMA_ID:
+        failures.append(f"schema_id must be {ACCOUNT_SCHEMA_ID}")
+    for key in ["task_id", "purpose", "owner"]:
+        if not non_empty_string(payload.get(key)):
+            failures.append(f"{key} must be a non-empty string")
+    if payload.get("status") not in ACCOUNT_STATUSES:
+        failures.append(f"status invalid: {payload.get('status')}")
+    max_rounds = payload.get("max_rounds_per_shard")
+    if not isinstance(max_rounds, int) or max_rounds < 1 or max_rounds > 5:
+        failures.append("max_rounds_per_shard must be an integer from 1 to 5")
+        max_rounds = 1
+    source_policy = payload.get("source_policy")
+    if not isinstance(source_policy, dict):
+        failures.append("source_policy must be an object")
+        max_files = 1
+    else:
+        if source_policy.get("mode") != "exact-files-before-shard":
+            failures.append("source_policy.mode must be exact-files-before-shard")
+        max_files = source_policy.get("max_files_per_shard")
+        if not isinstance(max_files, int) or max_files < 1 or max_files > MAX_FILES_PER_SHARD_HARD_LIMIT:
+            failures.append(f"source_policy.max_files_per_shard must be 1-{MAX_FILES_PER_SHARD_HARD_LIMIT}")
+            max_files = 1
+        if source_policy.get("bulk_read_allowed") is not False:
+            failures.append("source_policy.bulk_read_allowed must be false")
+    arbitration = payload.get("cap_arbitration")
+    if not isinstance(arbitration, dict):
+        failures.append("cap_arbitration must be an object")
+    else:
+        max_discussion = arbitration.get("max_discussion_rounds")
+        if not isinstance(max_discussion, int) or max_discussion < 1 or max_discussion > 5:
+            failures.append("cap_arbitration.max_discussion_rounds must be an integer from 1 to 5")
+        if arbitration.get("cap_decision_required_on_exhaustion") is not True:
+            failures.append("cap_arbitration.cap_decision_required_on_exhaustion must be true")
+    shards = payload.get("shards")
+    if not isinstance(shards, list) or not shards:
+        failures.append("shards must be a non-empty list")
+        return failures, outputs
+    seen_ids: set[str] = set()
+    terminal_statuses = {"verified", "blocked", "no_promote"}
+    for shard in shards:
+        if not isinstance(shard, dict):
+            failures.append("each shard must be an object")
+            continue
+        shard_id = str(shard.get("id") or "")
+        if not shard_id:
+            failures.append("shard.id must be non-empty")
+            shard_id = "<missing>"
+        if shard_id in seen_ids:
+            failures.append(f"duplicate shard id: {shard_id}")
+        seen_ids.add(shard_id)
+        for key in ["question", "scope", "stop_condition"]:
+            if not non_empty_string(shard.get(key)):
+                failures.append(f"shard {shard_id}: {key} must be a non-empty string")
+        if not string_list(shard.get("acceptance_criteria")):
+            failures.append(f"shard {shard_id}: acceptance_criteria must be a non-empty string list")
+        status = shard.get("status")
+        if status not in SHARD_STATUSES:
+            failures.append(f"shard {shard_id}: status invalid: {status}")
+        shard_rounds = shard.get("max_rounds")
+        if not isinstance(shard_rounds, int) or shard_rounds < 1 or shard_rounds > max_rounds:
+            failures.append(f"shard {shard_id}: max_rounds must be 1-{max_rounds}")
+        source_paths = validate_source_refs(
+            shard.get("candidate_sources"),
+            label=f"shard {shard_id}: candidate_sources",
+            base_dir=base_dir,
+            max_files=max_files,
+            failures=failures,
+        )
+        validate_provider_sessions(shard, shard_id, failures)
+        validate_output_schema(shard, shard_id, failures)
+        output_path_raw = shard.get("output_path")
+        output_path: pathlib.Path | None = None
+        if output_path_raw is not None:
+            if not non_empty_string(output_path_raw):
+                failures.append(f"shard {shard_id}: output_path must be string or null")
+            else:
+                output_path = resolve_ref(output_path_raw, base_dir)
+        if status == "verified":
+            if output_path is None or not output_path.exists():
+                failures.append(f"shard {shard_id}: verified shard requires output_path")
+            else:
+                output = validate_shard_output(output_path, shard, base_dir, source_paths, failures)
+                if output is not None:
+                    outputs.append(output)
+        if status in {"blocked", "no_promote"} and not non_empty_string(shard.get("decision_reason")):
+            failures.append(f"shard {shard_id}: {status} shard requires decision_reason")
+    account_status = payload.get("status")
+    if account_status in {"ready_for_merge", "merged"}:
+        active = [
+            str(shard.get("id") or "<missing>")
+            for shard in shards
+            if isinstance(shard, dict) and shard.get("status") not in terminal_statuses
+        ]
+        if active:
+            failures.append(f"{account_status} account has non-terminal shards: {', '.join(active)}")
+    return failures, outputs
+
+
+def cmd_check(args: argparse.Namespace) -> int:
+    account_path = pathlib.Path(args.account).resolve()
+    payload = load_json(account_path)
+    failures, outputs = validate_account_payload(payload, account_path)
+    result = {
+        "ok": not failures,
+        "account": str(account_path),
+        "verified_outputs": len(outputs),
+        "failures": failures,
+    }
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if failures:
+        return 1
+    print("PRISM_SHARD_ACCOUNT_OK")
+    return 0
+
+
+def cmd_merge(args: argparse.Namespace) -> int:
+    account_path = pathlib.Path(args.account).resolve()
+    payload = load_json(account_path)
+    failures, outputs = validate_account_payload(payload, account_path)
+    if failures:
+        print(json.dumps({"ok": False, "failures": failures}, ensure_ascii=False, indent=2))
+        return 1
+    shards = payload["shards"]
+    terminal = [shard for shard in shards if isinstance(shard, dict)]
+    merge = {
+        "schema_id": MERGE_SCHEMA_ID,
+        "task_id": payload.get("task_id"),
+        "account_path": str(account_path),
+        "merged_at": iso_now(),
+        "shard_count": len(terminal),
+        "verified_count": sum(1 for shard in terminal if shard.get("status") == "verified"),
+        "blocked_count": sum(1 for shard in terminal if shard.get("status") == "blocked"),
+        "no_promote_count": sum(1 for shard in terminal if shard.get("status") == "no_promote"),
+        "portable_designs": [item for output in outputs for item in output.get("portable_designs", [])],
+        "risk_designs": [item for output in outputs for item in output.get("risk_designs", [])],
+        "open_questions": [item for output in outputs for item in output.get("open_questions", [])],
+        "evidence_paths": sorted({item for output in outputs for item in output.get("evidence_paths", [])}),
+        "cap_arbitration": payload.get("cap_arbitration"),
+    }
+    out_path = pathlib.Path(args.out).resolve()
+    write_json(out_path, merge)
+    print(json.dumps({"ok": True, "merge_path": str(out_path)}, ensure_ascii=False, indent=2))
+    print("PRISM_SHARD_MERGE_OK")
+    return 0
+
+
+def valid_account_payload(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path]:
+    source = root / "source-a.md"
+    source.write_text("source evidence\n", encoding="utf-8")
+    output = root / "shard-a.output.json"
+    output.write_text(json.dumps({
+        "schema_id": OUTPUT_SCHEMA_ID,
+        "shard_id": "shard-a",
+        "source_files_read": [str(source)],
+        "portable_designs": [{"name": "bounded account", "evidence": [str(source)]}],
+        "risk_designs": [],
+        "evidence_paths": [str(source)],
+        "confidence": "high",
+        "open_questions": [],
+    }, ensure_ascii=False), encoding="utf-8")
+    account = root / "account.json"
+    account.write_text(json.dumps({
+        "schema_id": ACCOUNT_SCHEMA_ID,
+        "task_id": "self-check-shards",
+        "purpose": "verify bounded Prism shard accounts",
+        "owner": "cap",
+        "status": "ready_for_merge",
+        "max_rounds_per_shard": 3,
+        "source_policy": {
+            "mode": "exact-files-before-shard",
+            "max_files_per_shard": 3,
+            "bulk_read_allowed": False,
+        },
+        "cap_arbitration": {
+            "max_discussion_rounds": 3,
+            "cap_decision_required_on_exhaustion": True,
+        },
+        "shards": [
+            {
+                "id": "shard-a",
+                "question": "Which bounded account rules are needed?",
+                "scope": "one source file only",
+                "candidate_sources": [str(source)],
+                "forbidden_sources": ["raw evidence archives"],
+                "stop_condition": "extract shard account rules only",
+                "acceptance_criteria": ["output has required schema"],
+                "providers": ["kimi", "claude-code"],
+                "provider_sessions": {
+                    "kimi": {"status": "pending", "manifest_path": None},
+                    "claude-code": {"status": "pending", "manifest_path": None},
+                },
+                "max_rounds": 3,
+                "output_schema": {
+                    "schema_id": OUTPUT_SCHEMA_ID,
+                    "required_fields": sorted(REQUIRED_OUTPUT_FIELDS),
+                },
+                "status": "verified",
+                "output_path": str(output),
+            },
+            {
+                "id": "shard-b",
+                "question": "Which design should be rejected?",
+                "scope": "no source read needed",
+                "candidate_sources": [str(source)],
+                "forbidden_sources": ["directories"],
+                "stop_condition": "record no-promote reason",
+                "acceptance_criteria": ["decision reason exists"],
+                "providers": ["claude-code"],
+                "provider_sessions": {
+                    "claude-code": {"status": "pending", "manifest_path": None},
+                },
+                "max_rounds": 1,
+                "output_schema": {
+                    "schema_id": OUTPUT_SCHEMA_ID,
+                    "required_fields": sorted(REQUIRED_OUTPUT_FIELDS),
+                },
+                "status": "no_promote",
+                "decision_reason": "self-check no-promote branch",
+            },
+        ],
+    }, ensure_ascii=False), encoding="utf-8")
+    return account, output
+
+
+def cmd_self_check(_: argparse.Namespace) -> int:
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="prism-shard-") as raw_tmp:
+        tmp = pathlib.Path(raw_tmp)
+        account, _ = valid_account_payload(tmp)
+        valid_failures, _ = validate_account_payload(load_json(account), account)
+        if valid_failures:
+            failures.append(f"valid account failed: {valid_failures}")
+        merge_path = tmp / "merge.json"
+        merge_rc = cmd_merge(argparse.Namespace(account=str(account), out=str(merge_path)))
+        if merge_rc != 0 or not merge_path.exists():
+            failures.append("valid account did not merge")
+        merge_payload = load_json(merge_path) if merge_path.exists() else {}
+        if merge_payload.get("verified_count") != 1 or merge_payload.get("no_promote_count") != 1:
+            failures.append("merge counts did not reflect verified/no_promote shards")
+        if merge_payload.get("portable_designs") != [{"evidence": [str(tmp / "source-a.md")], "name": "bounded account"}]:
+            failures.append("merge did not preserve portable_designs from shard outputs")
+        if merge_payload.get("risk_designs") != []:
+            failures.append("merge did not preserve risk_designs from shard outputs")
+        if merge_payload.get("evidence_paths") != [str(tmp / "source-a.md")]:
+            failures.append("merge did not de-duplicate evidence_paths")
+        if merge_payload.get("open_questions") != []:
+            failures.append("merge did not preserve open_questions")
+        if not isinstance(merge_payload.get("cap_arbitration"), dict):
+            failures.append("merge did not preserve Cap arbitration metadata")
+        invalid_glob = load_json(account)
+        invalid_glob["shards"][0]["candidate_sources"] = [str(tmp / "*.md")]
+        glob_failures, _ = validate_account_payload(invalid_glob, account)
+        if not any("not globs" in failure for failure in glob_failures):
+            failures.append("glob source was not rejected")
+        invalid_dir = load_json(account)
+        invalid_dir["shards"][0]["candidate_sources"] = [str(tmp)]
+        dir_failures, _ = validate_account_payload(invalid_dir, account)
+        if not any("not a directory" in failure for failure in dir_failures):
+            failures.append("directory source was not rejected")
+        missing_output = load_json(account)
+        missing_output["shards"][0]["output_path"] = str(tmp / "missing.json")
+        output_failures, _ = validate_account_payload(missing_output, account)
+        if not any("verified shard requires output_path" in failure for failure in output_failures):
+            failures.append("verified shard without output was not rejected")
+        escaped_output_path = tmp / "escaped.output.json"
+        escaped_output_path.write_text(json.dumps({
+            "schema_id": OUTPUT_SCHEMA_ID,
+            "shard_id": "shard-a",
+            "source_files_read": [str(tmp / "other.md")],
+            "portable_designs": [],
+            "risk_designs": [],
+            "evidence_paths": [str(tmp / "other.md")],
+            "confidence": "medium",
+            "open_questions": [],
+        }, ensure_ascii=False), encoding="utf-8")
+        escaped = load_json(account)
+        escaped["shards"][0]["output_path"] = str(escaped_output_path)
+        escaped_failures, _ = validate_account_payload(escaped, account)
+        if not any("escapes candidate_sources" in failure for failure in escaped_failures):
+            failures.append("output source escape was not rejected")
+        invalid_provider = load_json(account)
+        invalid_provider["shards"][0]["providers"] = ["gemini"]
+        provider_failures, _ = validate_account_payload(invalid_provider, account)
+        if not any("unsupported providers" in failure for failure in provider_failures):
+            failures.append("unsupported provider was not rejected")
+        invalid_session = load_json(account)
+        invalid_session["shards"][0]["provider_sessions"]["kimi"]["status"] = "mystery"
+        session_failures, _ = validate_account_payload(invalid_session, account)
+        if not any("status invalid" in failure for failure in session_failures):
+            failures.append("invalid provider session status was not rejected")
+        invalid_schema = load_json(account)
+        invalid_schema["shards"][0]["output_schema"]["required_fields"] = ["portable_designs"]
+        schema_failures, _ = validate_account_payload(invalid_schema, account)
+        if not any("output_schema missing required fields" in failure for failure in schema_failures):
+            failures.append("incomplete output schema was not rejected")
+        non_terminal = load_json(account)
+        non_terminal["shards"][0]["status"] = "active"
+        terminal_failures, _ = validate_account_payload(non_terminal, account)
+        if not any("non-terminal shards" in failure for failure in terminal_failures):
+            failures.append("ready_for_merge account with active shard was not rejected")
+    print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
+    if failures:
+        return 1
+    print("PRISM_SHARD_SELF_CHECK_OK")
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Validate and merge Prism shard accounts")
+    sub = parser.add_subparsers(dest="command", required=True)
+    check = sub.add_parser("check")
+    check.add_argument("--account", required=True)
+    merge = sub.add_parser("merge")
+    merge.add_argument("--account", required=True)
+    merge.add_argument("--out", required=True)
+    sub.add_parser("self-check")
+    return parser
+
+
+def main() -> int:
+    args = build_parser().parse_args()
+    if args.command == "check":
+        return cmd_check(args)
+    if args.command == "merge":
+        return cmd_merge(args)
+    if args.command == "self-check":
+        return cmd_self_check(args)
+    raise SystemExit(f"unknown command: {args.command}")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

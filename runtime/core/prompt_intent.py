@@ -73,6 +73,9 @@ IMPLEMENTATION_MARKERS = {
     "改造",
     "赞同",
     "同意",
+    "处理",
+    "处置",
+    "实施",
 }
 
 REVIEW_MARKERS = {

@@ -1,0 +1,7 @@
+{
+  "task": "Review the completeness of the module",
+  "risk_level": "medium",
+  "changed_paths": [],
+  "tags": [],
+  "expected_decision": "optional"
+}

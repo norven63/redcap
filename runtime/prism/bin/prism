@@ -13,6 +13,7 @@ import datetime as dt
 import fnmatch
 import json
 import pathlib
+import re
 import shlex
 import shutil
 import subprocess
@@ -35,6 +36,7 @@ VERDICT_RANK = {"pass": 0, "concern": 1, "block": 2}
 GATE_RANK = {"skipped": 0, "optional": 1, "required": 2}
 PRISM_CONCERN_RESOLUTION_SCHEMA_ID = "prism-concern-resolution"
 PRISM_REBUTTAL_REQUEST_GENERATOR = "runtime/prism/bin/prism rebuttal-request"
+EXECUTED_CHECK_RECEIPT_SCHEMA_ID = "redcap-executed-check-receipt"
 SESSION_STATUSES = {"active", "converged", "main-decided", "escalated", "expired", "closed"}
 PROVIDER_SESSION_STATUSES = {"pending", "active", "converged", "escalated", "expired", "closed"}
 SELF_DEVELOPMENT_LIFECYCLE_RISKS = {"medium", "high", "critical"}
@@ -453,11 +455,34 @@ def evidence_entry_exists(raw: str, base_dir: pathlib.Path) -> bool:
     return shutil.which(target) is not None
 
 
+def valid_executed_check_receipt(raw: str, base_dir: pathlib.Path) -> tuple[bool, str]:
+    path = resolve_reference_path(raw, base_dir)
+    if not path.exists():
+        return False, f"receipt does not exist: {raw}"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, f"receipt is not valid JSON: {raw}: {exc}"
+    if not isinstance(payload, dict):
+        return False, f"receipt must be a JSON object: {raw}"
+    if payload.get("schema_id") != EXECUTED_CHECK_RECEIPT_SCHEMA_ID:
+        return False, f"receipt.schema_id must be {EXECUTED_CHECK_RECEIPT_SCHEMA_ID}: {raw}"
+    for key in ["command", "executed_at", "executor", "stdout_sha256", "stderr_sha256"]:
+        if not non_empty_string(payload.get(key)):
+            return False, f"receipt.{key} must be non-empty: {raw}"
+    if not isinstance(payload.get("exit_code"), int):
+        return False, f"receipt.exit_code must be an integer: {raw}"
+    if payload.get("exit_code") != 0:
+        return False, f"receipt.exit_code must be 0: {raw}"
+    return True, ""
+
+
 def validate_evidence_entries(
     entries: Any,
     label: str,
     base_dir: pathlib.Path,
     failures: list[str],
+    require_executed_check: bool = False,
 ) -> None:
     if not non_empty_string_list(entries):
         failures.append(f"{label} requires non-empty evidence entries")
@@ -465,6 +490,11 @@ def validate_evidence_entries(
     for index, raw in enumerate(entries):
         if not evidence_entry_exists(str(raw), base_dir):
             failures.append(f"{label}[{index}] does not resolve to an existing file or command: {raw}")
+            continue
+        if require_executed_check:
+            ok, reason = valid_executed_check_receipt(str(raw), base_dir)
+            if not ok:
+                failures.append(f"{label}[{index}] must be an executed-check receipt: {reason}")
 
 
 def validate_concern_references(
@@ -519,6 +549,7 @@ def validate_resolution_item(
             "accept decision verification_evidence",
             resolution_dir,
             failures,
+            require_executed_check=True,
         )
     elif decision == "reject":
         validate_reject_followup(resolution_item, resolution_dir, merge_path, expected_review, failures)
@@ -658,6 +689,19 @@ def _text_terms(payload: dict[str, Any]) -> str:
     return "\n".join(str(part).lower() for part in parts)
 
 
+def _has_cjk(value: str) -> bool:
+    return any("\u3400" <= char <= "\u9fff" for char in value)
+
+
+def _term_in_text(term: str, text: str) -> bool:
+    normalized = term.lower().strip()
+    if not normalized:
+        return False
+    if _has_cjk(normalized):
+        return normalized in text
+    return bool(re.search(r"(?<![a-z0-9_])" + re.escape(normalized) + r"(?![a-z0-9_])", text, flags=re.I))
+
+
 def _rule_matches(rule: dict[str, Any], payload: dict[str, Any]) -> bool:
     match = rule["match"]
     text = _text_terms(payload)
@@ -669,11 +713,11 @@ def _rule_matches(rule: dict[str, Any], payload: dict[str, Any]) -> bool:
         return False
     if "any_terms" in match:
         terms = [str(term).lower() for term in match["any_terms"]]
-        if not any(term in text for term in terms):
+        if not any(_term_in_text(term, text) for term in terms):
             return False
     if "all_terms" in match:
         terms = [str(term).lower() for term in match["all_terms"]]
-        if not all(term in text for term in terms):
+        if not all(_term_in_text(term, text) for term in terms):
             return False
     if "tags_any" in match:
         wanted = {str(tag).lower() for tag in match["tags_any"]}
@@ -874,6 +918,7 @@ def cmd_check(_: argparse.Namespace) -> int:
         ROOT / "examples" / "prism-concern-resolution.kimi-followup-concern.json",
         ROOT / "examples" / "prism-concern-resolution.followup-request.json",
         ROOT / "examples" / "prism-concern-resolution.valid-accept.json",
+        ROOT / "examples" / "prism-resolution-check.receipt.json",
         ROOT / "examples" / "prism-concern-resolution.valid-reject.json",
         ROOT / "examples" / "prism-concern-resolution.valid-escalate.json",
         ROOT / "examples" / "prism-concern-resolution.valid-pass-merge.json",
@@ -887,6 +932,7 @@ def cmd_check(_: argparse.Namespace) -> int:
         ROOT / "examples" / "gate-required-architecture.json",
         ROOT / "examples" / "gate-required-completion-pathology.json",
         ROOT / "examples" / "gate-required-diagnostic-only-changed-reality.json",
+        ROOT / "examples" / "gate-false-positive-completion-substring.json",
         ROOT / "examples" / "enforcement-matrix-hook-bad.json",
         ROOT / "examples" / "enforcement-matrix-hook-good.json",
         ROOT / "examples" / "hook-coverage-missing-required-event.json",
@@ -964,12 +1010,29 @@ def cmd_check(_: argparse.Namespace) -> int:
     )
     if "completion-semantics-check" not in completion_probe["matched_rules"]:
         raise SystemExit("gate must attach completion-semantics-check when completion is rejected")
+    false_positive_probe = evaluate_gate({
+        "task": "review Prism implementation completeness",
+        "risk_level": "low",
+        "changed_paths": [],
+        "tags": [],
+    })
+    if "completion-claim" in false_positive_probe["matched_rules"]:
+        raise SystemExit("gate must not treat completeness as a completion claim")
+    legitimate_completion_probe = evaluate_gate({
+        "task": "Claim provider dispatcher is complete",
+        "risk_level": "low",
+        "changed_paths": [],
+        "tags": [],
+    })
+    if "completion-claim" not in legitimate_completion_probe["matched_rules"]:
+        raise SystemExit("gate must still match a legitimate complete claim")
     for path in [
         ROOT / "examples" / "gate-skip-trivial.json",
         ROOT / "examples" / "gate-optional-implementation.json",
         ROOT / "examples" / "gate-required-architecture.json",
         ROOT / "examples" / "gate-required-completion-pathology.json",
         ROOT / "examples" / "gate-required-diagnostic-only-changed-reality.json",
+        ROOT / "examples" / "gate-false-positive-completion-substring.json",
     ]:
         payload = load_json(path)
         expected = payload.pop("expected_decision")
@@ -1124,6 +1187,16 @@ def cmd_check(_: argparse.Namespace) -> int:
             "implementation",
             "substantive",
         ),
+        (
+            "可以，请处理这些风险点",
+            "implementation",
+            "substantive",
+        ),
+        (
+            "这个风险点应该如何处理？",
+            "answer_only",
+            "none",
+        ),
     ]
     for prompt, expected_scope, expected_evidence in prompt_intent_cases:
         intent = classify_prompt_intent(prompt)
@@ -1155,6 +1228,22 @@ def cmd_check(_: argparse.Namespace) -> int:
         raise SystemExit("required prompt without action evidence should fail turn-action-check")
     if "no same-turn PostToolUse substantive action evidence" not in bad_turn_action.stdout:
         raise SystemExit("bad turn action fixture did not fail for the expected missing action reason")
+    try:
+        bad_turn_action_payload = json.loads(bad_turn_action.stdout)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"bad turn action fixture did not emit valid JSON: {exc}") from exc
+    bad_task_anchor = bad_turn_action_payload.get("task_anchor")
+    if not isinstance(bad_task_anchor, dict):
+        raise SystemExit("bad turn action fixture is missing structured task_anchor")
+    if bad_task_anchor.get("prompt_excerpt") != "修复 Stop hook 恢复时偏离原始任务的问题":
+        raise SystemExit("bad turn action fixture did not preserve the original task excerpt")
+    if bad_task_anchor.get("prompt_sha256") != "fixture-stop-hook-reanchor":
+        raise SystemExit("bad turn action fixture did not preserve the original prompt hash")
+    guidance = bad_turn_action_payload.get("recovery_guidance")
+    if not isinstance(guidance, list) or not guidance:
+        raise SystemExit("bad turn action fixture is missing recovery guidance")
+    if "Return to the original user task" not in json.dumps(guidance, ensure_ascii=False):
+        raise SystemExit("bad turn action fixture recovery guidance does not re-anchor to the original task")
     read_only_turn_action = subprocess.run(
         [
             str(ROOT / "bin" / "turn-action-check"),
@@ -1313,6 +1402,18 @@ def cmd_check(_: argparse.Namespace) -> int:
         if ledger_check.stderr:
             print(ledger_check.stderr.rstrip(), file=sys.stderr)
         raise SystemExit("prism ledger self-check should pass")
+    shard_check = subprocess.run(
+        [sys.executable, str(ROOT / "bin" / "prism-shard"), "self-check"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if shard_check.returncode != 0:
+        if shard_check.stdout:
+            print(shard_check.stdout.rstrip())
+        if shard_check.stderr:
+            print(shard_check.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("prism shard self-check should pass")
     resolution_failures = run_resolution_self_check()
     if resolution_failures:
         raise SystemExit(f"prism concern resolution self-check failed: {resolution_failures}")

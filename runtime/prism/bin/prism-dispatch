@@ -24,6 +24,7 @@ ALLOWED_PROVIDERS = {"kimi", "claude-code"}
 DEFAULT_TIMEOUT_SECONDS = 300
 DEFAULT_MAX_RETRIES = 5
 TIMEOUT_KILL_GRACE_SECONDS = 0.5
+DEFAULT_TOTAL_TIMEOUT_MULTIPLIER = 1.0
 REQUIRED_REVIEW_KEYS = {
     "provider",
     "verdict",
@@ -124,11 +125,20 @@ def run_with_hard_timeout(argv: list[str], timeout: float) -> subprocess.Complet
 
 
 class ProviderTimeoutError(Exception):
-    def __init__(self, attempts: list[dict[str, Any]], captured_handle: str | None, timeout_seconds: float):
+    def __init__(
+        self,
+        attempts: list[dict[str, Any]],
+        captured_handle: str | None,
+        timeout_seconds: float,
+        total_timeout_seconds: float | None = None,
+        reason: str = "provider command timed out",
+    ):
         super().__init__("provider command timed out")
         self.attempts = attempts
         self.captured_handle = captured_handle
         self.timeout_seconds = timeout_seconds
+        self.total_timeout_seconds = total_timeout_seconds
+        self.reason = reason
 
 
 def redacted_argv(argv: list[str]) -> list[str]:
@@ -488,45 +498,73 @@ def extract_provider_handle(raw_text: str, provider: str, fallback: str | None) 
     return fallback
 
 
+def assert_provider_command_safe(argv: list[str]) -> None:
+    if "bypassPermissions" in argv:
+        raise SystemExit("unsafe provider command: claude must not use bypassPermissions during Prism review")
+    if argv and argv[0] == "kimi":
+        if "--plan" not in argv:
+            raise SystemExit("unsafe provider command: kimi must run in plan mode during Prism review")
+        if str(REPO_ROOT) in argv:
+            raise SystemExit("unsafe provider command: kimi must not use the RedCap repo as work-dir during Prism review")
+    if argv and argv[0] == "claude":
+        if "plan" not in argv:
+            raise SystemExit("unsafe provider command: claude must run in plan permission mode during Prism review")
+        if "--tools" not in argv or "" not in argv:
+            raise SystemExit("unsafe provider command: claude Prism review must disable tools")
+
+
 def provider_command(provider: str, handle: str | None, prompt: str, max_steps: int) -> tuple[list[str], str | None]:
     if provider == "kimi":
         argv = [
             "kimi",
             "--work-dir",
-            str(REPO_ROOT),
-            "--quiet",
+            tempfile.gettempdir(),
+            "--plan",
             "--max-steps-per-turn",
             str(max_steps),
         ]
         if handle:
             argv.extend(["-r", handle])
         argv.extend(["-p", prompt])
+        assert_provider_command_safe(argv)
         return argv, handle
     if provider == "claude-code":
         if handle:
-            return [
+            argv = [
                 "claude",
                 "--print",
                 "--output-format",
                 "json",
                 "--permission-mode",
-                "bypassPermissions",
+                "plan",
+                "--tools",
+                "",
+                "--disallowedTools",
+                "Bash,Edit,Write,MultiEdit,Read,Glob,Grep,LS,Task,TodoWrite,NotebookEdit,WebFetch,WebSearch",
                 "--resume",
                 handle,
                 prompt,
-            ], handle
+            ]
+            assert_provider_command_safe(argv)
+            return argv, handle
         next_handle = str(uuid.uuid4())
-        return [
+        argv = [
             "claude",
             "--print",
             "--output-format",
             "json",
             "--permission-mode",
-            "bypassPermissions",
+            "plan",
+            "--tools",
+            "",
+            "--disallowedTools",
+            "Bash,Edit,Write,MultiEdit,Read,Glob,Grep,LS,Task,TodoWrite,NotebookEdit,WebFetch,WebSearch",
             "--session-id",
             next_handle,
             prompt,
-        ], next_handle
+        ]
+        assert_provider_command_safe(argv)
+        return argv, next_handle
     raise SystemExit(f"unsupported provider: {provider}")
 
 
@@ -541,7 +579,9 @@ def write_provider_timeout_raw(
         "attempts": exc.attempts,
         "exit_code": None,
         "timeout_seconds": exc.timeout_seconds,
+        "total_timeout_seconds": exc.total_timeout_seconds,
         "max_retries": max_retries,
+        "reason": exc.reason,
     }
     raw_out.parent.mkdir(parents=True, exist_ok=True)
     raw_out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -582,6 +622,30 @@ def update_session_handle(manifest: pathlib.Path, provider: str, handle: str) ->
         "--provider-status",
         "active",
     ])
+    if completed.returncode != 0:
+        raise SystemExit(completed.stderr or completed.stdout)
+
+
+def mark_session_expired(manifest: pathlib.Path, provider: str, handle: str | None, reason: str) -> None:
+    argv = [
+        str(PRISM),
+        "session-update",
+        "--manifest",
+        str(manifest),
+        "--provider",
+        provider,
+        "--provider-status",
+        "expired",
+        "--status",
+        "active",
+        "--convergence-state",
+        "unresolved",
+        "--convergence-reason",
+        reason,
+    ]
+    if handle:
+        argv.extend(["--session-handle", handle])
+    completed = run(argv)
     if completed.returncode != 0:
         raise SystemExit(completed.stderr or completed.stdout)
 
@@ -660,6 +724,7 @@ def run_provider_command(
     max_steps: int,
     timeout_seconds: float,
     max_retries: int,
+    total_timeout_seconds: float | None = None,
     *,
     rebuild_on_retry: bool = True,
     retry_command_builder=provider_command,
@@ -669,10 +734,36 @@ def run_provider_command(
     current_handle = handle
     current_planned_handle = planned_handle
     captured_handle = handle or planned_handle
+    started_at = time.monotonic()
+    deadline = started_at + total_timeout_seconds if total_timeout_seconds is not None else None
 
     for attempt_number in range(1, max_retries + 2):
+        effective_timeout = timeout_seconds
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                attempts.append({
+                    "attempt": attempt_number,
+                    "argv": redacted_argv(current_argv),
+                    "exit_code": None,
+                    "timed_out": True,
+                    "timeout_seconds": 0,
+                    "total_timeout_seconds": total_timeout_seconds,
+                    "stdout": "",
+                    "stderr": "dispatcher total timeout exhausted before provider attempt",
+                    "captured_session_handle": captured_handle,
+                    "timeout_scope": "dispatcher-total",
+                })
+                raise ProviderTimeoutError(
+                    attempts,
+                    captured_handle,
+                    timeout_seconds,
+                    total_timeout_seconds,
+                    "dispatcher total timeout exhausted",
+                )
+            effective_timeout = min(timeout_seconds, remaining)
         try:
-            completed = run(current_argv, timeout=timeout_seconds)
+            completed = run(current_argv, timeout=effective_timeout)
         except subprocess.TimeoutExpired as exc:
             stdout = output_text(exc.stdout)
             stderr = output_text(exc.stderr)
@@ -682,10 +773,12 @@ def run_provider_command(
                 "argv": redacted_argv(current_argv),
                 "exit_code": None,
                 "timed_out": True,
-                "timeout_seconds": timeout_seconds,
+                "timeout_seconds": effective_timeout,
+                "total_timeout_seconds": total_timeout_seconds,
                 "stdout": stdout,
                 "stderr": stderr,
                 "captured_session_handle": captured_handle,
+                "timeout_scope": "dispatcher-total" if deadline is not None and time.monotonic() >= deadline else "provider-attempt",
             })
             if attempt_number <= max_retries:
                 current_handle = captured_handle
@@ -693,7 +786,7 @@ def run_provider_command(
                     current_argv, current_planned_handle = retry_command_builder(provider, current_handle, prompt, max_steps)
                     captured_handle = current_handle or current_planned_handle
                 continue
-            raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds) from exc
+            raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds, total_timeout_seconds) from exc
 
         attempts.append({
             "attempt": attempt_number,
@@ -716,13 +809,23 @@ def run_provider_command(
                 "--output-format",
                 "json",
                 "--permission-mode",
-                "bypassPermissions",
+                "plan",
+                "--tools",
+                "",
+                "--disallowedTools",
+                "Bash,Edit,Write,MultiEdit,Read,Glob,Grep,LS,Task,TodoWrite,NotebookEdit,WebFetch,WebSearch",
                 "--session-id",
                 fallback_handle,
                 prompt,
             ]
             try:
-                completed = run(fallback_argv, timeout=timeout_seconds)
+                fallback_timeout = timeout_seconds
+                if deadline is not None:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise subprocess.TimeoutExpired(cmd=fallback_argv, timeout=0)
+                    fallback_timeout = min(timeout_seconds, remaining)
+                completed = run(fallback_argv, timeout=fallback_timeout)
             except subprocess.TimeoutExpired as exc:
                 stdout = output_text(exc.stdout)
                 stderr = output_text(exc.stderr)
@@ -732,11 +835,13 @@ def run_provider_command(
                     "argv": redacted_argv(fallback_argv),
                     "exit_code": None,
                     "timed_out": True,
-                    "timeout_seconds": timeout_seconds,
+                    "timeout_seconds": fallback_timeout if "fallback_timeout" in locals() else 0,
+                    "total_timeout_seconds": total_timeout_seconds,
                     "stdout": stdout,
                     "stderr": stderr,
                     "captured_session_handle": captured_handle,
                     "recovery": "fresh-session-after-resume-busy",
+                    "timeout_scope": "dispatcher-total" if deadline is not None and time.monotonic() >= deadline else "provider-attempt",
                 })
                 if attempt_number <= max_retries:
                     current_handle = captured_handle
@@ -744,7 +849,7 @@ def run_provider_command(
                         current_argv, current_planned_handle = retry_command_builder(provider, current_handle, prompt, max_steps)
                         captured_handle = current_handle or current_planned_handle
                     continue
-                raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds) from exc
+                raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds, total_timeout_seconds) from exc
             attempts.append({
                 "attempt": attempt_number,
                 "argv": redacted_argv(fallback_argv),
@@ -757,7 +862,7 @@ def run_provider_command(
             return completed, attempts, fallback_handle
         return completed, attempts, current_handle or current_planned_handle
 
-    raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds)
+    raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds, total_timeout_seconds)
 
 
 def cmd_dispatch(args: argparse.Namespace) -> int:
@@ -799,6 +904,9 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
     handle = record.get("session_handle") if isinstance(record.get("session_handle"), str) else None
     prompt = build_brief(provider, request, brief_out)
     argv, planned_handle = provider_command(provider, handle, prompt, args.max_steps)
+    total_timeout_seconds = args.total_timeout_seconds
+    if total_timeout_seconds is None:
+        total_timeout_seconds = args.timeout_seconds * (args.max_retries + 1) * DEFAULT_TOTAL_TIMEOUT_MULTIPLIER
 
     if args.dry_run:
         print(json.dumps({
@@ -811,6 +919,7 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             "argv_head": argv[:6],
             "brief_path": str(brief_out),
             "timeout_seconds": args.timeout_seconds,
+            "total_timeout_seconds": total_timeout_seconds,
             "max_retries": args.max_retries,
         }, ensure_ascii=False, indent=2))
         print("PRISM_DISPATCH_DRY_RUN_OK")
@@ -826,21 +935,23 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             args.max_steps,
             args.timeout_seconds,
             args.max_retries,
+            total_timeout_seconds,
         )
     except ProviderTimeoutError as exc:
         write_provider_timeout_raw(raw_out, argv, exc, args.max_retries)
         captured_handle = exc.captured_handle
-        if captured_handle and captured_handle != handle:
-            update_session_handle(manifest, provider, captured_handle)
+        mark_session_expired(manifest, provider, captured_handle or handle, exc.reason)
         raise SystemExit(json.dumps({
             "ok": False,
             "stage": "provider-timeout",
             "provider": provider,
             "timeout_seconds": exc.timeout_seconds,
+            "total_timeout_seconds": exc.total_timeout_seconds,
             "attempts": len(exc.attempts),
             "max_retries": args.max_retries,
             "captured_session_handle": captured_handle,
             "raw_path": str(raw_out),
+            "reason": exc.reason,
         }, ensure_ascii=False))
     raw_text = json.dumps({
         "argv": argv[:6] + ["<prompt>"],
@@ -958,7 +1069,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 "value += 1",
                 "counter.write_text(str(value))",
                 "print(f'kimi -r {handle}', flush=True)",
-                "if value <= 5:",
+                "if value <= 2:",
                 "    time.sleep(2)",
                 "print('retry-ok')",
             ]) + "\n",
@@ -977,8 +1088,9 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             None,
             None,
             1,
-            0.2,
-            5,
+            0.75,
+            2,
+            3.0,
             retry_command_builder=retry_builder,
         )
         exhausted_fixture = tmp / "always_timeout.py"
@@ -1007,6 +1119,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 1,
                 0.2,
                 2,
+                1.0,
                 retry_command_builder=lambda provider, current_handle, prompt, max_steps: (
                     [sys.executable, str(exhausted_fixture)],
                     current_handle,
@@ -1047,6 +1160,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 1,
                 0.2,
                 0,
+                1.0,
                 retry_command_builder=lambda provider, current_handle, prompt, max_steps: (
                     [sys.executable, str(stubborn_fixture)],
                     current_handle,
@@ -1184,13 +1298,15 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("dispatcher default timeout is not 300 seconds")
         if defaults.max_retries != DEFAULT_MAX_RETRIES:
             failures.append("dispatcher default max retries is not 5")
+        if defaults.total_timeout_seconds is not None:
+            failures.append("dispatcher default total timeout should be computed at dispatch time")
         if retry_completed.returncode != 0:
             failures.append("timeout retry fixture did not eventually succeed")
-        if len(retry_attempts) != 6:
-            failures.append("timeout retry fixture did not exercise five retries plus final success")
-        if sum(1 for attempt in retry_attempts if attempt.get("timed_out") is True) != 5:
-            failures.append("timeout retry fixture did not record exactly five timeout retries")
-        if len(rebuild_calls) != 5 or any(handle != retry_handle for handle in rebuild_calls):
+        if len(retry_attempts) != 3:
+            failures.append("timeout retry fixture did not exercise two retries plus final success")
+        if sum(1 for attempt in retry_attempts if attempt.get("timed_out") is True) != 2:
+            failures.append("timeout retry fixture did not record exactly two timeout retries")
+        if len(rebuild_calls) != 2 or any(handle != retry_handle for handle in rebuild_calls):
             failures.append("timeout retry fixture did not rebuild retry commands with the captured provider handle")
         if timeout_payload.get("max_retries") != 2 or len(timeout_payload.get("attempts", [])) != 3:
             failures.append("timeout raw evidence writer did not persist exhausted retry attempts")
@@ -1208,6 +1324,59 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("stubborn child timeout fixture did not record a timed-out attempt")
         if not stubborn_timeout_raw.is_file():
             failures.append("stubborn timeout raw evidence file was not written")
+        total_deadline_fixture = tmp / "total_deadline.py"
+        total_deadline_fixture.write_text(
+            "\n".join([
+                "import time",
+                "print('kimi -r 22222222-2222-4222-8222-222222222222', flush=True)",
+                "time.sleep(2)",
+            ]) + "\n",
+            encoding="utf-8",
+        )
+        total_deadline_attempts: list[dict[str, Any]] = []
+        total_deadline_elapsed = 0.0
+        try:
+            total_deadline_start = time.monotonic()
+            run_provider_command(
+                "kimi",
+                [sys.executable, str(total_deadline_fixture)],
+                "",
+                None,
+                None,
+                1,
+                2.0,
+                5,
+                0.35,
+                retry_command_builder=lambda provider, current_handle, prompt, max_steps: (
+                    [sys.executable, str(total_deadline_fixture)],
+                    current_handle,
+                ),
+            )
+        except ProviderTimeoutError as exc:
+            total_deadline_elapsed = time.monotonic() - total_deadline_start
+            total_deadline_attempts = exc.attempts
+        if not total_deadline_attempts:
+            failures.append("total deadline fixture did not raise ProviderTimeoutError")
+        if total_deadline_elapsed > 2:
+            failures.append("total deadline fixture exceeded dispatcher total timeout")
+        if total_deadline_attempts and not any(
+            attempt.get("timeout_scope") == "dispatcher-total" for attempt in total_deadline_attempts
+        ):
+            failures.append("total deadline fixture did not record dispatcher-total timeout scope")
+        mark_session_expired(manifest, "claude-code", "33333333-3333-4333-8333-333333333333", "self-check expired provider")
+        expired_manifest = load_json(manifest)
+        expired_provider = expired_manifest.get("providers", {}).get("claude-code", {})
+        kimi_after_expire = expired_manifest.get("providers", {}).get("kimi", {})
+        if expired_provider.get("status") != "expired":
+            failures.append("mark_session_expired did not persist provider expired status")
+        if expired_provider.get("session_handle") != "33333333-3333-4333-8333-333333333333":
+            failures.append("mark_session_expired did not persist captured provider handle")
+        if kimi_after_expire.get("round_count") != 1:
+            failures.append("mark_session_expired should not alter the other provider round count")
+        if kimi_after_expire.get("status") != "pending":
+            failures.append("mark_session_expired should not expire unrelated providers")
+        if expired_manifest.get("convergence", {}).get("state") != "unresolved":
+            failures.append("mark_session_expired should keep convergence unresolved")
         if markdown_review.get("provider") != "claude-code":
             failures.append("Claude markdown review extraction failed")
         if pass_summary_review.get("verdict") != "pass":
@@ -1224,6 +1393,38 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("split bold verdict/confidence extraction failed")
         if lowercase_split_bold_review.get("verdict") != "concern" or lowercase_split_bold_review.get("confidence") != "medium":
             failures.append("lowercase split bold verdict/confidence extraction failed")
+        kim_safe_argv, _ = provider_command("kimi", None, "safe-check", 1)
+        if "--plan" not in kim_safe_argv:
+            failures.append("kimi provider command is missing plan mode")
+        if str(REPO_ROOT) in kim_safe_argv:
+            failures.append("kimi provider command still uses RedCap repo as work-dir")
+        claude_safe_argv, _ = provider_command("claude-code", None, "safe-check", 1)
+        if "bypassPermissions" in claude_safe_argv:
+            failures.append("claude provider command still contains unsafe bypassPermissions flag")
+        if "acceptEdits" in claude_safe_argv:
+            failures.append("claude provider command still uses edit-capable permission mode")
+        if "--tools" not in claude_safe_argv or "" not in claude_safe_argv:
+            failures.append("claude provider command does not disable tools")
+        try:
+            assert_provider_command_safe(["kimi", "--work-dir", str(REPO_ROOT), "--plan", "-p", "x"])
+            failures.append("assert_provider_command_safe did not reject Kimi repo work-dir")
+        except SystemExit:
+            pass
+        try:
+            assert_provider_command_safe(["kimi", "--work-dir", tempfile.gettempdir(), "-p", "x"])
+            failures.append("assert_provider_command_safe did not reject Kimi without plan mode")
+        except SystemExit:
+            pass
+        try:
+            assert_provider_command_safe(["claude", "--permission-mode", "bypassPermissions", "x"])
+            failures.append("assert_provider_command_safe did not reject claude bypassPermissions")
+        except SystemExit:
+            pass
+        try:
+            assert_provider_command_safe(["claude", "--permission-mode", "acceptEdits", "--tools", "", "x"])
+            failures.append("assert_provider_command_safe did not reject claude acceptEdits")
+        except SystemExit:
+            pass
         result = {"ok": not failures, "failures": failures}
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if failures:
@@ -1248,6 +1449,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--brief-out")
     parser.add_argument("--max-steps", type=int, default=5)
     parser.add_argument("--timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
+    parser.add_argument("--total-timeout-seconds", type=float)
     parser.add_argument("--max-retries", type=int, default=DEFAULT_MAX_RETRIES)
     parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -1270,6 +1472,8 @@ def main() -> int:
             parser.error(f"--{name.replace('_', '-')} is required unless --self-check is used")
     if args.timeout_seconds <= 0:
         parser.error("--timeout-seconds must be greater than 0")
+    if args.total_timeout_seconds is not None and args.total_timeout_seconds <= 0:
+        parser.error("--total-timeout-seconds must be greater than 0")
     if args.max_retries < 0:
         parser.error("--max-retries must be greater than or equal to 0")
     return cmd_dispatch(args)

@@ -26,6 +26,7 @@ Usage:
   runtime/bin/redcap prism-resolution [...]
   runtime/bin/redcap prism-rebuttal-request [...]
   runtime/bin/redcap prism-ledger [...]
+  runtime/bin/redcap prism-shard [...]
   runtime/bin/redcap intent-judge classify|self-check [...]
   runtime/bin/redcap soul-load check|load|self-check [...]
   runtime/bin/redcap temporary-usable-check
@@ -62,6 +63,7 @@ Commands:
   prism-rebuttal-request
                 Generate a bounded same-provider rebuttal request for a rejected concern.
   prism-ledger  Record and summarize Prism task execution health.
+  prism-shard   Validate and merge bounded Prism long-task shard accounts.
   intent-judge  Classify prompt intent with deterministic rules and bounded Prism LLM fallback.
   soul-load     Load or verify Cap identity sources without leaking private text.
   temporary-usable-check
@@ -145,6 +147,9 @@ case "$cmd" in
   prism-ledger)
     exec "$REPO_ROOT/runtime/prism/bin/prism-ledger" "$@"
     ;;
+  prism-shard)
+    exec python3 "$REPO_ROOT/runtime/prism/bin/prism-shard" "$@"
+    ;;
   intent-judge)
     exec python3 "$REPO_ROOT/runtime/core/intent_judge.py" "$@"
     ;;
@@ -160,6 +165,7 @@ case "$cmd" in
   check)
     "$PRISM" check
     "$REPO_ROOT/runtime/bin/redcap" prism-resolution --self-check
+    "$REPO_ROOT/runtime/bin/redcap" prism-shard self-check
     "$REPO_ROOT/runtime/bin/redcap" session-ownership self-check
     "$REPO_ROOT/runtime/bin/redcap" intent-judge self-check
     python3 "$REPO_ROOT/runtime/host-adapters/codex/codex-hook.py" --self-check-intent-judge

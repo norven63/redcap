@@ -173,6 +173,8 @@ def prompt_excerpt_is_meaningful(excerpt: str, actual_prompt: str) -> bool:
     normalized_actual = normalize_prompt_text(actual_prompt)
     if normalized_excerpt not in normalized_actual:
         return False
+    if len(normalized_actual) < 16:
+        return normalized_excerpt == normalized_actual and len(normalized_excerpt) >= 6
     if len(normalized_excerpt) < 16:
         return False
     return len(normalized_excerpt) / max(len(normalized_actual), 1) >= 0.2
@@ -538,6 +540,20 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         question_failures = validate_packet(question_substring, question_events_path)
         if not any("question-only prompt substring" in item for item in question_failures):
             failures.append("question prompt substring authorizing implementation was not rejected")
+        short_events_path = tmp / "short-events.jsonl"
+        short_events_path.write_text(json.dumps({
+            "event": "UserPromptSubmit",
+            "prompt": {"normalized_excerpt": "可以，请处理这些风险点"},
+        }, ensure_ascii=False) + "\n", encoding="utf-8")
+        short_prompt = dict(valid)
+        short_prompt["prompt_context"] = {
+            "source_prompt_excerpt": "可以，请处理这些风险点",
+            "prompt_kind": "directive",
+            "authorized_scope": "implementation",
+        }
+        short_failures = validate_packet(short_prompt, short_events_path)
+        if short_failures:
+            failures.append(f"short directive prompt should pass lifecycle prompt verification: {'; '.join(short_failures)}")
         bypass = dict(valid)
         bypass["prompt_context"] = {
             "source_prompt_excerpt": "Please implement the lifecycle validator fixture.",

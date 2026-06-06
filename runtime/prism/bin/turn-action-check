@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import pathlib
 import re
@@ -31,6 +32,7 @@ SUBSTANTIVE_REDCAP_COMMANDS = {
     ("runtime/prism/bin/prism-dispatch",),
     ("runtime/prism/bin/prism-ledger",),
 }
+MAX_TASK_ANCHOR_CHARS = 320
 
 
 def load_events(path: pathlib.Path) -> list[dict[str, Any]]:
@@ -158,6 +160,63 @@ def latest_prompt(events: list[dict[str, Any]], session_id: str | None, turn_id:
     return prompts[-1] if prompts else None
 
 
+def normalize_text(value: str) -> str:
+    return " ".join(value.split())
+
+
+def prompt_task_anchor(prompt: dict[str, Any]) -> dict[str, Any]:
+    prompt_payload = prompt.get("prompt")
+    excerpt = ""
+    prompt_sha256: str | None = None
+    prompt_length: int | None = None
+    prompt_truncated = False
+    if isinstance(prompt_payload, dict):
+        raw_excerpt = prompt_payload.get("normalized_excerpt")
+        if isinstance(raw_excerpt, str):
+            excerpt = raw_excerpt
+        prompt_sha = prompt_payload.get("sha256")
+        if isinstance(prompt_sha, str):
+            prompt_sha256 = prompt_sha
+        length_value = prompt_payload.get("length")
+        if isinstance(length_value, int):
+            prompt_length = length_value
+        prompt_truncated = bool(prompt_payload.get("normalized_excerpt_truncated"))
+    elif isinstance(prompt_payload, str):
+        excerpt = normalize_text(prompt_payload)
+        prompt_sha256 = hashlib.sha256(prompt_payload.encode("utf-8")).hexdigest()
+        prompt_length = len(prompt_payload)
+    bounded_excerpt = excerpt[:MAX_TASK_ANCHOR_CHARS]
+    return {
+        "session_id": prompt.get("session_id"),
+        "turn_id": prompt.get("turn_id"),
+        "prompt_sha256": prompt_sha256,
+        "prompt_length": prompt_length,
+        "prompt_excerpt": bounded_excerpt,
+        "prompt_excerpt_limit": MAX_TASK_ANCHOR_CHARS,
+        "prompt_excerpt_truncated": prompt_truncated or len(excerpt) > MAX_TASK_ANCHOR_CHARS,
+        "gate_decision": prompt.get("gate_decision"),
+        "gate_matched_rules": prompt.get("gate_matched_rules", []),
+    }
+
+
+def stop_recovery_guidance(action_policy: str) -> list[dict[str, str]]:
+    evidence_label = "diagnostic evidence" if action_policy == "diagnostic" else "substantive task-body action evidence"
+    return [
+        {
+            "step": "re_anchor",
+            "requirement": "Return to the original user task identified by task_anchor before replying to the Stop hook prompt.",
+        },
+        {
+            "step": "continue_task",
+            "requirement": f"Perform the missing {evidence_label}, rerun the relevant checks, or mark the original task blocked with a concrete blocker.",
+        },
+        {
+            "step": "report_order",
+            "requirement": "Report original task, same-turn actions, verification, and only then mention hook recovery context.",
+        },
+    ]
+
+
 def check_turn(events: list[dict[str, Any]], session_id: str | None, turn_id: str | None, max_age_seconds: int | None) -> dict[str, Any]:
     prompt = latest_prompt(events, session_id, turn_id)
     if prompt is None:
@@ -194,6 +253,7 @@ def check_turn(events: list[dict[str, Any]], session_id: str | None, turn_id: st
                 "actions": 0,
             }
     required = prompt.get("gate_decision") == "required"
+    task_anchor = prompt_task_anchor(prompt)
     actions = [
         event for event in events
         if same_turn(event, prompt_session, prompt_turn)
@@ -233,6 +293,7 @@ def check_turn(events: list[dict[str, Any]], session_id: str | None, turn_id: st
         "turn_id": prompt_turn,
         "gate_decision": prompt.get("gate_decision"),
         "gate_matched_rules": prompt.get("gate_matched_rules", []),
+        "task_anchor": task_anchor,
         "prompt_intent": prompt_intent,
         "action_evidence_policy": action_policy,
         "actions": len(actions),
@@ -242,6 +303,7 @@ def check_turn(events: list[dict[str, Any]], session_id: str | None, turn_id: st
             str(action.get("tool_name")) for action in diagnostic_actions if action.get("tool_name")
         }),
         "reason": reason,
+        "recovery_guidance": [] if ok else stop_recovery_guidance(action_policy),
     }
 
 
