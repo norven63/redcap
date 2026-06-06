@@ -284,7 +284,15 @@
       "risk_level": "high",
       "requires_prism": true,
       "expected_output": "assets/archaeology/extractions/long-task-context-defense-v1.json",
-      "status": "queued"
+      "status": "verified",
+      "verification_evidence": [
+        "assets/archaeology/extractions/long-task-context-defense-v1.json",
+        "runtime/prism/bin/prism-shard",
+        "runtime/bin/redcap prism-shard self-check",
+        "runtime/bin/redcap archaeology check",
+        "runtime/bin/redcap phase2-blueprint check",
+        "runtime/bin/redcap check"
+      ]
     }
   ],
   "prior_decisions": [
@@ -384,6 +392,60 @@
       "hook_or_gate_assessment": "deterministic_gate",
       "verification_route": [
         "runtime/bin/redcap boundary self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "long-task-index-first-context",
+      "source_shard": "long-task-context-defense",
+      "source_refs": [
+        "assets/archaeology/extractions/long-task-context-defense-v1.json#L02",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json#S04"
+      ],
+      "summary": "Long-task work must load indexes first and treat raw or large artifacts as explicit references, never default context.",
+      "classification": "keep",
+      "destination_boundary": "assets_knowledge",
+      "migration_action": "copy",
+      "hook_or_gate_assessment": "knowledge_gateway",
+      "verification_route": [
+        "runtime/bin/redcap knowledge-gateway check",
+        "runtime/bin/redcap prism-shard self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "long-task-shard-context-budget",
+      "source_shard": "long-task-context-defense",
+      "source_refs": [
+        "assets/archaeology/extractions/long-task-context-defense-v1.json#L03",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json#S01",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json#S03"
+      ],
+      "summary": "Long tasks should be split into Prism shard accounts with explicit source budgets, provider round limits, stop conditions, and output schemas.",
+      "classification": "redesign",
+      "destination_boundary": "runtime_prism",
+      "migration_action": "redesign",
+      "hook_or_gate_assessment": "prism_protocol",
+      "verification_route": [
+        "runtime/bin/redcap prism-shard self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "long-task-cap-owned-acceptance",
+      "source_shard": "long-task-context-defense",
+      "source_refs": [
+        "assets/archaeology/extractions/long-task-context-defense-v1.json#L04",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json#S05"
+      ],
+      "summary": "Provider output and reports are support evidence only; Cap-owned acceptance remains separate and must be encoded in shard account policy.",
+      "classification": "keep",
+      "destination_boundary": "runtime_prism",
+      "migration_action": "copy",
+      "hook_or_gate_assessment": "prism_protocol",
+      "verification_route": [
+        "runtime/bin/redcap prism-resolution --self-check",
+        "runtime/bin/redcap prism-shard self-check",
         "runtime/bin/redcap check"
       ]
     },

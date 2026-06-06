@@ -29,6 +29,8 @@ REQUIRED_OUTPUT_FIELDS = {
     "confidence",
     "open_questions",
 }
+CONTEXT_POLICY_MODES = {"index-first"}
+DEFAULT_LOAD_POLICIES = {"index-only", "explicit-files-only"}
 MAX_FILES_PER_SHARD_HARD_LIMIT = 10
 
 
@@ -144,6 +146,66 @@ def validate_output_schema(shard: dict[str, Any], shard_id: str, failures: list[
         failures.append(f"shard {shard_id}: output_schema missing required fields: {', '.join(missing)}")
 
 
+def validate_context_policy(payload: dict[str, Any], failures: list[str]) -> None:
+    policy = payload.get("context_policy")
+    if not isinstance(policy, dict):
+        failures.append("context_policy must be an object")
+        return
+    if policy.get("mode") not in CONTEXT_POLICY_MODES:
+        failures.append("context_policy.mode must be index-first")
+    if policy.get("bulk_default_allowed") is not False:
+        failures.append("context_policy.bulk_default_allowed must be false")
+    if policy.get("raw_default_allowed") is not False:
+        failures.append("context_policy.raw_default_allowed must be false")
+    if policy.get("large_artifact_policy") != "explicit-reference-only":
+        failures.append("context_policy.large_artifact_policy must be explicit-reference-only")
+    if policy.get("task_truth_externalized") is not True:
+        failures.append("context_policy.task_truth_externalized must be true")
+
+
+def validate_acceptance_policy(payload: dict[str, Any], failures: list[str]) -> None:
+    policy = payload.get("acceptance_policy")
+    if not isinstance(policy, dict):
+        failures.append("acceptance_policy must be an object")
+        return
+    if policy.get("cap_acceptance_required") is not True:
+        failures.append("acceptance_policy.cap_acceptance_required must be true")
+    if policy.get("provider_output_support_only") is not True:
+        failures.append("acceptance_policy.provider_output_support_only must be true")
+    if policy.get("completion_requires_verified_outputs") is not True:
+        failures.append("acceptance_policy.completion_requires_verified_outputs must be true")
+
+
+def validate_context_budget(
+    shard: dict[str, Any],
+    shard_id: str,
+    *,
+    max_files: int,
+    max_rounds: int,
+    candidate_count: int,
+    failures: list[str],
+) -> None:
+    budget = shard.get("context_budget")
+    if not isinstance(budget, dict):
+        failures.append(f"shard {shard_id}: context_budget must be an object")
+        return
+    max_source_files = budget.get("max_source_files")
+    if not isinstance(max_source_files, int) or max_source_files < 1 or max_source_files > max_files:
+        failures.append(f"shard {shard_id}: context_budget.max_source_files must be 1-{max_files}")
+    elif candidate_count > max_source_files:
+        failures.append(f"shard {shard_id}: candidate_sources exceeds context budget")
+    provider_rounds = budget.get("max_provider_rounds")
+    if not isinstance(provider_rounds, int) or provider_rounds < 1 or provider_rounds > max_rounds:
+        failures.append(f"shard {shard_id}: context_budget.max_provider_rounds must be 1-{max_rounds}")
+    shard_rounds = shard.get("max_rounds")
+    if isinstance(provider_rounds, int) and isinstance(shard_rounds, int) and shard_rounds > provider_rounds:
+        failures.append(f"shard {shard_id}: max_rounds exceeds context budget")
+    if budget.get("default_load_policy") not in DEFAULT_LOAD_POLICIES:
+        failures.append(f"shard {shard_id}: context_budget.default_load_policy invalid")
+    if budget.get("raw_evidence_default_allowed") is not False:
+        failures.append(f"shard {shard_id}: context_budget.raw_evidence_default_allowed must be false")
+
+
 def validate_shard_output(
     output_path: pathlib.Path,
     shard: dict[str, Any],
@@ -212,6 +274,8 @@ def validate_account_payload(payload: dict[str, Any], account_path: pathlib.Path
             max_files = 1
         if source_policy.get("bulk_read_allowed") is not False:
             failures.append("source_policy.bulk_read_allowed must be false")
+    validate_context_policy(payload, failures)
+    validate_acceptance_policy(payload, failures)
     arbitration = payload.get("cap_arbitration")
     if not isinstance(arbitration, dict):
         failures.append("cap_arbitration must be an object")
@@ -254,6 +318,16 @@ def validate_account_payload(payload: dict[str, Any], account_path: pathlib.Path
             label=f"shard {shard_id}: candidate_sources",
             base_dir=base_dir,
             max_files=max_files,
+            failures=failures,
+        )
+        candidate_sources = shard.get("candidate_sources")
+        candidate_count = len(candidate_sources) if isinstance(candidate_sources, list) else 0
+        validate_context_budget(
+            shard,
+            shard_id,
+            max_files=max_files,
+            max_rounds=max_rounds,
+            candidate_count=candidate_count,
             failures=failures,
         )
         validate_provider_sessions(shard, shard_id, failures)
@@ -361,6 +435,18 @@ def valid_account_payload(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Pat
             "max_files_per_shard": 3,
             "bulk_read_allowed": False,
         },
+        "context_policy": {
+            "mode": "index-first",
+            "bulk_default_allowed": False,
+            "raw_default_allowed": False,
+            "large_artifact_policy": "explicit-reference-only",
+            "task_truth_externalized": True,
+        },
+        "acceptance_policy": {
+            "cap_acceptance_required": True,
+            "provider_output_support_only": True,
+            "completion_requires_verified_outputs": True,
+        },
         "cap_arbitration": {
             "max_discussion_rounds": 3,
             "cap_decision_required_on_exhaustion": True,
@@ -380,6 +466,12 @@ def valid_account_payload(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Pat
                     "claude-code": {"status": "pending", "manifest_path": None},
                 },
                 "max_rounds": 3,
+                "context_budget": {
+                    "max_source_files": 1,
+                    "max_provider_rounds": 3,
+                    "default_load_policy": "index-only",
+                    "raw_evidence_default_allowed": False,
+                },
                 "output_schema": {
                     "schema_id": OUTPUT_SCHEMA_ID,
                     "required_fields": sorted(REQUIRED_OUTPUT_FIELDS),
@@ -400,6 +492,12 @@ def valid_account_payload(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Pat
                     "claude-code": {"status": "pending", "manifest_path": None},
                 },
                 "max_rounds": 1,
+                "context_budget": {
+                    "max_source_files": 1,
+                    "max_provider_rounds": 1,
+                    "default_load_policy": "index-only",
+                    "raw_evidence_default_allowed": False,
+                },
                 "output_schema": {
                     "schema_id": OUTPUT_SCHEMA_ID,
                     "required_fields": sorted(REQUIRED_OUTPUT_FIELDS),
@@ -483,6 +581,38 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         schema_failures, _ = validate_account_payload(invalid_schema, account)
         if not any("output_schema missing required fields" in failure for failure in schema_failures):
             failures.append("incomplete output schema was not rejected")
+        invalid_context = load_json(account)
+        invalid_context["context_policy"]["raw_default_allowed"] = True
+        context_failures, _ = validate_account_payload(invalid_context, account)
+        if not any("raw_default_allowed" in failure for failure in context_failures):
+            failures.append("raw-default context policy was not rejected")
+        invalid_context_mode = load_json(account)
+        invalid_context_mode["context_policy"]["mode"] = "none"
+        context_mode_failures, _ = validate_account_payload(invalid_context_mode, account)
+        if not any("context_policy.mode" in failure for failure in context_mode_failures):
+            failures.append("non-index context policy mode was not rejected")
+        invalid_acceptance = load_json(account)
+        invalid_acceptance["acceptance_policy"]["provider_output_support_only"] = False
+        acceptance_failures, _ = validate_account_payload(invalid_acceptance, account)
+        if not any("provider_output_support_only" in failure for failure in acceptance_failures):
+            failures.append("provider-output-as-authority policy was not rejected")
+        zero_budget = load_json(account)
+        zero_budget["shards"][0]["context_budget"]["max_source_files"] = 0
+        zero_budget_failures, _ = validate_account_payload(zero_budget, account)
+        if not any("max_source_files" in failure for failure in zero_budget_failures):
+            failures.append("zero source-file budget was not rejected")
+        over_budget = load_json(account)
+        source_b = tmp / "source-b.md"
+        source_b.write_text("extra source\n", encoding="utf-8")
+        over_budget["shards"][0]["candidate_sources"] = [str(tmp / "source-a.md"), str(source_b)]
+        budget_failures, _ = validate_account_payload(over_budget, account)
+        if not any("context budget" in failure for failure in budget_failures):
+            failures.append("candidate source budget excess was not rejected")
+        invalid_load_policy = load_json(account)
+        invalid_load_policy["shards"][0]["context_budget"]["default_load_policy"] = "load-everything"
+        load_failures, _ = validate_account_payload(invalid_load_policy, account)
+        if not any("default_load_policy" in failure for failure in load_failures):
+            failures.append("invalid default load policy was not rejected")
         non_terminal = load_json(account)
         non_terminal["shards"][0]["status"] = "active"
         terminal_failures, _ = validate_account_payload(non_terminal, account)

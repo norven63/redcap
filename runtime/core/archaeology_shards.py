@@ -166,6 +166,74 @@ def validate_extraction(path: pathlib.Path) -> list[str]:
     return failures
 
 
+def validate_long_task_extraction(path: pathlib.Path) -> list[str]:
+    failures: list[str] = []
+    if not path.is_file():
+        return [f"missing long-task extraction: {path}"]
+    payload = read_json(path)
+    if payload.get("schema_id") != "old-redcap-long-task-context-defense-extraction":
+        failures.append("long-task extraction schema_id invalid")
+    sources = payload.get("bounded_sources")
+    if not isinstance(sources, list) or len(sources) != 1:
+        failures.append("long-task extraction must cite exactly one bounded source")
+    read_policy = payload.get("read_policy")
+    if not isinstance(read_policy, dict):
+        failures.append("long-task extraction read_policy must be an object")
+    else:
+        if read_policy.get("bulk_read") is not False:
+            failures.append("long-task extraction must record bulk_read=false")
+        for key in ["old_task_ledgers_read", "raw_prism_runs_read", "private_archives_read"]:
+            if read_policy.get(key) is not False:
+                failures.append(f"long-task extraction {key} must be false")
+    portable = payload.get("portable_designs")
+    if not isinstance(portable, list) or len(portable) < 6:
+        failures.append("long-task extraction must preserve at least six portable designs")
+    else:
+        required_destinations = {"runtime_prism", "assets_knowledge", "runtime_host_adapter"}
+        destinations = {
+            item.get("new_redcap_destination")
+            for item in portable
+            if isinstance(item, dict)
+        }
+        missing = sorted(required_destinations - destinations)
+        if missing:
+            failures.append(f"long-task extraction missing destinations: {', '.join(missing)}")
+    traceability = payload.get("source_traceability")
+    if not isinstance(traceability, list) or len(traceability) < 5:
+        failures.append("long-task extraction must include source traceability for the five defense strategies")
+    else:
+        required_strategies = {
+            "关键真相外置",
+            "渐进式上下文加载",
+            "长任务拆解",
+            "独立审查与 Cap 验收分离",
+            "宿主能力边界",
+        }
+        strategies = {
+            item.get("strategy")
+            for item in traceability
+            if isinstance(item, dict)
+        }
+        missing = sorted(required_strategies - strategies)
+        if missing:
+            failures.append(f"long-task extraction missing traceability strategies: {', '.join(missing)}")
+        for item in traceability:
+            if not isinstance(item, dict):
+                failures.append("long-task traceability entries must be objects")
+                break
+            for key in ["old_source_lines", "extraction_refs", "preserved_semantics"]:
+                if key not in item:
+                    failures.append(f"long-task traceability entry missing {key}")
+                    break
+    shard_rules = payload.get("shard_account_rules")
+    if not isinstance(shard_rules, list) or len(shard_rules) < 6:
+        failures.append("long-task extraction must include shard account rules")
+    not_promoted = payload.get("not_promoted")
+    if not isinstance(not_promoted, list) or len(not_promoted) < 3:
+        failures.append("long-task extraction must record no-promote boundaries")
+    return failures
+
+
 def shard_index_payload() -> dict[str, Any]:
     return {
         "schema_id": "redcap-archaeology-shard-index",
@@ -198,12 +266,12 @@ def shard_index_payload() -> dict[str, Any]:
             },
             {
                 "id": "long-task-context-defense",
-                "status": "planned",
+                "status": "extracted",
                 "question": "Which old long-task defenses should become Prism shard ledger rules?",
                 "candidate_sources": [
                     "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
                 ],
-                "output": None,
+                "output": "assets/archaeology/extractions/long-task-context-defense-v1.json",
                 "acceptance": "Produces shard split/acceptance rules and explicit anti-bulk-read limits.",
             },
             {
@@ -294,6 +362,23 @@ def cmd_check(args: argparse.Namespace) -> int:
             if missing:
                 failures.append(f"shard candidate_sources must exist: {missing[:3]}")
                 break
+            shard_id = shard.get("id") if isinstance(shard, dict) else None
+            status = shard.get("status") if isinstance(shard, dict) else None
+            output = shard.get("output") if isinstance(shard, dict) else None
+            if status in {"extracted", "classified", "ready_for_migration_review", "verified"}:
+                if not isinstance(output, str) or not output.strip():
+                    failures.append(f"extracted shard requires output: {shard_id}")
+                    break
+                output_path = pathlib.Path(output)
+                if not output_path.is_absolute():
+                    output_path = REPO_ROOT / output_path
+                if not output_path.is_file():
+                    failures.append(f"shard output must exist: {output}")
+                    break
+                if shard_id == "runtime-workspace-boundary":
+                    failures.extend(validate_extraction(output_path))
+                if shard_id == "long-task-context-defense":
+                    failures.extend(validate_long_task_extraction(output_path))
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1

@@ -1,0 +1,206 @@
+{
+  "schema_id": "old-redcap-long-task-context-defense-extraction",
+  "version": 1,
+  "shard_id": "long-task-context-defense",
+  "old_root": "/Users/norven/workspace/redcap",
+  "extracted_at": "2026-06-06T07:22:33+00:00",
+  "bounded_sources": [
+    {
+      "path": "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md",
+      "role": "long-task-defense-summary",
+      "line_count": 95,
+      "sha256": "8d250b6534e830762950e4c12045fb2f7b0f8cb3e708e8d3206a27020ca2ba6f"
+    }
+  ],
+  "read_policy": {
+    "mode": "bounded-exact-files",
+    "bulk_read": false,
+    "source_count": 1,
+    "old_task_ledgers_read": false,
+    "raw_prism_runs_read": false,
+    "private_archives_read": false,
+    "stop_condition": "extract split, budget, context, acceptance and host-boundary rules only"
+  },
+  "source_traceability": [
+    {
+      "strategy": "关键真相外置",
+      "old_source_lines": "7-10, 17-24, 42",
+      "extraction_refs": [
+        "portable_designs#L01",
+        "portable_designs#L05"
+      ],
+      "preserved_semantics": "把任务目标、当前切片、允许修改范围、完成标准和健康状态放到文件或状态面，而不是依赖长聊天窗口。"
+    },
+    {
+      "strategy": "渐进式上下文加载",
+      "old_source_lines": "26-30, 43, 51-63",
+      "extraction_refs": [
+        "portable_designs#L02",
+        "shard_account_rules#S02",
+        "shard_account_rules#S04"
+      ],
+      "preserved_semantics": "先读索引，再按问题读取精确文件；raw 证据和大材料必须显式引用，不能默认进入上下文。"
+    },
+    {
+      "strategy": "长任务拆解",
+      "old_source_lines": "32-36, 46",
+      "extraction_refs": [
+        "portable_designs#L03",
+        "shard_account_rules#S01",
+        "shard_account_rules#S03",
+        "shard_account_rules#S06"
+      ],
+      "preserved_semantics": "把无耦合问题拆成有边界的小账目，每个账目有问题、停止条件、预算和合并条件。"
+    },
+    {
+      "strategy": "独立审查与 Cap 验收分离",
+      "old_source_lines": "35-36, 45, 72-78",
+      "extraction_refs": [
+        "portable_designs#L04",
+        "shard_account_rules#S05"
+      ],
+      "preserved_semantics": "独立审查、报告和回执只提供辅助证据；最终验收必须回到真实工作区和 Cap 决策。"
+    },
+    {
+      "strategy": "宿主能力边界",
+      "old_source_lines": "48-49, 80-89",
+      "extraction_refs": [
+        "portable_designs#L06",
+        "not_promoted"
+      ],
+      "preserved_semantics": "没有宿主实时回复前拦截时，不能宣称 100% reply-time veto；只能在已验证入口和 hook 边界内强制执行。"
+    }
+  ],
+  "portable_designs": [
+    {
+      "id": "L01",
+      "name": "外置任务真相源",
+      "classification": "keep",
+      "summary": "长任务不能只依赖聊天窗口；任务目标、当前切片、允许修改范围和验收标准要外置到可检查文件或证据包。",
+      "new_redcap_destination": "runtime_prism",
+      "hook_or_gate_assessment": "lifecycle_validator",
+      "verification_route": [
+        "runtime/bin/redcap lifecycle check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "L02",
+      "name": "索引优先读取",
+      "classification": "keep",
+      "summary": "文档、知识、验收材料和运行残留都应先读索引，再按明确问题读取精确文件；raw 证据和大材料不能成为默认上下文。",
+      "new_redcap_destination": "assets_knowledge",
+      "hook_or_gate_assessment": "knowledge_gateway",
+      "verification_route": [
+        "runtime/bin/redcap knowledge-gateway check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "L03",
+      "name": "长任务分片账目",
+      "classification": "redesign",
+      "summary": "Loom / Layer B 的并行裂变思想应缩小成 Prism 分片账目：每个分片有问题、来源、停止条件、上下文预算、provider 轮次上限和输出结构。",
+      "new_redcap_destination": "runtime_prism",
+      "hook_or_gate_assessment": "prism_protocol",
+      "verification_route": [
+        "runtime/bin/redcap prism-shard self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "L04",
+      "name": "Cap 验收与 provider 输出分离",
+      "classification": "keep",
+      "summary": "Prism、Reviewer 和 task report 只能提供辅助证据；Cap 必须独立验收分片输出，不能让 provider 结论自动成为完成事实。",
+      "new_redcap_destination": "runtime_prism",
+      "hook_or_gate_assessment": "prism_protocol",
+      "verification_route": [
+        "runtime/bin/redcap prism-resolution --self-check",
+        "runtime/bin/redcap prism-shard self-check"
+      ]
+    },
+    {
+      "id": "L05",
+      "name": "健康状态显性化",
+      "classification": "keep",
+      "summary": "长任务需要状态面显示当前任务、追踪健康、诊断结果和最近 provider 运行质量，避免机制存在但现场不可见。",
+      "new_redcap_destination": "runtime",
+      "hook_or_gate_assessment": "deterministic_gate",
+      "verification_route": [
+        "runtime/bin/redcap prism-ledger summary",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "L06",
+      "name": "宿主边界诚实声明",
+      "classification": "keep",
+      "summary": "如果宿主没有实时回复前拦截或会话结束事件，RedCap 不能把 repo-owned 脚本包装成 100% host hook；只能在已验证入口处强制执行并显式说明边界。",
+      "new_redcap_destination": "runtime_host_adapter",
+      "hook_or_gate_assessment": "hard_hook",
+      "verification_route": [
+        "runtime/bin/redcap host-hook-audit",
+        "runtime/bin/redcap check"
+      ]
+    }
+  ],
+  "shard_account_rules": [
+    {
+      "id": "S01",
+      "rule": "每个长任务必须先被拆成分片账目；分片账目必须在 provider 执行前通过结构校验。",
+      "enforced_by": "runtime/prism/bin/prism-shard check"
+    },
+    {
+      "id": "S02",
+      "rule": "每个分片只能声明精确文件来源，不能使用目录、通配符、旧 raw 运行或私有归档作为默认来源。",
+      "enforced_by": "runtime/prism/bin/prism-shard check"
+    },
+    {
+      "id": "S03",
+      "rule": "每个分片必须有上下文预算，限制来源文件数量、provider 最大轮次和默认加载策略。",
+      "enforced_by": "runtime/prism/bin/prism-shard check"
+    },
+    {
+      "id": "S04",
+      "rule": "账号必须声明索引优先和 raw 证据非默认读取；违反者不能进入合并。",
+      "enforced_by": "runtime/prism/bin/prism-shard check"
+    },
+    {
+      "id": "S05",
+      "rule": "provider 输出只能作为辅助证据；账号必须声明 Cap 验收是最终入口。",
+      "enforced_by": "runtime/prism/bin/prism-shard check"
+    },
+    {
+      "id": "S06",
+      "rule": "ready_for_merge 或 merged 账号不能包含 active/reviewing/planned 分片。",
+      "enforced_by": "runtime/prism/bin/prism-shard merge"
+    }
+  ],
+  "not_promoted": [
+    "不迁移旧 Loom / Layer B 的完整执行形态；只保留可检查的分片账目思想。",
+    "不导入旧 task report 正文、旧 pending closure、旧历史任务 ledger 或旧 raw Prism 运行。",
+    "不把 task report、receipt、review 或 ledger 条目提升为完成事实。",
+    "不宣称宿主实时回复前拦截已经 100% 可用；当前只承认 RedCap 已验证入口和 Codex 项目 hook 边界。"
+  ],
+  "new_redcap_consumption": {
+    "runtime_changes": [
+      "runtime/prism/bin/prism-shard 增加 context_policy、acceptance_policy 和 context_budget 校验",
+      "assets/docs/prism-shard-accounts.md 以中文说明实际拒绝规则"
+    ],
+    "contract_changes": [
+      "assets/archaeology/shards/index.json 标记本 shard 已抽取",
+      "assets/contracts/redcap-1.1-phase2-blueprint.json 记录本 shard 的验证证据和 idea records"
+    ],
+    "expected_checks": [
+      "runtime/bin/redcap prism-shard self-check",
+      "runtime/bin/redcap archaeology check",
+      "runtime/bin/redcap phase2-blueprint check",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "open_questions": [
+    "后续是否需要把分片账目与 provider dispatch 串成一条自动执行队列，仍需在完整 360 扫描前另做设计评审。",
+    "外部项目中的 .dev-task.md 或等效任务真相源如何落地，需等待 RedCap 管理外部项目能力恢复后再定。"
+  ]
+}

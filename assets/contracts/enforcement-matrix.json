@@ -1303,7 +1303,7 @@
         ]
       },
       "gaps": [
-        "Only the runtime-workspace-boundary shard is extracted; lifecycle and long-task-defense shards are planned exact-file shards."
+        "The runtime-workspace-boundary and long-task-context-defense shards are extracted; development-lifecycle-review remains a planned exact-file shard."
       ]
     },
     {

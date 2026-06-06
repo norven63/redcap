@@ -25,16 +25,16 @@
       "question": "Which old review tracks are portable without duplicating the new FSM?",
       "status": "planned"
     },
-    {
-      "acceptance": "Produces shard split/acceptance rules and explicit anti-bulk-read limits.",
-      "candidate_sources": [
-        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
-      ],
-      "id": "long-task-context-defense",
-      "output": null,
-      "question": "Which old long-task defenses should become Prism shard ledger rules?",
-      "status": "planned"
-    },
+        {
+            "acceptance": "Produces shard split/acceptance rules and explicit anti-bulk-read limits.",
+            "candidate_sources": [
+                "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+            ],
+            "id": "long-task-context-defense",
+            "output": "assets/archaeology/extractions/long-task-context-defense-v1.json",
+            "question": "Which old long-task defenses should become Prism shard ledger rules?",
+            "status": "extracted"
+        },
     {
       "acceptance": "Produces anti-pattern rules that distinguish useful reports from report-as-progress pathology, with no task-report body migration.",
       "candidate_sources": [
