@@ -1,0 +1,171 @@
+{
+  "schema_id": "old-redcap-development-lifecycle-review-extraction",
+  "version": 1,
+  "shard_id": "development-lifecycle-review",
+  "old_root": "/Users/norven/workspace/redcap",
+  "extracted_at": "2026-06-06T08:00:00+00:00",
+  "bounded_sources": [
+    {
+      "path": "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+      "role": "three-track-review-source",
+      "sha256": "98a81f9ad8663a1f729fdc17ddb0682ce06a1c229691cbac99d935d58db15be8",
+      "line_count": 59,
+      "used_lines": "1-59"
+    },
+    {
+      "path": "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+      "role": "report-boundary-and-coverage-source",
+      "sha256": "ee5cbbda7fc924628c432314b1e8ca2d269451b2ead55027994e287ae6dee5a4",
+      "line_count": 228,
+      "used_lines": "1-8,24-30,57-76,135-168,171-187"
+    }
+  ],
+  "read_policy": {
+    "mode": "bounded-exact-files",
+    "bulk_read": false,
+    "source_count": 2,
+    "old_task_reports_read": false,
+    "old_receipts_read": false,
+    "old_closeout_ledgers_read": false,
+    "private_archives_read": false,
+    "raw_prism_runs_read": false,
+    "stop_condition": "Extract review-track and completion-boundary semantics only; do not migrate old task report bodies or build a second state machine."
+  },
+  "behavioral_questions": [
+    {
+      "id": "BQ01",
+      "question": "当前生命周期包在进入实现或验证前，是否强制区分架构、治理、契约三类评审？",
+      "before_answer": "否。旧语义散落在需求评审、技术评审和棱镜评审里，但没有可机检的三轨字段。",
+      "action": "在 redcap-development-lifecycle-packet 中新增 review_tracks，并由 development_lifecycle 校验 medium/high/critical 风险的关键状态跳转。"
+    },
+    {
+      "id": "BQ02",
+      "question": "当前生命周期是否会把报告、回执、登记或评审文本误当成完成本体？",
+      "before_answer": "大体不会。已有 task_body、completion_claim 和 final_claim_guard 约束，但旧模板再次证明报告只应作为支撑证据。",
+      "action": "不迁移完整报告模板；把“报告不能替代完成”的规则保留为 no-promote 设计记录，并继续由 final_claim_guard 与生命周期包约束。"
+    },
+    {
+      "id": "BQ03",
+      "question": "当前生命周期是否覆盖用户原始意图、可见边界、延期项和验证等级？",
+      "before_answer": "部分覆盖。prompt_context 和 task_body 已覆盖原始提示与验收，但没有把旧报告里的覆盖审计拆成独立报告体。",
+      "action": "保留现有 prompt_context、task_body 和 verification_evidence，不新增长报告运行时；后续如需要扩展，只扩展生命周期包字段。"
+    }
+  ],
+  "portable_designs": [
+    {
+      "id": "D01",
+      "name": "三轨评审门",
+      "source_refs": [
+        "review-tracks.json#L5-L57"
+      ],
+      "classification": "redesign",
+      "new_redcap_destination": "runtime",
+      "migration_action": "redesign",
+      "hook_or_gate": "lifecycle_validator",
+      "preserved_semantics": [
+        "架构评审检查架构边界、角色职责、状态机和运行时权威。",
+        "治理评审检查自然语言规则是否进入执行保障，并防止伪完成。",
+        "契约评审检查 hook、validator、CLI、文件生命周期和输入输出契约是否 fail-closed。"
+      ],
+      "new_behavior": "review_tracks 是生命周期包的一部分；关键状态跳转缺少三轨评审、只有泛化 finding、或 evidence 不像文件/命令引用时直接失败。"
+    },
+    {
+      "id": "D02",
+      "name": "原始意图覆盖审计",
+      "source_refs": [
+        "task-report-template.md#L57-L76"
+      ],
+      "classification": "keep",
+      "new_redcap_destination": "runtime",
+      "migration_action": "copy",
+      "hook_or_gate": "lifecycle_validator",
+      "preserved_semantics": [
+        "必须区分原始意图、已覆盖、未覆盖或延期，以及用户可见边界。"
+      ],
+      "new_behavior": "继续用 prompt_context 和 task_body 约束任务本体，不迁移整份报告模板。"
+    },
+    {
+      "id": "D03",
+      "name": "报告不是完成凭证",
+      "source_refs": [
+        "task-report-template.md#L3-L8",
+        "task-report-template.md#L150-L168"
+      ],
+      "classification": "no_promote",
+      "new_redcap_destination": "assets_archaeology",
+      "migration_action": "record_no_promote",
+      "hook_or_gate": "final_claim_guard",
+      "preserved_semantics": [
+        "报告、回执和评审结论只能支撑完成判断，不能替代任务本体完成。"
+      ],
+      "new_behavior": "保留为防旧疾规则，不恢复旧的任务报告完工机制。"
+    },
+    {
+      "id": "D04",
+      "name": "完成等级禁止混报",
+      "source_refs": [
+        "task-report-template.md#L160-L168"
+      ],
+      "classification": "keep",
+      "new_redcap_destination": "runtime",
+      "migration_action": "copy",
+      "hook_or_gate": "lifecycle_validator",
+      "preserved_semantics": [
+        "已实现、已自检、已独立验收、已正式完成必须分层表达。"
+      ],
+      "new_behavior": "继续通过 task_body.status、evidence_kind、verification_evidence 和 completion_claim 区分。"
+    },
+    {
+      "id": "D05",
+      "name": "人工介入显性化",
+      "source_refs": [
+        "task-report-template.md#L24-L30",
+        "task-report-template.md#L171-L187"
+      ],
+      "classification": "redesign",
+      "new_redcap_destination": "runtime",
+      "migration_action": "defer",
+      "hook_or_gate": "needs_design",
+      "preserved_semantics": [
+        "需要人类介入时必须说明缺什么、为什么不能自行完成、下一步是什么。"
+      ],
+      "new_behavior": "暂不在本批次新增字段；未来应进入阻塞包或任务恢复包，而不是长报告。"
+    }
+  ],
+  "not_promoted": [
+    {
+      "id": "NP01",
+      "name": "完整任务报告模板运行时",
+      "reason": "它有助于人类阅读，但会重新引入“写完报告像是完成”的风险。",
+      "replacement": "使用生命周期包和最终声明门禁表达完成边界。"
+    },
+    {
+      "id": "NP02",
+      "name": "旧 SessionEnd 报告归档强制项",
+      "reason": "当前 Codex 宿主不能保证所有对话结束都由 RedCap 拦截，强迁移会产生虚假安全感。",
+      "replacement": "只在 RedCap 自有 hook 和生命周期门禁内声明可执行保障。"
+    },
+    {
+      "id": "NP03",
+      "name": "旧 closeout runtime 作为唯一完工凭证",
+      "reason": "旧机制曾把收尾、回执和聚合工作变成任务本体之外的深坑。",
+      "replacement": "完成声明必须由任务本体证据和生命周期完成标记共同支撑。"
+    }
+  ],
+  "new_redcap_consumption": {
+    "runtime_changes": [
+      "runtime/core/development_lifecycle.py requires review_tracks for medium-or-higher transitions to IMPLEMENTING, VERIFYING, or TEMPORARY_USABLE, and rejects generic findings or evidence without file/command references.",
+      "runtime/core/e2e_trace.py and runtime/prism/examples/self-development-lifecycle-packet.json include three-track review evidence."
+    ],
+    "contract_changes": [
+      "assets/contracts/redcap-1.1-phase2-blueprint.json marks development-lifecycle-review verified.",
+      "assets/archaeology/shards/index.json points this shard to the extraction artifact."
+    ],
+    "verification_route": [
+      "runtime/bin/redcap lifecycle self-check",
+      "runtime/bin/redcap archaeology check",
+      "runtime/bin/redcap phase2-blueprint check",
+      "runtime/bin/redcap check"
+    ]
+  }
+}

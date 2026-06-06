@@ -279,6 +279,7 @@ def validate_queue(
         return set()
     queue_ids: set[str] = set()
     queued_count = 0
+    verified_count = 0
     max_files = 7
     limits: dict[str, Any] = {}
     shape = contract.get("queue_entry_shape")
@@ -299,6 +300,8 @@ def validate_queue(
         queue_ids.add(item_id)
         if item.get("status") == "queued":
             queued_count += 1
+        if item.get("status") == "verified":
+            verified_count += 1
         if item.get("status") not in allowed_status:
             failures.append(f"{prefix}.status invalid: {item.get('status')}")
         if item.get("status") == "no_promote":
@@ -330,8 +333,8 @@ def validate_queue(
                 failures.append(f"{prefix}.verification_evidence is required when status is verified")
             elif not has_reality_evidence(evidence):
                 failures.append(f"{prefix}.verification_evidence cannot be proof-only")
-    if queued_count < 1:
-        failures.append("initial_queue must include at least one currently queued extraction item")
+    if queued_count < 1 and verified_count < 1:
+        failures.append("initial_queue must include at least one queued or verified extraction item")
     return queue_ids
 
 
@@ -471,12 +474,13 @@ def validate_exit_criteria(contract: dict[str, Any], failures: list[str]) -> Non
     for fragment in [
         "authoritative contract exists",
         "checker exists",
-        "currently queued",
         "reaches verified",
         "no concrete old module migration",
     ]:
         if fragment not in joined:
             failures.append(f"phase2_exit_criteria missing fragment: {fragment}")
+    if "currently queued" not in joined and "queue item" not in joined:
+        failures.append("phase2_exit_criteria must describe which queue item reaches verified")
 
 
 def validate_contract(contract: dict[str, Any], path: pathlib.Path, allow_draft: bool) -> list[str]:
@@ -735,6 +739,16 @@ def command_self_check() -> int:
         directory_source["initial_queue"][0]["exact_old_sources"] = [OLD_REDCAP_ROOT + "/assets/references"]
         if not any("non-exact" in item for item in validate_contract(directory_source, path, allow_draft=True)):
             failures.append("directory source was not rejected")
+
+        all_verified = copy.deepcopy(fixture)
+        all_verified["initial_queue"][0]["status"] = "verified"
+        all_verified["initial_queue"][0]["verification_evidence"] = [
+            "runtime/core/phase2_blueprint.py",
+            "runtime/bin/redcap phase2-blueprint check",
+        ]
+        all_verified_failures = validate_contract(all_verified, path, allow_draft=True)
+        if all_verified_failures:
+            failures.append(f"all-verified queue fixture was rejected: {all_verified_failures}")
 
         no_redesign = copy.deepcopy(fixture)
         no_redesign["initial_idea_records"][0]["classification"] = "keep"

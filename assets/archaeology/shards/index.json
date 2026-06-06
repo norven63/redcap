@@ -21,9 +21,9 @@
         "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
       ],
       "id": "development-lifecycle-review",
-      "output": null,
+      "output": "assets/archaeology/extractions/development-lifecycle-review-v1.json",
       "question": "Which old review tracks are portable without duplicating the new FSM?",
-      "status": "planned"
+      "status": "extracted"
     },
         {
             "acceptance": "Produces shard split/acceptance rules and explicit anti-bulk-read limits.",

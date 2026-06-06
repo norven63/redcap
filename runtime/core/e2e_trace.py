@@ -229,6 +229,23 @@ def trace(tmp: pathlib.Path) -> dict[str, Any]:
             "evidence_kind": "code",
             "evidence": ["runtime/core/e2e_trace.py"],
         },
+        "review_tracks": {
+            "architecture": {
+                "status": "checked",
+                "findings": ["The fixture uses the existing development lifecycle checker and final-claim guard."],
+                "evidence": ["runtime/core/development_lifecycle.py", "runtime/core/e2e_trace.py"],
+            },
+            "governance": {
+                "status": "checked",
+                "findings": ["The completion marker is generated only after task-body evidence is verified."],
+                "evidence": ["runtime/core/final_claim_guard.py", "runtime/core/development_lifecycle.py"],
+            },
+            "contracts": {
+                "status": "checked",
+                "findings": ["The fixture names concrete implementation and verification evidence."],
+                "evidence": ["runtime/bin/redcap e2e-trace self-check"],
+            },
+        },
         "fsm_transition": {
             "from": "VERIFYING",
             "to": "TEMPORARY_USABLE",

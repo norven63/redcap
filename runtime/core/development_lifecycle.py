@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime as dt
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 import tempfile
@@ -29,10 +31,31 @@ REQUIRED_REVIEW_FIELDS = {"user_intent", "target_reality", "non_goals", "risk_le
 REQUIRED_TECH_FIELDS = {"runtime_boundary_checked", "prism_gate_decision", "rollback_plan", "verification_plan"}
 REQUIRED_TASK_BODY_FIELDS = {"requested_outcome", "primary_deliverable", "acceptance_criteria", "status", "evidence_kind", "evidence"}
 REQUIRED_PROMPT_CONTEXT_FIELDS = {"source_prompt_excerpt", "prompt_kind", "authorized_scope"}
+REQUIRED_REVIEW_TRACK_IDS = {"architecture", "governance", "contracts"}
 PRISM_REVIEW_REQUIRED_TARGETS = {"IMPLEMENTING", "VERIFYING", "TEMPORARY_USABLE"}
 TASK_BODY_STATUSES = {"planned", "in_progress", "implemented", "verified", "blocked", "deferred"}
 PROMPT_KINDS = {"question", "directive", "mixed"}
 AUTHORIZED_SCOPES = {"answer_only", "review_only", "implementation", "completion"}
+REVIEW_TRACK_STATUSES = {"checked", "not_applicable"}
+REVIEW_TRACK_REQUIRED_RISKS = {"medium", "high", "critical"}
+GENERIC_REVIEW_TEXT = {
+    "done",
+    "ok",
+    "pass",
+    "passed",
+    "checked",
+    "reviewed",
+    "complete",
+    "completed",
+    "yes",
+    "true",
+    "已检查",
+    "已评审",
+    "已审查",
+    "通过",
+    "完成",
+    "无问题",
+}
 TASK_BODY_EVIDENCE_KINDS = {"code", "code-and-review", "runtime-change", "runtime_change", "test", "migration"}
 REVIEW_EVIDENCE_KINDS = {"review-task"}
 LEGACY_EVIDENCE_KINDS = {"mixed"}
@@ -95,6 +118,33 @@ def collect_string_values(value: Any) -> list[str]:
             items.extend(collect_string_values(item))
         return items
     return []
+
+
+def non_empty_string_list(value: Any) -> bool:
+    return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item.strip() for item in value)
+
+
+def substantive_text(value: str) -> bool:
+    compact = re.sub(r"[\W_]+", "", value.casefold(), flags=re.UNICODE)
+    if len(compact) < 12:
+        return False
+    return compact not in GENERIC_REVIEW_TEXT
+
+
+def has_substantive_text(values: Any) -> bool:
+    return isinstance(values, list) and any(isinstance(item, str) and substantive_text(item) for item in values)
+
+
+def has_reference_like_evidence(values: Any) -> bool:
+    if not isinstance(values, list):
+        return False
+    for item in values:
+        if not isinstance(item, str):
+            continue
+        stripped = item.strip()
+        if "/" in stripped or "." in pathlib.PurePosixPath(stripped).name or stripped.startswith("runtime/bin/redcap"):
+            return True
+    return False
 
 
 def looks_like_prism_merge_path(value: str) -> bool:
@@ -362,6 +412,50 @@ def validate_prism_review_resolution(packet: dict[str, Any], failures: list[str]
             failures.append(f"referenced Prism merge is escalated and cannot authorize implementation: {merge_path}")
 
 
+def validate_review_tracks(packet: dict[str, Any], failures: list[str]) -> None:
+    transition = packet.get("fsm_transition")
+    transition_target = transition.get("to") if isinstance(transition, dict) else None
+    requirement_review = packet.get("requirement_review")
+    risk_level = requirement_review.get("risk_level") if isinstance(requirement_review, dict) else None
+    if (
+        transition_target not in PRISM_REVIEW_REQUIRED_TARGETS
+        or not isinstance(risk_level, str)
+        or risk_level.casefold() not in REVIEW_TRACK_REQUIRED_RISKS
+    ):
+        return
+
+    review_tracks = packet.get("review_tracks")
+    if not isinstance(review_tracks, dict):
+        failures.append("medium-or-higher lifecycle transition requires review_tracks")
+        return
+    missing = sorted(REQUIRED_REVIEW_TRACK_IDS - set(review_tracks))
+    if missing:
+        failures.append(f"review_tracks missing: {', '.join(missing)}")
+    for track_id in sorted(REQUIRED_REVIEW_TRACK_IDS):
+        track = review_tracks.get(track_id)
+        if not isinstance(track, dict):
+            failures.append(f"review_tracks.{track_id} must be an object")
+            continue
+        status = track.get("status")
+        if status not in REVIEW_TRACK_STATUSES:
+            failures.append(f"review_tracks.{track_id}.status invalid: {status}")
+            continue
+        if status == "checked":
+            if not non_empty_string_list(track.get("findings")):
+                failures.append(f"review_tracks.{track_id}.findings must be a non-empty string list when checked")
+            elif not has_substantive_text(track.get("findings")):
+                failures.append(f"review_tracks.{track_id}.findings must include a substantive review finding")
+            if not non_empty_string_list(track.get("evidence")):
+                failures.append(f"review_tracks.{track_id}.evidence must be a non-empty string list when checked")
+            elif not has_reference_like_evidence(track.get("evidence")):
+                failures.append(f"review_tracks.{track_id}.evidence must include a file path or command reference")
+        if status == "not_applicable":
+            if not (isinstance(track.get("reason"), str) and track["reason"].strip()):
+                failures.append(f"review_tracks.{track_id}.reason is required when not_applicable")
+            elif not substantive_text(track["reason"]):
+                failures.append(f"review_tracks.{track_id}.reason must explain why the track is not applicable")
+
+
 def validate_packet(packet: dict[str, Any], events_path: pathlib.Path = DEFAULT_EVENTS) -> list[str]:
     failures: list[str] = []
     if packet.get("schema_id") != "redcap-development-lifecycle-packet":
@@ -388,6 +482,7 @@ def validate_packet(packet: dict[str, Any], events_path: pathlib.Path = DEFAULT_
     validate_prompt_context(packet, failures, events_path)
     validate_task_body(packet, failures)
     validate_prism_review_resolution(packet, failures)
+    validate_review_tracks(packet, failures)
     fsm_transition = packet.get("fsm_transition")
     if isinstance(fsm_transition, dict):
         source = str(fsm_transition.get("from") or "")
@@ -472,6 +567,23 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "status": "implemented",
             "evidence_kind": "code",
             "evidence": ["runtime/core/development_lifecycle.py"],
+        },
+        "review_tracks": {
+            "architecture": {
+                "status": "checked",
+                "findings": ["FSM transition uses the existing lifecycle validator instead of a second state machine."],
+                "evidence": ["runtime/core/development_lifecycle.py", "runtime/core/fsm.py"],
+            },
+            "governance": {
+                "status": "checked",
+                "findings": ["Completion remains tied to task-body evidence, not report or receipt presence."],
+                "evidence": ["runtime/core/development_lifecycle.py", "runtime/prism/examples/self-development-lifecycle-packet.json"],
+            },
+            "contracts": {
+                "status": "checked",
+                "findings": ["The packet names rollback and verification plans before implementation."],
+                "evidence": ["runtime/bin/redcap lifecycle self-check", "runtime/bin/redcap check"],
+            },
         },
         "fsm_transition": {
             "from": "PRISM_REVIEW",
@@ -598,6 +710,36 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         escalated_prism_failures = validate_packet(escalated_prism_review, events_path)
         if not any("cannot proceed with escalated Prism concern resolution" in item for item in escalated_prism_failures):
             failures.append("escalated Prism concern could still authorize implementation")
+        missing_tracks = copy.deepcopy(valid)
+        missing_tracks.pop("review_tracks", None)
+        missing_track_failures = validate_packet(missing_tracks, events_path)
+        if not any("requires review_tracks" in item for item in missing_track_failures):
+            failures.append("medium-risk implementation transition could advance without review_tracks")
+        missing_governance = copy.deepcopy(valid)
+        missing_governance["review_tracks"].pop("governance", None)
+        governance_track_failures = validate_packet(missing_governance, events_path)
+        if not any("review_tracks missing" in item and "governance" in item for item in governance_track_failures):
+            failures.append("missing governance review track was not rejected")
+        no_evidence_track = copy.deepcopy(valid)
+        no_evidence_track["review_tracks"]["contracts"]["evidence"] = []
+        no_evidence_failures = validate_packet(no_evidence_track, events_path)
+        if not any("review_tracks.contracts.evidence" in item for item in no_evidence_failures):
+            failures.append("checked review track without evidence was not rejected")
+        no_reason_track = copy.deepcopy(valid)
+        no_reason_track["review_tracks"]["architecture"] = {"status": "not_applicable"}
+        no_reason_failures = validate_packet(no_reason_track, events_path)
+        if not any("review_tracks.architecture.reason" in item for item in no_reason_failures):
+            failures.append("not_applicable review track without reason was not rejected")
+        weak_finding_track = copy.deepcopy(valid)
+        weak_finding_track["review_tracks"]["governance"]["findings"] = ["done"]
+        weak_finding_failures = validate_packet(weak_finding_track, events_path)
+        if not any("review_tracks.governance.findings" in item and "substantive" in item for item in weak_finding_failures):
+            failures.append("generic review-track finding was not rejected")
+        weak_evidence_track = copy.deepcopy(valid)
+        weak_evidence_track["review_tracks"]["contracts"]["evidence"] = ["done"]
+        weak_evidence_failures = validate_packet(weak_evidence_track, events_path)
+        if not any("review_tracks.contracts.evidence" in item and "file path or command" in item for item in weak_evidence_failures):
+            failures.append("generic review-track evidence was not rejected")
         governance_implementation = dict(valid)
         governance_implementation["task_body"] = {
             "requested_outcome": "governance packet only",

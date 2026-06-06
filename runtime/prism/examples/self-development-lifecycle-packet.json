@@ -41,6 +41,38 @@
       "runtime/core/development_lifecycle.py"
     ]
   },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "The fixture uses the existing lifecycle validator and FSM transition."
+      ],
+      "evidence": [
+        "runtime/core/development_lifecycle.py",
+        "runtime/core/fsm.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "The fixture does not treat a report, receipt, or review as completion."
+      ],
+      "evidence": [
+        "runtime/core/development_lifecycle.py",
+        "runtime/prism/examples/self-development-lifecycle-packet.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "The fixture names rollback and verification evidence before implementation."
+      ],
+      "evidence": [
+        "runtime/bin/redcap lifecycle check --packet runtime/prism/examples/self-development-lifecycle-packet.json",
+        "runtime/bin/redcap check"
+      ]
+    }
+  },
   "fsm_transition": {
     "from": "PRISM_REVIEW",
     "to": "IMPLEMENTING",

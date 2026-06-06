@@ -266,7 +266,15 @@
       "risk_level": "high",
       "requires_prism": true,
       "expected_output": "assets/archaeology/extractions/development-lifecycle-review-v1.json",
-      "status": "queued"
+      "status": "verified",
+      "verification_evidence": [
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json",
+        "runtime/core/development_lifecycle.py",
+        "runtime/bin/redcap lifecycle self-check",
+        "runtime/bin/redcap archaeology check",
+        "runtime/bin/redcap phase2-blueprint check",
+        "runtime/bin/redcap check"
+      ]
     },
     {
       "id": "long-task-context-defense",
@@ -450,6 +458,57 @@
       ]
     },
     {
+      "id": "lifecycle-three-track-review",
+      "source_shard": "development-lifecycle-review",
+      "source_refs": [
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json#D01",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json#BQ01"
+      ],
+      "summary": "Medium-or-higher RedCap self-development work should prove architecture, governance, and contract review before moving into implementation or usable states.",
+      "classification": "redesign",
+      "destination_boundary": "runtime",
+      "migration_action": "redesign",
+      "hook_or_gate_assessment": "lifecycle_validator",
+      "verification_route": [
+        "runtime/bin/redcap lifecycle self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "lifecycle-intent-coverage",
+      "source_shard": "development-lifecycle-review",
+      "source_refs": [
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json#D02",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json#D04"
+      ],
+      "summary": "Original intent, visible boundaries, implementation status, verification evidence, and completion claim must stay separated inside the lifecycle packet.",
+      "classification": "keep",
+      "destination_boundary": "runtime",
+      "migration_action": "copy",
+      "hook_or_gate_assessment": "lifecycle_validator",
+      "verification_route": [
+        "runtime/bin/redcap lifecycle self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "id": "lifecycle-report-not-completion",
+      "source_shard": "development-lifecycle-review",
+      "source_refs": [
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json#D03",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json#NP01"
+      ],
+      "summary": "Old task reports are useful as human-readable evidence, but report presence must not become task completion authority.",
+      "classification": "no_promote",
+      "destination_boundary": "assets_archaeology",
+      "migration_action": "record_no_promote",
+      "hook_or_gate_assessment": "final_claim_guard",
+      "verification_route": [
+        "runtime/bin/redcap lifecycle self-check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
       "id": "report-presence-as-completion",
       "source_shard": "pathology-report-as-progress",
       "source_refs": [
@@ -489,7 +548,7 @@
     "The authoritative contract exists under assets/contracts.",
     "The contract-specific checker exists and is included in runtime/bin/redcap check.",
     "Every initial queue item is represented in the authoritative contract.",
-    "At least one item that is currently queued in the authoritative contract reaches verified through bounded extraction before Phase 2 can authorize concrete old module migration.",
+    "At least one queue item in the authoritative contract reaches verified through bounded extraction before Phase 2 can authorize concrete old module migration.",
     "At least one keep/redesign idea and one pathology/no_promote prior decision pass checker validation.",
     "Prism has reviewed the authoritative contract and any concerns have accepted/rejected/escalated resolutions.",
     "No concrete old module migration has started before the contract is active."

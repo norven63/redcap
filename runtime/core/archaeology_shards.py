@@ -234,6 +234,78 @@ def validate_long_task_extraction(path: pathlib.Path) -> list[str]:
     return failures
 
 
+def validate_development_lifecycle_extraction(path: pathlib.Path) -> list[str]:
+    failures: list[str] = []
+    if not path.is_file():
+        return [f"missing development lifecycle extraction: {path}"]
+    payload = read_json(path)
+    if payload.get("schema_id") != "old-redcap-development-lifecycle-review-extraction":
+        failures.append("development lifecycle extraction schema_id invalid")
+    sources = payload.get("bounded_sources")
+    if not isinstance(sources, list) or len(sources) != 2:
+        failures.append("development lifecycle extraction must cite exactly two bounded sources")
+    read_policy = payload.get("read_policy")
+    if not isinstance(read_policy, dict):
+        failures.append("development lifecycle extraction read_policy must be an object")
+    else:
+        if read_policy.get("bulk_read") is not False:
+            failures.append("development lifecycle extraction must record bulk_read=false")
+        for key in [
+            "old_task_reports_read",
+            "old_receipts_read",
+            "old_closeout_ledgers_read",
+            "private_archives_read",
+            "raw_prism_runs_read",
+        ]:
+            if read_policy.get(key) is not False:
+                failures.append(f"development lifecycle extraction {key} must be false")
+    questions = payload.get("behavioral_questions")
+    if not isinstance(questions, list) or len(questions) < 3:
+        failures.append("development lifecycle extraction must answer at least three behavioral questions")
+    else:
+        for item in questions:
+            if not isinstance(item, dict):
+                failures.append("development lifecycle behavioral questions must be objects")
+                break
+            for key in ["id", "question", "before_answer", "action"]:
+                if not (isinstance(item.get(key), str) and item[key].strip()):
+                    failures.append(f"development lifecycle behavioral question missing {key}")
+                    break
+    portable = payload.get("portable_designs")
+    if not isinstance(portable, list) or len(portable) < 5:
+        failures.append("development lifecycle extraction must preserve at least five portable or no-promote designs")
+    else:
+        destinations = {
+            item.get("new_redcap_destination")
+            for item in portable
+            if isinstance(item, dict)
+        }
+        if "runtime" not in destinations:
+            failures.append("development lifecycle extraction must map at least one design to runtime")
+        if "assets_archaeology" not in destinations:
+            failures.append("development lifecycle extraction must map at least one design to assets_archaeology")
+        hook_or_gate = {
+            item.get("hook_or_gate")
+            for item in portable
+            if isinstance(item, dict)
+        }
+        if "lifecycle_validator" not in hook_or_gate:
+            failures.append("development lifecycle extraction must include a lifecycle_validator target")
+        if "final_claim_guard" not in hook_or_gate:
+            failures.append("development lifecycle extraction must include a final_claim_guard target")
+    not_promoted = payload.get("not_promoted")
+    if not isinstance(not_promoted, list) or len(not_promoted) < 3:
+        failures.append("development lifecycle extraction must record no-promote boundaries")
+    consumption = payload.get("new_redcap_consumption")
+    if not isinstance(consumption, dict):
+        failures.append("development lifecycle extraction must record new_redcap_consumption")
+    else:
+        routes = consumption.get("verification_route")
+        if not isinstance(routes, list) or "runtime/bin/redcap lifecycle self-check" not in routes:
+            failures.append("development lifecycle extraction verification_route must include lifecycle self-check")
+    return failures
+
+
 def shard_index_payload() -> dict[str, Any]:
     return {
         "schema_id": "redcap-archaeology-shard-index",
@@ -255,13 +327,13 @@ def shard_index_payload() -> dict[str, Any]:
             },
             {
                 "id": "development-lifecycle-review",
-                "status": "planned",
+                "status": "extracted",
                 "question": "Which old review tracks are portable without duplicating the new FSM?",
                 "candidate_sources": [
                     "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
                     "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
                 ],
-                "output": None,
+                "output": "assets/archaeology/extractions/development-lifecycle-review-v1.json",
                 "acceptance": "Produces lifecycle evidence rules mapped to existing FSM transitions, not a second state machine.",
             },
             {
@@ -377,6 +449,8 @@ def cmd_check(args: argparse.Namespace) -> int:
                     break
                 if shard_id == "runtime-workspace-boundary":
                     failures.extend(validate_extraction(output_path))
+                if shard_id == "development-lifecycle-review":
+                    failures.extend(validate_development_lifecycle_extraction(output_path))
                 if shard_id == "long-task-context-defense":
                     failures.extend(validate_long_task_extraction(output_path))
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
