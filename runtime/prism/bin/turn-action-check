@@ -7,6 +7,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import os
 import pathlib
 import re
 import shlex
@@ -17,7 +18,8 @@ from typing import Any
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT.parents[1]
 sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
-from prompt_intent import prompt_intent_from_event  # noqa: E402
+from intent_judge import classify_with_policy  # noqa: E402
+from prompt_intent import classify_prompt_intent, prompt_intent_from_event, prompt_text_from_event  # noqa: E402
 
 DEFAULT_EVENTS = REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
 READ_ONLY_TOOL_NAMES = {"ReadFile", "Grep", "Glob", "FetchURL", "SearchWeb", "ReadMediaFile"}
@@ -33,6 +35,9 @@ SUBSTANTIVE_REDCAP_COMMANDS = {
     ("runtime/prism/bin/prism-ledger",),
 }
 MAX_TASK_ANCHOR_CHARS = 320
+DEFAULT_INTENT_JUDGE_PROVIDER = os.environ.get("REDCAP_INTENT_JUDGE_PROVIDER", "claude-code")
+DEFAULT_INTENT_JUDGE_FALLBACK_PROVIDER = os.environ.get("REDCAP_INTENT_JUDGE_FALLBACK_PROVIDER", "claude-code")
+DEFAULT_INTENT_JUDGE_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_TURN_ACTION_INTENT_TIMEOUT_SECONDS", "20"))
 
 
 def load_events(path: pathlib.Path) -> list[dict[str, Any]]:
@@ -217,7 +222,87 @@ def stop_recovery_guidance(action_policy: str) -> list[dict[str, str]]:
     ]
 
 
-def check_turn(events: list[dict[str, Any]], session_id: str | None, turn_id: str | None, max_age_seconds: int | None) -> dict[str, Any]:
+def explicit_blocked_statement(message: str | None) -> bool:
+    if not isinstance(message, str):
+        return False
+    normalized = normalize_text(message)
+    markers = ["阻塞条件：", "阻塞条件:", "blocked:", "blocker:"]
+    for marker in markers:
+        index = normalized.casefold().find(marker.casefold())
+        if index < 0:
+            continue
+        tail = normalized[index + len(marker):].strip()
+        if len(tail) >= 8:
+            return True
+    return False
+
+
+def semantic_rejudge_needed(
+    prompt: dict[str, Any],
+    stored_intent: dict[str, Any],
+    fresh_intent: dict[str, Any],
+    *,
+    action_policy: str,
+    actions: list[dict[str, Any]],
+    diagnostic_actions: list[dict[str, Any]],
+) -> bool:
+    prompt_text = prompt_text_from_event(prompt) or ""
+    if action_policy != "substantive" or actions:
+        return False
+    if fresh_intent.get("action_evidence") != action_policy:
+        return True
+    if "?" in prompt_text or "？" in prompt_text:
+        return True
+    if diagnostic_actions and stored_intent.get("source") != "llm":
+        return True
+    return False
+
+
+def semantic_rejudge(
+    prompt: dict[str, Any],
+    stored_intent: dict[str, Any],
+    fresh_intent: dict[str, Any],
+    *,
+    llm_policy: str,
+    timeout_seconds: float,
+) -> dict[str, Any] | None:
+    if llm_policy == "off":
+        return None
+    prompt_text = prompt_text_from_event(prompt)
+    if not isinstance(prompt_text, str) or not prompt_text.strip():
+        return None
+    judge_policy = "force" if llm_policy in {"auto", "force"} else "off"
+    if judge_policy == "off":
+        return None
+    fake_delay_raw = os.environ.get("REDCAP_INTENT_JUDGE_FAKE_DELAY_SECONDS")
+    try:
+        fake_delay = float(fake_delay_raw) if fake_delay_raw is not None else 0.0
+    except ValueError:
+        fake_delay = 0.0
+    result = classify_with_policy(
+        prompt_text,
+        llm_policy=judge_policy,
+        provider=DEFAULT_INTENT_JUDGE_PROVIDER,
+        fallback_provider=DEFAULT_INTENT_JUDGE_FALLBACK_PROVIDER,
+        timeout_seconds=timeout_seconds,
+        fake_response=os.environ.get("REDCAP_INTENT_JUDGE_FAKE_RESPONSE"),
+        fake_delay_seconds=fake_delay,
+    )
+    result["fresh_deterministic_intent"] = fresh_intent
+    result["stored_intent"] = stored_intent
+    return result
+
+
+def check_turn(
+    events: list[dict[str, Any]],
+    session_id: str | None,
+    turn_id: str | None,
+    max_age_seconds: int | None,
+    *,
+    message: str | None = None,
+    intent_llm_policy: str = "auto",
+    intent_timeout_seconds: float = DEFAULT_INTENT_JUDGE_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
     prompt = latest_prompt(events, session_id, turn_id)
     if prompt is None:
         return {
@@ -267,10 +352,48 @@ def check_turn(events: list[dict[str, Any]], session_id: str | None, turn_id: st
         and is_diagnostic_evidence(event)
     ]
     prompt_intent = prompt_intent_from_event(prompt)
+    prompt_value = prompt_text_from_event(prompt)
+    fresh_prompt_intent = classify_prompt_intent(prompt_value) if isinstance(prompt_value, str) and prompt_value.strip() else {}
     action_policy = prompt_intent.get("action_evidence", "substantive")
+    blocked_statement = explicit_blocked_statement(message)
+    semantic_judge: dict[str, Any] | None = None
+    if required and semantic_rejudge_needed(
+        prompt,
+        prompt_intent,
+        fresh_prompt_intent,
+        action_policy=action_policy,
+        actions=actions,
+        diagnostic_actions=diagnostic_actions,
+    ):
+        semantic_judge = semantic_rejudge(
+            prompt,
+            prompt_intent,
+            fresh_prompt_intent,
+            llm_policy=intent_llm_policy,
+            timeout_seconds=intent_timeout_seconds,
+        )
+        judged_intent = semantic_judge.get("prompt_intent") if isinstance(semantic_judge, dict) else None
+        if (
+            isinstance(judged_intent, dict)
+            and judged_intent.get("action_evidence") in {"none", "diagnostic"}
+            and judged_intent.get("confidence") != "low"
+        ):
+            prompt_intent = judged_intent
+            action_policy = str(judged_intent.get("action_evidence"))
+        elif prompt_value and fresh_prompt_intent.get("action_evidence") in {"none", "diagnostic"}:
+            prompt_intent = dict(fresh_prompt_intent)
+            prompt_intent["source"] = "fresh-deterministic-fallback"
+            prompt_intent["reason"] = (
+                "fresh deterministic intent relaxed action evidence after stored intent conflict; "
+                "final-claim guard still handles completion claims"
+            )
+            action_policy = str(fresh_prompt_intent.get("action_evidence"))
     if not required:
         ok = True
         reason = "Prompt is not required."
+    elif blocked_statement:
+        ok = True
+        reason = "Required prompt was explicitly marked blocked with a concrete blocker statement."
     elif action_policy == "none":
         ok = True
         reason = "Required answer-only prompt does not require same-turn task-body action evidence."
@@ -295,7 +418,10 @@ def check_turn(events: list[dict[str, Any]], session_id: str | None, turn_id: st
         "gate_matched_rules": prompt.get("gate_matched_rules", []),
         "task_anchor": task_anchor,
         "prompt_intent": prompt_intent,
+        "fresh_prompt_intent": fresh_prompt_intent,
+        "semantic_judge": semantic_judge,
         "action_evidence_policy": action_policy,
+        "blocked_statement": blocked_statement,
         "actions": len(actions),
         "diagnostic_actions": len(diagnostic_actions),
         "action_tools": sorted({str(action.get("tool_name")) for action in actions if action.get("tool_name")}),
@@ -313,10 +439,21 @@ def main() -> int:
     parser.add_argument("--session-id")
     parser.add_argument("--turn-id")
     parser.add_argument("--max-age-seconds", type=int)
+    parser.add_argument("--message", default="")
+    parser.add_argument("--intent-llm-policy", choices=["off", "auto", "force"], default="auto")
+    parser.add_argument("--intent-timeout-seconds", type=float, default=DEFAULT_INTENT_JUDGE_TIMEOUT_SECONDS)
     args = parser.parse_args()
 
     events = load_events(pathlib.Path(args.events).resolve())
-    result = check_turn(events, args.session_id, args.turn_id, args.max_age_seconds)
+    result = check_turn(
+        events,
+        args.session_id,
+        args.turn_id,
+        args.max_age_seconds,
+        message=args.message,
+        intent_llm_policy=args.intent_llm_policy,
+        intent_timeout_seconds=args.intent_timeout_seconds,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if not result["ok"]:
         return 1

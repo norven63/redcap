@@ -505,13 +505,21 @@ def validate_packet(packet: dict[str, Any], events_path: pathlib.Path = DEFAULT_
     return failures
 
 
-def record_completion_marker(packet_path: pathlib.Path, packet: dict[str, Any], marker_path: pathlib.Path = COMPLETION_MARKER) -> None:
+def record_completion_marker(
+    packet_path: pathlib.Path,
+    packet: dict[str, Any],
+    marker_path: pathlib.Path = COMPLETION_MARKER,
+    events_path: pathlib.Path = DEFAULT_EVENTS,
+) -> None:
     task_body = packet.get("task_body") if isinstance(packet.get("task_body"), dict) else {}
+    prompt_event = latest_prompt_event(events_path)
     marker = {
         "schema_id": "redcap-development-lifecycle-completion-marker",
         "checked_at": iso_now(),
         "packet_path": str(packet_path),
         "task_id": packet.get("task_id"),
+        "session_id": prompt_event.get("session_id") if isinstance(prompt_event, dict) else None,
+        "turn_id": prompt_event.get("turn_id") if isinstance(prompt_event, dict) else None,
         "task_body_status": task_body.get("status"),
         "task_body_evidence_kind": task_body.get("evidence_kind"),
         "requested_outcome": task_body.get("requested_outcome"),
@@ -528,7 +536,12 @@ def cmd_check(args: argparse.Namespace) -> int:
         return 1
     completion_claim = packet.get("completion_claim")
     if isinstance(completion_claim, dict) and completion_claim.get("present") is True:
-        record_completion_marker(packet_path, packet, pathlib.Path(args.completion_marker).resolve())
+        record_completion_marker(
+            packet_path,
+            packet,
+            pathlib.Path(args.completion_marker).resolve(),
+            pathlib.Path(args.events).resolve(),
+        )
     print("REDCAP_DEVELOPMENT_LIFECYCLE_OK")
     return 0
 

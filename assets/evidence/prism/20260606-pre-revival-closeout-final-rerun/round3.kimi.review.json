@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "行为层面的改变已得到较强验证：Kimi 和 Claude Code 均在真实 provider 下通过 2 秒 task-total 超时测试，考古碎片能成功加载并解析 schema，Codex Stop Hook 能在最后一条 assistant 消息违反中文策略时阻止 turn closeout。这些已不再是纯文档或自检，而是涉及真实提供者和真实旧数据的执行痕迹。但所有痕迹仍由实施方（Cap）在同一工作流中生成，缺乏 Norven 或独立环境的复现记录；360 度扫描尚未开始，因此批次关闭只能视为‘条件关闭’，而非‘彻底完成’。",
+  "main_concern": "批次关闭的‘失败可 reopen’目前更像策略声明而非自动机制；如果 360 度扫描失败，父批次能否真正被系统重新打开，而不是停留在已关闭状态？",
+  "top_risks": [
+    "reopen 机制虚化：‘扫描失败可 reopen’可能只是一句约定，未在 task-facts ledger 或生命周期合同中固化为自动状态迁移。",
+    "单点证据依赖：双 provider 超时痕迹与考古解析均为 Cap 在同一会话中生成，若他处无法复现， Revival 工作将建立在脆弱基础上。",
+    "阶段边界错觉：关闭批次会在心理上宣告基础设施完结，即便有 reopen 约定，团队仍可能低估扫描阶段对基础设施的反向压力。"
+  ],
+  "missing_evidence": [
+    "reopen 机制的自动化：展示当 360-scan 失败时，task-facts ledger 如何自动将 pre-revival-zero-tail-infra-batch 从 closed/verified 迁回 open/escalated，而非仅人工记录。",
+    "Norven 复现：Norven 亲自运行 Kimi/Claude 的 2 秒超时测试和考古碎片加载，确认输出与 Cap 提供的痕迹一致。",
+    "扫描入口预检：一个明确的预检命令，在启动 360-scan 前验证所有必要 infra（超时、中文策略、钩子、考古）均处于 green 状态。"
+  ],
+  "minimum_fix": "在关闭父批次前，必须满足以下之一：(a) 在生命周期合同或 task-facts 工作流中写入明确的 reopen 触发器——当 360-scan 标记失败时，自动将 pre-revival-zero-tail-infra-batch 迁回 open；(b) 将批次状态明确标记为‘条件关闭（conditional close pending 360-scan）’，在扫描完成并 green 之前不视为最终关闭。仅口头约定‘失败可 reopen’不足。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Cap 已有效回应了上一轮 Kimi 关切：真实 provider 双测、考古碎片解析、Codex 最后消息拦截均已落实。不要再要求 Cap 生成新的 trace 或 checker。当前唯一需要强化的不是证据数量，而是批次关闭与 360-scan 失败之间的状态机耦合。"
+  },
+  "user_intent_alignment": "高度对齐但有细节漂移：用户要的是‘ Revival 前基础设施真正就绪’，Cap 交付了行为级验证，但倾向于用‘完成并约定 reopen’来收尾。更安全的对齐方式是‘条件关闭 + 自动 reopen’，让基础设施在扫描失败时自然回到 Norven 的视线中。"
+}

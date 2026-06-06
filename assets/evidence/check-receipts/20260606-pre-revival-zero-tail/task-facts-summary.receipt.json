@@ -1,0 +1,16 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap task-facts summary",
+  "argv": [
+    "runtime/bin/redcap",
+    "task-facts",
+    "summary"
+  ],
+  "exit_code": 0,
+  "executed_at": "2026-06-06T13:51:25+00:00",
+  "executor": "cap",
+  "stdout_sha256": "61ecae902eab2a57daa07ae0da6ab0d063126056548c1f588c0f1680156bbf58",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 642,
+  "stderr_bytes": 0
+}

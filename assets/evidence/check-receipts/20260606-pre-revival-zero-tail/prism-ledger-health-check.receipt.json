@@ -1,0 +1,15 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/prism/bin/prism-ledger health-check",
+  "argv": [
+    "runtime/prism/bin/prism-ledger",
+    "health-check"
+  ],
+  "exit_code": 0,
+  "executed_at": "2026-06-06T13:51:25+00:00",
+  "executor": "cap",
+  "stdout_sha256": "b9b3f932eaf44a629c44a7a5d173a2a4e2213ce820cedeff996233be7c132cc0",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 89,
+  "stderr_bytes": 0
+}

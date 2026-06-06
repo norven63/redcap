@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+"""Independent timeout integration test for prism-dispatch."""
+
+from __future__ import annotations
+
+import json
+import importlib.machinery
+import importlib.util
+import os
+import pathlib
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[1]
+PRISM = ROOT / "bin" / "prism"
+DISPATCH = ROOT / "bin" / "prism-dispatch"
+
+
+def run(argv: list[str], cwd: pathlib.Path = REPO_ROOT) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(argv, cwd=str(cwd), check=False, capture_output=True, text=True)
+
+
+def process_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def main() -> int:
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="prism-dispatch-timeout-e2e-") as tmp_raw:
+        tmp = pathlib.Path(tmp_raw)
+        request = tmp / "request.json"
+        request.write_text(json.dumps({
+            "task": "timeout e2e",
+            "user_intent": "验证整任务预算耗尽时不会启动评审方",
+            "main_claim": "dispatcher must refuse provider launch after task budget is exhausted",
+            "changed_reality": ["timeout e2e fixture"],
+            "review_mode": "implementation_review",
+            "risk_level": "low",
+            "requested_providers": ["kimi", "claude-code"],
+        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        run_dir = tmp / "run"
+        init = run([str(PRISM), "session-init", "--task-id", "timeout-e2e", "--run-dir", str(run_dir)])
+        if init.returncode != 0:
+            failures.append(f"session-init failed: {init.stderr or init.stdout}")
+        manifest = run_dir / "session.json"
+        time.sleep(0.02)
+        review_out = tmp / "kimi.review.json"
+        raw_out = tmp / "kimi.raw.json"
+        dispatch = run([
+            str(DISPATCH),
+            "--provider",
+            "kimi",
+            "--manifest",
+            str(manifest),
+            "--request",
+            str(request),
+            "--review-out",
+            str(review_out),
+            "--raw-out",
+            str(raw_out),
+            "--timeout-seconds",
+            "5",
+            "--total-timeout-seconds",
+            "5",
+            "--task-total-timeout-seconds",
+            "0.001",
+            "--max-retries",
+            "0",
+        ])
+        if dispatch.returncode == 0:
+            failures.append("dispatcher should fail when task budget is exhausted")
+        if "task total timeout exhausted" not in (dispatch.stdout + dispatch.stderr):
+            failures.append("dispatcher did not report task-total timeout exhaustion")
+        if review_out.exists():
+            failures.append("review output should not exist when provider launch is refused")
+        if not raw_out.exists():
+            failures.append("timeout raw output was not written")
+        meta = run([str(DISPATCH), "--verify-raw-meta", "--raw-out", str(raw_out)])
+        if meta.returncode != 0 or "PRISM_RAW_META_OK" not in meta.stdout:
+            failures.append("timeout raw metadata did not verify")
+        report = run([str(DISPATCH), "--timeout-report", "--raw-out", str(raw_out)])
+        if report.returncode != 0 or "PRISM_TIMEOUT_REPORT_OK" not in report.stdout:
+            failures.append("timeout report did not run")
+        if "整任务预算" not in report.stdout:
+            failures.append("timeout report did not include Chinese task-budget wording")
+        child_pid_path = tmp / "signal-child.pid"
+        child_script = tmp / "signal_child.py"
+        child_script.write_text(
+            "\n".join([
+                "import pathlib, signal, time",
+                f"pathlib.Path({str(child_pid_path)!r}).write_text(str(__import__('os').getpid()))",
+                "signal.signal(signal.SIGTERM, signal.SIG_IGN)",
+                "time.sleep(999)",
+            ]) + "\n",
+            encoding="utf-8",
+        )
+        harness = tmp / "signal_harness.py"
+        harness.write_text(
+            "\n".join([
+                "import importlib.util, pathlib, sys",
+                "import importlib.machinery",
+                f"dispatch_path = pathlib.Path({str(DISPATCH)!r})",
+                "loader = importlib.machinery.SourceFileLoader('prism_dispatch_under_test', str(dispatch_path))",
+                "spec = importlib.util.spec_from_loader('prism_dispatch_under_test', loader)",
+                "module = importlib.util.module_from_spec(spec)",
+                "assert spec and spec.loader",
+                "spec.loader.exec_module(module)",
+                f"module.run_with_hard_timeout([sys.executable, {str(child_script)!r}], 60)",
+            ]) + "\n",
+            encoding="utf-8",
+        )
+        harness_proc = subprocess.Popen([sys.executable, str(harness)], cwd=str(REPO_ROOT))
+        deadline = time.time() + 5
+        while time.time() < deadline and not child_pid_path.exists() and harness_proc.poll() is None:
+            time.sleep(0.05)
+        if not child_pid_path.exists():
+            failures.append("signal cleanup fixture did not start child process")
+            harness_proc.kill()
+        else:
+            child_pid = int(child_pid_path.read_text(encoding="utf-8"))
+            harness_proc.terminate()
+            try:
+                harness_proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                failures.append("signal cleanup harness did not exit after SIGTERM")
+                harness_proc.kill()
+                harness_proc.wait(timeout=5)
+            time.sleep(0.2)
+            if process_alive(child_pid):
+                failures.append("signal cleanup fixture left provider child process alive")
+                try:
+                    os.kill(child_pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+    print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
+    if failures:
+        return 1
+    print("PRISM_DISPATCH_TIMEOUT_E2E_OK")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

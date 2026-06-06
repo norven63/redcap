@@ -16,7 +16,7 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_EVENTS = REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
 DEFAULT_COMPLETION_MARKER = REPO_ROOT / "assets" / "evidence" / "lifecycle" / "latest-completion.json"
 TASK_BODY_EVIDENCE_KINDS = {"code", "code-and-review", "runtime-change", "runtime_change", "test", "migration"}
-COMPLETION_TERMS = [
+CHINESE_COMPLETION_TERMS = [
     "一切正常",
     "已完成",
     "已处理",
@@ -40,6 +40,8 @@ COMPLETION_TERMS = [
     "功能完备",
     "问题解决",
     "不再有",
+]
+ENGLISH_COMPLETION_TERMS = [
     "ready",
     "all set",
     "good to go",
@@ -56,6 +58,31 @@ COMPLETION_TERMS = [
     "done",
     "finished",
     "goal achieved",
+]
+SELF_COMPLETION_PATTERNS = [
+    r"(?:我|我们|本轮|这轮|这次|该任务|这个任务|任务|修复|改动|实现|检查|验证).{0,24}(?:已经完成|已经处理|已经修复|已经解决|已完成|已处理|已应用|已生效|执行完|做完|完成了|搞定了|弄好了|问题解决|运行正常|正常运行)",
+    r"(?:已完成|已处理|已应用|已生效|执行完|做完|完成了|搞定了|弄好了).{0,24}(?:本轮|这轮|这次|任务|修复|改动|实现|检查|验证)",
+    r"^\s*(?:[-*]\s*)?(?:已完成|已处理|已应用|已生效|执行完|做完|完成了|搞定了|弄好了|一切正常)[。.!！]?\s*$",
+    r"\b(?:i|we|this task|the task|the fix|the change|the implementation|the check|the verification)\b.{0,80}\b(?:ready|all set|good to go|deployed|accomplished|resolved|fixed|complete|completed|done|finished)\b",
+    r"\b(?:all|checks?|tests?|verification)\s+(?:passed|green|clear|ok|successful|complete)\b",
+]
+STATUS_REPORT_PROMPT_PATTERNS = [
+    r"哪些.{0,20}(?:完成|未完成|状态|情况)",
+    r"(?:是否|是不是).{0,24}(?:完成|解决|修复|落实|落地)",
+    r"(?:盘点|回顾|列出|说明).{0,24}(?:状态|情况|清单|列表|缺口|风险|待办|遗留)",
+    r"review.{0,40}(?:status|remaining|open|pending|done|left)",
+    r"(?:还有|哪些|什么).{0,24}(?:缺口|问题|风险|待办|遗留)",
+    r"what(?:'s| is| are).{0,40}(?:done|left|status|remaining)",
+]
+STATUS_REPORT_MESSAGE_PATTERNS = [
+    r"(?:仍是|仍有|还没有|尚未|缺口|风险|待办|遗留|当前判断|状态|盘点|可判为|不宜)",
+    r"\b(?:remains?|remaining|open|pending|in progress|still|not yet)\b",
+    r"^\s*\|.+\|\s*$",
+    r"^\s*(?:[-*]|\d+\.)\s+",
+]
+SIMPLE_STATUS_ANSWER_PATTERNS = [
+    r"^\s*(?:是的[，,]?\s*)?(?:已完成|完成了|已处理|已修复|修复了|已解决|解决了|搞定了|弄好了|未完成|还没有|尚未|不是|没有)[。.!！]?\s*$",
+    r"^\s*(?:(?:yes|yeah|yep|yup)[,.]?\s*)?(?:done|complete|completed|resolved|fixed|not yet|pending|open|in progress)[.!]?\s*$",
 ]
 
 
@@ -97,11 +124,73 @@ def parse_time(value: Any) -> dt.datetime | None:
     return parsed
 
 
-def completion_claim_detected(message: str) -> bool:
+def prompt_authorized_scope(prompt: dict[str, Any] | None) -> str | None:
+    if not isinstance(prompt, dict):
+        return None
+    for key in ["prompt_intent_effective", "prompt_intent"]:
+        intent = prompt.get(key)
+        if isinstance(intent, dict):
+            scope = intent.get("authorized_scope")
+            if isinstance(scope, str) and scope.strip():
+                return scope
+    return None
+
+
+def prompt_text(prompt: dict[str, Any] | None) -> str:
+    if not isinstance(prompt, dict):
+        return ""
+    value = prompt.get("prompt")
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        excerpt = value.get("normalized_excerpt")
+        if isinstance(excerpt, str):
+            return excerpt
+    return ""
+
+
+def english_term_pattern(term: str) -> re.Pattern[str]:
+    return re.compile(rf"(?<![a-z0-9_-]){re.escape(term)}(?![a-z0-9_-])", re.I)
+
+
+ENGLISH_COMPLETION_PATTERNS = [english_term_pattern(term) for term in ENGLISH_COMPLETION_TERMS]
+SELF_COMPLETION_REGEXES = [re.compile(pattern, re.I | re.M | re.S) for pattern in SELF_COMPLETION_PATTERNS]
+STATUS_REPORT_PROMPT_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in STATUS_REPORT_PROMPT_PATTERNS]
+STATUS_REPORT_MESSAGE_REGEXES = [re.compile(pattern, re.I | re.M | re.S) for pattern in STATUS_REPORT_MESSAGE_PATTERNS]
+SIMPLE_STATUS_ANSWER_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in SIMPLE_STATUS_ANSWER_PATTERNS]
+
+
+def self_completion_claim_detected(message: str) -> bool:
+    return any(pattern.search(message) for pattern in SELF_COMPLETION_REGEXES)
+
+
+def completion_terms_present(message: str) -> bool:
     lowered = message.casefold()
-    if any(term in lowered for term in COMPLETION_TERMS):
+    if any(term in lowered for term in CHINESE_COMPLETION_TERMS):
         return True
-    return bool(re.search(r"\b(all|checks?|tests?|verification)\s+(passed|green|clear|ok|successful|complete)\b", lowered))
+    return any(pattern.search(message) for pattern in ENGLISH_COMPLETION_PATTERNS)
+
+
+def status_report_context(prompt: dict[str, Any] | None, message: str) -> bool:
+    scope = prompt_authorized_scope(prompt)
+    prompt_value = prompt_text(prompt)
+    prompt_asks_status = any(pattern.search(prompt_value) for pattern in STATUS_REPORT_PROMPT_REGEXES)
+    message_looks_status = any(pattern.search(message) for pattern in STATUS_REPORT_MESSAGE_REGEXES)
+    message_is_simple_status = any(pattern.search(message) for pattern in SIMPLE_STATUS_ANSWER_REGEXES)
+    return (
+        scope in {"answer_only", "review_only"}
+        or prompt_asks_status
+    ) and (message_looks_status or message_is_simple_status)
+
+
+def completion_claim_detected(message: str, prompt: dict[str, Any] | None = None) -> bool:
+    if status_report_context(prompt, message):
+        return False
+    if self_completion_claim_detected(message):
+        return True
+    if not completion_terms_present(message):
+        return False
+    return True
 
 
 def latest_prompt(events: list[dict[str, Any]], session_id: str | None, turn_id: str | None) -> dict[str, Any] | None:
@@ -122,9 +211,9 @@ def check_final_claim(
     session_id: str | None,
     turn_id: str | None,
 ) -> dict[str, Any]:
-    detected = completion_claim_detected(message)
     events = load_events(events_path)
     prompt = latest_prompt(events, session_id, turn_id)
+    detected = completion_claim_detected(message, prompt)
     required_prompt = isinstance(prompt, dict) and prompt.get("gate_decision") == "required"
     result: dict[str, Any] = {
         "ok": True,
@@ -271,6 +360,137 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         )
         if non_whitelisted["ok"]:
             failures.append("completion marker with non-whitelisted evidence_kind was not blocked")
+        answer_events_path = tmp / "answer-events.jsonl"
+        answer_events_path.write_text(json.dumps({
+            "event": "UserPromptSubmit",
+            "session_id": "fixture-session",
+            "turn_id": "fixture-answer",
+            "recorded_at": prompt_time.isoformat(),
+            "gate_decision": "required",
+            "prompt_intent": {
+                "authorized_scope": "answer_only",
+                "prompt_kind": "question",
+                "action_evidence": "none",
+            },
+            "prompt": {
+                "normalized_excerpt": "哪些项目已经完成，哪些还未完成？请盘点当前状态。",
+            },
+        }, ensure_ascii=False) + "\n", encoding="utf-8")
+        answer_status_report = check_final_claim(
+            message=(
+                "| 项目 | 当前判断 |\n"
+                "|---|---|\n"
+                "| A | 已完成 |\n"
+                "| B | 仍是缺口 |\n"
+                "| C | unresolved，不等于 resolved |\n"
+            ),
+            events_path=answer_events_path,
+            completion_marker_path=marker_path,
+            session_id="fixture-session",
+            turn_id="fixture-answer",
+        )
+        if not answer_status_report["ok"]:
+            failures.append("answer-only status report with completion words was blocked")
+        review_events_path = tmp / "review-events.jsonl"
+        review_events_path.write_text(json.dumps({
+            "event": "UserPromptSubmit",
+            "session_id": "fixture-session",
+            "turn_id": "fixture-review",
+            "recorded_at": prompt_time.isoformat(),
+            "gate_decision": "required",
+            "prompt_intent": {
+                "authorized_scope": "review_only",
+                "prompt_kind": "mixed",
+                "action_evidence": "diagnostic",
+            },
+            "prompt": {
+                "normalized_excerpt": "请 review 当前有哪些 done/remaining 状态。",
+            },
+        }, ensure_ascii=False) + "\n", encoding="utf-8")
+        review_status_report = check_final_claim(
+            message="当前判断：completed 是被盘点的状态词；中文报告仍是缺口。",
+            events_path=review_events_path,
+            completion_marker_path=marker_path,
+            session_id="fixture-session",
+            turn_id="fixture-review",
+        )
+        if not review_status_report["ok"]:
+            failures.append("review-only status report with English completion words was blocked")
+        answer_simple_status = check_final_claim(
+            message="完成了",
+            events_path=answer_events_path,
+            completion_marker_path=marker_path,
+            session_id="fixture-session",
+            turn_id="fixture-answer",
+        )
+        if not answer_simple_status["ok"]:
+            failures.append("answer-only simple status answer was blocked")
+        for casual_message in ["搞定了", "弄好了", "yep, done", "yup, fixed"]:
+            casual_status = check_final_claim(
+                message=casual_message,
+                events_path=answer_events_path,
+                completion_marker_path=marker_path,
+                session_id="fixture-session",
+                turn_id="fixture-answer",
+            )
+            if not casual_status["ok"]:
+                failures.append(f"answer-only casual status answer was blocked: {casual_message}")
+        answer_mixed_status = check_final_claim(
+            message="任务A已经完成，任务B仍是缺口，验证流程运行正常。",
+            events_path=answer_events_path,
+            completion_marker_path=marker_path,
+            session_id="fixture-session",
+            turn_id="fixture-answer",
+        )
+        if not answer_mixed_status["ok"]:
+            failures.append("answer-only mixed status report was blocked by self-completion pattern")
+        review_english_status = check_final_claim(
+            message="verification complete; all checks passed for A. B remains pending.",
+            events_path=review_events_path,
+            completion_marker_path=marker_path,
+            session_id="fixture-session",
+            turn_id="fixture-review",
+        )
+        if not review_english_status["ok"]:
+            failures.append("review-only English status report was blocked by self-completion pattern")
+        implementation_check_events_path = tmp / "implementation-check-events.jsonl"
+        implementation_check_events_path.write_text(json.dumps({
+            "event": "UserPromptSubmit",
+            "session_id": "fixture-session",
+            "turn_id": "fixture-implementation-check",
+            "recorded_at": prompt_time.isoformat(),
+            "gate_decision": "required",
+            "prompt_intent": {
+                "authorized_scope": "implementation",
+                "prompt_kind": "directive",
+                "action_evidence": "substantive",
+            },
+            "prompt": {
+                "normalized_excerpt": "请检查代码并修复问题。",
+            },
+        }, ensure_ascii=False) + "\n", encoding="utf-8")
+        implementation_check_claim = check_final_claim(
+            message="修复已完成，无遗留问题。",
+            events_path=implementation_check_events_path,
+            completion_marker_path=tmp / "missing-implementation-check-marker.json",
+            session_id="fixture-session",
+            turn_id="fixture-implementation-check",
+        )
+        if implementation_check_claim["ok"]:
+            failures.append("implementation prompt containing check language was incorrectly allowed")
+        if completion_claim_detected("The previous concern is unresolved."):
+            failures.append("unresolved should not match resolved")
+        if completion_claim_detected("This is a completion marker discussion, not a closeout claim."):
+            failures.append("completion should not match complete")
+        implementation_self_claim = check_final_claim(
+            message="我已经完成 Stop hook 修复。",
+            events_path=events_path,
+            completion_marker_path=tmp / "missing-marker.json",
+            session_id="fixture-session",
+            turn_id="fixture-turn",
+        )
+        if implementation_self_claim["ok"]:
+            failures.append("implementation self-completion claim without marker was not blocked")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1

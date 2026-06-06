@@ -50,8 +50,9 @@
         "cap-soul-loader",
         "session-ownership-kernel",
         "fsm-workflow-gates",
-          "knowledge-gateway",
-          "runtime-boundary-kernel",
+                "knowledge-gateway",
+                "human-facing-output-policy",
+                "runtime-boundary-kernel",
           "old-redcap-archaeology-shards",
           "development-lifecycle-evidence-gate",
           "prism-concern-resolution-gate",
@@ -130,14 +131,20 @@
       "required_event": "Stop",
       "rationale": "The Stop hook runs redcap check, and redcap check now runs the minimal executable FSM kernel."
     },
-    {
-      "entry_id": "knowledge-gateway",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The Stop hook runs redcap check, and redcap check now validates the index-first knowledge gateway."
-    },
-    {
-      "entry_id": "runtime-boundary-kernel",
+        {
+            "entry_id": "knowledge-gateway",
+            "coverage": "hook_required",
+            "required_event": "Stop",
+            "rationale": "The Stop hook runs redcap check, and redcap check now validates the index-first knowledge gateway."
+        },
+        {
+            "entry_id": "human-facing-output-policy",
+            "coverage": "hook_required",
+            "required_event": "Stop",
+            "rationale": "The Stop hook lints the final assistant message before turn closeout and also runs redcap check, which validates the Chinese-first human-facing output policy and its negative samples."
+        },
+        {
+            "entry_id": "runtime-boundary-kernel",
       "coverage": "hook_required",
       "required_event": "Stop",
       "rationale": "The Stop hook runs redcap check, and redcap check runs boundary check plus boundary self-check so runtime/project/user boundary leaks cannot close cleanly."

@@ -1,0 +1,34 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260606-pre-revival-closeout-final-rerun",
+  "merge_path": "assets/evidence/prism/20260606-pre-revival-closeout-final-rerun/round3.merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260606-pre-revival-closeout-final-rerun/round3.kimi.review.json",
+    "assets/evidence/prism/20260606-pre-revival-closeout-final-rerun/round3.claude.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的关注成立：父批次不能只靠口头约定在 360 扫描失败后重开。Cap 已接受该关注，并把自动重开触发器写入 task-facts 工作流。",
+      "implementation_evidence": [
+        "runtime/core/task_facts.py",
+        "assets/contracts/pre-revival-zero-tail-prism-request.json",
+        "assets/evidence/task-facts/task-facts.jsonl"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/task-facts-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/task-facts-summary.receipt.json",
+        "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/redcap-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/prism-ledger-health-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Kimi 的 concern 已被接受并落到自动重开机制；Claude Code 已 pass，剩余 partial-result 关注被其明确分类为 360 扫描阶段运行证据，不阻塞复活前置基建批次。"
+  }
+}

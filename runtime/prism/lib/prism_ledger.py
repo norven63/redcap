@@ -21,9 +21,11 @@ from prism_lock import file_lock, write_json_atomic  # noqa: E402
 
 DEFAULT_LEDGER = REPO_ROOT / "assets" / "evidence" / "prism" / "task-ledger.jsonl"
 DEFAULT_HEALTH = REPO_ROOT / "assets" / "evidence" / "prism" / "task-health.json"
+DEFAULT_TASK_FACTS = REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"
 PASSING_VERDICTS = {None, "pass"}
 SUCCESS_STATES = {"converged", "main-decided"}
 GATE_DECISIONS = {"required", "optional", "skipped"}
+UNHEALTHY_OUTCOMES = {"active", "failed", "attention", "closed_without_success"}
 
 
 def iso_now() -> str:
@@ -123,11 +125,30 @@ def classify_success(payload: dict[str, Any], strictest_verdict: str | None) -> 
         return False, "active"
     if state in SUCCESS_STATES and strictest_verdict in PASSING_VERDICTS:
         return True, "success"
+    if state == "main-decided" and strictest_verdict in {"concern", "block"}:
+        return True, "resolved_with_concern"
     if status in {"escalated", "expired"} or state == "escalated":
         return False, "failed"
     if strictest_verdict in {"concern", "block"}:
         return False, "attention"
     return False, "closed_without_success"
+
+
+def effective_outcome(record: dict[str, Any]) -> str:
+    status = record.get("status")
+    state = record.get("convergence_state")
+    strictest_verdict = record.get("strictest_verdict")
+    if status == "active" or state == "unresolved":
+        return "active"
+    if state in SUCCESS_STATES and strictest_verdict in PASSING_VERDICTS:
+        return "success"
+    if state == "main-decided" and strictest_verdict in {"concern", "block"}:
+        return "resolved_with_concern"
+    if status in {"escalated", "expired"} or state == "escalated":
+        return "failed"
+    if strictest_verdict in {"concern", "block"}:
+        return "attention"
+    return str(record.get("outcome") or "closed_without_success")
 
 
 def execution_class(task_id: Any, run_dir: pathlib.Path, trigger: str) -> str:
@@ -286,6 +307,26 @@ def latest_by_task(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return latest
 
 
+def task_fact_statuses(path: pathlib.Path) -> dict[str, str]:
+    statuses: dict[str, str] = {}
+    if not path.exists():
+        return statuses
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(record, dict):
+            continue
+        task_id = record.get("task_id")
+        status = record.get("status")
+        if isinstance(task_id, str) and task_id and isinstance(status, str) and status:
+            statuses[task_id] = status
+    return statuses
+
+
 def gate_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
     gate_records = [record for record in records if is_gate_record(record)]
     durations = [
@@ -327,14 +368,14 @@ def compute_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
     ]
     success_count = sum(1 for record in task_records if record.get("success") is True)
     operational_success_count = sum(1 for record in operational_records if record.get("success") is True)
-    active_count = sum(1 for record in task_records if record.get("outcome") == "active")
+    active_count = sum(1 for record in task_records if effective_outcome(record) == "active")
     operational_active_count = sum(
-        1 for record in operational_records if record.get("outcome") == "active"
+        1 for record in operational_records if effective_outcome(record) == "active"
     )
     attention_count = sum(
         1
         for record in task_records
-        if record.get("outcome") in {"attention", "failed", "closed_without_success"}
+        if effective_outcome(record) in UNHEALTHY_OUTCOMES
     )
     durations = [
         float(record["duration_seconds"])
@@ -391,7 +432,7 @@ def compute_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
         "recent_attention_tasks": [
             {
                 "task_id": record.get("task_id"),
-                "outcome": record.get("outcome"),
+                "outcome": effective_outcome(record),
                 "strictest_verdict": record.get("strictest_verdict"),
                 "recorded_at": record.get("recorded_at"),
             }
@@ -400,7 +441,7 @@ def compute_summary(records: list[dict[str, Any]]) -> dict[str, Any]:
                 key=lambda item: str(item.get("recorded_at") or ""),
                 reverse=True,
             )
-            if record.get("outcome") in {"attention", "failed", "closed_without_success"}
+            if effective_outcome(record) in UNHEALTHY_OUTCOMES
         ][:10],
     }
     summary.update(gate_summary(records))
@@ -505,6 +546,50 @@ def cmd_summary(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_health_check(args: argparse.Namespace) -> int:
+    records = read_records(pathlib.Path(args.ledger).resolve())
+    latest = latest_by_task([record for record in records if is_session_record(record)])
+    allowed = set(args.allow_task)
+    fact_statuses = task_fact_statuses(pathlib.Path(args.task_facts).resolve())
+    unhealthy = []
+    for record in latest.values():
+        task_id = str(record.get("task_id") or "")
+        record_class = record.get("execution_class") or execution_class(
+            task_id,
+            pathlib.Path(str(record.get("run_dir") or "")),
+            str(record.get("trigger") or ""),
+        )
+        if record_class in {"self_check", "fixture"}:
+            continue
+        if task_id in allowed:
+            continue
+        if fact_statuses.get(task_id) == "superseded":
+            continue
+        if effective_outcome(record) in UNHEALTHY_OUTCOMES:
+            unhealthy.append(record)
+    result = {
+        "ok": not unhealthy,
+        "unhealthy_count": len(unhealthy),
+        "unhealthy_tasks": [
+            {
+                "task_id": record.get("task_id"),
+                "outcome": effective_outcome(record),
+                "status": record.get("status"),
+                "convergence_state": record.get("convergence_state"),
+                "convergence_reason": record.get("convergence_reason"),
+                "strictest_verdict": record.get("strictest_verdict"),
+                "recorded_at": record.get("recorded_at"),
+            }
+            for record in sorted(unhealthy, key=lambda item: str(item.get("recorded_at") or ""), reverse=True)
+        ],
+    }
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if unhealthy:
+        return 1
+    print("PRISM_LEDGER_HEALTH_OK")
+    return 0
+
+
 def cmd_self_check(_: argparse.Namespace) -> int:
     with tempfile.TemporaryDirectory(prefix="prism-ledger-") as tmp_raw:
         tmp = pathlib.Path(tmp_raw)
@@ -601,6 +686,52 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("summary gate_event_count should be 1")
         if summary.get("providers", {}).get("kimi", {}).get("pass") != 1:
             failures.append("provider verdict stats missing")
+        concern_run = tmp / "concern-run"
+        concern_run.mkdir()
+        concern_review = dict(review)
+        concern_review["verdict"] = "concern"
+        concern_review_path = concern_run / "review-kimi.json"
+        concern_review_path.write_text(json.dumps(concern_review, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        (concern_run / "merge.json").write_text(
+            json.dumps(
+                {
+                    "strictest_verdict": "concern",
+                    "strictest_provider": "kimi",
+                    "must_respond": True,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        concern_manifest = dict(manifest)
+        concern_manifest["task_id"] = "fixture-main-decided-concern"
+        concern_manifest["run_dir"] = str(concern_run)
+        concern_manifest["status"] = "main-decided"
+        concern_manifest["convergence"] = {"state": "main-decided", "reason": "fixture concern accepted"}
+        concern_manifest["providers"] = {
+            "kimi": {
+                "session_handle": "kimi-fixture",
+                "round_count": 1,
+                "status": "main-decided",
+                "last_review": str(concern_review_path),
+            }
+        }
+        concern_manifest_path = concern_run / "session.json"
+        concern_manifest_path.write_text(json.dumps(concern_manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        concern_record = build_record(concern_manifest_path)
+        if concern_record.get("success") is not True or concern_record.get("outcome") != "resolved_with_concern":
+            failures.append("main-decided concern should be classified as resolved_with_concern")
+        active_manifest = dict(concern_manifest)
+        active_manifest["task_id"] = "fixture-active"
+        active_manifest["status"] = "active"
+        active_manifest["convergence"] = {"state": "unresolved", "reason": "fixture still running"}
+        active_manifest_path = concern_run / "active-session.json"
+        active_manifest_path.write_text(json.dumps(active_manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        active_record = build_record(active_manifest_path)
+        if active_record.get("success") is not False or active_record.get("outcome") != "active":
+            failures.append("active unresolved task should be classified as active")
         print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
         if failures:
             return 1
@@ -636,6 +767,12 @@ def build_parser() -> argparse.ArgumentParser:
     summary = sub.add_parser("summary", help="print the current ledger health summary")
     summary.add_argument("--ledger", default=str(DEFAULT_LEDGER))
     summary.set_defaults(func=cmd_summary)
+
+    health_check = sub.add_parser("health-check", help="fail when operational Prism tasks are unresolved or failed")
+    health_check.add_argument("--ledger", default=str(DEFAULT_LEDGER))
+    health_check.add_argument("--task-facts", default=str(DEFAULT_TASK_FACTS))
+    health_check.add_argument("--allow-task", action="append", default=[])
+    health_check.set_defaults(func=cmd_health_check)
 
     self_check = sub.add_parser("self-check", help="run isolated ledger self-check")
     self_check.set_defaults(func=cmd_self_check)

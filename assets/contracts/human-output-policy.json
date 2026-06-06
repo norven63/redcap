@@ -1,0 +1,199 @@
+{
+  "schema_id": "redcap-human-output-policy",
+  "version": 1,
+  "purpose": "所有给人看的 RedCap 输出必须中文优先、可读、少机器腔。专有名词可以保留原文，但首次出现要紧跟中文解释。",
+  "mechanism": "确定性启发式规则：先剥离代码块和行内代码，再计算中文字符与拉丁字符比例，检查机器化禁用短语，并要求专有名词首次出现时紧跟中文括号解释；它不是 LLM（大语言模型）裁判。",
+  "default_minimum_cjk_ratio": 0.18,
+  "mixed_language_rules": {
+    "minimum_mixed_samples": 5,
+    "rule": "中英混合内容可以出现，但中文必须承担主要解释；保留英文专有名词时，首次出现必须紧跟中文括号解释。"
+  },
+  "terms_requiring_explanation": [
+    "Prism",
+    "棱镜",
+    "provider",
+    "dispatcher",
+    "hook",
+    "Stop Hook",
+    "PreToolUse",
+    "stdout",
+    "raw",
+    "CLI",
+    "FSM",
+    "LLM",
+    "schema",
+    "commit",
+    "branch"
+  ],
+  "banned_phrases": [
+    "workflow lifecycle packet proves completion",
+    "task fact ledger proves completion",
+    "documentation is complete so implementation is complete",
+    "no action needed because the report exists"
+  ],
+  "surfaces": {
+    "assistant_reply": {
+      "minimum_cjk_ratio": 0.22,
+      "minimum_checked_chars": 16
+    },
+    "document": {
+      "minimum_cjk_ratio": 0.18,
+      "minimum_checked_chars": 24
+    },
+    "hook_message": {
+      "minimum_cjk_ratio": 0.12,
+      "minimum_checked_chars": 10,
+      "terms_requiring_explanation": [
+        "RedCap",
+        "Prism",
+        "hook"
+      ]
+    },
+    "generated_report": {
+      "minimum_cjk_ratio": 0.22,
+      "minimum_checked_chars": 16
+    },
+    "code_comment": {
+      "minimum_cjk_ratio": 0.16,
+      "minimum_checked_chars": 12
+    },
+    "commit_message": {
+      "minimum_cjk_ratio": 0.20,
+      "minimum_checked_chars": 12,
+      "terms_requiring_explanation": [
+        "Prism",
+        "hook",
+        "dispatcher",
+        "CLI"
+      ]
+    }
+  },
+  "required_samples": [
+    {
+      "id": "assistant-reply-good",
+      "surface": "assistant_reply",
+      "should_pass": true,
+      "text": "棱镜（异构评审助手）返回阻断意见，Cap 会先修行为级问题，再继续复活前置收尾。"
+    },
+    {
+      "id": "assistant-reply-english-machine",
+      "surface": "assistant_reply",
+      "should_pass": false,
+      "text": "The workflow lifecycle packet proves completion and the task is done."
+    },
+    {
+      "id": "assistant-reply-unexplained-term",
+      "surface": "assistant_reply",
+      "should_pass": false,
+      "text": "Prism 已经返回意见，继续处理。"
+    },
+    {
+      "id": "hook-message-good",
+      "surface": "hook_message",
+      "should_pass": true,
+      "text": "运行 RedCap（当前复活工程）收口检查。"
+    },
+    {
+      "id": "commit-message-good",
+      "surface": "commit_message",
+      "should_pass": true,
+      "text": "fix: 增加 Prism（异构评审助手）超时报告\n\n补充整任务预算和中文摘要。\n\n作者:redcap"
+    },
+    {
+      "id": "mixed-cli-good",
+      "surface": "document",
+      "mixed_language": true,
+      "should_pass": true,
+      "text": "CLI（命令行工具）只作为执行入口，给人的说明仍然使用中文描述原因和后果。"
+    },
+    {
+      "id": "mixed-cli-bad",
+      "surface": "document",
+      "mixed_language": true,
+      "should_pass": false,
+      "text": "CLI output is ok，继续下一步。"
+    },
+    {
+      "id": "mixed-dispatcher-good",
+      "surface": "generated_report",
+      "mixed_language": true,
+      "should_pass": true,
+      "text": "dispatcher（评审调度器）拒绝启动评审方，因为整任务预算已经耗尽。"
+    },
+    {
+      "id": "mixed-dispatcher-bad",
+      "surface": "generated_report",
+      "mixed_language": true,
+      "should_pass": false,
+      "text": "dispatcher 已切换到 fallback，status ok。"
+    },
+    {
+      "id": "stdout-good",
+      "surface": "generated_report",
+      "mixed_language": true,
+      "should_pass": true,
+      "text": "stdout（标准输出）只保留摘要，raw（原始输出）必须通过元数据读取。"
+    },
+    {
+      "id": "stdout-bad",
+      "surface": "generated_report",
+      "mixed_language": true,
+      "should_pass": false,
+      "text": "stdout raw 已存档，report done。"
+    },
+    {
+      "id": "code-comment-good",
+      "surface": "code_comment",
+      "mixed_language": true,
+      "should_pass": true,
+      "text": "hook（宿主触发脚本）只记录收口证据，不替代真实任务动作。"
+    },
+    {
+      "id": "code-comment-bad",
+      "surface": "code_comment",
+      "mixed_language": true,
+      "should_pass": false,
+      "text": "hook records marker and task is done."
+    },
+    {
+      "id": "fsm-doc-good",
+      "surface": "document",
+      "mixed_language": true,
+      "should_pass": true,
+      "text": "FSM（有限状态机）负责阻止跳步，branch（代码分支）说明只出现在提交上下文里。"
+    },
+    {
+      "id": "llm-reply-good",
+      "surface": "assistant_reply",
+      "mixed_language": true,
+      "should_pass": true,
+      "text": "LLM（大语言模型）判断只能作为辅助，最终动作仍由 Cap 执行并验证。"
+    },
+    {
+      "id": "banned-doc-bad",
+      "surface": "document",
+      "should_pass": false,
+      "text": "workflow lifecycle packet proves completion, no action needed because the report exists."
+    },
+    {
+      "id": "ascii-readable-bad",
+      "surface": "generated_report",
+      "should_pass": false,
+      "text": "1. Timeout\n2. Retry\n3. Continue"
+    },
+    {
+      "id": "low-cjk-mixed-bad",
+      "surface": "assistant_reply",
+      "mixed_language": true,
+      "should_pass": false,
+      "text": "#1234 已关，reason: insufficient budget and provider timeout in dispatcher."
+    },
+    {
+      "id": "chinese-with-unexplained-term-bad",
+      "surface": "assistant_reply",
+      "mixed_language": true,
+      "should_pass": false,
+      "text": "棱镜已经给出意见，继续执行。"
+    }
+  ]
+}

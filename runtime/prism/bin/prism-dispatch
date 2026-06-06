@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import datetime as dt
 import hashlib
 import json
 import os
@@ -42,6 +43,7 @@ REQUIRED_REVIEW_KEYS = {
     "user_intent_alignment",
 }
 RAW_META_SCHEMA_ID = "prism-provider-raw-metadata"
+DEFAULT_TIMEOUT_GOVERNANCE_CONTRACT = REPO_ROOT / "assets" / "contracts" / "prism-timeout-governance.json"
 
 
 REVIEW_JSON_SCHEMA = {
@@ -139,6 +141,9 @@ def raw_metadata_payload(
         "timed_out": timed_out,
         "timeout_seconds": raw_payload.get("timeout_seconds"),
         "total_timeout_seconds": raw_payload.get("total_timeout_seconds"),
+        "task_total_timeout_seconds": raw_payload.get("task_total_timeout_seconds"),
+        "task_elapsed_timeout_seconds": raw_payload.get("task_elapsed_timeout_seconds"),
+        "task_remaining_timeout_seconds": raw_payload.get("task_remaining_timeout_seconds"),
         "max_retries": raw_payload.get("max_retries"),
         "attempts_count": len(attempts),
         "attempts": attempts_summary([attempt for attempt in attempts if isinstance(attempt, dict)]),
@@ -216,6 +221,9 @@ def verify_raw_meta(meta_path: pathlib.Path) -> tuple[bool, list[str], dict[str,
         "timed_out": expected_timed_out,
         "timeout_seconds": raw_payload.get("timeout_seconds"),
         "total_timeout_seconds": raw_payload.get("total_timeout_seconds"),
+        "task_total_timeout_seconds": raw_payload.get("task_total_timeout_seconds"),
+        "task_elapsed_timeout_seconds": raw_payload.get("task_elapsed_timeout_seconds"),
+        "task_remaining_timeout_seconds": raw_payload.get("task_remaining_timeout_seconds"),
         "max_retries": raw_payload.get("max_retries"),
         "attempts_count": len(attempts),
         "attempts": expected_attempts,
@@ -286,6 +294,15 @@ def run_with_hard_timeout(argv: list[str], timeout: float) -> subprocess.Complet
         text=True,
         start_new_session=True,
     )
+    old_handlers: dict[int, Any] = {}
+
+    def terminate_child_then_exit(signum: int, _frame: Any) -> None:
+        terminate_process_group(proc, TIMEOUT_KILL_GRACE_SECONDS)
+        raise SystemExit(128 + signum)
+
+    for signum in [signal.SIGTERM, signal.SIGINT]:
+        old_handlers[signum] = signal.getsignal(signum)
+        signal.signal(signum, terminate_child_then_exit)
     try:
         stdout, stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as exc:
@@ -301,6 +318,9 @@ def run_with_hard_timeout(argv: list[str], timeout: float) -> subprocess.Complet
             output=stdout or output_text(exc.stdout),
             stderr=stderr or output_text(exc.stderr),
         ) from exc
+    finally:
+        for signum, handler in old_handlers.items():
+            signal.signal(signum, handler)
     return subprocess.CompletedProcess(argv, proc.returncode, stdout, stderr)
 
 
@@ -312,6 +332,7 @@ class ProviderTimeoutError(Exception):
         timeout_seconds: float,
         total_timeout_seconds: float | None = None,
         reason: str = "provider command timed out",
+        task_timeout_budget: dict[str, Any] | None = None,
     ):
         super().__init__("provider command timed out")
         self.attempts = attempts
@@ -319,6 +340,7 @@ class ProviderTimeoutError(Exception):
         self.timeout_seconds = timeout_seconds
         self.total_timeout_seconds = total_timeout_seconds
         self.reason = reason
+        self.task_timeout_budget = task_timeout_budget or {}
 
 
 def redacted_argv(argv: list[str]) -> list[str]:
@@ -360,6 +382,52 @@ def provider_record(manifest: pathlib.Path, provider: str) -> dict[str, Any]:
     if not isinstance(record, dict):
         raise SystemExit(f"provider record must be object: {provider}")
     return record
+
+
+def parse_manifest_time(value: Any) -> dt.datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed.astimezone(dt.timezone.utc)
+
+
+def task_timeout_budget(manifest: pathlib.Path, task_total_timeout_seconds: float | None) -> dict[str, Any] | None:
+    if task_total_timeout_seconds is None:
+        return None
+    payload = load_json(manifest)
+    if not isinstance(payload, dict):
+        raise SystemExit("session manifest must be a JSON object")
+    created_at = parse_manifest_time(payload.get("task_started_at") or payload.get("created_at"))
+    if created_at is None:
+        raise SystemExit("session manifest missing valid created_at for task total timeout")
+    now = dt.datetime.now(dt.timezone.utc)
+    elapsed = max(0.0, (now - created_at).total_seconds())
+    remaining = max(0.0, task_total_timeout_seconds - elapsed)
+    return {
+        "task_total_timeout_seconds": task_total_timeout_seconds,
+        "task_elapsed_timeout_seconds": round(elapsed, 3),
+        "task_remaining_timeout_seconds": round(remaining, 3),
+        "task_timeout_started_at": created_at.isoformat(),
+    }
+
+
+def timeout_budget_fields(budget: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(budget, dict):
+        return {
+            "task_total_timeout_seconds": None,
+            "task_elapsed_timeout_seconds": None,
+            "task_remaining_timeout_seconds": None,
+        }
+    return {
+        "task_total_timeout_seconds": budget.get("task_total_timeout_seconds"),
+        "task_elapsed_timeout_seconds": budget.get("task_elapsed_timeout_seconds"),
+        "task_remaining_timeout_seconds": budget.get("task_remaining_timeout_seconds"),
+    }
 
 
 def build_brief(provider: str, request: pathlib.Path, out_path: pathlib.Path) -> str:
@@ -838,6 +906,7 @@ def write_provider_timeout_raw(
     exc: ProviderTimeoutError,
     max_retries: int,
     provider: str,
+    task_timeout_budget_value: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload = {
         "argv": redacted_argv(argv),
@@ -845,6 +914,7 @@ def write_provider_timeout_raw(
         "exit_code": None,
         "timeout_seconds": exc.timeout_seconds,
         "total_timeout_seconds": exc.total_timeout_seconds,
+        **timeout_budget_fields(task_timeout_budget_value or exc.task_timeout_budget),
         "max_retries": max_retries,
         "reason": exc.reason,
     }
@@ -1003,6 +1073,101 @@ def cmd_verify_raw_meta(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_timeout_report(args: argparse.Namespace) -> int:
+    if args.raw_meta:
+        meta_path = pathlib.Path(args.raw_meta).resolve()
+    elif args.raw_out:
+        meta_path = raw_meta_path(pathlib.Path(args.raw_out).resolve())
+    else:
+        raise SystemExit("--raw-meta or --raw-out is required with --timeout-report")
+    ok, failures, meta = verify_raw_meta(meta_path)
+    if not ok:
+        print(json.dumps({
+            "ok": False,
+            "summary_zh": "超时报告无法生成，因为原始输出元数据未通过校验。",
+            "failures": failures,
+        }, ensure_ascii=False, indent=2))
+        return 1
+    raw_path_value = meta.get("raw_path")
+    raw_payload = load_json(pathlib.Path(str(raw_path_value)))
+    attempts = raw_payload.get("attempts") if isinstance(raw_payload, dict) else []
+    attempts = [attempt for attempt in attempts if isinstance(attempt, dict)]
+    timed_out = bool(meta.get("timed_out"))
+    timeout_scopes = sorted({
+        str(attempt.get("timeout_scope"))
+        for attempt in attempts
+        if attempt.get("timed_out") is True and attempt.get("timeout_scope")
+    })
+    reason = str(raw_payload.get("reason") or "") if isinstance(raw_payload, dict) else ""
+    provider = str(meta.get("provider") or "unknown")
+    if not timed_out:
+        summary = f"{provider} 调用没有触发超时。"
+        recommended = "无需超时补救，继续按评审结果处理。"
+    elif "task-total" in timeout_scopes:
+        summary = f"{provider} 调用在整任务预算耗尽前被拦截，未继续启动外部评审方。"
+        recommended = "由 Cap 立即裁决：缩小任务、延长整任务预算，或把该评审方标记过期后改派。"
+    elif "dispatcher-total" in timeout_scopes:
+        summary = f"{provider} 调用耗尽了本次委派的总预算。"
+        recommended = "优先复用已捕获会话继续一次短跟进；若仍超时，交给 Cap 裁决是否降级或改派。"
+    else:
+        summary = f"{provider} 单次评审尝试触发超时。"
+        recommended = "可以按重试策略继续；若连续触发，改为更小的分片任务。"
+    report = {
+        "ok": True,
+        "provider": provider,
+        "timed_out": timed_out,
+        "timeout_scopes": timeout_scopes,
+        "reason": reason,
+        "summary_zh": summary,
+        "recommended_action_zh": recommended,
+        "attempts_count": meta.get("attempts_count"),
+        "timeout_seconds": meta.get("timeout_seconds"),
+        "total_timeout_seconds": meta.get("total_timeout_seconds"),
+        "task_total_timeout_seconds": meta.get("task_total_timeout_seconds"),
+        "task_elapsed_timeout_seconds": meta.get("task_elapsed_timeout_seconds"),
+        "task_remaining_timeout_seconds": meta.get("task_remaining_timeout_seconds"),
+        "raw_path": raw_path_value,
+        "meta_path": str(meta_path),
+    }
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    print("PRISM_TIMEOUT_REPORT_OK")
+    return 0
+
+
+def cmd_timeout_policy_check(args: argparse.Namespace) -> int:
+    contract_path = pathlib.Path(args.timeout_policy_contract).resolve()
+    payload = load_json(contract_path)
+    failures: list[str] = []
+    if not isinstance(payload, dict):
+        failures.append("timeout policy contract must be a JSON object")
+    elif payload.get("schema_id") != "prism-timeout-governance-policy":
+        failures.append("schema_id must be prism-timeout-governance-policy")
+    budget_model = payload.get("budget_model") if isinstance(payload, dict) else None
+    if not isinstance(budget_model, dict):
+        failures.append("budget_model must be an object")
+    else:
+        for key in ["provider_attempt", "dispatcher_total", "task_total", "per_provider_allocation"]:
+            if not isinstance(budget_model.get(key), str) or not budget_model.get(key).strip():
+                failures.append(f"budget_model.{key} must be non-empty")
+        if budget_model.get("per_provider_allocation") != "shared_pool":
+            failures.append("budget_model.per_provider_allocation must be shared_pool")
+    if payload.get("task_timing_source") != "task_started_at":
+        failures.append("task_timing_source must be task_started_at")
+    decisions = payload.get("post_timeout_decisions") if isinstance(payload, dict) else None
+    if not isinstance(decisions, dict):
+        failures.append("post_timeout_decisions must be an object")
+    else:
+        for key in ["provider_attempt", "dispatcher_total", "task_total", "remote_state"]:
+            value = decisions.get(key)
+            if not isinstance(value, str) or not value.strip():
+                failures.append(f"post_timeout_decisions.{key} must be non-empty")
+    print(json.dumps({"ok": not failures, "contract": str(contract_path), "failures": failures}, ensure_ascii=False, indent=2))
+    if failures:
+        return 1
+    print("PRISM_TIMEOUT_GOVERNANCE_POLICY_OK")
+    return 0
+
+
 def run_provider_command(
     provider: str,
     argv: list[str],
@@ -1013,6 +1178,7 @@ def run_provider_command(
     timeout_seconds: float,
     max_retries: int,
     total_timeout_seconds: float | None = None,
+    task_timeout_budget_value: dict[str, Any] | None = None,
     *,
     rebuild_on_retry: bool = True,
     retry_command_builder=provider_command,
@@ -1024,6 +1190,33 @@ def run_provider_command(
     captured_handle = handle or planned_handle
     started_at = time.monotonic()
     deadline = started_at + total_timeout_seconds if total_timeout_seconds is not None else None
+    if task_timeout_budget_value is not None:
+        remaining_task = float(task_timeout_budget_value.get("task_remaining_timeout_seconds") or 0.0)
+        if remaining_task <= 0:
+            attempts.append({
+                "attempt": 1,
+                "argv": redacted_argv(current_argv),
+                "exit_code": None,
+                "timed_out": True,
+                "timeout_seconds": 0,
+                "total_timeout_seconds": total_timeout_seconds,
+                "stdout": "",
+                "stderr": "task total timeout exhausted before provider attempt",
+                "captured_session_handle": captured_handle,
+                "timeout_scope": "task-total",
+            })
+            raise ProviderTimeoutError(
+                attempts,
+                captured_handle,
+                timeout_seconds,
+                total_timeout_seconds,
+                "task total timeout exhausted",
+                task_timeout_budget_value,
+            )
+        if deadline is None:
+            deadline = started_at + remaining_task
+        else:
+            deadline = min(deadline, started_at + remaining_task)
 
     for attempt_number in range(1, max_retries + 2):
         effective_timeout = timeout_seconds
@@ -1048,6 +1241,7 @@ def run_provider_command(
                     timeout_seconds,
                     total_timeout_seconds,
                     "dispatcher total timeout exhausted",
+                    task_timeout_budget_value,
                 )
             effective_timeout = min(timeout_seconds, remaining)
         try:
@@ -1074,7 +1268,7 @@ def run_provider_command(
                     current_argv, current_planned_handle = retry_command_builder(provider, current_handle, prompt, max_steps)
                     captured_handle = current_handle or current_planned_handle
                 continue
-            raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds, total_timeout_seconds) from exc
+            raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds, total_timeout_seconds, task_timeout_budget=task_timeout_budget_value) from exc
 
         attempts.append({
             "attempt": attempt_number,
@@ -1140,7 +1334,7 @@ def run_provider_command(
                         current_argv, current_planned_handle = retry_command_builder(provider, current_handle, prompt, max_steps)
                         captured_handle = current_handle or current_planned_handle
                     continue
-                raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds, total_timeout_seconds) from exc
+                raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds, total_timeout_seconds, task_timeout_budget=task_timeout_budget_value) from exc
             attempts.append({
                 "attempt": attempt_number,
                 "argv": redacted_argv(fallback_argv),
@@ -1153,7 +1347,7 @@ def run_provider_command(
             return completed, attempts, fallback_handle
         return completed, attempts, current_handle or current_planned_handle
 
-    raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds, total_timeout_seconds)
+    raise ProviderTimeoutError(attempts, captured_handle, timeout_seconds, total_timeout_seconds, task_timeout_budget=task_timeout_budget_value)
 
 
 def cmd_dispatch(args: argparse.Namespace) -> int:
@@ -1198,6 +1392,10 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
     total_timeout_seconds = args.total_timeout_seconds
     if total_timeout_seconds is None:
         total_timeout_seconds = args.timeout_seconds * (args.max_retries + 1) * DEFAULT_TOTAL_TIMEOUT_MULTIPLIER
+    task_budget = task_timeout_budget(manifest, args.task_total_timeout_seconds)
+    if task_budget is not None:
+        remaining_task = float(task_budget.get("task_remaining_timeout_seconds") or 0.0)
+        total_timeout_seconds = min(total_timeout_seconds, remaining_task)
 
     if args.dry_run:
         print(json.dumps({
@@ -1211,6 +1409,7 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             "brief_path": str(brief_out),
             "timeout_seconds": args.timeout_seconds,
             "total_timeout_seconds": total_timeout_seconds,
+            **timeout_budget_fields(task_budget),
             "max_retries": args.max_retries,
         }, ensure_ascii=False, indent=2))
         print("PRISM_DISPATCH_DRY_RUN_OK")
@@ -1227,9 +1426,10 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             args.timeout_seconds,
             args.max_retries,
             total_timeout_seconds,
+            task_budget,
         )
     except ProviderTimeoutError as exc:
-        write_provider_timeout_raw(raw_out, argv, exc, args.max_retries, provider)
+        write_provider_timeout_raw(raw_out, argv, exc, args.max_retries, provider, task_budget)
         captured_handle = exc.captured_handle
         mark_session_expired(manifest, provider, captured_handle or handle, exc.reason)
         raise SystemExit(json.dumps({
@@ -1238,6 +1438,7 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             "provider": provider,
             "timeout_seconds": exc.timeout_seconds,
             "total_timeout_seconds": exc.total_timeout_seconds,
+            **timeout_budget_fields(task_budget or exc.task_timeout_budget),
             "attempts": len(exc.attempts),
             "max_retries": args.max_retries,
             "captured_session_handle": captured_handle,
@@ -1248,6 +1449,10 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
         "argv": argv[:6] + ["<prompt>"],
         "attempts": attempts,
         "exit_code": completed.returncode,
+        "timeout_seconds": args.timeout_seconds,
+        "total_timeout_seconds": total_timeout_seconds,
+        **timeout_budget_fields(task_budget),
+        "max_retries": args.max_retries,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
     }
@@ -1604,6 +1809,54 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
             "--review-out",
             str(tmp / "defaults.review.json"),
         ])
+        task_total_fixture = tmp / "task_total_should_not_run.py"
+        task_total_ran_marker = tmp / "task-total-ran.txt"
+        task_total_raw = tmp / "task-total-timeout.raw.json"
+        task_total_fixture.write_text(
+            "\n".join([
+                "import pathlib",
+                f"pathlib.Path({str(task_total_ran_marker)!r}).write_text('ran')",
+                "print('should-not-run')",
+            ]) + "\n",
+            encoding="utf-8",
+        )
+        time.sleep(0.02)
+        task_total_budget = task_timeout_budget(manifest, 0.001)
+        task_total_payload: dict[str, Any] = {}
+        task_total_attempts: list[dict[str, Any]] = []
+        try:
+            run_provider_command(
+                "kimi",
+                [sys.executable, str(task_total_fixture)],
+                "",
+                None,
+                None,
+                1,
+                5.0,
+                0,
+                5.0,
+                task_total_budget,
+                retry_command_builder=lambda provider, current_handle, prompt, max_steps: (
+                    [sys.executable, str(task_total_fixture)],
+                    current_handle,
+                ),
+            )
+        except ProviderTimeoutError as exc:
+            task_total_attempts = exc.attempts
+            task_total_payload = write_provider_timeout_raw(
+                task_total_raw,
+                [sys.executable, str(task_total_fixture)],
+                exc,
+                0,
+                "kimi",
+                task_total_budget,
+            )
+        task_total_report = run([
+            str(pathlib.Path(__file__).resolve()),
+            "--timeout-report",
+            "--raw-out",
+            str(task_total_raw),
+        ])
         failures: list[str] = []
         if first.returncode != 0 or "PRISM_DISPATCH_DRY_RUN_OK" not in first.stdout:
             failures.append("first dry-run dispatch did not pass")
@@ -1623,6 +1876,20 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
             failures.append("dispatcher default max retries is not 5")
         if defaults.total_timeout_seconds is not None:
             failures.append("dispatcher default total timeout should be computed at dispatch time")
+        if defaults.task_total_timeout_seconds is not None:
+            failures.append("dispatcher default task total timeout should be unset")
+        if not task_total_payload:
+            failures.append("task total timeout fixture did not raise ProviderTimeoutError")
+        if task_total_ran_marker.exists():
+            failures.append("task total timeout fixture started provider after task budget was exhausted")
+        if task_total_attempts and task_total_attempts[0].get("timeout_scope") != "task-total":
+            failures.append("task total timeout fixture did not record task-total scope")
+        if task_total_payload.get("task_total_timeout_seconds") != 0.001:
+            failures.append("task total timeout raw payload did not persist task budget")
+        if task_total_report.returncode != 0 or "PRISM_TIMEOUT_REPORT_OK" not in task_total_report.stdout:
+            failures.append("timeout report command did not accept task-total raw output")
+        if "整任务预算" not in task_total_report.stdout:
+            failures.append("timeout report did not emit a Chinese task-budget summary")
         if retry_completed.returncode != 0:
             failures.append("timeout retry fixture did not eventually succeed")
         if len(retry_attempts) != 3:
@@ -1899,6 +2166,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--self-check", action="store_true")
     parser.add_argument("--verify-evidence", action="store_true")
     parser.add_argument("--verify-raw-meta", action="store_true")
+    parser.add_argument("--timeout-report", action="store_true")
+    parser.add_argument("--timeout-policy-check", action="store_true")
     parser.add_argument("--evidence-run-dir")
     parser.add_argument("--providers", default="kimi,claude-code")
     parser.add_argument("--max-age-hours", type=float)
@@ -1908,11 +2177,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--review-out")
     parser.add_argument("--raw-out")
     parser.add_argument("--raw-meta")
+    parser.add_argument("--timeout-policy-contract", default=str(DEFAULT_TIMEOUT_GOVERNANCE_CONTRACT))
     parser.add_argument("--extract-from-raw")
     parser.add_argument("--brief-out")
     parser.add_argument("--max-steps", type=int, default=5)
     parser.add_argument("--timeout-seconds", type=float, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument("--total-timeout-seconds", type=float)
+    parser.add_argument("--task-total-timeout-seconds", type=float)
     parser.add_argument("--max-retries", type=int, default=DEFAULT_MAX_RETRIES)
     parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -1923,6 +2194,10 @@ def main() -> int:
     args = parser.parse_args()
     if args.self_check:
         return cmd_self_check(args)
+    if args.timeout_policy_check:
+        return cmd_timeout_policy_check(args)
+    if args.timeout_report:
+        return cmd_timeout_report(args)
     if args.verify_raw_meta:
         return cmd_verify_raw_meta(args)
     if args.verify_evidence:
@@ -1939,6 +2214,8 @@ def main() -> int:
         parser.error("--timeout-seconds must be greater than 0")
     if args.total_timeout_seconds is not None and args.total_timeout_seconds <= 0:
         parser.error("--total-timeout-seconds must be greater than 0")
+    if args.task_total_timeout_seconds is not None and args.task_total_timeout_seconds <= 0:
+        parser.error("--task-total-timeout-seconds must be greater than 0")
     if args.max_retries < 0:
         parser.error("--max-retries must be greater than or equal to 0")
     return cmd_dispatch(args)

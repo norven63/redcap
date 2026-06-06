@@ -1,0 +1,22 @@
+{
+  "schema_id": "prism-timeout-governance-policy",
+  "version": 1,
+  "task_timing_source": "task_started_at",
+  "budget_model": {
+    "provider_attempt": "单次评审方调用预算，触发后允许按 max_retries 重试。",
+    "dispatcher_total": "一次评审方委派的总预算，覆盖重试和恢复会话。",
+    "task_total": "整个 Prism 任务的总预算，按 session manifest 的 task_started_at 起算。",
+    "per_provider_allocation": "shared_pool"
+  },
+  "post_timeout_decisions": {
+    "provider_attempt": "记录 raw/meta，复用已捕获会话句柄重试；连续失败后交给 dispatcher_total 判断。",
+    "dispatcher_total": "标记该评审方过期，保留部分 raw/meta 和会话句柄，由 Cap 裁决是否短跟进、降级或改派。",
+    "task_total": "不再启动新的评审方；生成中文超时报告，由 Cap 立即裁决是否缩小任务、延长预算或进入人工可见阻断。",
+    "remote_state": "本地超时只能停止本地进程组；远端会话状态必须通过后续同 provider 会话句柄短跟进或显式过期记录处理。"
+  },
+  "verification": [
+    "runtime/prism/bin/prism-dispatch --self-check",
+    "python3 runtime/prism/bin/prism-dispatch-timeout-e2e",
+    "runtime/prism/bin/prism-dispatch --timeout-policy-check"
+  ]
+}

@@ -591,6 +591,7 @@
             "--event",
             "SessionStart",
             "--verify-live-marker",
+            "--allow-adapter-change-after-marker",
             "--require-real-codex-session",
             "--require-soul-load",
             "--max-age-seconds",
@@ -608,6 +609,7 @@
               "--event",
               "SessionStart",
               "--verify-live-marker",
+              "--allow-adapter-change-after-marker",
               "--require-real-codex-session",
               "--require-soul-load",
               "--max-age-seconds",
@@ -728,6 +730,7 @@
             "--event",
             "UserPromptSubmit",
             "--verify-live-marker",
+            "--allow-adapter-change-after-marker",
             "--require-real-codex-session",
             "--require-gate-decision",
             "--max-age-seconds",
@@ -745,6 +748,7 @@
               "--event",
               "UserPromptSubmit",
               "--verify-live-marker",
+              "--allow-adapter-change-after-marker",
               "--require-real-codex-session",
               "--require-gate-decision",
               "--max-age-seconds",
@@ -799,6 +803,7 @@
             "--event",
             "PreToolUse",
             "--verify-live-marker",
+            "--allow-adapter-change-after-marker",
             "--require-real-codex-session",
             "--require-pre-tool-guard",
             "--max-age-seconds",
@@ -816,6 +821,7 @@
               "--event",
               "PreToolUse",
               "--verify-live-marker",
+              "--allow-adapter-change-after-marker",
               "--require-real-codex-session",
               "--require-pre-tool-guard",
               "--max-age-seconds",
@@ -871,6 +877,7 @@
               "--event",
               "PreToolUse",
               "--verify-live-marker",
+              "--allow-adapter-change-after-marker",
               "--require-real-codex-session",
               "--require-pre-tool-guard",
               "--require-session-claim-attempt",
@@ -924,6 +931,7 @@
               "--event",
               "Stop",
               "--verify-live-marker",
+              "--allow-adapter-change-after-marker",
               "--require-real-codex-session",
               "--require-stop-check-attempt",
               "--require-action-check-ok",
@@ -943,6 +951,7 @@
               "--event",
               "Stop",
               "--verify-live-marker",
+              "--allow-adapter-change-after-marker",
               "--require-real-codex-session",
               "--require-stop-check-attempt",
               "--require-action-check-ok",
@@ -999,6 +1008,7 @@
             "--event",
             "PostToolUse",
             "--verify-live-marker",
+            "--allow-adapter-change-after-marker",
             "--require-real-codex-session",
             "--max-age-seconds",
             "86400"
@@ -1015,6 +1025,7 @@
               "--event",
               "PostToolUse",
               "--verify-live-marker",
+              "--allow-adapter-change-after-marker",
               "--require-real-codex-session",
               "--max-age-seconds",
               "86400"
@@ -1040,6 +1051,8 @@
         "assets/evidence/prism/20260601-timeout-retry-accountability/session.json",
         "runtime/prism/bin/prism",
         "runtime/prism/bin/prism-dispatch",
+        "runtime/prism/bin/prism-dispatch-timeout-e2e",
+        "assets/contracts/prism-timeout-governance.json",
         "runtime/bin/redcap"
       ],
       "evaluation": {
@@ -1059,6 +1072,8 @@
         ],
         "implementation_paths": [
           "runtime/prism/bin/prism-dispatch",
+          "runtime/prism/bin/prism-dispatch-timeout-e2e",
+          "assets/contracts/prism-timeout-governance.json",
           "runtime/prism/bin/prism",
           "runtime/bin/redcap"
         ]
@@ -1075,6 +1090,28 @@
             "expect_exit": 0,
             "stdout_contains": [
               "PRISM_DISPATCH_SELF_CHECK_OK"
+            ]
+          },
+          {
+            "name": "provider dispatcher timeout governance policy is explicit",
+            "argv": [
+              "runtime/prism/bin/prism-dispatch",
+              "--timeout-policy-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "PRISM_TIMEOUT_GOVERNANCE_POLICY_OK"
+            ]
+          },
+          {
+            "name": "provider dispatcher refuses provider launch after task budget exhaustion",
+            "argv": [
+              "python3",
+              "runtime/prism/bin/prism-dispatch-timeout-e2e"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "PRISM_DISPATCH_TIMEOUT_E2E_OK"
             ]
           },
           {
@@ -1761,6 +1798,80 @@
       },
       "gaps": [
         "This is an index-first write/review/retrieval gateway, not RAG or GraphRAG."
+      ]
+    },
+    {
+      "id": "human-facing-output-policy",
+      "title": "Chinese-first human-facing output policy",
+      "kind": "workflow",
+      "source_paths": [
+        "assets/contracts/human-output-policy.json",
+        "runtime/core/human_output_policy.py",
+        "runtime/bin/redcap"
+      ],
+      "evaluation": {
+        "evaluated": true,
+        "decision": "required_now",
+        "reason": "Human-facing RedCap output must be Chinese-first and readable across replies, documents, hook messages, reports, comments, and commit-message guidance."
+      },
+      "enforcement": {
+        "status": "operational",
+        "host_level_automatic": false,
+        "trigger_surfaces": [
+          "runtime/bin/redcap human-output check",
+          "runtime/bin/redcap human-output lint-text",
+          "runtime/bin/redcap human-output lint-file",
+          "runtime/bin/redcap check"
+        ],
+        "implementation_paths": [
+          "runtime/core/human_output_policy.py",
+          "assets/contracts/human-output-policy.json",
+          "runtime/bin/redcap"
+        ]
+      },
+      "verification": {
+        "mode": "commands",
+        "probes": [
+          {
+            "name": "human output policy validates contract samples",
+            "argv": [
+              "runtime/bin/redcap",
+              "human-output",
+              "check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_HUMAN_OUTPUT_POLICY_OK"
+            ]
+          },
+          {
+            "name": "human output policy rejects machine-like English text",
+            "argv": [
+              "runtime/bin/redcap",
+              "human-output",
+              "self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "REDCAP_HUMAN_OUTPUT_POLICY_SELF_CHECK_OK"
+            ]
+          },
+          {
+            "name": "Stop hook blocks English-only final assistant reply",
+            "argv": [
+              "python3",
+              "runtime/host-adapters/codex/codex-hook.py",
+              "--self-check"
+            ],
+            "expect_exit": 0,
+            "stdout_contains": [
+              "\"ok\": true"
+            ]
+          }
+        ]
+      },
+      "gaps": [
+        "This is a deterministic readability guard and sample validator; nuanced final copy quality still needs Cap judgment and Prism review when risk is high."
       ]
     }
   ]

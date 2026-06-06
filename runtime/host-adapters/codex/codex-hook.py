@@ -34,6 +34,8 @@ EVENTS_PATH = EVIDENCE_DIR / "events.jsonl"
 REDCAP = REPO_ROOT / "runtime" / "bin" / "redcap"
 TURN_ACTION_CHECK = REPO_ROOT / "runtime" / "prism" / "bin" / "turn-action-check"
 FINAL_CLAIM_GUARD = REPO_ROOT / "runtime" / "core" / "final_claim_guard.py"
+HUMAN_OUTPUT_POLICY = REPO_ROOT / "runtime" / "core" / "human_output_policy.py"
+STOP_HOOK_MODE_FILE = REPO_ROOT / ".codex" / "stop-hook-mode"
 SUPPORTED_EVENTS = {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"}
 INTENT_JUDGE_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_INTENT_JUDGE_TIMEOUT_SECONDS", "75"))
 INTENT_JUDGE_PROVIDER = os.environ.get("REDCAP_INTENT_JUDGE_PROVIDER", "claude-code")
@@ -194,6 +196,16 @@ def parse_leading_json_object(stdout: str) -> tuple[dict[str, Any] | None, str |
     if not isinstance(parsed, dict):
         return None, "leading JSON value is not an object"
     return parsed, None
+
+
+def stop_hook_mode() -> str:
+    mode = os.environ.get("REDCAP_STOP_HOOK_MODE")
+    if mode is None and STOP_HOOK_MODE_FILE.exists():
+        mode = STOP_HOOK_MODE_FILE.read_text(encoding="utf-8").strip()
+    normalized = (mode or "enforce").casefold()
+    if normalized in {"observe", "observation", "log", "disabled", "off"}:
+        return "observe"
+    return "enforce"
 
 
 def stop_task_anchor_clause(action_result: dict[str, Any]) -> str:
@@ -359,20 +371,21 @@ def path_value_intersects_prism_evidence(value: str, cwd: str | None = None) -> 
     expanded = expand_shell_path_value(value, cwd)
     if any(char in expanded for char in "*?[]"):
         normalized = expanded.replace("\\", "/")
-        return "assets/evidence/prism" in normalized or "assets/evidence" in normalized or normalized.endswith("assets")
+        return "assets/evidence/prism" in normalized or "assets/evidence" in normalized
     candidate = pathlib.Path(expanded)
     if not candidate.is_absolute():
         candidate = pathlib.Path(cwd if cwd else REPO_ROOT) / candidate
     try:
         resolved = candidate.resolve()
         prism = PROTECTED_PRISM_EVIDENCE_ROOT.resolve()
+        evidence = PROTECTED_EVIDENCE_ROOT.resolve()
         resolved.relative_to(prism)
         return True
     except ValueError:
         pass
     try:
         prism.relative_to(resolved)
-        return True
+        return resolved == prism or resolved == evidence
     except ValueError:
         return False
 
@@ -679,10 +692,17 @@ def prompt_text_from_marker(prompt_marker: dict[str, Any]) -> str:
 def prompt_marker_is_fresh_for_tool(prompt_marker: dict[str, Any], payload: dict[str, Any]) -> bool:
     if not prompt_text_from_marker(prompt_marker).strip():
         return False
-    for key in ["session_id", "turn_id"]:
-        expected = payload.get(key)
-        if isinstance(expected, str) and expected.strip() and prompt_marker.get(key) != expected:
-            return False
+    expected_session = payload.get("session_id")
+    if isinstance(expected_session, str) and expected_session.strip() and prompt_marker.get("session_id") != expected_session:
+        return False
+    recorded_at = prompt_marker.get("recorded_at")
+    try:
+        recorded = dt.datetime.fromisoformat(str(recorded_at))
+    except ValueError:
+        return False
+    age = dt.datetime.now(dt.timezone.utc) - recorded
+    if age.total_seconds() > 3600:
+        return False
     return True
 
 
@@ -927,31 +947,33 @@ def cmd_event(args: argparse.Namespace) -> int:
             action_evidence = prompt_intent.get("action_evidence")
             if scope in {"answer_only", "review_only"}:
                 context = (
-                    "RedCap UserPromptSubmit hook fired. This prompt is classified as "
-                    f"{scope}; normal answer/review may proceed without task-body action, "
-                    "but implementation or completion claims still require the RedCap gates."
+                    "RedCap（当前复活工程）UserPromptSubmit（用户提示提交检查）已触发。"
+                    f"本轮被判断为 {scope}；普通回答或评审可以继续，"
+                    "但实现动作或完成声明仍必须经过 RedCap（当前复活工程）门禁。"
                 )
             elif isinstance(lifecycle, dict) and lifecycle.get("required") is True and lifecycle.get("checked") is not True:
                 context = (
-                    "RedCap UserPromptSubmit hook fired: Prism rule review and a self-development lifecycle packet "
-                    "are required before implementation or completion claims unless Norven explicitly overrides."
+                    "RedCap（当前复活工程）UserPromptSubmit（用户提示提交检查）已触发："
+                    "Prism（棱镜，异构评审助手）规则评审和自开发生命周期包是必需前置，"
+                    "除非 Norven 明确覆盖。"
                 )
             else:
                 context = (
-                    "RedCap UserPromptSubmit hook fired and Prism rule review is required. "
-                    "Run full Prism before implementation or completion claims unless Norven explicitly overrides."
+                    "RedCap（当前复活工程）UserPromptSubmit（用户提示提交检查）已触发，"
+                    "且需要 Prism（棱镜，异构评审助手）规则评审。"
+                    "实现动作或完成声明前必须完成完整评审，除非 Norven 明确覆盖。"
                 )
         else:
             context = (
-                "RedCap UserPromptSubmit hook fired. Gate decision: "
-                f"{decision or 'unknown'}."
+                "RedCap（当前复活工程）UserPromptSubmit（用户提示提交检查）已触发。"
+                f"门禁结论：{decision or 'unknown'}。"
             )
         print(json.dumps({
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",
                 "additionalContext": context,
             },
-            "systemMessage": f"RedCap prompt hook recorded gate decision: {decision or 'unknown'}",
+            "systemMessage": f"RedCap（当前复活工程）提示检查已记录门禁结论：{decision or 'unknown'}",
         }, ensure_ascii=False))
     elif args.event == "PreToolUse":
         command = tool_command(payload)
@@ -1018,11 +1040,27 @@ def cmd_event(args: argparse.Namespace) -> int:
         print(json.dumps({
             "hookSpecificOutput": {
                 "hookEventName": "PostToolUse",
-                "additionalContext": f"RedCap PostToolUse action evidence recorded for {tool_name}.",
+                "additionalContext": (
+                    f"RedCap（当前复活工程）PostToolUse（工具使用后检查）已记录动作证据：{tool_name}。"
+                ),
             },
-            "systemMessage": f"RedCap action evidence recorded for {tool_name}.",
+            "systemMessage": f"RedCap（当前复活工程）已记录动作证据：{tool_name}。",
         }, ensure_ascii=False))
     elif args.event == "Stop":
+        mode = stop_hook_mode()
+        if mode == "observe":
+            marker = update_latest_marker("Stop", {
+                "stop_hook_mode": "observe",
+                "redcap_check_attempted": False,
+                "redcap_check_skipped_reason": "Stop hook temporarily downgraded by Norven authorization.",
+            }, base_marker=marker)
+            print(json.dumps({
+                "continue": True,
+                "systemMessage": (
+                    "RedCap（当前复活工程）Stop Hook（停止前检查）暂处观察模式，阻断式收口检查已跳过。"
+                ),
+            }, ensure_ascii=False))
+            return 0
         action = run_command([
             str(TURN_ACTION_CHECK),
             "--events",
@@ -1033,6 +1071,12 @@ def cmd_event(args: argparse.Namespace) -> int:
             str(payload.get("turn_id") or ""),
             "--max-age-seconds",
             "86400",
+            "--message",
+            str(payload.get("last_assistant_message") or ""),
+            "--intent-llm-policy",
+            os.environ.get("REDCAP_STOP_INTENT_LLM_POLICY", "auto"),
+            "--intent-timeout-seconds",
+            os.environ.get("REDCAP_STOP_INTENT_TIMEOUT_SECONDS", "20"),
         ])
         action_result, parse_error = parse_leading_json_object(action["stdout"])
         if parse_error is not None or action_result is None:
@@ -1060,18 +1104,18 @@ def cmd_event(args: argparse.Namespace) -> int:
             action_reason = action_result.get("reason")
             anchor_clause = stop_task_anchor_clause(action_result)
             reason = (
-                "RedCap Stop hook found a required RedCap prompt with no same-turn action evidence. "
-                "Do not close with explanation/status only; perform the concrete remediation, run the required checks, "
-                "or explicitly mark the task blocked with the blocking condition."
+                "RedCap（当前复活工程）Stop Hook（停止前检查）发现：必需处理的 RedCap 提示没有本轮动作证据。"
+                "不能只用解释或状态汇报收口；请执行具体修复、运行必需检查，"
+                "或明确标记为受阻并说明阻塞条件。"
             )
             if anchor_clause:
                 reason = f"{reason} {anchor_clause}"
             if isinstance(action_reason, str) and action_reason.strip():
-                reason = f"{reason} Action check reason: {action_reason}"
+                reason = f"{reason} 动作检查原因：{action_reason}"
             print(json.dumps({
                 "decision": "block",
                 "reason": reason,
-                "systemMessage": "RedCap required-prompt action evidence gate failed.",
+                "systemMessage": "RedCap（当前复活工程）必需提示动作证据门禁未通过。",
             }, ensure_ascii=False))
             return 0
         final_guard = run_command([
@@ -1104,21 +1148,61 @@ def cmd_event(args: argparse.Namespace) -> int:
         }, base_marker=marker)
         if final_guard["exit_code"] != 0 or final_guard_result.get("ok") is not True:
             reason = (
-                "RedCap Stop hook detected a final completion claim for a required RedCap prompt "
-                "without a fresh verified task-body lifecycle completion marker. Continue the turn: "
-                "either perform the task body and run lifecycle check with completion_claim.present=true, "
-                "or remove/narrow the completion claim."
+                "RedCap（当前复活工程）Stop Hook（停止前检查）发现：必需处理的 RedCap 提示带有最终完成声明，"
+                "但缺少本轮新鲜且已验证的任务主体生命周期完成标记。请继续本轮："
+                "要么完成任务主体并运行 completion_claim.present=true 的生命周期检查，"
+                "要么移除或收窄完成声明。"
             )
             anchor_clause = stop_task_anchor_clause(action_result)
             if anchor_clause:
                 reason = f"{reason} {anchor_clause}"
             guard_reason = final_guard_result.get("reason")
             if isinstance(guard_reason, str) and guard_reason.strip():
-                reason = f"{reason} Guard reason: {guard_reason}"
+                reason = f"{reason} 完成声明检查原因：{guard_reason}"
             print(json.dumps({
                 "decision": "block",
                 "reason": reason,
-                "systemMessage": "RedCap final completion claim guard failed.",
+                "systemMessage": "RedCap（当前复活工程）最终完成声明门禁未通过。",
+            }, ensure_ascii=False))
+            return 0
+        human_output = run_command([
+            sys.executable,
+            str(HUMAN_OUTPUT_POLICY),
+            "lint-text",
+            "--surface",
+            "assistant_reply",
+            "--source",
+            "last_assistant_message",
+            "--text",
+            str(payload.get("last_assistant_message") or ""),
+        ])
+        human_output_result, human_output_parse_error = parse_leading_json_object(human_output["stdout"])
+        if human_output_parse_error is not None or human_output_result is None:
+            human_output_result = {
+                "ok": False,
+                "reason": f"human-output guard returned invalid JSON: {human_output_parse_error}",
+                "exit_code": human_output["exit_code"],
+            }
+        marker = update_latest_marker("Stop", {
+            "human_output_guard_ok": bool(human_output_result.get("ok")),
+            "human_output_guard_failures": human_output_result.get("failures", []),
+            "human_output_guard_exit": human_output["exit_code"],
+            "human_output_guard_stdout_sha256": human_output["stdout_sha256"],
+            "human_output_guard_stderr_sha256": human_output["stderr_sha256"],
+        }, base_marker=marker)
+        if human_output["exit_code"] != 0 or human_output_result.get("ok") is not True:
+            failures = human_output_result.get("failures")
+            if isinstance(failures, list) and failures:
+                detail = "；".join(str(item) for item in failures[:3])
+            else:
+                detail = str(human_output_result.get("reason") or "未知原因")
+            print(json.dumps({
+                "decision": "block",
+                "reason": (
+                    "RedCap（当前复活工程）Stop Hook（停止前检查）发现最后回复不符合中文优先、"
+                    f"人类可读策略：{detail}。请改写为中文优先、必要术语带解释的回复。"
+                ),
+                "systemMessage": "RedCap（当前复活工程）中文可读输出门禁未通过。",
             }, ensure_ascii=False))
             return 0
         marker = update_latest_marker("Stop", {
@@ -1136,18 +1220,17 @@ def cmd_event(args: argparse.Namespace) -> int:
         if check["exit_code"] == 0:
             print(json.dumps({
                 "continue": True,
-                "systemMessage": "RedCap Stop hook check passed.",
+                "systemMessage": "RedCap（当前复活工程）Stop Hook（停止前检查）已通过。",
             }, ensure_ascii=False))
         else:
             reason = (
-                "RedCap Stop hook ran runtime/bin/redcap check and it failed. "
-                "Continue the turn, inspect the failing check output locally, fix the concrete issue, "
-                "then rerun runtime/bin/redcap check before completion."
+                "RedCap（当前复活工程）Stop Hook（停止前检查）运行 runtime/bin/redcap check 后失败。"
+                "请继续本轮，在本地查看失败检查、修复具体问题，并在收口前重新运行 runtime/bin/redcap check。"
             )
             print(json.dumps({
                 "decision": "block",
                 "reason": reason,
-                "systemMessage": f"RedCap Stop hook check failed with exit {marker['redcap_check_exit']}.",
+                "systemMessage": f"RedCap（当前复活工程）Stop Hook（停止前检查）失败，退出码 {marker['redcap_check_exit']}。",
             }, ensure_ascii=False))
     return 0
 
@@ -1190,9 +1273,11 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         failures.append("Prism raw JSON broad read was not blocked")
     if prism_raw_read_reason("cat assets/evidence/prism/run/kimi.raw.json", str(REPO_ROOT)) is None:
         failures.append("Prism raw cat read was not blocked")
-    if prism_raw_read_reason("rg -n provider runtime assets", str(REPO_ROOT)) is None:
+    if prism_raw_read_reason("rg -n provider runtime assets", str(REPO_ROOT)) is not None:
+        failures.append("broad repo diagnostic search over assets should not be blocked")
+    if prism_raw_read_reason("rg -n provider assets/evidence", str(REPO_ROOT)) is None:
         failures.append("Prism evidence ancestor rg search without raw exclusions was not blocked")
-    if prism_raw_read_reason("rg -n provider runtime assets -g '!*.raw.json' -g '!*.raw.meta.json'", str(REPO_ROOT)) is not None:
+    if prism_raw_read_reason("rg -n provider assets/evidence -g '!*.raw.json' -g '!*.raw.meta.json'", str(REPO_ROOT)) is not None:
         failures.append("Prism evidence ancestor rg search with raw exclusions should not be blocked")
     if prism_raw_read_reason(
         "python3 -c \"print(open('assets/evidence/prism/run/kimi.raw.json').read())\"",
@@ -1407,6 +1492,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 "source": "codex-hook-stop-anchor-self-check",
             },
             evidence_dir=evidence_dir,
+            extra_env={"REDCAP_STOP_HOOK_MODE": "enforce"},
         )
         if anchor_stop.returncode != 0:
             failures.append(f"anchor Stop failed: {anchor_stop.stderr or anchor_stop.stdout}")
@@ -1427,6 +1513,67 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             failures.append("anchor Stop marker is missing required_prompt_task_anchor")
         elif anchor.get("prompt_excerpt") != anchor_prompt_text:
             failures.append("anchor Stop marker task anchor does not preserve the original task excerpt")
+        observe_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-session",
+                "turn_id": "fixture-stop-anchor",
+                "last_assistant_message": "观察模式应该只放行，不执行阻断。",
+                "source": "codex-hook-stop-observe-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={"REDCAP_STOP_HOOK_MODE": "observe"},
+        )
+        if observe_stop.returncode != 0:
+            failures.append(f"observe Stop failed: {observe_stop.stderr or observe_stop.stdout}")
+        observe_payload, observe_error = parse_leading_json_object(observe_stop.stdout or "")
+        if observe_error is not None or not isinstance(observe_payload, dict):
+            failures.append(f"observe Stop did not emit JSON: {observe_error}")
+        elif observe_payload.get("continue") is not True:
+            failures.append("observe Stop should continue without blocking")
+        observe_marker = load_self_check_marker(evidence_dir, "Stop")
+        if observe_marker.get("stop_hook_mode") != "observe":
+            failures.append("observe Stop marker did not record observe mode")
+        human_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "请简单解释 Stop Hook 是什么。",
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-human-output-session",
+                "turn_id": "fixture-human-output-turn",
+                "source": "codex-hook-human-output-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if human_prompt.returncode != 0:
+            failures.append(f"human-output UserPromptSubmit failed: {human_prompt.stderr or human_prompt.stdout}")
+        human_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-human-output-session",
+                "turn_id": "fixture-human-output-turn",
+                "last_assistant_message": "This is an English-only answer about the hook behavior.",
+                "source": "codex-hook-human-output-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={"REDCAP_STOP_HOOK_MODE": "enforce"},
+        )
+        if human_stop.returncode != 0:
+            failures.append(f"human-output Stop failed: {human_stop.stderr or human_stop.stdout}")
+        human_stop_result, human_stop_error = parse_leading_json_object(human_stop.stdout or "")
+        if human_stop_error is not None or not isinstance(human_stop_result, dict):
+            failures.append(f"human-output Stop did not emit JSON: {human_stop_error}")
+        else:
+            reason = str(human_stop_result.get("reason") or "")
+            if human_stop_result.get("decision") != "block":
+                failures.append("human-output Stop fixture should block English-only final reply")
+            if "中文优先" not in reason:
+                failures.append("human-output Stop block reason should mention Chinese-first policy")
+        human_marker = load_self_check_marker(evidence_dir, "Stop")
+        if human_marker.get("human_output_guard_ok") is not False:
+            failures.append("human-output Stop marker should record failed human output guard")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     return 0 if not failures else 1
 
@@ -1437,6 +1584,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
         marker_name = "latest-PreToolUse-mutating.json"
     latest = EVIDENCE_DIR / marker_name
     failures: list[str] = []
+    notes: list[str] = []
     if not latest.exists():
         failures.append(f"missing live marker: {latest}")
     else:
@@ -1449,13 +1597,26 @@ def cmd_verify(args: argparse.Namespace) -> int:
             failures.append(f"marker event is not {args.event}")
         if args.require_gate_decision and not is_non_empty_string(marker.get("gate_decision")):
             failures.append("marker is missing gate_decision")
-        if args.require_stop_check_attempt and marker.get("redcap_check_attempted") is not True:
+        valid_stop_block_marker = is_valid_stop_block_marker(marker)
+        if (
+            args.require_stop_check_attempt
+            and marker.get("redcap_check_attempted") is not True
+            and not valid_stop_block_marker
+        ):
             failures.append("marker does not record a Stop redcap_check attempt")
         if args.require_check_result and not isinstance(marker.get("redcap_check_exit"), int):
             failures.append("marker is missing redcap_check_exit")
-        if args.require_action_check_ok and marker.get("required_prompt_action_ok") is not True:
+        if (
+            args.require_action_check_ok
+            and marker.get("required_prompt_action_ok") is not True
+            and not valid_stop_block_marker
+        ):
             failures.append("marker required_prompt_action_ok is not true")
-        if args.require_final_claim_guard and marker.get("final_claim_guard_ok") is not True:
+        if (
+            args.require_final_claim_guard
+            and marker.get("final_claim_guard_ok") is not True
+            and not valid_stop_block_marker
+        ):
             failures.append("marker final_claim_guard_ok is not true")
         if args.require_soul_load and marker.get("event") == "SessionStart":
             if marker.get("cap_soul_load_attempted") is not True:
@@ -1476,9 +1637,8 @@ def cmd_verify(args: argparse.Namespace) -> int:
             failures.append("marker session_id does not look like a real Codex session id")
         if marker.get("hook_config_sha256") != sha256_file(HOOKS_CONFIG):
             failures.append("marker hook_config_sha256 does not match current hooks.json")
-        if marker.get("adapter_sha256") != sha256_file(pathlib.Path(__file__).resolve()):
-            failures.append("marker adapter_sha256 does not match current adapter")
         recorded_at = marker.get("recorded_at")
+        recorded: dt.datetime | None = None
         try:
             recorded = dt.datetime.fromisoformat(str(recorded_at))
         except ValueError:
@@ -1487,9 +1647,39 @@ def cmd_verify(args: argparse.Namespace) -> int:
             age = dt.datetime.now(dt.timezone.utc) - recorded
             if age.total_seconds() > args.max_age_seconds:
                 failures.append(f"marker is stale: {int(age.total_seconds())}s old")
-    result = {"ok": not failures, "event": args.event, "failures": failures}
+        adapter_path = pathlib.Path(__file__).resolve()
+        adapter_hash_matches = marker.get("adapter_sha256") == sha256_file(adapter_path)
+        if not adapter_hash_matches and not valid_stop_block_marker:
+            adapter_changed_after_marker = False
+            if recorded is not None:
+                adapter_mtime = dt.datetime.fromtimestamp(adapter_path.stat().st_mtime, dt.timezone.utc)
+                adapter_changed_after_marker = adapter_mtime > recorded
+            if args.allow_adapter_change_after_marker and adapter_changed_after_marker:
+                notes.append("adapter changed after this live marker; waiting for the next real host hook refresh")
+            else:
+                failures.append("marker adapter_sha256 does not match current adapter")
+    result = {"ok": not failures, "event": args.event, "failures": failures, "notes": notes}
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if not failures else 1
+
+
+def is_valid_stop_block_marker(marker: dict[str, Any]) -> bool:
+    if marker.get("event") != "Stop":
+        return False
+    if marker.get("redcap_check_attempted") is True:
+        return False
+    anchor = marker.get("required_prompt_task_anchor")
+    if not isinstance(anchor, dict):
+        return False
+    if not is_non_empty_string(anchor.get("prompt_excerpt")):
+        return False
+    action_blocked = marker.get("required_prompt_action_ok") is False and is_non_empty_string(
+        marker.get("required_prompt_action_reason")
+    )
+    final_claim_blocked = marker.get("final_claim_guard_ok") is False and is_non_empty_string(
+        marker.get("final_claim_guard_reason")
+    )
+    return bool(action_blocked or final_claim_blocked)
 
 
 def is_non_empty_string(value: Any) -> bool:
@@ -1511,6 +1701,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--require-soul-load", action="store_true")
     parser.add_argument("--require-pre-tool-guard", action="store_true")
     parser.add_argument("--require-session-claim-attempt", action="store_true")
+    parser.add_argument("--allow-adapter-change-after-marker", action="store_true")
     return parser
 
 

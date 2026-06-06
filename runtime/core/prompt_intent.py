@@ -244,6 +244,13 @@ META_QUESTION_MARKERS = {
     "原因",
 }
 
+STATUS_CONFIRMATION_PATTERNS = [
+    r"(?:你|你们|cap|redcap|棱镜).{0,24}(?:是否|是不是|有没有|有无|是否已经|是不是已经|有没有已经|有).{0,24}(?:完成|修复|解决|处理|执行|落地|实现|做完|搞定)",
+    r"(?:是否|是不是|有没有|有无).{0,24}(?:完成|修复|解决|处理|执行|落地|实现|做完|搞定).{0,12}(?:了|了吗|了么|没有|没)",
+    r"(?:完成|修复|解决|处理|执行|落地|实现|做完|搞定).{0,12}(?:了吗|了么|了没有|了没|没有|没)",
+]
+STATUS_CONFIRMATION_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in STATUS_CONFIRMATION_PATTERNS]
+
 
 def normalize_prompt_text(value: str) -> str:
     return " ".join(value.casefold().split())
@@ -257,6 +264,12 @@ def prompt_requests_code_excerpt(normalized: str) -> bool:
     return (
         any(marker in normalized for marker in CODE_EXCERPT_REQUEST_MARKERS)
         and any(marker in normalized for marker in CODE_REFERENCE_MARKERS)
+    )
+
+
+def prompt_is_status_confirmation_question(prompt: str) -> bool:
+    return ("?" in prompt or "？" in prompt) and any(
+        pattern.search(prompt) for pattern in STATUS_CONFIRMATION_REGEXES
     )
 
 
@@ -280,6 +293,8 @@ def prompt_has_directive_authority(prompt: str) -> bool:
     normalized = normalize_prompt_text(prompt)
     directive_text = strip_quoted_spans(normalized)
     question_context = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
+    if prompt_is_status_confirmation_question(prompt):
+        return False
     for phrase in NEGATED_IMPLEMENTATION_PHRASES:
         directive_text = directive_text.replace(phrase, " ")
     for phrase in ANSWER_ONLY_EXECUTION_CONTEXT_PHRASES:

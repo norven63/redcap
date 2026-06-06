@@ -12,6 +12,7 @@ import argparse
 import datetime as dt
 import fnmatch
 import json
+import os
 import pathlib
 import re
 import shlex
@@ -1197,6 +1198,11 @@ def cmd_check(_: argparse.Namespace) -> int:
             "answer_only",
             "none",
         ),
+        (
+            "所以，你有详细的设计方案并去执行落地了吗？",
+            "answer_only",
+            "none",
+        ),
     ]
     for prompt, expected_scope, expected_evidence in prompt_intent_cases:
         intent = classify_prompt_intent(prompt)
@@ -1280,6 +1286,71 @@ def cmd_check(_: argparse.Namespace) -> int:
         raise SystemExit("required prompt with git read-only evidence should fail turn-action-check")
     if "no same-turn PostToolUse substantive action evidence" not in git_read_only_turn_action.stdout:
         raise SystemExit("git read-only turn action fixture did not fail for the expected missing substantive action reason")
+    semantic_status_env = os.environ.copy()
+    semantic_status_env["REDCAP_INTENT_JUDGE_FAKE_RESPONSE"] = json.dumps({
+        "prompt_kind": "question",
+        "authorized_scope": "review_only",
+        "action_evidence": "diagnostic",
+        "confidence": "high",
+        "reason": "fixture confirms status question only needs diagnostic evidence",
+    }, ensure_ascii=False)
+    semantic_status_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-status-question-diagnostic.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-status-question-diagnostic",
+            "--message",
+            "核查结果：当前只有局部补丁，尚无完整方案落地。",
+            "--intent-timeout-seconds",
+            "1",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=semantic_status_env,
+    )
+    if semantic_status_turn_action.returncode != 0:
+        if semantic_status_turn_action.stdout:
+            print(semantic_status_turn_action.stdout.rstrip())
+        if semantic_status_turn_action.stderr:
+            print(semantic_status_turn_action.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("stored implementation misclassification should be relaxable by semantic diagnostic review")
+    semantic_status_payload = json.loads(semantic_status_turn_action.stdout.split("REDCAP_TURN_ACTION_OK")[0])
+    if semantic_status_payload.get("action_evidence_policy") != "diagnostic":
+        raise SystemExit("semantic status fixture did not switch action evidence policy to diagnostic")
+    if not isinstance(semantic_status_payload.get("semantic_judge"), dict):
+        raise SystemExit("semantic status fixture did not record semantic_judge evidence")
+    explicit_blocked_turn_action = subprocess.run(
+        [
+            str(ROOT / "bin" / "turn-action-check"),
+            "--events",
+            str(ROOT / "examples" / "turn-action-required-explicit-blocked.jsonl"),
+            "--session-id",
+            "fixture-session",
+            "--turn-id",
+            "fixture-explicit-blocked",
+            "--message",
+            "阻塞条件：缺少可用的 provider 评审结果，继续实现会绕过用户要求的棱镜评审。",
+            "--intent-llm-policy",
+            "off",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if explicit_blocked_turn_action.returncode != 0:
+        if explicit_blocked_turn_action.stdout:
+            print(explicit_blocked_turn_action.stdout.rstrip())
+        if explicit_blocked_turn_action.stderr:
+            print(explicit_blocked_turn_action.stderr.rstrip(), file=sys.stderr)
+        raise SystemExit("explicit blocked statement should be accepted as a recovery exit")
+    explicit_blocked_payload = json.loads(explicit_blocked_turn_action.stdout.split("REDCAP_TURN_ACTION_OK")[0])
+    if explicit_blocked_payload.get("blocked_statement") is not True:
+        raise SystemExit("explicit blocked fixture did not record blocked_statement=true")
     answer_only_turn_action = subprocess.run(
         [
             str(ROOT / "bin" / "turn-action-check"),
@@ -1780,6 +1851,7 @@ def cmd_session_init(args: argparse.Namespace) -> int:
         "status": "active",
         "max_rounds_per_provider": args.max_rounds,
         "created_at": now,
+        "task_started_at": now,
         "updated_at": now,
         "providers": {
             provider: {

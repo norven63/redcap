@@ -1,0 +1,74 @@
+{
+  "schema_id": "redcap-stop-hook-semantic-adjudication-contract",
+  "version": 1,
+  "purpose": "Stop hook 在阻断前用结构化方式判断用户提示是否真的要求实质动作，避免用关键词误伤追问、状态盘点和诊断回复。",
+  "decision_order": [
+    "读取 UserPromptSubmit 存储的 prompt_intent。",
+    "统计同一 turn 的 substantive actions 和 diagnostic actions。",
+    "如果最后回复包含结构化阻塞声明，允许退出，但后续不得声称任务完成。",
+    "如果存储意图要求 substantive、同 turn 没有 substantive action，且提示文本存在追问、诊断动作或 fresh deterministic intent 冲突，则调用 intent_judge 做一次语义复核。",
+    "语义复核只能返回结构化 intent；turn-action-check 仍是最终裁决方。",
+    "语义复核为 answer_only 或 review_only 且 confidence 不是 low 时，按 none 或 diagnostic 证据策略收口。",
+    "语义复核超时、无效、低置信度且没有安全 fresh deterministic fallback 时，保持原阻断。",
+    "final-claim guard 继续独立阻断没有生命周期 marker 的完成声明。"
+  ],
+  "intent_judge_input": {
+    "user_prompt": "单条用户提示文本，不传完整会话和大段 stdout。",
+    "stored_intent": "UserPromptSubmit marker 中已有的 prompt_intent。",
+    "fresh_deterministic_intent": "用当前 prompt_text 重新计算出的确定性意图。",
+    "same_turn_evidence_summary": [
+      "substantive action count",
+      "diagnostic action count",
+      "tool names"
+    ]
+  },
+  "intent_judge_output": {
+    "prompt_kind": "question|directive|mixed",
+    "authorized_scope": "answer_only|review_only|implementation|completion",
+    "action_evidence": "none|diagnostic|substantive",
+    "confidence": "low|medium|high",
+    "reason": "中文优先的简短原因"
+  },
+  "timeout_policy": {
+    "max_llm_calls_per_stop_check": 1,
+    "default_timeout_seconds": 20,
+    "invalid_or_timeout": "保持原阻断，除非 fresh deterministic intent 能明确降级为 none 或 diagnostic。",
+    "low_confidence": "不采用 LLM 降级结果。"
+  },
+  "blocked_statement_contract": {
+    "accepted_markers": [
+      "阻塞条件：",
+      "阻塞条件:",
+      "Blocked:",
+      "Blocker:"
+    ],
+    "minimum_tail_chars": 8,
+    "meaning": "只表示当前任务无法继续执行；不等于完成。"
+  },
+  "historical_replay_cases": [
+    {
+      "prompt": "所以，你有详细的设计方案并去执行落地了吗？",
+      "old_wrong_behavior": "存储意图被判成 implementation/substantive，Stop 要求实质动作并反复拦截回答。",
+      "expected_behavior": "识别为状态追问；有诊断证据时允许回答，不允许声称完成。",
+      "fixture": "runtime/prism/examples/turn-action-required-status-question-diagnostic.jsonl"
+    },
+    {
+      "prompt": "请修复 Stop hook 恢复循环并重新启用阻断。",
+      "old_wrong_behavior": "恢复提示说可以标记阻塞，但 turn-action-check 不读取最后回复，导致无法退出。",
+      "expected_behavior": "最后回复含“阻塞条件：...”时允许退出，并把 blocked_statement=true 写入结果。",
+      "fixture": "runtime/prism/examples/turn-action-required-explicit-blocked.jsonl"
+    },
+    {
+      "prompt": "历史旧夹具缺少 prompt 文本，只保留 required gate 和 read-only evidence。",
+      "old_wrong_behavior": "新 fallback 曾错误把空 prompt 重算成 answer_only 并放行。",
+      "expected_behavior": "缺少 prompt 文本时保持 implementation/substantive 保守阻断。",
+      "fixture": "runtime/prism/examples/turn-action-required-read-only.jsonl"
+    }
+  ],
+  "verification": [
+    "runtime/prism/bin/turn-action-check --events runtime/prism/examples/turn-action-required-status-question-diagnostic.jsonl --session-id fixture-session --turn-id fixture-status-question-diagnostic",
+    "runtime/prism/bin/turn-action-check --events runtime/prism/examples/turn-action-required-explicit-blocked.jsonl --session-id fixture-session --turn-id fixture-explicit-blocked",
+    "runtime/prism/bin/prism check",
+    "runtime/bin/redcap check"
+  ]
+}

@@ -13,6 +13,7 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 HOOKS_CONFIG = REPO_ROOT / ".codex" / "hooks.json"
+HOOKS_TEMPLATE = REPO_ROOT / "assets" / "contracts" / "codex-hooks.template.json"
 CODEX_ADAPTER = "runtime/host-adapters/codex/codex-hook.py"
 REQUIRED_CODEX_EVENTS = {
     "SessionStart",
@@ -49,6 +50,16 @@ def hook_commands(config: dict[str, Any], event: str) -> list[str]:
     return commands
 
 
+def normalize_hook_config(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): normalize_hook_config(item) for key, item in sorted(value.items())}
+    if isinstance(value, list):
+        return [normalize_hook_config(item) for item in value]
+    if isinstance(value, str):
+        return value.replace(str(REPO_ROOT), "{REPO_ROOT}")
+    return value
+
+
 def run(argv: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(argv, cwd=str(REPO_ROOT), check=False, capture_output=True, text=True)
 
@@ -56,6 +67,11 @@ def run(argv: list[str]) -> subprocess.CompletedProcess[str]:
 def main() -> int:
     failures: list[str] = []
     config = load_json(HOOKS_CONFIG)
+    template = load_json(HOOKS_TEMPLATE)
+    live_normalized = normalize_hook_config(config)
+    template_normalized = normalize_hook_config(template)
+    if live_normalized != template_normalized:
+        failures.append("live .codex/hooks.json does not match tracked assets/contracts/codex-hooks.template.json")
     deployed: dict[str, bool] = {}
     for event in sorted(REQUIRED_CODEX_EVENTS):
         commands = hook_commands(config, event)
@@ -82,6 +98,11 @@ def main() -> int:
     result = {
         "ok": not failures,
         "codex_hooks": deployed,
+        "codex_hook_template": {
+            "template_path": str(HOOKS_TEMPLATE.relative_to(REPO_ROOT)),
+            "live_path": str(HOOKS_CONFIG.relative_to(REPO_ROOT)),
+            "matches": live_normalized == template_normalized,
+        },
         "provider_call_interception": {
             "mode": "dispatcher-enforced",
             "providers": sorted(provider_cli),

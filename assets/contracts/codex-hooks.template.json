@@ -1,0 +1,67 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"{REPO_ROOT}/runtime/host-adapters/codex/codex-hook.py\" --event SessionStart",
+            "timeout": 10,
+            "statusMessage": "Recording RedCap host hook live marker"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"{REPO_ROOT}/runtime/host-adapters/codex/codex-hook.py\" --event UserPromptSubmit",
+            "timeout": 10,
+            "statusMessage": "Running RedCap prompt gate"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"{REPO_ROOT}/runtime/host-adapters/codex/codex-hook.py\" --event PreToolUse",
+            "timeout": 120,
+            "statusMessage": "Running RedCap pre-tool guard"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"{REPO_ROOT}/runtime/host-adapters/codex/codex-hook.py\" --event PostToolUse",
+            "timeout": 10,
+            "statusMessage": "Recording RedCap action evidence"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env REDCAP_STOP_HOOK_MODE=enforce REDCAP_STOP_INTENT_LLM_POLICY=auto REDCAP_STOP_INTENT_TIMEOUT_SECONDS=20 /usr/bin/python3 \"{REPO_ROOT}/runtime/host-adapters/codex/codex-hook.py\" --event Stop",
+            "timeout": 60,
+            "statusMessage": "Running RedCap closeout check"
+          }
+        ]
+      }
+    ]
+  }
+}

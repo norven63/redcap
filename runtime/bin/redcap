@@ -26,6 +26,8 @@ Usage:
   runtime/bin/redcap prism-resolution [...]
   runtime/bin/redcap prism-rebuttal-request [...]
   runtime/bin/redcap prism-ledger [...]
+  runtime/bin/redcap task-facts record|summary|check|self-check [...]
+  runtime/bin/redcap human-output check|self-check|lint-text|lint-file [...]
   runtime/bin/redcap prism-shard [...]
   runtime/bin/redcap intent-judge classify|self-check [...]
   runtime/bin/redcap soul-load check|load|self-check [...]
@@ -63,6 +65,8 @@ Commands:
   prism-rebuttal-request
                 Generate a bounded same-provider rebuttal request for a rejected concern.
   prism-ledger  Record and summarize Prism task execution health.
+  task-facts    Record and summarize RedCap task fact status.
+  human-output  Check Chinese-first human-facing output policy.
   prism-shard   Validate and merge bounded Prism long-task shard accounts.
   intent-judge  Classify prompt intent with deterministic rules and bounded Prism LLM fallback.
   soul-load     Load or verify Cap identity sources without leaking private text.
@@ -147,6 +151,12 @@ case "$cmd" in
   prism-ledger)
     exec "$REPO_ROOT/runtime/prism/bin/prism-ledger" "$@"
     ;;
+  task-facts)
+    exec python3 "$REPO_ROOT/runtime/core/task_facts.py" "$@"
+    ;;
+  human-output)
+    exec python3 "$REPO_ROOT/runtime/core/human_output_policy.py" "$@"
+    ;;
   prism-shard)
     exec python3 "$REPO_ROOT/runtime/prism/bin/prism-shard" "$@"
     ;;
@@ -166,10 +176,16 @@ case "$cmd" in
     "$PRISM" check
     "$REPO_ROOT/runtime/bin/redcap" prism-resolution --self-check
     "$REPO_ROOT/runtime/bin/redcap" prism-shard self-check
+    "$REPO_ROOT/runtime/bin/redcap" task-facts self-check
+    "$REPO_ROOT/runtime/bin/redcap" task-facts check
+    "$REPO_ROOT/runtime/bin/redcap" human-output check
+    "$REPO_ROOT/runtime/bin/redcap" human-output self-check
     "$REPO_ROOT/runtime/bin/redcap" session-ownership self-check
     "$REPO_ROOT/runtime/bin/redcap" intent-judge self-check
     python3 "$REPO_ROOT/runtime/host-adapters/codex/codex-hook.py" --self-check-intent-judge
     "$REPO_ROOT/runtime/bin/redcap" host-hook-audit
+    "$REPO_ROOT/runtime/bin/redcap" prism-dispatch --timeout-policy-check
+    python3 "$REPO_ROOT/runtime/prism/bin/prism-dispatch-timeout-e2e"
     "$REPO_ROOT/runtime/bin/redcap" boundary check
     "$REPO_ROOT/runtime/bin/redcap" boundary self-check
     "$REPO_ROOT/runtime/bin/redcap" archaeology check
