@@ -43,7 +43,37 @@ INTENT_JUDGE_FAKE_DELAY_SECONDS = os.environ.get("REDCAP_INTENT_JUDGE_FAKE_DELAY
 MAX_GATE_PROMPT_CHARS = 12000
 MAX_TEXT_EVIDENCE_CHARS = 12000
 PROTECTED_EVIDENCE_ROOT = (REPO_ROOT / "assets" / "evidence").resolve()
+PROTECTED_PRISM_EVIDENCE_ROOT = (REPO_ROOT / "assets" / "evidence" / "prism").resolve()
 PROTECTED_EVIDENCE_PATH_PATTERN = r"['\"]?(?:\./)?(?:assets/evidence/|[^'\"\s;|&]*?/assets/evidence/)"
+BROAD_RAW_READ_COMMANDS = {
+    "awk",
+    "bat",
+    "batcat",
+    "cat",
+    "grep",
+    "head",
+    "jq",
+    "less",
+    "more",
+    "node",
+    "perl",
+    "python",
+    "python3",
+    "rg",
+    "ruby",
+    "sed",
+    "tail",
+}
+PRISM_RAW_PATH_REGEX = re.compile(
+    r"(?:assets/evidence/prism/|[^'\"\s;|&()]*?/assets/evidence/prism/)[^'\"\s;|&()]*\.raw\.json\b"
+)
+PRISM_RAW_META_PATH_REGEX = re.compile(
+    r"(?:assets/evidence/prism/|[^'\"\s;|&()]*?/assets/evidence/prism/)[^'\"\s;|&()]*\.raw\.meta\.json\b"
+)
+PRISM_RAW_READ_BLOCK_REASON = (
+    "Broad reads of Prism raw provider output are blocked; run prism-dispatch --verify-raw-meta "
+    "to get a verified small metadata summary."
+)
 SHELL_REDIRECT_TOKENS = {
     ">",
     ">>",
@@ -275,6 +305,148 @@ def path_value_under_protected_evidence(value: str, cwd: str | None = None) -> b
     return is_under(candidate, PROTECTED_EVIDENCE_ROOT)
 
 
+def path_value_is_prism_raw(value: str, cwd: str | None = None) -> bool:
+    if not value or ".raw.meta.json" in value:
+        return False
+    expanded = expand_shell_path_value(value, cwd)
+    if any(char in expanded for char in "*?[]"):
+        normalized = expanded.replace("\\", "/")
+        return "assets/evidence/prism/" in normalized and normalized.endswith(".raw.json")
+    candidate = pathlib.Path(expanded)
+    if not candidate.is_absolute():
+        candidate = pathlib.Path(cwd if cwd else REPO_ROOT) / candidate
+    return candidate.name.endswith(".raw.json") and is_under(candidate, PROTECTED_PRISM_EVIDENCE_ROOT)
+
+
+def path_value_is_prism_raw_meta(value: str, cwd: str | None = None) -> bool:
+    if not value:
+        return False
+    expanded = expand_shell_path_value(value, cwd)
+    if any(char in expanded for char in "*?[]"):
+        normalized = expanded.replace("\\", "/")
+        return "assets/evidence/prism/" in normalized and normalized.endswith(".raw.meta.json")
+    candidate = pathlib.Path(expanded)
+    if not candidate.is_absolute():
+        candidate = pathlib.Path(cwd if cwd else REPO_ROOT) / candidate
+    return candidate.name.endswith(".raw.meta.json") and is_under(candidate, PROTECTED_PRISM_EVIDENCE_ROOT)
+
+
+def any_prism_raw_path(tokens: list[str], start: int = 0, cwd: str | None = None) -> bool:
+    for token in tokens[start:]:
+        if token in {";", "|", "||", "&&"}:
+            break
+        if token.startswith("-"):
+            continue
+        if path_value_is_prism_raw(token, cwd):
+            return True
+    return False
+
+
+def any_prism_raw_meta_path(tokens: list[str], start: int = 0, cwd: str | None = None) -> bool:
+    for token in tokens[start:]:
+        if token in {";", "|", "||", "&&"}:
+            break
+        if token.startswith("-"):
+            continue
+        if path_value_is_prism_raw_meta(token, cwd):
+            return True
+    return False
+
+
+def path_value_intersects_prism_evidence(value: str, cwd: str | None = None) -> bool:
+    if not value:
+        return False
+    expanded = expand_shell_path_value(value, cwd)
+    if any(char in expanded for char in "*?[]"):
+        normalized = expanded.replace("\\", "/")
+        return "assets/evidence/prism" in normalized or "assets/evidence" in normalized or normalized.endswith("assets")
+    candidate = pathlib.Path(expanded)
+    if not candidate.is_absolute():
+        candidate = pathlib.Path(cwd if cwd else REPO_ROOT) / candidate
+    try:
+        resolved = candidate.resolve()
+        prism = PROTECTED_PRISM_EVIDENCE_ROOT.resolve()
+        resolved.relative_to(prism)
+        return True
+    except ValueError:
+        pass
+    try:
+        prism.relative_to(resolved)
+        return True
+    except ValueError:
+        return False
+
+
+def search_command_excludes_prism_raw(command: str) -> bool:
+    normalized = command.replace('"', "'")
+    return (
+        ("!*.raw.json" in normalized or "!**/*.raw.json" in normalized)
+        and ("!*.raw.meta.json" in normalized or "!**/*.raw.meta.json" in normalized)
+    )
+
+
+def search_over_prism_evidence_without_raw_exclusion(tokens: list[str], index: int, command: str, cwd: str | None) -> bool:
+    if search_command_excludes_prism_raw(command):
+        return False
+    for token in tokens[index + 1 :]:
+        if token in {";", "|", "||", "&&"}:
+            break
+        if token.startswith("-"):
+            continue
+        if path_value_intersects_prism_evidence(token, cwd):
+            return True
+    return False
+
+
+def command_contains_prism_raw_hint(command: str) -> bool:
+    normalized = command.replace("\\", "/")
+    return ".raw.json" in normalized and all(part in normalized for part in ["assets", "evidence", "prism"])
+
+
+def command_contains_prism_raw_meta_hint(command: str) -> bool:
+    normalized = command.replace("\\", "/")
+    return ".raw.meta.json" in normalized and all(part in normalized for part in ["assets", "evidence", "prism"])
+
+
+def prism_raw_read_reason(command: str, cwd: str | None = None) -> str | None:
+    if "--verify-raw-meta" in command:
+        return None
+    tokens = shell_tokens(command)
+    if not tokens:
+        if PRISM_RAW_PATH_REGEX.search(command) or PRISM_RAW_META_PATH_REGEX.search(command):
+            return PRISM_RAW_READ_BLOCK_REASON
+        return None
+    for index, token in enumerate(tokens):
+        name = command_name(token)
+        if name in {"rg", "grep"} and search_over_prism_evidence_without_raw_exclusion(tokens, index, command, cwd):
+            return PRISM_RAW_READ_BLOCK_REASON
+        if name in BROAD_RAW_READ_COMMANDS and any_prism_raw_path(tokens, index + 1, cwd):
+            return PRISM_RAW_READ_BLOCK_REASON
+        if name in BROAD_RAW_READ_COMMANDS and any_prism_raw_meta_path(tokens, index + 1, cwd):
+            return PRISM_RAW_READ_BLOCK_REASON
+        if name in BROAD_RAW_READ_COMMANDS and PRISM_RAW_PATH_REGEX.search(command):
+            return PRISM_RAW_READ_BLOCK_REASON
+        if name in BROAD_RAW_READ_COMMANDS and PRISM_RAW_META_PATH_REGEX.search(command):
+            return PRISM_RAW_READ_BLOCK_REASON
+        if name in BROAD_RAW_READ_COMMANDS and command_contains_prism_raw_hint(command):
+            return PRISM_RAW_READ_BLOCK_REASON
+        if name in BROAD_RAW_READ_COMMANDS and command_contains_prism_raw_meta_hint(command):
+            return PRISM_RAW_READ_BLOCK_REASON
+    return None
+
+
+def protected_prism_raw_read_reason(payload: dict[str, Any]) -> str | None:
+    tool_name = str(payload.get("tool_name") or "")
+    if tool_name not in {"Read", "Open", "View"}:
+        return None
+    for raw_path in iter_tool_paths(payload.get("tool_input")):
+        if path_value_is_prism_raw(raw_path, payload.get("cwd") if isinstance(payload.get("cwd"), str) else None):
+            return "Direct host reads of Prism raw provider output are blocked; run prism-dispatch --verify-raw-meta."
+        if path_value_is_prism_raw_meta(raw_path, payload.get("cwd") if isinstance(payload.get("cwd"), str) else None):
+            return "Direct host reads of Prism raw metadata are blocked; run prism-dispatch --verify-raw-meta."
+    return None
+
+
 def any_protected_evidence_path(tokens: list[str], start: int = 0, cwd: str | None = None) -> bool:
     for token in tokens[start:]:
         if token in {";", "|", "||", "&&"}:
@@ -384,7 +556,7 @@ def dangerous_command_reason(command: str, cwd: str | None = None) -> str | None
     for pattern, reason in checks:
         if re.search(pattern, command):
             return reason
-    return shell_evidence_write_reason(command, cwd)
+    return prism_raw_read_reason(command, cwd) or shell_evidence_write_reason(command, cwd)
 
 
 def iter_tool_paths(value: Any) -> list[str]:
@@ -816,6 +988,7 @@ def cmd_event(args: argparse.Namespace) -> int:
         deny_reason = (
             dangerous_command_reason(command, cwd)
             or protected_evidence_write_reason(payload)
+            or protected_prism_raw_read_reason(payload)
             or intent_deny_reason
         )
         claim = pre_tool_claim(payload, marker, command)
@@ -1013,6 +1186,45 @@ def load_self_check_marker(evidence_dir: pathlib.Path, event: str) -> dict[str, 
 
 def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
     failures: list[str] = []
+    if prism_raw_read_reason("python3 -m json.tool assets/evidence/prism/run/kimi.raw.json", str(REPO_ROOT)) is None:
+        failures.append("Prism raw JSON broad read was not blocked")
+    if prism_raw_read_reason("cat assets/evidence/prism/run/kimi.raw.json", str(REPO_ROOT)) is None:
+        failures.append("Prism raw cat read was not blocked")
+    if prism_raw_read_reason("rg -n provider runtime assets", str(REPO_ROOT)) is None:
+        failures.append("Prism evidence ancestor rg search without raw exclusions was not blocked")
+    if prism_raw_read_reason("rg -n provider runtime assets -g '!*.raw.json' -g '!*.raw.meta.json'", str(REPO_ROOT)) is not None:
+        failures.append("Prism evidence ancestor rg search with raw exclusions should not be blocked")
+    if prism_raw_read_reason(
+        "python3 -c \"print(open('assets/evidence/prism/run/kimi.raw.json').read())\"",
+        str(REPO_ROOT),
+    ) is None:
+        failures.append("Prism raw python -c read was not blocked")
+    if prism_raw_read_reason(
+        "python3 -c \"print(open('assets/' + 'evidence/prism/run/kimi.raw.json').read())\"",
+        str(REPO_ROOT),
+    ) is None:
+        failures.append("Prism raw python -c concatenated path read was not blocked")
+    if prism_raw_read_reason(
+        "runtime/prism/bin/prism-dispatch --verify-raw-meta --raw-out assets/evidence/prism/run/kimi.raw.json",
+        str(REPO_ROOT),
+    ) is not None:
+        failures.append("Prism raw metadata verifier should not be blocked")
+    if prism_raw_read_reason("cat assets/evidence/prism/run/kimi.raw.meta.json", str(REPO_ROOT)) is None:
+        failures.append("Prism raw metadata direct read should be blocked")
+    read_reason = protected_prism_raw_read_reason({
+        "cwd": str(REPO_ROOT),
+        "tool_name": "Read",
+        "tool_input": {"path": "assets/evidence/prism/run/kimi.raw.json"},
+    })
+    if read_reason is None:
+        failures.append("Prism raw host Read tool path was not blocked")
+    read_meta_reason = protected_prism_raw_read_reason({
+        "cwd": str(REPO_ROOT),
+        "tool_name": "Read",
+        "tool_input": {"path": "assets/evidence/prism/run/kimi.raw.meta.json"},
+    })
+    if read_meta_reason is None:
+        failures.append("Prism raw metadata host Read tool path was not blocked")
     with tempfile.TemporaryDirectory(prefix="redcap-codex-hook-intent-") as raw_tmp:
         evidence_dir = pathlib.Path(raw_tmp)
         prompt_payload = {

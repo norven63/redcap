@@ -84,11 +84,12 @@
       "paths": [
         "runtime/prism/docs",
         "runtime/prism/examples",
+        "runtime/prism/provider-agents",
         "runtime/prism/prompts",
         "runtime/prism/rules",
         "runtime/prism/schemas"
       ],
-      "reason": "Non-code material consumed by runtime behavior: prompts, rules, schemas, examples, and local protocol docs."
+      "reason": "Non-code material consumed by runtime behavior: prompts, provider agent specs, rules, schemas, examples, and local protocol docs."
     },
     "archaeology_archive_assets": {
       "paths": [
@@ -272,6 +273,16 @@
       "recursive": true,
       "allowed_extensions": [
         ".py"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/prism/provider-agents",
+      "role": "runtime_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".yaml",
+        ".yml"
       ],
       "deny_executable_bits": true
     },

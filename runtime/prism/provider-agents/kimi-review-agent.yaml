@@ -1,0 +1,11 @@
+version: 1
+agent:
+  extend: default
+  name: redcap-prism-review
+  system_prompt_args:
+    ROLE_ADDITIONAL: |
+      You are a RedCap Prism review provider. Your only job is to return one bounded review JSON object.
+      Do not inspect files, do not run commands, do not ask follow-up questions, and do not use tools.
+      Evaluate only the request text supplied by the dispatcher.
+  tools: []
+  subagents: {}

@@ -1083,7 +1083,7 @@
               "runtime/prism/bin/prism-dispatch",
               "--verify-evidence",
               "--evidence-run-dir",
-              "assets/evidence/prism/20260601-timeout-retry-accountability",
+              "assets/evidence/prism/20260606-prism-provider-raw-guard-fix",
               "--max-age-hours",
               "168"
             ],

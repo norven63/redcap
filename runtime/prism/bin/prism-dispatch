@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import ast
+import hashlib
 import json
 import os
 import pathlib
@@ -20,11 +22,13 @@ from typing import Any
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT.parents[1]
 PRISM = ROOT / "bin" / "prism"
+KIMI_REVIEW_AGENT_FILE = ROOT / "provider-agents" / "kimi-review-agent.yaml"
 ALLOWED_PROVIDERS = {"kimi", "claude-code"}
 DEFAULT_TIMEOUT_SECONDS = 300
 DEFAULT_MAX_RETRIES = 5
 TIMEOUT_KILL_GRACE_SECONDS = 0.5
 DEFAULT_TOTAL_TIMEOUT_MULTIPLIER = 1.0
+CLAUDE_DISALLOWED_TOOLS = "Bash,Edit,Write,MultiEdit,Read,Glob,Grep,LS,Task,TodoWrite,NotebookEdit,WebFetch,WebSearch"
 REQUIRED_REVIEW_KEYS = {
     "provider",
     "verdict",
@@ -37,6 +41,29 @@ REQUIRED_REVIEW_KEYS = {
     "anti_loop_signal",
     "user_intent_alignment",
 }
+RAW_META_SCHEMA_ID = "prism-provider-raw-metadata"
+
+
+REVIEW_JSON_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "provider": {"type": "string", "enum": ["kimi", "claude-code"]},
+        "verdict": {"type": "string", "enum": ["pass", "concern", "block"]},
+        "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+        "reality_delta": {"type": "string"},
+        "main_concern": {"type": "string"},
+        "top_risks": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
+        "missing_evidence": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
+        "minimum_fix": {"type": "string"},
+        "anti_loop_signal": {"type": "object"},
+        "user_intent_alignment": {"type": "string", "enum": ["aligned", "unclear", "drifting", "misaligned"]},
+    },
+    "required": sorted(REQUIRED_REVIEW_KEYS),
+}
+
+
+def review_json_schema_arg() -> str:
+    return json.dumps(REVIEW_JSON_SCHEMA, ensure_ascii=False, separators=(",", ":"))
 
 
 def load_json(path: pathlib.Path) -> Any:
@@ -44,6 +71,159 @@ def load_json(path: pathlib.Path) -> Any:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise SystemExit(f"invalid json: {path}: {exc}") from exc
+
+
+def sha256_file(path: pathlib.Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def raw_meta_path(raw_out: pathlib.Path) -> pathlib.Path:
+    if raw_out.name.endswith(".raw.json"):
+        return raw_out.with_name(raw_out.name[:-len(".raw.json")] + ".raw.meta.json")
+    if raw_out.name.endswith(".raw.txt"):
+        return raw_out.with_name(raw_out.name[:-len(".raw.txt")] + ".raw.meta.json")
+    return raw_out.with_name(raw_out.name + ".meta.json")
+
+
+def stream_size(value: Any) -> int:
+    return len(output_text(value).encode("utf-8"))
+
+
+def attempts_summary(attempts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    summary: list[dict[str, Any]] = []
+    for attempt in attempts:
+        summary.append({
+            "attempt": attempt.get("attempt"),
+            "exit_code": attempt.get("exit_code"),
+            "timed_out": attempt.get("timed_out") is True,
+            "timeout_scope": attempt.get("timeout_scope"),
+            "stdout_bytes": stream_size(attempt.get("stdout")),
+            "stderr_bytes": stream_size(attempt.get("stderr")),
+            "captured_session_handle": attempt.get("captured_session_handle"),
+            "recovery": attempt.get("recovery"),
+        })
+    return summary
+
+
+def write_json_file(path: pathlib.Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def raw_metadata_payload(
+    raw_out: pathlib.Path,
+    raw_payload: dict[str, Any],
+    provider: str,
+    *,
+    raw_kind: str,
+    review_path: pathlib.Path | None = None,
+) -> dict[str, Any]:
+    attempts = raw_payload.get("attempts")
+    if not isinstance(attempts, list):
+        attempts = []
+    timed_out = any(isinstance(attempt, dict) and attempt.get("timed_out") is True for attempt in attempts)
+    return {
+        "schema_id": RAW_META_SCHEMA_ID,
+        "provider": provider,
+        "raw_kind": raw_kind,
+        "raw_path": str(raw_out),
+        "raw_size_bytes": raw_out.stat().st_size,
+        "raw_sha256": sha256_file(raw_out),
+        "exit_code": raw_payload.get("exit_code"),
+        "timed_out": timed_out,
+        "timeout_seconds": raw_payload.get("timeout_seconds"),
+        "total_timeout_seconds": raw_payload.get("total_timeout_seconds"),
+        "max_retries": raw_payload.get("max_retries"),
+        "attempts_count": len(attempts),
+        "attempts": attempts_summary([attempt for attempt in attempts if isinstance(attempt, dict)]),
+        "review_path": str(review_path) if review_path is not None else None,
+    }
+
+
+def write_raw_and_meta(
+    raw_out: pathlib.Path,
+    raw_payload: dict[str, Any],
+    provider: str,
+    *,
+    raw_kind: str,
+    review_path: pathlib.Path | None = None,
+) -> dict[str, Any]:
+    raw_out.parent.mkdir(parents=True, exist_ok=True)
+    write_json_file(raw_out, raw_payload)
+    meta_payload = raw_metadata_payload(raw_out, raw_payload, provider, raw_kind=raw_kind, review_path=review_path)
+    meta_path = raw_meta_path(raw_out)
+    write_json_file(meta_path, meta_payload)
+    ok, failures, _ = verify_raw_meta(meta_path)
+    if not ok:
+        raise SystemExit(json.dumps({
+            "ok": False,
+            "stage": "raw-meta-write",
+            "provider": provider,
+            "raw_path": str(raw_out),
+            "meta_path": str(meta_path),
+            "failures": failures,
+        }, ensure_ascii=False))
+    return meta_payload
+
+
+def verify_raw_meta(meta_path: pathlib.Path) -> tuple[bool, list[str], dict[str, Any]]:
+    failures: list[str] = []
+    if not meta_path.exists():
+        return False, ["raw metadata file does not exist"], {}
+    meta = load_json(meta_path)
+    if not isinstance(meta, dict):
+        return False, ["raw metadata must be a JSON object"], {}
+    if meta.get("schema_id") != RAW_META_SCHEMA_ID:
+        failures.append(f"schema_id must be {RAW_META_SCHEMA_ID}")
+    raw_value = meta.get("raw_path")
+    if not isinstance(raw_value, str) or not raw_value:
+        failures.append("raw_path must be a non-empty string")
+        raw_path = None
+    else:
+        raw_path = pathlib.Path(raw_value)
+        if not raw_path.is_absolute():
+            raw_path = (meta_path.parent / raw_path).resolve()
+    if raw_path is None or not raw_path.exists():
+        failures.append("raw_path does not exist")
+        return False, failures, meta
+    actual_size = raw_path.stat().st_size
+    actual_sha = sha256_file(raw_path)
+    if meta.get("raw_size_bytes") != actual_size:
+        failures.append("raw_size_bytes does not match raw file")
+    if meta.get("raw_sha256") != actual_sha:
+        failures.append("raw_sha256 does not match raw file")
+    try:
+        raw_payload = load_json(raw_path)
+    except SystemExit as exc:
+        failures.append(f"raw file is not parseable JSON: {exc}")
+        return False, failures, meta
+    if not isinstance(raw_payload, dict):
+        failures.append("raw file must be a JSON object")
+        return False, failures, meta
+    attempts = raw_payload.get("attempts")
+    if not isinstance(attempts, list):
+        attempts = []
+    expected_attempts = attempts_summary([attempt for attempt in attempts if isinstance(attempt, dict)])
+    expected_timed_out = any(isinstance(attempt, dict) and attempt.get("timed_out") is True for attempt in attempts)
+    semantic_fields = {
+        "exit_code": raw_payload.get("exit_code"),
+        "timed_out": expected_timed_out,
+        "timeout_seconds": raw_payload.get("timeout_seconds"),
+        "total_timeout_seconds": raw_payload.get("total_timeout_seconds"),
+        "max_retries": raw_payload.get("max_retries"),
+        "attempts_count": len(attempts),
+        "attempts": expected_attempts,
+    }
+    for key, expected in semantic_fields.items():
+        if meta.get(key) != expected:
+            failures.append(f"{key} does not match raw file")
+    return not failures, failures, meta
 
 
 def run(argv: list[str], *, timeout: float | None = None) -> subprocess.CompletedProcess[str]:
@@ -223,6 +403,11 @@ def extract_review(raw_text: str, provider: str) -> dict[str, Any]:
                 continue
             return normalize_review(obj, provider)
     for text in candidate_markdown_texts(raw_text):
+        for obj in iter_json_objects(text):
+            if REQUIRED_REVIEW_KEYS.issubset(obj.keys()) and obj.get("provider") == provider:
+                if obj.get("verdict") not in {"pass", "concern", "block"}:
+                    continue
+                return normalize_review(obj, provider)
         markdown_review = extract_markdown_review(text, provider)
         if markdown_review is not None:
             return normalize_review(markdown_review, provider)
@@ -279,9 +464,60 @@ def candidate_markdown_texts(raw_text: str) -> list[str]:
                     nested_result = nested.get("result")
                     if isinstance(nested_result, str):
                         candidates.append(nested_result)
+                candidates.extend(kimi_text_part_candidates(stream))
                 candidates.append(stream)
+    candidates.extend(kimi_text_part_candidates(raw_text))
     candidates.append(raw_text)
     return candidates
+
+
+def kimi_text_part_candidates(raw_text: str) -> list[str]:
+    candidates: list[str] = []
+    pattern = re.compile(
+        r"TextPart\(\s*type=['\"]text['\"]\s*,\s*text=(?P<literal>'(?:\\.|[^'])*'|\"(?:\\.|[^\"])*\")\s*\)",
+        flags=re.S,
+    )
+    for match in pattern.finditer(raw_text):
+        try:
+            value = ast.literal_eval(match.group("literal"))
+        except (SyntaxError, ValueError):
+            value = decode_broken_kimi_text_literal(match.group("literal"))
+        if isinstance(value, str) and value.strip():
+            candidates.append(value)
+            repaired = remove_wrapped_newlines_inside_json_strings(value)
+            if repaired != value:
+                candidates.append(repaired)
+    return candidates
+
+
+def decode_broken_kimi_text_literal(literal: str) -> str:
+    if len(literal) < 2:
+        return ""
+    value = literal[1:-1]
+    return (
+        value
+        .replace("\\n", "\n")
+        .replace("\\t", "\t")
+        .replace("\\'", "'")
+        .replace('\\"', '"')
+    )
+
+
+def remove_wrapped_newlines_inside_json_strings(text: str) -> str:
+    chars: list[str] = []
+    in_string = False
+    escaped = False
+    for char in text:
+        if char == "\n" and in_string:
+            continue
+        chars.append(char)
+        if escaped:
+            escaped = False
+        elif char == "\\":
+            escaped = True
+        elif char == '"':
+            in_string = not in_string
+    return "".join(chars)
 
 
 def markdown_section(text: str, name: str) -> str:
@@ -504,13 +740,29 @@ def assert_provider_command_safe(argv: list[str]) -> None:
     if argv and argv[0] == "kimi":
         if "--plan" not in argv:
             raise SystemExit("unsafe provider command: kimi must run in plan mode during Prism review")
+        if "--print" not in argv:
+            raise SystemExit("unsafe provider command: kimi must run in non-interactive print mode during Prism review")
+        if "--agent-file" not in argv or str(KIMI_REVIEW_AGENT_FILE) not in argv:
+            raise SystemExit("unsafe provider command: kimi must use the RedCap no-tool review agent file")
+        if "--final-message-only" not in argv:
+            raise SystemExit("unsafe provider command: kimi must only print the final review message")
+        if "--output-format" not in argv or "text" not in argv:
+            raise SystemExit("unsafe provider command: kimi must use text output during Prism review")
+        if "--max-steps-per-turn" in argv:
+            index = argv.index("--max-steps-per-turn")
+            if index + 1 >= len(argv) or argv[index + 1] != "1":
+                raise SystemExit("unsafe provider command: kimi review must run with max one step per turn")
         if str(REPO_ROOT) in argv:
             raise SystemExit("unsafe provider command: kimi must not use the RedCap repo as work-dir during Prism review")
     if argv and argv[0] == "claude":
+        if "--bare" not in argv:
+            raise SystemExit("unsafe provider command: claude Prism review must use bare mode to avoid host hooks")
         if "plan" not in argv:
             raise SystemExit("unsafe provider command: claude must run in plan permission mode during Prism review")
         if "--tools" not in argv or "" not in argv:
             raise SystemExit("unsafe provider command: claude Prism review must disable tools")
+        if "--json-schema" not in argv:
+            raise SystemExit("unsafe provider command: claude Prism review must request structured JSON output")
 
 
 def provider_command(provider: str, handle: str | None, prompt: str, max_steps: int) -> tuple[list[str], str | None]:
@@ -519,9 +771,15 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
             "kimi",
             "--work-dir",
             tempfile.gettempdir(),
+            "--agent-file",
+            str(KIMI_REVIEW_AGENT_FILE),
+            "--print",
+            "--output-format",
+            "text",
+            "--final-message-only",
             "--plan",
             "--max-steps-per-turn",
-            str(max_steps),
+            "1",
         ]
         if handle:
             argv.extend(["-r", handle])
@@ -532,6 +790,7 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
         if handle:
             argv = [
                 "claude",
+                "--bare",
                 "--print",
                 "--output-format",
                 "json",
@@ -540,7 +799,9 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
                 "--tools",
                 "",
                 "--disallowedTools",
-                "Bash,Edit,Write,MultiEdit,Read,Glob,Grep,LS,Task,TodoWrite,NotebookEdit,WebFetch,WebSearch",
+                CLAUDE_DISALLOWED_TOOLS,
+                "--json-schema",
+                review_json_schema_arg(),
                 "--resume",
                 handle,
                 prompt,
@@ -550,6 +811,7 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
         next_handle = str(uuid.uuid4())
         argv = [
             "claude",
+            "--bare",
             "--print",
             "--output-format",
             "json",
@@ -558,7 +820,9 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
             "--tools",
             "",
             "--disallowedTools",
-            "Bash,Edit,Write,MultiEdit,Read,Glob,Grep,LS,Task,TodoWrite,NotebookEdit,WebFetch,WebSearch",
+            CLAUDE_DISALLOWED_TOOLS,
+            "--json-schema",
+            review_json_schema_arg(),
             "--session-id",
             next_handle,
             prompt,
@@ -573,6 +837,7 @@ def write_provider_timeout_raw(
     argv: list[str],
     exc: ProviderTimeoutError,
     max_retries: int,
+    provider: str,
 ) -> dict[str, Any]:
     payload = {
         "argv": redacted_argv(argv),
@@ -583,8 +848,7 @@ def write_provider_timeout_raw(
         "max_retries": max_retries,
         "reason": exc.reason,
     }
-    raw_out.parent.mkdir(parents=True, exist_ok=True)
-    raw_out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_raw_and_meta(raw_out, payload, provider, raw_kind="provider-timeout")
     return payload
 
 
@@ -663,6 +927,9 @@ def provider_success_raw(run_dir: pathlib.Path, provider: str, max_age_hours: fl
         if payload.get("exit_code") == 0 and (
             isinstance(payload.get("stdout"), str) or isinstance(payload.get("stderr"), str)
         ):
+            meta_ok, _, _ = verify_raw_meta(raw_meta_path(path))
+            if not meta_ok:
+                continue
             return True
     return False
 
@@ -698,7 +965,7 @@ def cmd_verify_evidence(args: argparse.Namespace) -> int:
         if not isinstance(record.get("round_count"), int) or record.get("round_count", 0) < 1:
             failures.append(f"{provider}: no completed provider round recorded")
         if not provider_success_raw(run_dir, provider, max_age_hours):
-            failures.append(f"{provider}: no successful raw provider output found")
+            failures.append(f"{provider}: no successful raw provider output with valid metadata found")
         if not provider_valid_review(run_dir, provider):
             failures.append(f"{provider}: no valid extracted review found")
     result = {
@@ -712,6 +979,27 @@ def cmd_verify_evidence(args: argparse.Namespace) -> int:
     if failures:
         return 1
     print("PRISM_DISPATCH_EVIDENCE_OK")
+    return 0
+
+
+def cmd_verify_raw_meta(args: argparse.Namespace) -> int:
+    if args.raw_meta:
+        meta_path = pathlib.Path(args.raw_meta).resolve()
+    elif args.raw_out:
+        meta_path = raw_meta_path(pathlib.Path(args.raw_out).resolve())
+    else:
+        raise SystemExit("--raw-meta or --raw-out is required with --verify-raw-meta")
+    ok, failures, meta = verify_raw_meta(meta_path)
+    print(json.dumps({
+        "ok": ok,
+        "meta_path": str(meta_path),
+        "raw_path": meta.get("raw_path") if isinstance(meta, dict) else None,
+        "metadata": meta if ok else None,
+        "failures": failures,
+    }, ensure_ascii=False, indent=2))
+    if not ok:
+        return 1
+    print("PRISM_RAW_META_OK")
     return 0
 
 
@@ -805,6 +1093,7 @@ def run_provider_command(
             fallback_handle = str(uuid.uuid4())
             fallback_argv = [
                 "claude",
+                "--bare",
                 "--print",
                 "--output-format",
                 "json",
@@ -813,7 +1102,9 @@ def run_provider_command(
                 "--tools",
                 "",
                 "--disallowedTools",
-                "Bash,Edit,Write,MultiEdit,Read,Glob,Grep,LS,Task,TodoWrite,NotebookEdit,WebFetch,WebSearch",
+                CLAUDE_DISALLOWED_TOOLS,
+                "--json-schema",
+                review_json_schema_arg(),
                 "--session-id",
                 fallback_handle,
                 prompt,
@@ -938,7 +1229,7 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             total_timeout_seconds,
         )
     except ProviderTimeoutError as exc:
-        write_provider_timeout_raw(raw_out, argv, exc, args.max_retries)
+        write_provider_timeout_raw(raw_out, argv, exc, args.max_retries, provider)
         captured_handle = exc.captured_handle
         mark_session_expired(manifest, provider, captured_handle or handle, exc.reason)
         raise SystemExit(json.dumps({
@@ -953,15 +1244,20 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             "raw_path": str(raw_out),
             "reason": exc.reason,
         }, ensure_ascii=False))
-    raw_text = json.dumps({
+    raw_payload = {
         "argv": argv[:6] + ["<prompt>"],
         "attempts": attempts,
         "exit_code": completed.returncode,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
-    }, ensure_ascii=False, indent=2)
-    raw_out.parent.mkdir(parents=True, exist_ok=True)
-    raw_out.write_text(raw_text + "\n", encoding="utf-8")
+    }
+    write_raw_and_meta(
+        raw_out,
+        raw_payload,
+        provider,
+        raw_kind="provider-output",
+        review_path=review_out,
+    )
     if completed.returncode != 0:
         captured_handle = None
         if provider == "kimi":
@@ -1056,6 +1352,22 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "--dry-run",
         ])
         nested = extract_review(json.dumps({"result": "{\"provider\":\"kimi\",\"verdict\":\"pass\",\"confidence\":\"high\",\"reality_delta\":\"x\",\"main_concern\":\"x\",\"top_risks\":[],\"missing_evidence\":[],\"minimum_fix\":\"x\",\"anti_loop_signal\":{\"present\":false,\"reason\":\"x\"},\"user_intent_alignment\":\"aligned\"}"}), "kimi")
+        kimi_text_part_review = extract_review(
+            "TextPart(type='text', text="
+            + repr("```json\n{\"provider\":\"kimi\",\"verdict\":\"pass\",\"confidence\":\"high\",\"reality_delta\":\"x\",\"main_concern\":\"x\",\"top_risks\":[],\"missing_evidence\":[],\"minimum_fix\":\"x\",\"anti_loop_signal\":\"none\",\"user_intent_alignment\":\"aligned\"}\n```")
+            + ")",
+            "kimi",
+        )
+        kimi_wrapped_text_part_review = extract_review(
+            """TextPart(
+    type='text',
+    text='```json\\n{\\n  "provider": "kimi",\\n  "verdict": "pass",\\n  "confi
+dence": "high",\\n  "reality_delta": "x",\\n  "main_concern": "wrapped li
+ne",\\n  "top_risks": [],\\n  "missing_evidence": [],\\n  "minimum_fix": "x",\\n  "anti_loop_signal": "no
+ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
+)""",
+            "kimi",
+        )
         contradictory_anti_loop = extract_review(json.dumps({"result": "{\"provider\":\"kimi\",\"verdict\":\"concern\",\"confidence\":\"high\",\"reality_delta\":\"x\",\"main_concern\":\"x\",\"top_risks\":[],\"missing_evidence\":[],\"minimum_fix\":\"x\",\"anti_loop_signal\":{\"present\":true,\"reason\":\"Present: false. No loop signal.\"},\"user_intent_alignment\":\"aligned\"}"}), "kimi")
         retry_fixture = tmp / "timeout_then_success.py"
         retry_counter = tmp / "retry-count.txt"
@@ -1126,7 +1438,13 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 ),
             )
         except ProviderTimeoutError as exc:
-            timeout_payload = write_provider_timeout_raw(timeout_raw, [sys.executable, str(exhausted_fixture)], exc, 2)
+            timeout_payload = write_provider_timeout_raw(
+                timeout_raw,
+                [sys.executable, str(exhausted_fixture)],
+                exc,
+                2,
+                "kimi",
+            )
         stubborn_fixture = tmp / "stubborn_child_timeout.py"
         stubborn_child_pid = tmp / "stubborn-child.pid"
         stubborn_timeout_raw = tmp / "stubborn-timeout.raw.json"
@@ -1173,6 +1491,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 [sys.executable, str(stubborn_fixture)],
                 exc,
                 0,
+                "kimi",
             )
             time.sleep(0.2)
             if stubborn_child_pid.exists():
@@ -1292,6 +1611,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             failures.append("follow-up without session handle was not blocked")
         if nested.get("provider") != "kimi":
             failures.append("nested review extraction failed")
+        if kimi_text_part_review.get("provider") != "kimi" or kimi_text_part_review.get("verdict") != "pass":
+            failures.append("Kimi TextPart JSON review extraction failed")
+        if kimi_wrapped_text_part_review.get("confidence") != "high":
+            failures.append("Kimi wrapped TextPart JSON repair failed")
         if contradictory_anti_loop.get("anti_loop_signal", {}).get("present") is not False:
             failures.append("contradictory anti-loop JSON normalization failed")
         if defaults.timeout_seconds != DEFAULT_TIMEOUT_SECONDS:
@@ -1396,25 +1719,153 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         kim_safe_argv, _ = provider_command("kimi", None, "safe-check", 1)
         if "--plan" not in kim_safe_argv:
             failures.append("kimi provider command is missing plan mode")
+        if "--print" not in kim_safe_argv:
+            failures.append("kimi provider command is missing non-interactive print mode")
+        if "--agent-file" not in kim_safe_argv or str(KIMI_REVIEW_AGENT_FILE) not in kim_safe_argv:
+            failures.append("kimi provider command is missing no-tool review agent file")
+        if "--final-message-only" not in kim_safe_argv:
+            failures.append("kimi provider command is missing final-message-only output mode")
+        if "--output-format" not in kim_safe_argv or "text" not in kim_safe_argv:
+            failures.append("kimi provider command is missing text output mode")
+        if "--max-steps-per-turn" not in kim_safe_argv:
+            failures.append("kimi provider command is missing max step limit")
+        else:
+            max_step_index = kim_safe_argv.index("--max-steps-per-turn")
+            if max_step_index + 1 >= len(kim_safe_argv) or kim_safe_argv[max_step_index + 1] != "1":
+                failures.append("kimi provider command should use one max step")
         if str(REPO_ROOT) in kim_safe_argv:
             failures.append("kimi provider command still uses RedCap repo as work-dir")
+        if not KIMI_REVIEW_AGENT_FILE.exists():
+            failures.append("kimi no-tool review agent file is missing")
         claude_safe_argv, _ = provider_command("claude-code", None, "safe-check", 1)
+        if "--bare" not in claude_safe_argv:
+            failures.append("claude provider command is missing bare mode")
         if "bypassPermissions" in claude_safe_argv:
             failures.append("claude provider command still contains unsafe bypassPermissions flag")
         if "acceptEdits" in claude_safe_argv:
             failures.append("claude provider command still uses edit-capable permission mode")
         if "--tools" not in claude_safe_argv or "" not in claude_safe_argv:
             failures.append("claude provider command does not disable tools")
+        if "--json-schema" not in claude_safe_argv:
+            failures.append("claude provider command is missing JSON schema output guard")
         try:
-            assert_provider_command_safe(["kimi", "--work-dir", str(REPO_ROOT), "--plan", "-p", "x"])
+            assert_provider_command_safe([
+                "kimi",
+                "--work-dir",
+                str(REPO_ROOT),
+                "--agent-file",
+                str(KIMI_REVIEW_AGENT_FILE),
+                "--print",
+                "--output-format",
+                "text",
+                "--final-message-only",
+                "--plan",
+                "--max-steps-per-turn",
+                "1",
+                "-p",
+                "x",
+            ])
             failures.append("assert_provider_command_safe did not reject Kimi repo work-dir")
         except SystemExit:
             pass
         try:
-            assert_provider_command_safe(["kimi", "--work-dir", tempfile.gettempdir(), "-p", "x"])
+            assert_provider_command_safe([
+                "kimi",
+                "--work-dir",
+                tempfile.gettempdir(),
+                "--agent-file",
+                str(KIMI_REVIEW_AGENT_FILE),
+                "--plan",
+                "--max-steps-per-turn",
+                "1",
+                "-p",
+                "x",
+            ])
+            failures.append("assert_provider_command_safe did not reject Kimi without print mode")
+        except SystemExit:
+            pass
+        try:
+            assert_provider_command_safe([
+                "kimi",
+                "--work-dir",
+                tempfile.gettempdir(),
+                "--agent-file",
+                str(KIMI_REVIEW_AGENT_FILE),
+                "--print",
+                "--output-format",
+                "text",
+                "--final-message-only",
+                "--max-steps-per-turn",
+                "1",
+                "-p",
+                "x",
+            ])
             failures.append("assert_provider_command_safe did not reject Kimi without plan mode")
         except SystemExit:
             pass
+        try:
+            assert_provider_command_safe([
+                "kimi",
+                "--work-dir",
+                tempfile.gettempdir(),
+                "--print",
+                "--output-format",
+                "text",
+                "--final-message-only",
+                "--plan",
+                "--max-steps-per-turn",
+                "1",
+                "-p",
+                "x",
+            ])
+            failures.append("assert_provider_command_safe did not reject Kimi without no-tool agent file")
+        except SystemExit:
+            pass
+        try:
+            assert_provider_command_safe([
+                "kimi",
+                "--work-dir",
+                tempfile.gettempdir(),
+                "--agent-file",
+                str(KIMI_REVIEW_AGENT_FILE),
+                "--print",
+                "--output-format",
+                "text",
+                "--plan",
+                "--max-steps-per-turn",
+                "1",
+                "-p",
+                "x",
+            ])
+            failures.append("assert_provider_command_safe did not reject Kimi without final-message-only")
+        except SystemExit:
+            pass
+        sample_raw = tmp / "sample.raw.json"
+        sample_payload = {
+            "argv": ["fixture"],
+            "attempts": [{"attempt": 1, "exit_code": 0, "timed_out": False, "stdout": "ok", "stderr": ""}],
+            "exit_code": 0,
+            "stdout": "ok",
+            "stderr": "",
+        }
+        write_raw_and_meta(sample_raw, sample_payload, "kimi", raw_kind="self-check")
+        sample_meta = raw_meta_path(sample_raw)
+        sample_meta_ok, sample_meta_failures, _ = verify_raw_meta(sample_meta)
+        if not sample_meta_ok:
+            failures.append(f"raw metadata verification failed: {'; '.join(sample_meta_failures)}")
+        forged_raw = tmp / "forged.raw.json"
+        write_raw_and_meta(forged_raw, sample_payload, "kimi", raw_kind="self-check")
+        forged_meta_path = raw_meta_path(forged_raw)
+        forged_meta = load_json(forged_meta_path)
+        forged_meta["exit_code"] = 99
+        write_json_file(forged_meta_path, forged_meta)
+        forged_ok, _, _ = verify_raw_meta(forged_meta_path)
+        if forged_ok:
+            failures.append("raw metadata verification did not detect forged exit_code")
+        sample_raw.write_text(sample_raw.read_text(encoding="utf-8") + "tamper\n", encoding="utf-8")
+        tamper_ok, _, _ = verify_raw_meta(sample_meta)
+        if tamper_ok:
+            failures.append("raw metadata verification did not detect raw tampering")
         try:
             assert_provider_command_safe(["claude", "--permission-mode", "bypassPermissions", "x"])
             failures.append("assert_provider_command_safe did not reject claude bypassPermissions")
@@ -1423,6 +1874,16 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         try:
             assert_provider_command_safe(["claude", "--permission-mode", "acceptEdits", "--tools", "", "x"])
             failures.append("assert_provider_command_safe did not reject claude acceptEdits")
+        except SystemExit:
+            pass
+        try:
+            assert_provider_command_safe(["claude", "--print", "--output-format", "json", "--permission-mode", "plan", "--tools", "", "--json-schema", review_json_schema_arg(), "x"])
+            failures.append("assert_provider_command_safe did not reject claude without bare mode")
+        except SystemExit:
+            pass
+        try:
+            assert_provider_command_safe(["claude", "--bare", "--print", "--output-format", "json", "--permission-mode", "plan", "--tools", "", "x"])
+            failures.append("assert_provider_command_safe did not reject claude without JSON schema")
         except SystemExit:
             pass
         result = {"ok": not failures, "failures": failures}
@@ -1437,6 +1898,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Dispatch Prism provider reviews")
     parser.add_argument("--self-check", action="store_true")
     parser.add_argument("--verify-evidence", action="store_true")
+    parser.add_argument("--verify-raw-meta", action="store_true")
     parser.add_argument("--evidence-run-dir")
     parser.add_argument("--providers", default="kimi,claude-code")
     parser.add_argument("--max-age-hours", type=float)
@@ -1445,6 +1907,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--request")
     parser.add_argument("--review-out")
     parser.add_argument("--raw-out")
+    parser.add_argument("--raw-meta")
     parser.add_argument("--extract-from-raw")
     parser.add_argument("--brief-out")
     parser.add_argument("--max-steps", type=int, default=5)
@@ -1460,6 +1923,8 @@ def main() -> int:
     args = parser.parse_args()
     if args.self_check:
         return cmd_self_check(args)
+    if args.verify_raw_meta:
+        return cmd_verify_raw_meta(args)
     if args.verify_evidence:
         if not args.evidence_run_dir:
             parser.error("--evidence-run-dir is required with --verify-evidence")
