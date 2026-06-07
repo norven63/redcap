@@ -1,0 +1,53 @@
+{
+  "schema_id": "redcap-version-record",
+  "version_record_id": "20260607-current-revival-closeout",
+  "recorded_at": "2026-06-07T04:30:00+00:00",
+  "branch": "develop",
+  "pre_record_head": "d44bcb7c7ca216b1c32a3175b687c77f2b3c7aa4",
+  "purpose": "记录 RedCap 复活工程在停止前检查误伤收敛、棱镜调度修复、当前任务生命周期锚点修复后，达到正式可用收口状态。",
+  "scope": [
+    "停止前检查误伤收敛已提交并推送",
+    "中文优先输出策略已放宽常用项目词误伤并保留专业术语解释要求",
+    "提示意图判断已覆盖授权、状态确认和混合执行场景",
+    "棱镜调度器已补充 Claude Code 参数收敛、原始输出元数据筛选和失败摘要",
+    "当前任务专用生命周期包已创建并通过 lifecycle check",
+    "棱镜对收口提出的 concern/block 已采纳并通过 prism-resolution",
+    "develop 分支已推送到 origin/develop"
+  ],
+  "verification_commands": [
+    "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260607-current-revival-closeout-merged/merge.json --resolution assets/evidence/prism/20260607-current-revival-closeout-merged/resolution.json --manifest assets/evidence/prism/20260607-current-revival-closeout/session.json",
+    "runtime/bin/redcap lifecycle check --packet assets/contracts/redcap-current-revival-closeout-lifecycle.json",
+    "runtime/bin/redcap gate --task \"重新开始执行 RedCap 复活计划，验证当前 RedCap 已达到正式可用，并收口基建修复与版本记录\" --risk-level high --lifecycle-packet assets/contracts/redcap-current-revival-closeout-lifecycle.json",
+    "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+    "runtime/bin/redcap revival-queue check",
+    "runtime/bin/redcap formal-usable-check",
+    "runtime/bin/redcap check",
+    "git status --short --branch",
+    "git ls-remote origin refs/heads/develop"
+  ],
+  "evidence": [
+    "assets/contracts/redcap-current-revival-closeout-lifecycle.json",
+    "assets/evidence/prism/20260607-current-revival-closeout-merged/merge.json",
+    "assets/evidence/prism/20260607-current-revival-closeout-merged/resolution.json",
+    "assets/evidence/check-receipts/20260607-current-revival-closeout/status.receipt.json",
+    "assets/evidence/check-receipts/20260607-current-revival-closeout/revival-queue.receipt.json",
+    "assets/evidence/check-receipts/20260607-current-revival-closeout/formal-usable.receipt.json",
+    "assets/evidence/check-receipts/20260607-current-revival-closeout/redcap-check.receipt.json",
+    "assets/evidence/check-receipts/20260607-current-revival-closeout/git-remote-develop.receipt.json"
+  ],
+  "human_gated_after_this_record": [
+    "是否用 develop 替代 main",
+    "是否对外发布 RedCap",
+    "是否继续追求完整复活之外的增强能力"
+  ],
+  "non_completion_shortcuts_rejected": [
+    "不以计划文件单独证明正式可用",
+    "不以单条全量检查单独证明正式可用",
+    "不以棱镜评审通过替代真实提交、推送和检查",
+    "不声称 Codex 未暴露的宿主事件已经支持"
+  ],
+  "formal_usable_claim": {
+    "present": true,
+    "basis": "正式可用声明基于生命周期包、棱镜分歧处理、受控检查回执、提交推送证据和全量检查共同成立。"
+  }
+}
