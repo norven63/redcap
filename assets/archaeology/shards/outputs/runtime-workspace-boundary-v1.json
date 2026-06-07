@@ -1,0 +1,86 @@
+{
+  "confidence": "high",
+  "evidence_paths": [
+    "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
+    "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+    "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py",
+    "assets/archaeology/extractions/runtime-workspace-boundary-v1.json"
+  ],
+  "open_questions": [
+    "后续复活计划需要确认新 RedCap 对外部项目命令面的最终命名：是否复刻 revive/summary/status/diagnose/doctor/debug，还是用当前命令面重命名承载。"
+  ],
+  "portable_designs": [
+    {
+      "classification": "keep",
+      "destination_boundary": "runtime",
+      "evidence": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G01",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G02",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G03"
+      ],
+      "id": "boundary-layer-separation",
+      "name": "运行时、项目工作区、用户私有状态三层分离",
+      "summary": "旧 RedCap 明确区分运行时实现根目录、被管理项目工作区、用户私有身份与本地状态；新 RedCap 应保留这个边界。"
+    },
+    {
+      "classification": "redesign",
+      "destination_boundary": "runtime",
+      "evidence": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G04",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G09"
+      ],
+      "id": "boundary-self-development-exception",
+      "name": "自开发例外必须显式化",
+      "summary": "当 RedCap 开发 RedCap 自身时，项目工作区可以等于运行时根目录，但必须是明确例外，不能污染外部项目默认行为。"
+    },
+    {
+      "classification": "redesign",
+      "destination_boundary": "runtime",
+      "evidence": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G05",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G06",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G07",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G08"
+      ],
+      "id": "boundary-shared-command-resolution",
+      "name": "工作区相关命令共享解析器",
+      "summary": "revive、summary、status、diagnose、doctor、debug 等命令应共享工作区和任务文件解析，而不是各自回退到运行时任务卡。"
+    },
+    {
+      "classification": "keep",
+      "destination_boundary": "external_project_policy",
+      "evidence": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#layers.user"
+      ],
+      "id": "boundary-user-private-state",
+      "name": "用户身份与私有状态不进入项目或运行时资产",
+      "summary": "~/.cap/identity.md 与本地用户状态属于用户层，不应被打包进项目状态或运行时实现。"
+    }
+  ],
+  "risk_designs": [
+    {
+      "classification": "risk",
+      "evidence": [
+        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "id": "old-command-branch-inspection-coupling",
+      "summary": "旧检查器通过检查 shell 分支文本来确认命令接入，适合作为迁移参考，但不应原样复制成长期架构；新 RedCap 应优先依赖共享解析器和端到端探针。"
+    },
+    {
+      "classification": "risk",
+      "evidence": [
+        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "id": "release-review-coupling",
+      "summary": "旧检查器还耦合 pre-release review 状态；新 RedCap 可保留发布前审计概念，但不应让边界检查依赖旧发布审计文件。"
+    }
+  ],
+  "schema_id": "prism-shard-output",
+  "shard_id": "runtime-workspace-boundary",
+  "source_files_read": [
+    "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
+    "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+    "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+  ],
+  "verified_at": "2026-06-06T17:53:35+00:00"
+}

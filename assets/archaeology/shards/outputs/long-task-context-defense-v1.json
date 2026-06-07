@@ -1,0 +1,166 @@
+{
+  "schema_id": "prism-shard-output",
+  "shard_id": "long-task-context-defense",
+  "generated_at": "2026-06-06T18:00:38+00:00",
+  "source_files_read": [
+    "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+  ],
+  "portable_designs": [
+    {
+      "id": "LTCD-P01",
+      "name": "外置任务真相源",
+      "classification": "keep",
+      "target_boundary": "runtime_prism",
+      "migration_action": "把任务目标、当前切片、允许修改范围、完成标准、健康状态放到可检查文件或状态面，减少长对话压缩带来的偏航。",
+      "must_preserve": [
+        "任务真相不能只活在聊天窗口里。",
+        "当前切片和停止条件必须能被检查器读取。",
+        "完成标准必须外置并可追溯。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json"
+      ]
+    },
+    {
+      "id": "LTCD-P02",
+      "name": "索引优先读取",
+      "classification": "keep",
+      "target_boundary": "assets_knowledge",
+      "migration_action": "后续知识库、考古材料、验证材料都先走索引或账目，再按问题读取精确文件；原始证据和大材料默认不进入上下文。",
+      "must_preserve": [
+        "先读索引，再读精确来源。",
+        "禁止默认加载原始运行材料、大块归档和私密任务体。",
+        "每次读取都应服务于当前分片问题。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ]
+    },
+    {
+      "id": "LTCD-P03",
+      "name": "长任务分片账目",
+      "classification": "redesign",
+      "target_boundary": "runtime_prism",
+      "migration_action": "把旧 Loom / Layer B 的长任务拆解思想缩成 prism-shard 账目：每个分片有问题、来源、预算、停止条件、验收字段和合并条件。",
+      "must_preserve": [
+        "分片必须有明确问题。",
+        "分片必须有上下文预算和最大轮次。",
+        "合并前必须所有可提升分片都达到终态。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json"
+      ]
+    },
+    {
+      "id": "LTCD-P04",
+      "name": "Cap 验收与评审输出分离",
+      "classification": "keep",
+      "target_boundary": "runtime_prism",
+      "migration_action": "棱镜（异构评审助手）、Reviewer 和报告只能提供辅助证据；Cap 必须独立验收，不能让评审结论自动变成完成事实。",
+      "must_preserve": [
+        "provider 输出不等于任务完成。",
+        "分歧需要有记录的采纳、驳回、追问或升级。",
+        "最终验收回到真实工作区变化。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ]
+    },
+    {
+      "id": "LTCD-P05",
+      "name": "健康状态显性化",
+      "classification": "keep",
+      "target_boundary": "runtime",
+      "migration_action": "继续用任务事实、棱镜运行流水、检查回执和状态面让长任务现场可观察，避免机制存在但现场不可见。",
+      "must_preserve": [
+        "当前任务和最近检查结果必须可查询。",
+        "评审方执行质量和过期状态必须可观察。",
+        "状态面不能替代任务本体完成。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json"
+      ]
+    },
+    {
+      "id": "LTCD-P06",
+      "name": "宿主边界诚实声明",
+      "classification": "keep",
+      "target_boundary": "runtime_host_adapter",
+      "migration_action": "宿主没有给 RedCap 控制点时，不能宣称 100% 回复前拦截；只能在已验证入口和项目钩子边界内声明强保障。",
+      "must_preserve": [
+        "已验证的硬门禁和未验证的宿主能力必须分开说。",
+        "缺少实时回复拦截时，不得包装成 100% 宿主级能力。",
+        "宿主边界应进入审计和状态面。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ]
+    }
+  ],
+  "risk_designs": [
+    {
+      "id": "LTCD-R01",
+      "name": "旧 Loom / Layer B 完整执行形态",
+      "classification": "discard",
+      "reason": "它的长任务拆解思想有价值，但完整执行形态太重，容易让新 RedCap 在复活前再次陷入流程膨胀。",
+      "replacement": "只保留轻量、可检查、可合并的 prism-shard 账目。",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ]
+    },
+    {
+      "id": "LTCD-R02",
+      "name": "旧任务报告正文、pending closure 和历史账本默认导入",
+      "classification": "no_promote",
+      "reason": "这些材料容易让上下文被历史噪音淹没，也容易把证明链误当任务本体。",
+      "replacement": "通过索引、分片来源和显式证据路径按需读取。",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ]
+    },
+    {
+      "id": "LTCD-R03",
+      "name": "报告、回执、评审或账目条目作为完成事实",
+      "classification": "discard",
+      "reason": "这是旧 RedCap 的核心旧病之一，会把任务现实变化替换成记录变化。",
+      "replacement": "完成只能来自真实变更、验证结果和生命周期完成标记。",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ]
+    },
+    {
+      "id": "LTCD-R04",
+      "name": "未验证的 100% 回复前拦截声明",
+      "classification": "discard",
+      "reason": "旧文档已经承认宿主实时回复路径仍有限制；直接宣称 100% 会制造虚假安全感。",
+      "replacement": "把能力拆成 RedCap 自有入口、Codex 项目钩子、宿主未知边界三类分别审计。",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ]
+    }
+  ],
+  "evidence_paths": [
+    "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md",
+    "assets/archaeology/extractions/long-task-context-defense-v1.json"
+  ],
+  "confidence": "high",
+  "open_questions": [
+    {
+      "id": "LTCD-Q01",
+      "question": "后续是否需要把分片账目和 provider 调度器串成自动执行队列？",
+      "recommended_timing": "复活实施计划阶段评估；不能阻塞当前扫描合并。"
+    },
+    {
+      "id": "LTCD-Q02",
+      "question": "外部项目的任务真相源应采用 .dev-task.md、项目内状态文件，还是 RedCap 管理目录中的影子账目？",
+      "recommended_timing": "外部项目开发能力复活时设计。"
+    }
+  ],
+  "cap_assessment": {
+    "decision": "accept",
+    "reason": "旧设计中最值得迁移的是对抗长上下文漂移的方法论：真相外置、索引优先、分片账目、独立验收、状态显性和宿主边界诚实声明；完整旧执行系统和虚假 100% 拦截声明必须丢弃。"
+  }
+}

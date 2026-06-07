@@ -1,0 +1,231 @@
+{
+  "schema_id": "redcap-continuous-revival-plan",
+  "version": 1,
+  "status": "formal_usable_verified",
+  "purpose": "把 Norven 要求的“一气呵成”目标拆成连续推进、分段验收、可回滚的 RedCap 复活总计划：先完成 360 度旧 RedCap 扫描，再制定复活计划，再实施落地，再审计优化，直到新 RedCap 可正式使用。",
+  "non_completion_warning": "本合同是执行路线和验收标准，不代表 360 度扫描、复活计划、复活落地或最终优化已经完成。",
+  "global_rules": [
+    {
+      "id": "CR-G01",
+      "rule": "连续推进不等于无边界长冲刺；每个阶段必须有入口、出口、验收证据和失败处理。"
+    },
+    {
+      "id": "CR-G02",
+      "rule": "360 度旧 RedCap 扫描完成前，不得给最终复活方案，只能维护方案生成规则和阶段状态。"
+    },
+    {
+      "id": "CR-G03",
+      "rule": "旧 RedCap 读取必须沿用精确文件优先和索引优先策略；禁止目录级批量读取、旧任务报告正文堆、旧原始评审运行、私密任务体和未列明来源。"
+    },
+    {
+      "id": "CR-G04",
+      "rule": "任何报告、评审、账目、回执、计划、状态摘要都只能作为辅助证据，不能替代真实代码、合同、知识库、运行时或检查器变化。"
+    },
+    {
+      "id": "CR-G05",
+      "rule": "每个高风险或结构性阶段必须触发异构评审助手（用于交叉检查主执行结论的工具）；Cap 负责采纳、驳回或升级分歧，不盲从也不一票否决。"
+    },
+    {
+      "id": "CR-G06",
+      "rule": "任何阶段如果连续两次只产出文档、报告、回执或账目而没有改变目标现实，必须暂停推进并先修空转根因。"
+    },
+    {
+      "id": "CR-G07",
+      "rule": "正式可用的最终声明必须同时满足：全部复活队列项关闭、全量检查通过、复活后审计通过、优化项关闭、版本记录完成。"
+    }
+  ],
+  "stage_sequence": [
+    {
+      "id": "CR-S01",
+      "name": "完成 360 度旧 RedCap 扫描",
+      "entry_conditions": [
+        "assets/archaeology/shards/old-redcap-360-scan-account.json 存在并通过 prism-shard check",
+        "full-360-old-redcap-scan 任务事实处于 planned 或 in_progress",
+        "不启动具体模块迁移"
+      ],
+      "work_items": [
+        "按分片读取精确旧源文件",
+        "为每个分片产出结构化提取：portable_designs、risk_designs、evidence_paths、confidence、open_questions",
+        "Cap 审核每个分片输出，必要时让评审方同会话追问",
+        "所有 promotable 分片 verified 后合并扫描结果"
+      ],
+      "exit_conditions": [
+        "所有 promotable 分片状态为 verified 或有明确 blocked/no_promote 理由",
+        "assets/archaeology/shards/old-redcap-360-scan-merge.json 存在并通过合并检查",
+        "task-facts 将 full-360-old-redcap-scan 标记为 verified 或 blocked",
+        "扫描状态块显示已完成或受阻，不再是未完成"
+      ],
+      "verification": [
+        "runtime/bin/redcap prism-shard check --account assets/archaeology/shards/old-redcap-360-scan-account.json",
+        "runtime/bin/redcap task-facts summary",
+        "runtime/bin/redcap scan-conclusion check",
+        "runtime/bin/redcap check"
+      ],
+      "failure_policy": "任何分片被阻塞时，只能记录具体阻塞条件或拆小分片；不得用阶段总结替代扫描完成。"
+    },
+    {
+      "id": "CR-S02",
+      "name": "生成完整复活计划",
+      "entry_conditions": [
+        "CR-S01 已完成或明确受阻并由 Norven 决策继续",
+        "扫描合并结果可读取",
+        "分类法 keep/redesign/discard/pathology/no_promote 可用"
+      ],
+      "work_items": [
+        "把扫描结果分成可直接迁移、需重新设计、必须丢弃、病灶防护、禁止提升五类",
+        "为每个 keep/redesign 项指定目标边界：runtime、runtime_prism、runtime_host_adapter、assets_contracts、assets_knowledge、assets_docs、external_project_policy 或 no_destination",
+        "为每个 pathology/discard/no_promote 项指定硬门禁、确定性检查、生命周期规则、知识条目或无需动作",
+        "生成实施队列，明确依赖、风险、验收命令和回滚方式"
+      ],
+      "exit_conditions": [
+        "复活实施队列覆盖全部扫描结论",
+        "每个队列项都有目标现实变化，不是纯文档动作",
+        "异构评审助手审查计划并完成 concern/block 处理"
+      ],
+      "verification": [
+        "runtime/bin/redcap phase2-blueprint check",
+        "runtime/bin/redcap prism-resolution --merge <plan-review-merge> --resolution <plan-review-resolution>",
+        "runtime/bin/redcap check"
+      ],
+      "failure_policy": "计划无法覆盖某项扫描结果时，回到 CR-S01 补分片，不允许靠主观假设补齐。"
+    },
+    {
+      "id": "CR-S03",
+      "name": "执行复活落地",
+      "entry_conditions": [
+        "CR-S02 的实施队列已通过评审",
+        "当前队列项有生命周期包和门禁结论",
+        "目标边界和回滚方案明确"
+      ],
+      "work_items": [
+        "一次只选择一个实施队列项",
+        "实施真实运行时、合同、知识库、目录、检查器或宿主适配器变化",
+        "执行项目专用验证和 runtime/bin/redcap check",
+        "解决评审助手 concern/block 后再推进下一项"
+      ],
+      "exit_conditions": [
+        "全部实施队列项 verified、no_promote、discard 或 blocked 且 blocked 有 Norven 决策",
+        "没有队列项仅靠计划、报告或回执完成",
+        "核心 RedCap 工作流可端到端运行"
+      ],
+      "verification": [
+        "每项专用检查",
+        "runtime/bin/redcap check",
+        "runtime/bin/redcap temporary-usable-check",
+        "必要时运行端到端 trace"
+      ],
+      "failure_policy": "如果连续两项实施暴露同一类基础设施缺口，暂停复活队列，先修基础设施。"
+    },
+    {
+      "id": "CR-S04",
+      "name": "复活后总审计与评审",
+      "entry_conditions": [
+        "CR-S03 关闭全部实施队列项",
+        "新 RedCap 具备可运行命令面和核心门禁"
+      ],
+      "work_items": [
+        "审计功能覆盖：门禁、生命周期、会话隔离、异构评审助手、知识网关、目录边界、空转防护、扫描治理",
+        "审计旧病复发：报告替代进度、回执替代完成、关闭递归、原始证据默认加载、上下文打爆、目录膨胀",
+        "审计正式使用路径：普通项目开发、RedCap 自开发、跨宿主协作、长任务分片",
+        "评审助手独立挑战审计结论"
+      ],
+      "exit_conditions": [
+        "审计问题全部分级为必须修、可延后、无需处理",
+        "必须修项目进入优化队列",
+        "审计结论通过 Cap 裁决和评审处理"
+      ],
+      "verification": [
+        "runtime/bin/redcap check",
+        "复活后审计专用检查",
+        "评审助手 concern/block 处理记录"
+      ],
+      "failure_policy": "发现正式使用阻塞问题时，不允许发布正式可用声明。"
+    },
+    {
+      "id": "CR-S05",
+      "name": "制定并落地优化方案",
+      "entry_conditions": [
+        "CR-S04 已产出必须修优化队列",
+        "每个优化项有目标现实变化和验收方式"
+      ],
+      "work_items": [
+        "按优先级修复审计发现的问题",
+        "更新检查器或门禁防止同类问题复发",
+        "补充知识库或文档，但不得以文档替代修复",
+        "对优化结果进行回归验证"
+      ],
+      "exit_conditions": [
+        "所有必须修优化项 verified",
+        "可延后项有明确理由和再审条件",
+        "全量检查和正式可用检查通过"
+      ],
+      "verification": [
+        "每项优化专用检查",
+        "runtime/bin/redcap check",
+        "runtime/bin/redcap temporary-usable-check"
+      ],
+      "failure_policy": "优化项如果变成新功能膨胀，拆成后续队列，不阻塞正式可用所需的最小集合。"
+    },
+    {
+      "id": "CR-S06",
+      "name": "正式可用验收与版本记录",
+      "entry_conditions": [
+        "CR-S01 到 CR-S05 均已关闭",
+        "没有未解决的必须修项目"
+      ],
+      "work_items": [
+        "运行最终验收矩阵",
+        "整理版本记录",
+        "确认 develop 分支可作为替代 main 的候选",
+        "向 Norven 报告正式可用边界和剩余非阻塞事项"
+      ],
+      "exit_conditions": [
+        "最终验收矩阵通过",
+        "版本记录存在",
+        "正式可用声明有生命周期完成标记"
+      ],
+      "verification": [
+        "runtime/bin/redcap check",
+        "git status --short --branch",
+        "必要时 git push origin develop"
+      ],
+      "failure_policy": "最终验收失败时回到对应阶段，不允许缩小正式可用定义。"
+    }
+  ],
+  "current_pointer": {
+    "stage_id": "CR-S06",
+    "reason": "360 度旧 RedCap 扫描、复活实施队列、正式可用检查和任务事实开放项检查均已验证；当前收口动作是版本记录与完成声明生命周期标记。"
+  },
+  "completion_audit": {
+    "audited_at": "2026-06-07T01:35:00+00:00",
+    "state": "formal_usable_verified",
+    "evidence": [
+      "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+      "runtime/bin/redcap revival-queue check",
+      "runtime/bin/redcap formal-usable-check",
+      "runtime/bin/redcap task-facts check --fail-on-open",
+      "runtime/bin/redcap check",
+      "assets/contracts/version-records/20260607-formal-usable-baseline.json"
+    ],
+    "known_non_blocking_boundary": [
+      "unsupported Codex host events remain explicitly reported by host-hook-audit and are not claimed as available",
+      "public release and replacing main remain human-gated decisions"
+    ]
+  },
+  "formal_usability_definition": {
+    "required_capabilities": [
+      "任务入口门禁能区分回答、诊断、实施和完成声明",
+      "异构评审助手调度、会话保存、分歧处理和健康流水可用",
+      "生命周期、有限状态机、完成声明、防空转检查和目录边界检查可用",
+      "旧 RedCap 扫描结论已完成并被迁移或明确丢弃",
+      "新 RedCap 能用于自身开发和外部项目开发",
+      "复活后审计和优化队列已关闭"
+    ],
+    "forbidden_shortcuts": [
+      "只凭合同或计划声明正式可用",
+      "只凭 runtime/bin/redcap check 一条绿灯声明正式可用",
+      "跳过 360 度扫描合并直接制定最终复活方案",
+      "把未完成优化项改名为非阻塞项"
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Load RedCap identity sources without leaking their private contents."""
+"""加载 RedCap 身份源，同时避免泄露私密正文。"""
 
 from __future__ import annotations
 
@@ -22,13 +22,13 @@ DEFAULT_SOURCES = [
         "id": "legacy_soul",
         "path": "~/.codex/skills/redcap/soul.md",
         "required": False,
-        "role": "legacy RedCap soul anchor referenced by AGENTS.md",
+        "role": "AGENTS.md 引用的旧 RedCap 灵魂锚点",
     },
     {
         "id": "cap_identity",
         "path": "/Users/norven/.cap/identity.md",
         "required": True,
-        "role": "private Cap identity source",
+        "role": "Cap 私有身份源",
     },
 ]
 
@@ -139,15 +139,15 @@ def build_packet(sources: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         "sources": summaries,
         "content_policy": {
             "private_body_written_to_evidence": False,
-            "evidence_contains": ["source status", "hashes", "counts", "titles", "redaction counts"],
+            "evidence_contains": ["来源状态", "哈希", "计数", "标题", "脱敏计数"],
         },
         "activation": {
             "identity": "Cap",
             "state": "loaded" if not failures else "blocked",
             "message": (
-                "Cap identity source is loaded into this RedCap session container."
+                "Cap 身份源已加载到当前 RedCap 会话容器。"
                 if not failures
-                else "Cap identity source could not be loaded."
+                else "Cap 身份源未能加载。"
             ),
         },
         "failures": failures,
@@ -255,7 +255,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="RedCap Cap soul loader")
+    parser = argparse.ArgumentParser(description="RedCap Cap 身份加载器")
     sub = parser.add_subparsers(dest="command", required=True)
 
     check = sub.add_parser("check", help="verify real configured soul sources")

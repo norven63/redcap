@@ -29,8 +29,13 @@ Usage:
   runtime/bin/redcap task-facts record|summary|check|self-check [...]
   runtime/bin/redcap human-output check|self-check|lint-text|lint-file [...]
   runtime/bin/redcap prism-shard [...]
+  runtime/bin/redcap scan-conclusion check|self-check [...]
   runtime/bin/redcap intent-judge classify|self-check [...]
   runtime/bin/redcap soul-load check|load|self-check [...]
+  runtime/bin/redcap status [...]
+  runtime/bin/redcap revive [...]
+  runtime/bin/redcap revival-queue check|self-check [...]
+  runtime/bin/redcap formal-usable-check
   runtime/bin/redcap temporary-usable-check
   runtime/bin/redcap layout-check [check|self-check]
   runtime/bin/redcap check
@@ -68,8 +73,15 @@ Commands:
   task-facts    Record and summarize RedCap task fact status.
   human-output  Check Chinese-first human-facing output policy.
   prism-shard   Validate and merge bounded Prism long-task shard accounts.
+  scan-conclusion
+                Guard 360-degree old RedCap scan conclusions with structured scan facts.
   intent-judge  Classify prompt intent with deterministic rules and bounded Prism LLM fallback.
   soul-load     Load or verify Cap identity sources without leaking private text.
+  status        Show the human-facing RedCap status surface.
+  revive        Load Cap identity and show the revival status surface.
+  revival-queue Check the executable RedCap revival implementation queue.
+  formal-usable-check
+                Verify RedCap formal usability through user-facing workflows.
   temporary-usable-check
                 Verify the current scaffold is usable enough for revival work.
   layout-check  Verify directory policy, root thinness, and unit boundaries.
@@ -160,11 +172,26 @@ case "$cmd" in
   prism-shard)
     exec python3 "$REPO_ROOT/runtime/prism/bin/prism-shard" "$@"
     ;;
+  scan-conclusion)
+    exec python3 "$REPO_ROOT/runtime/core/scan_conclusion_guard.py" "$@"
+    ;;
   intent-judge)
     exec python3 "$REPO_ROOT/runtime/core/intent_judge.py" "$@"
     ;;
   soul-load)
     exec python3 "$REPO_ROOT/runtime/core/soul_loader.py" "$@"
+    ;;
+  status)
+    exec python3 "$REPO_ROOT/runtime/core/status_surface.py" status "$@"
+    ;;
+  revive)
+    exec python3 "$REPO_ROOT/runtime/core/status_surface.py" revive "$@"
+    ;;
+  revival-queue)
+    exec python3 "$REPO_ROOT/runtime/core/revival_queue.py" "$@"
+    ;;
+  formal-usable-check)
+    exec python3 "$REPO_ROOT/runtime/core/formal_usable_check.py" check "$@"
     ;;
   temporary-usable-check)
     exec python3 "$REPO_ROOT/runtime/core/temporary_usable_check.py" "$@"
@@ -180,6 +207,14 @@ case "$cmd" in
     "$REPO_ROOT/runtime/bin/redcap" task-facts check
     "$REPO_ROOT/runtime/bin/redcap" human-output check
     "$REPO_ROOT/runtime/bin/redcap" human-output self-check
+    "$REPO_ROOT/runtime/bin/redcap" scan-conclusion self-check
+    "$REPO_ROOT/runtime/bin/redcap" status --json --require-scan-complete --fail-on-open
+    "$REPO_ROOT/runtime/bin/redcap" revive --json --no-write-evidence --require-scan-complete --fail-on-open
+    python3 "$REPO_ROOT/runtime/core/status_surface.py" self-check
+    "$REPO_ROOT/runtime/bin/redcap" revival-queue self-check
+    "$REPO_ROOT/runtime/bin/redcap" revival-queue check
+    python3 "$REPO_ROOT/runtime/core/formal_usable_check.py" self-check
+    "$REPO_ROOT/runtime/bin/redcap" formal-usable-check
     "$REPO_ROOT/runtime/bin/redcap" session-ownership self-check
     "$REPO_ROOT/runtime/bin/redcap" intent-judge self-check
     python3 "$REPO_ROOT/runtime/host-adapters/codex/codex-hook.py" --self-check-intent-judge

@@ -1,0 +1,104 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260607-fresh-prompt-marker-autoresume",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven 指出 fresh UserPromptSubmit 写入门禁已经严重阻塞自动续跑，要求立即查明原因、制定修复方案并落地。",
+    "target_reality": "自动续跑不再因为缺少新鲜 UserPromptSubmit 标记而阻塞已授权目标；普通写入仍必须有同会话授权意图。",
+    "non_goals": [
+      "删除写入授权门禁",
+      "允许跨会话写入",
+      "允许 answer_only 或 review_only 提示执行写入",
+      "绕过危险命令、证据目录写入、棱镜原始证据读取等既有保护"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "回退 runtime/host-adapters/codex/codex-hook.py 中的自动续跑授权识别、自检样例和相关文案。",
+    "verification_plan": [
+      "python3 -m py_compile runtime/host-adapters/codex/codex-hook.py",
+      "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge",
+      "runtime/bin/redcap host-hook-audit",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "我认为这个机制是超级严重阻塞bug！直接导致了任务推进失败，必须立即查处原因、制定修复方案、然后执行落地、组织这个bug继续阻塞任务推进",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion"
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260607-revival-implementation-plan/merge.json",
+    "resolution_path": "assets/evidence/prism/20260607-revival-implementation-plan/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260607-revival-implementation-plan/session.json"
+  },
+  "task_body": {
+    "requested_outcome": "修复 fresh UserPromptSubmit 写入门禁对自动续跑的误伤。",
+    "primary_deliverable": "Codex 项目钩子的自动续跑授权识别与自检覆盖。",
+    "acceptance_criteria": [
+      "仍然要求普通写入具备同会话、实施或完成授权意图。",
+      "自动续跑上下文可以作为同会话目标授权来源，不因 3600 秒超时被错误拒绝。",
+      "陈旧普通用户提示仍不能授权写入。",
+      "自检覆盖自动续跑允许分支和陈旧提示拒绝分支。",
+      "全量检查通过。"
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "runtime/host-adapters/codex/codex-hook.py"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "修复点应放在 PreToolUse 写入授权判断内，继续复用现有意图分类与同会话校验，不新增第二套宿主门禁。"
+      ],
+      "evidence": [
+        "runtime/host-adapters/codex/codex-hook.py",
+        "assets/contracts/hook-coverage.json"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "自动续跑授权只应用于当前线程目标，不应放宽普通用户提示、跨会话写入或证据目录保护。"
+      ],
+      "evidence": [
+        "runtime/host-adapters/codex/codex-hook.py",
+        "runtime/core/prompt_intent.py"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "验证必须包含正反样例：自动续跑允许，陈旧普通提示拒绝，防止再次把保护机制改成无条件放行。"
+      ],
+      "evidence": [
+        "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge",
+        "runtime/bin/redcap check"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/host-adapters/codex/codex-hook.py"
+  ],
+  "verification_evidence": [
+    "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge",
+    "runtime/bin/redcap host-hook-audit",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change"
+  }
+}

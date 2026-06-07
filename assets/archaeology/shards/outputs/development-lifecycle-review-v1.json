@@ -1,0 +1,151 @@
+{
+  "schema_id": "prism-shard-output",
+  "shard_id": "development-lifecycle-review",
+  "generated_at": "2026-06-06T17:59:07+00:00",
+  "source_files_read": [
+    "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+    "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+  ],
+  "portable_designs": [
+    {
+      "id": "DLR-P01",
+      "name": "三轨评审门",
+      "classification": "redesign",
+      "target_boundary": "runtime",
+      "migration_action": "保留架构、治理、契约三类审查语义；通过生命周期包字段和检查器落地，而不是恢复旧报告流程。",
+      "must_preserve": [
+        "架构轨检查运行边界、角色职责、状态机与运行时权威。",
+        "治理轨检查自然语言规则是否进入执行保障，并防止伪完成。",
+        "契约轨检查钩子、检查器、命令、文件生命周期和输入输出契约是否失败即关闭。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ]
+    },
+    {
+      "id": "DLR-P02",
+      "name": "原始意图覆盖审计",
+      "classification": "keep",
+      "target_boundary": "runtime",
+      "migration_action": "继续由 prompt_context、task_body、acceptance_criteria 与 verification_evidence 表达，不新增长报告运行时。",
+      "must_preserve": [
+        "必须能追溯用户原始意图。",
+        "必须能区分已覆盖、未覆盖、延期和用户可见边界。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ]
+    },
+    {
+      "id": "DLR-P03",
+      "name": "完成等级禁止混报",
+      "classification": "keep",
+      "target_boundary": "runtime",
+      "migration_action": "继续用 task_body.status、evidence_kind、verification_evidence 和 completion_claim 分层，不允许把已实现、已自检、已验收、已正式完成混成一个完成声明。",
+      "must_preserve": [
+        "完成等级必须可机检。",
+        "正式完成必须依赖任务本体证据和生命周期完成标记。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ]
+    },
+    {
+      "id": "DLR-P04",
+      "name": "人工介入显性化",
+      "classification": "redesign",
+      "target_boundary": "runtime",
+      "migration_action": "未来应进入阻塞包或任务恢复包：写清缺什么、为什么 Cap 不能自行完成、下一步需要谁做什么。",
+      "must_preserve": [
+        "人工介入不能藏在长报告后文。",
+        "阻塞条件必须足够具体，不能变成泛泛请求。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ]
+    },
+    {
+      "id": "DLR-P05",
+      "name": "可见下一步",
+      "classification": "keep",
+      "target_boundary": "assets_docs",
+      "migration_action": "保留为面向人的汇报要求：阶段性汇报必须写清上一刀、当前状态和下一刀，但它只能解释状态，不能替代任务完成。",
+      "must_preserve": [
+        "人类读者应能快速看懂当前做到哪里。",
+        "下一步必须是可执行动作，不是空泛愿景。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ]
+    }
+  ],
+  "risk_designs": [
+    {
+      "id": "DLR-R01",
+      "name": "完整任务报告运行时",
+      "classification": "no_promote",
+      "reason": "旧模板具备良好的人类可读结构，但如果恢复为完成前硬流程，容易重新制造“写完报告就像完成”的旧病。",
+      "replacement": "把可机检内容落入生命周期包、最终声明检查器和任务事实；把人类可读内容作为汇报风格要求，而不是完成凭证。",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ]
+    },
+    {
+      "id": "DLR-R02",
+      "name": "SessionEnd 报告归档强制项",
+      "classification": "redesign",
+      "reason": "当前 Codex 宿主不保证所有会话结束都能被 RedCap 拦截；直接照搬会产生虚假自动化保障。",
+      "replacement": "只在 RedCap 自有钩子和生命周期门禁可验证的范围内声明保障；宿主级不可保证的能力必须标清边界。",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ]
+    },
+    {
+      "id": "DLR-R03",
+      "name": "回执或评审文本替代任务本体",
+      "classification": "discard",
+      "reason": "旧模板把 receipt、独立验收和 closeout 放在强完工语义中；这些证据有价值，但不能成为现实已改变的替代物。",
+      "replacement": "完成声明必须由真实变更、验证命令和生命周期完成标记共同支撑。",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ]
+    },
+    {
+      "id": "DLR-R04",
+      "name": "独立报告状态机",
+      "classification": "discard",
+      "reason": "新 RedCap 已有有限状态机和生命周期包；再恢复旧报告状态，会形成第二套权威源并引发状态分裂。",
+      "replacement": "继续把评审轨作为生命周期包的一部分，而不是单独状态机。",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ]
+    }
+  ],
+  "evidence_paths": [
+    "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+    "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+    "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+  ],
+  "confidence": "high",
+  "open_questions": [
+    {
+      "id": "DLR-Q01",
+      "question": "人工介入显性化是否应在后续设计为独立阻塞包，还是扩展现有生命周期包字段？",
+      "recommended_timing": "复活计划阶段处理，不阻塞本分片验证。"
+    },
+    {
+      "id": "DLR-Q02",
+      "question": "面向人的阶段汇报格式是否需要独立中文输出检查器继续约束？",
+      "recommended_timing": "复活后审计阶段结合当前中文优先策略评估。"
+    }
+  ],
+  "cap_assessment": {
+    "decision": "accept",
+    "reason": "旧三轨评审和意图覆盖审计有高迁移价值；旧任务完成报告运行时和 SessionEnd 强归档不能直接迁移，应降级为人类可读规范或重新设计为生命周期检查字段。"
+  }
+}

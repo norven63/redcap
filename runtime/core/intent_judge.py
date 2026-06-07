@@ -269,6 +269,30 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     )
     if quoted["prompt_intent"].get("authorized_scope") != "review_only":
         failures.append("quoted code excerpt request should remain review_only")
+    pre_execution = classify_with_policy(
+        "我希望你可以一气呵成的完成任务：先完成360度旧RedCap扫描任务，然后根据任务的完成结果制定完整的如何复活Redcap项目计划，再根据计划去执行和落地。关于这个问题，你不要着急先开动，而是先回答我是否可行，并且如果还缺什么缓解，或者说你觉得有更好的“一气呵成任务计划方案”，也可以拿出来和我讨论。",
+        llm_policy="off",
+        provider=DEFAULT_PROVIDER,
+        fallback_provider=None,
+        timeout_seconds=1,
+    )
+    if pre_execution["prompt_intent"].get("authorized_scope") != "answer_only":
+        failures.append("pre-execution feasibility discussion should remain answer_only")
+    execution_samples = [
+        ("请执行这个修复", "direct implementation request should remain implementation"),
+        ("直接做这个优化", "direct do-it request should remain implementation"),
+        ("先讨论一下可行性，没问题的话就直接做", "mixed discussion plus execution request should remain implementation"),
+    ]
+    for sample_prompt, failure in execution_samples:
+        classified = classify_with_policy(
+            sample_prompt,
+            llm_policy="off",
+            provider=DEFAULT_PROVIDER,
+            fallback_provider=None,
+            timeout_seconds=1,
+        )
+        if classified["prompt_intent"].get("authorized_scope") != "implementation":
+            failures.append(failure)
     fake = classify_with_policy(
         "把棱镜改造成 LLM intent judge 模式",
         llm_policy="force",

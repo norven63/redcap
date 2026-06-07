@@ -35,6 +35,7 @@ REDCAP = REPO_ROOT / "runtime" / "bin" / "redcap"
 TURN_ACTION_CHECK = REPO_ROOT / "runtime" / "prism" / "bin" / "turn-action-check"
 FINAL_CLAIM_GUARD = REPO_ROOT / "runtime" / "core" / "final_claim_guard.py"
 HUMAN_OUTPUT_POLICY = REPO_ROOT / "runtime" / "core" / "human_output_policy.py"
+SCAN_CONCLUSION_GUARD = REPO_ROOT / "runtime" / "core" / "scan_conclusion_guard.py"
 STOP_HOOK_MODE_FILE = REPO_ROOT / ".codex" / "stop-hook-mode"
 SUPPORTED_EVENTS = {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"}
 INTENT_JUDGE_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_INTENT_JUDGE_TIMEOUT_SECONDS", "75"))
@@ -706,6 +707,31 @@ def prompt_marker_is_fresh_for_tool(prompt_marker: dict[str, Any], payload: dict
     return True
 
 
+def prompt_marker_same_session(prompt_marker: dict[str, Any], payload: dict[str, Any]) -> bool:
+    expected_session = payload.get("session_id")
+    return (
+        isinstance(expected_session, str)
+        and bool(expected_session.strip())
+        and prompt_marker.get("session_id") == expected_session
+    )
+
+
+def prompt_marker_can_authorize_same_session_continuation(
+    prompt_marker: dict[str, Any],
+    payload: dict[str, Any],
+) -> bool:
+    if not prompt_text_from_marker(prompt_marker).strip():
+        return False
+    if not prompt_marker_same_session(prompt_marker, payload):
+        return False
+    recorded_at = prompt_marker.get("recorded_at")
+    try:
+        dt.datetime.fromisoformat(str(recorded_at))
+    except ValueError:
+        return False
+    return prompt_intent_allows_mutation(prompt_marker)
+
+
 def run_intent_judge_for_marker(prompt_marker: dict[str, Any]) -> dict[str, Any]:
     prompt = prompt_text_from_marker(prompt_marker)
     if not prompt.strip():
@@ -982,12 +1008,16 @@ def cmd_event(args: argparse.Namespace) -> int:
         intent_deny_reason = None
         intent_judge = None
         prompt_marker_fresh = prompt_marker_is_fresh_for_tool(prompt_marker, payload)
+        same_session_continuation_authorized = False
         if tool_is_mutating(payload, command):
             if not prompt_marker_fresh:
-                intent_deny_reason = (
-                    "Latest RedCap prompt marker is missing or stale for this tool event; "
-                    "mutation requires a fresh UserPromptSubmit marker."
-                )
+                same_session_continuation_authorized = prompt_marker_can_authorize_same_session_continuation(prompt_marker, payload)
+                if not same_session_continuation_authorized:
+                    intent_deny_reason = (
+                        "RedCap 最新用户提示标记缺失、过期或不属于当前会话；"
+                        "写入动作需要新鲜 UserPromptSubmit（用户提示提交事件）标记，"
+                        "或同会话已授权实施/完成意图的续跑标记。"
+                    )
             elif not prompt_intent_allows_mutation(prompt_marker):
                 intent = effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else {}
                 scope = intent.get("authorized_scope") if isinstance(intent, dict) else "unknown"
@@ -1019,6 +1049,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             "dangerous_command_reason": deny_reason,
             "prompt_intent_mutation_denied": bool(intent_deny_reason),
             "latest_prompt_marker_fresh": prompt_marker_fresh,
+            "same_session_continuation_authorized": same_session_continuation_authorized,
             "latest_prompt_intent": effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else None,
             "prompt_intent_llm_attempted": bool(intent_judge),
             "prompt_intent_llm_result": intent_judge,
@@ -1163,6 +1194,54 @@ def cmd_event(args: argparse.Namespace) -> int:
                 "decision": "block",
                 "reason": reason,
                 "systemMessage": "RedCap（当前复活工程）最终完成声明门禁未通过。",
+            }, ensure_ascii=False))
+            return 0
+        scan_guard = run_command([
+            sys.executable,
+            str(SCAN_CONCLUSION_GUARD),
+            "check",
+            "--message",
+            str(payload.get("last_assistant_message") or ""),
+            "--events",
+            str(EVENTS_PATH),
+            "--session-id",
+            str(payload.get("session_id") or ""),
+            "--turn-id",
+            str(payload.get("turn_id") or ""),
+        ])
+        scan_guard_result, scan_guard_parse_error = parse_leading_json_object(scan_guard["stdout"])
+        if scan_guard_parse_error is not None or scan_guard_result is None:
+            scan_guard_result = {
+                "ok": False,
+                "reason": f"scan-conclusion guard returned invalid JSON: {scan_guard_parse_error}",
+                "exit_code": scan_guard["exit_code"],
+            }
+        scan_state = scan_guard_result.get("scan_state") if isinstance(scan_guard_result, dict) else None
+        marker = update_latest_marker("Stop", {
+            "scan_conclusion_guard_ok": bool(scan_guard_result.get("ok")),
+            "scan_conclusion_guard_triggered": scan_guard_result.get("triggered"),
+            "scan_conclusion_guard_reason": scan_guard_result.get("reason"),
+            "scan_conclusion_guard_state": scan_state,
+            "scan_conclusion_guard_exit": scan_guard["exit_code"],
+            "scan_conclusion_guard_stdout_sha256": scan_guard["stdout_sha256"],
+            "scan_conclusion_guard_stderr_sha256": scan_guard["stderr_sha256"],
+        }, base_marker=marker)
+        if scan_guard["exit_code"] != 0 or scan_guard_result.get("ok") is not True:
+            expected = scan_guard_result.get("expected_status_block")
+            recovery = scan_guard_result.get("recovery")
+            reason = (
+                "RedCap（当前复活工程）Stop Hook（停止前检查）发现：回复正在回答 360 度旧 RedCap 扫描结论，"
+                "但当前扫描没有完成证据，或缺少与账目一致的结构化扫描状态块。"
+                "请回到原扫描任务：只能报告阶段状态，或者继续执行已验证的分片扫描。"
+            )
+            if isinstance(expected, str) and expected.strip():
+                reason = f"{reason} 需要包含的状态块：{expected}"
+            if isinstance(recovery, str) and recovery.strip():
+                reason = f"{reason} 恢复要求：{recovery}"
+            print(json.dumps({
+                "decision": "block",
+                "reason": reason,
+                "systemMessage": "RedCap（当前复活工程）360 度扫描结论门禁未通过。",
             }, ensure_ascii=False))
             return 0
         human_output = run_command([
@@ -1425,6 +1504,50 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             failures.append("stale prompt marker should deny mutation")
         if stale_marker.get("prompt_intent_llm_attempted") is not False:
             failures.append("stale prompt marker must not call LLM using old prompt text")
+        if stale_marker.get("same_session_continuation_authorized") is not False:
+            failures.append("cross-session stale prompt must not authorize continuation")
+
+        continuation_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "继续执行这个修复任务并完成落地",
+                "cwd": str(REPO_ROOT),
+                "session_id": "same-session-continuation",
+                "turn_id": "same-session-continuation-prompt",
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if continuation_prompt.returncode != 0:
+            failures.append(f"continuation UserPromptSubmit failed: {continuation_prompt.stderr or continuation_prompt.stdout}")
+        continuation_marker_path = evidence_dir / "latest-UserPromptSubmit.json"
+        continuation_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
+        continuation_marker["recorded_at"] = "2000-01-01T00:00:00+00:00"
+        write_json_atomic(continuation_marker_path, continuation_marker)
+        continuation = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "same-session-continuation",
+                "turn_id": "same-session-continuation-tool",
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-continuation",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if continuation.returncode != 0:
+            failures.append(f"continuation PreToolUse failed: {continuation.stderr or continuation.stdout}")
+        continuation_tool_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        if continuation_tool_marker.get("latest_prompt_marker_fresh") is not False:
+            failures.append("continuation fixture should use a stale prompt marker")
+        if continuation_tool_marker.get("same_session_continuation_authorized") is not True:
+            failures.append("same-session continuation should authorize stale implementation prompt")
+        if continuation_tool_marker.get("dangerous_command_denied") is not False:
+            failures.append("same-session continuation should not deny ordinary mutation")
+        if continuation_tool_marker.get("prompt_intent_llm_attempted") is not False:
+            failures.append("same-session continuation must not call LLM using old prompt text")
 
         timeout_prompt = run_hook_event_for_self_check(
             "UserPromptSubmit",
@@ -1574,6 +1697,45 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         human_marker = load_self_check_marker(evidence_dir, "Stop")
         if human_marker.get("human_output_guard_ok") is not False:
             failures.append("human-output Stop marker should record failed human output guard")
+        scan_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "我希望知道的是，你对360度全方位扫描旧redcap后，是什么结论？",
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-scan-conclusion-session",
+                "turn_id": "fixture-scan-conclusion-turn",
+                "source": "codex-hook-scan-conclusion-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if scan_prompt.returncode != 0:
+            failures.append(f"scan-conclusion UserPromptSubmit failed: {scan_prompt.stderr or scan_prompt.stdout}")
+        scan_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-scan-conclusion-session",
+                "turn_id": "fixture-scan-conclusion-turn",
+                "last_assistant_message": "360 度旧 RedCap 扫描后的结论是：可以迁移全部设计。",
+                "source": "codex-hook-scan-conclusion-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={"REDCAP_STOP_HOOK_MODE": "enforce"},
+        )
+        if scan_stop.returncode != 0:
+            failures.append(f"scan-conclusion Stop failed: {scan_stop.stderr or scan_stop.stdout}")
+        scan_stop_result, scan_stop_error = parse_leading_json_object(scan_stop.stdout or "")
+        if scan_stop_error is not None or not isinstance(scan_stop_result, dict):
+            failures.append(f"scan-conclusion Stop did not emit JSON: {scan_stop_error}")
+        else:
+            reason = str(scan_stop_result.get("reason") or "")
+            if scan_stop_result.get("decision") != "block":
+                failures.append("scan-conclusion Stop fixture should block an unsupported final scan conclusion")
+            if "结构化扫描状态块" not in reason:
+                failures.append("scan-conclusion Stop block reason should request a structured scan status block")
+        scan_marker = load_self_check_marker(evidence_dir, "Stop")
+        if scan_marker.get("scan_conclusion_guard_ok") is not False:
+            failures.append("scan-conclusion Stop marker should record failed scan conclusion guard")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     return 0 if not failures else 1
 
@@ -1679,7 +1841,10 @@ def is_valid_stop_block_marker(marker: dict[str, Any]) -> bool:
     final_claim_blocked = marker.get("final_claim_guard_ok") is False and is_non_empty_string(
         marker.get("final_claim_guard_reason")
     )
-    return bool(action_blocked or final_claim_blocked)
+    scan_conclusion_blocked = marker.get("scan_conclusion_guard_ok") is False and is_non_empty_string(
+        marker.get("scan_conclusion_guard_reason")
+    )
+    return bool(action_blocked or final_claim_blocked or scan_conclusion_blocked)
 
 
 def is_non_empty_string(value: Any) -> bool:

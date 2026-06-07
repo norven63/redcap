@@ -1,448 +1,452 @@
 {
-  "schema_id": "prism-shard-account",
-  "task_id": "20260606-old-redcap-360-scan",
-  "purpose": "启动 360 度旧 RedCap 扫描：把已知优秀设计、病灶设计、可迁移边界和禁止迁移项拆成可验收分片。",
-  "owner": "cap",
-  "status": "active",
-  "max_rounds_per_shard": 3,
-  "source_policy": {
-    "mode": "exact-files-before-shard",
-    "max_files_per_shard": 7,
-    "bulk_read_allowed": false
-  },
-  "context_policy": {
-    "mode": "index-first",
-    "bulk_default_allowed": false,
-    "raw_default_allowed": false,
-    "large_artifact_policy": "explicit-reference-only",
-    "task_truth_externalized": true
-  },
   "acceptance_policy": {
     "cap_acceptance_required": true,
-    "provider_output_support_only": true,
-    "completion_requires_verified_outputs": true
+    "completion_requires_verified_outputs": true,
+    "provider_output_support_only": true
   },
+  "active_shard_id": null,
   "cap_arbitration": {
-    "max_discussion_rounds": 3,
-    "cap_decision_required_on_exhaustion": true
+    "cap_decision_required_on_exhaustion": true,
+    "max_discussion_rounds": 3
   },
-  "shards": [
-    {
-      "id": "runtime-workspace-boundary",
-      "question": "Which old RedCap rules separate runtime root, project workspace, and user-private state?",
-      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
-      "candidate_sources": [
-        "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
-        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
-        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
-      ],
-      "forbidden_sources": [
-        "旧仓库目录级批量读取",
-        "旧 task-reports 正文堆",
-        "旧 prism/runs 原始输出",
-        "旧 closeout receipts 或私密任务体",
-        "未列入 candidate_sources 的文件"
-      ],
-      "stop_condition": "回答本分片问题并产出结构化设计分类后停止，不迁移具体模块。",
-      "acceptance_criteria": [
-        "Boundary extraction exists, has exactly bounded sources, and preserves required guarantees.",
-        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
-        "不得读取 candidate_sources 之外的旧仓库文件。",
-        "不得把评审、报告、回执或账目本身当作复活完成。"
-      ],
-      "providers": [
-        "kimi",
-        "claude-code"
-      ],
-      "provider_sessions": {
-        "kimi": {
-          "status": "pending",
-          "manifest_path": null
-        },
-        "claude-code": {
-          "status": "pending",
-          "manifest_path": null
-        }
-      },
-      "max_rounds": 3,
-      "context_budget": {
-        "max_source_files": 3,
-        "max_provider_rounds": 3,
-        "default_load_policy": "explicit-files-only",
-        "raw_evidence_default_allowed": false
-      },
-      "output_schema": {
-        "schema_id": "prism-shard-output",
-        "required_fields": [
-          "confidence",
-          "evidence_paths",
-          "open_questions",
-          "portable_designs",
-          "risk_designs"
-        ]
-      },
-      "status": "active",
-      "output_path": null,
-      "started_at": "2026-06-06T14:00:00+00:00"
-    },
-    {
-      "id": "development-lifecycle-review",
-      "question": "Which old review tracks are portable without duplicating the new FSM?",
-      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
-      "candidate_sources": [
-        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
-        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
-      ],
-      "forbidden_sources": [
-        "旧仓库目录级批量读取",
-        "旧 task-reports 正文堆",
-        "旧 prism/runs 原始输出",
-        "旧 closeout receipts 或私密任务体",
-        "未列入 candidate_sources 的文件"
-      ],
-      "stop_condition": "回答本分片问题并产出结构化设计分类后停止，不迁移具体模块。",
-      "acceptance_criteria": [
-        "Produces lifecycle evidence rules mapped to existing FSM transitions, not a second state machine.",
-        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
-        "不得读取 candidate_sources 之外的旧仓库文件。",
-        "不得把评审、报告、回执或账目本身当作复活完成。"
-      ],
-      "providers": [
-        "kimi",
-        "claude-code"
-      ],
-      "provider_sessions": {
-        "kimi": {
-          "status": "pending",
-          "manifest_path": null
-        },
-        "claude-code": {
-          "status": "pending",
-          "manifest_path": null
-        }
-      },
-      "max_rounds": 3,
-      "context_budget": {
-        "max_source_files": 2,
-        "max_provider_rounds": 3,
-        "default_load_policy": "explicit-files-only",
-        "raw_evidence_default_allowed": false
-      },
-      "output_schema": {
-        "schema_id": "prism-shard-output",
-        "required_fields": [
-          "confidence",
-          "evidence_paths",
-          "open_questions",
-          "portable_designs",
-          "risk_designs"
-        ]
-      },
-      "status": "planned",
-      "output_path": null,
-      "scheduled_after": "runtime-workspace-boundary"
-    },
-    {
-      "id": "long-task-context-defense",
-      "question": "Which old long-task defenses should become Prism shard ledger rules?",
-      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
-      "candidate_sources": [
-        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
-      ],
-      "forbidden_sources": [
-        "旧仓库目录级批量读取",
-        "旧 task-reports 正文堆",
-        "旧 prism/runs 原始输出",
-        "旧 closeout receipts 或私密任务体",
-        "未列入 candidate_sources 的文件"
-      ],
-      "stop_condition": "回答本分片问题并产出结构化设计分类后停止，不迁移具体模块。",
-      "acceptance_criteria": [
-        "Produces shard split/acceptance rules and explicit anti-bulk-read limits.",
-        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
-        "不得读取 candidate_sources 之外的旧仓库文件。",
-        "不得把评审、报告、回执或账目本身当作复活完成。"
-      ],
-      "providers": [
-        "kimi",
-        "claude-code"
-      ],
-      "provider_sessions": {
-        "kimi": {
-          "status": "pending",
-          "manifest_path": null
-        },
-        "claude-code": {
-          "status": "pending",
-          "manifest_path": null
-        }
-      },
-      "max_rounds": 3,
-      "context_budget": {
-        "max_source_files": 1,
-        "max_provider_rounds": 3,
-        "default_load_policy": "explicit-files-only",
-        "raw_evidence_default_allowed": false
-      },
-      "output_schema": {
-        "schema_id": "prism-shard-output",
-        "required_fields": [
-          "confidence",
-          "evidence_paths",
-          "open_questions",
-          "portable_designs",
-          "risk_designs"
-        ]
-      },
-      "status": "planned",
-      "output_path": null,
-      "scheduled_after": "runtime-workspace-boundary"
-    },
-    {
-      "id": "pathology-report-as-progress",
-      "question": "Which old report rules helped verification, and which report mechanics let written reports substitute for changed reality?",
-      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
-      "candidate_sources": [
-        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
-        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-task-report-check.sh",
-        "/Users/norven/workspace/redcap/compass/tools/redcap-task-report-check.sh"
-      ],
-      "forbidden_sources": [
-        "旧仓库目录级批量读取",
-        "旧 task-reports 正文堆",
-        "旧 prism/runs 原始输出",
-        "旧 closeout receipts 或私密任务体",
-        "未列入 candidate_sources 的文件"
-      ],
-      "stop_condition": "extract only report/progress semantics and guardrail candidates; do not read historical task-report bodies",
-      "acceptance_criteria": [
-        "Produces anti-pattern rules that distinguish useful reports from report-as-progress pathology, with no task-report body migration.",
-        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
-        "不得读取 candidate_sources 之外的旧仓库文件。",
-        "不得把评审、报告、回执或账目本身当作复活完成。"
-      ],
-      "providers": [
-        "kimi",
-        "claude-code"
-      ],
-      "provider_sessions": {
-        "kimi": {
-          "status": "pending",
-          "manifest_path": null
-        },
-        "claude-code": {
-          "status": "pending",
-          "manifest_path": null
-        }
-      },
-      "max_rounds": 3,
-      "context_budget": {
-        "max_source_files": 3,
-        "max_provider_rounds": 3,
-        "default_load_policy": "explicit-files-only",
-        "raw_evidence_default_allowed": false
-      },
-      "output_schema": {
-        "schema_id": "prism-shard-output",
-        "required_fields": [
-          "confidence",
-          "evidence_paths",
-          "open_questions",
-          "portable_designs",
-          "risk_designs"
-        ]
-      },
-      "status": "no_promote",
-      "output_path": null,
-      "decision_reason": "The old task-report mechanism is not promoted into RedCap 1.0. The useful 1.0 requirement is already narrower and executable: report, extraction, Prism review, ledger, receipt, or summary artifacts must not complete an extract-and-consume loop item unless paired with runtime, contract, knowledge, or RedCap command evidence."
-    },
-    {
-      "id": "pathology-receipt-as-completion",
-      "question": "Which old receipt rules are useful proof chains, and which allowed receipts or aggregation to masquerade as completion?",
-      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
-      "candidate_sources": [
-        "/Users/norven/workspace/redcap/assets/references/parent-receipt-aggregation-policy.json",
-        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.py",
-        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.sh"
-      ],
-      "forbidden_sources": [
-        "旧仓库目录级批量读取",
-        "旧 task-reports 正文堆",
-        "旧 prism/runs 原始输出",
-        "旧 closeout receipts 或私密任务体",
-        "未列入 candidate_sources 的文件"
-      ],
-      "stop_condition": "extract receipt/completion boundary only; do not inspect receipt archives or private task bodies",
-      "acceptance_criteria": [
-        "Produces receipt semantics that keep receipts as proof after reality changes, never as completion itself.",
-        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
-        "不得读取 candidate_sources 之外的旧仓库文件。",
-        "不得把评审、报告、回执或账目本身当作复活完成。"
-      ],
-      "providers": [
-        "kimi",
-        "claude-code"
-      ],
-      "provider_sessions": {
-        "kimi": {
-          "status": "pending",
-          "manifest_path": null
-        },
-        "claude-code": {
-          "status": "pending",
-          "manifest_path": null
-        }
-      },
-      "max_rounds": 3,
-      "context_budget": {
-        "max_source_files": 3,
-        "max_provider_rounds": 3,
-        "default_load_policy": "explicit-files-only",
-        "raw_evidence_default_allowed": false
-      },
-      "output_schema": {
-        "schema_id": "prism-shard-output",
-        "required_fields": [
-          "confidence",
-          "evidence_paths",
-          "open_questions",
-          "portable_designs",
-          "risk_designs"
-        ]
-      },
-      "status": "no_promote",
-      "output_path": null,
-      "decision_reason": "The old receipt aggregation mechanism is not promoted into RedCap 1.0. The useful 1.0 requirement is narrower: receipt evidence must remain proof after runtime reality changes and must never be accepted as completion by itself."
-    },
-    {
-      "id": "pathology-closeout-recursion",
-      "question": "Which old closeout mechanics are needed for safe recovery, and which created closeout work before implementation reality changed?",
-      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
-      "candidate_sources": [
-        "/Users/norven/workspace/redcap/runtime/redcap-core/closeout-cap.sh",
-        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-layerb-closeout-runtime.py",
-        "/Users/norven/workspace/redcap/compass/tools/redcap-layerb-closeout-runtime.py",
-        "/Users/norven/workspace/redcap/assets/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md"
-      ],
-      "forbidden_sources": [
-        "旧仓库目录级批量读取",
-        "旧 task-reports 正文堆",
-        "旧 prism/runs 原始输出",
-        "旧 closeout receipts 或私密任务体",
-        "未列入 candidate_sources 的文件"
-      ],
-      "stop_condition": "extract closeout recursion and ownership limits only; do not execute old closeout scripts",
-      "acceptance_criteria": [
-        "Produces closeout recursion limits and cut lines between closeout, implementation, and verification.",
-        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
-        "不得读取 candidate_sources 之外的旧仓库文件。",
-        "不得把评审、报告、回执或账目本身当作复活完成。"
-      ],
-      "providers": [
-        "kimi",
-        "claude-code"
-      ],
-      "provider_sessions": {
-        "kimi": {
-          "status": "pending",
-          "manifest_path": null
-        },
-        "claude-code": {
-          "status": "pending",
-          "manifest_path": null
-        }
-      },
-      "max_rounds": 3,
-      "context_budget": {
-        "max_source_files": 4,
-        "max_provider_rounds": 3,
-        "default_load_policy": "explicit-files-only",
-        "raw_evidence_default_allowed": false
-      },
-      "output_schema": {
-        "schema_id": "prism-shard-output",
-        "required_fields": [
-          "confidence",
-          "evidence_paths",
-          "open_questions",
-          "portable_designs",
-          "risk_designs"
-        ]
-      },
-      "status": "no_promote",
-      "output_path": null,
-      "decision_reason": "The old closeout runtime is not promoted into RedCap 1.0. The useful 1.0 requirement is narrower: closeout, closure, pending-closure, closure-ledger, closeout receipt, and closeout summary artifacts may support evidence after changed runtime reality exists, but they must never complete a revival loop item by themselves."
-    },
-    {
-      "id": "pathology-raw-evidence-default",
-      "question": "Which old evidence retention rules preserve proof, and which made raw evidence the default context surface?",
-      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
-      "candidate_sources": [
-        "/Users/norven/workspace/redcap/prism/tools/prism-evidence-check.sh",
-        "/Users/norven/workspace/redcap/runtime/redcap-core/prism-tools/prism-evidence-check.sh",
-        "/Users/norven/workspace/redcap/compass/tools/redcap-r1-prism-evidence-retention-split-check.py",
-        "/Users/norven/workspace/redcap/assets/references/r1-prism-evidence-retention-split-preflight.json"
-      ],
-      "forbidden_sources": [
-        "旧仓库目录级批量读取",
-        "旧 task-reports 正文堆",
-        "旧 prism/runs 原始输出",
-        "旧 closeout receipts 或私密任务体",
-        "未列入 candidate_sources 的文件"
-      ],
-      "stop_condition": "extract evidence-retention and context-default rules only; do not read raw prism runs or evidence archives",
-      "acceptance_criteria": [
-        "Produces raw-evidence access limits that keep evidence queryable without making raw dumps default context.",
-        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
-        "不得读取 candidate_sources 之外的旧仓库文件。",
-        "不得把评审、报告、回执或账目本身当作复活完成。"
-      ],
-      "providers": [
-        "kimi",
-        "claude-code"
-      ],
-      "provider_sessions": {
-        "kimi": {
-          "status": "pending",
-          "manifest_path": null
-        },
-        "claude-code": {
-          "status": "pending",
-          "manifest_path": null
-        }
-      },
-      "max_rounds": 3,
-      "context_budget": {
-        "max_source_files": 4,
-        "max_provider_rounds": 3,
-        "default_load_policy": "explicit-files-only",
-        "raw_evidence_default_allowed": false
-      },
-      "output_schema": {
-        "schema_id": "prism-shard-output",
-        "required_fields": [
-          "confidence",
-          "evidence_paths",
-          "open_questions",
-          "portable_designs",
-          "risk_designs"
-        ]
-      },
-      "status": "no_promote",
-      "output_path": null,
-      "decision_reason": "The old raw evidence retention and split machinery is not promoted into RedCap 1.0. The useful 1.0 requirement is narrower: raw evidence remains preserved and queryable only through explicit access boundaries, never as default context or a completion substitute."
-    }
-  ],
-  "started_at": "2026-06-06T14:00:00+00:00",
-  "active_shard_id": "runtime-workspace-boundary",
+  "context_policy": {
+    "bulk_default_allowed": false,
+    "large_artifact_policy": "explicit-reference-only",
+    "mode": "index-first",
+    "raw_default_allowed": false,
+    "task_truth_externalized": true
+  },
   "disagreement_policy": {
-    "max_discussion_rounds": 3,
     "cap_decision_after_exhaustion": "Cap must record accept, reject-with-followup, or escalate with evidence; this is not a silent veto.",
     "escalate_to_norven_when": [
       "value-laden decision",
       "irreversible migration or deletion",
       "identity-affecting decision",
       "provider concern cannot be resolved with available evidence after bounded rounds"
-    ]
-  }
+    ],
+    "max_discussion_rounds": 3
+  },
+  "max_rounds_per_shard": 3,
+  "merged_output_path": "old-redcap-360-scan-merge.json",
+  "owner": "cap",
+  "purpose": "启动 360 度旧 RedCap 扫描：把已知优秀设计、病灶设计、可迁移边界和禁止迁移项拆成可验收分片。",
+  "schema_id": "prism-shard-account",
+  "shards": [
+    {
+      "acceptance_criteria": [
+        "Boundary extraction exists, has exactly bounded sources, and preserves required guarantees.",
+        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
+        "不得读取 candidate_sources 之外的旧仓库文件。",
+        "不得把评审、报告、回执或账目本身当作复活完成。"
+      ],
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "context_budget": {
+        "default_load_policy": "explicit-files-only",
+        "max_provider_rounds": 3,
+        "max_source_files": 3,
+        "raw_evidence_default_allowed": false
+      },
+      "forbidden_sources": [
+        "旧仓库目录级批量读取",
+        "旧 task-reports 正文堆",
+        "旧 prism/runs 原始输出",
+        "旧 closeout receipts 或私密任务体",
+        "未列入 candidate_sources 的文件"
+      ],
+      "id": "runtime-workspace-boundary",
+      "max_rounds": 3,
+      "output_path": "outputs/runtime-workspace-boundary-v1.json",
+      "output_schema": {
+        "required_fields": [
+          "confidence",
+          "evidence_paths",
+          "open_questions",
+          "portable_designs",
+          "risk_designs"
+        ],
+        "schema_id": "prism-shard-output"
+      },
+      "provider_sessions": {
+        "claude-code": {
+          "manifest_path": null,
+          "status": "pending"
+        },
+        "kimi": {
+          "manifest_path": null,
+          "status": "pending"
+        }
+      },
+      "providers": [
+        "kimi",
+        "claude-code"
+      ],
+      "question": "Which old RedCap rules separate runtime root, project workspace, and user-private state?",
+      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
+      "started_at": "2026-06-06T14:00:00+00:00",
+      "status": "verified",
+      "stop_condition": "回答本分片问题并产出结构化设计分类后停止，不迁移具体模块。",
+      "verified_at": "2026-06-06T17:53:35+00:00"
+    },
+    {
+      "acceptance_criteria": [
+        "Produces lifecycle evidence rules mapped to existing FSM transitions, not a second state machine.",
+        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
+        "不得读取 candidate_sources 之外的旧仓库文件。",
+        "不得把评审、报告、回执或账目本身当作复活完成。"
+      ],
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ],
+      "context_budget": {
+        "default_load_policy": "explicit-files-only",
+        "max_provider_rounds": 3,
+        "max_source_files": 2,
+        "raw_evidence_default_allowed": false
+      },
+      "forbidden_sources": [
+        "旧仓库目录级批量读取",
+        "旧 task-reports 正文堆",
+        "旧 prism/runs 原始输出",
+        "旧 closeout receipts 或私密任务体",
+        "未列入 candidate_sources 的文件"
+      ],
+      "id": "development-lifecycle-review",
+      "max_rounds": 3,
+      "output_path": "outputs/development-lifecycle-review-v1.json",
+      "output_schema": {
+        "required_fields": [
+          "confidence",
+          "evidence_paths",
+          "open_questions",
+          "portable_designs",
+          "risk_designs"
+        ],
+        "schema_id": "prism-shard-output"
+      },
+      "provider_sessions": {
+        "claude-code": {
+          "manifest_path": null,
+          "status": "pending"
+        },
+        "kimi": {
+          "manifest_path": null,
+          "status": "pending"
+        }
+      },
+      "providers": [
+        "kimi",
+        "claude-code"
+      ],
+      "question": "Which old review tracks are portable without duplicating the new FSM?",
+      "scheduled_after": "runtime-workspace-boundary",
+      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
+      "status": "verified",
+      "stop_condition": "回答本分片问题并产出结构化设计分类后停止，不迁移具体模块。",
+      "verified_at": "2026-06-06T17:59:07+00:00"
+    },
+    {
+      "acceptance_criteria": [
+        "Produces shard split/acceptance rules and explicit anti-bulk-read limits.",
+        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
+        "不得读取 candidate_sources 之外的旧仓库文件。",
+        "不得把评审、报告、回执或账目本身当作复活完成。"
+      ],
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "context_budget": {
+        "default_load_policy": "explicit-files-only",
+        "max_provider_rounds": 3,
+        "max_source_files": 1,
+        "raw_evidence_default_allowed": false
+      },
+      "forbidden_sources": [
+        "旧仓库目录级批量读取",
+        "旧 task-reports 正文堆",
+        "旧 prism/runs 原始输出",
+        "旧 closeout receipts 或私密任务体",
+        "未列入 candidate_sources 的文件"
+      ],
+      "id": "long-task-context-defense",
+      "max_rounds": 3,
+      "output_path": "outputs/long-task-context-defense-v1.json",
+      "output_schema": {
+        "required_fields": [
+          "confidence",
+          "evidence_paths",
+          "open_questions",
+          "portable_designs",
+          "risk_designs"
+        ],
+        "schema_id": "prism-shard-output"
+      },
+      "provider_sessions": {
+        "claude-code": {
+          "manifest_path": null,
+          "status": "pending"
+        },
+        "kimi": {
+          "manifest_path": null,
+          "status": "pending"
+        }
+      },
+      "providers": [
+        "kimi",
+        "claude-code"
+      ],
+      "question": "Which old long-task defenses should become Prism shard ledger rules?",
+      "scheduled_after": "runtime-workspace-boundary",
+      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
+      "status": "verified",
+      "stop_condition": "回答本分片问题并产出结构化设计分类后停止，不迁移具体模块。",
+      "verified_at": "2026-06-06T18:00:38+00:00"
+    },
+    {
+      "acceptance_criteria": [
+        "Produces anti-pattern rules that distinguish useful reports from report-as-progress pathology, with no task-report body migration.",
+        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
+        "不得读取 candidate_sources 之外的旧仓库文件。",
+        "不得把评审、报告、回执或账目本身当作复活完成。"
+      ],
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-task-report-check.sh",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-task-report-check.sh"
+      ],
+      "context_budget": {
+        "default_load_policy": "explicit-files-only",
+        "max_provider_rounds": 3,
+        "max_source_files": 3,
+        "raw_evidence_default_allowed": false
+      },
+      "decision_reason": "The old task-report mechanism is not promoted into RedCap 1.0. The useful 1.0 requirement is already narrower and executable: report, extraction, Prism review, ledger, receipt, or summary artifacts must not complete an extract-and-consume loop item unless paired with runtime, contract, knowledge, or RedCap command evidence.",
+      "forbidden_sources": [
+        "旧仓库目录级批量读取",
+        "旧 task-reports 正文堆",
+        "旧 prism/runs 原始输出",
+        "旧 closeout receipts 或私密任务体",
+        "未列入 candidate_sources 的文件"
+      ],
+      "id": "pathology-report-as-progress",
+      "max_rounds": 3,
+      "output_path": null,
+      "output_schema": {
+        "required_fields": [
+          "confidence",
+          "evidence_paths",
+          "open_questions",
+          "portable_designs",
+          "risk_designs"
+        ],
+        "schema_id": "prism-shard-output"
+      },
+      "provider_sessions": {
+        "claude-code": {
+          "manifest_path": null,
+          "status": "pending"
+        },
+        "kimi": {
+          "manifest_path": null,
+          "status": "pending"
+        }
+      },
+      "providers": [
+        "kimi",
+        "claude-code"
+      ],
+      "question": "Which old report rules helped verification, and which report mechanics let written reports substitute for changed reality?",
+      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
+      "status": "no_promote",
+      "stop_condition": "extract only report/progress semantics and guardrail candidates; do not read historical task-report bodies"
+    },
+    {
+      "acceptance_criteria": [
+        "Produces receipt semantics that keep receipts as proof after reality changes, never as completion itself.",
+        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
+        "不得读取 candidate_sources 之外的旧仓库文件。",
+        "不得把评审、报告、回执或账目本身当作复活完成。"
+      ],
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/assets/references/parent-receipt-aggregation-policy.json",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-parent-receipt-aggregation-check.sh"
+      ],
+      "context_budget": {
+        "default_load_policy": "explicit-files-only",
+        "max_provider_rounds": 3,
+        "max_source_files": 3,
+        "raw_evidence_default_allowed": false
+      },
+      "decision_reason": "The old receipt aggregation mechanism is not promoted into RedCap 1.0. The useful 1.0 requirement is narrower: receipt evidence must remain proof after runtime reality changes and must never be accepted as completion by itself.",
+      "forbidden_sources": [
+        "旧仓库目录级批量读取",
+        "旧 task-reports 正文堆",
+        "旧 prism/runs 原始输出",
+        "旧 closeout receipts 或私密任务体",
+        "未列入 candidate_sources 的文件"
+      ],
+      "id": "pathology-receipt-as-completion",
+      "max_rounds": 3,
+      "output_path": null,
+      "output_schema": {
+        "required_fields": [
+          "confidence",
+          "evidence_paths",
+          "open_questions",
+          "portable_designs",
+          "risk_designs"
+        ],
+        "schema_id": "prism-shard-output"
+      },
+      "provider_sessions": {
+        "claude-code": {
+          "manifest_path": null,
+          "status": "pending"
+        },
+        "kimi": {
+          "manifest_path": null,
+          "status": "pending"
+        }
+      },
+      "providers": [
+        "kimi",
+        "claude-code"
+      ],
+      "question": "Which old receipt rules are useful proof chains, and which allowed receipts or aggregation to masquerade as completion?",
+      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
+      "status": "no_promote",
+      "stop_condition": "extract receipt/completion boundary only; do not inspect receipt archives or private task bodies"
+    },
+    {
+      "acceptance_criteria": [
+        "Produces closeout recursion limits and cut lines between closeout, implementation, and verification.",
+        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
+        "不得读取 candidate_sources 之外的旧仓库文件。",
+        "不得把评审、报告、回执或账目本身当作复活完成。"
+      ],
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/runtime/redcap-core/closeout-cap.sh",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-layerb-closeout-runtime.py",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-layerb-closeout-runtime.py",
+        "/Users/norven/workspace/redcap/assets/docs/specs/2026-04-22-layerb-closeout-runtime-and-promise-ledger-design.md"
+      ],
+      "context_budget": {
+        "default_load_policy": "explicit-files-only",
+        "max_provider_rounds": 3,
+        "max_source_files": 4,
+        "raw_evidence_default_allowed": false
+      },
+      "decision_reason": "The old closeout runtime is not promoted into RedCap 1.0. The useful 1.0 requirement is narrower: closeout, closure, pending-closure, closure-ledger, closeout receipt, and closeout summary artifacts may support evidence after changed runtime reality exists, but they must never complete a revival loop item by themselves.",
+      "forbidden_sources": [
+        "旧仓库目录级批量读取",
+        "旧 task-reports 正文堆",
+        "旧 prism/runs 原始输出",
+        "旧 closeout receipts 或私密任务体",
+        "未列入 candidate_sources 的文件"
+      ],
+      "id": "pathology-closeout-recursion",
+      "max_rounds": 3,
+      "output_path": null,
+      "output_schema": {
+        "required_fields": [
+          "confidence",
+          "evidence_paths",
+          "open_questions",
+          "portable_designs",
+          "risk_designs"
+        ],
+        "schema_id": "prism-shard-output"
+      },
+      "provider_sessions": {
+        "claude-code": {
+          "manifest_path": null,
+          "status": "pending"
+        },
+        "kimi": {
+          "manifest_path": null,
+          "status": "pending"
+        }
+      },
+      "providers": [
+        "kimi",
+        "claude-code"
+      ],
+      "question": "Which old closeout mechanics are needed for safe recovery, and which created closeout work before implementation reality changed?",
+      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
+      "status": "no_promote",
+      "stop_condition": "extract closeout recursion and ownership limits only; do not execute old closeout scripts"
+    },
+    {
+      "acceptance_criteria": [
+        "Produces raw-evidence access limits that keep evidence queryable without making raw dumps default context.",
+        "输出必须区分 portable_designs 与 risk_designs，且给出 evidence_paths。",
+        "不得读取 candidate_sources 之外的旧仓库文件。",
+        "不得把评审、报告、回执或账目本身当作复活完成。"
+      ],
+      "candidate_sources": [
+        "/Users/norven/workspace/redcap/prism/tools/prism-evidence-check.sh",
+        "/Users/norven/workspace/redcap/runtime/redcap-core/prism-tools/prism-evidence-check.sh",
+        "/Users/norven/workspace/redcap/compass/tools/redcap-r1-prism-evidence-retention-split-check.py",
+        "/Users/norven/workspace/redcap/assets/references/r1-prism-evidence-retention-split-preflight.json"
+      ],
+      "context_budget": {
+        "default_load_policy": "explicit-files-only",
+        "max_provider_rounds": 3,
+        "max_source_files": 4,
+        "raw_evidence_default_allowed": false
+      },
+      "decision_reason": "The old raw evidence retention and split machinery is not promoted into RedCap 1.0. The useful 1.0 requirement is narrower: raw evidence remains preserved and queryable only through explicit access boundaries, never as default context or a completion substitute.",
+      "forbidden_sources": [
+        "旧仓库目录级批量读取",
+        "旧 task-reports 正文堆",
+        "旧 prism/runs 原始输出",
+        "旧 closeout receipts 或私密任务体",
+        "未列入 candidate_sources 的文件"
+      ],
+      "id": "pathology-raw-evidence-default",
+      "max_rounds": 3,
+      "output_path": null,
+      "output_schema": {
+        "required_fields": [
+          "confidence",
+          "evidence_paths",
+          "open_questions",
+          "portable_designs",
+          "risk_designs"
+        ],
+        "schema_id": "prism-shard-output"
+      },
+      "provider_sessions": {
+        "claude-code": {
+          "manifest_path": null,
+          "status": "pending"
+        },
+        "kimi": {
+          "manifest_path": null,
+          "status": "pending"
+        }
+      },
+      "providers": [
+        "kimi",
+        "claude-code"
+      ],
+      "question": "Which old evidence retention rules preserve proof, and which made raw evidence the default context surface?",
+      "scope": "360 度旧 RedCap 扫描启动分片：只允许读取本分片列出的精确旧源文件，提炼可迁移设计、风险设计、禁止迁移项和后续迁移边界。",
+      "status": "no_promote",
+      "stop_condition": "extract evidence-retention and context-default rules only; do not read raw prism runs or evidence archives"
+    }
+  ],
+  "source_policy": {
+    "bulk_read_allowed": false,
+    "max_files_per_shard": 7,
+    "mode": "exact-files-before-shard"
+  },
+  "started_at": "2026-06-06T14:00:00+00:00",
+  "status": "merged",
+  "task_id": "20260606-old-redcap-360-scan"
 }

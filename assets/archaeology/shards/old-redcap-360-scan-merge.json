@@ -1,0 +1,363 @@
+{
+  "account_path": "/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-account.json",
+  "blocked_count": 0,
+  "cap_arbitration": {
+    "cap_decision_required_on_exhaustion": true,
+    "max_discussion_rounds": 3
+  },
+  "evidence_paths": [
+    "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md",
+    "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+    "/Users/norven/workspace/redcap/assets/references/runtime-workspace-boundary-policy.json",
+    "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+    "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py",
+    "/Users/norven/workspace/redcap/runtime/redcap-core/tools/redcap-runtime-workspace-boundary-check.py",
+    "assets/archaeology/extractions/development-lifecycle-review-v1.json",
+    "assets/archaeology/extractions/long-task-context-defense-v1.json",
+    "assets/archaeology/extractions/runtime-workspace-boundary-v1.json"
+  ],
+  "merged_at": "2026-06-06T18:02:06+00:00",
+  "no_promote_count": 4,
+  "open_questions": [
+    "后续复活计划需要确认新 RedCap 对外部项目命令面的最终命名：是否复刻 revive/summary/status/diagnose/doctor/debug，还是用当前命令面重命名承载。",
+    {
+      "id": "DLR-Q01",
+      "question": "人工介入显性化是否应在后续设计为独立阻塞包，还是扩展现有生命周期包字段？",
+      "recommended_timing": "复活计划阶段处理，不阻塞本分片验证。"
+    },
+    {
+      "id": "DLR-Q02",
+      "question": "面向人的阶段汇报格式是否需要独立中文输出检查器继续约束？",
+      "recommended_timing": "复活后审计阶段结合当前中文优先策略评估。"
+    },
+    {
+      "id": "LTCD-Q01",
+      "question": "后续是否需要把分片账目和 provider 调度器串成自动执行队列？",
+      "recommended_timing": "复活实施计划阶段评估；不能阻塞当前扫描合并。"
+    },
+    {
+      "id": "LTCD-Q02",
+      "question": "外部项目的任务真相源应采用 .dev-task.md、项目内状态文件，还是 RedCap 管理目录中的影子账目？",
+      "recommended_timing": "外部项目开发能力复活时设计。"
+    }
+  ],
+  "portable_designs": [
+    {
+      "classification": "keep",
+      "destination_boundary": "runtime",
+      "evidence": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G01",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G02",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G03"
+      ],
+      "id": "boundary-layer-separation",
+      "name": "运行时、项目工作区、用户私有状态三层分离",
+      "summary": "旧 RedCap 明确区分运行时实现根目录、被管理项目工作区、用户私有身份与本地状态；新 RedCap 应保留这个边界。"
+    },
+    {
+      "classification": "redesign",
+      "destination_boundary": "runtime",
+      "evidence": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G04",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G09"
+      ],
+      "id": "boundary-self-development-exception",
+      "name": "自开发例外必须显式化",
+      "summary": "当 RedCap 开发 RedCap 自身时，项目工作区可以等于运行时根目录，但必须是明确例外，不能污染外部项目默认行为。"
+    },
+    {
+      "classification": "redesign",
+      "destination_boundary": "runtime",
+      "evidence": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G05",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G06",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G07",
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#G08"
+      ],
+      "id": "boundary-shared-command-resolution",
+      "name": "工作区相关命令共享解析器",
+      "summary": "revive、summary、status、diagnose、doctor、debug 等命令应共享工作区和任务文件解析，而不是各自回退到运行时任务卡。"
+    },
+    {
+      "classification": "keep",
+      "destination_boundary": "external_project_policy",
+      "evidence": [
+        "assets/archaeology/extractions/runtime-workspace-boundary-v1.json#layers.user"
+      ],
+      "id": "boundary-user-private-state",
+      "name": "用户身份与私有状态不进入项目或运行时资产",
+      "summary": "~/.cap/identity.md 与本地用户状态属于用户层，不应被打包进项目状态或运行时实现。"
+    },
+    {
+      "classification": "redesign",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ],
+      "id": "DLR-P01",
+      "migration_action": "保留架构、治理、契约三类审查语义；通过生命周期包字段和检查器落地，而不是恢复旧报告流程。",
+      "must_preserve": [
+        "架构轨检查运行边界、角色职责、状态机与运行时权威。",
+        "治理轨检查自然语言规则是否进入执行保障，并防止伪完成。",
+        "契约轨检查钩子、检查器、命令、文件生命周期和输入输出契约是否失败即关闭。"
+      ],
+      "name": "三轨评审门",
+      "target_boundary": "runtime"
+    },
+    {
+      "classification": "keep",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ],
+      "id": "DLR-P02",
+      "migration_action": "继续由 prompt_context、task_body、acceptance_criteria 与 verification_evidence 表达，不新增长报告运行时。",
+      "must_preserve": [
+        "必须能追溯用户原始意图。",
+        "必须能区分已覆盖、未覆盖、延期和用户可见边界。"
+      ],
+      "name": "原始意图覆盖审计",
+      "target_boundary": "runtime"
+    },
+    {
+      "classification": "keep",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ],
+      "id": "DLR-P03",
+      "migration_action": "继续用 task_body.status、evidence_kind、verification_evidence 和 completion_claim 分层，不允许把已实现、已自检、已验收、已正式完成混成一个完成声明。",
+      "must_preserve": [
+        "完成等级必须可机检。",
+        "正式完成必须依赖任务本体证据和生命周期完成标记。"
+      ],
+      "name": "完成等级禁止混报",
+      "target_boundary": "runtime"
+    },
+    {
+      "classification": "redesign",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ],
+      "id": "DLR-P04",
+      "migration_action": "未来应进入阻塞包或任务恢复包：写清缺什么、为什么 Cap 不能自行完成、下一步需要谁做什么。",
+      "must_preserve": [
+        "人工介入不能藏在长报告后文。",
+        "阻塞条件必须足够具体，不能变成泛泛请求。"
+      ],
+      "name": "人工介入显性化",
+      "target_boundary": "runtime"
+    },
+    {
+      "classification": "keep",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ],
+      "id": "DLR-P05",
+      "migration_action": "保留为面向人的汇报要求：阶段性汇报必须写清上一刀、当前状态和下一刀，但它只能解释状态，不能替代任务完成。",
+      "must_preserve": [
+        "人类读者应能快速看懂当前做到哪里。",
+        "下一步必须是可执行动作，不是空泛愿景。"
+      ],
+      "name": "可见下一步",
+      "target_boundary": "assets_docs"
+    },
+    {
+      "classification": "keep",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json"
+      ],
+      "id": "LTCD-P01",
+      "migration_action": "把任务目标、当前切片、允许修改范围、完成标准、健康状态放到可检查文件或状态面，减少长对话压缩带来的偏航。",
+      "must_preserve": [
+        "任务真相不能只活在聊天窗口里。",
+        "当前切片和停止条件必须能被检查器读取。",
+        "完成标准必须外置并可追溯。"
+      ],
+      "name": "外置任务真相源",
+      "target_boundary": "runtime_prism"
+    },
+    {
+      "classification": "keep",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "id": "LTCD-P02",
+      "migration_action": "后续知识库、考古材料、验证材料都先走索引或账目，再按问题读取精确文件；原始证据和大材料默认不进入上下文。",
+      "must_preserve": [
+        "先读索引，再读精确来源。",
+        "禁止默认加载原始运行材料、大块归档和私密任务体。",
+        "每次读取都应服务于当前分片问题。"
+      ],
+      "name": "索引优先读取",
+      "target_boundary": "assets_knowledge"
+    },
+    {
+      "classification": "redesign",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json"
+      ],
+      "id": "LTCD-P03",
+      "migration_action": "把旧 Loom / Layer B 的长任务拆解思想缩成 prism-shard 账目：每个分片有问题、来源、预算、停止条件、验收字段和合并条件。",
+      "must_preserve": [
+        "分片必须有明确问题。",
+        "分片必须有上下文预算和最大轮次。",
+        "合并前必须所有可提升分片都达到终态。"
+      ],
+      "name": "长任务分片账目",
+      "target_boundary": "runtime_prism"
+    },
+    {
+      "classification": "keep",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "id": "LTCD-P04",
+      "migration_action": "棱镜（异构评审助手）、Reviewer 和报告只能提供辅助证据；Cap 必须独立验收，不能让评审结论自动变成完成事实。",
+      "must_preserve": [
+        "provider 输出不等于任务完成。",
+        "分歧需要有记录的采纳、驳回、追问或升级。",
+        "最终验收回到真实工作区变化。"
+      ],
+      "name": "Cap 验收与评审输出分离",
+      "target_boundary": "runtime_prism"
+    },
+    {
+      "classification": "keep",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md",
+        "assets/archaeology/extractions/long-task-context-defense-v1.json"
+      ],
+      "id": "LTCD-P05",
+      "migration_action": "继续用任务事实、棱镜运行流水、检查回执和状态面让长任务现场可观察，避免机制存在但现场不可见。",
+      "must_preserve": [
+        "当前任务和最近检查结果必须可查询。",
+        "评审方执行质量和过期状态必须可观察。",
+        "状态面不能替代任务本体完成。"
+      ],
+      "name": "健康状态显性化",
+      "target_boundary": "runtime"
+    },
+    {
+      "classification": "keep",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "id": "LTCD-P06",
+      "migration_action": "宿主没有给 RedCap 控制点时，不能宣称 100% 回复前拦截；只能在已验证入口和项目钩子边界内声明强保障。",
+      "must_preserve": [
+        "已验证的硬门禁和未验证的宿主能力必须分开说。",
+        "缺少实时回复拦截时，不得包装成 100% 宿主级能力。",
+        "宿主边界应进入审计和状态面。"
+      ],
+      "name": "宿主边界诚实声明",
+      "target_boundary": "runtime_host_adapter"
+    }
+  ],
+  "risk_designs": [
+    {
+      "classification": "risk",
+      "evidence": [
+        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "id": "old-command-branch-inspection-coupling",
+      "summary": "旧检查器通过检查 shell 分支文本来确认命令接入，适合作为迁移参考，但不应原样复制成长期架构；新 RedCap 应优先依赖共享解析器和端到端探针。"
+    },
+    {
+      "classification": "risk",
+      "evidence": [
+        "/Users/norven/workspace/redcap/compass/tools/redcap-runtime-workspace-boundary-check.py"
+      ],
+      "id": "release-review-coupling",
+      "summary": "旧检查器还耦合 pre-release review 状态；新 RedCap 可保留发布前审计概念，但不应让边界检查依赖旧发布审计文件。"
+    },
+    {
+      "classification": "no_promote",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ],
+      "id": "DLR-R01",
+      "name": "完整任务报告运行时",
+      "reason": "旧模板具备良好的人类可读结构，但如果恢复为完成前硬流程，容易重新制造“写完报告就像完成”的旧病。",
+      "replacement": "把可机检内容落入生命周期包、最终声明检查器和任务事实；把人类可读内容作为汇报风格要求，而不是完成凭证。"
+    },
+    {
+      "classification": "redesign",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ],
+      "id": "DLR-R02",
+      "name": "SessionEnd 报告归档强制项",
+      "reason": "当前 Codex 宿主不保证所有会话结束都能被 RedCap 拦截；直接照搬会产生虚假自动化保障。",
+      "replacement": "只在 RedCap 自有钩子和生命周期门禁可验证的范围内声明保障；宿主级不可保证的能力必须标清边界。"
+    },
+    {
+      "classification": "discard",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/task-report-template.md"
+      ],
+      "id": "DLR-R03",
+      "name": "回执或评审文本替代任务本体",
+      "reason": "旧模板把 receipt、独立验收和 closeout 放在强完工语义中；这些证据有价值，但不能成为现实已改变的替代物。",
+      "replacement": "完成声明必须由真实变更、验证命令和生命周期完成标记共同支撑。"
+    },
+    {
+      "classification": "discard",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/references/review-tracks.json",
+        "assets/archaeology/extractions/development-lifecycle-review-v1.json"
+      ],
+      "id": "DLR-R04",
+      "name": "独立报告状态机",
+      "reason": "新 RedCap 已有有限状态机和生命周期包；再恢复旧报告状态，会形成第二套权威源并引发状态分裂。",
+      "replacement": "继续把评审轨作为生命周期包的一部分，而不是单独状态机。"
+    },
+    {
+      "classification": "discard",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "id": "LTCD-R01",
+      "name": "旧 Loom / Layer B 完整执行形态",
+      "reason": "它的长任务拆解思想有价值，但完整执行形态太重，容易让新 RedCap 在复活前再次陷入流程膨胀。",
+      "replacement": "只保留轻量、可检查、可合并的 prism-shard 账目。"
+    },
+    {
+      "classification": "no_promote",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "id": "LTCD-R02",
+      "name": "旧任务报告正文、pending closure 和历史账本默认导入",
+      "reason": "这些材料容易让上下文被历史噪音淹没，也容易把证明链误当任务本体。",
+      "replacement": "通过索引、分片来源和显式证据路径按需读取。"
+    },
+    {
+      "classification": "discard",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "id": "LTCD-R03",
+      "name": "报告、回执、评审或账目条目作为完成事实",
+      "reason": "这是旧 RedCap 的核心旧病之一，会把任务现实变化替换成记录变化。",
+      "replacement": "完成只能来自真实变更、验证结果和生命周期完成标记。"
+    },
+    {
+      "classification": "discard",
+      "evidence": [
+        "/Users/norven/workspace/redcap/assets/knowledge/long-task-context-defense.md"
+      ],
+      "id": "LTCD-R04",
+      "name": "未验证的 100% 回复前拦截声明",
+      "reason": "旧文档已经承认宿主实时回复路径仍有限制；直接宣称 100% 会制造虚假安全感。",
+      "replacement": "把能力拆成 RedCap 自有入口、Codex 项目钩子、宿主未知边界三类分别审计。"
+    }
+  ],
+  "schema_id": "prism-shard-merge",
+  "shard_count": 7,
+  "task_id": "20260606-old-redcap-360-scan",
+  "verified_count": 3
+}

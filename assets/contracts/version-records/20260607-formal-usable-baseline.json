@@ -1,0 +1,34 @@
+{
+  "schema_id": "redcap-version-record",
+  "version_record_id": "20260607-formal-usable-baseline",
+  "recorded_at": "2026-06-07T01:35:00+00:00",
+  "branch": "develop",
+  "pre_record_head": "ab994c8f6d15ef34acec45310fb8dd801f9a8b15",
+  "purpose": "记录 RedCap 当前复活工程达到正式可用候选并进入完成收口的版本基线。",
+  "scope": [
+    "360 度旧 RedCap 扫描已合并并允许给最终结论",
+    "复活实施队列必需项已验证",
+    "任务事实开放项为 0",
+    "Cap 身份加载、状态面、复活入口、宿主边界审计、生命周期、有限状态机、知识入口和正式可用检查已通过",
+    "同会话自动续跑不再因 3600 秒用户提示新鲜度误伤而阻塞写入或生命周期验证"
+  ],
+  "verification_commands": [
+    "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+    "runtime/bin/redcap revival-queue check",
+    "runtime/bin/redcap formal-usable-check",
+    "runtime/bin/redcap task-facts check --fail-on-open",
+    "runtime/bin/redcap lifecycle self-check",
+    "runtime/bin/redcap check"
+  ],
+  "human_gated_after_this_record": [
+    "是否用 develop 替代 main",
+    "是否对外发布 RedCap",
+    "是否变更供应商策略或宿主能力声明"
+  ],
+  "non_completion_shortcuts_rejected": [
+    "不以计划文件单独证明正式可用",
+    "不以单条全量检查单独证明正式可用",
+    "不声称 Codex 未暴露的宿主事件已经支持",
+    "不把公开发布视为自动完成"
+  ]
+}

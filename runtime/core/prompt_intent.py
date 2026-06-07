@@ -50,6 +50,8 @@ IMPLEMENTATION_MARKERS = {
     "开始",
     "来吧",
     "落地",
+    "直接做",
+    "做掉",
     "变成",
     "做成",
     "编成",
@@ -213,6 +215,8 @@ STRONG_IMPLEMENTATION_MARKERS = {
     "开始",
     "来吧",
     "落地",
+    "直接做",
+    "做掉",
     "跑",
     "继续",
     "先把",
@@ -250,6 +254,19 @@ STATUS_CONFIRMATION_PATTERNS = [
     r"(?:完成|修复|解决|处理|执行|落地|实现|做完|搞定).{0,12}(?:了吗|了么|了没有|了没|没有|没)",
 ]
 STATUS_CONFIRMATION_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in STATUS_CONFIRMATION_PATTERNS]
+PRE_EXECUTION_DISCUSSION_PATTERNS = [
+    r"(?:不要|别|先别|不用|不必|不要着急|不要急着).{0,12}(?:开动|开始|执行|落地|实施)",
+    r"(?:先|暂时).{0,8}(?:回答|评估|讨论|判断).{0,24}(?:是否可行|可不可行|可行性|方案)",
+    r"(?:是否可行|可不可行|可行性).{0,40}(?:讨论|拿出来|方案|缓解|更好)",
+]
+PRE_EXECUTION_DISCUSSION_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in PRE_EXECUTION_DISCUSSION_PATTERNS]
+EXECUTION_AFTER_DISCUSSION_PATTERNS = [
+    r"(?:没问题|可行|可以|通过|确认).{0,12}(?:就|则|的话).{0,8}(?:直接)?(?:做|执行|开动|开始|落地|实施|修复)",
+    r"(?:顺便|一起|同时).{0,8}(?:做掉|执行|落地|实施|修复)",
+    r"(?:讨论|评估|看看|分析).{0,24}(?:后|完|清楚).{0,12}(?:直接)?(?:做|执行|开动|开始|落地|实施|修复)",
+    r"(?:先|暂时).{0,12}(?:讨论|评估|看看|分析).{0,32}(?:然后|再).{0,8}(?:做|执行|开动|开始|落地|实施|修复)",
+]
+EXECUTION_AFTER_DISCUSSION_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in EXECUTION_AFTER_DISCUSSION_PATTERNS]
 
 
 def normalize_prompt_text(value: str) -> str:
@@ -273,6 +290,12 @@ def prompt_is_status_confirmation_question(prompt: str) -> bool:
     )
 
 
+def prompt_is_pre_execution_discussion(prompt: str) -> bool:
+    if any(pattern.search(prompt) for pattern in EXECUTION_AFTER_DISCUSSION_REGEXES):
+        return False
+    return any(pattern.search(prompt) for pattern in PRE_EXECUTION_DISCUSSION_REGEXES)
+
+
 def prompt_text_from_event(event: dict[str, Any]) -> str | None:
     for key in ["prompt_text", "prompt_excerpt", "source_prompt"]:
         value = event.get(key)
@@ -293,6 +316,8 @@ def prompt_has_directive_authority(prompt: str) -> bool:
     normalized = normalize_prompt_text(prompt)
     directive_text = strip_quoted_spans(normalized)
     question_context = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
+    if prompt_is_pre_execution_discussion(prompt):
+        return False
     if prompt_is_status_confirmation_question(prompt):
         return False
     for phrase in NEGATED_IMPLEMENTATION_PHRASES:
@@ -317,6 +342,13 @@ def prompt_has_directive_authority(prompt: str) -> bool:
 def classify_prompt_intent(prompt: str) -> dict[str, str]:
     normalized = normalize_prompt_text(prompt)
     question = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
+    if prompt_is_pre_execution_discussion(prompt):
+        return {
+            "prompt_kind": "question" if question else "mixed",
+            "authorized_scope": "answer_only",
+            "action_evidence": "none",
+            "reason": "pre-execution feasibility discussion explicitly asks not to start implementation",
+        }
     implementation = prompt_has_directive_authority(prompt)
     review = any(marker in normalized for marker in REVIEW_MARKERS) or prompt_requests_code_excerpt(normalized)
 

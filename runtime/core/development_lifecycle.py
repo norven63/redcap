@@ -230,6 +230,41 @@ def prompt_excerpt_is_meaningful(excerpt: str, actual_prompt: str) -> bool:
     return len(normalized_excerpt) / max(len(normalized_actual), 1) >= 0.2
 
 
+def continuation_authorization_is_valid(
+    prompt_context: dict[str, Any],
+    prompt_event: dict[str, Any],
+    actual_prompt: str,
+    authorized_scope: Any,
+) -> tuple[bool, str | None]:
+    auth = prompt_context.get("continuation_authorization")
+    if not isinstance(auth, dict):
+        return False, None
+    if auth.get("mode") != "same_session_authorized_continuation":
+        return False, "prompt_context.continuation_authorization.mode invalid"
+    source = auth.get("source")
+    if source not in {"codex_goal", "same_session_resume", "automatic_continuation"}:
+        return False, "prompt_context.continuation_authorization.source invalid"
+    session_id = auth.get("session_id")
+    event_session_id = prompt_event.get("session_id")
+    if not (isinstance(session_id, str) and session_id.strip()):
+        return False, "prompt_context.continuation_authorization.session_id is required"
+    if session_id != event_session_id:
+        return False, "prompt_context.continuation_authorization.session_id does not match latest UserPromptSubmit session"
+    base_excerpt = auth.get("base_prompt_excerpt")
+    if not (isinstance(base_excerpt, str) and base_excerpt.strip()):
+        return False, "prompt_context.continuation_authorization.base_prompt_excerpt is required"
+    if not prompt_excerpt_is_meaningful(base_excerpt, actual_prompt):
+        return False, "prompt_context.continuation_authorization.base_prompt_excerpt does not match latest UserPromptSubmit prompt"
+    continuation_excerpt = prompt_context.get("source_prompt_excerpt")
+    if not (isinstance(continuation_excerpt, str) and substantive_text(continuation_excerpt)):
+        return False, "prompt_context.source_prompt_excerpt must describe the continuation task"
+    if authorized_scope not in {"implementation", "completion"}:
+        return False, "prompt_context.continuation_authorization requires implementation or completion scope"
+    if not prompt_has_directive_authority(actual_prompt):
+        return False, "prompt_context.continuation_authorization requires a directive base UserPromptSubmit"
+    return True, None
+
+
 def validate_task_body(packet: dict[str, Any], failures: list[str]) -> None:
     task_body = packet.get("task_body")
     if not isinstance(task_body, dict):
@@ -325,7 +360,14 @@ def validate_prompt_context(packet: dict[str, Any], failures: list[str], events_
             if actual_prompt is None:
                 failures.append("prompt_context.source_prompt_excerpt cannot be verified: latest UserPromptSubmit event has no prompt text excerpt")
             elif not prompt_excerpt_is_meaningful(excerpt, actual_prompt):
-                failures.append("prompt_context.source_prompt_excerpt does not match latest UserPromptSubmit prompt")
+                continuation_ok, continuation_failure = continuation_authorization_is_valid(
+                    prompt_context,
+                    prompt_event,
+                    actual_prompt,
+                    authorized_scope,
+                )
+                if not continuation_ok:
+                    failures.append(continuation_failure or "prompt_context.source_prompt_excerpt does not match latest UserPromptSubmit prompt")
             elif authorized_scope in {"implementation", "completion"} and not prompt_has_directive_authority(actual_prompt):
                 failures.append("prompt_context.authorized_scope requires an actual UserPromptSubmit directive, not a question-only prompt substring")
 
@@ -628,6 +670,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         events_path = tmp / "events.jsonl"
         events_path.write_text(json.dumps({
             "event": "UserPromptSubmit",
+            "session_id": "fixture-session",
             "prompt": {"normalized_excerpt": "Please implement the lifecycle validator fixture."},
         }, ensure_ascii=False) + "\n", encoding="utf-8")
         if validate_packet(valid, events_path):
@@ -648,6 +691,26 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         mismatch_failures = validate_packet(mismatch, events_path)
         if not any("does not match latest UserPromptSubmit prompt" in item for item in mismatch_failures):
             failures.append("fabricated prompt excerpt was not rejected")
+        continuation = copy.deepcopy(valid)
+        continuation["prompt_context"] = {
+            "source_prompt_excerpt": "Continue the existing lifecycle validator goal after automatic resume.",
+            "prompt_kind": "directive",
+            "authorized_scope": "implementation",
+            "continuation_authorization": {
+                "mode": "same_session_authorized_continuation",
+                "source": "codex_goal",
+                "session_id": "fixture-session",
+                "base_prompt_excerpt": "Please implement the lifecycle validator fixture.",
+            },
+        }
+        continuation_failures = validate_packet(continuation, events_path)
+        if continuation_failures:
+            failures.append(f"same-session continuation should pass lifecycle prompt verification: {'; '.join(continuation_failures)}")
+        cross_session = copy.deepcopy(continuation)
+        cross_session["prompt_context"]["continuation_authorization"]["session_id"] = "other-session"
+        cross_session_failures = validate_packet(cross_session, events_path)
+        if not any("session_id does not match" in item for item in cross_session_failures):
+            failures.append("cross-session continuation was not rejected")
         missing_event_failures = validate_packet(valid, tmp / "missing-events.jsonl")
         if not any("no UserPromptSubmit event" in item for item in missing_event_failures):
             failures.append("missing UserPromptSubmit event did not fail prompt-context verification")

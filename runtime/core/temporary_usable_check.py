@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check whether the current scaffold is temporarily usable for RedCap revival."""
+"""检查当前脚手架是否足够支撑 RedCap 复活工作。"""
 
 from __future__ import annotations
 
@@ -122,6 +122,11 @@ def main() -> int:
     check_command("knowledge-write-review", ["runtime/bin/redcap", "knowledge-gateway", "self-check"], "REDCAP_KNOWLEDGE_WRITE_REVIEW_OK", failures)
     check_command("cap-soul-source", ["runtime/bin/redcap", "soul-load", "check"], "REDCAP_SOUL_SOURCE_OK", failures)
     check_command("cap-soul-loader", ["runtime/bin/redcap", "soul-load", "self-check"], "REDCAP_SOUL_LOADER_OK", failures)
+    check_command("status", ["runtime/bin/redcap", "status", "--json"], "REDCAP_STATUS_OK", failures)
+    check_command("revive", ["runtime/bin/redcap", "revive", "--json", "--no-write-evidence"], "REDCAP_REVIVE_OK", failures)
+    check_command("status-surface-self-check", ["python3", "runtime/core/status_surface.py", "self-check"], "REDCAP_STATUS_SURFACE_SELF_CHECK_OK", failures)
+    check_command("revival-queue", ["runtime/bin/redcap", "revival-queue", "check"], "REDCAP_REVIVAL_QUEUE_OK", failures)
+    check_command("revival-queue-self-check", ["runtime/bin/redcap", "revival-queue", "self-check"], "REDCAP_REVIVAL_QUEUE_SELF_CHECK_OK", failures)
     check_command("prism-ledger", ["runtime/bin/redcap", "prism-ledger", "self-check"], "PRISM_LEDGER_SELF_CHECK_OK", failures)
     check_command("prism-ledger-summary", ["runtime/bin/redcap", "prism-ledger", "summary"], "PRISM_LEDGER_SUMMARY_OK", failures)
     check_command("boundary", ["runtime/bin/redcap", "boundary", "check"], "REDCAP_RUNTIME_BOUNDARY_OK", failures)
