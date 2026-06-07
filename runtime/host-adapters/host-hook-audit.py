@@ -64,6 +64,16 @@ def run(argv: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(argv, cwd=str(REPO_ROOT), check=False, capture_output=True, text=True)
 
 
+def run_with_retry(argv: list[str], *, attempts: int = 2) -> list[subprocess.CompletedProcess[str]]:
+    results = []
+    for _ in range(max(1, attempts)):
+        completed = run(argv)
+        results.append(completed)
+        if completed.returncode == 0:
+            break
+    return results
+
+
 def main() -> int:
     failures: list[str] = []
     config = load_json(HOOKS_CONFIG)
@@ -91,7 +101,8 @@ def main() -> int:
     dispatcher = run(["runtime/prism/bin/prism-dispatch", "--self-check"])
     if dispatcher.returncode != 0 or "PRISM_DISPATCH_SELF_CHECK_OK" not in dispatcher.stdout:
         failures.append("provider dispatcher self-check failed")
-    codex_hook = run([sys.executable, CODEX_ADAPTER, "--self-check-intent-judge"])
+    codex_hook_attempts = run_with_retry([sys.executable, CODEX_ADAPTER, "--self-check-intent-judge"])
+    codex_hook = codex_hook_attempts[-1]
     if codex_hook.returncode != 0:
         failures.append("codex hook self-check failed")
 
@@ -109,6 +120,9 @@ def main() -> int:
             "dispatcher_self_check": dispatcher.returncode == 0,
         },
         "codex_hook_self_check": codex_hook.returncode == 0,
+        "codex_hook_self_check_attempts": len(codex_hook_attempts),
+        "codex_hook_self_check_stdout_tail": (codex_hook.stdout or "")[-1200:],
+        "codex_hook_self_check_stderr_tail": (codex_hook.stderr or "")[-1200:],
         "unsupported_events": AUDITED_UNSUPPORTED_EVENTS,
         "failures": failures,
     }

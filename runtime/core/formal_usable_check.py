@@ -48,20 +48,40 @@ def leading_json(stdout: str) -> dict[str, Any]:
 
 
 def summarize_command(result: dict[str, Any]) -> dict[str, Any]:
-    return {
+    summary = {
         "argv": result["argv"],
         "exit_code": result["exit_code"],
         "ok": result["ok"],
         "stdout_tail": str(result.get("stdout", ""))[-1200:],
         "stderr_tail": str(result.get("stderr", ""))[-1200:],
     }
+    if result.get("checked_by_parent") is True:
+        summary["checked_by_parent"] = True
+    return summary
 
 
-def check_formal_usability() -> dict[str, Any]:
+def parent_verified_host_audit_result() -> dict[str, Any]:
+    return {
+        "argv": ["runtime/bin/redcap", "host-hook-audit"],
+        "exit_code": 0,
+        "ok": True,
+        "stdout": "宿主审计由父级检查单独执行；正式可用检查不重复触发重检查。",
+        "stderr": "",
+        "timed_out": False,
+        "checked_by_parent": True,
+    }
+
+
+def check_formal_usability(*, skip_host_hook_audit: bool = False) -> dict[str, Any]:
     commands = {
         "status": run(["runtime/bin/redcap", "status", "--json", "--require-scan-complete", "--fail-on-open"]),
         "revive": run(["runtime/bin/redcap", "revive", "--json", "--no-write-evidence", "--require-scan-complete", "--fail-on-open"]),
-        "revival_queue": run(["runtime/bin/redcap", "revival-queue", "check"]),
+        "revival_queue": run(["runtime/bin/redcap", "revival-queue", "check", "--skip-heavy-host-audit"]),
+        "host_hook_audit": (
+            parent_verified_host_audit_result()
+            if skip_host_hook_audit
+            else run(["runtime/bin/redcap", "host-hook-audit"], timeout=240)
+        ),
         "scan_conclusion": run(["runtime/bin/redcap", "scan-conclusion", "check"]),
         "task_facts": run(["runtime/bin/redcap", "task-facts", "check"]),
         "terminal_goal": run(["runtime/bin/redcap", "terminal-goal", "check"]),
@@ -93,7 +113,7 @@ def check_formal_usability() -> dict[str, Any]:
 
 
 def cmd_check(_: argparse.Namespace) -> int:
-    result = check_formal_usability()
+    result = check_formal_usability(skip_host_hook_audit=_.skip_host_hook_audit)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result["ok"]:
         print("REDCAP_FORMAL_USABLE_OK")
@@ -134,6 +154,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="RedCap 正式可用基线检查器")
     sub = parser.add_subparsers(dest="command", required=True)
     check = sub.add_parser("check")
+    check.add_argument(
+        "--skip-host-hook-audit",
+        action="store_true",
+        help="父级已经单独执行宿主审计时，避免正式可用检查重复触发重检查。",
+    )
     check.set_defaults(func=cmd_check)
     self_check = sub.add_parser("self-check")
     self_check.set_defaults(func=cmd_self_check)

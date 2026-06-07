@@ -163,6 +163,7 @@
         ".jsonl",
         ".lock",
         ".md",
+        ".tmp",
         ".txt"
       ],
       "deny_executable_bits": true

@@ -43,7 +43,7 @@
       "title": "RedCap 完整复活",
       "domain": "redcap",
       "task_fact_id": "redcap-complete-revival",
-      "current_level": "migration_usable",
+      "current_level": "terminal_complete",
       "terminal_level": "terminal_complete",
       "aliases": [
         "完整复活",
@@ -77,7 +77,7 @@
         "Prism review",
         "lifecycle packet"
       ],
-      "open_reason": "当前只有基建、扫描和部分迁移队列证据；旧 RedCap 优秀设计完整迁移尚未完成终局验收。"
+      "open_reason": "完整复活终局验收已通过；保留字段用于历史兼容，当前目标应由任务事实 verified 状态判定为已关闭。"
     },
     {
       "id": "example-product-launch",

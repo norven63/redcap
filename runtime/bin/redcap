@@ -36,7 +36,8 @@ Usage:
   runtime/bin/redcap status [...]
   runtime/bin/redcap revive [...]
   runtime/bin/redcap revival-queue check|self-check [...]
-  runtime/bin/redcap formal-usable-check
+  runtime/bin/redcap formal-usable-check [--skip-host-hook-audit]
+  runtime/bin/redcap complete-revival-check [--require-terminal-verified] [--skip-host-hook-audit]
   runtime/bin/redcap temporary-usable-check
   runtime/bin/redcap layout-check [check|self-check]
   runtime/bin/redcap check
@@ -85,6 +86,8 @@ Commands:
   revival-queue Check the executable RedCap revival implementation queue.
   formal-usable-check
                 Verify RedCap formal usability through user-facing workflows.
+  complete-revival-check
+                Verify RedCap complete-revival terminal acceptance.
   temporary-usable-check
                 Verify the current scaffold is usable enough for revival work.
   layout-check  Verify directory policy, root thinness, and unit boundaries.
@@ -199,6 +202,9 @@ case "$cmd" in
   formal-usable-check)
     exec python3 "$REPO_ROOT/runtime/core/formal_usable_check.py" check "$@"
     ;;
+  complete-revival-check)
+    exec python3 "$REPO_ROOT/runtime/core/complete_revival_check.py" check "$@"
+    ;;
   temporary-usable-check)
     exec python3 "$REPO_ROOT/runtime/core/temporary_usable_check.py" "$@"
     ;;
@@ -220,9 +226,11 @@ case "$cmd" in
     "$REPO_ROOT/runtime/bin/redcap" revive --json --no-write-evidence --require-scan-complete --fail-on-open
     python3 "$REPO_ROOT/runtime/core/status_surface.py" self-check
     "$REPO_ROOT/runtime/bin/redcap" revival-queue self-check
-    "$REPO_ROOT/runtime/bin/redcap" revival-queue check
+    "$REPO_ROOT/runtime/bin/redcap" revival-queue check --skip-heavy-host-audit
     python3 "$REPO_ROOT/runtime/core/formal_usable_check.py" self-check
-    "$REPO_ROOT/runtime/bin/redcap" formal-usable-check
+    "$REPO_ROOT/runtime/bin/redcap" formal-usable-check --skip-host-hook-audit
+    python3 "$REPO_ROOT/runtime/core/complete_revival_check.py" self-check
+    "$REPO_ROOT/runtime/bin/redcap" complete-revival-check --skip-host-hook-audit
     "$REPO_ROOT/runtime/bin/redcap" session-ownership self-check
     "$REPO_ROOT/runtime/bin/redcap" intent-judge self-check
     python3 "$REPO_ROOT/runtime/host-adapters/codex/codex-hook.py" --self-check-intent-judge

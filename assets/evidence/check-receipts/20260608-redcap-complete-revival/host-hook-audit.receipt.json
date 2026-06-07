@@ -1,0 +1,14 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap host-hook-audit",
+  "exit_code": 0,
+  "actual_exit_code": 0,
+  "expected_exit_code": 0,
+  "executed_at": "2026-06-07T19:24:23Z",
+  "executor": "cap",
+  "stdout_sha256": "f1b2c7eb0ebf56ffda2eb9b2ed23b047ea152d123c741585c985ec6cde0be629",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260608-redcap-complete-revival/host-hook-audit.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260608-redcap-complete-revival/host-hook-audit.stderr.txt",
+  "timed_out": false
+}

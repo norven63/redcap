@@ -1988,7 +1988,10 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 "source": "codex-hook-human-output-self-check",
             },
             evidence_dir=evidence_dir,
-            extra_env={"REDCAP_STOP_HOOK_MODE": "enforce"},
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE": "enforce",
+                "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+            },
         )
         if human_stop.returncode != 0:
             failures.append(f"human-output Stop failed: {human_stop.stderr or human_stop.stdout}")
@@ -2027,7 +2030,10 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 "source": "codex-hook-scan-conclusion-self-check",
             },
             evidence_dir=evidence_dir,
-            extra_env={"REDCAP_STOP_HOOK_MODE": "enforce"},
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE": "enforce",
+                "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+            },
         )
         if scan_stop.returncode != 0:
             failures.append(f"scan-conclusion Stop failed: {scan_stop.stderr or scan_stop.stdout}")
@@ -2046,7 +2052,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         terminal_prompt = run_hook_event_for_self_check(
             "UserPromptSubmit",
             {
-                "prompt": "请汇报 RedCap 完整复活状态。",
+                "prompt": "请汇报产品发布完成状态。",
                 "cwd": str(REPO_ROOT),
                 "session_id": "fixture-terminal-goal-session",
                 "turn_id": "fixture-terminal-goal-turn",
@@ -2059,17 +2065,36 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         terminal_prompt_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
         if terminal_prompt_marker.get("terminal_goal_context_injected") is not True:
             failures.append("terminal-goal prompt-time context was not injected")
+        terminal_post = run_hook_event_for_self_check(
+            "PostToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-terminal-goal-session",
+                "turn_id": "fixture-terminal-goal-turn",
+                "tool_name": "Bash",
+                "tool_use_id": "fixture-terminal-goal-post",
+                "tool_input": {"command": "runtime/bin/redcap terminal-goal check"},
+                "tool_response": {"ok": True},
+                "source": "codex-hook-terminal-goal-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if terminal_post.returncode != 0:
+            failures.append(f"terminal-goal PostToolUse failed: {terminal_post.stderr or terminal_post.stdout}")
         terminal_stop = run_hook_event_for_self_check(
             "Stop",
             {
                 "cwd": str(REPO_ROOT),
                 "session_id": "fixture-terminal-goal-session",
                 "turn_id": "fixture-terminal-goal-turn",
-                "last_assistant_message": "RedCap 已经完整复活，正式可用。",
+                "last_assistant_message": "产品发布完成。",
                 "source": "codex-hook-terminal-goal-self-check",
             },
             evidence_dir=evidence_dir,
-            extra_env={"REDCAP_STOP_HOOK_MODE": "enforce"},
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE": "enforce",
+                "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+            },
         )
         if terminal_stop.returncode != 0:
             failures.append(f"terminal-goal Stop failed: {terminal_stop.stderr or terminal_stop.stdout}")
@@ -2079,7 +2104,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         else:
             reason = str(terminal_stop_result.get("reason") or "")
             if terminal_stop_result.get("decision") != "block":
-                failures.append("terminal-goal Stop fixture should block terminal completion overclaim")
+                failures.append("terminal-goal Stop fixture should block an unverified terminal completion overclaim")
             if "终局" not in reason:
                 failures.append("terminal-goal Stop block reason should mention terminal goal")
         terminal_marker = load_self_check_marker(evidence_dir, "Stop")

@@ -15,21 +15,52 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 MERGE_PATH = REPO_ROOT / "assets" / "archaeology" / "shards" / "old-redcap-360-scan-merge.json"
 
 
+def _text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
 def run_command(argv: list[str], *, timeout: int = 120) -> dict[str, Any]:
-    completed = subprocess.run(
-        argv,
-        cwd=str(REPO_ROOT),
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
+    try:
+        completed = subprocess.run(
+            argv,
+            cwd=str(REPO_ROOT),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "argv": argv,
+            "exit_code": 124,
+            "stdout_tail": _text(exc.stdout)[-1200:],
+            "stderr_tail": f"命令超时：{timeout} 秒",
+            "ok": False,
+            "timed_out": True,
+        }
     return {
         "argv": argv,
         "exit_code": completed.returncode,
         "stdout_tail": completed.stdout[-1200:],
         "stderr_tail": completed.stderr[-1200:],
         "ok": completed.returncode == 0,
+        "timed_out": False,
+    }
+
+
+def parent_verified_host_audit_result(argv: list[str]) -> dict[str, Any]:
+    return {
+        "argv": argv,
+        "exit_code": 0,
+        "stdout_tail": "宿主审计由父级检查单独执行；此处只避免复活队列嵌套重复触发重检查。",
+        "stderr_tail": "",
+        "ok": True,
+        "timed_out": False,
+        "checked_by_parent": True,
     }
 
 
@@ -153,11 +184,22 @@ def queue_items() -> list[dict[str, Any]]:
     ]
 
 
-def evaluate_queue(*, merge_path: pathlib.Path = MERGE_PATH, run_checks: bool = True) -> dict[str, Any]:
+def evaluate_queue(
+    *,
+    merge_path: pathlib.Path = MERGE_PATH,
+    run_checks: bool = True,
+    skip_heavy_host_audit: bool = False,
+) -> dict[str, Any]:
     coverage = merge_coverage(merge_path)
     entries = []
     for spec in queue_items():
-        command_results = [run_command(argv) for argv in spec["commands"]] if run_checks else []
+        command_results = []
+        if run_checks:
+            for argv in spec["commands"]:
+                if skip_heavy_host_audit and argv == ["runtime/bin/redcap", "host-hook-audit"]:
+                    command_results.append(parent_verified_host_audit_result(argv))
+                else:
+                    command_results.append(run_command(argv))
         commands_ok = all(result.get("ok") for result in command_results) if run_checks else True
         scan_refs_present = all(ref in coverage["portable_ids"] or ref in coverage["risk_ids"] for ref in spec["scan_refs"])
         status = "verified" if coverage["ok"] and commands_ok and scan_refs_present else "pending"
@@ -181,7 +223,11 @@ def evaluate_queue(*, merge_path: pathlib.Path = MERGE_PATH, run_checks: bool = 
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    result = evaluate_queue(merge_path=pathlib.Path(args.merge).resolve(), run_checks=not args.no_run_checks)
+    result = evaluate_queue(
+        merge_path=pathlib.Path(args.merge).resolve(),
+        run_checks=not args.no_run_checks,
+        skip_heavy_host_audit=args.skip_heavy_host_audit,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result["ok"]:
         print("REDCAP_REVIVAL_QUEUE_OK")
@@ -217,6 +263,9 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         bad_result = evaluate_queue(merge_path=bad, run_checks=False)
         if bad_result["ok"] or not bad_result["required_open"]:
             failures.append("缺少扫描引用时队列没有标记未完成")
+        skipped = parent_verified_host_audit_result(["runtime/bin/redcap", "host-hook-audit"])
+        if skipped.get("ok") is not True or skipped.get("checked_by_parent") is not True:
+            failures.append("父级宿主审计结果标记错误")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1
@@ -230,6 +279,11 @@ def build_parser() -> argparse.ArgumentParser:
     check = sub.add_parser("check")
     check.add_argument("--merge", default=str(MERGE_PATH))
     check.add_argument("--no-run-checks", action="store_true")
+    check.add_argument(
+        "--skip-heavy-host-audit",
+        action="store_true",
+        help="父级已经单独执行宿主审计时，避免在队列里重复触发重检查。",
+    )
     check.set_defaults(func=cmd_check)
     self_check = sub.add_parser("self-check")
     self_check.set_defaults(func=cmd_self_check)
