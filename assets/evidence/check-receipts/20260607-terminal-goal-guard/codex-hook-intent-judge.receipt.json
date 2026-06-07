@@ -1,0 +1,14 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge",
+  "exit_code": 0,
+  "actual_exit_code": 0,
+  "expected_exit_code": 0,
+  "executed_at": "2026-06-07T14:54:31Z",
+  "executor": "codex",
+  "stdout_sha256": "da593e2fa9bda03c7ee4dc337bef8d06893c6fb72db14bc2840067031244c1e0",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260607-terminal-goal-guard/codex-hook-intent-judge.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260607-terminal-goal-guard/codex-hook-intent-judge.stderr.txt",
+  "timed_out": false
+}

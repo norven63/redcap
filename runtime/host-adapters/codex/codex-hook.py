@@ -36,6 +36,7 @@ TURN_ACTION_CHECK = REPO_ROOT / "runtime" / "prism" / "bin" / "turn-action-check
 FINAL_CLAIM_GUARD = REPO_ROOT / "runtime" / "core" / "final_claim_guard.py"
 HUMAN_OUTPUT_POLICY = REPO_ROOT / "runtime" / "core" / "human_output_policy.py"
 SCAN_CONCLUSION_GUARD = REPO_ROOT / "runtime" / "core" / "scan_conclusion_guard.py"
+TERMINAL_GOAL_GUARD = REPO_ROOT / "runtime" / "core" / "terminal_goal_guard.py"
 STOP_HOOK_MODE_FILE = pathlib.Path(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE", str(REPO_ROOT / ".codex" / "stop-hook-mode")))
 STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS = float(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS", "900"))
 SUPPORTED_EVENTS = {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"}
@@ -1025,6 +1026,26 @@ def cmd_event(args: argparse.Namespace) -> int:
                 "RedCap（当前复活工程）UserPromptSubmit（用户提示提交检查）已触发。"
                 f"门禁结论：{decision or 'unknown'}。"
             )
+        terminal_context = run_command([
+            sys.executable,
+            str(TERMINAL_GOAL_GUARD),
+            "context",
+            "--for-hook",
+        ])
+        if terminal_context["exit_code"] == 0 and terminal_context["stdout"].strip():
+            context = f"{context}\n{terminal_context['stdout'].strip()}"
+            marker = update_latest_marker("UserPromptSubmit", {
+                "terminal_goal_context_injected": True,
+                "terminal_goal_context_stdout_sha256": terminal_context["stdout_sha256"],
+                "terminal_goal_context_stderr_sha256": terminal_context["stderr_sha256"],
+            }, base_marker=marker)
+        else:
+            marker = update_latest_marker("UserPromptSubmit", {
+                "terminal_goal_context_injected": False,
+                "terminal_goal_context_exit": terminal_context["exit_code"],
+                "terminal_goal_context_stdout_sha256": terminal_context["stdout_sha256"],
+                "terminal_goal_context_stderr_sha256": terminal_context["stderr_sha256"],
+            }, base_marker=marker)
         print(json.dumps({
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",
@@ -1178,6 +1199,49 @@ def cmd_event(args: argparse.Namespace) -> int:
                 "decision": "block",
                 "reason": reason,
                 "systemMessage": "RedCap（当前复活工程）必需提示动作证据门禁未通过。",
+            }, ensure_ascii=False))
+            return 0
+        terminal_guard = run_command([
+            sys.executable,
+            str(TERMINAL_GOAL_GUARD),
+            "check",
+            "--message",
+            str(payload.get("last_assistant_message") or ""),
+            "--events",
+            str(EVENTS_PATH),
+            "--session-id",
+            str(payload.get("session_id") or ""),
+            "--turn-id",
+            str(payload.get("turn_id") or ""),
+        ])
+        terminal_guard_result, terminal_guard_parse_error = parse_leading_json_object(terminal_guard["stdout"])
+        if terminal_guard_parse_error is not None or terminal_guard_result is None:
+            terminal_guard_result = {
+                "ok": False,
+                "reason": f"terminal-goal guard returned invalid JSON: {terminal_guard_parse_error}",
+                "exit_code": terminal_guard["exit_code"],
+            }
+        marker = update_latest_marker("Stop", {
+            "terminal_goal_guard_ok": bool(terminal_guard_result.get("ok")),
+            "terminal_goal_guard_triggered": terminal_guard_result.get("triggered_goals", []),
+            "terminal_goal_guard_failures": terminal_guard_result.get("failures", []),
+            "terminal_goal_guard_exit": terminal_guard["exit_code"],
+            "terminal_goal_guard_stdout_sha256": terminal_guard["stdout_sha256"],
+            "terminal_goal_guard_stderr_sha256": terminal_guard["stderr_sha256"],
+        }, base_marker=marker)
+        if terminal_guard["exit_code"] != 0 or terminal_guard_result.get("ok") is not True:
+            failures = terminal_guard_result.get("failures")
+            if isinstance(failures, list) and failures:
+                detail = "；".join(str(item) for item in failures[:3])
+            else:
+                detail = str(terminal_guard_result.get("reason") or "未知原因")
+            print(json.dumps({
+                "decision": "block",
+                "reason": (
+                    "RedCap（当前复活工程）Stop Hook（停止前检查）发现最后回复可能把阶段成果说成终局完成："
+                    f"{detail}。请改写为阶段状态，或继续执行终局父任务。"
+                ),
+                "systemMessage": "RedCap（当前复活工程）终局目标门禁未通过。",
             }, ensure_ascii=False))
             return 0
         final_guard = run_command([
@@ -1979,6 +2043,48 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         scan_marker = load_self_check_marker(evidence_dir, "Stop")
         if scan_marker.get("scan_conclusion_guard_ok") is not False:
             failures.append("scan-conclusion Stop marker should record failed scan conclusion guard")
+        terminal_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "请汇报 RedCap 完整复活状态。",
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-terminal-goal-session",
+                "turn_id": "fixture-terminal-goal-turn",
+                "source": "codex-hook-terminal-goal-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if terminal_prompt.returncode != 0:
+            failures.append(f"terminal-goal UserPromptSubmit failed: {terminal_prompt.stderr or terminal_prompt.stdout}")
+        terminal_prompt_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
+        if terminal_prompt_marker.get("terminal_goal_context_injected") is not True:
+            failures.append("terminal-goal prompt-time context was not injected")
+        terminal_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-terminal-goal-session",
+                "turn_id": "fixture-terminal-goal-turn",
+                "last_assistant_message": "RedCap 已经完整复活，正式可用。",
+                "source": "codex-hook-terminal-goal-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={"REDCAP_STOP_HOOK_MODE": "enforce"},
+        )
+        if terminal_stop.returncode != 0:
+            failures.append(f"terminal-goal Stop failed: {terminal_stop.stderr or terminal_stop.stdout}")
+        terminal_stop_result, terminal_stop_error = parse_leading_json_object(terminal_stop.stdout or "")
+        if terminal_stop_error is not None or not isinstance(terminal_stop_result, dict):
+            failures.append(f"terminal-goal Stop did not emit JSON: {terminal_stop_error}")
+        else:
+            reason = str(terminal_stop_result.get("reason") or "")
+            if terminal_stop_result.get("decision") != "block":
+                failures.append("terminal-goal Stop fixture should block terminal completion overclaim")
+            if "终局" not in reason:
+                failures.append("terminal-goal Stop block reason should mention terminal goal")
+        terminal_marker = load_self_check_marker(evidence_dir, "Stop")
+        if terminal_marker.get("terminal_goal_guard_ok") is not False:
+            failures.append("terminal-goal Stop marker should record failed terminal goal guard")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     return 0 if not failures else 1
 

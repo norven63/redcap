@@ -22,6 +22,7 @@ from fsm import STATES, transition_allowed  # noqa: E402
 from prompt_intent import (  # noqa: E402
     normalize_prompt_text,
     prompt_has_directive_authority,
+    prompt_intent_from_event,
     prompt_text_from_event,
 )
 
@@ -368,8 +369,19 @@ def validate_prompt_context(packet: dict[str, Any], failures: list[str], events_
                 )
                 if not continuation_ok:
                     failures.append(continuation_failure or "prompt_context.source_prompt_excerpt does not match latest UserPromptSubmit prompt")
-            elif authorized_scope in {"implementation", "completion"} and not prompt_has_directive_authority(actual_prompt):
+            elif authorized_scope in {"implementation", "completion"} and not (
+                prompt_has_directive_authority(actual_prompt)
+                or prompt_event_authorizes_execution(prompt_event)
+            ):
                 failures.append("prompt_context.authorized_scope requires an actual UserPromptSubmit directive, not a question-only prompt substring")
+
+
+def prompt_event_authorizes_execution(prompt_event: dict[str, Any]) -> bool:
+    intent = prompt_intent_from_event(prompt_event)
+    return (
+        intent.get("authorized_scope") in {"implementation", "completion"}
+        and intent.get("action_evidence") == "substantive"
+    )
 
 
 def validate_prism_review_resolution(packet: dict[str, Any], failures: list[str]) -> None:
@@ -728,6 +740,34 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         question_failures = validate_packet(question_substring, question_events_path)
         if not any("question-only prompt substring" in item for item in question_failures):
             failures.append("question prompt substring authorizing implementation was not rejected")
+        effective_events_path = tmp / "effective-events.jsonl"
+        effective_events_path.write_text(json.dumps({
+            "event": "UserPromptSubmit",
+            "prompt": {
+                "normalized_excerpt": "方案是什么？是否需要讨论？我要求你把这个解决方案执行完成",
+            },
+            "prompt_intent": {
+                "prompt_kind": "question",
+                "authorized_scope": "answer_only",
+                "action_evidence": "none",
+            },
+            "prompt_intent_effective": {
+                "prompt_kind": "mixed",
+                "authorized_scope": "implementation",
+                "action_evidence": "substantive",
+                "confidence": "high",
+                "reason": "fixture final sentence authorizes execution",
+            },
+        }, ensure_ascii=False) + "\n", encoding="utf-8")
+        effective_prompt = copy.deepcopy(valid)
+        effective_prompt["prompt_context"] = {
+            "source_prompt_excerpt": "方案是什么？是否需要讨论？我要求你把这个解决方案执行完成",
+            "prompt_kind": "mixed",
+            "authorized_scope": "implementation",
+        }
+        effective_failures = validate_packet(effective_prompt, effective_events_path)
+        if effective_failures:
+            failures.append(f"effective implementation intent should pass lifecycle prompt verification: {'; '.join(effective_failures)}")
         short_events_path = tmp / "short-events.jsonl"
         short_events_path.write_text(json.dumps({
             "event": "UserPromptSubmit",

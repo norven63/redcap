@@ -1,0 +1,14 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+  "exit_code": 0,
+  "actual_exit_code": 0,
+  "expected_exit_code": 0,
+  "executed_at": "2026-06-07T14:55:08Z",
+  "executor": "codex",
+  "stdout_sha256": "2f01b95a092682cfd42030f1194e0baa09bd74abb2441bdbe3088712bdd292e7",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260607-terminal-goal-guard/status-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260607-terminal-goal-guard/status-check.stderr.txt",
+  "timed_out": false
+}

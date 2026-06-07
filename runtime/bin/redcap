@@ -27,6 +27,7 @@ Usage:
   runtime/bin/redcap prism-rebuttal-request [...]
   runtime/bin/redcap prism-ledger [...]
   runtime/bin/redcap task-facts record|summary|check|self-check [...]
+  runtime/bin/redcap terminal-goal check|context|self-check [...]
   runtime/bin/redcap human-output check|self-check|lint-text|lint-file [...]
   runtime/bin/redcap prism-shard [...]
   runtime/bin/redcap scan-conclusion check|self-check [...]
@@ -71,6 +72,8 @@ Commands:
                 Generate a bounded same-provider rebuttal request for a rejected concern.
   prism-ledger  Record and summarize Prism task execution health.
   task-facts    Record and summarize RedCap task fact status.
+  terminal-goal
+                Guard terminal objectives so phase achievements cannot close parent goals.
   human-output  Check Chinese-first human-facing output policy.
   prism-shard   Validate and merge bounded Prism long-task shard accounts.
   scan-conclusion
@@ -166,6 +169,9 @@ case "$cmd" in
   task-facts)
     exec python3 "$REPO_ROOT/runtime/core/task_facts.py" "$@"
     ;;
+  terminal-goal)
+    exec python3 "$REPO_ROOT/runtime/core/terminal_goal_guard.py" "$@"
+    ;;
   human-output)
     exec python3 "$REPO_ROOT/runtime/core/human_output_policy.py" "$@"
     ;;
@@ -205,6 +211,8 @@ case "$cmd" in
     "$REPO_ROOT/runtime/bin/redcap" prism-shard self-check
     "$REPO_ROOT/runtime/bin/redcap" task-facts self-check
     "$REPO_ROOT/runtime/bin/redcap" task-facts check
+    "$REPO_ROOT/runtime/bin/redcap" terminal-goal self-check
+    "$REPO_ROOT/runtime/bin/redcap" terminal-goal check
     "$REPO_ROOT/runtime/bin/redcap" human-output check
     "$REPO_ROOT/runtime/bin/redcap" human-output self-check
     "$REPO_ROOT/runtime/bin/redcap" scan-conclusion self-check

@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "claude-code",
+    "kimi"
+  ],
+  "verdicts": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "claude-code",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "claude-code",
+      "concern": "The enforcement path is inverted. The guard is wired into the Codex Stop hook (post-hoc validation), but there is no specification for how Cap receives terminal-goal constraints before generating its completion claim. A stop hook catches overclaims after they happen; it does not prevent them. This creates a correction loop — Cap claims done, guard rejects, Cap reformulates — that generates activity without solving the root cause."
+    },
+    {
+      "provider": "kimi",
+      "concern": "The design treats terminal-goal substitution as a missing validation layer rather than a reasoning failure. Adding external contracts and runtime checkers risks creating procedural theater: Cap can still reason incorrectly about goal completion, generate an overclaim, and only then be caught by the guard. A post-hoc checker does not force Cap to maintain the terminal goal during planning. The completion levels are also implicitly shaped by the RedCap revival case without evidence they generalize to arbitrary terminal goals."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before implementing the runtime guard, specify the prompt-time constraint injection path — how Cap's context carries the terminal-goal definition so it knows it cannot claim completion before generating output. The hook check is secondary validation, not primary enforcement. Add this as an explicit planned change item."
+    },
+    {
+      "provider": "kimi",
+      "minimum_fix": "Before writing implementation code: (1) Write the terminal-goal contract schema explicitly and test it against at least one non-RedCap terminal goal to prove generality. (2) Shift the guard left from output validation into planning/decision boundaries so it blocks the reasoning error, not just the final sentence. (3) Define the exact mechanical behavior when the checker fires: does it rewrite the output, block submission, or require user confirmation?"
+    }
+  ],
+  "anti_loop_detected": true
+}

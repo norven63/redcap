@@ -1,0 +1,122 @@
+{
+  "schema_id": "redcap-terminal-goal-contract",
+  "schema_version": 1,
+  "purpose": "Prevent phase achievements from substituting for a user's terminal objective.",
+  "completion_levels": [
+    {
+      "id": "infrastructure_baseline",
+      "name": "基建可用基线",
+      "meaning": "工具、目录、检查链和状态面可以支撑继续工作。",
+      "not_equal_to": [
+        "scan_complete",
+        "migration_usable",
+        "terminal_complete"
+      ]
+    },
+    {
+      "id": "scan_complete",
+      "name": "扫描完成",
+      "meaning": "旧系统或目标材料已完成归纳、合并和风险分类。",
+      "not_equal_to": [
+        "migration_usable",
+        "terminal_complete"
+      ]
+    },
+    {
+      "id": "migration_usable",
+      "name": "迁移可用",
+      "meaning": "已选择的优秀设计完成迁移，并通过目标工作流验证。",
+      "not_equal_to": [
+        "terminal_complete"
+      ]
+    },
+    {
+      "id": "terminal_complete",
+      "name": "终局完成",
+      "meaning": "用户原始终点的全部验收条件满足，且终局父任务被明确验证。",
+      "not_equal_to": []
+    }
+  ],
+  "terminal_goals": [
+    {
+      "id": "redcap-complete-revival",
+      "title": "RedCap 完整复活",
+      "domain": "redcap",
+      "task_fact_id": "redcap-complete-revival",
+      "current_level": "migration_usable",
+      "terminal_level": "terminal_complete",
+      "aliases": [
+        "完整复活",
+        "完全复活",
+        "终局完成",
+        "正式可用",
+        "完整 RedCap 复活",
+        "RedCap 完整复活"
+      ],
+      "allowed_phase_terms": [
+        "基建可用基线",
+        "正式可用基线",
+        "扫描完成",
+        "迁移可用"
+      ],
+      "terminal_acceptance": [
+        "旧 RedCap 优秀设计迁移清单存在并逐项验证。",
+        "所有迁移项都有真实运行时、合同或工作流证据。",
+        "禁止迁移项仍被检查器拒绝。",
+        "用户原始终点没有被阶段成果替代。"
+      ],
+      "required_verified_task_facts": [
+        "redcap-complete-revival"
+      ],
+      "forbidden_substitutions": [
+        "formal usability baseline",
+        "360 scan merge",
+        "revival queue check",
+        "status command",
+        "version record",
+        "Prism review",
+        "lifecycle packet"
+      ],
+      "open_reason": "当前只有基建、扫描和部分迁移队列证据；旧 RedCap 优秀设计完整迁移尚未完成终局验收。"
+    },
+    {
+      "id": "example-product-launch",
+      "title": "示例产品发布",
+      "domain": "generic-example",
+      "task_fact_id": "example-product-launch",
+      "current_level": "infrastructure_baseline",
+      "terminal_level": "terminal_complete",
+      "aliases": [
+        "产品发布完成",
+        "上线完成",
+        "发布成功"
+      ],
+      "allowed_phase_terms": [
+        "原型完成",
+        "测试通过",
+        "发布准备完成"
+      ],
+      "terminal_acceptance": [
+        "生产环境发布完成。",
+        "回滚方案验证可用。",
+        "用户验收或监控指标达到发布标准。"
+      ],
+      "required_verified_task_facts": [
+        "example-product-launch"
+      ],
+      "forbidden_substitutions": [
+        "prototype ready",
+        "test pass",
+        "deployment plan",
+        "release notes"
+      ],
+      "open_reason": "示例用于证明终局目标机制不依赖 RedCap 领域词。"
+    }
+  ],
+  "output_rules": {
+    "terminal_claim_requires_verified_goal": true,
+    "phase_claim_must_name_level": true,
+    "prompt_time_context_required": true,
+    "stop_hook_validation_required": true
+  }
+}

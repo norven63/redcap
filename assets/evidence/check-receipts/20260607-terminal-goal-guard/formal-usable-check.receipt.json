@@ -1,0 +1,14 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap formal-usable-check",
+  "exit_code": 0,
+  "actual_exit_code": 0,
+  "expected_exit_code": 0,
+  "executed_at": "2026-06-07T14:55:08Z",
+  "executor": "codex",
+  "stdout_sha256": "fc808d6f50227495878b0f35567c8acfef54bca8086da16a27a1d3cf0d98b3af",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260607-terminal-goal-guard/formal-usable-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260607-terminal-goal-guard/formal-usable-check.stderr.txt",
+  "timed_out": false
+}

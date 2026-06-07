@@ -16,6 +16,7 @@ import runtime_boundary  # noqa: E402
 import scan_conclusion_guard  # noqa: E402
 import soul_loader  # noqa: E402
 import task_facts  # noqa: E402
+import terminal_goal_guard  # noqa: E402
 
 
 def namespace_from_args(args: argparse.Namespace) -> argparse.Namespace:
@@ -41,6 +42,18 @@ def build_status(args: argparse.Namespace, *, load_soul: bool = False, write_sou
     )
     records = task_facts.read_records(pathlib.Path(args.task_facts).resolve())
     task_summary = task_facts.compute_summary(records)
+    facts_by_task = task_facts.latest_by_task(records)
+    terminal_contract = terminal_goal_guard.load_json(pathlib.Path(args.terminal_goals).resolve())
+    terminal_goal_states = terminal_goal_guard.active_goal_states(terminal_contract, facts_by_task)
+    terminal_goal_ids = {
+        str(state.get("task_fact_id"))
+        for state in terminal_goal_states
+        if state.get("domain") != "generic-example"
+    }
+    non_terminal_open_tasks = [
+        item for item in task_summary.get("open_tasks", [])
+        if isinstance(item, dict) and str(item.get("task_id") or "") not in terminal_goal_ids
+    ]
     scan_state = scan_conclusion_guard.build_scan_state(
         pathlib.Path(args.scan_account).resolve(),
         pathlib.Path(args.scan_merge).resolve(),
@@ -53,8 +66,8 @@ def build_status(args: argparse.Namespace, *, load_soul: bool = False, write_sou
     failures = list(boundary_failures)
     if not soul_packet.get("ok"):
         failures.extend(str(item) for item in soul_packet.get("failures", []))
-    if task_summary.get("open_count", 0) > 0 and args.fail_on_open:
-        failures.append(f"仍有开放任务：{task_summary.get('open_count')}")
+    if non_terminal_open_tasks and args.fail_on_open:
+        failures.append(f"仍有非终局父任务开放：{len(non_terminal_open_tasks)}")
     if scan_state.get("scan_complete") is not True and args.require_scan_complete:
         failures.append("360 度旧 RedCap 扫描尚未完成")
     return {
@@ -70,8 +83,12 @@ def build_status(args: argparse.Namespace, *, load_soul: bool = False, write_sou
             "evidence": soul_evidence,
         },
         "task_summary": task_summary,
+        "terminal_goals": {
+            "states": terminal_goal_states,
+            "non_terminal_open_tasks": non_terminal_open_tasks,
+        },
         "scan_state": scan_state,
-        "human_next_step": human_next_step(task_summary, scan_state, soul_packet, boundary_failures),
+        "human_next_step": human_next_step(task_summary, scan_state, soul_packet, boundary_failures, terminal_goal_states),
         "failures": failures,
     }
 
@@ -81,6 +98,7 @@ def human_next_step(
     scan_state: dict[str, Any],
     soul_packet: dict[str, Any],
     boundary_failures: list[str],
+    terminal_goal_states: list[dict[str, Any]],
 ) -> str:
     if boundary_failures:
         return "先修运行边界：当前工作区、项目工作区或用户私有状态位置不满足边界规则。"
@@ -89,8 +107,15 @@ def human_next_step(
     if scan_state.get("scan_complete") is not True:
         return "继续 360 度旧 RedCap 扫描，完成分片和合并后再进入最终复活计划。"
     if task_summary.get("open_count", 0) > 0:
+        terminal_open = [
+            state for state in terminal_goal_states
+            if state.get("domain") != "generic-example" and state.get("open") is True
+        ]
+        if terminal_open:
+            titles = "、".join(str(state.get("title")) for state in terminal_open)
+            return f"继续推进终局父任务：{titles}；阶段成果不能替代终局验收。"
         return "先处理开放任务事实，避免把未完成事项藏到状态面后面。"
-    return "当前状态面健康；可以运行正式可用检查或继续执行复活实施队列。"
+    return "当前基线状态面健康；仍需按终局目标合同确认是否已经完整完成。"
 
 
 def print_human(status: dict[str, Any]) -> None:
@@ -107,6 +132,14 @@ def print_human(status: dict[str, Any]) -> None:
     print(f"任务文件：{boundary.get('task_file')}（存在：{boundary.get('task_file_exists')}）")
     print(f"Cap 身份：{'已加载' if soul.get('ok') else '未加载'}")
     print(f"开放任务：{task_summary.get('open_count', 0)}")
+    terminal_open = [
+        state for state in status.get("terminal_goals", {}).get("states", [])
+        if state.get("domain") != "generic-example" and state.get("open") is True
+    ]
+    if terminal_open:
+        print("终局父任务：仍开放")
+        for state in terminal_open:
+            print(f"- {state.get('title')}：{state.get('open_reason')}")
     print(
         "360 扫描："
         f"{scan_state.get('scan_status')}，"
@@ -130,6 +163,7 @@ def add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--state-root")
     parser.add_argument("--evidence-root")
     parser.add_argument("--task-facts", default=str(task_facts.DEFAULT_LEDGER))
+    parser.add_argument("--terminal-goals", default=str(terminal_goal_guard.DEFAULT_CONTRACT))
     parser.add_argument("--scan-account", default=str(scan_conclusion_guard.DEFAULT_ACCOUNT))
     parser.add_argument("--scan-merge", default=str(scan_conclusion_guard.DEFAULT_MERGE))
     parser.add_argument("--soul-evidence-dir", default=str(soul_loader.DEFAULT_EVIDENCE_DIR))
@@ -175,6 +209,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         state_root=None,
         evidence_root=None,
         task_facts=str(task_facts.DEFAULT_LEDGER),
+        terminal_goals=str(terminal_goal_guard.DEFAULT_CONTRACT),
         scan_account=str(scan_conclusion_guard.DEFAULT_ACCOUNT),
         scan_merge=str(scan_conclusion_guard.DEFAULT_MERGE),
         soul_evidence_dir=str(soul_loader.DEFAULT_EVIDENCE_DIR),

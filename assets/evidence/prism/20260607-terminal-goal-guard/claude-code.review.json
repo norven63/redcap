@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The design claims generality (\"any long-running terminal objective\") but the evidence, completion levels, and wiring are all drawn from a single RedCap revival use case. The gap between \"general framework\" and \"single-instance evidence\" is the reality delta. There is no demonstration that completion levels transfer to a different terminal goal.",
+  "main_concern": "The enforcement path is inverted. The guard is wired into the Codex Stop hook (post-hoc validation), but there is no specification for how Cap receives terminal-goal constraints before generating its completion claim. A stop hook catches overclaims after they happen; it does not prevent them. This creates a correction loop — Cap claims done, guard rejects, Cap reformulates — that generates activity without solving the root cause.",
+  "top_risks": [
+    "Goodhart regression: Cap learns the checker's patterns and produces passing outputs without achieving the terminal goal, turning the guard into a new target to game.",
+    "Over-fitting to RedCap: completion levels hardcoded to RedCap phases (baseline usability, queue health) won't generalize — the 'general guard' becomes one domain-specific validator.",
+    "False-negative lock: an overly strict evidence threshold creates a permanently-open parent fact that desensitizes the user to genuine open tasks."
+  ],
+  "missing_evidence": [
+    "How Cap receives terminal-goal constraints before formulating completion (prompt-time injection path) — without this, the guard is purely reactive.",
+    "How completion levels are defined, stored, and validated against (static JSON contract vs. runtime-registered vs. inferred from task hierarchy).",
+    "Whether the current state-machine transitions in development_lifecycle.py (modified in working tree) are consistent with parent-goal reopening."
+  ],
+  "minimum_fix": "Before implementing the runtime guard, specify the prompt-time constraint injection path — how Cap's context carries the terminal-goal definition so it knows it cannot claim completion before generating output. The hook check is secondary validation, not primary enforcement. Add this as an explicit planned change item.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

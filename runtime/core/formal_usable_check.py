@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""通过用户可见工作流检查 RedCap 是否已达到正式可用。"""
+"""通过用户可见工作流检查 RedCap 是否已达到正式可用基线。"""
 
 from __future__ import annotations
 
@@ -63,7 +63,8 @@ def check_formal_usability() -> dict[str, Any]:
         "revive": run(["runtime/bin/redcap", "revive", "--json", "--no-write-evidence", "--require-scan-complete", "--fail-on-open"]),
         "revival_queue": run(["runtime/bin/redcap", "revival-queue", "check"]),
         "scan_conclusion": run(["runtime/bin/redcap", "scan-conclusion", "check"]),
-        "task_facts": run(["runtime/bin/redcap", "task-facts", "check", "--fail-on-open"]),
+        "task_facts": run(["runtime/bin/redcap", "task-facts", "check"]),
+        "terminal_goal": run(["runtime/bin/redcap", "terminal-goal", "check"]),
     }
     failures: list[str] = []
     for name, result in commands.items():
@@ -74,14 +75,17 @@ def check_formal_usability() -> dict[str, Any]:
     queue_payload = leading_json(commands["revival_queue"].get("stdout", ""))
     if status_payload.get("scan_state", {}).get("scan_complete") is not True:
         failures.append("status 命令没有确认 360 扫描完成")
-    if status_payload.get("task_summary", {}).get("open_count") != 0:
-        failures.append("status 命令显示仍有开放任务")
+    non_terminal_open = status_payload.get("terminal_goals", {}).get("non_terminal_open_tasks", [])
+    if non_terminal_open:
+        failures.append("status 命令显示仍有非终局父任务开放")
     if revive_payload.get("soul", {}).get("ok") is not True:
         failures.append("revive 命令没有成功加载 Cap 身份")
     if queue_payload.get("required_open"):
         failures.append(f"复活队列仍有开放项：{queue_payload.get('required_open')}")
     return {
-        "schema_id": "redcap-formal-usability-check",
+        "schema_id": "redcap-formal-usability-baseline-check",
+        "level": "正式可用基线",
+        "not_equal_to": "完整复活",
         "ok": not failures,
         "checks": {name: summarize_command(result) for name, result in commands.items()},
         "failures": failures,
@@ -100,7 +104,17 @@ def cmd_check(_: argparse.Namespace) -> int:
 def cmd_self_check(_: argparse.Namespace) -> int:
     failures: list[str] = []
     fixture = {
-        "status": {"ok": True, "stdout": json.dumps({"scan_state": {"scan_complete": True}, "task_summary": {"open_count": 0}}, ensure_ascii=False), "stderr": "", "argv": [], "exit_code": 0},
+        "status": {
+            "ok": True,
+            "stdout": json.dumps({
+                "scan_state": {"scan_complete": True},
+                "task_summary": {"open_count": 1},
+                "terminal_goals": {"non_terminal_open_tasks": []},
+            }, ensure_ascii=False),
+            "stderr": "",
+            "argv": [],
+            "exit_code": 0,
+        },
         "revive": {"ok": True, "stdout": json.dumps({"soul": {"ok": True}}, ensure_ascii=False), "stderr": "", "argv": [], "exit_code": 0},
         "revival_queue": {"ok": True, "stdout": json.dumps({"required_open": []}, ensure_ascii=False), "stderr": "", "argv": [], "exit_code": 0},
     }
@@ -117,7 +131,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="RedCap 正式可用性检查器")
+    parser = argparse.ArgumentParser(description="RedCap 正式可用基线检查器")
     sub = parser.add_subparsers(dest="command", required=True)
     check = sub.add_parser("check")
     check.set_defaults(func=cmd_check)

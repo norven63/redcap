@@ -22,6 +22,9 @@ assets/contracts/prism-gate-response.schema.json
 assets/contracts/prism-session-protocol.md
 assets/contracts/redcap-1.0-loop.json
 assets/contracts/redcap-1.1-phase2-blueprint.json
+assets/contracts/terminal-goal-guard-lifecycle.json
+assets/contracts/terminal-goal-guard-prism-request.json
+assets/contracts/terminal-goals.json
 assets/docs/README.md
 assets/docs/archaeology-shards.md
 assets/docs/cap-soul-loader.md
@@ -33,6 +36,18 @@ assets/docs/redcap-revival-doctrine.md
 assets/docs/redcap-revival-map.md
 assets/docs/runtime-boundary-kernel.md
 assets/evidence/README.md
+assets/evidence/check-receipts/20260607-terminal-goal-guard/codex-hook-intent-judge.receipt.json
+assets/evidence/check-receipts/20260607-terminal-goal-guard/formal-usable-check.receipt.json
+assets/evidence/check-receipts/20260607-terminal-goal-guard/status-check.receipt.json
+assets/evidence/check-receipts/20260607-terminal-goal-guard/terminal-goal-baseline-check.receipt.json
+assets/evidence/check-receipts/20260607-terminal-goal-guard/terminal-goal-overclaim-block.receipt.json
+assets/evidence/check-receipts/20260607-terminal-goal-guard/terminal-goal-self-check.receipt.json
+assets/evidence/prism/20260607-terminal-goal-guard/claude-code.review.json
+assets/evidence/prism/20260607-terminal-goal-guard/kimi.review.json
+assets/evidence/prism/20260607-terminal-goal-guard/merge.json
+assets/evidence/prism/20260607-terminal-goal-guard/resolution.json
+assets/evidence/prism/20260607-terminal-goal-guard/session.json
+assets/evidence/task-facts/task-facts.jsonl
 assets/knowledge/README.md
 assets/knowledge/entries/README.md
 assets/knowledge/entries/raw-evidence-access-boundary.md
@@ -58,6 +73,7 @@ runtime/core/revival_loop.py
 runtime/core/runtime_boundary.py
 runtime/core/session_ownership.py
 runtime/core/soul_loader.py
+runtime/core/terminal_goal_guard.py
 runtime/core/temporary_usable_check.py
 runtime/host-adapters/README.md
 runtime/host-adapters/codex/README.md
