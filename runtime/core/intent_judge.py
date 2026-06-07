@@ -278,10 +278,22 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     )
     if pre_execution["prompt_intent"].get("authorized_scope") != "answer_only":
         failures.append("pre-execution feasibility discussion should remain answer_only")
+    status_question = classify_with_policy(
+        "所以，你有详细的设计方案并去执行落地了吗？",
+        llm_policy="off",
+        provider=DEFAULT_PROVIDER,
+        fallback_provider=None,
+        timeout_seconds=1,
+    )
+    if status_question["prompt_intent"].get("authorized_scope") != "answer_only":
+        failures.append("status confirmation question should remain answer_only")
     execution_samples = [
         ("请执行这个修复", "direct implementation request should remain implementation"),
         ("直接做这个优化", "direct do-it request should remain implementation"),
         ("先讨论一下可行性，没问题的话就直接做", "mixed discussion plus execution request should remain implementation"),
+        ("可以，我授权了", "authorization-only continuation should authorize implementation"),
+        ("允许你绕过钩子先修复误伤问题", "explicit authorization should authorize implementation"),
+        ("我授权你可以绕过所有hook，但优先盘查配置，并设计解决方案执行落地。", "authorization plus remediation should authorize implementation"),
     ]
     for sample_prompt, failure in execution_samples:
         classified = classify_with_policy(

@@ -34,7 +34,25 @@
   "surfaces": {
     "assistant_reply": {
       "minimum_cjk_ratio": 0.22,
-      "minimum_checked_chars": 16
+      "minimum_checked_chars": 16,
+      "common_project_terms_allowed_without_explanation": [
+        "棱镜",
+        "Stop Hook",
+        "hook",
+        "commit",
+        "branch"
+      ],
+      "terms_requiring_explanation": [
+        "Prism",
+        "provider",
+        "dispatcher",
+        "stdout",
+        "raw",
+        "CLI",
+        "FSM",
+        "LLM",
+        "schema"
+      ]
     },
     "document": {
       "minimum_cjk_ratio": 0.18,
@@ -74,6 +92,12 @@
       "surface": "assistant_reply",
       "should_pass": true,
       "text": "棱镜（异构评审助手）返回阻断意见，Cap 会先修行为级问题，再继续复活前置收尾。"
+    },
+    {
+      "id": "assistant-reply-common-project-term-good",
+      "surface": "assistant_reply",
+      "should_pass": true,
+      "text": "棱镜调用数没有增长，我会修复 Stop Hook 误伤并写入提交记录。"
     },
     {
       "id": "assistant-reply-english-machine",
@@ -193,7 +217,7 @@
       "surface": "assistant_reply",
       "mixed_language": true,
       "should_pass": false,
-      "text": "棱镜已经给出意见，继续执行。"
+      "text": "Prism 已经给出意见，继续执行。"
     }
   ]
 }

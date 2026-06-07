@@ -78,6 +78,9 @@ IMPLEMENTATION_MARKERS = {
     "处理",
     "处置",
     "实施",
+    "授权",
+    "允许",
+    "批准",
 }
 
 REVIEW_MARKERS = {
@@ -163,6 +166,8 @@ NEGATED_IMPLEMENTATION_PHRASES = {
     "别改",
     "别提交",
     "别推送",
+    "没有授权",
+    "未授权",
 }
 
 ANSWER_ONLY_EXECUTION_CONTEXT_PHRASES = {
@@ -222,6 +227,22 @@ STRONG_IMPLEMENTATION_MARKERS = {
     "先把",
     "帮我",
     "do it",
+    "授权",
+    "允许",
+    "批准",
+}
+
+STATUS_CONFIRMATION_DIRECTIVE_OVERRIDES = {
+    "请",
+    "请你",
+    "请也要",
+    "授权",
+    "允许",
+    "批准",
+    "直接做",
+    "开始修复",
+    "开始执行",
+    "彻底杜绝",
 }
 
 CONDITIONAL_IMPLEMENTATION_MARKERS = {
@@ -285,6 +306,11 @@ def prompt_requests_code_excerpt(normalized: str) -> bool:
 
 
 def prompt_is_status_confirmation_question(prompt: str) -> bool:
+    directive_text = strip_quoted_spans(normalize_prompt_text(prompt))
+    for phrase in NEGATED_IMPLEMENTATION_PHRASES:
+        directive_text = directive_text.replace(phrase, " ")
+    if any(marker in directive_text for marker in STATUS_CONFIRMATION_DIRECTIVE_OVERRIDES):
+        return False
     return ("?" in prompt or "？" in prompt) and any(
         pattern.search(prompt) for pattern in STATUS_CONFIRMATION_REGEXES
     )

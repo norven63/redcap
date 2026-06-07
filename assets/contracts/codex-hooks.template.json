@@ -56,7 +56,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/env REDCAP_STOP_HOOK_MODE=enforce REDCAP_STOP_INTENT_LLM_POLICY=auto REDCAP_STOP_INTENT_TIMEOUT_SECONDS=20 /usr/bin/python3 \"{REPO_ROOT}/runtime/host-adapters/codex/codex-hook.py\" --event Stop",
+            "command": "/usr/bin/env REDCAP_STOP_INTENT_LLM_POLICY=auto REDCAP_STOP_INTENT_TIMEOUT_SECONDS=20 /usr/bin/python3 \"{REPO_ROOT}/runtime/host-adapters/codex/codex-hook.py\" --event Stop",
             "timeout": 60,
             "statusMessage": "Running RedCap closeout check"
           }

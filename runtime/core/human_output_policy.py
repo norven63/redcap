@@ -116,6 +116,13 @@ def check_contract(contract: dict[str, Any]) -> list[str]:
             continue
         if not isinstance(policy.get("minimum_cjk_ratio"), (int, float)):
             failures.append(f"{name}: minimum_cjk_ratio must be number")
+    assistant_policy = surfaces.get("assistant_reply") if isinstance(surfaces, dict) else None
+    if not isinstance(assistant_policy, dict):
+        failures.append("assistant_reply policy must be object")
+    else:
+        common_terms = assistant_policy.get("common_project_terms_allowed_without_explanation")
+        if not isinstance(common_terms, list) or not common_terms:
+            failures.append("assistant_reply.common_project_terms_allowed_without_explanation must document allowed common terms")
     samples = contract.get("required_samples")
     if not isinstance(samples, list) or len(samples) < 15:
         failures.append("required_samples must contain at least 15 samples")
@@ -184,6 +191,12 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             surface="assistant_reply",
             source="good",
         )
+        common_project_terms = lint_text(
+            "棱镜调用数没有增长，我会修复 Stop Hook 误伤并写入提交记录。",
+            contract,
+            surface="assistant_reply",
+            source="common-project-terms",
+        )
         english_only = lint_text(
             "The workflow lifecycle packet proves completion and the task is done.",
             contract,
@@ -205,6 +218,8 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         failures: list[str] = []
         if good:
             failures.append("中文优先样例不应失败")
+        if common_project_terms:
+            failures.append("常用项目术语样例不应失败")
         if not english_only:
             failures.append("英文机器化样例应失败")
         if not unexplained:

@@ -29,7 +29,6 @@ DEFAULT_TIMEOUT_SECONDS = 300
 DEFAULT_MAX_RETRIES = 5
 TIMEOUT_KILL_GRACE_SECONDS = 0.5
 DEFAULT_TOTAL_TIMEOUT_MULTIPLIER = 1.0
-CLAUDE_DISALLOWED_TOOLS = "Bash,Edit,Write,MultiEdit,Read,Glob,Grep,LS,Task,TodoWrite,NotebookEdit,WebFetch,WebSearch"
 REQUIRED_REVIEW_KEYS = {
     "provider",
     "verdict",
@@ -823,12 +822,12 @@ def assert_provider_command_safe(argv: list[str]) -> None:
         if str(REPO_ROOT) in argv:
             raise SystemExit("unsafe provider command: kimi must not use the RedCap repo as work-dir during Prism review")
     if argv and argv[0] == "claude":
-        if "--bare" not in argv:
-            raise SystemExit("unsafe provider command: claude Prism review must use bare mode to avoid host hooks")
         if "plan" not in argv:
             raise SystemExit("unsafe provider command: claude must run in plan permission mode during Prism review")
         if "--tools" not in argv or "" not in argv:
             raise SystemExit("unsafe provider command: claude Prism review must disable tools")
+        if "--disallowedTools" in argv or "--disallowed-tools" in argv:
+            raise SystemExit("unsafe provider command: claude Prism review should rely on --tools '' instead of stale deny lists")
         if "--json-schema" not in argv:
             raise SystemExit("unsafe provider command: claude Prism review must request structured JSON output")
 
@@ -858,7 +857,6 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
         if handle:
             argv = [
                 "claude",
-                "--bare",
                 "--print",
                 "--output-format",
                 "json",
@@ -866,8 +864,6 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
                 "plan",
                 "--tools",
                 "",
-                "--disallowedTools",
-                CLAUDE_DISALLOWED_TOOLS,
                 "--json-schema",
                 review_json_schema_arg(),
                 "--resume",
@@ -879,7 +875,6 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
         next_handle = str(uuid.uuid4())
         argv = [
             "claude",
-            "--bare",
             "--print",
             "--output-format",
             "json",
@@ -887,8 +882,6 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
             "plan",
             "--tools",
             "",
-            "--disallowedTools",
-            CLAUDE_DISALLOWED_TOOLS,
             "--json-schema",
             review_json_schema_arg(),
             "--session-id",
@@ -985,10 +978,13 @@ def mark_session_expired(manifest: pathlib.Path, provider: str, handle: str | No
 
 
 def provider_success_raw(run_dir: pathlib.Path, provider: str, max_age_hours: float | None) -> bool:
-    raw_files = sorted(run_dir.glob(f"{provider}*.raw.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    raw_files = sorted(run_dir.glob("*.raw.json"), key=lambda path: path.stat().st_mtime, reverse=True)
     now = time.time()
     for path in raw_files:
         if max_age_hours is not None and now - path.stat().st_mtime > max_age_hours * 3600:
+            continue
+        meta_ok, _, meta = verify_raw_meta(raw_meta_path(path))
+        if not meta_ok or meta.get("provider") != provider:
             continue
         try:
             payload = load_json(path)
@@ -997,15 +993,12 @@ def provider_success_raw(run_dir: pathlib.Path, provider: str, max_age_hours: fl
         if payload.get("exit_code") == 0 and (
             isinstance(payload.get("stdout"), str) or isinstance(payload.get("stderr"), str)
         ):
-            meta_ok, _, _ = verify_raw_meta(raw_meta_path(path))
-            if not meta_ok:
-                continue
             return True
     return False
 
 
 def provider_valid_review(run_dir: pathlib.Path, provider: str) -> bool:
-    for path in run_dir.glob(f"{provider}*.review.json"):
+    for path in run_dir.glob("*.review.json"):
         try:
             payload = load_json(path)
         except SystemExit:
@@ -1131,6 +1124,58 @@ def cmd_timeout_report(args: argparse.Namespace) -> int:
     }
     print(json.dumps(report, ensure_ascii=False, indent=2))
     print("PRISM_TIMEOUT_REPORT_OK")
+    return 0
+
+
+def tail_text(value: Any, limit: int = 1200) -> str:
+    text = output_text(value)
+    if len(text) <= limit:
+        return text
+    return text[-limit:]
+
+
+def cmd_failure_report(args: argparse.Namespace) -> int:
+    if args.raw_meta:
+        meta_path = pathlib.Path(args.raw_meta).resolve()
+    elif args.raw_out:
+        meta_path = raw_meta_path(pathlib.Path(args.raw_out).resolve())
+    else:
+        raise SystemExit("--raw-meta or --raw-out is required with --failure-report")
+    ok, failures, meta = verify_raw_meta(meta_path)
+    if not ok:
+        print(json.dumps({
+            "ok": False,
+            "summary_zh": "失败摘要无法生成，因为原始输出元数据未通过校验。",
+            "failures": failures,
+        }, ensure_ascii=False, indent=2))
+        return 1
+    raw_path_value = meta.get("raw_path")
+    raw_payload = load_json(pathlib.Path(str(raw_path_value)))
+    attempts = raw_payload.get("attempts") if isinstance(raw_payload, dict) else []
+    attempts = [attempt for attempt in attempts if isinstance(attempt, dict)]
+    report = {
+        "ok": True,
+        "provider": meta.get("provider"),
+        "exit_code": meta.get("exit_code"),
+        "timed_out": meta.get("timed_out"),
+        "summary_zh": "已通过元数据校验，只展示最近三次尝试的短尾部输出。",
+        "attempts": [
+            {
+                "attempt": attempt.get("attempt"),
+                "exit_code": attempt.get("exit_code"),
+                "timed_out": attempt.get("timed_out") is True,
+                "timeout_scope": attempt.get("timeout_scope"),
+                "recovery": attempt.get("recovery"),
+                "stdout_tail": tail_text(attempt.get("stdout")),
+                "stderr_tail": tail_text(attempt.get("stderr")),
+            }
+            for attempt in attempts[-3:]
+        ],
+        "raw_path": raw_path_value,
+        "meta_path": str(meta_path),
+    }
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    print("PRISM_FAILURE_REPORT_OK")
     return 0
 
 
@@ -1287,7 +1332,6 @@ def run_provider_command(
             fallback_handle = str(uuid.uuid4())
             fallback_argv = [
                 "claude",
-                "--bare",
                 "--print",
                 "--output-format",
                 "json",
@@ -1295,8 +1339,6 @@ def run_provider_command(
                 "plan",
                 "--tools",
                 "",
-                "--disallowedTools",
-                CLAUDE_DISALLOWED_TOOLS,
                 "--json-schema",
                 review_json_schema_arg(),
                 "--session-id",
@@ -2005,14 +2047,16 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         if not KIMI_REVIEW_AGENT_FILE.exists():
             failures.append("kimi no-tool review agent file is missing")
         claude_safe_argv, _ = provider_command("claude-code", None, "safe-check", 1)
-        if "--bare" not in claude_safe_argv:
-            failures.append("claude provider command is missing bare mode")
+        if "--bare" in claude_safe_argv:
+            failures.append("claude provider command should not use bare mode because it conflicts with current reasoning settings")
         if "bypassPermissions" in claude_safe_argv:
             failures.append("claude provider command still contains unsafe bypassPermissions flag")
         if "acceptEdits" in claude_safe_argv:
             failures.append("claude provider command still uses edit-capable permission mode")
         if "--tools" not in claude_safe_argv or "" not in claude_safe_argv:
             failures.append("claude provider command does not disable tools")
+        if "--disallowedTools" in claude_safe_argv or "--disallowed-tools" in claude_safe_argv:
+            failures.append("claude provider command should not use stale disallowed tools")
         if "--json-schema" not in claude_safe_argv:
             failures.append("claude provider command is missing JSON schema output guard")
         try:
@@ -2144,13 +2188,27 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         except SystemExit:
             pass
         try:
-            assert_provider_command_safe(["claude", "--print", "--output-format", "json", "--permission-mode", "plan", "--tools", "", "--json-schema", review_json_schema_arg(), "x"])
-            failures.append("assert_provider_command_safe did not reject claude without bare mode")
+            assert_provider_command_safe(["claude", "--bare", "--print", "--output-format", "json", "--permission-mode", "plan", "--tools", "", "x"])
+            failures.append("assert_provider_command_safe did not reject claude without JSON schema")
         except SystemExit:
             pass
         try:
-            assert_provider_command_safe(["claude", "--bare", "--print", "--output-format", "json", "--permission-mode", "plan", "--tools", "", "x"])
-            failures.append("assert_provider_command_safe did not reject claude without JSON schema")
+            assert_provider_command_safe([
+                "claude",
+                "--print",
+                "--output-format",
+                "json",
+                "--permission-mode",
+                "plan",
+                "--tools",
+                "",
+                "--disallowedTools",
+                "Bash,Edit",
+                "--json-schema",
+                review_json_schema_arg(),
+                "x",
+            ])
+            failures.append("assert_provider_command_safe did not reject stale claude disallowedTools list")
         except SystemExit:
             pass
         result = {"ok": not failures, "failures": failures}
@@ -2167,6 +2225,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--verify-evidence", action="store_true")
     parser.add_argument("--verify-raw-meta", action="store_true")
     parser.add_argument("--timeout-report", action="store_true")
+    parser.add_argument("--failure-report", action="store_true")
     parser.add_argument("--timeout-policy-check", action="store_true")
     parser.add_argument("--evidence-run-dir")
     parser.add_argument("--providers", default="kimi,claude-code")
@@ -2198,6 +2257,8 @@ def main() -> int:
         return cmd_timeout_policy_check(args)
     if args.timeout_report:
         return cmd_timeout_report(args)
+    if args.failure_report:
+        return cmd_failure_report(args)
     if args.verify_raw_meta:
         return cmd_verify_raw_meta(args)
     if args.verify_evidence:

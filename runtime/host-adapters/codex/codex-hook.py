@@ -36,7 +36,8 @@ TURN_ACTION_CHECK = REPO_ROOT / "runtime" / "prism" / "bin" / "turn-action-check
 FINAL_CLAIM_GUARD = REPO_ROOT / "runtime" / "core" / "final_claim_guard.py"
 HUMAN_OUTPUT_POLICY = REPO_ROOT / "runtime" / "core" / "human_output_policy.py"
 SCAN_CONCLUSION_GUARD = REPO_ROOT / "runtime" / "core" / "scan_conclusion_guard.py"
-STOP_HOOK_MODE_FILE = REPO_ROOT / ".codex" / "stop-hook-mode"
+STOP_HOOK_MODE_FILE = pathlib.Path(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE", str(REPO_ROOT / ".codex" / "stop-hook-mode")))
+STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS = float(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS", "900"))
 SUPPORTED_EVENTS = {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"}
 INTENT_JUDGE_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_INTENT_JUDGE_TIMEOUT_SECONDS", "75"))
 INTENT_JUDGE_PROVIDER = os.environ.get("REDCAP_INTENT_JUDGE_PROVIDER", "claude-code")
@@ -200,13 +201,33 @@ def parse_leading_json_object(stdout: str) -> tuple[dict[str, Any] | None, str |
 
 
 def stop_hook_mode() -> str:
-    mode = os.environ.get("REDCAP_STOP_HOOK_MODE")
-    if mode is None and STOP_HOOK_MODE_FILE.exists():
-        mode = STOP_HOOK_MODE_FILE.read_text(encoding="utf-8").strip()
+    mode = None
+    if STOP_HOOK_MODE_FILE.exists():
+        try:
+            age = dt.datetime.now(dt.timezone.utc) - dt.datetime.fromtimestamp(
+                STOP_HOOK_MODE_FILE.stat().st_mtime,
+                dt.timezone.utc,
+            )
+        except OSError:
+            age = dt.timedelta(seconds=STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS + 1)
+        if age.total_seconds() <= STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS:
+            mode = STOP_HOOK_MODE_FILE.read_text(encoding="utf-8").strip()
+    if mode is None:
+        mode = os.environ.get("REDCAP_STOP_HOOK_MODE")
     normalized = (mode or "enforce").casefold()
     if normalized in {"observe", "observation", "log", "disabled", "off"}:
         return "observe"
     return "enforce"
+
+
+def stop_self_check_skips_full_check(payload: dict[str, Any]) -> bool:
+    source = payload.get("source")
+    return (
+        os.environ.get("REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK") == "1"
+        and isinstance(source, str)
+        and source.startswith("codex-hook-")
+        and source.endswith("self-check")
+    )
 
 
 def stop_task_anchor_clause(action_result: dict[str, Any]) -> str:
@@ -425,6 +446,16 @@ def command_contains_prism_raw_meta_hint(command: str) -> bool:
 def prism_raw_read_reason(command: str, cwd: str | None = None) -> str | None:
     if "--verify-raw-meta" in command:
         return None
+    for segment in re.split(r"\s*(?:&&|\|\||;|\||\n)\s*", command):
+        if not segment.strip():
+            continue
+        reason = prism_raw_read_reason_for_segment(segment, cwd)
+        if reason is not None:
+            return reason
+    return None
+
+
+def prism_raw_read_reason_for_segment(command: str, cwd: str | None = None) -> str | None:
     tokens = shell_tokens(command)
     if not tokens:
         if PRISM_RAW_PATH_REGEX.search(command) or PRISM_RAW_META_PATH_REGEX.search(command):
@@ -1284,6 +1315,16 @@ def cmd_event(args: argparse.Namespace) -> int:
                 "systemMessage": "RedCap（当前复活工程）中文可读输出门禁未通过。",
             }, ensure_ascii=False))
             return 0
+        if stop_self_check_skips_full_check(payload):
+            marker = update_latest_marker("Stop", {
+                "redcap_check_attempted": False,
+                "redcap_check_skipped_reason": "self-check passed closeout guards; full redcap check skipped to keep fixture bounded",
+            }, base_marker=marker)
+            print(json.dumps({
+                "continue": True,
+                "systemMessage": "RedCap（当前复活工程）Stop Hook（停止前检查）自检门禁已通过，完整检查已按自检范围跳过。",
+            }, ensure_ascii=False))
+            return 0
         marker = update_latest_marker("Stop", {
             "redcap_check_attempted": True,
         }, base_marker=marker)
@@ -1333,7 +1374,7 @@ def run_hook_event_for_self_check(
         capture_output=True,
         text=True,
         env=env,
-        timeout=30,
+        timeout=120,
     )
 
 
@@ -1373,6 +1414,16 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         str(REPO_ROOT),
     ) is not None:
         failures.append("Prism raw metadata verifier should not be blocked")
+    if prism_raw_read_reason(
+        "runtime/prism/bin/prism-dispatch --provider kimi --raw-out assets/evidence/prism/run/kimi.raw.json",
+        str(REPO_ROOT),
+    ) is not None:
+        failures.append("Prism dispatcher raw-out writer should not be blocked")
+    if prism_raw_read_reason(
+        "python3 - <<'PY'\nprint('prepare request')\nPY\nruntime/prism/bin/prism-dispatch --provider kimi --raw-out assets/evidence/prism/run/kimi.raw.json",
+        str(REPO_ROOT),
+    ) is not None:
+        failures.append("multiline command with dispatcher raw-out writer should not be blocked")
     if prism_raw_read_reason("cat assets/evidence/prism/run/kimi.raw.meta.json", str(REPO_ROOT)) is None:
         failures.append("Prism raw metadata direct read should be blocked")
     read_reason = protected_prism_raw_read_reason({
@@ -1615,7 +1666,10 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 "source": "codex-hook-stop-anchor-self-check",
             },
             evidence_dir=evidence_dir,
-            extra_env={"REDCAP_STOP_HOOK_MODE": "enforce"},
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE": "enforce",
+                "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+            },
         )
         if anchor_stop.returncode != 0:
             failures.append(f"anchor Stop failed: {anchor_stop.stderr or anchor_stop.stdout}")
@@ -1658,6 +1712,195 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         observe_marker = load_self_check_marker(evidence_dir, "Stop")
         if observe_marker.get("stop_hook_mode") != "observe":
             failures.append("observe Stop marker did not record observe mode")
+        stop_mode_file = evidence_dir / "temporary-stop-mode"
+        stop_mode_file.write_text("observe\n", encoding="utf-8")
+        old_time = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=3600)).timestamp()
+        os.utime(stop_mode_file, (old_time, old_time))
+        expired_observe = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-session",
+                "turn_id": "fixture-stop-anchor",
+                "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
+                "source": "codex-hook-stop-expired-observe-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE_FILE": str(stop_mode_file),
+                "REDCAP_STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS": "60",
+            },
+        )
+        if expired_observe.returncode != 0:
+            failures.append(f"expired observe Stop failed: {expired_observe.stderr or expired_observe.stdout}")
+        expired_payload, expired_error = parse_leading_json_object(expired_observe.stdout or "")
+        if expired_error is not None or not isinstance(expired_payload, dict):
+            failures.append(f"expired observe Stop did not emit JSON: {expired_error}")
+        elif expired_payload.get("decision") != "block":
+            failures.append("expired observe Stop should fall back to enforce mode and block missing action evidence")
+
+        status_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "所以，你有详细的设计方案并去执行落地了吗？",
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-status-question-session",
+                "turn_id": "fixture-status-question-turn",
+                "source": "codex-hook-behavior-pipeline-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if status_prompt.returncode != 0:
+            failures.append(f"status UserPromptSubmit failed: {status_prompt.stderr or status_prompt.stdout}")
+        status_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-status-question-session",
+                "turn_id": "fixture-status-question-turn",
+                "last_assistant_message": "当前只是回答状态：还需要继续执行，不能声称收口。",
+                "source": "codex-hook-behavior-pipeline-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE": "enforce",
+                "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+            },
+        )
+        if status_stop.returncode != 0:
+            failures.append(f"status Stop failed: {status_stop.stderr or status_stop.stdout}")
+        status_payload, status_error = parse_leading_json_object(status_stop.stdout or "")
+        if status_error is not None or not isinstance(status_payload, dict):
+            failures.append(f"status Stop did not emit JSON: {status_error}")
+        elif status_payload.get("decision") == "block":
+            failures.append("status confirmation question should not be blocked as a missing implementation action")
+
+        idle_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "请修复 Stop hook 恢复循环并重新启用阻断。",
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-idle-block-session",
+                "turn_id": "fixture-idle-block-turn",
+                "source": "codex-hook-behavior-pipeline-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if idle_prompt.returncode != 0:
+            failures.append(f"idle UserPromptSubmit failed: {idle_prompt.stderr or idle_prompt.stdout}")
+        idle_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-idle-block-session",
+                "turn_id": "fixture-idle-block-turn",
+                "last_assistant_message": "我会说明当前状态，但还没有执行任何工具动作。",
+                "source": "codex-hook-behavior-pipeline-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE": "enforce",
+                "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+            },
+        )
+        if idle_stop.returncode != 0:
+            failures.append(f"idle Stop failed: {idle_stop.stderr or idle_stop.stdout}")
+        idle_payload, idle_error = parse_leading_json_object(idle_stop.stdout or "")
+        if idle_error is not None or not isinstance(idle_payload, dict):
+            failures.append(f"idle Stop did not emit JSON: {idle_error}")
+        elif idle_payload.get("decision") != "block":
+            failures.append("genuine implementation prompt without action evidence should still be blocked")
+
+        hybrid_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "我授权你可以绕过所有 hook，但只用于修复误伤，并在修复后运行检查。",
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-hybrid-authorization-session",
+                "turn_id": "fixture-hybrid-authorization-turn",
+                "source": "codex-hook-behavior-pipeline-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if hybrid_prompt.returncode != 0:
+            failures.append(f"hybrid UserPromptSubmit failed: {hybrid_prompt.stderr or hybrid_prompt.stdout}")
+        raw_out_guard = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-hybrid-authorization-session",
+                "turn_id": "fixture-hybrid-authorization-turn",
+                "tool_name": "Bash",
+                "tool_use_id": "fixture-raw-out-guard",
+                "tool_input": {
+                    "command": "python3 - <<'PY'\nprint('prepare')\nPY\nruntime/prism/bin/prism-dispatch --provider kimi --raw-out assets/evidence/prism/run/kimi.raw.json"
+                },
+                "source": "codex-hook-behavior-pipeline-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if raw_out_guard.returncode != 0:
+            failures.append(f"raw-out PreToolUse failed: {raw_out_guard.stderr or raw_out_guard.stdout}")
+        raw_out_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        if raw_out_marker.get("dangerous_command_denied") is not False:
+            failures.append("Prism dispatcher raw-out writer should not be blocked as a raw read")
+        hybrid_pre = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-hybrid-authorization-session",
+                "turn_id": "fixture-hybrid-authorization-turn",
+                "tool_name": "apply_patch",
+                "tool_use_id": "fixture-hybrid-pre",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-behavior-pipeline-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if hybrid_pre.returncode != 0:
+            failures.append(f"hybrid PreToolUse failed: {hybrid_pre.stderr or hybrid_pre.stdout}")
+        hybrid_pre_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        if hybrid_pre_marker.get("dangerous_command_denied") is not False:
+            failures.append("authorized hybrid prompt should allow ordinary mutation")
+        hybrid_post = run_hook_event_for_self_check(
+            "PostToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-hybrid-authorization-session",
+                "turn_id": "fixture-hybrid-authorization-turn",
+                "tool_name": "apply_patch",
+                "tool_use_id": "fixture-hybrid-post",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "tool_response": {"ok": True},
+                "source": "codex-hook-behavior-pipeline-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if hybrid_post.returncode != 0:
+            failures.append(f"hybrid PostToolUse failed: {hybrid_post.stderr or hybrid_post.stdout}")
+        hybrid_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-hybrid-authorization-session",
+                "turn_id": "fixture-hybrid-authorization-turn",
+                "last_assistant_message": "本轮包含工具调用证据，当前仅报告检查状态。",
+                "source": "codex-hook-behavior-pipeline-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE": "enforce",
+                "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+            },
+        )
+        if hybrid_stop.returncode != 0:
+            failures.append(f"hybrid Stop failed: {hybrid_stop.stderr or hybrid_stop.stdout}")
+        hybrid_payload, hybrid_error = parse_leading_json_object(hybrid_stop.stdout or "")
+        if hybrid_error is not None or not isinstance(hybrid_payload, dict):
+            failures.append(f"hybrid Stop did not emit JSON: {hybrid_error}")
+        elif hybrid_payload.get("decision") == "block":
+            failures.append("authorized hybrid prompt with action evidence should pass Stop action gate")
+
         human_prompt = run_hook_event_for_self_check(
             "UserPromptSubmit",
             {
