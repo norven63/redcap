@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The proposed design creates a convincing specification for a future acceptance harness but does not demonstrate that the harness will be mechanically independent from the Cap instance it tests. The spatial separation (\"outside RedCap root\") does not guarantee process isolation. The evidence chain includes \"Prism review and Cap resolution\" as an evidence item — but this is a Cap-mediated loop, not independent verification. The design correctly identifies the shape of a genuine acceptance test but has not closed the self-testing loophole that the full-revival-amendment explicitly forbids.",
+  "main_concern": "Structural self-testing loophole: The proposed evidence chain places Prism review INSIDE Cap's orchestration loop (Cap → Prism → Cap resolution → success declaration), making it indistinguishable from Cap self-verification. Combined with undefined negative probes and a vague \"small but realistic engineering task,\" Cap can satisfy every evidence requirement without genuine independent oversight.",
+  "top_risks": [
+    "Cap self-testing parading as external acceptance: spatial independence (different directory) without process independence (same Cap instance, same modules, same FSM) is the primary structural risk",
+    "Underspecified negative probes enable post-hoc calibration: without pre-declared, irrevocable probes, Cap can select tests post-execution that confirm whatever outcome it already produced",
+    "Infinite regress: the design creates a future command whose output artifacts will themselves need review — the design does not specify who reviews the sandbox evidence independently, creating an unbounded verification chain"
+  ],
+  "missing_evidence": [
+    "Concrete definition of the engineering task to be used in the sandbox acceptance run — must be pre-specified and immutable before execution",
+    "Mechanical description of how the harness achieves process independence from the tested Cap instance — what modules does it import? What FSM does it use?",
+    "Pre-specified list of negative probes with pass/fail criteria declared before sandbox execution"
+  ],
+  "minimum_fix": "Add three concrete specifications to the design contract: (1) the harness must be a separate, minimal bootstrapper that invokes Cap only as an opaque external tool — no Cap module imports, no shared FSM; (2) negative probes must be pre-declared in the design contract itself (not chosen at runtime); (3) the sandbox task must be explicitly described in the design — not \"a small but real task\" as a parameter, but a named, scoped engineering problem with concrete acceptance criteria independent of RedCap.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

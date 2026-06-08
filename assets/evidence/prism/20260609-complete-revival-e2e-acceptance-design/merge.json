@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "claude-code",
+    "kimi"
+  ],
+  "verdicts": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "claude-code",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "claude-code",
+      "concern": "Structural self-testing loophole: The proposed evidence chain places Prism review INSIDE Cap's orchestration loop (Cap → Prism → Cap resolution → success declaration), making it indistinguishable from Cap self-verification. Combined with undefined negative probes and a vague \"small but realistic engineering task,\" Cap can satisfy every evidence requirement without genuine independent oversight."
+    },
+    {
+      "provider": "kimi",
+      "concern": "The design summary is directionally correct but structurally permissive: it describes a future harness without binding itself to the 15 archaeology items, without specifying how the test task is chosen to force hard-path coverage, and without defining raw human-inspectable artifacts that prevent Cap from grading its own homework. This creates a high risk that the final design becomes a convincing document that substitutes for actual workflow validation."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Add three concrete specifications to the design contract: (1) the harness must be a separate, minimal bootstrapper that invokes Cap only as an opaque external tool — no Cap module imports, no shared FSM; (2) negative probes must be pre-declared in the design contract itself (not chosen at runtime); (3) the sandbox task must be explicitly described in the design — not \"a small but real task\" as a parameter, but a named, scoped engineering problem with concrete acceptance criteria independent of RedCap."
+    },
+    {
+      "provider": "kimi",
+      "minimum_fix": "Add an explicit 'Coverage Matrix' section to the design that maps every archaeology item to a harness test case or negative probe. Replace aspirational 'should' language with mandatory 'shall' criteria: exact commands, exact expected filesystem states, exact exit codes, and a rule that Cap may not interpret its own test results for terminal acceptance. Specify that the sandbox task must be selected by criteria that guarantee blocked-state and change-intake exercise, not by Cap's discretion."
+    }
+  ],
+  "anti_loop_detected": true
+}

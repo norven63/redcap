@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap human-output lint-file --surface document assets/docs/complete-revival-e2e-acceptance-design.md",
+  "executed_at": "2026-06-08T18:24:16Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "stdout_sha256": "de0852291c059519d5f716c248e4543938bf87441f7846f77d0b00b30030f40b",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

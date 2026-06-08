@@ -1,0 +1,46 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260609-complete-revival-e2e-acceptance-design",
+  "merge_path": "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/claude-code.review.json",
+    "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/round2.kimi.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "担忧成立：外部目录本身不能防止 Cap 自测自判。正式设计已新增独立最小引导器要求，规定未来验收器只能把 RedCap 当作外部命令调用，不得导入 RedCap 运行时模块；同时固定沙盒任务和负向探针，避免运行后挑选有利测试。",
+      "implementation_evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/docs/complete-revival-e2e-acceptance-design.md"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/design-json.receipt.json"
+      ]
+    },
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "担忧成立：设计不能停留在方向性描述。正式设计已新增 15 项优秀设计覆盖矩阵、明确客观命令、退出码、原始证据包和反设计即完成条款；Cap 的自然语言总结不再能作为终局验收依据。",
+      "implementation_evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/docs/complete-revival-e2e-acceptance-design.md"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/design-json.receipt.json",
+        "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/design-doc-human-output.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两位有效评审方的担忧均被采纳，并已转化为正式设计契约中的独立性模型、固定沙盒任务、预声明负向探针、15 项覆盖矩阵、客观命令和证据包要求。"
+  }
+}

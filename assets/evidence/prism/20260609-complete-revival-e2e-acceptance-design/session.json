@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260609-complete-revival-e2e-acceptance-design",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-08T18:14:23+00:00",
+  "task_started_at": "2026-06-08T18:14:23+00:00",
+  "updated_at": "2026-06-08T18:20:49+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "bcfda0e0-f07c-4f97-90d6-ab7173ecad28",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "f02e2733-06f3-4a82-8827-ab509335d9d8",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/round2.kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap accepted both concern verdicts and resolved them in the complete-revival e2e acceptance design contract."
+  }
+}

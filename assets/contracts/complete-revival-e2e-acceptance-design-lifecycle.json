@@ -1,0 +1,127 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260609-complete-revival-e2e-acceptance-design",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven 要求完成 RedCap 完整复活端到端验收设计，并确认外部沙盒验收是否需要 Norven 协助。",
+    "target_reality": "新增一份可检查的端到端验收设计契约，明确 RedCap 如何用外部沙盒项目验证完整角色化工程工作流、旧 RedCap 优秀设计覆盖、反伪完成机制、变更接入和终局验收边界。",
+    "non_goals": [
+      "不声明 RedCap 完整复活已经终局完成。",
+      "不在本任务中实现或运行完整端到端验收器。",
+      "不批量读取旧 RedCap 仓库。",
+      "不要求 Norven 参与本地沙盒测试的机械执行；Norven 只需要在真实外部依赖、终局接受或策略裁决时介入。"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "若设计契约误导终局状态或引入不可执行验收口径，删除本任务新增的端到端验收设计契约、生命周期包、评审请求和精简评审证据。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/contracts/complete-revival-e2e-acceptance-design-lifecycle.json",
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/merge.json --resolution assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/resolution.json --manifest assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/session.json",
+      "python3 -m json.tool assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "runtime/bin/redcap human-output lint-file --surface document assets/docs/complete-revival-e2e-acceptance-design.md",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "可以，请你把这个设计完成。不过我有一个点想请教你，你说“创建外部沙盒项目并跑完整链路”，这个是你自己测试自己吗？不需要我来执行或者协助你就可以完成这份测试工作吗？",
+    "prompt_kind": "mixed",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "完成 RedCap 完整复活端到端验收设计。",
+    "primary_deliverable": "assets/contracts/complete-revival-e2e-acceptance-design.json",
+    "secondary_deliverable": "assets/docs/complete-revival-e2e-acceptance-design.md",
+    "acceptance_criteria": [
+      "设计必须明确外部沙盒项目由 Cap 本地创建和执行，不要求 Norven 执行机械测试。",
+      "设计必须明确自测风险：Cap 不能只靠自我判断通过，必须依赖客观命令、结构化证据、棱镜评审和终局目标门禁。",
+      "设计必须覆盖需求、架构、实现、测试、评审、变更接入、阻塞、收尾这些 Loom 阶段。",
+      "设计必须覆盖 15 项旧 RedCap 优秀设计如何在端到端验收中被验证。",
+      "设计必须包含反误报样例，防止报告、回执、阶段成果或最小内核替代完整复活。",
+      "设计必须保持完整复活仍未终局完成的状态边界。"
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/contracts/complete-revival-e2e-acceptance-design-lifecycle.json",
+      "assets/contracts/complete-revival-e2e-acceptance-design-prism-request.json",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "assets/docs/complete-revival-e2e-acceptance-design.md",
+      "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/resolution.json",
+      "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/design-json.receipt.json",
+      "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/design-doc-human-output.receipt.json",
+      "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/prism-resolution.receipt.json",
+      "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/redcap-check.receipt.json"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/merge.json",
+    "resolution_path": "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/session.json",
+    "strictest_verdict_before_resolution": "concern",
+    "final_resolution": "resolved",
+    "decision": "采纳两位评审方担忧：端到端验收设计必须防止 Cap 自测自判，必须固定沙盒任务、负向探针、15 项覆盖矩阵和原始证据包。"
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "设计要求未来验收器使用独立最小引导器，并把 RedCap 当作外部命令调用。",
+        "设计要求外部沙盒项目位于 RedCap 根目录之外，并禁止旧 RedCap 路径泄漏。"
+      ],
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "设计明确 Norven 不需要执行机械本地测试，但终局接受、发布和策略裁决仍由 Norven 掌握。",
+        "设计明确本设计完成不构成 RedCap 完整复活完成证据。"
+      ],
+      "evidence": [
+        "assets/docs/complete-revival-e2e-acceptance-design.md",
+        "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/resolution.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "设计契约固定沙盒任务、强制变更、强制阻塞、客观命令、负向探针和 15 项覆盖矩阵。",
+        "设计契约要求原始证据包可由人类核查，Cap 自然语言总结不足以通过验收。"
+      ],
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/design-json.receipt.json",
+        "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/design-doc-human-output.receipt.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "assets/contracts/complete-revival-e2e-acceptance-design.json",
+    "assets/docs/complete-revival-e2e-acceptance-design.md",
+    "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/resolution.json",
+    "assets/evidence/prism/20260609-complete-revival-e2e-acceptance-design/session.json"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/design-json.receipt.json",
+    "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/design-doc-human-output.receipt.json",
+    "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/lifecycle.receipt.json",
+    "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/prism-resolution.receipt.json",
+    "assets/evidence/check-receipts/20260609-complete-revival-e2e-acceptance-design/redcap-check.receipt.json"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change",
+    "statement": "RedCap 完整复活端到端验收设计已完成并通过 JSON 格式、人类可读策略和棱镜 concern 处置检查；该完成声明只覆盖验收设计契约，不覆盖 RedCap 完整复活终局。"
+  }
+}
