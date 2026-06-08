@@ -1,0 +1,137 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260608-full-revival-amendment",
+  "fsm_state": "IMPLEMENTING",
+  "requirement_review": {
+    "user_intent": "Norven 要求立刻摒弃“先复活最小可用执行内核即可”的完成口径，并以完整状态复活旧 RedCap 中所有优秀设计思想和方案。",
+    "target_reality": "RedCap 完整复活验收必须从最小内核基线升级为完整工作流机器验收；Loom 角色化工程工作流只是第一处被暴露的缺口，不能再被“后续增强”掩盖。",
+    "non_goals": [
+      "把旧 RedCap 的病态报告流、回执流或原始长账本无差别照搬回来",
+      "把生命周期包、评审请求、计划或状态改写当作完成",
+      "宣称未经实现和验证的完整复活已经完成",
+      "批量读取旧 RedCap 仓库"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "若修复导致检查链不可用，撤销本轮新增的完整复活修正合同、Loom 工作流检查器、终局目标降级记录和命令接入；保留旧扫描证据不改写。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/contracts/full-revival-amendment-lifecycle.json",
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260608-full-revival-amendment/merge.json --resolution assets/evidence/prism/20260608-full-revival-amendment/resolution.json --manifest assets/evidence/prism/20260608-full-revival-amendment/session.json",
+      "runtime/bin/redcap loom-workflow check",
+      "runtime/bin/redcap complete-revival-check --skip-host-hook-audit",
+      "runtime/bin/redcap terminal-goal check --message \"RedCap 完整复活已完成。\" --prompt \"请确认 RedCap 完整复活状态\"",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "好的，既然原因已经定位清楚，那我们就针对性修复。我要求：当前loom只是一个缩影和个例，你需要举一反三，立刻摒弃所有“先复活最小可用执行内核”的思想，要求以完整的状态复活“所有”旧redcap中优秀的设计思想和方案。",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation"
+  },
+  "task_body": {
+    "requested_outcome": "修正 RedCap 完整复活口径：最小内核只能是过渡基线，不能作为完整复活完成条件；完整优秀设计必须以工作流机器形态复活。",
+    "primary_deliverable": "完整复活修正合同、Loom 角色化工程工作流运行时检查、终局目标重新打开、旧最小内核口径降级、总检查链更新。",
+    "acceptance_criteria": [
+      "终局目标不得继续把最小内核和复活队列通过当作完整复活完成。",
+      "旧 Loom 的优秀思想必须以角色化工程工作流方式进入可执行检查，而不是只保留分片账目思想。",
+      "完整复活检查必须要求完整复活修正合同和 Loom 工作流检查通过。",
+      "任务事实必须重新反映完整复活仍需继续推进，不能保留误导性的终局完成状态。",
+      "异构评审助手的 concern 或 block 必须被处理后才能进入实现或完成声明。"
+    ],
+    "status": "implemented",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/contracts/full-revival-amendment-lifecycle.json",
+      "assets/contracts/full-revival-amendment-prism-request.json",
+      "assets/contracts/full-revival-amendment.json",
+      "assets/contracts/loom-workflow.json",
+      "runtime/core/full_revival_amendment.py",
+      "runtime/core/loom_workflow.py",
+      "runtime/core/complete_revival_check.py",
+      "runtime/core/revival_queue.py",
+      "runtime/bin/redcap",
+      "assets/contracts/terminal-goals.json",
+      "assets/evidence/task-facts/task-facts.jsonl",
+      "assets/evidence/prism/20260608-full-revival-amendment/resolution.json"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260608-full-revival-amendment/merge.json",
+    "resolution_path": "assets/evidence/prism/20260608-full-revival-amendment/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260608-full-revival-amendment/session.json",
+    "strictest_verdict_before_resolution": "block",
+    "final_resolution": "resolved",
+    "decision": "两个评审意见均采纳：完整复活不能由最小内核替代，必须有机器可枚举契约、运行时检查和 Loom 角色化工程工作流约束。"
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "完整复活从最小内核口径改为完整工作流机器口径，并新增运行时检查器验证所有 15 项可迁移优秀设计是否被纳入。",
+        "Loom 不再只是分片账本思想；角色化工程工作流被重建为可检查契约，覆盖产品经理、架构师、程序员、测试人员、评审者和 Cap 编排者。"
+      ],
+      "evidence": [
+        "assets/contracts/full-revival-amendment.json",
+        "assets/contracts/loom-workflow.json",
+        "runtime/core/full_revival_amendment.py",
+        "runtime/core/loom_workflow.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "异构评审助手的 concern 和 block 没有被绕过；两条意见均通过 resolution.json 采纳并绑定到实现与检查凭据。",
+        "redcap-complete-revival 被重新打开为 in_progress，终局完成授权被移除，防止继续沿用最小可用内核完成口径。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260608-full-revival-amendment/merge.json",
+        "assets/evidence/prism/20260608-full-revival-amendment/resolution.json",
+        "assets/evidence/prism/20260608-full-revival-amendment/session.json",
+        "assets/evidence/task-facts/task-facts.jsonl"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "terminal-goals.json 明确禁止把最小执行内核、最小可用执行内核或 minimal FSM kernel 当作完整复活完成依据。",
+        "complete-revival-check 默认只给出完整复活前置验收，只有带终局验证参数且父任务真实关闭后才授权完整复活事实。"
+      ],
+      "evidence": [
+        "assets/contracts/terminal-goals.json",
+        "runtime/core/complete_revival_check.py",
+        "assets/evidence/check-receipts/20260608-full-revival-amendment/full-revival-amendment-check.receipt.json",
+        "assets/evidence/check-receipts/20260608-full-revival-amendment/loom-workflow-check.receipt.json",
+        "assets/evidence/check-receipts/20260608-full-revival-amendment/enforcement-check.receipt.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "PRISM_REVIEW",
+    "to": "IMPLEMENTING",
+    "evidence": [
+      "prism_review_or_explicit_skip"
+    ]
+  },
+  "implementation_evidence": [
+    "assets/contracts/full-revival-amendment.json",
+    "assets/contracts/loom-workflow.json",
+    "runtime/core/full_revival_amendment.py",
+    "runtime/core/loom_workflow.py",
+    "runtime/core/complete_revival_check.py",
+    "runtime/core/revival_queue.py",
+    "runtime/bin/redcap",
+    "assets/contracts/terminal-goals.json",
+    "assets/evidence/task-facts/task-facts.jsonl"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260608-full-revival-amendment/full-revival-amendment-check.receipt.json",
+    "assets/evidence/check-receipts/20260608-full-revival-amendment/loom-workflow-check.receipt.json",
+    "assets/evidence/check-receipts/20260608-full-revival-amendment/enforcement-check.receipt.json"
+  ],
+  "completion_claim": {
+    "present": false
+  }
+}

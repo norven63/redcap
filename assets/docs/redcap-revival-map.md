@@ -82,7 +82,7 @@ runtime with these layers:
 
 | Layer | Keep | Redesign Smaller |
 | --- | --- | --- |
-| Runtime / Loom | Task execution, FSM, role handoff, recovery, closeout | Start with one minimal execution kernel before multi-role orchestration |
+| Runtime / Loom | Task execution, FSM, role handoff, recovery, closeout | Minimum kernel is only a bootstrap layer; full role orchestration is required before complete revival |
 | Prism | Heterogeneous opposition for high-risk decisions | Keep current new Prism small: Kimi + Claude Code only |
 | References / Contracts | Machine-readable policies and boundaries | Only promote a policy when a component consumes it |
 | Knowledge | Lessons, design philosophy, stable concepts | Three-tier gateway first; advanced wiki later |
@@ -181,7 +181,8 @@ Layer B carry forward:
 
 Redesign:
 
-- New RedCap should start with one minimal FSM kernel.
+- New RedCap may use the FSM kernel as a bootstrap layer, but complete revival
+  requires the full role workflow machine.
 - Gate strength should be risk-based, but the first version can use two tiers:
   `standard` and `structural`.
 - A closeout record should be one structured object before it becomes a
@@ -322,8 +323,9 @@ Discard:
    - Non-owner sessions become advisory-only.
 
 3. **Minimal FSM Kernel**
-   - Layer A: small explicit state machine.
-   - Layer B: smaller distributed lifecycle.
+   - Layer A: explicit state machine.
+   - Layer B: full role workflow machine rebuilt without the old report and
+     receipt pathologies.
    - Tests cover transition legality and blocked states.
 
 4. **Hook Adapter Contract**

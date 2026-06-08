@@ -6,7 +6,7 @@ Belongs here:
 
 - task identity and workspace boundary code
 - session ownership kernel
-- minimal FSM kernel
+- FSM foundation kernel and full Loom role workflow contract checks
 - completion semantics validator
 - index-first knowledge gateway
 - temporary usability verifier

@@ -1,0 +1,296 @@
+{
+  "schema_id": "redcap-loom-workflow-contract",
+  "schema_version": 1,
+  "purpose": "恢复旧 RedCap 中 Loom / Layer B 的优秀角色化工程工作流思想，但不照搬旧报告、回执和收尾递归病灶。",
+  "roles_are_phases": true,
+  "minimum_kernel_completion_allowed": false,
+  "required_roles": [
+    "product_manager",
+    "architect",
+    "developer",
+    "tester",
+    "reviewer",
+    "cap_orchestrator"
+  ],
+  "phases": [
+    {
+      "id": "idea_intake",
+      "role": "product_manager",
+      "name": "产品经理需求澄清",
+      "required_inputs": [
+        "user_idea"
+      ],
+      "required_outputs": [
+        "problem_statement",
+        "acceptance_criteria",
+        "scope_boundary"
+      ],
+      "evidence_required": [
+        "requirements_locked"
+      ]
+    },
+    {
+      "id": "architecture_design",
+      "role": "architect",
+      "name": "架构师方案设计",
+      "required_inputs": [
+        "problem_statement",
+        "acceptance_criteria",
+        "scope_boundary"
+      ],
+      "required_outputs": [
+        "architecture_decision",
+        "risk_register",
+        "rollback_plan"
+      ],
+      "evidence_required": [
+        "architecture_review"
+      ]
+    },
+    {
+      "id": "implementation",
+      "role": "developer",
+      "name": "开发者实现",
+      "required_inputs": [
+        "architecture_decision",
+        "acceptance_criteria"
+      ],
+      "required_outputs": [
+        "runtime_change",
+        "implementation_notes"
+      ],
+      "evidence_required": [
+        "runtime_change"
+      ]
+    },
+    {
+      "id": "quality_assurance",
+      "role": "tester",
+      "name": "测试验证",
+      "required_inputs": [
+        "runtime_change",
+        "acceptance_criteria"
+      ],
+      "required_outputs": [
+        "test_result",
+        "defect_route"
+      ],
+      "evidence_required": [
+        "test_execution"
+      ]
+    },
+    {
+      "id": "review_and_acceptance",
+      "role": "reviewer",
+      "name": "独立评审与验收",
+      "required_inputs": [
+        "test_result",
+        "implementation_notes"
+      ],
+      "required_outputs": [
+        "review_verdict",
+        "acceptance_decision"
+      ],
+      "evidence_required": [
+        "independent_review"
+      ]
+    },
+    {
+      "id": "change_intake",
+      "role": "product_manager",
+      "name": "变更接入",
+      "required_inputs": [
+        "change_request",
+        "current_task_truth"
+      ],
+      "required_outputs": [
+        "replan_decision",
+        "updated_acceptance_criteria"
+      ],
+      "evidence_required": [
+        "change_intake_record"
+      ]
+    },
+    {
+      "id": "closeout",
+      "role": "cap_orchestrator",
+      "name": "收尾确认",
+      "required_inputs": [
+        "acceptance_decision",
+        "task_truth_surface"
+      ],
+      "required_outputs": [
+        "completion_marker",
+        "next_step_or_none"
+      ],
+      "evidence_required": [
+        "terminal_acceptance"
+      ]
+    },
+    {
+      "id": "blocked",
+      "role": "cap_orchestrator",
+      "name": "阻塞处理",
+      "required_inputs": [
+        "blocking_condition"
+      ],
+      "required_outputs": [
+        "blocked_package"
+      ],
+      "evidence_required": [
+        "blocking_condition"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "from": "idea_intake",
+      "to": "architecture_design",
+      "trigger": "requirements_locked",
+      "evidence": [
+        "requirements_locked"
+      ]
+    },
+    {
+      "from": "architecture_design",
+      "to": "implementation",
+      "trigger": "architecture_approved",
+      "evidence": [
+        "architecture_review"
+      ]
+    },
+    {
+      "from": "implementation",
+      "to": "quality_assurance",
+      "trigger": "implementation_ready",
+      "evidence": [
+        "runtime_change"
+      ]
+    },
+    {
+      "from": "quality_assurance",
+      "to": "review_and_acceptance",
+      "trigger": "tests_passed",
+      "evidence": [
+        "test_execution"
+      ]
+    },
+    {
+      "from": "review_and_acceptance",
+      "to": "closeout",
+      "trigger": "accepted",
+      "evidence": [
+        "independent_review",
+        "terminal_acceptance"
+      ]
+    },
+    {
+      "from": "quality_assurance",
+      "to": "implementation",
+      "trigger": "code_failure",
+      "evidence": [
+        "defect_route"
+      ]
+    },
+    {
+      "from": "quality_assurance",
+      "to": "architecture_design",
+      "trigger": "design_failure",
+      "evidence": [
+        "defect_route"
+      ]
+    },
+    {
+      "from": "quality_assurance",
+      "to": "idea_intake",
+      "trigger": "requirement_failure",
+      "evidence": [
+        "defect_route"
+      ]
+    },
+    {
+      "from": "review_and_acceptance",
+      "to": "change_intake",
+      "trigger": "change_requested",
+      "evidence": [
+        "change_request"
+      ]
+    },
+    {
+      "from": "change_intake",
+      "to": "architecture_design",
+      "trigger": "replan_approved",
+      "evidence": [
+        "replan_decision"
+      ]
+    },
+    {
+      "from": "idea_intake",
+      "to": "blocked",
+      "trigger": "blocking_condition",
+      "evidence": [
+        "blocking_condition"
+      ]
+    },
+    {
+      "from": "architecture_design",
+      "to": "blocked",
+      "trigger": "blocking_condition",
+      "evidence": [
+        "blocking_condition"
+      ]
+    },
+    {
+      "from": "implementation",
+      "to": "blocked",
+      "trigger": "blocking_condition",
+      "evidence": [
+        "blocking_condition"
+      ]
+    },
+    {
+      "from": "quality_assurance",
+      "to": "blocked",
+      "trigger": "blocking_condition",
+      "evidence": [
+        "blocking_condition"
+      ]
+    },
+    {
+      "from": "review_and_acceptance",
+      "to": "blocked",
+      "trigger": "blocking_condition",
+      "evidence": [
+        "blocking_condition"
+      ]
+    }
+  ],
+  "failure_routes": [
+    {
+      "from": "quality_assurance",
+      "root_cause": "code",
+      "to": "implementation"
+    },
+    {
+      "from": "quality_assurance",
+      "root_cause": "design",
+      "to": "architecture_design"
+    },
+    {
+      "from": "quality_assurance",
+      "root_cause": "requirement",
+      "to": "idea_intake"
+    },
+    {
+      "from": "review_and_acceptance",
+      "root_cause": "change",
+      "to": "change_intake"
+    }
+  ],
+  "completion_rules": {
+    "closeout_requires_all_roles": true,
+    "closeout_requires_terminal_acceptance": true,
+    "phase_skipping_allowed": false,
+    "report_or_receipt_alone_can_complete": false
+  }
+}

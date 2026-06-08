@@ -1,0 +1,136 @@
+{
+  "schema_id": "redcap-full-revival-amendment",
+  "schema_version": 1,
+  "posture": "complete_workflow_machine_required",
+  "minimum_kernel_completion_allowed": false,
+  "purpose": "把 RedCap 完整复活从“最小执行内核可用”上调为“完整工作流机器可用”。",
+  "rules": [
+    {
+      "id": "FRA-R01",
+      "rule": "最小有限状态机、正式可用基线、复活队列通过或终局检查器存在，都不能单独关闭 RedCap 完整复活。"
+    },
+    {
+      "id": "FRA-R02",
+      "rule": "旧 RedCap 的优秀设计思想必须以运行时、合同、工作流或检查器方式进入当前工作流机器；不能只停留在文档描述。"
+    },
+    {
+      "id": "FRA-R03",
+      "rule": "旧 Loom / Layer B 的病态实现不得照搬，但产品经理、架构师、开发者、测试、评审、变更接入和收尾这些优秀角色化工作流必须重建。"
+    },
+    {
+      "id": "FRA-R04",
+      "rule": "任何 no_promote 旧决定只能阻止旧实现照搬，不能阻止同一优秀思想被重新设计并纳入完整复活。"
+    }
+  ],
+  "required_designs": [
+    {
+      "id": "boundary-layer-separation",
+      "name": "运行时、项目工作区、用户私有状态三层分离",
+      "required_as": "runtime_boundary",
+      "full_revival_required": true
+    },
+    {
+      "id": "boundary-self-development-exception",
+      "name": "自开发例外必须显式化",
+      "required_as": "runtime_boundary",
+      "full_revival_required": true
+    },
+    {
+      "id": "boundary-shared-command-resolution",
+      "name": "工作区相关命令共享解析器",
+      "required_as": "runtime_command_surface",
+      "full_revival_required": true
+    },
+    {
+      "id": "boundary-user-private-state",
+      "name": "用户身份与私有状态不进入项目或运行时资产",
+      "required_as": "runtime_boundary",
+      "full_revival_required": true
+    },
+    {
+      "id": "DLR-P01",
+      "name": "三轨评审门",
+      "required_as": "development_lifecycle",
+      "full_revival_required": true
+    },
+    {
+      "id": "DLR-P02",
+      "name": "原始意图覆盖审计",
+      "required_as": "development_lifecycle",
+      "full_revival_required": true
+    },
+    {
+      "id": "DLR-P03",
+      "name": "完成等级禁止混报",
+      "required_as": "completion_guard",
+      "full_revival_required": true
+    },
+    {
+      "id": "DLR-P04",
+      "name": "人工介入显性化",
+      "required_as": "blocking_package",
+      "full_revival_required": true
+    },
+    {
+      "id": "DLR-P05",
+      "name": "可见下一步",
+      "required_as": "status_surface",
+      "full_revival_required": true
+    },
+    {
+      "id": "LTCD-P01",
+      "name": "外置任务真相源",
+      "required_as": "task_truth_surface",
+      "full_revival_required": true
+    },
+    {
+      "id": "LTCD-P02",
+      "name": "索引优先读取",
+      "required_as": "knowledge_gateway",
+      "full_revival_required": true
+    },
+    {
+      "id": "LTCD-P03",
+      "name": "长任务分片账目",
+      "required_as": "long_task_shards",
+      "full_revival_required": true
+    },
+    {
+      "id": "LTCD-P04",
+      "name": "Cap 验收与评审输出分离",
+      "required_as": "review_resolution",
+      "full_revival_required": true
+    },
+    {
+      "id": "LTCD-P05",
+      "name": "健康状态显性化",
+      "required_as": "health_surface",
+      "full_revival_required": true
+    },
+    {
+      "id": "LTCD-P06",
+      "name": "宿主边界诚实声明",
+      "required_as": "host_boundary_audit",
+      "full_revival_required": true
+    }
+  ],
+  "reopened_design_decisions": [
+    {
+      "id": "LTCD-R01",
+      "old_name": "旧 Loom / Layer B 完整执行形态",
+      "old_decision_scope": "不照搬旧重型执行形态",
+      "new_decision": "重新设计并复活完整角色化工程工作流",
+      "required_runtime_check": "runtime/bin/redcap loom-workflow check"
+    }
+  ],
+  "terminal_goal_effect": {
+    "redcap_complete_revival_must_reopen": true,
+    "required_terminal_acceptance_fragment": "完整角色化工程工作流已经可执行验证",
+    "forbidden_completion_basis": [
+      "最小执行内核",
+      "正式可用基线",
+      "复活队列通过",
+      "检查器存在但未覆盖完整角色化工作流"
+    ]
+  }
+}

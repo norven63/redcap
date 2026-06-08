@@ -43,7 +43,7 @@
       "title": "RedCap 完整复活",
       "domain": "redcap",
       "task_fact_id": "redcap-complete-revival",
-      "current_level": "terminal_complete",
+      "current_level": "migration_usable",
       "terminal_level": "terminal_complete",
       "aliases": [
         "完整复活",
@@ -60,8 +60,10 @@
         "迁移可用"
       ],
       "terminal_acceptance": [
-        "旧 RedCap 优秀设计迁移清单存在并逐项验证。",
-        "所有迁移项都有真实运行时、合同或工作流证据。",
+        "旧 RedCap 优秀设计机器可枚举清单存在并逐项验证。",
+        "所有优秀设计都有真实运行时、合同、工作流或检查器证据。",
+        "完整角色化工程工作流已经可执行验证，覆盖产品经理、架构师、开发者、测试、评审、变更接入和 Cap 收尾。",
+        "旧 Loom / Layer B 的病态实现没有照搬，但其优秀角色化工程工作流已经重新设计并复活。",
         "禁止迁移项仍被检查器拒绝。",
         "用户原始终点没有被阶段成果替代。"
       ],
@@ -75,9 +77,13 @@
         "status command",
         "version record",
         "Prism review",
-        "lifecycle packet"
+        "lifecycle packet",
+        "最小执行内核",
+        "最小可用执行内核",
+        "minimal FSM kernel",
+        "minimum executable kernel"
       ],
-      "open_reason": "完整复活终局验收已通过；保留字段用于历史兼容，当前目标应由任务事实 verified 状态判定为已关闭。"
+      "open_reason": "Norven 已上调完整复活标准：最小执行内核和迁移可用不能关闭终局，必须完整复活旧 RedCap 优秀设计，尤其是 Loom 角色化工程工作流。"
     },
     {
       "id": "example-product-launch",

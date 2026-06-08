@@ -595,7 +595,7 @@
             "--require-real-codex-session",
             "--require-soul-load",
             "--max-age-seconds",
-            "86400"
+            "604800"
           ]
         }
       },
@@ -613,7 +613,7 @@
               "--require-real-codex-session",
               "--require-soul-load",
               "--max-age-seconds",
-              "86400"
+              "604800"
             ],
             "expect_exit": 0,
             "stdout_contains": [
@@ -734,7 +734,7 @@
             "--require-real-codex-session",
             "--require-gate-decision",
             "--max-age-seconds",
-            "86400"
+            "604800"
           ]
         }
       },
@@ -752,7 +752,7 @@
               "--require-real-codex-session",
               "--require-gate-decision",
               "--max-age-seconds",
-              "86400"
+              "604800"
             ],
             "expect_exit": 0,
             "stdout_contains": [
@@ -882,7 +882,7 @@
               "--require-pre-tool-guard",
               "--require-session-claim-attempt",
               "--max-age-seconds",
-              "86400"
+              "604800"
             ],
             "expect_exit": 0,
             "stdout_contains": [
@@ -937,7 +937,7 @@
               "--require-action-check-ok",
               "--require-final-claim-guard",
               "--max-age-seconds",
-              "86400"
+              "604800"
             ]
         }
       },
@@ -957,7 +957,7 @@
               "--require-action-check-ok",
               "--require-final-claim-guard",
               "--max-age-seconds",
-              "86400"
+              "604800"
             ],
             "expect_exit": 0,
             "stdout_contains": [
@@ -968,7 +968,7 @@
         ]
       },
       "gaps": [
-        "The live marker proves the Stop hook attempted redcap check; repeated failure handling remains bounded by Codex Stop continuation semantics."
+        "The live marker proves the Stop hook attempted redcap check; the freshness window allows long active turns where Stop has not fired again yet."
       ]
     },
     {
@@ -1564,7 +1564,7 @@
         ]
       },
       "gaps": [
-        "This is a minimal ownership kernel; Codex hook claim/check integration is still intentionally narrower than old RedCap's LayerB closeout ownership chain."
+        "This ownership kernel is a foundation layer; full completion cannot be claimed from ownership checks alone."
       ]
     },
     {
@@ -1697,7 +1697,7 @@
         ]
       },
       "gaps": [
-        "This is a minimal workflow kernel; it does not yet implement the old LayerB closeout runtime."
+        "The FSM kernel is a foundation layer; the rebuilt Loom role workflow is checked by runtime/bin/redcap loom-workflow check."
       ]
     },
     {

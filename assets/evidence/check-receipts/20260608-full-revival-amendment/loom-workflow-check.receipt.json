@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap loom-workflow check",
+  "executed_at": "2026-06-08T16:05:05+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "stdout_sha256": "3153d43201a2cac4043905ce4ff4215586b9039c265b4a8a205d6a7e71624880",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

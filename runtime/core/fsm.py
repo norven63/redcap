@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Minimal RedCap workflow FSM kernel."""
+"""RedCap workflow FSM kernel.
+
+This is a foundation state machine, not a full-revival completion criterion.
+"""
 
 from __future__ import annotations
 

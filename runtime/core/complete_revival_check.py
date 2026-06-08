@@ -180,6 +180,12 @@ def validate_contract(failures: list[str]) -> None:
         failures.append("RedCap 完整复活终局等级不是 terminal_complete")
     if len(redcap_goal.get("terminal_acceptance", [])) < 4:
         failures.append("RedCap 完整复活验收条件不足")
+    acceptance = "\n".join(str(item) for item in redcap_goal.get("terminal_acceptance", []))
+    if "完整角色化工程工作流" not in acceptance:
+        failures.append("RedCap 完整复活验收条件必须包含完整角色化工程工作流")
+    forbidden = "\n".join(str(item) for item in redcap_goal.get("forbidden_substitutions", []))
+    if "最小可用执行内核" not in forbidden and "最小执行内核" not in forbidden:
+        failures.append("RedCap 完整复活禁止替代项必须包含最小执行内核")
     if "redcap-complete-revival" not in redcap_goal.get("required_verified_task_facts", []):
         failures.append("RedCap 完整复活没有绑定父任务事实")
 
@@ -202,6 +208,8 @@ def check_complete_revival(
         "formal_usable": run(["runtime/bin/redcap", "formal-usable-check", "--skip-host-hook-audit"]),
         "scan_conclusion": run(["runtime/bin/redcap", "scan-conclusion", "check"]),
         "phase2_blueprint": run(["runtime/bin/redcap", "phase2-blueprint", "check"]),
+        "full_revival_amendment": run(["runtime/bin/redcap", "full-revival-amendment", "check"]),
+        "loom_workflow": run(["runtime/bin/redcap", "loom-workflow", "check"]),
         "host_hook_audit": (
             parent_verified_host_audit_result()
             if skip_host_hook_audit
@@ -221,13 +229,15 @@ def check_complete_revival(
     validate_terminal_goal(leading_json(commands["terminal_goal"].get("stdout", "")), failures, require_terminal_verified=require_terminal_verified)
     validate_contract(failures)
     validate_no_promote_records(failures)
+    terminal_completion_authorized = require_terminal_verified and not failures
     return {
         "schema_id": "redcap-complete-revival-check",
-        "level": "完整复活终局验收",
+        "level": "完整复活终局验收" if require_terminal_verified else "完整复活前置验收",
         "ok": not failures,
         "require_terminal_verified": require_terminal_verified,
         "skip_host_hook_audit": skip_host_hook_audit,
-        "authorizes_task_fact": "redcap-complete-revival",
+        "terminal_completion_authorized": terminal_completion_authorized,
+        "authorizes_task_fact": "redcap-complete-revival" if terminal_completion_authorized else None,
         "checks": {name: summarize(result) for name, result in commands.items()},
         "failures": failures,
     }

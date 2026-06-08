@@ -181,6 +181,13 @@ def queue_items() -> list[dict[str, Any]]:
             ["DLR-R01", "DLR-R03", "LTCD-R02", "LTCD-R03"],
             [["runtime/bin/redcap", "phase2-blueprint", "check"]],
         ),
+        item(
+            "RQ-10",
+            "完整角色化工程工作流",
+            "Loom 的优秀思想以产品经理、架构师、开发者、测试、评审和 Cap 收尾阶段进入可执行工作流检查。",
+            ["DLR-P01", "DLR-P02", "DLR-P03", "DLR-P04", "DLR-P05", "LTCD-P03", "LTCD-P04", "LTCD-P05"],
+            [["runtime/bin/redcap", "loom-workflow", "check"], ["runtime/bin/redcap", "full-revival-amendment", "check"]],
+        ),
     ]
 
 

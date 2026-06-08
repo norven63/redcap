@@ -16,8 +16,10 @@ Usage:
   runtime/bin/redcap lifecycle check|self-check [...]
   runtime/bin/redcap final-claim check|self-check [...]
   runtime/bin/redcap phase2-blueprint check|self-check [...]
+  runtime/bin/redcap full-revival-amendment check|self-check [...]
   runtime/bin/redcap e2e-trace check|self-check [...]
   runtime/bin/redcap fsm check|status|transition [...]
+  runtime/bin/redcap loom-workflow check|self-check [...]
   runtime/bin/redcap knowledge-gateway check|search [...]
   runtime/bin/redcap evidence-restore restore [...]
   runtime/bin/redcap session-ownership claim|check|self-check [...]
@@ -55,8 +57,11 @@ Commands:
   final-claim   Guard final completion claims against task-body evidence.
   phase2-blueprint
                 Validate the RedCap 1.1 Phase 2 blueprint contract.
+  full-revival-amendment
+                Verify that full revival cannot be reduced to a minimum kernel.
   e2e-trace     Run the RedCap 1.0 hook/session/FSM/completion trace.
-  fsm           Run the minimal RedCap workflow FSM kernel.
+  fsm           Run the RedCap workflow FSM kernel.
+  loom-workflow Verify the role-based Loom engineering workflow contract.
   knowledge-gateway
                 Run the minimal index-first RedCap knowledge gateway.
   evidence-restore
@@ -130,6 +135,9 @@ case "$cmd" in
   phase2-blueprint)
     exec python3 "$REPO_ROOT/runtime/core/phase2_blueprint.py" "$@"
     ;;
+  full-revival-amendment)
+    exec python3 "$REPO_ROOT/runtime/core/full_revival_amendment.py" "$@"
+    ;;
   e2e-trace)
     exec python3 "$REPO_ROOT/runtime/core/e2e_trace.py" "$@"
     ;;
@@ -138,6 +146,9 @@ case "$cmd" in
     ;;
   fsm-check)
     exec python3 "$REPO_ROOT/runtime/core/fsm.py" check "$@"
+    ;;
+  loom-workflow)
+    exec python3 "$REPO_ROOT/runtime/core/loom_workflow.py" "$@"
     ;;
   knowledge-gateway)
     exec python3 "$REPO_ROOT/runtime/core/knowledge_gateway.py" "$@"
@@ -245,8 +256,12 @@ case "$cmd" in
     "$REPO_ROOT/runtime/bin/redcap" final-claim self-check
     "$REPO_ROOT/runtime/bin/redcap" phase2-blueprint check
     "$REPO_ROOT/runtime/bin/redcap" phase2-blueprint self-check
+    "$REPO_ROOT/runtime/bin/redcap" full-revival-amendment self-check
+    "$REPO_ROOT/runtime/bin/redcap" full-revival-amendment check
     "$REPO_ROOT/runtime/bin/redcap" e2e-trace self-check
     "$REPO_ROOT/runtime/bin/redcap" fsm check
+    "$REPO_ROOT/runtime/bin/redcap" loom-workflow self-check
+    "$REPO_ROOT/runtime/bin/redcap" loom-workflow check
     "$REPO_ROOT/runtime/bin/redcap" knowledge-gateway check
     "$REPO_ROOT/runtime/bin/redcap" knowledge-gateway self-check
     python3 "$REPO_ROOT/runtime/core/revival_loop.py" check
