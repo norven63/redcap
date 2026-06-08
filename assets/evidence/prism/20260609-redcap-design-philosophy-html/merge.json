@@ -1,0 +1,28 @@
+{
+  "providers": [
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "claude-code",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "claude-code",
+      "concern": "Documentation-as-progress anti-pattern: The main claim (\"a single HTML page CAN safely summarize...\") is trivially true on its face — of course a page CAN summarize. The real question is whether creating this page advances RedCap's complete revival or becomes another documentation artifact in a commit history already dominated by contracts, maps, doctrines, and lifecycle records. Constraint 2 (\"do not turn a human-facing diagram into completion evidence\") flags a known risk but doesn't prevent it — the constraint acknowledges the pattern exists while the proposal provides no mechanism to prevent the page from being cited later as \"philosophy documented, phase complete.\""
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before building the HTML page: (1) Write a one-paragraph content specification listing exactly what sections the page will have and which evidence document maps to each section. (2) Define a crisp \"done\" condition — e.g., \"the page is done when it has been reviewed once by a human and no factual errors against the source contracts were found.\" (3) Add a prominent, non-dismissible status banner at the top of the page stating \"RedCap complete revival: NOT DONE\" with a link to terminal-goals.json. (4) Bind the page to a specific implementation milestone — do not let it float as a standalone artifact."
+    }
+  ],
+  "anti_loop_detected": false
+}

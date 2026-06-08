@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "/Users/norven/.codex/skills/playwright/scripts/playwright_cli.sh eval () => { const doc = document.documentElement; const body = document.body.innerText; const result = { title: document.title, width: doc.clientWidth, scrollWidth: doc.scrollWidth, overflow: doc.scrollWidth > doc.clientWidth + 1, hasStatus: body.includes('RedCap 完整复活：尚未终局完成'), hasLoom: body.includes('Loom（角色化工程工作流）'), hasDanger: body.includes('旧疾禁区') }; if (result.overflow || !result.hasStatus || !result.hasLoom || !result.hasDanger) throw new Error(JSON.stringify(result)); return result; }",
+  "executed_at": "2026-06-08T17:19:29+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "stdout_sha256": "8204596ad25525e5bd09c5dea85a29eb692a2648af63d394214fc337dc48f54e",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

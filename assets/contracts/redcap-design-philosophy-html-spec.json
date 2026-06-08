@@ -1,0 +1,115 @@
+{
+  "schema_id": "redcap-design-philosophy-html-spec",
+  "schema_version": 1,
+  "artifact": "assets/visuals/redcap-design-philosophy-map.html",
+  "artifact_role": "human_reading_visualization",
+  "runtime_authority": false,
+  "bound_milestone": "migration_usable_philosophy_visualization",
+  "not_bound_to_terminal_completion": true,
+  "status_banner": {
+    "required": true,
+    "text": "RedCap 完整复活：尚未终局完成",
+    "source": "assets/contracts/terminal-goals.json"
+  },
+  "done_condition": "本页面完成条件仅限于：单文件 HTML 可打开、内容与当前契约不矛盾、明确声明 RedCap 仍处于迁移可用阶段，并通过本任务定义的 HTML 与文本检查。它不能作为 RedCap 完整复活完成证据。",
+  "sections": [
+    {
+      "id": "hero-status",
+      "title": "当前状态与核心警戒",
+      "source_refs": [
+        "assets/contracts/terminal-goals.json",
+        "assets/contracts/full-revival-amendment.json"
+      ],
+      "must_say": [
+        "RedCap 当前处于 migration_usable（迁移可用阶段）。",
+        "最小执行内核不能关闭完整复活终局。"
+      ]
+    },
+    {
+      "id": "north-star",
+      "title": "复活北极星",
+      "source_refs": [
+        "assets/docs/redcap-revival-doctrine.md"
+      ],
+      "must_say": [
+        "成果先于证据。",
+        "文档是继承，不是完成。"
+      ]
+    },
+    {
+      "id": "workflow-machine",
+      "title": "从想法到工程落地的工作流机器",
+      "source_refs": [
+        "assets/contracts/loom-workflow.json",
+        "assets/docs/redcap-revival-map.md"
+      ],
+      "must_say": [
+        "Loom 是角色化工程工作流。",
+        "产品经理、架构师、程序员、测试、评审者和 Cap 编排者是阶段职责，不是装饰性称号。"
+      ]
+    },
+    {
+      "id": "prism-opposition",
+      "title": "异构评审助手的反对层",
+      "source_refs": [
+        "assets/docs/redcap-revival-doctrine.md"
+      ],
+      "must_say": [
+        "棱镜用于反对和挑错，不负责批准完成。",
+        "Cap 必须裁决和负责最终执行。"
+      ]
+    },
+    {
+      "id": "hard-gates",
+      "title": "硬门禁与宿主边界",
+      "source_refs": [
+        "assets/docs/redcap-revival-map.md",
+        "assets/contracts/full-revival-amendment.json"
+      ],
+      "must_say": [
+        "钩子和运行时检查用于保证关键规则触发。",
+        "宿主能力必须诚实声明，不得夸大为跨宿主通用拦截。"
+      ]
+    },
+    {
+      "id": "fifteen-designs",
+      "title": "十五项优秀设计覆盖",
+      "source_refs": [
+        "assets/contracts/full-revival-amendment.json"
+      ],
+      "must_say": [
+        "十五项优秀设计是完整复活要求的一部分。",
+        "它们必须进入工作流机器，而不是变成孤立模块。"
+      ]
+    },
+    {
+      "id": "pathology-zone",
+      "title": "旧疾禁区",
+      "source_refs": [
+        "assets/docs/redcap-revival-map.md",
+        "assets/docs/redcap-revival-doctrine.md"
+      ],
+      "must_say": [
+        "报告即进度、回执即完成、收尾递归、原始证据默认加载都不得复活。",
+        "漂亮页面不能替代真实工程能力。"
+      ]
+    },
+    {
+      "id": "next-step",
+      "title": "下一步",
+      "source_refs": [
+        "runtime/bin/redcap status --json --require-scan-complete --fail-on-open"
+      ],
+      "must_say": [
+        "继续推进完整复活终局父任务。",
+        "阶段成果不能替代终局验收。"
+      ]
+    }
+  ],
+  "forbidden_claims": [
+    "RedCap 完整复活已完成",
+    "完整复活终局完成",
+    "最小可用执行内核已足够",
+    "本页面证明 RedCap 已完整复活"
+  ]
+}

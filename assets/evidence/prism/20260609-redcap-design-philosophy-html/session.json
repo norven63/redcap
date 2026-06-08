@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260609-redcap-design-philosophy-html",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260609-redcap-design-philosophy-html",
+    "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-08T16:56:13+00:00",
+  "task_started_at": "2026-06-08T16:56:13+00:00",
+  "updated_at": "2026-06-08T16:59:10+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "9b4bdf95-9195-49e0-ad9d-ca8c8cdbe461",
+      "round_count": 1,
+            "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260609-redcap-design-philosophy-html/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": null,
+      "round_count": 0,
+            "status": "closed",
+      "last_review": null
+    }
+  },
+  "convergence": {
+        "state": "main-decided",
+        "reason": "Cap accepted the valid Claude Code concern, recorded Kimi format failures as non-review evidence, and narrowed the HTML task through a machine-readable content specification."
+  }
+}

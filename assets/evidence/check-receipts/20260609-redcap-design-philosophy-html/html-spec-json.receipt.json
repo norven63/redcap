@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -m json.tool assets/contracts/redcap-design-philosophy-html-spec.json",
+  "executed_at": "2026-06-08T17:07:15+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "stdout_sha256": "fa2cf72d7b214e586bac41183360d86738642dac9281fd06518c3d8ee09e8c31",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

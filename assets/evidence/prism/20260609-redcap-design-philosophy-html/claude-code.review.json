@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The proposal claims a single HTML page \"can safely summarize\" the current RedCap design philosophy. But the proposal defines no acceptance criteria, no content specification, and no \"done\" condition for the visualization. The changed reality items describe what doesn't exist (no visualization yet, minimum kernel not allowed, workflow contract exists) — but describe no change to RedCap's actual behavior, capabilities, or revival progress. The delta is a document artifact, not a capability delta. Four of the five recent commits on this branch are themselves documentation/contract/ledger artifacts (revival maps, doctrines, lifecycle records, contract amendments). The proposed HTML page continues this pattern without evidence it breaks the cycle.",
+  "main_concern": "Documentation-as-progress anti-pattern: The main claim (\"a single HTML page CAN safely summarize...\") is trivially true on its face — of course a page CAN summarize. The real question is whether creating this page advances RedCap's complete revival or becomes another documentation artifact in a commit history already dominated by contracts, maps, doctrines, and lifecycle records. Constraint 2 (\"do not turn a human-facing diagram into completion evidence\") flags a known risk but doesn't prevent it — the constraint acknowledges the pattern exists while the proposal provides no mechanism to prevent the page from being cited later as \"philosophy documented, phase complete.\"",
+  "top_risks": [
+    "Scope-creep loop: Without a crisp \"done\" definition, the HTML page becomes a living document requiring constant updates as RedCap evolves — each update session costing time that could go toward actual revival implementation.",
+    "Completion laundering: The page, once beautiful and comprehensive, gets cited in future sessions or contracts as evidence that \"design philosophy is settled\" — laundering documentation completeness as implementation completeness. Constraint 2 warns against this but has no enforcement mechanism.",
+    "Content authority drift: The HTML page sits under assets/docs (no runtime authority) but references executable contracts (full-revival-amendment.json, loom-workflow.json, terminal-goals.json). If the page's explanation diverges from the contracts, which takes precedence? A human reading the page may never check the source contracts."
+  ],
+  "missing_evidence": [
+    "No content specification or wireframe: The proposal references 5 evidence documents but provides no specification of what the HTML page should contain, how sections map to contracts, or what \"high-quality visual\" means concretely.",
+    "No completion criteria for the visualization task itself: Without acceptance criteria, the page can never be definitively finished — it becomes an open-ended task that justifies further sessions.",
+    "No evidence that the 5 referenced documents are internally consistent: The revival-map.md says \"keep, redesign, or discard\" old ideas; the full-revival-amendment.json says complete revival requires a complete workflow machine. Do these documents agree? If they contradict, the HTML page will either paper over the contradiction or expose it — neither outcome is planned for."
+  ],
+  "minimum_fix": "Before building the HTML page: (1) Write a one-paragraph content specification listing exactly what sections the page will have and which evidence document maps to each section. (2) Define a crisp \"done\" condition — e.g., \"the page is done when it has been reviewed once by a human and no factual errors against the source contracts were found.\" (3) Add a prominent, non-dismissible status banner at the top of the page stating \"RedCap complete revival: NOT DONE\" with a link to terminal-goals.json. (4) Bind the page to a specific implementation milestone — do not let it float as a standalone artifact.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "unclear"
+}
