@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "bash -lc tmp='assets/contracts/redcap-migration-negative-fixture-lifecycle.json'; printf '{}\\n' > \"$tmp\"; set +e; output=$(runtime/bin/redcap process-artifacts check 2>&1); rc=$?; rm -f \"$tmp\"; if [ \"$rc\" -eq 0 ]; then printf '%s\\n' \"$output\"; echo 'expected failure for misplaced file' >&2; exit 1; fi; printf '%s\\n' \"$output\" | rg -F 'assets/contracts/redcap-migration-negative-fixture-lifecycle.json' >/dev/null || { printf '%s\\n' \"$output\"; echo 'expected misplaced path' >&2; exit 1; }; echo REDCAP_PROCESS_ARTIFACT_MIGRATION_NEGATIVE_OK",
+  "exit_code": 0,
+  "executed_at": "2026-06-11T15:59:58+00:00",
+  "executor": "cap",
+  "stdout_sha256": "1e4497609bae04a4a4fa4fb707c1da0d0cbd8474b5ca50c531f24944be4b7b64",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260611-process-artifact-migration/process-artifacts-negative.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260611-process-artifact-migration/process-artifacts-negative.stderr.txt"
+}

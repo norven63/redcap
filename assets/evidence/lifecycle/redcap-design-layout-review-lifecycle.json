@@ -1,0 +1,60 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260610-redcap-design-layout-review",
+  "fsm_state": "PRISM_REVIEW",
+  "requirement_review": {
+    "user_intent": "Norven asked Cap to review the current new RedCap design thinking and directory structure together with Prism, as carefully as possible, and evaluate whether optimization or adjustment is needed.",
+    "target_reality": "The review identifies design and directory risks in the current new RedCap workspace without claiming terminal complete revival or changing implementation behavior.",
+    "non_goals": [
+      "Do not claim RedCap complete revival is terminally closed.",
+      "Do not implement fixes during this review unless Norven separately asks for remediation.",
+      "Do not bulk-read the old RedCap repository.",
+      "Do not treat Prism review output as implementation completion."
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "Remove this review lifecycle packet and the matching Prism request/review evidence if the review scope is rejected.",
+    "verification_plan": [
+      "runtime/bin/redcap gate --task \"整体评审当前新 RedCap 的设计思路和目录结构，并由棱镜参与\" --risk-level high --lifecycle-packet assets/evidence/lifecycle/redcap-design-layout-review-lifecycle.json",
+      "runtime/bin/redcap layout-check",
+      "runtime/bin/redcap known-issues-queue check --require-1-4-verified",
+      "runtime/bin/redcap boundary-consumers check",
+      "runtime/bin/redcap terminal-goal check",
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260610-redcap-design-layout-review/merge.json --resolution assets/evidence/prism/20260610-redcap-design-layout-review/resolution.json --manifest assets/evidence/prism/20260610-redcap-design-layout-review/session.json"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "请和棱镜一起整体review当前新redcap的设计思路和目录结构，务必做到100%程度的细致review，然后评估当前是否有需要优化或者调整的地方？",
+    "prompt_kind": "directive",
+    "authorized_scope": "review_only"
+  },
+  "task_body": {
+    "requested_outcome": "Run a Prism-assisted review of the current new RedCap design thinking and directory structure.",
+    "primary_deliverable": "A review report with ordered findings, open questions, and recommended follow-up priorities.",
+    "acceptance_criteria": [
+      "The review uses current workspace evidence, not memory alone.",
+      "Prism receives a structured review request and both configured providers are requested.",
+      "The final response distinguishes verified current state from recommended adjustments.",
+      "The review does not close the RedCap complete-revival terminal parent task."
+    ],
+    "status": "in_progress",
+    "evidence_kind": "review-task",
+    "evidence": [
+      "assets/evidence/lifecycle/redcap-design-layout-review-lifecycle.json",
+      "assets/evidence/prism/20260610-redcap-design-layout-review/redcap-design-layout-review-prism-request.json"
+    ]
+  },
+  "fsm_transition": {
+    "from": "INTAKE",
+    "to": "PRISM_REVIEW",
+    "evidence": [
+      "gate_required_or_optional"
+    ]
+  },
+  "completion_claim": {
+    "present": false
+  }
+}

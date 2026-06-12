@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -c \nfrom pathlib import Path\nimport json, sys\nroot=Path('.')\nmove_map=json.loads(Path('assets/evidence/migrations/20260611-process-artifact-migration-map.json').read_text(encoding='utf-8'))\nold_paths=[item['from'] for item in move_map['moves']]\nskip_prefixes=('assets/evidence/host-hooks/','assets/evidence/check-receipts/','assets/evidence/prism/')\nskip_exact={'assets/evidence/migrations/20260611-process-artifact-migration-map.json','runtime/core/process_artifact_placement.py'}\nallowed_suffixes={'.json','.jsonl','.md','.txt','.py','.sh'}\nhits=[]\nfor path in root.rglob('*'):\n    if not path.is_file():\n        continue\n    rel=path.as_posix()\n    if '.git/' in rel or '/__pycache__/' in rel:\n        continue\n    if rel in skip_exact or rel.startswith(skip_prefixes):\n        continue\n    if path.suffix not in allowed_suffixes:\n        continue\n    try:\n        text=path.read_text(encoding='utf-8')\n    except UnicodeDecodeError:\n        continue\n    for old in old_paths:\n        if old in text:\n            hits.append(f'{rel}: {old}')\nif hits:\n    print('\\n'.join(hits))\n    sys.exit(1)\nprint('REDCAP_PROCESS_ARTIFACT_EXACT_OLD_PATH_ACTIVE_SCAN_OK')\n",
+  "exit_code": 0,
+  "executed_at": "2026-06-11T15:59:58+00:00",
+  "executor": "cap",
+  "stdout_sha256": "0efc375d366ecb9e594902ff6aa1256d988ca12136488d87b1787240894de305",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260611-process-artifact-migration/exact-old-path-active-scan.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260611-process-artifact-migration/exact-old-path-active-scan.stderr.txt"
+}

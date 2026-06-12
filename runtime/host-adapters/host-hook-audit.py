@@ -60,8 +60,23 @@ def normalize_hook_config(value: Any) -> Any:
     return value
 
 
-def run(argv: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(argv, cwd=str(REPO_ROOT), check=False, capture_output=True, text=True)
+def run(argv: list[str], *, timeout_seconds: int = 180) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            argv,
+            cwd=str(REPO_ROOT),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return subprocess.CompletedProcess(
+            argv,
+            124,
+            stdout=exc.stdout or "",
+            stderr=f"命令超时：{timeout_seconds} 秒",
+        )
 
 
 def run_with_retry(argv: list[str], *, attempts: int = 2) -> list[subprocess.CompletedProcess[str]]:

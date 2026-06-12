@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "root": "/Users/norven/workspace/AI Era/redcap",
+  "policy": "/Users/norven/workspace/AI Era/redcap/assets/contracts/process-artifact-placement.json",
+  "found_in_forbidden_roots": [],
+  "failures": []
+}
+REDCAP_PROCESS_ARTIFACT_PLACEMENT_OK

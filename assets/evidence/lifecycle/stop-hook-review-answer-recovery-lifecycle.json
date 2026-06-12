@@ -1,0 +1,122 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260610-stop-hook-review-answer-recovery",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven said the answer to the current-new-RedCap optimization review was made incoherent by Stop Hook recovery prompts, and asked Cap to fix that problem immediately.",
+    "target_reality": "Stop Hook continues to block real empty-work or unsupported completion claims, but no longer turns a normal stage-review answer about current RedCap optimization needs into unrelated lifecycle recovery text.",
+    "non_goals": [
+      "Do not disable Stop Hook globally.",
+      "Do not weaken terminal goal protection for RedCap complete revival.",
+      "Do not claim RedCap complete revival is terminally complete.",
+      "Do not use a new document as a substitute for changing the hook behavior.",
+      "Do not bulk-read the old RedCap repository."
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "Revert changes to runtime/core/final_claim_guard.py, runtime/core/terminal_goal_guard.py, runtime/host-adapters/codex/codex-hook.py, and related self-check fixtures if the new guard behavior lets unsupported completion claims pass.",
+    "verification_plan": [
+      "runtime/bin/redcap gate --task \"修复 Stop Hook 对阶段评审回答的误伤，避免把当前新 RedCap 优化建议回答扭成无关恢复话术\" --risk-level high --lifecycle-packet assets/evidence/lifecycle/stop-hook-review-answer-recovery-lifecycle.json",
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/stop-hook-review-answer-recovery-lifecycle.json",
+      "runtime/bin/redcap final-claim self-check",
+      "runtime/bin/redcap terminal-goal self-check",
+      "runtime/bin/redcap human-output self-check",
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260610-stop-hook-review-answer-recovery/merge.json --resolution assets/evidence/prism/20260610-stop-hook-review-answer-recovery/resolution.json --manifest assets/evidence/prism/20260610-stop-hook-review-answer-recovery/session.json",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "我在问你当前新redcap还有哪些需要优化或者调整的地方，结果你的回答被钩子弄的完全驴唇不对马嘴。立即修复这个问题",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion",
+    "continuation_authorization": {
+      "mode": "same_session_authorized_continuation",
+      "source": "codex_goal",
+      "session_id": "019e745f-17b8-7832-ada8-ae990b49db69",
+      "base_prompt_excerpt": "请和棱镜一起整体review当前新redcap的设计思路和目录结构，务必做到100%程度的细致review，然后评估当前是否有需要优化或者调整的地方？"
+    }
+  },
+  "task_body": {
+    "requested_outcome": "Repair Stop Hook false-positive handling for stage-review answers about RedCap optimization needs.",
+    "primary_deliverable": "Hook guard code and self-check coverage that distinguish stage review answers from unsupported completion claims.",
+    "acceptance_criteria": [
+      "A normal answer listing current new RedCap optimization needs is not blocked as a RedCap complete-revival terminal overclaim.",
+      "A normal answer listing current new RedCap optimization needs is not blocked as an unsupported final completion claim.",
+      "Real claims that RedCap complete revival is terminally complete remain blocked without terminal verification.",
+      "Real claims that a required RedCap implementation task is complete remain blocked without a fresh verified lifecycle marker.",
+      "The Stop Hook user-facing recovery reason remains understandable and anchored to the actual prompt when it must block."
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/evidence/lifecycle/stop-hook-review-answer-recovery-lifecycle.json",
+      "assets/evidence/prism/20260610-stop-hook-review-answer-recovery/stop-hook-review-answer-recovery-prism-request.json",
+      "runtime/core/final_claim_guard.py",
+      "runtime/core/terminal_goal_guard.py",
+      "runtime/host-adapters/codex/codex-hook.py"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "误伤根因位于终局目标守卫的目标别名语境判断：原逻辑会把非闭合状态说明中的 RedCap 完整复活目标名误判为终局完成声明。"
+      ],
+      "evidence": [
+        "runtime/core/terminal_goal_guard.py",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "棱镜两方 concern 均已采纳；本次修复保留 Stop Hook 对真实空转和终局越权声明的阻断，不把评审回答强行改写成完成标记。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/merge.json",
+        "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/resolution.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "生命周期包、棱镜 resolution 和执行检查回执均能被机器校验；本次完成声明只覆盖 Stop Hook 误伤修复，不覆盖 RedCap 完整复活父任务。"
+      ],
+      "evidence": [
+        "assets/evidence/lifecycle/stop-hook-review-answer-recovery-lifecycle.json",
+        "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/receipts/terminal-goal-self-check.receipt.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/merge.json",
+    "resolution_path": "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/session.json"
+  },
+  "implementation_evidence": [
+    "runtime/core/terminal_goal_guard.py",
+    "runtime/host-adapters/codex/codex-hook.py"
+  ],
+  "verification_evidence": [
+    "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/receipts/terminal-goal-self-check.receipt.json",
+    "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/receipts/final-claim-self-check.receipt.json",
+    "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/receipts/human-output-self-check.receipt.json",
+    "assets/evidence/prism/20260610-stop-hook-review-answer-recovery-r2/receipts/py-compile.receipt.json",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change",
+    "scope": "本次 Stop Hook 误伤修复；不声明 RedCap 完整复活终局完成"
+  }
+}

@@ -21,6 +21,7 @@ QUESTION_ONLY_MARKERS = {
     "how do",
     "是否",
     "是不是",
+    "有没有",
     "要不要",
     "能否",
     "可以吗",
@@ -267,7 +268,43 @@ META_QUESTION_MARKERS = {
     "误判",
     "意图",
     "原因",
+    "本质",
+    "含义",
+    "什么意思",
+    "是什么意思",
+    "提示词",
+    "逻辑发生变化",
+    "导致你的任务",
+    "机械性",
 }
+
+META_CLARIFICATION_MARKERS = {
+    "任务需求本质",
+    "提问的本质",
+    "本质含义",
+    "你有分析过",
+    "是否分析过",
+    "有没有分析过",
+    "你只是机械",
+    "机械性的执行",
+    "这句话是什么意思",
+    "这句话是",
+    "是什么意思",
+    "什么含义",
+    "我的提示词导致",
+    "提示词导致",
+    "导致你的任务",
+    "导致你的逻辑",
+    "任务或者逻辑发生变化",
+    "逻辑发生变化",
+}
+
+META_CLARIFICATION_ACTION_OVERRIDES = [
+    r"(?:请|立刻|现在|马上|直接|去).{0,8}(?:修复|执行|改|修改|落地|实现)",
+    r"(?:开始|继续).{0,8}(?:修复|执行|改|修改|落地|实现)",
+    r"(?:修复|执行|改掉|修改|落地|实现).{0,12}(?:这个|该|上述|问题)",
+]
+META_CLARIFICATION_ACTION_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in META_CLARIFICATION_ACTION_OVERRIDES]
 
 STATUS_CONFIRMATION_PATTERNS = [
     r"(?:你|你们|cap|redcap|棱镜).{0,24}(?:是否|是不是|有没有|有无|是否已经|是不是已经|有没有已经|有).{0,24}(?:完成|修复|解决|处理|执行|落地|实现|做完|搞定)",
@@ -288,6 +325,19 @@ EXECUTION_AFTER_DISCUSSION_PATTERNS = [
     r"(?:先|暂时).{0,12}(?:讨论|评估|看看|分析).{0,32}(?:然后|再).{0,8}(?:做|执行|开动|开始|落地|实施|修复)",
 ]
 EXECUTION_AFTER_DISCUSSION_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in EXECUTION_AFTER_DISCUSSION_PATTERNS]
+
+AWARENESS_CONFIRMATION_PATTERNS = [
+    r"(?:你|你们|cap|redcap|棱镜).{0,32}(?:是否|是不是|有没有|有无|能否|可以).{0,32}(?:察觉|意识到|注意到|认可|认同|同意|理解|get到)",
+    r"(?:这个|上述|前面|刚才).{0,24}(?:问题|判断|说法|机制|现象).{0,32}(?:你|你们|cap|redcap|棱镜).{0,24}(?:是否|是不是|有没有|有无).{0,24}(?:察觉|意识到|注意到|认可|认同|同意|理解|get到)",
+    r"(?:你|你们|cap|redcap|棱镜).{0,24}(?:认可|认同|同意|理解|察觉|意识到|注意到).{0,12}(?:吗|么|？|\?)",
+]
+AWARENESS_CONFIRMATION_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in AWARENESS_CONFIRMATION_PATTERNS]
+AWARENESS_CONFIRMATION_ACTION_PATTERNS = [
+    r"(?:认可|认同|同意|理解|察觉|意识到|注意到|get到).{0,16}(?:的话|后|就|则|请|帮我|直接|立刻|马上|顺便|并|然后|再).{0,24}(?:执行|修复|修改|改掉|落地|实现|处理|做|开始|继续|写|提交|推送|运行|跑)",
+    r"(?:是否|是不是|有没有|有无|能否|可以|可否).{0,24}(?:帮我|直接|现在|立刻|马上|开始|继续|去|把|并|顺便).{0,24}(?:执行|修复|修改|改掉|落地|实现|处理|做|写|提交|推送|运行|跑)",
+    r"(?:如果|若).{0,16}(?:认可|认同|同意|理解|可以|可行|没问题).{0,24}(?:执行|修复|修改|改掉|落地|实现|处理|做|开始|继续|写|提交|推送|运行|跑)",
+]
+AWARENESS_CONFIRMATION_ACTION_REGEXES = [re.compile(pattern, re.I | re.S) for pattern in AWARENESS_CONFIRMATION_ACTION_PATTERNS]
 
 
 def normalize_prompt_text(value: str) -> str:
@@ -322,6 +372,32 @@ def prompt_is_pre_execution_discussion(prompt: str) -> bool:
     return any(pattern.search(prompt) for pattern in PRE_EXECUTION_DISCUSSION_REGEXES)
 
 
+def prompt_is_meta_clarification_question(prompt: str) -> bool:
+    normalized = normalize_prompt_text(prompt)
+    question_context = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
+    if not question_context:
+        return False
+    if any(pattern.search(prompt) for pattern in META_CLARIFICATION_ACTION_REGEXES):
+        return False
+    return any(marker in normalized for marker in META_CLARIFICATION_MARKERS)
+
+
+def prompt_has_explicit_action_question(prompt: str) -> bool:
+    return any(pattern.search(prompt) for pattern in AWARENESS_CONFIRMATION_ACTION_REGEXES)
+
+
+def prompt_is_awareness_confirmation_question(prompt: str) -> bool:
+    normalized = normalize_prompt_text(prompt)
+    question_context = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
+    if not question_context:
+        return False
+    if prompt_has_explicit_action_question(prompt):
+        return False
+    if any(pattern.search(prompt) for pattern in META_CLARIFICATION_ACTION_REGEXES):
+        return False
+    return any(pattern.search(prompt) for pattern in AWARENESS_CONFIRMATION_REGEXES)
+
+
 def prompt_text_from_event(event: dict[str, Any]) -> str | None:
     for key in ["prompt_text", "prompt_excerpt", "source_prompt"]:
         value = event.get(key)
@@ -344,7 +420,13 @@ def prompt_has_directive_authority(prompt: str) -> bool:
     question_context = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
     if prompt_is_pre_execution_discussion(prompt):
         return False
+    if prompt_has_explicit_action_question(prompt):
+        return True
     if prompt_is_status_confirmation_question(prompt):
+        return False
+    if prompt_is_meta_clarification_question(prompt):
+        return False
+    if prompt_is_awareness_confirmation_question(prompt):
         return False
     for phrase in NEGATED_IMPLEMENTATION_PHRASES:
         directive_text = directive_text.replace(phrase, " ")
@@ -368,12 +450,26 @@ def prompt_has_directive_authority(prompt: str) -> bool:
 def classify_prompt_intent(prompt: str) -> dict[str, str]:
     normalized = normalize_prompt_text(prompt)
     question = any(marker in normalized for marker in QUESTION_ONLY_MARKERS) or "?" in prompt or "？" in prompt
+    if prompt_is_meta_clarification_question(prompt):
+        return {
+            "prompt_kind": "question",
+            "authorized_scope": "answer_only",
+            "action_evidence": "none",
+            "reason": "meta clarification question does not authorize implementation",
+        }
     if prompt_is_pre_execution_discussion(prompt):
         return {
             "prompt_kind": "question" if question else "mixed",
             "authorized_scope": "answer_only",
             "action_evidence": "none",
             "reason": "pre-execution feasibility discussion explicitly asks not to start implementation",
+        }
+    if prompt_is_awareness_confirmation_question(prompt):
+        return {
+            "prompt_kind": "question",
+            "authorized_scope": "answer_only",
+            "action_evidence": "none",
+            "reason": "awareness or agreement confirmation question does not authorize implementation",
         }
     implementation = prompt_has_directive_authority(prompt)
     review = any(marker in normalized for marker in REVIEW_MARKERS) or prompt_requests_code_excerpt(normalized)

@@ -1608,7 +1608,8 @@
             "stdout_contains": [
               "REDCAP_HOST_HOOK_AUDIT_OK",
               "\"dispatcher-enforced\""
-            ]
+            ],
+            "timeout_seconds": 240
           }
         ]
       },
@@ -1866,7 +1867,8 @@
             "expect_exit": 0,
             "stdout_contains": [
               "\"ok\": true"
-            ]
+            ],
+            "timeout_seconds": 240
           }
         ]
       },

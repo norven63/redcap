@@ -1,0 +1,139 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260606-pre-revival-zero-tail-infra-batch",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven rejected a small hard slice and asked Cap to resolve all known pre-revival infrastructure issues without leaving tails that later grow into larger failures.",
+    "target_reality": "Before full RedCap revival starts, every known pre-revival infrastructure issue is either implemented and verified, or explicitly escalated with a concrete blocker instead of being silently deferred.",
+    "non_goals": [
+      "claim that the full RedCap revival is complete",
+      "bulk-read the old RedCap repository",
+      "treat lifecycle packets, ledgers, reports, or Prism reviews as the task body",
+      "replace implementation with a renamed backlog"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "Revert this batch's tracked code and contract changes, restore the previous hook behavior, and leave generated evidence artifacts ignored or removed by their owning evidence writer.",
+    "verification_plan": [
+      "runtime/bin/redcap gate --task \"复盘已知前置问题状态并解释此前汇报偏差，形成无尾巴整改队列\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/pre-revival-zero-tail-lifecycle.json",
+      "runtime/prism/bin/prism check",
+      "runtime/bin/redcap check",
+      "runtime/prism/bin/prism-ledger summary",
+      "targeted regression commands for PreToolUse raw-guard false positives",
+      "targeted regression commands for Stop Hook diagnostic and answer-only turns",
+      "targeted regression commands for Prism timeout budget and timeout report behavior",
+      "targeted regression commands for human-facing Chinese policy checks",
+      "targeted regression commands for the task fact ledger"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "可以，开始修复并提交",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion"
+  },
+    "prism_review": {
+        "merge_path": "assets/evidence/prism/20260606-pre-revival-closeout-final-rerun/round3.merge.json",
+        "resolution_path": "assets/evidence/prism/20260606-pre-revival-closeout-final-rerun/round3.resolution.json",
+        "manifest_path": "assets/evidence/prism/20260606-pre-revival-closeout-final-rerun/session.json"
+    },
+    "task_body": {
+        "requested_outcome": "Resolve all currently known pre-revival infrastructure issues before starting full RedCap revival.",
+        "primary_deliverable": "A verified zero-tail pre-revival infrastructure batch covering task fact ledger, Prism communication guard, Prism timeout governance, hook false-positive regression coverage, Chinese-first human-facing policy, provider health visibility, and tracked host-hook deployment hygiene.",
+        "reopen_policy": {
+            "reopen_on": [
+                "prism_360_concern",
+                "prism_360_block",
+                "timeout_governance_failure_during_360_scan",
+                "human_output_policy_failure_during_360_scan"
+            ],
+            "action": "Reopen pre-revival-zero-tail-infra-batch immediately for behavior fixes when the 360 scan exposes concrete infrastructure failure."
+        },
+        "acceptance_criteria": [
+      "The task fact ledger exists as an executable source of truth for discovered work items, with statuses that distinguish planned, in progress, verified, blocked, and escalated states.",
+      "Previously surfaced items are represented in the task fact ledger without renaming them into unrecognizable summaries.",
+      "Prism stdout and raw provider outputs remain bounded so Cap consumes summaries and verified metadata instead of large raw streams.",
+      "PreToolUse no longer blocks ordinary repo-wide searches unless the command actually targets Prism raw provider output or an unexcluded Prism evidence ancestor.",
+      "Stop Hook remains able to block empty required-task closes while allowing answer-only and review-only turns that have diagnostic evidence.",
+      "Prism timeout handling includes provider-attempt timeout, dispatcher total timeout, post-timeout provider state, and a human-readable Chinese report.",
+      "Any whole-task or multi-provider timeout budget not implemented in this batch is represented as an explicit blocker with a non-hidden follow-up decision, not as a quiet future TODO.",
+      "Human-facing output policy is encoded in a checkable contract or checker covering docs, hook messages, generated reports, comments, and commit-message guidance where practical.",
+      "The live Codex hook deployment path is reconciled with tracked templates or installer checks so ignored .codex changes do not become invisible infrastructure drift.",
+      "The batch passes redcap check, prism check, lifecycle check, and targeted regression checks."
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "runtime/prism/bin/prism check",
+      "runtime/bin/redcap check",
+      "runtime/prism/bin/prism-ledger summary",
+      "assets/evidence/prism/20260606-pre-revival-zero-tail-infra-batch/pre-revival-zero-tail-prism-request.json",
+      "runtime/core/task_facts.py",
+      "runtime/host-adapters/codex/codex-hook.py",
+      "runtime/prism/bin/prism-dispatch",
+      "runtime/core/human_output_policy.py",
+      "assets/evidence/prism/20260606-pre-revival-closeout-final-rerun/round3.resolution.json"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "复活前置基建的自动重开机制落在 task-facts 账本核心，而不是散落在文档说明里；Stop Hook 最后回复拦截也落在真实 Codex hook 适配器里。"
+      ],
+      "evidence": [
+        "runtime/core/task_facts.py",
+        "runtime/host-adapters/codex/codex-hook.py",
+        "runtime/bin/redcap check"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "Kimi 的 concern 被接受并映射到实现与回执证据；父批次是条件式已验证，360 扫描失败会自动重开，而不是口头约定。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260606-pre-revival-closeout-final-rerun/round3.resolution.json",
+        "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/task-facts-self-check.receipt.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "执行矩阵和 hook 覆盖合同已经包含双提供方真实超时证据、中文输出运行时拦截，以及 Stop Hook 对最后回复的检查。"
+      ],
+      "evidence": [
+        "assets/contracts/enforcement-matrix.json",
+        "assets/contracts/hook-coverage.json",
+        "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/redcap-check.receipt.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/task_facts.py",
+    "runtime/host-adapters/codex/codex-hook.py",
+    "runtime/prism/bin/prism-dispatch",
+    "runtime/core/human_output_policy.py",
+    "assets/contracts/enforcement-matrix.json",
+    "assets/contracts/hook-coverage.json"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/task-facts-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/task-facts-summary.receipt.json",
+    "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/redcap-check.receipt.json",
+    "assets/evidence/check-receipts/20260606-pre-revival-zero-tail/prism-ledger-health-check.receipt.json"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change"
+  }
+}

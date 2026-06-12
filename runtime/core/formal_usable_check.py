@@ -65,10 +65,48 @@ def parent_verified_host_audit_result() -> dict[str, Any]:
         "argv": ["runtime/bin/redcap", "host-hook-audit"],
         "exit_code": 0,
         "ok": True,
-        "stdout": "宿主审计由父级检查单独执行；正式可用检查不重复触发重检查。",
+        "stdout": "宿主审计已跳过；正式可用检查不重复触发重检查，结果只能视为部分通过。",
         "stderr": "",
         "timed_out": False,
         "checked_by_parent": True,
+        "skipped": True,
+    }
+
+
+def evaluate_formal_usability(commands: dict[str, dict[str, Any]], *, skip_host_hook_audit: bool = False) -> dict[str, Any]:
+    failures: list[str] = []
+    for name, result in commands.items():
+        if not result["ok"]:
+            failures.append(f"{name} 命令失败")
+    status_payload = leading_json(commands["status"].get("stdout", ""))
+    revive_payload = leading_json(commands["revive"].get("stdout", ""))
+    queue_payload = leading_json(commands["revival_queue"].get("stdout", ""))
+    if status_payload.get("scan_state", {}).get("scan_complete") is not True:
+        failures.append("status 命令没有确认 360 扫描完成")
+    non_terminal_open = status_payload.get("terminal_goals", {}).get("non_terminal_open_tasks", [])
+    if non_terminal_open:
+        failures.append("status 命令显示仍有非终局父任务开放")
+    if revive_payload.get("soul", {}).get("ok") is not True:
+        failures.append("revive 命令没有成功加载 Cap 身份")
+    if queue_payload.get("required_open"):
+        failures.append(f"复活队列仍有开放项：{queue_payload.get('required_open')}")
+    status = "partial_pass_with_host_hook_pending" if skip_host_hook_audit and not failures else ("pass" if not failures else "fail")
+    return {
+        "schema_id": "redcap-formal-usability-baseline-check",
+        "level": "正式可用基线",
+        "not_equal_to": "完整复活",
+        "ok": not failures,
+        "status": status,
+        "host_hook_audit": {
+            "status": "skipped" if skip_host_hook_audit else "checked",
+            "meaning": (
+                "宿主审计未在本命令内执行；本命令通过只能作为部分通过，不能替代完整宿主审计。"
+                if skip_host_hook_audit
+                else "宿主审计已在本命令内执行。"
+            ),
+        },
+        "checks": {name: summarize_command(result) for name, result in commands.items()},
+        "failures": failures,
     }
 
 
@@ -86,30 +124,7 @@ def check_formal_usability(*, skip_host_hook_audit: bool = False) -> dict[str, A
         "task_facts": run(["runtime/bin/redcap", "task-facts", "check"]),
         "terminal_goal": run(["runtime/bin/redcap", "terminal-goal", "check"]),
     }
-    failures: list[str] = []
-    for name, result in commands.items():
-        if not result["ok"]:
-            failures.append(f"{name} 命令失败")
-    status_payload = leading_json(commands["status"].get("stdout", ""))
-    revive_payload = leading_json(commands["revive"].get("stdout", ""))
-    queue_payload = leading_json(commands["revival_queue"].get("stdout", ""))
-    if status_payload.get("scan_state", {}).get("scan_complete") is not True:
-        failures.append("status 命令没有确认 360 扫描完成")
-    non_terminal_open = status_payload.get("terminal_goals", {}).get("non_terminal_open_tasks", [])
-    if non_terminal_open:
-        failures.append("status 命令显示仍有非终局父任务开放")
-    if revive_payload.get("soul", {}).get("ok") is not True:
-        failures.append("revive 命令没有成功加载 Cap 身份")
-    if queue_payload.get("required_open"):
-        failures.append(f"复活队列仍有开放项：{queue_payload.get('required_open')}")
-    return {
-        "schema_id": "redcap-formal-usability-baseline-check",
-        "level": "正式可用基线",
-        "not_equal_to": "完整复活",
-        "ok": not failures,
-        "checks": {name: summarize_command(result) for name, result in commands.items()},
-        "failures": failures,
-    }
+    return evaluate_formal_usability(commands, skip_host_hook_audit=skip_host_hook_audit)
 
 
 def cmd_check(_: argparse.Namespace) -> int:
@@ -137,12 +152,32 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         },
         "revive": {"ok": True, "stdout": json.dumps({"soul": {"ok": True}}, ensure_ascii=False), "stderr": "", "argv": [], "exit_code": 0},
         "revival_queue": {"ok": True, "stdout": json.dumps({"required_open": []}, ensure_ascii=False), "stderr": "", "argv": [], "exit_code": 0},
+        "host_hook_audit": parent_verified_host_audit_result(),
+        "scan_conclusion": {"ok": True, "stdout": "{}", "stderr": "", "argv": [], "exit_code": 0},
+        "task_facts": {"ok": True, "stdout": "{}", "stderr": "", "argv": [], "exit_code": 0},
+        "terminal_goal": {"ok": True, "stdout": "{}", "stderr": "", "argv": [], "exit_code": 0},
     }
     if leading_json(fixture["status"]["stdout"]).get("scan_state", {}).get("scan_complete") is not True:
         failures.append("fixture status parse failed")
     bad = json.dumps({"required_open": ["RQ-01"]}, ensure_ascii=False)
     if not leading_json(bad).get("required_open"):
         failures.append("fixture open queue parse failed")
+    partial = evaluate_formal_usability(fixture, skip_host_hook_audit=True)
+    if partial.get("status") != "partial_pass_with_host_hook_pending":
+        failures.append("skip-host-hook-audit should produce partial_pass_with_host_hook_pending")
+    if partial.get("host_hook_audit", {}).get("status") != "skipped":
+        failures.append("skip-host-hook-audit should expose host_hook_audit.status=skipped")
+    bad_fixture = dict(fixture)
+    bad_fixture["revival_queue"] = {
+        "ok": True,
+        "stdout": bad,
+        "stderr": "",
+        "argv": [],
+        "exit_code": 0,
+    }
+    blocked = evaluate_formal_usability(bad_fixture, skip_host_hook_audit=True)
+    if blocked.get("status") != "fail":
+        failures.append("open required revival queue should fail formal usability")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1

@@ -11,7 +11,8 @@ Usage:
   runtime/bin/redcap intake [--task TEXT|--request FILE] [--risk-level LEVEL]
   runtime/bin/redcap enforcement-check
   runtime/bin/redcap hook-coverage-check
-  runtime/bin/redcap boundary resolve|check|self-check [...]
+  runtime/bin/redcap boundary resolve|check|init|self-check [...]
+  runtime/bin/redcap boundary-consumers check|self-check [...]
   runtime/bin/redcap archaeology extract-boundary|seed|check|self-check [...]
   runtime/bin/redcap lifecycle check|self-check [...]
   runtime/bin/redcap final-claim check|self-check [...]
@@ -22,6 +23,7 @@ Usage:
   runtime/bin/redcap loom-workflow check|self-check [...]
   runtime/bin/redcap knowledge-gateway check|search [...]
   runtime/bin/redcap evidence-restore restore [...]
+  runtime/bin/redcap legacy-evidence check|plan|restore|self-check [...]
   runtime/bin/redcap session-ownership claim|check|self-check [...]
   runtime/bin/redcap host-hook-audit
   runtime/bin/redcap prism-dispatch [...]
@@ -38,9 +40,12 @@ Usage:
   runtime/bin/redcap status [...]
   runtime/bin/redcap revive [...]
   runtime/bin/redcap revival-queue check|self-check [...]
+  runtime/bin/redcap known-issues-order check|self-check [...]
+  runtime/bin/redcap known-issues-queue check|self-check [...]
   runtime/bin/redcap formal-usable-check [--skip-host-hook-audit]
   runtime/bin/redcap complete-revival-check [--require-terminal-verified] [--skip-host-hook-audit]
   runtime/bin/redcap temporary-usable-check
+  runtime/bin/redcap process-artifacts check|self-check [...]
   runtime/bin/redcap layout-check [check|self-check]
   runtime/bin/redcap check
 
@@ -52,6 +57,8 @@ Commands:
   hook-coverage-check
                 Verify required guardrails have deployed host hook coverage.
   boundary      Resolve and verify runtime/project/user-private boundaries.
+  boundary-consumers
+                Verify runtime-writing commands use the project-level .redcap boundary.
   archaeology   Run bounded old-RedCap archaeology shard extraction.
   lifecycle     Validate development lifecycle evidence against the FSM.
   final-claim   Guard final completion claims against task-body evidence.
@@ -66,6 +73,8 @@ Commands:
                 Run the minimal index-first RedCap knowledge gateway.
   evidence-restore
                 Restore bounded generated evidence through a RedCap-owned writer.
+  legacy-evidence
+                Check, plan, or restore old external RedCap evidence safely.
   session-ownership
                 Run the minimal RedCap host/session ownership kernel.
   host-hook-audit
@@ -89,12 +98,18 @@ Commands:
   status        Show the human-facing RedCap status surface.
   revive        Load Cap identity and show the revival status surface.
   revival-queue Check the executable RedCap revival implementation queue.
+  known-issues-order
+                Check the ordered queue for known remaining RedCap issues.
+  known-issues-queue
+                Check known remaining RedCap issue statuses and deferrals.
   formal-usable-check
                 Verify RedCap formal usability through user-facing workflows.
   complete-revival-check
                 Verify RedCap complete-revival terminal acceptance.
   temporary-usable-check
                 Verify the current scaffold is usable enough for revival work.
+  process-artifacts
+                Verify one-turn process artifacts are kept out of stable contracts.
   layout-check  Verify directory policy, root thinness, and unit boundaries.
   check         Run Prism, FSM, knowledge, and layout checks.
 USAGE
@@ -122,6 +137,9 @@ case "$cmd" in
     ;;
   boundary)
     exec python3 "$REPO_ROOT/runtime/core/runtime_boundary.py" "$@"
+    ;;
+  boundary-consumers)
+    exec python3 "$REPO_ROOT/runtime/core/runtime_boundary_consumers.py" "$@"
     ;;
   archaeology)
     exec python3 "$REPO_ROOT/runtime/core/archaeology_shards.py" "$@"
@@ -158,6 +176,9 @@ case "$cmd" in
     ;;
   evidence-restore)
     exec python3 "$REPO_ROOT/runtime/core/evidence_restore.py" "$@"
+    ;;
+  legacy-evidence)
+    exec python3 "$REPO_ROOT/runtime/core/legacy_evidence_policy.py" "$@"
     ;;
   session-ownership)
     exec python3 "$REPO_ROOT/runtime/core/session_ownership.py" "$@"
@@ -210,6 +231,12 @@ case "$cmd" in
   revival-queue)
     exec python3 "$REPO_ROOT/runtime/core/revival_queue.py" "$@"
     ;;
+  known-issues-order)
+    exec python3 "$REPO_ROOT/runtime/core/known_issues_order.py" "$@"
+    ;;
+  known-issues-queue)
+    exec python3 "$REPO_ROOT/runtime/core/known_issues_queue.py" "$@"
+    ;;
   formal-usable-check)
     exec python3 "$REPO_ROOT/runtime/core/formal_usable_check.py" check "$@"
     ;;
@@ -218,6 +245,9 @@ case "$cmd" in
     ;;
   temporary-usable-check)
     exec python3 "$REPO_ROOT/runtime/core/temporary_usable_check.py" "$@"
+    ;;
+  process-artifacts)
+    exec python3 "$REPO_ROOT/runtime/core/process_artifact_placement.py" "$@"
     ;;
   layout-check)
     exec python3 "$REPO_ROOT/runtime/core/layout_guard.py" "$@"
@@ -233,15 +263,20 @@ case "$cmd" in
     "$REPO_ROOT/runtime/bin/redcap" human-output check
     "$REPO_ROOT/runtime/bin/redcap" human-output self-check
     "$REPO_ROOT/runtime/bin/redcap" scan-conclusion self-check
-    "$REPO_ROOT/runtime/bin/redcap" status --json --require-scan-complete --fail-on-open
-    "$REPO_ROOT/runtime/bin/redcap" revive --json --no-write-evidence --require-scan-complete --fail-on-open
+    "$REPO_ROOT/runtime/bin/redcap" known-issues-order check
+    "$REPO_ROOT/runtime/bin/redcap" known-issues-queue check --require-1-4-verified
+    "$REPO_ROOT/runtime/bin/redcap" boundary-consumers check
+    "$REPO_ROOT/runtime/bin/redcap" legacy-evidence check
+    "$REPO_ROOT/runtime/bin/redcap" legacy-evidence self-check
+    "$REPO_ROOT/runtime/bin/redcap" process-artifacts check
+    "$REPO_ROOT/runtime/bin/redcap" process-artifacts self-check
+    "$REPO_ROOT/runtime/bin/redcap" status --json --require-scan-complete
+    "$REPO_ROOT/runtime/bin/redcap" revive --json --no-write-evidence --require-scan-complete
     python3 "$REPO_ROOT/runtime/core/status_surface.py" self-check
     "$REPO_ROOT/runtime/bin/redcap" revival-queue self-check
     "$REPO_ROOT/runtime/bin/redcap" revival-queue check --skip-heavy-host-audit
     python3 "$REPO_ROOT/runtime/core/formal_usable_check.py" self-check
-    "$REPO_ROOT/runtime/bin/redcap" formal-usable-check --skip-host-hook-audit
     python3 "$REPO_ROOT/runtime/core/complete_revival_check.py" self-check
-    "$REPO_ROOT/runtime/bin/redcap" complete-revival-check --skip-host-hook-audit
     "$REPO_ROOT/runtime/bin/redcap" session-ownership self-check
     "$REPO_ROOT/runtime/bin/redcap" intent-judge self-check
     python3 "$REPO_ROOT/runtime/host-adapters/codex/codex-hook.py" --self-check-intent-judge

@@ -1,0 +1,128 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260611-hook-llm-semantic-adjudication",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven要求把Hook（钩子，宿主在特定时机自动运行的脚本）的意图识别升级为“LLM（大语言模型）语义判断 + 脚本硬裁决”，并且把棱镜是否介入的判断也纳入同一类语义判断方案。落地后必须判断是否需要重启Codex，再循环测试，最后重新执行一次新RedCap整体评审。",
+    "target_reality": "Hook不再主要依赖写死关键词来判断真实意图；LLM只负责产出结构化语义判断，脚本负责确定性裁决、证据记录和安全降级。棱镜介入判断也能读取同一类语义判断结果，减少“问题句被当成执行授权”的误伤，同时不放过真正的实现、完成、提交、推送等高风险动作。",
+    "non_goals": [
+      "不关闭Stop Hook（停止前检查）或PreToolUse Hook（工具使用前检查）。",
+      "不让LLM直接绕过脚本裁决或直接决定是否允许危险动作。",
+      "不让语义判断降低真实实现任务、完成声明、提交、推送、目录调整等动作的必需门禁。",
+      "不把新增文档当作本次修复完成。",
+      "不声明RedCap完整复活已经终局完成。"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "若语义判断引入误放行或阻塞循环，回退 runtime/core/intent_judge.py、runtime/core/prompt_intent.py、runtime/prism/bin/prism、runtime/prism/bin/turn-action-check、runtime/host-adapters/codex/codex-hook.py 以及对应自检用例。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/hook-llm-semantic-adjudication-lifecycle.json",
+      "runtime/bin/redcap gate --task \"实现Hook的LLM语义识别加脚本裁决方案，并将棱镜介入判断纳入同一方案\" --risk-level high --lifecycle-packet assets/evidence/lifecycle/hook-llm-semantic-adjudication-lifecycle.json",
+      "runtime/bin/redcap intent-judge self-check",
+      "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge",
+      "runtime/bin/redcap check",
+      "用伪LLM回包测试：问题句应被判为answer_only（仅回答），明确执行句应保持implementation（实现授权），完成声明仍需生命周期完成标记。"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "再问一个问题，这波改动落地后，是否需要重启codex才能生效？因为我记得codex的hook钩子需要重启才能生效。",
+    "prompt_kind": "mixed",
+    "authorized_scope": "completion",
+    "continuation_authorization": {
+      "mode": "same_session_authorized_continuation",
+      "source": "codex_goal",
+      "session_id": "019e745f-17b8-7832-ada8-ae990b49db69",
+      "base_prompt_excerpt": "再问一个问题，这波改动落地后，是否需要重启codex才能生效？因为我记得codex的hook钩子需要重启才能生效。"
+    }
+  },
+  "task_body": {
+    "requested_outcome": "把Hook意图识别与棱镜介入判断从脆弱关键词判断升级为LLM语义判断辅助、脚本硬裁决的可测试实现。",
+    "primary_deliverable": "runtime/core/intent_judge.py、runtime/prism/bin/prism、runtime/prism/bin/turn-action-check、runtime/host-adapters/codex/codex-hook.py 的协同改造。",
+    "acceptance_criteria": [
+      "普通问题句不会因为包含“Hook、重启、执行、生效”等词而被当成实现授权。",
+      "明确要求修复、落地、提交或推送的提示仍被判定为需要动作证据或对应硬门禁。",
+      "LLM输出必须通过结构化字段校验；无效、超时、缺失时脚本采用保守降级。",
+      "棱镜介入判断能记录语义判断证据，并在安全规则允许时使用语义结果减少误伤。",
+      "不修改.codex/hooks.json时，判断结论必须说明本轮是否需要重启Codex。",
+      "自检覆盖问题句、明确执行句、混合句、无效LLM回包和Stop Hook恢复场景。"
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/evidence/lifecycle/hook-llm-semantic-adjudication-lifecycle.json",
+      "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/hook-llm-semantic-adjudication-prism-request.json",
+      "runtime/core/intent_judge.py",
+      "runtime/prism/bin/prism",
+      "runtime/prism/bin/turn-action-check",
+      "runtime/host-adapters/codex/codex-hook.py"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "本次没有把LLM直接变成裁决者，而是保留脚本硬裁决：LLM只产出受限语义字段，脚本决定是否调整棱镜门禁、是否写入有效意图、是否保守降级。"
+      ],
+      "evidence": [
+        "runtime/core/intent_judge.py",
+        "runtime/prism/bin/prism",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "棱镜两方阻断/关注均已采纳，并通过resolution校验；Kimi指出的“不要用方案替代实现”已用代码改造和检查回执回应。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/merge.json",
+        "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/resolution.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "问题句、明确执行句、LLM伪回包、Stop Hook语义重判、棱镜gate语义调整均已有自检或端到端探针覆盖。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/semantic-hook-e2e.receipt.json",
+        "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/redcap-check.receipt.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/merge.json",
+    "resolution_path": "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/session.json"
+  },
+  "implementation_evidence": [
+    "runtime/core/intent_judge.py",
+    "runtime/prism/bin/prism",
+    "runtime/prism/bin/turn-action-check",
+    "runtime/host-adapters/codex/codex-hook.py"
+  ],
+  "verification_evidence": [
+    "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/py-compile.receipt.json",
+    "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/intent-judge-self-check.receipt.json",
+    "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/codex-hook-self-check.receipt.json",
+    "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/semantic-hook-e2e.receipt.json",
+    "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/prism-check.receipt.json",
+    "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/redcap-check.receipt.json",
+    "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260611-hook-llm-semantic-adjudication/merge.json --resolution assets/evidence/prism/20260611-hook-llm-semantic-adjudication/resolution.json --manifest assets/evidence/prism/20260611-hook-llm-semantic-adjudication/session.json"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change",
+    "scope": "本次Hook语义判断与棱镜介入判断升级；不声明RedCap完整复活终局完成"
+  }
+}

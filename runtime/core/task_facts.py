@@ -15,6 +15,9 @@ from typing import Any
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
+import runtime_boundary  # noqa: E402
+
 DEFAULT_LEDGER = REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"
 DEFAULT_HEALTH = REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts-summary.json"
 STATUSES = {"planned", "in_progress", "verified", "blocked", "escalated", "superseded"}
@@ -59,6 +62,59 @@ def read_records(path: pathlib.Path) -> list[dict[str, Any]]:
         if isinstance(record, dict):
             records.append(record)
     return records
+
+
+def boundary_args(args: argparse.Namespace) -> argparse.Namespace:
+    return argparse.Namespace(
+        runtime_root=getattr(args, "runtime_root", None),
+        project_workspace=getattr(args, "project_workspace", None),
+        cwd=getattr(args, "cwd", None),
+        task_file=getattr(args, "task_file", None),
+        task_id=getattr(args, "task_id", "") or "",
+        user_private_root=getattr(args, "user_private_root", None),
+        project_runtime_root=getattr(args, "project_runtime_root", None),
+        state_root=getattr(args, "state_root", None),
+        evidence_root=getattr(args, "evidence_root", None),
+        require_task_file=False,
+    )
+
+
+def resolve_store_paths(args: argparse.Namespace, *, create: bool) -> tuple[pathlib.Path, pathlib.Path, dict[str, Any]]:
+    explicit_ledger = getattr(args, "ledger", None)
+    explicit_health = getattr(args, "health", None)
+    if explicit_ledger or explicit_health:
+        ledger = pathlib.Path(explicit_ledger or DEFAULT_LEDGER).resolve()
+        health = pathlib.Path(explicit_health or DEFAULT_HEALTH).resolve()
+        return ledger, health, {
+            "schema_id": "redcap-task-facts-store-paths",
+            "mode": "explicit",
+            "ledger": str(ledger),
+            "health": str(health),
+        }
+    context = runtime_boundary.build_context(boundary_args(args))
+    if create and context.get("boundary_mode") == "external-workspace":
+        runtime_boundary.initialize_runtime_dirs(context)
+        context = runtime_boundary.build_context(boundary_args(args))
+    failures = runtime_boundary.validate_context(context, require_task_file=False)
+    if failures:
+        raise SystemExit(json.dumps({
+            "ok": False,
+            "failures": failures,
+            "context": context,
+        }, ensure_ascii=False, indent=2))
+    evidence_root = pathlib.Path(context["evidence_root"]).resolve()
+    ledger = evidence_root / "task-facts" / "task-facts.jsonl"
+    health = evidence_root / "task-facts" / "task-facts-summary.json"
+    return ledger, health, {
+        "schema_id": "redcap-task-facts-store-paths",
+        "mode": "boundary",
+        "boundary_mode": context.get("boundary_mode"),
+        "project_workspace": context.get("project_workspace"),
+        "project_runtime_root": context.get("project_runtime_root"),
+        "evidence_root": context.get("evidence_root"),
+        "ledger": str(ledger),
+        "health": str(health),
+    }
 
 
 def latest_by_task(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -209,13 +265,13 @@ def append_record(record: dict[str, Any], ledger: pathlib.Path, health: pathlib.
 
 
 def cmd_record(args: argparse.Namespace) -> int:
-    ledger = pathlib.Path(args.ledger).resolve()
-    health = pathlib.Path(args.health).resolve()
+    ledger, health, store_paths = resolve_store_paths(args, create=True)
     payload = append_record(
         build_record(args),
         ledger,
         health,
     )
+    payload["store_paths"] = store_paths
     generated = []
     records_after = read_records(ledger)
     for auto_record in auto_reopen_records(payload["record"], records_after):
@@ -230,22 +286,25 @@ def cmd_record(args: argparse.Namespace) -> int:
 
 
 def cmd_summary(args: argparse.Namespace) -> int:
-    records = read_records(pathlib.Path(args.ledger).resolve())
+    ledger, _, store_paths = resolve_store_paths(args, create=False)
+    records = read_records(ledger)
     summary = compute_summary(records)
+    summary["store_paths"] = store_paths
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     print("REDCAP_TASK_FACT_SUMMARY_OK")
     return 0
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    records = read_records(pathlib.Path(args.ledger).resolve())
+    ledger, _, store_paths = resolve_store_paths(args, create=False)
+    records = read_records(ledger)
     summary = compute_summary(records)
     failures: list[str] = []
     for record in records:
         failures.extend(f"{record.get('task_id')}: {failure}" for failure in validate_record(record))
     if args.fail_on_open and summary.get("open_count", 0) > 0:
         failures.append(f"open task facts remain: {summary.get('open_count')}")
-    print(json.dumps({"ok": not failures, "failures": failures, "summary": summary}, ensure_ascii=False, indent=2))
+    print(json.dumps({"ok": not failures, "failures": failures, "summary": summary, "store_paths": store_paths}, ensure_ascii=False, indent=2))
     if failures:
         return 1
     print("REDCAP_TASK_FACTS_OK")
@@ -336,22 +395,38 @@ def build_parser() -> argparse.ArgumentParser:
     record.add_argument("--evidence", action="append", required=True)
     record.add_argument("--superseded-by")
     record.add_argument("--recorded-by", default="cap")
-    record.add_argument("--ledger", default=str(DEFAULT_LEDGER))
-    record.add_argument("--health", default=str(DEFAULT_HEALTH))
+    add_boundary_args(record)
+    record.add_argument("--ledger")
+    record.add_argument("--health")
     record.set_defaults(func=cmd_record)
 
     summary = sub.add_parser("summary", help="print task fact summary")
-    summary.add_argument("--ledger", default=str(DEFAULT_LEDGER))
+    add_boundary_args(summary)
+    summary.add_argument("--ledger")
+    summary.add_argument("--health")
     summary.set_defaults(func=cmd_summary)
 
     check = sub.add_parser("check", help="validate task fact ledger")
-    check.add_argument("--ledger", default=str(DEFAULT_LEDGER))
+    add_boundary_args(check)
+    check.add_argument("--ledger")
+    check.add_argument("--health")
     check.add_argument("--fail-on-open", action="store_true")
     check.set_defaults(func=cmd_check)
 
     self_check = sub.add_parser("self-check", help="run isolated task fact self-check")
     self_check.set_defaults(func=cmd_self_check)
     return parser
+
+
+def add_boundary_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--runtime-root")
+    parser.add_argument("--project-workspace")
+    parser.add_argument("--cwd")
+    parser.add_argument("--task-file")
+    parser.add_argument("--user-private-root")
+    parser.add_argument("--project-runtime-root")
+    parser.add_argument("--state-root")
+    parser.add_argument("--evidence-root")
 
 
 def main() -> int:

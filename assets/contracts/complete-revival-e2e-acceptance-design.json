@@ -137,7 +137,8 @@
       ],
       "must_verify": [
         "architecture references only the external sandbox",
-        "data path is inside sandbox data/tasks.json"
+        "data path is inside sandbox data/tasks.json",
+        "RedCap runtime artifacts are scoped to sandbox .redcap"
       ]
     },
     {
@@ -147,11 +148,13 @@
       "required_artifacts": [
         "task_ledger.py",
         "tests/test_task_ledger.py",
-        "data/tasks.json"
+        "data/tasks.json",
+        ".redcap/.gitignore"
       ],
       "must_verify": [
         "filesystem manifest contains source, tests, and data files",
-        "no files are created in RedCap root except evidence files"
+        "no files are created in RedCap root",
+        "RedCap evidence, state, logs, and temporary files live under sandbox .redcap"
       ]
     },
     {
@@ -212,10 +215,12 @@
   "objective_commands": [
     {
       "id": "harness-self-boundary",
-      "future_command": "runtime/bin/redcap complete-revival-e2e --work-root <temp-outside-redcap> --evidence-out <evidence-dir>",
+      "future_command": "runtime/bin/redcap complete-revival-e2e --work-root <temp-outside-redcap>",
       "expected_exit_code": 0,
       "must_emit": "REDCAP_COMPLETE_REVIVAL_E2E_OK",
-      "failure_means": "端到端验收未通过，不得推进终局完成。"
+      "failure_means": "端到端验收未通过，不得推进终局完成。",
+      "evidence_location": "<temp-outside-redcap>/external-task-ledger-cli/.redcap/evidence",
+      "forbidden_evidence_location": "RedCap runtime repository"
     },
     {
       "id": "sandbox-tests",
@@ -270,6 +275,12 @@
       "expected_failure": "外部项目污染 RedCap 根目录"
     },
     {
+      "id": "runtime-artifacts-outside-project-redcap-cannot-pass",
+      "setup": "把外部项目的 RedCap 状态、证据、日志或临时文件写到项目 .redcap 之外。",
+      "expected_exit_code": 1,
+      "expected_failure": "外部项目运行产物没有收束到项目 .redcap"
+    },
+    {
       "id": "old-redcap-import-cannot-pass",
       "setup": "任何命令、环境变量、sys.path 或文件清单引用 /Users/norven/workspace/redcap。",
       "expected_exit_code": 1,
@@ -293,7 +304,9 @@
       "design_id": "boundary-layer-separation",
       "acceptance_coverage": [
         "harness workspace outside RedCap root",
+        "sandbox .redcap contains RedCap state, evidence, logs, and tmp roots",
         "redcap-root-pollution-cannot-pass",
+        "runtime-artifacts-outside-project-redcap-cannot-pass",
         "filesystem manifest verifies runtime/project/user state separation"
       ]
     },
@@ -308,7 +321,7 @@
       "design_id": "boundary-shared-command-resolution",
       "acceptance_coverage": [
         "future complete-revival-e2e command must reuse boundary resolution outputs",
-        "objective command records cwd, work_root, evidence_out"
+        "objective command records cwd, work_root, project_runtime_root, and evidence_root"
       ]
     },
     {

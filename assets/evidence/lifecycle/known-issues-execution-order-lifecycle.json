@@ -1,0 +1,108 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260610-known-issues-execution-order",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven asked Cap to arrange the execution order for the known remaining RedCap revival issues after a Stop Hook recovery.",
+    "target_reality": "The known remaining issues are ordered into a durable, checkable contract so later execution does not drift, rename tasks beyond recognition, or close the terminal parent goal early.",
+    "non_goals": [
+      "Do not claim RedCap complete revival is terminally closed.",
+      "Do not treat this ordering contract as implementation of the remaining issues.",
+      "Do not bulk-read the old RedCap repository.",
+      "Do not bypass Prism if later steps move from ordering into implementation."
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "optional",
+    "rollback_plan": "Remove runtime/core/known_issues_order.py, remove the known-issues-order branch from runtime/bin/redcap, and remove assets/contracts/known-issues-execution-order.json plus this lifecycle packet if Norven rejects the ordering or asks for a different queue model.",
+    "verification_plan": [
+      "python3 -m json.tool assets/contracts/known-issues-execution-order.json",
+      "runtime/bin/redcap known-issues-order self-check",
+      "runtime/bin/redcap known-issues-order check",
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/known-issues-execution-order-lifecycle.json",
+      "runtime/bin/redcap gate --task \"排列已知遗留问题执行顺序\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/known-issues-execution-order-lifecycle.json"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "你任务这些遗留问题的执行顺序应该如何排布？",
+    "prompt_kind": "mixed",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "Create a durable execution order for known remaining RedCap revival issues.",
+    "primary_deliverable": "A checked known-issues execution order contract and a local validator command.",
+    "acceptance_criteria": [
+      "The ordering contract separates queue materialization, runtime boundary migration, legacy evidence policy, end-to-end acceptance, and terminal closeout.",
+      "The order explains why earlier steps unblock later steps.",
+      "The contract keeps the terminal RedCap complete-revival parent open.",
+      "runtime/bin/redcap known-issues-order check verifies the ordering contract.",
+      "The lifecycle packet can be checked by runtime/bin/redcap lifecycle check."
+    ],
+    "status": "verified",
+    "evidence_kind": "code-and-review",
+    "evidence": [
+      "runtime/core/known_issues_order.py",
+      "runtime/bin/redcap",
+      "assets/contracts/known-issues-execution-order.json",
+      "assets/evidence/lifecycle/known-issues-execution-order-lifecycle.json",
+      "runtime/bin/redcap known-issues-order self-check",
+      "runtime/bin/redcap known-issues-order check"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "排序检查器保持为独立小内核，只读取合同并验证顺序、依赖和终局父任务开放状态，不触碰后续遗留项的执行逻辑。"
+      ],
+      "evidence": [
+        "runtime/core/known_issues_order.py",
+        "runtime/bin/redcap known-issues-order check"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "合同明确把终局父任务保持为开放，并把终局关闭排在端到端验收与 15 项优秀设计覆盖证据之后。"
+      ],
+      "evidence": [
+        "assets/contracts/known-issues-execution-order.json",
+        "runtime/bin/redcap terminal-goal check"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "本地检查命令会拦截顺序错乱、依赖缺失、终局关闭项缺少 15 项覆盖条件，以及排序合同试图关闭终局父任务。"
+      ],
+      "evidence": [
+        "runtime/bin/redcap known-issues-order self-check",
+        "runtime/bin/redcap known-issues-order check"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/known_issues_order.py",
+    "runtime/bin/redcap",
+    "assets/contracts/known-issues-execution-order.json"
+  ],
+  "verification_evidence": [
+    "runtime/bin/redcap known-issues-order self-check",
+    "runtime/bin/redcap known-issues-order check",
+    "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/known-issues-execution-order-lifecycle.json"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "code-and-review",
+    "scope": "只覆盖已知遗留问题执行顺序合同和本地排序检查器；不覆盖这些遗留问题本体，也不覆盖 RedCap 完整复活终局父任务。"
+  }
+}

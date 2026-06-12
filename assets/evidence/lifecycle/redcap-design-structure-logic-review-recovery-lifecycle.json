@@ -1,0 +1,77 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260611-redcap-design-structure-logic-review-recovery",
+  "fsm_state": "BLOCKED",
+  "requirement_review": {
+    "user_intent": "Norven要求回顾此前Hook意图优化四步任务到底完成如何；Stop Hook指出不能只做状态汇报，需要回到原任务并处理第4步整体review未闭环的问题。",
+    "target_reality": "此前整体review的棱镜担忧必须被回应；能直接修的运行逻辑先修，不能安全关闭的部分必须明确升级为受阻，不得说成完成。",
+    "non_goals": [
+      "不声明RedCap完整复活终局完成。",
+      "不把整体review的棱镜concern说成已经全部解决。",
+      "不在本轮批量移动评审过程文件或创建提交。"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "回退runtime/core/formal_usable_check.py和runtime/core/complete_revival_check.py中关于skip-host-hook-audit部分通过语义的修改，并移除本轮新增的design-structure-logic-review resolution。",
+    "verification_plan": [
+      "python3 -m py_compile runtime/core/formal_usable_check.py runtime/core/complete_revival_check.py",
+      "python3 runtime/core/formal_usable_check.py self-check",
+      "python3 runtime/core/complete_revival_check.py self-check",
+      "runtime/bin/redcap check",
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260611-redcap-design-structure-logic-review/merge.json --resolution assets/evidence/prism/20260611-redcap-design-structure-logic-review/resolution.json --manifest assets/evidence/prism/20260611-redcap-design-structure-logic-review/session.json"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "1. 先完成此次hook意图识别优化方案（包括棱镜决策是否介入的判断应该也是hook触发的吧？总之，这次优化也要把棱镜决策是否介入的判断逻辑也用这种方案优化） 2. 等优化方案落地之后，开始判断，评估是否需要重启Codex才能生效。如果判断为否，直接可以生效，则继续下一步动作；如果判断为是，需要重启才能够生效，则立刻中断此次任务，等待我介入手动重启Codex后，才允许继续下一步任务 3. 之后，对优化方案开始测试，评估是否正常生效，如果测试发现有问题，则执行修复，然后重复1、2、3步骤，循环往复，直至测试成功、没有新问题发现为止 4. hook优化方案落地并测试无问题后，开始重新执行一次之前那个需求：请和棱镜一起整体review当前新redcap的设计思路、目录结构、逻辑实现，务必做到100%程度的细致review，然后评估当前是否有需要改进的地方、调整和优化的地方、尚未执行完毕的任务。然后整理清楚汇报给我。",
+    "prompt_kind": "mixed",
+    "authorized_scope": "implementation"
+  },
+  "task_body": {
+    "requested_outcome": "补齐此前整体review的棱镜担忧回应，并修复skip-host-hook-audit冒充完整通过的运行逻辑。",
+    "primary_deliverable": "runtime/core/formal_usable_check.py, runtime/core/complete_revival_check.py, assets/evidence/prism/20260611-redcap-design-structure-logic-review/resolution.json",
+    "acceptance_criteria": [
+      "formal-usable-check在--skip-host-hook-audit时输出partial_pass_with_host_hook_pending。",
+      "complete-revival-check在--skip-host-hook-audit时输出partial_pass_with_host_hook_pending。",
+      "整体review的棱镜担忧必须有机器可校验的resolution。",
+      "未关闭的KI-04、KI-05和评审文件归位问题必须保持受阻或升级，不得说成完成。"
+    ],
+    "status": "blocked",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "runtime/core/formal_usable_check.py",
+      "runtime/core/complete_revival_check.py",
+      "assets/evidence/prism/20260611-redcap-design-structure-logic-review/resolution.json"
+    ]
+  },
+  "fsm_transition": {
+    "from": "IMPLEMENTING",
+    "to": "BLOCKED",
+    "evidence": [
+      "blocking_condition"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260611-redcap-design-structure-logic-review/merge.json",
+    "resolution_path": "assets/evidence/prism/20260611-redcap-design-structure-logic-review/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260611-redcap-design-structure-logic-review/session.json"
+  },
+  "implementation_evidence": [
+    "runtime/core/formal_usable_check.py",
+    "runtime/core/complete_revival_check.py",
+    "assets/evidence/prism/20260611-redcap-design-structure-logic-review/resolution.json"
+  ],
+  "verification_evidence": [
+    "python3 -m py_compile runtime/core/formal_usable_check.py runtime/core/complete_revival_check.py",
+    "python3 runtime/core/formal_usable_check.py self-check",
+    "python3 runtime/core/complete_revival_check.py self-check",
+    "runtime/bin/redcap check",
+    "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260611-redcap-design-structure-logic-review/merge.json --resolution assets/evidence/prism/20260611-redcap-design-structure-logic-review/resolution.json --manifest assets/evidence/prism/20260611-redcap-design-structure-logic-review/session.json"
+  ],
+  "completion_claim": {
+    "present": false,
+    "scope": "本轮只完成一个明确修复点并把整体review剩余担忧升级为受阻；不声明第4步完整完成"
+  }
+}

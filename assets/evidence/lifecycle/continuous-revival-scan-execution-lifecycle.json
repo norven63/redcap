@@ -1,0 +1,109 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260607-continuous-revival-scan-execution",
+  "fsm_state": "IMPLEMENTING",
+  "requirement_review": {
+    "user_intent": "Norven 已授权 Cap 按“连续推进、分段验收”的方式执行 RedCap 复活计划，当前阶段只继续 360 度旧 RedCap 扫描，不进入最终复活结论。",
+    "target_reality": "360 度旧 RedCap 扫描从已启动状态进入持续执行：继续验证剩余分片、合并扫描结果，并在完成前禁止给最终复活方案或完成声明。",
+    "non_goals": [
+      "批量读取旧 RedCap 仓库",
+      "在扫描合并前迁移具体模块",
+      "把分片账目、报告、回执或评审当作复活完成",
+      "绕过 Kimi 与 Claude Code 已参与的扫描启动评审",
+      "扩大当前 provider 策略"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "回退本次新增的扫描输出、扫描账目状态和任务事实记录；保留已验证的扫描启动账目与首个分片输出。",
+    "verification_plan": [
+      "runtime/bin/redcap prism-shard check --account assets/archaeology/shards/old-redcap-360-scan-account.json",
+      "runtime/bin/redcap prism-shard merge --account assets/archaeology/shards/old-redcap-360-scan-account.json --out assets/archaeology/shards/old-redcap-360-scan-merge.json",
+      "runtime/bin/redcap task-facts summary",
+      "runtime/bin/redcap scan-conclusion check",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "执行完成在第2点中你制定的计划方案，保证没有遗漏的点、bug的点，达到新Redcap可以投入正式使用为止",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation"
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260606-old-redcap-360-scan-start/merge.json",
+    "resolution_path": "assets/evidence/prism/20260606-old-redcap-360-scan-start/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260606-old-redcap-360-scan-start/session.json"
+  },
+  "task_body": {
+    "requested_outcome": "继续执行 360 度旧 RedCap 扫描，直到可验证合并输出存在。",
+    "primary_deliverable": "剩余扫描分片输出、更新后的扫描账目、合并结果和全量检查回执。",
+    "acceptance_criteria": [
+      "所有 promotable 分片状态为 verified，no_promote 分片保留明确理由。",
+      "扫描输出只读取各分片列明的精确旧源文件。",
+      "合并结果存在并通过扫描分片检查。",
+      "扫描完成前只允许报告阶段状态，不能给最终复活结论。",
+      "runtime/bin/redcap check 通过。"
+    ],
+    "status": "implemented",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/contracts/redcap-continuous-revival-plan.json",
+      "assets/archaeology/shards/old-redcap-360-scan-account.json",
+      "assets/archaeology/shards/outputs/runtime-workspace-boundary-v1.json",
+      "assets/evidence/prism/20260606-old-redcap-360-scan-start/resolution.json"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "持续扫描仍使用既有 prism-shard 账目和合并命令，不新增第二套扫描状态机。"
+      ],
+      "evidence": [
+        "runtime/core/archaeology_shards.py",
+        "runtime/prism/bin/prism-shard",
+        "assets/archaeology/shards/old-redcap-360-scan-account.json"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "本阶段明确限制为分片扫描与合并；最终复活方案必须等 CR-S01 完成后才能生成。"
+      ],
+      "evidence": [
+        "assets/contracts/redcap-continuous-revival-plan.json",
+        "assets/evidence/prism/20260606-old-redcap-360-scan-start/old-redcap-360-scan-prism-request.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "生命周期包只授权进入实施扫描，不包含完成声明；完成声明仍需后续扫描合并和全量检查证据。"
+      ],
+      "evidence": [
+        "assets/evidence/lifecycle/continuous-revival-scan-execution-lifecycle.json",
+        "runtime/bin/redcap lifecycle check"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "PRISM_REVIEW",
+    "to": "IMPLEMENTING",
+    "evidence": [
+      "prism_review_or_explicit_skip"
+    ]
+  },
+  "implementation_evidence": [
+    "assets/contracts/redcap-continuous-revival-plan.json",
+    "assets/archaeology/shards/old-redcap-360-scan-account.json",
+    "assets/archaeology/shards/outputs/runtime-workspace-boundary-v1.json"
+  ],
+  "verification_evidence": [
+    "runtime/bin/redcap prism-shard check --account assets/archaeology/shards/old-redcap-360-scan-account.json"
+  ],
+  "completion_claim": {
+    "present": false
+  }
+}

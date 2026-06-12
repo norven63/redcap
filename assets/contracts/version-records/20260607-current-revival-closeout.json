@@ -16,8 +16,8 @@
   ],
   "verification_commands": [
     "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260607-current-revival-closeout-merged/merge.json --resolution assets/evidence/prism/20260607-current-revival-closeout-merged/resolution.json --manifest assets/evidence/prism/20260607-current-revival-closeout/session.json",
-    "runtime/bin/redcap lifecycle check --packet assets/contracts/redcap-current-revival-closeout-lifecycle.json",
-    "runtime/bin/redcap gate --task \"重新开始执行 RedCap 复活计划，验证当前 RedCap 已达到正式可用，并收口基建修复与版本记录\" --risk-level high --lifecycle-packet assets/contracts/redcap-current-revival-closeout-lifecycle.json",
+    "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/redcap-current-revival-closeout-lifecycle.json",
+    "runtime/bin/redcap gate --task \"重新开始执行 RedCap 复活计划，验证当前 RedCap 已达到正式可用，并收口基建修复与版本记录\" --risk-level high --lifecycle-packet assets/evidence/lifecycle/redcap-current-revival-closeout-lifecycle.json",
     "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
     "runtime/bin/redcap revival-queue check",
     "runtime/bin/redcap formal-usable-check",
@@ -26,7 +26,7 @@
     "git ls-remote origin refs/heads/develop"
   ],
   "evidence": [
-    "assets/contracts/redcap-current-revival-closeout-lifecycle.json",
+    "assets/evidence/lifecycle/redcap-current-revival-closeout-lifecycle.json",
     "assets/evidence/prism/20260607-current-revival-closeout-merged/merge.json",
     "assets/evidence/prism/20260607-current-revival-closeout-merged/resolution.json",
     "assets/evidence/check-receipts/20260607-current-revival-closeout/status.receipt.json",

@@ -1,0 +1,118 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260606-scan-conclusion-guard",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven challenged that Cap appeared to stop after only creating shard work and then reported as if that were the planned stopping point.",
+    "target_reality": "RedCap must distinguish a 360-degree old RedCap scan launch from a completed scan conclusion, and must block final-sounding scan conclusions unless scan completion evidence exists.",
+    "non_goals": [
+      "claim the 360-degree old RedCap scan is complete",
+      "bulk-read the old RedCap repository",
+      "migrate concrete old RedCap modules",
+      "treat lifecycle packets, shard accounts, reviews, receipts, or status notes as the scan conclusion"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "Remove the scan conclusion guard command, hook wiring, and its tests; keep the existing scan account untouched.",
+    "verification_plan": [
+      "runtime/bin/redcap gate --task \"复盘并修复 360 度扫描结论误报问题\" --risk-level high --lifecycle-packet assets/evidence/lifecycle/scan-conclusion-guard-lifecycle.json",
+      "runtime/bin/redcap scan-conclusion self-check",
+      "runtime/bin/redcap scan-conclusion check --message \"360 度旧 RedCap 扫描后的结论是：可以迁移全部设计。\"",
+      "runtime/bin/redcap final-claim self-check",
+      "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "你现在只是做了分片任务？然后就停下来向我汇报了？这是你之前就计划好的？仅仅执行到分片任务就停止？",
+    "prompt_kind": "mixed",
+    "authorized_scope": "completion"
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260606-scan-conclusion-guard/merge.json",
+    "resolution_path": "assets/evidence/prism/20260606-scan-conclusion-guard/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260606-scan-conclusion-guard/session.json"
+  },
+  "task_body": {
+    "requested_outcome": "Fix the empty-work recurrence where a scan launch can be reported as if it were a 360-degree scan conclusion.",
+    "primary_deliverable": "A runtime guard and Stop hook integration that distinguish scan-start evidence from scan-conclusion evidence.",
+    "acceptance_criteria": [
+      "A final-sounding 360-degree scan conclusion is rejected while the scan account is active and task facts are still in progress.",
+      "A clearly provisional stage-status answer is allowed while the scan is active.",
+      "The guard checks task facts, shard account status, verified shard outputs, and merge evidence instead of relying on wording alone.",
+      "The guard is included in runtime/bin/redcap check and the Codex Stop hook path.",
+      "Self-check fixtures prove both the blocked and allowed branches."
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "runtime/core/scan_conclusion_guard.py",
+      "runtime/bin/redcap",
+      "runtime/host-adapters/codex/codex-hook.py",
+      "assets/evidence/check-receipts/20260606-scan-conclusion-guard/scan-conclusion-self-check.receipt.json",
+      "assets/evidence/check-receipts/20260606-scan-conclusion-guard/codex-hook-self-check.receipt.json",
+      "assets/evidence/check-receipts/20260606-scan-conclusion-guard/redcap-check.receipt.json"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "扫描结论检查落在独立运行时命令里，并接入 runtime/bin/redcap check 与 Codex 停止前检查路径；它不依赖回复措辞自证，而是读取扫描账目、任务事实和合并状态。"
+      ],
+      "evidence": [
+        "runtime/core/scan_conclusion_guard.py",
+        "runtime/bin/redcap",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "异构评审助手（用于交叉检查主执行结论的工具）指出语义判断可被绕过；本轮采纳该意见，改为要求可解析的扫描状态块，并在扫描未完成时禁止未否定的最终结论语言。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260606-scan-conclusion-guard/merge.json",
+        "assets/evidence/prism/20260606-scan-conclusion-guard/resolution.json",
+        "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260606-scan-conclusion-guard/merge.json --resolution assets/evidence/prism/20260606-scan-conclusion-guard/resolution.json --manifest assets/evidence/prism/20260606-scan-conclusion-guard/session.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "检查回执记录了扫描结论自检、停止前检查适配器自检和全量检查，避免用命令字符串或口头汇报替代已执行证据。"
+      ],
+      "evidence": [
+        "assets/evidence/check-receipts/20260606-scan-conclusion-guard/scan-conclusion-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-scan-conclusion-guard/codex-hook-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-scan-conclusion-guard/redcap-check.receipt.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/scan_conclusion_guard.py",
+    "runtime/bin/redcap",
+    "runtime/host-adapters/codex/codex-hook.py",
+    "assets/evidence/lifecycle/scan-conclusion-guard-lifecycle.json",
+    "assets/evidence/prism/20260606-scan-conclusion-guard/scan-conclusion-guard-prism-request.json"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260606-scan-conclusion-guard/scan-conclusion-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260606-scan-conclusion-guard/codex-hook-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260606-scan-conclusion-guard/redcap-check.receipt.json"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change"
+  }
+}

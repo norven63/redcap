@@ -1,0 +1,114 @@
+{
+  "schema_id": "redcap-known-issues-execution-order",
+  "task_id": "20260610-known-issues-execution-order",
+  "status": "planned",
+  "terminal_goal": {
+    "id": "redcap-complete-revival",
+    "state": "open",
+    "note": "RedCap（当前复活工程）的终局父任务仍开放；本文件只排列已知遗留问题的执行顺序。"
+  },
+  "ordering_principles": [
+    "先让问题不再从队列里丢失，再处理会影响所有后续执行的运行边界。",
+    "先修通外部项目运行环境，再跑端到端验收，避免验收污染 RedCap 自身仓库。",
+    "只有端到端验收和 15 项优秀设计覆盖证据都可审查后，才允许进入终局关闭流程。"
+  ],
+  "items": [
+    {
+      "order": 0,
+      "id": "KI-00-lifecycle-and-prism-front-gate",
+      "title": "建立本批次生命周期包并触发棱镜评审",
+      "why_first": "中高风险 RedCap 自开发任务不能直接进入实现；必须先有需求、技术、验收和回滚边界。",
+      "depends_on": [],
+      "acceptance": [
+        "生命周期包通过 runtime/bin/redcap lifecycle check。",
+        "runtime/bin/redcap gate 在生命周期包存在时给出可执行的下一步。",
+        "如果棱镜要求双方评审，则必须有可合并、可裁决的评审结果。"
+      ]
+    },
+    {
+      "order": 1,
+      "id": "KI-01-structured-known-issue-queue",
+      "title": "把已知遗留问题写入结构化队列",
+      "why_first": "当前最大风险是问题存在于对话和零散文档里，后续容易被遗漏、改名或误判为已解决。",
+      "depends_on": [
+        "KI-00-lifecycle-and-prism-front-gate"
+      ],
+      "acceptance": [
+        "每个遗留问题都有目标、依赖、状态、验收条件和证据位置。",
+        "队列能被本地命令检查，而不是只靠聊天记忆。",
+        "终局父任务仍保持开放，不能被子任务阶段进展关闭。"
+      ]
+    },
+    {
+      "order": 2,
+      "id": "KI-02-runtime-boundary-consumer-migration",
+      "title": "运行时隔离全链路接入",
+      "why_second": "端到端验收会创建外部项目；如果所有写运行产物的命令还没有统一使用项目内 .redcap/，测试会污染 RedCap 仓库或共享旧目录。",
+      "depends_on": [
+        "KI-01-structured-known-issue-queue"
+      ],
+      "acceptance": [
+        "扫描并列出所有会写状态、证据、日志、临时文件的命令。",
+        "这些命令统一通过运行边界解析器获得项目级 .redcap/ 路径。",
+        "负向检查能拦截外部项目运行产物写到 RedCap 仓库或旧共享目录。"
+      ]
+    },
+    {
+      "order": 3,
+      "id": "KI-03-legacy-evidence-policy",
+      "title": "旧证据目录策略收口",
+      "why_after_boundary": "新边界确定后，才能决定旧式证据路径是只读兼容、迁移、废弃，还是按需恢复。",
+      "depends_on": [
+        "KI-02-runtime-boundary-consumer-migration"
+      ],
+      "acceptance": [
+        "明确旧证据路径的保留、读取、迁移和废弃策略。",
+        "策略有命令或检查器支撑，不只写在说明里。",
+        "不会把用户私有身份、宿主凭据或跨项目运行态迁入项目 .redcap/。"
+      ]
+    },
+    {
+      "order": 4,
+      "id": "KI-04-complete-revival-e2e-harness",
+      "title": "实现并运行端到端验收器",
+      "why_after_boundary_and_legacy_policy": "验收器必须在隔离后的外部沙盒项目里跑，才能验证 RedCap 是否能支持真实工程任务链路。",
+      "depends_on": [
+        "KI-02-runtime-boundary-consumer-migration",
+        "KI-03-legacy-evidence-policy"
+      ],
+      "acceptance": [
+        "自动创建 RedCap 仓库外部的沙盒项目。",
+        "沙盒项目内生成自己的 .redcap/ 运行目录。",
+        "驱动 Loom（角色化工程工作流）从需求到实现再到验证的完整链路。",
+        "产生可检查的工程产物、运行证据、正向检查和负向检查结果。",
+        "失败时能指出是工作流、运行边界、证据、角色协作还是验收标准的问题。"
+      ]
+    },
+    {
+      "order": 5,
+      "id": "KI-05-terminal-closeout-only-after-evidence",
+      "title": "终局关闭流程",
+      "why_last": "终局关闭只能是证据通过后的收口动作，不能替代前面的真实执行。",
+      "depends_on": [
+        "KI-00-lifecycle-and-prism-front-gate",
+        "KI-01-structured-known-issue-queue",
+        "KI-02-runtime-boundary-consumer-migration",
+        "KI-03-legacy-evidence-policy",
+        "KI-04-complete-revival-e2e-harness"
+      ],
+      "acceptance": [
+        "端到端验收通过且证据可审查。",
+        "15 项优秀设计覆盖矩阵逐项有证据命中。",
+        "终局目标检查允许关闭后，才更新父任务状态。",
+        "任何阶段成果都不能单独关闭 RedCap 完整复活父任务。"
+      ]
+    }
+  ],
+  "stop_conditions": [
+    "棱镜评审出现未解决阻断意见。",
+    "运行时隔离检查发现外部项目会污染 RedCap 仓库且无法在当前批次安全修复。",
+    "端到端验收需要外部账号、远端发布或其他不可替用户决定的权限。",
+    "用户明确要求暂停、改序或缩小范围。"
+  ],
+  "next_executable_step": "先执行 KI-00 和 KI-01；KI-02 到 KI-05 必须按依赖顺序推进。"
+}

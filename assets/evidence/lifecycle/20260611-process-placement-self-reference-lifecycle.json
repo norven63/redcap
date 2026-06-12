@@ -1,0 +1,83 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260611-process-placement-self-reference",
+  "fsm_state": "INTAKE",
+  "requirement_review": {
+    "user_intent": "Norven要求落地治理过程文件归属问题和整体评审状态自指阻塞问题：既不能陷入旧RedCap式反复举证规划不迁移，也不能一锤子买卖；需要建立能防止后续迭代复发的文件存放规范和状态检查规则。",
+    "target_reality": "实现机器可检查的文件归属防复发机制，并调整健康检查与终局验收的职责边界，使普通健康检查不被当前治理任务自指卡死，而终局完整复活仍不能被开放任务绕过。",
+    "non_goals": [
+      "不声明RedCap完整复活终局完成。",
+      "不批量阅读旧RedCap仓库。",
+      "不无差别迁移全部历史过程文件导致引用断链。",
+      "不通过硬标任务verified来绕过检查。"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "若实现不符合预期，回退本次新增检查器、命令入口、目录策略变更、生命周期证据与任务事实记录；不回退用户既有未提交修改。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260611-process-placement-self-reference-lifecycle.json",
+      "runtime/bin/redcap gate --task \"落地过程文件归属治理与整体评审状态自指阻塞治理，建立长期防复发规则\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260611-process-placement-self-reference-lifecycle.json",
+      "runtime/bin/redcap process-artifacts check",
+      "runtime/bin/redcap process-artifacts self-check",
+      "runtime/bin/redcap layout-check",
+      "runtime/bin/redcap status --json --require-scan-complete",
+      "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+      "runtime/bin/redcap check",
+      "runtime/bin/redcap complete-revival-check",
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260611-process-placement-self-reference/merge.json --resolution assets/evidence/prism/20260611-process-placement-self-reference/resolution.json --manifest assets/evidence/prism/20260611-process-placement-self-reference/session.json"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "1. 文件归属的问题我明白了，而且这个是旧redcap当时崩溃的根本原因，当时为了治理这个问题，旧redcap不停的陷入空转问题（他不停的举证、规划文件归属，但就不治理、不实际迁移文件）。所以这次你处理的时候一定要小心，第一不要陷入死循环空转，导致复发旧疾；第二不要一锤子买卖，治理完后就不管后面的事情了，要趁着这次问题暴露，建立起一个有效合理的文件存放规范（我记得这个不是一开始就设置了吗？怎么还会导致这个问题复发呢？也是奇怪），让后续的迭代也不会导致文件产物乱归属、乱摆放的问题。 2. 第二个问题细节我还没看明白，但是我大概感觉是不是当前的逻辑流程存在冲突，导致死循环了？你如果有解决方案可以尽快落地，而且同样的不要“一锤子买卖”，方案设计的要瞻前顾后，不要只顾解决眼前问题，却埋下了其他的问题隐患",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "落地文件归属治理和状态自指阻塞治理。",
+    "primary_deliverable": "运行时检查器、目录策略与命令入口更新，以及对应验证证据。",
+    "acceptance_criteria": [
+      "新增或更新的机制必须能阻止未来一次性过程文件继续混入 assets/contracts/。",
+      "既有历史过程文件不能被无差别搬迁导致引用断链，必须被显式识别为遗留债务或按策略迁移。",
+      "普通 redcap check 不再因为当前治理类开放任务形成自指死循环。",
+      "complete-revival-check 仍然不能绕过开放任务关闭 RedCap完整复活终局。",
+      "所有变更必须通过生命周期、棱镜裁决、目录检查和相关自检。"
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/contracts/process-artifact-placement.json",
+      "runtime/core/process_artifact_placement.py",
+      "runtime/bin/redcap",
+      "runtime/core/formal_usable_check.py",
+      "assets/evidence/prism/20260611-process-placement-self-reference/resolution.json",
+      "assets/evidence/check-receipts/20260611-process-placement-self-reference/redcap-check.receipt.json"
+    ]
+  },
+  "implementation_evidence": [
+    "assets/contracts/process-artifact-placement.json",
+    "runtime/core/process_artifact_placement.py",
+    "runtime/bin/redcap",
+    "runtime/core/formal_usable_check.py",
+    "assets/contracts/README.md",
+    "assets/evidence/README.md"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-check.receipt.json",
+    "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-negative-real-workspace.receipt.json",
+    "assets/evidence/check-receipts/20260611-process-placement-self-reference/status-require-scan-complete.receipt.json",
+    "assets/evidence/check-receipts/20260611-process-placement-self-reference/status-fail-on-open-still-strict.receipt.json",
+    "assets/evidence/check-receipts/20260611-process-placement-self-reference/complete-revival-check-still-strict.receipt.json",
+    "assets/evidence/check-receipts/20260611-process-placement-self-reference/formal-usable-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260611-process-placement-self-reference/redcap-check.receipt.json",
+    "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260611-process-placement-self-reference/merge.json --resolution assets/evidence/prism/20260611-process-placement-self-reference/resolution.json --manifest assets/evidence/prism/20260611-process-placement-self-reference/session.json"
+  ],
+  "completion_claim": {
+    "present": true,
+    "scope": "过程文件归属治理与整体评审状态自指阻塞治理已落地并验证；不声明 RedCap 完整复活终局完成。",
+    "evidence_kind": "runtime-change"
+  }
+}

@@ -23,6 +23,22 @@ TERMINAL_TERMS = re.compile(
     re.I,
 )
 NEGATION_TERMS = re.compile(r"(?:不是|不等于|不能|无法|尚未|还没有|还不能|未完成|not|not yet|cannot|can't)", re.I)
+NON_CLOSING_TERMS = re.compile(
+    r"(?:仍是|仍在|进行中|未验证|没有被|不会|不代表|不替代|不得|不应|不宜|"
+    r"阶段|风险|缺口|待处理|后续|下一步|开放|未关闭|in[_ -]?progress|"
+    r"not verified|not closed|open|phase|risk|pending)",
+    re.I,
+)
+EXPLICIT_NON_TERMINAL_TERMS = re.compile(
+    r"(?:(?:不是|不能(?:声明|视为|说成)|不得(?:声明|视为|说成)|没有声明)\s*(?:RedCap\s*)?(?:完整复活|完全复活|终局完成|正式可用)|"
+    r"不等于|不代表|不替代|不声明|尚未|还没有|仍未|未完成|未关闭|没有(?:完成|关闭|验证)|没有被关闭|"
+    r"仍(?:是|在|处于|开放)|终局(?:仍)?(?:未|没有)|terminal_verified\s*=\s*false|"
+    r"status\s*[:=]\s*(?:in_progress|open|pending)|in[_ -]?progress|not\s+(?:yet\s+)?(?:complete|closed|verified)|"
+    r"not\s+terminal|cannot|can't)",
+    re.I,
+)
+INTRINSIC_TERMINAL_ALIASES = {"终局完成", "正式可用"}
+SEMANTIC_UNIT_SPLIT = re.compile(r"(?<=[。！？!?；;])|\n+")
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -191,20 +207,32 @@ def goal_referenced(text: str, goal: dict[str, Any]) -> bool:
     return any(isinstance(alias, str) and alias_pattern(alias).search(cleaned) for alias in goal.get("aliases", []))
 
 
-def terminal_overclaim(message: str, goal: dict[str, Any]) -> bool:
+def semantic_units(text: str) -> list[str]:
+    units = [unit.strip() for unit in SEMANTIC_UNIT_SPLIT.split(text) if unit and unit.strip()]
+    return units or [text.strip()]
+
+
+def unit_is_explicit_non_terminal(unit: str) -> bool:
+    return bool(EXPLICIT_NON_TERMINAL_TERMS.search(unit))
+
+
+def alias_match_units(message: str, goal: dict[str, Any]) -> list[tuple[str, str]]:
     cleaned = strip_allowed_phase_terms(message, goal)
-    for alias in goal.get("aliases", []):
-        if not isinstance(alias, str) or not alias.strip():
+    matches: list[tuple[str, str]] = []
+    for unit in semantic_units(cleaned):
+        for alias in goal.get("aliases", []):
+            if isinstance(alias, str) and alias.strip() and alias_pattern(alias).search(unit):
+                matches.append((alias, unit))
+    return matches
+
+
+def terminal_overclaim(message: str, goal: dict[str, Any]) -> bool:
+    for alias, unit in alias_match_units(message, goal):
+        if unit_is_explicit_non_terminal(unit):
             continue
-        for match in alias_pattern(alias).finditer(cleaned):
-            window = cleaned[max(0, match.start() - 28): match.end() + 28]
-            if NEGATION_TERMS.search(window):
-                continue
-            if (
-                TERMINAL_TERMS.search(window)
-                or alias in {"完整复活", "完全复活", "终局完成", "正式可用"}
-                or alias.endswith(("完成", "成功"))
-            ):
+        for match in alias_pattern(alias).finditer(unit):
+            window = unit[max(0, match.start() - 36): match.end() + 36]
+            if TERMINAL_TERMS.search(window) or alias in INTRINSIC_TERMINAL_ALIASES or alias.endswith(("完成", "成功")):
                 return True
     return False
 
@@ -338,6 +366,49 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         )
         if not phase["ok"]:
             failures.append(f"phase-status report should pass: {phase['failures']}")
+        review_recovery_status = check_terminal_goals(
+            message=(
+                "结果通过，并确认 RedCap 完整复活仍是 in_progress，terminal_verified=false。"
+                "当前评审意见只作为后续结构优化依据；RedCap 完整复活没有被关闭，也没有被本轮评审替代。"
+            ),
+            prompt="请和棱镜一起整体 review 当前新 RedCap 的设计思路和目录结构，并评估是否需要优化。",
+            contract_path=contract,
+            task_facts_path=facts,
+        )
+        if not review_recovery_status["ok"]:
+            failures.append(f"review recovery status should pass: {review_recovery_status['failures']}")
+        adversarial_cases = [
+            ("本次只完成 Stop Hook 修复，不等于 RedCap 完整复活。", True),
+            ("RedCap 完整复活尚未完成，当前只是迁移可用阶段。", True),
+            ("当前阶段是 migration_usable，RedCap 完整复活仍未关闭。", True),
+            ("我没有声明 RedCap 完整复活终局完成。", True),
+            ("RedCap 完整复活 terminal_verified=false，父任务仍开放。", True),
+            ("这只是阶段回顾，不代表 RedCap 完整复活。", True),
+            ("风险：RedCap 完整复活还没有验收完成。", True),
+            ("待办：继续验证 Loom 工作流；RedCap 完整复活未完成。", True),
+            ("当前不是完整复活，只是停止前检查修复。", True),
+            ("RedCap 完整复活仍是 in_progress。", True),
+            ("RedCap 完整复活已经终局完成。", False),
+            ("RedCap 已经完整复活，正式可用。", False),
+            ("完整复活完成了。", False),
+            ("RedCap 完整复活 done。", False),
+            ("现在可以把 RedCap 完整复活视为完成。", False),
+            ("RedCap 完整复活正式完成。", False),
+            ("RedCap 完整复活成功。", False),
+            ("RedCap 完整复活已经达到。", False),
+            ("RedCap完整复活阶段一已完成，进入阶段二。", False),
+            ("RedCap完整复活已经不是问题了，全部完成。", False),
+        ]
+        for index, (message, should_pass) in enumerate(adversarial_cases, start=1):
+            result = check_terminal_goals(
+                message=message,
+                prompt="请说明 RedCap 完整复活状态。",
+                contract_path=contract,
+                task_facts_path=facts,
+            )
+            if bool(result["ok"]) is not should_pass:
+                expected = "pass" if should_pass else "block"
+                failures.append(f"adversarial terminal goal case {index} should {expected}: {message}: {result['failures']}")
         generic = check_terminal_goals(
             message="产品发布完成。",
             prompt="汇报产品发布完成情况。",

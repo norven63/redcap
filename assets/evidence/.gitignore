@@ -1,0 +1,33 @@
+*
+!.gitignore
+!README.md
+
+# Stable evidence that may be referenced by contracts, lifecycle packets, and task facts.
+!lifecycle/
+!lifecycle/*-lifecycle.json
+
+!migrations/
+!migrations/20260611-process-artifact-migration-map.json
+
+!check-receipts/
+!check-receipts/20260611-process-artifact-migration/
+!check-receipts/20260611-process-artifact-migration/**
+
+!task-facts/
+!task-facts/task-facts.json
+!task-facts/task-facts.jsonl
+!task-facts/task-facts-summary.json
+
+# Prism keeps structured review artifacts visible, while raw provider output stays ignored by default.
+!prism/
+!prism/*/
+!prism/task-ledger.jsonl
+!prism/task-health.json
+!prism/**/*-prism-request.json
+!prism/20260611-process-artifact-migration/
+!prism/20260611-process-artifact-migration/session.json
+!prism/20260611-process-artifact-migration/request.json
+!prism/20260611-process-artifact-migration/merge.json
+!prism/20260611-process-artifact-migration/resolution.json
+!prism/20260611-process-artifact-migration/*.review.json
+!prism/20260611-process-artifact-migration/*.review.brief.md

@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "引用扫描声称被严重夸大，且未识别 Python 检查器对 legacy_allowlist/legacy_policy 的强制 schema 验证。直接移除 JSON 字段而不同步修改代码会导致检查器崩溃。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "迁移方案把\"引用更新\"等同于 `rg` 文本路径替换，但 lifecycle/prism-request 文件内部 JSON 字段中存在大量非路径形式的语义引用（如 task_id、depends_on、related_artifacts 等字段值），这些不会以 `assets/contracts/` 前缀出现，路径 grep 扫描不到。同时方案未定义迁移的严格执行顺序——如果 checker 更新（移除 legacy_allowlist）先于文件迁移，所有 43 个文件会在检查中失败；如果文件迁移先于引用更新，CI/自动化可能在引用断裂窗口期读取旧路径失败。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "1) 修正引用声称，明确只有 3 个文件约 9 行需要更新；2) 给出 Python 检查器的具体代码修改点（移除 required 中的 legacy 字段、重写 check_placement 和 fixture_policy）；3) 重新论证 prism-request 目标目录（prism/requests/ 还是按任务子目录），并提供迁移后的目录树预览；4) 将 known-issues-queue.json 和 version-records 中的路径更新明确写入迁移步骤。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在迁移前补充：(1) 对 43 个文件做内容级别（JSON 字段值）的引用扫描，不限于 `rg` 路径匹配，输出完整引用图；(2) 定义严格迁移执行顺序：移动文件 → 更新路径引用（含 develop-branch-include.txt, known-issues-queue.json）→ 更新 checker → 运行 checker 验证；(3) 明确不可修改的历史引用清单（version-records、git 历史、外部 raw URL 如有）；(4) 统一 prism 证据目录命名模式——要么全部用日期子目录，要么在 `requests/` 下保持日期子目录层级"
+    }
+  ],
+  "anti_loop_detected": true
+}

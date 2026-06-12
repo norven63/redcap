@@ -233,12 +233,18 @@ def verify_raw_meta(meta_path: pathlib.Path) -> tuple[bool, list[str], dict[str,
     return not failures, failures, meta
 
 
+def provider_cwd(argv: list[str]) -> str:
+    if argv and pathlib.Path(argv[0]).name == "kimi":
+        return tempfile.gettempdir()
+    return str(REPO_ROOT)
+
+
 def run(argv: list[str], *, timeout: float | None = None) -> subprocess.CompletedProcess[str]:
     if timeout is not None:
         return run_with_hard_timeout(argv, timeout)
     return subprocess.run(
         argv,
-        cwd=str(REPO_ROOT),
+        cwd=provider_cwd(argv),
         check=False,
         capture_output=True,
         text=True,
@@ -287,7 +293,7 @@ def terminate_process_group(proc: subprocess.Popen[str], grace_seconds: float) -
 def run_with_hard_timeout(argv: list[str], timeout: float) -> subprocess.CompletedProcess[str]:
     proc = subprocess.Popen(
         argv,
-        cwd=str(REPO_ROOT),
+        cwd=provider_cwd(argv),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -524,6 +530,9 @@ def candidate_markdown_texts(raw_text: str) -> list[str]:
         result = obj.get("result")
         if isinstance(result, str):
             candidates.append(result)
+        content = obj.get("content")
+        if isinstance(content, str):
+            candidates.append(content)
         for stream_name in ["stdout", "stderr"]:
             stream = obj.get(stream_name)
             if isinstance(stream, str):
@@ -531,6 +540,9 @@ def candidate_markdown_texts(raw_text: str) -> list[str]:
                     nested_result = nested.get("result")
                     if isinstance(nested_result, str):
                         candidates.append(nested_result)
+                    nested_content = nested.get("content")
+                    if isinstance(nested_content, str):
+                        candidates.append(nested_content)
                 candidates.extend(kimi_text_part_candidates(stream))
                 candidates.append(stream)
     candidates.extend(kimi_text_part_candidates(raw_text))
@@ -777,7 +789,11 @@ def extract_markdown_review(raw_text: str, provider: str) -> dict[str, Any] | No
 
 
 def extract_kimi_handle(raw_text: str, fallback: str | None) -> str | None:
-    match = re.search(r"kimi\s+-r\s+([0-9a-fA-F-]{36})", raw_text)
+    for obj in iter_json_objects(raw_text):
+        session_id = obj.get("session_id")
+        if isinstance(session_id, str) and session_id.strip():
+            return session_id.strip()
+    match = re.search(r"kimi\s+-r\s+(session_[0-9a-fA-F-]{36}|[0-9a-fA-F-]{36})", raw_text)
     if match:
         return match.group(1)
     return fallback
@@ -804,21 +820,16 @@ def extract_provider_handle(raw_text: str, provider: str, fallback: str | None) 
 def assert_provider_command_safe(argv: list[str]) -> None:
     if "bypassPermissions" in argv:
         raise SystemExit("unsafe provider command: claude must not use bypassPermissions during Prism review")
-    if argv and argv[0] == "kimi":
-        if "--plan" not in argv:
-            raise SystemExit("unsafe provider command: kimi must run in plan mode during Prism review")
-        if "--print" not in argv:
-            raise SystemExit("unsafe provider command: kimi must run in non-interactive print mode during Prism review")
-        if "--agent-file" not in argv or str(KIMI_REVIEW_AGENT_FILE) not in argv:
-            raise SystemExit("unsafe provider command: kimi must use the RedCap no-tool review agent file")
-        if "--final-message-only" not in argv:
-            raise SystemExit("unsafe provider command: kimi must only print the final review message")
-        if "--output-format" not in argv or "text" not in argv:
-            raise SystemExit("unsafe provider command: kimi must use text output during Prism review")
-        if "--max-steps-per-turn" in argv:
-            index = argv.index("--max-steps-per-turn")
-            if index + 1 >= len(argv) or argv[index + 1] != "1":
-                raise SystemExit("unsafe provider command: kimi review must run with max one step per turn")
+    if argv and pathlib.Path(argv[0]).name == "kimi":
+        if "--plan" in argv:
+            raise SystemExit("unsafe provider command: kimi prompt mode cannot combine with plan mode")
+        if "-p" not in argv and "--prompt" not in argv:
+            raise SystemExit("unsafe provider command: kimi must run in non-interactive prompt mode during Prism review")
+        if "--output-format" not in argv or "stream-json" not in argv:
+            raise SystemExit("unsafe provider command: kimi must use stream-json output during Prism review")
+        for forbidden in ["--work-dir", "--agent-file", "--print", "--final-message-only", "--max-steps-per-turn", "-y", "--yolo", "--auto"]:
+            if forbidden in argv:
+                raise SystemExit(f"unsafe provider command: kimi must not use unsupported or unsafe option {forbidden}")
         if str(REPO_ROOT) in argv:
             raise SystemExit("unsafe provider command: kimi must not use the RedCap repo as work-dir during Prism review")
     if argv and argv[0] == "claude":
@@ -836,21 +847,10 @@ def provider_command(provider: str, handle: str | None, prompt: str, max_steps: 
     if provider == "kimi":
         argv = [
             "kimi",
-            "--work-dir",
-            tempfile.gettempdir(),
-            "--agent-file",
-            str(KIMI_REVIEW_AGENT_FILE),
-            "--print",
-            "--output-format",
-            "text",
-            "--final-message-only",
-            "--plan",
-            "--max-steps-per-turn",
-            "1",
         ]
         if handle:
-            argv.extend(["-r", handle])
-        argv.extend(["-p", prompt])
+            argv.extend(["--session", handle])
+        argv.extend(["-p", prompt, "--output-format", "stream-json"])
         assert_provider_command_safe(argv)
         return argv, handle
     if provider == "claude-code":
@@ -2026,26 +2026,22 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         if lowercase_split_bold_review.get("verdict") != "concern" or lowercase_split_bold_review.get("confidence") != "medium":
             failures.append("lowercase split bold verdict/confidence extraction failed")
         kim_safe_argv, _ = provider_command("kimi", None, "safe-check", 1)
-        if "--plan" not in kim_safe_argv:
-            failures.append("kimi provider command is missing plan mode")
-        if "--print" not in kim_safe_argv:
-            failures.append("kimi provider command is missing non-interactive print mode")
-        if "--agent-file" not in kim_safe_argv or str(KIMI_REVIEW_AGENT_FILE) not in kim_safe_argv:
-            failures.append("kimi provider command is missing no-tool review agent file")
-        if "--final-message-only" not in kim_safe_argv:
-            failures.append("kimi provider command is missing final-message-only output mode")
-        if "--output-format" not in kim_safe_argv or "text" not in kim_safe_argv:
-            failures.append("kimi provider command is missing text output mode")
-        if "--max-steps-per-turn" not in kim_safe_argv:
-            failures.append("kimi provider command is missing max step limit")
-        else:
-            max_step_index = kim_safe_argv.index("--max-steps-per-turn")
-            if max_step_index + 1 >= len(kim_safe_argv) or kim_safe_argv[max_step_index + 1] != "1":
-                failures.append("kimi provider command should use one max step")
+        if "--plan" in kim_safe_argv:
+            failures.append("kimi provider command still uses plan mode, which cannot combine with prompt mode")
+        if "-p" not in kim_safe_argv and "--prompt" not in kim_safe_argv:
+            failures.append("kimi provider command is missing non-interactive prompt mode")
+        if "--output-format" not in kim_safe_argv or "stream-json" not in kim_safe_argv:
+            failures.append("kimi provider command is missing stream-json output mode")
+        for forbidden in ["--work-dir", "--agent-file", "--print", "--final-message-only", "--max-steps-per-turn", "-y", "--yolo", "--auto"]:
+            if forbidden in kim_safe_argv:
+                failures.append(f"kimi provider command still uses unsupported or unsafe option {forbidden}")
         if str(REPO_ROOT) in kim_safe_argv:
             failures.append("kimi provider command still uses RedCap repo as work-dir")
-        if not KIMI_REVIEW_AGENT_FILE.exists():
-            failures.append("kimi no-tool review agent file is missing")
+        kim_resume_argv, kim_resume_handle = provider_command("kimi", "session_11111111-1111-4111-8111-111111111111", "safe-check", 1)
+        if "--session" not in kim_resume_argv or kim_resume_handle != "session_11111111-1111-4111-8111-111111111111":
+            failures.append("kimi provider command is missing session resume support")
+        if provider_cwd(kim_safe_argv) == str(REPO_ROOT):
+            failures.append("kimi provider command should run outside the RedCap repo cwd")
         claude_safe_argv, _ = provider_command("claude-code", None, "safe-check", 1)
         if "--bare" in claude_safe_argv:
             failures.append("claude provider command should not use bare mode because it conflicts with current reasoning settings")
@@ -2062,93 +2058,59 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         try:
             assert_provider_command_safe([
                 "kimi",
-                "--work-dir",
-                str(REPO_ROOT),
-                "--agent-file",
-                str(KIMI_REVIEW_AGENT_FILE),
-                "--print",
-                "--output-format",
-                "text",
                 "--final-message-only",
                 "--plan",
-                "--max-steps-per-turn",
-                "1",
                 "-p",
                 "x",
             ])
-            failures.append("assert_provider_command_safe did not reject Kimi repo work-dir")
+            failures.append("assert_provider_command_safe did not reject old Kimi final-message-only option")
         except SystemExit:
             pass
         try:
             assert_provider_command_safe([
                 "kimi",
-                "--work-dir",
-                tempfile.gettempdir(),
-                "--agent-file",
-                str(KIMI_REVIEW_AGENT_FILE),
                 "--plan",
-                "--max-steps-per-turn",
-                "1",
                 "-p",
                 "x",
             ])
-            failures.append("assert_provider_command_safe did not reject Kimi without print mode")
+            failures.append("assert_provider_command_safe did not reject Kimi without stream-json output")
         except SystemExit:
             pass
         try:
             assert_provider_command_safe([
                 "kimi",
-                "--work-dir",
-                tempfile.gettempdir(),
-                "--agent-file",
-                str(KIMI_REVIEW_AGENT_FILE),
-                "--print",
                 "--output-format",
-                "text",
-                "--final-message-only",
-                "--max-steps-per-turn",
-                "1",
-                "-p",
-                "x",
-            ])
-            failures.append("assert_provider_command_safe did not reject Kimi without plan mode")
-        except SystemExit:
-            pass
-        try:
-            assert_provider_command_safe([
-                "kimi",
-                "--work-dir",
-                tempfile.gettempdir(),
-                "--print",
-                "--output-format",
-                "text",
-                "--final-message-only",
+                "stream-json",
                 "--plan",
-                "--max-steps-per-turn",
-                "1",
                 "-p",
                 "x",
             ])
-            failures.append("assert_provider_command_safe did not reject Kimi without no-tool agent file")
+            failures.append("assert_provider_command_safe did not reject Kimi plan mode")
         except SystemExit:
             pass
         try:
             assert_provider_command_safe([
                 "kimi",
-                "--work-dir",
-                tempfile.gettempdir(),
-                "--agent-file",
-                str(KIMI_REVIEW_AGENT_FILE),
-                "--print",
                 "--output-format",
-                "text",
-                "--plan",
-                "--max-steps-per-turn",
-                "1",
+                "stream-json",
+                "--auto",
                 "-p",
                 "x",
             ])
-            failures.append("assert_provider_command_safe did not reject Kimi without final-message-only")
+            failures.append("assert_provider_command_safe did not reject Kimi auto mode")
+        except SystemExit:
+            pass
+        try:
+            assert_provider_command_safe([
+                "kimi",
+                "--output-format",
+                "stream-json",
+                "--plan",
+                "-y",
+                "-p",
+                "x",
+            ])
+            failures.append("assert_provider_command_safe did not reject Kimi yolo mode")
         except SystemExit:
             pass
         sample_raw = tmp / "sample.raw.json"

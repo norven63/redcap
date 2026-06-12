@@ -1,0 +1,56 @@
+{
+  "schema_id": "redcap-process-artifact-placement-policy",
+  "version": 2,
+  "purpose": "Keep one-turn process artifacts out of stable RedCap contracts without legacy exceptions.",
+  "consumer": "runtime/core/process_artifact_placement.py",
+  "artifact_identities": {
+    "lifecycle_packet": {
+      "meaning": "A one-task development lifecycle evidence packet.",
+      "default_home": "assets/evidence/lifecycle",
+      "not_contract": true
+    },
+    "prism_request": {
+      "meaning": "A one-task Prism review input packet.",
+      "default_home": "assets/evidence/prism/<task-id>/",
+      "not_contract": true
+    },
+    "stable_contract": {
+      "meaning": "A durable protocol, policy, schema, or reusable rule consumed by runtime code.",
+      "default_home": "assets/contracts",
+      "not_contract": false
+    },
+    "self_development_runtime_artifact": {
+      "meaning": "RedCap developing RedCap itself; bounded project evidence belongs under assets/evidence.",
+      "default_home": "assets/evidence",
+      "not_contract": true
+    },
+    "external_project_runtime_artifact": {
+      "meaning": "RedCap deployed into another project; project-local runtime output belongs under that project's .redcap directory.",
+      "default_home": "<project>/.redcap",
+      "not_contract": true
+    }
+  },
+  "forbidden_roots": [
+    "assets/contracts"
+  ],
+  "process_artifact_patterns": [
+    "*-lifecycle.json",
+    "*-prism-request.json"
+  ],
+  "allowed_roots": {
+    "lifecycle_packet": [
+      "assets/evidence/lifecycle"
+    ],
+    "prism_request": [
+      "assets/evidence/prism"
+    ],
+    "migration_evidence": [
+      "assets/evidence/migrations"
+    ]
+  },
+  "migration_policy": {
+    "legacy_allowlist_allowed": false,
+    "reason": "Previous legacy allowlist was a temporary bridge and did not satisfy the user's requirement for actual migration.",
+    "completed_migration_map": "assets/evidence/migrations/20260611-process-artifact-migration-map.json"
+  }
+}

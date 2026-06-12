@@ -39,12 +39,23 @@ SCAN_CONCLUSION_GUARD = REPO_ROOT / "runtime" / "core" / "scan_conclusion_guard.
 TERMINAL_GOAL_GUARD = REPO_ROOT / "runtime" / "core" / "terminal_goal_guard.py"
 STOP_HOOK_MODE_FILE = pathlib.Path(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE", str(REPO_ROOT / ".codex" / "stop-hook-mode")))
 STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS = float(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS", "900"))
+STOP_INCLUDE_BLOCKED_REPLY_EXCERPT = (
+    os.environ.get("REDCAP_STOP_INCLUDE_BLOCKED_REPLY_EXCERPT", "").casefold()
+    in {"1", "true", "yes", "on"}
+)
 SUPPORTED_EVENTS = {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"}
 INTENT_JUDGE_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_INTENT_JUDGE_TIMEOUT_SECONDS", "75"))
 INTENT_JUDGE_PROVIDER = os.environ.get("REDCAP_INTENT_JUDGE_PROVIDER", "claude-code")
 INTENT_JUDGE_FALLBACK_PROVIDER = os.environ.get("REDCAP_INTENT_JUDGE_FALLBACK_PROVIDER", "claude-code")
 INTENT_JUDGE_FAKE_RESPONSE = os.environ.get("REDCAP_INTENT_JUDGE_FAKE_RESPONSE")
 INTENT_JUDGE_FAKE_DELAY_SECONDS = os.environ.get("REDCAP_INTENT_JUDGE_FAKE_DELAY_SECONDS")
+GATE_SEMANTIC_POLICY = os.environ.get("REDCAP_GATE_SEMANTIC_POLICY", "auto-on-ambiguous")
+GATE_SEMANTIC_TIMEOUT_SECONDS = os.environ.get("REDCAP_GATE_SEMANTIC_TIMEOUT_SECONDS", "8")
+GATE_COMMAND_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_GATE_COMMAND_TIMEOUT_SECONDS", "12"))
+GATE_SEMANTIC_FAKE_RESPONSE = os.environ.get("REDCAP_GATE_SEMANTIC_FAKE_RESPONSE") or INTENT_JUDGE_FAKE_RESPONSE
+GATE_SEMANTIC_FAKE_DELAY_SECONDS = (
+    os.environ.get("REDCAP_GATE_SEMANTIC_FAKE_DELAY_SECONDS") or INTENT_JUDGE_FAKE_DELAY_SECONDS
+)
 MAX_GATE_PROMPT_CHARS = 12000
 MAX_TEXT_EVIDENCE_CHARS = 12000
 PROTECTED_EVIDENCE_ROOT = (REPO_ROOT / "assets" / "evidence").resolve()
@@ -151,19 +162,38 @@ def json_fingerprint(value: Any) -> dict[str, Any]:
     return payload
 
 
-def run_command(argv: list[str]) -> dict[str, Any]:
-    completed = subprocess.run(
-        argv,
-        cwd=str(REPO_ROOT),
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+def run_command(argv: list[str], timeout_seconds: float | None = None) -> dict[str, Any]:
+    try:
+        completed = subprocess.run(
+            argv,
+            cwd=str(REPO_ROOT),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = exc.stdout or ""
+        stderr = exc.stderr or ""
+        return {
+            "argv": argv,
+            "exit_code": 124,
+            "timed_out": True,
+            "timeout_seconds": timeout_seconds,
+            "stdout_length": len(stdout),
+            "stdout_sha256": hashlib.sha256(stdout.encode("utf-8")).hexdigest() if stdout else None,
+            "stderr_length": len(stderr),
+            "stderr_sha256": hashlib.sha256(stderr.encode("utf-8")).hexdigest() if stderr else None,
+            "stdout": stdout,
+            "stderr": stderr,
+        }
     stdout = completed.stdout or ""
     stderr = completed.stderr or ""
     return {
         "argv": argv,
         "exit_code": completed.returncode,
+        "timed_out": False,
+        "timeout_seconds": timeout_seconds,
         "stdout_length": len(stdout),
         "stdout_sha256": hashlib.sha256(stdout.encode("utf-8")).hexdigest() if stdout else None,
         "stderr_length": len(stderr),
@@ -245,15 +275,40 @@ def stop_task_anchor_clause(action_result: dict[str, Any]) -> str:
         parts.append(f"Original prompt sha256: {prompt_sha.strip()}.")
     if isinstance(turn_id, str) and turn_id.strip():
         parts.append(f"Original turn_id: {turn_id.strip()}.")
-    parts.append(
-        "Recovery rule: return to that original task first, then report same-turn actions/checks or a concrete blocker; "
-        "mention this Stop hook only as recovery context."
-    )
+    parts.append(recovery_focus_clause())
     return " ".join(parts)
 
 
-def run_prompt_gate(payload: dict[str, Any], prompt: str) -> dict[str, Any]:
+def recovery_focus_clause() -> str:
+    return (
+        "恢复规则：二次回答必须先直接回答原始用户问题，并保持原问题为主轴；"
+        "本停止前检查的拦截意见只是一组修正约束，不是新的用户问题，也不得成为回复主题；"
+        "除非原用户问题询问钩子本身，否则不要展开钩子细节；"
+        "如果无法满足原任务，请明确标记受阻并给出阻塞条件。"
+    )
+
+
+def blocked_reply_excerpt(message: str, limit: int = 160) -> str:
+    if not STOP_INCLUDE_BLOCKED_REPLY_EXCERPT:
+        return ""
+    normalized = normalized_text(message)
+    if not normalized:
+        return ""
+    excerpt = normalized[:limit]
+    if len(normalized) > limit:
+        excerpt = f"{excerpt}..."
+    return f" 被拦回复片段（仅用于定位，不得作为回答主题，不代表有效结论）：{excerpt}"
+
+
+def run_prompt_gate(
+    payload: dict[str, Any],
+    prompt: str,
+    *,
+    semantic_policy: str | None = None,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
     trimmed = prompt[:MAX_GATE_PROMPT_CHARS]
+    policy = semantic_policy if semantic_policy is not None else GATE_SEMANTIC_POLICY
     argv = [
         str(REDCAP),
         "gate",
@@ -265,13 +320,27 @@ def run_prompt_gate(payload: dict[str, Any], prompt: str) -> dict[str, Any]:
         "codex-user-prompt",
         "--tag",
         "codex-hook",
+        "--semantic-policy",
+        policy,
+        "--semantic-provider",
+        INTENT_JUDGE_PROVIDER,
+        "--semantic-fallback-provider",
+        INTENT_JUDGE_FALLBACK_PROVIDER,
+        "--semantic-timeout-seconds",
+        str(GATE_SEMANTIC_TIMEOUT_SECONDS),
     ]
+    if GATE_SEMANTIC_FAKE_RESPONSE:
+        argv.extend(["--semantic-fake-response", GATE_SEMANTIC_FAKE_RESPONSE])
+    if GATE_SEMANTIC_FAKE_DELAY_SECONDS:
+        argv.extend(["--semantic-fake-delay-seconds", str(GATE_SEMANTIC_FAKE_DELAY_SECONDS)])
     cwd = payload.get("cwd")
     if isinstance(cwd, str) and cwd.strip():
         argv.extend(["--boundary-cwd", cwd])
-    command = run_command(argv)
+    command = run_command(argv, timeout_seconds=timeout_seconds)
     result: dict[str, Any] = {
         "exit_code": command["exit_code"],
+        "timed_out": command.get("timed_out", False),
+        "timeout_seconds": command.get("timeout_seconds"),
         "prompt_truncated": len(prompt) > len(trimmed),
         "stdout_length": command["stdout_length"],
         "stdout_sha256": command["stdout_sha256"],
@@ -294,7 +363,25 @@ def run_prompt_gate(payload: dict[str, Any], prompt: str) -> dict[str, Any]:
         result["self_development_lifecycle"] = (
             parsed.get("self_development_lifecycle", {}) if isinstance(parsed, dict) else {}
         )
+        result["semantic_gate"] = parsed.get("semantic_gate", {}) if isinstance(parsed, dict) else {}
     return result
+
+
+def semantic_prompt_intent_from_gate(gate: dict[str, Any]) -> dict[str, Any] | None:
+    semantic_gate = gate.get("semantic_gate")
+    if not isinstance(semantic_gate, dict):
+        return None
+    if semantic_gate.get("source") == "deterministic" and semantic_gate.get("llm_judgment_applied") is not True:
+        return None
+    intent = semantic_gate.get("prompt_intent")
+    if not isinstance(intent, dict):
+        return None
+    scope = intent.get("authorized_scope")
+    evidence = intent.get("action_evidence")
+    kind = intent.get("prompt_kind")
+    if isinstance(scope, str) and isinstance(evidence, str) and isinstance(kind, str):
+        return intent
+    return None
 
 
 def tool_command(payload: dict[str, Any]) -> str:
@@ -971,38 +1058,100 @@ def cmd_event(args: argparse.Namespace) -> int:
         }, ensure_ascii=False))
     elif args.event == "UserPromptSubmit":
         prompt = payload.get("prompt") if isinstance(payload.get("prompt"), str) else ""
-        prompt_intent = classify_prompt_intent(prompt)
-        gate = run_prompt_gate(payload, prompt) if prompt.strip() else {
+        deterministic_prompt_intent = classify_prompt_intent(prompt)
+        gate = run_prompt_gate(
+            payload,
+            prompt,
+            semantic_policy="off",
+            timeout_seconds=GATE_COMMAND_TIMEOUT_SECONDS,
+        ) if prompt.strip() else {
             "exit_code": 0,
+            "timed_out": False,
+            "timeout_seconds": None,
             "prompt_truncated": False,
             "parse_ok": False,
             "decision": "skipped",
             "matched_rules": [],
             "review_mode": None,
             "required_providers": [],
+            "semantic_gate": {},
         }
+        semantic_prompt_intent = None
+        prompt_intent_effective = None
+        prompt_intent_for_context = prompt_intent_effective or deterministic_prompt_intent
         marker = update_latest_marker("UserPromptSubmit", {
             "gate_decision": gate.get("decision"),
             "gate_review_mode": gate.get("review_mode"),
             "gate_matched_rules": gate.get("matched_rules"),
             "gate_required_providers": gate.get("required_providers"),
             "gate_self_development_lifecycle": gate.get("self_development_lifecycle", {}),
+            "gate_semantic": gate.get("semantic_gate", {}),
             "gate_exit_code": gate.get("exit_code"),
+            "gate_timed_out": gate.get("timed_out", False),
+            "gate_timeout_seconds": gate.get("timeout_seconds"),
             "gate_parse_ok": gate.get("parse_ok"),
             "gate_prompt_truncated": gate.get("prompt_truncated"),
             "gate_stdout_length": gate.get("stdout_length"),
             "gate_stdout_sha256": gate.get("stdout_sha256"),
             "gate_stderr_length": gate.get("stderr_length"),
             "gate_stderr_sha256": gate.get("stderr_sha256"),
-            "prompt_intent": prompt_intent,
-            "prompt_intent_effective": None,
-            "prompt_intent_llm": None,
+            "prompt_intent": deterministic_prompt_intent,
+            "prompt_intent_effective": prompt_intent_effective,
+            "prompt_intent_llm": gate.get("semantic_gate", {}),
         }, base_marker=marker)
+        if prompt.strip() and GATE_SEMANTIC_POLICY != "off":
+            semantic_gate_result = run_prompt_gate(
+                payload,
+                prompt,
+                semantic_policy=GATE_SEMANTIC_POLICY,
+                timeout_seconds=GATE_COMMAND_TIMEOUT_SECONDS,
+            )
+            semantic_prompt_intent = semantic_prompt_intent_from_gate(semantic_gate_result)
+            if (
+                semantic_gate_result.get("parse_ok") is True
+                and isinstance(semantic_gate_result.get("decision"), str)
+                and semantic_gate_result.get("timed_out") is not True
+            ):
+                gate = semantic_gate_result
+                prompt_intent_effective = semantic_prompt_intent
+                prompt_intent_for_context = prompt_intent_effective or deterministic_prompt_intent
+                marker = update_latest_marker("UserPromptSubmit", {
+                    "gate_decision": gate.get("decision"),
+                    "gate_review_mode": gate.get("review_mode"),
+                    "gate_matched_rules": gate.get("matched_rules"),
+                    "gate_required_providers": gate.get("required_providers"),
+                    "gate_self_development_lifecycle": gate.get("self_development_lifecycle", {}),
+                    "gate_semantic": gate.get("semantic_gate", {}),
+                    "gate_exit_code": gate.get("exit_code"),
+                    "gate_timed_out": gate.get("timed_out", False),
+                    "gate_timeout_seconds": gate.get("timeout_seconds"),
+                    "gate_parse_ok": gate.get("parse_ok"),
+                    "gate_prompt_truncated": gate.get("prompt_truncated"),
+                    "gate_stdout_length": gate.get("stdout_length"),
+                    "gate_stdout_sha256": gate.get("stdout_sha256"),
+                    "gate_stderr_length": gate.get("stderr_length"),
+                    "gate_stderr_sha256": gate.get("stderr_sha256"),
+                    "prompt_intent": deterministic_prompt_intent,
+                    "prompt_intent_effective": prompt_intent_effective,
+                    "prompt_intent_llm": gate.get("semantic_gate", {}),
+                    "gate_semantic_degraded": False,
+                }, base_marker=marker)
+            else:
+                marker = update_latest_marker("UserPromptSubmit", {
+                    "gate_semantic_degraded": True,
+                    "gate_semantic_degraded_reason": "semantic gate did not complete before hook budget; deterministic gate marker retained",
+                    "gate_semantic_exit_code": semantic_gate_result.get("exit_code"),
+                    "gate_semantic_timed_out": semantic_gate_result.get("timed_out", False),
+                    "gate_semantic_timeout_seconds": semantic_gate_result.get("timeout_seconds"),
+                    "gate_semantic_parse_ok": semantic_gate_result.get("parse_ok"),
+                    "gate_semantic_stdout_sha256": semantic_gate_result.get("stdout_sha256"),
+                    "gate_semantic_stderr_sha256": semantic_gate_result.get("stderr_sha256"),
+                }, base_marker=marker)
         decision = marker.get("gate_decision")
         if decision == "required":
             lifecycle = marker.get("gate_self_development_lifecycle") if isinstance(marker, dict) else {}
-            scope = prompt_intent.get("authorized_scope")
-            action_evidence = prompt_intent.get("action_evidence")
+            scope = prompt_intent_for_context.get("authorized_scope")
+            action_evidence = prompt_intent_for_context.get("action_evidence")
             if scope in {"answer_only", "review_only"}:
                 context = (
                     "RedCap（当前复活工程）UserPromptSubmit（用户提示提交检查）已触发。"
@@ -1130,6 +1279,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             "systemMessage": f"RedCap（当前复活工程）已记录动作证据：{tool_name}。",
         }, ensure_ascii=False))
     elif args.event == "Stop":
+        last_assistant_message = str(payload.get("last_assistant_message") or "")
         mode = stop_hook_mode()
         if mode == "observe":
             marker = update_latest_marker("Stop", {
@@ -1155,11 +1305,11 @@ def cmd_event(args: argparse.Namespace) -> int:
             "--max-age-seconds",
             "86400",
             "--message",
-            str(payload.get("last_assistant_message") or ""),
+            last_assistant_message,
             "--intent-llm-policy",
-            os.environ.get("REDCAP_STOP_INTENT_LLM_POLICY", "auto"),
+            os.environ.get("REDCAP_STOP_INTENT_LLM_POLICY", "auto-on-ambiguous"),
             "--intent-timeout-seconds",
-            os.environ.get("REDCAP_STOP_INTENT_TIMEOUT_SECONDS", "20"),
+            os.environ.get("REDCAP_STOP_INTENT_TIMEOUT_SECONDS", "60"),
         ])
         action_result, parse_error = parse_leading_json_object(action["stdout"])
         if parse_error is not None or action_result is None:
@@ -1195,6 +1345,7 @@ def cmd_event(args: argparse.Namespace) -> int:
                 reason = f"{reason} {anchor_clause}"
             if isinstance(action_reason, str) and action_reason.strip():
                 reason = f"{reason} 动作检查原因：{action_reason}"
+            reason = f"{reason}{blocked_reply_excerpt(last_assistant_message)}"
             print(json.dumps({
                 "decision": "block",
                 "reason": reason,
@@ -1206,7 +1357,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             str(TERMINAL_GOAL_GUARD),
             "check",
             "--message",
-            str(payload.get("last_assistant_message") or ""),
+            last_assistant_message,
             "--events",
             str(EVENTS_PATH),
             "--session-id",
@@ -1239,7 +1390,9 @@ def cmd_event(args: argparse.Namespace) -> int:
                 "decision": "block",
                 "reason": (
                     "RedCap（当前复活工程）Stop Hook（停止前检查）发现最后回复可能把阶段成果说成终局完成："
-                    f"{detail}。请改写为阶段状态，或继续执行终局父任务。"
+                    f"{detail}。请回到原问题，用阶段、风险、待办口径回答；不要把阶段成果或检查结果写成完整复活。"
+                    f"{recovery_focus_clause()}"
+                    f"{blocked_reply_excerpt(last_assistant_message)}"
                 ),
                 "systemMessage": "RedCap（当前复活工程）终局目标门禁未通过。",
             }, ensure_ascii=False))
@@ -1249,7 +1402,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             str(FINAL_CLAIM_GUARD),
             "check",
             "--message",
-            str(payload.get("last_assistant_message") or ""),
+            last_assistant_message,
             "--events",
             str(EVENTS_PATH),
             "--session-id",
@@ -1276,8 +1429,8 @@ def cmd_event(args: argparse.Namespace) -> int:
             reason = (
                 "RedCap（当前复活工程）Stop Hook（停止前检查）发现：必需处理的 RedCap 提示带有最终完成声明，"
                 "但缺少本轮新鲜且已验证的任务主体生命周期完成标记。请继续本轮："
-                "要么完成任务主体并运行 completion_claim.present=true 的生命周期检查，"
-                "要么移除或收窄完成声明。"
+                "如果原任务只是评审、回答或状态盘点，请回到原问题并收窄完成口径；"
+                "只有实际实施任务已经落地时，才运行 completion_claim.present=true 的生命周期检查。"
             )
             anchor_clause = stop_task_anchor_clause(action_result)
             if anchor_clause:
@@ -1285,6 +1438,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             guard_reason = final_guard_result.get("reason")
             if isinstance(guard_reason, str) and guard_reason.strip():
                 reason = f"{reason} 完成声明检查原因：{guard_reason}"
+            reason = f"{reason}{blocked_reply_excerpt(last_assistant_message)}"
             print(json.dumps({
                 "decision": "block",
                 "reason": reason,
@@ -1296,7 +1450,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             str(SCAN_CONCLUSION_GUARD),
             "check",
             "--message",
-            str(payload.get("last_assistant_message") or ""),
+            last_assistant_message,
             "--events",
             str(EVENTS_PATH),
             "--session-id",
@@ -1328,11 +1482,13 @@ def cmd_event(args: argparse.Namespace) -> int:
                 "RedCap（当前复活工程）Stop Hook（停止前检查）发现：回复正在回答 360 度旧 RedCap 扫描结论，"
                 "但当前扫描没有完成证据，或缺少与账目一致的结构化扫描状态块。"
                 "请回到原扫描任务：只能报告阶段状态，或者继续执行已验证的分片扫描。"
+                f"{recovery_focus_clause()}"
             )
             if isinstance(expected, str) and expected.strip():
                 reason = f"{reason} 需要包含的状态块：{expected}"
             if isinstance(recovery, str) and recovery.strip():
                 reason = f"{reason} 恢复要求：{recovery}"
+            reason = f"{reason}{blocked_reply_excerpt(last_assistant_message)}"
             print(json.dumps({
                 "decision": "block",
                 "reason": reason,
@@ -1348,7 +1504,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             "--source",
             "last_assistant_message",
             "--text",
-            str(payload.get("last_assistant_message") or ""),
+            last_assistant_message,
         ])
         human_output_result, human_output_parse_error = parse_leading_json_object(human_output["stdout"])
         if human_output_parse_error is not None or human_output_result is None:
@@ -1375,6 +1531,8 @@ def cmd_event(args: argparse.Namespace) -> int:
                 "reason": (
                     "RedCap（当前复活工程）Stop Hook（停止前检查）发现最后回复不符合中文优先、"
                     f"人类可读策略：{detail}。请改写为中文优先、必要术语带解释的回复。"
+                    f"{recovery_focus_clause()}"
+                    f"{blocked_reply_excerpt(last_assistant_message)}"
                 ),
                 "systemMessage": "RedCap（当前复活工程）中文可读输出门禁未通过。",
             }, ensure_ascii=False))
@@ -1410,6 +1568,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             reason = (
                 "RedCap（当前复活工程）Stop Hook（停止前检查）运行 runtime/bin/redcap check 后失败。"
                 "请继续本轮，在本地查看失败检查、修复具体问题，并在收口前重新运行 runtime/bin/redcap check。"
+                f"{recovery_focus_clause()}"
             )
             print(json.dumps({
                 "decision": "block",
@@ -1442,7 +1601,30 @@ def run_hook_event_for_self_check(
     )
 
 
-def load_self_check_marker(evidence_dir: pathlib.Path, event: str) -> dict[str, Any]:
+def load_self_check_marker(
+    evidence_dir: pathlib.Path,
+    event: str,
+    *,
+    source: str | None = None,
+    turn_id: str | None = None,
+) -> dict[str, Any]:
+    if source or turn_id:
+        try:
+            lines = (evidence_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+        except OSError:
+            lines = []
+        for line in reversed(lines):
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(payload, dict) or payload.get("event") != event:
+                continue
+            if source is not None and payload.get("source") != source:
+                continue
+            if turn_id is not None and payload.get("turn_id") != turn_id:
+                continue
+            return payload
     path = evidence_dir / f"latest-{event}.json"
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -1746,9 +1928,14 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 failures.append("anchor Stop fixture should block a required prompt without action evidence")
             if anchor_prompt_text not in reason:
                 failures.append("anchor Stop block reason is missing the original task excerpt")
-            if "return to that original task first" not in reason:
+            if "二次回答必须先直接回答原始用户问题" not in reason or "不得成为回复主题" not in reason:
                 failures.append("anchor Stop block reason is missing the re-anchor recovery rule")
-        anchor_stop_marker = load_self_check_marker(evidence_dir, "Stop")
+        anchor_stop_marker = load_self_check_marker(
+            evidence_dir,
+            "Stop",
+            source="codex-hook-stop-anchor-self-check",
+            turn_id="fixture-stop-anchor",
+        )
         anchor = anchor_stop_marker.get("required_prompt_task_anchor")
         if not isinstance(anchor, dict):
             failures.append("anchor Stop marker is missing required_prompt_task_anchor")
@@ -1773,7 +1960,12 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             failures.append(f"observe Stop did not emit JSON: {observe_error}")
         elif observe_payload.get("continue") is not True:
             failures.append("observe Stop should continue without blocking")
-        observe_marker = load_self_check_marker(evidence_dir, "Stop")
+        observe_marker = load_self_check_marker(
+            evidence_dir,
+            "Stop",
+            source="codex-hook-stop-observe-self-check",
+            turn_id="fixture-stop-anchor",
+        )
         if observe_marker.get("stop_hook_mode") != "observe":
             failures.append("observe Stop marker did not record observe mode")
         stop_mode_file = evidence_dir / "temporary-stop-mode"
@@ -2004,7 +2196,12 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 failures.append("human-output Stop fixture should block English-only final reply")
             if "中文优先" not in reason:
                 failures.append("human-output Stop block reason should mention Chinese-first policy")
-        human_marker = load_self_check_marker(evidence_dir, "Stop")
+        human_marker = load_self_check_marker(
+            evidence_dir,
+            "Stop",
+            source="codex-hook-human-output-self-check",
+            turn_id="fixture-human-output-turn",
+        )
         if human_marker.get("human_output_guard_ok") is not False:
             failures.append("human-output Stop marker should record failed human output guard")
         scan_prompt = run_hook_event_for_self_check(
@@ -2046,13 +2243,18 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 failures.append("scan-conclusion Stop fixture should block an unsupported final scan conclusion")
             if "结构化扫描状态块" not in reason:
                 failures.append("scan-conclusion Stop block reason should request a structured scan status block")
-        scan_marker = load_self_check_marker(evidence_dir, "Stop")
+        scan_marker = load_self_check_marker(
+            evidence_dir,
+            "Stop",
+            source="codex-hook-scan-conclusion-self-check",
+            turn_id="fixture-scan-conclusion-turn",
+        )
         if scan_marker.get("scan_conclusion_guard_ok") is not False:
             failures.append("scan-conclusion Stop marker should record failed scan conclusion guard")
         terminal_prompt = run_hook_event_for_self_check(
             "UserPromptSubmit",
             {
-                "prompt": "请汇报产品发布完成状态。",
+                "prompt": "请汇报 RedCap 完整复活状态。",
                 "cwd": str(REPO_ROOT),
                 "session_id": "fixture-terminal-goal-session",
                 "turn_id": "fixture-terminal-goal-turn",
@@ -2062,7 +2264,12 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         )
         if terminal_prompt.returncode != 0:
             failures.append(f"terminal-goal UserPromptSubmit failed: {terminal_prompt.stderr or terminal_prompt.stdout}")
-        terminal_prompt_marker = load_self_check_marker(evidence_dir, "UserPromptSubmit")
+        terminal_prompt_marker = load_self_check_marker(
+            evidence_dir,
+            "UserPromptSubmit",
+            source="codex-hook-terminal-goal-self-check",
+            turn_id="fixture-terminal-goal-turn",
+        )
         if terminal_prompt_marker.get("terminal_goal_context_injected") is not True:
             failures.append("terminal-goal prompt-time context was not injected")
         terminal_post = run_hook_event_for_self_check(
@@ -2087,7 +2294,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 "cwd": str(REPO_ROOT),
                 "session_id": "fixture-terminal-goal-session",
                 "turn_id": "fixture-terminal-goal-turn",
-                "last_assistant_message": "产品发布完成。",
+                "last_assistant_message": "RedCap 完整复活已经终局完成。",
                 "source": "codex-hook-terminal-goal-self-check",
             },
             evidence_dir=evidence_dir,
@@ -2107,9 +2314,77 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 failures.append("terminal-goal Stop fixture should block an unverified terminal completion overclaim")
             if "终局" not in reason:
                 failures.append("terminal-goal Stop block reason should mention terminal goal")
-        terminal_marker = load_self_check_marker(evidence_dir, "Stop")
+            if "被拦回复片段" in reason:
+                failures.append("terminal-goal Stop block reason should not include the blocked reply excerpt by default")
+            if "二次回答必须先直接回答原始用户问题" not in reason:
+                failures.append("terminal-goal Stop block reason should preserve original-task recovery focus")
+        terminal_marker = load_self_check_marker(
+            evidence_dir,
+            "Stop",
+            source="codex-hook-terminal-goal-self-check",
+            turn_id="fixture-terminal-goal-turn",
+        )
         if terminal_marker.get("terminal_goal_guard_ok") is not False:
             failures.append("terminal-goal Stop marker should record failed terminal goal guard")
+        stage_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "请汇报 RedCap 完整复活状态。",
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-terminal-stage-session",
+                "turn_id": "fixture-terminal-stage-turn",
+                "source": "codex-hook-terminal-stage-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if stage_prompt.returncode != 0:
+            failures.append(f"terminal-stage UserPromptSubmit failed: {stage_prompt.stderr or stage_prompt.stdout}")
+        stage_post = run_hook_event_for_self_check(
+            "PostToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-terminal-stage-session",
+                "turn_id": "fixture-terminal-stage-turn",
+                "tool_name": "Bash",
+                "tool_use_id": "fixture-terminal-stage-post",
+                "tool_input": {"command": "runtime/bin/redcap terminal-goal context"},
+                "tool_response": {"ok": True},
+                "source": "codex-hook-terminal-stage-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if stage_post.returncode != 0:
+            failures.append(f"terminal-stage PostToolUse failed: {stage_post.stderr or stage_post.stdout}")
+        stage_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-terminal-stage-session",
+                "turn_id": "fixture-terminal-stage-turn",
+                "last_assistant_message": "RedCap 完整复活尚未完成，当前只是迁移可用阶段；本轮只说明风险和待办。",
+                "source": "codex-hook-terminal-stage-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE": "enforce",
+                "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+            },
+        )
+        if stage_stop.returncode != 0:
+            failures.append(f"terminal-stage Stop failed: {stage_stop.stderr or stage_stop.stdout}")
+        stage_stop_result, stage_stop_error = parse_leading_json_object(stage_stop.stdout or "")
+        if stage_stop_error is not None or not isinstance(stage_stop_result, dict):
+            failures.append(f"terminal-stage Stop did not emit JSON: {stage_stop_error}")
+        elif stage_stop_result.get("continue") is not True:
+            failures.append(f"terminal-stage Stop should allow explicit non-terminal status: {stage_stop.stdout}")
+        stage_marker = load_self_check_marker(
+            evidence_dir,
+            "Stop",
+            source="codex-hook-terminal-stage-self-check",
+            turn_id="fixture-terminal-stage-turn",
+        )
+        if stage_marker.get("terminal_goal_guard_ok") is not True:
+            failures.append("terminal-stage Stop marker should record passed terminal goal guard")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     return 0 if not failures else 1
 

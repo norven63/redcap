@@ -1,0 +1,57 @@
+{
+  "schema_id": "redcap-prism-review",
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "方案方向正确（主张实际迁移而非登记遗留），但关键事实声称与磁盘证据不符，且遗漏了会导致检查器崩溃的 schema 强耦合。迁移若按当前方案执行，大概率出现运行时失败或目录结构冲突。",
+  "main_concern": "引用扫描声称被严重夸大，且未识别 Python 检查器对 legacy_allowlist/legacy_policy 的强制 schema 验证。直接移除 JSON 字段而不同步修改代码会导致检查器崩溃。",
+  "top_risks": [
+    "引用声称失真：方案声称‘多个清单、生命周期包、棱镜请求和版本记录仍引用’，实际磁盘上仅有 develop-branch-include.txt（4 行）、known-issues-queue.json（2 行）、version-records/20260607-current-revival-closeout.json（3 行）共 3 个文件硬编码引用。夸大的风险评估会扭曲迁移优先级和资源分配。",
+    "检查器崩溃风险：process_artifact_placement.py 的 load_policy 将 legacy_allowlist 和 legacy_policy 列为 required 字段，且 check_placement、legacy_records、fixture_policy 均硬编码依赖这些键。方案未给出 Python 侧的具体修改点，若只改 JSON 不改代码，运行时直接 SystemExit。",
+    "目录设计冲突：assets/evidence/prism/requests/ 当前不存在，而现有 prism/ 下是按 task-id 分目录的结构（如 20260606-prism-llm-intent-judge-upgrade/）。扁平放置 43 个文件到 requests/ 根下会与现有组织惯例冲突，方案未论证此设计选择。"
+  ],
+  "missing_evidence": [
+    "具体引用清单：需明确列出所有硬编码路径引用文件及其行号，而非‘批量更新’的空泛描述。当前遗漏 known-issues-queue.json 和 version-records/ 中的自引用将导致迁移后断链。",
+    "Python 代码修改方案：需给出 process_artifact_placement.py 中 load_policy 的 required 列表、legacy_records 调用、fixture_policy 和 self-check 用例的具体删除/重写策略，而非‘不再支持白名单’一句话。",
+    "prism/requests/ 与现有 prism/<task-id>/ 结构的兼容性论证：需说明为何选择扁平目录而非按任务归档，或如何协调两者。"
+  ],
+  "minimum_fix": "1) 修正引用声称，明确只有 3 个文件约 9 行需要更新；2) 给出 Python 检查器的具体代码修改点（移除 required 中的 legacy 字段、重写 check_placement 和 fixture_policy）；3) 重新论证 prism-request 目标目录（prism/requests/ 还是按任务子目录），并提供迁移后的目录树预览；4) 将 known-issues-queue.json 和 version-records 中的路径更新明确写入迁移步骤。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "上一轮的错误是‘用 legacy_allowlist 登记替代实际迁移’。本轮方案虽然口头上主张实际迁移，但用夸大的引用扫描论证复杂度、用‘批量更新引用’回避具体文件清单、用‘更新检查器’回避具体代码修改点，本质仍是‘用一份更完整的计划替代实际执行’。如果没有逐文件、逐行、逐函数的明确清单，本轮仍可能空转。"
+  },
+  "user_intent_alignment": "方向一致（彻底迁移、消除白名单、防止复发），但执行计划不够扎实。用户要的是‘错放文件消失、检查器真正变严’的现实改变，不是又一份‘看起来更完整’的迁移方案。当前方案的过度声称和关键遗漏表明，若直接执行，可能制造新的运行时崩溃和目录混乱，反而增加技术债务。",
+  "migration_assessment": {
+    "necessary": true,
+    "direction_correct": true,
+    "executable_as_proposed": false,
+    "blocker_count": 2,
+    "blockers": [
+      "Python 检查器 schema 强耦合未解决",
+      "prism/requests/ 目录设计与现有结构冲突未论证"
+    ]
+  },
+  "directory_assessment": {
+    "lifecycle_target": "assets/evidence/lifecycle/ 已存在，可直接接收，无冲突。",
+    "prism_request_target": "assets/evidence/prism/requests/ 不存在，且与现有 prism/<task-id>/ 按任务分目录的惯例冲突。需重新设计。",
+    "stable_contracts_safe": true,
+    "non_goals_respected": true
+  },
+  "reference_risk": {
+    "claimed_scale": "多个清单、多个生命周期包、多个棱镜请求、版本记录",
+    "actual_scale": "3 个文件、约 9 行硬编码引用",
+    "high_risk_files": [
+      "assets/manifests/develop-branch-include.txt",
+      "assets/contracts/known-issues-queue.json",
+      "assets/contracts/version-records/20260607-current-revival-closeout.json"
+    ],
+    "risk_level": "low_to_medium"
+  },
+  "recommended_checks": [
+    "执行前：在 PR 中展示 process_artifact_placement.py 的完整 diff，证明 legacy_allowlist/legacy_policy 已从代码和 JSON 中同步移除。",
+    "执行前：展示迁移后的 assets/evidence/prism/ 目录树，证明新目录结构与现有 task-id 子目录兼容。",
+    "执行后：find assets/contracts -maxdepth 1 -type f \\( -name '*-lifecycle.json' -o -name '*-prism-request.json' \\) | wc -l 必须为 0。",
+    "执行后：rg -n 'assets/contracts/.*(-lifecycle|-prism-request)\\.json' 必须在全仓库返回 0 个结果（ Fixture 和测试数据中的硬编码字符串除外）。",
+    "执行后：python3 runtime/core/process_artifact_placement.py check 必须通过，且临时放入 assets/contracts/test-lifecycle.json 后必须失败。"
+  ]
+}

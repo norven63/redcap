@@ -1,0 +1,1627 @@
+{
+  "ok": true,
+  "entries": 26,
+  "probes_run": [
+    "prism-task-intake-gate:architecture work is halted by intake",
+    "completion-pathology-gate:old-disease language is halted by intake",
+    "completion-semantics-gate:tested-only completion claim is halted",
+    "diagnostic-only-changed-reality-gate:diagnostic-only changed_reality is halted",
+    "layout-check:directory policy accepts current workspace",
+    "layout-check:directory policy rejects sprawl fixtures",
+    "hook-coverage-gate:required guardrails have deployed hook coverage",
+    "required-prompt-action-evidence:required prompt without action evidence is blocked",
+    "required-prompt-action-evidence:required prompt with read-only evidence is blocked",
+    "required-prompt-action-evidence:required prompt with git read-only evidence is blocked",
+    "required-prompt-action-evidence:required prompt with action evidence passes",
+    "prism-session-followup-check:session-check allows a valid continuing Prism task",
+    "prism-session-followup-check:dispatcher blocks follow-up without session handle",
+    "prism-concern-resolution-gate:Prism concern resolution fixtures pass and fail correctly",
+    "prism-concern-resolution-gate:lifecycle blocks unresolved Prism concern merges",
+    "codex-session-start-hook:latest Codex SessionStart marker matches current hook config",
+    "cap-soul-loader:Cap identity source is loadable",
+    "cap-soul-loader:Cap soul loader redacts private fixture evidence",
+    "codex-user-prompt-submit-gate-hook:latest Codex UserPromptSubmit marker has gate decision",
+    "codex-pre-tool-use-guard:latest Codex PreToolUse marker records guard decision",
+    "codex-pre-tool-use-guard:PreToolUse denies destructive git reset",
+    "codex-pre-tool-use-guard:PreToolUse denies direct evidence file writes",
+    "codex-pre-tool-use-guard:PreToolUse denies shell evidence file writes",
+    "codex-pre-tool-use-guard:latest Codex PreToolUse mutating marker records session ownership claim",
+    "codex-stop-redcap-check-hook:latest Codex Stop marker records check attempt",
+    "codex-post-tool-use-action-evidence-hook:latest Codex PostToolUse marker records action evidence",
+    "provider-dispatcher:provider dispatcher self-check enforces sessions, retries timeouts, and extracts nested reviews",
+    "provider-dispatcher:provider dispatcher timeout governance policy is explicit",
+    "provider-dispatcher:provider dispatcher refuses provider launch after task budget exhaustion",
+    "provider-dispatcher:provider dispatcher verifies persisted real provider evidence",
+    "prism-task-execution-ledger:Prism task ledger records and summarizes fixture execution",
+    "prism-task-execution-ledger:Prism gate evaluations append to the ledger",
+    "prism-task-execution-ledger:Prism task ledger summary is queryable",
+    "runtime-boundary-kernel:runtime boundary accepts current self-development context",
+    "runtime-boundary-kernel:runtime boundary self-check rejects cross-boundary leaks",
+    "old-redcap-archaeology-shards:old RedCap boundary rules are extracted from bounded sources",
+    "old-redcap-archaeology-shards:archaeology shards reject missing extraction and wildcard sources",
+    "development-lifecycle-evidence-gate:development lifecycle rejects documentation-only completion",
+    "development-lifecycle-evidence-gate:self-development lifecycle packet is required by intake",
+    "development-lifecycle-evidence-gate:self-development lifecycle packet is checked by gate",
+    "development-lifecycle-evidence-gate:external workspace architecture does not require self-development packet",
+    "final-claim-guard:final claim guard blocks completion without task-body marker",
+    "session-ownership-kernel:session ownership self-check distinguishes owned from mismatch",
+    "host-level-hook-interception:host hook audit verifies Codex hooks and dispatcher boundary",
+    "fsm-workflow-gates:FSM kernel validates transition table",
+    "fsm-workflow-gates:FSM allows verified temporary usable transition",
+    "fsm-workflow-gates:FSM blocks direct intake to temporary usable",
+    "knowledge-gateway:knowledge gateway validates index-first policy",
+    "knowledge-gateway:knowledge gateway can search session references",
+    "knowledge-gateway:knowledge gateway writes, reviews, promotes, and searches a fixture",
+    "knowledge-gateway:knowledge gateway fails required unknown query",
+    "human-facing-output-policy:human output policy validates contract samples",
+    "human-facing-output-policy:human output policy rejects machine-like English text",
+    "human-facing-output-policy:Stop hook blocks English-only final assistant reply"
+  ],
+  "warnings": [],
+  "failures": []
+}
+REDCAP_ENFORCEMENT_MATRIX_OK
+PRISM_CHECK_OK
+{
+  "ok": true,
+  "failures": []
+}
+PRISM_CONCERN_RESOLUTION_SELF_CHECK_OK
+{
+  "ok": true,
+  "merge_path": "/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/prism-shard-rkocx1k2/merge.json"
+}
+PRISM_SHARD_MERGE_OK
+{
+  "ok": true,
+  "failures": []
+}
+PRISM_SHARD_SELF_CHECK_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_TASK_FACTS_SELF_CHECK_OK
+{
+  "ok": true,
+  "failures": [],
+  "summary": {
+    "schema_id": "redcap-task-fact-summary",
+    "computed_at": "2026-06-11T16:43:04+00:00",
+    "record_count": 49,
+    "task_count": 25,
+    "status_counts": {
+      "blocked": 0,
+      "escalated": 0,
+      "in_progress": 2,
+      "planned": 1,
+      "superseded": 4,
+      "verified": 18
+    },
+    "open_count": 3,
+    "open_tasks": [
+      {
+        "task_id": "redcap-design-structure-logic-review",
+        "title": "新RedCap设计结构逻辑整体评审",
+        "status": "in_progress",
+        "reason": "整体评审发现的两个可立即治理项已补做并验证：过程文件归属完成实际迁移，状态自指阻塞完成分层与慢探针预算化；当前仍保留开放项：Kimi 长评审超时治理仍需后续处理，RedCap 完整复活终局父任务仍未关闭。",
+        "recorded_at": "2026-06-11T16:36:14+00:00"
+      },
+      {
+        "task_id": "prism-kimi-heavy-review-timeout",
+        "title": "Kimi重评审超时治理",
+        "status": "planned",
+        "reason": "本轮 Kimi 长评审在 360 秒总预算内超时；短补评成功。后续需要优化长评审分片或摘要策略，避免 100% 评审被单方超时拖住。",
+        "recorded_at": "2026-06-11T12:54:36+00:00"
+      },
+      {
+        "task_id": "redcap-complete-revival",
+        "title": "RedCap 完整复活",
+        "status": "in_progress",
+        "reason": "Norven 已废止最小可用执行内核作为完整复活完成口径；完整复活必须覆盖旧 RedCap 所有优秀设计，优先补齐 Loom 角色化工程工作流。",
+        "recorded_at": "2026-06-08T15:43:20+00:00"
+      }
+    ]
+  },
+  "store_paths": {
+    "schema_id": "redcap-task-facts-store-paths",
+    "mode": "boundary",
+    "boundary_mode": "self-development",
+    "project_workspace": "/Users/norven/workspace/AI Era/redcap",
+    "project_runtime_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
+    "evidence_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
+    "ledger": "/Users/norven/workspace/AI Era/redcap/assets/evidence/task-facts/task-facts.jsonl",
+    "health": "/Users/norven/workspace/AI Era/redcap/assets/evidence/task-facts/task-facts-summary.json"
+  }
+}
+REDCAP_TASK_FACTS_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_TERMINAL_GOAL_GUARD_SELF_CHECK_OK
+{
+  "ok": true,
+  "triggered_goals": [],
+  "terminal_goal_states": [
+    {
+      "id": "redcap-complete-revival",
+      "title": "RedCap 完整复活",
+      "domain": "redcap",
+      "task_fact_id": "redcap-complete-revival",
+      "task_status": "in_progress",
+      "current_level": "migration_usable",
+      "terminal_level": "terminal_complete",
+      "terminal_verified": false,
+      "open": true,
+      "open_reason": "Norven 已上调完整复活标准：最小执行内核和迁移可用不能关闭终局，必须完整复活旧 RedCap 优秀设计，尤其是 Loom 角色化工程工作流。",
+      "aliases": [
+        "完整复活",
+        "完全复活",
+        "终局完成",
+        "正式可用",
+        "完整 RedCap 复活",
+        "RedCap 完整复活"
+      ],
+      "allowed_phase_terms": [
+        "基建可用基线",
+        "正式可用基线",
+        "扫描完成",
+        "迁移可用"
+      ],
+      "forbidden_substitutions": [
+        "formal usability baseline",
+        "360 scan merge",
+        "revival queue check",
+        "status command",
+        "version record",
+        "Prism review",
+        "lifecycle packet",
+        "最小执行内核",
+        "最小可用执行内核",
+        "minimal FSM kernel",
+        "minimum executable kernel"
+      ]
+    },
+    {
+      "id": "example-product-launch",
+      "title": "示例产品发布",
+      "domain": "generic-example",
+      "task_fact_id": "example-product-launch",
+      "task_status": null,
+      "current_level": "infrastructure_baseline",
+      "terminal_level": "terminal_complete",
+      "terminal_verified": false,
+      "open": true,
+      "open_reason": "示例用于证明终局目标机制不依赖 RedCap 领域词。",
+      "aliases": [
+        "产品发布完成",
+        "上线完成",
+        "发布成功"
+      ],
+      "allowed_phase_terms": [
+        "原型完成",
+        "测试通过",
+        "发布准备完成"
+      ],
+      "forbidden_substitutions": [
+        "prototype ready",
+        "test pass",
+        "deployment plan",
+        "release notes"
+      ]
+    }
+  ],
+  "prompt_time_context": "RedCap 终局目标约束：\n- RedCap 完整复活：仍未终局完成；当前只允许说明 migration_usable 阶段，不得把阶段成果说成完整复活。原因：Norven 已上调完整复活标准：最小执行内核和迁移可用不能关闭终局，必须完整复活旧 RedCap 优秀设计，尤其是 Loom 角色化工程工作流。",
+  "failures": []
+}
+REDCAP_TERMINAL_GOAL_GUARD_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_HUMAN_OUTPUT_POLICY_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_HUMAN_OUTPUT_POLICY_SELF_CHECK_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_SCAN_CONCLUSION_GUARD_SELF_CHECK_OK
+{
+  "schema_id": "redcap-known-issues-execution-order-check",
+  "ok": true,
+  "contract": "/Users/norven/workspace/AI Era/redcap/assets/contracts/known-issues-execution-order.json",
+  "terminal_goal_state": "open",
+  "item_count": 6,
+  "ordered_ids": [
+    "KI-00-lifecycle-and-prism-front-gate",
+    "KI-01-structured-known-issue-queue",
+    "KI-02-runtime-boundary-consumer-migration",
+    "KI-03-legacy-evidence-policy",
+    "KI-04-complete-revival-e2e-harness",
+    "KI-05-terminal-closeout-only-after-evidence"
+  ],
+  "failures": []
+}
+REDCAP_KNOWN_ISSUES_ORDER_OK
+{
+  "schema_id": "redcap-known-issues-queue-check",
+  "ok": true,
+  "queue": "/Users/norven/workspace/AI Era/redcap/assets/contracts/known-issues-queue.json",
+  "require_1_4_verified": true,
+  "statuses": {
+    "KI-00-lifecycle-and-prism-front-gate": "verified",
+    "KI-01-structured-known-issue-queue": "verified",
+    "KI-02-runtime-boundary-consumer-migration": "verified",
+    "KI-03-legacy-evidence-policy": "verified",
+    "KI-04-complete-revival-e2e-harness": "deferred_user_supervised",
+    "KI-05-terminal-closeout-only-after-evidence": "deferred_user_supervised"
+  },
+  "failures": []
+}
+REDCAP_KNOWN_ISSUES_QUEUE_OK
+{
+  "schema_id": "redcap-runtime-boundary-consumer-check",
+  "ok": true,
+  "project_workspace": "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project",
+  "project_runtime_root": "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap",
+  "commands_checked": [
+    "boundary_init",
+    "status",
+    "task_facts_record",
+    "task_facts_summary"
+  ],
+  "command_results": {
+    "boundary_init": {
+      "argv": [
+        "runtime/bin/redcap",
+        "boundary",
+        "init",
+        "--cwd",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/src/pkg",
+        "--user-private-root",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/private",
+        "--require-task-file"
+      ],
+      "exit_code": 0,
+      "ok": true,
+      "stdout_tail": "s-rk5e6zm9/managed-project/.redcap/.gitignore\",\n    \"project_runtime_gitignore_ok\": true,\n    \"legacy_external_evidence_root\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/private/redcap-runtime/evidence/8ce26cd2a08b4dee\",\n    \"source_policy\": \"old-redcap-runtime-workspace-boundary-extraction-v1\"\n  },\n  \"created_paths\": [\n    \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap\",\n    \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/state\",\n    \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/evidence\",\n    \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/logs\",\n    \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/tmp\",\n    \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/.gitignore\"\n  ],\n  \"failures\": []\n}\nREDCAP_RUNTIME_BOUNDARY_INIT_OK\n",
+      "stderr_tail": ""
+    },
+    "task_facts_record": {
+      "argv": [
+        "runtime/bin/redcap",
+        "task-facts",
+        "record",
+        "--cwd",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/src/pkg",
+        "--user-private-root",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/private",
+        "--task-id",
+        "external-boundary-consumer-fixture",
+        "--title",
+        "外部项目运行产物探针",
+        "--status",
+        "in_progress",
+        "--reason",
+        "验证 task-facts 默认写入项目级 .redcap。",
+        "--source",
+        "runtime-boundary-consumers-self-check",
+        "--evidence",
+        "runtime/core/runtime_boundary_consumers.py"
+      ],
+      "exit_code": 0,
+      "ok": true,
+      "stdout_tail": "-rk5e6zm9/managed-project/.redcap/evidence/task-facts/task-facts.jsonl\",\n  \"health_path\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/evidence/task-facts/task-facts-summary.json\",\n  \"store_paths\": {\n    \"schema_id\": \"redcap-task-facts-store-paths\",\n    \"mode\": \"boundary\",\n    \"boundary_mode\": \"external-workspace\",\n    \"project_workspace\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project\",\n    \"project_runtime_root\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap\",\n    \"evidence_root\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/evidence\",\n    \"ledger\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/evidence/task-facts/task-facts.jsonl\",\n    \"health\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/evidence/task-facts/task-facts-summary.json\"\n  }\n}\nREDCAP_TASK_FACT_RECORD_OK\n",
+      "stderr_tail": ""
+    },
+    "task_facts_summary": {
+      "argv": [
+        "runtime/bin/redcap",
+        "task-facts",
+        "summary",
+        "--cwd",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/src/pkg",
+        "--user-private-root",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/private"
+      ],
+      "exit_code": 0,
+      "ok": true,
+      "stdout_tail": "1,\n  \"open_tasks\": [\n    {\n      \"task_id\": \"external-boundary-consumer-fixture\",\n      \"title\": \"外部项目运行产物探针\",\n      \"status\": \"in_progress\",\n      \"reason\": \"验证 task-facts 默认写入项目级 .redcap。\",\n      \"recorded_at\": \"2026-06-11T16:43:05+00:00\"\n    }\n  ],\n  \"store_paths\": {\n    \"schema_id\": \"redcap-task-facts-store-paths\",\n    \"mode\": \"boundary\",\n    \"boundary_mode\": \"external-workspace\",\n    \"project_workspace\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project\",\n    \"project_runtime_root\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap\",\n    \"evidence_root\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/evidence\",\n    \"ledger\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/evidence/task-facts/task-facts.jsonl\",\n    \"health\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/.redcap/evidence/task-facts/task-facts-summary.json\"\n  }\n}\nREDCAP_TASK_FACT_SUMMARY_OK\n",
+      "stderr_tail": ""
+    },
+    "status": {
+      "argv": [
+        "runtime/bin/redcap",
+        "status",
+        "--json",
+        "--cwd",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/managed-project/src/pkg",
+        "--user-private-root",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-boundary-consumers-rk5e6zm9/private"
+      ],
+      "exit_code": 0,
+      "ok": true,
+      "stdout_tail": "     \"原型完成\",\n          \"测试通过\",\n          \"发布准备完成\"\n        ],\n        \"forbidden_substitutions\": [\n          \"prototype ready\",\n          \"test pass\",\n          \"deployment plan\",\n          \"release notes\"\n        ]\n      }\n    ],\n    \"non_terminal_open_tasks\": [\n      {\n        \"task_id\": \"external-boundary-consumer-fixture\",\n        \"title\": \"外部项目运行产物探针\",\n        \"status\": \"in_progress\",\n        \"reason\": \"验证 task-facts 默认写入项目级 .redcap。\",\n        \"recorded_at\": \"2026-06-11T16:43:05+00:00\"\n      }\n    ]\n  },\n  \"scan_state\": {\n    \"account_path\": \"/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-account.json\",\n    \"account_status\": \"merged\",\n    \"task_status\": null,\n    \"scan_complete\": false,\n    \"scan_status\": \"未完成\",\n    \"shards_completed\": 3,\n    \"shards_total\": 3,\n    \"open_shards\": [],\n    \"blocked_shards\": [],\n    \"merge_status\": \"已合并\",\n    \"merge_path\": \"/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-merge.json\",\n    \"last_verified_output\": \"2026-06-06T18:01:12+00:00\",\n    \"conclusion_scope\": \"只能给阶段状态\"\n  },\n  \"human_next_step\": \"继续 360 度旧 RedCap 扫描，完成分片和合并后再进入最终复活计划。\",\n  \"failures\": []\n}\nREDCAP_STATUS_OK\n",
+      "stderr_tail": ""
+    }
+  },
+  "failures": []
+}
+REDCAP_RUNTIME_BOUNDARY_CONSUMERS_OK
+{
+  "schema_id": "redcap-legacy-evidence-policy-check",
+  "ok": true,
+  "policy": "/Users/norven/workspace/AI Era/redcap/assets/contracts/legacy-evidence-policy.json",
+  "failures": []
+}
+REDCAP_LEGACY_EVIDENCE_POLICY_OK
+{
+  "schema_id": "redcap-legacy-evidence-plan",
+  "ok": true,
+  "mode": "read_only_compatibility",
+  "boundary_mode": "external-workspace",
+  "project_workspace": "/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-legacy-evidence-bkj0n6jm/project",
+  "source": "/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-legacy-evidence-bkj0n6jm/private/redcap-runtime/evidence/c1812e07a0783a70",
+  "source_exists": true,
+  "destination": "/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-legacy-evidence-bkj0n6jm/project/.redcap/evidence/legacy-import",
+  "automatic_migration": false,
+  "restore_command_required": true,
+  "failures": [],
+  "restored_files": [
+    "review.json"
+  ]
+}
+REDCAP_LEGACY_EVIDENCE_RESTORE_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_LEGACY_EVIDENCE_SELF_CHECK_OK
+{
+  "ok": true,
+  "root": "/Users/norven/workspace/AI Era/redcap",
+  "policy": "/Users/norven/workspace/AI Era/redcap/assets/contracts/process-artifact-placement.json",
+  "found_in_forbidden_roots": [],
+  "failures": []
+}
+REDCAP_PROCESS_ARTIFACT_PLACEMENT_OK
+{
+  "ok": true,
+  "negative_cases": [
+    "new process artifact in assets/contracts fails",
+    "same artifact in assets/evidence/lifecycle passes",
+    "same artifact in assets/evidence/prism/<task-id> passes",
+    "legacy_allowlist policy erosion fails"
+  ],
+  "failures": []
+}
+REDCAP_PROCESS_ARTIFACT_PLACEMENT_SELF_CHECK_OK
+{
+  "schema_id": "redcap-status-surface",
+  "ok": true,
+  "mode": "status",
+  "boundary": {
+    "schema_id": "redcap-runtime-boundary-context",
+    "version": 2,
+    "resolved_at": "2026-06-11T16:43:05+00:00",
+    "boundary_mode": "self-development",
+    "cwd": "/Users/norven/workspace/AI Era/redcap",
+    "runtime_root": "/Users/norven/workspace/AI Era/redcap",
+    "project_workspace": "/Users/norven/workspace/AI Era/redcap",
+    "project_runtime_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
+    "task_file": "/Users/norven/workspace/AI Era/redcap/.dev-task.md",
+    "task_file_exists": false,
+    "task_id": "",
+    "task_hash": null,
+    "user_private_root": "/Users/norven/.cap",
+    "state_root": "/Users/norven/.cap/redcap-runtime",
+    "evidence_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
+    "logs_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/logs",
+    "tmp_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp",
+    "project_runtime_gitignore": "/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore",
+    "project_runtime_gitignore_ok": true,
+    "legacy_external_evidence_root": "/Users/norven/.cap/redcap-runtime/evidence/8c8cdb010e8e4721",
+    "source_policy": "old-redcap-runtime-workspace-boundary-extraction-v1"
+  },
+  "soul": {
+    "ok": true,
+    "required_loaded": [
+      "cap_identity"
+    ],
+    "optional_missing": [
+      "legacy_soul"
+    ],
+    "activation": {
+      "identity": "Cap",
+      "state": "loaded",
+      "message": "Cap 身份源已加载到当前 RedCap 会话容器。"
+    },
+    "evidence": null
+  },
+  "task_summary": {
+    "schema_id": "redcap-task-fact-summary",
+    "computed_at": "2026-06-11T16:43:05+00:00",
+    "record_count": 49,
+    "task_count": 25,
+    "status_counts": {
+      "blocked": 0,
+      "escalated": 0,
+      "in_progress": 2,
+      "planned": 1,
+      "superseded": 4,
+      "verified": 18
+    },
+    "open_count": 3,
+    "open_tasks": [
+      {
+        "task_id": "redcap-design-structure-logic-review",
+        "title": "新RedCap设计结构逻辑整体评审",
+        "status": "in_progress",
+        "reason": "整体评审发现的两个可立即治理项已补做并验证：过程文件归属完成实际迁移，状态自指阻塞完成分层与慢探针预算化；当前仍保留开放项：Kimi 长评审超时治理仍需后续处理，RedCap 完整复活终局父任务仍未关闭。",
+        "recorded_at": "2026-06-11T16:36:14+00:00"
+      },
+      {
+        "task_id": "prism-kimi-heavy-review-timeout",
+        "title": "Kimi重评审超时治理",
+        "status": "planned",
+        "reason": "本轮 Kimi 长评审在 360 秒总预算内超时；短补评成功。后续需要优化长评审分片或摘要策略，避免 100% 评审被单方超时拖住。",
+        "recorded_at": "2026-06-11T12:54:36+00:00"
+      },
+      {
+        "task_id": "redcap-complete-revival",
+        "title": "RedCap 完整复活",
+        "status": "in_progress",
+        "reason": "Norven 已废止最小可用执行内核作为完整复活完成口径；完整复活必须覆盖旧 RedCap 所有优秀设计，优先补齐 Loom 角色化工程工作流。",
+        "recorded_at": "2026-06-08T15:43:20+00:00"
+      }
+    ]
+  },
+  "task_facts_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/task-facts/task-facts.jsonl",
+  "terminal_goals": {
+    "states": [
+      {
+        "id": "redcap-complete-revival",
+        "title": "RedCap 完整复活",
+        "domain": "redcap",
+        "task_fact_id": "redcap-complete-revival",
+        "task_status": "in_progress",
+        "current_level": "migration_usable",
+        "terminal_level": "terminal_complete",
+        "terminal_verified": false,
+        "open": true,
+        "open_reason": "Norven 已上调完整复活标准：最小执行内核和迁移可用不能关闭终局，必须完整复活旧 RedCap 优秀设计，尤其是 Loom 角色化工程工作流。",
+        "aliases": [
+          "完整复活",
+          "完全复活",
+          "终局完成",
+          "正式可用",
+          "完整 RedCap 复活",
+          "RedCap 完整复活"
+        ],
+        "allowed_phase_terms": [
+          "基建可用基线",
+          "正式可用基线",
+          "扫描完成",
+          "迁移可用"
+        ],
+        "forbidden_substitutions": [
+          "formal usability baseline",
+          "360 scan merge",
+          "revival queue check",
+          "status command",
+          "version record",
+          "Prism review",
+          "lifecycle packet",
+          "最小执行内核",
+          "最小可用执行内核",
+          "minimal FSM kernel",
+          "minimum executable kernel"
+        ]
+      },
+      {
+        "id": "example-product-launch",
+        "title": "示例产品发布",
+        "domain": "generic-example",
+        "task_fact_id": "example-product-launch",
+        "task_status": null,
+        "current_level": "infrastructure_baseline",
+        "terminal_level": "terminal_complete",
+        "terminal_verified": false,
+        "open": true,
+        "open_reason": "示例用于证明终局目标机制不依赖 RedCap 领域词。",
+        "aliases": [
+          "产品发布完成",
+          "上线完成",
+          "发布成功"
+        ],
+        "allowed_phase_terms": [
+          "原型完成",
+          "测试通过",
+          "发布准备完成"
+        ],
+        "forbidden_substitutions": [
+          "prototype ready",
+          "test pass",
+          "deployment plan",
+          "release notes"
+        ]
+      }
+    ],
+    "non_terminal_open_tasks": [
+      {
+        "task_id": "redcap-design-structure-logic-review",
+        "title": "新RedCap设计结构逻辑整体评审",
+        "status": "in_progress",
+        "reason": "整体评审发现的两个可立即治理项已补做并验证：过程文件归属完成实际迁移，状态自指阻塞完成分层与慢探针预算化；当前仍保留开放项：Kimi 长评审超时治理仍需后续处理，RedCap 完整复活终局父任务仍未关闭。",
+        "recorded_at": "2026-06-11T16:36:14+00:00"
+      },
+      {
+        "task_id": "prism-kimi-heavy-review-timeout",
+        "title": "Kimi重评审超时治理",
+        "status": "planned",
+        "reason": "本轮 Kimi 长评审在 360 秒总预算内超时；短补评成功。后续需要优化长评审分片或摘要策略，避免 100% 评审被单方超时拖住。",
+        "recorded_at": "2026-06-11T12:54:36+00:00"
+      }
+    ]
+  },
+  "scan_state": {
+    "account_path": "/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-account.json",
+    "account_status": "merged",
+    "task_status": "verified",
+    "scan_complete": true,
+    "scan_status": "已完成",
+    "shards_completed": 3,
+    "shards_total": 3,
+    "open_shards": [],
+    "blocked_shards": [],
+    "merge_status": "已合并",
+    "merge_path": "/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-merge.json",
+    "last_verified_output": "2026-06-06T18:01:12+00:00",
+    "conclusion_scope": "可以给最终结论"
+  },
+  "human_next_step": "继续推进终局父任务：RedCap 完整复活；阶段成果不能替代终局验收。",
+  "failures": []
+}
+REDCAP_STATUS_OK
+{
+  "schema_id": "redcap-status-surface",
+  "ok": true,
+  "mode": "revive",
+  "boundary": {
+    "schema_id": "redcap-runtime-boundary-context",
+    "version": 2,
+    "resolved_at": "2026-06-11T16:43:05+00:00",
+    "boundary_mode": "self-development",
+    "cwd": "/Users/norven/workspace/AI Era/redcap",
+    "runtime_root": "/Users/norven/workspace/AI Era/redcap",
+    "project_workspace": "/Users/norven/workspace/AI Era/redcap",
+    "project_runtime_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
+    "task_file": "/Users/norven/workspace/AI Era/redcap/.dev-task.md",
+    "task_file_exists": false,
+    "task_id": "",
+    "task_hash": null,
+    "user_private_root": "/Users/norven/.cap",
+    "state_root": "/Users/norven/.cap/redcap-runtime",
+    "evidence_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
+    "logs_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/logs",
+    "tmp_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp",
+    "project_runtime_gitignore": "/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore",
+    "project_runtime_gitignore_ok": true,
+    "legacy_external_evidence_root": "/Users/norven/.cap/redcap-runtime/evidence/8c8cdb010e8e4721",
+    "source_policy": "old-redcap-runtime-workspace-boundary-extraction-v1"
+  },
+  "soul": {
+    "ok": true,
+    "required_loaded": [
+      "cap_identity"
+    ],
+    "optional_missing": [
+      "legacy_soul"
+    ],
+    "activation": {
+      "identity": "Cap",
+      "state": "loaded",
+      "message": "Cap 身份源已加载到当前 RedCap 会话容器。"
+    },
+    "evidence": null
+  },
+  "task_summary": {
+    "schema_id": "redcap-task-fact-summary",
+    "computed_at": "2026-06-11T16:43:05+00:00",
+    "record_count": 49,
+    "task_count": 25,
+    "status_counts": {
+      "blocked": 0,
+      "escalated": 0,
+      "in_progress": 2,
+      "planned": 1,
+      "superseded": 4,
+      "verified": 18
+    },
+    "open_count": 3,
+    "open_tasks": [
+      {
+        "task_id": "redcap-design-structure-logic-review",
+        "title": "新RedCap设计结构逻辑整体评审",
+        "status": "in_progress",
+        "reason": "整体评审发现的两个可立即治理项已补做并验证：过程文件归属完成实际迁移，状态自指阻塞完成分层与慢探针预算化；当前仍保留开放项：Kimi 长评审超时治理仍需后续处理，RedCap 完整复活终局父任务仍未关闭。",
+        "recorded_at": "2026-06-11T16:36:14+00:00"
+      },
+      {
+        "task_id": "prism-kimi-heavy-review-timeout",
+        "title": "Kimi重评审超时治理",
+        "status": "planned",
+        "reason": "本轮 Kimi 长评审在 360 秒总预算内超时；短补评成功。后续需要优化长评审分片或摘要策略，避免 100% 评审被单方超时拖住。",
+        "recorded_at": "2026-06-11T12:54:36+00:00"
+      },
+      {
+        "task_id": "redcap-complete-revival",
+        "title": "RedCap 完整复活",
+        "status": "in_progress",
+        "reason": "Norven 已废止最小可用执行内核作为完整复活完成口径；完整复活必须覆盖旧 RedCap 所有优秀设计，优先补齐 Loom 角色化工程工作流。",
+        "recorded_at": "2026-06-08T15:43:20+00:00"
+      }
+    ]
+  },
+  "task_facts_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/task-facts/task-facts.jsonl",
+  "terminal_goals": {
+    "states": [
+      {
+        "id": "redcap-complete-revival",
+        "title": "RedCap 完整复活",
+        "domain": "redcap",
+        "task_fact_id": "redcap-complete-revival",
+        "task_status": "in_progress",
+        "current_level": "migration_usable",
+        "terminal_level": "terminal_complete",
+        "terminal_verified": false,
+        "open": true,
+        "open_reason": "Norven 已上调完整复活标准：最小执行内核和迁移可用不能关闭终局，必须完整复活旧 RedCap 优秀设计，尤其是 Loom 角色化工程工作流。",
+        "aliases": [
+          "完整复活",
+          "完全复活",
+          "终局完成",
+          "正式可用",
+          "完整 RedCap 复活",
+          "RedCap 完整复活"
+        ],
+        "allowed_phase_terms": [
+          "基建可用基线",
+          "正式可用基线",
+          "扫描完成",
+          "迁移可用"
+        ],
+        "forbidden_substitutions": [
+          "formal usability baseline",
+          "360 scan merge",
+          "revival queue check",
+          "status command",
+          "version record",
+          "Prism review",
+          "lifecycle packet",
+          "最小执行内核",
+          "最小可用执行内核",
+          "minimal FSM kernel",
+          "minimum executable kernel"
+        ]
+      },
+      {
+        "id": "example-product-launch",
+        "title": "示例产品发布",
+        "domain": "generic-example",
+        "task_fact_id": "example-product-launch",
+        "task_status": null,
+        "current_level": "infrastructure_baseline",
+        "terminal_level": "terminal_complete",
+        "terminal_verified": false,
+        "open": true,
+        "open_reason": "示例用于证明终局目标机制不依赖 RedCap 领域词。",
+        "aliases": [
+          "产品发布完成",
+          "上线完成",
+          "发布成功"
+        ],
+        "allowed_phase_terms": [
+          "原型完成",
+          "测试通过",
+          "发布准备完成"
+        ],
+        "forbidden_substitutions": [
+          "prototype ready",
+          "test pass",
+          "deployment plan",
+          "release notes"
+        ]
+      }
+    ],
+    "non_terminal_open_tasks": [
+      {
+        "task_id": "redcap-design-structure-logic-review",
+        "title": "新RedCap设计结构逻辑整体评审",
+        "status": "in_progress",
+        "reason": "整体评审发现的两个可立即治理项已补做并验证：过程文件归属完成实际迁移，状态自指阻塞完成分层与慢探针预算化；当前仍保留开放项：Kimi 长评审超时治理仍需后续处理，RedCap 完整复活终局父任务仍未关闭。",
+        "recorded_at": "2026-06-11T16:36:14+00:00"
+      },
+      {
+        "task_id": "prism-kimi-heavy-review-timeout",
+        "title": "Kimi重评审超时治理",
+        "status": "planned",
+        "reason": "本轮 Kimi 长评审在 360 秒总预算内超时；短补评成功。后续需要优化长评审分片或摘要策略，避免 100% 评审被单方超时拖住。",
+        "recorded_at": "2026-06-11T12:54:36+00:00"
+      }
+    ]
+  },
+  "scan_state": {
+    "account_path": "/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-account.json",
+    "account_status": "merged",
+    "task_status": "verified",
+    "scan_complete": true,
+    "scan_status": "已完成",
+    "shards_completed": 3,
+    "shards_total": 3,
+    "open_shards": [],
+    "blocked_shards": [],
+    "merge_status": "已合并",
+    "merge_path": "/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-merge.json",
+    "last_verified_output": "2026-06-06T18:01:12+00:00",
+    "conclusion_scope": "可以给最终结论"
+  },
+  "human_next_step": "继续推进终局父任务：RedCap 完整复活；阶段成果不能替代终局验收。",
+  "failures": []
+}
+REDCAP_REVIVE_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_STATUS_SURFACE_SELF_CHECK_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_REVIVAL_QUEUE_SELF_CHECK_OK
+{
+  "schema_id": "redcap-revival-execution-queue",
+  "ok": true,
+  "merge_coverage": {
+    "ok": true,
+    "portable_ids": [
+      "DLR-P01",
+      "DLR-P02",
+      "DLR-P03",
+      "DLR-P04",
+      "DLR-P05",
+      "LTCD-P01",
+      "LTCD-P02",
+      "LTCD-P03",
+      "LTCD-P04",
+      "LTCD-P05",
+      "LTCD-P06",
+      "boundary-layer-separation",
+      "boundary-self-development-exception",
+      "boundary-shared-command-resolution",
+      "boundary-user-private-state"
+    ],
+    "risk_ids": [
+      "DLR-R01",
+      "DLR-R02",
+      "DLR-R03",
+      "DLR-R04",
+      "LTCD-R01",
+      "LTCD-R02",
+      "LTCD-R03",
+      "LTCD-R04",
+      "old-command-branch-inspection-coupling",
+      "release-review-coupling"
+    ],
+    "verified_count": 3,
+    "no_promote_count": 4
+  },
+  "required_open": [],
+  "entries": [
+    {
+      "id": "RQ-01",
+      "title": "360 扫描合并结果",
+      "reality_change": "旧 RedCap 设计已经完成分片扫描、合并，并能被检查器验证。",
+      "scan_refs": [
+        "boundary-layer-separation",
+        "DLR-P01",
+        "LTCD-P03"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "scan-conclusion",
+          "check"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "scan-conclusion",
+            "check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "{\n  \"ok\": true,\n  \"triggered\": false,\n  \"scan_state\": {\n    \"account_path\": \"/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-account.json\",\n    \"account_status\": \"merged\",\n    \"task_status\": \"verified\",\n    \"scan_complete\": true,\n    \"scan_status\": \"已完成\",\n    \"shards_completed\": 3,\n    \"shards_total\": 3,\n    \"open_shards\": [],\n    \"blocked_shards\": [],\n    \"merge_status\": \"已合并\",\n    \"merge_path\": \"/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-merge.json\",\n    \"last_verified_output\": \"2026-06-06T18:01:12+00:00\",\n    \"conclusion_scope\": \"可以给最终结论\"\n  },\n  \"expected_status_block\": \"RedCap 扫描状态：\\n扫描状态：已完成\\n分片进度：3/3\\n合并状态：已合并\\n最后验证输出：2026-06-06T18:01:12+00:00\\n结论权限：可以给最终结论\",\n  \"reason\": \"No 360-degree scan conclusion context detected.\"\n}\nREDCAP_SCAN_CONCLUSION_GUARD_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "id": "RQ-02",
+      "title": "运行边界",
+      "reality_change": "运行时、项目工作区、用户私有状态三层边界由运行时代码检查。",
+      "scan_refs": [
+        "boundary-layer-separation",
+        "boundary-self-development-exception",
+        "boundary-user-private-state"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "boundary",
+          "check"
+        ],
+        [
+          "runtime/bin/redcap",
+          "boundary",
+          "self-check"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "boundary",
+            "check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "  \"resolved_at\": \"2026-06-11T16:43:05+00:00\",\n    \"boundary_mode\": \"self-development\",\n    \"cwd\": \"/Users/norven/workspace/AI Era/redcap\",\n    \"runtime_root\": \"/Users/norven/workspace/AI Era/redcap\",\n    \"project_workspace\": \"/Users/norven/workspace/AI Era/redcap\",\n    \"project_runtime_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence\",\n    \"task_file\": \"/Users/norven/workspace/AI Era/redcap/.dev-task.md\",\n    \"task_file_exists\": false,\n    \"task_id\": \"\",\n    \"task_hash\": null,\n    \"user_private_root\": \"/Users/norven/.cap\",\n    \"state_root\": \"/Users/norven/.cap/redcap-runtime\",\n    \"evidence_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence\",\n    \"logs_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/logs\",\n    \"tmp_root\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp\",\n    \"project_runtime_gitignore\": \"/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore\",\n    \"project_runtime_gitignore_ok\": true,\n    \"legacy_external_evidence_root\": \"/Users/norven/.cap/redcap-runtime/evidence/8c8cdb010e8e4721\",\n    \"source_policy\": \"old-redcap-runtime-workspace-boundary-extraction-v1\"\n  },\n  \"failures\": []\n}\nREDCAP_RUNTIME_BOUNDARY_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        },
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "boundary",
+            "self-check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_RUNTIME_BOUNDARY_SELF_CHECK_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "id": "RQ-03",
+      "title": "生命周期与完成声明",
+      "reality_change": "原始意图、评审轨、完成等级和最终声明由生命周期与最终声明检查器约束。",
+      "scan_refs": [
+        "DLR-P01",
+        "DLR-P02",
+        "DLR-P03",
+        "DLR-R03"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "lifecycle",
+          "self-check"
+        ],
+        [
+          "runtime/bin/redcap",
+          "final-claim",
+          "self-check"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "lifecycle",
+            "self-check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_DEVELOPMENT_LIFECYCLE_SELF_CHECK_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        },
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "final-claim",
+            "self-check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_FINAL_CLAIM_GUARD_SELF_CHECK_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "id": "RQ-04",
+      "title": "长任务分片治理",
+      "reality_change": "长任务通过分片账目、上下文预算、Cap 验收与合并条件约束。",
+      "scan_refs": [
+        "LTCD-P01",
+        "LTCD-P03",
+        "LTCD-P04",
+        "LTCD-P05"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "prism-shard",
+          "self-check"
+        ],
+        [
+          "runtime/bin/redcap",
+          "prism-ledger",
+          "summary"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "prism-shard",
+            "self-check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "{\n  \"ok\": true,\n  \"merge_path\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/prism-shard-b4uhdysa/merge.json\"\n}\nPRISM_SHARD_MERGE_OK\n{\n  \"ok\": true,\n  \"failures\": []\n}\nPRISM_SHARD_SELF_CHECK_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        },
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "prism-ledger",
+            "summary"
+          ],
+          "exit_code": 0,
+          "stdout_tail": " \"active\",\n      \"strictest_verdict\": null,\n      \"recorded_at\": \"2026-06-11T06:54:46+00:00\"\n    },\n    {\n      \"task_id\": \"20260611-redcap-design-structure-logic-review\",\n      \"outcome\": \"failed\",\n      \"strictest_verdict\": \"concern\",\n      \"recorded_at\": \"2026-06-11T05:43:23+00:00\"\n    },\n    {\n      \"task_id\": \"20260610-stop-hook-review-answer-recovery-r2\",\n      \"outcome\": \"attention\",\n      \"strictest_verdict\": \"concern\",\n      \"recorded_at\": \"2026-06-10T17:28:34+00:00\"\n    },\n    {\n      \"task_id\": \"20260610-stop-hook-review-answer-recovery\",\n      \"outcome\": \"active\",\n      \"strictest_verdict\": null,\n      \"recorded_at\": \"2026-06-10T16:29:56+00:00\"\n    },\n    {\n      \"task_id\": \"20260610-redcap-design-layout-review\",\n      \"outcome\": \"failed\",\n      \"strictest_verdict\": \"concern\",\n      \"recorded_at\": \"2026-06-10T14:59:00+00:00\"\n    }\n  ],\n  \"gate_event_count\": 11648,\n  \"gate_success_count\": 11648,\n  \"gate_success_rate\": 1.0,\n  \"gate_decision_counts\": {\n    \"optional\": 392,\n    \"required\": 10307,\n    \"skipped\": 949\n  },\n  \"gate_trigger_counts\": {\n    \"codex-UserPromptSubmit\": 8615,\n    \"cli-gate\": 3033\n  },\n  \"gate_average_duration_seconds\": 0.209\n}\nPRISM_LEDGER_SUMMARY_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "id": "RQ-05",
+      "title": "索引优先知识入口",
+      "reality_change": "知识、证据和大材料默认先走索引，原始证据不默认进入上下文。",
+      "scan_refs": [
+        "LTCD-P02",
+        "LTCD-R02"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "knowledge-gateway",
+          "check"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "knowledge-gateway",
+            "check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "{\n  \"ok\": true,\n  \"entries\": 6,\n  \"default_read\": \"index-only\",\n  \"failures\": []\n}\nREDCAP_KNOWLEDGE_GATEWAY_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "id": "RQ-06",
+      "title": "宿主边界诚实审计",
+      "reality_change": "RedCap 只声明已验证的项目钩子和调度器边界，不包装成未知宿主能力。",
+      "scan_refs": [
+        "LTCD-P06",
+        "LTCD-R04"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "host-hook-audit"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "host-hook-audit"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "宿主审计由父级检查单独执行；此处只避免复活队列嵌套重复触发重检查。",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false,
+          "checked_by_parent": true
+        }
+      ]
+    },
+    {
+      "id": "RQ-07",
+      "title": "用户状态命令",
+      "reality_change": "用户可直接运行 redcap status 查看项目状态、扫描状态和下一步。",
+      "scan_refs": [
+        "boundary-shared-command-resolution",
+        "DLR-P05"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "status",
+          "--json"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "status",
+            "--json"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "p设计结构逻辑整体评审\",\n        \"status\": \"in_progress\",\n        \"reason\": \"整体评审发现的两个可立即治理项已补做并验证：过程文件归属完成实际迁移，状态自指阻塞完成分层与慢探针预算化；当前仍保留开放项：Kimi 长评审超时治理仍需后续处理，RedCap 完整复活终局父任务仍未关闭。\",\n        \"recorded_at\": \"2026-06-11T16:36:14+00:00\"\n      },\n      {\n        \"task_id\": \"prism-kimi-heavy-review-timeout\",\n        \"title\": \"Kimi重评审超时治理\",\n        \"status\": \"planned\",\n        \"reason\": \"本轮 Kimi 长评审在 360 秒总预算内超时；短补评成功。后续需要优化长评审分片或摘要策略，避免 100% 评审被单方超时拖住。\",\n        \"recorded_at\": \"2026-06-11T12:54:36+00:00\"\n      }\n    ]\n  },\n  \"scan_state\": {\n    \"account_path\": \"/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-account.json\",\n    \"account_status\": \"merged\",\n    \"task_status\": \"verified\",\n    \"scan_complete\": true,\n    \"scan_status\": \"已完成\",\n    \"shards_completed\": 3,\n    \"shards_total\": 3,\n    \"open_shards\": [],\n    \"blocked_shards\": [],\n    \"merge_status\": \"已合并\",\n    \"merge_path\": \"/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-merge.json\",\n    \"last_verified_output\": \"2026-06-06T18:01:12+00:00\",\n    \"conclusion_scope\": \"可以给最终结论\"\n  },\n  \"human_next_step\": \"继续推进终局父任务：RedCap 完整复活；阶段成果不能替代终局验收。\",\n  \"failures\": []\n}\nREDCAP_STATUS_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "id": "RQ-08",
+      "title": "Cap 复活命令",
+      "reality_change": "用户可直接运行 redcap revive 重新加载 Cap 身份并得到状态面，不泄露私密正文。",
+      "scan_refs": [
+        "LTCD-P01",
+        "boundary-user-private-state"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "revive",
+          "--json",
+          "--no-write-evidence"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "revive",
+            "--json",
+            "--no-write-evidence"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "p设计结构逻辑整体评审\",\n        \"status\": \"in_progress\",\n        \"reason\": \"整体评审发现的两个可立即治理项已补做并验证：过程文件归属完成实际迁移，状态自指阻塞完成分层与慢探针预算化；当前仍保留开放项：Kimi 长评审超时治理仍需后续处理，RedCap 完整复活终局父任务仍未关闭。\",\n        \"recorded_at\": \"2026-06-11T16:36:14+00:00\"\n      },\n      {\n        \"task_id\": \"prism-kimi-heavy-review-timeout\",\n        \"title\": \"Kimi重评审超时治理\",\n        \"status\": \"planned\",\n        \"reason\": \"本轮 Kimi 长评审在 360 秒总预算内超时；短补评成功。后续需要优化长评审分片或摘要策略，避免 100% 评审被单方超时拖住。\",\n        \"recorded_at\": \"2026-06-11T12:54:36+00:00\"\n      }\n    ]\n  },\n  \"scan_state\": {\n    \"account_path\": \"/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-account.json\",\n    \"account_status\": \"merged\",\n    \"task_status\": \"verified\",\n    \"scan_complete\": true,\n    \"scan_status\": \"已完成\",\n    \"shards_completed\": 3,\n    \"shards_total\": 3,\n    \"open_shards\": [],\n    \"blocked_shards\": [],\n    \"merge_status\": \"已合并\",\n    \"merge_path\": \"/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-merge.json\",\n    \"last_verified_output\": \"2026-06-06T18:01:12+00:00\",\n    \"conclusion_scope\": \"可以给最终结论\"\n  },\n  \"human_next_step\": \"继续推进终局父任务：RedCap 完整复活；阶段成果不能替代终局验收。\",\n  \"failures\": []\n}\nREDCAP_REVIVE_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "id": "RQ-09",
+      "title": "旧病禁止提升",
+      "reality_change": "报告即进度、回执即完成、收尾递归和原始证据默认加载都保留为禁止提升决策。",
+      "scan_refs": [
+        "DLR-R01",
+        "DLR-R03",
+        "LTCD-R02",
+        "LTCD-R03"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "phase2-blueprint",
+          "check"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "phase2-blueprint",
+            "check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "{\n  \"ok\": true,\n  \"contract\": \"assets/contracts/redcap-1.1-phase2-blueprint.json\",\n  \"allow_draft\": false,\n  \"failures\": []\n}\nREDCAP_PHASE2_BLUEPRINT_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        }
+      ]
+    },
+    {
+      "id": "RQ-10",
+      "title": "完整角色化工程工作流",
+      "reality_change": "Loom 的优秀思想以产品经理、架构师、开发者、测试、评审和 Cap 收尾阶段进入可执行工作流检查。",
+      "scan_refs": [
+        "DLR-P01",
+        "DLR-P02",
+        "DLR-P03",
+        "DLR-P04",
+        "DLR-P05",
+        "LTCD-P03",
+        "LTCD-P04",
+        "LTCD-P05"
+      ],
+      "commands": [
+        [
+          "runtime/bin/redcap",
+          "loom-workflow",
+          "check"
+        ],
+        [
+          "runtime/bin/redcap",
+          "full-revival-amendment",
+          "check"
+        ]
+      ],
+      "required_for_formal_use": true,
+      "status": "verified",
+      "scan_refs_present": true,
+      "command_results": [
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "loom-workflow",
+            "check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-loom-workflow-check\",\n  \"ok\": true,\n  \"contract\": \"/Users/norven/workspace/AI Era/redcap/assets/contracts/loom-workflow.json\",\n  \"roles\": [\n    \"architect\",\n    \"cap_orchestrator\",\n    \"developer\",\n    \"product_manager\",\n    \"reviewer\",\n    \"tester\"\n  ],\n  \"phases\": [\n    \"architecture_design\",\n    \"blocked\",\n    \"change_intake\",\n    \"closeout\",\n    \"idea_intake\",\n    \"implementation\",\n    \"quality_assurance\",\n    \"review_and_acceptance\"\n  ],\n  \"failures\": []\n}\nREDCAP_LOOM_WORKFLOW_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        },
+        {
+          "argv": [
+            "runtime/bin/redcap",
+            "full-revival-amendment",
+            "check"
+          ],
+          "exit_code": 0,
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-full-revival-amendment-check\",\n  \"ok\": true,\n  \"contract\": \"/Users/norven/workspace/AI Era/redcap/assets/contracts/full-revival-amendment.json\",\n  \"scan_merge\": \"/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-merge.json\",\n  \"required_design_count\": 15,\n  \"scan_portable_count\": 15,\n  \"failures\": []\n}\nREDCAP_FULL_REVIVAL_AMENDMENT_OK\n",
+          "stderr_tail": "",
+          "ok": true,
+          "timed_out": false
+        }
+      ]
+    }
+  ]
+}
+REDCAP_REVIVAL_QUEUE_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_FORMAL_USABLE_SELF_CHECK_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_COMPLETE_REVIVAL_SELF_CHECK_OK
+SESSION_OWNERSHIP_OK state=claimed file=/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-runtime/project/24ce03cb3fd2a69dd863afdd6d04c05c/session-ownership/codex-d6440983c454c2e5999fdb66bbe9cf5f89a8f5847d6c9578ef14afd26eee122c.json
+{
+  "ok": true,
+  "owned_probe": "owned",
+  "mismatch_probe": "advisory-only",
+  "failures": []
+}
+REDCAP_SESSION_OWNERSHIP_OK
+{
+  "ok": true,
+  "failures": []
+}
+{
+  "ok": true,
+  "failures": []
+}
+{
+  "ok": true,
+  "codex_hooks": {
+    "PostToolUse": true,
+    "PreToolUse": true,
+    "SessionStart": true,
+    "Stop": true,
+    "UserPromptSubmit": true
+  },
+  "codex_hook_template": {
+    "template_path": "assets/contracts/codex-hooks.template.json",
+    "live_path": ".codex/hooks.json",
+    "matches": true
+  },
+  "provider_call_interception": {
+    "mode": "dispatcher-enforced",
+    "providers": [
+      "claude-code",
+      "kimi"
+    ],
+    "dispatcher_self_check": true
+  },
+  "codex_hook_self_check": true,
+  "codex_hook_self_check_attempts": 1,
+  "codex_hook_self_check_stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\n",
+  "codex_hook_self_check_stderr_tail": "",
+  "unsupported_events": {
+    "PermissionRequest": "No verified Codex project hook event or provider CLI lifecycle equivalent is available in this workspace.",
+    "PreCompact": "No verified Codex project hook event or provider CLI lifecycle equivalent is available in this workspace.",
+    "PostCompact": "No verified Codex project hook event or provider CLI lifecycle equivalent is available in this workspace."
+  },
+  "failures": []
+}
+REDCAP_HOST_HOOK_AUDIT_OK
+{
+  "ok": true,
+  "contract": "/Users/norven/workspace/AI Era/redcap/assets/contracts/prism-timeout-governance.json",
+  "failures": []
+}
+PRISM_TIMEOUT_GOVERNANCE_POLICY_OK
+{
+  "ok": true,
+  "failures": []
+}
+PRISM_DISPATCH_TIMEOUT_E2E_OK
+{
+  "ok": true,
+  "context": {
+    "schema_id": "redcap-runtime-boundary-context",
+    "version": 2,
+    "resolved_at": "2026-06-11T16:43:58+00:00",
+    "boundary_mode": "self-development",
+    "cwd": "/Users/norven/workspace/AI Era/redcap",
+    "runtime_root": "/Users/norven/workspace/AI Era/redcap",
+    "project_workspace": "/Users/norven/workspace/AI Era/redcap",
+    "project_runtime_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
+    "task_file": "/Users/norven/workspace/AI Era/redcap/.dev-task.md",
+    "task_file_exists": false,
+    "task_id": "",
+    "task_hash": null,
+    "user_private_root": "/Users/norven/.cap",
+    "state_root": "/Users/norven/.cap/redcap-runtime",
+    "evidence_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence",
+    "logs_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/logs",
+    "tmp_root": "/Users/norven/workspace/AI Era/redcap/assets/evidence/tmp",
+    "project_runtime_gitignore": "/Users/norven/workspace/AI Era/redcap/assets/evidence/.gitignore",
+    "project_runtime_gitignore_ok": true,
+    "legacy_external_evidence_root": "/Users/norven/.cap/redcap-runtime/evidence/8c8cdb010e8e4721",
+    "source_policy": "old-redcap-runtime-workspace-boundary-extraction-v1"
+  },
+  "failures": []
+}
+REDCAP_RUNTIME_BOUNDARY_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_RUNTIME_BOUNDARY_SELF_CHECK_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_ARCHAEOLOGY_SHARDS_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_ARCHAEOLOGY_SHARDS_SELF_CHECK_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_DEVELOPMENT_LIFECYCLE_SELF_CHECK_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_FINAL_CLAIM_GUARD_SELF_CHECK_OK
+{
+  "ok": true,
+  "contract": "assets/contracts/redcap-1.1-phase2-blueprint.json",
+  "allow_draft": false,
+  "failures": []
+}
+REDCAP_PHASE2_BLUEPRINT_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_PHASE2_BLUEPRINT_SELF_CHECK_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_FULL_REVIVAL_AMENDMENT_SELF_CHECK_OK
+{
+  "schema_id": "redcap-full-revival-amendment-check",
+  "ok": true,
+  "contract": "/Users/norven/workspace/AI Era/redcap/assets/contracts/full-revival-amendment.json",
+  "scan_merge": "/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-merge.json",
+  "required_design_count": 15,
+  "scan_portable_count": 15,
+  "failures": []
+}
+REDCAP_FULL_REVIVAL_AMENDMENT_OK
+{
+  "ok": true,
+  "steps": {
+    "pretool_claim": true,
+    "ownership_state": "owned",
+    "fsm_transitions": 4,
+    "completion_blocked_without_marker": true,
+    "completion_allowed_with_lifecycle_marker": true,
+    "old_redcap_path": "/Users/norven/workspace/redcap"
+  },
+  "commands": [
+    {
+      "argv": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "/Users/norven/workspace/AI Era/redcap/runtime/host-adapters/codex/codex-hook.py",
+        "--event",
+        "PreToolUse"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+        "session-ownership",
+        "check",
+        "--host",
+        "codex",
+        "--session-id",
+        "e2e-trace-session",
+        "--task-id",
+        "e2e-trace-task"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+        "fsm",
+        "transition",
+        "--from",
+        "INTAKE",
+        "--to",
+        "PRISM_REVIEW",
+        "--evidence",
+        "gate_required_or_optional"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+        "fsm",
+        "transition",
+        "--from",
+        "PRISM_REVIEW",
+        "--to",
+        "IMPLEMENTING",
+        "--evidence",
+        "prism_review_or_explicit_skip"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+        "fsm",
+        "transition",
+        "--from",
+        "IMPLEMENTING",
+        "--to",
+        "VERIFYING",
+        "--evidence",
+        "runtime_change"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+        "fsm",
+        "transition",
+        "--from",
+        "VERIFYING",
+        "--to",
+        "TEMPORARY_USABLE",
+        "--evidence",
+        "redcap_check_passed"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "/Users/norven/workspace/AI Era/redcap/runtime/core/final_claim_guard.py",
+        "check",
+        "--message",
+        "已完成。",
+        "--events",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-e2e-trace-da2purgm/completion-events.jsonl",
+        "--completion-marker",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-e2e-trace-da2purgm/latest-completion.json",
+        "--session-id",
+        "e2e-completion-session",
+        "--turn-id",
+        "e2e-completion-turn"
+      ],
+      "exit_code": 1
+    },
+    {
+      "argv": [
+        "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+        "lifecycle",
+        "check",
+        "--packet",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-e2e-trace-da2purgm/completion-packet.json",
+        "--events",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-e2e-trace-da2purgm/completion-events.jsonl",
+        "--completion-marker",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-e2e-trace-da2purgm/latest-completion.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "/Applications/Xcode.app/Contents/Developer/usr/bin/python3",
+        "/Users/norven/workspace/AI Era/redcap/runtime/core/final_claim_guard.py",
+        "check",
+        "--message",
+        "已完成。",
+        "--events",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-e2e-trace-da2purgm/completion-events.jsonl",
+        "--completion-marker",
+        "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-e2e-trace-da2purgm/latest-completion.json",
+        "--session-id",
+        "e2e-completion-session",
+        "--turn-id",
+        "e2e-completion-turn"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "failures": []
+}
+REDCAP_E2E_TRACE_OK
+{
+  "ok": true,
+  "states": [
+    "BLOCKED",
+    "IMPLEMENTING",
+    "INTAKE",
+    "PRISM_REVIEW",
+    "TEMPORARY_USABLE",
+    "VERIFYING"
+  ],
+  "transitions": 12,
+  "failures": []
+}
+REDCAP_FSM_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_LOOM_WORKFLOW_SELF_CHECK_OK
+{
+  "schema_id": "redcap-loom-workflow-check",
+  "ok": true,
+  "contract": "/Users/norven/workspace/AI Era/redcap/assets/contracts/loom-workflow.json",
+  "roles": [
+    "architect",
+    "cap_orchestrator",
+    "developer",
+    "product_manager",
+    "reviewer",
+    "tester"
+  ],
+  "phases": [
+    "architecture_design",
+    "blocked",
+    "change_intake",
+    "closeout",
+    "idea_intake",
+    "implementation",
+    "quality_assurance",
+    "review_and_acceptance"
+  ],
+  "failures": []
+}
+REDCAP_LOOM_WORKFLOW_OK
+{
+  "ok": true,
+  "entries": 6,
+  "default_read": "index-only",
+  "failures": []
+}
+REDCAP_KNOWLEDGE_GATEWAY_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_KNOWLEDGE_WRITE_REVIEW_OK
+{
+  "ok": true,
+  "contract": "/Users/norven/workspace/AI Era/redcap/assets/contracts/redcap-1.0-loop.json",
+  "failures": []
+}
+REDCAP_REVIVAL_1_LOOP_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_REVIVAL_1_LOOP_SELF_CHECK_OK
+{
+  "ok": true,
+  "required_loaded": [
+    "cap_identity"
+  ],
+  "optional_missing": [
+    "legacy_soul"
+  ],
+  "failures": []
+}
+REDCAP_SOUL_SOURCE_OK
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_SOUL_LOADER_OK
+{
+  "ok": true,
+  "root": "/Users/norven/workspace/AI Era/redcap",
+  "policy": "/Users/norven/workspace/AI Era/redcap/assets/contracts/directory-structure.json",
+  "failures": []
+}
+REDCAP_LAYOUT_OK

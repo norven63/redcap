@@ -30,6 +30,7 @@ sys.path.insert(0, str(ROOT / "lib"))
 sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
 from prism_lock import file_lock, write_json_atomic, write_text_atomic  # noqa: E402
 from prism_ledger import record_gate, record_manifest  # noqa: E402
+from intent_judge import classify_with_policy  # noqa: E402
 from prompt_intent import classify_prompt_intent  # noqa: E402
 
 ALLOWED_PROVIDERS = {"kimi", "claude-code"}
@@ -815,6 +816,13 @@ def apply_self_development_lifecycle_gate(
         return
     if payload.get("risk_level", "medium") not in SELF_DEVELOPMENT_LIFECYCLE_RISKS:
         return
+    semantic_intent = ((result.get("semantic_gate") or {}).get("prompt_intent") or {})
+    if isinstance(semantic_intent, dict) and semantic_intent.get("action_evidence") in {"none", "diagnostic"}:
+        lifecycle["skip_reason"] = (
+            "semantic intent is non-mutating; lifecycle packet is required before implementation or completion, "
+            "not before ordinary answers or read-only review"
+        )
+        return
 
     lifecycle["required"] = True
     if not isinstance(lifecycle_packet, str) or not lifecycle_packet.strip():
@@ -890,6 +898,92 @@ def evaluate_gate(payload: dict[str, Any], rules_payload: dict[str, Any] | None 
         }[decision],
     }
     return result
+
+
+def semantic_gate_prompt(payload: dict[str, Any]) -> str:
+    parts = [
+        payload.get("task", ""),
+        payload.get("user_intent", ""),
+        payload.get("main_claim", ""),
+    ]
+    return "\n".join(str(part) for part in parts if str(part).strip())
+
+
+def semantic_gate_has_hard_state_change(args: argparse.Namespace, payload: dict[str, Any]) -> bool:
+    if payload.get("changed_paths"):
+        return True
+    for key in ["completion_claim", "capability_status", "completion_label"]:
+        value = getattr(args, key, None)
+        if value:
+            return True
+    return False
+
+
+def apply_semantic_gate(
+    payload: dict[str, Any],
+    result: dict[str, Any],
+    args: argparse.Namespace,
+) -> None:
+    policy = getattr(args, "semantic_policy", "off")
+    if policy == "off":
+        return
+    prompt = semantic_gate_prompt(payload)
+    semantic_gate: dict[str, Any] = {
+        "policy": policy,
+        "attempted": False,
+        "before_decision": result.get("decision"),
+        "before_matched_rules": list(result.get("matched_rules", [])),
+    }
+    if not prompt.strip():
+        semantic_gate["reason"] = "empty gate prompt"
+        result["semantic_gate"] = semantic_gate
+        return
+    try:
+        fake_delay = float(getattr(args, "semantic_fake_delay_seconds", 0.0) or 0.0)
+    except ValueError:
+        fake_delay = 0.0
+    judgment = classify_with_policy(
+        prompt,
+        llm_policy=policy,
+        provider=getattr(args, "semantic_provider", "claude-code"),
+        fallback_provider=getattr(args, "semantic_fallback_provider", "claude-code"),
+        timeout_seconds=float(getattr(args, "semantic_timeout_seconds", 20.0)),
+        fake_response=getattr(args, "semantic_fake_response", None),
+        fake_delay_seconds=fake_delay,
+    )
+    intent = judgment.get("prompt_intent") if isinstance(judgment, dict) else {}
+    semantic_gate.update({
+        "attempted": bool(judgment.get("llm_attempted")) if isinstance(judgment, dict) else False,
+        "ok": judgment.get("ok") if isinstance(judgment, dict) else False,
+        "source": judgment.get("source") if isinstance(judgment, dict) else None,
+        "prompt_intent": intent,
+        "llm_appeal_reason": judgment.get("llm_appeal_reason") if isinstance(judgment, dict) else None,
+        "llm_judgment_applied": judgment.get("llm_judgment_applied") if isinstance(judgment, dict) else None,
+        "llm_application_reason": judgment.get("llm_application_reason") if isinstance(judgment, dict) else None,
+        "llm_results": judgment.get("llm_results", []) if isinstance(judgment, dict) else [],
+        "fallback_reason": judgment.get("reason") if isinstance(judgment, dict) else None,
+        "hard_state_change": semantic_gate_has_hard_state_change(args, payload),
+    })
+    if (
+        isinstance(intent, dict)
+        and intent.get("action_evidence") == "none"
+        and intent.get("confidence") != "low"
+        and not semantic_gate["hard_state_change"]
+    ):
+        result["decision"] = "skipped"
+        result["review_mode"] = None
+        result["required_providers"] = []
+        result["reason"] = (
+            "语义判断认为这是仅需回答的问题；不需要棱镜外部评审，但实现动作或完成声明仍受后续门禁约束。"
+        )
+        result["next_step"] = "继续普通回答；如后续要改代码、提交或推送，必须重新进入对应门禁。"
+        semantic_gate["decision_adjusted"] = "required_or_optional_to_skipped"
+    elif isinstance(intent, dict) and intent.get("action_evidence") == "diagnostic":
+        semantic_gate["decision_adjusted"] = "none; diagnostic review may still require Prism"
+    else:
+        semantic_gate["decision_adjusted"] = "none"
+    semantic_gate["after_decision"] = result.get("decision")
+    result["semantic_gate"] = semantic_gate
 
 
 def cmd_check(_: argparse.Namespace) -> int:
@@ -1027,6 +1121,94 @@ def cmd_check(_: argparse.Namespace) -> int:
     })
     if "completion-claim" not in legitimate_completion_probe["matched_rules"]:
         raise SystemExit("gate must still match a legitimate complete claim")
+    semantic_fixture_args = argparse.Namespace(
+        semantic_policy="auto-on-ambiguous",
+        semantic_provider="claude-code",
+        semantic_fallback_provider="claude-code",
+        semantic_timeout_seconds=1.0,
+        semantic_fake_response=json.dumps({
+            "prompt_kind": "question",
+            "authorized_scope": "answer_only",
+            "action_evidence": "none",
+            "confidence": "high",
+            "reason": "fixture restart question",
+        }, ensure_ascii=False),
+        semantic_fake_delay_seconds=0.0,
+        completion_claim=None,
+        capability_status=None,
+        completion_label=[],
+    )
+    semantic_restart_probe = evaluate_gate({
+        "task": "再问一个问题，这波改动落地后，是否需要重启codex才能生效？因为我记得codex的hook钩子需要重启才能生效。",
+        "risk_level": "medium",
+        "changed_paths": [],
+        "tags": ["codex-user-prompt", "codex-hook"],
+    })
+    apply_semantic_gate(
+        {
+            "task": "再问一个问题，这波改动落地后，是否需要重启codex才能生效？因为我记得codex的hook钩子需要重启才能生效。",
+            "risk_level": "medium",
+            "changed_paths": [],
+            "tags": ["codex-user-prompt", "codex-hook"],
+        },
+        semantic_restart_probe,
+        semantic_fixture_args,
+    )
+    if semantic_restart_probe["decision"] != "skipped":
+        raise SystemExit("semantic gate should skip answer-only restart questions")
+    semantic_implementation_probe = evaluate_gate({
+        "task": "请立即修复Hook误伤问题并运行测试",
+        "risk_level": "medium",
+        "changed_paths": [],
+        "tags": ["codex-user-prompt", "codex-hook"],
+    })
+    apply_semantic_gate(
+        {
+            "task": "请立即修复Hook误伤问题并运行测试",
+            "risk_level": "medium",
+            "changed_paths": [],
+            "tags": ["codex-user-prompt", "codex-hook"],
+        },
+        semantic_implementation_probe,
+        semantic_fixture_args,
+    )
+    if semantic_implementation_probe["decision"] == "skipped":
+        raise SystemExit("semantic gate must not downgrade clear implementation directives")
+    semantic_review_args = argparse.Namespace(
+        semantic_policy="auto-on-ambiguous",
+        semantic_provider="claude-code",
+        semantic_fallback_provider="claude-code",
+        semantic_timeout_seconds=1.0,
+        semantic_fake_response=json.dumps({
+            "prompt_kind": "directive",
+            "authorized_scope": "review_only",
+            "action_evidence": "diagnostic",
+            "confidence": "high",
+            "reason": "fixture review request",
+        }, ensure_ascii=False),
+        semantic_fake_delay_seconds=0.0,
+        completion_claim=None,
+        capability_status=None,
+        completion_label=[],
+    )
+    semantic_review_probe = evaluate_gate({
+        "task": "和棱镜一起整体review当前新RedCap的设计思路、目录结构、逻辑实现，细致评估需要改进、调整和尚未执行完毕的任务",
+        "risk_level": "high",
+        "changed_paths": [],
+        "tags": ["codex-user-prompt", "codex-hook"],
+    })
+    apply_semantic_gate(
+        {
+            "task": "和棱镜一起整体review当前新RedCap的设计思路、目录结构、逻辑实现，细致评估需要改进、调整和尚未执行完毕的任务",
+            "risk_level": "high",
+            "changed_paths": [],
+            "tags": ["codex-user-prompt", "codex-hook"],
+        },
+        semantic_review_probe,
+        semantic_review_args,
+    )
+    if ((semantic_review_probe.get("semantic_gate") or {}).get("prompt_intent") or {}).get("authorized_scope") != "review_only":
+        raise SystemExit("semantic gate should classify review-shaped prompts as review_only when LLM says so")
     for path in [
         ROOT / "examples" / "gate-skip-trivial.json",
         ROOT / "examples" / "gate-optional-implementation.json",
@@ -1516,6 +1698,7 @@ def cmd_gate(args: argparse.Namespace) -> int:
     if args.task_id:
         payload["task_id"] = args.task_id
     result = evaluate_gate(payload)
+    apply_semantic_gate(payload, result, args)
     if args.completion_claim or args.capability_status or args.completion_label:
         completion_semantics = run_completion_semantics_check(
             status=args.capability_status,
@@ -2044,6 +2227,17 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument("--project-workspace", help="Project workspace used by runtime boundary resolution")
     gate.add_argument("--lifecycle-packet", help="Development lifecycle packet checked for RedCap self-development work")
     gate.add_argument("--lifecycle-events", help="UserPromptSubmit event JSONL used to verify lifecycle prompt_context excerpts")
+    gate.add_argument(
+        "--semantic-policy",
+        choices=["off", "auto", "auto-on-ambiguous", "force"],
+        default="off",
+        help="Use bounded LLM semantic judgment before final gate decision. Default keeps CLI deterministic.",
+    )
+    gate.add_argument("--semantic-provider", choices=sorted(ALLOWED_PROVIDERS), default="claude-code")
+    gate.add_argument("--semantic-fallback-provider", choices=sorted(ALLOWED_PROVIDERS), default="claude-code")
+    gate.add_argument("--semantic-timeout-seconds", type=float, default=20.0)
+    gate.add_argument("--semantic-fake-response", help="Test-only semantic judgment JSON.")
+    gate.add_argument("--semantic-fake-delay-seconds", type=float, default=0.0, help="Test-only semantic delay.")
     gate.add_argument("--completion-claim", help="Completion claim text to validate before returning the gate decision")
     gate.add_argument(
         "--capability-status",

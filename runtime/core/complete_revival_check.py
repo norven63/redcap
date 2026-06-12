@@ -74,10 +74,11 @@ def parent_verified_host_audit_result() -> dict[str, Any]:
         "argv": ["runtime/bin/redcap", "host-hook-audit"],
         "exit_code": 0,
         "ok": True,
-        "stdout": "宿主审计由父级检查单独执行；终局验收不重复触发重检查。",
+        "stdout": "宿主审计已跳过；终局验收不重复触发重检查，结果只能视为部分通过。",
         "stderr": "",
         "timed_out": False,
         "checked_by_parent": True,
+        "skipped": True,
     }
 
 
@@ -230,12 +231,22 @@ def check_complete_revival(
     validate_contract(failures)
     validate_no_promote_records(failures)
     terminal_completion_authorized = require_terminal_verified and not failures
+    status = "partial_pass_with_host_hook_pending" if skip_host_hook_audit and not failures else ("pass" if not failures else "fail")
     return {
         "schema_id": "redcap-complete-revival-check",
         "level": "完整复活终局验收" if require_terminal_verified else "完整复活前置验收",
         "ok": not failures,
+        "status": status,
         "require_terminal_verified": require_terminal_verified,
         "skip_host_hook_audit": skip_host_hook_audit,
+        "host_hook_audit": {
+            "status": "skipped" if skip_host_hook_audit else "checked",
+            "meaning": (
+                "宿主审计未在本命令内执行；本命令通过只能作为部分通过，不能替代完整宿主审计。"
+                if skip_host_hook_audit
+                else "宿主审计已在本命令内执行。"
+            ),
+        },
         "terminal_completion_authorized": terminal_completion_authorized,
         "authorizes_task_fact": "redcap-complete-revival" if terminal_completion_authorized else None,
         "checks": {name: summarize(result) for name, result in commands.items()},
@@ -307,6 +318,17 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     validate_status(open_status, status_failures, require_terminal_verified=True)
     if not any("终局父任务" in item for item in status_failures):
         failures.append("要求终局验证时，开放父任务没有失败")
+    skipped = parent_verified_host_audit_result()
+    if skipped.get("skipped") is not True or skipped.get("checked_by_parent") is not True:
+        failures.append("跳过宿主审计样例没有明确标记 skipped")
+    partial_shape = {
+        "schema_id": "redcap-complete-revival-check",
+        "ok": True,
+        "status": "partial_pass_with_host_hook_pending",
+        "host_hook_audit": {"status": "skipped"},
+    }
+    if partial_shape.get("status") != "partial_pass_with_host_hook_pending":
+        failures.append("跳过宿主审计时必须暴露 partial_pass_with_host_hook_pending")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1

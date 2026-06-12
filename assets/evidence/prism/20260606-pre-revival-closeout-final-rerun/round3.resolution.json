@@ -16,7 +16,7 @@
       "rationale": "Kimi 的关注成立：父批次不能只靠口头约定在 360 扫描失败后重开。Cap 已接受该关注，并把自动重开触发器写入 task-facts 工作流。",
       "implementation_evidence": [
         "runtime/core/task_facts.py",
-        "assets/contracts/pre-revival-zero-tail-prism-request.json",
+        "assets/evidence/prism/20260606-pre-revival-zero-tail-infra-batch/pre-revival-zero-tail-prism-request.json",
         "assets/evidence/task-facts/task-facts.jsonl"
       ],
       "verification_evidence": [

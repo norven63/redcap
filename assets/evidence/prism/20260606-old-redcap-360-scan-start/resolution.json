@@ -36,8 +36,8 @@
       "implementation_evidence": [
         "assets/archaeology/shards/old-redcap-360-scan-account.json",
         "assets/archaeology/shards/old-redcap-360-scan-coverage.json",
-        "assets/contracts/old-redcap-360-scan-prism-request.json",
-        "assets/contracts/old-redcap-360-scan-lifecycle.json"
+        "assets/evidence/prism/20260606-old-redcap-360-scan-start/old-redcap-360-scan-prism-request.json",
+        "assets/evidence/lifecycle/old-redcap-360-scan-lifecycle.json"
       ],
       "verification_evidence": [
         "assets/evidence/check-receipts/20260606-old-redcap-360-scan-start/prism-shard-check.receipt.json",

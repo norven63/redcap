@@ -22,10 +22,10 @@ assets/contracts/prism-gate-response.schema.json
 assets/contracts/prism-session-protocol.md
 assets/contracts/redcap-1.0-loop.json
 assets/contracts/redcap-1.1-phase2-blueprint.json
-assets/contracts/redcap-complete-revival-lifecycle.json
-assets/contracts/redcap-complete-revival-prism-request.json
-assets/contracts/terminal-goal-guard-lifecycle.json
-assets/contracts/terminal-goal-guard-prism-request.json
+assets/evidence/lifecycle/redcap-complete-revival-lifecycle.json
+assets/evidence/prism/20260608-redcap-complete-revival/redcap-complete-revival-prism-request.json
+assets/evidence/lifecycle/terminal-goal-guard-lifecycle.json
+assets/evidence/prism/20260607-terminal-goal-guard/terminal-goal-guard-prism-request.json
 assets/contracts/terminal-goals.json
 assets/docs/README.md
 assets/docs/archaeology-shards.md

@@ -1,0 +1,112 @@
+{
+  "schema_id": "prism-task-health-summary",
+  "computed_at": "2026-06-12T17:54:59+00:00",
+  "event_count": 17524,
+  "session_event_count": 5477,
+  "task_count": 57,
+  "success_count": 32,
+  "success_rate": 0.5614,
+  "operational_task_count": 52,
+  "operational_success_count": 32,
+  "operational_success_rate": 0.6154,
+  "self_check_task_count": 5,
+  "active_count": 18,
+  "operational_active_count": 13,
+  "attention_count": 24,
+  "average_duration_seconds": 2036.667,
+  "providers": {
+    "claude-code": {
+      "tasks": 57,
+      "rounds": 61,
+      "reviews_loaded": 45,
+      "pass": 7,
+      "concern": 33,
+      "block": 5,
+      "missing_verdict": 12
+    },
+    "kimi": {
+      "tasks": 57,
+      "rounds": 53,
+      "reviews_loaded": 39,
+      "pass": 6,
+      "concern": 29,
+      "block": 4,
+      "missing_verdict": 18
+    }
+  },
+  "recent_attention_tasks": [
+    {
+      "task_id": "dispatcher-self-check",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-12T17:51:47+00:00"
+    },
+    {
+      "task_id": "timeout-e2e",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-12T17:50:50+00:00"
+    },
+    {
+      "task_id": "loom-fsm-kimi-short-review",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-12T17:40:55+00:00"
+    },
+    {
+      "task_id": "loom-fsm-self-evolution-runtime-review",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-12T17:38:44+00:00"
+    },
+    {
+      "task_id": "20260611-redcap-design-structure-logic-review-rerun",
+      "outcome": "failed",
+      "strictest_verdict": "block",
+      "recorded_at": "2026-06-11T12:53:40+00:00"
+    },
+    {
+      "task_id": "20260611-redcap-design-structure-logic-review-rerun-kimi-short",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-11T12:46:07+00:00"
+    },
+    {
+      "task_id": "20260611-stop-hook-recovery-reanchor-rerun",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-11T07:25:01+00:00"
+    },
+    {
+      "task_id": "20260611-stop-hook-recovery-reanchor",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-11T06:54:46+00:00"
+    },
+    {
+      "task_id": "20260611-redcap-design-structure-logic-review",
+      "outcome": "failed",
+      "strictest_verdict": "concern",
+      "recorded_at": "2026-06-11T05:43:23+00:00"
+    },
+    {
+      "task_id": "20260610-stop-hook-review-answer-recovery-r2",
+      "outcome": "attention",
+      "strictest_verdict": "concern",
+      "recorded_at": "2026-06-10T17:28:34+00:00"
+    }
+  ],
+  "gate_event_count": 12047,
+  "gate_success_count": 12047,
+  "gate_success_rate": 1.0,
+  "gate_decision_counts": {
+    "optional": 398,
+    "required": 10600,
+    "skipped": 1049
+  },
+  "gate_trigger_counts": {
+    "codex-UserPromptSubmit": 8961,
+    "cli-gate": 3086
+  },
+  "gate_average_duration_seconds": 0.214
+}

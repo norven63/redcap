@@ -27,6 +27,7 @@ def namespace_from_args(args: argparse.Namespace) -> argparse.Namespace:
         task_file=args.task_file,
         task_id=args.task_id or "",
         user_private_root=args.user_private_root,
+        project_runtime_root=args.project_runtime_root,
         state_root=args.state_root,
         evidence_root=args.evidence_root,
         require_task_file=False,
@@ -40,7 +41,8 @@ def build_status(args: argparse.Namespace, *, load_soul: bool = False, write_sou
         boundary_context,
         require_task_file=args.require_task_file,
     )
-    records = task_facts.read_records(pathlib.Path(args.task_facts).resolve())
+    task_facts_path = resolve_task_facts_path(args, boundary_context)
+    records = task_facts.read_records(task_facts_path)
     task_summary = task_facts.compute_summary(records)
     facts_by_task = task_facts.latest_by_task(records)
     terminal_contract = terminal_goal_guard.load_json(pathlib.Path(args.terminal_goals).resolve())
@@ -57,12 +59,12 @@ def build_status(args: argparse.Namespace, *, load_soul: bool = False, write_sou
     scan_state = scan_conclusion_guard.build_scan_state(
         pathlib.Path(args.scan_account).resolve(),
         pathlib.Path(args.scan_merge).resolve(),
-        pathlib.Path(args.task_facts).resolve(),
+        task_facts_path,
     )
     soul_packet = soul_loader.build_packet()
     soul_evidence: dict[str, str] | None = None
     if load_soul and write_soul_evidence:
-        soul_evidence = soul_loader.write_evidence(soul_packet, pathlib.Path(args.soul_evidence_dir).resolve())
+        soul_evidence = soul_loader.write_evidence(soul_packet, resolve_soul_evidence_dir(args, boundary_context))
     failures = list(boundary_failures)
     if not soul_packet.get("ok"):
         failures.extend(str(item) for item in soul_packet.get("failures", []))
@@ -83,6 +85,7 @@ def build_status(args: argparse.Namespace, *, load_soul: bool = False, write_sou
             "evidence": soul_evidence,
         },
         "task_summary": task_summary,
+        "task_facts_path": str(task_facts_path),
         "terminal_goals": {
             "states": terminal_goal_states,
             "non_terminal_open_tasks": non_terminal_open_tasks,
@@ -91,6 +94,18 @@ def build_status(args: argparse.Namespace, *, load_soul: bool = False, write_sou
         "human_next_step": human_next_step(task_summary, scan_state, soul_packet, boundary_failures, terminal_goal_states),
         "failures": failures,
     }
+
+
+def resolve_task_facts_path(args: argparse.Namespace, boundary_context: dict[str, Any]) -> pathlib.Path:
+    if args.task_facts:
+        return pathlib.Path(args.task_facts).resolve()
+    return pathlib.Path(boundary_context["evidence_root"]).resolve() / "task-facts" / "task-facts.jsonl"
+
+
+def resolve_soul_evidence_dir(args: argparse.Namespace, boundary_context: dict[str, Any]) -> pathlib.Path:
+    if args.soul_evidence_dir:
+        return pathlib.Path(args.soul_evidence_dir).resolve()
+    return pathlib.Path(boundary_context["evidence_root"]).resolve() / "soul"
 
 
 def human_next_step(
@@ -129,6 +144,7 @@ def print_human(status: dict[str, Any]) -> None:
     print(f"工作模式：{boundary.get('boundary_mode')}")
     print(f"运行时根目录：{boundary.get('runtime_root')}")
     print(f"项目工作区：{boundary.get('project_workspace')}")
+    print(f"项目运行目录：{boundary.get('project_runtime_root')}")
     print(f"任务文件：{boundary.get('task_file')}（存在：{boundary.get('task_file_exists')}）")
     print(f"Cap 身份：{'已加载' if soul.get('ok') else '未加载'}")
     print(f"开放任务：{task_summary.get('open_count', 0)}")
@@ -160,13 +176,14 @@ def add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--task-file")
     parser.add_argument("--task-id", default="")
     parser.add_argument("--user-private-root")
+    parser.add_argument("--project-runtime-root")
     parser.add_argument("--state-root")
     parser.add_argument("--evidence-root")
-    parser.add_argument("--task-facts", default=str(task_facts.DEFAULT_LEDGER))
+    parser.add_argument("--task-facts")
     parser.add_argument("--terminal-goals", default=str(terminal_goal_guard.DEFAULT_CONTRACT))
     parser.add_argument("--scan-account", default=str(scan_conclusion_guard.DEFAULT_ACCOUNT))
     parser.add_argument("--scan-merge", default=str(scan_conclusion_guard.DEFAULT_MERGE))
-    parser.add_argument("--soul-evidence-dir", default=str(soul_loader.DEFAULT_EVIDENCE_DIR))
+    parser.add_argument("--soul-evidence-dir")
     parser.add_argument("--require-task-file", action="store_true")
     parser.add_argument("--require-scan-complete", action="store_true")
     parser.add_argument("--fail-on-open", action="store_true")
@@ -206,6 +223,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         task_file=None,
         task_id="",
         user_private_root=None,
+        project_runtime_root=None,
         state_root=None,
         evidence_root=None,
         task_facts=str(task_facts.DEFAULT_LEDGER),

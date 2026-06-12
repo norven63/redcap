@@ -1,0 +1,132 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260607-terminal-goal-guard",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven requires Cap to fix the class of failures where phase work, infrastructure checks, or reports substitute for the user's terminal objective.",
+    "target_reality": "RedCap must keep long-running terminal goals open until their own acceptance criteria are satisfied, and must prevent phase achievements from being reported as terminal completion.",
+    "non_goals": [
+      "claim the full RedCap revival is complete",
+      "treat formal usability baseline checks as full revival completion",
+      "hide terminal-goal work under status reports or version records",
+      "bulk-read the old RedCap repository"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "Remove the terminal goal guard command, the terminal goal contract, and Stop hook wiring; leave existing scan and revival evidence untouched.",
+    "verification_plan": [
+      "runtime/bin/redcap gate --task \"实现长期目标锚点，防止阶段成果冒充终局成果\" --risk-level high --lifecycle-packet assets/evidence/lifecycle/terminal-goal-guard-lifecycle.json",
+      "runtime/bin/redcap terminal-goal self-check",
+      "runtime/bin/redcap terminal-goal check",
+      "runtime/bin/redcap terminal-goal check --message \"RedCap 已经完整复活，正式可用。\" --prompt \"请汇报完整复活状态\"",
+      "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge",
+      "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+      "runtime/bin/redcap formal-usable-check",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260607-terminal-goal-guard/merge.json",
+    "resolution_path": "assets/evidence/prism/20260607-terminal-goal-guard/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260607-terminal-goal-guard/session.json"
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "好，那么你的方案是什么？是否有完善的方案了？是否需要和棱镜讨论来定案？我要求你把这个解决方案执行完成",
+    "prompt_kind": "mixed",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "Solve the general class of terminal-goal substitution failures, not only the RedCap revival instance.",
+    "primary_deliverable": "A runtime terminal-goal guard, contract, status integration, host hook integration, and task fact anchor that keep full revival open until its own evidence exists.",
+    "acceptance_criteria": [
+      "The contract distinguishes infrastructure usability, scan completion, migration usability, and full revival.",
+      "The full revival parent task is reopened or kept open when only phase-level evidence exists.",
+      "A final reply that says full revival is complete is rejected unless the terminal-goal contract and task facts prove it.",
+      "Formal usability checks explicitly identify themselves as a baseline, not full revival.",
+      "The Stop hook runs the terminal-goal guard before allowing final replies.",
+      "The UserPromptSubmit hook injects terminal-goal context before Cap plans or drafts the final answer.",
+      "At least one non-RedCap terminal-goal fixture proves the mechanism is not RedCap-only."
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/contracts/terminal-goals.json",
+      "runtime/core/terminal_goal_guard.py",
+      "runtime/host-adapters/codex/codex-hook.py",
+      "runtime/core/status_surface.py",
+      "runtime/core/formal_usable_check.py",
+      "runtime/core/development_lifecycle.py",
+      "runtime/bin/redcap",
+      "assets/evidence/task-facts/task-facts.jsonl"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "终局目标被建模为独立契约和任务账本锚点，状态展示、正式可用基线检查、主机适配器都读取同一契约，避免每个入口各自解释完成状态。"
+      ],
+      "evidence": [
+        "assets/contracts/terminal-goals.json",
+        "runtime/core/terminal_goal_guard.py",
+        "runtime/core/status_surface.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "异构评审助手提出的两个 concern 均被采纳，并通过 prism-resolution 检查；完整复活父任务保持 in_progress，阶段成果不能关闭父任务。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260607-terminal-goal-guard/resolution.json",
+        "assets/evidence/prism/20260607-terminal-goal-guard/session.json",
+        "runtime/bin/redcap task-facts summary"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "终局目标契约包含 RedCap 与非 RedCap 样例，停止前检查会阻断终局冒领，正式可用检查明确只代表基线而非完整复活。"
+      ],
+      "evidence": [
+        "assets/contracts/terminal-goals.json",
+        "assets/evidence/check-receipts/20260607-terminal-goal-guard/terminal-goal-overclaim-block.receipt.json",
+        "runtime/core/formal_usable_check.py"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "assets/contracts/terminal-goals.json",
+    "runtime/core/terminal_goal_guard.py",
+    "runtime/host-adapters/codex/codex-hook.py",
+    "runtime/core/status_surface.py",
+    "runtime/core/formal_usable_check.py",
+    "runtime/core/development_lifecycle.py",
+    "runtime/bin/redcap",
+    "assets/evidence/task-facts/task-facts.jsonl"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260607-terminal-goal-guard/codex-hook-intent-judge.receipt.json",
+    "assets/evidence/check-receipts/20260607-terminal-goal-guard/terminal-goal-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260607-terminal-goal-guard/terminal-goal-baseline-check.receipt.json",
+    "assets/evidence/check-receipts/20260607-terminal-goal-guard/terminal-goal-overclaim-block.receipt.json",
+    "assets/evidence/check-receipts/20260607-terminal-goal-guard/formal-usable-check.receipt.json",
+    "assets/evidence/check-receipts/20260607-terminal-goal-guard/status-check.receipt.json",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change",
+    "scope": "terminal-goal-substitution guard only; this does not claim RedCap full revival completion"
+  }
+}

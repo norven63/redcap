@@ -1,0 +1,13 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap complete-revival-check --require-terminal-verified --skip-host-hook-audit",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "expected_result_met": true,
+  "executed_at": "2026-06-11T16:35:55+00:00",
+  "executor": "cap",
+  "stdout_sha256": "b444945fd078fe90404855bab9eef56ff74e65a744e46c1c609e98b77ddd0a1c",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260611-process-artifact-migration/complete-revival-terminal-still-strict.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260611-process-artifact-migration/complete-revival-terminal-still-strict.stderr.txt"
+}

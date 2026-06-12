@@ -1,0 +1,79 @@
+{
+  "schema_id": "redcap-known-issues-queue",
+  "status": "pre_e2e_ready_queue",
+  "terminal_goal": {
+    "id": "redcap-complete-revival",
+    "state": "open",
+    "note": "第 5、6 项暂缓，不得关闭 RedCap（当前复活工程）的终局父任务。"
+  },
+  "items": [
+    {
+      "number": 1,
+      "id": "KI-00-lifecycle-and-prism-front-gate",
+      "title": "生命周期包与必要评审门",
+      "status": "verified",
+      "evidence": [
+        "assets/evidence/lifecycle/known-issues-1-4-lifecycle.json",
+        "runtime/bin/redcap gate --task \"按照已知遗留问题顺序落地任务1到4，保留任务5和6\" --risk-level high --lifecycle-packet assets/evidence/lifecycle/known-issues-1-4-lifecycle.json"
+      ]
+    },
+    {
+      "number": 2,
+      "id": "KI-01-structured-known-issue-queue",
+      "title": "结构化已知问题队列",
+      "status": "verified",
+      "evidence": [
+        "assets/contracts/known-issues-execution-order.json",
+        "assets/contracts/known-issues-queue.json",
+        "runtime/core/known_issues_queue.py",
+        "runtime/bin/redcap known-issues-order check",
+        "runtime/bin/redcap known-issues-queue check --require-1-4-verified"
+      ]
+    },
+    {
+      "number": 3,
+      "id": "KI-02-runtime-boundary-consumer-migration",
+      "title": "项目级 .redcap 运行时隔离全链路接入",
+      "status": "verified",
+      "evidence": [
+        "runtime/core/runtime_boundary.py",
+        "runtime/core/task_facts.py",
+        "runtime/core/status_surface.py",
+        "runtime/core/runtime_boundary_consumers.py",
+        "runtime/bin/redcap boundary-consumers check"
+      ]
+    },
+    {
+      "number": 4,
+      "id": "KI-03-legacy-evidence-policy",
+      "title": "旧证据目录策略收口",
+      "status": "verified",
+      "evidence": [
+        "assets/contracts/legacy-evidence-policy.json",
+        "runtime/core/legacy_evidence_policy.py",
+        "runtime/bin/redcap legacy-evidence check",
+        "runtime/bin/redcap legacy-evidence self-check"
+      ]
+    },
+    {
+      "number": 5,
+      "id": "KI-04-complete-revival-e2e-harness",
+      "title": "端到端验收器",
+      "status": "deferred_user_supervised",
+      "deferred_until": "Norven 确认第 1-4 项全部落地后，亲自督导开展。",
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ]
+    },
+    {
+      "number": 6,
+      "id": "KI-05-terminal-closeout-only-after-evidence",
+      "title": "终局关闭流程",
+      "status": "deferred_user_supervised",
+      "deferred_until": "Norven 亲自督导第 5 项端到端验收后再开展。",
+      "evidence": [
+        "assets/contracts/terminal-goals.json"
+      ]
+    }
+  ]
+}

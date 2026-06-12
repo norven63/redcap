@@ -1,0 +1,126 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260610-project-runtime-isolation",
+    "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven asked Cap to clear the previous probe pollution and complete the missing runtime/project directory isolation logic, including a broader re-scan of old RedCap runtime artifact and self-code separation designs.",
+    "target_reality": "External managed projects use their own <project_workspace>/.redcap/ directory for RedCap runtime artifacts; RedCap's repository remains implementation code and self-development evidence only; user-private identity remains outside both.",
+    "non_goals": [
+      "Do not implement the full complete-revival E2E harness in this task.",
+      "Do not claim RedCap complete revival is terminally complete.",
+      "Do not copy old RedCap's whole runtime state shell stack wholesale.",
+      "Do not move user-private identity or host credentials into project .redcap.",
+      "Do not bulk-read the old RedCap repository."
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "Revert changes to runtime/core/runtime_boundary.py, runtime/core/status_surface.py, runtime/bin/redcap help text, runtime boundary docs, and E2E acceptance design updates; restore stale lane-review files only if they are needed as evidence.",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/project-runtime-isolation-lifecycle.json",
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260610-project-runtime-isolation/merge.json --resolution assets/evidence/prism/20260610-project-runtime-isolation/resolution.json --manifest assets/evidence/prism/20260610-project-runtime-isolation/session.json",
+      "runtime/bin/redcap boundary self-check",
+      "runtime/bin/redcap boundary check --cwd <external-subdir> --runtime-root <redcap-root> --require-task-file",
+      "runtime/bin/redcap status --cwd <external-subdir> --json",
+      "python3 -m json.tool assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "1. 先确认当前工作的污染是否完全清楚了，不会影响后续redcap的复活计划工作 2. 继续补充完善还没修复好的逻辑，保证目录和运行时产物是隔离的。并且，需要举一反三，将所有旧redcap中关于运行时产物、自身逻辑代码相关联的逻辑和优秀设计再扫描和理解一边，然后力求此次复活的完整性",
+    "prompt_kind": "mixed",
+        "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "Repair RedCap project-runtime isolation so external managed project artifacts live under the project-level .redcap directory while RedCap code, self-development evidence, and user-private state remain separated.",
+    "primary_deliverable": "runtime/core/runtime_boundary.py",
+    "acceptance_criteria": [
+      "Previous Codex CLI probe pollution is classified and no live probe process remains.",
+      "External project boundary resolution exposes project_runtime_root=<project_workspace>/.redcap.",
+      "External project state_root and evidence_root default under project_runtime_root, not under RedCap runtime_root.",
+      "Boundary validation rejects external runtime artifacts outside project_runtime_root unless the task is self-development.",
+      "Self-development mode continues to allow RedCap's own repository as project_workspace.",
+      "Status output exposes project_runtime_root so humans can see where runtime artifacts live.",
+      "The complete-revival E2E design requires a managed project .redcap runtime directory.",
+      "Stale unfinished lane-review contract files are removed or folded into this task's evidence."
+    ],
+        "status": "verified",
+        "evidence_kind": "runtime-change",
+        "evidence": [
+            "assets/evidence/prism/20260610-project-runtime-isolation/project-runtime-isolation-prism-request.json",
+            "assets/evidence/lifecycle/project-runtime-isolation-lifecycle.json",
+            "runtime/core/runtime_boundary.py",
+            "runtime/core/status_surface.py",
+            "runtime/bin/redcap",
+            "assets/docs/runtime-boundary-kernel.md",
+            "assets/contracts/complete-revival-e2e-acceptance-design.json",
+            "assets/docs/complete-revival-e2e-acceptance-design.md"
+        ]
+    },
+    "review_tracks": {
+        "architecture": {
+            "status": "checked",
+            "findings": [
+                "外部项目运行产物不再进入共享哈希目录作为默认路径，而是收束到项目自己的 .redcap；RedCap 自研例外只由解析后路径相等触发。"
+            ],
+            "evidence": [
+                "runtime/core/runtime_boundary.py",
+                "assets/docs/runtime-boundary-kernel.md"
+            ]
+        },
+        "governance": {
+            "status": "checked",
+            "findings": [
+                "棱镜两方 concern 均已采纳，并通过 prism-resolution 检查；旧证据只暴露 legacy_external_evidence_root，不自动迁移。"
+            ],
+            "evidence": [
+                "assets/evidence/prism/20260610-project-runtime-isolation/merge.json",
+                "assets/evidence/prism/20260610-project-runtime-isolation/resolution.json",
+                "assets/evidence/prism/20260610-project-runtime-isolation/session.json"
+            ]
+        },
+        "contracts": {
+            "status": "checked",
+            "findings": [
+                "完整复活 E2E 设计已要求外部沙盒项目拥有 .redcap 项目运行目录，并新增运行产物未收束到 .redcap 的负向探针。"
+            ],
+            "evidence": [
+                "assets/contracts/complete-revival-e2e-acceptance-design.json",
+                "assets/docs/complete-revival-e2e-acceptance-design.md"
+            ]
+        }
+    },
+    "fsm_transition": {
+        "from": "VERIFYING",
+        "to": "TEMPORARY_USABLE",
+        "evidence": [
+            "project_runtime_isolation_verified",
+            "redcap_check_passed"
+        ]
+    },
+    "prism_review": {
+        "merge_path": "assets/evidence/prism/20260610-project-runtime-isolation/merge.json",
+        "resolution_path": "assets/evidence/prism/20260610-project-runtime-isolation/resolution.json"
+    },
+    "implementation_evidence": [
+        "runtime/core/runtime_boundary.py",
+        "runtime/core/status_surface.py",
+        "runtime/bin/redcap",
+        "assets/docs/runtime-boundary-kernel.md",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/docs/complete-revival-e2e-acceptance-design.md"
+    ],
+    "verification_evidence": [
+        "assets/evidence/prism/20260610-project-runtime-isolation/receipts/boundary-self-check.receipt.json",
+        "assets/evidence/prism/20260610-project-runtime-isolation/receipts/status-self-check.receipt.json",
+        "assets/evidence/prism/20260610-project-runtime-isolation/receipts/e2e-design-json.receipt.json",
+        "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260610-project-runtime-isolation/merge.json --resolution assets/evidence/prism/20260610-project-runtime-isolation/resolution.json --manifest assets/evidence/prism/20260610-project-runtime-isolation/session.json"
+    ],
+    "completion_claim": {
+        "present": true,
+        "evidence_kind": "runtime-change",
+        "scope": "本次项目运行目录隔离修复；不声明 RedCap 完整复活终局完成"
+    }
+}

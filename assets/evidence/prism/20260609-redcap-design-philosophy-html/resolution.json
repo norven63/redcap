@@ -15,7 +15,7 @@
       "rationale": "担忧成立：漂亮的设计哲学页面容易被后续误用为“哲学已完成”或“完整复活已完成”的证明。本轮先新增机器可读页面规格，明确章节、来源、完成条件、非运行时权威身份和顶部状态横幅；后续 HTML 必须按该规格实现，并保留 RedCap 完整复活尚未终局完成的状态。",
       "implementation_evidence": [
         "assets/contracts/redcap-design-philosophy-html-spec.json",
-        "assets/contracts/redcap-design-philosophy-html-lifecycle.json"
+        "assets/evidence/lifecycle/redcap-design-philosophy-html-lifecycle.json"
       ],
       "verification_evidence": [
         "assets/evidence/check-receipts/20260609-redcap-design-philosophy-html/html-spec-json.receipt.json",

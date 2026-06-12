@@ -97,13 +97,21 @@ def run_probe(entry_id: str, probe: dict[str, Any]) -> list[str]:
     argv = probe.get("argv")
     if not isinstance(argv, list) or not argv or not all(isinstance(item, str) for item in argv):
         return [f"{entry_id}: probe {probe.get('name', '<unnamed>')} argv must be a non-empty string list"]
-    completed = subprocess.run(
-        argv,
-        cwd=str(REPO_ROOT),
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    timeout_seconds = int(probe.get("timeout_seconds") or 60)
+    try:
+        completed = subprocess.run(
+            argv,
+            cwd=str(REPO_ROOT),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return [
+            f"{entry_id}: probe {probe.get('name')} timed out after {timeout_seconds} seconds: "
+            f"{exc.stderr or exc.stdout or ''}"
+        ]
     expected_exit = probe.get("expect_exit")
     if completed.returncode != expected_exit:
         failures.append(

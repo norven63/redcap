@@ -27,5 +27,15 @@ Current contracts:
   `runtime/prism/bin/enforcement-check` and `runtime/bin/redcap check`.
 - `enforcement-matrix.schema.json`: schema for the enforcement matrix contract.
 - `gate-protocol.md`: consumed by `runtime/prism/bin/prism gate`.
+- `process-artifact-placement.json`: consumed by
+  `runtime/core/process_artifact_placement.py`,
+  `runtime/bin/redcap process-artifacts`, and `runtime/bin/redcap check`.
 - `prism-session-protocol.md`: consumed by `runtime/prism/bin/prism session-init`,
   `session-update`, `brief`, and `merge`.
+
+Process files such as lifecycle packets and Prism requests are evidence, not
+stable contracts. Files matching `*-lifecycle.json` or `*-prism-request.json`
+belong under `assets/evidence/`. Historical process files were migrated out of
+this directory by the migration recorded in
+`assets/evidence/migrations/20260611-process-artifact-migration-map.json`;
+new process files under `assets/contracts/` are a hard placement violation.

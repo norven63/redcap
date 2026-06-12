@@ -1,0 +1,22 @@
+{
+  "schema_id": "redcap-legacy-evidence-policy",
+  "status": "active",
+  "default_mode": "read_only_compatibility",
+  "source": {
+    "kind": "old-redcap-external-evidence",
+    "resolver": "runtime_boundary.legacy_external_evidence_root",
+    "base": "~/.cap/redcap-runtime/evidence/<project-hash>"
+  },
+  "destination": {
+    "external_workspace": "<project-workspace>/.redcap/evidence/legacy-import",
+    "self_development": "assets/evidence/legacy-import"
+  },
+  "rules": [
+    "不自动迁移旧证据；默认只报告旧证据是否存在。",
+    "恢复旧证据必须显式调用 legacy-evidence restore。",
+    "恢复目标必须位于当前项目的 .redcap/evidence/legacy-import 内。",
+    "只允许恢复 .json、.jsonl、.md、.txt、.lock 文件。",
+    "拒绝可执行文件，避免把旧运行态脚本带入新项目。",
+    "用户私有身份、宿主凭据和跨项目运行状态不得迁入项目 .redcap。"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "ok": true,
+  "codex_hooks": {
+    "PostToolUse": true,
+    "PreToolUse": true,
+    "SessionStart": true,
+    "Stop": true,
+    "UserPromptSubmit": true
+  },
+  "codex_hook_template": {
+    "template_path": "assets/contracts/codex-hooks.template.json",
+    "live_path": ".codex/hooks.json",
+    "matches": true
+  },
+  "provider_call_interception": {
+    "mode": "dispatcher-enforced",
+    "providers": [
+      "claude-code",
+      "kimi"
+    ],
+    "dispatcher_self_check": true
+  },
+  "codex_hook_self_check": true,
+  "codex_hook_self_check_attempts": 1,
+  "codex_hook_self_check_stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\n",
+  "codex_hook_self_check_stderr_tail": "",
+  "unsupported_events": {
+    "PermissionRequest": "No verified Codex project hook event or provider CLI lifecycle equivalent is available in this workspace.",
+    "PreCompact": "No verified Codex project hook event or provider CLI lifecycle equivalent is available in this workspace.",
+    "PostCompact": "No verified Codex project hook event or provider CLI lifecycle equivalent is available in this workspace."
+  },
+  "failures": []
+}
+REDCAP_HOST_HOOK_AUDIT_OK

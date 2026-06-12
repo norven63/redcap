@@ -271,7 +271,14 @@ def semantic_rejudge(
     prompt_text = prompt_text_from_event(prompt)
     if not isinstance(prompt_text, str) or not prompt_text.strip():
         return None
-    judge_policy = "force" if llm_policy in {"auto", "force"} else "off"
+    if llm_policy == "force":
+        judge_policy = "force"
+    elif llm_policy == "auto":
+        judge_policy = "force"
+    elif llm_policy == "auto-on-ambiguous":
+        judge_policy = "auto-on-ambiguous"
+    else:
+        judge_policy = "off"
     if judge_policy == "off":
         return None
     fake_delay_raw = os.environ.get("REDCAP_INTENT_JUDGE_FAKE_DELAY_SECONDS")
@@ -440,7 +447,7 @@ def main() -> int:
     parser.add_argument("--turn-id")
     parser.add_argument("--max-age-seconds", type=int)
     parser.add_argument("--message", default="")
-    parser.add_argument("--intent-llm-policy", choices=["off", "auto", "force"], default="auto")
+    parser.add_argument("--intent-llm-policy", choices=["off", "auto", "auto-on-ambiguous", "force"], default="auto")
     parser.add_argument("--intent-timeout-seconds", type=float, default=DEFAULT_INTENT_JUDGE_TIMEOUT_SECONDS)
     args = parser.parse_args()
 
