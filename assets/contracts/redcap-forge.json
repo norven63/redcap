@@ -1,0 +1,46 @@
+{
+  "schema_id": "redcap-forge-contract",
+  "schema_version": 1,
+  "purpose": "定义 RedCap Forge：把会话经验、能力经验和可复用设计从私有候选沉淀为可公开复用的 redcap-arsenal 条目。",
+  "public_name": "RedCap Forge（公共沉淀锻造流水线）",
+  "target_index": "assets/knowledge/arsenal/index.json",
+  "stages": [
+    {
+      "id": "candidate",
+      "meaning": "候选经验只能来自已验证任务事实、合同、运行时检查或人工明确输入。"
+    },
+    {
+      "id": "private_review",
+      "meaning": "先审查是否包含用户私密身份、原始会话正文、凭据、未授权路径或项目特定隐私。"
+    },
+    {
+      "id": "dedupe",
+      "meaning": "与既有 arsenal 条目按 id、标签和摘要去重，避免重复沉淀。"
+    },
+    {
+      "id": "promote_to_arsenal",
+      "meaning": "只把可公开复用、可读、可检索、来源可追溯的条目提升到 redcap-arsenal。"
+    }
+  ],
+  "promotion_requires": [
+    "reviewed_source",
+    "privacy_checked",
+    "deduplicated",
+    "human_readable",
+    "index_first",
+    "source_refs_exist"
+  ],
+  "forbidden_inputs": [
+    "用户私有身份正文",
+    "原始供应方长输出",
+    "未脱敏路径",
+    "凭据、令牌或账号信息",
+    "未验证的阶段报告",
+    "只来自单次自我总结的经验"
+  ],
+  "output_rules": [
+    "条目必须写入 assets/knowledge/arsenal/，不得写入 assets/evidence/ 作为长期知识。",
+    "条目必须先出现在 assets/knowledge/arsenal/index.json 中，正文按显式路径读取。",
+    "条目只能保存可复用原则、能力说明、使用边界和验证来源，不保存私密正文。"
+  ]
+}

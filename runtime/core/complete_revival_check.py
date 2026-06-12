@@ -184,6 +184,9 @@ def validate_contract(failures: list[str]) -> None:
     acceptance = "\n".join(str(item) for item in redcap_goal.get("terminal_acceptance", []))
     if "完整角色化工程工作流" not in acceptance:
         failures.append("RedCap 完整复活验收条件必须包含完整角色化工程工作流")
+    for required in ["RedCap Forge", "redcap-arsenal", "项目级安装"]:
+        if required not in acceptance:
+            failures.append(f"RedCap 完整复活验收条件必须包含：{required}")
     forbidden = "\n".join(str(item) for item in redcap_goal.get("forbidden_substitutions", []))
     if "最小可用执行内核" not in forbidden and "最小执行内核" not in forbidden:
         failures.append("RedCap 完整复活禁止替代项必须包含最小执行内核")
@@ -211,6 +214,9 @@ def check_complete_revival(
         "phase2_blueprint": run(["runtime/bin/redcap", "phase2-blueprint", "check"]),
         "full_revival_amendment": run(["runtime/bin/redcap", "full-revival-amendment", "check"]),
         "loom_workflow": run(["runtime/bin/redcap", "loom-workflow", "check"]),
+        "forge": run(["runtime/bin/redcap", "forge", "check"]),
+        "arsenal": run(["runtime/bin/redcap", "arsenal", "check"]),
+        "project_install": run(["runtime/bin/redcap", "project-install", "self-check"]),
         "host_hook_audit": (
             parent_verified_host_audit_result()
             if skip_host_hook_audit

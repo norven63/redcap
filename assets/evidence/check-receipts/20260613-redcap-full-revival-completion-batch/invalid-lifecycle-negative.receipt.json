@@ -1,0 +1,14 @@
+{
+  "actual_exit_code": 0,
+  "command": "bash -lc tmp=$(mktemp); printf '{\"schema_id\":\"redcap-development-lifecycle-packet\",\"task_id\":\"bad\"}\n' > \"$tmp\"; if runtime/bin/redcap lifecycle check --packet \"$tmp\"; then echo \"unexpected success\"; rm -f \"$tmp\"; exit 1; else rc=$?; echo \"expected lifecycle failure rc=$rc\"; rm -f \"$tmp\"; exit 0; fi",
+  "executed_at": "2026-06-12T18:39:01+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/invalid-lifecycle-negative.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/invalid-lifecycle-negative.stdout.txt",
+  "stdout_sha256": "90263f8561d2b17bfc74f68294cb3ecadc1f8d65a327994b965755971293c2c0",
+  "timed_out": false
+}

@@ -48,8 +48,9 @@ def validate_contract(payload: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     if payload.get("schema_id") != EXPECTED_SCHEMA_ID:
         failures.append("schema_id 不匹配")
-    if payload.get("status") not in {"planned", "in_progress"}:
-        failures.append("执行顺序合同只能作为待执行或执行中队列，不能伪装成已验证结果")
+    status = payload.get("status")
+    if status not in {"planned", "in_progress", "verified"}:
+        failures.append("执行顺序合同状态必须是 planned、in_progress 或 verified")
 
     terminal_goal = payload.get("terminal_goal")
     if not isinstance(terminal_goal, dict):
@@ -57,8 +58,13 @@ def validate_contract(payload: dict[str, Any]) -> list[str]:
     else:
         if terminal_goal.get("id") != EXPECTED_TERMINAL_ID:
             failures.append("terminal_goal.id 必须指向 RedCap 终局父任务")
-        if terminal_goal.get("state") != "open":
-            failures.append("执行顺序合同不能关闭 RedCap 终局父任务")
+        terminal_state = terminal_goal.get("state")
+        if terminal_state not in {"open", "closed"}:
+            failures.append("terminal_goal.state 必须是 open 或 closed")
+        if terminal_state == "closed" and status != "verified":
+            failures.append("只有执行顺序合同已验证后，才允许标记终局父任务 closed")
+        if terminal_state == "open" and status == "verified":
+            failures.append("执行顺序合同已验证时，终局父任务状态必须同步为 closed")
 
     if not non_empty_string_list(payload.get("ordering_principles")):
         failures.append("ordering_principles 必须是非空字符串列表")
@@ -179,14 +185,18 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         ],
     }
     failures = validate_contract(payload)
+    closed_verified = json.loads(json.dumps(payload, ensure_ascii=False))
+    closed_verified["status"] = "verified"
+    closed_verified["terminal_goal"]["state"] = "closed"
+    failures.extend(validate_contract(closed_verified))
     closed = json.loads(json.dumps(payload, ensure_ascii=False))
     closed["terminal_goal"]["state"] = "closed"
     closed_failures = validate_contract(closed)
     if failures:
         print(json.dumps({"ok": False, "failures": failures}, ensure_ascii=False, indent=2))
         return 1
-    if not any("不能关闭" in failure for failure in closed_failures):
-        print(json.dumps({"ok": False, "failures": ["未能拦截终局父任务关闭"]}, ensure_ascii=False, indent=2))
+    if not any("才允许标记终局父任务 closed" in failure for failure in closed_failures):
+        print(json.dumps({"ok": False, "failures": ["未能拦截未验证合同关闭终局"]}, ensure_ascii=False, indent=2))
         return 1
     print(json.dumps({"ok": True, "fixture_items": len(EXPECTED_SEQUENCE)}, ensure_ascii=False, indent=2))
     print("REDCAP_KNOWN_ISSUES_ORDER_SELF_CHECK_OK")

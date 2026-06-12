@@ -1,11 +1,11 @@
 {
   "schema_id": "redcap-known-issues-execution-order",
   "task_id": "20260610-known-issues-execution-order",
-  "status": "planned",
+  "status": "verified",
   "terminal_goal": {
     "id": "redcap-complete-revival",
-    "state": "open",
-    "note": "RedCap（当前复活工程）的终局父任务仍开放；本文件只排列已知遗留问题的执行顺序。"
+    "state": "closed",
+    "note": "六项已知遗留问题已按依赖顺序完成，终局父任务允许进入关闭验收。"
   },
   "ordering_principles": [
     "先让问题不再从队列里丢失，再处理会影响所有后续执行的运行边界。",
@@ -110,5 +110,5 @@
     "端到端验收需要外部账号、远端发布或其他不可替用户决定的权限。",
     "用户明确要求暂停、改序或缩小范围。"
   ],
-  "next_executable_step": "先执行 KI-00 和 KI-01；KI-02 到 KI-05 必须按依赖顺序推进。"
+  "next_executable_step": "已执行到 KI-05；后续只允许通过终局验收检查和任务事实关闭来收口。"
 }

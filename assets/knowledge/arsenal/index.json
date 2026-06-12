@@ -1,0 +1,71 @@
+{
+  "schema_id": "redcap-arsenal-index",
+  "schema_version": 1,
+  "visibility": "public-reusable",
+  "default_read": "index-first",
+  "privacy_boundary": "no-private-identity-no-raw-provider-output",
+  "entries": [
+    {
+      "id": "project-runtime-boundary",
+      "title": "项目级 .redcap 运行边界",
+      "status": "promoted",
+      "summary": "外部项目使用 RedCap 时，运行产物必须进入该项目自己的 .redcap 目录，不能回写 RedCap 源仓库。",
+      "tags": [
+        "runtime-boundary",
+        "project-install",
+        "isolation"
+      ],
+      "body": "assets/knowledge/arsenal/project-runtime-boundary.md",
+      "source_refs": [
+        "runtime/core/runtime_boundary.py",
+        "runtime/core/runtime_boundary_consumers.py",
+        "assets/contracts/project-installation.json"
+      ],
+      "target_consumers": [
+        "external-projects",
+        "self-development"
+      ]
+    },
+    {
+      "id": "loom-role-workflow",
+      "title": "Loom 角色化工程工作流",
+      "status": "promoted",
+      "summary": "把产品经理、架构师、开发者、测试、评审、变更接入和 Cap 收尾作为可检查工程阶段，而不是只保留最小状态机。",
+      "tags": [
+        "loom",
+        "fsm",
+        "engineering-workflow"
+      ],
+      "body": "assets/knowledge/arsenal/loom-role-workflow.md",
+      "source_refs": [
+        "assets/contracts/loom-workflow.json",
+        "runtime/core/loom_workflow.py",
+        "assets/contracts/full-revival-amendment.json"
+      ],
+      "target_consumers": [
+        "project-delivery",
+        "self-development"
+      ]
+    },
+    {
+      "id": "anti-empty-completion",
+      "title": "防空转完成声明",
+      "status": "promoted",
+      "summary": "计划、报告、评审和回执只能作为证据，不能替代任务主体；完成声明必须绑定真实任务体和验证证据。",
+      "tags": [
+        "completion-guard",
+        "lifecycle",
+        "anti-loop"
+      ],
+      "body": "assets/knowledge/arsenal/anti-empty-completion.md",
+      "source_refs": [
+        "runtime/core/development_lifecycle.py",
+        "runtime/core/final_claim_guard.py",
+        "assets/contracts/terminal-goals.json"
+      ],
+      "target_consumers": [
+        "all-redcap-tasks"
+      ]
+    }
+  ]
+}

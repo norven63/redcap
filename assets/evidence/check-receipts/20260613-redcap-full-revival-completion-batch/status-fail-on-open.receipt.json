@@ -1,0 +1,14 @@
+{
+  "actual_exit_code": 0,
+  "command": "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+  "executed_at": "2026-06-12T18:39:06+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/status-fail-on-open.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/status-fail-on-open.stdout.txt",
+  "stdout_sha256": "b114b341f631e14830ee6e987b7a596c3fd5f584cac31cb03bacf9c797a02b69",
+  "timed_out": false
+}

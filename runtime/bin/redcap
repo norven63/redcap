@@ -21,6 +21,9 @@ Usage:
   runtime/bin/redcap e2e-trace check|self-check [...]
   runtime/bin/redcap fsm check|status|transition [...]
   runtime/bin/redcap loom-workflow check|self-check [...]
+  runtime/bin/redcap forge check|self-check [...]
+  runtime/bin/redcap arsenal check|self-check [...]
+  runtime/bin/redcap project-install check|package|init|self-check [...]
   runtime/bin/redcap knowledge-gateway check|search [...]
   runtime/bin/redcap evidence-restore restore [...]
   runtime/bin/redcap legacy-evidence check|plan|restore|self-check [...]
@@ -69,6 +72,10 @@ Commands:
   e2e-trace     Run the RedCap 1.0 hook/session/FSM/completion trace.
   fsm           Run the RedCap workflow FSM kernel.
   loom-workflow Verify the role-based Loom engineering workflow contract.
+  forge         Verify RedCap Forge and redcap-arsenal promotion rules.
+  arsenal       Verify the public reusable redcap-arsenal index.
+  project-install
+                Package RedCap as .redcap and initialize project-level runtime.
   knowledge-gateway
                 Run the minimal index-first RedCap knowledge gateway.
   evidence-restore
@@ -167,6 +174,15 @@ case "$cmd" in
     ;;
   loom-workflow)
     exec python3 "$REPO_ROOT/runtime/core/loom_workflow.py" "$@"
+    ;;
+  forge)
+    exec python3 "$REPO_ROOT/runtime/core/redcap_forge.py" "$@"
+    ;;
+  arsenal)
+    exec python3 "$REPO_ROOT/runtime/core/redcap_forge.py" "$@"
+    ;;
+  project-install)
+    exec python3 "$REPO_ROOT/runtime/core/project_install.py" "$@"
     ;;
   knowledge-gateway)
     exec python3 "$REPO_ROOT/runtime/core/knowledge_gateway.py" "$@"
@@ -297,6 +313,11 @@ case "$cmd" in
     "$REPO_ROOT/runtime/bin/redcap" fsm check
     "$REPO_ROOT/runtime/bin/redcap" loom-workflow self-check
     "$REPO_ROOT/runtime/bin/redcap" loom-workflow check
+    "$REPO_ROOT/runtime/bin/redcap" forge self-check
+    "$REPO_ROOT/runtime/bin/redcap" forge check
+    "$REPO_ROOT/runtime/bin/redcap" arsenal check
+    "$REPO_ROOT/runtime/bin/redcap" project-install self-check
+    "$REPO_ROOT/runtime/bin/redcap" project-install check
     "$REPO_ROOT/runtime/bin/redcap" knowledge-gateway check
     "$REPO_ROOT/runtime/bin/redcap" knowledge-gateway self-check
     python3 "$REPO_ROOT/runtime/core/revival_loop.py" check

@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "请求主张的 reality change 是事实：develop 已推送、生命周期包已创建并通过 `lifecycle check`、gate 返回 optional、任务未声明终局完成。但工作区存在一份与当前检查结果矛盾的 stale 合同：`assets/contracts/redcap-continuous-revival-plan.json` 仍声明 `formal_usable_verified` 且 `current_pointer.stage_id` 为 `CR-S06`（正式可用验收阶段），而实际运行 `runtime/bin/redcap formal-usable-check` 因两条非终局任务仍处于开放状态而失败。这意味着工作区中有一份高阶合同在断言\"已经到达正式可用/版本记录阶段\"，但当前现实不再支持该断言。",
+  "main_concern": "在高风险补全复活任务启动下一批实施前，主导 AI 没有先修复 workspace 内一份 stale 的高阶合同。该合同把当前阶段标记为 CR-S06 / formal_usable_verified，而实际 formal-usable-check 失败、status --fail-on-open 也失败。若直接开始实现 Loom 运行机等能力，主导 AI 容易把下一批成果包装成\"正式可用之后的优化\"，而不是\"未完成复活队列的继续实施\"，从而把阶段进展重新说成更接近终局。",
+  "top_risks": [
+    "stale 的 `redcap-continuous-revival-plan.json` 会误导下一批次的语义定位：下一批会被当作 post-formal-usable 增强，而非尚未到达正式可用的补全复活",
+    "`prism-kimi-heavy-review-timeout` 仍处于 planned 状态，后续长评审（包括本任务本身）存在超时或需要短补评的风险，可能让 Prism 评审不完整",
+    "下一批四个目标（Loom 运行机、自我进化闭环、RedCap Forge、redcap-arsenal、项目级安装发布）仅作为一句话列出，尚未拆分为带精确旧源路径、停止条件、验收命令的 Phase-2 队列项"
+  ],
+  "missing_evidence": [
+    "刷新后的 `redcap-continuous-revival-plan.json`，其 `current_pointer` 与 `completion_audit` 状态须与当前 `formal-usable-check`、`status --fail-on-open` 输出一致",
+    "下一批每个能力（至少 Loom 运行机、自我进化闭环、RedCap Forge、redcap-arsenal、项目级安装发布）对应的 Phase-2 队列项，包含 exact_old_sources、stop_condition、acceptance_criteria、risk_level、verification_route",
+    "对 `prism-kimi-heavy-review-timeout` 的处理决策或缓解方案：是本轮修复、拆片执行，还是明确作为下一批第一项"
+  ],
+  "minimum_fix": "在写入任何下一批实现代码前，主导 AI 必须先完成三项修复：1）更新 `assets/contracts/redcap-continuous-revival-plan.json`，把 `current_pointer` 从 CR-S06 回退到与当前开放任务一致的阶段（建议 CR-S03 或 CR-S04），移除 `formal_usable_verified` 断言，或显式标注该断言已过期并说明原因；2）对两个开放非终局任务（`redcap-design-structure-logic-review`、`prism-kimi-heavy-review-timeout`）做出处理：修复、关闭或作为下一批第一项纳入新的生命周期包；3）将下一批四个目标拆分为 `redcap-1.1-phase2-blueprint.json` 风格的队列项，每个项必须包含精确旧源路径、停止条件、验收命令和回滚方式，然后重新运行 `runtime/bin/redcap check` 与 `runtime/bin/redcap phase2-blueprint check`。完成以上后再进入具体实现。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "存在文档-现实漂移信号：一份已标记 formal_usable_verified 的合同与当前检查输出不一致；若主导 AI 继续推进而不修复该合同，很可能把下一批阶段成果再次包装成接近终局的进展。必须先停下来同步合同与现实，再编码。"
+  },
+  "user_intent_alignment": "aligned"
+}

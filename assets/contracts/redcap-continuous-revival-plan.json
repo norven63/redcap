@@ -1,9 +1,9 @@
 {
   "schema_id": "redcap-continuous-revival-plan",
   "version": 1,
-  "status": "formal_usable_verified",
+  "status": "terminal_complete_verified",
   "purpose": "把 Norven 要求的“一气呵成”目标拆成连续推进、分段验收、可回滚的 RedCap 复活总计划：先完成 360 度旧 RedCap 扫描，再制定复活计划，再实施落地，再审计优化，直到新 RedCap 可正式使用。",
-  "non_completion_warning": "本合同是执行路线和验收标准，不代表 360 度扫描、复活计划、复活落地或最终优化已经完成。",
+  "non_completion_warning": "历史阶段警示：本合同在终局验收前不得被当成完成证据；当前终局状态以 completion_audit 和任务事实为准。",
   "global_rules": [
     {
       "id": "CR-G01",
@@ -194,18 +194,33 @@
   ],
   "current_pointer": {
     "stage_id": "CR-S06",
-    "reason": "360 度旧 RedCap 扫描、复活实施队列、正式可用检查和任务事实开放项检查均已验证；当前收口动作是版本记录与完成声明生命周期标记。"
+    "reason": "终局收尾批次已补齐 RedCap Forge、redcap-arsenal、项目级安装发布、已知问题第 5/6 项关闭态、棱镜疑虑闭环和完整复活终局验收；当前进入版本记录和提交推送固化。"
   },
   "completion_audit": {
-    "audited_at": "2026-06-07T01:35:00+00:00",
-    "state": "formal_usable_verified",
-    "evidence": [
+    "audited_at": "2026-06-13T00:00:00+08:00",
+    "state": "terminal_complete_verified",
+    "previous_state": "revival_implementation_in_progress",
+    "previous_evidence": [
       "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
       "runtime/bin/redcap revival-queue check",
       "runtime/bin/redcap formal-usable-check",
       "runtime/bin/redcap task-facts check --fail-on-open",
       "runtime/bin/redcap check",
       "assets/contracts/version-records/20260607-formal-usable-baseline.json"
+    ],
+    "current_reality": [
+      "runtime/bin/redcap complete-revival-check --require-terminal-verified --skip-host-hook-audit 已通过。",
+      "runtime/bin/redcap terminal-goal check --message \"RedCap 完整复活已完成。\" --prompt \"请汇报 RedCap 完整复活状态\" 已通过。",
+      "runtime/bin/redcap status --json --require-scan-complete --fail-on-open 已通过，open_count=0。",
+      "runtime/bin/redcap check 已通过。"
+    ],
+    "superseding_evidence": [
+      "assets/contracts/full-revival-amendment.json",
+      "assets/contracts/terminal-goals.json",
+      "assets/contracts/version-records/20260613-terminal-complete-revival.json",
+      "assets/evidence/lifecycle/20260613-redcap-complete-revival-terminal-lifecycle.json",
+      "assets/evidence/prism/20260613-redcap-full-revival-completion-batch/resolution.json",
+      "assets/evidence/task-facts/task-facts.jsonl"
     ],
     "known_non_blocking_boundary": [
       "unsupported Codex host events remain explicitly reported by host-hook-audit and are not claimed as available",

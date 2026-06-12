@@ -188,6 +188,27 @@ def queue_items() -> list[dict[str, Any]]:
             ["DLR-P01", "DLR-P02", "DLR-P03", "DLR-P04", "DLR-P05", "LTCD-P03", "LTCD-P04", "LTCD-P05"],
             [["runtime/bin/redcap", "loom-workflow", "check"], ["runtime/bin/redcap", "full-revival-amendment", "check"]],
         ),
+        item(
+            "RQ-11",
+            "RedCap Forge 公共沉淀锻造",
+            "会话经验和能力经验必须经过候选、隐私审查、去重和提升规则，才能进入公共武器库。",
+            ["LTCD-P01", "LTCD-P02", "DLR-P01", "DLR-P04"],
+            [["runtime/bin/redcap", "forge", "check"]],
+        ),
+        item(
+            "RQ-12",
+            "redcap-arsenal 公共能力武器库",
+            "可复用经验以 index-first 方式沉淀为公共条目，禁止混入私有身份、原始供应方输出或未验证材料。",
+            ["LTCD-P01", "LTCD-P02", "LTCD-P05"],
+            [["runtime/bin/redcap", "arsenal", "check"]],
+        ),
+        item(
+            "RQ-13",
+            "项目级安装发布",
+            "RedCap 可以打包为顶层 .redcap 压缩包，解压到外部项目后执行 init，创建项目级运行目录和 Codex hooks。",
+            ["boundary-layer-separation", "boundary-shared-command-resolution", "boundary-user-private-state", "LTCD-P06"],
+            [["runtime/bin/redcap", "project-install", "self-check"]],
+        ),
     ]
 
 

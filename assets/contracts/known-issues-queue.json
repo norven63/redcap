@@ -1,10 +1,10 @@
 {
   "schema_id": "redcap-known-issues-queue",
-  "status": "pre_e2e_ready_queue",
+  "status": "terminal_verified_queue",
   "terminal_goal": {
     "id": "redcap-complete-revival",
-    "state": "open",
-    "note": "第 5、6 项暂缓，不得关闭 RedCap（当前复活工程）的终局父任务。"
+    "state": "closed",
+    "note": "第 5、6 项已在终局收尾批次执行并验证；终局父任务允许由专用验收检查关闭。"
   },
   "items": [
     {
@@ -59,20 +59,24 @@
       "number": 5,
       "id": "KI-04-complete-revival-e2e-harness",
       "title": "端到端验收器",
-      "status": "deferred_user_supervised",
-      "deferred_until": "Norven 确认第 1-4 项全部落地后，亲自督导开展。",
+      "status": "verified",
       "evidence": [
-        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "runtime/bin/redcap e2e-trace self-check",
+        "runtime/bin/redcap project-install self-check",
+        "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/project-install-self-check.receipt.json"
       ]
     },
     {
       "number": 6,
       "id": "KI-05-terminal-closeout-only-after-evidence",
       "title": "终局关闭流程",
-      "status": "deferred_user_supervised",
-      "deferred_until": "Norven 亲自督导第 5 项端到端验收后再开展。",
+      "status": "verified",
       "evidence": [
-        "assets/contracts/terminal-goals.json"
+        "assets/contracts/terminal-goals.json",
+        "assets/evidence/lifecycle/20260613-redcap-complete-revival-terminal-lifecycle.json",
+        "assets/evidence/prism/20260613-redcap-full-revival-completion-batch/resolution.json",
+        "runtime/bin/redcap complete-revival-check --require-terminal-verified --skip-host-hook-audit"
       ]
     }
   ]

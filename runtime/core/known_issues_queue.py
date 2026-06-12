@@ -56,8 +56,9 @@ def validate_queue(payload: dict[str, Any], *, require_1_to_4_verified: bool) ->
     else:
         if terminal_goal.get("id") != "redcap-complete-revival":
             failures.append("terminal_goal.id 必须是 redcap-complete-revival")
-        if terminal_goal.get("state") != "open":
-            failures.append("第 5、6 项暂缓时终局父任务必须保持 open")
+        if terminal_goal.get("state") not in {"open", "closed"}:
+            failures.append("terminal_goal.state 必须是 open 或 closed")
+    terminal_closed = isinstance(terminal_goal, dict) and terminal_goal.get("state") == "closed"
     items = payload.get("items")
     if not isinstance(items, list) or len(items) != len(EXPECTED_IDS):
         failures.append("items 数量必须正好覆盖 1-6 项")
@@ -82,12 +83,17 @@ def validate_queue(payload: dict[str, Any], *, require_1_to_4_verified: bool) ->
             failures.append(f"{item_id} evidence 必须是非空字符串列表")
         else:
             evidence_exists(item_id, evidence, failures)
-        if index <= 4 and require_1_to_4_verified and item.get("status") != "verified":
+        if ((index <= 4 and require_1_to_4_verified) or terminal_closed) and item.get("status") != "verified":
             failures.append(f"第 {index} 项必须已验证：{item_id}")
         if index >= 5:
-            if item.get("status") != "deferred_user_supervised":
+            if terminal_closed:
+                if item.get("status") != "verified":
+                    failures.append(f"终局关闭时第 {index} 项必须已验证：{item_id}")
+            elif item.get("status") != "deferred_user_supervised":
                 failures.append(f"第 {index} 项必须保持用户督导前暂缓：{item_id}")
-            if not isinstance(item.get("deferred_until"), str) or "Norven" not in item["deferred_until"]:
+            if not terminal_closed and (
+                not isinstance(item.get("deferred_until"), str) or "Norven" not in item["deferred_until"]
+            ):
                 failures.append(f"{item_id} 必须写明由 Norven 督导后再开展")
     if ordered_ids != EXPECTED_IDS:
         failures.append("队列顺序不符合遗留问题执行顺序合同")
@@ -135,11 +141,22 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         ],
     }
     failures = validate_queue(fixture, require_1_to_4_verified=True)
-    bad = json.loads(json.dumps(fixture, ensure_ascii=False))
-    bad["items"][4]["status"] = "verified"
-    bad_failures = validate_queue(bad, require_1_to_4_verified=True)
-    if not any("用户督导前暂缓" in failure for failure in bad_failures):
+    closed = json.loads(json.dumps(fixture, ensure_ascii=False))
+    closed["terminal_goal"]["state"] = "closed"
+    for item in closed["items"]:
+        item["status"] = "verified"
+        item.pop("deferred_until", None)
+    failures.extend(validate_queue(closed, require_1_to_4_verified=True))
+    bad_early = json.loads(json.dumps(fixture, ensure_ascii=False))
+    bad_early["items"][4]["status"] = "verified"
+    bad_early_failures = validate_queue(bad_early, require_1_to_4_verified=True)
+    if not any("用户督导前暂缓" in failure for failure in bad_early_failures):
         failures.append("未能拦截第 5 项提前验证")
+    bad_closed = json.loads(json.dumps(fixture, ensure_ascii=False))
+    bad_closed["terminal_goal"]["state"] = "closed"
+    bad_closed_failures = validate_queue(bad_closed, require_1_to_4_verified=True)
+    if not any("终局关闭时第 5 项必须已验证" in failure for failure in bad_closed_failures):
+        failures.append("未能拦截第 5 项未验证却关闭终局")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1

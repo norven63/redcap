@@ -1,38 +1,16 @@
 {
-  "computed_at": "2026-06-11T16:36:14+00:00",
-  "open_count": 3,
-  "open_tasks": [
-    {
-      "reason": "整体评审发现的两个可立即治理项已补做并验证：过程文件归属完成实际迁移，状态自指阻塞完成分层与慢探针预算化；当前仍保留开放项：Kimi 长评审超时治理仍需后续处理，RedCap 完整复活终局父任务仍未关闭。",
-      "recorded_at": "2026-06-11T16:36:14+00:00",
-      "status": "in_progress",
-      "task_id": "redcap-design-structure-logic-review",
-      "title": "新RedCap设计结构逻辑整体评审"
-    },
-    {
-      "reason": "本轮 Kimi 长评审在 360 秒总预算内超时；短补评成功。后续需要优化长评审分片或摘要策略，避免 100% 评审被单方超时拖住。",
-      "recorded_at": "2026-06-11T12:54:36+00:00",
-      "status": "planned",
-      "task_id": "prism-kimi-heavy-review-timeout",
-      "title": "Kimi重评审超时治理"
-    },
-    {
-      "reason": "Norven 已废止最小可用执行内核作为完整复活完成口径；完整复活必须覆盖旧 RedCap 所有优秀设计，优先补齐 Loom 角色化工程工作流。",
-      "recorded_at": "2026-06-08T15:43:20+00:00",
-      "status": "in_progress",
-      "task_id": "redcap-complete-revival",
-      "title": "RedCap 完整复活"
-    }
-  ],
-  "record_count": 49,
+  "computed_at": "2026-06-12T18:46:32+00:00",
+  "open_count": 0,
+  "open_tasks": [],
+  "record_count": 52,
   "schema_id": "redcap-task-fact-summary",
   "status_counts": {
     "blocked": 0,
     "escalated": 0,
-    "in_progress": 2,
-    "planned": 1,
+    "in_progress": 0,
+    "planned": 0,
     "superseded": 4,
-    "verified": 18
+    "verified": 21
   },
   "task_count": 25
 }

@@ -1,0 +1,14 @@
+{
+  "actual_exit_code": 0,
+  "command": "bash -lc if runtime/bin/redcap gate --task \"\" --risk-level high; then echo \"unexpected success\"; exit 1; else rc=$?; echo \"expected gate failure rc=$rc\"; exit 0; fi",
+  "executed_at": "2026-06-12T18:39:01+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/empty-gate-negative.stderr.txt",
+  "stderr_sha256": "8b75c1e679cb75d44207de24dc6dbb3f34c31b515f1569ce4a11c9cb6424fb27",
+  "stdout_path": "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/empty-gate-negative.stdout.txt",
+  "stdout_sha256": "5a8de74479d9156657fbd5509142f7973fe65f1df552e71f508eb2c88cd322ee",
+  "timed_out": false
+}

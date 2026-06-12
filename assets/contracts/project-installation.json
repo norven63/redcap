@@ -1,0 +1,37 @@
+{
+  "schema_id": "redcap-project-installation-contract",
+  "schema_version": 1,
+  "purpose": "定义 RedCap 发布给外部项目时的项目级安装方式：压缩包顶层为 .redcap，解压到项目根目录后执行 init 完成项目级部署。",
+  "package_root_name": ".redcap",
+  "init_command": ".redcap/runtime/bin/redcap project-install init --project <project-root>",
+  "package_command": "runtime/bin/redcap project-install package --out <zip-path>",
+  "runtime_boundary": {
+    "external_project_runtime_root": "<project-root>/.redcap",
+    "self_development_exception": "RedCap 自身开发时仍使用 assets/evidence 作为工程内证据区。"
+  },
+  "required_package_roots": [
+    "runtime",
+    "assets/contracts",
+    "assets/docs",
+    "assets/knowledge",
+    "assets/archaeology/no-promote",
+    "assets/archaeology/shards/old-redcap-360-scan-account.json",
+    "assets/archaeology/shards/old-redcap-360-scan-merge.json",
+    "README.md"
+  ],
+  "init_outputs": [
+    "<project-root>/.redcap/state",
+    "<project-root>/.redcap/evidence",
+    "<project-root>/.redcap/logs",
+    "<project-root>/.redcap/tmp",
+    "<project-root>/.redcap/install.json",
+    "<project-root>/.codex/hooks.json"
+  ],
+  "safety_rules": [
+    "init 不得写入 RedCap 源仓库，除非项目根目录就是 RedCap 自身。",
+    "init 不得迁移旧证据，只能建立项目级运行目录和钩子配置。",
+    "包内不得包含 assets/evidence、.git、缓存目录、供应方原始输出或用户私有状态。",
+    "包内不得包含当前开发会话的 AGENTS.md；外部项目只通过 init 渲染项目级 hooks。",
+    "项目级 hooks 必须从 assets/contracts/codex-hooks.template.json 渲染，并把 {REPO_ROOT} 指向项目 .redcap。"
+  ]
+}

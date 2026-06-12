@@ -37,6 +37,12 @@ FINAL_CLAIM_GUARD = REPO_ROOT / "runtime" / "core" / "final_claim_guard.py"
 HUMAN_OUTPUT_POLICY = REPO_ROOT / "runtime" / "core" / "human_output_policy.py"
 SCAN_CONCLUSION_GUARD = REPO_ROOT / "runtime" / "core" / "scan_conclusion_guard.py"
 TERMINAL_GOAL_GUARD = REPO_ROOT / "runtime" / "core" / "terminal_goal_guard.py"
+TERMINAL_GOAL_CONTRACT = pathlib.Path(
+    os.environ.get("REDCAP_TERMINAL_GOAL_CONTRACT", str(REPO_ROOT / "assets" / "contracts" / "terminal-goals.json"))
+)
+TERMINAL_GOAL_TASK_FACTS = pathlib.Path(
+    os.environ.get("REDCAP_TERMINAL_GOAL_TASK_FACTS", str(REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"))
+)
 STOP_HOOK_MODE_FILE = pathlib.Path(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE", str(REPO_ROOT / ".codex" / "stop-hook-mode")))
 STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS = float(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS", "900"))
 STOP_INCLUDE_BLOCKED_REPLY_EXCERPT = (
@@ -201,6 +207,15 @@ def run_command(argv: list[str], timeout_seconds: float | None = None) -> dict[s
         "stdout": stdout,
         "stderr": stderr,
     }
+
+
+def terminal_goal_guard_args() -> list[str]:
+    return [
+        "--contract",
+        str(TERMINAL_GOAL_CONTRACT),
+        "--task-facts",
+        str(TERMINAL_GOAL_TASK_FACTS),
+    ]
 
 
 @contextlib.contextmanager
@@ -1180,6 +1195,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             str(TERMINAL_GOAL_GUARD),
             "context",
             "--for-hook",
+            *terminal_goal_guard_args(),
         ])
         if terminal_context["exit_code"] == 0 and terminal_context["stdout"].strip():
             context = f"{context}\n{terminal_context['stdout'].strip()}"
@@ -1364,6 +1380,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             str(payload.get("session_id") or ""),
             "--turn-id",
             str(payload.get("turn_id") or ""),
+            *terminal_goal_guard_args(),
         ])
         terminal_guard_result, terminal_guard_parse_error = parse_leading_json_object(terminal_guard["stdout"])
         if terminal_guard_parse_error is not None or terminal_guard_result is None:
@@ -2251,6 +2268,27 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         )
         if scan_marker.get("scan_conclusion_guard_ok") is not False:
             failures.append("scan-conclusion Stop marker should record failed scan conclusion guard")
+        terminal_contract_fixture = evidence_dir / "terminal-goals-open-fixture.json"
+        terminal_contract_payload = json.loads((REPO_ROOT / "assets" / "contracts" / "terminal-goals.json").read_text(encoding="utf-8"))
+        for goal in terminal_contract_payload.get("terminal_goals", []):
+            if isinstance(goal, dict) and goal.get("id") == "redcap-complete-revival":
+                goal["current_level"] = "migration_usable"
+                goal["open_reason"] = "self-check fixture keeps RedCap terminal goal unverified."
+        write_json_atomic(terminal_contract_fixture, terminal_contract_payload)
+        terminal_facts_fixture = evidence_dir / "terminal-task-facts-open-fixture.jsonl"
+        terminal_facts_fixture.write_text(json.dumps({
+            "schema_id": "redcap-task-fact-record",
+            "task_id": "redcap-complete-revival",
+            "title": "RedCap 完整复活",
+            "status": "in_progress",
+            "reason": "self-check fixture open terminal goal",
+            "evidence": ["fixture-terminal-evidence"],
+            "recorded_at": iso_now(),
+        }, ensure_ascii=False) + "\n", encoding="utf-8")
+        terminal_guard_fixture_env = {
+            "REDCAP_TERMINAL_GOAL_CONTRACT": str(terminal_contract_fixture),
+            "REDCAP_TERMINAL_GOAL_TASK_FACTS": str(terminal_facts_fixture),
+        }
         terminal_prompt = run_hook_event_for_self_check(
             "UserPromptSubmit",
             {
@@ -2261,6 +2299,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 "source": "codex-hook-terminal-goal-self-check",
             },
             evidence_dir=evidence_dir,
+            extra_env=terminal_guard_fixture_env,
         )
         if terminal_prompt.returncode != 0:
             failures.append(f"terminal-goal UserPromptSubmit failed: {terminal_prompt.stderr or terminal_prompt.stdout}")
@@ -2299,6 +2338,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             },
             evidence_dir=evidence_dir,
             extra_env={
+                **terminal_guard_fixture_env,
                 "REDCAP_STOP_HOOK_MODE": "enforce",
                 "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
             },
@@ -2336,6 +2376,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
                 "source": "codex-hook-terminal-stage-self-check",
             },
             evidence_dir=evidence_dir,
+            extra_env=terminal_guard_fixture_env,
         )
         if stage_prompt.returncode != 0:
             failures.append(f"terminal-stage UserPromptSubmit failed: {stage_prompt.stderr or stage_prompt.stdout}")
@@ -2366,6 +2407,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             },
             evidence_dir=evidence_dir,
             extra_env={
+                **terminal_guard_fixture_env,
                 "REDCAP_STOP_HOOK_MODE": "enforce",
                 "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
             },

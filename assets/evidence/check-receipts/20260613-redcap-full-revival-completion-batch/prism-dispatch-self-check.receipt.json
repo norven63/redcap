@@ -1,0 +1,14 @@
+{
+  "actual_exit_code": 0,
+  "command": "runtime/bin/redcap prism-dispatch --self-check",
+  "executed_at": "2026-06-12T18:39:05+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/prism-dispatch-self-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/prism-dispatch-self-check.stdout.txt",
+  "stdout_sha256": "4c10a253d482b6bc3e86bb68894fb74e6b4cf8bcb4a45e541547c19d5071d6e0",
+  "timed_out": false
+}

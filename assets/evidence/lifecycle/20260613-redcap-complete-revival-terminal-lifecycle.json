@@ -1,0 +1,160 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260613-redcap-complete-revival-terminal",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven 要求 Cap 在棱镜配合下把所有已规划的 RedCap 复活任务一次性执行落地，并在当前基线推送后继续推进，不能再把外围建设当成终点。",
+    "target_reality": "RedCap 的终局父任务只能在完整复活验收链、棱镜疑虑闭环、端到端链路、项目级安装、公共沉淀、角色化工程工作流和任务事实均通过后关闭。",
+    "non_goals": [
+      "不把生命周期包、版本记录、回执、棱镜评审或状态汇报单独当成完整复活完成。",
+      "不批量读取旧 RedCap 仓库。",
+      "不把最小可用执行内核、迁移可用或正式可用基线替代终局完成。",
+      "不把宿主钩子审计跳过结果说成完整宿主审计已重新执行。"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "若终局验收失败，撤回 terminal-goals.json 的 terminal_complete 当前层级、把 known-issues 第 5、6 项恢复为暂缓或开放状态，并记录 redcap-complete-revival 仍为 in_progress；保留已通过的独立能力实现和检查回执。",
+    "verification_plan": [
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260613-redcap-full-revival-completion-batch/merge.json --resolution assets/evidence/prism/20260613-redcap-full-revival-completion-batch/resolution.json --manifest assets/evidence/prism/20260613-redcap-full-revival-completion-batch/session.json",
+      "runtime/bin/redcap e2e-trace self-check",
+      "runtime/bin/redcap project-install self-check",
+      "runtime/bin/redcap known-issues-order check",
+      "runtime/bin/redcap known-issues-queue check --require-1-4-verified",
+      "runtime/bin/redcap complete-revival-check --require-terminal-verified --skip-host-hook-audit",
+      "runtime/bin/redcap terminal-goal check --message \"RedCap 完整复活已完成。\" --prompt \"请汇报 RedCap 完整复活状态\"",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "可以，你看看能够在棱镜的配合下，把这些所有任务都一次性一气呵成执行落地吗？如果可以，则立即开始，稳步推进直至所有都完成为止；之后你确认推送成功后询问是否可以继续。",
+    "prompt_kind": "mixed",
+    "authorized_scope": "completion",
+    "continuation_authorization": {
+      "mode": "same_session_authorized_continuation",
+      "source": "same_session_resume",
+      "session_id": "019e745f-17b8-7832-ada8-ae990b49db69",
+      "base_prompt_excerpt": "好像推送成功了，你现在是不是可以继续了？"
+    }
+  },
+  "task_body": {
+    "requested_outcome": "关闭 RedCap 完整复活终局父任务，前提是所有已知前置任务和终局验收均已有真实运行证据。",
+    "primary_deliverable": "可运行的完整复活工作流机器、项目级 .redcap 安装发布、RedCap Forge 公共沉淀、redcap-arsenal 公共能力库、Loom 角色化工程工作流、终局任务事实和完整验收链。",
+    "acceptance_criteria": [
+      "15 项优秀设计覆盖矩阵由 full-revival-amendment 检查器验证通过。",
+      "Loom 角色化工程工作流由 loom-workflow 检查器验证通过。",
+      "RedCap Forge 和 redcap-arsenal 均有运行时检查并通过。",
+      "项目级安装发布可以打包为顶层 .redcap 并在外部项目 init。",
+      "棱镜对本批次提出的 concern 已通过 prism-resolution 结构化闭环。",
+      "已知问题第 5、6 项从暂缓变为 verified，并且终局目标只在任务事实 verified 后允许完成表述。",
+      "runtime/bin/redcap check 在终局状态下通过。"
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "runtime/core/known_issues_order.py",
+      "runtime/core/known_issues_queue.py",
+      "runtime/core/redcap_forge.py",
+      "runtime/core/project_install.py",
+      "runtime/core/complete_revival_check.py",
+      "assets/contracts/known-issues-execution-order.json",
+      "assets/contracts/known-issues-queue.json",
+      "assets/contracts/terminal-goals.json",
+      "assets/contracts/redcap-forge.json",
+      "assets/contracts/project-installation.json",
+      "assets/knowledge/arsenal/index.json",
+      "assets/evidence/prism/20260613-redcap-full-revival-completion-batch/resolution.json",
+      "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/redcap-check-after-forge.receipt.json"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260613-redcap-full-revival-completion-batch/merge.json",
+    "resolution_path": "assets/evidence/prism/20260613-redcap-full-revival-completion-batch/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260613-redcap-full-revival-completion-batch/session.json",
+    "strictest_verdict_before_resolution": "concern",
+    "final_resolution": "resolved",
+    "decision": "两个 concern 均采纳：通过壳风险用负向检查和全量回执处理，合同漂移风险用计划回退、任务事实收口和终局验收处理。"
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "终局能力不只停留在合同：RedCap Forge、redcap-arsenal、项目级安装发布、Loom 工作流和完整复活检查均接入 runtime/bin/redcap。",
+        "项目级运行时产物通过 .redcap 安装发布自检验证，不再把外部项目产物写回 RedCap 自身代码区。"
+      ],
+      "evidence": [
+        "runtime/core/redcap_forge.py",
+        "runtime/core/project_install.py",
+        "runtime/core/loom_workflow.py",
+        "runtime/core/complete_revival_check.py",
+        "runtime/bin/redcap project-install self-check"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "棱镜疑虑没有被 Cap 盲从或覆盖，而是采纳后绑定到真实检查回执。",
+        "已知问题第 5、6 项从原来的暂缓状态升级为可验证关闭路径，避免制度自身阻塞真实完成。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260613-redcap-full-revival-completion-batch/resolution.json",
+        "assets/evidence/prism/20260613-redcap-full-revival-completion-batch/session.json",
+        "runtime/core/known_issues_order.py",
+        "runtime/core/known_issues_queue.py"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "终局目标合同继续禁止最小可用执行内核替代完整复活，同时把当前层级推进到 terminal_complete。",
+        "已知问题队列和执行顺序合同在关闭态下要求第 5、6 项 verified，不能提前关闭。"
+      ],
+      "evidence": [
+        "assets/contracts/terminal-goals.json",
+        "assets/contracts/known-issues-queue.json",
+        "assets/contracts/known-issues-execution-order.json",
+        "runtime/bin/redcap terminal-goal check"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/known_issues_order.py",
+    "runtime/core/known_issues_queue.py",
+    "runtime/core/redcap_forge.py",
+    "runtime/core/project_install.py",
+    "runtime/core/complete_revival_check.py",
+    "runtime/bin/redcap",
+    "assets/contracts/known-issues-execution-order.json",
+    "assets/contracts/known-issues-queue.json",
+    "assets/contracts/terminal-goals.json",
+    "assets/contracts/redcap-forge.json",
+    "assets/contracts/project-installation.json",
+    "assets/knowledge/arsenal/index.json",
+    "assets/evidence/task-facts/task-facts.jsonl"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/invalid-lifecycle-negative.receipt.json",
+    "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/empty-gate-negative.receipt.json",
+    "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/prism-dispatch-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/status-fail-on-open.receipt.json",
+    "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/formal-usable-check.receipt.json",
+    "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/revival-queue-check.receipt.json",
+    "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/complete-revival-precheck.receipt.json",
+    "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/project-install-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260613-redcap-full-revival-completion-batch/redcap-check-after-forge.receipt.json"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change",
+    "statement": "RedCap 完整复活终局收尾已进入可关闭状态；最终完成表述仍以 complete-revival-check 和 terminal-goal check 的通过结果为准。"
+  }
+}
