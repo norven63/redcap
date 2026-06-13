@@ -87,7 +87,7 @@
     {
       "id": "max-correction-rounds",
       "risk": "Stop 与 Cap 循环互相修正，消耗上下文。",
-      "mitigation": "Count Stop advisories per session_id + turn_id; after max_rounds, emit a bounded blocker that asks Cap to mark blocked or narrow claim instead of generating another full correction loop.",
+      "mitigation": "Count Stop advisories per session_id + turn_id; after max_rounds, emit an audited fuse release with continue=true, fuse_triggered=true, and resolution_status=released_not_resolved so the turn can close without pretending the issue was fixed.",
       "enforcement": "code-and-self-check"
     },
     {
@@ -118,6 +118,7 @@
   "residual_risks_after_mitigation": [
     "Stop 仍在收口热路径，响应延迟高于无 Stop 方案；当前 Codex hook timeout 设置为 120 秒，完整 runtime/bin/redcap check 不在默认热路径内，Stop 标记会记录 stop_hook_duration_ms 供后续观测；计时记录失败只能退化为观测缺失，不能阻断 Stop 行为。",
     "Cap 仲裁权已有 marker-based override 通路；覆盖标记按 session_id + turn_id 匹配，要求最短理由和 expires_at 过期校验，但仍需要 Cap 自觉只在误伤或有证据时使用。",
+    "最大修正轮次熔断不是问题解决声明；它必须记录 released_not_resolved，表示本轮为防止循环而放行。",
     "如果宿主未来改变 Stop 输出语义，仍需重新审计。"
   ]
 }

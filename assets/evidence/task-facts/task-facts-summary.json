@@ -1,8 +1,8 @@
 {
-  "computed_at": "2026-06-12T18:46:32+00:00",
+  "computed_at": "2026-06-13T12:35:47+00:00",
   "open_count": 0,
   "open_tasks": [],
-  "record_count": 52,
+  "record_count": 53,
   "schema_id": "redcap-task-fact-summary",
   "status_counts": {
     "blocked": 0,
@@ -10,7 +10,7 @@
     "in_progress": 0,
     "planned": 0,
     "superseded": 4,
-    "verified": 21
+    "verified": 22
   },
-  "task_count": 25
+  "task_count": 26
 }

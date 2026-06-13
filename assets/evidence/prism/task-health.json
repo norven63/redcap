@@ -1,69 +1,69 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-13T10:49:57+00:00",
-  "event_count": 29302,
-  "session_event_count": 7435,
-  "task_count": 75,
-  "success_count": 39,
-  "success_rate": 0.52,
-  "operational_task_count": 65,
-  "operational_success_count": 39,
-  "operational_success_rate": 0.6,
+  "computed_at": "2026-06-13T15:56:11+00:00",
+  "event_count": 29796,
+  "session_event_count": 7492,
+  "task_count": 76,
+  "success_count": 40,
+  "success_rate": 0.5263,
+  "operational_task_count": 66,
+  "operational_success_count": 40,
+  "operational_success_rate": 0.6061,
   "self_check_task_count": 10,
   "active_count": 29,
   "operational_active_count": 19,
   "attention_count": 35,
-  "average_duration_seconds": 1745.827,
+  "average_duration_seconds": 1733.868,
   "providers": {
     "claude-code": {
-      "tasks": 75,
-      "rounds": 72,
-      "reviews_loaded": 52,
+      "tasks": 76,
+      "rounds": 73,
+      "reviews_loaded": 53,
       "pass": 7,
-      "concern": 40,
+      "concern": 41,
       "block": 5,
       "missing_verdict": 23
     },
     "kimi": {
-      "tasks": 75,
-      "rounds": 66,
-      "reviews_loaded": 46,
+      "tasks": 76,
+      "rounds": 67,
+      "reviews_loaded": 47,
       "pass": 8,
-      "concern": 34,
+      "concern": 35,
       "block": 4,
       "missing_verdict": 29
     }
   },
   "recent_attention_tasks": [
     {
+      "task_id": "timeout-e2e",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-13T12:34:42+00:00"
+    },
+    {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-13T10:49:31+00:00"
+      "recorded_at": "2026-06-13T12:34:06+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-13T10:49:27+00:00"
+      "recorded_at": "2026-06-13T12:34:02+00:00"
     },
     {
       "task_id": "dispatcher-truncation-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-13T10:49:27+00:00"
+      "recorded_at": "2026-06-13T12:34:02+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-13T10:49:26+00:00"
-    },
-    {
-      "task_id": "timeout-e2e",
-      "outcome": "active",
-      "strictest_verdict": null,
-      "recorded_at": "2026-06-13T10:43:58+00:00"
+      "recorded_at": "2026-06-13T12:34:01+00:00"
     },
     {
       "task_id": "20260613-kimi-file-access-and-scan-guard-fix",
@@ -96,17 +96,17 @@
       "recorded_at": "2026-06-13T07:57:05+00:00"
     }
   ],
-  "gate_event_count": 21867,
-  "gate_success_count": 21867,
+  "gate_event_count": 22304,
+  "gate_success_count": 22304,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 499,
-    "required": 17703,
-    "skipped": 3665
+    "optional": 502,
+    "required": 18032,
+    "skipped": 3770
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 17988,
-    "cli-gate": 3879
+    "codex-UserPromptSubmit": 18409,
+    "cli-gate": 3895
   },
-  "gate_average_duration_seconds": 0.282
+  "gate_average_duration_seconds": 0.287
 }

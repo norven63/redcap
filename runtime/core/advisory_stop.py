@@ -286,6 +286,70 @@ def run_e2e_regression() -> dict[str, Any]:
         if first_marker.get("redcap_check_attempted") is not False:
             failures.append("first Stop must not run full redcap check in the default hot path")
 
+        fuse_session_id = "advisory-stop-fuse-session"
+        fuse_turn_id = "advisory-stop-fuse-turn"
+        fuse_prompt = run_hook_event(
+            "UserPromptSubmit",
+            {
+                "prompt": "请修复建议型 Stop 达到最大修正轮次后的重复循环。",
+                "cwd": str(REPO_ROOT),
+                "session_id": fuse_session_id,
+                "turn_id": fuse_turn_id,
+                "source": "advisory-stop-e2e-fuse",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if fuse_prompt.returncode != 0:
+            failures.append(f"fuse UserPromptSubmit failed: {fuse_prompt.stderr or fuse_prompt.stdout}")
+        fuse_payloads: list[dict[str, Any]] = []
+        for round_index in range(1, 4):
+            fuse_stop = run_hook_event(
+                "Stop",
+                {
+                    "cwd": str(REPO_ROOT),
+                    "session_id": fuse_session_id,
+                    "turn_id": fuse_turn_id,
+                    "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
+                    "source": f"advisory-stop-e2e-fuse-{round_index}",
+                },
+                evidence_dir=evidence_dir,
+            )
+            if fuse_stop.returncode != 0:
+                failures.append(f"fuse Stop round {round_index} failed: {fuse_stop.stderr or fuse_stop.stdout}")
+                continue
+            try:
+                fuse_payloads.append(leading_json(fuse_stop.stdout or ""))
+            except Exception as exc:
+                failures.append(f"fuse Stop round {round_index} did not emit JSON: {exc}")
+        if len(fuse_payloads) >= 2:
+            for round_index, fuse_payload in enumerate(fuse_payloads[:2], 1):
+                if fuse_payload.get("decision") != "block":
+                    failures.append(f"fuse Stop round {round_index} should block before max rounds are exhausted")
+        final_fuse_payload = fuse_payloads[-1] if fuse_payloads else {}
+        if final_fuse_payload.get("continue") is not True:
+            failures.append("fuse Stop third round must continue after max rounds are exhausted")
+        if final_fuse_payload.get("fuse_triggered") is not True:
+            failures.append("fuse Stop third round must expose fuse_triggered=true")
+        if final_fuse_payload.get("resolution_status") != "released_not_resolved":
+            failures.append("fuse Stop third round must expose released_not_resolved status")
+        try:
+            fuse_markers = [
+                item
+                for item in (json.loads(line) for line in marker_path.read_text(encoding="utf-8").splitlines())
+                if isinstance(item, dict)
+                and item.get("event") == "Stop"
+                and item.get("turn_id") == fuse_turn_id
+            ]
+        except OSError:
+            fuse_markers = []
+        final_fuse_marker = fuse_markers[-1] if fuse_markers else {}
+        if final_fuse_marker.get("advisory_stop_fuse_triggered") is not True:
+            failures.append("fuse Stop marker must record advisory_stop_fuse_triggered=true")
+        if final_fuse_marker.get("advisory_stop_resolution_status") != "released_not_resolved":
+            failures.append("fuse Stop marker must record released_not_resolved status")
+        if final_fuse_marker.get("stop_hook_outcome") != "pass:max-correction-rounds-fuse":
+            failures.append("fuse Stop marker must record pass:max-correction-rounds-fuse outcome")
+
         override_file = write_override_marker(
             evidence_dir,
             session_id=session_id,

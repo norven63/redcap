@@ -371,6 +371,7 @@ def build_advisory_stop_payload(
     checker_source: str,
 ) -> dict[str, Any]:
     current_round = advisory_stop_round(payload)
+    fuse_triggered = current_round > ADVISORY_STOP_MAX_ROUNDS
     if current_round > ADVISORY_STOP_MAX_ROUNDS:
         constraints = [
             stop_constraint(
@@ -384,13 +385,16 @@ def build_advisory_stop_payload(
         ]
     return {
         "advisory_schema_id": ADVISORY_STOP_SCHEMA_ID,
-        "decision": "stop_suggest",
+        "decision": "continue" if fuse_triggered else "stop_suggest",
         "original_task_excerpt": latest_prompt_excerpt_for_stop(action_result),
         "correction_constraints": constraints,
         "cap_may_override": True,
         "override_condition": "Cap 有具体证据表明该建议与用户原始请求无关、误伤或已经被本轮动作证据满足。",
         "max_rounds": ADVISORY_STOP_MAX_ROUNDS,
         "current_round": current_round,
+        "fuse_triggered": fuse_triggered,
+        "fuse_reason": "max_correction_rounds_exhausted" if fuse_triggered else None,
+        "resolution_status": "released_not_resolved" if fuse_triggered else "requires_correction",
         "recovery_focus_anchor": (
             "二次回答必须先直接回答原始用户问题（即用户原始请求）；"
             "Stop（停止前检查钩子）的反馈只是一组修正约束，不是新的用户任务，也不得成为回复主题。"
@@ -467,6 +471,9 @@ def advisory_marker_updates(advisory: dict[str, Any]) -> dict[str, Any]:
         "advisory_stop_category": category,
         "advisory_stop_current_round": advisory.get("current_round"),
         "advisory_stop_max_rounds": advisory.get("max_rounds"),
+        "advisory_stop_fuse_triggered": advisory.get("fuse_triggered") is True,
+        "advisory_stop_fuse_reason": advisory.get("fuse_reason"),
+        "advisory_stop_resolution_status": advisory.get("resolution_status"),
         "advisory_stop_checker_source": advisory.get("checker_source"),
         "advisory_stop_cap_may_override": advisory.get("cap_may_override"),
         "advisory_stop_do_not_answer_the_hook": advisory.get("do_not_answer_the_hook"),
@@ -536,6 +543,22 @@ def print_advisory_stop(
         "advisory_stop_override_source": override.get("source"),
     })
     marker = update_latest_marker("Stop", marker_updates, base_marker=marker)
+    if advisory.get("fuse_triggered") is True:
+        update_latest_marker("Stop", {
+            "stop_hook_outcome": "pass:max-correction-rounds-fuse",
+            "advisory_stop_fuse_released_at": iso_now(),
+        }, base_marker=marker)
+        print(json.dumps({
+            "continue": True,
+            "decision": "continue",
+            "fuse_triggered": True,
+            "resolution_status": "released_not_resolved",
+            "systemMessage": (
+                "RedCap（当前复活工程）Stop（停止前检查钩子）已达到本轮最大修正次数，"
+                "本轮熔断放行；问题已记录为未解决释放状态。"
+            ),
+        }, ensure_ascii=False))
+        return
     if override.get("ok") is True:
         print(json.dumps({
             "continue": True,
@@ -2251,6 +2274,67 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             failures.append("anchor Stop marker must record that full Prism is not used in the hot path")
         if anchor_stop_marker.get("advisory_stop_validation_failures") != []:
             failures.append("anchor Stop advisory payload should pass internal validation")
+        fuse_prompt_text = "请修复Stop最大修正轮次后的重复循环。"
+        fuse_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": fuse_prompt_text,
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-stop-fuse-session",
+                "turn_id": "fixture-stop-fuse-turn",
+                "source": "codex-hook-stop-fuse-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if fuse_prompt.returncode != 0:
+            failures.append(f"fuse UserPromptSubmit failed: {fuse_prompt.stderr or fuse_prompt.stdout}")
+        fuse_payloads: list[dict[str, Any]] = []
+        for round_index in range(1, ADVISORY_STOP_MAX_ROUNDS + 2):
+            fuse_stop = run_hook_event_for_self_check(
+                "Stop",
+                {
+                    "cwd": str(REPO_ROOT),
+                    "session_id": "fixture-stop-fuse-session",
+                    "turn_id": "fixture-stop-fuse-turn",
+                    "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
+                    "source": f"codex-hook-stop-fuse-self-check-{round_index}",
+                },
+                evidence_dir=evidence_dir,
+                extra_env={
+                    "REDCAP_STOP_HOOK_MODE": "enforce",
+                    "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+                },
+            )
+            if fuse_stop.returncode != 0:
+                failures.append(f"fuse Stop round {round_index} failed: {fuse_stop.stderr or fuse_stop.stdout}")
+                continue
+            fuse_payload, fuse_error = parse_leading_json_object(fuse_stop.stdout or "")
+            if fuse_error is not None or not isinstance(fuse_payload, dict):
+                failures.append(f"fuse Stop round {round_index} did not emit JSON: {fuse_error}")
+                continue
+            fuse_payloads.append(fuse_payload)
+        for index, fuse_payload in enumerate(fuse_payloads[:ADVISORY_STOP_MAX_ROUNDS], 1):
+            if fuse_payload.get("decision") != "block":
+                failures.append(f"fuse Stop round {index} should block before max rounds are exhausted")
+        final_fuse_payload = fuse_payloads[-1] if fuse_payloads else {}
+        if final_fuse_payload.get("continue") is not True:
+            failures.append("fuse Stop final round should continue after max rounds are exhausted")
+        if final_fuse_payload.get("fuse_triggered") is not True:
+            failures.append("fuse Stop final round should expose fuse_triggered=true")
+        if final_fuse_payload.get("resolution_status") != "released_not_resolved":
+            failures.append("fuse Stop final round should expose released_not_resolved status")
+        fuse_marker = load_self_check_marker(
+            evidence_dir,
+            "Stop",
+            source=f"codex-hook-stop-fuse-self-check-{ADVISORY_STOP_MAX_ROUNDS + 1}",
+            turn_id="fixture-stop-fuse-turn",
+        )
+        if fuse_marker.get("advisory_stop_fuse_triggered") is not True:
+            failures.append("fuse Stop marker should record advisory_stop_fuse_triggered=true")
+        if fuse_marker.get("advisory_stop_resolution_status") != "released_not_resolved":
+            failures.append("fuse Stop marker should record released_not_resolved status")
+        if fuse_marker.get("stop_hook_outcome") != "pass:max-correction-rounds-fuse":
+            failures.append("fuse Stop marker should record pass:max-correction-rounds-fuse outcome")
         override_key = hashlib.sha256("fixture-session\nfixture-stop-anchor".encode("utf-8")).hexdigest()
         override_path = evidence_dir / "stop-overrides" / f"{override_key}.json"
         override_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2330,12 +2414,25 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         stop_mode_file.write_text("observe\n", encoding="utf-8")
         old_time = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(seconds=3600)).timestamp()
         os.utime(stop_mode_file, (old_time, old_time))
+        expired_observe_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "请验证过期观察模式会回到执行检查。",
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-session",
+                "turn_id": "fixture-stop-expired-observe",
+                "source": "codex-hook-stop-expired-observe-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if expired_observe_prompt.returncode != 0:
+            failures.append(f"expired observe UserPromptSubmit failed: {expired_observe_prompt.stderr or expired_observe_prompt.stdout}")
         expired_observe = run_hook_event_for_self_check(
             "Stop",
             {
                 "cwd": str(REPO_ROOT),
                 "session_id": "fixture-session",
-                "turn_id": "fixture-stop-anchor",
+                "turn_id": "fixture-stop-expired-observe",
                 "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
                 "source": "codex-hook-stop-expired-observe-self-check",
             },
