@@ -53,7 +53,7 @@
         "所有 promotable 分片状态为 verified 或有明确 blocked/no_promote 理由",
         "assets/archaeology/shards/old-redcap-360-scan-merge.json 存在并通过合并检查",
         "task-facts 将 full-360-old-redcap-scan 标记为 verified 或 blocked",
-        "扫描状态块显示已完成或受阻，不再是未完成"
+        "扫描状态证据显示已完成或受阻，不再是未完成"
       ],
       "verification": [
         "runtime/bin/redcap prism-shard check --account assets/archaeology/shards/old-redcap-360-scan-account.json",

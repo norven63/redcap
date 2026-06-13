@@ -139,6 +139,7 @@ def main() -> int:
         "codex_hook_self_check_stdout_tail": (codex_hook.stdout or "")[-1200:],
         "codex_hook_self_check_stderr_tail": (codex_hook.stderr or "")[-1200:],
         "unsupported_events": AUDITED_UNSUPPORTED_EVENTS,
+        "retired_events": {},
         "failures": failures,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))

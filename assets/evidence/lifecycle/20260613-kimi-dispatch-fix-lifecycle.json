@@ -1,0 +1,129 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260613-kimi-dispatch-fix",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven reported that Kimi works through direct CLI calls but frequently times out when used by Prism, and asked Cap to diagnose and fix the Prism-to-Kimi invocation before returning to the known-issues queue.",
+    "target_reality": "Prism invokes Kimi with the current Kimi CLI contract, captures or resumes the task-scoped session handle, extracts the review result reliably, and does not create avoidable timeouts from a stale or mismatched command line.",
+    "non_goals": [
+      "Do not broaden this task into the known-issues queue implementation before Kimi dispatch is verified.",
+      "Do not claim RedCap complete revival is finished.",
+      "Do not bulk-read the old RedCap repository.",
+      "Do not weaken Prism provider safety so Kimi can mutate the RedCap workspace during review."
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "Revert bounded changes to runtime/prism/bin/prism-dispatch and this lifecycle packet if the live Kimi smoke test or Prism dispatcher self-check fails.",
+    "verification_plan": [
+      "which kimi && kimi --help",
+      "direct Kimi text-mode smoke test",
+      "direct Kimi stream-json smoke test if the dispatcher still needs stream output",
+      "runtime/bin/redcap prism-dispatch --self-check",
+      "live Prism Kimi dispatch smoke test with a short bounded request",
+      "live Prism Kimi dispatch smoke test with a single 120-second attempt",
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260613-kimi-dispatch-fix-r4/merge.json --resolution assets/evidence/prism/20260613-kimi-dispatch-fix-r4/resolution.json --manifest assets/evidence/prism/20260613-kimi-dispatch-fix-r4/session.json",
+      "runtime/bin/redcap enforcement-check",
+      "runtime/bin/redcap check",
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260613-kimi-dispatch-fix-lifecycle.json"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "kimi -p '你好，这次会话是test 223，请记住' ─╯ • The user is greeting me in Chinese and says \"Hello, this session is test 223, please remember.\" This is a simple conve rsational request with no need for tools. I should respond in Chinese acknowledging that I will remember. No tool call s needed. • 你好！已记住：本次会话是 **test 223**。有什么可以帮你的吗？ To resume this session: kimi -r session_17d37fee-6df4-496d-a108-7c1eb05a0ee0",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "Diagnose and repair Prism's Kimi invocation path so recent avoidable Kimi timeouts are removed.",
+    "primary_deliverable": "A verified Kimi dispatch path in Prism, including command construction, session handle capture, output parsing, and timeout behavior.",
+    "acceptance_criteria": [
+      "The current installed Kimi CLI help and direct smoke behavior are recorded as the invocation baseline.",
+      "The dispatcher uses a Kimi command shape compatible with that baseline.",
+      "Kimi session handles are captured from current CLI output and reused in follow-up calls.",
+      "The dispatcher self-check covers the current Kimi command and session-handle extraction behavior.",
+      "A live short Kimi dispatch smoke test succeeds or produces a precise blocker that distinguishes provider outage from RedCap invocation error."
+    ],
+    "status": "verified",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "runtime/prism/bin/prism-dispatch",
+      "runtime/prism/prompts/kimi-prism-review.md",
+      "runtime/prism/skills/kimi-empty/README.md",
+      "assets/contracts/directory-structure.json",
+      "runtime/core/layout_guard.py",
+      "assets/contracts/enforcement-matrix.json"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "The root cause was not Kimi CLI unavailability. Prism's Kimi path let Kimi behave like a code agent under the review prompt, and the session extractor accepted a fake `kimi -r` string from tool/read output as a real session handle."
+      ],
+      "evidence": [
+        "runtime/prism/bin/prism-dispatch",
+        "assets/evidence/prism/20260613-kimi-dispatch-fix/kimi.raw.meta.json",
+        "assets/evidence/prism/20260613-kimi-dispatch-fix-r4/kimi.raw.meta.json"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "Kimi review now uses an empty Prism skills directory and a hard prompt boundary that tells Kimi to use only the supplied prompt text, not inspect files or call tools."
+      ],
+      "evidence": [
+        "runtime/prism/bin/prism-dispatch",
+        "runtime/prism/prompts/kimi-prism-review.md",
+        "runtime/prism/skills/kimi-empty/README.md"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "Kimi's concern was accepted and resolved with a live dispatcher run, valid raw metadata, evidence verification receipts, and the full RedCap check passing."
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260613-kimi-dispatch-fix-r4/resolution.json",
+        "assets/evidence/prism/20260613-kimi-dispatch-fix-r4/receipts/prism-dispatch-self-check.receipt.json",
+        "assets/evidence/prism/20260613-kimi-dispatch-fix-r4/receipts/prism-dispatch-raw-meta.receipt.json",
+        "assets/evidence/prism/20260613-kimi-dispatch-fix-r4/receipts/prism-dispatch-evidence.receipt.json"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260613-kimi-dispatch-fix-r4/merge.json",
+    "resolution_path": "assets/evidence/prism/20260613-kimi-dispatch-fix-r4/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260613-kimi-dispatch-fix-r4/session.json"
+  },
+  "implementation_evidence": [
+    "runtime/prism/bin/prism-dispatch",
+    "runtime/prism/prompts/kimi-prism-review.md",
+    "runtime/prism/skills/kimi-empty/README.md",
+    "assets/contracts/directory-structure.json",
+    "runtime/core/layout_guard.py",
+    "assets/contracts/enforcement-matrix.json"
+  ],
+  "verification_evidence": [
+    "python3 -m py_compile runtime/prism/bin/prism-dispatch runtime/core/layout_guard.py",
+    "runtime/bin/redcap prism-dispatch --self-check",
+    "runtime/bin/redcap prism-dispatch --verify-raw-meta --raw-out assets/evidence/prism/20260613-kimi-dispatch-fix-r4/kimi.raw.json",
+    "runtime/bin/redcap prism-dispatch --verify-evidence --evidence-run-dir assets/evidence/prism/20260613-kimi-dispatch-fix-r4 --providers kimi --max-age-hours 1",
+    "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260613-kimi-dispatch-fix-r4/merge.json --resolution assets/evidence/prism/20260613-kimi-dispatch-fix-r4/resolution.json --manifest assets/evidence/prism/20260613-kimi-dispatch-fix-r4/session.json",
+    "runtime/bin/redcap enforcement-check",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime-change",
+    "scope": "只覆盖 Prism 对 Kimi CLI 的调度修复、会话句柄捕获修复、空技能目录隔离、Kimi 提示边界和相关检查预算；不声明 RedCap 完整复活终局完成"
+  }
+}

@@ -126,6 +126,6 @@
     "terminal_claim_requires_verified_goal": true,
     "phase_claim_must_name_level": true,
     "prompt_time_context_required": true,
-    "stop_hook_validation_required": true
+    "closeout_command_validation_required": true
   }
 }

@@ -36,7 +36,8 @@ DIRECT_CONCLUSION_REQUEST_RE = re.compile(
 META_DISCUSSION_RE = re.compile(
     r"(?:"
     r"拦截|误伤|误报|冗余|触发|状态块|检查器|检查逻辑|门禁|机制|修复方案|垂直能力|空转拦截|"
-    r"guard|checker|false[- ]positive|over[- ]trigger|status block|trigger"
+    r"不应该出现|不该出现|带着如下内容|这是什么bug|bug|"
+    r"guard|checker|false[- ]positive|over[- ]trigger|scan[- ]state artifact|trigger"
     r")",
     re.I | re.S,
 )
@@ -214,17 +215,31 @@ def build_scan_state(account_path: pathlib.Path, merge_path: pathlib.Path, task_
     }
 
 
-def scan_conclusion_context(prompt: str, message: str) -> bool:
-    combined = f"{prompt}\n{message}"
-    if not CONTEXT_RE.search(combined):
+def prompt_requests_scan_conclusion(prompt: str) -> bool:
+    if not CONTEXT_RE.search(prompt):
         return False
+    if META_DISCUSSION_RE.search(prompt):
+        return False
+    return bool(DIRECT_CONCLUSION_REQUEST_RE.search(prompt) or CONCLUSION_RE.search(prompt))
+
+
+def has_scan_state_template(message: str) -> bool:
+    parsed = parse_status_block(message)
+    if not parsed:
+        return False
+    anchors = {"scan_status", "conclusion_scope"}
+    return anchors.issubset(parsed) or len(parsed) >= 3
+
+
+def scan_conclusion_context(prompt: str, message: str) -> bool:
     if prohibited_incomplete_conclusion(message):
         return True
+    if not prompt_requests_scan_conclusion(prompt):
+        return False
+    combined = f"{prompt}\n{message}"
     if META_DISCUSSION_RE.search(combined):
         return False
-    if DIRECT_CONCLUSION_REQUEST_RE.search(prompt):
-        return True
-    return bool(CONCLUSION_RE.search(combined))
+    return bool(CONCLUSION_RE.search(combined) or has_scan_state_template(message))
 
 
 def prohibited_incomplete_conclusion(message: str) -> bool:
@@ -249,9 +264,8 @@ def parse_status_block(message: str) -> dict[str, Any]:
     return parsed
 
 
-def expected_status_block(state: dict[str, Any]) -> str:
+def scan_state_fixture_text(state: dict[str, Any]) -> str:
     return "\n".join([
-        "RedCap 扫描状态：",
         f"扫描状态：{state['scan_status']}",
         f"分片进度：{state['shards_completed']}/{state['shards_total']}",
         f"合并状态：{state['merge_status']}",
@@ -260,17 +274,17 @@ def expected_status_block(state: dict[str, Any]) -> str:
     ])
 
 
-def status_block_matches(message: str, state: dict[str, Any]) -> tuple[bool, list[str]]:
+def scan_state_fields_match(message: str, state: dict[str, Any]) -> tuple[bool, list[str]]:
     parsed = parse_status_block(message)
     failures: list[str] = []
     required_keys = {"scan_status", "shards_completed", "shards_total", "merge_status", "last_verified_output", "conclusion_scope"}
     missing = sorted(required_keys - set(parsed))
     if missing:
-        failures.append(f"scan status block missing: {', '.join(missing)}")
+        failures.append(f"scan_state fields missing: {', '.join(missing)}")
         return False, failures
     for key in sorted(required_keys):
         if parsed.get(key) != state.get(key):
-            failures.append(f"scan status block mismatch for {key}: expected {state.get(key)!r}, got {parsed.get(key)!r}")
+            failures.append(f"scan_state field mismatch for {key}: expected {state.get(key)!r}, got {parsed.get(key)!r}")
     return not failures, failures
 
 
@@ -283,23 +297,31 @@ def check_scan_conclusion(
     task_facts_path: pathlib.Path,
 ) -> dict[str, Any]:
     state = build_scan_state(account_path, merge_path, task_facts_path)
+    irrelevant_scan_template = has_scan_state_template(message) and not prompt_requests_scan_conclusion(prompt)
     triggered = scan_conclusion_context(prompt, message)
     result: dict[str, Any] = {
         "ok": True,
-        "triggered": triggered,
+        "triggered": triggered or irrelevant_scan_template,
         "scan_state": state,
-        "expected_status_block": expected_status_block(state),
         "reason": "No 360-degree scan conclusion context detected.",
     }
+    if irrelevant_scan_template:
+        result.update({
+            "ok": False,
+            "reason": "irrelevant-scan-state-template",
+            "failures": ["RedCap scan-state template appeared in a non-scan-answer context"],
+            "recovery": "删除与原问题无关的扫描模板内容，并直接回答用户原始问题。",
+        })
+        return result
     if not triggered:
         return result
-    block_ok, block_failures = status_block_matches(message, state)
+    fields_ok, field_failures = scan_state_fields_match(message, state)
     if not state["scan_complete"]:
-        if not block_ok:
+        if not fields_ok:
             result.update({
                 "ok": False,
-                "reason": "360-degree scan conclusion context requires a structured scan status block while the scan is incomplete.",
-                "failures": block_failures,
+                "reason": "360-degree scan conclusion context requires verified scan_state fields while the scan is incomplete.",
+                "failures": field_failures,
                 "recovery": "Return to the 360-degree scan task, report only provisional status, or continue verified shard execution before giving conclusions.",
             })
             return result
@@ -312,17 +334,17 @@ def check_scan_conclusion(
             })
             return result
         result.update({
-            "reason": "Incomplete scan context has a matching structured scan status block and no unnegated final conclusion.",
+            "reason": "Incomplete scan context has matching scan_state fields and no unnegated final conclusion.",
         })
         return result
-    if not block_ok:
+    if not fields_ok:
         result.update({
             "ok": False,
-            "reason": "Completed scan conclusion requires a structured scan status block matching verified scan evidence.",
-            "failures": block_failures,
+            "reason": "Completed scan conclusion requires scan_state fields matching verified scan evidence.",
+            "failures": field_failures,
         })
         return result
-    result.update({"reason": "Scan conclusion has verified scan evidence and a matching structured status block."})
+    result.update({"reason": "Scan conclusion has verified scan evidence and matching scan_state fields."})
     return result
 
 
@@ -443,7 +465,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         if unsafe["ok"]:
             failures.append("unsafe active-scan conclusion was not blocked")
         state = build_scan_state(account, merge, facts)
-        safe_message = "我现在不能给最终结论，只能给当前阶段状态。\n" + expected_status_block(state)
+        safe_message = "我现在不能给最终结论，只能给当前阶段状态。\n" + scan_state_fixture_text(state)
         safe = check_scan_conclusion(
             message=safe_message,
             prompt=prompt,
@@ -461,7 +483,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             task_facts_path=facts,
         )
         if status_with_final_claim["ok"]:
-            failures.append("incomplete scan with matching status block and final claim was not blocked")
+            failures.append("incomplete scan with matching scan_state fields and final claim was not blocked")
         missing_block = check_scan_conclusion(
             message="我现在不能给最终结论，只能说扫描尚未完成。",
             prompt=prompt,
@@ -470,10 +492,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             task_facts_path=facts,
         )
         if missing_block["ok"]:
-            failures.append("scan conclusion context without status block was not blocked")
+            failures.append("scan conclusion context without scan_state fields was not blocked")
         complete_account, complete_merge, complete_facts = fixture_account(tmp / "complete", complete=True)
         complete_state = build_scan_state(complete_account, complete_merge, complete_facts)
-        complete_message = "现在可以给最终结论。\n" + expected_status_block(complete_state)
+        complete_message = "现在可以给最终结论。\n" + scan_state_fixture_text(complete_state)
         complete = check_scan_conclusion(
             message=complete_message,
             prompt=prompt,
@@ -482,7 +504,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             task_facts_path=complete_facts,
         )
         if not complete["ok"]:
-            failures.append(f"completed scan with status block was blocked: {complete.get('failures')}")
+            failures.append(f"completed scan with scan_state fields was blocked: {complete.get('failures')}")
         unrelated = check_scan_conclusion(
             message="当前只能说明版本记录状态。",
             prompt="接下来应该做什么？",
@@ -492,6 +514,40 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         )
         if not unrelated["ok"] or unrelated["triggered"]:
             failures.append("unrelated prompt should not trigger scan conclusion guard")
+        kimi_prompt = (
+            "我不能理解的是，让kimi读文件就会导致超时？这的结论我无法接受，我希望你再好好排查原因。"
+            "另外，你的回答带着如下内容，这是什么bug。"
+        )
+        kimi_normal = check_scan_conclusion(
+            message="Kimi的超时根因应从调用方式、超时预算和会话句柄提取排查，不应归因于读文件本身。",
+            prompt=kimi_prompt,
+            account_path=account,
+            merge_path=merge,
+            task_facts_path=facts,
+        )
+        if not kimi_normal["ok"] or kimi_normal["triggered"]:
+            failures.append("Kimi diagnostic prompt without scan_state template should not trigger scan guard")
+        if any(key.endswith("_status_block") for key in kimi_normal):
+            failures.append("normal scan guard result should not expose legacy status template fields")
+        irrelevant_block_message = "\n".join([
+            "Kimi的超时根因需要重新排查。",
+            "扫描状态：已完成",
+            "分片进度：3/3",
+            "合并状态：已合并",
+            "最后验证输出：2026-06-06T18:01:12+00:00",
+            "结论权限：可以给最终结论",
+        ])
+        irrelevant_block = check_scan_conclusion(
+            message=irrelevant_block_message,
+            prompt=kimi_prompt,
+            account_path=account,
+            merge_path=merge,
+            task_facts_path=facts,
+        )
+        if irrelevant_block["ok"] or irrelevant_block.get("reason") != "irrelevant-scan-state-template":
+            failures.append("irrelevant scan_state template in Kimi diagnostic answer was not blocked as irrelevant")
+        if any(key.endswith("_status_block") for key in irrelevant_block):
+            failures.append("irrelevant scan template recovery should not expose legacy status template fields")
         meta_prompt = (
             "为何还要建立一个垂直能力的拦截？即“360 度扫描结论误报”拦截，"
             "现在你每次回答问题都会带着这个拦截的报告，很冗余，你不觉得吗？"
@@ -508,7 +564,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             task_facts_path=facts,
         )
         if not meta_discussion["ok"] or meta_discussion["triggered"]:
-            failures.append("meta discussion about the guard should not trigger scan conclusion status block")
+            failures.append("meta discussion about the guard should not trigger scan_state template")
         adversarial_messages = [
             "虽然这是在讨论误伤，但最终结论是：扫描已经完成。",
             "关于这个检查器的修复方案，我顺便给结论是：可以迁移全部设计。",

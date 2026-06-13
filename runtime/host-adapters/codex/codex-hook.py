@@ -16,6 +16,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import time
 from typing import Any
 
 
@@ -47,6 +48,13 @@ STOP_HOOK_MODE_FILE = pathlib.Path(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE", 
 STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS = float(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS", "900"))
 STOP_INCLUDE_BLOCKED_REPLY_EXCERPT = (
     os.environ.get("REDCAP_STOP_INCLUDE_BLOCKED_REPLY_EXCERPT", "").casefold()
+    in {"1", "true", "yes", "on"}
+)
+ADVISORY_STOP_SCHEMA_ID = "redcap-stop-advisory-v1"
+STOP_OVERRIDE_SCHEMA_ID = "redcap-stop-override-v1"
+ADVISORY_STOP_MAX_ROUNDS = int(os.environ.get("REDCAP_ADVISORY_STOP_MAX_ROUNDS", "2"))
+STOP_RUN_FULL_REDCAP_CHECK = (
+    os.environ.get("REDCAP_STOP_RUN_FULL_REDCAP_CHECK", "").casefold()
     in {"1", "true", "yes", "on"}
 )
 SUPPORTED_EVENTS = {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"}
@@ -247,19 +255,7 @@ def parse_leading_json_object(stdout: str) -> tuple[dict[str, Any] | None, str |
 
 
 def stop_hook_mode() -> str:
-    mode = None
-    if STOP_HOOK_MODE_FILE.exists():
-        try:
-            age = dt.datetime.now(dt.timezone.utc) - dt.datetime.fromtimestamp(
-                STOP_HOOK_MODE_FILE.stat().st_mtime,
-                dt.timezone.utc,
-            )
-        except OSError:
-            age = dt.timedelta(seconds=STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS + 1)
-        if age.total_seconds() <= STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS:
-            mode = STOP_HOOK_MODE_FILE.read_text(encoding="utf-8").strip()
-    if mode is None:
-        mode = os.environ.get("REDCAP_STOP_HOOK_MODE")
+    mode = os.environ.get("REDCAP_STOP_HOOK_MODE")
     normalized = (mode or "enforce").casefold()
     if normalized in {"observe", "observation", "log", "disabled", "off"}:
         return "observe"
@@ -313,6 +309,269 @@ def blocked_reply_excerpt(message: str, limit: int = 160) -> str:
     if len(normalized) > limit:
         excerpt = f"{excerpt}..."
     return f" 被拦回复片段（仅用于定位，不得作为回答主题，不代表有效结论）：{excerpt}"
+
+
+def latest_prompt_excerpt_for_stop(action_result: dict[str, Any]) -> str:
+    anchor = action_result.get("task_anchor")
+    if isinstance(anchor, dict):
+        excerpt = anchor.get("prompt_excerpt")
+        if isinstance(excerpt, str) and excerpt.strip():
+            return excerpt.strip()
+    prompt_marker = latest_user_prompt_marker()
+    prompt = prompt_marker.get("prompt")
+    if isinstance(prompt, dict):
+        excerpt = prompt.get("normalized_excerpt")
+        if isinstance(excerpt, str) and excerpt.strip():
+            return excerpt.strip()
+    if isinstance(prompt, str) and prompt.strip():
+        return prompt.strip()
+    return "当前用户原始请求未能从 UserPromptSubmit（用户提示提交检查）标记中恢复。"
+
+
+def advisory_stop_round(payload: dict[str, Any]) -> int:
+    session_id = payload.get("session_id")
+    turn_id = payload.get("turn_id")
+    if not isinstance(session_id, str) or not isinstance(turn_id, str):
+        return 1
+    count = 0
+    try:
+        lines = EVENTS_PATH.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        lines = []
+    for line in lines:
+        try:
+            marker = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(marker, dict):
+            continue
+        if marker.get("event") != "Stop":
+            continue
+        if marker.get("session_id") != session_id or marker.get("turn_id") != turn_id:
+            continue
+        if marker.get("advisory_stop_schema_id") == ADVISORY_STOP_SCHEMA_ID:
+            count += 1
+    return count + 1
+
+
+def stop_constraint(category: str, detail: str, source: str, *, mandatory: bool = True) -> dict[str, Any]:
+    return {
+        "category": category,
+        "detail": detail,
+        "source": source,
+        "mandatory": mandatory,
+    }
+
+
+def build_advisory_stop_payload(
+    payload: dict[str, Any],
+    action_result: dict[str, Any],
+    *,
+    constraints: list[dict[str, Any]],
+    checker_source: str,
+) -> dict[str, Any]:
+    current_round = advisory_stop_round(payload)
+    if current_round > ADVISORY_STOP_MAX_ROUNDS:
+        constraints = [
+            stop_constraint(
+                "max-correction-rounds",
+                (
+                    "同一轮 Stop（停止前检查钩子）建议已达到上限；请不要继续围绕钩子反复改写。"
+                    "如果仍无法满足原始任务，请明确标记受阻并说明阻塞条件，或收窄完成声明。"
+                ),
+                checker_source,
+            )
+        ]
+    return {
+        "advisory_schema_id": ADVISORY_STOP_SCHEMA_ID,
+        "decision": "stop_suggest",
+        "original_task_excerpt": latest_prompt_excerpt_for_stop(action_result),
+        "correction_constraints": constraints,
+        "cap_may_override": True,
+        "override_condition": "Cap 有具体证据表明该建议与用户原始请求无关、误伤或已经被本轮动作证据满足。",
+        "max_rounds": ADVISORY_STOP_MAX_ROUNDS,
+        "current_round": current_round,
+        "recovery_focus_anchor": (
+            "二次回答必须先直接回答原始用户问题（即用户原始请求）；"
+            "Stop（停止前检查钩子）的反馈只是一组修正约束，不是新的用户任务，也不得成为回复主题。"
+        ),
+        "do_not_answer_the_hook": True,
+        "checker_source": checker_source,
+        "hot_path_full_prism": False,
+        "bounded_llm_allowed": "仅允许 turn-action-check 中的歧义意图分类调用 LLM（大语言模型）。",
+    }
+
+
+def validate_advisory_stop_payload(advisory: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    if advisory.get("advisory_schema_id") != ADVISORY_STOP_SCHEMA_ID:
+        failures.append("advisory_schema_id invalid")
+    if not isinstance(advisory.get("original_task_excerpt"), str) or not advisory["original_task_excerpt"].strip():
+        failures.append("original_task_excerpt missing")
+    constraints = advisory.get("correction_constraints")
+    if not isinstance(constraints, list) or not constraints:
+        failures.append("correction_constraints missing")
+    else:
+        for index, item in enumerate(constraints):
+            if not isinstance(item, dict):
+                failures.append(f"correction_constraints[{index}] is not an object")
+                continue
+            if not isinstance(item.get("category"), str) or not item["category"].strip():
+                failures.append(f"correction_constraints[{index}].category missing")
+            detail = item.get("detail")
+            if not isinstance(detail, str) or len(detail.strip()) < 12:
+                failures.append(f"correction_constraints[{index}].detail too vague")
+    if advisory.get("cap_may_override") is not True:
+        failures.append("cap_may_override must be true")
+    if advisory.get("do_not_answer_the_hook") is not True:
+        failures.append("do_not_answer_the_hook must be true")
+    if not isinstance(advisory.get("max_rounds"), int) or advisory["max_rounds"] < 1:
+        failures.append("max_rounds invalid")
+    if not isinstance(advisory.get("current_round"), int) or advisory["current_round"] < 1:
+        failures.append("current_round invalid")
+    if not isinstance(advisory.get("recovery_focus_anchor"), str) or "用户原始请求" not in advisory["recovery_focus_anchor"]:
+        failures.append("recovery_focus_anchor must mention the original user request")
+    return failures
+
+
+def advisory_stop_reason(advisory: dict[str, Any]) -> str:
+    constraints = advisory.get("correction_constraints")
+    details: list[str] = []
+    if isinstance(constraints, list):
+        for item in constraints[:4]:
+            if isinstance(item, dict):
+                category = str(item.get("category") or "修正项")
+                detail = str(item.get("detail") or "").strip()
+                if detail:
+                    details.append(f"{category}：{detail}")
+    if not details:
+        details.append("unknown：Stop（停止前检查钩子）发现问题，但没有生成可用修正项。")
+    return (
+        "RedCap（当前复活工程）Stop（停止前检查钩子）给出建议型收口评审。"
+        "这不是新的用户任务；请只按下列约束修正原回答或继续原任务。"
+        f"原始任务：{advisory.get('original_task_excerpt')}。"
+        f"修正约束：{'；'.join(details)}。"
+        f"恢复锚点：{advisory.get('recovery_focus_anchor')}。"
+        f"修正轮次：{advisory.get('current_round')}/{advisory.get('max_rounds')}。"
+        "Cap（当前会话承载的执行主体）可在有具体证据时仲裁并覆盖误伤，但最终回复仍必须围绕原始任务。"
+    )
+
+
+def advisory_marker_updates(advisory: dict[str, Any]) -> dict[str, Any]:
+    constraints = advisory.get("correction_constraints")
+    first_constraint = constraints[0] if isinstance(constraints, list) and constraints else {}
+    category = first_constraint.get("category") if isinstance(first_constraint, dict) else None
+    return {
+        "advisory_stop_schema_id": advisory.get("advisory_schema_id"),
+        "advisory_stop_decision": advisory.get("decision"),
+        "advisory_stop_category": category,
+        "advisory_stop_current_round": advisory.get("current_round"),
+        "advisory_stop_max_rounds": advisory.get("max_rounds"),
+        "advisory_stop_checker_source": advisory.get("checker_source"),
+        "advisory_stop_cap_may_override": advisory.get("cap_may_override"),
+        "advisory_stop_do_not_answer_the_hook": advisory.get("do_not_answer_the_hook"),
+        "advisory_stop_original_task_sha256": hashlib.sha256(
+            str(advisory.get("original_task_excerpt") or "").encode("utf-8")
+        ).hexdigest(),
+        "advisory_stop_hot_path_full_prism": advisory.get("hot_path_full_prism"),
+        "advisory_stop_validation_failures": validate_advisory_stop_payload(advisory),
+    }
+
+
+def stop_override_marker_path(payload: dict[str, Any]) -> pathlib.Path:
+    session_id = str(payload.get("session_id") or "")
+    turn_id = str(payload.get("turn_id") or "")
+    key = hashlib.sha256(f"{session_id}\n{turn_id}".encode("utf-8")).hexdigest()
+    return EVIDENCE_DIR / "stop-overrides" / f"{key}.json"
+
+
+def load_stop_override(payload: dict[str, Any]) -> dict[str, Any]:
+    path = stop_override_marker_path(payload)
+    try:
+        marker = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {"ok": False, "reason": "missing", "path": str(path)}
+    except json.JSONDecodeError as exc:
+        return {"ok": False, "reason": f"invalid json: {exc}", "path": str(path)}
+    if not isinstance(marker, dict):
+        return {"ok": False, "reason": "marker is not an object", "path": str(path)}
+    if marker.get("schema_id") != STOP_OVERRIDE_SCHEMA_ID:
+        return {"ok": False, "reason": "invalid schema_id", "path": str(path)}
+    if marker.get("session_id") != payload.get("session_id") or marker.get("turn_id") != payload.get("turn_id"):
+        return {"ok": False, "reason": "session or turn mismatch", "path": str(path)}
+    reason = marker.get("reason")
+    if not isinstance(reason, str) or len(reason.strip()) < 12:
+        return {"ok": False, "reason": "override reason is too short", "path": str(path)}
+    expires_at = marker.get("expires_at")
+    try:
+        expires = dt.datetime.fromisoformat(str(expires_at))
+    except ValueError:
+        return {"ok": False, "reason": "invalid expires_at", "path": str(path)}
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=dt.timezone.utc)
+    if dt.datetime.now(dt.timezone.utc) > expires:
+        return {"ok": False, "reason": "expired", "path": str(path)}
+    return {
+        "ok": True,
+        "path": str(path),
+        "reason": reason.strip(),
+        "created_at": marker.get("created_at"),
+        "expires_at": expires_at,
+        "source": marker.get("source"),
+    }
+
+
+def print_advisory_stop(
+    payload: dict[str, Any],
+    marker: dict[str, Any],
+    advisory: dict[str, Any],
+) -> None:
+    marker_updates = advisory_marker_updates(advisory)
+    override = load_stop_override(payload)
+    marker_updates.update({
+        "advisory_stop_override_attempted": True,
+        "advisory_stop_override_used": override.get("ok") is True,
+        "advisory_stop_override_reason": override.get("reason"),
+        "advisory_stop_override_path": override.get("path"),
+        "advisory_stop_override_source": override.get("source"),
+    })
+    marker = update_latest_marker("Stop", marker_updates, base_marker=marker)
+    if override.get("ok") is True:
+        print(json.dumps({
+            "continue": True,
+            "systemMessage": (
+                "RedCap（当前复活工程）Stop（停止前检查钩子）建议已被 Cap（当前会话承载的执行主体）"
+                "用显式理由覆盖；继续收口，但后续审计会保留覆盖记录。"
+            ),
+        }, ensure_ascii=False))
+        return
+    reason = advisory_stop_reason(advisory)
+    validation_failures = marker.get("advisory_stop_validation_failures")
+    if isinstance(validation_failures, list) and validation_failures:
+        reason = f"{reason} 建议载荷自检失败：{'; '.join(str(item) for item in validation_failures)}。"
+    print(json.dumps({
+        "decision": "block",
+        "reason": reason,
+        "systemMessage": "RedCap（当前复活工程）Stop（停止前检查钩子）建议型收口评审要求修正原任务回复。",
+    }, ensure_ascii=False))
+
+
+def mark_stop_timing(marker: dict[str, Any], started_at: float, outcome: str) -> dict[str, Any]:
+    updates = {
+        "stop_hook_duration_ms": round(max(0.0, (time.perf_counter() - started_at) * 1000), 3),
+        "stop_hook_completed_at": iso_now(),
+        "stop_hook_outcome": outcome,
+    }
+    try:
+        if os.environ.get("REDCAP_STOP_TIMING_FAIL_FOR_SELF_CHECK"):
+            raise OSError("forced Stop timing failure for self-check")
+        return update_latest_marker("Stop", updates, base_marker=marker)
+    except OSError as exc:
+        fallback = dict(marker)
+        fallback.update(updates)
+        fallback["stop_hook_timing_record_failed"] = True
+        fallback["stop_hook_timing_record_error"] = f"{type(exc).__name__}: {exc}"
+        return fallback
 
 
 def run_prompt_gate(
@@ -1295,6 +1554,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             "systemMessage": f"RedCap（当前复活工程）已记录动作证据：{tool_name}。",
         }, ensure_ascii=False))
     elif args.event == "Stop":
+        stop_started_at = time.perf_counter()
         last_assistant_message = str(payload.get("last_assistant_message") or "")
         mode = stop_hook_mode()
         if mode == "observe":
@@ -1303,6 +1563,7 @@ def cmd_event(args: argparse.Namespace) -> int:
                 "redcap_check_attempted": False,
                 "redcap_check_skipped_reason": "Stop hook temporarily downgraded by Norven authorization.",
             }, base_marker=marker)
+            marker = mark_stop_timing(marker, stop_started_at, "pass:observe-mode")
             print(json.dumps({
                 "continue": True,
                 "systemMessage": (
@@ -1351,22 +1612,20 @@ def cmd_event(args: argparse.Namespace) -> int:
         }, base_marker=marker)
         if action["exit_code"] != 0 or action_result.get("ok") is not True:
             action_reason = action_result.get("reason")
-            anchor_clause = stop_task_anchor_clause(action_result)
-            reason = (
-                "RedCap（当前复活工程）Stop Hook（停止前检查）发现：必需处理的 RedCap 提示没有本轮动作证据。"
-                "不能只用解释或状态汇报收口；请执行具体修复、运行必需检查，"
-                "或明确标记为受阻并说明阻塞条件。"
+            detail = (
+                "必需处理的 RedCap 提示缺少本轮动作证据；请回到用户原始请求，"
+                "执行具体修复、运行必需检查，或明确标记受阻并说明阻塞条件。"
             )
-            if anchor_clause:
-                reason = f"{reason} {anchor_clause}"
             if isinstance(action_reason, str) and action_reason.strip():
-                reason = f"{reason} 动作检查原因：{action_reason}"
-            reason = f"{reason}{blocked_reply_excerpt(last_assistant_message)}"
-            print(json.dumps({
-                "decision": "block",
-                "reason": reason,
-                "systemMessage": "RedCap（当前复活工程）必需提示动作证据门禁未通过。",
-            }, ensure_ascii=False))
+                detail = f"{detail} 动作检查原因：{action_reason}"
+            advisory = build_advisory_stop_payload(
+                payload,
+                action_result,
+                checker_source="turn-action-check",
+                constraints=[stop_constraint("missing-action-evidence", detail, "turn-action-check")],
+            )
+            marker = mark_stop_timing(marker, stop_started_at, "block:turn-action-check")
+            print_advisory_stop(payload, marker, advisory)
             return 0
         terminal_guard = run_command([
             sys.executable,
@@ -1403,16 +1662,23 @@ def cmd_event(args: argparse.Namespace) -> int:
                 detail = "；".join(str(item) for item in failures[:3])
             else:
                 detail = str(terminal_guard_result.get("reason") or "未知原因")
-            print(json.dumps({
-                "decision": "block",
-                "reason": (
-                    "RedCap（当前复活工程）Stop Hook（停止前检查）发现最后回复可能把阶段成果说成终局完成："
-                    f"{detail}。请回到原问题，用阶段、风险、待办口径回答；不要把阶段成果或检查结果写成完整复活。"
-                    f"{recovery_focus_clause()}"
-                    f"{blocked_reply_excerpt(last_assistant_message)}"
-                ),
-                "systemMessage": "RedCap（当前复活工程）终局目标门禁未通过。",
-            }, ensure_ascii=False))
+            advisory = build_advisory_stop_payload(
+                payload,
+                action_result,
+                checker_source="terminal-goal-guard",
+                constraints=[
+                    stop_constraint(
+                        "terminal-goal-overclaim",
+                        (
+                            "最后回复可能把阶段成果说成终局完成；请回到用户原始请求，"
+                            f"用阶段、风险、待办口径收窄表达。检查详情：{detail}"
+                        ),
+                        "terminal-goal-guard",
+                    )
+                ],
+            )
+            marker = mark_stop_timing(marker, stop_started_at, "block:terminal-goal-guard")
+            print_advisory_stop(payload, marker, advisory)
             return 0
         final_guard = run_command([
             sys.executable,
@@ -1443,24 +1709,21 @@ def cmd_event(args: argparse.Namespace) -> int:
             "final_claim_guard_stderr_sha256": final_guard["stderr_sha256"],
         }, base_marker=marker)
         if final_guard["exit_code"] != 0 or final_guard_result.get("ok") is not True:
-            reason = (
-                "RedCap（当前复活工程）Stop Hook（停止前检查）发现：必需处理的 RedCap 提示带有最终完成声明，"
-                "但缺少本轮新鲜且已验证的任务主体生命周期完成标记。请继续本轮："
-                "如果原任务只是评审、回答或状态盘点，请回到原问题并收窄完成口径；"
-                "只有实际实施任务已经落地时，才运行 completion_claim.present=true 的生命周期检查。"
+            detail = (
+                "最后回复带有完成声明，但缺少本轮新鲜且已验证的任务主体生命周期完成标记；"
+                "请回到用户原始请求，若只是评审或状态盘点则收窄完成口径，若确实完成实施则补齐生命周期检查。"
             )
-            anchor_clause = stop_task_anchor_clause(action_result)
-            if anchor_clause:
-                reason = f"{reason} {anchor_clause}"
             guard_reason = final_guard_result.get("reason")
             if isinstance(guard_reason, str) and guard_reason.strip():
-                reason = f"{reason} 完成声明检查原因：{guard_reason}"
-            reason = f"{reason}{blocked_reply_excerpt(last_assistant_message)}"
-            print(json.dumps({
-                "decision": "block",
-                "reason": reason,
-                "systemMessage": "RedCap（当前复活工程）最终完成声明门禁未通过。",
-            }, ensure_ascii=False))
+                detail = f"{detail} 完成声明检查原因：{guard_reason}"
+            advisory = build_advisory_stop_payload(
+                payload,
+                action_result,
+                checker_source="final-claim-guard",
+                constraints=[stop_constraint("missing-lifecycle-completion-marker", detail, "final-claim-guard")],
+            )
+            marker = mark_stop_timing(marker, stop_started_at, "block:final-claim-guard")
+            print_advisory_stop(payload, marker, advisory)
             return 0
         scan_guard = run_command([
             sys.executable,
@@ -1493,24 +1756,25 @@ def cmd_event(args: argparse.Namespace) -> int:
             "scan_conclusion_guard_stderr_sha256": scan_guard["stderr_sha256"],
         }, base_marker=marker)
         if scan_guard["exit_code"] != 0 or scan_guard_result.get("ok") is not True:
-            expected = scan_guard_result.get("expected_status_block")
             recovery = scan_guard_result.get("recovery")
-            reason = (
-                "RedCap（当前复活工程）Stop Hook（停止前检查）发现：回复正在回答 360 度旧 RedCap 扫描结论，"
-                "但当前扫描没有完成证据，或缺少与账目一致的结构化扫描状态块。"
-                "请回到原扫描任务：只能报告阶段状态，或者继续执行已验证的分片扫描。"
-                f"{recovery_focus_clause()}"
-            )
-            if isinstance(expected, str) and expected.strip():
-                reason = f"{reason} 需要包含的状态块：{expected}"
+            if scan_guard_result.get("reason") == "irrelevant-scan-state-template":
+                detail = "回复夹带了与原问题无关的 RedCap 扫描模板内容；请删除这部分内容，并直接回到用户原始问题。"
+            else:
+                detail = (
+                    "扫描结论检查发现最后回复可能偏离用户原始问题；请先回到原始问题。"
+                    "如果原始问题确实要求旧 RedCap 360 度扫描结论，只能依据 scan_state（扫描状态字段）"
+                    "说明阶段或结论权限，不要机械插入检查器模板。"
+                )
             if isinstance(recovery, str) and recovery.strip():
-                reason = f"{reason} 恢复要求：{recovery}"
-            reason = f"{reason}{blocked_reply_excerpt(last_assistant_message)}"
-            print(json.dumps({
-                "decision": "block",
-                "reason": reason,
-                "systemMessage": "RedCap（当前复活工程）360 度扫描结论门禁未通过。",
-            }, ensure_ascii=False))
+                detail = f"{detail} 恢复要求：{recovery}"
+            advisory = build_advisory_stop_payload(
+                payload,
+                action_result,
+                checker_source="scan-conclusion-guard",
+                constraints=[stop_constraint("scan-conclusion-anchor", detail, "scan-conclusion-guard")],
+            )
+            marker = mark_stop_timing(marker, stop_started_at, "block:scan-conclusion-guard")
+            print_advisory_stop(payload, marker, advisory)
             return 0
         human_output = run_command([
             sys.executable,
@@ -1543,25 +1807,34 @@ def cmd_event(args: argparse.Namespace) -> int:
                 detail = "；".join(str(item) for item in failures[:3])
             else:
                 detail = str(human_output_result.get("reason") or "未知原因")
-            print(json.dumps({
-                "decision": "block",
-                "reason": (
-                    "RedCap（当前复活工程）Stop Hook（停止前检查）发现最后回复不符合中文优先、"
-                    f"人类可读策略：{detail}。请改写为中文优先、必要术语带解释的回复。"
-                    f"{recovery_focus_clause()}"
-                    f"{blocked_reply_excerpt(last_assistant_message)}"
-                ),
-                "systemMessage": "RedCap（当前复活工程）中文可读输出门禁未通过。",
-            }, ensure_ascii=False))
+            advisory = build_advisory_stop_payload(
+                payload,
+                action_result,
+                checker_source="human-output-policy",
+                constraints=[
+                    stop_constraint(
+                        "human-output-policy",
+                        f"最后回复不符合中文优先、人类可读策略；请保持原问题主轴，只修正语言可读性。检查详情：{detail}",
+                        "human-output-policy",
+                    )
+                ],
+            )
+            marker = mark_stop_timing(marker, stop_started_at, "block:human-output-policy")
+            print_advisory_stop(payload, marker, advisory)
             return 0
-        if stop_self_check_skips_full_check(payload):
+        if stop_self_check_skips_full_check(payload) or not STOP_RUN_FULL_REDCAP_CHECK:
             marker = update_latest_marker("Stop", {
                 "redcap_check_attempted": False,
-                "redcap_check_skipped_reason": "self-check passed closeout guards; full redcap check skipped to keep fixture bounded",
+                "redcap_check_skipped_reason": (
+                    "self-check passed closeout guards; full redcap check skipped to keep fixture bounded"
+                    if stop_self_check_skips_full_check(payload)
+                    else "full runtime/bin/redcap check is intentionally outside the Stop hot path"
+                ),
+                "stop_hot_path_bounded": True,
             }, base_marker=marker)
+            marker = mark_stop_timing(marker, stop_started_at, "pass:bounded-hot-path")
             print(json.dumps({
                 "continue": True,
-                "systemMessage": "RedCap（当前复活工程）Stop Hook（停止前检查）自检门禁已通过，完整检查已按自检范围跳过。",
             }, ensure_ascii=False))
             return 0
         marker = update_latest_marker("Stop", {
@@ -1577,21 +1850,29 @@ def cmd_event(args: argparse.Namespace) -> int:
             "redcap_check_completed_at": iso_now(),
         }, base_marker=marker)
         if check["exit_code"] == 0:
+            marker = mark_stop_timing(marker, stop_started_at, "pass:redcap-check")
             print(json.dumps({
                 "continue": True,
-                "systemMessage": "RedCap（当前复活工程）Stop Hook（停止前检查）已通过。",
             }, ensure_ascii=False))
         else:
-            reason = (
-                "RedCap（当前复活工程）Stop Hook（停止前检查）运行 runtime/bin/redcap check 后失败。"
-                "请继续本轮，在本地查看失败检查、修复具体问题，并在收口前重新运行 runtime/bin/redcap check。"
-                f"{recovery_focus_clause()}"
+            advisory = build_advisory_stop_payload(
+                payload,
+                action_result,
+                checker_source="redcap-check",
+                constraints=[
+                    stop_constraint(
+                        "redcap-check-failed",
+                        (
+                            "runtime/bin/redcap check 未通过；请回到用户原始请求相关的失败检查，"
+                            "修复具体问题并重新运行检查，不要把失败检查当成新的汇报主题。"
+                            f"退出码：{marker['redcap_check_exit']}"
+                        ),
+                        "redcap-check",
+                    )
+                ],
             )
-            print(json.dumps({
-                "decision": "block",
-                "reason": reason,
-                "systemMessage": f"RedCap（当前复活工程）Stop Hook（停止前检查）失败，退出码 {marker['redcap_check_exit']}。",
-            }, ensure_ascii=False))
+            marker = mark_stop_timing(marker, stop_started_at, "block:redcap-check")
+            print_advisory_stop(payload, marker, advisory)
     return 0
 
 
@@ -1958,6 +2239,66 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             failures.append("anchor Stop marker is missing required_prompt_task_anchor")
         elif anchor.get("prompt_excerpt") != anchor_prompt_text:
             failures.append("anchor Stop marker task anchor does not preserve the original task excerpt")
+        if anchor_stop_marker.get("advisory_stop_schema_id") != ADVISORY_STOP_SCHEMA_ID:
+            failures.append("anchor Stop marker is missing advisory Stop schema id")
+        if anchor_stop_marker.get("advisory_stop_category") != "missing-action-evidence":
+            failures.append("anchor Stop marker did not record the advisory category")
+        if anchor_stop_marker.get("advisory_stop_cap_may_override") is not True:
+            failures.append("anchor Stop marker must preserve Cap arbitration")
+        if anchor_stop_marker.get("advisory_stop_do_not_answer_the_hook") is not True:
+            failures.append("anchor Stop marker must forbid answering the hook itself")
+        if anchor_stop_marker.get("advisory_stop_hot_path_full_prism") is not False:
+            failures.append("anchor Stop marker must record that full Prism is not used in the hot path")
+        if anchor_stop_marker.get("advisory_stop_validation_failures") != []:
+            failures.append("anchor Stop advisory payload should pass internal validation")
+        override_key = hashlib.sha256("fixture-session\nfixture-stop-anchor".encode("utf-8")).hexdigest()
+        override_path = evidence_dir / "stop-overrides" / f"{override_key}.json"
+        override_path.parent.mkdir(parents=True, exist_ok=True)
+        write_json_atomic(override_path, {
+            "schema_id": STOP_OVERRIDE_SCHEMA_ID,
+            "session_id": "fixture-session",
+            "turn_id": "fixture-stop-anchor",
+            "reason": "self-check proves Cap can explicitly override a false positive advisory",
+            "source": "codex-hook-stop-override-self-check",
+            "created_at": iso_now(),
+            "expires_at": (dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=30)).replace(microsecond=0).isoformat(),
+        })
+        override_stop = run_hook_event_for_self_check(
+            "Stop",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "fixture-session",
+                "turn_id": "fixture-stop-anchor",
+                "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
+                "source": "codex-hook-stop-override-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_STOP_HOOK_MODE": "enforce",
+                "REDCAP_STOP_SKIP_FULL_CHECK_FOR_SELF_CHECK": "1",
+            },
+        )
+        if override_stop.returncode != 0:
+            failures.append(f"override Stop failed: {override_stop.stderr or override_stop.stdout}")
+        override_payload, override_error = parse_leading_json_object(override_stop.stdout or "")
+        if override_error is not None or not isinstance(override_payload, dict):
+            failures.append(f"override Stop did not emit JSON: {override_error}")
+        elif override_payload.get("continue") is not True:
+            failures.append("override Stop should continue after a valid explicit Cap override marker")
+        override_marker = load_self_check_marker(
+            evidence_dir,
+            "Stop",
+            source="codex-hook-stop-override-self-check",
+            turn_id="fixture-stop-anchor",
+        )
+        if override_marker.get("advisory_stop_override_used") is not True:
+            failures.append("override Stop marker should record advisory_stop_override_used=true")
+        if override_marker.get("advisory_stop_override_reason") != "self-check proves Cap can explicitly override a false positive advisory":
+            failures.append("override Stop marker should record the explicit override reason")
+        try:
+            override_path.unlink()
+        except FileNotFoundError:
+            pass
         observe_stop = run_hook_event_for_self_check(
             "Stop",
             {
@@ -2258,8 +2599,10 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             reason = str(scan_stop_result.get("reason") or "")
             if scan_stop_result.get("decision") != "block":
                 failures.append("scan-conclusion Stop fixture should block an unsupported final scan conclusion")
-            if "结构化扫描状态块" not in reason:
-                failures.append("scan-conclusion Stop block reason should request a structured scan status block")
+            if "原始问题" not in reason or "scan_state" not in reason:
+                failures.append("scan-conclusion Stop block reason should anchor to the original task and scan_state")
+            if "结构化" in reason or "需要包含" in reason or "状态块" in reason:
+                failures.append("scan-conclusion Stop block reason must not request injecting a scan template")
         scan_marker = load_self_check_marker(
             evidence_dir,
             "Stop",
@@ -2268,6 +2611,8 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         )
         if scan_marker.get("scan_conclusion_guard_ok") is not False:
             failures.append("scan-conclusion Stop marker should record failed scan conclusion guard")
+        if scan_marker.get("advisory_stop_category") != "scan-conclusion-anchor":
+            failures.append("scan-conclusion Stop marker should use scan-conclusion-anchor advisory category")
         terminal_contract_fixture = evidence_dir / "terminal-goals-open-fixture.json"
         terminal_contract_payload = json.loads((REPO_ROOT / "assets" / "contracts" / "terminal-goals.json").read_text(encoding="utf-8"))
         for goal in terminal_contract_payload.get("terminal_goals", []):
@@ -2488,8 +2833,6 @@ def cmd_verify(args: argparse.Namespace) -> int:
             and re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", session_id)
         ):
             failures.append("marker session_id does not look like a real Codex session id")
-        if marker.get("hook_config_sha256") != sha256_file(HOOKS_CONFIG):
-            failures.append("marker hook_config_sha256 does not match current hooks.json")
         recorded_at = marker.get("recorded_at")
         recorded: dt.datetime | None = None
         try:
@@ -2500,6 +2843,16 @@ def cmd_verify(args: argparse.Namespace) -> int:
             age = dt.datetime.now(dt.timezone.utc) - recorded
             if age.total_seconds() > args.max_age_seconds:
                 failures.append(f"marker is stale: {int(age.total_seconds())}s old")
+        hook_config_hash_matches = marker.get("hook_config_sha256") == sha256_file(HOOKS_CONFIG)
+        if not hook_config_hash_matches:
+            hook_config_changed_after_marker = False
+            if recorded is not None:
+                hook_config_mtime = dt.datetime.fromtimestamp(HOOKS_CONFIG.stat().st_mtime, dt.timezone.utc)
+                hook_config_changed_after_marker = hook_config_mtime > recorded
+            if args.allow_adapter_change_after_marker and hook_config_changed_after_marker:
+                notes.append("hook config changed after this live marker; waiting for the next real host hook refresh")
+            else:
+                failures.append("marker hook_config_sha256 does not match current hooks.json")
         adapter_path = pathlib.Path(__file__).resolve()
         adapter_hash_matches = marker.get("adapter_sha256") == sha256_file(adapter_path)
         if not adapter_hash_matches and not valid_stop_block_marker:

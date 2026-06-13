@@ -16,7 +16,7 @@ from typing import Any
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 DEFAULT_POLICY = REPO_ROOT / "assets" / "contracts" / "directory-structure.json"
-EXPECTED_POLICY_SHA256 = "2d45b6e5655c9797cfa183db620dfbe3d68304a2e1d1614e4c746b33e8ee98a1"
+EXPECTED_POLICY_SHA256 = "bbd250a5971204f5941c0614b12a639fb508bcc3c94d9d33d38509c1b9752c1a"
 
 
 def load_json(path: pathlib.Path) -> Any:

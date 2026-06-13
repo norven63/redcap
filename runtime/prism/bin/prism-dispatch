@@ -24,6 +24,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT.parents[1]
 PRISM = ROOT / "bin" / "prism"
 KIMI_REVIEW_AGENT_FILE = ROOT / "provider-agents" / "kimi-review-agent.yaml"
+KIMI_EMPTY_SKILLS_DIR = ROOT / "skills" / "kimi-empty"
 ALLOWED_PROVIDERS = {"kimi", "claude-code"}
 DEFAULT_TIMEOUT_SECONDS = 300
 DEFAULT_MAX_RETRIES = 5
@@ -43,6 +44,26 @@ REQUIRED_REVIEW_KEYS = {
 }
 RAW_META_SCHEMA_ID = "prism-provider-raw-metadata"
 DEFAULT_TIMEOUT_GOVERNANCE_CONTRACT = REPO_ROOT / "assets" / "contracts" / "prism-timeout-governance.json"
+KIMI_FILE_BUNDLE_SCHEMA_ID = "redcap-prism-kimi-file-bundle-v1"
+KIMI_FILE_ACCESS_MODES = {"prompt-only", "bounded-read"}
+DEFAULT_KIMI_FILE_MAX_FILES = 20
+DEFAULT_KIMI_FILE_MAX_DIRECTORY_ENTRIES = 200
+DEFAULT_KIMI_FILE_MAX_BYTES_PER_FILE = 20_000
+DEFAULT_KIMI_FILE_MAX_TOTAL_BYTES = 80_000
+KIMI_FILE_ACCESS_DENIED_PARTS = {
+    ".git",
+    ".venv",
+    "venv",
+    "node_modules",
+    "__pycache__",
+}
+KIMI_FILE_ACCESS_DENIED_FILENAMES = {
+    ".env",
+    ".env.local",
+    ".env.production",
+    ".env.development",
+    ".npmrc",
+}
 
 
 REVIEW_JSON_SCHEMA = {
@@ -349,7 +370,19 @@ class ProviderTimeoutError(Exception):
 
 
 def redacted_argv(argv: list[str]) -> list[str]:
-    return argv[:6] + ["<prompt>"]
+    redacted: list[str] = []
+    skip_next = False
+    for index, item in enumerate(argv):
+        if skip_next:
+            skip_next = False
+            continue
+        redacted.append(item)
+        if item in {"-p", "--prompt"}:
+            redacted.append("<prompt>")
+            skip_next = True
+        elif index == len(argv) - 1 and argv and pathlib.Path(argv[0]).name == "claude":
+            redacted[-1] = "<prompt>"
+    return redacted
 
 
 def require_session_allowed(manifest: pathlib.Path, provider: str) -> dict[str, Any]:
@@ -435,7 +468,239 @@ def timeout_budget_fields(budget: dict[str, Any] | None) -> dict[str, Any]:
     }
 
 
-def build_brief(provider: str, request: pathlib.Path, out_path: pathlib.Path) -> str:
+def bounded_int(value: Any, default: int, *, minimum: int, maximum: int) -> int:
+    if value is None:
+        return default
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        raise SystemExit(f"Kimi file access limit must be an integer: {value!r}")
+    return max(minimum, min(maximum, parsed))
+
+
+def is_relative_to(path: pathlib.Path, parent: pathlib.Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+def repo_relative_path(path: pathlib.Path) -> str:
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def denied_kimi_file_access_path(path: pathlib.Path) -> str | None:
+    parts = set(path.parts)
+    denied_parts = sorted(parts & KIMI_FILE_ACCESS_DENIED_PARTS)
+    if denied_parts:
+        return f"path contains denied segment: {denied_parts[0]}"
+    if path.name in KIMI_FILE_ACCESS_DENIED_FILENAMES:
+        return f"path uses denied filename: {path.name}"
+    return None
+
+
+def resolve_kimi_allowed_path(raw_path: str) -> pathlib.Path:
+    candidate = pathlib.Path(raw_path).expanduser()
+    if not candidate.is_absolute():
+        candidate = REPO_ROOT / candidate
+    resolved = candidate.resolve()
+    if not is_relative_to(resolved, REPO_ROOT):
+        raise SystemExit(f"Kimi file access path must stay inside the RedCap repo: {raw_path}")
+    denied_reason = denied_kimi_file_access_path(resolved)
+    if denied_reason is not None:
+        raise SystemExit(f"Kimi file access path denied: {raw_path}: {denied_reason}")
+    return resolved
+
+
+def kimi_file_access_config(request_payload: dict[str, Any]) -> dict[str, Any]:
+    raw_config = request_payload.get("file_access")
+    if raw_config is None:
+        raw_config = request_payload.get("kimi_file_access")
+    if raw_config is None:
+        return {"mode": "prompt-only"}
+    if not isinstance(raw_config, dict):
+        raise SystemExit("Kimi file_access must be a JSON object")
+    mode = str(raw_config.get("mode") or "prompt-only").strip()
+    if mode not in KIMI_FILE_ACCESS_MODES:
+        raise SystemExit(f"Kimi file_access.mode must be one of {sorted(KIMI_FILE_ACCESS_MODES)}")
+    if mode == "prompt-only":
+        return {"mode": "prompt-only"}
+    raw_paths = raw_config.get("allowed_paths")
+    if raw_paths is None:
+        raw_paths = raw_config.get("paths")
+    if not isinstance(raw_paths, list) or not raw_paths:
+        raise SystemExit("Kimi bounded-read file_access requires non-empty allowed_paths")
+    allowed_paths: list[pathlib.Path] = []
+    for raw_path in raw_paths:
+        if not isinstance(raw_path, str) or not raw_path.strip():
+            raise SystemExit("Kimi bounded-read allowed_paths must contain non-empty strings")
+        allowed_paths.append(resolve_kimi_allowed_path(raw_path.strip()))
+    max_files = bounded_int(
+        raw_config.get("max_files"),
+        DEFAULT_KIMI_FILE_MAX_FILES,
+        minimum=1,
+        maximum=100,
+    )
+    if len(allowed_paths) > max_files:
+        raise SystemExit(f"Kimi bounded-read allowed_paths exceeds max_files: {len(allowed_paths)} > {max_files}")
+    return {
+        "mode": "bounded-read",
+        "allowed_paths": allowed_paths,
+        "purpose": str(raw_config.get("purpose") or "Prism review file evidence").strip(),
+        "max_files": max_files,
+        "max_directory_entries": bounded_int(
+            raw_config.get("max_directory_entries"),
+            DEFAULT_KIMI_FILE_MAX_DIRECTORY_ENTRIES,
+            minimum=1,
+            maximum=1000,
+        ),
+        "max_bytes_per_file": bounded_int(
+            raw_config.get("max_bytes_per_file"),
+            DEFAULT_KIMI_FILE_MAX_BYTES_PER_FILE,
+            minimum=1024,
+            maximum=200_000,
+        ),
+        "max_total_bytes": bounded_int(
+            raw_config.get("max_total_bytes"),
+            DEFAULT_KIMI_FILE_MAX_TOTAL_BYTES,
+            minimum=1024,
+            maximum=1_000_000,
+        ),
+    }
+
+
+def directory_listing(path: pathlib.Path, max_entries: int) -> tuple[list[dict[str, Any]], bool]:
+    entries: list[dict[str, Any]] = []
+    truncated = False
+    for child in sorted(path.rglob("*")):
+        denied_reason = denied_kimi_file_access_path(child)
+        if denied_reason is not None:
+            continue
+        entries.append({
+            "path": repo_relative_path(child),
+            "kind": "directory" if child.is_dir() else "file",
+            "size_bytes": child.stat().st_size if child.is_file() else None,
+        })
+        if len(entries) >= max_entries:
+            truncated = True
+            break
+    return entries, truncated
+
+
+def read_limited_text(path: pathlib.Path, max_bytes: int, remaining_total: int) -> tuple[str, int, bool]:
+    read_limit = min(max_bytes, max(0, remaining_total))
+    if read_limit <= 0:
+        return "", 0, True
+    with path.open("rb") as handle:
+        data = handle.read(read_limit + 1)
+    truncated = len(data) > read_limit
+    data = data[:read_limit]
+    return data.decode("utf-8", errors="replace"), len(data), truncated
+
+
+def build_kimi_file_bundle(config: dict[str, Any], bundle_path: pathlib.Path, request_path: pathlib.Path) -> dict[str, Any]:
+    remaining_total = int(config["max_total_bytes"])
+    entries: list[dict[str, Any]] = []
+    for path in config["allowed_paths"]:
+        if not path.exists():
+            entries.append({
+                "path": repo_relative_path(path),
+                "kind": "missing",
+                "error": "path does not exist",
+            })
+            continue
+        if path.is_dir():
+            listing, truncated = directory_listing(path, int(config["max_directory_entries"]))
+            entries.append({
+                "path": repo_relative_path(path),
+                "kind": "directory",
+                "listing_truncated": truncated,
+                "listing_count": len(listing),
+                "listing": listing,
+            })
+            continue
+        if not path.is_file():
+            entries.append({
+                "path": repo_relative_path(path),
+                "kind": "unsupported",
+                "error": "path is not a regular file or directory",
+            })
+            continue
+        content, bytes_read, truncated = read_limited_text(path, int(config["max_bytes_per_file"]), remaining_total)
+        remaining_total -= bytes_read
+        entries.append({
+            "path": repo_relative_path(path),
+            "kind": "file",
+            "size_bytes": path.stat().st_size,
+            "bytes_included": bytes_read,
+            "content_truncated": truncated,
+            "content": content,
+        })
+    bundle = {
+        "schema_id": KIMI_FILE_BUNDLE_SCHEMA_ID,
+        "mode": "bounded-read",
+        "created_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+        "request_path": str(request_path),
+        "purpose": config["purpose"],
+        "limits": {
+            "max_files": config["max_files"],
+            "max_directory_entries": config["max_directory_entries"],
+            "max_bytes_per_file": config["max_bytes_per_file"],
+            "max_total_bytes": config["max_total_bytes"],
+        },
+        "entries": entries,
+    }
+    write_json_file(bundle_path, bundle)
+    return bundle
+
+
+def apply_kimi_file_access(prompt: str, request: pathlib.Path, out_path: pathlib.Path) -> tuple[str, dict[str, Any]]:
+    payload = load_json(request)
+    if not isinstance(payload, dict):
+        raise SystemExit(f"request must be a JSON object: {request}")
+    config = kimi_file_access_config(payload)
+    if config["mode"] == "prompt-only":
+        summary = {
+            "mode": "prompt-only",
+            "bundle_path": None,
+            "entry_count": 0,
+            "rule": "Kimi may use only the prompt text and must not inspect files.",
+        }
+        prompt = prompt + "\n\n--- KIMI FILE ACCESS ---\nmode: prompt-only\nNo file reading is authorized for this review.\n"
+        return prompt, summary
+
+    bundle_path = out_path.with_suffix(".files.json")
+    bundle = build_kimi_file_bundle(config, bundle_path, request)
+    summary = {
+        "mode": "bounded-read",
+        "bundle_path": str(bundle_path),
+        "bundle_sha256": sha256_file(bundle_path),
+        "entry_count": len(bundle.get("entries", [])),
+        "allowed_paths": [repo_relative_path(path) for path in config["allowed_paths"]],
+        "limits": bundle.get("limits", {}),
+        "rule": "Kimi may read only the generated file bundle and must not inspect any other file.",
+    }
+    prompt = prompt + "\n\n".join([
+        "",
+        "--- AUTHORIZED FILE ACCESS ---",
+        "mode: bounded-read",
+        f"Authorized bundle JSON: {bundle_path}",
+        f"Bundle sha256: {summary['bundle_sha256']}",
+        "Rules:",
+        "- You may read only this generated bundle JSON if file evidence is needed.",
+        "- Do not inspect the original source paths directly.",
+        "- Do not run commands.",
+        "- If the bundle is insufficient, report missing evidence instead of fetching more files.",
+        "",
+    ])
+    return prompt, summary
+
+
+def build_brief(provider: str, request: pathlib.Path, out_path: pathlib.Path) -> tuple[str, dict[str, Any] | None]:
     completed = run([
         str(PRISM),
         "brief",
@@ -449,7 +714,12 @@ def build_brief(provider: str, request: pathlib.Path, out_path: pathlib.Path) ->
     ])
     if completed.returncode != 0:
         raise SystemExit(completed.stderr or completed.stdout)
-    return out_path.read_text(encoding="utf-8")
+    prompt = out_path.read_text(encoding="utf-8")
+    file_access: dict[str, Any] | None = None
+    if provider == "kimi":
+        prompt, file_access = apply_kimi_file_access(prompt, request, out_path)
+        out_path.write_text(prompt, encoding="utf-8")
+    return prompt, file_access
 
 
 def iter_json_objects(text: str) -> list[dict[str, Any]]:
@@ -791,9 +1061,19 @@ def extract_markdown_review(raw_text: str, provider: str) -> dict[str, Any] | No
 def extract_kimi_handle(raw_text: str, fallback: str | None) -> str | None:
     for obj in iter_json_objects(raw_text):
         session_id = obj.get("session_id")
-        if isinstance(session_id, str) and session_id.strip():
+        command = obj.get("command")
+        content = obj.get("content")
+        is_resume_hint = (
+            obj.get("type") == "session.resume_hint"
+            or (isinstance(command, str) and "kimi -r" in command)
+            or (isinstance(content, str) and content.strip().startswith("To resume this session: kimi -r "))
+        )
+        if is_resume_hint and isinstance(session_id, str) and session_id.strip():
             return session_id.strip()
-    match = re.search(r"kimi\s+-r\s+(session_[0-9a-fA-F-]{36}|[0-9a-fA-F-]{36})", raw_text)
+    match = re.search(
+        r"(?m)^\s*To resume this session:\s*kimi\s+-r\s+(session_[0-9a-fA-F-]{36}|[0-9a-fA-F-]{36})\s*$",
+        raw_text,
+    )
     if match:
         return match.group(1)
     return fallback
@@ -825,6 +1105,8 @@ def assert_provider_command_safe(argv: list[str]) -> None:
             raise SystemExit("unsafe provider command: kimi prompt mode cannot combine with plan mode")
         if "-p" not in argv and "--prompt" not in argv:
             raise SystemExit("unsafe provider command: kimi must run in non-interactive prompt mode during Prism review")
+        if "--skills-dir" not in argv or str(KIMI_EMPTY_SKILLS_DIR) not in argv:
+            raise SystemExit("unsafe provider command: kimi must use the Prism empty skills directory")
         if "--output-format" not in argv or "stream-json" not in argv:
             raise SystemExit("unsafe provider command: kimi must use stream-json output during Prism review")
         for forbidden in ["--work-dir", "--agent-file", "--print", "--final-message-only", "--max-steps-per-turn", "-y", "--yolo", "--auto"]:
@@ -845,8 +1127,11 @@ def assert_provider_command_safe(argv: list[str]) -> None:
 
 def provider_command(provider: str, handle: str | None, prompt: str, max_steps: int) -> tuple[list[str], str | None]:
     if provider == "kimi":
+        KIMI_EMPTY_SKILLS_DIR.mkdir(parents=True, exist_ok=True)
         argv = [
             "kimi",
+            "--skills-dir",
+            str(KIMI_EMPTY_SKILLS_DIR),
         ]
         if handle:
             argv.extend(["--session", handle])
@@ -1429,7 +1714,7 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
     session_payload = require_session_allowed(manifest, provider)
     record = provider_record(manifest, provider)
     handle = record.get("session_handle") if isinstance(record.get("session_handle"), str) else None
-    prompt = build_brief(provider, request, brief_out)
+    prompt, file_access = build_brief(provider, request, brief_out)
     argv, planned_handle = provider_command(provider, handle, prompt, args.max_steps)
     total_timeout_seconds = args.total_timeout_seconds
     if total_timeout_seconds is None:
@@ -1447,8 +1732,9 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             "session_check": session_payload,
             "has_existing_handle": bool(handle),
             "planned_handle": planned_handle,
-            "argv_head": argv[:6],
+            "argv_head": redacted_argv(argv)[:8],
             "brief_path": str(brief_out),
+            "file_access": file_access,
             "timeout_seconds": args.timeout_seconds,
             "total_timeout_seconds": total_timeout_seconds,
             **timeout_budget_fields(task_budget),
@@ -1488,13 +1774,14 @@ def cmd_dispatch(args: argparse.Namespace) -> int:
             "reason": exc.reason,
         }, ensure_ascii=False))
     raw_payload = {
-        "argv": argv[:6] + ["<prompt>"],
+        "argv": redacted_argv(argv),
         "attempts": attempts,
         "exit_code": completed.returncode,
         "timeout_seconds": args.timeout_seconds,
         "total_timeout_seconds": total_timeout_seconds,
         **timeout_budget_fields(task_budget),
         "max_retries": args.max_retries,
+        "file_access": file_access,
         "stdout": completed.stdout,
         "stderr": completed.stderr,
     }
@@ -1564,8 +1851,9 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         if init.returncode != 0:
             raise SystemExit(init.stderr or init.stdout)
         manifest = manifest_dir / "session.json"
+        self_cmd = [sys.executable, str(pathlib.Path(__file__).resolve())]
         first = run([
-            str(pathlib.Path(__file__).resolve()),
+            *self_cmd,
             "--provider",
             "kimi",
             "--manifest",
@@ -1587,7 +1875,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "1",
         ])
         blocked = run([
-            str(pathlib.Path(__file__).resolve()),
+            *self_cmd,
             "--provider",
             "kimi",
             "--manifest",
@@ -1596,6 +1884,103 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             str(request),
             "--review-out",
             str(tmp / "blocked.review.json"),
+            "--dry-run",
+        ])
+        file_request = tmp / "file-request.json"
+        file_request.write_text(json.dumps({
+            "task": "dispatcher bounded file access self-check",
+            "user_intent": "verify Kimi can receive bounded file evidence",
+            "main_claim": "Kimi may read only the generated file bundle when explicitly authorized",
+            "changed_reality": ["bounded file bundle fixture"],
+            "review_mode": "implementation_review",
+            "risk_level": "low",
+            "requested_providers": ["kimi"],
+            "file_access": {
+                "mode": "bounded-read",
+                "allowed_paths": [
+                    "runtime/prism/prompts/kimi-prism-review.md",
+                    "runtime/prism/skills/kimi-empty"
+                ],
+                "max_files": 2,
+                "max_directory_entries": 5,
+                "max_bytes_per_file": 4096,
+                "max_total_bytes": 4096,
+                "purpose": "dispatcher self-check fixture"
+            },
+        }, ensure_ascii=False), encoding="utf-8")
+        file_manifest_dir = tmp / "file-run"
+        file_init = run([str(PRISM), "session-init", "--task-id", "dispatcher-file-access-self-check", "--run-dir", str(file_manifest_dir)])
+        file_manifest = file_manifest_dir / "session.json"
+        file_access_dry_run = run([
+            *self_cmd,
+            "--provider",
+            "kimi",
+            "--manifest",
+            str(file_manifest),
+            "--request",
+            str(file_request),
+            "--review-out",
+            str(tmp / "file.review.json"),
+            "--dry-run",
+        ])
+        bad_file_request = tmp / "bad-file-request.json"
+        bad_file_request.write_text(json.dumps({
+            "task": "dispatcher bounded file access rejection self-check",
+            "user_intent": "verify Kimi file access rejects paths outside the repository",
+            "main_claim": "Kimi file access must reject path traversal",
+            "changed_reality": ["bounded file bundle rejection fixture"],
+            "review_mode": "implementation_review",
+            "risk_level": "low",
+            "requested_providers": ["kimi"],
+            "file_access": {
+                "mode": "bounded-read",
+                "allowed_paths": ["../outside-redcap-secret.txt"],
+            },
+        }, ensure_ascii=False), encoding="utf-8")
+        bad_file_manifest_dir = tmp / "bad-file-run"
+        bad_file_init = run([str(PRISM), "session-init", "--task-id", "dispatcher-bad-file-access-self-check", "--run-dir", str(bad_file_manifest_dir)])
+        bad_file_access = run([
+            *self_cmd,
+            "--provider",
+            "kimi",
+            "--manifest",
+            str(bad_file_manifest_dir / "session.json"),
+            "--request",
+            str(bad_file_request),
+            "--review-out",
+            str(tmp / "bad-file.review.json"),
+            "--dry-run",
+        ])
+        truncation_request = tmp / "truncation-request.json"
+        truncation_request.write_text(json.dumps({
+            "task": "dispatcher bounded file truncation self-check",
+            "user_intent": "verify Kimi file access records budget truncation",
+            "main_claim": "Kimi file bundle must record content truncation when the byte budget is exhausted",
+            "changed_reality": ["bounded file bundle truncation fixture"],
+            "review_mode": "implementation_review",
+            "risk_level": "low",
+            "requested_providers": ["kimi"],
+            "file_access": {
+                "mode": "bounded-read",
+                "allowed_paths": ["runtime/prism/bin/prism-dispatch"],
+                "max_files": 1,
+                "max_bytes_per_file": 1024,
+                "max_total_bytes": 1024,
+                "purpose": "dispatcher truncation self-check fixture"
+            },
+        }, ensure_ascii=False), encoding="utf-8")
+        truncation_manifest_dir = tmp / "truncation-run"
+        truncation_init = run([str(PRISM), "session-init", "--task-id", "dispatcher-truncation-self-check", "--run-dir", str(truncation_manifest_dir)])
+        truncation_dry_run = run([
+            *self_cmd,
+            "--provider",
+            "kimi",
+            "--manifest",
+            str(truncation_manifest_dir / "session.json"),
+            "--request",
+            str(truncation_request),
+            "--review-out",
+            str(tmp / "truncation.review.json"),
             "--dry-run",
         ])
         nested = extract_review(json.dumps({"result": "{\"provider\":\"kimi\",\"verdict\":\"pass\",\"confidence\":\"high\",\"reality_delta\":\"x\",\"main_concern\":\"x\",\"top_risks\":[],\"missing_evidence\":[],\"minimum_fix\":\"x\",\"anti_loop_signal\":{\"present\":false,\"reason\":\"x\"},\"user_intent_alignment\":\"aligned\"}"}), "kimi")
@@ -1627,7 +2012,7 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
                 "value = int(counter.read_text() or '0') if counter.exists() else 0",
                 "value += 1",
                 "counter.write_text(str(value))",
-                "print(f'kimi -r {handle}', flush=True)",
+                "print(f'To resume this session: kimi -r {handle}', flush=True)",
                 "if value <= 2:",
                 "    time.sleep(2)",
                 "print('retry-ok')",
@@ -1661,7 +2046,7 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
                 f"handle = {retry_handle!r}",
                 "value = int(counter.read_text() or '0') if counter.exists() else 0",
                 "counter.write_text(str(value + 1))",
-                "print(f'kimi -r {handle}', flush=True)",
+                "print(f'To resume this session: kimi -r {handle}', flush=True)",
                 "time.sleep(2)",
             ]) + "\n",
             encoding="utf-8",
@@ -1706,7 +2091,7 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
                 "    'import signal, time; signal.signal(signal.SIGTERM, signal.SIG_IGN); print(\"child-started\", flush=True); time.sleep(999)',",
                 "])",
                 "pid_path.write_text(str(child.pid))",
-                "print(f'kimi -r {handle}', flush=True)",
+                "print(f'To resume this session: kimi -r {handle}', flush=True)",
                 "child.wait()",
             ]) + "\n",
             encoding="utf-8",
@@ -1894,7 +2279,7 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
                 task_total_budget,
             )
         task_total_report = run([
-            str(pathlib.Path(__file__).resolve()),
+            *self_cmd,
             "--timeout-report",
             "--raw-out",
             str(task_total_raw),
@@ -1904,6 +2289,57 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
             failures.append("first dry-run dispatch did not pass")
         if blocked.returncode == 0:
             failures.append("follow-up without session handle was not blocked")
+        if file_init.returncode != 0:
+            failures.append("file access self-check manifest init failed")
+        if file_access_dry_run.returncode != 0 or "PRISM_DISPATCH_DRY_RUN_OK" not in file_access_dry_run.stdout:
+            failures.append("bounded file access dry-run did not pass")
+        else:
+            file_access_objects = iter_json_objects(file_access_dry_run.stdout)
+            file_access_result = file_access_objects[0] if file_access_objects else {}
+            file_access_meta = file_access_result.get("file_access") if isinstance(file_access_result, dict) else None
+            bundle_path_value = file_access_meta.get("bundle_path") if isinstance(file_access_meta, dict) else None
+            if not isinstance(bundle_path_value, str) or not bundle_path_value:
+                failures.append("bounded file access dry-run did not report a bundle path")
+            else:
+                bundle_path = pathlib.Path(bundle_path_value)
+                if not bundle_path.is_file():
+                    failures.append("bounded file access bundle file was not created")
+                else:
+                    bundle = load_json(bundle_path)
+                    if bundle.get("schema_id") != KIMI_FILE_BUNDLE_SCHEMA_ID:
+                        failures.append("bounded file access bundle schema_id invalid")
+                    if bundle.get("mode") != "bounded-read":
+                        failures.append("bounded file access bundle mode invalid")
+                    entries = bundle.get("entries")
+                    if not isinstance(entries, list) or len(entries) != 2:
+                        failures.append("bounded file access bundle did not preserve both authorized paths")
+                    elif not any(entry.get("kind") == "directory" for entry in entries if isinstance(entry, dict)):
+                        failures.append("bounded file access bundle did not include directory listing support")
+                    if isinstance(file_access_meta, dict) and file_access_meta.get("bundle_sha256") != sha256_file(bundle_path):
+                        failures.append("bounded file access dry-run bundle sha256 mismatch")
+        if bad_file_init.returncode != 0:
+            failures.append("bad file access self-check manifest init failed")
+        if bad_file_access.returncode == 0:
+            failures.append("bounded file access accepted a path outside the RedCap repo")
+        if truncation_init.returncode != 0:
+            failures.append("truncation self-check manifest init failed")
+        if truncation_dry_run.returncode != 0 or "PRISM_DISPATCH_DRY_RUN_OK" not in truncation_dry_run.stdout:
+            failures.append("bounded file access truncation dry-run did not pass")
+        else:
+            truncation_objects = iter_json_objects(truncation_dry_run.stdout)
+            truncation_result = truncation_objects[0] if truncation_objects else {}
+            truncation_meta = truncation_result.get("file_access") if isinstance(truncation_result, dict) else None
+            truncation_bundle_path = truncation_meta.get("bundle_path") if isinstance(truncation_meta, dict) else None
+            if not isinstance(truncation_bundle_path, str) or not truncation_bundle_path:
+                failures.append("bounded file access truncation dry-run did not report a bundle path")
+            else:
+                truncation_bundle = load_json(pathlib.Path(truncation_bundle_path))
+                truncation_entries = truncation_bundle.get("entries")
+                first_truncation_entry = truncation_entries[0] if isinstance(truncation_entries, list) and truncation_entries else {}
+                if not isinstance(first_truncation_entry, dict) or first_truncation_entry.get("content_truncated") is not True:
+                    failures.append("bounded file access truncation fixture did not record content_truncated=true")
+                if isinstance(first_truncation_entry, dict) and first_truncation_entry.get("bytes_included") != 1024:
+                    failures.append("bounded file access truncation fixture did not respect the 1024 byte budget")
         if nested.get("provider") != "kimi":
             failures.append("nested review extraction failed")
         if kimi_text_part_review.get("provider") != "kimi" or kimi_text_part_review.get("verdict") != "pass":
@@ -1960,7 +2396,7 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         total_deadline_fixture.write_text(
             "\n".join([
                 "import time",
-                "print('kimi -r 22222222-2222-4222-8222-222222222222', flush=True)",
+                "print('To resume this session: kimi -r 22222222-2222-4222-8222-222222222222', flush=True)",
                 "time.sleep(2)",
             ]) + "\n",
             encoding="utf-8",
@@ -2028,6 +2464,8 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         kim_safe_argv, _ = provider_command("kimi", None, "safe-check", 1)
         if "--plan" in kim_safe_argv:
             failures.append("kimi provider command still uses plan mode, which cannot combine with prompt mode")
+        if "--skills-dir" not in kim_safe_argv or str(KIMI_EMPTY_SKILLS_DIR) not in kim_safe_argv:
+            failures.append("kimi provider command is missing the empty skills directory")
         if "-p" not in kim_safe_argv and "--prompt" not in kim_safe_argv:
             failures.append("kimi provider command is missing non-interactive prompt mode")
         if "--output-format" not in kim_safe_argv or "stream-json" not in kim_safe_argv:
@@ -2040,6 +2478,24 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         kim_resume_argv, kim_resume_handle = provider_command("kimi", "session_11111111-1111-4111-8111-111111111111", "safe-check", 1)
         if "--session" not in kim_resume_argv or kim_resume_handle != "session_11111111-1111-4111-8111-111111111111":
             failures.append("kimi provider command is missing session resume support")
+        stream_resume = extract_kimi_handle(
+            '{"role":"meta","type":"session.resume_hint","session_id":"session_aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","command":"kimi -r session_aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","content":"To resume this session: kimi -r session_aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"}',
+            None,
+        )
+        if stream_resume != "session_aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa":
+            failures.append("Kimi stream-json resume hint extraction failed")
+        direct_resume = extract_kimi_handle(
+            "To resume this session: kimi -r session_bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            None,
+        )
+        if direct_resume != "session_bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb":
+            failures.append("Kimi text resume hint extraction failed")
+        fake_resume = extract_kimi_handle(
+            "retry_fixture.write_text(\"print(f'kimi -r 22222222-2222-4222-8222-222222222222', flush=True)\")",
+            None,
+        )
+        if fake_resume is not None:
+            failures.append("Kimi handle extraction accepted a fake session from code text")
         if provider_cwd(kim_safe_argv) == str(REPO_ROOT):
             failures.append("kimi provider command should run outside the RedCap repo cwd")
         claude_safe_argv, _ = provider_command("claude-code", None, "safe-check", 1)
@@ -2069,6 +2525,8 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         try:
             assert_provider_command_safe([
                 "kimi",
+                "--skills-dir",
+                str(KIMI_EMPTY_SKILLS_DIR),
                 "--plan",
                 "-p",
                 "x",
@@ -2079,6 +2537,8 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         try:
             assert_provider_command_safe([
                 "kimi",
+                "--skills-dir",
+                str(KIMI_EMPTY_SKILLS_DIR),
                 "--output-format",
                 "stream-json",
                 "--plan",
@@ -2091,6 +2551,8 @@ ne",\\n  "user_intent_alignment": "aligned"\\n}\\n```'
         try:
             assert_provider_command_safe([
                 "kimi",
+                "--skills-dir",
+                str(KIMI_EMPTY_SKILLS_DIR),
                 "--output-format",
                 "stream-json",
                 "--auto",

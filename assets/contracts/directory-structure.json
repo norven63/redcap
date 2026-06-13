@@ -28,7 +28,8 @@
   },
   "direct_children_allowed": {
     ".codex": [
-      "hooks.json"
+      "hooks.json",
+      "stop-hook-mode"
     ],
     "assets": [
       "README.md",
@@ -90,7 +91,8 @@
         "runtime/prism/provider-agents",
         "runtime/prism/prompts",
         "runtime/prism/rules",
-        "runtime/prism/schemas"
+        "runtime/prism/schemas",
+        "runtime/prism/skills"
       ],
       "reason": "Non-code material consumed by runtime behavior: prompts, provider agent specs, rules, schemas, examples, and local protocol docs."
     },
@@ -119,7 +121,8 @@
       "role": "host_entry_config",
       "recursive": false,
       "allowed_names": [
-        "hooks.json"
+        "hooks.json",
+        "stop-hook-mode"
       ],
       "deny_executable_bits": true
     },
@@ -333,6 +336,15 @@
       "recursive": true,
       "allowed_extensions": [
         ".json"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/prism/skills",
+      "role": "runtime_assets",
+      "recursive": true,
+      "allowed_extensions": [
+        ".md"
       ],
       "deny_executable_bits": true
     }

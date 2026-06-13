@@ -19,13 +19,13 @@
       "mode": "prompt-gate-context-and-evidence",
       "covers_guardrails": [
         "prism-task-intake-gate",
-          "completion-pathology-gate",
-          "completion-semantics-gate",
-          "diagnostic-only-changed-reality-gate",
-          "prism-concern-resolution-gate",
-          "development-lifecycle-evidence-gate",
-          "prism-task-execution-ledger",
-          "codex-user-prompt-submit-gate-hook"
+        "completion-pathology-gate",
+        "completion-semantics-gate",
+        "diagnostic-only-changed-reality-gate",
+        "prism-concern-resolution-gate",
+        "development-lifecycle-evidence-gate",
+        "prism-task-execution-ledger",
+        "codex-user-prompt-submit-gate-hook"
       ]
     },
     {
@@ -37,36 +37,23 @@
       ]
     },
     {
-      "event": "Stop",
-      "matrix_hook_id": "codex-stop-redcap-check-hook",
-      "mode": "turn-closeout-redcap-check",
-      "covers_guardrails": [
-        "required-prompt-action-evidence",
-        "prism-session-followup-check",
-        "provider-dispatcher",
-        "host-level-hook-interception",
-        "hook-coverage-gate",
-        "layout-check",
-        "cap-soul-loader",
-        "session-ownership-kernel",
-        "fsm-workflow-gates",
-                "knowledge-gateway",
-                "human-facing-output-policy",
-                "runtime-boundary-kernel",
-          "old-redcap-archaeology-shards",
-          "development-lifecycle-evidence-gate",
-          "prism-concern-resolution-gate",
-          "final-claim-guard",
-          "codex-stop-redcap-check-hook"
-      ]
-    },
-    {
       "event": "PostToolUse",
       "matrix_hook_id": "codex-post-tool-use-action-evidence-hook",
       "mode": "turn-action-evidence-marker",
       "covers_guardrails": [
-        "required-prompt-action-evidence",
         "codex-post-tool-use-action-evidence-hook"
+      ]
+    },
+    {
+      "event": "Stop",
+      "matrix_hook_id": "codex-stop-redcap-check-hook",
+      "mode": "advisory-closeout-review",
+      "covers_guardrails": [
+        "required-prompt-action-evidence",
+        "human-facing-output-policy",
+        "old-redcap-archaeology-shards",
+        "final-claim-guard",
+        "codex-stop-redcap-check-hook"
       ]
     }
   ],
@@ -99,103 +86,25 @@
       "entry_id": "prism-concern-resolution-gate",
       "coverage": "hook_required",
       "required_event": "UserPromptSubmit",
-      "rationale": "The prompt hook routes RedCap self-development through lifecycle checking, and lifecycle checking now blocks unresolved Prism concern/block merges before implementation can proceed; Stop also reruns redcap check self-probes."
-    },
-    {
-      "entry_id": "hook-coverage-gate",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The Stop hook runs redcap check, which includes hook coverage validation before the turn can close cleanly."
-    },
-    {
-      "entry_id": "required-prompt-action-evidence",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The Stop hook correlates required UserPromptSubmit markers with same-turn PostToolUse action evidence and blocks explanation-only closes."
-    },
-    {
-      "entry_id": "layout-check",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The Stop hook runs redcap check, and redcap check runs layout-check."
-    },
-    {
-      "entry_id": "session-ownership-kernel",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The Stop hook runs redcap check, and redcap check now runs the minimal session ownership self-check."
-    },
-    {
-      "entry_id": "fsm-workflow-gates",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The Stop hook runs redcap check, and redcap check now runs the minimal executable FSM kernel."
-    },
-        {
-            "entry_id": "knowledge-gateway",
-            "coverage": "hook_required",
-            "required_event": "Stop",
-            "rationale": "The Stop hook runs redcap check, and redcap check now validates the index-first knowledge gateway."
-        },
-        {
-            "entry_id": "human-facing-output-policy",
-            "coverage": "hook_required",
-            "required_event": "Stop",
-            "rationale": "The Stop hook lints the final assistant message before turn closeout and also runs redcap check, which validates the Chinese-first human-facing output policy and its negative samples."
-        },
-        {
-            "entry_id": "runtime-boundary-kernel",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The Stop hook runs redcap check, and redcap check runs boundary check plus boundary self-check so runtime/project/user boundary leaks cannot close cleanly."
-    },
-    {
-      "entry_id": "old-redcap-archaeology-shards",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The Stop hook runs redcap check, and redcap check validates bounded old-RedCap archaeology shards instead of accepting unbounded scanning or undocumented extraction."
+      "rationale": "The prompt hook routes RedCap self-development through lifecycle checking, and lifecycle checking blocks unresolved Prism concern or block merges before implementation can proceed."
     },
     {
       "entry_id": "development-lifecycle-evidence-gate",
       "coverage": "hook_required",
       "required_event": "UserPromptSubmit",
-      "rationale": "The prompt hook runs Prism gate, and Prism gate now requires and checks lifecycle packets for medium-or-higher RedCap self-development work; Stop still runs redcap check for the self-check path."
-    },
-    {
-      "entry_id": "final-claim-guard",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The Stop hook checks the final assistant message and blocks completion claims for required RedCap prompts unless a fresh verified task-body lifecycle completion marker exists."
-    },
-    {
-      "entry_id": "prism-session-followup-check",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "Provider follow-up continuity is enforced by the Prism dispatcher and verified by redcap check, which the Stop hook runs."
-    },
-    {
-      "entry_id": "provider-dispatcher",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "The provider dispatcher self-check is part of redcap check, which the Stop hook runs."
+      "rationale": "The prompt hook runs Prism gate, and Prism gate requires lifecycle packets for medium-or-higher RedCap self-development work."
     },
     {
       "entry_id": "prism-task-execution-ledger",
       "coverage": "hook_required",
       "required_event": "UserPromptSubmit",
-      "rationale": "UserPromptSubmit runs the deterministic Prism gate with codex hook tags, and prism gate now appends a gate-evaluation record to the Prism ledger."
+      "rationale": "UserPromptSubmit is a real Codex project hook with a gate-evaluation record in the Prism ledger."
     },
     {
       "entry_id": "cap-soul-loader",
       "coverage": "hook_required",
       "required_event": "SessionStart",
       "rationale": "SessionStart attempts a real Cap soul load and records the result in the live marker; redcap check also verifies the loader."
-    },
-    {
-      "entry_id": "host-level-hook-interception",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "Host hook capability is audited by redcap check, which the Stop hook runs; unsupported provider-host hooks are reported as audit facts instead of fake parity."
     },
     {
       "entry_id": "codex-session-start-hook",
@@ -216,21 +125,99 @@
       "rationale": "PreToolUse is a real Codex project hook that blocks known destructive commands and claims mutating session ownership."
     },
     {
-      "entry_id": "codex-stop-redcap-check-hook",
-      "coverage": "hook_required",
-      "required_event": "Stop",
-      "rationale": "Stop is a real Codex project hook that attempts redcap check and records live-marker evidence."
-    },
-    {
       "entry_id": "codex-post-tool-use-action-evidence-hook",
       "coverage": "hook_required",
       "required_event": "PostToolUse",
-      "rationale": "PostToolUse is a real Codex project hook that records same-turn supported tool-use fingerprints for Stop enforcement."
+      "rationale": "PostToolUse is a real Codex project hook that records supported tool-use fingerprints for explicit closeout checks."
+    },
+    {
+      "entry_id": "required-prompt-action-evidence",
+      "coverage": "hook_required",
+      "required_event": "Stop",
+      "rationale": "PostToolUse records action evidence automatically, and Stop runs the same-turn correlation check before closeout. The explicit command remains available for focused diagnostics."
+    },
+    {
+      "entry_id": "hook-coverage-gate",
+      "coverage": "explicit_command_required",
+      "required_event": null,
+      "rationale": "Hook coverage validation remains required through runtime/bin/redcap hook-coverage-check and runtime/bin/redcap check; it is intentionally outside the Stop hot path."
+    },
+    {
+      "entry_id": "layout-check",
+      "coverage": "explicit_command_required",
+      "required_event": null,
+      "rationale": "Directory layout validation remains required through runtime/bin/redcap layout-check and runtime/bin/redcap check; it is intentionally outside the Stop hot path."
+    },
+    {
+      "entry_id": "session-ownership-kernel",
+      "coverage": "explicit_command_required",
+      "required_event": null,
+      "rationale": "Session ownership checks remain required through runtime/bin/redcap session-ownership self-check and runtime/bin/redcap check; Stop keeps only closeout guards in its hot path."
+    },
+    {
+      "entry_id": "fsm-workflow-gates",
+      "coverage": "explicit_command_required",
+      "required_event": null,
+      "rationale": "FSM validation remains required through runtime/bin/redcap fsm check and runtime/bin/redcap check; it is intentionally outside the Stop hot path."
+    },
+    {
+      "entry_id": "knowledge-gateway",
+      "coverage": "explicit_command_required",
+      "required_event": null,
+      "rationale": "Knowledge gateway validation remains required through runtime/bin/redcap knowledge-gateway check and runtime/bin/redcap check; it is intentionally outside the Stop hot path."
+    },
+    {
+      "entry_id": "human-facing-output-policy",
+      "coverage": "hook_required",
+      "required_event": "Stop",
+      "rationale": "Stop lints the final assistant reply for Chinese-first, human-readable output before closeout; file-level lint commands remain available for focused diagnostics."
+    },
+    {
+      "entry_id": "runtime-boundary-kernel",
+      "coverage": "explicit_command_required",
+      "required_event": null,
+      "rationale": "Runtime boundary validation remains required through runtime/bin/redcap boundary check and runtime/bin/redcap check; it is intentionally outside the Stop hot path."
+    },
+    {
+      "entry_id": "old-redcap-archaeology-shards",
+      "coverage": "hook_required",
+      "required_event": "Stop",
+      "rationale": "Stop runs runtime/bin/redcap check before closeout and also blocks unsupported 360-degree scan conclusions."
+    },
+    {
+      "entry_id": "final-claim-guard",
+      "coverage": "hook_required",
+      "required_event": "Stop",
+      "rationale": "Stop runs the final-claim guard before closeout and blocks unsupported completion claims with advisory constraints."
+    },
+    {
+      "entry_id": "prism-session-followup-check",
+      "coverage": "explicit_command_required",
+      "required_event": null,
+      "rationale": "Provider follow-up continuity remains enforced by the Prism dispatcher and verified through runtime/bin/redcap check; it is intentionally outside the Stop hot path."
+    },
+    {
+      "entry_id": "provider-dispatcher",
+      "coverage": "explicit_command_required",
+      "required_event": null,
+      "rationale": "The provider dispatcher self-check remains part of runtime/bin/redcap check and host-hook-audit; it is intentionally outside the Stop hot path."
+    },
+    {
+      "entry_id": "host-level-hook-interception",
+      "coverage": "explicit_command_required",
+      "required_event": null,
+      "rationale": "Host hook capability is audited by runtime/bin/redcap host-hook-audit and runtime/bin/redcap check; unsupported provider-host hooks are reported as audit facts instead of fake parity."
+    },
+    {
+      "entry_id": "codex-stop-redcap-check-hook",
+      "coverage": "hook_required",
+      "required_event": "Stop",
+      "rationale": "Stop is redeployed as an advisory closeout review: it blocks closeout only to provide original-task-anchored correction constraints, and its self-check proves the old answer-drift pattern is not restored."
     }
   ],
   "deferred_events": [],
   "future_hook_policy": {
     "default": "fail_closed_when_required_event_missing",
-    "reason": "Any future capability marked hook-required must name a required event, a deployed Codex hook, an operational matrix hook entry, and a live-marker probe before RedCap check can pass."
+    "reason": "Any future capability marked hook-required must name a required event, a deployed Codex hook, an operational matrix hook entry, and a live-marker probe before RedCap check can pass. Capabilities intentionally moved out of hook coverage must be marked explicit_command_required instead of pretending to be automatic."
   }
 }

@@ -148,12 +148,26 @@ def validate(coverage: dict[str, Any], matrix: dict[str, Any]) -> dict[str, Any]
         coverage_state = guardrail.get("coverage")
         required_event = guardrail.get("required_event")
         if entry_id in required_now_ids:
-            require(coverage_state == "hook_required", failures, f"{entry_id}: required_now entries must be hook_required")
+            require(
+                coverage_state in {"hook_required", "explicit_command_required"},
+                failures,
+                f"{entry_id}: required_now entries must be hook_required or explicit_command_required",
+            )
         if coverage_state == "hook_required":
             require(isinstance(required_event, str) and required_event in required_event_by_name, failures, f"{entry_id}: hook_required guardrail must name a deployed required_event")
             if isinstance(required_event, str) and required_event in required_event_by_name:
                 covered = required_event_by_name[required_event].get("covers_guardrails", [])
                 require(entry_id in covered, failures, f"{entry_id}: required_event {required_event} does not list this guardrail")
+        elif coverage_state == "explicit_command_required":
+            require(required_event is None, failures, f"{entry_id}: explicit_command_required guardrail must not name a required_event")
+            matrix_entry = matrix_entries.get(entry_id)
+            require(isinstance(matrix_entry, dict), failures, f"{entry_id}: explicit_command_required guardrail must reference a matrix entry")
+            if isinstance(matrix_entry, dict):
+                verification = matrix_entry.get("verification")
+                require(isinstance(verification, dict), failures, f"{entry_id}: matrix entry must include verification")
+                if isinstance(verification, dict):
+                    require(verification.get("mode") == "commands", failures, f"{entry_id}: explicit command guardrail needs command verification")
+                    require(verification.get("probes"), failures, f"{entry_id}: explicit command guardrail needs behavioral probes")
         elif coverage_state == "manual_protocol":
             warnings.append(f"{entry_id}: manual protocol is not host-level automatic yet")
         elif coverage_state == "deferred_not_claimed":
@@ -178,6 +192,11 @@ def validate(coverage: dict[str, Any], matrix: dict[str, Any]) -> dict[str, Any]
         "ok": not failures,
         "required_now_entries": sorted(required_now_ids),
         "required_events": sorted(required_event_by_name),
+        "explicit_command_entries": sorted(
+            entry_id
+            for entry_id, guardrail in coverage_by_entry.items()
+            if isinstance(guardrail, dict) and guardrail.get("coverage") == "explicit_command_required"
+        ),
         "warnings": warnings,
         "failures": failures,
     }

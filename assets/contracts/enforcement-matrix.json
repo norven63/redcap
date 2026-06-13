@@ -342,8 +342,7 @@
         "status": "operational",
         "host_level_automatic": false,
         "trigger_surfaces": [
-          "runtime/prism/bin/turn-action-check",
-          "codex:Stop"
+          "runtime/prism/bin/turn-action-check"
         ],
         "implementation_paths": [
           "runtime/prism/bin/turn-action-check",
@@ -449,8 +448,7 @@
           "runtime/prism/bin/prism session-check --require-existing-session",
           "runtime/prism/bin/prism-dispatch",
           "runtime/bin/redcap prism-dispatch",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/prism/bin/prism",
@@ -513,8 +511,7 @@
           "runtime/bin/redcap prism-resolution",
           "runtime/prism/bin/prism resolution-check",
           "runtime/bin/redcap lifecycle check",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/prism/bin/prism",
@@ -587,6 +584,7 @@
         "live_marker_probe": {
           "name": "latest Codex SessionStart marker matches current hook config",
           "argv": [
+            "python3",
             "runtime/host-adapters/codex/codex-hook.py",
             "--event",
             "SessionStart",
@@ -605,6 +603,7 @@
           {
             "name": "latest Codex SessionStart marker matches current hook config",
             "argv": [
+              "python3",
               "runtime/host-adapters/codex/codex-hook.py",
               "--event",
               "SessionStart",
@@ -624,7 +623,7 @@
         ]
       },
       "gaps": [
-        "UserPromptSubmit, PreToolUse, PostToolUse, and Stop are deployed for Codex; cross-host parity is not claimed."
+        "UserPromptSubmit, PreToolUse, PostToolUse, and advisory Stop are deployed for Codex; cross-host parity is not claimed."
       ]
     },
     {
@@ -726,6 +725,7 @@
         "live_marker_probe": {
           "name": "latest Codex UserPromptSubmit marker has gate decision",
           "argv": [
+            "python3",
             "runtime/host-adapters/codex/codex-hook.py",
             "--event",
             "UserPromptSubmit",
@@ -744,6 +744,7 @@
           {
             "name": "latest Codex UserPromptSubmit marker has gate decision",
             "argv": [
+              "python3",
               "runtime/host-adapters/codex/codex-hook.py",
               "--event",
               "UserPromptSubmit",
@@ -799,6 +800,7 @@
         "live_marker_probe": {
           "name": "latest Codex PreToolUse marker records guard decision",
           "argv": [
+            "python3",
             "runtime/host-adapters/codex/codex-hook.py",
             "--event",
             "PreToolUse",
@@ -817,6 +819,7 @@
           {
             "name": "latest Codex PreToolUse marker records guard decision",
             "argv": [
+              "python3",
               "runtime/host-adapters/codex/codex-hook.py",
               "--event",
               "PreToolUse",
@@ -873,6 +876,7 @@
           {
             "name": "latest Codex PreToolUse mutating marker records session ownership claim",
             "argv": [
+              "python3",
               "runtime/host-adapters/codex/codex-hook.py",
               "--event",
               "PreToolUse",
@@ -907,16 +911,17 @@
       "evaluation": {
         "evaluated": true,
         "decision": "required_now",
-        "reason": "Closeout-sensitive guardrails must run before a turn closes cleanly, so Codex Stop must attempt runtime/bin/redcap check and record live-marker evidence."
+        "reason": "Norven authorized restoring Stop as an advisory closeout review: it remains host-level automatic for closeout-sensitive guards, but the heavy runtime/bin/redcap check suite is intentionally outside the hot path."
       },
       "enforcement": {
         "status": "operational",
         "host_level_automatic": true,
         "trigger_surfaces": [
-          "codex:Stop"
+          "Codex Stop"
         ],
         "implementation_paths": [
           ".codex/hooks.json",
+          "assets/contracts/advisory-stop.json",
           "runtime/host-adapters/codex/codex-hook.py"
         ]
       },
@@ -925,50 +930,46 @@
         "event": "Stop",
         "adapter_path": "runtime/host-adapters/codex/codex-hook.py",
         "live_marker_probe": {
-          "name": "latest Codex Stop marker records check attempt",
-            "argv": [
-              "runtime/host-adapters/codex/codex-hook.py",
-              "--event",
-              "Stop",
-              "--verify-live-marker",
-              "--allow-adapter-change-after-marker",
-              "--require-real-codex-session",
-              "--require-stop-check-attempt",
-              "--require-action-check-ok",
-              "--require-final-claim-guard",
-              "--max-age-seconds",
-              "604800"
-            ]
+          "name": "Codex Stop advisory self-check blocks without task drift",
+          "argv": [
+            "python3",
+            "runtime/host-adapters/codex/codex-hook.py",
+            "--self-check-intent-judge"
+          ]
         }
       },
       "verification": {
         "mode": "commands",
         "probes": [
           {
-            "name": "latest Codex Stop marker records check attempt",
+            "name": "Codex Stop advisory self-check blocks without task drift",
             "argv": [
+              "python3",
               "runtime/host-adapters/codex/codex-hook.py",
-              "--event",
-              "Stop",
-              "--verify-live-marker",
-              "--allow-adapter-change-after-marker",
-              "--require-real-codex-session",
-              "--require-stop-check-attempt",
-              "--require-action-check-ok",
-              "--require-final-claim-guard",
-              "--max-age-seconds",
-              "604800"
+              "--self-check-intent-judge"
             ],
             "expect_exit": 0,
+            "timeout_seconds": 180,
             "stdout_contains": [
-              "\"ok\": true",
-              "\"event\": \"Stop\""
+              "\"ok\": true"
+            ]
+          },
+          {
+            "name": "host hook audit verifies advisory Stop deployment",
+            "argv": [
+              "runtime/bin/redcap",
+              "host-hook-audit"
+            ],
+            "expect_exit": 0,
+            "timeout_seconds": 180,
+            "stdout_contains": [
+              "REDCAP_HOST_HOOK_AUDIT_OK"
             ]
           }
         ]
       },
       "gaps": [
-        "The live marker proves the Stop hook attempted redcap check; the freshness window allows long active turns where Stop has not fired again yet."
+        "Stop is still a Codex-only host hook. Other hosts must use explicit RedCap commands or their own verified host adapters until equivalent hooks exist. Full runtime/bin/redcap check remains an explicit verification command, not a Stop hot-path action."
       ]
     },
     {
@@ -984,7 +985,7 @@
       "evaluation": {
         "evaluated": true,
         "decision": "required_now",
-        "reason": "Stop enforcement for required RedCap prompts needs same-turn supported tool-use evidence, so PostToolUse must record action fingerprints."
+        "reason": "Explicit closeout checks for required RedCap prompts need same-turn supported tool-use evidence, so PostToolUse must record action fingerprints."
       },
       "enforcement": {
         "status": "operational",
@@ -1004,6 +1005,7 @@
         "live_marker_probe": {
           "name": "latest Codex PostToolUse marker records action evidence",
           "argv": [
+            "python3",
             "runtime/host-adapters/codex/codex-hook.py",
             "--event",
             "PostToolUse",
@@ -1021,6 +1023,7 @@
           {
             "name": "latest Codex PostToolUse marker records action evidence",
             "argv": [
+              "python3",
               "runtime/host-adapters/codex/codex-hook.py",
               "--event",
               "PostToolUse",
@@ -1049,6 +1052,7 @@
       "source_paths": [
         "runtime/prism/README.md",
         "assets/evidence/prism/20260601-timeout-retry-accountability/session.json",
+        "assets/evidence/prism/20260613-advisory-stop-implementation/session.json",
         "runtime/prism/bin/prism",
         "runtime/prism/bin/prism-dispatch",
         "runtime/prism/bin/prism-dispatch-timeout-e2e",
@@ -1067,8 +1071,7 @@
           "runtime/prism/bin/prism-dispatch",
           "runtime/bin/redcap prism-dispatch",
           "runtime/prism/bin/prism-dispatch --verify-evidence",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/prism/bin/prism-dispatch",
@@ -1120,7 +1123,7 @@
               "runtime/prism/bin/prism-dispatch",
               "--verify-evidence",
               "--evidence-run-dir",
-              "assets/evidence/prism/20260606-prism-provider-raw-guard-fix",
+              "assets/evidence/prism/20260613-advisory-stop-implementation",
               "--max-age-hours",
               "168"
             ],
@@ -1237,8 +1240,7 @@
         "trigger_surfaces": [
           "runtime/bin/redcap boundary check",
           "runtime/bin/redcap boundary self-check",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/core/runtime_boundary.py",
@@ -1302,8 +1304,7 @@
           "runtime/bin/redcap archaeology extract-boundary",
           "runtime/bin/redcap archaeology check",
           "runtime/bin/redcap archaeology self-check",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/core/archaeology_shards.py",
@@ -1370,8 +1371,7 @@
           "runtime/bin/redcap gate --lifecycle-packet ...",
           "runtime/bin/redcap lifecycle check",
           "runtime/bin/redcap lifecycle self-check",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/prism/bin/prism",
@@ -1486,8 +1486,7 @@
         "host_level_automatic": false,
         "trigger_surfaces": [
           "runtime/bin/redcap final-claim check",
-          "runtime/bin/redcap final-claim self-check",
-          "codex:Stop"
+          "runtime/bin/redcap final-claim self-check"
         ],
         "implementation_paths": [
           "runtime/core/final_claim_guard.py",
@@ -1537,8 +1536,7 @@
           "runtime/bin/redcap session-ownership claim",
           "runtime/bin/redcap session-ownership check",
           "runtime/bin/redcap session-ownership self-check",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/core/session_ownership.py",
@@ -1586,8 +1584,7 @@
         "host_level_automatic": false,
         "trigger_surfaces": [
           "runtime/bin/redcap host-hook-audit",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/host-adapters/host-hook-audit.py",
@@ -1635,8 +1632,7 @@
         "trigger_surfaces": [
           "runtime/bin/redcap fsm check",
           "runtime/bin/redcap fsm transition",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/core/fsm.py",
@@ -1728,8 +1724,7 @@
           "runtime/bin/redcap knowledge-gateway review",
           "runtime/bin/redcap knowledge-gateway promote",
           "runtime/bin/redcap knowledge-gateway self-check",
-          "runtime/bin/redcap check",
-          "codex:Stop"
+          "runtime/bin/redcap check"
         ],
         "implementation_paths": [
           "runtime/core/knowledge_gateway.py",
@@ -1858,17 +1853,23 @@
             ]
           },
           {
-            "name": "Stop hook blocks English-only final assistant reply",
+            "name": "human output lint rejects English-only assistant reply",
             "argv": [
-              "python3",
-              "runtime/host-adapters/codex/codex-hook.py",
-              "--self-check"
+              "runtime/bin/redcap",
+              "human-output",
+              "lint-text",
+              "--surface",
+              "assistant_reply",
+              "--source",
+              "fixture",
+              "--text",
+              "This task is complete and ready."
             ],
-            "expect_exit": 0,
+            "expect_exit": 1,
             "stdout_contains": [
-              "\"ok\": true"
-            ],
-            "timeout_seconds": 240
+              "\"ok\": false",
+              "中文比例过低"
+            ]
           }
         ]
       },

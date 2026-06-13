@@ -16,12 +16,18 @@ Current deployed surface:
 - `PreToolUse`: writes a live-marker record, blocks known destructive commands
   before execution, and claims session ownership for mutating supported tool
   calls when Codex supplies a real session id.
-- `PostToolUse`: writes same-turn supported tool-use fingerprints so `Stop` can
-  distinguish action-backed work from explanation-only closure.
-- `Stop`: writes a live-marker record and runs `runtime/bin/redcap check` before
-  a turn closes cleanly. If the matching prompt was RedCap-required and no
-  `PostToolUse` action evidence exists for the same turn, `Stop` asks Codex to
-  continue instead of closing with explanation/status only.
+- `PostToolUse`: writes same-turn supported tool-use fingerprints so explicit
+  closeout commands can distinguish action-backed work from explanation-only
+  closure.
+- `Stop`: runs an advisory closeout review. It can block a flawed closeout, but
+  its payload is constrained to original-task-anchored correction requirements,
+  Cap arbitration, bounded correction rounds, and structured health markers.
+  Full Prism provider review is not run in this hot path. If Cap has concrete
+  evidence that a Stop finding is a false positive, it can create a bounded
+  override marker with `runtime/bin/redcap advisory-stop override`; the next
+  matching Stop event records the reason and continues. Full `runtime/bin/redcap
+  check` remains an explicit verification command, not the default Stop hot
+  path.
 
 Not currently claimed:
 

@@ -1,0 +1,123 @@
+{
+  "schema_id": "redcap-advisory-stop-contract",
+  "version": 1,
+  "purpose": "恢复 Stop（停止前检查钩子）100% 收口评审，同时防止旧 Stop 把回答主轴从用户原问题拖向钩子反馈。",
+  "deployment": {
+    "hook_event": "Stop",
+    "required_in_codex_hooks": true,
+    "hot_path_full_prism": false,
+    "hot_path_llm_policy": "only bounded ambiguous-intent classification; no full Prism provider review",
+    "full_prism_usage": [
+      "pre_implementation_review",
+      "post_implementation_review",
+      "concern_resolution"
+    ]
+  },
+  "decision_model": {
+    "stop_suggest": {
+      "meaning": "Stop 发现可修正问题，并给出锚定原问题的建议型修正约束。",
+      "host_effect": "blocks current closeout so Cap can produce a corrected answer, but the payload declares itself as correction constraints, not a new user task.",
+      "cap_may_override": true,
+      "override_condition": "Cap has concrete reason that the Stop finding is false positive or irrelevant to the original user request.",
+      "override_requirement": "The revised answer must remain anchored to the original user request and must not explain the hook discussion unless the user asked about it.",
+      "override_command": "runtime/bin/redcap advisory-stop override --session-id <session_id> --turn-id <turn_id> --reason <human-readable reason>"
+    },
+    "stop_pass": {
+      "meaning": "No closeout issue detected.",
+      "host_effect": "continue true"
+    },
+    "stop_degraded": {
+      "meaning": "A checker failed, timed out, or emitted invalid output.",
+      "host_effect": "use deterministic failure if the failed checker protects hard evidence; otherwise record degraded health and avoid speculative LLM-driven blocking."
+    }
+  },
+  "advisory_payload_schema": {
+    "required_fields": [
+      "advisory_schema_id",
+      "original_task_excerpt",
+      "correction_constraints",
+      "cap_may_override",
+      "max_rounds",
+      "current_round",
+      "recovery_focus_anchor",
+      "do_not_answer_the_hook"
+    ],
+    "field_rules": {
+      "advisory_schema_id": "must equal redcap-stop-advisory-v1",
+      "original_task_excerpt": "must be copied from the latest anchored UserPromptSubmit or turn-action-check task anchor",
+      "correction_constraints": "must be a non-empty list of concrete corrections; generic rewrite requests are invalid",
+      "cap_may_override": "must be true for suggestion-class issues",
+      "max_rounds": "must be a small integer, default 2",
+      "current_round": "must be counted per session_id + turn_id",
+      "recovery_focus_anchor": "must state that the next answer begins from the original user request",
+      "do_not_answer_the_hook": "must be true"
+    },
+    "forbidden_payload_content": [
+      "new task instructions unrelated to the original user request",
+      "requests to explain the hook unless the original user asked about hook behavior",
+      "raw provider output",
+      "unbounded excerpts of the blocked reply"
+    ]
+  },
+  "six_hard_constraints": [
+    {
+      "id": "original-task-anchor",
+      "risk": "二次回答围绕 Stop 反馈，而不是围绕用户原始需求。",
+      "mitigation": "Stop advisory payload must include original_task_excerpt and recovery_focus_anchor; self-check must fail if missing.",
+      "enforcement": "code-and-self-check"
+    },
+    {
+      "id": "concrete-correction-only",
+      "risk": "Stop 泛泛要求重写，制造新任务源。",
+      "mitigation": "Each correction constraint must include category and actionable detail; generic text such as '重新回答' alone is invalid.",
+      "enforcement": "code-and-self-check"
+    },
+    {
+      "id": "cap-arbitration",
+      "risk": "Cap 盲从 Stop，Stop 实际成为执行大脑。",
+      "mitigation": "Payload must declare cap_may_override=true for suggestion issues and explain override_condition; runtime/bin/redcap advisory-stop override creates a bounded marker that makes the next matching Stop continue=true while recording the reason.",
+      "enforcement": "code-contract-self-check-and-e2e"
+    },
+    {
+      "id": "no-hook-axis-leakage",
+      "risk": "最终回答向用户解释钩子细节而偏离原问题。",
+      "mitigation": "Payload must set do_not_answer_the_hook=true and recovery wording says hook feedback is only a correction constraint.",
+      "enforcement": "code-and-self-check"
+    },
+    {
+      "id": "max-correction-rounds",
+      "risk": "Stop 与 Cap 循环互相修正，消耗上下文。",
+      "mitigation": "Count Stop advisories per session_id + turn_id; after max_rounds, emit a bounded blocker that asks Cap to mark blocked or narrow claim instead of generating another full correction loop.",
+      "enforcement": "code-and-self-check"
+    },
+    {
+      "id": "health-observation",
+      "risk": "误伤率、采纳倾向、超时和重复拦截不可见。",
+      "mitigation": "Latest Stop marker records advisory category, round count, checker source, LLM use, total Stop hook duration, and whether full Prism or full runtime/bin/redcap check was intentionally not used in the hot path.",
+      "enforcement": "marker-and-audit"
+    }
+  ],
+  "deterministic_checker_taxonomy": {
+    "hard_deterministic": [
+      "turn action evidence",
+      "terminal goal overclaim",
+      "fresh lifecycle completion marker",
+      "scan conclusion readiness",
+      "Chinese-first human output policy",
+      "redcap check exit code"
+    ],
+    "bounded_llm_allowed": [
+      "ambiguous prompt intent classification inside turn-action-check"
+    ],
+    "full_prism_forbidden_in_hot_path": [
+      "provider design review",
+      "post-implementation review",
+      "multi-round rebuttal"
+    ]
+  },
+  "residual_risks_after_mitigation": [
+    "Stop 仍在收口热路径，响应延迟高于无 Stop 方案；当前 Codex hook timeout 设置为 120 秒，完整 runtime/bin/redcap check 不在默认热路径内，Stop 标记会记录 stop_hook_duration_ms 供后续观测；计时记录失败只能退化为观测缺失，不能阻断 Stop 行为。",
+    "Cap 仲裁权已有 marker-based override 通路；覆盖标记按 session_id + turn_id 匹配，要求最短理由和 expires_at 过期校验，但仍需要 Cap 自觉只在误伤或有证据时使用。",
+    "如果宿主未来改变 Stop 输出语义，仍需重新审计。"
+  ]
+}

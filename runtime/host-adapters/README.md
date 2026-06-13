@@ -22,9 +22,10 @@ Rule: host adapters forward into RedCap; they do not become RedCap authority.
 Current adapters:
 
 - `codex/`: project-local Codex `SessionStart`, `UserPromptSubmit`,
-  `PreToolUse`, `PostToolUse`, and `Stop` hooks. These hooks record live
-  markers, run the deterministic prompt gate, block known destructive commands,
-  collect action evidence, and run RedCap closeout checks.
+  `PreToolUse`, `PostToolUse`, and advisory `Stop` hooks. These hooks record live markers, run
+  the deterministic prompt gate, block known destructive commands, and collect
+  action evidence. `Stop` performs closeout review through original-task-anchored
+  correction constraints so hook feedback does not become a new reply topic.
 - `host-hook-audit.py`: verifies the deployed Codex hook surface and the
   provider-call interception boundary. Provider calls are intercepted at the
   RedCap Prism dispatcher layer for Kimi and Claude Code.

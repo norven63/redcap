@@ -39,6 +39,7 @@ Usage:
   runtime/bin/redcap prism-shard [...]
   runtime/bin/redcap scan-conclusion check|self-check [...]
   runtime/bin/redcap intent-judge classify|self-check [...]
+  runtime/bin/redcap advisory-stop check|self-check
   runtime/bin/redcap soul-load check|load|self-check [...]
   runtime/bin/redcap status [...]
   runtime/bin/redcap revive [...]
@@ -101,6 +102,7 @@ Commands:
   scan-conclusion
                 Guard 360-degree old RedCap scan conclusions with structured scan facts.
   intent-judge  Classify prompt intent with deterministic rules and bounded Prism LLM fallback.
+  advisory-stop Check advisory Stop closeout contract and deployment.
   soul-load     Load or verify Cap identity sources without leaking private text.
   status        Show the human-facing RedCap status surface.
   revive        Load Cap identity and show the revival status surface.
@@ -206,7 +208,7 @@ case "$cmd" in
     exec python3 "$REPO_ROOT/runtime/host-adapters/host-hook-audit.py" "$@"
     ;;
   prism-dispatch)
-    exec "$REPO_ROOT/runtime/prism/bin/prism-dispatch" "$@"
+    exec python3 "$REPO_ROOT/runtime/prism/bin/prism-dispatch" "$@"
     ;;
   prism-resolution)
     exec "$PRISM" resolution-check "$@"
@@ -234,6 +236,9 @@ case "$cmd" in
     ;;
   intent-judge)
     exec python3 "$REPO_ROOT/runtime/core/intent_judge.py" "$@"
+    ;;
+  advisory-stop)
+    exec python3 "$REPO_ROOT/runtime/core/advisory_stop.py" "$@"
     ;;
   soul-load)
     exec python3 "$REPO_ROOT/runtime/core/soul_loader.py" "$@"
@@ -295,6 +300,7 @@ case "$cmd" in
     python3 "$REPO_ROOT/runtime/core/complete_revival_check.py" self-check
     "$REPO_ROOT/runtime/bin/redcap" session-ownership self-check
     "$REPO_ROOT/runtime/bin/redcap" intent-judge self-check
+    "$REPO_ROOT/runtime/bin/redcap" advisory-stop check
     python3 "$REPO_ROOT/runtime/host-adapters/codex/codex-hook.py" --self-check-intent-judge
     "$REPO_ROOT/runtime/bin/redcap" host-hook-audit
     "$REPO_ROOT/runtime/bin/redcap" prism-dispatch --timeout-policy-check

@@ -74,7 +74,7 @@
           },
           "coverage": {
             "type": "string",
-            "enum": ["hook_required", "manual_protocol", "deferred_not_claimed"]
+            "enum": ["hook_required", "explicit_command_required", "manual_protocol", "deferred_not_claimed"]
           },
           "required_event": {
             "type": ["string", "null"]

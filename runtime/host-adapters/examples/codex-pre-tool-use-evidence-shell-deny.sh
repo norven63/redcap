@@ -9,7 +9,7 @@ run_probe() {
   local command="$1"
   local output
   output="$(
-    python3 - "$command" <<'PY' | PWDDIR="$PWD" HOMEBREW="$PWD" REDCAP_CODEX_HOOK_EVIDENCE_DIR="$tmp_dir" runtime/host-adapters/codex/codex-hook.py --event PreToolUse
+    python3 - "$command" <<'PY' | PWDDIR="$PWD" HOMEBREW="$PWD" REDCAP_CODEX_HOOK_EVIDENCE_DIR="$tmp_dir" python3 runtime/host-adapters/codex/codex-hook.py --event PreToolUse
 import json
 import sys
 

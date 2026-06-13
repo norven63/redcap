@@ -148,8 +148,8 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
     rules = contract.get("output_rules")
     if not isinstance(rules, dict):
         failures.append("output_rules must be an object")
-    elif rules.get("prompt_time_context_required") is not True or rules.get("stop_hook_validation_required") is not True:
-        failures.append("output_rules must require prompt-time context and Stop hook validation")
+    elif rules.get("prompt_time_context_required") is not True or rules.get("closeout_command_validation_required") is not True:
+        failures.append("output_rules must require prompt-time context and explicit closeout command validation")
     return failures
 
 
