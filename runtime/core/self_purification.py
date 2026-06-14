@@ -55,6 +55,14 @@ REQUIRED_PERSONA_EVIDENCE_FIELDS = {"candidate_id", "decision", "source_task", "
 FORBIDDEN_PERSONA_EVIDENCE = {"private_identity_body", "raw_persona_body", "secret", "token", "credential"}
 REQUIRED_BEFORE = {"knowledge_retrieval_or_skip_reason"}
 REQUIRED_AFTER = {"harvest_candidate_or_no_candidate_reason", "review_decision", "promotion_or_no_promote_result"}
+REQUIRED_RUNTIME_INTEGRATION = {
+    "pre_task_entrypoint",
+    "post_task_entrypoint",
+    "aggregate_check",
+    "e2e_hard_gate",
+    "skip_policy",
+    "failure_policy",
+}
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -170,6 +178,23 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         e2e_binding = str(binding.get("e2e_failure_binding") or "")
         if "E2E" not in e2e_binding or "candidate" not in e2e_binding:
             failures.append("E2E 失败必须绑定候选抽取或无候选理由")
+    runtime = contract.get("runtime_integration")
+    if not isinstance(runtime, dict):
+        failures.append("自我净化缺少 runtime_integration")
+    else:
+        missing_runtime = missing(REQUIRED_RUNTIME_INTEGRATION, set(runtime))
+        if missing_runtime:
+            failures.append(f"自我净化运行接入字段缺失：{missing_runtime}")
+        if runtime.get("pre_task_entrypoint") != "runtime/bin/redcap knowledge-gateway search <query>":
+            failures.append("自我净化任务前入口必须是 knowledge-gateway search")
+        if runtime.get("post_task_entrypoint") != "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-project>/.redcap/evidence/e2e":
+            failures.append("自我净化任务后入口必须绑定 revival-followthrough e2e-check")
+        if runtime.get("aggregate_check") != "runtime/bin/redcap self-purification check":
+            failures.append("自我净化聚合检查入口错误")
+        failure_policy = str(runtime.get("failure_policy") or "")
+        for required in ["Missing retrieval", "persona privacy leak", "open failure-backlog", "closed_non_blocking"]:
+            if required not in failure_policy:
+                failures.append(f"自我净化 failure_policy 缺少：{required}")
     return failures
 
 
@@ -211,6 +236,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     no_no_promote_reason["post_task_harvest"]["no_promote_requires_reason"] = False
     if not any("no-promote" in item for item in validate_contract(no_no_promote_reason)):
         failures.append("no-promote 无理由样例没有失败")
+    no_runtime = json.loads(json.dumps(good, ensure_ascii=False))
+    no_runtime.pop("runtime_integration", None)
+    if not any("runtime_integration" in item for item in validate_contract(no_runtime)):
+        failures.append("缺少 runtime_integration 的样例没有失败")
     with tempfile.TemporaryDirectory(prefix="redcap-self-purification-") as raw:
         tmp = pathlib.Path(raw)
         fixture = tmp / "contract.json"

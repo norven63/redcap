@@ -12,7 +12,8 @@ from typing import Any
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-HOOKS_CONFIG = REPO_ROOT / ".codex" / "hooks.json"
+PROJECT_ROOT = REPO_ROOT.parent if REPO_ROOT.name == ".redcap" else REPO_ROOT
+HOOKS_CONFIG = PROJECT_ROOT / ".codex" / "hooks.json"
 HOOKS_TEMPLATE = REPO_ROOT / "assets" / "contracts" / "codex-hooks.template.json"
 CODEX_ADAPTER = "runtime/host-adapters/codex/codex-hook.py"
 REQUIRED_CODEX_EVENTS = {
@@ -126,7 +127,7 @@ def main() -> int:
         "codex_hooks": deployed,
         "codex_hook_template": {
             "template_path": str(HOOKS_TEMPLATE.relative_to(REPO_ROOT)),
-            "live_path": str(HOOKS_CONFIG.relative_to(REPO_ROOT)),
+            "live_path": str(HOOKS_CONFIG.relative_to(PROJECT_ROOT)),
             "matches": live_normalized == template_normalized,
         },
         "provider_call_interception": {

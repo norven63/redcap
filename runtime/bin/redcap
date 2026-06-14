@@ -46,6 +46,7 @@ Usage:
   runtime/bin/redcap soul-load check|load|self-check [...]
   runtime/bin/redcap status [...]
   runtime/bin/redcap revive [...]
+  runtime/bin/redcap revival-followthrough check|e2e-check|self-check [...]
   runtime/bin/redcap revival-queue check|self-check [...]
   runtime/bin/redcap known-issues-order check|self-check [...]
   runtime/bin/redcap known-issues-queue check|self-check [...]
@@ -115,6 +116,8 @@ Commands:
   soul-load     Load or verify Cap identity sources without leaking private text.
   status        Show the human-facing RedCap status surface.
   revive        Load Cap identity and show the revival status surface.
+  revival-followthrough
+                Verify post-E2E revival gap closure queue and evidence quality.
   revival-queue Check the executable RedCap revival implementation queue.
   known-issues-order
                 Check the ordered queue for known remaining RedCap issues.
@@ -266,6 +269,9 @@ case "$cmd" in
     ;;
   revive)
     exec python3 "$REPO_ROOT/runtime/core/status_surface.py" revive "$@"
+    ;;
+  revival-followthrough)
+    exec python3 "$REPO_ROOT/runtime/core/revival_followthrough.py" "$@"
     ;;
   revival-queue)
     exec python3 "$REPO_ROOT/runtime/core/revival_queue.py" "$@"

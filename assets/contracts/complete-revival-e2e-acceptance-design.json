@@ -50,8 +50,22 @@
       ]
     },
     "codex_cli_implementer": {
-      "description": "独立 Codex CLI 扮演承接方，在外部项目根目录执行，实现需求方材料要求的交付物。",
+      "description": "独立 Codex CLI 扮演承接方，在外部项目根目录执行。Loom 的产品经理、架构师、开发者、测试人员、评审者必须由独立 Codex CLI 调用产生证据，不能由同一个共享上下文冒充全部角色。",
       "required_host": "codex-cli",
+      "loom_role_execution": {
+        "roles": [
+          "product_manager",
+          "architect",
+          "developer",
+          "tester",
+          "reviewer"
+        ],
+        "independent_codex_cli_call_required": true,
+        "different_session_id_required": true,
+        "role_artifact_required": true,
+        "role_run_receipt_required": true,
+        "session_id_source": "project-level Hook UserPromptSubmit events"
+      },
       "required_hooks": [
         "SessionStart",
         "UserPromptSubmit",
@@ -148,10 +162,14 @@
       "acceptance-criteria.json",
       "architecture-template.md",
       "loom-role-session-manifest-template.json",
+      "loom-role-session-manifest-pre-review-template.json",
       "prism-assisted-review-template.json",
       "knowledge-retrieval-evidence-template.json",
       "self-purification-candidates-template.json",
       "persona-distillation-decision-template.json",
+      "test-results-template.json",
+      "negative-probes-template.json",
+      "package-prism-check-template.json",
       "failure-backlog-template.json",
       "iteration-verdict-template.json",
       "implementer-prompt.md",
@@ -165,12 +183,17 @@
       "filesystem-after.json",
       "hook-events-summary.json",
       "loom-role-session-manifest.json",
+      "loom-role-session-manifest-pre-review.json",
       "prism-assisted-review.json",
       "knowledge-retrieval-evidence.json",
       "self-purification-candidates.json",
       "persona-distillation-decision.json",
+      "test-results.json",
+      "negative-probes.json",
+      "package-prism-check.json",
       "failure-backlog.json",
       "iteration-verdict.json",
+      "revival-followthrough-e2e-check.json",
       "e2e-acceptance-summary.md"
     ],
     "hash_required": true,
@@ -179,19 +202,28 @@
   "meaningful_acceptance": {
     "required_evidence": [
       "loom-role-session-manifest.json",
+      "loom-role-session-manifest-pre-review.json",
       "prism-assisted-review.json",
       "knowledge-retrieval-evidence.json",
       "self-purification-candidates.json",
       "persona-distillation-decision.json",
+      "test-results.json",
+      "negative-probes.json",
+      "package-prism-check.json",
       "failure-backlog.json",
       "iteration-verdict.json"
     ],
     "quality_gates": [
       "每个 Loom 角色必须记录 session_id，缺失时必须写 alarm",
-      "需求、架构、代码、测试或文档至少一处必须记录棱镜协助评审决策；如果未调用，必须说明低风险理由",
+      "每个 Loom 角色必须来自独立 Codex CLI 调用，且不同角色必须拥有不同 session_id",
+      "每个 Loom 角色必须拥有 role-runs、role-artifacts、role-prompts 和 role-messages 证据",
+      "reviewer 角色必须读取评审前清单；最终五角色清单由运行器在 reviewer 退出后生成",
+      "需求、架构、代码、测试或文档至少一处必须记录实际棱镜协助评审决策；本轮完整复活 E2E 不接受跳过棱镜协助",
       "实现前必须记录知识检索结果或跳过理由",
       "任务后必须记录自我净化候选或无候选理由",
+      "test-results.json 和 negative-probes.json 必须由 tester 角色产出，验证脚本不得覆盖角色证据",
       "Cap 人格沉淀必须记录私有边界决策，禁止写入公共知识库",
+      "安装包内棱镜自检必须通过，失败不得作为 non_blocking 关闭",
       "失败必须进入 failure-backlog，不能被 completion-marker 覆盖",
       "iteration-verdict 必须明确是否 ready_for_engineering_use，并列出剩余问题"
     ],

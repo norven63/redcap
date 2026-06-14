@@ -16,9 +16,7 @@
     "assets/contracts",
     "assets/docs",
     "assets/knowledge",
-    "assets/archaeology/no-promote",
-    "assets/archaeology/shards/old-redcap-360-scan-account.json",
-    "assets/archaeology/shards/old-redcap-360-scan-merge.json",
+    "assets/archaeology",
     "README.md"
   ],
   "init_outputs": [

@@ -1,0 +1,120 @@
+{
+  "schema_id": "redcap-revival-followthrough-queue",
+  "schema_version": 1,
+  "status": "runtime-gated",
+  "purpose": "把首次 E2E 暴露出的复活缺口转成可执行、可验收、可回流的任务队列；队列本身不能作为完成证据。",
+  "anti_completion_rule": "任务队列、合同、报告、回执和单轮绿灯都不是 RedCap 完整复活完成；只有对应运行检查和外部 E2E 证据通过，才可作为阶段证据。",
+  "loop_rules": {
+    "failure_backlog_blocks_ready": true,
+    "closed_non_blocking_forbidden": true,
+    "same_root_cause_failure_limit": 3,
+    "same_root_cause_escalation": "同一 root_cause_category 连续三轮 E2E 失败时，必须停止普通修复循环并进入架构评审。",
+    "next_round_required_when_open_items_exist": true,
+    "queue_item_must_name_runtime_check": true
+  },
+  "items": [
+    {
+      "id": "RF-01-followthrough-queue",
+      "title": "E2E 复盘问题到任务队列",
+      "root_cause_category": "task-drift-and-unclosed-self-assigned-work",
+      "status": "runtime-gated",
+      "hard_gate": true,
+      "acceptance": [
+        "每个缺口必须记录根因分类、阻塞条件、运行检查和验收证据",
+        "队列不得以文档存在作为完成",
+        "开放问题必须阻止可用性汇报"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap revival-followthrough check"
+      ],
+      "evidence_required": [
+        "assets/contracts/revival-followthrough-queue.json",
+        "runtime/core/revival_followthrough.py"
+      ]
+    },
+    {
+      "id": "RF-02-loom-runtime-session-quality",
+      "title": "Loom 真实角色会话质量",
+      "root_cause_category": "loom-role-boundary-can-be-faked-by-shared-context",
+      "status": "runtime-gated",
+      "hard_gate": true,
+      "acceptance": [
+        "产品经理、架构师、开发者、测试人员、评审者必须由独立 Codex CLI 调用产生证据",
+        "不同角色必须拥有不同 session_id",
+        "每个角色必须拥有独立证据目录、上下游交付物和角色执行回执",
+        "会话缺失、重复或上下文降级必须阻止 E2E 通过"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-project>/.redcap/evidence/e2e"
+      ],
+      "evidence_required": [
+        "loom-role-session-manifest.json",
+        "role-runs/*.json",
+        "role-artifacts/*.json"
+      ]
+    },
+    {
+      "id": "RF-03-self-purification-operational-loop",
+      "title": "自我净化运行闭环",
+      "root_cause_category": "knowledge-system-not-in-task-loop",
+      "status": "runtime-gated",
+      "hard_gate": true,
+      "acceptance": [
+        "任务前必须执行知识检索或写明不可执行理由",
+        "任务后必须抽取候选或写明无候选理由",
+        "候选必须进入评审并得到 promote_public、keep_private、no_promote 或 defer_with_owner 决策",
+        "no_promote 必须写明理由"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap self-purification check",
+        "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-project>/.redcap/evidence/e2e"
+      ],
+      "evidence_required": [
+        "knowledge-retrieval-evidence.json",
+        "self-purification-candidates.json"
+      ]
+    },
+    {
+      "id": "RF-04-cap-persona-private-boundary",
+      "title": "Cap 人格沉淀私有边界",
+      "root_cause_category": "private-persona-can-leak-into-public-assets",
+      "status": "runtime-gated",
+      "hard_gate": true,
+      "acceptance": [
+        "人格沉淀只能记录边界决策和哈希化摘要，不记录私有正文",
+        "公共知识库、Forge 和 redcap-arsenal 禁止出现私有人格正文",
+        "公共写入必须为 false，private_body_written 必须为 false"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap revival-followthrough check",
+        "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-project>/.redcap/evidence/e2e"
+      ],
+      "evidence_required": [
+        "persona-distillation-decision.json",
+        "public persona boundary scan"
+      ]
+    },
+    {
+      "id": "RF-05-e2e-iteration-engine",
+      "title": "多轮 E2E 失败回流运行机",
+      "root_cause_category": "single-green-run-can-mask-process-failure",
+      "status": "runtime-gated",
+      "hard_gate": true,
+      "acceptance": [
+        "failure-backlog 有开放项时 E2E 必须失败",
+        "closed_non_blocking 不允许作为通过依据",
+        "iteration-verdict 必须列出已检查证据并证明 ready_for_engineering_use",
+        "同一根因连续失败达到上限时必须进入架构评审"
+      ],
+      "runtime_checks": [
+        "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
+        "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-project>/.redcap/evidence/e2e"
+      ],
+      "evidence_required": [
+        "failure-backlog.json",
+        "iteration-verdict.json",
+        "meaningful-evidence-check.json"
+      ]
+    }
+  ]
+}

@@ -21,14 +21,26 @@ from typing import Any
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
+INSTALLED_PACKAGE_MODE = REPO_ROOT.name == ".redcap"
+PROJECT_ROOT = REPO_ROOT.parent if INSTALLED_PACKAGE_MODE else REPO_ROOT
 sys.path.insert(0, str(REPO_ROOT / "runtime" / "core"))
 from prompt_intent import classify_prompt_intent  # noqa: E402
 
-HOOKS_CONFIG = REPO_ROOT / ".codex" / "hooks.json"
+HOOKS_CONFIG = PROJECT_ROOT / ".codex" / "hooks.json"
+DEFAULT_HOOK_EVIDENCE_DIR = (
+    REPO_ROOT / "evidence" / "host-hooks" / "codex"
+    if INSTALLED_PACKAGE_MODE
+    else REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex"
+)
+DEFAULT_TASK_FACTS = (
+    REPO_ROOT / "evidence" / "task-facts" / "task-facts.jsonl"
+    if INSTALLED_PACKAGE_MODE
+    else REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"
+)
 EVIDENCE_DIR = pathlib.Path(
     os.environ.get(
         "REDCAP_CODEX_HOOK_EVIDENCE_DIR",
-        str(REPO_ROOT / "assets" / "evidence" / "host-hooks" / "codex"),
+        str(DEFAULT_HOOK_EVIDENCE_DIR),
     )
 )
 EVENTS_PATH = EVIDENCE_DIR / "events.jsonl"
@@ -42,9 +54,9 @@ TERMINAL_GOAL_CONTRACT = pathlib.Path(
     os.environ.get("REDCAP_TERMINAL_GOAL_CONTRACT", str(REPO_ROOT / "assets" / "contracts" / "terminal-goals.json"))
 )
 TERMINAL_GOAL_TASK_FACTS = pathlib.Path(
-    os.environ.get("REDCAP_TERMINAL_GOAL_TASK_FACTS", str(REPO_ROOT / "assets" / "evidence" / "task-facts" / "task-facts.jsonl"))
+    os.environ.get("REDCAP_TERMINAL_GOAL_TASK_FACTS", str(DEFAULT_TASK_FACTS))
 )
-STOP_HOOK_MODE_FILE = pathlib.Path(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE", str(REPO_ROOT / ".codex" / "stop-hook-mode")))
+STOP_HOOK_MODE_FILE = pathlib.Path(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE", str(PROJECT_ROOT / ".codex" / "stop-hook-mode")))
 STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS = float(os.environ.get("REDCAP_STOP_HOOK_MODE_FILE_MAX_AGE_SECONDS", "900"))
 STOP_INCLUDE_BLOCKED_REPLY_EXCERPT = (
     os.environ.get("REDCAP_STOP_INCLUDE_BLOCKED_REPLY_EXCERPT", "").casefold()
@@ -81,8 +93,23 @@ try:
 except ValueError:
     MAX_TRANSCRIPT_TAIL_BYTES = 1024 * 1024
 PROTECTED_EVIDENCE_ROOT = (REPO_ROOT / "assets" / "evidence").resolve()
+PROTECTED_RUNTIME_EVIDENCE_ROOT = (REPO_ROOT / "evidence").resolve()
+PROTECTED_EVIDENCE_ROOTS = (
+    [PROTECTED_EVIDENCE_ROOT, PROTECTED_RUNTIME_EVIDENCE_ROOT]
+    if INSTALLED_PACKAGE_MODE
+    else [PROTECTED_EVIDENCE_ROOT]
+)
 PROTECTED_PRISM_EVIDENCE_ROOT = (REPO_ROOT / "assets" / "evidence" / "prism").resolve()
-PROTECTED_EVIDENCE_PATH_PATTERN = r"['\"]?(?:\./)?(?:assets/evidence/|[^'\"\s;|&]*?/assets/evidence/)"
+PROTECTED_RUNTIME_PRISM_EVIDENCE_ROOT = (REPO_ROOT / "evidence" / "prism").resolve()
+PROTECTED_PRISM_EVIDENCE_ROOTS = (
+    [PROTECTED_PRISM_EVIDENCE_ROOT, PROTECTED_RUNTIME_PRISM_EVIDENCE_ROOT]
+    if INSTALLED_PACKAGE_MODE
+    else [PROTECTED_PRISM_EVIDENCE_ROOT]
+)
+PROTECTED_EVIDENCE_PATH_PATTERN = (
+    r"['\"]?(?:\./)?(?:assets/evidence/|\.redcap/evidence/|"
+    r"[^'\"\s;|&]*?/assets/evidence/|[^'\"\s;|&]*?/\.redcap/evidence/)"
+)
 BROAD_RAW_READ_COMMANDS = {
     "awk",
     "bat",
@@ -103,10 +130,14 @@ BROAD_RAW_READ_COMMANDS = {
     "tail",
 }
 PRISM_RAW_PATH_REGEX = re.compile(
-    r"(?:assets/evidence/prism/|[^'\"\s;|&()]*?/assets/evidence/prism/)[^'\"\s;|&()]*\.raw\.json\b"
+    r"(?:assets/evidence/prism/|\.redcap/evidence/prism/|"
+    r"[^'\"\s;|&()]*?/assets/evidence/prism/|[^'\"\s;|&()]*?/\.redcap/evidence/prism/)"
+    r"[^'\"\s;|&()]*\.raw\.json\b"
 )
 PRISM_RAW_META_PATH_REGEX = re.compile(
-    r"(?:assets/evidence/prism/|[^'\"\s;|&()]*?/assets/evidence/prism/)[^'\"\s;|&()]*\.raw\.meta\.json\b"
+    r"(?:assets/evidence/prism/|\.redcap/evidence/prism/|"
+    r"[^'\"\s;|&()]*?/assets/evidence/prism/|[^'\"\s;|&()]*?/\.redcap/evidence/prism/)"
+    r"[^'\"\s;|&()]*\.raw\.meta\.json\b"
 )
 PRISM_RAW_READ_BLOCK_REASON = (
     "Broad reads of Prism raw provider output are blocked; run prism-dispatch --verify-raw-meta "
@@ -153,8 +184,28 @@ def short_text_fingerprint(value: Any) -> dict[str, Any]:
     return {
         "present": isinstance(value, str),
         "length": len(text),
-        "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest() if text else None,
+        "sha256": hashlib.sha256(utf8_fingerprint_bytes(text)).hexdigest() if text else None,
     }
+
+
+def utf8_fingerprint_bytes(text: str) -> bytes:
+    return text.encode("utf-8", errors="backslashreplace")
+
+
+def safe_text(value: str) -> str:
+    return utf8_fingerprint_bytes(value).decode("utf-8")
+
+
+def json_safe(value: Any) -> Any:
+    if isinstance(value, str):
+        return safe_text(value)
+    if isinstance(value, list):
+        return [json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [json_safe(item) for item in value]
+    if isinstance(value, dict):
+        return {safe_text(str(key)): json_safe(item) for key, item in value.items()}
+    return value
 
 
 def normalized_text(value: str) -> str:
@@ -162,9 +213,9 @@ def normalized_text(value: str) -> str:
 
 
 def text_evidence(value: Any) -> dict[str, Any]:
-    text = value if isinstance(value, str) else ""
+    text = safe_text(value) if isinstance(value, str) else ""
     normalized = normalized_text(text)
-    evidence = short_text_fingerprint(value)
+    evidence = short_text_fingerprint(text)
     evidence.update({
         "normalized_excerpt": normalized[:MAX_TEXT_EVIDENCE_CHARS],
         "normalized_excerpt_truncated": len(normalized) > MAX_TEXT_EVIDENCE_CHARS,
@@ -173,10 +224,10 @@ def text_evidence(value: Any) -> dict[str, Any]:
 
 
 def json_fingerprint(value: Any) -> dict[str, Any]:
-    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    encoded = json.dumps(json_safe(value), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     payload: dict[str, Any] = {
         "type": type(value).__name__,
-        "sha256": hashlib.sha256(encoded.encode("utf-8")).hexdigest(),
+        "sha256": hashlib.sha256(utf8_fingerprint_bytes(encoded)).hexdigest(),
         "length": len(encoded),
     }
     if isinstance(value, dict):
@@ -234,6 +285,12 @@ def terminal_goal_guard_args() -> list[str]:
     ]
 
 
+def terminal_goal_guard_enabled() -> bool:
+    if "REDCAP_TERMINAL_GOAL_CONTRACT" in os.environ or "REDCAP_TERMINAL_GOAL_TASK_FACTS" in os.environ:
+        return True
+    return not INSTALLED_PACKAGE_MODE
+
+
 @contextlib.contextmanager
 def evidence_lock() -> Any:
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
@@ -248,7 +305,7 @@ def evidence_lock() -> Any:
 
 def write_json_atomic(path: pathlib.Path, payload: dict[str, Any]) -> None:
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    tmp.write_text(json.dumps(json_safe(payload), ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -720,16 +777,23 @@ def expand_shell_path_value(value: str, cwd: str | None) -> str:
     expanded = re.sub(r"\$PWD\b", cwd_value, expanded)
     expanded = re.sub(r"\$\{HOME\}", home_value, expanded)
     expanded = re.sub(r"\$HOME\b", home_value, expanded)
-    return os.path.expandvars(os.path.expanduser(expanded))
+    expanded = os.path.expandvars(os.path.expanduser(expanded))
+    if expanded.startswith("$") and expanded[1:].startswith(("/", "./", "assets/", ".redcap/")):
+        expanded = expanded[1:]
+    return expanded
 
 
 def path_value_under_protected_evidence(value: str, cwd: str | None = None) -> bool:
     if not value:
         return False
-    candidate = pathlib.Path(expand_shell_path_value(value, cwd))
+    expanded = expand_shell_path_value(value, cwd)
+    normalized = expanded.replace("\\", "/")
+    if "assets/evidence/" in normalized or ".redcap/evidence/" in normalized:
+        return True
+    candidate = pathlib.Path(expanded)
     if not candidate.is_absolute():
-        candidate = REPO_ROOT / candidate
-    return is_under(candidate, PROTECTED_EVIDENCE_ROOT)
+        candidate = pathlib.Path(cwd if cwd else PROJECT_ROOT) / candidate
+    return any(is_under(candidate, root) for root in PROTECTED_EVIDENCE_ROOTS)
 
 
 def path_value_is_prism_raw(value: str, cwd: str | None = None) -> bool:
@@ -738,11 +802,14 @@ def path_value_is_prism_raw(value: str, cwd: str | None = None) -> bool:
     expanded = expand_shell_path_value(value, cwd)
     if any(char in expanded for char in "*?[]"):
         normalized = expanded.replace("\\", "/")
-        return "assets/evidence/prism/" in normalized and normalized.endswith(".raw.json")
+        return (
+            ("assets/evidence/prism/" in normalized or ".redcap/evidence/prism/" in normalized)
+            and normalized.endswith(".raw.json")
+        )
     candidate = pathlib.Path(expanded)
     if not candidate.is_absolute():
-        candidate = pathlib.Path(cwd if cwd else REPO_ROOT) / candidate
-    return candidate.name.endswith(".raw.json") and is_under(candidate, PROTECTED_PRISM_EVIDENCE_ROOT)
+        candidate = pathlib.Path(cwd if cwd else PROJECT_ROOT) / candidate
+    return candidate.name.endswith(".raw.json") and any(is_under(candidate, root) for root in PROTECTED_PRISM_EVIDENCE_ROOTS)
 
 
 def path_value_is_prism_raw_meta(value: str, cwd: str | None = None) -> bool:
@@ -751,11 +818,14 @@ def path_value_is_prism_raw_meta(value: str, cwd: str | None = None) -> bool:
     expanded = expand_shell_path_value(value, cwd)
     if any(char in expanded for char in "*?[]"):
         normalized = expanded.replace("\\", "/")
-        return "assets/evidence/prism/" in normalized and normalized.endswith(".raw.meta.json")
+        return (
+            ("assets/evidence/prism/" in normalized or ".redcap/evidence/prism/" in normalized)
+            and normalized.endswith(".raw.meta.json")
+        )
     candidate = pathlib.Path(expanded)
     if not candidate.is_absolute():
-        candidate = pathlib.Path(cwd if cwd else REPO_ROOT) / candidate
-    return candidate.name.endswith(".raw.meta.json") and is_under(candidate, PROTECTED_PRISM_EVIDENCE_ROOT)
+        candidate = pathlib.Path(cwd if cwd else PROJECT_ROOT) / candidate
+    return candidate.name.endswith(".raw.meta.json") and any(is_under(candidate, root) for root in PROTECTED_PRISM_EVIDENCE_ROOTS)
 
 
 def any_prism_raw_path(tokens: list[str], start: int = 0, cwd: str | None = None) -> bool:
@@ -786,23 +856,32 @@ def path_value_intersects_prism_evidence(value: str, cwd: str | None = None) -> 
     expanded = expand_shell_path_value(value, cwd)
     if any(char in expanded for char in "*?[]"):
         normalized = expanded.replace("\\", "/")
-        return "assets/evidence/prism" in normalized or "assets/evidence" in normalized
+        return (
+            "assets/evidence/prism" in normalized
+            or "assets/evidence" in normalized
+            or ".redcap/evidence/prism" in normalized
+            or ".redcap/evidence" in normalized
+        )
     candidate = pathlib.Path(expanded)
     if not candidate.is_absolute():
-        candidate = pathlib.Path(cwd if cwd else REPO_ROOT) / candidate
+        candidate = pathlib.Path(cwd if cwd else PROJECT_ROOT) / candidate
     try:
         resolved = candidate.resolve()
-        prism = PROTECTED_PRISM_EVIDENCE_ROOT.resolve()
-        evidence = PROTECTED_EVIDENCE_ROOT.resolve()
-        resolved.relative_to(prism)
-        return True
-    except ValueError:
-        pass
-    try:
-        prism.relative_to(resolved)
-        return resolved == prism or resolved == evidence
-    except ValueError:
+        for prism, evidence in zip(PROTECTED_PRISM_EVIDENCE_ROOTS, PROTECTED_EVIDENCE_ROOTS):
+            try:
+                resolved.relative_to(prism.resolve())
+                return True
+            except ValueError:
+                pass
+            try:
+                prism.resolve().relative_to(resolved)
+                if resolved in {prism.resolve(), evidence.resolve()}:
+                    return True
+            except ValueError:
+                pass
+    except OSError:
         return False
+    return False
 
 
 def search_command_excludes_prism_raw(command: str) -> bool:
@@ -1028,8 +1107,8 @@ def protected_evidence_write_reason(payload: dict[str, Any]) -> str | None:
         candidate = pathlib.Path(raw_path)
         if not candidate.is_absolute():
             cwd = payload.get("cwd")
-            candidate = pathlib.Path(cwd if isinstance(cwd, str) and cwd else REPO_ROOT) / candidate
-        if is_under(candidate, PROTECTED_EVIDENCE_ROOT):
+            candidate = pathlib.Path(cwd if isinstance(cwd, str) and cwd else PROJECT_ROOT) / candidate
+        if any(is_under(candidate, root) for root in PROTECTED_EVIDENCE_ROOTS):
             return "Direct Write/Edit/MultiEdit into assets/evidence is blocked; use RedCap evidence writers instead."
     return None
 
@@ -1421,7 +1500,7 @@ def update_latest_marker(event: str, updates: dict[str, Any], base_marker: dict[
         marker.update(updates)
         write_json_atomic(latest, marker)
         with EVENTS_PATH.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(marker, ensure_ascii=False, sort_keys=True) + "\n")
+            handle.write(json.dumps(json_safe(marker), ensure_ascii=False, sort_keys=True) + "\n")
     return marker
 
 
@@ -1477,7 +1556,7 @@ def write_marker(event: str, payload: dict[str, Any]) -> dict[str, Any]:
     latest = EVIDENCE_DIR / f"latest-{event}.json"
     with evidence_lock():
         with EVENTS_PATH.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(marker, ensure_ascii=False, sort_keys=True) + "\n")
+            handle.write(json.dumps(json_safe(marker), ensure_ascii=False, sort_keys=True) + "\n")
         write_json_atomic(latest, marker)
     return marker
 
@@ -1824,59 +1903,71 @@ def cmd_event(args: argparse.Namespace) -> int:
             marker = mark_stop_timing(marker, stop_started_at, "block:turn-action-check")
             print_advisory_stop(payload, marker, advisory)
             return 0
-        terminal_guard = run_command([
-            sys.executable,
-            str(TERMINAL_GOAL_GUARD),
-            "check",
-            "--message",
-            last_assistant_message,
-            "--events",
-            str(EVENTS_PATH),
-            "--session-id",
-            str(payload.get("session_id") or ""),
-            "--turn-id",
-            str(payload.get("turn_id") or ""),
-            *terminal_goal_guard_args(),
-        ])
-        terminal_guard_result, terminal_guard_parse_error = parse_leading_json_object(terminal_guard["stdout"])
-        if terminal_guard_parse_error is not None or terminal_guard_result is None:
-            terminal_guard_result = {
-                "ok": False,
-                "reason": f"terminal-goal guard returned invalid JSON: {terminal_guard_parse_error}",
-                "exit_code": terminal_guard["exit_code"],
-            }
-        marker = update_latest_marker("Stop", {
-            "terminal_goal_guard_ok": bool(terminal_guard_result.get("ok")),
-            "terminal_goal_guard_triggered": terminal_guard_result.get("triggered_goals", []),
-            "terminal_goal_guard_failures": terminal_guard_result.get("failures", []),
-            "terminal_goal_guard_exit": terminal_guard["exit_code"],
-            "terminal_goal_guard_stdout_sha256": terminal_guard["stdout_sha256"],
-            "terminal_goal_guard_stderr_sha256": terminal_guard["stderr_sha256"],
-        }, base_marker=marker)
-        if terminal_guard["exit_code"] != 0 or terminal_guard_result.get("ok") is not True:
-            failures = terminal_guard_result.get("failures")
-            if isinstance(failures, list) and failures:
-                detail = "；".join(str(item) for item in failures[:3])
-            else:
-                detail = str(terminal_guard_result.get("reason") or "未知原因")
-            advisory = build_advisory_stop_payload(
-                payload,
-                action_result,
-                checker_source="terminal-goal-guard",
-                constraints=[
-                    stop_constraint(
-                        "terminal-goal-overclaim",
-                        (
-                            "最后回复可能把阶段成果说成终局完成；请回到用户原始请求，"
-                            f"用阶段、风险、待办口径收窄表达。检查详情：{detail}"
-                        ),
-                        "terminal-goal-guard",
-                    )
-                ],
-            )
-            marker = mark_stop_timing(marker, stop_started_at, "block:terminal-goal-guard")
-            print_advisory_stop(payload, marker, advisory)
-            return 0
+        if terminal_goal_guard_enabled():
+            terminal_guard = run_command([
+                sys.executable,
+                str(TERMINAL_GOAL_GUARD),
+                "check",
+                "--message",
+                last_assistant_message,
+                "--events",
+                str(EVENTS_PATH),
+                "--session-id",
+                str(payload.get("session_id") or ""),
+                "--turn-id",
+                str(payload.get("turn_id") or ""),
+                *terminal_goal_guard_args(),
+            ])
+            terminal_guard_result, terminal_guard_parse_error = parse_leading_json_object(terminal_guard["stdout"])
+            if terminal_guard_parse_error is not None or terminal_guard_result is None:
+                terminal_guard_result = {
+                    "ok": False,
+                    "reason": f"terminal-goal guard returned invalid JSON: {terminal_guard_parse_error}",
+                    "exit_code": terminal_guard["exit_code"],
+                }
+            marker = update_latest_marker("Stop", {
+                "terminal_goal_guard_ok": bool(terminal_guard_result.get("ok")),
+                "terminal_goal_guard_triggered": terminal_guard_result.get("triggered_goals", []),
+                "terminal_goal_guard_failures": terminal_guard_result.get("failures", []),
+                "terminal_goal_guard_exit": terminal_guard["exit_code"],
+                "terminal_goal_guard_stdout_sha256": terminal_guard["stdout_sha256"],
+                "terminal_goal_guard_stderr_sha256": terminal_guard["stderr_sha256"],
+            }, base_marker=marker)
+            if terminal_guard["exit_code"] != 0 or terminal_guard_result.get("ok") is not True:
+                failures = terminal_guard_result.get("failures")
+                if isinstance(failures, list) and failures:
+                    detail = "；".join(str(item) for item in failures[:3])
+                else:
+                    detail = str(terminal_guard_result.get("reason") or "未知原因")
+                advisory = build_advisory_stop_payload(
+                    payload,
+                    action_result,
+                    checker_source="terminal-goal-guard",
+                    constraints=[
+                        stop_constraint(
+                            "terminal-goal-overclaim",
+                            (
+                                "最后回复可能把阶段成果说成终局完成；请回到用户原始请求，"
+                                f"用阶段、风险、待办口径收窄表达。检查详情：{detail}"
+                            ),
+                            "terminal-goal-guard",
+                        )
+                    ],
+                )
+                marker = mark_stop_timing(marker, stop_started_at, "block:terminal-goal-guard")
+                print_advisory_stop(payload, marker, advisory)
+                return 0
+        else:
+            marker = update_latest_marker("Stop", {
+                "terminal_goal_guard_ok": True,
+                "terminal_goal_guard_skipped": True,
+                "terminal_goal_guard_skip_reason": "installed package has no project-level terminal goal contract configured",
+                "terminal_goal_guard_triggered": [],
+                "terminal_goal_guard_failures": [],
+                "terminal_goal_guard_exit": None,
+                "terminal_goal_guard_stdout_sha256": None,
+                "terminal_goal_guard_stderr_sha256": None,
+            }, base_marker=marker)
         final_guard = run_command([
             sys.executable,
             str(FINAL_CLAIM_GUARD),
@@ -2083,6 +2174,9 @@ def run_hook_event_for_self_check(
     env = os.environ.copy()
     env["REDCAP_CODEX_HOOK_EVIDENCE_DIR"] = str(evidence_dir)
     env["REDCAP_CODEX_HOOK_TRANSCRIPT_ROOT"] = str(evidence_dir)
+    if event == "UserPromptSubmit":
+        # 自检只验证钩子逻辑，不验证外部语义模型连通性；真实运行仍按宿主环境配置触发。
+        env.setdefault("REDCAP_GATE_SEMANTIC_POLICY", "off")
     if extra_env:
         env.update(extra_env)
     return subprocess.run(
@@ -2148,6 +2242,16 @@ def write_self_check_transcript(path: pathlib.Path, user_messages: list[str]) ->
 
 def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
     failures: list[str] = []
+    host_read_raw_path = (
+        ".redcap/evidence/prism/run/kimi.raw.json"
+        if INSTALLED_PACKAGE_MODE
+        else "assets/evidence/prism/run/kimi.raw.json"
+    )
+    host_read_raw_meta_path = (
+        ".redcap/evidence/prism/run/kimi.raw.meta.json"
+        if INSTALLED_PACKAGE_MODE
+        else "assets/evidence/prism/run/kimi.raw.meta.json"
+    )
     if prism_raw_read_reason("python3 -m json.tool assets/evidence/prism/run/kimi.raw.json", str(REPO_ROOT)) is None:
         failures.append("Prism raw JSON broad read was not blocked")
     if prism_raw_read_reason("cat assets/evidence/prism/run/kimi.raw.json", str(REPO_ROOT)) is None:
@@ -2186,16 +2290,16 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
     if prism_raw_read_reason("cat assets/evidence/prism/run/kimi.raw.meta.json", str(REPO_ROOT)) is None:
         failures.append("Prism raw metadata direct read should be blocked")
     read_reason = protected_prism_raw_read_reason({
-        "cwd": str(REPO_ROOT),
+        "cwd": str(PROJECT_ROOT),
         "tool_name": "Read",
-        "tool_input": {"path": "assets/evidence/prism/run/kimi.raw.json"},
+        "tool_input": {"path": host_read_raw_path},
     })
     if read_reason is None:
         failures.append("Prism raw host Read tool path was not blocked")
     read_meta_reason = protected_prism_raw_read_reason({
-        "cwd": str(REPO_ROOT),
+        "cwd": str(PROJECT_ROOT),
         "tool_name": "Read",
-        "tool_input": {"path": "assets/evidence/prism/run/kimi.raw.meta.json"},
+        "tool_input": {"path": host_read_raw_meta_path},
     })
     if read_meta_reason is None:
         failures.append("Prism raw metadata host Read tool path was not blocked")
@@ -2203,7 +2307,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         evidence_dir = pathlib.Path(raw_tmp)
         prompt_payload = {
             "prompt": "让这个机制以后自己判断真实意图",
-            "cwd": str(REPO_ROOT),
+            "cwd": str(PROJECT_ROOT),
             "source": "codex-hook-intent-self-check",
         }
         first_prompt = run_hook_event_for_self_check("UserPromptSubmit", prompt_payload, evidence_dir=evidence_dir)
@@ -2212,7 +2316,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         allow = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "tool_name": "apply_patch",
                 "tool_use_id": "codex-hook-intent-self-check-allow",
                 "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
@@ -2245,7 +2349,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "把这段代码贴出来给我看",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "source": "codex-hook-intent-self-check",
             },
             evidence_dir=evidence_dir,
@@ -2258,7 +2362,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         deny = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "tool_name": "apply_patch",
                 "tool_use_id": "codex-hook-intent-self-check-deny",
                 "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
@@ -2286,7 +2390,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         stale = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "different-session",
                 "turn_id": "different-turn",
                 "tool_name": "apply_patch",
@@ -2321,7 +2425,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "继续执行这个修复任务并完成落地",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "same-session-continuation",
                 "turn_id": "same-session-continuation-prompt",
                 "source": "codex-hook-intent-self-check",
@@ -2337,7 +2441,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         continuation = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "same-session-continuation",
                 "turn_id": "same-session-continuation-tool",
                 "tool_name": "apply_patch",
@@ -2363,7 +2467,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "请和棱镜一起整体 review 当前设计思路，看看还有哪些问题",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "goal-session-allow",
                 "turn_id": "goal-session-review-prompt",
                 "source": "codex-hook-intent-self-check",
@@ -2384,7 +2488,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         goal_allow = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "goal-session-allow",
                 "turn_id": "goal-session-tool",
                 "transcript_path": str(goal_transcript),
@@ -2414,7 +2518,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "请和棱镜一起整体 review 当前设计思路，看看还有哪些问题",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "goal-session-deny",
                 "turn_id": "goal-session-deny-prompt",
                 "source": "codex-hook-intent-self-check",
@@ -2428,7 +2532,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         ordinary_deny = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "goal-session-deny",
                 "turn_id": "goal-session-deny-tool",
                 "transcript_path": str(ordinary_transcript),
@@ -2461,7 +2565,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "请和棱镜一起整体 review 当前设计思路，看看还有哪些问题",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "goal-session-later-question",
                 "turn_id": "goal-session-later-question-prompt",
                 "source": "codex-hook-intent-self-check",
@@ -2475,7 +2579,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         later_question_deny = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "goal-session-later-question",
                 "turn_id": "goal-session-later-question-tool",
                 "transcript_path": str(later_question_transcript),
@@ -2508,7 +2612,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "让这个机制以后自己判断真实意图",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "source": "codex-hook-intent-self-check",
             },
             evidence_dir=evidence_dir,
@@ -2518,7 +2622,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         timeout_branch = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "tool_name": "apply_patch",
                 "tool_use_id": "codex-hook-intent-self-check-timeout",
                 "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
@@ -2551,7 +2655,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": anchor_prompt_text,
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-session",
                 "turn_id": "fixture-stop-anchor",
                 "source": "codex-hook-stop-anchor-self-check",
@@ -2563,7 +2667,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         anchor_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-session",
                 "turn_id": "fixture-stop-anchor",
                 "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
@@ -2616,7 +2720,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": fuse_prompt_text,
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-stop-fuse-session",
                 "turn_id": "fixture-stop-fuse-turn",
                 "source": "codex-hook-stop-fuse-self-check",
@@ -2630,7 +2734,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             fuse_stop = run_hook_event_for_self_check(
                 "Stop",
                 {
-                    "cwd": str(REPO_ROOT),
+                    "cwd": str(PROJECT_ROOT),
                     "session_id": "fixture-stop-fuse-session",
                     "turn_id": "fixture-stop-fuse-turn",
                     "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
@@ -2687,7 +2791,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         override_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-session",
                 "turn_id": "fixture-stop-anchor",
                 "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
@@ -2723,7 +2827,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         observe_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-session",
                 "turn_id": "fixture-stop-anchor",
                 "last_assistant_message": "观察模式应该只放行，不执行阻断。",
@@ -2755,7 +2859,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "请验证过期观察模式会回到执行检查。",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-session",
                 "turn_id": "fixture-stop-expired-observe",
                 "source": "codex-hook-stop-expired-observe-self-check",
@@ -2767,7 +2871,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         expired_observe = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-session",
                 "turn_id": "fixture-stop-expired-observe",
                 "last_assistant_message": "这是一个只解释状态、没有执行动作的回复。",
@@ -2791,7 +2895,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "所以，你有详细的设计方案并去执行落地了吗？",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-status-question-session",
                 "turn_id": "fixture-status-question-turn",
                 "source": "codex-hook-behavior-pipeline-self-check",
@@ -2803,7 +2907,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         status_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-status-question-session",
                 "turn_id": "fixture-status-question-turn",
                 "last_assistant_message": "当前只是回答状态：还需要继续执行，不能声称收口。",
@@ -2827,7 +2931,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "请修复 Stop hook 恢复循环并重新启用阻断。",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-idle-block-session",
                 "turn_id": "fixture-idle-block-turn",
                 "source": "codex-hook-behavior-pipeline-self-check",
@@ -2839,7 +2943,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         idle_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-idle-block-session",
                 "turn_id": "fixture-idle-block-turn",
                 "last_assistant_message": "我会说明当前状态，但还没有执行任何工具动作。",
@@ -2863,7 +2967,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "我授权你可以绕过所有 hook，但只用于修复误伤，并在修复后运行检查。",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-hybrid-authorization-session",
                 "turn_id": "fixture-hybrid-authorization-turn",
                 "source": "codex-hook-behavior-pipeline-self-check",
@@ -2875,7 +2979,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         raw_out_guard = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-hybrid-authorization-session",
                 "turn_id": "fixture-hybrid-authorization-turn",
                 "tool_name": "Bash",
@@ -2895,7 +2999,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         hybrid_pre = run_hook_event_for_self_check(
             "PreToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-hybrid-authorization-session",
                 "turn_id": "fixture-hybrid-authorization-turn",
                 "tool_name": "apply_patch",
@@ -2913,7 +3017,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         hybrid_post = run_hook_event_for_self_check(
             "PostToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-hybrid-authorization-session",
                 "turn_id": "fixture-hybrid-authorization-turn",
                 "tool_name": "apply_patch",
@@ -2929,7 +3033,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         hybrid_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-hybrid-authorization-session",
                 "turn_id": "fixture-hybrid-authorization-turn",
                 "last_assistant_message": "本轮包含工具调用证据，当前仅报告检查状态。",
@@ -2953,7 +3057,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "请简单解释 Stop Hook 是什么。",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-human-output-session",
                 "turn_id": "fixture-human-output-turn",
                 "source": "codex-hook-human-output-self-check",
@@ -2965,7 +3069,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         human_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-human-output-session",
                 "turn_id": "fixture-human-output-turn",
                 "last_assistant_message": "This is an English-only answer about the hook behavior.",
@@ -3000,7 +3104,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "我希望知道的是，你对360度全方位扫描旧redcap后，是什么结论？",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-scan-conclusion-session",
                 "turn_id": "fixture-scan-conclusion-turn",
                 "source": "codex-hook-scan-conclusion-self-check",
@@ -3012,7 +3116,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         scan_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-scan-conclusion-session",
                 "turn_id": "fixture-scan-conclusion-turn",
                 "last_assistant_message": "360 度旧 RedCap 扫描后的结论是：可以迁移全部设计。",
@@ -3072,7 +3176,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "请汇报 RedCap 完整复活状态。",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-terminal-goal-session",
                 "turn_id": "fixture-terminal-goal-turn",
                 "source": "codex-hook-terminal-goal-self-check",
@@ -3093,7 +3197,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         terminal_post = run_hook_event_for_self_check(
             "PostToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-terminal-goal-session",
                 "turn_id": "fixture-terminal-goal-turn",
                 "tool_name": "Bash",
@@ -3109,7 +3213,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         terminal_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-terminal-goal-session",
                 "turn_id": "fixture-terminal-goal-turn",
                 "last_assistant_message": "RedCap 完整复活已经终局完成。",
@@ -3149,7 +3253,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             "UserPromptSubmit",
             {
                 "prompt": "请汇报 RedCap 完整复活状态。",
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-terminal-stage-session",
                 "turn_id": "fixture-terminal-stage-turn",
                 "source": "codex-hook-terminal-stage-self-check",
@@ -3162,7 +3266,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         stage_post = run_hook_event_for_self_check(
             "PostToolUse",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-terminal-stage-session",
                 "turn_id": "fixture-terminal-stage-turn",
                 "tool_name": "Bash",
@@ -3178,7 +3282,7 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
         stage_stop = run_hook_event_for_self_check(
             "Stop",
             {
-                "cwd": str(REPO_ROOT),
+                "cwd": str(PROJECT_ROOT),
                 "session_id": "fixture-terminal-stage-session",
                 "turn_id": "fixture-terminal-stage-turn",
                 "last_assistant_message": "RedCap 完整复活尚未完成，当前只是迁移可用阶段；本轮只说明风险和待办。",

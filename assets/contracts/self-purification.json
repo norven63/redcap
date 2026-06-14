@@ -99,5 +99,13 @@
       "promotion_or_no_promote_result"
     ],
     "e2e_failure_binding": "Every meaningful E2E failure must create at least one harvest candidate or a no-candidate reason."
+  },
+  "runtime_integration": {
+    "pre_task_entrypoint": "runtime/bin/redcap knowledge-gateway search <query>",
+    "post_task_entrypoint": "runtime/bin/redcap revival-followthrough e2e-check --evidence-root <external-project>/.redcap/evidence/e2e",
+    "aggregate_check": "runtime/bin/redcap self-purification check",
+    "e2e_hard_gate": "runtime/bin/redcap complete-revival-e2e run",
+    "skip_policy": "Implementation, completion, E2E, and self-development tasks may skip retrieval only with an explicit reason; full revival E2E cannot skip retrieval.",
+    "failure_policy": "Missing retrieval, missing harvest decision, persona privacy leak, open failure-backlog, or closed_non_blocking must fail the E2E quality gate."
   }
 }

@@ -24,7 +24,6 @@ PACKAGE_ROOT = ".redcap"
 EXCLUDED_PARTS = {".git", "__pycache__", "assets/evidence"}
 EXCLUDED_PREFIXES = {
     "runtime/bootstrap",
-    "runtime/host-adapters/examples",
 }
 FORBIDDEN_ZIP_PARTS = {".git", "__pycache__", "assets/evidence"}
 FORBIDDEN_ZIP_NAMES = {"AGENTS.md", ".DS_Store"}
@@ -56,6 +55,10 @@ def should_exclude(path: pathlib.Path) -> bool:
 
 def sha256_file(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def executable_bit_set(path: pathlib.Path) -> bool:
+    return bool(path.stat().st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
 
 
 def iter_package_files(contract: dict[str, Any]) -> list[pathlib.Path]:
@@ -96,6 +99,26 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
 def render_hook_config(package_root: pathlib.Path) -> str:
     template = HOOK_TEMPLATE.read_text(encoding="utf-8")
     return template.replace("{REPO_ROOT}", str(package_root.resolve()))
+
+
+def restore_executable_bits(package_root: pathlib.Path) -> list[str]:
+    changed: list[str] = []
+    for command_dir in [
+        package_root / "runtime" / "bin",
+        package_root / "runtime" / "host-adapters" / "examples",
+        package_root / "runtime" / "prism" / "bin",
+    ]:
+        if not command_dir.is_dir():
+            continue
+        for path in command_dir.iterdir():
+            if not path.is_file():
+                continue
+            mode = path.stat().st_mode
+            desired = mode | stat.S_IXUSR
+            if desired != mode:
+                path.chmod(desired)
+                changed.append(str(path))
+    return changed
 
 
 def package_to(output: pathlib.Path) -> dict[str, Any]:
@@ -232,6 +255,7 @@ def release_check() -> dict[str, Any]:
                 failures.append("真实解压安装命令失败")
             for required in [
                 project / PACKAGE_ROOT / "runtime" / "bin" / "redcap",
+                project / PACKAGE_ROOT / "runtime" / "prism" / "bin" / "prism",
                 project / PACKAGE_ROOT / "install.json",
                 project / PACKAGE_ROOT / "evidence",
                 project / PACKAGE_ROOT / "logs",
@@ -243,6 +267,12 @@ def release_check() -> dict[str, Any]:
             hook_file = project / ".codex" / "hooks.json"
             if hook_file.exists() and str((project / PACKAGE_ROOT).resolve()) not in hook_file.read_text(encoding="utf-8", errors="replace"):
                 failures.append("项目 hooks 没有指向解压后的项目 .redcap")
+            for executable in [
+                project / PACKAGE_ROOT / "runtime" / "bin" / "redcap",
+                project / PACKAGE_ROOT / "runtime" / "prism" / "bin" / "prism",
+            ]:
+                if executable.exists() and not executable_bit_set(executable):
+                    failures.append(f"发布安装后命令不可执行：{executable}")
     return {
         "schema_id": "redcap-project-release-check",
         "ok": not failures,
@@ -309,8 +339,7 @@ def init_project(project: pathlib.Path, package_root: pathlib.Path) -> dict[str,
         "runtime_bin": str(runtime_bin),
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     created.append(str(install_json))
-    mode = runtime_bin.stat().st_mode
-    runtime_bin.chmod(mode | stat.S_IXUSR)
+    created.extend(restore_executable_bits(package_root))
     return {
         "schema_id": "redcap-project-installation",
         "ok": True,

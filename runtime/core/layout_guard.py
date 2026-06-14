@@ -268,6 +268,8 @@ def check_file_placement(root: pathlib.Path, policy: dict[str, Any], failures: l
 
 
 def check_layout(root: pathlib.Path, policy: dict[str, Any]) -> list[str]:
+    if root.name == ".redcap" and (root / "install.json").exists():
+        return check_installed_package_layout(root)
     failures: list[str] = []
     if not root.exists() or not root.is_dir():
         return [f"root is not a directory: {root}"]
@@ -278,6 +280,38 @@ def check_layout(root: pathlib.Path, policy: dict[str, Any]) -> list[str]:
     check_forbidden_names(root, policy, failures)
     check_file_placement(root, policy, failures)
     check_asset_unit(root, policy, failures)
+    return failures
+
+
+def check_installed_package_layout(root: pathlib.Path) -> list[str]:
+    failures: list[str] = []
+    project_root = root.parent
+    required = [
+        "README.md",
+        ".gitignore",
+        "runtime/bin/redcap",
+        "assets/contracts/codex-hooks.template.json",
+        "assets/contracts/directory-structure.json",
+        "assets/contracts/project-installation.json",
+        "assets/docs/README.md",
+        "assets/knowledge/README.md",
+        "assets/archaeology/README.md",
+        "install-manifest.json",
+        "install.json",
+        "evidence",
+        "logs",
+        "state",
+        "tmp",
+    ]
+    for item in required:
+        if not (root / item).exists():
+            failures.append(f"installed package missing path: {item}")
+    if not (project_root / ".codex" / "hooks.json").exists():
+        failures.append("installed project missing path: .codex/hooks.json")
+    forbidden = [".git", "node_modules"]
+    for name in forbidden:
+        if (root / name).exists():
+            failures.append(f"installed package contains forbidden path: {name}")
     return failures
 
 
