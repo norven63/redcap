@@ -1,0 +1,9 @@
+{
+  "schema_id": "redcap-project-installation-check",
+  "ok": true,
+  "contract": "/Users/norven/workspace/AI Era/redcap/assets/contracts/project-installation.json",
+  "package_root": ".redcap",
+  "package_file_count": 181,
+  "failures": []
+}
+REDCAP_PROJECT_INSTALL_OK

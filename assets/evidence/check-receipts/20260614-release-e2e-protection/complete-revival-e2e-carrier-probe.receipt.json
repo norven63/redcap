@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root /tmp/redcap-ai-e2e-carrier-protection --timeout-seconds 300",
+  "exit_code": 0,
+  "executed_at": "2026-06-14T08:37:43+00:00",
+  "executor": "cap",
+  "stdout_sha256": "48098441084e082b7f7bc788ac9fc95b69acba4b86a95b65e9a3e554e49bbd46",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260614-release-e2e-protection/complete-revival-e2e-carrier-probe.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260614-release-e2e-protection/complete-revival-e2e-carrier-probe.stderr.txt"
+}

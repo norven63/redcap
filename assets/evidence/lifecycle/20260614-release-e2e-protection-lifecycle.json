@@ -1,0 +1,126 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260614-release-e2e-protection",
+  "fsm_state": "IMPLEMENTING",
+  "requirement_review": {
+    "user_intent": "整体 review 当前 RedCap 工作区，重点检查发布产物链路，并做好 E2E 分支和工作区保护，防止 E2E bug 污染本工作区。",
+    "target_reality": "RedCap 发布包必须可真实解压安装；E2E 执行必须在外部项目运行，并在运行前后验证源工作区分支、HEAD、工作区状态没有被改变。",
+    "non_goals": [
+      "实际运行完整业务 E2E 实例",
+      "修改远端仓库分支保护规则",
+      "用口头规范替代可执行保护"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "删除新增发布审计和 E2E 工作区保护代码，恢复 runtime/bin/redcap 与 check_runner 对应命令入口。",
+    "verification_plan": [
+      "runtime/bin/redcap project-install release-check",
+      "runtime/bin/redcap project-install self-check",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-temp>",
+      "runtime/bin/redcap check --only project-install-release-check",
+      "runtime/bin/redcap layout-check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "好，整体review一下当前的工作区，尤其是发布产物相关的，因为后续执行E2E的时候这个是必须要走的。 另外，做好分支保护，防止E2E触发bug，污染到本工作区",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "发布产物链路 review 与 E2E 工作区保护落地。",
+    "primary_deliverable": "发布包审计、真实发布包安装自检、E2E 源工作区快照保护、检查器接入和验证证据。",
+    "acceptance_criteria": [
+      "发布包 release-check 必须检查包内容和真实解压安装链路",
+      "E2E prepare/run/carrier-probe 必须记录并校验 RedCap 源工作区快照",
+      "源工作区污染必须导致 E2E 结果失败",
+      "验证命令必须覆盖发布产物和 E2E 保护两条链路"
+    ],
+    "status": "verified",
+    "evidence_kind": "code-and-review",
+    "evidence": [
+      "runtime/core/project_install.py",
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/core/check_runner.py",
+      "runtime/bin/redcap",
+      "assets/contracts/project-installation.json",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "assets/evidence/prism/20260614-release-e2e-protection/resolution.json"
+    ]
+  },
+  "fsm_transition": {
+    "from": "PRISM_REVIEW",
+    "to": "IMPLEMENTING",
+    "evidence": [
+      "prism_review_or_explicit_skip"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/project_install.py",
+    "runtime/core/complete_revival_e2e.py",
+    "runtime/core/check_runner.py",
+    "runtime/bin/redcap",
+    "assets/contracts/project-installation.json",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json",
+    "assets/archaeology/shards/old-redcap-360-scan-merge.json"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260614-release-e2e-protection/py-compile.receipt.json",
+    "assets/evidence/check-receipts/20260614-release-e2e-protection/project-install-check.receipt.json",
+    "assets/evidence/check-receipts/20260614-release-e2e-protection/project-install-release-check.receipt.json",
+    "assets/evidence/check-receipts/20260614-release-e2e-protection/project-install-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260614-release-e2e-protection/check-project-install-release.receipt.json",
+    "assets/evidence/check-receipts/20260614-release-e2e-protection/complete-revival-e2e-design-check.receipt.json",
+    "assets/evidence/check-receipts/20260614-release-e2e-protection/complete-revival-e2e-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260614-release-e2e-protection/complete-revival-e2e-carrier-probe.receipt.json",
+    "assets/evidence/check-receipts/20260614-release-e2e-protection/process-artifacts-check.receipt.json"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "runtime",
+    "scope": "发布产物 review 与 E2E 源工作区保护任务已实施并通过本轮检查；不声明 RedCap 完整复活终局完成。"
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260614-release-e2e-protection/merge.json",
+    "resolution_path": "assets/evidence/prism/20260614-release-e2e-protection/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260614-release-e2e-protection/session.json"
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "发布包链路已从函数级自检升级为打包、审计、真实解压、包内入口初始化的闭环，避免项目级安装只在源码仓库中成立。"
+      ],
+      "evidence": [
+        "runtime/core/project_install.py",
+        "assets/contracts/project-installation.json",
+        "assets/evidence/check-receipts/20260614-release-e2e-protection/project-install-release-check.receipt.json"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "E2E 运行器已加入源工作区前后快照保护，并用临时污染负向探针证明可以发现新增污染且恢复基线。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/evidence/check-receipts/20260614-release-e2e-protection/complete-revival-e2e-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260614-release-e2e-protection/complete-revival-e2e-carrier-probe.receipt.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "项目安装合同和通用 E2E 合同已明确发布包审计、真实发布检查、源工作区变更失败规则和对应负向探针。"
+      ],
+      "evidence": [
+        "assets/contracts/project-installation.json",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/evidence/check-receipts/20260614-release-e2e-protection/complete-revival-e2e-design-check.receipt.json"
+      ]
+    }
+  }
+}

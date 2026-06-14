@@ -70,6 +70,46 @@ def matches_process_artifact(name: str, patterns: list[str]) -> bool:
     return any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
 
 
+def semantic_process_artifact_reason(path: pathlib.Path, policy: dict[str, Any]) -> str | None:
+    if path.suffix != ".json":
+        return None
+    indicators = policy.get("semantic_indicators")
+    if not isinstance(indicators, dict):
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    identities = policy.get("artifact_identities")
+    identities = identities if isinstance(identities, dict) else {}
+    schema_identities = indicators.get("schema_identities")
+    if isinstance(schema_identities, dict):
+        schema_identity = schema_identities.get(payload.get("schema_id"))
+        if isinstance(schema_identity, str):
+            identity = identities.get(schema_identity)
+            if isinstance(identity, dict) and identity.get("not_contract") is True:
+                return f"schema_id:{payload.get('schema_id')}"
+    identity_fields = indicators.get("identity_fields")
+    if isinstance(identity_fields, list):
+        for field in identity_fields:
+            if not isinstance(field, str):
+                continue
+            raw_identity = payload.get(field)
+            if not isinstance(raw_identity, str):
+                continue
+            identity = identities.get(raw_identity)
+            if isinstance(identity, dict) and identity.get("not_contract") is True:
+                return f"{field}:{raw_identity}"
+    process_flags = indicators.get("process_flags")
+    if isinstance(process_flags, list):
+        for flag in process_flags:
+            if isinstance(flag, str) and payload.get(flag) is True:
+                return f"{flag}:true"
+    return None
+
+
 def scan_process_artifacts(root: pathlib.Path, policy: dict[str, Any]) -> list[str]:
     patterns = policy["process_artifact_patterns"]
     found: list[str] = []
@@ -78,8 +118,16 @@ def scan_process_artifacts(root: pathlib.Path, policy: dict[str, Any]) -> list[s
         if not directory.exists():
             continue
         for path in directory.rglob("*"):
-            if path.is_file() and matches_process_artifact(path.name, patterns):
-                found.append(rel(path, root))
+            if not path.is_file():
+                continue
+            reason = None
+            if matches_process_artifact(path.name, patterns):
+                reason = "filename-pattern"
+            semantic_reason = semantic_process_artifact_reason(path, policy)
+            if semantic_reason is not None:
+                reason = semantic_reason
+            if reason is not None:
+                found.append(f"{rel(path, root)} ({reason})")
     return sorted(found)
 
 
@@ -134,6 +182,17 @@ def fixture_policy() -> dict[str, Any]:
         },
         "forbidden_roots": ["assets/contracts"],
         "process_artifact_patterns": ["*-lifecycle.json", "*-prism-request.json"],
+        "semantic_indicators": {
+            "schema_identities": {
+                "redcap-development-lifecycle-packet": "lifecycle_packet",
+                "prism-session-manifest": "prism_request",
+                "redcap-executed-check-receipt": "self_development_runtime_artifact",
+                "redcap-completion-evidence-packet": "self_development_runtime_artifact",
+            },
+            "identity_fields": ["artifact_identity", "artifact_kind"],
+            "process_flags": ["not_contract", "process_artifact"],
+            "scope": "top_level_json_object_only",
+        },
         "allowed_roots": {
             "lifecycle_packet": ["assets/evidence/lifecycle"],
             "prism_request": ["assets/evidence/prism"],
@@ -182,8 +241,25 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         bad_file = root / "assets" / "contracts" / "new-task-lifecycle.json"
         bad_file.write_text("{}", encoding="utf-8")
         bad = check_placement(root, policy)
-        if bad["ok"] or "assets/contracts/new-task-lifecycle.json" not in bad["found_in_forbidden_roots"]:
+        if bad["ok"] or not any(item.startswith("assets/contracts/new-task-lifecycle.json") for item in bad["found_in_forbidden_roots"]):
             failures.append(f"new misplaced artifact should fail: {bad}")
+        semantic_bad = root / "assets" / "contracts" / "review-packet.json"
+        semantic_bad.write_text(json.dumps({
+            "schema_id": "redcap-development-lifecycle-packet",
+            "task_id": "fixture",
+        }), encoding="utf-8")
+        semantic = check_placement(root, policy)
+        if semantic["ok"] or not any(item.startswith("assets/contracts/review-packet.json") for item in semantic["found_in_forbidden_roots"]):
+            failures.append(f"semantic process artifact should fail even without a process filename: {semantic}")
+        stable_contract = root / "assets" / "contracts" / "stable-contract.json"
+        stable_contract.write_text(json.dumps({
+            "artifact_identity": "stable_contract",
+            "not_contract": False,
+        }), encoding="utf-8")
+        semantic_bad.unlink()
+        stable = check_placement(root, policy)
+        if stable["ok"]:
+            failures.append("stable contract fixture should still fail while filename-pattern artifact remains")
         good_file = root / "assets" / "evidence" / "lifecycle" / "new-task-lifecycle.json"
         good_file.write_text("{}", encoding="utf-8")
         good_prism = root / "assets" / "evidence" / "prism" / "fixture-task" / "fixture-prism-request.json"
@@ -212,6 +288,8 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         "ok": not failures,
         "negative_cases": [
             "new process artifact in assets/contracts fails",
+            "semantic process artifact in assets/contracts fails even when the filename is contract-like",
+            "stable contract identity is not treated as a process artifact",
             "same artifact in assets/evidence/lifecycle passes",
             "same artifact in assets/evidence/prism/<task-id> passes",
             "legacy_allowlist policy erosion fails",

@@ -1,5 +1,5 @@
 {
-  "account_path": "/Users/norven/workspace/AI Era/redcap/assets/archaeology/shards/old-redcap-360-scan-account.json",
+  "account_path": "assets/archaeology/shards/old-redcap-360-scan-account.json",
   "blocked_count": 0,
   "cap_arbitration": {
     "cap_decision_required_on_exhaustion": true,

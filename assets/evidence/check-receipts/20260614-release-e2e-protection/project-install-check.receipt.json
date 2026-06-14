@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap project-install check",
+  "exit_code": 0,
+  "executed_at": "2026-06-14T08:37:05+00:00",
+  "executor": "cap",
+  "stdout_sha256": "b38a4aa60e200cecbeb47c8d36f0cbac8308217bac292cac09a373296a7cec0d",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260614-release-e2e-protection/project-install-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260614-release-e2e-protection/project-install-check.stderr.txt"
+}

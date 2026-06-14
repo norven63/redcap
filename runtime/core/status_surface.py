@@ -130,6 +130,15 @@ def human_next_step(
             titles = "、".join(str(state.get("title")) for state in terminal_open)
             return f"继续推进终局父任务：{titles}；阶段成果不能替代终局验收。"
         return "先处理开放任务事实，避免把未完成事项藏到状态面后面。"
+    primary_terminal_states = [
+        state for state in terminal_goal_states
+        if state.get("domain") != "generic-example"
+    ]
+    if primary_terminal_states and all(
+        state.get("terminal_verified") is True and state.get("open") is False
+        for state in primary_terminal_states
+    ):
+        return "终局目标已按证据验证；后续可继续做静态质量治理或外部项目验收，不需要重复确认完整完成。"
     return "当前基线状态面健康；仍需按终局目标合同确认是否已经完整完成。"
 
 
@@ -242,6 +251,14 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         failures.append("状态面 schema_id 错误")
     if "boundary" not in status or "task_summary" not in status or "scan_state" not in status:
         failures.append("状态面缺少核心字段")
+    next_step = str(status.get("human_next_step") or "")
+    terminal_states = [
+        state for state in status.get("terminal_goals", {}).get("states", [])
+        if state.get("domain") != "generic-example"
+    ]
+    if terminal_states and all(state.get("terminal_verified") is True and state.get("open") is False for state in terminal_states):
+        if "仍需按终局目标合同确认是否已经完整完成" in next_step:
+            failures.append("终局已验证时不应继续提示确认完整完成")
     revived = build_status(args, load_soul=True, write_soul_evidence=False)
     if revived.get("mode") != "revive":
         failures.append("复活模式没有进入 revive 状态")

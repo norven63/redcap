@@ -1,0 +1,5 @@
+{
+  "ok": true,
+  "failures": []
+}
+REDCAP_PROJECT_INSTALL_SELF_CHECK_OK

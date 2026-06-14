@@ -41,6 +41,9 @@ PRISM_REBUTTAL_REQUEST_GENERATOR = "runtime/prism/bin/prism rebuttal-request"
 EXECUTED_CHECK_RECEIPT_SCHEMA_ID = "redcap-executed-check-receipt"
 SESSION_STATUSES = {"active", "converged", "main-decided", "escalated", "expired", "closed"}
 PROVIDER_SESSION_STATUSES = {"pending", "active", "converged", "escalated", "expired", "closed"}
+PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS", "240"))
+_ORIGINAL_SUBPROCESS_RUN = subprocess.run
+_PRISM_CHECK_TIMEOUT_GUARD_INSTALLED = False
 SELF_DEVELOPMENT_LIFECYCLE_RISKS = {"medium", "high", "critical"}
 SELF_DEVELOPMENT_LIFECYCLE_TERMS = {
     "redcap",
@@ -80,6 +83,35 @@ SELF_DEVELOPMENT_LIFECYCLE_TAGS = {
     "provider-dispatcher",
     "knowledge",
 }
+
+
+def install_prism_check_timeout_guard() -> None:
+    """Make Prism check child commands bounded without removing any check."""
+    global _PRISM_CHECK_TIMEOUT_GUARD_INSTALLED
+    if _PRISM_CHECK_TIMEOUT_GUARD_INSTALLED:
+        return
+
+    def bounded_run(*popenargs: Any, **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        if kwargs.get("timeout") is None:
+            kwargs["timeout"] = PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS
+        try:
+            return _ORIGINAL_SUBPROCESS_RUN(*popenargs, **kwargs)
+        except subprocess.TimeoutExpired as exc:
+            argv = kwargs.get("args")
+            if argv is None and popenargs:
+                argv = popenargs[0]
+            failure = {
+                "schema_id": "prism-check-subprocess-timeout",
+                "argv": argv,
+                "timeout_seconds": kwargs.get("timeout"),
+                "stdout_tail": (exc.stdout or "")[-2000:] if isinstance(exc.stdout, str) else "",
+                "stderr_tail": (exc.stderr or "")[-2000:] if isinstance(exc.stderr, str) else "",
+            }
+            print(json.dumps(failure, ensure_ascii=False, indent=2), file=sys.stderr)
+            raise SystemExit("prism check child command timed out") from exc
+
+    subprocess.run = bounded_run
+    _PRISM_CHECK_TIMEOUT_GUARD_INSTALLED = True
 SELF_DEVELOPMENT_LIFECYCLE_PATH_GLOBS = {
     "AGENTS.md",
     "runtime/**",
@@ -987,6 +1019,7 @@ def apply_semantic_gate(
 
 
 def cmd_check(_: argparse.Namespace) -> int:
+    install_prism_check_timeout_guard()
     for path in [
         ROOT / "schemas" / "prism-request.schema.json",
         ROOT / "schemas" / "prism-review.schema.json",

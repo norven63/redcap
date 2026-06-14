@@ -98,6 +98,12 @@ def run_probe(entry_id: str, probe: dict[str, Any]) -> list[str]:
     if not isinstance(argv, list) or not argv or not all(isinstance(item, str) for item in argv):
         return [f"{entry_id}: probe {probe.get('name', '<unnamed>')} argv must be a non-empty string list"]
     timeout_seconds = int(probe.get("timeout_seconds") or 60)
+    probe_name = str(probe.get("name") or "<unnamed>")
+    print(
+        f"REDCAP_ENFORCEMENT_PROBE_START entry={entry_id} probe={probe_name} timeout_seconds={timeout_seconds}",
+        file=sys.stderr,
+        flush=True,
+    )
     try:
         completed = subprocess.run(
             argv,
@@ -109,20 +115,32 @@ def run_probe(entry_id: str, probe: dict[str, Any]) -> list[str]:
         )
     except subprocess.TimeoutExpired as exc:
         return [
-            f"{entry_id}: probe {probe.get('name')} timed out after {timeout_seconds} seconds: "
+            f"{entry_id}: probe {probe_name} timed out after {timeout_seconds} seconds: "
             f"{exc.stderr or exc.stdout or ''}"
         ]
     expected_exit = probe.get("expect_exit")
     if completed.returncode != expected_exit:
         failures.append(
-            f"{entry_id}: probe {probe.get('name')} expected exit {expected_exit}, got {completed.returncode}"
+            f"{entry_id}: probe {probe_name} expected exit {expected_exit}, got {completed.returncode}"
         )
     for needle in probe.get("stdout_contains", []) or []:
         if needle not in completed.stdout:
             failures.append(f"{entry_id}: probe {probe.get('name')} stdout missing {needle!r}")
     for needle in probe.get("stderr_contains", []) or []:
         if needle not in completed.stderr:
-            failures.append(f"{entry_id}: probe {probe.get('name')} stderr missing {needle!r}")
+            failures.append(f"{entry_id}: probe {probe_name} stderr missing {needle!r}")
+    if failures:
+        print(
+            f"REDCAP_ENFORCEMENT_PROBE_FAIL entry={entry_id} probe={probe_name} exit_code={completed.returncode}",
+            file=sys.stderr,
+            flush=True,
+        )
+    else:
+        print(
+            f"REDCAP_ENFORCEMENT_PROBE_OK entry={entry_id} probe={probe_name}",
+            file=sys.stderr,
+            flush=True,
+        )
     return failures
 
 

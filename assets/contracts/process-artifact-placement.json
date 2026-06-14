@@ -37,6 +37,23 @@
     "*-lifecycle.json",
     "*-prism-request.json"
   ],
+  "semantic_indicators": {
+    "schema_identities": {
+      "redcap-development-lifecycle-packet": "lifecycle_packet",
+      "prism-session-manifest": "prism_request",
+      "redcap-executed-check-receipt": "self_development_runtime_artifact",
+      "redcap-completion-evidence-packet": "self_development_runtime_artifact"
+    },
+    "identity_fields": [
+      "artifact_identity",
+      "artifact_kind"
+    ],
+    "process_flags": [
+      "not_contract",
+      "process_artifact"
+    ],
+    "scope": "top_level_json_object_only"
+  },
   "allowed_roots": {
     "lifecycle_packet": [
       "assets/evidence/lifecycle"

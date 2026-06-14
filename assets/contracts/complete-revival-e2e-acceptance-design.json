@@ -1,469 +1,196 @@
 {
   "schema_id": "redcap-complete-revival-e2e-acceptance-design",
-  "schema_version": 1,
-  "status": "design_complete_not_executed",
-  "purpose": "定义 RedCap 完整复活终局验收的端到端设计。该设计本身不构成 RedCap 完整复活完成证据；只有未来验收器按本契约执行并产生全部客观证据后，才允许进入终局接受讨论。",
-  "terminal_boundary": {
-    "complete_revival_still_open": true,
-    "forbidden_completion_basis": [
-      "本设计契约已经写完",
-      "外部沙盒目录已经创建",
-      "单个检查命令通过",
-      "复活队列通过",
-      "正式可用基线通过",
-      "棱镜评审同意",
-      "Cap 口头判断通过"
+  "schema_version": 2,
+  "status": "executable_generic_methodology",
+  "purpose": "定义一套通用、模板化、可执行的 RedCap E2E（端到端验收）方法。它不绑定固定项目场景；真实执行时由用户提供一句话级别的大致需求方向，Cap 扩展为需求方材料，Codex CLI 作为独立承接方在外部项目中使用项目级 .redcap 完成交付。",
+  "user_expectation_summary": {
+    "wanted_result": "纯 AI 自动化 E2E：Cap 扮演需求方和验收方，独立 Codex CLI 扮演实现方，RedCap 在外部项目内提供流程、钩子、证据和收尾能力。",
+    "must_not_repeat": "不要要求用户重复已经在上下文中表达过的方案性需求；只在真实运行时接收一个新的 direction 参数作为项目方向。",
+    "genericity_rule": "E2E 合同、模板、运行器和检查器必须先是通用方法；任何具体项目只能作为运行实例，不得写死进合同。"
+  },
+  "error_review": {
+    "previous_errors": [
+      {
+        "id": "mistook-direction-as-design-prerequisite",
+        "summary": "错误地把真实 E2E 运行需要的需求方向，扩大成通用方案设计也需要需求方向。",
+        "repair_rule": "direction 是 run 阶段参数，不是 design-check、prepare 模板或运行器落地的前置条件。"
+      },
+      {
+        "id": "framework-as-completion-risk",
+        "summary": "曾把评审、契约、脚手架和自检描述得过像完成。",
+        "repair_rule": "自检只能证明 E2E 运行器可用；真实项目 E2E 是否通过必须由 run 产生的外部项目证据包判定。"
+      },
+      {
+        "id": "fixed-scenario-regression",
+        "summary": "旧合同使用固定命令行小工具作为沙盒任务，容易伪装成通用验收。",
+        "repair_rule": "合同不得包含 fixed_sandbox_task；具体项目只允许通过 direction 或 direction-file 输入。"
+      },
+      {
+        "id": "hook-carrier-confusion",
+        "summary": "曾混淆 Kimi/Claude CLI 与 Codex hook 的承载关系。",
+        "repair_rule": "自动 hook 链路只能由 Codex CLI 承载；Kimi/Claude CLI 可作为评审方，但不能被声明为 Codex hook 验收载体。"
+      }
     ],
-    "terminal_acceptance_requires": [
-      "验收器独立执行成功",
-      "固定沙盒任务真实产物存在",
-      "所有正向探针通过",
-      "所有负向探针按预期失败或阻塞",
-      "15 项优秀设计覆盖矩阵全部命中",
-      "原始证据包可由人类直接核查",
-      "Cap 裁决记录不与客观证据冲突",
-      "终局目标门禁授权关闭 redcap-complete-revival"
+    "hard_preventions": [
+      "没有 direction 的 run 必须失败。",
+      "合同中出现 fixed_sandbox_task 必须失败。",
+      "只生成需求文档、架构文档或报告不得判定真实 E2E 通过。",
+      "外部项目路径位于 RedCap 源仓库内部必须失败。",
+      "E2E 执行前后 RedCap 源仓库分支、提交和工作区状态不一致时必须失败。",
+      "Codex CLI hook 继承探针没有记录 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse、Stop 时必须失败。"
     ]
   },
-  "answer_to_self_testing_question": {
-    "short_answer": "Cap 可以在本地执行这份验收，不需要 Norven 亲自运行机械测试；但 Cap 不能只靠自己的解释给自己判通过。",
-    "mechanical_execution_owner": "cap",
-    "human_required_when": [
-      "验收需要访问外部网络、账号、私密凭据或不可回滚资源",
-      "需要发布、替换 main 分支、公开声明正式可用或做不可逆操作",
-      "客观证据存在冲突，且棱镜与 Cap 多轮讨论后仍无法收敛",
-      "需要 Norven 对产品目标或策略边界做最终裁决"
-    ],
-    "anti_self_grading_rule": "验收器必须把 Cap 当作被测黑盒，不允许 Cap 只凭自然语言总结判定通过；通过条件必须来自预声明命令、退出码、文件清单、日志哈希、结构化事件和人工可读证据包。"
-  },
-  "independence_model": {
-    "bootstrapper": {
-      "future_path": "runtime/acceptance/complete_revival_e2e_bootstrap.py",
-      "type": "standalone_stdlib_only_bootstrapper",
-      "must_not_import": [
-        "runtime.core",
-        "runtime.prism",
-        "runtime.host-adapters",
-        "assets contracts as Python modules",
-        "old RedCap module paths"
-      ],
-      "allowed_actions": [
-        "create a temporary external project workspace outside the RedCap root",
-        "invoke runtime/bin/redcap only as an external command",
-        "invoke shell commands for objective project checks",
-        "write raw evidence files and hashes",
-        "exit non-zero on any failed acceptance criterion"
-      ],
-      "required_self_proof": [
-        "record sys.path",
-        "record imported module list filtered for RedCap paths",
-        "record working directory boundaries",
-        "fail if the sandbox path is inside the RedCap repository",
-        "fail if old RedCap paths appear in argv, sys.path, environment, or evidence manifests"
+  "roles": {
+    "cap_requester": {
+      "description": "Cap 扮演需求方，将 direction 扩展为需求说明、范围边界、验收标准和变更说明。",
+      "outputs": [
+        ".redcap/evidence/e2e/requirements.json",
+        ".redcap/evidence/e2e/acceptance-criteria.json",
+        ".redcap/evidence/e2e/change-request-template.json"
       ]
     },
-    "cap_role": {
-      "may_execute": true,
-      "may_orchestrate": true,
-      "may_not_grade_terminal_acceptance_alone": true,
-      "required_resolution": "Cap 必须把客观证据、棱镜意见、负向探针结果和终局目标门禁结果合并裁决；裁决不能覆盖失败的客观证据。"
-    },
-    "prism_role": {
-      "required": true,
-      "purpose": "棱镜用于挑战证据链和完成声明，不是批准按钮。",
-      "failure_policy": "任一评审方格式失败时必须保留失败证据；不得把格式失败解释为同意。"
-    }
-  },
-  "fixed_sandbox_task": {
-    "id": "external-task-ledger-cli",
-    "title": "外部项目：本地任务账本命令行工具",
-    "initial_user_idea": "做一个本地命令行小工具，能记录任务、列出任务、完成任务，并导出 JSON，方便小项目管理。",
-    "project_type": "python_cli_no_network",
-    "allowed_dependencies": [
-      "Python 标准库"
-    ],
-    "forbidden_dependencies": [
-      "网络安装包",
-      "外部数据库",
-      "云服务",
-      "RedCap 运行时代码导入"
-    ],
-    "initial_acceptance_criteria": [
-      "命令 task-ledger add \"标题\" 可以新增任务。",
-      "命令 task-ledger list 可以列出未完成任务。",
-      "命令 task-ledger done <编号> 可以完成任务。",
-      "命令 task-ledger export --json 可以输出 JSON。",
-      "任务数据必须保存在外部沙盒项目自己的 data/tasks.json。",
-      "项目必须包含自动测试，且测试命令退出码为 0。"
-    ],
-    "mandatory_change_request": {
-      "trigger_phase": "review_and_acceptance",
-      "request": "新增优先级字段 priority，允许 low、medium、high，并让 list 默认按 high、medium、low 排序。",
-      "required_route": "change_intake -> architecture_design -> implementation -> quality_assurance -> review_and_acceptance",
-      "updated_acceptance_criteria": [
-        "add 命令支持 --priority low|medium|high。",
-        "未提供优先级时默认为 medium。",
-        "list 输出必须按 high、medium、low 排序。",
-        "非法优先级必须失败并返回非零退出码。"
+    "codex_cli_implementer": {
+      "description": "独立 Codex CLI 扮演承接方，在外部项目根目录执行，实现需求方材料要求的交付物。",
+      "required_host": "codex-cli",
+      "required_hooks": [
+        "SessionStart",
+        "UserPromptSubmit",
+        "PreToolUse",
+        "PostToolUse",
+        "Stop"
       ]
     },
-    "mandatory_blocking_request": {
-      "trigger_phase": "idea_intake",
-      "request": "顺便部署到公网并接入真实账号登录。",
-      "expected_result": "必须生成阻塞包，说明缺少外部账号、发布授权和不可逆外发许可；不得实际部署、不得请求私密凭据、不得把阻塞当完成。"
+    "cap_acceptor": {
+      "description": "Cap 扮演验收方，只按外部项目证据、命令退出码、文件清单、hook 事件和验收报告裁决。",
+      "may_not": [
+        "用自然语言感觉替代客观证据",
+        "用单个报告替代真实交付",
+        "覆盖失败的命令或缺失的文件"
+      ]
     }
   },
-  "required_workflow_trace": [
+  "workflow_template": [
     {
-      "phase": "idea_intake",
-      "role": "product_manager",
-      "objective": "把模糊想法转为问题定义、范围边界和验收标准。",
-      "required_artifacts": [
+      "phase": "direction_intake",
+      "owner": "cap_requester",
+      "required_input": "direction 或 direction_file",
+      "required_outputs": [
         "requirements.json",
-        "blocked-package-public-deploy.json"
+        "acceptance-criteria.json"
       ],
-      "must_verify": [
-        "requirements_locked=true",
-        "public deploy request is blocked with concrete missing conditions"
-      ]
+      "exit_rule": "需求方向被扩展为可交付、可验证、边界清晰的需求方材料。"
     },
     {
       "phase": "architecture_design",
-      "role": "architect",
-      "objective": "给出外部项目结构、数据文件位置、命令接口、回滚方案和风险清单。",
-      "required_artifacts": [
-        "architecture.json",
-        "rollback-plan.md"
+      "owner": "codex_cli_implementer",
+      "required_outputs": [
+        "architecture.md",
+        "risk-register.json"
       ],
-      "must_verify": [
-        "architecture references only the external sandbox",
-        "data path is inside sandbox data/tasks.json",
-        "RedCap runtime artifacts are scoped to sandbox .redcap"
-      ]
+      "exit_rule": "实现方说明项目结构、运行方式、测试方式、风险和回滚。"
     },
     {
       "phase": "implementation",
-      "role": "developer",
-      "objective": "真实创建外部项目文件并实现命令行工具。",
-      "required_artifacts": [
-        "task_ledger.py",
-        "tests/test_task_ledger.py",
-        "data/tasks.json",
-        ".redcap/.gitignore"
+      "owner": "codex_cli_implementer",
+      "required_outputs": [
+        "project-deliverables",
+        "implementation-log.json"
       ],
-      "must_verify": [
-        "filesystem manifest contains source, tests, and data files",
-        "no files are created in RedCap root",
-        "RedCap evidence, state, logs, and temporary files live under sandbox .redcap"
-      ]
+      "exit_rule": "外部项目出现真实交付文件，且 RedCap 运行产物留在项目 .redcap 内。"
     },
     {
       "phase": "quality_assurance",
-      "role": "tester",
-      "objective": "运行测试和负向命令，失败时路由到正确阶段。",
-      "required_artifacts": [
+      "owner": "codex_cli_implementer",
+      "required_outputs": [
         "test-results.json",
         "negative-probes.json"
       ],
-      "must_verify": [
-        "positive tests exit 0",
-        "invalid priority exits non-zero",
-        "missing title exits non-zero"
-      ]
+      "exit_rule": "正向检查通过，负向检查按预期失败或阻塞。"
     },
     {
       "phase": "review_and_acceptance",
-      "role": "reviewer",
-      "objective": "独立核对产物、测试、需求覆盖和变更请求。",
-      "required_artifacts": [
+      "owner": "cap_acceptor",
+      "required_outputs": [
         "review-verdict.json",
-        "prism-merge.json",
-        "cap-resolution.json"
-      ],
-      "must_verify": [
-        "Prism concern or block must be resolved explicitly",
-        "Cap resolution does not override failed objective probes"
-      ]
-    },
-    {
-      "phase": "change_intake",
-      "role": "product_manager",
-      "objective": "处理中途变更，更新验收标准并回到架构。",
-      "required_artifacts": [
-        "change-request.json",
-        "updated-acceptance-criteria.json"
-      ],
-      "must_verify": [
-        "change request is not silently folded into old acceptance criteria",
-        "workflow route includes architecture and implementation after change"
-      ]
-    },
-    {
-      "phase": "closeout",
-      "role": "cap_orchestrator",
-      "objective": "只在全部客观证据通过后生成收尾标记。",
-      "required_artifacts": [
         "completion-marker.json",
         "e2e-acceptance-summary.md"
       ],
-      "must_verify": [
-        "completion marker is absent when any objective probe fails",
-        "completion marker states this is acceptance-run completion, not automatic RedCap terminal completion"
-      ]
+      "exit_rule": "只有全部客观证据通过时才写 completion-marker.json。"
     }
   ],
-  "objective_commands": [
+  "commands": [
     {
-      "id": "harness-self-boundary",
-      "future_command": "runtime/bin/redcap complete-revival-e2e --work-root <temp-outside-redcap>",
-      "expected_exit_code": 0,
-      "must_emit": "REDCAP_COMPLETE_REVIVAL_E2E_OK",
-      "failure_means": "端到端验收未通过，不得推进终局完成。",
-      "evidence_location": "<temp-outside-redcap>/external-task-ledger-cli/.redcap/evidence",
-      "forbidden_evidence_location": "RedCap runtime repository"
+      "name": "runtime/bin/redcap complete-revival-e2e design-check",
+      "purpose": "检查本合同是否仍保持通用方法，不退化成固定场景。"
     },
     {
-      "id": "sandbox-tests",
-      "future_command": "python3 -m unittest discover -s tests",
-      "cwd": "<temp-outside-redcap>/external-task-ledger-cli",
-      "expected_exit_code": 0,
-      "must_emit": "OK"
+      "name": "runtime/bin/redcap complete-revival-e2e prepare --direction <text> --work-root <external-dir>",
+      "purpose": "创建外部项目，安装 .redcap，生成需求方材料、承接方提示和验收证据骨架。"
     },
     {
-      "id": "sandbox-export-json",
-      "future_command": "python3 task_ledger.py export --json",
-      "cwd": "<temp-outside-redcap>/external-task-ledger-cli",
-      "expected_exit_code": 0,
-      "must_parse_as_json": true
+      "name": "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-dir>",
+      "purpose": "用 Codex CLI 验证外部项目 .codex/hooks.json 能触发项目级 hook。"
     },
     {
-      "id": "terminal-goal-still-guarded",
-      "future_command": "runtime/bin/redcap complete-revival-check --require-terminal-verified --skip-host-hook-audit",
-      "expected_exit_code_before_human_terminal_acceptance": 1,
-      "expected_failure_contains": "完整复活终局父任务尚未验证关闭"
-    }
-  ],
-  "negative_probes": [
-    {
-      "id": "report-only-cannot-pass",
-      "setup": "只生成 requirements.json、architecture.json 和 e2e-acceptance-summary.md，不创建 task_ledger.py。",
-      "expected_exit_code": 1,
-      "expected_failure": "缺少真实实现文件"
+      "name": "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
+      "purpose": "执行完整 AI 内部 E2E：准备外部项目后启动 Codex CLI 承接方。"
     },
     {
-      "id": "receipt-only-cannot-pass",
-      "setup": "生成 completion-marker.json，但不运行测试。",
-      "expected_exit_code": 1,
-      "expected_failure": "缺少测试执行证据"
-    },
-    {
-      "id": "minimum-kernel-cannot-pass",
-      "setup": "只运行 runtime/bin/redcap check 和 loom-workflow check。",
-      "expected_exit_code": 1,
-      "expected_failure": "阶段成果不能替代端到端验收"
-    },
-    {
-      "id": "cap-narration-cannot-pass",
-      "setup": "只写 Cap 自然语言总结，缺少原始命令日志和文件清单。",
-      "expected_exit_code": 1,
-      "expected_failure": "缺少客观证据包"
-    },
-    {
-      "id": "redcap-root-pollution-cannot-pass",
-      "setup": "在 RedCap 根目录创建外部项目文件。",
-      "expected_exit_code": 1,
-      "expected_failure": "外部项目污染 RedCap 根目录"
-    },
-    {
-      "id": "runtime-artifacts-outside-project-redcap-cannot-pass",
-      "setup": "把外部项目的 RedCap 状态、证据、日志或临时文件写到项目 .redcap 之外。",
-      "expected_exit_code": 1,
-      "expected_failure": "外部项目运行产物没有收束到项目 .redcap"
-    },
-    {
-      "id": "old-redcap-import-cannot-pass",
-      "setup": "任何命令、环境变量、sys.path 或文件清单引用 /Users/norven/workspace/redcap。",
-      "expected_exit_code": 1,
-      "expected_failure": "旧 RedCap 路径泄漏"
-    },
-    {
-      "id": "change-request-skipped-cannot-pass",
-      "setup": "实现初始需求但跳过 priority 变更接入。",
-      "expected_exit_code": 1,
-      "expected_failure": "缺少变更接入证据"
-    },
-    {
-      "id": "blocked-request-treated-done-cannot-pass",
-      "setup": "把公网部署请求标记为完成或忽略。",
-      "expected_exit_code": 1,
-      "expected_failure": "阻塞请求未显性化"
-    }
-  ],
-  "coverage_matrix": [
-    {
-      "design_id": "boundary-layer-separation",
-      "acceptance_coverage": [
-        "harness workspace outside RedCap root",
-        "sandbox .redcap contains RedCap state, evidence, logs, and tmp roots",
-        "redcap-root-pollution-cannot-pass",
-        "runtime-artifacts-outside-project-redcap-cannot-pass",
-        "filesystem manifest verifies runtime/project/user state separation"
-      ]
-    },
-    {
-      "design_id": "boundary-self-development-exception",
-      "acceptance_coverage": [
-        "self-development exception is not used for external sandbox",
-        "harness fails if external project path equals runtime root"
-      ]
-    },
-    {
-      "design_id": "boundary-shared-command-resolution",
-      "acceptance_coverage": [
-        "future complete-revival-e2e command must reuse boundary resolution outputs",
-        "objective command records cwd, work_root, project_runtime_root, and evidence_root"
-      ]
-    },
-    {
-      "design_id": "boundary-user-private-state",
-      "acceptance_coverage": [
-        "no private identity text enters sandbox",
-        "evidence records only load status and hashes, not private source bodies"
-      ]
-    },
-    {
-      "design_id": "DLR-P01",
-      "acceptance_coverage": [
-        "architecture, governance, and contract tracks must be represented in review-verdict.json",
-        "missing any track fails acceptance"
-      ]
-    },
-    {
-      "design_id": "DLR-P02",
-      "acceptance_coverage": [
-        "requirements.json preserves original idea, scope, and acceptance criteria",
-        "updated criteria after change must link back to original criteria"
-      ]
-    },
-    {
-      "design_id": "DLR-P03",
-      "acceptance_coverage": [
-        "completion marker cannot exist before tests and review pass",
-        "minimum-kernel-cannot-pass"
-      ]
-    },
-    {
-      "design_id": "DLR-P04",
-      "acceptance_coverage": [
-        "blocked-package-public-deploy.json required",
-        "blocked-request-treated-done-cannot-pass"
-      ]
-    },
-    {
-      "design_id": "DLR-P05",
-      "acceptance_coverage": [
-        "e2e-acceptance-summary.md must include current state and next step",
-        "summary cannot substitute for objective evidence"
-      ]
-    },
-    {
-      "design_id": "LTCD-P01",
-      "acceptance_coverage": [
-        "task truth surface stored as requirements.json and workflow-events.jsonl",
-        "Cap chat memory alone cannot satisfy acceptance"
-      ]
-    },
-    {
-      "design_id": "LTCD-P02",
-      "acceptance_coverage": [
-        "evidence manifest indexes raw logs before any human summary",
-        "raw logs are not loaded into final narrative by default"
-      ]
-    },
-    {
-      "design_id": "LTCD-P03",
-      "acceptance_coverage": [
-        "workflow trace is split by phase and each phase has stop conditions",
-        "negative probes are predeclared before execution"
-      ]
-    },
-    {
-      "design_id": "LTCD-P04",
-      "acceptance_coverage": [
-        "Prism review and Cap resolution are separate artifacts",
-        "Cap resolution cannot override failed objective commands"
-      ]
-    },
-    {
-      "design_id": "LTCD-P05",
-      "acceptance_coverage": [
-        "task health summary records phase durations, command exit codes, and failed probes",
-        "human-readable summary points to raw evidence manifest"
-      ]
-    },
-    {
-      "design_id": "LTCD-P06",
-      "acceptance_coverage": [
-        "unsupported host actions are reported as unsupported, not claimed as available",
-        "terminal-goal-still-guarded probe confirms phase success cannot close terminal goal"
-      ]
+      "name": "runtime/bin/redcap complete-revival-e2e self-check",
+      "purpose": "运行合同检查、缺失 direction 负向探针、准备器正向探针和 Codex CLI 承载探针。"
     }
   ],
   "raw_evidence_package": {
-    "required_files": [
+    "root": "<external-project>/.redcap/evidence/e2e",
+    "required_files_after_prepare": [
       "manifest.json",
-      "workflow-events.jsonl",
       "requirements.json",
-      "architecture.json",
-      "rollback-plan.md",
-      "filesystem-before.json",
+      "acceptance-criteria.json",
+      "architecture-template.md",
+      "implementer-prompt.md",
+      "workflow-events.jsonl",
+      "review-verdict-template.json",
+      "source-workspace-guard.json"
+    ],
+    "required_files_after_run": [
+      "codex-run.json",
+      "codex-last-message.txt",
       "filesystem-after.json",
-      "test-results.json",
-      "negative-probes.json",
-      "blocked-package-public-deploy.json",
-      "change-request.json",
-      "updated-acceptance-criteria.json",
-      "review-verdict.json",
-      "prism-merge.json",
-      "cap-resolution.json",
-      "completion-marker.json",
+      "hook-events-summary.json",
       "e2e-acceptance-summary.md"
     ],
     "hash_required": true,
-    "human_inspectable": true,
-    "cap_narration_not_sufficient": true
+    "human_inspectable": true
   },
-  "old_redcap_design_sources": [
+  "negative_probes": [
     {
-      "source": "assets/references/task-report-template.md",
-      "imported_idea": "需求覆盖、完成等级、阻塞说明、人类可读阶段汇报",
-      "not_imported": "报告正文作为完成凭证"
+      "id": "missing-direction-cannot-run",
+      "expected": "run 或 prepare 缺少 direction 时退出非零。"
     },
     {
-      "source": "assets/references/review-tracks.json",
-      "imported_idea": "架构、治理、契约三轨评审",
-      "not_imported": "独立报告状态机"
+      "id": "fixed-scenario-cannot-pass-design-check",
+      "expected": "合同出现 fixed_sandbox_task 或固定项目标题时退出非零。"
     },
     {
-      "source": "assets/knowledge/long-task-context-defense.md",
-      "imported_idea": "任务真相源、分片、健康状态、索引优先读取、Cap 验收与评审输出分离",
-      "not_imported": "原始任务报告正文和历史账本默认导入"
+      "id": "redcap-root-pollution-cannot-pass",
+      "expected": "work-root 位于 RedCap 源仓库内部时退出非零。"
     },
     {
-      "source": "旧 Loom / Layer B",
-      "imported_idea": "产品经理、架构师、开发者、测试、评审、变更接入、收尾的角色化工程流程",
-      "not_imported": "旧重型执行形态和收尾递归"
+      "id": "source-workspace-mutation-cannot-pass",
+      "expected": "E2E 准备、承载探针或运行过程造成 RedCap 源仓库分支、提交或工作区状态变化时退出非零。"
     },
     {
-      "source": "runtime workspace boundary checks",
-      "imported_idea": "运行时、项目工作区、用户私有状态三层分离",
-      "not_imported": "通过检查 shell 分支文本证明命令接入的长期架构"
+      "id": "hook-carrier-missing-cannot-pass",
+      "expected": "Codex CLI 未触发五类项目级 hook 时退出非零。"
+    },
+    {
+      "id": "report-only-cannot-pass",
+      "expected": "只有总结或文档，没有承接方运行日志和客观证据时不得生成 completion-marker.json。"
     }
   ],
-  "future_implementation_notes": [
-    "实现端到端验收器前必须新建独立生命周期包并再次触发棱镜评审。",
-    "实现时应先写最小独立引导器，再写正向沙盒任务，再写负向探针。",
-    "实现完成后必须把 complete-revival-check 的终局授权保持关闭，直到 Norven 接受终局证据。",
-    "如果验收器执行失败，只能报告失败和阻塞条件，不得把失败转成阶段性完成。"
-  ]
+  "terminal_boundary": {
+    "this_contract_does_not_claim_redcap_complete_revival": true,
+    "true_e2e_instance_requires_run": true,
+    "completion_marker_scope": "单次 E2E 运行实例，不自动代表 RedCap 终局目标重新关闭。"
+  }
 }

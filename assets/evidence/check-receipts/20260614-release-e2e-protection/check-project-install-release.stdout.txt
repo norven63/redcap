@@ -1,0 +1,9 @@
+REDCAP_CHECK_STEP_START name=project-install-release-check timeout_seconds=180
+REDCAP_CHECK_STEP_OK name=project-install-release-check elapsed_seconds=0.157
+{
+  "schema_id": "redcap-check-summary",
+  "ok": true,
+  "completed_steps": 1,
+  "total_steps": 1
+}
+REDCAP_CHECK_OK

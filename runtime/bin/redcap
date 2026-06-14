@@ -19,11 +19,12 @@ Usage:
   runtime/bin/redcap phase2-blueprint check|self-check [...]
   runtime/bin/redcap full-revival-amendment check|self-check [...]
   runtime/bin/redcap e2e-trace check|self-check [...]
+  runtime/bin/redcap complete-revival-e2e design-check|prepare|carrier-probe|run|self-check [...]
   runtime/bin/redcap fsm check|status|transition [...]
   runtime/bin/redcap loom-workflow check|self-check [...]
   runtime/bin/redcap forge check|self-check [...]
   runtime/bin/redcap arsenal check|self-check [...]
-  runtime/bin/redcap project-install check|package|init|self-check [...]
+  runtime/bin/redcap project-install check|package|audit-package|release-check|init|self-check [...]
   runtime/bin/redcap knowledge-gateway check|search [...]
   runtime/bin/redcap evidence-restore restore [...]
   runtime/bin/redcap legacy-evidence check|plan|restore|self-check [...]
@@ -34,6 +35,7 @@ Usage:
   runtime/bin/redcap prism-rebuttal-request [...]
   runtime/bin/redcap prism-ledger [...]
   runtime/bin/redcap task-facts record|summary|check|self-check [...]
+  runtime/bin/redcap completion-evidence check|self-check [...]
   runtime/bin/redcap terminal-goal check|context|self-check [...]
   runtime/bin/redcap human-output check|self-check|lint-text|lint-file [...]
   runtime/bin/redcap prism-shard [...]
@@ -71,12 +73,14 @@ Commands:
   full-revival-amendment
                 Verify that full revival cannot be reduced to a minimum kernel.
   e2e-trace     Run the RedCap 1.0 hook/session/FSM/completion trace.
+  complete-revival-e2e
+                Run the generic AI-only RedCap E2E methodology and Codex CLI carrier probe.
   fsm           Run the RedCap workflow FSM kernel.
   loom-workflow Verify the role-based Loom engineering workflow contract.
   forge         Verify RedCap Forge and redcap-arsenal promotion rules.
   arsenal       Verify the public reusable redcap-arsenal index.
   project-install
-                Package RedCap as .redcap and initialize project-level runtime.
+                Package RedCap as .redcap, audit release artifacts, and initialize project-level runtime.
   knowledge-gateway
                 Run the minimal index-first RedCap knowledge gateway.
   evidence-restore
@@ -95,6 +99,8 @@ Commands:
                 Generate a bounded same-provider rebuttal request for a rejected concern.
   prism-ledger  Record and summarize Prism task execution health.
   task-facts    Record and summarize RedCap task fact status.
+  completion-evidence
+                Verify completion judgments are backed by source, contract, negative, and runtime evidence.
   terminal-goal
                 Guard terminal objectives so phase achievements cannot close parent goals.
   human-output  Check Chinese-first human-facing output policy.
@@ -168,6 +174,9 @@ case "$cmd" in
   e2e-trace)
     exec python3 "$REPO_ROOT/runtime/core/e2e_trace.py" "$@"
     ;;
+  complete-revival-e2e)
+    exec python3 "$REPO_ROOT/runtime/core/complete_revival_e2e.py" "$@"
+    ;;
   fsm)
     exec python3 "$REPO_ROOT/runtime/core/fsm.py" "$@"
     ;;
@@ -222,6 +231,9 @@ case "$cmd" in
   task-facts)
     exec python3 "$REPO_ROOT/runtime/core/task_facts.py" "$@"
     ;;
+  completion-evidence)
+    exec python3 "$REPO_ROOT/runtime/core/completion_evidence.py" "$@"
+    ;;
   terminal-goal)
     exec python3 "$REPO_ROOT/runtime/core/terminal_goal_guard.py" "$@"
     ;;
@@ -274,63 +286,10 @@ case "$cmd" in
     exec python3 "$REPO_ROOT/runtime/core/layout_guard.py" "$@"
     ;;
   check)
-    "$PRISM" check
-    "$REPO_ROOT/runtime/bin/redcap" prism-resolution --self-check
-    "$REPO_ROOT/runtime/bin/redcap" prism-shard self-check
-    "$REPO_ROOT/runtime/bin/redcap" task-facts self-check
-    "$REPO_ROOT/runtime/bin/redcap" task-facts check
-    "$REPO_ROOT/runtime/bin/redcap" terminal-goal self-check
-    "$REPO_ROOT/runtime/bin/redcap" terminal-goal check
-    "$REPO_ROOT/runtime/bin/redcap" human-output check
-    "$REPO_ROOT/runtime/bin/redcap" human-output self-check
-    "$REPO_ROOT/runtime/bin/redcap" scan-conclusion self-check
-    "$REPO_ROOT/runtime/bin/redcap" known-issues-order check
-    "$REPO_ROOT/runtime/bin/redcap" known-issues-queue check --require-1-4-verified
-    "$REPO_ROOT/runtime/bin/redcap" boundary-consumers check
-    "$REPO_ROOT/runtime/bin/redcap" legacy-evidence check
-    "$REPO_ROOT/runtime/bin/redcap" legacy-evidence self-check
-    "$REPO_ROOT/runtime/bin/redcap" process-artifacts check
-    "$REPO_ROOT/runtime/bin/redcap" process-artifacts self-check
-    "$REPO_ROOT/runtime/bin/redcap" status --json --require-scan-complete
-    "$REPO_ROOT/runtime/bin/redcap" revive --json --no-write-evidence --require-scan-complete
-    python3 "$REPO_ROOT/runtime/core/status_surface.py" self-check
-    "$REPO_ROOT/runtime/bin/redcap" revival-queue self-check
-    "$REPO_ROOT/runtime/bin/redcap" revival-queue check --skip-heavy-host-audit
-    python3 "$REPO_ROOT/runtime/core/formal_usable_check.py" self-check
-    python3 "$REPO_ROOT/runtime/core/complete_revival_check.py" self-check
-    "$REPO_ROOT/runtime/bin/redcap" session-ownership self-check
-    "$REPO_ROOT/runtime/bin/redcap" intent-judge self-check
-    "$REPO_ROOT/runtime/bin/redcap" advisory-stop check
-    python3 "$REPO_ROOT/runtime/host-adapters/codex/codex-hook.py" --self-check-intent-judge
-    "$REPO_ROOT/runtime/bin/redcap" host-hook-audit
-    "$REPO_ROOT/runtime/bin/redcap" prism-dispatch --timeout-policy-check
-    python3 "$REPO_ROOT/runtime/prism/bin/prism-dispatch-timeout-e2e"
-    "$REPO_ROOT/runtime/bin/redcap" boundary check
-    "$REPO_ROOT/runtime/bin/redcap" boundary self-check
-    "$REPO_ROOT/runtime/bin/redcap" archaeology check
-    "$REPO_ROOT/runtime/bin/redcap" archaeology self-check
-    "$REPO_ROOT/runtime/bin/redcap" lifecycle self-check
-    "$REPO_ROOT/runtime/bin/redcap" final-claim self-check
-    "$REPO_ROOT/runtime/bin/redcap" phase2-blueprint check
-    "$REPO_ROOT/runtime/bin/redcap" phase2-blueprint self-check
-    "$REPO_ROOT/runtime/bin/redcap" full-revival-amendment self-check
-    "$REPO_ROOT/runtime/bin/redcap" full-revival-amendment check
-    "$REPO_ROOT/runtime/bin/redcap" e2e-trace self-check
-    "$REPO_ROOT/runtime/bin/redcap" fsm check
-    "$REPO_ROOT/runtime/bin/redcap" loom-workflow self-check
-    "$REPO_ROOT/runtime/bin/redcap" loom-workflow check
-    "$REPO_ROOT/runtime/bin/redcap" forge self-check
-    "$REPO_ROOT/runtime/bin/redcap" forge check
-    "$REPO_ROOT/runtime/bin/redcap" arsenal check
-    "$REPO_ROOT/runtime/bin/redcap" project-install self-check
-    "$REPO_ROOT/runtime/bin/redcap" project-install check
-    "$REPO_ROOT/runtime/bin/redcap" knowledge-gateway check
-    "$REPO_ROOT/runtime/bin/redcap" knowledge-gateway self-check
-    python3 "$REPO_ROOT/runtime/core/revival_loop.py" check
-    python3 "$REPO_ROOT/runtime/core/revival_loop.py" self-check
-    "$REPO_ROOT/runtime/bin/redcap" soul-load check
-    "$REPO_ROOT/runtime/bin/redcap" soul-load self-check
-    "$REPO_ROOT/runtime/bin/redcap" layout-check
+    if [[ "${1:-}" == "list" || "${1:-}" == "self-check" ]]; then
+      exec python3 "$REPO_ROOT/runtime/core/check_runner.py" "$@"
+    fi
+    exec python3 "$REPO_ROOT/runtime/core/check_runner.py" check "$@"
     ;;
   -h|--help|help)
     usage

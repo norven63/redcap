@@ -1,0 +1,110 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260614-ai-e2e-runner",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "用户要求 Cap 自行回顾上下文，复盘前几次 E2E 方案失败原因，并交付一套完整、可执行、纯 AI 自动化的 RedCap E2E 方案。",
+    "target_reality": "RedCap 需要具备一个通用 E2E 执行方案：Cap 扮演需求方，Codex CLI 扮演独立承接方，外部项目通过 .redcap 项目级安装运行；方案本身不绑定固定需求，真实运行时通过 direction 输入大致方向。",
+    "non_goals": [
+      "要求用户重复说明已经在上下文里表达过的需求",
+      "把固定示例项目冒充通用 E2E 方案",
+      "把方案文档、评审记录或自检脚本当作真实 E2E 运行通过"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "optional",
+    "rollback_plan": "删除新增 E2E 运行器、命令入口、合同修改和本轮证据文件；恢复 runtime/bin/redcap 中新增命令分支。",
+    "verification_plan": [
+      "runtime/bin/redcap complete-revival-e2e design-check",
+      "runtime/bin/redcap complete-revival-e2e self-check",
+      "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <temp-outside-redcap>",
+      "runtime/bin/redcap complete-revival-e2e prepare --direction <rough-direction> --work-root <temp-outside-redcap>",
+      "runtime/bin/redcap complete-revival-e2e run --work-root <temp-outside-redcap> 缺少 direction 时失败",
+      "runtime/bin/redcap check --only complete-revival-e2e-self-check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "我不想花精力重复和你声明我的具体需求，请你自行回顾上下文和往期对话记录，总结出我到底期望得到一个什么样的redcap E2E测试方案",
+    "prompt_kind": "mixed",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "交付完整、可执行、纯 AI 自动化 RedCap E2E 方案。",
+    "primary_deliverable": "通用 E2E 合同、运行器、命令入口、Codex CLI 承接方探针、需求方向准备器、自检和错误复盘机制。",
+    "acceptance_criteria": [
+      "方案必须先总结用户期望，不要求用户重复说明",
+      "具体需求方向只能作为运行参数进入真实 E2E，不得阻塞通用方案设计",
+      "运行器必须验证 Codex CLI 可继承外部项目 .codex/hooks.json",
+      "运行器必须能在外部项目安装 .redcap 并生成需求方材料、承接方提示、证据目录和验收骨架",
+      "没有 direction 时真实执行命令必须失败并给出人类可读原因",
+      "自检必须包含正向准备、承载探针、缺失 direction 负向探针和固定场景防退化检查"
+    ],
+    "status": "verified",
+    "evidence_kind": "code-and-review",
+    "evidence": [
+      "assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/bin/redcap",
+      "runtime/core/check_runner.py"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "通用 E2E 方案已拆成合同、运行器、项目级安装、Codex CLI 承接方和证据包；具体需求方向只作为 run/prepare 参数，不再阻塞方案设计。"
+      ],
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "runtime/core/complete_revival_e2e.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "运行器包含缺失 direction、源仓库污染、固定场景回退、hook 承载缺失等负向约束，避免把脚手架或报告当成 E2E 完成。"
+      ],
+      "evidence": [
+        "runtime/bin/redcap complete-revival-e2e run --work-root /tmp/redcap-ai-e2e-run-no-direction --timeout-seconds 30",
+        "runtime/bin/redcap complete-revival-e2e prepare --direction \"源仓库污染负向探针\" --work-root \"/Users/norven/workspace/AI Era/redcap/tmp-e2e-should-fail\""
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "E2E 合同已删除固定沙盒任务，改为角色、阶段、命令、证据包和负向探针组成的通用方法合同。"
+      ],
+      "evidence": [
+        "runtime/bin/redcap complete-revival-e2e design-check",
+        "runtime/bin/redcap check --only complete-revival-e2e-design-check"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "assets/contracts/complete-revival-e2e-acceptance-design.json",
+    "runtime/core/complete_revival_e2e.py",
+    "runtime/bin/redcap",
+    "runtime/core/check_runner.py"
+  ],
+  "verification_evidence": [
+    "runtime/bin/redcap complete-revival-e2e design-check",
+    "runtime/bin/redcap check --only complete-revival-e2e-self-check",
+    "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root /tmp/redcap-ai-e2e-carrier-current --timeout-seconds 300",
+    "runtime/bin/redcap complete-revival-e2e run --work-root /tmp/redcap-ai-e2e-run-no-direction --timeout-seconds 30",
+    "runtime/bin/redcap layout-check",
+    "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/check_runner.py"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "code-and-review"
+  }
+}

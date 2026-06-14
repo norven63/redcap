@@ -12,6 +12,8 @@
 !check-receipts/
 !check-receipts/20260611-process-artifact-migration/
 !check-receipts/20260611-process-artifact-migration/**
+!check-receipts/20260614-release-e2e-protection/
+!check-receipts/20260614-release-e2e-protection/**
 
 !task-facts/
 !task-facts/task-facts.json
@@ -31,3 +33,10 @@
 !prism/20260611-process-artifact-migration/resolution.json
 !prism/20260611-process-artifact-migration/*.review.json
 !prism/20260611-process-artifact-migration/*.review.brief.md
+!prism/20260614-release-e2e-protection/
+!prism/20260614-release-e2e-protection/session.json
+!prism/20260614-release-e2e-protection/request.json
+!prism/20260614-release-e2e-protection/merge.json
+!prism/20260614-release-e2e-protection/resolution.json
+!prism/20260614-release-e2e-protection/*.review.json
+!prism/20260614-release-e2e-protection/*.review.brief.md
