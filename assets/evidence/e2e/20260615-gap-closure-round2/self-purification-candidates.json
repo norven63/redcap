@@ -1,0 +1,22 @@
+{
+  "schema_id": "redcap-e2e-self-purification-candidates",
+  "candidates": [
+    {
+      "id": "zero-dependency-local-e2e-delivery",
+      "summary": "For constrained RedCap E2E implementation tasks, a zero-dependency Node HTTP app can satisfy full-stack local validation while avoiding package install and account risk.",
+      "evidence": [
+        "package.json uses no dependencies",
+        "npm run validate passed",
+        "local HTTP smoke passed"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "candidate_id": "zero-dependency-local-e2e-delivery",
+      "decision": "no-promote",
+      "reason": "Useful for this task but too context-specific to promote as durable RedCap knowledge without more repeated evidence."
+    }
+  ],
+  "no_candidate_reason": null
+}

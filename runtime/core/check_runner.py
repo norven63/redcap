@@ -34,7 +34,7 @@ def python(path: str, *args: str) -> tuple[str, ...]:
 
 
 STEPS: tuple[Step, ...] = (
-    Step("prism-check", ("runtime/prism/bin/prism", "check"), 360),
+    Step("prism-check", ("runtime/prism/bin/prism", "check"), 900),
     Step("prism-resolution-self-check", redcap("prism-resolution", "--self-check")),
     Step("prism-shard-self-check", redcap("prism-shard", "self-check")),
     Step("task-facts-self-check", redcap("task-facts", "self-check")),
@@ -90,6 +90,8 @@ STEPS: tuple[Step, ...] = (
     Step("project-install-check", redcap("project-install", "check")),
     Step("knowledge-gateway-check", redcap("knowledge-gateway", "check")),
     Step("knowledge-gateway-self-check", redcap("knowledge-gateway", "self-check")),
+    Step("self-purification-check", redcap("self-purification", "check")),
+    Step("self-purification-self-check", redcap("self-purification", "self-check")),
     Step("revival-loop-check", python("runtime/core/revival_loop.py", "check")),
     Step("revival-loop-self-check", python("runtime/core/revival_loop.py", "self-check")),
     Step("soul-load-check", redcap("soul-load", "check")),

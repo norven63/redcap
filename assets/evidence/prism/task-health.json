@@ -1,75 +1,81 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-14T10:46:51+00:00",
-  "event_count": 30778,
-  "session_event_count": 7709,
-  "task_count": 80,
-  "success_count": 43,
-  "success_rate": 0.5375,
-  "operational_task_count": 70,
-  "operational_success_count": 43,
-  "operational_success_rate": 0.6143,
+  "computed_at": "2026-06-14T17:35:05+00:00",
+  "event_count": 32942,
+  "session_event_count": 8060,
+  "task_count": 83,
+  "success_count": 45,
+  "success_rate": 0.5422,
+  "operational_task_count": 73,
+  "operational_success_count": 45,
+  "operational_success_rate": 0.6164,
   "self_check_task_count": 10,
-  "active_count": 29,
-  "operational_active_count": 19,
-  "attention_count": 36,
-  "average_duration_seconds": 1729.575,
+  "active_count": 30,
+  "operational_active_count": 20,
+  "attention_count": 37,
+  "average_duration_seconds": 1679.843,
   "providers": {
     "claude-code": {
-      "tasks": 80,
-      "rounds": 77,
-      "reviews_loaded": 57,
+      "tasks": 83,
+      "rounds": 80,
+      "reviews_loaded": 60,
       "pass": 7,
-      "concern": 45,
-      "block": 5,
+      "concern": 47,
+      "block": 6,
       "missing_verdict": 23
     },
     "kimi": {
-      "tasks": 80,
-      "rounds": 72,
-      "reviews_loaded": 51,
+      "tasks": 83,
+      "rounds": 75,
+      "reviews_loaded": 54,
       "pass": 8,
-      "concern": 37,
-      "block": 6,
+      "concern": 38,
+      "block": 8,
       "missing_verdict": 29
     }
   },
   "recent_attention_tasks": [
     {
-      "task_id": "20260614-generic-e2e-methodology",
-      "outcome": "failed",
-      "strictest_verdict": "concern",
-      "recorded_at": "2026-06-14T07:48:34+00:00"
-    },
-    {
-      "task_id": "timeout-e2e",
-      "outcome": "active",
-      "strictest_verdict": null,
-      "recorded_at": "2026-06-13T18:24:52+00:00"
-    },
-    {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-13T18:24:16+00:00"
+      "recorded_at": "2026-06-14T17:24:54+00:00"
     },
     {
       "task_id": "dispatcher-truncation-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-13T18:24:12+00:00"
+      "recorded_at": "2026-06-14T17:24:50+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-13T18:24:11+00:00"
+      "recorded_at": "2026-06-14T17:24:49+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-13T18:24:11+00:00"
+      "recorded_at": "2026-06-14T17:24:49+00:00"
+    },
+    {
+      "task_id": "timeout-e2e",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-14T17:15:45+00:00"
+    },
+    {
+      "task_id": "20260614-p0-goal-continuation-intent",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-14T13:23:25+00:00"
+    },
+    {
+      "task_id": "20260614-generic-e2e-methodology",
+      "outcome": "failed",
+      "strictest_verdict": "concern",
+      "recorded_at": "2026-06-14T07:48:34+00:00"
     },
     {
       "task_id": "20260613-kimi-file-access-and-scan-guard-fix",
@@ -88,25 +94,19 @@
       "outcome": "active",
       "strictest_verdict": null,
       "recorded_at": "2026-06-13T09:22:40+00:00"
-    },
-    {
-      "task_id": "20260613-kimi-dispatch-fix-r3",
-      "outcome": "active",
-      "strictest_verdict": null,
-      "recorded_at": "2026-06-13T08:09:05+00:00"
     }
   ],
-  "gate_event_count": 23069,
-  "gate_success_count": 23069,
+  "gate_event_count": 24882,
+  "gate_success_count": 24882,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 512,
-    "required": 18613,
-    "skipped": 3944
+    "optional": 524,
+    "required": 20063,
+    "skipped": 4295
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 19111,
-    "cli-gate": 3958
+    "codex-UserPromptSubmit": 20833,
+    "cli-gate": 4049
   },
-  "gate_average_duration_seconds": 0.297
+  "gate_average_duration_seconds": 0.319
 }

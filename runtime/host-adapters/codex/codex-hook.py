@@ -72,6 +72,14 @@ GATE_SEMANTIC_FAKE_DELAY_SECONDS = (
 )
 MAX_GATE_PROMPT_CHARS = 12000
 MAX_TEXT_EVIDENCE_CHARS = 12000
+GOAL_CONTEXT_MARKERS = (
+    '<codex_internal_context source="goal"',
+    "<goal_context",
+)
+try:
+    MAX_TRANSCRIPT_TAIL_BYTES = int(os.environ.get("REDCAP_GOAL_CONTEXT_TAIL_BYTES", str(1024 * 1024)))
+except ValueError:
+    MAX_TRANSCRIPT_TAIL_BYTES = 1024 * 1024
 PROTECTED_EVIDENCE_ROOT = (REPO_ROOT / "assets" / "evidence").resolve()
 PROTECTED_PRISM_EVIDENCE_ROOT = (REPO_ROOT / "assets" / "evidence" / "prism").resolve()
 PROTECTED_EVIDENCE_PATH_PATTERN = r"['\"]?(?:\./)?(?:assets/evidence/|[^'\"\s;|&]*?/assets/evidence/)"
@@ -1148,6 +1156,164 @@ def prompt_marker_can_authorize_same_session_continuation(
     return prompt_intent_allows_mutation(prompt_marker)
 
 
+def codex_transcript_roots() -> list[pathlib.Path]:
+    codex_home = pathlib.Path(os.environ.get("CODEX_HOME", "~/.codex")).expanduser()
+    roots = [codex_home / "sessions", codex_home / "archived_sessions"]
+    extra_root = os.environ.get("REDCAP_CODEX_HOOK_TRANSCRIPT_ROOT")
+    if extra_root:
+        roots.append(pathlib.Path(extra_root).expanduser())
+    resolved: list[pathlib.Path] = []
+    for root in roots:
+        try:
+            resolved.append(root.resolve())
+        except OSError:
+            continue
+    return resolved
+
+
+def transcript_path_is_allowed(path: pathlib.Path) -> bool:
+    try:
+        resolved = path.expanduser().resolve()
+    except OSError:
+        return False
+    if resolved.suffix != ".jsonl":
+        return False
+    for root in codex_transcript_roots():
+        try:
+            resolved.relative_to(root)
+        except ValueError:
+            continue
+        return True
+    return False
+
+
+def transcript_session_matches(path: pathlib.Path, payload: dict[str, Any]) -> bool:
+    session_id = payload.get("session_id")
+    if not isinstance(session_id, str) or not session_id.strip():
+        return False
+    return session_id in path.name
+
+
+def read_transcript_tail(path: pathlib.Path) -> list[str]:
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as handle:
+            if size > MAX_TRANSCRIPT_TAIL_BYTES:
+                handle.seek(size - MAX_TRANSCRIPT_TAIL_BYTES)
+                raw = handle.read()
+                _, _, raw = raw.partition(b"\n")
+            else:
+                raw = handle.read()
+    except OSError:
+        return []
+    return raw.decode("utf-8", errors="replace").splitlines()
+
+
+def message_text_from_content(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+    parts: list[str] = []
+    if isinstance(content, list):
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+    return "\n".join(part for part in parts if part)
+
+
+def transcript_user_text(entry: dict[str, Any]) -> str:
+    payload = entry.get("payload")
+    message = payload if isinstance(payload, dict) else entry
+    if message.get("role") != "user":
+        return ""
+    return message_text_from_content(message.get("content"))
+
+
+def last_transcript_user_text(path: pathlib.Path) -> dict[str, Any]:
+    for line in reversed(read_transcript_tail(path)):
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        text = transcript_user_text(entry)
+        if text.strip():
+            return {
+                "found": True,
+                "text": text,
+                "text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                "text_length": len(text),
+                "text_excerpt": normalized_text(text)[:500],
+            }
+    return {"found": False}
+
+
+def text_is_goal_context(text: str) -> bool:
+    normalized = text.strip()
+    return any(marker in normalized for marker in GOAL_CONTEXT_MARKERS)
+
+
+def extract_goal_objective(text: str) -> str:
+    match = re.search(r"<objective>\s*(.*?)\s*</objective>", text, flags=re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return ""
+
+
+def active_goal_continuation_authorization(payload: dict[str, Any]) -> dict[str, Any]:
+    transcript = payload.get("transcript_path")
+    if not isinstance(transcript, str) or not transcript.strip():
+        return {
+            "attempted": False,
+            "authorized": False,
+            "reason": "missing transcript_path",
+        }
+    path = pathlib.Path(transcript)
+    result: dict[str, Any] = {
+        "attempted": True,
+        "authorized": False,
+        "transcript_path_sha256": hashlib.sha256(str(path).encode("utf-8")).hexdigest(),
+        "transcript_basename": path.name,
+    }
+    if not transcript_path_is_allowed(path):
+        result["reason"] = "transcript path is outside allowed Codex session roots"
+        return result
+    if not transcript_session_matches(path, payload):
+        result["reason"] = "transcript path does not match current session id"
+        return result
+    latest_user = last_transcript_user_text(path)
+    result["latest_user_message"] = {
+        key: value
+        for key, value in latest_user.items()
+        if key in {"found", "text_sha256", "text_length", "text_excerpt"}
+    }
+    if not latest_user.get("found"):
+        result["reason"] = "no user message found in transcript tail"
+        return result
+    text = str(latest_user.get("text") or "")
+    if not text_is_goal_context(text):
+        result["reason"] = "latest transcript user message is not a goal continuation"
+        return result
+    objective = extract_goal_objective(text)
+    result["objective"] = text_evidence(objective)
+    if not objective:
+        result["reason"] = "goal continuation has no objective"
+        return result
+    intent = classify_prompt_intent(objective)
+    result["objective_intent"] = intent
+    result["authorized"] = intent.get("authorized_scope") in {"implementation", "completion"}
+    result["reason"] = (
+        "latest transcript user message is an active goal continuation with execution authority"
+        if result["authorized"]
+        else "goal objective does not authorize implementation"
+    )
+    return result
+
+
 def run_intent_judge_for_marker(prompt_marker: dict[str, Any]) -> dict[str, Any]:
     prompt = prompt_text_from_marker(prompt_marker)
     if not prompt.strip():
@@ -1508,6 +1674,7 @@ def cmd_event(args: argparse.Namespace) -> int:
         intent_judge = None
         prompt_marker_fresh = prompt_marker_is_fresh_for_tool(prompt_marker, payload)
         same_session_continuation_authorized = False
+        goal_continuation_authorization: dict[str, Any] = {"attempted": False, "authorized": False}
         if tool_is_mutating(payload, command):
             if not prompt_marker_fresh:
                 same_session_continuation_authorized = prompt_marker_can_authorize_same_session_continuation(prompt_marker, payload)
@@ -1520,20 +1687,26 @@ def cmd_event(args: argparse.Namespace) -> int:
             elif not prompt_intent_allows_mutation(prompt_marker):
                 intent = effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else {}
                 scope = intent.get("authorized_scope") if isinstance(intent, dict) else "unknown"
-                intent_judge = run_intent_judge_for_marker(prompt_marker)
-                judge_intent = intent_judge.get("prompt_intent") if isinstance(intent_judge, dict) else None
-                if isinstance(judge_intent, dict) and judge_intent.get("authorized_scope") in {"implementation", "completion"}:
-                    prompt_marker = update_latest_marker("UserPromptSubmit", {
-                        "prompt_intent_effective": judge_intent,
-                        "prompt_intent_llm": intent_judge,
-                    }, base_marker=prompt_marker)
+                goal_continuation_authorization = active_goal_continuation_authorization(payload)
+                if goal_continuation_authorization.get("authorized") is True:
+                    same_session_continuation_authorized = True
                 else:
-                    judge_reason = intent_judge.get("reason") if isinstance(intent_judge, dict) else None
-                    intent_deny_reason = (
-                        "Latest RedCap prompt is classified as "
-                        f"{scope}; Prism LLM intent judge did not authorize mutation"
-                        f"{': ' + judge_reason if judge_reason else ''}."
-                    )
+                    intent_judge = run_intent_judge_for_marker(prompt_marker)
+                    judge_intent = intent_judge.get("prompt_intent") if isinstance(intent_judge, dict) else None
+                    if isinstance(judge_intent, dict) and judge_intent.get("authorized_scope") in {"implementation", "completion"}:
+                        prompt_marker = update_latest_marker("UserPromptSubmit", {
+                            "prompt_intent_effective": judge_intent,
+                            "prompt_intent_llm": intent_judge,
+                        }, base_marker=prompt_marker)
+                    else:
+                        judge_reason = intent_judge.get("reason") if isinstance(intent_judge, dict) else None
+                        goal_reason = goal_continuation_authorization.get("reason")
+                        intent_deny_reason = (
+                            "Latest RedCap prompt is classified as "
+                            f"{scope}; neither active goal continuation nor Prism LLM intent judge authorized mutation"
+                            f"{': ' + str(goal_reason) if goal_reason else ''}"
+                            f"{'; ' + str(judge_reason) if judge_reason else ''}."
+                        )
             else:
                 pass
         deny_reason = (
@@ -1549,6 +1722,7 @@ def cmd_event(args: argparse.Namespace) -> int:
             "prompt_intent_mutation_denied": bool(intent_deny_reason),
             "latest_prompt_marker_fresh": prompt_marker_fresh,
             "same_session_continuation_authorized": same_session_continuation_authorized,
+            "active_goal_continuation_authorization": goal_continuation_authorization,
             "latest_prompt_intent": effective_prompt_intent(prompt_marker) if isinstance(prompt_marker, dict) else None,
             "prompt_intent_llm_attempted": bool(intent_judge),
             "prompt_intent_llm_result": intent_judge,
@@ -1908,6 +2082,7 @@ def run_hook_event_for_self_check(
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["REDCAP_CODEX_HOOK_EVIDENCE_DIR"] = str(evidence_dir)
+    env["REDCAP_CODEX_HOOK_TRANSCRIPT_ROOT"] = str(evidence_dir)
     if extra_env:
         env.update(extra_env)
     return subprocess.run(
@@ -1952,6 +2127,23 @@ def load_self_check_marker(
     except (OSError, json.JSONDecodeError):
         return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def write_self_check_transcript(path: pathlib.Path, user_messages: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines: list[str] = []
+    for index, text in enumerate(user_messages):
+        entry = {
+            "timestamp": f"2026-01-01T00:00:{index:02d}.000Z",
+            "type": "response_item",
+            "payload": {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": text}],
+            },
+        }
+        lines.append(json.dumps(entry, ensure_ascii=False, sort_keys=True))
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
@@ -2166,6 +2358,151 @@ def cmd_self_check_intent_judge(_: argparse.Namespace) -> int:
             failures.append("same-session continuation should not deny ordinary mutation")
         if continuation_tool_marker.get("prompt_intent_llm_attempted") is not False:
             failures.append("same-session continuation must not call LLM using old prompt text")
+
+        goal_review_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "请和棱镜一起整体 review 当前设计思路，看看还有哪些问题",
+                "cwd": str(REPO_ROOT),
+                "session_id": "goal-session-allow",
+                "turn_id": "goal-session-review-prompt",
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if goal_review_prompt.returncode != 0:
+            failures.append(f"goal review UserPromptSubmit failed: {goal_review_prompt.stderr or goal_review_prompt.stdout}")
+        goal_context = (
+            '<codex_internal_context source="goal">\n'
+            "<objective>\n"
+            "请把当前已知问题全部修复并执行落地，不要停留在状态汇报。\n"
+            "</objective>\n"
+            "</codex_internal_context>"
+        )
+        goal_transcript = evidence_dir / "sessions" / "rollout-goal-session-allow.jsonl"
+        write_self_check_transcript(goal_transcript, [goal_context])
+        goal_allow = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "goal-session-allow",
+                "turn_id": "goal-session-tool",
+                "transcript_path": str(goal_transcript),
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-goal-allow",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if goal_allow.returncode != 0:
+            failures.append(f"goal continuation PreToolUse failed: {goal_allow.stderr or goal_allow.stdout}")
+        goal_allow_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        goal_auth = goal_allow_marker.get("active_goal_continuation_authorization")
+        if goal_allow_marker.get("latest_prompt_marker_fresh") is not True:
+            failures.append("goal continuation fixture should keep a fresh review-only prompt marker")
+        if not (isinstance(goal_auth, dict) and goal_auth.get("authorized") is True):
+            failures.append("active goal continuation should authorize implementation objective")
+        if goal_allow_marker.get("same_session_continuation_authorized") is not True:
+            failures.append("active goal continuation should set same_session_continuation_authorized")
+        if goal_allow_marker.get("dangerous_command_denied") is not False:
+            failures.append("active goal continuation should not deny ordinary mutation")
+        if goal_allow_marker.get("prompt_intent_llm_attempted") is not False:
+            failures.append("active goal continuation should not call LLM after explicit goal authorization")
+
+        ordinary_review_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "请和棱镜一起整体 review 当前设计思路，看看还有哪些问题",
+                "cwd": str(REPO_ROOT),
+                "session_id": "goal-session-deny",
+                "turn_id": "goal-session-deny-prompt",
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if ordinary_review_prompt.returncode != 0:
+            failures.append(f"ordinary review UserPromptSubmit failed: {ordinary_review_prompt.stderr or ordinary_review_prompt.stdout}")
+        ordinary_transcript = evidence_dir / "sessions" / "rollout-goal-session-deny.jsonl"
+        write_self_check_transcript(ordinary_transcript, ["我只是想知道当前有哪些问题，可以先别改吗？"])
+        ordinary_deny = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "goal-session-deny",
+                "turn_id": "goal-session-deny-tool",
+                "transcript_path": str(ordinary_transcript),
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-goal-deny",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_INTENT_JUDGE_FAKE_RESPONSE": json.dumps({
+                    "prompt_kind": "question",
+                    "authorized_scope": "answer_only",
+                    "action_evidence": "none",
+                    "confidence": "high",
+                    "reason": "ordinary review request is not an implementation authorization",
+                }, ensure_ascii=False),
+            },
+        )
+        if ordinary_deny.returncode != 0:
+            failures.append(f"ordinary review PreToolUse failed: {ordinary_deny.stderr or ordinary_deny.stdout}")
+        ordinary_deny_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        ordinary_auth = ordinary_deny_marker.get("active_goal_continuation_authorization")
+        if not (isinstance(ordinary_auth, dict) and ordinary_auth.get("authorized") is False):
+            failures.append("ordinary transcript should not authorize active goal continuation")
+        if ordinary_deny_marker.get("dangerous_command_denied") is not True:
+            failures.append("ordinary review transcript should deny mutation")
+
+        later_question_prompt = run_hook_event_for_self_check(
+            "UserPromptSubmit",
+            {
+                "prompt": "请和棱镜一起整体 review 当前设计思路，看看还有哪些问题",
+                "cwd": str(REPO_ROOT),
+                "session_id": "goal-session-later-question",
+                "turn_id": "goal-session-later-question-prompt",
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+        )
+        if later_question_prompt.returncode != 0:
+            failures.append(f"later question UserPromptSubmit failed: {later_question_prompt.stderr or later_question_prompt.stdout}")
+        later_question_transcript = evidence_dir / "sessions" / "rollout-goal-session-later-question.jsonl"
+        write_self_check_transcript(later_question_transcript, [goal_context, "现在先讲讲这个方案是否合理，不要执行。"])
+        later_question_deny = run_hook_event_for_self_check(
+            "PreToolUse",
+            {
+                "cwd": str(REPO_ROOT),
+                "session_id": "goal-session-later-question",
+                "turn_id": "goal-session-later-question-tool",
+                "transcript_path": str(later_question_transcript),
+                "tool_name": "apply_patch",
+                "tool_use_id": "codex-hook-intent-self-check-later-question",
+                "tool_input": {"patch": "*** Begin Patch\n*** End Patch\n"},
+                "source": "codex-hook-intent-self-check",
+            },
+            evidence_dir=evidence_dir,
+            extra_env={
+                "REDCAP_INTENT_JUDGE_FAKE_RESPONSE": json.dumps({
+                    "prompt_kind": "question",
+                    "authorized_scope": "answer_only",
+                    "action_evidence": "none",
+                    "confidence": "high",
+                    "reason": "newer ordinary question overrides older goal context",
+                }, ensure_ascii=False),
+            },
+        )
+        if later_question_deny.returncode != 0:
+            failures.append(f"later question PreToolUse failed: {later_question_deny.stderr or later_question_deny.stdout}")
+        later_question_marker = load_self_check_marker(evidence_dir, "PreToolUse")
+        later_question_auth = later_question_marker.get("active_goal_continuation_authorization")
+        if not (isinstance(later_question_auth, dict) and later_question_auth.get("authorized") is False):
+            failures.append("older goal context must not override a newer ordinary user question")
+        if later_question_marker.get("dangerous_command_denied") is not True:
+            failures.append("newer ordinary question should deny mutation despite older goal context")
 
         timeout_prompt = run_hook_event_for_self_check(
             "UserPromptSubmit",

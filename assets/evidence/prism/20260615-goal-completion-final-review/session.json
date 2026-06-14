@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260615-goal-completion-final-review",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260615-goal-completion-final-review",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-14T17:27:09+00:00",
+  "task_started_at": "2026-06-14T17:27:09+00:00",
+  "updated_at": "2026-06-14T17:35:05+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "e273cee7-e20e-43de-a4ab-f37b80149e6c",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260615-goal-completion-final-review/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_aecdf4ee-59bb-4792-a300-3577b1939c39",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260615-goal-completion-final-review/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap accepted the block concerns, added local E2E evidence snapshot, dedicated Forge/arsenal/project-install receipts, and Prism toolchain audit before re-review."
+  }
+}

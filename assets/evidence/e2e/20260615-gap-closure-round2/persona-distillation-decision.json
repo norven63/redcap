@@ -1,0 +1,8 @@
+{
+  "schema_id": "redcap-e2e-persona-distillation-decision",
+  "decision": "no_signal",
+  "privacy_class": "cap-private",
+  "private_body_written": false,
+  "public_write": false,
+  "reason": "No new Cap persona boundary or private identity learning was produced by this implementation task; no private body was written."
+}

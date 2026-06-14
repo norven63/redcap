@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The plan is at high risk of becoming another design artifact. The main AI could satisfy the request by producing a refined contract, report, or todo queue without actually adding machine-checkable runtime assertions and running repeated E2E loops in an external project."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The plan has not yet escaped the pattern it criticizes. Seven evidence references point to existing contracts and code that need enhancement, but zero draft machine-checkable contracts have been produced for the gaps. The lifecycle packet (20260615-e2e-gap-closure-lifecycle.json) is a documentation artifact — no runtime checker reads it. Without at least one concrete, consumed runtime check contract, the plan is indistinguishable from the reporting loop it claims to break."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Convert the plan into committed runtime assertions with explicit fail modes, bind them into the aggregate check so they block any 'ready' claim, and execute at least one full E2E loop in a fresh external project before reporting progress."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before any further implementation, produce and ship at least one consumed runtime check contract for a single gap (recommend starting with Loom session continuity since it has the clearest machine-checkable shape: session ID presence, session start timestamp, session-loss alarm). Write the corresponding checker, integrate it into the aggregate check runner, and demonstrate it failing against the current runtime state. Only then proceed to the remaining gaps. This breaks the plan-vs-execution ambiguity and proves the implementation loop works."
+    }
+  ],
+  "anti_loop_detected": true
+}

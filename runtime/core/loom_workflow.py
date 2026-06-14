@@ -42,6 +42,39 @@ REQUIRED_FAILURE_ROUTES = {
     ("quality_assurance", "requirement", "idea_intake"),
     ("review_and_acceptance", "change", "change_intake"),
 }
+REQUIRED_HOOK_EVENTS = {
+    "SessionStart",
+    "UserPromptSubmit",
+    "PreToolUse",
+    "PostToolUse",
+    "Stop",
+}
+REQUIRED_SESSION_FIELDS = {
+    "project_id",
+    "task_id",
+    "role",
+    "session_id",
+    "provider",
+    "started_at",
+    "last_seen_at",
+    "context_state",
+    "handoff_inputs",
+    "handoff_outputs",
+}
+REQUIRED_PRISM_ASSISTANCE = {
+    "requirements_clarification_review",
+    "architecture_review",
+    "code_review",
+    "test_review",
+    "documentation_review",
+    "session_loss_recovery",
+}
+REQUIRED_PRISM_EVIDENCE = {
+    "prism_request",
+    "provider_reviews",
+    "merge_or_resolution",
+    "cap_decision",
+}
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -76,6 +109,67 @@ def validate_phase(phase: dict[str, Any], failures: list[str]) -> None:
             failures.append(f"{phase_id}: {key} 必须是非空字符串列表")
 
 
+def validate_execution_runtime(contract: dict[str, Any], failures: list[str]) -> None:
+    runtime = contract.get("execution_runtime")
+    if not isinstance(runtime, dict):
+        failures.append("Loom 工作流缺少 execution_runtime")
+        return
+    if runtime.get("required_host") != "codex-cli":
+        failures.append("Loom 执行宿主必须是 codex-cli，才能承载项目级 Hook")
+    if runtime.get("hook_carrier_required") is not True:
+        failures.append("Loom 必须声明 Hook 承载为必需能力")
+    hooks = set(runtime.get("required_hook_events", []) if isinstance(runtime.get("required_hook_events"), list) else [])
+    missing_hooks = sorted(REQUIRED_HOOK_EVENTS - hooks)
+    if missing_hooks:
+        failures.append(f"Loom Hook 事件要求缺失：{missing_hooks}")
+    providers = runtime.get("allowed_role_providers")
+    if providers != ["codex-cli"]:
+        failures.append("Loom 角色执行方必须限定为 codex-cli，其他 AI 只能作为评审协助方")
+
+    policy = runtime.get("role_session_policy")
+    if not isinstance(policy, dict):
+        failures.append("Loom 工作流缺少 role_session_policy")
+        return
+    expected_true = {
+        "session_id_required": "Loom 角色必须持久记录 session_id",
+        "same_role_must_resume_same_session": "同一角色必须续用同一 session_id",
+        "session_loss_alarm_required": "session_id 丢失必须报警",
+    }
+    for key, message in expected_true.items():
+        if policy.get(key) is not True:
+            failures.append(message)
+    if policy.get("session_scope") != "project_id + task_id + role":
+        failures.append("Loom session_id 作用域必须绑定 project_id + task_id + role")
+    if policy.get("lost_session_effect") != "mark_role_context_degraded_and_require_assisted_review":
+        failures.append("Loom session_id 丢失后必须标记上下文降级并要求协助评审")
+    fields = set(policy.get("manifest_required_fields", []) if isinstance(policy.get("manifest_required_fields"), list) else [])
+    missing_fields = sorted(REQUIRED_SESSION_FIELDS - fields)
+    if missing_fields:
+        failures.append(f"Loom 角色会话清单字段缺失：{missing_fields}")
+
+
+def validate_prism_assistance(contract: dict[str, Any], failures: list[str]) -> None:
+    policy = contract.get("prism_assistance_policy")
+    if not isinstance(policy, dict):
+        failures.append("Loom 工作流缺少 prism_assistance_policy")
+        return
+    if policy.get("allowed") is not True:
+        failures.append("Loom 必须允许角色调用棱镜协助复杂评审")
+    required_for = set(policy.get("required_for", []) if isinstance(policy.get("required_for"), list) else [])
+    missing_required = sorted(REQUIRED_PRISM_ASSISTANCE - required_for)
+    if missing_required:
+        failures.append(f"Loom 棱镜协助场景缺失：{missing_required}")
+    if policy.get("providers") != ["kimi", "claude-code"]:
+        failures.append("Loom 棱镜协助方必须显式限定为 kimi 和 claude-code")
+    evidence = set(policy.get("evidence_required", []) if isinstance(policy.get("evidence_required"), list) else [])
+    missing_evidence = sorted(REQUIRED_PRISM_EVIDENCE - evidence)
+    if missing_evidence:
+        failures.append(f"Loom 棱镜协助证据缺失：{missing_evidence}")
+    rule = str(policy.get("role_decision_rule") or "")
+    if "Cap" not in rule or "blindly" not in rule:
+        failures.append("Loom 必须声明 Cap 不能盲从或无理由否决棱镜")
+
+
 def validate_contract(contract: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     if contract.get("schema_id") != "redcap-loom-workflow-contract":
@@ -88,6 +182,8 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
     missing_roles = sorted(REQUIRED_ROLES - roles)
     if missing_roles:
         failures.append(f"Loom 工作流缺少必需角色：{missing_roles}")
+    validate_execution_runtime(contract, failures)
+    validate_prism_assistance(contract, failures)
     phases = contract.get("phases")
     if not isinstance(phases, list) or not phases:
         failures.append("Loom 工作流缺少阶段")
@@ -152,6 +248,8 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         expected = {
             "closeout_requires_all_roles": True,
             "closeout_requires_terminal_acceptance": True,
+            "closeout_requires_role_session_manifest": True,
+            "closeout_requires_prism_assistance_decisions": True,
             "phase_skipping_allowed": False,
             "report_or_receipt_alone_can_complete": False,
         }
@@ -203,6 +301,18 @@ def cmd_self_check(_: argparse.Namespace) -> int:
     bad_completion["completion_rules"]["report_or_receipt_alone_can_complete"] = True
     if not any("report_or_receipt" in item for item in validate_contract(bad_completion)):
         failures.append("报告或回执单独完成的样例没有失败")
+    missing_session = json.loads(json.dumps(good, ensure_ascii=False))
+    missing_session["execution_runtime"]["role_session_policy"].pop("session_id_required", None)
+    if not any("session_id" in item for item in validate_contract(missing_session)):
+        failures.append("缺少角色 session_id 要求的样例没有失败")
+    missing_alarm = json.loads(json.dumps(good, ensure_ascii=False))
+    missing_alarm["execution_runtime"]["role_session_policy"]["session_loss_alarm_required"] = False
+    if not any("丢失" in item or "报警" in item for item in validate_contract(missing_alarm)):
+        failures.append("缺少 session 丢失报警的样例没有失败")
+    missing_prism = json.loads(json.dumps(good, ensure_ascii=False))
+    missing_prism["prism_assistance_policy"]["required_for"] = ["code_review"]
+    if not any("棱镜协助场景缺失" in item for item in validate_contract(missing_prism)):
+        failures.append("缺少棱镜协助场景的样例没有失败")
     print(json.dumps({"ok": not failures, "failures": failures}, ensure_ascii=False, indent=2))
     if failures:
         return 1

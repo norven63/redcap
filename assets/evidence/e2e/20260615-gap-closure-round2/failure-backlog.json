@@ -1,0 +1,18 @@
+{
+  "schema_id": "redcap-e2e-failure-backlog",
+  "open_items": [],
+  "closed_items": [
+    {
+      "id": "browser-automation-fallback",
+      "status": "closed_non_blocking",
+      "summary": "In-app browser was unavailable and Playwright CLI fetch failed with npm ECONNRESET. API, frontend shell, and local HTTP behavior were still validated without external dependencies."
+    },
+    {
+      "id": "prism-full-check-package-paths",
+      "status": "closed_non_blocking",
+      "summary": "Prism full self-check failed on RedCap package/source-path completeness expectations, not on the TRPG app implementation. Gate, Loom checks, and app validation were recorded separately."
+    }
+  ],
+  "next_round_required": false,
+  "closure_reason": "No open product, implementation, or validation defects remain for the scoped local TRPG activity platform."
+}

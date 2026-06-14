@@ -1,0 +1,8 @@
+{
+  "schema_id": "redcap-project-installation",
+  "installed_at": "2026-06-14T16:59:00+00:00",
+  "project": "/private/tmp/redcap-e2e-20260615-gap-closure-round2/redcap-e2e-简化版-trpg-活动组织平台-在一个本地全栈项目中交付可运行的桌面角色",
+  "package_root": "/private/tmp/redcap-e2e-20260615-gap-closure-round2/redcap-e2e-简化版-trpg-活动组织平台-在一个本地全栈项目中交付可运行的桌面角色/.redcap",
+  "hook_config": "/private/tmp/redcap-e2e-20260615-gap-closure-round2/redcap-e2e-简化版-trpg-活动组织平台-在一个本地全栈项目中交付可运行的桌面角色/.codex/hooks.json",
+  "runtime_bin": "/private/tmp/redcap-e2e-20260615-gap-closure-round2/redcap-e2e-简化版-trpg-活动组织平台-在一个本地全栈项目中交付可运行的桌面角色/.redcap/runtime/bin/redcap"
+}

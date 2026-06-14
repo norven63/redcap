@@ -147,6 +147,13 @@
       "requirements.json",
       "acceptance-criteria.json",
       "architecture-template.md",
+      "loom-role-session-manifest-template.json",
+      "prism-assisted-review-template.json",
+      "knowledge-retrieval-evidence-template.json",
+      "self-purification-candidates-template.json",
+      "persona-distillation-decision-template.json",
+      "failure-backlog-template.json",
+      "iteration-verdict-template.json",
       "implementer-prompt.md",
       "workflow-events.jsonl",
       "review-verdict-template.json",
@@ -157,10 +164,44 @@
       "codex-last-message.txt",
       "filesystem-after.json",
       "hook-events-summary.json",
+      "loom-role-session-manifest.json",
+      "prism-assisted-review.json",
+      "knowledge-retrieval-evidence.json",
+      "self-purification-candidates.json",
+      "persona-distillation-decision.json",
+      "failure-backlog.json",
+      "iteration-verdict.json",
       "e2e-acceptance-summary.md"
     ],
     "hash_required": true,
     "human_inspectable": true
+  },
+  "meaningful_acceptance": {
+    "required_evidence": [
+      "loom-role-session-manifest.json",
+      "prism-assisted-review.json",
+      "knowledge-retrieval-evidence.json",
+      "self-purification-candidates.json",
+      "persona-distillation-decision.json",
+      "failure-backlog.json",
+      "iteration-verdict.json"
+    ],
+    "quality_gates": [
+      "每个 Loom 角色必须记录 session_id，缺失时必须写 alarm",
+      "需求、架构、代码、测试或文档至少一处必须记录棱镜协助评审决策；如果未调用，必须说明低风险理由",
+      "实现前必须记录知识检索结果或跳过理由",
+      "任务后必须记录自我净化候选或无候选理由",
+      "Cap 人格沉淀必须记录私有边界决策，禁止写入公共知识库",
+      "失败必须进入 failure-backlog，不能被 completion-marker 覆盖",
+      "iteration-verdict 必须明确是否 ready_for_engineering_use，并列出剩余问题"
+    ],
+    "pass_rule": "只有项目交付、Hook、Loom、棱镜协助、自我净化、人格边界、测试和 iteration-verdict 全部通过，单轮 E2E 才可通过。"
+  },
+  "iteration_loop": {
+    "max_iterations_before_cap_escalation": 6,
+    "failure_ingestion": "每轮失败必须写入 failure-backlog.json，并转化为下一轮修复队列或 no-promote 决策。",
+    "next_round_rule": "只要 iteration-verdict.ready_for_engineering_use 为 false，下一轮必须先处理 failure-backlog 中未关闭项。",
+    "stop_rule": "连续一轮外部项目 E2E 通过且 failure-backlog 无开放问题时，才允许进入生产可用性汇报；这仍不等同于永久无问题。"
   },
   "negative_probes": [
     {

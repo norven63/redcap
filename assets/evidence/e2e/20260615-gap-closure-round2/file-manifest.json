@@ -1,0 +1,31 @@
+{
+  "schema_id": "redcap-e2e-file-manifest",
+  "recorded_at": "2026-06-14T17:06:33Z",
+  "deliverable_files": [
+    "architecture.md",
+    "package.json",
+    "public/app.js",
+    "public/index.html",
+    "public/styles.css",
+    "public/table-map.svg",
+    "src/app.js",
+    "src/data.js",
+    "src/server.js",
+    "tests/api.test.js"
+  ],
+  "evidence_files": [
+    ".redcap/evidence/e2e/acceptance-summary.json",
+    ".redcap/evidence/e2e/completion-marker.json",
+    ".redcap/evidence/e2e/failure-backlog.json",
+    ".redcap/evidence/e2e/file-manifest.json",
+    ".redcap/evidence/e2e/implementation-log.json",
+    ".redcap/evidence/e2e/iteration-verdict.json",
+    ".redcap/evidence/e2e/knowledge-retrieval-evidence.json",
+    ".redcap/evidence/e2e/loom-role-session-manifest.json",
+    ".redcap/evidence/e2e/persona-distillation-decision.json",
+    ".redcap/evidence/e2e/prism-assisted-review.json",
+    ".redcap/evidence/e2e/review-verdict.json",
+    ".redcap/evidence/e2e/self-purification-candidates.json",
+    ".redcap/evidence/e2e/test-results.json"
+  ]
+}

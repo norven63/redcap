@@ -1,0 +1,67 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"/private/tmp/redcap-e2e-20260615-gap-closure-round2/redcap-e2e-简化版-trpg-活动组织平台-在一个本地全栈项目中交付可运行的桌面角色/.redcap/runtime/host-adapters/codex/codex-hook.py\" --event SessionStart",
+            "timeout": 10,
+            "statusMessage": "Recording RedCap host hook live marker"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"/private/tmp/redcap-e2e-20260615-gap-closure-round2/redcap-e2e-简化版-trpg-活动组织平台-在一个本地全栈项目中交付可运行的桌面角色/.redcap/runtime/host-adapters/codex/codex-hook.py\" --event UserPromptSubmit",
+            "timeout": 10,
+            "statusMessage": "Running RedCap prompt gate"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"/private/tmp/redcap-e2e-20260615-gap-closure-round2/redcap-e2e-简化版-trpg-活动组织平台-在一个本地全栈项目中交付可运行的桌面角色/.redcap/runtime/host-adapters/codex/codex-hook.py\" --event PreToolUse",
+            "timeout": 120,
+            "statusMessage": "Running RedCap pre-tool guard"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"/private/tmp/redcap-e2e-20260615-gap-closure-round2/redcap-e2e-简化版-trpg-活动组织平台-在一个本地全栈项目中交付可运行的桌面角色/.redcap/runtime/host-adapters/codex/codex-hook.py\" --event PostToolUse",
+            "timeout": 10,
+            "statusMessage": "Recording RedCap action evidence"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"/private/tmp/redcap-e2e-20260615-gap-closure-round2/redcap-e2e-简化版-trpg-活动组织平台-在一个本地全栈项目中交付可运行的桌面角色/.redcap/runtime/host-adapters/codex/codex-hook.py\" --event Stop",
+            "timeout": 120,
+            "statusMessage": "Running RedCap advisory closeout review"
+          }
+        ]
+      }
+    ]
+  }
+}

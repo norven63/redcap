@@ -23,6 +23,24 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 REDCAP = REPO_ROOT / "runtime" / "bin" / "redcap"
 CONTRACT = REPO_ROOT / "assets" / "contracts" / "complete-revival-e2e-acceptance-design.json"
 REQUIRED_HOOK_EVENTS = ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"]
+MEANINGFUL_E2E_REQUIRED_FILES = [
+    "loom-role-session-manifest.json",
+    "prism-assisted-review.json",
+    "knowledge-retrieval-evidence.json",
+    "self-purification-candidates.json",
+    "persona-distillation-decision.json",
+    "failure-backlog.json",
+    "iteration-verdict.json",
+]
+MEANINGFUL_E2E_REQUIRED_GATES = [
+    "session_id",
+    "棱镜协助",
+    "知识检索",
+    "自我净化",
+    "Cap 人格",
+    "failure-backlog",
+    "ready_for_engineering_use",
+]
 OLD_REDCAP_ROOT = pathlib.Path("/Users/norven/workspace/redcap")
 GIT_IN_PROGRESS_MARKERS = [
     "MERGE_HEAD",
@@ -358,6 +376,47 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
     ]:
         if required_probe not in probes:
             failures.append(f"E2E 合同缺少负向探针：{required_probe}")
+    raw_package = contract.get("raw_evidence_package")
+    if not isinstance(raw_package, dict):
+        failures.append("E2E 合同缺少 raw_evidence_package")
+    else:
+        after_run = set(raw_package.get("required_files_after_run", []) if isinstance(raw_package.get("required_files_after_run"), list) else [])
+        missing_after_run = sorted(set(MEANINGFUL_E2E_REQUIRED_FILES) - after_run)
+        if missing_after_run:
+            failures.append(f"E2E 运行后证据缺少有意义验收文件：{missing_after_run}")
+        after_prepare = set(raw_package.get("required_files_after_prepare", []) if isinstance(raw_package.get("required_files_after_prepare"), list) else [])
+        expected_templates = {name.replace(".json", "-template.json") for name in MEANINGFUL_E2E_REQUIRED_FILES}
+        missing_templates = sorted(expected_templates - after_prepare)
+        if missing_templates:
+            failures.append(f"E2E 准备阶段缺少有意义验收模板：{missing_templates}")
+    meaningful = contract.get("meaningful_acceptance")
+    if not isinstance(meaningful, dict):
+        failures.append("E2E 合同缺少 meaningful_acceptance")
+    else:
+        required_evidence = set(meaningful.get("required_evidence", []) if isinstance(meaningful.get("required_evidence"), list) else [])
+        missing_evidence = sorted(set(MEANINGFUL_E2E_REQUIRED_FILES) - required_evidence)
+        if missing_evidence:
+            failures.append(f"meaningful_acceptance.required_evidence 缺失：{missing_evidence}")
+        joined_gates = "\n".join(str(item) for item in meaningful.get("quality_gates", []))
+        for gate in MEANINGFUL_E2E_REQUIRED_GATES:
+            if gate not in joined_gates:
+                failures.append(f"meaningful_acceptance.quality_gates 缺少关键约束：{gate}")
+        pass_rule = str(meaningful.get("pass_rule") or "")
+        if "Loom" not in pass_rule or "自我净化" not in pass_rule or "iteration-verdict" not in pass_rule:
+            failures.append("meaningful_acceptance.pass_rule 必须覆盖 Loom、自我净化和 iteration-verdict")
+    loop = contract.get("iteration_loop")
+    if not isinstance(loop, dict):
+        failures.append("E2E 合同缺少 iteration_loop")
+    else:
+        max_iterations = loop.get("max_iterations_before_cap_escalation")
+        if not isinstance(max_iterations, int) or not (1 <= max_iterations <= 6):
+            failures.append("iteration_loop.max_iterations_before_cap_escalation 必须是 1 到 6 的整数")
+        for key in ["failure_ingestion", "next_round_rule", "stop_rule"]:
+            value = str(loop.get(key) or "")
+            if "failure-backlog" not in value and key != "stop_rule":
+                failures.append(f"iteration_loop.{key} 必须绑定 failure-backlog")
+        if "ready_for_engineering_use" not in str(loop.get("next_round_rule") or ""):
+            failures.append("iteration_loop.next_round_rule 必须读取 ready_for_engineering_use")
     return failures
 
 
@@ -415,6 +474,7 @@ def build_requirements(direction: str) -> dict[str, Any]:
         ],
         "quality_bar": [
             "实现方必须先读 .redcap/evidence/e2e/requirements.json",
+            "实现方必须记录知识检索结果；无相关条目时写 no_relevant_entry_reason，不能留空",
             "实现方必须生成 architecture.md 和 test-results.json",
             "实现方必须在完成前运行验证命令并记录结果",
             "实现方不能把无法完成的事项标为完成"
@@ -453,8 +513,15 @@ def build_implementer_prompt(project: pathlib.Path, direction: str) -> str:
     3. 产出 architecture.md，说明方案、目录结构、运行方式、验证方式和风险。
     4. 运行你认为合适的验证命令，并把结果写入 .redcap/evidence/e2e/test-results.json。
     5. 写入 .redcap/evidence/e2e/implementation-log.json，记录你做了什么。
-    6. 如果因为权限、网络、账号、环境缺失无法完成，写 .redcap/evidence/e2e/blocked-package.json，并说明阻塞条件。
-    7. 只有真实交付和验证都完成时，才写 .redcap/evidence/e2e/completion-marker.json。
+    6. 写入 .redcap/evidence/e2e/loom-role-session-manifest.json，记录产品、架构、开发、测试、评审角色；每个角色必须有 session_id，缺失时写 alarm。
+    7. 写入 .redcap/evidence/e2e/prism-assisted-review.json，记录是否调用棱镜协助需求、架构、代码、测试或文档评审；未调用时必须说明理由。
+    8. 写入 .redcap/evidence/e2e/knowledge-retrieval-evidence.json，记录实现前查了哪些 RedCap 知识；如果没有相关条目，必须写 no_relevant_entry_reason；如果没有检索，必须写 skip_reason。
+    9. 写入 .redcap/evidence/e2e/self-purification-candidates.json，记录任务后是否产生可沉淀经验、是否晋升或 no-promote。
+    10. 写入 .redcap/evidence/e2e/persona-distillation-decision.json，记录 Cap 人格沉淀边界；禁止写入私密正文。
+    11. 写入 .redcap/evidence/e2e/failure-backlog.json，记录开放问题；无问题时写空列表和关闭理由。
+    12. 写入 .redcap/evidence/e2e/iteration-verdict.json，明确 ready_for_engineering_use 是 true 还是 false，并列出理由。
+    13. 如果因为权限、网络、账号、环境缺失无法完成，写 .redcap/evidence/e2e/blocked-package.json，并说明阻塞条件。
+    14. 只有真实交付、验证、Loom 会话、棱镜协助、自我净化、人格边界和失败回流都完成时，才写 .redcap/evidence/e2e/completion-marker.json。
 
     最后请用中文简要说明：完成了什么、验证命令是什么、证据文件在哪里。
     """).strip() + "\n"
@@ -492,6 +559,56 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "# 架构设计\n\n## 目标\n\n## 目录结构\n\n## 运行方式\n\n## 验证方式\n\n## 风险与回滚\n",
         encoding="utf-8",
     )
+    write_json(evidence / "loom-role-session-manifest-template.json", {
+        "schema_id": "redcap-e2e-loom-role-session-manifest",
+        "roles": [
+            {"role": role, "session_id": "<required>", "context_state": "complete|degraded", "alarm": None}
+            for role in ["product_manager", "architect", "developer", "tester", "reviewer"]
+        ],
+        "session_loss_alarms": []
+    })
+    write_json(evidence / "prism-assisted-review-template.json", {
+        "schema_id": "redcap-e2e-prism-assisted-review",
+        "used": False,
+        "reviews": [],
+        "skip_reason": "<required if used=false>",
+        "cap_decision": "<required>"
+    })
+    write_json(evidence / "knowledge-retrieval-evidence-template.json", {
+        "schema_id": "redcap-e2e-knowledge-retrieval-evidence",
+        "query": "<required>",
+        "matches": [],
+        "used_entries": [],
+        "no_relevant_entry_reason": "<required if matches empty and search ran>",
+        "skip_reason": None
+    })
+    write_json(evidence / "self-purification-candidates-template.json", {
+        "schema_id": "redcap-e2e-self-purification-candidates",
+        "candidates": [],
+        "no_candidate_reason": "<required if candidates empty>",
+        "decisions": []
+    })
+    write_json(evidence / "persona-distillation-decision-template.json", {
+        "schema_id": "redcap-e2e-persona-distillation-decision",
+        "privacy_class": "cap-private",
+        "public_write": False,
+        "decision": "keep_private|no_signal|defer_with_owner",
+        "private_body_written": False,
+        "reason": "<required>"
+    })
+    write_json(evidence / "failure-backlog-template.json", {
+        "schema_id": "redcap-e2e-failure-backlog",
+        "open_items": [],
+        "closed_items": [],
+        "next_round_required": False
+    })
+    write_json(evidence / "iteration-verdict-template.json", {
+        "schema_id": "redcap-e2e-iteration-verdict",
+        "ready_for_engineering_use": False,
+        "status": "pass|fail|blocked",
+        "remaining_issues": [],
+        "evidence_checked": []
+    })
     (evidence / "implementer-prompt.md").write_text(prompt, encoding="utf-8")
     write_json(evidence / "review-verdict-template.json", {
         "schema_id": "redcap-e2e-review-verdict",
@@ -552,6 +669,87 @@ def parse_hook_events(path: pathlib.Path) -> list[str]:
         if isinstance(payload, dict) and isinstance(payload.get("event"), str):
             events.append(payload["event"])
     return events
+
+
+def load_optional_json(path: pathlib.Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
+    failures: list[str] = []
+    for rel in MEANINGFUL_E2E_REQUIRED_FILES:
+        if not (evidence / rel).exists():
+            failures.append(f"缺少有意义 E2E 证据：{rel}")
+    role_manifest = load_optional_json(evidence / "loom-role-session-manifest.json")
+    if role_manifest is not None:
+        roles = role_manifest.get("roles")
+        if not isinstance(roles, list) or not roles:
+            failures.append("loom-role-session-manifest.roles 必须是非空列表")
+        else:
+            for role in roles:
+                if not isinstance(role, dict):
+                    failures.append("loom-role-session-manifest.roles 条目必须是对象")
+                    continue
+                if not (isinstance(role.get("role"), str) and role["role"].strip()):
+                    failures.append("Loom 角色条目缺少 role")
+                if not (isinstance(role.get("session_id"), str) and role["session_id"].strip()):
+                    failures.append(f"Loom 角色缺少 session_id：{role.get('role')}")
+                if role.get("context_state") == "degraded" and not role.get("alarm"):
+                    failures.append(f"Loom 角色上下文降级但缺少 alarm：{role.get('role')}")
+    prism_review = load_optional_json(evidence / "prism-assisted-review.json")
+    if prism_review is not None:
+        if prism_review.get("used") is True:
+            reviews = prism_review.get("reviews")
+            if not isinstance(reviews, list) or not reviews:
+                failures.append("prism-assisted-review.used=true 时 reviews 必须非空")
+            if not prism_review.get("cap_decision"):
+                failures.append("prism-assisted-review 必须记录 cap_decision")
+        elif not prism_review.get("skip_reason"):
+            failures.append("prism-assisted-review 未调用棱镜时必须写 skip_reason")
+    retrieval = load_optional_json(evidence / "knowledge-retrieval-evidence.json")
+    if retrieval is not None and not (
+        retrieval.get("matches")
+        or retrieval.get("skip_reason")
+        or retrieval.get("no_relevant_entry_reason")
+    ):
+        failures.append("knowledge-retrieval-evidence 必须记录匹配项、无相关条目理由或跳过理由")
+    purification = load_optional_json(evidence / "self-purification-candidates.json")
+    if purification is not None and not (purification.get("candidates") or purification.get("no_candidate_reason")):
+        failures.append("self-purification-candidates 必须记录候选或无候选理由")
+    persona = load_optional_json(evidence / "persona-distillation-decision.json")
+    if persona is not None:
+        if persona.get("public_write") is not False:
+            failures.append("persona-distillation-decision.public_write 必须为 false")
+        if persona.get("private_body_written") is not False:
+            failures.append("persona-distillation-decision.private_body_written 必须为 false")
+        if persona.get("privacy_class") != "cap-private":
+            failures.append("persona-distillation-decision.privacy_class 必须是 cap-private")
+    backlog = load_optional_json(evidence / "failure-backlog.json")
+    if backlog is not None:
+        open_items = backlog.get("open_items")
+        if open_items is not None and not isinstance(open_items, list):
+            failures.append("failure-backlog.open_items 必须是列表")
+    verdict = load_optional_json(evidence / "iteration-verdict.json")
+    ready = False
+    if verdict is not None:
+        ready = verdict.get("ready_for_engineering_use") is True
+        if verdict.get("status") not in {"pass", "fail", "blocked"}:
+            failures.append("iteration-verdict.status 必须是 pass、fail 或 blocked")
+        if ready and verdict.get("status") != "pass":
+            failures.append("ready_for_engineering_use=true 时 iteration-verdict.status 必须是 pass")
+        if not isinstance(verdict.get("evidence_checked"), list) or not verdict.get("evidence_checked"):
+            failures.append("iteration-verdict.evidence_checked 必须非空")
+    return {
+        "schema_id": "redcap-e2e-meaningful-evidence-check",
+        "ok": not failures,
+        "ready_for_engineering_use": ready,
+        "required_files": MEANINGFUL_E2E_REQUIRED_FILES,
+        "failures": failures,
+    }
 
 
 def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[str, Any]:
@@ -664,6 +862,8 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
     write_json(evidence / "filesystem-after.json", {"files": filesystem_manifest(project)})
     hook_events = parse_hook_events(project / ".redcap" / "assets" / "evidence" / "host-hooks" / "codex" / "events.jsonl")
     missing_hooks = [event for event in REQUIRED_HOOK_EVENTS if event not in hook_events]
+    meaningful = validate_meaningful_e2e_evidence(evidence)
+    write_json(evidence / "meaningful-evidence-check.json", meaningful)
     write_json(evidence / "hook-events-summary.json", {
         "schema_id": "redcap-e2e-hook-events-summary",
         "events": hook_events,
@@ -677,6 +877,8 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
         "evidence_root": str(evidence),
         "codex_cli_ok": result["ok"],
         "hook_events_ok": not missing_hooks,
+        "meaningful_evidence_ok": meaningful["ok"],
+        "ready_for_engineering_use": meaningful["ready_for_engineering_use"],
         "completion_marker_present": completion_marker.exists(),
         "failures": [],
     }
@@ -686,6 +888,11 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
         summary["failures"].append(f"缺少项目级 hook 事件：{missing_hooks}")
     if not completion_marker.exists():
         summary["failures"].append("实现方没有写入 completion-marker.json；这可能表示任务未完成或被阻塞")
+    if not meaningful["ok"]:
+        summary["failures"].append(f"有意义 E2E 证据不完整：{meaningful['failures']}")
+    if not meaningful["ready_for_engineering_use"]:
+        summary["failures"].append("iteration-verdict 未证明 ready_for_engineering_use=true")
+    summary["ok"] = summary["ok"] and meaningful["ok"] and meaningful["ready_for_engineering_use"]
     summary = attach_source_workspace_guard(summary, guard_before)
     (evidence / "e2e-acceptance-summary.md").write_text(
         "# RedCap E2E 验收摘要\n\n"

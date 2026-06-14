@@ -1,0 +1,103 @@
+{
+  "schema_id": "redcap-self-purification-contract",
+  "schema_version": 1,
+  "purpose": "把 RedCap 的自我净化从手动写知识，升级为任务前检索、任务后候选抽取、评审、晋升或 no-promote 的工作流闭环，并把 Cap 人格沉淀限制在私有边界内。",
+  "status": "runtime-gated",
+  "pre_task_retrieval": {
+    "required_for": [
+      "implementation",
+      "completion",
+      "e2e",
+      "self-development"
+    ],
+    "command": "runtime/bin/redcap knowledge-gateway search <query>",
+    "evidence_field": "knowledge_retrieval_evidence",
+    "skip_requires_reason": true,
+    "minimum_result_handling": [
+      "use_relevant_entry",
+      "record_no_relevant_entry",
+      "record_skip_reason"
+    ]
+  },
+  "post_task_harvest": {
+    "required_triggers": [
+      "user_correction",
+      "prism_block_or_concern",
+      "e2e_failure",
+      "hook_false_positive",
+      "workflow_drift",
+      "completion_claim_correction",
+      "new_reusable_design",
+      "persona_signal"
+    ],
+    "candidate_required_fields": [
+      "id",
+      "source_task",
+      "trigger",
+      "lesson",
+      "privacy_class",
+      "proposed_destination",
+      "evidence",
+      "created_at"
+    ],
+    "decision_labels": [
+      "promote_public",
+      "keep_private",
+      "no_promote",
+      "defer_with_owner"
+    ],
+    "no_promote_requires_reason": true
+  },
+  "public_knowledge_path": {
+    "gateway": "runtime/bin/redcap knowledge-gateway",
+    "forge": "runtime/bin/redcap forge check",
+    "arsenal": "runtime/bin/redcap arsenal check",
+    "promotion_requires": [
+      "reviewed_source",
+      "privacy_checked",
+      "deduplicated",
+      "human_readable",
+      "index_first",
+      "source_refs_exist"
+    ]
+  },
+  "cap_persona_distillation": {
+    "enabled": true,
+    "privacy_class": "cap-private",
+    "public_write_forbidden": true,
+    "public_destinations_forbidden": [
+      "assets/knowledge/entries",
+      "assets/knowledge/arsenal",
+      "assets/contracts",
+      "assets/docs"
+    ],
+    "private_identity_source": "/Users/norven/.cap/identity.md",
+    "evidence_may_contain": [
+      "candidate_id",
+      "decision",
+      "source_task",
+      "reason",
+      "hash",
+      "counts"
+    ],
+    "evidence_must_not_contain": [
+      "private_identity_body",
+      "raw_persona_body",
+      "secret",
+      "token",
+      "credential"
+    ],
+    "identity_mutation_requires_human": true
+  },
+  "lifecycle_binding": {
+    "required_before_implementation": [
+      "knowledge_retrieval_or_skip_reason"
+    ],
+    "required_after_task": [
+      "harvest_candidate_or_no_candidate_reason",
+      "review_decision",
+      "promotion_or_no_promote_result"
+    ],
+    "e2e_failure_binding": "Every meaningful E2E failure must create at least one harvest candidate or a no-candidate reason."
+  }
+}

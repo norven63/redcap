@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260615-e2e-gap-closure",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260615-e2e-gap-closure",
+  "status": "main-decided",
+  "max_rounds_per_provider": 2,
+  "created_at": "2026-06-14T16:26:07+00:00",
+  "task_started_at": "2026-06-14T16:26:07+00:00",
+  "updated_at": "2026-06-14T16:34:11+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "3d92c6dd-0493-46a8-98b0-fbef81f63482",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "assets/evidence/prism/20260615-e2e-gap-closure/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_e19802c2-865f-43f9-8147-ee02b06a47eb",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "assets/evidence/prism/20260615-e2e-gap-closure/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap accepted Prism concerns and implemented consumed runtime checks; external E2E iteration remains pending."
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema_id": "redcap-prism-toolchain-change-audit",
+  "created_at": "2026-06-15T01:33:19+0800",
+  "scope": [
+    "runtime/prism/bin/prism",
+    "runtime/prism/bin/prism-dispatch",
+    "runtime/host-adapters/codex/codex-hook.py"
+  ],
+  "findings": [
+    {
+      "path": "runtime/prism/bin/prism",
+      "classification": "timeout_budget_only",
+      "summary": "Only the default subprocess timeout changed from 240 seconds to 600 seconds; this affects long-running checks but not verdict parsing, merge strictness, resolution schema, or provider content.",
+      "risk": "low_to_medium",
+      "mitigation": "Keep the change visible in Prism review evidence and rely on provider raw outputs plus resolution checks, not only local timeout behavior."
+    },
+    {
+      "path": "runtime/prism/bin/prism-dispatch",
+      "classification": "unchanged",
+      "summary": "No working-tree diff was present for the dispatcher used to call providers.",
+      "risk": "low",
+      "mitigation": "Provider dispatch behavior remains governed by the existing dispatcher."
+    },
+    {
+      "path": "runtime/host-adapters/codex/codex-hook.py",
+      "classification": "host_hook_advisory_recovery_change",
+      "summary": "Large host hook changes are present from prior Stop/intent-governance repair work and are covered by host-hook-audit and codex-hook self-check in complete revival checks.",
+      "risk": "medium",
+      "mitigation": "Do not use hook changes as the sole proof of completion; require E2E hook event evidence and complete-revival host audit."
+    }
+  ],
+  "diff_stat": " runtime/host-adapters/codex/codex-hook.py | 363 ++++++++++++++++++++++++++++--\n runtime/prism/bin/prism                   |   2 +-\n 2 files changed, 351 insertions(+), 14 deletions(-)\n",
+  "prism_diff": "diff --git a/runtime/prism/bin/prism b/runtime/prism/bin/prism\nindex 1d428c0..119dc55 100755\n--- a/runtime/prism/bin/prism\n+++ b/runtime/prism/bin/prism\n@@ -41,7 +41,7 @@ PRISM_REBUTTAL_REQUEST_GENERATOR = \"runtime/prism/bin/prism rebuttal-request\"\n EXECUTED_CHECK_RECEIPT_SCHEMA_ID = \"redcap-executed-check-receipt\"\n SESSION_STATUSES = {\"active\", \"converged\", \"main-decided\", \"escalated\", \"expired\", \"closed\"}\n PROVIDER_SESSION_STATUSES = {\"pending\", \"active\", \"converged\", \"escalated\", \"expired\", \"closed\"}\n-PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS = float(os.environ.get(\"REDCAP_PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS\", \"240\"))\n+PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS = float(os.environ.get(\"REDCAP_PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS\", \"600\"))\n _ORIGINAL_SUBPROCESS_RUN = subprocess.run\n _PRISM_CHECK_TIMEOUT_GUARD_INSTALLED = False\n SELF_DEVELOPMENT_LIFECYCLE_RISKS = {\"medium\", \"high\", \"critical\"}\n",
+  "dispatch_diff_empty": true,
+  "hook_diff_stat": " runtime/host-adapters/codex/codex-hook.py | 363 ++++++++++++++++++++++++++++--\n 1 file changed, 350 insertions(+), 13 deletions(-)\n"
+}

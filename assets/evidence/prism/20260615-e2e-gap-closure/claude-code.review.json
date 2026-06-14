@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The plan correctly diagnoses six gaps across Loom session continuity, Codex CLI Hook carrier assumptions, Prism-assisted role review, self-purification, Cap persona distillation, and Forge lifecycle binding. However, the deliverable is still a lifecycle packet and a review request — not a single machine-checkable runtime contract. The main claim says \"the correct next implementation is not another report,\" but what exists so far is structurally another report. The lifecycle packet records the target scope but no checker consumes it. The changed_reality items describe what is missing, not what has changed.",
+  "main_concern": "The plan has not yet escaped the pattern it criticizes. Seven evidence references point to existing contracts and code that need enhancement, but zero draft machine-checkable contracts have been produced for the gaps. The lifecycle packet (20260615-e2e-gap-closure-lifecycle.json) is a documentation artifact — no runtime checker reads it. Without at least one concrete, consumed runtime check contract, the plan is indistinguishable from the reporting loop it claims to break.",
+  "top_risks": [
+    "Design-phase trap: Contracts are drafted and reviewed but never become consumed runtime checks — the gap analysis becomes the output instead of the input",
+    "Cap persona distillation leaks: Without a machine-enforced privacy boundary, automatic extraction of Cap's private persona reasoning could expose private material to public knowledge or redcap-arsenal",
+    "Self-purification theater: Runtime checks for self-purification prove the checker exists but cannot prove purification actually occurred — the check becomes a ceremony, not a guardrail"
+  ],
+  "missing_evidence": [
+    "Draft machine-checkable contract for Loom role session continuity with specific fields (session_id, session_start, session_loss_alarm) and a checker specification",
+    "Concrete definition of what a Prism-assisted role review check validates — what artifact must exist, what fields it must contain, what freshness/recency constraints apply",
+    "Machine-checkable definition of 'meaningful E2E' for the next iteration — minimum required evidence types, their required fields, and how they chain to the gaps being closed"
+  ],
+  "minimum_fix": "Before any further implementation, produce and ship at least one consumed runtime check contract for a single gap (recommend starting with Loom session continuity since it has the clearest machine-checkable shape: session ID presence, session start timestamp, session-loss alarm). Write the corresponding checker, integrate it into the aggregate check runner, and demonstrate it failing against the current runtime state. Only then proceed to the remaining gaps. This breaks the plan-vs-execution ambiguity and proves the implementation loop works.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "unclear"
+}

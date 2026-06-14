@@ -1,0 +1,68 @@
+{
+  "task": "Review the RedCap E2E gap-closure plan before implementation.",
+  "user_intent": "Norven requires RedCap to convert first E2E findings into an executable todo queue, implement missing Loom role session continuity, Codex CLI Hook carrier assumptions, Prism-assisted role review, self-purification, Cap persona distillation, and repeated E2E loops until RedCap can be proven ready for engineering use.",
+  "main_claim": "The correct next implementation is not another report. RedCap must add machine-checkable runtime contracts and checkers for these gaps, integrate them into the aggregate check, then run E2E iterations in an external project and feed failures back into the queue.",
+  "changed_reality": [
+    "A lifecycle packet records the full target scope instead of narrowing it to a single E2E report.",
+    "The current code inspection shows Loom validates roles and transitions but not role session continuity or Prism-assisted role work.",
+    "The current knowledge and Forge checks validate manual/index-first sedimentation but not automatic pre-task retrieval, post-task candidate review, or private Cap persona distillation.",
+    "The current E2E runner validates Codex CLI Hook carrier presence and completion markers but not enough role-quality and self-purification evidence."
+  ],
+  "evidence": [
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/loom-workflow.json",
+      "summary": "Existing Loom contract defines roles, phases, transitions and failure routes, but does not require role session IDs or session-loss alarms."
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/loom_workflow.py",
+      "summary": "Existing Loom checker enforces role and transition presence only."
+    },
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "summary": "Existing E2E contract requires Codex CLI and Hook events but does not yet require full Loom role-quality and self-purification evidence."
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/complete_revival_e2e.py",
+      "summary": "Existing E2E runner prepares and runs external projects, but its pass criteria focus on command success, Hook events and completion marker presence."
+    },
+    {
+      "kind": "contract",
+      "reference": "assets/contracts/redcap-forge.json",
+      "summary": "Existing Forge contract defines candidate, privacy review, dedupe and promotion stages, but does not bind them into every task lifecycle."
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/knowledge_gateway.py",
+      "summary": "Existing knowledge gateway supports manual draft, review, promote and search commands."
+    },
+    {
+      "kind": "evidence",
+      "reference": "assets/evidence/lifecycle/20260615-e2e-gap-closure-lifecycle.json",
+      "summary": "Lifecycle packet for this gap-closure task."
+    }
+  ],
+  "review_mode": "design_review",
+  "risk_level": "high",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "Do not disable or weaken existing lifecycle, Prism, Hook, terminal-goal, final-claim or human-output guardrails.",
+    "Do not claim RedCap is fully revived until repeated external E2E evidence and all newly introduced checks prove it.",
+    "Do not put Cap private persona text or user private identity material into public knowledge or redcap-arsenal.",
+    "Do not let a todo queue, design contract or report count as implementation without a consumed runtime check.",
+    "Keep runtime artifacts for external E2E projects inside that project's .redcap directory, not the RedCap source repository.",
+    "If a provider review times out, record the timeout as degraded evidence and continue only when the lifecycle policy permits."
+  ],
+  "questions_for_prism": [
+    "Does this plan cover the missing requirements Norven added around Loom role session IDs, Codex CLI Hook carrier, Prism-assisted roles, self-purification, Cap persona distillation and E2E iteration?",
+    "What must be added as hard machine checks before implementation can be trusted?",
+    "What would be dangerous to over-implement or accidentally expose in public knowledge?",
+    "Which acceptance criteria should block the next E2E from being called meaningful?"
+  ]
+}

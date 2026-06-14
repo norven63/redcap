@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap loom-workflow check",
+  "executed_at": "2026-06-14T16:33:46+00:00",
+  "executor": "codex-redcap-local-wrapper",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 515,
+  "stdout_sha256": "3153d43201a2cac4043905ce4ff4215586b9039c265b4a8a205d6a7e71624880"
+}

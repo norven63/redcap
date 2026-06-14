@@ -1,0 +1,30 @@
+{
+  "schema_id": "prism-provider-raw-metadata",
+  "provider": "claude-code",
+  "raw_kind": "provider-output",
+  "raw_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260615-goal-completion-final-review/claude-code.raw.json",
+  "raw_size_bytes": 19714,
+  "raw_sha256": "4f0117a86fafc55bbc7e4a16faccd0944887027675328bf44b679caad0397e55",
+  "exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 600.0,
+  "total_timeout_seconds": 821.911,
+  "task_total_timeout_seconds": 900.0,
+  "task_elapsed_timeout_seconds": 78.089,
+  "task_remaining_timeout_seconds": 821.911,
+  "max_retries": 5,
+  "attempts_count": 1,
+  "attempts": [
+    {
+      "attempt": 1,
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_scope": null,
+      "stdout_bytes": 8155,
+      "stderr_bytes": 0,
+      "captured_session_handle": null,
+      "recovery": null
+    }
+  ],
+  "review_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260615-goal-completion-final-review/claude-code.review.json"
+}

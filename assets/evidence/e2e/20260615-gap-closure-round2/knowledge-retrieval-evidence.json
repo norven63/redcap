@@ -1,0 +1,32 @@
+{
+  "schema_id": "redcap-e2e-knowledge-retrieval-evidence",
+  "query": "external project runtime boundary, loom role workflow, anti empty completion for RedCap E2E delivery",
+  "skip_reason": null,
+  "matches": [
+    {
+      "id": "project-runtime-boundary",
+      "title": "项目级 .redcap 运行边界",
+      "path": ".redcap/assets/knowledge/arsenal/project-runtime-boundary.md",
+      "reason": "确认外部项目证据必须写入当前项目 .redcap，不能回写 RedCap 源仓库。"
+    },
+    {
+      "id": "loom-role-workflow",
+      "title": "Loom 角色化工程工作流",
+      "path": ".redcap/assets/knowledge/arsenal/loom-role-workflow.md",
+      "reason": "确认产品、架构、开发、测试、评审、收尾角色阶段要被记录。"
+    },
+    {
+      "id": "anti-empty-completion",
+      "title": "防空转完成声明",
+      "path": ".redcap/assets/knowledge/arsenal/anti-empty-completion.md",
+      "reason": "确认不能用文档、计划或回执替代真实交付和验证证据。"
+    }
+  ],
+  "no_relevant_entry_reason": null,
+  "used_entries": [
+    "project-runtime-boundary",
+    "loom-role-workflow",
+    "anti-empty-completion"
+  ],
+  "retrieved_at": "2026-06-14T17:06:33Z"
+}

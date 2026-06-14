@@ -1,0 +1,13 @@
+{
+  "command": "runtime/bin/redcap check",
+  "executed_at": "2026-06-14T17:15:52+00:00",
+  "executor": "codex-redcap-local-wrapper",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_length": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_tail": "",
+  "stdout_length": 9129,
+  "stdout_sha256": "9574690cacd9389d82988d0eb1f60a1bc3323d5dc775cb6cc6e77e9e18b4a97d",
+  "stdout_tail": "name=forge-check elapsed_seconds=0.037\nREDCAP_CHECK_STEP_START name=arsenal-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=arsenal-check elapsed_seconds=0.036\nREDCAP_CHECK_STEP_START name=project-install-release-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=project-install-release-check elapsed_seconds=0.177\nREDCAP_CHECK_STEP_START name=project-install-self-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=project-install-self-check elapsed_seconds=0.325\nREDCAP_CHECK_STEP_START name=project-install-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=project-install-check elapsed_seconds=0.047\nREDCAP_CHECK_STEP_START name=knowledge-gateway-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=knowledge-gateway-check elapsed_seconds=0.038\nREDCAP_CHECK_STEP_START name=knowledge-gateway-self-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=knowledge-gateway-self-check elapsed_seconds=0.192\nREDCAP_CHECK_STEP_START name=self-purification-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=self-purification-check elapsed_seconds=0.036\nREDCAP_CHECK_STEP_START name=self-purification-self-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=self-purification-self-check elapsed_seconds=0.036\nREDCAP_CHECK_STEP_START name=revival-loop-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=revival-loop-check elapsed_seconds=0.03\nREDCAP_CHECK_STEP_START name=revival-loop-self-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=revival-loop-self-check elapsed_seconds=0.031\nREDCAP_CHECK_STEP_START name=soul-load-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=soul-load-check elapsed_seconds=0.038\nREDCAP_CHECK_STEP_START name=soul-load-self-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=soul-load-self-check elapsed_seconds=0.04\nREDCAP_CHECK_STEP_START name=layout-check timeout_seconds=180\nREDCAP_CHECK_STEP_OK name=layout-check elapsed_seconds=1.231\n{\n  \"schema_id\": \"redcap-check-summary\",\n  \"ok\": true,\n  \"completed_steps\": 63,\n  \"total_steps\": 63\n}\nREDCAP_CHECK_OK\n"
+}

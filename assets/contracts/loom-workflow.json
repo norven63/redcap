@@ -12,6 +12,61 @@
     "reviewer",
     "cap_orchestrator"
   ],
+  "execution_runtime": {
+    "required_host": "codex-cli",
+    "hook_carrier_required": true,
+    "required_hook_events": [
+      "SessionStart",
+      "UserPromptSubmit",
+      "PreToolUse",
+      "PostToolUse",
+      "Stop"
+    ],
+    "role_session_policy": {
+      "session_id_required": true,
+      "session_scope": "project_id + task_id + role",
+      "same_role_must_resume_same_session": true,
+      "session_loss_alarm_required": true,
+      "lost_session_effect": "mark_role_context_degraded_and_require_assisted_review",
+      "manifest_required_fields": [
+        "project_id",
+        "task_id",
+        "role",
+        "session_id",
+        "provider",
+        "started_at",
+        "last_seen_at",
+        "context_state",
+        "handoff_inputs",
+        "handoff_outputs"
+      ]
+    },
+    "allowed_role_providers": [
+      "codex-cli"
+    ]
+  },
+  "prism_assistance_policy": {
+    "allowed": true,
+    "required_for": [
+      "requirements_clarification_review",
+      "architecture_review",
+      "code_review",
+      "test_review",
+      "documentation_review",
+      "session_loss_recovery"
+    ],
+    "providers": [
+      "kimi",
+      "claude-code"
+    ],
+    "evidence_required": [
+      "prism_request",
+      "provider_reviews",
+      "merge_or_resolution",
+      "cap_decision"
+    ],
+    "role_decision_rule": "Prism provides resistance and review evidence; Cap remains orchestrator and cannot blindly accept or discard Prism output."
+  },
   "phases": [
     {
       "id": "idea_intake",
@@ -290,6 +345,8 @@
   "completion_rules": {
     "closeout_requires_all_roles": true,
     "closeout_requires_terminal_acceptance": true,
+    "closeout_requires_role_session_manifest": true,
+    "closeout_requires_prism_assistance_decisions": true,
     "phase_skipping_allowed": false,
     "report_or_receipt_alone_can_complete": false
   }

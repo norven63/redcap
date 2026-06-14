@@ -26,6 +26,7 @@ Usage:
   runtime/bin/redcap arsenal check|self-check [...]
   runtime/bin/redcap project-install check|package|audit-package|release-check|init|self-check [...]
   runtime/bin/redcap knowledge-gateway check|search [...]
+  runtime/bin/redcap self-purification check|self-check [...]
   runtime/bin/redcap evidence-restore restore [...]
   runtime/bin/redcap legacy-evidence check|plan|restore|self-check [...]
   runtime/bin/redcap session-ownership claim|check|self-check [...]
@@ -83,6 +84,8 @@ Commands:
                 Package RedCap as .redcap, audit release artifacts, and initialize project-level runtime.
   knowledge-gateway
                 Run the minimal index-first RedCap knowledge gateway.
+  self-purification
+                Verify pre-task retrieval, post-task harvest, no-promote, and Cap private persona boundaries.
   evidence-restore
                 Restore bounded generated evidence through a RedCap-owned writer.
   legacy-evidence
@@ -200,6 +203,9 @@ case "$cmd" in
     ;;
   knowledge-gateway-check)
     exec python3 "$REPO_ROOT/runtime/core/knowledge_gateway.py" check "$@"
+    ;;
+  self-purification)
+    exec python3 "$REPO_ROOT/runtime/core/self_purification.py" "$@"
     ;;
   evidence-restore)
     exec python3 "$REPO_ROOT/runtime/core/evidence_restore.py" "$@"
