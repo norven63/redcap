@@ -1,0 +1,3 @@
+M	assets/evidence/.gitignore
+M	assets/evidence/prism/task-health.json
+M	assets/evidence/prism/task-ledger.jsonl

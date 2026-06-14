@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "root": "/Users/norven/workspace/AI Era/redcap",
+  "policy": "/Users/norven/workspace/AI Era/redcap/assets/contracts/directory-structure.json",
+  "failures": []
+}
+REDCAP_LAYOUT_OK

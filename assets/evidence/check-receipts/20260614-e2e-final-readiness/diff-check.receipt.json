@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "git diff --check",
+  "exit_code": 0,
+  "executed_at": "2026-06-14T10:45:36+00:00",
+  "executor": "cap",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260614-e2e-final-readiness/diff-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260614-e2e-final-readiness/diff-check.stderr.txt"
+}
