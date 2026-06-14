@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "主 AI 声称两条硬链路\"计划补强\"，但 git status 显示大量新增 untracked evidence/lifecycle 文件和修改中的 contracts，而非经过测试的防护实现。关键文件 check_runner.py 和 completion_evidence.py 是全新 untracked 文件，意味着它们可能只是脚手架或证据生成器，而非通过负向测试验证的防护代码。project_install.py 的 self-check 是否已从直接调用 Python 函数升级为验证真实发布包路径，无法从当前证据确认。语言从\"计划补强\"滑向\"已完成\"的描述存在 delta。",
+  "main_concern": "自证循环（Checker Proves Itself）：project_install.py 的 self-check 若仍直接 import 并调用 init_project Python 函数，而非解压真实发布包后运行 bin/redcap 命令，则检查器只能证明 Python 模块可导入，不能证明发布包在用户环境中解压后可执行。这是审计链路最致命的单点失效——发布包内容审计（排除 evidence/.git 等）如果没有真实的解压→执行验证作为闭环，审计本身只是文件列表检查，无法捕获权限、路径、依赖等运行时问题。",
+  "top_risks": [
+    "自证循环：project_install self-check 可能仍直接调用 Python 函数而非真实发布包路径，使审计链路沦为文件列表检查，无法捕获解压后权限/路径/依赖问题",
+    "证据生成替代实现：check_runner.py 和 completion_evidence.py 是全新 untracked 文件，存在仅生成 lifecycle evidence 而不实际硬化工件保护的风险——合约和 evidence 文件在增长，但防护代码未被负向测试验证",
+    "Git 快照保护边界不完整：complete_revival_e2e 的前后快照校验若只检查 branch/HEAD/dirty，无法覆盖 rebase-in-progress、detached HEAD、stash pop 竞态、或 E2E 子进程中修改环境变量后 git 操作产生的间接污染"
+  ],
+  "missing_evidence": [
+    "负向测试：故意在发布包中嵌入 assets/evidence 目录，运行 release-check 并验证被拒绝的完整输出",
+    "E2E 被正确拦截的实录：一次因 E2E 运行前后源仓库 git 快照不匹配而被判定失败的完整日志",
+    "project_install self-check 当前代码的实际内容——确认是否仍为直接 Python 函数调用"
+  ],
+  "minimum_fix": "在批准当前方案前，执行一次负向 E2E：故意在 E2E 运行期间修改 RedCap 源仓库文件（如 touch 一个脏文件），验证 complete_revival_e2e 的前后快照校验能捕获并判定本次 E2E 失败。同时用包含 assets/evidence 目录的发布包运行 release-check，验证审计拒绝该包。两项结果作为追加 evidence 提交。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "unclear"
+}

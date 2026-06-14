@@ -42,6 +42,8 @@
 !prism/20260614-release-e2e-protection/resolution.json
 !prism/20260614-release-e2e-protection/*.review.json
 !prism/20260614-release-e2e-protection/*.review.brief.md
+!prism/20260614-release-e2e-protection/*-review.json
+!prism/20260614-release-e2e-protection/*-review.brief.md
 !prism/20260614-e2e-final-readiness/
 !prism/20260614-e2e-final-readiness/session.json
 !prism/20260614-e2e-final-readiness/20260614-e2e-final-readiness-prism-request.json
@@ -49,3 +51,5 @@
 !prism/20260614-e2e-final-readiness/resolution.json
 !prism/20260614-e2e-final-readiness/*.review.json
 !prism/20260614-e2e-final-readiness/*.review.brief.md
+!prism/20260614-e2e-final-readiness/*-review.json
+!prism/20260614-e2e-final-readiness/*-review.brief.md
