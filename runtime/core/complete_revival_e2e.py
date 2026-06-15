@@ -38,7 +38,7 @@ ROLE_TIMEOUT_SECONDS = {
     "reviewer": 360,
 }
 CODEX_ROLE_MODEL = os.environ.get("REDCAP_E2E_CODEX_ROLE_MODEL", "gpt-5.5")
-CODEX_ROLE_REASONING_EFFORT = os.environ.get("REDCAP_E2E_CODEX_ROLE_REASONING_EFFORT", "low")
+CODEX_ROLE_REASONING_EFFORT = os.environ.get("REDCAP_E2E_CODEX_ROLE_REASONING_EFFORT", "medium")
 CODEX_ROLE_DISABLE_PLUGINS = os.environ.get("REDCAP_E2E_CODEX_ROLE_DISABLE_PLUGINS", "1") != "0"
 CODEX_ROLE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CODEX_ROLE_MAX_ATTEMPTS", "2"))
 CODEX_ROLE_RETRYABLE_STDERR_MARKERS = [
@@ -60,6 +60,7 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "negative-probes.json",
     "package-prism-check.json",
     "final-runner-test-results.json",
+    "browser-inspection.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -954,7 +955,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            - "runner_owned_follow_up": ["completion-marker.json", "iteration-verdict.json", "final-prism-review.json", "final-runner-test-results.json"]，必须是这四个精确文件名字符串，不要写成说明句。
            同时在边界说明中写明 terminal_completion=false 表示 reviewer 只能给阶段评审，不能自证本轮 E2E 终局完成或 RedCap 完整复活。
         3. 写 prism-assisted-review.json；本轮必须记录 used=true，reviews 必须是非空数组，cap_decision 必须非空，skip_reason 必须为 null 或空字符串。至少在 reviews[0] 中说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决，并必须包含 prism_assistance_request.requested=true。
-        4. 写 self-purification-candidates.json，包含候选或 no_candidate_reason，并给出 decisions 数组。decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；需要后续沉淀但本轮不晋升时用 defer_with_owner。
+        4. 写 self-purification-candidates.json，包含候选或 no_candidate_reason，并给出 decisions 数组。decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；每个 decision 必须包含 reason；需要后续沉淀但本轮不晋升时用 defer_with_owner。
         5. 写 persona-distillation-decision.json；privacy_class 必须是 cap-private，public_write=false，private_body_written=false，reason 必须是非空字符串，推荐写“本轮没有可晋升的人格信号”。禁止写身份私密材料正文，也禁止出现 private_body、cap_private_body、persona_private_body、private_text 等私有正文键；reason 不要复述禁止项本身，不要用 rationale 替代 reason。
         6. 写 failure-backlog.json。必须使用 open_items 数组作为唯一开放问题字段；没有开放问题时 open_items=[] 且 next_round_required=false。禁止只写 open_issues。若有开放问题，每项必须包含 id、severity、summary、root_cause、impact、suggested_fix、owner、next_step。
            open_items 只记录你从需求、架构、实现、测试、上游角色证据中发现的真实阻塞问题。
@@ -1081,6 +1082,9 @@ def validate_reviewer_outputs(evidence: pathlib.Path) -> list[str]:
         for decision in decisions or []:
             if not isinstance(decision, dict) or decision.get("decision") not in allowed:
                 failures.append("self-purification-candidates.decisions 存在非法 decision")
+                continue
+            if not isinstance(decision.get("reason"), str) or not decision["reason"].strip():
+                failures.append("self-purification-candidates.decisions 每项必须写明 reason")
 
     persona = load_optional_json(evidence / "persona-distillation-decision.json")
     if persona is None:
@@ -1545,6 +1549,14 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
+    write_json(evidence / "browser-inspection-template.json", {
+        "schema_id": "redcap-e2e-browser-inspection",
+        "producer": "e2e-runner",
+        "target": "index.html",
+        "screenshot": "browser-inspection.png",
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
     write_json(evidence / "final-evidence-bundle-template.json", {
         "schema_id": "redcap-e2e-final-evidence-bundle",
         "producer": "e2e-runner",
@@ -1717,7 +1729,7 @@ def write_external_project_agents(project: pathlib.Path) -> None:
     """).strip() + "\n", encoding="utf-8")
 
 
-def final_evidence_paths(evidence: pathlib.Path) -> list[pathlib.Path]:
+def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[pathlib.Path]:
     fixed = [
         "requirements.json",
         "acceptance-criteria.json",
@@ -1734,6 +1746,9 @@ def final_evidence_paths(evidence: pathlib.Path) -> list[pathlib.Path]:
         "negative-probes.json",
         "package-prism-check.json",
         "final-runner-test-results.json",
+        "browser-inspection.json",
+        "role-execution-risk.json",
+        "final-prism-review.json",
         "failure-backlog.json",
         "iteration-verdict.json",
         "loom-role-session-manifest-pre-review.json",
@@ -1742,7 +1757,8 @@ def final_evidence_paths(evidence: pathlib.Path) -> list[pathlib.Path]:
         "codex-run.json",
         "filesystem-after.json",
     ]
-    paths = [evidence / rel for rel in fixed]
+    project_root_files = {"architecture.md", "risk-register.json"}
+    paths = [(project / rel) if rel in project_root_files else (evidence / rel) for rel in fixed]
     for pattern in ["role-gate-clearance/*.json", "role-artifacts/*.json", "role-runs/*.json", "role-messages/*.txt", "role-raw/*.txt"]:
         paths.extend(sorted(evidence.glob(pattern)))
     seen: set[pathlib.Path] = set()
@@ -1757,8 +1773,11 @@ def final_evidence_paths(evidence: pathlib.Path) -> list[pathlib.Path]:
 
 def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, direction: str) -> dict[str, Any]:
     files: list[dict[str, Any]] = []
-    for path in final_evidence_paths(evidence):
-        rel = path.relative_to(evidence).as_posix()
+    for path in final_evidence_paths(project, evidence):
+        try:
+            rel = path.relative_to(evidence).as_posix()
+        except ValueError:
+            rel = path.relative_to(project).as_posix()
         record: dict[str, Any] = {
             "path": rel,
             "exists": path.exists(),
@@ -1830,6 +1849,87 @@ def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
     return receipt
 
 
+def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    target = project / "index.html"
+    screenshot = evidence / "browser-inspection.png"
+    result: dict[str, Any] = {
+        "schema_id": "redcap-e2e-browser-inspection",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "target": str(target),
+        "url": target.as_uri() if target.exists() else None,
+        "screenshot": "browser-inspection.png",
+        "ok": False,
+        "checks": [],
+        "failures": [],
+    }
+    if not target.exists():
+        result["failures"].append("缺少 index.html，无法执行浏览器检查")
+        return result
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception as exc:  # pragma: no cover - 取决于本机运行时
+        result["failures"].append(f"无法导入 Playwright 浏览器自动化库：{type(exc).__name__}: {exc}")
+        return result
+    console_errors: list[str] = []
+    page_errors: list[str] = []
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page(viewport={"width": 1280, "height": 900})
+            page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
+            page.on("pageerror", lambda error: page_errors.append(str(error)))
+            page.goto(target.as_uri(), wait_until="domcontentloaded", timeout=20_000)
+            page.wait_for_timeout(500)
+            title = page.title()
+            body_text = page.locator("body").inner_text(timeout=5_000)
+            interactive_count = page.locator("button, input, select, textarea, a[href]").count()
+            element_count = page.locator("body *").count()
+            page.screenshot(path=str(screenshot), full_page=True)
+            browser.close()
+    except Exception as exc:
+        result["failures"].append(f"浏览器检查执行失败：{type(exc).__name__}: {exc}")
+        return result
+    visible_text = body_text.strip()
+    checks = [
+        {"name": "page_loaded", "passed": True, "evidence": target.as_uri()},
+        {"name": "visible_text", "passed": len(visible_text) >= 80, "evidence": f"visible_text_length={len(visible_text)}"},
+        {
+            "name": "interactive_or_semantic_elements",
+            "passed": interactive_count > 0 or element_count >= 10,
+            "evidence": f"interactive_count={interactive_count}, element_count={element_count}",
+        },
+        {
+            "name": "no_browser_errors",
+            "passed": not console_errors and not page_errors,
+            "evidence": {"console_errors": console_errors, "page_errors": page_errors},
+        },
+        {
+            "name": "screenshot_written",
+            "passed": screenshot.exists() and screenshot.stat().st_size > 0,
+            "evidence": {
+                "path": "browser-inspection.png",
+                "sha256": sha256_file(screenshot) if screenshot.exists() else None,
+                "size": screenshot.stat().st_size if screenshot.exists() else 0,
+            },
+        },
+    ]
+    failures = [f"浏览器检查失败：{item['name']}" for item in checks if item.get("passed") is not True]
+    result.update({
+        "ok": not failures,
+        "title": title,
+        "visible_text_length": len(visible_text),
+        "visible_text_sample": visible_text[:1000],
+        "interactive_count": interactive_count,
+        "element_count": element_count,
+        "console_errors": console_errors,
+        "page_errors": page_errors,
+        "checks": checks,
+        "failures": failures,
+    })
+    return result
+
+
 def backlog_open_items(evidence: pathlib.Path) -> list[Any]:
     backlog = load_optional_json(evidence / "failure-backlog.json")
     if backlog is None:
@@ -1866,13 +1966,107 @@ def write_failure_backlog_with_runner_items(evidence: pathlib.Path, failures: li
     write_json(evidence / "failure-backlog.json", backlog)
 
 
-def write_final_iteration_verdict(evidence: pathlib.Path, ok: bool, failures: list[str]) -> None:
+def criterion_pass(criterion: str, project: pathlib.Path, evidence: pathlib.Path, context: dict[str, Any]) -> tuple[bool, str]:
+    if "外部项目根目录包含真实交付文件" in criterion:
+        manifest = project_deliverable_manifest(project)
+        return manifest.get("count", 0) > 0, f"deliverable_count={manifest.get('count', 0)}"
+    if "入口说明" in criterion:
+        return (project / "README.md").exists() or (project / "index.html").exists(), "README.md 或 index.html 存在"
+    if "architecture.md" in criterion:
+        return (project / "architecture.md").exists(), "project-root architecture.md"
+    if "实现日志" in criterion or "测试结果" in criterion or "验收摘要" in criterion:
+        required = ["implementation-log.json", "test-results.json", "final-evidence-bundle.json"]
+        missing = [rel for rel in required if not (evidence / rel).exists()]
+        return not missing, f"missing={missing}"
+    if "loom-role-session-manifest" in criterion or "Loom 角色" in criterion:
+        return context.get("role_ok") is True and (evidence / "loom-role-session-manifest.json").exists(), "role pipeline and manifest"
+    if "默认实现不得依赖" in criterion or "外部依赖" in criterion:
+        probes = load_optional_json(evidence / "negative-probes.json") or {}
+        return probes.get("passed") is True, "negative-probes.json passed"
+    if "self-purification-candidates.json" in criterion or "persona-distillation-decision.json" in criterion:
+        return (evidence / "self-purification-candidates.json").exists() and (evidence / "persona-distillation-decision.json").exists(), "self-purification and persona boundary evidence"
+    if "package-prism-check.json" in criterion:
+        return context.get("package_prism_ok") is True, "package prism check"
+    if "final-runner-test-results.json" in criterion:
+        return context.get("runner_tests_ok") is True, "final runner validation"
+    if "final-evidence-bundle.json" in criterion:
+        return (evidence / "final-evidence-bundle.json").exists(), "final evidence bundle"
+    if "final-prism-review.json" in criterion:
+        return context.get("final_prism_ok") is True, "final prism review"
+    if "blocked-package.json" in criterion:
+        return not (project / "blocked-package.json").exists(), "blocked-package.json absent"
+    if "浏览器" in criterion or "可访问" in criterion:
+        return context.get("browser_ok") is True, "browser-inspection.json"
+    return not context.get("failures"), "no runner failures matched generic criterion"
+
+
+def build_acceptance_results(project: pathlib.Path, evidence: pathlib.Path, context: dict[str, Any]) -> list[dict[str, Any]]:
+    acceptance = load_optional_json(evidence / "acceptance-criteria.json") or {}
+    criteria = acceptance.get("criteria")
+    if not isinstance(criteria, list):
+        criteria = []
+    results: list[dict[str, Any]] = []
+    for index, criterion in enumerate(criteria, start=1):
+        text = str(criterion)
+        passed, evidence_text = criterion_pass(text, project, evidence, context)
+        results.append({
+            "id": f"AC-{index:02d}",
+            "criterion": text,
+            "passed": passed,
+            "evidence": evidence_text,
+        })
+    browser_passed, browser_evidence = criterion_pass("浏览器实际打开检查", project, evidence, context)
+    results.append({
+        "id": "AC-browser",
+        "criterion": "运行器使用真实浏览器打开项目入口，确认页面渲染、有可见内容、无浏览器错误，并写入截图证据。",
+        "passed": browser_passed,
+        "evidence": browser_evidence,
+    })
+    return results
+
+
+def write_role_execution_risk(evidence: pathlib.Path) -> dict[str, Any]:
+    payload = {
+        "schema_id": "redcap-e2e-role-execution-risk",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "role_model": CODEX_ROLE_MODEL,
+        "role_reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
+        "disable_plugins": CODEX_ROLE_DISABLE_PLUGINS,
+        "risk": "Loom 角色由独立 Codex CLI 自动执行；角色质量风险由中等推理预算、结构化交接、运行器客观检查、浏览器检查和最终双 provider 棱镜复核共同约束。",
+        "accepted_for_single_e2e": CODEX_ROLE_REASONING_EFFORT != "low",
+        "notes": [
+            "session_id 是角色隔离主证据。",
+            "turn_id 可能来自宿主钩子同轮记录，不作为角色隔离主证据。",
+        ],
+    }
+    write_json(evidence / "role-execution-risk.json", payload)
+    return payload
+
+
+def write_final_iteration_verdict(
+    project: pathlib.Path,
+    evidence: pathlib.Path,
+    ok: bool,
+    failures: list[str],
+    context: dict[str, Any],
+    *,
+    final_prism_pending: bool = False,
+) -> None:
+    criteria_results = build_acceptance_results(project, evidence, {**context, "failures": failures})
     write_json(evidence / "iteration-verdict.json", {
         "schema_id": "redcap-e2e-iteration-verdict",
         "producer": "e2e-runner",
         "created_at": iso_now(),
         "status": "pass" if ok else "fail",
-        "ready_for_engineering_use": ok,
+        "ready_for_engineering_use": ok and not final_prism_pending,
+        "final_prism_pending": final_prism_pending,
+        "criteria_results": criteria_results,
+        "criteria_summary": {
+            "total": len(criteria_results),
+            "passed": sum(1 for item in criteria_results if item.get("passed") is True),
+            "failed": sum(1 for item in criteria_results if item.get("passed") is not True),
+        },
         "remaining_issues": [] if ok else failures,
         "evidence_checked": sorted(REQUIRED_EVIDENCE_CHECKS),
     })
@@ -1889,6 +2083,8 @@ def write_completion_marker(evidence: pathlib.Path, project: pathlib.Path, bundl
         "final_evidence_bundle_sha256": bundle.get("bundle_sha256"),
         "final_prism_strictest_verdict": final_prism.get("strictest_verdict"),
         "final_prism_review": "final-prism-review.json",
+        "browser_inspection": "browser-inspection.json",
+        "iteration_verdict": "iteration-verdict.json",
         "no_open_failure_backlog": True,
     })
 
@@ -1923,6 +2119,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "An external project was created outside the RedCap source workspace.",
             "Five Loom roles ran as independent Codex CLI sessions with project-level Hook evidence.",
             "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
+            "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
         ],
         "evidence": [
             {
@@ -1938,7 +2135,20 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "Reviewer must not self-certify completion.",
             "Open failure-backlog items block completion.",
             "Completion marker scope is only this E2E run, not permanent RedCap full revival.",
+            "The bundled iteration-verdict is pre-final: it may mark objective criteria passed while final_prism_pending=true until this provider review passes.",
+            "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
         ],
+        "role_execution_profile": {
+            "model": CODEX_ROLE_MODEL,
+            "reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
+            "disable_plugins": CODEX_ROLE_DISABLE_PLUGINS,
+            "quality_controls": [
+                "structured role handoff files",
+                "runner-owned final validation",
+                "browser-inspection.json",
+                "two-provider final Prism review",
+            ],
+        },
     }
 
 
@@ -2053,8 +2263,9 @@ def finalize_e2e_acceptance(
         })
     runner_tests = run_final_runner_tests(project)
     write_json(evidence / "final-runner-test-results.json", runner_tests)
-    bundle = build_final_evidence_bundle(project, evidence, direction)
-    write_json(evidence / "final-evidence-bundle.json", bundle)
+    browser_inspection = run_browser_inspection(project, evidence)
+    write_json(evidence / "browser-inspection.json", browser_inspection)
+    role_risk = write_role_execution_risk(evidence)
     failures: list[str] = []
     if role_result.get("ok") is not True:
         failures.append("Loom 角色管线未通过")
@@ -2064,11 +2275,25 @@ def finalize_e2e_acceptance(
         failures.append("安装包内棱镜自检未通过")
     if runner_tests.get("ok") is not True:
         failures.append("运行器独立重跑项目验证未通过")
+    if browser_inspection.get("ok") is not True:
+        failures.append("运行器浏览器检查未通过")
+    if role_risk.get("accepted_for_single_e2e") is not True:
+        failures.append("Loom 角色推理预算风险未被接受")
     backlog_path = evidence / "failure-backlog.json"
     if backlog_path.exists() or role_result.get("ok") is True:
         open_items = backlog_open_items(evidence)
         if open_items:
             failures.append(f"failure-backlog 仍有开放项：{open_items}")
+    pre_final_context = {
+        "role_ok": role_result.get("ok") is True,
+        "package_prism_ok": package_prism.get("ok") is True,
+        "runner_tests_ok": runner_tests.get("ok") is True,
+        "browser_ok": browser_inspection.get("ok") is True,
+        "final_prism_ok": False,
+    }
+    write_final_iteration_verdict(project, evidence, not failures, failures, pre_final_context, final_prism_pending=True)
+    bundle = build_final_evidence_bundle(project, evidence, direction)
+    write_json(evidence / "final-evidence-bundle.json", bundle)
     if failures:
         final_prism = {
             "schema_id": "redcap-e2e-final-prism-review",
@@ -2089,9 +2314,17 @@ def finalize_e2e_acceptance(
         if "final_prism" in locals():
             write_runner_prism_assistance(evidence, final_prism)
         write_failure_backlog_with_runner_items(evidence, failures)
-        write_final_iteration_verdict(evidence, False, failures)
+        write_final_iteration_verdict(project, evidence, False, failures, {
+            **pre_final_context,
+            "final_prism_ok": final_prism.get("ok") is True if "final_prism" in locals() else False,
+        })
     else:
-        write_final_iteration_verdict(evidence, True, [])
+        write_final_iteration_verdict(project, evidence, True, [], {
+            **pre_final_context,
+            "final_prism_ok": final_prism.get("ok") is True,
+        })
+        bundle = build_final_evidence_bundle(project, evidence, direction)
+        write_json(evidence / "final-evidence-bundle.json", bundle)
         write_completion_marker(evidence, project, bundle, final_prism)
     return {
         "schema_id": "redcap-e2e-finalization-result",
@@ -2198,6 +2431,12 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
     runner_tests = load_optional_json(evidence / "final-runner-test-results.json")
     if runner_tests is not None and runner_tests.get("ok") is not True:
         failures.append("final-runner-test-results 必须证明运行器独立验证通过")
+    browser_inspection = load_optional_json(evidence / "browser-inspection.json")
+    if browser_inspection is not None and browser_inspection.get("ok") is not True:
+        failures.append("browser-inspection 必须证明运行器独立浏览器检查通过")
+    role_risk = load_optional_json(evidence / "role-execution-risk.json")
+    if role_risk is not None and role_risk.get("accepted_for_single_e2e") is not True:
+        failures.append("role-execution-risk 必须说明本轮角色执行风险已被约束")
     final_bundle = load_optional_json(evidence / "final-evidence-bundle.json")
     if final_bundle is not None:
         files = final_bundle.get("files")

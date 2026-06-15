@@ -1,8 +1,8 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-15T15:53:08+00:00",
-  "event_count": 36040,
-  "session_event_count": 8855,
+  "computed_at": "2026-06-15T16:18:29+00:00",
+  "event_count": 36192,
+  "session_event_count": 8895,
   "task_count": 88,
   "success_count": 48,
   "success_rate": 0.5455,
@@ -39,31 +39,31 @@
       "task_id": "timeout-e2e",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T15:53:08+00:00"
+      "recorded_at": "2026-06-15T16:18:29+00:00"
     },
     {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T15:52:49+00:00"
+      "recorded_at": "2026-06-15T16:18:10+00:00"
     },
     {
       "task_id": "dispatcher-truncation-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T15:52:45+00:00"
+      "recorded_at": "2026-06-15T16:18:06+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T15:52:44+00:00"
+      "recorded_at": "2026-06-15T16:18:05+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T15:52:44+00:00"
+      "recorded_at": "2026-06-15T16:18:05+00:00"
     },
     {
       "task_id": "20260615-e2e-reviewer-contract-fix",
@@ -96,17 +96,17 @@
       "recorded_at": "2026-06-13T09:35:51+00:00"
     }
   ],
-  "gate_event_count": 27185,
-  "gate_success_count": 27185,
+  "gate_event_count": 27297,
+  "gate_success_count": 27297,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 555,
-    "required": 22299,
+    "optional": 556,
+    "required": 22410,
     "skipped": 4331
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 22949,
-    "cli-gate": 4236
+    "codex-UserPromptSubmit": 23053,
+    "cli-gate": 4244
   },
-  "gate_average_duration_seconds": 0.299
+  "gate_average_duration_seconds": 0.298
 }
