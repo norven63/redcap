@@ -1,75 +1,75 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-15T17:04:56+00:00",
-  "event_count": 36502,
-  "session_event_count": 8978,
-  "task_count": 89,
-  "success_count": 48,
-  "success_rate": 0.5393,
-  "operational_task_count": 79,
-  "operational_success_count": 48,
-  "operational_success_rate": 0.6076,
+  "computed_at": "2026-06-15T20:16:28+00:00",
+  "event_count": 36965,
+  "session_event_count": 9103,
+  "task_count": 90,
+  "success_count": 49,
+  "success_rate": 0.5444,
+  "operational_task_count": 80,
+  "operational_success_count": 49,
+  "operational_success_rate": 0.6125,
   "self_check_task_count": 10,
   "active_count": 33,
   "operational_active_count": 23,
   "attention_count": 40,
-  "average_duration_seconds": 1669.315,
+  "average_duration_seconds": 1702.367,
   "providers": {
     "claude-code": {
-      "tasks": 89,
-      "rounds": 86,
-      "reviews_loaded": 66,
+      "tasks": 90,
+      "rounds": 87,
+      "reviews_loaded": 67,
       "pass": 8,
-      "concern": 51,
+      "concern": 52,
       "block": 7,
       "missing_verdict": 23
     },
     "kimi": {
-      "tasks": 89,
-      "rounds": 81,
-      "reviews_loaded": 60,
+      "tasks": 90,
+      "rounds": 82,
+      "reviews_loaded": 61,
       "pass": 9,
-      "concern": 43,
+      "concern": 44,
       "block": 8,
       "missing_verdict": 29
     }
   },
   "recent_attention_tasks": [
     {
-      "task_id": "20260615-resume-e2e-round19-gate",
-      "outcome": "active",
-      "strictest_verdict": null,
-      "recorded_at": "2026-06-15T17:04:55+00:00"
-    },
-    {
       "task_id": "timeout-e2e",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T17:00:27+00:00"
+      "recorded_at": "2026-06-15T20:13:09+00:00"
     },
     {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T17:00:09+00:00"
-    },
-    {
-      "task_id": "dispatcher-truncation-self-check",
-      "outcome": "active",
-      "strictest_verdict": null,
-      "recorded_at": "2026-06-15T17:00:05+00:00"
+      "recorded_at": "2026-06-15T20:12:52+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T17:00:04+00:00"
+      "recorded_at": "2026-06-15T20:12:47+00:00"
+    },
+    {
+      "task_id": "dispatcher-truncation-self-check",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-15T20:12:47+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T17:00:03+00:00"
+      "recorded_at": "2026-06-15T20:12:46+00:00"
+    },
+    {
+      "task_id": "20260615-resume-e2e-round19-gate",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-15T17:04:55+00:00"
     },
     {
       "task_id": "20260615-e2e-reviewer-contract-fix",
@@ -96,17 +96,17 @@
       "recorded_at": "2026-06-14T07:48:34+00:00"
     }
   ],
-  "gate_event_count": 27524,
-  "gate_success_count": 27524,
+  "gate_event_count": 27862,
+  "gate_success_count": 27862,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 559,
-    "required": 22634,
+    "optional": 562,
+    "required": 22969,
     "skipped": 4331
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 23261,
-    "cli-gate": 4263
+    "codex-UserPromptSubmit": 23573,
+    "cli-gate": 4289
   },
-  "gate_average_duration_seconds": 0.296
+  "gate_average_duration_seconds": 0.293
 }

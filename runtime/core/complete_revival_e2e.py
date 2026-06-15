@@ -42,6 +42,7 @@ ROLE_TIMEOUT_SECONDS = {
 CODEX_ROLE_MODEL = os.environ.get("REDCAP_E2E_CODEX_ROLE_MODEL", "gpt-5.5")
 CODEX_ROLE_REASONING_EFFORT = os.environ.get("REDCAP_E2E_CODEX_ROLE_REASONING_EFFORT", "medium")
 CODEX_ROLE_DISABLE_PLUGINS = os.environ.get("REDCAP_E2E_CODEX_ROLE_DISABLE_PLUGINS", "1") != "0"
+CODEX_ROLE_PRESERVE_USER_CONFIG = True
 CODEX_ROLE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CODEX_ROLE_MAX_ATTEMPTS", "2"))
 CODEX_ROLE_RETRYABLE_STDERR_MARKERS = [
     "responses_websocket",
@@ -50,6 +51,18 @@ CODEX_ROLE_RETRYABLE_STDERR_MARKERS = [
     "error sending request",
     "http/request failed",
 ]
+CODEX_ROLE_INTERACTIVE_GATE_MARKERS = [
+    "brainstorming/SKILL.md",
+    "<HARD-GATE>",
+    "User Review Gate",
+    "docs/superpowers/specs",
+    "get user approval",
+    "wait for the user's response",
+    "需要人工批准",
+    "等待用户批准",
+    "需要用户批准",
+]
+CARRIER_PROBE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CARRIER_PROBE_MAX_ATTEMPTS", "2"))
 MEANINGFUL_E2E_REQUIRED_FILES = [
     "loom-role-session-manifest.json",
     "loom-role-session-manifest-pre-review.json",
@@ -100,6 +113,7 @@ MEANINGFUL_E2E_REQUIRED_GATES = [
     "Cap 人格",
     "failure-backlog",
     "ready_for_engineering_use",
+    "项目级 Hook",
 ]
 OLD_REDCAP_ROOT = pathlib.Path("/Users/norven/workspace/redcap")
 GIT_IN_PROGRESS_MARKERS = [
@@ -277,9 +291,20 @@ def extract_codex_session_id(stderr: str) -> str | None:
     return match.group(1) if match else None
 
 
+def role_interactive_gate_marker(result: dict[str, Any]) -> str | None:
+    combined = f"{result.get('stdout') or ''}\n{result.get('stderr') or ''}".casefold()
+    for marker in CODEX_ROLE_INTERACTIVE_GATE_MARKERS:
+        if marker.casefold() in combined:
+            return marker
+    return None
+
+
 def role_failure_retry_reason(result: dict[str, Any], artifact_exists: bool) -> str | None:
     if result.get("ok") is True or artifact_exists:
         return None
+    interactive_marker = role_interactive_gate_marker(result)
+    if interactive_marker:
+        return f"interactive approval gate marker: {interactive_marker}"
     stderr = str(result.get("stderr") or "").casefold()
     stdout = str(result.get("stdout") or "")
     if stdout.strip():
@@ -907,6 +932,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
     - 本角色不得运行 prism-dispatch、prism session-init、prism merge 或完整 provider 评审；需要棱镜协助时，把请求和理由写入 role-artifacts/<role>.json，由 E2E 运行器统一调度。
     - 本角色不得写 .redcap/evidence/e2e/prism/<role>/ 或 .redcap/evidence/e2e/prism/<role>_completion/ 目录；这些目录会被视为角色越权。
     - 本角色只允许读取上游输入、角色门禁协调文件和必要模板；不要读取 manifest.json、Hook 事件、role-workspaces、redcap-package.zip 或 RedCap 源码。
+    - 本角色已经处于 E2E 运行器授权的执行模式；不要启动需要人工批准的交互式设计流程，不要等待用户批准，不要把“需要先问用户”当作阻塞；若某个技能要求人工批准才能继续，说明该技能不适用于本次非交互 E2E，请回到本角色产物清单继续交付。
     - 先写本角色必需产物，再做少量核对；不要为了“更全面”而扩展探索范围。
     - 如果 Stop 或 Gate 只给出建议，不要把建议当作新任务；本角色主轴始终是上面列出的产物。
     - 写完本角色要求的全部文件后，立即用一句中文说明已交付并停止，不要继续追加无关分析。
@@ -1011,6 +1037,44 @@ def provider_state_dirs_for_role(role: str) -> list[pathlib.Path]:
     if not kimi_state.exists():
         return []
     return [kimi_state]
+
+
+def build_codex_role_argv(project: pathlib.Path, role: str, message_path: pathlib.Path, prompt: str) -> list[str]:
+    argv = [
+        "codex",
+        "exec",
+        "--model",
+        CODEX_ROLE_MODEL,
+        "-c",
+        f'model_reasoning_effort="{CODEX_ROLE_REASONING_EFFORT}"',
+        "--cd",
+        str(project),
+        "--skip-git-repo-check",
+        "--sandbox",
+        "workspace-write",
+        "--full-auto",
+    ]
+    if CODEX_ROLE_DISABLE_PLUGINS:
+        argv.extend(["--disable", "plugins"])
+    for state_dir in provider_state_dirs_for_role(role):
+        argv.extend(["--add-dir", str(state_dir)])
+    argv.extend([
+        "--output-last-message",
+        str(message_path),
+        prompt,
+    ])
+    return argv
+
+
+def role_retry_prompt(base_prompt: str, attempt_index: int) -> str:
+    if attempt_index <= 1:
+        return base_prompt
+    return base_prompt + textwrap.dedent("""\
+
+    【重试约束】
+    上一次尝试没有产出本角色必需文件，可能误入了需要人工批准的交互式设计流程或遇到传输抖动。
+    本次重试必须直接完成本角色产物，不要读取或执行需要人工批准的技能流程，不要写等待用户确认的回复。
+    """)
 
 
 def role_provider_boundary_failures(evidence: pathlib.Path, role: str) -> list[str]:
@@ -1246,40 +1310,21 @@ def run_loom_role_pipeline(
         message_path = evidence / "role-messages" / f"{role}.txt"
         prompt_path.write_text(prompt, encoding="utf-8")
         role_timeout = min(timeout_seconds, ROLE_TIMEOUT_SECONDS[role])
-        base_argv = [
-            "codex",
-            "exec",
-            "--model",
-            CODEX_ROLE_MODEL,
-            "-c",
-            f'model_reasoning_effort="{CODEX_ROLE_REASONING_EFFORT}"',
-            "--cd",
-            str(project),
-            "--skip-git-repo-check",
-            "--sandbox",
-            "workspace-write",
-            "--full-auto",
-        ]
-        if CODEX_ROLE_DISABLE_PLUGINS:
-            base_argv.extend(["--disable", "plugins"])
-        for state_dir in provider_state_dirs_for_role(role):
-            base_argv.extend(["--add-dir", str(state_dir)])
-        base_argv.extend([
-            "--output-last-message",
-            str(message_path),
-            prompt,
-        ])
         attempts: list[dict[str, Any]] = []
         result: dict[str, Any] = {}
         for attempt_index in range(1, max(1, CODEX_ROLE_MAX_ATTEMPTS) + 1):
             if message_path.exists():
                 message_path.unlink()
-            result = run_command(base_argv, cwd=project, timeout_seconds=role_timeout)
+            attempt_prompt = role_retry_prompt(prompt, attempt_index)
+            attempt_argv = build_codex_role_argv(project, role, message_path, attempt_prompt)
+            result = run_command(attempt_argv, cwd=project, timeout_seconds=role_timeout)
             attempt_stdout = evidence / "role-raw" / f"{role}.attempt-{attempt_index}.stdout.txt"
             attempt_stderr = evidence / "role-raw" / f"{role}.attempt-{attempt_index}.stderr.txt"
             attempt_stdout.write_text(str(result.get("stdout") or ""), encoding="utf-8")
             attempt_stderr.write_text(str(result.get("stderr") or ""), encoding="utf-8")
             attempt_receipt = command_receipt(result)
+            interactive_gate_marker = role_interactive_gate_marker(result)
+            retry_reason = role_failure_retry_reason(result, role_artifact_path(evidence, role).exists())
             attempt_receipt.update({
                 "attempt": attempt_index,
                 "session_id": extract_codex_session_id(str(result.get("stderr") or "")),
@@ -1287,9 +1332,11 @@ def run_loom_role_pipeline(
                 "raw_stderr": str(attempt_stderr),
                 "expected_artifact_exists": role_artifact_path(evidence, role).exists(),
                 "last_message_exists": message_path.exists(),
+                "interactive_gate_marker": interactive_gate_marker,
+                "retry_reason": retry_reason,
+                "retry_prompt_used": attempt_index > 1,
             })
             attempts.append(attempt_receipt)
-            retry_reason = role_failure_retry_reason(result, role_artifact_path(evidence, role).exists())
             if retry_reason and attempt_index < max(1, CODEX_ROLE_MAX_ATTEMPTS):
                 append_jsonl(evidence / "workflow-events.jsonl", {
                     "event": "loom_role_retry_scheduled",
@@ -1312,6 +1359,7 @@ def run_loom_role_pipeline(
             "codex_model": CODEX_ROLE_MODEL,
             "codex_reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
             "codex_plugins_disabled": CODEX_ROLE_DISABLE_PLUGINS,
+            "codex_user_config_preserved": CODEX_ROLE_PRESERVE_USER_CONFIG,
             "attempt_count": len(attempts),
             "max_attempts": max(1, CODEX_ROLE_MAX_ATTEMPTS),
             "attempts": attempts,
@@ -2351,11 +2399,14 @@ def write_role_execution_risk(evidence: pathlib.Path) -> dict[str, Any]:
         "role_model": CODEX_ROLE_MODEL,
         "role_reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
         "disable_plugins": CODEX_ROLE_DISABLE_PLUGINS,
+        "preserve_user_config": CODEX_ROLE_PRESERVE_USER_CONFIG,
+        "interactive_gate_markers": CODEX_ROLE_INTERACTIVE_GATE_MARKERS,
         "risk": "Loom 角色由独立 Codex CLI 自动执行；角色质量风险由中等推理预算、结构化交接、运行器客观检查、浏览器检查和最终双 provider 棱镜复核共同约束。",
         "accepted_for_single_e2e": CODEX_ROLE_REASONING_EFFORT != "low",
         "notes": [
             "session_id 是角色隔离主证据。",
             "turn_id 可能来自宿主钩子同轮记录，不作为角色隔离主证据。",
+            "角色子进程保留用户配置以确保项目级 .codex hook 生效；误入用户级交互式技能时由运行器识别、记录并重试，不允许牺牲 Hook 能力。",
         ],
     }
     write_json(evidence / "role-execution-risk.json", payload)
@@ -2500,6 +2551,8 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "model": CODEX_ROLE_MODEL,
             "reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
             "disable_plugins": CODEX_ROLE_DISABLE_PLUGINS,
+            "preserve_user_config": CODEX_ROLE_PRESERVE_USER_CONFIG,
+            "interactive_gate_markers": CODEX_ROLE_INTERACTIVE_GATE_MARKERS,
             "quality_controls": [
                 "structured role handoff files",
                 "runner-owned final validation",
@@ -2910,22 +2963,43 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
             "Stop": [{"hooks": [hook("Stop")]}],
         }
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    attempts: list[dict[str, Any]] = []
+    result: dict[str, Any] = {}
+    events: list[str] = []
+    missing: list[str] = list(REQUIRED_HOOK_EVENTS)
     last_message = project / ".redcap" / "evidence" / "e2e" / "carrier-last-message.txt"
-    result = run_command([
-        "codex",
-        "exec",
-        "--cd",
-        str(project),
-        "--skip-git-repo-check",
-        "--sandbox",
-        "workspace-write",
-        "--full-auto",
-        "--output-last-message",
-        str(last_message),
-        "请使用 shell 执行 pwd，然后最终只回答 carrier-probe-ok。",
-    ], cwd=project, timeout_seconds=timeout_seconds)
-    events = parse_hook_events(events_path)
-    missing = [event for event in REQUIRED_HOOK_EVENTS if event not in events]
+    for attempt in range(1, max(1, CARRIER_PROBE_MAX_ATTEMPTS) + 1):
+        if events_path.exists():
+            events_path.unlink()
+        last_message = project / ".redcap" / "evidence" / "e2e" / f"carrier-last-message.attempt-{attempt}.txt"
+        result = run_command([
+            "codex",
+            "exec",
+            "--cd",
+            str(project),
+            "--skip-git-repo-check",
+            "--sandbox",
+            "workspace-write",
+            "--full-auto",
+            "--output-last-message",
+            str(last_message),
+            "请使用 shell 执行 pwd，然后最终只回答 carrier-probe-ok。",
+        ], cwd=project, timeout_seconds=timeout_seconds)
+        events = parse_hook_events(events_path)
+        missing = [event for event in REQUIRED_HOOK_EVENTS if event not in events]
+        attempt_ok = result["ok"] and not missing
+        attempts.append({
+            "attempt": attempt,
+            "ok": attempt_ok,
+            "command": command_receipt(result),
+            "events": events,
+            "missing_events": missing,
+            "last_message": str(last_message),
+        })
+        if attempt_ok:
+            break
+        if result["ok"]:
+            break
     probe = {
         "schema_id": "redcap-ai-e2e-carrier-probe",
         "ok": result["ok"] and not missing,
@@ -2934,6 +3008,8 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         "events": events,
         "missing_events": missing,
         "command": command_receipt(result),
+        "attempts": attempts,
+        "max_attempts": max(1, CARRIER_PROBE_MAX_ATTEMPTS),
         "last_message": str(last_message),
         "failures": [],
     }
@@ -3105,6 +3181,19 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 "stderr": "stream disconnected",
             }, artifact_exists=False):
                 failures.append("已有 stdout 的角色失败不应被自动重试")
+            interactive_retry_reason = role_failure_retry_reason({
+                "ok": False,
+                "stdout": "Spec written and committed. Please review it before proceeding.",
+                "stderr": "sed -n '1,220p' /Users/norven/.claude/skills/brainstorming/SKILL.md",
+            }, artifact_exists=False)
+            if not interactive_retry_reason or "interactive approval gate marker" not in interactive_retry_reason:
+                failures.append("误入交互式技能门禁没有被识别为可重试失败")
+            if role_failure_retry_reason({
+                "ok": False,
+                "stdout": "Spec written and committed. Please review it before proceeding.",
+                "stderr": "brainstorming/SKILL.md",
+            }, artifact_exists=True):
+                failures.append("角色产物已存在时不应因交互式技能标记继续重试")
             events_path = project_hook_events_path(project)
             events_path.parent.mkdir(parents=True, exist_ok=True)
             retry_events = [
@@ -3139,12 +3228,24 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             if manifest.get("session_loss_alarms"):
                 failures.append(f"重试成功夹具不应产生 session_loss_alarms：{manifest.get('session_loss_alarms')}")
             developer_prompt = build_role_prompt(project, evidence, "developer", "自检方向")
+            developer_argv = build_codex_role_argv(project, "developer", evidence / "role-messages" / "developer.txt", developer_prompt)
+            if "--ignore-user-config" in developer_argv:
+                failures.append("developer Codex CLI argv 不得包含 --ignore-user-config；该参数会破坏项目级 Hook 承载")
+            if CODEX_ROLE_DISABLE_PLUGINS:
+                disable_index = developer_argv.index("--disable") if "--disable" in developer_argv else -1
+                if disable_index < 0 or developer_argv[disable_index:disable_index + 2] != ["--disable", "plugins"]:
+                    failures.append("developer Codex CLI argv 没有禁用 plugins")
             if ".redcap/evidence/e2e/requirements.json" not in developer_prompt:
                 failures.append("developer 提示词没有给出 requirements.json 的证据目录实际路径")
             if ".redcap/evidence/e2e/acceptance-criteria.json" not in developer_prompt:
                 failures.append("developer 提示词没有给出 acceptance-criteria.json 的证据目录实际路径")
             if ".redcap/evidence/e2e/implementation-log.json" not in developer_prompt:
                 failures.append("developer 提示词没有给出 implementation-log.json 的证据目录目标路径")
+            if "不要启动需要人工批准的交互式设计流程" not in developer_prompt:
+                failures.append("developer 提示词没有禁止交互式设计流程，可能复发 brainstorming 卡死")
+            retry_developer_prompt = role_retry_prompt(developer_prompt, 2)
+            if "【重试约束】" not in retry_developer_prompt or "不要读取或执行需要人工批准的技能流程" not in retry_developer_prompt:
+                failures.append("developer 重试提示没有压制交互式设计技能误触发")
             developer_clearance = build_role_gate_clearance(project, evidence, "developer", "自检方向")
             developer_reads = {
                 item["name"]: item
