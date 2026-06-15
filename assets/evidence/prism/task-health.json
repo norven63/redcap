@@ -1,8 +1,8 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-15T03:19:47+00:00",
-  "event_count": 34164,
-  "session_event_count": 8351,
+  "computed_at": "2026-06-15T03:40:37+00:00",
+  "event_count": 34316,
+  "session_event_count": 8391,
   "task_count": 85,
   "success_count": 46,
   "success_rate": 0.5412,
@@ -39,31 +39,31 @@
       "task_id": "timeout-e2e",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T03:19:47+00:00"
+      "recorded_at": "2026-06-15T03:40:37+00:00"
     },
     {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T03:19:30+00:00"
+      "recorded_at": "2026-06-15T03:40:20+00:00"
     },
     {
       "task_id": "dispatcher-truncation-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T03:19:26+00:00"
+      "recorded_at": "2026-06-15T03:40:16+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T03:19:25+00:00"
+      "recorded_at": "2026-06-15T03:40:15+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T03:19:25+00:00"
+      "recorded_at": "2026-06-15T03:40:15+00:00"
     },
     {
       "task_id": "20260615-goal-completion-final-review-r2",
@@ -96,17 +96,17 @@
       "recorded_at": "2026-06-13T09:22:50+00:00"
     }
   ],
-  "gate_event_count": 25813,
-  "gate_success_count": 25813,
+  "gate_event_count": 25925,
+  "gate_success_count": 25925,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 538,
-    "required": 20945,
+    "optional": 539,
+    "required": 21056,
     "skipped": 4330
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 21697,
-    "cli-gate": 4116
+    "codex-UserPromptSubmit": 21801,
+    "cli-gate": 4124
   },
-  "gate_average_duration_seconds": 0.312
+  "gate_average_duration_seconds": 0.311
 }

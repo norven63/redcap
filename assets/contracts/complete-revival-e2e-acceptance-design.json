@@ -236,7 +236,7 @@
     "quality_gates": [
       "每个 Loom 角色必须记录 session_id，缺失时必须写 alarm",
       "每个 Loom 角色必须来自独立 Codex CLI 调用，且不同角色必须拥有不同 session_id",
-      "每个 Loom 角色必须拥有 role-runs、role-artifacts、role-prompts 和 role-messages 证据",
+      "每个 Loom 角色必须拥有 role-runs、role-artifacts、role-prompts、role-messages 和 role-raw 原始输出证据",
       "reviewer 角色必须读取评审前清单；最终五角色清单由运行器在 reviewer 退出后生成",
       "每个 Loom 角色必须读取运行器签发的 role-gate-clearance，角色不得自行运行 redcap gate 后把 gate_required 当作阻塞",
       "Loom 角色不得自行运行 prism-dispatch、prism session-init、prism merge 或完整 provider 评审；需要棱镜协助时由 E2E 运行器统一调度并回写 prism-assisted-review.json",

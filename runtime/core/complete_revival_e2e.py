@@ -29,6 +29,13 @@ CONTRACT = REPO_ROOT / "assets" / "contracts" / "complete-revival-e2e-acceptance
 REQUIRED_HOOK_EVENTS = ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"]
 LOOM_EXECUTION_ROLES = ["product_manager", "architect", "developer", "tester", "reviewer"]
 ROLE_MARKER_PREFIX = "REDCAP_LOOM_ROLE="
+ROLE_TIMEOUT_SECONDS = {
+    "product_manager": 240,
+    "architect": 300,
+    "developer": 420,
+    "tester": 240,
+    "reviewer": 360,
+}
 MEANINGFUL_E2E_REQUIRED_FILES = [
     "loom-role-session-manifest.json",
     "loom-role-session-manifest-pre-review.json",
@@ -789,6 +796,9 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
     - 如果项目根目录已经存在 blocked-package.json，必须先读取它；除非你就是正在生成该阻塞的角色，否则要产出本角色的阻塞证据并快速停止。
     - 本角色不得运行 prism-dispatch、prism session-init、prism merge 或完整 provider 评审；需要棱镜协助时，把请求和理由写入 role-artifacts/<role>.json，由 E2E 运行器统一调度。
     - 本角色不得写 .redcap/evidence/e2e/prism/<role>/ 或 .redcap/evidence/e2e/prism/<role>_completion/ 目录；这些目录会被视为角色越权。
+    - 本角色只允许读取上游输入、角色门禁协调文件和必要模板；不要读取 manifest.json、Hook 事件、role-workspaces、redcap-package.zip 或 RedCap 源码。
+    - 先写本角色必需产物，再做少量核对；不要为了“更全面”而扩展探索范围。
+    - 如果 Stop 或 Gate 只给出建议，不要把建议当作新任务；本角色主轴始终是上面列出的产物。
     - 写完本角色要求的全部文件后，立即用一句中文说明已交付并停止，不要继续追加无关分析。
     """
     role_specific = {
@@ -802,9 +812,11 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         "architect": """
         你的任务：
         1. 阅读产品经理交付和验收标准。
-        2. 写 architecture.md，说明结构、技术选型、运行方式、测试方式、风险和回滚。
+        2. 立即写 architecture.md，必须包含：目标、目录结构、数据模型、交互流程、运行方式、验证方式、风险与回滚。
         3. 默认选择无外部依赖、无需联网安装、可直接本地验证的方案；除非需求明确要求，不要引入 Vite、Playwright、数据库或服务端框架。
-        4. 写 risk-register.json 和 role-artifacts/architect.json。
+        4. 立即写 risk-register.json，至少包含 risks 数组；每项包含 id、risk、impact、mitigation、owner。
+        5. 立即写 role-artifacts/architect.json，status="completed"，并列出读取的输入和写出的文件。
+        6. 不要读取 manifest.json，不要检查 role-workspaces，不要扫描 .redcap 全目录。
         """,
         "developer": """
         你的任务：
@@ -960,9 +972,8 @@ def run_loom_role_pipeline(
 ) -> dict[str, Any]:
     role_results: dict[str, dict[str, Any]] = {}
     role_clearances: dict[str, dict[str, Any]] = {}
-    for dirname in ["role-prompts", "role-messages", "role-runs", "role-workspaces", "role-artifacts"]:
+    for dirname in ["role-prompts", "role-messages", "role-runs", "role-workspaces", "role-artifacts", "role-raw"]:
         (evidence / dirname).mkdir(parents=True, exist_ok=True)
-    role_timeout = max(240, min(timeout_seconds, 600))
     for role in LOOM_EXECUTION_ROLES:
         role_workspace_path(evidence, role).mkdir(parents=True, exist_ok=True)
         role_clearances[role] = write_role_gate_clearance(evidence, project, role, direction)
@@ -970,6 +981,7 @@ def run_loom_role_pipeline(
         prompt_path = evidence / "role-prompts" / f"{role}.md"
         message_path = evidence / "role-messages" / f"{role}.txt"
         prompt_path.write_text(prompt, encoding="utf-8")
+        role_timeout = min(timeout_seconds, ROLE_TIMEOUT_SECONDS[role])
         argv = [
             "codex",
             "exec",
@@ -988,6 +1000,10 @@ def run_loom_role_pipeline(
             prompt,
         ])
         result = run_command(argv, cwd=project, timeout_seconds=role_timeout)
+        raw_stdout = evidence / "role-raw" / f"{role}.stdout.txt"
+        raw_stderr = evidence / "role-raw" / f"{role}.stderr.txt"
+        raw_stdout.write_text(str(result.get("stdout") or ""), encoding="utf-8")
+        raw_stderr.write_text(str(result.get("stderr") or ""), encoding="utf-8")
         receipt = command_receipt(result)
         boundary_failures = role_provider_boundary_failures(evidence, role)
         receipt.update({
@@ -999,6 +1015,8 @@ def run_loom_role_pipeline(
             "expected_artifact_exists": role_artifact_path(evidence, role).exists(),
             "last_message_exists": message_path.exists(),
             "last_message_size": message_path.stat().st_size if message_path.exists() else 0,
+            "raw_stdout": str(raw_stdout),
+            "raw_stderr": str(raw_stderr),
             "project_deliverables_after_role": project_deliverable_manifest(project, limit=60),
             "role_provider_boundary_failures": boundary_failures,
         })
@@ -1401,7 +1419,7 @@ def final_evidence_paths(evidence: pathlib.Path) -> list[pathlib.Path]:
         "filesystem-after.json",
     ]
     paths = [evidence / rel for rel in fixed]
-    for pattern in ["role-gate-clearance/*.json", "role-artifacts/*.json", "role-runs/*.json", "role-messages/*.txt"]:
+    for pattern in ["role-gate-clearance/*.json", "role-artifacts/*.json", "role-runs/*.json", "role-messages/*.txt", "role-raw/*.txt"]:
         paths.extend(sorted(evidence.glob(pattern)))
     seen: set[pathlib.Path] = set()
     unique: list[pathlib.Path] = []
