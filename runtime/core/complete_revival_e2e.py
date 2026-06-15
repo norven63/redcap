@@ -942,10 +942,14 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         你的任务：
         1. 审阅需求、架构、实现、测试和角色证据。
            注意：loom-role-session-manifest-pre-review.json 只用于审核上游四个角色；reviewer 自己的 session_id 会在你退出后由运行器写入最终 loom-role-session-manifest.json，因此不要因为最终清单在评审前缺少 reviewer 自身而阻塞。
-        2. 写 review-verdict.json；必须包含 "terminal_completion": false，并在边界说明中写明 terminal_completion=false 表示 reviewer 只能给阶段评审，不能自证本轮 E2E 终局完成或 RedCap 完整复活。
-        3. 写 prism-assisted-review.json；本轮必须记录 used=true，至少说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决，并必须包含 prism_assistance_request.requested=true。
+        2. 写 review-verdict.json；必须包含：
+           - "terminal_completion": false；
+           - "blocking_findings": [] 或阻塞项数组，禁止用 blocking_failures、open_issues 等近义字段替代；
+           - "runner_owned_follow_up": ["completion-marker.json", "iteration-verdict.json", "final-prism-review.json", "final-runner-test-results.json"]，必须是这四个精确文件名字符串，不要写成说明句。
+           同时在边界说明中写明 terminal_completion=false 表示 reviewer 只能给阶段评审，不能自证本轮 E2E 终局完成或 RedCap 完整复活。
+        3. 写 prism-assisted-review.json；本轮必须记录 used=true，reviews 必须是非空数组，cap_decision 必须非空，skip_reason 必须为 null 或空字符串。至少在 reviews[0] 中说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决，并必须包含 prism_assistance_request.requested=true。
         4. 写 self-purification-candidates.json，包含候选或 no_candidate_reason，并给出 decisions 数组。decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；需要后续沉淀但本轮不晋升时用 defer_with_owner。
-        5. 写 persona-distillation-decision.json；privacy_class 必须是 cap-private，public_write=false，private_body_written=false，禁止写私有人格正文。
+        5. 写 persona-distillation-decision.json；privacy_class 必须是 cap-private，public_write=false，private_body_written=false，reason 必须是非空字符串。禁止写私有人格正文，也禁止出现 private_body、cap_private_body、persona_private_body、private_text 等私有正文键；不要用 rationale 替代 reason。
         6. 写 failure-backlog.json。必须使用 open_items 数组作为唯一开放问题字段；没有开放问题时 open_items=[] 且 next_round_required=false。禁止只写 open_issues。若有开放问题，每项必须包含 id、severity、summary、root_cause、impact、suggested_fix、owner、next_step。
            open_items 只记录你从需求、架构、实现、测试、上游角色证据中发现的真实阻塞问题。
            completion-marker.json、iteration-verdict.json、final-prism-review.json、final-runner-test-results.json 属于运行器固定收尾动作；若上游证据通过，请写入 review-verdict.runner_owned_follow_up，不要写入 open_items。
@@ -1050,6 +1054,13 @@ def validate_reviewer_outputs(evidence: pathlib.Path) -> list[str]:
             failures.append("reviewer 必须在 prism-assisted-review.json 记录运行器统一调度棱镜的请求")
         if assisted.get("used") is not True:
             failures.append("reviewer 必须把棱镜边界或包内棱镜要求如何影响裁决记录为 used=true")
+        reviews = assisted.get("reviews")
+        if not isinstance(reviews, list) or not reviews:
+            failures.append("reviewer 的 prism-assisted-review.reviews 必须是非空数组")
+        if not assisted.get("cap_decision"):
+            failures.append("reviewer 的 prism-assisted-review.cap_decision 必须非空")
+        if assisted.get("used") is True and assisted.get("skip_reason") not in (None, ""):
+            failures.append("reviewer 的 prism-assisted-review.used=true 时 skip_reason 必须为空")
 
     purification = load_optional_json(evidence / "self-purification-candidates.json")
     if purification is None:
@@ -1075,6 +1086,11 @@ def validate_reviewer_outputs(evidence: pathlib.Path) -> list[str]:
             failures.append("persona-distillation-decision.public_write 必须为 false")
         if persona.get("private_body_written") is not False:
             failures.append("persona-distillation-decision.private_body_written 必须为 false")
+        if not isinstance(persona.get("reason"), str) or not persona["reason"].strip():
+            failures.append("persona-distillation-decision.reason 必须非空，不能只写 rationale")
+        leaked = sorted({"private_body", "cap_private_body", "persona_private_body", "private_text"} & set(persona))
+        if leaked:
+            failures.append(f"persona-distillation-decision 禁止包含私有正文键：{leaked}")
 
     verdict = load_optional_json(evidence / "review-verdict.json")
     if verdict is None:
@@ -1084,13 +1100,19 @@ def validate_reviewer_outputs(evidence: pathlib.Path) -> list[str]:
             failures.append("reviewer 不得自证终局完成，review-verdict.terminal_completion 必须为 false")
         if not isinstance(verdict.get("blocking_findings"), list):
             failures.append("review-verdict.blocking_findings 必须是列表")
+        if "blocking_failures" in verdict:
+            failures.append("review-verdict 禁止用 blocking_failures 替代 blocking_findings")
         runner_follow_up = verdict.get("runner_owned_follow_up")
         if not isinstance(runner_follow_up, list):
             failures.append("review-verdict.runner_owned_follow_up 必须是列表")
         else:
-            missing = sorted(set(REVIEWER_RUNNER_OWNED_FOLLOW_UP) - {str(item) for item in runner_follow_up})
+            actual = {str(item) for item in runner_follow_up}
+            missing = sorted(set(REVIEWER_RUNNER_OWNED_FOLLOW_UP) - actual)
             if missing:
                 failures.append(f"review-verdict.runner_owned_follow_up 缺少运行器固定收尾动作：{missing}")
+            extra = sorted(actual - set(REVIEWER_RUNNER_OWNED_FOLLOW_UP))
+            if extra:
+                failures.append(f"review-verdict.runner_owned_follow_up 只能写精确文件名，不能写说明句：{extra}")
     return failures
 
 
@@ -1451,7 +1473,13 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
     write_json(evidence / "prism-assisted-review-template.json", {
         "schema_id": "redcap-e2e-prism-assisted-review",
         "used": True,
-        "reviews": [],
+        "reviews": [
+            {
+                "scope": "<requirements|architecture|implementation|tests|documents|runner-prism-boundary>",
+                "finding": "<required>",
+                "effect_on_verdict": "<required>"
+            }
+        ],
         "skip_reason": None,
         "cap_decision": "<required>"
     })
@@ -1478,7 +1506,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "public_write": False,
         "decision": "keep_private|no_signal|defer_with_owner",
         "private_body_written": False,
-        "reason": "<required>"
+        "reason": "<required; do not add private_body, cap_private_body, persona_private_body, or private_text keys>"
     })
     write_json(evidence / "test-results-template.json", {
         "schema_id": "redcap-e2e-test-results",
@@ -1552,6 +1580,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "boundary": "reviewer 只能给阶段评审；terminal_completion=false 表示不能自证本轮 E2E 终局完成或 RedCap 完整复活",
         "runner_owned_follow_up": REVIEWER_RUNNER_OWNED_FOLLOW_UP,
         "blocking_findings": [],
+        "forbidden_aliases": ["blocking_failures", "open_issues"],
         "must_check": [
             "requirements_covered",
             "deliverables_exist",
@@ -1755,10 +1784,13 @@ def detect_validation_command(project: pathlib.Path) -> tuple[list[str] | None, 
     validate_js = project / "scripts" / "validate.js"
     if validate_js.exists():
         return ["node", "scripts/validate.js"], "scripts/validate.js"
+    verify_sh = project / "scripts" / "verify.sh"
+    if verify_sh.exists():
+        return ["bash", "scripts/verify.sh"], "scripts/verify.sh"
     validate_script = project / "tests" / "validate.mjs"
     if validate_script.exists():
         return ["node", "tests/validate.mjs"], "tests/validate.mjs"
-    return None, "没有发现 package.json scripts.test、scripts.validate、scripts/validate.js 或 tests/validate.mjs"
+    return None, "没有发现 package.json scripts.test、scripts.validate、scripts/validate.js、scripts/verify.sh 或 tests/validate.mjs"
 
 
 def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
@@ -2494,11 +2526,21 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             implementation_log = developer_writes.get("implementation-log.json")
             if not implementation_log or implementation_log.get("location") != "evidence":
                 failures.append("developer 门禁凭证没有把 implementation-log.json 解析到证据目录")
+            verify_script = project / "scripts" / "verify.sh"
+            verify_script.parent.mkdir(parents=True, exist_ok=True)
+            verify_script.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+            detected_argv, detected_source = detect_validation_command(project)
+            if detected_argv != ["bash", "scripts/verify.sh"] or detected_source != "scripts/verify.sh":
+                failures.append("运行器没有识别 scripts/verify.sh 作为本地验证命令")
             reviewer_prompt = build_role_prompt(project, evidence, "reviewer", "自检方向")
             if "terminal_completion=false" not in reviewer_prompt or '"terminal_completion": false' not in reviewer_prompt:
                 failures.append("reviewer 提示词没有明确要求 terminal_completion=false")
             if "runner_owned_follow_up" not in reviewer_prompt or "open_items 只记录" not in reviewer_prompt:
                 failures.append("reviewer 提示词没有区分 open_items 与 runner_owned_follow_up")
+            if "blocking_findings" not in reviewer_prompt or "blocking_failures" not in reviewer_prompt:
+                failures.append("reviewer 提示词没有禁止 blocking_failures 近义字段")
+            if "private_body" not in reviewer_prompt or "reason 必须是非空字符串" not in reviewer_prompt:
+                failures.append("reviewer 提示词没有明确人格边界字段要求")
             verdict_template = load_json(evidence / "review-verdict-template.json")
             if verdict_template.get("terminal_completion") is not False:
                 failures.append("review-verdict-template.json 没有预置 terminal_completion=false")
@@ -2514,6 +2556,15 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             write_json(evidence / "prism-assisted-review.json", {
                 "schema_id": "redcap-e2e-prism-assisted-review",
                 "used": True,
+                "reviews": [
+                    {
+                        "scope": "runner-prism-boundary",
+                        "finding": "自检夹具确认棱镜协助边界被记录。",
+                        "effect_on_verdict": "reviewer 只给阶段评审。"
+                    }
+                ],
+                "skip_reason": None,
+                "cap_decision": "stage_pass",
                 "prism_assistance_request": {"requested": True},
                 "impact": "自检夹具确认 reviewer 记录棱镜协助边界。"
             })
@@ -2526,7 +2577,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 "schema_id": "redcap-e2e-persona-distillation-decision",
                 "privacy_class": "cap-private",
                 "public_write": False,
-                "private_body_written": False
+                "private_body_written": False,
+                "reason": "自检夹具确认不写入私有人格正文。"
             })
             write_json(evidence / "review-verdict.json", {
                 "schema_id": "redcap-e2e-review-verdict",
