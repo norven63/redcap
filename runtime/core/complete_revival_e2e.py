@@ -837,10 +837,10 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         1. 审阅需求、架构、实现、测试和角色证据。
            注意：loom-role-session-manifest-pre-review.json 只用于审核上游四个角色；reviewer 自己的 session_id 会在你退出后由运行器写入最终 loom-role-session-manifest.json，因此不要因为最终清单在评审前缺少 reviewer 自身而阻塞。
         2. 写 review-verdict.json。
-        3. 写 prism-assisted-review.json；本轮必须记录 used=true，至少说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决。
-        4. 写 self-purification-candidates.json，包含候选或 no_candidate_reason，并给出 decisions。decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；需要后续沉淀但本轮不晋升时用 defer_with_owner。
+        3. 写 prism-assisted-review.json；本轮必须记录 used=true，至少说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决，并必须包含 prism_assistance_request.requested=true。
+        4. 写 self-purification-candidates.json，包含候选或 no_candidate_reason，并给出 decisions 数组。decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；需要后续沉淀但本轮不晋升时用 defer_with_owner。
         5. 写 persona-distillation-decision.json；privacy_class 必须是 cap-private，public_write=false，private_body_written=false，禁止写私有人格正文。
-        6. 写 failure-backlog.json。若有开放问题，必须列出根因、影响和建议修复。
+        6. 写 failure-backlog.json。必须使用 open_items 数组作为唯一开放问题字段；没有开放问题时 open_items=[] 且 next_round_required=false。禁止只写 open_issues。若有开放问题，每项必须包含 id、severity、summary、root_cause、impact、suggested_fix、owner、next_step。
         7. 禁止写 completion-marker.json 或 iteration-verdict.json；这两个文件只能由 E2E 运行器在你退出后独立生成。
         """,
     }[role]
@@ -904,6 +904,104 @@ def role_provider_boundary_failures(evidence: pathlib.Path, role: str) -> list[s
             leaked = [str(item) for item in files if f"prism/{role}" in str(item)]
             if leaked:
                 failures.append(f"{role} 角色证据声明了越权棱镜产物：{leaked}")
+    return failures
+
+
+def role_output_path(project: pathlib.Path, evidence: pathlib.Path, output: str) -> pathlib.Path | None:
+    if output == "project-deliverables":
+        return None
+    evidence_path = evidence / output
+    if evidence_path.exists() or output.startswith("role-artifacts/"):
+        return evidence_path
+    return project / output
+
+
+def validate_reviewer_outputs(evidence: pathlib.Path) -> list[str]:
+    failures: list[str] = []
+    backlog = load_optional_json(evidence / "failure-backlog.json")
+    if backlog is None:
+        failures.append("reviewer 必须写入可解析的 failure-backlog.json")
+    else:
+        open_items = backlog.get("open_items")
+        if not isinstance(open_items, list):
+            failures.append("reviewer 的 failure-backlog.open_items 必须是列表，不能用 open_issues 替代")
+        closed_items = backlog.get("closed_items")
+        if closed_items is not None and not isinstance(closed_items, list):
+            failures.append("reviewer 的 failure-backlog.closed_items 必须是列表")
+        if open_items == [] and backlog.get("next_round_required") is True:
+            failures.append("reviewer 的 failure-backlog 无开放项时 next_round_required 必须为 false")
+        for item in open_items or []:
+            if not isinstance(item, dict):
+                failures.append("reviewer 的 failure-backlog.open_items 每项必须是对象")
+                continue
+            for field in ["id", "severity", "summary", "root_cause", "impact", "suggested_fix", "owner", "next_step"]:
+                if not isinstance(item.get(field), str) or not item[field].strip():
+                    failures.append(f"reviewer 的 failure-backlog.open_items 缺少字段：{field}")
+
+    assisted = load_optional_json(evidence / "prism-assisted-review.json")
+    if assisted is None:
+        failures.append("reviewer 必须写入可解析的 prism-assisted-review.json")
+    else:
+        request = assisted.get("prism_assistance_request")
+        if not isinstance(request, dict) or request.get("requested") is not True:
+            failures.append("reviewer 必须在 prism-assisted-review.json 记录运行器统一调度棱镜的请求")
+        if assisted.get("used") is not True:
+            failures.append("reviewer 必须把棱镜边界或包内棱镜要求如何影响裁决记录为 used=true")
+
+    purification = load_optional_json(evidence / "self-purification-candidates.json")
+    if purification is None:
+        failures.append("reviewer 必须写入可解析的 self-purification-candidates.json")
+    else:
+        decisions = purification.get("decisions")
+        if not isinstance(decisions, list):
+            failures.append("self-purification-candidates.decisions 必须是列表")
+        elif not decisions and not isinstance(purification.get("no_candidate_reason"), str):
+            failures.append("无自我沉淀候选时必须写 no_candidate_reason")
+        allowed = {"promote_public", "keep_private", "no_promote", "defer_with_owner"}
+        for decision in decisions or []:
+            if not isinstance(decision, dict) or decision.get("decision") not in allowed:
+                failures.append("self-purification-candidates.decisions 存在非法 decision")
+
+    persona = load_optional_json(evidence / "persona-distillation-decision.json")
+    if persona is None:
+        failures.append("reviewer 必须写入可解析的 persona-distillation-decision.json")
+    else:
+        if persona.get("privacy_class") != "cap-private":
+            failures.append("persona-distillation-decision.privacy_class 必须是 cap-private")
+        if persona.get("public_write") is not False:
+            failures.append("persona-distillation-decision.public_write 必须为 false")
+        if persona.get("private_body_written") is not False:
+            failures.append("persona-distillation-decision.private_body_written 必须为 false")
+
+    verdict = load_optional_json(evidence / "review-verdict.json")
+    if verdict is None:
+        failures.append("reviewer 必须写入可解析的 review-verdict.json")
+    else:
+        if verdict.get("terminal_completion") is not False:
+            failures.append("reviewer 不得自证终局完成，review-verdict.terminal_completion 必须为 false")
+        if not isinstance(verdict.get("blocking_findings"), list):
+            failures.append("review-verdict.blocking_findings 必须是列表")
+    return failures
+
+
+def validate_role_outputs(project: pathlib.Path, evidence: pathlib.Path, role: str) -> list[str]:
+    failures: list[str] = []
+    _inputs, outputs = role_handoff(role)
+    for output in outputs:
+        path = role_output_path(project, evidence, output)
+        if path is not None and not path.exists():
+            failures.append(f"{role} 缺少必需产物：{output}")
+    artifact = load_optional_json(role_artifact_path(evidence, role))
+    if artifact is None:
+        failures.append(f"{role} 缺少可解析的 role-artifacts/{role}.json")
+    else:
+        for field in ["schema_id", "role", "status", "handoff_inputs", "handoff_outputs", "evidence_files", "notes"]:
+            if field not in artifact:
+                failures.append(f"role-artifacts/{role}.json 缺少字段：{field}")
+        if artifact.get("role") != role:
+            failures.append(f"role-artifacts/{role}.json.role 必须是 {role}")
+    if role == "reviewer":
+        failures.extend(validate_reviewer_outputs(evidence))
     return failures
 
 
@@ -1020,6 +1118,10 @@ def run_loom_role_pipeline(
             "project_deliverables_after_role": project_deliverable_manifest(project, limit=60),
             "role_provider_boundary_failures": boundary_failures,
         })
+        artifact_failures = validate_role_outputs(project, evidence, role)
+        if artifact_failures:
+            receipt["ok"] = False
+            receipt["failures"] = [*receipt.get("failures", []), *artifact_failures]
         if boundary_failures:
             receipt["ok"] = False
             receipt["failures"] = [*receipt.get("failures", []), *boundary_failures]
@@ -1465,10 +1567,15 @@ def detect_validation_command(project: pathlib.Path) -> tuple[list[str] | None, 
     scripts = package_json.get("scripts") if isinstance(package_json, dict) else None
     if isinstance(scripts, dict) and isinstance(scripts.get("test"), str) and scripts["test"].strip():
         return ["npm", "test"], "package.json scripts.test"
+    if isinstance(scripts, dict) and isinstance(scripts.get("validate"), str) and scripts["validate"].strip():
+        return ["npm", "run", "validate"], "package.json scripts.validate"
+    validate_js = project / "scripts" / "validate.js"
+    if validate_js.exists():
+        return ["node", "scripts/validate.js"], "scripts/validate.js"
     validate_script = project / "tests" / "validate.mjs"
     if validate_script.exists():
         return ["node", "tests/validate.mjs"], "tests/validate.mjs"
-    return None, "没有发现 package.json scripts.test 或 tests/validate.mjs"
+    return None, "没有发现 package.json scripts.test、scripts.validate、scripts/validate.js 或 tests/validate.mjs"
 
 
 def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
