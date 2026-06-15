@@ -37,6 +37,17 @@ ROLE_TIMEOUT_SECONDS = {
     "tester": 240,
     "reviewer": 360,
 }
+CODEX_ROLE_MODEL = os.environ.get("REDCAP_E2E_CODEX_ROLE_MODEL", "gpt-5.5")
+CODEX_ROLE_REASONING_EFFORT = os.environ.get("REDCAP_E2E_CODEX_ROLE_REASONING_EFFORT", "low")
+CODEX_ROLE_DISABLE_PLUGINS = os.environ.get("REDCAP_E2E_CODEX_ROLE_DISABLE_PLUGINS", "1") != "0"
+CODEX_ROLE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CODEX_ROLE_MAX_ATTEMPTS", "2"))
+CODEX_ROLE_RETRYABLE_STDERR_MARKERS = [
+    "responses_websocket",
+    "stream disconnected",
+    "tls handshake eof",
+    "error sending request",
+    "http/request failed",
+]
 MEANINGFUL_E2E_REQUIRED_FILES = [
     "loom-role-session-manifest.json",
     "loom-role-session-manifest-pre-review.json",
@@ -225,6 +236,24 @@ def command_receipt(result: dict[str, Any]) -> dict[str, Any]:
         "stdout_tail": stdout[-2000:],
         "stderr_tail": stderr[-2000:],
     }
+
+
+def extract_codex_session_id(stderr: str) -> str | None:
+    match = re.search(r"session id:\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", stderr)
+    return match.group(1) if match else None
+
+
+def role_failure_retry_reason(result: dict[str, Any], artifact_exists: bool) -> str | None:
+    if result.get("ok") is True or artifact_exists:
+        return None
+    stderr = str(result.get("stderr") or "").casefold()
+    stdout = str(result.get("stdout") or "")
+    if stdout.strip():
+        return None
+    for marker in CODEX_ROLE_RETRYABLE_STDERR_MARKERS:
+        if marker in stderr:
+            return f"codex transient transport marker: {marker}"
+    return None
 
 
 def git_text(args: list[str]) -> tuple[bool, str, str]:
@@ -1022,15 +1051,27 @@ def build_role_session_manifest(
         session_ids = [str(item.get("session_id") or "") for item in entries if item.get("session_id")]
         unique_sessions = sorted(set(session_ids))
         command_ok = role_results.get(role, {}).get("ok") is True
+        recorded_session_id = str(role_results.get(role, {}).get("session_id") or "")
+        attempt_count = int(role_results.get(role, {}).get("attempt_count") or 0)
+        selected_session_id: str | None = None
+        if command_ok and recorded_session_id and recorded_session_id in unique_sessions:
+            selected_session_id = recorded_session_id
+        elif len(unique_sessions) == 1:
+            selected_session_id = unique_sessions[0]
+        retry_sessions_allowed = (
+            command_ok
+            and attempt_count > 1
+            and selected_session_id in unique_sessions
+        )
         artifact_rel = f"role-artifacts/{role}.json"
         inputs, outputs = role_handoff(role)
         alarm: str | None = None
         role_has_started = role in role_results or bool(entries)
         if include_pending and not role_has_started:
             alarm = None
-        elif not unique_sessions:
+        elif not selected_session_id:
             alarm = "missing_session_id"
-        elif len(unique_sessions) > 1:
+        elif len(unique_sessions) > 1 and not retry_sessions_allowed:
             alarm = "multiple_sessions_for_single_role"
         elif not command_ok:
             alarm = "role_command_failed"
@@ -1038,7 +1079,10 @@ def build_role_session_manifest(
             alarms.append({"role": role, "alarm": alarm})
         roles.append({
             "role": role,
-            "session_id": unique_sessions[0] if len(unique_sessions) == 1 else None,
+            "session_id": selected_session_id,
+            "observed_session_ids": unique_sessions,
+            "retry_session_ids": [item for item in unique_sessions if item != selected_session_id],
+            "attempt_count": role_results.get(role, {}).get("attempt_count"),
             "provider": "codex-cli",
             "started_at": entries[0].get("recorded_at") if entries else None,
             "last_seen_at": entries[-1].get("recorded_at") if entries else None,
@@ -1082,9 +1126,13 @@ def run_loom_role_pipeline(
         message_path = evidence / "role-messages" / f"{role}.txt"
         prompt_path.write_text(prompt, encoding="utf-8")
         role_timeout = min(timeout_seconds, ROLE_TIMEOUT_SECONDS[role])
-        argv = [
+        base_argv = [
             "codex",
             "exec",
+            "--model",
+            CODEX_ROLE_MODEL,
+            "-c",
+            f'model_reasoning_effort="{CODEX_ROLE_REASONING_EFFORT}"',
             "--cd",
             str(project),
             "--skip-git-repo-check",
@@ -1092,14 +1140,46 @@ def run_loom_role_pipeline(
             "workspace-write",
             "--full-auto",
         ]
+        if CODEX_ROLE_DISABLE_PLUGINS:
+            base_argv.extend(["--disable", "plugins"])
         for state_dir in provider_state_dirs_for_role(role):
-            argv.extend(["--add-dir", str(state_dir)])
-        argv.extend([
+            base_argv.extend(["--add-dir", str(state_dir)])
+        base_argv.extend([
             "--output-last-message",
             str(message_path),
             prompt,
         ])
-        result = run_command(argv, cwd=project, timeout_seconds=role_timeout)
+        attempts: list[dict[str, Any]] = []
+        result: dict[str, Any] = {}
+        for attempt_index in range(1, max(1, CODEX_ROLE_MAX_ATTEMPTS) + 1):
+            if message_path.exists():
+                message_path.unlink()
+            result = run_command(base_argv, cwd=project, timeout_seconds=role_timeout)
+            attempt_stdout = evidence / "role-raw" / f"{role}.attempt-{attempt_index}.stdout.txt"
+            attempt_stderr = evidence / "role-raw" / f"{role}.attempt-{attempt_index}.stderr.txt"
+            attempt_stdout.write_text(str(result.get("stdout") or ""), encoding="utf-8")
+            attempt_stderr.write_text(str(result.get("stderr") or ""), encoding="utf-8")
+            attempt_receipt = command_receipt(result)
+            attempt_receipt.update({
+                "attempt": attempt_index,
+                "session_id": extract_codex_session_id(str(result.get("stderr") or "")),
+                "raw_stdout": str(attempt_stdout),
+                "raw_stderr": str(attempt_stderr),
+                "expected_artifact_exists": role_artifact_path(evidence, role).exists(),
+                "last_message_exists": message_path.exists(),
+            })
+            attempts.append(attempt_receipt)
+            retry_reason = role_failure_retry_reason(result, role_artifact_path(evidence, role).exists())
+            if retry_reason and attempt_index < max(1, CODEX_ROLE_MAX_ATTEMPTS):
+                append_jsonl(evidence / "workflow-events.jsonl", {
+                    "event": "loom_role_retry_scheduled",
+                    "role": role,
+                    "attempt": attempt_index,
+                    "recorded_at": iso_now(),
+                    "reason": retry_reason,
+                })
+                continue
+            break
         raw_stdout = evidence / "role-raw" / f"{role}.stdout.txt"
         raw_stderr = evidence / "role-raw" / f"{role}.stderr.txt"
         raw_stdout.write_text(str(result.get("stdout") or ""), encoding="utf-8")
@@ -1109,6 +1189,13 @@ def run_loom_role_pipeline(
         receipt.update({
             "schema_id": "redcap-e2e-loom-role-run",
             "role": role,
+            "codex_model": CODEX_ROLE_MODEL,
+            "codex_reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
+            "codex_plugins_disabled": CODEX_ROLE_DISABLE_PLUGINS,
+            "attempt_count": len(attempts),
+            "max_attempts": max(1, CODEX_ROLE_MAX_ATTEMPTS),
+            "attempts": attempts,
+            "session_id": extract_codex_session_id(str(result.get("stderr") or "")),
             "prompt_path": str(prompt_path),
             "last_message": str(message_path),
             "expected_artifact": str(role_artifact_path(evidence, role)),
@@ -2237,10 +2324,57 @@ def cmd_self_check(args: argparse.Namespace) -> int:
         if prepared.get("ok") is not True:
             failures.append(f"prepare 正向探针失败：{prepared.get('failures')}")
         else:
+            project = pathlib.Path(str(prepared["project"]))
             evidence = pathlib.Path(str(prepared["evidence_root"]))
             for rel in load_json(CONTRACT)["raw_evidence_package"]["required_files_after_prepare"]:
                 if not (evidence / rel).exists():
                     failures.append(f"prepare 后缺少证据文件：{rel}")
+            retry_reason = role_failure_retry_reason({
+                "ok": False,
+                "stdout": "",
+                "stderr": "responses_websocket tls handshake eof; stream disconnected",
+            }, artifact_exists=False)
+            if not retry_reason:
+                failures.append("传输抖动失败没有被识别为可重试")
+            if role_failure_retry_reason({
+                "ok": False,
+                "stdout": "partial output",
+                "stderr": "stream disconnected",
+            }, artifact_exists=False):
+                failures.append("已有 stdout 的角色失败不应被自动重试")
+            events_path = project_hook_events_path(project)
+            events_path.parent.mkdir(parents=True, exist_ok=True)
+            retry_events = [
+                {
+                    "event": "UserPromptSubmit",
+                    "session_id": "11111111-1111-4111-8111-111111111111",
+                    "turn_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                    "recorded_at": iso_now(),
+                    "prompt": {"normalized_excerpt": f"{ROLE_MARKER_PREFIX}developer failed attempt"},
+                },
+                {
+                    "event": "UserPromptSubmit",
+                    "session_id": "22222222-2222-4222-8222-222222222222",
+                    "turn_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                    "recorded_at": iso_now(),
+                    "prompt": {"normalized_excerpt": f"{ROLE_MARKER_PREFIX}developer successful attempt"},
+                },
+            ]
+            events_path.write_text("\n".join(json.dumps(item, ensure_ascii=False) for item in retry_events) + "\n", encoding="utf-8")
+            manifest = build_role_session_manifest(project, evidence, {
+                "developer": {
+                    "ok": True,
+                    "session_id": "22222222-2222-4222-8222-222222222222",
+                    "attempt_count": 2,
+                }
+            }, include_pending=True)
+            developer_role = next(item for item in manifest["roles"] if item["role"] == "developer")
+            if developer_role.get("session_id") != "22222222-2222-4222-8222-222222222222":
+                failures.append("重试成功后没有选择成功尝试的 session_id")
+            if developer_role.get("retry_session_ids") != ["11111111-1111-4111-8111-111111111111"]:
+                failures.append("重试失败尝试没有进入 retry_session_ids")
+            if manifest.get("session_loss_alarms"):
+                failures.append(f"重试成功夹具不应产生 session_loss_alarms：{manifest.get('session_loss_alarms')}")
         guard_probe = source_workspace_guard_negative_probe()
         if guard_probe.get("ok") is not True:
             failures.append(f"源工作区保护负向探针失败：{guard_probe.get('failures')}")

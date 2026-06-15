@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The 'changed_reality' items only describe the observed Round 9 failure (developer timeout, transport jitter, inherited user config) and a proposed design. No evidence is presented that runtime/core/complete_revival_e2e.py has actually been modified, that --ignore-user-config + low reasoning has been tested, or that the project-level Hook still captures session_id under the new invocation. Reality = a diagnosis and a plan; the fix itself is not yet real.",
+  "main_concern": "This is a design/plan deliverable presented as forward progress. The strongest risk is 'document as completion': the main AI may satisfy itself with a convincing hardening proposal while the runner remains unpatched and the next E2E run would fail the same way. The review request does not contain a code diff, a validation run, or a changed session_id artifact.",
+  "top_risks": [
+    "--ignore-user-config may also suppress the project-level Hook or model parameters if Codex CLI loads them from a source that is classified as user/global config. The boundary between ignored user config and retained project config is asserted but not evidenced, so session_id capture could silently break.",
+    "A single bounded retry may be insufficient for the observed transport failures (responses_websocket TLS handshake EOF, stream disconnected retry) and the retryable-vs-fatal classification is undefined. One retry could turn a clean failure into a flaky false success or still timeout.",
+    "Lowering reasoning effort to avoid timeout may degrade the developer role's implementation quality, violating the constraint to preserve original capabilities. There is no evidence that the task still completes correctly under the reduced reasoning setting."
+  ],
+  "missing_evidence": [
+    "A diff or actual modified code for runtime/core/complete_revival_e2e.py showing exactly how --ignore-user-config, explicit low-reasoning/stable-model flags, bounded retry logic, and successful-attempt session selection are implemented.",
+    "A focused validation run (minimum: one role, ideally developer) proving the new invocation completes within timeout, generates the role artifact, and that the project-level Hook still emits a UserPromptSubmit event whose session_id becomes the role context.",
+    "Explicit confirmation of Codex CLI's config precedence when --ignore-user-config is used: which paths are ignored, which are retained, and how project hooks are loaded so they are not dropped along with user plugins."
+  ],
+  "minimum_fix": "Implement the runner changes now, then run at least a focused validation. The next deliverable must include: (1) the code diff, (2) runtime logs showing the new CLI flags in the command line, (3) a successful role artifact, (4) the final session_id captured from the Hook of the successful attempt, and (5) retry evidence artifacts for any preceding failed attempt. Do not advance by producing another design document.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "If the main AI's next response is another plan, rationale, or 'design approved' summary without a concrete code diff and runtime evidence, it is looping on explanation instead of changing reality. Require implementation + verification as the only acceptable next step."
+  },
+  "user_intent_alignment": "The design direction is aligned with user intent—fix the runner, keep Loom role separation, preserve project-level Hook/session_id/artifacts/evidence chain, and do not bypass Loom. However, alignment is theoretical until the plan is implemented and verified. The user authorized continuing until the final goal is reached, so a plan alone does not meet that authorization."
+}

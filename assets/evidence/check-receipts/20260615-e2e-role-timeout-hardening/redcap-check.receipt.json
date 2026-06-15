@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap check",
+  "exit_code": 0,
+  "executed_at": "2026-06-15T13:44:57.022878+00:00",
+  "executor": "cap",
+  "stdout_sha256": "1afd48227b837c93cfed75cf9a43c53acd899e94c5519e4761c8e4496e2d983e",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/redcap-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/redcap-check.stderr.txt"
+}

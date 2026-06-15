@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -m json.tool assets/contracts/complete-revival-e2e-acceptance-design.json",
+  "exit_code": 0,
+  "executed_at": "2026-06-15T13:41:07.016368+00:00",
+  "executor": "cap",
+  "stdout_sha256": "25231edbb630dfef7c04418dda46e3d8e3ade13621e0a4d18fbf8b3fec088804",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/design-json.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/design-json.stderr.txt"
+}

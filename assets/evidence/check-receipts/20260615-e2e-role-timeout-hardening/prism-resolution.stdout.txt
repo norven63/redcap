@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "merge_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/e2e-role-timeout-hardening-20260615/merge.json",
+  "resolution_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/lifecycle/20260615-e2e-role-timeout-hardening-prism-resolution.json",
+  "must_respond": true,
+  "expected_resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern"
+    }
+  ],
+  "conclusion_state": "resolved",
+  "failures": []
+}
+PRISM_CONCERN_RESOLUTION_OK

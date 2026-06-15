@@ -1,0 +1,76 @@
+{
+  "schema_id": "redcap-e2e-role-timeout-hardening-probes",
+  "created_at": "2026-06-15T13:41:07.959436+00:00",
+  "decision": "采用保留用户和项目配置、model_reasoning_effort=low、--disable plugins、有界重试；拒绝 --ignore-user-config 和 minimal 推理。",
+  "round9_failure": {
+    "summary_path": "/Users/norven/workspace/redcap-e2e-runs/run-20260615-round9/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/run-summary.json",
+    "ok": false,
+    "codex_cli_ok": false,
+    "hook_events_ok": true,
+    "finalization_ok": false,
+    "meaningful_evidence_ok": false,
+    "failure_count": 5
+  },
+  "probes": {
+    "low_reasoning_only": {
+      "run_name": "hook-probe-20260615-low-reasoning",
+      "events_path": "/Users/norven/workspace/redcap-e2e-runs/hook-probe-20260615-low-reasoning/project/.redcap/evidence/host-hooks/codex/events.jsonl",
+      "events_exists": true,
+      "event_count": 14,
+      "required_events_present": true,
+      "user_prompt_sessions": [
+        "019ecb74-cc37-7271-9369-ed5bc12943c4"
+      ],
+      "stop_count": 8,
+      "last_message_path": "/Users/norven/workspace/redcap-e2e-runs/hook-probe-20260615-low-reasoning/project/probe-last-message.txt",
+      "last_message": "probe done",
+      "last_message_ok": true
+    },
+    "low_reasoning_role_probe": {
+      "run_name": "role-probe-20260615-low-reasoning",
+      "events_path": "/Users/norven/workspace/redcap-e2e-runs/role-probe-20260615-low-reasoning/project/.redcap/evidence/host-hooks/codex/events.jsonl",
+      "events_exists": true,
+      "event_count": 6,
+      "required_events_present": false,
+      "user_prompt_sessions": [
+        "019ecb79-ec96-7061-834b-09a09703d45e"
+      ],
+      "stop_count": 0,
+      "last_message_path": "/Users/norven/workspace/redcap-e2e-runs/role-probe-20260615-low-reasoning/project/probe-last-message.txt",
+      "last_message": null,
+      "last_message_ok": true,
+      "interpretation": "低推理保留 Hook 事件，但聚焦角色探针仍受到传输抖动影响，不能单独作为最终采用方案。"
+    },
+    "low_reasoning_disable_plugins": {
+      "run_name": "hook-probe-20260615-disable-plugins",
+      "events_path": "/Users/norven/workspace/redcap-e2e-runs/hook-probe-20260615-disable-plugins/project/.redcap/evidence/host-hooks/codex/events.jsonl",
+      "events_exists": true,
+      "event_count": 14,
+      "required_events_present": true,
+      "user_prompt_sessions": [
+        "019ecb7e-bea7-7362-bf8e-9636c4803cc2"
+      ],
+      "stop_count": 8,
+      "last_message_path": "/Users/norven/workspace/redcap-e2e-runs/hook-probe-20260615-disable-plugins/project/probe-last-message.txt",
+      "last_message": "probe done",
+      "last_message_ok": true
+    },
+    "ignore_user_config_minimal": {
+      "run_name": "hook-probe-20260615-ignore-user-config",
+      "accepted": false,
+      "reason": "本地探针出现 minimal 推理与工具不兼容问题，且该路径不能作为项目级 Hook 继承的可靠方案。"
+    }
+  },
+  "adopted_runtime_flags": {
+    "model": "gpt-5.5",
+    "model_reasoning_effort": "low",
+    "disable_plugins": true,
+    "ignore_user_config": false,
+    "max_attempts": 2
+  },
+  "acceptance": {
+    "source_workspace_guard_preserved": true,
+    "hook_and_session_probe_passed": true,
+    "last_message_probe_passed": true
+  }
+}

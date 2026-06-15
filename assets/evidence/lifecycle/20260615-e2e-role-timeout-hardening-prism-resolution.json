@@ -1,0 +1,53 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260615-e2e-role-timeout-hardening",
+  "merge_path": "assets/evidence/prism/e2e-role-timeout-hardening-20260615/merge.json",
+  "reviews": [
+    "assets/evidence/prism/e2e-role-timeout-hardening-20260615/kimi/review.json",
+    "assets/evidence/prism/e2e-role-timeout-hardening-20260615/claude-code/review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "关切成立：不能用方案文档替代真实修复。本轮已修改 E2E 运行器，加入角色调用参数收敛、有界重试、attempt 证据保留、成功 session_id 选择和自检夹具，并用执行回执验证。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/evidence/lifecycle/20260615-e2e-role-timeout-hardening-probes.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/py-compile.receipt.json",
+        "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/design-json.receipt.json",
+        "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/complete-revival-e2e-design-check.receipt.json",
+        "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/complete-revival-e2e-self-check-skip-carrier.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "关切成立：--ignore-user-config 不能在未验证时进入运行器。本轮探针拒绝该路径，保留用户和项目配置，采用 model_reasoning_effort=low 与 --disable plugins；hook-probe-20260615-disable-plugins 已验证项目级 Hook、UserPromptSubmit 和 session_id 仍记录。双重失败路径被定义为 E2E 失败并保留两次尝试证据，不伪造完成。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/evidence/lifecycle/20260615-e2e-role-timeout-hardening-probes.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/py-compile.receipt.json",
+        "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/design-json.receipt.json",
+        "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/complete-revival-e2e-design-check.receipt.json",
+        "assets/evidence/check-receipts/20260615-e2e-role-timeout-hardening/complete-revival-e2e-self-check-skip-carrier.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两名评审方的关切都被接受，并映射到代码、合同、探针摘要和执行回执；下一步必须重新运行真实 E2E，而不能把本收敛决议当作终局完成。"
+  }
+}
