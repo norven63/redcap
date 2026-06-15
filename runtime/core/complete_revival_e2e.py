@@ -12,11 +12,13 @@ import pathlib
 import re
 import signal
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
 import textwrap
 import time
+import urllib.request
 import zipfile
 from typing import Any
 
@@ -1852,12 +1854,17 @@ def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
 def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     target = project / "index.html"
     screenshot = evidence / "browser-inspection.png"
+    server_process: subprocess.Popen[str] | None = None
+    server_stdout = ""
+    server_stderr = ""
     result: dict[str, Any] = {
         "schema_id": "redcap-e2e-browser-inspection",
         "producer": "e2e-runner",
         "created_at": iso_now(),
         "target": str(target),
-        "url": target.as_uri() if target.exists() else None,
+        "file_url": target.as_uri() if target.exists() else None,
+        "url": None,
+        "launch_mode": "local-http-server",
         "screenshot": "browser-inspection.png",
         "ok": False,
         "checks": [],
@@ -1871,28 +1878,84 @@ def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dic
     except Exception as exc:  # pragma: no cover - 取决于本机运行时
         result["failures"].append(f"无法导入 Playwright 浏览器自动化库：{type(exc).__name__}: {exc}")
         return result
-    console_errors: list[str] = []
-    page_errors: list[str] = []
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = int(sock.getsockname()[1])
+    url = f"http://127.0.0.1:{port}/index.html"
+    server_argv = ["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"]
+    server_ready = False
+    server_error = ""
     try:
-        with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(headless=True)
-            page = browser.new_page(viewport={"width": 1280, "height": 900})
-            page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
-            page.on("pageerror", lambda error: page_errors.append(str(error)))
-            page.goto(target.as_uri(), wait_until="domcontentloaded", timeout=20_000)
-            page.wait_for_timeout(500)
-            title = page.title()
-            body_text = page.locator("body").inner_text(timeout=5_000)
-            interactive_count = page.locator("button, input, select, textarea, a[href]").count()
-            element_count = page.locator("body *").count()
-            page.screenshot(path=str(screenshot), full_page=True)
-            browser.close()
-    except Exception as exc:
-        result["failures"].append(f"浏览器检查执行失败：{type(exc).__name__}: {exc}")
-        return result
+        server_process = subprocess.Popen(
+            server_argv,
+            cwd=str(project),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            start_new_session=True,
+        )
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            if server_process.poll() is not None:
+                server_error = f"本地 HTTP 服务提前退出，exit_code={server_process.returncode}"
+                break
+            try:
+                with urllib.request.urlopen(url, timeout=0.5) as response:
+                    if response.status < 500:
+                        server_ready = True
+                        break
+            except Exception as exc:
+                server_error = f"{type(exc).__name__}: {exc}"
+                time.sleep(0.1)
+        result["url"] = url
+        result["server"] = {
+            "argv": server_argv,
+            "cwd": str(project),
+            "ready": server_ready,
+            "url": url,
+            "last_readiness_error": server_error,
+            "exit_code_before_cleanup": server_process.poll(),
+        }
+        if not server_ready:
+            result["failures"].append(f"本地 HTTP 服务没有就绪，无法执行浏览器检查：{server_error}")
+            return result
+        console_errors: list[str] = []
+        page_errors: list[str] = []
+        try:
+            with sync_playwright() as playwright:
+                browser = playwright.chromium.launch(headless=True)
+                page = browser.new_page(viewport={"width": 1280, "height": 900})
+                page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
+                page.on("pageerror", lambda error: page_errors.append(str(error)))
+                page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+                page.wait_for_timeout(500)
+                title = page.title()
+                body_text = page.locator("body").inner_text(timeout=5_000)
+                interactive_count = page.locator("button, input, select, textarea, a[href]").count()
+                element_count = page.locator("body *").count()
+                page.screenshot(path=str(screenshot), full_page=True)
+                browser.close()
+        except Exception as exc:
+            result["failures"].append(f"浏览器检查执行失败：{type(exc).__name__}: {exc}")
+            return result
+    finally:
+        if server_process is not None:
+            killed = kill_process_group(server_process, grace_seconds=1.0)
+            try:
+                server_stdout, server_stderr = server_process.communicate(timeout=3)
+            except subprocess.TimeoutExpired:
+                server_stdout, server_stderr = "", ""
+            server = result.get("server")
+            if isinstance(server, dict):
+                server.update({
+                    "exit_code_after_cleanup": server_process.returncode,
+                    "process_group_killed": killed,
+                    "stdout_tail": server_stdout[-1000:],
+                    "stderr_tail": server_stderr[-1000:],
+                })
     visible_text = body_text.strip()
     checks = [
-        {"name": "page_loaded", "passed": True, "evidence": target.as_uri()},
+        {"name": "page_loaded", "passed": True, "evidence": url},
         {"name": "visible_text", "passed": len(visible_text) >= 80, "evidence": f"visible_text_length={len(visible_text)}"},
         {
             "name": "interactive_or_semantic_elements",
@@ -2878,6 +2941,11 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             reviewer_failures = validate_reviewer_outputs(evidence)
             if reviewer_failures:
                 failures.append(f"reviewer 终局边界自检失败：{reviewer_failures}")
+            current_source = pathlib.Path(__file__).read_text(encoding="utf-8")
+            if '"python3", "-m", "http.server"' not in current_source or "http://127.0.0.1:" not in current_source:
+                failures.append("浏览器验收没有通过本地 HTTP 服务打开项目，可能退化为 file:// 误判")
+            if "process_group_killed" not in current_source or "exit_code_after_cleanup" not in current_source:
+                failures.append("浏览器验收没有记录本地 HTTP 服务清理证据")
         guard_probe = source_workspace_guard_negative_probe()
         if guard_probe.get("ok") is not True:
             failures.append(f"源工作区保护负向探针失败：{guard_probe.get('failures')}")
