@@ -34,7 +34,7 @@ ROLE_TIMEOUT_SECONDS = {
     "product_manager": 240,
     "architect": 300,
     "developer": 420,
-    "tester": 240,
+    "tester": 360,
     "reviewer": 360,
 }
 CODEX_ROLE_MODEL = os.environ.get("REDCAP_E2E_CODEX_ROLE_MODEL", "gpt-5.5")
@@ -934,9 +934,14 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         "tester": """
         你的任务：
         1. 如果项目根目录存在 blocked-package.json，立即读取它，写 test-results.json、negative-probes.json 和 role-artifacts/tester.json，标记 status="blocked_by_upstream"，passed=false，然后停止；不要等待、不要修复。
-        2. 如果没有上游阻塞，运行项目验证命令，至少包含一个正向验证和一个负向/静态探针。
-        3. 写 test-results.json、negative-probes.json 和 role-artifacts/tester.json；test-results.json 必须标记 role="tester"。
-        4. 如果测试失败，必须把失败写清楚，不要替开发者修复。
+        2. 如果没有上游阻塞，先写进行中证据，再运行任何验证：
+           - test-results.json：role="tester"，status="in_progress"，passed=false，commands=[]，positive_checks=[]；
+           - negative-probes.json：role="tester"，status="in_progress"，passed=false，probes=[]；
+           - role-artifacts/tester.json：role="tester"，status="in_progress"，evidence_files 列出上述两个文件。
+        3. 只做两类验证：最多一个正向验证命令，最多一个负向或静态探针。优先使用 README、package.json scripts、scripts/validate.mjs 或 scripts/verify.sh 中明确给出的本地验证命令；不要为了“更全面”继续追加探索。
+        4. 每执行完一个验证动作，立即更新对应 JSON；验证动作全部结束后，立即把三个文件更新为 completed 或 failed。
+        5. test-results.json 必须标记 role="tester"，并记录 commands、positive_checks、passed；negative-probes.json 必须标记 role="tester"，并记录 probes、passed。
+        6. 如果测试失败，必须把失败写清楚，不要替开发者修复。
         """,
         "reviewer": """
         你的任务：
@@ -2526,6 +2531,15 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             implementation_log = developer_writes.get("implementation-log.json")
             if not implementation_log or implementation_log.get("location") != "evidence":
                 failures.append("developer 门禁凭证没有把 implementation-log.json 解析到证据目录")
+            tester_prompt = build_role_prompt(project, evidence, "tester", "自检方向")
+            if ROLE_TIMEOUT_SECONDS.get("tester", 0) < 360:
+                failures.append("tester 角色超时预算低于 360 秒，容易在写入证据前被截断")
+            if "先写进行中证据" not in tester_prompt or 'status="in_progress"' not in tester_prompt:
+                failures.append("tester 提示词没有要求在验证前先写 in_progress 证据")
+            if "最多一个正向验证命令" not in tester_prompt or "最多一个负向或静态探针" not in tester_prompt:
+                failures.append("tester 提示词没有限制验证动作数量，容易因过度探索超时")
+            if "每执行完一个验证动作，立即更新对应 JSON" not in tester_prompt:
+                failures.append("tester 提示词没有要求验证后立即更新结构化证据")
             verify_script = project / "scripts" / "verify.sh"
             verify_script.parent.mkdir(parents=True, exist_ok=True)
             verify_script.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
