@@ -273,6 +273,7 @@
       "Loom 角色不得自行运行 prism-dispatch、prism session-init、prism merge 或完整 provider 评审；需要棱镜协助时由 E2E 运行器统一调度并回写 prism-assisted-review.json",
       "需求、架构、代码、测试或文档至少一处必须记录实际棱镜协助评审决策；本轮完整复活 E2E 不接受跳过棱镜协助",
       "实现前必须记录知识检索结果或跳过理由",
+      "需求方向中的领域要求必须被结构化为 domain_contracts，并被需求、验收、架构、开发、测试和评审逐项承接；不能只靠 tester 事后发现字段缺失",
       "默认实现和验证方案必须优先无外部依赖、无需联网安装；除非需求明确要求，不得把 Vite、Playwright 或其他重型依赖作为默认路径",
       "任务后必须记录自我净化候选或无候选理由",
       "test-results.json 和 negative-probes.json 必须由 tester 角色产出，验证脚本不得覆盖角色证据",

@@ -659,12 +659,50 @@ def package_and_init(project: pathlib.Path, evidence: pathlib.Path) -> dict[str,
     }
 
 
+def domain_contracts_for_direction(direction: str) -> list[dict[str, Any]]:
+    normalized = direction.casefold()
+    contracts: list[dict[str, Any]] = []
+    if any(keyword in normalized for keyword in ["报名", "意向", "signup", "sign-up", "registration"]):
+        contracts.append({
+            "id": "signup-intent-data-contract",
+            "trigger": "需求方向包含报名或意向",
+            "description": "活动、场次或事件数据必须能独立表达报名意向。",
+            "required_data_shape": "至少一个活动记录包含非空 signups 数组；兼容非空 signupIntent 字段，但优先使用 signups。",
+            "signups_item_hint": "signups 每项建议包含玩家、角色或身份、意向状态、备注中的至少两类信息。",
+            "must_be_reflected_by_roles": [
+                "product_manager",
+                "architect",
+                "developer",
+                "tester",
+                "reviewer"
+            ],
+            "validation_hint": "验证脚本或负向探针必须判定 signups=[] 和 signupIntent 为空为失败。"
+        })
+    if "角色" in direction and "玩家" in direction:
+        contracts.append({
+            "id": "character-player-relation-contract",
+            "trigger": "需求方向同时包含角色和玩家",
+            "description": "角色与玩家关系必须在数据和界面中可追踪。",
+            "required_data_shape": "角色记录应能引用或展示对应玩家，界面应能同时看到角色名和玩家名。",
+            "must_be_reflected_by_roles": [
+                "architect",
+                "developer",
+                "tester",
+                "reviewer"
+            ],
+            "validation_hint": "浏览器行为验收会在适用时检查角色名和玩家名在 UI 中相邻呈现。"
+        })
+    return contracts
+
+
 def build_requirements(direction: str) -> dict[str, Any]:
+    domain_contracts = domain_contracts_for_direction(direction)
     return {
         "schema_id": "redcap-e2e-requirements",
         "created_at": iso_now(),
         "direction": direction,
         "cap_expanded_need": f"围绕“{direction}”交付一个可在本地运行、可检查、可维护的小型工程成果。",
+        "domain_contracts": domain_contracts,
         "scope": [
             "实现真实可运行产物，不只写文档",
             "提供清晰启动方式",
@@ -692,24 +730,29 @@ def build_requirements(direction: str) -> dict[str, Any]:
 
 
 def build_acceptance(direction: str) -> dict[str, Any]:
+    domain_contracts = domain_contracts_for_direction(direction)
+    criteria = [
+        "外部项目根目录包含真实交付文件",
+        "存在可执行或可打开的入口说明",
+        "存在 architecture.md，说明结构、边界、风险和测试方式",
+        ".redcap/evidence/e2e 中存在实现日志、测试结果、文件清单和验收摘要",
+        ".redcap/evidence/e2e/loom-role-session-manifest.json 证明五个 Loom 角色来自独立 Codex CLI 会话",
+        ".redcap/evidence/e2e/loom-role-session-manifest-pre-review.json 供 reviewer 审核上游四个角色；最终五角色清单由运行器在 reviewer 退出后生成",
+        "默认实现不得依赖联网安装或重型测试栈；如果确需外部依赖，必须在 risk-register.json 中写明理由和降级方案",
+        ".redcap/evidence/e2e/self-purification-candidates.json 和 persona-distillation-decision.json 证明自我净化与人格边界已触发",
+        ".redcap/evidence/e2e/package-prism-check.json 证明安装包内棱镜自检通过",
+        ".redcap/evidence/e2e/final-runner-test-results.json 证明运行器独立重跑了项目验证",
+        ".redcap/evidence/e2e/final-evidence-bundle.json 证明最终证据带有可检查哈希和摘要",
+        ".redcap/evidence/e2e/final-prism-review.json 证明最终完成声明经过运行器侧棱镜复核",
+        "如果实现方遇到阻塞，必须写 blocked-package.json，而不是写 completion-marker.json"
+    ]
+    for contract in domain_contracts:
+        criteria.append(f"领域数据契约 {contract['id']} 必须被架构、实现、验证和评审承接：{contract['validation_hint']}")
     return {
         "schema_id": "redcap-e2e-acceptance-criteria",
         "direction_sha256": sha256_text(direction),
-        "criteria": [
-            "外部项目根目录包含真实交付文件",
-            "存在可执行或可打开的入口说明",
-            "存在 architecture.md，说明结构、边界、风险和测试方式",
-            ".redcap/evidence/e2e 中存在实现日志、测试结果、文件清单和验收摘要",
-            ".redcap/evidence/e2e/loom-role-session-manifest.json 证明五个 Loom 角色来自独立 Codex CLI 会话",
-            ".redcap/evidence/e2e/loom-role-session-manifest-pre-review.json 供 reviewer 审核上游四个角色；最终五角色清单由运行器在 reviewer 退出后生成",
-            "默认实现不得依赖联网安装或重型测试栈；如果确需外部依赖，必须在 risk-register.json 中写明理由和降级方案",
-            ".redcap/evidence/e2e/self-purification-candidates.json 和 persona-distillation-decision.json 证明自我净化与人格边界已触发",
-            ".redcap/evidence/e2e/package-prism-check.json 证明安装包内棱镜自检通过",
-            ".redcap/evidence/e2e/final-runner-test-results.json 证明运行器独立重跑了项目验证",
-            ".redcap/evidence/e2e/final-evidence-bundle.json 证明最终证据带有可检查哈希和摘要",
-            ".redcap/evidence/e2e/final-prism-review.json 证明最终完成声明经过运行器侧棱镜复核",
-            "如果实现方遇到阻塞，必须写 blocked-package.json，而不是写 completion-marker.json"
-        ],
+        "domain_contracts": domain_contracts,
+        "criteria": criteria,
         "completion_marker_rule": "只有 E2E 运行器在 reviewer 退出后确认客观证据全部通过时，才允许写 .redcap/evidence/e2e/completion-marker.json。"
     }
 
@@ -931,6 +974,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
     - 本角色是在外部项目中使用 .redcap，不是在修改 RedCap 源仓库；不要运行 runtime/bin/redcap gate 或 .redcap/runtime/bin/redcap gate。
     - 如果缺少上游输入，请写 blocked-package.json 并说明阻塞，不要伪造完成。
     - 如果项目根目录已经存在 blocked-package.json，必须先读取它；除非你就是正在生成该阻塞的角色，否则要产出本角色的阻塞证据并快速停止。
+    - 如果 requirements.json 或 acceptance-criteria.json 包含 domain_contracts，必须在本角色产物中记录你如何承接这些领域数据契约；不能只把自然语言需求写进 UI 文案。
     - 本角色不得运行 prism-dispatch、prism session-init、prism merge 或完整 provider 评审；需要棱镜协助时，把请求和理由写入 role-artifacts/<role>.json，由 E2E 运行器统一调度。
     - 本角色不得写 .redcap/evidence/e2e/prism/<role>/ 或 .redcap/evidence/e2e/prism/<role>_completion/ 目录；这些目录会被视为角色越权。
     - 本角色只允许读取上游输入、角色门禁协调文件和必要模板；不要读取 manifest.json、Hook 事件、role-workspaces、redcap-package.zip 或 RedCap 源码。
@@ -945,12 +989,13 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         1. 阅读 requirements.json 和 acceptance-criteria.json。
         2. 运行 `.redcap/runtime/bin/redcap knowledge-gateway search loom`，把结果写入 knowledge-retrieval-evidence.json。
            该文件必须包含 search_ran=true、query="loom"、command、exit_code、matches；如果 matches 为空，必须写 no_relevant_entry_reason。
-        3. 明确问题陈述、范围边界、验收重点，并写入 role-artifacts/product_manager.json。
+        3. 明确问题陈述、范围边界、验收重点；如果存在 domain_contracts，必须把每项契约列为验收重点，并写入 role-artifacts/product_manager.json。
         """,
         "architect": """
         你的任务：
         1. 阅读产品经理交付和验收标准。
         2. 立即写 architecture.md，必须包含：目标、目录结构、数据模型、交互流程、运行方式、验证方式、风险与回滚。
+           如果存在 domain_contracts，architecture.md 的数据模型和验证方式必须逐项承接；例如 signup-intent-data-contract 必须设计非空 signups 数组或非空 signupIntent 字段，并说明验证脚本如何检查。
         3. 默认选择无外部依赖、无需联网安装、可直接本地验证的方案；除非需求明确要求，不要引入 Vite、Playwright、数据库或服务端框架。
         4. 立即写 risk-register.json，至少包含 risks 数组；每项包含 id、risk、impact、mitigation、owner。
         5. 立即写 role-artifacts/architect.json，status="completed"，并列出读取的输入和写出的文件。
@@ -960,8 +1005,9 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         你的任务：
         1. 按 architecture.md 实现一个可运行的本地项目。
         2. 优先选择简单、无外部依赖、无需联网安装、可本地验证的技术栈；如果 architecture.md 要求重型依赖但需求并不需要，你应收窄为纯 HTML/CSS/JS + Node 内置模块验证，并在 implementation-log.json 说明原因。
-        3. 写 implementation-log.json 和 role-artifacts/developer.json。
-        4. 如果提供验证脚本，机器验证输出必须写 verification-results.json 或其他非角色文件，不能写或覆盖 test-results.json；test-results.json 只属于 tester 角色。
+        3. 必须让实现和本地验证命令覆盖 acceptance-criteria.json 的 domain_contracts；例如 signup-intent-data-contract 必须在真实数据中提供非空 signups 数组或非空 signupIntent 字段，且验证脚本要检查该字段，不能只把报名意向放进玩家备注或按钮文案。
+        4. 写 implementation-log.json 和 role-artifacts/developer.json。
+        5. 如果提供验证脚本，机器验证输出必须写 verification-results.json 或其他非角色文件，不能写或覆盖 test-results.json；test-results.json 只属于 tester 角色。
         """,
         "tester": """
         你的任务：
@@ -981,6 +1027,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         你的任务：
         1. 审阅需求、架构、实现、测试和角色证据。
            注意：loom-role-session-manifest-pre-review.json 只用于审核上游四个角色；reviewer 自己的 session_id 会在你退出后由运行器写入最终 loom-role-session-manifest.json，因此不要因为最终清单在评审前缺少 reviewer 自身而阻塞。
+           如果 requirements.json 或 acceptance-criteria.json 包含 domain_contracts，必须逐项审核产品、架构、开发和测试是否承接；任何未承接项必须进入 blocking_findings 和 failure-backlog.open_items。
         2. 写 review-verdict.json；必须包含：
            - "terminal_completion": false；
            - "blocking_findings": [] 或阻塞项数组，禁止用 blocking_failures、open_issues 等近义字段替代；
@@ -3382,6 +3429,26 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("developer 提示词没有给出 implementation-log.json 的证据目录目标路径")
             if "不要启动需要人工批准的交互式设计流程" not in developer_prompt:
                 failures.append("developer 提示词没有禁止交互式设计流程，可能复发 brainstorming 卡死")
+            signup_direction = "活动组织工具，包含报名意向、角色和玩家信息"
+            signup_requirements = build_requirements(signup_direction)
+            signup_acceptance = build_acceptance(signup_direction)
+            signup_contracts = signup_requirements.get("domain_contracts")
+            if not isinstance(signup_contracts, list) or not any(item.get("id") == "signup-intent-data-contract" for item in signup_contracts if isinstance(item, dict)):
+                failures.append("包含报名意向的需求没有生成 signup-intent-data-contract")
+            if "domain_contracts" not in signup_acceptance or not any("signup-intent-data-contract" in item for item in signup_acceptance.get("criteria", []) if isinstance(item, str)):
+                failures.append("包含报名意向的验收标准没有承接 signup-intent-data-contract")
+            architect_prompt = build_role_prompt(project, evidence, "architect", signup_direction)
+            signup_developer_prompt = build_role_prompt(project, evidence, "developer", signup_direction)
+            signup_tester_prompt = build_role_prompt(project, evidence, "tester", signup_direction)
+            signup_reviewer_prompt = build_role_prompt(project, evidence, "reviewer", signup_direction)
+            if "signup-intent-data-contract" not in architect_prompt or "数据模型" not in architect_prompt:
+                failures.append("architect 提示词没有要求把报名意向契约落入数据模型")
+            if "signup-intent-data-contract" not in signup_developer_prompt or "非空 signups 数组" not in signup_developer_prompt:
+                failures.append("developer 提示词没有要求实现并验证报名意向契约")
+            if "signups 数组" not in signup_tester_prompt or "signupIntent 字段" not in signup_tester_prompt:
+                failures.append("tester 提示词没有要求验证报名意向契约")
+            if "domain_contracts" not in signup_reviewer_prompt or "blocking_findings" not in signup_reviewer_prompt:
+                failures.append("reviewer 提示词没有要求审核领域数据契约")
             retry_developer_prompt = role_retry_prompt(developer_prompt, 2)
             if "【重试约束】" not in retry_developer_prompt or "不要读取或执行需要人工批准的技能流程" not in retry_developer_prompt:
                 failures.append("developer 重试提示没有压制交互式设计技能误触发")
