@@ -20,7 +20,7 @@ import time
 import zipfile
 from typing import Any
 
-from revival_followthrough import REQUIRED_EVIDENCE_CHECKS, validate_e2e_evidence_quality
+from revival_followthrough import PRIVATE_PERSONA_MARKERS, REQUIRED_EVIDENCE_CHECKS, validate_e2e_evidence_quality
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -939,8 +939,9 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            - negative-probes.json：role="tester"，status="in_progress"，passed=false，probes=[]；
            - role-artifacts/tester.json：role="tester"，status="in_progress"，evidence_files 列出上述两个文件。
         3. 只做两类验证：最多一个正向验证命令，最多一个负向或静态探针。优先使用 README、package.json scripts、scripts/validate.mjs、scripts/verify.mjs 或 scripts/verify.sh 中明确给出的本地验证命令；不要为了“更全面”继续追加探索。
+           负向或静态探针必须使用 Node 标准库脚本或已经写好的验证脚本；不要用未引用的 shell 通配符、find -name *.xxx、zsh glob 或会被 shell 预展开的命令。
         4. 每执行完一个验证动作，立即更新对应 JSON；验证动作全部结束后，立即把三个文件更新为 completed 或 failed。
-        5. test-results.json 必须标记 role="tester"，并记录 commands、positive_checks、passed；negative-probes.json 必须标记 role="tester"，并记录 probes、passed。
+        5. test-results.json 必须标记 role="tester"，并记录 commands、positive_checks、passed；negative-probes.json 必须标记 role="tester"，并记录 probes、passed。status 与 passed 必须一致：completed 对应 passed=true，failed 对应 passed=false。
         6. 如果测试失败，必须把失败写清楚，不要替开发者修复。
         """,
         "reviewer": """
@@ -954,7 +955,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            同时在边界说明中写明 terminal_completion=false 表示 reviewer 只能给阶段评审，不能自证本轮 E2E 终局完成或 RedCap 完整复活。
         3. 写 prism-assisted-review.json；本轮必须记录 used=true，reviews 必须是非空数组，cap_decision 必须非空，skip_reason 必须为 null 或空字符串。至少在 reviews[0] 中说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决，并必须包含 prism_assistance_request.requested=true。
         4. 写 self-purification-candidates.json，包含候选或 no_candidate_reason，并给出 decisions 数组。decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；需要后续沉淀但本轮不晋升时用 defer_with_owner。
-        5. 写 persona-distillation-decision.json；privacy_class 必须是 cap-private，public_write=false，private_body_written=false，reason 必须是非空字符串。禁止写私有人格正文，也禁止出现 private_body、cap_private_body、persona_private_body、private_text 等私有正文键；不要用 rationale 替代 reason。
+        5. 写 persona-distillation-decision.json；privacy_class 必须是 cap-private，public_write=false，private_body_written=false，reason 必须是非空字符串，推荐写“本轮没有可晋升的人格信号”。禁止写身份私密材料正文，也禁止出现 private_body、cap_private_body、persona_private_body、private_text 等私有正文键；reason 不要复述禁止项本身，不要用 rationale 替代 reason。
         6. 写 failure-backlog.json。必须使用 open_items 数组作为唯一开放问题字段；没有开放问题时 open_items=[] 且 next_round_required=false。禁止只写 open_issues。若有开放问题，每项必须包含 id、severity、summary、root_cause、impact、suggested_fix、owner、next_step。
            open_items 只记录你从需求、架构、实现、测试、上游角色证据中发现的真实阻塞问题。
            completion-marker.json、iteration-verdict.json、final-prism-review.json、final-runner-test-results.json 属于运行器固定收尾动作；若上游证据通过，请写入 review-verdict.runner_owned_follow_up，不要写入 open_items。
@@ -1096,6 +1097,10 @@ def validate_reviewer_outputs(evidence: pathlib.Path) -> list[str]:
         leaked = sorted({"private_body", "cap_private_body", "persona_private_body", "private_text"} & set(persona))
         if leaked:
             failures.append(f"persona-distillation-decision 禁止包含私有正文键：{leaked}")
+        persona_text = json.dumps(persona, ensure_ascii=False).casefold()
+        leaked_markers = [marker for marker in PRIVATE_PERSONA_MARKERS if marker.casefold() in persona_text]
+        if leaked_markers:
+            failures.append(f"persona-distillation-decision 禁止包含身份私密材料标记：{leaked_markers}")
 
     verdict = load_optional_json(evidence / "review-verdict.json")
     if verdict is None:
@@ -2158,9 +2163,19 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
     test_results = load_optional_json(evidence / "test-results.json")
     if test_results is not None and test_results.get("role") != "tester":
         failures.append("test-results.json 必须由 tester 角色产出，不能被验证脚本或其他角色覆盖")
+    if test_results is not None:
+        if test_results.get("status") == "completed" and test_results.get("passed") is not True:
+            failures.append("test-results.json status=completed 时 passed 必须为 true")
+        if test_results.get("status") == "failed" and test_results.get("passed") is not False:
+            failures.append("test-results.json status=failed 时 passed 必须为 false")
     negative_probes = load_optional_json(evidence / "negative-probes.json")
     if negative_probes is not None and negative_probes.get("role") != "tester":
         failures.append("negative-probes.json 必须由 tester 角色产出")
+    if negative_probes is not None:
+        if negative_probes.get("status") == "completed" and negative_probes.get("passed") is not True:
+            failures.append("negative-probes.json status=completed 时 passed 必须为 true")
+        if negative_probes.get("status") == "failed" and negative_probes.get("passed") is not False:
+            failures.append("negative-probes.json status=failed 时 passed 必须为 false")
     persona = load_optional_json(evidence / "persona-distillation-decision.json")
     if persona is not None:
         if persona.get("public_write") is not False:
@@ -2169,6 +2184,10 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("persona-distillation-decision.private_body_written 必须为 false")
         if persona.get("privacy_class") != "cap-private":
             failures.append("persona-distillation-decision.privacy_class 必须是 cap-private")
+        persona_text = json.dumps(persona, ensure_ascii=False).casefold()
+        leaked_markers = [marker for marker in PRIVATE_PERSONA_MARKERS if marker.casefold() in persona_text]
+        if leaked_markers:
+            failures.append(f"persona-distillation-decision 禁止包含身份私密材料标记：{leaked_markers}")
     package_prism = load_optional_json(evidence / "package-prism-check.json")
     if package_prism is not None:
         stdout_tail = str(package_prism.get("stdout_tail") or "")
@@ -2544,6 +2563,10 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("tester 提示词没有限制验证动作数量，容易因过度探索超时")
             if "每执行完一个验证动作，立即更新对应 JSON" not in tester_prompt:
                 failures.append("tester 提示词没有要求验证后立即更新结构化证据")
+            if "Node 标准库脚本" not in tester_prompt or "未引用的 shell 通配符" not in tester_prompt:
+                failures.append("tester 提示词没有禁止危险 shell 通配符负向探针")
+            if "status 与 passed 必须一致" not in tester_prompt:
+                failures.append("tester 提示词没有要求 status 与 passed 一致")
             verify_script = project / "scripts" / "verify.sh"
             verify_script.parent.mkdir(parents=True, exist_ok=True)
             verify_script.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
@@ -2564,6 +2587,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("reviewer 提示词没有禁止 blocking_failures 近义字段")
             if "private_body" not in reviewer_prompt or "reason 必须是非空字符串" not in reviewer_prompt:
                 failures.append("reviewer 提示词没有明确人格边界字段要求")
+            if "reason 不要复述禁止项本身" not in reviewer_prompt:
+                failures.append("reviewer 提示词没有禁止在人格 reason 中复述敏感禁止项")
             verdict_template = load_json(evidence / "review-verdict-template.json")
             if verdict_template.get("terminal_completion") is not False:
                 failures.append("review-verdict-template.json 没有预置 terminal_completion=false")
@@ -2601,7 +2626,7 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 "privacy_class": "cap-private",
                 "public_write": False,
                 "private_body_written": False,
-                "reason": "自检夹具确认不写入私有人格正文。"
+                "reason": "自检夹具没有可晋升的人格信号。"
             })
             write_json(evidence / "review-verdict.json", {
                 "schema_id": "redcap-e2e-review-verdict",
