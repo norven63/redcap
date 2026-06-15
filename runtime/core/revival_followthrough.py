@@ -41,6 +41,7 @@ REQUIRED_E2E_FILES = {
     "negative-probes.json",
     "final-runner-test-results.json",
     "browser-inspection.json",
+    "behavioral-browser-verification.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -59,6 +60,7 @@ REQUIRED_EVIDENCE_CHECKS = {
     "negative-probes.json",
     "final-runner-test-results.json",
     "browser-inspection.json",
+    "behavioral-browser-verification.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -423,6 +425,16 @@ def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str
             failures.append("运行器浏览器检查必须成功")
         if not browser.get("screenshot"):
             failures.append("browser-inspection 必须记录截图证据")
+    behavior = load_optional_json(evidence_root / "behavioral-browser-verification.json")
+    if behavior is None:
+        failures.append("缺少或无法读取 behavioral-browser-verification.json")
+    else:
+        if behavior.get("producer") != "e2e-runner":
+            failures.append("behavioral-browser-verification.producer 必须是 e2e-runner")
+        if behavior.get("ok") is not True:
+            failures.append("运行器行为级浏览器验证必须成功")
+        if not behavior.get("screenshot"):
+            failures.append("behavioral-browser-verification 必须记录截图证据")
 
     bundle = load_optional_json(evidence_root / "final-evidence-bundle.json")
     if bundle is None:
@@ -435,7 +447,7 @@ def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str
             failures.append("final-evidence-bundle.files 必须非空")
         else:
             indexed = {str(item.get("path")) for item in files if isinstance(item, dict)}
-            for required in ["loom-role-session-manifest.json", "role-gate-clearance-summary.json", "package-prism-check.json", "final-runner-test-results.json", "browser-inspection.json", "failure-backlog.json"]:
+            for required in ["loom-role-session-manifest.json", "role-gate-clearance-summary.json", "package-prism-check.json", "final-runner-test-results.json", "browser-inspection.json", "behavioral-browser-verification.json", "failure-backlog.json"]:
                 if required not in indexed:
                     failures.append(f"final-evidence-bundle 缺少关键证据索引：{required}")
             for item in files:
@@ -591,6 +603,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         (evidence / "negative-probes.json").write_text('{"role": "tester", "passed": true}\n', encoding="utf-8")
         (evidence / "final-runner-test-results.json").write_text('{"schema_id": "redcap-e2e-final-runner-test-results", "producer": "e2e-runner", "ok": true, "exit_code": 0, "detected_command": ["npm", "test"]}\n', encoding="utf-8")
         (evidence / "browser-inspection.json").write_text('{"schema_id": "redcap-e2e-browser-inspection", "producer": "e2e-runner", "ok": true, "screenshot": "browser-inspection.png"}\n', encoding="utf-8")
+        (evidence / "behavioral-browser-verification.json").write_text('{"schema_id": "redcap-e2e-behavioral-browser-verification", "producer": "e2e-runner", "ok": true, "screenshot": "behavioral-browser-verification.png"}\n', encoding="utf-8")
         (evidence / "final-evidence-bundle.json").write_text(json.dumps({
             "schema_id": "redcap-e2e-final-evidence-bundle",
             "producer": "e2e-runner",
@@ -601,6 +614,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 {"path": "package-prism-check.json", "exists": True, "sha256": "fixture"},
                 {"path": "final-runner-test-results.json", "exists": True, "sha256": "fixture"},
                 {"path": "browser-inspection.json", "exists": True, "sha256": "fixture"},
+                {"path": "behavioral-browser-verification.json", "exists": True, "sha256": "fixture"},
                 {"path": "failure-backlog.json", "exists": True, "sha256": "fixture"},
             ],
         }, ensure_ascii=False), encoding="utf-8")

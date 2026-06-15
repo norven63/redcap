@@ -63,6 +63,7 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "package-prism-check.json",
     "final-runner-test-results.json",
     "browser-inspection.json",
+    "behavioral-browser-verification.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -1559,6 +1560,18 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
+    write_json(evidence / "behavioral-browser-verification-template.json", {
+        "schema_id": "redcap-e2e-behavioral-browser-verification",
+        "producer": "e2e-runner",
+        "target": "index.html",
+        "screenshot": "behavioral-browser-verification.png",
+        "checks": [
+            "至少一次真实浏览器交互会改变页面可见状态",
+            "如项目数据包含玩家和角色关系，必须验证该关系在 UI 中可见"
+        ],
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
     write_json(evidence / "final-evidence-bundle-template.json", {
         "schema_id": "redcap-e2e-final-evidence-bundle",
         "producer": "e2e-runner",
@@ -1749,7 +1762,9 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
         "package-prism-check.json",
         "final-runner-test-results.json",
         "browser-inspection.json",
+        "behavioral-browser-verification.json",
         "role-execution-risk.json",
+        "pre-final-readiness.json",
         "final-prism-review.json",
         "failure-backlog.json",
         "iteration-verdict.json",
@@ -1761,6 +1776,8 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
     ]
     project_root_files = {"architecture.md", "risk-register.json"}
     paths = [(project / rel) if rel in project_root_files else (evidence / rel) for rel in fixed]
+    for pattern in ["index.html", "app.js", "styles.css", "src/*.js", "src/*.css", "data/*.json", "scripts/*.js", "scripts/*.mjs"]:
+        paths.extend(sorted(project.glob(pattern)))
     for pattern in ["role-gate-clearance/*.json", "role-artifacts/*.json", "role-runs/*.json", "role-messages/*.txt", "role-raw/*.txt"]:
         paths.extend(sorted(evidence.glob(pattern)))
     seen: set[pathlib.Path] = set()
@@ -1791,6 +1808,19 @@ def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, d
                 "excerpt": read_text_excerpt(path),
             })
         files.append(record)
+    role_run_summary: list[dict[str, Any]] = []
+    for path in sorted((evidence / "role-runs").glob("*.json")):
+        payload = load_optional_json(path)
+        if not isinstance(payload, dict):
+            continue
+        role_run_summary.append({
+            "role": payload.get("role"),
+            "ok": payload.get("ok"),
+            "exit_code": payload.get("exit_code"),
+            "timed_out": payload.get("timed_out"),
+            "session_id": payload.get("session_id"),
+            "attempt_count": len(payload.get("attempts", [])) if isinstance(payload.get("attempts"), list) else None,
+        })
     bundle = {
         "schema_id": "redcap-e2e-final-evidence-bundle",
         "producer": "e2e-runner",
@@ -1799,6 +1829,7 @@ def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, d
         "direction_sha256": sha256_text(direction),
         "purpose": "供最终棱镜复核独立检查，避免 reviewer 自证完成",
         "deliverables": project_deliverable_manifest(project),
+        "role_run_summary": role_run_summary,
         "files": files,
     }
     bundle["bundle_sha256"] = sha256_text(json.dumps(bundle, ensure_ascii=False, sort_keys=True))
@@ -1993,6 +2024,218 @@ def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dic
     return result
 
 
+def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
+    for data_path in sorted((project / "data").glob("*.json")):
+        try:
+            payload = json.loads(data_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        event_lists: list[Any] = []
+        if isinstance(payload, dict):
+            for key in ["events", "activities", "sessions"]:
+                value = payload.get(key)
+                if isinstance(value, list):
+                    event_lists.append(value)
+        elif isinstance(payload, list):
+            event_lists.append(payload)
+        for events in event_lists:
+            for event in events:
+                if not isinstance(event, dict):
+                    continue
+                players = event.get("players")
+                characters = event.get("characters")
+                if not isinstance(players, list) or not isinstance(characters, list):
+                    continue
+                player_by_id = {
+                    str(player.get("id")): str(player.get("name"))
+                    for player in players
+                    if isinstance(player, dict) and player.get("id") and player.get("name")
+                }
+                for character in characters:
+                    if not isinstance(character, dict):
+                        continue
+                    character_name = str(character.get("name") or "")
+                    player_name = player_by_id.get(str(character.get("playerId") or character.get("player_id") or ""))
+                    if character_name and player_name:
+                        return {
+                            "data_file": data_path.relative_to(project).as_posix(),
+                            "event_title": event.get("title") or event.get("name"),
+                            "character_name": character_name,
+                            "player_name": player_name,
+                        }
+    return None
+
+
+def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    target = project / "index.html"
+    screenshot = evidence / "behavioral-browser-verification.png"
+    server_process: subprocess.Popen[str] | None = None
+    result: dict[str, Any] = {
+        "schema_id": "redcap-e2e-behavioral-browser-verification",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "target": str(target),
+        "file_url": target.as_uri() if target.exists() else None,
+        "url": None,
+        "launch_mode": "local-http-server",
+        "screenshot": "behavioral-browser-verification.png",
+        "checks": [],
+        "failures": [],
+        "ok": False,
+    }
+    if not target.exists():
+        result["failures"].append("缺少 index.html，无法执行行为级浏览器验证")
+        return result
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception as exc:  # pragma: no cover - 取决于本机运行时
+        result["failures"].append(f"无法导入 Playwright 浏览器自动化库：{type(exc).__name__}: {exc}")
+        return result
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = int(sock.getsockname()[1])
+    url = f"http://127.0.0.1:{port}/index.html"
+    server_argv = ["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"]
+    server_ready = False
+    server_error = ""
+    console_errors: list[str] = []
+    page_errors: list[str] = []
+    relation_probe = find_character_player_probe(project)
+    try:
+        server_process = subprocess.Popen(
+            server_argv,
+            cwd=str(project),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            start_new_session=True,
+        )
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            if server_process.poll() is not None:
+                server_error = f"本地 HTTP 服务提前退出，exit_code={server_process.returncode}"
+                break
+            try:
+                with urllib.request.urlopen(url, timeout=0.5) as response:
+                    if response.status < 500:
+                        server_ready = True
+                        break
+            except Exception as exc:
+                server_error = f"{type(exc).__name__}: {exc}"
+                time.sleep(0.1)
+        result["url"] = url
+        result["server"] = {
+            "argv": server_argv,
+            "cwd": str(project),
+            "ready": server_ready,
+            "url": url,
+            "last_readiness_error": server_error,
+            "exit_code_before_cleanup": server_process.poll(),
+        }
+        if not server_ready:
+            result["failures"].append(f"本地 HTTP 服务没有就绪，无法执行行为级浏览器验证：{server_error}")
+            return result
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page(viewport={"width": 1280, "height": 900})
+            page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
+            page.on("pageerror", lambda error: page_errors.append(str(error)))
+            page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+            page.wait_for_timeout(800)
+            before_text = page.locator("body").inner_text(timeout=5_000)
+            clicked_button = None
+            button_count = page.locator("button").count()
+            for index in range(button_count):
+                button = page.locator("button").nth(index)
+                label = button.inner_text(timeout=2_000).strip()
+                if label and label not in {"全部", "All"}:
+                    clicked_button = label
+                    button.click(timeout=5_000)
+                    page.wait_for_timeout(500)
+                    break
+            after_text = page.locator("body").inner_text(timeout=5_000)
+            interaction_changed = bool(clicked_button) and before_text != after_text
+            relation_passed = True
+            relation_evidence: dict[str, Any] = {"probe_available": False}
+            if relation_probe:
+                page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+                page.wait_for_timeout(800)
+                relation_text = page.locator("body").inner_text(timeout=5_000)
+                character_name = str(relation_probe["character_name"])
+                player_name = str(relation_probe["player_name"])
+                character_index = relation_text.find(character_name)
+                player_index = relation_text.find(player_name)
+                relation_passed = character_index >= 0 and player_index >= 0 and abs(character_index - player_index) <= 500
+                relation_evidence = {
+                    "probe_available": True,
+                    **relation_probe,
+                    "character_index": character_index,
+                    "player_index": player_index,
+                    "max_distance": 500,
+                }
+            page.screenshot(path=str(screenshot), full_page=True)
+            browser.close()
+    except Exception as exc:
+        result["failures"].append(f"行为级浏览器验证执行失败：{type(exc).__name__}: {exc}")
+        return result
+    finally:
+        if server_process is not None:
+            killed = kill_process_group(server_process, grace_seconds=1.0)
+            try:
+                server_stdout, server_stderr = server_process.communicate(timeout=3)
+            except subprocess.TimeoutExpired:
+                server_stdout, server_stderr = "", ""
+            server = result.get("server")
+            if isinstance(server, dict):
+                server.update({
+                    "exit_code_after_cleanup": server_process.returncode,
+                    "process_group_killed": killed,
+                    "stdout_tail": server_stdout[-1000:],
+                    "stderr_tail": server_stderr[-1000:],
+                })
+    checks = [
+        {
+            "name": "interactive_state_change",
+            "passed": interaction_changed,
+            "evidence": {
+                "clicked_button": clicked_button,
+                "before_length": len(before_text),
+                "after_length": len(after_text),
+            },
+        },
+        {
+            "name": "character_player_relation_visible",
+            "passed": relation_passed,
+            "evidence": relation_evidence,
+        },
+        {
+            "name": "no_browser_errors",
+            "passed": not console_errors and not page_errors,
+            "evidence": {"console_errors": console_errors, "page_errors": page_errors},
+        },
+        {
+            "name": "screenshot_written",
+            "passed": screenshot.exists() and screenshot.stat().st_size > 0,
+            "evidence": {
+                "path": "behavioral-browser-verification.png",
+                "sha256": sha256_file(screenshot) if screenshot.exists() else None,
+                "size": screenshot.stat().st_size if screenshot.exists() else 0,
+            },
+        },
+    ]
+    failures = [f"行为级浏览器验证失败：{item['name']}" for item in checks if item.get("passed") is not True]
+    result.update({
+        "ok": not failures,
+        "checks": checks,
+        "failures": failures,
+        "clicked_button": clicked_button,
+        "relation_probe": relation_probe,
+        "console_errors": console_errors,
+        "page_errors": page_errors,
+    })
+    return result
+
+
 def backlog_open_items(evidence: pathlib.Path) -> list[Any]:
     backlog = load_optional_json(evidence / "failure-backlog.json")
     if backlog is None:
@@ -2017,6 +2260,9 @@ def write_failure_backlog_with_runner_items(evidence: pathlib.Path, failures: li
             "id": item_id,
             "severity": "blocking",
             "summary": failure,
+            "root_cause": "E2E 运行器最终收口检查未满足终局验收条件。",
+            "impact": "当前轮不能写 completion-marker.json，也不能判定 ready_for_engineering_use=true。",
+            "suggested_fix": "根据失败摘要修复运行器、证据或外部项目后，重新执行完整 E2E。",
             "owner": "e2e-runner",
             "next_step": "修复后重新执行完整 E2E",
         })
@@ -2058,6 +2304,8 @@ def criterion_pass(criterion: str, project: pathlib.Path, evidence: pathlib.Path
         return context.get("final_prism_ok") is True, "final prism review"
     if "blocked-package.json" in criterion:
         return not (project / "blocked-package.json").exists(), "blocked-package.json absent"
+    if "行为" in criterion or "交互" in criterion:
+        return context.get("behavior_ok") is True, "behavioral-browser-verification.json"
     if "浏览器" in criterion or "可访问" in criterion:
         return context.get("browser_ok") is True, "browser-inspection.json"
     return not context.get("failures"), "no runner failures matched generic criterion"
@@ -2084,6 +2332,13 @@ def build_acceptance_results(project: pathlib.Path, evidence: pathlib.Path, cont
         "criterion": "运行器使用真实浏览器打开项目入口，确认页面渲染、有可见内容、无浏览器错误，并写入截图证据。",
         "passed": browser_passed,
         "evidence": browser_evidence,
+    })
+    behavior_passed, behavior_evidence = criterion_pass("浏览器行为级交互验证", project, evidence, context)
+    results.append({
+        "id": "AC-behavior",
+        "criterion": "运行器必须执行至少一次真实浏览器交互，并在适用时验证关键领域关系在 UI 中正确呈现。",
+        "passed": behavior_passed,
+        "evidence": behavior_evidence,
     })
     return results
 
@@ -2135,6 +2390,43 @@ def write_final_iteration_verdict(
     })
 
 
+def write_pre_final_readiness(
+    project: pathlib.Path,
+    evidence: pathlib.Path,
+    failures: list[str],
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    criteria_results = build_acceptance_results(project, evidence, {**context, "failures": failures, "final_prism_ok": False})
+    for item in criteria_results:
+        if item.get("evidence") == "final prism review":
+            item["passed"] = None
+            item["status"] = "pending_final_prism"
+        elif item.get("passed") is True:
+            item["status"] = "passed"
+        else:
+            item["status"] = "failed"
+    payload = {
+        "schema_id": "redcap-e2e-pre-final-readiness",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "status": "ready_for_final_prism" if not failures else "blocked_before_final_prism",
+        "ready_for_engineering_use": False,
+        "final_prism_pending": True,
+        "purpose": "最终棱镜复核前的客观证据汇总；不是终局完成声明，不能替代 iteration-verdict.json。",
+        "criteria_results": criteria_results,
+        "criteria_summary": {
+            "total": len(criteria_results),
+            "passed": sum(1 for item in criteria_results if item.get("passed") is True),
+            "pending_final_prism": sum(1 for item in criteria_results if item.get("status") == "pending_final_prism"),
+            "failed": sum(1 for item in criteria_results if item.get("status") == "failed"),
+        },
+        "remaining_issues": failures,
+        "evidence_checked": sorted(REQUIRED_EVIDENCE_CHECKS),
+    }
+    write_json(evidence / "pre-final-readiness.json", payload)
+    return payload
+
+
 def write_completion_marker(evidence: pathlib.Path, project: pathlib.Path, bundle: dict[str, Any], final_prism: dict[str, Any]) -> None:
     write_json(evidence / "completion-marker.json", {
         "schema_id": "redcap-e2e-completion-marker",
@@ -2147,6 +2439,7 @@ def write_completion_marker(evidence: pathlib.Path, project: pathlib.Path, bundl
         "final_prism_strictest_verdict": final_prism.get("strictest_verdict"),
         "final_prism_review": "final-prism-review.json",
         "browser_inspection": "browser-inspection.json",
+        "behavioral_browser_verification": "behavioral-browser-verification.json",
         "iteration_verdict": "iteration-verdict.json",
         "no_open_failure_backlog": True,
     })
@@ -2183,6 +2476,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "Five Loom roles ran as independent Codex CLI sessions with project-level Hook evidence.",
             "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
+            "The runner performed a separate behavioral browser verification with a real click interaction and, when project data exposed player-character relationships, checked that the relation rendered in the UI.",
         ],
         "evidence": [
             {
@@ -2198,7 +2492,8 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "Reviewer must not self-certify completion.",
             "Open failure-backlog items block completion.",
             "Completion marker scope is only this E2E run, not permanent RedCap full revival.",
-            "The bundled iteration-verdict is pre-final: it may mark objective criteria passed while final_prism_pending=true until this provider review passes.",
+            "iteration-verdict.json is intentionally not finalized before this provider review; pre-final-readiness.json is only an objective pre-final summary and is not a completion claim.",
+            "If this provider review passes, the runner must regenerate iteration-verdict.json with final_prism_pending=false before writing completion-marker.json.",
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
         ],
         "role_execution_profile": {
@@ -2209,6 +2504,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
                 "structured role handoff files",
                 "runner-owned final validation",
                 "browser-inspection.json",
+                "behavioral-browser-verification.json",
                 "two-provider final Prism review",
             ],
         },
@@ -2328,6 +2624,8 @@ def finalize_e2e_acceptance(
     write_json(evidence / "final-runner-test-results.json", runner_tests)
     browser_inspection = run_browser_inspection(project, evidence)
     write_json(evidence / "browser-inspection.json", browser_inspection)
+    behavioral_verification = run_behavioral_browser_verification(project, evidence)
+    write_json(evidence / "behavioral-browser-verification.json", behavioral_verification)
     role_risk = write_role_execution_risk(evidence)
     failures: list[str] = []
     if role_result.get("ok") is not True:
@@ -2340,6 +2638,8 @@ def finalize_e2e_acceptance(
         failures.append("运行器独立重跑项目验证未通过")
     if browser_inspection.get("ok") is not True:
         failures.append("运行器浏览器检查未通过")
+    if behavioral_verification.get("ok") is not True:
+        failures.append("运行器行为级浏览器验证未通过")
     if role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("Loom 角色推理预算风险未被接受")
     backlog_path = evidence / "failure-backlog.json"
@@ -2352,9 +2652,10 @@ def finalize_e2e_acceptance(
         "package_prism_ok": package_prism.get("ok") is True,
         "runner_tests_ok": runner_tests.get("ok") is True,
         "browser_ok": browser_inspection.get("ok") is True,
+        "behavior_ok": behavioral_verification.get("ok") is True,
         "final_prism_ok": False,
     }
-    write_final_iteration_verdict(project, evidence, not failures, failures, pre_final_context, final_prism_pending=True)
+    write_pre_final_readiness(project, evidence, failures, pre_final_context)
     bundle = build_final_evidence_bundle(project, evidence, direction)
     write_json(evidence / "final-evidence-bundle.json", bundle)
     if failures:
@@ -2497,6 +2798,12 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
     browser_inspection = load_optional_json(evidence / "browser-inspection.json")
     if browser_inspection is not None and browser_inspection.get("ok") is not True:
         failures.append("browser-inspection 必须证明运行器独立浏览器检查通过")
+    behavioral_verification = load_optional_json(evidence / "behavioral-browser-verification.json")
+    if behavioral_verification is not None:
+        if behavioral_verification.get("ok") is not True:
+            failures.append("behavioral-browser-verification 必须证明运行器独立行为级浏览器验证通过")
+        if not behavioral_verification.get("screenshot"):
+            failures.append("behavioral-browser-verification 必须记录截图证据")
     role_risk = load_optional_json(evidence / "role-execution-risk.json")
     if role_risk is not None and role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("role-execution-risk 必须说明本轮角色执行风险已被约束")
@@ -2946,6 +3253,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("浏览器验收没有通过本地 HTTP 服务打开项目，可能退化为 file:// 误判")
             if "process_group_killed" not in current_source or "exit_code_after_cleanup" not in current_source:
                 failures.append("浏览器验收没有记录本地 HTTP 服务清理证据")
+            if "behavioral-browser-verification.json" not in current_source or "interactive_state_change" not in current_source:
+                failures.append("E2E 自检没有覆盖行为级浏览器验证证据")
         guard_probe = source_workspace_guard_negative_probe()
         if guard_probe.get("ok") is not True:
             failures.append(f"源工作区保护负向探针失败：{guard_probe.get('failures')}")
