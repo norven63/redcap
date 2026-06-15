@@ -1,0 +1,16 @@
+{
+  "command": [
+    "runtime/bin/redcap",
+    "lifecycle",
+    "check",
+    "--packet",
+    "assets/evidence/lifecycle/20260615-revival-resume-after-archive-lifecycle/packet.json"
+  ],
+  "duration_seconds": 0.411,
+  "exit_code": 0,
+  "ok": true,
+  "recorded_at": "2026-06-15T14:23:54+00:00",
+  "schema_id": "redcap-check-receipt",
+  "stderr": "",
+  "stdout": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_DEVELOPMENT_LIFECYCLE_OK\n"
+}

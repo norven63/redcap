@@ -10,6 +10,8 @@
 !lifecycle/20260615-e2e-resume-prism-resolution.json
 !lifecycle/20260615-e2e-role-timeout-hardening-probes.json
 !lifecycle/20260615-e2e-role-timeout-hardening-prism-resolution.json
+!lifecycle/20260615-revival-resume-after-archive-lifecycle/
+!lifecycle/20260615-revival-resume-after-archive-lifecycle/packet.json
 
 !migrations/
 !migrations/20260611-process-artifact-migration-map.json
@@ -25,6 +27,8 @@
 !check-receipts/20260615-e2e-resume/**
 !check-receipts/20260615-e2e-role-timeout-hardening/
 !check-receipts/20260615-e2e-role-timeout-hardening/**
+!check-receipts/20260615-e2e-reviewer-contract-fix/
+!check-receipts/20260615-e2e-reviewer-contract-fix/**
 
 !task-facts/
 !task-facts/task-facts.json
@@ -83,3 +87,14 @@
 !prism/e2e-role-timeout-hardening-20260615/claude-code/review.json
 !prism/e2e-role-timeout-hardening-20260615/claude-code/review.brief.md
 !prism/e2e-role-timeout-hardening-20260615/merge.json
+!prism/20260615-e2e-reviewer-contract-fix-request.json
+!prism/e2e-reviewer-contract-fix-20260615/
+!prism/e2e-reviewer-contract-fix-20260615/run/
+!prism/e2e-reviewer-contract-fix-20260615/run/session.json
+!prism/e2e-reviewer-contract-fix-20260615/kimi/
+!prism/e2e-reviewer-contract-fix-20260615/kimi/review.json
+!prism/e2e-reviewer-contract-fix-20260615/kimi/review.brief.md
+!prism/e2e-reviewer-contract-fix-20260615/claude-code/
+!prism/e2e-reviewer-contract-fix-20260615/claude-code/review.json
+!prism/e2e-reviewer-contract-fix-20260615/claude-code/review.brief.md
+!prism/e2e-reviewer-contract-fix-20260615/merge.json

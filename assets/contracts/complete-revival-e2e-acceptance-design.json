@@ -272,6 +272,8 @@
       "E2E 运行器必须独立重跑项目验证，不能只采信 tester 或 developer 自报",
       "E2E 运行器必须生成 final-evidence-bundle，包含关键证据哈希、摘要和交付物清单",
       "E2E 运行器必须在 reviewer 退出后执行最终棱镜复核，且 Kimi 和 Claude Code 的合并 strictest_verdict 必须是 pass",
+      "reviewer 的 review-verdict.terminal_completion 必须是布尔值 false；reviewer 只能给阶段评审，不得自证本轮 E2E 终局完成或 RedCap 完整复活",
+      "reviewer 必须用 review-verdict.runner_owned_follow_up 记录 completion-marker.json、iteration-verdict.json、final-prism-review.json、final-runner-test-results.json 这类运行器固定收尾动作；除非上游证据本身阻塞，不得把这些动作写进 failure-backlog.open_items",
       "completion-marker 必须由 e2e-runner 生成，Loom 角色不得自证完成",
       "失败必须进入 failure-backlog，不能被 completion-marker 覆盖",
       "iteration-verdict 必须明确是否 ready_for_engineering_use，并列出剩余问题"
