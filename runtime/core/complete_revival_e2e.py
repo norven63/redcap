@@ -56,11 +56,7 @@ CODEX_ROLE_INTERACTIVE_GATE_MARKERS = [
     "<HARD-GATE>",
     "User Review Gate",
     "docs/superpowers/specs",
-    "get user approval",
-    "wait for the user's response",
-    "需要人工批准",
-    "等待用户批准",
-    "需要用户批准",
+    "Please review it before proceeding",
 ]
 CARRIER_PROBE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CARRIER_PROBE_MAX_ATTEMPTS", "2"))
 MEANINGFUL_E2E_REQUIRED_FILES = [
@@ -299,10 +295,16 @@ def role_interactive_gate_marker(result: dict[str, Any]) -> str | None:
     return None
 
 
+def actionable_interactive_gate_marker(result: dict[str, Any], artifact_exists: bool) -> str | None:
+    if result.get("ok") is True or artifact_exists:
+        return None
+    return role_interactive_gate_marker(result)
+
+
 def role_failure_retry_reason(result: dict[str, Any], artifact_exists: bool) -> str | None:
     if result.get("ok") is True or artifact_exists:
         return None
-    interactive_marker = role_interactive_gate_marker(result)
+    interactive_marker = actionable_interactive_gate_marker(result, artifact_exists)
     if interactive_marker:
         return f"interactive approval gate marker: {interactive_marker}"
     stderr = str(result.get("stderr") or "").casefold()
@@ -970,6 +972,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            - role-artifacts/tester.json：role="tester"，status="in_progress"，evidence_files 列出上述两个文件。
         3. 只做两类验证：最多一个正向验证命令，最多一个负向或静态探针。优先使用 README、package.json scripts、scripts/validate.mjs、scripts/verify.mjs 或 scripts/verify.sh 中明确给出的本地验证命令；不要为了“更全面”继续追加探索。
            负向或静态探针必须使用 Node 标准库脚本或已经写好的验证脚本；不要用未引用的 shell 通配符、find -name *.xxx、zsh glob 或会被 shell 预展开的命令。
+           如果需求包含报名意向，负向或静态探针必须验证至少一个活动有非空报名数据；优先接受 signups 数组（每项可以包含玩家、角色、意向或备注），也可以兼容 signupIntent 字段，但 signups=[] 或 signupIntent 为空必须判定失败。
         4. 每执行完一个验证动作，立即更新对应 JSON；验证动作全部结束后，立即把三个文件更新为 completed 或 failed。
         5. test-results.json 必须标记 role="tester"，并记录 commands、positive_checks、passed；negative-probes.json 必须标记 role="tester"，并记录 probes、passed。status 与 passed 必须一致：completed 对应 passed=true，failed 对应 passed=false。
         6. 如果测试失败，必须把失败写清楚，不要替开发者修复。
@@ -1323,16 +1326,19 @@ def run_loom_role_pipeline(
             attempt_stdout.write_text(str(result.get("stdout") or ""), encoding="utf-8")
             attempt_stderr.write_text(str(result.get("stderr") or ""), encoding="utf-8")
             attempt_receipt = command_receipt(result)
+            artifact_exists = role_artifact_path(evidence, role).exists()
             interactive_gate_marker = role_interactive_gate_marker(result)
-            retry_reason = role_failure_retry_reason(result, role_artifact_path(evidence, role).exists())
+            actionable_marker = actionable_interactive_gate_marker(result, artifact_exists)
+            retry_reason = role_failure_retry_reason(result, artifact_exists)
             attempt_receipt.update({
                 "attempt": attempt_index,
                 "session_id": extract_codex_session_id(str(result.get("stderr") or "")),
                 "raw_stdout": str(attempt_stdout),
                 "raw_stderr": str(attempt_stderr),
-                "expected_artifact_exists": role_artifact_path(evidence, role).exists(),
+                "expected_artifact_exists": artifact_exists,
                 "last_message_exists": message_path.exists(),
-                "interactive_gate_marker": interactive_gate_marker,
+                "interactive_gate_marker_observed": interactive_gate_marker,
+                "interactive_gate_marker": actionable_marker,
                 "retry_reason": retry_reason,
                 "retry_prompt_used": attempt_index > 1,
             })
@@ -1614,7 +1620,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "target": "index.html",
         "screenshot": "behavioral-browser-verification.png",
         "checks": [
-            "至少一次真实浏览器交互会改变页面可见状态",
+            "至少一次真实浏览器交互必须同时改变页面文本哈希和稳定 DOM 摘要哈希",
             "如项目数据包含玩家和角色关系，必须验证该关系在 UI 中可见"
         ],
         "ok": "<boolean>",
@@ -2114,6 +2120,85 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
     return None
 
 
+def browser_observable_snapshot(page: Any) -> dict[str, Any]:
+    snapshot = page.evaluate(
+        """() => {
+            const volatileSelector = [
+                "script",
+                "style",
+                "noscript",
+                "time",
+                "[data-redcap-volatile]",
+                "[data-volatile]",
+                "[aria-busy='true']",
+                ".spinner",
+                ".loading"
+            ].join(",");
+            const textOf = (el) => {
+                const raw = el.innerText || el.textContent || el.value || el.getAttribute("aria-label") || "";
+                return String(raw).replace(/\\s+/g, " ").trim().slice(0, 160);
+            };
+            const classOf = (el) => {
+                if (typeof el.className === "string") return el.className;
+                if (el.className && typeof el.className.baseVal === "string") return el.className.baseVal;
+                return "";
+            };
+            const stableElements = Array.from(document.querySelectorAll([
+                "main",
+                "section",
+                "article",
+                "dialog",
+                "[aria-live]",
+                "button",
+                "[role='button']",
+                "[aria-selected]",
+                "[aria-expanded]",
+                "[aria-pressed]",
+                "[data-state]",
+                "[data-active]",
+                ".active",
+                ".selected"
+            ].join(","))).filter((el) => !el.closest(volatileSelector)).slice(0, 160);
+            const bodyClone = document.body ? document.body.cloneNode(true) : null;
+            if (bodyClone) {
+                bodyClone.querySelectorAll(volatileSelector).forEach((el) => el.remove());
+            }
+            return {
+                text: bodyClone ? (bodyClone.innerText || bodyClone.textContent || "") : "",
+                dom_summary: stableElements.map((el) => {
+                    const style = window.getComputedStyle(el);
+                    return {
+                        tag: el.tagName.toLowerCase(),
+                        id: el.id || "",
+                        classes: classOf(el),
+                        text: textOf(el),
+                        ariaSelected: el.getAttribute("aria-selected"),
+                        ariaExpanded: el.getAttribute("aria-expanded"),
+                        ariaPressed: el.getAttribute("aria-pressed"),
+                        dataState: el.getAttribute("data-state"),
+                        dataActive: el.getAttribute("data-active"),
+                        hidden: el.hidden || el.getAttribute("aria-hidden") === "true",
+                        display: style.display,
+                        visibility: style.visibility
+                    };
+                })
+            };
+        }"""
+    )
+    text = str(snapshot.get("text") or "")
+    dom_summary = snapshot.get("dom_summary")
+    if not isinstance(dom_summary, list):
+        dom_summary = []
+    dom_summary_text = json.dumps(dom_summary, ensure_ascii=False, sort_keys=True)
+    return {
+        "text": text,
+        "text_hash": sha256_text(text),
+        "text_length": len(text),
+        "dom_summary_hash": sha256_text(dom_summary_text),
+        "dom_summary_count": len(dom_summary),
+    }
+
+
 def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     target = project / "index.html"
     screenshot = evidence / "behavioral-browser-verification.png"
@@ -2190,19 +2275,63 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
             page.on("pageerror", lambda error: page_errors.append(str(error)))
             page.goto(url, wait_until="domcontentloaded", timeout=20_000)
             page.wait_for_timeout(800)
-            before_text = page.locator("body").inner_text(timeout=5_000)
+            before_snapshot = browser_observable_snapshot(page)
+            before_text = before_snapshot["text"]
+            after_snapshot = before_snapshot
+            after_text = before_text
             clicked_button = None
-            button_count = page.locator("button").count()
+            interaction_attempts: list[dict[str, Any]] = []
+            candidates = page.locator("button, [role='button']")
+            button_count = candidates.count()
             for index in range(button_count):
-                button = page.locator("button").nth(index)
+                if index >= 12:
+                    break
+                button = candidates.nth(index)
                 label = button.inner_text(timeout=2_000).strip()
-                if label and label not in {"全部", "All"}:
-                    clicked_button = label
+                if not label or label in {"全部", "All"}:
+                    interaction_attempts.append({
+                        "index": index,
+                        "label": label,
+                        "skipped": True,
+                        "reason": "empty_or_global_filter",
+                    })
+                    continue
+                attempt_before = browser_observable_snapshot(page)
+                try:
                     button.click(timeout=5_000)
                     page.wait_for_timeout(500)
-                    break
+                    attempt_after = browser_observable_snapshot(page)
+                    text_changed = attempt_before["text_hash"] != attempt_after["text_hash"]
+                    dom_changed = attempt_before["dom_summary_hash"] != attempt_after["dom_summary_hash"]
+                    changed = text_changed and dom_changed
+                    interaction_attempts.append({
+                        "index": index,
+                        "label": label,
+                        "skipped": False,
+                        "text_changed": text_changed,
+                        "dom_summary_changed": dom_changed,
+                        "changed": changed,
+                        "before_text_hash": attempt_before["text_hash"],
+                        "after_text_hash": attempt_after["text_hash"],
+                        "before_dom_summary_hash": attempt_before["dom_summary_hash"],
+                        "after_dom_summary_hash": attempt_after["dom_summary_hash"],
+                    })
+                    after_snapshot = attempt_after
+                    after_text = attempt_after["text"]
+                    if changed:
+                        clicked_button = label
+                        before_snapshot = attempt_before
+                        break
+                except Exception as exc:
+                    interaction_attempts.append({
+                        "index": index,
+                        "label": label,
+                        "skipped": False,
+                        "error": f"{type(exc).__name__}: {exc}",
+                    })
+            before_text = before_snapshot["text"]
             after_text = page.locator("body").inner_text(timeout=5_000)
-            interaction_changed = bool(clicked_button) and before_text != after_text
+            interaction_changed = bool(clicked_button) and before_snapshot["text_hash"] != after_snapshot["text_hash"] and before_snapshot["dom_summary_hash"] != after_snapshot["dom_summary_hash"]
             relation_passed = True
             relation_evidence: dict[str, Any] = {"probe_available": False}
             if relation_probe:
@@ -2249,6 +2378,15 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                 "clicked_button": clicked_button,
                 "before_length": len(before_text),
                 "after_length": len(after_text),
+                "before_text_hash": before_snapshot["text_hash"],
+                "after_text_hash": after_snapshot["text_hash"],
+                "before_dom_summary_hash": before_snapshot["dom_summary_hash"],
+                "after_dom_summary_hash": after_snapshot["dom_summary_hash"],
+                "attempts": interaction_attempts,
+                "observable_criteria": [
+                    "text_hash_changed",
+                    "dom_summary_hash_changed"
+                ],
             },
         },
         {
@@ -2277,6 +2415,7 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
         "checks": checks,
         "failures": failures,
         "clicked_button": clicked_button,
+        "interaction_attempts": interaction_attempts,
         "relation_probe": relation_probe,
         "console_errors": console_errors,
         "page_errors": page_errors,
@@ -3275,6 +3414,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("tester 提示词没有要求验证后立即更新结构化证据")
             if "Node 标准库脚本" not in tester_prompt or "未引用的 shell 通配符" not in tester_prompt:
                 failures.append("tester 提示词没有禁止危险 shell 通配符负向探针")
+            if "signups 数组" not in tester_prompt or "signupIntent 字段" not in tester_prompt or "signups=[]" not in tester_prompt:
+                failures.append("tester 提示词没有明确报名意向的非空结构化探针规则")
             if "status 与 passed 必须一致" not in tester_prompt:
                 failures.append("tester 提示词没有要求 status 与 passed 一致")
             verify_script = project / "scripts" / "verify.sh"
@@ -3356,6 +3497,12 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("浏览器验收没有记录本地 HTTP 服务清理证据")
             if "behavioral-browser-verification.json" not in current_source or "interactive_state_change" not in current_source:
                 failures.append("E2E 自检没有覆盖行为级浏览器验证证据")
+            if "text_hash" not in current_source or "dom_summary_hash" not in current_source or "observable_criteria" not in current_source:
+                failures.append("行为级浏览器验证没有使用文本哈希和稳定 DOM 摘要哈希作为可度量交互标准")
+            if "data-redcap-volatile" not in current_source or ".spinner" not in current_source or ".loading" not in current_source:
+                failures.append("行为级浏览器验证没有排除时间戳和加载器等常见噪音节点")
+            if "interactive_gate_marker_observed" not in current_source or "actionable_interactive_gate_marker" not in current_source:
+                failures.append("角色交互式门禁证据没有区分观测噪音与行动标记")
         guard_probe = source_workspace_guard_negative_probe()
         if guard_probe.get("ok") is not True:
             failures.append(f"源工作区保护负向探针失败：{guard_probe.get('failures')}")

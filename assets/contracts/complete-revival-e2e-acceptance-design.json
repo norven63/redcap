@@ -141,7 +141,7 @@
         "test-results.json",
         "negative-probes.json"
       ],
-      "exit_rule": "正向检查通过，负向检查按预期失败或阻塞。"
+      "exit_rule": "正向检查通过；负向或静态探针必须验证关键领域数据不缺失，例如报名意向必须有非空 signups 数组或非空 signupIntent 字段。"
     },
     {
       "phase": "review_and_acceptance",
@@ -268,7 +268,7 @@
       "reviewer 角色必须读取评审前清单；最终五角色清单由运行器在 reviewer 退出后生成",
       "每个 Loom 角色必须读取运行器签发的 role-gate-clearance，角色不得自行运行 redcap gate 后把 gate_required 当作阻塞",
       "每个 Loom 角色的 Codex CLI 调用必须保留用户配置和项目级配置，不得使用 --ignore-user-config；项目级 Hook 触发必须由 hook-events-summary 和角色 session_id 证据独立证明",
-      "每个 Loom 角色若误入用户级交互式技能门禁，运行器必须在 role-runs attempts 中记录 interactive_gate_marker、retry_reason 和 retry_prompt_used，并触发重试或失败回流",
+      "每个 Loom 角色若误入用户级交互式技能门禁，且没有成功产出角色证据，运行器必须在 role-runs attempts 中记录 actionable interactive_gate_marker、retry_reason 和 retry_prompt_used，并触发重试或失败回流；成功产出的角色只能记录 observed 标记，不能把噪音写成行动标记",
       "每个 Loom 角色的提示词和 role-gate-clearance 必须提供上游输入与结构化产物的实际路径解析；角色判断缺失输入时必须以 resolved 路径为准，不能只按项目根目录裸文件名查找",
       "Loom 角色不得自行运行 prism-dispatch、prism session-init、prism merge 或完整 provider 评审；需要棱镜协助时由 E2E 运行器统一调度并回写 prism-assisted-review.json",
       "需求、架构、代码、测试或文档至少一处必须记录实际棱镜协助评审决策；本轮完整复活 E2E 不接受跳过棱镜协助",
@@ -280,7 +280,7 @@
       "安装包内棱镜自检必须通过，失败不得作为 non_blocking 关闭",
       "E2E 运行器必须独立重跑项目验证，不能只采信 tester 或 developer 自报",
       "E2E 运行器必须用真实浏览器打开项目入口，写入 browser-inspection.json 和截图证据，不能只采信静态脚本",
-      "E2E 运行器必须执行行为级浏览器验证，写入 behavioral-browser-verification.json，至少证明一次真实交互改变页面可见状态，并在适用时验证关键领域关系在 UI 中呈现",
+      "E2E 运行器必须执行行为级浏览器验证，写入 behavioral-browser-verification.json，至少证明一次真实交互同时改变页面文本哈希和稳定 DOM 摘要哈希，并在适用时验证关键领域关系在 UI 中呈现",
       "E2E 运行器必须生成 final-evidence-bundle，包含关键证据哈希、摘要和交付物清单",
       "E2E 运行器必须在 reviewer 退出后执行最终棱镜复核，且 Kimi 和 Claude Code 的合并 strictest_verdict 必须是 pass",
       "reviewer 的 review-verdict.terminal_completion 必须是布尔值 false；reviewer 只能给阶段评审，不得自证本轮 E2E 终局完成或 RedCap 完整复活",
