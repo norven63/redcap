@@ -1971,6 +1971,24 @@ def detect_validation_command(project: pathlib.Path) -> tuple[list[str] | None, 
     for relative_path, argv in script_candidates:
         if (project / relative_path).exists():
             return argv, relative_path
+    readme = project / "README.md"
+    if readme.exists():
+        text = readme.read_text(encoding="utf-8", errors="replace")
+        for match in re.finditer(r"(?m)^\s*(node|bash|python3)\s+((?:scripts|tests)/[A-Za-z0-9_.\/-]+\.(?:js|mjs|sh|py))\s*$", text):
+            runner = match.group(1)
+            relative_path = match.group(2)
+            if ".." in pathlib.PurePosixPath(relative_path).parts:
+                continue
+            if not (project / relative_path).exists():
+                continue
+            argv = [runner, relative_path]
+            if runner == "bash" and not relative_path.endswith(".sh"):
+                continue
+            if runner == "node" and not relative_path.endswith((".js", ".mjs")):
+                continue
+            if runner == "python3" and not relative_path.endswith(".py"):
+                continue
+            return argv, f"README.md command: {runner} {relative_path}"
     known_sources = ", ".join(["package.json scripts.test", "package.json scripts.validate", *[item[0] for item in script_candidates]])
     return None, f"没有发现可执行验证命令：{known_sources}"
 
@@ -3670,6 +3688,19 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             detected_argv, detected_source = detect_validation_command(project)
             if detected_argv != ["node", "scripts/verify.mjs"] or detected_source != "scripts/verify.mjs":
                 failures.append("运行器没有识别 scripts/verify.mjs 作为本地验证命令")
+            verify_mjs.unlink()
+            verify_script.unlink()
+            validate_data_js = project / "scripts" / "validate-data.js"
+            validate_data_js.write_text("process.exit(0)\n", encoding="utf-8")
+            (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/validate-data.js\n```\n", encoding="utf-8")
+            detected_argv, detected_source = detect_validation_command(project)
+            if detected_argv != ["node", "scripts/validate-data.js"] or detected_source != "README.md command: node scripts/validate-data.js":
+                failures.append("运行器没有识别 README 中明确给出的本地验证命令")
+            validate_data_js.unlink()
+            (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/missing-validate.js\n```\n", encoding="utf-8")
+            detected_argv, detected_source = detect_validation_command(project)
+            if detected_argv is not None:
+                failures.append("运行器不应识别 README 中不存在的验证脚本")
             reviewer_prompt = build_role_prompt(project, evidence, "reviewer", "自检方向")
             if "terminal_completion=false" not in reviewer_prompt or '"terminal_completion": false' not in reviewer_prompt:
                 failures.append("reviewer 提示词没有明确要求 terminal_completion=false")
