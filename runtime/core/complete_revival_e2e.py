@@ -73,6 +73,7 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "final-runner-test-results.json",
     "browser-inspection.json",
     "behavioral-browser-verification.json",
+    "independent-browser-verification.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -744,6 +745,7 @@ def build_acceptance(direction: str) -> dict[str, Any]:
         ".redcap/evidence/e2e/final-runner-test-results.json 证明运行器独立重跑了项目验证",
         ".redcap/evidence/e2e/final-evidence-bundle.json 证明最终证据带有可检查哈希和摘要",
         ".redcap/evidence/e2e/final-prism-review.json 证明最终完成声明经过运行器侧棱镜复核",
+        ".redcap/evidence/e2e/independent-browser-verification.json 证明至少一次浏览器复核来自独立子进程",
         "如果实现方遇到阻塞，必须写 blocked-package.json，而不是写 completion-marker.json"
     ]
     for contract in domain_contracts:
@@ -1673,6 +1675,19 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
+    write_json(evidence / "independent-browser-verification-template.json", {
+        "schema_id": "redcap-e2e-independent-browser-verification",
+        "producer": "e2e-independent-browser-process",
+        "target": "index.html",
+        "screenshot": "independent-browser-verification.png",
+        "checks": [
+            "独立子进程必须打开本地 HTTP 地址并确认可见文本",
+            "独立子进程必须写入截图证据",
+            "如页面有交互，独立子进程应尝试一次可见交互"
+        ],
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
     write_json(evidence / "final-evidence-bundle-template.json", {
         "schema_id": "redcap-e2e-final-evidence-bundle",
         "producer": "e2e-runner",
@@ -2470,6 +2485,153 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
     return result
 
 
+def run_independent_browser_verification_process(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    script = r"""
+import json
+import pathlib
+import socket
+import subprocess
+import sys
+import time
+import urllib.request
+
+project = pathlib.Path(sys.argv[1])
+evidence = pathlib.Path(sys.argv[2])
+target = project / "index.html"
+screenshot = evidence / "independent-browser-verification.png"
+result = {
+    "schema_id": "redcap-e2e-independent-browser-verification",
+    "producer": "e2e-independent-browser-process",
+    "target": str(target),
+    "ok": False,
+    "checks": [],
+    "failures": [],
+    "screenshot": "independent-browser-verification.png",
+}
+if not target.exists():
+    result["failures"].append("缺少 index.html")
+    print(json.dumps(result, ensure_ascii=False))
+    sys.exit(0)
+try:
+    from playwright.sync_api import sync_playwright
+except Exception as exc:
+    result["failures"].append(f"无法导入 Playwright: {type(exc).__name__}: {exc}")
+    print(json.dumps(result, ensure_ascii=False))
+    sys.exit(0)
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    sock.bind(("127.0.0.1", 0))
+    port = int(sock.getsockname()[1])
+url = f"http://127.0.0.1:{port}/index.html"
+server = subprocess.Popen(["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"], cwd=str(project), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
+try:
+    ready = False
+    last_error = ""
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        if server.poll() is not None:
+            last_error = f"server exited: {server.returncode}"
+            break
+        try:
+            with urllib.request.urlopen(url, timeout=0.5) as response:
+                ready = response.status < 500
+                if ready:
+                    break
+        except Exception as exc:
+            last_error = f"{type(exc).__name__}: {exc}"
+            time.sleep(0.1)
+    result["url"] = url
+    result["server_ready"] = ready
+    result["server_last_error"] = last_error
+    if not ready:
+        result["failures"].append(f"本地 HTTP 服务未就绪：{last_error}")
+    else:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            page = browser.new_page(viewport={"width": 1280, "height": 900})
+            console_errors = []
+            page_errors = []
+            page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
+            page.on("pageerror", lambda error: page_errors.append(str(error)))
+            page.goto(url, wait_until="domcontentloaded", timeout=20000)
+            page.wait_for_timeout(500)
+            text_before = page.locator("body").inner_text(timeout=5000)
+            button_count = page.locator("button, [role='button']").count()
+            clicked = None
+            text_after = text_before
+            for index in range(min(button_count, 6)):
+                button = page.locator("button, [role='button']").nth(index)
+                label = button.inner_text(timeout=2000).strip()
+                if not label:
+                    continue
+                before = page.locator("body").inner_text(timeout=5000)
+                try:
+                    button.click(timeout=5000)
+                    page.wait_for_timeout(300)
+                except Exception:
+                    continue
+                after = page.locator("body").inner_text(timeout=5000)
+                if before != after:
+                    clicked = label[:120]
+                    text_before = before
+                    text_after = after
+                    break
+            page.screenshot(path=str(screenshot), full_page=True)
+            browser.close()
+            checks = [
+                {"name": "visible_text", "passed": len(text_before.strip()) >= 80, "evidence": {"length": len(text_before)}},
+                {"name": "no_browser_errors", "passed": not console_errors and not page_errors, "evidence": {"console_errors": console_errors, "page_errors": page_errors}},
+                {"name": "independent_interaction_or_static_content", "passed": bool(clicked) or len(text_before.strip()) >= 160, "evidence": {"clicked": clicked, "before_length": len(text_before), "after_length": len(text_after)}},
+                {"name": "screenshot_written", "passed": screenshot.exists() and screenshot.stat().st_size > 0, "evidence": {"path": "independent-browser-verification.png", "size": screenshot.stat().st_size if screenshot.exists() else 0}},
+            ]
+            result["checks"] = checks
+            result["failures"].extend([f"独立浏览器验证失败：{item['name']}" for item in checks if item.get("passed") is not True])
+finally:
+    try:
+        server.terminate()
+        server.wait(timeout=2)
+    except Exception:
+        try:
+            server.kill()
+        except Exception:
+            pass
+result["ok"] = not result["failures"]
+print(json.dumps(result, ensure_ascii=False))
+"""
+    completed = subprocess.run(
+        ["python3", "-c", script, str(project), str(evidence)],
+        cwd=str(project),
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=180,
+    )
+    payload: dict[str, Any]
+    try:
+        payload = json.loads(completed.stdout.strip().splitlines()[-1])
+    except (IndexError, json.JSONDecodeError) as exc:
+        payload = {
+            "schema_id": "redcap-e2e-independent-browser-verification",
+            "producer": "e2e-runner",
+            "ok": False,
+            "failures": [f"独立浏览器验证子进程没有返回有效 JSON：{type(exc).__name__}: {exc}"],
+        }
+    payload["command"] = command_receipt({
+        "argv": ["python3", "-c", "<independent-browser-verification>", str(project), str(evidence)],
+        "cwd": str(project),
+        "exit_code": completed.returncode,
+        "ok": completed.returncode == 0,
+        "timed_out": False,
+        "timeout_seconds": 180,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "process_group_killed": None,
+    })
+    if completed.returncode != 0:
+        payload["ok"] = False
+        payload.setdefault("failures", []).append(f"独立浏览器验证子进程退出码非 0：{completed.returncode}")
+    return payload
+
+
 def backlog_open_items(evidence: pathlib.Path) -> list[Any]:
     backlog = load_optional_json(evidence / "failure-backlog.json")
     if backlog is None:
@@ -2536,6 +2698,8 @@ def criterion_pass(criterion: str, project: pathlib.Path, evidence: pathlib.Path
         return (evidence / "final-evidence-bundle.json").exists(), "final evidence bundle"
     if "final-prism-review.json" in criterion:
         return context.get("final_prism_ok") is True, "final prism review"
+    if "independent-browser-verification.json" in criterion:
+        return context.get("independent_browser_ok") is True, "independent-browser-verification.json"
     if "blocked-package.json" in criterion:
         return not (project / "blocked-package.json").exists(), "blocked-package.json absent"
     if "行为" in criterion or "交互" in criterion:
@@ -2714,6 +2878,8 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
             "The runner performed a separate behavioral browser verification with a real click interaction and, when project data exposed player-character relationships, checked that the relation rendered in the UI.",
+            "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review.",
+            "pre-final-readiness.json was regenerated after final-evidence-bundle.json existed, so it is a current pre-final summary with only final Prism pending.",
         ],
         "evidence": [
             {
@@ -2729,7 +2895,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "Reviewer must not self-certify completion.",
             "Open failure-backlog items block completion.",
             "Completion marker scope is only this E2E run, not permanent RedCap full revival.",
-            "iteration-verdict.json is intentionally not finalized before this provider review; pre-final-readiness.json is only an objective pre-final summary and is not a completion claim.",
+            "iteration-verdict.json is intentionally not finalized before this provider review; pre-final-readiness.json is generated after final-evidence-bundle.json and is only an objective pre-final summary, not a completion claim.",
             "If this provider review passes, the runner must regenerate iteration-verdict.json with final_prism_pending=false before writing completion-marker.json.",
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
         ],
@@ -2744,6 +2910,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
                 "runner-owned final validation",
                 "browser-inspection.json",
                 "behavioral-browser-verification.json",
+                "independent-browser-verification.json",
                 "two-provider final Prism review",
             ],
         },
@@ -2865,6 +3032,8 @@ def finalize_e2e_acceptance(
     write_json(evidence / "browser-inspection.json", browser_inspection)
     behavioral_verification = run_behavioral_browser_verification(project, evidence)
     write_json(evidence / "behavioral-browser-verification.json", behavioral_verification)
+    independent_browser = run_independent_browser_verification_process(project, evidence)
+    write_json(evidence / "independent-browser-verification.json", independent_browser)
     role_risk = write_role_execution_risk(evidence)
     failures: list[str] = []
     if role_result.get("ok") is not True:
@@ -2879,6 +3048,8 @@ def finalize_e2e_acceptance(
         failures.append("运行器浏览器检查未通过")
     if behavioral_verification.get("ok") is not True:
         failures.append("运行器行为级浏览器验证未通过")
+    if independent_browser.get("ok") is not True:
+        failures.append("独立子进程浏览器验证未通过")
     if role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("Loom 角色推理预算风险未被接受")
     backlog_path = evidence / "failure-backlog.json"
@@ -2892,8 +3063,11 @@ def finalize_e2e_acceptance(
         "runner_tests_ok": runner_tests.get("ok") is True,
         "browser_ok": browser_inspection.get("ok") is True,
         "behavior_ok": behavioral_verification.get("ok") is True,
+        "independent_browser_ok": independent_browser.get("ok") is True,
         "final_prism_ok": False,
     }
+    bundle = build_final_evidence_bundle(project, evidence, direction)
+    write_json(evidence / "final-evidence-bundle.json", bundle)
     write_pre_final_readiness(project, evidence, failures, pre_final_context)
     bundle = build_final_evidence_bundle(project, evidence, direction)
     write_json(evidence / "final-evidence-bundle.json", bundle)
@@ -3564,12 +3738,16 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("浏览器验收没有记录本地 HTTP 服务清理证据")
             if "behavioral-browser-verification.json" not in current_source or "interactive_state_change" not in current_source:
                 failures.append("E2E 自检没有覆盖行为级浏览器验证证据")
+            if "independent-browser-verification.json" not in current_source or "e2e-independent-browser-process" not in current_source:
+                failures.append("E2E 自检没有覆盖独立子进程浏览器复核证据")
             if "text_hash" not in current_source or "dom_summary_hash" not in current_source or "observable_criteria" not in current_source:
                 failures.append("行为级浏览器验证没有使用文本哈希和稳定 DOM 摘要哈希作为可度量交互标准")
             if "data-redcap-volatile" not in current_source or ".spinner" not in current_source or ".loading" not in current_source:
                 failures.append("行为级浏览器验证没有排除时间戳和加载器等常见噪音节点")
             if "interactive_gate_marker_observed" not in current_source or "actionable_interactive_gate_marker" not in current_source:
                 failures.append("角色交互式门禁证据没有区分观测噪音与行动标记")
+            if current_source.find("write_json(evidence / \"final-evidence-bundle.json\", bundle)") > current_source.find("write_pre_final_readiness(project, evidence, failures, pre_final_context)"):
+                failures.append("pre-final-readiness.json 必须在 final-evidence-bundle.json 存在后生成，避免陈旧失败进入最终棱镜复核")
         guard_probe = source_workspace_guard_negative_probe()
         if guard_probe.get("ok") is not True:
             failures.append(f"源工作区保护负向探针失败：{guard_probe.get('failures')}")

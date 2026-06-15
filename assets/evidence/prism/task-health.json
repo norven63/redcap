@@ -1,8 +1,8 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-15T21:56:19+00:00",
-  "event_count": 37585,
-  "session_event_count": 9271,
+  "computed_at": "2026-06-15T22:46:24+00:00",
+  "event_count": 37737,
+  "session_event_count": 9311,
   "task_count": 92,
   "success_count": 50,
   "success_rate": 0.5435,
@@ -39,31 +39,31 @@
       "task_id": "timeout-e2e",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T21:56:18+00:00"
+      "recorded_at": "2026-06-15T22:46:24+00:00"
     },
     {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T21:56:01+00:00"
-    },
-    {
-      "task_id": "dispatcher-bad-file-access-self-check",
-      "outcome": "active",
-      "strictest_verdict": null,
-      "recorded_at": "2026-06-15T21:55:56+00:00"
+      "recorded_at": "2026-06-15T22:46:06+00:00"
     },
     {
       "task_id": "dispatcher-truncation-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T21:55:56+00:00"
+      "recorded_at": "2026-06-15T22:46:02+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T21:55:55+00:00"
+      "recorded_at": "2026-06-15T22:46:01+00:00"
+    },
+    {
+      "task_id": "dispatcher-bad-file-access-self-check",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-15T22:46:01+00:00"
     },
     {
       "task_id": "e2e-round20-fix-review-20260615",
@@ -96,17 +96,17 @@
       "recorded_at": "2026-06-14T13:23:25+00:00"
     }
   ],
-  "gate_event_count": 28314,
-  "gate_success_count": 28314,
+  "gate_event_count": 28426,
+  "gate_success_count": 28426,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 567,
-    "required": 23416,
+    "optional": 568,
+    "required": 23527,
     "skipped": 4331
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 23989,
-    "cli-gate": 4325
+    "codex-UserPromptSubmit": 24093,
+    "cli-gate": 4333
   },
-  "gate_average_duration_seconds": 0.289
+  "gate_average_duration_seconds": 0.288
 }
