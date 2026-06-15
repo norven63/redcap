@@ -28,7 +28,7 @@
     ]
   },
   "prompt_context": {
-    "source_prompt_excerpt": "好的，我已经为你把kimi登陆成功了，请继续吧",
+    "source_prompt_excerpt": "好的，我授权，请继续没完成的所有任务，直至达到最终目标为止",
     "prompt_kind": "mixed",
     "authorized_scope": "implementation"
   },

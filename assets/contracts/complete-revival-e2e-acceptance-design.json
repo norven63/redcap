@@ -8,6 +8,20 @@
     "must_not_repeat": "不要要求用户重复已经在上下文中表达过的方案性需求；只在真实运行时接收一个新的 direction 参数作为项目方向。",
     "genericity_rule": "E2E 合同、模板、运行器和检查器必须先是通用方法；任何具体项目只能作为运行实例，不得写死进合同。"
   },
+  "persistent_run_workspace": {
+    "default_root": "/Users/norven/workspace/redcap-e2e-runs",
+    "why": "真实 E2E 证据不能依赖 /tmp 这类可能因会话恢复、系统清理或进程中断而消失的位置。",
+    "run_directory_rule": "未显式传入 --work-root 时，运行器必须在 default_root 下创建 run-<UTC时间>-<进程号> 子目录；显式传入 --work-root 时，该目录仍必须位于 RedCap 源仓库外部。",
+    "per_run_structure": {
+      "run_root": "run-<UTC时间>-<进程号>/",
+      "external_project": "run_root/redcap-e2e-<direction-slug>/",
+      "runtime_evidence": "external_project/.redcap/evidence/e2e/",
+      "deliverables": "external_project/ 中除 .redcap/ 与 .codex/ 之外的真实项目交付物",
+      "raw_role_outputs": "external_project/.redcap/evidence/e2e/role-raw/",
+      "final_evidence": "external_project/.redcap/evidence/e2e/final-evidence-bundle.json"
+    },
+    "interruption_rule": "若运行中断且 run_root 或 external_project 不存在，该轮只能登记为证据丢失，不能作为通过或失败的最终验收依据；已提交到 RedCap 源仓库的代码修复仍以 Git 提交为准，不因 E2E 证据丢失而回滚。"
+  },
   "error_review": {
     "previous_errors": [
       {
@@ -260,7 +274,18 @@
     "max_iterations_before_cap_escalation": 6,
     "failure_ingestion": "每轮失败必须写入 failure-backlog.json，并转化为下一轮修复队列或 no-promote 决策。",
     "next_round_rule": "只要 iteration-verdict.ready_for_engineering_use 为 false，下一轮必须先处理 failure-backlog 中未关闭项。",
-    "stop_rule": "连续一轮外部项目 E2E 通过且 failure-backlog 无开放问题时，才允许进入生产可用性汇报；这仍不等同于永久无问题。"
+    "stop_rule": "连续一轮外部项目 E2E 通过且 failure-backlog 无开放问题时，才允许进入生产可用性汇报；这仍不等同于永久无问题。",
+    "terminal_exit_criteria": [
+      "五个 Loom 角色均由独立 Codex CLI 会话执行，且 loom-role-session-manifest.json 无 session_loss_alarms",
+      "项目级 Hook 事件 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse、Stop 全部被记录",
+      "E2E 运行器独立重跑项目验证通过，final-runner-test-results.ok=true 且 detected_command 非空",
+      "最终棱镜复核包含 Kimi 和 Claude Code，final-prism-review.ok=true 且 strictest_verdict=pass",
+      "failure-backlog.open_items 为空，next_round_required=false",
+      "iteration-verdict.status=pass 且 ready_for_engineering_use=true",
+      "completion-marker.json 由 e2e-runner 生成，并且 meaningful-evidence-check.ok=true",
+      "RedCap 源仓库 source-workspace-guard-run.json 证明 E2E 前后分支、提交和工作区状态未被污染"
+    ],
+    "anti_loop_rule": "如果任一轮只新增计划、台账或文档而没有真实 E2E 运行证据，必须视为未推进，不得进入完成汇报。"
   },
   "negative_probes": [
     {

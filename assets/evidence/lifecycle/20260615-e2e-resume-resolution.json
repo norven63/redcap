@@ -1,0 +1,71 @@
+{
+  "schema_id": "redcap-e2e-resume-resolution",
+  "created_at": "2026-06-15T12:45:00+08:00",
+  "interrupted_round": {
+    "round_id": "round8",
+    "work_root": "/tmp/redcap-e2e-20260615-followthrough-round8",
+    "status": "interrupted_and_unusable_as_e2e_evidence",
+    "facts": [
+      "本地执行会话句柄失效，无法继续读取原命令输出。",
+      "系统进程表中未发现 round8 的 E2E 运行器或 Codex CLI 子进程。",
+      "/tmp/redcap-e2e-20260615-followthrough-round8 不存在，无法恢复该轮外部项目证据。"
+    ],
+    "lost_evidence_count": 1,
+    "lost_evidence": [
+      "round8 外部项目运行目录及其中的 .redcap/evidence/e2e 证据包"
+    ],
+    "usable_as_completion_evidence": false
+  },
+  "source_repair_inventory": {
+    "workspace_status_before_resume_fix": "仅生命周期包与棱镜流水有未提交变化；未发现未提交源码修复。",
+    "completed_repair_commits": [
+      {
+        "commit": "9101eec",
+        "summary": "修复 RedCap E2E 角色门禁协调"
+      },
+      {
+        "commit": "a46ec73",
+        "summary": "收敛 E2E Loom 角色执行边界"
+      },
+      {
+        "commit": "874a968",
+        "summary": "修复 E2E 终验命令与角色产物检查"
+      }
+    ],
+    "completed_fix_count": 3,
+    "not_started_fix_count": 0,
+    "uncommitted_source_fix_count": 0,
+    "rule": "已进入 Git 提交的源码修复以提交为准；丢失的只是 round8 运行证据，不能因此声称 E2E 通过，也不应回滚已验证的源码修复。"
+  },
+  "persistent_run_workspace": {
+    "default_root": "/Users/norven/workspace/redcap-e2e-runs",
+    "run_directory_rule": "run-<UTC时间>-<进程号>",
+    "required_isolation": [
+      "每轮 E2E 使用独立 run 目录。",
+      "每轮外部项目的 RedCap 运行产物只写入该项目 .redcap/。",
+      "RedCap 源仓库只允许产生明确提交的源码或证据变化，E2E 运行不得污染源工作区。"
+    ]
+  },
+  "loop_exit_criteria": [
+    "五个 Loom 角色均由独立 Codex CLI 会话执行，且无会话丢失报警。",
+    "项目级 Hook 事件全部记录。",
+    "运行器独立重跑项目验证通过。",
+    "最终棱镜复核 Kimi 与 Claude Code 均纳入，合并 strictest_verdict=pass。",
+    "failure-backlog 无开放项，iteration-verdict.ready_for_engineering_use=true。",
+    "completion-marker 由 e2e-runner 生成，meaningful-evidence-check.ok=true。",
+    "源工作区保护证明 E2E 前后没有未授权污染。"
+  ],
+  "prism_concerns": [
+    {
+      "provider": "kimi",
+      "decision": "accept",
+      "resolution": "不把生命周期与棱镜门禁通过当作 E2E 推进完成；必须实际在持久目录执行新一轮 E2E。"
+    },
+    {
+      "provider": "claude-code",
+      "decision": "accept",
+      "resolution": "补充中断进展清单、持久目录结构和循环停止条件，并在执行前确认工作区状态。"
+    }
+  ],
+  "next_action": "提交当前基线后，在 /Users/norven/workspace/redcap-e2e-runs 下启动新一轮 E2E。"
+}

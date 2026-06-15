@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+  "exit_code": 0,
+  "executed_at": "2026-06-15T13:01:40.117958+00:00",
+  "executor": "cap",
+  "stdout_sha256": "ab3ecfc7e9d5e234f53960b67e120a3be26c99846425613bd17cf9337d0054a2",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260615-e2e-resume/complete-revival-e2e-self-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260615-e2e-resume/complete-revival-e2e-self-check.stderr.txt"
+}

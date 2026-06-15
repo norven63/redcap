@@ -26,6 +26,7 @@ from revival_followthrough import REQUIRED_EVIDENCE_CHECKS, validate_e2e_evidenc
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 REDCAP = REPO_ROOT / "runtime" / "bin" / "redcap"
 CONTRACT = REPO_ROOT / "assets" / "contracts" / "complete-revival-e2e-acceptance-design.json"
+DEFAULT_PERSISTENT_WORK_ROOT = pathlib.Path.home() / "workspace" / "redcap-e2e-runs"
 REQUIRED_HOOK_EVENTS = ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop"]
 LOOM_EXECUTION_ROLES = ["product_manager", "architect", "developer", "tester", "reviewer"]
 ROLE_MARKER_PREFIX = "REDCAP_LOOM_ROLE="
@@ -376,7 +377,8 @@ def source_workspace_guard_negative_probe() -> dict[str, Any]:
 def resolve_work_root(raw: str | None) -> pathlib.Path:
     if raw:
         return pathlib.Path(raw).expanduser().resolve()
-    return pathlib.Path(tempfile.mkdtemp(prefix="redcap-ai-e2e-")).resolve()
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return (DEFAULT_PERSISTENT_WORK_ROOT / f"run-{stamp}-{os.getpid()}").resolve()
 
 
 def ensure_external_path(path: pathlib.Path) -> list[str]:

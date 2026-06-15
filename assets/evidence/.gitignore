@@ -5,6 +5,9 @@
 # Stable evidence that may be referenced by contracts, lifecycle packets, and task facts.
 !lifecycle/
 !lifecycle/*-lifecycle.json
+!lifecycle/20260615-e2e-resume-resolution.json
+!lifecycle/20260615-e2e-resume-prism-merge.json
+!lifecycle/20260615-e2e-resume-prism-resolution.json
 
 !migrations/
 !migrations/20260611-process-artifact-migration-map.json
@@ -16,6 +19,8 @@
 !check-receipts/20260614-release-e2e-protection/**
 !check-receipts/20260614-e2e-final-readiness/
 !check-receipts/20260614-e2e-final-readiness/**
+!check-receipts/20260615-e2e-resume/
+!check-receipts/20260615-e2e-resume/**
 
 !task-facts/
 !task-facts/task-facts.json
@@ -28,6 +33,7 @@
 !prism/task-ledger.jsonl
 !prism/task-health.json
 !prism/**/*-prism-request.json
+!prism/20260615-e2e-resume-request.json
 !prism/20260611-process-artifact-migration/
 !prism/20260611-process-artifact-migration/session.json
 !prism/20260611-process-artifact-migration/request.json
@@ -53,3 +59,12 @@
 !prism/20260614-e2e-final-readiness/*.review.brief.md
 !prism/20260614-e2e-final-readiness/*-review.json
 !prism/20260614-e2e-final-readiness/*-review.brief.md
+!prism/e2e-resume-20260615/
+!prism/e2e-resume-20260615/run/
+!prism/e2e-resume-20260615/run/session.json
+!prism/e2e-resume-20260615/kimi/
+!prism/e2e-resume-20260615/kimi/review.json
+!prism/e2e-resume-20260615/kimi/review.brief.md
+!prism/e2e-resume-20260615/claude-code/
+!prism/e2e-resume-20260615/claude-code/review.json
+!prism/e2e-resume-20260615/claude-code/review.brief.md

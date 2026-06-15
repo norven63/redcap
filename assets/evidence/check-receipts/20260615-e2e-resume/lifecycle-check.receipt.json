@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260615-revival-followthrough-lifecycle.json",
+  "exit_code": 0,
+  "executed_at": "2026-06-15T13:01:39.160305+00:00",
+  "executor": "cap",
+  "stdout_sha256": "6d9ce851e9f2c192b5d4908060fd8236630913004af16b0dbf8ff0c8b9766b54",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260615-e2e-resume/lifecycle-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260615-e2e-resume/lifecycle-check.stderr.txt"
+}
