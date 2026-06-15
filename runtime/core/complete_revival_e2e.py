@@ -72,6 +72,20 @@ REVIEWER_RUNNER_OWNED_FOLLOW_UP = [
     "final-prism-review.json",
     "final-runner-test-results.json",
 ]
+ROLE_EVIDENCE_FILES = {
+    "requirements.json",
+    "acceptance-criteria.json",
+    "knowledge-retrieval-evidence.json",
+    "implementation-log.json",
+    "verification-results.json",
+    "test-results.json",
+    "negative-probes.json",
+    "review-verdict.json",
+    "prism-assisted-review.json",
+    "self-purification-candidates.json",
+    "persona-distillation-decision.json",
+    "failure-backlog.json",
+}
 MEANINGFUL_E2E_REQUIRED_GATES = [
     "session_id",
     "独立 Codex CLI",
@@ -123,6 +137,16 @@ def append_jsonl(path: pathlib.Path, payload: dict[str, Any]) -> None:
 
 def sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def unique_preserve_order(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    unique: list[str] = []
+    for value in values:
+        if value not in seen:
+            unique.append(value)
+            seen.add(value)
+    return unique
 
 
 def sha256_file(path: pathlib.Path) -> str:
@@ -695,8 +719,44 @@ def role_gate_clearance_path(evidence: pathlib.Path, role: str) -> pathlib.Path:
     return evidence / "role-gate-clearance" / f"{role}.json"
 
 
+def role_logical_path(project: pathlib.Path, evidence: pathlib.Path, logical_name: str, *, for_output: bool) -> pathlib.Path | None:
+    if logical_name == "project-deliverables":
+        return None
+    if logical_name.startswith("role-artifacts/"):
+        return evidence / logical_name
+    if logical_name in ROLE_EVIDENCE_FILES:
+        return evidence / logical_name
+    evidence_path = evidence / logical_name
+    if not for_output and evidence_path.exists():
+        return evidence_path
+    return project / logical_name
+
+
+def role_path_records(
+    project: pathlib.Path,
+    evidence: pathlib.Path,
+    logical_names: list[str],
+    *,
+    for_output: bool,
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for logical_name in logical_names:
+        path = role_logical_path(project, evidence, logical_name, for_output=for_output)
+        record: dict[str, Any] = {
+            "name": logical_name,
+            "path": None if path is None else str(path),
+            "relative_path": None if path is None else path.relative_to(project).as_posix(),
+            "location": "project-deliverables" if path is None else ("evidence" if path.is_relative_to(evidence) else "project-root"),
+        }
+        if not for_output and path is not None:
+            record["exists"] = path.exists()
+        records.append(record)
+    return records
+
+
 def build_role_gate_clearance(project: pathlib.Path, evidence: pathlib.Path, role: str, direction: str) -> dict[str, Any]:
     inputs, outputs = role_handoff(role)
+    required_reads = unique_preserve_order(["requirements.json", "acceptance-criteria.json", *inputs])
     return {
         "schema_id": "redcap-e2e-role-gate-clearance",
         "producer": "e2e-runner",
@@ -718,12 +778,10 @@ def build_role_gate_clearance(project: pathlib.Path, evidence: pathlib.Path, rol
             "prism session-init",
             "prism merge",
         ],
-        "role_must_read": [
-            "requirements.json",
-            "acceptance-criteria.json",
-            *inputs,
-        ],
+        "role_must_read": required_reads,
+        "role_must_read_resolved": role_path_records(project, evidence, required_reads, for_output=False),
         "role_must_write": outputs,
+        "role_must_write_resolved": role_path_records(project, evidence, outputs, for_output=True),
         "runner_owned_checks": [
             "package-prism-check.json",
             "final-runner-test-results.json",
@@ -805,6 +863,9 @@ def role_handoff(role: str) -> tuple[list[str], list[str]]:
 
 def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, direction: str) -> str:
     inputs, outputs = role_handoff(role)
+    required_inputs = unique_preserve_order(["requirements.json", "acceptance-criteria.json", *inputs])
+    input_records = role_path_records(project, evidence, required_inputs, for_output=False)
+    output_records = role_path_records(project, evidence, outputs, for_output=True)
     common = f"""
     {ROLE_MARKER_PREFIX}{role}
 
@@ -818,16 +879,24 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
     需求方向：{direction}
 
     上游输入：
-    {json.dumps(inputs, ensure_ascii=False)}
+    {json.dumps(required_inputs, ensure_ascii=False)}
+
+    上游输入实际路径：
+    {json.dumps(input_records, ensure_ascii=False, indent=2)}
 
     本角色必须产出：
     {json.dumps(outputs, ensure_ascii=False)}
+
+    本角色必须产出的实际路径：
+    {json.dumps(output_records, ensure_ascii=False, indent=2)}
 
     通用要求：
     - 只修改外部项目，不要修改 RedCap 源仓库。
     - 本角色的结构化证据必须写入 {role_artifact_path(evidence, role)}。
     - role artifact 至少包含 schema_id、role、status、handoff_inputs、handoff_outputs、evidence_files、notes。
     - 必须先读取角色门禁协调文件，并把它作为本角色的门禁依据。
+    - 判断上游输入是否缺失时，必须以“上游输入实际路径”和角色门禁协调文件里的 role_must_read_resolved 为准；不要只在项目根目录按裸文件名查找。
+    - 写结构化产物时，必须优先写入“本角色必须产出的实际路径”和角色门禁协调文件里的 role_must_write_resolved。
     - 本角色是在外部项目中使用 .redcap，不是在修改 RedCap 源仓库；不要运行 runtime/bin/redcap gate 或 .redcap/runtime/bin/redcap gate。
     - 如果缺少上游输入，请写 blocked-package.json 并说明阻塞，不要伪造完成。
     - 如果项目根目录已经存在 blocked-package.json，必须先读取它；除非你就是正在生成该阻塞的角色，否则要产出本角色的阻塞证据并快速停止。
@@ -947,12 +1016,7 @@ def role_provider_boundary_failures(evidence: pathlib.Path, role: str) -> list[s
 
 
 def role_output_path(project: pathlib.Path, evidence: pathlib.Path, output: str) -> pathlib.Path | None:
-    if output == "project-deliverables":
-        return None
-    evidence_path = evidence / output
-    if evidence_path.exists() or output.startswith("role-artifacts/"):
-        return evidence_path
-    return project / output
+    return role_logical_path(project, evidence, output, for_output=True)
 
 
 def validate_reviewer_outputs(evidence: pathlib.Path) -> list[str]:
@@ -1105,7 +1169,9 @@ def build_role_session_manifest(
             "alarm": alarm,
             "role_workspace": [f"role-workspaces/{role}"],
             "handoff_inputs": inputs,
+            "handoff_input_paths": role_path_records(project, evidence, inputs, for_output=False),
             "handoff_outputs": outputs,
+            "handoff_output_paths": role_path_records(project, evidence, outputs, for_output=True),
             "evidence_files": [
                 artifact_rel,
                 f"role-runs/{role}.json",
@@ -1309,7 +1375,9 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
                 "alarm": None,
                 "role_workspace": [f"role-workspaces/{role}"],
                 "handoff_inputs": role_handoff(role)[0],
+                "handoff_input_paths": role_path_records(project, evidence, role_handoff(role)[0], for_output=False),
                 "handoff_outputs": role_handoff(role)[1],
+                "handoff_output_paths": role_path_records(project, evidence, role_handoff(role)[1], for_output=True),
                 "evidence_files": [
                     f"role-artifacts/{role}.json",
                     f"role-runs/{role}.json",
@@ -1335,7 +1403,9 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
                 "alarm": None,
                 "role_workspace": [f"role-workspaces/{role}"],
                 "handoff_inputs": role_handoff(role)[0],
+                "handoff_input_paths": role_path_records(project, evidence, role_handoff(role)[0], for_output=False),
                 "handoff_outputs": role_handoff(role)[1],
+                "handoff_output_paths": role_path_records(project, evidence, role_handoff(role)[1], for_output=True),
                 "evidence_files": [
                     f"role-artifacts/{role}.json",
                     f"role-runs/{role}.json",
@@ -1359,6 +1429,10 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
             "prism session-init",
             "prism merge",
         ],
+        "role_must_read": [],
+        "role_must_read_resolved": [],
+        "role_must_write": [],
+        "role_must_write_resolved": [],
         "runner_owned_checks": [
             "package-prism-check.json",
             "final-runner-test-results.json",
@@ -2395,6 +2469,31 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("重试失败尝试没有进入 retry_session_ids")
             if manifest.get("session_loss_alarms"):
                 failures.append(f"重试成功夹具不应产生 session_loss_alarms：{manifest.get('session_loss_alarms')}")
+            developer_prompt = build_role_prompt(project, evidence, "developer", "自检方向")
+            if ".redcap/evidence/e2e/requirements.json" not in developer_prompt:
+                failures.append("developer 提示词没有给出 requirements.json 的证据目录实际路径")
+            if ".redcap/evidence/e2e/acceptance-criteria.json" not in developer_prompt:
+                failures.append("developer 提示词没有给出 acceptance-criteria.json 的证据目录实际路径")
+            if ".redcap/evidence/e2e/implementation-log.json" not in developer_prompt:
+                failures.append("developer 提示词没有给出 implementation-log.json 的证据目录目标路径")
+            developer_clearance = build_role_gate_clearance(project, evidence, "developer", "自检方向")
+            developer_reads = {
+                item["name"]: item
+                for item in developer_clearance.get("role_must_read_resolved", [])
+                if isinstance(item, dict) and isinstance(item.get("name"), str)
+            }
+            for required_input in ["requirements.json", "acceptance-criteria.json"]:
+                record = developer_reads.get(required_input)
+                if not record or record.get("location") != "evidence" or record.get("exists") is not True:
+                    failures.append(f"developer 门禁凭证没有把 {required_input} 解析到已存在的证据目录文件")
+            developer_writes = {
+                item["name"]: item
+                for item in developer_clearance.get("role_must_write_resolved", [])
+                if isinstance(item, dict) and isinstance(item.get("name"), str)
+            }
+            implementation_log = developer_writes.get("implementation-log.json")
+            if not implementation_log or implementation_log.get("location") != "evidence":
+                failures.append("developer 门禁凭证没有把 implementation-log.json 解析到证据目录")
             reviewer_prompt = build_role_prompt(project, evidence, "reviewer", "自检方向")
             if "terminal_completion=false" not in reviewer_prompt or '"terminal_completion": false' not in reviewer_prompt:
                 failures.append("reviewer 提示词没有明确要求 terminal_completion=false")

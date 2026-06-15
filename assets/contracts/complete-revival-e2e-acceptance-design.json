@@ -261,6 +261,7 @@
       "每个 Loom 角色必须拥有 role-runs、role-artifacts、role-prompts、role-messages 和 role-raw 原始输出证据",
       "reviewer 角色必须读取评审前清单；最终五角色清单由运行器在 reviewer 退出后生成",
       "每个 Loom 角色必须读取运行器签发的 role-gate-clearance，角色不得自行运行 redcap gate 后把 gate_required 当作阻塞",
+      "每个 Loom 角色的提示词和 role-gate-clearance 必须提供上游输入与结构化产物的实际路径解析；角色判断缺失输入时必须以 resolved 路径为准，不能只按项目根目录裸文件名查找",
       "Loom 角色不得自行运行 prism-dispatch、prism session-init、prism merge 或完整 provider 评审；需要棱镜协助时由 E2E 运行器统一调度并回写 prism-assisted-review.json",
       "需求、架构、代码、测试或文档至少一处必须记录实际棱镜协助评审决策；本轮完整复活 E2E 不接受跳过棱镜协助",
       "实现前必须记录知识检索结果或跳过理由",
