@@ -938,7 +938,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            - test-results.json：role="tester"，status="in_progress"，passed=false，commands=[]，positive_checks=[]；
            - negative-probes.json：role="tester"，status="in_progress"，passed=false，probes=[]；
            - role-artifacts/tester.json：role="tester"，status="in_progress"，evidence_files 列出上述两个文件。
-        3. 只做两类验证：最多一个正向验证命令，最多一个负向或静态探针。优先使用 README、package.json scripts、scripts/validate.mjs 或 scripts/verify.sh 中明确给出的本地验证命令；不要为了“更全面”继续追加探索。
+        3. 只做两类验证：最多一个正向验证命令，最多一个负向或静态探针。优先使用 README、package.json scripts、scripts/validate.mjs、scripts/verify.mjs 或 scripts/verify.sh 中明确给出的本地验证命令；不要为了“更全面”继续追加探索。
         4. 每执行完一个验证动作，立即更新对应 JSON；验证动作全部结束后，立即把三个文件更新为 completed 或 failed。
         5. test-results.json 必须标记 role="tester"，并记录 commands、positive_checks、passed；negative-probes.json 必须标记 role="tester"，并记录 probes、passed。
         6. 如果测试失败，必须把失败写清楚，不要替开发者修复。
@@ -1786,16 +1786,20 @@ def detect_validation_command(project: pathlib.Path) -> tuple[list[str] | None, 
         return ["npm", "test"], "package.json scripts.test"
     if isinstance(scripts, dict) and isinstance(scripts.get("validate"), str) and scripts["validate"].strip():
         return ["npm", "run", "validate"], "package.json scripts.validate"
-    validate_js = project / "scripts" / "validate.js"
-    if validate_js.exists():
-        return ["node", "scripts/validate.js"], "scripts/validate.js"
-    verify_sh = project / "scripts" / "verify.sh"
-    if verify_sh.exists():
-        return ["bash", "scripts/verify.sh"], "scripts/verify.sh"
-    validate_script = project / "tests" / "validate.mjs"
-    if validate_script.exists():
-        return ["node", "tests/validate.mjs"], "tests/validate.mjs"
-    return None, "没有发现 package.json scripts.test、scripts.validate、scripts/validate.js、scripts/verify.sh 或 tests/validate.mjs"
+    script_candidates = [
+        ("scripts/validate.js", ["node", "scripts/validate.js"]),
+        ("scripts/validate.mjs", ["node", "scripts/validate.mjs"]),
+        ("scripts/verify.mjs", ["node", "scripts/verify.mjs"]),
+        ("scripts/verify.js", ["node", "scripts/verify.js"]),
+        ("scripts/verify.sh", ["bash", "scripts/verify.sh"]),
+        ("tests/validate.mjs", ["node", "tests/validate.mjs"]),
+        ("tests/verify.mjs", ["node", "tests/verify.mjs"]),
+    ]
+    for relative_path, argv in script_candidates:
+        if (project / relative_path).exists():
+            return argv, relative_path
+    known_sources = ", ".join(["package.json scripts.test", "package.json scripts.validate", *[item[0] for item in script_candidates]])
+    return None, f"没有发现可执行验证命令：{known_sources}"
 
 
 def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
@@ -2546,6 +2550,11 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             detected_argv, detected_source = detect_validation_command(project)
             if detected_argv != ["bash", "scripts/verify.sh"] or detected_source != "scripts/verify.sh":
                 failures.append("运行器没有识别 scripts/verify.sh 作为本地验证命令")
+            verify_mjs = project / "scripts" / "verify.mjs"
+            verify_mjs.write_text("process.exit(0)\n", encoding="utf-8")
+            detected_argv, detected_source = detect_validation_command(project)
+            if detected_argv != ["node", "scripts/verify.mjs"] or detected_source != "scripts/verify.mjs":
+                failures.append("运行器没有识别 scripts/verify.mjs 作为本地验证命令")
             reviewer_prompt = build_role_prompt(project, evidence, "reviewer", "自检方向")
             if "terminal_completion=false" not in reviewer_prompt or '"terminal_completion": false' not in reviewer_prompt:
                 failures.append("reviewer 提示词没有明确要求 terminal_completion=false")
