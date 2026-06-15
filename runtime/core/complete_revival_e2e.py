@@ -10,11 +10,13 @@ import json
 import os
 import pathlib
 import re
+import signal
 import shutil
 import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 import zipfile
 from typing import Any
 
@@ -30,6 +32,7 @@ ROLE_MARKER_PREFIX = "REDCAP_LOOM_ROLE="
 MEANINGFUL_E2E_REQUIRED_FILES = [
     "loom-role-session-manifest.json",
     "loom-role-session-manifest-pre-review.json",
+    "role-gate-clearance-summary.json",
     "prism-assisted-review.json",
     "knowledge-retrieval-evidence.json",
     "self-purification-candidates.json",
@@ -37,8 +40,12 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "test-results.json",
     "negative-probes.json",
     "package-prism-check.json",
+    "final-runner-test-results.json",
+    "final-evidence-bundle.json",
+    "final-prism-review.json",
     "failure-backlog.json",
     "iteration-verdict.json",
+    "completion-marker.json",
 ]
 MEANINGFUL_E2E_REQUIRED_GATES = [
     "session_id",
@@ -113,31 +120,36 @@ def run_command(
     stdin: str | None = None,
 ) -> dict[str, Any]:
     started = dt.datetime.now(dt.timezone.utc)
+    process: subprocess.Popen[str] | None = None
     try:
-        completed = subprocess.run(
+        process = subprocess.Popen(
             argv,
             cwd=str(cwd),
-            input=stdin,
-            capture_output=True,
+            stdin=subprocess.PIPE if stdin is not None else None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            check=False,
-            timeout=timeout_seconds,
+            start_new_session=True,
         )
+        stdout, stderr = process.communicate(input=stdin, timeout=timeout_seconds)
         return {
             "argv": argv,
             "cwd": str(cwd),
-            "exit_code": completed.returncode,
-            "ok": completed.returncode == 0,
+            "exit_code": process.returncode,
+            "ok": process.returncode == 0,
             "timed_out": False,
             "timeout_seconds": timeout_seconds,
             "started_at": started.replace(microsecond=0).isoformat(),
             "finished_at": iso_now(),
-            "stdout": completed.stdout,
-            "stderr": completed.stderr,
+            "stdout": stdout,
+            "stderr": stderr,
         }
-    except subprocess.TimeoutExpired as exc:
-        stdout = exc.stdout if isinstance(exc.stdout, str) else ""
-        stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+    except subprocess.TimeoutExpired:
+        killed = kill_process_group(process)
+        try:
+            stdout, stderr = process.communicate(timeout=3) if process is not None else ("", "")
+        except subprocess.TimeoutExpired:
+            stdout, stderr = "", ""
         return {
             "argv": argv,
             "cwd": str(cwd),
@@ -145,11 +157,46 @@ def run_command(
             "ok": False,
             "timed_out": True,
             "timeout_seconds": timeout_seconds,
+            "process_group_killed": killed,
             "started_at": started.replace(microsecond=0).isoformat(),
             "finished_at": iso_now(),
             "stdout": stdout,
             "stderr": stderr,
         }
+
+
+def kill_process_group(process: subprocess.Popen[str] | None, grace_seconds: float = 2.0) -> bool:
+    if process is None or process.poll() is not None:
+        return False
+    killed = False
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+        killed = True
+    except ProcessLookupError:
+        return killed
+    except OSError:
+        try:
+            process.terminate()
+            killed = True
+        except OSError:
+            return killed
+    deadline = time.monotonic() + grace_seconds
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            return killed
+        time.sleep(0.05)
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+        killed = True
+    except ProcessLookupError:
+        return killed
+    except OSError:
+        try:
+            process.kill()
+            killed = True
+        except OSError:
+            pass
+    return killed
 
 
 def command_receipt(result: dict[str, Any]) -> dict[str, Any]:
@@ -162,6 +209,7 @@ def command_receipt(result: dict[str, Any]) -> dict[str, Any]:
         "ok": result.get("ok"),
         "timed_out": result.get("timed_out"),
         "timeout_seconds": result.get("timeout_seconds"),
+        "process_group_killed": result.get("process_group_killed"),
         "stdout_length": len(stdout),
         "stdout_sha256": sha256_text(stdout) if stdout else None,
         "stderr_length": len(stderr),
@@ -535,6 +583,7 @@ def build_requirements(direction: str) -> dict[str, Any]:
             "实现方必须先读 .redcap/evidence/e2e/requirements.json",
             "实现方必须记录知识检索结果；无相关条目时写 no_relevant_entry_reason，不能留空",
             "Loom 角色不能共用 session_id 或共享一份伪造角色证据",
+            "默认优先选择无外部依赖、无需联网安装的实现和验证方案；除非需求明确要求，不得把 Vite、Playwright 或其他重型依赖作为默认方案",
             "实现方必须生成 architecture.md 和 test-results.json",
             "实现方必须在完成前运行验证命令并记录结果",
             "E2E 运行器必须独立执行安装包内 .redcap/runtime/prism/bin/prism check，失败即不能通过",
@@ -554,11 +603,15 @@ def build_acceptance(direction: str) -> dict[str, Any]:
             ".redcap/evidence/e2e 中存在实现日志、测试结果、文件清单和验收摘要",
             ".redcap/evidence/e2e/loom-role-session-manifest.json 证明五个 Loom 角色来自独立 Codex CLI 会话",
             ".redcap/evidence/e2e/loom-role-session-manifest-pre-review.json 供 reviewer 审核上游四个角色；最终五角色清单由运行器在 reviewer 退出后生成",
+            "默认实现不得依赖联网安装或重型测试栈；如果确需外部依赖，必须在 risk-register.json 中写明理由和降级方案",
             ".redcap/evidence/e2e/self-purification-candidates.json 和 persona-distillation-decision.json 证明自我净化与人格边界已触发",
             ".redcap/evidence/e2e/package-prism-check.json 证明安装包内棱镜自检通过",
+            ".redcap/evidence/e2e/final-runner-test-results.json 证明运行器独立重跑了项目验证",
+            ".redcap/evidence/e2e/final-evidence-bundle.json 证明最终证据带有可检查哈希和摘要",
+            ".redcap/evidence/e2e/final-prism-review.json 证明最终完成声明经过运行器侧棱镜复核",
             "如果实现方遇到阻塞，必须写 blocked-package.json，而不是写 completion-marker.json"
         ],
-        "completion_marker_rule": "只有客观证据全部通过时，才允许写 .redcap/evidence/e2e/completion-marker.json。"
+        "completion_marker_rule": "只有 E2E 运行器在 reviewer 退出后确认客观证据全部通过时，才允许写 .redcap/evidence/e2e/completion-marker.json。"
     }
 
 
@@ -581,7 +634,8 @@ def build_implementer_prompt(project: pathlib.Path, direction: str) -> str:
     3. 只处理自己角色范围内的任务，并把证据写入 .redcap/evidence/e2e/role-artifacts/<role>.json。
     4. 如果因为权限、网络、账号、环境缺失无法完成，写 .redcap/evidence/e2e/blocked-package.json，并说明阻塞条件。
 
-    最终只有 reviewer 角色在确认真实交付、验证、Loom 会话、棱镜协助、自我净化、人格边界和失败回流都完成时，才允许写 completion-marker.json。
+    reviewer 角色只负责评审和记录问题，不能写 completion-marker.json 或 iteration-verdict.json。
+    最终完成标记由 E2E 运行器在 reviewer 退出后，基于最终角色清单、测试回执、证据哈希和棱镜复核独立写入。
     """).strip() + "\n"
 
 
@@ -591,6 +645,77 @@ def role_artifact_path(evidence: pathlib.Path, role: str) -> pathlib.Path:
 
 def role_workspace_path(evidence: pathlib.Path, role: str) -> pathlib.Path:
     return evidence / "role-workspaces" / role
+
+
+def role_gate_clearance_path(evidence: pathlib.Path, role: str) -> pathlib.Path:
+    return evidence / "role-gate-clearance" / f"{role}.json"
+
+
+def build_role_gate_clearance(project: pathlib.Path, evidence: pathlib.Path, role: str, direction: str) -> dict[str, Any]:
+    inputs, outputs = role_handoff(role)
+    return {
+        "schema_id": "redcap-e2e-role-gate-clearance",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "role": role,
+        "decision": "cleared_for_external_project_role_execution",
+        "scope": "external_project_using_project_local_redcap",
+        "project": str(project),
+        "direction_sha256": sha256_text(direction),
+        "reason": (
+            "本角色是在外部项目中使用已安装的 .redcap 运行时交付项目产物，"
+            "不是修改 RedCap 源仓库本体。角色不得自行运行完整棱镜或 RedCap 源开发门禁；"
+            "E2E 运行器负责安装包棱镜自检、最终棱镜复核、证据打包和 completion-marker 裁决。"
+        ),
+        "role_must_not_run_commands": [
+            "runtime/bin/redcap gate",
+            ".redcap/runtime/bin/redcap gate",
+            "prism-dispatch",
+            "prism session-init",
+            "prism merge",
+        ],
+        "role_must_read": [
+            "requirements.json",
+            "acceptance-criteria.json",
+            *inputs,
+        ],
+        "role_must_write": outputs,
+        "runner_owned_checks": [
+            "package-prism-check.json",
+            "final-runner-test-results.json",
+            "final-evidence-bundle.json",
+            "final-prism-review.json",
+            "completion-marker.json",
+        ],
+        "escalation_path": (
+            "如果本角色发现必须由棱镜协助的问题，写入 role-artifacts/<role>.json 的 prism_assistance_request，"
+            "不要自行调用 provider 或阻塞为 gate_required。"
+        ),
+    }
+
+
+def write_role_gate_clearance(evidence: pathlib.Path, project: pathlib.Path, role: str, direction: str) -> dict[str, Any]:
+    payload = build_role_gate_clearance(project, evidence, role, direction)
+    write_json(role_gate_clearance_path(evidence, role), payload)
+    return payload
+
+
+def write_role_gate_clearance_summary(evidence: pathlib.Path, clearances: dict[str, dict[str, Any]]) -> None:
+    write_json(evidence / "role-gate-clearance-summary.json", {
+        "schema_id": "redcap-e2e-role-gate-clearance-summary",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "roles": [
+            {
+                "role": role,
+                "decision": payload.get("decision"),
+                "path": f"role-gate-clearance/{role}.json",
+            }
+            for role, payload in sorted(clearances.items())
+        ],
+        "runner_owns_full_prism": True,
+        "role_gate_self_block_forbidden": True,
+    })
 
 
 def role_handoff(role: str) -> tuple[list[str], list[str]]:
@@ -629,8 +754,6 @@ def role_handoff(role: str) -> tuple[list[str], list[str]]:
             "self-purification-candidates.json",
             "persona-distillation-decision.json",
             "failure-backlog.json",
-            "iteration-verdict.json",
-            "completion-marker.json",
             "role-artifacts/reviewer.json",
         ],
     )
@@ -647,6 +770,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
     项目根目录：{project}
     证据目录：{evidence}
     角色工作目录：{role_workspace_path(evidence, role)}
+    角色门禁协调文件：{role_gate_clearance_path(evidence, role)}
     需求方向：{direction}
 
     上游输入：
@@ -659,7 +783,12 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
     - 只修改外部项目，不要修改 RedCap 源仓库。
     - 本角色的结构化证据必须写入 {role_artifact_path(evidence, role)}。
     - role artifact 至少包含 schema_id、role、status、handoff_inputs、handoff_outputs、evidence_files、notes。
+    - 必须先读取角色门禁协调文件，并把它作为本角色的门禁依据。
+    - 本角色是在外部项目中使用 .redcap，不是在修改 RedCap 源仓库；不要运行 runtime/bin/redcap gate 或 .redcap/runtime/bin/redcap gate。
     - 如果缺少上游输入，请写 blocked-package.json 并说明阻塞，不要伪造完成。
+    - 如果项目根目录已经存在 blocked-package.json，必须先读取它；除非你就是正在生成该阻塞的角色，否则要产出本角色的阻塞证据并快速停止。
+    - 本角色不得运行 prism-dispatch、prism session-init、prism merge 或完整 provider 评审；需要棱镜协助时，把请求和理由写入 role-artifacts/<role>.json，由 E2E 运行器统一调度。
+    - 本角色不得写 .redcap/evidence/e2e/prism/<role>/ 或 .redcap/evidence/e2e/prism/<role>_completion/ 目录；这些目录会被视为角色越权。
     - 写完本角色要求的全部文件后，立即用一句中文说明已交付并停止，不要继续追加无关分析。
     """
     role_specific = {
@@ -674,20 +803,22 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         你的任务：
         1. 阅读产品经理交付和验收标准。
         2. 写 architecture.md，说明结构、技术选型、运行方式、测试方式、风险和回滚。
-        3. 写 risk-register.json 和 role-artifacts/architect.json。
+        3. 默认选择无外部依赖、无需联网安装、可直接本地验证的方案；除非需求明确要求，不要引入 Vite、Playwright、数据库或服务端框架。
+        4. 写 risk-register.json 和 role-artifacts/architect.json。
         """,
         "developer": """
         你的任务：
         1. 按 architecture.md 实现一个可运行的本地项目。
-        2. 优先选择简单、可本地验证的技术栈。
+        2. 优先选择简单、无外部依赖、无需联网安装、可本地验证的技术栈；如果 architecture.md 要求重型依赖但需求并不需要，你应收窄为纯 HTML/CSS/JS + Node 内置模块验证，并在 implementation-log.json 说明原因。
         3. 写 implementation-log.json 和 role-artifacts/developer.json。
         4. 如果提供验证脚本，机器验证输出必须写 verification-results.json 或其他非角色文件，不能写或覆盖 test-results.json；test-results.json 只属于 tester 角色。
         """,
         "tester": """
         你的任务：
-        1. 运行项目验证命令，至少包含一个正向验证和一个负向/静态探针。
-        2. 写 test-results.json、negative-probes.json 和 role-artifacts/tester.json；test-results.json 必须标记 role="tester"。
-        3. 如果测试失败，必须把失败写清楚，不要替开发者修复。
+        1. 如果项目根目录存在 blocked-package.json，立即读取它，写 test-results.json、negative-probes.json 和 role-artifacts/tester.json，标记 status="blocked_by_upstream"，passed=false，然后停止；不要等待、不要修复。
+        2. 如果没有上游阻塞，运行项目验证命令，至少包含一个正向验证和一个负向/静态探针。
+        3. 写 test-results.json、negative-probes.json 和 role-artifacts/tester.json；test-results.json 必须标记 role="tester"。
+        4. 如果测试失败，必须把失败写清楚，不要替开发者修复。
         """,
         "reviewer": """
         你的任务：
@@ -697,9 +828,8 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         3. 写 prism-assisted-review.json；本轮必须记录 used=true，至少说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决。
         4. 写 self-purification-candidates.json，包含候选或 no_candidate_reason，并给出 decisions。decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；需要后续沉淀但本轮不晋升时用 defer_with_owner。
         5. 写 persona-distillation-decision.json；privacy_class 必须是 cap-private，public_write=false，private_body_written=false，禁止写私有人格正文。
-        6. 写 failure-backlog.json。若有开放问题，不得写 completion-marker.json。
-        7. 写 iteration-verdict.json，evidence_checked 必须列出全部关键证据文件。
-        8. 只有无开放问题、测试通过、证据齐全时才写 completion-marker.json。
+        6. 写 failure-backlog.json。若有开放问题，必须列出根因、影响和建议修复。
+        7. 禁止写 completion-marker.json 或 iteration-verdict.json；这两个文件只能由 E2E 运行器在你退出后独立生成。
         """,
     }[role]
     return textwrap.dedent(common + "\n" + role_specific).strip() + "\n"
@@ -743,12 +873,26 @@ def extract_role_sessions(project: pathlib.Path) -> dict[str, list[dict[str, Any
 
 
 def provider_state_dirs_for_role(role: str) -> list[pathlib.Path]:
-    if role != "reviewer":
-        return []
     kimi_state = pathlib.Path.home() / ".kimi-code"
     if not kimi_state.exists():
         return []
     return [kimi_state]
+
+
+def role_provider_boundary_failures(evidence: pathlib.Path, role: str) -> list[str]:
+    failures: list[str] = []
+    prism_root = evidence / "prism"
+    for forbidden in [prism_root / role, prism_root / f"{role}_completion"]:
+        if forbidden.exists():
+            failures.append(f"{role} 角色越权运行完整棱镜评审：{forbidden.relative_to(evidence).as_posix()}")
+    artifact = load_optional_json(role_artifact_path(evidence, role))
+    if artifact is not None:
+        files = artifact.get("evidence_files")
+        if isinstance(files, list):
+            leaked = [str(item) for item in files if f"prism/{role}" in str(item)]
+            if leaked:
+                failures.append(f"{role} 角色证据声明了越权棱镜产物：{leaked}")
+    return failures
 
 
 def build_role_session_manifest(
@@ -815,11 +959,13 @@ def run_loom_role_pipeline(
     timeout_seconds: int,
 ) -> dict[str, Any]:
     role_results: dict[str, dict[str, Any]] = {}
+    role_clearances: dict[str, dict[str, Any]] = {}
     for dirname in ["role-prompts", "role-messages", "role-runs", "role-workspaces", "role-artifacts"]:
         (evidence / dirname).mkdir(parents=True, exist_ok=True)
-    role_timeout = max(240, min(timeout_seconds, 900))
+    role_timeout = max(240, min(timeout_seconds, 600))
     for role in LOOM_EXECUTION_ROLES:
         role_workspace_path(evidence, role).mkdir(parents=True, exist_ok=True)
+        role_clearances[role] = write_role_gate_clearance(evidence, project, role, direction)
         prompt = build_role_prompt(project, evidence, role, direction)
         prompt_path = evidence / "role-prompts" / f"{role}.md"
         message_path = evidence / "role-messages" / f"{role}.txt"
@@ -843,13 +989,22 @@ def run_loom_role_pipeline(
         ])
         result = run_command(argv, cwd=project, timeout_seconds=role_timeout)
         receipt = command_receipt(result)
+        boundary_failures = role_provider_boundary_failures(evidence, role)
         receipt.update({
             "schema_id": "redcap-e2e-loom-role-run",
             "role": role,
             "prompt_path": str(prompt_path),
             "last_message": str(message_path),
             "expected_artifact": str(role_artifact_path(evidence, role)),
+            "expected_artifact_exists": role_artifact_path(evidence, role).exists(),
+            "last_message_exists": message_path.exists(),
+            "last_message_size": message_path.stat().st_size if message_path.exists() else 0,
+            "project_deliverables_after_role": project_deliverable_manifest(project, limit=60),
+            "role_provider_boundary_failures": boundary_failures,
         })
+        if boundary_failures:
+            receipt["ok"] = False
+            receipt["failures"] = [*receipt.get("failures", []), *boundary_failures]
         write_json(evidence / "role-runs" / f"{role}.json", receipt)
         role_results[role] = receipt
         append_jsonl(evidence / "workflow-events.jsonl", {
@@ -858,11 +1013,12 @@ def run_loom_role_pipeline(
             "recorded_at": iso_now(),
             "ok": receipt["ok"],
         })
-        if not result["ok"]:
+        if not receipt["ok"]:
             break
         if role == "tester":
             pre_review_manifest = build_role_session_manifest(project, evidence, role_results, include_pending=True)
             write_json(evidence / "loom-role-session-manifest-pre-review.json", pre_review_manifest)
+    write_role_gate_clearance_summary(evidence, role_clearances)
     manifest = build_role_session_manifest(project, evidence, role_results)
     write_json(evidence / "loom-role-session-manifest.json", manifest)
     ok = all(role_results.get(role, {}).get("ok") is True for role in LOOM_EXECUTION_ROLES)
@@ -895,6 +1051,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
     if project.exists():
         shutil.rmtree(project)
     project.mkdir(parents=True)
+    write_external_project_agents(project)
     evidence = project / ".redcap" / "evidence" / "e2e"
     evidence.mkdir(parents=True, exist_ok=True)
     install_result = package_and_init(project, evidence)
@@ -966,6 +1123,33 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         ],
         "session_loss_alarms": []
     })
+    write_json(evidence / "role-gate-clearance-template.json", {
+        "schema_id": "redcap-e2e-role-gate-clearance",
+        "producer": "e2e-runner",
+        "decision": "cleared_for_external_project_role_execution",
+        "scope": "external_project_using_project_local_redcap",
+        "role_must_not_run_commands": [
+            "runtime/bin/redcap gate",
+            ".redcap/runtime/bin/redcap gate",
+            "prism-dispatch",
+            "prism session-init",
+            "prism merge",
+        ],
+        "runner_owned_checks": [
+            "package-prism-check.json",
+            "final-runner-test-results.json",
+            "final-evidence-bundle.json",
+            "final-prism-review.json",
+            "completion-marker.json",
+        ],
+    })
+    write_json(evidence / "role-gate-clearance-summary-template.json", {
+        "schema_id": "redcap-e2e-role-gate-clearance-summary",
+        "producer": "e2e-runner",
+        "roles": [],
+        "runner_owns_full_prism": True,
+        "role_gate_self_block_forbidden": True,
+    })
     write_json(evidence / "prism-assisted-review-template.json", {
         "schema_id": "redcap-e2e-prism-assisted-review",
         "used": True,
@@ -1018,6 +1202,28 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "required_marker": "PRISM_CHECK_OK",
         "failure_policy": "blocking"
     })
+    write_json(evidence / "final-runner-test-results-template.json", {
+        "schema_id": "redcap-e2e-final-runner-test-results",
+        "producer": "e2e-runner",
+        "detected_command": "<required>",
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
+    write_json(evidence / "final-evidence-bundle-template.json", {
+        "schema_id": "redcap-e2e-final-evidence-bundle",
+        "producer": "e2e-runner",
+        "files": [],
+        "hash_required": True,
+        "purpose": "供最终棱镜复核独立检查，不依赖 reviewer 自证"
+    })
+    write_json(evidence / "final-prism-review-template.json", {
+        "schema_id": "redcap-e2e-final-prism-review",
+        "producer": "e2e-runner",
+        "providers_required": ["kimi", "claude-code"],
+        "strictest_verdict": "<pass|concern|block>",
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
     write_json(evidence / "failure-backlog-template.json", {
         "schema_id": "redcap-e2e-failure-backlog",
         "open_items": [],
@@ -1026,10 +1232,18 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
     })
     write_json(evidence / "iteration-verdict-template.json", {
         "schema_id": "redcap-e2e-iteration-verdict",
+        "producer": "e2e-runner",
         "ready_for_engineering_use": False,
         "status": "pass|fail|blocked",
         "remaining_issues": [],
         "evidence_checked": sorted(REQUIRED_EVIDENCE_CHECKS)
+    })
+    write_json(evidence / "completion-marker-template.json", {
+        "schema_id": "redcap-e2e-completion-marker",
+        "producer": "e2e-runner",
+        "ready_for_engineering_use": True,
+        "requires_final_prism_pass": True,
+        "requires_no_open_failure_backlog": True
     })
     (evidence / "implementer-prompt.md").write_text(prompt, encoding="utf-8")
     write_json(evidence / "review-verdict-template.json", {
@@ -1108,6 +1322,433 @@ def load_optional_json(path: pathlib.Path) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
+def read_text_excerpt(path: pathlib.Path, max_chars: int = 3000) -> dict[str, Any]:
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        return {"readable": False, "error": str(exc)}
+    if len(text) <= max_chars:
+        return {"readable": True, "truncated": False, "text": text}
+    half = max_chars // 2
+    return {
+        "readable": True,
+        "truncated": True,
+        "head": text[:half],
+        "tail": text[-half:],
+        "length": len(text),
+    }
+
+
+def project_deliverable_manifest(project: pathlib.Path, limit: int = 80) -> dict[str, Any]:
+    files = [
+        item
+        for item in filesystem_manifest(project)
+        if not item["path"].startswith(".redcap/") and not item["path"].startswith(".codex/")
+    ]
+    return {
+        "count": len(files),
+        "truncated": len(files) > limit,
+        "files": files[:limit],
+    }
+
+
+def write_external_project_agents(project: pathlib.Path) -> None:
+    project.joinpath("AGENTS.md").write_text(textwrap.dedent("""
+    # RedCap E2E 外部项目说明
+
+    本目录是 RedCap E2E（端到端验收）临时外部项目，不是 RedCap 源仓库。
+
+    Loom（角色化工程工作流）角色在这里的职责是使用项目级 `.redcap/` 运行时完成项目交付物。
+    角色不得把本项目误判为 RedCap 框架本体开发，也不得自行运行 RedCap 源开发门禁。
+
+    每个角色必须读取自己的门禁协调凭证。该文件由 E2E 运行器生成，是本角色的门禁依据。
+
+    角色不得运行以下命令：
+    - `runtime/bin/redcap gate`
+    - `.redcap/runtime/bin/redcap gate`
+    - `prism-dispatch`
+    - `prism session-init`
+    - `prism merge`
+
+    如果角色需要棱镜（异构 AI 评审助手）协助，只能把请求写入自己的角色证据，
+    由 E2E 运行器统一调度。
+    """).strip() + "\n", encoding="utf-8")
+
+
+def final_evidence_paths(evidence: pathlib.Path) -> list[pathlib.Path]:
+    fixed = [
+        "requirements.json",
+        "acceptance-criteria.json",
+        "architecture.md",
+        "risk-register.json",
+        "role-gate-clearance-summary.json",
+        "implementation-log.json",
+        "review-verdict.json",
+        "prism-assisted-review.json",
+        "knowledge-retrieval-evidence.json",
+        "self-purification-candidates.json",
+        "persona-distillation-decision.json",
+        "test-results.json",
+        "negative-probes.json",
+        "package-prism-check.json",
+        "final-runner-test-results.json",
+        "failure-backlog.json",
+        "iteration-verdict.json",
+        "loom-role-session-manifest-pre-review.json",
+        "loom-role-session-manifest.json",
+        "hook-events-summary.json",
+        "codex-run.json",
+        "filesystem-after.json",
+    ]
+    paths = [evidence / rel for rel in fixed]
+    for pattern in ["role-gate-clearance/*.json", "role-artifacts/*.json", "role-runs/*.json", "role-messages/*.txt"]:
+        paths.extend(sorted(evidence.glob(pattern)))
+    seen: set[pathlib.Path] = set()
+    unique: list[pathlib.Path] = []
+    for path in paths:
+        resolved = path.resolve()
+        if resolved not in seen:
+            unique.append(path)
+            seen.add(resolved)
+    return unique
+
+
+def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, direction: str) -> dict[str, Any]:
+    files: list[dict[str, Any]] = []
+    for path in final_evidence_paths(evidence):
+        rel = path.relative_to(evidence).as_posix()
+        record: dict[str, Any] = {
+            "path": rel,
+            "exists": path.exists(),
+        }
+        if path.exists() and path.is_file():
+            record.update({
+                "size": path.stat().st_size,
+                "sha256": sha256_file(path),
+                "excerpt": read_text_excerpt(path),
+            })
+        files.append(record)
+    bundle = {
+        "schema_id": "redcap-e2e-final-evidence-bundle",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "project": str(project),
+        "direction_sha256": sha256_text(direction),
+        "purpose": "供最终棱镜复核独立检查，避免 reviewer 自证完成",
+        "deliverables": project_deliverable_manifest(project),
+        "files": files,
+    }
+    bundle["bundle_sha256"] = sha256_text(json.dumps(bundle, ensure_ascii=False, sort_keys=True))
+    return bundle
+
+
+def detect_validation_command(project: pathlib.Path) -> tuple[list[str] | None, str]:
+    package_json = load_optional_json(project / "package.json")
+    scripts = package_json.get("scripts") if isinstance(package_json, dict) else None
+    if isinstance(scripts, dict) and isinstance(scripts.get("test"), str) and scripts["test"].strip():
+        return ["npm", "test"], "package.json scripts.test"
+    validate_script = project / "tests" / "validate.mjs"
+    if validate_script.exists():
+        return ["node", "tests/validate.mjs"], "tests/validate.mjs"
+    return None, "没有发现 package.json scripts.test 或 tests/validate.mjs"
+
+
+def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
+    argv, source = detect_validation_command(project)
+    if argv is None:
+        return {
+            "schema_id": "redcap-e2e-final-runner-test-results",
+            "producer": "e2e-runner",
+            "ok": False,
+            "detected_command": None,
+            "command_source": source,
+            "failures": ["运行器无法发现可执行验证命令"],
+        }
+    result = run_command(argv, cwd=project, timeout_seconds=240)
+    receipt = command_receipt(result)
+    receipt.update({
+        "schema_id": "redcap-e2e-final-runner-test-results",
+        "producer": "e2e-runner",
+        "detected_command": argv,
+        "command_source": source,
+        "failures": [] if result["ok"] else ["运行器重跑验证命令失败"],
+    })
+    return receipt
+
+
+def backlog_open_items(evidence: pathlib.Path) -> list[Any]:
+    backlog = load_optional_json(evidence / "failure-backlog.json")
+    if backlog is None:
+        return [{"id": "RUNNER-FINAL-MISSING-BACKLOG", "summary": "缺少 failure-backlog.json"}]
+    open_items = backlog.get("open_items")
+    if not isinstance(open_items, list):
+        return [{"id": "RUNNER-FINAL-INVALID-BACKLOG", "summary": "failure-backlog.open_items 不是列表"}]
+    return open_items
+
+
+def write_failure_backlog_with_runner_items(evidence: pathlib.Path, failures: list[str]) -> None:
+    backlog = load_optional_json(evidence / "failure-backlog.json") or {}
+    open_items = backlog.get("open_items")
+    if not isinstance(open_items, list):
+        open_items = []
+    existing_ids = {str(item.get("id")) for item in open_items if isinstance(item, dict)}
+    for index, failure in enumerate(failures, start=1):
+        item_id = f"RUNNER-FINAL-{index:03d}"
+        if item_id in existing_ids:
+            continue
+        open_items.append({
+            "id": item_id,
+            "severity": "blocking",
+            "summary": failure,
+            "owner": "e2e-runner",
+            "next_step": "修复后重新执行完整 E2E",
+        })
+    backlog.update({
+        "schema_id": "redcap-e2e-failure-backlog",
+        "open_items": open_items,
+        "closed_items": backlog.get("closed_items") if isinstance(backlog.get("closed_items"), list) else [],
+        "next_round_required": bool(open_items),
+    })
+    write_json(evidence / "failure-backlog.json", backlog)
+
+
+def write_final_iteration_verdict(evidence: pathlib.Path, ok: bool, failures: list[str]) -> None:
+    write_json(evidence / "iteration-verdict.json", {
+        "schema_id": "redcap-e2e-iteration-verdict",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "status": "pass" if ok else "fail",
+        "ready_for_engineering_use": ok,
+        "remaining_issues": [] if ok else failures,
+        "evidence_checked": sorted(REQUIRED_EVIDENCE_CHECKS),
+    })
+
+
+def write_completion_marker(evidence: pathlib.Path, project: pathlib.Path, bundle: dict[str, Any], final_prism: dict[str, Any]) -> None:
+    write_json(evidence / "completion-marker.json", {
+        "schema_id": "redcap-e2e-completion-marker",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "project": str(project),
+        "ready_for_engineering_use": True,
+        "completion_scope": "single-e2e-run",
+        "final_evidence_bundle_sha256": bundle.get("bundle_sha256"),
+        "final_prism_strictest_verdict": final_prism.get("strictest_verdict"),
+        "final_prism_review": "final-prism-review.json",
+        "no_open_failure_backlog": True,
+    })
+
+
+def write_runner_prism_assistance(evidence: pathlib.Path, final_prism: dict[str, Any]) -> None:
+    existing = load_optional_json(evidence / "prism-assisted-review.json") or {}
+    final_reviews = final_prism.get("reviews") if isinstance(final_prism.get("reviews"), list) else []
+    existing_reviews = existing.get("reviews") if isinstance(existing.get("reviews"), list) else []
+    merged_reviews = existing_reviews or final_reviews
+    existing.update({
+        "schema_id": "redcap-e2e-prism-assisted-review",
+        "used": bool(merged_reviews),
+        "reviews": merged_reviews,
+        "skip_reason": None if merged_reviews else "最终棱镜复核未运行或未返回有效评审",
+        "cap_decision": "accepted" if final_prism.get("ok") is True else "blocked",
+        "runner_final_review": {
+            "path": "final-prism-review.json",
+            "ok": final_prism.get("ok") is True,
+            "strictest_verdict": final_prism.get("strictest_verdict"),
+            "failures": final_prism.get("failures", []),
+        },
+    })
+    write_json(evidence / "prism-assisted-review.json", existing)
+
+
+def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "task": "Review whether this RedCap E2E run may write its completion marker.",
+        "user_intent": "Norven wants RedCap to prove it can drive a real project through role-separated Loom workflow, hooks, evidence, self-purification, persona boundary, and failure feedback before claiming production usefulness.",
+        "main_claim": "The E2E runner may write completion-marker.json because all role, hook, test, evidence, and failure-loop requirements passed after reviewer exit.",
+        "changed_reality": [
+            "An external project was created outside the RedCap source workspace.",
+            "Five Loom roles ran as independent Codex CLI sessions with project-level Hook evidence.",
+            "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
+        ],
+        "evidence": [
+            {
+                "kind": "final-evidence-bundle",
+                "reference": "final-evidence-bundle.json",
+                "summary": bundle,
+            }
+        ],
+        "review_mode": "completion_review",
+        "risk_level": "high",
+        "requested_providers": ["kimi", "claude-code"],
+        "known_constraints": [
+            "Reviewer must not self-certify completion.",
+            "Open failure-backlog items block completion.",
+            "Completion marker scope is only this E2E run, not permanent RedCap full revival.",
+        ],
+    }
+
+
+def run_final_prism_review(project: pathlib.Path, evidence: pathlib.Path, direction: str, bundle: dict[str, Any]) -> dict[str, Any]:
+    package_prism = project / ".redcap" / "runtime" / "prism" / "bin" / "prism"
+    package_dispatch = project / ".redcap" / "runtime" / "prism" / "bin" / "prism-dispatch"
+    run_dir = evidence / "final-prism-review"
+    if run_dir.exists():
+        shutil.rmtree(run_dir)
+    run_dir.mkdir(parents=True, exist_ok=True)
+    request_path = run_dir / "request.json"
+    request_payload = final_prism_request(direction, bundle)
+    write_json(request_path, request_payload)
+    if not package_prism.exists() or not package_dispatch.exists():
+        summary = {
+            "schema_id": "redcap-e2e-final-prism-review",
+            "producer": "e2e-runner",
+            "ok": False,
+            "run_dir": str(run_dir),
+            "failures": ["安装包内缺少 prism 或 prism-dispatch"],
+        }
+        write_json(evidence / "final-prism-review.json", summary)
+        return summary
+    init = run_command([str(package_prism), "session-init", "--task-id", "complete-revival-e2e-final-review", "--run-dir", str(run_dir)], cwd=project, timeout_seconds=30)
+    manifest = run_dir / "session.json"
+    dispatches: dict[str, Any] = {}
+    review_paths: list[pathlib.Path] = []
+    reviews: list[dict[str, Any]] = []
+    failures: list[str] = []
+    if not init["ok"]:
+        failures.append("最终棱镜会话初始化失败")
+    else:
+        for provider in ["kimi", "claude-code"]:
+            review_out = run_dir / f"{provider}.review.json"
+            raw_out = run_dir / f"{provider}.raw.json"
+            dispatch = run_command([
+                str(package_dispatch),
+                "--provider",
+                provider,
+                "--manifest",
+                str(manifest),
+                "--request",
+                str(request_path),
+                "--review-out",
+                str(review_out),
+                "--raw-out",
+                str(raw_out),
+                "--timeout-seconds",
+                "240",
+                "--total-timeout-seconds",
+                "300",
+                "--task-total-timeout-seconds",
+                "720",
+                "--max-retries",
+                "0",
+            ], cwd=project, timeout_seconds=360)
+            dispatches[provider] = command_receipt(dispatch)
+            review = load_optional_json(review_out)
+            if dispatch["ok"] and review is not None:
+                review_paths.append(review_out)
+                reviews.append(review)
+            else:
+                failures.append(f"{provider} 最终棱镜复核未返回有效 review")
+    merge_payload: dict[str, Any] | None = None
+    if len(review_paths) == 2:
+        merge_path = run_dir / "merge.json"
+        merge = run_command([str(package_prism), "merge", str(review_paths[0]), str(review_paths[1]), "--out", str(merge_path)], cwd=project, timeout_seconds=30)
+        if merge["ok"]:
+            merge_payload = load_optional_json(merge_path)
+            if merge_payload is None:
+                failures.append("最终棱镜 merge.json 无法读取")
+        else:
+            failures.append("最终棱镜合并失败")
+        dispatches["merge"] = command_receipt(merge)
+    else:
+        failures.append("最终棱镜复核必须同时取得 Kimi 和 Claude Code 两个评审结果")
+    strictest = merge_payload.get("strictest_verdict") if isinstance(merge_payload, dict) else None
+    if strictest != "pass":
+        failures.append(f"最终棱镜 strictest_verdict 不是 pass：{strictest}")
+    summary = {
+        "schema_id": "redcap-e2e-final-prism-review",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "ok": not failures,
+        "run_dir": str(run_dir),
+        "request": str(request_path),
+        "providers_required": ["kimi", "claude-code"],
+        "reviews": reviews,
+        "dispatches": dispatches,
+        "merge": merge_payload,
+        "strictest_verdict": strictest,
+        "failures": failures,
+    }
+    write_json(evidence / "final-prism-review.json", summary)
+    return summary
+
+
+def finalize_e2e_acceptance(
+    project: pathlib.Path,
+    evidence: pathlib.Path,
+    direction: str,
+    role_result: dict[str, Any],
+    package_prism: dict[str, Any],
+    missing_hooks: list[str],
+) -> dict[str, Any]:
+    marker = evidence / "completion-marker.json"
+    if marker.exists():
+        marker.unlink()
+        append_jsonl(evidence / "workflow-events.jsonl", {
+            "event": "runner_removed_untrusted_completion_marker",
+            "recorded_at": iso_now(),
+        })
+    runner_tests = run_final_runner_tests(project)
+    write_json(evidence / "final-runner-test-results.json", runner_tests)
+    bundle = build_final_evidence_bundle(project, evidence, direction)
+    write_json(evidence / "final-evidence-bundle.json", bundle)
+    failures: list[str] = []
+    if role_result.get("ok") is not True:
+        failures.append("Loom 角色管线未通过")
+    if missing_hooks:
+        failures.append(f"缺少项目级 Hook 事件：{missing_hooks}")
+    if package_prism.get("ok") is not True:
+        failures.append("安装包内棱镜自检未通过")
+    if runner_tests.get("ok") is not True:
+        failures.append("运行器独立重跑项目验证未通过")
+    backlog_path = evidence / "failure-backlog.json"
+    if backlog_path.exists() or role_result.get("ok") is True:
+        open_items = backlog_open_items(evidence)
+        if open_items:
+            failures.append(f"failure-backlog 仍有开放项：{open_items}")
+    if failures:
+        final_prism = {
+            "schema_id": "redcap-e2e-final-prism-review",
+            "producer": "e2e-runner",
+            "ok": False,
+            "skipped": True,
+            "skip_reason": "前置客观证据未通过，跳过最终 provider 复核",
+            "strictest_verdict": None,
+            "failures": failures,
+        }
+        write_json(evidence / "final-prism-review.json", final_prism)
+    else:
+        final_prism = run_final_prism_review(project, evidence, direction, bundle)
+        write_runner_prism_assistance(evidence, final_prism)
+        if final_prism.get("ok") is not True:
+            failures.append(f"最终棱镜复核未通过：{final_prism.get('failures')}")
+    if failures:
+        if "final_prism" in locals():
+            write_runner_prism_assistance(evidence, final_prism)
+        write_failure_backlog_with_runner_items(evidence, failures)
+        write_final_iteration_verdict(evidence, False, failures)
+    else:
+        write_final_iteration_verdict(evidence, True, [])
+        write_completion_marker(evidence, project, bundle, final_prism)
+    return {
+        "schema_id": "redcap-e2e-finalization-result",
+        "ok": not failures,
+        "runner_tests_ok": runner_tests.get("ok") is True,
+        "final_prism_ok": final_prism.get("ok") is True,
+        "completion_marker_present": (evidence / "completion-marker.json").exists(),
+        "failures": failures,
+    }
+
+
 def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
     failures: list[str] = []
     for rel in MEANINGFUL_E2E_REQUIRED_FILES:
@@ -1129,6 +1770,22 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
                     failures.append(f"Loom 角色缺少 session_id：{role.get('role')}")
                 if role.get("context_state") == "degraded" and not role.get("alarm"):
                     failures.append(f"Loom 角色上下文降级但缺少 alarm：{role.get('role')}")
+    clearance_summary = load_optional_json(evidence / "role-gate-clearance-summary.json")
+    if clearance_summary is not None:
+        if clearance_summary.get("producer") != "e2e-runner":
+            failures.append("role-gate-clearance-summary 必须由 e2e-runner 生成")
+        roles = clearance_summary.get("roles")
+        if not isinstance(roles, list):
+            failures.append("role-gate-clearance-summary.roles 必须是列表")
+        else:
+            cleared_roles = {str(item.get("role")) for item in roles if isinstance(item, dict) and item.get("decision") == "cleared_for_external_project_role_execution"}
+            missing = sorted(set(LOOM_EXECUTION_ROLES) - cleared_roles)
+            if missing:
+                failures.append(f"role-gate-clearance-summary 缺少角色协调凭证：{missing}")
+        if clearance_summary.get("runner_owns_full_prism") is not True:
+            failures.append("role-gate-clearance-summary 必须声明 runner_owns_full_prism=true")
+        if clearance_summary.get("role_gate_self_block_forbidden") is not True:
+            failures.append("role-gate-clearance-summary 必须禁止角色自跑门禁后阻塞")
     prism_review = load_optional_json(evidence / "prism-assisted-review.json")
     if prism_review is not None:
         if prism_review.get("used") is True:
@@ -1170,6 +1827,33 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("package-prism-check 必须成功退出")
         if "PRISM_CHECK_OK" not in stdout_tail:
             failures.append("package-prism-check 必须包含 PRISM_CHECK_OK")
+    runner_tests = load_optional_json(evidence / "final-runner-test-results.json")
+    if runner_tests is not None and runner_tests.get("ok") is not True:
+        failures.append("final-runner-test-results 必须证明运行器独立验证通过")
+    final_bundle = load_optional_json(evidence / "final-evidence-bundle.json")
+    if final_bundle is not None:
+        files = final_bundle.get("files")
+        if not isinstance(files, list) or not files:
+            failures.append("final-evidence-bundle.files 必须非空")
+        else:
+            for item in files:
+                if not isinstance(item, dict):
+                    failures.append("final-evidence-bundle.files 条目必须是对象")
+                    continue
+                if item.get("exists") is True and not item.get("sha256"):
+                    failures.append(f"final-evidence-bundle 中存在缺少 sha256 的已存在文件：{item.get('path')}")
+    final_prism = load_optional_json(evidence / "final-prism-review.json")
+    if final_prism is not None:
+        if final_prism.get("ok") is not True:
+            failures.append("final-prism-review 必须通过")
+        if final_prism.get("strictest_verdict") != "pass":
+            failures.append("final-prism-review.strictest_verdict 必须是 pass")
+    completion_marker = load_optional_json(evidence / "completion-marker.json")
+    if completion_marker is not None:
+        if completion_marker.get("producer") != "e2e-runner":
+            failures.append("completion-marker 必须由 e2e-runner 生成，不能由 Loom 角色自证")
+        if completion_marker.get("ready_for_engineering_use") is not True:
+            failures.append("completion-marker.ready_for_engineering_use 必须为 true")
     backlog = load_optional_json(evidence / "failure-backlog.json")
     if backlog is not None:
         open_items = backlog.get("open_items")
@@ -1311,14 +1995,15 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
     write_json(evidence / "package-prism-check.json", command_receipt(package_prism))
     hook_events = parse_hook_events(project_hook_events_path(project))
     missing_hooks = [event for event in REQUIRED_HOOK_EVENTS if event not in hook_events]
-    meaningful = validate_meaningful_e2e_evidence(evidence)
-    write_json(evidence / "revival-followthrough-e2e-check.json", meaningful["followthrough"])
-    write_json(evidence / "meaningful-evidence-check.json", meaningful)
     write_json(evidence / "hook-events-summary.json", {
         "schema_id": "redcap-e2e-hook-events-summary",
         "events": hook_events,
         "missing_events": missing_hooks,
     })
+    finalization = finalize_e2e_acceptance(project, evidence, direction, result, package_prism, missing_hooks)
+    meaningful = validate_meaningful_e2e_evidence(evidence)
+    write_json(evidence / "revival-followthrough-e2e-check.json", meaningful["followthrough"])
+    write_json(evidence / "meaningful-evidence-check.json", meaningful)
     completion_marker = evidence / "completion-marker.json"
     summary = {
         "schema_id": "redcap-ai-e2e-run-result",
@@ -1328,6 +2013,7 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
         "codex_cli_ok": result["ok"],
         "package_prism_ok": package_prism["ok"],
         "hook_events_ok": not missing_hooks,
+        "finalization_ok": finalization["ok"],
         "meaningful_evidence_ok": meaningful["ok"],
         "ready_for_engineering_use": meaningful["ready_for_engineering_use"],
         "completion_marker_present": completion_marker.exists(),
@@ -1340,12 +2026,20 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
     if missing_hooks:
         summary["failures"].append(f"缺少项目级 hook 事件：{missing_hooks}")
     if not completion_marker.exists():
-        summary["failures"].append("实现方没有写入 completion-marker.json；这可能表示任务未完成或被阻塞")
+        summary["failures"].append("E2E 运行器没有写入 completion-marker.json；这表示最终验收未通过或被阻塞")
+    if not finalization["ok"]:
+        summary["failures"].append(f"运行器最终验收未通过：{finalization['failures']}")
     if not meaningful["ok"]:
         summary["failures"].append(f"有意义 E2E 证据不完整：{meaningful['failures']}")
     if not meaningful["ready_for_engineering_use"]:
         summary["failures"].append("iteration-verdict 未证明 ready_for_engineering_use=true")
-    summary["ok"] = summary["ok"] and package_prism["ok"] and meaningful["ok"] and meaningful["ready_for_engineering_use"]
+    summary["ok"] = (
+        summary["ok"]
+        and package_prism["ok"]
+        and finalization["ok"]
+        and meaningful["ok"]
+        and meaningful["ready_for_engineering_use"]
+    )
     summary = attach_source_workspace_guard(summary, guard_before)
     (evidence / "e2e-acceptance-summary.md").write_text(
         "# RedCap E2E 验收摘要\n\n"

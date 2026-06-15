@@ -28,7 +28,7 @@
     ]
   },
   "prompt_context": {
-    "source_prompt_excerpt": "我重新复述一次这次长任务的需求描述（我只复述这个任务的内容，但是这个任务的背景需要你自行回顾上下文来总结： 1. 上述你刚才的总结和复盘我没有意见，即便都认可，我要求你把这些都整理并提炼成todo任务，去执行落地，至少这些也算是首次E2E测试为我们带出来的宝贵结论了。 2. 我还需要补充一个loom的实现细节：因为要发挥hook的机制，所以执行loom的AI大概率只能是Codex CLI，但他可以允许调用棱镜来协助他完成一些复杂的工作",
+    "source_prompt_excerpt": "好的，我已经为你把kimi登陆成功了，请继续吧",
     "prompt_kind": "mixed",
     "authorized_scope": "implementation"
   },

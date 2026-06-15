@@ -32,26 +32,36 @@ REQUIRED_LOOM_ROLES = {
 REQUIRED_E2E_FILES = {
     "loom-role-session-manifest.json",
     "loom-role-session-manifest-pre-review.json",
+    "role-gate-clearance-summary.json",
     "prism-assisted-review.json",
     "knowledge-retrieval-evidence.json",
     "self-purification-candidates.json",
     "persona-distillation-decision.json",
     "test-results.json",
     "negative-probes.json",
+    "final-runner-test-results.json",
+    "final-evidence-bundle.json",
+    "final-prism-review.json",
     "failure-backlog.json",
     "iteration-verdict.json",
+    "completion-marker.json",
 }
 REQUIRED_EVIDENCE_CHECKS = {
     "loom-role-session-manifest.json",
     "loom-role-session-manifest-pre-review.json",
+    "role-gate-clearance-summary.json",
     "prism-assisted-review.json",
     "knowledge-retrieval-evidence.json",
     "self-purification-candidates.json",
     "persona-distillation-decision.json",
     "test-results.json",
     "negative-probes.json",
+    "final-runner-test-results.json",
+    "final-evidence-bundle.json",
+    "final-prism-review.json",
     "failure-backlog.json",
     "iteration-verdict.json",
+    "completion-marker.json",
 }
 SESSION_ID_RE = re.compile(
     r"^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{8,}|session_[a-zA-Z0-9_-]+)$"
@@ -219,6 +229,43 @@ def validate_role_manifest(evidence_root: pathlib.Path, failures: list[str]) -> 
         failures.append(f"Loom session_loss_alarms 必须为空才能通过：{alarms}")
 
 
+def validate_role_gate_clearance(evidence_root: pathlib.Path, failures: list[str]) -> None:
+    summary = load_optional_json(evidence_root / "role-gate-clearance-summary.json")
+    if summary is None:
+        failures.append("缺少或无法读取 role-gate-clearance-summary.json")
+        return
+    if summary.get("producer") != "e2e-runner":
+        failures.append("role-gate-clearance-summary.producer 必须是 e2e-runner")
+    if summary.get("runner_owns_full_prism") is not True:
+        failures.append("role-gate-clearance-summary.runner_owns_full_prism 必须为 true")
+    if summary.get("role_gate_self_block_forbidden") is not True:
+        failures.append("role-gate-clearance-summary.role_gate_self_block_forbidden 必须为 true")
+    roles = summary.get("roles")
+    if not isinstance(roles, list) or not roles:
+        failures.append("role-gate-clearance-summary.roles 必须是非空列表")
+        return
+    cleared_roles = {
+        str(item.get("role"))
+        for item in roles
+        if isinstance(item, dict) and item.get("decision") == "cleared_for_external_project_role_execution"
+    }
+    missing = sorted(REQUIRED_LOOM_ROLES - cleared_roles)
+    if missing:
+        failures.append(f"role-gate-clearance-summary 缺少角色协调凭证：{missing}")
+    for role in sorted(REQUIRED_LOOM_ROLES):
+        clearance = load_optional_json(evidence_root / "role-gate-clearance" / f"{role}.json")
+        if clearance is None:
+            failures.append(f"缺少或无法读取 role-gate-clearance/{role}.json")
+            continue
+        if clearance.get("producer") != "e2e-runner":
+            failures.append(f"{role}: 门禁协调凭证 producer 必须是 e2e-runner")
+        if clearance.get("decision") != "cleared_for_external_project_role_execution":
+            failures.append(f"{role}: 门禁协调凭证 decision 无效")
+        forbidden = clearance.get("role_must_not_run_commands")
+        if not isinstance(forbidden, list) or ".redcap/runtime/bin/redcap gate" not in forbidden:
+            failures.append(f"{role}: 门禁协调凭证必须禁止角色自跑 redcap gate")
+
+
 def validate_prism_assistance(evidence_root: pathlib.Path, failures: list[str]) -> None:
     payload = load_optional_json(evidence_root / "prism-assisted-review.json")
     if payload is None:
@@ -353,17 +400,80 @@ def validate_package_prism(evidence_root: pathlib.Path, failures: list[str]) -> 
         failures.append("package-prism-check 必须包含 PRISM_CHECK_OK")
 
 
+def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str]) -> None:
+    runner_tests = load_optional_json(evidence_root / "final-runner-test-results.json")
+    if runner_tests is None:
+        failures.append("缺少或无法读取 final-runner-test-results.json")
+    else:
+        if runner_tests.get("producer") != "e2e-runner":
+            failures.append("final-runner-test-results.producer 必须是 e2e-runner")
+        if runner_tests.get("ok") is not True or runner_tests.get("exit_code") != 0:
+            failures.append("运行器独立重跑验证必须成功")
+        if not runner_tests.get("detected_command"):
+            failures.append("final-runner-test-results 必须记录 detected_command")
+
+    bundle = load_optional_json(evidence_root / "final-evidence-bundle.json")
+    if bundle is None:
+        failures.append("缺少或无法读取 final-evidence-bundle.json")
+    else:
+        if bundle.get("producer") != "e2e-runner":
+            failures.append("final-evidence-bundle.producer 必须是 e2e-runner")
+        files = bundle.get("files")
+        if not isinstance(files, list) or not files:
+            failures.append("final-evidence-bundle.files 必须非空")
+        else:
+            indexed = {str(item.get("path")) for item in files if isinstance(item, dict)}
+            for required in ["loom-role-session-manifest.json", "role-gate-clearance-summary.json", "package-prism-check.json", "final-runner-test-results.json", "failure-backlog.json"]:
+                if required not in indexed:
+                    failures.append(f"final-evidence-bundle 缺少关键证据索引：{required}")
+            for item in files:
+                if not isinstance(item, dict) or item.get("exists") is not True:
+                    continue
+                if not isinstance(item.get("sha256"), str) or not item["sha256"].strip():
+                    failures.append(f"final-evidence-bundle 已存在文件缺少 sha256：{item.get('path')}")
+        if not isinstance(bundle.get("bundle_sha256"), str) or not bundle["bundle_sha256"].strip():
+            failures.append("final-evidence-bundle.bundle_sha256 必须非空")
+
+    final_prism = load_optional_json(evidence_root / "final-prism-review.json")
+    if final_prism is None:
+        failures.append("缺少或无法读取 final-prism-review.json")
+    else:
+        if final_prism.get("producer") != "e2e-runner":
+            failures.append("final-prism-review.producer 必须是 e2e-runner")
+        if final_prism.get("ok") is not True:
+            failures.append(f"最终棱镜复核未通过：{final_prism.get('failures')}")
+        if final_prism.get("strictest_verdict") != "pass":
+            failures.append("final-prism-review.strictest_verdict 必须是 pass")
+        reviews = final_prism.get("reviews")
+        providers = {str(item.get("provider")) for item in reviews if isinstance(item, dict)} if isinstance(reviews, list) else set()
+        if providers != {"kimi", "claude-code"}:
+            failures.append(f"最终棱镜复核必须包含 Kimi 和 Claude Code：{sorted(providers)}")
+
+    marker = load_optional_json(evidence_root / "completion-marker.json")
+    if marker is None:
+        failures.append("缺少或无法读取 completion-marker.json")
+    else:
+        if marker.get("producer") != "e2e-runner":
+            failures.append("completion-marker.producer 必须是 e2e-runner，不能由 Loom 角色自证")
+        if marker.get("ready_for_engineering_use") is not True:
+            failures.append("completion-marker.ready_for_engineering_use 必须为 true")
+        if marker.get("final_prism_strictest_verdict") != "pass":
+            failures.append("completion-marker 必须绑定最终棱镜 pass 结果")
+
+
 def validate_e2e_evidence_quality(evidence_root: pathlib.Path) -> dict[str, Any]:
     failures: list[str] = []
     for rel in sorted(REQUIRED_E2E_FILES):
         if not (evidence_root / rel).is_file():
             failures.append(f"缺少 E2E 证据文件：{rel}")
     validate_role_manifest(evidence_root, failures)
+    validate_role_gate_clearance(evidence_root, failures)
     validate_prism_assistance(evidence_root, failures)
     validate_knowledge_and_purification(evidence_root, failures)
     validate_persona_boundary(evidence_root, failures)
     validate_failure_loop(evidence_root, failures)
     validate_package_prism(evidence_root, failures)
+    validate_runner_finalization(evidence_root, failures)
     return {
         "schema_id": "redcap-revival-followthrough-e2e-check",
         "ok": not failures,
@@ -438,19 +548,67 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "session_loss_alarms": [],
         }, ensure_ascii=False), encoding="utf-8")
         shutil.copyfile(evidence / "loom-role-session-manifest.json", evidence / "loom-role-session-manifest-pre-review.json")
+        (evidence / "role-gate-clearance").mkdir(exist_ok=True)
+        for role in REQUIRED_LOOM_ROLES:
+            (evidence / "role-gate-clearance" / f"{role}.json").write_text(json.dumps({
+                "schema_id": "redcap-e2e-role-gate-clearance",
+                "producer": "e2e-runner",
+                "role": role,
+                "decision": "cleared_for_external_project_role_execution",
+                "role_must_not_run_commands": [".redcap/runtime/bin/redcap gate"],
+            }, ensure_ascii=False), encoding="utf-8")
+        (evidence / "role-gate-clearance-summary.json").write_text(json.dumps({
+            "schema_id": "redcap-e2e-role-gate-clearance-summary",
+            "producer": "e2e-runner",
+            "runner_owns_full_prism": True,
+            "role_gate_self_block_forbidden": True,
+            "roles": [
+                {
+                    "role": role,
+                    "decision": "cleared_for_external_project_role_execution",
+                    "path": f"role-gate-clearance/{role}.json",
+                }
+                for role in sorted(REQUIRED_LOOM_ROLES)
+            ],
+        }, ensure_ascii=False), encoding="utf-8")
         (evidence / "prism-assisted-review.json").write_text('{"used": true, "reviews": [{"provider": "kimi", "verdict": "pass"}], "cap_decision": "accepted"}\n', encoding="utf-8")
         (evidence / "knowledge-retrieval-evidence.json").write_text('{"search_ran": true, "query": "loom", "matches": [{"id": "loom"}]}\n', encoding="utf-8")
         (evidence / "self-purification-candidates.json").write_text('{"candidates": [], "no_candidate_reason": "fixture", "decisions": [{"decision": "no_promote", "reason": "fixture"}]}\n', encoding="utf-8")
         (evidence / "persona-distillation-decision.json").write_text('{"privacy_class": "cap-private", "public_write": false, "private_body_written": false, "reason": "fixture"}\n', encoding="utf-8")
         (evidence / "test-results.json").write_text('{"role": "tester", "passed": true}\n', encoding="utf-8")
         (evidence / "negative-probes.json").write_text('{"role": "tester", "passed": true}\n', encoding="utf-8")
+        (evidence / "final-runner-test-results.json").write_text('{"schema_id": "redcap-e2e-final-runner-test-results", "producer": "e2e-runner", "ok": true, "exit_code": 0, "detected_command": ["npm", "test"]}\n', encoding="utf-8")
+        (evidence / "final-evidence-bundle.json").write_text(json.dumps({
+            "schema_id": "redcap-e2e-final-evidence-bundle",
+            "producer": "e2e-runner",
+            "bundle_sha256": "fixture",
+            "files": [
+                {"path": "loom-role-session-manifest.json", "exists": True, "sha256": "fixture"},
+                {"path": "role-gate-clearance-summary.json", "exists": True, "sha256": "fixture"},
+                {"path": "package-prism-check.json", "exists": True, "sha256": "fixture"},
+                {"path": "final-runner-test-results.json", "exists": True, "sha256": "fixture"},
+                {"path": "failure-backlog.json", "exists": True, "sha256": "fixture"},
+            ],
+        }, ensure_ascii=False), encoding="utf-8")
+        (evidence / "final-prism-review.json").write_text(json.dumps({
+            "schema_id": "redcap-e2e-final-prism-review",
+            "producer": "e2e-runner",
+            "ok": True,
+            "strictest_verdict": "pass",
+            "reviews": [
+                {"provider": "kimi", "verdict": "pass"},
+                {"provider": "claude-code", "verdict": "pass"},
+            ],
+        }, ensure_ascii=False), encoding="utf-8")
         (evidence / "failure-backlog.json").write_text('{"open_items": [], "closed_items": [], "next_round_required": false}\n', encoding="utf-8")
         (evidence / "iteration-verdict.json").write_text(json.dumps({
             "status": "pass",
+            "producer": "e2e-runner",
             "ready_for_engineering_use": True,
             "evidence_checked": sorted(REQUIRED_EVIDENCE_CHECKS),
         }, ensure_ascii=False), encoding="utf-8")
         (evidence / "package-prism-check.json").write_text('{"ok": true, "exit_code": 0, "stdout_tail": "PRISM_CHECK_OK"}\n', encoding="utf-8")
+        (evidence / "completion-marker.json").write_text('{"schema_id": "redcap-e2e-completion-marker", "producer": "e2e-runner", "ready_for_engineering_use": true, "final_prism_strictest_verdict": "pass"}\n', encoding="utf-8")
         good = validate_e2e_evidence_quality(evidence)
         if not good["ok"]:
             failures.append(f"合法 E2E fixture 不应失败：{good['failures']}")

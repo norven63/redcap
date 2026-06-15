@@ -113,6 +113,11 @@
       "evidence_required": [
         "failure-backlog.json",
         "iteration-verdict.json",
+        "role-gate-clearance-summary.json",
+        "final-runner-test-results.json",
+        "final-evidence-bundle.json",
+        "final-prism-review.json",
+        "completion-marker.json",
         "meaningful-evidence-check.json"
       ]
     }

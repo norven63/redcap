@@ -126,10 +126,14 @@
       "owner": "cap_acceptor",
       "required_outputs": [
         "review-verdict.json",
+        "final-runner-test-results.json",
+        "final-evidence-bundle.json",
+        "final-prism-review.json",
+        "iteration-verdict.json",
         "completion-marker.json",
         "e2e-acceptance-summary.md"
       ],
-      "exit_rule": "只有全部客观证据通过时才写 completion-marker.json。"
+      "exit_rule": "reviewer 只能提交评审意见；只有 E2E 运行器在 reviewer 退出后完成独立测试、证据哈希和最终棱镜复核，才写 completion-marker.json。"
     }
   ],
   "commands": [
@@ -163,6 +167,8 @@
       "architecture-template.md",
       "loom-role-session-manifest-template.json",
       "loom-role-session-manifest-pre-review-template.json",
+      "role-gate-clearance-template.json",
+      "role-gate-clearance-summary-template.json",
       "prism-assisted-review-template.json",
       "knowledge-retrieval-evidence-template.json",
       "self-purification-candidates-template.json",
@@ -170,8 +176,12 @@
       "test-results-template.json",
       "negative-probes-template.json",
       "package-prism-check-template.json",
+      "final-runner-test-results-template.json",
+      "final-evidence-bundle-template.json",
+      "final-prism-review-template.json",
       "failure-backlog-template.json",
       "iteration-verdict-template.json",
+      "completion-marker-template.json",
       "implementer-prompt.md",
       "workflow-events.jsonl",
       "review-verdict-template.json",
@@ -184,6 +194,7 @@
       "hook-events-summary.json",
       "loom-role-session-manifest.json",
       "loom-role-session-manifest-pre-review.json",
+      "role-gate-clearance-summary.json",
       "prism-assisted-review.json",
       "knowledge-retrieval-evidence.json",
       "self-purification-candidates.json",
@@ -191,8 +202,12 @@
       "test-results.json",
       "negative-probes.json",
       "package-prism-check.json",
+      "final-runner-test-results.json",
+      "final-evidence-bundle.json",
+      "final-prism-review.json",
       "failure-backlog.json",
       "iteration-verdict.json",
+      "completion-marker.json",
       "revival-followthrough-e2e-check.json",
       "e2e-acceptance-summary.md"
     ],
@@ -203,6 +218,7 @@
     "required_evidence": [
       "loom-role-session-manifest.json",
       "loom-role-session-manifest-pre-review.json",
+      "role-gate-clearance-summary.json",
       "prism-assisted-review.json",
       "knowledge-retrieval-evidence.json",
       "self-purification-candidates.json",
@@ -210,24 +226,35 @@
       "test-results.json",
       "negative-probes.json",
       "package-prism-check.json",
+      "final-runner-test-results.json",
+      "final-evidence-bundle.json",
+      "final-prism-review.json",
       "failure-backlog.json",
-      "iteration-verdict.json"
+      "iteration-verdict.json",
+      "completion-marker.json"
     ],
     "quality_gates": [
       "每个 Loom 角色必须记录 session_id，缺失时必须写 alarm",
       "每个 Loom 角色必须来自独立 Codex CLI 调用，且不同角色必须拥有不同 session_id",
       "每个 Loom 角色必须拥有 role-runs、role-artifacts、role-prompts 和 role-messages 证据",
       "reviewer 角色必须读取评审前清单；最终五角色清单由运行器在 reviewer 退出后生成",
+      "每个 Loom 角色必须读取运行器签发的 role-gate-clearance，角色不得自行运行 redcap gate 后把 gate_required 当作阻塞",
+      "Loom 角色不得自行运行 prism-dispatch、prism session-init、prism merge 或完整 provider 评审；需要棱镜协助时由 E2E 运行器统一调度并回写 prism-assisted-review.json",
       "需求、架构、代码、测试或文档至少一处必须记录实际棱镜协助评审决策；本轮完整复活 E2E 不接受跳过棱镜协助",
       "实现前必须记录知识检索结果或跳过理由",
+      "默认实现和验证方案必须优先无外部依赖、无需联网安装；除非需求明确要求，不得把 Vite、Playwright 或其他重型依赖作为默认路径",
       "任务后必须记录自我净化候选或无候选理由",
       "test-results.json 和 negative-probes.json 必须由 tester 角色产出，验证脚本不得覆盖角色证据",
       "Cap 人格沉淀必须记录私有边界决策，禁止写入公共知识库",
       "安装包内棱镜自检必须通过，失败不得作为 non_blocking 关闭",
+      "E2E 运行器必须独立重跑项目验证，不能只采信 tester 或 developer 自报",
+      "E2E 运行器必须生成 final-evidence-bundle，包含关键证据哈希、摘要和交付物清单",
+      "E2E 运行器必须在 reviewer 退出后执行最终棱镜复核，且 Kimi 和 Claude Code 的合并 strictest_verdict 必须是 pass",
+      "completion-marker 必须由 e2e-runner 生成，Loom 角色不得自证完成",
       "失败必须进入 failure-backlog，不能被 completion-marker 覆盖",
       "iteration-verdict 必须明确是否 ready_for_engineering_use，并列出剩余问题"
     ],
-    "pass_rule": "只有项目交付、Hook、Loom、棱镜协助、自我净化、人格边界、测试和 iteration-verdict 全部通过，单轮 E2E 才可通过。"
+    "pass_rule": "只有项目交付、Hook、Loom、棱镜协助、自我净化、人格边界、测试、运行器最终复核和 iteration-verdict 全部通过，单轮 E2E 才可通过。"
   },
   "iteration_loop": {
     "max_iterations_before_cap_escalation": 6,
