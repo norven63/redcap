@@ -47,6 +47,16 @@
     ],
     "round42_chosen_solution": [
       "修复 events 列表分支为 enumerate(characters)，并在 complete-revival-e2e self-check 中加入 data/sample-data.json 关系探针夹具，验证返回 event_index 与 character_index。"
+    ],
+    "round43_additional_root_causes": [
+      "第 43 轮外部项目本身生成了可验证的 data/sample-data.js，且项目自己的负向领域契约探针已通过；但 RedCap 运行器只优先识别固定命名的 JSON/JS 数据文件，漏掉 data/*.js 里的合理结构化数据。",
+      "第 43 轮最终棱镜因前置客观证据失败而跳过，但 convergence-diagnosis 用过宽关键词把“角色玩家负向探针失败”误判为 loom_opposition_gap，导致下一步修复方向可能偏离真实根因。"
+    ],
+    "round43_chosen_solution": [
+      "扩展结构化数据候选发现：除固定文件名外，扫描 data/*.json 与 data/*.js，并支持 window.TRPG_ACTIVITY_DATA / globalThis.TRPG_ACTIVITY_DATA 这类浏览器全局对象。",
+      "增强数据写回格式，让 RedCap 生成的 JS 数据同时提供 TRPG_DATA、TRPG_CAMPAIGNS、TRPG_ACTIVITY_DATA、TRPG_ACTIVITIES 等读取入口。",
+      "收紧收敛诊断分类：最终棱镜因前置客观证据失败而跳过时，必须归类为 objective_evidence_precondition_gap；移除单个“角色”关键词触发 Loom 制衡缺口的过宽规则。",
+      "把 data/sample-data.js 浏览器全局对象和“前置证据失败导致最终复核跳过”的分类场景加入 complete-revival-e2e self-check，防止后续回退。"
     ]
   },
   "prompt_context": {
@@ -77,7 +87,9 @@
       "行为浏览器验证必须记录交互后的选中事件和关系探针事件，避免点击状态与关系证据错位",
       "所有新增规则必须进入 self-check 或 design-check，防止后续回退",
       "reviewer 提示词与结构校验器必须对 role_opposition_matrix 字段完全一致，不能让独立角色靠猜字段名。",
-      "运行器负向领域契约探针必须能处理浏览器全局 JS 数据文件，例如 data/campaigns.js 中的 window.TRPG_CAMPAIGNS。"
+      "运行器负向领域契约探针必须能处理浏览器全局 JS 数据文件，例如 data/campaigns.js 中的 window.TRPG_CAMPAIGNS。",
+      "运行器负向领域契约探针必须能发现 data/*.js 中的结构化浏览器全局对象，例如 data/sample-data.js 中的 window.TRPG_ACTIVITY_DATA。",
+      "最终棱镜因前置客观证据失败而跳过时，收敛诊断必须归类为 objective_evidence_precondition_gap，不能误判为 Loom 角色制衡缺口。"
     ],
     "status": "verified",
     "evidence_kind": "code-and-review",
@@ -145,6 +157,17 @@
       ],
       "evidence": [
         "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round42/",
+        "runtime/core/complete_revival_e2e.py"
+      ]
+    },
+    "round43_data_discovery_and_diagnosis_fix": {
+      "status": "checked",
+      "findings": [
+        "第 43 轮不是无限循环，而是暴露了运行器外部证据读取能力不足：项目数据存在且项目自测通过，但运行器没有发现 data/sample-data.js。",
+        "第 43 轮还暴露了失败归因过宽：前置客观证据失败导致最终棱镜跳过时，收敛诊断不能套用 Loom 角色制衡问题。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round43/",
         "runtime/core/complete_revival_e2e.py"
       ]
     }

@@ -2324,11 +2324,15 @@ JS_DATA_CANDIDATE_RELATIVE_PATHS = [
 
 def structured_data_candidate_paths(project: pathlib.Path) -> list[pathlib.Path]:
     data_dir = project / "data"
+    fixed_json = [data_dir / "events.json", data_dir / "activities.json"]
+    extra_json = sorted(path for path in data_dir.glob("*.json") if path not in fixed_json)
+    fixed_js = [(project / relative) for relative in JS_DATA_CANDIDATE_RELATIVE_PATHS]
+    extra_data_js = sorted(path for path in data_dir.glob("*.js") if path not in fixed_js)
     candidates = [
-        data_dir / "events.json",
-        data_dir / "activities.json",
-        *sorted(path for path in data_dir.glob("*.json") if path.name not in {"events.json", "activities.json"}),
-        *[(project / relative) for relative in JS_DATA_CANDIDATE_RELATIVE_PATHS],
+        *fixed_json,
+        *extra_json,
+        *fixed_js,
+        *extra_data_js,
     ]
     result: list[pathlib.Path] = []
     seen: set[pathlib.Path] = set()
@@ -2364,7 +2368,7 @@ def load_structured_data_payload(project: pathlib.Path, data_path: pathlib.Path,
             "candidates.push({source: 'exports', value: sandbox.exports});"
             "for (const scopeName of ['window', 'globalThis']) {"
             "  const scope = scopeName === 'window' ? sandbox.window : sandbox;"
-            "  for (const key of ['TRPG_CAMPAIGNS', 'TRPG_DATA', 'REDCAP_DATA', 'TRPG_EVENTS', 'TRPG_ACTIVITIES', 'campaigns', 'events', 'activities']) {"
+            "  for (const key of ['TRPG_CAMPAIGNS', 'TRPG_ACTIVITY_DATA', 'TRPG_DATA', 'REDCAP_DATA', 'TRPG_EVENTS', 'TRPG_ACTIVITIES', 'ACTIVITY_DATA', 'campaigns', 'events', 'activities']) {"
             "    candidates.push({source: `${scopeName}.${key}`, value: scope[key]});"
             "  }"
             "}"
@@ -2411,12 +2415,14 @@ def write_structured_data_probe_payload(data_path: pathlib.Path, payload: dict[s
             + "if (typeof window !== \"undefined\") {\n"
             + "  window.TRPG_DATA = data;\n"
             + "  window.TRPG_CAMPAIGNS = Array.isArray(data) ? data : (data.campaigns || data.activities || data.events || data.items || data);\n"
+            + "  window.TRPG_ACTIVITY_DATA = data;\n"
             + "  window.TRPG_ACTIVITIES = Array.isArray(data) ? data : (data.activities || data.campaigns || data.events || data.items || data);\n"
             + "  window.TRPG_EVENTS = Array.isArray(data) ? data : (data.events || data.activities || data.campaigns || data.items || data);\n"
             + "}\n"
             + "if (typeof globalThis !== \"undefined\") {\n"
             + "  globalThis.TRPG_DATA = data;\n"
             + "  globalThis.TRPG_CAMPAIGNS = Array.isArray(data) ? data : (data.campaigns || data.activities || data.events || data.items || data);\n"
+            + "  globalThis.TRPG_ACTIVITY_DATA = data;\n"
             + "}\n"
             + "if (typeof module !== \"undefined\" && module.exports) {\n"
             + "  module.exports = data;\n"
@@ -4157,6 +4163,7 @@ def classify_final_prism_convergence(final_prism: dict[str, Any], failures: list
     failure_text = json.dumps(failures, ensure_ascii=False).casefold()
     combined = f"{review_text}\n{merge_text}\n{failure_text}"
     classes: list[dict[str, Any]] = []
+
     def add_class(loop_class: str, evidence_gap: str, required_next_action: str, *, auto_rerun_allowed: bool = False) -> None:
         if any(item.get("loop_class") == loop_class for item in classes):
             return
@@ -4167,13 +4174,50 @@ def classify_final_prism_convergence(final_prism: dict[str, Any], failures: list
             "auto_rerun_allowed": auto_rerun_allowed,
         })
 
+    if final_prism.get("skipped") is True:
+        skip_reason = str(final_prism.get("skip_reason") or "")
+        skipped_failures = final_prism.get("failures") if isinstance(final_prism.get("failures"), list) else []
+        skipped_text = json.dumps([skip_reason, *skipped_failures, *failures], ensure_ascii=False).casefold()
+        if any(token in skipped_text for token in [
+            "前置客观证据",
+            "precondition",
+            "objective evidence",
+            "runner probe",
+            "运行器负向",
+            "负向领域契约探针",
+            "角色玩家负向",
+            "structured data",
+            "结构化数据",
+        ]):
+            add_class(
+                "objective_evidence_precondition_gap",
+                "最终棱镜复核因前置客观证据未通过而跳过，不能误判为角色制衡或最终评审语义问题。",
+                "先修复运行器客观探针、结构化数据发现或项目验证证据，再重新执行 E2E；不要在未修复前盲目重跑。",
+            )
+
     if any(token in combined for token in ["self-witness", "self witnessed", "self-referential", "same redcap", "same host", "out-of-band", "external anchor", "self-certification"]):
         add_class(
             "verification_authority_gap",
             "最终评审认为当前验收链仍可能由同一 RedCap 运行器自证，缺少足够清晰的外部锚点或工程试用边界。",
             "先补外部锚点证据、独立脚本哈希、边界降级声明或人工/非运行器验收入口，再重新执行 E2E。",
         )
-    if any(token in combined for token in ["cross-role", "opposition", "challenge", "homogeneous loom", "same model", "角色", "对抗"]):
+    if any(token in combined for token in [
+        "cross-role",
+        "role opposition",
+        "role_opposition",
+        "opposition matrix",
+        "opposition",
+        "challenge evidence",
+        "upstream challenge",
+        "homogeneous loom",
+        "same model",
+        "角色制衡",
+        "角色对抗",
+        "上游挑战",
+        "互相制衡",
+        "同质化 loom",
+        "同一模型",
+    ]):
         add_class(
             "loom_opposition_gap",
             "最终评审认为 Loom 角色虽然分离，但缺少上游挑战、拒绝、复核或互相制衡的结构化证据。",
@@ -6172,6 +6216,47 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append(f"运行器角色玩家负向契约探针不能处理 data/campaigns.js 浏览器全局数据：{global_character_probe.get('failures')}")
             if global_character_probe.get("data_path") != "data/campaigns.js" or global_character_probe.get("list_key") != "$":
                 failures.append("运行器角色玩家负向契约探针没有记录浏览器全局数据路径和顶层数组字段")
+            browser_global_js.unlink()
+            activity_global_js = data_dir / "sample-data.js"
+            activity_global_js.write_text(
+                "window.TRPG_ACTIVITY_DATA = "
+                + json.dumps(js_payload, ensure_ascii=False, indent=2)
+                + ";\n",
+                encoding="utf-8",
+            )
+            validate_data_js.write_text(
+                "const fs = require('fs');\n"
+                "const vm = require('vm');\n"
+                "const source = fs.readFileSync('data/sample-data.js', 'utf8');\n"
+                "const sandbox = { window: {} };\n"
+                "vm.createContext(sandbox);\n"
+                "vm.runInContext(source, sandbox, { filename: 'data/sample-data.js' });\n"
+                "const data = sandbox.window.TRPG_ACTIVITY_DATA;\n"
+                "if (!data || !Array.isArray(data.activities)) process.exit(10);\n"
+                "for (const [index, activity] of data.activities.entries()) {\n"
+                "  if (!activity.signupIntent || !Array.isArray(activity.signups) || activity.signups.length === 0) {\n"
+                "    console.error(`signup-intent-data-contract failed at ${index}`);\n"
+                "    process.exit(2);\n"
+                "  }\n"
+                "  const playerIds = new Set((activity.players || []).map((player) => player.id));\n"
+                "  if (!Array.isArray(activity.characters) || activity.characters.some((character) => !playerIds.has(character.playerId))) {\n"
+                "    console.error(`character-player-relation-contract failed at ${index}`);\n"
+                "    process.exit(3);\n"
+                "  }\n"
+                "}\n"
+                "console.log(JSON.stringify({ok: true, source: 'data/sample-data.js'}));\n",
+                encoding="utf-8",
+            )
+            activity_negative_probe = run_runner_negative_contract_probe(project, evidence)
+            if activity_negative_probe.get("ok") is not True:
+                failures.append(f"运行器报名负向契约探针不能处理 data/sample-data.js 浏览器全局对象：{activity_negative_probe.get('failures')}")
+            if activity_negative_probe.get("data_path") != "data/sample-data.js" or activity_negative_probe.get("list_key") != "activities":
+                failures.append("运行器报名负向契约探针没有记录 data/*.js 浏览器全局对象路径和列表字段")
+            activity_character_probe = run_runner_character_player_contract_probe(project, evidence)
+            if activity_character_probe.get("ok") is not True:
+                failures.append(f"运行器角色玩家负向契约探针不能处理 data/sample-data.js 浏览器全局对象：{activity_character_probe.get('failures')}")
+            if activity_character_probe.get("data_path") != "data/sample-data.js" or activity_character_probe.get("list_key") != "activities":
+                failures.append("运行器角色玩家负向契约探针没有记录 data/*.js 浏览器全局对象路径和列表字段")
             sample_data = data_dir / "sample-data.json"
             sample_data.write_text(json.dumps({
                 "events": [
@@ -6325,6 +6410,26 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("结构性最终棱镜 concern 没有禁止自动盲目重跑")
             if not expected_structural_classes.issubset(structural_classes):
                 failures.append(f"结构性收敛诊断缺少类别：{sorted(expected_structural_classes - structural_classes)}")
+            skipped_final_prism = {
+                "schema_id": "redcap-e2e-final-prism-review",
+                "producer": "e2e-runner",
+                "ok": False,
+                "skipped": True,
+                "skip_reason": "前置客观证据未通过，跳过最终 provider 复核",
+                "strictest_verdict": None,
+                "failures": [
+                    "运行器负向领域契约探针未通过",
+                    "运行器角色玩家负向领域契约探针未通过",
+                ],
+            }
+            skipped_convergence = classify_final_prism_convergence(skipped_final_prism, skipped_final_prism["failures"])
+            skipped_classes = {item.get("loop_class") for item in skipped_convergence.get("diagnosis", [])}
+            if "objective_evidence_precondition_gap" not in skipped_classes:
+                failures.append("前置客观证据失败导致最终棱镜跳过时，收敛诊断没有归类为 objective_evidence_precondition_gap")
+            if "loom_opposition_gap" in skipped_classes:
+                failures.append("前置客观证据失败导致最终棱镜跳过时，收敛诊断误判为 loom_opposition_gap")
+            if skipped_convergence.get("auto_rerun_allowed") is not False:
+                failures.append("前置客观证据失败导致最终棱镜跳过时，收敛诊断没有禁止自动盲目重跑")
             replay_evidence = work_root / "convergence-replay" / ".redcap" / "evidence" / "e2e"
             write_json(replay_evidence / "final-prism-review.json", structural_final_prism)
             write_json(replay_evidence / "run-summary.json", {
