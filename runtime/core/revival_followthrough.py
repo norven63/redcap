@@ -51,6 +51,7 @@ REQUIRED_E2E_FILES = {
     "independent-observer.json",
     "visual-independence-report.json",
     "self-referential-boundary.json",
+    "convergence-diagnosis.json",
     "final-prism-review.json",
     "failure-backlog.json",
     "iteration-verdict.json",
@@ -78,6 +79,7 @@ REQUIRED_EVIDENCE_CHECKS = {
     "independent-observer.json",
     "visual-independence-report.json",
     "self-referential-boundary.json",
+    "convergence-diagnosis.json",
     "final-prism-review.json",
     "failure-backlog.json",
     "iteration-verdict.json",
@@ -375,6 +377,18 @@ def validate_persona_boundary(evidence_root: pathlib.Path, failures: list[str]) 
 
 
 def validate_failure_loop(evidence_root: pathlib.Path, failures: list[str]) -> None:
+    convergence = load_optional_json(evidence_root / "convergence-diagnosis.json")
+    if convergence is None:
+        failures.append("缺少或无法读取 convergence-diagnosis.json")
+    else:
+        if convergence.get("producer") != "e2e-runner":
+            failures.append("convergence-diagnosis.producer 必须是 e2e-runner")
+        if convergence.get("final_prism_ok") is not True:
+            failures.append("通过验收时 convergence-diagnosis.final_prism_ok 必须为 true")
+        if convergence.get("strictest_verdict") != "pass":
+            failures.append("通过验收时 convergence-diagnosis.strictest_verdict 必须是 pass")
+        if convergence.get("auto_rerun_allowed") is not False:
+            failures.append("通过验收时 convergence-diagnosis.auto_rerun_allowed 必须为 false，表示不需要继续循环")
     backlog = load_optional_json(evidence_root / "failure-backlog.json")
     if backlog is None:
         failures.append("缺少或无法读取 failure-backlog.json")
@@ -543,6 +557,9 @@ def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str
             failures.append("completion-marker 必须引用通过的 final-marker-validation")
         if not isinstance(marker.get("file_browser_inspection"), dict) or marker["file_browser_inspection"].get("ok") is not True:
             failures.append("completion-marker 必须引用通过的 file-browser-inspection")
+        marker_convergence = marker.get("convergence_diagnosis")
+        if not isinstance(marker_convergence, dict) or marker_convergence.get("strictest_verdict") != "pass":
+            failures.append("completion-marker 必须引用 strictest_verdict=pass 的 convergence-diagnosis")
 
     boundary = load_optional_json(evidence_root / "self-referential-boundary.json")
     if boundary is None:
@@ -683,10 +700,12 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         (evidence / "browser-inspection.json").write_text('{"schema_id": "redcap-e2e-browser-inspection", "producer": "e2e-runner", "ok": true, "screenshot": "browser-inspection.png"}\n', encoding="utf-8")
         (evidence / "file-browser-inspection.json").write_text('{"schema_id": "redcap-e2e-file-browser-inspection", "producer": "e2e-runner", "ok": true, "launch_mode": "local-file-protocol", "screenshot": "file-browser-inspection.png"}\n', encoding="utf-8")
         (evidence / "behavioral-browser-verification.json").write_text('{"schema_id": "redcap-e2e-behavioral-browser-verification", "producer": "e2e-runner", "ok": true, "screenshot": "behavioral-browser-verification.png"}\n', encoding="utf-8")
-        (evidence / "independent-browser-verification.json").write_text('{"schema_id": "redcap-e2e-independent-browser-verification", "producer": "e2e-independent-browser-process", "ok": true, "screenshot": "independent-browser-verification.png"}\n', encoding="utf-8")
+        (evidence / "independent-browser-verification-script.py").write_text("print('fixture')\n", encoding="utf-8")
+        (evidence / "independent-browser-verification.json").write_text('{"schema_id": "redcap-e2e-independent-browser-verification", "producer": "e2e-independent-browser-process", "ok": true, "screenshot": "independent-browser-verification.png", "script": {"path": "independent-browser-verification-script.py", "sha256": "fixture"}}\n', encoding="utf-8")
         (evidence / "independent-observer.json").write_text('{"schema_id": "redcap-e2e-independent-observer", "producer": "redcap-independent-observer", "ok": true}\n', encoding="utf-8")
         (evidence / "visual-independence-report.json").write_text('{"schema_id": "redcap-e2e-visual-independence-report", "producer": "e2e-runner", "ok": true}\n', encoding="utf-8")
         (evidence / "self-referential-boundary.json").write_text('{"schema_id": "redcap-e2e-self-referential-boundary", "producer": "e2e-runner", "ok": true, "validation_chain_scope": {"same_host": true, "same_redcap_package": true}, "completion_marker_disclosure": {"must_copy_this_boundary": true}}\n', encoding="utf-8")
+        (evidence / "convergence-diagnosis.json").write_text('{"schema_id": "redcap-e2e-convergence-diagnosis", "producer": "e2e-runner", "final_prism_ok": true, "strictest_verdict": "pass", "auto_rerun_allowed": false, "diagnosis": []}\n', encoding="utf-8")
         (evidence / "final-evidence-bundle.json").write_text(json.dumps({
             "schema_id": "redcap-e2e-final-evidence-bundle",
             "producer": "e2e-runner",
@@ -723,7 +742,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "evidence_checked": sorted(REQUIRED_EVIDENCE_CHECKS),
         }, ensure_ascii=False), encoding="utf-8")
         (evidence / "package-prism-check.json").write_text('{"ok": true, "exit_code": 0, "stdout_tail": "PRISM_CHECK_OK"}\n', encoding="utf-8")
-        (evidence / "completion-marker.json").write_text('{"schema_id": "redcap-e2e-completion-marker", "producer": "e2e-runner", "ready_for_engineering_use": true, "final_prism_strictest_verdict": "pass", "validation_chain_scope": {"same_host": true, "same_redcap_package": true}, "not_claimed": ["fixture"], "final_marker_validation": {"ok": true}, "file_browser_inspection": {"ok": true}}\n', encoding="utf-8")
+        (evidence / "completion-marker.json").write_text('{"schema_id": "redcap-e2e-completion-marker", "producer": "e2e-runner", "ready_for_engineering_use": true, "final_prism_strictest_verdict": "pass", "validation_chain_scope": {"same_host": true, "same_redcap_package": true}, "not_claimed": ["fixture"], "final_marker_validation": {"ok": true}, "file_browser_inspection": {"ok": true}, "convergence_diagnosis": {"strictest_verdict": "pass"}}\n', encoding="utf-8")
         good = validate_e2e_evidence_quality(evidence)
         if not good["ok"]:
             failures.append(f"合法 E2E fixture 不应失败：{good['failures']}")

@@ -92,6 +92,7 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "independent-observer.json",
     "visual-independence-report.json",
     "self-referential-boundary.json",
+    "convergence-diagnosis.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -132,6 +133,10 @@ MEANINGFUL_E2E_REQUIRED_GATES = [
     "项目级 Hook",
     "runner-character-player-contract-probe.json",
     "visual-independence-report.json",
+    "convergence-diagnosis.json",
+    "role_opposition_matrix",
+    "independent-browser-verification-script.py",
+    "behavioral-relation-probe.png",
     "冻结证据包",
 ]
 OLD_REDCAP_ROOT = pathlib.Path("/Users/norven/workspace/redcap")
@@ -664,6 +669,10 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
                 failures.append(f"iteration_loop.{key} 必须绑定 failure-backlog")
         if "ready_for_engineering_use" not in str(loop.get("next_round_rule") or ""):
             failures.append("iteration_loop.next_round_rule 必须读取 ready_for_engineering_use")
+        if "auto_rerun_allowed" not in str(loop.get("next_round_rule") or ""):
+            failures.append("iteration_loop.next_round_rule 必须读取 convergence-diagnosis.auto_rerun_allowed")
+        if "source_signature" not in str(loop.get("next_round_rule") or ""):
+            failures.append("iteration_loop.next_round_rule 必须说明源码签名变化后才允许修复后重跑")
     return failures
 
 
@@ -1016,7 +1025,8 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
     通用要求：
     - 只修改外部项目，不要修改 RedCap 源仓库。
     - 本角色的结构化证据必须写入 {role_artifact_path(evidence, role)}。
-    - role artifact 至少包含 schema_id、role、status、handoff_inputs、handoff_outputs、evidence_files、notes。
+    - role artifact 至少包含 schema_id、role、status、handoff_inputs、handoff_outputs、evidence_files、notes、upstream_challenges、accepted_upstream_assumptions、rejected_upstream_assumptions。
+    - upstream_challenges 必须是数组；除 product_manager 没有真实上游可写空数组外，其他角色至少记录一条对上游输入的质疑、风险复核、验收挑战或明确接受理由。每条建议包含 target、concern、disposition、reason。
     - 必须先读取角色门禁协调文件，并把它作为本角色的门禁依据。
     - 判断上游输入是否缺失时，必须以“上游输入实际路径”和角色门禁协调文件里的 role_must_read_resolved 为准；不要只在项目根目录按裸文件名查找。
     - 写结构化产物时，必须优先写入“本角色必须产出的实际路径”和角色门禁协调文件里的 role_must_write_resolved。
@@ -1039,6 +1049,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         2. 运行 `.redcap/runtime/bin/redcap knowledge-gateway search loom`，把结果写入 knowledge-retrieval-evidence.json。
            该文件必须包含 search_ran=true、query="loom"、command、exit_code、matches；如果 matches 为空，必须写 no_relevant_entry_reason。
         3. 明确问题陈述、范围边界、验收重点；如果存在 domain_contracts，必须把每项契约列为验收重点，并写入 role-artifacts/product_manager.json。
+           product_manager 没有真实上游角色，role-artifacts/product_manager.json 的 upstream_challenges 可以是空数组，但 accepted_upstream_assumptions 必须说明它如何接受用户 direction 并收窄成可验收需求。
         """,
         "architect": """
         你的任务：
@@ -1050,6 +1061,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            前端入口必须支持 file:// 直接打开；如果界面需要本地数据，不要只依赖浏览器 fetch 本地 JSON，必须设计内嵌数据、降级数据或其他 file:// 可用方案。
         4. 立即写 risk-register.json，至少包含 risks 数组；每项包含 id、risk、impact、mitigation、owner。
         5. 立即写 role-artifacts/architect.json，status="completed"，并列出读取的输入和写出的文件。
+           role-artifacts/architect.json 必须包含 upstream_challenges，至少写一条对产品需求或验收标准的架构风险复核；即使接受上游，也要说明为什么接受。
         6. 不要读取 manifest.json，不要检查 role-workspaces，不要扫描 .redcap 全目录。
         """,
         "developer": """
@@ -1061,6 +1073,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            如果存在 character-player-relation-contract，验证脚本必须检查 character.playerId 或等价字段命中同活动、同场次或同文件内真实 players[]；只要 playerId 被改成不存在的玩家 id，即使 playerName 仍存在，验证命令也必须非零退出。
         5. implementation-log.json 必须逐项说明每个 domain_contracts 的数据结构、界面呈现和验证脚本检查方式；character-player-relation-contract 不能只写“角色和玩家可见”，必须写明真实引用校验。
         6. 写 implementation-log.json 和 role-artifacts/developer.json。
+           role-artifacts/developer.json 必须包含 upstream_challenges，至少写一条对架构、风险或验收标准的实现侧挑战；即使接受上游，也要说明为什么接受。
         7. 如果提供验证脚本，机器验证输出必须写 verification-results.json 或其他非角色文件，不能写或覆盖 test-results.json；test-results.json 只属于 tester 角色。
         """,
         "tester": """
@@ -1077,6 +1090,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         4. 每执行完一个验证动作，立即更新对应 JSON；验证动作全部结束后，立即把三个文件更新为 completed 或 failed。
         5. test-results.json 必须标记 role="tester"，并记录 commands、positive_checks、passed；negative-probes.json 必须标记 role="tester"，并记录 probes、passed。status 与 passed 必须一致：completed 对应 passed=true，failed 对应 passed=false。
         6. 如果测试失败，必须把失败写清楚，不要替开发者修复。
+        7. role-artifacts/tester.json 必须包含 upstream_challenges，至少写一条对开发验证、实现声明或验收标准的测试侧挑战；即使接受上游，也要说明为什么接受。
         """,
         "reviewer": """
         你的任务：
@@ -1090,6 +1104,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            - "terminal_completion": false；
            - "blocking_findings": [] 或阻塞项数组，禁止用 blocking_failures、open_issues 等近义字段替代；
            - "runner_owned_follow_up": ["completion-marker.json", "iteration-verdict.json", "final-prism-review.json", "final-runner-test-results.json"]，必须是这四个精确文件名字符串，不要写成说明句。
+           - "role_opposition_matrix": 非空数组，逐项说明 product_manager、architect、developer、tester 的上游挑战证据是否存在、挑战了什么、reviewer 是否接受。
            同时在边界说明中写明 terminal_completion=false 表示 reviewer 只能给阶段评审，不能自证本轮 E2E 终局完成或 RedCap 完整复活。
         3. 写 prism-assisted-review.json；本轮必须记录 used=true，reviews 必须是非空数组，cap_decision 必须非空，skip_reason 必须为 null 或空字符串。至少在 reviews[0] 中说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决，并必须包含 prism_assistance_request.requested=true。
         4. 写 self-purification-candidates.json，包含候选或 no_candidate_reason，并给出 decisions 数组。decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；每个 decision 必须包含 reason；需要后续沉淀但本轮不晋升时用 defer_with_owner。
@@ -1304,6 +1319,21 @@ def validate_reviewer_outputs(evidence: pathlib.Path) -> list[str]:
             extra = sorted(actual - set(REVIEWER_RUNNER_OWNED_FOLLOW_UP))
             if extra:
                 failures.append(f"review-verdict.runner_owned_follow_up 只能写精确文件名，不能写说明句：{extra}")
+        opposition = verdict.get("role_opposition_matrix")
+        if not isinstance(opposition, list) or not opposition:
+            failures.append("review-verdict.role_opposition_matrix 必须是非空数组，证明 reviewer 审核了角色对抗证据")
+        else:
+            covered_roles = {str(item.get("role")) for item in opposition if isinstance(item, dict)}
+            missing_roles = sorted({"product_manager", "architect", "developer", "tester"} - covered_roles)
+            if missing_roles:
+                failures.append(f"review-verdict.role_opposition_matrix 缺少角色：{missing_roles}")
+            for item in opposition:
+                if not isinstance(item, dict):
+                    failures.append("review-verdict.role_opposition_matrix 条目必须是对象")
+                    continue
+                for field in ["role", "challenge_summary", "reviewer_disposition"]:
+                    if not isinstance(item.get(field), str) or not item[field].strip():
+                        failures.append(f"review-verdict.role_opposition_matrix 条目缺少字段：{field}")
     return failures
 
 
@@ -1323,6 +1353,28 @@ def validate_role_outputs(project: pathlib.Path, evidence: pathlib.Path, role: s
                 failures.append(f"role-artifacts/{role}.json 缺少字段：{field}")
         if artifact.get("role") != role:
             failures.append(f"role-artifacts/{role}.json.role 必须是 {role}")
+        for field in ["upstream_challenges", "accepted_upstream_assumptions", "rejected_upstream_assumptions"]:
+            if field not in artifact:
+                failures.append(f"role-artifacts/{role}.json 缺少角色对抗字段：{field}")
+        upstream_challenges = artifact.get("upstream_challenges")
+        if not isinstance(upstream_challenges, list):
+            failures.append(f"role-artifacts/{role}.json.upstream_challenges 必须是数组")
+        elif role != "product_manager" and not upstream_challenges:
+            failures.append(f"role-artifacts/{role}.json.upstream_challenges 必须至少包含一条上游挑战或明确接受理由")
+        if isinstance(upstream_challenges, list):
+            for item in upstream_challenges:
+                if not isinstance(item, dict):
+                    failures.append(f"role-artifacts/{role}.json.upstream_challenges 条目必须是对象")
+                    continue
+                for field in ["target", "concern", "disposition", "reason"]:
+                    if not isinstance(item.get(field), str) or not item[field].strip():
+                        failures.append(f"role-artifacts/{role}.json.upstream_challenges 条目缺少字段：{field}")
+        accepted = artifact.get("accepted_upstream_assumptions")
+        rejected = artifact.get("rejected_upstream_assumptions")
+        if not isinstance(accepted, list):
+            failures.append(f"role-artifacts/{role}.json.accepted_upstream_assumptions 必须是数组")
+        if not isinstance(rejected, list):
+            failures.append(f"role-artifacts/{role}.json.rejected_upstream_assumptions 必须是数组")
     if role == "reviewer":
         failures.extend(validate_reviewer_outputs(evidence))
     return failures
@@ -1769,6 +1821,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "producer": "e2e-runner",
         "target": "index.html",
         "screenshot": "behavioral-browser-verification.png",
+        "relation_probe_screenshot": "behavioral-relation-probe.png",
         "screenshot_phase": "after_interaction",
         "visual_independence": {
             "hashes_compared": True,
@@ -1838,6 +1891,20 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "hash_required": True,
         "purpose": "供最终棱镜复核独立检查，不依赖 reviewer 自证"
     })
+    write_json(evidence / "convergence-diagnosis-template.json", {
+        "schema_id": "redcap-e2e-convergence-diagnosis",
+        "producer": "e2e-runner",
+        "auto_rerun_allowed": "<boolean>",
+        "diagnosis": [
+            {
+                "loop_class": "verification_authority_gap|loom_opposition_gap|behavioral_evidence_alignment_gap|unclassified_final_prism_concern",
+                "evidence_gap": "<why the run cannot converge>",
+                "required_next_action": "<what must be fixed before rerun>",
+                "auto_rerun_allowed": False
+            }
+        ],
+        "failure_policy": "structural gaps must stop blind reruns"
+    })
     write_json(evidence / "final-prism-review-template.json", {
         "schema_id": "redcap-e2e-final-prism-review",
         "producer": "e2e-runner",
@@ -1876,6 +1943,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "boundary": "reviewer 只能给阶段评审；terminal_completion=false 表示不能自证本轮 E2E 终局完成或 RedCap 完整复活",
         "runner_owned_follow_up": REVIEWER_RUNNER_OWNED_FOLLOW_UP,
         "blocking_findings": [],
+        "role_opposition_matrix": [],
         "forbidden_aliases": ["blocking_failures", "open_issues"],
         "must_check": [
             "requirements_covered",
@@ -2040,6 +2108,8 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
         "browser-inspection.png",
         "file-browser-inspection.png",
         "behavioral-browser-verification.png",
+        "behavioral-relation-probe.png",
+        "independent-browser-verification-script.py",
         "independent-browser-verification.png",
         "loom-role-session-manifest-pre-review.json",
         "loom-role-session-manifest.json",
@@ -2921,6 +2991,7 @@ def run_file_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -
 
 
 def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
+    candidates: list[dict[str, Any]] = []
     for data_path in sorted((project / "data").glob("*.json")):
         try:
             payload = json.loads(data_path.read_text(encoding="utf-8"))
@@ -2936,7 +3007,7 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
                     for player in players
                     if isinstance(player, dict) and player.get("id") and player.get("name")
                 } if isinstance(players, list) else {}
-                for character in characters:
+                for character_index, character in enumerate(characters):
                     if not isinstance(character, dict):
                         continue
                     character_name = str(character.get("name") or "")
@@ -2944,20 +3015,22 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
                     if not player_name:
                         player_name = str(character.get("player") or character.get("playerName") or character.get("player_name") or "")
                     if character_name and player_name:
-                        return {
+                        candidates.append({
                             "data_file": data_path.relative_to(project).as_posix(),
                             "event_title": payload.get("title") or payload.get("name") or data_path.stem,
+                            "event_index": None,
+                            "character_index": None,
                             "character_name": character_name,
                             "player_name": player_name,
-                        }
+                        })
             for key in ["events", "activities", "sessions"]:
                 value = payload.get(key)
                 if isinstance(value, list):
-                    event_lists.append(value)
+                    event_lists.append((key, value))
         elif isinstance(payload, list):
-            event_lists.append(payload)
-        for events in event_lists:
-            for event in events:
+            event_lists.append(("root-list", payload))
+        for list_key, events in event_lists:
+            for event_index, event in enumerate(events):
                 if not isinstance(event, dict):
                     continue
                 characters = event.get("characters")
@@ -2977,13 +3050,23 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
                     if not player_name:
                         player_name = str(character.get("player") or character.get("playerName") or character.get("player_name") or "")
                     if character_name and player_name:
-                        return {
+                        candidates.append({
                             "data_file": data_path.relative_to(project).as_posix(),
+                            "list_key": list_key,
+                            "event_index": event_index,
                             "event_title": event.get("title") or event.get("name"),
+                            "character_index": character_index,
                             "character_name": character_name,
                             "player_name": player_name,
-                        }
-    return None
+                        })
+    if not candidates:
+        return None
+    # Prefer a non-first event when available so the browser proof must perform
+    # a real selection before checking the character-player relation.
+    for candidate in candidates:
+        if isinstance(candidate.get("event_index"), int) and candidate["event_index"] > 0:
+            return candidate
+    return candidates[0]
 
 
 def browser_observable_snapshot(page: Any) -> dict[str, Any]:
@@ -3068,6 +3151,7 @@ def browser_observable_snapshot(page: Any) -> dict[str, Any]:
 def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     target, target_rel, checked_entrypoints = detect_browser_entrypoint(project)
     screenshot = evidence / "behavioral-browser-verification.png"
+    relation_screenshot = evidence / "behavioral-relation-probe.png"
     server_process: subprocess.Popen[str] | None = None
     result: dict[str, Any] = {
         "schema_id": "redcap-e2e-behavioral-browser-verification",
@@ -3216,6 +3300,45 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
             if relation_probe:
                 page.goto(url, wait_until="domcontentloaded", timeout=20_000)
                 page.wait_for_timeout(800)
+                relation_event_title = str(relation_probe.get("event_title") or "")
+                relation_event_control: dict[str, Any] = {
+                    "requested_event_title": relation_event_title,
+                    "clicked": False,
+                    "label": None,
+                    "reason": "no_event_title" if not relation_event_title else "no_matching_control_clicked",
+                }
+                if relation_event_title:
+                    relation_buttons = page.locator("button, [role='button']")
+                    for relation_button_index in range(min(relation_buttons.count(), 16)):
+                        button = relation_buttons.nth(relation_button_index)
+                        try:
+                            label = button.inner_text(timeout=2_000).strip()
+                        except Exception:
+                            continue
+                        if not label:
+                            continue
+                        title_match = relation_event_title in label or label in relation_event_title
+                        if not title_match:
+                            continue
+                        try:
+                            button.click(timeout=5_000)
+                            page.wait_for_timeout(500)
+                            relation_event_control = {
+                                "requested_event_title": relation_event_title,
+                                "clicked": True,
+                                "label": label,
+                                "index": relation_button_index,
+                                "reason": "matched_event_title",
+                            }
+                            break
+                        except Exception as exc:
+                            relation_event_control = {
+                                "requested_event_title": relation_event_title,
+                                "clicked": False,
+                                "label": label,
+                                "index": relation_button_index,
+                                "reason": f"matching_control_click_failed:{type(exc).__name__}",
+                            }
                 relation_text = page.locator("body").inner_text(timeout=5_000)
                 character_name = str(relation_probe["character_name"])
                 player_name = str(relation_probe["player_name"])
@@ -3270,10 +3393,14 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                     }""",
                     {"characterName": character_name, "playerName": player_name},
                 )
+                page.screenshot(path=str(relation_screenshot), full_page=True)
                 relation_passed = bool(isinstance(dom_relation, dict) and dom_relation.get("same_structural_container") is True)
                 relation_evidence = {
                     "probe_available": True,
                     **relation_probe,
+                    "relation_event_control": relation_event_control,
+                    "relation_event_title_visible": bool(relation_event_title and relation_event_title in relation_text),
+                    "relation_probe_screenshot": evidence_file_record(relation_screenshot, base=evidence),
                     "character_index": character_index,
                     "player_index": player_index,
                     "text_distance": abs(character_index - player_index) if character_index >= 0 and player_index >= 0 else None,
@@ -3378,6 +3505,7 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
         "clicked_button": clicked_button,
         "interaction_attempts": interaction_attempts,
         "relation_probe": relation_probe,
+        "relation_probe_screenshot_record": evidence_file_record(relation_screenshot, base=evidence),
         "screenshot_phase": screenshot_phase,
         "screenshot_phase_reason": screenshot_phase_reason,
         "screenshot_record": screenshot_record,
@@ -3532,8 +3660,11 @@ finally:
 result["ok"] = not result["failures"]
 print(json.dumps(result, ensure_ascii=False))
 """
+    script_path = evidence / "independent-browser-verification-script.py"
+    script_path.write_text(script.lstrip(), encoding="utf-8")
+    script_sha256 = sha256_file(script_path)
     completed = subprocess.run(
-        ["python3", "-c", script, str(project), str(evidence)],
+        ["python3", str(script_path), str(project), str(evidence)],
         cwd=str(project),
         check=False,
         capture_output=True,
@@ -3550,8 +3681,14 @@ print(json.dumps(result, ensure_ascii=False))
             "ok": False,
             "failures": [f"独立浏览器验证子进程没有返回有效 JSON：{type(exc).__name__}: {exc}"],
         }
+    payload["script"] = {
+        "path": script_path.relative_to(evidence).as_posix(),
+        "sha256": script_sha256,
+        "size": script_path.stat().st_size,
+        "purpose": "独立浏览器验证脚本先写入证据目录并记录哈希，再由子进程执行，避免最终复核只能看到匿名内联代码。",
+    }
     payload["command"] = command_receipt({
-        "argv": ["python3", "-c", "<independent-browser-verification>", str(project), str(evidence)],
+        "argv": ["python3", str(script_path), str(project), str(evidence)],
         "cwd": str(project),
         "exit_code": completed.returncode,
         "ok": completed.returncode == 0,
@@ -3685,6 +3822,19 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
             "browser_context": payload.get("browser_context") if isinstance(payload.get("browser_context"), dict) else None,
             "ok": payload.get("ok") is True,
         })
+        if source_id == "behavioral-browser-verification":
+            relation_record = payload.get("relation_probe_screenshot_record")
+            if isinstance(relation_record, dict) and relation_record.get("exists") is True:
+                relation_context = dict(payload.get("browser_context") or {})
+                relation_context["capture_role"] = "behavioral-relation-probe"
+                relation_context["screenshot_phase"] = "after_relation_event_selection"
+                sources.append({
+                    "source_id": "behavioral-relation-probe",
+                    "json": json_name,
+                    "screenshot": relation_record,
+                    "browser_context": relation_context,
+                    "ok": payload.get("ok") is True,
+                })
     observer_payload = load_optional_json(evidence / "independent-observer.json") or {}
     observer_browser = observer_payload.get("browser_observation") if isinstance(observer_payload.get("browser_observation"), dict) else {}
     observer_record = observer_browser.get("screenshot_record") if isinstance(observer_browser.get("screenshot_record"), dict) else {
@@ -3931,6 +4081,223 @@ def write_failure_backlog_with_runner_items(evidence: pathlib.Path, failures: li
         "next_round_required": bool(open_items),
     })
     write_json(evidence / "failure-backlog.json", backlog)
+
+
+def redcap_source_revision() -> dict[str, Any]:
+    relevant_paths = [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/revival_followthrough.py",
+        "runtime/bin/redcap",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+    ]
+    head_result = run_command(["git", "rev-parse", "--verify", "HEAD"], timeout_seconds=15)
+    status_result = run_command(["git", "status", "--porcelain=v1", "--", *relevant_paths], timeout_seconds=15)
+    diff_result = run_command([
+        "git",
+        "diff",
+        "--",
+        *relevant_paths,
+    ], timeout_seconds=15)
+    head = str(head_result.get("stdout") or "").strip() if head_result.get("ok") else None
+    status_text = str(status_result.get("stdout") or "")
+    diff_text = str(diff_result.get("stdout") or "")
+    signature_material = "\n".join([
+        str(head or ""),
+        status_text,
+        diff_text,
+    ])
+    return {
+        "git_head": head,
+        "dirty": bool(status_text.strip() or diff_text.strip()),
+        "status_sha256": sha256_text(status_text) if status_text else None,
+        "relevant_diff_sha256": sha256_text(diff_text) if diff_text else None,
+        "source_signature": sha256_text(signature_material),
+        "signature_scope": relevant_paths,
+        "commands": {
+            "head": command_receipt(head_result),
+            "status": command_receipt(status_result),
+            "diff": command_receipt(diff_result),
+        },
+    }
+
+
+def classify_final_prism_convergence(final_prism: dict[str, Any], failures: list[str]) -> dict[str, Any]:
+    reviews = final_prism.get("reviews") if isinstance(final_prism.get("reviews"), list) else []
+    review_text = json.dumps(reviews, ensure_ascii=False).casefold()
+    merge_text = json.dumps(final_prism.get("merge") if isinstance(final_prism.get("merge"), dict) else {}, ensure_ascii=False).casefold()
+    failure_text = json.dumps(failures, ensure_ascii=False).casefold()
+    combined = f"{review_text}\n{merge_text}\n{failure_text}"
+    classes: list[dict[str, Any]] = []
+    def add_class(loop_class: str, evidence_gap: str, required_next_action: str, *, auto_rerun_allowed: bool = False) -> None:
+        if any(item.get("loop_class") == loop_class for item in classes):
+            return
+        classes.append({
+            "loop_class": loop_class,
+            "evidence_gap": evidence_gap,
+            "required_next_action": required_next_action,
+            "auto_rerun_allowed": auto_rerun_allowed,
+        })
+
+    if any(token in combined for token in ["self-witness", "self witnessed", "self-referential", "same redcap", "same host", "out-of-band", "external anchor", "self-certification"]):
+        add_class(
+            "verification_authority_gap",
+            "最终评审认为当前验收链仍可能由同一 RedCap 运行器自证，缺少足够清晰的外部锚点或工程试用边界。",
+            "先补外部锚点证据、独立脚本哈希、边界降级声明或人工/非运行器验收入口，再重新执行 E2E。",
+        )
+    if any(token in combined for token in ["cross-role", "opposition", "challenge", "homogeneous loom", "same model", "角色", "对抗"]):
+        add_class(
+            "loom_opposition_gap",
+            "最终评审认为 Loom 角色虽然分离，但缺少上游挑战、拒绝、复核或互相制衡的结构化证据。",
+            "先让角色产物和 reviewer 产物强制记录 role_opposition_matrix 与 upstream_challenges，再重新执行 E2E。",
+        )
+    if any(token in combined for token in ["relation probe", "page-state", "probe alignment", "dom", "after a second-event click", "关系探针", "页面状态"]):
+        add_class(
+            "behavioral_evidence_alignment_gap",
+            "最终评审认为浏览器行为截图、点击状态和角色玩家关系探针之间存在解释歧义。",
+            "先让行为验证记录关系探针截图、目标活动选择和 DOM 结构证据，再重新执行 E2E。",
+        )
+    if final_prism.get("strictest_verdict") not in (None, "pass") and not classes:
+        add_class(
+            "unclassified_final_prism_concern",
+            "最终棱镜未通过，但运行器尚未识别出具体可修复类别。",
+            "先人工阅读 final-prism-review.json，把新类别写入运行器分类规则，再决定是否重跑。",
+        )
+    auto_rerun_allowed = bool(classes) and all(item.get("auto_rerun_allowed") is True for item in classes)
+    if not classes and final_prism.get("ok") is True:
+        auto_rerun_allowed = False
+    return {
+        "schema_id": "redcap-e2e-convergence-diagnosis",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "redcap_source": redcap_source_revision(),
+        "final_prism_ok": final_prism.get("ok") is True,
+        "strictest_verdict": final_prism.get("strictest_verdict"),
+        "auto_rerun_allowed": auto_rerun_allowed,
+        "diagnosis": classes,
+        "summary": (
+            "最终棱镜已通过，不需要循环重跑。"
+            if final_prism.get("ok") is True
+            else "最终棱镜未通过；若 diagnosis 中 auto_rerun_allowed=false，禁止继续无意义重跑，必须先修复对应 RedCap 机制。"
+        ),
+        "source": "final-prism-review.json",
+    }
+
+
+def convergence_diagnosis_from_evidence(evidence: pathlib.Path) -> dict[str, Any]:
+    final_prism = load_optional_json(evidence / "final-prism-review.json")
+    run_summary = load_optional_json(evidence / "run-summary.json")
+    iteration_verdict = load_optional_json(evidence / "iteration-verdict.json")
+    failure_backlog = load_optional_json(evidence / "failure-backlog.json")
+    failures: list[str] = []
+    if isinstance(run_summary, dict):
+        failures.extend(str(item) for item in run_summary.get("failures", []) if item)
+    if isinstance(iteration_verdict, dict):
+        failures.extend(str(item) for item in iteration_verdict.get("remaining_issues", []) if item)
+    if isinstance(failure_backlog, dict):
+        for item in failure_backlog.get("open_items", []):
+            if isinstance(item, dict):
+                failures.append(str(item.get("summary") or item))
+            else:
+                failures.append(str(item))
+    if not isinstance(final_prism, dict):
+        final_prism = {
+            "schema_id": "redcap-e2e-final-prism-review",
+            "producer": "e2e-runner",
+            "ok": False,
+            "strictest_verdict": None,
+            "reviews": [],
+            "failures": ["缺少 final-prism-review.json，无法证明最终评审通过。"],
+        }
+        failures.append("缺少 final-prism-review.json，无法证明最终评审通过。")
+    diagnosis = classify_final_prism_convergence(final_prism, failures)
+    diagnosis["replay"] = {
+        "source_evidence_root": str(evidence),
+        "used_files": [
+            rel for rel in [
+                "final-prism-review.json",
+                "run-summary.json",
+                "iteration-verdict.json",
+                "failure-backlog.json",
+            ] if (evidence / rel).exists()
+        ],
+        "failure_count": len(failures),
+    }
+    return diagnosis
+
+
+def find_latest_structural_convergence(work_root: pathlib.Path) -> dict[str, Any] | None:
+    resolved = work_root.resolve()
+    search_roots = [resolved]
+    if resolved.parent.name == DEFAULT_PERSISTENT_WORK_ROOT.name:
+        search_roots.append(resolved.parent)
+    elif resolved == DEFAULT_PERSISTENT_WORK_ROOT:
+        search_roots.append(DEFAULT_PERSISTENT_WORK_ROOT)
+    candidates: list[tuple[float, pathlib.Path, dict[str, Any]]] = []
+    for root in unique_preserve_order([str(path) for path in search_roots]):
+        root_path = pathlib.Path(root)
+        if not root_path.exists():
+            continue
+        for path in root_path.glob("**/.redcap/evidence/e2e/convergence-diagnosis.json"):
+            payload = load_optional_json(path)
+            if not isinstance(payload, dict):
+                continue
+            if payload.get("final_prism_ok") is True:
+                continue
+            if payload.get("auto_rerun_allowed") is not False:
+                continue
+            diagnosis = payload.get("diagnosis")
+            if not isinstance(diagnosis, list) or not diagnosis:
+                continue
+            try:
+                mtime = path.stat().st_mtime
+            except OSError:
+                mtime = 0.0
+            candidates.append((mtime, path, payload))
+    if not candidates:
+        return None
+    _, path, payload = sorted(candidates, key=lambda item: item[0], reverse=True)[0]
+    return {"path": path, "payload": payload}
+
+
+def convergence_rerun_guard(work_root: pathlib.Path) -> dict[str, Any]:
+    latest = find_latest_structural_convergence(work_root)
+    current_source = redcap_source_revision()
+    if latest is None:
+        return {
+            "schema_id": "redcap-e2e-convergence-rerun-guard",
+            "ok": True,
+            "blocked": False,
+            "reason": "未发现上一轮结构性收敛阻断诊断。",
+            "current_source": current_source,
+        }
+    payload = latest["payload"]
+    recorded_source = payload.get("redcap_source") if isinstance(payload.get("redcap_source"), dict) else {}
+    recorded_signature = recorded_source.get("source_signature") if isinstance(recorded_source, dict) else None
+    current_signature = current_source.get("source_signature")
+    source_changed = bool(recorded_signature and current_signature and recorded_signature != current_signature)
+    if source_changed:
+        return {
+            "schema_id": "redcap-e2e-convergence-rerun-guard",
+            "ok": True,
+            "blocked": False,
+            "reason": "上一轮结构性诊断已被新的 RedCap 源码变更覆盖，允许修复后验证。",
+            "previous_diagnosis": str(latest["path"]),
+            "recorded_source_signature": recorded_signature,
+            "current_source_signature": current_signature,
+            "current_source": current_source,
+        }
+    return {
+        "schema_id": "redcap-e2e-convergence-rerun-guard",
+        "ok": False,
+        "blocked": True,
+        "reason": "上一轮 convergence-diagnosis.json 设置 auto_rerun_allowed=false，且 RedCap 源码签名没有变化；禁止继续盲目重跑 E2E。",
+        "previous_diagnosis": str(latest["path"]),
+        "diagnosis": payload.get("diagnosis"),
+        "required_next_action": "先修复 convergence-diagnosis.json 指出的 RedCap 机制缺口，再启动下一轮 E2E。",
+        "recorded_source_signature": recorded_signature,
+        "current_source_signature": current_signature,
+        "current_source": current_source,
+    }
 
 
 def criterion_pass(criterion: str, project: pathlib.Path, evidence: pathlib.Path, context: dict[str, Any]) -> tuple[bool, str]:
@@ -4190,6 +4557,7 @@ def write_completion_marker(
     self_referential_boundary: dict[str, Any] | None = None,
     final_marker_validation: dict[str, Any] | None = None,
     file_browser_inspection: dict[str, Any] | None = None,
+    convergence_diagnosis: dict[str, Any] | None = None,
 ) -> None:
     write_json(evidence / "completion-marker.json", {
         "schema_id": "redcap-e2e-completion-marker",
@@ -4217,6 +4585,11 @@ def write_completion_marker(
             "path": "file-browser-inspection.json",
             "ok": file_browser_inspection.get("ok") if isinstance(file_browser_inspection, dict) else None,
             "screenshot": "file-browser-inspection.png",
+        },
+        "convergence_diagnosis": {
+            "path": "convergence-diagnosis.json",
+            "auto_rerun_allowed": convergence_diagnosis.get("auto_rerun_allowed") if isinstance(convergence_diagnosis, dict) else None,
+            "strictest_verdict": convergence_diagnosis.get("strictest_verdict") if isinstance(convergence_diagnosis, dict) else None,
         },
         "browser_inspection": "browser-inspection.json",
         "behavioral_browser_verification": "behavioral-browser-verification.json",
@@ -4310,19 +4683,20 @@ def write_runner_self_purification_resolution(evidence: pathlib.Path) -> dict[st
 def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evidence: dict[str, Any] | None = None) -> dict[str, Any]:
     supplemental_evidence = supplemental_evidence or {}
     return {
-        "task": "Review whether this RedCap E2E run may write its completion marker.",
+        "task": "Review whether this RedCap E2E run may write an engineering-trial completion marker with explicit scope boundaries.",
         "user_intent": "Norven wants RedCap to prove it can drive a real project through role-separated Loom workflow, hooks, evidence, self-purification, persona boundary, and failure feedback before claiming production usefulness.",
-        "main_claim": "The E2E runner may write completion-marker.json because all role, hook, test, evidence, and failure-loop requirements passed after reviewer exit.",
+        "main_claim": "The E2E runner may write completion-marker.json only as a single-run engineering-trial evidence marker, because role, hook, test, evidence, boundary-disclosure, convergence-diagnosis, and failure-loop requirements passed after reviewer exit. This is not a claim that RedCap is permanently fully revived or externally production-certified.",
         "changed_reality": [
             "An external project was created outside the RedCap source workspace.",
             "Five Loom roles ran as independent Codex CLI sessions with project-level Hook evidence.",
             "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
             "The runner reran the detected project validation command again as final-marker-validation.json before asking for completion-marker.json, recording exit code, stdout hash, and stderr hash.",
             "The runner performed mutation-based negative contract probes: it prefers non-first eligible records when available, temporarily writes bad signup and character-player data, requires the validation command to fail, restores the original data, and requires validation to pass again.",
+            "The runner requires Loom roles to record upstream_challenges and reviewer to summarize role_opposition_matrix so the workflow has explicit role challenge evidence instead of a smooth same-context narrative.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
             "The runner also opened the same browser entrypoint through the file:// local file protocol and wrote file-browser-inspection.json plus file-browser-inspection.png before final provider review.",
-            "The runner performed a separate behavioral browser verification with a real click interaction, captured behavioral-browser-verification.png immediately after the verified interaction and before any later page reset, compared its hash with browser-inspection.png, and, when project data exposed player-character relationships, checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
-            "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review; browser-inspection, behavioral verification, independent browser verification, and independent observer use recorded browser_context metadata and are summarized by visual-independence-report.json.",
+            "The runner performed a separate behavioral browser verification with a real click interaction, captured behavioral-browser-verification.png immediately after the verified interaction, captured behavioral-relation-probe.png at the exact relation-probe state when character-player data exists, compared screenshot hashes, and checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
+            "The runner also wrote independent-browser-verification-script.py, recorded its SHA-256, launched it as a separate Python process, and wrote independent-browser-verification.json before final provider review; browser-inspection, behavioral verification, independent browser verification, and independent observer use recorded browser_context metadata and are summarized by visual-independence-report.json.",
             "The outer E2E harness launched an independent observer as a sibling process of the runner-worker; the observer read the frozen final-evidence-bundle.json, independently recomputed its declared bundle_sha256, rechecked the file hash after a cooldown window, and wrote read-only sealed independent-observer.json.",
             "self-referential-boundary.json explicitly discloses that the runner, observer, browser checks, and final reviews are coordinated on the same host and same RedCap package, and states what is not claimed.",
             "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
@@ -4378,6 +4752,11 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
                 "kind": "package-prism-check-full",
                 "reference": "package-prism-check.json",
                 "summary": supplemental_evidence.get("package_prism_check"),
+            },
+            {
+                "kind": "convergence-diagnosis-policy",
+                "reference": "convergence-diagnosis.json",
+                "summary": supplemental_evidence.get("convergence_diagnosis_policy"),
             }
         ],
         "review_mode": "completion_review",
@@ -4387,6 +4766,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "Reviewer must not self-certify completion.",
             "Open failure-backlog items block completion.",
             "Completion marker scope is only this E2E run, not permanent RedCap full revival.",
+            "Completion marker is an engineering-trial evidence marker with explicit validation_chain_scope and not_claimed boundaries; do not evaluate it as a cross-machine, human, or permanent production certification.",
             "iteration-verdict.json is intentionally not finalized before this provider review; pre-final-readiness.json is generated after final-evidence-bundle.json and is only an objective pre-final summary, not a completion claim.",
             "If this provider review passes, the runner must regenerate iteration-verdict.json with final_prism_pending=false before writing completion-marker.json.",
             "pre-final-readiness.json must not list completion-marker.json, final-prism-review.json, or iteration-verdict.json in evidence_checked; those belong in pending_final_evidence until this review passes.",
@@ -4395,6 +4775,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
             "visual-independence-report.json must show distinct screenshot hashes and recorded browser_context for browser-inspection, behavioral-browser-verification, independent-browser-verification, and independent-observer.",
             "completion-marker.json is forbidden before final provider review; if this review passes, the runner must copy self-referential-boundary.json disclosures into completion-marker.json and cite final-marker-validation.json and file-browser-inspection.json.",
+            "If the remaining concern is that any same-host automated E2E can never be externally production-certified, treat that as compatible with an engineering-trial marker only when self-referential-boundary.json and completion-marker.json explicitly disclose that limitation.",
         ],
         "role_execution_profile": {
             "model": CODEX_ROLE_MODEL,
@@ -4642,12 +5023,23 @@ def finalize_e2e_acceptance(
             "failure_backlog": load_optional_json(evidence / "failure-backlog.json"),
             "independent_observer": load_optional_json(evidence / "independent-observer.json"),
             "package_prism_check": load_optional_json(evidence / "package-prism-check.json"),
+            "convergence_diagnosis_policy": {
+                "will_write": "convergence-diagnosis.json",
+                "rule": "如果最终棱镜未通过，运行器必须归类 loop_class，并在结构性缺口存在时设置 auto_rerun_allowed=false，禁止继续无意义重跑。",
+            },
         })
         write_runner_prism_assistance(evidence, final_prism)
+        convergence = classify_final_prism_convergence(final_prism, failures)
+        write_json(evidence / "convergence-diagnosis.json", convergence)
         if final_prism.get("ok") is not True:
             failures.append(f"最终棱镜复核未通过：{final_prism.get('failures')}")
+            if convergence.get("auto_rerun_allowed") is not True:
+                failures.append("E2E 收敛诊断禁止自动盲目重跑；必须先处理 convergence-diagnosis.json 中的结构性缺口")
     if failures:
         if "final_prism" in locals():
+            if not (evidence / "convergence-diagnosis.json").exists():
+                convergence = classify_final_prism_convergence(final_prism, failures)
+                write_json(evidence / "convergence-diagnosis.json", convergence)
             write_runner_prism_assistance(evidence, final_prism)
         write_failure_backlog_with_runner_items(evidence, failures)
         write_final_iteration_verdict(project, evidence, False, failures, {
@@ -4655,6 +5047,8 @@ def finalize_e2e_acceptance(
             "final_prism_ok": final_prism.get("ok") is True if "final_prism" in locals() else False,
         })
     else:
+        convergence = classify_final_prism_convergence(final_prism, failures)
+        write_json(evidence / "convergence-diagnosis.json", convergence)
         write_final_iteration_verdict(project, evidence, True, [], {
             **pre_final_context,
             "final_prism_ok": final_prism.get("ok") is True,
@@ -4667,6 +5061,7 @@ def finalize_e2e_acceptance(
             self_referential_boundary=self_referential_boundary,
             final_marker_validation=final_marker_validation,
             file_browser_inspection=file_browser_inspection,
+            convergence_diagnosis=convergence,
         )
     return {
         "schema_id": "redcap-e2e-finalization-result",
@@ -4828,12 +5223,38 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
                 failures.append("behavioral-browser-verification.visual_independence 必须证明已比较普通截图和行为截图哈希")
             if visual_independence.get("hashes_differ") is not True:
                 failures.append("behavioral-browser-verification.visual_independence 必须证明行为截图不同于普通浏览器截图")
+        relation_probe = behavioral_verification.get("relation_probe")
+        if isinstance(relation_probe, dict):
+            relation_record = behavioral_verification.get("relation_probe_screenshot_record")
+            if not isinstance(relation_record, dict) or relation_record.get("exists") is not True or not relation_record.get("sha256"):
+                failures.append("behavioral-browser-verification 有角色玩家关系探针时，必须记录 behavioral-relation-probe.png 截图哈希")
+            relation_check = next(
+                (
+                    item for item in behavioral_verification.get("checks", [])
+                    if isinstance(item, dict) and item.get("name") == "character_player_relation_visible"
+                ),
+                None,
+            )
+            relation_evidence = relation_check.get("evidence") if isinstance(relation_check, dict) else None
+            if not isinstance(relation_evidence, dict) or not isinstance(relation_evidence.get("relation_event_control"), dict):
+                failures.append("behavioral-browser-verification 关系探针必须记录 relation_event_control，说明验证的是哪个交互状态")
+            if isinstance(relation_evidence, dict) and relation_evidence.get("event_title") and relation_evidence.get("relation_event_title_visible") is not True:
+                failures.append("behavioral-browser-verification 关系探针必须证明被验证活动标题在关系探针页面状态中可见")
     visual_report = load_optional_json(evidence / "visual-independence-report.json")
     if visual_report is not None:
         if visual_report.get("ok") is not True:
             failures.append(f"visual-independence-report 必须通过：{visual_report.get('failures')}")
         if visual_report.get("distinct_screenshot_sha256_count") != visual_report.get("screenshot_count"):
             failures.append("visual-independence-report 必须证明截图哈希互不相同")
+    independent_browser = load_optional_json(evidence / "independent-browser-verification.json")
+    if independent_browser is not None:
+        if independent_browser.get("ok") is not True:
+            failures.append("independent-browser-verification 必须通过")
+        script = independent_browser.get("script")
+        if not isinstance(script, dict) or script.get("path") != "independent-browser-verification-script.py" or not script.get("sha256"):
+            failures.append("independent-browser-verification 必须记录独立脚本文件路径和 sha256")
+        elif not (evidence / "independent-browser-verification-script.py").exists():
+            failures.append("independent-browser-verification-script.py 必须真实存在于证据目录")
     independent_observer = load_optional_json(evidence / "independent-observer.json")
     if independent_observer is not None:
         verification = verify_independent_observer_output(evidence / "independent-observer.json")
@@ -4866,6 +5287,7 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
                 "observer-command.json",
                 "visual-independence-report.json",
                 "pre-final-readiness.json",
+                "convergence-diagnosis.json",
                 "final-prism-review.json",
                 "failure-backlog.json",
                 "iteration-verdict.json",
@@ -5146,6 +5568,17 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
     if os.environ.get("REDCAP_E2E_WORKER") == "1":
         return run_e2e(direction, work_root, timeout_seconds)
     work_root.mkdir(parents=True, exist_ok=True)
+    rerun_guard = convergence_rerun_guard(work_root)
+    write_json(work_root / "redcap-e2e-convergence-rerun-guard.json", rerun_guard)
+    if rerun_guard.get("blocked") is True:
+        return {
+            "schema_id": "redcap-ai-e2e-run-result",
+            "ok": False,
+            "ready_for_engineering_use": False,
+            "blocked_before_project_run": True,
+            "convergence_rerun_guard": rerun_guard,
+            "failures": [str(rerun_guard.get("reason"))],
+        }
     env = os.environ.copy()
     env["REDCAP_E2E_WORKER"] = "1"
     env["REDCAP_E2E_OBSERVER_BY_HARNESS"] = "1"
@@ -5262,6 +5695,39 @@ def cmd_carrier_probe(args: argparse.Namespace) -> int:
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result.get("ok"):
         print("REDCAP_AI_E2E_CARRIER_PROBE_OK")
+        return 0
+    return 1
+
+
+def cmd_convergence_check(args: argparse.Namespace) -> int:
+    evidence = pathlib.Path(args.evidence_root).expanduser().resolve()
+    result = convergence_diagnosis_from_evidence(evidence)
+    if args.out:
+        write_json(pathlib.Path(args.out).expanduser().resolve(), result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("final_prism_ok") is True:
+        print("REDCAP_AI_E2E_CONVERGENCE_PASS")
+        return 0
+    if result.get("auto_rerun_allowed") is False and result.get("diagnosis"):
+        print("REDCAP_AI_E2E_CONVERGENCE_STRUCTURAL_STOP")
+        if args.expect_structural_stop:
+            return 0
+        return 2
+    return 1
+
+
+def cmd_convergence_guard_check(args: argparse.Namespace) -> int:
+    result = convergence_rerun_guard(resolve_work_root(args.work_root))
+    if args.out:
+        write_json(pathlib.Path(args.out).expanduser().resolve(), result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if args.expect_blocked:
+        if result.get("blocked") is True:
+            print("REDCAP_AI_E2E_CONVERGENCE_GUARD_BLOCKED_OK")
+            return 0
+        return 1
+    if result.get("ok") is True:
+        print("REDCAP_AI_E2E_CONVERGENCE_GUARD_OK")
         return 0
     return 1
 
@@ -5658,6 +6124,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             runner_follow_up = verdict_template.get("runner_owned_follow_up")
             if not isinstance(runner_follow_up, list) or sorted(set(REVIEWER_RUNNER_OWNED_FOLLOW_UP) - {str(item) for item in runner_follow_up}):
                 failures.append("review-verdict-template.json 没有预置完整的 runner_owned_follow_up")
+            if "role_opposition_matrix" not in verdict_template:
+                failures.append("review-verdict-template.json 没有预置 role_opposition_matrix")
             write_json(evidence / "failure-backlog.json", {
                 "schema_id": "redcap-e2e-failure-backlog",
                 "open_items": [],
@@ -5698,11 +6166,94 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 "terminal_completion": False,
                 "boundary": "reviewer 只能给阶段评审，不能自证本轮 E2E 终局完成。",
                 "blocking_findings": [],
-                "runner_owned_follow_up": REVIEWER_RUNNER_OWNED_FOLLOW_UP
+                "runner_owned_follow_up": REVIEWER_RUNNER_OWNED_FOLLOW_UP,
+                "role_opposition_matrix": [
+                    {
+                        "role": "product_manager",
+                        "challenge_summary": "产品经理接受方向并收窄范围。",
+                        "reviewer_disposition": "accepted"
+                    },
+                    {
+                        "role": "architect",
+                        "challenge_summary": "架构师复核产品需求风险。",
+                        "reviewer_disposition": "accepted"
+                    },
+                    {
+                        "role": "developer",
+                        "challenge_summary": "开发者复核架构与验收可实现性。",
+                        "reviewer_disposition": "accepted"
+                    },
+                    {
+                        "role": "tester",
+                        "challenge_summary": "测试者用负向探针挑战开发声明。",
+                        "reviewer_disposition": "accepted"
+                    }
+                ]
             })
             reviewer_failures = validate_reviewer_outputs(evidence)
             if reviewer_failures:
                 failures.append(f"reviewer 终局边界自检失败：{reviewer_failures}")
+            structural_final_prism = {
+                "schema_id": "redcap-e2e-final-prism-review",
+                "producer": "e2e-runner",
+                "ok": False,
+                "strictest_verdict": "concern",
+                "reviews": [],
+                "merge": {
+                    "strictest_verdict": "concern",
+                    "main_concerns": [
+                        {
+                            "provider": "kimi",
+                            "concern": "The completion claim is self-witnessed and self-referential; the same RedCap harness lacks an external anchor and the relation probe has page-state ambiguity."
+                        },
+                        {
+                            "provider": "claude-code",
+                            "concern": "The independent browser verification uses an inline script instead of a hash-verifiable file, and cross-role challenge evidence is too weak."
+                        }
+                    ],
+                    "minimum_fixes": [
+                        {
+                            "provider": "kimi",
+                            "minimum_fix": "Add an external anchor or downgrade to engineering-trial scope; record relation probe state."
+                        }
+                    ]
+                },
+                "failures": ["最终棱镜 strictest_verdict 不是 pass：concern"],
+            }
+            structural_convergence = classify_final_prism_convergence(structural_final_prism, structural_final_prism["failures"])
+            structural_classes = {item.get("loop_class") for item in structural_convergence.get("diagnosis", [])}
+            expected_structural_classes = {
+                "verification_authority_gap",
+                "loom_opposition_gap",
+                "behavioral_evidence_alignment_gap",
+            }
+            if structural_convergence.get("auto_rerun_allowed") is not False:
+                failures.append("结构性最终棱镜 concern 没有禁止自动盲目重跑")
+            if not expected_structural_classes.issubset(structural_classes):
+                failures.append(f"结构性收敛诊断缺少类别：{sorted(expected_structural_classes - structural_classes)}")
+            replay_evidence = work_root / "convergence-replay" / ".redcap" / "evidence" / "e2e"
+            write_json(replay_evidence / "final-prism-review.json", structural_final_prism)
+            write_json(replay_evidence / "run-summary.json", {
+                "schema_id": "redcap-ai-e2e-run-result",
+                "ok": False,
+                "failures": ["最终棱镜复核未通过"],
+            })
+            replay_convergence = convergence_diagnosis_from_evidence(replay_evidence)
+            replay_classes = {item.get("loop_class") for item in replay_convergence.get("diagnosis", [])}
+            if not expected_structural_classes.issubset(replay_classes):
+                failures.append(f"收敛回放没有复现结构性类别：{sorted(expected_structural_classes - replay_classes)}")
+            loop_root = work_root / "loop-guard"
+            previous_evidence = loop_root / "previous" / ".redcap" / "evidence" / "e2e"
+            write_json(previous_evidence / "convergence-diagnosis.json", replay_convergence)
+            blocked_guard = convergence_rerun_guard(loop_root)
+            if blocked_guard.get("blocked") is not True:
+                failures.append("上一轮 auto_rerun_allowed=false 且源码未变时，E2E 重跑守卫没有阻断")
+            changed_convergence = copy.deepcopy(replay_convergence)
+            changed_convergence.setdefault("redcap_source", {})["source_signature"] = "old-source-signature"
+            write_json(previous_evidence / "convergence-diagnosis.json", changed_convergence)
+            allowed_guard = convergence_rerun_guard(loop_root)
+            if allowed_guard.get("blocked") is True:
+                failures.append("源码签名变化后，E2E 重跑守卫没有允许修复后验证")
             current_source = pathlib.Path(__file__).read_text(encoding="utf-8")
             if '"python3", "-m", "http.server"' not in current_source or "http://127.0.0.1:" not in current_source:
                 failures.append("浏览器验收没有通过本地 HTTP 服务打开项目，可能退化为 file:// 误判")
@@ -5712,6 +6263,20 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("E2E 自检没有覆盖行为级浏览器验证证据")
             if "independent-browser-verification.json" not in current_source or "e2e-independent-browser-process" not in current_source:
                 failures.append("E2E 自检没有覆盖独立子进程浏览器复核证据")
+            if "independent-browser-verification-script.py" not in current_source or "script_sha256" not in current_source:
+                failures.append("E2E 自检没有覆盖独立浏览器验证脚本哈希证据")
+            if "role_opposition_matrix" not in current_source or "upstream_challenges" not in current_source:
+                failures.append("E2E 自检没有覆盖 Loom 角色对抗证据")
+            if "convergence-diagnosis.json" not in current_source or "classify_final_prism_convergence" not in current_source:
+                failures.append("E2E 自检没有覆盖防无限循环的收敛诊断证据")
+            if "convergence_rerun_guard" not in current_source or "redcap-e2e-convergence-rerun-guard.json" not in current_source:
+                failures.append("E2E 自检没有覆盖 auto_rerun_allowed=false 的下一轮重跑阻断")
+            if "convergence_diagnosis_from_evidence" not in current_source or "convergence-check" not in current_source:
+                failures.append("E2E 自检没有覆盖旧轮次收敛诊断回放入口")
+            if "convergence-guard-check" not in current_source or "expect_blocked" not in current_source:
+                failures.append("E2E 自检没有覆盖重跑守卫检查入口")
+            if "behavioral-relation-probe.png" not in current_source or "relation_event_control" not in current_source:
+                failures.append("E2E 自检没有覆盖行为关系探针截图和事件状态证据")
             if "independent-observer.json" not in current_source or "e2e_independent_observer.py" not in current_source:
                 failures.append("E2E 自检没有覆盖独立外部观察者证据")
             if "run_e2e_harness" not in current_source or "REDCAP_E2E_WORKER" not in current_source:
@@ -5788,6 +6353,16 @@ def build_parser() -> argparse.ArgumentParser:
     carrier.add_argument("--work-root")
     carrier.add_argument("--timeout-seconds", type=int, default=240)
     carrier.set_defaults(func=cmd_carrier_probe)
+    convergence = sub.add_parser("convergence-check")
+    convergence.add_argument("--evidence-root", required=True)
+    convergence.add_argument("--out")
+    convergence.add_argument("--expect-structural-stop", action="store_true")
+    convergence.set_defaults(func=cmd_convergence_check)
+    guard_check = sub.add_parser("convergence-guard-check")
+    guard_check.add_argument("--work-root")
+    guard_check.add_argument("--out")
+    guard_check.add_argument("--expect-blocked", action="store_true")
+    guard_check.set_defaults(func=cmd_convergence_guard_check)
     run = sub.add_parser("run")
     run.add_argument("--direction")
     run.add_argument("--direction-file")

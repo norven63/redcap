@@ -1,0 +1,132 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260616-e2e-convergence-and-external-anchor",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven 要求先解决 E2E 无限循环却无法把 RedCap 推进到可交付状态的问题，再继续被中断的完整复活任务；不能继续无意义重跑，也不能降低验收标准。",
+    "target_reality": "第 40 轮 E2E 已证明外部项目交付、Loom 角色链、运行器测试、负向领域契约探针、浏览器检查和源工作区保护均可运行，但最终棱镜给出 concern：验收链仍有同一 RedCap 运行器自证风险、角色对抗证据不足、行为浏览器关系探针状态说明不够清楚。",
+    "non_goals": [
+      "不把第 40 轮失败说成通过",
+      "不删除最终棱镜复核",
+      "不把 strictest_verdict=concern 当作 pass",
+      "不通过降级、绕过或放松验收来制造 completion-marker.json",
+      "不立即启动下一轮 E2E 去碰运气"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "root_cause": "E2E 收口层缺少明确的证明等级、外部锚点策略、循环停止规则和角色对抗证据要求，导致每轮都可能把同一套自证链补得更复杂，却仍被最终评审以验证拓扑不足拦下。",
+    "chosen_solution": "在 complete-revival-e2e 运行器中加入收口治理：保存独立浏览器验证脚本并记录哈希，生成 convergence-diagnosis 归类最终棱镜失败原因和自动重跑许可，收紧最终棱镜请求为工程试用证据而非永久终局证明，要求 completion-marker 复制自引用边界披露；同时补强 Loom 角色对抗证据和行为浏览器关系探针状态说明。",
+    "rollback_plan": "若本轮改动导致 E2E 运行器无法产生原有证据或误杀有效工程试用证据，回退 runtime/core/complete_revival_e2e.py 和 assets/contracts/complete-revival-e2e-acceptance-design.json 中本轮新增的收口治理、角色对抗和独立脚本证据变更。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260616-e2e-convergence-and-external-anchor-lifecycle.json",
+      "runtime/bin/redcap gate --task \"修复E2E无限循环与最终交付推进阻塞\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260616-e2e-convergence-and-external-anchor-lifecycle.json",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/revival_followthrough.py",
+      "runtime/bin/redcap complete-revival-e2e design-check",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "runtime/bin/redcap revival-followthrough self-check",
+      "git diff --check",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "你需要先把导致无限循环却无法推进redcap复活计划到最终交付状态的问题先解决掉，然后再继续推进当前被中断的任务，直至达成目标为止。",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation",
+    "continuation_authorization": {
+      "mode": "same_session_authorized_continuation",
+      "source": "same_session_resume",
+      "session_id": "019e745f-17b8-7832-ada8-ae990b49db69",
+      "turn_id": "019ed0e7-b3b2-70f1-b2b9-41a838309d5d"
+    }
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/merge.json",
+    "resolution_path": "assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/session.json"
+  },
+  "task_body": {
+    "requested_outcome": "让 E2E 运行器在遇到验证拓扑不足、角色对抗不足或行为证据歧义时能明确诊断、阻止无意义重跑，并把可修复项落实为硬证据要求。",
+    "primary_deliverable": "runtime/core/complete_revival_e2e.py 增强收口治理与证据质量；assets/contracts/complete-revival-e2e-acceptance-design.json 同步合同要求。",
+    "acceptance_criteria": [
+      "最终棱镜失败时必须写 convergence-diagnosis.json，说明 loop_class、auto_rerun_allowed、required_next_action 和 evidence_gap",
+      "自证拓扑类失败不得被无限自动重跑，必须明确外部锚点或工程试用范围边界",
+      "独立浏览器验证不能只使用匿名内联脚本，必须保存脚本文件并记录 sha256",
+      "最终棱镜请求必须明确 completion-marker 只代表工程试用证据，不代表 RedCap 永久完整复活或跨机器生产验收",
+      "Loom 角色或 reviewer 必须留下上游挑战、风险异议、接受或拒绝理由等角色对抗证据",
+      "行为浏览器验证必须记录交互后的选中事件和关系探针事件，避免点击状态与关系证据错位",
+      "所有新增规则必须进入 self-check 或 design-check，防止后续回退"
+    ],
+    "status": "verified",
+    "evidence_kind": "code-and-review",
+    "evidence": [
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/core/revival_followthrough.py",
+      "runtime/bin/redcap",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json"
+    ]
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "第 40 轮的主要失败不在外部项目功能，而在最终验收拓扑仍可被判定为同源自证。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round40/"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "继续原样 E2E 会制造循环；运行器必须在同类拓扑失败时产出停止规则和下一步动作，而不是只写普通 failure-backlog。"
+      ],
+      "evidence": [
+        "final-prism-review.json",
+        "failure-backlog.json",
+        "iteration-verdict.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "当前合同要求最终棱镜通过，但未把验证等级、外部锚点和工程试用边界写成可检测规则。"
+      ],
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "runtime/core/complete_revival_e2e.py"
+      ]
+    }
+  },
+  "implementation_evidence": [
+    "runtime/core/complete_revival_e2e.py",
+    "runtime/core/revival_followthrough.py",
+    "runtime/bin/redcap",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json",
+    "assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/resolution.json"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260616-e2e-convergence-and-external-anchor/py-compile.receipt.json",
+    "assets/evidence/check-receipts/20260616-e2e-convergence-and-external-anchor/complete-revival-e2e-design-check.receipt.json",
+    "assets/evidence/check-receipts/20260616-e2e-convergence-and-external-anchor/complete-revival-e2e-self-check.receipt.json",
+    "assets/evidence/check-receipts/20260616-e2e-convergence-and-external-anchor/round40-convergence-check.receipt.json",
+    "assets/evidence/check-receipts/20260616-e2e-convergence-and-external-anchor/convergence-guard-check.receipt.json",
+    "assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/round40-convergence-replay.json",
+    "assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/redcap-e2e-convergence-rerun-guard.json",
+    "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/merge.json --resolution assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/resolution.json --manifest assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/session.json",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": false,
+    "scope": "本包只跟踪 E2E 无限循环根因治理，不声明 RedCap 完整复活"
+  }
+}

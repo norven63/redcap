@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap complete-revival-e2e design-check",
+  "executed_at": "2026-06-16T15:25:43+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260616-e2e-convergence-and-external-anchor/complete-revival-e2e-design-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260616-e2e-convergence-and-external-anchor/complete-revival-e2e-design-check.stdout.txt",
+  "stdout_sha256": "0c529de2608285057acc7d29d6aba7da4aef50dd057fe0fd91c8d0d43ef4760b"
+}

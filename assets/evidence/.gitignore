@@ -29,6 +29,8 @@
 !check-receipts/20260615-e2e-role-timeout-hardening/**
 !check-receipts/20260615-e2e-reviewer-contract-fix/
 !check-receipts/20260615-e2e-reviewer-contract-fix/**
+!check-receipts/20260616-e2e-convergence-and-external-anchor/
+!check-receipts/20260616-e2e-convergence-and-external-anchor/**
 
 !task-facts/
 !task-facts/task-facts.json
@@ -98,3 +100,18 @@
 !prism/e2e-reviewer-contract-fix-20260615/claude-code/review.json
 !prism/e2e-reviewer-contract-fix-20260615/claude-code/review.brief.md
 !prism/e2e-reviewer-contract-fix-20260615/merge.json
+!prism/20260616-e2e-convergence-and-external-anchor/
+!prism/20260616-e2e-convergence-and-external-anchor/session.json
+!prism/20260616-e2e-convergence-and-external-anchor/request.json
+!prism/20260616-e2e-convergence-and-external-anchor/merge.json
+!prism/20260616-e2e-convergence-and-external-anchor/resolution.json
+!prism/20260616-e2e-convergence-and-external-anchor/*.review.json
+!prism/20260616-e2e-convergence-and-external-anchor/*.review.brief.md
+!prism/20260616-e2e-convergence-and-external-anchor/round40-convergence-replay.json
+!prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/
+!prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/redcap-e2e-convergence-rerun-guard.json
+!prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/previous/
+!prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/previous/.redcap/
+!prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/previous/.redcap/evidence/
+!prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/previous/.redcap/evidence/e2e/
+!prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/previous/.redcap/evidence/e2e/convergence-diagnosis.json

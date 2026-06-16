@@ -1,0 +1,11 @@
+{
+  "command": "runtime/bin/redcap complete-revival-e2e convergence-guard-check --work-root assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work --out assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/redcap-e2e-convergence-rerun-guard.json --expect-blocked",
+  "executed_at": "2026-06-16T15:25:49+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260616-e2e-convergence-and-external-anchor/convergence-guard-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260616-e2e-convergence-and-external-anchor/convergence-guard-check.stdout.txt",
+  "stdout_sha256": "a11b952a402ec2889b5394af7e747f2902639ca4d12260ad8449fff41683d72d"
+}

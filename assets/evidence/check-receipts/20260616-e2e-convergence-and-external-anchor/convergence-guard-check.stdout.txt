@@ -1,0 +1,101 @@
+{
+  "schema_id": "redcap-e2e-convergence-rerun-guard",
+  "ok": false,
+  "blocked": true,
+  "reason": "上一轮 convergence-diagnosis.json 设置 auto_rerun_allowed=false，且 RedCap 源码签名没有变化；禁止继续盲目重跑 E2E。",
+  "previous_diagnosis": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260616-e2e-convergence-and-external-anchor/rerun-guard-probe-work/previous/.redcap/evidence/e2e/convergence-diagnosis.json",
+  "diagnosis": [
+    {
+      "loop_class": "verification_authority_gap",
+      "evidence_gap": "最终评审认为当前验收链仍可能由同一 RedCap 运行器自证，缺少足够清晰的外部锚点或工程试用边界。",
+      "required_next_action": "先补外部锚点证据、独立脚本哈希、边界降级声明或人工/非运行器验收入口，再重新执行 E2E。",
+      "auto_rerun_allowed": false
+    }
+  ],
+  "required_next_action": "先修复 convergence-diagnosis.json 指出的 RedCap 机制缺口，再启动下一轮 E2E。",
+  "recorded_source_signature": "48b96524736ddb67740a1d254025420a259cd99314ed26632d90a61ad36ec0e5",
+  "current_source_signature": "48b96524736ddb67740a1d254025420a259cd99314ed26632d90a61ad36ec0e5",
+  "current_source": {
+    "git_head": "afcf4b77ad1541b1b3bf86ecf8871060248d8fdc",
+    "dirty": true,
+    "status_sha256": "a026a3b9e75650927799d5c394655473b5f644c061b95c2bf30370fa353cbe0c",
+    "relevant_diff_sha256": "0fb4132227150dc0f6626fd563379a78f9c2ccddc049dd82bf183b608ebff817",
+    "source_signature": "48b96524736ddb67740a1d254025420a259cd99314ed26632d90a61ad36ec0e5",
+    "signature_scope": [
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/core/revival_followthrough.py",
+      "runtime/bin/redcap",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json"
+    ],
+    "commands": {
+      "head": {
+        "argv": [
+          "git",
+          "rev-parse",
+          "--verify",
+          "HEAD"
+        ],
+        "cwd": "/Users/norven/workspace/AI Era/redcap",
+        "exit_code": 0,
+        "ok": true,
+        "timed_out": false,
+        "timeout_seconds": 15,
+        "process_group_killed": null,
+        "stdout_length": 41,
+        "stdout_sha256": "f769271e40c9cc70200b2c3f78f8abde4639a686e791cd8f44c8ab271be61635",
+        "stderr_length": 0,
+        "stderr_sha256": null,
+        "stdout_tail": "afcf4b77ad1541b1b3bf86ecf8871060248d8fdc\n",
+        "stderr_tail": ""
+      },
+      "status": {
+        "argv": [
+          "git",
+          "status",
+          "--porcelain=v1",
+          "--",
+          "runtime/core/complete_revival_e2e.py",
+          "runtime/core/revival_followthrough.py",
+          "runtime/bin/redcap",
+          "assets/contracts/complete-revival-e2e-acceptance-design.json"
+        ],
+        "cwd": "/Users/norven/workspace/AI Era/redcap",
+        "exit_code": 0,
+        "ok": true,
+        "timed_out": false,
+        "timeout_seconds": 15,
+        "process_group_killed": null,
+        "stdout_length": 167,
+        "stdout_sha256": "a026a3b9e75650927799d5c394655473b5f644c061b95c2bf30370fa353cbe0c",
+        "stderr_length": 0,
+        "stderr_sha256": null,
+        "stdout_tail": " M assets/contracts/complete-revival-e2e-acceptance-design.json\n M runtime/bin/redcap\n M runtime/core/complete_revival_e2e.py\n M runtime/core/revival_followthrough.py\n",
+        "stderr_tail": ""
+      },
+      "diff": {
+        "argv": [
+          "git",
+          "diff",
+          "--",
+          "runtime/core/complete_revival_e2e.py",
+          "runtime/core/revival_followthrough.py",
+          "runtime/bin/redcap",
+          "assets/contracts/complete-revival-e2e-acceptance-design.json"
+        ],
+        "cwd": "/Users/norven/workspace/AI Era/redcap",
+        "exit_code": 0,
+        "ok": true,
+        "timed_out": false,
+        "timeout_seconds": 15,
+        "process_group_killed": null,
+        "stdout_length": 74536,
+        "stdout_sha256": "0fb4132227150dc0f6626fd563379a78f9c2ccddc049dd82bf183b608ebff817",
+        "stderr_length": 0,
+        "stderr_sha256": null,
+        "stdout_tail": "2e-runner\", \"ok\": true, \"validation_chain_scope\": {\"same_host\": true, \"same_redcap_package\": true}, \"completion_marker_disclosure\": {\"must_copy_this_boundary\": true}}\\n', encoding=\"utf-8\")\n+        (evidence / \"convergence-diagnosis.json\").write_text('{\"schema_id\": \"redcap-e2e-convergence-diagnosis\", \"producer\": \"e2e-runner\", \"final_prism_ok\": true, \"strictest_verdict\": \"pass\", \"auto_rerun_allowed\": false, \"diagnosis\": []}\\n', encoding=\"utf-8\")\n         (evidence / \"final-evidence-bundle.json\").write_text(json.dumps({\n             \"schema_id\": \"redcap-e2e-final-evidence-bundle\",\n             \"producer\": \"e2e-runner\",\n@@ -723,7 +742,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:\n             \"evidence_checked\": sorted(REQUIRED_EVIDENCE_CHECKS),\n         }, ensure_ascii=False), encoding=\"utf-8\")\n         (evidence / \"package-prism-check.json\").write_text('{\"ok\": true, \"exit_code\": 0, \"stdout_tail\": \"PRISM_CHECK_OK\"}\\n', encoding=\"utf-8\")\n-        (evidence / \"completion-marker.json\").write_text('{\"schema_id\": \"redcap-e2e-completion-marker\", \"producer\": \"e2e-runner\", \"ready_for_engineering_use\": true, \"final_prism_strictest_verdict\": \"pass\", \"validation_chain_scope\": {\"same_host\": true, \"same_redcap_package\": true}, \"not_claimed\": [\"fixture\"], \"final_marker_validation\": {\"ok\": true}, \"file_browser_inspection\": {\"ok\": true}}\\n', encoding=\"utf-8\")\n+        (evidence / \"completion-marker.json\").write_text('{\"schema_id\": \"redcap-e2e-completion-marker\", \"producer\": \"e2e-runner\", \"ready_for_engineering_use\": true, \"final_prism_strictest_verdict\": \"pass\", \"validation_chain_scope\": {\"same_host\": true, \"same_redcap_package\": true}, \"not_claimed\": [\"fixture\"], \"final_marker_validation\": {\"ok\": true}, \"file_browser_inspection\": {\"ok\": true}, \"convergence_diagnosis\": {\"strictest_verdict\": \"pass\"}}\\n', encoding=\"utf-8\")\n         good = validate_e2e_evidence_quality(evidence)\n         if not good[\"ok\"]:\n             failures.append(f\"合法 E2E fixture 不应失败：{good['failures']}\")\n",
+        "stderr_tail": ""
+      }
+    }
+  }
+}
+REDCAP_AI_E2E_CONVERGENCE_GUARD_BLOCKED_OK
