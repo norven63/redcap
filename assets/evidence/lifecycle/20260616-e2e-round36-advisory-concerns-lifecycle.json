@@ -4,7 +4,7 @@
   "fsm_state": "IMPLEMENTING",
   "requirement_review": {
     "user_intent": "Norven 授权继续 RedCap 复活长任务直至目标达成，并要求不要留下已知尾巴；Round36 E2E 已通过，但最终棱镜复核留下了证据独立性和负向探针覆盖面的建议型担忧。",
-    "target_reality": "把 Round36 的建议型担忧转成运行器能力增强：独立观察者不依赖 harness 传入的期望哈希，负向探针覆盖非首条记录，观察者验证记录冻结包到观察者验证的时间窗口和冷却后复核。",
+    "target_reality": "把 Round36 的建议型担忧转成运行器能力增强：独立观察者不依赖 harness 传入的期望哈希，负向探针覆盖非首条记录，观察者验证记录冻结包到观察者验证的时间窗口和冷却后复核；同时修复 Round37 暴露的 README 长驻服务命令被误识别为验证命令的问题。",
     "non_goals": [
       "不降低 Round36 已通过的最终棱镜标准",
       "不删除独立观察者或视觉三角验证",
@@ -49,6 +49,7 @@
       "观察者记录 freeze_to_observer_seconds 和 cooldown_recheck，且冷却后文件哈希保持一致",
       "signup 负向探针优先选择非首条承载报名意向的记录，且记录 probe_depth",
       "character-player 负向探针优先选择非首条可验证角色玩家关系，且记录 probe_depth",
+      "detect_validation_command 不得把 serve、start、dev、watch、preview、listen 等长驻服务命令识别为验证命令",
       "complete-revival-e2e self-check 覆盖上述能力，防止回退"
     ],
     "status": "implemented",

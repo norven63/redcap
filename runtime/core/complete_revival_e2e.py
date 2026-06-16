@@ -2094,9 +2094,9 @@ def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, d
 def detect_validation_command(project: pathlib.Path) -> tuple[list[str] | None, str]:
     package_json = load_optional_json(project / "package.json")
     scripts = package_json.get("scripts") if isinstance(package_json, dict) else None
-    if isinstance(scripts, dict) and isinstance(scripts.get("test"), str) and scripts["test"].strip():
+    if isinstance(scripts, dict) and isinstance(scripts.get("test"), str) and scripts["test"].strip() and not command_text_looks_long_running(scripts["test"]):
         return ["npm", "test"], "package.json scripts.test"
-    if isinstance(scripts, dict) and isinstance(scripts.get("validate"), str) and scripts["validate"].strip():
+    if isinstance(scripts, dict) and isinstance(scripts.get("validate"), str) and scripts["validate"].strip() and not command_text_looks_long_running(scripts["validate"]):
         return ["npm", "run", "validate"], "package.json scripts.validate"
     script_candidates = [
         ("scripts/validate.js", ["node", "scripts/validate.js"]),
@@ -2120,6 +2120,8 @@ def detect_validation_command(project: pathlib.Path) -> tuple[list[str] | None, 
                 continue
             if not (project / relative_path).exists():
                 continue
+            if validation_script_path_looks_long_running(relative_path):
+                continue
             argv = [runner, relative_path]
             if runner == "bash" and not relative_path.endswith(".sh"):
                 continue
@@ -2130,6 +2132,23 @@ def detect_validation_command(project: pathlib.Path) -> tuple[list[str] | None, 
             return argv, f"README.md command: {runner} {relative_path}"
     known_sources = ", ".join(["package.json scripts.test", "package.json scripts.validate", *[item[0] for item in script_candidates]])
     return None, f"没有发现可执行验证命令：{known_sources}"
+
+
+LONG_RUNNING_COMMAND_HINTS = {"serve", "server", "start", "dev", "watch", "preview", "listen", "http-server"}
+
+
+def command_text_looks_long_running(command_text: str) -> bool:
+    lowered = command_text.lower()
+    tokens = re.split(r"[^a-z0-9]+", lowered)
+    return any(token in LONG_RUNNING_COMMAND_HINTS for token in tokens)
+
+
+def validation_script_path_looks_long_running(relative_path: str) -> bool:
+    pure = pathlib.PurePosixPath(relative_path)
+    tokens: list[str] = []
+    for part in pure.parts:
+        tokens.extend(re.split(r"[^a-z0-9]+", part.lower()))
+    return any(token in LONG_RUNNING_COMMAND_HINTS for token in tokens)
 
 
 def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
@@ -5064,6 +5083,14 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             detected_argv, detected_source = detect_validation_command(project)
             if detected_argv != ["node", "scripts/validate-data.js"] or detected_source != "README.md command: node scripts/validate-data.js":
                 failures.append("运行器没有识别 README 中明确给出的本地验证命令")
+            serve_js = project / "scripts" / "serve.js"
+            serve_js.write_text("setInterval(() => {}, 1000)\n", encoding="utf-8")
+            (project / "README.md").write_text("## 启动\n\n```sh\nnode scripts/serve.js\n```\n", encoding="utf-8")
+            detected_argv, detected_source = detect_validation_command(project)
+            if detected_argv is not None:
+                failures.append("运行器不应把 README 中的长驻 serve 命令识别为验证命令")
+            serve_js.unlink()
+            (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/validate-data.js\n```\n", encoding="utf-8")
             data_dir = project / "data"
             data_dir.mkdir(exist_ok=True)
             write_json(data_dir / "activities.json", {
@@ -5092,21 +5119,47 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                                 "status": "confirmed"
                             }
                         ]
+                    },
+                    {
+                        "id": "self-check-activity-2",
+                        "title": "自检活动二",
+                        "players": [
+                            {
+                                "id": "player-2",
+                                "name": "测试玩家二"
+                            }
+                        ],
+                        "characters": [
+                            {
+                                "id": "character-2",
+                                "name": "测试角色二",
+                                "playerId": "player-2"
+                            }
+                        ],
+                        "signupIntent": "第二条活动也需要报名者",
+                        "signups": [
+                            {
+                                "playerName": "测试玩家二",
+                                "characterName": "测试角色二",
+                                "status": "confirmed"
+                            }
+                        ]
                     }
                 ]
             })
             validate_data_js.write_text(
                 "const fs = require('fs');\n"
                 "const data = JSON.parse(fs.readFileSync('data/activities.json', 'utf8'));\n"
-                "const activity = data.activities[0];\n"
-                "if (!activity.signupIntent || !Array.isArray(activity.signups) || activity.signups.length === 0) {\n"
-                "  console.error('signup-intent-data-contract failed');\n"
-                "  process.exit(2);\n"
-                "}\n"
-                "const playerIds = new Set((activity.players || []).map((player) => player.id));\n"
-                "if (!Array.isArray(activity.characters) || activity.characters.some((character) => !playerIds.has(character.playerId))) {\n"
-                "  console.error('character-player-relation-contract failed');\n"
-                "  process.exit(3);\n"
+                "for (const [index, activity] of data.activities.entries()) {\n"
+                "  if (!activity.signupIntent || !Array.isArray(activity.signups) || activity.signups.length === 0) {\n"
+                "    console.error(`signup-intent-data-contract failed at ${index}`);\n"
+                "    process.exit(2);\n"
+                "  }\n"
+                "  const playerIds = new Set((activity.players || []).map((player) => player.id));\n"
+                "  if (!Array.isArray(activity.characters) || activity.characters.some((character) => !playerIds.has(character.playerId))) {\n"
+                "    console.error(`character-player-relation-contract failed at ${index}`);\n"
+                "    process.exit(3);\n"
+                "  }\n"
                 "}\n"
                 "console.log(JSON.stringify({ok: true}));\n",
                 encoding="utf-8",
@@ -5116,11 +5169,15 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append(f"运行器负向契约探针不能处理 data/activities.json：{negative_probe.get('failures')}")
             if negative_probe.get("data_path") != "data/activities.json" or negative_probe.get("list_key") != "activities":
                 failures.append("运行器负向契约探针没有记录真实 activities 数据路径和列表字段")
+            if not isinstance(negative_probe.get("probe_depth"), dict) or negative_probe["probe_depth"].get("targeted_non_first_record") is not True:
+                failures.append("运行器报名负向契约探针没有优先命中非首条活动记录")
             character_probe = run_runner_character_player_contract_probe(project, evidence)
             if character_probe.get("ok") is not True:
                 failures.append(f"运行器角色玩家负向契约探针不能处理 data/activities.json：{character_probe.get('failures')}")
             if character_probe.get("data_path") != "data/activities.json" or character_probe.get("list_key") != "activities":
                 failures.append("运行器角色玩家负向契约探针没有记录真实 activities 数据路径和列表字段")
+            if not isinstance(character_probe.get("probe_depth"), dict) or character_probe["probe_depth"].get("targeted_non_first_event") is not True:
+                failures.append("运行器角色玩家负向契约探针没有优先命中非首条活动记录")
             validate_data_js.unlink()
             (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/missing-validate.js\n```\n", encoding="utf-8")
             detected_argv, detected_source = detect_validation_command(project)
