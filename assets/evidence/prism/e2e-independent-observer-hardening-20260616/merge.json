@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The proposed observer is still authored, committed, and launched by the same E2E runner/system, so its 'independence' is procedural rather than causal. Moving browser verification from an inline subprocess to a separate script addresses the surface symptom of round 27, but it does not by itself prevent the runner from controlling what the observer sees, hashes, and reports. The plan risks replacing one circular verification with a better-documented form of self-certification."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The E2E runner fully controls the observer's invocation and output file access. The plan describes no mechanism to prevent: (a) the runner skipping observer invocation and fabricating independent-observer.json, (b) the runner invoking the observer but modifying its output before submitting to Prism, or (c) the runner invoking the observer against a pre-staged browser state that was already manipulated. The planned PID/parent-PID check would catch case (c) only if the observer can verify the browser process is genuine, but the plan doesn't specify how the observer authenticates the browser process it inspects. Process-level separation without integrity protection on the evidence artifact is a cosmetic fix — it changes the shape of the self-verification loop without breaking it."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Before the next final Prism review: (1) commit the observer script first and record its hash; have the observer re-hash itself and report parent pid, executable path, argv, and environment allowlist in independent-observer.json; (2) invoke the observer only via a fixed, read-only path with a minimal documented interface, preventing the runner from rewriting it mid-run; (3) require a second provider or human to re-run the observer against the same artifacts and confirm matching hashes and DOM/screenshot summaries; (4) define hard failure conditions—missing observer evidence, hash mismatch, environment deviation, or DOM/screenshot inconsistency—each of which blocks completion-marker.json regardless of narrative."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "1. Observer invocation MUST come from outside the E2E runner — the test harness or shell script triggers the observer as a sibling process, not a child of the runner. 2. Observer output MUST be integrity-protected: write to a file with chmod 444 immediately after write, or include an HMAC-SHA256 using a key stored in an env var the E2E runner cannot read (different user, or env isolation). 3. Final Prism MUST independently verify the observer's PID tree does not trace back to the E2E runner (check PPID chain in the observer's own process metadata). 4. The observer MUST capture a browser process fingerprint (browser PID, launch time, WebDriver session ID) and compare it against what the E2E runner declared — detecting when the runner launched a fresh browser for inspection. 5. Observer MUST hash deliverables before the E2E runner has an opportunity to modify them — ideally by the test harness passing paths via argv before the runner starts, not by the runner telling the observer what to hash."
+    }
+  ],
+  "anti_loop_detected": true
+}

@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The plan creates convincing process-level separation (separate Python entry point, different PID) but fails to establish a separate trust domain. The observer lives in the same repo, runs on the same machine under the same user, and — critically — is still invoked at the discretion of the E2E runner. This is independence in OS terms, not in trust terms. The E2E runner remains the sole orchestrator of the entire verification chain, including the observer's invocation, input state, and output handling.",
+  "main_concern": "The E2E runner fully controls the observer's invocation and output file access. The plan describes no mechanism to prevent: (a) the runner skipping observer invocation and fabricating independent-observer.json, (b) the runner invoking the observer but modifying its output before submitting to Prism, or (c) the runner invoking the observer against a pre-staged browser state that was already manipulated. The planned PID/parent-PID check would catch case (c) only if the observer can verify the browser process is genuine, but the plan doesn't specify how the observer authenticates the browser process it inspects. Process-level separation without integrity protection on the evidence artifact is a cosmetic fix — it changes the shape of the self-verification loop without breaking it.",
+  "top_risks": [
+    "Observer output forgery: the E2E runner shares the same filesystem and user as the observer. It can write any content to independent-observer.json before submitting to Prism. The PID/parent-PID in the JSON proves nothing if the runner fabricated the file.",
+    "Invocation-stage manipulation: the E2E runner controls when the observer is called and what browser state exists at invocation time. If the runner sets up a passing state before calling the observer, the observer will faithfully report a pass — this is still self-certification, just with extra steps.",
+    "Hash comparison circularity: the observer 'independently hashes deliverables... and compares them against final-evidence-bundle values.' If the final-evidence-bundle is populated by the same E2E runner before or after observer invocation, the comparison is against values from the same trust domain. The observer cannot detect tampering in a bundle it didn't independently anchor."
+  ],
+  "missing_evidence": [
+    "Integrity protection on observer output: no signing, no HMAC, no append-only log, no read-only-after-write file permissions. The observer output is plain JSON writable by anyone with the same user account.",
+    "External invocation proof: no requirement that the observer be triggered from outside the E2E runner process tree (e.g., from the test harness or a CI step). The plan says 'separate process entry point' but doesn't say who calls it — if the runner calls it, the independence is illusory.",
+    "Browser process authentication: the observer inspects 'browser-visible state after a click' but the plan doesn't specify how the observer confirms the browser process it's inspecting is the one the E2E runner actually drove, rather than a freshly launched clean instance."
+  ],
+  "minimum_fix": "1. Observer invocation MUST come from outside the E2E runner — the test harness or shell script triggers the observer as a sibling process, not a child of the runner. 2. Observer output MUST be integrity-protected: write to a file with chmod 444 immediately after write, or include an HMAC-SHA256 using a key stored in an env var the E2E runner cannot read (different user, or env isolation). 3. Final Prism MUST independently verify the observer's PID tree does not trace back to the E2E runner (check PPID chain in the observer's own process metadata). 4. The observer MUST capture a browser process fingerprint (browser PID, launch time, WebDriver session ID) and compare it against what the E2E runner declared — detecting when the runner launched a fresh browser for inspection. 5. Observer MUST hash deliverables before the E2E runner has an opportunity to modify them — ideally by the test harness passing paths via argv before the runner starts, not by the runner telling the observer what to hash.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "unclear"
+}

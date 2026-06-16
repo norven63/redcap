@@ -85,6 +85,7 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "browser-inspection.json",
     "behavioral-browser-verification.json",
     "independent-browser-verification.json",
+    "independent-observer.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -133,6 +134,7 @@ GIT_IN_PROGRESS_MARKERS = [
     "rebase-merge",
     "rebase-apply",
 ]
+OBSERVER_TIMEOUT_SECONDS = int(os.environ.get("REDCAP_E2E_OBSERVER_TIMEOUT_SECONDS", "300"))
 
 
 def iso_now() -> str:
@@ -1722,6 +1724,21 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
+    write_json(evidence / "independent-observer-template.json", {
+        "schema_id": "redcap-e2e-independent-observer",
+        "producer": "e2e-independent-observer-script",
+        "parent_relation": "harness sibling process, not runner-worker child",
+        "required_checks": [
+            "observer_seal.payload_sha256_without_seal 必须匹配",
+            "independent-observer.json 必须是只读文件",
+            "process.parent_is_harness 必须为 true",
+            "process.parent_is_not_runner 必须为 true",
+            "deliverable_hashes.failures 必须为空",
+            "browser_observation.ok 必须为 true"
+        ],
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
     write_json(evidence / "final-evidence-bundle-template.json", {
         "schema_id": "redcap-e2e-final-evidence-bundle",
         "producer": "e2e-runner",
@@ -1826,6 +1843,14 @@ def parse_hook_events(path: pathlib.Path) -> list[str]:
     return events
 
 
+def parse_leading_json(stdout: str) -> dict[str, Any] | None:
+    try:
+        parsed, _ = json.JSONDecoder().raw_decode(stdout.lstrip())
+    except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
 def project_hook_events_path(project: pathlib.Path) -> pathlib.Path:
     runtime_events = project / ".redcap" / "evidence" / "host-hooks" / "codex" / "events.jsonl"
     if runtime_events.exists():
@@ -1915,6 +1940,7 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
         "final-runner-test-results.json",
         "browser-inspection.json",
         "behavioral-browser-verification.json",
+        "independent-observer.json",
         "role-execution-risk.json",
         "pre-final-readiness.json",
         "final-prism-review.json",
@@ -1922,6 +1948,9 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
         "browser-inspection.png",
         "behavioral-browser-verification.png",
         "independent-browser-verification.png",
+        "independent-observer.png",
+        "observer-request.json",
+        "observer-command.json",
         "failure-backlog.json",
         "iteration-verdict.json",
         "loom-role-session-manifest-pre-review.json",
@@ -1958,6 +1987,7 @@ def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, d
         "browser-inspection.json",
         "behavioral-browser-verification.json",
         "independent-browser-verification.json",
+        "independent-observer.json",
         "pre-final-readiness.json",
         "review-verdict.json",
         "prism-assisted-review.json",
@@ -2843,6 +2873,202 @@ print(json.dumps(result, ensure_ascii=False))
     return payload
 
 
+def observer_script_path(project: pathlib.Path) -> pathlib.Path:
+    packaged = project / ".redcap" / "runtime" / "core" / "e2e_independent_observer.py"
+    if packaged.exists():
+        return packaged
+    return REPO_ROOT / "runtime" / "core" / "e2e_independent_observer.py"
+
+
+def verify_observer_seal(payload: dict[str, Any]) -> tuple[bool, str]:
+    seal = payload.get("observer_seal")
+    if not isinstance(seal, dict):
+        return False, "independent-observer 缺少 observer_seal"
+    expected = seal.get("payload_sha256_without_seal")
+    if not isinstance(expected, str) or not expected:
+        return False, "observer_seal 缺少 payload_sha256_without_seal"
+    copy_payload = dict(payload)
+    copy_payload.pop("observer_seal", None)
+    actual = sha256_text(json.dumps(copy_payload, ensure_ascii=False, sort_keys=True))
+    if actual != expected:
+        return False, "independent-observer seal 哈希不匹配，证据可能被改写"
+    return True, ""
+
+
+def verify_independent_observer_output(path: pathlib.Path, runner_pid: int | None = None) -> dict[str, Any]:
+    failures: list[str] = []
+    payload = load_optional_json(path)
+    if payload is None:
+        return {
+            "schema_id": "redcap-e2e-independent-observer-verification",
+            "ok": False,
+            "path": str(path),
+            "failures": ["缺少或无法读取 independent-observer.json"],
+        }
+    if payload.get("schema_id") != "redcap-e2e-independent-observer":
+        failures.append("independent-observer schema_id 错误")
+    if payload.get("producer") != "e2e-independent-observer-script":
+        failures.append("independent-observer producer 错误")
+    if payload.get("ok") is not True:
+        failures.append(f"independent-observer 自身未通过：{payload.get('failures')}")
+    seal_ok, seal_failure = verify_observer_seal(payload)
+    if not seal_ok:
+        failures.append(seal_failure)
+    try:
+        mode = path.stat().st_mode & 0o777
+        if mode & 0o222:
+            failures.append(f"independent-observer.json 不是只读文件：{oct(mode)}")
+    except OSError as exc:
+        failures.append(f"无法读取 independent-observer.json 权限：{exc}")
+    process = payload.get("process")
+    if not isinstance(process, dict):
+        failures.append("independent-observer 缺少 process 元数据")
+    else:
+        if process.get("parent_is_harness") is not True:
+            failures.append("independent-observer 不是由 harness 作为父进程启动")
+        if process.get("parent_is_not_runner") is not True:
+            failures.append("independent-observer 父进程不能是 runner-worker")
+        if runner_pid is not None and process.get("runner_pid") != runner_pid:
+            failures.append("independent-observer 记录的 runner_pid 与当前 worker 不一致")
+    deliverables = payload.get("deliverable_hashes")
+    if not isinstance(deliverables, dict) or deliverables.get("failures"):
+        failures.append(f"independent-observer 交付文件哈希复核失败：{deliverables.get('failures') if isinstance(deliverables, dict) else 'missing'}")
+    browser = payload.get("browser_observation")
+    if not isinstance(browser, dict) or browser.get("ok") is not True:
+        failures.append(f"independent-observer 浏览器观察失败：{browser.get('failures') if isinstance(browser, dict) else 'missing'}")
+    return {
+        "schema_id": "redcap-e2e-independent-observer-verification",
+        "ok": not failures,
+        "path": str(path),
+        "payload": payload,
+        "failures": failures,
+    }
+
+
+def run_observer_request_as_harness(request_path: pathlib.Path, runner_pid: int, harness_pid: int) -> dict[str, Any]:
+    request = load_optional_json(request_path)
+    if request is None:
+        return {
+            "schema_id": "redcap-e2e-observer-command",
+            "ok": False,
+            "request_path": str(request_path),
+            "failures": ["observer-request.json 无法读取"],
+        }
+    project = pathlib.Path(str(request.get("project") or "")).resolve()
+    evidence = pathlib.Path(str(request.get("evidence") or "")).resolve()
+    bundle = pathlib.Path(str(request.get("bundle") or "")).resolve()
+    output = pathlib.Path(str(request.get("output") or "")).resolve()
+    script = pathlib.Path(str(request.get("observer_script") or "")).resolve()
+    if output.exists():
+        output.chmod(0o644)
+        output.unlink()
+    env = os.environ.copy()
+    env.pop("REDCAP_E2E_WORKER", None)
+    env["REDCAP_E2E_OBSERVER_BY_HARNESS"] = "1"
+    argv = [
+        sys.executable,
+        str(script),
+        "--project",
+        str(project),
+        "--evidence",
+        str(evidence),
+        "--bundle",
+        str(bundle),
+        "--output",
+        str(output),
+        "--runner-pid",
+        str(runner_pid),
+        "--harness-pid",
+        str(harness_pid),
+    ]
+    started = iso_now()
+    try:
+        completed = subprocess.run(
+            argv,
+            cwd=str(project),
+            text=True,
+            capture_output=True,
+            timeout=OBSERVER_TIMEOUT_SECONDS,
+            check=False,
+            env=env,
+        )
+        timed_out = False
+        exit_code = completed.returncode
+        stdout = completed.stdout
+        stderr = completed.stderr
+    except subprocess.TimeoutExpired as exc:
+        timed_out = True
+        exit_code = None
+        stdout = exc.stdout if isinstance(exc.stdout, str) else ""
+        stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+    verification = verify_independent_observer_output(output, runner_pid=runner_pid)
+    command = {
+        "schema_id": "redcap-e2e-observer-command",
+        "ok": (exit_code == 0) and verification["ok"],
+        "request_path": str(request_path),
+        "started_at": started,
+        "finished_at": iso_now(),
+        "argv": argv,
+        "cwd": str(project),
+        "exit_code": exit_code,
+        "timed_out": timed_out,
+        "stdout_tail": stdout[-2000:],
+        "stderr_tail": stderr[-2000:],
+        "output": str(output),
+        "verification": {
+            "ok": verification["ok"],
+            "failures": verification["failures"],
+        },
+        "failures": [],
+    }
+    if timed_out:
+        command["failures"].append("独立观察者超时")
+    if exit_code != 0:
+        command["failures"].append(f"独立观察者退出码非 0：{exit_code}")
+    command["failures"].extend(verification["failures"])
+    write_json(evidence / "observer-command.json", command)
+    return command
+
+
+def request_independent_observer(project: pathlib.Path, evidence: pathlib.Path, bundle: dict[str, Any]) -> dict[str, Any]:
+    output = evidence / "independent-observer.json"
+    if output.exists():
+        output.chmod(0o644)
+        output.unlink()
+    request = {
+        "schema_id": "redcap-e2e-observer-request",
+        "created_at": iso_now(),
+        "project": str(project),
+        "evidence": str(evidence),
+        "bundle": str(evidence / "final-evidence-bundle.json"),
+        "bundle_sha256": bundle.get("bundle_sha256"),
+        "output": str(output),
+        "observer_script": str(observer_script_path(project)),
+        "runner_pid": os.getpid(),
+        "required_relation": "observer_parent_is_harness_and_not_runner",
+    }
+    request_path = evidence / "observer-request.json"
+    write_json(request_path, request)
+    if os.environ.get("REDCAP_E2E_OBSERVER_BY_HARNESS") == "1":
+        deadline = time.monotonic() + OBSERVER_TIMEOUT_SECONDS
+        while time.monotonic() < deadline:
+            if output.exists():
+                return verify_independent_observer_output(output, runner_pid=os.getpid())
+            time.sleep(0.5)
+        return {
+            "schema_id": "redcap-e2e-independent-observer-verification",
+            "ok": False,
+            "path": str(output),
+            "failures": ["等待 harness 写入 independent-observer.json 超时"],
+        }
+    command = run_observer_request_as_harness(request_path, runner_pid=os.getpid(), harness_pid=os.getpid())
+    verification = verify_independent_observer_output(output, runner_pid=os.getpid())
+    if command.get("ok") is not True and command.get("failures"):
+        verification["failures"].extend(str(item) for item in command.get("failures", []))
+        verification["ok"] = False
+    return verification
+
+
 def backlog_open_items(evidence: pathlib.Path) -> list[Any]:
     backlog = load_optional_json(evidence / "failure-backlog.json")
     if backlog is None:
@@ -2916,6 +3142,8 @@ def criterion_pass(criterion: str, project: pathlib.Path, evidence: pathlib.Path
         return context.get("final_prism_ok") is True, "final prism review"
     if "independent-browser-verification.json" in criterion:
         return context.get("independent_browser_ok") is True, "independent-browser-verification.json"
+    if "independent-observer.json" in criterion or "外部观察者" in criterion:
+        return context.get("independent_observer_ok") is True, "independent-observer.json"
     if "blocked-package.json" in criterion:
         return not (project / "blocked-package.json").exists(), "blocked-package.json absent"
     if "行为" in criterion or "交互" in criterion:
@@ -3173,6 +3401,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
             "The runner performed a separate behavioral browser verification with a real click interaction and, when project data exposed player-character relationships, checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
             "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review.",
+            "The outer E2E harness launched an independent observer as a sibling process of the runner-worker; the observer wrote read-only sealed independent-observer.json with process metadata, script self-hash, deliverable hash cross-checks, DOM summary, visible text excerpt, screenshot hash, and browser observation.",
             "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
             "runner-self-purification-resolution.json explicitly resolves reviewer self-purification candidates for this E2E without writing public memory or Cap private persona body.",
         ],
@@ -3194,6 +3423,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "If this provider review passes, the runner must regenerate iteration-verdict.json with final_prism_pending=false before writing completion-marker.json.",
             "pre-final-readiness.json must not list completion-marker.json, final-prism-review.json, or iteration-verdict.json in evidence_checked; those belong in pending_final_evidence until this review passes.",
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
+            "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, and browser observation.",
         ],
         "role_execution_profile": {
             "model": CODEX_ROLE_MODEL,
@@ -3208,6 +3438,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
                 "browser-inspection.json",
                 "behavioral-browser-verification.json",
                 "independent-browser-verification.json",
+                "independent-observer.json",
                 "runner-negative-contract-probe.json",
                 "runner-self-purification-resolution.json",
                 "two-provider final Prism review",
@@ -3371,8 +3602,24 @@ def finalize_e2e_acceptance(
         "browser_ok": browser_inspection.get("ok") is True,
         "behavior_ok": behavioral_verification.get("ok") is True,
         "independent_browser_ok": independent_browser.get("ok") is True,
+        "independent_observer_ok": False,
         "final_prism_ok": False,
     }
+    bundle = build_final_evidence_bundle(project, evidence, direction)
+    write_json(evidence / "final-evidence-bundle.json", bundle)
+    independent_observer_verification = request_independent_observer(project, evidence, bundle)
+    independent_observer_payload = independent_observer_verification.get("payload")
+    if independent_observer_verification.get("ok") is not True:
+        failures.append(f"独立外部观察者验证未通过：{independent_observer_verification.get('failures')}")
+    if isinstance(independent_observer_payload, dict):
+        write_json(evidence / "independent-observer-verification.json", {
+            "schema_id": "redcap-e2e-independent-observer-verification",
+            "ok": independent_observer_verification.get("ok") is True,
+            "checked_at": iso_now(),
+            "path": independent_observer_verification.get("path"),
+            "failures": independent_observer_verification.get("failures"),
+        })
+    pre_final_context["independent_observer_ok"] = independent_observer_verification.get("ok") is True
     bundle = build_final_evidence_bundle(project, evidence, direction)
     write_json(evidence / "final-evidence-bundle.json", bundle)
     write_pre_final_readiness(project, evidence, failures, pre_final_context)
@@ -3538,6 +3785,11 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("behavioral-browser-verification 必须证明运行器独立行为级浏览器验证通过")
         if not behavioral_verification.get("screenshot"):
             failures.append("behavioral-browser-verification 必须记录截图证据")
+    independent_observer = load_optional_json(evidence / "independent-observer.json")
+    if independent_observer is not None:
+        verification = verify_independent_observer_output(evidence / "independent-observer.json")
+        if verification.get("ok") is not True:
+            failures.append(f"independent-observer 必须证明 harness 兄弟进程外部观察通过：{verification.get('failures')}")
     role_risk = load_optional_json(evidence / "role-execution-risk.json")
     if role_risk is not None and role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("role-execution-risk 必须说明本轮角色执行风险已被约束")
@@ -3805,6 +4057,98 @@ def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900)
     return summary
 
 
+def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900) -> dict[str, Any]:
+    """Run E2E through an outer harness so observer and runner are siblings."""
+    if os.environ.get("REDCAP_E2E_WORKER") == "1":
+        return run_e2e(direction, work_root, timeout_seconds)
+    work_root.mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    env["REDCAP_E2E_WORKER"] = "1"
+    env["REDCAP_E2E_OBSERVER_BY_HARNESS"] = "1"
+    env["REDCAP_E2E_HARNESS_PID"] = str(os.getpid())
+    argv = [
+        sys.executable,
+        str(pathlib.Path(__file__).resolve()),
+        "run",
+        "--direction",
+        direction,
+        "--work-root",
+        str(work_root),
+        "--timeout-seconds",
+        str(timeout_seconds),
+    ]
+    started = iso_now()
+    worker = subprocess.Popen(
+        argv,
+        cwd=str(REPO_ROOT),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+        env=env,
+    )
+    observer_requests: set[pathlib.Path] = set()
+    observer_commands: list[dict[str, Any]] = []
+    deadline = time.monotonic() + timeout_seconds + OBSERVER_TIMEOUT_SECONDS + 600
+    timed_out = False
+    while worker.poll() is None:
+        for request_path in sorted(work_root.glob("**/.redcap/evidence/e2e/observer-request.json")):
+            resolved = request_path.resolve()
+            if resolved in observer_requests:
+                continue
+            observer_requests.add(resolved)
+            observer_commands.append(run_observer_request_as_harness(resolved, runner_pid=worker.pid, harness_pid=os.getpid()))
+        if time.monotonic() > deadline:
+            timed_out = True
+            kill_process_group(worker, grace_seconds=2.0)
+            break
+        time.sleep(0.5)
+    stdout, stderr = worker.communicate()
+    parsed = parse_leading_json(stdout)
+    if parsed is None:
+        parsed = {
+            "schema_id": "redcap-ai-e2e-run-result",
+            "ok": False,
+            "ready_for_engineering_use": False,
+            "failures": ["E2E worker 没有返回可解析 JSON"],
+        }
+    harness_failures: list[str] = []
+    if timed_out:
+        harness_failures.append("E2E harness 等待 worker 超时")
+    if worker.returncode != 0 and parsed.get("ok") is True:
+        harness_failures.append(f"E2E worker 退出码非 0：{worker.returncode}")
+    if not observer_requests:
+        harness_failures.append("E2E worker 没有发出 observer-request.json")
+    if any(command.get("ok") is not True for command in observer_commands):
+        harness_failures.append("至少一个独立观察者命令失败")
+    parsed.setdefault("failures", [])
+    if harness_failures:
+        parsed["ok"] = False
+        parsed["ready_for_engineering_use"] = False
+        parsed["failures"].extend(harness_failures)
+    parsed["harness"] = {
+        "schema_id": "redcap-e2e-harness-summary",
+        "producer": "e2e-harness",
+        "started_at": started,
+        "finished_at": iso_now(),
+        "worker_pid": worker.pid,
+        "worker_exit_code": worker.returncode,
+        "worker_timed_out": timed_out,
+        "observer_request_count": len(observer_requests),
+        "observer_commands": observer_commands,
+        "stdout_tail": stdout[-4000:],
+        "stderr_tail": stderr[-4000:],
+    }
+    evidence_root = parsed.get("evidence_root")
+    if isinstance(evidence_root, str):
+        try:
+            write_json(pathlib.Path(evidence_root) / "harness-summary.json", parsed["harness"])
+            write_json(pathlib.Path(evidence_root) / "run-summary.json", parsed)
+        except Exception:
+            pass
+    return parsed
+
+
 def cmd_design_check(_: argparse.Namespace) -> int:
     result = {
         "schema_id": "redcap-ai-e2e-design-check",
@@ -3839,7 +4183,7 @@ def cmd_carrier_probe(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    result = run_e2e(direction_from_args(args), resolve_work_root(args.work_root), args.timeout_seconds)
+    result = run_e2e_harness(direction_from_args(args), resolve_work_root(args.work_root), args.timeout_seconds)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if result.get("ok"):
         print("REDCAP_AI_E2E_RUN_OK")
@@ -4118,6 +4462,12 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("E2E 自检没有覆盖行为级浏览器验证证据")
             if "independent-browser-verification.json" not in current_source or "e2e-independent-browser-process" not in current_source:
                 failures.append("E2E 自检没有覆盖独立子进程浏览器复核证据")
+            if "independent-observer.json" not in current_source or "e2e_independent_observer.py" not in current_source:
+                failures.append("E2E 自检没有覆盖独立外部观察者证据")
+            if "run_e2e_harness" not in current_source or "REDCAP_E2E_WORKER" not in current_source:
+                failures.append("E2E 自检没有覆盖 harness/worker 兄弟进程运行结构")
+            if "observer_seal" not in current_source or "parent_is_not_runner" not in current_source:
+                failures.append("E2E 自检没有覆盖观察者 seal 与非 runner 父进程约束")
             if "runner-negative-contract-probe.json" not in current_source or "empty-signups-and-empty-signupIntent-must-fail" not in current_source:
                 failures.append("E2E 自检没有覆盖运行器坏数据负向契约探针证据")
             if "runner-self-purification-resolution.json" not in current_source or "write_runner_self_purification_resolution" not in current_source:

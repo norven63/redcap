@@ -1,0 +1,55 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260616-e2e-independent-observer-hardening",
+  "merge_path": "assets/evidence/prism/e2e-independent-observer-hardening-20260616/merge.json",
+  "reviews": [
+    "assets/evidence/prism/e2e-independent-observer-hardening-20260616/kimi/review.json",
+    "assets/evidence/prism/e2e-independent-observer-hardening-20260616/claude-code/review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "关切成立：仅把观察者从内联子进程移到单独脚本仍可能是更好看的自证。本轮实现不止新增脚本，还加入外层 harness：runner-worker 与 observer 由 harness 作为兄弟进程启动；observer 自哈希、记录进程关系、写只读 sealed JSON、复核交付物哈希、输出 DOM/可见文本/截图摘要；runner-worker 必须等待该证据并校验 seal、权限和父进程关系后才能进入最终棱镜。",
+      "implementation_evidence": [
+        "runtime/core/e2e_independent_observer.py",
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/py-compile.receipt.json",
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/design-json.receipt.json",
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/complete-revival-e2e-design-check.receipt.json",
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/complete-revival-e2e-self-check-skip-carrier.receipt.json",
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "关切成立：观察者输出不能由 runner 单独控制。本轮引入 harness/worker 分层，默认 run 命令由 harness 启动 worker，并在 worker 写出 observer-request.json 后由 harness 调用观察者；observer 记录 parent_is_harness=true 与 parent_is_not_runner=true，输出文件写入后 chmod 0444，runner 校验 observer_seal、只读权限、进程关系、交付物哈希和浏览器观察结果，任何失败都会阻止 completion-marker.json。",
+      "implementation_evidence": [
+        "runtime/core/e2e_independent_observer.py",
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/py-compile.receipt.json",
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/design-json.receipt.json",
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/complete-revival-e2e-design-check.receipt.json",
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/complete-revival-e2e-self-check-skip-carrier.receipt.json",
+        "assets/evidence/check-receipts/20260616-e2e-independent-observer-hardening/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两名评审方的 concern 均被接受并落实为 harness 兄弟进程、sealed 观察者证据、只读文件、进程关系校验、哈希复核和合同门禁；本 resolution 只允许进入下一轮完整 E2E 验证，不构成 RedCap 终局完成声明。"
+  }
+}

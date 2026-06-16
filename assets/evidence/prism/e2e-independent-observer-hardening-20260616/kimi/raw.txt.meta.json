@@ -1,0 +1,30 @@
+{
+  "schema_id": "prism-provider-raw-metadata",
+  "provider": "kimi",
+  "raw_kind": "provider-output",
+  "raw_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/e2e-independent-observer-hardening-20260616/kimi/raw.txt",
+  "raw_size_bytes": 8988,
+  "raw_sha256": "9a52184cb49ea898ec093a0721255e6d4c1553e537999464f18c57d5d4573109",
+  "exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 240.0,
+  "total_timeout_seconds": 300.0,
+  "task_total_timeout_seconds": 720.0,
+  "task_elapsed_timeout_seconds": 226.831,
+  "task_remaining_timeout_seconds": 493.169,
+  "max_retries": 0,
+  "attempts_count": 1,
+  "attempts": [
+    {
+      "attempt": 1,
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_scope": null,
+      "stdout_bytes": 3848,
+      "stderr_bytes": 0,
+      "captured_session_handle": null,
+      "recovery": null
+    }
+  ],
+  "review_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/e2e-independent-observer-hardening-20260616/kimi/review.json"
+}
