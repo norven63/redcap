@@ -2310,6 +2310,23 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
             continue
         list_candidates: list[tuple[str, list[Any]]] = []
         if isinstance(payload, dict):
+            top_characters = payload.get("characters")
+            if isinstance(top_characters, list):
+                top_players = payload.get("players")
+                top_player_ids = {
+                    str(player.get("id"))
+                    for player in top_players
+                    if isinstance(player, dict) and player.get("id")
+                } if isinstance(top_players, list) else set()
+                for character_index, character in enumerate(top_characters):
+                    if not isinstance(character, dict):
+                        continue
+                    for ref_key in ["playerId", "player_id", "player", "playerName", "player_name"]:
+                        ref = character.get(ref_key)
+                        if top_player_ids and ref and str(ref) in top_player_ids:
+                            return data_path, payload, "__top_level__", -1, character_index, ref_key, failures
+                        if not top_player_ids and ref_key in {"player", "playerName", "player_name"} and isinstance(ref, str) and ref.strip():
+                            return data_path, payload, "__top_level__", -1, character_index, ref_key, failures
             for key in ["events", "activities", "sessions", "campaigns", "items"]:
                 value = payload.get(key)
                 if isinstance(value, list):
@@ -2376,12 +2393,16 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
     original_bytes = data_path.read_bytes()
     original_sha256 = hashlib.sha256(original_bytes).hexdigest()
     mutated = copy.deepcopy(data)
-    records = mutated if list_key == "$" else mutated.get(list_key) if isinstance(mutated, dict) else None
-    if not isinstance(records, list) or event_index >= len(records) or not isinstance(records[event_index], dict):
-        result["failures"].append(f"{data_path.relative_to(project)} 中 {list_key}[{event_index}] 不是可变更对象")
-        return result
-    event = records[event_index]
-    characters = event.get("characters")
+    if list_key == "__top_level__":
+        event = mutated if isinstance(mutated, dict) else None
+        characters = event.get("characters") if isinstance(event, dict) else None
+    else:
+        records = mutated if list_key == "$" else mutated.get(list_key) if isinstance(mutated, dict) else None
+        if not isinstance(records, list) or event_index is None or event_index >= len(records) or not isinstance(records[event_index], dict):
+            result["failures"].append(f"{data_path.relative_to(project)} 中 {list_key}[{event_index}] 不是可变更对象")
+            return result
+        event = records[event_index]
+        characters = event.get("characters")
     if not isinstance(characters, list) or character_index >= len(characters) or not isinstance(characters[character_index], dict):
         result["failures"].append(f"{data_path.relative_to(project)} 中 characters[{character_index}] 不是可变更对象")
         return result
@@ -2615,6 +2636,28 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
             continue
         event_lists: list[Any] = []
         if isinstance(payload, dict):
+            characters = payload.get("characters")
+            if isinstance(characters, list):
+                players = payload.get("players")
+                player_by_id = {
+                    str(player.get("id")): str(player.get("name"))
+                    for player in players
+                    if isinstance(player, dict) and player.get("id") and player.get("name")
+                } if isinstance(players, list) else {}
+                for character in characters:
+                    if not isinstance(character, dict):
+                        continue
+                    character_name = str(character.get("name") or "")
+                    player_name = player_by_id.get(str(character.get("playerId") or character.get("player_id") or ""))
+                    if not player_name:
+                        player_name = str(character.get("player") or character.get("playerName") or character.get("player_name") or "")
+                    if character_name and player_name:
+                        return {
+                            "data_file": data_path.relative_to(project).as_posix(),
+                            "event_title": payload.get("title") or payload.get("name") or data_path.stem,
+                            "character_name": character_name,
+                            "player_name": player_name,
+                        }
             for key in ["events", "activities", "sessions"]:
                 value = payload.get(key)
                 if isinstance(value, list):

@@ -1,0 +1,107 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260616-e2e-top-level-character-player",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "Norven 授权恢复并继续 RedCap 复活任务直至目标达成；Round32 E2E 暴露出运行器角色玩家负向契约探针对顶层 players[] 与 characters[] 数据结构支持不足。",
+    "target_reality": "E2E 运行器必须能识别两类有效角色玩家关系：活动记录内部嵌套 players[]/characters[]，以及项目数据文件顶层 players[]/characters[]。当破坏 character.playerId 时，本地验证命令必须失败；恢复数据后必须通过。",
+    "non_goals": [
+      "不降低角色玩家负向契约探针要求",
+      "不把外部项目数据结构强行改成运行器已支持的形态",
+      "不把 Round32 失败说成 E2E 通过",
+      "不跳过后续完整 E2E 重跑"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "optional",
+    "rollback_plan": "若修复引入误判，回退 runtime/core/complete_revival_e2e.py 中本轮对角色玩家关系数据定位与行为浏览器探针的改动。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260616-e2e-top-level-character-player-lifecycle.json",
+      "runtime/bin/redcap gate --task \"修复E2E角色玩家探针支持顶层players和characters数据\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260616-e2e-top-level-character-player-lifecycle.json",
+      "用 Round32 外部项目重新运行 runner-character-player-contract-probe，确认破坏 playerId 后验证命令失败、恢复后通过",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "runtime/bin/redcap check",
+      "重新执行完整 E2E"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "抱歉，我刚才不小心把你归档了，现在已经恢复了，你还能恢复之前的任务，并完成直至所有目标达成吗",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "修复 E2E 角色玩家负向契约探针，使其支持顶层 players[] 与 characters[] 数据结构。",
+    "primary_deliverable": "运行器能够对 Round32 这种顶层玩家/角色数据执行可失败、可恢复的负向契约探针。",
+    "acceptance_criteria": [
+      "find_character_player_contract_data_target 必须识别顶层 players[] 与 characters[]",
+      "find_character_player_probe 必须识别顶层 players[] 与 characters[]，供行为浏览器验证使用",
+      "破坏 character.playerId 或直接玩家名字段后，本地验证命令必须非零退出",
+      "恢复数据后，本地验证命令必须重新通过",
+      "修复后必须重新执行完整 E2E，不得只用手动探针替代最终验收"
+    ],
+    "status": "verified",
+    "evidence_kind": "code",
+    "evidence": [
+      "runtime/core/complete_revival_e2e.py",
+      "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round32/"
+    ]
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "运行器现在同时支持活动内部嵌套 players/characters 和数据文件顶层 players/characters，不再把有效项目数据误判为缺少角色玩家关系。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "python3 -m py_compile runtime/core/complete_revival_e2e.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "本轮只收口 Round32 暴露的 E2E 运行器探针缺口，不把窄修复扩大声明为 RedCap 完整复活或 E2E 已通过。"
+      ],
+      "evidence": [
+        "assets/evidence/lifecycle/20260616-e2e-top-level-character-player-lifecycle.json",
+        "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260616-e2e-top-level-character-player-lifecycle.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "针对 Round32 项目的负向契约探针已经证明：破坏顶层 character.playerId 会让项目验证命令非零退出，恢复数据后重新通过。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round32/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/manual-top-level-character-player-probe/runner-character-player-contract-probe.json",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+        "runtime/bin/redcap check"
+      ]
+    }
+  },
+  "implementation_evidence": [
+    "runtime/core/complete_revival_e2e.py"
+  ],
+  "verification_evidence": [
+    "python3 -m py_compile runtime/core/complete_revival_e2e.py",
+    "PYTHONPATH=runtime/core python3 - <<'PY' ... run_runner_character_player_contract_probe(...) ... find_character_player_probe(...) ... PY",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+    "git diff --check",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "code",
+    "scope": "Round32 暴露问题的窄修复，不代表 E2E 已通过"
+  }
+}
