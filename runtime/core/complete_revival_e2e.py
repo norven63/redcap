@@ -33,23 +33,27 @@ REQUIRED_HOOK_EVENTS = ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostT
 LOOM_EXECUTION_ROLES = ["product_manager", "architect", "developer", "tester", "reviewer"]
 ROLE_MARKER_PREFIX = "REDCAP_LOOM_ROLE="
 ROLE_TIMEOUT_SECONDS = {
-    "product_manager": 240,
-    "architect": 300,
-    "developer": 420,
-    "tester": 360,
-    "reviewer": 360,
+    "product_manager": 420,
+    "architect": 420,
+    "developer": 600,
+    "tester": 480,
+    "reviewer": 480,
 }
 CODEX_ROLE_MODEL = os.environ.get("REDCAP_E2E_CODEX_ROLE_MODEL", "gpt-5.5")
 CODEX_ROLE_REASONING_EFFORT = os.environ.get("REDCAP_E2E_CODEX_ROLE_REASONING_EFFORT", "medium")
 CODEX_ROLE_DISABLE_PLUGINS = os.environ.get("REDCAP_E2E_CODEX_ROLE_DISABLE_PLUGINS", "1") != "0"
 CODEX_ROLE_PRESERVE_USER_CONFIG = True
-CODEX_ROLE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CODEX_ROLE_MAX_ATTEMPTS", "2"))
+CODEX_ROLE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CODEX_ROLE_MAX_ATTEMPTS", "3"))
 CODEX_ROLE_RETRYABLE_STDERR_MARKERS = [
     "responses_websocket",
     "stream disconnected",
     "tls handshake eof",
     "error sending request",
     "http/request failed",
+    "reconnecting",
+    "request timed out",
+    "operation timed out",
+    "temporarily unavailable",
 ]
 CODEX_ROLE_INTERACTIVE_GATE_MARKERS = [
     "brainstorming/SKILL.md",
@@ -313,6 +317,8 @@ def role_failure_retry_reason(result: dict[str, Any], artifact_exists: bool) -> 
     stdout = str(result.get("stdout") or "")
     if stdout.strip():
         return None
+    if result.get("timed_out") is True:
+        return f"codex role timeout after {result.get('timeout_seconds')} seconds"
     for marker in CODEX_ROLE_RETRYABLE_STDERR_MARKERS:
         if marker in stderr:
             return f"codex transient transport marker: {marker}"
@@ -3483,19 +3489,28 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         if events_path.exists():
             events_path.unlink()
         last_message = project / ".redcap" / "evidence" / "e2e" / f"carrier-last-message.attempt-{attempt}.txt"
-        result = run_command([
+        argv = [
             "codex",
             "exec",
+            "--model",
+            CODEX_ROLE_MODEL,
+            "-c",
+            f'model_reasoning_effort="{CODEX_ROLE_REASONING_EFFORT}"',
             "--cd",
             str(project),
             "--skip-git-repo-check",
             "--sandbox",
             "workspace-write",
             "--full-auto",
+        ]
+        if CODEX_ROLE_DISABLE_PLUGINS:
+            argv.extend(["--disable", "plugins"])
+        argv.extend([
             "--output-last-message",
             str(last_message),
             "请使用 shell 执行 pwd，然后最终只回答 carrier-probe-ok。",
-        ], cwd=project, timeout_seconds=timeout_seconds)
+        ])
+        result = run_command(argv, cwd=project, timeout_seconds=timeout_seconds)
         events = parse_hook_events(events_path)
         missing = [event for event in REQUIRED_HOOK_EVENTS if event not in events]
         attempt_ok = result["ok"] and not missing
@@ -3521,6 +3536,10 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         "command": command_receipt(result),
         "attempts": attempts,
         "max_attempts": max(1, CARRIER_PROBE_MAX_ATTEMPTS),
+        "codex_model": CODEX_ROLE_MODEL,
+        "codex_reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
+        "codex_plugins_disabled": CODEX_ROLE_DISABLE_PLUGINS,
+        "codex_user_config_preserved": CODEX_ROLE_PRESERVE_USER_CONFIG,
         "last_message": str(last_message),
         "failures": [],
     }
@@ -3686,6 +3705,15 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             }, artifact_exists=False)
             if not retry_reason:
                 failures.append("传输抖动失败没有被识别为可重试")
+            timeout_retry_reason = role_failure_retry_reason({
+                "ok": False,
+                "timed_out": True,
+                "timeout_seconds": 420,
+                "stdout": "",
+                "stderr": "",
+            }, artifact_exists=False)
+            if not timeout_retry_reason or "timeout" not in timeout_retry_reason:
+                failures.append("无产物的 Codex CLI 超时没有被识别为可重试")
             if role_failure_retry_reason({
                 "ok": False,
                 "stdout": "partial output",
@@ -3742,6 +3770,18 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             developer_argv = build_codex_role_argv(project, "developer", evidence / "role-messages" / "developer.txt", developer_prompt)
             if "--ignore-user-config" in developer_argv:
                 failures.append("developer Codex CLI argv 不得包含 --ignore-user-config；该参数会破坏项目级 Hook 承载")
+            if max(1, CODEX_ROLE_MAX_ATTEMPTS) < 3:
+                failures.append("Loom 角色默认尝试次数低于 3，无法覆盖承载层双重抖动")
+            minimum_timeouts = {
+                "product_manager": 420,
+                "architect": 420,
+                "developer": 600,
+                "tester": 480,
+                "reviewer": 480,
+            }
+            for role_name, minimum_timeout in minimum_timeouts.items():
+                if ROLE_TIMEOUT_SECONDS.get(role_name, 0) < minimum_timeout:
+                    failures.append(f"{role_name} 角色超时预算低于 {minimum_timeout} 秒")
             if CODEX_ROLE_DISABLE_PLUGINS:
                 disable_index = developer_argv.index("--disable") if "--disable" in developer_argv else -1
                 if disable_index < 0 or developer_argv[disable_index:disable_index + 2] != ["--disable", "plugins"]:
