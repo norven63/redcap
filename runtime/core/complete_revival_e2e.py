@@ -1104,7 +1104,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            - "terminal_completion": false；
            - "blocking_findings": [] 或阻塞项数组，禁止用 blocking_failures、open_issues 等近义字段替代；
            - "runner_owned_follow_up": ["completion-marker.json", "iteration-verdict.json", "final-prism-review.json", "final-runner-test-results.json"]，必须是这四个精确文件名字符串，不要写成说明句。
-           - "role_opposition_matrix": 非空数组，逐项说明 product_manager、architect、developer、tester 的上游挑战证据是否存在、挑战了什么、reviewer 是否接受。
+           - "role_opposition_matrix": 非空数组，必须覆盖 product_manager、architect、developer、tester；每项必须精确包含 role、challenge_summary、reviewer_disposition 三个非空字符串字段，分别说明角色名、上游挑战证据摘要、reviewer 是否接受及原因。可以额外写 reason 等补充字段，但不能用 challenged、reviewer_acceptance 等近义字段替代这三个必需字段。
            同时在边界说明中写明 terminal_completion=false 表示 reviewer 只能给阶段评审，不能自证本轮 E2E 终局完成或 RedCap 完整复活。
         3. 写 prism-assisted-review.json；本轮必须记录 used=true，reviews 必须是非空数组，cap_decision 必须非空，skip_reason 必须为 null 或空字符串。至少在 reviews[0] 中说明一次对需求、架构、代码、测试或文档的棱镜协助或包内棱镜检查如何影响裁决，并必须包含 prism_assistance_request.requested=true。
         4. 写 self-purification-candidates.json，包含候选或 no_candidate_reason，并给出 decisions 数组。decision 只允许 promote_public、keep_private、no_promote、defer_with_owner；每个 decision 必须包含 reason；需要后续沉淀但本轮不晋升时用 defer_with_owner。
@@ -2313,8 +2313,10 @@ def run_final_marker_validation(project: pathlib.Path) -> dict[str, Any]:
 JS_DATA_CANDIDATE_RELATIVE_PATHS = [
     pathlib.Path("src/data.js"),
     pathlib.Path("data.js"),
+    pathlib.Path("data/campaigns.js"),
     pathlib.Path("data/events.js"),
     pathlib.Path("data/activities.js"),
+    pathlib.Path("src/campaigns.js"),
     pathlib.Path("src/events.js"),
     pathlib.Path("src/activities.js"),
 ]
@@ -2348,12 +2350,31 @@ def load_structured_data_payload(project: pathlib.Path, data_path: pathlib.Path,
             return None
     if data_path.suffix == ".js":
         script = (
+            "const fs = require('fs');"
+            "const vm = require('vm');"
             "const p = process.argv[1];"
-            "const data = require(p);"
-            "if (data === undefined || typeof data === 'function') {"
-            "  throw new Error('JS data module did not export structured data');"
+            "function structured(v) { return v && typeof v !== 'function' && (Array.isArray(v) || typeof v === 'object'); }"
+            "const candidates = [];"
+            "try { candidates.push({source: 'require', value: require(p)}); } catch (error) { candidates.push({source: 'require-error', value: undefined, error: String(error && error.message || error)}); }"
+            "const sandbox = { module: { exports: {} }, exports: {}, window: {} };"
+            "sandbox.globalThis = sandbox;"
+            "vm.createContext(sandbox);"
+            "try { vm.runInContext(fs.readFileSync(p, 'utf8'), sandbox, { filename: p }); } catch (error) { candidates.push({source: 'vm-error', value: undefined, error: String(error && error.message || error)}); }"
+            "candidates.push({source: 'module.exports', value: sandbox.module.exports});"
+            "candidates.push({source: 'exports', value: sandbox.exports});"
+            "for (const scopeName of ['window', 'globalThis']) {"
+            "  const scope = scopeName === 'window' ? sandbox.window : sandbox;"
+            "  for (const key of ['TRPG_CAMPAIGNS', 'TRPG_DATA', 'REDCAP_DATA', 'TRPG_EVENTS', 'TRPG_ACTIVITIES', 'campaigns', 'events', 'activities']) {"
+            "    candidates.push({source: `${scopeName}.${key}`, value: scope[key]});"
+            "  }"
             "}"
-            "process.stdout.write(JSON.stringify(data));"
+            "for (const candidate of candidates) {"
+            "  if (structured(candidate.value) && !(typeof candidate.value === 'object' && !Array.isArray(candidate.value) && Object.keys(candidate.value).length === 0)) {"
+            "    process.stdout.write(JSON.stringify({source: candidate.source, payload: candidate.value}));"
+            "    process.exit(0);"
+            "  }"
+            "}"
+            "throw new Error('JS data file did not expose structured data through module exports or known browser globals');"
         )
         completed = subprocess.run(
             ["node", "-e", script, str(data_path.resolve())],
@@ -2367,10 +2388,11 @@ def load_structured_data_payload(project: pathlib.Path, data_path: pathlib.Path,
             failures.append(f"{relative} 无法作为 JS 数据模块读取：{(completed.stderr or completed.stdout).strip()}")
             return None
         try:
-            payload = json.loads(completed.stdout)
+            output = json.loads(completed.stdout)
         except json.JSONDecodeError as exc:
             failures.append(f"{relative} JS 数据模块输出无法解析：{exc}")
             return None
+        payload = output.get("payload") if isinstance(output, dict) and "payload" in output else output
         return payload if isinstance(payload, (dict, list)) else None
     failures.append(f"{relative} 不是支持的数据文件类型")
     return None
@@ -2386,8 +2408,15 @@ def write_structured_data_probe_payload(data_path: pathlib.Path, payload: dict[s
             "const data = "
             + serialized
             + ";\n\n"
+            + "if (typeof window !== \"undefined\") {\n"
+            + "  window.TRPG_DATA = data;\n"
+            + "  window.TRPG_CAMPAIGNS = Array.isArray(data) ? data : (data.campaigns || data.activities || data.events || data.items || data);\n"
+            + "  window.TRPG_ACTIVITIES = Array.isArray(data) ? data : (data.activities || data.campaigns || data.events || data.items || data);\n"
+            + "  window.TRPG_EVENTS = Array.isArray(data) ? data : (data.events || data.activities || data.campaigns || data.items || data);\n"
+            + "}\n"
             + "if (typeof globalThis !== \"undefined\") {\n"
             + "  globalThis.TRPG_DATA = data;\n"
+            + "  globalThis.TRPG_CAMPAIGNS = Array.isArray(data) ? data : (data.campaigns || data.activities || data.events || data.items || data);\n"
             + "}\n"
             + "if (typeof module !== \"undefined\" && module.exports) {\n"
             + "  module.exports = data;\n"
@@ -6102,6 +6131,47 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("运行器角色玩家负向契约探针没有记录 JS 数据模块路径和列表字段")
             if not isinstance(js_character_probe.get("probe_depth"), dict) or js_character_probe["probe_depth"].get("targeted_non_first_event") is not True:
                 failures.append("运行器角色玩家负向契约探针没有在 JS 数据模块中优先命中非首条活动记录")
+            src_data_js.unlink()
+            browser_global_js = data_dir / "campaigns.js"
+            browser_global_js.write_text(
+                "(function () { window.TRPG_CAMPAIGNS = "
+                + json.dumps(js_payload["activities"], ensure_ascii=False, indent=2)
+                + "; })();\n",
+                encoding="utf-8",
+            )
+            validate_data_js.write_text(
+                "const fs = require('fs');\n"
+                "const vm = require('vm');\n"
+                "const source = fs.readFileSync('data/campaigns.js', 'utf8');\n"
+                "const sandbox = { window: {} };\n"
+                "vm.createContext(sandbox);\n"
+                "vm.runInContext(source, sandbox, { filename: 'data/campaigns.js' });\n"
+                "const activities = sandbox.window.TRPG_CAMPAIGNS;\n"
+                "if (!Array.isArray(activities)) process.exit(10);\n"
+                "for (const [index, activity] of activities.entries()) {\n"
+                "  if (!activity.signupIntent || !Array.isArray(activity.signups) || activity.signups.length === 0) {\n"
+                "    console.error(`signup-intent-data-contract failed at ${index}`);\n"
+                "    process.exit(2);\n"
+                "  }\n"
+                "  const playerIds = new Set((activity.players || []).map((player) => player.id));\n"
+                "  if (!Array.isArray(activity.characters) || activity.characters.some((character) => !playerIds.has(character.playerId))) {\n"
+                "    console.error(`character-player-relation-contract failed at ${index}`);\n"
+                "    process.exit(3);\n"
+                "  }\n"
+                "}\n"
+                "console.log(JSON.stringify({ok: true, source: 'data/campaigns.js'}));\n",
+                encoding="utf-8",
+            )
+            global_negative_probe = run_runner_negative_contract_probe(project, evidence)
+            if global_negative_probe.get("ok") is not True:
+                failures.append(f"运行器报名负向契约探针不能处理 data/campaigns.js 浏览器全局数据：{global_negative_probe.get('failures')}")
+            if global_negative_probe.get("data_path") != "data/campaigns.js" or global_negative_probe.get("list_key") != "$":
+                failures.append("运行器报名负向契约探针没有记录浏览器全局数据路径和顶层数组字段")
+            global_character_probe = run_runner_character_player_contract_probe(project, evidence)
+            if global_character_probe.get("ok") is not True:
+                failures.append(f"运行器角色玩家负向契约探针不能处理 data/campaigns.js 浏览器全局数据：{global_character_probe.get('failures')}")
+            if global_character_probe.get("data_path") != "data/campaigns.js" or global_character_probe.get("list_key") != "$":
+                failures.append("运行器角色玩家负向契约探针没有记录浏览器全局数据路径和顶层数组字段")
             validate_data_js.unlink()
             (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/missing-validate.js\n```\n", encoding="utf-8")
             detected_argv, detected_source = detect_validation_command(project)
@@ -6114,6 +6184,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("reviewer 提示词没有区分 open_items 与 runner_owned_follow_up")
             if "blocking_findings" not in reviewer_prompt or "blocking_failures" not in reviewer_prompt:
                 failures.append("reviewer 提示词没有禁止 blocking_failures 近义字段")
+            if "challenge_summary" not in reviewer_prompt or "reviewer_disposition" not in reviewer_prompt or "不能用 challenged、reviewer_acceptance" not in reviewer_prompt:
+                failures.append("reviewer 提示词没有精确声明 role_opposition_matrix 必需字段")
             if "private_body" not in reviewer_prompt or "reason 必须是非空字符串" not in reviewer_prompt:
                 failures.append("reviewer 提示词没有明确人格边界字段要求")
             if "reason 不要复述禁止项本身" not in reviewer_prompt:

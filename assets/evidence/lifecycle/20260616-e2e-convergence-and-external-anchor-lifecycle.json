@@ -28,7 +28,18 @@
       "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
       "runtime/bin/redcap revival-followthrough self-check",
       "git diff --check",
-      "runtime/bin/redcap check"
+      "runtime/bin/redcap check",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py",
+      "第 41 轮真实外部项目 data/campaigns.js 运行器负向探针复核"
+    ],
+    "round41_additional_root_causes": [
+      "reviewer 产物字段契约与提示词不一致：校验器要求 challenge_summary/reviewer_disposition，但提示词只要求语义说明，导致独立角色按语义完成却被结构校验拦下。",
+      "运行器负向领域契约探针的 JS 数据候选过窄，且只按 CommonJS 模块读取，无法识别 data/campaigns.js 这类浏览器全局数据文件。"
+    ],
+    "round41_chosen_solution": [
+      "不放宽 reviewer 校验；反向收紧提示词，明确 role_opposition_matrix 必须包含 role、challenge_summary、reviewer_disposition。",
+      "增强 JS 数据读取和回写：支持 CommonJS 模块导出与 window/globalThis 上的常见结构化数据变量，并把 data/campaigns.js、src/campaigns.js 纳入候选。",
+      "把 data/campaigns.js 浏览器全局数据加入 complete-revival-e2e self-check，防止后续回退。"
     ]
   },
   "prompt_context": {
@@ -57,7 +68,9 @@
       "最终棱镜请求必须明确 completion-marker 只代表工程试用证据，不代表 RedCap 永久完整复活或跨机器生产验收",
       "Loom 角色或 reviewer 必须留下上游挑战、风险异议、接受或拒绝理由等角色对抗证据",
       "行为浏览器验证必须记录交互后的选中事件和关系探针事件，避免点击状态与关系证据错位",
-      "所有新增规则必须进入 self-check 或 design-check，防止后续回退"
+      "所有新增规则必须进入 self-check 或 design-check，防止后续回退",
+      "reviewer 提示词与结构校验器必须对 role_opposition_matrix 字段完全一致，不能让独立角色靠猜字段名。",
+      "运行器负向领域契约探针必须能处理浏览器全局 JS 数据文件，例如 data/campaigns.js 中的 window.TRPG_CAMPAIGNS。"
     ],
     "status": "verified",
     "evidence_kind": "code-and-review",
@@ -103,6 +116,17 @@
       ],
       "evidence": [
         "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "runtime/core/complete_revival_e2e.py"
+      ]
+    },
+    "round41_replay_fix": {
+      "status": "checked",
+      "findings": [
+        "第 41 轮没有继续无限重跑，而是暴露了 reviewer 字段契约和 JS 数据探针两个可修复缺口。",
+        "修复后，针对第 41 轮真实外部项目的运行器报名负向探针和角色玩家负向探针均能识别 data/campaigns.js 并通过。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round41/",
         "runtime/core/complete_revival_e2e.py"
       ]
     }
