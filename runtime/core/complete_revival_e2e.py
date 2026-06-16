@@ -75,6 +75,7 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "prism-assisted-review.json",
     "knowledge-retrieval-evidence.json",
     "self-purification-candidates.json",
+    "runner-self-purification-resolution.json",
     "persona-distillation-decision.json",
     "test-results.json",
     "negative-probes.json",
@@ -107,6 +108,7 @@ ROLE_EVIDENCE_FILES = {
     "review-verdict.json",
     "prism-assisted-review.json",
     "self-purification-candidates.json",
+    "runner-self-purification-resolution.json",
     "persona-distillation-decision.json",
     "failure-backlog.json",
 }
@@ -1635,6 +1637,15 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "allowed_decisions": ["promote_public", "keep_private", "no_promote", "defer_with_owner"],
         "decisions": []
     })
+    write_json(evidence / "runner-self-purification-resolution-template.json", {
+        "schema_id": "redcap-e2e-runner-self-purification-resolution",
+        "producer": "e2e-runner",
+        "source": "self-purification-candidates.json",
+        "resolved": "<boolean>",
+        "public_promotions_written": False,
+        "private_persona_written": False,
+        "resolutions": []
+    })
     write_json(evidence / "persona-distillation-decision-template.json", {
         "schema_id": "redcap-e2e-persona-distillation-decision",
         "privacy_class": "cap-private",
@@ -1895,6 +1906,7 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
         "prism-assisted-review.json",
         "knowledge-retrieval-evidence.json",
         "self-purification-candidates.json",
+        "runner-self-purification-resolution.json",
         "persona-distillation-decision.json",
         "test-results.json",
         "negative-probes.json",
@@ -1941,6 +1953,7 @@ def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, d
         "test-results.json",
         "negative-probes.json",
         "runner-negative-contract-probe.json",
+        "runner-self-purification-resolution.json",
         "final-runner-test-results.json",
         "browser-inspection.json",
         "behavioral-browser-verification.json",
@@ -2551,13 +2564,64 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                 player_name = str(relation_probe["player_name"])
                 character_index = relation_text.find(character_name)
                 player_index = relation_text.find(player_name)
-                relation_passed = character_index >= 0 and player_index >= 0 and abs(character_index - player_index) <= 500
+                dom_relation = page.evaluate(
+                    """({ characterName, playerName }) => {
+                        const textOf = (element) => (element.innerText || element.textContent || "").replace(/\\s+/g, " ").trim();
+                        const visible = (element) => {
+                            const style = window.getComputedStyle(element);
+                            const rect = element.getBoundingClientRect();
+                            return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+                        };
+                        const selector = [
+                            "tr",
+                            "li",
+                            "article",
+                            "section",
+                            "[role='row']",
+                            "[data-testid]",
+                            ".card",
+                            ".event",
+                            ".session",
+                            ".character",
+                            ".player",
+                            "div"
+                        ].join(",");
+                        const containers = [];
+                        for (const element of Array.from(document.querySelectorAll(selector))) {
+                            if (!visible(element)) continue;
+                            const text = textOf(element);
+                            if (!text.includes(characterName) || !text.includes(playerName)) continue;
+                            if (["HTML", "BODY", "MAIN"].includes(element.tagName)) continue;
+                            if (text.length > 1600) continue;
+                            const rect = element.getBoundingClientRect();
+                            containers.push({
+                                tag: element.tagName.toLowerCase(),
+                                id: element.id || null,
+                                className: element.className || null,
+                                role: element.getAttribute("role"),
+                                textLength: text.length,
+                                textExcerpt: text.slice(0, 500),
+                                rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+                            });
+                        }
+                        containers.sort((a, b) => a.textLength - b.textLength);
+                        return {
+                            same_structural_container: containers.length > 0,
+                            matched_container_count: containers.length,
+                            matched_containers: containers.slice(0, 5)
+                        };
+                    }""",
+                    {"characterName": character_name, "playerName": player_name},
+                )
+                relation_passed = bool(isinstance(dom_relation, dict) and dom_relation.get("same_structural_container") is True)
                 relation_evidence = {
                     "probe_available": True,
                     **relation_probe,
                     "character_index": character_index,
                     "player_index": player_index,
-                    "max_distance": 500,
+                    "text_distance": abs(character_index - player_index) if character_index >= 0 and player_index >= 0 else None,
+                    "text_distance_is_informational_only": True,
+                    "dom_structural_probe": dom_relation,
                 }
             page.screenshot(path=str(screenshot), full_page=True)
             browser.close()
@@ -2959,12 +3023,18 @@ def write_pre_final_readiness(
             item["status"] = "passed"
         else:
             item["status"] = "failed"
+    pending_final_evidence = ["completion-marker.json", "final-prism-review.json", "iteration-verdict.json"]
+    checked_existing_evidence = sorted(
+        item for item in REQUIRED_EVIDENCE_CHECKS
+        if item not in set(pending_final_evidence)
+    )
     payload = {
         "schema_id": "redcap-e2e-pre-final-readiness",
         "producer": "e2e-runner",
         "created_at": iso_now(),
         "status": "ready_for_final_prism" if not failures else "blocked_before_final_prism",
         "ready_for_engineering_use": False,
+        "ready_for_engineering_use_reason": "最终棱镜复核前必须为 false；通过最终棱镜后由运行器重写 iteration-verdict.json 并写 completion-marker.json。",
         "final_prism_pending": True,
         "purpose": "最终棱镜复核前的客观证据汇总；不是终局完成声明，不能替代 iteration-verdict.json。",
         "criteria_results": criteria_results,
@@ -2975,7 +3045,16 @@ def write_pre_final_readiness(
             "failed": sum(1 for item in criteria_results if item.get("status") == "failed"),
         },
         "remaining_issues": failures,
-        "evidence_checked": sorted(REQUIRED_EVIDENCE_CHECKS),
+        "evidence_checked": checked_existing_evidence,
+        "pending_final_evidence": [
+            {
+                "path": item,
+                "checked": False,
+                "pending": True,
+                "reason": "该文件只能在最终棱镜通过后生成或更新，不能进入预收口已检查清单。"
+            }
+            for item in pending_final_evidence
+        ],
     }
     write_json(evidence / "pre-final-readiness.json", payload)
     return payload
@@ -3020,6 +3099,67 @@ def write_runner_prism_assistance(evidence: pathlib.Path, final_prism: dict[str,
     write_json(evidence / "prism-assisted-review.json", existing)
 
 
+def write_runner_self_purification_resolution(evidence: pathlib.Path) -> dict[str, Any]:
+    purification = load_optional_json(evidence / "self-purification-candidates.json") or {}
+    decisions = purification.get("decisions")
+    if not isinstance(decisions, list):
+        decisions = []
+    candidates = purification.get("candidates")
+    if not isinstance(candidates, list):
+        candidates = []
+    resolutions: list[dict[str, Any]] = []
+    failures: list[str] = []
+    for index, decision in enumerate(decisions, start=1):
+        if not isinstance(decision, dict):
+            failures.append(f"第 {index} 个自我净化 decision 不是对象")
+            continue
+        requested_decision = str(decision.get("decision") or "")
+        source_id = str(decision.get("id") or decision.get("candidate_id") or f"decision-{index}")
+        if requested_decision == "promote_public":
+            disposition = "defer_public_promotion"
+            reason = "E2E 运行器不能在验收收口阶段直接写公共知识；候选只进入后续自我净化评审输入。"
+        elif requested_decision == "keep_private":
+            disposition = "acknowledge_private_boundary"
+            reason = "本轮确认私有边界，但不写入 Cap 私有人格正文。"
+        elif requested_decision == "defer_with_owner":
+            disposition = "defer_with_owner_acknowledged"
+            reason = "本轮承认后续归属，但不让悬空候选阻塞完成；后续由自我净化流程单独评审。"
+        elif requested_decision == "no_promote":
+            disposition = "no_promote_acknowledged"
+            reason = "本轮接受不晋升决定。"
+        else:
+            disposition = "invalid_decision"
+            reason = "未知 decision，不能视为已解决。"
+            failures.append(f"未知自我净化 decision：{requested_decision}")
+        resolutions.append({
+            "source_id": source_id,
+            "requested_decision": requested_decision,
+            "disposition": disposition,
+            "reason": reason,
+            "source_reason": decision.get("reason"),
+            "public_write": False,
+            "private_persona_write": False,
+        })
+    if not decisions and candidates:
+        failures.append("存在自我净化候选但 reviewer 未给出 decisions")
+    payload = {
+        "schema_id": "redcap-e2e-runner-self-purification-resolution",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "source": "self-purification-candidates.json",
+        "resolved": not failures,
+        "public_promotions_written": False,
+        "private_persona_written": False,
+        "candidate_count": len(candidates),
+        "decision_count": len(decisions),
+        "resolutions": resolutions,
+        "no_candidate_reason": purification.get("no_candidate_reason"),
+        "failures": failures,
+    }
+    write_json(evidence / "runner-self-purification-resolution.json", payload)
+    return payload
+
+
 def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any]:
     return {
         "task": "Review whether this RedCap E2E run may write its completion marker.",
@@ -3031,9 +3171,10 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
             "The runner performed a mutation-based negative contract probe: it temporarily wrote bad signup data, required the validation command to fail, restored the original data, and required validation to pass again.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
-            "The runner performed a separate behavioral browser verification with a real click interaction and, when project data exposed player-character relationships, checked that the relation rendered in the UI.",
+            "The runner performed a separate behavioral browser verification with a real click interaction and, when project data exposed player-character relationships, checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
             "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review.",
-            "pre-final-readiness.json was regenerated after final-evidence-bundle.json existed, so it is a current pre-final summary with only final Prism pending.",
+            "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
+            "runner-self-purification-resolution.json explicitly resolves reviewer self-purification candidates for this E2E without writing public memory or Cap private persona body.",
         ],
         "evidence": [
             {
@@ -3051,6 +3192,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "Completion marker scope is only this E2E run, not permanent RedCap full revival.",
             "iteration-verdict.json is intentionally not finalized before this provider review; pre-final-readiness.json is generated after final-evidence-bundle.json and is only an objective pre-final summary, not a completion claim.",
             "If this provider review passes, the runner must regenerate iteration-verdict.json with final_prism_pending=false before writing completion-marker.json.",
+            "pre-final-readiness.json must not list completion-marker.json, final-prism-review.json, or iteration-verdict.json in evidence_checked; those belong in pending_final_evidence until this review passes.",
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
         ],
         "role_execution_profile": {
@@ -3067,6 +3209,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
                 "behavioral-browser-verification.json",
                 "independent-browser-verification.json",
                 "runner-negative-contract-probe.json",
+                "runner-self-purification-resolution.json",
                 "two-provider final Prism review",
             ],
         },
@@ -3193,6 +3336,7 @@ def finalize_e2e_acceptance(
     independent_browser = run_independent_browser_verification_process(project, evidence)
     write_json(evidence / "independent-browser-verification.json", independent_browser)
     role_risk = write_role_execution_risk(evidence)
+    runner_purification_resolution = write_runner_self_purification_resolution(evidence)
     failures: list[str] = []
     if role_result.get("ok") is not True:
         failures.append("Loom 角色管线未通过")
@@ -3212,6 +3356,8 @@ def finalize_e2e_acceptance(
         failures.append("独立子进程浏览器验证未通过")
     if role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("Loom 角色推理预算风险未被接受")
+    if runner_purification_resolution.get("resolved") is not True:
+        failures.append(f"运行器自我净化裁决未通过：{runner_purification_resolution.get('failures')}")
     backlog_path = evidence / "failure-backlog.json"
     if backlog_path.exists() or role_result.get("ok") is True:
         open_items = backlog_open_items(evidence)
@@ -3331,6 +3477,14 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
     purification = load_optional_json(evidence / "self-purification-candidates.json")
     if purification is not None and not (purification.get("candidates") or purification.get("no_candidate_reason")):
         failures.append("self-purification-candidates 必须记录候选或无候选理由")
+    runner_purification = load_optional_json(evidence / "runner-self-purification-resolution.json")
+    if runner_purification is not None:
+        if runner_purification.get("resolved") is not True:
+            failures.append("runner-self-purification-resolution.resolved 必须为 true")
+        if runner_purification.get("public_promotions_written") is not False:
+            failures.append("runner-self-purification-resolution.public_promotions_written 必须为 false")
+        if runner_purification.get("private_persona_written") is not False:
+            failures.append("runner-self-purification-resolution.private_persona_written 必须为 false")
     test_results = load_optional_json(evidence / "test-results.json")
     if test_results is not None and test_results.get("role") != "tester":
         failures.append("test-results.json 必须由 tester 角色产出，不能被验证脚本或其他角色覆盖")
@@ -3936,6 +4090,7 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 "decisions": [],
                 "no_candidate_reason": "自检夹具没有真实任务候选。"
             })
+            write_runner_self_purification_resolution(evidence)
             write_json(evidence / "persona-distillation-decision.json", {
                 "schema_id": "redcap-e2e-persona-distillation-decision",
                 "privacy_class": "cap-private",
@@ -3965,6 +4120,12 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("E2E 自检没有覆盖独立子进程浏览器复核证据")
             if "runner-negative-contract-probe.json" not in current_source or "empty-signups-and-empty-signupIntent-must-fail" not in current_source:
                 failures.append("E2E 自检没有覆盖运行器坏数据负向契约探针证据")
+            if "runner-self-purification-resolution.json" not in current_source or "write_runner_self_purification_resolution" not in current_source:
+                failures.append("E2E 自检没有覆盖运行器自我净化裁决证据")
+            if "same_structural_container" not in current_source or "text_distance_is_informational_only" not in current_source:
+                failures.append("行为级浏览器关系验证没有升级为 DOM 结构级探针")
+            if "pending_final_evidence" not in current_source or "completion-marker.json\", \"final-prism-review.json\", \"iteration-verdict.json" not in current_source:
+                failures.append("pre-final-readiness 没有把最终文件移出已检查证据清单")
             if "text_hash" not in current_source or "dom_summary_hash" not in current_source or "observable_criteria" not in current_source:
                 failures.append("行为级浏览器验证没有使用文本哈希和稳定 DOM 摘要哈希作为可度量交互标准")
             if "data-redcap-volatile" not in current_source or ".spinner" not in current_source or ".loading" not in current_source:
