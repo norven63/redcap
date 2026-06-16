@@ -49,6 +49,23 @@ def load_json(path: pathlib.Path) -> dict[str, Any]:
     return payload
 
 
+def bundle_declared_hash_input(bundle: dict[str, Any]) -> dict[str, Any]:
+    payload = dict(bundle)
+    payload.pop("bundle_sha256", None)
+    return payload
+
+
+def seconds_between(start_iso: str | None, end_iso: str | None) -> float | None:
+    if not start_iso or not end_iso:
+        return None
+    try:
+        start = dt.datetime.fromisoformat(start_iso)
+        end = dt.datetime.fromisoformat(end_iso)
+    except ValueError:
+        return None
+    return round((end - start).total_seconds(), 3)
+
+
 def write_json_locked(path: pathlib.Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     seal_input = json.dumps(payload, ensure_ascii=False, sort_keys=True)
@@ -355,7 +372,6 @@ def main() -> int:
     parser.add_argument("--project", required=True)
     parser.add_argument("--evidence", required=True)
     parser.add_argument("--bundle", required=True)
-    parser.add_argument("--expected-bundle-file-sha256", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--runner-pid", required=True, type=int)
     parser.add_argument("--harness-pid", required=True, type=int)
@@ -373,16 +389,35 @@ def main() -> int:
     except Exception as exc:
         bundle = {}
         failures.append(f"无法读取 final-evidence-bundle：{type(exc).__name__}: {exc}")
+    first_observed_at = iso_now()
+    first_observed_monotonic = time.monotonic()
     bundle_file_sha256 = sha256_file(bundle_path) if bundle_path.exists() else None
+    declared_bundle_sha256 = bundle.get("bundle_sha256") if isinstance(bundle, dict) else None
+    computed_bundle_sha256 = (
+        sha256_text(json.dumps(bundle_declared_hash_input(bundle), ensure_ascii=False, sort_keys=True))
+        if isinstance(bundle, dict)
+        else None
+    )
+    time.sleep(2)
+    cooldown_seconds = round(time.monotonic() - first_observed_monotonic, 3)
+    cooldown_file_sha256 = sha256_file(bundle_path) if bundle_path.exists() else None
     bundle_fingerprint = {
         "path": str(bundle_path),
         "file_sha256": bundle_file_sha256,
-        "expected_file_sha256": args.expected_bundle_file_sha256,
-        "matches_expected_file_sha256": bool(args.expected_bundle_file_sha256) and bundle_file_sha256 == args.expected_bundle_file_sha256,
-        "declared_bundle_sha256": bundle.get("bundle_sha256") if isinstance(bundle, dict) else None,
+        "declared_bundle_sha256": declared_bundle_sha256,
+        "computed_bundle_sha256": computed_bundle_sha256,
+        "matches_declared_bundle_sha256": bool(declared_bundle_sha256) and computed_bundle_sha256 == declared_bundle_sha256,
+        "observer_first_read_at": first_observed_at,
+        "bundle_created_at": bundle.get("created_at") if isinstance(bundle, dict) else None,
+        "freeze_to_observer_seconds": seconds_between(bundle.get("created_at") if isinstance(bundle, dict) else None, first_observed_at),
+        "cooldown_seconds": cooldown_seconds,
+        "cooldown_file_sha256": cooldown_file_sha256,
+        "file_sha256_stable_after_cooldown": bool(bundle_file_sha256) and bundle_file_sha256 == cooldown_file_sha256,
     }
-    if not bundle_fingerprint["matches_expected_file_sha256"]:
-        failures.append("观察者读取的 final-evidence-bundle.json 文件哈希与请求中的冻结哈希不一致")
+    if not bundle_fingerprint["matches_declared_bundle_sha256"]:
+        failures.append("观察者独立计算的 final-evidence-bundle 正文哈希与 bundle_sha256 声明不一致")
+    if not bundle_fingerprint["file_sha256_stable_after_cooldown"]:
+        failures.append("观察者冷却后复核发现 final-evidence-bundle.json 文件哈希发生变化")
     chain = process_chain(os.getpid())
     deliverables = inspect_deliverables(project, bundle)
     failures.extend(deliverables["failures"])

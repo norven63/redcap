@@ -2198,7 +2198,12 @@ def find_signup_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Pat
                 index for index, record in enumerate(records)
                 if isinstance(record, dict)
             ]
-            for record_index in [*signup_indexes, *fallback_indexes]:
+            candidate_indexes: list[int] = []
+            for index in [*signup_indexes, *fallback_indexes]:
+                if index not in candidate_indexes:
+                    candidate_indexes.append(index)
+            if candidate_indexes:
+                record_index = next((index for index in candidate_indexes if index > 0), candidate_indexes[0])
                 return data_path, payload, list_key, record_index, failures
         failures.append(f"{data_path.relative_to(project)} 未发现可变更的活动列表记录")
     failures.append("未找到包含报名数据或活动列表的 JSON 数据文件")
@@ -2241,6 +2246,13 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
     if not isinstance(records, list) or record_index >= len(records) or not isinstance(records[record_index], dict):
         result["failures"].append(f"{data_path.relative_to(project)} 中 {list_key}[{record_index}] 不是可变更对象")
         return result
+    eligible_record_indexes = [index for index, record in enumerate(records) if isinstance(record, dict)]
+    result["probe_depth"] = {
+        "record_count": len(records),
+        "eligible_record_indexes": eligible_record_indexes,
+        "targeted_non_first_record": record_index > 0,
+        "selection_rule": "prefer_non_first_signup_record_then_first_available",
+    }
     mutated = json.loads(json.dumps(data, ensure_ascii=False))
     mutated_records = mutated if list_key == "$" else mutated[list_key]
     mutated_event = mutated_records[record_index]
@@ -2295,6 +2307,19 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
     return result
 
 
+CharacterPlayerMatch = tuple[pathlib.Path, Any, str, int, int, str, list[str]]
+
+
+def prefer_deeper_character_player_match(matches: list[CharacterPlayerMatch]) -> CharacterPlayerMatch:
+    return next(
+        (
+            match for match in matches
+            if match[3] > 0 or match[4] > 0
+        ),
+        matches[0],
+    )
+
+
 def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Path | None, dict[str, Any] | list[Any] | None, str | None, int | None, int | None, str | None, list[str]]:
     failures: list[str] = []
     data_dir = project / "data"
@@ -2315,6 +2340,7 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             failures.append(f"{data_path.relative_to(project)} 无法解析：{type(exc).__name__}: {exc}")
             continue
+        candidate_matches: list[CharacterPlayerMatch] = []
         list_candidates: list[tuple[str, list[Any]]] = []
         if isinstance(payload, dict):
             top_characters = payload.get("characters")
@@ -2331,9 +2357,9 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
                     for ref_key in ["playerId", "player_id", "player", "playerName", "player_name"]:
                         ref = character.get(ref_key)
                         if top_player_ids and ref and str(ref) in top_player_ids:
-                            return data_path, payload, "__top_level__", -1, character_index, ref_key, failures
+                            candidate_matches.append((data_path, payload, "__top_level__", -1, character_index, ref_key, failures))
                         if not top_player_ids and ref_key in {"player", "playerName", "player_name"} and isinstance(ref, str) and ref.strip():
-                            return data_path, payload, "__top_level__", -1, character_index, ref_key, failures
+                            candidate_matches.append((data_path, payload, "__top_level__", -1, character_index, ref_key, failures))
             for key in ["events", "activities", "sessions", "campaigns", "items"]:
                 value = payload.get(key)
                 if isinstance(value, list):
@@ -2363,9 +2389,11 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
                     for ref_key in ["playerId", "player_id", "player", "playerName", "player_name"]:
                         ref = character.get(ref_key)
                         if player_ids and ref and str(ref) in player_ids:
-                            return data_path, payload, list_key, event_index, character_index, ref_key, failures
+                            candidate_matches.append((data_path, payload, list_key, event_index, character_index, ref_key, failures))
                         if not player_ids and ref_key in {"player", "playerName", "player_name"} and isinstance(ref, str) and ref.strip():
-                            return data_path, payload, list_key, event_index, character_index, ref_key, failures
+                            candidate_matches.append((data_path, payload, list_key, event_index, character_index, ref_key, failures))
+        if candidate_matches:
+            return prefer_deeper_character_player_match(candidate_matches)
         failures.append(f"{data_path.relative_to(project)} 未发现可破坏的角色玩家关联")
     failures.append("未找到包含 characters 与玩家引用或玩家名的 JSON 数据文件")
     return None, None, None, None, None, None, failures
@@ -2403,6 +2431,7 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
     if list_key == "__top_level__":
         event = mutated if isinstance(mutated, dict) else None
         characters = event.get("characters") if isinstance(event, dict) else None
+        event_count = 1 if isinstance(event, dict) else 0
     else:
         records = mutated if list_key == "$" else mutated.get(list_key) if isinstance(mutated, dict) else None
         if not isinstance(records, list) or event_index is None or event_index >= len(records) or not isinstance(records[event_index], dict):
@@ -2410,9 +2439,17 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
             return result
         event = records[event_index]
         characters = event.get("characters")
+        event_count = len(records)
     if not isinstance(characters, list) or character_index >= len(characters) or not isinstance(characters[character_index], dict):
         result["failures"].append(f"{data_path.relative_to(project)} 中 characters[{character_index}] 不是可变更对象")
         return result
+    result["probe_depth"] = {
+        "event_count": event_count,
+        "character_count_in_target_event": len(characters),
+        "targeted_non_first_event": bool(event_index is not None and event_index > 0),
+        "targeted_non_first_character": character_index > 0,
+        "selection_rule": "prefer_non_first_event_or_character_then_first_available",
+    }
     original_ref = characters[character_index].get(ref_key)
     broken_ref = "" if ref_key in {"player", "playerName", "player_name"} else "__redcap_missing_player__"
     characters[character_index][ref_key] = broken_ref
@@ -3343,8 +3380,10 @@ def verify_independent_observer_output(path: pathlib.Path, runner_pid: int | Non
     if not isinstance(deliverables, dict) or deliverables.get("failures"):
         failures.append(f"independent-observer 交付文件哈希复核失败：{deliverables.get('failures') if isinstance(deliverables, dict) else 'missing'}")
     bundle_fingerprint = payload.get("bundle_fingerprint")
-    if not isinstance(bundle_fingerprint, dict) or bundle_fingerprint.get("matches_expected_file_sha256") is not True:
-        failures.append("independent-observer 必须证明读取的 final-evidence-bundle.json 文件哈希等于请求中的冻结哈希")
+    if not isinstance(bundle_fingerprint, dict) or bundle_fingerprint.get("matches_declared_bundle_sha256") is not True:
+        failures.append("independent-observer 必须独立证明 final-evidence-bundle.json 正文哈希等于 bundle_sha256 声明")
+    if not isinstance(bundle_fingerprint, dict) or bundle_fingerprint.get("file_sha256_stable_after_cooldown") is not True:
+        failures.append("independent-observer 必须证明 final-evidence-bundle.json 冷却后文件哈希保持稳定")
     browser = payload.get("browser_observation")
     if not isinstance(browser, dict) or browser.get("ok") is not True:
         failures.append(f"independent-observer 浏览器观察失败：{browser.get('failures') if isinstance(browser, dict) else 'missing'}")
@@ -3433,8 +3472,10 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
         failures.append("视觉三角验证要求各截图哈希互不相同，当前存在重复截图哈希")
     observer_payload = load_optional_json(evidence / "independent-observer.json") or {}
     bundle_fingerprint = observer_payload.get("bundle_fingerprint")
-    if not isinstance(bundle_fingerprint, dict) or bundle_fingerprint.get("matches_expected_file_sha256") is not True:
-        failures.append("视觉三角报告要求观察者证据包文件哈希与冻结哈希一致")
+    if not isinstance(bundle_fingerprint, dict) or bundle_fingerprint.get("matches_declared_bundle_sha256") is not True:
+        failures.append("视觉三角报告要求观察者独立计算的证据包正文哈希与 bundle_sha256 声明一致")
+    if not isinstance(bundle_fingerprint, dict) or bundle_fingerprint.get("file_sha256_stable_after_cooldown") is not True:
+        failures.append("视觉三角报告要求观察者冷却后复核冻结包文件哈希稳定")
     return {
         "schema_id": "redcap-e2e-visual-independence-report",
         "producer": "e2e-runner",
@@ -3468,8 +3509,12 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
                 "passed": all(isinstance(source.get("browser_context"), dict) for source in sources),
             },
             {
-                "name": "observer_bundle_file_hash_matches",
-                "passed": isinstance(bundle_fingerprint, dict) and bundle_fingerprint.get("matches_expected_file_sha256") is True,
+                "name": "observer_bundle_declared_hash_matches",
+                "passed": isinstance(bundle_fingerprint, dict) and bundle_fingerprint.get("matches_declared_bundle_sha256") is True,
+            },
+            {
+                "name": "observer_bundle_file_hash_stable_after_cooldown",
+                "passed": isinstance(bundle_fingerprint, dict) and bundle_fingerprint.get("file_sha256_stable_after_cooldown") is True,
             },
         ],
         "failures": failures,
@@ -3505,8 +3550,6 @@ def run_observer_request_as_harness(request_path: pathlib.Path, runner_pid: int,
         str(evidence),
         "--bundle",
         str(bundle),
-        "--expected-bundle-file-sha256",
-        str(request.get("bundle_file_sha256") or ""),
         "--output",
         str(output),
         "--runner-pid",
@@ -3576,7 +3619,6 @@ def request_independent_observer(project: pathlib.Path, evidence: pathlib.Path, 
         "evidence": str(evidence),
         "bundle": str(bundle_path),
         "bundle_sha256": bundle.get("bundle_sha256"),
-        "bundle_file_sha256": sha256_file(bundle_path) if bundle_path.exists() else None,
         "output": str(output),
         "observer_script": str(observer_script_path(project)),
         "runner_pid": os.getpid(),
@@ -3938,11 +3980,11 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "An external project was created outside the RedCap source workspace.",
             "Five Loom roles ran as independent Codex CLI sessions with project-level Hook evidence.",
             "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
-            "The runner performed a mutation-based negative contract probe: it temporarily wrote bad signup data, required the validation command to fail, restored the original data, and required validation to pass again.",
+            "The runner performed mutation-based negative contract probes: it prefers non-first eligible records when available, temporarily writes bad signup and character-player data, requires the validation command to fail, restores the original data, and requires validation to pass again.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
             "The runner performed a separate behavioral browser verification with a real click interaction, captured behavioral-browser-verification.png immediately after the verified interaction and before any later page reset, compared its hash with browser-inspection.png, and, when project data exposed player-character relationships, checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
             "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review; browser-inspection, behavioral verification, independent browser verification, and independent observer use recorded browser_context metadata and are summarized by visual-independence-report.json.",
-            "The outer E2E harness launched an independent observer as a sibling process of the runner-worker; the observer read the frozen final-evidence-bundle.json and recorded bundle_fingerprint.file_sha256 matching the observer request before writing read-only sealed independent-observer.json.",
+            "The outer E2E harness launched an independent observer as a sibling process of the runner-worker; the observer read the frozen final-evidence-bundle.json, independently recomputed its declared bundle_sha256, rechecked the file hash after a cooldown window, and wrote read-only sealed independent-observer.json.",
             "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
             "runner-self-purification-resolution.json explicitly resolves reviewer self-purification candidates for this E2E without writing public memory or Cap private persona body.",
         ],
@@ -3994,7 +4036,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "If this provider review passes, the runner must regenerate iteration-verdict.json with final_prism_pending=false before writing completion-marker.json.",
             "pre-final-readiness.json must not list completion-marker.json, final-prism-review.json, or iteration-verdict.json in evidence_checked; those belong in pending_final_evidence until this review passes.",
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
-            "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, and browser observation.",
+            "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, browser observation, declared bundle hash match, and cooldown file hash stability.",
             "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
             "visual-independence-report.json must show distinct screenshot hashes and recorded browser_context for browser-inspection, behavioral-browser-verification, independent-browser-verification, and independent-observer.",
         ],
@@ -5165,6 +5207,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("E2E 自检没有覆盖运行器坏数据负向契约探针证据")
             if "runner-character-player-contract-probe.json" not in current_source or "broken-character-player-link-must-fail" not in current_source:
                 failures.append("E2E 自检没有覆盖运行器角色玩家负向契约探针证据")
+            if "probe_depth" not in current_source or "targeted_non_first_record" not in current_source or "targeted_non_first_event" not in current_source:
+                failures.append("E2E 自检没有覆盖负向探针优先命中非首条记录的深度证据")
             if "runner-self-purification-resolution.json" not in current_source or "write_runner_self_purification_resolution" not in current_source:
                 failures.append("E2E 自检没有覆盖运行器自我净化裁决证据")
             if "same_structural_container" not in current_source or "text_distance_is_informational_only" not in current_source:
@@ -5183,8 +5227,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("行为级浏览器验证没有比较普通浏览器截图和行为截图哈希")
             if "visual-independence-report.json" not in current_source or "build_visual_independence_report" not in current_source:
                 failures.append("E2E 自检没有覆盖视觉三角独立性报告")
-            if "bundle_file_sha256" not in current_source or "matches_expected_file_sha256" not in current_source:
-                failures.append("E2E 自检没有覆盖独立观察者冻结证据包文件哈希核对")
+            if "matches_declared_bundle_sha256" not in current_source or "file_sha256_stable_after_cooldown" not in current_source or "cooldown_seconds" not in current_source:
+                failures.append("E2E 自检没有覆盖独立观察者声明哈希核对与冷却后文件哈希复核")
             if "data-redcap-volatile" not in current_source or ".spinner" not in current_source or ".loading" not in current_source:
                 failures.append("行为级浏览器验证没有排除时间戳和加载器等常见噪音节点")
             if "interactive_gate_marker_observed" not in current_source or "actionable_interactive_gate_marker" not in current_source:

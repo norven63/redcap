@@ -1,0 +1,118 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260616-e2e-round36-advisory-concerns",
+  "fsm_state": "IMPLEMENTING",
+  "requirement_review": {
+    "user_intent": "Norven 授权继续 RedCap 复活长任务直至目标达成，并要求不要留下已知尾巴；Round36 E2E 已通过，但最终棱镜复核留下了证据独立性和负向探针覆盖面的建议型担忧。",
+    "target_reality": "把 Round36 的建议型担忧转成运行器能力增强：独立观察者不依赖 harness 传入的期望哈希，负向探针覆盖非首条记录，观察者验证记录冻结包到观察者验证的时间窗口和冷却后复核。",
+    "non_goals": [
+      "不降低 Round36 已通过的最终棱镜标准",
+      "不删除独立观察者或视觉三角验证",
+      "不把建议型担忧伪装成已经不存在",
+      "不修改 Round36 外部项目来伪造更好结果",
+      "不把本轮修复声明为 RedCap 永久完整复活"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required_before_packet_pending_after_packet",
+    "rollback_plan": "若本轮修复导致观察者验证过慢、误伤或无法在包内运行，回退 runtime/core/complete_revival_e2e.py 与 runtime/core/e2e_independent_observer.py 中本轮独立观察者和负向探针改动。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260616-e2e-round36-advisory-concerns-lifecycle.json",
+      "runtime/bin/redcap gate --task \"消除Round36最终复核遗留证据独立性担忧\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260616-e2e-round36-advisory-concerns-lifecycle.json",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/e2e_independent_observer.py",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "git diff --check",
+      "runtime/bin/redcap check",
+      "重新执行完整 E2E"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "好的，我授权，请继续没完成的所有任务，直至达到最终目标为止",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation",
+    "continuation_authorization": {
+      "mode": "same_session_authorized_continuation",
+      "source": "same_session_resume",
+      "session_id": "019e745f-17b8-7832-ada8-ae990b49db69",
+      "base_prompt_excerpt": "抱歉，我刚才不小心把你归档了，现在已经恢复了，你还能恢复之前的任务，并完成直至所有目标达成吗",
+      "continuation_task_excerpt": "Round36 E2E 通过后继续处理最终棱镜建议型担忧"
+    }
+  },
+  "task_body": {
+    "requested_outcome": "消除 Round36 最终棱镜复核留下的证据独立性、负向探针覆盖面和冻结观察时间窗口担忧，让下一轮 E2E 的通过更有说服力。",
+    "primary_deliverable": "complete_revival_e2e 运行器和独立观察者脚本增强：观察者独立计算冻结包正文哈希与文件哈希，记录冷却后复核；报名和角色玩家负向探针优先覆盖第二条记录。",
+    "acceptance_criteria": [
+      "independent-observer 不再需要 --expected-bundle-file-sha256 参数作为通过条件",
+      "independent-observer 记录 file_sha256、declared_bundle_sha256、computed_bundle_sha256，并验证正文哈希与冻结包声明一致",
+      "观察者记录 freeze_to_observer_seconds 和 cooldown_recheck，且冷却后文件哈希保持一致",
+      "signup 负向探针优先选择非首条承载报名意向的记录，且记录 probe_depth",
+      "character-player 负向探针优先选择非首条可验证角色玩家关系，且记录 probe_depth",
+      "complete-revival-e2e self-check 覆盖上述能力，防止回退"
+    ],
+    "status": "implemented",
+    "evidence_kind": "code",
+    "evidence": [
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/core/e2e_independent_observer.py",
+      "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round36/"
+    ]
+  },
+  "fsm_transition": {
+    "from": "PRISM_REVIEW",
+    "to": "IMPLEMENTING",
+    "evidence": [
+      "prism_review_or_explicit_skip",
+      "runtime/bin/redcap gate --task \"消除Round36最终复核遗留证据独立性担忧\" --risk-level medium"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "修复增强证据独立性和探针深度，不改变项目级发布安装、Loom 角色顺序或最终棱镜必须通过的判定。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/e2e_independent_observer.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "Round36 已通过但仍保留建议型担忧；本轮将担忧转成可运行、可验证的增强，而不是在汇报里消解它。"
+      ],
+      "evidence": [
+        "assets/evidence/lifecycle/20260616-e2e-round36-advisory-concerns-lifecycle.json",
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round36/"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "增强后的观察者和负向探针仍保持运行器拥有最终验收权，外部项目必须用真实验证命令证明坏数据失败。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/e2e_independent_observer.py"
+      ]
+    }
+  },
+  "implementation_evidence": [
+    "runtime/core/complete_revival_e2e.py",
+    "runtime/core/e2e_independent_observer.py"
+  ],
+  "verification_evidence": [
+    "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260616-e2e-round36-advisory-concerns-lifecycle.json",
+    "runtime/bin/redcap gate --task \"消除Round36最终复核遗留证据独立性担忧\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260616-e2e-round36-advisory-concerns-lifecycle.json",
+    "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/e2e_independent_observer.py",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+    "git diff --check",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": false,
+    "scope": "本包只跟踪 Round36 最终棱镜建议型担忧的增强修复"
+  }
+}
