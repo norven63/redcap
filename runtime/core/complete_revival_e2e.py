@@ -182,6 +182,20 @@ def sha256_file(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def evidence_file_record(path: pathlib.Path, *, base: pathlib.Path | None = None) -> dict[str, Any]:
+    display_path = path.relative_to(base).as_posix() if base and path.exists() else path.name
+    record: dict[str, Any] = {
+        "path": display_path,
+        "exists": path.exists(),
+        "sha256": None,
+        "size": 0,
+    }
+    if path.exists():
+        record["sha256"] = sha256_file(path)
+        record["size"] = path.stat().st_size
+    return record
+
+
 def slugify(value: str) -> str:
     lowered = value.casefold()
     slug = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", "-", lowered, flags=re.UNICODE).strip("-")
@@ -1704,8 +1718,16 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "producer": "e2e-runner",
         "target": "index.html",
         "screenshot": "behavioral-browser-verification.png",
+        "screenshot_phase": "after_interaction",
+        "visual_independence": {
+            "hashes_compared": True,
+            "hashes_differ": True,
+            "required_when": "interaction_changed=true and browser-inspection.png exists"
+        },
         "checks": [
             "至少一次真实浏览器交互必须同时改变页面文本哈希和稳定 DOM 摘要哈希",
+            "交互成功后必须立即采集行为截图，不能在后续页面刷新后采集初始状态截图",
+            "如 browser-inspection.png 存在，行为截图必须记录并证明哈希不同",
             "如项目数据包含玩家和角色关系，必须验证该关系在 UI 中可见"
         ],
         "ok": "<boolean>",
@@ -2543,6 +2565,9 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
     console_errors: list[str] = []
     page_errors: list[str] = []
     relation_probe = find_character_player_probe(project)
+    browser_inspection_screenshot = evidence / "browser-inspection.png"
+    screenshot_phase = "not_captured"
+    screenshot_phase_reason = "行为级浏览器验证尚未运行到截图阶段"
     try:
         server_process = subprocess.Popen(
             server_argv,
@@ -2641,6 +2666,13 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
             before_text = before_snapshot["text"]
             after_text = page.locator("body").inner_text(timeout=5_000)
             interaction_changed = bool(clicked_button) and before_snapshot["text_hash"] != after_snapshot["text_hash"] and before_snapshot["dom_summary_hash"] != after_snapshot["dom_summary_hash"]
+            if interaction_changed:
+                screenshot_phase = "after_interaction"
+                screenshot_phase_reason = "真实点击已改变页面文本哈希和稳定 DOM 摘要哈希，截图在关系探针刷新页面前采集"
+            else:
+                screenshot_phase = "after_initial_observation"
+                screenshot_phase_reason = "没有找到可证明页面变化的交互，截图只能记录初始观察状态"
+            page.screenshot(path=str(screenshot), full_page=True)
             relation_passed = True
             relation_evidence: dict[str, Any] = {"probe_available": False}
             if relation_probe:
@@ -2710,7 +2742,6 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                     "text_distance_is_informational_only": True,
                     "dom_structural_probe": dom_relation,
                 }
-            page.screenshot(path=str(screenshot), full_page=True)
             browser.close()
     except Exception as exc:
         result["failures"].append(f"行为级浏览器验证执行失败：{type(exc).__name__}: {exc}")
@@ -2730,6 +2761,28 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                     "stdout_tail": server_stdout[-1000:],
                     "stderr_tail": server_stderr[-1000:],
                 })
+    screenshot_record = evidence_file_record(screenshot, base=evidence)
+    browser_inspection_record = evidence_file_record(browser_inspection_screenshot, base=evidence)
+    hashes_compared = bool(screenshot_record["sha256"] and browser_inspection_record["sha256"])
+    hashes_differ = (
+        screenshot_record["sha256"] != browser_inspection_record["sha256"]
+        if hashes_compared
+        else None
+    )
+    visual_independence = {
+        "behavioral_screenshot_phase": screenshot_phase,
+        "phase_reason": screenshot_phase_reason,
+        "behavioral_screenshot": screenshot_record,
+        "browser_inspection_screenshot": browser_inspection_record,
+        "hashes_compared": hashes_compared,
+        "hashes_differ": hashes_differ,
+        "required_when": "interaction_changed=true and browser-inspection.png exists",
+    }
+    visual_independence_passed = not (
+        interaction_changed
+        and browser_inspection_record["exists"]
+        and hashes_differ is not True
+    )
     checks = [
         {
             "name": "interactive_state_change",
@@ -2761,12 +2814,22 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
         },
         {
             "name": "screenshot_written",
-            "passed": screenshot.exists() and screenshot.stat().st_size > 0,
+            "passed": screenshot_record["exists"] and int(screenshot_record["size"] or 0) > 0,
+            "evidence": screenshot_record,
+        },
+        {
+            "name": "screenshot_phase_after_interaction",
+            "passed": screenshot_phase == "after_interaction",
             "evidence": {
-                "path": "behavioral-browser-verification.png",
-                "sha256": sha256_file(screenshot) if screenshot.exists() else None,
-                "size": screenshot.stat().st_size if screenshot.exists() else 0,
+                "screenshot_phase": screenshot_phase,
+                "phase_reason": screenshot_phase_reason,
+                "clicked_button": clicked_button,
             },
+        },
+        {
+            "name": "behavioral_visual_independence",
+            "passed": visual_independence_passed,
+            "evidence": visual_independence,
         },
     ]
     failures = [f"行为级浏览器验证失败：{item['name']}" for item in checks if item.get("passed") is not True]
@@ -2777,6 +2840,10 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
         "clicked_button": clicked_button,
         "interaction_attempts": interaction_attempts,
         "relation_probe": relation_probe,
+        "screenshot_phase": screenshot_phase,
+        "screenshot_phase_reason": screenshot_phase_reason,
+        "screenshot_record": screenshot_record,
+        "visual_independence": visual_independence,
         "console_errors": console_errors,
         "page_errors": page_errors,
     })
@@ -3456,7 +3523,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
             "The runner performed a mutation-based negative contract probe: it temporarily wrote bad signup data, required the validation command to fail, restored the original data, and required validation to pass again.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
-            "The runner performed a separate behavioral browser verification with a real click interaction and, when project data exposed player-character relationships, checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
+            "The runner performed a separate behavioral browser verification with a real click interaction, captured behavioral-browser-verification.png immediately after the verified interaction and before any later page reset, compared its hash with browser-inspection.png, and, when project data exposed player-character relationships, checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
             "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review.",
             "The outer E2E harness launched an independent observer as a sibling process of the runner-worker; the observer wrote read-only sealed independent-observer.json with process metadata, script self-hash, deliverable hash cross-checks, DOM summary, visible text excerpt, screenshot hash, and browser observation.",
             "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
@@ -3842,6 +3909,16 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("behavioral-browser-verification 必须证明运行器独立行为级浏览器验证通过")
         if not behavioral_verification.get("screenshot"):
             failures.append("behavioral-browser-verification 必须记录截图证据")
+        if behavioral_verification.get("screenshot_phase") != "after_interaction":
+            failures.append("behavioral-browser-verification 必须记录 screenshot_phase=after_interaction，证明截图采集发生在真实交互后")
+        visual_independence = behavioral_verification.get("visual_independence")
+        if not isinstance(visual_independence, dict):
+            failures.append("behavioral-browser-verification 必须记录 visual_independence")
+        else:
+            if visual_independence.get("hashes_compared") is not True:
+                failures.append("behavioral-browser-verification.visual_independence 必须证明已比较普通截图和行为截图哈希")
+            if visual_independence.get("hashes_differ") is not True:
+                failures.append("behavioral-browser-verification.visual_independence 必须证明行为截图不同于普通浏览器截图")
     independent_observer = load_optional_json(evidence / "independent-observer.json")
     if independent_observer is not None:
         verification = verify_independent_observer_output(evidence / "independent-observer.json")
@@ -4569,6 +4646,10 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("pre-final-readiness 没有把最终文件移出已检查证据清单")
             if "text_hash" not in current_source or "dom_summary_hash" not in current_source or "observable_criteria" not in current_source:
                 failures.append("行为级浏览器验证没有使用文本哈希和稳定 DOM 摘要哈希作为可度量交互标准")
+            if "screenshot_phase" not in current_source or "after_interaction" not in current_source or "behavioral_visual_independence" not in current_source:
+                failures.append("行为级浏览器验证没有固化交互后截图阶段与视觉独立性检查")
+            if "visual_independence" not in current_source or "hashes_differ" not in current_source or "browser-inspection.png" not in current_source:
+                failures.append("行为级浏览器验证没有比较普通浏览器截图和行为截图哈希")
             if "data-redcap-volatile" not in current_source or ".spinner" not in current_source or ".loading" not in current_source:
                 failures.append("行为级浏览器验证没有排除时间戳和加载器等常见噪音节点")
             if "interactive_gate_marker_observed" not in current_source or "actionable_interactive_gate_marker" not in current_source:
