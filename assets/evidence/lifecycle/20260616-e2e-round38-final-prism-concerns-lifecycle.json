@@ -1,0 +1,119 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260616-e2e-round38-final-prism-concerns",
+  "fsm_state": "IMPLEMENTING",
+  "requirement_review": {
+    "user_intent": "Norven 要求继续所有未完成任务直至目标达成，且不允许用绕过、降级或放宽标准的方式处理 E2E 暴露的问题。",
+    "target_reality": "第 38 轮完整 E2E 的最终棱镜复核给出 concern 而非 pass；本轮要把 concern 转成运行器硬能力：完成标记边界披露、写完成标记前最终验证、file 协议入口浏览器验证，并让这些证据进入硬验收。",
+    "non_goals": [
+      "不放宽最终棱镜必须 pass 的标准",
+      "不把 concern 改写成 pass",
+      "不修改外部 E2E 项目来伪造结果",
+      "不删除独立观察者、负向探针或浏览器验证",
+      "不把本轮修复声明为 RedCap 永久完整复活"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required_before_packet_pending_after_packet",
+    "rollback_plan": "若本轮改动导致完整 E2E 无法生成最终证据，回退 runtime/core/complete_revival_e2e.py、runtime/core/revival_followthrough.py 与合同文件中本轮新增的最终验证、file 协议验证和完成标记边界披露改动。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260616-e2e-round38-final-prism-concerns-lifecycle.json",
+      "runtime/bin/redcap gate --task \"修复第38轮E2E最终棱镜 concern\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260616-e2e-round38-final-prism-concerns-lifecycle.json",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/revival_followthrough.py",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "git diff --check",
+      "runtime/bin/redcap check",
+      "重新执行完整 E2E"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "好的，我授权，请继续没完成的所有任务，直至达到最终目标为止",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation",
+    "continuation_authorization": {
+      "mode": "same_session_authorized_continuation",
+      "source": "same_session_resume",
+      "session_id": "019e745f-17b8-7832-ada8-ae990b49db69",
+      "base_prompt_excerpt": "抱歉，我刚才不小心把你归档了，现在已经恢复了，你还能恢复之前的任务，并完成直至所有目标达成吗",
+      "continuation_task_excerpt": "第 38 轮 E2E 失败于最终棱镜 concern，继续修复并重跑"
+    }
+  },
+  "task_body": {
+    "requested_outcome": "让第 38 轮最终棱镜提出的最低修复变成下一轮 E2E 的可运行证据和硬验收条件。",
+    "primary_deliverable": "complete_revival_e2e 运行器增强：生成 final-marker-validation.json、file-browser-inspection.json、self-referential-boundary.json，并把这些证据纳入最终棱镜请求、完成标记和有意义证据检查。",
+    "acceptance_criteria": [
+      "完成标记必须写入本轮验证链路的自引用边界和适用范围，不得伪装成跨机器或人工验收",
+      "最终棱镜复核前必须提供 planned_completion_marker_disclosure，说明 completion-marker.json 将写入哪些边界披露",
+      "写 completion-marker.json 前必须再次运行项目验证命令，并记录 final-marker-validation.json",
+      "运行器必须用真实浏览器通过 file:// 打开项目入口并记录 file-browser-inspection.json 和截图",
+      "final-prism-review 请求必须包含上述新增完整证据",
+      "meaningful evidence 与 followthrough 检查必须把新增证据作为硬要求",
+      "self-check 必须覆盖新增能力，防止后续回退"
+    ],
+    "status": "verified",
+    "evidence_kind": "code",
+    "evidence": [
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/core/revival_followthrough.py",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json"
+    ]
+  },
+  "fsm_transition": {
+    "from": "PRISM_REVIEW",
+    "to": "IMPLEMENTING",
+    "evidence": [
+      "prism_review_or_explicit_skip",
+      "runtime/bin/redcap gate --task \"修复第38轮E2E最终棱镜 concern：完成标记边界披露、写标记前最终验证、file 协议入口验证\" --risk-level medium"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "最终复核 concern 指向证据链自引用边界和最终写标记前验证缺口；应增强运行器，而不是降低复核标准。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round38/"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "第 38 轮拒绝写 completion-marker.json 是正确行为；本轮修复目标是让下一轮在同等严格标准下通过。"
+      ],
+      "evidence": [
+        "assets/evidence/lifecycle/20260616-e2e-round38-final-prism-concerns-lifecycle.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "新增证据必须进入合同和 followthrough 检查，否则会变成可选报告。"
+      ],
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "runtime/core/revival_followthrough.py"
+      ]
+    }
+  },
+  "implementation_evidence": [
+    "runtime/core/complete_revival_e2e.py",
+    "runtime/core/revival_followthrough.py",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json"
+  ],
+  "verification_evidence": [
+    "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260616-e2e-round38-final-prism-concerns-lifecycle.json",
+    "runtime/bin/redcap gate --task \"修复第38轮E2E最终棱镜 concern\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260616-e2e-round38-final-prism-concerns-lifecycle.json",
+    "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/revival_followthrough.py",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+    "runtime/bin/redcap revival-followthrough self-check",
+    "git diff --check",
+    "runtime/bin/redcap check"
+  ],
+  "completion_claim": {
+    "present": false,
+    "scope": "本包只跟踪第 38 轮最终棱镜 concern 的运行器修复"
+  }
+}

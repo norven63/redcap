@@ -42,12 +42,15 @@ REQUIRED_E2E_FILES = {
     "runner-negative-contract-probe.json",
     "runner-character-player-contract-probe.json",
     "final-runner-test-results.json",
+    "final-marker-validation.json",
     "browser-inspection.json",
+    "file-browser-inspection.json",
     "behavioral-browser-verification.json",
     "independent-browser-verification.json",
     "final-evidence-bundle.json",
     "independent-observer.json",
     "visual-independence-report.json",
+    "self-referential-boundary.json",
     "final-prism-review.json",
     "failure-backlog.json",
     "iteration-verdict.json",
@@ -66,12 +69,15 @@ REQUIRED_EVIDENCE_CHECKS = {
     "runner-negative-contract-probe.json",
     "runner-character-player-contract-probe.json",
     "final-runner-test-results.json",
+    "final-marker-validation.json",
     "browser-inspection.json",
+    "file-browser-inspection.json",
     "behavioral-browser-verification.json",
     "independent-browser-verification.json",
     "final-evidence-bundle.json",
     "independent-observer.json",
     "visual-independence-report.json",
+    "self-referential-boundary.json",
     "final-prism-review.json",
     "failure-backlog.json",
     "iteration-verdict.json",
@@ -425,6 +431,18 @@ def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str
             failures.append("运行器独立重跑验证必须成功")
         if not runner_tests.get("detected_command"):
             failures.append("final-runner-test-results 必须记录 detected_command")
+    marker_validation = load_optional_json(evidence_root / "final-marker-validation.json")
+    if marker_validation is None:
+        failures.append("缺少或无法读取 final-marker-validation.json")
+    else:
+        if marker_validation.get("producer") != "e2e-runner":
+            failures.append("final-marker-validation.producer 必须是 e2e-runner")
+        if marker_validation.get("ok") is not True or marker_validation.get("exit_code") != 0:
+            failures.append("写 completion-marker 前的最终项目验证必须成功")
+        if not marker_validation.get("detected_command"):
+            failures.append("final-marker-validation 必须记录 detected_command")
+        if not marker_validation.get("stdout_sha256"):
+            failures.append("final-marker-validation 必须记录 stdout_sha256")
     browser = load_optional_json(evidence_root / "browser-inspection.json")
     if browser is None:
         failures.append("缺少或无法读取 browser-inspection.json")
@@ -435,6 +453,18 @@ def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str
             failures.append("运行器浏览器检查必须成功")
         if not browser.get("screenshot"):
             failures.append("browser-inspection 必须记录截图证据")
+    file_browser = load_optional_json(evidence_root / "file-browser-inspection.json")
+    if file_browser is None:
+        failures.append("缺少或无法读取 file-browser-inspection.json")
+    else:
+        if file_browser.get("producer") != "e2e-runner":
+            failures.append("file-browser-inspection.producer 必须是 e2e-runner")
+        if file_browser.get("ok") is not True:
+            failures.append("file:// 浏览器检查必须成功")
+        if file_browser.get("launch_mode") != "local-file-protocol":
+            failures.append("file-browser-inspection.launch_mode 必须是 local-file-protocol")
+        if not file_browser.get("screenshot"):
+            failures.append("file-browser-inspection 必须记录截图证据")
     behavior = load_optional_json(evidence_root / "behavioral-browser-verification.json")
     if behavior is None:
         failures.append("缺少或无法读取 behavioral-browser-verification.json")
@@ -464,7 +494,9 @@ def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str
                 "runner-negative-contract-probe.json",
                 "runner-character-player-contract-probe.json",
                 "final-runner-test-results.json",
+                "final-marker-validation.json",
                 "browser-inspection.json",
+                "file-browser-inspection.json",
                 "behavioral-browser-verification.json",
                 "independent-browser-verification.json",
             ]:
@@ -503,6 +535,29 @@ def validate_runner_finalization(evidence_root: pathlib.Path, failures: list[str
             failures.append("completion-marker.ready_for_engineering_use 必须为 true")
         if marker.get("final_prism_strictest_verdict") != "pass":
             failures.append("completion-marker 必须绑定最终棱镜 pass 结果")
+        if not isinstance(marker.get("validation_chain_scope"), dict):
+            failures.append("completion-marker 必须包含 validation_chain_scope")
+        if not isinstance(marker.get("not_claimed"), list) or not marker.get("not_claimed"):
+            failures.append("completion-marker 必须包含 not_claimed")
+        if not isinstance(marker.get("final_marker_validation"), dict) or marker["final_marker_validation"].get("ok") is not True:
+            failures.append("completion-marker 必须引用通过的 final-marker-validation")
+        if not isinstance(marker.get("file_browser_inspection"), dict) or marker["file_browser_inspection"].get("ok") is not True:
+            failures.append("completion-marker 必须引用通过的 file-browser-inspection")
+
+    boundary = load_optional_json(evidence_root / "self-referential-boundary.json")
+    if boundary is None:
+        failures.append("缺少或无法读取 self-referential-boundary.json")
+    else:
+        if boundary.get("producer") != "e2e-runner":
+            failures.append("self-referential-boundary.producer 必须是 e2e-runner")
+        if boundary.get("ok") is not True:
+            failures.append("self-referential-boundary 必须通过")
+        scope = boundary.get("validation_chain_scope")
+        if not isinstance(scope, dict) or scope.get("same_host") is not True or scope.get("same_redcap_package") is not True:
+            failures.append("self-referential-boundary 必须声明 same_host 与 same_redcap_package")
+        disclosure = boundary.get("completion_marker_disclosure")
+        if not isinstance(disclosure, dict) or disclosure.get("must_copy_this_boundary") is not True:
+            failures.append("self-referential-boundary 必须要求 completion-marker 复制边界披露")
 
 
 def validate_e2e_evidence_quality(evidence_root: pathlib.Path) -> dict[str, Any]:
@@ -624,11 +679,14 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         (evidence / "runner-negative-contract-probe.json").write_text('{"schema_id": "redcap-e2e-runner-negative-contract-probe", "producer": "e2e-runner", "ok": true}\n', encoding="utf-8")
         (evidence / "runner-character-player-contract-probe.json").write_text('{"schema_id": "redcap-e2e-runner-character-player-contract-probe", "producer": "e2e-runner", "ok": true}\n', encoding="utf-8")
         (evidence / "final-runner-test-results.json").write_text('{"schema_id": "redcap-e2e-final-runner-test-results", "producer": "e2e-runner", "ok": true, "exit_code": 0, "detected_command": ["npm", "test"]}\n', encoding="utf-8")
+        (evidence / "final-marker-validation.json").write_text('{"schema_id": "redcap-e2e-final-marker-validation", "producer": "e2e-runner", "ok": true, "exit_code": 0, "detected_command": ["npm", "test"], "stdout_sha256": "fixture"}\n', encoding="utf-8")
         (evidence / "browser-inspection.json").write_text('{"schema_id": "redcap-e2e-browser-inspection", "producer": "e2e-runner", "ok": true, "screenshot": "browser-inspection.png"}\n', encoding="utf-8")
+        (evidence / "file-browser-inspection.json").write_text('{"schema_id": "redcap-e2e-file-browser-inspection", "producer": "e2e-runner", "ok": true, "launch_mode": "local-file-protocol", "screenshot": "file-browser-inspection.png"}\n', encoding="utf-8")
         (evidence / "behavioral-browser-verification.json").write_text('{"schema_id": "redcap-e2e-behavioral-browser-verification", "producer": "e2e-runner", "ok": true, "screenshot": "behavioral-browser-verification.png"}\n', encoding="utf-8")
         (evidence / "independent-browser-verification.json").write_text('{"schema_id": "redcap-e2e-independent-browser-verification", "producer": "e2e-independent-browser-process", "ok": true, "screenshot": "independent-browser-verification.png"}\n', encoding="utf-8")
         (evidence / "independent-observer.json").write_text('{"schema_id": "redcap-e2e-independent-observer", "producer": "redcap-independent-observer", "ok": true}\n', encoding="utf-8")
         (evidence / "visual-independence-report.json").write_text('{"schema_id": "redcap-e2e-visual-independence-report", "producer": "e2e-runner", "ok": true}\n', encoding="utf-8")
+        (evidence / "self-referential-boundary.json").write_text('{"schema_id": "redcap-e2e-self-referential-boundary", "producer": "e2e-runner", "ok": true, "validation_chain_scope": {"same_host": true, "same_redcap_package": true}, "completion_marker_disclosure": {"must_copy_this_boundary": true}}\n', encoding="utf-8")
         (evidence / "final-evidence-bundle.json").write_text(json.dumps({
             "schema_id": "redcap-e2e-final-evidence-bundle",
             "producer": "e2e-runner",
@@ -640,7 +698,9 @@ def cmd_self_check(_: argparse.Namespace) -> int:
                 {"path": "runner-negative-contract-probe.json", "exists": True, "sha256": "fixture"},
                 {"path": "runner-character-player-contract-probe.json", "exists": True, "sha256": "fixture"},
                 {"path": "final-runner-test-results.json", "exists": True, "sha256": "fixture"},
+                {"path": "final-marker-validation.json", "exists": True, "sha256": "fixture"},
                 {"path": "browser-inspection.json", "exists": True, "sha256": "fixture"},
+                {"path": "file-browser-inspection.json", "exists": True, "sha256": "fixture"},
                 {"path": "behavioral-browser-verification.json", "exists": True, "sha256": "fixture"},
                 {"path": "independent-browser-verification.json", "exists": True, "sha256": "fixture"},
             ],
@@ -663,7 +723,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             "evidence_checked": sorted(REQUIRED_EVIDENCE_CHECKS),
         }, ensure_ascii=False), encoding="utf-8")
         (evidence / "package-prism-check.json").write_text('{"ok": true, "exit_code": 0, "stdout_tail": "PRISM_CHECK_OK"}\n', encoding="utf-8")
-        (evidence / "completion-marker.json").write_text('{"schema_id": "redcap-e2e-completion-marker", "producer": "e2e-runner", "ready_for_engineering_use": true, "final_prism_strictest_verdict": "pass"}\n', encoding="utf-8")
+        (evidence / "completion-marker.json").write_text('{"schema_id": "redcap-e2e-completion-marker", "producer": "e2e-runner", "ready_for_engineering_use": true, "final_prism_strictest_verdict": "pass", "validation_chain_scope": {"same_host": true, "same_redcap_package": true}, "not_claimed": ["fixture"], "final_marker_validation": {"ok": true}, "file_browser_inspection": {"ok": true}}\n', encoding="utf-8")
         good = validate_e2e_evidence_quality(evidence)
         if not good["ok"]:
             failures.append(f"合法 E2E fixture 不应失败：{good['failures']}")

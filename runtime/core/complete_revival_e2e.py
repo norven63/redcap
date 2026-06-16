@@ -84,11 +84,14 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "runner-character-player-contract-probe.json",
     "package-prism-check.json",
     "final-runner-test-results.json",
+    "final-marker-validation.json",
     "browser-inspection.json",
+    "file-browser-inspection.json",
     "behavioral-browser-verification.json",
     "independent-browser-verification.json",
     "independent-observer.json",
     "visual-independence-report.json",
+    "self-referential-boundary.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -747,6 +750,7 @@ def build_requirements(direction: str) -> dict[str, Any]:
             "实现真实可运行产物，不只写文档",
             "提供清晰启动方式",
             "提供自动或半自动验证命令",
+            "项目入口必须支持本地 HTTP 服务访问，也必须支持 file:// 本地文件协议直接打开",
             "把 RedCap 运行证据保存在项目 .redcap 内",
             "通过 Loom 五角色独立 Codex CLI 调用完成需求、架构、开发、测试和评审",
             "任务前检索 RedCap 知识，任务后记录自我净化和 Cap 私有人格边界决策"
@@ -761,6 +765,7 @@ def build_requirements(direction: str) -> dict[str, Any]:
             "实现方必须记录知识检索结果；无相关条目时写 no_relevant_entry_reason，不能留空",
             "Loom 角色不能共用 session_id 或共享一份伪造角色证据",
             "默认优先选择无外部依赖、无需联网安装的实现和验证方案；除非需求明确要求，不得把 Vite、Playwright 或其他重型依赖作为默认方案",
+            "前端不得只能依赖 fetch 本地 JSON；如果需要读取本地数据，必须提供 file:// 可用的内嵌数据、降级数据或同步加载方案",
             "实现方必须生成 architecture.md 和 test-results.json",
             "实现方必须在完成前运行验证命令并记录结果",
             "E2E 运行器必须独立执行安装包内 .redcap/runtime/prism/bin/prism check，失败即不能通过",
@@ -774,6 +779,7 @@ def build_acceptance(direction: str) -> dict[str, Any]:
     criteria = [
         "外部项目根目录包含真实交付文件",
         "存在可执行或可打开的入口说明",
+        "项目入口必须同时支持本地 HTTP 服务访问和 file:// 本地文件协议直接打开",
         "存在 architecture.md，说明结构、边界、风险和测试方式",
         ".redcap/evidence/e2e 中存在实现日志、测试结果、文件清单和验收摘要",
         ".redcap/evidence/e2e/loom-role-session-manifest.json 证明五个 Loom 角色来自独立 Codex CLI 会话",
@@ -782,6 +788,8 @@ def build_acceptance(direction: str) -> dict[str, Any]:
         ".redcap/evidence/e2e/self-purification-candidates.json 和 persona-distillation-decision.json 证明自我净化与人格边界已触发",
         ".redcap/evidence/e2e/package-prism-check.json 证明安装包内棱镜自检通过",
         ".redcap/evidence/e2e/final-runner-test-results.json 证明运行器独立重跑了项目验证",
+        ".redcap/evidence/e2e/final-marker-validation.json 证明写完成标记前的项目状态再次通过验证",
+        ".redcap/evidence/e2e/file-browser-inspection.json 证明项目入口可通过 file:// 本地文件协议打开",
         ".redcap/evidence/e2e/final-evidence-bundle.json 证明最终证据带有可检查哈希和摘要",
         ".redcap/evidence/e2e/final-prism-review.json 证明最终完成声明经过运行器侧棱镜复核",
         ".redcap/evidence/e2e/independent-browser-verification.json 证明至少一次浏览器复核来自独立子进程",
@@ -1039,6 +1047,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            如果存在 domain_contracts，architecture.md 的数据模型和验证方式必须逐项承接；例如 signup-intent-data-contract 必须设计每个活动、场次或事件自己的非空 signups 数组或非空 signupIntent 字段，并说明验证脚本如何逐记录检查。
            如果存在 character-player-relation-contract，必须设计 players[] 与 characters[] 的真实引用关系；character.playerId 或等价字段必须命中同活动、同场次或同文件内真实玩家 id，不能只靠 playerName 文案兜底。
         3. 默认选择无外部依赖、无需联网安装、可直接本地验证的方案；除非需求明确要求，不要引入 Vite、Playwright、数据库或服务端框架。
+           前端入口必须支持 file:// 直接打开；如果界面需要本地数据，不要只依赖浏览器 fetch 本地 JSON，必须设计内嵌数据、降级数据或其他 file:// 可用方案。
         4. 立即写 risk-register.json，至少包含 risks 数组；每项包含 id、risk、impact、mitigation、owner。
         5. 立即写 role-artifacts/architect.json，status="completed"，并列出读取的输入和写出的文件。
         6. 不要读取 manifest.json，不要检查 role-workspaces，不要扫描 .redcap 全目录。
@@ -1047,11 +1056,12 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         你的任务：
         1. 按 architecture.md 实现一个可运行的本地项目。
         2. 优先选择简单、无外部依赖、无需联网安装、可本地验证的技术栈；如果 architecture.md 要求重型依赖但需求并不需要，你应收窄为纯 HTML/CSS/JS + Node 内置模块验证，并在 implementation-log.json 说明原因。
-        3. 必须让实现和本地验证命令覆盖 acceptance-criteria.json 的 domain_contracts；例如 signup-intent-data-contract 必须在每个承载报名意向的真实活动、场次或事件记录中提供自己的非空 signups 数组或非空 signupIntent 字段，且验证脚本要逐记录检查该字段，不能只把报名意向放进玩家备注或按钮文案，也不能只检查全局至少有一条报名。
+        3. 前端入口必须支持 file:// 直接打开；如果需要展示本地数据，不要只写 fetch("data/xxx.json") 这种在 file:// 下可能失败的路径，必须提供 file:// 可用的数据加载方式，并在 README.md 说明 HTTP 和 file:// 两种打开方式。
+        4. 必须让实现和本地验证命令覆盖 acceptance-criteria.json 的 domain_contracts；例如 signup-intent-data-contract 必须在每个承载报名意向的真实活动、场次或事件记录中提供自己的非空 signups 数组或非空 signupIntent 字段，且验证脚本要逐记录检查该字段，不能只把报名意向放进玩家备注或按钮文案，也不能只检查全局至少有一条报名。
            如果存在 character-player-relation-contract，验证脚本必须检查 character.playerId 或等价字段命中同活动、同场次或同文件内真实 players[]；只要 playerId 被改成不存在的玩家 id，即使 playerName 仍存在，验证命令也必须非零退出。
-        4. implementation-log.json 必须逐项说明每个 domain_contracts 的数据结构、界面呈现和验证脚本检查方式；character-player-relation-contract 不能只写“角色和玩家可见”，必须写明真实引用校验。
-        5. 写 implementation-log.json 和 role-artifacts/developer.json。
-        6. 如果提供验证脚本，机器验证输出必须写 verification-results.json 或其他非角色文件，不能写或覆盖 test-results.json；test-results.json 只属于 tester 角色。
+        5. implementation-log.json 必须逐项说明每个 domain_contracts 的数据结构、界面呈现和验证脚本检查方式；character-player-relation-contract 不能只写“角色和玩家可见”，必须写明真实引用校验。
+        6. 写 implementation-log.json 和 role-artifacts/developer.json。
+        7. 如果提供验证脚本，机器验证输出必须写 verification-results.json 或其他非角色文件，不能写或覆盖 test-results.json；test-results.json 只属于 tester 角色。
         """,
         "tester": """
         你的任务：
@@ -1075,6 +1085,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            如果 requirements.json 或 acceptance-criteria.json 包含 domain_contracts，必须逐项审核产品、架构、开发和测试是否承接；任何未承接项必须进入 blocking_findings 和 failure-backlog.open_items。
            对 signup-intent-data-contract 的审核必须包含：开发验证脚本是否逐活动、逐场次或逐事件检查非空报名意向，tester 是否做了清空单个活动 signups 和 signupIntent 后验证命令非零退出的负向或静态探针；只看到全局至少一条报名不算通过。
            对 character-player-relation-contract 的审核必须包含：开发验证脚本是否检查 playerId 命中真实玩家、tester 是否做了破坏 playerId 后验证命令非零退出的负向或静态探针；只看到 playerName 或界面文案不算通过。
+           对本地入口的审核必须包含：README、架构和实现是否支持本地 HTTP 服务访问与 file:// 直接打开；如果前端只依赖 fetch 本地 JSON 且没有 file:// 降级方案，必须阻塞。
         2. 写 review-verdict.json；必须包含：
            - "terminal_completion": false；
            - "blocking_findings": [] 或阻塞项数组，禁止用 blocking_failures、open_issues 等近义字段替代；
@@ -1728,11 +1739,28 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
+    write_json(evidence / "final-marker-validation-template.json", {
+        "schema_id": "redcap-e2e-final-marker-validation",
+        "producer": "e2e-runner",
+        "detected_command": "<required>",
+        "ok": "<boolean>",
+        "failure_policy": "blocking",
+        "purpose": "写 completion-marker.json 前再次验证项目状态，避免负向探针或浏览器检查之后数据被破坏。"
+    })
     write_json(evidence / "browser-inspection-template.json", {
         "schema_id": "redcap-e2e-browser-inspection",
         "producer": "e2e-runner",
         "target": "index.html",
         "screenshot": "browser-inspection.png",
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
+    write_json(evidence / "file-browser-inspection-template.json", {
+        "schema_id": "redcap-e2e-file-browser-inspection",
+        "producer": "e2e-runner",
+        "target": "index.html",
+        "screenshot": "file-browser-inspection.png",
+        "launch_mode": "local-file-protocol",
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
@@ -1783,6 +1811,13 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         ],
         "ok": "<boolean>",
         "failure_policy": "blocking"
+    })
+    write_json(evidence / "self-referential-boundary-template.json", {
+        "schema_id": "redcap-e2e-self-referential-boundary",
+        "producer": "e2e-runner",
+        "ok": "<boolean>",
+        "failure_policy": "blocking",
+        "purpose": "完成标记必须明示本轮验证链路的自引用边界和未覆盖范围。"
     })
     write_json(evidence / "visual-independence-report-template.json", {
         "schema_id": "redcap-e2e-visual-independence-report",
@@ -1995,12 +2030,15 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
         "runner-negative-contract-probe.json",
         "package-prism-check.json",
         "final-runner-test-results.json",
+        "final-marker-validation.json",
         "browser-inspection.json",
+        "file-browser-inspection.json",
         "behavioral-browser-verification.json",
         "runner-character-player-contract-probe.json",
         "role-execution-risk.json",
         "independent-browser-verification.json",
         "browser-inspection.png",
+        "file-browser-inspection.png",
         "behavioral-browser-verification.png",
         "independent-browser-verification.png",
         "loom-role-session-manifest-pre-review.json",
@@ -2036,7 +2074,9 @@ def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, d
         "runner-self-purification-resolution.json",
         "package-prism-check.json",
         "final-runner-test-results.json",
+        "final-marker-validation.json",
         "browser-inspection.json",
+        "file-browser-inspection.json",
         "behavioral-browser-verification.json",
         "independent-browser-verification.json",
         "review-verdict.json",
@@ -2170,6 +2210,32 @@ def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
         "detected_command": argv,
         "command_source": source,
         "failures": [] if result["ok"] else ["运行器重跑验证命令失败"],
+    })
+    return receipt
+
+
+def run_final_marker_validation(project: pathlib.Path) -> dict[str, Any]:
+    argv, source = detect_validation_command(project)
+    if argv is None:
+        return {
+            "schema_id": "redcap-e2e-final-marker-validation",
+            "producer": "e2e-runner",
+            "ok": False,
+            "detected_command": None,
+            "command_source": source,
+            "failures": ["写 completion-marker.json 前无法发现可执行验证命令"],
+        }
+    result = run_command(argv, cwd=project, timeout_seconds=240)
+    receipt = command_receipt(result)
+    receipt.update({
+        "schema_id": "redcap-e2e-final-marker-validation",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "purpose": "写 completion-marker.json 前再次验证项目状态，确保负向探针和浏览器检查之后数据仍可通过项目验证。",
+        "detected_command": argv,
+        "command_source": source,
+        "stdout_sha256_required": True,
+        "failures": [] if result["ok"] else ["写 completion-marker.json 前的最终项目验证失败"],
     })
     return receipt
 
@@ -2684,6 +2750,105 @@ def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dic
             "server_port": port,
             "capture_role": "browser-inspection",
             "screenshot_phase": "initial_render",
+        },
+        "checks": checks,
+        "failures": failures,
+    })
+    return result
+
+
+def run_file_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    target, target_rel, checked_entrypoints = detect_browser_entrypoint(project)
+    screenshot = evidence / "file-browser-inspection.png"
+    result: dict[str, Any] = {
+        "schema_id": "redcap-e2e-file-browser-inspection",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "target": str(target) if target is not None else None,
+        "target_relative_path": target_rel,
+        "checked_entrypoints": checked_entrypoints,
+        "file_url": target.as_uri() if target is not None and target.exists() else None,
+        "launch_mode": "local-file-protocol",
+        "screenshot": "file-browser-inspection.png",
+        "ok": False,
+        "checks": [],
+        "failures": [],
+    }
+    if target is None or target_rel is None:
+        result["failures"].append(f"缺少浏览器入口文件，已检查：{checked_entrypoints}")
+        return result
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception as exc:  # pragma: no cover - 取决于本机运行时
+        result["failures"].append(f"无法导入 Playwright 浏览器自动化库：{type(exc).__name__}: {exc}")
+        return result
+    console_errors: list[str] = []
+    page_errors: list[str] = []
+    browser_version = None
+    title = ""
+    body_text = ""
+    interactive_count = 0
+    element_count = 0
+    file_url = target.as_uri()
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            browser_version = browser.version
+            page = browser.new_page(viewport=BROWSER_INSPECTION_VIEWPORT)
+            page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
+            page.on("pageerror", lambda error: page_errors.append(str(error)))
+            page.goto(file_url, wait_until="domcontentloaded", timeout=20_000)
+            page.wait_for_timeout(800)
+            title = page.title()
+            body_text = page.locator("body").inner_text(timeout=5_000)
+            interactive_count = page.locator("button, input, select, textarea, a[href]").count()
+            element_count = page.locator("body *").count()
+            page.screenshot(path=str(screenshot), full_page=True)
+            browser.close()
+    except Exception as exc:
+        result["failures"].append(f"file:// 浏览器检查执行失败：{type(exc).__name__}: {exc}")
+        return result
+    visible_text = body_text.strip()
+    checks = [
+        {"name": "file_url_loaded", "passed": True, "evidence": file_url},
+        {"name": "visible_text", "passed": len(visible_text) >= 80, "evidence": f"visible_text_length={len(visible_text)}"},
+        {
+            "name": "interactive_or_semantic_elements",
+            "passed": interactive_count > 0 or element_count >= 10,
+            "evidence": f"interactive_count={interactive_count}, element_count={element_count}",
+        },
+        {
+            "name": "no_browser_errors",
+            "passed": not console_errors and not page_errors,
+            "evidence": {"console_errors": console_errors, "page_errors": page_errors},
+        },
+        {
+            "name": "screenshot_written",
+            "passed": screenshot.exists() and screenshot.stat().st_size > 0,
+            "evidence": {
+                "path": "file-browser-inspection.png",
+                "sha256": sha256_file(screenshot) if screenshot.exists() else None,
+                "size": screenshot.stat().st_size if screenshot.exists() else 0,
+            },
+        },
+    ]
+    failures = [f"file:// 浏览器检查失败：{item['name']}" for item in checks if item.get("passed") is not True]
+    result.update({
+        "ok": not failures,
+        "title": title,
+        "visible_text_length": len(visible_text),
+        "visible_text_sample": visible_text[:1000],
+        "interactive_count": interactive_count,
+        "element_count": element_count,
+        "console_errors": console_errors,
+        "page_errors": page_errors,
+        "browser_context": {
+            "process_pid": os.getpid(),
+            "browser_version": browser_version,
+            "viewport": BROWSER_INSPECTION_VIEWPORT,
+            "capture_role": "file-browser-inspection",
+            "screenshot_phase": "file_protocol_render",
+            "protocol": "file",
         },
         "checks": checks,
         "failures": failures,
@@ -3749,6 +3914,8 @@ def criterion_pass(criterion: str, project: pathlib.Path, evidence: pathlib.Path
         return not (project / "blocked-package.json").exists(), "blocked-package.json absent"
     if "行为" in criterion or "交互" in criterion:
         return context.get("behavior_ok") is True, "behavioral-browser-verification.json"
+    if "file://" in criterion or "本地文件协议" in criterion:
+        return context.get("file_browser_ok") is True, "file-browser-inspection.json"
     if "浏览器" in criterion or "可访问" in criterion:
         return context.get("browser_ok") is True, "browser-inspection.json"
     return not context.get("failures"), "no runner failures matched generic criterion"
@@ -3775,6 +3942,13 @@ def build_acceptance_results(project: pathlib.Path, evidence: pathlib.Path, cont
         "criterion": "运行器使用真实浏览器打开项目入口，确认页面渲染、有可见内容、无浏览器错误，并写入截图证据。",
         "passed": browser_passed,
         "evidence": browser_evidence,
+    })
+    file_browser_passed, file_browser_evidence = criterion_pass("file:// 本地文件协议打开检查", project, evidence, context)
+    results.append({
+        "id": "AC-file-browser",
+        "criterion": "运行器使用真实浏览器通过 file:// 本地文件协议打开项目入口，确认无需本地服务也能呈现核心内容。",
+        "passed": file_browser_passed,
+        "evidence": file_browser_evidence,
     })
     behavior_passed, behavior_evidence = criterion_pass("浏览器行为级交互验证", project, evidence, context)
     results.append({
@@ -3889,7 +4063,70 @@ def write_pre_final_readiness(
     return payload
 
 
-def write_completion_marker(evidence: pathlib.Path, project: pathlib.Path, bundle: dict[str, Any], final_prism: dict[str, Any]) -> None:
+def write_self_referential_boundary(
+    evidence: pathlib.Path,
+    project: pathlib.Path,
+    independent_observer_payload: dict[str, Any] | None,
+) -> dict[str, Any]:
+    observer_process = independent_observer_payload.get("process") if isinstance(independent_observer_payload, dict) else None
+    payload = {
+        "schema_id": "redcap-e2e-self-referential-boundary",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "ok": True,
+        "project": str(project),
+        "validation_chain_scope": {
+            "same_host": True,
+            "same_redcap_package": True,
+            "harness_coordinates_runner_and_observer": True,
+            "observer_parent_is_harness": bool(isinstance(observer_process, dict) and observer_process.get("parent_is_harness") is True),
+            "observer_parent_is_not_runner": bool(isinstance(observer_process, dict) and observer_process.get("parent_is_not_runner") is True),
+            "harness_pid": observer_process.get("harness_pid") if isinstance(observer_process, dict) else None,
+            "runner_pid": observer_process.get("runner_pid") if isinstance(observer_process, dict) else None,
+            "observer_pid": observer_process.get("pid") if isinstance(observer_process, dict) else None,
+        },
+        "not_claimed": [
+            "未声称跨机器验收",
+            "未声称人工浏览器验收",
+            "未声称生产级真实用户流量验收",
+            "未声称 RedCap 永久完整复活",
+        ],
+        "mitigations": [
+            "Loom 角色通过独立 Codex CLI 会话运行",
+            "Kimi 与 Claude Code 进行最终棱镜复核",
+            "独立观察者由 harness 以 runner 兄弟进程启动",
+            "运行器执行 HTTP 浏览器检查、file:// 浏览器检查、行为浏览器验证和独立子进程浏览器验证",
+            "运行器执行正向验证、负向契约探针、角色玩家负向契约探针和写完成标记前最终验证",
+        ],
+        "completion_marker_disclosure": {
+            "must_copy_this_boundary": True,
+            "completion_scope": "single-e2e-run",
+            "ready_for_engineering_use_means": "本轮 E2E 证据足以支持工程试用判断，不等同于跨机器、人工或永久生产验收。",
+            "boundary_file": "self-referential-boundary.json",
+            "final_marker_validation": "final-marker-validation.json",
+            "file_browser_inspection": "file-browser-inspection.json",
+        },
+        "failures": [],
+    }
+    if not payload["validation_chain_scope"]["observer_parent_is_harness"]:
+        payload["ok"] = False
+        payload["failures"].append("self-referential-boundary 无法确认 observer_parent_is_harness")
+    if not payload["validation_chain_scope"]["observer_parent_is_not_runner"]:
+        payload["ok"] = False
+        payload["failures"].append("self-referential-boundary 无法确认 observer_parent_is_not_runner")
+    write_json(evidence / "self-referential-boundary.json", payload)
+    return payload
+
+
+def write_completion_marker(
+    evidence: pathlib.Path,
+    project: pathlib.Path,
+    bundle: dict[str, Any],
+    final_prism: dict[str, Any],
+    self_referential_boundary: dict[str, Any] | None = None,
+    final_marker_validation: dict[str, Any] | None = None,
+    file_browser_inspection: dict[str, Any] | None = None,
+) -> None:
     write_json(evidence / "completion-marker.json", {
         "schema_id": "redcap-e2e-completion-marker",
         "producer": "e2e-runner",
@@ -3900,6 +4137,23 @@ def write_completion_marker(evidence: pathlib.Path, project: pathlib.Path, bundl
         "final_evidence_bundle_sha256": bundle.get("bundle_sha256"),
         "final_prism_strictest_verdict": final_prism.get("strictest_verdict"),
         "final_prism_review": "final-prism-review.json",
+        "self_referential_boundary": "self-referential-boundary.json",
+        "validation_chain_scope": self_referential_boundary.get("validation_chain_scope") if isinstance(self_referential_boundary, dict) else None,
+        "not_claimed": self_referential_boundary.get("not_claimed") if isinstance(self_referential_boundary, dict) else [],
+        "ready_for_engineering_use_means": (
+            "本轮 E2E 证据足以支持工程试用判断，不等同于跨机器、人工或永久生产验收。"
+        ),
+        "final_marker_validation": {
+            "path": "final-marker-validation.json",
+            "ok": final_marker_validation.get("ok") if isinstance(final_marker_validation, dict) else None,
+            "stdout_sha256": final_marker_validation.get("stdout_sha256") if isinstance(final_marker_validation, dict) else None,
+            "exit_code": final_marker_validation.get("exit_code") if isinstance(final_marker_validation, dict) else None,
+        },
+        "file_browser_inspection": {
+            "path": "file-browser-inspection.json",
+            "ok": file_browser_inspection.get("ok") if isinstance(file_browser_inspection, dict) else None,
+            "screenshot": "file-browser-inspection.png",
+        },
         "browser_inspection": "browser-inspection.json",
         "behavioral_browser_verification": "behavioral-browser-verification.json",
         "iteration_verdict": "iteration-verdict.json",
@@ -3999,11 +4253,14 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "An external project was created outside the RedCap source workspace.",
             "Five Loom roles ran as independent Codex CLI sessions with project-level Hook evidence.",
             "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
+            "The runner reran the detected project validation command again as final-marker-validation.json before asking for completion-marker.json, recording exit code, stdout hash, and stderr hash.",
             "The runner performed mutation-based negative contract probes: it prefers non-first eligible records when available, temporarily writes bad signup and character-player data, requires the validation command to fail, restores the original data, and requires validation to pass again.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
+            "The runner also opened the same browser entrypoint through the file:// local file protocol and wrote file-browser-inspection.json plus file-browser-inspection.png before final provider review.",
             "The runner performed a separate behavioral browser verification with a real click interaction, captured behavioral-browser-verification.png immediately after the verified interaction and before any later page reset, compared its hash with browser-inspection.png, and, when project data exposed player-character relationships, checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
             "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review; browser-inspection, behavioral verification, independent browser verification, and independent observer use recorded browser_context metadata and are summarized by visual-independence-report.json.",
             "The outer E2E harness launched an independent observer as a sibling process of the runner-worker; the observer read the frozen final-evidence-bundle.json, independently recomputed its declared bundle_sha256, rechecked the file hash after a cooldown window, and wrote read-only sealed independent-observer.json.",
+            "self-referential-boundary.json explicitly discloses that the runner, observer, browser checks, and final reviews are coordinated on the same host and same RedCap package, and states what is not claimed.",
             "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
             "runner-self-purification-resolution.json explicitly resolves reviewer self-purification candidates for this E2E without writing public memory or Cap private persona body.",
         ],
@@ -4022,6 +4279,21 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
                 "kind": "visual-independence-report",
                 "reference": "visual-independence-report.json",
                 "summary": supplemental_evidence.get("visual_independence_report"),
+            },
+            {
+                "kind": "final-marker-validation-full",
+                "reference": "final-marker-validation.json",
+                "summary": supplemental_evidence.get("final_marker_validation"),
+            },
+            {
+                "kind": "file-browser-inspection-full",
+                "reference": "file-browser-inspection.json",
+                "summary": supplemental_evidence.get("file_browser_inspection"),
+            },
+            {
+                "kind": "self-referential-boundary-full",
+                "reference": "self-referential-boundary.json",
+                "summary": supplemental_evidence.get("self_referential_boundary"),
             },
             {
                 "kind": "pre-final-readiness",
@@ -4058,6 +4330,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, browser observation, declared bundle hash match, and cooldown file hash stability.",
             "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
             "visual-independence-report.json must show distinct screenshot hashes and recorded browser_context for browser-inspection, behavioral-browser-verification, independent-browser-verification, and independent-observer.",
+            "completion-marker.json is forbidden before final provider review; if this review passes, the runner must copy self-referential-boundary.json disclosures into completion-marker.json and cite final-marker-validation.json and file-browser-inspection.json.",
         ],
         "role_execution_profile": {
             "model": CODEX_ROLE_MODEL,
@@ -4069,7 +4342,9 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "quality_controls": [
                 "structured role handoff files",
                 "runner-owned final validation",
+                "final-marker-validation.json",
                 "browser-inspection.json",
+                "file-browser-inspection.json",
                 "behavioral-browser-verification.json",
                 "independent-browser-verification.json",
                 "independent-observer.json",
@@ -4198,10 +4473,14 @@ def finalize_e2e_acceptance(
     write_json(evidence / "runner-character-player-contract-probe.json", runner_character_player_probe)
     browser_inspection = run_browser_inspection(project, evidence)
     write_json(evidence / "browser-inspection.json", browser_inspection)
+    file_browser_inspection = run_file_browser_inspection(project, evidence)
+    write_json(evidence / "file-browser-inspection.json", file_browser_inspection)
     behavioral_verification = run_behavioral_browser_verification(project, evidence)
     write_json(evidence / "behavioral-browser-verification.json", behavioral_verification)
     independent_browser = run_independent_browser_verification_process(project, evidence)
     write_json(evidence / "independent-browser-verification.json", independent_browser)
+    final_marker_validation = run_final_marker_validation(project)
+    write_json(evidence / "final-marker-validation.json", final_marker_validation)
     role_risk = write_role_execution_risk(evidence)
     runner_purification_resolution = write_runner_self_purification_resolution(evidence)
     failures: list[str] = []
@@ -4219,10 +4498,14 @@ def finalize_e2e_acceptance(
         failures.append("运行器角色玩家负向领域契约探针未通过")
     if browser_inspection.get("ok") is not True:
         failures.append("运行器浏览器检查未通过")
+    if file_browser_inspection.get("ok") is not True:
+        failures.append("运行器 file:// 浏览器检查未通过")
     if behavioral_verification.get("ok") is not True:
         failures.append("运行器行为级浏览器验证未通过")
     if independent_browser.get("ok") is not True:
         failures.append("独立子进程浏览器验证未通过")
+    if final_marker_validation.get("ok") is not True:
+        failures.append("写完成标记前最终项目验证未通过")
     if role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("Loom 角色推理预算风险未被接受")
     if runner_purification_resolution.get("resolved") is not True:
@@ -4239,8 +4522,10 @@ def finalize_e2e_acceptance(
         "runner_negative_probe_ok": runner_negative_probe.get("ok") is True,
         "runner_character_player_probe_ok": runner_character_player_probe.get("ok") is True,
         "browser_ok": browser_inspection.get("ok") is True,
+        "file_browser_ok": file_browser_inspection.get("ok") is True,
         "behavior_ok": behavioral_verification.get("ok") is True,
         "independent_browser_ok": independent_browser.get("ok") is True,
+        "final_marker_validation_ok": final_marker_validation.get("ok") is True,
         "independent_observer_ok": False,
         "final_prism_ok": False,
     }
@@ -4258,6 +4543,13 @@ def finalize_e2e_acceptance(
             "path": independent_observer_verification.get("path"),
             "failures": independent_observer_verification.get("failures"),
         })
+    self_referential_boundary = write_self_referential_boundary(
+        evidence,
+        project,
+        independent_observer_payload if isinstance(independent_observer_payload, dict) else None,
+    )
+    if self_referential_boundary.get("ok") is not True:
+        failures.append(f"自引用边界披露未通过：{self_referential_boundary.get('failures')}")
     visual_independence = build_visual_independence_report(evidence)
     write_json(evidence / "visual-independence-report.json", visual_independence)
     if visual_independence.get("ok") is not True:
@@ -4280,6 +4572,9 @@ def finalize_e2e_acceptance(
             "independent_observer_verification": load_optional_json(evidence / "independent-observer-verification.json"),
             "visual_independence_report": visual_independence,
             "pre_final_readiness": pre_final_readiness,
+            "final_marker_validation": load_optional_json(evidence / "final-marker-validation.json"),
+            "file_browser_inspection": load_optional_json(evidence / "file-browser-inspection.json"),
+            "self_referential_boundary": load_optional_json(evidence / "self-referential-boundary.json"),
             "failure_backlog": load_optional_json(evidence / "failure-backlog.json"),
             "independent_observer": load_optional_json(evidence / "independent-observer.json"),
             "package_prism_check": load_optional_json(evidence / "package-prism-check.json"),
@@ -4300,11 +4595,21 @@ def finalize_e2e_acceptance(
             **pre_final_context,
             "final_prism_ok": final_prism.get("ok") is True,
         })
-        write_completion_marker(evidence, project, bundle, final_prism)
+        write_completion_marker(
+            evidence,
+            project,
+            bundle,
+            final_prism,
+            self_referential_boundary=self_referential_boundary,
+            final_marker_validation=final_marker_validation,
+            file_browser_inspection=file_browser_inspection,
+        )
     return {
         "schema_id": "redcap-e2e-finalization-result",
         "ok": not failures,
         "runner_tests_ok": runner_tests.get("ok") is True,
+        "final_marker_validation_ok": final_marker_validation.get("ok") is True,
+        "file_browser_ok": file_browser_inspection.get("ok") is True,
         "final_prism_ok": final_prism.get("ok") is True,
         "completion_marker_present": (evidence / "completion-marker.json").exists(),
         "failures": failures,
@@ -4426,9 +4731,23 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
     runner_tests = load_optional_json(evidence / "final-runner-test-results.json")
     if runner_tests is not None and runner_tests.get("ok") is not True:
         failures.append("final-runner-test-results 必须证明运行器独立验证通过")
+    final_marker_validation = load_optional_json(evidence / "final-marker-validation.json")
+    if final_marker_validation is not None:
+        if final_marker_validation.get("ok") is not True:
+            failures.append("final-marker-validation 必须证明写完成标记前最终项目验证通过")
+        if not final_marker_validation.get("stdout_sha256"):
+            failures.append("final-marker-validation 必须记录 stdout_sha256")
     browser_inspection = load_optional_json(evidence / "browser-inspection.json")
     if browser_inspection is not None and browser_inspection.get("ok") is not True:
         failures.append("browser-inspection 必须证明运行器独立浏览器检查通过")
+    file_browser_inspection = load_optional_json(evidence / "file-browser-inspection.json")
+    if file_browser_inspection is not None:
+        if file_browser_inspection.get("ok") is not True:
+            failures.append("file-browser-inspection 必须证明项目入口可通过 file:// 本地文件协议打开")
+        if file_browser_inspection.get("launch_mode") != "local-file-protocol":
+            failures.append("file-browser-inspection.launch_mode 必须是 local-file-protocol")
+        if not file_browser_inspection.get("screenshot"):
+            failures.append("file-browser-inspection 必须记录截图证据")
     behavioral_verification = load_optional_json(evidence / "behavioral-browser-verification.json")
     if behavioral_verification is not None:
         if behavioral_verification.get("ok") is not True:
@@ -4456,6 +4775,16 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
         verification = verify_independent_observer_output(evidence / "independent-observer.json")
         if verification.get("ok") is not True:
             failures.append(f"independent-observer 必须证明 harness 兄弟进程外部观察通过：{verification.get('failures')}")
+    self_referential_boundary = load_optional_json(evidence / "self-referential-boundary.json")
+    if self_referential_boundary is not None:
+        if self_referential_boundary.get("ok") is not True:
+            failures.append(f"self-referential-boundary 必须通过：{self_referential_boundary.get('failures')}")
+        scope = self_referential_boundary.get("validation_chain_scope")
+        if not isinstance(scope, dict) or scope.get("same_host") is not True or scope.get("same_redcap_package") is not True:
+            failures.append("self-referential-boundary 必须明示 same_host 和 same_redcap_package")
+        disclosure = self_referential_boundary.get("completion_marker_disclosure")
+        if not isinstance(disclosure, dict) or disclosure.get("must_copy_this_boundary") is not True:
+            failures.append("self-referential-boundary 必须要求 completion-marker 复制边界披露")
     role_risk = load_optional_json(evidence / "role-execution-risk.json")
     if role_risk is not None and role_risk.get("accepted_for_single_e2e") is not True:
         failures.append("role-execution-risk 必须说明本轮角色执行风险已被约束")
@@ -4498,6 +4827,16 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("completion-marker 必须由 e2e-runner 生成，不能由 Loom 角色自证")
         if completion_marker.get("ready_for_engineering_use") is not True:
             failures.append("completion-marker.ready_for_engineering_use 必须为 true")
+        if not isinstance(completion_marker.get("validation_chain_scope"), dict):
+            failures.append("completion-marker 必须包含 validation_chain_scope 边界披露")
+        if not isinstance(completion_marker.get("not_claimed"), list) or not completion_marker.get("not_claimed"):
+            failures.append("completion-marker 必须包含 not_claimed 边界声明")
+        marker_validation = completion_marker.get("final_marker_validation")
+        if not isinstance(marker_validation, dict) or marker_validation.get("ok") is not True:
+            failures.append("completion-marker 必须引用通过的 final-marker-validation")
+        file_browser = completion_marker.get("file_browser_inspection")
+        if not isinstance(file_browser, dict) or file_browser.get("ok") is not True:
+            failures.append("completion-marker 必须引用通过的 file-browser-inspection")
     backlog = load_optional_json(evidence / "failure-backlog.json")
     if backlog is not None:
         open_items = backlog.get("open_items")
@@ -5274,8 +5613,12 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("pre-final-readiness 没有把最终文件移出已检查证据清单")
             if "failure-backlog-full" not in current_source or "independent-observer-full" not in current_source or "package-prism-check-full" not in current_source:
                 failures.append("最终棱镜复核请求没有包含 failure-backlog、independent-observer 和 package-prism-check 的完整证据项")
+            if "final-marker-validation-full" not in current_source or "file-browser-inspection-full" not in current_source or "self-referential-boundary-full" not in current_source:
+                failures.append("最终棱镜复核请求没有包含最终标记前验证、file 协议浏览器检查和自引用边界披露")
             if "\"failure_backlog\": load_optional_json" not in current_source or "\"independent_observer\": load_optional_json" not in current_source or "\"package_prism_check\": load_optional_json" not in current_source:
                 failures.append("最终棱镜复核没有从证据目录读取完整关键 JSON 后再提交给评审方")
+            if "\"final_marker_validation\": load_optional_json" not in current_source or "\"file_browser_inspection\": load_optional_json" not in current_source or "\"self_referential_boundary\": load_optional_json" not in current_source:
+                failures.append("最终棱镜复核没有读取新增关键 JSON 后再提交给评审方")
             if "text_hash" not in current_source or "dom_summary_hash" not in current_source or "observable_criteria" not in current_source:
                 failures.append("行为级浏览器验证没有使用文本哈希和稳定 DOM 摘要哈希作为可度量交互标准")
             if "screenshot_phase" not in current_source or "after_interaction" not in current_source or "behavioral_visual_independence" not in current_source:
@@ -5284,6 +5627,12 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("行为级浏览器验证没有比较普通浏览器截图和行为截图哈希")
             if "visual-independence-report.json" not in current_source or "build_visual_independence_report" not in current_source:
                 failures.append("E2E 自检没有覆盖视觉三角独立性报告")
+            if "file-browser-inspection.json" not in current_source or "local-file-protocol" not in current_source or "run_file_browser_inspection" not in current_source:
+                failures.append("E2E 自检没有覆盖 file:// 本地文件协议浏览器检查")
+            if "final-marker-validation.json" not in current_source or "run_final_marker_validation" not in current_source or "stdout_sha256_required" not in current_source:
+                failures.append("E2E 自检没有覆盖写 completion-marker 前的最终项目验证")
+            if "self-referential-boundary.json" not in current_source or "not_claimed" not in current_source or "validation_chain_scope" not in current_source:
+                failures.append("E2E 自检没有覆盖自引用边界披露")
             if "matches_declared_bundle_sha256" not in current_source or "file_sha256_stable_after_cooldown" not in current_source or "cooldown_seconds" not in current_source:
                 failures.append("E2E 自检没有覆盖独立观察者声明哈希核对与冷却后文件哈希复核")
             if "data-redcap-volatile" not in current_source or ".spinner" not in current_source or ".loading" not in current_source:
