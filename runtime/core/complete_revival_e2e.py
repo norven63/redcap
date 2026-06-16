@@ -3071,7 +3071,7 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
                     for player in players
                     if isinstance(player, dict) and player.get("id") and player.get("name")
                 } if isinstance(players, list) else {}
-                for character in characters:
+                for character_index, character in enumerate(characters):
                     if not isinstance(character, dict):
                         continue
                     character_name = str(character.get("name") or "")
@@ -6172,6 +6172,28 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append(f"运行器角色玩家负向契约探针不能处理 data/campaigns.js 浏览器全局数据：{global_character_probe.get('failures')}")
             if global_character_probe.get("data_path") != "data/campaigns.js" or global_character_probe.get("list_key") != "$":
                 failures.append("运行器角色玩家负向契约探针没有记录浏览器全局数据路径和顶层数组字段")
+            sample_data = data_dir / "sample-data.json"
+            sample_data.write_text(json.dumps({
+                "events": [
+                    {
+                        "id": "probe-event-1",
+                        "title": "关系探针活动一",
+                        "players": [{"id": "probe-player-1", "name": "探针玩家一"}],
+                        "characters": [{"id": "probe-character-1", "name": "探针角色一", "playerId": "probe-player-1"}],
+                    },
+                    {
+                        "id": "probe-event-2",
+                        "title": "关系探针活动二",
+                        "players": [{"id": "probe-player-2", "name": "探针玩家二"}],
+                        "characters": [{"id": "probe-character-2", "name": "探针角色二", "playerId": "probe-player-2"}],
+                    },
+                ]
+            }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            relation_probe = find_character_player_probe(project)
+            if not isinstance(relation_probe, dict):
+                failures.append("行为关系探针没有从 events 列表数据中找到角色玩家关系")
+            elif relation_probe.get("data_file") != "data/sample-data.json" or relation_probe.get("event_index") != 1 or relation_probe.get("character_index") != 0:
+                failures.append(f"行为关系探针没有返回稳定的事件和角色下标：{relation_probe}")
             validate_data_js.unlink()
             (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/missing-validate.js\n```\n", encoding="utf-8")
             detected_argv, detected_source = detect_validation_command(project)

@@ -30,7 +30,8 @@
       "git diff --check",
       "runtime/bin/redcap check",
       "python3 -m py_compile runtime/core/complete_revival_e2e.py",
-      "第 41 轮真实外部项目 data/campaigns.js 运行器负向探针复核"
+      "第 41 轮真实外部项目 data/campaigns.js 运行器负向探针复核",
+      "第 42 轮真实外部项目 find_character_player_probe 复核"
     ],
     "round41_additional_root_causes": [
       "reviewer 产物字段契约与提示词不一致：校验器要求 challenge_summary/reviewer_disposition，但提示词只要求语义说明，导致独立角色按语义完成却被结构校验拦下。",
@@ -40,6 +41,12 @@
       "不放宽 reviewer 校验；反向收紧提示词，明确 role_opposition_matrix 必须包含 role、challenge_summary、reviewer_disposition。",
       "增强 JS 数据读取和回写：支持 CommonJS 模块导出与 window/globalThis 上的常见结构化数据变量，并把 data/campaigns.js、src/campaigns.js 纳入候选。",
       "把 data/campaigns.js 浏览器全局数据加入 complete-revival-e2e self-check，防止后续回退。"
+    ],
+    "round42_additional_root_causes": [
+      "第 42 轮最终浏览器行为验证暴露 find_character_player_probe 在 events 列表分支未使用 enumerate，导致 character_index 未初始化并使 worker 崩溃。"
+    ],
+    "round42_chosen_solution": [
+      "修复 events 列表分支为 enumerate(characters)，并在 complete-revival-e2e self-check 中加入 data/sample-data.json 关系探针夹具，验证返回 event_index 与 character_index。"
     ]
   },
   "prompt_context": {
@@ -127,6 +134,17 @@
       ],
       "evidence": [
         "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round41/",
+        "runtime/core/complete_revival_e2e.py"
+      ]
+    },
+    "round42_behavioral_probe_fix": {
+      "status": "checked",
+      "findings": [
+        "第 42 轮五个 Loom 角色与运行器负向契约探针均已通过，但最终行为浏览器关系探针因运行器未初始化 character_index 崩溃。",
+        "修复后，针对第 42 轮真实外部项目可以返回 data/sample-data.json、event_index=1、character_index=0 的关系探针。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round42/",
         "runtime/core/complete_revival_e2e.py"
       ]
     }
