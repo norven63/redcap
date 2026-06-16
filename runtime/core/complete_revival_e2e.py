@@ -2105,10 +2105,60 @@ def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
     return receipt
 
 
+def find_signup_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Path | None, dict[str, Any] | list[Any] | None, str | None, int | None, list[str]]:
+    """Locate the JSON record that should be mutated for signup contract probing."""
+    failures: list[str] = []
+    data_dir = project / "data"
+    candidates = [
+        data_dir / "events.json",
+        data_dir / "activities.json",
+        *sorted(path for path in data_dir.glob("*.json") if path.name not in {"events.json", "activities.json"}),
+    ]
+    seen: set[pathlib.Path] = set()
+    for data_path in candidates:
+        if data_path in seen:
+            continue
+        seen.add(data_path)
+        if not data_path.exists():
+            continue
+        try:
+            payload = json.loads(data_path.read_text(encoding="utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            failures.append(f"{data_path.relative_to(project)} 无法解析：{type(exc).__name__}: {exc}")
+            continue
+        list_candidates: list[tuple[str, list[Any]]] = []
+        if isinstance(payload, dict):
+            preferred_keys = ["events", "activities", "campaigns", "sessions", "items"]
+            for key in preferred_keys:
+                value = payload.get(key)
+                if isinstance(value, list):
+                    list_candidates.append((key, value))
+            known_keys = {key for key, _ in list_candidates}
+            for key, value in payload.items():
+                if isinstance(value, list) and key not in known_keys:
+                    list_candidates.append((str(key), value))
+        elif isinstance(payload, list):
+            list_candidates.append(("$", payload))
+        for list_key, records in list_candidates:
+            signup_indexes = [
+                index for index, record in enumerate(records)
+                if isinstance(record, dict) and ("signups" in record or "signupIntent" in record)
+            ]
+            fallback_indexes = [
+                index for index, record in enumerate(records)
+                if isinstance(record, dict)
+            ]
+            for record_index in [*signup_indexes, *fallback_indexes]:
+                return data_path, payload, list_key, record_index, failures
+        failures.append(f"{data_path.relative_to(project)} 未发现可变更的活动列表记录")
+    failures.append("未找到包含报名数据或活动列表的 JSON 数据文件")
+    return None, None, None, None, failures
+
+
 def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     """Prove the local validation command rejects malformed signup data."""
     argv, source = detect_validation_command(project)
-    data_path = project / "data" / "events.json"
+    data_path, data, list_key, record_index, location_failures = find_signup_contract_data_target(project)
     result: dict[str, Any] = {
         "schema_id": "redcap-e2e-runner-negative-contract-probe",
         "producer": "e2e-runner",
@@ -2117,7 +2167,9 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
         "probe_id": "empty-signups-and-empty-signupIntent-must-fail",
         "detected_command": argv,
         "command_source": source,
-        "data_path": "data/events.json",
+        "data_path": str(data_path.relative_to(project)) if data_path is not None else None,
+        "list_key": list_key,
+        "record_index": record_index,
         "ok": False,
         "checks": [],
         "failures": [],
@@ -2125,25 +2177,30 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
     if argv is None:
         result["failures"].append("无法发现验证命令，不能执行运行器负向契约探针")
         return result
-    if not data_path.exists():
-        result["failures"].append("缺少 data/events.json，不能构造坏数据探针")
+    if data_path is None or data is None or list_key is None or record_index is None:
+        result["failures"].extend(location_failures)
         return result
     original_bytes = data_path.read_bytes()
-    try:
-        data = json.loads(original_bytes.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        result["failures"].append(f"data/events.json 无法解析，不能构造坏数据探针：{type(exc).__name__}: {exc}")
-        return result
-    events = data.get("events") if isinstance(data, dict) else None
-    if not isinstance(events, list) or not events or not isinstance(events[0], dict):
-        result["failures"].append("data/events.json 缺少可变更的 events[0] 对象")
+    original_sha256 = hashlib.sha256(original_bytes).hexdigest()
+    if isinstance(data, dict):
+        records = data.get(list_key)
+    elif list_key == "$":
+        records = data
+    else:
+        records = None
+    if not isinstance(records, list) or record_index >= len(records) or not isinstance(records[record_index], dict):
+        result["failures"].append(f"{data_path.relative_to(project)} 中 {list_key}[{record_index}] 不是可变更对象")
         return result
     mutated = json.loads(json.dumps(data, ensure_ascii=False))
-    mutated_event = mutated["events"][0]
+    mutated_records = mutated if list_key == "$" else mutated[list_key]
+    mutated_event = mutated_records[record_index]
     mutated_event["signups"] = []
     mutated_event["signupIntent"] = ""
     mutation_summary = {
         "event_id": mutated_event.get("id"),
+        "data_path": str(data_path.relative_to(project)),
+        "list_key": list_key,
+        "record_index": record_index,
         "changed_fields": ["signups", "signupIntent"],
         "expected_validation_exit": "non_zero",
     }
@@ -2181,7 +2238,7 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
     result["negative_command"] = negative_receipt
     result["restore_command"] = restore_receipt
     result["restored_sha256"] = sha256_file(data_path)
-    result["original_sha256"] = hashlib.sha256(original_bytes).hexdigest()
+    result["original_sha256"] = original_sha256
     result["ok"] = all(item.get("passed") is True for item in result["checks"])
     if not result["ok"]:
         result["failures"].append("运行器负向契约探针未证明坏数据失败且原数据恢复后通过")
@@ -4386,6 +4443,40 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             detected_argv, detected_source = detect_validation_command(project)
             if detected_argv != ["node", "scripts/validate-data.js"] or detected_source != "README.md command: node scripts/validate-data.js":
                 failures.append("运行器没有识别 README 中明确给出的本地验证命令")
+            data_dir = project / "data"
+            data_dir.mkdir(exist_ok=True)
+            write_json(data_dir / "activities.json", {
+                "activities": [
+                    {
+                        "id": "self-check-activity",
+                        "title": "自检活动",
+                        "signupIntent": "需要至少一名报名者",
+                        "signups": [
+                            {
+                                "playerName": "测试玩家",
+                                "characterName": "测试角色",
+                                "status": "confirmed"
+                            }
+                        ]
+                    }
+                ]
+            })
+            validate_data_js.write_text(
+                "const fs = require('fs');\n"
+                "const data = JSON.parse(fs.readFileSync('data/activities.json', 'utf8'));\n"
+                "const activity = data.activities[0];\n"
+                "if (!activity.signupIntent || !Array.isArray(activity.signups) || activity.signups.length === 0) {\n"
+                "  console.error('signup-intent-data-contract failed');\n"
+                "  process.exit(2);\n"
+                "}\n"
+                "console.log(JSON.stringify({ok: true}));\n",
+                encoding="utf-8",
+            )
+            negative_probe = run_runner_negative_contract_probe(project, evidence)
+            if negative_probe.get("ok") is not True:
+                failures.append(f"运行器负向契约探针不能处理 data/activities.json：{negative_probe.get('failures')}")
+            if negative_probe.get("data_path") != "data/activities.json" or negative_probe.get("list_key") != "activities":
+                failures.append("运行器负向契约探针没有记录真实 activities 数据路径和列表字段")
             validate_data_js.unlink()
             (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/missing-validate.js\n```\n", encoding="utf-8")
             detected_argv, detected_source = detect_validation_command(project)
