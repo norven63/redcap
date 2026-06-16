@@ -1,0 +1,106 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260616-e2e-signup-contract-per-record",
+  "fsm_state": "IMPLEMENTING",
+  "requirement_review": {
+    "user_intent": "Norven 授权继续 RedCap 复活长任务直至目标达成；Round34 E2E 暴露出报名意向契约仍存在角色提示宽松、运行器收口严格的错位。",
+    "target_reality": "报名意向契约必须从“全局至少有一条报名”收紧为“每个承载报名意向的活动、场次或事件记录都有自己的非空报名意向”，并被产品、架构、开发、测试、评审和运行器验收共同承接。",
+    "non_goals": [
+      "不放宽 runner-negative-contract-probe",
+      "不修改 Round34 外部项目来伪造通过",
+      "不把本轮修复声明为 RedCap 完整复活",
+      "不删除报名意向验收要求"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required_before_packet_optional_after_packet",
+    "rollback_plan": "若本轮修复导致报名意向契约误伤无报名需求项目，回退 runtime/core/complete_revival_e2e.py 和 assets/contracts/complete-revival-e2e-acceptance-design.json 中本轮报名契约文案、自检和提示词改动。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260616-e2e-signup-contract-per-record-lifecycle.json",
+      "runtime/bin/redcap gate --task \"收紧E2E报名意向领域契约并重跑完整验收\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260616-e2e-signup-contract-per-record-lifecycle.json",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "runtime/bin/redcap check",
+      "重新执行完整 E2E"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "好的，我授权，请继续没完成的所有任务，直至达到最终目标为止",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation",
+    "continuation_authorization": {
+      "mode": "same_session_authorized_continuation",
+      "source": "same_session_resume",
+      "session_id": "019e745f-17b8-7832-ada8-ae990b49db69",
+      "base_prompt_excerpt": "抱歉，我刚才不小心把你归档了，现在已经恢复了，你还能恢复之前的任务，并完成直至所有目标达成吗",
+      "continuation_task_excerpt": "Round34 E2E 失败后继续修复报名意向契约逐记录落实缺口"
+    }
+  },
+  "task_body": {
+    "requested_outcome": "修复 Round34 暴露的报名意向契约弱承接问题，防止开发、测试、评审角色只验证全局至少一条报名而漏掉单个活动报名被清空的失败路径。",
+    "primary_deliverable": "complete_revival_e2e 运行器在需求契约、角色提示、评审要求、自检和验收设计中强制逐记录报名意向验证。",
+    "acceptance_criteria": [
+      "signup-intent-data-contract 明确要求每个承载报名意向的活动、场次或事件记录有自己的非空报名数据",
+      "developer 提示要求验证脚本逐记录检查，且不得只检查全局至少有一条报名",
+      "tester 提示要求清空任一活动 signups 和 signupIntent 后验证命令非零退出，否则测试失败",
+      "reviewer 提示要求把缺少逐记录报名意向负向验证列入阻塞",
+      "complete-revival-e2e self-check 能检查上述提示不再退化"
+    ],
+    "status": "implemented",
+    "evidence_kind": "code",
+    "evidence": [
+      "runtime/core/complete_revival_e2e.py",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round34/"
+    ]
+  },
+  "fsm_transition": {
+    "from": "PRISM_REVIEW",
+    "to": "IMPLEMENTING",
+    "evidence": [
+      "prism_review_or_explicit_skip",
+      "runtime/bin/redcap gate --task \"收紧E2E报名意向领域契约并重跑完整验收\" --risk-level medium"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "本轮不改变外部项目结构，只修正 E2E 角色工作流对报名意向数据契约的逐记录要求。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "修复保持运行器严格验收，不绕过 Round34 暴露的问题；失败仍需要下一轮完整 E2E 证明。"
+      ],
+      "evidence": [
+        "assets/evidence/lifecycle/20260616-e2e-signup-contract-per-record-lifecycle.json",
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round34/"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "运行器、角色提示、自检和验收设计改为同一口径：单个活动报名意向被清空必须导致项目验证失败。"
+      ],
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ]
+    }
+  },
+  "implementation_evidence": [
+    "runtime/core/complete_revival_e2e.py",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json"
+  ],
+  "verification_evidence": [],
+  "completion_claim": {
+    "present": false,
+    "scope": "本包只跟踪 Round34 暴露的报名意向契约逐记录落实缺口修复"
+  }
+}

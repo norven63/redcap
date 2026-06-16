@@ -707,7 +707,7 @@ def domain_contracts_for_direction(direction: str) -> list[dict[str, Any]]:
             "id": "signup-intent-data-contract",
             "trigger": "需求方向包含报名或意向",
             "description": "活动、场次或事件数据必须能独立表达报名意向。",
-            "required_data_shape": "至少一个活动记录包含非空 signups 数组；兼容非空 signupIntent 字段，但优先使用 signups。",
+            "required_data_shape": "每个承载报名意向的活动、场次或事件记录都必须包含自己的非空 signups 数组；兼容非空 signupIntent 字段，但优先使用 signups。",
             "signups_item_hint": "signups 每项建议包含玩家、角色或身份、意向状态、备注中的至少两类信息。",
             "must_be_reflected_by_roles": [
                 "product_manager",
@@ -716,7 +716,7 @@ def domain_contracts_for_direction(direction: str) -> list[dict[str, Any]]:
                 "tester",
                 "reviewer"
             ],
-            "validation_hint": "验证脚本或负向探针必须判定 signups=[] 和 signupIntent 为空为失败。"
+            "validation_hint": "验证脚本或负向探针必须证明：把任一活动、场次或事件记录的 signups 置为空数组且 signupIntent 置为空后，验证命令非零退出。"
         })
     if "角色" in direction and "玩家" in direction:
         contracts.append({
@@ -1036,7 +1036,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         你的任务：
         1. 阅读产品经理交付和验收标准。
         2. 立即写 architecture.md，必须包含：目标、目录结构、数据模型、交互流程、运行方式、验证方式、风险与回滚。
-           如果存在 domain_contracts，architecture.md 的数据模型和验证方式必须逐项承接；例如 signup-intent-data-contract 必须设计非空 signups 数组或非空 signupIntent 字段，并说明验证脚本如何检查。
+           如果存在 domain_contracts，architecture.md 的数据模型和验证方式必须逐项承接；例如 signup-intent-data-contract 必须设计每个活动、场次或事件自己的非空 signups 数组或非空 signupIntent 字段，并说明验证脚本如何逐记录检查。
            如果存在 character-player-relation-contract，必须设计 players[] 与 characters[] 的真实引用关系；character.playerId 或等价字段必须命中同活动、同场次或同文件内真实玩家 id，不能只靠 playerName 文案兜底。
         3. 默认选择无外部依赖、无需联网安装、可直接本地验证的方案；除非需求明确要求，不要引入 Vite、Playwright、数据库或服务端框架。
         4. 立即写 risk-register.json，至少包含 risks 数组；每项包含 id、risk、impact、mitigation、owner。
@@ -1047,7 +1047,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         你的任务：
         1. 按 architecture.md 实现一个可运行的本地项目。
         2. 优先选择简单、无外部依赖、无需联网安装、可本地验证的技术栈；如果 architecture.md 要求重型依赖但需求并不需要，你应收窄为纯 HTML/CSS/JS + Node 内置模块验证，并在 implementation-log.json 说明原因。
-        3. 必须让实现和本地验证命令覆盖 acceptance-criteria.json 的 domain_contracts；例如 signup-intent-data-contract 必须在真实数据中提供非空 signups 数组或非空 signupIntent 字段，且验证脚本要检查该字段，不能只把报名意向放进玩家备注或按钮文案。
+        3. 必须让实现和本地验证命令覆盖 acceptance-criteria.json 的 domain_contracts；例如 signup-intent-data-contract 必须在每个承载报名意向的真实活动、场次或事件记录中提供自己的非空 signups 数组或非空 signupIntent 字段，且验证脚本要逐记录检查该字段，不能只把报名意向放进玩家备注或按钮文案，也不能只检查全局至少有一条报名。
            如果存在 character-player-relation-contract，验证脚本必须检查 character.playerId 或等价字段命中同活动、同场次或同文件内真实 players[]；只要 playerId 被改成不存在的玩家 id，即使 playerName 仍存在，验证命令也必须非零退出。
         4. implementation-log.json 必须逐项说明每个 domain_contracts 的数据结构、界面呈现和验证脚本检查方式；character-player-relation-contract 不能只写“角色和玩家可见”，必须写明真实引用校验。
         5. 写 implementation-log.json 和 role-artifacts/developer.json。
@@ -1062,7 +1062,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
            - role-artifacts/tester.json：role="tester"，status="in_progress"，evidence_files 列出上述两个文件。
         3. 只做有限验证：最多一个正向验证命令，最多两个负向或静态探针。优先使用 README、package.json scripts、scripts/validate.mjs、scripts/verify.mjs 或 scripts/verify.sh 中明确给出的本地验证命令；不要为了“更全面”继续追加探索。
            负向或静态探针必须使用 Node 标准库脚本或已经写好的验证脚本；不要用未引用的 shell 通配符、find -name *.xxx、zsh glob 或会被 shell 预展开的命令。
-           如果需求包含报名意向，负向或静态探针必须验证至少一个活动有非空报名数据；优先接受 signups 数组（每项可以包含玩家、角色、意向或备注），也可以兼容 signupIntent 字段，但 signups=[] 或 signupIntent 为空必须判定失败。
+           如果需求包含报名意向，负向或静态探针必须验证 signup-intent-data-contract：每个承载报名意向的活动、场次或事件记录都有自己的非空报名数据；优先接受 signups 数组（每项可以包含玩家、角色、意向或备注），也可以兼容 signupIntent 字段。测试必须证明把任一活动记录的 signups 置为空数组且 signupIntent 置为空时，项目验证命令非零退出；如果验证脚本只检查全局至少有一条报名，test-results.json 和 negative-probes.json 必须标记 failed，不得替开发者修复。
            如果需求同时包含角色和玩家，负向或静态探针必须验证 character-player-relation-contract：当 character.playerId 或等价字段被改成不存在的玩家 id 时，项目验证命令必须非零退出；如果验证脚本没有覆盖该失败路径，test-results.json 和 negative-probes.json 必须标记 failed，不得替开发者修复。
         4. 每执行完一个验证动作，立即更新对应 JSON；验证动作全部结束后，立即把三个文件更新为 completed 或 failed。
         5. test-results.json 必须标记 role="tester"，并记录 commands、positive_checks、passed；negative-probes.json 必须标记 role="tester"，并记录 probes、passed。status 与 passed 必须一致：completed 对应 passed=true，failed 对应 passed=false。
@@ -1073,6 +1073,7 @@ def build_role_prompt(project: pathlib.Path, evidence: pathlib.Path, role: str, 
         1. 审阅需求、架构、实现、测试和角色证据。
            注意：loom-role-session-manifest-pre-review.json 只用于审核上游四个角色；reviewer 自己的 session_id 会在你退出后由运行器写入最终 loom-role-session-manifest.json，因此不要因为最终清单在评审前缺少 reviewer 自身而阻塞。
            如果 requirements.json 或 acceptance-criteria.json 包含 domain_contracts，必须逐项审核产品、架构、开发和测试是否承接；任何未承接项必须进入 blocking_findings 和 failure-backlog.open_items。
+           对 signup-intent-data-contract 的审核必须包含：开发验证脚本是否逐活动、逐场次或逐事件检查非空报名意向，tester 是否做了清空单个活动 signups 和 signupIntent 后验证命令非零退出的负向或静态探针；只看到全局至少一条报名不算通过。
            对 character-player-relation-contract 的审核必须包含：开发验证脚本是否检查 playerId 命中真实玩家、tester 是否做了破坏 playerId 后验证命令非零退出的负向或静态探针；只看到 playerName 或界面文案不算通过。
         2. 写 review-verdict.json；必须包含：
            - "terminal_completion": false；
@@ -4931,16 +4932,18 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("architect 提示词没有要求把报名意向契约落入数据模型")
             if "character-player-relation-contract" not in architect_prompt or "真实引用关系" not in architect_prompt or "不能只靠 playerName" not in architect_prompt:
                 failures.append("architect 提示词没有要求角色玩家契约落入真实引用数据模型")
-            if "signup-intent-data-contract" not in signup_developer_prompt or "非空 signups 数组" not in signup_developer_prompt:
-                failures.append("developer 提示词没有要求实现并验证报名意向契约")
+            if "signup-intent-data-contract" not in signup_developer_prompt or "逐记录检查" not in signup_developer_prompt or "不能只检查全局至少有一条报名" not in signup_developer_prompt:
+                failures.append("developer 提示词没有要求逐记录实现并验证报名意向契约")
             if "character-player-relation-contract" not in signup_developer_prompt or "playerId 被改成不存在的玩家 id" not in signup_developer_prompt or "验证命令也必须非零退出" not in signup_developer_prompt:
                 failures.append("developer 提示词没有要求验证脚本拒绝损坏的角色玩家引用")
-            if "signups 数组" not in signup_tester_prompt or "signupIntent 字段" not in signup_tester_prompt:
-                failures.append("tester 提示词没有要求验证报名意向契约")
+            if "signups 数组" not in signup_tester_prompt or "signupIntent 字段" not in signup_tester_prompt or "项目验证命令非零退出" not in signup_tester_prompt or "只检查全局至少有一条报名" not in signup_tester_prompt:
+                failures.append("tester 提示词没有要求逐记录验证报名意向契约")
             if "character-player-relation-contract" not in signup_tester_prompt or "不存在的玩家 id" not in signup_tester_prompt or "test-results.json 和 negative-probes.json 必须标记 failed" not in signup_tester_prompt:
                 failures.append("tester 提示词没有要求角色玩家负向探针失败时标记测试失败")
             if "domain_contracts" not in signup_reviewer_prompt or "blocking_findings" not in signup_reviewer_prompt:
                 failures.append("reviewer 提示词没有要求审核领域数据契约")
+            if "逐活动、逐场次或逐事件检查非空报名意向" not in signup_reviewer_prompt or "清空单个活动 signups 和 signupIntent" not in signup_reviewer_prompt:
+                failures.append("reviewer 提示词没有要求审核报名意向逐记录负向验证证据")
             if "开发验证脚本是否检查 playerId 命中真实玩家" not in signup_reviewer_prompt or "tester 是否做了破坏 playerId" not in signup_reviewer_prompt:
                 failures.append("reviewer 提示词没有要求审核角色玩家负向验证证据")
             retry_developer_prompt = role_retry_prompt(developer_prompt, 2)
@@ -4975,7 +4978,7 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("tester 提示词没有要求验证后立即更新结构化证据")
             if "Node 标准库脚本" not in tester_prompt or "未引用的 shell 通配符" not in tester_prompt:
                 failures.append("tester 提示词没有禁止危险 shell 通配符负向探针")
-            if "signups 数组" not in tester_prompt or "signupIntent 字段" not in tester_prompt or "signups=[]" not in tester_prompt:
+            if "signups 数组" not in tester_prompt or "signupIntent 字段" not in tester_prompt or "signups" not in tester_prompt or "只检查全局至少有一条报名" not in tester_prompt:
                 failures.append("tester 提示词没有明确报名意向的非空结构化探针规则")
             if "character-player-relation-contract" not in tester_prompt or "character.playerId" not in tester_prompt or "不存在的玩家 id" not in tester_prompt:
                 failures.append("tester 提示词没有明确角色玩家关系负向探针规则")
