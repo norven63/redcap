@@ -57,6 +57,17 @@
       "增强数据写回格式，让 RedCap 生成的 JS 数据同时提供 TRPG_DATA、TRPG_CAMPAIGNS、TRPG_ACTIVITY_DATA、TRPG_ACTIVITIES 等读取入口。",
       "收紧收敛诊断分类：最终棱镜因前置客观证据失败而跳过时，必须归类为 objective_evidence_precondition_gap；移除单个“角色”关键词触发 Loom 制衡缺口的过宽规则。",
       "把 data/sample-data.js 浏览器全局对象和“前置证据失败导致最终复核跳过”的分类场景加入 complete-revival-e2e self-check，防止后续回退。"
+    ],
+    "round44_additional_root_causes": [
+      "第 44 轮前置客观证据已通过，但最终棱镜指出行为浏览器验证没有留下 behavioral-relation-probe.png，也没有把角色和玩家关系的 DOM 同容器证明作为硬证据。",
+      "行为关系探针仍只读取 data/*.json，无法复用结构化数据读取器识别 data/trpg-data.js 中的 window.TRPG_DATA，导致负向契约探针通过而行为浏览器关系探针为空。",
+      "视觉独立报告只汇总预设来源，没有核对证据目录实际 PNG 全集，漏掉 file-browser-inspection.png；同时旧规则要求所有截图哈希必须不同，无法区分真实重复与可解释的同状态渲染。"
+    ],
+    "round44_chosen_solution": [
+      "让 find_character_player_probe 复用 structured_data_candidate_paths 与 load_structured_data_payload，统一支持 JSON、CommonJS 和浏览器全局 JS 数据。",
+      "当 runner-character-player-contract-probe 已通过时，行为浏览器验证必须找到关系探针、点击目标活动、截图 behavioral-relation-probe.png，并记录 relation_event_control 与 dom_structural_probe；找不到不再被视为通过。",
+      "visual-independence-report 现在纳入全部已落盘 PNG，并拦截未报告截图；HTTP/file 同静态页面截图相同、行为截图/关系探针同状态截图相同时，必须写 allowed_duplicate_screenshot_hashes 解释和结构证据，未解释重复仍失败。",
+      "complete-revival-e2e self-check 增加 JS 行为关系探针、截图全集、未报告 PNG 拦截、HTTP/file 可解释重复、行为/关系同状态可解释重复的覆盖。"
     ]
   },
   "prompt_context": {
@@ -89,7 +100,9 @@
       "reviewer 提示词与结构校验器必须对 role_opposition_matrix 字段完全一致，不能让独立角色靠猜字段名。",
       "运行器负向领域契约探针必须能处理浏览器全局 JS 数据文件，例如 data/campaigns.js 中的 window.TRPG_CAMPAIGNS。",
       "运行器负向领域契约探针必须能发现 data/*.js 中的结构化浏览器全局对象，例如 data/sample-data.js 中的 window.TRPG_ACTIVITY_DATA。",
-      "最终棱镜因前置客观证据失败而跳过时，收敛诊断必须归类为 objective_evidence_precondition_gap，不能误判为 Loom 角色制衡缺口。"
+      "最终棱镜因前置客观证据失败而跳过时，收敛诊断必须归类为 objective_evidence_precondition_gap，不能误判为 Loom 角色制衡缺口。",
+      "行为浏览器验证必须复用结构化数据发现能力，能从 data/*.js 中找到角色玩家关系，并在关系契约适用时生成 behavioral-relation-probe.png 与 DOM 同容器证据。",
+      "视觉独立性报告必须覆盖证据目录里的全部 PNG；未解释重复哈希和未纳入报告的 PNG 都必须失败，已解释的 HTTP/file 同像素渲染与行为/关系同状态渲染可以通过。"
     ],
     "status": "verified",
     "evidence_kind": "code-and-review",
@@ -169,6 +182,18 @@
       "evidence": [
         "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round43/",
         "runtime/core/complete_revival_e2e.py"
+      ]
+    },
+    "round44_behavioral_visual_evidence_fix": {
+      "status": "checked",
+      "findings": [
+        "第 44 轮证明项目交付、角色管线、负向契约探针、浏览器检查和独立观察者均已运行；失败点集中在最终棱镜指出的行为关系证据和视觉报告完整性。",
+        "修复后，第 44 轮真实外部项目可从 data/trpg-data.js 识别铁冠遗迹远征中的角色奥琳与玩家吴越，并可生成关系探针截图和 DOM 同容器证据；视觉报告可纳入 file-browser-inspection 与 behavioral-relation-probe，并区分可解释重复与未解释重复。"
+      ],
+      "evidence": [
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round44/",
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
       ]
     }
   },

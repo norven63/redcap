@@ -1876,9 +1876,9 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "schema_id": "redcap-e2e-visual-independence-report",
         "producer": "e2e-runner",
         "checks": [
-            "四条浏览器截图证据必须存在并带 sha256",
-            "四条截图 sha256 必须互不相同",
-            "四条浏览器证据必须记录 browser_context",
+            "所有 E2E 截图证据必须存在于 sources 中并带 sha256，不能漏掉已落盘 PNG",
+            "截图 sha256 默认必须互不相同；若 HTTP 与 file:// 对同一静态入口在相同视口下产生相同像素截图，必须在 allowed_duplicate_screenshot_hashes 中解释并记录独立 browser_context；若行为截图与关系探针截图处于同一已选活动状态且像素相同，必须记录 relation_event_control 和 dom_structural_probe 作为新增证明",
+            "所有浏览器证据必须记录 browser_context",
             "观察者读取的 final-evidence-bundle.json 文件哈希必须等于请求中的冻结哈希"
         ],
         "ok": "<boolean>",
@@ -3027,10 +3027,12 @@ def run_file_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -
 
 def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
     candidates: list[dict[str, Any]] = []
-    for data_path in sorted((project / "data").glob("*.json")):
-        try:
-            payload = json.loads(data_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+    for data_path in structured_data_candidate_paths(project):
+        if not data_path.exists():
+            continue
+        failures: list[str] = []
+        payload = load_structured_data_payload(project, data_path, failures)
+        if payload is None:
             continue
         event_lists: list[Any] = []
         if isinstance(payload, dict):
@@ -3221,6 +3223,8 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
     console_errors: list[str] = []
     page_errors: list[str] = []
     relation_probe = find_character_player_probe(project)
+    relation_required_payload = load_optional_json(evidence / "runner-character-player-contract-probe.json")
+    relation_required = isinstance(relation_required_payload, dict) and relation_required_payload.get("ok") is True
     browser_inspection_screenshot = evidence / "browser-inspection.png"
     screenshot_phase = "not_captured"
     screenshot_phase_reason = "行为级浏览器验证尚未运行到截图阶段"
@@ -3330,8 +3334,16 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                 screenshot_phase = "after_initial_observation"
                 screenshot_phase_reason = "没有找到可证明页面变化的交互，截图只能记录初始观察状态"
             page.screenshot(path=str(screenshot), full_page=True)
-            relation_passed = True
-            relation_evidence: dict[str, Any] = {"probe_available": False}
+            relation_passed = not relation_required
+            relation_evidence: dict[str, Any] = {
+                "probe_available": False,
+                "relation_required": relation_required,
+                "reason": (
+                    "runner_character_player_contract_probe_passed_but_no_browser_probe_found"
+                    if relation_required
+                    else "character_player_relation_contract_not_required_for_this_project"
+                ),
+            }
             if relation_probe:
                 page.goto(url, wait_until="domcontentloaded", timeout=20_000)
                 page.wait_for_timeout(800)
@@ -3429,9 +3441,15 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                     {"characterName": character_name, "playerName": player_name},
                 )
                 page.screenshot(path=str(relation_screenshot), full_page=True)
-                relation_passed = bool(isinstance(dom_relation, dict) and dom_relation.get("same_structural_container") is True)
+                relation_passed = bool(
+                    isinstance(dom_relation, dict)
+                    and dom_relation.get("same_structural_container") is True
+                    and (not relation_event_title or relation_event_control.get("clicked") is True)
+                    and (not relation_event_title or relation_event_title in relation_text)
+                )
                 relation_evidence = {
                     "probe_available": True,
+                    "relation_required": relation_required,
                     **relation_probe,
                     "relation_event_control": relation_event_control,
                     "relation_event_title_visible": bool(relation_event_title and relation_event_title in relation_text),
@@ -3842,6 +3860,7 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
     sources: list[dict[str, Any]] = []
     source_specs = [
         ("browser-inspection", "browser-inspection.json", "browser-inspection.png"),
+        ("file-browser-inspection", "file-browser-inspection.json", "file-browser-inspection.png"),
         ("behavioral-browser-verification", "behavioral-browser-verification.json", "behavioral-browser-verification.png"),
         ("independent-browser-verification", "independent-browser-verification.json", "independent-browser-verification.png"),
     ]
@@ -3887,21 +3906,95 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
     })
     failures: list[str] = []
     screenshot_hashes: list[str] = []
+    expected_png_paths: set[str] = set()
+    source_by_id = {str(source.get("source_id")): source for source in sources}
     for source in sources:
         record = source.get("screenshot") if isinstance(source.get("screenshot"), dict) else {}
         if record.get("exists") is not True or not record.get("sha256"):
             failures.append(f"{source.get('source_id')} 缺少可哈希的截图证据")
         else:
             screenshot_hashes.append(str(record["sha256"]))
+            if record.get("path"):
+                expected_png_paths.add(str(record["path"]))
         context = source.get("browser_context")
         if not isinstance(context, dict):
             failures.append(f"{source.get('source_id')} 缺少 browser_context")
         else:
-            for key in ["process_pid", "browser_version", "viewport", "server_port", "capture_role", "screenshot_phase"]:
+            required_context_keys = ["process_pid", "browser_version", "viewport", "capture_role", "screenshot_phase"]
+            required_context_keys.append("protocol" if context.get("protocol") == "file" else "server_port")
+            for key in required_context_keys:
                 if context.get(key) in (None, "", {}):
                     failures.append(f"{source.get('source_id')} browser_context 缺少 {key}")
+    actual_png_paths = sorted(path.name for path in evidence.glob("*.png"))
+    unreported_png_paths = [path for path in actual_png_paths if path not in expected_png_paths]
+    if unreported_png_paths:
+        failures.append(f"视觉三角报告发现未纳入 sources 的截图文件：{unreported_png_paths}")
     distinct_hashes = sorted(set(screenshot_hashes))
-    if len(distinct_hashes) != len(screenshot_hashes):
+    duplicate_hashes = sorted({item for item in screenshot_hashes if screenshot_hashes.count(item) > 1})
+    browser_source = source_by_id.get("browser-inspection", {})
+    file_source = source_by_id.get("file-browser-inspection", {})
+    browser_record = browser_source.get("screenshot") if isinstance(browser_source.get("screenshot"), dict) else {}
+    file_record = file_source.get("screenshot") if isinstance(file_source.get("screenshot"), dict) else {}
+    browser_context = browser_source.get("browser_context") if isinstance(browser_source.get("browser_context"), dict) else {}
+    file_context = file_source.get("browser_context") if isinstance(file_source.get("browser_context"), dict) else {}
+    allowed_duplicate_screenshot_hashes: list[dict[str, Any]] = []
+    if (
+        browser_record.get("exists") is True
+        and file_record.get("exists") is True
+        and browser_record.get("sha256")
+        and browser_record.get("sha256") == file_record.get("sha256")
+        and browser_context.get("capture_role") == "browser-inspection"
+        and file_context.get("capture_role") == "file-browser-inspection"
+        and file_context.get("protocol") == "file"
+        and browser_context.get("viewport") == file_context.get("viewport")
+    ):
+        allowed_duplicate_screenshot_hashes.append({
+            "sha256": browser_record.get("sha256"),
+            "sources": ["browser-inspection", "file-browser-inspection"],
+            "reason": "同一个静态入口在相同视口下通过本地 HTTP 与 file:// 独立渲染，像素完全一致是可接受结果；独立性由不同 launch_mode、protocol、capture_role 和浏览器上下文记录证明。",
+            "browser_capture_role": browser_context.get("capture_role"),
+            "file_capture_role": file_context.get("capture_role"),
+            "file_protocol": file_context.get("protocol"),
+            "viewport": file_context.get("viewport"),
+        })
+    behavioral_source = source_by_id.get("behavioral-browser-verification", {})
+    relation_source = source_by_id.get("behavioral-relation-probe", {})
+    behavioral_record = behavioral_source.get("screenshot") if isinstance(behavioral_source.get("screenshot"), dict) else {}
+    relation_record = relation_source.get("screenshot") if isinstance(relation_source.get("screenshot"), dict) else {}
+    behavioral_payload = load_optional_json(evidence / "behavioral-browser-verification.json") or {}
+    relation_check = next(
+        (
+            item for item in behavioral_payload.get("checks", [])
+            if isinstance(item, dict) and item.get("name") == "character_player_relation_visible"
+        ),
+        None,
+    )
+    relation_evidence = relation_check.get("evidence") if isinstance(relation_check, dict) else None
+    relation_event_control = relation_evidence.get("relation_event_control") if isinstance(relation_evidence, dict) else None
+    relation_dom_probe = relation_evidence.get("dom_structural_probe") if isinstance(relation_evidence, dict) else None
+    if (
+        behavioral_record.get("exists") is True
+        and relation_record.get("exists") is True
+        and behavioral_record.get("sha256")
+        and behavioral_record.get("sha256") == relation_record.get("sha256")
+        and isinstance(relation_event_control, dict)
+        and relation_event_control.get("clicked") is True
+        and isinstance(relation_dom_probe, dict)
+        and relation_dom_probe.get("same_structural_container") is True
+    ):
+        allowed_duplicate_screenshot_hashes.append({
+            "sha256": behavioral_record.get("sha256"),
+            "sources": ["behavioral-browser-verification", "behavioral-relation-probe"],
+            "reason": "行为交互截图和关系探针截图处于同一已选活动状态时，像素相同是可接受结果；关系探针的新增证明来自 relation_event_control 和 dom_structural_probe，而不是依赖像素差异。",
+            "relation_event_control": relation_event_control,
+            "dom_structural_probe_summary": {
+                "same_structural_container": relation_dom_probe.get("same_structural_container"),
+                "matched_container_count": relation_dom_probe.get("matched_container_count"),
+            },
+        })
+    allowed_duplicate_hashes = {str(item.get("sha256")) for item in allowed_duplicate_screenshot_hashes if item.get("sha256")}
+    unexpected_duplicate_hashes = [item for item in duplicate_hashes if item not in allowed_duplicate_hashes]
+    if unexpected_duplicate_hashes:
         failures.append("视觉三角验证要求各截图哈希互不相同，当前存在重复截图哈希")
     observer_payload = load_optional_json(evidence / "independent-observer.json") or {}
     bundle_fingerprint = observer_payload.get("bundle_fingerprint")
@@ -3917,6 +4010,12 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
         "sources": sources,
         "distinct_screenshot_sha256_count": len(distinct_hashes),
         "screenshot_count": len(screenshot_hashes),
+        "actual_png_files": actual_png_paths,
+        "reported_png_files": sorted(expected_png_paths),
+        "unreported_png_files": unreported_png_paths,
+        "duplicate_screenshot_sha256": duplicate_hashes,
+        "allowed_duplicate_screenshot_hashes": allowed_duplicate_screenshot_hashes,
+        "unexpected_duplicate_screenshot_sha256": unexpected_duplicate_hashes,
         "bundle_fingerprint": bundle_fingerprint,
         "checks": [
             {
@@ -3930,11 +4029,22 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
             },
             {
                 "name": "screenshot_hashes_distinct",
-                "passed": len(distinct_hashes) == len(screenshot_hashes) == len(sources),
+                "passed": not unexpected_duplicate_hashes and len(screenshot_hashes) == len(sources),
                 "evidence": {
                     "distinct": len(distinct_hashes),
                     "total": len(screenshot_hashes),
                     "hashes": screenshot_hashes,
+                    "allowed_duplicates": allowed_duplicate_screenshot_hashes,
+                    "unexpected_duplicates": unexpected_duplicate_hashes,
+                },
+            },
+            {
+                "name": "all_png_files_reported",
+                "passed": not unreported_png_paths,
+                "evidence": {
+                    "actual_png_files": actual_png_paths,
+                    "reported_png_files": sorted(expected_png_paths),
+                    "unreported_png_files": unreported_png_paths,
                 },
             },
             {
@@ -4846,7 +4956,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
             "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, browser observation, declared bundle hash match, and cooldown file hash stability.",
             "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
-            "visual-independence-report.json must show distinct screenshot hashes and recorded browser_context for browser-inspection, behavioral-browser-verification, independent-browser-verification, and independent-observer.",
+            "visual-independence-report.json must include every PNG screenshot in the evidence directory, including file-browser-inspection.png and behavioral-relation-probe.png. Duplicate hashes are forbidden unless the report explicitly records an allowed duplicate explanation. Expected allowances are: browser-inspection.png and file-browser-inspection.png rendering the same deterministic static page in separate HTTP and file:// contexts; behavioral-browser-verification.png and behavioral-relation-probe.png capturing the same selected event state while relation_event_control and dom_structural_probe provide the additional relation proof.",
             "completion-marker.json is forbidden before final provider review; if this review passes, the runner must copy self-referential-boundary.json disclosures into completion-marker.json and cite final-marker-validation.json and file-browser-inspection.json.",
             "If the remaining concern is that any same-host automated E2E can never be externally production-certified, treat that as compatible with an engineering-trial marker only when self-referential-boundary.json and completion-marker.json explicitly disclose that limitation.",
         ],
@@ -5317,8 +5427,11 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
     if visual_report is not None:
         if visual_report.get("ok") is not True:
             failures.append(f"visual-independence-report 必须通过：{visual_report.get('failures')}")
-        if visual_report.get("distinct_screenshot_sha256_count") != visual_report.get("screenshot_count"):
-            failures.append("visual-independence-report 必须证明截图哈希互不相同")
+        unexpected_duplicates = visual_report.get("unexpected_duplicate_screenshot_sha256")
+        if unexpected_duplicates:
+            failures.append(f"visual-independence-report 存在未解释的重复截图哈希：{unexpected_duplicates}")
+        if visual_report.get("unreported_png_files"):
+            failures.append(f"visual-independence-report 存在未纳入报告的截图文件：{visual_report.get('unreported_png_files')}")
     independent_browser = load_optional_json(evidence / "independent-browser-verification.json")
     if independent_browser is not None:
         if independent_browser.get("ok") is not True:
@@ -6257,6 +6370,12 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append(f"运行器角色玩家负向契约探针不能处理 data/sample-data.js 浏览器全局对象：{activity_character_probe.get('failures')}")
             if activity_character_probe.get("data_path") != "data/sample-data.js" or activity_character_probe.get("list_key") != "activities":
                 failures.append("运行器角色玩家负向契约探针没有记录 data/*.js 浏览器全局对象路径和列表字段")
+            activity_relation_probe = find_character_player_probe(project)
+            if not isinstance(activity_relation_probe, dict):
+                failures.append("行为关系探针没有从 data/sample-data.js 浏览器全局对象中找到角色玩家关系")
+            elif activity_relation_probe.get("data_file") != "data/sample-data.js" or activity_relation_probe.get("event_index") != 1 or activity_relation_probe.get("character_index") != 0:
+                failures.append(f"行为关系探针没有返回 data/*.js 的稳定事件和角色下标：{activity_relation_probe}")
+            activity_global_js.unlink()
             sample_data = data_dir / "sample-data.json"
             sample_data.write_text(json.dumps({
                 "events": [
@@ -6430,6 +6549,124 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("前置客观证据失败导致最终棱镜跳过时，收敛诊断误判为 loom_opposition_gap")
             if skipped_convergence.get("auto_rerun_allowed") is not False:
                 failures.append("前置客观证据失败导致最终棱镜跳过时，收敛诊断没有禁止自动盲目重跑")
+            visual_evidence = work_root / "visual-report-self-check" / ".redcap" / "evidence" / "e2e"
+            visual_evidence.mkdir(parents=True, exist_ok=True)
+
+            def write_visual_probe(name: str, payload: bytes) -> dict[str, Any]:
+                path = visual_evidence / name
+                path.write_bytes(payload)
+                return evidence_file_record(path, base=visual_evidence)
+
+            same_static_render = b"same-static-render"
+            browser_record = write_visual_probe("browser-inspection.png", same_static_render)
+            file_record = write_visual_probe("file-browser-inspection.png", same_static_render)
+            behavioral_record = write_visual_probe("behavioral-browser-verification.png", b"behavioral-render")
+            relation_record = write_visual_probe("behavioral-relation-probe.png", b"behavioral-render")
+            independent_record = write_visual_probe("independent-browser-verification.png", b"independent-render")
+            observer_record = write_visual_probe("independent-observer.png", b"observer-render")
+            common_viewport = {"width": 1280, "height": 900}
+            write_json(visual_evidence / "browser-inspection.json", {
+                "ok": True,
+                "screenshot_record": browser_record,
+                "browser_context": {
+                    "process_pid": 1,
+                    "browser_version": "self-check",
+                    "viewport": common_viewport,
+                    "server_port": 1111,
+                    "capture_role": "browser-inspection",
+                    "screenshot_phase": "initial_render",
+                },
+            })
+            write_json(visual_evidence / "file-browser-inspection.json", {
+                "ok": True,
+                "screenshot_record": file_record,
+                "browser_context": {
+                    "process_pid": 2,
+                    "browser_version": "self-check",
+                    "viewport": common_viewport,
+                    "server_port": 0,
+                    "capture_role": "file-browser-inspection",
+                    "screenshot_phase": "file_protocol_render",
+                    "protocol": "file",
+                },
+            })
+            write_json(visual_evidence / "behavioral-browser-verification.json", {
+                "ok": True,
+                "screenshot_record": behavioral_record,
+                "relation_probe_screenshot_record": relation_record,
+                "checks": [
+                    {
+                        "name": "character_player_relation_visible",
+                        "passed": True,
+                        "evidence": {
+                            "relation_event_control": {"clicked": True, "reason": "matched_event_title"},
+                            "dom_structural_probe": {
+                                "same_structural_container": True,
+                                "matched_container_count": 1,
+                            },
+                        },
+                    }
+                ],
+                "browser_context": {
+                    "process_pid": 3,
+                    "browser_version": "self-check",
+                    "viewport": {"width": 1280, "height": 900},
+                    "server_port": 1112,
+                    "capture_role": "behavioral-interaction",
+                    "screenshot_phase": "after_interaction",
+                },
+            })
+            write_json(visual_evidence / "independent-browser-verification.json", {
+                "ok": True,
+                "screenshot_record": independent_record,
+                "browser_context": {
+                    "process_pid": 4,
+                    "browser_version": "self-check",
+                    "viewport": {"width": 1176, "height": 820},
+                    "server_port": 1113,
+                    "capture_role": "independent-browser-process",
+                    "screenshot_phase": "after_interaction",
+                },
+            })
+            write_json(visual_evidence / "independent-observer.json", {
+                "ok": True,
+                "bundle_fingerprint": {
+                    "matches_declared_bundle_sha256": True,
+                    "file_sha256_stable_after_cooldown": True,
+                },
+                "browser_observation": {
+                    "screenshot_record": observer_record,
+                    "browser_context": {
+                        "process_pid": 5,
+                        "browser_version": "self-check",
+                        "viewport": {"width": 1032, "height": 760},
+                        "server_port": 1114,
+                        "capture_role": "independent-observer",
+                        "screenshot_phase": "after_interaction",
+                    },
+                },
+            })
+            visual_report = build_visual_independence_report(visual_evidence)
+            if visual_report.get("ok") is not True:
+                failures.append(f"视觉独立报告不能接受带解释的 HTTP/file 同像素渲染：{visual_report.get('failures')}")
+            visual_source_ids = {item.get("source_id") for item in visual_report.get("sources", []) if isinstance(item, dict)}
+            if "file-browser-inspection" not in visual_source_ids:
+                failures.append("视觉独立报告没有纳入 file-browser-inspection 截图来源")
+            if not visual_report.get("allowed_duplicate_screenshot_hashes"):
+                failures.append("视觉独立报告没有记录 HTTP/file 同像素渲染的允许重复说明")
+            allowed_duplicate_sources = {
+                tuple(item.get("sources") or [])
+                for item in visual_report.get("allowed_duplicate_screenshot_hashes", [])
+                if isinstance(item, dict)
+            }
+            if ("behavioral-browser-verification", "behavioral-relation-probe") not in allowed_duplicate_sources:
+                failures.append("视觉独立报告没有记录行为截图与关系探针同状态截图的允许重复说明")
+            if visual_report.get("unreported_png_files"):
+                failures.append(f"视觉独立报告误判存在未报告截图：{visual_report.get('unreported_png_files')}")
+            (visual_evidence / "unreported-extra.png").write_bytes(b"unreported")
+            visual_report_with_extra = build_visual_independence_report(visual_evidence)
+            if visual_report_with_extra.get("ok") is True or "unreported-extra.png" not in visual_report_with_extra.get("unreported_png_files", []):
+                failures.append("视觉独立报告没有拦截未纳入 sources 的额外 PNG 截图")
             replay_evidence = work_root / "convergence-replay" / ".redcap" / "evidence" / "e2e"
             write_json(replay_evidence / "final-prism-review.json", structural_final_prism)
             write_json(replay_evidence / "run-summary.json", {
