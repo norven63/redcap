@@ -1,8 +1,8 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-16T08:33:23+00:00",
-  "event_count": 39124,
-  "session_event_count": 9676,
+  "computed_at": "2026-06-16T09:37:29+00:00",
+  "event_count": 39432,
+  "session_event_count": 9756,
   "task_count": 93,
   "success_count": 51,
   "success_rate": 0.5484,
@@ -13,7 +13,7 @@
   "active_count": 34,
   "operational_active_count": 24,
   "attention_count": 41,
-  "average_duration_seconds": 1681.398,
+  "average_duration_seconds": 1681.376,
   "providers": {
     "claude-code": {
       "tasks": 93,
@@ -39,31 +39,31 @@
       "task_id": "timeout-e2e",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-16T08:30:49+00:00"
+      "recorded_at": "2026-06-16T09:35:51+00:00"
     },
     {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-16T08:30:31+00:00"
+      "recorded_at": "2026-06-16T09:35:33+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-16T08:30:26+00:00"
+      "recorded_at": "2026-06-16T09:35:29+00:00"
     },
     {
       "task_id": "dispatcher-truncation-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-16T08:30:26+00:00"
+      "recorded_at": "2026-06-16T09:35:29+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-16T08:30:25+00:00"
+      "recorded_at": "2026-06-16T09:35:28+00:00"
     },
     {
       "task_id": "e2e-round20-fix-review-20260615",
@@ -96,17 +96,17 @@
       "recorded_at": "2026-06-14T13:23:25+00:00"
     }
   ],
-  "gate_event_count": 29448,
-  "gate_success_count": 29448,
+  "gate_event_count": 29676,
+  "gate_success_count": 29676,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 583,
-    "required": 24534,
+    "optional": 587,
+    "required": 24758,
     "skipped": 4331
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 25029,
-    "cli-gate": 4419
+    "codex-UserPromptSubmit": 25237,
+    "cli-gate": 4439
   },
-  "gate_average_duration_seconds": 0.28
+  "gate_average_duration_seconds": 0.278
 }

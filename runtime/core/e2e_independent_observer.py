@@ -22,6 +22,9 @@ import urllib.request
 from typing import Any
 
 
+OBSERVER_BROWSER_VIEWPORT = {"width": 1032, "height": 760}
+
+
 def iso_now() -> str:
     return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
 
@@ -260,7 +263,7 @@ def run_browser_observation(project: pathlib.Path, output_png: pathlib.Path) -> 
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             browser_version = browser.version
-            page = browser.new_page(viewport={"width": 1280, "height": 900})
+            page = browser.new_page(viewport=OBSERVER_BROWSER_VIEWPORT)
             page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
             page.on("pageerror", lambda error: page_errors.append(str(error)))
             page.goto(url, wait_until="domcontentloaded", timeout=20_000)
@@ -300,6 +303,14 @@ def run_browser_observation(project: pathlib.Path, output_png: pathlib.Path) -> 
         ]
         result.update({
             "browser_version": browser_version,
+            "browser_context": {
+                "process_pid": os.getpid(),
+                "browser_version": browser_version,
+                "viewport": OBSERVER_BROWSER_VIEWPORT,
+                "server_port": port,
+                "capture_role": "independent-observer",
+                "screenshot_phase": "after_interaction" if clicked else "after_static_observation",
+            },
             "clicked_button": clicked,
             "before": before,
             "after": after,
@@ -327,6 +338,7 @@ def main() -> int:
     parser.add_argument("--project", required=True)
     parser.add_argument("--evidence", required=True)
     parser.add_argument("--bundle", required=True)
+    parser.add_argument("--expected-bundle-file-sha256", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--runner-pid", required=True, type=int)
     parser.add_argument("--harness-pid", required=True, type=int)
@@ -344,6 +356,16 @@ def main() -> int:
     except Exception as exc:
         bundle = {}
         failures.append(f"无法读取 final-evidence-bundle：{type(exc).__name__}: {exc}")
+    bundle_file_sha256 = sha256_file(bundle_path) if bundle_path.exists() else None
+    bundle_fingerprint = {
+        "path": str(bundle_path),
+        "file_sha256": bundle_file_sha256,
+        "expected_file_sha256": args.expected_bundle_file_sha256,
+        "matches_expected_file_sha256": bool(args.expected_bundle_file_sha256) and bundle_file_sha256 == args.expected_bundle_file_sha256,
+        "declared_bundle_sha256": bundle.get("bundle_sha256") if isinstance(bundle, dict) else None,
+    }
+    if not bundle_fingerprint["matches_expected_file_sha256"]:
+        failures.append("观察者读取的 final-evidence-bundle.json 文件哈希与请求中的冻结哈希不一致")
     chain = process_chain(os.getpid())
     deliverables = inspect_deliverables(project, bundle)
     failures.extend(deliverables["failures"])
@@ -388,6 +410,7 @@ def main() -> int:
             "REDCAP_E2E_OBSERVER_BY_HARNESS": os.environ.get("REDCAP_E2E_OBSERVER_BY_HARNESS"),
         },
         "versions": collect_versions(project),
+        "bundle_fingerprint": bundle_fingerprint,
         "deliverable_hashes": deliverables,
         "browser_observation": browser,
         "failures": failures,

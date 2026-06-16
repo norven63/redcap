@@ -1,0 +1,117 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260616-e2e-visual-triangulation-bundle-freeze",
+  "fsm_state": "VERIFYING",
+  "requirement_review": {
+    "user_intent": "Norven 授权恢复并继续完成 RedCap 复活目标；第 30 轮端到端验收失败于最终棱镜复核，原因是三条视觉验证截图哈希相同、独立观察者核对的证据包哈希与最终证据包不一致，并缺少角色-玩家关系负向契约探针。",
+    "target_reality": "E2E 运行器必须冻结可被独立观察者核对的最终评审证据包，让观察者读取的证据包与最终复核使用的证据包一致；三条视觉验证必须记录可区分的浏览器实例、视口、进程和截图哈希；角色-玩家关系必须有运行器级负向契约探针。",
+    "non_goals": [
+      "不降低最终棱镜复核严格度",
+      "不把截图哈希相同解释成通过",
+      "不通过修改外部项目来伪造负向探针通过",
+      "不把本次修复声明为 RedCap 终局完整复活"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "optional",
+    "rollback_plan": "若证据包冻结、视觉三角报告或角色玩家负向契约探针引入误判，可回滚 runtime/core/complete_revival_e2e.py、runtime/core/e2e_independent_observer.py、runtime/core/revival_followthrough.py 与验收合同的对应改动，再回到第 30 轮失败证据重新设计。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260616-e2e-visual-triangulation-bundle-freeze-lifecycle.json",
+      "runtime/bin/redcap gate --task \"修复完整复活E2E视觉三角证据冻结与角色玩家负向契约\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260616-e2e-visual-triangulation-bundle-freeze-lifecycle.json",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/e2e_independent_observer.py runtime/core/revival_followthrough.py",
+      "runtime/bin/redcap complete-revival-e2e design-check",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "runtime/bin/redcap check",
+      "重新执行完整 E2E，确认 final-prism-review.strictest_verdict=pass 且 completion-marker.json 生成"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "抱歉，我刚才不小心把你归档了，现在已经恢复了，你还能恢复之前的任务，并完成直至所有目标达成吗",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "修复第 30 轮 E2E 暴露的证据包冻结、视觉三角独立性和角色-玩家关系负向契约缺口。",
+    "primary_deliverable": "运行器能够生成稳定可核对的最终评审证据包、视觉独立性报告和角色玩家负向契约探针，并把这些要求纳入验收合同和自检。",
+    "acceptance_criteria": [
+      "独立观察者读取的证据包哈希必须与最终棱镜复核使用的 final-evidence-bundle.json 一致",
+      "behavioral、independent-browser、independent-observer 三条截图证据必须记录不同视口或不同截图状态，并在 visual-independence-report.json 中证明截图哈希互不相同",
+      "独立浏览器和独立观察者必须记录进程、端口、浏览器版本、视口和截图阶段",
+      "运行器必须写入 runner-character-player-contract-probe.json，证明破坏角色玩家关联会导致项目验证失败，恢复后通过",
+      "验收合同、自检、后续闭环检查必须覆盖新增证据文件"
+    ],
+    "status": "verified",
+    "evidence_kind": "code",
+    "evidence": [
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/core/e2e_independent_observer.py",
+      "runtime/core/revival_followthrough.py",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "assets/evidence/lifecycle/20260616-e2e-visual-triangulation-bundle-freeze-lifecycle.json"
+    ]
+  },
+  "fsm_transition": {
+    "from": "IMPLEMENTING",
+    "to": "VERIFYING",
+    "evidence": [
+      "runtime_change",
+      "self-check",
+      "full-check"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "证据包不能包含会在观察者运行后才生成或改写的观察者文件，否则观察者永远只能核对旧包；视觉三角证据需要明确不同截图角色和浏览器元数据。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/e2e_independent_observer.py",
+        "/Users/norven/workspace/redcap-e2e-runs/run-20260616-round30/redcap-e2e-简化版-trpg-活动组织平台-交付一个本地可运行的桌面角色扮演活动组织/.redcap/evidence/e2e/final-prism-review/"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "本次修复必须增加运行器硬检查和验收合同，而不是把最终棱镜 concern 解释掉；缺失的角色-玩家负向契约必须变成可失败的机器探针。"
+      ],
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "runtime/bin/redcap complete-revival-e2e design-check"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "有意义 E2E 证据应包含视觉独立性报告和角色玩家负向探针，否则仍可能出现证据存在但独立性或领域契约不可证的问题。"
+      ],
+      "evidence": [
+        "runtime/core/revival_followthrough.py",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe"
+      ]
+    }
+  },
+  "implementation_evidence": [
+    "runtime/core/complete_revival_e2e.py: 冻结 final-evidence-bundle.json，新增 visual-independence-report.json，新增 runner-character-player-contract-probe.json，并禁止成功路径二次改写冻结包",
+    "runtime/core/e2e_independent_observer.py: 独立观察者记录浏览器上下文，并核对观察者读取的冻结证据包文件哈希",
+    "runtime/core/revival_followthrough.py: 后续闭环检查器同步新增证据文件，并移除冻结包必须索引后生成 failure-backlog.json 的旧规则",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json: 验收合同纳入视觉独立性报告、角色玩家负向探针和冻结证据包边界"
+  ],
+  "verification_evidence": [
+    "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/e2e_independent_observer.py runtime/core/revival_followthrough.py: exit=0",
+    "python3 -m json.tool assets/contracts/complete-revival-e2e-acceptance-design.json: exit=0",
+    "runtime/bin/redcap complete-revival-e2e design-check: REDCAP_AI_E2E_DESIGN_OK",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe: REDCAP_AI_E2E_SELF_CHECK_OK",
+    "runtime/bin/redcap revival-followthrough self-check: REDCAP_REVIVAL_FOLLOWTHROUGH_SELF_CHECK_OK",
+    "git diff --check: exit=0",
+    "runtime/bin/redcap check: REDCAP_CHECK_OK, completed_steps=65/65"
+  ],
+  "completion_claim": {
+    "present": true,
+    "evidence_kind": "code",
+    "scope": "本轮 E2E 视觉三角、冻结证据包和角色玩家负向契约修复已通过本地验证；不代表 RedCap 终局完整复活"
+  }
+}

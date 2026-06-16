@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime as dt
 import hashlib
 import json
@@ -80,12 +81,14 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "test-results.json",
     "negative-probes.json",
     "runner-negative-contract-probe.json",
+    "runner-character-player-contract-probe.json",
     "package-prism-check.json",
     "final-runner-test-results.json",
     "browser-inspection.json",
     "behavioral-browser-verification.json",
     "independent-browser-verification.json",
     "independent-observer.json",
+    "visual-independence-report.json",
     "final-evidence-bundle.json",
     "final-prism-review.json",
     "failure-backlog.json",
@@ -124,6 +127,9 @@ MEANINGFUL_E2E_REQUIRED_GATES = [
     "failure-backlog",
     "ready_for_engineering_use",
     "项目级 Hook",
+    "runner-character-player-contract-probe.json",
+    "visual-independence-report.json",
+    "冻结证据包",
 ]
 OLD_REDCAP_ROOT = pathlib.Path("/Users/norven/workspace/redcap")
 GIT_IN_PROGRESS_MARKERS = [
@@ -135,6 +141,9 @@ GIT_IN_PROGRESS_MARKERS = [
     "rebase-apply",
 ]
 OBSERVER_TIMEOUT_SECONDS = int(os.environ.get("REDCAP_E2E_OBSERVER_TIMEOUT_SECONDS", "300"))
+BROWSER_INSPECTION_VIEWPORT = {"width": 1280, "height": 900}
+BEHAVIORAL_BROWSER_VIEWPORT = {"width": 1280, "height": 900}
+INDEPENDENT_BROWSER_VIEWPORT = {"width": 1176, "height": 820}
 
 
 def iso_now() -> str:
@@ -1691,6 +1700,14 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
+    write_json(evidence / "runner-character-player-contract-probe-template.json", {
+        "schema_id": "redcap-e2e-runner-character-player-contract-probe",
+        "producer": "e2e-runner",
+        "target_contract": "character-player-relation-contract",
+        "probe_id": "broken-character-player-link-must-fail",
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
     write_json(evidence / "package-prism-check-template.json", {
         "schema_id": "redcap-e2e-package-prism-check",
         "producer": "e2e-runner",
@@ -1757,6 +1774,18 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
             "process.parent_is_not_runner 必须为 true",
             "deliverable_hashes.failures 必须为空",
             "browser_observation.ok 必须为 true"
+        ],
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
+    write_json(evidence / "visual-independence-report-template.json", {
+        "schema_id": "redcap-e2e-visual-independence-report",
+        "producer": "e2e-runner",
+        "checks": [
+            "四条浏览器截图证据必须存在并带 sha256",
+            "四条截图 sha256 必须互不相同",
+            "四条浏览器证据必须记录 browser_context",
+            "观察者读取的 final-evidence-bundle.json 文件哈希必须等于请求中的冻结哈希"
         ],
         "ok": "<boolean>",
         "failure_policy": "blocking"
@@ -1962,19 +1991,12 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
         "final-runner-test-results.json",
         "browser-inspection.json",
         "behavioral-browser-verification.json",
-        "independent-observer.json",
+        "runner-character-player-contract-probe.json",
         "role-execution-risk.json",
-        "pre-final-readiness.json",
-        "final-prism-review.json",
         "independent-browser-verification.json",
         "browser-inspection.png",
         "behavioral-browser-verification.png",
         "independent-browser-verification.png",
-        "independent-observer.png",
-        "observer-request.json",
-        "observer-command.json",
-        "failure-backlog.json",
-        "iteration-verdict.json",
         "loom-role-session-manifest-pre-review.json",
         "loom-role-session-manifest.json",
         "hook-events-summary.json",
@@ -2004,13 +2026,12 @@ def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, d
         "test-results.json",
         "negative-probes.json",
         "runner-negative-contract-probe.json",
+        "runner-character-player-contract-probe.json",
         "runner-self-purification-resolution.json",
         "final-runner-test-results.json",
         "browser-inspection.json",
         "behavioral-browser-verification.json",
         "independent-browser-verification.json",
-        "independent-observer.json",
-        "pre-final-readiness.json",
         "review-verdict.json",
         "prism-assisted-review.json",
     }
@@ -2267,6 +2288,152 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
     return result
 
 
+def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Path | None, dict[str, Any] | list[Any] | None, str | None, int | None, int | None, str | None, list[str]]:
+    failures: list[str] = []
+    data_dir = project / "data"
+    candidates = [
+        data_dir / "events.json",
+        data_dir / "activities.json",
+        *sorted(path for path in data_dir.glob("*.json") if path.name not in {"events.json", "activities.json"}),
+    ]
+    seen: set[pathlib.Path] = set()
+    for data_path in candidates:
+        if data_path in seen:
+            continue
+        seen.add(data_path)
+        if not data_path.exists():
+            continue
+        try:
+            payload = json.loads(data_path.read_text(encoding="utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            failures.append(f"{data_path.relative_to(project)} 无法解析：{type(exc).__name__}: {exc}")
+            continue
+        list_candidates: list[tuple[str, list[Any]]] = []
+        if isinstance(payload, dict):
+            for key in ["events", "activities", "sessions", "campaigns", "items"]:
+                value = payload.get(key)
+                if isinstance(value, list):
+                    list_candidates.append((key, value))
+            known = {key for key, _ in list_candidates}
+            for key, value in payload.items():
+                if isinstance(value, list) and key not in known:
+                    list_candidates.append((str(key), value))
+        elif isinstance(payload, list):
+            list_candidates.append(("$", payload))
+        for list_key, records in list_candidates:
+            for event_index, event in enumerate(records):
+                if not isinstance(event, dict):
+                    continue
+                players = event.get("players")
+                characters = event.get("characters")
+                if not isinstance(players, list) or not isinstance(characters, list):
+                    continue
+                player_ids = {
+                    str(player.get("id"))
+                    for player in players
+                    if isinstance(player, dict) and player.get("id")
+                }
+                for character_index, character in enumerate(characters):
+                    if not isinstance(character, dict):
+                        continue
+                    for ref_key in ["playerId", "player_id", "player"]:
+                        ref = character.get(ref_key)
+                        if ref and str(ref) in player_ids:
+                            return data_path, payload, list_key, event_index, character_index, ref_key, failures
+        failures.append(f"{data_path.relative_to(project)} 未发现可破坏的角色玩家关联")
+    failures.append("未找到包含 players 与 characters 且存在真实关联的 JSON 数据文件")
+    return None, None, None, None, None, None, failures
+
+
+def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    argv, source = detect_validation_command(project)
+    data_path, data, list_key, event_index, character_index, ref_key, location_failures = find_character_player_contract_data_target(project)
+    result: dict[str, Any] = {
+        "schema_id": "redcap-e2e-runner-character-player-contract-probe",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "target_contract": "character-player-relation-contract",
+        "probe_id": "broken-character-player-link-must-fail",
+        "detected_command": argv,
+        "command_source": source,
+        "data_path": str(data_path.relative_to(project)) if data_path is not None else None,
+        "list_key": list_key,
+        "event_index": event_index,
+        "character_index": character_index,
+        "reference_key": ref_key,
+        "ok": False,
+        "checks": [],
+        "failures": [],
+    }
+    if argv is None:
+        result["failures"].append("无法发现验证命令，不能执行角色玩家负向契约探针")
+        return result
+    if data_path is None or data is None or list_key is None or event_index is None or character_index is None or ref_key is None:
+        result["failures"].extend(location_failures)
+        return result
+    original_bytes = data_path.read_bytes()
+    original_sha256 = hashlib.sha256(original_bytes).hexdigest()
+    mutated = copy.deepcopy(data)
+    records = mutated if list_key == "$" else mutated.get(list_key) if isinstance(mutated, dict) else None
+    if not isinstance(records, list) or event_index >= len(records) or not isinstance(records[event_index], dict):
+        result["failures"].append(f"{data_path.relative_to(project)} 中 {list_key}[{event_index}] 不是可变更对象")
+        return result
+    event = records[event_index]
+    characters = event.get("characters")
+    if not isinstance(characters, list) or character_index >= len(characters) or not isinstance(characters[character_index], dict):
+        result["failures"].append(f"{data_path.relative_to(project)} 中 characters[{character_index}] 不是可变更对象")
+        return result
+    original_ref = characters[character_index].get(ref_key)
+    characters[character_index][ref_key] = "__redcap_missing_player__"
+    result["mutation"] = {
+        "event_id": event.get("id"),
+        "character_name": characters[character_index].get("name"),
+        "data_path": str(data_path.relative_to(project)),
+        "list_key": list_key,
+        "event_index": event_index,
+        "character_index": character_index,
+        "changed_field": ref_key,
+        "original_ref": original_ref,
+        "expected_validation_exit": "non_zero",
+    }
+    try:
+        data_path.write_text(json.dumps(mutated, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        negative_run = run_command(argv, cwd=project, timeout_seconds=120)
+        negative_receipt = command_receipt(negative_run)
+        negative_passed = negative_run.get("exit_code") not in (0, None)
+        result["checks"].append({
+            "name": "broken_character_player_link_rejected",
+            "passed": negative_passed,
+            "evidence": {
+                "exit_code": negative_run.get("exit_code"),
+                "stdout_tail": negative_receipt.get("stdout_tail"),
+                "stderr_tail": negative_receipt.get("stderr_tail"),
+            },
+        })
+    finally:
+        data_path.write_bytes(original_bytes)
+    restore_run = run_command(argv, cwd=project, timeout_seconds=120)
+    restore_receipt = command_receipt(restore_run)
+    restore_passed = restore_run.get("exit_code") == 0
+    result["checks"].append({
+        "name": "original_character_player_data_restored_and_validation_passes",
+        "passed": restore_passed,
+        "evidence": {
+            "exit_code": restore_run.get("exit_code"),
+            "stdout_tail": restore_receipt.get("stdout_tail"),
+            "stderr_tail": restore_receipt.get("stderr_tail"),
+        },
+    })
+    result["negative_command"] = negative_receipt
+    result["restore_command"] = restore_receipt
+    result["restored_sha256"] = sha256_file(data_path)
+    result["original_sha256"] = original_sha256
+    result["ok"] = all(item.get("passed") is True for item in result["checks"])
+    if not result["ok"]:
+        result["failures"].append("角色玩家负向契约探针未证明破坏关联会失败且原数据恢复后通过")
+    return result
+
+
 def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     target = project / "index.html"
     screenshot = evidence / "browser-inspection.png"
@@ -2340,7 +2507,8 @@ def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dic
         try:
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(headless=True)
-                page = browser.new_page(viewport={"width": 1280, "height": 900})
+                browser_version = browser.version
+                page = browser.new_page(viewport=BROWSER_INSPECTION_VIEWPORT)
                 page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
                 page.on("pageerror", lambda error: page_errors.append(str(error)))
                 page.goto(url, wait_until="domcontentloaded", timeout=20_000)
@@ -2403,6 +2571,14 @@ def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dic
         "element_count": element_count,
         "console_errors": console_errors,
         "page_errors": page_errors,
+        "browser_context": {
+            "process_pid": os.getpid(),
+            "browser_version": browser_version,
+            "viewport": BROWSER_INSPECTION_VIEWPORT,
+            "server_port": port,
+            "capture_role": "browser-inspection",
+            "screenshot_phase": "initial_render",
+        },
         "checks": checks,
         "failures": failures,
     })
@@ -2604,7 +2780,8 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
             return result
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
-            page = browser.new_page(viewport={"width": 1280, "height": 900})
+            browser_version = browser.version
+            page = browser.new_page(viewport=BEHAVIORAL_BROWSER_VIEWPORT)
             page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
             page.on("pageerror", lambda error: page_errors.append(str(error)))
             page.goto(url, wait_until="domcontentloaded", timeout=20_000)
@@ -2844,6 +3021,14 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
         "screenshot_phase_reason": screenshot_phase_reason,
         "screenshot_record": screenshot_record,
         "visual_independence": visual_independence,
+        "browser_context": {
+            "process_pid": os.getpid(),
+            "browser_version": browser_version,
+            "viewport": BEHAVIORAL_BROWSER_VIEWPORT,
+            "server_port": port,
+            "capture_role": "behavioral-interaction",
+            "screenshot_phase": screenshot_phase,
+        },
         "console_errors": console_errors,
         "page_errors": page_errors,
     })
@@ -2853,6 +3038,7 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
 def run_independent_browser_verification_process(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     script = r"""
 import json
+import hashlib
 import pathlib
 import socket
 import subprocess
@@ -2864,6 +3050,9 @@ project = pathlib.Path(sys.argv[1])
 evidence = pathlib.Path(sys.argv[2])
 target = project / "index.html"
 screenshot = evidence / "independent-browser-verification.png"
+viewport = {"width": 1176, "height": 820}
+def sha256_file(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 result = {
     "schema_id": "redcap-e2e-independent-browser-verification",
     "producer": "e2e-independent-browser-process",
@@ -2912,7 +3101,8 @@ try:
     else:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
-            page = browser.new_page(viewport={"width": 1280, "height": 900})
+            browser_version = browser.version
+            page = browser.new_page(viewport=viewport)
             console_errors = []
             page_errors = []
             page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
@@ -2946,9 +3136,18 @@ try:
                 {"name": "visible_text", "passed": len(text_before.strip()) >= 80, "evidence": {"length": len(text_before)}},
                 {"name": "no_browser_errors", "passed": not console_errors and not page_errors, "evidence": {"console_errors": console_errors, "page_errors": page_errors}},
                 {"name": "independent_interaction_or_static_content", "passed": bool(clicked) or len(text_before.strip()) >= 160, "evidence": {"clicked": clicked, "before_length": len(text_before), "after_length": len(text_after)}},
-                {"name": "screenshot_written", "passed": screenshot.exists() and screenshot.stat().st_size > 0, "evidence": {"path": "independent-browser-verification.png", "size": screenshot.stat().st_size if screenshot.exists() else 0}},
+                {"name": "screenshot_written", "passed": screenshot.exists() and screenshot.stat().st_size > 0, "evidence": {"path": "independent-browser-verification.png", "size": screenshot.stat().st_size if screenshot.exists() else 0, "sha256": sha256_file(screenshot) if screenshot.exists() else None}},
             ]
             result["checks"] = checks
+            result["browser_context"] = {
+                "process_pid": __import__("os").getpid(),
+                "browser_version": browser_version,
+                "viewport": viewport,
+                "server_port": port,
+                "capture_role": "independent-browser-process",
+                "screenshot_phase": "after_interaction" if clicked else "after_static_observation",
+            }
+            result["screenshot_record"] = {"path": "independent-browser-verification.png", "exists": screenshot.exists(), "size": screenshot.stat().st_size if screenshot.exists() else 0, "sha256": sha256_file(screenshot) if screenshot.exists() else None}
             result["failures"].extend([f"独立浏览器验证失败：{item['name']}" for item in checks if item.get("passed") is not True])
 finally:
     try:
@@ -3057,6 +3256,9 @@ def verify_independent_observer_output(path: pathlib.Path, runner_pid: int | Non
     deliverables = payload.get("deliverable_hashes")
     if not isinstance(deliverables, dict) or deliverables.get("failures"):
         failures.append(f"independent-observer 交付文件哈希复核失败：{deliverables.get('failures') if isinstance(deliverables, dict) else 'missing'}")
+    bundle_fingerprint = payload.get("bundle_fingerprint")
+    if not isinstance(bundle_fingerprint, dict) or bundle_fingerprint.get("matches_expected_file_sha256") is not True:
+        failures.append("independent-observer 必须证明读取的 final-evidence-bundle.json 文件哈希等于请求中的冻结哈希")
     browser = payload.get("browser_observation")
     if not isinstance(browser, dict) or browser.get("ok") is not True:
         failures.append(f"independent-observer 浏览器观察失败：{browser.get('failures') if isinstance(browser, dict) else 'missing'}")
@@ -3065,6 +3267,125 @@ def verify_independent_observer_output(path: pathlib.Path, runner_pid: int | Non
         "ok": not failures,
         "path": str(path),
         "payload": payload,
+        "failures": failures,
+    }
+
+
+def screenshot_record_from_checks(payload: dict[str, Any], fallback_path: str) -> dict[str, Any]:
+    checks = payload.get("checks")
+    if isinstance(checks, list):
+        for item in checks:
+            if not isinstance(item, dict) or item.get("name") != "screenshot_written":
+                continue
+            evidence = item.get("evidence")
+            if isinstance(evidence, dict):
+                return {
+                    "path": evidence.get("path") or fallback_path,
+                    "exists": evidence.get("exists", True),
+                    "sha256": evidence.get("sha256"),
+                    "size": evidence.get("size", 0),
+                }
+    return {
+        "path": fallback_path,
+        "exists": False,
+        "sha256": None,
+        "size": 0,
+    }
+
+
+def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
+    sources: list[dict[str, Any]] = []
+    source_specs = [
+        ("browser-inspection", "browser-inspection.json", "browser-inspection.png"),
+        ("behavioral-browser-verification", "behavioral-browser-verification.json", "behavioral-browser-verification.png"),
+        ("independent-browser-verification", "independent-browser-verification.json", "independent-browser-verification.png"),
+    ]
+    for source_id, json_name, screenshot_name in source_specs:
+        payload = load_optional_json(evidence / json_name) or {}
+        record = payload.get("screenshot_record")
+        if not isinstance(record, dict):
+            record = screenshot_record_from_checks(payload, screenshot_name)
+        sources.append({
+            "source_id": source_id,
+            "json": json_name,
+            "screenshot": record,
+            "browser_context": payload.get("browser_context") if isinstance(payload.get("browser_context"), dict) else None,
+            "ok": payload.get("ok") is True,
+        })
+    observer_payload = load_optional_json(evidence / "independent-observer.json") or {}
+    observer_browser = observer_payload.get("browser_observation") if isinstance(observer_payload.get("browser_observation"), dict) else {}
+    observer_record = observer_browser.get("screenshot_record") if isinstance(observer_browser.get("screenshot_record"), dict) else {
+        "path": "independent-observer.png",
+        "exists": False,
+        "sha256": None,
+        "size": 0,
+    }
+    sources.append({
+        "source_id": "independent-observer",
+        "json": "independent-observer.json",
+        "screenshot": observer_record,
+        "browser_context": observer_browser.get("browser_context") if isinstance(observer_browser.get("browser_context"), dict) else None,
+        "ok": observer_payload.get("ok") is True,
+    })
+    failures: list[str] = []
+    screenshot_hashes: list[str] = []
+    for source in sources:
+        record = source.get("screenshot") if isinstance(source.get("screenshot"), dict) else {}
+        if record.get("exists") is not True or not record.get("sha256"):
+            failures.append(f"{source.get('source_id')} 缺少可哈希的截图证据")
+        else:
+            screenshot_hashes.append(str(record["sha256"]))
+        context = source.get("browser_context")
+        if not isinstance(context, dict):
+            failures.append(f"{source.get('source_id')} 缺少 browser_context")
+        else:
+            for key in ["process_pid", "browser_version", "viewport", "server_port", "capture_role", "screenshot_phase"]:
+                if context.get(key) in (None, "", {}):
+                    failures.append(f"{source.get('source_id')} browser_context 缺少 {key}")
+    distinct_hashes = sorted(set(screenshot_hashes))
+    if len(distinct_hashes) != len(screenshot_hashes):
+        failures.append("视觉三角验证要求各截图哈希互不相同，当前存在重复截图哈希")
+    observer_payload = load_optional_json(evidence / "independent-observer.json") or {}
+    bundle_fingerprint = observer_payload.get("bundle_fingerprint")
+    if not isinstance(bundle_fingerprint, dict) or bundle_fingerprint.get("matches_expected_file_sha256") is not True:
+        failures.append("视觉三角报告要求观察者证据包文件哈希与冻结哈希一致")
+    return {
+        "schema_id": "redcap-e2e-visual-independence-report",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "ok": not failures,
+        "sources": sources,
+        "distinct_screenshot_sha256_count": len(distinct_hashes),
+        "screenshot_count": len(screenshot_hashes),
+        "bundle_fingerprint": bundle_fingerprint,
+        "checks": [
+            {
+                "name": "all_screenshots_present",
+                "passed": all(
+                    isinstance(source.get("screenshot"), dict)
+                    and source["screenshot"].get("exists") is True
+                    and bool(source["screenshot"].get("sha256"))
+                    for source in sources
+                ),
+            },
+            {
+                "name": "screenshot_hashes_distinct",
+                "passed": len(distinct_hashes) == len(screenshot_hashes) == len(sources),
+                "evidence": {
+                    "distinct": len(distinct_hashes),
+                    "total": len(screenshot_hashes),
+                    "hashes": screenshot_hashes,
+                },
+            },
+            {
+                "name": "browser_contexts_recorded",
+                "passed": all(isinstance(source.get("browser_context"), dict) for source in sources),
+            },
+            {
+                "name": "observer_bundle_file_hash_matches",
+                "passed": isinstance(bundle_fingerprint, dict) and bundle_fingerprint.get("matches_expected_file_sha256") is True,
+            },
+        ],
         "failures": failures,
     }
 
@@ -3098,6 +3419,8 @@ def run_observer_request_as_harness(request_path: pathlib.Path, runner_pid: int,
         str(evidence),
         "--bundle",
         str(bundle),
+        "--expected-bundle-file-sha256",
+        str(request.get("bundle_file_sha256") or ""),
         "--output",
         str(output),
         "--runner-pid",
@@ -3159,13 +3482,15 @@ def request_independent_observer(project: pathlib.Path, evidence: pathlib.Path, 
     if output.exists():
         output.chmod(0o644)
         output.unlink()
+    bundle_path = evidence / "final-evidence-bundle.json"
     request = {
         "schema_id": "redcap-e2e-observer-request",
         "created_at": iso_now(),
         "project": str(project),
         "evidence": str(evidence),
-        "bundle": str(evidence / "final-evidence-bundle.json"),
+        "bundle": str(bundle_path),
         "bundle_sha256": bundle.get("bundle_sha256"),
+        "bundle_file_sha256": sha256_file(bundle_path) if bundle_path.exists() else None,
         "output": str(output),
         "observer_script": str(observer_script_path(project)),
         "runner_pid": os.getpid(),
@@ -3268,6 +3593,10 @@ def criterion_pass(criterion: str, project: pathlib.Path, evidence: pathlib.Path
         return context.get("independent_browser_ok") is True, "independent-browser-verification.json"
     if "independent-observer.json" in criterion or "外部观察者" in criterion:
         return context.get("independent_observer_ok") is True, "independent-observer.json"
+    if "character-player-relation-contract" in criterion or "角色名和玩家名" in criterion:
+        runner_probe = load_optional_json(evidence / "runner-character-player-contract-probe.json") or {}
+        passed = context.get("behavior_ok") is True and runner_probe.get("ok") is True
+        return passed, "behavioral-browser-verification.json and runner-character-player-contract-probe.json"
     if "blocked-package.json" in criterion:
         return not (project / "blocked-package.json").exists(), "blocked-package.json absent"
     if "行为" in criterion or "交互" in criterion:
@@ -3512,7 +3841,8 @@ def write_runner_self_purification_resolution(evidence: pathlib.Path) -> dict[st
     return payload
 
 
-def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any]:
+def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evidence: dict[str, Any] | None = None) -> dict[str, Any]:
+    supplemental_evidence = supplemental_evidence or {}
     return {
         "task": "Review whether this RedCap E2E run may write its completion marker.",
         "user_intent": "Norven wants RedCap to prove it can drive a real project through role-separated Loom workflow, hooks, evidence, self-purification, persona boundary, and failure feedback before claiming production usefulness.",
@@ -3524,8 +3854,8 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "The runner performed a mutation-based negative contract probe: it temporarily wrote bad signup data, required the validation command to fail, restored the original data, and required validation to pass again.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
             "The runner performed a separate behavioral browser verification with a real click interaction, captured behavioral-browser-verification.png immediately after the verified interaction and before any later page reset, compared its hash with browser-inspection.png, and, when project data exposed player-character relationships, checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
-            "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review.",
-            "The outer E2E harness launched an independent observer as a sibling process of the runner-worker; the observer wrote read-only sealed independent-observer.json with process metadata, script self-hash, deliverable hash cross-checks, DOM summary, visible text excerpt, screenshot hash, and browser observation.",
+            "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review; browser-inspection, behavioral verification, independent browser verification, and independent observer use recorded browser_context metadata and are summarized by visual-independence-report.json.",
+            "The outer E2E harness launched an independent observer as a sibling process of the runner-worker; the observer read the frozen final-evidence-bundle.json and recorded bundle_fingerprint.file_sha256 matching the observer request before writing read-only sealed independent-observer.json.",
             "pre-final-readiness.json separates evidence_checked from pending_final_evidence, so completion-marker.json, final-prism-review.json, and the final iteration-verdict.json are not claimed as pre-final checked evidence.",
             "runner-self-purification-resolution.json explicitly resolves reviewer self-purification candidates for this E2E without writing public memory or Cap private persona body.",
         ],
@@ -3534,6 +3864,21 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
                 "kind": "final-evidence-bundle",
                 "reference": "final-evidence-bundle.json",
                 "summary": bundle,
+            },
+            {
+                "kind": "post-bundle-observer-verification",
+                "reference": "independent-observer-verification.json",
+                "summary": supplemental_evidence.get("independent_observer_verification"),
+            },
+            {
+                "kind": "visual-independence-report",
+                "reference": "visual-independence-report.json",
+                "summary": supplemental_evidence.get("visual_independence_report"),
+            },
+            {
+                "kind": "pre-final-readiness",
+                "reference": "pre-final-readiness.json",
+                "summary": supplemental_evidence.get("pre_final_readiness"),
             }
         ],
         "review_mode": "completion_review",
@@ -3548,6 +3893,8 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "pre-final-readiness.json must not list completion-marker.json, final-prism-review.json, or iteration-verdict.json in evidence_checked; those belong in pending_final_evidence until this review passes.",
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
             "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, and browser observation.",
+            "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
+            "visual-independence-report.json must show distinct screenshot hashes and recorded browser_context for browser-inspection, behavioral-browser-verification, independent-browser-verification, and independent-observer.",
         ],
         "role_execution_profile": {
             "model": CODEX_ROLE_MODEL,
@@ -3571,7 +3918,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
     }
 
 
-def run_final_prism_review(project: pathlib.Path, evidence: pathlib.Path, direction: str, bundle: dict[str, Any]) -> dict[str, Any]:
+def run_final_prism_review(project: pathlib.Path, evidence: pathlib.Path, direction: str, bundle: dict[str, Any], supplemental_evidence: dict[str, Any] | None = None) -> dict[str, Any]:
     package_prism = project / ".redcap" / "runtime" / "prism" / "bin" / "prism"
     package_dispatch = project / ".redcap" / "runtime" / "prism" / "bin" / "prism-dispatch"
     run_dir = evidence / "final-prism-review"
@@ -3579,7 +3926,7 @@ def run_final_prism_review(project: pathlib.Path, evidence: pathlib.Path, direct
         shutil.rmtree(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
     request_path = run_dir / "request.json"
-    request_payload = final_prism_request(direction, bundle)
+    request_payload = final_prism_request(direction, bundle, supplemental_evidence=supplemental_evidence)
     write_json(request_path, request_payload)
     if not package_prism.exists() or not package_dispatch.exists():
         summary = {
@@ -3684,6 +4031,8 @@ def finalize_e2e_acceptance(
     write_json(evidence / "final-runner-test-results.json", runner_tests)
     runner_negative_probe = run_runner_negative_contract_probe(project, evidence)
     write_json(evidence / "runner-negative-contract-probe.json", runner_negative_probe)
+    runner_character_player_probe = run_runner_character_player_contract_probe(project, evidence)
+    write_json(evidence / "runner-character-player-contract-probe.json", runner_character_player_probe)
     browser_inspection = run_browser_inspection(project, evidence)
     write_json(evidence / "browser-inspection.json", browser_inspection)
     behavioral_verification = run_behavioral_browser_verification(project, evidence)
@@ -3703,6 +4052,8 @@ def finalize_e2e_acceptance(
         failures.append("运行器独立重跑项目验证未通过")
     if runner_negative_probe.get("ok") is not True:
         failures.append("运行器负向领域契约探针未通过")
+    if runner_character_player_probe.get("ok") is not True:
+        failures.append("运行器角色玩家负向领域契约探针未通过")
     if browser_inspection.get("ok") is not True:
         failures.append("运行器浏览器检查未通过")
     if behavioral_verification.get("ok") is not True:
@@ -3723,6 +4074,7 @@ def finalize_e2e_acceptance(
         "package_prism_ok": package_prism.get("ok") is True,
         "runner_tests_ok": runner_tests.get("ok") is True,
         "runner_negative_probe_ok": runner_negative_probe.get("ok") is True,
+        "runner_character_player_probe_ok": runner_character_player_probe.get("ok") is True,
         "browser_ok": browser_inspection.get("ok") is True,
         "behavior_ok": behavioral_verification.get("ok") is True,
         "independent_browser_ok": independent_browser.get("ok") is True,
@@ -3743,12 +4095,12 @@ def finalize_e2e_acceptance(
             "path": independent_observer_verification.get("path"),
             "failures": independent_observer_verification.get("failures"),
         })
+    visual_independence = build_visual_independence_report(evidence)
+    write_json(evidence / "visual-independence-report.json", visual_independence)
+    if visual_independence.get("ok") is not True:
+        failures.append(f"视觉三角独立性验证未通过：{visual_independence.get('failures')}")
     pre_final_context["independent_observer_ok"] = independent_observer_verification.get("ok") is True
-    bundle = build_final_evidence_bundle(project, evidence, direction)
-    write_json(evidence / "final-evidence-bundle.json", bundle)
-    write_pre_final_readiness(project, evidence, failures, pre_final_context)
-    bundle = build_final_evidence_bundle(project, evidence, direction)
-    write_json(evidence / "final-evidence-bundle.json", bundle)
+    pre_final_readiness = write_pre_final_readiness(project, evidence, failures, pre_final_context)
     if failures:
         final_prism = {
             "schema_id": "redcap-e2e-final-prism-review",
@@ -3761,7 +4113,11 @@ def finalize_e2e_acceptance(
         }
         write_json(evidence / "final-prism-review.json", final_prism)
     else:
-        final_prism = run_final_prism_review(project, evidence, direction, bundle)
+        final_prism = run_final_prism_review(project, evidence, direction, bundle, supplemental_evidence={
+            "independent_observer_verification": load_optional_json(evidence / "independent-observer-verification.json"),
+            "visual_independence_report": visual_independence,
+            "pre_final_readiness": pre_final_readiness,
+        })
         write_runner_prism_assistance(evidence, final_prism)
         if final_prism.get("ok") is not True:
             failures.append(f"最终棱镜复核未通过：{final_prism.get('failures')}")
@@ -3778,8 +4134,6 @@ def finalize_e2e_acceptance(
             **pre_final_context,
             "final_prism_ok": final_prism.get("ok") is True,
         })
-        bundle = build_final_evidence_bundle(project, evidence, direction)
-        write_json(evidence / "final-evidence-bundle.json", bundle)
         write_completion_marker(evidence, project, bundle, final_prism)
     return {
         "schema_id": "redcap-e2e-finalization-result",
@@ -3878,6 +4232,12 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("runner-negative-contract-probe 必须由 e2e-runner 生成")
         if runner_negative_probe.get("ok") is not True:
             failures.append("runner-negative-contract-probe 必须证明坏报名数据失败且恢复后通过")
+    runner_character_probe = load_optional_json(evidence / "runner-character-player-contract-probe.json")
+    if runner_character_probe is not None:
+        if runner_character_probe.get("producer") != "e2e-runner":
+            failures.append("runner-character-player-contract-probe 必须由 e2e-runner 生成")
+        if runner_character_probe.get("ok") is not True:
+            failures.append("runner-character-player-contract-probe 必须证明破坏角色玩家关联失败且恢复后通过")
     persona = load_optional_json(evidence / "persona-distillation-decision.json")
     if persona is not None:
         if persona.get("public_write") is not False:
@@ -3919,6 +4279,12 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
                 failures.append("behavioral-browser-verification.visual_independence 必须证明已比较普通截图和行为截图哈希")
             if visual_independence.get("hashes_differ") is not True:
                 failures.append("behavioral-browser-verification.visual_independence 必须证明行为截图不同于普通浏览器截图")
+    visual_report = load_optional_json(evidence / "visual-independence-report.json")
+    if visual_report is not None:
+        if visual_report.get("ok") is not True:
+            failures.append(f"visual-independence-report 必须通过：{visual_report.get('failures')}")
+        if visual_report.get("distinct_screenshot_sha256_count") != visual_report.get("screenshot_count"):
+            failures.append("visual-independence-report 必须证明截图哈希互不相同")
     independent_observer = load_optional_json(evidence / "independent-observer.json")
     if independent_observer is not None:
         verification = verify_independent_observer_output(evidence / "independent-observer.json")
@@ -3933,12 +4299,27 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
         if not isinstance(files, list) or not files:
             failures.append("final-evidence-bundle.files 必须非空")
         else:
+            post_bundle_forbidden = {
+                "independent-observer.json",
+                "independent-observer.png",
+                "independent-observer-verification.json",
+                "observer-request.json",
+                "observer-command.json",
+                "visual-independence-report.json",
+                "pre-final-readiness.json",
+                "final-prism-review.json",
+                "failure-backlog.json",
+                "iteration-verdict.json",
+                "completion-marker.json",
+            }
             for item in files:
                 if not isinstance(item, dict):
                     failures.append("final-evidence-bundle.files 条目必须是对象")
                     continue
                 if item.get("exists") is True and not item.get("sha256"):
                     failures.append(f"final-evidence-bundle 中存在缺少 sha256 的已存在文件：{item.get('path')}")
+                if item.get("path") in post_bundle_forbidden:
+                    failures.append(f"final-evidence-bundle 禁止包含后生成或自引用证据文件：{item.get('path')}")
     final_prism = load_optional_json(evidence / "final-prism-review.json")
     if final_prism is not None:
         if final_prism.get("ok") is not True:
@@ -4527,6 +4908,19 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                     {
                         "id": "self-check-activity",
                         "title": "自检活动",
+                        "players": [
+                            {
+                                "id": "player-1",
+                                "name": "测试玩家"
+                            }
+                        ],
+                        "characters": [
+                            {
+                                "id": "character-1",
+                                "name": "测试角色",
+                                "playerId": "player-1"
+                            }
+                        ],
                         "signupIntent": "需要至少一名报名者",
                         "signups": [
                             {
@@ -4546,6 +4940,11 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 "  console.error('signup-intent-data-contract failed');\n"
                 "  process.exit(2);\n"
                 "}\n"
+                "const playerIds = new Set((activity.players || []).map((player) => player.id));\n"
+                "if (!Array.isArray(activity.characters) || activity.characters.some((character) => !playerIds.has(character.playerId))) {\n"
+                "  console.error('character-player-relation-contract failed');\n"
+                "  process.exit(3);\n"
+                "}\n"
                 "console.log(JSON.stringify({ok: true}));\n",
                 encoding="utf-8",
             )
@@ -4554,6 +4953,11 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append(f"运行器负向契约探针不能处理 data/activities.json：{negative_probe.get('failures')}")
             if negative_probe.get("data_path") != "data/activities.json" or negative_probe.get("list_key") != "activities":
                 failures.append("运行器负向契约探针没有记录真实 activities 数据路径和列表字段")
+            character_probe = run_runner_character_player_contract_probe(project, evidence)
+            if character_probe.get("ok") is not True:
+                failures.append(f"运行器角色玩家负向契约探针不能处理 data/activities.json：{character_probe.get('failures')}")
+            if character_probe.get("data_path") != "data/activities.json" or character_probe.get("list_key") != "activities":
+                failures.append("运行器角色玩家负向契约探针没有记录真实 activities 数据路径和列表字段")
             validate_data_js.unlink()
             (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/missing-validate.js\n```\n", encoding="utf-8")
             detected_argv, detected_source = detect_validation_command(project)
@@ -4638,6 +5042,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("E2E 自检没有覆盖观察者 seal 与非 runner 父进程约束")
             if "runner-negative-contract-probe.json" not in current_source or "empty-signups-and-empty-signupIntent-must-fail" not in current_source:
                 failures.append("E2E 自检没有覆盖运行器坏数据负向契约探针证据")
+            if "runner-character-player-contract-probe.json" not in current_source or "broken-character-player-link-must-fail" not in current_source:
+                failures.append("E2E 自检没有覆盖运行器角色玩家负向契约探针证据")
             if "runner-self-purification-resolution.json" not in current_source or "write_runner_self_purification_resolution" not in current_source:
                 failures.append("E2E 自检没有覆盖运行器自我净化裁决证据")
             if "same_structural_container" not in current_source or "text_distance_is_informational_only" not in current_source:
@@ -4650,12 +5056,16 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("行为级浏览器验证没有固化交互后截图阶段与视觉独立性检查")
             if "visual_independence" not in current_source or "hashes_differ" not in current_source or "browser-inspection.png" not in current_source:
                 failures.append("行为级浏览器验证没有比较普通浏览器截图和行为截图哈希")
+            if "visual-independence-report.json" not in current_source or "build_visual_independence_report" not in current_source:
+                failures.append("E2E 自检没有覆盖视觉三角独立性报告")
+            if "bundle_file_sha256" not in current_source or "matches_expected_file_sha256" not in current_source:
+                failures.append("E2E 自检没有覆盖独立观察者冻结证据包文件哈希核对")
             if "data-redcap-volatile" not in current_source or ".spinner" not in current_source or ".loading" not in current_source:
                 failures.append("行为级浏览器验证没有排除时间戳和加载器等常见噪音节点")
             if "interactive_gate_marker_observed" not in current_source or "actionable_interactive_gate_marker" not in current_source:
                 failures.append("角色交互式门禁证据没有区分观测噪音与行动标记")
-            if current_source.find("write_json(evidence / \"final-evidence-bundle.json\", bundle)") > current_source.find("write_pre_final_readiness(project, evidence, failures, pre_final_context)"):
-                failures.append("pre-final-readiness.json 必须在 final-evidence-bundle.json 存在后生成，避免陈旧失败进入最终棱镜复核")
+            if current_source.count("\n    write_json(evidence / \"final-evidence-bundle.json\", bundle)\n") != 1:
+                failures.append("final-evidence-bundle.json 必须只写入一次，避免观察者核对后再次改写冻结包")
         guard_probe = source_workspace_guard_negative_probe()
         if guard_probe.get("ok") is not True:
             failures.append(f"源工作区保护负向探针失败：{guard_probe.get('failures')}")
