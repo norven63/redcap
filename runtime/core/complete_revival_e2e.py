@@ -2240,26 +2240,102 @@ def run_final_marker_validation(project: pathlib.Path) -> dict[str, Any]:
     return receipt
 
 
-def find_signup_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Path | None, dict[str, Any] | list[Any] | None, str | None, int | None, list[str]]:
-    """Locate the JSON record that should be mutated for signup contract probing."""
-    failures: list[str] = []
+JS_DATA_CANDIDATE_RELATIVE_PATHS = [
+    pathlib.Path("src/data.js"),
+    pathlib.Path("data.js"),
+    pathlib.Path("data/events.js"),
+    pathlib.Path("data/activities.js"),
+    pathlib.Path("src/events.js"),
+    pathlib.Path("src/activities.js"),
+]
+
+
+def structured_data_candidate_paths(project: pathlib.Path) -> list[pathlib.Path]:
     data_dir = project / "data"
     candidates = [
         data_dir / "events.json",
         data_dir / "activities.json",
         *sorted(path for path in data_dir.glob("*.json") if path.name not in {"events.json", "activities.json"}),
+        *[(project / relative) for relative in JS_DATA_CANDIDATE_RELATIVE_PATHS],
     ]
+    result: list[pathlib.Path] = []
     seen: set[pathlib.Path] = set()
-    for data_path in candidates:
-        if data_path in seen:
-            continue
-        seen.add(data_path)
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            result.append(candidate)
+    return result
+
+
+def load_structured_data_payload(project: pathlib.Path, data_path: pathlib.Path, failures: list[str]) -> dict[str, Any] | list[Any] | None:
+    relative = data_path.relative_to(project)
+    if data_path.suffix == ".json":
+        try:
+            return json.loads(data_path.read_text(encoding="utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            failures.append(f"{relative} 无法解析：{type(exc).__name__}: {exc}")
+            return None
+    if data_path.suffix == ".js":
+        script = (
+            "const p = process.argv[1];"
+            "const data = require(p);"
+            "if (data === undefined || typeof data === 'function') {"
+            "  throw new Error('JS data module did not export structured data');"
+            "}"
+            "process.stdout.write(JSON.stringify(data));"
+        )
+        completed = subprocess.run(
+            ["node", "-e", script, str(data_path.resolve())],
+            cwd=str(project),
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if completed.returncode != 0:
+            failures.append(f"{relative} 无法作为 JS 数据模块读取：{(completed.stderr or completed.stdout).strip()}")
+            return None
+        try:
+            payload = json.loads(completed.stdout)
+        except json.JSONDecodeError as exc:
+            failures.append(f"{relative} JS 数据模块输出无法解析：{exc}")
+            return None
+        return payload if isinstance(payload, (dict, list)) else None
+    failures.append(f"{relative} 不是支持的数据文件类型")
+    return None
+
+
+def write_structured_data_probe_payload(data_path: pathlib.Path, payload: dict[str, Any] | list[Any]) -> None:
+    if data_path.suffix == ".json":
+        data_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return
+    if data_path.suffix == ".js":
+        serialized = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+        module_text = (
+            "const data = "
+            + serialized
+            + ";\n\n"
+            + "if (typeof globalThis !== \"undefined\") {\n"
+            + "  globalThis.TRPG_DATA = data;\n"
+            + "}\n"
+            + "if (typeof module !== \"undefined\" && module.exports) {\n"
+            + "  module.exports = data;\n"
+            + "}\n"
+        )
+        data_path.write_text(module_text, encoding="utf-8")
+        return
+    raise ValueError(f"unsupported structured data probe path: {data_path}")
+
+
+def find_signup_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Path | None, dict[str, Any] | list[Any] | None, str | None, int | None, list[str]]:
+    """Locate the structured record that should be mutated for signup contract probing."""
+    failures: list[str] = []
+    for data_path in structured_data_candidate_paths(project):
         if not data_path.exists():
             continue
-        try:
-            payload = json.loads(data_path.read_text(encoding="utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            failures.append(f"{data_path.relative_to(project)} 无法解析：{type(exc).__name__}: {exc}")
+        payload = load_structured_data_payload(project, data_path, failures)
+        if payload is None:
             continue
         list_candidates: list[tuple[str, list[Any]]] = []
         if isinstance(payload, dict):
@@ -2291,7 +2367,7 @@ def find_signup_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Pat
                 record_index = next((index for index in candidate_indexes if index > 0), candidate_indexes[0])
                 return data_path, payload, list_key, record_index, failures
         failures.append(f"{data_path.relative_to(project)} 未发现可变更的活动列表记录")
-    failures.append("未找到包含报名数据或活动列表的 JSON 数据文件")
+    failures.append("未找到包含报名数据或活动列表的 JSON 或 JS 数据文件")
     return None, None, None, None, failures
 
 
@@ -2355,7 +2431,7 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
     negative_receipt: dict[str, Any] | None = None
     restore_receipt: dict[str, Any] | None = None
     try:
-        data_path.write_text(json.dumps(mutated, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        write_structured_data_probe_payload(data_path, mutated)
         negative_run = run_command(argv, cwd=project, timeout_seconds=120)
         negative_receipt = command_receipt(negative_run)
         negative_passed = negative_run.get("exit_code") not in (0, None)
@@ -2407,23 +2483,11 @@ def prefer_deeper_character_player_match(matches: list[CharacterPlayerMatch]) ->
 
 def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Path | None, dict[str, Any] | list[Any] | None, str | None, int | None, int | None, str | None, list[str]]:
     failures: list[str] = []
-    data_dir = project / "data"
-    candidates = [
-        data_dir / "events.json",
-        data_dir / "activities.json",
-        *sorted(path for path in data_dir.glob("*.json") if path.name not in {"events.json", "activities.json"}),
-    ]
-    seen: set[pathlib.Path] = set()
-    for data_path in candidates:
-        if data_path in seen:
-            continue
-        seen.add(data_path)
+    for data_path in structured_data_candidate_paths(project):
         if not data_path.exists():
             continue
-        try:
-            payload = json.loads(data_path.read_text(encoding="utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            failures.append(f"{data_path.relative_to(project)} 无法解析：{type(exc).__name__}: {exc}")
+        payload = load_structured_data_payload(project, data_path, failures)
+        if payload is None:
             continue
         candidate_matches: list[CharacterPlayerMatch] = []
         list_candidates: list[tuple[str, list[Any]]] = []
@@ -2480,7 +2544,7 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
         if candidate_matches:
             return prefer_deeper_character_player_match(candidate_matches)
         failures.append(f"{data_path.relative_to(project)} 未发现可破坏的角色玩家关联")
-    failures.append("未找到包含 characters 与玩家引用或玩家名的 JSON 数据文件")
+    failures.append("未找到包含 characters 与玩家引用或玩家名的 JSON 或 JS 数据文件")
     return None, None, None, None, None, None, failures
 
 
@@ -2551,7 +2615,7 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
         "expected_validation_exit": "non_zero",
     }
     try:
-        data_path.write_text(json.dumps(mutated, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        write_structured_data_probe_payload(data_path, mutated)
         negative_run = run_command(argv, cwd=project, timeout_seconds=120)
         negative_receipt = command_receipt(negative_run)
         negative_passed = negative_run.get("exit_code") not in (0, None)
@@ -5517,6 +5581,61 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("运行器角色玩家负向契约探针没有记录真实 activities 数据路径和列表字段")
             if not isinstance(character_probe.get("probe_depth"), dict) or character_probe["probe_depth"].get("targeted_non_first_event") is not True:
                 failures.append("运行器角色玩家负向契约探针没有优先命中非首条活动记录")
+            (data_dir / "activities.json").unlink()
+            src_dir = project / "src"
+            src_dir.mkdir(exist_ok=True)
+            src_data_js = src_dir / "data.js"
+            js_payload = {
+                "activities": [
+                    {
+                        "id": "self-check-js-activity",
+                        "title": "JS 自检活动",
+                        "players": [{"id": "player-js-1", "name": "JS 测试玩家"}],
+                        "characters": [{"id": "character-js-1", "name": "JS 测试角色", "playerId": "player-js-1"}],
+                        "signupIntent": "JS 活动需要报名者",
+                        "signups": [{"playerName": "JS 测试玩家", "characterName": "JS 测试角色", "status": "confirmed"}],
+                    },
+                    {
+                        "id": "self-check-js-activity-2",
+                        "title": "JS 自检活动二",
+                        "players": [{"id": "player-js-2", "name": "JS 测试玩家二"}],
+                        "characters": [{"id": "character-js-2", "name": "JS 测试角色二", "playerId": "player-js-2"}],
+                        "signupIntent": "JS 第二条活动也需要报名者",
+                        "signups": [{"playerName": "JS 测试玩家二", "characterName": "JS 测试角色二", "status": "confirmed"}],
+                    },
+                ]
+            }
+            write_structured_data_probe_payload(src_data_js, js_payload)
+            validate_data_js.write_text(
+                "const data = require('../src/data.js');\n"
+                "for (const [index, activity] of data.activities.entries()) {\n"
+                "  if (!activity.signupIntent || !Array.isArray(activity.signups) || activity.signups.length === 0) {\n"
+                "    console.error(`signup-intent-data-contract failed at ${index}`);\n"
+                "    process.exit(2);\n"
+                "  }\n"
+                "  const playerIds = new Set((activity.players || []).map((player) => player.id));\n"
+                "  if (!Array.isArray(activity.characters) || activity.characters.some((character) => !playerIds.has(character.playerId))) {\n"
+                "    console.error(`character-player-relation-contract failed at ${index}`);\n"
+                "    process.exit(3);\n"
+                "  }\n"
+                "}\n"
+                "console.log(JSON.stringify({ok: true, source: 'src/data.js'}));\n",
+                encoding="utf-8",
+            )
+            js_negative_probe = run_runner_negative_contract_probe(project, evidence)
+            if js_negative_probe.get("ok") is not True:
+                failures.append(f"运行器报名负向契约探针不能处理 src/data.js：{js_negative_probe.get('failures')}")
+            if js_negative_probe.get("data_path") != "src/data.js" or js_negative_probe.get("list_key") != "activities":
+                failures.append("运行器报名负向契约探针没有记录 JS 数据模块路径和列表字段")
+            if not isinstance(js_negative_probe.get("probe_depth"), dict) or js_negative_probe["probe_depth"].get("targeted_non_first_record") is not True:
+                failures.append("运行器报名负向契约探针没有在 JS 数据模块中优先命中非首条活动记录")
+            js_character_probe = run_runner_character_player_contract_probe(project, evidence)
+            if js_character_probe.get("ok") is not True:
+                failures.append(f"运行器角色玩家负向契约探针不能处理 src/data.js：{js_character_probe.get('failures')}")
+            if js_character_probe.get("data_path") != "src/data.js" or js_character_probe.get("list_key") != "activities":
+                failures.append("运行器角色玩家负向契约探针没有记录 JS 数据模块路径和列表字段")
+            if not isinstance(js_character_probe.get("probe_depth"), dict) or js_character_probe["probe_depth"].get("targeted_non_first_event") is not True:
+                failures.append("运行器角色玩家负向契约探针没有在 JS 数据模块中优先命中非首条活动记录")
             validate_data_js.unlink()
             (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/missing-validate.js\n```\n", encoding="utf-8")
             detected_argv, detected_source = detect_validation_command(project)
