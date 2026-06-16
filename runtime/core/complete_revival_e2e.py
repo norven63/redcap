@@ -2005,7 +2005,7 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
     ]
     project_root_files = {"architecture.md", "risk-register.json"}
     paths = [(project / rel) if rel in project_root_files else (evidence / rel) for rel in fixed]
-    for pattern in ["index.html", "app.js", "styles.css", "src/*.js", "src/*.css", "data/*.json", "scripts/*.js", "scripts/*.mjs"]:
+    for pattern in ["index.html", "app.js", "styles.css", "public/*.html", "public/*.js", "public/*.css", "src/*.js", "src/*.css", "data/*.json", "scripts/*.js", "scripts/*.mjs"]:
         paths.extend(sorted(project.glob(pattern)))
     for pattern in ["role-gate-clearance/*.json", "role-artifacts/*.json", "role-runs/*.json", "role-messages/*.txt", "role-raw/*.txt"]:
         paths.extend(sorted(evidence.glob(pattern)))
@@ -2324,24 +2324,26 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
             for event_index, event in enumerate(records):
                 if not isinstance(event, dict):
                     continue
-                players = event.get("players")
                 characters = event.get("characters")
-                if not isinstance(players, list) or not isinstance(characters, list):
+                if not isinstance(characters, list):
                     continue
+                players = event.get("players")
                 player_ids = {
                     str(player.get("id"))
                     for player in players
                     if isinstance(player, dict) and player.get("id")
-                }
+                } if isinstance(players, list) else set()
                 for character_index, character in enumerate(characters):
                     if not isinstance(character, dict):
                         continue
-                    for ref_key in ["playerId", "player_id", "player"]:
+                    for ref_key in ["playerId", "player_id", "player", "playerName", "player_name"]:
                         ref = character.get(ref_key)
-                        if ref and str(ref) in player_ids:
+                        if player_ids and ref and str(ref) in player_ids:
+                            return data_path, payload, list_key, event_index, character_index, ref_key, failures
+                        if not player_ids and ref_key in {"player", "playerName", "player_name"} and isinstance(ref, str) and ref.strip():
                             return data_path, payload, list_key, event_index, character_index, ref_key, failures
         failures.append(f"{data_path.relative_to(project)} 未发现可破坏的角色玩家关联")
-    failures.append("未找到包含 players 与 characters 且存在真实关联的 JSON 数据文件")
+    failures.append("未找到包含 characters 与玩家引用或玩家名的 JSON 数据文件")
     return None, None, None, None, None, None, failures
 
 
@@ -2384,7 +2386,8 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
         result["failures"].append(f"{data_path.relative_to(project)} 中 characters[{character_index}] 不是可变更对象")
         return result
     original_ref = characters[character_index].get(ref_key)
-    characters[character_index][ref_key] = "__redcap_missing_player__"
+    broken_ref = "" if ref_key in {"player", "playerName", "player_name"} else "__redcap_missing_player__"
+    characters[character_index][ref_key] = broken_ref
     result["mutation"] = {
         "event_id": event.get("id"),
         "character_name": characters[character_index].get("name"),
@@ -2394,6 +2397,7 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
         "character_index": character_index,
         "changed_field": ref_key,
         "original_ref": original_ref,
+        "broken_ref": broken_ref,
         "expected_validation_exit": "non_zero",
     }
     try:
@@ -2434,8 +2438,24 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
     return result
 
 
+def detect_browser_entrypoint(project: pathlib.Path) -> tuple[pathlib.Path | None, str | None, list[str]]:
+    candidates = [
+        "index.html",
+        "public/index.html",
+        "dist/index.html",
+        "build/index.html",
+    ]
+    checked: list[str] = []
+    for rel in candidates:
+        checked.append(rel)
+        path = project / rel
+        if path.is_file():
+            return path, rel, checked
+    return None, None, checked
+
+
 def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
-    target = project / "index.html"
+    target, target_rel, checked_entrypoints = detect_browser_entrypoint(project)
     screenshot = evidence / "browser-inspection.png"
     server_process: subprocess.Popen[str] | None = None
     server_stdout = ""
@@ -2444,8 +2464,10 @@ def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dic
         "schema_id": "redcap-e2e-browser-inspection",
         "producer": "e2e-runner",
         "created_at": iso_now(),
-        "target": str(target),
-        "file_url": target.as_uri() if target.exists() else None,
+        "target": str(target) if target is not None else None,
+        "target_relative_path": target_rel,
+        "checked_entrypoints": checked_entrypoints,
+        "file_url": target.as_uri() if target is not None and target.exists() else None,
         "url": None,
         "launch_mode": "local-http-server",
         "screenshot": "browser-inspection.png",
@@ -2453,8 +2475,8 @@ def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dic
         "checks": [],
         "failures": [],
     }
-    if not target.exists():
-        result["failures"].append("缺少 index.html，无法执行浏览器检查")
+    if target is None or target_rel is None:
+        result["failures"].append(f"缺少浏览器入口文件，已检查：{checked_entrypoints}")
         return result
     try:
         from playwright.sync_api import sync_playwright
@@ -2464,7 +2486,7 @@ def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dic
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
         port = int(sock.getsockname()[1])
-    url = f"http://127.0.0.1:{port}/index.html"
+    url = f"http://127.0.0.1:{port}/{target_rel}"
     server_argv = ["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"]
     server_ready = False
     server_error = ""
@@ -2603,20 +2625,22 @@ def find_character_player_probe(project: pathlib.Path) -> dict[str, Any] | None:
             for event in events:
                 if not isinstance(event, dict):
                     continue
-                players = event.get("players")
                 characters = event.get("characters")
-                if not isinstance(players, list) or not isinstance(characters, list):
+                if not isinstance(characters, list):
                     continue
+                players = event.get("players")
                 player_by_id = {
                     str(player.get("id")): str(player.get("name"))
                     for player in players
                     if isinstance(player, dict) and player.get("id") and player.get("name")
-                }
+                } if isinstance(players, list) else {}
                 for character in characters:
                     if not isinstance(character, dict):
                         continue
                     character_name = str(character.get("name") or "")
                     player_name = player_by_id.get(str(character.get("playerId") or character.get("player_id") or ""))
+                    if not player_name:
+                        player_name = str(character.get("player") or character.get("playerName") or character.get("player_name") or "")
                     if character_name and player_name:
                         return {
                             "data_file": data_path.relative_to(project).as_posix(),
@@ -2707,15 +2731,17 @@ def browser_observable_snapshot(page: Any) -> dict[str, Any]:
 
 
 def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
-    target = project / "index.html"
+    target, target_rel, checked_entrypoints = detect_browser_entrypoint(project)
     screenshot = evidence / "behavioral-browser-verification.png"
     server_process: subprocess.Popen[str] | None = None
     result: dict[str, Any] = {
         "schema_id": "redcap-e2e-behavioral-browser-verification",
         "producer": "e2e-runner",
         "created_at": iso_now(),
-        "target": str(target),
-        "file_url": target.as_uri() if target.exists() else None,
+        "target": str(target) if target is not None else None,
+        "target_relative_path": target_rel,
+        "checked_entrypoints": checked_entrypoints,
+        "file_url": target.as_uri() if target is not None and target.exists() else None,
         "url": None,
         "launch_mode": "local-http-server",
         "screenshot": "behavioral-browser-verification.png",
@@ -2723,8 +2749,8 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
         "failures": [],
         "ok": False,
     }
-    if not target.exists():
-        result["failures"].append("缺少 index.html，无法执行行为级浏览器验证")
+    if target is None or target_rel is None:
+        result["failures"].append(f"缺少浏览器入口文件，已检查：{checked_entrypoints}")
         return result
     try:
         from playwright.sync_api import sync_playwright
@@ -2734,7 +2760,7 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
         port = int(sock.getsockname()[1])
-    url = f"http://127.0.0.1:{port}/index.html"
+    url = f"http://127.0.0.1:{port}/{target_rel}"
     server_argv = ["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"]
     server_ready = False
     server_error = ""
@@ -3048,7 +3074,15 @@ import urllib.request
 
 project = pathlib.Path(sys.argv[1])
 evidence = pathlib.Path(sys.argv[2])
-target = project / "index.html"
+checked_entrypoints = ["index.html", "public/index.html", "dist/index.html", "build/index.html"]
+target = None
+target_rel = None
+for candidate in checked_entrypoints:
+    candidate_path = project / candidate
+    if candidate_path.is_file():
+        target = candidate_path
+        target_rel = candidate
+        break
 screenshot = evidence / "independent-browser-verification.png"
 viewport = {"width": 1176, "height": 820}
 def sha256_file(path):
@@ -3056,14 +3090,16 @@ def sha256_file(path):
 result = {
     "schema_id": "redcap-e2e-independent-browser-verification",
     "producer": "e2e-independent-browser-process",
-    "target": str(target),
+    "target": str(target) if target is not None else None,
+    "target_relative_path": target_rel,
+    "checked_entrypoints": checked_entrypoints,
     "ok": False,
     "checks": [],
     "failures": [],
     "screenshot": "independent-browser-verification.png",
 }
-if not target.exists():
-    result["failures"].append("缺少 index.html")
+if target is None or target_rel is None:
+    result["failures"].append(f"缺少浏览器入口文件，已检查：{checked_entrypoints}")
     print(json.dumps(result, ensure_ascii=False))
     sys.exit(0)
 try:
@@ -3075,7 +3111,7 @@ except Exception as exc:
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
     sock.bind(("127.0.0.1", 0))
     port = int(sock.getsockname()[1])
-url = f"http://127.0.0.1:{port}/index.html"
+url = f"http://127.0.0.1:{port}/{target_rel}"
 server = subprocess.Popen(["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"], cwd=str(project), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
 try:
     ready = False
@@ -3562,7 +3598,8 @@ def criterion_pass(criterion: str, project: pathlib.Path, evidence: pathlib.Path
         manifest = project_deliverable_manifest(project)
         return manifest.get("count", 0) > 0, f"deliverable_count={manifest.get('count', 0)}"
     if "入口说明" in criterion:
-        return (project / "README.md").exists() or (project / "index.html").exists(), "README.md 或 index.html 存在"
+        entrypoint, entrypoint_rel, _ = detect_browser_entrypoint(project)
+        return (project / "README.md").exists() or entrypoint is not None, f"README.md 或浏览器入口存在：{entrypoint_rel}"
     if "architecture.md" in criterion:
         return (project / "architecture.md").exists(), "project-root architecture.md"
     if "实现日志" in criterion or "测试结果" in criterion or "验收摘要" in criterion:

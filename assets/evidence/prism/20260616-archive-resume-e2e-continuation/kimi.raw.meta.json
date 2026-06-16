@@ -1,0 +1,30 @@
+{
+  "schema_id": "prism-provider-raw-metadata",
+  "provider": "kimi",
+  "raw_kind": "provider-output",
+  "raw_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260616-archive-resume-e2e-continuation/kimi.raw.json",
+  "raw_size_bytes": 8385,
+  "raw_sha256": "891b1bf3f6d6d8c539873f9ba6cad302c22ad2699cbd5e8db015d4ff321a0bcc",
+  "exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 240.0,
+  "total_timeout_seconds": 300.0,
+  "task_total_timeout_seconds": 600.0,
+  "task_elapsed_timeout_seconds": 12.387,
+  "task_remaining_timeout_seconds": 587.613,
+  "max_retries": 5,
+  "attempts_count": 1,
+  "attempts": [
+    {
+      "attempt": 1,
+      "exit_code": 0,
+      "timed_out": false,
+      "timeout_scope": null,
+      "stdout_bytes": 3547,
+      "stderr_bytes": 0,
+      "captured_session_handle": null,
+      "recovery": null
+    }
+  ],
+  "review_path": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260616-archive-resume-e2e-continuation/kimi.review.json"
+}

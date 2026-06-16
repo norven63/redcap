@@ -23,6 +23,7 @@ from typing import Any
 
 
 OBSERVER_BROWSER_VIEWPORT = {"width": 1032, "height": 760}
+ENTRYPOINT_CANDIDATES = ["index.html", "public/index.html", "dist/index.html", "build/index.html"]
 
 
 def iso_now() -> str:
@@ -145,9 +146,13 @@ def inspect_deliverables(project: pathlib.Path, bundle: dict[str, Any]) -> dict[
         "index.html",
         "app.js",
         "styles.css",
+        "public/index.html",
+        "public/app.js",
+        "public/styles.css",
         "architecture.md",
         "risk-register.json",
         "data/events.json",
+        "scripts/validate.mjs",
         "scripts/validate-data.mjs",
         "scripts/validate-data.js",
     ]
@@ -171,6 +176,16 @@ def inspect_deliverables(project: pathlib.Path, bundle: dict[str, Any]) -> dict[
             failures.append(f"final-evidence-bundle 声称存在但观察者未找到：{rel}")
         records.append(record)
     return {"files": records, "failures": failures}
+
+
+def detect_browser_entrypoint(project: pathlib.Path) -> tuple[pathlib.Path | None, str | None, list[str]]:
+    checked: list[str] = []
+    for rel in ENTRYPOINT_CANDIDATES:
+        checked.append(rel)
+        path = project / rel
+        if path.is_file():
+            return path, rel, checked
+    return None, None, checked
 
 
 def dom_summary(page: Any) -> dict[str, Any]:
@@ -208,16 +223,18 @@ def dom_summary(page: Any) -> dict[str, Any]:
 
 
 def run_browser_observation(project: pathlib.Path, output_png: pathlib.Path) -> dict[str, Any]:
-    target = project / "index.html"
+    target, target_rel, checked_entrypoints = detect_browser_entrypoint(project)
     result: dict[str, Any] = {
-        "target": str(target),
+        "target": str(target) if target is not None else None,
+        "target_relative_path": target_rel,
+        "checked_entrypoints": checked_entrypoints,
         "ok": False,
         "checks": [],
         "failures": [],
         "screenshot": output_png.name,
     }
-    if not target.exists():
-        result["failures"].append("缺少 index.html")
+    if target is None or target_rel is None:
+        result["failures"].append(f"缺少浏览器入口文件，已检查：{checked_entrypoints}")
         return result
     try:
         from playwright.sync_api import sync_playwright
@@ -227,7 +244,7 @@ def run_browser_observation(project: pathlib.Path, output_png: pathlib.Path) -> 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
         port = int(sock.getsockname()[1])
-    url = f"http://127.0.0.1:{port}/index.html"
+    url = f"http://127.0.0.1:{port}/{target_rel}"
     server = subprocess.Popen(
         ["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"],
         cwd=str(project),
