@@ -2034,6 +2034,7 @@ def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, d
         "runner-negative-contract-probe.json",
         "runner-character-player-contract-probe.json",
         "runner-self-purification-resolution.json",
+        "package-prism-check.json",
         "final-runner-test-results.json",
         "browser-inspection.json",
         "behavioral-browser-verification.json",
@@ -3965,6 +3966,21 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
                 "kind": "pre-final-readiness",
                 "reference": "pre-final-readiness.json",
                 "summary": supplemental_evidence.get("pre_final_readiness"),
+            },
+            {
+                "kind": "failure-backlog-full",
+                "reference": "failure-backlog.json",
+                "summary": supplemental_evidence.get("failure_backlog"),
+            },
+            {
+                "kind": "independent-observer-full",
+                "reference": "independent-observer.json",
+                "summary": supplemental_evidence.get("independent_observer"),
+            },
+            {
+                "kind": "package-prism-check-full",
+                "reference": "package-prism-check.json",
+                "summary": supplemental_evidence.get("package_prism_check"),
             }
         ],
         "review_mode": "completion_review",
@@ -4203,6 +4219,9 @@ def finalize_e2e_acceptance(
             "independent_observer_verification": load_optional_json(evidence / "independent-observer-verification.json"),
             "visual_independence_report": visual_independence,
             "pre_final_readiness": pre_final_readiness,
+            "failure_backlog": load_optional_json(evidence / "failure-backlog.json"),
+            "independent_observer": load_optional_json(evidence / "independent-observer.json"),
+            "package_prism_check": load_optional_json(evidence / "package-prism-check.json"),
         })
         write_runner_prism_assistance(evidence, final_prism)
         if final_prism.get("ok") is not True:
@@ -5152,6 +5171,10 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("行为级浏览器关系验证没有升级为 DOM 结构级探针")
             if "pending_final_evidence" not in current_source or "completion-marker.json\", \"final-prism-review.json\", \"iteration-verdict.json" not in current_source:
                 failures.append("pre-final-readiness 没有把最终文件移出已检查证据清单")
+            if "failure-backlog-full" not in current_source or "independent-observer-full" not in current_source or "package-prism-check-full" not in current_source:
+                failures.append("最终棱镜复核请求没有包含 failure-backlog、independent-observer 和 package-prism-check 的完整证据项")
+            if "\"failure_backlog\": load_optional_json" not in current_source or "\"independent_observer\": load_optional_json" not in current_source or "\"package_prism_check\": load_optional_json" not in current_source:
+                failures.append("最终棱镜复核没有从证据目录读取完整关键 JSON 后再提交给评审方")
             if "text_hash" not in current_source or "dom_summary_hash" not in current_source or "observable_criteria" not in current_source:
                 failures.append("行为级浏览器验证没有使用文本哈希和稳定 DOM 摘要哈希作为可度量交互标准")
             if "screenshot_phase" not in current_source or "after_interaction" not in current_source or "behavioral_visual_independence" not in current_source:
