@@ -69,6 +69,7 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "persona-distillation-decision.json",
     "test-results.json",
     "negative-probes.json",
+    "runner-negative-contract-probe.json",
     "package-prism-check.json",
     "final-runner-test-results.json",
     "browser-inspection.json",
@@ -1641,6 +1642,14 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "probes": [],
         "passed": "<boolean>"
     })
+    write_json(evidence / "runner-negative-contract-probe-template.json", {
+        "schema_id": "redcap-e2e-runner-negative-contract-probe",
+        "producer": "e2e-runner",
+        "target_contract": "signup-intent-data-contract",
+        "probe_id": "empty-signups-and-empty-signupIntent-must-fail",
+        "ok": "<boolean>",
+        "failure_policy": "blocking"
+    })
     write_json(evidence / "package-prism-check-template.json", {
         "schema_id": "redcap-e2e-package-prism-check",
         "producer": "e2e-runner",
@@ -1875,6 +1884,7 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
         "persona-distillation-decision.json",
         "test-results.json",
         "negative-probes.json",
+        "runner-negative-contract-probe.json",
         "package-prism-check.json",
         "final-runner-test-results.json",
         "browser-inspection.json",
@@ -1882,6 +1892,10 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
         "role-execution-risk.json",
         "pre-final-readiness.json",
         "final-prism-review.json",
+        "independent-browser-verification.json",
+        "browser-inspection.png",
+        "behavioral-browser-verification.png",
+        "independent-browser-verification.png",
         "failure-backlog.json",
         "iteration-verdict.json",
         "loom-role-session-manifest-pre-review.json",
@@ -1907,6 +1921,20 @@ def final_evidence_paths(project: pathlib.Path, evidence: pathlib.Path) -> list[
 
 
 def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, direction: str) -> dict[str, Any]:
+    full_json_evidence = {
+        "requirements.json",
+        "acceptance-criteria.json",
+        "test-results.json",
+        "negative-probes.json",
+        "runner-negative-contract-probe.json",
+        "final-runner-test-results.json",
+        "browser-inspection.json",
+        "behavioral-browser-verification.json",
+        "independent-browser-verification.json",
+        "pre-final-readiness.json",
+        "review-verdict.json",
+        "prism-assisted-review.json",
+    }
     files: list[dict[str, Any]] = []
     for path in final_evidence_paths(project, evidence):
         try:
@@ -1923,6 +1951,10 @@ def build_final_evidence_bundle(project: pathlib.Path, evidence: pathlib.Path, d
                 "sha256": sha256_file(path),
                 "excerpt": read_text_excerpt(path),
             })
+            if rel in full_json_evidence and path.stat().st_size <= 80_000:
+                payload = load_optional_json(path)
+                if payload is not None:
+                    record["full_json"] = payload
         files.append(record)
     role_run_summary: list[dict[str, Any]] = []
     for path in sorted((evidence / "role-runs").glob("*.json")):
@@ -2014,6 +2046,89 @@ def run_final_runner_tests(project: pathlib.Path) -> dict[str, Any]:
         "failures": [] if result["ok"] else ["运行器重跑验证命令失败"],
     })
     return receipt
+
+
+def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
+    """Prove the local validation command rejects malformed signup data."""
+    argv, source = detect_validation_command(project)
+    data_path = project / "data" / "events.json"
+    result: dict[str, Any] = {
+        "schema_id": "redcap-e2e-runner-negative-contract-probe",
+        "producer": "e2e-runner",
+        "created_at": iso_now(),
+        "target_contract": "signup-intent-data-contract",
+        "probe_id": "empty-signups-and-empty-signupIntent-must-fail",
+        "detected_command": argv,
+        "command_source": source,
+        "data_path": "data/events.json",
+        "ok": False,
+        "checks": [],
+        "failures": [],
+    }
+    if argv is None:
+        result["failures"].append("无法发现验证命令，不能执行运行器负向契约探针")
+        return result
+    if not data_path.exists():
+        result["failures"].append("缺少 data/events.json，不能构造坏数据探针")
+        return result
+    original_bytes = data_path.read_bytes()
+    try:
+        data = json.loads(original_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        result["failures"].append(f"data/events.json 无法解析，不能构造坏数据探针：{type(exc).__name__}: {exc}")
+        return result
+    events = data.get("events") if isinstance(data, dict) else None
+    if not isinstance(events, list) or not events or not isinstance(events[0], dict):
+        result["failures"].append("data/events.json 缺少可变更的 events[0] 对象")
+        return result
+    mutated = json.loads(json.dumps(data, ensure_ascii=False))
+    mutated_event = mutated["events"][0]
+    mutated_event["signups"] = []
+    mutated_event["signupIntent"] = ""
+    mutation_summary = {
+        "event_id": mutated_event.get("id"),
+        "changed_fields": ["signups", "signupIntent"],
+        "expected_validation_exit": "non_zero",
+    }
+    result["mutation"] = mutation_summary
+    negative_receipt: dict[str, Any] | None = None
+    restore_receipt: dict[str, Any] | None = None
+    try:
+        data_path.write_text(json.dumps(mutated, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        negative_run = run_command(argv, cwd=project, timeout_seconds=120)
+        negative_receipt = command_receipt(negative_run)
+        negative_passed = negative_run.get("exit_code") not in (0, None)
+        result["checks"].append({
+            "name": "malformed_signup_data_rejected",
+            "passed": negative_passed,
+            "evidence": {
+                "exit_code": negative_run.get("exit_code"),
+                "stdout_tail": negative_receipt.get("stdout_tail"),
+                "stderr_tail": negative_receipt.get("stderr_tail"),
+            },
+        })
+    finally:
+        data_path.write_bytes(original_bytes)
+    restore_run = run_command(argv, cwd=project, timeout_seconds=120)
+    restore_receipt = command_receipt(restore_run)
+    restore_passed = restore_run.get("ok") is True
+    result["checks"].append({
+        "name": "original_data_restored_and_validation_passes",
+        "passed": restore_passed,
+        "evidence": {
+            "exit_code": restore_run.get("exit_code"),
+            "stdout_tail": restore_receipt.get("stdout_tail"),
+            "stderr_tail": restore_receipt.get("stderr_tail"),
+        },
+    })
+    result["negative_command"] = negative_receipt
+    result["restore_command"] = restore_receipt
+    result["restored_sha256"] = sha256_file(data_path)
+    result["original_sha256"] = hashlib.sha256(original_bytes).hexdigest()
+    result["ok"] = all(item.get("passed") is True for item in result["checks"])
+    if not result["ok"]:
+        result["failures"].append("运行器负向契约探针未证明坏数据失败且原数据恢复后通过")
+    return result
 
 
 def run_browser_inspection(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
@@ -2706,6 +2821,11 @@ def criterion_pass(criterion: str, project: pathlib.Path, evidence: pathlib.Path
     if "默认实现不得依赖" in criterion or "外部依赖" in criterion:
         probes = load_optional_json(evidence / "negative-probes.json") or {}
         return probes.get("passed") is True, "negative-probes.json passed"
+    if "signup-intent-data-contract" in criterion:
+        probes = load_optional_json(evidence / "negative-probes.json") or {}
+        runner_probe = load_optional_json(evidence / "runner-negative-contract-probe.json") or {}
+        passed = probes.get("passed") is True and runner_probe.get("ok") is True
+        return passed, "negative-probes.json and runner-negative-contract-probe.json"
     if "self-purification-candidates.json" in criterion or "persona-distillation-decision.json" in criterion:
         return (evidence / "self-purification-candidates.json").exists() and (evidence / "persona-distillation-decision.json").exists(), "self-purification and persona boundary evidence"
     if "package-prism-check.json" in criterion:
@@ -2894,6 +3014,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "An external project was created outside the RedCap source workspace.",
             "Five Loom roles ran as independent Codex CLI sessions with project-level Hook evidence.",
             "The runner independently reran project validation and bundled evidence hashes before deciding completion.",
+            "The runner performed a mutation-based negative contract probe: it temporarily wrote bad signup data, required the validation command to fail, restored the original data, and required validation to pass again.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
             "The runner performed a separate behavioral browser verification with a real click interaction and, when project data exposed player-character relationships, checked that the relation rendered in the UI.",
             "The runner also launched a separate Python process for independent browser verification and wrote independent-browser-verification.json before final provider review.",
@@ -2929,6 +3050,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
                 "browser-inspection.json",
                 "behavioral-browser-verification.json",
                 "independent-browser-verification.json",
+                "runner-negative-contract-probe.json",
                 "two-provider final Prism review",
             ],
         },
@@ -3046,6 +3168,8 @@ def finalize_e2e_acceptance(
         })
     runner_tests = run_final_runner_tests(project)
     write_json(evidence / "final-runner-test-results.json", runner_tests)
+    runner_negative_probe = run_runner_negative_contract_probe(project, evidence)
+    write_json(evidence / "runner-negative-contract-probe.json", runner_negative_probe)
     browser_inspection = run_browser_inspection(project, evidence)
     write_json(evidence / "browser-inspection.json", browser_inspection)
     behavioral_verification = run_behavioral_browser_verification(project, evidence)
@@ -3062,6 +3186,8 @@ def finalize_e2e_acceptance(
         failures.append("安装包内棱镜自检未通过")
     if runner_tests.get("ok") is not True:
         failures.append("运行器独立重跑项目验证未通过")
+    if runner_negative_probe.get("ok") is not True:
+        failures.append("运行器负向领域契约探针未通过")
     if browser_inspection.get("ok") is not True:
         failures.append("运行器浏览器检查未通过")
     if behavioral_verification.get("ok") is not True:
@@ -3079,6 +3205,7 @@ def finalize_e2e_acceptance(
         "role_ok": role_result.get("ok") is True,
         "package_prism_ok": package_prism.get("ok") is True,
         "runner_tests_ok": runner_tests.get("ok") is True,
+        "runner_negative_probe_ok": runner_negative_probe.get("ok") is True,
         "browser_ok": browser_inspection.get("ok") is True,
         "behavior_ok": behavioral_verification.get("ok") is True,
         "independent_browser_ok": independent_browser.get("ok") is True,
@@ -3204,6 +3331,12 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
             failures.append("negative-probes.json status=completed 时 passed 必须为 true")
         if negative_probes.get("status") == "failed" and negative_probes.get("passed") is not False:
             failures.append("negative-probes.json status=failed 时 passed 必须为 false")
+    runner_negative_probe = load_optional_json(evidence / "runner-negative-contract-probe.json")
+    if runner_negative_probe is not None:
+        if runner_negative_probe.get("producer") != "e2e-runner":
+            failures.append("runner-negative-contract-probe 必须由 e2e-runner 生成")
+        if runner_negative_probe.get("ok") is not True:
+            failures.append("runner-negative-contract-probe 必须证明坏报名数据失败且恢复后通过")
     persona = load_optional_json(evidence / "persona-distillation-decision.json")
     if persona is not None:
         if persona.get("public_write") is not False:
@@ -3771,6 +3904,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("E2E 自检没有覆盖行为级浏览器验证证据")
             if "independent-browser-verification.json" not in current_source or "e2e-independent-browser-process" not in current_source:
                 failures.append("E2E 自检没有覆盖独立子进程浏览器复核证据")
+            if "runner-negative-contract-probe.json" not in current_source or "empty-signups-and-empty-signupIntent-must-fail" not in current_source:
+                failures.append("E2E 自检没有覆盖运行器坏数据负向契约探针证据")
             if "text_hash" not in current_source or "dom_summary_hash" not in current_source or "observable_criteria" not in current_source:
                 failures.append("行为级浏览器验证没有使用文本哈希和稳定 DOM 摘要哈希作为可度量交互标准")
             if "data-redcap-volatile" not in current_source or ".spinner" not in current_source or ".loading" not in current_source:

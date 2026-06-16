@@ -139,7 +139,8 @@
       "owner": "codex_cli_implementer",
       "required_outputs": [
         "test-results.json",
-        "negative-probes.json"
+        "negative-probes.json",
+        "runner-negative-contract-probe.json"
       ],
       "exit_rule": "正向检查通过；负向或静态探针必须验证关键领域数据不缺失，例如报名意向必须有非空 signups 数组或非空 signupIntent 字段。"
     },
@@ -197,6 +198,7 @@
       "persona-distillation-decision-template.json",
       "test-results-template.json",
       "negative-probes-template.json",
+      "runner-negative-contract-probe-template.json",
       "package-prism-check-template.json",
       "final-runner-test-results-template.json",
       "browser-inspection-template.json",
@@ -226,6 +228,7 @@
       "persona-distillation-decision.json",
       "test-results.json",
       "negative-probes.json",
+      "runner-negative-contract-probe.json",
       "package-prism-check.json",
       "final-runner-test-results.json",
       "browser-inspection.json",
@@ -253,6 +256,7 @@
       "persona-distillation-decision.json",
       "test-results.json",
       "negative-probes.json",
+      "runner-negative-contract-probe.json",
       "package-prism-check.json",
       "final-runner-test-results.json",
       "browser-inspection.json",
@@ -280,6 +284,7 @@
       "默认实现和验证方案必须优先无外部依赖、无需联网安装；除非需求明确要求，不得把 Vite、Playwright 或其他重型依赖作为默认路径",
       "任务后必须记录自我净化候选或无候选理由",
       "test-results.json 和 negative-probes.json 必须由 tester 角色产出，验证脚本不得覆盖角色证据",
+      "E2E 运行器必须执行 runner-negative-contract-probe.json，临时构造 signups=[] 且 signupIntent 为空的坏数据，证明本地验证命令会失败，再恢复原数据并证明验证通过",
       "Cap 人格沉淀必须记录私有边界决策，禁止写入公共知识库",
       "安装包内棱镜自检必须通过，失败不得作为 non_blocking 关闭",
       "E2E 运行器必须独立重跑项目验证，不能只采信 tester 或 developer 自报",
