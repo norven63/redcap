@@ -42,6 +42,11 @@ ROLE_TIMEOUT_SECONDS = {
 CODEX_ROLE_MODEL = os.environ.get("REDCAP_E2E_CODEX_ROLE_MODEL", "gpt-5.5")
 CODEX_ROLE_REASONING_EFFORT = os.environ.get("REDCAP_E2E_CODEX_ROLE_REASONING_EFFORT", "medium")
 CODEX_ROLE_DISABLE_PLUGINS = os.environ.get("REDCAP_E2E_CODEX_ROLE_DISABLE_PLUGINS", "1") != "0"
+CODEX_ROLE_EXTRA_DISABLED_FEATURES = [
+    item.strip()
+    for item in os.environ.get("REDCAP_E2E_CODEX_ROLE_EXTRA_DISABLED_FEATURES", "apps,general_analytics").split(",")
+    if item.strip()
+]
 CODEX_ROLE_PRESERVE_USER_CONFIG = True
 CODEX_ROLE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CODEX_ROLE_MAX_ATTEMPTS", "3"))
 CODEX_ROLE_RETRYABLE_STDERR_MARKERS = [
@@ -62,7 +67,7 @@ CODEX_ROLE_INTERACTIVE_GATE_MARKERS = [
     "docs/superpowers/specs",
     "Please review it before proceeding",
 ]
-CARRIER_PROBE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CARRIER_PROBE_MAX_ATTEMPTS", "2"))
+CARRIER_PROBE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CARRIER_PROBE_MAX_ATTEMPTS", "3"))
 MEANINGFUL_E2E_REQUIRED_FILES = [
     "loom-role-session-manifest.json",
     "loom-role-session-manifest-pre-review.json",
@@ -1115,6 +1120,8 @@ def build_codex_role_argv(project: pathlib.Path, role: str, message_path: pathli
     ]
     if CODEX_ROLE_DISABLE_PLUGINS:
         argv.extend(["--disable", "plugins"])
+    for feature in CODEX_ROLE_EXTRA_DISABLED_FEATURES:
+        argv.extend(["--disable", feature])
     for state_dir in provider_state_dirs_for_role(role):
         argv.extend(["--add-dir", str(state_dir)])
     argv.extend([
@@ -1421,6 +1428,7 @@ def run_loom_role_pipeline(
             "codex_model": CODEX_ROLE_MODEL,
             "codex_reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
             "codex_plugins_disabled": CODEX_ROLE_DISABLE_PLUGINS,
+            "codex_extra_disabled_features": CODEX_ROLE_EXTRA_DISABLED_FEATURES,
             "codex_user_config_preserved": CODEX_ROLE_PRESERVE_USER_CONFIG,
             "attempt_count": len(attempts),
             "max_attempts": max(1, CODEX_ROLE_MAX_ATTEMPTS),
@@ -2893,6 +2901,7 @@ def write_role_execution_risk(evidence: pathlib.Path) -> dict[str, Any]:
         "role_model": CODEX_ROLE_MODEL,
         "role_reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
         "disable_plugins": CODEX_ROLE_DISABLE_PLUGINS,
+        "extra_disabled_features": CODEX_ROLE_EXTRA_DISABLED_FEATURES,
         "preserve_user_config": CODEX_ROLE_PRESERVE_USER_CONFIG,
         "interactive_gate_markers": CODEX_ROLE_INTERACTIVE_GATE_MARKERS,
         "risk": "Loom 角色由独立 Codex CLI 自动执行；角色质量风险由中等推理预算、结构化交接、运行器客观检查、浏览器检查和最终双 provider 棱镜复核共同约束。",
@@ -3048,6 +3057,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any]) -> dict[str, Any
             "model": CODEX_ROLE_MODEL,
             "reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
             "disable_plugins": CODEX_ROLE_DISABLE_PLUGINS,
+            "extra_disabled_features": CODEX_ROLE_EXTRA_DISABLED_FEATURES,
             "preserve_user_config": CODEX_ROLE_PRESERVE_USER_CONFIG,
             "interactive_gate_markers": CODEX_ROLE_INTERACTIVE_GATE_MARKERS,
             "quality_controls": [
@@ -3505,6 +3515,8 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         ]
         if CODEX_ROLE_DISABLE_PLUGINS:
             argv.extend(["--disable", "plugins"])
+        for feature in CODEX_ROLE_EXTRA_DISABLED_FEATURES:
+            argv.extend(["--disable", feature])
         argv.extend([
             "--output-last-message",
             str(last_message),
@@ -3539,6 +3551,7 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         "codex_model": CODEX_ROLE_MODEL,
         "codex_reasoning_effort": CODEX_ROLE_REASONING_EFFORT,
         "codex_plugins_disabled": CODEX_ROLE_DISABLE_PLUGINS,
+        "codex_extra_disabled_features": CODEX_ROLE_EXTRA_DISABLED_FEATURES,
         "codex_user_config_preserved": CODEX_ROLE_PRESERVE_USER_CONFIG,
         "last_message": str(last_message),
         "failures": [],
@@ -3786,6 +3799,12 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 disable_index = developer_argv.index("--disable") if "--disable" in developer_argv else -1
                 if disable_index < 0 or developer_argv[disable_index:disable_index + 2] != ["--disable", "plugins"]:
                     failures.append("developer Codex CLI argv 没有禁用 plugins")
+            for required_feature in ["apps", "general_analytics"]:
+                if ["--disable", required_feature] not in [
+                    developer_argv[index:index + 2]
+                    for index in range(0, len(developer_argv) - 1)
+                ]:
+                    failures.append(f"developer Codex CLI argv 没有禁用 {required_feature}")
             if ".redcap/evidence/e2e/requirements.json" not in developer_prompt:
                 failures.append("developer 提示词没有给出 requirements.json 的证据目录实际路径")
             if ".redcap/evidence/e2e/acceptance-criteria.json" not in developer_prompt:
