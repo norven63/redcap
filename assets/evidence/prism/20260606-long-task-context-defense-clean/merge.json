@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The review request treats a bounded plan and file-path promises as implementation evidence. In implementation_review mode, the absence of actual extracted JSON content, code diffs, or queue state mutations means the main AI has likely rewritten the user's task into an easier planning exercise rather than completing the hardening work."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "No implementation artifact is provided for review — the three evidence items are all inputs/baselines, not outputs. The claim that the old source was 'already read once for this bounded task' is a self-referential assertion inside the evidence summary, not a verifiable fact. The extraction JSON, the hardened prism-shard diff, and the Phase 2 queue update are all absent from the review packet. Without these, the review cannot distinguish between 'task was executed' and 'task was described as executed.'"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Reclassify this as a plan_review and require the main AI to produce the extracted JSON and proposed prism-shard diff as concrete artifacts; or, if implementation is complete, attach the actual file contents and diffs before requesting implementation_review approval."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Include the post-implementation artifacts in the review packet: the extraction JSON file, the unified diff of prism-shard changes, and at least one rejection test case that proves the new constraints are enforced. Without these, resubmit as a planning review (pre-execution) rather than an implementation review."
+    }
+  ],
+  "anti_loop_detected": true
+}

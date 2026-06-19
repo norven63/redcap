@@ -1,0 +1,23 @@
+{
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "confidence": "high",
+  "main_concern": "The proposal skips root-cause diagnosis of why Codex CLI project-level Hooks don't trigger, and instead builds a replacement evidence pipeline (RedCap equivalent carrier layer). This structurally treats the symptom (missing Hook evidence) rather than the cause (Hook non-triggering). The user's explicit constraint is \"不得降级\" (no downgrading), but replacing native CLI execution context evidence with RedCap-synthesized evidence IS a form of downgrading — even if transparently labeled. The carrier layer records what RedCap thinks happened, not what the CLI actually did, losing environmental side-effects, authentic process state, and ground-truth execution context that native Hooks capture.",
+  "minimum_fix": "Add a mandatory root-cause investigation phase BEFORE any carrier layer implementation: (1) Diagnose why Codex CLI project-level Hooks don't trigger in the current environment — check Hook configuration, CLI version compatibility, file path resolution, permission model, and event routing. (2) Attempt native fix with evidence of what was tried. (3) Only if native fix is definitively impossible (with documented evidence of attempts), proceed with carrier layer design — and even then, explicitly label carrier-layer evidence as \"synthetic/RedCap-generated\" (not \"equivalent\") and downgrade the confidence tier of any conclusions drawn from it. (4) Set a hard expiry on the carrier layer workaround — require periodic re-check of whether native Hooks have become available.",
+  "missing_evidence": [
+    "Root-cause diagnostic report: why does the Codex CLI project-level Hook fail to trigger? (No investigation evidence in the review package — only the observation that Hook events are missing from carrier_probe output.)",
+    "Native Hook fix attempt log: what specific fixes were tried, what was the outcome, and why is native fix impossible? (No attempt evidence — the proposal jumps directly to building a replacement.)",
+    "Concrete evidence equivalence mapping: for each field that native Codex Hook would provide (process PID, real stdout/stderr, filesystem state snapshot, environment variables, exit code, timing), what is the carrier-layer equivalent and what authenticity gap exists? (The proposal claims equivalence but provides no field-by-field mapping.)"
+  ],
+  "provider": "claude-code",
+  "reality_delta": "The proposal frames the carrier layer as an \"equivalent\" (等价) alternative to native Codex Hooks, but the reality delta is that: (1) native Hook evidence is ground-truth CLI execution context — the actual process, actual environment, actual file state; (2) carrier-layer evidence is synthetic — RedCap records what it asked the runner to do, not what actually happened at the OS/CLI level. This gap is fundamental and cannot be closed by recording more fields. The proposal's honesty (labeling it \"not native\") is commendable, but calling it \"equivalent\" masks the authenticity gap. The true reality is: if native Hooks don't fire, the E2E's evidence chain has an authenticity gap that no amount of RedCap-side recording can close — the system must either fix native Hooks or explicitly accept degraded evidence quality.",
+  "top_risks": [
+    "Normalization of workaround: The equivalent carrier layer becomes the permanent solution. The 'native Hook as highest priority' becomes theoretical — no incentive remains to fix native Hooks once the carrier layer produces passing evidence. Over iterations, the system forgets it's running on a workaround.",
+    "Evidence authenticity degradation cascade: Carrier-layer evidence looks structurally similar to native Hook evidence (same field names, same schema). Downstream checks, Prism reviewers, and future AIs treat it as equivalent. The authenticity gap compounds — decisions made on synthetic evidence accumulate, and the system loses its grounding in real CLI execution truth.",
+    "Self-referential blocked gate: The proposal says 'if evidence insufficient, keep blocked' — but the same RedCap system that produces carrier-layer evidence also evaluates its sufficiency. This creates a circular dependency where the system can convince itself the evidence is sufficient to unblock, without independent verification that the carrier layer is genuinely equivalent to native Hooks."
+  ],
+  "user_intent_alignment": "unclear",
+  "verdict": "concern"
+}

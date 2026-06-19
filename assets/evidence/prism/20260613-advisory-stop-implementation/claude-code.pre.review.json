@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The plan describes a desired end-state (advisory Stop with bounded corrections) but handwaves the mechanism that transitions from old blocking code to new advisory behavior. The 'planned_changes' enumerate asset modifications without specifying whether the old blocking control flow in codex-hook.py is structurally rewritten or merely relabeled with new message strings. The stated six hard constraints include 'Cap arbitration wording' — using the word 'wording' for what should be a code-enforced guardrail reveals the central gap: the plan conflates documentation changes with behavioral enforcement. The git status shows codex-hook.py as modified (not rewritten), consistent with a message-swap rather than control-flow-rewrite approach.",
+  "main_concern": "Replacing old Stop block messages on top of the existing blocking control flow without rewriting the control flow itself. The old answer-drift pathology lives in the code structure (hooks that block and re-prompt), not in the text strings. If the implementation changes messages but preserves the block→re-prompt code path, the pathology survives under a new name. 'Advisory correction payload' becomes indistinguishable from the old 'block with reason' when the LLM cannot cleanly classify intent — which it will fail to do in precisely the edge cases that matter.",
+  "top_risks": [
+    "Old blocking control flow survives message replacement and re-emerges as answer-drift under ambiguous input. The 'advisory correction payload' is functionally identical to the old 'block with reason' if both result in re-prompting Cap with new instructions.",
+    "Wording-based hard constraints fail silently at runtime. If 'concrete correction only' is enforced by prompt instruction rather than structural code guard (schema validator, character-limit clamp, topic-distance metric), enforcement strength is zero.",
+    "Zero tests means no regression barrier. The old Stop was retired because it caused answer-drift. Restoring it without tests that reproduce the drift scenario and prove it's blocked is restoring a known hazard without a safety check."
+  ],
+  "missing_evidence": [
+    "Diff or specification of the actual code change to codex-hook.py — is the Stop path a message-string swap on the old blocking branch, or a control-flow rewrite that structurally prevents re-prompting?",
+    "Test plan with minimum 3 scenarios that reproduce the original answer-drift pathology and prove the new implementation blocks them. No test files are mentioned in planned changes.",
+    "Taxonomy of deterministic vs. LLM-gated checks. The plan says 'deterministic checks for hard rules, bounded LLM only for ambiguous intent classification' but never defines which rules are deterministic or what makes intent 'ambiguous.' Without this taxonomy, the boundary is undefined and will drift at runtime."
+  ],
+  "minimum_fix": "Before implementation begins: (a) specify which of the six hard constraints are code-enforced (with mechanism: assertion, schema validation, structural guard) vs. wording-only (with justification); (b) define the deterministic check taxonomy — at minimum, original-task anchor verification and correction-round counting must be deterministic code, not LLM calls; (c) produce minimum 3 test scenarios that reproduce the old answer-drift pathology and prove the new implementation blocks them. The implementation must rewrite Stop's control flow so the hook returns bounded correction constraints to Cap without re-entering the prompt loop — not just swap message strings on the old blocking branch.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

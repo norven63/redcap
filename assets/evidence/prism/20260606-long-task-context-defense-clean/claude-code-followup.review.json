@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The main AI correctly addressed the previous review's primary finding — artifacts now exist where none existed before. However, the evidence structure has shifted from 'no artifacts' to a different weakness: all verification is self-referential. The three check results (prism-shard self-check, archaeology check, phase2-blueprint check) are executed by the same runtime that produced the implementation. The extraction JSON is summarized but its semantic fidelity to the original markdown strategies is not independently verifiable from the packet. The prism-shard hardening claims 'must declare' fields — declaration is not rejection. Without seeing the actual rejection logic and its edge cases, the review cannot distinguish between 'validator enforces policy' and 'validator requires paperwork.' The enforcement matrix update ('remove stale planned status') and Phase 2 queue status change are closeout artifacts that prove administrative completion, not capability.",
+  "main_concern": "Self-referential verification loop: all three check results (prism-shard self-check, archaeology check, phase2-blueprint check) are produced by the same runtime that was just modified. If the self-check rejection cases are weak — e.g., they test that a rejection function exists rather than that it catches semantically unsafe configurations — the entire verification chain is a hall of mirrors. The previous review warned about 'tests that only prove the checker exists.' The response was to add checkers, not to prove the checkers test meaningful failure modes.",
+  "top_risks": [
+    "Declaration-without-enforcement: The prism-shard hardening requires accounts to declare context_policy, acceptance_policy, and context_budget — but if the validator accepts any declaration (including context_policy: 'none' or context_budget: 0), the hardening is paperwork, not safety. The claim says 'must declare,' not 'must satisfy.'",
+    "Extraction lossiness cascade: The original long-task-context-defense.md contained prose strategies (state externalization, progressive loading, shard splitting, independent review, host-limited boundaries). If the JSON extraction reduced these to enumerated type fields without preserving the procedural semantics, downstream consumers (360-degree scanner, future long tasks) will operate on degraded knowledge — and the extraction format will mask the degradation because it validates structurally.",
+    "Closeout-as-capability pattern: Three of eight changed-reality items are administrative status updates (index.json, phase2-blueprint.json, enforcement-matrix.json). Combined with three self-checks, the evidence packet ratio is 6:2 administrative/verification to actual behavioral changes (extraction JSON + prism-shard diff). The user's intent is 'real enough for scanning,' not 'administratively marked complete.'"
+  ],
+  "missing_evidence": [
+    "The raw prism-shard diff showing the rejection logic — specifically, what input values for context_policy and context_budget trigger rejection and what values are silently accepted.",
+    "A test case that submits a shard with context_policy: 'none' or context_budget: 0 and proves the validator rejects it — this would distinguish declaration requirement from enforcement.",
+    "Side-by-side mapping of the five original defense strategies (state externalization, progressive loading, shard splitting, independent review, host-limited boundaries) to their representations in the extraction JSON — to verify no strategy was reduced to an unactionable label."
+  ],
+  "minimum_fix": "Provide: (1) the specific rejection thresholds in prism-shard (what context_policy values are banned, what minimum context_budget is enforced), (2) a negative test proving rejection of a policy-violating shard (not just field absence), and (3) a traceability mapping from the five original defense strategies to their extraction JSON representations — so the review can verify that 'extracted' means 'preserved with executable semantics,' not 'categorized with a label.'",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "unclear"
+}

@@ -1,0 +1,28 @@
+{
+  "providers": [
+    "kimi"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The review request treats configuration intent and CLI capability as completed verification, but it does not show that the dispatcher actually invoked Kimi successfully or captured a session handle. 'We documented the command shape' is being used as a proxy for 'the dispatcher works'."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Run the actual dispatcher Kimi smoke from `runtime/bin/redcap prism-dispatch` with verbose logging/timing, capture the full Kimi CLI stdout (including stream-json session handle if any), and compare it against the generated command in the dispatcher source. Do not close the diagnostic until the live invocation completes successfully within the allowed timeout."
+    }
+  ],
+  "anti_loop_detected": true
+}

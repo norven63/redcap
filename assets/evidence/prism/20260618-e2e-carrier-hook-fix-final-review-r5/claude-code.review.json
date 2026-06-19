@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "五轮复审已趋近收敛，但自检使用了 --skip-carrier-probe，导致 carrier_probe_final_decision 从未被自动化自检覆盖。所有验证证据均来自手工命令运行，而非持续集成路径。无法在不读取源码的情况下确认 carrier_probe_final_decision 是唯一的 ok 计算路径，无法排除存在后置覆盖 ok 的残留代码。",
+  "main_concern": "自检命令使用了 --skip-carrier-probe 标志，这意味着 self-check 跳过了 carrier_probe 阶段，新增的 carrier_probe_final_decision 函数从未在自动化自检路径中被执行或验证。手工 carrier-probe 命令通过不代表自检管线能发现未来的回归。",
+  "top_risks": [
+    "carrier_probe_final_decision 可能不是唯一的 ok 计算路径 — carrier_probe 内部其他位置仍可能有对 ok 的后置赋值或覆盖",
+    "decision['ok']=true 且 marker_cleanup_error 非 None 的组合仅通过注入测试间接覆盖，未做独立边界测试",
+    "source-pack.md 与当前代码的同步性仅为声明，未经 diff 验证"
+  ],
+  "missing_evidence": [
+    "self-check 在去掉 --skip-carrier-probe 后的完整运行结果",
+    "carrier_probe_final_decision 作为唯一 ok 决策点的代码路径证据（所有 ok 赋值均经过该函数）",
+    "source-pack.md 与 runtime/core/complete_revival_e2e.py 的 diff 一致性证明"
+  ],
+  "minimum_fix": "在 self-check 中增加一个不跳过 carrier_probe 的轻量模式，或为 carrier_probe_final_decision 添加一个独立的、覆盖全部四种输入组合（decision['ok'] T/F × marker_cleanup_error None/非None）的单元级自检断言，确保回归可被自动化捕获。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "五轮复审已产生收敛：注入机制合理、final_decision 模式正确、成功/失败路径均有证据。剩余风险小且可自动化覆盖，继续追加轮次不会产生新发现。"
+  },
+  "user_intent_alignment": "aligned"
+}

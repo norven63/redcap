@@ -1,0 +1,10 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap revival-queue check",
+  "exit_code": 0,
+  "executed_at": "2026-06-07T04:19:26+00:00",
+  "executor": "codex",
+  "stdout_sha256": "026cee6bbaff29306ba19debd1cb7a1fb9473fbb7853ed82560f692bcc3d7d06",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "timed_out": false
+}

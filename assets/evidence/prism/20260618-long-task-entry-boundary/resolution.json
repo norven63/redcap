@@ -1,0 +1,59 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260618-long-task-entry-boundary",
+  "merge_path": "assets/evidence/prism/20260618-long-task-entry-boundary/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260618-long-task-entry-boundary/round3.kimi.review.json",
+    "assets/evidence/prism/20260618-long-task-entry-boundary/round2.claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 第三轮 concern 成立：coverage 推导若没有行为级正反例，仍可能退化为文件壳检查。本轮接受该 concern，并补充两个最低修复收据：合法 active_run 正向通过，以及 completion_claim_allowed=true 但缺 prism_review_resolution 时失败。Claude Code 第三轮因整任务预算耗尽 expired，不能伪造为通过；Cap 仅基于已完成的最低修复项作 main-decided 仲裁。",
+      "implementation_evidence": [
+        "runtime/core/long_task_contract.py",
+        "runtime/bin/redcap",
+        "assets/contracts/long-task-contract.json",
+        "assets/evidence/.gitignore"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/negative-active-run-empty-ledger.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/negative-active-run-missing-failure-backlog.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/negative-self-declared-completed-layers.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/long-task-contract-check.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/decide-low-answer.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/decide-medium-self-dev.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/decide-blocked-arbitration.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary-extra/positive-active-run-valid.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary-extra/negative-completion-coverage-missing-prism-resolution.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 第二轮 concern 成立：只有正向 policy_template 检查不足以证明 active_run 空账本被拒绝。本轮补充了 negative-active-run-empty-ledger 收据，显示 exit_code=1 且错误明确包含 active_run iteration_ledger must be non-empty；同时补充合法 active_run 正向通过收据，避免只证明失败不证明可用。",
+      "implementation_evidence": [
+        "runtime/core/long_task_contract.py",
+        "assets/contracts/long-task-contract.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/negative-active-run-empty-ledger.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/negative-active-run-missing-failure-backlog.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary-extra/positive-active-run-valid.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary-extra/negative-completion-coverage-missing-prism-resolution.receipt.json",
+        "assets/evidence/check-receipts/20260618-long-task-entry-boundary/long-task-self-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "所有被纳入本裁决的 concern 均被接受并以代码、合同、入口决策和正反向收据落实。Claude Code 第三轮因整任务预算耗尽 expired，没有被当作通过；该事实保留为调度健康问题，不影响本轮最低修复项已由 Kimi 第三轮具体要求的两个行为级收据闭合。"
+  }
+}

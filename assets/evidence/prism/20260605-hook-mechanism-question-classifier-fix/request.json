@@ -1,0 +1,39 @@
+{
+  "task": "Review a RedCap hook prompt-intent classifier fix for mechanism questions that mention execution words.",
+  "user_intent": "Norven asked how a hook-triggered script can know what is a pure question versus empty work. The prompt was an answer-only mechanism question, but the current classifier treated it as implementation because it contained the word '执行' inside '触发执行脚本'.",
+  "main_claim": "The classifier should treat hook mechanism questions such as 'hook只能触发执行脚本吧？脚本如何触发逻辑判断？' as answer_only/none, while preserving direct instructions to execute scripts, remediate, commit, or push as implementation/substantive.",
+  "changed_reality": [
+    "No code has been changed yet for this specific classifier edge case.",
+    "The intended runtime change is limited to prompt intent classification and Prism self-check fixtures.",
+    "The fix must preserve anti-empty-work blocking for actual remediation prompts and mutating tool use."
+  ],
+  "evidence": [
+    {
+      "kind": "diagnostic",
+      "reference": "assets/evidence/host-hooks/codex/latest-UserPromptSubmit.json",
+      "summary": "The mechanism question was classified as implementation/substantive."
+    },
+    {
+      "kind": "diagnostic",
+      "reference": "runtime/core/prompt_intent.py",
+      "summary": "The classifier currently strips answer-only execution context phrases but does not strip hook mechanism phrases such as '触发执行脚本' or '如何触发逻辑判断'."
+    },
+    {
+      "kind": "diagnostic",
+      "reference": "runtime/prism/bin/prism",
+      "summary": "Prompt intent self-check fixtures do not include this mechanism-question class."
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "Do not weaken the Stop hook anti-empty-work gate for real implementation prompts.",
+    "Do not classify '请执行脚本' or '执行修复并 commit' as answer-only.",
+    "Keep the change deterministic, testable, and narrow.",
+    "Do not claim cross-host hook parity."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "task": "Kimi受控文件包调用验证",
+  "user_intent": "验证Kimi在Prism调度器中不是被一刀切禁止读文件，而是在明确授权时只读取受控文件包。",
+  "main_claim": "调度器会生成受限文件包，Kimi只能基于提示词和该文件包给出评审，不能自由探索仓库。",
+  "changed_reality": [
+    "runtime/prism/bin/prism-dispatch新增Kimi受控文件包生成与路径预算限制。",
+    "runtime/prism/prompts/kimi-prism-review.md允许在AUTHORIZED FILE ACCESS段落存在时读取生成的文件包。",
+    "runtime/core/scan_conclusion_guard.py会把非扫描回答里的RedCap扫描状态块判为无关块并要求移除。"
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "allowed_paths": [
+      "runtime/prism/prompts/kimi-prism-review.md",
+      "runtime/core/scan_conclusion_guard.py"
+    ],
+    "max_files": 2,
+    "max_directory_entries": 10,
+    "max_bytes_per_file": 12000,
+    "max_total_bytes": 24000,
+    "purpose": "验证Kimi可读取调度器生成的受控证据包，而不是任意读取工作区。"
+  }
+}

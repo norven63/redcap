@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The prompt reports direct Kimi CLI smoke results (text and stream-json) and that the dispatcher self-check passes, but it does not clearly state that the dispatcher itself successfully invoked Kimi and returned without timeout. The evidence summary mentions a 'live Kimi smoke' only as something that happens after the self-check, not as a verified outcome. The changed reality therefore describes CLI health and command-builder intent, not an end-to-end dispatcher-to-Kimi invocation.",
+  "main_concern": "The main AI may have substituted a proof that the Kimi CLI works and the dispatcher self-check passes for a proof that the dispatcher-mediated path works. The user's question was specifically about RedCap invoking Kimi incorrectly, not about Kimi CLI health in isolation.",
+  "top_risks": [
+    "Direct CLI success does not prove the dispatcher's constructed command string is correct or that its spawned process lifecycle avoids timeout.",
+    "Session handle capture is claimed as a requirement but no evidence shows a handle was actually extracted from a dispatcher-invoked run.",
+    "A timeout may still occur only during real dispatcher invocation and be concealed by the self-check passing."
+  ],
+  "missing_evidence": [
+    "Output or log of one actual dispatcher invocation of Kimi, not merely the dispatcher self-check.",
+    "Proof that the session handle was returned and is usable for follow-up.",
+    "Side-by-side comparison of the command built by the dispatcher versus the direct CLI command that succeeded."
+  ],
+  "minimum_fix": "Run and record one end-to-end dispatcher invocation of Kimi, capturing the exact command emitted, the full output, the elapsed time, and the extracted session handle, and confirm it completes within the allowed timeout budget.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "This review is a static inspection of the supplied prompt text; no workspace mutation occurred and no tools were invoked."
+  },
+  "user_intent_alignment": "medium"
+}

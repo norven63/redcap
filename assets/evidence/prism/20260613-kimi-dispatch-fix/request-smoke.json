@@ -1,0 +1,32 @@
+{
+  "task": "Diagnose whether Prism can invoke Kimi through the current dispatcher without avoidable timeout.",
+  "user_intent": "Norven observed direct Kimi CLI calls work and asked whether RedCap invokes Kimi incorrectly.",
+  "main_claim": "The dispatcher should use a Kimi command compatible with the installed CLI and capture a session handle from the result.",
+  "changed_reality": [
+    "Kimi text-mode CLI smoke returned quickly.",
+    "Kimi stream-json CLI smoke returned quickly.",
+    "The dispatcher command builder currently uses prompt mode, stream-json output, and --session for follow-up."
+  ],
+  "evidence": [
+    {
+      "kind": "command",
+      "reference": "kimi --help",
+      "summary": "Installed Kimi CLI supports -p/--prompt, -S/--session, -C/--continue, -y/--yolo, --auto, and --output-format text or stream-json."
+    },
+    {
+      "kind": "command",
+      "reference": "runtime/bin/redcap prism-dispatch --self-check",
+      "summary": "Local dispatcher self-check passes before live Kimi smoke."
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi"
+  ],
+  "known_constraints": [
+    "Do not allow Kimi to mutate the RedCap workspace during Prism review.",
+    "Do not treat a provider timeout as approval.",
+    "Keep the smoke request short so invocation failure is not confused with broad review complexity."
+  ]
+}

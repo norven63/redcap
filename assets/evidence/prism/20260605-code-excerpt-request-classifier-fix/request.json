@@ -1,0 +1,39 @@
+{
+  "task": "Review a RedCap prompt-intent classifier fix for code excerpt requests containing high-risk words.",
+  "user_intent": "Norven asked Cap to paste the script code that detects question, execution, negation, mechanism context, and commit/push markers. The prompt was a read-only code excerpt request, but the classifier treated quoted marker names such as '执行词' and 'commit/push' as implementation directives.",
+  "main_claim": "A code excerpt or quoted-marker request should classify as review_only/diagnostic, not implementation/substantive, while direct instructions to execute, remediate, commit, or push must still classify as implementation/substantive.",
+  "changed_reality": [
+    "No code has been changed yet for this specific edge case.",
+    "The intended runtime change is limited to prompt intent classification and Prism self-check fixtures.",
+    "The fix must preserve anti-empty-work blocking for actual mutating directives."
+  ],
+  "evidence": [
+    {
+      "kind": "diagnostic",
+      "reference": "assets/evidence/host-hooks/codex/latest-UserPromptSubmit.json",
+      "summary": "The code excerpt request was classified as implementation/substantive."
+    },
+    {
+      "kind": "diagnostic",
+      "reference": "runtime/core/prompt_intent.py",
+      "summary": "The classifier currently scans all text for implementation markers, including quoted marker names and code-excerpt contexts."
+    },
+    {
+      "kind": "diagnostic",
+      "reference": "runtime/prism/bin/prism",
+      "summary": "Prompt intent self-check fixtures do not include code excerpt requests containing commit/push marker names."
+    }
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "Do not weaken implementation detection for direct commands such as '请执行脚本' or '执行修复并 commit'.",
+    "Do not treat every occurrence of code-related words as safe; only excerpt/show/paste requests should become diagnostic.",
+    "Keep the change deterministic and testable.",
+    "Do not claim cross-host hook parity."
+  ]
+}

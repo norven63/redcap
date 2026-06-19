@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap process-artifacts check",
+  "exit_code": 0,
+  "executed_at": "2026-06-11T14:35:56+00:00",
+  "executor": "cap",
+  "stdout_sha256": "cf7967baac3925b849e6e6ec9f2b8f87317fbbe19f6a6e582d769c4d712c74c8",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-check.stderr.txt"
+}

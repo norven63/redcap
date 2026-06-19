@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "block",
+  "confidence": "high",
+  "reality_delta": "本轮修复声称 E2E 入口被硬化为 carrier_probe 前置阻断，但证据自身显示探针返回 ok 而 Hook 事件从未触发——探针与 Hook 承载之间存在根本鸿沟。此外，上游 patrol loop 是否正确处理阻断返回值未被验证，阻断链路不完整。修复产出的是阻断声明而非阻断现实。",
+  "main_concern": "carrier_probe 探针设计缺陷：探针返回 carrier-probe-ok 但 Hook 事件零触发，说明探针仅验证了子进程可执行而非 Hook 机制真正工作。这构成对已知风险（Hook 承载缺失）的虚假缓解——探针说 ok 但实际没 ok。",
+  "top_risks": [
+    "carrier_probe 返回 ok 但 Hook 零触发：探针询问与验证之间的语义鸿沟导致阻断决策基于错误信号",
+    "阻断链路不完整：无证据表明 patrol loop 上游正确处理 blocked_before_project_run 返回值，阻断可能仅停留在 runner 内部",
+    "合同声明与可验证行为漂移：contract 中说禁止启动 Loom 角色，但阻断发生在 runner 内部时，上游调度器是否受影响未经证明"
+  ],
+  "missing_evidence": [
+    "patrol loop 上游代码中对 blocked_before_project_run 返回值的处理逻辑（当前零证据）",
+    "carrier_probe 的完整实现：探针具体做了什么、如何判断 ok、为什么 Hook 未触发却能返回 ok",
+    "Codex CLI 在项目目录下实际加载 .codex/config.toml 的路径约定验证——project_install.py 生成的路径是否正确"
+  ],
+  "minimum_fix": "carrier_probe 必须从\"检测子进程能否返回 ok\"改为\"检测 Codex CLI 是否实际触发项目级 Hook 事件\"：即启动 Codex CLI 会话并发送一个真实 prompt，验证 SessionStart/UserPromptSubmit/Stop Hook 事件确实被记录到日志，而非仅检查 CLI 是否可执行。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "misaligned"
+}

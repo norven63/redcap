@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "设计方案正确识别了缺口并给出了结构合理的补强方向，但停留在设计层：contract_kind 的强制校验代码变更未明确、capability_coverage_guard 的 completed_layers 由谁/何机制填充存在自引用循环风险、入口决策所依赖的\"连续3次同类失败\"需要持久化状态但未指定存储位置、验证计划引用的 lifecycle/evidence 文件本身是本次实现的产物（循环依赖）。如果实现仅添加 JSON 字段和文档而不修改校验器行为代码，则空账本仍可通过检查，core 问题未解决。",
+  "main_concern": "contract_kind 字段分离存在标签化风险：提案定义了 policy_template 与 active_run 的语义差异，但未具体说明 long_task_contract.py 校验器中如何根据 contract_kind 执行不同的校验规则。当前校验器允许空 iteration_ledger 通过，若仅添加字段而不修改校验逻辑，active_run 设值后空账本仍可冒充真实运行完成——这会将问题从\"无区分\"变成\"有区分但无强制\"，本质上没有根治。",
+  "top_risks": [
+    "contract_kind 标签化：字段存在但校验器不按 kind 区分校验规则，空账本仍可通过 active_run 检查",
+    "capability_coverage_guard 自引用死锁：completed_layers 的填充机制不明确——若由同一声称完成的系统自行标记各层完成，则 guard 形同虚设；若需要外部评审才能标记 prism_review_resolution 层完成，则实现→评审→守卫检查形成死锁",
+    "入口决策状态依赖断裂：'连续3次同类失败'和'跨2个以上运行边界'需要跨会话持久化状态，提案未指定存储位置与更新机制，可能导致决策依据丢失或错误分类"
+  ],
+  "missing_evidence": [
+    "long_task_contract.py 或 check_runner.py 中针对 contract_kind 的分支校验逻辑的具体代码变更（diff）",
+    "入口决策所需持久化状态（失败计数、运行边界计数）的存储位置和读写机制",
+    "completed_layers 的填充机制说明——由谁、在何种条件下、基于什么证据将一个 layer 标记为 completed"
+  ],
+  "minimum_fix": "在 long_task_contract.py 中实现 contract_kind 感知的强制校验：当 contract_kind=active_run 时，iteration_ledger 必须非空、failure_backlog 必须存在、evidence_signature 必须有效，并提供反向测试用例证明 empty_ledger + active_run 组合被拒绝（而非通过）。这是整个方案中最核心的防误报机制，如果只加字段不加逻辑，其他层都是空中楼阁。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

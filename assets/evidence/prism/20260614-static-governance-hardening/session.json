@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260614-static-governance-hardening",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260614-static-governance-hardening",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-13T16:49:04+00:00",
+  "task_started_at": "2026-06-13T16:49:04+00:00",
+  "updated_at": "2026-06-13T18:13:52+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "2f69beb6-5454-430f-90bd-1cb5a41c53c8",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260614-static-governance-hardening/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_db0aa5e8-898b-479c-b222-bce9d48163ef",
+      "round_count": 2,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260614-static-governance-hardening/kimi.followup.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap 已采纳两方 concern 并以代码与检查证据回应"
+  }
+}

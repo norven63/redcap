@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "block",
+  "confidence": "high",
+  "reality_delta": "本轮声称新增了两个独立验证：独立的 prism-dispatch-timeout-e2e 脚本（脱离 --self-check）和 human-output 扩展的 15+ 样本集。这是对上一轮 block 的正确方向的回应——方向对，但执行有致命缺陷。prism-dispatch-timeout-e2e 是一个 100 行的 shell 脚本，但它测试的是「在 task budget 耗尽后 dispatcher 拒绝启动 provider」——这个行为不需要 e2e 就能验证，因为 dispatcher 在同一个进程中计算 budget 并做 if/else 判断。E2e 脚本应该测试的是进程隔离失效、SIGTERM 传播、子进程残留——这些才是进程边界才有的风险，也是上一轮 block 中明确要求的内容。当前 e2e 测试了「代码在独立进程中被执行了一遍」，但没有测试任何跨进程边界才暴露的行为。",
+  "main_concern": "prism-dispatch-timeout-e2e 脚本验证了「代码逻辑在独立进程中也能 run」，但没有测试任何跨进程边界才暴露的行为（真正需要 e2e 测试的场景：dispatcher 崩溃后子进程是否被正确清理、SIGTERM 是否正确传播到 provider 子进程、进程组 kill 是否原子生效）。human-output 的 5 个混合语言样本看起来是增加了数量，但样本的 adversarial 性质存疑——如果 checker 是基于 regex 检测中文字符的存在性，那么任何包含至少一个中文字符的混合文本都会 pass，而不含任何中文的纯英文会 fail。这种 naive regex 的「15+ 样本」不会暴露新的失败模式——它只是在验证同一个简单规则对更多输入样本都成立。",
+  "top_risks": [
+    "E2e 测试的「e2e」属性是假阳性：当前脚本 fork 了一个 dispatch 子进程并等待其退出，检查退出码和输出。但 dispatcher 的 timeout 逻辑（budget 计算和 provider 启动前检查）在同一个进程中用 if/else 实现，没有任何进程边界特有的 race condition、资源泄漏、或信号传播路径被测试到。如果 dispatcher 在 provider 运行期间 crash，子进程清理路径完全未被覆盖",
+    "混合语言样本可能只是 regex 的机械验证：如果 human_output_policy checker 的核心逻辑是「检测 text 中是否包含 CJK 字符」的正则，那么添加 15 个样本只是证明「正则匹配到了中文」——一个恒真命题。真正的 adversarial 测试需要一个不含中文但 human-readable 的 output（如用 emoji / 符号 / 数字表达含义）或一个中文占比极低但核心信息在英文中的混合文本",
+    "batch close caveat 的执行力问题：requested_review #4 询问「parent batch 能否带着 caveat 关闭，如果 360 scan 发现失败就立即 reopen」。这是一个合理的提案，但 caveat 本身的执行性取决于「立即 reopen」的触发器是什么。如果没有自动化触发器（如 lifecycle packet 中的 reopen_on_360_fail flag），caveat 就是一个纪年性注释——下次 Prism review 可能不会读取 lifecycle packet 的历史版本"
+  ],
+  "missing_evidence": [
+    "prism-dispatch 的进程清理路径测试：dispatcher 在 provider 运行期间崩溃后，provider 子进程是否成为孤儿进程或被进程组 kill。SIGTERM/SIGKILL 传播是否正确——这需要注入 crash 场景的测试",
+    "human_output_policy checker 的对抗性样本：不含中文但 human-readable 的输出（emoji、数字编号列表、ASCII art 表格）、中文占比极低但核心判断信息在英文中的混合文本（如 '#1234 已关闭，reason: insufficient budget'）、以及纯中文但使用了大量非标准格式（如竖排文本、全角标点混乱）",
+    "batch reopen 的自动化触发器定义：lifecycle packet 或 task_facts 中是否有 reopen_on_360_fail 或等价机制，还是仅依赖人读文档"
+  ],
+  "minimum_fix": "三个修复：(1) prism-dispatch-timeout-e2e 增加至少一个 crash 注入场景——kill -9 dispatcher 进程后验证子进程是否被进程组清理；如果当前架构不支持进程组，至少记录这是已知的清理缺口并降级 e2e 的声称范围。(2) human_output_policy 自检增加至少 3 个真正的对抗性样本——不含 CJK 字符的 human-readable 输出、中文占比低于 5% 的混合文本、以及包含未解释技术术语的纯中文文本。(3) 在 lifecycle packet 或 contract 中显式写入 batch 的 reopen 触发条件，格式可以简单如 \"reopen_on: [prism_360_concern, prism_360_block]\"——以确保 caveat 是可自动化的而不仅仅是一个人类注释。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "drifting"
+}

@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260611-redcap-design-structure-logic-review-rerun",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-redcap-design-structure-logic-review-rerun",
+  "status": "escalated",
+  "max_rounds_per_provider": 2,
+  "created_at": "2026-06-11T12:26:10+00:00",
+  "task_started_at": "2026-06-11T12:26:10+00:00",
+  "updated_at": "2026-06-11T12:53:40+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "a8df7957-8449-44a5-9430-b5dc3a0c7de1",
+      "round_count": 1,
+      "status": "escalated",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-redcap-design-structure-logic-review-rerun/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "expired",
+      "last_review": null
+    }
+  },
+  "convergence": {
+    "state": "escalated",
+    "reason": "本轮整体评审合并结果为 block；Cap 接受 concern/block 的核心风险，已修复 project_runtime_gitignore_ok=false，但过程文件归属、自指状态机制与端到端验收执行仍未解决。"
+  }
+}

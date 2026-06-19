@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "python3",
+    "-c",
+    "from pathlib import Path\nfrom runtime.core.scan_conclusion_guard import check_scan_conclusion, DEFAULT_ACCOUNT, DEFAULT_MERGE, DEFAULT_TASK_FACTS\nprompt='为何还要建立一个垂直能力的拦截？即“360 度扫描结论误报”拦截，现在你每次回答问题都会带着这个拦截的报告，很冗余，你不觉得吗？'\nmessage='这里讨论的是停止前检查本身，不是在给扫描结论。'\nr=check_scan_conclusion(message=message,prompt=prompt,account_path=Path(DEFAULT_ACCOUNT),merge_path=Path(DEFAULT_MERGE),task_facts_path=Path(DEFAULT_TASK_FACTS))\nprint(r['ok'], r['triggered'], r['reason'])\nraise SystemExit(0 if r['ok'] and not r['triggered'] else 1)"
+  ],
+  "command": "python3 -c from pathlib import Path\nfrom runtime.core.scan_conclusion_guard import check_scan_conclusion, DEFAULT_ACCOUNT, DEFAULT_MERGE, DEFAULT_TASK_FACTS\nprompt='为何还要建立一个垂直能力的拦截？即“360 度扫描结论误报”拦截，现在你每次回答问题都会带着这个拦截的报告，很冗余，你不觉得吗？'\nmessage='这里讨论的是停止前检查本身，不是在给扫描结论。'\nr=check_scan_conclusion(message=message,prompt=prompt,account_path=Path(DEFAULT_ACCOUNT),merge_path=Path(DEFAULT_MERGE),task_facts_path=Path(DEFAULT_TASK_FACTS))\nprint(r['ok'], r['triggered'], r['reason'])\nraise SystemExit(0 if r['ok'] and not r['triggered'] else 1)",
+  "executed_at": "2026-06-06T17:16:04+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_bytes": 0,
+  "stderr_excerpt": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 59,
+  "stdout_excerpt": "True False No 360-degree scan conclusion context detected.\n",
+  "stdout_sha256": "2681e15d39a31fc3cf75019492f059489df1d499cd32755356e9c51bae4ad457"
+}

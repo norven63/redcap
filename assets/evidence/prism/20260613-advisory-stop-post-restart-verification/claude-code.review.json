@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The main AI claims advisory Stop is fully implemented and verified post-restart. The reality is that all verification is self-referential (RedCap tools checking RedCap outputs), no real Stop event has been triggered through the actual Codex hook mechanism, and the critical hot-path performance claim (\"redcap check 已移出默认 Stop 热路径\") is asserted but unmeasured. The evidence package is documentation-thorough but behavior-thin. The gap between \"config exists + self-tests pass\" and \"behavior confirmed under real conditions\" is the delta.",
+  "main_concern": "Self-referential verification loop. Every verification tool used (advisory-stop check, host-hook-audit, hook-coverage-check, enforcement-check, prism-resolution) is a RedCap internal tool. No external observer, no independent measurement, and critically: no real Stop event has been triggered through the Codex hook mechanism. The known limits admit this — \"真实宿主触发的 Stop 事件只有在 Cap 尝试收口时才会发生\" — meaning the most important test case is untested. The prism-resolution merge creates a documentation close-out loop that may mask unresolved behavioral issues.",
+  "top_risks": [
+    "Hot-path regression: The claim that redcap check was moved out of Stop's hot path is unmeasured. If the move was conditional rather than structural, a future change could silently reintroduce heavy checks during Stop, causing the original Claude Code concern to recur without detection.",
+    "Override masking: advisory_stop.py provides an override command. If the override is used during a real Stop event to bypass a legitimate block, the advisory nature becomes a permission structure that can be abused to skip safety checks.",
+    "Template/config drift: The verification relies on template matching (host-hook-audit shows Stop=true and live/template match). If hooks.json is manually edited outside the template sync process, the matching verification would not catch drift — it only validates the happy path of template-driven configuration."
+  ],
+  "missing_evidence": [
+    "Timing measurement of Stop hook execution: Before/after comparison showing that redcap check no longer contributes to Stop hook latency. Without this, the hot-path fix is an unverified claim.",
+    "Real Stop event trace: A log or evidence artifact from an actual Codex Stop event (not a simulated self-check) showing the full execution path, timing, and payload output. This is the known limit but it remains the critical missing evidence.",
+    "Negative test for override: Evidence that the advisory-stop override command refuses to override when safety conditions are genuinely violated, not just a test that it allows override when conditions are clean."
+  ],
+  "minimum_fix": "1) Instrument the Stop hook path with a sub-millisecond timer that logs actual execution duration. Run a benchmark comparing Stop hook latency before and after the hot-path change. 2) Trigger at least one real Stop event through Codex (e.g., by sending a synthetic Stop signal to a test session) and capture the full trace including stdin payload, stdout advisory output, and timing. 3) Add a negative test to advisory-stop override that verifies it rejects override when a genuine safety condition (not just advisory) is present. Document the benchmark results and real-trigger trace as evidence artifacts before claiming the implementation is verified.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

@@ -1,0 +1,49 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260605-hook-mechanism-question-classifier-fix",
+  "merge_path": "assets/evidence/prism/20260605-hook-mechanism-question-classifier-fix/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260605-hook-mechanism-question-classifier-fix/kimi.review.json",
+    "assets/evidence/prism/20260605-hook-mechanism-question-classifier-fix/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern is valid: a naive phrase strip could weaken true directives. The implemented rule strips mechanism-context execution phrases only in question contexts and keeps real script execution and repair prompts classified as implementation.",
+      "implementation_evidence": [
+        "runtime/core/prompt_intent.py",
+        "runtime/prism/bin/prism"
+      ],
+      "verification_evidence": [
+        "python3 -m py_compile runtime/core/prompt_intent.py runtime/prism/bin/prism",
+        "runtime/prism/bin/prism check",
+        "runtime/bin/redcap check"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern is valid: the fix needs regression coverage for mechanism questions and direct execution counter-cases. The implemented fixtures include the exact prompt, execution-flow variants, '请执行脚本', and '请触发执行脚本来修复这个bug'.",
+      "implementation_evidence": [
+        "runtime/core/prompt_intent.py",
+        "runtime/prism/bin/prism"
+      ],
+      "verification_evidence": [
+        "python3 -m py_compile runtime/core/prompt_intent.py runtime/prism/bin/prism",
+        "runtime/prism/bin/prism check",
+        "runtime/bin/redcap check"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Both provider concerns were accepted and mapped to a question-context mechanism classifier rule plus regression fixtures."
+  }
+}

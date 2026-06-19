@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "long-task",
+    "decide",
+    "--task",
+    "解释这个字段是什么意思",
+    "--risk-level",
+    "low"
+  ],
+  "command": "runtime/bin/redcap long-task decide --task 解释这个字段是什么意思 --risk-level low",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "duration_seconds": 0.044,
+  "executed_at": "2026-06-17T18:35:38.394745+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "expected_exit_code": null,
+  "name": "decide-low-answer",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "started_at": "2026-06-17T18:35:38.350474+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "{\n  \"schema_id\": \"redcap-long-task-decision\",\n  \"ok\": true,\n  \"mode\": \"fast_path\",\n  \"risk_level\": \"low\",\n  \"triggers\": [],\n  \"fast_path_signals\": [\n    \"answer_only_or_review_only\",\n    \"low_risk\",\n    \"no_cross_role_no_e2e_no_release_no_self_development\",\n    \"single_step_or_small_patch\"\n  ],\n  \"requires_lifecycle\": false,\n  \"requires_prism\": false,\n  \"requires_cap_arbitration\": false,\n  \"external_goal_status\": null,\n  \"reason\": \"走轻量路径：未命中长任务触发条件。\"\n}\nREDCAP_LONG_TASK_DECISION_OK\n",
+  "stdout_sha256": "8b62ff14011de68bb0ed148098e069e092699ff67215c80235cb8c04c791e9a0"
+}

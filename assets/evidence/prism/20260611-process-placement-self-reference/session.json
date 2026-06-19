@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260611-process-placement-self-reference",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-process-placement-self-reference",
+  "status": "main-decided",
+  "max_rounds_per_provider": 1,
+  "created_at": "2026-06-11T14:13:47+00:00",
+  "task_started_at": "2026-06-11T14:13:47+00:00",
+  "updated_at": "2026-06-11T14:33:14+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "f6e597e1-9c6e-491c-9048-af627789f5c9",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-process-placement-self-reference/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_0bbb121b-27ea-4645-aef4-90a5615048ce",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-process-placement-self-reference/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap已接受Claude Code concern并以运行时代码、负样例测试、正式可用自检修复和整体验证处理。"
+  }
+}

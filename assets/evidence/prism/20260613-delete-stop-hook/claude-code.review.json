@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "方案声称删除 Stop 后由「显式命令」承接其职责，但未提供任何证据表明替代命令（redcap check、lifecycle check、terminal-goal check、human-output lint）已存在、可运行、且覆盖 Stop 原本的全部检查项。Stop 是自动执行的一层安全网，方案将其替换为手动命令，这在操作模型上是一个根本性降级。方案文档本身构成了一次令人信服的说明，但实际行为变化（自动→手动）的后果未被充分评估。现实改变的不是 Stop 是否有害，而是用户是否愿意接受后续无自动护栏的裸奔状态。",
+  "main_concern": "从自动钩子到手动命令的安全模型降级未被承认。Stop 提供了 assistant 最终回复后的自动阻断能力——无论用户是否记得运行 redcap check，Stop 都会执行。删除后，所有检查变成了用户必须主动调用的命令。这不是「替代」，是「撤销自动化」。方案将其表述为等价替换，但这两者根本不在同一信任层级上。",
+  "top_risks": [
+    "Stop 可能不是导致回答偏航的唯一原因：PreToolUse 拒绝关键工具调用同样会迫使 assistant 选择次优路径，产生偏航。删除 Stop 后如果偏航复现，会被误判为「Stop 不是根因」而陷入诊断循环。",
+    "模板同步失败：如果 codex-hooks.template.json 的删除遗漏或版本回退，redcap install 会静默恢复 Stop，造成「我明明删了怎么又回来了」的困惑。没有防回归测试。",
+    "保留的 Stop Python 代码成为死代码，但可能被其他路径意外导入或手动调用，产生不可预期的行为。死代码的「可回滚」承诺在数月后将因 bit-rot 而失效，形成虚假安全感。"
+  ],
+  "missing_evidence": [
+    "替代命令的存在性证据：redcap check、lifecycle check、terminal-goal check、human-output lint 等命令的实际输出或运行截图，证明它们在删除 Stop 之前就已经可用。",
+    "Stop 的实际 hook_prompt 内容：Stop 到底注入了什么 hook_prompt 导致了偏航？没有这个信息，无法判断是 Stop 机制本身有问题还是 hook_prompt 的内容有问题——后者可以通过修改 prompt 内容而非删除整个钩子来修复。",
+    "端到端回归测试：删除 Stop 后，一个完整的 RedCap 会话的证据 ledger——证明 PreToolUse 和 UserPromptSubmit 仍在正常工作，且没有新的偏航发生。"
+  ],
+  "minimum_fix": "在删除 Stop 之前，先截取 Stop 的 hook_prompt 全文并记录到证据目录中。如果偏航是由 hook_prompt 内容而非 Stop 机制本身引起的，方案应改为「修改 Stop 的 hook_prompt 为只做最终 lint 检查而不注入新回答指令」，而非删除整个钩子。如果确认必须删除，方案必须附带一份替代命令的运行证明和一份删除前后的对比测试 ledger。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

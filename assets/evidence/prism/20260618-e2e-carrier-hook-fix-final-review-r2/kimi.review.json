@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "代码层面确有改动：决策函数统一了 command_ok/marker_ok/hook_events 判定，提示词不再出现字面 marker，marker 清理被放入 finally，并出现一次 carrier-probe 真实通过；但这些改动仍主要靠自我报告，尚未形成可独立复核的原始运行产物。",
+  "main_concern": "验证证据仍是同一代码库的自我引用摘要：round3/round4 的运行结果、self-check 断言、marker 内容均由被测程序自己输出，缺少原始终端/日志/artifact；且 bundle 中的核心源码被截断，无法逐行确认所有 return/except 路径不会跳过检查。",
+  "top_risks": [
+    "run_command_pty 或 carrier_probe_attempt_decision 中可能存在未被摘录的异常处理分支，导致 command_ok=True 时提前返回而跳过 marker/Hook 检查。",
+    "round3 失败被解释为“提示词回显误判”，但缺少原始输出/日志/截图，无法排除是其他环境或模型行为导致，round4 成功也可能是特定运行上下文下的偶然。",
+    "marker 清理在 finally 中执行，但如果 cleanup_marker 之前被异常或子进程状态污染，或者 finally 外的上层函数吞掉错误，仍可能留下脏 marker 并影响下一次探针。"
+  ],
+  "missing_evidence": [
+    "未截断的 carrier_probe_attempt_decision 与 carrier_probe 完整源码（或带行号的针对性片段），以确认所有 return 路径都经过统一决策且没有分支跳过检查。",
+    "round3 失败与 round4 通过的原始运行产物：完整 stdout/stderr、日志文件、marker 文件内容快照、events 列表。",
+    "至少一次人工注入错误的独立复现：marker 内容错误/缺失、Hook 事件缺失时，carrier-probe 明确返回非 ok 且 failure_reasons 分类正确。"
+  ],
+  "minimum_fix": "在提交完整 E2E 前，补充 (1) 未截断的关键源码或精确行号片段；(2) round3/round4 的原始终端/日志产物；(3) 一次手动构造 marker/Hook 失败的独立复现记录。若源码与日志均证实决策无分支跳过、finally 清理可靠，则可放行。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "本轮再次以“真实探针本轮新发现问题→修复→通过”作为核心证据，模式与前轮类似；必须引入外部可复现锚点（原始日志 + 独立复现），否则下一轮仍可能继续发现新的“本轮问题”。"
+  },
+  "user_intent_alignment": "部分对齐：修复方向符合用户“不得用形式产物替代真实运行能力”的要求，但当前证据的形态仍是形式化摘要，未达到用户所要求的可验证交付标准。"
+}

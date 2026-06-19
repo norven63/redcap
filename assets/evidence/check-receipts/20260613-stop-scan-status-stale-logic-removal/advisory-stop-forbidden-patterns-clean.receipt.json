@@ -1,0 +1,13 @@
+{
+  "command": "bash -lc 'if rg -n \"unsupported-scan-conclusion|expected_status_block|RedCap 扫描状态|scan status block|status block|irrelevant-scan-status-block|扫描状态块\" runtime/core/advisory_stop.py .codex/hooks.json assets/contracts/codex-hooks.template.json assets/contracts/advisory-stop.json; then exit 2; else test $? -eq 1; fi'",
+  "executed_at": "2026-06-13T10:38:18+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_bytes": 0,
+  "stderr_excerpt": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 0,
+  "stdout_excerpt": "",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

@@ -1,0 +1,55 @@
+{
+  "schema_id": "redcap-prism-review-request",
+  "task_id": "20260611-goal-completion-review",
+  "title": "评估四段前置任务是否已完成并防止终局夸大",
+  "task": "评估Hook意图识别优化、重启判断、测试闭环、棱镜整体评审这四段任务是否已经完成到可以阶段性汇报的程度。",
+  "main_claim": "四段前置任务动作已经完成到可汇报状态，但RedCap完整复活终局目标仍未完成。",
+  "changed_reality": "本轮新增完成性回顾生命周期包，并发现和修复了真实UserPromptSubmit标记缺少gate_decision的问题；同时保留整体评审concern结论作为后续待办。",
+  "review_mode": "completion-review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "user_intent": "Norven要求仔细评估四段任务是否都完成；若完成，则整理最后阶段汇报。四段任务包括：Hook意图识别优化、Codex重启判断、优化方案测试闭环、和棱镜一起整体评审当前新RedCap设计思路、目录结构、逻辑实现。",
+  "review_questions": [
+    "这四段任务是否都已经执行到可以阶段性汇报的程度？请区分任务动作完成与RedCap完整复活终局完成。",
+    "是否仍存在会阻止我发送阶段汇报的缺失证据或未完成前置？",
+    "本轮汇报应如何表达，才能避免把阶段成果说成RedCap完整复活？"
+  ],
+  "evidence": [
+    "assets/evidence/prism/20260611-goal-completion-review/lifecycle.json",
+    "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/session.json",
+    "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/semantic-hook-e2e.receipt.json",
+    "assets/evidence/prism/20260611-hook-llm-semantic-adjudication/receipts/redcap-check.receipt.json",
+    "assets/evidence/prism/20260611-redcap-design-structure-logic-review/session.json",
+    "assets/evidence/prism/20260611-redcap-design-structure-logic-review/kimi.review.json",
+    "assets/evidence/prism/20260611-redcap-design-structure-logic-review/claude-code.review.json",
+    "assets/evidence/host-hooks/codex/latest-UserPromptSubmit.json",
+    "runtime/core/intent_judge.py",
+    "runtime/prism/bin/prism",
+    "runtime/prism/bin/turn-action-check",
+    "runtime/host-adapters/codex/codex-hook.py"
+  ],
+  "known_caveats": [
+    "RedCap完整复活终局目标仍未验证完成。",
+    "整体设计评审给出的合并结论是concern，不是pass。",
+    "整体评审指出后续待办：收紧assets/contracts目录边界、真实外部沙盒E2E、跳过宿主钩子审计时的输出语义、整理当前未提交改动。",
+    "本轮刚修复了真实UserPromptSubmit标记缺少gate_decision的问题，并已刷新最新标记。"
+  ],
+  "required_output": {
+    "format": "json",
+    "fields": [
+      "provider",
+      "verdict",
+      "confidence",
+      "reality_delta",
+      "main_concern",
+      "top_risks",
+      "missing_evidence",
+      "minimum_fix",
+      "anti_loop_signal",
+      "user_intent_alignment"
+    ]
+  }
+}

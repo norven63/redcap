@@ -1,0 +1,48 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260607-pre-execution-discussion-intent",
+  "merge_path": "assets/evidence/prism/20260607-pre-execution-discussion-intent/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260607-pre-execution-discussion-intent/kimi.review.json",
+    "assets/evidence/prism/20260607-pre-execution-discussion-intent/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "采纳。实现已公开为确定性规则：预执行讨论只在明确先不执行、先评估可行性时放行；复合提示一旦包含后续执行授权，优先判定为实施任务。",
+      "implementation_evidence": [
+        "runtime/core/prompt_intent.py",
+        "runtime/core/intent_judge.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260607-pre-execution-discussion-intent/intent-judge-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260607-pre-execution-discussion-intent/turn-action-original-prompt.receipt.json",
+        "assets/evidence/check-receipts/20260607-pre-execution-discussion-intent/mixed-execution-classify.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "采纳。自检已加入明确执行、直接做、讨论后直接做的负样本，复合提示不再被预执行讨论规则短路放行。",
+      "implementation_evidence": [
+        "runtime/core/prompt_intent.py",
+        "runtime/core/intent_judge.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260607-pre-execution-discussion-intent/intent-judge-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260607-pre-execution-discussion-intent/mixed-execution-classify.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两路 concern 均已转化为实现和验证：公开确定性边界、复合提示优先实施、负样本自检覆盖。"
+  }
+}

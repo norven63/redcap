@@ -1,0 +1,10 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap formal-usable-check",
+  "exit_code": 0,
+  "executed_at": "2026-06-07T04:19:55+00:00",
+  "executor": "codex",
+  "stdout_sha256": "a76ac9d7f8c90e164a8ec32ed6086fc4253a54aebede2416ac5daef863b2c92a",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "timed_out": false
+}

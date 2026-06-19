@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260611-hook-llm-semantic-adjudication",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-hook-llm-semantic-adjudication",
+  "status": "main-decided",
+  "max_rounds_per_provider": 2,
+  "created_at": "2026-06-10T18:15:38+00:00",
+  "task_started_at": "2026-06-10T18:15:38+00:00",
+  "updated_at": "2026-06-10T18:37:04+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "223e8dfc-46e8-48b2-b0ce-dbe781e828c0",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-hook-llm-semantic-adjudication/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "2fa3b2f5-31c6-4f90-8435-356af0700146",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-hook-llm-semantic-adjudication/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap采纳两方阻断意见并已用代码改造与执行回执回应；不需要继续同一问题的棱镜轮次。"
+  }
+}

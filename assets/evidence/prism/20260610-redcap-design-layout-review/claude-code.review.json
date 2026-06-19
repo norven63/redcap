@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The main AI claims a coherent, intentionally-designed workspace with passing self-checks. The evidence shows: (1) layout checks are tautological — the checker was built to match the layout it checks, creating a closed verification loop; (2) the worktree contains 13 untracked new files and 5 modified core files that represent the actual design state but are invisible to the committed-state checks; (3) a recursive contract-lifecycle pattern is emerging (contracts about contracts about contracts) that the directory policy doesn't guard against; (4) .DS_Store at root contradicts the \"closed root\" policy unless explicitly gitignored. The design is reasonable in principle but the evidence of coherence is weaker than claimed.",
+  "main_concern": "Self-verifying checker circularity: the directory policy JSON defines what's valid, the layout checker enforces that policy, and both were written in the same design session. This creates a closed loop where neither independently validates the design. The 13 untracked files and 5 modified core files in the worktree represent the REAL design state being reviewed, but the passing layout check may have rubber-stamped them into existing directories without questioning whether the runtime/assets split boundaries are being maintained. The checks prove the checker scripts run without error — they do not prove the design is coherent.",
+  "top_risks": [
+    "Checker circularity mask: self-written checkers passing against self-written policies creates false confidence in design coherence while real structural drift (13 new files, contract lifecycle recursion) goes undetected",
+    "Worktree-committed gap: the review targets a dirty worktree with uncommitted structural changes — the checkers may be validating a stale committed state while new files are being added to directories without boundary enforcement",
+    "Contract proliferation without rate-limiting: lifecycle contracts are being generated for other contracts recursively (e.g., known-issues-*-lifecycle.json about known-issues-*.json), creating a documentation feedback loop that assets/contracts/ has no mechanism to bound"
+  ],
+  "missing_evidence": [
+    "Diff of the 5 modified runtime files — what changed in runtime_boundary.py, status_surface.py, task_facts.py, and codex-hook.py, and do those changes align with the claimed design?",
+    "Content of the 13 untracked files — do the new lifecycle contracts and runtime modules actually belong in their current directories, or are any misplaced across the runtime/assets boundary?",
+    "Whether .DS_Store is in .gitignore — if not, the closed-root claim is factually false for macOS users"
+  ],
+  "minimum_fix": "Before proceeding to E2E acceptance: (1) commit or intentionally clean the worktree so the review targets a single consistent state; (2) add a structural drift check to the layout checker that compares worktree against committed policy, not just directory existence; (3) establish an explicit boundary rule for lifecycle/meta contracts — either they live in assets/contracts/ with a naming convention that prevents recursive generation, or they move to runtime/prism/ as execution artifacts; (4) add .DS_Store to .gitignore if not already present, or remove it and document the root closure policy.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

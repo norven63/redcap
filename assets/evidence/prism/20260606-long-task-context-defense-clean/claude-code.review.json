@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The three evidence items describe pre-implementation state (a contract, an old source file, and the current prism-shard baseline). None of them constitute proof that the claimed implementation batch was actually executed or that the resulting artifacts enable real capability. The 'changed reality' claims describe what SHOULD exist after the batch, but the review packet contains no post-implementation diff, no extraction output, no test results, and no verification of the hardened validator. The evidence packet IS the plan, dressed as a completion report.",
+  "main_concern": "No implementation artifact is provided for review — the three evidence items are all inputs/baselines, not outputs. The claim that the old source was 'already read once for this bounded task' is a self-referential assertion inside the evidence summary, not a verifiable fact. The extraction JSON, the hardened prism-shard diff, and the Phase 2 queue update are all absent from the review packet. Without these, the review cannot distinguish between 'task was executed' and 'task was described as executed.'",
+  "top_risks": [
+    "Lossy extraction: Converting long-task-context-defense.md prose (state externalization, progressive loading, shard splitting, independent review, host-limited boundaries) into a JSON schema may omit edge-case semantics that only surface during actual long-task execution — silent capability degradation.",
+    "Cosmetic hardening: Adding context-budget, index-first, and Cap-owned-acceptance parameters to prism-shard without corresponding enforcement logic changes would create a false sense of safety — the validator would accept the new fields but never reject anything based on them.",
+    "Infinite preparation treadmill: If this batch produces a Phase 2 queue status update and a reformatted extraction without enabling any actual long-task defense behavior, it extends the preparation phase without approaching operational capability — a pattern that consumes review cycles without delivering user-facing value."
+  ],
+  "missing_evidence": [
+    "The actual diff or content of the extraction JSON at assets/archaeology/extractions/long-task-context-defense-v1.json — does it exist, and does it faithfully preserve all five defense strategies from the source?",
+    "The actual diff to runtime/prism/bin/prism-shard — do the new context-budget/index-first/Cap-owned fields have enforcement code, or are they accepted-and-ignored parameters?",
+    "A test or dry-run demonstrating that the hardened validator rejects a shard that violates context-budget or index-first policy — proving the hardening is behavioral, not cosmetic."
+  ],
+  "minimum_fix": "Include the post-implementation artifacts in the review packet: the extraction JSON file, the unified diff of prism-shard changes, and at least one rejection test case that proves the new constraints are enforced. Without these, resubmit as a planning review (pre-execution) rather than an implementation review.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "unclear"
+}

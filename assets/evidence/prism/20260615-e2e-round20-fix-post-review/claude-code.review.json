@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The implementation adds measurable criteria (text_hash, dom_summary_hash for browser; non-empty signups for signup; separate actionable_interactive_gate_marker from observed noise) as claimed. The two external tests confirm these work on round 20 data. However, 4 of 7 evidence items are self-referential (py_compile, design-check, self-check, redcap check) — they only prove internal consistency with the same codebase that defines the criteria. The changed_reality in the code is real; the changed_reality in behavior is plausible but 2 targeted tests on the same project that failed round 20 is insufficient to prove the fix generalizes. The interactive gate marker change — the most complex refactor — has zero dedicated test evidence beyond the diff itself.",
+  "main_concern": "Verification is dominated by self-referential checks (4/7 items) that cannot detect false positives, edge cases, or generalization failures. The two external tests are both on round 20 data — the very project the implementation was designed to fix. Zero negative test cases exist. Zero generalization tests exist. The interactive gate marker refactor has no behavioral test evidence at all.",
+  "top_risks": [
+    "Hash-based browser verification may false-positive on non-semantic DOM changes (timestamps, random IDs, animation states) that change text_hash but not actual UI state",
+    "Implementation validated only on round 20 project (the 'training set') — may fail on different project structures, interaction patterns, or signup formats in round 21",
+    "Interactive gate marker refactor untested — existing retry/failback flows that depend on old marker semantics could break silently in round 21 E2E"
+  ],
+  "missing_evidence": [
+    "Negative browser test cases: interactions that should correctly fail verification (e.g., clicking same element twice, clicking non-interactive elements)",
+    "Validation against at least one project other than round 20 to demonstrate the verifier generalizes beyond the failure case it was designed for",
+    "Controlled test of interactive gate marker retry/failback behavior: does marking observed noise separately from actionable markers preserve correct retry logic?"
+  ],
+  "minimum_fix": "Before round 21, run the verifier against at least one additional project not used in development. Add explicit negative browser test cases (same-element double-click should not pass, non-interactive element click should not pass). Verify interactive gate marker failback with a controlled retry scenario. Document the false-positive rate of hash-based detection against common DOM noise patterns (timestamps, random aria attributes, animation artifacts).",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

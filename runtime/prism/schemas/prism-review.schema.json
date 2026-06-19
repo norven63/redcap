@@ -31,11 +31,11 @@
     },
     "reality_delta": {
       "type": "string",
-      "minLength": 1
+      "minLength": 12
     },
     "main_concern": {
       "type": "string",
-      "minLength": 1
+      "minLength": 12
     },
     "top_risks": {
       "type": "array",
@@ -53,7 +53,7 @@
     },
     "minimum_fix": {
       "type": "string",
-      "minLength": 1
+      "minLength": 12
     },
     "anti_loop_signal": {
       "type": "object",
@@ -64,14 +64,14 @@
           "type": "boolean"
         },
         "reason": {
-          "type": "string"
+          "type": "string",
+          "minLength": 8
         }
       }
     },
     "user_intent_alignment": {
       "type": "string",
-      "enum": ["aligned", "unclear", "drifting", "misaligned"]
+      "minLength": 1
     }
   }
 }
-

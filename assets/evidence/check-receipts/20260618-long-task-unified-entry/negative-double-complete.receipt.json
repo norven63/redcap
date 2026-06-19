@@ -1,0 +1,37 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "long-task",
+    "complete",
+    "--packet",
+    "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/positive-run/redcap-long-task-active-run.json",
+    "--outcome",
+    "completed",
+    "--final-objective-delta",
+    "完成后故意再次 complete，必须被状态门禁拒绝。",
+    "--completion-evidence",
+    "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/positive-run/final-receipt.json",
+    "--final-summary",
+    "已完成的 active_run 不应被重复关闭。",
+    "--blocker-signature",
+    "double-complete"
+  ],
+  "command": "runtime/bin/redcap long-task complete --packet /var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/positive-run/redcap-long-task-active-run.json --outcome completed --final-objective-delta '完成后故意再次 complete，必须被状态门禁拒绝。' --completion-evidence /var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/positive-run/final-receipt.json --final-summary '已完成的 active_run 不应被重复关闭。' --blocker-signature double-complete",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "duration_seconds": 0.043,
+  "executed_at": "2026-06-18T07:05:50.972467+00:00",
+  "executor": "codex",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "fixture_payload": {
+    "expected_failure": "lifecycle_state=running"
+  },
+  "name": "negative-double-complete",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "started_at": "2026-06-18T07:05:50.929715+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "{\n  \"schema_id\": \"redcap-long-task-complete-result\",\n  \"ok\": false,\n  \"failures\": [\n    \"complete requires active_run.lifecycle_state=running\"\n  ]\n}\n",
+  "stdout_sha256": "abd5580d7440379d041fe21ecb61a73850d1e67f7f415a0ea5738d3924d5c048"
+}

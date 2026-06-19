@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "Three rounds produced convincing evidence artifacts (source pack, injection test, normal path verification), but the injection mechanism's evidentiary value depends on a single unverified fact: whether REDCAP_TEST_INJECT_CARRIER_MARKER_CLEANUP_FAILURE is checked inside the production carrier_probe code path or only in a test wrapper. Without code access, this review cannot distinguish between \"proven production resilience\" and \"convincing test theater.\" The progression from code fixes (R1-R2) to documentation artifacts (R3 source pack) is also a concerning trajectory.",
+  "main_concern": "The cleanup failure injection's location in the codebase is unverified. If REDCAP_TEST_INJECT_CARRIER_MARKER_CLEANUP_FAILURE is checked only in a test wrapper, CLI entry point, or special test mode rather than inside carrier_probe() or carrier_probe_attempt_decision(), the injection proves nothing about how production carrier_probe handles real marker cleanup failures. The env var name itself (\"TEST_INJECT\") is suspicious — production code paths shouldn't contain test-only injection points. A real marker cleanup failure would not go through an env-var-gated code path.",
+  "top_risks": [
+    "Injection env var gated behind test-only code path: if REDCAP_TEST_INJECT_CARRIER_MARKER_CLEANUP_FAILURE is checked in a CLI wrapper or test harness rather than the production carrier_probe function, the claimed proof of production resilience is invalid.",
+    "Source pack staleness: source-pack.md is a snapshot artifact; the actual complete_revival_e2e.py may have diverged since the pack was generated, making the evidence pack misleading.",
+    "Round-4 review loop: four rounds on the same carrier-probe issue with evolving evidence types (code fixes → documentation → injection tests) may indicate the underlying problem hasn't been addressed at root cause, only re-framed with different evidence each round."
+  ],
+  "missing_evidence": [
+    "Direct diff or code trace showing exactly where REDCAP_TEST_INJECT_CARRIER_MARKER_CLEANUP_FAILURE is read — is it inside carrier_probe_attempt_decision() or carrier_probe() (production path) or in a test wrapper / CLI entry point?",
+    "Current complete_revival_e2e.py full source compared against source-pack.md to confirm the pack is not stale.",
+    "Independent verification run (different machine, different operator) of both normal and failure-injection paths, not produced by the same developer who made the changes."
+  ],
+  "minimum_fix": "Before proceeding to full E2E: confirm (via code inspection) that REDCAP_TEST_INJECT_CARRIER_MARKER_CLEANUP_FAILURE is read inside the production carrier_probe() or carrier_probe_attempt_decision() function body, not in a test wrapper or CLI entry point. If it's not in the production path, move the injection check into the production function. Additionally, verify the source-pack.md content matches the current HEAD of complete_revival_e2e.py line-for-line — if there's any divergence, regenerate the pack.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Round 4 on the same carrier-probe issue. The evidence type shifted from code implementation (R1-R2) to documentation artifacts (R3 source pack) to injection tests (R4). Each round addresses the previous concern with a different category of artifact rather than converging on a stable implementation. The forbidden shortcut '不得把尚未运行完整 E2E 作为本 carrier 修复未通过的理由' suggests previous reviews may have been blocked on procedural rather than technical grounds. This pattern risks indefinite review iteration."
+  },
+  "user_intent_alignment": "aligned"
+}

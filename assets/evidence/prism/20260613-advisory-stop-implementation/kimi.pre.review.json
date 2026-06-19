@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The plan frames the change as a clean rollback of a no-Stop observer followed by deployment of an advisory Stop. In reality, the no-Stop observer is only a lifecycle packet and some retired-hook contract text (no deployed runtime code to roll back), while the existing codex-hook.py Stop branch is still a hard blocker with old-style block reasons. The plan therefore promises a bigger mechanical change than the rollback actually requires, and at the same time it under-describes how the existing blocking Stop branch will be transformed into something genuinely advisory. The word 'advisory' is being used to describe a hook that the plan itself says can still block.",
+  "main_concern": "The plan contains a central contradiction: it calls Stop 'advisory' and says it 'only provides bounded suggestions and corrections', but also states 'Stop may block to force a revised answer'. Blocking is not advisory. If Stop retains a veto over the final reply, Cap's independence is limited to compliance or looping, not genuine arbitration. The old pathology—replies re-centering around hook feedback instead of the original user task—was caused by exactly this kind of Stop-controlled reply axis, not merely by the wording of block reasons. Reframing the same block power as 'correction constraints' risks reproducing the drift under a softer name.",
+  "top_risks": [
+    "Advisory label conceals retained veto power: Stop can still block, so Cap 'judges suggestions independently' only in name unless a concrete override path is implemented and tested.",
+    "No concrete Cap arbitration mechanism: 'Cap arbitration wording' is listed as a constraint but not specified as a code path, contract state, or recorded decision; this is exactly the kind of wording-only protection the review bias warns against.",
+    "Six hard constraints lack enforcement mapping: the plan lists constraints but does not say which will be enforced by deterministic code, by contract check, or by self-check, making them easy to document and hard to verify."
+  ],
+  "missing_evidence": [
+    "Exact inventory of no-Stop observer remnants to remove: only the lifecycle packet and contract text were found; the plan should specify every file, command, and marker that will be deleted or superseded.",
+    "Advisory payload schema with original-task anchor and Cap override path: an example JSON block/suggest payload and a worked example of how Cap rejects or accepts a Stop correction without rewriting the reply around hook feedback.",
+    "Self-check fixture proving the old drift pathology is not reintroduced: a test that asserts the block reason is anchored to the original task and that a simulated Cap override can continue without the hook reason becoming the new reply topic."
+  ],
+  "minimum_fix": "Before modifying hooks.json or contracts, produce and review three artifacts: (1) a decision model that explicitly distinguishes Stop-suggest from Stop-block and documents how Cap records an override, including the data field and command path; (2) an example advisory payload schema with fields such as original_task_excerpt, correction_constraints[], cap_may_override, max_rounds, and recovery_focus_anchor; (3) a new self-check fixture in codex-hook.py that verifies a Cap-override continuation does not re-center the reply on hook feedback. Only after these design artifacts are accepted should the implementation proceed to config, adapter, and doc changes.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The plan includes two genuine anti-loop signals: a max correction rounds constraint and an original-task anchor constraint. However, both are currently listed as planned constraints without implementation detail; they must become code-enforced limits, not just documentation."
+  },
+  "user_intent_alignment": "drifting"
+}

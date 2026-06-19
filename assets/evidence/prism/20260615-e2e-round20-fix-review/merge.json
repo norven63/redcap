@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "Approving a pre-implementation plan cannot verify that the verifier will remain strict. The two most material fixes—browser 'observable state change' and dual signupIntent/signups acceptance—introduce new subjective criteria that could silently relax acceptance if their validation logic is not tightly specified."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The browser interaction fix's \"observable state change\" criterion is undefined. Without a measurable definition (text hash, DOM mutation threshold, specific element visibility toggle), the verifier risks latching onto any incidental page side-effect — CSS transitions, XHR spinners, re-renders — inflating the pass rate without improving verification quality. The logging of all attempted candidates further creates an evidence artifact that reads as diligence but is automated fuzzing."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Cap should implement the fixes, provide the code diff, run targeted verifier tests on the round 20 failure cases, and then submit a post-implementation Prism review before declaring round 21 ready to rerun."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before implementation: (1) Define browser \"observable state change\" as a measurable criterion — minimum: page textContent hash differs pre/post interaction AND at least one non-transient DOM element was added/removed/modified. (2) Add a guard clause to the signup probe: if signups array is present but empty, the probe must fail with the same severity as missing signupIntent. (3) Consider implementing the three fixes sequentially with interleaved verification rather than landing them as a single changeset."
+    }
+  ],
+  "anti_loop_detected": true
+}

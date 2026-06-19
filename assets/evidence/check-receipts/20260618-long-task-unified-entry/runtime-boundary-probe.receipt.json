@@ -1,0 +1,429 @@
+{
+  "cases": [
+    {
+      "discovery": {
+        "check_receipt": {
+          "argv": [
+            "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+            "long-task",
+            "check",
+            "--packet",
+            "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/illegal-lifecycle-state/redcap-long-task-active-run.json"
+          ],
+          "cleanup_wait_timed_out": null,
+          "completion_reason": null,
+          "cwd": "/Users/norven/workspace/AI Era/redcap",
+          "exit_code": 1,
+          "intentional_stop_after_completion": null,
+          "interactive_confirm_prompt_seen": null,
+          "ok": false,
+          "process_group_killed": null,
+          "pty": null,
+          "stderr_length": 0,
+          "stderr_sha256": null,
+          "stderr_tail": "",
+          "stdout_length": 488,
+          "stdout_sha256": "58c02522541c71fe322c651bdcd517454e87bc9ada124aafe5f5ad5e54e260b6",
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": false,\n  \"path\": \"/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/illegal-lifecycle-state/redcap-long-task-active-run.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": [\n    \"active_run.lifecycle_state must be one of running, completed, blocked, human_decision\"\n  ]\n}\n",
+          "stop_requested_after_completion": null,
+          "terminal_query_responses": null,
+          "timed_out": false,
+          "timeout_seconds": 60,
+          "trust_prompt_confirmed": null
+        },
+        "completion_boundary_outcome": null,
+        "completion_boundary_present": false,
+        "event": "discover_active_run",
+        "expected_lifecycle_state": "running",
+        "failures": [
+          "E2E 巡检发现 active_run 包，但合同检查失败。",
+          "E2E 巡检 active_run 状态不匹配：期望 running，实际 paused"
+        ],
+        "lifecycle_state": "paused",
+        "ok": false,
+        "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/illegal-lifecycle-state/redcap-long-task-active-run.json",
+        "packet_sha256": "54517f2ca357713bb5cf59f97befe5012df8f543dd138b75c06ab4b9d9548350",
+        "require_completion_boundary": false,
+        "schema_id": "redcap-e2e-long-task-active-run-discovery"
+      },
+      "entry_failures": [
+        "E2E 长任务 active_run 入口合同检查失败，不能启动项目执行。",
+        "E2E 长任务 active_run 入口状态必须是 running。"
+      ],
+      "final_failures": [
+        "E2E 长任务 active_run 收束合同检查失败。",
+        "E2E 长任务 active_run 收束状态错误：期望 completed，实际 paused",
+        "E2E 通过时必须写入 active_run completion_boundary。"
+      ],
+      "name": "illegal-lifecycle-state",
+      "rejected": true,
+      "status": {
+        "check_receipt": {
+          "argv": [
+            "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+            "long-task",
+            "check",
+            "--packet",
+            "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/illegal-lifecycle-state/redcap-long-task-active-run.json"
+          ],
+          "cleanup_wait_timed_out": null,
+          "completion_reason": null,
+          "cwd": "/Users/norven/workspace/AI Era/redcap",
+          "exit_code": 1,
+          "intentional_stop_after_completion": null,
+          "interactive_confirm_prompt_seen": null,
+          "ok": false,
+          "process_group_killed": null,
+          "pty": null,
+          "stderr_length": 0,
+          "stderr_sha256": null,
+          "stderr_tail": "",
+          "stdout_length": 488,
+          "stdout_sha256": "58c02522541c71fe322c651bdcd517454e87bc9ada124aafe5f5ad5e54e260b6",
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": false,\n  \"path\": \"/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/illegal-lifecycle-state/redcap-long-task-active-run.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": [\n    \"active_run.lifecycle_state must be one of running, completed, blocked, human_decision\"\n  ]\n}\n",
+          "stop_requested_after_completion": null,
+          "terminal_query_responses": null,
+          "timed_out": false,
+          "timeout_seconds": 60,
+          "trust_prompt_confirmed": null
+        },
+        "completion_boundary_outcome": null,
+        "completion_boundary_present": false,
+        "lifecycle_state": "paused",
+        "ok": false,
+        "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/illegal-lifecycle-state/redcap-long-task-active-run.json",
+        "schema_id": "redcap-e2e-long-task-active-run-status"
+      }
+    },
+    {
+      "discovery": {
+        "check_receipt": {
+          "argv": [
+            "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+            "long-task",
+            "check",
+            "--packet",
+            "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/running-with-completion-boundary/redcap-long-task-active-run.json"
+          ],
+          "cleanup_wait_timed_out": null,
+          "completion_reason": null,
+          "cwd": "/Users/norven/workspace/AI Era/redcap",
+          "exit_code": 1,
+          "intentional_stop_after_completion": null,
+          "interactive_confirm_prompt_seen": null,
+          "ok": false,
+          "process_group_killed": null,
+          "pty": null,
+          "stderr_length": 0,
+          "stderr_sha256": null,
+          "stderr_tail": "",
+          "stdout_length": 478,
+          "stdout_sha256": "94527506327440e056a1f2008a1feaaa2a741309ae836f13254f30ea25fec1e1",
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": false,\n  \"path\": \"/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/running-with-completion-boundary/redcap-long-task-active-run.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": [\n    \"running active_run must not contain a terminal completion_boundary\"\n  ]\n}\n",
+          "stop_requested_after_completion": null,
+          "terminal_query_responses": null,
+          "timed_out": false,
+          "timeout_seconds": 60,
+          "trust_prompt_confirmed": null
+        },
+        "completion_boundary_outcome": "running",
+        "completion_boundary_present": true,
+        "event": "discover_active_run",
+        "expected_lifecycle_state": "running",
+        "failures": [
+          "E2E 巡检发现 active_run 包，但合同检查失败。"
+        ],
+        "lifecycle_state": "running",
+        "ok": false,
+        "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/running-with-completion-boundary/redcap-long-task-active-run.json",
+        "packet_sha256": "c40e04066bf801f6ddc8c95dda323b3d2742e768b4b7828a8988c0b2543bdc41",
+        "require_completion_boundary": false,
+        "schema_id": "redcap-e2e-long-task-active-run-discovery"
+      },
+      "entry_failures": [
+        "E2E 长任务 active_run 入口合同检查失败，不能启动项目执行。",
+        "E2E 长任务 active_run 入口不能带 completion_boundary。"
+      ],
+      "final_failures": [
+        "E2E 长任务 active_run 收束合同检查失败。",
+        "E2E 长任务 active_run 收束状态错误：期望 completed，实际 running"
+      ],
+      "name": "running-with-completion-boundary",
+      "rejected": true,
+      "status": {
+        "check_receipt": {
+          "argv": [
+            "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+            "long-task",
+            "check",
+            "--packet",
+            "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/running-with-completion-boundary/redcap-long-task-active-run.json"
+          ],
+          "cleanup_wait_timed_out": null,
+          "completion_reason": null,
+          "cwd": "/Users/norven/workspace/AI Era/redcap",
+          "exit_code": 1,
+          "intentional_stop_after_completion": null,
+          "interactive_confirm_prompt_seen": null,
+          "ok": false,
+          "process_group_killed": null,
+          "pty": null,
+          "stderr_length": 0,
+          "stderr_sha256": null,
+          "stderr_tail": "",
+          "stdout_length": 478,
+          "stdout_sha256": "94527506327440e056a1f2008a1feaaa2a741309ae836f13254f30ea25fec1e1",
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": false,\n  \"path\": \"/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/running-with-completion-boundary/redcap-long-task-active-run.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": [\n    \"running active_run must not contain a terminal completion_boundary\"\n  ]\n}\n",
+          "stop_requested_after_completion": null,
+          "terminal_query_responses": null,
+          "timed_out": false,
+          "timeout_seconds": 60,
+          "trust_prompt_confirmed": null
+        },
+        "completion_boundary_outcome": "running",
+        "completion_boundary_present": true,
+        "lifecycle_state": "running",
+        "ok": false,
+        "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/running-with-completion-boundary/redcap-long-task-active-run.json",
+        "schema_id": "redcap-e2e-long-task-active-run-status"
+      }
+    },
+    {
+      "discovery": {
+        "check_receipt": {
+          "argv": [
+            "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+            "long-task",
+            "check",
+            "--packet",
+            "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completed-without-completion-boundary/redcap-long-task-active-run.json"
+          ],
+          "cleanup_wait_timed_out": null,
+          "completion_reason": null,
+          "cwd": "/Users/norven/workspace/AI Era/redcap",
+          "exit_code": 1,
+          "intentional_stop_after_completion": null,
+          "interactive_confirm_prompt_seen": null,
+          "ok": false,
+          "process_group_killed": null,
+          "pty": null,
+          "stderr_length": 0,
+          "stderr_sha256": null,
+          "stderr_tail": "",
+          "stdout_length": 472,
+          "stdout_sha256": "8ce2e691192097b89c8e2a8a97ebe5f9f13794014f3364986bee3d3837996db7",
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": false,\n  \"path\": \"/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completed-without-completion-boundary/redcap-long-task-active-run.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": [\n    \"terminal active_run requires completion_boundary object\"\n  ]\n}\n",
+          "stop_requested_after_completion": null,
+          "terminal_query_responses": null,
+          "timed_out": false,
+          "timeout_seconds": 60,
+          "trust_prompt_confirmed": null
+        },
+        "completion_boundary_outcome": null,
+        "completion_boundary_present": false,
+        "event": "discover_active_run",
+        "expected_lifecycle_state": "completed",
+        "failures": [
+          "E2E 巡检发现 active_run 包，但合同检查失败。",
+          "E2E 巡检要求 completion_boundary，但 active_run 未提供。"
+        ],
+        "lifecycle_state": "completed",
+        "ok": false,
+        "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completed-without-completion-boundary/redcap-long-task-active-run.json",
+        "packet_sha256": "868b2aa1fca6324889a66a7126847857b74b2942a1aa068cae2e05a7ce71f8a7",
+        "require_completion_boundary": true,
+        "schema_id": "redcap-e2e-long-task-active-run-discovery"
+      },
+      "entry_failures": [
+        "E2E 长任务 active_run 入口合同检查失败，不能启动项目执行。",
+        "E2E 长任务 active_run 入口状态必须是 running。"
+      ],
+      "final_failures": [
+        "E2E 长任务 active_run 收束合同检查失败。",
+        "E2E 通过时必须写入 active_run completion_boundary。"
+      ],
+      "name": "completed-without-completion-boundary",
+      "rejected": true,
+      "status": {
+        "check_receipt": {
+          "argv": [
+            "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+            "long-task",
+            "check",
+            "--packet",
+            "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completed-without-completion-boundary/redcap-long-task-active-run.json"
+          ],
+          "cleanup_wait_timed_out": null,
+          "completion_reason": null,
+          "cwd": "/Users/norven/workspace/AI Era/redcap",
+          "exit_code": 1,
+          "intentional_stop_after_completion": null,
+          "interactive_confirm_prompt_seen": null,
+          "ok": false,
+          "process_group_killed": null,
+          "pty": null,
+          "stderr_length": 0,
+          "stderr_sha256": null,
+          "stderr_tail": "",
+          "stdout_length": 472,
+          "stdout_sha256": "8ce2e691192097b89c8e2a8a97ebe5f9f13794014f3364986bee3d3837996db7",
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": false,\n  \"path\": \"/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completed-without-completion-boundary/redcap-long-task-active-run.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": [\n    \"terminal active_run requires completion_boundary object\"\n  ]\n}\n",
+          "stop_requested_after_completion": null,
+          "terminal_query_responses": null,
+          "timed_out": false,
+          "timeout_seconds": 60,
+          "trust_prompt_confirmed": null
+        },
+        "completion_boundary_outcome": null,
+        "completion_boundary_present": false,
+        "lifecycle_state": "completed",
+        "ok": false,
+        "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completed-without-completion-boundary/redcap-long-task-active-run.json",
+        "schema_id": "redcap-e2e-long-task-active-run-status"
+      }
+    },
+    {
+      "discovery": {
+        "check_receipt": {
+          "argv": [
+            "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+            "long-task",
+            "check",
+            "--packet",
+            "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completion-boundary-outcome-mismatch/redcap-long-task-active-run.json"
+          ],
+          "cleanup_wait_timed_out": null,
+          "completion_reason": null,
+          "cwd": "/Users/norven/workspace/AI Era/redcap",
+          "exit_code": 1,
+          "intentional_stop_after_completion": null,
+          "interactive_confirm_prompt_seen": null,
+          "ok": false,
+          "process_group_killed": null,
+          "pty": null,
+          "stderr_length": 0,
+          "stderr_sha256": null,
+          "stderr_tail": "",
+          "stdout_length": 481,
+          "stdout_sha256": "8f52fb2e2cf67940bec4f991d2b9c471b02f5d49f86ccc29fc236da545ead7e6",
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": false,\n  \"path\": \"/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completion-boundary-outcome-mismatch/redcap-long-task-active-run.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": [\n    \"completion_boundary.outcome must match active_run.lifecycle_state\"\n  ]\n}\n",
+          "stop_requested_after_completion": null,
+          "terminal_query_responses": null,
+          "timed_out": false,
+          "timeout_seconds": 60,
+          "trust_prompt_confirmed": null
+        },
+        "completion_boundary_outcome": "blocked",
+        "completion_boundary_present": true,
+        "event": "discover_active_run",
+        "expected_lifecycle_state": "completed",
+        "failures": [
+          "E2E 巡检发现 active_run 包，但合同检查失败。",
+          "E2E 巡检 completion_boundary.outcome 不匹配 lifecycle_state：blocked != completed"
+        ],
+        "lifecycle_state": "completed",
+        "ok": false,
+        "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completion-boundary-outcome-mismatch/redcap-long-task-active-run.json",
+        "packet_sha256": "89d18a5ff8e48bb49e9b82416ff88c66f05995db85ba0d91b764a2b2041a31e8",
+        "require_completion_boundary": true,
+        "schema_id": "redcap-e2e-long-task-active-run-discovery"
+      },
+      "entry_failures": [
+        "E2E 长任务 active_run 入口合同检查失败，不能启动项目执行。",
+        "E2E 长任务 active_run 入口状态必须是 running。",
+        "E2E 长任务 active_run 入口不能带 completion_boundary。"
+      ],
+      "final_failures": [
+        "E2E 长任务 active_run 收束合同检查失败。",
+        "E2E completion_boundary.outcome 必须匹配 lifecycle_state：blocked != completed"
+      ],
+      "name": "completion-boundary-outcome-mismatch",
+      "rejected": true,
+      "status": {
+        "check_receipt": {
+          "argv": [
+            "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+            "long-task",
+            "check",
+            "--packet",
+            "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completion-boundary-outcome-mismatch/redcap-long-task-active-run.json"
+          ],
+          "cleanup_wait_timed_out": null,
+          "completion_reason": null,
+          "cwd": "/Users/norven/workspace/AI Era/redcap",
+          "exit_code": 1,
+          "intentional_stop_after_completion": null,
+          "interactive_confirm_prompt_seen": null,
+          "ok": false,
+          "process_group_killed": null,
+          "pty": null,
+          "stderr_length": 0,
+          "stderr_sha256": null,
+          "stderr_tail": "",
+          "stdout_length": 481,
+          "stdout_sha256": "8f52fb2e2cf67940bec4f991d2b9c471b02f5d49f86ccc29fc236da545ead7e6",
+          "stdout_tail": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": false,\n  \"path\": \"/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completion-boundary-outcome-mismatch/redcap-long-task-active-run.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": [\n    \"completion_boundary.outcome must match active_run.lifecycle_state\"\n  ]\n}\n",
+          "stop_requested_after_completion": null,
+          "terminal_query_responses": null,
+          "timed_out": false,
+          "timeout_seconds": 60,
+          "trust_prompt_confirmed": null
+        },
+        "completion_boundary_outcome": "blocked",
+        "completion_boundary_present": true,
+        "lifecycle_state": "completed",
+        "ok": false,
+        "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/completion-boundary-outcome-mismatch/redcap-long-task-active-run.json",
+        "schema_id": "redcap-e2e-long-task-active-run-status"
+      }
+    }
+  ],
+  "failures": [],
+  "ok": true,
+  "schema_id": "redcap-e2e-active-run-runtime-boundary-probe",
+  "valid_entry": {
+    "check": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/valid-entry/redcap-long-task-active-run.check.json",
+    "check_receipt": {
+      "argv": [
+        "/Users/norven/workspace/AI Era/redcap/runtime/bin/redcap",
+        "long-task",
+        "check",
+        "--packet",
+        "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/valid-entry/redcap-long-task-active-run.json"
+      ],
+      "cleanup_wait_timed_out": null,
+      "completion_reason": null,
+      "cwd": "/Users/norven/workspace/AI Era/redcap",
+      "exit_code": 0,
+      "intentional_stop_after_completion": null,
+      "interactive_confirm_prompt_seen": null,
+      "iteration": 1,
+      "ok": true,
+      "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/valid-entry/redcap-long-task-active-run.json",
+      "packet_sha256": "239210d07db112b6d077f1ac0895634f2b63d82f21fcd76c6702eca22de9806b",
+      "process_group_killed": null,
+      "pty": null,
+      "schema_id": "redcap-e2e-long-task-active-run-check",
+      "status": "running",
+      "stderr_length": 0,
+      "stderr_sha256": null,
+      "stderr_tail": "",
+      "stdout_length": 409,
+      "stdout_sha256": "ddd62614110abbd9c7832be0352242d23dbd4422265159eeda5ba990a6cacbd1",
+      "stdout_tail": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": true,\n  \"path\": \"/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/valid-entry/redcap-long-task-active-run.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": []\n}\nREDCAP_LONG_TASK_CONTRACT_OK\n",
+      "stop_requested_after_completion": null,
+      "terminal_query_responses": null,
+      "timed_out": false,
+      "timeout_seconds": 60,
+      "trust_prompt_confirmed": null
+    },
+    "completion_boundary_outcome": null,
+    "completion_boundary_present": false,
+    "lifecycle_state": "running",
+    "ok": true,
+    "packet": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe/active-run-runtime-boundary-probe/valid-entry/redcap-long-task-active-run.json",
+    "schema_id": "redcap-e2e-long-task-active-run-status"
+  },
+  "valid_entry_failures": [],
+  "work_root": "/Users/norven/workspace/redcap-e2e-runs/20260618-runtime-boundary-probe"
+}

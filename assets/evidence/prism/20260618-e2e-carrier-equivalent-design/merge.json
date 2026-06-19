@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "该方案有把 E2E 阻塞问题重新包装成“RedCap 自产等价证据子系统”的风险：它尚未证明所生证据与原生 Codex Hook 行为等效，也未证明该承载层已被实际构建并在完整巡检循环中跑通。目前它是一份带强约束的计划，而不是现实变更。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The proposal skips root-cause diagnosis of why Codex CLI project-level Hooks don't trigger, and instead builds a replacement evidence pipeline (RedCap equivalent carrier layer). This structurally treats the symptom (missing Hook evidence) rather than the cause (Hook non-triggering). The user's explicit constraint is \"不得降级\" (no downgrading), but replacing native CLI execution context evidence with RedCap-synthesized evidence IS a form of downgrading — even if transparently labeled. The carrier layer records what RedCap thinks happened, not what the CLI actually did, losing environmental side-effects, authentic process state, and ground-truth execution context that native Hooks capture."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "不要把设计方案当作完成态。应实现该承载层、跑完一次完整 E2E 巡检循环，并附上可执行证据（命令收据、session_id、self-check 输出、最终棱镜复核）。如果承载层无法证明其证据与原生 Hook 等效，应保持 blocked，并报告根因，而不是合并 fallback。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Add a mandatory root-cause investigation phase BEFORE any carrier layer implementation: (1) Diagnose why Codex CLI project-level Hooks don't trigger in the current environment — check Hook configuration, CLI version compatibility, file path resolution, permission model, and event routing. (2) Attempt native fix with evidence of what was tried. (3) Only if native fix is definitively impossible (with documented evidence of attempts), proceed with carrier layer design — and even then, explicitly label carrier-layer evidence as \"synthetic/RedCap-generated\" (not \"equivalent\") and downgrade the confidence tier of any conclusions drawn from it. (4) Set a hard expiry on the carrier layer workaround — require periodic re-check of whether native Hooks have become available."
+    }
+  ],
+  "anti_loop_detected": true
+}

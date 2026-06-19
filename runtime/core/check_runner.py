@@ -47,6 +47,8 @@ STEPS: tuple[Step, ...] = (
     Step("scan-conclusion-self-check", redcap("scan-conclusion", "self-check")),
     Step("known-issues-order-check", redcap("known-issues-order", "check")),
     Step("known-issues-queue-check", redcap("known-issues-queue", "check", "--require-1-4-verified")),
+    Step("long-task-contract-self-check", redcap("long-task", "self-check")),
+    Step("long-task-contract-check", redcap("long-task", "check", "--packet", "assets/contracts/long-task-contract.json", "--require-integration")),
     Step("boundary-consumers-check", redcap("boundary-consumers", "check")),
     Step("legacy-evidence-check", redcap("legacy-evidence", "check")),
     Step("legacy-evidence-self-check", redcap("legacy-evidence", "self-check")),

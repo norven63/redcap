@@ -1,0 +1,68 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260611-process-placement-self-reference",
+  "merge_path": "merge.json",
+  "reviews": [
+    "kimi.review.json",
+    "claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 成立：只有设计说明会复发旧病，必须落到运行时代码。Cap 已新增过程文件归属策略和检查器，将 43 个历史错放文件登记为遗留债务，并把检查器接入 redcap check；同时把 redcap check 从终局开放任务检查中解耦，complete-revival-check 仍保持严格。",
+      "implementation_evidence": [
+        "assets/contracts/process-artifact-placement.json",
+        "runtime/core/process_artifact_placement.py",
+        "runtime/bin/redcap"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-check.receipt.json",
+        "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-negative-real-workspace.receipt.json",
+        "assets/evidence/check-receipts/20260611-process-placement-self-reference/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 的 concern 成立：治理不能只停留在方案。Cap 已补齐遗留清单、可执行检查器、临时误放文件负样例、普通体检与终局验收分层验证，并修正 formal_usable_check 自检不应依赖当前开放任务状态的问题。",
+      "implementation_evidence": [
+        "assets/contracts/process-artifact-placement.json",
+        "runtime/core/process_artifact_placement.py",
+        "runtime/bin/redcap",
+        "runtime/core/formal_usable_check.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260611-process-placement-self-reference/status-require-scan-complete.receipt.json",
+        "assets/evidence/check-receipts/20260611-process-placement-self-reference/status-fail-on-open-still-strict.receipt.json",
+        "assets/evidence/check-receipts/20260611-process-placement-self-reference/complete-revival-check-still-strict.receipt.json",
+        "assets/evidence/check-receipts/20260611-process-placement-self-reference/formal-usable-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260611-process-placement-self-reference/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "evidence": [
+    "assets/contracts/process-artifact-placement.json",
+    "runtime/core/process_artifact_placement.py",
+    "runtime/bin/redcap",
+    "runtime/core/formal_usable_check.py",
+    "runtime/bin/redcap process-artifacts check",
+    "runtime/bin/redcap process-artifacts self-check",
+    "临时误放文件负样例：assets/contracts/redcap-placement-negative-fixture-lifecycle.json 被检查器捕获后已清理",
+    "runtime/bin/redcap status --json --require-scan-complete",
+    "runtime/bin/redcap status --json --require-scan-complete --fail-on-open",
+    "runtime/bin/redcap complete-revival-check",
+    "runtime/bin/redcap check"
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两方 concern 均被接受并以运行时代码、策略文件、负样例和整体验证处理；本结论只关闭过程文件归属治理与状态自指阻塞治理，不声明 RedCap 完整复活终局完成。"
+  }
+}

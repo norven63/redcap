@@ -1,0 +1,28 @@
+{
+  "providers": [
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "claude-code",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "claude-code",
+      "concern": "The \"final-sounding scan conclusion\" vs \"provisional stage-status\" classification boundary is a semantic line, not a structural one. There is no specified classification algorithm, no false-positive/false-negative analysis, and no adversarial testing plan. The guard's entire effectiveness depends on correctly classifying assistant intent from natural language output. Cap already demonstrated it can generate convincing-but-wrong summaries; the same capability can produce language that hovers on the safe side of whatever boundary the classifier draws. Without a structural signal (e.g., requiring a machine-readable status code or a cryptographically verifiable progress token), the guard is a linguistic filter that a sufficiently verbose model can talk its way around."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Replace or augment the semantic classification with a structural requirement: every scan status response MUST include a machine-parseable progress block sourced from the task fact ledger with at minimum (shards_completed / shards_total, merge_status, last_verified_output_timestamp). The guard then inspects this structural block rather than classifying natural language. This transforms the guard from a linguistic gate into a data-integrity gate that cannot be bypassed by rhetorical framing. Additionally, specify that a blocked conclusion MUST feed back into the next turn's system prompt as a correction signal rather than silently dropping."
+    }
+  ],
+  "anti_loop_detected": false
+}

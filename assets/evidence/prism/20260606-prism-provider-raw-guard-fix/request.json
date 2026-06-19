@@ -1,0 +1,40 @@
+{
+  "task": "Review the Prism provider raw-output guard fix",
+  "user_intent": "Norven approved fixing the two blockers before continuing: Kimi provider review invocation reliability, and verified raw-output metadata so Cap does not blindly trust dispatcher summaries.",
+  "main_claim": "The implementation now makes Kimi provider dispatch use a no-tool review agent with final-message-only output, writes verified .raw.meta.json metadata next to every dispatcher raw file, provides a raw metadata verifier, and blocks broad Codex reads of Prism raw provider output through the host hook.",
+  "changed_reality": [
+    "runtime/prism/provider-agents/kimi-review-agent.yaml defines a Kimi review agent with tools=[] and subagents={}.",
+    "runtime/prism/bin/prism-dispatch now invokes Kimi with --agent-file, --final-message-only, --output-format text, --plan, and --max-steps-per-turn 1.",
+    "runtime/prism/bin/prism-dispatch now writes .raw.meta.json files with raw_path, raw_size_bytes, raw_sha256, exit_code, timeout fields, and bounded attempt summaries.",
+    "runtime/prism/bin/prism-dispatch --verify-raw-meta recomputes raw size and sha256 instead of trusting the metadata file blindly.",
+    "runtime/host-adapters/codex/codex-hook.py now blocks broad reads of assets/evidence/prism/**/*.raw.json by common raw-dumping commands, while allowing .raw.meta.json and --verify-raw-meta diagnostics."
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "evidence_summary": [
+    "python3 -m py_compile runtime/prism/bin/prism-dispatch runtime/host-adapters/codex/codex-hook.py passed.",
+    "runtime/prism/bin/prism-dispatch --self-check passed.",
+    "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge passed.",
+    "Kimi agent-file load smoke returned KIMI_AGENT_FILE_LOAD_OK.",
+    "Kimi dispatcher smoke returned PRISM_DISPATCH_OK and PRISM_RAW_META_OK.",
+    "Kimi dispatcher smoke produced raw size 5895 bytes, metadata size 780 bytes, review size 2469 bytes.",
+    "Simulated Codex PreToolUse denied python3 -m json.tool assets/evidence/prism/run/kimi.raw.json.",
+    "Simulated Codex PreToolUse allowed runtime/prism/bin/prism-dispatch --verify-raw-meta --raw-out assets/evidence/prism/run/kimi.raw.json."
+  ],
+  "review_questions": [
+    "Does this fix the two blockers without introducing a new blind-trust metadata path?",
+    "Is the Kimi invocation now sufficiently bounded for Prism review work under the currently available Kimi CLI flags?",
+    "Is the raw-read hook narrow enough to preserve legitimate diagnostics but strong enough to stop the observed context pollution accident?",
+    "What must be fixed before Cap may treat this as usable infrastructure for the next RedCap revival tasks?"
+  ],
+  "non_goals": [
+    "Do not require removing full raw provider output.",
+    "Do not broaden providers beyond Kimi and Claude Code.",
+    "Do not require solving Claude model pinning in this task.",
+    "Do not require a cross-host universal hook interception layer in this task."
+  ]
+}

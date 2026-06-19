@@ -1,0 +1,61 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260606-prism-provider-raw-guard-fix",
+  "merge_path": "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/kimi-followup.review.json",
+    "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/claude-code-followup.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 有效：本次修复不能只依赖代码自检，必须补足独立 Kimi 受限运行、raw 读取拦截、raw 元数据验证和全量 RedCap 检查回执。现在已经用无工具 agent 文件限制 Kimi，落地 raw 元数据语义校验，并用 hook 阻断 raw/raw.meta 直接读取与未排除 raw 的广域检索。",
+      "implementation_evidence": [
+        "runtime/prism/bin/prism-dispatch",
+        "runtime/prism/provider-agents/kimi-review-agent.yaml",
+        "runtime/host-adapters/codex/codex-hook.py",
+        "assets/contracts/directory-structure.json",
+        "runtime/core/layout_guard.py",
+        "assets/contracts/enforcement-matrix.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/kimi-agent-smoke.receipt.json",
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/prism-dispatch-self-check.receipt.json",
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/codex-hook-self-check.receipt.json",
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/raw-meta-verify.receipt.json",
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 的 concern 中，路径拼接绕过风险有效并已纳入 hook 自检；但它关于 verify_raw_meta 从 JSON 可解析性推断 exit_code 的描述与当前实现不符。当前实现会把 metadata 中的 exit_code、timeout、retry 等字段与 raw JSON 中调度器实际写入的同名字段逐项比对，并用伪造 exit_code 与 raw 篡改样例做自检，不做成功/失败启发式推断。",
+      "implementation_evidence": [
+        "runtime/prism/bin/prism-dispatch",
+        "runtime/prism/provider-agents/kimi-review-agent.yaml",
+        "runtime/host-adapters/codex/codex-hook.py",
+        "assets/contracts/directory-structure.json",
+        "runtime/core/layout_guard.py",
+        "assets/contracts/enforcement-matrix.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/kimi-agent-smoke.receipt.json",
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/prism-dispatch-self-check.receipt.json",
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/codex-hook-self-check.receipt.json",
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/raw-meta-verify.receipt.json",
+        "assets/evidence/prism/20260606-prism-provider-raw-guard-fix/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两项 provider concern 均已进入 Cap 仲裁：有效部分已由代码和 hook 落地，事实性不符部分已保留说明；本轮修复以同轮次命令回执作为验收依据。"
+  }
+}

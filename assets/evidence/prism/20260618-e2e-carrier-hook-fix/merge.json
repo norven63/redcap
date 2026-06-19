@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The fix design is directionally correct, but this design review cannot verify that the implementation actually enforces the new success condition, preserves the full REQUIRED_HOOK_EVENTS list, or correctly implements 'continue retrying while hooks or marker are missing.' Without seeing the full carrier_probe function or a passing run, the risk that the same misjudgment persists in code is non-trivial."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "硬编码隔离特定 MCP 服务器名称（neon、railway、openaiDeveloperDocs、node_repl）是一种不稳定的白名单式修复。该列表会随用户环境、Codex CLI 版本和 MCP 生态变化而过时，且无法覆盖用户新增的其他全局 MCP 服务器。更健壮的方案应支持按模式禁用全部非项目级 MCP，或者至少通过环境变量/配置文件可配置隔离列表，而非在 carrier_probe 中硬编码服务器名。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Before passing, land the code changes and supply: (1) the carrier_probe diff, (2) one passing run output, and (3) the negative test. Additionally, expose the MCP/plugin isolation list via an environment variable (e.g., REDCAP_E2E_CARRIER_PROBE_ISOLATE_MCP) so the default can be audited or overridden without source edits."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在合并修复代码前：(1) 将 MCP 隔离列表改为可配置参数（环境变量 REDCAP_E2E_CODEX_DISABLED_MCP_SERVERS），默认值包含已知噪音源但不硬编码为唯一列表；(2) 为重试循环增加 distinguishable failure reason——区分“命令失败”、“marker 缺失”、“Hook 缺失”，并对 Hook 缺失设置独立的重试上限（低于总重试次数）；(3) 在 carrier_probe 完成后清理 marker 文件。(4) 至少运行一次修复后的完整 complete-revival-e2e 管道并记录结果。"
+    }
+  ],
+  "anti_loop_detected": true
+}

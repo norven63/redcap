@@ -1,0 +1,51 @@
+{
+  "schema_id": "redcap-prism-review-request",
+  "task_id": "20260611-redcap-design-structure-logic-review-rerun-kimi-short",
+  "task": "对新RedCap整体评审做Kimi短补评：判断设计思路、目录结构、逻辑实现是否还有必须立刻处理的问题。",
+  "review_mode": "timeout_recovery_short_review",
+  "risk_level": "high",
+  "requested_providers": [
+    "kimi"
+  ],
+  "language_policy": "中文优先；只输出结构化JSON，不展开长文。",
+  "user_intent": "Norven要求和棱镜一起100%细致评审当前新RedCap的设计思路、目录结构、逻辑实现，找出改进项、优化项和尚未执行完毕的任务。",
+  "main_claim": "此前整体评审未完成；当前RedCap具备迁移可用阶段的核心部件，但完整复活终局仍未关闭。本轮需要判断是否可以关闭整体评审任务，或必须先修阻断项。",
+  "changed_reality": [
+    "layout-check通过，根目录保持runtime/运行单元、assets/资产单元、.codex/宿主入口。",
+    "known-issues队列通过：KI-00到KI-03 verified，KI-04端到端验收器与KI-05终局关闭仍 deferred_user_supervised。",
+    "revival-queue通过：15项旧优秀设计覆盖、Loom角色化工作流、运行边界、知识入口、宿主边界审计都有检查证据。",
+    "redcap check与complete-revival-check当前失败，原因是redcap-design-structure-logic-review仍为非终局开放任务。",
+    "Claude Code已返回concern：部件健康不等于整体健康；建议处理过程文件目录归属、self-development下project_runtime_gitignore_ok=false、自指阻塞。Kimi原长评审会话已超时，无有效评审JSON。"
+  ],
+  "non_goals": [
+    "不要声明RedCap完整复活终局完成。",
+    "不要要求批量阅读旧RedCap仓库。",
+    "不要把端到端验收设计当成已执行。"
+  ],
+  "review_questions": [
+    "能否把本轮整体评审任务标记为verified？",
+    "如果不能，阻塞条件是什么？",
+    "当前必须立刻修复的前三个问题是什么？",
+    "哪些遗留任务属于完整复活终局前置？"
+  ],
+  "expected_output": {
+    "format": "json",
+    "required_fields": [
+      "provider",
+      "verdict",
+      "confidence",
+      "reality_delta",
+      "main_concern",
+      "top_risks",
+      "missing_evidence",
+      "minimum_fix",
+      "anti_loop_signal",
+      "user_intent_alignment"
+    ],
+    "verdict_options": [
+      "pass",
+      "concern",
+      "block"
+    ]
+  }
+}

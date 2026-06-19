@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "runtime/bin/redcap process-artifacts check",
+  "exit_code": 0,
+  "executed_at": "2026-06-13T18:18:01+00:00",
+  "executor": "codex-cap",
+  "stdout_sha256": "0b1877005ec6cdf18c66264dfaa6b3d8f9b0d3bbb1313b9e938df6abc58e9278",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_tail": "{\n  \"ok\": true,\n  \"root\": \"/Users/norven/workspace/AI Era/redcap\",\n  \"policy\": \"/Users/norven/workspace/AI Era/redcap/assets/contracts/process-artifact-placement.json\",\n  \"found_in_forbidden_roots\": [],\n  \"failures\": []\n}\nREDCAP_PROCESS_ARTIFACT_PLACEMENT_OK\n",
+  "stderr_tail": ""
+}

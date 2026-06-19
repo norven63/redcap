@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "pass",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "block",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "block",
+  "strictest_provider": "claude-code",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The Chinese-first checker mechanism remains opaque; we know it passes curated samples but not whether it is an LLM judge, heuristic ensemble, or disguised regex theater. At 360-scan scale this opacity becomes risky—an overfitted or brittle checker could either flood Cap with false positives or silently leak machine jargon. Additionally, the task_started_at fallback to created_at for older manifests is a latent compatibility path that could reactivate session-scoped misaccounting if legacy manifests are loaded during old-RedCap archaeology."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "prism-dispatch-timeout-e2e 脚本验证了「代码逻辑在独立进程中也能 run」，但没有测试任何跨进程边界才暴露的行为（真正需要 e2e 测试的场景：dispatcher 崩溃后子进程是否被正确清理、SIGTERM 是否正确传播到 provider 子进程、进程组 kill 是否原子生效）。human-output 的 5 个混合语言样本看起来是增加了数量，但样本的 adversarial 性质存疑——如果 checker 是基于 regex 检测中文字符的存在性，那么任何包含至少一个中文字符的混合文本都会 pass，而不含任何中文的纯英文会 fail。这种 naive regex 的「15+ 样本」不会暴露新的失败模式——它只是在验证同一个简单规则对更多输入样本都成立。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Close the batch under the explicit reopening clause. Before starting the 360 scan, Cap should document the Chinese checker mechanism in the contract and confirm the e2e test is integrated into automated checks. If the 360 scan surfaces concrete timeout misaccounting or Chinese-policy violations, the batch reopens immediately for behavior fixes, not for additional sample curation or documentation."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "三个修复：(1) prism-dispatch-timeout-e2e 增加至少一个 crash 注入场景——kill -9 dispatcher 进程后验证子进程是否被进程组清理；如果当前架构不支持进程组，至少记录这是已知的清理缺口并降级 e2e 的声称范围。(2) human_output_policy 自检增加至少 3 个真正的对抗性样本——不含 CJK 字符的 human-readable 输出、中文占比低于 5% 的混合文本、以及包含未解释技术术语的纯中文文本。(3) 在 lifecycle packet 或 contract 中显式写入 batch 的 reopen 触发条件，格式可以简单如 \"reopen_on: [prism_360_concern, prism_360_block]\"——以确保 caveat 是可自动化的而不仅仅是一个人类注释。"
+    }
+  ],
+  "anti_loop_detected": true
+}

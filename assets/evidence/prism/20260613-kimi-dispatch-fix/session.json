@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260613-kimi-dispatch-fix",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260613-kimi-dispatch-fix",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-13T07:57:05+00:00",
+  "task_started_at": "2026-06-13T07:57:05+00:00",
+  "updated_at": "2026-06-13T07:57:05+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "pending",
+      "last_review": null
+    },
+    "kimi": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "pending",
+      "last_review": null
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "Initial Prism task session manifest."
+  }
+}

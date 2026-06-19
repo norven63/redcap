@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "Concrete code changes are described and limited in scope: the browser verifier now requires both text_hash and dom_summary_hash changes, signup evidence requires non-empty signups/signupIntent, and interactive gate markers separate observed noise from actionable retry evidence. The acceptance contract was updated to match. Targeted round 20 tests and self-checks are reported as passing.",
+  "main_concern": "All evidence is self-reported summary-level pass/fail information; there is no raw log, hash value, screenshot, or independent reproduction attached. Targeted tests on round 20 artifacts validate the specific fix points, but they do not demonstrate that the fixes survive a full E2E run under round 21's broader constraints.",
+  "top_risks": [
+    "The targeted round 20 browser and signup tests may not exercise every verifier path that round 21 will hit, so brittle behavior could recur on a slightly different page or event shape.",
+    "Because only summary command outputs are provided, a false-positive pass (e.g., an exception silently swallowed or a hash collision) could be hidden behind 'Passed.'",
+    "The new interactive marker separation is plausible, but without raw observed-vs-actionable marker logs we cannot confirm it actually reduces noise rather than just renaming the same data."
+  ],
+  "missing_evidence": [
+    "Raw logs/hashes/screenshots from the targeted round 20 browser and signup tests showing before/after values and the exact rejection cases.",
+    "An independent or full round 20 replay, or a minimal round 21 dry-run, that exercises Loom roles, hooks, Prism assistance, self-evolution, package install, and terminal readiness—not just the two verifier fixes.",
+    "Explicit negative cases for signupIntent when signups is empty or missing, to prove the predicate rejects legacy/weak evidence."
+  ],
+  "minimum_fix": "Cap may proceed to round 21 E2E, but only as a checkpoint with a fail-fast abort if the same verifier failures reappear. Round 21 must be run with raw evidence capture (hashes, DOM summaries, interaction attempts, signup payloads, logs) and the results must be reviewed before claiming progress. Do not retroactively mark round 20 as passed.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "This fix is a verifier hardening checkpoint, not evidence that RedCap revival is complete. The real gate is the full round 21 E2E outcome."
+  },
+  "user_intent_alignment": "Aligned: the change keeps strictness, does not claim completion, and continues the authorized revival work. It avoids the pre-implementation concern about relaxing acceptance criteria by using measurable hashes and non-empty signup evidence."
+}

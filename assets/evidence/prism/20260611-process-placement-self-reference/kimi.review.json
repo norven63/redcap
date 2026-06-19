@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "Minimal. Only one lifecycle JSON placed in assets/evidence/lifecycle/. The runtime behavior (redcap check failing on open governance tasks), the directory policy, and the layout guard remain unchanged. The 43 historical files are identified but not registered as legacy debt in any machine-readable registry. The main AI is presenting a design direction as if governance infrastructure has been established.",
+  "main_concern": "Design-document-as-completion pattern. The proposal describes the correct layered fix (normal check vs. complete-revival-check) and the correct process-file detection strategy, but none of the runtime enforcement has been implemented. The 'changed_reality' section is mostly a description of current problems, not evidence of solved problems. Without actual code changes to runtime/bin/redcap and layout_guard.py, this is governance theater.",
+  "top_risks": [
+    "Implementation gap: The machine checker, policy update, and redcap check modification are all deferred to future work, making recurrence prevention theoretical.",
+    "Legacy debt invisibility: The 43 files are 'noted' but not registered in a machine-readable legacy registry, so future reviewers cannot distinguish grandfathered files from new violations.",
+    "Meta-recursion risk: The lifecycle evidence file itself is a process file about process files; if the fix is only to document the problem in evidence, the loop continues at a higher level of abstraction."
+  ],
+  "missing_evidence": [
+    "Modified runtime/bin/redcap where the 'check' command no longer passes --fail-on-open to status/revive.",
+    "Updated directory-structure.json or layout_guard.py with semantic process-file detection (e.g., banning *-prism-request.json, *-lifecycle.json from assets/contracts/ root).",
+    "A machine-readable legacy-debt registry (e.g., assets/contracts/.legacy-process-files.json) listing the 43 files with git-reason for non-removal."
+  ],
+  "minimum_fix": "1) Edit runtime/bin/redcap line 265 to remove --fail-on-open from the check command while keeping it in complete-revival-check. 2) Add a legacy registry file for the 43 files. 3) Update layout_guard.py or directory-structure.json to reject new process-file patterns in assets/contracts/ root. Anything less is planning, not governance.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The main AI produced a lifecycle evidence file and a proposal. It did NOT modify runtime/bin/redcap, directory-structure.json, or layout_guard.py. The loop signal is: 'We documented the boundary and deferred the hard part to a cleaner future state.'"
+  },
+  "user_intent_alignment": "Low-to-medium. The user explicitly demanded actual governance and recurrence prevention, not just planning. The proposal is directionally aligned but materially incomplete. The user would likely accept the design if told 'here is what we will implement,' but the framing as 'changed reality' suggests the main AI may believe the work is further along than it is."
+}

@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "runtime/prism/bin/turn-action-check",
+    "--events",
+    "assets/evidence/host-hooks/codex/events.jsonl",
+    "--session-id",
+    "019e745f-17b8-7832-ada8-ae990b49db69",
+    "--turn-id",
+    "019e9dfb-2f91-7903-aeee-f6e365a67036",
+    "--max-age-seconds",
+    "86400",
+    "--message",
+    "可以，现在这个一气呵成总目标是可行的，但不能按字面做成一个不设停靠点的超长单次冲刺。",
+    "--intent-llm-policy",
+    "off"
+  ],
+  "command": "runtime/prism/bin/turn-action-check --events assets/evidence/host-hooks/codex/events.jsonl --session-id 019e745f-17b8-7832-ada8-ae990b49db69 --turn-id 019e9dfb-2f91-7903-aeee-f6e365a67036 --max-age-seconds 86400 --message 可以，现在这个一气呵成总目标是可行的，但不能按字面做成一个不设停靠点的超长单次冲刺。 --intent-llm-policy off",
+  "executed_at": "2026-06-06T17:37:45+00:00",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_bytes": 0,
+  "stderr_excerpt": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 2190,
+  "stdout_excerpt": "{\n  \"ok\": true,\n  \"required_prompt\": true,\n  \"session_id\": \"019e745f-17b8-7832-ada8-ae990b49db69\",\n  \"turn_id\": \"019e9dfb-2f91-7903-aeee-f6e365a67036\",\n  \"gate_decision\": \"required\",\n  \"gate_matched_rules\": [\n    \"architecture-or-directory\",\n    \"completion-claim\",\n    \"self-development-lifecycle-gate\"\n  ],\n  \"task_anchor\": {\n    \"session_id\": \"019e745f-17b8-7832-ada8-ae990b49db69\",\n    \"turn_id\": \"019e9dfb-2f91-7903-aeee-f6e365a67036\",\n    \"prompt_sha256\": \"c1ae0ca4eb7bf5923ca784abf00df6096a6834d23394e9624ecf153240e4e042\",\n    \"prompt_length\": 206,\n    \"prompt_excerpt\": \"我希望你可以一气呵成的完成任务：先完成360度旧RedCap扫描任务，然后根据任务的完成结果制定完整的如何复活Redcap项目计划，再根据计划去执行和落地，最终完成复活任务，之后再review和评审复活后的项目是否有什么问题、不足，然后再制定优化方案并执行完成落地。关于这个问题，你不要着急先开动，而是先回答我是否可行，并且如果还缺什么缓解，或者说你觉得有更好的“一气呵成任务计划方案”，也可以拿出来和我讨论。\",\n    \"prompt_excerpt_limit\": 320,\n    \"prompt_excerpt_truncated\": false,\n    \"gate_decision\": \"required\",\n    \"gate_matched_rules\": [\n      \"architecture-or-directory\",\n      \"completion-claim\",\n      \"self-development-lifecycle-gate\"\n    ]\n  },\n  \"prompt_intent\": {\n    \"prompt_kind\": \"mixed\",\n    \"authorized_scope\": \"implementation\",\n    \"action_evidence\": \"substantive\",\n    \"reason\": \"implementation directive marker present\"\n  },\n  \"fresh_prompt_intent\": {\n    \"prompt_kind\": \"question\",\n    \"authorized_scope\": \"answer_only\",\n    \"action_evidence\": \"none\",\n    \"reason\": \"pre-execution feasibility discussion explicitly asks not to start implementation\"\n  },\n  \"semantic_judge\": null,\n  \"action_evidence_policy\": \"substantive\",\n  \"blocked_statement\": false,\n  \"actions\": 12,\n  \"diagnostic_actions\": 31,\n  \"action_tools\": [\n    \"Bash\",\n    \"apply_patch\"\n  ],\n  \"diagnostic_action_tools\": [\n    \"Bash\"\n  ],\n  \"reason\": \"Required prompt has same-turn substantive action evidence.\",\n  \"recovery_guidance\": []\n}\nREDCAP_TURN_ACTION_OK\n",
+  "stdout_sha256": "7c5af4410312c9061d2c96ff3e32e55a77c6aea8da69e1bd2c0b81250cd808ca"
+}

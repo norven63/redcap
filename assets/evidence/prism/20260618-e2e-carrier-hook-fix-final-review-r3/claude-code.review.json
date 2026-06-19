@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "二轮 concern 中的 missing_events=None 安全性和 completion marker 回显误判确有实质性修复证据。独立负向复现输出与 self-check 覆盖均对齐。但存在两个未被质疑的模式问题：(1) cleanup_marker 的 try/finally 保护在 round5 真实探针中从未触发过失败路径，没有证据表明清理失败→probe_ok=false 的反转逻辑在真实 AI 交互中可正确触发；(2) self-check 的 7 个测试用例覆盖在 31 行代码内，平均每用例约 4.4 行，更可能是单元级函数调用测试而非端到端行为验证，无法排除 self-check 仅验证 checker 存在而非验证真实失败检测路径。",
+  "main_concern": "round5 真实探针 marker_removed_after_probe=true 且 marker_cleanup_error=null，证明成功路径可靠；但 cleanup 失败→probe ok 翻转为 false 的路径仅在 self-check 中测试，从未在真实 AI 运行中触发过。如果 cleanup_marker 在异常场景下行为与 self-check 假设不一致（如异常被吞掉未进入 failures），可能导致虚假通过。需要一次人为注入 cleanup 失败的端到端验证。",
+  "top_risks": [
+    "cleanup_marker 失败→probe ok 翻转路径未经真实 AI 端到端验证，self-check 可能仅测试函数调用而非集成行为",
+    "self-check 31 行覆盖 7 个用例过于紧凑，可能只验证返回值形状而非失败检测语义",
+    "carrier_probe 的成功判定依赖 completion_markers 等待最终输出，但若 AI 在 try 块内异常退出（非 finally 可捕获的退出方式），marker_removed_after_probe 可能未被写入"
+  ],
+  "missing_evidence": [
+    "cleanup_marker 失败场景的真实 AI 端到端探针产物（如注入一个不可删除的 marker 目录后运行 carrier-probe）",
+    "self-check 测试的完整源码或详细行为描述，以排除仅验证 checker 存在的模式",
+    "try/finally 在 AI 进程被 SIGKILL 或 OOM 时的行为验证"
+  ],
+  "minimum_fix": "不阻止放行完整 E2E，但要求进入完整 E2E 前先运行一次注入 cleanup 失败的 carrier-probe（如 chmod 000 marker 目录），确认 probe ok 正确翻转为 false 并记录 marker_cleanup_error。此验证约 5 分钟，不可推迟到完整 E2E 中被动发现。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "三轮复审的演进轨迹清晰：二轮发现真问题→三轮有针对性修复和独立复现。未看到同一问题反复打转的证据，每次复审都缩小了问题范围。当前 concern 是新的、未覆盖的边缘路径，而非已有问题的重述。"
+  },
+  "user_intent_alignment": "aligned"
+}

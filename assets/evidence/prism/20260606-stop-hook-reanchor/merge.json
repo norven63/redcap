@@ -1,0 +1,28 @@
+{
+  "providers": [
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "claude-code",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "claude-code",
+      "concern": "**The proposal treats re-anchoring as a text-injection problem but drift is likely a structural lifecycle problem.**\n\nAdding prompt excerpts to hook block messages is equivalent to putting a sticky note on a broken dispatch chain. The note might help the AI self-correct, but it doesn't fix why the recovery dispatch lost the original task context. If the recovery prompt template structurally discards the original `UserPromptSubmit` context, the fix should be in the dispatch chain — not in decorating the block reason with text the AI may or may not read correctly.\n\nThis also contradicts constraint #3: *\"Keep the change deterministic and independent of provider availability at Stop time.\"* Natural language re-anchor guidance embedded in block messages is **inherently provider-dependent** — its effectiveness depends on how the recovery AI interprets the text.\n\n---"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before implementing text-anchoring, instrument the recovery dispatch to carry the original task context as **structured data** (prompt hash, lifecycle phase, task classification) rather than embedded natural language. This:\n- Makes re-anchoring independent of provider text interpretation (satisfying constraint #3)\n- Avoids leaking prompt excerpts into hook logs (satisfying constraint #2)\n- Lets the recovery dispatch structurally enforce task continuity\n\nThen measure whether drift is in the recovery template, the dispatch chain, or the AI response. Only after that diagnostic should text anchoring be considered as a possible supplementary layer.\n\n---"
+    }
+  ],
+  "anti_loop_detected": true
+}

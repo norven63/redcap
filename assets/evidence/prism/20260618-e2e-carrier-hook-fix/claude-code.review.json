@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "实验证据正面、可复现：要求子 Codex 创建真实文件后五类 Hook 事件全部触发，MCP 隔离不影响 Hook。但“源码现状”的 carrier_probe 描述未能在评审中直接验证文件内容，依赖请求方的自述。代码修改方向与实验结论一致，不存在伪造事件或降级承载，但隔离策略的硬编码 MCP 名称是尚未解决的实现脆性。真实增量是实验确认了修复路径可行；风险在于实现细节可能偏离实验配置。",
+  "main_concern": "硬编码隔离特定 MCP 服务器名称（neon、railway、openaiDeveloperDocs、node_repl）是一种不稳定的白名单式修复。该列表会随用户环境、Codex CLI 版本和 MCP 生态变化而过时，且无法覆盖用户新增的其他全局 MCP 服务器。更健壮的方案应支持按模式禁用全部非项目级 MCP，或者至少通过环境变量/配置文件可配置隔离列表，而非在 carrier_probe 中硬编码服务器名。",
+  "top_risks": [
+    "MCP 隔离列表硬编码导致未来版本断裂：Codex CLI 更新 MCP 配置键名或新增全局服务器后，carrier_probe 可能因未隔离的新噪音再次失败且难以诊断。",
+    "重试逻辑改动引入无限重试：如果某个 Codex 环境从根本上无法触发 PreToolUse/PostToolUse（如 headless 模式），继续重试而非 break 将耗尽超时预算而不产生有用信号。",
+    "真实文件副作用可能留下残留物：carrier-shell-marker.txt 创建在工作目录后，如果清理逻辑缺失，可能在后续 E2E 步骤中被误读为有效标记或污染其他探针的判断条件。"
+  ],
+  "missing_evidence": [
+    "未验证完整 E2E 管道（而非仅 carrier_probe 独立运行）在修复后的端到端通过情况。独立探针通过不等于完整复活流程可运行到交付。",
+    "未提供负向测试：如果子 Codex 因环境限制（如无网络、无文件写入权限）无法创建 marker 文件时，carrier_probe 的错误信息和超时行为是否清晰可诊断。",
+    "未检查 hooks.json 中项目级 Hook 配置是否正确映射五类事件且与 carrier_probe 中的 REQUIRED_HOOK_EVENTS 一致——如果 hooks.json 缺少某类事件定义，即使 Codex 触发了该事件也可能不会被记录。"
+  ],
+  "minimum_fix": "在合并修复代码前：(1) 将 MCP 隔离列表改为可配置参数（环境变量 REDCAP_E2E_CODEX_DISABLED_MCP_SERVERS），默认值包含已知噪音源但不硬编码为唯一列表；(2) 为重试循环增加 distinguishable failure reason——区分“命令失败”、“marker 缺失”、“Hook 缺失”，并对 Hook 缺失设置独立的重试上限（低于总重试次数）；(3) 在 carrier_probe 完成后清理 marker 文件。(4) 至少运行一次修复后的完整 complete-revival-e2e 管道并记录结果。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "诊断实验呈递进式深入（disable plugins → 文件副作用 → MCP 隔离），每步有独立可验证结果，未发现循环试错或仅靠文档/报告自我说服的模式。实验结论收敛于可操作的代码修改方案。"
+  },
+  "user_intent_alignment": "aligned"
+}

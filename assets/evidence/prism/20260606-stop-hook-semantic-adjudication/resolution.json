@@ -1,0 +1,38 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260606-stop-hook-semantic-adjudication",
+  "merge_path": "assets/evidence/prism/20260606-stop-hook-semantic-adjudication/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260606-stop-hook-semantic-adjudication/kimi.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 concern 成立：仅有观察模式和漂亮计划不能算彻底修复。因此本轮补齐了真实误伤夹具、turn-action-check 与 intent_judge 的结构化接口合同、语义复核实现、阻塞声明出口、旧夹具保守回归，以及 Stop 重新注册后的全链路验证。",
+      "implementation_evidence": [
+        "runtime/prism/bin/turn-action-check",
+        "runtime/core/prompt_intent.py",
+        "runtime/host-adapters/codex/codex-hook.py",
+        "runtime/prism/bin/prism",
+        "runtime/prism/examples/turn-action-required-status-question-diagnostic.jsonl",
+        "runtime/prism/examples/turn-action-required-explicit-blocked.jsonl",
+        "assets/contracts/stop-hook-semantic-adjudication.json",
+        ".codex/hooks.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260606-stop-hook-semantic-adjudication/redcap-check.receipt.json",
+        "assets/evidence/prism/20260606-stop-hook-semantic-adjudication/prism-check.receipt.json",
+        "assets/evidence/prism/20260606-stop-hook-semantic-adjudication/codex-hook-self-check.receipt.json",
+        "assets/evidence/prism/20260606-stop-hook-semantic-adjudication/final-claim-self-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Kimi concern 已转化为代码、合同、回放夹具与全链路验证；Claude Code 本轮超时，未作为通过依据。"
+  }
+}

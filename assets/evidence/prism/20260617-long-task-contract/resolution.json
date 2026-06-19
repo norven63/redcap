@@ -1,0 +1,58 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260617-long-task-contract",
+  "merge_path": "assets/evidence/prism/20260617-long-task-contract/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260617-long-task-contract/kimi.review.json",
+    "assets/evidence/prism/20260617-long-task-contract/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 指出的风险成立：如果只写规则和解释，长任务机制仍会停留在文档层，也没有正面回答 Codex 目标 blocked 对新任务的影响。本轮新增 long-task-contract 机器检查器、合同、命令入口和 aggregate check 步骤；合同明确 blocked 不等于 RedCap 工程失败、不必清除后才能开启新任务、也不能被内部合同覆盖，同时要求 blocked 外部目标在 1 轮内触发 Cap 仲裁。",
+      "implementation_evidence": [
+        "runtime/core/long_task_contract.py",
+        "runtime/bin/redcap",
+        "runtime/core/check_runner.py",
+        "assets/contracts/long-task-contract.json",
+        "assets/docs/long-task-contract.md"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260617-long-task-contract/py-compile.receipt.json",
+        "assets/evidence/check-receipts/20260617-long-task-contract/long-task-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260617-long-task-contract/long-task-contract-check.receipt.json",
+        "assets/evidence/check-receipts/20260617-long-task-contract/aggregate-long-task-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260617-long-task-contract/aggregate-long-task-check.receipt.json",
+        "assets/evidence/check-receipts/20260617-long-task-contract/git-diff-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 指出的风险成立：进入条件不能停留在 multi_iteration 或 cross_workspace 这类模糊词。本轮把 multi_iteration_failure_repair 固定为连续 3 次同类失败，把 cross_workspace_or_runtime_boundary_change 固定为 2 个或更多独立边界；默认仲裁上限固定为 5 轮，连续 2 轮没有 objective_delta 或同类阻塞重复必须触发结构性停止。",
+      "implementation_evidence": [
+        "runtime/core/long_task_contract.py",
+        "assets/contracts/long-task-contract.json",
+        "runtime/core/check_runner.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260617-long-task-contract/long-task-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260617-long-task-contract/long-task-contract-check.receipt.json",
+        "assets/evidence/check-receipts/20260617-long-task-contract/aggregate-long-task-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260617-long-task-contract/aggregate-long-task-check.receipt.json",
+        "assets/evidence/check-receipts/20260617-long-task-contract/git-diff-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两个 concern 均被接受，并已通过代码、合同、命令入口、总检查接入和局部验证落实。"
+  }
+}

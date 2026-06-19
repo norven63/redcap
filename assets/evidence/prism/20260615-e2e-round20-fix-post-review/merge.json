@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "All evidence is self-reported summary-level pass/fail information; there is no raw log, hash value, screenshot, or independent reproduction attached. Targeted tests on round 20 artifacts validate the specific fix points, but they do not demonstrate that the fixes survive a full E2E run under round 21's broader constraints."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "Verification is dominated by self-referential checks (4/7 items) that cannot detect false positives, edge cases, or generalization failures. The two external tests are both on round 20 data — the very project the implementation was designed to fix. Zero negative test cases exist. Zero generalization tests exist. The interactive gate marker refactor has no behavioral test evidence at all."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Cap may proceed to round 21 E2E, but only as a checkpoint with a fail-fast abort if the same verifier failures reappear. Round 21 must be run with raw evidence capture (hashes, DOM summaries, interaction attempts, signup payloads, logs) and the results must be reviewed before claiming progress. Do not retroactively mark round 20 as passed."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before round 21, run the verifier against at least one additional project not used in development. Add explicit negative browser test cases (same-element double-click should not pass, non-interactive element click should not pass). Verify interactive gate marker failback with a controlled retry scenario. Document the false-positive rate of hash-based detection against common DOM noise patterns (timestamps, random aria attributes, animation artifacts)."
+    }
+  ],
+  "anti_loop_detected": true
+}

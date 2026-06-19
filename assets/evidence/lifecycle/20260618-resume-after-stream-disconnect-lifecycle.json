@@ -1,0 +1,64 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260618-resume-after-stream-disconnect",
+  "fsm_state": "PRISM_REVIEW",
+  "requirement_review": {
+    "user_intent": "Norven 看到连接层报错后，要求确认当前 RedCap 复活长任务是否可以继续，并继续推进未完成任务直到达到真实目标；本轮不能把连接中断、阶段复核或局部修复包装成终局完成。",
+    "target_reality": "在恢复中断后，RedCap 必须先恢复生命周期边界和棱镜复核上下文，再继续长任务完成边界修复、最终复核和后续 E2E 巡检；如果发现新的真实阻塞，必须保留阻塞状态并说明下一项阻塞。",
+    "non_goals": [
+      "不因为连接中断而重置任务或丢失已完成证据",
+      "不把阶段修复说成 RedCap 完整复活",
+      "不跳过棱镜复核",
+      "不在缺少完成边界证据时声明终局完成",
+      "不通过降级、绕过或减少证据来让任务表面通过"
+    ],
+    "risk_level": "high"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "如恢复后的生命周期或棱镜复核发现本轮边界错误，回滚本轮新增生命周期包和后续修复；保留中断前已验证的收据和棱镜记录作为历史证据。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260618-resume-after-stream-disconnect-lifecycle.json",
+      "runtime/bin/redcap gate --task \"恢复连接中断后的 RedCap 复活长任务，继续长任务完成边界修复与棱镜最终复核\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260618-resume-after-stream-disconnect-lifecycle.json",
+      "补齐棱镜第 4 轮复核请求缺失字段",
+      "运行棱镜第 4 轮 Kimi 与 Claude Code 复核",
+      "合并棱镜复核结论并处理 concern 或 block",
+      "复跑长任务合同、E2E 自检和必要的收据检查",
+      "若复核通过，回到完整复活 E2E 巡检；若复核未通过，继续修复最小真实阻塞"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "我看报错“stream disconnected before completion: error sending request for url (https://chatgpt.com/backend-api/codex/responses)”了，现在是不是可以继续推进任务直至达到最终目标为止？",
+    "prompt_kind": "mixed",
+    "authorized_scope": "implementation"
+  },
+  "task_body": {
+    "requested_outcome": "恢复被连接中断打断的 RedCap 复活长任务，继续完成长任务入口边界、棱镜复核和后续 E2E 巡检，直到达到真实可交付目标或出现明确阻塞。",
+    "primary_deliverable": "恢复后的生命周期包、通过门禁的继续执行上下文、棱镜最终复核结果、后续修复或 E2E 巡检证据。",
+    "acceptance_criteria": [
+      "生命周期检查必须匹配本轮恢复提示，不能继续使用中断前过期提示作为当前任务锚点。",
+      "棱镜第 4 轮复核请求必须满足 schema，并覆盖长任务完成边界 concern 是否闭合。",
+      "若棱镜仍给出 concern 或 block，必须正面修复或给出可验证的反驳证据。",
+      "后续 E2E 巡检必须在真实项目级边界内运行，不能污染 RedCap 源码区。",
+      "只有完成边界、棱镜复核和 E2E 目标均满足时，才允许汇报阶段目标已达成；RedCap 完整复活仍须以终局验收为准。"
+    ],
+    "status": "planned",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/evidence/lifecycle/20260618-resume-after-stream-disconnect-lifecycle.json",
+      "assets/evidence/prism/20260618-long-task-unified-entry-final-review-round4/request.json",
+      "assets/evidence/prism/20260618-long-task-unified-entry-final-review-round4/session.json"
+    ]
+  },
+  "fsm_transition": {
+    "from": "INTAKE",
+    "to": "PRISM_REVIEW",
+    "evidence": [
+      "gate_required_or_optional"
+    ]
+  },
+  "completion_claim": {
+    "present": false
+  }
+}

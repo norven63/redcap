@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "证据包未覆盖被审查的核心代码区间，存在以“精确行号清单”替代“实际代码审计”的形式产物风险。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "round5 真实探针 marker_removed_after_probe=true 且 marker_cleanup_error=null，证明成功路径可靠；但 cleanup 失败→probe ok 翻转为 false 的路径仅在 self-check 中测试，从未在真实 AI 运行中触发过。如果 cleanup_marker 在异常场景下行为与 self-check 假设不一致（如异常被吞掉未进入 failures），可能导致虚假通过。需要一次人为注入 cleanup 失败的端到端验证。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "重新生成包含上述关键行区间的证据包（或单独贴出 6888-7028、7637-7668 行源码），并附 round3/round5 carrier-probe.json 全文；补充通过 redcap complete-revival-e2e carrier-probe CLI 构造的负向复现。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "不阻止放行完整 E2E，但要求进入完整 E2E 前先运行一次注入 cleanup 失败的 carrier-probe（如 chmod 000 marker 目录），确认 probe ok 正确翻转为 false 并记录 marker_cleanup_error。此验证约 5 分钟，不可推迟到完整 E2E 中被动发现。"
+    }
+  ],
+  "anti_loop_detected": true
+}

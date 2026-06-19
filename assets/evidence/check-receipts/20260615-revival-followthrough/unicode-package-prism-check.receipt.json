@@ -1,0 +1,12 @@
+{
+  "command": ".redcap/runtime/prism/bin/prism check",
+  "cwd": "/tmp/redcap-pretool-unicode-test/redcap-e2e-中文路径-hook-指纹回归",
+  "executed_at": "2026-06-14T20:26:08Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260615-revival-followthrough/unicode-package-prism-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260615-revival-followthrough/unicode-package-prism-check.stdout.txt",
+  "stdout_sha256": "0ac553b79572a170359022d2a2d032405aad8d5b5b9a0536702635f98281e9cb"
+}

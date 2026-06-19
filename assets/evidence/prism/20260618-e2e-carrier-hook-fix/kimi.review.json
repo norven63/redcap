@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "Main AI has correctly diagnosed why the old carrier_probe was producing false positives (weak 'say carrier-probe-ok' success condition, premature retry stop, inherited global MCP/plugin noise) and has experimental evidence that forcing a real file side effect plus noise isolation yields all five required hook events. However, the provided bundle truncates runtime/core/complete_revival_e2e.py at 200 KB / 444 KB, so the actual carrier_probe source changes cannot be inspected. No post-fix test run is included. The reality has been explained and experimentally validated, but not yet demonstrably changed in committed/running code.",
+  "main_concern": "The fix design is directionally correct, but this design review cannot verify that the implementation actually enforces the new success condition, preserves the full REQUIRED_HOOK_EVENTS list, or correctly implements 'continue retrying while hooks or marker are missing.' Without seeing the full carrier_probe function or a passing run, the risk that the same misjudgment persists in code is non-trivial.",
+  "top_risks": [
+    "Implementation drift: the design may be implemented incompletely (e.g., marker check added but hook-missing break not removed), reproducing the original false-positive path.",
+    "Hard-coded isolation list (neon, railway, openaiDeveloperDocs, node_repl, plugins, apps) may be incomplete for other user environments and lacks an obvious override, so future noise sources can re-break E2E silently.",
+    "Retry-until-max on missing hooks is correct, but if the underlying Codex CLI invocation is misconfigured, the probe could now spin for the full timeout budget on each E2E run before failing clearly."
+  ],
+  "missing_evidence": [
+    "Actual diff or full carrier_probe implementation showing the new prompt, marker-file check, all-five-events assertion, and corrected retry logic.",
+    "A clean test run (log or CI output) of the updated carrier_probe passing from a fresh work-root, not just manual experimental commands.",
+    "A negative test showing the probe fails when the child Codex returns 'carrier-probe-ok' but does not create the marker file or is missing one of the five hook events."
+  ],
+  "minimum_fix": "Before passing, land the code changes and supply: (1) the carrier_probe diff, (2) one passing run output, and (3) the negative test. Additionally, expose the MCP/plugin isolation list via an environment variable (e.g., REDCAP_E2E_CARRIER_PROBE_ISOLATE_MCP) so the default can be audited or overridden without source edits.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The plan tightens the success criterion from 'model output contains a string' to 'model must perform a real shell action that leaves an auditable file artifact and triggers all five project-level hook events.' This is a genuine, non-narrative increase in verification strength, not a redefinition or documentation-only fix."
+  },
+  "user_intent_alignment": "High alignment with the stated intent to revive RedCap through verifiable delivery and no bypasses. The only gap is that intent must still be confirmed in actual committed code and test results; the design itself does not downgrade RedCap E2E."
+}

@@ -1,0 +1,38 @@
+{
+  "task": "压缩版第三轮复核：确认长任务完成边界修复是否足以回到 E2E 巡检。",
+  "user_intent": "用户要求不能在任务未完成时汇报完成。本轮只评审这个边界是否已被正面修复。",
+  "main_claim": "已补 long-task complete 出口：start 只创建 running active_run；record 只能追加 running 迭代，完成后 record 会失败；complete 才能写 completion_boundary 并切换 completed/blocked/human_decision。complete 会拒绝低置信证据，也会拒绝结构合法但与完成目标无关的证据。E2E 入口和收束现在读取 lifecycle_state 与 completion_boundary，禁止只凭记录数量或回执数量推断完成。",
+  "review_mode": "implementation_review",
+  "risk_level": "high",
+  "requested_providers": ["kimi", "claude-code"],
+  "changed_reality": [
+    "runtime/core/long_task_contract.py：新增 complete_long_task、completion_relevance_failures、完成后禁止 record、低置信和无关证据拒绝。",
+    "runtime/core/complete_revival_e2e.py：active_run 写 lifecycle_state/completion_boundary；入口要求 running 且无 completion_boundary；通过时要求 completed 且有 completion_boundary。",
+    "标准回执目录显示 positive-complete 通过，negative-record-after-complete、negative-low-confidence-complete、negative-irrelevant-complete 均按预期失败。"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260618-long-task-unified-entry/summary.receipt.json",
+    "assets/evidence/check-receipts/20260618-long-task-unified-entry/positive-complete.receipt.json",
+    "assets/evidence/check-receipts/20260618-long-task-unified-entry/negative-record-after-complete.receipt.json",
+    "assets/evidence/check-receipts/20260618-long-task-unified-entry/negative-low-confidence-complete.receipt.json",
+    "assets/evidence/check-receipts/20260618-long-task-unified-entry/negative-irrelevant-complete.receipt.json"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "只复核长任务完成边界。",
+    "max_files": 6,
+    "max_bytes_per_file": 220000,
+    "max_total_bytes": 700000,
+    "allowed_paths": [
+      "runtime/core/long_task_contract.py",
+      "runtime/core/complete_revival_e2e.py",
+      "assets/evidence/check-receipts/20260618-long-task-unified-entry/summary.receipt.json",
+      "assets/evidence/check-receipts/20260618-long-task-unified-entry/negative-irrelevant-complete.receipt.json",
+      "assets/evidence/check-receipts/20260618-long-task-unified-entry/positive-complete.receipt.json"
+    ]
+  },
+  "questions_for_prism": [
+    "是否还有具体阻塞项会导致任务未完成却汇报完成？",
+    "是否可以回到 E2E 巡检？如果不可以，最小必须修复项是什么？"
+  ]
+}

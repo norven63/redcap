@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "e2e-role-user-config-isolation-20260615",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260615-e2e-role-user-config-isolation",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-15T18:59:04+00:00",
+  "task_started_at": "2026-06-15T18:59:04+00:00",
+  "updated_at": "2026-06-15T20:16:28+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "987b1901-1786-4171-aec6-eaca0f7b7b14",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260615-e2e-role-user-config-isolation/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_853bd0fc-efb9-4f6a-a844-75d7b7fc6784",
+      "round_count": 1,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260615-e2e-role-user-config-isolation/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap accepted both provider concerns, removed unsafe --ignore-user-config role strategy, added interactive-gate retry evidence, and verified full self-check, carrier probe, and redcap check."
+  }
+}

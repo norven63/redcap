@@ -1,0 +1,23 @@
+{
+  "verdict": "concern",
+  "confidence": "medium",
+  "provider": "kimi",
+  "reality_delta": "部分成立但混入了计划层自我验证。设计方向（默认关闭、显式进入条件、防盲重跑、Cap 仲裁）确实回应了用户意图；但所谓“已改变的现实”里，E2E 第 45 轮“证明工程试用可用”、Codex 目标 blocked 的当前状态、以及 E2E runner 已有能力等声明，均无法从本提示中核验。最关键的现实变化——新增通用 long-task-contract 检查器并接入 aggregate check——目前只是设计提案（runtime/core/long_task_contract.py、新命令、合约文件），尚未被证明已落地。因此，现状更接近“起草了一份有道理的约束文档”，而不是“运行时已存在可信边界”。",
+  "main_concern": "设计仍可能停留在“我们写下了规则”这一层，并且对 Norven 关于 Codex blocked 的三个直接问题回答不完整：它没有明确说 blocked 是否等于“任务未完成”、是否“必须消除”、以及是否“阻止新任务”，而只是把 blocked 外化为不可信状态。若合同检查器没有强制接入 aggregate check / 门禁，也没有精确的风险分级实现，则小任务仍可能被拖入重型循环，或反之在长任务真正该停时继续空转。",
+  "top_risks": [
+    "进入条件过宽且缺乏可执行定义：'redcap_self_development_medium_or_higher'、'multi_iteration_failure_repair'、'cross_workspace_or_runtime_boundary_change' 没有风险评级表和分类器，运行时容易把中低风险任务误判为长任务，破坏 fast-path。",
+    "缺乏强制集成，合同可能只成文档：proposed_design 列出 aggregate check 接入，但没有给出调用顺序、返回码、失败行为；若只是 advisory，则无法防止 E2E 无限循环复发。",
+    "E2E “成功”可能是程序性自我确认：changed_reality 称第 45 轮 E2E 已证明工程可用，但用户意图里明确提到“本次 E2E 无限循环的恶果”；若该轮是在用户叫停或外部中断下结束，completion-marker / iteration-verdict 可能只是仪式性收敛，而非真正解决底层阻塞。"
+  ],
+  "missing_evidence": [
+    "E2E 第 45 轮生命周期原始证据（lifecycle JSON、final-prism-review、convergence-diagnosis），以判断收敛是真实的还是用户/外部终止后的程序性收尾。",
+    "风险分级/任务分类器的具体实现或规则表，说明什么算 medium risk、什么算 small patch、分类由谁执行。",
+    "long-task-contract 与 aggregate check / 门禁 / 生命周期包的集成契约：调用点、返回值、失败时行为、是否阻止任务启动。"
+  ],
+  "minimum_fix": "1) 在 aggregate check（或任务入口路由器）中强制调用 long-task-contract 检查器：返回 enabled 才进入重型循环，返回 fast-path 则必须跳过循环；2) 发布一张显式风险评级表并给出至少 5 个正反例，让“medium or higher / small patch”不再依赖解释；3) 针对 Codex 目标 blocked 增加明确规则：若外部父目标处于 blocked 状态，long-task 必须在 1 轮内触发 human/Cap 仲裁，且不得用合同内部状态替代外部目标状态来宣告完成；4) 把“每轮必须产生 objective_delta + action_evidence”做成机器可检字段，而非文档口号。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "本设计已经内置了多个反循环信号（source_signature、evidence_signature、max_iterations_before_cap_arbitration、auto_rerun_allowed），但它们的效力取决于运行时强制执行和清晰的“结构性停止”定义。建议增加一个全局计数器：只要同一 blocker + 相同签名出现两次，无论 auto_rerun_allowed 为何，都必须停止并转人工。否则本评审本身也可能成为又一个规划循环。"
+  },
+  "user_intent_alignment": "中-高。设计明确尊重了 Norven 的核心约束：默认关闭、小任务 fast-path、禁止伪造完成、禁止无限重跑、Prism 评审。但它没有完整回答 Norven 关于 Codex blocked 的三个具体问题（是否代表未完成、是否需要消除、是否阻止新任务），也没有证明机制会从文档落地到运行时边界。若补齐强制集成和明确回答，则对齐度可升到高。"
+}

@@ -1,0 +1,70 @@
+{
+  "task": "评审 RedCap 复活继续补齐与多轮 E2E 闭环方案",
+  "user_intent": "Norven 要求把首次 E2E 暴露出的遗漏和缺失设计整理成任务队列并执行落地，尤其补齐 Loom 真实角色会话、Codex CLI 承载 Hook、棱镜协助、自我净化、Cap 私有人格沉淀和多轮 E2E 闭环，直到 RedCap 能被证据证明可以投入工程使用。",
+  "main_claim": "下一步不能只补报告或合同；必须把缺口变成被 runtime/bin/redcap check 或专用检查器消费的运行规则，并用外部项目 E2E 反复验证，失败必须进入下一轮修复队列。",
+  "changed_reality": [
+    "assets/contracts/loom-workflow.json 已声明 Codex CLI 为 Loom 角色宿主、角色 session_id 必填、同角色续用、丢失报警和棱镜协助场景。",
+    "runtime/core/loom_workflow.py 能检查 Loom 合同，但尚未充分验证 E2E 真实运行中不同角色是否有独立或可追踪的会话延续质量。",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json 已要求 Hook、Loom、棱镜协助、知识检索、自我净化、人格边界、失败账本和 iteration-verdict。",
+    "runtime/core/complete_revival_e2e.py 已能运行外部项目 E2E，并已新增包内棱镜自检，但仍需要强化角色质量、自我净化和多轮失败回流的硬判定。",
+    "assets/knowledge 与 redcap-arsenal 已有知识网关和公共能力库，但当前主工作流没有稳定证明任务前主动检索、任务后自动候选抽取、评审、晋升或 no-promote 都在发挥作用。",
+    "Cap 私有人格沉淀边界已有原则，但没有在每个重要任务收尾中形成可验证的私有边界决策证据。"
+  ],
+  "proposed_task_queue": [
+    {
+      "id": "RF-01-followthrough-queue",
+      "title": "建立 E2E 复盘问题到任务队列的可执行合同",
+      "acceptance": "每个缺口必须有状态、阻塞条件、验收证据、是否接入检查器、是否需要棱镜协助。"
+    },
+    {
+      "id": "RF-02-loom-runtime-session-quality",
+      "title": "强化 Loom 真实角色会话质量",
+      "acceptance": "E2E 中必须记录角色 session_id、同角色续用、缺失报警、上下游交付物、棱镜协助证据；如果多个角色共用同一 Codex CLI 会话，必须额外证明角色隔离不靠聊天记忆冒充。"
+    },
+    {
+      "id": "RF-03-self-purification-operational-loop",
+      "title": "强化自我净化运行闭环",
+      "acceptance": "任务前必须检索知识或记录跳过理由；任务后必须抽取候选、评审、晋升或 no-promote，并把公共与私有边界分开。"
+    },
+    {
+      "id": "RF-04-cap-persona-private-boundary",
+      "title": "强化 Cap 人格沉淀私有边界",
+      "acceptance": "人格沉淀只能记录决策与边界，私有正文不得进入公共仓库、Forge 或 redcap-arsenal。"
+    },
+    {
+      "id": "RF-05-e2e-iteration-engine",
+      "title": "强化多轮 E2E 闭环",
+      "acceptance": "E2E 失败必须写入失败账本并生成下一轮修复队列；只有无开放问题、无 non_blocking 偷渡、过程质量证据齐全时才允许进入可用性汇报。"
+    }
+  ],
+  "planned_checks": [
+    "runtime/bin/redcap revival-followthrough check",
+    "runtime/bin/redcap loom-workflow check",
+    "runtime/bin/redcap self-purification check",
+    "runtime/bin/redcap complete-revival-e2e design-check",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+    "runtime/bin/redcap check",
+    "至少一轮新的 runtime/bin/redcap complete-revival-e2e run 外部项目验收；若失败则修复并继续下一轮"
+  ],
+  "known_constraints": [
+    "不能削弱现有生命周期、Hook、棱镜、完成声明、终局目标或中文可读性门禁。",
+    "不能把任务队列、合同、报告、回执或单轮 E2E 项目可运行说成 RedCap 完整复活。",
+    "不能把 Cap 私有人格正文、用户身份或项目私密材料写入公共知识库。",
+    "不能把多个角色共用一个上下文的便利性冒充 Loom 角色隔离。",
+    "不能把 non_blocking 关闭当成真实修复。"
+  ],
+  "review_questions": [
+    "这份队列是否覆盖 Norven 本轮复述的全部真实意图？",
+    "哪些检查必须变成硬门禁，否则会复发旧病？",
+    "Loom 在 Codex CLI 只能由单个承接方执行时，如何验证角色隔离和会话连续性才不自欺？",
+    "自我净化与 Cap 人格沉淀应如何接入任务流，既能发挥作用又不泄漏私密内容？",
+    "二次及后续 E2E 的最低通过标准还缺什么？"
+  ],
+  "expected_output": "返回严格 JSON，字段包括 provider, verdict, confidence, reality_delta, main_concern, top_risks, missing_evidence, minimum_fix, anti_loop_signal, user_intent_alignment。",
+  "review_mode": "design_review",
+  "risk_level": "high",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ]
+}

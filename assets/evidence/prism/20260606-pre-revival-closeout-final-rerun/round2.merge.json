@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "真实 provider 痕迹虽比纯模拟更强，但仍是实施者自己生成的证据；独立验证与 360 度扫描压力测试双双缺失，存在将‘自测通过’误认为‘任务完成’的风险。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The 2 open task facts in `redcap_task_facts_open_count` remain unidentified and unassessed for blocking risk. The evidence says the count is 2 after the timeout governance and Chinese policy items were \"updated from behavior-level evidence,\" but updating a fact's evidence field is not the same as closing it. If these 2 represent the timeout governance and human-output policy items themselves still in an open state (not transitioned to \"verified\"), then the batch claims completion on items the task ledger still considers open — a ledger/reality inconsistency. If they represent two other unknown items, they are unacknowledged blocking risks. Either case undermines the batch-close claim."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在关闭批次前，必须满足以下之一：(a) Norven 亲自运行 `prism-dispatch` 的 2 秒 task-total 真实 provider 测试并书面确认输出；(b) 用新基础设施完成一次旧 RedCap 碎片的加载或解析，证明 infra 已具备 Revival 支撑能力；(c) 若必须现在标记状态，则将批次明确设为‘条件关闭（conditional close pending 360-scan）’，并书面约定扫描失败时立即 reopen，而非彻底关闭。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before batch closure, run `runtime/bin/redcap task-facts list --state open` and append the output to the evidence set. If the 2 open items are the timeout-governance and human-output-policy facts and their state is semantically \"verified but tracked,\" add a note explaining why the ledger distinguishes \"verified\" from \"closed\" and why this distinction does not block the batch. If they are different items, categorize each as blocking or non-blocking against the 360-scan phase entry."
+    }
+  ],
+  "anti_loop_detected": true
+}

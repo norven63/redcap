@@ -1,0 +1,108 @@
+{
+  "schema_id": "redcap-long-task-contract",
+  "contract_kind": "policy_template",
+  "parent_objective": "为 RedCap 复活后的复杂自动化任务提供可持续推进、可停止、可仲裁的父目标循环治理。",
+  "terminal_acceptance": [
+    "每一轮都有可核验的动作证据和父目标推进差量",
+    "成功、受阻、需要人类决策三类停止条件均可机器检查",
+    "没有源码或证据变化时，不允许在结构性停止后盲目重跑"
+  ],
+  "non_claimed_boundaries": [
+    "本合同模板本身不直接执行任务循环；真实执行入口必须通过 long-task start 创建 active_run",
+    "record 只能证明单轮迭代被记录，不能证明父任务完成；父任务收口必须通过 long-task complete 写入终止边界",
+    "本合同不替代 E2E、Loom、生命周期包或最终棱镜复核",
+    "本合同不把 Codex 目标 blocked 擅自改写成完成"
+  ],
+  "activation": {
+    "mode": "enabled",
+    "default_state": "off",
+    "risk_level": "medium",
+    "triggers": [
+      "user_explicit_long_run",
+      "redcap_self_development_medium_or_higher",
+      "multi_iteration_failure_repair"
+    ],
+    "thresholds": {
+      "multi_iteration_failure_repair": {
+        "min_consecutive_failures": 3
+      },
+      "cross_workspace_or_runtime_boundary_change": {
+        "min_independent_boundaries": 2
+      }
+    }
+  },
+  "codex_goal_policy": {
+    "blocked_meaning": "Codex 目标 blocked 是外部目标工具状态；它说明该目标不能继续作为活跃父任务自动推进，但不自动等于 RedCap 工程验收失败。",
+    "blocked_equals_redcap_failure": false,
+    "must_clear_before_new_task": false,
+    "blocks_new_redcap_task": false,
+    "internal_contract_may_override_external_goal": false,
+    "arbitration_required_within_iterations": 1
+  },
+  "loop_policy": {
+    "max_iterations_before_cap_arbitration": 5,
+    "repeated_blocker_threshold": 2,
+    "structural_stop_threshold": 2,
+    "require_action_evidence": true,
+    "require_objective_delta": true,
+    "require_failure_backlog": true,
+    "no_blind_rerun_without_source_or_evidence_delta": true,
+    "blocked_goal_requires_cap_arbitration": true,
+    "human_decision_stops_automation": true
+  },
+  "stop_conditions": {
+    "success": [
+      "终止验收证据通过，且完成边界声明完整"
+    ],
+    "blocked": [
+      "同一结构性阻塞连续重复且没有源码或证据变化",
+      "收敛诊断设置 auto_rerun_allowed=false"
+    ],
+    "human_decision": [
+      "涉及产品范围、外部账号、密钥、发布、破坏性操作或用户价值取舍"
+    ]
+  },
+  "iteration_ledger": [],
+  "capability_coverage": {
+    "claim_scope": "本文件只是长任务治理策略模板；它不能单独声明长任务运行完成，也不能声明 RedCap 完整复活。",
+    "completion_claim_allowed": false,
+    "required_layers": [
+      "active_run_ledger",
+      "aggregate_check_integration",
+      "completion_boundary_guard",
+      "contract_validation",
+      "failure_backlog",
+      "generic_active_run_entry",
+      "prism_review_resolution",
+      "stable_evidence_policy",
+      "task_entry_decision"
+    ]
+  },
+  "risk_rating_examples": [
+    {
+      "task": "回答 Codex 目标 blocked 的语义，不修改文件。",
+      "expected_mode": "fast_path",
+      "reason": "这是解释型任务，没有跨角色、发布、E2E 或多轮失败修复。"
+    },
+    {
+      "task": "修复一个低风险错别字并运行单个检查。",
+      "expected_mode": "fast_path",
+      "reason": "一步小修且可局部验证，不需要父目标循环。"
+    },
+    {
+      "task": "连续三轮 E2E 暴露同类结构性失败。",
+      "expected_mode": "enabled",
+      "reason": "达到多轮同类失败阈值，需要父目标、失败账本和防盲重跑。"
+    },
+    {
+      "task": "修改 RedCap 自开发门禁和生命周期规则。",
+      "expected_mode": "enabled",
+      "reason": "中高风险自开发会改变任务治理能力，必须启用长任务合同。"
+    },
+    {
+      "task": "同时影响发布包、项目 .redcap 运行时和源仓库边界。",
+      "expected_mode": "enabled",
+      "reason": "涉及两个以上独立边界，必须记录父目标和回滚停止条件。"
+    }
+  ]
+}

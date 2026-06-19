@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "方案描述了 LLM 输出格式和脚本裁决职责边界，但未明确说明 auto 模式何时调用 LLM、何时跳过——而这正是当前 Bug 的根因机制。方案声称\"LLM 只输出语义判断\"是正确的架构方向，但如果不显式改变 intent_judge.py 中 auto 模式的跳过逻辑，同样的 Bug 将完整保留：确定性分类器仍会把\"改动落地后是否需要重启\"判为 implementation，auto 模式仍会跳过 LLM 调用。方案中提到的 7 条约束全部是\"不能做什么\"的边界条件，缺少\"必须做什么\"的正向实现路径描述。",
+  "main_concern": "auto 模式跳过逻辑未在方案中显式变更：当前 intent_judge.py 的 auto 模式在确定性结果已是 implementation/completion 时不调用 LLM，这是本次 Bug 的直接机制。方案聚焦于 LLM 输出格式和脚本裁决职责，但未说明 auto 模式将如何调整以允许 LLM 覆盖确定性误判。如果不改这一行逻辑，LLM 语义判断的准确性提升对本次 Bug 无效。",
+  "top_risks": [
+    "auto 模式跳过逻辑未变更 → 相同 Bug 持续存在：确定性 classifier 判为 implementation 的句子永远不会到达 LLM 语义判断",
+    "LLM 延迟引入 UserPromptSubmit 热路径，缺乏 SLA/超时预算定义。每次用户提示增加 500ms-2s 延迟可能严重影响交互体验",
+    "LLM 不可用时的降级策略未明确：如果回退到确定性分类器（正是有 Bug 的那个），降级等于无降级。需要定义 LLM 不可用时是'信任确定性'还是'保守拦截'"
+  ],
+  "missing_evidence": [
+    "intent_judge.py 中 auto 模式的具体调整方案——何时跳过 LLM、何时必须调用、确定性结果的可覆盖条件",
+    "LLM 语义判断与确定性判断的裁决优先级矩阵——当两者矛盾时，在何种条件下谁优先",
+    "下游消费者（Stop Hook / PreToolUse / prism gate）如何接收修正后的意图——证据链一致性保证"
+  ],
+  "minimum_fix": "在进入实现前，方案必须显式回答三个架构决策：\n1. auto 模式何时调用 LLM？引入置信度分级：确定性低置信（如问题句中包含\"改动\"\"落地\"等关键词被误匹配）→ 必须调 LLM；确定性高置信（如明确的 git push 命令）→ 可直接使用确定性结果。\n2. LLM 与确定性判断矛盾时的裁决优先级：LLM 可降级（implementation→question），不可升级（question→implementation），确保保守安全。\n3. LLM 不可用时的降级策略：不可简单回退到确定性分类器（因为正是它产生了误判），应定义\"无法判断时按危险处理\"或使用启发式降级规则。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

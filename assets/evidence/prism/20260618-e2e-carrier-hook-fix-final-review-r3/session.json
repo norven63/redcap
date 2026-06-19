@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260618-e2e-carrier-hook-fix-final-review-r3",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-e2e-carrier-hook-fix-final-review-r3",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-18T12:37:53+00:00",
+  "task_started_at": "2026-06-18T12:37:53+00:00",
+  "updated_at": "2026-06-18T12:39:42+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "2fd11a28-99d9-416e-a529-270baafcf224",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-e2e-carrier-hook-fix-final-review-r3/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_6150f2b7-aab9-457b-bb19-58d4ecdcdbec",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-e2e-carrier-hook-fix-final-review-r3/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "Initial Prism task session manifest."
+  }
+}

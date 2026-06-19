@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260610-stop-hook-review-answer-recovery",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260610-stop-hook-review-answer-recovery",
+  "status": "active",
+  "max_rounds_per_provider": 2,
+  "created_at": "2026-06-10T16:24:14+00:00",
+  "task_started_at": "2026-06-10T16:24:14+00:00",
+  "updated_at": "2026-06-10T16:29:56+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "42161b72-a896-4022-b6fa-c541dd0bf1b7",
+      "round_count": 0,
+      "status": "expired",
+      "last_review": null
+    },
+    "kimi": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "expired",
+      "last_review": null
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "task total timeout exhausted"
+  }
+}

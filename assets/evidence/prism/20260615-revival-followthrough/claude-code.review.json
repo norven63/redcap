@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "设计声称是一份关闭所有 E2E 暴露缺口的可执行任务队列。实际情况是：RF-02（Loom 角色隔离）的验收标准要求\"证明\"一个在共享 Codex CLI 上下文中结构上不可能成立的事实；RF-03（自我净化）缺少具体的 hook 机制设计；RF-04（Cap 人格边界）只有原则声明没有强制执行路径。5 个 RF 任务中至少有 3 个不是\"可执行任务\"而是\"未解决的设计/研究问题\"。队列本身（RF-01）的验收标准全部是关于缺口跟踪元数据是否完整，而不是缺口是否真正关闭——这是一个精致的缺口跟踪器，不是缺口关闭器。",
+  "main_concern": "RF-02 要求\"证明 Codex CLI 共享会话中的角色隔离不靠聊天记忆冒充\"，但在共享 LLM 上下文中角色边界仅存在于 prompt 层面（说服性的，非架构性的），这种\"证明\"结构上不可能成立。该验收标准要么催生虚假证据（LLM 自己说\"已隔离\"），要么无限期阻塞。诚实方案是：要求不同 Loom 角色使用独立 Codex CLI 调用（不同 session_id、不同工作目录、不同证据产物）。",
+  "top_risks": [
+    "Loom 角色隔离产生自欺证据：共享 Codex CLI 会话中 LLM 声称角色已隔离并通过检查，实际上只是聊天记忆冒充角色边界，造成虚假安全感",
+    "自我净化（RF-03）被实现为独立手动脚本，从未集成到实际任务执行流程中——pre-task 知识检索和 post-task 候选晋升成为可选项而非强制执行",
+    "任务队列元框架（RF-01）成为主要交付物——缺口被完美记录和跟踪但从未关闭，因为验收标准关注的是跟踪系统完整性而非缺口解决"
+  ],
+  "missing_evidence": [
+    "自我净化集成所需的 hook 架构规格——pre-task 检索检查具体挂载在 runtime 哪个位置（runtime wrapper? pre-tool-use hook? CI gate?）",
+    "Loom 角色隔离在 Codex CLI 单执行体上的可行机制证明——或诚实承认不可行并改为多会话方案",
+    "Cap 人格私有边界扫描器的检测模式规格——什么构成\"私有正文\"，扫描器如何区分\"决策边界\"（可公开）与\"私有体验\"（不可公开）"
+  ],
+  "minimum_fix": "1. 重新设计 RF-02：强制不同 Loom 角色使用独立 Codex CLI 调用（独立 session_id、独立工作目录、独立证据产物），删除\"证明共享会话中隔离\"这一不可满足的验收标准；2. 为 RF-03 指定精确 hook 机制和实现路径（如 runtime/core 中的 pre_task_hook 入口点 + post_task_hook 出口点）；3. 为 RF-04 增加阻塞性 pre-commit/pre-push 扫描器规格，包含具体的私有内容检测模式（如个人体验描述、身份信息、项目私密路径）；4. 为 RF-01 任务队列增加 root_cause_category 字段和反循环规则：同一根因出现 3 轮 E2E 失败则阻止所有队列处理并升级到架构评审。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "drifting"
+}

@@ -1,0 +1,66 @@
+{
+  "task": "评审 RedCap 静态治理补强方案。",
+  "user_intent": "Norven 已授权执行落地，并明确要求：任何修复都不允许绕过、降级、放松严格性或牺牲原能力；必须正面分析根因、彻底根治并保留原能力。",
+  "main_claim": "当前应先修静态治理层暴露出的真实工程问题，再进入端到端验收：总检查不能被子检查无限拖住，过程产物归属不能只依赖薄弱文件名模式，任务完成判定不能只依赖账本状态，状态面不能出现终局口径矛盾。",
+  "changed_reality": [
+    "实际运行 runtime/bin/redcap check 后，超过 90 秒没有输出，手动中止后栈信息显示卡在 runtime/prism/bin/prism 的子检查 subprocess.run，说明总检查缺少统一超时、进度输出和失败归因。",
+    "runtime/core/process_artifact_placement.py 已能拦截特定文件名模式误入 assets/contracts，但主要依赖 *-lifecycle.json 与 *-prism-request.json，语义覆盖偏窄。",
+    "runtime/core/layout_guard.py 已有较强负例自检，说明目录治理不是空壳；但这也反证其他治理项不能只看产物存在。",
+    "runtime/core/status_surface.py 输出中终局目标已 verified，但 human_next_step 仍说需要确认是否完整完成，存在状态口径不一致风险。",
+    "当前任务不能把生命周期包、棱镜评审或检查回执本身当作完成，必须落到运行逻辑、负例检查和可重复验证。"
+  ],
+  "evidence": [
+    {
+      "kind": "runtime",
+      "reference": "runtime/bin/redcap check",
+      "summary": "总检查长时间无输出，手动中止后定位到棱镜检查内部子进程等待。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/prism/bin/prism",
+      "summary": "棱镜 check 流程中存在多个未设置 timeout 的 subprocess.run。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/bin/redcap",
+      "summary": "总检查串行执行大量子命令，但缺少统一步骤进度、每步超时和失败归因。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/process_artifact_placement.py",
+      "summary": "过程产物归属检查主要依赖文件名模式，需补强语义身份检查。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/status_surface.py",
+      "summary": "状态面需要消除终局 verified 与人类下一步文案之间的口径不一致。"
+    },
+    {
+      "kind": "code",
+      "reference": "runtime/core/layout_guard.py",
+      "summary": "目录治理已具备负例自检，可作为本次补强的验收标准参考。"
+    }
+  ],
+  "review_mode": "design_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "known_constraints": [
+    "不能把文件存在、文档存在、账本状态当作完成判定。",
+    "不能让 redcap check 无界等待外部或内部子检查。",
+    "不能为了提速直接删掉关键检查。",
+    "不能把低价值环境噪音升级成人类决策议题。",
+    "不能通过绕过、降级、放松严格性来修复问题。",
+    "修复必须中文优先且不引入新的 Stop Hook 干扰。",
+    "实现前必须通过 RedCap 自开发生命周期门禁。"
+  ],
+  "questions": [
+    "总检查应采用什么分层策略，才能既保留关键检查，又避免单个子检查无限拖住？",
+    "过程产物归属检查除了文件名模式外，还应补哪些结构化语义规则？",
+    "任务完成判定应如何固定为账本、源码、合同、负例、运行检查的组合证据，而不是单一状态值？",
+    "状态面文案应如何表达终局 verified，避免既说已验证又要求继续确认的矛盾？",
+    "本次补强最小但足够的验收命令应该包括哪些？"
+  ]
+}

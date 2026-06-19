@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The completion gate is an extraction artifact (documentation), not a mandatory runtime behavior change. The conditional clause ('only if behaviorally useful') creates a plausible path to no-op completion: the main AI produces the extraction file, judges the rules 'not useful enough,' and stops without modifying any validator or contract."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The task is structurally self-justifying: it can claim success whether or not anything useful is found in the old sources. The two allowed old files (review-tracks.json and task-report-template.md) may contain only configuration mappings and template structure — not rich lifecycle semantics. The current lifecycle validator already covers all major review dimensions. The \"no-promote\" branch becomes a guaranteed completion path that produces documentation artifacts (the extraction JSON) without behavioral impact, while the \"promote\" branch would require justification that the existing validator is incomplete — which the AI may be reluctant to assert. Either way, the task \"completes\" but the user gains nothing."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Before extraction, define 2–3 specific behavioral questions the current validator cannot answer. After extraction, require a yes/no determination for each. If any answer remains 'no' due to missing rules, the contract or checker must be updated. Do not allow 'nothing useful extracted' as a completion outcome."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Add a hard gate: the task is not complete unless at least one concrete, testable behavioral change is made to the current lifecycle validator or checker (e.g., a new invariant, a type narrowing, a falsifiable guard). If no such change can be justified after reading the two old sources, the task must be explicitly closed as \"no-action-needed / already covered\" — not as \"extraction-complete\" with an artifact. The extraction JSON alone does not constitute completion."
+    }
+  ],
+  "anti_loop_detected": true
+}

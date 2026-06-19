@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "bash -lc tmp='assets/contracts/redcap-placement-negative-fixture-lifecycle.json'; printf '{}\\n' > \"$tmp\"; set +e; output=$(runtime/bin/redcap process-artifacts check 2>&1); rc=$?; rm -f \"$tmp\"; if [ \"$rc\" -eq 0 ]; then printf '%s\\n' \"$output\"; echo 'expected failure for misplaced file' >&2; exit 1; fi; printf '%s\\n' \"$output\" | rg -F 'assets/contracts/redcap-placement-negative-fixture-lifecycle.json' >/dev/null || { printf '%s\\n' \"$output\"; echo 'expected misplaced path' >&2; exit 1; }; echo REDCAP_PROCESS_ARTIFACT_NEGATIVE_REAL_WORKSPACE_OK",
+  "exit_code": 0,
+  "executed_at": "2026-06-11T14:35:56+00:00",
+  "executor": "cap",
+  "stdout_sha256": "fc81d9be7fd95e7c35df5af5024070d27d96fc8651ed4de83aff7b5dfc6330a2",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-negative-real-workspace.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260611-process-placement-self-reference/process-artifacts-negative-real-workspace.stderr.txt"
+}

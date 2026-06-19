@@ -1,0 +1,66 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260614-static-governance-hardening",
+  "merge_path": "merge.json",
+  "reviews": [
+    "kimi.review.json",
+    "claude-code.review.json",
+    "kimi.followup.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi concern 成立：仅有诊断和计划不能算修复，completion_evidence.py 也不能变成新的自我完成证书。本次已改为运行代码：新增有界总检查运行器、棱镜内部子检查超时保护、过程产物语义身份检查、组合证据检查器，并用完整 redcap check 证明不是只写文档；组合证据检查器强制 standalone_completion_certificate=false，且输出声明它只是生命周期评审输入。",
+      "implementation_evidence": [
+        "../../../../runtime/core/check_runner.py",
+        "../../../../runtime/bin/redcap",
+        "../../../../runtime/prism/bin/prism",
+        "../../../../runtime/prism/bin/enforcement-check",
+        "../../../../runtime/core/process_artifact_placement.py",
+        "../../../../runtime/core/completion_evidence.py",
+        "../../../../runtime/core/status_surface.py",
+        "../../../../assets/contracts/process-artifact-placement.json"
+      ],
+      "verification_evidence": [
+        "../../check-receipts/20260614-static-governance-hardening/redcap-check.receipt.json",
+        "../../check-receipts/20260614-static-governance-hardening/prism-check-only.receipt.json",
+        "../../check-receipts/20260614-static-governance-hardening/completion-evidence-check.receipt.json",
+        "../../check-receipts/20260614-static-governance-hardening/process-artifacts-self-check.receipt.json",
+        "../../check-receipts/20260614-static-governance-hardening/status-surface-self-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code concern 成立：第一版方案缺少具体修改计划。本次已落实到具体文件和函数，并以实际检查命令验证。超时策略不跳过检查，超时会导致失败并显示失败步骤；过程产物语义规则只检查顶层 JSON 明确标记，避免规则膨胀；状态面只修人类文案，不篡改状态值。",
+      "implementation_evidence": [
+        "../../../../runtime/core/check_runner.py",
+        "../../../../runtime/bin/redcap",
+        "../../../../runtime/prism/bin/prism",
+        "../../../../runtime/prism/bin/enforcement-check",
+        "../../../../runtime/core/process_artifact_placement.py",
+        "../../../../runtime/core/completion_evidence.py",
+        "../../../../runtime/core/status_surface.py",
+        "../../../../assets/contracts/process-artifact-placement.json"
+      ],
+      "verification_evidence": [
+        "../../check-receipts/20260614-static-governance-hardening/redcap-check.receipt.json",
+        "../../check-receipts/20260614-static-governance-hardening/check-runner-self-check.receipt.json",
+        "../../check-receipts/20260614-static-governance-hardening/completion-evidence-self-check.receipt.json",
+        "../../check-receipts/20260614-static-governance-hardening/process-artifacts-check.receipt.json",
+        "../../check-receipts/20260614-static-governance-hardening/status-json.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "所有 concern 均已采纳，并以运行代码、负例自检、组合证据检查和完整 redcap check 回应；本结论只覆盖静态治理补强，不把组合证据包或棱镜评审当成独立完成证书。"
+  }
+}

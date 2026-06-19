@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "设计在概念层面正确分离了 Codex 目标 blocked 与 RedCap 验收的依赖关系，并勾勒了合理的进入/退出边界。但进入条件缺少具体阈值（multi_iteration 是几次？cross_workspace 多宽算跨边界？），退出条件中 max_iterations_before_cap_arbitration 和 structural stop 两个关键参数未定义，且缺少与现有 check_runner 聚合检查的集成规范。这意味着当前设计停留在概念层，尚未到达可防止本次 E2E 无限循环复发的工程精度。",
+  "main_concern": "进入条件过于模糊：multi_iteration_failure_repair 和 cross_workspace_or_runtime_boundary_change 两个触发器缺少具体阈值定义，可能导致中等复杂度的任务被错误拖入重型长任务循环，违反 Norven '不能把所有小任务都拖进重型模式' 的明确约束。",
+  "top_risks": [
+    "进入条件缺少具体阈值：multi_iteration 未定义次数（2次？3次？），cross_workspace 未定义边界宽度，存在将中等任务错误升级为重型长任务的风险",
+    "防盲重跑依赖未定义的 structural stop 概念：规则5检查 source_signature 和 evidence_signature 不变的前提是系统能判定 structural stop，若该判定本身不明确，签名可能因表面变化而绕过阻塞",
+    "缺少与 check_runner 聚合检查的集成规范：设计只提到 CLI 命令，未说明如何在 aggregate check、生命周期包或门禁中接入，存在沦为文档层产物的风险"
+  ],
+  "missing_evidence": [
+    "max_iterations_before_cap_arbitration 的默认值未指定（建议 5-7 并附理由）",
+    "structural stop 的判定标准未定义（什么条件触发签名冻结比较？）",
+    "long_task_contract.py 与 check_runner.py 的接口约定未给出（函数签名、返回结构、集成点）"
+  ],
+  "minimum_fix": "1) 将进入条件具体化：multi_iteration_failure_repair 定义为连续 3+ 次失败且失败模式相同；cross_workspace 定义为涉及 2+ 个独立 runtime 目录或仓库边界的变更。2) 设定 max_iterations_before_cap_arbitration = 5 作为默认硬上限。3) 定义 structural stop 为：连续 2 轮 objective_delta 为空或收敛诊断判定无实质推进。4) 在 check_runner.py 中新增 LONG_TASK_CONTRACT 检查类型及调用点。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

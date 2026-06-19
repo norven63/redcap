@@ -1,0 +1,15 @@
+{
+  "provider": "kimi",
+  "verdict": "pass",
+  "confidence": "high",
+  "reality_delta": "x",
+  "main_concern": "x",
+  "top_risks": [],
+  "missing_evidence": [],
+  "minimum_fix": "x",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "x"
+  },
+  "user_intent_alignment": "aligned"
+}

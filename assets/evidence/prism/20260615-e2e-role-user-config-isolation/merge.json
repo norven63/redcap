@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The review package treats a self-check run with --skip-carrier-probe as validating evidence, while the carrier probe is exactly the component needed to test the remaining risk (project-level hooks and role session IDs). This produces a satisfying validation narrative while bypassing the hardest verification step."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "--ignore-user-config is a broad suppression flag that may suppress more user-level config than the targeted interactive brainstorming skill. Without a carrier probe or actual E2E run, there is no evidence the flag does not also interfere with project-level or role-level configurations needed for correct E2E operation. The self-check passed with --skip-carrier-probe, which directly contradicts the acceptance contract's new requirement for independent carrier-probe verification of project-level hooks and session behavior."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Do not commit or declare readiness until the carrier probe is included: rerun the full RedCap check and a fresh E2E round, then attach the actual diff and Round 20 hook-events-summary / role session-ID evidence. Only then treat the patch as validated."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before running Round 20: (1) execute a carrier probe with --ignore-user-config enabled to verify project-level hooks still fire, (2) log which specific user-level configs are being suppressed vs preserved, and (3) do not skip the carrier probe in the Round 20 self-check. If the carrier probe reveals any suppressed config that E2E roles depend on, narrow the suppression to target only interactive/approval-gating skills rather than all user config."
+    }
+  ],
+  "anti_loop_detected": true
+}

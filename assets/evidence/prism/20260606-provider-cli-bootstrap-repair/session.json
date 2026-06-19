@@ -1,0 +1,27 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260606-provider-cli-bootstrap-repair",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260606-provider-cli-bootstrap-repair",
+  "status": "main-decided",
+  "max_rounds_per_provider": 2,
+  "created_at": "2026-06-06T04:03:32+00:00",
+  "updated_at": "2026-06-06T04:13:15+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "41902994-abe2-460b-8304-537e2cdf909e",
+      "round_count": 2,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260606-provider-cli-bootstrap-repair/claude-code.adversarial.review.json"
+    },
+    "kimi": {
+      "session_handle": "4f387ccd-91a3-47a7-9e83-b266bbdaa4cb",
+      "round_count": 2,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260606-provider-cli-bootstrap-repair/kimi.adversarial.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Bootstrap provider repair verified with two Kimi dispatch rounds, two Claude Code dispatch rounds, merged strictest verdict pass, and RedCap aggregate checks passing."
+  }
+}

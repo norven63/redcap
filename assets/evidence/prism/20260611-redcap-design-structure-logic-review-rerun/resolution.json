@@ -1,0 +1,41 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260611-redcap-design-structure-logic-review-rerun",
+  "merge_path": "merge.json",
+  "reviews": [
+    "claude-code.review.json",
+    "../20260611-redcap-design-structure-logic-review-rerun-kimi-short/kimi.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "escalate",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code 的核心 concern 成立：当前 RedCap 的部件检查多数健康，但系统级自检仍被本整体评审开放任务阻塞，端到端验收器与终局关闭仍未执行。Cap 已修复 self-development 模式下 assets/evidence/.gitignore 缺失问题并验证通过，但过程文件归属与自指状态机制仍未在本轮彻底解决。",
+      "escalation": {
+        "target": "Cap-owned follow-up queue",
+        "blocking_reason": "过程文件归属迁移涉及 43 个既有 lifecycle/prism-request 类文件，可能影响历史证据引用；自指状态机制需要设计一个不靠硬标 verified 绕过的检查策略。",
+        "user_visible_question": "本轮结论应作为结构评审发现保留，不应把整体评审任务标记为 verified。下一步应先处理过程文件归属策略和自指状态机制。"
+      }
+    },
+    {
+      "provider": "kimi",
+      "verdict": "block",
+      "decision": "escalate",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi 的 block 部分成立：不能用“评审完成”证明“评审应完成”。Cap 已修复 project_runtime_gitignore_ok=false，但 Kimi 要求的过程文件归属和自指阻塞解除尚未完成；KI-04 端到端验收器仍是设计完成未执行，KI-05 终局关闭仍需等待验收。",
+      "escalation": {
+        "target": "Cap-owned follow-up queue",
+        "blocking_reason": "本轮评审已经给出有效问题结论，但仍缺少过程文件归属迁移方案、自指状态解除策略和端到端验收器执行证据。",
+        "user_visible_question": "不能关闭整体评审任务；应把它保持为升级状态，并把三个未解问题排入下一步执行。"
+      }
+    }
+  ],
+  "conclusion": {
+    "state": "escalated",
+    "reason": "两方棱镜评审均指出不能把本轮整体评审直接关闭；Cap 已修复一个可执行边界问题，但仍需处理过程文件归属、自指状态机制和端到端验收执行。"
+  }
+}

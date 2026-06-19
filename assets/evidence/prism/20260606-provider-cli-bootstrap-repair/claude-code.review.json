@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "pass",
+  "confidence": "medium",
+  "reality_delta": "No delta. The provider returned a valid Prism review shape through this invocation without tools, file edits, or unbounded planning. The claimed behavior matches observed behavior. However, a single smoke test is self-referential by design — the fact that you are reading this output proves the provider works for this exact prompt, but says nothing about the dispatcher path, different prompt shapes, or adversarial inputs.",
+  "main_concern": "Single-invocation pass does not validate the dispatcher pipeline, environment parity, or resilience under varying prompt structures. The test is a mirror — the provider is asked to prove it can respond, and any response is tautological proof. There is no negative control.",
+  "top_risks": [
+    "The `prism-dispatch` wrapper may fail to parse or route arguments correctly even though the underlying provider works in isolation.",
+    "Structured JSON output constraints may break under prompts that trigger markdown wrapping, code fences, or conversational preamble — common failure modes in LLM-based CLI tools.",
+    "Non-interactive mode is asserted but untested: an adversarial or ambiguous prompt could trigger tool-use attempts or interactive prompts, violating the bare-mode contract."
+  ],
+  "missing_evidence": [
+    "No end-to-end dispatcher invocation log showing the full argument chain, exit code, and stdout/stderr separation.",
+    "No negative test: what happens when the provider receives a malformed or empty prompt through the dispatcher?",
+    "No timeout or resource-limit behavior observed — the `--print` and bare-mode flags may silently hang or OOM under certain prompt lengths."
+  ],
+  "minimum_fix": "Run a second invocation with a structurally different prompt (e.g., one that explicitly requests tool use or markdown output) and confirm the JSON-only constraint holds. If possible, capture a dispatcher log showing the full invocation chain and exit code.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "主 AI 声称完成了源码级改动（carrier_probe 前置、active_run 阻断、自检断言、项目级 .codex/config.toml、Prism 占位门禁），但这些改动的真实效果并未被独立验证。受控负向运行的描述反而暴露关键疑点：carrier_probe 能返回 \"carrier-probe-ok\"，却没有触发项目级 Hook 事件。这说明探针可能与真实 Hook 能力解耦，更像是一个子进程握手标记，而非真正的承载能力探针。因此，边界硬化的现实变化存疑；当前证据更像是一份自洽的收据/合同/计划，而不是可复现的外部运行结果。",
+  "main_concern": "carrier_probe 似乎可以在 Codex CLI 未真实触发项目级 Hook 的情况下返回 ok，导致 E2E 入口的阻断逻辑可能依赖于测试装置自身生成的状态，而非真实的外部能力。整个验证链由同一系统生成的 receipt、resolution.json 和 fixture 校验器构成，缺乏外部可观察的独立证据。",
+  "top_risks": [
+    "假阳性承载：carrier_probe 若只检查子进程 stdout 字符串，未校验真实 Hook 事件（SessionStart/UserPromptSubmit/PreToolUse/PostToolUse/Stop），则可能在 Hook 能力缺失时仍被判定为 ok，边界硬化形同虚设。",
+    "自证循环：所有 receipt、合同、resolution.json 和 Prism 占位校验器都由被审查系统自身产出，只能证明装置能打印预期文本，不能证明真实 Codex CLI 运行会被阻断。",
+    "语义漂移式非完成：把任务重新框定为\"入口边界硬化/主动阻断\"，用大量文档和元数据替代可工作的长任务/完整复活入口，使未完成的现实被包装成设计选择。"
+  ],
+  "missing_evidence": [
+    "carrier_probe 的实际源码/diff，明确要求它必须捕获到真实 Codex CLI 项目级 Hook 事件才算通过，而不是仅匹配 stdout 字符串。",
+    "受控负向运行的原始日志（stdout/stderr、Hook 事件追踪、active_run 阻断记录），且该运行应来自测试装置外部的真实 Codex CLI 调用。",
+    "由 CI 或第三方独立复现的 E2E 阻断结果，确认在当前 project_install 生成的配置下，Codex CLI 无法触发项目级 Hook 并返回 blocked_before_project_run=true。"
+  ],
+  "minimum_fix": "公开 carrier_probe 的实现，使其在缺少真实 Hook 事件时必然失败；用外部可观察的运行日志取代自生成的 .receipt.json 作为主要证据；在 CI 或独立环境中复现一次真实 Codex CLI 调用，确认 E2E 确实在项目运行前被阻断，且未生成 Loom 角色或 completion-marker。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "上一轮 Prism 的 concern 被\"接受并升级为真实阻塞\"，现在又被当作本轮进展的论据。下一轮不能再增加新的 meta-document、contract 或 fixture 校验层，必须直接展示 hook-carrier 代码和可复现的外部运行输出。"
+  },
+  "user_intent_alignment": "主 AI 正确避免宣称 RedCap 完整复活完成，与用户的明确约束一致。但其证据体系仍高度依赖自生成产物，且 carrier_probe 与真实 Hook 事件的耦合性未经验证，存在从\"正面修复\"滑向\"制造可信证据\"的风险。用户要的是真正可验证的入口硬化或诚实的阻塞，而不是另一份漂亮的合同/收据。"
+}

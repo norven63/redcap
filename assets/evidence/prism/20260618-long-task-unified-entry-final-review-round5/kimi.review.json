@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "Receipts exist and show the expected pass/fail signatures, but the bundle truncates the very file (complete_revival_e2e.py) that is supposed to prove the probes are wired into the E2E self-check. We therefore cannot verify that the runtime-boundary-probe and integration-dry-run are durable parts of the E2E patrol path rather than one-off manual runs that produced receipts.",
+  "main_concern": "Generated receipts are being treated as proof of integration. The previous block was about runtime boundary probes and start→record→complete→discover wiring; the response shows commands ran, but not that complete_revival_e2e.py permanently includes the new entry/final failure guards, the discover function, the two new CLI commands, or self-check integration.",
+  "top_risks": [
+    "complete_revival_e2e.py is truncated at 200000/442807 bytes, hiding the claimed e2e_active_run_entry_failures, e2e_active_run_final_failures, discover_e2e_long_task_active_run, runtime-boundary-probe command, long-task-integration-dry-run command, and self-check wiring.",
+    "runtime-boundary-probe.receipt.json shows at least the illegal-lifecycle-state case, but the visible evidence does not confirm the other three claimed bad-packet variants (running with completion_boundary, completed missing completion_boundary, outcome mismatch) are all present and rejected.",
+    "long-task-integration-dry-run receipt proves `complete` succeeded, but does not prove the E2E patrol path actually discovers the active_run and asserts lifecycle_state=completed plus a valid completion_boundary."
+  ],
+  "missing_evidence": [
+    "Untruncated content of complete_revival_e2e.py (or exact line-number snippets) showing the five integration points: entry/final failure helpers, discover helper, the two new probe commands, and self-check invocation.",
+    "Full runtime-boundary-probe.receipt.json listing all four bad-packet cases with exit_code=1 and the correct failure messages.",
+    "Evidence that the integration-dry-run completed active_run is discovered and inspected by the E2E patrol code, not just by a separate manual command."
+  ],
+  "minimum_fix": "Provide a non-truncated view of complete_revival_e2e.py (or focused line-range excerpts with git blame/diff) proving the probe and dry-run commands are registered, called by self-check, and reuse the same entry/final boundary helpers as the main E2E flow. Then re-run complete-revival-e2e self-check and attach its receipt.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Do not accept another round of standalone probe receipts as closure. The next evidence must show the code integration points, not just that the probes can run."
+  },
+  "user_intent_alignment": "User only wants to know if E2E patrol can resume. Because the bundle cannot prove the blockers are durably closed, the safe answer is: not yet; one more verification step is needed before returning to E2E patrol."
+}

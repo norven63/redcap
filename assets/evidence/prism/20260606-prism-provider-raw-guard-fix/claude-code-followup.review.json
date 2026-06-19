@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The patch addresses the two prior concerns directionally — semantic metadata verification and live hook testing — but the exit_code is inferred from raw JSON content heuristically, not recomputed from process state. If Kimi produces valid JSON error output with a non-zero exit code, the heuristic would infer exit_code=0 from parseable JSON and flag a mismatch against the truthful exit_code=1 in metadata, causing the dispatcher to reject a legitimate provider error run as a metadata integrity failure.",
+  "main_concern": "verify_raw_meta now parses the raw JSON and infers exit_code from content rather than recomputing it from captured process state. This creates a false-positive failure mode: when Kimi exits non-zero but produces valid JSON error output (e.g., a rate-limit response formatted as JSON), the heuristic sees parseable JSON and infers success, detects a mismatch with the actual non-zero exit_code in metadata, and rejects the run — collapsing a provider error into an infrastructure integrity alert and potentially masking real Kimi failures from Cap.",
+  "top_risks": [
+    "False-positive metadata rejection when Kimi produces valid JSON error output with non-zero exit code — the heuristic conflates 'valid JSON' with 'successful execution', breaking error handling for structured Kimi error responses",
+    "Hook pattern-matching bypass via path string concatenation inside python -c (e.g., open('assets/' + 'evidence/prism/...raw.json')) — the detection now catches embedded paths but may not handle runtime-composed path strings",
+    "provider-agents/ directory still appears untracked in git from prior review snapshot — the kimi-review-agent.yaml that the entire dispatch reliability fix depends on may not be under version control"
+  ],
+  "missing_evidence": [
+    "No test showing behavior when Kimi produces valid JSON error response with non-zero exit code — does the verification correctly handle this or does it false-positive reject?",
+    "No test of hook bypass via path string concatenation or variable interpolation inside python -c commands",
+    "No confirmation that runtime/prism/provider-agents/ has been added to git tracking (was ?? in prior review snapshot)"
+  ],
+  "minimum_fix": "Add explicit error-output detection to the exit_code inference: if the raw JSON contains recognised error-indicating fields (e.g., top-level 'error', 'type': 'error', HTTP-style error envelope), treat exit_code as non-inferrable and skip the exit_code comparison, or infer an unknown/error state that doesn't trigger a mismatch. Add a self-check test case with a simulated Kimi error response (valid JSON, exit_code=1) to confirm the pipeline passes through provider errors without false-positive metadata rejection. Test hook against path string concatenation in python -c.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

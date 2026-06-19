@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "long-task",
+    "check",
+    "--packet",
+    "assets/contracts/long-task-contract.json",
+    "--require-integration"
+  ],
+  "command": "runtime/bin/redcap long-task check --packet assets/contracts/long-task-contract.json --require-integration",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "duration_seconds": 0.04,
+  "executed_at": "2026-06-17T18:35:38.557168+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "expected_exit_code": null,
+  "name": "long-task-contract-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "started_at": "2026-06-17T18:35:38.517318+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": true,\n  \"path\": \"/Users/norven/workspace/AI Era/redcap/assets/contracts/long-task-contract.json\",\n  \"contract_kind\": \"policy_template\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [\n    \"active_run_ledger\",\n    \"aggregate_check_integration\",\n    \"completion_boundary_guard\",\n    \"contract_validation\",\n    \"failure_backlog\",\n    \"stable_evidence_policy\",\n    \"task_entry_decision\"\n  ],\n  \"missing_capability_layers\": [\n    \"prism_review_resolution\"\n  ],\n  \"failures\": []\n}\nREDCAP_LONG_TASK_CONTRACT_OK\n",
+  "stdout_sha256": "12f1dfb74464c064c241c8b97fc23ca9c071a7a596dba8db8ca47daef90e7e92"
+}

@@ -85,6 +85,43 @@ REQUIRED_EVIDENCE_CHECKS = {
     "iteration-verdict.json",
     "completion-marker.json",
 }
+SELF_PURIFICATION_ALLOWED_DECISIONS = {"promote_public", "keep_private", "no_promote", "defer_with_owner"}
+
+
+def collect_self_purification_decisions(purification: dict[str, Any]) -> list[dict[str, Any]]:
+    collected: list[dict[str, Any]] = []
+    top_level = purification.get("decisions")
+    if isinstance(top_level, list):
+        collected.extend(decision for decision in top_level if isinstance(decision, dict))
+    candidates = purification.get("candidates")
+    if isinstance(candidates, list):
+        for candidate in candidates:
+            if not isinstance(candidate, dict):
+                continue
+            candidate_id = candidate.get("id")
+            nested = candidate.get("decisions")
+            if not isinstance(nested, list):
+                continue
+            for decision in nested:
+                if not isinstance(decision, dict):
+                    continue
+                normalized = dict(decision)
+                if candidate_id and "candidate_id" not in normalized and "id" not in normalized:
+                    normalized["candidate_id"] = candidate_id
+                collected.append(normalized)
+    return collected
+
+
+def validate_self_purification_decisions(decisions: list[dict[str, Any]], failures: list[str]) -> None:
+    if not decisions:
+        failures.append("self-purification-candidates 必须包含顶层或候选内嵌 decisions")
+        return
+    for decision in decisions:
+        label = decision.get("decision")
+        if label not in SELF_PURIFICATION_ALLOWED_DECISIONS:
+            failures.append(f"自我净化 decision 无效：{label}")
+        if label == "no_promote" and not decision.get("reason"):
+            failures.append("no_promote 决策必须写明 reason")
 SESSION_ID_RE = re.compile(
     r"^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{8,}|session_[a-zA-Z0-9_-]+)$"
 )
@@ -331,19 +368,7 @@ def validate_knowledge_and_purification(evidence_root: pathlib.Path, failures: l
     no_candidate_reason = purification.get("no_candidate_reason")
     if not candidates and not (isinstance(no_candidate_reason, str) and no_candidate_reason.strip()):
         failures.append("自我净化必须记录候选或无候选理由")
-    decisions = purification.get("decisions")
-    if not isinstance(decisions, list) or not decisions:
-        failures.append("self-purification-candidates.decisions 必须非空")
-    else:
-        for decision in decisions:
-            if not isinstance(decision, dict):
-                failures.append("自我净化 decision 必须是对象")
-                continue
-            label = decision.get("decision")
-            if label not in {"promote_public", "keep_private", "no_promote", "defer_with_owner"}:
-                failures.append(f"自我净化 decision 无效：{label}")
-            if label == "no_promote" and not decision.get("reason"):
-                failures.append("no_promote 决策必须写明 reason")
+    validate_self_purification_decisions(collect_self_purification_decisions(purification), failures)
 
     test_results = load_optional_json(evidence_root / "test-results.json")
     if test_results is None:
@@ -689,7 +714,10 @@ def cmd_self_check(_: argparse.Namespace) -> int:
         }, ensure_ascii=False), encoding="utf-8")
         (evidence / "prism-assisted-review.json").write_text('{"used": true, "reviews": [{"provider": "kimi", "verdict": "pass"}], "cap_decision": "accepted"}\n', encoding="utf-8")
         (evidence / "knowledge-retrieval-evidence.json").write_text('{"search_ran": true, "query": "loom", "matches": [{"id": "loom"}]}\n', encoding="utf-8")
-        (evidence / "self-purification-candidates.json").write_text('{"candidates": [], "no_candidate_reason": "fixture", "decisions": [{"decision": "no_promote", "reason": "fixture"}]}\n', encoding="utf-8")
+        (evidence / "self-purification-candidates.json").write_text(
+            '{"candidates": [{"id": "fixture-candidate", "decisions": [{"decision": "no_promote", "reason": "fixture"}]}]}\n',
+            encoding="utf-8",
+        )
         (evidence / "persona-distillation-decision.json").write_text('{"privacy_class": "cap-private", "public_write": false, "private_body_written": false, "reason": "fixture"}\n', encoding="utf-8")
         (evidence / "test-results.json").write_text('{"role": "tester", "passed": true}\n', encoding="utf-8")
         (evidence / "negative-probes.json").write_text('{"role": "tester", "passed": true}\n', encoding="utf-8")

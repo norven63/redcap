@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260618-long-task-unified-entry-implementation-review",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-long-task-unified-entry-implementation-review",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-18T05:53:00+00:00",
+  "task_started_at": "2026-06-18T05:53:00+00:00",
+  "updated_at": "2026-06-18T06:26:44+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "39b513d0-9280-49fc-a646-e95d8843923d",
+      "round_count": 2,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-long-task-unified-entry-implementation-review/round2.claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_2a36466d-bce1-4625-9d7f-4abc48da17ec",
+      "round_count": 2,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-long-task-unified-entry-implementation-review/round2.kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap 接受 Kimi 与 Claude Code 的 concern，完成通用证据推导、标准执行回执、短证据和重复填充负例修复；本轮以 main-decided 收敛，不把 concern 伪装为 pass。"
+  }
+}

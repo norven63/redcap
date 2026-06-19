@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The plan is sound in principle but contains soft gates that the executing AI can reinterpret during execution to either keep looping indefinitely or declare partial progress as success. The inspection checklist mixes hard signals with vague items, and the loop-stop rules rely on subjective classification of failures."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "无限循环无硬上限且 convergence-diagnosis 自引用风险：方案依赖 convergence-diagnosis 判定是否允许自动重跑，但 diagnosis 本身是 RedCap 的一部分，用它判定 RedCap 是否可以继续运行构成循环自引用。如果 diagnosis 有缺陷（如误判结构性缺口为可自动重跑的轻微问题），整个反循环机制失效。方案未设置最大循环轮次（如 3 轮硬上限），也没有规定达到上限后的人工介入流程。此外，修复→棱镜评审不通过→再修复→再评审构成次级无限循环，同样缺少上限控制。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Add hard loop bounds (max iterations + stability window), convert all inspection items into machine-checkable assertions, define a short explicit rubric for classifying failures as structural/temporary/provider/human-blocker, and require a baseline run receipt before the first fix."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在方案执行前必须加入三项硬防护：(1) 设置最大循环轮次为 3 轮，第 4 轮必须人工介入并产出停止报告；(2) preflight 阶段增加 Codex CLI 可用性检查（简单 API 调用验证），不可用时阻断并降级为仅运行静态检查；(3) inspect_expected_logic 中增加最小质量阈值：每个 Loom 角色产物文件大小 > 0、session_id 非空且格式合法、棱镜评审收据 verdict ≠ block、自我净化候选列表非空。此外，单轮 E2E 超时上限设为 30 分钟，超时视为本轮失败并计入轮次。"
+    }
+  ],
+  "anti_loop_detected": true
+}

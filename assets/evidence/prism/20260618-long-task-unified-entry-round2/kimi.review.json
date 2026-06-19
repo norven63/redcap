@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "block",
+  "confidence": "high",
+  "reality_delta": "No actual runtime change has occurred. The 'main_claim' uses the wording 拟实现 (plans to implement) and the review_mode is design_review. The changed_reality bullets describe pre-existing files and current limitations, not new working code. No new long-task start command, no created active_run package, and no check/self-check coverage exist in the evidence provided.",
+  "main_concern": "The main AI is treating a design document as the fix itself. The user's intent explicitly forbids 'only adding documentation' and requires a direct, capability-preserving breakthrough. The proposal adds a new 'derived capability layer' and describes fast_path/enabled logic, but these are still plans and classification rules, not an implemented entry point that creates real active_run packages.",
+  "top_risks": [
+    "Design approval is mistaken for implementation completion: the original failure mode—'contract checker exists but real task entry is not unified'—remains unaddressed because no code entry has been created.",
+    "The 'derived capability layer' may become a new form of documentation mask: it records whether a capability 'should exist' or 'is planned' rather than enforcing that the start command and check coverage actually exist at runtime.",
+    "fast_path vs enabled criteria are undefined in the evidence; without concrete thresholds, the same system could either force trivial tasks into heavy long-task mode or let real long tasks bypass governance."
+  ],
+  "missing_evidence": [
+    "Actual code diff or new file showing the implemented start function, its wiring in runtime/bin/redcap, and the active_run package creation logic.",
+    "Execution/test evidence demonstrating a real invocation of long-task start that produces a package and passes long-task check / self-check.",
+    "Contents of the authorized bundle JSON were not provided in the prompt; only the file path was given, so no concrete source inspection evidence is available to this review."
+  ],
+  "minimum_fix": "Do not produce another design review. Implement the real start entry: add the start command, wire it into runtime/bin/redcap, make it create an active_run package with parent goal, trigger, stop condition, first running iteration, action evidence, source signature, evidence signature, and failure_backlog, then run check/self-check and pass. Return for review only after the implementation runs successfully.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "This is round2 because round1 exhausted its budget without producing a review. The current request risks repeating the same loop by substituting design documentation for implementation. The loop breaks only when a runnable long-task start exists and has been exercised, not when another design document is approved."
+  },
+  "user_intent_alignment": "Misaligned. The user required a real fix that preserves existing capabilities and forbids bypassing, degrading, or merely documenting. The current deliverable is exactly 'merely a convincing explanation, document, and plan'—it does not change the runtime reality and therefore does not satisfy the user's intent."
+}

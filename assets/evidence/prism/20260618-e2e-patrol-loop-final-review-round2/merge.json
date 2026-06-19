@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "block",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "block",
+  "strictest_provider": "claude-code",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "carrier_probe 似乎可以在 Codex CLI 未真实触发项目级 Hook 的情况下返回 ok，导致 E2E 入口的阻断逻辑可能依赖于测试装置自身生成的状态，而非真实的外部能力。整个验证链由同一系统生成的 receipt、resolution.json 和 fixture 校验器构成，缺乏外部可观察的独立证据。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "carrier_probe 探针设计缺陷：探针返回 carrier-probe-ok 但 Hook 事件零触发，说明探针仅验证了子进程可执行而非 Hook 机制真正工作。这构成对已知风险（Hook 承载缺失）的虚假缓解——探针说 ok 但实际没 ok。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "公开 carrier_probe 的实现，使其在缺少真实 Hook 事件时必然失败；用外部可观察的运行日志取代自生成的 .receipt.json 作为主要证据；在 CI 或独立环境中复现一次真实 Codex CLI 调用，确认 E2E 确实在项目运行前被阻断，且未生成 Loom 角色或 completion-marker。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "carrier_probe 必须从\"检测子进程能否返回 ok\"改为\"检测 Codex CLI 是否实际触发项目级 Hook 事件\"：即启动 Codex CLI 会话并发送一个真实 prompt，验证 SessionStart/UserPromptSubmit/Stop Hook 事件确实被记录到日志，而非仅检查 CLI 是否可执行。"
+    }
+  ],
+  "anti_loop_detected": true
+}

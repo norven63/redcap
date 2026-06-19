@@ -25,7 +25,8 @@
     "<project-root>/.redcap/logs",
     "<project-root>/.redcap/tmp",
     "<project-root>/.redcap/install.json",
-    "<project-root>/.codex/hooks.json"
+    "<project-root>/.codex/hooks.json",
+    "<project-root>/.codex/config.toml"
   ],
   "safety_rules": [
     "init 不得写入 RedCap 源仓库，除非项目根目录就是 RedCap 自身。",
@@ -34,6 +35,7 @@
     "包内不得包含 RedCap 当前源码工作区绝对路径。",
     "发布前必须通过 audit-package 审计和 release-check 真实解压安装检查。",
     "包内不得包含当前开发会话的 AGENTS.md；外部项目只通过 init 渲染项目级 hooks。",
-    "项目级 hooks 必须从 assets/contracts/codex-hooks.template.json 渲染，并把 {REPO_ROOT} 指向项目 .redcap。"
+    "项目级 hooks 必须从 assets/contracts/codex-hooks.template.json 渲染，并把 {REPO_ROOT} 指向项目 .redcap。",
+    ".codex/config.toml 只允许声明项目级 hook 开关，不得引入会改变用户项目行为的额外策略。"
   ]
 }

@@ -261,6 +261,7 @@ def release_check() -> dict[str, Any]:
                 project / PACKAGE_ROOT / "logs",
                 project / PACKAGE_ROOT / "tmp",
                 project / ".codex" / "hooks.json",
+                project / ".codex" / "config.toml",
             ]:
                 if not required.exists():
                     failures.append(f"发布安装后缺少路径：{required}")
@@ -329,6 +330,11 @@ def init_project(project: pathlib.Path, package_root: pathlib.Path) -> dict[str,
     hook_file = project / ".codex" / "hooks.json"
     hook_file.write_text(render_hook_config(package_root), encoding="utf-8")
     created.append(str(hook_file))
+    codex_config = project / ".codex" / "config.toml"
+    config_text = "[features]\nhooks = true\n"
+    if not codex_config.exists() or codex_config.read_text(encoding="utf-8", errors="replace") != config_text:
+        codex_config.write_text(config_text, encoding="utf-8")
+        created.append(str(codex_config))
     install_json = package_root / "install.json"
     install_json.write_text(json.dumps({
         "schema_id": "redcap-project-installation",
@@ -336,6 +342,7 @@ def init_project(project: pathlib.Path, package_root: pathlib.Path) -> dict[str,
         "project": str(project),
         "package_root": str(package_root),
         "hook_config": str(hook_file),
+        "codex_config": str(codex_config),
         "runtime_bin": str(runtime_bin),
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     created.append(str(install_json))
@@ -439,6 +446,7 @@ def cmd_self_check(_: argparse.Namespace) -> int:
             package_root / "logs",
             package_root / "tmp",
             project / ".codex" / "hooks.json",
+            project / ".codex" / "config.toml",
         ]:
             if not required.exists():
                 failures.append(f"安装后缺少路径：{required}")

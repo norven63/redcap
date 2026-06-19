@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260611-stop-hook-recovery-reanchor-rerun2",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-stop-hook-recovery-reanchor-rerun2",
+  "status": "main-decided",
+  "max_rounds_per_provider": 2,
+  "created_at": "2026-06-11T07:31:49+00:00",
+  "task_started_at": "2026-06-11T07:31:49+00:00",
+  "updated_at": "2026-06-11T11:34:50+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "6eb799d3-85f7-4ad1-ba4d-fc3d852084a1",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-stop-hook-recovery-reanchor-rerun2/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_9bebff42-8d45-416e-a8a1-4779c7b413e9",
+      "round_count": 1,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260611-stop-hook-recovery-reanchor-rerun2/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap采纳两方concern：默认关闭被拦回复片段，恢复规则锚定原问题，确认类问题增加混合执行边界，并用执行回执验证。"
+  }
+}

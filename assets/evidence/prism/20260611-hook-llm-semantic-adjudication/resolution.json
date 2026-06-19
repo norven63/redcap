@@ -1,0 +1,59 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260611-hook-llm-semantic-adjudication",
+  "merge_path": "merge.json",
+  "reviews": [
+    "kimi.review.json",
+    "claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "block",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该阻断成立。前置评审请求本身不能算完成；本次已转为实际代码改造：新增auto-on-ambiguous语义策略、结构化LLM判断应用规则、UserPromptSubmit阶段语义门禁接入、棱镜gate语义调整、Stop Hook策略同步，并用端到端提示探针证明“重启是否生效”问题句会被判为仅回答，明确修复句仍保持实现授权。",
+      "implementation_evidence": [
+        "../../../../runtime/core/intent_judge.py",
+        "../../../../runtime/prism/bin/prism",
+        "../../../../runtime/prism/bin/turn-action-check",
+        "../../../../runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "verification_evidence": [
+        "receipts/py-compile.receipt.json",
+        "receipts/intent-judge-self-check.receipt.json",
+        "receipts/codex-hook-self-check.receipt.json",
+        "receipts/semantic-hook-e2e.receipt.json",
+        "receipts/prism-check.receipt.json",
+        "receipts/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该关注点成立。auto模式原本会在确定性判断为implementation或completion时跳过LLM，无法纠正误伤；本次没有破坏原auto语义，而是新增auto-on-ambiguous策略，只在“确定性说要执行但文本形状像问题”时调用LLM。LLM可高置信降级模糊实现判断，但不能把普通问题升级为实现授权；清晰实现句不会触发伪LLM降级。LLM不可用时保留脚本裁决和保守门禁，后续危险动作仍由PreToolUse和生命周期门禁拦住。",
+      "implementation_evidence": [
+        "../../../../runtime/core/intent_judge.py",
+        "../../../../runtime/prism/bin/prism",
+        "../../../../runtime/prism/bin/turn-action-check",
+        "../../../../runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "verification_evidence": [
+        "receipts/py-compile.receipt.json",
+        "receipts/intent-judge-self-check.receipt.json",
+        "receipts/codex-hook-self-check.receipt.json",
+        "receipts/semantic-hook-e2e.receipt.json",
+        "receipts/prism-check.receipt.json",
+        "receipts/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两方意见均已采纳，并已落到运行代码、宿主Hook接入、棱镜gate接入、Stop Hook策略同步和已执行检查回执；本结论仅覆盖Hook语义判断升级，不声明RedCap完整复活终局完成。"
+  }
+}

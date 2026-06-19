@@ -1,0 +1,51 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260603-redcap-1.0-final-claim",
+  "merge_path": "merge.json",
+  "reviews": [
+    "kimi.review.json",
+    "claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Kimi is right that runtime green checks cannot replace formal Prism closure. The unresolved block now has a formal resolution tied to implemented allowlist/path-inspection fixes, and the remaining unresolved concerns have a triage artifact classifying them against the contract labels with concrete evidence.",
+      "implementation_evidence": [
+        "assets/evidence/prism/20260601-old-disease-loop-r1/resolution.json",
+        "assets/evidence/prism/20260603-redcap-1.0-final-claim/historical-prism-concern-triage.json"
+      ],
+      "verification_evidence": [
+        "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260601-old-disease-loop-r1/merge.json --resolution assets/evidence/prism/20260601-old-disease-loop-r1/resolution.json",
+        "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260603-redcap-1.0-final-claim/merge.json --resolution assets/evidence/prism/20260603-redcap-1.0-final-claim/resolution.json",
+        "runtime/bin/redcap prism-resolution --self-check",
+        "assets/evidence/prism/20260603-redcap-1.0-final-claim/probes/redcap-check.txt"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "Claude Code is right that exit criterion #7 requires triage before final completion can be verified. The fix verifies that code changes match the old-disease block demands, resolves that block formally, and documents the remaining concern triage instead of creating empty resolution tokens.",
+      "implementation_evidence": [
+        "assets/evidence/prism/20260601-old-disease-loop-r1/resolution.json",
+        "assets/evidence/prism/20260603-redcap-1.0-final-claim/historical-prism-concern-triage.json"
+      ],
+      "verification_evidence": [
+        "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260601-old-disease-loop-r1/merge.json --resolution assets/evidence/prism/20260601-old-disease-loop-r1/resolution.json",
+        "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260603-redcap-1.0-final-claim/merge.json --resolution assets/evidence/prism/20260603-redcap-1.0-final-claim/resolution.json",
+        "runtime/bin/redcap prism-resolution --self-check",
+        "assets/evidence/prism/20260603-redcap-1.0-final-claim/probes/redcap-check.txt"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Final review concerns were accepted and mapped to block resolution plus historical concern triage with concrete runtime evidence."
+  }
+}

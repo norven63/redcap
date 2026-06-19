@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260613-advisory-stop-post-fix-recheck",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260613-advisory-stop-post-fix-recheck",
+  "status": "active",
+  "max_rounds_per_provider": 2,
+  "created_at": "2026-06-13T06:46:37+00:00",
+  "task_started_at": "2026-06-13T06:46:37+00:00",
+  "updated_at": "2026-06-13T06:55:12+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "d61947c1-81b9-4d98-952d-6a755978d42e",
+      "round_count": 1,
+      "status": "expired",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260613-advisory-stop-post-fix-recheck/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "expired",
+      "last_review": null
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "task total timeout exhausted"
+  }
+}

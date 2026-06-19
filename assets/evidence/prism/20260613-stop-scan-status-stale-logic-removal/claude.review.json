@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The review request describes a coherent surgical deletion plan with specific line-level targets, but provides zero implementation evidence (evidence_count=0). The plan's weakest link is the \"preserve for internal self-check\" claim — without verifying that internal consumers actually call expected_status_block() on a distinct code path from ordinary results, the preservation may be aspirational rather than functional. Additionally, the classification rename (unsupported-scan-conclusion → scan-conclusion-anchor) likely affects enforcement-matrix.json, hook-coverage.json, and dispatch logic — none of which can be verified without file access. The git status shows these contract files as modified, which may indicate they've been updated, but this cannot be confirmed.",
+  "main_concern": "The classification rename from unsupported-scan-conclusion to scan-conclusion-anchor is not verified against consumers in enforcement-matrix.json, hook-coverage.json, and prism-dispatch. If any consumer references the old string, the hook will silently fail to match — a regression that produces no error, just missing enforcement. The \"preserve expected_status_block for internal self-check\" claim is also unverified: the plan does not enumerate which internal consumers exist or demonstrate they operate on a distinct path from ordinary results.",
+  "top_risks": [
+    "Classification rename causes silent mismatch in enforcement-matrix.json or hook-coverage.json, breaking scan-conclusion hook dispatch without error",
+    "Removing expected_status_block from scan_conclusion_guard.py result dict breaks downstream consumers (prism-dispatch, hook-coverage-check, host-hook-audit.py) that still read that key",
+    "The preserved expected_status_block() function becomes dead code because no internal consumer actually invokes it on a distinct 'real scan' path — the 'preservation' is nominal, not functional"
+  ],
+  "missing_evidence": [
+    "Grep output showing zero remaining references to 'unsupported-scan-conclusion' in all contract files, dispatch scripts, and hook implementations after the rename",
+    "Call-graph trace confirming that expected_status_block() is invoked exclusively by real-scan-task codepaths and never by ordinary-result codepaths after the field removal",
+    "A before/after diff or diffstat that matches the changed_reality list exactly, with no extra edits beyond the claimed scope"
+  ],
+  "minimum_fix": "Before executing: (1) grep the entire repo for 'unsupported-scan-conclusion' and update every occurrence — not just codex-hook.py — to scan-conclusion-anchor, including enforcement-matrix.json, hook-coverage.json, and any dispatch scripts; (2) trace every consumer of scan_conclusion_guard results to verify none read expected_status_block from the result dict after removal; (3) demonstrate that expected_status_block() has at least one verified caller on a distinct real-scan path — if none exists, remove the function entirely rather than preserving dead code with a future promise.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

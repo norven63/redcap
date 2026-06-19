@@ -1,0 +1,52 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260606-prism-llm-intent-judge-upgrade",
+  "merge_path": "assets/evidence/prism/20260606-prism-llm-intent-judge-upgrade/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260606-prism-llm-intent-judge-upgrade/kimi.review.json",
+    "assets/evidence/prism/20260606-prism-llm-intent-judge-upgrade/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern is valid. A security-critical PreToolUse guard should not call a tool-capable provider in normal execution mode, and the previous timeout arithmetic could starve fallback. The implementation now defaults to Claude Code in plan mode with disallowed tools, keeps Kimi only as an explicit plan-mode provider path, computes the outer timeout from provider count, and includes a timeout-deny fixture in codex-hook self-check.",
+      "implementation_evidence": [
+        "runtime/core/intent_judge.py",
+        "runtime/host-adapters/codex/codex-hook.py",
+        ".codex/hooks.json"
+      ],
+      "verification_evidence": [
+        "runtime/bin/redcap intent-judge self-check",
+        "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge",
+        "runtime/bin/redcap intent-judge classify --prompt '让这个机制以后自己判断真实意图' --llm-policy force --timeout-seconds 75",
+        "timeout 90 kimi --work-dir '/Users/norven/workspace/AI Era/redcap' --plan --quiet --max-steps-per-turn 1 -p '<json-only fixture prompt>'"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern is valid. prompt_intent_effective must not be reusable across stale prompt markers. The implementation now resets prompt_intent_effective on every UserPromptSubmit, requires session/turn freshness before mutation, bounds judge prompt text, removes bypassPermissions, and adds fixture-based allow/deny/stale self-check paths.",
+      "implementation_evidence": [
+        "runtime/core/intent_judge.py",
+        "runtime/host-adapters/codex/codex-hook.py",
+        "runtime/bin/redcap"
+      ],
+      "verification_evidence": [
+        "python3 -m py_compile runtime/core/prompt_intent.py runtime/core/intent_judge.py runtime/host-adapters/codex/codex-hook.py",
+        "runtime/bin/redcap intent-judge self-check",
+        "python3 runtime/host-adapters/codex/codex-hook.py --self-check-intent-judge"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Both provider concerns were accepted and mapped to concrete runtime changes plus self-check coverage. The LLM identifies intent, but script-side scope checks, freshness checks, timeout handling, and mutating-tool guards remain the final authority."
+  }
+}

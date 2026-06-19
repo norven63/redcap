@@ -1,0 +1,46 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260607-scan-conclusion-guard-noise",
+  "merge_path": "assets/evidence/prism/20260607-scan-conclusion-guard-noise/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260607-scan-conclusion-guard-noise/kimi.review.json",
+    "assets/evidence/prism/20260607-scan-conclusion-guard-noise/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "采纳。实现必须把危险结论检测放在元讨论例外之前，并在原始回复文本上运行，防止用机制讨论话术包裹真实结论绕过检查。",
+      "implementation_evidence": [
+        "runtime/core/scan_conclusion_guard.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260607-scan-conclusion-guard-noise/scan-conclusion-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260607-scan-conclusion-guard-noise/scan-conclusion-adversarial-probe.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "部分采纳为本轮边界内的可执行要求：不扩展到 20 条样本，但必须加入真实误伤样本和混合对抗样本，并明确冲突优先级。",
+      "implementation_evidence": [
+        "runtime/core/scan_conclusion_guard.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260607-scan-conclusion-guard-noise/scan-conclusion-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260607-scan-conclusion-guard-noise/scan-conclusion-meta-probe.receipt.json",
+        "assets/evidence/check-receipts/20260607-scan-conclusion-guard-noise/scan-conclusion-adversarial-probe.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两路 concern 均转化为实现约束：危险结论优先、元讨论后置、加入真实误伤与混合对抗自检。"
+  }
+}

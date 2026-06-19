@@ -1,0 +1,54 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260610-project-runtime-isolation",
+  "merge_path": "merge.json",
+  "reviews": [
+    "claude-code.review.json",
+    "kimi.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该关注点成立。原拒绝保护是在防误提交、路径混淆和外部证据流入 RedCap 仓库；本次已用项目 .redcap 固定根目录、保护性 .gitignore、外部项目根校验、用户私有状态排除、任务文件排除和旧证据只暴露不自动迁移来替代。",
+      "implementation_evidence": [
+        "../../../../runtime/core/runtime_boundary.py",
+        "../../../../runtime/core/status_surface.py",
+        "../../../../runtime/bin/redcap",
+        "../../../../assets/docs/runtime-boundary-kernel.md",
+        "../../../../assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ],
+      "verification_evidence": [
+        "receipts/boundary-self-check.receipt.json",
+        "receipts/status-self-check.receipt.json",
+        "receipts/e2e-design-json.receipt.json"
+      ]
+    },
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该关注点成立。任务已经从考古诊断转为可执行边界算法：外部项目默认 project_runtime_root=<项目工作区>/.redcap，状态、证据、日志和临时目录必须位于其中；自研例外只用解析后路径相等判定；两个上一轮遗留合同文件已删除。",
+      "implementation_evidence": [
+        "../../../../runtime/core/runtime_boundary.py",
+        "../../../../runtime/core/status_surface.py",
+        "../../../../assets/docs/runtime-boundary-kernel.md",
+        "../../../../assets/docs/complete-revival-e2e-acceptance-design.md"
+      ],
+      "verification_evidence": [
+        "receipts/boundary-self-check.receipt.json",
+        "receipts/status-self-check.receipt.json",
+        "receipts/e2e-design-json.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两个关注点均已采纳，并分别落到实现、文档、合同和已执行检查回执。"
+  }
+}

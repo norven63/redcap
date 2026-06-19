@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The lifecycle packet is at INTAKE state; no code has been modified yet. The 'changed_reality' claims in the request describe accurately diagnosed current-state problems, but zero fixes have been implemented. The review request conflates 'we have identified the problem' with 'the problem is being fixed' — there is no design document, diff, or merged change.",
+  "main_concern": "The proposed two-layer fix treats symptoms without addressing the structural cause of recovery drift. The `blocked_reply_excerpt()` function in `codex-hook.py` (line 281–288) literally injects the intercepted reply text into the Stop hook's block reason, creating a forced attention shift. Tightening `stop_task_anchor_clause` while keeping `blocked_reply_excerpt` intact is like adding a 'do not look here' sign next to a flashing light — the LLM will still orient to the most salient, immediately present text. The drift is architecturally baked in, not a wording bug.",
+  "top_risks": [
+    "Expanding marker lists for confirmation questions ('察觉/认可/理解') creates a perpetual whack-a-mole; natural language variation will always outpace static regexes, and each new exception risks false negatives on genuine implementation directives.",
+    "The recovery anchor clause change may be ineffective because the Codex host adapter emits the block reason as a `systemMessage`-level directive. In LLM attention dynamics, system-level constraints often override weaker 'please focus on X first' instructions in the same prompt.",
+    "If the confirmation question fix is too aggressive, it could downgrade prompts like '你认可这个方案吗？认可的话直接执行' into `answer_only`, violating known constraint #4 that explicit post-acknowledgment execution must still be gated."
+  ],
+  "missing_evidence": [
+    "No measurement or test showing how often recovery replies actually drift from the original task, or whether removing `blocked_reply_excerpt` reduces drift more effectively than rewording the anchor clause.",
+    "No completeness proof for the proposed confirmation marker list — the design does not demonstrate that '察觉/认可/理解' covers the semantic space or that it won't collide with hybrid authorization prompts.",
+    "No evidence that the turn-action-check component (`TURN_ACTION_CHECK`) correctly preserves and returns the original task excerpt for all prompt shapes; if the anchor is malformed, the re-anchor clause has nothing to attach to."
+  ],
+  "minimum_fix": "1) In `prompt_intent.py`, add a new `AWARENESS_CONFIRMATION_PATTERNS` regex set for '察觉/认可/理解/同意/注意到' + question shape, with explicit self-check cases in `intent_judge.py` that validate both pure confirmation AND hybrid '确认后执行' prompts. 2) In `codex-hook.py`, rewrite `stop_task_anchor_clause` to: 'Recovery rule: the secondary reply must answer the ORIGINAL user's question first and foremost; the Stop hook block reason is only a constraint, not the topic — do not re-center the reply around the hook's concerns.' 3) Make `blocked_reply_excerpt` optional via environment variable (default OFF for recovery) because the intercepted snippet is the primary drift vector; if kept ON, prepend it with '以下被拦片段仅用于定位，不得作为回答主题：'.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "The design lacks an explicit anti-loop mechanism. If the confirmation fix creates a false negative and a mutating action slips through, the Stop hook will block it again; the AI will then 'recover' with another confirmation-seeking reply, potentially creating a confirmation→block→explanation→confirmation loop. A counter or max-recovery-depth is needed in the turn-action-check logic."
+  },
+  "user_intent_alignment": "aligned"
+}

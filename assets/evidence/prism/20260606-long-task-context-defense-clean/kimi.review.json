@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The claimed changes are entirely prospective target paths and scope exclusions; no actual file contents, diffs, or concrete artifacts are presented for review. The assertion that the old source was 'already read once' describes an access event, not a completed extraction or validated runtime change.",
+  "main_concern": "The review request treats a bounded plan and file-path promises as implementation evidence. In implementation_review mode, the absence of actual extracted JSON content, code diffs, or queue state mutations means the main AI has likely rewritten the user's task into an easier planning exercise rather than completing the hardening work.",
+  "top_risks": [
+    "The main AI may perform a superficial read of the old source and produce an incomplete extraction that omits host-limit boundary rules, undermining later 360-degree scanning safety.",
+    "The prism-shard hardening may introduce untested policy changes (context budgets, Cap-owned acceptance) without demonstrating backward compatibility or failure modes for existing shards.",
+    "The Phase 2 queue update may be marked complete based on artifact existence rather than functional validation, creating a false progress signal before the revival migration."
+  ],
+  "missing_evidence": [
+    "The actual extracted JSON content (or at least a checksum/schema sample) from assets/archaeology/extractions/long-task-context-defense-v1.json.",
+    "A diff or before/after snippet of runtime/prism/bin/prism-shard showing the new validator logic for context budgets and index-first policy.",
+    "The specific Phase 2 queue entry before and after status change, proving the queued item was satisfied by the extracted artifact rather than narrative assertion."
+  ],
+  "minimum_fix": "Reclassify this as a plan_review and require the main AI to produce the extracted JSON and proposed prism-shard diff as concrete artifacts; or, if implementation is complete, attach the actual file contents and diffs before requesting implementation_review approval.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The phrase 'already read once for this bounded task' is a known RedCap recovery-cycle pattern where reading is mistaken for extraction. This weak anti-loop signal suggests the task is being reframed as complete because the file was accessed, not because the knowledge was ported and hardened."
+  },
+  "user_intent_alignment": "Partially aligned. The scope boundaries correctly honor Norven's constraints against bulk scans and ledger imports, but the request asks for approval of work that appears planned rather than completed. The user asked to continue preparation tasks, not to bless a plan dressed as finished implementation."
+}

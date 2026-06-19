@@ -1,0 +1,27 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260606-stop-hook-false-positive-fix",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260606-stop-hook-false-positive-fix",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-06T09:54:39+00:00",
+  "updated_at": "2026-06-06T10:11:23+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "3355aeea-7869-4f73-86ab-d26de9975d6e",
+      "round_count": 3,
+      "status": "closed",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260606-stop-hook-false-positive-fix/claude.followup2.review.json"
+    },
+    "kimi": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "pending",
+      "last_review": null
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap accepted Claude follow-up2 pass, applied its minimum casual-answer fix, reran final-claim self-check and redcap check; follow-up3 was blocked by max provider rounds, so Cap arbitrated."
+  }
+}

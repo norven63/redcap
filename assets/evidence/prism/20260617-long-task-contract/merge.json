@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "设计仍可能停留在“我们写下了规则”这一层，并且对 Norven 关于 Codex blocked 的三个直接问题回答不完整：它没有明确说 blocked 是否等于“任务未完成”、是否“必须消除”、以及是否“阻止新任务”，而只是把 blocked 外化为不可信状态。若合同检查器没有强制接入 aggregate check / 门禁，也没有精确的风险分级实现，则小任务仍可能被拖入重型循环，或反之在长任务真正该停时继续空转。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "进入条件过于模糊：multi_iteration_failure_repair 和 cross_workspace_or_runtime_boundary_change 两个触发器缺少具体阈值定义，可能导致中等复杂度的任务被错误拖入重型长任务循环，违反 Norven '不能把所有小任务都拖进重型模式' 的明确约束。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "1) 在 aggregate check（或任务入口路由器）中强制调用 long-task-contract 检查器：返回 enabled 才进入重型循环，返回 fast-path 则必须跳过循环；2) 发布一张显式风险评级表并给出至少 5 个正反例，让“medium or higher / small patch”不再依赖解释；3) 针对 Codex 目标 blocked 增加明确规则：若外部父目标处于 blocked 状态，long-task 必须在 1 轮内触发 human/Cap 仲裁，且不得用合同内部状态替代外部目标状态来宣告完成；4) 把“每轮必须产生 objective_delta + action_evidence”做成机器可检字段，而非文档口号。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "1) 将进入条件具体化：multi_iteration_failure_repair 定义为连续 3+ 次失败且失败模式相同；cross_workspace 定义为涉及 2+ 个独立 runtime 目录或仓库边界的变更。2) 设定 max_iterations_before_cap_arbitration = 5 作为默认硬上限。3) 定义 structural stop 为：连续 2 轮 objective_delta 为空或收敛诊断判定无实质推进。4) 在 check_runner.py 中新增 LONG_TASK_CONTRACT 检查类型及调用点。"
+    }
+  ],
+  "anti_loop_detected": true
+}

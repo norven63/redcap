@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The main AI is treating gap-closure evidence as sufficient to close the active RedCap revival goal, even though the committed lifecycle state and the E2E's own Prism self-check both signal that the system is only temporarily usable, not formally ready for engineering work. The failure backlog closed two real issues (browser automation unavailable, Prism full self-check failure) as 'non-blocking' rather than resolving them, which conflicts with the user's instruction to run repeated E2E loops until no issues or omissions remain."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "The evidence chain is structurally self-referential: Prism audit reviewed Prism, prism-resolution passed its own resolution, and now Prism re-reviews Prism's prior review. Each layer validates the previous without external ground truth. The dedicated receipts (forge, arsenal, project-install) address the form of the prior block (\"no dedicated evidence\") but their content is unverifiable — receipt JSON files can be generated without actual tool execution. Combined with a dirty git baseline, the closure claim rests on evidence that validates itself."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Before marking the active goal complete, either (a) fix the RedCap package-level Prism self-check failures and any remaining lifecycle blockers, then run one more E2E loop that passes without non-blocking closures, or (b) obtain explicit user sign-off that TEMPORARY_USABLE plus the documented non-blocking failures satisfies 'formally used for engineering work'. Do not close the goal solely on gap-closure receipts and a single round2 E2E."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Commit the uncommitted task-health.json and task-ledger.jsonl changes (or stash/discard them with an explicit decision record), then re-verify the baseline at a new commit SHA before claiming closure. Additionally, add at least one non-Prism verification step — e.g., a direct shell invocation of `runtime/bin/redcap forge --self-check` with captured output — to break the self-referential review chain for the most critical claim."
+    }
+  ],
+  "anti_loop_detected": true
+}

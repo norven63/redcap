@@ -1,0 +1,27 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260606-pre-revival-infra-batch",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260606-pre-revival-infra-batch",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-06T01:55:25+00:00",
+  "updated_at": "2026-06-06T01:59:48+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "expired",
+      "last_review": null
+    },
+    "kimi": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "pending",
+      "last_review": null
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "provider dispatch exceeded --timeout-seconds 120 and required manual process cleanup before implementation review could complete"
+  }
+}

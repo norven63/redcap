@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "low",
+  "reality_delta": "The verification evidence is substantially stronger than previous rounds: a precisely scoped grep confirms zero hits for old patterns outside evidence/archaeology, Python syntax compiles cleanly, and five functional checks (self-check, host-hook-audit, enforcement-check, layout, comprehensive redcap check) all exit 0 with expected markers. The evidence chain is internally consistent — the old strings are gone, the contracts align, the guards pass. The only delta from full confidence is that advisory_stop.py is a new file in the Stop advisory domain, and the checks (REDCAP_ADVISORY_STOP_OK) confirm it loads and passes structure validation, not that it avoids introducing functionally equivalent status-block injection through new variable names and code paths that the backward-looking grep wouldn't catch.",
+  "main_concern": "advisory_stop.py is a new, untracked file that the claim says handles '建议型Stop契约、自检和回归' (advisory Stop contracts, self-checks, and regression). This is the precise domain where status-block injection into Stop suggestions would occur. The grep only searches for old string patterns — if advisory_stop.py constructs or propagates scan status blocks using new variable names (e.g., '_status_context' instead of 'expected_status_block'), neither the grep nor the functional checks would detect it. The REDCAP_ADVISORY_STOP_OK marker proves the file is syntactically valid and passes contract checks, not that it avoids re-introducing the forbidden behavior under new names.",
+  "top_risks": [
+    "advisory_stop.py introduces new status-block injection paths under different variable/field names that the backward-looking grep cannot detect",
+    "The grep correctly catches old strings but cannot detect functionally equivalent new code — e.g., a renamed '_scan_context_block' field that carries the same status template data into Stop suggestions",
+    "redcap-continuous-revival-plan.json changes are described as wording fixes ('固定模板→扫描状态证据') — if this is the only change to a contract file, it may be a docs-only change that masks rather than removes the underlying template concept"
+  ],
+  "missing_evidence": [
+    "Actual file contents or diff of advisory_stop.py confirming no scan-status-block construction, propagation, or injection into Stop suggestion output under any variable name",
+    "Grep or source inspection confirming advisory_stop.py does not import, reference, or construct any status-block-like data structure that flows into Stop's suggestion text",
+    "Confirmation that the redcap-continuous-revival-plan.json change is more than a wording fix — or if it is only wording, acknowledgment that the contract-level template concept still exists"
+  ],
+  "minimum_fix": "Read advisory_stop.py and grep it for any status-block-adjacent patterns (status, scan_state, conclusion_block, context_block, expected_*) that could construct or propagate scan status into Stop suggestions. If none exist, this concern closes and the review passes. If any exist, trace them to confirm they don't reach Stop's suggestion output.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

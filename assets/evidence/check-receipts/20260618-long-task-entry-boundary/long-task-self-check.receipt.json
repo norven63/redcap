@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "long-task",
+    "self-check"
+  ],
+  "command": "runtime/bin/redcap long-task self-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "duration_seconds": 0.043,
+  "executed_at": "2026-06-17T18:35:38.350223+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "expected_exit_code": null,
+  "name": "long-task-self-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "started_at": "2026-06-17T18:35:38.307539+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "{\n  \"schema_id\": \"redcap-long-task-contract-self-check\",\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_LONG_TASK_CONTRACT_SELF_CHECK_OK\n",
+  "stdout_sha256": "9b7a1e2f577b2ddf36bbc4e0b22e546b029750f5491178abbd7809c88116c391"
+}

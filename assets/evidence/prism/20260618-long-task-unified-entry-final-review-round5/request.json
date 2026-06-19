@@ -1,0 +1,42 @@
+{
+  "task": "第五轮复核：确认上一轮 block 的运行时边界探针与集成干跑缺口是否闭合。",
+  "user_intent": "只确认能否回到 E2E 巡检；不要求声明 RedCap 完整复活。",
+  "main_claim": "上一轮 block 的两个最小修复已落地：1）新增 runtime-boundary-probe，构造非法 lifecycle_state、running 携带 completion_boundary、completed 缺 completion_boundary、completion_boundary outcome 不匹配等坏包，确认 E2E 运行时边界会拒绝；2）新增 long-task-integration-dry-run，真实执行 redcap long-task start→record→complete，再由 E2E 巡检 discover active_run、读取 lifecycle_state=completed 与 completion_boundary。",
+  "changed_reality": [
+    "complete_revival_e2e.py 增加 e2e_active_run_entry_failures、e2e_active_run_final_failures 和 discover_e2e_long_task_active_run，E2E 主流程入口和收束都调用同一套运行时边界判断。",
+    "complete_revival_e2e.py 增加 runtime-boundary-probe 命令，并保存 runtime-boundary-probe.receipt.json。",
+    "complete_revival_e2e.py 增加 long-task-integration-dry-run 命令，并保存 long-task-integration-dry-run.receipt.json。",
+    "complete-revival-e2e self-check 已接入上述两个探针，避免探针只作为临时脚本存在。",
+    "已复跑 py_compile、runtime-boundary-probe、long-task-integration-dry-run、complete-revival-e2e self-check、long-task self-check、long-task check --require-integration、git diff --check。"
+  ],
+  "review_mode": "implementation_review",
+  "risk_level": "high",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verification_evidence": [
+    "assets/evidence/check-receipts/20260618-long-task-unified-entry/runtime-boundary-probe.receipt.json",
+    "assets/evidence/check-receipts/20260618-long-task-unified-entry/long-task-integration-dry-run.receipt.json",
+    "assets/evidence/check-receipts/20260618-long-task-unified-entry/summary.receipt.json",
+    "assets/evidence/check-receipts/20260618-long-task-unified-entry/negative-irrelevant-complete.receipt.json"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "确认上一轮 block 是否闭合，并只提出回到 E2E 巡检前必须修复的最小阻塞。",
+    "max_files": 5,
+    "max_bytes_per_file": 320000,
+    "max_total_bytes": 1100000,
+    "allowed_paths": [
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/core/long_task_contract.py",
+      "assets/evidence/check-receipts/20260618-long-task-unified-entry/runtime-boundary-probe.receipt.json",
+      "assets/evidence/check-receipts/20260618-long-task-unified-entry/long-task-integration-dry-run.receipt.json",
+      "assets/evidence/check-receipts/20260618-long-task-unified-entry/negative-irrelevant-complete.receipt.json"
+    ]
+  },
+  "questions_for_prism": [
+    "上一轮 block 中关于 E2E 运行时边界探针和 start→record→complete→discover 集成干跑的最小阻塞是否已经闭合？",
+    "如果没有，请只列回到 E2E 巡检前必须修复的最小阻塞；如果已闭合，请 verdict=pass。"
+  ]
+}

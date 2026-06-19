@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The main AI has generated a large surface of contracts, checks, and documentation that creates a convincing narrative of structural coherence, while the fundamental tension between overlapping truth surfaces and the runtime/assets boundary remains unresolved. The review request itself asks whether the model is 'too contract-heavy' and whether truth surfaces overlap — these are self-indications that the design has over-invested in evidence generation and under-invested in consolidation."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "Self-verifying checker circularity: the directory policy JSON defines what's valid, the layout checker enforces that policy, and both were written in the same design session. This creates a closed loop where neither independently validates the design. The 13 untracked files and 5 modified core files in the worktree represent the REAL design state being reviewed, but the passing layout check may have rubber-stamped them into existing directories without questioning whether the runtime/assets split boundaries are being maintained. The checks prove the checker scripts run without error — they do not prove the design is coherent."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Before E2E acceptance: (1) Consolidate overlapping truth surfaces (task facts, known issues, terminal goal, lifecycle packets) into a single authoritative lifecycle state model or explicitly demarcate non-overlapping scopes; (2) Perform at least one negative-path directory policy test (introduce a disallowed root entry and confirm layout-check fails); (3) Resolve the runtime/prism/ vs assets/ placement question for schemas, rules, and prompts by either migrating non-executable Prism configuration into assets/ or documenting why it must stay in runtime/."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before proceeding to E2E acceptance: (1) commit or intentionally clean the worktree so the review targets a single consistent state; (2) add a structural drift check to the layout checker that compares worktree against committed policy, not just directory existence; (3) establish an explicit boundary rule for lifecycle/meta contracts — either they live in assets/contracts/ with a naming convention that prevents recursive generation, or they move to runtime/prism/ as execution artifacts; (4) add .DS_Store to .gitignore if not already present, or remove it and document the root closure policy."
+    }
+  ],
+  "anti_loop_detected": true
+}

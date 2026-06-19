@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The bundle contains source-pack.md and a truncated prefix of complete_revival_e2e.py, but the two raw carrier-probe.json artifacts (cleanup-failure injection and normal round5) that would prove the claimed ok flip are absent. The included source snippet also stops before showing how marker_cleanup_error is wired into the ok determination.",
+  "main_concern": "The central claim—that an injected marker-cleanup failure flips probe ok to false—is asserted but not independently demonstrated. The displayed carrier_probe_attempt_decision signature does not accept marker_cleanup_error, so the causal mechanism is either missing from the evidence or located in an unaudited, truncated region.",
+  "top_risks": [
+    "carrier_probe_attempt_decision may not actually consume marker_cleanup_error; ok=false could be coincidental or driven by an undisclosed path.",
+    "The raw cleanup-failure and round5 JSON artifacts are not in the bundle, so the reported event lists, failures, and ok values cannot be verified.",
+    "The main source file is truncated at 200 KB despite the request allowing 700 KB, hiding cleanup_marker(), the injection switch, and the result-assembly logic."
+  ],
+  "missing_evidence": [
+    "Raw /Users/norven/workspace/redcap-e2e-runs/20260618-carrier-hook-cleanup-failure-injection/.../carrier-probe.json and the round5 carrier-probe.json.",
+    "The complete source region where marker_cleanup_error is set and then used to determine or override the probe result's ok field.",
+    "The REDCAP_TEST_INJECT_CARRIER_MARKER_CLEANUP_FAILURE switch implementation and cleanup_marker() body."
+  ],
+  "minimum_fix": "Re-bundle with the two raw JSON artifacts, the full source segment that shows marker_cleanup_error flowing into the ok decision, and the injection-switch/cleanup_marker implementation. If carrier_probe_attempt_decision truly ignores marker_cleanup_error, either change it to accept the error or explicitly document the actual mechanism that flips ok.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Do not accept another markdown summary or line-number list in place of the raw JSON artifacts and the complete code path. The next review must present independently verifiable artifacts, not narrative assurances."
+  },
+  "user_intent_alignment": "Partial. The source-pack moves toward real audit, but the missing raw artifacts and incomplete causal chain mean the review still depends on the main AI's description rather than on independently confirmed reality."
+}

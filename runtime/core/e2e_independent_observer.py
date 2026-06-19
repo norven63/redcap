@@ -23,7 +23,7 @@ from typing import Any
 
 
 OBSERVER_BROWSER_VIEWPORT = {"width": 1032, "height": 760}
-ENTRYPOINT_CANDIDATES = ["index.html", "public/index.html", "dist/index.html", "build/index.html"]
+ENTRYPOINT_CANDIDATES = ["index.html", "app/index.html", "public/index.html", "dist/index.html", "build/index.html"]
 
 
 def iso_now() -> str:

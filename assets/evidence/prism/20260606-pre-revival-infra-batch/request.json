@@ -1,0 +1,33 @@
+{
+  "task": "Execute pre-revival infrastructure batch before RedCap revival scanning",
+  "user_intent": "Norven approved executing items 1-3 together before starting the 360 old-RedCap scan: solidify the current develop baseline, fix Prism dispatcher timeout behavior, and build a formal Prism long-task sharding foundation that is more complete than a bare MVP.",
+  "main_claim": "The batch is appropriate as a pre-revival infrastructure step if it remains bounded to runtime hardening, repository baseline stabilization, and a practical shard-account mechanism that the later 360 scan can immediately use.",
+  "changed_reality": [
+    "No new code has been changed for this batch yet.",
+    "The worktree already contains uncommitted infrastructure changes from earlier approved hardening work; item 1 must review, commit, and push those before new revival migration work begins.",
+    "A prior Kimi provider dispatch did not return within the expected practical window and had to be manually cleaned up, so timeout behavior needs behavior-level proof.",
+    "Existing archaeology shard contracts mention long-task-context-defense, but there is not yet a formal Prism long-task sharding runtime account/check mechanism."
+  ],
+  "review_mode": "pre-implementation design review",
+  "risk_level": "medium",
+  "requested_providers": ["kimi", "claude-code"],
+  "proposal": [
+    "First review and commit/push the current infrastructure baseline to develop without mixing it with later old-RedCap migration changes.",
+    "Then harden prism-dispatch timeout handling with deterministic self-checks and visible expired-session recording.",
+    "Then add a Prism shard account foundation with bounded source scopes, provider/session binding, per-shard output schema, max rounds, Cap arbitration, merge/acceptance checks, and ledger/health integration.",
+    "Defer the 360 old-RedCap scan contract until these three items pass checks."
+  ],
+  "non_goals": [
+    "Do not start broad old-RedCap scanning in this batch.",
+    "Do not add providers beyond Kimi and Claude Code.",
+    "Do not claim cross-host hook parity.",
+    "Do not build a full autonomous multi-agent scheduler beyond the foundation needed by the next scan phase."
+  ],
+  "review_questions": [
+    "Is this 1-3 batch correctly bounded before 360 scanning?",
+    "What must the Prism long-task sharding foundation include so it is not an underpowered MVP?",
+    "What risks would make commit/push or dispatcher timeout work unsafe in the same batch?",
+    "What verification should be required before Cap reports this batch as ready for the 360 scan contract?"
+  ],
+  "expected_output": "Return strict JSON with provider, verdict, confidence, reality_delta, main_concern, top_risks, missing_evidence, minimum_fix, anti_loop_signal, and user_intent_alignment."
+}

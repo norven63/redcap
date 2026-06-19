@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260618-long-task-entry-boundary",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-long-task-entry-boundary",
+  "status": "main-decided",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-17T18:23:00+00:00",
+  "task_started_at": "2026-06-17T18:23:00+00:00",
+  "updated_at": "2026-06-17T18:41:20+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "2b52c064-99df-4c11-8544-de93ac4cee75",
+      "round_count": 2,
+      "status": "expired",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-long-task-entry-boundary/round2.claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_b9ef00f1-747b-4bee-ba7d-026009819684",
+      "round_count": 3,
+      "status": "converged",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-long-task-entry-boundary/round3.kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "main-decided",
+    "reason": "Cap accepted Prism concerns, implemented behavior-level positive/negative receipts, and arbitrated Claude Code round3 expiration without treating it as pass."
+  }
+}

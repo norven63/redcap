@@ -1,0 +1,56 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260615-revival-followthrough",
+  "merge_path": "assets/evidence/prism/20260615-revival-followthrough/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260615-revival-followthrough/kimi.review.json",
+    "assets/evidence/prism/20260615-revival-followthrough/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern was valid: task queues and reports must not become completion substitutes. The followthrough queue now forbids completion-by-document, every item names runtime checks, failure-backlog blocks readiness, and complete E2E now fails fast on missing full Prism provider readiness instead of producing a hollow pass.",
+      "implementation_evidence": [
+        "assets/contracts/revival-followthrough-queue.json",
+        "runtime/core/revival_followthrough.py",
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260615-revival-followthrough/redcap-check.receipt.json",
+        "assets/evidence/check-receipts/20260615-revival-followthrough/complete-revival-e2e-design-check.receipt.json",
+        "assets/evidence/check-receipts/20260615-revival-followthrough/complete-revival-e2e-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260615-revival-followthrough/unicode-package-prism-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The shared-session role-isolation idea was rejected. Complete E2E now requires independent Codex CLI invocations per Loom role, different session_id values captured from project UserPromptSubmit hook events, role prompts, role messages, role run receipts, role artifacts, a pre-review upstream session manifest, and a final five-role manifest after reviewer exits.",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/core/revival_followthrough.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/contracts/revival-followthrough-queue.json",
+        "assets/contracts/self-purification.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260615-revival-followthrough/redcap-check.receipt.json",
+        "assets/evidence/check-receipts/20260615-revival-followthrough/revival-followthrough-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260615-revival-followthrough/project-install-release-check.receipt.json",
+        "assets/evidence/check-receipts/20260615-revival-followthrough/complete-revival-e2e-design-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "The implementation concerns were accepted and mapped to runtime gates. The remaining blocker for the next full E2E is external Kimi login readiness, which is not claimed as resolved here and is now detected before the long Loom run starts."
+  }
+}

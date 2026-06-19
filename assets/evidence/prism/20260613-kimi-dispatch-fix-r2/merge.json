@@ -1,0 +1,28 @@
+{
+  "providers": [
+    "kimi"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The main AI may have substituted a proof that the Kimi CLI works and the dispatcher self-check passes for a proof that the dispatcher-mediated path works. The user's question was specifically about RedCap invoking Kimi incorrectly, not about Kimi CLI health in isolation."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Run and record one end-to-end dispatcher invocation of Kimi, capturing the exact command emitted, the full output, the elapsed time, and the extracted session handle, and confirm it completes within the allowed timeout budget."
+    }
+  ],
+  "anti_loop_detected": true
+}

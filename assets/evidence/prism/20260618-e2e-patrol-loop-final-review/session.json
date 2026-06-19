@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260618-e2e-patrol-loop-final-review",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-e2e-patrol-loop-final-review",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-18T01:44:27+00:00",
+  "task_started_at": "2026-06-18T01:44:27+00:00",
+  "updated_at": "2026-06-18T01:54:36+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "4296cc9d-47be-42b7-907e-ad00e070036f",
+      "round_count": 1,
+      "status": "expired",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-e2e-patrol-loop-final-review/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_176422b2-3811-471b-b79c-db569783a564",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-e2e-patrol-loop-final-review/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "task total timeout exhausted"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260619-e2e-change-review",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-change-review",
+  "status": "escalated",
+  "max_rounds_per_provider": 2,
+  "created_at": "2026-06-18T19:03:07+00:00",
+  "task_started_at": "2026-06-18T19:03:07+00:00",
+  "updated_at": "2026-06-18T19:07:16+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "d61001a0-3dd9-4785-be25-a8979ddd250f",
+      "round_count": 1,
+      "status": "escalated",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-change-review/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_0098fa65-2622-4098-b21f-c688084ebc61",
+      "round_count": 1,
+      "status": "escalated",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260619-e2e-change-review/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "escalated",
+    "reason": "两方 concern 均成立；本轮作为评审发现升级为后续修复队列，不声明已解决。"
+  }
+}

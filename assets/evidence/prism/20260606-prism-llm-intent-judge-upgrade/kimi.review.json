@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The implementation does wire LLM intent judgment into the PreToolUse hook path; this is a real behavioral change, not just documentation. The freshness guard (session_id/turn_id matching), prompt_intent_effective reset on UserPromptSubmit, bounded prompt text (4000 chars), and removal of --permission-mode bypassPermissions are all present in the current code and function correctly. The self-checks in both intent_judge.py and codex-hook.py exercise the allow/deny/stale fixture paths. However, two runtime gaps remain: (1) the Kimi provider subprocess is invoked with --max-steps-per-turn 4, which permits tool use in a non-interactive guard context; and (2) the timeout budget starves the fallback provider when the primary times out, making the dual-provider resilience weaker than claimed.",
+  "main_concern": "The Kimi provider command (intent_judge.py:126-135) uses --max-steps-per-turn 4 in a subprocess called from a security-critical PreToolUse hook. This allows the Kimi CLI to execute tools (Bash, ReadFile, WriteFile, etc.) during what is supposed to be a read-only intent classification. A guard that adjudicates mutation authorization should not itself invoke a tool-capable LLM without disabling tool use, because anomalous provider behavior could mutate state or hang inside the guard. Additionally, the fallback provider is practically disabled on timeout: run_provider gives each provider up to 75s, but run_intent_judge_for_marker wraps the entire call in an 80s outer timeout, leaving the fallback with ~5s if the primary times out.",
+  "top_risks": [
+    "Kimi provider tool-use risk: --max-steps-per-turn 4 allows the intent judge subprocess to execute tools. If Kimi hallucinates a tool call, the hook guard could itself perform unauthorized mutations or hang, undermining the anti-empty-work boundary it is meant to enforce.",
+    "Fallback provider timeout starvation: with a 75s per-provider timeout and an 80s outer subprocess timeout, the fallback (Claude Code) gets at most ~5s before being killed. The dual-provider resilience claim is therefore unreliable in timeout scenarios.",
+    "No timeout-path exercise in self-checks: the timeout and fallback-swap behavior is only verified by code inspection, not by any automated test that simulates a slow or hanging provider."
+  ],
+  "missing_evidence": [
+    "No evidence that Kimi single-prompt mode (--quiet -p) suppresses tool use, or that --max-steps-per-turn 4 is safe for a non-interactive guard subprocess.",
+    "No test or log verifying fallback provider invocation under primary-timeout conditions; the timeout math (75s + 75s > 80s) implies fallback failure but is not exercised.",
+    "No end-to-end test that a second PreToolUse in the same turn reuses the cached prompt_intent_effective without re-invoking the LLM intent judge."
+  ],
+  "minimum_fix": "1) Harden the Kimi provider invocation to disable tool use (investigate a --no-tools or equivalent flag, or reduce --max-steps-per-turn to 0/1 if the CLI supports it). 2) Fix timeout arithmetic: either reduce per-provider timeout to ~35s so both providers fit within the 80s outer bound, or increase the outer timeout to ~160s and raise .codex/hooks.json PreToolUse timeout accordingly. 3) Add a fixture-based timeout test that injects a slow provider subprocess to verify graceful fallback-or-deny behavior when the primary exceeds its budget.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "The self-checks test concrete paths (deterministic fast-path, fixture allow, fixture deny, stale marker) and do not merely assert 'already covered'. The auto_clear test in intent_judge.py correctly verifies that deterministic implementation markers bypass LLM invocation in auto mode; this is intended fast-path behavior, not circular reasoning."
+  },
+  "user_intent_alignment": "aligned"
+}

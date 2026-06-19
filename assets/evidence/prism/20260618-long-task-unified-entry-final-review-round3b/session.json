@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260618-long-task-unified-entry-final-review-round3b",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-long-task-unified-entry-final-review-round3b",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-18T06:57:59+00:00",
+  "task_started_at": "2026-06-18T06:57:59+00:00",
+  "updated_at": "2026-06-18T07:00:42+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "25e883eb-bdd6-4f55-90ec-011757012a3f",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-long-task-unified-entry-final-review-round3b/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": "session_9fc14cd8-0cba-49e3-bddb-f972f2fa82d8",
+      "round_count": 1,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260618-long-task-unified-entry-final-review-round3b/kimi.review.json"
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "Initial Prism task session manifest."
+  }
+}

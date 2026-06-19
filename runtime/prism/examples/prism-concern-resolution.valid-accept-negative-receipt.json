@@ -1,0 +1,29 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "fixture-prism-concern-resolution-negative-receipt",
+  "merge_path": "runtime/prism/examples/prism-concern-resolution.merge.concern.json",
+  "reviews": [
+    "runtime/prism/examples/prism-concern-resolution.kimi-concern.json",
+    "runtime/prism/examples/prism-concern-resolution.claude-pass.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern is valid; a negative probe with expected non-zero exit code is acceptable verification evidence when the receipt marks ok=true.",
+      "implementation_evidence": [
+        "runtime/prism/bin/prism"
+      ],
+      "verification_evidence": [
+        "runtime/prism/examples/prism-resolution-check-negative.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "The concern was accepted and mapped to expected-failure verification evidence."
+  }
+}

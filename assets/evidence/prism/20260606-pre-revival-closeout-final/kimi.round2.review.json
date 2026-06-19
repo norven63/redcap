@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "Cap delivered behavior-level implementations for timeout governance and Chinese-first output policy, with executable self-checks and negative samples. However, the timeout implementation explicitly computes remaining budget from session creation time rather than task start time, which contradicts the requirement for whole-task budgeting and risks misaccounting in long-lived or multi-task sessions. The prior concern about per-provider budget allocation and partial-result fallback remains unaddressed, and the Chinese checker's enforcement model—whether it prevents violations at generation time or only detects them afterward—is not transparent.",
+  "main_concern": "The timeout governance has a likely fundamental accounting flaw: it uses session created_at to compute remaining task budget, implying session scope rather than task scope. This conflates two distinct boundaries and may cause premature timeout, budget leakage across tasks, or silent misaccounting. The self-check probably misses this because it runs in a single-task context. Additionally, the Chinese-first checker's mechanism and prevention model are opaque, raising the risk that it is retrospective theater rather than enforced policy.",
+  "top_risks": [
+    "Task-total timeout misaccounts elapsed time by using session age instead of task age, causing premature timeout in long-lived sessions or multi-task workflows, or leaking budget across tasks.",
+    "Chinese-first checker is retrospective only (running in redcap/prism check) rather than preventive, allowing non-compliant output to reach the user before detection.",
+    "The self-checks validate the happy path and known negative samples but do not test cross-session budget persistence, multi-provider budget exhaustion sequences, or real-world technical-term handling."
+  ],
+  "missing_evidence": [
+    "A demonstration or explicit design statement that task-total timeout uses task-scoped (not session-scoped) timing, with evidence for multi-task or long-session scenarios.",
+    "Clear description of the Chinese checker's implementation mechanism (LLM, heuristic, or rule-based) and proof that it is preventive at generation time, not only retrospective.",
+    "Evidence of per-provider budget allocation or fallback behavior when a task partially completes before timeout, addressing the prior review's specific gap."
+  ],
+  "minimum_fix": "Cap must either (a) prove task-total timeout is task-scoped, not session-scoped, with self-check evidence spanning multiple tasks or long sessions, or reimplement it with explicit task start tracking; (b) document the Chinese checker's mechanism and demonstrate preventive enforcement (e.g., hook-level blocking) rather than only post-hoc checking; and (c) explicitly state whether per-provider budget allocation and partial-result fallback are in or out of scope for this batch, rather than leaving the prior concern silently unaddressed.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Do not respond by updating task facts, ledger states, or lifecycle packets to reflect these items as complete. The fix must be behavioral evidence or design documentation that directly answers the session-scoping, prevention-model, and fallback questions."
+  },
+  "user_intent_alignment": "Close but not fully aligned. Norven wants robust pre-revival infrastructure. Cap has built real checks and timeout behavior, but the session-scoped timeout accounting suggests either a design shortcut or an unexamined assumption that conflates sessions with tasks. The Chinese policy may also be audit-only rather than enforced. These are gaps between 'checks exist' and 'infrastructure is trustworthy.'"
+}

@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "提示文本描述了一个设计方案和一组约束断言，但未展示可验证的实现变更或测试结果。所谓“已改变的现实”多为目标/要求（例如 carrier_probe 源码要求、E2E 入口当前会阻断），而非已执行的运行产物。提示中未包含代码、diff 内容或执行日志。",
+  "main_concern": "该方案有把 E2E 阻塞问题重新包装成“RedCap 自产等价证据子系统”的风险：它尚未证明所生证据与原生 Codex Hook 行为等效，也未证明该承载层已被实际构建并在完整巡检循环中跑通。目前它是一份带强约束的计划，而不是现实变更。",
+  "top_risks": [
+    "尚未实施：当前仍是设计文档，所有“已改变现实”的声明都未被验证。",
+    "自产“等价”证据可能实质上降低证据门槛——调度 Loom 角色的运行器同时生成 carrier receipt 和自检查输入，形成闭合的证据自循环。",
+    "原生 Codex CLI 项目级 Hook 缺失的根因可能仍未解决；fallback 机制可能把未来回归隐藏在“等价承载层”标签之后。"
+  ],
+  "missing_evidence": [
+    "complete_revival_e2e.py 中等价承载层与 carrier_probe 逻辑的实际源码或 diff 内容。",
+    "至少一次使用承载层 fallback 跑完完整 E2E 巡检循环的执行记录，包括命令收据、角色 session_id、self-check / meaningful-evidence 结果。",
+    "独立审计或映射，证明承载层产出的每一项工件都对应到原生 Codex Hook 事件并满足同等证据标准。"
+  ],
+  "minimum_fix": "不要把设计方案当作完成态。应实现该承载层、跑完一次完整 E2E 巡检循环，并附上可执行证据（命令收据、session_id、self-check 输出、最终棱镜复核）。如果承载层无法证明其证据与原生 Hook 等效，应保持 blocked，并报告根因，而不是合并 fallback。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "“生成自己的等价证据”的设计，在未被实际构建和独立验证之前仍只是一份文档；不要让下一轮迭代用更强的措辞替代测试产物。"
+  },
+  "user_intent_alignment": "partial / at risk。方案回应了 Hook 缺失问题，但 Norven 的本意是修复并复测 E2E，而不是把自产证据 fallback 制度化。没有实现证明的话，这更接近“用更弱证据替代真实能力”，而非“恢复真实能力”。"
+}

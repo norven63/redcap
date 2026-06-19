@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "用户的意图是让RedCap拥有稳固的架构和诚实的自检能力，但当前状态存在三个核心差距：(1) formal-usable-check和complete-revival-check通过--skip-host-hook-audit跳过关键审计，这与\"废止最小可用完成口径\"的修正精神冲突——跳过审计的\"通过\"是新形式的\"最小完成口径\"；(2) 10+个新增contracts文件中大量是评审过程证据而非设计契约，混放在contracts目录下造成膨胀；(3) 4个新增核心.py文件(known_issues_queue.py等)未提交，既不在版本控制中又被其他检查引用，形成检查盲区。",
+  "main_concern": "--skip-host-hook-audit被用于formal-usable-check和complete-revival-check两个关键门禁，使得它们在不完整条件下宣称\"通过\"。这与commit 361c4b3\"摒弃最小内核完成口径\"直接矛盾——跳过审计的通过就是新瓶装旧酒的最小完成口径。如果host-hook-audit是完整复活的前置条件（按照设计它应该是），那么当前没有任何检查是真正完整通过的。",
+  "top_risks": [
+    "跳过Host Hook审计的检查被当作'通过'引用，形成新的伪完成口径",
+    "10+个未提交的contracts/新py文件在门禁体系之外增长，自身不受任何检查约束",
+    "LLM语义判断(auto-on-ambiguous)缺乏缓存/去重机制，可能在高频Hook事件下产生大量重复LLM调用"
+  ],
+  "missing_evidence": [
+    "intent_judge.py中auto-on-ambiguous策略的触发条件边界和LLM调用频率上限",
+    "KI-00~03的verified状态是否也依赖--skip-host-hook-audit（污染传播检查）",
+    "新增4个核心.py文件的单元测试或集成测试是否存在"
+  ],
+  "minimum_fix": "(1) 修改runtime/bin/redcap中formal-usable-check和complete-revival-check子命令：当--skip-host-hook-audit被使用时，将结果从'通过'降级为'partial_pass_with_host_hook_pending'，输出中明确标注host_hook_audit: skipped。(2) 将评审过程文件(*-lifecycle.json, *-prism-request.json)从assets/contracts/移到assets/reviews/或assets/evidence/，更新directory-structure.json契约。(3) 提交4个新增核心.py文件并通过redcap check自检。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "drifting"
+}

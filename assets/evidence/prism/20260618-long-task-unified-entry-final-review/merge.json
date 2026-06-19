@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "record 仍然是“先验证外部证据、再记账”的治理层，而不是任务执行驱动层；当前 action_evidence 门禁是结构性而非语义性的——80 字节以上且包含 8 种以上可见字符的随机填充文件仍可通过，objective_delta 只需与上一轮字符串不同即可通过。因此它降低了“未执行却汇报完成”的风险，但还不能确保每一轮迭代都对应真实工程动作。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "Long-task lifecycle is asymmetric: start creates active_run, record appends iterations, but there is no explicit complete/finish/close command. Without a completion signal, the system cannot distinguish \"task is still running with no recent records\" from \"task is actually done.\" This is the same class of boundary error the task claims to fix — premature completion reporting — now shifted from entry boundary to exit boundary. Upstream E2E patrol cannot determine via record presence alone whether a long task is active or completed."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在继续 E2E 前，补充一个集成测试：由非 RedCap 自身（或独立脚本）产生真实文件/源码变更作为 action_evidence，record 能成功入账；同时让 80 字节随机填充证据至少被标记为低置信度。另外用文档或测试固定 record 与任务执行器之间的调用边界，避免 E2E 中再次出现“入口即完成”的误报。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Add a long-task complete or finish command that explicitly transitions active_run to a terminal state with mandatory completion evidence; or document that completion detection is handled by an external mechanism (timeout, E2E convergence) and record is purely iterative accounting. Also add adversarial test cases for evidence gating."
+    }
+  ],
+  "anti_loop_detected": true
+}

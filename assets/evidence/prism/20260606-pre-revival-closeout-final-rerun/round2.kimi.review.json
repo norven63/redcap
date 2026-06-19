@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "系统行为确实发生了具体改变：超时治理已通过真实 Kimi provider 在 2 秒任务总预算下验证，能正确拒绝启动、输出中文超时报告、清理进程；中文输出自检、信号处理等也有可执行证据。但所有验证痕迹（包括真实 provider 测试）均来自实施方自己生成，缺乏独立第三方运行并确认的记录。360 度旧 RedCap 扫描仍未开始，因此‘基础设施完成’是‘自检和自测通过’意义上的完成，而非经过真实 Revival 负载验证的完成。",
+  "main_concern": "真实 provider 痕迹虽比纯模拟更强，但仍是实施者自己生成的证据；独立验证与 360 度扫描压力测试双双缺失，存在将‘自测通过’误认为‘任务完成’的风险。",
+  "top_risks": [
+    "痕迹可复制性风险：真实 provider 超时痕迹是单次运行结果，未证明 Norven 或其他环境可稳定复现。",
+    "阶段边界幻觉：在 360 度扫描前关闭批次，团队可能已心理上切换上下文，导致扫描暴露问题时修复成本上升。",
+    "中文策略元层漂移：自检声称通过，但 RedCap 的审查请求、证据描述、任务分类等元数据层仍全为英文，说明中文优先策略尚未覆盖运营语言。"
+  ],
+  "missing_evidence": [
+    "独立复现：Norven 或 Prism 亲自执行相同的 2 秒 task-total 真实 provider 分发，并确认超时报告与进程清理结果一致。",
+    "360 度预扫描冒烟测试：使用新基础设施加载至少一个旧 RedCap 考古碎片，证明 infra 能实际支撑下一阶段，而非仅‘理论上可 reopen’。",
+    "批次关闭的明确授权：Norven 书面确认‘接受条件关闭’，而非由 Cap 推断可关闭。"
+  ],
+  "minimum_fix": "在关闭批次前，必须满足以下之一：(a) Norven 亲自运行 `prism-dispatch` 的 2 秒 task-total 真实 provider 测试并书面确认输出；(b) 用新基础设施完成一次旧 RedCap 碎片的加载或解析，证明 infra 已具备 Revival 支撑能力；(c) 若必须现在标记状态，则将批次明确设为‘条件关闭（conditional close pending 360-scan）’，并书面约定扫描失败时立即 reopen，而非彻底关闭。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Cap 已将历史 Prism 关切系统性转化为新的 checker、contract、trace 和 evidence 目录。停止继续为审查意见新增文件或痕迹。当前需要的是在独立环境中复现现有证据，而不是再生成一份新报告。"
+  },
+  "user_intent_alignment": "表面对齐：所有已知未完成项均有对应的状态、合同、自检和真实 provider 痕迹。实质上仍有漂移：用户要的是‘ Revival 前基础设施真正可用’，而主 AI 交付的是‘基础设施有自测并通过（包括一次真实 provider 自测）’。真正的可用性应由 360 度扫描或至少独立复现验证，而不是扫描失败后再 reopen。"
+}

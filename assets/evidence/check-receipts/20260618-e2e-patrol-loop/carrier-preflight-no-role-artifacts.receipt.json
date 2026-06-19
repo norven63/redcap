@@ -1,0 +1,15 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 -c <verify carrier-preflight blocked before role artifacts>",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "ok": true,
+  "executed_at": "2026-06-18T01:42:37+00:00",
+  "executor": "codex-redcap-local-wrapper",
+  "stdout_sha256": "e2ddac0b5554d00f836f9c1cf1f691a09422f94e9fe552aa458c3ec5375c9e87",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_length": 61,
+  "stderr_length": 0,
+  "stdout_tail": "blocked before project run; no role or final artifacts found\n",
+  "stderr_tail": ""
+}

@@ -1,0 +1,48 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260611-goal-completion-review",
+  "merge_path": "merge.json",
+  "reviews": [
+    "kimi.review.json",
+    "claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该关注成立。本轮不能回答为四段任务严格全部完成，只能回答为阶段性执行回顾：Hook语义升级、重启判断、测试和整体评审动作已经发生并有证据，但整体评审返回concern，且目录边界、外部沙盒E2E、跳过宿主审计输出语义、未提交改动整理仍未收口。gate_decision缺失问题已在本轮修复，并通过最新UserPromptSubmit标记验证和redcap check验证。",
+      "implementation_evidence": [
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260611-goal-completion-review/verify-user-prompt-marker.receipt.json",
+        "assets/evidence/prism/20260611-goal-completion-review/lifecycle-check.receipt.json",
+        "assets/evidence/prism/20260611-goal-completion-review/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该关注成立。本轮补充了最新UserPromptSubmit标记验证和redcap check，但尚未完成按四段任务拆分的独立完成标准，也尚未清理assets/contracts目录和未提交改动。因此最终回复必须避免“任务全部完成”的措辞，改为逐项说明：哪些已经落地、哪些只是动作完成但质量评审仍有待办、哪些仍是后续必须处理的问题。",
+      "implementation_evidence": [
+        "runtime/host-adapters/codex/codex-hook.py",
+        "assets/evidence/prism/20260611-goal-completion-review/request.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260611-goal-completion-review/verify-user-prompt-marker.receipt.json",
+        "assets/evidence/prism/20260611-goal-completion-review/kimi-raw-meta.receipt.json",
+        "assets/evidence/prism/20260611-goal-completion-review/claude-code-raw-meta.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两方concern均已采纳。回应后的允许口径是：四段任务已有执行与验证证据，但不能回答为严格全部完成；应向Norven汇报阶段性执行回顾、风险和未收口项。RedCap完整复活仍未终局完成。"
+  }
+}

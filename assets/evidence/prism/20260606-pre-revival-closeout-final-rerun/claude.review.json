@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The main claim asserts \"behavior-level fixes\" for the two remaining pre-revival infrastructure items. However, 8 of 9 evidence pieces are command-line invocations whose described output is dominated by exit codes and self-check summaries. The review request itself acknowledges: (1) open_count is still 2, (2) the parent batch \"still needs explicit Prism resolution,\" and (3) the proposed closure relies on a soft-close-with-immediate-reopen caveat. The delta is between \"behavior-level verification of changed system behavior\" (what Norven requested) and \"self-referential checkers and contract documents that confirm their own existence\" (what the evidence pattern most strongly resembles).",
+  "main_concern": "The evidence chain is dominated by --self-check exit codes, contract documents, and summary commands. This matches the exact anti-pattern from the Prism review bias instructions: \"Tests that only prove the checker exists\" and \"Claims that rely on closeout artifacts instead of implementation facts.\" None of the 9 evidence items describe an adversarial test, a real-provider integration exercise, a failure injection result, or a behavioral assertion that would fail if the underlying system behavior were broken. The request's final instruction (\"Do not approve closure unless the runtime checks now verify changed system behavior, not only records\") appears to be violated by the evidence presented.",
+  "top_risks": [
+    "2 unexplained open task facts: The evidence shows redcap_task_facts_open_count is 2 after all claimed fixes. These 2 open items are never identified, categorized, or assessed for blocking risk against the 360-scan phase. They may represent real unaddressed gaps masked by the batch-close maneuver.",
+    "Tautological checker risk: exit-0 from `redcap check` and `prism check` may only prove that the check framework loads without errors, not that the human-output policy or timeout governance actually constrain system behavior at runtime. A checker that always passes because it validates its own contract is worse than no checker — it creates false confidence.",
+    "Phase-boundary collapse: The distinction between pre-revival-infra and 360-scan is proposed but untested. If timeout governance fails under a real long-running scan session, or if human-output leaks machine English during scan reporting, the batch will immediately reopen — but the reopen event itself becomes a new coordination failure point requiring Prism re-engagement, creating exactly the loop the anti_loop_signal must detect."
+  ],
+  "missing_evidence": [
+    "No adversarial timeout test: What happens when a provider hangs for task_total - 1 second, then the dispatcher SIGTERMs it, but the child process ignores SIGTERM and continues writing to a shared raw-metadata file? The e2e script mentions SIGTERM cleanup but the summary describes only 'a stubborn child process' without quantifying whether the cleanup actually prevents resource leaks or metadata corruption under concurrent access.",
+    "No real-provider or realistic-mock integration exercise for the full chain: All evidence is command-line checkers. There is no trace of a session where a Kimi or Claude Code provider is launched through the dispatcher, hits a timeout boundary, generates a Chinese report, and has that report validated by the human-output checker for Chinese readability and absence of machine jargon.",
+    "No human-output policy enforcement trace: The self-check says 'Chinese-readable text passes while machine-like English and unexplained technical terms fail' — but this is the checker testing its own rules on crafted samples. There is no evidence the policy actually intercepts, blocks, or rewrites a real assistant reply, hook message, or generated report at runtime."
+  ],
+  "minimum_fix": "Before closing the parent batch, run one end-to-end behavioral trace: launch a provider session through prism-dispatch with a short task-total budget (e.g., 30s), have the provider attempt an operation that exceeds the budget, capture the full dispatcher lifecycle (refuse-launch, SIGTERM, cleanup, Chinese report), pipe the Chinese report through the human-output checker, and confirm both that the report is actionable Chinese (not machine jargon) and that no orphaned child processes or stale metadata entries remain. Document the trace output as evidence. This single trace would replace 3-4 self-check exit codes with one behavioral proof.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "drifting"
+}

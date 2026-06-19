@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "方案识别到了真正的循环问题，但熔断语义和审计字段的设计存在模糊地带，尚未在代码层验证修复点是否确实存在，也未确认自检能否覆盖循环复发场景。",
+  "main_concern": "continue=true 的熔断语义可能产生静默放行：如果 Stop 在最大轮次后仅记录审计证据就直接放行，下游消费者如何区分“问题已解决”和“循环耗尽被迫放行”？缺少一个显式的 fuse_reason 字段来标记这是熔断放行而非正常通过。",
+  "top_risks": [
+    "continue=true 放行后下游无区分能力，可能将熔断放行误解为问题已修复",
+    "print_advisory_stop 中的 decision=block 逻辑如果仅改为 continue=true 而不改约束键名，可能触发宿主侧的其他保护逻辑",
+    "自检仅覆盖单个场景，未模拟同一 session/turn 反复投喂 Stop 建议的循环重现测试"
+  ],
+  "missing_evidence": [
+    "build_advisory_stop_payload 和 print_advisory_stop 的实际代码 diff 或当前源码内容",
+    "自检测试用例的具体内容——是否包含循环重现场景",
+    "宿主侧接收 decision=continue 与 decision=block 的行为差异文档"
+  ],
+  "minimum_fix": "在熔断放行的载荷中增加 fuse_reason 字段（如 \\\"max_correction_rounds_exhausted\\\"），确保 build_advisory_stop_payload 在 current_round > max_rounds 时产出 decision=continue 且附带原始问题摘要和熔断标记；自检必须包含同 session/turn 第 N+1 次投喂 Stop 建议时不再次触发阻断的循环验证。",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

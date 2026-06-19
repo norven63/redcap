@@ -1,0 +1,15 @@
+{
+  "provider": "kimi",
+  "verdict": "pass",
+  "confidence": "high",
+  "reality_delta": "The Kimi provider successfully returned the required Prism review JSON shape through the dispatcher without file inspection, tool use, or entering an interactive planning flow. The provider channel is operational.",
+  "main_concern": "None for this bounded smoke test.",
+  "top_risks": [],
+  "missing_evidence": [],
+  "minimum_fix": "None required.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "This is a bounded provider invocation smoke test; no recursive reviewor follow-up work is needed."
+  },
+  "user_intent_alignment": "The user explicitly authorized a narrow bootstrap repair to verify that Kimi and Claude Code providers can be invoked correctly by Prism. Returning the required JSON shape confirmsthe provider CLI bootstrap is functional."
+}

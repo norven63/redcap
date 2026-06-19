@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260613-advisory-stop-post-restart-verification",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260613-advisory-stop-post-restart-verification",
+  "status": "active",
+  "max_rounds_per_provider": 2,
+  "created_at": "2026-06-13T06:36:30+00:00",
+  "task_started_at": "2026-06-13T06:36:30+00:00",
+  "updated_at": "2026-06-13T06:46:26+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": "2dba4a7e-47de-48ca-be61-cba39324c5b6",
+      "round_count": 1,
+      "status": "expired",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260613-advisory-stop-post-restart-verification/claude-code.review.json"
+    },
+    "kimi": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "expired",
+      "last_review": null
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "task total timeout exhausted"
+  }
+}

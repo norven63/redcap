@@ -1,0 +1,28 @@
+{
+  "schema_id": "prism-session-manifest",
+  "task_id": "20260613-kimi-file-access-and-scan-guard-fix",
+  "run_dir": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260613-kimi-file-access-and-scan-guard-fix",
+  "status": "active",
+  "max_rounds_per_provider": 3,
+  "created_at": "2026-06-13T09:31:18+00:00",
+  "task_started_at": "2026-06-13T09:31:18+00:00",
+  "updated_at": "2026-06-13T09:35:51+00:00",
+  "providers": {
+    "claude-code": {
+      "session_handle": null,
+      "round_count": 0,
+      "status": "pending",
+      "last_review": null
+    },
+    "kimi": {
+      "session_handle": "session_914d8303-8f51-472f-b47c-d3d2ef581b7e",
+      "round_count": 3,
+      "status": "active",
+      "last_review": "/Users/norven/workspace/AI Era/redcap/assets/evidence/prism/20260613-kimi-file-access-and-scan-guard-fix/kimi.followup2.review.json"
+    }
+  },
+  "convergence": {
+    "state": "unresolved",
+    "reason": "Initial Prism task session manifest."
+  }
+}

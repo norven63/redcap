@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The main AI has reframed 'make RedCap formally usable' into 'build a queue and checker to manage the making of RedCap formally usable.' This defers the hard part—actual feature implementation—into an abstraction layer where marking items complete becomes the primary activity."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "Contract proliferation without implementation: 8 untracked JSON contract/lifecycle/Prism-request files have been generated but the only new runtime code is scan_conclusion_guard.py — which itself has no tests. The revival implementation queue and formal usability checker that this Prism review was asked to evaluate do not exist in any executable form. This pattern (generate contract → request Prism review → generate more contracts) is precisely the \"report-as-progress\" and \"closeout recursion\" anti-pattern that the known constraints explicitly forbid."
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Cap must implement at least one concrete user-facing command end-to-end (e.g., 'redcap status' or 'redcap revive' with real functional output) before building any queue or checker. Only then should the queue track real features with attached functional tests. The formal usability checker must test external user behavior, not internal scaffolding state."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "Before another Prism review: (1) implement the revival queue as an actual Python module (e.g., runtime/core/revival_queue.py) with at least one test that verifies it correctly distinguishes done vs. pending items; (2) implement the formal usability checker as code, not a contract document; (3) add a test for scan_conclusion_guard.py that verifies it rejects an intentionally incomplete scan. Do not generate additional contract/lifecycle/Prism-request JSON files until these three implementation artifacts exist."
+    }
+  ],
+  "anti_loop_detected": true
+}

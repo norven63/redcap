@@ -1,0 +1,12 @@
+{
+  "command": "runtime/bin/redcap project-install release-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "executed_at": "2026-06-14T20:25:03Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260615-revival-followthrough/project-install-release-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260615-revival-followthrough/project-install-release-check.stdout.txt",
+  "stdout_sha256": "8526bb78c344a31da40de7edcf68183dad05e8a497316421dbf5f2d5cd2dcd68"
+}

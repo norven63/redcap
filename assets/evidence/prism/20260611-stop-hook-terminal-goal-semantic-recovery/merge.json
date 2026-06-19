@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "拟议的‘阶段说明安全区’依赖尚未定义的中文语义边界，而现有UserPromptSubmit语义层已证明不足以防止误杀；在未提供对抗性测试语料和确定性摘要机制之前，该设计可能重复‘加一层语义过滤器→仍误杀/误放行’的循环，且用户授权‘落地’会把未验证的安全假设直接写入生产路径。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "语义安全区误放行风险未经过对抗性测试验证。中文'已完成'同时出现在阶段说明（「阶段一已完成，继续阶段二」）和终局声明（「RedCap完整复活已完成」）中，纯LLM语义区分在压力下会偏向放行。当前方案未提供哪怕一组边界测试用例来证明区分有效。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在允许编码落地前，必须先交付三项可审计产物：(a) 已分类的误杀案例原文与预期语义标签；(b) adversarial Chinese test suite（≥20条边缘用例）及100%的预期通过/阻断结果；(c) 摘要生成须为确定性规则或模板，若使用LLM则必须附带‘摘要无法重构被禁声明’的不变性证明与自动化检测脚本。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "1) 将语义判断限定为白名单模式——LLM仅判断回复是否'明确在说明阶段/风险/待办/未完成'，而非判断是否完成，其余全部回退到确定性裁决；2) 交付前提交≥10组对抗性中文测试用例及预期结果；3) 阻断摘要由确定性脚本裁剪（截取回复前120字），不依赖LLM生成，避免二次语义偏差。"
+    }
+  ],
+  "anti_loop_detected": true
+}

@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "prism-dispatch",
+    "--self-check"
+  ],
+  "command": "runtime/bin/redcap prism-dispatch --self-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "duration_seconds": 6.987,
+  "executed_at": "2026-06-18T07:04:08.085944+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "prism-dispatch-self-check",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "started_at": "2026-06-18T07:04:01.099370+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "{\n  \"ok\": true,\n  \"failures\": []\n}\nPRISM_DISPATCH_SELF_CHECK_OK\n",
+  "stdout_sha256": "4c10a253d482b6bc3e86bb68894fb74e6b4cf8bcb4a45e541547c19d5071d6e0"
+}

@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "Review complete. Here's the summary:\n\n---\n\n**Prism Review — `claude-code`**\n\n**Verdict:** `concern` | **Confidence:** `high`\n\n**What's happening:** The prompt `来，把你脚本里如何判断\"问题词、执行词、否定词、机制语境词、commit/push 等高风险词\"的代码贴出来` is classified as `implementation/substantive` because `执行` hits both `IMPLEMENTATION_MARKERS` and `STRONG_IMPLEMENTATION_MARKERS`, and `commit`/`push` hit `IMPLEMENTATION_MARKERS`. Since `执行` is a strong marker, the question-context override (`如何`) is bypassed, and the function returns `True`. The classifier has no concept of excerpt/show intent — it treats every `执行`/`commit`/`push` occurrence as a directive, even when they're quoted marker names inside a \"paste the code\" request.\n\n**Main concern:** Over-scoping the fix. If excerpt detection uses flat keywords (`贴出来` + `代码`) without checking that the marker hits are in quoted/named-reference positions (not action verbs), hybrid requests like `贴出代码然后执行修复并 commit` would be misclassified as diagnostic. The guard must check positional context, not just presence.\n\n**Top risks:**\n1. Over-broad excerpt detection degrading hybrid request classification\n2. Chinese/English coverage asymmetry — the same bug exists for English code-excerpt requests but the self-check fixtures test only Chinese patterns\n3. Ordering/supersession bugs with existing `MECHANISM_QUESTION_CONTEXT_PHRASES` if excerpt phrases are added naively\n\n**Missing evidence:**\n1. No fixture for the exact failing prompt\n2. No fixture for the regression boundary (hybrid excerpt+execute)\n3. No analysis of English-only session exposure\n\n**Minimum fix:** Add excerpt/show/paste verb detection that checks positional context — whether `IMPLEMENTATION_MARKER` hits appear as quoted names within an excerpt request or as action directives. Add the failing prompt and a hybrid prompt to the self-check fixtures.\n\n**User intent alignment:** `aligned` — the user clearly asked to see code, not execute it.\n\n**Anti-loop:** `false` — genuine edge case, not a self-referential loop.\n\nThe review file is at `assets/evidence/prism/20260605-code-excerpt-request-classifier-fix/claude-code-review.json`.",
+  "main_concern": "Over-scoping the fix. If excerpt detection uses flat keywords (`贴出来` + `代码`) without checking that the marker hits are in quoted/named-reference positions (not action verbs), hybrid requests like `贴出代码然后执行修复并 commit` would be misclassified as diagnostic. The guard must check positional context, not just presence.",
+  "top_risks": [
+    "Over-broad excerpt detection degrading hybrid request classification",
+    "Chinese/English coverage asymmetry — the same bug exists for English code-excerpt requests but the self-check fixtures test only Chinese patterns",
+    "Ordering/supersession bugs with existing `MECHANISM_QUESTION_CONTEXT_PHRASES` if excerpt phrases are added naively"
+  ],
+  "missing_evidence": [
+    "No fixture for the exact failing prompt",
+    "No fixture for the regression boundary (hybrid excerpt+execute)",
+    "No analysis of English-only session exposure"
+  ],
+  "minimum_fix": "Add excerpt/show/paste verb detection that checks positional context — whether `IMPLEMENTATION_MARKER` hits appear as quoted names within an excerpt request or as action directives. Add the failing prompt and a hybrid prompt to the self-check fixtures.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

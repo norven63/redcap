@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The wire-up from PreToolUse hook to intent judge is real and correctly conditional (only called when deterministic would deny mutation). The fallback chain correctly preserves denial when LLM judgment fails. However, three implementation gaps diverge from stated constraints: (1) prompt_intent_effective persistence relies on temporal coupling between UserPromptSubmit and PreToolUse without an explicit freshness guard, creating a latent auth bypass when UserPromptSubmit doesn't refresh the marker; (2) intent_judge.py's build_judge_prompt lacks a prompt length bound, violating the 'keep prompt text bounded' constraint; (3) the intent judge's Claude Code provider command uses --permission-mode bypassPermissions, which is unnecessarily broad for a JSON-only non-interactive call.",
+  "main_concern": "prompt_intent_effective written by PreToolUse override persists in the latest-UserPromptSubmit.json marker until the next UserPromptSubmit hook fires. If PreToolUse fires without a fresh UserPromptSubmit (tool-chaining, hook ordering anomaly), effective_prompt_intent() returns the previous turn's LLM-authorized implementation scope, silently allowing mutation for a different prompt. The current Codex hook ordering may mask this in practice, but the code has no explicit freshness check — it's a ticking coupling bug.",
+  "top_risks": [
+    "prompt_intent_effective persistence across turns without explicit invalidation: effective_prompt_intent() checks prompt_intent_effective before prompt_intent, and UserPromptSubmit is the only path that creates a fresh marker. If UserPromptSubmit hook doesn't fire or update before PreToolUse (tool chaining, host event ordering), a prior implementation override authorizes mutation for a non-implementation prompt.",
+    "Intent judge Claude Code call uses --permission-mode bypassPermissions at intent_judge.py:136-138. While --print --output-format json should suppress tool use, bypassPermissions is unnecessarily broad for a non-interactive JSON task. If the model hallucinates a tool call, all hook guards are circumvented.",
+    "No prompt length bound in build_judge_prompt (intent_judge.py:89-115): user prompt is embedded in the judge prompt JSON without truncation. A 15k-char user prompt creates a 16k+ judge prompt, violating the 'keep prompt text bounded' constraint and risking provider context overflow or excessive latency."
+  ],
+  "missing_evidence": [
+    "No end-to-end test of the PreToolUse → intent-judge → deny/authorize decision path with fixture responses. The self-check only tests intent_judge.py in isolation via --fake-response; the codex-hook.py's run_intent_judge_for_marker + prompt_intent_effective override path is untested.",
+    "No verification of prompt_intent_effective reset on new UserPromptSubmit. A test should confirm that after PreToolUse writes prompt_intent_effective=implementation, the NEXT UserPromptSubmit clears it and a subsequent PreToolUse with a diagnostic prompt correctly denies mutation.",
+    "No timeout-path verification: the hook's 80s subprocess timeout vs the intent judge's 75s per-provider timeout creates a compound timeout behavior (primary gets 75s, fallback gets ≤5s). This timing interaction is untested and could mask subtle timeout-before-fallback bugs."
+  ],
+  "minimum_fix": "1) In UserPromptSubmit handler (codex-hook.py:698), explicitly delete prompt_intent_effective from the marker to ensure fresh-prompt determination. 2) In intent_judge.py:137, replace --permission-mode bypassPermissions with --permission-mode acceptEdits or omit it entirely for --print mode. 3) In build_judge_prompt (intent_judge.py:89), truncate user_prompt to a bounded length (e.g., 4000 chars) with a truncation indicator. 4) Add at least one fixture-based PreToolUse e2e test that exercises the full deny→judge→authorize and deny→judge→deny paths.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "The self-check's auto_clear test (intent_judge.py:273-289) is circular: it tests that '请升级这个 hook' (which contains the newly-added '升级' implementation marker) is classified as implementation and skips LLM in auto mode. It doesn't test that the LLM override actually works — it only tests that the deterministic marker prevents LLM invocation. The evidence claims 'fixture classify' verifies LLM override, but the auto_clear test specifically tests the code path where LLM is NOT called. This suggests the test was adjusted to match the implementation rather than verifying the intended behavior."
+  },
+  "user_intent_alignment": "aligned"
+}

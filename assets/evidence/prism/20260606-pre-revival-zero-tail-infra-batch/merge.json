@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "high"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "主 AI 可能将‘检查通过 + 文档冻结’误认为实施就绪信号，忽视了运行时本身存在的自相矛盾故障信号（台账失败、防护误杀、工作树脏、旧台账未迁移、调度器策略缺口），从而在一个伪稳定的基础上开始高风险的批量修复。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "自检基础设施与其所保护的系统状态存在脱节：prism check 和 redcap check 均报告通过，但 prism 账本同时记录有未解决的关注项和失败任务。这表明自检并未接入账本状态——意味着 Cap 可能错误地依赖\"check 通过\"作为\"已完成\"的信号，而无法察觉真正的未解决问题。这是一个元问题：如果自检框架存在盲区，则\"所有条目已验证为已解决\"这一批量主张从定义上就无法成立。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在将批次标记为‘可实施’前，必须先完成三项硬门槛：1）工作树稳定化（提交或清理所有变更，使基线可复现）；2）输出 Prism 台账失败任务的逐项根因读数与处置结论；3）提供 PreToolUse 假阳性的具体修复计划并验证普通诊断搜索不再被误杀。缺少任何一项，都不应进入实施阶段。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "将 PreToolUse 原始输出 guard 的误报拦截作为本批次的试金石。该问题具体、可复现、可直接测试。如果这个单一的、有明确边界的问题无法被干净地根因分析和修复——而非通过增加更多检查来掩盖——则整个批处理方法就失败了，不应继续推进。修复后，将 prism check 接入 prism-ledger 状态，使账本中任何未解决的关注项都能导致检查失败——从而闭合当前的验证盲区。"
+    }
+  ],
+  "anti_loop_detected": true
+}

@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "No code has been changed. The `prompt_intent.py` classifier still misfires on the exact excerpt request from the evidence (classified as `implementation`/`substantive`). The self-check fixtures in `runtime/prism/bin/prism` do not include a code-excerpt request containing quoted `commit`/`push`/`执行` marker names. The `changed_reality` describes only intent and constraints, not actual behavioral or filesystem changes.",
+  "main_concern": "This request is framed as an `implementation_review`, but nothing has been implemented. The `changed_reality` is entirely negative (\"No code has been changed yet\", \"intended runtime change\", \"fix must preserve\"). This is a specification/design concern about a classifier bug, not a review of completed work. Approving it as `implementation_review` would validate a plan without verifying the actual code change or its test coverage.",
+  "top_risks": [
+    "The fix may inadvertently strip implementation markers from genuine directive contexts while trying to protect quoted-marker excerpts.",
+    "Without a self-check fixture for this edge case, regressions in `prompt_intent.py` will not be caught by `prism check`.",
+    "Treating plan-as-implementation creates a precedent where `changed_reality` can be purely aspirational, weakening Prism's anti-empty-work guardrail."
+  ],
+  "missing_evidence": [
+    "A concrete code change in `runtime/core/prompt_intent.py` that distinguishes `贴出来`/`给我看看` excerpt contexts from directive contexts.",
+    "A new self-check test case in `runtime/prism/bin/prism` `prompt_intent_cases` covering the exact misfired prompt.",
+    "Verification that the fix still correctly classifies genuine directives containing the same words (e.g., `执行修复并 commit`)."
+  ],
+  "minimum_fix": "Reframe this as a design/spec review or implement the actual classifier fix first:\n1. Add excerpt-context detection (e.g., `贴出来`, `给我看看`, `show me the code`, `paste the script`) that overrides implementation marker hits when the prompt is clearly requesting code display.\n2. Add the exact misfired prompt to the Prism self-check fixtures with `expected_scope='review_only'` or `'answer_only'`.\n3. Re-run Prism as `implementation_review` with actual `changed_paths` and positive `changed_reality` describing the behavioral fix.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "`present: false` — This is a first-time bug report for a genuine classifier misfire, not a repeated unbounded discussion. However, the framing as \"implementation review of a fix\" when no fix exists is a mild form of premature completion framing.\n\n---\n\nReview written to:\n`assets/evidence/prism/20260605-code-excerpt-request-classifier-fix/kimi-review.json`\n\n\nTo resume this session: kimi -r 3ab24e31-15ab-491a-a132-7fc709c5a354"
+  },
+  "user_intent_alignment": "drifting"
+}

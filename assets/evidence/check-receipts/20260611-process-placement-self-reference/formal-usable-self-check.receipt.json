@@ -1,0 +1,11 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "command": "python3 runtime/core/formal_usable_check.py self-check",
+  "exit_code": 0,
+  "executed_at": "2026-06-11T14:36:28+00:00",
+  "executor": "cap",
+  "stdout_sha256": "b6ea1aaa1113419edf15f1e34b16a7a438346d71f1e8498a89a4b217f40613b6",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260611-process-placement-self-reference/formal-usable-self-check.stdout.txt",
+  "stderr_path": "assets/evidence/check-receipts/20260611-process-placement-self-reference/formal-usable-self-check.stderr.txt"
+}

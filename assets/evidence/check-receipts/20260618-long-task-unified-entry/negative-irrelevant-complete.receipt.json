@@ -1,0 +1,37 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "long-task",
+    "complete",
+    "--packet",
+    "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/irrelevant-run/redcap-long-task-active-run.json",
+    "--outcome",
+    "completed",
+    "--final-objective-delta",
+    "最终完成回执需要证明当前 active_run 已达到终止条件。",
+    "--completion-evidence",
+    "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/irrelevant-run/irrelevant-receipt.json",
+    "--final-summary",
+    "当前 active_run 必须由完成回执关闭。",
+    "--blocker-signature",
+    "irrelevant-completion-evidence"
+  ],
+  "command": "runtime/bin/redcap long-task complete --packet /var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/irrelevant-run/redcap-long-task-active-run.json --outcome completed --final-objective-delta '最终完成回执需要证明当前 active_run 已达到终止条件。' --completion-evidence /var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/irrelevant-run/irrelevant-receipt.json --final-summary '当前 active_run 必须由完成回执关闭。' --blocker-signature irrelevant-completion-evidence",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "duration_seconds": 0.042,
+  "executed_at": "2026-06-18T07:05:51.102169+00:00",
+  "executor": "codex",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "fixture_payload": {
+    "expected_failure": "task-relevant completion markers"
+  },
+  "name": "negative-irrelevant-complete",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "started_at": "2026-06-18T07:05:51.060472+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "{\n  \"schema_id\": \"redcap-long-task-complete-result\",\n  \"ok\": false,\n  \"failures\": [\n    \"completion_evidence[0] lacks task-relevant completion markers: /var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/irrelevant-run/irrelevant-receipt.json\"\n  ],\n  \"evidence_quality\": [\n    {\n      \"reference\": \"/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/irrelevant-run/irrelevant-receipt.json\",\n      \"resolved_path\": \"/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/irrelevant-run/irrelevant-receipt.json\",\n      \"exists\": true,\n      \"bytes\": 159,\n      \"sha256\": \"a41cd625434c28c3ac6957f8eb4f37fefb09e878630a54202e602e530e1e8641\",\n      \"confidence\": \"high\",\n      \"signals\": [\n        \"check\",\n        \"command\",\n        \"exit_code\",\n        \"ok\",\n        \"passed\",\n        \"stderr\",\n        \"stdout\"\n      ],\n      \"structured\": true\n    }\n  ]\n}\n",
+  "stdout_sha256": "7ac712070bdd2adc153bd9e5f0565b83a731f6721155f3481d36227e948c5cc2"
+}

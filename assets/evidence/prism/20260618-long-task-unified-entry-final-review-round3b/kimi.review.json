@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "long_task_contract.py 中确实新增了 complete_long_task 出口、完成后禁止 record、低置信/无关证据拒绝等代码级约束；summary receipt 也显示 positive-complete 通过，negative-irrelevant-complete 按预期失败。但 complete_revival_e2e.py 在 bundle 中被截断，E2E 入口与收束是否真正读取 lifecycle_state/completion_boundary 无法直接核验。",
+  "main_concern": "E2E 集成声明的验证证据不完整。核心边界修复在长任务契约模块可见，但“回到 E2E 巡检”依赖于 E2E runner 实际使用这些新字段，这一点因文件截断而未正面证实。",
+  "top_risks": [
+    "complete_revival_e2e.py 被截断，无法确认 E2E 入口要求 running 且无 completion_boundary、通过时要求 completed 且有 completion_boundary 的逻辑是否真实落地。",
+    "negative-record-after-complete 与 negative-low-confidence-complete 回执不在 bundle 中，仅能通过 summary receipt 间接相信其失败行为符合预期。",
+    "summary receipt 本身也在 stdout 字段处截断，完整检查列表与输出未完全可见。"
+  ],
+  "missing_evidence": [
+    "complete_revival_e2e.py 中关于 lifecycle_state 与 completion_boundary 读取/判断的非截断代码片段。",
+    "negative-record-after-complete.receipt.json 的直接内容。",
+    "negative-low-confidence-complete.receipt.json 的直接内容。"
+  ],
+  "minimum_fix": "补充一份不截断的 complete_revival_e2e.py 关键段落（或新增一个针对 E2E lifecycle_state/completion_boundary 使用的独立检查回执），并直接提供两个缺失的负向回执，使得“可回 E2E 巡检”的声明能被正面验证。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "修复方向正确：把“完成”从记录数量/回执数量的推断改成了显式的 completion_boundary 状态机。但仍需确认 E2E runner 不会绕过该状态机，否则可能再次进入“自检查通过即认为完成”的循环。"
+  },
+  "user_intent_alignment": "用户要求“不能在任务未完成时汇报完成”。长任务契约本身已对齐该意图；然而“回到 E2E 巡检”的结论是比契约修复更强的主张，目前证据不足以支持该结论。"
+}

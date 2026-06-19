@@ -1,0 +1,48 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260615-resume-e2e-round19-gate",
+  "merge_path": "merge.json",
+  "reviews": [
+    "kimi.review.json",
+    "claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern is valid: pre-E2E continuation should not rely on summary-only evidence. Raw command outputs and receipts were recorded before starting round 19.",
+      "implementation_evidence": [
+        "./pre-round19-baseline-evidence.json"
+      ],
+      "verification_evidence": [
+        "./git-status-clean.receipt.json",
+        "./git-log.receipt.json",
+        "./lifecycle-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "block",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The block is valid: global Prism ledger files were modified by the required full Prism review. They were committed as a separate pre-E2E baseline commit, and a fresh clean git status was recorded before round 19.",
+      "implementation_evidence": [
+        "assets/evidence/prism/task-health.json",
+        "assets/evidence/prism/task-ledger.jsonl",
+        "./pre-round19-baseline-evidence.json"
+      ],
+      "verification_evidence": [
+        "./git-status-clean.receipt.json",
+        "./git-log.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Both Prism concerns were accepted, implemented with a clean pre-E2E baseline, and verified by command receipts before round 19."
+  }
+}

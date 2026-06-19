@@ -1,112 +1,112 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-16T17:17:01+00:00",
-  "event_count": 42327,
-  "session_event_count": 10523,
-  "task_count": 95,
-  "success_count": 53,
-  "success_rate": 0.5579,
-  "operational_task_count": 85,
-  "operational_success_count": 53,
-  "operational_success_rate": 0.6235,
+  "computed_at": "2026-06-19T01:06:53+00:00",
+  "event_count": 44289,
+  "session_event_count": 11231,
+  "task_count": 122,
+  "success_count": 57,
+  "success_rate": 0.4672,
+  "operational_task_count": 112,
+  "operational_success_count": 57,
+  "operational_success_rate": 0.5089,
   "self_check_task_count": 10,
-  "active_count": 34,
-  "operational_active_count": 24,
-  "attention_count": 41,
-  "average_duration_seconds": 1660.937,
+  "active_count": 54,
+  "operational_active_count": 44,
+  "attention_count": 64,
+  "average_duration_seconds": 1663.902,
   "providers": {
     "claude-code": {
-      "tasks": 95,
-      "rounds": 92,
-      "reviews_loaded": 72,
-      "pass": 8,
-      "concern": 57,
-      "block": 7,
-      "missing_verdict": 23
+      "tasks": 122,
+      "rounds": 117,
+      "reviews_loaded": 95,
+      "pass": 9,
+      "concern": 77,
+      "block": 9,
+      "missing_verdict": 27
     },
     "kimi": {
-      "tasks": 95,
-      "rounds": 87,
-      "reviews_loaded": 66,
-      "pass": 9,
-      "concern": 49,
-      "block": 8,
-      "missing_verdict": 29
+      "tasks": 122,
+      "rounds": 113,
+      "reviews_loaded": 89,
+      "pass": 10,
+      "concern": 68,
+      "block": 11,
+      "missing_verdict": 33
     }
   },
   "recent_attention_tasks": [
     {
+      "task_id": "20260619-e2e-change-review",
+      "outcome": "failed",
+      "strictest_verdict": "concern",
+      "recorded_at": "2026-06-18T19:07:16+00:00"
+    },
+    {
       "task_id": "timeout-e2e",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-16T17:17:01+00:00"
+      "recorded_at": "2026-06-18T19:01:22+00:00"
     },
     {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-16T17:16:42+00:00"
+      "recorded_at": "2026-06-18T19:00:42+00:00"
     },
     {
       "task_id": "dispatcher-truncation-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-16T17:16:38+00:00"
-    },
-    {
-      "task_id": "dispatcher-file-access-self-check",
-      "outcome": "active",
-      "strictest_verdict": null,
-      "recorded_at": "2026-06-16T17:16:37+00:00"
+      "recorded_at": "2026-06-18T19:00:36+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-16T17:16:37+00:00"
+      "recorded_at": "2026-06-18T19:00:34+00:00"
     },
     {
-      "task_id": "e2e-round20-fix-review-20260615",
+      "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T20:54:00+00:00"
+      "recorded_at": "2026-06-18T19:00:32+00:00"
     },
     {
-      "task_id": "20260615-resume-e2e-round19-gate",
+      "task_id": "20260618-e2e-feedback-loop-review",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T17:04:55+00:00"
+      "recorded_at": "2026-06-18T14:42:36+00:00"
     },
     {
-      "task_id": "20260615-e2e-reviewer-contract-fix",
+      "task_id": "20260618-e2e-carrier-hook-fix-final-review-r5",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-15T14:07:18+00:00"
+      "recorded_at": "2026-06-18T12:51:55+00:00"
     },
     {
-      "task_id": "20260615-goal-completion-final-review-r2",
+      "task_id": "20260618-e2e-carrier-hook-fix-final-review-r4",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-14T17:39:04+00:00"
+      "recorded_at": "2026-06-18T12:45:54+00:00"
     },
     {
-      "task_id": "20260614-p0-goal-continuation-intent",
+      "task_id": "20260618-e2e-carrier-hook-fix-final-review-r3",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-14T13:23:25+00:00"
+      "recorded_at": "2026-06-18T12:39:42+00:00"
     }
   ],
-  "gate_event_count": 31804,
-  "gate_success_count": 31804,
+  "gate_event_count": 33058,
+  "gate_success_count": 33058,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 624,
-    "required": 26849,
-    "skipped": 4331
+    "optional": 653,
+    "required": 28068,
+    "skipped": 4337
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 27172,
-    "cli-gate": 4632
+    "codex-UserPromptSubmit": 28253,
+    "cli-gate": 4805
   },
-  "gate_average_duration_seconds": 0.266
+  "gate_average_duration_seconds": 0.262
 }

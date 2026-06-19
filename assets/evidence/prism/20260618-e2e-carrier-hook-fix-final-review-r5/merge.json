@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "The review is being asked to accept a source-pack document and self-reported command summaries as proof that the production cleanup path is instrumented and that the final decision is used. The authorized bundle does not contain the non-truncated injection site, final-decision call site, or raw command outputs, so the central anti-bypass claim is unverified."
+    },
+    {
+      "provider": "claude-code",
+      "concern": "自检命令使用了 --skip-carrier-probe 标志，这意味着 self-check 跳过了 carrier_probe 阶段，新增的 carrier_probe_final_decision 函数从未在自动化自检路径中被执行或验证。手工 carrier-probe 命令通过不代表自检管线能发现未来的回归。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "Re-bundle the review with the full, bounded-readable source segments that show (1) where `carrier_probe_final_decision` is called in the carrier probe final summary, (2) the exact `cleanup_marker` code that honors `REDCAP_TEST_INJECT_CARRIER_MARKER_CLEANUP_FAILURE`, and (3) the `cleanup_failed_decision` self-check. Attach the raw command output files. Then re-submit for Prism review before running the full E2E."
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在 self-check 中增加一个不跳过 carrier_probe 的轻量模式，或为 carrier_probe_final_decision 添加一个独立的、覆盖全部四种输入组合（decision['ok'] T/F × marker_cleanup_error None/非None）的单元级自检断言，确保回归可被自动化捕获。"
+    }
+  ],
+  "anti_loop_detected": true
+}

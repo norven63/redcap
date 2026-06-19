@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The fix direction is correct, but the current negation architecture is the root cause — not the absence of one phrase. The `NEGATED_IMPLEMENTATION_PHRASES` whitelist at `prompt_intent.py:87-119` will never be complete because Chinese negation particles (不是, 没有, 不会, 并非, etc.) combine combinatorially with every execution marker. Patching one phrase per incident just guarantees more Prism reviews for the same bug class.",
+  "main_concern": "The exact-phrase negation approach is architecturally brittle. The classifier strips negated phrases from a copy of the text, but `\"不是实际执行任务\"` doesn't match any existing entry — `\"执行\"` survives and triggers `STRONG_IMPLEMENTATION_MARKERS` at line 195, bypassing the question-only gate. This isn't a one-off; it's a systematic gap.",
+  "top_risks": [
+    "**Whac-a-mole**: Adding `\"不是实际执行\"` fixes this prompt but leaves `\"不是真正执行\"`, `\"没有实际执行\"`, `\"不会执行\"` etc. unfixed. Next session hits the same false positive with slightly different wording.",
+    "**Inverse bug from overcorrection**: If the fix uses broad pattern matching (any co-occurrence of negation + execution → answer-only), directives like `\"不是只诊断，而是要执行修复并 commit\"` get misclassified, weakening the anti-empty-work gate.",
+    "**Missing regression test**: The Prism self-check at `prism:1036` has no test case for the actual bug trigger. Without a failing test added first, there's no guardrail."
+  ],
+  "missing_evidence": [
+    "No failing test for the exact false positive (`\"不是实际执行任务\"` → `answer_only`)",
+    "No inventory of Chinese negation particles absent from the phrase list — latent false positive count is unknown",
+    "Hook invocation path re-import behavior not explicitly verified (though `prism` subprocess invocation should pick up changes fresh)"
+  ],
+  "minimum_fix": "1. Add at minimum `\"不是实际执行\"`, `\"不是执行\"`, `\"没有执行\"`, `\"不会执行\"` to `NEGATED_IMPLEMENTATION_PHRASES`\n2. Add two self-check cases at `prism:1036`: `(\"不是实际执行任务\", \"answer_only\", \"none\")` and `(\"是不是实际执行的操作？\", \"answer_only\", \"none\")`\n3. Add a counter-case: `(\"不是只诊断，而是要执行修复并 commit\", \"implementation\", \"substantive\")` to prove the fix doesn't weaken\n4. Consider a structural improvement: before classifying, strip any negation prefix (不是/没有/不会/并非) that immediately precedes an implementation marker, rather than relying solely on phrase enumeration",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "**Present: false** — The fix is bounded and straightforward. However, if the approach stays purely phrase-based without item 4 above, expect another Prism review for this bug class within 2-3 sessions.\n\n---\n\nReview written to `assets/evidence/prism/20260605-answer-only-execution-question-hook-fix/claude-code-review.json`."
+  },
+  "user_intent_alignment": "unclear"
+}

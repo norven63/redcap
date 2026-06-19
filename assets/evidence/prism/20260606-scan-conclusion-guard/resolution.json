@@ -1,0 +1,32 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260606-scan-conclusion-guard",
+  "merge_path": "assets/evidence/prism/20260606-scan-conclusion-guard/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260606-scan-conclusion-guard/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern is valid: a wording-only boundary can be bypassed. The implementation now requires a structured scan status block sourced from the scan account and task fact ledger.",
+      "implementation_evidence": [
+        "runtime/core/scan_conclusion_guard.py",
+        "runtime/bin/redcap",
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260606-scan-conclusion-guard/scan-conclusion-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-scan-conclusion-guard/codex-hook-self-check.receipt.json",
+        "assets/evidence/check-receipts/20260606-scan-conclusion-guard/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "The minimum fix is accepted and will be implemented as a structural scan-status guard before code completion."
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The implementation made substantive changes (new advisory_stop.py, new contract, modified hook, removed stale files) and the verification commands reportedly pass. However, the pre-review's most critical finding — that self-check fixtures are not regression tests — has been resolved with more self-check fixtures. The pre-review required 'minimum 3 test scenarios that reproduce the old answer-drift pathology and prove the new implementation blocks them.' The resolution is: 'codex-hook self-check includes original-task anchoring, no blocked reply excerpt by default, human output, scan conclusion, terminal goal, and missing-action fixtures.' This is a category error — fixtures that assert properties exist are structurally different from scenarios that simulate drift and prove it's blocked. A fixture proves the checker runs; a regression test proves the pathology can't re-emerge. The verification question 'does Stop feedback stay anchored to the original task?' is answered by a self-check that asserts it does — not by a test that tries to make it drift and fails.",
+  "main_concern": "Self-check fixtures are being treated as equivalent to regression tests. The pre-review explicitly demanded scenarios that reproduce the old answer-drift pathology and prove it's blocked. What was delivered is a self-check with hardcoded fixtures that assert properties (original-task anchoring present, no blocked reply excerpt, etc.) — this proves the checker exists and can read its own output, not that Stop feedback stays anchored under real usage. The review bias section of the Prism prompt warns directly about this: 'Be suspicious of tests that only prove the checker exists.' The self-check is one of those tests.",
+  "top_risks": [
+    "Self-check fixtures create false confidence. A fixture asserting 'no blocked reply excerpt by default' proves the self-check can read a default payload, not that Stop won't generate a blocking reply under adversarial or edge-case input. The original pathology emerged in real usage, not in fixture tests.",
+    "Cap override metadata may be dead. Finding #3 resolution records cap_may_override=true in the payload, but without verification that Cap actually reads and enforces this field (as opposed to the self-check confirming the field exists), it's metadata without behavioral effect. Cap blind-obedience to Stop would yield identical self-check results.",
+    "Live Stop events have never fired. Known limit admits the live marker probe uses adapter self-check rather than a real Stop event. Until a real Stop event fires and the full system processes it, the entire hot path is unverified. The contract defines behavior that may not survive contact with production."
+  ],
+  "missing_evidence": [
+    "A regression test scenario (not a self-check fixture) that: submits a user task, triggers a Stop event with an ambiguous or adversarial closeout, and verifies Cap's reply remains anchored to the original task without incorporating Stop's correction constraints as new task content.",
+    "Evidence that Cap actually checks and enforces cap_may_override and override_condition — not just that the payload carries the fields, but that Cap's behavior changes when they differ.",
+    "A real Stop event firing in production (or a recorded simulation that exercises the full hot path, not just the self-check path) with health markers demonstrating the max-round guard triggers and the deterministic/LLM boundary holds."
+  ],
+  "minimum_fix": "Add at least one end-to-end regression scenario (not a self-check fixture) that: (1) submits a concrete user task, (2) produces a closeout that triggers advisory Stop, (3) provides Stop with a correction that could plausibly shift the answer topic, and (4) verifies the final Cap reply is anchored to the original task with <= 1 correction round consumed. This can be a script or a recorded scenario, but it must exercise the actual hook path, not the self-check's hardcoded assertion path. Separately, verify that Cap's behavior observably changes when cap_may_override is set to false vs. true — if the behavior is identical, the field is dead metadata.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "两个核心源文件确实已按 claim 修改：codex-hook.py 中已找不到 expected_status_block、旧恢复文案“回复正在回答 360 度旧 RedCap 扫描结论”、‘需要包含的状态块’ 或 unsupported-scan-conclusion；Stop 约束已替换为 scan-conclusion-anchor，且新 detail 要求回到用户原始问题。scan_conclusion_guard.py 的 check_scan_conclusion 普通返回路径与 irrelevant-scan-status-block 分支均不再包含 expected_status_block 字段；expected_status_block 仅作为内部自检辅助函数保留。但 bundle 未提供任何验证命令输出，lifecycle 文件 fsm_state 仍为 PRISM_REVIEW，无法确认 repo 其余位置是否干净。",
+  "main_concern": "主执行 AI 声称“验证已覆盖”多项检查，但 bundle 中没有任何命令输出或 repo 级搜索证据；存在把“源码已改”等同于“运行路径彻底干净”的自我欺骗风险。",
+  "top_risks": [
+    "旧恢复文案或状态模板可能仍留在 .codex/hooks.json、文档目录或未打包的其他消费者中。",
+    "expected_status_block 辅助函数若被 bundle 外的其他模块导入调用，仍可能把状态模板重新注入回答。",
+    "新的 scan-conclusion-anchor 分类若未在宿主合同/配置中注册，Stop 可能以不可预期方式回退或仍把建议渲染成新提示。"
+  ],
+  "missing_evidence": [
+    "rg 全仓库搜索结果与 verification_plan 中各命令（py_compile、scan-conclusion self-check、host-hook-audit、enforcement-check、redcap check）的实际输出。",
+    "除 codex-hook.py 与 scan_conclusion_guard.py 之外，所有引用 expected_status_block 或 check_scan_conclusion 返回值的消费者清单。",
+    "scan-conclusion-anchor 在宿主/合同/配置中的处理定义，确保其不会被误解为要求输出新用户问题。"
+  ],
+  "minimum_fix": "补交验证命令输出和全仓库 rg 搜索结果，确认旧字符串与 expected_status_block 消费者均已清除；若干净，将 lifecycle FSM 状态更新为已实现/已验证。",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "不能只用源码修改替代“彻底物理删除”的全局干净证明；必须看到运行证据和搜索输出。"
+  },
+  "user_intent_alignment": "中-high。代码层面已满足用户“物理删除旧逻辑/文案”的核心意图，但“彻底”要求因缺少全仓库验证证据而未完全兑现。"
+}

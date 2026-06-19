@@ -1,0 +1,49 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260614-p0-goal-continuation-intent",
+  "merge_path": "assets/evidence/prism/20260614-p0-goal-continuation-intent/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260614-p0-goal-continuation-intent/kimi.review.json",
+    "assets/evidence/prism/20260614-p0-goal-continuation-intent/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "block",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受。修复没有把评审口吻提示直接当成实施授权，而是新增受限的当前会话目标续跑读取：只有 PreToolUse（工具使用前检查）载荷中的 transcript_path 位于允许的 Codex 会话目录、文件名匹配当前 session_id（会话编号）、尾部最后一条用户消息是 Codex 目标续跑上下文，并且 objective（目标正文）本身被判定为 implementation/completion（实施/完成）时，才允许写操作继续。普通评审提示、旧目标后又出现的新问题、目标正文不含实施授权都会继续阻断。",
+      "implementation_evidence": [
+        "runtime/host-adapters/codex/codex-hook.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260614-p0-goal-continuation-intent/receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260614-p0-goal-continuation-intent/receipts/codex-hook-intent-self-check.receipt.json",
+        "assets/evidence/prism/20260614-p0-goal-continuation-intent/receipts/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "接受。已追踪既有链路失败点：原 PreToolUse（工具使用前检查）只有在 UserPromptSubmit（用户提示提交事件）标记过期或跨会话时才调用同会话续跑授权；当标记仍新鲜但内容是 review_only（仅评审）时，会直接转入阻断分支，生命周期里的 same_session_authorized_continuation（同会话授权续跑）不会参与工具授权。本次修复把当前 Codex transcript_path（会话记录路径）中的目标续跑上下文纳入这一分支，并保留原来的新鲜提示、同会话、危险命令、受保护证据写入等拦截能力。",
+      "implementation_evidence": [
+        "runtime/host-adapters/codex/codex-hook.py",
+        "runtime/prism/bin/prism",
+        "runtime/core/check_runner.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260614-p0-goal-continuation-intent/receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260614-p0-goal-continuation-intent/receipts/codex-hook-intent-self-check.receipt.json",
+        "assets/evidence/prism/20260614-p0-goal-continuation-intent/receipts/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两个评审方的最小修复要求均已用代码、反例夹具和全量检查闭环；该闭环只覆盖 P0 目标续跑授权误判问题，不声明 RedCap 整体终局完成。"
+  }
+}

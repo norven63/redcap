@@ -1,0 +1,51 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260615-e2e-role-user-config-isolation",
+  "merge_path": "merge.json",
+  "reviews": [
+    "kimi.review.json",
+    "claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern is valid: a self-check that skips carrier probe cannot validate the highest-risk part of this patch. Cap reran full self-check without skipping carrier probe and replaced the patch strategy so project-level hooks remain loaded.",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "./verification-summary.json"
+      ],
+      "verification_evidence": [
+        "./receipts/complete-revival-e2e-self-check.receipt.json",
+        "./receipts/complete-revival-e2e-carrier-probe.receipt.json",
+        "./receipts/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "The concern is valid: --ignore-user-config is too broad and can break project-level Hook evidence. Cap removed that flag from Loom role execution, added interactive skill-gate detection and retry evidence, and verified carrier probe plus full RedCap check.",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "./verification-summary.json"
+      ],
+      "verification_evidence": [
+        "./receipts/complete-revival-e2e-self-check.receipt.json",
+        "./receipts/complete-revival-e2e-carrier-probe.receipt.json",
+        "./receipts/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "Both Prism concerns were accepted. The unsafe config-isolation strategy was removed; project-level Hook carrier behavior is preserved by contract and verified by full self-check, carrier probe, and redcap check. Round 20 E2E remains required before any production-use claim."
+  }
+}

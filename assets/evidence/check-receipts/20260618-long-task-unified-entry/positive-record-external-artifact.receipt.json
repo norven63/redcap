@@ -1,0 +1,32 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "long-task",
+    "record",
+    "--packet",
+    "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/positive-run/redcap-long-task-active-run.json",
+    "--status",
+    "running",
+    "--objective-delta",
+    "外部承接方写入源码产物，并由 record 作为真实行为证据入账。",
+    "--action-evidence",
+    "/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/external-worker/feature-output.js",
+    "--blocker-signature",
+    "none"
+  ],
+  "command": "runtime/bin/redcap long-task record --packet /var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/positive-run/redcap-long-task-active-run.json --status running --objective-delta '外部承接方写入源码产物，并由 record 作为真实行为证据入账。' --action-evidence /var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/external-worker/feature-output.js --blocker-signature none",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "duration_seconds": 0.044,
+  "executed_at": "2026-06-18T07:05:50.886001+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "positive-record-external-artifact",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "started_at": "2026-06-18T07:05:50.842222+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "{\n  \"schema_id\": \"redcap-long-task-record-result\",\n  \"ok\": true,\n  \"packet\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/positive-run/redcap-long-task-active-run.json\",\n  \"check\": \"/private/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/positive-run/redcap-long-task-active-run.json.check.json\",\n  \"iteration_id\": \"recorded-round-2\",\n  \"status\": \"running\",\n  \"evidence_quality\": [\n    {\n      \"reference\": \"/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/external-worker/feature-output.js\",\n      \"resolved_path\": \"/var/folders/yw/_wxmp7pd3wnfggvhmvqyjfkc0000gn/T/redcap-long-task-probes-v4-g7dvq3es/external-worker/feature-output.js\",\n      \"exists\": true,\n      \"bytes\": 177,\n      \"sha256\": \"fff9ad48116ce5707f8a02301b6665e48b07342b357cb3f3080784b43310929c\",\n      \"confidence\": \"high\",\n      \"signals\": [\n        \"command\",\n        \"ok\",\n        \"passed\",\n        \"result\",\n        \"stdout\",\n        \"test\",\n        \"产物\",\n        \"变更\",\n        \"证据\"\n      ],\n      \"structured\": false\n    }\n  ],\n  \"failures\": []\n}\nREDCAP_LONG_TASK_RECORD_OK\n",
+  "stdout_sha256": "77624b72afe98b3dd02a6bbf34b3a0d6e0920da134bac30a6926c00906b61bad"
+}

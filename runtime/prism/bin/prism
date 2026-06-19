@@ -44,6 +44,16 @@ PROVIDER_SESSION_STATUSES = {"pending", "active", "converged", "escalated", "exp
 PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS = float(os.environ.get("REDCAP_PRISM_CHECK_SUBPROCESS_TIMEOUT_SECONDS", "600"))
 _ORIGINAL_SUBPROCESS_RUN = subprocess.run
 _PRISM_CHECK_TIMEOUT_GUARD_INSTALLED = False
+PLACEHOLDER_REVIEW_TERMS = {
+    "暂不填写",
+    "先探索代码",
+    "待补充",
+    "占位文本",
+    "占位内容",
+    "todo",
+    "tbd",
+    "placeholder",
+}
 SELF_DEVELOPMENT_LIFECYCLE_RISKS = {"medium", "high", "critical"}
 SELF_DEVELOPMENT_LIFECYCLE_TERMS = {
     "redcap",
@@ -181,6 +191,37 @@ def validate_request(path: pathlib.Path) -> None:
         raise SystemExit(f"request includes excluded providers: {', '.join(unknown)}")
 
 
+def review_text_has_placeholder(value: Any) -> bool:
+    text = str(value or "").strip().lower()
+    return any(term in text for term in PLACEHOLDER_REVIEW_TERMS)
+
+
+def require_review_string(payload: dict[str, Any], key: str, failures: list[str], *, min_len: int = 1) -> None:
+    value = payload.get(key)
+    if not isinstance(value, str) or not value.strip():
+        failures.append(f"review.{key} must be a non-empty string")
+        return
+    if len(value.strip()) < min_len:
+        failures.append(f"review.{key} must be at least {min_len} characters")
+    if review_text_has_placeholder(value):
+        failures.append(f"review.{key} contains placeholder text")
+
+
+def require_review_string_list(payload: dict[str, Any], key: str, failures: list[str], *, required_when_blocking: bool) -> None:
+    value = payload.get(key)
+    if not isinstance(value, list):
+        failures.append(f"review.{key} must be a list")
+        return
+    if required_when_blocking and not value:
+        failures.append(f"review.{key} must be non-empty for concern/block verdicts")
+        return
+    for index, item in enumerate(value):
+        if not isinstance(item, str) or not item.strip():
+            failures.append(f"review.{key}[{index}] must be a non-empty string")
+        elif review_text_has_placeholder(item):
+            failures.append(f"review.{key}[{index}] contains placeholder text")
+
+
 def validate_review(path: pathlib.Path) -> None:
     payload = load_json(path)
     if not isinstance(payload, dict):
@@ -207,6 +248,30 @@ def validate_review(path: pathlib.Path) -> None:
     verdict = payload.get("verdict")
     if verdict not in VERDICT_RANK:
         raise SystemExit(f"review verdict must be pass, concern, or block: {verdict}")
+    if payload.get("confidence") not in {"low", "medium", "high"}:
+        raise SystemExit(f"review confidence must be low, medium, or high: {payload.get('confidence')}")
+    quality_failures: list[str] = []
+    for key in ["reality_delta", "main_concern", "minimum_fix"]:
+        require_review_string(payload, key, quality_failures, min_len=12)
+    require_review_string(payload, "user_intent_alignment", quality_failures)
+    blocking = verdict in {"concern", "block"}
+    require_review_string_list(payload, "top_risks", quality_failures, required_when_blocking=blocking)
+    require_review_string_list(payload, "missing_evidence", quality_failures, required_when_blocking=blocking)
+    anti_loop_signal = payload.get("anti_loop_signal")
+    if not isinstance(anti_loop_signal, dict):
+        quality_failures.append("review.anti_loop_signal must be an object")
+    else:
+        if not isinstance(anti_loop_signal.get("present"), bool):
+            quality_failures.append("review.anti_loop_signal.present must be boolean")
+        reason = anti_loop_signal.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            quality_failures.append("review.anti_loop_signal.reason must be a non-empty string")
+        elif len(reason.strip()) < 8:
+            quality_failures.append("review.anti_loop_signal.reason must be at least 8 characters")
+        elif review_text_has_placeholder(reason):
+            quality_failures.append("review.anti_loop_signal.reason contains placeholder text")
+    if quality_failures:
+        raise SystemExit("; ".join(quality_failures))
 
 
 def validate_capability_status(path: pathlib.Path) -> None:
@@ -506,8 +571,16 @@ def valid_executed_check_receipt(raw: str, base_dir: pathlib.Path) -> tuple[bool
             return False, f"receipt.{key} must be non-empty: {raw}"
     if not isinstance(payload.get("exit_code"), int):
         return False, f"receipt.exit_code must be an integer: {raw}"
-    if payload.get("exit_code") != 0:
-        return False, f"receipt.exit_code must be 0: {raw}"
+    exit_code = payload.get("exit_code")
+    if exit_code != 0:
+        expected_exit_code = payload.get("expected_exit_code")
+        expected_negative_ok = (
+            isinstance(expected_exit_code, int)
+            and exit_code == expected_exit_code
+            and payload.get("ok") is True
+        )
+        if not expected_negative_ok:
+            return False, f"receipt.exit_code must be 0 or match expected_exit_code with ok=true: {raw}"
     return True, ""
 
 
@@ -1044,6 +1117,7 @@ def cmd_check(_: argparse.Namespace) -> int:
         ROOT / "examples" / "prism-concern-resolution.claude-pass.json",
         ROOT / "examples" / "prism-concern-resolution.kimi-followup-pass.json",
         ROOT / "examples" / "prism-concern-resolution.kimi-followup-concern.json",
+        ROOT / "examples" / "prism-review.invalid-placeholder.json",
         ROOT / "examples" / "prism-concern-resolution.followup-request.json",
         ROOT / "examples" / "prism-concern-resolution.valid-accept.json",
         ROOT / "examples" / "prism-resolution-check.receipt.json",
@@ -1074,6 +1148,20 @@ def cmd_check(_: argparse.Namespace) -> int:
     validate_review(ROOT / "examples" / "prism-concern-resolution.claude-pass.json")
     validate_review(ROOT / "examples" / "prism-concern-resolution.kimi-followup-pass.json")
     validate_review(ROOT / "examples" / "prism-concern-resolution.kimi-followup-concern.json")
+    try:
+        validate_review(ROOT / "examples" / "prism-review.invalid-placeholder.json")
+    except SystemExit as exc:
+        if "placeholder text" not in str(exc):
+            raise SystemExit(f"invalid placeholder review failed for the wrong reason: {exc}") from exc
+    else:
+        raise SystemExit("invalid placeholder review should fail")
+    try:
+        validate_review(ROOT / "examples" / "prism-review.invalid-too-short.json")
+    except SystemExit as exc:
+        if "at least" not in str(exc):
+            raise SystemExit(f"invalid too-short review failed for the wrong reason: {exc}") from exc
+    else:
+        raise SystemExit("invalid too-short review should fail")
     validate_session_manifest(ROOT / "examples" / "prism-session.example.json")
     validate_capability_status(ROOT / "examples" / "capability-status.example.json")
     blocked_status = subprocess.run(
@@ -1974,6 +2062,7 @@ def run_resolution_self_check() -> list[str]:
     failures: list[str] = []
     good_cases = [
         "prism-concern-resolution.valid-accept.json",
+        "prism-concern-resolution.valid-accept-negative-receipt.json",
         "prism-concern-resolution.valid-reject.json",
         "prism-concern-resolution.valid-escalate.json",
     ]

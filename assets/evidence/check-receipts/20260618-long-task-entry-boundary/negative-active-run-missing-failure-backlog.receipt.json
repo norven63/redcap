@@ -1,0 +1,143 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "long-task",
+    "check",
+    "--packet",
+    "/tmp/redcap-long-task-entry-boundary-receipts/negative-active-run-missing-failure-backlog.fixture.json"
+  ],
+  "command": "runtime/bin/redcap long-task check --packet /tmp/redcap-long-task-entry-boundary-receipts/negative-active-run-missing-failure-backlog.fixture.json",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "duration_seconds": 0.041,
+  "executed_at": "2026-06-17T18:35:38.831970+00:00",
+  "executor": "codex",
+  "exit_code": 1,
+  "expected_exit_code": 1,
+  "fixture_payload": {
+    "activation": {
+      "default_state": "off",
+      "mode": "enabled",
+      "risk_level": "medium",
+      "thresholds": {
+        "cross_workspace_or_runtime_boundary_change": {
+          "min_independent_boundaries": 2
+        },
+        "multi_iteration_failure_repair": {
+          "min_consecutive_failures": 3
+        }
+      },
+      "triggers": [
+        "user_explicit_long_run",
+        "redcap_self_development_medium_or_higher",
+        "multi_iteration_failure_repair"
+      ]
+    },
+    "capability_coverage": {
+      "claim_scope": "本文件只是长任务治理策略模板；它不能单独声明长任务运行完成，也不能声明 RedCap 完整复活。",
+      "completion_claim_allowed": false,
+      "required_layers": [
+        "active_run_ledger",
+        "aggregate_check_integration",
+        "completion_boundary_guard",
+        "contract_validation",
+        "failure_backlog",
+        "prism_review_resolution",
+        "stable_evidence_policy",
+        "task_entry_decision"
+      ]
+    },
+    "codex_goal_policy": {
+      "arbitration_required_within_iterations": 1,
+      "blocked_equals_redcap_failure": false,
+      "blocked_meaning": "Codex 目标 blocked 是外部目标工具状态；它说明该目标不能继续作为活跃父任务自动推进，但不自动等于 RedCap 工程验收失败。",
+      "blocks_new_redcap_task": false,
+      "internal_contract_may_override_external_goal": false,
+      "must_clear_before_new_task": false
+    },
+    "contract_kind": "active_run",
+    "iteration_ledger": [
+      {
+        "action_evidence": [
+          "runtime/bin/redcap long-task check --packet fixture"
+        ],
+        "auto_rerun_allowed": false,
+        "blocker_signature": "missing-backlog",
+        "evidence_signature": "evidence-signature-fixture",
+        "iteration_id": "round-1",
+        "objective_delta": "验证 active_run 缺少 failure_backlog 时必须失败。",
+        "source_signature": "source-signature-fixture",
+        "status": "failed"
+      }
+    ],
+    "loop_policy": {
+      "blocked_goal_requires_cap_arbitration": true,
+      "human_decision_stops_automation": true,
+      "max_iterations_before_cap_arbitration": 5,
+      "no_blind_rerun_without_source_or_evidence_delta": true,
+      "repeated_blocker_threshold": 2,
+      "require_action_evidence": true,
+      "require_failure_backlog": true,
+      "require_objective_delta": true,
+      "structural_stop_threshold": 2
+    },
+    "non_claimed_boundaries": [
+      "本合同不直接执行任务循环，只判断是否允许进入长任务模式",
+      "本合同不替代 E2E、Loom、生命周期包或最终棱镜复核",
+      "本合同不把 Codex 目标 blocked 擅自改写成完成"
+    ],
+    "parent_objective": "为 RedCap 复活后的复杂自动化任务提供可持续推进、可停止、可仲裁的父目标循环治理。",
+    "risk_rating_examples": [
+      {
+        "expected_mode": "fast_path",
+        "reason": "这是解释型任务，没有跨角色、发布、E2E 或多轮失败修复。",
+        "task": "回答 Codex 目标 blocked 的语义，不修改文件。"
+      },
+      {
+        "expected_mode": "fast_path",
+        "reason": "一步小修且可局部验证，不需要父目标循环。",
+        "task": "修复一个低风险错别字并运行单个检查。"
+      },
+      {
+        "expected_mode": "enabled",
+        "reason": "达到多轮同类失败阈值，需要父目标、失败账本和防盲重跑。",
+        "task": "连续三轮 E2E 暴露同类结构性失败。"
+      },
+      {
+        "expected_mode": "enabled",
+        "reason": "中高风险自开发会改变任务治理能力，必须启用长任务合同。",
+        "task": "修改 RedCap 自开发门禁和生命周期规则。"
+      },
+      {
+        "expected_mode": "enabled",
+        "reason": "涉及两个以上独立边界，必须记录父目标和回滚停止条件。",
+        "task": "同时影响发布包、项目 .redcap 运行时和源仓库边界。"
+      }
+    ],
+    "schema_id": "redcap-long-task-contract",
+    "stop_conditions": {
+      "blocked": [
+        "同一结构性阻塞连续重复且没有源码或证据变化",
+        "收敛诊断设置 auto_rerun_allowed=false"
+      ],
+      "human_decision": [
+        "涉及产品范围、外部账号、密钥、发布、破坏性操作或用户价值取舍"
+      ],
+      "success": [
+        "终止验收证据通过，且完成边界声明完整"
+      ]
+    },
+    "terminal_acceptance": [
+      "每一轮都有可核验的动作证据和父目标推进差量",
+      "成功、受阻、需要人类决策三类停止条件均可机器检查",
+      "没有源码或证据变化时，不允许在结构性停止后盲目重跑"
+    ]
+  },
+  "name": "negative-active-run-missing-failure-backlog",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "started_at": "2026-06-17T18:35:38.790714+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "{\n  \"schema_id\": \"redcap-long-task-contract-check-result\",\n  \"ok\": false,\n  \"path\": \"/private/tmp/redcap-long-task-entry-boundary-receipts/negative-active-run-missing-failure-backlog.fixture.json\",\n  \"contract_kind\": \"active_run\",\n  \"mode\": \"enabled\",\n  \"derived_capability_layers\": [],\n  \"missing_capability_layers\": [],\n  \"failures\": [\n    \"active_run requires failure_backlog object\"\n  ]\n}\n",
+  "stdout_sha256": "650adda042f3065c1f83c3fca004a8b0cd4051ba394b789433113ca7a8bcd15a"
+}

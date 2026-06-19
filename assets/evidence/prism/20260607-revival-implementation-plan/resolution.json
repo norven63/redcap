@@ -1,0 +1,53 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260607-revival-implementation-plan",
+  "merge_path": "assets/evidence/prism/20260607-revival-implementation-plan/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260607-revival-implementation-plan/kimi.review.json",
+    "assets/evidence/prism/20260607-revival-implementation-plan/claude-code.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该顾虑成立：队列或检查器不能替代复活本体。RedCap 现在已经具备面向用户的状态命令、复活命令、可执行复活队列，以及验证用户可见行为的正式可用性检查。",
+      "implementation_evidence": [
+        "runtime/core/status_surface.py",
+        "runtime/core/revival_queue.py",
+        "runtime/core/formal_usable_check.py",
+        "runtime/core/temporary_usable_check.py",
+        "runtime/bin/redcap"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260607-revival-implementation-plan/formal-usable-check.receipt.json",
+        "assets/evidence/check-receipts/20260607-revival-implementation-plan/redcap-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该顾虑成立：此前状态里合同活动太多、可执行行为太少。RedCap 现在已经补入运行时模块、扫描结论防误报自检覆盖，以及全量检查验证。",
+      "implementation_evidence": [
+        "runtime/core/revival_queue.py",
+        "runtime/core/formal_usable_check.py",
+        "runtime/core/scan_conclusion_guard.py",
+        "runtime/core/status_surface.py",
+        "runtime/core/temporary_usable_check.py"
+      ],
+      "verification_evidence": [
+        "assets/evidence/check-receipts/20260607-revival-implementation-plan/formal-usable-check.receipt.json",
+        "assets/evidence/check-receipts/20260607-revival-implementation-plan/redcap-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两个棱镜顾虑均已接受，并通过可执行运行时代码与本轮验证完成处理。"
+  }
+}

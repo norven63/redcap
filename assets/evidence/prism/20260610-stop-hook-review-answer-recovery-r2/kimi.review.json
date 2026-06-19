@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "high",
+  "reality_delta": "The submission is a design proposal and diagnostic framing, not an executed fix. No evidence demonstrates that final_claim_guard.py, terminal_goal_guard.py, or codex-hook.py have been modified, and the user explicitly demanded the behavior be fixed now. The 'planned repair' risks becoming a documentation-only artifact that describes the correct solution without changing the runtime behavior that triggers the false-positive loop.",
+  "main_concern": "The main AI is likely to answer the four design questions with a convincing explanation of intent discrimination and targeted exceptions, satisfy the 'design review' framing, and stop there—leaving the actual guard code and recovery wording untouched. This would repeat the exact failure mode the user is complaining about: a smart-sounding rationale that does not alter the incoherent recovery loop in production.",
+  "top_risks": [
+    "The narrow rule is never committed to code; the guards remain unchanged and the false-positive loop continues for the next review answer.",
+    "codex-hook.py recovery wording is not updated, so even if guards are later relaxed, the recovery mechanism will keep rewriting review-only answers into completion assertions.",
+    "The exception is implemented without regression fixtures, so future keyword or context tweaks silently reintroduce false positives or accidentally bypass real unsupported completion claims."
+  ],
+  "missing_evidence": [
+    "Concrete code diff or logic patch for final_claim_guard.py showing exactly how review/assessment/optimization-listing intent suppresses the completion marker without relying on broad keyword negation.",
+    "At least two regression test fixtures: one asserting the RedCap optimization-needs list passes the hook without distortion, and one asserting a real unsupported '已完成/complete' claim is still blocked.",
+    "The actual codex-hook.py recovery prompt template to verify the root cause (rewriting review answers to satisfy completion requirements) is addressed in the same changeset."
+  ],
+  "minimum_fix": "Deliver a single changeset containing: (1) a targeted intent discriminator in final_claim_guard.py that sets completion_claim.present=false when task metadata or context flags indicate review/assessment/audit/optimization-listing mode; (2) an update to codex-hook.py recovery wording that stops demanding completion markers or status-report rewrites for review-only answers; (3) regression fixtures proving both the false-positive is eliminated and true-positive completion claims remain blocked.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "If the answer vocabulary signals review/assessment (needs, risks, open issues, next priorities) and the task context is non-terminal, the guard must return a no-match signal rather than a completion marker, and recovery must accept the answer as-is without rewrite."
+  },
+  "user_intent_alignment": "The stated design direction correctly identifies the problem, but the user asked Norven to fix the behavior now. A plan-level review without committed code changes drifts from 'fix it now' into 'let's discuss how to fix it,' which is the prohibited documentation-only outcome."
+}

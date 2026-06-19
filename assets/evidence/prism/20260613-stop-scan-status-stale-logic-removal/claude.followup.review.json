@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "The changed_reality entries provide a detailed and internally consistent description of changes to two Python files. However, I cannot verify any of these changes against actual file contents — the review relies entirely on the main AI's self-report. More critically, the changed_reality list only claims modifications to codex-hook.py and scan_conclusion_guard.py, but the git status shows modifications to contract files (codex-hooks.template.json, hook-coverage.json, enforcement-matrix.json), dispatch scripts (prism-dispatch, hook-coverage-check), and sibling guards (layout_guard.py, terminal_goal_guard.py). None of these files are accounted for in the migration claim. Additionally, an untracked advisory_stop.py exists that may introduce new status-block injection paths. The claim may be true for the two Python files it describes, but the migration's blast radius appears larger than acknowledged.",
+  "main_concern": "The migration claim only addresses changes to codex-hook.py and scan_conclusion_guard.py, but the git status shows at least 7 other modified files in the same subsystem (contracts, dispatch, sibling guards). None of these are claimed as updated for the classification rename or status-block removal. If enforcement-matrix.json or hook-coverage.json still reference 'unsupported-scan-conclusion' or 'expected_status_block', the old behavior can re-enter through configuration-driven paths even after code changes. The untracked advisory_stop.py is a wildcard — it may introduce a new path that bypasses the fix entirely.",
+  "top_risks": [
+    "Contract files (codex-hooks.template.json, hook-coverage.json, enforcement-matrix.json) still reference 'unsupported-scan-conclusion' or 'expected_status_block', allowing old behavior through configuration-driven dispatch paths",
+    "Untracked advisory_stop.py introduces a new status-block injection path that bypasses the codex-hook.py and scan_conclusion_guard.py fixes entirely",
+    "The expected_status_block() function, if it shares module-level state with the guard result dict, could leak self-check output into production Stop responses through Python's mutable default arguments or module globals"
+  ],
+  "missing_evidence": [
+    "File contents of all modified contract/dispatch files confirming they were updated to use 'scan-conclusion-anchor' and drop expected_status_block references",
+    "Contents of untracked advisory_stop.py confirming it does not re-introduce status-block injection or old classification references",
+    "A repository-wide grep confirming zero remaining occurrences of 'unsupported-scan-conclusion', the old recovery text strings, and 'expected_status_block' in any executable path (not just the two claimed files)"
+  ],
+  "minimum_fix": "(1) Grep the entire repo for 'unsupported-scan-conclusion', the old recovery boilerplate strings, and 'expected_status_block' — verify zero hits in executable paths. (2) Read advisory_stop.py and confirm it does not reference status blocks or old classifications. (3) Verify that expected_status_block() does not share module-level mutable state with the result dict returned to Stop — if it does, add a defensive copy or isolate the self-check path with a distinct module.",
+  "anti_loop_signal": {
+    "present": false,
+    "reason": "No anti-loop signal provided."
+  },
+  "user_intent_alignment": "aligned"
+}

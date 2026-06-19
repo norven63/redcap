@@ -1,0 +1,23 @@
+{
+  "provider": "kimi",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "No verifiable system change is demonstrated in the prompt. The claim that Kimi smoke tests returned quickly and that the dispatcher command builder now uses prompt mode/stream-json/--session is unsupported by the supplied evidence. The only concrete evidence is `kimi --help` output and a dispatcher self-check that passes *before* the live Kimi smoke, so the critical live invocation and session-handle capture have not been shown to succeed.",
+  "main_concern": "The review request treats configuration intent and CLI capability as completed verification, but it does not show that the dispatcher actually invoked Kimi successfully or captured a session handle. 'We documented the command shape' is being used as a proxy for 'the dispatcher works'.",
+  "top_risks": [
+    "The dispatcher may still build a command that times out because the live smoke result is missing, even though the help text and self-check pass.",
+    "Session-handle parsing may not match the actual stream-json schema; no evidence shows the handle is extracted or reused.",
+    "The `prism-dispatch --self-check` may not exercise the full provider path, so passing it does not rule out timeout at the real invoke boundary."
+  ],
+  "missing_evidence": [
+    "Output and timing of the actual Kimi text-mode and stream-json smoke invocations (not just the claim that they returned quickly).",
+    "Dispatcher command builder code or generated command string showing prompt mode, stream-json, --session, and handle capture logic.",
+    "A live end-to-end trace of Prism -> dispatcher -> Kimi returning a response within the timeout window."
+  ],
+  "minimum_fix": "Run the actual dispatcher Kimi smoke from `runtime/bin/redcap prism-dispatch` with verbose logging/timing, capture the full Kimi CLI stdout (including stream-json session handle if any), and compare it against the generated command in the dispatcher source. Do not close the diagnostic until the live invocation completes successfully within the allowed timeout.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "If the next response repeats the same CLI help summary or self-check result without adding a live invocation trace, treat it as no progress and demand the missing trace."
+  },
+  "user_intent_alignment": "Medium-low. Norven asked whether RedCap invokes Kimi incorrectly. The prompt answers with a plausible command-shape theory but does not yet verify whether RedCap actually invokes Kimi incorrectly or not."
+}

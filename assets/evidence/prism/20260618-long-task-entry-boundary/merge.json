@@ -1,0 +1,70 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code",
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "high"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "该方案可能被当作完成本身。它新增了多个‘防误报’概念层，但防误报机制自身如果仍只是文档、字段或检查清单，Cap 下一次仍可能把‘coverage_guard 已通过’再次误报为‘长任务能力完成’，形成同构的局部完成→整体完成谬误。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "contract_kind 字段分离存在标签化风险：提案定义了 policy_template 与 active_run 的语义差异，但未具体说明 long_task_contract.py 校验器中如何根据 contract_kind 执行不同的校验规则。当前校验器允许空 iteration_ledger 通过，若仅添加字段而不修改校验逻辑，active_run 设值后空账本仍可冒充真实运行完成——这会将问题从\"无区分\"变成\"有区分但无强制\"，本质上没有根治。"
+    },
+    {
+      "provider": "kimi",
+      "concern": "本轮评审请求把‘命令已运行’当作证据，但缺少输出。没有输出就无法区分：是真正的运行时检查器在阻断空账本 / 自评覆盖，还是 Cap 生成了一份自洽的状态报告。这正是上一轮要阻断的“局部完成误报整体完成”的同构风险。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "验证证据全部为\"证明检查器存在\"的正向测试，缺失上轮最低修复项要求的反向测试：传入 active_run + empty_ledger 组合并证明被拒绝。当前 long-task check --packet 只验证了 policy_template 合同通过（正确行为），但未验证 active_run + 无效数据的拒绝行为。这意味着最核心的防误报机制——区分空账本模板与真实运行——仍未得到独立验证。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在认可方案之前，必须至少交付：(1) 可执行的 long-task decide 命令及其 fast_path/enabled 判定测试；(2) contract_kind 字段在 schema 与检查器中的强制校验，证明 policy_template 无法被当作 active_run 完成证据；(3) capability_coverage_guard 的自动化检查器，completed_layers 必须由工具根据源码、命令、证据目录真实存在性推导，而非由任务执行者自评。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在 long_task_contract.py 中实现 contract_kind 感知的强制校验：当 contract_kind=active_run 时，iteration_ledger 必须非空、failure_backlog 必须存在、evidence_signature 必须有效，并提供反向测试用例证明 empty_ledger + active_run 组合被拒绝（而非通过）。这是整个方案中最核心的防误报机制，如果只加字段不加逻辑，其他层都是空中楼阁。"
+    },
+    {
+      "provider": "kimi",
+      "minimum_fix": "主 AI 必须重新运行所有列出的检查并捕获完整输出，附加 runtime/core/long_task_contract.py 与 assets/evidence/.gitignore 的 diff，以及至少一个 active_run 空账本/缺 failure_backlog 被明确拒绝的失败用例。只有看到这些，才能判断实现逻辑是否真正落地。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "创建并运行一个明确的失败测试用例：构造 contract_kind=active_run、iteration_ledger=[]、failure_backlog=[] 的合同文件，传入 long-task check，验证返回非零退出码且错误信息明确指示 active_run 不允许空账本。将此失败用例的输出作为 check-receipt 留存，并在后续报告中有据可查。这直接闭合上轮已确认的最低修复项。"
+    }
+  ],
+  "anti_loop_detected": true
+}

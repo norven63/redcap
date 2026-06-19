@@ -1,0 +1,23 @@
+{
+  "provider": "claude-code",
+  "verdict": "concern",
+  "confidence": "medium",
+  "reality_delta": "Implementation adds start/record lifecycle management and evidence gating, but long-task completion boundary detection (how the system determines task-done vs still-in-progress) remains unspecified. record tracks iterations without a corresponding complete/finish/close command, leaving the original \"reporting before done\" problem structurally unresolved at the lifecycle exit boundary. Evidence gating is syntax-level (bytes, char diversity) without semantic verification of task relevance.",
+  "main_concern": "Long-task lifecycle is asymmetric: start creates active_run, record appends iterations, but there is no explicit complete/finish/close command. Without a completion signal, the system cannot distinguish \"task is still running with no recent records\" from \"task is actually done.\" This is the same class of boundary error the task claims to fix — premature completion reporting — now shifted from entry boundary to exit boundary. Upstream E2E patrol cannot determine via record presence alone whether a long task is active or completed.",
+  "top_risks": [
+    "Completion boundary false-positive: without long-task complete command, any downstream check may treat a paused/silent task as finished, repeating the original error at the exit boundary.",
+    "Evidence gating bypass via adversarial payload: 80 bytes of diverse visible characters can be trivially generated without representing real task progress — syntax gates without semantic verification.",
+    "Capability scan regression: switching from hardcoded directories to generic scanning risks silent capability loss if scan logic misses valid prism review directories due to path resolution or format changes."
+  ],
+  "missing_evidence": [
+    "No long-task complete/finish/close command or documented completion detection mechanism.",
+    "No adversarial test of evidence gating — unverified whether garbage payloads with diverse characters pass the gate.",
+    "No comprehensive comparison between old hardcoded and new generic prism scan to confirm zero capability loss."
+  ],
+  "minimum_fix": "Add a long-task complete or finish command that explicitly transitions active_run to a terminal state with mandatory completion evidence; or document that completion detection is handled by an external mechanism (timeout, E2E convergence) and record is purely iterative accounting. Also add adversarial test cases for evidence gating.",
+  "anti_loop_signal": {
+    "present": true,
+    "reason": "Review focuses on lifecycle asymmetry and evidence gating depth rather than re-litigating directory scan changes or record-not-executing boundary — those are explicitly acknowledged constraints. This is a new structural finding, not a re-loop of prior rounds."
+  },
+  "user_intent_alignment": "aligned"
+}

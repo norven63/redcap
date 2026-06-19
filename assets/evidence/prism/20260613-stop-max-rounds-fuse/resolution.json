@@ -1,0 +1,51 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260613-stop-max-rounds-fuse",
+  "merge_path": "assets/evidence/prism/20260613-stop-max-rounds-fuse/merge.json",
+  "reviews": [
+    "assets/evidence/prism/20260613-stop-max-rounds-fuse/claude-code.review.json",
+    "assets/evidence/prism/20260613-stop-max-rounds-fuse/kimi.review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "采纳。熔断放行不能被误读为问题已解决，所以运行时现在在最大轮次耗尽时输出 continue=true，并同时写入 fuse_triggered、fuse_reason 和 resolution_status=released_not_resolved。",
+      "implementation_evidence": [
+        "runtime/host-adapters/codex/codex-hook.py",
+        "runtime/core/advisory_stop.py",
+        "assets/contracts/advisory-stop.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260613-stop-max-rounds-fuse/receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260613-stop-max-rounds-fuse/receipts/codex-hook-self-check.receipt.json",
+        "assets/evidence/prism/20260613-stop-max-rounds-fuse/receipts/advisory-stop-check.receipt.json"
+      ]
+    },
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "采纳。实现没有把问题静默吞掉，而是将第三次同轮建议变成带 released_not_resolved 状态的熔断释放；自检覆盖 block、block、continue-with-fuse-marker 的连续回放。",
+      "implementation_evidence": [
+        "runtime/host-adapters/codex/codex-hook.py",
+        "runtime/core/advisory_stop.py",
+        "assets/contracts/advisory-stop.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260613-stop-max-rounds-fuse/receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260613-stop-max-rounds-fuse/receipts/codex-hook-self-check.receipt.json",
+        "assets/evidence/prism/20260613-stop-max-rounds-fuse/receipts/advisory-stop-check.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两方 concern 均已采纳并落到运行时代码、契约和回归检查中。"
+  }
+}

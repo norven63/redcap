@@ -1,0 +1,12 @@
+{
+  "command": "runtime/bin/redcap revival-followthrough self-check",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "executed_at": "2026-06-14T20:25:03Z",
+  "executor": "cap",
+  "exit_code": 0,
+  "schema_id": "redcap-executed-check-receipt",
+  "stderr_path": "assets/evidence/check-receipts/20260615-revival-followthrough/revival-followthrough-self-check.stderr.txt",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_path": "assets/evidence/check-receipts/20260615-revival-followthrough/revival-followthrough-self-check.stdout.txt",
+  "stdout_sha256": "b7dd78d0bebc7d874a9a65be2e496411b3d92d095c3cd05b8cc4f3e1de85492b"
+}

@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "runtime/bin/redcap",
+    "complete-revival-e2e",
+    "self-check",
+    "--skip-carrier-probe"
+  ],
+  "command": "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+  "cwd": "/Users/norven/workspace/AI Era/redcap",
+  "duration_seconds": 2.012,
+  "executed_at": "2026-06-18T07:04:01.099091+00:00",
+  "executor": "codex",
+  "exit_code": 0,
+  "expected_exit_code": 0,
+  "name": "complete-revival-e2e-self-check-skip-carrier",
+  "ok": true,
+  "schema_id": "redcap-executed-check-receipt",
+  "started_at": "2026-06-18T07:03:59.087347+00:00",
+  "stderr": "",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_AI_E2E_SELF_CHECK_OK\n",
+  "stdout_sha256": "ab3ecfc7e9d5e234f53960b67e120a3be26c99846425613bd17cf9337d0054a2"
+}
