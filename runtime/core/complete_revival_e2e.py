@@ -126,6 +126,8 @@ DEVELOPER_CRITICAL_CATEGORIES = {
 }
 CARRIER_PROBE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CARRIER_PROBE_MAX_ATTEMPTS", "3"))
 TEST_INJECT_CARRIER_MARKER_CLEANUP_FAILURE = os.environ.get("REDCAP_TEST_INJECT_CARRIER_MARKER_CLEANUP_FAILURE", "0") == "1"
+TEST_MODE_ENV = "REDCAP_TEST_MODE"
+TEST_INJECT_LAYERED_PREFLIGHT_FAILURE_ENV = "REDCAP_TEST_INJECT_LAYERED_PREFLIGHT_FAILURE"
 CODEX_INTERACTIVE_CONFIRM_PROMPT = "Continue anyway? [y/N]"
 BROWSER_ENTRYPOINT_CANDIDATES = [
     "index.html",
@@ -1100,6 +1102,8 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
     for required in [
         "runtime/bin/redcap complete-revival-e2e design-check",
         "runtime/bin/redcap complete-revival-e2e prepare --direction <text> --work-root <external-dir>",
+        "runtime/bin/redcap complete-revival-e2e preflight --work-root <external-dir>",
+        "runtime/bin/redcap complete-revival-e2e preflight-regression-test --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e self-check",
@@ -1156,6 +1160,34 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         for required_fragment in ["blocked_before_project_run=true", "auto_rerun_allowed=false", "禁止启动 Loom 角色"]:
             if required_fragment not in failure_behavior:
                 failures.append(f"codex_cli_hook_carrier_preflight.failure_behavior 缺少：{required_fragment}")
+    layered_preflight = contract.get("redcap_layered_preflight")
+    if not isinstance(layered_preflight, dict):
+        failures.append("E2E 合同缺少 redcap_layered_preflight 硬入口")
+    else:
+        if layered_preflight.get("status") != "hard_entry_gate":
+            failures.append("redcap_layered_preflight.status 必须为 hard_entry_gate")
+        required_checks = layered_preflight.get("required_checks")
+        expected_checks = [
+            "loom-runtime-self-check",
+            "self-purification-self-check",
+            "knowledge-search-self-purification",
+            "knowledge-search-loom",
+            "project-install-release-check",
+        ]
+        if not isinstance(required_checks, list):
+            failures.append("redcap_layered_preflight.required_checks 必须是列表")
+        else:
+            missing_checks = [check for check in expected_checks if check not in required_checks]
+            if missing_checks:
+                failures.append(f"redcap_layered_preflight.required_checks 缺少：{missing_checks}")
+        must_run_before = str(layered_preflight.get("must_run_before") or "")
+        for required_fragment in ["carrier-probe", 'env["REDCAP_E2E_WORKER"]', "Loom 角色"]:
+            if required_fragment not in must_run_before:
+                failures.append(f"redcap_layered_preflight.must_run_before 缺少：{required_fragment}")
+        failure_behavior = str(layered_preflight.get("failure_behavior") or "")
+        for required_fragment in ["blocked_before_project_run=true", "auto_rerun_allowed=false", "禁止启动 Loom 角色"]:
+            if required_fragment not in failure_behavior:
+                failures.append(f"redcap_layered_preflight.failure_behavior 缺少：{required_fragment}")
     phases = [item.get("phase") for item in contract.get("workflow_template", []) if isinstance(item, dict)]
     for phase in ["direction_intake", "architecture_design", "implementation", "quality_assurance", "review_and_acceptance"]:
         if phase not in phases:
@@ -1166,6 +1198,7 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         "fixed-scenario-cannot-pass-design-check",
         "redcap-root-pollution-cannot-pass",
         "source-workspace-mutation-cannot-pass",
+        "layered-preflight-failure-cannot-start-project-run",
         "hook-carrier-missing-cannot-pass",
         "report-only-cannot-pass",
     ]:
@@ -6273,6 +6306,7 @@ def build_e2e_long_task_active_run(
             "closed": [] if open_items else [{"id": f"e2e-round-{iteration}-entry", "summary": closed_summary}],
         },
         "lifecycle_state": lifecycle_state,
+        "auto_rerun_allowed": auto_rerun_allowed,
         "completion_boundary": terminal_boundary,
         "iteration_ledger": [
             {
@@ -8109,6 +8143,83 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
     return probe
 
 
+def run_layered_preflight(work_root: pathlib.Path | None = None) -> dict[str, Any]:
+    checks: list[dict[str, Any]] = []
+    commands = [
+        {
+            "id": "loom-runtime-self-check",
+            "purpose": "确认 Loom 角色会话运行机可校验项目级角色身份、会话接续和上下文完整性。",
+            "argv": [str(REDCAP), "loom-runtime", "self-check"],
+        },
+        {
+            "id": "self-purification-self-check",
+            "purpose": "确认自我净化闭环具备任务后候选识别、晋升判断、公共/私有边界和证据输出能力。",
+            "argv": [str(REDCAP), "self-purification", "self-check"],
+        },
+        {
+            "id": "knowledge-search-self-purification",
+            "purpose": "确认 E2E 前能主动召回自我净化相关沉淀，避免能力尘封。",
+            "argv": [str(REDCAP), "knowledge-gateway", "search", "self-purification", "--require-hit"],
+        },
+        {
+            "id": "knowledge-search-loom",
+            "purpose": "确认 E2E 前能主动召回 Loom 角色工作流相关沉淀。",
+            "argv": [str(REDCAP), "knowledge-gateway", "search", "loom", "--require-hit"],
+        },
+        {
+            "id": "project-install-release-check",
+            "purpose": "确认发布包能解压到外部项目并完成项目级 .redcap 初始化。",
+            "argv": [str(REDCAP), "project-install", "release-check"],
+        },
+    ]
+    for spec in commands:
+        injected_failure = (
+            os.environ.get(TEST_MODE_ENV) == "1"
+            and os.environ.get(TEST_INJECT_LAYERED_PREFLIGHT_FAILURE_ENV) == spec["id"]
+        )
+        if injected_failure:
+            result = {
+                "argv": spec["argv"],
+                "cwd": str(REPO_ROOT),
+                "exit_code": 97,
+                "ok": False,
+                "timed_out": False,
+                "timeout_seconds": 240,
+                "started_at": iso_now(),
+                "finished_at": iso_now(),
+                "stdout": "",
+                "stderr": f"injected layered preflight failure: {spec['id']}",
+            }
+        else:
+            result = run_command(spec["argv"], timeout_seconds=240)
+        checks.append({
+            "id": spec["id"],
+            "purpose": spec["purpose"],
+            "ok": result.get("ok") is True,
+            "test_injection": injected_failure,
+            "command": command_receipt(result),
+        })
+    failures = [
+        f"{check['id']} 未通过"
+        for check in checks
+        if check.get("ok") is not True
+    ]
+    result = {
+        "schema_id": "redcap-ai-e2e-layered-preflight",
+        "ok": not failures,
+        "checked_at": iso_now(),
+        "must_run_before": "Codex CLI carrier-probe、REDCAP_E2E_WORKER worker 启动、任一 Loom 角色执行之前。",
+        "blocked_before_project_run": bool(failures),
+        "auto_rerun_allowed": False if failures else True,
+        "checks": checks,
+        "failures": failures,
+    }
+    if work_root is not None:
+        work_root.mkdir(parents=True, exist_ok=True)
+        write_json(work_root / "redcap-e2e-layered-preflight.json", result)
+    return result
+
+
 def run_e2e(direction: str, work_root: pathlib.Path, timeout_seconds: int = 900) -> dict[str, Any]:
     provider_readiness = provider_readiness_check()
     if provider_readiness.get("ok") is not True:
@@ -8278,6 +8389,38 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
             "long_task_active_run": active_run,
             "failures": [str(rerun_guard.get("reason"))],
         }
+    layered_preflight = run_layered_preflight(work_root)
+    if layered_preflight.get("ok") is not True:
+        active_run = write_e2e_long_task_active_run(
+            work_root,
+            direction=direction,
+            iteration=next_iteration,
+            status="blocked",
+            action_evidence=[
+                "runtime/bin/redcap complete-revival-e2e preflight",
+                str(work_root / "redcap-e2e-layered-preflight.json"),
+            ],
+            objective_delta="E2E 在启动 Codex CLI 承载探针和 Loom 角色前验证 RedCap 自身的 Loom、自我净化、知识召回和项目级发布安装能力；当前分层前置检查失败，继续执行会把目标项目产物误当成 RedCap 能力成熟。",
+            blocker_signature="layered-preflight:" + ",".join(str(item) for item in layered_preflight.get("failures", [])),
+            auto_rerun_allowed=False,
+            failures=[str(item) for item in layered_preflight.get("failures", [])],
+        )
+        append_jsonl(patrol_ledger_path(work_root), {
+            "event": "e2e_iteration_blocked",
+            "recorded_at": iso_now(),
+            "reason": "RedCap E2E 分层前置检查失败",
+            "layered_preflight": layered_preflight,
+            "long_task_active_run": active_run,
+        })
+        return {
+            "schema_id": "redcap-ai-e2e-run-result",
+            "ok": False,
+            "ready_for_engineering_use": False,
+            "blocked_before_project_run": True,
+            "layered_preflight": layered_preflight,
+            "long_task_active_run": active_run,
+            "failures": ["RedCap E2E 分层前置检查失败，不能启动 Loom 角色执行。", *layered_preflight.get("failures", [])],
+        }
     carrier = carrier_probe(work_root / "carrier-preflight", min(max(timeout_seconds, 120), 240))
     write_json(work_root / "redcap-e2e-carrier-preflight.json", carrier)
     if carrier.get("ok") is not True:
@@ -8328,9 +8471,10 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
             str(patrol_ledger_path(work_root)),
             str(work_root / "redcap-e2e-patrol-iteration-guard.json"),
             str(work_root / "redcap-e2e-convergence-rerun-guard.json"),
+            str(work_root / "redcap-e2e-layered-preflight.json"),
             str(work_root / "redcap-e2e-carrier-preflight.json"),
         ],
-        objective_delta="E2E 巡检入口已进入真实运行，父目标循环、轮次守卫、收敛守卫和 Codex CLI hook 承载预检均已产生可校验证据。",
+        objective_delta="E2E 巡检入口已进入真实运行，父目标循环、轮次守卫、收敛守卫、RedCap 分层前置检查和 Codex CLI hook 承载预检均已产生可校验证据。",
         blocker_signature="none-before-worker-start",
         auto_rerun_allowed=True,
         failures=[],
@@ -8527,6 +8671,15 @@ def cmd_carrier_probe(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_preflight(args: argparse.Namespace) -> int:
+    result = run_layered_preflight(resolve_work_root(args.work_root))
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok"):
+        print("REDCAP_AI_E2E_PREFLIGHT_OK")
+        return 0
+    return 1
+
+
 def cmd_convergence_check(args: argparse.Namespace) -> int:
     evidence = pathlib.Path(args.evidence_root).expanduser().resolve()
     result = convergence_diagnosis_from_evidence(evidence)
@@ -8591,12 +8744,103 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 1
 
 
+def layered_preflight_block_failures(result: dict[str, Any], work_root: pathlib.Path) -> list[str]:
+    failures: list[str] = []
+    if result.get("ok") is True:
+        failures.append("分层前置负向运行不应通过")
+    if result.get("blocked_before_project_run") is not True:
+        failures.append("分层前置负向运行没有返回 blocked_before_project_run=true")
+    active_packet = load_optional_json(pathlib.Path(str(result.get("long_task_active_run", {}).get("packet") or "")))
+    if not isinstance(active_packet, dict):
+        failures.append("分层前置负向运行没有写入 active_run 包")
+    else:
+        if active_packet.get("lifecycle_state") != "blocked":
+            failures.append("分层前置负向运行 active_run.lifecycle_state 不是 blocked")
+        if active_packet.get("auto_rerun_allowed") is not False:
+            failures.append("分层前置负向运行 active_run.auto_rerun_allowed 不是 false")
+    if (work_root / "redcap-e2e-carrier-preflight.json").exists():
+        failures.append("分层前置失败后仍启动了 Codex CLI 承载探针")
+    if list(work_root.glob("**/role-artifacts/*.json")):
+        failures.append("分层前置失败后仍出现 Loom 角色产物")
+    return failures
+
+
+def run_layered_preflight_regression_test(work_root: pathlib.Path) -> dict[str, Any]:
+    work_root.mkdir(parents=True, exist_ok=True)
+    failures: list[str] = []
+    cases: list[dict[str, Any]] = []
+
+    normal = run_layered_preflight(work_root / "normal-pass")
+    cases.append({"id": "normal-pass", "ok": normal.get("ok") is True, "result": normal})
+    if normal.get("ok") is not True:
+        failures.append(f"正常分层前置检查未通过：{normal.get('failures')}")
+
+    saved_test_mode = os.environ.get(TEST_MODE_ENV)
+    saved_injection = os.environ.get(TEST_INJECT_LAYERED_PREFLIGHT_FAILURE_ENV)
+    try:
+        os.environ[TEST_MODE_ENV] = "1"
+        for injected_check in ["knowledge-search-loom", "self-purification-self-check"]:
+            case_root = work_root / f"negative-{injected_check}"
+            os.environ[TEST_INJECT_LAYERED_PREFLIGHT_FAILURE_ENV] = injected_check
+            result = run_e2e_harness(
+                f"自检方向：验证 {injected_check} 失败会阻断完整 E2E",
+                case_root,
+                timeout_seconds=240,
+            )
+            case_failures = layered_preflight_block_failures(result, case_root)
+            cases.append({
+                "id": f"negative-{injected_check}",
+                "ok": not case_failures,
+                "injected_check": injected_check,
+                "failures": case_failures,
+                "blocked_before_project_run": result.get("blocked_before_project_run"),
+                "carrier_preflight_exists": (case_root / "redcap-e2e-carrier-preflight.json").exists(),
+                "role_artifact_count": len(list(case_root.glob("**/role-artifacts/*.json"))),
+                "active_run": result.get("long_task_active_run"),
+            })
+            failures.extend(f"{injected_check}: {item}" for item in case_failures)
+    finally:
+        if saved_test_mode is None:
+            os.environ.pop(TEST_MODE_ENV, None)
+        else:
+            os.environ[TEST_MODE_ENV] = saved_test_mode
+        if saved_injection is None:
+            os.environ.pop(TEST_INJECT_LAYERED_PREFLIGHT_FAILURE_ENV, None)
+        else:
+            os.environ[TEST_INJECT_LAYERED_PREFLIGHT_FAILURE_ENV] = saved_injection
+
+    result = {
+        "schema_id": "redcap-e2e-layered-preflight-regression-test",
+        "ok": not failures,
+        "work_root": str(work_root),
+        "cases": cases,
+        "failures": failures,
+    }
+    write_json(work_root / "redcap-e2e-layered-preflight-regression-test.json", result)
+    return result
+
+
+def cmd_preflight_regression_test(args: argparse.Namespace) -> int:
+    result = run_layered_preflight_regression_test(resolve_work_root(args.work_root))
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok"):
+        print("REDCAP_AI_E2E_PREFLIGHT_REGRESSION_TEST_OK")
+        return 0
+    return 1
+
+
 def cmd_self_check(args: argparse.Namespace) -> int:
     failures: list[str] = []
     if validate_contract(load_json(CONTRACT)):
         failures.append("通用 E2E 合同检查失败")
     with tempfile.TemporaryDirectory(prefix="redcap-ai-e2e-self-check-") as raw:
         work_root = pathlib.Path(raw).resolve()
+        layered_preflight = run_layered_preflight(work_root / "layered-preflight-self-check")
+        if layered_preflight.get("ok") is not True:
+            failures.append(f"E2E 分层前置检查失败：{layered_preflight.get('failures')}")
+        preflight_regression = run_layered_preflight_regression_test(work_root / "layered-preflight-regression")
+        if preflight_regression.get("ok") is not True:
+            failures.append(f"E2E 分层前置回归测试失败：{preflight_regression.get('failures')}")
         missing_direction = prepare_project("", work_root / "missing")
         if missing_direction.get("ok") is True:
             failures.append("缺失 direction 的 prepare 没有失败")
@@ -9927,12 +10171,34 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             if "run_e2e_harness" not in current_source or "REDCAP_E2E_WORKER" not in current_source:
                 failures.append("E2E 自检没有覆盖 harness/worker 兄弟进程运行结构")
             harness_source = inspect.getsource(run_e2e_harness)
+            if "run_layered_preflight(work_root)" not in harness_source:
+                failures.append("E2E harness 必须在 Codex CLI 承载探针和 Loom 角色启动前运行 RedCap 分层前置检查")
             if "carrier_probe(work_root / \"carrier-preflight\"" not in harness_source:
                 failures.append("E2E harness 必须在 Loom 角色启动前运行 Codex CLI hook 承载探针")
+            layered_index = harness_source.find("run_layered_preflight(")
             carrier_index = harness_source.find("carrier_probe(")
             worker_index = harness_source.find('env["REDCAP_E2E_WORKER"]')
             if carrier_index < 0 or worker_index < 0 or carrier_index > worker_index:
                 failures.append("Codex CLI hook 承载探针必须早于 REDCAP_E2E_WORKER worker 启动")
+            if layered_index < 0 or carrier_index < 0 or worker_index < 0 or not (layered_index < carrier_index < worker_index):
+                failures.append("RedCap 分层前置检查必须早于 Codex CLI 承载探针和 REDCAP_E2E_WORKER worker 启动")
+            preflight_source = inspect.getsource(run_layered_preflight)
+            for required_token in [
+                "loom-runtime",
+                "self-purification",
+                "knowledge-gateway",
+                "project-install",
+                "release-check",
+                "blocked_before_project_run",
+                "TEST_INJECT_LAYERED_PREFLIGHT_FAILURE_ENV",
+                "TEST_MODE_ENV",
+            ]:
+                if required_token not in preflight_source:
+                    failures.append(f"RedCap 分层前置检查缺少关键能力：{required_token}")
+            regression_source = inspect.getsource(run_layered_preflight_regression_test)
+            for required_token in ["normal-pass", "knowledge-search-loom", "self-purification-self-check", "layered_preflight_block_failures"]:
+                if required_token not in regression_source:
+                    failures.append(f"RedCap 分层前置回归测试缺少覆盖：{required_token}")
             if "observer_seal" not in current_source or "parent_is_not_runner" not in current_source:
                 failures.append("E2E 自检没有覆盖观察者 seal 与非 runner 父进程约束")
             if "runner-negative-contract-probe.json" not in current_source or "empty-signups-and-empty-signupIntent-must-fail" not in current_source:
@@ -10015,6 +10281,12 @@ def build_parser() -> argparse.ArgumentParser:
     carrier.add_argument("--work-root")
     carrier.add_argument("--timeout-seconds", type=int, default=240)
     carrier.set_defaults(func=cmd_carrier_probe)
+    preflight = sub.add_parser("preflight")
+    preflight.add_argument("--work-root")
+    preflight.set_defaults(func=cmd_preflight)
+    preflight_regression = sub.add_parser("preflight-regression-test")
+    preflight_regression.add_argument("--work-root")
+    preflight_regression.set_defaults(func=cmd_preflight_regression_test)
     convergence = sub.add_parser("convergence-check")
     convergence.add_argument("--evidence-root", required=True)
     convergence.add_argument("--out")

@@ -43,7 +43,7 @@
       "title": "RedCap 完整复活",
       "domain": "redcap",
       "task_fact_id": "redcap-complete-revival",
-      "current_level": "terminal_complete",
+      "current_level": "infrastructure_baseline",
       "terminal_level": "terminal_complete",
       "aliases": [
         "完整复活",
@@ -86,7 +86,7 @@
         "minimal FSM kernel",
         "minimum executable kernel"
       ],
-      "open_reason": "终局收尾批次要求：只有 redcap-complete-revival 任务事实 verified 且专用终局验收通过后，才可把本目标视为关闭。"
+      "open_reason": "当前仍处于基建可用基线与二次 E2E 前置验证阶段；只有 redcap-complete-revival 任务事实 verified 且专用终局验收通过后，才可把本目标视为关闭。"
     },
     {
       "id": "example-product-launch",

@@ -19,7 +19,7 @@ Usage:
   runtime/bin/redcap phase2-blueprint check|self-check [...]
   runtime/bin/redcap full-revival-amendment check|self-check [...]
   runtime/bin/redcap e2e-trace check|self-check [...]
-  runtime/bin/redcap complete-revival-e2e design-check|prepare|carrier-probe|convergence-check|convergence-guard-check|run|self-check [...]
+  runtime/bin/redcap complete-revival-e2e design-check|prepare|preflight|preflight-regression-test|carrier-probe|convergence-check|convergence-guard-check|run|self-check [...]
   runtime/bin/redcap fsm check|status|transition [...]
   runtime/bin/redcap loom-workflow check|self-check [...]
   runtime/bin/redcap loom-runtime init|record-session|import-hook-events|manifest-check|self-check [...]

@@ -1,0 +1,19 @@
+{
+  "schema_id": "redcap-command-receipt",
+  "name": "complete-revival-e2e-self-check-skip-carrier",
+  "argv": [
+    "runtime/bin/redcap",
+    "complete-revival-e2e",
+    "self-check",
+    "--skip-carrier-probe"
+  ],
+  "exit_code": 0,
+  "expected_exit_code": null,
+  "ok": true,
+  "started_at": "2026-06-19T02:34:05+00:00",
+  "finished_at": "2026-06-19T02:34:21+00:00",
+  "stdout_sha256": "ab3ecfc7e9d5e234f53960b67e120a3be26c99846425613bd17cf9337d0054a2",
+  "stderr_sha256": null,
+  "stdout_tail": "{\n  \"ok\": true,\n  \"failures\": []\n}\nREDCAP_AI_E2E_SELF_CHECK_OK\n",
+  "stderr_tail": ""
+}

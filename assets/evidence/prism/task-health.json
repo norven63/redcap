@@ -1,112 +1,112 @@
 {
   "schema_id": "prism-task-health-summary",
-  "computed_at": "2026-06-19T01:38:21+00:00",
-  "event_count": 44600,
-  "session_event_count": 11316,
-  "task_count": 123,
+  "computed_at": "2026-06-19T03:20:55+00:00",
+  "event_count": 44851,
+  "session_event_count": 11393,
+  "task_count": 129,
   "success_count": 58,
-  "success_rate": 0.4715,
-  "operational_task_count": 113,
+  "success_rate": 0.4496,
+  "operational_task_count": 119,
   "operational_success_count": 58,
-  "operational_success_rate": 0.5133,
+  "operational_success_rate": 0.4874,
   "self_check_task_count": 10,
-  "active_count": 54,
-  "operational_active_count": 44,
-  "attention_count": 64,
-  "average_duration_seconds": 1655.634,
+  "active_count": 60,
+  "operational_active_count": 50,
+  "attention_count": 70,
+  "average_duration_seconds": 1589.155,
   "providers": {
     "claude-code": {
-      "tasks": 123,
-      "rounds": 118,
-      "reviews_loaded": 96,
+      "tasks": 129,
+      "rounds": 124,
+      "reviews_loaded": 102,
       "pass": 9,
-      "concern": 78,
+      "concern": 84,
       "block": 9,
       "missing_verdict": 27
     },
     "kimi": {
-      "tasks": 123,
-      "rounds": 114,
-      "reviews_loaded": 90,
-      "pass": 10,
-      "concern": 69,
-      "block": 11,
+      "tasks": 129,
+      "rounds": 120,
+      "reviews_loaded": 96,
+      "pass": 12,
+      "concern": 72,
+      "block": 12,
       "missing_verdict": 33
     }
   },
   "recent_attention_tasks": [
     {
-      "task_id": "timeout-e2e",
-      "outcome": "active",
-      "strictest_verdict": null,
-      "recorded_at": "2026-06-19T01:38:20+00:00"
-    },
-    {
       "task_id": "dispatcher-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-19T01:37:40+00:00"
+      "recorded_at": "2026-06-19T03:20:25+00:00"
     },
     {
       "task_id": "dispatcher-truncation-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-19T01:37:34+00:00"
+      "recorded_at": "2026-06-19T03:20:19+00:00"
     },
     {
       "task_id": "dispatcher-bad-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-19T01:37:33+00:00"
+      "recorded_at": "2026-06-19T03:20:18+00:00"
     },
     {
       "task_id": "dispatcher-file-access-self-check",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-19T01:37:32+00:00"
+      "recorded_at": "2026-06-19T03:20:16+00:00"
     },
     {
-      "task_id": "20260619-e2e-change-review",
-      "outcome": "failed",
-      "strictest_verdict": "concern",
-      "recorded_at": "2026-06-18T19:07:16+00:00"
-    },
-    {
-      "task_id": "20260618-e2e-feedback-loop-review",
+      "task_id": "e2e-layered-preflight-review-round6",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-18T14:42:36+00:00"
+      "recorded_at": "2026-06-19T03:02:28+00:00"
     },
     {
-      "task_id": "20260618-e2e-carrier-hook-fix-final-review-r5",
+      "task_id": "e2e-layered-preflight-review-round5",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-18T12:51:55+00:00"
+      "recorded_at": "2026-06-19T02:53:45+00:00"
     },
     {
-      "task_id": "20260618-e2e-carrier-hook-fix-final-review-r4",
+      "task_id": "e2e-layered-preflight-review-round4",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-18T12:45:54+00:00"
+      "recorded_at": "2026-06-19T02:36:23+00:00"
     },
     {
-      "task_id": "20260618-e2e-carrier-hook-fix-final-review-r3",
+      "task_id": "e2e-layered-preflight-review-round3",
       "outcome": "active",
       "strictest_verdict": null,
-      "recorded_at": "2026-06-18T12:39:42+00:00"
+      "recorded_at": "2026-06-19T02:27:22+00:00"
+    },
+    {
+      "task_id": "e2e-layered-preflight-review-round2",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-19T02:24:41+00:00"
+    },
+    {
+      "task_id": "e2e-layered-preflight-review",
+      "outcome": "active",
+      "strictest_verdict": null,
+      "recorded_at": "2026-06-19T02:22:52+00:00"
     }
   ],
-  "gate_event_count": 33284,
-  "gate_success_count": 33284,
+  "gate_event_count": 33458,
+  "gate_success_count": 33458,
   "gate_success_rate": 1.0,
   "gate_decision_counts": {
-    "optional": 656,
-    "required": 28291,
+    "optional": 661,
+    "required": 28460,
     "skipped": 4337
   },
   "gate_trigger_counts": {
-    "codex-UserPromptSubmit": 28461,
-    "cli-gate": 4823
+    "codex-UserPromptSubmit": 28616,
+    "cli-gate": 4842
   },
-  "gate_average_duration_seconds": 0.261
+  "gate_average_duration_seconds": 0.262
 }

@@ -1,7 +1,7 @@
 {
   "schema_id": "redcap-next-development-queue",
   "schema_version": 1,
-  "status": "planned-for-prism-review",
+  "status": "runtime-implemented-pending-second-e2e",
   "purpose": "把首次 E2E 暴露出的 RedCap 能力缺口转成下一步开发队列；队列本身不是完成证据。",
   "anti_completion_rule": "只有对应运行时命令、检查证据和后续 E2E 结果通过，才允许把队列项标记为已完成。",
   "common_acceptance": [
@@ -15,7 +15,7 @@
       "id": "R2-01-loom-runtime",
       "title": "Loom 通用角色运行机",
       "priority": "P0",
-      "status": "planned",
+      "status": "runtime_verified_pre_e2e",
       "root_cause": "Loom 能力主要停留在合同和 E2E 专用运行器，缺少普通项目可复用的角色会话运行机。",
       "expected_reality_change": [
         "项目级 .redcap/state/loom/session-manifest.json 可被创建和校验。",
@@ -33,6 +33,12 @@
         "runtime/bin/redcap loom-runtime manifest-check --project-root <project> --task-id <task>",
         "runtime/bin/redcap loom-workflow check"
       ],
+      "verified_evidence": [
+        "runtime/core/loom_runtime.py",
+        "runtime/bin/redcap loom-runtime self-check",
+        "runtime/bin/redcap complete-revival-e2e preflight --work-root /tmp/redcap-e2e-preflight-check"
+      ],
+      "remaining_e2e_question": "普通项目中的多角色独立 Codex CLI 执行仍需要下一轮完整 E2E 用真实项目证据继续验收。",
       "coupling": [
         "R2-04-e2e-layered-acceptance"
       ]
@@ -41,7 +47,7 @@
       "id": "R2-02-self-purification-loop",
       "title": "自我净化运行闭环",
       "priority": "P0",
-      "status": "planned",
+      "status": "runtime_verified_pre_e2e",
       "root_cause": "自我净化主要是合同检查，缺少可执行的任务前检索、任务后候选、评审决策和晋升或不晋升闭环。",
       "expected_reality_change": [
         "任务前知识检索写入结构化证据。",
@@ -58,6 +64,12 @@
         "runtime/bin/redcap self-purification self-check",
         "runtime/bin/redcap self-purification run-loop --task-summary <text> --evidence-root <dir>"
       ],
+      "verified_evidence": [
+        "runtime/core/self_purification.py",
+        "runtime/bin/redcap self-purification self-check",
+        "runtime/bin/redcap complete-revival-e2e preflight --work-root /tmp/redcap-e2e-preflight-check"
+      ],
+      "remaining_e2e_question": "下一轮完整 E2E 仍需验证任务后候选是否能由真实失败、质疑和变更自动进入沉淀决策。",
       "coupling": [
         "R2-03-knowledge-effective-retrieval",
         "R2-04-e2e-layered-acceptance"
@@ -67,7 +79,7 @@
       "id": "R2-03-knowledge-effective-retrieval",
       "title": "知识召回影响任务决策",
       "priority": "P0",
-      "status": "planned",
+      "status": "runtime_verified_pre_e2e",
       "root_cause": "知识网关能检索和晋升，但尚未证明相关知识会被后续任务采用。",
       "expected_reality_change": [
         "RedCap 自开发任务前必须检索知识或写明不可执行理由。",
@@ -83,6 +95,14 @@
         "runtime/bin/redcap knowledge-gateway search self-purification --require-hit",
         "runtime/bin/redcap knowledge-gateway search loom --require-hit"
       ],
+      "verified_evidence": [
+        "assets/knowledge/entries/self-purification-runtime-loop.md",
+        "assets/knowledge/entries/loom-runtime-session-continuity.md",
+        "runtime/bin/redcap knowledge-gateway search self-purification --require-hit",
+        "runtime/bin/redcap knowledge-gateway search loom --require-hit",
+        "runtime/bin/redcap complete-revival-e2e preflight --work-root /tmp/redcap-e2e-preflight-check"
+      ],
+      "remaining_e2e_question": "下一轮完整 E2E 仍需验证命中知识是否真实影响角色计划、实现和验收裁决。",
       "coupling": [
         "R2-02-self-purification-loop"
       ]
@@ -91,7 +111,7 @@
       "id": "R2-04-e2e-layered-acceptance",
       "title": "E2E 轻重分层验收",
       "priority": "P1",
-      "status": "planned",
+      "status": "runtime_verified_pre_e2e",
       "root_cause": "完整 E2E 太重，若缺少前置轻量真实检查，会把明显问题拖进长循环。",
       "expected_reality_change": [
         "完整 E2E 前先通过 Loom、自我净化、知识召回和发布安装检查。",
@@ -103,9 +123,20 @@
         "不能在 failure-backlog 未清时给出可用性通过。"
       ],
       "runtime_checks": [
+        "runtime/bin/redcap complete-revival-e2e preflight --work-root <external-dir>",
         "runtime/bin/redcap revival-followthrough check",
         "runtime/bin/redcap complete-revival-e2e design-check"
       ],
+      "verified_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "runtime/bin/redcap complete-revival-e2e preflight --work-root /tmp/redcap-e2e-preflight-check",
+        "runtime/bin/redcap complete-revival-e2e preflight-regression-test --work-root /tmp/redcap-e2e-layered-preflight-regression",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+        "runtime/bin/redcap check --only complete-revival-e2e-design-check",
+        "runtime/bin/redcap check --only complete-revival-e2e-self-check"
+      ],
+      "remaining_e2e_question": "下一轮完整 E2E 仍需验证分层前置检查通过后，目标项目交付质量和 RedCap 工作流质量能同时被审计。",
       "coupling": [
         "R2-01-loom-runtime",
         "R2-02-self-purification-loop",

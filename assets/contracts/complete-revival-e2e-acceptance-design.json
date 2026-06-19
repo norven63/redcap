@@ -44,6 +44,19 @@
     "failure_behavior": "若任一 required_events 缺失，运行器必须写入 redcap-long-task-active-run.json，状态为 blocked，auto_rerun_allowed=false，并返回 blocked_before_project_run=true；禁止启动 Loom 角色，禁止写 completion-marker.json，禁止声称 E2E 通过。",
     "current_verified_blocker": "2026-06-18 的探针显示：Codex CLI 子进程命令可成功返回 carrier-probe-ok，但没有触发项目 .codex/hooks.json 中的 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse、Stop。因此当前不能把 Codex CLI 子进程当作可用 Loom Hook 承载。"
   },
+  "redcap_layered_preflight": {
+    "status": "hard_entry_gate",
+    "why": "E2E 的目标是验证 RedCap 能不能稳定推动工程，而不只是让某个目标应用看起来可运行；因此启动 Codex CLI 承载探针和 Loom 角色前，必须先确认 RedCap 自身关键能力可运行。",
+    "must_run_before": "carrier-probe、env[\"REDCAP_E2E_WORKER\"] 被设置、worker 子进程启动、任一 Loom 角色提示词写出或执行之前。",
+    "required_checks": [
+      "loom-runtime-self-check",
+      "self-purification-self-check",
+      "knowledge-search-self-purification",
+      "knowledge-search-loom",
+      "project-install-release-check"
+    ],
+    "failure_behavior": "若任一 required_checks 失败，运行器必须写入 redcap-long-task-active-run.json，状态为 blocked，auto_rerun_allowed=false，并返回 blocked_before_project_run=true；禁止启动 Loom 角色，禁止写 completion-marker.json，禁止声称 E2E 通过。"
+  },
   "error_review": {
     "previous_errors": [
       {
@@ -187,6 +200,14 @@
     {
       "name": "runtime/bin/redcap complete-revival-e2e prepare --direction <text> --work-root <external-dir>",
       "purpose": "创建外部项目，安装 .redcap，生成需求方材料、承接方提示和验收证据骨架。"
+    },
+    {
+      "name": "runtime/bin/redcap complete-revival-e2e preflight --work-root <external-dir>",
+      "purpose": "在完整 E2E 前执行轻量真实检查，确认 Loom、自我净化、知识召回和项目级发布安装能力可用。"
+    },
+    {
+      "name": "runtime/bin/redcap complete-revival-e2e preflight-regression-test --work-root <external-dir>",
+      "purpose": "自动回归验证分层前置门禁：覆盖正常通过、知识召回失败阻断和自我净化失败阻断。"
     },
     {
       "name": "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-dir>",
@@ -392,6 +413,10 @@
     {
       "id": "source-workspace-mutation-cannot-pass",
       "expected": "E2E 准备、承载探针或运行过程造成 RedCap 源仓库分支、提交或工作区状态变化时退出非零。"
+    },
+    {
+      "id": "layered-preflight-failure-cannot-start-project-run",
+      "expected": "Loom、自我净化、知识召回或发布安装任一分层前置检查失败时，完整 E2E 必须返回 blocked_before_project_run=true，auto_rerun_allowed=false，不得启动 Codex CLI 承载探针或 Loom 角色。"
     },
     {
       "id": "hook-carrier-missing-cannot-pass",

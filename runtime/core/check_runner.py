@@ -81,6 +81,7 @@ STEPS: tuple[Step, ...] = (
     Step("e2e-trace-self-check", redcap("e2e-trace", "self-check")),
     Step("complete-revival-e2e-design-check", redcap("complete-revival-e2e", "design-check")),
     Step("complete-revival-e2e-self-check", redcap("complete-revival-e2e", "self-check", "--skip-carrier-probe"), 360),
+    Step("complete-revival-e2e-layered-preflight-unit-test", ("python3", "-m", "unittest", "runtime/core/test_e2e_layered_preflight.py")),
     Step("revival-followthrough-check", redcap("revival-followthrough", "check")),
     Step("revival-followthrough-self-check", redcap("revival-followthrough", "self-check")),
     Step("fsm-check", redcap("fsm", "check")),
