@@ -71,7 +71,7 @@ CODEX_DISABLED_MCP_SERVERS = [
     ).split(",")
     if item.strip()
 ]
-CODEX_PROJECT_TRUST_MODE = os.environ.get("REDCAP_E2E_CODEX_PROJECT_TRUST_MODE", "persist")
+CODEX_PROJECT_TRUST_MODE = os.environ.get("REDCAP_E2E_CODEX_PROJECT_TRUST_MODE", "isolated_home")
 CODEX_ROLE_PRESERVE_USER_CONFIG = True
 CODEX_ROLE_MAX_ATTEMPTS = int(os.environ.get("REDCAP_E2E_CODEX_ROLE_MAX_ATTEMPTS", "3"))
 LOOM_DEVELOPER_REPAIR_MAX_ROUNDS = int(os.environ.get("REDCAP_E2E_LOOM_DEVELOPER_REPAIR_MAX_ROUNDS", "2"))
@@ -262,13 +262,34 @@ def unique_preserve_order(values: list[str]) -> list[str]:
     return unique
 
 
-def codex_mcp_isolation_argv() -> list[str]:
+def codex_mcp_isolation_argv(trust_mode: str | None = None) -> list[str]:
+    mode = trust_mode or CODEX_PROJECT_TRUST_MODE
+    if mode == "isolated_home":
+        return []
     argv: list[str] = []
     for server_name in unique_preserve_order(CODEX_DISABLED_MCP_SERVERS):
         if not re.fullmatch(r"[A-Za-z0-9_-]+", server_name):
             raise SystemExit(f"非法 MCP 服务器名：{server_name}")
         argv.extend(["-c", f"mcp_servers.{server_name}.enabled=false"])
     return argv
+
+
+def codex_mcp_isolation_contract(trust_mode: str | None = None) -> dict[str, Any]:
+    mode = trust_mode or CODEX_PROJECT_TRUST_MODE
+    argv = codex_mcp_isolation_argv(mode)
+    failures: list[str] = []
+    if mode == "isolated_home" and argv:
+        failures.append("隔离 Codex Home 模式不得下发 MCP 禁用覆盖；干净 config 没有 transport 定义会触发 Codex CLI 配置错误")
+    if mode != "isolated_home" and CODEX_DISABLED_MCP_SERVERS and not argv:
+        failures.append("非隔离模式必须保留 MCP 禁用覆盖，避免用户全局 MCP 噪音影响验收")
+    return {
+        "schema_id": "redcap-e2e-codex-mcp-isolation-contract",
+        "ok": not failures,
+        "trust_mode": mode,
+        "argv": argv,
+        "disabled_servers": unique_preserve_order(CODEX_DISABLED_MCP_SERVERS),
+        "failures": failures,
+    }
 
 
 def carrier_probe_attempt_decision(
@@ -340,6 +361,78 @@ def evidence_file_record(path: pathlib.Path, *, base: pathlib.Path | None = None
         record["sha256"] = sha256_file(path)
         record["size"] = path.stat().st_size
     return record
+
+
+def filesystem_state(path: pathlib.Path) -> dict[str, Any]:
+    if not path.exists():
+        return {"path": str(path), "exists": False, "kind": None}
+    stat = path.stat()
+    if path.is_file():
+        return {
+            "path": str(path),
+            "exists": True,
+            "kind": "file",
+            "size": stat.st_size,
+            "mtime_ns": stat.st_mtime_ns,
+            "sha256": sha256_file(path),
+        }
+    if path.is_dir():
+        entries: list[str] = []
+        total_size = 0
+        max_mtime_ns = stat.st_mtime_ns
+        for item in sorted(path.rglob("*")):
+            try:
+                item_stat = item.stat()
+            except OSError:
+                continue
+            rel = item.relative_to(path).as_posix()
+            kind = "dir" if item.is_dir() else "file"
+            size = item_stat.st_size if item.is_file() else 0
+            total_size += size
+            max_mtime_ns = max(max_mtime_ns, item_stat.st_mtime_ns)
+            entries.append(f"{kind}:{rel}:{size}:{item_stat.st_mtime_ns}")
+        return {
+            "path": str(path),
+            "exists": True,
+            "kind": "dir",
+            "entry_count": len(entries),
+            "total_size": total_size,
+            "max_mtime_ns": max_mtime_ns,
+            "fingerprint": sha256_text("\n".join(entries)),
+        }
+    return {
+        "path": str(path),
+        "exists": True,
+        "kind": "other",
+        "size": stat.st_size,
+        "mtime_ns": stat.st_mtime_ns,
+    }
+
+
+def user_codex_home_state() -> dict[str, Any]:
+    home = source_codex_home()
+    return {
+        "schema_id": "redcap-user-codex-home-state",
+        "home": str(home),
+        "config": filesystem_state(home / "config.toml"),
+        "auth": filesystem_state(home / "auth.json"),
+        "logs": filesystem_state(home / "logs"),
+    }
+
+
+def compare_user_codex_home_state(before: dict[str, Any]) -> dict[str, Any]:
+    after = user_codex_home_state()
+    failures: list[str] = []
+    for key in ["config", "auth", "logs"]:
+        if before.get(key) != after.get(key):
+            failures.append(f"用户真实 Codex Home 的 {key} 状态发生变化")
+    return {
+        "schema_id": "redcap-user-codex-home-guard",
+        "ok": not failures,
+        "before": before,
+        "after": after,
+        "failures": failures,
+    }
 
 
 def slugify(value: str) -> str:
@@ -426,6 +519,7 @@ def run_command_pty(
     completion_files: list[pathlib.Path] | None = None,
     completion_predicate: Callable[[], bool] | None = None,
     settle_seconds: float = 2.0,
+    env_overrides: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run an interactive command in a PTY so Codex project hooks can fire."""
     started = dt.datetime.now(dt.timezone.utc)
@@ -450,6 +544,8 @@ def run_command_pty(
     try:
         master_fd, slave_fd = pty.openpty()
         env = os.environ.copy()
+        if env_overrides:
+            env.update(env_overrides)
         env.setdefault("TERM", "xterm-256color")
         if env.get("TERM") == "dumb":
             env["TERM"] = "xterm-256color"
@@ -620,6 +716,7 @@ def run_command_pty(
             "keyboard_protocol": keyboard_protocol_reported,
         },
         "completion_reason": completion_reason,
+        "env_overrides": sorted((env_overrides or {}).keys()),
         "completion_files_required": [str(path) for path in completion_files],
         "completion_files_present": [
             str(path)
@@ -998,9 +1095,77 @@ def codex_project_trust_argv(project: pathlib.Path) -> list[str]:
     return ["-c", codex_project_trust_config_arg(project)]
 
 
+def source_codex_home() -> pathlib.Path:
+    raw_home = os.environ.get("CODEX_HOME")
+    return pathlib.Path(raw_home).expanduser() if raw_home else pathlib.Path.home() / ".codex"
+
+
+def prepare_isolated_codex_home(project: pathlib.Path, evidence: pathlib.Path | None = None) -> dict[str, Any]:
+    source_home = source_codex_home()
+    isolated_home = project / ".redcap" / "codex-home"
+    auth_source = source_home / "auth.json"
+    auth_target = isolated_home / "auth.json"
+    config_target = isolated_home / "config.toml"
+    payload: dict[str, Any] = {
+        "schema_id": "redcap-e2e-isolated-codex-home",
+        "ok": True,
+        "mode": "isolated_home",
+        "source_home": str(source_home),
+        "isolated_home": str(isolated_home),
+        "auth_copied": False,
+        "config": str(config_target),
+        "failures": [],
+    }
+    try:
+        isolated_home.mkdir(parents=True, exist_ok=True)
+        if not auth_source.exists():
+            payload["ok"] = False
+            payload["failures"].append(f"缺少 Codex 认证文件：{auth_source}")
+        else:
+            shutil.copy2(auth_source, auth_target)
+            auth_target.chmod(0o600)
+            payload["auth_copied"] = True
+        config_target.write_text(
+            "suppress_unstable_features_warning = true\n"
+            "[features]\n"
+            "hooks = true\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        payload["ok"] = False
+        payload["failures"].append(f"无法准备隔离 Codex Home：{exc}")
+    if evidence is not None:
+        write_json(evidence / "isolated-codex-home.json", payload)
+    return payload
+
+
+def codex_child_env(isolated_home: dict[str, Any]) -> dict[str, str]:
+    if isolated_home.get("ok") is True and isinstance(isolated_home.get("isolated_home"), str):
+        return {"CODEX_HOME": isolated_home["isolated_home"]}
+    return {}
+
+
 def ensure_codex_project_trusted(project: pathlib.Path, evidence: pathlib.Path | None = None) -> dict[str, Any]:
-    """Persist trust for a generated E2E project so project-local hooks load."""
-    config_path = pathlib.Path.home() / ".codex" / "config.toml"
+    """Prepare command-scoped trust for a generated E2E project so project-local hooks load."""
+    if CODEX_PROJECT_TRUST_MODE == "isolated_home":
+        isolated = prepare_isolated_codex_home(project, evidence)
+        payload = {
+            "schema_id": "redcap-e2e-codex-project-trust",
+            "ok": isolated.get("ok") is True,
+            "project": str(project.resolve()),
+            "config": isolated.get("config"),
+            "trust_mode": CODEX_PROJECT_TRUST_MODE,
+            "config_override_arg": codex_project_trust_config_arg(project),
+            "added_or_updated": False,
+            "before_sha256": None,
+            "after_sha256": None,
+            "isolated_home": isolated,
+            "failures": list(isolated.get("failures") or []),
+        }
+        if evidence is not None:
+            write_json(evidence / "codex-project-trust.json", payload)
+        return payload
+    config_path = source_codex_home() / "config.toml"
     project_path = str(project.resolve())
     header = f'[projects."{toml_basic_string(project_path)}"]'
     payload: dict[str, Any] = {
@@ -2476,6 +2641,31 @@ def run_loom_role_pipeline(
         "role-round-snapshots",
     ]:
         (evidence / dirname).mkdir(parents=True, exist_ok=True)
+    trust_result = ensure_codex_project_trusted(project, evidence)
+    mcp_contract = codex_mcp_isolation_contract()
+    child_env = codex_child_env(trust_result.get("isolated_home") if isinstance(trust_result.get("isolated_home"), dict) else {})
+    if trust_result.get("ok") is not True or mcp_contract.get("ok") is not True:
+        aggregate = {
+            "schema_id": "redcap-e2e-loom-role-pipeline-run",
+            "ok": False,
+            "roles": {},
+            "codex_project_trust": trust_result,
+            "codex_mcp_isolation_contract": mcp_contract,
+            "developer_repair_loop": {
+                "max_rounds": LOOM_DEVELOPER_REPAIR_MAX_ROUNDS,
+                "rounds_used": 0,
+                "history": [],
+                "resolved_failures": [],
+                "final_feedback_packet": None,
+            },
+            "session_manifest": None,
+            "failures": [
+                *([] if trust_result.get("ok") is True else ["Loom 角色管线无法准备隔离 Codex Home，禁止启动角色"]),
+                *[str(item) for item in mcp_contract.get("failures", [])],
+            ],
+        }
+        write_json(evidence / "codex-run.json", aggregate)
+        return aggregate
 
     def execute_role(role: str, *, feedback_packet: pathlib.Path | None = None, round_name: str | None = None) -> dict[str, Any]:
         role_workspace_path(evidence, role).mkdir(parents=True, exist_ok=True)
@@ -2509,6 +2699,7 @@ def run_loom_role_pipeline(
                 timeout_seconds=role_timeout,
                 completion_files=completion_files,
                 completion_predicate=lambda role=role: role_completion_ready(project, evidence, role),
+                env_overrides=child_env,
             )
             attempt_stdout = evidence / "role-raw" / f"{role}.attempt-{attempt_index}.stdout.txt"
             attempt_stderr = evidence / "role-raw" / f"{role}.attempt-{attempt_index}.stderr.txt"
@@ -2752,6 +2943,8 @@ def run_loom_role_pipeline(
         "schema_id": "redcap-e2e-loom-role-pipeline-run",
         "ok": ok,
         "roles": role_results,
+        "codex_project_trust": trust_result,
+        "codex_mcp_isolation_contract": mcp_contract,
         "developer_repair_loop": {
             "max_rounds": LOOM_DEVELOPER_REPAIR_MAX_ROUNDS,
             "rounds_used": repair_rounds_used,
@@ -7941,6 +8134,7 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
 
 def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[str, Any]:
     guard_before = source_workspace_snapshot()
+    user_codex_before = user_codex_home_state()
     failures = ensure_external_path(work_root)
     if failures:
         return attach_source_workspace_guard({"ok": False, "failures": failures}, guard_before)
@@ -7999,6 +8193,24 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         }
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     trust_result = ensure_codex_project_trusted(project, project / ".redcap" / "evidence" / "e2e")
+    mcp_contract = codex_mcp_isolation_contract()
+    child_env = codex_child_env(trust_result.get("isolated_home") if isinstance(trust_result.get("isolated_home"), dict) else {})
+    if trust_result.get("ok") is not True or mcp_contract.get("ok") is not True:
+        probe = {
+            "schema_id": "redcap-ai-e2e-carrier-probe",
+            "ok": False,
+            "project": str(project),
+            "events_path": str(events_path),
+            "codex_project_trust": trust_result,
+            "codex_mcp_isolation_contract": mcp_contract,
+            "user_codex_home_guard": compare_user_codex_home_state(user_codex_before),
+            "failures": [
+                *([] if trust_result.get("ok") is True else ["Codex CLI 项目信任准备失败"]),
+                *[str(item) for item in mcp_contract.get("failures", [])],
+            ],
+        }
+        write_json(project / ".redcap" / "evidence" / "e2e" / "carrier-probe.json", probe)
+        return attach_source_workspace_guard(probe, guard_before)
     attempts: list[dict[str, Any]] = []
     result: dict[str, Any] = {}
     events: list[str] = []
@@ -8036,6 +8248,7 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
                 "--dangerously-bypass-hook-trust",
                 "--ask-for-approval",
                 "never",
+                "exec",
                 "--model",
                 CODEX_ROLE_MODEL,
                 "-c",
@@ -8046,7 +8259,11 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
                 str(project),
                 "--sandbox",
                 "workspace-write",
-                "--no-alt-screen",
+                "--skip-git-repo-check",
+                "--color",
+                "never",
+                "--output-last-message",
+                str(last_message),
             ]
             if CODEX_INTERACTIVE_DISABLE_PLUGINS:
                 argv.extend(["--disable", "plugins"])
@@ -8063,6 +8280,7 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
                 completion_markers=["carrier-probe-ok"],
                 completion_files=[marker_path],
                 settle_seconds=10.0,
+                env_overrides=child_env,
             )
             if str(result.get("stdout") or "").strip():
                 last_message.write_text(str(result.get("stdout") or "")[-12000:], encoding="utf-8")
@@ -8124,6 +8342,8 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         "marker_cleanup_error": marker_cleanup_error,
         "git": git_result,
         "codex_project_trust": trust_result,
+        "codex_mcp_isolation_contract": mcp_contract,
+        "user_codex_home_guard": compare_user_codex_home_state(user_codex_before),
         "last_message": str(last_message),
         "failures": [],
     }
@@ -8138,6 +8358,10 @@ def carrier_probe(work_root: pathlib.Path, timeout_seconds: int = 240) -> dict[s
         probe["failures"].append(f"Codex CLI 没有触发全部项目级 hook：{missing}")
     if marker_cleanup_error:
         probe["failures"].append(f"Codex CLI 承载探针 marker 清理失败：{marker_cleanup_error}")
+    user_guard = probe.get("user_codex_home_guard") if isinstance(probe.get("user_codex_home_guard"), dict) else {}
+    if user_guard.get("ok") is not True:
+        probe["ok"] = False
+        probe["failures"].append(f"用户真实 Codex Home 保护失败：{user_guard.get('failures')}")
     probe = attach_source_workspace_guard(probe, guard_before)
     write_json(project / ".redcap" / "evidence" / "e2e" / "carrier-probe.json", probe)
     return probe
@@ -9013,11 +9237,40 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             })
             if not role_completion_ready(project, evidence, "tester"):
                 failures.append("tester completed 夹具没有被判定为角色完成")
-            if CODEX_PROJECT_TRUST_MODE != "persist":
-                failures.append("项目级 trust 默认必须持久写入 Codex config；单次 -c 覆盖无法证明能加载项目级 hooks")
+            current_source = pathlib.Path(__file__).read_text(encoding="utf-8")
+            if CODEX_PROJECT_TRUST_MODE == "persist":
+                failures.append("项目级 trust 默认不得持久写入 Codex config；必须优先使用单次 -c 覆盖，避免 E2E 污染用户全局配置")
+            if "prepare_isolated_codex_home" not in current_source or "CODEX_HOME" not in current_source:
+                failures.append("E2E 必须准备隔离 Codex Home，复制认证但不污染用户全局 config")
+            isolated_mcp_contract = codex_mcp_isolation_contract("isolated_home")
+            if isolated_mcp_contract.get("ok") is not True or isolated_mcp_contract.get("argv"):
+                failures.append("isolated_home 模式下 codex_mcp_isolation_argv 必须返回空列表，不能向干净 Codex config 注入 MCP 覆盖")
+            non_isolated_mcp_contract = codex_mcp_isolation_contract("command_override")
+            if CODEX_DISABLED_MCP_SERVERS and not non_isolated_mcp_contract.get("argv"):
+                failures.append("非 isolated_home 模式必须保留 MCP 禁用覆盖，避免用户全局 MCP 噪音影响验收")
+            isolated_home_source = inspect.getsource(prepare_isolated_codex_home)
+            if "mcp_servers" in isolated_home_source:
+                failures.append("隔离 Codex Home 最小 config 模板不得包含 mcp_servers 条目")
             carrier_probe_source = inspect.getsource(carrier_probe)
+            role_pipeline_source = inspect.getsource(run_loom_role_pipeline)
             if "*codex_project_trust_argv(project)" not in carrier_probe_source:
                 failures.append("carrier_probe 必须携带项目级 trust 覆盖，否则探针不能证明项目级 hooks 真实可用")
+            if "env_overrides=child_env" not in carrier_probe_source:
+                failures.append("carrier_probe 必须在隔离 Codex Home 中运行子 Codex，避免污染用户全局配置")
+            if "env_overrides=child_env" not in role_pipeline_source:
+                failures.append("Loom 角色管线必须在隔离 Codex Home 中运行子 Codex，避免污染用户全局配置")
+            if "codex_mcp_isolation_contract" not in carrier_probe_source:
+                failures.append("carrier_probe 必须运行时检查 MCP 隔离契约，防止隔离模式重新注入 MCP 覆盖")
+            if "codex_mcp_isolation_contract" not in role_pipeline_source:
+                failures.append("Loom 角色管线必须运行时检查 MCP 隔离契约，防止角色执行复发配置错误")
+            if "user_codex_home_guard" not in carrier_probe_source or "compare_user_codex_home_state" not in carrier_probe_source:
+                failures.append("carrier_probe 必须记录用户真实 Codex Home 的 config/auth/logs 前后状态，证明不污染全局配置")
+            if '"exec"' not in carrier_probe_source:
+                failures.append("carrier_probe 必须使用 codex exec 非交互入口，贴合 Loom 角色真实执行方式")
+            if "--no-alt-screen" in carrier_probe_source:
+                failures.append("carrier_probe 使用 codex exec 时不得携带 --no-alt-screen")
+            if "--output-last-message" not in carrier_probe_source:
+                failures.append("carrier_probe 必须写 output-last-message，确保承载探针消息证据可回收")
             if '".codex" / "config.toml"' not in carrier_probe_source or "hooks = true" not in carrier_probe_source:
                 failures.append("carrier_probe 必须生成最小 .codex/config.toml 项目配置层，否则 Codex CLI 可能不加载项目级 hooks")
             if "carrier-shell-marker.txt" not in carrier_probe_source or "completion_files=[marker_path]" not in carrier_probe_source:

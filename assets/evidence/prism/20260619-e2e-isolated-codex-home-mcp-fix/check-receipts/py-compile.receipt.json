@@ -1,0 +1,22 @@
+{
+  "schema_id": "redcap-executed-check-receipt",
+  "name": "py-compile",
+  "checked_at": "2026-06-19T05:42:58+00:00",
+  "argv": [
+    "python3",
+    "-m",
+    "py_compile",
+    "runtime/core/complete_revival_e2e.py"
+  ],
+  "exit_code": 0,
+  "ok": true,
+  "stdout_tail": "",
+  "stderr_tail": "",
+  "command": "python3 -m py_compile runtime/core/complete_revival_e2e.py",
+  "executed_at": "2026-06-19T05:42:58+00:00",
+  "executor": "codex-redcap-local-wrapper",
+  "stdout_length": 0,
+  "stderr_length": 0,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

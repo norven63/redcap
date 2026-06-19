@@ -1,0 +1,52 @@
+{
+  "schema_id": "prism-concern-resolution",
+  "task_id": "20260619-e2e-isolated-codex-home-mcp-fix",
+  "merge_path": "merge.json",
+  "reviews": [
+    "kimi-review.json",
+    "claude-code-review.json"
+  ],
+  "resolutions": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该 concern 成立：设计本身不能证明现实已改变。本轮已补充运行时契约、自检断言、真实 carrier-probe 回执和用户 Codex Home 前后状态保护，避免把方案文档误当成修复完成。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/check-receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/check-receipts/design-check.receipt.json",
+        "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/check-receipts/self-check-skip-carrier.receipt.json",
+        "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/check-receipts/carrier-probe-real-isolated-home.receipt.json",
+        "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/check-receipts/complete-revival-check-pre-terminal.receipt.json",
+        "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/check-receipts/complete-revival-check-terminal-required.receipt.json"
+      ]
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "decision": "accept",
+      "concern_ref": "main_concern",
+      "minimum_fix_ref": "minimum_fix",
+      "rationale": "该 concern 成立：codex_mcp_isolation_argv 的职责边界必须被明确并被运行时检查。实现已确认该函数只生成 MCP 禁用覆盖；isolated_home 模式返回空列表，非隔离模式保留原覆盖能力。carrier-probe 和 Loom 角色管线都会检查 codex_mcp_isolation_contract，并记录用户真实 Codex Home 的 config、auth、logs 状态。",
+      "implementation_evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ],
+      "verification_evidence": [
+        "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/check-receipts/py-compile.receipt.json",
+        "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/check-receipts/self-check-skip-carrier.receipt.json",
+        "assets/evidence/prism/20260619-e2e-isolated-codex-home-mcp-fix/check-receipts/carrier-probe-real-isolated-home.receipt.json"
+      ]
+    }
+  ],
+  "conclusion": {
+    "state": "resolved",
+    "reason": "两方 concern 均已采纳并落实到运行时契约、真实探针证据和不污染用户 Codex Home 的保护证据。本决议只关闭本轮 E2E 承载隔离修复 concern，不声明 RedCap 完整复活终局完成。"
+  }
+}

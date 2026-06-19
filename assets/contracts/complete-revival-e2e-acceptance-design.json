@@ -42,7 +42,8 @@
       "Stop"
     ],
     "failure_behavior": "若任一 required_events 缺失，运行器必须写入 redcap-long-task-active-run.json，状态为 blocked，auto_rerun_allowed=false，并返回 blocked_before_project_run=true；禁止启动 Loom 角色，禁止写 completion-marker.json，禁止声称 E2E 通过。",
-    "current_verified_blocker": "2026-06-18 的探针显示：Codex CLI 子进程命令可成功返回 carrier-probe-ok，但没有触发项目 .codex/hooks.json 中的 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse、Stop。因此当前不能把 Codex CLI 子进程当作可用 Loom Hook 承载。"
+    "current_verified_status": "2026-06-19 的隔离承载探针显示：Codex CLI 子进程在隔离 CODEX_HOME、复制认证文件、显式启用 hooks、使用项目 trust 覆盖时，可以触发项目 .codex/hooks.json 中的 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse、Stop，并产生真实文件副作用，且不会写入用户全局 config.toml。该能力仍必须在每轮完整 E2E 启动 Loom 角色前重新探测，不得用历史探针替代当轮证据。",
+    "global_config_isolation": "承载探针和 Loom 角色必须使用项目 .redcap/codex-home 作为隔离 CODEX_HOME；允许子 Codex 在该隔离目录内写入 trust，不允许写入用户真实 ~/.codex/config.toml。每次 carrier-probe 必须记录用户真实 Codex Home 的 config.toml、auth.json、logs 前后状态；隔离 CODEX_HOME 模式不得下发 mcp_servers.*.enabled=false 覆盖，因为干净 config.toml 没有 MCP transport 定义，非隔离模式才保留该覆盖以隔离用户全局 MCP 噪音。"
   },
   "redcap_layered_preflight": {
     "status": "hard_entry_gate",

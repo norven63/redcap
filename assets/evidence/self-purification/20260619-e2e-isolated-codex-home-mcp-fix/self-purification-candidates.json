@@ -1,0 +1,30 @@
+{
+  "candidates": [
+    {
+      "created_at": "2026-06-19T05:48:09+00:00",
+      "evidence": {
+        "knowledge_retrieval": "assets/evidence/self-purification/20260619-e2e-isolated-codex-home-mcp-fix/knowledge-retrieval-evidence.json",
+        "lesson_chars": 182,
+        "lesson_sha256": "b29403ed341bd02c540a72faa70dcf744ada48ce131c363ffcc1341497a9d833"
+      },
+      "id": "isolated-codex-home-mcp-contract",
+      "lesson": "当 Codex CLI 子进程使用隔离 CODEX_HOME 时，不应向干净 config.toml 注入 mcp_servers.*.enabled=false 覆盖；这些覆盖只适合复用用户真实 Codex Home 的非隔离模式。隔离模式应复制认证文件、写最小 hooks config，并用运行时契约和真实 carrier-probe 验证项目级 Hook。",
+      "privacy_class": "public",
+      "proposed_destination": "assets/knowledge/entries",
+      "source_task": "E2E 隔离 Codex Home MCP 覆盖冲突修复",
+      "trigger": "e2e_failure"
+    }
+  ],
+  "decisions": [
+    {
+      "candidate_id": "isolated-codex-home-mcp-contract",
+      "decided_at": "2026-06-19T05:48:09+00:00",
+      "decision": "no_promote",
+      "reason": "候选暂不晋升；本轮只保留证据，避免把未经验证的经验写入公共知识库。"
+    }
+  ],
+  "promotion_result": null,
+  "recorded_at": "2026-06-19T05:48:09+00:00",
+  "schema_id": "redcap-self-purification-candidates",
+  "task_summary": "E2E 隔离 Codex Home MCP 覆盖冲突修复"
+}

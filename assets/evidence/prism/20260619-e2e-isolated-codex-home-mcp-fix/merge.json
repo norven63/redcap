@@ -1,0 +1,42 @@
+{
+  "providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "verdicts": [
+    {
+      "provider": "kimi",
+      "verdict": "concern",
+      "confidence": "medium"
+    },
+    {
+      "provider": "claude-code",
+      "verdict": "concern",
+      "confidence": "medium"
+    }
+  ],
+  "strictest_verdict": "concern",
+  "strictest_provider": "kimi",
+  "must_respond": true,
+  "main_concerns": [
+    {
+      "provider": "kimi",
+      "concern": "证据不足以支撑‘根因已定位且修复已落地’。关键源码被截断，缺少隔离配置模板和实际运行日志，无法独立确认 invalid transport 仅由 MCP 覆盖注入导致，也无法确认用户全局 ~/.codex/config.toml 真的未被修改。"
+    },
+    {
+      "provider": "claude-code",
+      "concern": "codex_mcp_isolation_argv 的职责边界不清晰：设计方案假定该函数在 isolated_home 模式下的唯一职责是注入 MCP 禁用覆盖，因此返回空列表是安全的。但如果该函数在其他调用路径中同时注入非 MCP 相关的隔离参数（如环境变量、日志级别、沙箱配置），则空列表返回会导致这些参数静默丢失，可能在后续步骤中触发更隐蔽的故障。需要确认该函数的完整输出契约，而不是仅凭当前故障现象做局部修复。"
+    }
+  ],
+  "minimum_fixes": [
+    {
+      "provider": "kimi",
+      "minimum_fix": "在标记实现完成前补充并验证：1) 展示 codex_mcp_isolation_argv 在 CODEX_PROJECT_TRUST_MODE=isolated_home 时返回空列表，且静态断言生效；2) 确认 .redcap/codex-home 最小 config.toml 不含残缺 MCP 条目；3) 运行 carrier-probe 并输出执行日志，证明 invalid transport 消失、五类 Hook 被触发、且用户全局 config.toml 哈希前后一致。"
+    },
+    {
+      "provider": "claude-code",
+      "minimum_fix": "在实施前必须完成三项检查：1) 审计 codex_mcp_isolation_argv 的完整返回值和所有调用点，确认 isolated_home 分支是否仅涉及 MCP 禁用覆盖；2) 增加验证范围——除 config.toml 哈希外，同时记录 ~/.codex/auth.json 和 ~/.codex/logs/ 目录的前后状态对比；3) 将静态断言从仅测试级提升为运行时断言（在 carrier-probe 启动时检查），防止后续重构绕过。"
+    }
+  ],
+  "anti_loop_detected": true
+}
