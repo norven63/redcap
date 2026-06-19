@@ -76,7 +76,8 @@
       "当验证命令把领域失败写入 verification-results.json 而不是 stdout/stderr 时，运行器必须仍能识别目标合同失败。",
       "Loom 角色完成谓词必须要求本轮新写 role-artifact，避免 repair round 被旧产物立即短路。",
       "关系探针截图必须记录 relation_visual_focus，并在已验证的真实关系容器上滚动到专用视口后采集；browser-inspection.png 与 behavioral-relation-probe.png 同像素必须被视为未解释重复。",
-      "relation_visual_focus 必须用可见面积比例、视口下限和 MutationObserver 证明不是精确滚动坐标或样式注入侥幸通过；relation_probe_reset 必须证明截图后默认视口和滚动位置已恢复；behavioral-relation-container-crop.png 必须作为关系容器内容像素证据纳入 visual-independence-report。"
+      "relation_visual_focus 必须用可见面积比例、视口下限和 MutationObserver 证明不是精确滚动坐标或样式注入侥幸通过；relation_probe_reset 必须证明截图后默认视口和滚动位置已恢复；behavioral-relation-container-crop.png 必须作为关系容器内容像素证据纳入 visual-independence-report。",
+      "Loom 角色提示必须明确要求 role-artifacts/<role>.json.status 精确为 completed，避免独立角色写 implemented 等近义状态后被运行器判失败。"
     ],
     "status": "implemented",
     "task_type": "e2e_runner_verification_hardening",
@@ -213,7 +214,9 @@
     "targeted retest on run-20260619T104850Z-73264 after Prism round2 concerns: relation_visual_focus.visibleAreaRatio=1.0, mutationRecordCount=0, dom_mutation=false, relation_probe_state_reset passed, visual-independence-report.ok true",
     "targeted retest on run-20260619T104850Z-73264 after relation crop hardening: relation_container_crop_written true, behavioral-relation-container-crop.png sha256=07044fe1..., visual-independence-report sources include behavioral-relation-container-crop and duplicate_hashes null",
     "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after prepare-stage crop placeholder and runtime crop overwrite path",
-    "runtime/bin/redcap check -> REDCAP_CHECK_OK 69/69 after relation crop hardening"
+    "runtime/bin/redcap check -> REDCAP_CHECK_OK 69/69 after relation crop hardening",
+    "complete-revival-e2e run after relation crop hardening exposed developer role artifact status drift: developer wrote status=implemented while validator requires completed; source workspace guard stayed ok",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after role status exact completed prompt and self-check guard"
   ],
   "self_purification": {
     "task_type": "runtime_change",

@@ -2356,6 +2356,7 @@ def build_role_prompt(
     - 只修改外部项目，不要修改 RedCap 源仓库。
     - 本角色的结构化证据必须写入 {role_artifact_path(evidence, role)}。
     - role artifact 至少包含 schema_id、role、status、handoff_inputs、handoff_outputs、evidence_files、notes、upstream_challenges、accepted_upstream_assumptions、rejected_upstream_assumptions。
+    - role-artifacts/{role}.json 的 status 必须精确写成 "completed"；不要写 implemented、complete、done、in_progress 或其他近义词。
     - upstream_challenges 必须是数组；除 product_manager 没有真实上游可写空数组外，其他角色至少记录一条对上游输入的质疑、风险复核、验收挑战或明确接受理由。每条建议包含 target、concern、disposition、reason。
     - 必须先读取角色门禁协调文件，并把它作为本角色的门禁依据。
     - 判断上游输入是否缺失时，必须以“上游输入实际路径”和角色门禁协调文件里的 role_must_read_resolved 为准；不要只在项目根目录按裸文件名查找。
@@ -2407,7 +2408,7 @@ def build_role_prompt(
         5. 页面必须提供真实可观察交互：至少一个 button 或 role=button 控件，点击后必须改变可见文本和稳定 DOM 摘要，例如切换活动、场次或筛选状态；不能只交付静态信息页。
            该交互必须不依赖联网、不依赖安装包，并且点击后仍能看见报名意向和角色-玩家关系。
         6. implementation-log.json 必须逐项说明每个 domain_contracts 的数据结构、界面呈现、真实交互方式和验证脚本检查方式；character-player-relation-contract 不能只写“角色和玩家可见”，必须写明真实引用校验。
-        7. 写 implementation-log.json 和 role-artifacts/developer.json。
+        7. 写 implementation-log.json 和 role-artifacts/developer.json；role-artifacts/developer.json 的 status 必须精确是 "completed"，不能写 implemented。
            role-artifacts/developer.json 必须包含 upstream_challenges，至少写一条对架构、风险或验收标准的实现侧挑战；即使接受上游，也要说明为什么接受。
         8. 如果提供验证脚本，机器验证输出必须写 verification-results.json 或其他非角色文件，不能写或覆盖 test-results.json；test-results.json 只属于 tester 角色。
         """,
@@ -12663,6 +12664,10 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("E2E 自检没有覆盖独立浏览器验证脚本哈希证据")
             if "role_opposition_matrix" not in current_source or "upstream_challenges" not in current_source:
                 failures.append("E2E 自检没有覆盖 Loom 角色对抗证据")
+            if 'role-artifacts/{role}.json 的 status 必须精确写成 "completed"' not in current_source:
+                failures.append("E2E 自检没有覆盖角色产物 status 精确完成约束")
+            if 'role-artifacts/developer.json 的 status 必须精确是 "completed"' not in current_source:
+                failures.append("E2E 自检没有覆盖 developer 角色 status 精确完成约束")
             if "convergence-diagnosis.json" not in current_source or "classify_final_prism_convergence" not in current_source:
                 failures.append("E2E 自检没有覆盖防无限循环的收敛诊断证据")
             if "convergence_rerun_guard" not in current_source or "redcap-e2e-convergence-rerun-guard.json" not in current_source:
