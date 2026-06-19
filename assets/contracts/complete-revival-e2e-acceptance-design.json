@@ -251,6 +251,7 @@
     "required_files_after_prepare": [
       "acceptance-criteria.json",
       "architecture-template.md",
+      "behavioral-relation-container-crop.png",
       "behavioral-browser-verification-template.json",
       "browser-inspection-template.json",
       "completion-marker-boundary-validation-template.json",
@@ -292,6 +293,7 @@
     ],
     "required_files_after_run": [
       "behavioral-browser-verification.json",
+      "behavioral-relation-container-crop.png",
       "browser-inspection.json",
       "codex-last-message.txt",
       "codex-run.json",
@@ -335,6 +337,7 @@
   "meaningful_acceptance": {
     "required_evidence": [
       "behavioral-browser-verification.json",
+      "behavioral-relation-container-crop.png",
       "browser-inspection.json",
       "completion-marker-boundary-validation.json",
       "completion-marker-preview-validation.json",
@@ -396,10 +399,10 @@
       "E2E 运行器必须在写 completion-marker.json 前再次运行项目验证命令，写入 final-marker-validation.json，并记录 exit_code、stdout_sha256 和 stderr_sha256",
       "E2E 运行器必须用真实浏览器打开项目入口，写入 browser-inspection.json 和截图证据，不能只采信静态脚本",
       "E2E 运行器必须用真实浏览器通过 file:// 本地文件协议打开项目入口，写入 file-browser-inspection.json 和截图证据；file:// 截图必须通过独立视口或独立状态与 HTTP 浏览器截图形成可区分视觉证据；项目不能只在本地 HTTP 服务下可用",
-      "E2E 运行器必须执行行为级浏览器验证，写入 behavioral-browser-verification.json，至少证明一次真实交互同时改变页面文本哈希和稳定 DOM 摘要哈希；行为截图必须在交互成功后、任何后续页面刷新前采集，并在 browser-inspection.png 存在时证明两张截图哈希不同；如项目数据包含玩家和角色关系，必须探索可能承载角色、玩家或关系信息的视图入口，并用 DOM 结构级探针验证关键领域关系在同一结构容器中呈现，同时额外记录 behavioral-relation-probe.png、relation_event_control、relation_record_control、relation_view_control 和被验证活动标题可见性；扁平文本距离只能作为辅助信息，不能单独判定通过",
+      "E2E 运行器必须执行行为级浏览器验证，写入 behavioral-browser-verification.json，至少证明一次真实交互同时改变页面文本哈希和稳定 DOM 摘要哈希；行为截图必须在交互成功后、任何后续页面刷新前采集，并在 browser-inspection.png 存在时证明两张截图哈希不同；如项目数据包含玩家和角色关系，必须探索可能承载角色、玩家或关系信息的视图入口，并用 DOM 结构级探针验证关键领域关系在同一结构容器中呈现，同时额外记录 behavioral-relation-probe.png、behavioral-relation-container-crop.png、relation_event_control、relation_record_control、relation_view_control、relation_visual_focus、relation_probe_reset 和被验证活动标题可见性；关系探针截图必须滚动到已验证的真实关系容器并用关系专用视口采集，不能只是复刻初始浏览器截图，也不能依靠修改页面样式制造哈希差异；relation_visual_focus 必须证明目标容器与视口相交、可见面积比例不低于 0.5、关系视口不小于 800x600、dom_mutation=false；behavioral-relation-container-crop.png 必须裁剪自该真实关系容器，作为关系内容本身的像素证据；截图后必须恢复默认行为验证视口和滚动位置；扁平文本距离只能作为辅助信息，不能单独判定通过",
       "E2E 运行器必须执行独立子进程浏览器复核，写入 independent-browser-verification.json 和 independent-browser-verification-script.py，并记录脚本 sha256，避免所有浏览器证据都由匿名内联代码或同一个收口进程自签",
       "E2E 外层 harness 必须以兄弟进程方式启动独立观察者，写入只读 sealed independent-observer.json；该证据必须包含观察者脚本自哈希、父进程关系、冻结证据包文件哈希核对、交付文件哈希交叉检查、DOM 摘要、可见文本摘要、截图哈希和浏览器观察结果",
-      "E2E 运行器必须生成 visual-independence-report.json，证明所有已落盘 PNG 截图都纳入 sources 并带有 browser_context 元数据；截图哈希默认必须互不相同，HTTP browser-inspection.png 与 file-browser-inspection.png 必须通过独立视口或独立状态形成可区分视觉证据；只有 behavioral-browser-verification.png 与 behavioral-relation-probe.png 处于同一已选活动状态且由 relation_event_control、relation_view_control 和 dom_structural_probe 提供新增关系证明时，才允许写入 allowed_duplicate_screenshot_hashes 解释为可接受重复",
+      "E2E 运行器必须生成 visual-independence-report.json，证明所有已落盘 PNG 截图都纳入 sources 并带有 browser_context 元数据；截图哈希默认必须互不相同，HTTP browser-inspection.png 与 file-browser-inspection.png 必须通过独立视口或独立状态形成可区分视觉证据；browser-inspection.png 与 behavioral-relation-probe.png 同像素必须视为未解释重复；只有 behavioral-browser-verification.png 与 behavioral-relation-probe.png 处于同一已选活动状态且由 relation_event_control、relation_view_control 和 dom_structural_probe 提供新增关系证明时，才允许写入 allowed_duplicate_screenshot_hashes 解释为可接受重复",
       "E2E 运行器必须生成 self-referential-boundary.json，明示本轮验证链路的同机、同包、harness 协调边界，并要求 completion-marker.json 复制该边界披露",
       "E2E 运行器必须生成 convergence-diagnosis.json；如果最终棱镜未通过，必须归类 loop_class、写明 evidence_gap 和 required_next_action，且结构性缺口必须设置 auto_rerun_allowed=false，禁止无意义重跑",
       "E2E 运行器必须生成 final-evidence-bundle，包含关键稳定证据哈希、摘要和交付物清单；观察者、最终棱镜、失败队列、迭代结论和完成标记等后生成文件不得放入该冻结包造成自引用哈希变化",

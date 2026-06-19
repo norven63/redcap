@@ -38,6 +38,10 @@ REDCAP = REPO_ROOT / "runtime" / "bin" / "redcap"
 CONTRACT = REPO_ROOT / "assets" / "contracts" / "complete-revival-e2e-acceptance-design.json"
 LONG_TASK_CONTRACT = REPO_ROOT / "assets" / "contracts" / "long-task-contract.json"
 DEFAULT_PERSISTENT_WORK_ROOT = pathlib.Path.home() / "workspace" / "redcap-e2e-runs"
+PLACEHOLDER_PNG_BYTES = bytes.fromhex(
+    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
+    "0000000a49444154789c63600000020001e221bc330000000049454e44ae426082"
+)
 REQUIRED_HOOK_EVENTS = ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse"]
 REQUIRED_CONFIGURED_HOOK_EVENTS = [*REQUIRED_HOOK_EVENTS, "Stop"]
 LOOM_EXECUTION_ROLES = ["product_manager", "architect", "developer", "tester", "reviewer"]
@@ -158,6 +162,7 @@ MEANINGFUL_E2E_REQUIRED_FILES = [
     "independent-browser-verification.json",
     "independent-observer.json",
     "visual-independence-report.json",
+    "behavioral-relation-container-crop.png",
     "self-referential-boundary.json",
     "completion-marker-preview.json",
     "completion-marker-preview-validation.json",
@@ -226,6 +231,9 @@ HARNESS_WATCHDOG_POLL_SECONDS = float(os.environ.get("REDCAP_E2E_WATCHDOG_POLL_S
 BROWSER_INSPECTION_VIEWPORT = {"width": 1280, "height": 900}
 FILE_BROWSER_INSPECTION_VIEWPORT = {"width": 1024, "height": 768}
 BEHAVIORAL_BROWSER_VIEWPORT = {"width": 1280, "height": 900}
+RELATION_PROBE_VIEWPORT = {"width": 1120, "height": 760}
+RELATION_PROBE_MIN_VIEWPORT = {"width": 800, "height": 600}
+RELATION_PROBE_MIN_VISIBLE_RATIO = 0.5
 INDEPENDENT_BROWSER_VIEWPORT = {"width": 1176, "height": 820}
 
 
@@ -3819,6 +3827,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "target": "index.html",
         "screenshot": "behavioral-browser-verification.png",
         "relation_probe_screenshot": "behavioral-relation-probe.png",
+        "relation_container_crop_screenshot": "behavioral-relation-container-crop.png",
         "screenshot_phase": "after_interaction",
         "visual_independence": {
             "hashes_compared": True,
@@ -3834,6 +3843,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "ok": "<boolean>",
         "failure_policy": "blocking"
     })
+    (evidence / "behavioral-relation-container-crop.png").write_bytes(PLACEHOLDER_PNG_BYTES)
     write_json(evidence / "independent-browser-verification-template.json", {
         "schema_id": "redcap-e2e-independent-browser-verification",
         "producer": "e2e-independent-browser-process",
@@ -6074,10 +6084,179 @@ def click_relation_view_control(page: Any, character_name: str, player_name: str
     return result
 
 
+def focus_relation_container_for_screenshot(page: Any, character_name: str, player_name: str) -> dict[str, Any]:
+    """滚动到真实关系容器，让关系截图截取关系视口。"""
+    try:
+        result = page.evaluate(
+            """({ characterName, playerName }) => {
+                const textOf = (element) => (element.innerText || element.textContent || "").replace(/\\s+/g, " ").trim();
+                const visible = (element) => {
+                    const style = window.getComputedStyle(element);
+                    const rect = element.getBoundingClientRect();
+                    return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+                };
+                const selector = [
+                    "tr",
+                    "li",
+                    "article",
+                    "section",
+                    "[role='row']",
+                    "[data-testid]",
+                    ".card",
+                    ".event",
+                    ".session",
+                    ".character",
+                    ".player",
+                    "div"
+                ].join(",");
+                const candidates = [];
+                for (const element of Array.from(document.querySelectorAll(selector))) {
+                    if (!visible(element)) continue;
+                    const text = textOf(element);
+                    if (!text.includes(characterName) || !text.includes(playerName)) continue;
+                    if (["HTML", "BODY", "MAIN"].includes(element.tagName)) continue;
+                    if (text.length > 1600) continue;
+                    const rect = element.getBoundingClientRect();
+                    candidates.push({ element, text, rect });
+                }
+                candidates.sort((a, b) => a.text.length - b.text.length);
+                if (!candidates.length) {
+                    return {
+                        applied: false,
+                        reason: "no_visible_relation_container",
+                        focus_method: "scroll_relation_container_into_view",
+                        character_visible: document.body.innerText.includes(characterName),
+                        player_visible: document.body.innerText.includes(playerName)
+                    };
+                }
+                const target = candidates[0].element;
+                const mutationRecords = [];
+                const observer = new MutationObserver((records) => {
+                    for (const record of records) {
+                        mutationRecords.push({
+                            type: record.type,
+                            target: record.target && record.target.nodeType === Node.ELEMENT_NODE ? record.target.tagName.toLowerCase() : String(record.target && record.target.nodeName || ""),
+                            attributeName: record.attributeName || null
+                        });
+                    }
+                });
+                observer.observe(document.documentElement, {
+                    attributes: true,
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                });
+                const beforeScroll = { x: window.scrollX, y: window.scrollY };
+                const beforeRect = target.getBoundingClientRect();
+                target.scrollIntoView({ block: "center", inline: "nearest" });
+                for (const record of observer.takeRecords()) {
+                    mutationRecords.push({
+                        type: record.type,
+                        target: record.target && record.target.nodeType === Node.ELEMENT_NODE ? record.target.tagName.toLowerCase() : String(record.target && record.target.nodeName || ""),
+                        attributeName: record.attributeName || null
+                    });
+                }
+                observer.disconnect();
+                const rect = target.getBoundingClientRect();
+                const viewport = { width: window.innerWidth, height: window.innerHeight };
+                const intersectsViewport = rect.bottom > 0 && rect.top < viewport.height && rect.right > 0 && rect.left < viewport.width;
+                const visibleWidth = Math.max(0, Math.min(rect.right, viewport.width) - Math.max(rect.left, 0));
+                const visibleHeight = Math.max(0, Math.min(rect.bottom, viewport.height) - Math.max(rect.top, 0));
+                const rectArea = Math.max(1, rect.width * rect.height);
+                const visibleAreaRatio = (visibleWidth * visibleHeight) / rectArea;
+                return {
+                    applied: true,
+                    reason: "relation_container_scrolled_into_view_for_screenshot",
+                    focus_method: "scroll_relation_container_into_view_and_capture_viewport",
+                    dom_mutation: mutationRecords.length > 0,
+                    mutationRecordCount: mutationRecords.length,
+                    mutationRecords: mutationRecords.slice(0, 20),
+                    tag: target.tagName.toLowerCase(),
+                    id: target.id || null,
+                    className: target.className || null,
+                    textLength: textOf(target).length,
+                    textExcerpt: textOf(target).slice(0, 300),
+                    viewport,
+                    beforeScroll,
+                    afterScroll: { x: window.scrollX, y: window.scrollY },
+                    rectBeforeScroll: { x: beforeRect.x, y: beforeRect.y, width: beforeRect.width, height: beforeRect.height },
+                    rectAfterScroll: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+                    visibleAreaRatio,
+                    minimumVisibleAreaRatio: 0.5,
+                    targetIntersectsViewport: intersectsViewport
+                };
+            }""",
+            {"characterName": character_name, "playerName": player_name},
+        )
+    except Exception as exc:
+        return {
+            "applied": False,
+            "reason": f"relation_focus_failed:{type(exc).__name__}",
+            "focus_method": "scroll_relation_container_into_view",
+            "error": str(exc),
+        }
+    return result if isinstance(result, dict) else {"applied": False, "reason": "relation_focus_returned_non_object"}
+
+
+def reset_relation_probe_page_state(page: Any) -> dict[str, Any]:
+    """关系探针截图后恢复默认行为验证视口与滚动位置。"""
+    try:
+        page.set_viewport_size(BEHAVIORAL_BROWSER_VIEWPORT)
+        page.evaluate("() => window.scrollTo(0, 0)")
+        page.wait_for_timeout(100)
+        result = page.evaluate(
+            """() => ({
+                viewport: { width: window.innerWidth, height: window.innerHeight },
+                scroll: { x: window.scrollX, y: window.scrollY }
+            })"""
+        )
+    except Exception as exc:
+        return {
+            "applied": False,
+            "reason": f"relation_probe_reset_failed:{type(exc).__name__}",
+            "error": str(exc),
+        }
+    viewport = result.get("viewport") if isinstance(result, dict) else None
+    scroll = result.get("scroll") if isinstance(result, dict) else None
+    return {
+        "applied": True,
+        "reason": "relation_probe_viewport_and_scroll_reset",
+        "viewport": viewport,
+        "scroll": scroll,
+        "viewport_restored": viewport == BEHAVIORAL_BROWSER_VIEWPORT,
+        "scroll_restored": isinstance(scroll, dict) and abs(float(scroll.get("x") or 0)) <= 1 and abs(float(scroll.get("y") or 0)) <= 1,
+    }
+
+
+def relation_container_clip(focus: dict[str, Any]) -> dict[str, float] | None:
+    rect = focus.get("rectAfterScroll")
+    viewport = focus.get("viewport")
+    if not isinstance(rect, dict) or not isinstance(viewport, dict):
+        return None
+    try:
+        viewport_width = float(viewport["width"])
+        viewport_height = float(viewport["height"])
+        x = max(0.0, float(rect["x"]) - 12.0)
+        y = max(0.0, float(rect["y"]) - 12.0)
+        width = min(float(rect["width"]) + 24.0, viewport_width - x)
+        height = min(float(rect["height"]) + 24.0, viewport_height - y)
+    except (KeyError, TypeError, ValueError):
+        return None
+    if width <= 1 or height <= 1:
+        return None
+    return {
+        "x": x,
+        "y": y,
+        "width": width,
+        "height": height,
+    }
+
+
 def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     target, target_rel, checked_entrypoints = detect_browser_entrypoint(project)
     screenshot = evidence / "behavioral-browser-verification.png"
     relation_screenshot = evidence / "behavioral-relation-probe.png"
+    relation_crop_screenshot = evidence / "behavioral-relation-container-crop.png"
     server_process: subprocess.Popen[str] | None = None
     result: dict[str, Any] = {
         "schema_id": "redcap-e2e-behavioral-browser-verification",
@@ -6120,6 +6299,13 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
     browser_inspection_screenshot = evidence / "browser-inspection.png"
     screenshot_phase = "not_captured"
     screenshot_phase_reason = "行为级浏览器验证尚未运行到截图阶段"
+    relation_probe_browser_context: dict[str, Any] | None = None
+    relation_crop_browser_context: dict[str, Any] | None = None
+    relation_crop_record: dict[str, Any] | None = None
+    relation_probe_reset: dict[str, Any] = {
+        "applied": None,
+        "reason": "no_relation_probe",
+    }
     try:
         server_process = subprocess.Popen(
             server_argv,
@@ -6236,6 +6422,10 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                     else "character_player_relation_contract_not_required_for_this_project"
                 ),
             }
+            relation_visual_focus: dict[str, Any] = {
+                "applied": None,
+                "reason": "no_relation_probe",
+            }
             if relation_probe:
                 page.goto(url, wait_until="domcontentloaded", timeout=20_000)
                 page.wait_for_timeout(800)
@@ -6306,7 +6496,35 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                     }""",
                     {"characterName": character_name, "playerName": player_name},
                 )
-                page.screenshot(path=str(relation_screenshot), full_page=True)
+                page.set_viewport_size(RELATION_PROBE_VIEWPORT)
+                relation_visual_focus = focus_relation_container_for_screenshot(page, character_name, player_name)
+                page.wait_for_timeout(200)
+                page.screenshot(path=str(relation_screenshot), full_page=False)
+                relation_clip = relation_container_clip(relation_visual_focus)
+                if relation_clip is not None:
+                    page.screenshot(path=str(relation_crop_screenshot), clip=relation_clip)
+                    relation_crop_record = evidence_file_record(relation_crop_screenshot, base=evidence)
+                    relation_crop_browser_context = {
+                        "process_pid": os.getpid(),
+                        "browser_version": browser_version,
+                        "viewport": RELATION_PROBE_VIEWPORT,
+                        "server_port": port,
+                        "capture_role": "behavioral-relation-container-crop",
+                        "screenshot_phase": "relation_container_crop",
+                        "visual_independence_strategy": "crop_verified_relation_container_after_scroll",
+                        "clip": relation_clip,
+                    }
+                relation_probe_browser_context = {
+                    "process_pid": os.getpid(),
+                    "browser_version": browser_version,
+                    "viewport": RELATION_PROBE_VIEWPORT,
+                    "server_port": port,
+                    "capture_role": "behavioral-relation-probe",
+                    "screenshot_phase": "relation_container_viewport",
+                    "visual_independence_strategy": "scroll_real_relation_container_into_dedicated_viewport",
+                    "dom_mutation": relation_visual_focus.get("dom_mutation"),
+                }
+                relation_probe_reset = reset_relation_probe_page_state(page)
                 relation_event_title_visible = bool(relation_event_title and relation_event_title in relation_text)
                 relation_record_title_visible = bool(relation_record_title and relation_record_title in relation_text)
                 event_state_matched = not relation_event_title or relation_event_control.get("clicked") is True or relation_event_title_visible
@@ -6329,6 +6547,12 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                     "relation_event_control": relation_event_control,
                     "relation_record_control": relation_record_control,
                     "relation_view_control": relation_view_control,
+                    "relation_visual_focus": relation_visual_focus,
+                    "relation_container_crop": {
+                        "screenshot": relation_crop_record,
+                        "browser_context": relation_crop_browser_context,
+                    },
+                    "relation_probe_reset": relation_probe_reset,
                     "relation_event_title_visible": relation_event_title_visible,
                     "relation_record_title_visible": relation_record_title_visible,
                     "relation_state_matched": {
@@ -6408,6 +6632,49 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
             "evidence": relation_evidence,
         },
         {
+            "name": "relation_visual_focus_applied",
+            "passed": (
+                not relation_probe
+                or (
+                    relation_visual_focus.get("applied") is True
+                    and relation_visual_focus.get("targetIntersectsViewport") is True
+                    and float(relation_visual_focus.get("visibleAreaRatio") or 0) >= RELATION_PROBE_MIN_VISIBLE_RATIO
+                    and int((relation_visual_focus.get("viewport") or {}).get("width") or 0) >= RELATION_PROBE_MIN_VIEWPORT["width"]
+                    and int((relation_visual_focus.get("viewport") or {}).get("height") or 0) >= RELATION_PROBE_MIN_VIEWPORT["height"]
+                    and relation_visual_focus.get("dom_mutation") is False
+                )
+            ),
+            "evidence": relation_visual_focus,
+        },
+        {
+            "name": "relation_probe_state_reset",
+            "passed": (
+                not relation_probe
+                or (
+                    relation_probe_reset.get("applied") is True
+                    and relation_probe_reset.get("viewport_restored") is True
+                    and relation_probe_reset.get("scroll_restored") is True
+                )
+            ),
+            "evidence": relation_probe_reset,
+        },
+        {
+            "name": "relation_container_crop_written",
+            "passed": (
+                not relation_probe
+                or (
+                    isinstance(relation_crop_record, dict)
+                    and relation_crop_record.get("exists") is True
+                    and int(relation_crop_record.get("size") or 0) > 0
+                    and bool(relation_crop_record.get("sha256"))
+                )
+            ),
+            "evidence": relation_crop_record or {
+                "exists": False,
+                "reason": "no_relation_crop_screenshot",
+            },
+        },
+        {
             "name": "no_browser_errors",
             "passed": not console_errors and not page_errors,
             "evidence": {"console_errors": console_errors, "page_errors": page_errors},
@@ -6441,6 +6708,9 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
         "interaction_attempts": interaction_attempts,
         "relation_probe": relation_probe,
         "relation_probe_screenshot_record": evidence_file_record(relation_screenshot, base=evidence),
+        "relation_probe_browser_context": relation_probe_browser_context,
+        "relation_container_crop_screenshot_record": relation_crop_record,
+        "relation_container_crop_browser_context": relation_crop_browser_context,
         "screenshot_phase": screenshot_phase,
         "screenshot_phase_reason": screenshot_phase_reason,
         "screenshot_record": screenshot_record,
@@ -6760,15 +7030,29 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
         })
         if source_id == "behavioral-browser-verification":
             relation_record = payload.get("relation_probe_screenshot_record")
+            relation_context_for_crop: dict[str, Any] | None = None
             if isinstance(relation_record, dict) and relation_record.get("exists") is True:
-                relation_context = dict(payload.get("browser_context") or {})
-                relation_context["capture_role"] = "behavioral-relation-probe"
-                relation_context["screenshot_phase"] = "after_relation_event_selection"
+                relation_context = payload.get("relation_probe_browser_context")
+                if not isinstance(relation_context, dict):
+                    relation_context = dict(payload.get("browser_context") or {})
+                    relation_context["capture_role"] = "behavioral-relation-probe"
+                    relation_context["screenshot_phase"] = "after_relation_event_selection"
+                relation_context_for_crop = relation_context
                 sources.append({
                     "source_id": "behavioral-relation-probe",
                     "json": json_name,
                     "screenshot": relation_record,
                     "browser_context": relation_context,
+                    "ok": payload.get("ok") is True,
+                })
+            crop_record = payload.get("relation_container_crop_screenshot_record")
+            if isinstance(crop_record, dict) and crop_record.get("exists") is True:
+                crop_context = payload.get("relation_container_crop_browser_context")
+                sources.append({
+                    "source_id": "behavioral-relation-container-crop",
+                    "json": json_name,
+                    "screenshot": crop_record,
+                    "browser_context": crop_context if isinstance(crop_context, dict) else relation_context_for_crop,
                     "ok": payload.get("ok") is True,
                 })
     observer_payload = load_optional_json(evidence / "independent-observer.json") or {}
@@ -8725,7 +9009,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
             "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, browser observation, declared bundle hash match, and cooldown file hash stability.",
             "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, completion-marker-preview.json, completion-marker-preview-validation.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, completion-marker-boundary-validation.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
-            "visual-independence-report.json must include every PNG screenshot in the evidence directory, including file-browser-inspection.png and behavioral-relation-probe.png. Duplicate hashes are forbidden unless the report explicitly records an allowed duplicate explanation. HTTP browser-inspection.png and file-browser-inspection.png must be visually distinguishable through independent viewport or state; the expected duplicate allowance is only behavioral-browser-verification.png and behavioral-relation-probe.png capturing the same selected event state while relation_event_control, relation_view_control, and dom_structural_probe provide the additional relation proof.",
+            "visual-independence-report.json must include every PNG screenshot in the evidence directory, including file-browser-inspection.png, behavioral-relation-probe.png, and behavioral-relation-container-crop.png. Duplicate hashes are forbidden unless the report explicitly records an allowed duplicate explanation; relation evidence must not rely on duplicate hashes, because behavioral-relation-container-crop.png must be a real crop of the verified relation container. HTTP browser-inspection.png and file-browser-inspection.png must be visually distinguishable through independent viewport or state.",
             "completion-marker.json is forbidden before final provider review; if this review passes, the runner must copy self-referential-boundary.json disclosures into completion-marker.json and cite final-marker-validation.json and file-browser-inspection.json.",
             "If this provider review passes, completion-marker.json must copy role_process_completion, observer_boundary, and bootstrap_review_boundary from self-referential-boundary.json.",
             "If the remaining concern is that any same-host automated E2E can never be externally production-certified, treat that as compatible with an engineering-trial marker only when self-referential-boundary.json and completion-marker.json explicitly disclose that limitation.",
@@ -12221,6 +12505,107 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             visual_report_with_extra = build_visual_independence_report(visual_evidence)
             if visual_report_with_extra.get("ok") is True or "unreported-extra.png" not in visual_report_with_extra.get("unreported_png_files", []):
                 failures.append("视觉独立报告没有拦截未纳入 sources 的额外 PNG 截图")
+            browser_relation_duplicate_evidence = work_root / "visual-browser-relation-duplicate-self-check" / ".redcap" / "evidence" / "e2e"
+            browser_relation_duplicate_evidence.mkdir(parents=True, exist_ok=True)
+
+            def write_browser_relation_duplicate_probe(name: str, payload: bytes) -> dict[str, Any]:
+                path = browser_relation_duplicate_evidence / name
+                path.write_bytes(payload)
+                return evidence_file_record(path, base=browser_relation_duplicate_evidence)
+
+            duplicate_browser_record = write_browser_relation_duplicate_probe("browser-inspection.png", b"same-initial-and-relation-render")
+            duplicate_file_record = write_browser_relation_duplicate_probe("file-browser-inspection.png", b"duplicate-file-render")
+            duplicate_behavioral_record = write_browser_relation_duplicate_probe("behavioral-browser-verification.png", b"duplicate-behavior-render")
+            duplicate_relation_record = write_browser_relation_duplicate_probe("behavioral-relation-probe.png", b"same-initial-and-relation-render")
+            duplicate_independent_record = write_browser_relation_duplicate_probe("independent-browser-verification.png", b"duplicate-independent-render")
+            duplicate_observer_record = write_browser_relation_duplicate_probe("independent-observer.png", b"duplicate-observer-render")
+            write_json(browser_relation_duplicate_evidence / "browser-inspection.json", {
+                "ok": True,
+                "screenshot_record": duplicate_browser_record,
+                "browser_context": {
+                    "process_pid": 11,
+                    "browser_version": "self-check",
+                    "viewport": common_viewport,
+                    "server_port": 2111,
+                    "capture_role": "browser-inspection",
+                    "screenshot_phase": "initial_render",
+                },
+            })
+            write_json(browser_relation_duplicate_evidence / "file-browser-inspection.json", {
+                "ok": True,
+                "screenshot_record": duplicate_file_record,
+                "browser_context": {
+                    "process_pid": 12,
+                    "browser_version": "self-check",
+                    "viewport": FILE_BROWSER_INSPECTION_VIEWPORT,
+                    "server_port": 0,
+                    "capture_role": "file-browser-inspection",
+                    "screenshot_phase": "file_protocol_render",
+                    "protocol": "file",
+                },
+            })
+            write_json(browser_relation_duplicate_evidence / "behavioral-browser-verification.json", {
+                "ok": True,
+                "screenshot_record": duplicate_behavioral_record,
+                "relation_probe_screenshot_record": duplicate_relation_record,
+                "checks": [
+                    {
+                        "name": "character_player_relation_visible",
+                        "passed": True,
+                        "evidence": {
+                            "relation_event_control": {"clicked": False, "reason": "initial_page_already_visible"},
+                            "relation_visual_focus": {"applied": False, "reason": "self_check_bad_case_no_focus"},
+                            "dom_structural_probe": {
+                                "same_structural_container": True,
+                                "matched_container_count": 1,
+                            },
+                        },
+                    }
+                ],
+                "browser_context": {
+                    "process_pid": 13,
+                    "browser_version": "self-check",
+                    "viewport": common_viewport,
+                    "server_port": 2112,
+                    "capture_role": "behavioral-interaction",
+                    "screenshot_phase": "after_interaction",
+                },
+            })
+            write_json(browser_relation_duplicate_evidence / "independent-browser-verification.json", {
+                "ok": True,
+                "screenshot_record": duplicate_independent_record,
+                "browser_context": {
+                    "process_pid": 14,
+                    "browser_version": "self-check",
+                    "viewport": {"width": 1176, "height": 820},
+                    "server_port": 2113,
+                    "capture_role": "independent-browser-process",
+                    "screenshot_phase": "after_interaction",
+                },
+            })
+            write_json(browser_relation_duplicate_evidence / "independent-observer.json", {
+                "ok": True,
+                "bundle_fingerprint": {
+                    "matches_declared_bundle_sha256": True,
+                    "file_sha256_stable_after_cooldown": True,
+                },
+                "browser_observation": {
+                    "screenshot_record": duplicate_observer_record,
+                    "browser_context": {
+                        "process_pid": 15,
+                        "browser_version": "self-check",
+                        "viewport": {"width": 1032, "height": 760},
+                        "server_port": 2114,
+                        "capture_role": "independent-observer",
+                        "screenshot_phase": "after_interaction",
+                    },
+                },
+            })
+            browser_relation_duplicate_report = build_visual_independence_report(browser_relation_duplicate_evidence)
+            if browser_relation_duplicate_report.get("ok") is True:
+                failures.append("视觉独立报告误放行 browser-inspection 与 behavioral-relation-probe 同像素截图")
+            if not browser_relation_duplicate_report.get("unexpected_duplicate_screenshot_sha256"):
+                failures.append("视觉独立报告没有把 browser/relation 同像素识别为未解释重复")
             replay_evidence = work_root / "convergence-replay" / ".redcap" / "evidence" / "e2e"
             write_json(replay_evidence / "final-prism-review.json", structural_final_prism)
             write_json(replay_evidence / "run-summary.json", {
@@ -12296,6 +12681,22 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("E2E active_run 入口和收束检查必须显式委托给统一边界检查")
             if "behavioral-relation-probe.png" not in current_source or "relation_event_control" not in current_source or "relation_record_control" not in current_source:
                 failures.append("E2E 自检没有覆盖行为关系探针截图和事件状态证据")
+            for required_token in [
+                "RELATION_PROBE_VIEWPORT",
+                "RELATION_PROBE_MIN_VIEWPORT",
+                "RELATION_PROBE_MIN_VISIBLE_RATIO",
+                "relation_probe_browser_context",
+                "reset_relation_probe_page_state",
+                "relation_probe_state_reset",
+                "behavioral-relation-container-crop.png",
+                "relation_container_clip",
+                "relation_container_crop_written",
+                "visibleAreaRatio",
+                "full_page=False",
+                "dom_mutation",
+            ]:
+                if required_token not in current_source:
+                    failures.append(f"E2E 自检没有覆盖关系探针专用视口截图防线：{required_token}")
             if "independent-observer.json" not in current_source or "e2e_independent_observer.py" not in current_source:
                 failures.append("E2E 自检没有覆盖独立外部观察者证据")
             if "run_e2e_harness" not in current_source or "REDCAP_E2E_WORKER" not in current_source:
