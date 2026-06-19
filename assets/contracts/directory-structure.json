@@ -43,6 +43,7 @@
     ],
     "runtime": [
       "README.md",
+      "audit",
       "bin",
       "bootstrap",
       "core",
@@ -77,6 +78,7 @@
     "source_execution_logic": {
       "paths": [
         "runtime/bin",
+        "runtime/audit",
         "runtime/core",
         "runtime/host-adapters",
         "runtime/prism/bin",
@@ -218,6 +220,16 @@
       "recursive": false,
       "allowed_names": [
         "README.md"
+      ],
+      "deny_executable_bits": true
+    },
+    {
+      "path": "runtime/audit",
+      "role": "source_execution_logic",
+      "recursive": true,
+      "allowed_extensions": [
+        ".md",
+        ".py"
       ],
       "deny_executable_bits": true
     },

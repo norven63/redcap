@@ -1,0 +1,170 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260619-e2e-runner-negative-probe-fix",
+  "fsm_state": "IMPLEMENTING",
+  "requirement_review": {
+    "user_intent": "继续推进 RedCap 完整复活长任务。上一轮完整 E2E 已证明 Loom 角色链、项目级 .redcap、Hook 证据、自我净化和独立观察者能运行，但最终棱镜指出运行器负向合同探针把 JS 数据文件写坏，导致探针验证的是脚本加载失败，而不是领域合同失败。 本轮恢复后继续处理完整 E2E 暴露的新问题：行为级浏览器关系探针必须能探索角色、玩家或关系视图入口，避免把真实页面中隐藏在标签页后的领域关系误判为失败。",
+    "target_reality": "E2E 运行器必须用保持语法有效的数据变更来做负向合同探针，并记录可审计的变更摘要；最终收敛诊断必须精准反映真实阻塞，不能用泛化模板掩盖具体问题。 同时，关系探针必须先选中目标活动或记录，再探索关系视图入口，并以 DOM 结构容器证明角色和玩家关系真实可见。",
+    "non_goals": [
+      "不把本次修复说成 RedCap 完整复活已经终局完成",
+      "不降低最终棱镜 strictest_verdict 必须为 pass 的要求",
+      "不绕过负向合同探针",
+      "不把同主机工程试用边界伪装成外部生产认证",
+      "不只改报告文字而不修运行器真实验证逻辑"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "required",
+    "rollback_plan": "回滚 runtime/core/complete_revival_e2e.py、assets/contracts/complete-revival-e2e-acceptance-design.json 和本任务新增证据；外部 E2E 运行目录可作为失败证据保留，不写回 RedCap 源码区。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260619-e2e-runner-negative-probe-fix-lifecycle.json",
+      "runtime/bin/redcap gate --task \"恢复并继续推进 RedCap E2E 负向探针修复、生命周期验证与完整端到端验收\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260619-e2e-runner-negative-probe-fix-lifecycle.json",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/audit/e2e_negative_probe_external_audit.py",
+      "runtime/bin/redcap complete-revival-e2e runner-negative-probe-regression-test --work-root /tmp/redcap-runner-negative-probe-regression6-2LmXmC",
+      "python3 runtime/audit/e2e_negative_probe_external_audit.py --regression-json assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-runner-negative-probe-regression-test.json --independent-audit-json assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-runner-negative-probe-independent-audit.json --contract assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "runtime/bin/redcap complete-revival-e2e design-check",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/merged-review.json --resolution assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/resolution.json --review assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/kimi-review.json --review assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/claude-code-review.json --manifest assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/session.json",
+      "runtime/bin/redcap check",
+      "重新运行完整 E2E，确认最终棱镜不再因负向探针语法损坏给出 concern"
+    ]
+  },
+  "prism_review": {
+    "merge_path": "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/merged-review.json",
+    "resolution_path": "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/resolution.json",
+    "manifest_path": "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/session.json"
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "抱歉，刚才网络受阻了，你的任务被中断，现在尝试是否恢复，如果恢复，请继续推进任务目标",
+    "prompt_kind": "directive",
+    "authorized_scope": "implementation",
+    "continuation_authorization": {
+      "mode": "same_session_authorized_continuation",
+      "source": "same_session_resume",
+      "session_id": "019e745f-17b8-7832-ada8-ae990b49db69",
+      "base_prompt_excerpt": "抱歉，刚才网络受阻了，你的任务被中断，现在尝试是否恢复，如果恢复，请继续推进任务目标"
+    }
+  },
+  "task_body": {
+    "requested_outcome": "修复 E2E 运行器负向合同探针，使其验证 signupIntent/signups 和 character.playerId 的真实领域合同失败，而不是由无效 JS 写入造成的加载失败。 并修复行为关系探针只选择活动、不切换关系视图导致的误判。",
+    "primary_deliverable": "运行器探针修复、合同更新、回归测试、棱镜评审证据、完整 E2E 重新验收结论。 追加行为关系视图探索修复和自检夹具。",
+    "acceptance_criteria": [
+      "运行器负向探针必须保持 data/seed-data.js 语法有效。",
+      "signup 探针必须通过清空某个活动的 signups 与 signupIntent 触发合同失败。",
+      "character 探针必须通过写入不存在的 playerId 触发合同失败。",
+      "探针证据必须记录实际变更路径、变更前后摘要和验证输出，便于评审分辨领域失败与加载失败。",
+      "收敛诊断必须把最终棱镜疑虑映射到具体可修问题，不能只输出泛化外部锚点模板。",
+      "回归测试必须证明两个探针的失败输出不再是 window.TRPG_SEED_DATA 未设置。",
+      "终局完整复活仍未验证时，必须保持阶段口径。",
+      "行为级浏览器关系探针必须记录 relation_view_control，说明是否探索了角色、玩家或关系视图入口。",
+      "当角色和玩家关系隐藏在标签页或视图按钮后面时，运行器必须主动探索入口，并仍以 DOM 结构级同容器证明通过。",
+      "必须用真实失败项目或等价夹具验证关系视图探索能力，而不是只通过静态代码检查。"
+    ],
+    "status": "implemented",
+    "task_type": "e2e_runner_verification_hardening",
+    "task_weight": "standard",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "assets/evidence/lifecycle/20260619-e2e-runner-negative-probe-fix-lifecycle.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/request-implementation-review.json",
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/audit/e2e_negative_probe_external_audit.py",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-runner-negative-probe-regression-test.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-negative-probe-external-audit.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/claude-code-rerun-summary/claude-code-rerun-summary.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/merged-review.json",
+      "runtime/core/complete_revival_e2e.py:click_relation_view_control",
+      "临时复测 /tmp/redcap-behavior-retest.* 证明旧失败 TRPG 示例可通过关系视图探针",
+      "runtime/bin/redcap check -> REDCAP_CHECK_OK"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "负向探针已经从破坏 JS 语法改成语法有效的数据变更，并增加 target_path、变更摘要、独立重建和 setup_error 控制组，避免把加载失败冒充领域合同失败。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/audit/e2e_negative_probe_external_audit.py",
+        "assets/contracts/complete-revival-e2e-acceptance-design.json"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "棱镜前七轮 concern 均以代码、审计或证据补强方式回应；第八轮 Kimi 与 Claude Code 均给出 pass，并明确完整 E2E 仍是下一道终局验证。"
+      ],
+      "evidence": [
+        "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/merged-review.json",
+        "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/resolution.json",
+        "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/merged-review.json --resolution assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/resolution.json --manifest assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/session.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "完整复活 E2E 合同已经补充负向探针别名覆盖、独立重建和 setup_error 控制组要求；当前修复只关闭负向探针质量缺陷，不关闭 RedCap 完整复活父目标。",
+        "行为级关系探针合同已要求 relation_view_control；关系验证不能只看扁平文本，也不能因未点击关系视图而误杀真实能力。"
+      ],
+      "evidence": [
+        "assets/contracts/complete-revival-e2e-acceptance-design.json",
+        "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-negative-probe-external-audit.json",
+        "runtime/core/complete_revival_e2e.py"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "PRISM_REVIEW",
+    "to": "IMPLEMENTING",
+    "evidence": [
+      "prism_review_or_explicit_skip"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/complete_revival_e2e.py",
+    "runtime/audit/e2e_negative_probe_external_audit.py",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json",
+    "runtime/bin/redcap",
+    "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/implementation-diff/implementation-diff.txt",
+    "runtime/core/complete_revival_e2e.py:click_relation_view_control",
+    "assets/contracts/complete-revival-e2e-acceptance-design.json relation_view_control contract update"
+  ],
+  "verification_evidence": [
+    "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/audit/e2e_negative_probe_external_audit.py",
+    "runtime/bin/redcap complete-revival-e2e design-check",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+    "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-runner-negative-probe-regression-test.json",
+    "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-negative-probe-external-audit.json",
+    "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/runner-negative-probe-regression-test/redcap-e2e-runner-negative-probe-independent-audit.json",
+    "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/check-receipts/claude-code-rerun-summary/claude-code-rerun-summary.json",
+    "runtime/bin/redcap prism-resolution --merge assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/merged-review.json --resolution assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/resolution.json --manifest assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/implementation-review-round8/session.json",
+    "PYTHONPATH=runtime/core python3 - <<targeted behavioral retest against /Users/norven/workspace/redcap-e2e-runs/run-20260619T084251Z-4381/...>> -> ok true",
+    "runtime/bin/redcap check -> REDCAP_CHECK_OK"
+  ],
+  "self_purification": {
+    "task_type": "runtime_change",
+    "task_weight": "standard",
+    "purification_required": true,
+    "knowledge_retrieval_evidence": "assets/evidence/self-purification/20260619-e2e-runner-negative-probe-fix/knowledge-retrieval-evidence.json",
+    "post_task_harvest": {
+      "candidates_path": "assets/evidence/self-purification/20260619-e2e-runner-negative-probe-fix/self-purification-candidates.json"
+    },
+    "review_decision": {
+      "decision": "no_promote",
+      "reason": "本轮先把负向验收区分领域失败与设置错误的经验沉淀为候选；在完整 E2E 复跑通过前，不把它晋升为公共能力资产。"
+    },
+    "promotion_or_no_promote_result": {
+      "decision": "no_promote",
+      "evidence": "assets/evidence/self-purification/20260619-e2e-runner-negative-probe-fix/runner-self-purification-resolution.json"
+    },
+    "persona_boundary_evidence": "assets/evidence/self-purification/20260619-e2e-runner-negative-probe-fix/persona-distillation-decision.json"
+  },
+  "completion_claim": {
+    "present": false,
+    "scope": "E2E 运行器负向探针和关系视图探针已进入实现后验证阶段；不声明 RedCap 完整复活终局完成。"
+  }
+}

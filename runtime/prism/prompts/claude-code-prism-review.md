@@ -15,6 +15,20 @@ Focus on:
 - Whether the diff actually implements the claim.
 - Whether verification matches the risk.
 
+## Authorized File Access
+
+If the review request JSON contains `file_access.mode = "bounded-read"` and an
+`allowed_paths` list, you are authorized and expected to inspect those paths
+directly before judging implementation reality.
+
+- Read only the listed paths unless the prompt explicitly expands scope.
+- Treat unreadable listed files as missing evidence, not as proof that the main
+  claim is false.
+- Do not rely only on the request's narrative when code or evidence files are
+  authorized.
+- When the request also includes generated compact audit evidence, prefer that
+  compact evidence over broad source reads if context is tight.
+
 ## Review Bias
 
 Be suspicious of:
@@ -29,4 +43,3 @@ Be suspicious of:
 
 Return the Prism review shape from `schemas/prism-review.schema.json` with
 `provider` set to `claude-code`.
-

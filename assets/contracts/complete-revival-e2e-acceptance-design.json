@@ -238,6 +238,10 @@
       "purpose": "轻量验证 E2E 父执行器硬超时、进程组清理和独立看门狗兜底能力。"
     },
     {
+      "name": "runtime/bin/redcap complete-revival-e2e runner-negative-probe-regression-test --work-root <external-dir>",
+      "purpose": "轻量验证 E2E 运行器负向合同探针会保持 JS 数据文件语法有效，并触发报名合同与实体引用关系合同的领域失败，而不是退化成数据加载失败；回归必须同时覆盖 TRPG_SEED_DATA、REDCAP_DATA、PROJECT_DATA、ACTIVITY_DATA、SAMPLE_DATA 和非 TRPG 的 APP_DATA 通用工作坊数据。"
+    },
+    {
       "name": "runtime/bin/redcap complete-revival-e2e self-check",
       "purpose": "运行合同检查、缺失 direction 负向探针、准备器正向探针和 Codex CLI 承载探针。"
     }
@@ -370,18 +374,23 @@
       "默认实现和验证方案必须优先无外部依赖、无需联网安装；除非需求明确要求，不得把 Vite、Playwright 或其他重型依赖作为默认路径",
       "任务后必须记录至少一个自我净化候选和对应处理决定，并由 E2E 运行器写入 runner-self-purification-resolution.json 明确本轮是否晋升、保留私有或不晋升；不得用无候选理由替代触发，也不得让 defer_with_owner 候选悬空进入完成声明",
       "test-results.json 和 negative-probes.json 必须由 tester 角色产出，验证脚本不得覆盖角色证据",
-      "E2E 运行器必须执行 runner-negative-contract-probe.json，临时把任一活动、场次或事件记录构造成 signups=[] 且 signupIntent 为空的坏数据，证明本地验证命令会失败，再恢复原数据并证明验证通过；只证明全局至少还有一条报名不能算通过",
-      "E2E 运行器必须执行 runner-character-player-contract-probe.json，临时破坏角色玩家关联，证明本地验证命令会失败，再恢复原数据并证明验证通过",
+      "E2E 运行器必须执行 runner-negative-contract-probe.json，按合同字段别名识别并临时破坏任一活动、场次、事件、会话或条目记录中的报名/注册意图字段和集合字段，证明本地验证命令会失败，再恢复原数据并证明验证通过；只证明全局至少还有一条报名不能算通过",
+      "E2E 运行器必须执行 runner-character-player-contract-probe.json，按父实体列表与子实体引用字段识别并临时破坏角色玩家、参与者任务分配或等价实体引用关系，证明本地验证命令会失败，再恢复原数据并证明验证通过",
+      "E2E 运行器负向合同探针必须由 runner 内部动态执行，写回后必须先验证数据文件语法或结构仍有效；如果失败，必须标记 setup_error，不能把数据加载失败当作领域合同失败",
+      "E2E 运行器负向合同探针必须记录 mutation_summary 或等价 mutation 字段，包含 executor=runner_internal、目标路径、变更前后摘要、文件前后哈希、语法检查结果、验证命令输出和 domain_failure_detected",
+      "runner-negative-probe-regression-test 必须包含 setup_error 控制组：故意制造非领域目标的数据语法错误，使验证命令非零退出但输出不指向任何领域合同，并证明 domain_failure_detected 不会把该错误误判为报名合同或实体引用合同失败；恢复原数据后验证必须通过",
+      "runner-negative-probe-regression-test 必须产出 redcap-e2e-runner-negative-probe-independent-audit.json，包含关键函数源码片段哈希、字段和实体别名常量、domain_failure_detected 判定逻辑、六类回归案例的 mutation 与命令输出，供棱镜不依赖整份运行器源码即可审计",
+      "runner-negative-probe-regression-test 的结果必须再由 runtime/audit/e2e_negative_probe_external_audit.py 这类不调用运行器探针函数的独立审计器复核，覆盖全局名矩阵、语法检查、领域合同输出、变更哈希、恢复验证、原始数据 target_path 存在性、mutation 快照 target_path 变更结果、合同别名覆盖率，并且必须由审计器按合同别名独立重构报名字段破坏与实体引用破坏、运行同一验证命令、确认目标合同失败后恢复原数据",
       "Cap 人格沉淀必须记录私有边界决策，禁止写入公共知识库",
       "安装包内棱镜自检必须通过，失败不得作为 non_blocking 关闭",
       "E2E 运行器必须独立重跑项目验证，不能只采信 tester 或 developer 自报",
       "E2E 运行器必须在写 completion-marker.json 前再次运行项目验证命令，写入 final-marker-validation.json，并记录 exit_code、stdout_sha256 和 stderr_sha256",
       "E2E 运行器必须用真实浏览器打开项目入口，写入 browser-inspection.json 和截图证据，不能只采信静态脚本",
       "E2E 运行器必须用真实浏览器通过 file:// 本地文件协议打开项目入口，写入 file-browser-inspection.json 和截图证据；项目不能只在本地 HTTP 服务下可用",
-      "E2E 运行器必须执行行为级浏览器验证，写入 behavioral-browser-verification.json，至少证明一次真实交互同时改变页面文本哈希和稳定 DOM 摘要哈希；行为截图必须在交互成功后、任何后续页面刷新前采集，并在 browser-inspection.png 存在时证明两张截图哈希不同；如项目数据包含玩家和角色关系，必须用 DOM 结构级探针验证关键领域关系在同一结构容器中呈现，并额外记录 behavioral-relation-probe.png、relation_event_control 和被验证活动标题可见性；扁平文本距离只能作为辅助信息，不能单独判定通过",
+      "E2E 运行器必须执行行为级浏览器验证，写入 behavioral-browser-verification.json，至少证明一次真实交互同时改变页面文本哈希和稳定 DOM 摘要哈希；行为截图必须在交互成功后、任何后续页面刷新前采集，并在 browser-inspection.png 存在时证明两张截图哈希不同；如项目数据包含玩家和角色关系，必须探索可能承载角色、玩家或关系信息的视图入口，并用 DOM 结构级探针验证关键领域关系在同一结构容器中呈现，同时额外记录 behavioral-relation-probe.png、relation_event_control、relation_record_control、relation_view_control 和被验证活动标题可见性；扁平文本距离只能作为辅助信息，不能单独判定通过",
     "E2E 运行器必须执行独立子进程浏览器复核，写入 independent-browser-verification.json 和 independent-browser-verification-script.py，并记录脚本 sha256，避免所有浏览器证据都由匿名内联代码或同一个收口进程自签",
     "E2E 外层 harness 必须以兄弟进程方式启动独立观察者，写入只读 sealed independent-observer.json；该证据必须包含观察者脚本自哈希、父进程关系、冻结证据包文件哈希核对、交付文件哈希交叉检查、DOM 摘要、可见文本摘要、截图哈希和浏览器观察结果",
-      "E2E 运行器必须生成 visual-independence-report.json，证明所有已落盘 PNG 截图都纳入 sources 并带有 browser_context 元数据；截图哈希默认必须互不相同，只有 browser-inspection.png 与 file-browser-inspection.png 在同一静态入口、相同视口、不同 HTTP/file 上下文下像素完全一致，或 behavioral-browser-verification.png 与 behavioral-relation-probe.png 处于同一已选活动状态且由 relation_event_control 和 dom_structural_probe 提供新增关系证明时，才允许写入 allowed_duplicate_screenshot_hashes 解释为可接受重复",
+      "E2E 运行器必须生成 visual-independence-report.json，证明所有已落盘 PNG 截图都纳入 sources 并带有 browser_context 元数据；截图哈希默认必须互不相同，只有 browser-inspection.png 与 file-browser-inspection.png 在同一静态入口、相同视口、不同 HTTP/file 上下文下像素完全一致，或 behavioral-browser-verification.png 与 behavioral-relation-probe.png 处于同一已选活动状态且由 relation_event_control、relation_view_control 和 dom_structural_probe 提供新增关系证明时，才允许写入 allowed_duplicate_screenshot_hashes 解释为可接受重复",
       "E2E 运行器必须生成 self-referential-boundary.json，明示本轮验证链路的同机、同包、harness 协调边界，并要求 completion-marker.json 复制该边界披露",
       "E2E 运行器必须生成 convergence-diagnosis.json；如果最终棱镜未通过，必须归类 loop_class、写明 evidence_gap 和 required_next_action，且结构性缺口必须设置 auto_rerun_allowed=false，禁止无意义重跑",
       "E2E 运行器必须生成 final-evidence-bundle，包含关键稳定证据哈希、摘要和交付物清单；观察者、最终棱镜、失败队列、迭代结论和完成标记等后生成文件不得放入该冻结包造成自引用哈希变化",
@@ -447,6 +456,52 @@
       "expected": "只有总结或文档，没有承接方运行日志和客观证据时不得生成 completion-marker.json。"
     }
   ],
+  "negative_probe_alias_coverage": {
+    "status": "hard_regression_contract",
+    "why": "负向合同探针必须服务通用项目，不能只识别 TRPG 字段名；别名覆盖来自合同，由独立审计器按合同核对运行器常量。",
+    "required_aliases": {
+      "SIGNUP_COLLECTION_FIELD_CANDIDATES": [
+        "signups",
+        "registrations",
+        "enrollments",
+        "applications",
+        "participants"
+      ],
+      "SIGNUP_INTENT_FIELD_CANDIDATES": [
+        "signupIntent",
+        "registrationIntent",
+        "enrollmentIntent",
+        "applicationIntent",
+        "participationIntent"
+      ],
+      "RELATION_PARENT_LIST_KEYS": [
+        "players",
+        "participants",
+        "attendees",
+        "users",
+        "members"
+      ],
+      "RELATION_CHILD_LIST_KEYS": [
+        "characters",
+        "assignments",
+        "reservations",
+        "submissions",
+        "allocations"
+      ],
+      "RELATION_REFERENCE_KEYS": [
+        "playerId",
+        "player_id",
+        "participantId",
+        "participant_id",
+        "attendeeId",
+        "attendee_id",
+        "userId",
+        "user_id",
+        "memberId",
+        "member_id"
+      ]
+    }
+  },
   "terminal_boundary": {
     "this_contract_does_not_claim_redcap_complete_revival": true,
     "true_e2e_instance_requires_run": true,

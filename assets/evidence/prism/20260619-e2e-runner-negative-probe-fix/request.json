@@ -1,0 +1,77 @@
+{
+  "schema_id": "redcap-prism-review-request",
+  "task_id": "20260619-e2e-runner-negative-probe-fix",
+  "task": "评审 RedCap 完整复活 E2E 运行器负向合同探针与收敛诊断修复方案。",
+  "language_policy": "中文优先；专有名词首次出现请给中文解释。",
+  "review_mode": "design_review",
+  "risk_level": "medium",
+  "requested_providers": [
+    "kimi",
+    "claude-code"
+  ],
+  "user_intent": "Norven 要求继续推进 RedCap 完整复活长任务。上一轮完整 E2E 跑到最终棱镜复核，但 Claude Code 指出运行器负向合同探针实际触发的是 data/seed-data.js 未设置 window.TRPG_SEED_DATA 的加载/语法失败，而不是 signupIntent/signups 与 character.playerId 的领域合同失败。",
+  "main_claim": "修复方向是：运行器必须用保持 JS 语法有效的数据变更来执行负向合同探针，记录实际变更路径与前后摘要，并让收敛诊断精准映射最终棱镜疑虑，禁止用泛化模板掩盖具体阻塞。",
+  "changed_reality": [
+    "上一轮 E2E 的 Loom 角色链、项目级 .redcap、Hook 证据、自我净化、独立观察者和最终棱镜流程都已触发。",
+    "最终棱镜 strictest_verdict 是 concern，因此运行器没有写 completion-marker.json，也没有声明 ready_for_engineering_use=true。",
+    "Claude Code 的核心 concern 是 runner negative contract probes 两个探针都返回相同的 window.TRPG_SEED_DATA 未设置错误，说明 mutation 可能破坏了 JS 文件结构。",
+    "Kimi 认为可给工程试用标记，但也指出同主机自动化链路不能被说成外部生产认证。",
+    "本轮不能重跑赌通过，必须先修运行器探针与诊断。"
+  ],
+  "proposed_design": [
+    "新增或改造 seed-data.js 读取/写回辅助函数：从当前 seed 数据加载对象，深拷贝后只修改字段值，再写回合法的 window.TRPG_SEED_DATA = <json>; 形式。",
+    "signup 探针清空某个活动的 signups 和 signupIntent，但保持文件语法有效；预期验证失败信息必须指向报名合同，而不是 window.TRPG_SEED_DATA 未设置。",
+    "character 探针把某个角色的 playerId 改成不存在的玩家 ID，但保持文件语法有效；预期验证失败信息必须指向角色玩家关系合同。",
+    "探针证据增加 mutation_summary，至少包含目标对象路径、变更前后值摘要、seed-data.js 前后哈希、验证命令、退出码、stdout/stderr 摘要和 domain_failure_detected。",
+    "新增 runner-negative-probe-regression-test 子命令，构造最小外部项目并证明两个探针都能产生领域合同失败，而不是数据加载失败。",
+    "收敛诊断从 final-prism-review 读取主要 concern 和风险，优先写入具体缺口，例如 runner_negative_probe_semantics_gap，而不是默认写成外部锚点或行为截图缺口。",
+    "保持最终棱镜 strictest_verdict 必须为 pass 的门槛，不通过时继续禁止 completion-marker.json。"
+  ],
+  "known_constraints": [
+    "不能降低最终棱镜复核标准。",
+    "不能把 tester 角色已经做过的负向探针直接当成 runner 自己独立探针通过。",
+    "不能删掉负向探针或只改文案。",
+    "不能把同主机自动化工程试用边界说成外部生产认证。",
+    "不能让完整 E2E 自动盲目重跑。"
+  ],
+  "file_access": {
+    "mode": "bounded-read",
+    "purpose": "评审 E2E 运行器负向合同探针与收敛诊断修复方案。",
+    "max_files": 8,
+    "max_bytes_per_file": 260000,
+    "max_total_bytes": 900000,
+    "allowed_paths": [
+      "runtime/core/complete_revival_e2e.py",
+      "assets/contracts/complete-revival-e2e-acceptance-design.json",
+      "assets/evidence/lifecycle/20260619-e2e-runner-negative-probe-fix-lifecycle.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/request.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/e2e-inputs/final-prism-review/claude-code.review.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/e2e-inputs/final-prism-review/kimi.review.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/e2e-inputs/final-prism-review/merge.json",
+      "assets/evidence/prism/20260619-e2e-runner-negative-probe-fix/e2e-inputs/final-prism-review/session.json"
+    ]
+  },
+  "questions_for_prism": [
+    "该方案是否正面修复了负向探针语义，而不是绕过或降级？",
+    "保持 JS 语法有效并记录 mutation_summary，是否足以回应 Claude Code 的核心 concern？",
+    "收敛诊断应该如何避免泛化模板掩盖具体阻塞？",
+    "回归测试和完整 E2E 重跑还应覆盖哪些风险？",
+    "是否存在引入新误判、过拟合 TRPG 案例或削弱最终验收门槛的风险？"
+  ],
+  "expected_output": {
+    "format": "json",
+    "required_fields": [
+      "verdict",
+      "confidence",
+      "main_concern",
+      "minimum_fix",
+      "risk_notes",
+      "evidence_reviewed"
+    ],
+    "verdict_options": [
+      "pass",
+      "concern",
+      "block"
+    ]
+  }
+}

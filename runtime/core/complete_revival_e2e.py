@@ -1781,6 +1781,7 @@ def validate_contract(contract: dict[str, Any]) -> list[str]:
         "runtime/bin/redcap complete-revival-e2e carrier-probe --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e run --direction <text> --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e harness-timeout-regression-test --work-root <external-dir>",
+        "runtime/bin/redcap complete-revival-e2e runner-negative-probe-regression-test --work-root <external-dir>",
         "runtime/bin/redcap complete-revival-e2e self-check",
     ]:
         if required not in commands:
@@ -3822,7 +3823,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "producer": "e2e-runner",
         "checks": [
             "所有 E2E 截图证据必须存在于 sources 中并带 sha256，不能漏掉已落盘 PNG",
-            "截图 sha256 默认必须互不相同；若 HTTP 与 file:// 对同一静态入口在相同视口下产生相同像素截图，必须在 allowed_duplicate_screenshot_hashes 中解释并记录独立 browser_context；若行为截图与关系探针截图处于同一已选活动状态且像素相同，必须记录 relation_event_control 和 dom_structural_probe 作为新增证明",
+            "截图 sha256 默认必须互不相同；若 HTTP 与 file:// 对同一静态入口在相同视口下产生相同像素截图，必须在 allowed_duplicate_screenshot_hashes 中解释并记录独立 browser_context；若行为截图与关系探针截图处于同一已选活动状态且像素相同，必须记录 relation_event_control、relation_view_control 和 dom_structural_probe 作为新增证明",
             "所有浏览器证据必须记录 browser_context",
             "观察者读取的 final-evidence-bundle.json 文件哈希必须等于请求中的冻结哈希"
         ],
@@ -3842,7 +3843,7 @@ def prepare_project(direction: str, work_root: pathlib.Path, project_name: str |
         "auto_rerun_allowed": "<boolean>",
         "diagnosis": [
             {
-                "loop_class": "verification_authority_gap|loom_opposition_gap|behavioral_evidence_alignment_gap|unclassified_final_prism_concern",
+                "loop_class": "runner_negative_probe_semantics_gap|verification_authority_gap|loom_opposition_gap|behavioral_evidence_alignment_gap|unclassified_final_prism_concern",
                 "evidence_gap": "<why the run cannot converge>",
                 "required_next_action": "<what must be fixed before rerun>",
                 "auto_rerun_allowed": False
@@ -4311,6 +4312,60 @@ JS_DATA_CANDIDATE_RELATIVE_PATHS = [
 ]
 
 SIGNUP_CHILD_LIST_KEYS = ["sessions", "events", "activities", "items"]
+SIGNUP_COLLECTION_FIELD_CANDIDATES = [
+    "signups",
+    "registrations",
+    "enrollments",
+    "applications",
+    "participants",
+]
+SIGNUP_INTENT_FIELD_CANDIDATES = [
+    "signupIntent",
+    "registrationIntent",
+    "enrollmentIntent",
+    "applicationIntent",
+    "participationIntent",
+]
+RELATION_PARENT_LIST_KEYS = [
+    "players",
+    "participants",
+    "attendees",
+    "users",
+    "members",
+]
+RELATION_CHILD_LIST_KEYS = [
+    "characters",
+    "assignments",
+    "reservations",
+    "submissions",
+    "allocations",
+]
+RELATION_REFERENCE_KEYS = [
+    "playerId",
+    "player_id",
+    "participantId",
+    "participant_id",
+    "attendeeId",
+    "attendee_id",
+    "userId",
+    "user_id",
+    "memberId",
+    "member_id",
+    "player",
+    "playerName",
+    "player_name",
+    "participant",
+    "participantName",
+    "participant_name",
+]
+RELATION_NAME_REFERENCE_KEYS = {
+    "player",
+    "playerName",
+    "player_name",
+    "participant",
+    "participantName",
+    "participant_name",
+}
 SELF_PURIFICATION_ALLOWED_DECISIONS = {"promote_public", "keep_private", "no_promote", "defer_with_owner"}
 
 
@@ -4381,6 +4436,9 @@ HTML_JSON_TYPE_RE = re.compile(r"\btype\s*=\s*['\"]application/json['\"]", re.IG
 HTML_DATA_HINTS = [
     "trpg",
     "redcap",
+    "app",
+    "application",
+    "project",
     "activity",
     "activities",
     "campaign",
@@ -4395,9 +4453,17 @@ STRUCTURED_DATA_KEYS = {
     "sessions",
     "items",
     "players",
+    "participants",
+    "attendees",
+    "users",
+    "members",
     "characters",
+    "assignments",
+    "reservations",
     "signups",
     "signupIntent",
+    "registrations",
+    "registrationIntent",
 }
 
 
@@ -4468,7 +4534,7 @@ def load_structured_data_payload(project: pathlib.Path, data_path: pathlib.Path,
             "candidates.push({source: 'exports', value: sandbox.exports});"
             "for (const scopeName of ['window', 'globalThis']) {"
             "  const scope = scopeName === 'window' ? sandbox.window : sandbox;"
-            "  for (const key of ['TRPG_CAMPAIGNS', 'TRPG_ACTIVITY_DATA', 'TRPG_SAMPLE_DATA', 'TRPG_SEED_DATA', 'TRPG_DATA', 'REDCAP_DATA', 'TRPG_EVENTS', 'TRPG_ACTIVITIES', 'ACTIVITY_DATA', 'SAMPLE_DATA', 'campaigns', 'events', 'activities']) {"
+            "  for (const key of ['TRPG_CAMPAIGNS', 'TRPG_ACTIVITY_DATA', 'TRPG_SAMPLE_DATA', 'TRPG_SEED_DATA', 'TRPG_DATA', 'REDCAP_DATA', 'APP_DATA', 'APPLICATION_DATA', 'PROJECT_DATA', 'DOMAIN_DATA', 'BOOTSTRAP_DATA', 'TRPG_EVENTS', 'TRPG_ACTIVITIES', 'ACTIVITY_DATA', 'SAMPLE_DATA', 'campaigns', 'events', 'activities', 'sessions', 'items']) {"
             "    candidates.push({source: `${scopeName}.${key}`, value: scope[key]});"
             "  }"
             "}"
@@ -4532,17 +4598,37 @@ def write_structured_data_probe_payload(data_path: pathlib.Path, payload: dict[s
             + ";\n\n"
             + "if (typeof window !== \"undefined\") {\n"
             + "  window.TRPG_DATA = data;\n"
+            + "  window.TRPG_SEED_DATA = data;\n"
+            + "  window.REDCAP_DATA = data;\n"
+            + "  window.APP_DATA = data;\n"
+            + "  window.APPLICATION_DATA = data;\n"
+            + "  window.PROJECT_DATA = data;\n"
+            + "  window.DOMAIN_DATA = data;\n"
+            + "  window.BOOTSTRAP_DATA = data;\n"
             + "  window.TRPG_CAMPAIGNS = Array.isArray(data) ? data : (data.campaigns || data.activities || data.events || data.items || data);\n"
             + "  window.TRPG_ACTIVITY_DATA = data;\n"
             + "  window.TRPG_SAMPLE_DATA = data;\n"
             + "  window.TRPG_ACTIVITIES = Array.isArray(data) ? data : (data.activities || data.campaigns || data.events || data.items || data);\n"
             + "  window.TRPG_EVENTS = Array.isArray(data) ? data : (data.events || data.activities || data.campaigns || data.items || data);\n"
+            + "  window.ACTIVITY_DATA = data;\n"
+            + "  window.SAMPLE_DATA = data;\n"
+            + "  window.activities = Array.isArray(data) ? data : (data.activities || data.events || data.campaigns || data.items || data);\n"
+            + "  window.events = Array.isArray(data) ? data : (data.events || data.activities || data.campaigns || data.items || data);\n"
             + "}\n"
             + "if (typeof globalThis !== \"undefined\") {\n"
             + "  globalThis.TRPG_DATA = data;\n"
+            + "  globalThis.TRPG_SEED_DATA = data;\n"
+            + "  globalThis.REDCAP_DATA = data;\n"
+            + "  globalThis.APP_DATA = data;\n"
+            + "  globalThis.APPLICATION_DATA = data;\n"
+            + "  globalThis.PROJECT_DATA = data;\n"
+            + "  globalThis.DOMAIN_DATA = data;\n"
+            + "  globalThis.BOOTSTRAP_DATA = data;\n"
             + "  globalThis.TRPG_CAMPAIGNS = Array.isArray(data) ? data : (data.campaigns || data.activities || data.events || data.items || data);\n"
             + "  globalThis.TRPG_ACTIVITY_DATA = data;\n"
             + "  globalThis.TRPG_SAMPLE_DATA = data;\n"
+            + "  globalThis.ACTIVITY_DATA = data;\n"
+            + "  globalThis.SAMPLE_DATA = data;\n"
             + "}\n"
             + "if (typeof module !== \"undefined\" && module.exports) {\n"
             + "  module.exports = data;\n"
@@ -4564,8 +4650,134 @@ def write_structured_data_probe_payload(data_path: pathlib.Path, payload: dict[s
     raise ValueError(f"unsupported structured data probe path: {data_path}")
 
 
+def summarize_probe_value(value: Any) -> dict[str, Any]:
+    if isinstance(value, list):
+        return {"type": "list", "length": len(value)}
+    if isinstance(value, dict):
+        return {"type": "object", "keys": sorted(str(key) for key in value.keys())[:12]}
+    if isinstance(value, str):
+        return {"type": "string", "length": len(value), "sample": value[:80]}
+    if value is None:
+        return {"type": "null"}
+    return {"type": type(value).__name__, "repr": repr(value)[:80]}
+
+
+def structured_data_probe_syntax_check(project: pathlib.Path, data_path: pathlib.Path) -> dict[str, Any]:
+    relative = str(data_path.relative_to(project))
+    if data_path.suffix == ".json":
+        try:
+            json.loads(data_path.read_text(encoding="utf-8"))
+            return {"ok": True, "kind": "json-parse", "target": relative}
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            return {"ok": False, "kind": "json-parse", "target": relative, "error": f"{type(exc).__name__}: {exc}"}
+    if data_path.suffix == ".js":
+        completed = run_command(["node", "--check", relative], cwd=project, timeout_seconds=30)
+        receipt = command_receipt(completed)
+        return {
+            "ok": completed.get("exit_code") == 0,
+            "kind": "node-check",
+            "target": relative,
+            "receipt": receipt,
+        }
+    if data_path.suffix == ".html":
+        text = data_path.read_text(encoding="utf-8", errors="replace")
+        _, payload, source = find_html_embedded_json_script(text)
+        return {
+            "ok": payload is not None,
+            "kind": "html-embedded-json-parse",
+            "target": relative,
+            "source": source,
+        }
+    return {"ok": False, "kind": "unsupported", "target": relative, "error": f"unsupported suffix: {data_path.suffix}"}
+
+
+def write_mutated_probe_snapshot(
+    project: pathlib.Path,
+    evidence: pathlib.Path,
+    data_path: pathlib.Path,
+    probe_id: str,
+    mutated_sha256: str,
+) -> dict[str, Any]:
+    suffix = data_path.suffix or ".txt"
+    snapshot_dir = evidence / "probe-snapshots"
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_path = snapshot_dir / f"{probe_id}-{mutated_sha256[:12]}{suffix}"
+    shutil.copy2(data_path, snapshot_path)
+    return {
+        "path": str(snapshot_path.relative_to(project)),
+        "sha256": sha256_file(snapshot_path),
+        "source_path": str(data_path.relative_to(project)),
+    }
+
+
+def receipt_text(receipt: dict[str, Any] | None) -> str:
+    if not isinstance(receipt, dict):
+        return ""
+    return "\n".join(
+        str(receipt.get(key) or "")
+        for key in ("stdout_tail", "stderr_tail")
+    ).casefold()
+
+
+def domain_failure_detected(receipt: dict[str, Any] | None, target_contract: str) -> bool:
+    text = receipt_text(receipt)
+    if not text:
+        return False
+    setup_error_markers = [
+        "trpg_seed_data not set",
+        "window.trpg_seed_data",
+        "did not set window",
+        "js data file did not expose structured data",
+        "syntaxerror",
+        "unexpected token",
+    ]
+    if any(marker in text for marker in setup_error_markers):
+        return False
+    if target_contract == "signup-intent-data-contract":
+        markers = [
+            "signup-intent-data-contract",
+            "signupintent",
+            "signups",
+            "registrationintent",
+            "registrations",
+            "enrollmentintent",
+            "enrollments",
+            "participationintent",
+            "participants",
+            "报名",
+            "注册",
+            "参与",
+        ]
+    elif target_contract == "character-player-relation-contract":
+        markers = [
+            "character-player-relation-contract",
+            "entity-reference-contract",
+            "playerid",
+            "player id",
+            "participantid",
+            "participant id",
+            "attendeeid",
+            "userid",
+            "memberid",
+            "角色",
+            "玩家",
+            "参与者",
+            "关联",
+        ]
+    else:
+        markers = [target_contract.casefold()]
+    return any(marker in text for marker in markers)
+
+
+def signup_record_contract_fields(record: dict[str, Any]) -> tuple[str | None, str | None]:
+    collection_field = next((field for field in SIGNUP_COLLECTION_FIELD_CANDIDATES if field in record), None)
+    intent_field = next((field for field in SIGNUP_INTENT_FIELD_CANDIDATES if field in record), None)
+    return collection_field, intent_field
+
+
 def signup_record_has_contract_fields(record: dict[str, Any]) -> bool:
-    return "signups" in record or "signupIntent" in record
+    collection_field, intent_field = signup_record_contract_fields(record)
+    return collection_field is not None or intent_field is not None
 
 
 def top_level_data_list_candidates(payload: dict[str, Any] | list[Any]) -> list[tuple[str, list[Any]]]:
@@ -4724,14 +4936,35 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
         result["failures"].append(f"{data_path.relative_to(project)} 中 {list_key} 无法解析为可变更列表")
         return result
     mutated_event = mutated_records[record_index]
-    mutated_event["signups"] = []
-    mutated_event["signupIntent"] = ""
+    collection_field, intent_field = signup_record_contract_fields(mutated_event)
+    if collection_field is None:
+        collection_field = "signups"
+    if intent_field is None:
+        intent_field = "signupIntent"
+    before_values = {
+        collection_field: copy.deepcopy(mutated_event.get(collection_field)),
+        intent_field: copy.deepcopy(mutated_event.get(intent_field)),
+    }
+    mutated_event[collection_field] = []
+    mutated_event[intent_field] = ""
     mutation_summary = {
+        "executor": "runner_internal",
         "event_id": mutated_event.get("id"),
         "data_path": str(data_path.relative_to(project)),
         "list_key": list_key,
         "record_index": record_index,
-        "changed_fields": ["signups", "signupIntent"],
+        "target_path": f"{list_key}[{record_index}]",
+        "changed_fields": [collection_field, intent_field],
+        "contract_fields": {
+            "collection_field": collection_field,
+            "intent_field": intent_field,
+        },
+        "before": {key: summarize_probe_value(value) for key, value in before_values.items()},
+        "after": {
+            collection_field: summarize_probe_value(mutated_event.get(collection_field)),
+            intent_field: summarize_probe_value(mutated_event.get(intent_field)),
+        },
+        "original_sha256": original_sha256,
         "expected_validation_exit": "non_zero",
     }
     result["mutation"] = mutation_summary
@@ -4739,16 +4972,41 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
     restore_receipt: dict[str, Any] | None = None
     try:
         write_structured_data_probe_payload(data_path, mutated)
-        negative_run = run_command(argv, cwd=project, timeout_seconds=120)
-        negative_receipt = command_receipt(negative_run)
-        negative_passed = negative_run.get("exit_code") not in (0, None)
+        mutated_sha256 = sha256_file(data_path)
+        snapshot = write_mutated_probe_snapshot(project, evidence, data_path, str(result["probe_id"]), mutated_sha256)
+        syntax_check = structured_data_probe_syntax_check(project, data_path)
+        result["mutation"]["mutated_sha256"] = mutated_sha256
+        result["mutation"]["mutated_snapshot"] = snapshot
+        result["mutation"]["syntax_check"] = syntax_check
+        if syntax_check.get("ok") is not True:
+            negative_passed = False
+            result["checks"].append({
+                "name": "probe_setup_keeps_data_file_syntax_valid",
+                "passed": False,
+                "evidence": syntax_check,
+            })
+            result["failures"].append("报名负向探针写回后的数据文件语法检查失败，不能把 setup_error 当作领域合同失败")
+        else:
+            result["checks"].append({
+                "name": "probe_setup_keeps_data_file_syntax_valid",
+                "passed": True,
+                "evidence": syntax_check,
+            })
+            negative_run = run_command(argv, cwd=project, timeout_seconds=120)
+            negative_receipt = command_receipt(negative_run)
+            contract_failure_detected = domain_failure_detected(negative_receipt, "signup-intent-data-contract")
+            negative_passed = negative_run.get("exit_code") not in (0, None) and contract_failure_detected
+            if negative_run.get("exit_code") not in (0, None) and not contract_failure_detected:
+                result["failures"].append("报名负向探针触发了非零退出，但输出没有指向报名合同失败，疑似 setup_error 或非目标错误")
+        result["contract_failure_detected"] = bool(negative_receipt and domain_failure_detected(negative_receipt, "signup-intent-data-contract"))
         result["checks"].append({
             "name": "malformed_signup_data_rejected",
             "passed": negative_passed,
             "evidence": {
-                "exit_code": negative_run.get("exit_code"),
-                "stdout_tail": negative_receipt.get("stdout_tail"),
-                "stderr_tail": negative_receipt.get("stderr_tail"),
+                "exit_code": negative_receipt.get("exit_code") if isinstance(negative_receipt, dict) else None,
+                "stdout_tail": negative_receipt.get("stdout_tail") if isinstance(negative_receipt, dict) else None,
+                "stderr_tail": negative_receipt.get("stderr_tail") if isinstance(negative_receipt, dict) else None,
+                "domain_failure_detected": result["contract_failure_detected"],
             },
         })
     finally:
@@ -4775,20 +5033,69 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
     return result
 
 
-CharacterPlayerMatch = tuple[pathlib.Path, Any, str, int, int, str, list[str]]
+CharacterPlayerMatch = tuple[pathlib.Path, Any, str, int, str, int, str, str, list[str]]
 
 
 def prefer_deeper_character_player_match(matches: list[CharacterPlayerMatch]) -> CharacterPlayerMatch:
     return next(
         (
             match for match in matches
-            if match[3] > 0 or match[4] > 0 or signup_probe_uses_non_first_path(match[2], match[3])
+            if match[3] > 0 or match[5] > 0 or signup_probe_uses_non_first_path(match[2], match[3])
         ),
         matches[0],
     )
 
 
-def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Path | None, dict[str, Any] | list[Any] | None, str | None, int | None, int | None, str | None, list[str]]:
+def relation_parent_ids(container: dict[str, Any], parent_key: str) -> set[str]:
+    parents = container.get(parent_key)
+    if not isinstance(parents, list):
+        return set()
+    ids: set[str] = set()
+    for parent in parents:
+        if not isinstance(parent, dict):
+            continue
+        for key in ["id", "uid", "name"]:
+            value = parent.get(key)
+            if value:
+                ids.add(str(value))
+    return ids
+
+
+def append_relation_matches(
+    matches: list[CharacterPlayerMatch],
+    data_path: pathlib.Path,
+    payload: dict[str, Any] | list[Any],
+    list_key: str,
+    event_index: int,
+    container: dict[str, Any],
+    failures: list[str],
+) -> None:
+    parent_id_sets = [
+        (parent_key, relation_parent_ids(container, parent_key))
+        for parent_key in RELATION_PARENT_LIST_KEYS
+    ]
+    parent_id_sets = [(key, ids) for key, ids in parent_id_sets if ids]
+    for child_key in RELATION_CHILD_LIST_KEYS:
+        children = container.get(child_key)
+        if not isinstance(children, list):
+            continue
+        for child_index, child in enumerate(children):
+            if not isinstance(child, dict):
+                continue
+            for ref_key in RELATION_REFERENCE_KEYS:
+                ref = child.get(ref_key)
+                if not isinstance(ref, (str, int, float)) or not str(ref).strip():
+                    continue
+                ref_value = str(ref)
+                if parent_id_sets:
+                    for parent_key, parent_ids in parent_id_sets:
+                        if ref_value in parent_ids:
+                            matches.append((data_path, payload, list_key, event_index, child_key, child_index, ref_key, parent_key, failures))
+                elif ref_key in RELATION_NAME_REFERENCE_KEYS:
+                    matches.append((data_path, payload, list_key, event_index, child_key, child_index, ref_key, "__name_reference__", failures))
+
+
+def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[pathlib.Path | None, dict[str, Any] | list[Any] | None, str | None, int | None, str | None, int | None, str | None, str | None, list[str]]:
     failures: list[str] = []
     for data_path in structured_data_candidate_paths(project):
         if not data_path.exists():
@@ -4799,23 +5106,7 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
         candidate_matches: list[CharacterPlayerMatch] = []
         list_candidates: list[tuple[str, list[Any]]] = []
         if isinstance(payload, dict):
-            top_characters = payload.get("characters")
-            if isinstance(top_characters, list):
-                top_players = payload.get("players")
-                top_player_ids = {
-                    str(player.get("id"))
-                    for player in top_players
-                    if isinstance(player, dict) and player.get("id")
-                } if isinstance(top_players, list) else set()
-                for character_index, character in enumerate(top_characters):
-                    if not isinstance(character, dict):
-                        continue
-                    for ref_key in ["playerId", "player_id", "player", "playerName", "player_name"]:
-                        ref = character.get(ref_key)
-                        if top_player_ids and ref and str(ref) in top_player_ids:
-                            candidate_matches.append((data_path, payload, "__top_level__", -1, character_index, ref_key, failures))
-                        if not top_player_ids and ref_key in {"player", "playerName", "player_name"} and isinstance(ref, str) and ref.strip():
-                            candidate_matches.append((data_path, payload, "__top_level__", -1, character_index, ref_key, failures))
+            append_relation_matches(candidate_matches, data_path, payload, "__top_level__", -1, payload, failures)
             for key in ["events", "activities", "sessions", "campaigns", "items"]:
                 value = payload.get(key)
                 if isinstance(value, list):
@@ -4840,34 +5131,17 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
                         if isinstance(child_event, dict):
                             event_records.append((nested_list_key, child_index, child_event))
                 for candidate_list_key, candidate_event_index, candidate_event in event_records:
-                    characters = candidate_event.get("characters")
-                    if not isinstance(characters, list):
-                        continue
-                    players = candidate_event.get("players")
-                    player_ids = {
-                        str(player.get("id"))
-                        for player in players
-                        if isinstance(player, dict) and player.get("id")
-                    } if isinstance(players, list) else set()
-                    for character_index, character in enumerate(characters):
-                        if not isinstance(character, dict):
-                            continue
-                        for ref_key in ["playerId", "player_id", "player", "playerName", "player_name"]:
-                            ref = character.get(ref_key)
-                            if player_ids and ref and str(ref) in player_ids:
-                                candidate_matches.append((data_path, payload, candidate_list_key, candidate_event_index, character_index, ref_key, failures))
-                            if not player_ids and ref_key in {"player", "playerName", "player_name"} and isinstance(ref, str) and ref.strip():
-                                candidate_matches.append((data_path, payload, candidate_list_key, candidate_event_index, character_index, ref_key, failures))
+                    append_relation_matches(candidate_matches, data_path, payload, candidate_list_key, candidate_event_index, candidate_event, failures)
         if candidate_matches:
             return prefer_deeper_character_player_match(candidate_matches)
-        failures.append(f"{data_path.relative_to(project)} 未发现可破坏的角色玩家关联")
-    failures.append("未找到包含 characters 与玩家引用或玩家名的 JSON 或 JS 数据文件")
-    return None, None, None, None, None, None, failures
+        failures.append(f"{data_path.relative_to(project)} 未发现可破坏的实体引用关系")
+    failures.append("未找到包含父实体列表与子实体引用关系的 JSON 或 JS 数据文件")
+    return None, None, None, None, None, None, None, None, failures
 
 
 def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     argv, source = detect_validation_command(project)
-    data_path, data, list_key, event_index, character_index, ref_key, location_failures = find_character_player_contract_data_target(project)
+    data_path, data, list_key, event_index, child_key, child_index, ref_key, parent_key, location_failures = find_character_player_contract_data_target(project)
     result: dict[str, Any] = {
         "schema_id": "redcap-e2e-runner-character-player-contract-probe",
         "producer": "e2e-runner",
@@ -4879,7 +5153,9 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
         "data_path": str(data_path.relative_to(project)) if data_path is not None else None,
         "list_key": list_key,
         "event_index": event_index,
-        "character_index": character_index,
+        "relation_child_key": child_key,
+        "child_index": child_index,
+        "parent_key": parent_key,
         "reference_key": ref_key,
         "ok": False,
         "checks": [],
@@ -4888,7 +5164,7 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
     if argv is None:
         result["failures"].append("无法发现验证命令，不能执行角色玩家负向契约探针")
         return result
-    if data_path is None or data is None or list_key is None or event_index is None or character_index is None or ref_key is None:
+    if data_path is None or data is None or list_key is None or event_index is None or child_key is None or child_index is None or ref_key is None:
         result["failures"].extend(location_failures)
         return result
     original_bytes = data_path.read_bytes()
@@ -4896,7 +5172,7 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
     mutated = copy.deepcopy(data)
     if list_key == "__top_level__":
         event = mutated if isinstance(mutated, dict) else None
-        characters = event.get("characters") if isinstance(event, dict) else None
+        children = event.get(child_key) if isinstance(event, dict) else None
         event_count = 1 if isinstance(event, dict) else 0
     else:
         records = signup_probe_records_at_list_key(mutated, list_key)
@@ -4904,45 +5180,76 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
             result["failures"].append(f"{data_path.relative_to(project)} 中 {list_key}[{event_index}] 不是可变更对象")
             return result
         event = records[event_index]
-        characters = event.get("characters")
+        children = event.get(child_key)
         event_count = len(records)
-    if not isinstance(characters, list) or character_index >= len(characters) or not isinstance(characters[character_index], dict):
-        result["failures"].append(f"{data_path.relative_to(project)} 中 characters[{character_index}] 不是可变更对象")
+    if not isinstance(children, list) or child_index >= len(children) or not isinstance(children[child_index], dict):
+        result["failures"].append(f"{data_path.relative_to(project)} 中 {child_key}[{child_index}] 不是可变更对象")
         return result
     result["probe_depth"] = {
         "event_count": event_count,
-        "character_count_in_target_event": len(characters),
+        "child_count_in_target_event": len(children),
         "targeted_non_first_event": bool(event_index is not None and event_index > 0),
-        "targeted_non_first_character": character_index > 0,
-        "selection_rule": "prefer_non_first_event_or_character_then_first_available",
+        "targeted_non_first_child": child_index > 0,
+        "selection_rule": "prefer_non_first_event_or_child_then_first_available",
     }
-    original_ref = characters[character_index].get(ref_key)
-    broken_ref = "" if ref_key in {"player", "playerName", "player_name"} else "__redcap_missing_player__"
-    characters[character_index][ref_key] = broken_ref
+    original_ref = children[child_index].get(ref_key)
+    broken_ref = "" if ref_key in RELATION_NAME_REFERENCE_KEYS else "__redcap_missing_reference__"
+    children[child_index][ref_key] = broken_ref
     result["mutation"] = {
+        "executor": "runner_internal",
         "event_id": event.get("id"),
-        "character_name": characters[character_index].get("name"),
+        "child_name": children[child_index].get("name") or children[child_index].get("title"),
         "data_path": str(data_path.relative_to(project)),
         "list_key": list_key,
         "event_index": event_index,
-        "character_index": character_index,
+        "relation_child_key": child_key,
+        "child_index": child_index,
+        "parent_key": parent_key,
+        "target_path": f"{list_key}[{event_index}].{child_key}[{child_index}].{ref_key}",
         "changed_field": ref_key,
-        "original_ref": original_ref,
-        "broken_ref": broken_ref,
+        "before": summarize_probe_value(original_ref),
+        "after": summarize_probe_value(broken_ref),
+        "original_sha256": original_sha256,
         "expected_validation_exit": "non_zero",
     }
+    negative_receipt: dict[str, Any] | None = None
     try:
         write_structured_data_probe_payload(data_path, mutated)
-        negative_run = run_command(argv, cwd=project, timeout_seconds=120)
-        negative_receipt = command_receipt(negative_run)
-        negative_passed = negative_run.get("exit_code") not in (0, None)
+        mutated_sha256 = sha256_file(data_path)
+        snapshot = write_mutated_probe_snapshot(project, evidence, data_path, str(result["probe_id"]), mutated_sha256)
+        syntax_check = structured_data_probe_syntax_check(project, data_path)
+        result["mutation"]["mutated_sha256"] = mutated_sha256
+        result["mutation"]["mutated_snapshot"] = snapshot
+        result["mutation"]["syntax_check"] = syntax_check
+        if syntax_check.get("ok") is not True:
+            negative_passed = False
+            result["checks"].append({
+                "name": "probe_setup_keeps_data_file_syntax_valid",
+                "passed": False,
+                "evidence": syntax_check,
+            })
+            result["failures"].append("角色玩家负向探针写回后的数据文件语法检查失败，不能把 setup_error 当作领域合同失败")
+        else:
+            result["checks"].append({
+                "name": "probe_setup_keeps_data_file_syntax_valid",
+                "passed": True,
+                "evidence": syntax_check,
+            })
+            negative_run = run_command(argv, cwd=project, timeout_seconds=120)
+            negative_receipt = command_receipt(negative_run)
+            contract_failure_detected = domain_failure_detected(negative_receipt, "character-player-relation-contract")
+            negative_passed = negative_run.get("exit_code") not in (0, None) and contract_failure_detected
+            if negative_run.get("exit_code") not in (0, None) and not contract_failure_detected:
+                result["failures"].append("角色玩家负向探针触发了非零退出，但输出没有指向角色玩家关系合同失败，疑似 setup_error 或非目标错误")
+        result["contract_failure_detected"] = bool(negative_receipt and domain_failure_detected(negative_receipt, "character-player-relation-contract"))
         result["checks"].append({
             "name": "broken_character_player_link_rejected",
             "passed": negative_passed,
             "evidence": {
-                "exit_code": negative_run.get("exit_code"),
-                "stdout_tail": negative_receipt.get("stdout_tail"),
-                "stderr_tail": negative_receipt.get("stderr_tail"),
+                "exit_code": negative_receipt.get("exit_code") if isinstance(negative_receipt, dict) else None,
+                "stdout_tail": negative_receipt.get("stdout_tail") if isinstance(negative_receipt, dict) else None,
+                "stderr_tail": negative_receipt.get("stderr_tail") if isinstance(negative_receipt, dict) else None,
+                "domain_failure_detected": result["contract_failure_detected"],
             },
         })
     finally:
@@ -5512,6 +5819,137 @@ def click_matching_browser_control(page: Any, requested_title: str, *, control_k
     return result
 
 
+def click_relation_view_control(page: Any, character_name: str, player_name: str) -> dict[str, Any]:
+    """探索可能承载角色和玩家关系的视图入口。"""
+    result: dict[str, Any] = {
+        "control_kind": "relation_view",
+        "clicked": False,
+        "label": None,
+        "index": None,
+        "reason": "no_relation_view_control_clicked",
+        "attempts": [],
+    }
+    try:
+        initial_text = page.locator("body").inner_text(timeout=5_000)
+    except Exception as exc:
+        result["reason"] = f"initial_text_read_failed:{type(exc).__name__}"
+        return result
+    if character_name in initial_text and player_name in initial_text:
+        result["reason"] = "relation_names_already_visible"
+        return result
+
+    relation_keywords = [
+        "角色",
+        "玩家",
+        "关系",
+        "绑定",
+        "资料",
+        "名单",
+        "成员",
+        "队伍",
+        "管理",
+        "character",
+        "characters",
+        "player",
+        "players",
+        "relation",
+        "relations",
+        "binding",
+        "roster",
+        "party",
+        "profile",
+        "profiles",
+        "admin",
+    ]
+    controls = page.locator("button, [role='button'], [role='tab'], a[href], [data-view], [aria-controls]")
+    candidates: list[dict[str, Any]] = []
+    for control_index in range(min(controls.count(), 64)):
+        control = controls.nth(control_index)
+        try:
+            if not control.is_visible(timeout=1_000):
+                continue
+        except Exception:
+            continue
+        try:
+            label = control.inner_text(timeout=1_000).strip()
+        except Exception:
+            label = ""
+        attrs: dict[str, str] = {}
+        for attr in ["aria-label", "title", "data-view", "data-testid", "href", "role", "class"]:
+            try:
+                value = control.get_attribute(attr, timeout=1_000)
+            except Exception:
+                value = None
+            if value:
+                attrs[attr] = str(value)
+        haystack = " ".join([label, *attrs.values()]).lower()
+        matched_keywords = [keyword for keyword in relation_keywords if keyword.lower() in haystack]
+        if not matched_keywords:
+            continue
+        score = len(set(matched_keywords))
+        if any(keyword in matched_keywords for keyword in ["角色", "character", "characters"]):
+            score += 3
+        if any(keyword in matched_keywords for keyword in ["玩家", "player", "players"]):
+            score += 2
+        if any(keyword in matched_keywords for keyword in ["关系", "绑定", "relation", "relations", "binding"]):
+            score += 2
+        candidates.append({
+            "index": control_index,
+            "label": label,
+            "attributes": attrs,
+            "matched_keywords": matched_keywords,
+            "score": score,
+        })
+    candidates.sort(key=lambda item: (-int(item["score"]), int(item["index"])))
+    for candidate in candidates[:16]:
+        control_index = int(candidate["index"])
+        control = controls.nth(control_index)
+        attempt = {
+            "index": control_index,
+            "label": candidate.get("label"),
+            "attributes": candidate.get("attributes"),
+            "matched_keywords": candidate.get("matched_keywords"),
+            "score": candidate.get("score"),
+            "clicked": False,
+            "character_visible_after_click": False,
+            "player_visible_after_click": False,
+        }
+        try:
+            before_snapshot = browser_observable_snapshot(page)
+            control.click(timeout=5_000)
+            page.wait_for_timeout(500)
+            after_snapshot = browser_observable_snapshot(page)
+            after_text = after_snapshot["text"]
+            character_visible = character_name in after_text
+            player_visible = player_name in after_text
+            attempt.update({
+                "clicked": True,
+                "text_changed": before_snapshot["text_hash"] != after_snapshot["text_hash"],
+                "dom_summary_changed": before_snapshot["dom_summary_hash"] != after_snapshot["dom_summary_hash"],
+                "character_visible_after_click": character_visible,
+                "player_visible_after_click": player_visible,
+            })
+            result["attempts"].append(attempt)
+            if character_visible and player_visible:
+                result.update({
+                    "clicked": True,
+                    "label": candidate.get("label"),
+                    "index": control_index,
+                    "attributes": candidate.get("attributes"),
+                    "matched_keywords": candidate.get("matched_keywords"),
+                    "reason": "relation_names_visible_after_click",
+                })
+                return result
+        except Exception as exc:
+            attempt["error"] = f"{type(exc).__name__}: {exc}"
+            result["attempts"].append(attempt)
+    if candidates:
+        result["reason"] = "candidate_controls_did_not_reveal_both_relation_names"
+    else:
+        result["reason"] = "no_relation_keyword_control_found"
+    return result
+
+
 def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib.Path) -> dict[str, Any]:
     target, target_rel, checked_entrypoints = detect_browser_entrypoint(project)
     screenshot = evidence / "behavioral-browser-verification.png"
@@ -5689,9 +6127,10 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                 }
                 if relation_record_title and relation_record_title != relation_event_title:
                     relation_record_control = click_matching_browser_control(page, relation_record_title, control_kind="record")
-                relation_text = page.locator("body").inner_text(timeout=5_000)
                 character_name = str(relation_probe["character_name"])
                 player_name = str(relation_probe["player_name"])
+                relation_view_control = click_relation_view_control(page, character_name, player_name)
+                relation_text = page.locator("body").inner_text(timeout=5_000)
                 character_index = relation_text.find(character_name)
                 player_index = relation_text.find(player_name)
                 dom_relation = page.evaluate(
@@ -5765,6 +6204,7 @@ def run_behavioral_browser_verification(project: pathlib.Path, evidence: pathlib
                     **relation_probe,
                     "relation_event_control": relation_event_control,
                     "relation_record_control": relation_record_control,
+                    "relation_view_control": relation_view_control,
                     "relation_event_title_visible": relation_event_title_visible,
                     "relation_record_title_visible": relation_record_title_visible,
                     "relation_state_matched": {
@@ -6303,7 +6743,7 @@ def build_visual_independence_report(evidence: pathlib.Path) -> dict[str, Any]:
         allowed_duplicate_screenshot_hashes.append({
             "sha256": behavioral_record.get("sha256"),
             "sources": ["behavioral-browser-verification", "behavioral-relation-probe"],
-            "reason": "行为交互截图和关系探针截图处于同一已选活动状态时，像素相同是可接受结果；关系探针的新增证明来自 relation_event_control 和 dom_structural_probe，而不是依赖像素差异。",
+            "reason": "行为交互截图和关系探针截图处于同一已选活动状态时，像素相同是可接受结果；关系探针的新增证明来自 relation_event_control、relation_view_control 和 dom_structural_probe，而不是依赖像素差异。",
             "relation_event_control": relation_event_control,
             "dom_structural_probe_summary": {
                 "same_structural_container": relation_dom_probe.get("same_structural_container"),
@@ -6622,6 +7062,30 @@ def classify_final_prism_convergence(final_prism: dict[str, Any], failures: list
                 "最终棱镜复核因前置客观证据未通过而跳过，不能误判为角色制衡或最终评审语义问题。",
                 "先修复运行器客观探针、结构化数据发现或项目验证证据，再重新执行 E2E；不要在未修复前盲目重跑。",
             )
+
+    if any(token in combined for token in [
+        "runner negative contract",
+        "negative contract probe",
+        "runner probe",
+        "window.trpg_seed_data",
+        "trpg_seed_data not set",
+        "data/seed-data.js did not set",
+        "js parse",
+        "syntax-level",
+        "syntax error",
+        "mutation approach corrupts",
+        "mutation_summary",
+        "运行器负向",
+        "负向合同探针",
+        "数据加载失败",
+        "语法失败",
+        "领域合同",
+    ]):
+        add_class(
+            "runner_negative_probe_semantics_gap",
+            "最终评审认为运行器负向合同探针没有证明领域合同失败，而是退化为数据加载、语法或探针设置失败。",
+            "先修复运行器内部动态 mutation、语法有效性检查、领域失败分类和 mutation_summary 证据，再重新执行 E2E。",
+        )
 
     if any(token in combined for token in ["self-witness", "self witnessed", "self-referential", "same redcap", "same host", "out-of-band", "external anchor", "self-certification"]):
         add_class(
@@ -7956,7 +8420,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "The runner requires Loom roles to record upstream_challenges and reviewer to summarize role_opposition_matrix so the workflow has explicit role challenge evidence instead of a smooth same-context narrative.",
             "The runner opened the deliverable in a real headless browser, captured a screenshot, and checked visible rendered content before requesting completion.",
             "The runner also opened the same browser entrypoint through the file:// local file protocol and wrote file-browser-inspection.json plus file-browser-inspection.png before final provider review.",
-            "The runner performed a separate behavioral browser verification with a real click interaction, captured behavioral-browser-verification.png immediately after the verified interaction, captured behavioral-relation-probe.png at the exact relation-probe state when character-player data exists, compared screenshot hashes, and checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
+            "The runner performed a separate behavioral browser verification with a real click interaction, captured behavioral-browser-verification.png immediately after the verified interaction, captured behavioral-relation-probe.png at the exact relation-probe state when character-player data exists, explored relation-bearing view controls, compared screenshot hashes, and checked that the relation rendered in the same DOM structural container rather than relying on flattened text distance.",
             "The runner also wrote independent-browser-verification-script.py, recorded its SHA-256, launched it as a separate Python process, and wrote independent-browser-verification.json before final provider review; browser-inspection, behavioral verification, independent browser verification, and independent observer use recorded browser_context metadata and are summarized by visual-independence-report.json.",
             "The outer E2E harness launched an independent observer as a sibling process of the runner-worker; the observer read the frozen final-evidence-bundle.json, independently recomputed its declared bundle_sha256, rechecked the file hash after a cooldown window, and wrote read-only sealed independent-observer.json.",
             "self-referential-boundary.json explicitly discloses that the runner, observer, browser checks, and final reviews are coordinated on the same host and same RedCap package, and states what is not claimed.",
@@ -8038,7 +8502,7 @@ def final_prism_request(direction: str, bundle: dict[str, Any], supplemental_evi
             "Loom role session_id is the role isolation evidence; turn_id may reflect host hook grouping and is not used as the role identity boundary.",
             "independent-observer.json must verify parent_is_harness=true, parent_is_not_runner=true, observer_seal hash match, read-only file mode, deliverable hashes, browser observation, declared bundle hash match, and cooldown file hash stability.",
             "final-evidence-bundle.json is a frozen review bundle observed by the independent observer; post-bundle observer files, visual-independence-report.json, final-prism-review.json, failure-backlog.json, iteration-verdict.json, and completion-marker.json are supplied separately or generated later to avoid self-referential bundle hashes.",
-            "visual-independence-report.json must include every PNG screenshot in the evidence directory, including file-browser-inspection.png and behavioral-relation-probe.png. Duplicate hashes are forbidden unless the report explicitly records an allowed duplicate explanation. Expected allowances are: browser-inspection.png and file-browser-inspection.png rendering the same deterministic static page in separate HTTP and file:// contexts; behavioral-browser-verification.png and behavioral-relation-probe.png capturing the same selected event state while relation_event_control and dom_structural_probe provide the additional relation proof.",
+            "visual-independence-report.json must include every PNG screenshot in the evidence directory, including file-browser-inspection.png and behavioral-relation-probe.png. Duplicate hashes are forbidden unless the report explicitly records an allowed duplicate explanation. Expected allowances are: browser-inspection.png and file-browser-inspection.png rendering the same deterministic static page in separate HTTP and file:// contexts; behavioral-browser-verification.png and behavioral-relation-probe.png capturing the same selected event state while relation_event_control, relation_view_control, and dom_structural_probe provide the additional relation proof.",
             "completion-marker.json is forbidden before final provider review; if this review passes, the runner must copy self-referential-boundary.json disclosures into completion-marker.json and cite final-marker-validation.json and file-browser-inspection.json.",
             "If this provider review passes, completion-marker.json must copy role_process_completion, observer_boundary, and bootstrap_review_boundary from self-referential-boundary.json.",
             "If the remaining concern is that any same-host automated E2E can never be externally production-certified, treat that as compatible with an engineering-trial marker only when self-referential-boundary.json and completion-marker.json explicitly disclose that limitation.",
@@ -8539,6 +9003,8 @@ def validate_meaningful_e2e_evidence(evidence: pathlib.Path) -> dict[str, Any]:
                 failures.append("behavioral-browser-verification 关系探针必须记录 relation_event_control，说明验证的是哪个交互状态")
             if not isinstance(relation_evidence, dict) or not isinstance(relation_evidence.get("relation_record_control"), dict):
                 failures.append("behavioral-browser-verification 关系探针必须记录 relation_record_control，说明嵌套场次或记录状态")
+            if not isinstance(relation_evidence, dict) or not isinstance(relation_evidence.get("relation_view_control"), dict):
+                failures.append("behavioral-browser-verification 关系探针必须记录 relation_view_control，说明是否探索了角色、玩家或关系视图入口")
             relation_state = relation_evidence.get("relation_state_matched") if isinstance(relation_evidence, dict) else None
             if not isinstance(relation_state, dict) or relation_state.get("event_state_matched") is not True or relation_state.get("record_state_matched") is not True:
                 failures.append("behavioral-browser-verification 关系探针必须证明外层活动和内层记录状态都已匹配")
@@ -9599,6 +10065,354 @@ def cmd_harness_timeout_regression_test(args: argparse.Namespace) -> int:
     return 1
 
 
+def write_runner_negative_probe_regression_project(project: pathlib.Path, global_name: str, data_filename: str) -> pathlib.Path:
+    (project / "data").mkdir(parents=True, exist_ok=True)
+    (project / "scripts").mkdir(parents=True, exist_ok=True)
+    payload = {
+        "activities": [
+            {
+                "id": f"{global_name.lower()}-activity-1",
+                "title": f"{global_name} 自检活动一",
+                "players": [{"id": f"{global_name.lower()}-player-1", "name": "自检玩家一"}],
+                "characters": [{"id": f"{global_name.lower()}-character-1", "name": "自检角色一", "playerId": f"{global_name.lower()}-player-1"}],
+                "signupIntent": "第一场需要报名者",
+                "signups": [{"id": f"{global_name.lower()}-signup-1", "playerId": f"{global_name.lower()}-player-1"}],
+            },
+            {
+                "id": f"{global_name.lower()}-activity-2",
+                "title": f"{global_name} 自检活动二",
+                "players": [{"id": f"{global_name.lower()}-player-2", "name": "自检玩家二"}],
+                "characters": [{"id": f"{global_name.lower()}-character-2", "name": "自检角色二", "playerId": f"{global_name.lower()}-player-2"}],
+                "signupIntent": "第二场也需要报名者",
+                "signups": [{"id": f"{global_name.lower()}-signup-2", "playerId": f"{global_name.lower()}-player-2"}],
+            },
+        ]
+    }
+    data_path = project / "data" / data_filename
+    data_path.write_text(
+        f"window.{global_name} = " + json.dumps(payload, ensure_ascii=False, indent=2) + ";\n",
+        encoding="utf-8",
+    )
+    (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/validate-data.js\n```\n", encoding="utf-8")
+    (project / "scripts" / "validate-data.js").write_text(
+        "const fs = require('fs');\n"
+        "const vm = require('vm');\n"
+        f"const source = fs.readFileSync('data/{data_filename}', 'utf8');\n"
+        "const sandbox = { window: {} };\n"
+        "sandbox.globalThis = sandbox.window;\n"
+        "vm.createContext(sandbox);\n"
+        f"vm.runInContext(source, sandbox, {{ filename: 'data/{data_filename}' }});\n"
+        f"const data = sandbox.window.{global_name};\n"
+        f"if (!data || !Array.isArray(data.activities)) {{ console.error('{global_name} data not set'); process.exit(10); }}\n"
+        "for (const [index, activity] of data.activities.entries()) {\n"
+        "  if (!activity.signupIntent || !Array.isArray(activity.signups) || activity.signups.length === 0) {\n"
+        "    console.error(`signup-intent-data-contract failed at ${index}`);\n"
+        "    process.exit(2);\n"
+        "  }\n"
+        "  const playerIds = new Set((activity.players || []).map((player) => player.id));\n"
+        "  if (!Array.isArray(activity.characters) || activity.characters.some((character) => !playerIds.has(character.playerId))) {\n"
+        "    console.error(`character-player-relation-contract failed at ${index}`);\n"
+        "    process.exit(3);\n"
+        "  }\n"
+        "}\n"
+        f"console.log(JSON.stringify({{ok: true, source: '{global_name}'}}));\n",
+        encoding="utf-8",
+    )
+    return data_path
+
+
+def write_generic_runner_negative_probe_regression_project(project: pathlib.Path) -> pathlib.Path:
+    (project / "data").mkdir(parents=True, exist_ok=True)
+    (project / "scripts").mkdir(parents=True, exist_ok=True)
+    payload = {
+        "sessions": [
+            {
+                "id": "workshop-session-1",
+                "title": "工作坊报名与分组自检一",
+                "participants": [{"id": "participant-1", "name": "参与者一"}],
+                "assignments": [{"id": "assignment-1", "name": "任务分配一", "participantId": "participant-1"}],
+                "registrationIntent": "第一场需要注册者",
+                "registrations": [{"id": "registration-1", "participantId": "participant-1"}],
+            },
+            {
+                "id": "workshop-session-2",
+                "title": "工作坊报名与分组自检二",
+                "participants": [{"id": "participant-2", "name": "参与者二"}],
+                "assignments": [{"id": "assignment-2", "name": "任务分配二", "participantId": "participant-2"}],
+                "registrationIntent": "第二场也需要注册者",
+                "registrations": [{"id": "registration-2", "participantId": "participant-2"}],
+            },
+        ]
+    }
+    data_path = project / "data" / "domain-data.js"
+    data_path.write_text(
+        "window.APP_DATA = " + json.dumps(payload, ensure_ascii=False, indent=2) + ";\n",
+        encoding="utf-8",
+    )
+    (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/validate-data.js\n```\n", encoding="utf-8")
+    (project / "scripts" / "validate-data.js").write_text(
+        "const fs = require('fs');\n"
+        "const vm = require('vm');\n"
+        "const source = fs.readFileSync('data/domain-data.js', 'utf8');\n"
+        "const sandbox = { window: {} };\n"
+        "sandbox.globalThis = sandbox.window;\n"
+        "vm.createContext(sandbox);\n"
+        "vm.runInContext(source, sandbox, { filename: 'data/domain-data.js' });\n"
+        "const data = sandbox.window.APP_DATA;\n"
+        "if (!data || !Array.isArray(data.sessions)) { console.error('APP_DATA data not set'); process.exit(10); }\n"
+        "for (const [index, session] of data.sessions.entries()) {\n"
+        "  if (!session.registrationIntent || !Array.isArray(session.registrations) || session.registrations.length === 0) {\n"
+        "    console.error(`signup-intent-data-contract failed at ${index}: registrations missing`);\n"
+        "    process.exit(2);\n"
+        "  }\n"
+        "  const participantIds = new Set((session.participants || []).map((participant) => participant.id));\n"
+        "  if (!Array.isArray(session.assignments) || session.assignments.some((assignment) => !participantIds.has(assignment.participantId))) {\n"
+        "    console.error(`character-player-relation-contract failed at ${index}: participant assignment reference missing`);\n"
+        "    process.exit(3);\n"
+        "  }\n"
+        "}\n"
+        "console.log(JSON.stringify({ok: true, source: 'APP_DATA'}));\n",
+        encoding="utf-8",
+    )
+    return data_path
+
+
+def run_runner_negative_probe_setup_error_control(work_root: pathlib.Path) -> dict[str, Any]:
+    project = work_root / "setup-error-syntax-control"
+    data_path = write_runner_negative_probe_regression_project(project, "TRPG_SEED_DATA", "seed-data.js")
+    argv = ["node", "scripts/validate-data.js"]
+    positive_run = run_command(argv, cwd=project, timeout_seconds=60)
+    original_bytes = data_path.read_bytes()
+    original_sha256 = hashlib.sha256(original_bytes).hexdigest()
+    syntax_check: dict[str, Any] = {}
+    negative_receipt: dict[str, Any] | None = None
+    restore_receipt: dict[str, Any] | None = None
+    try:
+        data_path.write_text("window.TRPG_SEED_DATA = ;\n", encoding="utf-8")
+        syntax_check = structured_data_probe_syntax_check(project, data_path)
+        negative_run = run_command(argv, cwd=project, timeout_seconds=60)
+        negative_receipt = command_receipt(negative_run)
+    finally:
+        data_path.write_bytes(original_bytes)
+        restore_run = run_command(argv, cwd=project, timeout_seconds=60)
+        restore_receipt = command_receipt(restore_run)
+    signup_detected = domain_failure_detected(negative_receipt, "signup-intent-data-contract")
+    relation_detected = domain_failure_detected(negative_receipt, "character-player-relation-contract")
+    output_text = receipt_text(negative_receipt)
+    setup_marker_detected = any(
+        marker in output_text
+        for marker in [
+            "syntaxerror",
+            "unexpected token",
+            "did not set window",
+            "data not set",
+        ]
+    )
+    checks = [
+        {
+            "name": "positive_validation_passes_before_control",
+            "passed": positive_run.get("ok") is True,
+            "evidence": command_receipt(positive_run),
+        },
+        {
+            "name": "control_setup_error_is_syntax_invalid",
+            "passed": syntax_check.get("ok") is False,
+            "evidence": syntax_check,
+        },
+        {
+            "name": "setup_error_validation_exits_nonzero",
+            "passed": isinstance(negative_receipt, dict) and negative_receipt.get("exit_code") not in (0, None),
+            "evidence": negative_receipt,
+        },
+        {
+            "name": "setup_error_not_classified_as_domain_failure",
+            "passed": signup_detected is False and relation_detected is False,
+            "evidence": {
+                "signup_domain_failure_detected": signup_detected,
+                "relation_domain_failure_detected": relation_detected,
+                "setup_marker_detected": setup_marker_detected,
+            },
+        },
+        {
+            "name": "original_data_restored_after_setup_error_control",
+            "passed": isinstance(restore_receipt, dict)
+            and restore_receipt.get("exit_code") == 0
+            and sha256_file(data_path) == original_sha256,
+            "evidence": restore_receipt,
+        },
+    ]
+    failures = [item["name"] for item in checks if item.get("passed") is not True]
+    return {
+        "schema_id": "redcap-e2e-runner-negative-probe-setup-error-control",
+        "case_id": "setup-error-syntax-control",
+        "data_path": str(data_path.relative_to(project)),
+        "original_sha256": original_sha256,
+        "positive_validation": command_receipt(positive_run),
+        "syntax_check": syntax_check,
+        "negative_command": negative_receipt,
+        "restore_command": restore_receipt,
+        "signup_domain_failure_detected": signup_detected,
+        "relation_domain_failure_detected": relation_detected,
+        "setup_marker_detected": setup_marker_detected,
+        "checks": checks,
+        "ok": not failures,
+        "failures": failures,
+    }
+
+
+def runner_negative_probe_audit(cases: list[dict[str, Any]]) -> dict[str, Any]:
+    function_names = [
+        "write_structured_data_probe_payload",
+        "write_mutated_probe_snapshot",
+        "domain_failure_detected",
+        "signup_record_contract_fields",
+        "append_relation_matches",
+        "run_runner_negative_contract_probe",
+        "run_runner_character_player_contract_probe",
+    ]
+    function_sources: dict[str, dict[str, Any]] = {}
+    for name in function_names:
+        fn = globals().get(name)
+        if fn is None:
+            continue
+        source = inspect.getsource(fn)
+        function_sources[name] = {
+            "sha256": hashlib.sha256(source.encode("utf-8")).hexdigest(),
+            "source": source,
+        }
+    probe_summaries: list[dict[str, Any]] = []
+    for case in cases:
+        for probe_key in ["signup_probe", "character_probe"]:
+            probe = case.get(probe_key)
+            if not isinstance(probe, dict):
+                continue
+            probe_summaries.append({
+                "case_id": case.get("id"),
+                "probe_key": probe_key,
+                "target_contract": probe.get("target_contract"),
+                "ok": probe.get("ok"),
+                "contract_failure_detected": probe.get("contract_failure_detected"),
+                "mutation": probe.get("mutation"),
+                "negative_command": probe.get("negative_command"),
+                "restore_command": probe.get("restore_command"),
+            })
+    return {
+        "schema_id": "redcap-e2e-runner-negative-probe-independent-audit",
+        "created_at": iso_now(),
+        "source_file": str(pathlib.Path(__file__).resolve().relative_to(REPO_ROOT)),
+        "source_file_sha256": sha256_file(pathlib.Path(__file__).resolve()),
+        "alias_constants": {
+            "SIGNUP_COLLECTION_FIELD_CANDIDATES": SIGNUP_COLLECTION_FIELD_CANDIDATES,
+            "SIGNUP_INTENT_FIELD_CANDIDATES": SIGNUP_INTENT_FIELD_CANDIDATES,
+            "RELATION_PARENT_LIST_KEYS": RELATION_PARENT_LIST_KEYS,
+            "RELATION_CHILD_LIST_KEYS": RELATION_CHILD_LIST_KEYS,
+            "RELATION_REFERENCE_KEYS": RELATION_REFERENCE_KEYS,
+            "RELATION_NAME_REFERENCE_KEYS": sorted(RELATION_NAME_REFERENCE_KEYS),
+        },
+        "function_sources": function_sources,
+        "probe_summaries": probe_summaries,
+    }
+
+
+def runner_negative_probe_case_failures(case: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    for probe_key, expected_contract in [
+        ("signup_probe", "signup-intent-data-contract"),
+        ("character_probe", "character-player-relation-contract"),
+    ]:
+        probe = case.get(probe_key)
+        if not isinstance(probe, dict):
+            failures.append(f"{probe_key} 缺失")
+            continue
+        if probe.get("ok") is not True:
+            failures.append(f"{probe_key} 未通过：{probe.get('failures')}")
+        if probe.get("contract_failure_detected") is not True:
+            failures.append(f"{probe_key} 没有检测到 {expected_contract} 领域失败")
+        mutation = probe.get("mutation")
+        if not isinstance(mutation, dict):
+            failures.append(f"{probe_key} 缺少 mutation 摘要")
+            continue
+        if mutation.get("executor") != "runner_internal":
+            failures.append(f"{probe_key} mutation.executor 不是 runner_internal")
+        syntax_check = mutation.get("syntax_check")
+        if not isinstance(syntax_check, dict) or syntax_check.get("ok") is not True:
+            failures.append(f"{probe_key} 写回后的语法检查未通过")
+        if not mutation.get("mutated_sha256") or mutation.get("mutated_sha256") == mutation.get("original_sha256"):
+            failures.append(f"{probe_key} 没有记录有效的变更前后哈希")
+        output_text = receipt_text(probe.get("negative_command") if isinstance(probe.get("negative_command"), dict) else None)
+        if "trpg_seed_data not set" in output_text or "data not set" in output_text:
+            failures.append(f"{probe_key} 仍然退化成数据加载失败：{output_text[-160:]}")
+    return failures
+
+
+def run_runner_negative_probe_regression_test(work_root: pathlib.Path) -> dict[str, Any]:
+    work_root.mkdir(parents=True, exist_ok=True)
+    failures: list[str] = []
+    cases: list[dict[str, Any]] = []
+    configured_cases = [
+        ("trpg-seed-data", "TRPG_SEED_DATA", "seed-data.js", "trpg-compatible"),
+        ("redcap-data", "REDCAP_DATA", "redcap-data.js", "redcap-compatible"),
+        ("project-data", "PROJECT_DATA", "project-data.js", "project-compatible"),
+        ("activity-data", "ACTIVITY_DATA", "activity-data.js", "activity-compatible"),
+        ("sample-data", "SAMPLE_DATA", "sample-data.js", "sample-compatible"),
+        ("generic-workshop-app-data", "APP_DATA", "domain-data.js", "generic-workshop"),
+    ]
+    for case_id, global_name, filename, case_kind in configured_cases:
+        project = work_root / case_id
+        evidence = project / ".redcap" / "evidence" / "e2e"
+        evidence.mkdir(parents=True, exist_ok=True)
+        if case_kind == "generic-workshop":
+            data_path = write_generic_runner_negative_probe_regression_project(project)
+        else:
+            data_path = write_runner_negative_probe_regression_project(project, global_name, filename)
+        positive = run_command(["node", "scripts/validate-data.js"], cwd=project, timeout_seconds=60)
+        signup_probe = run_runner_negative_contract_probe(project, evidence)
+        character_probe = run_runner_character_player_contract_probe(project, evidence)
+        case = {
+            "id": case_id,
+            "case_kind": case_kind,
+            "global_name": global_name,
+            "data_path": str(data_path.relative_to(project)),
+            "positive_validation": command_receipt(positive),
+            "signup_probe": signup_probe,
+            "character_probe": character_probe,
+        }
+        case_failures = runner_negative_probe_case_failures(case)
+        if positive.get("ok") is not True:
+            case_failures.append(f"{case_id} 原始验证命令未通过")
+        case["ok"] = not case_failures
+        case["failures"] = case_failures
+        failures.extend(f"{case_id}: {item}" for item in case_failures)
+        cases.append(case)
+    setup_error_control = run_runner_negative_probe_setup_error_control(work_root)
+    if setup_error_control.get("ok") is not True:
+        failures.extend(f"setup-error-syntax-control: {item}" for item in setup_error_control.get("failures", []))
+    audit = runner_negative_probe_audit(cases)
+    audit_path = work_root / "redcap-e2e-runner-negative-probe-independent-audit.json"
+    write_json(audit_path, audit)
+    result = {
+        "schema_id": "redcap-e2e-runner-negative-probe-regression-test",
+        "ok": not failures,
+        "work_root": str(work_root),
+        "audit_path": str(audit_path),
+        "audit_sha256": sha256_file(audit_path),
+        "cases": cases,
+        "setup_error_control": setup_error_control,
+        "failures": failures,
+    }
+    write_json(work_root / "redcap-e2e-runner-negative-probe-regression-test.json", result)
+    return result
+
+
+def cmd_runner_negative_probe_regression_test(args: argparse.Namespace) -> int:
+    result = run_runner_negative_probe_regression_test(resolve_work_root(args.work_root))
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if result.get("ok") is True:
+        print("REDCAP_AI_E2E_RUNNER_NEGATIVE_PROBE_REGRESSION_OK")
+        return 0
+    return 1
+
+
 def cmd_harness_watchdog(args: argparse.Namespace) -> int:
     result = run_harness_watchdog(pathlib.Path(args.record).expanduser().resolve())
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -9714,6 +10528,25 @@ def cmd_self_check(args: argparse.Namespace) -> int:
         harness_timeout_regression = run_harness_timeout_regression_test(work_root / "harness-timeout-regression")
         if harness_timeout_regression.get("ok") is not True:
             failures.append(f"E2E harness 硬超时回归测试失败：{harness_timeout_regression.get('failures')}")
+        runner_negative_probe_regression = run_runner_negative_probe_regression_test(work_root / "runner-negative-probe-regression")
+        if runner_negative_probe_regression.get("ok") is not True:
+            failures.append(f"E2E 运行器负向合同探针回归测试失败：{runner_negative_probe_regression.get('failures')}")
+        regression_dir = work_root / "runner-negative-probe-regression"
+        external_audit_out = regression_dir / "redcap-e2e-negative-probe-external-audit.json"
+        external_audit = run_command([
+            sys.executable,
+            "runtime/audit/e2e_negative_probe_external_audit.py",
+            "--regression-result",
+            str(regression_dir / "redcap-e2e-runner-negative-probe-regression-test.json"),
+            "--focused-audit",
+            str(regression_dir / "redcap-e2e-runner-negative-probe-independent-audit.json"),
+            "--contract",
+            str(CONTRACT),
+            "--out",
+            str(external_audit_out),
+        ], cwd=REPO_ROOT, timeout_seconds=60)
+        if external_audit.get("ok") is not True:
+            failures.append(f"E2E 运行器负向合同探针独立审计失败：{command_receipt(external_audit)}")
         missing_direction = prepare_project("", work_root / "missing")
         if missing_direction.get("ok") is True:
             failures.append("缺失 direction 的 prepare 没有失败")
@@ -10710,7 +11543,73 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 or nested_relation_probe.get("character_index") != 0
             ):
                 failures.append(f"行为关系探针没有返回嵌套活动的父级可点击标题和场次关系：{nested_relation_probe}")
+            (project / "index.html").write_text(
+                "<!doctype html>\n"
+                "<html lang=\"zh-CN\">\n"
+                "<head><meta charset=\"utf-8\"><title>关系视图自检</title></head>\n"
+                "<body>\n"
+                "<main>\n"
+                "  <section id=\"activities\"></section>\n"
+                "  <section aria-live=\"polite\">\n"
+                "    <h1 id=\"activeTitle\"></h1>\n"
+                "    <nav>\n"
+                "      <button type=\"button\" data-view=\"signups\">报名意向</button>\n"
+                "      <button type=\"button\" data-view=\"characters\">角色资料</button>\n"
+                "    </nav>\n"
+                "    <div id=\"view\"></div>\n"
+                "  </section>\n"
+                "</main>\n"
+                "<script src=\"src/sample-data.js\"></script>\n"
+                "<script src=\"src/relation-view-app.js\"></script>\n"
+                "</body>\n"
+                "</html>\n",
+                encoding="utf-8",
+            )
+            (src_dir / "relation-view-app.js").write_text(
+                "(function () {\n"
+                "  const campaigns = window.TRPG_SEED_DATA.campaigns;\n"
+                "  const sessions = campaigns.flatMap((campaign) => campaign.sessions.map((session) => ({ campaign, session })));\n"
+                "  let activeId = sessions[0].session.id;\n"
+                "  let activeView = 'signups';\n"
+                "  const activities = document.getElementById('activities');\n"
+                "  const activeTitle = document.getElementById('activeTitle');\n"
+                "  const view = document.getElementById('view');\n"
+                "  function active() { return sessions.find((item) => item.session.id === activeId) || sessions[0]; }\n"
+                "  function render() {\n"
+                "    const current = active();\n"
+                "    activities.innerHTML = sessions.map((item) => `<button type=\"button\" data-session=\"${item.session.id}\">${item.campaign.title}<br>${item.session.title}</button>`).join('');\n"
+                "    activities.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => { activeId = button.dataset.session; render(); }));\n"
+                "    activeTitle.textContent = `${current.campaign.title} / ${current.session.title}`;\n"
+                "    if (activeView === 'characters') {\n"
+                "      const players = new Map(current.session.players.map((player) => [player.id, player]));\n"
+                "      view.innerHTML = current.session.characters.map((character) => `<article class=\"relation-card\"><h2>${character.name}</h2><p>玩家：${players.get(character.playerId).name}</p></article>`).join('');\n"
+                "    } else {\n"
+                "      view.innerHTML = current.session.signups.map((signup) => `<article><p>${signup.intentStatus}</p></article>`).join('');\n"
+                "    }\n"
+                "  }\n"
+                "  document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => { activeView = button.dataset.view; render(); }));\n"
+                "  render();\n"
+                "}());\n",
+                encoding="utf-8",
+            )
+            relation_view_behavior = run_behavioral_browser_verification(project, evidence)
+            if relation_view_behavior.get("ok") is not True:
+                failures.append(f"行为浏览器关系视图探索夹具未通过：{relation_view_behavior.get('failures')}")
+            relation_view_check = next(
+                (
+                    item for item in relation_view_behavior.get("checks", [])
+                    if isinstance(item, dict) and item.get("name") == "character_player_relation_visible"
+                ),
+                None,
+            )
+            relation_view_evidence = relation_view_check.get("evidence") if isinstance(relation_view_check, dict) else None
+            relation_view_control = relation_view_evidence.get("relation_view_control") if isinstance(relation_view_evidence, dict) else None
+            if not isinstance(relation_view_control, dict) or relation_view_control.get("clicked") is not True:
+                failures.append(f"行为关系探针没有点击承载关系的视图入口：{relation_view_control}")
+            elif "角色资料" not in str(relation_view_control.get("label") or ""):
+                failures.append(f"行为关系探针点击的关系视图入口不是预期的角色资料标签：{relation_view_control}")
             nested_campaign_js.unlink()
+            (src_dir / "relation-view-app.js").unlink(missing_ok=True)
             validate_data_js.unlink()
             (project / "README.md").write_text("## 验证\n\n```sh\nnode scripts/missing-validate.js\n```\n", encoding="utf-8")
             detected_argv, detected_source = detect_validation_command(project)
@@ -10855,6 +11754,27 @@ def cmd_self_check(args: argparse.Namespace) -> int:
                 failures.append("结构性最终棱镜 concern 没有禁止自动盲目重跑")
             if not expected_structural_classes.issubset(structural_classes):
                 failures.append(f"结构性收敛诊断缺少类别：{sorted(expected_structural_classes - structural_classes)}")
+            runner_probe_final_prism = {
+                "schema_id": "redcap-e2e-final-prism-review",
+                "producer": "e2e-runner",
+                "ok": False,
+                "strictest_verdict": "concern",
+                "reviews": [],
+                "merge": {
+                    "strictest_verdict": "concern",
+                    "main_concerns": [
+                        {
+                            "provider": "claude-code",
+                            "concern": "Runner negative contract probes trigger data/seed-data.js did not set window.TRPG_SEED_DATA, a syntax-level setup failure rather than domain contract validation."
+                        }
+                    ],
+                },
+                "failures": ["最终棱镜 strictest_verdict 不是 pass：concern"],
+            }
+            runner_probe_convergence = classify_final_prism_convergence(runner_probe_final_prism, runner_probe_final_prism["failures"])
+            runner_probe_classes = {item.get("loop_class") for item in runner_probe_convergence.get("diagnosis", [])}
+            if "runner_negative_probe_semantics_gap" not in runner_probe_classes:
+                failures.append(f"负向探针语义缺口没有被收敛诊断识别：{runner_probe_convergence}")
             skipped_final_prism = {
                 "schema_id": "redcap-e2e-final-prism-review",
                 "producer": "e2e-runner",
@@ -11229,6 +12149,9 @@ def build_parser() -> argparse.ArgumentParser:
     harness_timeout_regression = sub.add_parser("harness-timeout-regression-test")
     harness_timeout_regression.add_argument("--work-root")
     harness_timeout_regression.set_defaults(func=cmd_harness_timeout_regression_test)
+    runner_negative_probe_regression = sub.add_parser("runner-negative-probe-regression-test")
+    runner_negative_probe_regression.add_argument("--work-root")
+    runner_negative_probe_regression.set_defaults(func=cmd_runner_negative_probe_regression_test)
     watchdog = sub.add_parser("harness-watchdog", help=argparse.SUPPRESS)
     watchdog.add_argument("--record", required=True)
     watchdog.set_defaults(func=cmd_harness_watchdog)
