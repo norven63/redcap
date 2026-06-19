@@ -3104,8 +3104,22 @@ def run_developer_readiness_gate(project: pathlib.Path, evidence: pathlib.Path, 
     return result
 
 
-def role_completion_ready(project: pathlib.Path, evidence: pathlib.Path, role: str) -> bool:
-    return not validate_role_outputs(project, evidence, role)
+def role_completion_ready(
+    project: pathlib.Path,
+    evidence: pathlib.Path,
+    role: str,
+    *,
+    min_role_artifact_mtime: float | None = None,
+) -> bool:
+    if validate_role_outputs(project, evidence, role):
+        return False
+    if min_role_artifact_mtime is None:
+        return True
+    artifact = role_artifact_path(evidence, role)
+    try:
+        return artifact.stat().st_mtime >= min_role_artifact_mtime
+    except OSError:
+        return False
 
 
 def build_role_session_manifest(
@@ -3245,6 +3259,7 @@ def run_loom_role_pipeline(
                 message_path.unlink()
             attempt_prompt = role_retry_prompt(prompt, attempt_index)
             attempt_argv = build_codex_role_argv(project, role, message_path, attempt_prompt)
+            min_role_artifact_mtime = time.time() - 0.5
             completion_files = [
                 path
                 for path in [
@@ -3261,7 +3276,12 @@ def run_loom_role_pipeline(
                 cwd=project,
                 timeout_seconds=role_timeout,
                 completion_files=completion_files,
-                completion_predicate=lambda role=role: role_completion_ready(project, evidence, role),
+                completion_predicate=lambda role=role, min_role_artifact_mtime=min_role_artifact_mtime: role_completion_ready(
+                    project,
+                    evidence,
+                    role,
+                    min_role_artifact_mtime=min_role_artifact_mtime,
+                ),
                 env_overrides=child_env,
             )
             attempt_stdout = evidence / "role-raw" / f"{role}.attempt-{attempt_index}.stdout.txt"
@@ -4781,6 +4801,11 @@ def domain_failure_detected(receipt: dict[str, Any] | None, target_contract: str
     text = receipt_text(receipt)
     if not text:
         return False
+    return domain_failure_text_matches(text, target_contract)
+
+
+def domain_failure_text_matches(text: str, target_contract: str) -> bool:
+    text = text.casefold()
     setup_error_markers = [
         "trpg_seed_data not set",
         "window.trpg_seed_data",
@@ -4827,6 +4852,13 @@ def domain_failure_detected(receipt: dict[str, Any] | None, target_contract: str
     return any(marker in text for marker in markers)
 
 
+def domain_failure_detected_in_payload(payload: dict[str, Any] | None, target_contract: str) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    text = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    return domain_failure_text_matches(text, target_contract)
+
+
 def signup_record_contract_fields(record: dict[str, Any]) -> tuple[str | None, str | None]:
     collection_field = next((field for field in SIGNUP_COLLECTION_FIELD_CANDIDATES if field in record), None)
     intent_field = next((field for field in SIGNUP_INTENT_FIELD_CANDIDATES if field in record), None)
@@ -4840,18 +4872,44 @@ def signup_record_has_contract_fields(record: dict[str, Any]) -> bool:
 
 def top_level_data_list_candidates(payload: dict[str, Any] | list[Any]) -> list[tuple[str, list[Any]]]:
     list_candidates: list[tuple[str, list[Any]]] = []
-    if isinstance(payload, dict):
-        preferred_keys = ["events", "activities", "campaigns", "sessions", "items"]
+    seen: set[str] = set()
+    preferred_keys = ["events", "activities", "campaigns", "sessions", "items"]
+
+    def append(path: str, records: list[Any]) -> None:
+        if path not in seen:
+            seen.add(path)
+            list_candidates.append((path, records))
+
+    def visit(value: Any, path: str, depth: int) -> None:
+        if depth > 5:
+            return
+        if isinstance(value, list):
+            append(path or "$", value)
+            for index, item in enumerate(value):
+                if isinstance(item, dict):
+                    for child_key in preferred_keys:
+                        child_value = item.get(child_key)
+                        if isinstance(child_value, list):
+                            visit(child_value, f"{path or '$'}.{index}.{child_key}", depth + 1)
+                    for child_key, child_value in item.items():
+                        if child_key in preferred_keys:
+                            continue
+                        if isinstance(child_value, (dict, list)):
+                            visit(child_value, f"{path or '$'}.{index}.{child_key}", depth + 1)
+            return
+        if not isinstance(value, dict):
+            return
         for key in preferred_keys:
-            value = payload.get(key)
-            if isinstance(value, list):
-                list_candidates.append((key, value))
-        known_keys = {key for key, _ in list_candidates}
-        for key, value in payload.items():
-            if isinstance(value, list) and key not in known_keys:
-                list_candidates.append((str(key), value))
-    elif isinstance(payload, list):
-        list_candidates.append(("$", payload))
+            child = value.get(key)
+            if isinstance(child, list):
+                visit(child, f"{path}.{key}" if path else key, depth + 1)
+        for key, child in value.items():
+            if key in preferred_keys:
+                continue
+            if isinstance(child, (dict, list)):
+                visit(child, f"{path}.{key}" if path else str(key), depth + 1)
+
+    visit(payload, "", 0)
     return list_candidates
 
 
@@ -4876,30 +4934,25 @@ def iter_signup_probe_candidates(payload: dict[str, Any] | list[Any]) -> list[tu
 def signup_probe_records_at_list_key(payload: dict[str, Any] | list[Any], list_key: str) -> list[Any] | None:
     if list_key == "$":
         return payload if isinstance(payload, list) else None
-    parts = list_key.split(".")
+    parts = [part for part in list_key.split(".") if part]
     if not parts:
         return None
-    if parts[0] == "$":
-        current: Any = payload if isinstance(payload, list) else None
-        index = 1
-    else:
-        current = payload.get(parts[0]) if isinstance(payload, dict) else None
-        index = 1
-    while index < len(parts):
-        if not isinstance(current, list):
+    current: Any = payload
+    for part in parts:
+        if part == "$":
+            continue
+        if isinstance(current, list):
+            try:
+                item_index = int(part)
+            except ValueError:
+                return None
+            if item_index < 0 or item_index >= len(current):
+                return None
+            current = current[item_index]
+        elif isinstance(current, dict):
+            current = current.get(part)
+        else:
             return None
-        try:
-            parent_index = int(parts[index])
-        except ValueError:
-            return None
-        index += 1
-        if parent_index < 0 or parent_index >= len(current) or not isinstance(current[parent_index], dict):
-            return None
-        if index >= len(parts):
-            return None
-        child_key = parts[index]
-        index += 1
-        current = current[parent_index].get(child_key)
     return current if isinstance(current, list) else None
 
 
@@ -5052,11 +5105,22 @@ def run_runner_negative_contract_probe(project: pathlib.Path, evidence: pathlib.
             })
             negative_run = run_command(argv, cwd=project, timeout_seconds=120)
             negative_receipt = command_receipt(negative_run)
-            contract_failure_detected = domain_failure_detected(negative_receipt, "signup-intent-data-contract")
+            negative_payload = developer_validation_payload(evidence, project)
+            result["negative_validation_payload"] = negative_payload
+            contract_failure_detected = (
+                domain_failure_detected(negative_receipt, "signup-intent-data-contract")
+                or domain_failure_detected_in_payload(negative_payload, "signup-intent-data-contract")
+            )
             negative_passed = negative_run.get("exit_code") not in (0, None) and contract_failure_detected
             if negative_run.get("exit_code") not in (0, None) and not contract_failure_detected:
                 result["failures"].append("报名负向探针触发了非零退出，但输出没有指向报名合同失败，疑似 setup_error 或非目标错误")
-        result["contract_failure_detected"] = bool(negative_receipt and domain_failure_detected(negative_receipt, "signup-intent-data-contract"))
+        result["contract_failure_detected"] = bool(
+            negative_receipt
+            and (
+                domain_failure_detected(negative_receipt, "signup-intent-data-contract")
+                or domain_failure_detected_in_payload(result.get("negative_validation_payload"), "signup-intent-data-contract")
+            )
+        )
         result["checks"].append({
             "name": "malformed_signup_data_rejected",
             "passed": negative_passed,
@@ -5162,19 +5226,9 @@ def find_character_player_contract_data_target(project: pathlib.Path) -> tuple[p
         if payload is None:
             continue
         candidate_matches: list[CharacterPlayerMatch] = []
-        list_candidates: list[tuple[str, list[Any]]] = []
         if isinstance(payload, dict):
             append_relation_matches(candidate_matches, data_path, payload, "__top_level__", -1, payload, failures)
-            for key in ["events", "activities", "sessions", "campaigns", "items"]:
-                value = payload.get(key)
-                if isinstance(value, list):
-                    list_candidates.append((key, value))
-            known = {key for key, _ in list_candidates}
-            for key, value in payload.items():
-                if isinstance(value, list) and key not in known:
-                    list_candidates.append((str(key), value))
-        elif isinstance(payload, list):
-            list_candidates.append(("$", payload))
+        list_candidates = top_level_data_list_candidates(payload)
         for list_key, records in list_candidates:
             for event_index, event in enumerate(records):
                 if not isinstance(event, dict):
@@ -5295,11 +5349,22 @@ def run_runner_character_player_contract_probe(project: pathlib.Path, evidence: 
             })
             negative_run = run_command(argv, cwd=project, timeout_seconds=120)
             negative_receipt = command_receipt(negative_run)
-            contract_failure_detected = domain_failure_detected(negative_receipt, "character-player-relation-contract")
+            negative_payload = developer_validation_payload(evidence, project)
+            result["negative_validation_payload"] = negative_payload
+            contract_failure_detected = (
+                domain_failure_detected(negative_receipt, "character-player-relation-contract")
+                or domain_failure_detected_in_payload(negative_payload, "character-player-relation-contract")
+            )
             negative_passed = negative_run.get("exit_code") not in (0, None) and contract_failure_detected
             if negative_run.get("exit_code") not in (0, None) and not contract_failure_detected:
                 result["failures"].append("角色玩家负向探针触发了非零退出，但输出没有指向角色玩家关系合同失败，疑似 setup_error 或非目标错误")
-        result["contract_failure_detected"] = bool(negative_receipt and domain_failure_detected(negative_receipt, "character-player-relation-contract"))
+        result["contract_failure_detected"] = bool(
+            negative_receipt
+            and (
+                domain_failure_detected(negative_receipt, "character-player-relation-contract")
+                or domain_failure_detected_in_payload(result.get("negative_validation_payload"), "character-player-relation-contract")
+            )
+        )
         result["checks"].append({
             "name": "broken_character_player_link_rejected",
             "passed": negative_passed,
@@ -10919,6 +10984,8 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             })
             if not role_completion_ready(project, evidence, "tester"):
                 failures.append("tester completed 夹具没有被判定为角色完成")
+            if role_completion_ready(project, evidence, "tester", min_role_artifact_mtime=time.time() + 60):
+                failures.append("角色完成谓词不应允许旧 role-artifact 短路新一轮角色执行")
             current_source = pathlib.Path(__file__).read_text(encoding="utf-8")
             if CODEX_PROJECT_TRUST_MODE == "persist":
                 failures.append("项目级 trust 默认不得持久写入 Codex config；必须优先使用单次 -c 覆盖，避免 E2E 污染用户全局配置")
@@ -11399,6 +11466,47 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             if not isinstance(js_character_probe.get("probe_depth"), dict) or js_character_probe["probe_depth"].get("targeted_non_first_event") is not True:
                 failures.append("运行器角色玩家负向契约探针没有在 JS 数据模块中优先命中非首条活动记录")
             src_data_js.unlink()
+            app_js = project / "app.js"
+            app_js.write_text(
+                "(function (root) {\n"
+                "  const TRPG_ACTIVITY_DATA = "
+                + json.dumps(js_payload, ensure_ascii=False, indent=2)
+                + ";\n"
+                "  if (typeof module !== 'undefined' && module.exports) {\n"
+                "    module.exports = { TRPG_ACTIVITY_DATA };\n"
+                "  }\n"
+                "  root.__redcapSelfCheckData = TRPG_ACTIVITY_DATA;\n"
+                "})(typeof window !== 'undefined' ? window : globalThis);\n",
+                encoding="utf-8",
+            )
+            validate_data_js.write_text(
+                "const { TRPG_ACTIVITY_DATA } = require('../app.js');\n"
+                "const data = TRPG_ACTIVITY_DATA;\n"
+                "for (const [index, activity] of data.activities.entries()) {\n"
+                "  if (!activity.signupIntent || !Array.isArray(activity.signups) || activity.signups.length === 0) {\n"
+                "    console.error(`signup-intent-data-contract failed at ${index}`);\n"
+                "    process.exit(2);\n"
+                "  }\n"
+                "  const playerIds = new Set((activity.players || []).map((player) => player.id));\n"
+                "  if (!Array.isArray(activity.characters) || activity.characters.some((character) => !playerIds.has(character.playerId))) {\n"
+                "    console.error(`character-player-relation-contract failed at ${index}`);\n"
+                "    process.exit(3);\n"
+                "  }\n"
+                "}\n"
+                "console.log(JSON.stringify({ok: true, source: 'app.js wrapped module export'}));\n",
+                encoding="utf-8",
+            )
+            wrapped_negative_probe = run_runner_negative_contract_probe(project, evidence)
+            if wrapped_negative_probe.get("ok") is not True:
+                failures.append(f"运行器报名负向契约探针不能处理 app.js 包装层模块导出：{wrapped_negative_probe.get('failures')}")
+            if wrapped_negative_probe.get("data_path") != "app.js" or wrapped_negative_probe.get("list_key") != "TRPG_ACTIVITY_DATA.activities":
+                failures.append(f"运行器报名负向契约探针没有记录 app.js 包装层数据路径：{wrapped_negative_probe}")
+            wrapped_character_probe = run_runner_character_player_contract_probe(project, evidence)
+            if wrapped_character_probe.get("ok") is not True:
+                failures.append(f"运行器角色玩家负向契约探针不能处理 app.js 包装层模块导出：{wrapped_character_probe.get('failures')}")
+            if wrapped_character_probe.get("data_path") != "app.js" or wrapped_character_probe.get("list_key") != "TRPG_ACTIVITY_DATA.activities":
+                failures.append(f"运行器角色玩家负向契约探针没有记录 app.js 包装层数据路径：{wrapped_character_probe}")
+            app_js.unlink()
             src_sample_data_js = src_dir / "sample-data.js"
             write_structured_data_probe_payload(src_sample_data_js, js_payload)
             validate_data_js.write_text(

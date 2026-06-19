@@ -3,8 +3,8 @@
   "task_id": "20260619-e2e-runner-negative-probe-fix",
   "fsm_state": "IMPLEMENTING",
   "requirement_review": {
-    "user_intent": "继续推进 RedCap 完整复活长任务。上一轮完整 E2E 已证明 Loom 角色链、项目级 .redcap、Hook 证据、自我净化和独立观察者能运行，但最终棱镜指出运行器负向合同探针把 JS 数据文件写坏，导致探针验证的是脚本加载失败，而不是领域合同失败。 本轮恢复后继续处理完整 E2E 暴露的新问题：行为级浏览器关系探针必须能探索角色、玩家或关系视图入口，避免把真实页面中隐藏在标签页后的领域关系误判为失败。 进一步处理完整 E2E 最终棱镜 concern：评审方需要在正式 completion-marker 写入前看到边界复制预览，同时 file:// 浏览器证据需要可区分视觉截图。 最新完整 E2E 已经通过项目交付、Loom、钩子、自我净化和最终收口，但源工作区保护发现棱镜流水写入 tracked 源码文件；这必须作为运行时边界缺陷修复。",
-    "target_reality": "E2E 运行器必须用保持语法有效的数据变更来做负向合同探针，并记录可审计的变更摘要；最终收敛诊断必须精准反映真实阻塞，不能用泛化模板掩盖具体问题。 同时，关系探针必须先选中目标活动或记录，再探索关系视图入口，并以 DOM 结构容器证明角色和玩家关系真实可见。 最终棱镜前必须存在 completion-marker-preview.json 与 preview validation；HTTP 与 file:// 截图必须可区分，不能把像素相同作为常规独立证据。 棱镜流水必须默认写入运行时 .redcap/evidence/prism，不再污染 tracked assets/evidence/prism；RedCap 源工作区作为自开发项目时允许被忽略的 .redcap 运行时目录，但不允许任何 .redcap 文件进入 Git 跟踪。",
+    "user_intent": "继续推进 RedCap 完整复活长任务。上一轮完整 E2E 已证明 Loom 角色链、项目级 .redcap、Hook 证据、自我净化和独立观察者能运行，但最终棱镜指出运行器负向合同探针把 JS 数据文件写坏，导致探针验证的是脚本加载失败，而不是领域合同失败。 本轮恢复后继续处理完整 E2E 暴露的新问题：行为级浏览器关系探针必须能探索角色、玩家或关系视图入口，避免把真实页面中隐藏在标签页后的领域关系误判为失败。 进一步处理完整 E2E 最终棱镜 concern：评审方需要在正式 completion-marker 写入前看到边界复制预览，同时 file:// 浏览器证据需要可区分视觉截图。 最新完整 E2E 已经通过项目交付、Loom、钩子、自我净化和最终收口，但源工作区保护发现棱镜流水写入 tracked 源码文件；这必须作为运行时边界缺陷修复。 后续 E2E 又暴露运行器不能识别 app.js 包装层模块导出的真实活动数据，并且 developer 修复轮会被上一轮旧 role-artifact 短路；这两个缺陷必须继续正面修复。",
+    "target_reality": "E2E 运行器必须用保持语法有效的数据变更来做负向合同探针，并记录可审计的变更摘要；最终收敛诊断必须精准反映真实阻塞，不能用泛化模板掩盖具体问题。 同时，关系探针必须先选中目标活动或记录，再探索关系视图入口，并以 DOM 结构容器证明角色和玩家关系真实可见。 最终棱镜前必须存在 completion-marker-preview.json 与 preview validation；HTTP 与 file:// 截图必须可区分，不能把像素相同作为常规独立证据。 棱镜流水必须默认写入运行时 .redcap/evidence/prism，不再污染 tracked assets/evidence/prism；RedCap 源工作区作为自开发项目时允许被忽略的 .redcap 运行时目录，但不允许任何 .redcap 文件进入 Git 跟踪。 运行器负向探针必须能穿透 module.exports 包装层定位 TRPG_ACTIVITY_DATA.activities，并从验证结果 JSON 中识别目标合同失败；角色完成谓词必须要求本轮新写 role-artifact，不能被旧产物短路。",
     "non_goals": [
       "不把本次修复说成 RedCap 完整复活已经终局完成",
       "不降低最终棱镜 strictest_verdict 必须为 pass 的要求",
@@ -52,8 +52,8 @@
     }
   },
   "task_body": {
-    "requested_outcome": "修复 E2E 运行器负向合同探针，使其验证 signupIntent/signups 和 character.playerId 的真实领域合同失败，而不是由无效 JS 写入造成的加载失败。 并修复行为关系探针只选择活动、不切换关系视图导致的误判。 并补强最终收口前完成标记预览与 file:// 视觉独立性。 并修复完整 E2E 被源工作区棱镜流水污染的问题，确保 gate 流水落在运行时边界内。",
-    "primary_deliverable": "运行器探针修复、合同更新、回归测试、棱镜评审证据、完整 E2E 重新验收结论。 追加行为关系视图探索修复和自检夹具。 追加 completion-marker 预览、边界复制校验、file:// 独立视口和视觉报告收紧。 追加棱镜流水运行时落点、源工作区 .redcap ignore 策略、边界消费者检查升级和 E2E 自检隔离探针。",
+    "requested_outcome": "修复 E2E 运行器负向合同探针，使其验证 signupIntent/signups 和 character.playerId 的真实领域合同失败，而不是由无效 JS 写入造成的加载失败。 并修复行为关系探针只选择活动、不切换关系视图导致的误判。 并补强最终收口前完成标记预览与 file:// 视觉独立性。 并修复完整 E2E 被源工作区棱镜流水污染的问题，确保 gate 流水落在运行时边界内。 并修复 app.js 包装层模块导出无法被探针识别、developer 修复轮被旧产物短路的问题。",
+    "primary_deliverable": "运行器探针修复、合同更新、回归测试、棱镜评审证据、完整 E2E 重新验收结论。 追加行为关系视图探索修复和自检夹具。 追加 completion-marker 预览、边界复制校验、file:// 独立视口和视觉报告收紧。 追加棱镜流水运行时落点、源工作区 .redcap ignore 策略、边界消费者检查升级和 E2E 自检隔离探针。 追加包装层数据路径递归发现、结构化验证结果合同失败识别，以及角色产物新鲜度完成谓词。",
     "acceptance_criteria": [
       "运行器负向探针必须保持 data/seed-data.js 语法有效。",
       "signup 探针必须通过清空某个活动的 signups 与 signupIntent 触发合同失败。",
@@ -71,7 +71,10 @@
       "visual-independence-report 不得再把 HTTP/file 同像素截图作为常规通过路径。",
       "redcap gate、prism session-init 和 session-update 默认不得写入 tracked assets/evidence/prism/task-ledger.jsonl 或 task-health.json。",
       "源工作区 .redcap 必须被 .gitignore 和目录策略识别为运行时目录；允许存在，但不得被 Git 跟踪。",
-      "E2E 自检必须包含 source_workspace_prism_ledger_isolation_probe，证明运行 gate 后源工作区状态哈希不变。"
+      "E2E 自检必须包含 source_workspace_prism_ledger_isolation_probe，证明运行 gate 后源工作区状态哈希不变。",
+      "运行器负向探针必须能处理 app.js 中 module.exports = { TRPG_ACTIVITY_DATA } 的包装层数据，并记录 TRPG_ACTIVITY_DATA.activities 路径。",
+      "当验证命令把领域失败写入 verification-results.json 而不是 stdout/stderr 时，运行器必须仍能识别目标合同失败。",
+      "Loom 角色完成谓词必须要求本轮新写 role-artifact，避免 repair round 被旧产物立即短路。"
     ],
     "status": "implemented",
     "task_type": "e2e_runner_verification_hardening",
@@ -99,7 +102,9 @@
       "assets/contracts/directory-structure.json",
       "assets/docs/prism-task-ledger.md",
       ".gitignore",
-      "assets/evidence/self-purification/20260619-prism-ledger-runtime-boundary-fix/runner-self-purification-resolution.json"
+      "assets/evidence/self-purification/20260619-prism-ledger-runtime-boundary-fix/runner-self-purification-resolution.json",
+      "targeted retest on run-20260619T102735Z-30544: runner probes locate app.js TRPG_ACTIVITY_DATA.activities and both contracts fail under mutation",
+      "runtime/core/complete_revival_e2e.py:role_completion_ready min_role_artifact_mtime"
     ]
   },
   "review_tracks": {
@@ -167,7 +172,10 @@
     "runtime/core/runtime_boundary_consumers.py source .redcap ignore policy",
     "runtime/core/complete_revival_e2e.py:source_workspace_prism_ledger_isolation_probe",
     "assets/contracts/directory-structure.json ignored_names includes .redcap",
-    ".gitignore ignores .redcap/"
+    ".gitignore ignores .redcap/",
+    "runtime/core/complete_revival_e2e.py recursive top_level_data_list_candidates",
+    "runtime/core/complete_revival_e2e.py domain_failure_detected_in_payload",
+    "runtime/core/complete_revival_e2e.py role_completion_ready min_role_artifact_mtime"
   ],
   "verification_evidence": [
     "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/audit/e2e_negative_probe_external_audit.py",
@@ -187,7 +195,9 @@
     "source_workspace_prism_ledger_isolation_probe -> ok true",
     "runtime/bin/redcap boundary-consumers check -> REDCAP_RUNTIME_BOUNDARY_CONSUMERS_OK",
     "runtime/bin/redcap layout-check -> REDCAP_LAYOUT_OK",
-    "runtime/bin/redcap check -> REDCAP_CHECK_OK after runtime ledger boundary fix"
+    "runtime/bin/redcap check -> REDCAP_CHECK_OK after runtime ledger boundary fix",
+    "targeted retest on run-20260619T102735Z-30544 -> signup_ok true and character_ok true for app.js TRPG_ACTIVITY_DATA.activities",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe -> REDCAP_AI_E2E_SELF_CHECK_OK after wrapped app.js and stale role artifact regressions"
   ],
   "self_purification": {
     "task_type": "runtime_change",
