@@ -1,0 +1,15 @@
+{
+  "schema_id": "redcap-knowledge-retrieval-evidence",
+  "task_id": "20260619-e2e-root-summary-final-write",
+  "retrieved_sources": [
+    {
+      "path": "runtime/core/complete_revival_e2e.py",
+      "reason": "确认 E2E 顶层 run-summary 和 evidence_root/run-summary 的写入时序。"
+    },
+    {
+      "path": "assets/evidence/self-purification/20260619-e2e-watchdog-deadline-classification-fix/self-purification-candidates.json",
+      "reason": "复用同类 E2E harness 修复的经验沉淀格式。"
+    }
+  ],
+  "used_for": "将顶层摘要早写导致最终完成边界缺失的问题，转化为运行时修复、自检防线和自我净化候选。"
+}

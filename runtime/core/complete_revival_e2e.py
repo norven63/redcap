@@ -10690,6 +10690,10 @@ def run_e2e_harness(direction: str, work_root: pathlib.Path, timeout_seconds: in
         parsed.setdefault("failures", [])
         if isinstance(parsed["failures"], list):
             parsed["failures"].extend(final_failures)
+    try:
+        write_json(work_root / "redcap-e2e-run-summary.json", parsed)
+    except Exception:
+        pass
     if isinstance(evidence_root, str):
         try:
             write_json(pathlib.Path(evidence_root) / "run-summary.json", parsed)
@@ -12920,6 +12924,11 @@ def cmd_self_check(args: argparse.Namespace) -> int:
             if "run_e2e_harness" not in current_source or "REDCAP_E2E_WORKER" not in current_source:
                 failures.append("E2E 自检没有覆盖 harness/worker 兄弟进程运行结构")
             harness_source = inspect.getsource(run_e2e_harness)
+            final_discovery_index = harness_source.find('parsed["long_task_active_run_discovery"] = discovery')
+            root_summary_write_pattern = r'write_json\(work_root / "redcap-e2e-run-summary\.json", parsed\)'
+            root_summary_write_indexes = [match.start() for match in re.finditer(root_summary_write_pattern, harness_source)]
+            if final_discovery_index < 0 or not any(index > final_discovery_index for index in root_summary_write_indexes):
+                failures.append("E2E 顶层 run-summary 必须在 long_task_active_run_discovery 写入后再次回写，避免顶层证据缺少最终完成边界")
             for required_token in [
                 "observer_request_routing_decision",
                 "request_runner_pid != worker_pid",

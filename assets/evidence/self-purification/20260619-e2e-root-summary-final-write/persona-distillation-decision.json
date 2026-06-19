@@ -1,0 +1,6 @@
+{
+  "schema_id": "redcap-persona-distillation-decision",
+  "task_id": "20260619-e2e-root-summary-final-write",
+  "decision": "no_private_persona_update",
+  "reason": "本轮修复是工程证据一致性问题，不涉及 Cap 私有人格或身份边界的新沉淀。"
+}

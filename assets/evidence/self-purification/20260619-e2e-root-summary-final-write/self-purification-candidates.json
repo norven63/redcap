@@ -1,0 +1,17 @@
+{
+  "schema_id": "redcap-e2e-self-purification-candidates",
+  "task_id": "20260619-e2e-root-summary-final-write",
+  "candidates": [
+    {
+      "id": "final-summary-must-be-written-after-boundary",
+      "summary": "长任务完成边界、发现结果和最终失败改写都进入 parsed 后，所有对人和自动脚本可见的最终摘要都必须重新写入；不能只更新 evidence_root 而遗留顶层旧摘要。",
+      "source": "E2E 顶层 redcap-e2e-run-summary.json 与 evidence_root/run-summary.json 不一致的复盘",
+      "decisions": [
+        {
+          "decision": "no_promote",
+          "reason": "本轮经验已经落到 E2E harness 和自检，当前仍是 RedCap 自身单点证据一致性问题；暂不晋升公共能力资产，等待第二个运行器或发布安装链路出现同类问题后再评审。"
+        }
+      ]
+    }
+  ]
+}

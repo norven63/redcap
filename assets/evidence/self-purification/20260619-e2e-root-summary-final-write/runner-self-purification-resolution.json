@@ -1,0 +1,7 @@
+{
+  "schema_id": "redcap-self-purification-resolution",
+  "task_id": "20260619-e2e-root-summary-final-write",
+  "decision": "no_promote",
+  "reason": "该经验已通过最终顶层摘要回写和 complete-revival-e2e 自检固定在运行器里；目前缺少跨模块复用样本，暂不进入 redcap-arsenal。",
+  "next_review_trigger": "任意发布安装、Loom 角色链或其他长任务运行器出现“最终证据只写局部、不回写入口摘要”的第二个样本。"
+}

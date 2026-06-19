@@ -1,0 +1,121 @@
+{
+  "schema_id": "redcap-development-lifecycle-packet",
+  "task_id": "20260619-e2e-root-summary-final-write",
+  "fsm_state": "TEMPORARY_USABLE",
+  "requirement_review": {
+    "user_intent": "继续推进 E2E 后发现证据一致性缺陷：工作根顶层 redcap-e2e-run-summary.json 是早写版本，缺少最终 long_task_active_run 和 discovery 字段。",
+    "target_reality": "E2E 完成 long_task 收口后，顶层 run-summary 和 evidence_root/run-summary 都必须包含同一份最终摘要，避免用户或自动脚本读取顶层摘要时误判长任务字段缺失。",
+    "non_goals": [
+      "不改变 E2E 验收标准",
+      "不把本修复说成 RedCap 完整复活终局完成",
+      "不修改外部旧 E2E 结果来伪造历史通过"
+    ],
+    "risk_level": "medium"
+  },
+  "technical_review": {
+    "runtime_boundary_checked": true,
+    "prism_gate_decision": "optional",
+    "rollback_plan": "回滚 runtime/core/complete_revival_e2e.py、runtime/core/test_e2e_layered_preflight.py 和本任务新增证据。",
+    "verification_plan": [
+      "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260619-e2e-root-summary-final-write-lifecycle.json",
+      "runtime/bin/redcap gate --task \"修复 E2E 顶层 run-summary 未回写最终 long_task_active_run 与 discovery 字段的证据一致性问题\" --risk-level medium --lifecycle-packet assets/evidence/lifecycle/20260619-e2e-root-summary-final-write-lifecycle.json",
+      "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/test_e2e_layered_preflight.py",
+      "python3 -m unittest runtime.core.test_e2e_layered_preflight -v",
+      "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+      "runtime/bin/redcap check"
+    ]
+  },
+  "prompt_context": {
+    "source_prompt_excerpt": "抱歉，刚才网络受阻了，你的任务被中断，现在尝试是否恢复，如果恢复，请继续推进任务目标",
+    "prompt_kind": "directive",
+    "authorized_scope": "completion"
+  },
+  "task_body": {
+    "requested_outcome": "修复顶层 run-summary 最终回写，使顶层摘要与 evidence_root 摘要都包含 long_task_active_run 和 long_task_active_run_discovery。",
+    "primary_deliverable": "E2E harness 最终摘要回写修复、回归检查和生命周期证据。",
+    "acceptance_criteria": [
+      "parsed 写入 long_task_active_run 和 discovery 后，必须重新写入 work_root/redcap-e2e-run-summary.json。",
+      "若 final_failures 改写 ok 或 ready_for_engineering_use，也必须反映到顶层摘要。",
+      "自检或单元测试必须覆盖源码中存在最终顶层摘要回写。"
+    ],
+    "status": "verified",
+    "task_type": "e2e_harness_evidence_consistency",
+    "task_weight": "standard",
+    "evidence_kind": "runtime-change",
+    "evidence": [
+      "runtime/core/complete_revival_e2e.py",
+      "runtime/core/test_e2e_layered_preflight.py",
+      "assets/evidence/lifecycle/20260619-e2e-root-summary-final-write-lifecycle.json"
+    ]
+  },
+  "review_tracks": {
+    "architecture": {
+      "status": "checked",
+      "findings": [
+        "E2E harness 现在会在 long_task_active_run 和 discovery 写入 parsed 后，再次回写工作根顶层 redcap-e2e-run-summary.json，避免入口摘要与 evidence_root 摘要漂移。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe"
+      ]
+    },
+    "governance": {
+      "status": "checked",
+      "findings": [
+        "本修复只关闭 E2E 证据一致性缺口，不把阶段修复包装成 RedCap 完整复活终局；完成声明限定在 task_id 范围内。"
+      ],
+      "evidence": [
+        "assets/evidence/lifecycle/20260619-e2e-root-summary-final-write-lifecycle.json",
+        "runtime/bin/redcap lifecycle check --packet assets/evidence/lifecycle/20260619-e2e-root-summary-final-write-lifecycle.json"
+      ]
+    },
+    "contracts": {
+      "status": "checked",
+      "findings": [
+        "complete-revival-e2e 自检已新增源码时序检查：顶层 run-summary 必须在 long_task_active_run_discovery 写入后再次回写。"
+      ],
+      "evidence": [
+        "runtime/core/complete_revival_e2e.py",
+        "runtime/bin/redcap check"
+      ]
+    }
+  },
+  "fsm_transition": {
+    "from": "VERIFYING",
+    "to": "TEMPORARY_USABLE",
+    "evidence": [
+      "redcap_check_passed"
+    ]
+  },
+  "implementation_evidence": [
+    "runtime/core/complete_revival_e2e.py",
+    "assets/evidence/self-purification/20260619-e2e-root-summary-final-write/self-purification-candidates.json"
+  ],
+  "verification_evidence": [
+    "python3 -m py_compile runtime/core/complete_revival_e2e.py runtime/core/test_e2e_layered_preflight.py",
+    "python3 -m unittest runtime.core.test_e2e_layered_preflight -v",
+    "runtime/bin/redcap complete-revival-e2e self-check --skip-carrier-probe",
+    "runtime/bin/redcap check"
+  ],
+  "self_purification": {
+    "task_type": "e2e_harness_evidence_consistency",
+    "task_weight": "standard",
+    "purification_required": true,
+    "knowledge_retrieval_evidence": "assets/evidence/self-purification/20260619-e2e-root-summary-final-write/knowledge-retrieval-evidence.json",
+    "post_task_harvest": {
+      "candidates_path": "assets/evidence/self-purification/20260619-e2e-root-summary-final-write/self-purification-candidates.json"
+    },
+    "review_decision": {
+      "decision": "no_promote",
+      "reason": "本轮经验已直接落入 E2E harness 和自检，当前仍是 RedCap 自身单点证据一致性问题；等待第二个运行器或发布安装链路出现同类样本后再评审。"
+    },
+    "promotion_or_no_promote_result": "assets/evidence/self-purification/20260619-e2e-root-summary-final-write/runner-self-purification-resolution.json",
+    "persona_boundary_evidence": "assets/evidence/self-purification/20260619-e2e-root-summary-final-write/persona-distillation-decision.json"
+  },
+  "completion_claim": {
+    "present": true,
+    "scope": "20260619-e2e-root-summary-final-write",
+    "evidence_kind": "runtime-change",
+    "claim": "本轮已修复 E2E 顶层 run-summary 最终回写缺口，并通过自检与 RedCap 总检查；该声明不覆盖 RedCap 完整复活终局。"
+  }
+}
